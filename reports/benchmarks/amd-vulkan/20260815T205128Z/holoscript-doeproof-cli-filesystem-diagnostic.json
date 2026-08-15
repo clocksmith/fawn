@@ -1,0 +1,108 @@
+{
+  "schemaVersion": 1,
+  "artifactKind": "doeproof-cli-filesystem-integration-diagnostic",
+  "evidenceMaturity": "diagnostic",
+  "status": "passed",
+  "workload": {
+    "actorId": "holoscript-snn-webgpu",
+    "upstreamCommit": "337a39a869a552c814933c587fe65b34a0a2c95d",
+    "application": "unchanged pinned HoloScript tropical-SpMV workload",
+    "oracle": "independent CPU tropical min-plus SpMV with frozen exact output identity"
+  },
+  "plan": {
+    "id": "holoscript-tropical-spmv-doeproof-cli-filesystem-qm0-v1",
+    "path": "bench/external-projects/holoscript-snn-webgpu/doeproof-cli-filesystem-integration.plan.json",
+    "sha256": "34bb231d04c60562e4b2d2a59666b31221ccd60ceeea6d2b1a90f1079df4b6cb"
+  },
+  "evidence": {
+    "path": "bench/out/external-projects/holoscript-snn-webgpu/doeproof-cli-filesystem-qm0-v1-retry2/result.json",
+    "sha256": "89ce4432805a1324320bc0fd37a0cce2372c2a838ed2569d6a93028424de3b41"
+  },
+  "implementation": {
+    "bin": {
+      "path": "packages/doe-gpu/bin/doe-proof-node.js",
+      "sha256": "6881fbef17168a5893c1f78e39537d0b708518001282c0b5fa2e60ec24fd2b95"
+    },
+    "cli": {
+      "path": "packages/doe-gpu/src/node-webgpu-process-cli.js",
+      "sha256": "edea8fb2e9c53040f59e0053097c8c5fa7ee59053b3d978e975378a3e13e7587"
+    },
+    "processRunner": {
+      "path": "packages/doe-gpu/src/node-webgpu-process.js",
+      "sha256": "eb79366cb93caa6d564f2d64c0f6a4cffa527222fc6bb61763b8bd8097f688cd"
+    },
+    "loader": {
+      "path": "packages/doe-gpu/src/node-webgpu-loader.js",
+      "sha256": "c76023c803e868d66bf95cd7d90efc91b4cb35459684e7d0a0c28e8b607b34ab"
+    },
+    "contractSchema": {
+      "path": "packages/doe-gpu/assets/governed-node-webgpu-process-contract.schema.json",
+      "sha256": "6a2428572f90483b03cf06fd0528a7e6d9643b18dec2d20d1ec16974c3d86b48"
+    },
+    "evaluator": {
+      "path": "bench/external-projects/holoscript-snn-webgpu/evaluate-doeproof-cli-output.mjs",
+      "sha256": "6959f0c60d634700e3f4ef2974d76f8ce478cf1847fe4812a96803534119e658"
+    },
+    "runner": {
+      "path": "bench/external-projects/holoscript-snn-webgpu/run-doeproof-cli-integration.mjs",
+      "sha256": "37f5812402baf6a3f6587176743fd7c4855cf5a6bc9e26e1d6236d386504f71f"
+    },
+    "workload": {
+      "path": "bench/external-projects/holoscript-snn-webgpu/run-workload.mjs",
+      "sha256": "ff435a50712f1dc786c26f1abbb63d1e8b03c881d62c7876c988eeee33447d37"
+    }
+  },
+  "permissionBoundary": {
+    "mode": "node-permission-read-only",
+    "nodeFilesystemReads": "entrypoint, provider, loader, input, and declared hash-bound runtime files only",
+    "filesystemWrites": "denied by Node permission mode",
+    "childProcesses": "denied by Node permission mode",
+    "workerThreads": "allowed-for-loader",
+    "nativeAddons": "allowed-for-provider",
+    "rendererAttestation": "omitted-by-node-permission",
+    "hardwareEligible": false
+  },
+  "lanes": {
+    "W0": {
+      "providerId": "dawn-node-webgpu",
+      "runtimeFileCount": 11,
+      "artifactSha256": "36847df55e4958743905ca8c3fae075b68449c4173d9010650ea35bcbf0e11c3",
+      "receiptValid": true,
+      "oracle": "pass",
+      "workloadReplaySha256": "sha256:a8e50939479879a7a7414b2b49bd11a63234530b4b611170ebe8bb280c379e8c"
+    },
+    "D0": {
+      "providerId": "doe-gpu",
+      "runtimeFileCount": 36,
+      "artifactSha256": "5212a62895091683c9213816f149b549db7261b04864a384902739881fb6d2d9",
+      "replayArtifactSha256": "b64fdea05a0516fa1a8ca36d3d0aeceb56e9803078179ac8d29109552dec220a",
+      "receiptValid": true,
+      "oracle": "pass",
+      "workloadReplaySha256": "sha256:a8e50939479879a7a7414b2b49bd11a63234530b4b611170ebe8bb280c379e8c",
+      "executionReplayMatched": true
+    }
+  },
+  "comparison": {
+    "comparable": true,
+    "sameWorkload": true,
+    "sameOutput": true,
+    "performanceInterpretable": false,
+    "runtimeOwnershipCredit": false
+  },
+  "decision": {
+    "realApplicationNodePermissionBoundary": "authorized",
+    "runtimeOwnershipCredit": false,
+    "performanceCredit": false,
+    "hardwareCredit": false,
+    "releaseCredit": false,
+    "terminalOwnershipDecisionChanged": false
+  },
+  "limitations": [
+    "This is a Node API permission boundary, not operating-system dependency sealing.",
+    "Native addon syscalls and network access are outside the enforced boundary.",
+    "The auxiliary renderer probe was intentionally omitted, so this artifact receives no hardware eligibility credit.",
+    "The declared file set is hash-bound and sufficient for this frozen run; it is not a universal transitive dependency manifest.",
+    "The run does not establish application adoption or release-blocker status.",
+    "The terminal HoloScript runtime-ownership rejection remains authoritative."
+  ]
+}

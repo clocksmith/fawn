@@ -15,8 +15,8 @@
     "sha256": "2e37cc0b9fb46ae3943297eb0b841314894b642fb9c6d1ab7ac31c7a1f4e97ef"
   },
   "evidence": {
-    "path": "bench/out/external-projects/holoscript-snn-webgpu/doeproof-cli-qm0-v1-retry3/result.json",
-    "sha256": "9f63c1d1ca978361f02027b676a24b6a20b4626422b622f91601a25a7858649d"
+    "path": "bench/out/external-projects/holoscript-snn-webgpu/doeproof-cli-qm0-v1-retry6/result.json",
+    "sha256": "326a3bb3b18f5d8d2e25f619518a7410a3f14aee589b71eee15c28471c9d02f7"
   },
   "implementation": {
     "bin": {
@@ -25,11 +25,11 @@
     },
     "cli": {
       "path": "packages/doe-gpu/src/node-webgpu-process-cli.js",
-      "sha256": "c1c4b841d8398f08f04d6cd7ead910b995d0ffeeb67d7fd42f7c99147388fefc"
+      "sha256": "edea8fb2e9c53040f59e0053097c8c5fa7ee59053b3d978e975378a3e13e7587"
     },
     "processRunner": {
       "path": "packages/doe-gpu/src/node-webgpu-process.js",
-      "sha256": "ca6f162c4b10a417783fc4af7ecd85517e566194bcef9303babead8de165d0b8"
+      "sha256": "eb79366cb93caa6d564f2d64c0f6a4cffa527222fc6bb61763b8bd8097f688cd"
     },
     "loader": {
       "path": "packages/doe-gpu/src/node-webgpu-loader.js",
@@ -37,7 +37,7 @@
     },
     "contractSchema": {
       "path": "packages/doe-gpu/assets/governed-node-webgpu-process-contract.schema.json",
-      "sha256": "178bc4b5b81c0a3b925fb99aa07d865003a0b6d740cee42a84486ba39d0c4f54"
+      "sha256": "6a2428572f90483b03cf06fd0528a7e6d9643b18dec2d20d1ec16974c3d86b48"
     },
     "evaluator": {
       "path": "bench/external-projects/holoscript-snn-webgpu/evaluate-doeproof-cli-output.mjs",
@@ -45,7 +45,7 @@
     },
     "runner": {
       "path": "bench/external-projects/holoscript-snn-webgpu/run-doeproof-cli-integration.mjs",
-      "sha256": "55c837ba977c7dc37318045cc492486b42440cc75a8fcb21bd81591e20620472"
+      "sha256": "37f5812402baf6a3f6587176743fd7c4855cf5a6bc9e26e1d6236d386504f71f"
     }
   },
   "commands": {
@@ -58,18 +58,18 @@
   "lanes": {
     "W0": {
       "providerId": "dawn-node-webgpu",
-      "artifactSha256": "33fb36781216f254be66fe0941a46477dbaceed846bba2a5a7ed079e1ad8a69e",
+      "artifactSha256": "7afa87451b8c91ead2ce953bbe6fc7a2c06f931b4c650484cc278250cf996005",
       "receiptValid": true,
       "oracle": "pass",
-      "workloadReplaySha256": "sha256:1063db8739e1e6e3d5fa552b10c3bee208353ff9e9df3147e2ccb203983eee7d"
+      "workloadReplaySha256": "sha256:1c00af1c6afa3583d7a7752f590f938db5ffd12a93b441c7e449473c0d0c5e0b"
     },
     "D0": {
       "providerId": "doe-gpu",
-      "artifactSha256": "67cd122b5b80b5a5a32b533beaad7a5dd656b4bc6e7d7bfe2eb02d00746314d8",
-      "replayArtifactSha256": "36968c4d28f1f04f9871b07c9d6074cd1875f887c9581d016ab21e4c7662cba2",
+      "artifactSha256": "ded5443599fe2ac5b3f2de320a361a8b505909c903f41fc33772a15a40348474",
+      "replayArtifactSha256": "00dd2ca86d7e7bf3306b76303a39959da79b3902eca6084cf4ce6405d1885330",
       "receiptValid": true,
       "oracle": "pass",
-      "workloadReplaySha256": "sha256:1063db8739e1e6e3d5fa552b10c3bee208353ff9e9df3147e2ccb203983eee7d",
+      "workloadReplaySha256": "sha256:1c00af1c6afa3583d7a7752f590f938db5ffd12a93b441c7e449473c0d0c5e0b",
       "executionReplayMatched": true
     }
   },
