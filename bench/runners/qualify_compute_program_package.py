@@ -91,10 +91,17 @@ def main() -> int:
                     shutil.copyfile(ROOT / source, output / Path(source).name)
                     replacements[f'../../../../{source}'] = f'./{Path(source).name}'
                 regressions = [('commands', 'native-command-ownership'),
+                               ('reflection', 'native-reflection'),
+                               ('rendering', 'native-render-ownership'),
                                ('plans', 'compute-program'), ('timestamps', 'timestamp-query'),
                                ('normalization', 'timestamp-normalization')]
                 if args.platform_package == 'doe-gpu-linux-x64':
                     regressions.append(('resources', 'native-resource-retention'))
+                helper = (ROOT / 'packages/doe-gpu/test/integration/native-addon-test-helper.js').read_text()
+                for original, replacement in replacements.items():
+                    helper = helper.replace(original, replacement)
+                (scratch / 'native-addon-test-helper.js').write_text(helper)
+                (output / 'native-addon-test-helper.js').write_text(helper)
                 for fixture, name in regressions:
                     regression = (ROOT / f'packages/doe-gpu/test/integration/test-integration-{name}.js').read_text()
                     for before, after in replacements.items():
