@@ -258,13 +258,13 @@ pub fn dispatchesCanMerge(left: *const RecordedDispatch, right: *const RecordedD
 pub fn tryMergeDispatchIntoLast(cmds: *std.ArrayListUnmanaged(RecordedCmd), cmd: *const RecordedCmd) bool {
     if (cmds.items.len == 0) return false;
     const right = switch (cmd.*) {
-        .dispatch => |dispatch| dispatch,
+        .dispatch => |*dispatch| dispatch,
         else => return false,
     };
     const last = &cmds.items[cmds.items.len - 1];
     switch (last.*) {
         .dispatch => |*left| {
-            if (!dispatchesCanMerge(left, &right)) return false;
+            if (!dispatchesCanMerge(left, right)) return false;
             const left_repeat = if (left.repeat_count == 0) 1 else left.repeat_count;
             const right_repeat = if (right.repeat_count == 0) 1 else right.repeat_count;
             left.repeat_count = std.math.add(u32, left_repeat, right_repeat) catch return false;
@@ -334,6 +334,12 @@ test "tryMergeDispatchIntoLast coalesces identical dispatch commands" {
     try std.testing.expect(tryMergeDispatchIntoLast(&cmds, &second));
     try std.testing.expectEqual(@as(usize, 1), cmds.items.len);
     try std.testing.expectEqual(@as(u32, 2), cmds.items[0].dispatch.repeat_count);
+    try std.testing.expectEqual(@as(u32, 1), second.dispatch.repeat_count);
+    try std.testing.expect(tryMergeDispatchIntoLast(&cmds, &cmds.items[0]));
+    try std.testing.expectEqual(@as(u32, 4), cmds.items[0].dispatch.repeat_count);
+    cmds.items[0].dispatch.repeat_count = std.math.maxInt(u32);
+    try std.testing.expect(!tryMergeDispatchIntoLast(&cmds, &cmds.items[0]));
+    try std.testing.expectEqual(std.math.maxInt(u32), cmds.items[0].dispatch.repeat_count);
 }
 
 test "tryMergeRenderDrawIntoLast coalesces identical draws inside one pass" {

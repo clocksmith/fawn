@@ -36,9 +36,10 @@ pub fn populateRecordedDispatchBindingState(
     dispatch: anytype,
 ) void {
     if (pipe.spirv_data == null) return;
-    dispatch.vulkan_binding_state = vulkan_compute.vulkan_collect_recorded_bind_group_state(
+    vulkan_compute.vulkan_collect_recorded_bind_group_state(
         pipe,
         bind_groups,
+        &dispatch.vulkan_binding_state,
     );
 }
 
@@ -193,10 +194,12 @@ pub fn prewarmPreparedDispatchBindings(
             &bind_groups,
             bg_count,
         );
-        var state = if (cache_index) |cached_index|
-            prepared_cache[cached_index].state
-        else
-            vulkan_compute.vulkan_collect_dispatch_binding_state(pipe, bind_groups[0..]);
+        var state: vulkan_compute.VulkanDispatchBindingState = undefined;
+        if (cache_index) |cached_index| {
+            state = prepared_cache[cached_index].state;
+        } else {
+            vulkan_compute.vulkan_collect_dispatch_binding_state(pipe, bind_groups[0..], &state);
+        }
         var cache_slot = cache_index;
         if (cache_slot == null) {
             if (findPreparedBindingStateCache(
@@ -282,10 +285,12 @@ pub fn dispatchBatchCopyFlush(
                 &bind_groups,
                 bg_count,
             );
-            var state = if (cache_index) |cached_index|
-                prepared_cache[cached_index].state
-            else
-                vulkan_compute.vulkan_collect_dispatch_binding_state(pipe, bind_groups[0..]);
+            var state: vulkan_compute.VulkanDispatchBindingState = undefined;
+            if (cache_index) |cached_index| {
+                state = prepared_cache[cached_index].state;
+            } else {
+                vulkan_compute.vulkan_collect_dispatch_binding_state(pipe, bind_groups[0..], &state);
+            }
             var cache_slot = cache_index;
             if (cache_slot == null) {
                 if (findPreparedBindingStateCache(

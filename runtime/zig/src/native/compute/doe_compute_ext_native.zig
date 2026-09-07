@@ -228,9 +228,10 @@ fn appendRecordedDispatch(pass: *DoeComputePass, pip: *DoeComputePipeline, x: u3
         &cmd.dispatch.buf_sizes,
     );
     if (pip.spirv_data != null) {
-        cmd.dispatch.vulkan_binding_state = vulkan_compute.vulkan_collect_recorded_bind_group_state(
+        vulkan_compute.vulkan_collect_recorded_bind_group_state(
             pip,
             pass.bind_groups[0..],
+            &cmd.dispatch.vulkan_binding_state,
         );
     }
     if (native_cmds.tryMergeDispatchIntoLast(&pass.enc.cmds, &cmd)) {
@@ -403,9 +404,10 @@ pub export fn doeNativeComputePassDispatchIndirect(pass_raw: ?*anyopaque, buf_ra
         cmd.dispatch_indirect.bind_groups[index] = if (maybe_bg) |bg| toOpaque(bg) else null;
     }
     if (pip.spirv_data != null) {
-        cmd.dispatch_indirect.vulkan_binding_state = vulkan_compute.vulkan_collect_recorded_bind_group_state(
+        vulkan_compute.vulkan_collect_recorded_bind_group_state(
             pip,
             pass.bind_groups[0..],
+            &cmd.dispatch_indirect.vulkan_binding_state,
         );
     }
     if (!recording.reserve(pass.enc, 0, 1)) return;
