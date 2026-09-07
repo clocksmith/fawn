@@ -7,6 +7,8 @@ const buffer_abi = @import("../../core/abi/wgpu_core_base_types.zig");
 
 const std = @import("std");
 const abi_pipeline = @import("../../core/abi/wgpu_pipeline_descriptor_types.zig");
+const command_types = @import("../support/doe_native_command_types.zig");
+const command_storage = @import("doe_command_storage.zig");
 const native_types = @import("../support/doe_native_object_types.zig");
 const native_shared = @import("../support/doe_native_shared_types.zig");
 const native_helpers = @import("../support/doe_native_object_helpers.zig");
@@ -47,15 +49,26 @@ pub fn createEncoder(allocator: std.mem.Allocator, device: *DoeDevice) !*DoeComm
     const encoder = try native_helpers.create(DoeCommandEncoder, allocator);
     native_helpers.object_add_ref(DoeDevice, toOpaque(device));
     encoder.* = .{ .allocator = allocator, .dev = device, .device_ref = device };
+    if (device.command_storage) |*pool| encoder.cmds = pool.take(allocator);
     return encoder;
+}
+
+fn releaseCommandStorage(allocator: std.mem.Allocator, device: ?*DoeDevice, commands: *std.ArrayListUnmanaged(command_types.RecordedCmd)) void {
+    if (device) |owner| {
+        if (owner.command_storage) |*pool| {
+            pool.recycle(allocator, commands);
+            return;
+        }
+    }
+    commands.deinit(allocator);
 }
 
 pub export fn doeNativeCommandEncoderRelease(raw: ?*anyopaque) callconv(.c) void {
     if (cast(DoeCommandEncoder, raw)) |e| {
         if (!native_helpers.object_should_destroy(e)) return;
         label_store.remove(raw);
-        e.cmds.deinit(e.allocator);
         @import("../../contracts/resource_lease.zig").releaseAll(e.allocator, &e.references);
+        releaseCommandStorage(e.allocator, e.device_ref, &e.cmds);
         if (e.device_ref) |dev| native_exports.doeNativeDeviceRelease(toOpaque(dev));
         const allocator = e.allocator;
         allocator.destroy(e);
@@ -200,8 +213,8 @@ pub export fn doeNativeCommandBufferRelease(raw: ?*anyopaque) callconv(.c) void 
     if (cast(DoeCommandBuffer, raw)) |cb| {
         if (!native_helpers.object_should_destroy(cb)) return;
         label_store.remove(raw);
-        cb.cmds.deinit(cb.allocator);
         @import("../../contracts/resource_lease.zig").releaseAll(cb.allocator, &cb.references);
+        releaseCommandStorage(cb.allocator, cb.device_ref, &cb.cmds);
         if (cb.device_ref) |dev| native_exports.doeNativeDeviceRelease(toOpaque(dev));
         const allocator = cb.allocator;
         allocator.destroy(cb);
@@ -252,6 +265,35 @@ test "recorded copies transfer resource ownership to command buffers" {
     doeNativeCommandBufferRelease(commands);
     try std.testing.expectEqual(@as(u32, 1), source.ref_count);
     try std.testing.expectEqual(@as(u32, 1), destination.ref_count);
+    try std.testing.expectEqual(@as(u32, 1), device.ref_count);
+}
+
+test "command storage returns after leases release and cannot alias live commands" {
+    const allocator = std.testing.allocator;
+    var device = DoeDevice{ .command_storage = command_storage.Pool.init(allocator, std.math.maxInt(usize)) };
+    defer device.command_storage.?.deinit();
+    var source = DoeBuffer{ .dev = &device, .size = 16, .usage = buffer_abi.WGPUBufferUsage_CopySrc };
+    var destination = DoeBuffer{ .dev = &device, .size = 16, .usage = buffer_abi.WGPUBufferUsage_CopyDst };
+    const encoder = try createEncoder(allocator, &device);
+    doeNativeCopyBufferToBuffer(toOpaque(encoder), toOpaque(&source), 0, toOpaque(&destination), 0, 16);
+    const address = encoder.cmds.items.ptr;
+    const commands = doeNativeCommandEncoderFinish(toOpaque(encoder), null).?;
+    doeNativeCommandEncoderRelease(toOpaque(encoder));
+    const concurrent = try createEncoder(allocator, &device);
+    try std.testing.expectEqual(@as(usize, 0), concurrent.cmds.capacity);
+    doeNativeCommandEncoderRelease(toOpaque(concurrent));
+    try std.testing.expectEqual(@as(u32, 2), source.ref_count);
+    doeNativeCommandBufferRelease(commands);
+    try std.testing.expectEqual(@as(u32, 1), source.ref_count);
+    try std.testing.expectEqual(@as(u32, 1), destination.ref_count);
+    const reused = try createEncoder(allocator, &device);
+    try std.testing.expectEqual(address, reused.cmds.items.ptr);
+    try std.testing.expectEqual(@as(usize, 0), reused.cmds.items.len);
+    try std.testing.expectEqual(@as(usize, 0), reused.references.items.len);
+    doeNativeCopyBufferToBuffer(toOpaque(reused), toOpaque(&source), 0, toOpaque(&destination), 0, 4);
+    try std.testing.expectEqual(@as(u64, 4), reused.cmds.items[0].copy_buf.size);
+    doeNativeCommandEncoderRelease(toOpaque(reused));
+    try std.testing.expectEqual(@as(u32, 1), source.ref_count);
     try std.testing.expectEqual(@as(u32, 1), device.ref_count);
 }
 
@@ -357,10 +399,17 @@ test "render recording retains caller-released state until command buffer releas
 
 const RecordingFixture = enum { compute, render, copy, query };
 
-fn recordingAllocationScenario(allocator: std.mem.Allocator, fixture: RecordingFixture) !void {
+fn recordingAllocationScenario(allocator: std.mem.Allocator, fixture: RecordingFixture, reuse: bool) !void {
     const compute = @import("../compute/doe_compute_ext_native.zig");
     const render = @import("../render/doe_render_native.zig");
     var device = DoeDevice{};
+    if (reuse) device.command_storage = command_storage.Pool.init(allocator, std.math.maxInt(usize));
+    defer if (device.command_storage) |*pool| pool.deinit();
+    if (reuse) {
+        const warmup = try createEncoder(allocator, &device);
+        defer doeNativeCommandEncoderRelease(toOpaque(warmup));
+        try warmup.cmds.ensureTotalCapacity(allocator, 8);
+    }
     var pipeline = native_types.DoeComputePipeline{};
     var render_pipeline = native_types.DoeRenderPipeline{};
     var group = DoeBindGroup{};
@@ -423,8 +472,10 @@ fn recordingAllocationScenario(allocator: std.mem.Allocator, fixture: RecordingF
 }
 
 test "ordinary command recording cleans up every allocation failure across command families" {
-    for (std.enums.values(RecordingFixture)) |fixture|
-        try std.testing.checkAllAllocationFailures(std.testing.allocator, recordingAllocationScenario, .{fixture});
+    for (std.enums.values(RecordingFixture)) |fixture| {
+        for ([_]bool{ false, true }) |reuse|
+            try std.testing.checkAllAllocationFailures(std.testing.allocator, recordingAllocationScenario, .{ fixture, reuse });
+    }
 }
 
 test "failed recording finishes as an error object and cannot submit or resume" {

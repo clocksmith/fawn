@@ -60,6 +60,7 @@ pub const DoeDevice = struct {
     pub const TYPE_MAGIC = MAGIC_DEVICE;
     metal_libraries: ?@import("../cache/doe_metal_library_cache.zig").Cache = null,
     metal_pipeline_cache: ?*anyopaque = null,
+    command_storage: ?@import("../command/doe_command_storage.zig").Pool = null,
     magic: u32 = TYPE_MAGIC,
     ref_count: u32 = 1,
     adapter: ?*DoeAdapter = null,

@@ -17,6 +17,8 @@ const native_types = @import("../support/doe_native_object_types.zig");
 const native_helpers = @import("../support/doe_native_object_helpers.zig");
 const package_metal_pipeline_cache = @import("../cache/doe_package_metal_pipeline_cache.zig");
 const device_caps = @import("../support/doe_device_caps.zig");
+const command_storage = @import("../command/doe_command_storage.zig");
+const build_options = @import("build_options");
 const future_ids = @import("../support/doe_future_ids.zig");
 
 const alloc = native_helpers.alloc;
@@ -370,6 +372,7 @@ fn create_device_for_adapter(
                 .adapter = adapter,
                 .vk_runtime = @ptrCast(rt),
                 .enabled_features = enabled_features,
+                .command_storage = command_storage.Pool.init(alloc, build_options.native_command_storage_max_retained_bytes),
             };
             const feature_caps: vk_feature_caps.VulkanFeatureCaps = blk: {
                 if (vulkan_feature_cache.get_adapter(adapter_raw)) |cached| break :blk cached;
@@ -412,6 +415,7 @@ fn create_device_for_adapter(
             .mtl_queue = rt.queue,
             .d3d12_runtime = @ptrCast(rt),
             .enabled_features = enabled_features,
+            .command_storage = command_storage.Pool.init(alloc, build_options.native_command_storage_max_retained_bytes),
         };
         return dev;
     }
@@ -429,6 +433,7 @@ fn create_device_for_adapter(
         .mtl_queue = queue,
         .metal_libraries = .{ .ops = .{ .retain = backend_lifecycle.metal_bridge_retain, .release = backend_lifecycle.metal_bridge_release } },
         .enabled_features = enabled_features,
+        .command_storage = command_storage.Pool.init(alloc, build_options.native_command_storage_max_retained_bytes),
     };
     return dev;
 }
@@ -636,6 +641,7 @@ pub export fn doeNativeDeviceRelease(raw: ?*anyopaque) callconv(.c) void {
     if (cast(DoeDevice, raw)) |d| {
         if (!native_helpers.object_should_destroy(d)) return;
         label_store.remove(raw);
+        if (d.command_storage) |*pool| pool.deinit();
         if (d.metal_libraries) |*cache| cache.deinit(alloc);
         // Fire the device-lost callback with reason "destroyed" before teardown.
         const multi_adapter = @import("../../runtime/device/multi_adapter.zig");

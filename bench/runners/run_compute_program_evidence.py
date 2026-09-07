@@ -199,6 +199,8 @@ def main() -> int:
                     ROOT / 'bench/lib/compute_program_fixture.py', original_policy,
                     ROOT / 'config/benchmark-methodology-thresholds.json',
                     ROOT / 'config/vulkan-buffer-memory-policy.json',
+                    ROOT / 'config/native-command-storage-policy.json',
+                    ROOT / 'config/native-command-storage-policy.schema.json',
                     ROOT / 'config/vulkan-timestamp-policy.json',
                     ROOT / 'config/spirv-compute-arithmetic-policy.json',
                     ROOT / 'config/spirv-compute-arithmetic-policy.schema.json',
