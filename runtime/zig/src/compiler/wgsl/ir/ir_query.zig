@@ -3,6 +3,12 @@ const std = @import("std");
 const ir = @import("ir.zig");
 const layout_utils = @import("layout_utils.zig");
 
+pub fn isComputeOnlyModule(module: *const ir.Module) bool {
+    if (module.entry_points.items.len == 0) return false;
+    for (module.entry_points.items) |entry| if (entry.stage != .compute) return false;
+    return true;
+}
+
 pub fn resolveValueAlias(function: *const ir.Function, expr_id: ir.ExprId) ir.ExprId {
     var current = expr_id;
     while (true) {

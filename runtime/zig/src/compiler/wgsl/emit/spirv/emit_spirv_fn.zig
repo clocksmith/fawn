@@ -225,15 +225,15 @@ pub fn FunctionState(comptime EmitterT: type) type {
 
                     try self.emitter.builder.append_function_inst(spirv.Opcode.Branch, &.{header_label});
                     try self.emit_label(header_label);
-                    if (loop_stmt.cond) |cond| {
-                        const cond_id = try self.emit_value_expr(cond);
-                        try self.emitter.builder.append_function_inst(spirv.Opcode.LoopMerge, &.{ merge_label, continue_label, spirv.LoopControl.None });
+                    const condition = if (loop_stmt.cond) |cond| try self.emit_value_expr(cond) else null;
+                    try self.emitter.builder.append_function_inst(spirv.Opcode.LoopMerge, &.{ merge_label, continue_label, spirv.LoopControl.None });
+                    const body_offset = self.emitter.builder.functions.items.len;
+                    if (condition) |cond_id| {
                         try self.emitter.builder.append_function_inst(
                             spirv.Opcode.BranchConditional,
                             &.{ cond_id, body_label, merge_label },
                         );
                     } else {
-                        try self.emitter.builder.append_function_inst(spirv.Opcode.LoopMerge, &.{ merge_label, continue_label, spirv.LoopControl.None });
                         try self.emitter.builder.append_function_inst(spirv.Opcode.Branch, &.{body_label});
                     }
 
@@ -250,6 +250,11 @@ pub fn FunctionState(comptime EmitterT: type) type {
 
                     _ = self.break_targets.pop();
                     _ = self.continue_targets.pop();
+
+                    if (self.emitter.preserve_multi_dot_loops) {
+                        const words = self.emitter.builder.functions.items;
+                        words[body_offset - 1] = emit_spirv_fn_helpers.multiDotLoopControl(words[body_offset..]);
+                    }
 
                     try self.emit_label(merge_label);
                     return false;

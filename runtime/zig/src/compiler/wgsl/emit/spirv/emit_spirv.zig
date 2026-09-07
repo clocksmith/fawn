@@ -1,4 +1,6 @@
 const std = @import("std");
+const build_options = @import("build_options");
+const ir_query = @import("../../ir/ir_query.zig");
 const ir = @import("../../ir/ir.zig");
 const spirv = @import("spirv_builder.zig");
 const emit_spirv_shared = @import("emit_spirv_shared.zig");
@@ -28,6 +30,7 @@ fn emitImpl(module: *const ir.Module, stage_filter: ?ir.ShaderStage, out: []u8) 
 
 pub const Emitter = struct {
     module: *const ir.Module,
+    preserve_multi_dot_loops: bool,
     alloc: std.mem.Allocator,
     builder: spirv.Builder,
     type_ids: []u32,
@@ -73,6 +76,7 @@ pub const Emitter = struct {
 
         return .{
             .module = module,
+            .preserve_multi_dot_loops = build_options.spirv_compute_preserve_multi_dot_loops and ir_query.isComputeOnlyModule(module),
             .alloc = alloc,
             .builder = spirv.Builder.init(alloc),
             .type_ids = type_ids,

@@ -320,11 +320,16 @@ fn configure_non_windows_graphics(artifact: *std.Build.Step.Compile, b: *std.Bui
 fn addCompilerArithmeticPolicy(options: *std.Build.Step.Options, allocator: std.mem.Allocator) void {
     const bytes = std.fs.cwd().readFileAlloc(allocator, "../../config/spirv-compute-arithmetic-policy.json", 64 * 1024) catch
         @panic("failed to read spirv-compute-arithmetic-policy.json");
-    const Policy = struct { schemaVersion: u32, offsetMultiplyAdd: enum { @"source-order", @"fuse-trailing-add" } };
+    const Policy = struct {
+        schemaVersion: u32,
+        offsetMultiplyAdd: enum { @"source-order", @"fuse-trailing-add" },
+        multiDotLoops: enum { @"driver-default", preserve },
+    };
     const policy = std.json.parseFromSlice(Policy, allocator, bytes, .{}) catch
         @panic("invalid SPIR-V compute arithmetic policy");
-    if (policy.value.schemaVersion != 1) @panic("unsupported SPIR-V compute arithmetic policy version");
+    if (policy.value.schemaVersion != 2) @panic("unsupported SPIR-V compute arithmetic policy version");
     options.addOption(bool, "spirv_compute_fuse_trailing_add", policy.value.offsetMultiplyAdd == .@"fuse-trailing-add");
+    options.addOption(bool, "spirv_compute_preserve_multi_dot_loops", policy.value.multiDotLoops == .preserve);
 }
 
 fn addComputeProgramContract(options: *std.Build.Step.Options, allocator: std.mem.Allocator) void {

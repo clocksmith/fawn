@@ -1,6 +1,7 @@
 const std = @import("std");
 const analysis = @import("analysis.zig");
 const ir = @import("../ir/ir.zig");
+const ir_query = @import("../ir/ir_query.zig");
 const float_fusion = @import("../ir/ir_transform_float_fusion.zig");
 const ir_validate = @import("../ir/ir_validate.zig");
 const build_options = @import("build_options");
@@ -8,8 +9,7 @@ pub const emitter = @import("../emit/spirv/emit_spirv.zig");
 pub const MAX_OUTPUT: usize = emitter.MAX_OUTPUT;
 
 pub fn prepareComputeIrWithDiagnostic(module: *ir.Module, diagnostic: *analysis.Diagnostic) analysis.TranslateError!void {
-    if (!build_options.spirv_compute_fuse_trailing_add or module.entry_points.items.len == 0) return;
-    for (module.entry_points.items) |entry| if (entry.stage != .compute) return;
+    if (!build_options.spirv_compute_fuse_trailing_add or !ir_query.isComputeOnlyModule(module)) return;
     _ = float_fusion.apply(module) catch |err| {
         diagnostic.setLastErrorDetailPublic(.ir_transform, err, @errorName(err));
         return err;

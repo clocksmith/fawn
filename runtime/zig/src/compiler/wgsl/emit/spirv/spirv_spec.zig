@@ -195,6 +195,7 @@ pub const SelectionControl = struct {
 
 pub const LoopControl = struct {
     pub const None: u32 = 0;
+    pub const DontUnroll: u32 = 2;
 };
 
 pub const Opcode = struct {

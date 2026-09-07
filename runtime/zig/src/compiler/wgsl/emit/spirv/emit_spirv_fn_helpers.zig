@@ -2,6 +2,21 @@ const std = @import("std");
 const ir = @import("../../ir/ir.zig");
 const spirv = @import("spirv_spec.zig");
 
+pub fn multiDotLoopControl(body: []const u32) u32 {
+    const multi_dot_minimum = 2;
+    var dot_count: usize = 0;
+    var offset: usize = 0;
+    while (offset < body.len) {
+        const word_count = body[offset] >> 16;
+        const opcode: u16 = @truncate(body[offset]);
+        std.debug.assert(word_count > 0 and word_count <= body.len - offset);
+        if (opcode == spirv.Opcode.LoopMerge) return spirv.LoopControl.None;
+        if (opcode == spirv.Opcode.Dot) dot_count += 1;
+        offset += word_count;
+    }
+    return if (dot_count >= multi_dot_minimum) spirv.LoopControl.DontUnroll else spirv.LoopControl.None;
+}
+
 pub const AccessChainEntry = struct {
     root_id: u32,
     ptr_type: u32,
