@@ -66,94 +66,14 @@ static WGPUBlendComponent parse_blend_component(napi_env env, napi_value obj) {
     return comp;
 }
 
-typedef void (*FnWgpuComputePassEncoderPushDebugGroup)(WGPUComputePassEncoder, WGPUStringView);
-typedef void (*FnWgpuComputePassEncoderPopDebugGroup)(WGPUComputePassEncoder);
-typedef void (*FnWgpuComputePassEncoderInsertDebugMarker)(WGPUComputePassEncoder, WGPUStringView);
-typedef void (*FnWgpuRenderPassEncoderDrawIndirect)(WGPURenderPassEncoder, WGPUBuffer, uint64_t);
-typedef void (*FnWgpuRenderPassEncoderDrawIndexedIndirect)(WGPURenderPassEncoder, WGPUBuffer, uint64_t);
-typedef void (*FnDoeNativeRenderPassExecuteBundles)(void*, size_t, void* const*);
-typedef void (*FnWgpuRenderBundleEncoderDrawIndirect)(void*, WGPUBuffer, uint64_t);
-typedef void (*FnWgpuRenderBundleEncoderDrawIndexedIndirect)(void*, WGPUBuffer, uint64_t);
 
-static FnWgpuComputePassEncoderPushDebugGroup resolve_wgpu_compute_pass_push_debug_group(void) {
-    static FnWgpuComputePassEncoderPushDebugGroup fn = NULL;
-    static bool resolved = false;
-    if (!resolved) {
-        fn = (FnWgpuComputePassEncoderPushDebugGroup)LIB_SYM(g_lib, "wgpuComputePassEncoderPushDebugGroup");
-        resolved = true;
-    }
-    return fn;
-}
 
-static FnWgpuComputePassEncoderPopDebugGroup resolve_wgpu_compute_pass_pop_debug_group(void) {
-    static FnWgpuComputePassEncoderPopDebugGroup fn = NULL;
-    static bool resolved = false;
-    if (!resolved) {
-        fn = (FnWgpuComputePassEncoderPopDebugGroup)LIB_SYM(g_lib, "wgpuComputePassEncoderPopDebugGroup");
-        resolved = true;
-    }
-    return fn;
-}
 
-static FnWgpuComputePassEncoderInsertDebugMarker resolve_wgpu_compute_pass_insert_debug_marker(void) {
-    static FnWgpuComputePassEncoderInsertDebugMarker fn = NULL;
-    static bool resolved = false;
-    if (!resolved) {
-        fn = (FnWgpuComputePassEncoderInsertDebugMarker)LIB_SYM(g_lib, "wgpuComputePassEncoderInsertDebugMarker");
-        resolved = true;
-    }
-    return fn;
-}
 
-static FnWgpuRenderPassEncoderDrawIndirect resolve_wgpu_render_pass_draw_indirect(void) {
-    static FnWgpuRenderPassEncoderDrawIndirect fn = NULL;
-    static bool resolved = false;
-    if (!resolved) {
-        fn = (FnWgpuRenderPassEncoderDrawIndirect)LIB_SYM(g_lib, "wgpuRenderPassEncoderDrawIndirect");
-        resolved = true;
-    }
-    return fn;
-}
 
-static FnWgpuRenderPassEncoderDrawIndexedIndirect resolve_wgpu_render_pass_draw_indexed_indirect(void) {
-    static FnWgpuRenderPassEncoderDrawIndexedIndirect fn = NULL;
-    static bool resolved = false;
-    if (!resolved) {
-        fn = (FnWgpuRenderPassEncoderDrawIndexedIndirect)LIB_SYM(g_lib, "wgpuRenderPassEncoderDrawIndexedIndirect");
-        resolved = true;
-    }
-    return fn;
-}
 
-static FnDoeNativeRenderPassExecuteBundles resolve_doe_native_render_pass_execute_bundles(void) {
-    static FnDoeNativeRenderPassExecuteBundles fn = NULL;
-    static bool resolved = false;
-    if (!resolved) {
-        fn = (FnDoeNativeRenderPassExecuteBundles)LIB_SYM(g_lib, "doeNativeRenderPassExecuteBundles");
-        resolved = true;
-    }
-    return fn;
-}
 
-static FnWgpuRenderBundleEncoderDrawIndirect resolve_wgpu_render_bundle_encoder_draw_indirect(void) {
-    static FnWgpuRenderBundleEncoderDrawIndirect fn = NULL;
-    static bool resolved = false;
-    if (!resolved) {
-        fn = (FnWgpuRenderBundleEncoderDrawIndirect)LIB_SYM(g_lib, "wgpuRenderBundleEncoderDrawIndirect");
-        resolved = true;
-    }
-    return fn;
-}
 
-static FnWgpuRenderBundleEncoderDrawIndexedIndirect resolve_wgpu_render_bundle_encoder_draw_indexed_indirect(void) {
-    static FnWgpuRenderBundleEncoderDrawIndexedIndirect fn = NULL;
-    static bool resolved = false;
-    if (!resolved) {
-        fn = (FnWgpuRenderBundleEncoderDrawIndexedIndirect)LIB_SYM(g_lib, "wgpuRenderBundleEncoderDrawIndexedIndirect");
-        resolved = true;
-    }
-    return fn;
-}
 
 /* Render Pipeline */
 
@@ -578,7 +498,7 @@ napi_value doe_render_pass_draw_indexed(napi_env env, napi_callback_info info) {
 napi_value doe_render_pass_execute_bundles(napi_env env, napi_callback_info info) {
     NAPI_ASSERT_ARGC(env, info, 2);
     void* pass = unwrap_ptr(env, _args[0]);
-    FnDoeNativeRenderPassExecuteBundles fn = resolve_doe_native_render_pass_execute_bundles();
+    FnDoeNativeRenderPassExecuteBundles fn = pfn_doeNativeRenderPassExecuteBundles;
     if (!pass || !fn) NAPI_THROW(env, "renderPassExecuteBundles not available");
     bool is_array = false;
     napi_is_array(env, _args[1], &is_array);
@@ -693,7 +613,7 @@ napi_value doe_render_pass_insert_debug_marker(napi_env env, napi_callback_info 
 napi_value doe_compute_pass_push_debug_group(napi_env env, napi_callback_info info) {
     NAPI_ASSERT_ARGC(env, info, 2);
     WGPUComputePassEncoder pass = unwrap_ptr(env, _args[0]);
-    FnWgpuComputePassEncoderPushDebugGroup fn = resolve_wgpu_compute_pass_push_debug_group();
+    FnWgpuComputePassEncoderPushDebugGroup fn = pfn_wgpuComputePassEncoderPushDebugGroup;
     if (!pass || !fn) NAPI_THROW(env, "computePassPushDebugGroup not available");
     size_t label_len = 0;
     napi_get_value_string_utf8(env, _args[1], NULL, 0, &label_len);
@@ -708,7 +628,7 @@ napi_value doe_compute_pass_push_debug_group(napi_env env, napi_callback_info in
 napi_value doe_compute_pass_pop_debug_group(napi_env env, napi_callback_info info) {
     NAPI_ASSERT_ARGC(env, info, 1);
     WGPUComputePassEncoder pass = unwrap_ptr(env, _args[0]);
-    FnWgpuComputePassEncoderPopDebugGroup fn = resolve_wgpu_compute_pass_pop_debug_group();
+    FnWgpuComputePassEncoderPopDebugGroup fn = pfn_wgpuComputePassEncoderPopDebugGroup;
     if (!pass || !fn) NAPI_THROW(env, "computePassPopDebugGroup not available");
     fn(pass);
     return NULL;
@@ -717,7 +637,7 @@ napi_value doe_compute_pass_pop_debug_group(napi_env env, napi_callback_info inf
 napi_value doe_compute_pass_insert_debug_marker(napi_env env, napi_callback_info info) {
     NAPI_ASSERT_ARGC(env, info, 2);
     WGPUComputePassEncoder pass = unwrap_ptr(env, _args[0]);
-    FnWgpuComputePassEncoderInsertDebugMarker fn = resolve_wgpu_compute_pass_insert_debug_marker();
+    FnWgpuComputePassEncoderInsertDebugMarker fn = pfn_wgpuComputePassEncoderInsertDebugMarker;
     if (!pass || !fn) NAPI_THROW(env, "computePassInsertDebugMarker not available");
     size_t label_len = 0;
     napi_get_value_string_utf8(env, _args[1], NULL, 0, &label_len);
@@ -733,7 +653,7 @@ napi_value doe_render_pass_draw_indirect(napi_env env, napi_callback_info info) 
     NAPI_ASSERT_ARGC(env, info, 3);
     WGPURenderPassEncoder pass = unwrap_ptr(env, _args[0]);
     WGPUBuffer buffer = unwrap_ptr(env, _args[1]);
-    FnWgpuRenderPassEncoderDrawIndirect fn = resolve_wgpu_render_pass_draw_indirect();
+    FnWgpuRenderPassEncoderDrawIndirect fn = pfn_wgpuRenderPassEncoderDrawIndirect;
     if (!pass || !buffer || !fn) NAPI_THROW(env, "renderPassDrawIndirect not available");
     uint64_t offset = (uint64_t)get_int64_value(env, _args[2]);
     fn(pass, buffer, offset);
@@ -744,7 +664,7 @@ napi_value doe_render_pass_draw_indexed_indirect(napi_env env, napi_callback_inf
     NAPI_ASSERT_ARGC(env, info, 3);
     WGPURenderPassEncoder pass = unwrap_ptr(env, _args[0]);
     WGPUBuffer buffer = unwrap_ptr(env, _args[1]);
-    FnWgpuRenderPassEncoderDrawIndexedIndirect fn = resolve_wgpu_render_pass_draw_indexed_indirect();
+    FnWgpuRenderPassEncoderDrawIndexedIndirect fn = pfn_wgpuRenderPassEncoderDrawIndexedIndirect;
     if (!pass || !buffer || !fn) NAPI_THROW(env, "renderPassDrawIndexedIndirect not available");
     uint64_t offset = (uint64_t)get_int64_value(env, _args[2]);
     fn(pass, buffer, offset);
@@ -755,7 +675,7 @@ napi_value doe_render_bundle_encoder_draw_indirect(napi_env env, napi_callback_i
     NAPI_ASSERT_ARGC(env, info, 3);
     void* enc = unwrap_ptr(env, _args[0]);
     WGPUBuffer buffer = unwrap_ptr(env, _args[1]);
-    FnWgpuRenderBundleEncoderDrawIndirect fn = resolve_wgpu_render_bundle_encoder_draw_indirect();
+    FnWgpuRenderBundleEncoderDrawIndirect fn = pfn_wgpuRenderBundleEncoderDrawIndirect;
     if (!enc || !buffer || !fn) NAPI_THROW(env, "renderBundleEncoderDrawIndirect not available");
     uint64_t offset = (uint64_t)get_int64_value(env, _args[2]);
     fn(enc, buffer, offset);
@@ -766,7 +686,7 @@ napi_value doe_render_bundle_encoder_draw_indexed_indirect(napi_env env, napi_ca
     NAPI_ASSERT_ARGC(env, info, 3);
     void* enc = unwrap_ptr(env, _args[0]);
     WGPUBuffer buffer = unwrap_ptr(env, _args[1]);
-    FnWgpuRenderBundleEncoderDrawIndexedIndirect fn = resolve_wgpu_render_bundle_encoder_draw_indexed_indirect();
+    FnWgpuRenderBundleEncoderDrawIndexedIndirect fn = pfn_wgpuRenderBundleEncoderDrawIndexedIndirect;
     if (!enc || !buffer || !fn) NAPI_THROW(env, "renderBundleEncoderDrawIndexedIndirect not available");
     uint64_t offset = (uint64_t)get_int64_value(env, _args[2]);
     fn(enc, buffer, offset);

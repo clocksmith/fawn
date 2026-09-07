@@ -155,10 +155,10 @@ pub export fn wgpuDeviceAddRef(a0: types.WGPUDevice) callconv(.c) void {
 
 pub export fn wgpuDeviceCreateComputePipelineAsync(a0: types.WGPUDevice, a1: *const types.WGPUComputePipelineDescriptor, a2: p0.CreateComputePipelineAsyncCallbackInfo) callconv(.c) types.WGPUFuture {
     const future = types.WGPUFuture{ .id = next_async_future_id() };
-    const req = copy_compute_pipeline_request(a0, a1, a2) orelse {
+    const req = copy_compute_pipeline_request(a0, a1, a2) catch |err| {
         if (a2.callback) |cb| {
-            const msg = "async request allocation failed";
-            cb(2, null, .{ .data = msg.ptr, .length = msg.len }, a2.userdata1, a2.userdata2);
+            const msg = @errorName(err);
+            cb(if (err == error.OutOfMemory) async_procs.CREATE_PIPELINE_ASYNC_STATUS_INTERNAL_ERROR else async_procs.CREATE_PIPELINE_ASYNC_STATUS_VALIDATION_ERROR, null, .{ .data = msg.ptr, .length = msg.len }, a2.userdata1, a2.userdata2);
         }
         return future;
     };
@@ -166,7 +166,7 @@ pub export fn wgpuDeviceCreateComputePipelineAsync(a0: types.WGPUDevice, a1: *co
         free_compute_pipeline_request(req);
         if (a2.callback) |cb| {
             const msg = "async pipeline single-flight allocation failed";
-            cb(2, null, .{ .data = msg.ptr, .length = msg.len }, a2.userdata1, a2.userdata2);
+            cb(async_procs.CREATE_PIPELINE_ASYNC_STATUS_INTERNAL_ERROR, null, .{ .data = msg.ptr, .length = msg.len }, a2.userdata1, a2.userdata2);
         }
         return future;
     };
@@ -175,12 +175,7 @@ pub export fn wgpuDeviceCreateComputePipelineAsync(a0: types.WGPUDevice, a1: *co
             .run = run_compute_pipeline_async,
             .ctx = joined.entry,
         }) catch {
-            _ = pipeline.g_compute_inflight.take(joined.entry);
-            free_compute_pipeline_request(req);
-            if (a2.callback) |cb| {
-                const msg = "async pipeline worker submit failed";
-                cb(2, null, .{ .data = msg.ptr, .length = msg.len }, a2.userdata1, a2.userdata2);
-            }
+            pipeline.fail_compute_pipeline_async(joined.entry, "async pipeline worker submit failed");
         };
     }
     return future;
@@ -192,10 +187,10 @@ pub export fn wgpuDeviceCreateRenderBundleEncoder(a0: types.WGPUDevice, a1: *con
 
 pub export fn wgpuDeviceCreateRenderPipelineAsync(a0: types.WGPUDevice, a1: *const anyopaque, a2: async_procs.CreateRenderPipelineAsyncCallbackInfo) callconv(.c) types.WGPUFuture {
     const future = types.WGPUFuture{ .id = next_async_future_id() };
-    const req = copy_render_pipeline_request(a0, a1, a2) orelse {
+    const req = copy_render_pipeline_request(a0, a1, a2) catch |err| {
         if (a2.callback) |cb| {
-            const msg = "async render request allocation failed";
-            cb(2, null, .{ .data = msg.ptr, .length = msg.len }, a2.userdata1, a2.userdata2);
+            const msg = @errorName(err);
+            cb(if (err == error.OutOfMemory) async_procs.CREATE_PIPELINE_ASYNC_STATUS_INTERNAL_ERROR else async_procs.CREATE_PIPELINE_ASYNC_STATUS_VALIDATION_ERROR, null, .{ .data = msg.ptr, .length = msg.len }, a2.userdata1, a2.userdata2);
         }
         return future;
     };
@@ -203,7 +198,7 @@ pub export fn wgpuDeviceCreateRenderPipelineAsync(a0: types.WGPUDevice, a1: *con
         free_render_pipeline_request(req);
         if (a2.callback) |cb| {
             const msg = "async render single-flight allocation failed";
-            cb(2, null, .{ .data = msg.ptr, .length = msg.len }, a2.userdata1, a2.userdata2);
+            cb(async_procs.CREATE_PIPELINE_ASYNC_STATUS_INTERNAL_ERROR, null, .{ .data = msg.ptr, .length = msg.len }, a2.userdata1, a2.userdata2);
         }
         return future;
     };
@@ -212,12 +207,7 @@ pub export fn wgpuDeviceCreateRenderPipelineAsync(a0: types.WGPUDevice, a1: *con
             .run = run_render_pipeline_async,
             .ctx = joined.entry,
         }) catch {
-            _ = pipeline.g_render_inflight.take(joined.entry);
-            free_render_pipeline_request(req);
-            if (a2.callback) |cb| {
-                const msg = "async render worker submit failed";
-                cb(2, null, .{ .data = msg.ptr, .length = msg.len }, a2.userdata1, a2.userdata2);
-            }
+            pipeline.fail_render_pipeline_async(joined.entry, "async render worker submit failed");
         };
     }
     return future;

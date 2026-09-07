@@ -16,14 +16,14 @@ napi_value native_direct_resolved_promise(napi_env env, napi_value value) {
 
 napi_value native_direct_resolved_undefined_promise(napi_env env) {
     napi_value promise;
-    if (native_direct_resolved_undefined_promise_ref) {
-        napi_get_reference_value(env, native_direct_resolved_undefined_promise_ref, &promise);
+    if (doe_env_state(env)->native_direct_resolved_undefined_promise_ref) {
+        napi_get_reference_value(env, doe_env_state(env)->native_direct_resolved_undefined_promise_ref, &promise);
         return promise;
     }
     napi_value undefined_value;
     napi_get_undefined(env, &undefined_value);
     promise = native_direct_resolved_promise(env, undefined_value);
-    napi_create_reference(env, promise, 1, &native_direct_resolved_undefined_promise_ref);
+    napi_create_reference(env, promise, 1, &doe_env_state(env)->native_direct_resolved_undefined_promise_ref);
     return promise;
 }
 
@@ -321,7 +321,7 @@ WGPUAdapter native_direct_request_adapter_sync(napi_env env, WGPUInstance inst, 
         future = pfn_wgpuInstanceRequestAdapter(inst, opts_ptr, callback_info);
     }
     if (future.id == 0) NAPI_THROW(env, "requestAdapter future unavailable");
-    if (!process_events_until(inst, &result.done, current_timeout_ns())) {
+    if (!process_events_until(inst, &result.done, current_timeout_ns(env))) {
         throw_status_error(env, "DOE_REQUEST_ADAPTER_TIMEOUT", "requestAdapter timed out", result.status, result.message);
         return NULL;
     }
@@ -348,7 +348,7 @@ WGPUDevice native_direct_request_device_sync(napi_env env, WGPUInstance inst, WG
         ? pfn_doeNativeAdapterRequestDevice(adapter, NULL, cb_info)
         : pfn_wgpuAdapterRequestDevice(adapter, NULL, cb_info);
     if (future.id == 0) NAPI_THROW(env, "requestDevice future unavailable");
-    if (!process_events_until(inst, &result.done, current_timeout_ns())) {
+    if (!process_events_until(inst, &result.done, current_timeout_ns(env))) {
         throw_status_error(env, "DOE_REQUEST_DEVICE_TIMEOUT", "requestDevice timed out", result.status, result.message);
         return NULL;
     }

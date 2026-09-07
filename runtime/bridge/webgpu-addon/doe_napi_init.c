@@ -208,6 +208,7 @@ napi_value doe_package_pipeline_cache_flush(napi_env env, napi_callback_info inf
  * ================================================================ */
 
 napi_value doe_module_init(napi_env env, napi_value exports) {
+    if (!doe_env_init(env)) NAPI_THROW(env, "Failed to initialize addon environment");
     napi_property_descriptor descriptors[] = {
         EXPORT_FN("loadLibrary",                              doe_load_library),
         EXPORT_FN("nativeDirectCreate",                       doe_native_direct_create),

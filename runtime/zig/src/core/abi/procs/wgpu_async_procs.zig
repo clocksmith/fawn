@@ -5,6 +5,8 @@ const abi_proc_aliases = @import("../wgpu_type_proc_aliases.zig");
 const loader = @import("../wgpu_loader.zig");
 
 pub const CREATE_PIPELINE_ASYNC_STATUS_SUCCESS: u32 = 1;
+pub const CREATE_PIPELINE_ASYNC_STATUS_VALIDATION_ERROR: u32 = 3;
+pub const CREATE_PIPELINE_ASYNC_STATUS_INTERNAL_ERROR: u32 = 4;
 pub const POP_ERROR_SCOPE_STATUS_SUCCESS: u32 = 1;
 pub const COMPILATION_INFO_STATUS_SUCCESS: u32 = 1;
 pub const COMPILATION_INFO_STATUS_CALLBACK_CANCELLED: u32 = 2;

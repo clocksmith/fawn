@@ -8,8 +8,8 @@
  * Error/string helpers
  * ================================================================ */
 
-uint64_t current_timeout_ns(void) {
-    return g_timeout_ns;
+uint64_t current_timeout_ns(napi_env env) {
+    return doe_env_state(env)->timeout_ns;
 }
 
 void copy_library_error_message(char* out, size_t out_len) {
@@ -348,8 +348,6 @@ void lost_native_callback(uint32_t reason, const char* message_ptr, size_t messa
         if (payload->message) free(payload->message);
         free(payload);
     }
-    binding_take(&g_lost_bindings, binding->device);
-    release_binding(binding);
 }
 
 /* ================================================================

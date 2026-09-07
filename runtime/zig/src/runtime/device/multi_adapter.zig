@@ -345,18 +345,23 @@ pub export fn doeNativeDeviceRegisterLostCallback(
     callback: ?DeviceLostCallback,
     userdata: ?*anyopaque,
 ) callconv(.c) void {
-    // Store callback per device.  In practice Doe devices are torn down explicitly;
-    // we fire the callback immediately with reason=destroyed on doeNativeDeviceRelease.
-    // For eGPU hot-unplug, doeNativeDeviceNotifyLost is called from the ObjC removal
-    // notification observer registered in metal_multi_device.m.
-    const allocator = process_roots.adapterAllocator();
-    const reg = allocator.create(DeviceLostReg) catch return;
-    reg.* = .{
-        .dev = _dev,
-        .callback = callback,
-        .userdata = userdata,
-    };
-    device_lost_registry_insert(reg);
+    lost_reg_mutex.lock();
+    defer lost_reg_mutex.unlock();
+    if (device_lost_registry_take(_dev)) |reg| {
+        if (callback) |cb| {
+            reg.callback = cb;
+            reg.userdata = userdata;
+            reg.next = lost_reg_head;
+            lost_reg_head = reg;
+        } else {
+            process_roots.adapterAllocator().destroy(reg);
+        }
+        return;
+    }
+    const cb = callback orelse return;
+    const reg = process_roots.adapterAllocator().create(DeviceLostReg) catch return;
+    reg.* = .{ .dev = _dev, .callback = cb, .userdata = userdata, .next = lost_reg_head };
+    lost_reg_head = reg;
 }
 
 pub export fn doeNativeDeviceNotifyLost(
@@ -373,35 +378,35 @@ pub export fn doeNativeDeviceNotifyLost(
 
 const DeviceLostReg = struct {
     dev: ?*anyopaque,
-    callback: ?DeviceLostCallback,
+    callback: DeviceLostCallback,
     userdata: ?*anyopaque,
     next: ?*DeviceLostReg = null,
 };
 
 var lost_reg_head: ?*DeviceLostReg = null;
+var lost_reg_mutex: std.Thread.Mutex = .{};
 
-fn device_lost_registry_insert(reg: *DeviceLostReg) void {
-    reg.next = lost_reg_head;
-    lost_reg_head = reg;
+// Caller holds lost_reg_mutex. Detach before invoking callbacks so they may reenter.
+fn device_lost_registry_take(dev: ?*anyopaque) ?*DeviceLostReg {
+    var link = &lost_reg_head;
+    while (link.*) |node| {
+        if (node.dev == dev) {
+            link.* = node.next;
+            node.next = null;
+            return node;
+        }
+        link = &node.next;
+    }
+    return null;
 }
 
 fn device_lost_fire_and_remove(dev: ?*anyopaque, reason: u32, msg_ptr: ?[*]const u8, msg_len: usize) void {
-    var prev: ?*DeviceLostReg = null;
-    var cur = lost_reg_head;
-    while (cur) |node| {
-        if (node.dev == dev) {
-            if (node.callback) |cb| cb(reason, msg_ptr, msg_len, node.userdata);
-            // Remove from list.
-            if (prev) |p| {
-                p.next = node.next;
-            } else {
-                lost_reg_head = node.next;
-            }
-            process_roots.adapterAllocator().destroy(node);
-            return;
-        }
-        prev = node;
-        cur = node.next;
+    lost_reg_mutex.lock();
+    const reg = device_lost_registry_take(dev);
+    lost_reg_mutex.unlock();
+    if (reg) |node| {
+        defer process_roots.adapterAllocator().destroy(node);
+        node.callback(reason, msg_ptr, msg_len, node.userdata);
     }
 }
 

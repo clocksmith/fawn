@@ -731,10 +731,24 @@ typedef struct { uint32_t status; uint32_t done; char message[DOE_ERROR_BUF_CAP]
 typedef struct { uint32_t status; uint32_t done; char message[DOE_ERROR_BUF_CAP]; } QueueWorkDoneResult;
 typedef struct { uint32_t done; uint32_t error_type; char message[DOE_ERROR_BUF_CAP]; } DevicePopErrorScopeResult;
 
+typedef void (*FnWgpuComputePassEncoderPushDebugGroup)(WGPUComputePassEncoder, WGPUStringView);
+typedef void (*FnWgpuComputePassEncoderPopDebugGroup)(WGPUComputePassEncoder);
+typedef void (*FnWgpuComputePassEncoderInsertDebugMarker)(WGPUComputePassEncoder, WGPUStringView);
+typedef void (*FnWgpuRenderPassEncoderDrawIndirect)(WGPURenderPassEncoder, WGPUBuffer, uint64_t);
+typedef void (*FnWgpuRenderPassEncoderDrawIndexedIndirect)(WGPURenderPassEncoder, WGPUBuffer, uint64_t);
+typedef void (*FnDoeNativeRenderPassExecuteBundles)(void*, size_t, void* const*);
+typedef void (*FnWgpuRenderBundleEncoderDrawIndirect)(void*, WGPUBuffer, uint64_t);
+typedef void (*FnWgpuRenderBundleEncoderDrawIndexedIndirect)(void*, WGPUBuffer, uint64_t);
+extern FnWgpuComputePassEncoderPushDebugGroup pfn_wgpuComputePassEncoderPushDebugGroup;
+extern FnWgpuComputePassEncoderPopDebugGroup pfn_wgpuComputePassEncoderPopDebugGroup;
+extern FnWgpuComputePassEncoderInsertDebugMarker pfn_wgpuComputePassEncoderInsertDebugMarker;
+extern FnWgpuRenderPassEncoderDrawIndirect pfn_wgpuRenderPassEncoderDrawIndirect;
+extern FnWgpuRenderPassEncoderDrawIndexedIndirect pfn_wgpuRenderPassEncoderDrawIndexedIndirect;
+extern FnDoeNativeRenderPassExecuteBundles pfn_doeNativeRenderPassExecuteBundles;
+extern FnWgpuRenderBundleEncoderDrawIndirect pfn_wgpuRenderBundleEncoderDrawIndirect;
+extern FnWgpuRenderBundleEncoderDrawIndexedIndirect pfn_wgpuRenderBundleEncoderDrawIndexedIndirect;
+
 extern void* g_lib;
-extern uint64_t g_timeout_ns;
-extern DeviceCallbackBinding* g_uncaptured_bindings;
-extern DeviceCallbackBinding* g_lost_bindings;
 
 /* Native-direct property key constants */
 #define DOE_DIRECT_NATIVE "__doe_native"
@@ -763,64 +777,73 @@ typedef struct {
     uint32_t map_mode;
 } NativeDirectBufferCache;
 
-/* Native-direct method refs (one per cached method) */
-extern napi_ref native_direct_method_gpu_request_adapter_ref;
-extern napi_ref native_direct_method_adapter_request_device_ref;
-extern napi_ref native_direct_method_adapter_destroy_ref;
-extern napi_ref native_direct_method_queue_submit_ref;
-extern napi_ref native_direct_method_queue_write_buffer_ref;
-extern napi_ref native_direct_method_queue_write_buffer_batch_ref;
-extern napi_ref native_direct_method_queue_on_submitted_work_done_ref;
-extern napi_ref native_direct_method_device_create_buffer_ref;
-extern napi_ref native_direct_method_device_create_shader_module_ref;
-extern napi_ref native_direct_method_device_create_compute_pipeline_ref;
-extern napi_ref native_direct_method_device_create_compute_pipeline_async_ref;
-extern napi_ref native_direct_method_device_create_bind_group_layout_ref;
-extern napi_ref native_direct_method_device_create_bind_group_ref;
-extern napi_ref native_direct_method_device_create_pipeline_layout_ref;
-extern napi_ref native_direct_method_device_create_command_encoder_ref;
-extern napi_ref native_direct_method_device_destroy_ref;
-extern napi_ref native_direct_method_buffer_map_async_ref;
-extern napi_ref native_direct_method_buffer_get_mapped_range_ref;
-extern napi_ref native_direct_method_buffer_read_copy_ref;
-extern napi_ref native_direct_method_buffer_map_read_copy_unmap_ref;
-extern napi_ref native_direct_method_buffer_unmap_ref;
-extern napi_ref native_direct_method_buffer_destroy_ref;
-extern napi_ref native_direct_method_command_encoder_begin_compute_pass_ref;
-extern napi_ref native_direct_method_command_encoder_copy_buffer_to_buffer_ref;
-extern napi_ref native_direct_method_command_encoder_finish_ref;
-extern napi_ref native_direct_method_compute_pass_set_pipeline_ref;
-extern napi_ref native_direct_method_compute_pass_set_bind_group_ref;
-extern napi_ref native_direct_method_compute_pass_dispatch_workgroups_ref;
-extern napi_ref native_direct_method_compute_pass_dispatch_workgroups_indirect_ref;
-extern napi_ref native_direct_method_compute_pass_end_ref;
-extern napi_ref native_direct_method_compute_pass_set_immediates_ref;
-extern napi_ref native_direct_method_compute_pass_push_debug_group_ref;
-extern napi_ref native_direct_method_compute_pass_pop_debug_group_ref;
-extern napi_ref native_direct_method_compute_pass_insert_debug_marker_ref;
-extern napi_ref native_direct_method_render_pass_set_immediates_ref;
-extern napi_ref native_direct_method_render_pass_set_viewport_ref;
-extern napi_ref native_direct_method_render_pass_set_scissor_rect_ref;
-extern napi_ref native_direct_method_render_pass_set_blend_constant_ref;
-extern napi_ref native_direct_method_render_pass_set_stencil_reference_ref;
-extern napi_ref native_direct_method_render_pass_push_debug_group_ref;
-extern napi_ref native_direct_method_render_pass_pop_debug_group_ref;
-extern napi_ref native_direct_method_render_pass_insert_debug_marker_ref;
-extern napi_ref native_direct_method_render_pass_draw_indirect_ref;
-extern napi_ref native_direct_method_render_pass_draw_indexed_indirect_ref;
-extern napi_ref native_direct_method_render_bundle_encoder_set_immediates_ref;
-extern napi_ref native_direct_method_render_bundle_encoder_draw_indirect_ref;
-extern napi_ref native_direct_method_render_bundle_encoder_draw_indexed_indirect_ref;
-extern napi_ref native_direct_method_adapter_get_preferred_canvas_format_ref;
-extern napi_ref native_direct_method_device_add_event_listener_ref;
-extern napi_ref native_direct_method_device_remove_event_listener_ref;
-extern napi_ref native_direct_method_device_import_external_texture_ref;
-extern napi_ref native_direct_method_command_encoder_clear_buffer_ref;
-extern napi_ref native_direct_method_command_encoder_copy_texture_to_texture_ref;
-extern napi_ref native_direct_method_queue_write_texture_ref;
-extern napi_ref native_direct_method_adapter_get_info_ref;
-extern napi_ref native_direct_method_shader_module_get_compilation_info_ref;
-extern napi_ref native_direct_resolved_undefined_promise_ref;
+/* State is owned by an addon environment, never shared between Node workers. */
+typedef struct {
+    bool library_loaded;
+    uint64_t timeout_ns;
+    DeviceCallbackBinding* uncaptured_bindings;
+    DeviceCallbackBinding* lost_bindings;
+    napi_ref native_direct_method_gpu_request_adapter_ref;
+    napi_ref native_direct_method_adapter_request_device_ref;
+    napi_ref native_direct_method_adapter_destroy_ref;
+    napi_ref native_direct_method_queue_submit_ref;
+    napi_ref native_direct_method_queue_write_buffer_ref;
+    napi_ref native_direct_method_queue_write_buffer_batch_ref;
+    napi_ref native_direct_method_queue_on_submitted_work_done_ref;
+    napi_ref native_direct_method_device_create_buffer_ref;
+    napi_ref native_direct_method_device_create_shader_module_ref;
+    napi_ref native_direct_method_device_create_compute_pipeline_ref;
+    napi_ref native_direct_method_device_create_compute_pipeline_async_ref;
+    napi_ref native_direct_method_device_create_bind_group_layout_ref;
+    napi_ref native_direct_method_device_create_bind_group_ref;
+    napi_ref native_direct_method_device_create_pipeline_layout_ref;
+    napi_ref native_direct_method_device_create_command_encoder_ref;
+    napi_ref native_direct_method_device_destroy_ref;
+    napi_ref native_direct_method_buffer_map_async_ref;
+    napi_ref native_direct_method_buffer_get_mapped_range_ref;
+    napi_ref native_direct_method_buffer_read_copy_ref;
+    napi_ref native_direct_method_buffer_map_read_copy_unmap_ref;
+    napi_ref native_direct_method_buffer_unmap_ref;
+    napi_ref native_direct_method_buffer_destroy_ref;
+    napi_ref native_direct_method_command_encoder_begin_compute_pass_ref;
+    napi_ref native_direct_method_command_encoder_copy_buffer_to_buffer_ref;
+    napi_ref native_direct_method_command_encoder_finish_ref;
+    napi_ref native_direct_method_compute_pass_set_pipeline_ref;
+    napi_ref native_direct_method_compute_pass_set_bind_group_ref;
+    napi_ref native_direct_method_compute_pass_dispatch_workgroups_ref;
+    napi_ref native_direct_method_compute_pass_dispatch_workgroups_indirect_ref;
+    napi_ref native_direct_method_compute_pass_end_ref;
+    napi_ref native_direct_method_compute_pass_set_immediates_ref;
+    napi_ref native_direct_method_compute_pass_push_debug_group_ref;
+    napi_ref native_direct_method_compute_pass_pop_debug_group_ref;
+    napi_ref native_direct_method_compute_pass_insert_debug_marker_ref;
+    napi_ref native_direct_method_render_pass_set_immediates_ref;
+    napi_ref native_direct_method_render_pass_set_viewport_ref;
+    napi_ref native_direct_method_render_pass_set_scissor_rect_ref;
+    napi_ref native_direct_method_render_pass_set_blend_constant_ref;
+    napi_ref native_direct_method_render_pass_set_stencil_reference_ref;
+    napi_ref native_direct_method_render_pass_push_debug_group_ref;
+    napi_ref native_direct_method_render_pass_pop_debug_group_ref;
+    napi_ref native_direct_method_render_pass_insert_debug_marker_ref;
+    napi_ref native_direct_method_render_pass_draw_indirect_ref;
+    napi_ref native_direct_method_render_pass_draw_indexed_indirect_ref;
+    napi_ref native_direct_method_render_bundle_encoder_set_immediates_ref;
+    napi_ref native_direct_method_render_bundle_encoder_draw_indirect_ref;
+    napi_ref native_direct_method_render_bundle_encoder_draw_indexed_indirect_ref;
+    napi_ref native_direct_method_adapter_get_preferred_canvas_format_ref;
+    napi_ref native_direct_method_device_add_event_listener_ref;
+    napi_ref native_direct_method_device_remove_event_listener_ref;
+    napi_ref native_direct_method_device_import_external_texture_ref;
+    napi_ref native_direct_method_command_encoder_clear_buffer_ref;
+    napi_ref native_direct_method_command_encoder_copy_texture_to_texture_ref;
+    napi_ref native_direct_method_queue_write_texture_ref;
+    napi_ref native_direct_method_adapter_get_info_ref;
+    napi_ref native_direct_method_shader_module_get_compilation_info_ref;
+    napi_ref native_direct_resolved_undefined_promise_ref;
+} DoeEnvState;
+
+DoeEnvState* doe_env_state(napi_env env);
+bool doe_env_init(napi_env env);
 
 /* ================================================================
  * N-API utility macros
@@ -832,7 +855,7 @@ extern napi_ref native_direct_resolved_undefined_promise_ref;
     size_t _argc = (n); napi_value _args[MAX_NAPI_ARGS]; \
     if ((n) > MAX_NAPI_ARGS) NAPI_THROW(env, "too many args"); \
     if (napi_get_cb_info(env, info, &_argc, _args, NULL, NULL) != napi_ok) NAPI_THROW(env, "napi_get_cb_info failed")
-#define CHECK_LIB_LOADED(env) do { if (!g_lib) NAPI_THROW(env, "Library not loaded"); } while(0)
+#define CHECK_LIB_LOADED(env) do { if (!doe_env_state(env)->library_loaded) NAPI_THROW(env, "Library not loaded"); } while(0)
 #define LOAD_SYM(name) pfn_##name = (PFN_##name)LIB_SYM(g_lib, #name)
 #define EXPORT_FN(name, fn) { name, 0, fn, 0, 0, 0, napi_default, 0 }
 
@@ -854,7 +877,7 @@ char* dup_string_value(napi_env env, napi_value value, size_t* out_len);
 napi_valuetype prop_type(napi_env env, napi_value obj, const char* key);
 
 /* Error/string helpers */
-uint64_t current_timeout_ns(void);
+uint64_t current_timeout_ns(napi_env env);
 void copy_library_error_message(char* out, size_t out_len);
 void copy_library_error_meta(PFN_doeNativeCopyLastErrorMessage fn, char* out, size_t out_len);
 uint64_t monotonic_now_ns(void);

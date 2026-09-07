@@ -42,7 +42,6 @@ pub const query_native = @import("../native/resource/doe_query_native.zig");
 pub const error_scope = @import("../runtime/diagnostics/error_scope.zig");
 pub const task_pool = @import("../runtime/task_pool.zig");
 pub const singleflight = @import("../runtime/pipeline_singleflight.zig");
-pub const pipeline_cache_integration = @import("../runtime/pipeline_cache_integration.zig");
 
 pub extern fn wgpuGetProcAddress(name: abi_core.WGPUStringView) callconv(.c) p1cap.WGPUProc;
 pub extern fn doeWgpuDropinAbortMissingRequiredSymbol(name: abi_core.WGPUStringView) callconv(.c) noreturn;

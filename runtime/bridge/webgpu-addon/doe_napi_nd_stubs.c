@@ -44,6 +44,6 @@ create_native_direct_render_bundle_encoder_object(napi_env env, void* encoder) {
     native_direct_set_external_prop(env, obj, DOE_DIRECT_NATIVE, encoder);
     native_direct_wrap_handle_cache(env, obj, NULL, encoder);
     /* GPURenderBundleEncoder#setImmediates (GPUBindingCommandsMixin) */
-    native_direct_add_cached_method(env, obj, "setImmediates", native_direct_render_bundle_encoder_set_immediates, &native_direct_method_render_bundle_encoder_set_immediates_ref);
+    native_direct_add_cached_method(env, obj, "setImmediates", native_direct_render_bundle_encoder_set_immediates, &doe_env_state(env)->native_direct_method_render_bundle_encoder_set_immediates_ref);
     return obj;
 }

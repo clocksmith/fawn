@@ -6,7 +6,8 @@ const p0 = core.p0;
 const async_procs = core.async_procs;
 const native = core.native;
 const singleflight = core.singleflight;
-const pipeline_cache_integration = core.pipeline_cache_integration;
+
+pub const SnapshotError = error{ OutOfMemory, InvalidDescriptor, UnsupportedDescriptor };
 
 pub const string_view_slice = core.string_view_slice;
 pub const dup_string_view = core.dup_string_view;
@@ -130,8 +131,7 @@ pub fn next_async_future_id() u64 {
 }
 
 pub fn render_string_view_slice(view: RenderStringView) []const u8 {
-    const data = view.data orelse return "";
-    return data[0..view.length];
+    return string_view_slice(.{ .data = view.data, .length = view.length });
 }
 
 pub fn dup_render_string_view(view: RenderStringView) ?[]u8 {
@@ -196,6 +196,8 @@ pub fn render_pipeline_request_key(req: *const RenderPipelineAsyncRequest) u64 {
 }
 
 pub const ComputePipelineAsyncRequest = struct {
+    pub const matches = same_compute_request;
+    allocator: std.mem.Allocator = std.heap.c_allocator,
     next: ?*ComputePipelineAsyncRequest = null,
     device: types.WGPUDevice,
     descriptor: types.WGPUComputePipelineDescriptor,
@@ -203,15 +205,16 @@ pub const ComputePipelineAsyncRequest = struct {
     label_bytes: ?[]u8 = null,
     entry_point_bytes: ?[]u8 = null,
     constants: ?[]types.WGPUConstantEntry = null,
-    constant_key_bytes: ?[]?[]u8 = null,
     pipeline: types.WGPUComputePipeline = null,
     status: u32 = p0.CREATE_COMPUTE_PIPELINE_ASYNC_STATUS_SUCCESS,
-    message_bytes: ?[]u8 = null,
+    message: []const u8 = "",
 };
 
 pub const ComputeInflightEntry = singleflight.Registry(ComputePipelineAsyncRequest).Entry;
 
 pub const RenderPipelineAsyncRequest = struct {
+    pub const matches = same_render_request;
+    allocator: std.mem.Allocator = std.heap.c_allocator,
     next: ?*RenderPipelineAsyncRequest = null,
     device: types.WGPUDevice,
     descriptor: RenderPipelineDesc,
@@ -223,227 +226,313 @@ pub const RenderPipelineAsyncRequest = struct {
     vertex_attributes: ?[]RenderVertexAttribute = null,
     fragment_state: ?*RenderFragmentState = null,
     fragment_targets: ?[]RenderColorTargetState = null,
+    fragment_blends: ?[]RenderBlendState = null,
+    vertex_constants: ?[]types.WGPUConstantEntry = null,
+    fragment_constants: ?[]types.WGPUConstantEntry = null,
     depth_stencil: ?*RenderDepthStencilDesc = null,
     pipeline: types.WGPURenderPipeline = null,
     status: u32 = async_procs.CREATE_PIPELINE_ASYNC_STATUS_SUCCESS,
-    message_bytes: ?[]u8 = null,
+    message: []const u8 = "",
 };
 
 pub const RenderInflightEntry = singleflight.Registry(RenderPipelineAsyncRequest).Entry;
 
-pub fn free_compute_pipeline_request(req: *ComputePipelineAsyncRequest) void {
-    if (req.label_bytes) |bytes| std.heap.c_allocator.free(bytes);
-    if (req.entry_point_bytes) |bytes| std.heap.c_allocator.free(bytes);
-    if (req.constant_key_bytes) |all_keys| {
-        for (all_keys) |maybe_key| {
-            if (maybe_key) |key| std.heap.c_allocator.free(key);
-        }
-        std.heap.c_allocator.free(all_keys);
+fn same_constants(left: ?[]types.WGPUConstantEntry, right: ?[]types.WGPUConstantEntry) bool {
+    const a = left orelse &.{};
+    const b = right orelse &.{};
+    if (a.len != b.len) return false;
+    for (a, b) |x, y| {
+        if (@as(u64, @bitCast(x.value)) != @as(u64, @bitCast(y.value)) or
+            !std.mem.eql(u8, string_view_slice(x.key), string_view_slice(y.key))) return false;
     }
-    if (req.constants) |constants| std.heap.c_allocator.free(constants);
-    if (req.message_bytes) |bytes| std.heap.c_allocator.free(bytes);
+    return true;
+}
+
+fn same_compute_request(left: *const ComputePipelineAsyncRequest, right: *const ComputePipelineAsyncRequest) bool {
+    return left.device == right.device and left.descriptor.layout == right.descriptor.layout and
+        left.descriptor.compute.module == right.descriptor.compute.module and
+        std.mem.eql(u8, string_view_slice(left.descriptor.label), string_view_slice(right.descriptor.label)) and
+        std.mem.eql(u8, string_view_slice(left.descriptor.compute.entryPoint), string_view_slice(right.descriptor.compute.entryPoint)) and
+        same_constants(left.constants, right.constants);
+}
+
+fn same_render_request(left: *const RenderPipelineAsyncRequest, right: *const RenderPipelineAsyncRequest) bool {
+    const a = &left.descriptor;
+    const b = &right.descriptor;
+    if (left.device != right.device or a.layout != b.layout or a.vertex.module != b.vertex.module or
+        !std.mem.eql(u8, render_string_view_slice(a.label), render_string_view_slice(b.label)) or
+        !std.mem.eql(u8, render_string_view_slice(a.vertex.entryPoint), render_string_view_slice(b.vertex.entryPoint)) or
+        !std.meta.eql(a.primitive, b.primitive) or !std.meta.eql(a.multisample, b.multisample) or
+        !same_constants(left.vertex_constants, right.vertex_constants) or
+        !same_constants(left.fragment_constants, right.fragment_constants)) return false;
+    const ab = left.vertex_buffers orelse &.{};
+    const bb = right.vertex_buffers orelse &.{};
+    if (ab.len != bb.len) return false;
+    for (ab, bb) |x, y| {
+        if (x.arrayStride != y.arrayStride or x.stepMode != y.stepMode or x.attributeCount != y.attributeCount) return false;
+        if (x.attributeCount != 0) {
+            for (x.attributes.?[0..x.attributeCount], y.attributes.?[0..y.attributeCount]) |xa, ya| {
+                if (!std.meta.eql(xa, ya)) return false;
+            }
+        }
+    }
+    if ((a.fragment == null) != (b.fragment == null)) return false;
+    if (a.fragment) |af| {
+        const bf = b.fragment.?;
+        if (af.module != bf.module or
+            !std.mem.eql(u8, render_string_view_slice(af.entryPoint), render_string_view_slice(bf.entryPoint))) return false;
+        const at = left.fragment_targets orelse &.{};
+        const bt = right.fragment_targets orelse &.{};
+        if (at.len != bt.len) return false;
+        for (at, bt) |x, y| {
+            if (x.format != y.format or x.writeMask != y.writeMask or (x.blend == null) != (y.blend == null)) return false;
+            if (x.blend) |blend| {
+                if (!std.meta.eql(blend.*, y.blend.?.*)) return false;
+            }
+        }
+    }
+    if ((left.depth_stencil == null) != (right.depth_stencil == null)) return false;
+    if (left.depth_stencil) |ad| {
+        const bd = right.depth_stencil.?;
+        if (!std.meta.eql(ad.*, bd.*) or
+            @as(u32, @bitCast(ad.depthBiasSlopeScale)) != @as(u32, @bitCast(bd.depthBiasSlopeScale)) or
+            @as(u32, @bitCast(ad.depthBiasClamp)) != @as(u32, @bitCast(bd.depthBiasClamp))) return false;
+    }
+    return true;
+}
+
+fn copy_string(allocator: std.mem.Allocator, bytes: []const u8) std.mem.Allocator.Error!?[]u8 {
+    return if (bytes.len == 0) null else try allocator.dupe(u8, bytes);
+}
+
+fn free_constants(allocator: std.mem.Allocator, constants: ?[]types.WGPUConstantEntry) void {
+    if (constants) |entries| {
+        for (entries) |entry| {
+            const key = string_view_slice(entry.key);
+            if (key.len != 0) allocator.free(key);
+        }
+        allocator.free(entries);
+    }
+}
+
+fn copy_constants(allocator: std.mem.Allocator, source: []const types.WGPUConstantEntry) SnapshotError!?[]types.WGPUConstantEntry {
+    if (source.len == 0) return null;
+    const entries = try allocator.alloc(types.WGPUConstantEntry, source.len);
+    @memset(entries, std.mem.zeroes(types.WGPUConstantEntry));
+    errdefer free_constants(allocator, entries);
+    for (entries, source) |*entry, original| {
+        if (original.nextInChain != null) return error.UnsupportedDescriptor;
+        entry.value = original.value;
+        entry.key = make_string_view(try copy_string(allocator, string_view_slice(original.key)));
+    }
+    return entries;
+}
+
+pub fn free_compute_pipeline_request(req: *ComputePipelineAsyncRequest) void {
+    const allocator = req.allocator;
+    if (req.label_bytes) |bytes| allocator.free(bytes);
+    if (req.entry_point_bytes) |bytes| allocator.free(bytes);
+    free_constants(allocator, req.constants);
     if (req.descriptor.layout != null) native.doeNativePipelineLayoutRelease(req.descriptor.layout);
     if (req.descriptor.compute.module != null) native.doeNativeShaderModuleRelease(req.descriptor.compute.module);
     native.doeNativeDeviceRelease(req.device);
-    std.heap.c_allocator.destroy(req);
+    allocator.destroy(req);
 }
 
 pub fn copy_compute_pipeline_request(
     device: types.WGPUDevice,
     desc: *const types.WGPUComputePipelineDescriptor,
     callback_info: p0.CreateComputePipelineAsyncCallbackInfo,
-) ?*ComputePipelineAsyncRequest {
-    const req = std.heap.c_allocator.create(ComputePipelineAsyncRequest) catch return null;
-    errdefer std.heap.c_allocator.destroy(req);
+) SnapshotError!*ComputePipelineAsyncRequest {
+    return copy_compute_request(std.heap.c_allocator, device, desc, callback_info);
+}
 
-    req.* = .{
-        .device = device,
-        .descriptor = desc.*,
-        .callback_info = callback_info,
-    };
-
+fn copy_compute_request(
+    allocator: std.mem.Allocator,
+    device: types.WGPUDevice,
+    desc: *const types.WGPUComputePipelineDescriptor,
+    callback_info: p0.CreateComputePipelineAsyncCallbackInfo,
+) SnapshotError!*ComputePipelineAsyncRequest {
+    if (desc.nextInChain != null or desc.compute.nextInChain != null) return error.UnsupportedDescriptor;
+    if (desc.compute.constantCount > 0 and desc.compute.constants == null) return error.InvalidDescriptor;
+    const req = try allocator.create(ComputePipelineAsyncRequest);
+    req.* = .{ .allocator = allocator, .device = device, .descriptor = desc.*, .callback_info = callback_info };
     native.doeNativeDeviceAddRef(device);
     if (desc.compute.module != null) native.object_add_ref(native.DoeShaderModule, desc.compute.module);
     if (desc.layout != null) native.object_add_ref(native.DoePipelineLayout, desc.layout);
-
-    req.label_bytes = dup_string_view(desc.label);
+    errdefer free_compute_pipeline_request(req);
+    req.label_bytes = try copy_string(allocator, string_view_slice(desc.label));
     req.descriptor.label = make_string_view(req.label_bytes);
-
-    req.entry_point_bytes = dup_string_view(desc.compute.entryPoint);
+    req.entry_point_bytes = try copy_string(allocator, string_view_slice(desc.compute.entryPoint));
     req.descriptor.compute.entryPoint = make_string_view(req.entry_point_bytes);
-
     if (desc.compute.constantCount > 0 and desc.compute.constants != null) {
-        const count = desc.compute.constantCount;
-        const constants = std.heap.c_allocator.alloc(types.WGPUConstantEntry, count) catch {
-            free_compute_pipeline_request(req);
-            return null;
-        };
-        const key_bytes = std.heap.c_allocator.alloc(?[]u8, count) catch {
-            std.heap.c_allocator.free(constants);
-            free_compute_pipeline_request(req);
-            return null;
-        };
-        @memset(key_bytes, null);
-        for (constants, 0..) |*entry, index| {
-            entry.* = desc.compute.constants.?[index];
-            key_bytes[index] = dup_string_view(entry.key);
-            entry.key = make_string_view(key_bytes[index]);
-        }
-        req.constants = constants;
-        req.constant_key_bytes = key_bytes;
-        req.descriptor.compute.constants = constants.ptr;
-        req.descriptor.compute.constantCount = count;
-    } else {
-        req.descriptor.compute.constants = null;
-        req.descriptor.compute.constantCount = 0;
+        req.constants = try copy_constants(allocator, desc.compute.constants[0..desc.compute.constantCount]);
     }
-
+    req.descriptor.compute.constants = if (req.constants) |entries| entries.ptr else null;
+    req.descriptor.compute.constantCount = if (req.constants) |entries| entries.len else 0;
     return req;
 }
 
-pub fn set_compute_pipeline_request_error(req: *ComputePipelineAsyncRequest, message: []const u8) void {
-    req.status = 2;
-    req.message_bytes = std.heap.c_allocator.dupe(u8, message) catch null;
+pub fn set_compute_pipeline_request_error(req: *ComputePipelineAsyncRequest, comptime message: []const u8) void {
+    req.status = async_procs.CREATE_PIPELINE_ASYNC_STATUS_INTERNAL_ERROR;
+    req.message = message;
 }
 
 pub fn copy_render_pipeline_request(
     device: types.WGPUDevice,
     desc_raw: *const anyopaque,
     callback_info: async_procs.CreateRenderPipelineAsyncCallbackInfo,
-) ?*RenderPipelineAsyncRequest {
-    const src: *const RenderPipelineDesc = @ptrCast(@alignCast(desc_raw));
-    const req = std.heap.c_allocator.create(RenderPipelineAsyncRequest) catch return null;
-    errdefer std.heap.c_allocator.destroy(req);
+) SnapshotError!*RenderPipelineAsyncRequest {
+    return copy_render_request(std.heap.c_allocator, device, @ptrCast(@alignCast(desc_raw)), callback_info);
+}
 
-    req.* = .{
-        .device = device,
-        .descriptor = src.*,
-        .callback_info = callback_info,
-    };
-
+fn copy_render_request(
+    allocator: std.mem.Allocator,
+    device: types.WGPUDevice,
+    src: *const RenderPipelineDesc,
+    callback_info: async_procs.CreateRenderPipelineAsyncCallbackInfo,
+) SnapshotError!*RenderPipelineAsyncRequest {
+    if (src.nextInChain != null or src.vertex.nextInChain != null or src.primitive.nextInChain != null or src.multisample.nextInChain != null) return error.UnsupportedDescriptor;
+    if ((src.vertex.constantCount > 0 and src.vertex.constants == null) or
+        (src.vertex.bufferCount > 0 and src.vertex.buffers == null)) return error.InvalidDescriptor;
+    if (src.fragment) |fragment| {
+        if (fragment.nextInChain != null) return error.UnsupportedDescriptor;
+        if ((fragment.constantCount > 0 and fragment.constants == null) or
+            (fragment.targetCount > 0 and fragment.targets == null)) return error.InvalidDescriptor;
+    }
+    const req = try allocator.create(RenderPipelineAsyncRequest);
+    req.* = .{ .allocator = allocator, .device = device, .descriptor = src.*, .callback_info = callback_info };
     native.doeNativeDeviceAddRef(device);
     if (src.layout != null) native.object_add_ref(native.DoePipelineLayout, src.layout);
     if (src.vertex.module != null) native.object_add_ref(native.DoeShaderModule, src.vertex.module);
     if (src.fragment) |frag| {
         if (frag.module != null) native.object_add_ref(native.DoeShaderModule, frag.module);
     }
-
-    req.label_bytes = dup_render_string_view(src.label);
+    errdefer free_render_pipeline_request(req);
+    req.label_bytes = try copy_string(allocator, render_string_view_slice(src.label));
     req.descriptor.label = make_render_string_view(req.label_bytes);
-    req.vertex_entry_bytes = dup_render_string_view(src.vertex.entryPoint);
+    req.vertex_entry_bytes = try copy_string(allocator, render_string_view_slice(src.vertex.entryPoint));
     req.descriptor.vertex.entryPoint = make_render_string_view(req.vertex_entry_bytes);
-
+    if (src.vertex.constantCount > 0 and src.vertex.constants != null) {
+        const entries: [*]const types.WGPUConstantEntry = @ptrCast(@alignCast(src.vertex.constants.?));
+        req.vertex_constants = try copy_constants(allocator, entries[0..src.vertex.constantCount]);
+    }
+    req.descriptor.vertex.constants = if (req.vertex_constants) |entries| @ptrCast(entries.ptr) else null;
+    req.descriptor.vertex.constantCount = if (req.vertex_constants) |entries| entries.len else 0;
     if (src.vertex.bufferCount > 0 and src.vertex.buffers != null) {
         const src_bufs = @as([*]const RenderVertexBufferLayout, @ptrCast(@alignCast(src.vertex.buffers)))[0..src.vertex.bufferCount];
-        const dst_bufs = std.heap.c_allocator.alloc(RenderVertexBufferLayout, src_bufs.len) catch {
-            free_render_pipeline_request(req);
-            return null;
-        };
-        var attr_total: usize = 0;
-        for (src_bufs) |buf| attr_total += buf.attributeCount;
-        const dst_attrs = if (attr_total > 0)
-            std.heap.c_allocator.alloc(RenderVertexAttribute, attr_total) catch {
-                std.heap.c_allocator.free(dst_bufs);
-                free_render_pipeline_request(req);
-                return null;
-            }
-        else
-            null;
+        const dst_bufs = try allocator.dupe(RenderVertexBufferLayout, src_bufs);
         req.vertex_buffers = dst_bufs;
+        var attr_total: usize = 0;
+        for (src_bufs) |buf| {
+            if (buf.nextInChain != null) return error.UnsupportedDescriptor;
+            if (buf.attributeCount > 0 and buf.attributes == null) return error.InvalidDescriptor;
+            attr_total = std.math.add(usize, attr_total, buf.attributeCount) catch return error.InvalidDescriptor;
+        }
+        const dst_attrs = if (attr_total > 0) try allocator.alloc(RenderVertexAttribute, attr_total) else null;
         req.vertex_attributes = dst_attrs;
         req.descriptor.vertex.buffers = @ptrCast(dst_bufs.ptr);
         req.descriptor.vertex.bufferCount = dst_bufs.len;
-
         var attr_index: usize = 0;
-        for (src_bufs, 0..) |src_buf, index| {
-            dst_bufs[index] = src_buf;
-            dst_bufs[index].nextInChain = null;
-            if (src_buf.attributeCount > 0 and src_buf.attributes != null and dst_attrs != null) {
-                const src_attrs = src_buf.attributes.?[0..src_buf.attributeCount];
-                const dst_slice = dst_attrs.?[attr_index .. attr_index + src_buf.attributeCount];
-                for (src_attrs, 0..) |src_attr, attr_offset| {
-                    dst_slice[attr_offset] = src_attr;
-                    dst_slice[attr_offset].nextInChain = null;
+        for (dst_bufs, src_bufs) |*dst, original| {
+            dst.nextInChain = null;
+            if (original.attributeCount > 0 and original.attributes != null and dst_attrs != null) {
+                const copied = dst_attrs.?[attr_index .. attr_index + original.attributeCount];
+                @memcpy(copied, original.attributes.?[0..original.attributeCount]);
+                for (copied) |attribute| {
+                    if (attribute.nextInChain != null) return error.UnsupportedDescriptor;
                 }
-                dst_bufs[index].attributes = dst_slice.ptr;
-                attr_index += src_buf.attributeCount;
+                dst.attributes = copied.ptr;
+                attr_index += original.attributeCount;
             } else {
-                dst_bufs[index].attributes = null;
-                dst_bufs[index].attributeCount = 0;
+                dst.attributes = null;
+                dst.attributeCount = 0;
             }
         }
     } else {
         req.descriptor.vertex.buffers = null;
         req.descriptor.vertex.bufferCount = 0;
     }
-
     if (src.fragment) |frag| {
-        const frag_copy = std.heap.c_allocator.create(RenderFragmentState) catch {
-            free_render_pipeline_request(req);
-            return null;
-        };
-        frag_copy.* = frag.*;
-        req.fragment_state = frag_copy;
-        req.fragment_entry_bytes = dup_render_string_view(frag.entryPoint);
-        frag_copy.entryPoint = make_render_string_view(req.fragment_entry_bytes);
-        if (frag.targetCount > 0 and frag.targets != null) {
-            const targets = std.heap.c_allocator.alloc(RenderColorTargetState, frag.targetCount) catch {
-                free_render_pipeline_request(req);
-                return null;
-            };
-            @memcpy(targets, frag.targets.?[0..frag.targetCount]);
-            for (targets) |*target| target.nextInChain = null;
-            req.fragment_targets = targets;
-            frag_copy.targets = targets.ptr;
-            frag_copy.targetCount = targets.len;
-        } else {
-            frag_copy.targets = null;
-            frag_copy.targetCount = 0;
+        const copied = try allocator.create(RenderFragmentState);
+        copied.* = frag.*;
+        req.fragment_state = copied;
+        req.descriptor.fragment = copied;
+        req.fragment_entry_bytes = try copy_string(allocator, render_string_view_slice(frag.entryPoint));
+        copied.entryPoint = make_render_string_view(req.fragment_entry_bytes);
+        if (frag.constantCount > 0 and frag.constants != null) {
+            const entries: [*]const types.WGPUConstantEntry = @ptrCast(@alignCast(frag.constants.?));
+            req.fragment_constants = try copy_constants(allocator, entries[0..frag.constantCount]);
         }
-        req.descriptor.fragment = frag_copy;
-    } else {
-        req.descriptor.fragment = null;
+        copied.constants = if (req.fragment_constants) |entries| @ptrCast(entries.ptr) else null;
+        copied.constantCount = if (req.fragment_constants) |entries| entries.len else 0;
+        if (frag.targetCount > 0 and frag.targets != null) {
+            const targets = try allocator.dupe(RenderColorTargetState, frag.targets.?[0..frag.targetCount]);
+            req.fragment_targets = targets;
+            const blends = try allocator.alloc(RenderBlendState, targets.len);
+            req.fragment_blends = blends;
+            for (targets, blends) |*target, *blend| {
+                if (target.nextInChain != null) return error.UnsupportedDescriptor;
+                if (target.blend) |original| {
+                    blend.* = original.*;
+                    target.blend = blend;
+                }
+            }
+            copied.targets = targets.ptr;
+            copied.targetCount = targets.len;
+        } else {
+            copied.targets = null;
+            copied.targetCount = 0;
+        }
     }
-
     if (src.depthStencil) |depth_raw| {
-        const src_depth: *const RenderDepthStencilDesc = @ptrCast(@alignCast(depth_raw));
-        const depth_copy = std.heap.c_allocator.create(RenderDepthStencilDesc) catch {
-            free_render_pipeline_request(req);
-            return null;
-        };
-        depth_copy.* = src_depth.*;
-        depth_copy.nextInChain = null;
-        req.depth_stencil = depth_copy;
-        req.descriptor.depthStencil = @ptrCast(depth_copy);
-    } else {
-        req.descriptor.depthStencil = null;
+        const original: *const RenderDepthStencilDesc = @ptrCast(@alignCast(depth_raw));
+        if (original.nextInChain != null) return error.UnsupportedDescriptor;
+        const copied = try allocator.create(RenderDepthStencilDesc);
+        copied.* = original.*;
+        copied.nextInChain = null;
+        req.depth_stencil = copied;
+        req.descriptor.depthStencil = @ptrCast(copied);
     }
-
     return req;
 }
 
 pub fn free_render_pipeline_request(req: *RenderPipelineAsyncRequest) void {
-    if (req.label_bytes) |bytes| std.heap.c_allocator.free(bytes);
-    if (req.vertex_entry_bytes) |bytes| std.heap.c_allocator.free(bytes);
-    if (req.fragment_entry_bytes) |bytes| std.heap.c_allocator.free(bytes);
-    if (req.vertex_buffers) |bufs| std.heap.c_allocator.free(bufs);
-    if (req.vertex_attributes) |attrs| std.heap.c_allocator.free(attrs);
-    if (req.fragment_targets) |targets| std.heap.c_allocator.free(targets);
-    if (req.fragment_state) |frag| std.heap.c_allocator.destroy(frag);
-    if (req.depth_stencil) |depth| std.heap.c_allocator.destroy(depth);
-    if (req.message_bytes) |bytes| std.heap.c_allocator.free(bytes);
     if (req.descriptor.layout != null) native.doeNativePipelineLayoutRelease(req.descriptor.layout);
     if (req.descriptor.vertex.module != null) native.doeNativeShaderModuleRelease(req.descriptor.vertex.module);
     if (req.descriptor.fragment) |frag| {
         if (frag.module != null) native.doeNativeShaderModuleRelease(frag.module);
     }
+    if (req.label_bytes) |bytes| req.allocator.free(bytes);
+    if (req.vertex_entry_bytes) |bytes| req.allocator.free(bytes);
+    if (req.fragment_entry_bytes) |bytes| req.allocator.free(bytes);
+    if (req.vertex_buffers) |bufs| req.allocator.free(bufs);
+    if (req.vertex_attributes) |attrs| req.allocator.free(attrs);
+    free_constants(req.allocator, req.vertex_constants);
+    free_constants(req.allocator, req.fragment_constants);
+    if (req.fragment_blends) |blends| req.allocator.free(blends);
+    if (req.fragment_targets) |targets| req.allocator.free(targets);
+    if (req.fragment_state) |frag| req.allocator.destroy(frag);
+    if (req.depth_stencil) |depth| req.allocator.destroy(depth);
     native.doeNativeDeviceRelease(req.device);
-    std.heap.c_allocator.destroy(req);
+    req.allocator.destroy(req);
 }
 
-pub fn set_render_pipeline_request_error(req: *RenderPipelineAsyncRequest, message: []const u8) void {
-    req.status = 2;
-    req.message_bytes = std.heap.c_allocator.dupe(u8, message) catch null;
+pub fn set_render_pipeline_request_error(req: *RenderPipelineAsyncRequest, comptime message: []const u8) void {
+    req.status = async_procs.CREATE_PIPELINE_ASYNC_STATUS_INTERNAL_ERROR;
+    req.message = message;
+}
+
+pub fn fail_compute_pipeline_async(entry: *ComputeInflightEntry, comptime message: []const u8) void {
+    const head = g_compute_inflight.take(entry) orelse return;
+    set_compute_pipeline_request_error(head, message);
+    deliver_pipeline_requests(ComputePipelineAsyncRequest, native.DoeComputePipeline, native.doeNativeComputePipelineRelease, free_compute_pipeline_request, head);
+}
+
+pub fn fail_render_pipeline_async(entry: *RenderInflightEntry, comptime message: []const u8) void {
+    const head = g_render_inflight.take(entry) orelse return;
+    set_render_pipeline_request_error(head, message);
+    deliver_pipeline_requests(RenderPipelineAsyncRequest, native.DoeRenderPipeline, native.doeNativeRenderPipelineRelease, free_render_pipeline_request, head);
 }
 
 pub fn run_compute_pipeline_async(ctx_raw: ?*anyopaque) void {
@@ -451,28 +540,10 @@ pub fn run_compute_pipeline_async(ctx_raw: ?*anyopaque) void {
     const head = g_compute_inflight.take(entry) orelse return;
     const lead = head;
     lead.pipeline = @ptrCast(native.doeNativeDeviceCreateComputePipeline(lead.device, &lead.descriptor));
-    pipeline_cache_integration.recordComputePipelineCreation(if (lead.entry_point_bytes) |ep| ep else null);
     if (lead.pipeline == null) {
         set_compute_pipeline_request_error(lead, "pipeline creation failed");
     }
-    var req: ?*ComputePipelineAsyncRequest = head;
-    var first = true;
-    while (req) |current| {
-        const next = current.next;
-        current.status = lead.status;
-        if (lead.pipeline != null) {
-            current.pipeline = lead.pipeline;
-            if (!first) native.object_add_ref(native.DoeComputePipeline, current.pipeline);
-        } else if (current != lead) {
-            set_compute_pipeline_request_error(current, "pipeline creation failed");
-        }
-        if (current.callback_info.callback) |cb| {
-            cb(current.status, current.pipeline, make_string_view(current.message_bytes), current.callback_info.userdata1, current.callback_info.userdata2);
-        }
-        free_compute_pipeline_request(current);
-        first = false;
-        req = next;
-    }
+    deliver_pipeline_requests(ComputePipelineAsyncRequest, native.DoeComputePipeline, native.doeNativeComputePipelineRelease, free_compute_pipeline_request, head);
 }
 
 pub fn run_render_pipeline_async(ctx_raw: ?*anyopaque) void {
@@ -480,26 +551,183 @@ pub fn run_render_pipeline_async(ctx_raw: ?*anyopaque) void {
     const head = g_render_inflight.take(entry) orelse return;
     const lead = head;
     lead.pipeline = @ptrCast(native.doeNativeDeviceCreateRenderPipeline(lead.device, @ptrCast(&lead.descriptor)));
-    pipeline_cache_integration.recordRenderPipelineCreation();
     if (lead.pipeline == null) {
         set_render_pipeline_request_error(lead, "render pipeline creation failed");
     }
-    var req: ?*RenderPipelineAsyncRequest = head;
-    var first = true;
+    deliver_pipeline_requests(RenderPipelineAsyncRequest, native.DoeRenderPipeline, native.doeNativeRenderPipelineRelease, free_render_pipeline_request, head);
+}
+
+fn deliver_pipeline_requests(
+    comptime Request: type,
+    comptime Pipeline: type,
+    comptime release_pipeline: fn (?*anyopaque) callconv(.c) void,
+    comptime free_request: fn (*Request) void,
+    head: *Request,
+) void {
+    defer free_request(head);
+    defer if (head.pipeline != null) release_pipeline(head.pipeline);
+    var req: ?*Request = head;
     while (req) |current| {
         const next = current.next;
-        current.status = lead.status;
-        if (lead.pipeline != null) {
-            current.pipeline = lead.pipeline;
-            if (!first) native.object_add_ref(native.DoeRenderPipeline, current.pipeline);
-        } else if (current != lead) {
-            set_render_pipeline_request_error(current, "render pipeline creation failed");
-        }
         if (current.callback_info.callback) |cb| {
-            cb(current.status, current.pipeline, make_string_view(current.message_bytes), current.callback_info.userdata1, current.callback_info.userdata2);
+            // Each callback receives its own lease; earlier callbacks may release or reenter.
+            if (head.pipeline != null) native.object_add_ref(Pipeline, head.pipeline);
+            cb(head.status, head.pipeline, .{ .data = head.message.ptr, .length = head.message.len }, current.callback_info.userdata1, current.callback_info.userdata2);
         }
-        free_render_pipeline_request(current);
-        first = false;
+        if (current != head) free_request(current);
         req = next;
     }
+}
+
+test "async render cleanup releases shader leases before owned fragment storage" {
+    var device = native.DoeDevice{};
+    var shader = native.DoeShaderModule{};
+    var descriptor = std.mem.zeroes(RenderPipelineDesc);
+    var fragment = std.mem.zeroes(RenderFragmentState);
+    fragment.module = native.toOpaque(&shader);
+    descriptor.vertex.module = native.toOpaque(&shader);
+    descriptor.fragment = &fragment;
+    const request = try copy_render_pipeline_request(@ptrCast(&device), &descriptor, std.mem.zeroes(async_procs.CreateRenderPipelineAsyncCallbackInfo));
+    try std.testing.expectEqual(@as(u32, 3), shader.ref_count);
+    try std.testing.expectEqual(@as(u32, 2), device.ref_count);
+    free_render_pipeline_request(request);
+    try std.testing.expectEqual(@as(u32, 1), shader.ref_count);
+    try std.testing.expectEqual(@as(u32, 1), device.ref_count);
+}
+
+fn test_callback_leases(comptime Pipeline: type, comptime release: fn (?*anyopaque) callconv(.c) void) !void {
+    const Node = struct {
+        const Self = @This();
+        next: ?*@This() = null,
+        pipeline: ?*anyopaque,
+        status: u32,
+        message_bytes: ?[]u8 = null,
+        message: []const u8 = "",
+        callback_info: struct {
+            callback: ?*const fn (u32, ?*anyopaque, types.WGPUStringView, ?*anyopaque, ?*anyopaque) callconv(.c) void = null,
+            userdata1: ?*anyopaque = null,
+            userdata2: ?*anyopaque = null,
+        },
+
+        const State = struct { count: usize = 0, failed: bool = false, expected_status: u32 };
+        fn callback(status: u32, pipeline: ?*anyopaque, message: types.WGPUStringView, data: ?*anyopaque, _: ?*anyopaque) callconv(.c) void {
+            const state: *State = @ptrCast(@alignCast(data.?));
+            state.failed = state.failed or status != state.expected_status or
+                !std.mem.eql(u8, string_view_slice(message), "original cause");
+            if (pipeline != null) release(pipeline);
+            state.count += 1;
+        }
+        fn free(self: *Self) void {
+            if (self.message_bytes) |bytes| std.testing.allocator.free(bytes);
+            std.testing.allocator.destroy(self);
+        }
+    };
+    for ([_]bool{ false, true }) |failed| {
+        var pipeline = Pipeline{ .ref_count = 2 };
+        var state = Node.State{ .expected_status = if (failed) 2 else 1 };
+        var callback: @FieldType(Node, "callback_info") = .{};
+        callback.callback = Node.callback;
+        callback.userdata1 = &state;
+        const head = try std.testing.allocator.create(Node);
+        head.* = .{ .pipeline = if (failed) null else &pipeline, .status = state.expected_status, .callback_info = callback };
+        head.message_bytes = try std.testing.allocator.dupe(u8, "original cause");
+        head.message = head.message_bytes.?;
+        const follower = try std.testing.allocator.create(Node);
+        follower.* = .{ .pipeline = null, .status = 0, .callback_info = callback };
+        head.next = follower;
+        const unobserved = try std.testing.allocator.create(Node);
+        unobserved.* = .{ .pipeline = null, .status = 0, .callback_info = .{} };
+        follower.next = unobserved;
+        deliver_pipeline_requests(Node, Pipeline, release, Node.free, head);
+        try std.testing.expectEqual(@as(usize, 2), state.count);
+        try std.testing.expect(!state.failed);
+        try std.testing.expectEqual(@as(u32, if (failed) 2 else 1), pipeline.ref_count);
+    }
+}
+
+test "async pipeline callbacks may release results before later waiters receive them" {
+    try test_callback_leases(native.DoeComputePipeline, native.doeNativeComputePipelineRelease);
+    try test_callback_leases(native.DoeRenderPipeline, native.doeNativeRenderPipelineRelease);
+}
+
+fn test_owned_snapshots(allocator: std.mem.Allocator) !void {
+    var device = native.DoeDevice{};
+    var shader = native.DoeShaderModule{};
+    defer std.debug.assert(device.ref_count == 1 and shader.ref_count == 1);
+    var key = [_]u8{'x'};
+    var constants = [_]types.WGPUConstantEntry{std.mem.zeroes(types.WGPUConstantEntry)};
+    constants[0].key = .{ .data = &key, .length = key.len };
+    constants[0].value = 2;
+    var compute = std.mem.zeroes(types.WGPUComputePipelineDescriptor);
+    compute.label = .{ .data = "compute", .length = core.abi_core.WGPU_STRLEN };
+    compute.compute.entryPoint = .{ .data = "main", .length = core.abi_core.WGPU_STRLEN };
+    compute.compute.module = @ptrCast(&shader);
+    compute.compute.constants = &constants;
+    compute.compute.constantCount = constants.len;
+    const first = try copy_compute_request(allocator, @ptrCast(&device), &compute, std.mem.zeroes(p0.CreateComputePipelineAsyncCallbackInfo));
+    defer free_compute_pipeline_request(first);
+    key[0] = 'y';
+    try std.testing.expectEqualStrings("x", string_view_slice(first.constants.?[0].key));
+    try std.testing.expectEqualStrings("main", string_view_slice(first.descriptor.compute.entryPoint));
+    const second = try copy_compute_request(allocator, @ptrCast(&device), &compute, std.mem.zeroes(p0.CreateComputePipelineAsyncCallbackInfo));
+    defer free_compute_pipeline_request(second);
+    try std.testing.expect(!same_compute_request(first, second));
+
+    var render = std.mem.zeroes(RenderPipelineDesc);
+    render.vertex.module = @ptrCast(&shader);
+    render.vertex.entryPoint = .{ .data = "vs", .length = core.abi_core.WGPU_STRLEN };
+    render.vertex.constants = &constants;
+    render.vertex.constantCount = constants.len;
+    var attributes = [_]RenderVertexAttribute{std.mem.zeroes(RenderVertexAttribute)};
+    var buffers = [_]RenderVertexBufferLayout{std.mem.zeroes(RenderVertexBufferLayout)};
+    buffers[0].attributes = &attributes;
+    buffers[0].attributeCount = attributes.len;
+    render.vertex.buffers = &buffers;
+    render.vertex.bufferCount = buffers.len;
+    var blend = std.mem.zeroes(RenderBlendState);
+    var target = [_]RenderColorTargetState{std.mem.zeroes(RenderColorTargetState)};
+    target[0].blend = &blend;
+    var fragment = std.mem.zeroes(RenderFragmentState);
+    fragment.module = @ptrCast(&shader);
+    fragment.entryPoint = .{ .data = "fs", .length = core.abi_core.WGPU_STRLEN };
+    fragment.targets = &target;
+    fragment.targetCount = target.len;
+    fragment.constants = &constants;
+    fragment.constantCount = constants.len;
+    render.fragment = &fragment;
+    var depth = std.mem.zeroes(RenderDepthStencilDesc);
+    render.depthStencil = &depth;
+    const a = try copy_render_request(allocator, @ptrCast(&device), &render, std.mem.zeroes(async_procs.CreateRenderPipelineAsyncCallbackInfo));
+    defer free_render_pipeline_request(a);
+    const b = try copy_render_request(allocator, @ptrCast(&device), &render, std.mem.zeroes(async_procs.CreateRenderPipelineAsyncCallbackInfo));
+    defer free_render_pipeline_request(b);
+    try std.testing.expect(same_render_request(a, b));
+    blend.color.srcFactor = 2;
+    attributes[0].offset = 16;
+    constants[0].value = 3;
+    key[0] = 'z';
+    try std.testing.expectEqual(@as(u32, 0), a.fragment_targets.?[0].blend.?.color.srcFactor);
+    try std.testing.expectEqual(@as(u64, 0), a.vertex_attributes.?[0].offset);
+    try std.testing.expectEqual(@as(f64, 2), a.fragment_constants.?[0].value);
+    try std.testing.expectEqualStrings("y", string_view_slice(a.vertex_constants.?[0].key));
+    var changed = b.*;
+    changed.descriptor.primitive.cullMode = 1;
+    try std.testing.expect(!same_render_request(a, &changed));
+    changed = b.*;
+    changed.vertex_buffers = &buffers;
+    try std.testing.expect(!same_render_request(a, &changed));
+    changed = b.*;
+    changed.fragment_targets = &target;
+    try std.testing.expect(!same_render_request(a, &changed));
+    changed = b.*;
+    changed.fragment_constants = &constants;
+    try std.testing.expect(!same_render_request(a, &changed));
+    changed = b.*;
+    changed.depth_stencil = &depth;
+    depth.depthBias = 1;
+    try std.testing.expect(!same_render_request(a, &changed));
+}
+
+test "async snapshots preserve nested declarations and roll back every allocation failure" {
+    try std.testing.checkAllAllocationFailures(std.testing.allocator, test_owned_snapshots, .{});
 }

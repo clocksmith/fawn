@@ -57,8 +57,16 @@ def main() -> int:
                    if not key.startswith('DOE_') and key not in ('NODE_PATH', 'NODE_OPTIONS', 'ELECTRON_RUN_AS_NODE')}
 
     def run(command: list[str], cwd: Path, label: str, extra: dict[str, str] | None = None) -> str:
-        result = subprocess.run(command, cwd=cwd, env={**environment, **(extra or {})},
-                                capture_output=True, text=True, check=False, timeout=args.timeout_ms / 1000)
+        try:
+            result = subprocess.run(command, cwd=cwd, env={**environment, **(extra or {})},
+                                    capture_output=True, text=True, check=False, timeout=args.timeout_ms / 1000)
+        except subprocess.TimeoutExpired as error:
+            for stream in ['stdout', 'stderr']:
+                value = getattr(error, stream) or ''
+                if isinstance(value, bytes):
+                    value = value.decode('utf-8', errors='replace')
+                (output / f'{label}.{stream}').write_text(value)
+            raise
         (output / f'{label}.stdout').write_text(result.stdout)
         (output / f'{label}.stderr').write_text(result.stderr)
         validate_process_result(result, label)
@@ -114,6 +122,8 @@ def main() -> int:
                     regressions.append(('resources', 'native-resource-retention'))
                 if host == 'node':
                     regressions.append(('live-simulation', 'live-simulation'))
+                    if args.platform_package == 'doe-gpu-linux-x64':
+                        regressions.append(('concurrent-devices', 'native-concurrent-devices'))
                 helper = (ROOT / 'packages/doe-gpu/test/integration/native-addon-test-helper.js').read_text()
                 for original, replacement in replacements.items():
                     helper = helper.replace(original, replacement)

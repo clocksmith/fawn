@@ -1408,7 +1408,7 @@ napi_value doe_queue_flush(napi_env env, napi_callback_info info) {
             if (!result.done) pfn_wgpuInstanceProcessEvents(inst);
         } else if (wait_status == WGPU_WAIT_STATUS_TIMED_OUT) {
             pfn_wgpuInstanceProcessEvents(inst);
-            if (monotonic_now_ns() - start_ns >= current_timeout_ns()) {
+            if (monotonic_now_ns() - start_ns >= current_timeout_ns(env)) {
                 napi_throw_error(env, "DOE_QUEUE_TIMEOUT", "queueFlush: queue wait timed out");
                 return NULL;
             }
@@ -1925,7 +1925,7 @@ napi_value doe_compute_dispatch_flush_and_map_sync(napi_env env, napi_callback_i
     } else if (pfn_wgpuBufferMapAsync2) {
         WGPUFuture future = pfn_wgpuBufferMapAsync2(buf, (uint64_t)mode, (size_t)offset_i, (size_t)size_i, cb_info);
         if (future.id == 0) NAPI_THROW(env, "flushAndMapSync: bufferMapAsync future unavailable");
-        if (!process_events_until(inst, &result.done, current_timeout_ns()))
+        if (!process_events_until(inst, &result.done, current_timeout_ns(env)))
             return throw_status_error(env, "DOE_BUFFER_MAP_TIMEOUT", "flushAndMapSync: bufferMapAsync timed out", result.status, result.message);
         if (result.status != WGPU_MAP_ASYNC_STATUS_SUCCESS)
             return throw_status_error(env, "DOE_BUFFER_MAP_ERROR", "flushAndMapSync: bufferMapAsync failed", result.status, result.message);

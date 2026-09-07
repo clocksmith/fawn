@@ -64,7 +64,7 @@ pub fn Registry(comptime Node: type) type {
             try self.ensureEntryStorage();
 
             for (self.entries) |*entry| {
-                if (!entry.in_use or entry.key != key) continue;
+                if (!entry.in_use or entry.key != key or !Node.matches(entry.head.?, node)) continue;
                 appendWaiter(entry, node);
                 return .{ .entry = entry, .leader = false };
             }
@@ -99,6 +99,11 @@ pub fn Registry(comptime Node: type) type {
 const TestNode = struct {
     next: ?*TestNode = null,
     id: u32,
+    identity: u32 = 0,
+
+    fn matches(left: *const TestNode, right: *const TestNode) bool {
+        return left.identity == right.identity;
+    }
 };
 
 test "singleflight registry can join take deinit and recreate" {
@@ -127,4 +132,17 @@ test "singleflight registry can join take deinit and recreate" {
     const recreated = try registry.join_or_create(9, &third);
     try testing.expect(recreated.leader);
     try testing.expectEqual(@as(u32, 3), registry.take(recreated.entry).?.id);
+}
+
+test "singleflight hash collisions require matching request identity" {
+    var registry = Registry(TestNode).init(std.testing.allocator);
+    defer registry.deinit();
+    var first = TestNode{ .id = 1, .identity = 1 };
+    var second = TestNode{ .id = 2, .identity = 2 };
+    const left = try registry.join_or_create(7, &first);
+    const right = try registry.join_or_create(7, &second);
+    try std.testing.expect(left.leader and right.leader);
+    try std.testing.expect(left.entry != right.entry);
+    try std.testing.expectEqual(&first, registry.take(left.entry).?);
+    try std.testing.expectEqual(&second, registry.take(right.entry).?);
 }

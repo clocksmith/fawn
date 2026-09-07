@@ -8,6 +8,17 @@
 
 #include "doe_napi_internal.h"
 
+#ifdef _WIN32
+static SRWLOCK library_mutex = SRWLOCK_INIT;
+static void library_lock(void) { AcquireSRWLockExclusive(&library_mutex); }
+static void library_unlock(void) { ReleaseSRWLockExclusive(&library_mutex); }
+#else
+#include <pthread.h>
+static pthread_mutex_t library_mutex = PTHREAD_MUTEX_INITIALIZER;
+static void library_lock(void) { pthread_mutex_lock(&library_mutex); }
+static void library_unlock(void) { pthread_mutex_unlock(&library_mutex); }
+#endif
+
 /* ================================================================
  * Function pointer definitions — DECL_PFN extern decls are in the header;
  * these are the actual storage definitions.
@@ -201,71 +212,16 @@ FnMetalBridgeRelease pfn_metalBridgeRelease = NULL;
  * Shared state globals
  * ================================================================ */
 
+FnWgpuComputePassEncoderPushDebugGroup pfn_wgpuComputePassEncoderPushDebugGroup = NULL;
+FnWgpuComputePassEncoderPopDebugGroup pfn_wgpuComputePassEncoderPopDebugGroup = NULL;
+FnWgpuComputePassEncoderInsertDebugMarker pfn_wgpuComputePassEncoderInsertDebugMarker = NULL;
+FnWgpuRenderPassEncoderDrawIndirect pfn_wgpuRenderPassEncoderDrawIndirect = NULL;
+FnWgpuRenderPassEncoderDrawIndexedIndirect pfn_wgpuRenderPassEncoderDrawIndexedIndirect = NULL;
+FnDoeNativeRenderPassExecuteBundles pfn_doeNativeRenderPassExecuteBundles = NULL;
+FnWgpuRenderBundleEncoderDrawIndirect pfn_wgpuRenderBundleEncoderDrawIndirect = NULL;
+FnWgpuRenderBundleEncoderDrawIndexedIndirect pfn_wgpuRenderBundleEncoderDrawIndexedIndirect = NULL;
+
 void* g_lib = NULL;
-uint64_t g_timeout_ns = DOE_DEFAULT_TIMEOUT_NS;
-DeviceCallbackBinding* g_uncaptured_bindings = NULL;
-DeviceCallbackBinding* g_lost_bindings = NULL;
-
-/* ================================================================
- * Native-direct method refs
- * ================================================================ */
-
-napi_ref native_direct_method_gpu_request_adapter_ref = NULL;
-napi_ref native_direct_method_adapter_request_device_ref = NULL;
-napi_ref native_direct_method_adapter_destroy_ref = NULL;
-napi_ref native_direct_method_queue_submit_ref = NULL;
-napi_ref native_direct_method_queue_write_buffer_ref = NULL;
-napi_ref native_direct_method_queue_write_buffer_batch_ref = NULL;
-napi_ref native_direct_method_queue_on_submitted_work_done_ref = NULL;
-napi_ref native_direct_method_device_create_buffer_ref = NULL;
-napi_ref native_direct_method_device_create_shader_module_ref = NULL;
-napi_ref native_direct_method_device_create_compute_pipeline_ref = NULL;
-napi_ref native_direct_method_device_create_compute_pipeline_async_ref = NULL;
-napi_ref native_direct_method_device_create_bind_group_layout_ref = NULL;
-napi_ref native_direct_method_device_create_bind_group_ref = NULL;
-napi_ref native_direct_method_device_create_pipeline_layout_ref = NULL;
-napi_ref native_direct_method_device_create_command_encoder_ref = NULL;
-napi_ref native_direct_method_device_destroy_ref = NULL;
-napi_ref native_direct_method_buffer_map_async_ref = NULL;
-napi_ref native_direct_method_buffer_get_mapped_range_ref = NULL;
-napi_ref native_direct_method_buffer_read_copy_ref = NULL;
-napi_ref native_direct_method_buffer_map_read_copy_unmap_ref = NULL;
-napi_ref native_direct_method_buffer_unmap_ref = NULL;
-napi_ref native_direct_method_buffer_destroy_ref = NULL;
-napi_ref native_direct_method_command_encoder_begin_compute_pass_ref = NULL;
-napi_ref native_direct_method_command_encoder_copy_buffer_to_buffer_ref = NULL;
-napi_ref native_direct_method_command_encoder_finish_ref = NULL;
-napi_ref native_direct_method_compute_pass_set_pipeline_ref = NULL;
-napi_ref native_direct_method_compute_pass_set_bind_group_ref = NULL;
-napi_ref native_direct_method_compute_pass_dispatch_workgroups_ref = NULL;
-napi_ref native_direct_method_compute_pass_dispatch_workgroups_indirect_ref = NULL;
-napi_ref native_direct_method_compute_pass_end_ref = NULL;
-napi_ref native_direct_method_compute_pass_set_immediates_ref = NULL;
-napi_ref native_direct_method_compute_pass_push_debug_group_ref = NULL;
-napi_ref native_direct_method_compute_pass_pop_debug_group_ref = NULL;
-napi_ref native_direct_method_compute_pass_insert_debug_marker_ref = NULL;
-napi_ref native_direct_method_render_pass_set_immediates_ref = NULL;
-napi_ref native_direct_method_render_pass_set_viewport_ref = NULL;
-napi_ref native_direct_method_render_pass_set_scissor_rect_ref = NULL;
-napi_ref native_direct_method_render_pass_set_blend_constant_ref = NULL;
-napi_ref native_direct_method_render_pass_set_stencil_reference_ref = NULL;
-napi_ref native_direct_method_render_pass_push_debug_group_ref = NULL;
-napi_ref native_direct_method_render_pass_pop_debug_group_ref = NULL;
-napi_ref native_direct_method_render_pass_insert_debug_marker_ref = NULL;
-napi_ref native_direct_method_render_pass_draw_indirect_ref = NULL;
-napi_ref native_direct_method_render_pass_draw_indexed_indirect_ref = NULL;
-napi_ref native_direct_method_render_bundle_encoder_set_immediates_ref = NULL;
-napi_ref native_direct_method_adapter_get_preferred_canvas_format_ref = NULL;
-napi_ref native_direct_method_device_add_event_listener_ref = NULL;
-napi_ref native_direct_method_device_remove_event_listener_ref = NULL;
-napi_ref native_direct_method_device_import_external_texture_ref = NULL;
-napi_ref native_direct_method_command_encoder_clear_buffer_ref = NULL;
-napi_ref native_direct_method_command_encoder_copy_texture_to_texture_ref = NULL;
-napi_ref native_direct_method_queue_write_texture_ref = NULL;
-napi_ref native_direct_method_adapter_get_info_ref = NULL;
-napi_ref native_direct_method_shader_module_get_compilation_info_ref = NULL;
-napi_ref native_direct_resolved_undefined_promise_ref = NULL;
-
 /* ================================================================
  * Library loading
  * ================================================================ */
@@ -273,23 +229,35 @@ napi_ref native_direct_resolved_undefined_promise_ref = NULL;
 napi_value doe_load_library(napi_env env, napi_callback_info info) {
     NAPI_ASSERT_ARGC(env, info, 1);
     size_t path_len = 0;
-    napi_get_value_string_utf8(env, _args[0], NULL, 0, &path_len);
+    if (_argc < 1 || napi_get_value_string_utf8(env, _args[0], NULL, 0, &path_len) != napi_ok)
+        NAPI_THROW(env, "loadLibrary requires a library path string");
     char* path = (char*)malloc(path_len + 1);
-    napi_get_value_string_utf8(env, _args[0], path, path_len + 1, &path_len);
-
-    if (g_lib) { LIB_CLOSE(g_lib); g_lib = NULL; }
-    g_lib = LIB_OPEN(path);
-    free(path);
-    if (!g_lib) NAPI_THROW(env, "Failed to load libwebgpu_doe");
-
-    const char* timeout_env = getenv("DOE_TIMEOUT_MS");
-    if (timeout_env && timeout_env[0] != '\0') {
-        char* end = NULL;
-        unsigned long parsed = strtoul(timeout_env, &end, 10);
-        if (end && *end == '\0') {
-            g_timeout_ns = (uint64_t)parsed * 1000000ULL;
-        }
+    if (!path) NAPI_THROW(env, "Out of memory retaining library path");
+    if (napi_get_value_string_utf8(env, _args[0], path, path_len + 1, &path_len) != napi_ok) {
+        free(path);
+        NAPI_THROW(env, "Invalid library path");
     }
+
+    library_lock();
+    void* candidate = LIB_OPEN(path);
+    free(path);
+    if (!candidate) {
+        library_unlock();
+        NAPI_THROW(env, "Failed to load libwebgpu_doe");
+    }
+    if (g_lib) {
+        const bool same_library = candidate == g_lib;
+        LIB_CLOSE(candidate);
+        library_unlock();
+        if (!same_library)
+            NAPI_THROW(env, "A different Doe native library is already loaded; use a separate process");
+        doe_env_state(env)->library_loaded = true;
+        napi_value result;
+        napi_get_boolean(env, true, &result);
+        return result;
+    }
+    // Keep this handle for the process lifetime: objects and native workers may outlive an env.
+    g_lib = candidate;
 
     LOAD_SYM(wgpuCreateInstance);
     LOAD_SYM(wgpuInstanceRelease);
@@ -490,6 +458,15 @@ napi_value doe_load_library(napi_env env, napi_callback_info info) {
     pfn_metalBridgeConfigureSurfaceHost = (FnMetalBridgeConfigureSurfaceHost)LIB_SYM(g_lib, "metal_bridge_configure_surface_host");
     pfn_metalBridgeRelease = (FnMetalBridgeRelease)LIB_SYM(g_lib, "metal_bridge_release");
 
+    pfn_wgpuComputePassEncoderPushDebugGroup = (FnWgpuComputePassEncoderPushDebugGroup)LIB_SYM(g_lib, "wgpuComputePassEncoderPushDebugGroup");
+    pfn_wgpuComputePassEncoderPopDebugGroup = (FnWgpuComputePassEncoderPopDebugGroup)LIB_SYM(g_lib, "wgpuComputePassEncoderPopDebugGroup");
+    pfn_wgpuComputePassEncoderInsertDebugMarker = (FnWgpuComputePassEncoderInsertDebugMarker)LIB_SYM(g_lib, "wgpuComputePassEncoderInsertDebugMarker");
+    pfn_wgpuRenderPassEncoderDrawIndirect = (FnWgpuRenderPassEncoderDrawIndirect)LIB_SYM(g_lib, "wgpuRenderPassEncoderDrawIndirect");
+    pfn_wgpuRenderPassEncoderDrawIndexedIndirect = (FnWgpuRenderPassEncoderDrawIndexedIndirect)LIB_SYM(g_lib, "wgpuRenderPassEncoderDrawIndexedIndirect");
+    pfn_doeNativeRenderPassExecuteBundles = (FnDoeNativeRenderPassExecuteBundles)LIB_SYM(g_lib, "doeNativeRenderPassExecuteBundles");
+    pfn_wgpuRenderBundleEncoderDrawIndirect = (FnWgpuRenderBundleEncoderDrawIndirect)LIB_SYM(g_lib, "wgpuRenderBundleEncoderDrawIndirect");
+    pfn_wgpuRenderBundleEncoderDrawIndexedIndirect = (FnWgpuRenderBundleEncoderDrawIndexedIndirect)LIB_SYM(g_lib, "wgpuRenderBundleEncoderDrawIndexedIndirect");
+
     /* Validate all critical function pointers were resolved. */
     if (!pfn_wgpuCreateInstance || !pfn_wgpuInstanceRelease || !pfn_wgpuInstanceRequestAdapter ||
         !pfn_wgpuInstanceWaitAny || !pfn_wgpuInstanceProcessEvents ||
@@ -502,9 +479,12 @@ napi_value doe_load_library(napi_env env, napi_callback_info info) {
         !pfn_wgpuBufferMapAsync2) {
         LIB_CLOSE(g_lib);
         g_lib = NULL;
+        library_unlock();
         NAPI_THROW(env, "Failed to resolve required symbols from libwebgpu_doe");
     }
 
+    library_unlock();
+    doe_env_state(env)->library_loaded = true;
     napi_value result;
     napi_get_boolean(env, true, &result);
     return result;

@@ -317,7 +317,7 @@ static napi_value native_direct_adapter_request_device(napi_env env, napi_callba
         if (descriptor.defaultQueue.label.data) free((void*)descriptor.defaultQueue.label.data);
         NAPI_THROW(env, "requestDevice future unavailable");
     }
-    if (!process_events_until(inst, &result.done, current_timeout_ns())) {
+    if (!process_events_until(inst, &result.done, current_timeout_ns(env))) {
         free(required_features);
         if (descriptor.label.data) free((void*)descriptor.label.data);
         if (descriptor.defaultQueue.label.data) free((void*)descriptor.defaultQueue.label.data);
@@ -722,7 +722,7 @@ napi_value create_native_direct_gpu_object(napi_env env, WGPUInstance instance) 
     napi_create_object(env, &obj);
     native_direct_set_external_prop(env, obj, DOE_DIRECT_INSTANCE, instance);
     native_direct_wrap_handle_cache(env, obj, instance, NULL);
-    native_direct_add_cached_method(env, obj, "requestAdapter", native_direct_gpu_request_adapter, &native_direct_method_gpu_request_adapter_ref);
+    native_direct_add_cached_method(env, obj, "requestAdapter", native_direct_gpu_request_adapter, &doe_env_state(env)->native_direct_method_gpu_request_adapter_ref);
     return obj;
 }
 
@@ -736,11 +736,11 @@ napi_value create_native_direct_adapter_object(napi_env env, WGPUInstance instan
     WGPULimits limits = native_direct_query_adapter_limits(adapter, &limits_ok);
     native_direct_set_object_prop(env, obj, "limits", limits_ok ? create_limits_object(env, &limits) : native_direct_create_empty_object(env));
     native_direct_set_object_prop(env, obj, "features", native_direct_create_feature_set(env, native_direct_adapter_has_feature_value, adapter));
-    native_direct_add_cached_method(env, obj, "requestDevice", native_direct_adapter_request_device, &native_direct_method_adapter_request_device_ref);
-    native_direct_add_cached_method(env, obj, "destroy", native_direct_adapter_destroy, &native_direct_method_adapter_destroy_ref);
-    native_direct_add_cached_method(env, obj, "getPreferredCanvasFormat", native_direct_adapter_get_preferred_canvas_format, &native_direct_method_adapter_get_preferred_canvas_format_ref);
+    native_direct_add_cached_method(env, obj, "requestDevice", native_direct_adapter_request_device, &doe_env_state(env)->native_direct_method_adapter_request_device_ref);
+    native_direct_add_cached_method(env, obj, "destroy", native_direct_adapter_destroy, &doe_env_state(env)->native_direct_method_adapter_destroy_ref);
+    native_direct_add_cached_method(env, obj, "getPreferredCanvasFormat", native_direct_adapter_get_preferred_canvas_format, &doe_env_state(env)->native_direct_method_adapter_get_preferred_canvas_format_ref);
     /* GPUAdapter.info — method that returns the info object directly (not async). */
-    native_direct_add_cached_method(env, obj, "getInfo", native_direct_adapter_get_info, &native_direct_method_adapter_get_info_ref);
+    native_direct_add_cached_method(env, obj, "getInfo", native_direct_adapter_get_info, &doe_env_state(env)->native_direct_method_adapter_get_info_ref);
     return obj;
 }
 
@@ -758,11 +758,11 @@ napi_value create_native_direct_queue_object(napi_env env, WGPUInstance instance
     native_direct_set_double_prop(env, obj, DOE_DIRECT_DIAG_SUBMIT_WAIT_MS, 0.0);
     native_direct_set_double_prop(env, obj, DOE_DIRECT_DIAG_QUEUE_FLUSH_MS, 0.0);
     native_direct_wrap_queue_cache(env, obj, instance, queue);
-    native_direct_add_cached_method(env, obj, "submit", native_direct_queue_submit, &native_direct_method_queue_submit_ref);
-    native_direct_add_cached_method(env, obj, "writeBuffer", native_direct_queue_write_buffer, &native_direct_method_queue_write_buffer_ref);
-    native_direct_add_cached_method(env, obj, "writeBufferBatch", native_direct_queue_write_buffer_batch, &native_direct_method_queue_write_buffer_batch_ref);
-    native_direct_add_cached_method(env, obj, "writeTexture", native_direct_queue_write_texture, &native_direct_method_queue_write_texture_ref);
-    native_direct_add_cached_method(env, obj, "onSubmittedWorkDone", native_direct_queue_on_submitted_work_done, &native_direct_method_queue_on_submitted_work_done_ref);
+    native_direct_add_cached_method(env, obj, "submit", native_direct_queue_submit, &doe_env_state(env)->native_direct_method_queue_submit_ref);
+    native_direct_add_cached_method(env, obj, "writeBuffer", native_direct_queue_write_buffer, &doe_env_state(env)->native_direct_method_queue_write_buffer_ref);
+    native_direct_add_cached_method(env, obj, "writeBufferBatch", native_direct_queue_write_buffer_batch, &doe_env_state(env)->native_direct_method_queue_write_buffer_batch_ref);
+    native_direct_add_cached_method(env, obj, "writeTexture", native_direct_queue_write_texture, &doe_env_state(env)->native_direct_method_queue_write_texture_ref);
+    native_direct_add_cached_method(env, obj, "onSubmittedWorkDone", native_direct_queue_on_submitted_work_done, &doe_env_state(env)->native_direct_method_queue_on_submitted_work_done_ref);
     return obj;
 }
 
@@ -781,18 +781,18 @@ napi_value create_native_direct_device_object(napi_env env, WGPUInstance instanc
     native_direct_set_object_prop(env, obj, "limits", limits_ok ? create_limits_object(env, &limits) : native_direct_create_empty_object(env));
     native_direct_set_object_prop(env, obj, "features", native_direct_create_feature_set(env, native_direct_device_has_feature_value, device));
     native_direct_set_object_prop(env, obj, "queue", create_native_direct_queue_object(env, instance, queue));
-    native_direct_add_cached_method(env, obj, "createBuffer", native_direct_device_create_buffer, &native_direct_method_device_create_buffer_ref);
-    native_direct_add_cached_method(env, obj, "createShaderModule", native_direct_device_create_shader_module, &native_direct_method_device_create_shader_module_ref);
-    native_direct_add_cached_method(env, obj, "createComputePipeline", native_direct_device_create_compute_pipeline, &native_direct_method_device_create_compute_pipeline_ref);
-    native_direct_add_cached_method(env, obj, "createComputePipelineAsync", native_direct_device_create_compute_pipeline_async, &native_direct_method_device_create_compute_pipeline_async_ref);
-    native_direct_add_cached_method(env, obj, "createBindGroupLayout", native_direct_device_create_bind_group_layout, &native_direct_method_device_create_bind_group_layout_ref);
-    native_direct_add_cached_method(env, obj, "createBindGroup", native_direct_device_create_bind_group, &native_direct_method_device_create_bind_group_ref);
-    native_direct_add_cached_method(env, obj, "createPipelineLayout", native_direct_device_create_pipeline_layout, &native_direct_method_device_create_pipeline_layout_ref);
-    native_direct_add_cached_method(env, obj, "createCommandEncoder", native_direct_device_create_command_encoder, &native_direct_method_device_create_command_encoder_ref);
-    native_direct_add_cached_method(env, obj, "destroy", native_direct_device_destroy, &native_direct_method_device_destroy_ref);
-    native_direct_add_cached_method(env, obj, "addEventListener", native_direct_device_add_event_listener, &native_direct_method_device_add_event_listener_ref);
-    native_direct_add_cached_method(env, obj, "removeEventListener", native_direct_device_remove_event_listener, &native_direct_method_device_remove_event_listener_ref);
-    native_direct_add_cached_method(env, obj, "importExternalTexture", native_direct_device_import_external_texture, &native_direct_method_device_import_external_texture_ref);
+    native_direct_add_cached_method(env, obj, "createBuffer", native_direct_device_create_buffer, &doe_env_state(env)->native_direct_method_device_create_buffer_ref);
+    native_direct_add_cached_method(env, obj, "createShaderModule", native_direct_device_create_shader_module, &doe_env_state(env)->native_direct_method_device_create_shader_module_ref);
+    native_direct_add_cached_method(env, obj, "createComputePipeline", native_direct_device_create_compute_pipeline, &doe_env_state(env)->native_direct_method_device_create_compute_pipeline_ref);
+    native_direct_add_cached_method(env, obj, "createComputePipelineAsync", native_direct_device_create_compute_pipeline_async, &doe_env_state(env)->native_direct_method_device_create_compute_pipeline_async_ref);
+    native_direct_add_cached_method(env, obj, "createBindGroupLayout", native_direct_device_create_bind_group_layout, &doe_env_state(env)->native_direct_method_device_create_bind_group_layout_ref);
+    native_direct_add_cached_method(env, obj, "createBindGroup", native_direct_device_create_bind_group, &doe_env_state(env)->native_direct_method_device_create_bind_group_ref);
+    native_direct_add_cached_method(env, obj, "createPipelineLayout", native_direct_device_create_pipeline_layout, &doe_env_state(env)->native_direct_method_device_create_pipeline_layout_ref);
+    native_direct_add_cached_method(env, obj, "createCommandEncoder", native_direct_device_create_command_encoder, &doe_env_state(env)->native_direct_method_device_create_command_encoder_ref);
+    native_direct_add_cached_method(env, obj, "destroy", native_direct_device_destroy, &doe_env_state(env)->native_direct_method_device_destroy_ref);
+    native_direct_add_cached_method(env, obj, "addEventListener", native_direct_device_add_event_listener, &doe_env_state(env)->native_direct_method_device_add_event_listener_ref);
+    native_direct_add_cached_method(env, obj, "removeEventListener", native_direct_device_remove_event_listener, &doe_env_state(env)->native_direct_method_device_remove_event_listener_ref);
+    native_direct_add_cached_method(env, obj, "importExternalTexture", native_direct_device_import_external_texture, &doe_env_state(env)->native_direct_method_device_import_external_texture_ref);
     return obj;
 }
 
@@ -814,12 +814,12 @@ napi_value create_native_direct_buffer_object(napi_env env, WGPUInstance instanc
     native_direct_set_double_prop(env, obj, DOE_DIRECT_DIAG_MAP_READ_COPY_UNMAP_COPY_MS, 0.0);
     native_direct_set_double_prop(env, obj, DOE_DIRECT_DIAG_MAP_READ_COPY_UNMAP_UNMAP_MS, 0.0);
     native_direct_wrap_buffer_cache(env, obj, instance, buffer, size, usage, queue_obj);
-    native_direct_add_cached_method(env, obj, "mapAsync", native_direct_buffer_map_async, &native_direct_method_buffer_map_async_ref);
-    native_direct_add_cached_method(env, obj, "getMappedRange", native_direct_buffer_get_mapped_range, &native_direct_method_buffer_get_mapped_range_ref);
-    native_direct_add_cached_method(env, obj, "_readCopy", native_direct_buffer_read_copy, &native_direct_method_buffer_read_copy_ref);
-    native_direct_add_cached_method(env, obj, "_mapReadCopyUnmap", native_direct_buffer_map_read_copy_unmap, &native_direct_method_buffer_map_read_copy_unmap_ref);
-    native_direct_add_cached_method(env, obj, "unmap", native_direct_buffer_unmap, &native_direct_method_buffer_unmap_ref);
-    native_direct_add_cached_method(env, obj, "destroy", native_direct_buffer_destroy, &native_direct_method_buffer_destroy_ref);
+    native_direct_add_cached_method(env, obj, "mapAsync", native_direct_buffer_map_async, &doe_env_state(env)->native_direct_method_buffer_map_async_ref);
+    native_direct_add_cached_method(env, obj, "getMappedRange", native_direct_buffer_get_mapped_range, &doe_env_state(env)->native_direct_method_buffer_get_mapped_range_ref);
+    native_direct_add_cached_method(env, obj, "_readCopy", native_direct_buffer_read_copy, &doe_env_state(env)->native_direct_method_buffer_read_copy_ref);
+    native_direct_add_cached_method(env, obj, "_mapReadCopyUnmap", native_direct_buffer_map_read_copy_unmap, &doe_env_state(env)->native_direct_method_buffer_map_read_copy_unmap_ref);
+    native_direct_add_cached_method(env, obj, "unmap", native_direct_buffer_unmap, &doe_env_state(env)->native_direct_method_buffer_unmap_ref);
+    native_direct_add_cached_method(env, obj, "destroy", native_direct_buffer_destroy, &doe_env_state(env)->native_direct_method_buffer_destroy_ref);
     return obj;
 }
 
@@ -853,7 +853,7 @@ napi_value create_native_direct_shader_module_object(napi_env env, WGPUShaderMod
     native_direct_set_external_prop(env, obj, DOE_DIRECT_NATIVE, shader_module);
     native_direct_wrap_handle_cache(env, obj, NULL, shader_module);
     /* GPUShaderModule.getCompilationInfo() — returns a Promise<GPUCompilationInfo>. */
-    native_direct_add_cached_method(env, obj, "getCompilationInfo", native_direct_shader_module_get_compilation_info, &native_direct_method_shader_module_get_compilation_info_ref);
+    native_direct_add_cached_method(env, obj, "getCompilationInfo", native_direct_shader_module_get_compilation_info, &doe_env_state(env)->native_direct_method_shader_module_get_compilation_info_ref);
     return obj;
 }
 
@@ -878,11 +878,11 @@ napi_value create_native_direct_command_encoder_object(napi_env env, WGPUCommand
     napi_create_object(env, &obj);
     native_direct_set_external_prop(env, obj, DOE_DIRECT_NATIVE, encoder);
     native_direct_wrap_handle_cache(env, obj, NULL, encoder);
-    native_direct_add_cached_method(env, obj, "beginComputePass", native_direct_command_encoder_begin_compute_pass, &native_direct_method_command_encoder_begin_compute_pass_ref);
-    native_direct_add_cached_method(env, obj, "copyBufferToBuffer", native_direct_command_encoder_copy_buffer_to_buffer, &native_direct_method_command_encoder_copy_buffer_to_buffer_ref);
-    native_direct_add_cached_method(env, obj, "clearBuffer", native_direct_command_encoder_clear_buffer, &native_direct_method_command_encoder_clear_buffer_ref);
-    native_direct_add_cached_method(env, obj, "copyTextureToTexture", native_direct_command_encoder_copy_texture_to_texture, &native_direct_method_command_encoder_copy_texture_to_texture_ref);
-    native_direct_add_cached_method(env, obj, "finish", native_direct_command_encoder_finish, &native_direct_method_command_encoder_finish_ref);
+    native_direct_add_cached_method(env, obj, "beginComputePass", native_direct_command_encoder_begin_compute_pass, &doe_env_state(env)->native_direct_method_command_encoder_begin_compute_pass_ref);
+    native_direct_add_cached_method(env, obj, "copyBufferToBuffer", native_direct_command_encoder_copy_buffer_to_buffer, &doe_env_state(env)->native_direct_method_command_encoder_copy_buffer_to_buffer_ref);
+    native_direct_add_cached_method(env, obj, "clearBuffer", native_direct_command_encoder_clear_buffer, &doe_env_state(env)->native_direct_method_command_encoder_clear_buffer_ref);
+    native_direct_add_cached_method(env, obj, "copyTextureToTexture", native_direct_command_encoder_copy_texture_to_texture, &doe_env_state(env)->native_direct_method_command_encoder_copy_texture_to_texture_ref);
+    native_direct_add_cached_method(env, obj, "finish", native_direct_command_encoder_finish, &doe_env_state(env)->native_direct_method_command_encoder_finish_ref);
     return obj;
 }
 
@@ -891,16 +891,16 @@ napi_value create_native_direct_compute_pass_object(napi_env env, WGPUComputePas
     napi_create_object(env, &obj);
     native_direct_set_external_prop(env, obj, DOE_DIRECT_NATIVE, pass);
     native_direct_wrap_handle_cache(env, obj, NULL, pass);
-    native_direct_add_cached_method(env, obj, "setPipeline", native_direct_compute_pass_set_pipeline, &native_direct_method_compute_pass_set_pipeline_ref);
-    native_direct_add_cached_method(env, obj, "setBindGroup", native_direct_compute_pass_set_bind_group, &native_direct_method_compute_pass_set_bind_group_ref);
-    native_direct_add_cached_method(env, obj, "dispatchWorkgroups", native_direct_compute_pass_dispatch_workgroups, &native_direct_method_compute_pass_dispatch_workgroups_ref);
-    native_direct_add_cached_method(env, obj, "dispatchWorkgroupsIndirect", native_direct_compute_pass_dispatch_workgroups_indirect, &native_direct_method_compute_pass_dispatch_workgroups_indirect_ref);
-    native_direct_add_cached_method(env, obj, "end", native_direct_compute_pass_end, &native_direct_method_compute_pass_end_ref);
+    native_direct_add_cached_method(env, obj, "setPipeline", native_direct_compute_pass_set_pipeline, &doe_env_state(env)->native_direct_method_compute_pass_set_pipeline_ref);
+    native_direct_add_cached_method(env, obj, "setBindGroup", native_direct_compute_pass_set_bind_group, &doe_env_state(env)->native_direct_method_compute_pass_set_bind_group_ref);
+    native_direct_add_cached_method(env, obj, "dispatchWorkgroups", native_direct_compute_pass_dispatch_workgroups, &doe_env_state(env)->native_direct_method_compute_pass_dispatch_workgroups_ref);
+    native_direct_add_cached_method(env, obj, "dispatchWorkgroupsIndirect", native_direct_compute_pass_dispatch_workgroups_indirect, &doe_env_state(env)->native_direct_method_compute_pass_dispatch_workgroups_indirect_ref);
+    native_direct_add_cached_method(env, obj, "end", native_direct_compute_pass_end, &doe_env_state(env)->native_direct_method_compute_pass_end_ref);
     /* GPUBindingCommandsMixin#setImmediates — covers both mixin and compute-pass-specific contract */
-    native_direct_add_cached_method(env, obj, "setImmediates", native_direct_compute_pass_set_immediates, &native_direct_method_compute_pass_set_immediates_ref);
-    native_direct_add_cached_method(env, obj, "pushDebugGroup", native_direct_compute_pass_push_debug_group, &native_direct_method_compute_pass_push_debug_group_ref);
-    native_direct_add_cached_method(env, obj, "popDebugGroup", native_direct_compute_pass_pop_debug_group, &native_direct_method_compute_pass_pop_debug_group_ref);
-    native_direct_add_cached_method(env, obj, "insertDebugMarker", native_direct_compute_pass_insert_debug_marker, &native_direct_method_compute_pass_insert_debug_marker_ref);
+    native_direct_add_cached_method(env, obj, "setImmediates", native_direct_compute_pass_set_immediates, &doe_env_state(env)->native_direct_method_compute_pass_set_immediates_ref);
+    native_direct_add_cached_method(env, obj, "pushDebugGroup", native_direct_compute_pass_push_debug_group, &doe_env_state(env)->native_direct_method_compute_pass_push_debug_group_ref);
+    native_direct_add_cached_method(env, obj, "popDebugGroup", native_direct_compute_pass_pop_debug_group, &doe_env_state(env)->native_direct_method_compute_pass_pop_debug_group_ref);
+    native_direct_add_cached_method(env, obj, "insertDebugMarker", native_direct_compute_pass_insert_debug_marker, &doe_env_state(env)->native_direct_method_compute_pass_insert_debug_marker_ref);
     return obj;
 }
 
@@ -912,18 +912,18 @@ napi_value create_native_direct_render_pass_object(napi_env env, WGPURenderPassE
     native_direct_set_external_prop(env, obj, DOE_DIRECT_NATIVE, pass);
     native_direct_wrap_handle_cache(env, obj, NULL, pass);
     /* GPURenderPassEncoder#setImmediates (GPUBindingCommandsMixin) */
-    native_direct_add_cached_method(env, obj, "setImmediates", native_direct_render_pass_set_immediates, &native_direct_method_render_pass_set_immediates_ref);
+    native_direct_add_cached_method(env, obj, "setImmediates", native_direct_render_pass_set_immediates, &doe_env_state(env)->native_direct_method_render_pass_set_immediates_ref);
     /* GPURenderPassEncoder dynamic state */
-    native_direct_add_cached_method(env, obj, "setViewport", native_direct_render_pass_set_viewport, &native_direct_method_render_pass_set_viewport_ref);
-    native_direct_add_cached_method(env, obj, "setScissorRect", native_direct_render_pass_set_scissor_rect, &native_direct_method_render_pass_set_scissor_rect_ref);
-    native_direct_add_cached_method(env, obj, "setBlendConstant", native_direct_render_pass_set_blend_constant, &native_direct_method_render_pass_set_blend_constant_ref);
-    native_direct_add_cached_method(env, obj, "setStencilReference", native_direct_render_pass_set_stencil_reference, &native_direct_method_render_pass_set_stencil_reference_ref);
-    native_direct_add_cached_method(env, obj, "drawIndirect", native_direct_render_pass_draw_indirect, &native_direct_method_render_pass_draw_indirect_ref);
-    native_direct_add_cached_method(env, obj, "drawIndexedIndirect", native_direct_render_pass_draw_indexed_indirect, &native_direct_method_render_pass_draw_indexed_indirect_ref);
+    native_direct_add_cached_method(env, obj, "setViewport", native_direct_render_pass_set_viewport, &doe_env_state(env)->native_direct_method_render_pass_set_viewport_ref);
+    native_direct_add_cached_method(env, obj, "setScissorRect", native_direct_render_pass_set_scissor_rect, &doe_env_state(env)->native_direct_method_render_pass_set_scissor_rect_ref);
+    native_direct_add_cached_method(env, obj, "setBlendConstant", native_direct_render_pass_set_blend_constant, &doe_env_state(env)->native_direct_method_render_pass_set_blend_constant_ref);
+    native_direct_add_cached_method(env, obj, "setStencilReference", native_direct_render_pass_set_stencil_reference, &doe_env_state(env)->native_direct_method_render_pass_set_stencil_reference_ref);
+    native_direct_add_cached_method(env, obj, "drawIndirect", native_direct_render_pass_draw_indirect, &doe_env_state(env)->native_direct_method_render_pass_draw_indirect_ref);
+    native_direct_add_cached_method(env, obj, "drawIndexedIndirect", native_direct_render_pass_draw_indexed_indirect, &doe_env_state(env)->native_direct_method_render_pass_draw_indexed_indirect_ref);
     /* GPURenderPassEncoder debug markers */
-    native_direct_add_cached_method(env, obj, "pushDebugGroup", native_direct_render_pass_push_debug_group, &native_direct_method_render_pass_push_debug_group_ref);
-    native_direct_add_cached_method(env, obj, "popDebugGroup", native_direct_render_pass_pop_debug_group, &native_direct_method_render_pass_pop_debug_group_ref);
-    native_direct_add_cached_method(env, obj, "insertDebugMarker", native_direct_render_pass_insert_debug_marker, &native_direct_method_render_pass_insert_debug_marker_ref);
+    native_direct_add_cached_method(env, obj, "pushDebugGroup", native_direct_render_pass_push_debug_group, &doe_env_state(env)->native_direct_method_render_pass_push_debug_group_ref);
+    native_direct_add_cached_method(env, obj, "popDebugGroup", native_direct_render_pass_pop_debug_group, &doe_env_state(env)->native_direct_method_render_pass_pop_debug_group_ref);
+    native_direct_add_cached_method(env, obj, "insertDebugMarker", native_direct_render_pass_insert_debug_marker, &doe_env_state(env)->native_direct_method_render_pass_insert_debug_marker_ref);
     return obj;
 }
 

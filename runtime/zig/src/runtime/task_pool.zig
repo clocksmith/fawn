@@ -23,6 +23,7 @@ const State = struct {
 
 var g_init_lock: std.Thread.Mutex = .{};
 var g_state = State{};
+var g_started = std.atomic.Value(bool).init(false);
 
 fn queueTail(state: *const State) usize {
     if (state.jobs.len == 0) return 0;
@@ -80,7 +81,15 @@ fn growQueueLocked(state: *State, allocator: std.mem.Allocator) !void {
 }
 
 pub fn ensureStartedWithAllocator(allocator: std.mem.Allocator) !void {
-    if (g_state.started) return;
+    return ensureStarted(allocator, spawnWorker);
+}
+
+fn spawnWorker(index: usize) std.Thread.SpawnError!std.Thread {
+    return std.Thread.spawn(.{}, workerMain, .{index});
+}
+
+fn ensureStarted(allocator: std.mem.Allocator, comptime spawn: fn (usize) std.Thread.SpawnError!std.Thread) !void {
+    if (g_started.load(.acquire)) return;
 
     g_init_lock.lock();
     defer g_init_lock.unlock();
@@ -88,17 +97,31 @@ pub fn ensureStartedWithAllocator(allocator: std.mem.Allocator) !void {
     if (g_state.started) return;
 
     try growQueueLocked(&g_state, allocator);
+    errdefer {
+        allocator.free(g_state.jobs);
+        g_state.jobs = &.{};
+    }
     const count = workerCount();
     const threads = try allocator.alloc(std.Thread, count);
     errdefer allocator.free(threads);
-
+    var started_count: usize = 0;
+    errdefer {
+        g_state.mutex.lock();
+        g_state.stop = true;
+        g_state.cond.broadcast();
+        g_state.mutex.unlock();
+        for (threads[0..started_count]) |thread| thread.join();
+        g_state.stop = false;
+    }
     for (threads, 0..) |*slot, index| {
-        slot.* = try std.Thread.spawn(.{}, workerMain, .{index});
+        slot.* = try spawn(index);
+        started_count += 1;
     }
 
     g_state.allocator = allocator;
     g_state.threads = threads;
     g_state.started = true;
+    g_started.store(true, .release);
 }
 
 pub fn submitWithAllocator(allocator: std.mem.Allocator, job: Job) !void {
@@ -136,6 +159,7 @@ pub fn shutdown() void {
     allocator.free(g_state.threads);
     allocator.free(g_state.jobs);
     g_state = .{};
+    g_started.store(false, .release);
 }
 
 test "task pool ring queue stores jobs without per-job nodes" {
@@ -173,4 +197,30 @@ test "task pool can shutdown and restart with the same allocator owner" {
     try ensureStartedWithAllocator(testing.allocator);
     try submitWithAllocator(testing.allocator, .{ .run = runCounterJob, .ctx = &counter });
     try waitForCounter(&counter, 2);
+}
+
+fn testInitializationAllocationFailures(allocator: std.mem.Allocator) !void {
+    defer shutdown();
+    try ensureStartedWithAllocator(allocator);
+}
+
+test "task pool initialization releases allocations and permits retry" {
+    try std.testing.checkAllAllocationFailures(std.testing.allocator, testInitializationAllocationFailures, .{});
+    try std.testing.expect(g_state.jobs.len == 0 and g_state.threads.len == 0);
+    try std.testing.expect(!g_started.load(.acquire));
+}
+
+test "task pool joins already started workers after a later spawn fails" {
+    if (workerCount() < 2) return error.SkipZigTest;
+    const Failing = struct {
+        fn spawn(index: usize) std.Thread.SpawnError!std.Thread {
+            if (index == 1) return error.ThreadQuotaExceeded;
+            return spawnWorker(index);
+        }
+    };
+    try std.testing.expectError(error.ThreadQuotaExceeded, ensureStarted(std.testing.allocator, Failing.spawn));
+    try std.testing.expect(g_state.jobs.len == 0 and g_state.threads.len == 0);
+    try std.testing.expect(!g_started.load(.acquire));
+    defer shutdown();
+    try ensureStartedWithAllocator(std.testing.allocator);
 }

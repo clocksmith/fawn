@@ -127,7 +127,7 @@ napi_value doe_request_adapter(napi_env env, napi_callback_info info) {
         future = pfn_wgpuInstanceRequestAdapter(inst, opts_ptr, callback_info);
     }
     if (future.id == 0) NAPI_THROW(env, "requestAdapter future unavailable");
-    if (!process_events_until(inst, &result.done, current_timeout_ns()))
+    if (!process_events_until(inst, &result.done, current_timeout_ns(env)))
         return throw_status_error(env, "DOE_REQUEST_ADAPTER_TIMEOUT", "requestAdapter timed out", result.status, result.message);
     if (result.status != WGPU_REQUEST_STATUS_SUCCESS || !result.adapter)
         return throw_status_error(env, "DOE_REQUEST_ADAPTER_ERROR", "requestAdapter failed", result.status, result.message);
@@ -472,7 +472,7 @@ napi_value doe_request_device(napi_env env, napi_callback_info info) {
         if (descriptor.defaultQueue.label.data) free((void*)descriptor.defaultQueue.label.data);
         NAPI_THROW(env, "requestDevice future unavailable");
     }
-    if (!process_events_until(inst, &result.done, current_timeout_ns())) {
+    if (!process_events_until(inst, &result.done, current_timeout_ns(env))) {
         free(required_features);
         if (descriptor.label.data) free((void*)descriptor.label.data);
         if (descriptor.defaultQueue.label.data) free((void*)descriptor.defaultQueue.label.data);
@@ -509,8 +509,8 @@ napi_value doe_device_release(napi_env env, napi_callback_info info) {
     NAPI_ASSERT_ARGC(env, info, 1);
     void* device = unwrap_ptr(env, _args[0]);
     if (device) {
-        DeviceCallbackBinding* lost = binding_take(&g_lost_bindings, device);
-        DeviceCallbackBinding* uncaptured = binding_take(&g_uncaptured_bindings, device);
+        DeviceCallbackBinding* lost = binding_take(&doe_env_state(env)->lost_bindings, device);
+        DeviceCallbackBinding* uncaptured = binding_take(&doe_env_state(env)->uncaptured_bindings, device);
         if (lost && pfn_doeNativeDeviceRegisterLostCallback) {
             pfn_doeNativeDeviceRegisterLostCallback(device, NULL, NULL);
         }

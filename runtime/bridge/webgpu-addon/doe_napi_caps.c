@@ -258,7 +258,7 @@ napi_value doe_device_set_uncaptured_error_callback(napi_env env, napi_callback_
     WGPUDevice device = unwrap_ptr(env, _args[0]);
     if (!device) NAPI_THROW(env, "Invalid device");
 
-    DeviceCallbackBinding* old = binding_take(&g_uncaptured_bindings, device);
+    DeviceCallbackBinding* old = binding_take(&doe_env_state(env)->uncaptured_bindings, device);
     if (old) {
         pfn_doeNativeDeviceSetUncapturedErrorCallback(device, NULL, NULL, NULL);
         release_binding(old);
@@ -285,7 +285,7 @@ napi_value doe_device_set_uncaptured_error_callback(napi_env env, napi_callback_
         NAPI_THROW(env, "Failed to create uncaptured-error callback bridge");
     }
     napi_unref_threadsafe_function(env, binding->tsfn);
-    binding_insert(&g_uncaptured_bindings, binding);
+    binding_insert(&doe_env_state(env)->uncaptured_bindings, binding);
     pfn_doeNativeDeviceSetUncapturedErrorCallback(device, uncaptured_error_native_callback, binding, NULL);
     napi_value result;
     napi_get_boolean(env, true, &result);
@@ -303,7 +303,7 @@ napi_value doe_device_register_lost_callback(napi_env env, napi_callback_info in
     WGPUDevice device = unwrap_ptr(env, _args[0]);
     if (!device) NAPI_THROW(env, "Invalid device");
 
-    DeviceCallbackBinding* old = binding_take(&g_lost_bindings, device);
+    DeviceCallbackBinding* old = binding_take(&doe_env_state(env)->lost_bindings, device);
     if (old) {
         release_binding(old);
     }
@@ -326,7 +326,7 @@ napi_value doe_device_register_lost_callback(napi_env env, napi_callback_info in
         NAPI_THROW(env, "Failed to create device-lost callback bridge");
     }
     napi_unref_threadsafe_function(env, binding->tsfn);
-    binding_insert(&g_lost_bindings, binding);
+    binding_insert(&doe_env_state(env)->lost_bindings, binding);
     pfn_doeNativeDeviceRegisterLostCallback(device, lost_native_callback, binding);
     napi_value result;
     napi_get_boolean(env, true, &result);
@@ -743,7 +743,7 @@ napi_value doe_set_timeout_ms(napi_env env, napi_callback_info info) {
     NAPI_ASSERT_ARGC(env, info, 1);
     uint32_t timeout_ms = 0;
     napi_get_value_uint32(env, _args[0], &timeout_ms);
-    g_timeout_ns = (uint64_t)timeout_ms * 1000000ULL;
+    doe_env_state(env)->timeout_ns = (uint64_t)timeout_ms * 1000000ULL;
     return NULL;
 }
 

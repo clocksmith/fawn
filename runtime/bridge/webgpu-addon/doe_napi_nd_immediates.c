@@ -422,7 +422,7 @@ napi_value native_direct_queue_on_submitted_work_done(napi_env env, napi_callbac
                     if (!result.done) pfn_wgpuInstanceProcessEvents(inst);
                 } else if (wait_status == WGPU_WAIT_STATUS_TIMED_OUT) {
                     pfn_wgpuInstanceProcessEvents(inst);
-                    if (monotonic_now_ns() - start_ns >= current_timeout_ns()) {
+                    if (monotonic_now_ns() - start_ns >= current_timeout_ns(env)) {
                         napi_throw_error(env, "DOE_QUEUE_TIMEOUT", "queue wait timed out");
                         return NULL;
                     }
@@ -488,7 +488,7 @@ napi_value native_direct_buffer_map_async(napi_env env, napi_callback_info info)
             WGPUFuture future = pfn_wgpuQueueOnSubmittedWorkDone(queue, cb_info);
             if (future.id == 0) NAPI_THROW(env, "queue work-done future unavailable");
             const uint64_t flush_started_ns = monotonic_now_ns();
-            if (!process_events_until(inst, &result.done, current_timeout_ns())) {
+            if (!process_events_until(inst, &result.done, current_timeout_ns(env))) {
                 return throw_status_error(env, "DOE_QUEUE_TIMEOUT", "queue wait timed out", result.status, result.message);
             }
             if (result.status != WGPU_QUEUE_WORK_DONE_STATUS_SUCCESS) {
@@ -517,7 +517,7 @@ napi_value native_direct_buffer_map_async(napi_env env, napi_callback_info info)
     } else if (pfn_wgpuBufferMapAsync2) {
         WGPUFuture future = pfn_wgpuBufferMapAsync2(buffer, (uint64_t)mode, (size_t)offset, (size_t)size, cb_info);
         if (future.id == 0) NAPI_THROW(env, "bufferMapAsync future unavailable");
-        if (!process_events_until(inst, &result.done, current_timeout_ns())) {
+        if (!process_events_until(inst, &result.done, current_timeout_ns(env))) {
             return throw_status_error(env, "DOE_BUFFER_MAP_TIMEOUT", "bufferMapAsync timed out", result.status, result.message);
         }
         if (result.status != WGPU_MAP_ASYNC_STATUS_SUCCESS) {
@@ -708,7 +708,7 @@ napi_value native_direct_buffer_map_read_copy_unmap(napi_env env, napi_callback_
             WGPUFuture future = pfn_wgpuQueueOnSubmittedWorkDone(queue, cb_info);
             if (future.id == 0) NAPI_THROW(env, "queue work-done future unavailable");
             const uint64_t wait_started_ns = monotonic_now_ns();
-            if (!process_events_until(inst, &qresult.done, current_timeout_ns())) {
+            if (!process_events_until(inst, &qresult.done, current_timeout_ns(env))) {
                 NAPI_THROW(env, "queue wait timed out in mapReadCopyUnmap");
             }
             queue_wait_completed_ms = native_direct_elapsed_ms(wait_started_ns);
@@ -733,7 +733,7 @@ napi_value native_direct_buffer_map_read_copy_unmap(napi_env env, napi_callback_
     } else if (pfn_wgpuBufferMapAsync2) {
         WGPUFuture future = pfn_wgpuBufferMapAsync2(buffer, (uint64_t)mode, (size_t)offset, (size_t)size, cb_info);
         if (future.id == 0) NAPI_THROW(env, "mapReadCopyUnmap: map future unavailable");
-        if (!process_events_until(inst, &result.done, current_timeout_ns())) {
+        if (!process_events_until(inst, &result.done, current_timeout_ns(env))) {
             NAPI_THROW(env, "mapReadCopyUnmap: map timed out");
         }
     } else {

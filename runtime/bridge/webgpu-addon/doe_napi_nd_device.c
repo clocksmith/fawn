@@ -453,8 +453,8 @@ napi_value native_direct_device_destroy(napi_env env, napi_callback_info info) {
     NativeDirectHandleCache* device_cache = native_direct_get_handle_cache(env, this_arg);
     WGPUDevice device = device_cache ? (WGPUDevice)device_cache->native : native_direct_unwrap_external_prop(env, this_arg, DOE_DIRECT_NATIVE);
     if (device) {
-        DeviceCallbackBinding* lost = binding_take(&g_lost_bindings, device);
-        DeviceCallbackBinding* uncaptured = binding_take(&g_uncaptured_bindings, device);
+        DeviceCallbackBinding* lost = binding_take(&doe_env_state(env)->lost_bindings, device);
+        DeviceCallbackBinding* uncaptured = binding_take(&doe_env_state(env)->uncaptured_bindings, device);
         if (lost && pfn_doeNativeDeviceRegisterLostCallback) {
             pfn_doeNativeDeviceRegisterLostCallback(device, NULL, NULL);
         }

@@ -98,7 +98,7 @@ napi_value doe_buffer_map_sync(napi_env env, napi_callback_info info) {
         WGPUFuture future = pfn_wgpuBufferMapAsync2(buf, (uint64_t)mode,
             (size_t)offset_i, (size_t)size_i, cb_info);
         if (future.id == 0) NAPI_THROW(env, "bufferMapAsync future unavailable");
-        if (!process_events_until(inst, &result.done, current_timeout_ns()))
+        if (!process_events_until(inst, &result.done, current_timeout_ns(env)))
             return throw_status_error(env, "DOE_BUFFER_MAP_TIMEOUT", "bufferMapAsync timed out", result.status, result.message);
         if (result.status != WGPU_MAP_ASYNC_STATUS_SUCCESS)
             return throw_status_error(env, "DOE_BUFFER_MAP_ERROR", "bufferMapAsync failed", result.status, result.message);
@@ -264,7 +264,7 @@ napi_value doe_buffer_map_read_copy_unmap(napi_env env, napi_callback_info info)
             WGPUFuture future = pfn_wgpuQueueOnSubmittedWorkDone(queue, cb_info);
             if (future.id == 0) NAPI_THROW(env, "bufferMapReadCopyUnmap: queue work-done future unavailable");
             const uint64_t wait_started_ns = monotonic_now_ns();
-            if (!process_events_until(inst, &qresult.done, current_timeout_ns())) {
+            if (!process_events_until(inst, &qresult.done, current_timeout_ns(env))) {
                 NAPI_THROW(env, "bufferMapReadCopyUnmap: queue wait timed out");
             }
             wait_completed_ns = monotonic_now_ns() - wait_started_ns;
@@ -291,7 +291,7 @@ napi_value doe_buffer_map_read_copy_unmap(napi_env env, napi_callback_info info)
     } else if (pfn_wgpuBufferMapAsync2) {
         WGPUFuture future = pfn_wgpuBufferMapAsync2(buf, (uint64_t)mode, (size_t)offset_i, (size_t)size_i, cb_info);
         if (future.id == 0) NAPI_THROW(env, "bufferMapReadCopyUnmap: bufferMapAsync future unavailable");
-        if (!process_events_until(inst, &result.done, current_timeout_ns()))
+        if (!process_events_until(inst, &result.done, current_timeout_ns(env)))
             return throw_status_error(env, "DOE_BUFFER_MAP_TIMEOUT", "bufferMapReadCopyUnmap: bufferMapAsync timed out", result.status, result.message);
         if (result.status != WGPU_MAP_ASYNC_STATUS_SUCCESS)
             return throw_status_error(env, "DOE_BUFFER_MAP_ERROR", "bufferMapReadCopyUnmap: bufferMapAsync failed", result.status, result.message);
