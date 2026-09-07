@@ -16,6 +16,21 @@ from bench.gates.compute_program_gate import digest
 ROOT = Path(__file__).resolve().parents[2]
 
 
+def validate_process_result(
+    result: subprocess.CompletedProcess[str], label: str,
+) -> None:
+    """Reject failed processes and native validation errors before qualification."""
+    if result.returncode:
+        raise ValueError(f'{label}: exit {result.returncode}; see retained stdout/stderr')
+    for stream, text in [('stdout', result.stdout), ('stderr', result.stderr)]:
+        for line in text.splitlines():
+            if line.startswith('Validation Error:') or 'SYNC-HAZARD' in line:
+                raise ValueError(
+                    f'{label}: Vulkan validation error in {stream}; '
+                    'see retained stdout/stderr'
+                )
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', type=Path, required=True)
@@ -46,8 +61,7 @@ def main() -> int:
                                 capture_output=True, text=True, check=False, timeout=args.timeout_ms / 1000)
         (output / f'{label}.stdout').write_text(result.stdout)
         (output / f'{label}.stderr').write_text(result.stderr)
-        if result.returncode:
-            raise ValueError(f'{label}: exit {result.returncode}; see retained stdout/stderr')
+        validate_process_result(result, label)
         return result.stdout
 
     try:
