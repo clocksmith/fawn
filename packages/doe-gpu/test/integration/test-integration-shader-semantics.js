@@ -26,8 +26,8 @@ fn change(p: ptr<function, u32>) { *p += 5u; }
   data[id.x * 5u] = x + x;
   x += 3u;
   data[id.x * 5u + 1u] = x;
-  let alias = &x;
-  change(alias);
+  let pointerAlias = &x;
+  change(pointerAlias);
   data[id.x * 5u + 2u] = x;
   if ((id.x % 2u) == 0u) { x += 10u; } else { x += 20u; }
   data[id.x * 5u + 3u] = x;
@@ -37,10 +37,71 @@ fn change(p: ptr<function, u32>) { *p += 5u; }
 const POINTER_EXPECTED = [2, 4, 9, 19, 22, 4, 5, 10, 30, 33,
   6, 6, 11, 21, 24, 8, 7, 12, 32, 35];
 const CASES = [
+  {
+    label: 'private default values and mutation are isolated per invocation',
+    code: `struct State { vector: vec4f, matrix: mat2x2f, values: array<u32, 2> }
+      @group(0) @binding(0) var<storage, read_write> data: array<u32>;
+      var<private> state: State;
+      var<private> counter: u32;
+      var<private> flag: bool;
+      var<private> initial: u32 = 17u;
+      @compute @workgroup_size(1) fn main(@builtin(global_invocation_id) id: vec3u) {
+        let offset = id.x * 4u;
+        data[offset] = counter + u32(flag);
+        counter += id.x + 1u;
+        data[offset + 1u] = counter;
+        data[offset + 2u] = u32(state.vector.x + state.matrix[1][0]) + state.values[1];
+        data[offset + 3u] = initial;
+        state.values[1] = counter; flag = true;
+      }`,
+    dispatch: 4, expected: [0, 1, 0, 17, 0, 2, 0, 17, 0, 3, 0, 17, 0, 4, 0, 17],
+  },
+  {
+    label: 'loop invariants preserve nested branches and modular overflow',
+    code: `@group(0) @binding(0) var<storage, read_write> data: array<u32>;
+      @compute @workgroup_size(1) fn main() {
+        let base = data[0]; let stride = data[1]; var sum = 0u;
+        for (var i = 0u; i < 4u; i++) {
+          if (i != 1u) { sum += base * stride + i; }
+          for (var j = 0u; j < 2u; j++) { sum += base * stride + j; }
+        }
+        data[0] = sum;
+        data[1] = (base << 31u) * stride;
+      }`,
+    expected: [284, 0x80000000],
+  },
+  {
+    label: 'loop calls and storage mutation retain evaluation order',
+    code: `@group(0) @binding(0) var<storage, read_write> data: array<u32>;
+      fn change(p: ptr<function, u32>) { *p += 2u; }
+      @compute @workgroup_size(1) fn main() {
+        var base = data[0]; let stride = data[1]; var localSum = 0u; var storageSum = 0u;
+        let pointerAlias = &base;
+        for (var i = 0u; i < 4u; i++) {
+          localSum += base * stride;
+          storageSum += data[0] * stride;
+          change(pointerAlias); data[0]++;
+        }
+        data[0] = localSum; data[1] = storageSum; data[2] = base;
+      }`,
+    expected: [160, 130, 13],
+  },
+  {
+    label: 'zero-iteration loops do not evaluate calls or division',
+    code: `@group(0) @binding(0) var<storage, read_write> data: array<u32>;
+      var<private> calls: u32;
+      fn next() -> u32 { calls++; return calls; }
+      @compute @workgroup_size(1) fn main() {
+        let base = data[0]; let divisor = data[1]; var sum = 0u;
+        for (var i = 0u; i < 0u; i++) { sum += next() + base / divisor; }
+        data[0] = sum; data[1] = calls;
+      }`,
+    expected: [0, 0],
+  },
   { label: 'named pointer alias mutation', code: POINTER_ALIAS, dispatch: 4,
     expected: POINTER_EXPECTED },
   { label: 'direct pointer mutation',
-    code: POINTER_ALIAS.replace('let alias = &x;\n  change(alias);', 'change(&x);'),
+    code: POINTER_ALIAS.replace('let pointerAlias = &x;\n  change(pointerAlias);', 'change(&x);'),
     dispatch: 4, expected: POINTER_EXPECTED },
   {
     label: 'pointer member and captured index',
@@ -194,6 +255,69 @@ async function runCase({ label, code, entryPoint = 'main', dispatch = 1, expecte
   }
 }
 
+async function runUniformLoopCase() {
+  const code = `struct Params { base: u32, stride: u32, count: u32, padding: u32 }
+    @group(0) @binding(0) var<uniform> params: Params;
+    @group(0) @binding(1) var<storage, read_write> data: array<u32>;
+    @compute @workgroup_size(1) fn main() {
+      var sum = 0u;
+      for (var i = 0u; i < params.count; i++) { sum += params.base * params.stride + i; }
+      data[0] = sum; data[1] = params.count;
+    }`;
+  const uniform = device.createBuffer({
+    size: 16, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+  });
+  const output = device.createBuffer({
+    size: 8, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC,
+  });
+  const staging = device.createBuffer({
+    size: 8, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST,
+  });
+  const resources = [];
+  try {
+    const module = device.createShaderModule({ code });
+    resources.push(module);
+    const pipeline = device.createComputePipeline({
+      layout: 'auto', compute: { module, entryPoint: 'main' },
+    });
+    resources.push(pipeline);
+    const layout = pipeline.getBindGroupLayout(0);
+    resources.push(layout);
+    const group = device.createBindGroup({ layout, entries: [
+      { binding: 0, resource: { buffer: uniform } },
+      { binding: 1, resource: { buffer: output } },
+    ] });
+    resources.push(group);
+    for (const { input, expected } of [
+      { input: [2, 5, 3, 0], expected: [33, 3] },
+      { input: [7, 9, 4, 0], expected: [258, 4] },
+      { input: [0xffffffff, 2, 2, 0], expected: [0xfffffffd, 2] },
+      { input: [7, 9, 0, 0], expected: [0, 0] },
+    ]) {
+      device.queue.writeBuffer(uniform, 0, new Uint32Array(input));
+      const encoder = device.createCommandEncoder();
+      const pass = encoder.beginComputePass();
+      pass.setPipeline(pipeline);
+      pass.setBindGroup(0, group);
+      pass.dispatchWorkgroups(1);
+      pass.end();
+      encoder.copyBufferToBuffer(output, 0, staging, 0, 8);
+      device.queue.submit([encoder.finish()]);
+      await staging.mapAsync(GPUMapMode.READ);
+      const actual = Array.from(new Uint32Array(staging.getMappedRange().slice(0)));
+      staging.unmap();
+      console.log(JSON.stringify({ label: 'uniform loop inputs', input, actual, expected,
+        sourceSha256: createHash('sha256').update(code).digest('hex') }));
+      assert.deepEqual(actual, expected, 'changed uniform input on reused pipeline');
+    }
+  } finally {
+    for (const resource of resources.reverse()) releaseOwnedResource(resource);
+    uniform.destroy();
+    output.destroy();
+    staging.destroy();
+  }
+}
+
 async function runMappedWriteCase() {
   const source = device.createBuffer({
     size: 16, usage: GPUBufferUsage.MAP_WRITE | GPUBufferUsage.COPY_SRC, mappedAtCreation: true,
@@ -324,6 +448,7 @@ try {
     ...CASES.flatMap(testCase => ['batched', 'native', 'dispatch-copy', 'multi-buffer'].map(path => ({
       label: `${testCase.label} / ${path}`, run: () => runCase(testCase, path),
     }))),
+    { label: 'changed uniform loop inputs', run: runUniformLoopCase },
     { label: 'mapped writes use native contents', run: runMappedWriteCase },
     { label: 'integer render clear', run: runUintRenderClearCase },
     { label: 'texture dimensions in rendering', run: runTextureRenderCase },
