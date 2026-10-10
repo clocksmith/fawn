@@ -7,15 +7,19 @@ export function observeDevicePhases(device, events, phase) {
       const start = performance.now();
       const scope = phase();
       const metadata = detail(args);
-      const result = original(...args);
+      const record = (failed = false, error) => {
+        const end = performance.now();
+        events.push({ phase: scope, method, startedMs: start, endedMs: end, durationMs: end - start,
+          ...metadata, ...(failed ? { failure: error?.stack ?? String(error) } : {}) });
+      };
+      let result;
+      try { result = original(...args); }
+      catch (error) { record(true, error);throw error; }
       if (result && typeof result.then === 'function') {
-        return result.then((value) => {
-          events.push({ phase: scope, method, startedMs: start, endedMs: performance.now(), durationMs: performance.now() - start, ...metadata });return value;
-        }, (error) => {
-          events.push({ phase: scope, method, startedMs: start, endedMs: performance.now(), durationMs: performance.now() - start, failure: error.message, ...metadata });throw error;
-        });
+        return result.then((value) => { record();return value; },
+          (error) => { record(true, error);throw error; });
       }
-      events.push({ phase: scope, method, startedMs: start, endedMs: performance.now(), durationMs: performance.now() - start, ...metadata });
+      record();
       return result;
     };
   };
@@ -31,6 +35,7 @@ export function observeDevicePhases(device, events, phase) {
       bytes: descriptor.size, label: descriptor.label ?? '' });
     instrument(buffer, 'mapAsync', () => ({ label: buffer.label ?? '' }));
     instrument(buffer, 'getMappedRange', () => ({ label: buffer.label ?? '' }));
+    instrument(buffer, 'destroy', () => ({ bytes: descriptor.size, label: buffer.label ?? '' }));
     return buffer;
   };
   for (const method of ['submit', 'onSubmittedWorkDone', 'writeBuffer']) instrument(device.queue, method);
