@@ -84,6 +84,13 @@ response with the surface. [Transition diagnostics](../../reports/maintenance/20
 bind the input response to an independent ODE reference, GPU fluid state and
 desktop/emulated mobile controls.
 
+The magnetic surface has a black body with spectral color concentrated in curved
+reflection bands. Surface-coordinate gradients preserve the appearance across
+simulation grid sizes; normalized lighting avoids a bright wash over flat areas.
+[Material diagnostics](../../reports/maintenance/20261011-fawn-magnetic-material/README.md)
+retain matched-field GPU pixel comparisons and the existing interaction checks.
+The fluid simulation and magnet response are unchanged by this material revision.
+
 Prismatic Fluids consumes pointer displacement once as an immediate stroke
 impulse. Velocity and dye cover the segment between sampled pointer positions;
 presses add a stronger impulse and color burst, including taps between frames.

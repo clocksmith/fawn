@@ -1,0 +1,21 @@
+{
+  "classification": "Chrome offscreen shader pixel and application diagnostics; emulated mobile viewports",
+  "sources": {
+    "browser/chromium/resources/fawn-magnetic-fluids.html": "5a3383ae0ecf77a29317fad7e86699106bdf4487ad4a1b086632e5f4b895b003",
+    "browser/chromium/scripts/test-fawn-magnetic-material.mjs": "1cdced5e9f9056744f95bd0c6c974682a1387fa7e63ff37bc46d21cce195a9f2",
+    "browser/chromium/scripts/test-fawn-magnetic-transition.mjs": "ab135c4810abe8462f1660aca9c7e77ae9920fb00f1667c0f244e4f1c019efb7"
+  },
+  "artifacts": {
+    "README.md": "fd0a9235e3123fb9c62f41907399399ede21433f45c4fea4d8d2724f89e1d3da",
+    "default-grid-baseline.png": "0e2397002a1479a421b6909636ffcff6639d10b1ffafeeb4f56e617fc4bd3043",
+    "default-grid-candidate.png": "ad9192fa1ac771f2050b8ec8fc6f351ce575d4d4affa59102e73476472ed75a8",
+    "flat-baseline.png": "34a8cee613dab868581a18e314bdd8b314ed980020ab995886cb0451445dd940",
+    "flat-candidate.png": "145dc7256a810cc63a0babfeb348f399a0ec09c951853d8064ccc85383f66010",
+    "idle-baseline.png": "05122727ed5159d86ca1d68b0a774497c27babeec1a0c46d728fca14268c077a",
+    "idle-candidate.png": "6c417597bf43cfebbc63ba83bd9ebfea21474b0e3b7e3b95b1a54e728d3fe7ee",
+    "interaction.json": "7cb98aa1e8d9504b840065b8870d825ead3fa4ba4956a391d4a98c678ad07720",
+    "pressed-baseline.png": "75b99bbc8812300895e2d6aab94c950190edd7d106e2a7b31206703214f5797b",
+    "pressed-candidate.png": "b10cb99f84cc4e634e7ac76c5d0f05c7e16b8bf1c1193eb0b302157aedeaaa72",
+    "results.json": "8e2dc8b58d242e2d4567bdcdbc9120c1a0ea8bb8688bc8ad097ad7293425afb8"
+  }
+}
