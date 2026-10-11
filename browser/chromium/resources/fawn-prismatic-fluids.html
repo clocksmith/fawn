@@ -122,6 +122,15 @@ summary::after { content: ' +'; }
 <script>
 const WORKGROUP_SIZE = 16;
 const SIM_DENSITY_SCALE = 0.5;
+const PRESS_STRENGTH = 1.4;
+const HOVER_STRENGTH = 0.28;
+const POINTER_RADIUS = 0.10;
+const DRAG_GAIN = 8.0;
+const PRESS_IMPULSE = 0.65;
+const SWIRL_ACCELERATION = 0.9;
+const MAX_FLUID_SPEED = 6.0;
+const DYE_RATE = 4.0;
+const PRESS_DYE = 0.18;
 
 const SHARED_HELPERS = `
 struct Params {
@@ -145,6 +154,15 @@ fn uv_to_grid(uv: vec2<f32>) -> vec2<f32> {
 
 fn safe_norm(v: vec2<f32>) -> vec2<f32> {
   return v / max(length(v), 1e-5);
+}
+
+fn pointer_falloff(uv: vec2<f32>, radius: f32) -> f32 {
+  // A capsule covers the entire stroke, including movement between rendered frames.
+  let stroke = u.pointerDelta.xy;
+  let start = u.mouse.xy - stroke;
+  let along = clamp(dot(uv - start, stroke) / max(dot(stroke, stroke), 1e-8), 0.0, 1.0);
+  let distance = length(uv - (start + along * stroke));
+  return (1.0 - smoothstep(0.0, radius, distance)) * u.mouse.z;
 }
 
 `;
@@ -186,14 +204,14 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
   var vel = sample_vel(prevUv) * 0.989;
 
   let delta = uv - u.mouse.xy;
-  let dist = length(delta);
-  let falloff = smoothstep(u.mouse.w, 0.0, dist) * u.mouse.z;
+  let falloff = pointer_falloff(uv, u.mouse.w);
   let drag = u.pointerDelta.xy;
-  let dragLen = max(length(drag), 1e-5);
-  let dragDir = drag / dragLen;
   let swirl = vec2<f32>(-delta.y, delta.x);
-  let swirlLen = max(length(swirl), 1e-5);
-  vel += (dragDir * dragLen * 1.55 + (swirl / swirlLen) * 0.08) * falloff * u.sim.x;
+  // Drag is displacement: consume its impulse once, without another dt factor.
+  vel += drag * ${DRAG_GAIN} * falloff;
+  vel += (safe_norm(swirl) * ${SWIRL_ACCELERATION} * u.sim.x
+    + safe_norm(delta) * ${PRESS_IMPULSE} * u.pointerDelta.z) * falloff;
+  vel *= min(1.0, ${MAX_FLUID_SPEED} / max(length(vel), 1e-5));
 
   if (gid.x <= 1u || gid.y <= 1u || gid.x >= width - 2u || gid.y >= height - 2u) {
     vel *= 0.0;
@@ -368,9 +386,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
   let prevUv = clamp(uv - vel * u.sim.x, u.grid.zw * 0.5, vec2<f32>(1.0) - u.grid.zw * 0.5);
   var dye = sample_dye(prevUv) * 0.992;
 
-  let delta = uv - u.mouse.xy;
-  let dist = length(delta);
-  let falloff = smoothstep(u.mouse.w * 0.85, 0.0, dist) * u.mouse.z;
+  let falloff = pointer_falloff(uv, u.mouse.w * 0.85);
   let tint = 0.5 + 0.5 * cos(
     vec3<f32>(0.0, 2.1, 4.2)
     + vec3<f32>(
@@ -379,7 +395,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
       u.sim.y * 0.19 + (uv.x + uv.y) * 5.0
     )
   );
-  dye += tint * (falloff * 0.036);
+  dye += tint * falloff * (${DYE_RATE} * u.sim.x + ${PRESS_DYE} * u.pointerDelta.z);
   dye *= 0.996;
   dyeDst[idx_at(i32(gid.x), i32(gid.y))] = vec4<f32>(dye, 1.0);
 }
@@ -540,7 +556,8 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
   let advectDyeBindGroups = [];
   let renderBindGroups = [];
 
-  const pointer = { x: 0.5, y: 0.5, hover: false, down: false, dx: 0.0, dy: 0.0 };
+  const pointer = { x: 0.5, y: 0.5, hover: false, down: false,
+    dx: 0, dy: 0, press: 0, strokeForce: 0 };
   const simGrid = () => Math.max(96, Math.floor(currentGrid * SIM_DENSITY_SCALE));
 
   function resizeGraphCanvas() {
@@ -758,12 +775,15 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
     schedule();
   }
 
-  function updatePointer(event) {
+  function updatePointer(event, moving = true) {
     const rect = canvas.getBoundingClientRect();
     const nextX = rect.width > 0 ? (event.clientX - rect.left) / rect.width : 0.5;
     const nextY = rect.height > 0 ? 1.0 - (event.clientY - rect.top) / rect.height : 0.5;
-    pointer.dx += nextX - pointer.x;
-    pointer.dy += nextY - pointer.y;
+    if (moving && !paused) {
+      pointer.dx += nextX - pointer.x;
+      pointer.dy += nextY - pointer.y;
+      pointer.strokeForce = Math.max(pointer.strokeForce, pointer.down ? PRESS_STRENGTH : HOVER_STRENGTH);
+    }
     pointer.x = nextX;
     pointer.y = nextY;
   }
@@ -830,7 +850,7 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
     running = true;
   }
 
-  const MAX_PENDING_FRAMES = 2;
+  const MAX_PENDING_FRAMES = 1;
   const METRIC_INTERVAL_MS = 500;
   let pendingFrames = 0;
   let raf = 0;
@@ -908,7 +928,8 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
     const dtMs = Math.max(0, Math.min(33, now - lastFrameTime));
     lastFrameTime = now;
     const dt = dtMs / 1000;
-    const mouseForce = pointer.hover ? (pointer.down ? 0.82 : 0.28) : 0.0;
+    const mouseForce = Math.max(pointer.hover ? (pointer.down ? PRESS_STRENGTH : HOVER_STRENGTH) : 0,
+      pointer.press * PRESS_STRENGTH, pointer.strokeForce);
     uniformData[0] = effectiveGrid;
     uniformData[1] = effectiveGrid;
     uniformData[2] = 1 / effectiveGrid;
@@ -916,7 +937,7 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
     uniformData[4] = pointer.x;
     uniformData[5] = pointer.y;
     uniformData[6] = mouseForce;
-    uniformData[7] = 0.10;
+    uniformData[7] = POINTER_RADIUS;
     uniformData[8] = dt * 0.82;
     if (!paused) simulationTime = now - pausedMs;
     uniformData[9] = simulationTime * 0.001;
@@ -924,11 +945,13 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
     uniformData[11] = 0.95;
     uniformData[12] = pointer.dx;
     uniformData[13] = pointer.dy;
-    uniformData[14] = 0.0;
+    uniformData[14] = pointer.press;
     uniformData[15] = 0.0;
     device.queue.writeBuffer(uniformBuffer, 0, uniformData);
-    pointer.dx *= 0.72;
-    pointer.dy *= 0.72;
+    pointer.dx = 0;
+    pointer.dy = 0;
+    pointer.press = 0;
+    pointer.strokeForce = 0;
 
     const encoder = device.createCommandEncoder();
     if (!paused) {
@@ -1010,6 +1033,8 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
       pointer.down = false;
       pointer.dx = 0;
       pointer.dy = 0;
+      pointer.press = 0;
+      pointer.strokeForce = 0;
     } else {
       pausedMs += now - pausedSince;
     }
@@ -1025,19 +1050,40 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
   restartButton.addEventListener('click', () => {
     pointer.dx = 0;
     pointer.dy = 0;
+    pointer.press = 0;
+    pointer.strokeForce = 0;
     rebuildSimulationBuffers();
   });
-  canvas.addEventListener('pointerenter', () => { pointer.hover = true; });
-  canvas.addEventListener('pointerleave', () => { pointer.hover = false; pointer.down = false; });
+  canvas.addEventListener('pointerenter', event => { updatePointer(event, false); pointer.hover = true; });
+  canvas.addEventListener('pointerleave', () => { if (!pointer.down) pointer.hover = false; });
   canvas.addEventListener('pointermove', (event) => updatePointer(event));
   canvas.addEventListener('pointerdown', (event) => {
-    updatePointer(event);
+    updatePointer(event, false);
+    pointer.dx = 0;
+    pointer.dy = 0;
+    pointer.press = paused ? 0 : 1;
     pointer.down = true;
     pointer.hover = true;
     canvas.setPointerCapture(event.pointerId);
   });
-  canvas.addEventListener('pointercancel', () => { pointer.down = false; pointer.hover = false; });
-  addEventListener('pointerup', () => { pointer.down = false; });
+  function cancelPointer() {
+    pointer.down = false;
+    pointer.hover = false;
+    pointer.dx = 0;
+    pointer.dy = 0;
+    pointer.press = 0;
+    pointer.strokeForce = 0;
+  }
+  canvas.addEventListener('pointercancel', cancelPointer);
+  canvas.addEventListener('lostpointercapture', () => { if (pointer.down) cancelPointer(); });
+  addEventListener('blur', cancelPointer);
+  addEventListener('pointerup', event => {
+    pointer.down = false;
+    const rect = canvas.getBoundingClientRect();
+    pointer.hover = event.pointerType === 'mouse' && event.target === canvas
+      && event.clientX >= rect.left && event.clientX <= rect.right
+      && event.clientY >= rect.top && event.clientY <= rect.bottom;
+  });
   addEventListener('resize', () => resizeCanvas());
 
   try {

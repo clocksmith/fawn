@@ -84,6 +84,14 @@ response with the surface. [Transition diagnostics](../../reports/maintenance/20
 bind the input response to an independent ODE reference, GPU fluid state and
 desktop/emulated mobile controls.
 
+Prismatic Fluids consumes pointer displacement once as an immediate stroke
+impulse. Velocity and dye cover the segment between sampled pointer positions;
+presses add a stronger impulse and color burst, including taps between frames.
+Input history no longer decays into later frames, and only one rendering frame
+may remain in flight. [Response diagnostics](../../reports/maintenance/20261011-fawn-prismatic-response/README.md)
+retain preceding-source comparisons, first-frame GPU fluid state, mouse/touch
+release and cancellation, and the existing control checks.
+
 [Retained application evidence](../../reports/maintenance/20261005-fawn-demo-optimization/README.md)
 binds the source HTML to physical Chrome GPU state comparisons, screenshot
 identity, field-transition checks, controls, lifecycle checks, and alternating
