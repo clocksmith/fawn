@@ -10,6 +10,7 @@ const { chromium } = await import(process.env.FAWN_PLAYWRIGHT_MODULE || 'playwri
 const output = resolve(process.env.FAWN_REPORT_DIR || 'bench/out/fawn-demo-switcher');
 const baselineRef = 'b599d2e3a8ad09fa3aff66a2d08d3fa1515647fb';
 const names = ['start', 'magnetic-fluids', 'prismatic-fluids'];
+const labels = ['Drift', 'Black Opal', 'Chroma'];
 const sources = {};
 const hash = source => createHash('sha256').update(source).digest('hex');
 await mkdir(output, { recursive: true });
@@ -126,6 +127,24 @@ try {
       assert.ok(box.x >= 0 && box.y >= 0 && box.x + box.width <= viewport.width
         && box.y + box.height <= viewport.height);
       assert.equal(await menu.locator('a').count(), names.length);
+      assert.deepEqual(await menu.locator('a').allTextContents(), labels);
+      assert.equal(await page.title(), `${labels[index]} · Fawn`);
+      const summaryBox = await summary.boundingBox();
+      assert.ok(Math.abs(box.x - summaryBox.x) < 1 && Math.abs(box.width - summaryBox.width) < 1,
+        'Menu and trigger share their left and right edges');
+      assert.ok(summaryBox.height >= 44, 'Trigger keeps its touch target');
+      const alignment = await page.evaluate(() => {
+        const summary = document.querySelector('.demo-switcher > summary');
+        const range = document.createRange(); range.selectNodeContents(summary);
+        const triggerX = range.getBoundingClientRect().x;
+        return [...document.querySelectorAll('.demo-menu a')].map(link => {
+          range.selectNodeContents(link);
+          return { textX: range.getBoundingClientRect().x, height: link.getBoundingClientRect().height,
+            triggerX };
+        });
+      });
+      assert.ok(alignment.every(row => row.height >= 44 && Math.abs(row.textX - row.triggerX) < 1),
+        'Rows retain touch targets and labels align with the trigger');
       assert.equal(await menu.locator('[aria-current="page"]').getAttribute('href'), `./fawn-${name}.html`);
       await page.keyboard.press('Escape');
       assert.equal(await menu.isVisible(), false);
@@ -145,6 +164,7 @@ try {
       assert.equal(await page.locator('.demo-menu [aria-current="page"]').getAttribute('href'), `./fawn-${next}.html`);
       assert.deepEqual(await page.evaluate(() => window.switcherTest.errors), []);
       report.navigation.push({ name, next, screen, menuBox: box,
+        labels, title: `${labels[index]} · Fawn`, summaryBox, alignment,
         keyboard: 'open and Escape restore focus', dismissal: 'outside canvas and Settings', gpuStartup: 'passed' });
       await context.close();
     }

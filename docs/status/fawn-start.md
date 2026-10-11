@@ -22,9 +22,12 @@ directly to the fluid fixture rather
 than requiring a public navigation link.
 
 The three hosted pages have a compact Backgrounds disclosure and no instruction
-subtitle block.
-It marks the current page and switches between the particle
-cycle, Magnetic Fluids, and Prismatic Fluids. Particle Trails and Image Lab are
+subtitle block. Its trigger and dropdown share their width and text alignment;
+rows retain touch targets and a current-selection checkmark.
+It switches between Drift (the particle cycle), Black Opal (Magnetic Fluids),
+and Chroma (Prismatic Fluids). [Menu diagnostics](../../reports/maintenance/20261011-fawn-background-menu/README.md)
+retain desktop and emulated mobile layout, naming, keyboard and navigation checks.
+Particle Trails and Image Lab are
 excluded from the menu and hosting package, and retained as repository-only
 benchmarks. The
 main page continues cycling its own particle fields; choosing another simulator

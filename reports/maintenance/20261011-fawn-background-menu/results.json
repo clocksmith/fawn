@@ -1,0 +1,526 @@
+{
+  "classification": "Chrome application diagnostics; no Doe-vs-Dawn performance claim",
+  "observedAt": "2026-10-11T20:33:31.179Z",
+  "browser": "136.0.7103.59",
+  "baselineRef": "b599d2e3a8ad09fa3aff66a2d08d3fa1515647fb",
+  "sourceHashes": {
+    "start": {
+      "candidate": "b078f9c4a22ee07b971c7d26f82447158329a8c5d286f59c1380f0d72f80e3a7",
+      "baseline": "76cbcd389581864e8c407fc06360425db75792aef955001b96b316092cc03aba"
+    },
+    "magnetic-fluids": {
+      "candidate": "fc241943cd8dfe1240673861d012dd5838e321ccfd260cbbd8dfbcd9b417f5f2",
+      "baseline": "573f32ffaf3e666ce468137081e62110e90b9707476d66ecbe0b29e7ae54dee8"
+    },
+    "prismatic-fluids": {
+      "candidate": "7f4f89b9a69579730bdf9439f9122e0fd418cd57c7980a15557b591e974c4fbb",
+      "baseline": "aa62de53be413b5156fb2a3f9e74593ad05a896017260a061410fc0515791c33"
+    }
+  },
+  "navigation": [
+    {
+      "name": "start",
+      "next": "magnetic-fluids",
+      "screen": "desktop",
+      "menuBox": {
+        "x": 1252,
+        "y": 72,
+        "width": 160,
+        "height": 142
+      },
+      "labels": [
+        "Drift",
+        "Black Opal",
+        "Chroma"
+      ],
+      "title": "Drift · Fawn",
+      "summaryBox": {
+        "x": 1252,
+        "y": 24,
+        "width": 160,
+        "height": 44
+      },
+      "alignment": [
+        {
+          "textX": 1264,
+          "height": 44,
+          "triggerX": 1264
+        },
+        {
+          "textX": 1264,
+          "height": 44,
+          "triggerX": 1264
+        },
+        {
+          "textX": 1264,
+          "height": 44,
+          "triggerX": 1264
+        }
+      ],
+      "keyboard": "open and Escape restore focus",
+      "dismissal": "outside canvas and Settings",
+      "gpuStartup": "passed"
+    },
+    {
+      "name": "magnetic-fluids",
+      "next": "prismatic-fluids",
+      "screen": "desktop",
+      "menuBox": {
+        "x": 1252,
+        "y": 72,
+        "width": 160,
+        "height": 142
+      },
+      "labels": [
+        "Drift",
+        "Black Opal",
+        "Chroma"
+      ],
+      "title": "Black Opal · Fawn",
+      "summaryBox": {
+        "x": 1252,
+        "y": 24,
+        "width": 160,
+        "height": 44
+      },
+      "alignment": [
+        {
+          "textX": 1264,
+          "height": 44,
+          "triggerX": 1264
+        },
+        {
+          "textX": 1264,
+          "height": 44,
+          "triggerX": 1264
+        },
+        {
+          "textX": 1264,
+          "height": 44,
+          "triggerX": 1264
+        }
+      ],
+      "keyboard": "open and Escape restore focus",
+      "dismissal": "outside canvas and Settings",
+      "gpuStartup": "passed"
+    },
+    {
+      "name": "prismatic-fluids",
+      "next": "start",
+      "screen": "desktop",
+      "menuBox": {
+        "x": 1252,
+        "y": 72,
+        "width": 160,
+        "height": 142
+      },
+      "labels": [
+        "Drift",
+        "Black Opal",
+        "Chroma"
+      ],
+      "title": "Chroma · Fawn",
+      "summaryBox": {
+        "x": 1252,
+        "y": 24,
+        "width": 160,
+        "height": 44
+      },
+      "alignment": [
+        {
+          "textX": 1264,
+          "height": 44,
+          "triggerX": 1264
+        },
+        {
+          "textX": 1264,
+          "height": 44,
+          "triggerX": 1264
+        },
+        {
+          "textX": 1264,
+          "height": 44,
+          "triggerX": 1264
+        }
+      ],
+      "keyboard": "open and Escape restore focus",
+      "dismissal": "outside canvas and Settings",
+      "gpuStartup": "passed"
+    },
+    {
+      "name": "start",
+      "next": "magnetic-fluids",
+      "screen": "mobile",
+      "menuBox": {
+        "x": 214,
+        "y": 66,
+        "width": 160,
+        "height": 142
+      },
+      "labels": [
+        "Drift",
+        "Black Opal",
+        "Chroma"
+      ],
+      "title": "Drift · Fawn",
+      "summaryBox": {
+        "x": 214,
+        "y": 18,
+        "width": 160,
+        "height": 44
+      },
+      "alignment": [
+        {
+          "textX": 226,
+          "height": 44,
+          "triggerX": 226
+        },
+        {
+          "textX": 226,
+          "height": 44,
+          "triggerX": 226
+        },
+        {
+          "textX": 226,
+          "height": 44,
+          "triggerX": 226
+        }
+      ],
+      "keyboard": "open and Escape restore focus",
+      "dismissal": "outside canvas and Settings",
+      "gpuStartup": "passed"
+    },
+    {
+      "name": "magnetic-fluids",
+      "next": "prismatic-fluids",
+      "screen": "mobile",
+      "menuBox": {
+        "x": 214,
+        "y": 66,
+        "width": 160,
+        "height": 142
+      },
+      "labels": [
+        "Drift",
+        "Black Opal",
+        "Chroma"
+      ],
+      "title": "Black Opal · Fawn",
+      "summaryBox": {
+        "x": 214,
+        "y": 18,
+        "width": 160,
+        "height": 44
+      },
+      "alignment": [
+        {
+          "textX": 226,
+          "height": 44,
+          "triggerX": 226
+        },
+        {
+          "textX": 226,
+          "height": 44,
+          "triggerX": 226
+        },
+        {
+          "textX": 226,
+          "height": 44,
+          "triggerX": 226
+        }
+      ],
+      "keyboard": "open and Escape restore focus",
+      "dismissal": "outside canvas and Settings",
+      "gpuStartup": "passed"
+    },
+    {
+      "name": "prismatic-fluids",
+      "next": "start",
+      "screen": "mobile",
+      "menuBox": {
+        "x": 214,
+        "y": 66,
+        "width": 160,
+        "height": 142
+      },
+      "labels": [
+        "Drift",
+        "Black Opal",
+        "Chroma"
+      ],
+      "title": "Chroma · Fawn",
+      "summaryBox": {
+        "x": 214,
+        "y": 18,
+        "width": 160,
+        "height": 44
+      },
+      "alignment": [
+        {
+          "textX": 226,
+          "height": 44,
+          "triggerX": 226
+        },
+        {
+          "textX": 226,
+          "height": 44,
+          "triggerX": 226
+        },
+        {
+          "textX": 226,
+          "height": 44,
+          "triggerX": 226
+        }
+      ],
+      "keyboard": "open and Escape restore focus",
+      "dismissal": "outside canvas and Settings",
+      "gpuStartup": "passed"
+    },
+    {
+      "name": "start",
+      "next": "magnetic-fluids",
+      "screen": "small",
+      "menuBox": {
+        "x": 144,
+        "y": 66,
+        "width": 160,
+        "height": 142
+      },
+      "labels": [
+        "Drift",
+        "Black Opal",
+        "Chroma"
+      ],
+      "title": "Drift · Fawn",
+      "summaryBox": {
+        "x": 144,
+        "y": 18,
+        "width": 160,
+        "height": 44
+      },
+      "alignment": [
+        {
+          "textX": 156,
+          "height": 44,
+          "triggerX": 156
+        },
+        {
+          "textX": 156,
+          "height": 44,
+          "triggerX": 156
+        },
+        {
+          "textX": 156,
+          "height": 44,
+          "triggerX": 156
+        }
+      ],
+      "keyboard": "open and Escape restore focus",
+      "dismissal": "outside canvas and Settings",
+      "gpuStartup": "passed"
+    },
+    {
+      "name": "magnetic-fluids",
+      "next": "prismatic-fluids",
+      "screen": "small",
+      "menuBox": {
+        "x": 144,
+        "y": 66,
+        "width": 160,
+        "height": 142
+      },
+      "labels": [
+        "Drift",
+        "Black Opal",
+        "Chroma"
+      ],
+      "title": "Black Opal · Fawn",
+      "summaryBox": {
+        "x": 144,
+        "y": 18,
+        "width": 160,
+        "height": 44
+      },
+      "alignment": [
+        {
+          "textX": 156,
+          "height": 44,
+          "triggerX": 156
+        },
+        {
+          "textX": 156,
+          "height": 44,
+          "triggerX": 156
+        },
+        {
+          "textX": 156,
+          "height": 44,
+          "triggerX": 156
+        }
+      ],
+      "keyboard": "open and Escape restore focus",
+      "dismissal": "outside canvas and Settings",
+      "gpuStartup": "passed"
+    },
+    {
+      "name": "prismatic-fluids",
+      "next": "start",
+      "screen": "small",
+      "menuBox": {
+        "x": 144,
+        "y": 66,
+        "width": 160,
+        "height": 142
+      },
+      "labels": [
+        "Drift",
+        "Black Opal",
+        "Chroma"
+      ],
+      "title": "Chroma · Fawn",
+      "summaryBox": {
+        "x": 144,
+        "y": 18,
+        "width": 160,
+        "height": 44
+      },
+      "alignment": [
+        {
+          "textX": 156,
+          "height": 44,
+          "triggerX": 156
+        },
+        {
+          "textX": 156,
+          "height": 44,
+          "triggerX": 156
+        },
+        {
+          "textX": 156,
+          "height": 44,
+          "triggerX": 156
+        }
+      ],
+      "keyboard": "open and Escape restore focus",
+      "dismissal": "outside canvas and Settings",
+      "gpuStartup": "passed"
+    }
+  ],
+  "clocks": [
+    {
+      "name": "start",
+      "rafTimestamp": 990,
+      "initializationClock": 1000,
+      "baseline": {
+        "uniforms": [
+          {
+            "dt": -0.0024999999441206455,
+            "phase": -1
+          }
+        ],
+        "errors": [],
+        "adapter": {
+          "vendor": "intel",
+          "architecture": "gen-12lp",
+          "isFallbackAdapter": false
+        }
+      },
+      "candidate": {
+        "uniforms": [
+          {
+            "dt": 0,
+            "phase": 0
+          }
+        ],
+        "errors": [],
+        "adapter": {
+          "vendor": "intel",
+          "architecture": "gen-12lp",
+          "isFallbackAdapter": false
+        }
+      }
+    },
+    {
+      "name": "magnetic-fluids",
+      "rafTimestamp": 990,
+      "initializationClock": 1000,
+      "baseline": {
+        "uniforms": [
+          {
+            "dt": -0.010999999940395355,
+            "phase": null
+          }
+        ],
+        "errors": [],
+        "adapter": {
+          "vendor": "intel",
+          "architecture": "gen-12lp",
+          "isFallbackAdapter": false
+        }
+      },
+      "candidate": {
+        "uniforms": [
+          {
+            "dt": 0,
+            "phase": null
+          }
+        ],
+        "errors": [],
+        "adapter": {
+          "vendor": "intel",
+          "architecture": "gen-12lp",
+          "isFallbackAdapter": false
+        }
+      }
+    },
+    {
+      "name": "prismatic-fluids",
+      "rafTimestamp": 990,
+      "initializationClock": 1000,
+      "baseline": {
+        "uniforms": [
+          {
+            "dt": -0.008200000040233135,
+            "phase": null
+          }
+        ],
+        "errors": [],
+        "adapter": {
+          "vendor": "intel",
+          "architecture": "gen-12lp",
+          "isFallbackAdapter": false
+        }
+      },
+      "candidate": {
+        "uniforms": [
+          {
+            "dt": 0,
+            "phase": null
+          }
+        ],
+        "errors": [],
+        "adapter": {
+          "vendor": "intel",
+          "architecture": "gen-12lp",
+          "isFallbackAdapter": false
+        }
+      }
+    }
+  ],
+  "cycle": {
+    "fields": [
+      0,
+      1,
+      2,
+      0
+    ],
+    "errors": [],
+    "adapter": {
+      "vendor": "intel",
+      "architecture": "gen-12lp",
+      "isFallbackAdapter": false
+    }
+  },
+  "passed": true,
+  "errors": []
+}
