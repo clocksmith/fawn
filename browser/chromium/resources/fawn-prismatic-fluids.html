@@ -531,6 +531,7 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
   let currentGrid = parseInt(gridSelect.value, 10);
   let pressureIterations = parseInt(pressureSelect.value, 10);
   let running = false;
+  let failed = false;
   let paused = matchMedia('(prefers-reduced-motion: reduce)').matches;
   let redrawRequested = true;
   let pausedSince = performance.now();
@@ -618,10 +619,13 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
   }
 
   function resizeCanvas() {
-    if (!context || !device || !format) return;
-    const dpr = window.devicePixelRatio || 1;
-    const width = Math.max(1, Math.floor(canvas.clientWidth * dpr));
-    const height = Math.max(1, Math.floor(canvas.clientHeight * dpr));
+    if (failed || !context || !device || !format) return;
+    const cssWidth = Math.max(1, canvas.clientWidth);
+    const cssHeight = Math.max(1, canvas.clientHeight);
+    const dpr = Math.min(window.devicePixelRatio || 1,
+      device.limits.maxTextureDimension2D / Math.max(cssWidth, cssHeight));
+    const width = Math.max(1, Math.floor(cssWidth * dpr));
+    const height = Math.max(1, Math.floor(cssHeight * dpr));
     if (canvasConfigured && canvas.width === width && canvas.height === height) return;
     canvas.width = width;
     canvas.height = height;
@@ -1016,6 +1020,8 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
     updateLoadLabel();
   });
   function fail(error) {
+    if (failed) return;
+    failed = true;
     running = false;
     cancelAnimationFrame(raf);
     raf = 0;
@@ -1026,6 +1032,8 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
     statusEl.textContent = `Error: ${error.message}`;
     failureEl.textContent = error.message;
     failureEl.hidden = false;
+    context?.unconfigure();
+    device?.destroy();
   }
 
   pauseButton.addEventListener('click', () => {
