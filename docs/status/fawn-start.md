@@ -21,7 +21,8 @@ Particle Trails and Image Lab are repository-only. Lifecycle probes navigate
 directly to the fluid fixture rather
 than requiring a public navigation link.
 
-The hosted main page and benchmark pages have a compact Demos disclosure.
+The three hosted pages have a compact Backgrounds disclosure and no instruction
+subtitle block.
 It marks the current page and switches between the particle
 cycle, Magnetic Fluids, and Prismatic Fluids. Particle Trails and Image Lab are
 excluded from the menu and hosting package, and retained as repository-only
@@ -75,6 +76,13 @@ particles within the same render pass. Simulation dispatches share a compute
 pass while preserving their order. The prismatic solver stores scalar pressure.
 All hosted demos bound pending frames, stop scheduling while hidden, and sample
 completed-frame intervals separately from clamped simulation time.
+
+Magnetic Fluids uses a critically damped response for magnet position and
+strength across hover, press, drag, release and cancellation. Mouse release
+returns to hover strength; touch release removes the magnet. Pause freezes this
+response with the surface. [Transition diagnostics](../../reports/maintenance/20261011-fawn-magnetic-transition/README.md)
+bind the input response to an independent ODE reference, GPU fluid state and
+desktop/emulated mobile controls.
 
 [Retained application evidence](../../reports/maintenance/20261005-fawn-demo-optimization/README.md)
 binds the source HTML to physical Chrome GPU state comparisons, screenshot

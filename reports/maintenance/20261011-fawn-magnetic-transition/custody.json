@@ -1,0 +1,13 @@
+{
+  "artifacts": {
+    "README.md": "7b1050043f8ff931604596634fc571f82e7788f1a5d037711d2bcd44e5b5e93f",
+    "results.json": "ee886ba04674e8906b9b4d9137120b688d5ddd1f651fb1128bc92f3c77bce92f"
+  },
+  "classification": "Chrome application diagnostics; emulated mobile viewports",
+  "sources": {
+    "browser/chromium/resources/fawn-magnetic-fluids.html": "b7d5db4991bd8734767a7a5315be5686a1e43ea26ef18f881cd259ff46dd82d8",
+    "browser/chromium/resources/fawn-prismatic-fluids.html": "ffa80f400e863971dbf23855f4d5a452bece73a3e7797117fd1514368f28188c",
+    "browser/chromium/resources/fawn-start.html": "546cad8df4492a753db233e8b0f4aba31e9ad221fa8a6705c838ca4cf4779d82",
+    "browser/chromium/scripts/test-fawn-magnetic-transition.mjs": "ab135c4810abe8462f1660aca9c7e77ae9920fb00f1667c0f244e4f1c019efb7"
+  }
+}
