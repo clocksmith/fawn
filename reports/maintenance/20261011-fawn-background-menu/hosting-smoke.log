@@ -1,0 +1,6 @@
+Previous Doppler worker and shell caches retired; model cache, local storage, and OPFS preserved.
+Fawn rendered and reset: http://127.0.0.1:44823/
+Fawn rendered and reset: http://127.0.0.1:44823/fawn-magnetic-fluids.html
+Fawn rendered and reset: http://127.0.0.1:44823/fawn-prismatic-fluids.html
+Repository-only demo excluded: http://127.0.0.1:44823/fawn-heavy-particles.html
+Repository-only demo excluded: http://127.0.0.1:44823/fawn-image-lab.html

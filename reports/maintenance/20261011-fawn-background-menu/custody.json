@@ -7,8 +7,11 @@
     "browser/chromium/scripts/test-fawn-demo-switcher.mjs": "bd9b10360e66e06496ebc233b0d052979c5c3df8206e324dabe4d11ae0cac622"
   },
   "artifacts": {
-    "README.md": "4bcc4df962f6456555490c93b1ca8010451ebc84bf0078161f6ebb3f2d1fca28",
+    "README.md": "b3110a5c0cd053cd56259e394761b2ee477b11441d25e016f89d39d7ecda862c",
     "desktop.png": "c7fd0842376c5bb1ecac4203a0cba889598b44a47af2ff9d0b70396791995458",
+    "hosted/deploy.log": "8589cb2a92067035f4226bade142c3b5bb380164a55af8114200c6e930fc2a1e",
+    "hosted/identity.json": "4b705b8ed740d55d4c96b733146bc403546510d99b0f09e1abe86930a345d02a",
+    "hosting-smoke.log": "d60a69f8dcc42375890f3fbc31b90b980d172922bc86da090c351d80f2cfab16",
     "mobile.png": "61627a0a60300c0de1fbe47b06da1e101492e5f574231e057a603f672649c38b",
     "program-identity.json": "7bac199340923392502c9399b920be863ae7ecfefb6303b0d659c58a8923ce4f",
     "results.json": "9dde7fb1f75c169068389a0a374a395e2871e00cd8cec3f56174c910bc7e930d",
