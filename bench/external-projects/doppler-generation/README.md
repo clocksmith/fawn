@@ -24,6 +24,27 @@ timing controls and unchanged Dawn drift, plus initial/resident tails and RSS.
 Neither admission nor regression success automatically promotes performance.
 This candidate is also rejected and its runtime patch is archived.
 
+## Current installed Node memory investigation
+
+The separate [memory policy](memory-contract.json) binds one retained generation
+case, context capacity, precision, budgets and regression limits. Its
+[evidence report](../../../reports/maintenance/20261011-doppler-generation-memory/README.md)
+qualifies current installed Doppler through explicitly selected Doe and Dawn
+providers. It preserves the historical experiments above.
+
+`run-memory-cohort.py` qualifies each exact package before diagnostic observation
+and independent-process measurement. `run-memory.mjs` requires a matching
+qualification before measurement; `observe-memory.mjs` separates host RAM,
+requested buffers, retained capacity and raw driver observations. GPU activity
+is observed outside each measured process through the existing DRM observer.
+`analyze-memory.py` retains every process and failed check; `validate-memory.py`
+authenticates the report and independent output oracle.
+
+The sampled-logits ownership repair stops active-buffer growth. Primary process
+RAM admission fails, foreign Chrome GPU activity disqualifies the timings, and
+the Doe load regression bound fails. No material performance claim, browser
+contribution or unrelated-application memory transfer is promoted.
+
 ## Prepare identical inputs
 
 Use the source commits, dependency lock, model manifest, tokenizer and shard

@@ -2,6 +2,21 @@
 
 ## Doppler-driven Vulkan engineering
 
+The [current Doppler compiler compatibility repair](../../reports/maintenance/20261011-native-doppler-compiler/README.md)
+corrects integer-search instruction emission and returning/nested switch lowering.
+The [installed Node memory campaign](../../reports/maintenance/20261011-doppler-generation-memory/README.md)
+passes unchanged output, cancellation, subsequent generation and teardown through
+explicit Doe and Dawn providers on the tested AMD Vulkan host. Doppler's sampled
+logits consumer now releases its owned buffer, including sampling failures;
+resident active capacity stops growing without changing weights or context.
+
+The frozen primary process-RAM improvement is not established. Foreign Chrome
+GPU activity makes the measured timings ineligible, and the retained comparison
+also fails a Doe load-latency regression bound. The resource-ownership correction
+does not promote a RAM or speed claim. Browser contribution and unrelated
+application memory transfer remain gated on local advantage. No new optimization
+is selected from these results; Vulkan remains active.
+
 The [current-source mapping repair](../../reports/maintenance/20261010-doppler-map-callbacks/README.md)
 restores synchronous host readback after deferred callback delivery. Frozen Doppler
 generation cases, cancellation/reuse and native rendering/command lifetime checks
@@ -12,10 +27,9 @@ arbitrary driver loss and full application leak qualification remain separate.
 
 Doppler is the first engineering customer. The [descriptor-retirement candidate](../../reports/benchmarks/amd-vulkan/20261010-doppler-descriptor-retirement/README.md)
 is rejected: baseline stability and material complete-generation admission failed.
-Its patch is archived and the prior Vulkan implementation remains active. API
-destruction cost did not translate into an accepted algorithmic gain. The next
-selection must distinguish native allocation/driver work from descriptor scanning
-before changing another mechanism; no successor experiment is selected. External
+Its patch is archived and the prior descriptor-retirement mechanism remains active.
+API destruction cost did not translate into an accepted algorithmic gain. The
+separate memory campaign above preserves this rejected decision. External
 recruitment is separate adoption work, not an engineering gate. Closed reuse
 experiments stay closed and Vulkan remains the active backend.
 

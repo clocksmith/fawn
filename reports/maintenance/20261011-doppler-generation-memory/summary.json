@@ -1,0 +1,2445 @@
+{
+  "schemaVersion": 1,
+  "classification": "diagnostic-memory-comparison",
+  "policySha256": "3c3f841e8a2c61a028767a5acf72f4194e1e08cffe9568c955348ae303535e9a",
+  "cohortSha256": "f774265cb96db4534c3c4a5e1e7df028c258e2220f12daa18fcdc58f3cafc7e3",
+  "analysisSettingsSha256": "b52114a7e7124a737835c954cd3ece5883e2313535d97c6ea7400407d394317d",
+  "estimator": "Process-paired geometric ratios; bootstrap confidence on that estimator. Interpolated p50/p95; no excluded processes.",
+  "providers": {
+    "dawn": {
+      "arms": {
+        "baseline": {
+          "peakProcessRssBytes": {
+            "p50": 785438720.0,
+            "p95": 832074547.1999999,
+            "minimum": 770334720,
+            "maximum": 854106112,
+            "samples": [
+              781422592,
+              770334720,
+              786710528,
+              791158784,
+              854106112,
+              788496384,
+              784166912,
+              774561792
+            ]
+          },
+          "loadMs": {
+            "p50": 989.159302,
+            "p95": 1033.0077623999998,
+            "minimum": 915.394852,
+            "maximum": 1039.926939,
+            "samples": [
+              991.9473869999999,
+              986.371217,
+              1039.926939,
+              981.3428969999999,
+              915.394852,
+              951.711296,
+              996.156423,
+              1020.1578629999999
+            ]
+          },
+          "initial": {
+            "firstTokenMs": {
+              "p50": 247.38622650000002,
+              "p95": 267.31396185,
+              "minimum": 234.916747,
+              "maximum": 267.39625,
+              "samples": [
+                253.88880700000004,
+                246.13992499999995,
+                245.77959800000008,
+                267.39625,
+                267.16114100000004,
+                234.916747,
+                248.6325280000001,
+                246.13469900000018
+              ]
+            },
+            "completeMs": {
+              "p50": 717.9486630000001,
+              "p95": 745.8599256499998,
+              "minimum": 683.1069089999999,
+              "maximum": 748.2522529999999,
+              "samples": [
+                724.7688950000002,
+                709.3968879999998,
+                715.2226780000001,
+                741.4170319999998,
+                748.2522529999999,
+                683.1069089999999,
+                720.366524,
+                715.5308020000002
+              ]
+            }
+          },
+          "resident": {
+            "firstTokenMs": {
+              "p50": 67.73143250000021,
+              "p95": 68.80958874999999,
+              "minimum": 65.58794900000021,
+              "maximum": 69.73815400000012,
+              "samples": [
+                68.25606100000005,
+                66.28662200000008,
+                68.47498399999995,
+                65.83883400000013,
+                67.99802899999986,
+                65.58794900000021,
+                68.50006699999994,
+                67.16242899999997,
+                68.03711699999985,
+                66.57432199999994,
+                68.44086199999992,
+                66.7428560000003,
+                67.8349720000001,
+                66.70471799999996,
+                69.73815400000012,
+                67.62789300000031
+              ]
+            },
+            "completeMs": {
+              "p50": 426.81935999999973,
+              "p95": 437.8832200000003,
+              "minimum": 411.44320100000004,
+              "maximum": 439.78023699999994,
+              "samples": [
+                434.199662,
+                414.2521590000001,
+                432.7976510000003,
+                418.5744559999998,
+                427.02806999999984,
+                416.1349260000002,
+                433.980603,
+                439.78023699999994,
+                429.5662910000001,
+                420.0971690000001,
+                421.7073059999998,
+                411.44320100000004,
+                437.2508810000004,
+                426.6106499999996,
+                435.82647,
+                421.39353800000026
+              ]
+            }
+          },
+          "diagnostic": {
+            "maxima": {
+              "requestedBufferBytes": 807744504,
+              "rssBytes": 773836800,
+              "arrayBuffersBytes": 1111515387
+            },
+            "poolCheckpoints": [
+              {
+                "phase": "load",
+                "reason": "loaded",
+                "host": {
+                  "rss": 403165184,
+                  "heapTotal": 141004800,
+                  "heapUsed": 115057880,
+                  "external": 1108373877,
+                  "arrayBuffers": 1106357027
+                },
+                "pools": [
+                  {
+                    "allocations": 253,
+                    "reuses": 224,
+                    "totalBytesAllocated": 606356736,
+                    "peakBytesAllocated": 606356736,
+                    "currentBytesAllocated": 606356736,
+                    "totalBytesRequested": 606077696,
+                    "peakBytesRequested": 603417344,
+                    "currentBytesRequested": 603417088,
+                    "resources": {
+                      "retainedModel": {
+                        "bytes": 536420352,
+                        "count": 236
+                      },
+                      "active": {
+                        "bytes": 67108864,
+                        "count": 4
+                      },
+                      "reusable": {
+                        "bytes": 2827520,
+                        "count": 13
+                      },
+                      "deferredCleanup": {
+                        "bytes": 0,
+                        "count": 0
+                      }
+                    },
+                    "activeBuffers": 240,
+                    "pooledBuffers": 13,
+                    "budgetMaxBytes": 0,
+                    "budgetUtilization": 0,
+                    "hitRate": "47.0%"
+                  }
+                ]
+              },
+              {
+                "phase": "initial",
+                "reason": "generation-completed",
+                "host": {
+                  "rss": 489148416,
+                  "heapTotal": 213782528,
+                  "heapUsed": 178645176,
+                  "external": 1086308054,
+                  "arrayBuffers": 1084262079
+                },
+                "pools": [
+                  {
+                    "allocations": 5085,
+                    "reuses": 792,
+                    "totalBytesAllocated": 655582976,
+                    "peakBytesAllocated": 628438528,
+                    "currentBytesAllocated": 628438528,
+                    "totalBytesRequested": 648687872,
+                    "peakBytesRequested": 621246208,
+                    "currentBytesRequested": 620194304,
+                    "resources": {
+                      "retainedModel": {
+                        "bytes": 536420352,
+                        "count": 236
+                      },
+                      "active": {
+                        "bytes": 83886080,
+                        "count": 20
+                      },
+                      "reusable": {
+                        "bytes": 8132096,
+                        "count": 64
+                      },
+                      "deferredCleanup": {
+                        "bytes": 0,
+                        "count": 0
+                      }
+                    },
+                    "activeBuffers": 256,
+                    "pooledBuffers": 64,
+                    "budgetMaxBytes": 0,
+                    "budgetUtilization": 0,
+                    "hitRate": "13.5%"
+                  }
+                ]
+              },
+              {
+                "phase": "warmup",
+                "reason": "generation-completed",
+                "host": {
+                  "rss": 528470016,
+                  "heapTotal": 237916160,
+                  "heapUsed": 202261936,
+                  "external": 1087356630,
+                  "arrayBuffers": 1085310655
+                },
+                "pools": [
+                  {
+                    "allocations": 9830,
+                    "reuses": 1447,
+                    "totalBytesAllocated": 701776896,
+                    "peakBytesAllocated": 644792832,
+                    "currentBytesAllocated": 644792832,
+                    "totalBytesRequested": 688864768,
+                    "peakBytesRequested": 638023424,
+                    "currentBytesRequested": 636971520,
+                    "resources": {
+                      "retainedModel": {
+                        "bytes": 536420352,
+                        "count": 236
+                      },
+                      "active": {
+                        "bytes": 100663296,
+                        "count": 36
+                      },
+                      "reusable": {
+                        "bytes": 7709184,
+                        "count": 64
+                      },
+                      "deferredCleanup": {
+                        "bytes": 0,
+                        "count": 0
+                      }
+                    },
+                    "activeBuffers": 272,
+                    "pooledBuffers": 64,
+                    "budgetMaxBytes": 0,
+                    "budgetUtilization": 0,
+                    "hitRate": "12.8%"
+                  }
+                ]
+              },
+              {
+                "phase": "resident-0",
+                "reason": "generation-completed",
+                "host": {
+                  "rss": 570413056,
+                  "heapTotal": 264155136,
+                  "heapUsed": 227472528,
+                  "external": 1088405206,
+                  "arrayBuffers": 1086359231
+                },
+                "pools": [
+                  {
+                    "allocations": 14557,
+                    "reuses": 2120,
+                    "totalBytesAllocated": 749468416,
+                    "peakBytesAllocated": 661341184,
+                    "currentBytesAllocated": 661341184,
+                    "totalBytesRequested": 730137856,
+                    "peakBytesRequested": 654800640,
+                    "currentBytesRequested": 653748736,
+                    "resources": {
+                      "retainedModel": {
+                        "bytes": 536420352,
+                        "count": 236
+                      },
+                      "active": {
+                        "bytes": 117440512,
+                        "count": 52
+                      },
+                      "reusable": {
+                        "bytes": 7480320,
+                        "count": 64
+                      },
+                      "deferredCleanup": {
+                        "bytes": 0,
+                        "count": 0
+                      }
+                    },
+                    "activeBuffers": 288,
+                    "pooledBuffers": 64,
+                    "budgetMaxBytes": 0,
+                    "budgetUtilization": 0,
+                    "hitRate": "12.7%"
+                  }
+                ]
+              },
+              {
+                "phase": "resident-1",
+                "reason": "generation-completed",
+                "host": {
+                  "rss": 614191104,
+                  "heapTotal": 286699520,
+                  "heapUsed": 262127536,
+                  "external": 1095811870,
+                  "arrayBuffers": 1093765895
+                },
+                "pools": [
+                  {
+                    "allocations": 19284,
+                    "reuses": 2793,
+                    "totalBytesAllocated": 797388800,
+                    "peakBytesAllocated": 678118400,
+                    "currentBytesAllocated": 678118400,
+                    "totalBytesRequested": 771576320,
+                    "peakBytesRequested": 671577856,
+                    "currentBytesRequested": 670525952,
+                    "resources": {
+                      "retainedModel": {
+                        "bytes": 536420352,
+                        "count": 236
+                      },
+                      "active": {
+                        "bytes": 134217728,
+                        "count": 68
+                      },
+                      "reusable": {
+                        "bytes": 7480320,
+                        "count": 64
+                      },
+                      "deferredCleanup": {
+                        "bytes": 0,
+                        "count": 0
+                      }
+                    },
+                    "activeBuffers": 304,
+                    "pooledBuffers": 64,
+                    "budgetMaxBytes": 0,
+                    "budgetUtilization": 0,
+                    "hitRate": "12.7%"
+                  }
+                ]
+              },
+              {
+                "phase": "idle",
+                "reason": "idle-start",
+                "host": {
+                  "rss": 614191104,
+                  "heapTotal": 286699520,
+                  "heapUsed": 262186888,
+                  "external": 1095811870,
+                  "arrayBuffers": 1093765895
+                },
+                "pools": [
+                  {
+                    "allocations": 19284,
+                    "reuses": 2793,
+                    "totalBytesAllocated": 797388800,
+                    "peakBytesAllocated": 678118400,
+                    "currentBytesAllocated": 678118400,
+                    "totalBytesRequested": 771576320,
+                    "peakBytesRequested": 671577856,
+                    "currentBytesRequested": 670525952,
+                    "resources": {
+                      "retainedModel": {
+                        "bytes": 536420352,
+                        "count": 236
+                      },
+                      "active": {
+                        "bytes": 134217728,
+                        "count": 68
+                      },
+                      "reusable": {
+                        "bytes": 7480320,
+                        "count": 64
+                      },
+                      "deferredCleanup": {
+                        "bytes": 0,
+                        "count": 0
+                      }
+                    },
+                    "activeBuffers": 304,
+                    "pooledBuffers": 64,
+                    "budgetMaxBytes": 0,
+                    "budgetUtilization": 0,
+                    "hitRate": "12.7%"
+                  }
+                ]
+              },
+              {
+                "phase": "idle",
+                "reason": "idle-end",
+                "host": {
+                  "rss": 705679360,
+                  "heapTotal": 354332672,
+                  "heapUsed": 319083112,
+                  "external": 1086307954,
+                  "arrayBuffers": 1084261979
+                },
+                "pools": [
+                  {
+                    "allocations": 19284,
+                    "reuses": 2793,
+                    "totalBytesAllocated": 797388800,
+                    "peakBytesAllocated": 678118400,
+                    "currentBytesAllocated": 678118400,
+                    "totalBytesRequested": 771576320,
+                    "peakBytesRequested": 671577856,
+                    "currentBytesRequested": 670525952,
+                    "resources": {
+                      "retainedModel": {
+                        "bytes": 536420352,
+                        "count": 236
+                      },
+                      "active": {
+                        "bytes": 134217728,
+                        "count": 68
+                      },
+                      "reusable": {
+                        "bytes": 7480320,
+                        "count": 64
+                      },
+                      "deferredCleanup": {
+                        "bytes": 0,
+                        "count": 0
+                      }
+                    },
+                    "activeBuffers": 304,
+                    "pooledBuffers": 64,
+                    "budgetMaxBytes": 0,
+                    "budgetUtilization": 0,
+                    "hitRate": "12.7%"
+                  }
+                ]
+              },
+              {
+                "phase": "cancellation",
+                "reason": "cancellation-settled",
+                "host": {
+                  "rss": 725864448,
+                  "heapTotal": 364032000,
+                  "heapUsed": 338262704,
+                  "external": 1091588050,
+                  "arrayBuffers": 1089542075
+                },
+                "pools": [
+                  {
+                    "allocations": 19766,
+                    "reuses": 3001,
+                    "totalBytesAllocated": 816182784,
+                    "peakBytesAllocated": 681987584,
+                    "currentBytesAllocated": 679166976,
+                    "totalBytesRequested": 785954304,
+                    "peakBytesRequested": 675268352,
+                    "currentBytesRequested": 671574528,
+                    "resources": {
+                      "retainedModel": {
+                        "bytes": 536420352,
+                        "count": 236
+                      },
+                      "active": {
+                        "bytes": 135266304,
+                        "count": 69
+                      },
+                      "reusable": {
+                        "bytes": 7480320,
+                        "count": 64
+                      },
+                      "deferredCleanup": {
+                        "bytes": 0,
+                        "count": 0
+                      }
+                    },
+                    "activeBuffers": 305,
+                    "pooledBuffers": 64,
+                    "budgetMaxBytes": 0,
+                    "budgetUtilization": 0,
+                    "hitRate": "13.2%"
+                  }
+                ]
+              },
+              {
+                "phase": "following-cancellation",
+                "reason": "generation-completed",
+                "host": {
+                  "rss": 773574656,
+                  "heapTotal": 393678848,
+                  "heapUsed": 355322136,
+                  "external": 1090502358,
+                  "arrayBuffers": 1088456383
+                },
+                "pools": [
+                  {
+                    "allocations": 24493,
+                    "reuses": 3674,
+                    "totalBytesAllocated": 864103168,
+                    "peakBytesAllocated": 695944192,
+                    "currentBytesAllocated": 695944192,
+                    "totalBytesRequested": 827392768,
+                    "peakBytesRequested": 689403648,
+                    "currentBytesRequested": 688351744,
+                    "resources": {
+                      "retainedModel": {
+                        "bytes": 536420352,
+                        "count": 236
+                      },
+                      "active": {
+                        "bytes": 152043520,
+                        "count": 85
+                      },
+                      "reusable": {
+                        "bytes": 7480320,
+                        "count": 64
+                      },
+                      "deferredCleanup": {
+                        "bytes": 0,
+                        "count": 0
+                      }
+                    },
+                    "activeBuffers": 321,
+                    "pooledBuffers": 64,
+                    "budgetMaxBytes": 0,
+                    "budgetUtilization": 0,
+                    "hitRate": "13.0%"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "candidate": {
+          "peakProcessRssBytes": {
+            "p50": 783067136.0,
+            "p95": 790355148.8,
+            "minimum": 770383872,
+            "maximum": 791203840,
+            "samples": [
+              781971456,
+              787243008,
+              777031680,
+              784162816,
+              770383872,
+              780472320,
+              791203840,
+              788779008
+            ]
+          },
+          "loadMs": {
+            "p50": 963.4486250000001,
+            "p95": 1026.01219345,
+            "minimum": 918.4538899999999,
+            "maximum": 1044.795781,
+            "samples": [
+              949.612165,
+              1044.795781,
+              970.9832000000001,
+              973.5307819999999,
+              937.2690490000001,
+              991.128388,
+              955.9140500000001,
+              918.4538899999999
+            ]
+          },
+          "initial": {
+            "firstTokenMs": {
+              "p50": 244.1863370000001,
+              "p95": 264.8860448,
+              "minimum": 237.1175999999998,
+              "maximum": 268.541162,
+              "samples": [
+                268.541162,
+                244.229965,
+                242.890308,
+                249.28544899999997,
+                237.1175999999998,
+                237.55308999999988,
+                244.1427090000002,
+                258.09797000000003
+              ]
+            },
+            "completeMs": {
+              "p50": 708.6504255000001,
+              "p95": 749.5656942999999,
+              "minimum": 697.9298669999998,
+              "maximum": 766.0809489999999,
+              "samples": [
+                766.0809489999999,
+                706.4226259999998,
+                718.894507,
+                710.5060799999999,
+                707.7673929999999,
+                697.9298669999998,
+                700.1883640000003,
+                709.5334580000003
+              ]
+            }
+          },
+          "resident": {
+            "firstTokenMs": {
+              "p50": 68.07189350000021,
+              "p95": 69.56481300000019,
+              "minimum": 65.42444899999964,
+              "maximum": 70.57722600000034,
+              "samples": [
+                68.5717539999996,
+                67.21748500000012,
+                68.31486900000027,
+                66.18706699999984,
+                68.4432670000001,
+                65.98360400000001,
+                67.82891800000016,
+                68.94190800000024,
+                70.57722600000034,
+                68.41831400000001,
+                69.22734200000014,
+                67.37665199999992,
+                66.64761899999985,
+                66.04229499999974,
+                69.08141799999976,
+                65.42444899999964
+              ]
+            },
+            "completeMs": {
+              "p50": 428.045396,
+              "p95": 440.9273665000002,
+              "minimum": 406.05792599999995,
+              "maximum": 448.74175300000024,
+              "samples": [
+                429.08123099999966,
+                417.30028900000025,
+                428.3238570000003,
+                414.079663,
+                432.91231000000016,
+                414.3862710000003,
+                434.786012,
+                425.34815000000026,
+                448.74175300000024,
+                428.102578,
+                438.32257100000015,
+                424.9846940000002,
+                427.98821399999997,
+                406.05792599999995,
+                435.9164569999998,
+                414.30787499999997
+              ]
+            }
+          },
+          "diagnostic": {
+            "maxima": {
+              "requestedBufferBytes": 730965176,
+              "rssBytes": 776691712,
+              "arrayBuffersBytes": 1124098299
+            },
+            "poolCheckpoints": [
+              {
+                "phase": "load",
+                "reason": "loaded",
+                "host": {
+                  "rss": 344940544,
+                  "heapTotal": 113741824,
+                  "heapUsed": 107519504,
+                  "external": 1102164901,
+                  "arrayBuffers": 1100148051
+                },
+                "pools": [
+                  {
+                    "allocations": 253,
+                    "reuses": 224,
+                    "totalBytesAllocated": 606356736,
+                    "peakBytesAllocated": 606356736,
+                    "currentBytesAllocated": 606356736,
+                    "totalBytesRequested": 606077696,
+                    "peakBytesRequested": 603417344,
+                    "currentBytesRequested": 603417088,
+                    "resources": {
+                      "retainedModel": {
+                        "bytes": 536420352,
+                        "count": 236
+                      },
+                      "active": {
+                        "bytes": 67108864,
+                        "count": 4
+                      },
+                      "reusable": {
+                        "bytes": 2827520,
+                        "count": 13
+                      },
+                      "deferredCleanup": {
+                        "bytes": 0,
+                        "count": 0
+                      }
+                    },
+                    "activeBuffers": 240,
+                    "pooledBuffers": 13,
+                    "budgetMaxBytes": 0,
+                    "budgetUtilization": 0,
+                    "hitRate": "47.0%"
+                  }
+                ]
+              },
+              {
+                "phase": "initial",
+                "reason": "generation-completed",
+                "host": {
+                  "rss": 495673344,
+                  "heapTotal": 208277504,
+                  "heapUsed": 179414272,
+                  "external": 1104535802,
+                  "arrayBuffers": 1102489827
+                },
+                "pools": [
+                  {
+                    "allocations": 5084,
+                    "reuses": 793,
+                    "totalBytesAllocated": 639969024,
+                    "peakBytesAllocated": 613606656,
+                    "currentBytesAllocated": 612701696,
+                    "totalBytesRequested": 633045248,
+                    "peakBytesRequested": 608159488,
+                    "currentBytesRequested": 603417088,
+                    "resources": {
+                      "retainedModel": {
+                        "bytes": 536420352,
+                        "count": 236
+                      },
+                      "active": {
+                        "bytes": 67108864,
+                        "count": 4
+                      },
+                      "reusable": {
+                        "bytes": 9172480,
+                        "count": 64
+                      },
+                      "deferredCleanup": {
+                        "bytes": 0,
+                        "count": 0
+                      }
+                    },
+                    "activeBuffers": 240,
+                    "pooledBuffers": 64,
+                    "budgetMaxBytes": 0,
+                    "budgetUtilization": 0,
+                    "hitRate": "13.5%"
+                  }
+                ]
+              },
+              {
+                "phase": "warmup",
+                "reason": "generation-completed",
+                "host": {
+                  "rss": 533946368,
+                  "heapTotal": 231624704,
+                  "heapUsed": 202317184,
+                  "external": 1105584378,
+                  "arrayBuffers": 1103538403
+                },
+                "pools": [
+                  {
+                    "allocations": 9828,
+                    "reuses": 1449,
+                    "totalBytesAllocated": 668360704,
+                    "peakBytesAllocated": 615916032,
+                    "currentBytesAllocated": 612285952,
+                    "totalBytesRequested": 655417856,
+                    "peakBytesRequested": 608159488,
+                    "currentBytesRequested": 603417088,
+                    "resources": {
+                      "retainedModel": {
+                        "bytes": 536420352,
+                        "count": 236
+                      },
+                      "active": {
+                        "bytes": 67108864,
+                        "count": 4
+                      },
+                      "reusable": {
+                        "bytes": 8756736,
+                        "count": 64
+                      },
+                      "deferredCleanup": {
+                        "bytes": 0,
+                        "count": 0
+                      }
+                    },
+                    "activeBuffers": 240,
+                    "pooledBuffers": 64,
+                    "budgetMaxBytes": 0,
+                    "budgetUtilization": 0,
+                    "hitRate": "12.8%"
+                  }
+                ]
+              },
+              {
+                "phase": "resident-0",
+                "reason": "generation-completed",
+                "host": {
+                  "rss": 576151552,
+                  "heapTotal": 256552960,
+                  "heapUsed": 222967392,
+                  "external": 1103466731,
+                  "arrayBuffers": 1101420756
+                },
+                "pools": [
+                  {
+                    "allocations": 14554,
+                    "reuses": 2123,
+                    "totalBytesAllocated": 698231296,
+                    "peakBytesAllocated": 615926272,
+                    "currentBytesAllocated": 612057856,
+                    "totalBytesRequested": 678870016,
+                    "peakBytesRequested": 608159488,
+                    "currentBytesRequested": 603417088,
+                    "resources": {
+                      "retainedModel": {
+                        "bytes": 536420352,
+                        "count": 236
+                      },
+                      "active": {
+                        "bytes": 67108864,
+                        "count": 4
+                      },
+                      "reusable": {
+                        "bytes": 8528640,
+                        "count": 64
+                      },
+                      "deferredCleanup": {
+                        "bytes": 0,
+                        "count": 0
+                      }
+                    },
+                    "activeBuffers": 240,
+                    "pooledBuffers": 64,
+                    "budgetMaxBytes": 0,
+                    "budgetUtilization": 0,
+                    "hitRate": "12.7%"
+                  }
+                ]
+              },
+              {
+                "phase": "resident-1",
+                "reason": "generation-completed",
+                "host": {
+                  "rss": 620453888,
+                  "heapTotal": 279359488,
+                  "heapUsed": 255167576,
+                  "external": 1110860574,
+                  "arrayBuffers": 1108814599
+                },
+                "pools": [
+                  {
+                    "allocations": 19269,
+                    "reuses": 2808,
+                    "totalBytesAllocated": 729112576,
+                    "peakBytesAllocated": 615927296,
+                    "currentBytesAllocated": 611861504,
+                    "totalBytesRequested": 703072768,
+                    "peakBytesRequested": 608159488,
+                    "currentBytesRequested": 603417088,
+                    "resources": {
+                      "retainedModel": {
+                        "bytes": 536420352,
+                        "count": 236
+                      },
+                      "active": {
+                        "bytes": 67108864,
+                        "count": 4
+                      },
+                      "reusable": {
+                        "bytes": 8332288,
+                        "count": 64
+                      },
+                      "deferredCleanup": {
+                        "bytes": 0,
+                        "count": 0
+                      }
+                    },
+                    "activeBuffers": 240,
+                    "pooledBuffers": 64,
+                    "budgetMaxBytes": 0,
+                    "budgetUtilization": 0,
+                    "hitRate": "12.7%"
+                  }
+                ]
+              },
+              {
+                "phase": "idle",
+                "reason": "idle-start",
+                "host": {
+                  "rss": 620453888,
+                  "heapTotal": 279359488,
+                  "heapUsed": 255224352,
+                  "external": 1110860574,
+                  "arrayBuffers": 1108814599
+                },
+                "pools": [
+                  {
+                    "allocations": 19269,
+                    "reuses": 2808,
+                    "totalBytesAllocated": 729112576,
+                    "peakBytesAllocated": 615927296,
+                    "currentBytesAllocated": 611861504,
+                    "totalBytesRequested": 703072768,
+                    "peakBytesRequested": 608159488,
+                    "currentBytesRequested": 603417088,
+                    "resources": {
+                      "retainedModel": {
+                        "bytes": 536420352,
+                        "count": 236
+                      },
+                      "active": {
+                        "bytes": 67108864,
+                        "count": 4
+                      },
+                      "reusable": {
+                        "bytes": 8332288,
+                        "count": 64
+                      },
+                      "deferredCleanup": {
+                        "bytes": 0,
+                        "count": 0
+                      }
+                    },
+                    "activeBuffers": 240,
+                    "pooledBuffers": 64,
+                    "budgetMaxBytes": 0,
+                    "budgetUtilization": 0,
+                    "hitRate": "12.7%"
+                  }
+                ]
+              },
+              {
+                "phase": "idle",
+                "reason": "idle-end",
+                "host": {
+                  "rss": 705388544,
+                  "heapTotal": 341749760,
+                  "heapUsed": 314747264,
+                  "external": 1101356658,
+                  "arrayBuffers": 1099310683
+                },
+                "pools": [
+                  {
+                    "allocations": 19269,
+                    "reuses": 2808,
+                    "totalBytesAllocated": 729112576,
+                    "peakBytesAllocated": 615927296,
+                    "currentBytesAllocated": 611861504,
+                    "totalBytesRequested": 703072768,
+                    "peakBytesRequested": 608159488,
+                    "currentBytesRequested": 603417088,
+                    "resources": {
+                      "retainedModel": {
+                        "bytes": 536420352,
+                        "count": 236
+                      },
+                      "active": {
+                        "bytes": 67108864,
+                        "count": 4
+                      },
+                      "reusable": {
+                        "bytes": 8332288,
+                        "count": 64
+                      },
+                      "deferredCleanup": {
+                        "bytes": 0,
+                        "count": 0
+                      }
+                    },
+                    "activeBuffers": 240,
+                    "pooledBuffers": 64,
+                    "budgetMaxBytes": 0,
+                    "budgetUtilization": 0,
+                    "hitRate": "12.7%"
+                  }
+                ]
+              },
+              {
+                "phase": "cancellation",
+                "reason": "cancellation-settled",
+                "host": {
+                  "rss": 728981504,
+                  "heapTotal": 354856960,
+                  "heapUsed": 327305936,
+                  "external": 1106632970,
+                  "arrayBuffers": 1104586995
+                },
+                "pools": [
+                  {
+                    "allocations": 19754,
+                    "reuses": 3013,
+                    "totalBytesAllocated": 746792448,
+                    "peakBytesAllocated": 615927296,
+                    "currentBytesAllocated": 611861504,
+                    "totalBytesRequested": 716090880,
+                    "peakBytesRequested": 608159488,
+                    "currentBytesRequested": 603417088,
+                    "resources": {
+                      "retainedModel": {
+                        "bytes": 536420352,
+                        "count": 236
+                      },
+                      "active": {
+                        "bytes": 67108864,
+                        "count": 4
+                      },
+                      "reusable": {
+                        "bytes": 8332288,
+                        "count": 64
+                      },
+                      "deferredCleanup": {
+                        "bytes": 0,
+                        "count": 0
+                      }
+                    },
+                    "activeBuffers": 240,
+                    "pooledBuffers": 64,
+                    "budgetMaxBytes": 0,
+                    "budgetUtilization": 0,
+                    "hitRate": "13.2%"
+                  }
+                ]
+              },
+              {
+                "phase": "following-cancellation",
+                "reason": "generation-completed",
+                "host": {
+                  "rss": 776429568,
+                  "heapTotal": 382930944,
+                  "heapUsed": 353601400,
+                  "external": 1109791583,
+                  "arrayBuffers": 1107745608
+                },
+                "pools": [
+                  {
+                    "allocations": 24469,
+                    "reuses": 3698,
+                    "totalBytesAllocated": 777870080,
+                    "peakBytesAllocated": 615927296,
+                    "currentBytesAllocated": 611861504,
+                    "totalBytesRequested": 740440832,
+                    "peakBytesRequested": 608159488,
+                    "currentBytesRequested": 603417088,
+                    "resources": {
+                      "retainedModel": {
+                        "bytes": 536420352,
+                        "count": 236
+                      },
+                      "active": {
+                        "bytes": 67108864,
+                        "count": 4
+                      },
+                      "reusable": {
+                        "bytes": 8332288,
+                        "count": 64
+                      },
+                      "deferredCleanup": {
+                        "bytes": 0,
+                        "count": 0
+                      }
+                    },
+                    "activeBuffers": 240,
+                    "pooledBuffers": 64,
+                    "budgetMaxBytes": 0,
+                    "budgetUtilization": 0,
+                    "hitRate": "13.1%"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      "baselineToCandidateRssRatio": {
+        "ratio": 1.0106967839898005,
+        "lower": 0.9904945358902176,
+        "upper": 1.0407479856613757,
+        "pairedLogRatios": [
+          -0.0007021441884745086,
+          -0.021711856700801044,
+          0.012379241992189274,
+          0.008882013669712115,
+          0.10316651331186956,
+          0.010228545589199322,
+          -0.008933738033947487,
+          -0.018188750597955824
+        ]
+      },
+      "candidateToBaselineResidentLatencyRatio": {
+        "ratio": 0.9999835840138825,
+        "lower": 0.9853092504672413,
+        "upper": 1.015870613477604,
+        "pairedLogRatios": [
+          -0.0024430744659695754,
+          -0.010590152174567002,
+          0.00489285684664316,
+          -0.01571832035973149,
+          0.03148913323466058,
+          0.0355563640705769,
+          -0.03512376634449239,
+          -0.008194369774010201
+        ]
+      },
+      "candidateToBaselineInitialLatencyRatios": {
+        "firstTokenMs": {
+          "ratio": 0.9860311074680752,
+          "lower": 0.9478617250495514,
+          "upper": 1.021480545501066,
+          "pairedLogRatios": [
+            0.05610780228356725,
+            -0.007789914093056552,
+            -0.011825257227886524,
+            -0.0701330192380588,
+            -0.11929578009823567,
+            0.011159952044873737,
+            -0.018223087975177497,
+            0.04746029853675083
+          ]
+        },
+        "completeMs": {
+          "ratio": 0.9928734276438286,
+          "lower": 0.9713764712654647,
+          "upper": 1.0167985595747175,
+          "pairedLogRatios": [
+            0.05543500318189777,
+            -0.004201476736022548,
+            0.005120693150889472,
+            -0.04258575835249343,
+            -0.055624659002139164,
+            0.02146724476486162,
+            -0.02841075332018944,
+            -0.008416995044392387
+          ]
+        }
+      },
+      "candidateToBaselineLoadLatencyRatio": {
+        "ratio": 0.9820724507100681,
+        "lower": 0.9481661066786118,
+        "upper": 1.0181616721342606,
+        "pairedLogRatios": [
+          -0.04361641470943712,
+          0.05754394884210828,
+          -0.06859657231528979,
+          -0.00799249247695882,
+          0.02361487532994633,
+          0.04058235163006986,
+          -0.04123629330628123,
+          -0.10502095997040288
+        ]
+      },
+      "candidateToBaselineResidentFirstTokenRatio": {
+        "ratio": 1.0040894465708614,
+        "lower": 0.9937111445075496,
+        "upper": 1.0145661063324896,
+        "pairedLogRatios": [
+          0.009222476029855606,
+          0.0013996056995132487,
+          0.006275040636263933,
+          0.008136567924140267,
+          0.03204944754422939,
+          0.010451457999621437,
+          -0.013844316026422044,
+          -0.021041419717107872
+        ]
+      },
+      "checks": {
+        "primaryMemoryGain": false,
+        "residentLatencyRegression": true,
+        "initialLatencyRegression": true,
+        "loadLatencyRegression": true,
+        "residentFirstTokenRegression": true,
+        "hostBudget": true,
+        "requestedBufferBudget": true,
+        "requestedBufferRegression": true,
+        "absoluteLatency": true,
+        "noObservedForeignGpuActivity": false
+      },
+      "activityFailures": [
+        "Unrelated GPU activity: DRM client 65897/gfx advanced 2226640 ns",
+        "Unrelated GPU activity: DRM client 65897/gfx advanced 2321862 ns",
+        "Unrelated GPU activity: DRM client 65897/gfx advanced 1930906 ns",
+        "Unrelated GPU activity: DRM client 65897/gfx advanced 640861 ns",
+        "Unrelated GPU activity: DRM client 65897/gfx advanced 5097848 ns",
+        "Unrelated GPU activity: DRM client 65897/gfx advanced 2050005 ns",
+        "Unrelated GPU activity: DRM client 65897/gfx advanced 3379126 ns",
+        "Unrelated GPU activity: DRM client 65897/gfx advanced 4988980 ns",
+        "Unrelated GPU activity: DRM client 65897/gfx advanced 1020734 ns",
+        "Unrelated GPU activity: DRM client 65897/gfx advanced 817778 ns",
+        "Unrelated GPU activity: DRM client 65897/gfx advanced 1239126 ns",
+        "Unrelated GPU activity: DRM client 65897/gfx advanced 4056754 ns",
+        "Unrelated GPU activity: DRM client 65897/gfx advanced 1579366 ns",
+        "Unrelated GPU activity: DRM client 65897/gfx advanced 1228873 ns",
+        "Unrelated GPU activity: DRM client 65897/gfx advanced 1251475 ns",
+        "Unrelated GPU activity: DRM client 65897/gfx advanced 2973213 ns"
+      ],
+      "performancePromoted": false
+    },
+    "doe": {
+      "arms": {
+        "baseline": {
+          "peakProcessRssBytes": {
+            "p50": 553500672.0,
+            "p95": 562679193.6,
+            "minimum": 540778496,
+            "maximum": 564613120,
+            "samples": [
+              552239104,
+              544034816,
+              554762240,
+              559087616,
+              564613120,
+              540778496,
+              557182976,
+              548433920
+            ]
+          },
+          "loadMs": {
+            "p50": 1114.7812629999999,
+            "p95": 1177.35047145,
+            "minimum": 1083.5985500000002,
+            "maximum": 1190.601658,
+            "samples": [
+              1112.845594,
+              1116.7169319999998,
+              1190.601658,
+              1083.5985500000002,
+              1099.362004,
+              1102.8602099999998,
+              1152.741125,
+              1116.919692
+            ]
+          },
+          "initial": {
+            "firstTokenMs": {
+              "p50": 216.16053,
+              "p95": 220.33188964999997,
+              "minimum": 209.4929219999999,
+              "maximum": 221.76131099999998,
+              "samples": [
+                217.67724999999996,
+                212.72386699999993,
+                209.4929219999999,
+                221.76131099999998,
+                216.2992569999999,
+                216.0218030000001,
+                217.08386500000006,
+                210.02590699999996
+              ]
+            },
+            "completeMs": {
+              "p50": 948.9763654999999,
+              "p95": 978.4034701499999,
+              "minimum": 923.369017,
+              "maximum": 985.4811739999998,
+              "samples": [
+                942.3325960000002,
+                965.259163,
+                923.369017,
+                947.7238189999998,
+                985.4811739999998,
+                950.228912,
+                951.6178089999999,
+                946.7891169999998
+              ]
+            }
+          },
+          "resident": {
+            "firstTokenMs": {
+              "p50": 70.93316550000009,
+              "p95": 74.3398279999999,
+              "minimum": 68.73457199999939,
+              "maximum": 75.02622800000017,
+              "samples": [
+                71.04772899999989,
+                72.41100499999993,
+                75.02622800000017,
+                70.75606700000026,
+                74.1110279999998,
+                70.150576,
+                70.57197399999995,
+                71.24193999999989,
+                71.9804680000002,
+                73.40100399999938,
+                70.81860200000028,
+                70.58024200000045,
+                69.44845000000032,
+                68.73457199999939,
+                70.51927399999977,
+                73.03356299999996
+              ]
+            },
+            "completeMs": {
+              "p50": 684.6618210000001,
+              "p95": 723.6170425000005,
+              "minimum": 661.2385910000003,
+              "maximum": 733.0457320000005,
+              "samples": [
+                686.514921,
+                661.2385910000003,
+                720.4741460000005,
+                687.2892260000008,
+                695.0241889999998,
+                669.5630940000001,
+                690.1054559999998,
+                676.2093929999996,
+                733.0457320000005,
+                675.1258619999999,
+                694.7201480000003,
+                675.3128099999999,
+                681.364032,
+                671.6466899999996,
+                703.5565139999999,
+                682.8087210000003
+              ]
+            }
+          },
+          "diagnostic": {
+            "maxima": {
+              "requestedBufferBytes": 806851288,
+              "rssBytes": 539275264,
+              "arrayBuffersBytes": 1118328067
+            },
+            "poolCheckpoints": [
+              {
+                "phase": "load",
+                "reason": "loaded",
+                "host": {
+                  "rss": 392433664,
+                  "heapTotal": 133595136,
+                  "heapUsed": 102550384,
+                  "external": 1110975958,
+                  "arrayBuffers": 1108794035
+                },
+                "pools": [
+                  {
+                    "allocations": 253,
+                    "reuses": 224,
+                    "totalBytesAllocated": 606356736,
+                    "peakBytesAllocated": 606356736,
+                    "currentBytesAllocated": 606356736,
+                    "totalBytesRequested": 606077696,
+                    "peakBytesRequested": 603417344,
+                    "currentBytesRequested": 603417088,
+                    "resources": {
+                      "retainedModel": {
+                        "bytes": 536420352,
+                        "count": 236
+                      },
+                      "active": {
+                        "bytes": 67108864,
+                        "count": 4
+                      },
+                      "reusable": {
+                        "bytes": 2827520,
+                        "count": 13
+                      },
+                      "deferredCleanup": {
+                        "bytes": 0,
+                        "count": 0
+                      }
+                    },
+                    "activeBuffers": 240,
+                    "pooledBuffers": 13,
+                    "budgetMaxBytes": 0,
+                    "budgetUtilization": 0,
+                    "hitRate": "47.0%"
+                  }
+                ]
+              },
+              {
+                "phase": "initial",
+                "reason": "generation-completed",
+                "host": {
+                  "rss": 439480320,
+                  "heapTotal": 143974400,
+                  "heapUsed": 123066208,
+                  "external": 1106236286,
+                  "arrayBuffers": 1100879510
+                },
+                "pools": [
+                  {
+                    "allocations": 5085,
+                    "reuses": 792,
+                    "totalBytesAllocated": 655582976,
+                    "peakBytesAllocated": 628438528,
+                    "currentBytesAllocated": 628438528,
+                    "totalBytesRequested": 648687872,
+                    "peakBytesRequested": 621246208,
+                    "currentBytesRequested": 620194304,
+                    "resources": {
+                      "retainedModel": {
+                        "bytes": 536420352,
+                        "count": 236
+                      },
+                      "active": {
+                        "bytes": 83886080,
+                        "count": 20
+                      },
+                      "reusable": {
+                        "bytes": 8132096,
+                        "count": 64
+                      },
+                      "deferredCleanup": {
+                        "bytes": 0,
+                        "count": 0
+                      }
+                    },
+                    "activeBuffers": 256,
+                    "pooledBuffers": 64,
+                    "budgetMaxBytes": 0,
+                    "budgetUtilization": 0,
+                    "hitRate": "13.5%"
+                  }
+                ]
+              },
+              {
+                "phase": "warmup",
+                "reason": "generation-completed",
+                "host": {
+                  "rss": 462684160,
+                  "heapTotal": 151076864,
+                  "heapUsed": 121084768,
+                  "external": 1098859729,
+                  "arrayBuffers": 1095600105
+                },
+                "pools": [
+                  {
+                    "allocations": 9830,
+                    "reuses": 1447,
+                    "totalBytesAllocated": 701776896,
+                    "peakBytesAllocated": 644792832,
+                    "currentBytesAllocated": 644792832,
+                    "totalBytesRequested": 688864768,
+                    "peakBytesRequested": 638023424,
+                    "currentBytesRequested": 636971520,
+                    "resources": {
+                      "retainedModel": {
+                        "bytes": 536420352,
+                        "count": 236
+                      },
+                      "active": {
+                        "bytes": 100663296,
+                        "count": 36
+                      },
+                      "reusable": {
+                        "bytes": 7709184,
+                        "count": 64
+                      },
+                      "deferredCleanup": {
+                        "bytes": 0,
+                        "count": 0
+                      }
+                    },
+                    "activeBuffers": 272,
+                    "pooledBuffers": 64,
+                    "budgetMaxBytes": 0,
+                    "budgetUtilization": 0,
+                    "hitRate": "12.8%"
+                  }
+                ]
+              },
+              {
+                "phase": "resident-0",
+                "reason": "generation-completed",
+                "host": {
+                  "rss": 488390656,
+                  "heapTotal": 157655040,
+                  "heapUsed": 134968576,
+                  "external": 1108334258,
+                  "arrayBuffers": 1102977482
+                },
+                "pools": [
+                  {
+                    "allocations": 14557,
+                    "reuses": 2120,
+                    "totalBytesAllocated": 749468416,
+                    "peakBytesAllocated": 661341184,
+                    "currentBytesAllocated": 661341184,
+                    "totalBytesRequested": 730137856,
+                    "peakBytesRequested": 654800640,
+                    "currentBytesRequested": 653748736,
+                    "resources": {
+                      "retainedModel": {
+                        "bytes": 536420352,
+                        "count": 236
+                      },
+                      "active": {
+                        "bytes": 117440512,
+                        "count": 52
+                      },
+                      "reusable": {
+                        "bytes": 7480320,
+                        "count": 64
+                      },
+                      "deferredCleanup": {
+                        "bytes": 0,
+                        "count": 0
+                      }
+                    },
+                    "activeBuffers": 288,
+                    "pooledBuffers": 64,
+                    "budgetMaxBytes": 0,
+                    "budgetUtilization": 0,
+                    "hitRate": "12.7%"
+                  }
+                ]
+              },
+              {
+                "phase": "resident-1",
+                "reason": "generation-completed",
+                "host": {
+                  "rss": 516296704,
+                  "heapTotal": 163684352,
+                  "heapUsed": 130637344,
+                  "external": 1100938892,
+                  "arrayBuffers": 1097679268
+                },
+                "pools": [
+                  {
+                    "allocations": 19284,
+                    "reuses": 2793,
+                    "totalBytesAllocated": 797388800,
+                    "peakBytesAllocated": 678118400,
+                    "currentBytesAllocated": 678118400,
+                    "totalBytesRequested": 771576320,
+                    "peakBytesRequested": 671577856,
+                    "currentBytesRequested": 670525952,
+                    "resources": {
+                      "retainedModel": {
+                        "bytes": 536420352,
+                        "count": 236
+                      },
+                      "active": {
+                        "bytes": 134217728,
+                        "count": 68
+                      },
+                      "reusable": {
+                        "bytes": 7480320,
+                        "count": 64
+                      },
+                      "deferredCleanup": {
+                        "bytes": 0,
+                        "count": 0
+                      }
+                    },
+                    "activeBuffers": 304,
+                    "pooledBuffers": 64,
+                    "budgetMaxBytes": 0,
+                    "budgetUtilization": 0,
+                    "hitRate": "12.7%"
+                  }
+                ]
+              },
+              {
+                "phase": "idle",
+                "reason": "idle-start",
+                "host": {
+                  "rss": 516296704,
+                  "heapTotal": 163684352,
+                  "heapUsed": 130729896,
+                  "external": 1100938892,
+                  "arrayBuffers": 1097679268
+                },
+                "pools": [
+                  {
+                    "allocations": 19284,
+                    "reuses": 2793,
+                    "totalBytesAllocated": 797388800,
+                    "peakBytesAllocated": 678118400,
+                    "currentBytesAllocated": 678118400,
+                    "totalBytesRequested": 771576320,
+                    "peakBytesRequested": 671577856,
+                    "currentBytesRequested": 670525952,
+                    "resources": {
+                      "retainedModel": {
+                        "bytes": 536420352,
+                        "count": 236
+                      },
+                      "active": {
+                        "bytes": 134217728,
+                        "count": 68
+                      },
+                      "reusable": {
+                        "bytes": 7480320,
+                        "count": 64
+                      },
+                      "deferredCleanup": {
+                        "bytes": 0,
+                        "count": 0
+                      }
+                    },
+                    "activeBuffers": 304,
+                    "pooledBuffers": 64,
+                    "budgetMaxBytes": 0,
+                    "budgetUtilization": 0,
+                    "hitRate": "12.7%"
+                  }
+                ]
+              },
+              {
+                "phase": "idle",
+                "reason": "idle-end",
+                "host": {
+                  "rss": 515104768,
+                  "heapTotal": 161669120,
+                  "heapUsed": 104315416,
+                  "external": 1100937827,
+                  "arrayBuffers": 1073768027
+                },
+                "pools": [
+                  {
+                    "allocations": 19284,
+                    "reuses": 2793,
+                    "totalBytesAllocated": 797388800,
+                    "peakBytesAllocated": 678118400,
+                    "currentBytesAllocated": 678118400,
+                    "totalBytesRequested": 771576320,
+                    "peakBytesRequested": 671577856,
+                    "currentBytesRequested": 670525952,
+                    "resources": {
+                      "retainedModel": {
+                        "bytes": 536420352,
+                        "count": 236
+                      },
+                      "active": {
+                        "bytes": 134217728,
+                        "count": 68
+                      },
+                      "reusable": {
+                        "bytes": 7480320,
+                        "count": 64
+                      },
+                      "deferredCleanup": {
+                        "bytes": 0,
+                        "count": 0
+                      }
+                    },
+                    "activeBuffers": 304,
+                    "pooledBuffers": 64,
+                    "budgetMaxBytes": 0,
+                    "budgetUtilization": 0,
+                    "hitRate": "12.7%"
+                  }
+                ]
+              },
+              {
+                "phase": "cancellation",
+                "reason": "cancellation-settled",
+                "host": {
+                  "rss": 517857280,
+                  "heapTotal": 161669120,
+                  "heapUsed": 106594040,
+                  "external": 1081224644,
+                  "arrayBuffers": 1077966085
+                },
+                "pools": [
+                  {
+                    "allocations": 19766,
+                    "reuses": 3001,
+                    "totalBytesAllocated": 816182784,
+                    "peakBytesAllocated": 681987584,
+                    "currentBytesAllocated": 679166976,
+                    "totalBytesRequested": 785954304,
+                    "peakBytesRequested": 675268352,
+                    "currentBytesRequested": 671574528,
+                    "resources": {
+                      "retainedModel": {
+                        "bytes": 536420352,
+                        "count": 236
+                      },
+                      "active": {
+                        "bytes": 135266304,
+                        "count": 69
+                      },
+                      "reusable": {
+                        "bytes": 7480320,
+                        "count": 64
+                      },
+                      "deferredCleanup": {
+                        "bytes": 0,
+                        "count": 0
+                      }
+                    },
+                    "activeBuffers": 305,
+                    "pooledBuffers": 64,
+                    "budgetMaxBytes": 0,
+                    "budgetUtilization": 0,
+                    "hitRate": "13.2%"
+                  }
+                ]
+              },
+              {
+                "phase": "following-cancellation",
+                "reason": "generation-completed",
+                "host": {
+                  "rss": 539275264,
+                  "heapTotal": 161669120,
+                  "heapUsed": 117147536,
+                  "external": 1085459588,
+                  "arrayBuffers": 1081152453
+                },
+                "pools": [
+                  {
+                    "allocations": 24493,
+                    "reuses": 3674,
+                    "totalBytesAllocated": 864103168,
+                    "peakBytesAllocated": 695944192,
+                    "currentBytesAllocated": 695944192,
+                    "totalBytesRequested": 827392768,
+                    "peakBytesRequested": 689403648,
+                    "currentBytesRequested": 688351744,
+                    "resources": {
+                      "retainedModel": {
+                        "bytes": 536420352,
+                        "count": 236
+                      },
+                      "active": {
+                        "bytes": 152043520,
+                        "count": 85
+                      },
+                      "reusable": {
+                        "bytes": 7480320,
+                        "count": 64
+                      },
+                      "deferredCleanup": {
+                        "bytes": 0,
+                        "count": 0
+                      }
+                    },
+                    "activeBuffers": 321,
+                    "pooledBuffers": 64,
+                    "budgetMaxBytes": 0,
+                    "budgetUtilization": 0,
+                    "hitRate": "13.0%"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "candidate": {
+          "peakProcessRssBytes": {
+            "p50": 556392448.0,
+            "p95": 563553484.8,
+            "minimum": 495177728,
+            "maximum": 564731904,
+            "samples": [
+              561364992,
+              549801984,
+              561172480,
+              547758080,
+              558747648,
+              564731904,
+              495177728,
+              554037248
+            ]
+          },
+          "loadMs": {
+            "p50": 1122.8152885,
+            "p95": 1203.6391611000001,
+            "minimum": 1084.4516330000001,
+            "maximum": 1217.148102,
+            "samples": [
+              1159.574861,
+              1122.0193639999998,
+              1100.8247930000002,
+              1178.551128,
+              1084.4516330000001,
+              1217.148102,
+              1123.6112130000001,
+              1115.245472
+            ]
+          },
+          "initial": {
+            "firstTokenMs": {
+              "p50": 212.0548205,
+              "p95": 224.58869059999998,
+              "minimum": 207.65748400000007,
+              "maximum": 229.792107,
+              "samples": [
+                214.925203,
+                211.45489799999996,
+                211.62511400000017,
+                212.019407,
+                212.090234,
+                229.792107,
+                212.67223400000012,
+                207.65748400000007
+              ]
+            },
+            "completeMs": {
+              "p50": 940.0628835,
+              "p95": 970.58805685,
+              "minimum": 920.403943,
+              "maximum": 972.9684100000002,
+              "samples": [
+                964.855879,
+                972.9684100000002,
+                936.254516,
+                943.871251,
+                920.403943,
+                966.1674009999999,
+                928.7201439999999,
+                930.500168
+              ]
+            }
+          },
+          "resident": {
+            "firstTokenMs": {
+              "p50": 70.98541350000005,
+              "p95": 74.65765950000002,
+              "minimum": 67.16721400000006,
+              "maximum": 75.4216080000001,
+              "samples": [
+                75.4216080000001,
+                68.74665900000036,
+                70.51840300000003,
+                73.14281099999971,
+                73.55333700000028,
+                71.66697400000021,
+                68.11402199999975,
+                67.65299499999992,
+                69.23135400000001,
+                72.91014300000006,
+                74.40301,
+                72.24195300000065,
+                71.45242400000006,
+                69.42950800000017,
+                69.85752700000012,
+                67.16721400000006
+              ]
+            },
+            "completeMs": {
+              "p50": 684.6174900000003,
+              "p95": 712.4104749999999,
+              "minimum": 664.7188719999999,
+              "maximum": 714.9285910000003,
+              "samples": [
+                711.5711029999998,
+                686.3181180000001,
+                700.7966769999998,
+                675.3835650000001,
+                714.9285910000003,
+                682.9168620000005,
+                692.9581199999998,
+                681.161165,
+                695.6913249999998,
+                675.0407440000004,
+                699.3262559999998,
+                676.9421660000007,
+                697.009689,
+                670.1230059999998,
+                674.8802540000001,
+                664.7188719999999
+              ]
+            }
+          },
+          "diagnostic": {
+            "maxima": {
+              "requestedBufferBytes": 726834360,
+              "rssBytes": 540385280,
+              "arrayBuffersBytes": 1112549579
+            },
+            "poolCheckpoints": [
+              {
+                "phase": "load",
+                "reason": "loaded",
+                "host": {
+                  "rss": 393605120,
+                  "heapTotal": 133595136,
+                  "heapUsed": 102245704,
+                  "external": 1103453589,
+                  "arrayBuffers": 1101272731
+                },
+                "pools": [
+                  {
+                    "allocations": 253,
+                    "reuses": 224,
+                    "totalBytesAllocated": 606356736,
+                    "peakBytesAllocated": 606356736,
+                    "currentBytesAllocated": 606356736,
+                    "totalBytesRequested": 606077696,
+                    "peakBytesRequested": 603417344,
+                    "currentBytesRequested": 603417088,
+                    "resources": {
+                      "retainedModel": {
+                        "bytes": 536420352,
+                        "count": 236
+                      },
+                      "active": {
+                        "bytes": 67108864,
+                        "count": 4
+                      },
+                      "reusable": {
+                        "bytes": 2827520,
+                        "count": 13
+                      },
+                      "deferredCleanup": {
+                        "bytes": 0,
+                        "count": 0
+                      }
+                    },
+                    "activeBuffers": 240,
+                    "pooledBuffers": 13,
+                    "budgetMaxBytes": 0,
+                    "budgetUtilization": 0,
+                    "hitRate": "47.0%"
+                  }
+                ]
+              },
+              {
+                "phase": "initial",
+                "reason": "generation-completed",
+                "host": {
+                  "rss": 438505472,
+                  "heapTotal": 143720448,
+                  "heapUsed": 122456912,
+                  "external": 1102103802,
+                  "arrayBuffers": 1096748091
+                },
+                "pools": [
+                  {
+                    "allocations": 5084,
+                    "reuses": 793,
+                    "totalBytesAllocated": 639969024,
+                    "peakBytesAllocated": 613606656,
+                    "currentBytesAllocated": 612701696,
+                    "totalBytesRequested": 633045248,
+                    "peakBytesRequested": 608159488,
+                    "currentBytesRequested": 603417088,
+                    "resources": {
+                      "retainedModel": {
+                        "bytes": 536420352,
+                        "count": 236
+                      },
+                      "active": {
+                        "bytes": 67108864,
+                        "count": 4
+                      },
+                      "reusable": {
+                        "bytes": 9172480,
+                        "count": 64
+                      },
+                      "deferredCleanup": {
+                        "bytes": 0,
+                        "count": 0
+                      }
+                    },
+                    "activeBuffers": 240,
+                    "pooledBuffers": 64,
+                    "budgetMaxBytes": 0,
+                    "budgetUtilization": 0,
+                    "hitRate": "13.5%"
+                  }
+                ]
+              },
+              {
+                "phase": "warmup",
+                "reason": "generation-completed",
+                "host": {
+                  "rss": 461414400,
+                  "heapTotal": 150290432,
+                  "heapUsed": 120082328,
+                  "external": 1094725612,
+                  "arrayBuffers": 1091467053
+                },
+                "pools": [
+                  {
+                    "allocations": 9828,
+                    "reuses": 1449,
+                    "totalBytesAllocated": 668360704,
+                    "peakBytesAllocated": 615916032,
+                    "currentBytesAllocated": 612285952,
+                    "totalBytesRequested": 655417856,
+                    "peakBytesRequested": 608159488,
+                    "currentBytesRequested": 603417088,
+                    "resources": {
+                      "retainedModel": {
+                        "bytes": 536420352,
+                        "count": 236
+                      },
+                      "active": {
+                        "bytes": 67108864,
+                        "count": 4
+                      },
+                      "reusable": {
+                        "bytes": 8756736,
+                        "count": 64
+                      },
+                      "deferredCleanup": {
+                        "bytes": 0,
+                        "count": 0
+                      }
+                    },
+                    "activeBuffers": 240,
+                    "pooledBuffers": 64,
+                    "budgetMaxBytes": 0,
+                    "budgetUtilization": 0,
+                    "hitRate": "12.8%"
+                  }
+                ]
+              },
+              {
+                "phase": "resident-0",
+                "reason": "generation-completed",
+                "host": {
+                  "rss": 486559744,
+                  "heapTotal": 157917184,
+                  "heapUsed": 134364768,
+                  "external": 1100005732,
+                  "arrayBuffers": 1095698597
+                },
+                "pools": [
+                  {
+                    "allocations": 14554,
+                    "reuses": 2123,
+                    "totalBytesAllocated": 698231296,
+                    "peakBytesAllocated": 615926272,
+                    "currentBytesAllocated": 612057856,
+                    "totalBytesRequested": 678870016,
+                    "peakBytesRequested": 608159488,
+                    "currentBytesRequested": 603417088,
+                    "resources": {
+                      "retainedModel": {
+                        "bytes": 536420352,
+                        "count": 236
+                      },
+                      "active": {
+                        "bytes": 67108864,
+                        "count": 4
+                      },
+                      "reusable": {
+                        "bytes": 8528640,
+                        "count": 64
+                      },
+                      "deferredCleanup": {
+                        "bytes": 0,
+                        "count": 0
+                      }
+                    },
+                    "activeBuffers": 240,
+                    "pooledBuffers": 64,
+                    "budgetMaxBytes": 0,
+                    "budgetUtilization": 0,
+                    "hitRate": "12.7%"
+                  }
+                ]
+              },
+              {
+                "phase": "resident-1",
+                "reason": "generation-completed",
+                "host": {
+                  "rss": 512950272,
+                  "heapTotal": 163684352,
+                  "heapUsed": 129714152,
+                  "external": 1096802674,
+                  "arrayBuffers": 1093544115
+                },
+                "pools": [
+                  {
+                    "allocations": 19269,
+                    "reuses": 2808,
+                    "totalBytesAllocated": 729112576,
+                    "peakBytesAllocated": 615927296,
+                    "currentBytesAllocated": 611861504,
+                    "totalBytesRequested": 703072768,
+                    "peakBytesRequested": 608159488,
+                    "currentBytesRequested": 603417088,
+                    "resources": {
+                      "retainedModel": {
+                        "bytes": 536420352,
+                        "count": 236
+                      },
+                      "active": {
+                        "bytes": 67108864,
+                        "count": 4
+                      },
+                      "reusable": {
+                        "bytes": 8332288,
+                        "count": 64
+                      },
+                      "deferredCleanup": {
+                        "bytes": 0,
+                        "count": 0
+                      }
+                    },
+                    "activeBuffers": 240,
+                    "pooledBuffers": 64,
+                    "budgetMaxBytes": 0,
+                    "budgetUtilization": 0,
+                    "hitRate": "12.7%"
+                  }
+                ]
+              },
+              {
+                "phase": "idle",
+                "reason": "idle-start",
+                "host": {
+                  "rss": 512950272,
+                  "heapTotal": 163684352,
+                  "heapUsed": 129801584,
+                  "external": 1096802674,
+                  "arrayBuffers": 1093544115
+                },
+                "pools": [
+                  {
+                    "allocations": 19269,
+                    "reuses": 2808,
+                    "totalBytesAllocated": 729112576,
+                    "peakBytesAllocated": 615927296,
+                    "currentBytesAllocated": 611861504,
+                    "totalBytesRequested": 703072768,
+                    "peakBytesRequested": 608159488,
+                    "currentBytesRequested": 603417088,
+                    "resources": {
+                      "retainedModel": {
+                        "bytes": 536420352,
+                        "count": 236
+                      },
+                      "active": {
+                        "bytes": 67108864,
+                        "count": 4
+                      },
+                      "reusable": {
+                        "bytes": 8332288,
+                        "count": 64
+                      },
+                      "deferredCleanup": {
+                        "bytes": 0,
+                        "count": 0
+                      }
+                    },
+                    "activeBuffers": 240,
+                    "pooledBuffers": 64,
+                    "budgetMaxBytes": 0,
+                    "budgetUtilization": 0,
+                    "hitRate": "12.7%"
+                  }
+                ]
+              },
+              {
+                "phase": "idle",
+                "reason": "idle-end",
+                "host": {
+                  "rss": 512950272,
+                  "heapTotal": 163684352,
+                  "heapUsed": 130775568,
+                  "external": 1096802674,
+                  "arrayBuffers": 1093544115
+                },
+                "pools": [
+                  {
+                    "allocations": 19269,
+                    "reuses": 2808,
+                    "totalBytesAllocated": 729112576,
+                    "peakBytesAllocated": 615927296,
+                    "currentBytesAllocated": 611861504,
+                    "totalBytesRequested": 703072768,
+                    "peakBytesRequested": 608159488,
+                    "currentBytesRequested": 603417088,
+                    "resources": {
+                      "retainedModel": {
+                        "bytes": 536420352,
+                        "count": 236
+                      },
+                      "active": {
+                        "bytes": 67108864,
+                        "count": 4
+                      },
+                      "reusable": {
+                        "bytes": 8332288,
+                        "count": 64
+                      },
+                      "deferredCleanup": {
+                        "bytes": 0,
+                        "count": 0
+                      }
+                    },
+                    "activeBuffers": 240,
+                    "pooledBuffers": 64,
+                    "budgetMaxBytes": 0,
+                    "budgetUtilization": 0,
+                    "hitRate": "12.7%"
+                  }
+                ]
+              },
+              {
+                "phase": "cancellation",
+                "reason": "cancellation-settled",
+                "host": {
+                  "rss": 515600384,
+                  "heapTotal": 163946496,
+                  "heapUsed": 143834696,
+                  "external": 1104210320,
+                  "arrayBuffers": 1098854593
+                },
+                "pools": [
+                  {
+                    "allocations": 19754,
+                    "reuses": 3013,
+                    "totalBytesAllocated": 746792448,
+                    "peakBytesAllocated": 615927296,
+                    "currentBytesAllocated": 611861504,
+                    "totalBytesRequested": 716090880,
+                    "peakBytesRequested": 608159488,
+                    "currentBytesRequested": 603417088,
+                    "resources": {
+                      "retainedModel": {
+                        "bytes": 536420352,
+                        "count": 236
+                      },
+                      "active": {
+                        "bytes": 67108864,
+                        "count": 4
+                      },
+                      "reusable": {
+                        "bytes": 8332288,
+                        "count": 64
+                      },
+                      "deferredCleanup": {
+                        "bytes": 0,
+                        "count": 0
+                      }
+                    },
+                    "activeBuffers": 240,
+                    "pooledBuffers": 64,
+                    "budgetMaxBytes": 0,
+                    "budgetUtilization": 0,
+                    "hitRate": "13.2%"
+                  }
+                ]
+              },
+              {
+                "phase": "following-cancellation",
+                "reason": "generation-completed",
+                "host": {
+                  "rss": 540385280,
+                  "heapTotal": 174194688,
+                  "heapUsed": 143076592,
+                  "external": 1097871452,
+                  "arrayBuffers": 1094612893
+                },
+                "pools": [
+                  {
+                    "allocations": 24469,
+                    "reuses": 3698,
+                    "totalBytesAllocated": 777870080,
+                    "peakBytesAllocated": 615927296,
+                    "currentBytesAllocated": 611861504,
+                    "totalBytesRequested": 740440832,
+                    "peakBytesRequested": 608159488,
+                    "currentBytesRequested": 603417088,
+                    "resources": {
+                      "retainedModel": {
+                        "bytes": 536420352,
+                        "count": 236
+                      },
+                      "active": {
+                        "bytes": 67108864,
+                        "count": 4
+                      },
+                      "reusable": {
+                        "bytes": 8332288,
+                        "count": 64
+                      },
+                      "deferredCleanup": {
+                        "bytes": 0,
+                        "count": 0
+                      }
+                    },
+                    "activeBuffers": 240,
+                    "pooledBuffers": 64,
+                    "budgetMaxBytes": 0,
+                    "budgetUtilization": 0,
+                    "hitRate": "13.1%"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      "baselineToCandidateRssRatio": {
+        "ratio": 1.0071456519227324,
+        "lower": 0.9816209666822985,
+        "upper": 1.043757533857105,
+        "pairedLogRatios": [
+          -0.016390191682751465,
+          -0.01054493950154442,
+          -0.0114886836876344,
+          0.020472468281633772,
+          0.01044281671685229,
+          -0.04334135171349757,
+          0.11797694408350677,
+          -0.010165120706522639
+        ]
+      },
+      "candidateToBaselineResidentLatencyRatio": {
+        "ratio": 0.9996590389508831,
+        "lower": 0.9834970259753021,
+        "upper": 1.0160554677044513,
+        "pairedLogRatios": [
+          0.036524258442456284,
+          -0.02269046319483856,
+          0.024080062918411953,
+          0.0056957815569484375,
+          -0.02694716699233923,
+          0.004540998129598773,
+          0.010383349488352187,
+          -0.03431497386500204
+        ]
+      },
+      "candidateToBaselineInitialLatencyRatios": {
+        "firstTokenMs": {
+          "ratio": 0.9946105952371466,
+          "lower": 0.9772373172302967,
+          "upper": 1.0169166534796534,
+          "pairedLogRatios": [
+            -0.012723386596520588,
+            -0.0059831980774117,
+            0.010126425553278045,
+            -0.044923814845512555,
+            -0.01965108171734528,
+            0.06179567516138919,
+            -0.020531580515333946,
+            -0.011340878931963066
+          ]
+        },
+        "completeMs": {
+          "ratio": 0.9935169971788086,
+          "lower": 0.9729787160949079,
+          "upper": 1.0108939382094446,
+          "pairedLogRatios": [
+            0.023620455428630886,
+            0.007954987084022402,
+            0.013858401980881273,
+            -0.00407335944991467,
+            -0.06831738125791778,
+            0.01663419659130143,
+            -0.024356043967932676,
+            -0.017354126435568846
+          ]
+        }
+      },
+      "candidateToBaselineLoadLatencyRatio": {
+        "ratio": 1.0137590879391114,
+        "lower": 0.976581719327355,
+        "upper": 1.0532041898204592,
+        "pairedLogRatios": [
+          0.041133105693295355,
+          0.004736995531481091,
+          -0.07839906365728946,
+          0.08399833331990056,
+          -0.013655563319938136,
+          0.09860350486596935,
+          -0.025594897366103934,
+          -0.001500086410229699
+        ]
+      },
+      "candidateToBaselineResidentFirstTokenRatio": {
+        "ratio": 0.9925303623771209,
+        "lower": 0.9737899419757654,
+        "upper": 1.01137982301034,
+        "pairedLogRatios": [
+          0.004933712320417353,
+          -0.014656531611319667,
+          0.006623629701140426,
+          -0.04357542701215876,
+          -0.022538109981109323,
+          0.036429869708602326,
+          0.019343125046790074,
+          -0.0465416687561443
+        ]
+      },
+      "checks": {
+        "primaryMemoryGain": false,
+        "residentLatencyRegression": true,
+        "initialLatencyRegression": true,
+        "loadLatencyRegression": false,
+        "residentFirstTokenRegression": true,
+        "hostBudget": true,
+        "requestedBufferBudget": true,
+        "requestedBufferRegression": true,
+        "absoluteLatency": true,
+        "noObservedForeignGpuActivity": false
+      },
+      "activityFailures": [
+        "Unrelated GPU activity: DRM client 65897/gfx advanced 2125777 ns",
+        "Unrelated GPU activity: DRM client 65897/gfx advanced 2805573 ns",
+        "Unrelated GPU activity: DRM client 65897/gfx advanced 3320202 ns",
+        "Unrelated GPU activity: DRM client 65897/gfx advanced 1421327 ns",
+        "Unrelated GPU activity: DRM client 65897/gfx advanced 978433 ns",
+        "Unrelated GPU activity: DRM client 65897/gfx advanced 2254333 ns",
+        "Unrelated GPU activity: DRM client 65897/gfx advanced 1185807 ns",
+        "Unrelated GPU activity: DRM client 65897/gfx advanced 4482818 ns",
+        "Unrelated GPU activity: DRM client 65897/gfx advanced 774998 ns",
+        "Unrelated GPU activity: DRM client 65897/gfx advanced 828769 ns",
+        "Unrelated GPU activity: DRM client 65897/gfx advanced 1043260 ns",
+        "Unrelated GPU activity: DRM client 65897/gfx advanced 963509 ns",
+        "Unrelated GPU activity: DRM client 65897/gfx advanced 2536613 ns",
+        "Unrelated GPU activity: DRM client 65897/gfx advanced 841251 ns",
+        "Unrelated GPU activity: DRM client 65897/gfx advanced 1524171 ns",
+        "Unrelated GPU activity: DRM client 65897/gfx advanced 2385414 ns"
+      ],
+      "performancePromoted": false
+    }
+  },
+  "candidateDawnToDoeRssRatio": {
+    "ratio": 1.4264113213265557,
+    "lower": 1.3920833233783485,
+    "upper": 1.4783924368016943,
+    "pairedLogRatios": [
+      0.3314469350066739,
+      0.35897879408242017,
+      0.32545281248753516,
+      0.35878294263673394,
+      0.32119098916239935,
+      0.32354816254267943,
+      0.46863888909240503,
+      0.35325427121406455
+    ]
+  },
+  "performancePromoted": false,
+  "ownershipRepairProven": true
+}

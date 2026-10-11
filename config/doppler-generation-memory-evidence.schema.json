@@ -1,0 +1,428 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Bounded native Doppler memory evidence",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/receipt"
+    },
+    {
+      "$ref": "#/$defs/manifest"
+    },
+    {
+      "$ref": "#/$defs/summary"
+    }
+  ],
+  "$defs": {
+    "receipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "classification",
+        "lane",
+        "policySha256",
+        "providerManifestSha256",
+        "runnerSha256",
+        "observerSha256",
+        "admissionSha256",
+        "checkpoints",
+        "rows",
+        "observation",
+        "peakProcessRssBytes",
+        "cleanup",
+        "passed",
+        "failure"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "const": 1
+        },
+        "classification": {
+          "enum": [
+            "qualification",
+            "diagnostic",
+            "measurement"
+          ]
+        },
+        "lane": {
+          "enum": [
+            "doe",
+            "dawn"
+          ]
+        },
+        "policySha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "providerManifestSha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "runnerSha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "observerSha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "providerIdentity": {
+          "type": "object"
+        },
+        "adapterIdentity": {
+          "type": "object"
+        },
+        "admissionSha256": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "loadMs": {
+          "type": "number",
+          "minimum": 0
+        },
+        "runtimeSession": {
+          "type": "object"
+        },
+        "checkpoints": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "phase",
+              "reason",
+              "host",
+              "pools"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "phase": {
+                "type": "string"
+              },
+              "reason": {
+                "type": "string"
+              },
+              "host": {
+                "type": "object"
+              },
+              "pools": {
+                "anyOf": [
+                  {
+                    "type": "array",
+                    "items": {
+                      "type": "object"
+                    }
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "rows": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "phase"
+            ],
+            "properties": {
+              "phase": {
+                "type": "string"
+              },
+              "firstTokenMs": {
+                "anyOf": [
+                  {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "completeMs": {
+                "type": "number",
+                "minimum": 0
+              },
+              "tokens": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              },
+              "text": {
+                "type": "string"
+              },
+              "stats": {
+                "type": "object"
+              },
+              "chunks": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "cancellationError": {
+                "anyOf": [
+                  {
+                    "type": "object"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "completionSettled": {
+                "type": "boolean"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "observation": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [
+                "snapshots",
+                "maxima",
+                "overflow"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "snapshots": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
+                },
+                "maxima": {
+                  "type": "object",
+                  "required": [
+                    "requestedBufferBytes",
+                    "rssBytes",
+                    "arrayBuffersBytes"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "requestedBufferBytes": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "rssBytes": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "arrayBuffersBytes": {
+                      "type": "integer",
+                      "minimum": 0
+                    }
+                  }
+                },
+                "overflow": {
+                  "type": "boolean"
+                }
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "peakProcessRssBytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "cleanup": {
+          "type": "object"
+        },
+        "passed": {
+          "type": "boolean"
+        },
+        "failure": {
+          "anyOf": [
+            {
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "manifest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "classification",
+        "policySha256",
+        "sourceCommits",
+        "hardware",
+        "disposition",
+        "performancePromoted",
+        "claims",
+        "limitations",
+        "artifacts",
+        "archives",
+        "invalidEarlierObservations"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "const": 1
+        },
+        "classification": {
+          "const": "diagnostic-native-memory"
+        },
+        "policySha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "sourceCommits": {
+          "type": "object"
+        },
+        "hardware": {
+          "type": "object"
+        },
+        "disposition": {
+          "const": "retain-proven-ownership-repair-without-ram-promotion"
+        },
+        "performancePromoted": {
+          "const": false
+        },
+        "claims": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "limitations": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "artifacts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "path",
+              "sha256",
+              "bytes",
+              "schemaDefinition"
+            ],
+            "properties": {
+              "path": {
+                "type": "string",
+                "minLength": 1
+              },
+              "sha256": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              "bytes": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "schemaDefinition": {
+                "enum": [
+                  "receipt",
+                  null
+                ]
+              }
+            }
+          }
+        },
+        "archives": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "invalidEarlierObservations": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "classification",
+        "policySha256",
+        "cohortSha256",
+        "analysisSettingsSha256",
+        "estimator",
+        "providers",
+        "candidateDawnToDoeRssRatio",
+        "performancePromoted",
+        "ownershipRepairProven"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "const": 1
+        },
+        "classification": {
+          "const": "diagnostic-memory-comparison"
+        },
+        "policySha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "cohortSha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "analysisSettingsSha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "estimator": {
+          "type": "string"
+        },
+        "providers": {
+          "type": "object",
+          "required": [
+            "doe",
+            "dawn"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "doe": {
+              "type": "object"
+            },
+            "dawn": {
+              "type": "object"
+            }
+          }
+        },
+        "candidateDawnToDoeRssRatio": {
+          "type": "object"
+        },
+        "performancePromoted": {
+          "const": false
+        },
+        "ownershipRepairProven": {
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,164 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Native Doppler memory campaign policy",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "workloadId",
+    "classification",
+    "generationContract",
+    "generationContractSha256",
+    "reference",
+    "referenceSha256",
+    "caseId",
+    "inputTokens",
+    "maximumOutputTokens",
+    "contextCapacityTokens",
+    "precision",
+    "primaryMetric",
+    "minimumMemoryGainRatio",
+    "maximumLatencyRegressionRatio",
+    "maximumAllocationRegressionRatio",
+    "hostMemoryBudgetBytes",
+    "requestedBufferBudgetBytes",
+    "maximumLoadMs",
+    "maximumFirstTokenMs",
+    "maximumGenerationMs",
+    "independentProcesses",
+    "residentRuns",
+    "warmupRuns",
+    "sampleOrder",
+    "idleObservationMs",
+    "sampleIntervalMs",
+    "maximumSamples",
+    "scope",
+    "stoppingRule"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "workloadId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "classification": {
+      "const": "unchanged-application-replacement"
+    },
+    "generationContract": {
+      "type": "string",
+      "minLength": 1
+    },
+    "generationContractSha256": {
+      "type": "string",
+      "minLength": 1
+    },
+    "reference": {
+      "type": "string",
+      "minLength": 1
+    },
+    "referenceSha256": {
+      "type": "string",
+      "minLength": 1
+    },
+    "caseId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "inputTokens": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "maximumOutputTokens": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "contextCapacityTokens": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "precision": {
+      "type": "string",
+      "minLength": 1
+    },
+    "primaryMetric": {
+      "const": "peakProcessRssBytes"
+    },
+    "minimumMemoryGainRatio": {
+      "type": "number",
+      "minimum": 1
+    },
+    "maximumLatencyRegressionRatio": {
+      "type": "number",
+      "minimum": 1
+    },
+    "maximumAllocationRegressionRatio": {
+      "type": "number",
+      "minimum": 1
+    },
+    "hostMemoryBudgetBytes": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "requestedBufferBudgetBytes": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "maximumLoadMs": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "maximumFirstTokenMs": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "maximumGenerationMs": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "independentProcesses": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "residentRuns": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "warmupRuns": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "sampleOrder": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "doe",
+          "dawn"
+        ]
+      },
+      "minItems": 4,
+      "maxItems": 4
+    },
+    "idleObservationMs": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "sampleIntervalMs": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "maximumSamples": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "scope": {
+      "type": "string",
+      "minLength": 1
+    },
+    "stoppingRule": {
+      "type": "string",
+      "minLength": 1
+    }
+  }
+}

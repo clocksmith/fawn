@@ -1,0 +1,860 @@
+{
+  "schemaVersion": 1,
+  "classification": "diagnostic-native-memory",
+  "policySha256": "3c3f841e8a2c61a028767a5acf72f4194e1e08cffe9568c955348ae303535e9a",
+  "sourceCommits": {
+    "doe": "a6a6baaa4",
+    "dopplerBaseline": "3f1cd76251fcb7d7741ee82d9cb88b9e81b922c9",
+    "dopplerLiveParent": "e66f7b56b0f3e70028b49611074582d1a8f8ca3c",
+    "candidateDelta": "Only the two source files in ownership.patch.gz differ between exact npm archives; package version unchanged.",
+    "dopplerRepairCommit": "c3f2bb78"
+  },
+  "hardware": {
+    "machine": "128",
+    "os": "Linux-7.0.0-29-generic-x86_64-with-glibc2.43",
+    "node": "v22.22.1",
+    "gpu": "AMD Radeon 8060S Graphics / RADV STRIX_HALO / PCI 1002:1586 / Vulkan"
+  },
+  "disposition": "retain-proven-ownership-repair-without-ram-promotion",
+  "performancePromoted": false,
+  "claims": [
+    "Explicit Doe and Dawn providers execute unchanged installed Node generation matching the retained independent CPU token/text oracle.",
+    "Cancellation settles queues; the next generation is correct; teardown ends logical buffer ownership.",
+    "The sampled-logits consumer now releases its owned GPU buffer exactly once, including sampling failures.",
+    "Candidate active buffers return to loaded capacity on both providers across the frozen workload."
+  ],
+  "limitations": [
+    "Primary peak process RSS improvement did not meet the frozen material threshold.",
+    "Every measured process observed foreign Chrome GPU activity; latency and backend comparisons are diagnostic.",
+    "One Doe load-latency confidence bound exceeds its regression limit.",
+    "Requested buffers, pool capacity, host RSS and DRM driver observations are distinct; none is a measurement of unique physical GPU RAM.",
+    "Published Dawn binary is pinned, not source-matched native preparation.",
+    "The source-bound Doe host was retained from prior qualified integration; no registry npm publication, deployed package, browser contribution or unrelated-application memory transfer is qualified.",
+    "The bounded Gemma workload does not qualify larger models or Reploid numerical parity."
+  ],
+  "artifacts": [
+    {
+      "path": "admission-negative.log.gz",
+      "sha256": "bf8aa04c8906cb3920063311b3b9071c48dd183f767466f7b787b8ffb6bbee17",
+      "bytes": 350,
+      "schemaDefinition": null
+    },
+    {
+      "path": "analysis.json",
+      "sha256": "b52114a7e7124a737835c954cd3ece5883e2313535d97c6ea7400407d394317d",
+      "bytes": 644,
+      "schemaDefinition": null
+    },
+    {
+      "path": "analyze-memory.py",
+      "sha256": "843ea7c0c768bec4c304d2c5ac15283745f919c38cd27510879b1fb32c203760",
+      "bytes": 8587,
+      "schemaDefinition": null
+    },
+    {
+      "path": "baseline-providers.json.gz",
+      "sha256": "bb8ec9e1277d68f1d70a58820d9bdb3f4e174f17b819ebb005e1d5f58133d96e",
+      "bytes": 4468,
+      "schemaDefinition": null
+    },
+    {
+      "path": "candidate-providers.json.gz",
+      "sha256": "f82bea418ae74a6ad94ca1a83c0e2c909b79a511dbd8742510f9815131b7d781",
+      "bytes": 4471,
+      "schemaDefinition": null
+    },
+    {
+      "path": "doppler-architecture.log.gz",
+      "sha256": "11c16bfb9f1f561db722f7cd94cacd16079ccd85df4abd17cc9e9e6617b8b19e",
+      "bytes": 199,
+      "schemaDefinition": null
+    },
+    {
+      "path": "doppler-before-regression.log.gz",
+      "sha256": "965ac110cf342688a5931d6bc1a0017bb45e0c3bd390d50f607cdc1ae5b932c9",
+      "bytes": 373,
+      "schemaDefinition": null
+    },
+    {
+      "path": "doppler-style.log.gz",
+      "sha256": "f641d0148b9a1e3b95326b2a28f91a90c31985c1b8d495a7c5fe7ec9cf9dfd42",
+      "bytes": 248,
+      "schemaDefinition": null
+    },
+    {
+      "path": "doppler-unit.log.gz",
+      "sha256": "55c93a82bfb01f2cee4ad69f06a6f0ceeab2aa8e6cbee737c8ddd4810fd3addd",
+      "bytes": 50797,
+      "schemaDefinition": null
+    },
+    {
+      "path": "generation-contract.json",
+      "sha256": "e77adf8a73e872efda6b3fb13ac1810477b1f7d6adc7a73cea1b2ba9a87c8936",
+      "bytes": 4673,
+      "schemaDefinition": null
+    },
+    {
+      "path": "observe-memory.mjs",
+      "sha256": "3bda905742b66c3178b4699e59cbc5566b1c6d5590fb34cb0b9072055f175307",
+      "bytes": 2780,
+      "schemaDefinition": null
+    },
+    {
+      "path": "ownership.patch.gz",
+      "sha256": "ab004bc9acb4eef9dc0188a2d39589ab7a6b4dab5182f7b2831f05d8f5698df6",
+      "bytes": 532,
+      "schemaDefinition": null
+    },
+    {
+      "path": "policy.json",
+      "sha256": "3c3f841e8a2c61a028767a5acf72f4194e1e08cffe9568c955348ae303535e9a",
+      "bytes": 2015,
+      "schemaDefinition": null
+    },
+    {
+      "path": "receipts/00-baseline-dawn.json.gpu-activity.json.gz",
+      "sha256": "cb94815b82d4d68a9cfb58be0268a8e78efa09c4579cc24272cdba65f3341a28",
+      "bytes": 6735,
+      "schemaDefinition": null
+    },
+    {
+      "path": "receipts/00-baseline-dawn.json.gz",
+      "sha256": "d7a78fefc0c8223e9cb64db67e54cb328905daf90872235e98123d06a0da3846",
+      "bytes": 16720,
+      "schemaDefinition": "receipt"
+    },
+    {
+      "path": "receipts/00-baseline-dawn.log.gz",
+      "sha256": "18e7e9e4e93de59089bf6b8c8f988a984481bfa2ad8a0d4cc4811a739be3680e",
+      "bytes": 1616,
+      "schemaDefinition": null
+    },
+    {
+      "path": "receipts/00-baseline-doe.json.gpu-activity.json.gz",
+      "sha256": "9b36c7b0f22ae28c9e232fe83d851dadc69d61e1a88fa88b1f59ef9a106abc17",
+      "bytes": 6734,
+      "schemaDefinition": null
+    },
+    {
+      "path": "receipts/00-baseline-doe.json.gz",
+      "sha256": "fa5424bd4e99ea5f33108429f141d286781c8a4a12dc5065bd6b3840c7409a49",
+      "bytes": 17026,
+      "schemaDefinition": "receipt"
+    },
+    {
+      "path": "receipts/00-baseline-doe.log.gz",
+      "sha256": "d068f9615e5856c455307ca295af817fa3ade59445e859dedaae4000066694a1",
+      "bytes": 1614,
+      "schemaDefinition": null
+    },
+    {
+      "path": "receipts/00-candidate-dawn.json.gpu-activity.json.gz",
+      "sha256": "36674e1b42a522b270fc7a0fd864be67bebfdd214b660f848953b884f124e7de",
+      "bytes": 6725,
+      "schemaDefinition": null
+    },
+    {
+      "path": "receipts/00-candidate-dawn.json.gz",
+      "sha256": "3a745ed3bbf619ad8b001280ea7cf6be1d5cbeac183d5d27248630bcf1ef9111",
+      "bytes": 16696,
+      "schemaDefinition": "receipt"
+    },
+    {
+      "path": "receipts/00-candidate-dawn.log.gz",
+      "sha256": "055f2fcbe508ee41db18a014d2d01996d4cf7538f3696a3d4728866f6d10dd3b",
+      "bytes": 1618,
+      "schemaDefinition": null
+    },
+    {
+      "path": "receipts/00-candidate-doe.json.gpu-activity.json.gz",
+      "sha256": "fb3a721f29a227215fb580cd0af318f6352b8edd0ad4484b521583f3e6cc5e5c",
+      "bytes": 6723,
+      "schemaDefinition": null
+    },
+    {
+      "path": "receipts/00-candidate-doe.json.gz",
+      "sha256": "c245903f157a9592ecebbdef91faa0c752de7935bbe74a66fe048fa94ff64f10",
+      "bytes": 17011,
+      "schemaDefinition": "receipt"
+    },
+    {
+      "path": "receipts/00-candidate-doe.log.gz",
+      "sha256": "a24d2cc787a72f7046941fd4a9c73b1aee9a97d88d08dbd3c58368551c1fa5c2",
+      "bytes": 1621,
+      "schemaDefinition": null
+    },
+    {
+      "path": "receipts/01-baseline-dawn.json.gpu-activity.json.gz",
+      "sha256": "3a5f731146d6c99a2f167c37a64051ba10641db594f49c37404a65a8a960f1f2",
+      "bytes": 6716,
+      "schemaDefinition": null
+    },
+    {
+      "path": "receipts/01-baseline-dawn.json.gz",
+      "sha256": "fbce178fedcc4f5c3c78e39ded1109b1b4fa6d2fa412dcfe159c4ebe95d78445",
+      "bytes": 16716,
+      "schemaDefinition": "receipt"
+    },
+    {
+      "path": "receipts/01-baseline-dawn.log.gz",
+      "sha256": "43028dc7b012479a900aab7331506d3baec2e27ba86ae071051ff659f61fe051",
+      "bytes": 1632,
+      "schemaDefinition": null
+    },
+    {
+      "path": "receipts/01-baseline-doe.json.gpu-activity.json.gz",
+      "sha256": "8d02b78d549a2ad33cb9f459d194a16ab7dec356aebb4819fc24422a389c8c88",
+      "bytes": 6719,
+      "schemaDefinition": null
+    },
+    {
+      "path": "receipts/01-baseline-doe.json.gz",
+      "sha256": "7ef3ceb6b7073cd688733367ee85f657b863ce143744691277891efeda8c4467",
+      "bytes": 17018,
+      "schemaDefinition": "receipt"
+    },
+    {
+      "path": "receipts/01-baseline-doe.log.gz",
+      "sha256": "06dffe24c5d7d2b22eb7fbcae3f1067c712349f7b81e1007ac83540864c8f50e",
+      "bytes": 1613,
+      "schemaDefinition": null
+    },
+    {
+      "path": "receipts/01-candidate-dawn.json.gpu-activity.json.gz",
+      "sha256": "6078b69e7615bbd37cba11e9cdec6a08c4f129c72fae7ed0bd71d36054ae5049",
+      "bytes": 6717,
+      "schemaDefinition": null
+    },
+    {
+      "path": "receipts/01-candidate-dawn.json.gz",
+      "sha256": "fafb6b704fa9f8f60661fe15fd951a946773bad55e0e91a27578fd0fec61251f",
+      "bytes": 16715,
+      "schemaDefinition": "receipt"
+    },
+    {
+      "path": "receipts/01-candidate-dawn.log.gz",
+      "sha256": "2d461ba3124140a80cce12206e1cc9434fb6844dd9986df121d08dfb30bd7029",
+      "bytes": 1619,
+      "schemaDefinition": null
+    },
+    {
+      "path": "receipts/01-candidate-doe.json.gpu-activity.json.gz",
+      "sha256": "a6587ecf209befeee061ddf92eb480cc496a77401f853b224f4dde7b6cb02e6a",
+      "bytes": 6726,
+      "schemaDefinition": null
+    },
+    {
+      "path": "receipts/01-candidate-doe.json.gz",
+      "sha256": "c84125e84632786d3cee2622b0e031b196bd3e8d8027ace22bdaed551041622b",
+      "bytes": 17018,
+      "schemaDefinition": "receipt"
+    },
+    {
+      "path": "receipts/01-candidate-doe.log.gz",
+      "sha256": "f68b1c8732295da758dfa4605525bfa4c73ab1dfd3c45e21f545eb074610eb71",
+      "bytes": 1613,
+      "schemaDefinition": null
+    },
+    {
+      "path": "receipts/02-baseline-dawn.json.gpu-activity.json.gz",
+      "sha256": "7f126f1d2e2102f265b38d541eaf61d91799249509dcf84105e5c20a070321ee",
+      "bytes": 6721,
+      "schemaDefinition": null
+    },
+    {
+      "path": "receipts/02-baseline-dawn.json.gz",
+      "sha256": "ef7c12005c981a63f4646bd2b0ac02d91646183f3fd6a81220f961e76ce7a597",
+      "bytes": 16716,
+      "schemaDefinition": "receipt"
+    },
+    {
+      "path": "receipts/02-baseline-dawn.log.gz",
+      "sha256": "edbcbfe4760e70011db1163531df2224d5b2c3eb63d25483e97d870ec3d83d6e",
+      "bytes": 1623,
+      "schemaDefinition": null
+    },
+    {
+      "path": "receipts/02-baseline-doe.json.gpu-activity.json.gz",
+      "sha256": "ced4dadf60b171285188aaafb483017978768a870565321a7611f6f60db02e34",
+      "bytes": 6717,
+      "schemaDefinition": null
+    },
+    {
+      "path": "receipts/02-baseline-doe.json.gz",
+      "sha256": "db9dfa68bfa9b69660f38e3af040af190bff01f2dd29a0ddeca5701e00da8337",
+      "bytes": 17020,
+      "schemaDefinition": "receipt"
+    },
+    {
+      "path": "receipts/02-baseline-doe.log.gz",
+      "sha256": "ff7221a83a5c2df21944ee048e2db9c09f73fc7c69004279aa11874a0e1197c2",
+      "bytes": 1618,
+      "schemaDefinition": null
+    },
+    {
+      "path": "receipts/02-candidate-dawn.json.gpu-activity.json.gz",
+      "sha256": "1e9884938ae6f39a6908c42bfd411848018dc4753476a36f5b64896dc72a0dee",
+      "bytes": 6714,
+      "schemaDefinition": null
+    },
+    {
+      "path": "receipts/02-candidate-dawn.json.gz",
+      "sha256": "14661334e5e437cf74c5a4447bf2a355c35fe3661a58dbaf4521421da626e55f",
+      "bytes": 16701,
+      "schemaDefinition": "receipt"
+    },
+    {
+      "path": "receipts/02-candidate-dawn.log.gz",
+      "sha256": "478e0f6d70c4f7a33cff24e1652e98ca3665b6cd2ad91d821fe83505c68dc418",
+      "bytes": 1638,
+      "schemaDefinition": null
+    },
+    {
+      "path": "receipts/02-candidate-doe.json.gpu-activity.json.gz",
+      "sha256": "236640e5b3328a639cb12842059fd4eacd39cf3091b3d933efd0b721c6021ed2",
+      "bytes": 6720,
+      "schemaDefinition": null
+    },
+    {
+      "path": "receipts/02-candidate-doe.json.gz",
+      "sha256": "ffb5d4ea0f47c0198512a168cefd79b05cf82e5d8d098a0996f8a99d1ee44c32",
+      "bytes": 17033,
+      "schemaDefinition": "receipt"
+    },
+    {
+      "path": "receipts/02-candidate-doe.log.gz",
+      "sha256": "5f6069108cdb6a83a6c788f5799dbe804349d3d4d90fcacc044cc2b1b80118ec",
+      "bytes": 1605,
+      "schemaDefinition": null
+    },
+    {
+      "path": "receipts/03-baseline-dawn.json.gpu-activity.json.gz",
+      "sha256": "01fb5b492ce44e10d702d97446cc6f92e4b35127d93da0293649c722e5c48ba0",
+      "bytes": 6720,
+      "schemaDefinition": null
+    },
+    {
+      "path": "receipts/03-baseline-dawn.json.gz",
+      "sha256": "871417fb7a7e0f5d49124df48afa95b31bd724578751baa4d5c2a7eec9ca1f25",
+      "bytes": 16725,
+      "schemaDefinition": "receipt"
+    },
+    {
+      "path": "receipts/03-baseline-dawn.log.gz",
+      "sha256": "eed33393180e23924a6b05e02d222f3837f19fe6ba135f1eb003950988f9053a",
+      "bytes": 1621,
+      "schemaDefinition": null
+    },
+    {
+      "path": "receipts/03-baseline-doe.json.gpu-activity.json.gz",
+      "sha256": "31c5966b13823dd72aae8e82054018bda7695f634f017e39aaf686514ca1b812",
+      "bytes": 6727,
+      "schemaDefinition": null
+    },
+    {
+      "path": "receipts/03-baseline-doe.json.gz",
+      "sha256": "056c5cf1197321ef4bf8a657c5da93b8c9e50deb405fa23c15a3130e378aefa0",
+      "bytes": 17018,
+      "schemaDefinition": "receipt"
+    },
+    {
+      "path": "receipts/03-baseline-doe.log.gz",
+      "sha256": "cd29d2bb7679bb5b02421bb02d00ba872580c7e8b5f839e79ea905e59df7f1e2",
+      "bytes": 1619,
+      "schemaDefinition": null
+    },
+    {
+      "path": "receipts/03-candidate-dawn.json.gpu-activity.json.gz",
+      "sha256": "324d365257342a1b4da5997436187009cc080553e03be95ae4719d702c51170d",
+      "bytes": 6714,
+      "schemaDefinition": null
+    },
+    {
+      "path": "receipts/03-candidate-dawn.json.gz",
+      "sha256": "aad863a2485020ff066d9b616d5d5278465d79e9dcc32b6105bb5ddd27eed59b",
+      "bytes": 16690,
+      "schemaDefinition": "receipt"
+    },
+    {
+      "path": "receipts/03-candidate-dawn.log.gz",
+      "sha256": "3696565b9b511985eed1a02862acb0f3e11730674fd13889ffd38e70acac0838",
+      "bytes": 1622,
+      "schemaDefinition": null
+    },
+    {
+      "path": "receipts/03-candidate-doe.json.gpu-activity.json.gz",
+      "sha256": "79c8ec85c5b436ecaa86d3bbe146f3403cd9afdc3283e763701fee5ce5213677",
+      "bytes": 6720,
+      "schemaDefinition": null
+    },
+    {
+      "path": "receipts/03-candidate-doe.json.gz",
+      "sha256": "2e2d33d3ee67273865115bb87cb4b2ffaedd59b30b3b3153a2ac55f38f75428c",
+      "bytes": 17003,
+      "schemaDefinition": "receipt"
+    },
+    {
+      "path": "receipts/03-candidate-doe.log.gz",
+      "sha256": "2100219ab99aba2114e7cad233805239d163dd13233803aace3e9df457de7aef",
+      "bytes": 1598,
+      "schemaDefinition": null
+    },
+    {
+      "path": "receipts/04-baseline-dawn.json.gpu-activity.json.gz",
+      "sha256": "50bc306c39e3009b83256151ad046999593b4c47a107ec32e5dc3e8184742b1a",
+      "bytes": 6718,
+      "schemaDefinition": null
+    },
+    {
+      "path": "receipts/04-baseline-dawn.json.gz",
+      "sha256": "a556fd71486b6e518d0dedcf6d13746fbf4e7ed22a0266098f122d18d6da3b87",
+      "bytes": 16695,
+      "schemaDefinition": "receipt"
+    },
+    {
+      "path": "receipts/04-baseline-dawn.log.gz",
+      "sha256": "2a2224f2036872070256071952485db29cdd5ad9ceb109b7d0a77e2cf7160fc5",
+      "bytes": 1616,
+      "schemaDefinition": null
+    },
+    {
+      "path": "receipts/04-baseline-doe.json.gpu-activity.json.gz",
+      "sha256": "a2493d68566809243d6ab897ef28fabc0f580a813e7c75b980e094c678c4a74f",
+      "bytes": 6727,
+      "schemaDefinition": null
+    },
+    {
+      "path": "receipts/04-baseline-doe.json.gz",
+      "sha256": "c5d33d2d68b4a21ab606590e23c7f10f099996e492f421534ffb655eca823342",
+      "bytes": 17012,
+      "schemaDefinition": "receipt"
+    },
+    {
+      "path": "receipts/04-baseline-doe.log.gz",
+      "sha256": "208dc1742cc69d695cc56f1c1c60eac763ae5e26ed437c5b138b8ad3576780b6",
+      "bytes": 1603,
+      "schemaDefinition": null
+    },
+    {
+      "path": "receipts/04-candidate-dawn.json.gpu-activity.json.gz",
+      "sha256": "51c5626c92b65adb2662e071c1931cdd4e0a7edd0cb85c00808fd2f337d37989",
+      "bytes": 6724,
+      "schemaDefinition": null
+    },
+    {
+      "path": "receipts/04-candidate-dawn.json.gz",
+      "sha256": "ffa301cc50160d2e0d84fcfbde23ae24857f183a719634e5c073b1cb627c5133",
+      "bytes": 16720,
+      "schemaDefinition": "receipt"
+    },
+    {
+      "path": "receipts/04-candidate-dawn.log.gz",
+      "sha256": "ffdea55139f2dfe4b1dd5b5aa5aaf800603d1b8ac17a1a66b89aff3287d7ec5c",
+      "bytes": 1604,
+      "schemaDefinition": null
+    },
+    {
+      "path": "receipts/04-candidate-doe.json.gpu-activity.json.gz",
+      "sha256": "6f9b6803e40a90b5dd45d78a4c1e64c928165d67814362406fa51893d69f3ef6",
+      "bytes": 6717,
+      "schemaDefinition": null
+    },
+    {
+      "path": "receipts/04-candidate-doe.json.gz",
+      "sha256": "6d8023ba275a225bc49fb0aea1770221092cd1895e36a5d0153b630f351d5a52",
+      "bytes": 17004,
+      "schemaDefinition": "receipt"
+    },
+    {
+      "path": "receipts/04-candidate-doe.log.gz",
+      "sha256": "d3025605d358949082e047266e73591e01a45d50ae2acfa9436ffa4e06fbdeb9",
+      "bytes": 1614,
+      "schemaDefinition": null
+    },
+    {
+      "path": "receipts/05-baseline-dawn.json.gpu-activity.json.gz",
+      "sha256": "a9d81d01ee06db0b21e7b0dbb4c858d6b59466416937b4642a23e36fc47244b0",
+      "bytes": 6724,
+      "schemaDefinition": null
+    },
+    {
+      "path": "receipts/05-baseline-dawn.json.gz",
+      "sha256": "7b11a1bbf2c5c3c3368d9c80daa4dc9022b9fb3ffbe3da61a1558adaf50e5184",
+      "bytes": 16713,
+      "schemaDefinition": "receipt"
+    },
+    {
+      "path": "receipts/05-baseline-dawn.log.gz",
+      "sha256": "8f54dbe8715b768d77db1f050b24030bf5d312b3be2f10dfe6cc6e54fd3a420a",
+      "bytes": 1623,
+      "schemaDefinition": null
+    },
+    {
+      "path": "receipts/05-baseline-doe.json.gpu-activity.json.gz",
+      "sha256": "1d4904ff9b484100298437d2e79d0de27d843905cf7b27785b30d7653e6744aa",
+      "bytes": 6721,
+      "schemaDefinition": null
+    },
+    {
+      "path": "receipts/05-baseline-doe.json.gz",
+      "sha256": "10af4aa75a569e7015f807b2bf416f65c6954f5fee8e408a9a882745b744c227",
+      "bytes": 17016,
+      "schemaDefinition": "receipt"
+    },
+    {
+      "path": "receipts/05-baseline-doe.log.gz",
+      "sha256": "a09d6a4b35eb22fa74df229c6698f97590e4c48b811c8b767beaa088b0d3ac96",
+      "bytes": 1618,
+      "schemaDefinition": null
+    },
+    {
+      "path": "receipts/05-candidate-dawn.json.gpu-activity.json.gz",
+      "sha256": "9e51a6fc58c2eb2e18d471f31080b5371c2fb1c7d94b40e31dee401b75f38f25",
+      "bytes": 6714,
+      "schemaDefinition": null
+    },
+    {
+      "path": "receipts/05-candidate-dawn.json.gz",
+      "sha256": "baba8f2f1256541081fb775821877933838f5d5df929de8a7c3714ba9f603eb0",
+      "bytes": 16729,
+      "schemaDefinition": "receipt"
+    },
+    {
+      "path": "receipts/05-candidate-dawn.log.gz",
+      "sha256": "181bce193b553ab2f0ae9780da9f939f6c38bcfb806fd88e736f2acbd10024fe",
+      "bytes": 1626,
+      "schemaDefinition": null
+    },
+    {
+      "path": "receipts/05-candidate-doe.json.gpu-activity.json.gz",
+      "sha256": "5ab190d58d31aa8c6e8a97506e88ef166b8da6a4ac407a265d450d60898590be",
+      "bytes": 6722,
+      "schemaDefinition": null
+    },
+    {
+      "path": "receipts/05-candidate-doe.json.gz",
+      "sha256": "760ff20a130031cb1edcfec9f3b1ab7a7d77f48062359b8b1cfc1041c89a43fd",
+      "bytes": 17016,
+      "schemaDefinition": "receipt"
+    },
+    {
+      "path": "receipts/05-candidate-doe.log.gz",
+      "sha256": "6eb9c987f860102ddcd90d52267027ff34e28fcff15647285ef6930d740ed116",
+      "bytes": 1615,
+      "schemaDefinition": null
+    },
+    {
+      "path": "receipts/06-baseline-dawn.json.gpu-activity.json.gz",
+      "sha256": "5af6825b12ddda03851630851906a98a18a9c77be18378c5e3fba6e156637686",
+      "bytes": 6728,
+      "schemaDefinition": null
+    },
+    {
+      "path": "receipts/06-baseline-dawn.json.gz",
+      "sha256": "18e1c4ca37a227f7ac60d2a2c29e8d2be8b032de80d7ff374b21ad8c7dc49cbe",
+      "bytes": 16737,
+      "schemaDefinition": "receipt"
+    },
+    {
+      "path": "receipts/06-baseline-dawn.log.gz",
+      "sha256": "4ae1d9a8a05706561a2d37b05e8c93a713213c16d4d48b1bf647e0dd521b4230",
+      "bytes": 1624,
+      "schemaDefinition": null
+    },
+    {
+      "path": "receipts/06-baseline-doe.json.gpu-activity.json.gz",
+      "sha256": "fe538fc723be1e02155e7a56298523e6b002155439730e8fd636ec0894a90072",
+      "bytes": 6724,
+      "schemaDefinition": null
+    },
+    {
+      "path": "receipts/06-baseline-doe.json.gz",
+      "sha256": "690de3d2edc1b5a21b2eaa4af4e004c9b976e68d40cdfb547b80b6b1e75a8742",
+      "bytes": 17044,
+      "schemaDefinition": "receipt"
+    },
+    {
+      "path": "receipts/06-baseline-doe.log.gz",
+      "sha256": "884df5ea2243f7eb8a86b42711e41794da8f5b2f0a547a0bb7f70522a113280b",
+      "bytes": 1624,
+      "schemaDefinition": null
+    },
+    {
+      "path": "receipts/06-candidate-dawn.json.gpu-activity.json.gz",
+      "sha256": "ee5020124931f063d2efd8f40b0ff5269858bd03439c5d107dbba8fd20c3de25",
+      "bytes": 6726,
+      "schemaDefinition": null
+    },
+    {
+      "path": "receipts/06-candidate-dawn.json.gz",
+      "sha256": "4796b9da03941442f2686ed7c8eb7472f1d343b4246e61f0f5d7b67eeb413bf0",
+      "bytes": 16746,
+      "schemaDefinition": "receipt"
+    },
+    {
+      "path": "receipts/06-candidate-dawn.log.gz",
+      "sha256": "203cd72ab1584646051520ab5cc908e414813f62eaa6fa624e4a39c0fb0a348d",
+      "bytes": 1612,
+      "schemaDefinition": null
+    },
+    {
+      "path": "receipts/06-candidate-doe.json.gpu-activity.json.gz",
+      "sha256": "35f313b60251191770fce058f3c1f3f9a983804ce696546e93b9f492ea223b46",
+      "bytes": 6735,
+      "schemaDefinition": null
+    },
+    {
+      "path": "receipts/06-candidate-doe.json.gz",
+      "sha256": "ea6f3d2a491fefb6c8889cbf81ce2f1ea7b0bbeb77ebb4a95eecd12e6d098cc3",
+      "bytes": 16975,
+      "schemaDefinition": "receipt"
+    },
+    {
+      "path": "receipts/06-candidate-doe.log.gz",
+      "sha256": "875e2823161faa83ad539d649c366c0f2d9096d459304c637e2750a122090047",
+      "bytes": 1596,
+      "schemaDefinition": null
+    },
+    {
+      "path": "receipts/07-baseline-dawn.json.gpu-activity.json.gz",
+      "sha256": "70e36ed08f1c8210ac2c9b569b479ef4cc0ca16f24060c6c102f0425261b68a6",
+      "bytes": 6728,
+      "schemaDefinition": null
+    },
+    {
+      "path": "receipts/07-baseline-dawn.json.gz",
+      "sha256": "db066da16f2bb5c1e1477ee41d078e40af320da96257114ca3912baa5b82d85d",
+      "bytes": 16746,
+      "schemaDefinition": "receipt"
+    },
+    {
+      "path": "receipts/07-baseline-dawn.log.gz",
+      "sha256": "f21571649eef8682d185266b0994bcb19490f51cdacc721480b47fd61b0ccdf2",
+      "bytes": 1628,
+      "schemaDefinition": null
+    },
+    {
+      "path": "receipts/07-baseline-doe.json.gpu-activity.json.gz",
+      "sha256": "beb63ebbcc0794c84b4c77e0e62f91c65678667e4aee17bc746931c8bc9fb59a",
+      "bytes": 6713,
+      "schemaDefinition": null
+    },
+    {
+      "path": "receipts/07-baseline-doe.json.gz",
+      "sha256": "218115644282d5c3d40a25b5ccdc1b134a046e6bfa857df25a60b31ec4dd5f3c",
+      "bytes": 17015,
+      "schemaDefinition": "receipt"
+    },
+    {
+      "path": "receipts/07-baseline-doe.log.gz",
+      "sha256": "6bc6ce78d1dd7a652a4f0fb5f08efcb19e39ac5cb94b8f7f1a782944345e1a6d",
+      "bytes": 1612,
+      "schemaDefinition": null
+    },
+    {
+      "path": "receipts/07-candidate-dawn.json.gpu-activity.json.gz",
+      "sha256": "a0ba381cdc7d002b3b620032df15b166542079b02684f015c268758a324d250f",
+      "bytes": 6721,
+      "schemaDefinition": null
+    },
+    {
+      "path": "receipts/07-candidate-dawn.json.gz",
+      "sha256": "2a27d59a58c5384a8fae63f18218545fee787c5b912b53f3ae61a56a4d27cdc6",
+      "bytes": 16711,
+      "schemaDefinition": "receipt"
+    },
+    {
+      "path": "receipts/07-candidate-dawn.log.gz",
+      "sha256": "5fcf440a7e2e1e7a965ae861c21a06350e141d21006376211f3f698807266dda",
+      "bytes": 1615,
+      "schemaDefinition": null
+    },
+    {
+      "path": "receipts/07-candidate-doe.json.gpu-activity.json.gz",
+      "sha256": "fa38841c4b57e96fe86f535b4ee0718a51eddd89e34a58938c6bebc9664f0609",
+      "bytes": 6714,
+      "schemaDefinition": null
+    },
+    {
+      "path": "receipts/07-candidate-doe.json.gz",
+      "sha256": "ce628220fe8a3c90bf780af5b1ef15936f2f2ad0c2537870e312d68ee91ac603",
+      "bytes": 16989,
+      "schemaDefinition": "receipt"
+    },
+    {
+      "path": "receipts/07-candidate-doe.log.gz",
+      "sha256": "ce02a2ae8c522878a0037c5bc1ce6883c1c3e9ecdf8cb4312ed1bef77045e4a3",
+      "bytes": 1612,
+      "schemaDefinition": null
+    },
+    {
+      "path": "receipts/baseline-dawn-diagnostic.json.gz",
+      "sha256": "65697bf182547e32e788dcbb560170fa0c0d8e7fe1acc8ff09312d23bfb76e72",
+      "bytes": 46018,
+      "schemaDefinition": "receipt"
+    },
+    {
+      "path": "receipts/baseline-dawn-diagnostic.log.gz",
+      "sha256": "28e784f65e63eb55c519847254910a33c10f5435346aa0404db7c465f90aae7d",
+      "bytes": 1619,
+      "schemaDefinition": null
+    },
+    {
+      "path": "receipts/baseline-dawn-qualification.json.gz",
+      "sha256": "190f16e019dbab3822e2e88f0148e91ac6e62370647e7e9cb60eaaba030f59d1",
+      "bytes": 16635,
+      "schemaDefinition": "receipt"
+    },
+    {
+      "path": "receipts/baseline-dawn-qualification.log.gz",
+      "sha256": "7196797fc0d6004a20858894dcf1d8a07bea6e230fa44afff78180105cee1c26",
+      "bytes": 1621,
+      "schemaDefinition": null
+    },
+    {
+      "path": "receipts/baseline-doe-diagnostic.json.gz",
+      "sha256": "cd57d4a022cd201afed5d660750fcee8bc4d3d7c9b255ffda7343d600c6a476d",
+      "bytes": 27778,
+      "schemaDefinition": "receipt"
+    },
+    {
+      "path": "receipts/baseline-doe-diagnostic.log.gz",
+      "sha256": "8a4c6cd820297bbfb8fb7878444ba728f426b0acd9bae77155de4d9829e1f098",
+      "bytes": 1610,
+      "schemaDefinition": null
+    },
+    {
+      "path": "receipts/baseline-doe-qualification.json.gz",
+      "sha256": "832e10563d6f7d35834f2c9d767c321c50e840d1242437363d7d75c92ca8f524",
+      "bytes": 16994,
+      "schemaDefinition": "receipt"
+    },
+    {
+      "path": "receipts/baseline-doe-qualification.log.gz",
+      "sha256": "f9c465202af544f71465060b0ab064a92821d0fdcb6eb9921e303304ebb1aa0b",
+      "bytes": 1612,
+      "schemaDefinition": null
+    },
+    {
+      "path": "receipts/candidate-dawn-diagnostic.json.gz",
+      "sha256": "48ce06ed2f822aa56dc133c9cbada0d46b1ae8f87d792081b59ecf9525154d55",
+      "bytes": 45000,
+      "schemaDefinition": "receipt"
+    },
+    {
+      "path": "receipts/candidate-dawn-diagnostic.log.gz",
+      "sha256": "9df862bcde9988ac2c1b1c0c14e48547d235d61bd5eee88fa66c7350a8e07db3",
+      "bytes": 1625,
+      "schemaDefinition": null
+    },
+    {
+      "path": "receipts/candidate-dawn-qualification.json.gz",
+      "sha256": "f636229caf140293c47259861f7699f1e13d810682ad128e4d463b8eb6aaf93d",
+      "bytes": 16647,
+      "schemaDefinition": "receipt"
+    },
+    {
+      "path": "receipts/candidate-dawn-qualification.log.gz",
+      "sha256": "c2bf8649d750197591bd45dc1fb0f005b1aa03a7ec0ce0f09ef6ecd3ed0f7e57",
+      "bytes": 1615,
+      "schemaDefinition": null
+    },
+    {
+      "path": "receipts/candidate-doe-diagnostic.json.gz",
+      "sha256": "a7b9273a2130af68edad0fdc8eb52ee2cd1b8f5e58eb018a5523eb9ee285f700",
+      "bytes": 27538,
+      "schemaDefinition": "receipt"
+    },
+    {
+      "path": "receipts/candidate-doe-diagnostic.log.gz",
+      "sha256": "e79b12aecf35967aa095ab8e6bfb3b02844e50b44945934763bb080d02ebb674",
+      "bytes": 1611,
+      "schemaDefinition": null
+    },
+    {
+      "path": "receipts/candidate-doe-qualification.json.gz",
+      "sha256": "dc5c31842ed3e4a1eadf4d5d8075975551c3ea12f2cefc91c2a8fee2518f0c10",
+      "bytes": 16972,
+      "schemaDefinition": "receipt"
+    },
+    {
+      "path": "receipts/candidate-doe-qualification.log.gz",
+      "sha256": "5bf21c17ff4566ea4389a8ae6839efcbea1c42eb27d34ed79cda103c7eed9a8f",
+      "bytes": 1615,
+      "schemaDefinition": null
+    },
+    {
+      "path": "receipts/cohort.json.gz",
+      "sha256": "72c3f5d16fd2f5b53037a049ca3a90e69186513748c5d913b79685297b1ab589",
+      "bytes": 3142,
+      "schemaDefinition": null
+    },
+    {
+      "path": "reference.json",
+      "sha256": "c71da2db7a01a87f714446b68eb5eb1550b478f97784e9cba580f05b287dc546",
+      "bytes": 3643,
+      "schemaDefinition": null
+    },
+    {
+      "path": "run-memory-cohort.py",
+      "sha256": "df8ab311904782b0fc8f43c3993cf3be436e7f94725f3868235616c7181eb264",
+      "bytes": 4793,
+      "schemaDefinition": null
+    },
+    {
+      "path": "run-memory.mjs",
+      "sha256": "c97cc5de63750ba01efe35cd57e6e7c222b627ac770bd709924639856130419b",
+      "bytes": 8813,
+      "schemaDefinition": null
+    },
+    {
+      "path": "summary.json",
+      "sha256": "516b38fafa1343d4a8dff19dce4a8d597c3e4e72e18499a62906eb45efe7f4c0",
+      "bytes": 86185,
+      "schemaDefinition": null
+    },
+    {
+      "path": "decode-sampling-ownership.test.js.gz",
+      "bytes": 905,
+      "sha256": "db71b264d9ee12ec29179b89b64738dd431fef4040387bada0de32726159a8c2",
+      "schemaDefinition": null
+    }
+  ],
+  "archives": [
+    {
+      "path": "/home/x/deco/doe/bench/out/doppler-generation/20261011-memory/archives/baseline-doppler.tgz",
+      "sha256": "414f61c37e21c07e481c5685afacd24eb93ae98d02e1c0c5a7fdd4010c820e13",
+      "bytes": 3345427
+    },
+    {
+      "path": "/home/x/deco/doe/bench/out/doppler-generation/20261011-memory/archives/candidate-doppler.tgz",
+      "sha256": "308ebeeb19ee235c6de3d49aa5738aefa72aa742ce3bbf7e7f96530cb74b189b",
+      "bytes": 3345432
+    },
+    {
+      "path": "/home/x/deco/doe/bench/out/doppler-generation/20261011-memory/corrected-doe-build/lib/libwebgpu_doe.so",
+      "sha256": "f3c8c42e56d3d037402dda29256b9ba7c42acb988a570cb2696ea33ea56579ec",
+      "bytes": 12058840
+    }
+  ],
+  "invalidEarlierObservations": [
+    {
+      "path": "/home/x/deco/doe/bench/out/doppler-generation/20261011-memory/doe-diagnostic.json",
+      "sha256": "de3609e7b606195b9a47184cfe3d2504f48bfb6df70cb6052f6be58d7cabce56",
+      "bytes": 169651207,
+      "reason": "Observer snapshots on each allocation retained excessive profiling data; not a memory measurement."
+    },
+    {
+      "path": "/home/x/deco/doe/bench/out/doppler-generation/20261011-memory/current-dawn-qualification.json",
+      "sha256": "3ffc378ada8fb9ecff58af90fe426d646f5cd5746dbf37a35ec8cc96e39b99f6",
+      "bytes": 261717,
+      "reason": "Hashing a source archive in one read inflated the process high-water mark; qualification output only."
+    },
+    {
+      "path": "/home/x/deco/doe/bench/out/doppler-generation/20261011-memory/current-dawn-diagnostic.json",
+      "sha256": "9a74724b06e4a692644c7a3087fea12164d0788bb967d8cf18c4d1b4fb4df5d6",
+      "bytes": 2246112,
+      "reason": "Preliminary source-tree investigation; workspace dependency closure; not an installed cohort."
+    }
+  ]
+}

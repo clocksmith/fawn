@@ -1904,6 +1904,18 @@
     {
       "schema": "config/onnx-proc-adapter.schema.json",
       "data": "reports/benchmarks/amd-vulkan/20261005-onnx-proc-adapter/archive-installation.json"
+    },
+    {
+      "schema": "config/doppler-generation-memory.schema.json",
+      "data": "bench/external-projects/doppler-generation/memory-contract.json"
+    },
+    {
+      "schema": "config/doppler-generation-memory-evidence.schema.json",
+      "data": "reports/maintenance/20261011-doppler-generation-memory/manifest.json"
+    },
+    {
+      "schema": "config/doppler-generation-memory-evidence.schema.json",
+      "data": "reports/maintenance/20261011-doppler-generation-memory/summary.json"
     }
   ],
   "globTargets": [
