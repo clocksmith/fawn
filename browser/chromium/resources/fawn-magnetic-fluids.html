@@ -280,26 +280,25 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
   let r = height_at(gx + 1, gy).x;
   let b = height_at(gx, gy - 1).x;
   let t = height_at(gx, gy + 1).x;
-  let grad = vec2<f32>((r - l) * 0.5, (t - b) * 0.5);
-  let normal = normalize(vec3<f32>(-grad.x * 2.3, -grad.y * 2.3, 1.0));
+  // Derivatives in surface coordinates keep reflections consistent across grid sizes.
+  let grad = vec2<f32>((r - l) * u.grid.x, (t - b) * u.grid.y) * 0.5;
+  let normal = normalize(vec3<f32>(-grad * 0.12, 1.0));
   let view = normalize(vec3<f32>(0.0, 0.0, 1.0));
   let slope = length(grad);
   let fresnel = pow(1.0 - max(dot(normal, view), 0.0), 3.0);
-  let spec = pow(max(dot(reflect(vec3<f32>(0.18, 0.22, -1.0), normal), view), 0.0), 26.0);
-  let prism = spectral(c.x * 0.34 + c.z * 0.50 + fresnel * 0.25 + u.sim.y * 0.03);
-  let secondary = spectral(c.w * 0.035 + normal.x * 0.18 - normal.y * 0.12);
-  let base = mix(vec3<f32>(0.08, 0.06, 0.12), prism, 0.78);
-  let metallic = base + secondary * fresnel * 0.45 + vec3<f32>(1.0, 0.94, 0.92) * spec * 0.65;
-  let glow = prism * smoothstep(0.08, 1.0, c.z) * 0.24;
-  let vignette = 1.0 - smoothstep(0.18, 0.95, length(in.uv * 2.0 - 1.0));
-  let contour = pow(1.0 - abs(sin(c.w * 0.055 + slope * 10.0 + dot(in.uv * 2.0 - 1.0, vec2<f32>(4.0, -6.0)) - u.sim.y * 0.22)), 18.0);
-  let contourGlow = spectral(c.w * 0.012 + u.sim.y * 0.02 + slope * 0.8) * contour * (0.10 + slope * 0.24);
-  let slopeWash = spectral(slope * 0.75 + u.sim.y * 0.012) * smoothstep(0.02, 0.35, slope) * 0.10;
-  let bg = vec3<f32>(0.020, 0.018, 0.034)
-    + vignette * vec3<f32>(0.035, 0.020, 0.070)
-    + contourGlow
-    + slopeWash;
-  return vec4<f32>(max(bg, metallic + glow), 1.0);
+  let ridge = smoothstep(0.20, 4.0, slope);
+  let fieldPhase = log(1.0 + max(c.w, 0.0));
+  let prism = spectral(c.x * 0.34 + fieldPhase * 0.14 + fresnel * 0.55
+    + dot(normal.xy, vec2<f32>(0.4, -0.3)) + u.sim.y * 0.015);
+  let contour = pow(0.5 + 0.5 * sin(fieldPhase * 8.0 - c.x * 2.0), 12.0);
+  let light = normalize(vec3<f32>(0.45, 0.60, 1.0));
+  let halfVector = normalize(light + view);
+  let spec = pow(max(dot(normal, halfVector), 0.0), 64.0) * ridge;
+  // The fluid body stays black; spectral color belongs to curved reflection bands.
+  let body = vec3<f32>(0.003, 0.004, 0.006);
+  let iridescence = prism * ridge * (0.02 + contour * 0.40 + fresnel * 0.16);
+  let silver = vec3<f32>(0.80, 0.88, 1.0) * spec * 0.28;
+  return vec4<f32>(body + iridescence + silver, 1.0);
 }
 `;
 
