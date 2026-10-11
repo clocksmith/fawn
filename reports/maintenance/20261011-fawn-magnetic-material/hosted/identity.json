@@ -1,0 +1,54 @@
+{
+  "origin": "https://canvascontext.com",
+  "observedAt": "2026-10-11T20:23:39.881Z",
+  "release": {
+    "sourceCommit": "a581fcef4dfd439e39a219ce8b2932aa2169df55",
+    "demoSourceCommit": "a8c49807ef3b7d9757b2458eee8f3ec5d951e53b",
+    "application": "fawn-demo",
+    "canonicalUrl": "https://canvascontext.com/"
+  },
+  "files": [
+    {
+      "path": "/fawn-domain-migration.js",
+      "status": 200,
+      "sha256": "0d7722d0b89ee742d20d1b0945ec9118ff5012aa0cf0116de9cb136d5ffde3cc"
+    },
+    {
+      "path": "/fawn-icon.svg",
+      "status": 200,
+      "sha256": "e016e06419ee291494372c4383f0cb5cc2409a02b744c98f96fd7bd653126a07"
+    },
+    {
+      "path": "/fawn-magnetic-fluids.html",
+      "status": 200,
+      "sha256": "160c6a22435b6f9081fc95e3af965dd788f8f71d13efe40133af185f7ffa4551"
+    },
+    {
+      "path": "/fawn-prismatic-fluids.html",
+      "status": 200,
+      "sha256": "b94351292f077c8192d2ca17ffba76a78cafa6faf97b3759d8372a6a8f62a4f6"
+    },
+    {
+      "path": "/fawn-start.html",
+      "status": 200,
+      "sha256": "acc5d76aa473e833b09be5d743b297a0af82a01361fe2b3c13546067f6c3738b"
+    },
+    {
+      "path": "/index.html",
+      "status": 200,
+      "sha256": "acc5d76aa473e833b09be5d743b297a0af82a01361fe2b3c13546067f6c3738b"
+    },
+    {
+      "path": "/release.json",
+      "status": 200,
+      "sha256": "9c673ba56c15efb9902813345535dd63cbf43e3007ebdd654d23a1e305c83f5c"
+    },
+    {
+      "path": "/demo/sw.js",
+      "status": 200,
+      "sha256": "1af3b17eaff4838ff753eda2de85cdd64941f7a994673a8ea1f4819bee2c6d27"
+    }
+  ],
+  "rootMatchesIndex": true,
+  "passed": true
+}
