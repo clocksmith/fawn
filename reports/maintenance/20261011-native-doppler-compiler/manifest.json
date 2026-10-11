@@ -59,8 +59,8 @@
       "sha256": "38a8fb0aee5f4c209d1c2ad9744d2946a322f07898c101d8707fa8106279eb1f"
     },
     {
-      "path": "compiler.patch",
-      "sha256": "7747ab1915472b2e75602f334846796385b98fb2e25339688cc53755b757153f"
+      "path": "compiler.patch.gz",
+      "sha256": "08e16ac92a405f78e1869daac082cfe19d50d7adf0ff18b0d00bb8da7bfb65e4"
     }
   ],
   "nativeLibrarySha256": "f3c8c42e56d3d037402dda29256b9ba7c42acb988a570cb2696ea33ea56579ec",

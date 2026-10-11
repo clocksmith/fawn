@@ -290,8 +290,8 @@ file	src/compiler/wgsl/emit/msl/emit_msl_vertex.zig	pending			Read and review th
 file	src/compiler/wgsl/emit/msl/emit_msl_workgroup_zero.zig	pending			Read and review the complete scope.
 file	src/compiler/wgsl/emit/operator_text.zig	pending			Read and review the complete scope.
 file	src/compiler/wgsl/emit/spirv/emit_spirv.zig	stale	shader_semantics_spirv_20260919_evidence		Review all type lowering and decoration identities, allocation-failure cleanup and entrypoint emission; this focused storage-block repair does not complete the emitter review.
-file	src/compiler/wgsl/emit/spirv/emit_spirv_builtins.zig	in_progress	native_doppler_compiler_20261011_0		Complete whole-file review; retained regression evidence covers only the changed builtin or switch path.
-file	src/compiler/wgsl/emit/spirv/emit_spirv_fn.zig	in_progress	native_doppler_compiler_20261011_1		Complete whole-file review; retained regression evidence covers only the changed builtin or switch path.
+file	src/compiler/wgsl/emit/spirv/emit_spirv_builtins.zig	stale	native_doppler_compiler_20261011_0		Complete whole-file review; retained regression evidence covers only the changed builtin or switch path.
+file	src/compiler/wgsl/emit/spirv/emit_spirv_fn.zig	stale	native_doppler_compiler_20261011_1		Complete whole-file review; retained regression evidence covers only the changed builtin or switch path.
 file	src/compiler/wgsl/emit/spirv/emit_spirv_fn_helpers.zig	stale	spirv_ownership_helpers_20260928		Review scalar conversion consumers independently of the completed cache ownership correction.
 file	src/compiler/wgsl/emit/spirv/emit_spirv_matrix.zig	pending			Read and review the complete scope.
 file	src/compiler/wgsl/emit/spirv/emit_spirv_shared.zig	pending			Read and review the complete scope.
@@ -319,7 +319,7 @@ file	src/compiler/wgsl/frontend/sema_types.zig	pending			Read and review the com
 file	src/compiler/wgsl/frontend/sema_typeutils.zig	pending			Read and review the complete scope.
 file	src/compiler/wgsl/frontend/token.zig	pending			Read and review the complete scope.
 file	src/compiler/wgsl/ir/ir.zig	pending			Read and review the complete scope.
-file	src/compiler/wgsl/ir/ir_builder.zig	in_progress	native_doppler_compiler_20261011_2		Complete whole-file review; retained regression evidence covers only the changed builtin or switch path.
+file	src/compiler/wgsl/ir/ir_builder.zig	stale	native_doppler_compiler_20261011_2		Complete whole-file review; retained regression evidence covers only the changed builtin or switch path.
 file	src/compiler/wgsl/ir/ir_const_eval.zig	pending			Read and review the complete scope.
 file	src/compiler/wgsl/ir/ir_digest.zig	pending			Read and review the complete scope.
 file	src/compiler/wgsl/ir/ir_loop_independence.zig	stale	ir_loop_independence_20260927		Review remaining IR query consumers and emitter policy separately; this predicate is not a general dependence proof.
