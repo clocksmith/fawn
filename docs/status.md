@@ -3,22 +3,6 @@
 This page routes current state. Artifacts own counts, timings, hashes, and
 verdicts. Historical narrative lives under [`status/archive/`](status/archive/).
 
-Cross-project implementation is tracked in the
-[canonical Reploid TODO](https://github.com/clocksmith/reploid/blob/main/TODO.md),
-not a duplicate Doe roadmap.
-Compiler/runtime items:
-[DOE-1](https://github.com/clocksmith/reploid/blob/main/TODO.md#doe-1),
-[DOE-2](https://github.com/clocksmith/reploid/blob/main/TODO.md#doe-2),
-[DOE-3](https://github.com/clocksmith/reploid/blob/main/TODO.md#doe-3),
-[DOE-4](https://github.com/clocksmith/reploid/blob/main/TODO.md#doe-4),
-[DOE-5](https://github.com/clocksmith/reploid/blob/main/TODO.md#doe-5), and
-[DOE-6](https://github.com/clocksmith/reploid/blob/main/TODO.md#doe-6).
-Coordination starts at
-[projection handoff DD-1](https://github.com/clocksmith/reploid/blob/main/TODO.md#dd-1),
-[optional participation through Doppler ER-1](https://github.com/clocksmith/reploid/blob/main/TODO.md#er-1),
-and [shared machine windows ALL-2](https://github.com/clocksmith/reploid/blob/main/TODO.md#all-2).
-Repository-local artifacts remain authoritative for measured results.
-
 | Area | Live status | Ground truth |
 | --- | --- | --- |
 | Strategy milestones | [`status/runtime-backends-and-bench.md`](status/runtime-backends-and-bench.md) | [`config/doe-product-strategy.json`](../config/doe-product-strategy.json), [migration](product-strategy-contract.md) |
