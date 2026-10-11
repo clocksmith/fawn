@@ -40,5 +40,16 @@ python3 bench/gates/catscan_gate.py
 
 Pixel artifacts default to `bench/out/fawn-magnetic-material/`;
 `FAWN_REPORT_DIR` selects another destination. Source and artifact hashes are
-retained in `custody.json`. Hosting checks and publication identity are added
-after deploying the source commit.
+retained in `custody.json`.
+
+Publication succeeded at `https://canvascontext.com/fawn-magnetic-fluids.html`
+from Doe source commit `a8c49807ef3b7d9757b2458eee8f3ec5d951e53b`.
+[Hosted identity](hosted/identity.json) checks all eight package files and the
+root route against the published bytes. [Hosted interaction](hosted/results.json)
+passes the same mouse/touch and controls checks against the public page. Local
+hosting smoke and deployment logs are retained separately.
+
+The CATSCAN gate and JavaScript syntax check pass. The repository-wide document
+link test fails on 26 existing missing compute-program artifacts;
+[link diagnostics](document-links.json) verify those failures exactly match the
+preceding source and that both changed documents have valid local links.
