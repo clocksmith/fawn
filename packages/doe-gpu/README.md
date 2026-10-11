@@ -1,8 +1,18 @@
 # doe-gpu
 
-`doe-gpu` is the public JavaScript package for Doe's native WebGPU runtime.
-Support is limited to the runtime, operating-system, architecture, backend,
-and workload tuples declared in the Doe support matrix.
+`doe-gpu` provides JavaScript access to Doe's native WebGPU implementation.
+
+That implementation includes a WGSL compiler and runtime machinery. The compiler
+translates shader programs; the runtime manages GPU objects, pipelines, commands,
+synchronization, and cleanup. These are cooperating subsystems of Doe, not two
+providers that applications must install separately.
+
+The compiler can also be used independently through its documented integrations.
+This package's available interfaces are listed under [Entry points](#entry-points).
+
+Support is limited to the runtime, operating system, architecture, backend, and
+workload combinations declared in the
+[Doe support matrix](https://github.com/doerun/doe/blob/main/docs/doe-support-matrix.md).
 
 ## Install and verify
 
@@ -430,49 +440,27 @@ workload, hardware, timing, oracle, and claim state in the referenced artifacts.
 
 ## Browser boundary
 
-`doe-gpu/browser` wraps the browser's incumbent WebGPU implementation. It does
-not install Doe beneath `navigator.gpu` and is not evidence of Chromium runtime
-replacement. Browser integration is a separate governed lane under
-`browser/chromium/`.
+`doe-gpu/browser` forwards to the browser's existing WebGPU implementation.
+Importing it does not install Doe's native runtime or replace `navigator.gpu`.
+
+Native execution through Doe requires an explicitly supported native integration.
+Browser runtime replacement is a separate experimental integration, not a
+capability supplied by an ordinary webpage import.
 
 ### Doe-assisted WebGPU
 
-The experimental `doe-gpu/browser-compiler` entrypoint downloads a compiler into
-a Worker and returns WGSL. GPU execution remains browser-owned. The adapter
-only prepares shader modules; inject it explicitly without replacing
-`navigator.gpu`. It does not implement a complete WebGPU provider.
+`doe-gpu/browser-compiler` is an experimental, independently usable compiler
+integration. It runs a compiler in a Worker, returns WGSL and diagnostics, and
+can prepare shader modules through an explicitly injected adapter.
 
-```js
-import { createDoeCompiler, createDoeShaderAdapter } from 'doe-gpu/browser-compiler';
+The resulting shaders execute through the browser's existing WebGPU provider.
+This uses Doe's compiler without using Doe's native runtime. It does not
+implement a complete browser WebGPU provider.
 
-// Pin these values in trusted application code or build metadata.
-const compiler = await createDoeCompiler({ artifact: {
-  url: pinnedCompilerURL, sha256: pinnedSHA256, byteLength: pinnedByteLength,
-} });
-const shaders = createDoeShaderAdapter({ device, compiler, optimize: true });
-const { module, diagnostics } = await shaders.createShaderModule({ code: wgsl });
-// Use module with the original browser device. Close after pending work settles.
-compiler.close();
-```
-
-Bundle the trusted metadata with the application. A digest fetched beside
-untrusted bytes does not establish authority. Verified OPFS bytes are optional:
-cache loss, corruption or quota exhaustion retains explicit download/verification
-and cache status. The Worker owns one bounded instance and one pending job;
-closing or deadline expiry rejects pending work and terminates it.
-
-The first pass admits scalar unsigned division/remainder by literal powers of
-two for identifiers and member chains. Signed/vector operands, calls, indexed
-operands and overrides remain untouched. Floating-point arithmetic is preserved.
-Doe diagnostics use original UTF-8 byte offsets; browser diagnostics explicitly
-refer to emitted WGSL. This is bounded admission, not full WGSL conformance.
-
-Run the [particle example](examples/browser-compiler/README.md) with
-`npm run demo:browser-compiler`. It compares baseline, the same adapter with
-passes disabled, and enabled passes from identical state. It exports preparation,
-delivery, execution, readback and numerical evidence. The first
-[retained experiment](../../reports/browser-compiler/20261004/README.md)
-does not establish a material performance advantage.
+See the [browser compiler example](examples/browser-compiler/README.md) for
+setup, trusted artifact metadata, cleanup, and the comparison workflow.
+The retained experiments do not establish a material application-performance
+advantage.
 
 ## Release boundary
 

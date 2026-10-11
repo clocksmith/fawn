@@ -1,8 +1,12 @@
 # Doe
 
-Doe compiles WGSL shaders and runs WebGPU applications on native GPU backends.
-The compiler and native runtime can earn adoption independently, with separate
-evidence. Vulkan is the current engineering focus.
+Doe implements WebGPU with a WGSL compiler and native GPU runtime.
+
+The compiler is a subsystem of the complete WebGPU implementation, alongside
+resource management, command recording, and backend execution. It can also be
+used independently without adopting Doe's runtime.
+
+Vulkan is the current engineering focus.
 
 Start with the [ONNX Vulkan evaluation installation](docs/onnx-vulkan-installation.md).
 It runs pinned ONNX Runtime WebGPU operators through Doe, with unchanged
@@ -15,11 +19,9 @@ compatibility, retained adoption, and material replacement advantage remain
 unestablished. See the guide for host
 prerequisites, package acquisition, initialization, cleanup, and exclusions.
 
-![Doe prepares a shader program and binds its data on the selected device, then executes GPU work.](assets/readme/execution.svg)
-
-Backend support and native/browser releases are qualified separately. See the
-[technical diagrams: compiler and resource lifetime](#technical-architecture)
-and [support matrix](docs/doe-support-matrix.md).
+See [Technical architecture](#technical-architecture) for compiler and runtime
+boundaries, and the [support matrix](docs/doe-support-matrix.md) for qualified
+configurations. Native and browser integrations have separate support requirements.
 
 **[Evaluate ONNX on Vulkan](docs/onnx-vulkan-installation.md)** · [Run your first Doe kernel](#how-to-use-doe)
 
@@ -99,60 +101,51 @@ Inspect the raw receipt and merged classification before updating status.
 
 ## Technical architecture
 
-The component view follows source at `198d56d34`. Compiler, native runtime and backend support
-remain separately qualified. See the [architecture guide](docs/architecture.md#technical-diagrams)
-for source owners and implementation details.
+Doe's complete WebGPU implementation includes its WGSL compiler, WebGPU object
+and validation layer, resource management, command recording, and native backends.
+The application sits above this implementation; platform APIs, drivers, and GPU
+hardware remain external dependencies.
 
 ### Compiler and runtime ownership
 
-Native execution brings together compiled shader code, live resources, and
-recorded commands. Completion travels back through the object layer; submitting
-work alone does not make output readable or resources safe to reuse. Solid arrows
-show calls or data; the dotted return marks lifetime coordination.
+**WGSL compiler:** Parses and validates shader meaning, builds an intermediate
+representation, applies compiler transformations, and emits target shader code
+and reflection information. It does not own application GPU buffers or submit
+GPU commands.
 
-![Nine Doe components show shader compilation, resources, and recorded commands converging at backend submission, with GPU completion returning results and governing resource retirement.](assets/readme/technical-architecture.svg)
+**Runtime machinery:** Validates WebGPU API usage, manages devices, buffers,
+textures, pipelines, and recorded commands, and handles submission,
+synchronization, completion, readback, and cleanup. Shader preparation invokes
+the compiler; compiled shader code is one input to pipeline creation and execution.
 
-[Open the diagram at full size](assets/readme/technical-architecture.svg).
+The compiler is inside the complete implementation, not an additional layer
+outside WebGPU. It remains independently callable: a tool can consume compiler
+output without creating a Doe device or running work through Doe's runtime.
 
-Compiler callers can consume emitted code independently of the runtime. Native
-execution uses one selected backend; the target list is not a fallback chain or
-a claim of equal backend support. Command references keep dependencies alive;
-completion and ownership rules govern their eventual release.
+Platform drivers may perform further compilation before hardware execution.
+Doe's native backend manages the interaction with those platform facilities;
+Doe does not replace the operating system's GPU driver.
+
+Application behavior remains outside both subsystems. For example, Doppler owns
+model computation, tokenization, and sampling; Doe owns the selected shader
+compilation and GPU execution path.
 
 ### Optional prepared-program resource lifetime
 
-Prepared programs are optional. Structural replacement preserves the original
-on preparation failure; cancellation cannot interrupt submitted GPU commands.
+Prepared programs retain compatible resources for repeated computation. They
+are an optional runtime interface, not a prerequisite for ordinary WebGPU use.
 
-```mermaid
-flowchart TB
-    DESC["Immutable program descriptor<br/>shaders, bindings, buffers, steps, output"]
-    PREP["prepareComputeProgram(device, descriptor, options)<br/>validate identity and execution mode"]
-    READY["Ready program<br/>device-specific resources and resident state"]
-    RUN["run(inputs, signal)<br/>reject overlapping work and conflicting leases"]
-    WAIT["Submission and completion<br/>await queue and any readback mapping"]
-    OUT["Result or failure<br/>release invocation input leases"]
-    UPDATE["Assess and authorize update<br/>bind approval to this instance and revision"]
-    BUILD["Prepare replacement<br/>reuse compatible resources"]
-    NEXT["New ready program<br/>retire old instance after successful preparation"]
-    CLOSE["close()<br/>reject new work, await active operation, release"]
-    DESC --> PREP --> READY
-    READY --> RUN --> WAIT --> OUT
-    OUT -->|successful settled run| READY
-    OUT -->|invalidated state| CLOSE
-    READY --> UPDATE --> BUILD
-    BUILD -->|success| NEXT
-    BUILD -->|failure, original remains open| READY
-    READY --> CLOSE
-    classDef contract fill:#f3edff,stroke:#7c3aed,color:#111827
-    classDef resident fill:#edf3ff,stroke:#2563eb,color:#111827
-    classDef invocation fill:#ffffff,stroke:#111827,color:#111827
-    classDef compute fill:#fff0f3,stroke:#e11d48,color:#111827
-    class DESC,PREP,UPDATE contract
-    class READY,BUILD,NEXT resident
-    class RUN,OUT,CLOSE invocation
-    class WAIT compute
-```
+A structural update prepares its replacement before activation. Failed
+preparation preserves the working program. Recorded and submitted work retains
+the resource references needed for safe execution and cleanup.
+
+Submission is not completion. Cancellation does not establish that the GPU has
+stopped using resources. Readback, reuse, and destruction follow the applicable
+completion and ownership rules.
+
+See the [architecture guide](docs/architecture.md) for implementation owners and
+[reusable compute programs](docs/reusable-compute-programs.md) for the optional
+interface and its supported execution modes.
 
 ## Evidence and demonstrated capabilities
 
