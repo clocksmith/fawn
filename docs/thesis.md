@@ -187,6 +187,12 @@ adoption and retention require separate evidence from the application's owner.
 Receipts, internal benchmarks, sibling integrations, and paid qualification do
 not establish adoption. Revenue is not required for the first proof.
 
+For a retained adoption claim, record the external owner's dependency decision,
+supported scope, rollback path, and release evidence. Requalify after a
+consequential application, driver, runtime, adapter, or hardware change and retain
+the owner's second release decision. Initial substitution and a measured benefit
+do not establish continued use.
+
 ## Ownership and independent controls
 
 The WGSL compiler and DoeRuntime are independently adoptable. Compiler evidence
