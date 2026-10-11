@@ -46,3 +46,11 @@ machine's default headless graphics path. Response artifacts default to
 `bench/out/fawn-prismatic-response/`; `FAWN_REPORT_DIR` changes their destination.
 Set `FAWN_TEST_ORIGIN=https://canvascontext.com` for the same response checks
 against the public page, omitting the local preceding-source comparison.
+
+Publication succeeded at `https://canvascontext.com/` from Doe source commit
+`2aa745fe315fbf5354ebc0694b34b29f53193aae`.
+[Hosted identity](hosted/identity.json) verifies all eight package files and the
+root route against the published bytes. [Hosted response](hosted/results.json)
+passes the first-frame stroke, quick tap, release/cancellation and finite GPU
+state checks for desktop mouse and emulated mobile touch on the public page.
+Local hosting smoke and successful deployment logs are retained separately.
