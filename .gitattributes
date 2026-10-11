@@ -1,2 +1,5 @@
 # Retained unified patches contain significant spaces on empty context lines.
 reports/maintenance/**/source.diff -whitespace
+reports/maintenance/**/source.patch -whitespace
+# Preserve terminal blank lines in this checkpoint's byte-bound tool output.
+reports/maintenance/20261011-wgsl-packed-integers/*.log whitespace=-blank-at-eof
