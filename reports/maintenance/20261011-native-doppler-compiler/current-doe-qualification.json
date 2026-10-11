@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "classification": "qualification",
+  "lane": "doe",
+  "policySha256": "c79962d25d8a0425b98efb0ee23e9ca621cae5f472953cd910534bab7e2f0e98",
+  "providerManifestSha256": "89ea1eda17ceec5081220aab510feba8472e60744383fae94a98f20fc83abd21",
+  "runnerSha256": "bf22f03cc6c05e474971edb5c816efa03e0b5506cb107e569d231406b845f47d",
+  "observerSha256": "72cd459a858eec5dad4ff115b68c16e5b65dd185b6f101c5d05d8ea4bd0563a5",
+  "checkpoints": [
+    {
+      "phase": "load",
+      "reason": "before-load",
+      "host": {
+        "rss": 169222144,
+        "heapTotal": 66719744,
+        "heapUsed": 32112760,
+        "external": 3042560,
+        "arrayBuffers": 918078
+      },
+      "pools": null
+    },
+    {
+      "phase": "cleanup",
+      "reason": "unloaded",
+      "host": {
+        "rss": 402427904,
+        "heapTotal": 133332992,
+        "heapUsed": 104063536,
+        "external": 1122814350,
+        "arrayBuffers": 1120632427
+      },
+      "pools": null
+    }
+  ],
+  "rows": [],
+  "observation": null,
+  "peakProcessRssBytes": 1534935040,
+  "cleanup": {
+    "unloaded": null,
+    "destroyedDevices": 4
+  },
+  "passed": false,
+  "failure": {
+    "name": "Error",
+    "message": "Pipeline load phase \"rope\" failed: Shader compilation failed for rope_precompute_f32",
+    "stack": "Error: Pipeline load phase \"rope\" failed: Shader compilation failed for rope_precompute_f32\n    at createPipelineLoadPhaseError (file:///home/x/deco/doe/bench/out/doppler-generation/20261011-memory/current-doppler/src/inference/pipelines/text/pipeline-load-timing.js:9:19)\n    at withPipelineLoadPhase (file:///home/x/deco/doe/bench/out/doppler-generation/20261011-memory/current-doppler/src/inference/pipelines/text/pipeline-load-timing.js:32:11)\n    at async timedPipelineLoadPhase (file:///home/x/deco/doe/bench/out/doppler-generation/20261011-memory/current-doppler/src/inference/pipelines/text/pipeline-load-timing.js:73:12)\n    at async InferencePipeline.loadModel (file:///home/x/deco/doe/bench/out/doppler-generation/20261011-memory/current-doppler/src/inference/pipelines/text/lifecycle.js:405:5)\n    at async file:///home/x/deco/doe/bench/out/doppler-generation/20261011-memory/current-doppler/src/inference/pipelines/factory.js:22:7\n    at async runWithShaderSourceScope (file:///home/x/deco/doe/bench/out/doppler-generation/20261011-memory/current-doppler/src/gpu/kernels/shader-source-scope.js:70:16)\n    at async createInitializedPipeline (file:///home/x/deco/doe/bench/out/doppler-generation/20261011-memory/current-doppler/src/inference/pipelines/factory.js:14:3)\n    at async loadProgram (file:///home/x/deco/doe/bench/out/doppler-generation/20261011-memory/current-doppler/src/client/model-host/index.js:313:18)\n    at async Module.load (file:///home/x/deco/doe/bench/out/doppler-generation/20261011-memory/current-doppler/src/client/model-host/index.js:210:13)\n    at async file:///home/x/deco/doe/bench/external-projects/doppler-generation/run-memory.mjs:69:11"
+  }
+}

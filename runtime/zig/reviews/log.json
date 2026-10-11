@@ -28034,6 +28034,81 @@
       "targets": [
         "src/backend/vulkan/vk_pipeline_cache.zig"
       ]
+    },
+    {
+      "context": [],
+      "evidence": [
+        {
+          "path": "reports/maintenance/20261011-native-doppler-compiler/manifest.json",
+          "sha256": "d2ea8037230e8e58dd209159a57198598c4387e73b9ef79a06ee2dededad0a46"
+        }
+      ],
+      "findings": [],
+      "inputHash": "eb51e1be715676143bffee3d90d198ab7e687e6ae204715950d1269508cf6d54",
+      "level": "file",
+      "nextAction": "Complete whole-file review; retained regression evidence covers only the changed builtin or switch path.",
+      "prerequisites": [],
+      "resolvedFindings": [],
+      "reviewId": "native_doppler_compiler_20261011_0",
+      "reviewedAt": "2026-10-11T12:55:20.179113+00:00",
+      "reviewer": "codex-native-doppler",
+      "sourceCommit": "c8fb0f46e5cc7b7f947f15fcec4a70ebf318320b",
+      "status": "in_progress",
+      "summary": "Bounded compatibility repair inspected and tested; complete file review remains unfinished.",
+      "supersedes": null,
+      "targets": [
+        "src/compiler/wgsl/emit/spirv/emit_spirv_builtins.zig"
+      ]
+    },
+    {
+      "context": [],
+      "evidence": [
+        {
+          "path": "reports/maintenance/20261011-native-doppler-compiler/manifest.json",
+          "sha256": "d2ea8037230e8e58dd209159a57198598c4387e73b9ef79a06ee2dededad0a46"
+        }
+      ],
+      "findings": [],
+      "inputHash": "e61d33fe00024d582a114ec6d83011a69e6ff77b28861be14df729952acac8b8",
+      "level": "file",
+      "nextAction": "Complete whole-file review; retained regression evidence covers only the changed builtin or switch path.",
+      "prerequisites": [],
+      "resolvedFindings": [],
+      "reviewId": "native_doppler_compiler_20261011_1",
+      "reviewedAt": "2026-10-11T12:55:21.851507+00:00",
+      "reviewer": "codex-native-doppler",
+      "sourceCommit": "c8fb0f46e5cc7b7f947f15fcec4a70ebf318320b",
+      "status": "in_progress",
+      "summary": "Bounded compatibility repair inspected and tested; complete file review remains unfinished.",
+      "supersedes": "spirv_pointer_alias_20260928",
+      "targets": [
+        "src/compiler/wgsl/emit/spirv/emit_spirv_fn.zig"
+      ]
+    },
+    {
+      "context": [],
+      "evidence": [
+        {
+          "path": "reports/maintenance/20261011-native-doppler-compiler/manifest.json",
+          "sha256": "d2ea8037230e8e58dd209159a57198598c4387e73b9ef79a06ee2dededad0a46"
+        }
+      ],
+      "findings": [],
+      "inputHash": "5e6b099ecbd2e4d88874ffbc6814a35c8943594d4b444085d1fa59eed0b2a023",
+      "level": "file",
+      "nextAction": "Complete whole-file review; retained regression evidence covers only the changed builtin or switch path.",
+      "prerequisites": [],
+      "resolvedFindings": [],
+      "reviewId": "native_doppler_compiler_20261011_2",
+      "reviewedAt": "2026-10-11T12:55:23.504369+00:00",
+      "reviewer": "codex-native-doppler",
+      "sourceCommit": "c8fb0f46e5cc7b7f947f15fcec4a70ebf318320b",
+      "status": "in_progress",
+      "summary": "Bounded compatibility repair inspected and tested; complete file review remains unfinished.",
+      "supersedes": null,
+      "targets": [
+        "src/compiler/wgsl/ir/ir_builder.zig"
+      ]
     }
   ],
   "schemaVersion": 1

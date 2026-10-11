@@ -319,8 +319,8 @@ pub fn emit_builtin(self: anytype, call: anytype, result_ty: ir.TypeId) !?u32 {
     // GLSL.std.450 FindSMsb / FindUMsb for firstLeadingBit.
     if (std.mem.eql(u8, call.name, "firstLeadingBit")) {
         return try emit_glsl_ext_inst_args(self, call, result_ty, switch (self.scalar_kind(result_ty)) {
-            .signed => 44, // FindSMsb
-            else => 42, // FindUMsb
+            .signed => 74, // FindSMsb
+            else => 75, // FindUMsb
         });
     }
     if (std.mem.eql(u8, call.name, "firstTrailingBit")) {
@@ -787,7 +787,7 @@ fn emit_count_leading_zeros(self: anytype, call: anytype, result_ty: ir.TypeId) 
         try ops.append(self.emitter.alloc, result_type);
         try ops.append(self.emitter.alloc, msb_id);
         try ops.append(self.emitter.alloc, import_id);
-        try ops.append(self.emitter.alloc, 42); // FindUMsb
+        try ops.append(self.emitter.alloc, 75); // FindUMsb
         try ops.append(self.emitter.alloc, val_id);
         try self.emitter.builder.append_function_inst(spirv.Opcode.ExtInst, ops.items);
     }

@@ -27,7 +27,7 @@ pub fn FunctionState(comptime EmitterT: type) type {
         local_value_ids: []u32,
         indexed_values: std.ArrayListUnmanaged(struct { base: ir.ExprId, pointer: u32 }) = .{},
         instruction_cache: InstructionCache,
-        break_targets: std.ArrayListUnmanaged(u32) = .{},
+        break_targets: std.ArrayListUnmanaged(struct { label: u32, referenced: bool = false }) = .{},
         continue_targets: std.ArrayListUnmanaged(u32) = .{},
 
         pub fn init(emitter: *EmitterT, function_index: ir.FunctionId) EmitError!@This() {
@@ -234,7 +234,7 @@ pub fn FunctionState(comptime EmitterT: type) type {
                         try self.emitter.builder.append_function_inst(spirv.Opcode.Branch, &.{body_label});
                     }
 
-                    try self.break_targets.append(self.emitter.alloc, merge_label);
+                    try self.break_targets.append(self.emitter.alloc, .{ .label = merge_label });
                     try self.continue_targets.append(self.emitter.alloc, continue_label);
 
                     try self.emit_label(body_label);
@@ -294,22 +294,32 @@ pub fn FunctionState(comptime EmitterT: type) type {
                     try self.emitter.builder.append_function_inst(spirv.Opcode.SelectionMerge, &.{ merge_label, spirv.SelectionControl.None });
                     try self.emitter.builder.append_function_inst(spirv.Opcode.Switch, operands.items);
 
-                    try self.break_targets.append(self.emitter.alloc, merge_label);
+                    try self.break_targets.append(self.emitter.alloc, .{ .label = merge_label });
+                    var merge_reachable = default_label == merge_label;
                     case_index = 0;
                     while (case_index < switch_stmt.cases.len) : (case_index += 1) {
                         const case_node = self.function.switch_cases.items[switch_stmt.cases.start + case_index];
                         try self.emit_label(labels[case_index]);
                         const terminated = try self.emit_stmt(case_node.body);
-                        if (!terminated) try self.emitter.builder.append_function_inst(spirv.Opcode.Branch, &.{merge_label});
+                        if (!terminated) {
+                            try self.emitter.builder.append_function_inst(spirv.Opcode.Branch, &.{merge_label});
+                            merge_reachable = true;
+                        }
                     }
-                    _ = self.break_targets.pop();
+                    merge_reachable = self.break_targets.pop().?.referenced or merge_reachable;
 
                     try self.emit_label(merge_label);
+                    if (!merge_reachable) {
+                        try self.emitter.builder.append_function_inst(spirv.Opcode.Unreachable, &.{});
+                        return true;
+                    }
                     return false;
                 },
                 .break_ => {
                     if (self.break_targets.items.len == 0) return error.InvalidIr;
-                    try self.emitter.builder.append_function_inst(spirv.Opcode.Branch, &.{self.break_targets.items[self.break_targets.items.len - 1]});
+                    const target = &self.break_targets.items[self.break_targets.items.len - 1];
+                    try self.emitter.builder.append_function_inst(spirv.Opcode.Branch, &.{target.label});
+                    target.referenced = true;
                     return true;
                 },
                 .continue_ => {

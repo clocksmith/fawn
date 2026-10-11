@@ -1,0 +1,244 @@
+diff --git a/runtime/zig/source-layout.json b/runtime/zig/source-layout.json
+index b28a3936b..ffe8f7f39 100644
+--- a/runtime/zig/source-layout.json
++++ b/runtime/zig/source-layout.json
+@@ -2302,15 +2302,15 @@
+       },
+       "src/compiler/wgsl/emit/spirv/emit_spirv_builtins.zig": {
+         "decision": "Keep",
+-        "moduleSha256": "7089329d46e786d4e19ba875d710e201d2e6d037198c44103645e89883e48d1d",
+-        "reason": "Keep: the shared SPIR-V builtin family owns signature checks and typed instruction emission; texture and function storage stay delegated. Integer dot evaluates each vector once and emits integer multiplication and scalar reduction; floating dot keeps its existing opcode. No source rewriting, scheduling, policy selection, or new imports enter this owner.",
+-        "reviewer": "codex-onnx-integer-dot/2026-10-05"
++        "moduleSha256": "0493b118aeadde5340d57c25f7ceceb6ff0688f8c2f980c638a5520fea8ad8a0",
++        "reason": "Keep: typed builtin emission owns GLSL integer search opcodes. Correct firstLeadingBit and countLeadingZeros mappings without shader rewrites or selection policy.",
++        "reviewer": "codex-native-doppler-compatibility/2026-10-11"
+       },
+       "src/compiler/wgsl/emit/spirv/emit_spirv_fn.zig": {
+         "decision": "Keep",
+-        "moduleSha256": "e12d83fdeb0c97135158c6395dccc5c26478b86596d380ea7821b33719a0cefe",
+-        "reviewer": "codex-onnx-store-materialization/2026-10-05",
+-        "reason": "Keep: SPIR-V function lowering materializes admitted assignment and initializer values to destination types and applies WGSL default initialization at declaration execution; instruction and reference ownership remain unchanged."
++        "moduleSha256": "b14a79f337481fc16b34e3c5e0453162a0a0efbb621fda3042f818b7474ca99e",
++        "reviewer": "codex-native-doppler-compatibility/2026-10-11",
++        "reason": "Keep: SPIR-V control flow owns switch merge reachability. Break target identity and incoming edges remain in the function state; unreachable merges terminate without discarding explicit break paths."
+       },
+       "src/compiler/wgsl/emit/spirv/emit_spirv_fn_helpers.zig": {
+         "decision": "Keep",
+@@ -2464,9 +2464,9 @@
+       },
+       "src/compiler/wgsl/ir/ir_builder.zig": {
+         "decision": "Keep",
+-        "moduleSha256": "287f16284894c4e21bc2aaffa49049dbd66d5856ef6256355f101150feb2eff8",
+-        "reason": "Keep: WGSL IR lowering preserves address-of, dereference, and pointer-valued let and call expressions.",
+-        "reviewer": "codex-doe-pointer-reference-20260928"
++        "moduleSha256": "7eb4546fa22c07f90b323f7beb99f48a7da29f88d9a74ebf190755db13b579ae",
++        "reason": "Keep: AST-to-IR lowering owns contiguous switch case publication. Temporary selectors retain explicit ownership until publication; nested case ranges and allocation rollback stay local.",
++        "reviewer": "codex-native-doppler-compatibility/2026-10-11"
+       },
+       "src/compiler/wgsl/ir/ir_const_eval.zig": {
+         "decision": "Keep",
+diff --git a/runtime/zig/src/compiler/wgsl/emit/spirv/emit_spirv_builtins.zig b/runtime/zig/src/compiler/wgsl/emit/spirv/emit_spirv_builtins.zig
+index 5947a085e..f971d2660 100644
+--- a/runtime/zig/src/compiler/wgsl/emit/spirv/emit_spirv_builtins.zig
++++ b/runtime/zig/src/compiler/wgsl/emit/spirv/emit_spirv_builtins.zig
+@@ -319,8 +319,8 @@ pub fn emit_builtin(self: anytype, call: anytype, result_ty: ir.TypeId) !?u32 {
+     // GLSL.std.450 FindSMsb / FindUMsb for firstLeadingBit.
+     if (std.mem.eql(u8, call.name, "firstLeadingBit")) {
+         return try emit_glsl_ext_inst_args(self, call, result_ty, switch (self.scalar_kind(result_ty)) {
+-            .signed => 44, // FindSMsb
+-            else => 42, // FindUMsb
++            .signed => 74, // FindSMsb
++            else => 75, // FindUMsb
+         });
+     }
+     if (std.mem.eql(u8, call.name, "firstTrailingBit")) {
+@@ -787,7 +787,7 @@ fn emit_count_leading_zeros(self: anytype, call: anytype, result_ty: ir.TypeId)
+         try ops.append(self.emitter.alloc, result_type);
+         try ops.append(self.emitter.alloc, msb_id);
+         try ops.append(self.emitter.alloc, import_id);
+-        try ops.append(self.emitter.alloc, 42); // FindUMsb
++        try ops.append(self.emitter.alloc, 75); // FindUMsb
+         try ops.append(self.emitter.alloc, val_id);
+         try self.emitter.builder.append_function_inst(spirv.Opcode.ExtInst, ops.items);
+     }
+diff --git a/runtime/zig/src/compiler/wgsl/emit/spirv/emit_spirv_fn.zig b/runtime/zig/src/compiler/wgsl/emit/spirv/emit_spirv_fn.zig
+index aa56c795f..cae92bbf1 100644
+--- a/runtime/zig/src/compiler/wgsl/emit/spirv/emit_spirv_fn.zig
++++ b/runtime/zig/src/compiler/wgsl/emit/spirv/emit_spirv_fn.zig
+@@ -27,7 +27,7 @@ pub fn FunctionState(comptime EmitterT: type) type {
+         local_value_ids: []u32,
+         indexed_values: std.ArrayListUnmanaged(struct { base: ir.ExprId, pointer: u32 }) = .{},
+         instruction_cache: InstructionCache,
+-        break_targets: std.ArrayListUnmanaged(u32) = .{},
++        break_targets: std.ArrayListUnmanaged(struct { label: u32, referenced: bool = false }) = .{},
+         continue_targets: std.ArrayListUnmanaged(u32) = .{},
+ 
+         pub fn init(emitter: *EmitterT, function_index: ir.FunctionId) EmitError!@This() {
+@@ -234,7 +234,7 @@ pub fn FunctionState(comptime EmitterT: type) type {
+                         try self.emitter.builder.append_function_inst(spirv.Opcode.Branch, &.{body_label});
+                     }
+ 
+-                    try self.break_targets.append(self.emitter.alloc, merge_label);
++                    try self.break_targets.append(self.emitter.alloc, .{ .label = merge_label });
+                     try self.continue_targets.append(self.emitter.alloc, continue_label);
+ 
+                     try self.emit_label(body_label);
+@@ -294,22 +294,32 @@ pub fn FunctionState(comptime EmitterT: type) type {
+                     try self.emitter.builder.append_function_inst(spirv.Opcode.SelectionMerge, &.{ merge_label, spirv.SelectionControl.None });
+                     try self.emitter.builder.append_function_inst(spirv.Opcode.Switch, operands.items);
+ 
+-                    try self.break_targets.append(self.emitter.alloc, merge_label);
++                    try self.break_targets.append(self.emitter.alloc, .{ .label = merge_label });
++                    var merge_reachable = default_label == merge_label;
+                     case_index = 0;
+                     while (case_index < switch_stmt.cases.len) : (case_index += 1) {
+                         const case_node = self.function.switch_cases.items[switch_stmt.cases.start + case_index];
+                         try self.emit_label(labels[case_index]);
+                         const terminated = try self.emit_stmt(case_node.body);
+-                        if (!terminated) try self.emitter.builder.append_function_inst(spirv.Opcode.Branch, &.{merge_label});
++                        if (!terminated) {
++                            try self.emitter.builder.append_function_inst(spirv.Opcode.Branch, &.{merge_label});
++                            merge_reachable = true;
++                        }
+                     }
+-                    _ = self.break_targets.pop();
++                    merge_reachable = self.break_targets.pop().?.referenced or merge_reachable;
+ 
+                     try self.emit_label(merge_label);
++                    if (!merge_reachable) {
++                        try self.emitter.builder.append_function_inst(spirv.Opcode.Unreachable, &.{});
++                        return true;
++                    }
+                     return false;
+                 },
+                 .break_ => {
+                     if (self.break_targets.items.len == 0) return error.InvalidIr;
+-                    try self.emitter.builder.append_function_inst(spirv.Opcode.Branch, &.{self.break_targets.items[self.break_targets.items.len - 1]});
++                    const target = &self.break_targets.items[self.break_targets.items.len - 1];
++                    try self.emitter.builder.append_function_inst(spirv.Opcode.Branch, &.{target.label});
++                    target.referenced = true;
+                     return true;
+                 },
+                 .continue_ => {
+diff --git a/runtime/zig/src/compiler/wgsl/ir/ir_builder.zig b/runtime/zig/src/compiler/wgsl/ir/ir_builder.zig
+index 2a5510acd..5aab35684 100644
+--- a/runtime/zig/src/compiler/wgsl/ir/ir_builder.zig
++++ b/runtime/zig/src/compiler/wgsl/ir/ir_builder.zig
+@@ -321,9 +321,11 @@ const FunctionBuilder = struct {
+         const extra = self.tree.extra_data.items;
+         const case_start = node.data.rhs & 0xFFFF;
+         const case_count = node.data.rhs >> 16;
+-        const cases_range = ir.Range{
+-            .start = @intCast(self.function.switch_cases.items.len),
+-            .len = case_count,
++        var cases = std.ArrayListUnmanaged(ir.SwitchCase){};
++        defer cases.deinit(self.allocator);
++        var transferred = false;
++        defer if (!transferred) {
++            for (cases.items) |*case_ir| case_ir.deinit(self.allocator);
+         };
+ 
+         var i: u32 = 0;
+@@ -341,9 +343,18 @@ const FunctionBuilder = struct {
+             while (j < selector_count) : (j += 1) {
+                 try case_ir.selectors.append(self.allocator, try self.lower_value_expr(extra[selector_start + j]));
+             }
+-            try self.function.switch_cases.append(self.allocator, case_ir);
++            try cases.append(self.allocator, case_ir);
+         }
+ 
++        // Lowering a case body may append a nested switch's cases. Publish
++        // this switch's contiguous range only after those bodies are lowered.
++        const cases_range = ir.Range{
++            .start = @intCast(self.function.switch_cases.items.len),
++            .len = case_count,
++        };
++        try self.function.switch_cases.appendSlice(self.allocator, cases.items);
++        transferred = true;
++
+         return try self.function.append_stmt(self.allocator, .{ .switch_ = .{
+             .expr = try self.lower_value_expr(node.data.lhs),
+             .cases = cases_range,
+diff --git a/runtime/zig/tests/wgsl/emit_spirv_builtin_test.zig b/runtime/zig/tests/wgsl/emit_spirv_builtin_test.zig
+index 6664e58fd..05498bec6 100644
+--- a/runtime/zig/tests/wgsl/emit_spirv_builtin_test.zig
++++ b/runtime/zig/tests/wgsl/emit_spirv_builtin_test.zig
+@@ -663,6 +663,29 @@ test "spirv builtin: firstLeadingBit produces valid SPIR-V" {
+     try testing.expectEqual(spirv.MAGIC, read_u32_le(&out, 0));
+ }
+ 
++test "SPIR-V leading-bit builtins use the GLSL integer search instructions" {
++    inline for (.{ "u32", "i32" }) |element| {
++        const source = "@group(0) @binding(0) var<storage, read_write> buf: array<" ++ element ++ ">;" ++
++            "@compute @workgroup_size(1) fn main() { buf[0] = firstLeadingBit(buf[1]); }";
++        var out: [MAX_SPIRV_OUTPUT]u8 = undefined;
++        const len = try translateToSpirv(allocator, source, &out);
++        var offset: usize = 5;
++        var found = false;
++        while (offset < len / 4) {
++            const instruction = read_u32_le(&out, offset * 4);
++            const words = instruction >> 16;
++            try testing.expect(words > 0);
++            if (@as(u16, @truncate(instruction)) == spirv.Opcode.ExtInst and words == 6 and
++                read_u32_le(&out, (offset + 4) * 4) == @as(u32, if (element[0] == 'i') 74 else 75))
++            {
++                found = true;
++            }
++            offset += words;
++        }
++        try testing.expect(found);
++    }
++}
++
+ test "spirv builtin: firstTrailingBit produces valid SPIR-V" {
+     const source =
+         \\@group(0) @binding(0) var<storage, read_write> buf: array<u32>;
+diff --git a/runtime/zig/tests/wgsl/emit_spirv_mixed_binary_test.zig b/runtime/zig/tests/wgsl/emit_spirv_mixed_binary_test.zig
+index 44e915c04..07a22a6e1 100644
+--- a/runtime/zig/tests/wgsl/emit_spirv_mixed_binary_test.zig
++++ b/runtime/zig/tests/wgsl/emit_spirv_mixed_binary_test.zig
+@@ -28,6 +28,44 @@ const allocator = testing.allocator;
+ const MAX_SPIRV_OUTPUT = mod.MAX_SPIRV_OUTPUT;
+ const translateToSpirv = mod.translateToSpirv;
+ 
++test "SPIR-V returning switches terminate unreachable merges and preserve explicit breaks" {
++    const source =
++        \\@group(0) @binding(0) var<storage, read_write> buf: array<u32>;
++        \\fn returning(x: u32) -> u32 {
++        \\  switch x { case 0u: { return 7u; } default: { return 9u; } }
++        \\}
++        \\fn breaking(x: u32) -> u32 {
++        \\  switch x { case 0u: { break; } default: { return 9u; } }
++        \\  return 11u;
++        \\}
++        \\fn nested(x: u32) -> u32 {
++        \\  switch x {
++        \\    case 0u: {
++        \\      switch buf[2] { case 0u: { break; } default: { return 3u; } }
++        \\      return 5u;
++        \\    }
++        \\    default: { return 9u; }
++        \\  }
++        \\}
++        \\@compute @workgroup_size(1) fn main() {
++        \\  buf[0] = returning(buf[1]);
++        \\  buf[1] = breaking(buf[2]);
++        \\  buf[2] = nested(buf[3]);
++        \\}
++    ;
++    var out: [MAX_SPIRV_OUTPUT]u8 = undefined;
++    const len = try translateToSpirv(allocator, source, &out);
++    try expect_spirv_magic(out[0..len]);
++    try testing.expectEqual(@as(u32, 2), count_spirv_opcode(out[0..len], spirv.Opcode.Unreachable));
++    try testing.expectEqual(@as(u32, 7), count_spirv_opcode(out[0..len], spirv.Opcode.ReturnValue));
++    try testing.checkAllAllocationFailures(allocator, struct {
++        fn compile(alloc: std.mem.Allocator) !void {
++            var binary: [MAX_SPIRV_OUTPUT]u8 = undefined;
++            _ = try translateToSpirv(alloc, source, &binary);
++        }
++    }.compile, .{});
++}
++
+ fn read_u32_le(bytes: []const u8, offset: usize) u32 {
+     return std.mem.readInt(u32, @as(*const [4]u8, @ptrCast(bytes[offset .. offset + 4].ptr)), .little);
+ }
