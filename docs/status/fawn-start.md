@@ -1,5 +1,11 @@
 # Fawn hosted demonstrations
 
+[Canvas and failure regressions](../../reports/maintenance/20261011-fawn-canvas-lifecycle/README.md)
+retain the default-canvas initialization repair, aspect-preserving device-limit
+scaling, and Chroma terminal resource cleanup. The report separates reproduced
+preceding-source failures, harness corrections, adapter acquisition failures,
+and passing application checks. This is not a hosting publication.
+
 The canonical demo is [CanvasContext](https://canvascontext.com/). Doe owns the
 HTML/WGSL under `browser/chromium/resources/`; the sibling D4DA repository owns
 packaging and publication through `firebase.fawn.json`. Legacy D4DA Doe routes
