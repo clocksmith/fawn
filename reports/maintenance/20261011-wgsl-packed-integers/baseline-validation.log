@@ -1,0 +1,3 @@
+error: line 71: GLSL.std.450 PackHalf2x16: expected operand V to be a 32-bit float vector of size 2
+  %26 = OpExtInst %uint %17 PackHalf2x16 %52
+

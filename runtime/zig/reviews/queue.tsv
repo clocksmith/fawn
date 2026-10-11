@@ -272,15 +272,16 @@ file	src/compiler/wgsl/emit/dxil/dxil_spec.zig	pending			Read and review the com
 file	src/compiler/wgsl/emit/dxil/dxil_validate.zig	pending			Read and review the complete scope.
 file	src/compiler/wgsl/emit/dxil/emit_dxil.zig	pending			Read and review the complete scope.
 file	src/compiler/wgsl/emit/dxil/emit_dxil_native.zig	pending			Read and review the complete scope.
-file	src/compiler/wgsl/emit/hlsl/emit_hlsl.zig	pending			Read and review the complete scope.
-file	src/compiler/wgsl/emit/hlsl/emit_hlsl_builtins.zig	pending			Read and review the complete scope.
-file	src/compiler/wgsl/emit/hlsl/emit_hlsl_maps.zig	pending			Read and review the complete scope.
+file	src/compiler/wgsl/emit/emit_integer_dot.zig	in_progress	packed_integer_20261011_21		Review the complete file and remaining callers against its charter before granting whole-file verification.
+file	src/compiler/wgsl/emit/hlsl/emit_hlsl.zig	in_progress	packed_integer_20261011_00		Review the complete file and remaining callers against its charter before granting whole-file verification.
+file	src/compiler/wgsl/emit/hlsl/emit_hlsl_builtins.zig	in_progress	packed_integer_20261011_01		Review the complete file and remaining callers against its charter before granting whole-file verification.
+file	src/compiler/wgsl/emit/hlsl/emit_hlsl_maps.zig	in_progress	packed_integer_20261011_02		Review the complete file and remaining callers against its charter before granting whole-file verification.
 file	src/compiler/wgsl/emit/hlsl/emit_hlsl_stage.zig	pending			Read and review the complete scope.
 file	src/compiler/wgsl/emit/hlsl/emit_hlsl_texture.zig	pending			Read and review the complete scope.
 file	src/compiler/wgsl/emit/msl/emit_msl.zig	pending			Read and review the complete scope.
 file	src/compiler/wgsl/emit/msl/emit_msl_fragment.zig	pending			Read and review the complete scope.
-file	src/compiler/wgsl/emit/msl/emit_msl_ir.zig	pending			Read and review the complete scope.
-file	src/compiler/wgsl/emit/msl/emit_msl_ir_builtins.zig	pending			Read and review the complete scope.
+file	src/compiler/wgsl/emit/msl/emit_msl_ir.zig	in_progress	packed_integer_20261011_03		Review the complete file and remaining callers against its charter before granting whole-file verification.
+file	src/compiler/wgsl/emit/msl/emit_msl_ir_builtins.zig	in_progress	packed_integer_20261011_04		Review the complete file and remaining callers against its charter before granting whole-file verification.
 file	src/compiler/wgsl/emit/msl/emit_msl_maps.zig	pending			Read and review the complete scope.
 file	src/compiler/wgsl/emit/msl/emit_msl_shared.zig	pending			Read and review the complete scope.
 file	src/compiler/wgsl/emit/msl/emit_msl_stage.zig	pending			Read and review the complete scope.
@@ -290,7 +291,7 @@ file	src/compiler/wgsl/emit/msl/emit_msl_vertex.zig	pending			Read and review th
 file	src/compiler/wgsl/emit/msl/emit_msl_workgroup_zero.zig	pending			Read and review the complete scope.
 file	src/compiler/wgsl/emit/operator_text.zig	pending			Read and review the complete scope.
 file	src/compiler/wgsl/emit/spirv/emit_spirv.zig	stale	shader_semantics_spirv_20260919_evidence		Review all type lowering and decoration identities, allocation-failure cleanup and entrypoint emission; this focused storage-block repair does not complete the emitter review.
-file	src/compiler/wgsl/emit/spirv/emit_spirv_builtins.zig	stale	native_doppler_compiler_20261011_0		Complete whole-file review; retained regression evidence covers only the changed builtin or switch path.
+file	src/compiler/wgsl/emit/spirv/emit_spirv_builtins.zig	in_progress	packed_integer_20261011_05		Review the complete file and remaining callers against its charter before granting whole-file verification.
 file	src/compiler/wgsl/emit/spirv/emit_spirv_fn.zig	stale	native_doppler_compiler_20261011_1		Complete whole-file review; retained regression evidence covers only the changed builtin or switch path.
 file	src/compiler/wgsl/emit/spirv/emit_spirv_fn_helpers.zig	stale	spirv_ownership_helpers_20260928		Review scalar conversion consumers independently of the completed cache ownership correction.
 file	src/compiler/wgsl/emit/spirv/emit_spirv_matrix.zig	pending			Read and review the complete scope.
@@ -302,28 +303,29 @@ file	src/compiler/wgsl/emit/spirv/spirv_builder.zig	pending			Read and review th
 file	src/compiler/wgsl/emit/spirv/spirv_spec.zig	pending			Read and review the complete scope.
 file	src/compiler/wgsl/emit/toolchain.zig	pending			Read and review the complete scope.
 file	src/compiler/wgsl/emit/wgsl_rewrite.zig	stale	browser_wgsl_emitter_20261004		Retain the bounded pass as a mechanism fixture; require attributable direct-shader benefit before performance promotion.
-file	src/compiler/wgsl/frontend/ast.zig	pending			Read and review the complete scope.
+file	src/compiler/wgsl/frontend/ast.zig	in_progress	packed_integer_20261011_06		Review the complete file and remaining callers against its charter before granting whole-file verification.
 file	src/compiler/wgsl/frontend/lexer.zig	pending			Read and review the complete scope.
-file	src/compiler/wgsl/frontend/parser.zig	pending			Read and review the complete scope.
+file	src/compiler/wgsl/frontend/parser.zig	in_progress	packed_integer_20261011_07		Review the complete file and remaining callers against its charter before granting whole-file verification.
 file	src/compiler/wgsl/frontend/parser_attrs.zig	pending			Read and review the complete scope.
-file	src/compiler/wgsl/frontend/parser_decl.zig	pending			Read and review the complete scope.
+file	src/compiler/wgsl/frontend/parser_decl.zig	in_progress	packed_integer_20261011_08		Review the complete file and remaining callers against its charter before granting whole-file verification.
 file	src/compiler/wgsl/frontend/parser_expr.zig	pending			Read and review the complete scope.
 file	src/compiler/wgsl/frontend/parser_stmt.zig	pending			Read and review the complete scope.
-file	src/compiler/wgsl/frontend/sema.zig	pending			Read and review the complete scope.
-file	src/compiler/wgsl/frontend/sema_attrs.zig	pending			Read and review the complete scope.
+file	src/compiler/wgsl/frontend/sema.zig	in_progress	packed_integer_20261011_09		Review the complete file and remaining callers against its charter before granting whole-file verification.
+file	src/compiler/wgsl/frontend/sema_attrs.zig	in_progress	packed_integer_20261011_10		Review the complete file and remaining callers against its charter before granting whole-file verification.
 file	src/compiler/wgsl/frontend/sema_expr.zig	pending			Read and review the complete scope.
 file	src/compiler/wgsl/frontend/sema_helpers.zig	pending			Read and review the complete scope.
 file	src/compiler/wgsl/frontend/sema_resolve.zig	pending			Read and review the complete scope.
 file	src/compiler/wgsl/frontend/sema_type_syntax.zig	pending			Read and review the complete scope.
 file	src/compiler/wgsl/frontend/sema_types.zig	pending			Read and review the complete scope.
 file	src/compiler/wgsl/frontend/sema_typeutils.zig	pending			Read and review the complete scope.
-file	src/compiler/wgsl/frontend/token.zig	pending			Read and review the complete scope.
+file	src/compiler/wgsl/frontend/token.zig	in_progress	packed_integer_20261011_11		Review the complete file and remaining callers against its charter before granting whole-file verification.
 file	src/compiler/wgsl/ir/ir.zig	pending			Read and review the complete scope.
-file	src/compiler/wgsl/ir/ir_builder.zig	stale	native_doppler_compiler_20261011_2		Complete whole-file review; retained regression evidence covers only the changed builtin or switch path.
+file	src/compiler/wgsl/ir/ir_builder.zig	in_progress	packed_integer_20261011_12		Review the complete file and remaining callers against its charter before granting whole-file verification.
 file	src/compiler/wgsl/ir/ir_const_eval.zig	pending			Read and review the complete scope.
 file	src/compiler/wgsl/ir/ir_digest.zig	pending			Read and review the complete scope.
 file	src/compiler/wgsl/ir/ir_loop_independence.zig	stale	ir_loop_independence_20260927		Review remaining IR query consumers and emitter policy separately; this predicate is not a general dependence proof.
 file	src/compiler/wgsl/ir/ir_opt_rewrite.zig	pending			Read and review the complete scope.
+file	src/compiler/wgsl/ir/ir_packed_integer.zig	in_progress	packed_integer_20261011_20		Review the complete file and remaining callers against its charter before granting whole-file verification.
 file	src/compiler/wgsl/ir/ir_query.zig	stale	spirv_ownership_queries_20260928		Continue query-family review only along a named compiler consumer; preserve storage versus value alias semantics.
 file	src/compiler/wgsl/ir/ir_transform_float_fusion.zig	pending			Read and review the complete scope.
 file	src/compiler/wgsl/ir/ir_transform_robustness.zig	pending			Read and review the complete scope.
@@ -404,10 +406,10 @@ file	src/contracts/texture_format.zig	pending			Read and review the complete sco
 file	src/contracts/texture_format_layout.zig	pending			Read and review the complete scope.
 file	src/contracts/vertex_format.zig	pending			Read and review the complete scope.
 file	src/contracts/workload_profile.zig	pending			Read and review the complete scope.
-file	src/core/abi/generated/webgpu_upstream.zig	pending			Read and review the complete scope.
+file	src/core/abi/generated/webgpu_upstream.zig	in_progress	packed_integer_20261011_13		Review the complete file and remaining callers against its charter before granting whole-file verification.
 file	src/core/abi/procs/wgpu_async_procs.zig	pending			Read and review the complete scope.
 file	src/core/abi/procs/wgpu_p0_procs.zig	pending			Read and review the complete scope.
-file	src/core/abi/procs/wgpu_p1_capability_procs.zig	pending			Read and review the complete scope.
+file	src/core/abi/procs/wgpu_p1_capability_procs.zig	in_progress	packed_integer_20261011_14		Review the complete file and remaining callers against its charter before granting whole-file verification.
 file	src/core/abi/procs/wgpu_p1_resource_table_procs.zig	pending			Read and review the complete scope.
 file	src/core/abi/procs/wgpu_p2_lifecycle_procs.zig	pending			Read and review the complete scope.
 file	src/core/abi/procs/wgpu_texture_procs.zig	pending			Read and review the complete scope.
@@ -453,8 +455,8 @@ file	src/dropin/dropin_runtime_config.zig	pending			Read and review the complete
 file	src/dropin/dropin_symbol_ownership.zig	pending			Read and review the complete scope.
 file	src/dropin/root.zig	pending			Read and review the complete scope.
 file	src/dropin/wgpu_dropin_ext_a.zig	pending			Read and review the complete scope.
-file	src/dropin/wgpu_dropin_ext_a_core.zig	pending			Read and review the complete scope.
-file	src/dropin/wgpu_dropin_ext_a_exports.zig	pending			Read and review the complete scope.
+file	src/dropin/wgpu_dropin_ext_a_core.zig	in_progress	packed_integer_20261011_15		Review the complete file and remaining callers against its charter before granting whole-file verification.
+file	src/dropin/wgpu_dropin_ext_a_exports.zig	in_progress	packed_integer_20261011_16		Review the complete file and remaining callers against its charter before granting whole-file verification.
 file	src/dropin/wgpu_dropin_ext_a_pipeline.zig	pending			Read and review the complete scope.
 file	src/dropin/wgpu_dropin_ext_b.zig	pending			Read and review the complete scope.
 file	src/dropin/wgpu_dropin_ext_c.zig	pending			Read and review the complete scope.
@@ -695,7 +697,7 @@ file	tests/d3d12/d3d12_mod_integration_test.zig	pending			Read and review the co
 file	tests/d3d12/d3d12_mod_test_support.zig	pending			Read and review the complete scope.
 file	tests/d3d12/d3d12_native_unit_test.zig	pending			Read and review the complete scope.
 file	tests/d3d12/d3d12_timing_semantics_test.zig	pending			Read and review the complete scope.
-file	tests/dropin/dropin_behavior_policy_test.zig	pending			Read and review the complete scope.
+file	tests/dropin/dropin_behavior_policy_test.zig	in_progress	packed_integer_20261011_17		Review the complete file and remaining callers against its charter before granting whole-file verification.
 file	tests/dropin/dropin_loader_test.zig	pending			Read and review the complete scope.
 file	tests/dropin/dropin_proc_manifest_test.zig	pending			Read and review the complete scope.
 file	tests/dropin/dropin_router_test.zig	pending			Read and review the complete scope.
@@ -719,7 +721,7 @@ file	tests/vulkan/vulkan_render_pipeline_test.zig	pending			Read and review the 
 file	tests/vulkan/vulkan_surface_admission_test.zig	pending			Read and review the complete scope.
 file	tests/vulkan/vulkan_timing_semantics_test.zig	pending			Read and review the complete scope.
 file	tests/wgsl/browser_wgsl_test.zig	pending			Read and review the complete scope.
-file	tests/wgsl/coverage_builtin_spec_test.zig	pending			Read and review the complete scope.
+file	tests/wgsl/coverage_builtin_spec_test.zig	in_progress	packed_integer_20261011_18		Review the complete file and remaining callers against its charter before granting whole-file verification.
 file	tests/wgsl/coverage_builtin_test.zig	pending			Read and review the complete scope.
 file	tests/wgsl/coverage_expr_stmt_test.zig	pending			Read and review the complete scope.
 file	tests/wgsl/coverage_resource_test.zig	pending			Read and review the complete scope.
@@ -751,7 +753,7 @@ file	tests/wgsl/mod_api_proof_preconditions_test.zig	pending			Read and review t
 file	tests/wgsl/mod_api_stage_and_pointer_test.zig	pending			Read and review the complete scope.
 file	tests/wgsl/mod_api_test.zig	pending			Read and review the complete scope.
 file	tests/wgsl/mod_api_test_support.zig	pending			Read and review the complete scope.
-file	tests/wgsl/mod_api_translation_basics_test.zig	pending			Read and review the complete scope.
+file	tests/wgsl/mod_api_translation_basics_test.zig	in_progress	packed_integer_20261011_19		Review the complete file and remaining callers against its charter before granting whole-file verification.
 file	tests/wgsl/mod_backend_translation_test.zig	pending			Read and review the complete scope.
 file	tests/wgsl/mod_bounds_local_test.zig	pending			Read and review the complete scope.
 file	tests/wgsl/mod_bounds_loop_test.zig	pending			Read and review the complete scope.
@@ -803,14 +805,14 @@ directory	src/compiler/targets	pending		file:src/compiler/targets/mod.zig;file:s
 directory	src/compiler/tsir	pending		file:src/compiler/tsir/collective_synthesis.zig;file:src/compiler/tsir/digest.zig;file:src/compiler/tsir/emit_csl.zig;file:src/compiler/tsir/emit_csl_f16_pack.zig;file:src/compiler/tsir/emit_dtype_routing.zig;file:src/compiler/tsir/emit_dxil.zig;file:src/compiler/tsir/emit_kernel_body.zig;file:src/compiler/tsir/emit_kernel_body_attention.zig;file:src/compiler/tsir/emit_kernel_body_conv1d.zig;file:src/compiler/tsir/emit_kernel_body_gated.zig;file:src/compiler/tsir/emit_kernel_body_kv.zig;file:src/compiler/tsir/emit_kernel_body_l2_normalize.zig;file:src/compiler/tsir/emit_kernel_body_linear_attention.zig;file:src/compiler/tsir/emit_kernel_context.zig;file:src/compiler/tsir/emit_msl.zig;file:src/compiler/tsir/emit_semantic_metadata.zig;file:src/compiler/tsir/emit_spir_v.zig;file:src/compiler/tsir/emit_text_skeleton.zig;file:src/compiler/tsir/emit_webgpu.zig;file:src/compiler/tsir/family_hint.zig;file:src/compiler/tsir/frontend.zig;file:src/compiler/tsir/frontend_body.zig;file:src/compiler/tsir/frontend_collectives.zig;file:src/compiler/tsir/frontend_expr.zig;file:src/compiler/tsir/frontend_rejections.zig;file:src/compiler/tsir/frontend_types.zig;file:src/compiler/tsir/mod.zig;file:src/compiler/tsir/planner.zig;file:src/compiler/tsir/planner_support.zig;file:src/compiler/tsir/reference_extended_ops.zig;file:src/compiler/tsir/reference_inputs.zig;file:src/compiler/tsir/reference_interpreter.zig;file:src/compiler/tsir/reference_reduction.zig;file:src/compiler/tsir/reference_scalar.zig;file:src/compiler/tsir/reference_types.zig;file:src/compiler/tsir/schema.zig	Read and review the complete scope.
 directory	src/compiler/tsir/tools	pending		file:src/compiler/tsir/tools/tsir_bootstrap_manifest_inputs.zig;file:src/compiler/tsir/tools/tsir_bootstrap_oracle.zig	Read and review the complete scope.
 directory	src/compiler/wgsl	pending		file:src/compiler/wgsl/mod.zig	Read and review the complete scope.
-directory	src/compiler/wgsl/emit	pending		file:src/compiler/wgsl/emit/operator_text.zig;file:src/compiler/wgsl/emit/toolchain.zig;file:src/compiler/wgsl/emit/wgsl_rewrite.zig	Read and review the complete scope.
+directory	src/compiler/wgsl/emit	pending		file:src/compiler/wgsl/emit/emit_integer_dot.zig;file:src/compiler/wgsl/emit/operator_text.zig;file:src/compiler/wgsl/emit/toolchain.zig;file:src/compiler/wgsl/emit/wgsl_rewrite.zig	Read and review the complete scope.
 directory	src/compiler/wgsl/emit/csl	pending		file:src/compiler/wgsl/emit/csl/csl_compile_sections.zig;file:src/compiler/wgsl/emit/csl/csl_spec.zig;file:src/compiler/wgsl/emit/csl/csl_storage_emit.zig;file:src/compiler/wgsl/emit/csl/csl_text_buffer.zig;file:src/compiler/wgsl/emit/csl/emit_csl.zig;file:src/compiler/wgsl/emit/csl/emit_csl_attention.zig;file:src/compiler/wgsl/emit/csl/emit_csl_classify.zig;file:src/compiler/wgsl/emit/csl/emit_csl_core.zig;file:src/compiler/wgsl/emit/csl/emit_csl_dense_gemv.zig;file:src/compiler/wgsl/emit/csl/emit_csl_dequant.zig;file:src/compiler/wgsl/emit/csl/emit_csl_elementwise.zig;file:src/compiler/wgsl/emit/csl/emit_csl_exec_v1.zig;file:src/compiler/wgsl/emit/csl/emit_csl_fused.zig;file:src/compiler/wgsl/emit/csl/emit_csl_fused_ffn.zig;file:src/compiler/wgsl/emit/csl/emit_csl_gather.zig;file:src/compiler/wgsl/emit/csl/emit_csl_host.zig;file:src/compiler/wgsl/emit/csl/emit_csl_host_compile_rewrite.zig;file:src/compiler/wgsl/emit/csl/emit_csl_host_compile_source.zig;file:src/compiler/wgsl/emit/csl/emit_csl_host_plan.zig;file:src/compiler/wgsl/emit/csl/emit_csl_host_runtime.zig;file:src/compiler/wgsl/emit/csl/emit_csl_ir_walk.zig;file:src/compiler/wgsl/emit/csl/emit_csl_kv_cache.zig;file:src/compiler/wgsl/emit/csl/emit_csl_layout.zig;file:src/compiler/wgsl/emit/csl/emit_csl_linear_attn.zig;file:src/compiler/wgsl/emit/csl/emit_csl_maps.zig;file:src/compiler/wgsl/emit/csl/emit_csl_matmul.zig;file:src/compiler/wgsl/emit/csl/emit_csl_matmul_q4k.zig;file:src/compiler/wgsl/emit/csl/emit_csl_mem_plan.zig;file:src/compiler/wgsl/emit/csl/emit_csl_reduce_dist.zig;file:src/compiler/wgsl/emit/csl/emit_csl_reduction.zig;file:src/compiler/wgsl/emit/csl/emit_csl_rmsnorm_pack.zig;file:src/compiler/wgsl/emit/csl/emit_csl_rope.zig;file:src/compiler/wgsl/emit/csl/emit_csl_sample.zig;file:src/compiler/wgsl/emit/csl/emit_csl_semantic_ops.zig;file:src/compiler/wgsl/emit/csl/emit_csl_simulator.zig;file:src/compiler/wgsl/emit/csl/emit_csl_toolchain.zig;file:src/compiler/wgsl/emit/csl/emit_csl_validate.zig	Read and review the complete scope.
 directory	src/compiler/wgsl/emit/dxil	pending		file:src/compiler/wgsl/emit/dxil/dxil_bitcode.zig;file:src/compiler/wgsl/emit/dxil/dxil_builder.zig;file:src/compiler/wgsl/emit/dxil/dxil_container.zig;file:src/compiler/wgsl/emit/dxil/dxil_serialize.zig;file:src/compiler/wgsl/emit/dxil/dxil_spec.zig;file:src/compiler/wgsl/emit/dxil/dxil_validate.zig;file:src/compiler/wgsl/emit/dxil/emit_dxil.zig;file:src/compiler/wgsl/emit/dxil/emit_dxil_native.zig	Read and review the complete scope.
 directory	src/compiler/wgsl/emit/hlsl	pending		file:src/compiler/wgsl/emit/hlsl/emit_hlsl.zig;file:src/compiler/wgsl/emit/hlsl/emit_hlsl_builtins.zig;file:src/compiler/wgsl/emit/hlsl/emit_hlsl_maps.zig;file:src/compiler/wgsl/emit/hlsl/emit_hlsl_stage.zig;file:src/compiler/wgsl/emit/hlsl/emit_hlsl_texture.zig	Read and review the complete scope.
 directory	src/compiler/wgsl/emit/msl	pending		file:src/compiler/wgsl/emit/msl/emit_msl.zig;file:src/compiler/wgsl/emit/msl/emit_msl_fragment.zig;file:src/compiler/wgsl/emit/msl/emit_msl_ir.zig;file:src/compiler/wgsl/emit/msl/emit_msl_ir_builtins.zig;file:src/compiler/wgsl/emit/msl/emit_msl_maps.zig;file:src/compiler/wgsl/emit/msl/emit_msl_shared.zig;file:src/compiler/wgsl/emit/msl/emit_msl_stage.zig;file:src/compiler/wgsl/emit/msl/emit_msl_subgroups.zig;file:src/compiler/wgsl/emit/msl/emit_msl_texture.zig;file:src/compiler/wgsl/emit/msl/emit_msl_vertex.zig;file:src/compiler/wgsl/emit/msl/emit_msl_workgroup_zero.zig	Read and review the complete scope.
 directory	src/compiler/wgsl/emit/spirv	pending		file:src/compiler/wgsl/emit/spirv/emit_spirv.zig;file:src/compiler/wgsl/emit/spirv/emit_spirv_builtins.zig;file:src/compiler/wgsl/emit/spirv/emit_spirv_fn.zig;file:src/compiler/wgsl/emit/spirv/emit_spirv_fn_helpers.zig;file:src/compiler/wgsl/emit/spirv/emit_spirv_matrix.zig;file:src/compiler/wgsl/emit/spirv/emit_spirv_shared.zig;file:src/compiler/wgsl/emit/spirv/emit_spirv_stages.zig;file:src/compiler/wgsl/emit/spirv/emit_spirv_texture.zig;file:src/compiler/wgsl/emit/spirv/instruction_cache.zig;file:src/compiler/wgsl/emit/spirv/spirv_builder.zig;file:src/compiler/wgsl/emit/spirv/spirv_spec.zig	Read and review the complete scope.
 directory	src/compiler/wgsl/frontend	pending		file:src/compiler/wgsl/frontend/ast.zig;file:src/compiler/wgsl/frontend/lexer.zig;file:src/compiler/wgsl/frontend/parser.zig;file:src/compiler/wgsl/frontend/parser_attrs.zig;file:src/compiler/wgsl/frontend/parser_decl.zig;file:src/compiler/wgsl/frontend/parser_expr.zig;file:src/compiler/wgsl/frontend/parser_stmt.zig;file:src/compiler/wgsl/frontend/sema.zig;file:src/compiler/wgsl/frontend/sema_attrs.zig;file:src/compiler/wgsl/frontend/sema_expr.zig;file:src/compiler/wgsl/frontend/sema_helpers.zig;file:src/compiler/wgsl/frontend/sema_resolve.zig;file:src/compiler/wgsl/frontend/sema_type_syntax.zig;file:src/compiler/wgsl/frontend/sema_types.zig;file:src/compiler/wgsl/frontend/sema_typeutils.zig;file:src/compiler/wgsl/frontend/token.zig	Read and review the complete scope.
-directory	src/compiler/wgsl/ir	pending		file:src/compiler/wgsl/ir/ir.zig;file:src/compiler/wgsl/ir/ir_builder.zig;file:src/compiler/wgsl/ir/ir_const_eval.zig;file:src/compiler/wgsl/ir/ir_digest.zig;file:src/compiler/wgsl/ir/ir_loop_independence.zig;file:src/compiler/wgsl/ir/ir_opt_rewrite.zig;file:src/compiler/wgsl/ir/ir_query.zig;file:src/compiler/wgsl/ir/ir_transform_float_fusion.zig;file:src/compiler/wgsl/ir/ir_transform_robustness.zig;file:src/compiler/wgsl/ir/ir_validate.zig;file:src/compiler/wgsl/ir/layout_utils.zig	Read and review the complete scope.
+directory	src/compiler/wgsl/ir	pending		file:src/compiler/wgsl/ir/ir.zig;file:src/compiler/wgsl/ir/ir_builder.zig;file:src/compiler/wgsl/ir/ir_const_eval.zig;file:src/compiler/wgsl/ir/ir_digest.zig;file:src/compiler/wgsl/ir/ir_loop_independence.zig;file:src/compiler/wgsl/ir/ir_opt_rewrite.zig;file:src/compiler/wgsl/ir/ir_packed_integer.zig;file:src/compiler/wgsl/ir/ir_query.zig;file:src/compiler/wgsl/ir/ir_transform_float_fusion.zig;file:src/compiler/wgsl/ir/ir_transform_robustness.zig;file:src/compiler/wgsl/ir/ir_validate.zig;file:src/compiler/wgsl/ir/layout_utils.zig	Read and review the complete scope.
 directory	src/compiler/wgsl/pipeline	pending		file:src/compiler/wgsl/pipeline/analysis.zig;file:src/compiler/wgsl/pipeline/binding_reflection.zig;file:src/compiler/wgsl/pipeline/diagnostic.zig;file:src/compiler/wgsl/pipeline/overrides.zig;file:src/compiler/wgsl/pipeline/translate_csl.zig;file:src/compiler/wgsl/pipeline/translate_dxil.zig;file:src/compiler/wgsl/pipeline/translate_hlsl.zig;file:src/compiler/wgsl/pipeline/translate_msl.zig;file:src/compiler/wgsl/pipeline/translate_spirv.zig	Read and review the complete scope.
 directory	src/compiler/wgsl/proof	pending		file:src/compiler/wgsl/proof/dispatch_proof_loop_match.zig;file:src/compiler/wgsl/proof/dispatch_proof_match.zig;file:src/compiler/wgsl/proof/dispatch_uniform_bounds.zig;file:src/compiler/wgsl/proof/robustness_static_bounds.zig	Read and review the complete scope.
 directory	src/compiler/wgsl/runtime	pending		file:src/compiler/wgsl/runtime/browser_wasm.zig;file:src/compiler/wgsl/runtime/runtime_compile.zig;file:src/compiler/wgsl/runtime/runtime_compile_report.zig;file:src/compiler/wgsl/runtime/runtime_compute_translation.zig;file:src/compiler/wgsl/runtime/runtime_graphics_translation.zig;file:src/compiler/wgsl/runtime/runtime_translation_info.zig;file:src/compiler/wgsl/runtime/shader_info.zig	Read and review the complete scope.

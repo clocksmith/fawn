@@ -29,6 +29,26 @@ pub fn parseEnableDirective(self: anytype) @TypeOf(self.*).Error!u32 {
     });
 }
 
+pub fn parseRequiresDirective(self: anytype) @TypeOf(self.*).Error!u32 {
+    const main_token = self.token_idx;
+    self.advance();
+    const scratch_top = self.scratch.items.len;
+    defer self.scratch.shrinkRetainingCapacity(scratch_top);
+    while (true) {
+        try self.scratch.append(self.allocator, try self.expectIdentifier());
+        if (self.peekTag() != .@",") break;
+        self.advance();
+        if (self.peekTag() == .@";") break;
+    }
+    _ = try self.expect(.@";");
+    const names = self.scratch.items[scratch_top..];
+    return self.tree.addNode(.{
+        .tag = .requires_directive,
+        .main_token = main_token,
+        .data = .{ .lhs = try self.tree.addExtraSlice(names), .rhs = @intCast(names.len) },
+    });
+}
+
 pub fn parseDiagnosticDirective(self: anytype) @TypeOf(self.*).Error!u32 {
     const main_token = self.token_idx;
     self.advance(); // consume `diagnostic`

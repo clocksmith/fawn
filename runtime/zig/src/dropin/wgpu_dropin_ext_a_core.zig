@@ -25,6 +25,7 @@ pub const types = struct {
     pub const WGPUStatus_Success = abi_core.WGPUStatus_Success;
     pub const WGPUStringView = abi_core.WGPUStringView;
     pub const WGPUTextureFormat = abi_texture.WGPUTextureFormat;
+    pub const WGPU_TRUE = abi_core.WGPU_TRUE;
     pub const WGPU_FALSE = abi_core.WGPU_FALSE;
     pub const WGPUConstantEntry = abi_pipeline.WGPUConstantEntry;
     pub const WGPUComputePipelineDescriptor = abi_pipeline.WGPUComputePipelineDescriptor;

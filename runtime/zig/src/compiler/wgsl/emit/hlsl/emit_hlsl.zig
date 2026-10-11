@@ -1,5 +1,6 @@
 const std = @import("std");
 const ir = @import("../../ir/ir.zig");
+const integer_dot = @import("../emit_integer_dot.zig");
 const ir_query = @import("../../ir/ir_query.zig");
 const ir_const_eval = @import("../../ir/ir_const_eval.zig");
 const maps = @import("emit_hlsl_maps.zig");
@@ -55,11 +56,16 @@ const Emitter = struct {
         try self.write("uint doe_pack2x16float(float2 v) { return f32tof16(v.x) | (f32tof16(v.y) << 16u); }\n");
         try self.write("float4 doe_unpack4x8unorm(uint v) { return float4(v & 0xFFu, (v >> 8u) & 0xFFu, (v >> 16u) & 0xFFu, v >> 24u) / 255.0; }\n");
         try self.write("float4 doe_unpack4x8snorm(uint v) { int4 s = int4(int(v << 24u) >> 24, int(v << 16u) >> 24, int(v << 8u) >> 24, int(v) >> 24); return clamp(float4(s) / 127.0, -1.0, 1.0); }\n");
-        try self.write("uint doe_pack4x8unorm(float4 v) { uint4 c = uint4(round(saturate(v) * 255.0)); return c.x | (c.y << 8u) | (c.z << 16u) | (c.w << 24u); }\n");
-        try self.write("uint doe_pack4x8snorm(float4 v) { int4 c = int4(round(clamp(v, -1.0, 1.0) * 127.0)); uint4 b = uint4(c) & 0xFFu; return b.x | (b.y << 8u) | (b.z << 16u) | (b.w << 24u); }\n");
+        try self.write("uint doe_pack4x8unorm(float4 v) { uint4 c = uint4(floor(0.5 + saturate(v) * 255.0)); return c.x | (c.y << 8u) | (c.z << 16u) | (c.w << 24u); }\n");
+        try self.write("uint doe_pack4x8snorm(float4 v) { int4 c = int4(floor(0.5 + clamp(v, -1.0, 1.0) * 127.0)); uint4 b = uint4(c) & 0xFFu; return b.x | (b.y << 8u) | (b.z << 16u) | (b.w << 24u); }\n");
+        try self.write("uint doe_pack2x16unorm(float2 v) { uint2 c = uint2(floor(0.5 + saturate(v) * 65535.0)); return c.x | (c.y << 16u); }\n");
+        try self.write("uint doe_pack2x16snorm(float2 v) { uint2 c = asuint(int2(floor(0.5 + clamp(v, -1.0, 1.0) * 32767.0))) & 0xFFFFu; return c.x | (c.y << 16u); }\n");
+        try self.write("float2 doe_unpack2x16unorm(uint v) { return float2(v & 0xFFFFu, v >> 16u) / 65535.0; }\n");
+        try self.write("float2 doe_unpack2x16snorm(uint v) { int2 c = int2(asint(v << 16u) >> 16, asint(v) >> 16); return max(float2(c) / 32767.0, -1.0); }\n");
         if (module_uses_num_workgroups(self.module)) {
             try self.emit_dispatch_info_contract();
         }
+        try integer_dot.emitHelpers(self, false);
         try self.emit_structs();
         try self.emit_globals();
         try self.emit_global_helpers();
@@ -661,19 +667,31 @@ const Emitter = struct {
     fn emit_constant(self: *Emitter, constant: ir.ConstantValue, ty: ir.TypeId) EmitError!void {
         switch (constant) {
             .bool => |value| try self.write(if (value) "true" else "false"),
-            .int => |value| try self.write_u64(value),
+            .int => |value| {
+                if (ir.is_scalar(&self.module.types, ty, .i32)) {
+                    var buffer: [32]u8 = undefined;
+                    const text = std.fmt.bufPrint(&buffer, "{}", .{@as(i32, @bitCast(@as(u32, @truncate(value))))}) catch return error.OutputTooLarge;
+                    try self.write(text);
+                } else {
+                    try self.write_u64(value);
+                    if (ir.is_scalar(&self.module.types, ty, .u32)) try self.write("u");
+                }
+            },
             .float => |value| try self.write_float(value),
             .composite => |values| {
+                const is_vector = self.module.types.get(ty) == .vector;
                 const elem_ty = switch (self.module.types.get(ty)) {
                     .array => |array| array.elem,
+                    .vector => |vector| if (values.len == vector.len) vector.elem else return error.InvalidIr,
                     else => return error.InvalidIr,
                 };
-                try self.write("{");
+                if (is_vector) try self.emit_type_only(ty);
+                try self.write(if (is_vector) "(" else "{");
                 for (values, 0..) |value, index| {
                     if (index > 0) try self.write(", ");
                     try self.emit_constant(value, elem_ty);
                 }
-                try self.write("}");
+                try self.write(if (is_vector) ")" else "}");
             },
         }
     }

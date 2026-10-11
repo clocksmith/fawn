@@ -1,0 +1,262 @@
+[
+  {
+    "shader": "bench/out/wgsl-packed-integers/20261011/qualified-doe/shaders/integer-family.wgsl",
+    "commands": [
+      {
+        "command": [
+          "bench/out/wgsl-packed-integers/20261011/final-build/bin/doe-emit-spirv",
+          "--shader-path",
+          "bench/out/wgsl-packed-integers/20261011/qualified-doe/shaders/integer-family.wgsl",
+          "--out",
+          "bench/out/wgsl-packed-integers/20261011/qualified-doe/shaders/integer-family.spv"
+        ],
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "command": [
+          "spirv-val",
+          "--target-env",
+          "vulkan1.1",
+          "bench/out/wgsl-packed-integers/20261011/qualified-doe/shaders/integer-family.spv"
+        ],
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "command": [
+          "bench/out/wgsl-packed-integers/20261011/final-build/bin/doe-emit-msl",
+          "--shader-path",
+          "bench/out/wgsl-packed-integers/20261011/qualified-doe/shaders/integer-family.wgsl",
+          "--out",
+          "bench/out/wgsl-packed-integers/20261011/qualified-doe/shaders/integer-family.msl"
+        ],
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "command": [
+          "bench/out/wgsl-packed-integers/20261011/final-build/bin/doe-emit-hlsl",
+          "--shader-path",
+          "bench/out/wgsl-packed-integers/20261011/qualified-doe/shaders/integer-family.wgsl",
+          "--out",
+          "bench/out/wgsl-packed-integers/20261011/qualified-doe/shaders/integer-family.hlsl"
+        ],
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    ]
+  },
+  {
+    "shader": "bench/out/wgsl-packed-integers/20261011/qualified-doe/shaders/module-constants.wgsl",
+    "commands": [
+      {
+        "command": [
+          "bench/out/wgsl-packed-integers/20261011/final-build/bin/doe-emit-spirv",
+          "--shader-path",
+          "bench/out/wgsl-packed-integers/20261011/qualified-doe/shaders/module-constants.wgsl",
+          "--out",
+          "bench/out/wgsl-packed-integers/20261011/qualified-doe/shaders/module-constants.spv"
+        ],
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "command": [
+          "spirv-val",
+          "--target-env",
+          "vulkan1.1",
+          "bench/out/wgsl-packed-integers/20261011/qualified-doe/shaders/module-constants.spv"
+        ],
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "command": [
+          "bench/out/wgsl-packed-integers/20261011/final-build/bin/doe-emit-msl",
+          "--shader-path",
+          "bench/out/wgsl-packed-integers/20261011/qualified-doe/shaders/module-constants.wgsl",
+          "--out",
+          "bench/out/wgsl-packed-integers/20261011/qualified-doe/shaders/module-constants.msl"
+        ],
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "command": [
+          "bench/out/wgsl-packed-integers/20261011/final-build/bin/doe-emit-hlsl",
+          "--shader-path",
+          "bench/out/wgsl-packed-integers/20261011/qualified-doe/shaders/module-constants.wgsl",
+          "--out",
+          "bench/out/wgsl-packed-integers/20261011/qualified-doe/shaders/module-constants.hlsl"
+        ],
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    ]
+  },
+  {
+    "shader": "bench/out/wgsl-packed-integers/20261011/qualified-doe/shaders/normalized-16.wgsl",
+    "commands": [
+      {
+        "command": [
+          "bench/out/wgsl-packed-integers/20261011/final-build/bin/doe-emit-spirv",
+          "--shader-path",
+          "bench/out/wgsl-packed-integers/20261011/qualified-doe/shaders/normalized-16.wgsl",
+          "--out",
+          "bench/out/wgsl-packed-integers/20261011/qualified-doe/shaders/normalized-16.spv"
+        ],
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "command": [
+          "spirv-val",
+          "--target-env",
+          "vulkan1.1",
+          "bench/out/wgsl-packed-integers/20261011/qualified-doe/shaders/normalized-16.spv"
+        ],
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "command": [
+          "bench/out/wgsl-packed-integers/20261011/final-build/bin/doe-emit-msl",
+          "--shader-path",
+          "bench/out/wgsl-packed-integers/20261011/qualified-doe/shaders/normalized-16.wgsl",
+          "--out",
+          "bench/out/wgsl-packed-integers/20261011/qualified-doe/shaders/normalized-16.msl"
+        ],
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "command": [
+          "bench/out/wgsl-packed-integers/20261011/final-build/bin/doe-emit-hlsl",
+          "--shader-path",
+          "bench/out/wgsl-packed-integers/20261011/qualified-doe/shaders/normalized-16.wgsl",
+          "--out",
+          "bench/out/wgsl-packed-integers/20261011/qualified-doe/shaders/normalized-16.hlsl"
+        ],
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    ]
+  },
+  {
+    "shader": "bench/out/wgsl-packed-integers/20261011/qualified-doe/shaders/normalized-packing.wgsl",
+    "commands": [
+      {
+        "command": [
+          "bench/out/wgsl-packed-integers/20261011/final-build/bin/doe-emit-spirv",
+          "--shader-path",
+          "bench/out/wgsl-packed-integers/20261011/qualified-doe/shaders/normalized-packing.wgsl",
+          "--out",
+          "bench/out/wgsl-packed-integers/20261011/qualified-doe/shaders/normalized-packing.spv"
+        ],
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "command": [
+          "spirv-val",
+          "--target-env",
+          "vulkan1.1",
+          "bench/out/wgsl-packed-integers/20261011/qualified-doe/shaders/normalized-packing.spv"
+        ],
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "command": [
+          "bench/out/wgsl-packed-integers/20261011/final-build/bin/doe-emit-msl",
+          "--shader-path",
+          "bench/out/wgsl-packed-integers/20261011/qualified-doe/shaders/normalized-packing.wgsl",
+          "--out",
+          "bench/out/wgsl-packed-integers/20261011/qualified-doe/shaders/normalized-packing.msl"
+        ],
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "command": [
+          "bench/out/wgsl-packed-integers/20261011/final-build/bin/doe-emit-hlsl",
+          "--shader-path",
+          "bench/out/wgsl-packed-integers/20261011/qualified-doe/shaders/normalized-packing.wgsl",
+          "--out",
+          "bench/out/wgsl-packed-integers/20261011/qualified-doe/shaders/normalized-packing.hlsl"
+        ],
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    ]
+  },
+  {
+    "shader": "bench/out/wgsl-packed-integers/20261011/qualified-doe/shaders/single-evaluation.wgsl",
+    "commands": [
+      {
+        "command": [
+          "bench/out/wgsl-packed-integers/20261011/final-build/bin/doe-emit-spirv",
+          "--shader-path",
+          "bench/out/wgsl-packed-integers/20261011/qualified-doe/shaders/single-evaluation.wgsl",
+          "--out",
+          "bench/out/wgsl-packed-integers/20261011/qualified-doe/shaders/single-evaluation.spv"
+        ],
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "command": [
+          "spirv-val",
+          "--target-env",
+          "vulkan1.1",
+          "bench/out/wgsl-packed-integers/20261011/qualified-doe/shaders/single-evaluation.spv"
+        ],
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "command": [
+          "bench/out/wgsl-packed-integers/20261011/final-build/bin/doe-emit-msl",
+          "--shader-path",
+          "bench/out/wgsl-packed-integers/20261011/qualified-doe/shaders/single-evaluation.wgsl",
+          "--out",
+          "bench/out/wgsl-packed-integers/20261011/qualified-doe/shaders/single-evaluation.msl"
+        ],
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "command": [
+          "bench/out/wgsl-packed-integers/20261011/final-build/bin/doe-emit-hlsl",
+          "--shader-path",
+          "bench/out/wgsl-packed-integers/20261011/qualified-doe/shaders/single-evaluation.wgsl",
+          "--out",
+          "bench/out/wgsl-packed-integers/20261011/qualified-doe/shaders/single-evaluation.hlsl"
+        ],
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    ]
+  }
+]

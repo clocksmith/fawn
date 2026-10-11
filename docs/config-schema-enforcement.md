@@ -17,6 +17,17 @@ Required rules:
 The normative stage and gate order lives in [`process.md`](process.md).
 Machine-owned tool boundaries live in `config/tool-surfaces.json`.
 
+## Packed-integer controls introduction
+
+`config/wgsl-packed-integer-controls.schema.json` declares the repo-only physical
+correctness receipt: provider and library identity, shader/input/oracle/output
+hashes, dispatch count, and failure outcomes. The runner requires explicit Doe
+selection and observes the selected library in the process. Integer outputs and
+normalized packing are exact; the frozen non-exact binary16 conversion accepts
+only the adjacent values permitted by WGSL. A failed incumbent control remains
+failed. These receipts establish bounded correctness, not timing, inference
+acceleration, or complete WebGPU conformance. Existing runtime policy is unchanged.
+
 ## Native full-generation experiment introduction
 
 `config/doppler-generation.schema.json` declares the repo-only workload, analysis,

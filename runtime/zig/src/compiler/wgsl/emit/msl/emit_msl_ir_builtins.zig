@@ -6,6 +6,7 @@
 
 const std = @import("std");
 const ir = @import("../../ir/ir.zig");
+const integer_dot = @import("../emit_integer_dot.zig");
 const maps = @import("emit_msl_maps.zig");
 const texture_builtins = @import("emit_msl_texture.zig");
 const layout = @import("../../ir/layout_utils.zig");
@@ -20,6 +21,7 @@ pub const EmitError = error{
 
 pub fn emit_call(self: anytype, function: ir.Function, result_ty: ir.TypeId, call: @FieldType(ir.Expr, "call")) EmitError!void {
     if (call.kind == .builtin) {
+        if (std.mem.eql(u8, call.name, "dot") and try integer_dot.emitCall(self, function, result_ty, call.args)) return;
         if (std.mem.eql(u8, call.name, "workgroupBarrier")) {
             try self.write(if (workgroup_policy.singleInvocationWorkgroup(function))
                 "(void)0"
@@ -80,14 +82,14 @@ pub fn emit_call(self: anytype, function: ir.Function, result_ty: ir.TypeId, cal
         }
         if (std.mem.eql(u8, call.name, "pack4x8unorm")) {
             if (call.args.len != 1) return error.InvalidIr;
-            try self.write("as_type<uint>(uchar4(round(clamp(");
+            try self.write("as_type<uint>(uchar4(floor(0.5 + clamp(");
             try self.emit_expr(function, function.expr_args.items[call.args.start]);
             try self.write(", 0.0, 1.0) * 255.0)))");
             return;
         }
         if (std.mem.eql(u8, call.name, "pack4x8snorm")) {
             if (call.args.len != 1) return error.InvalidIr;
-            try self.write("as_type<uint>(char4(round(clamp(");
+            try self.write("as_type<uint>(char4(floor(0.5 + clamp(");
             try self.emit_expr(function, function.expr_args.items[call.args.start]);
             try self.write(", -1.0, 1.0) * 127.0)))");
             return;
@@ -202,16 +204,16 @@ pub fn emit_call(self: anytype, function: ir.Function, result_ty: ir.TypeId, cal
         }
         if (std.mem.eql(u8, call.name, "pack2x16snorm")) {
             if (call.args.len != 1) return error.InvalidIr;
-            try self.write("pack_float_to_snorm2x16(");
+            try self.write("pack_float_to_snorm2x16(floor(0.5 + clamp(");
             try self.emit_expr(function, function.expr_args.items[call.args.start]);
-            try self.write(")");
+            try self.write(", -1.0, 1.0) * 32767.0) / 32767.0)");
             return;
         }
         if (std.mem.eql(u8, call.name, "pack2x16unorm")) {
             if (call.args.len != 1) return error.InvalidIr;
-            try self.write("pack_float_to_unorm2x16(");
+            try self.write("pack_float_to_unorm2x16(floor(0.5 + clamp(");
             try self.emit_expr(function, function.expr_args.items[call.args.start]);
-            try self.write(")");
+            try self.write(", 0.0, 1.0) * 65535.0) / 65535.0)");
             return;
         }
         if (std.mem.eql(u8, call.name, "unpack2x16snorm")) {

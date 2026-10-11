@@ -2,8 +2,10 @@ const std = @import("std");
 const ast_mod = @import("../frontend/ast.zig");
 const ir = @import("ir.zig");
 const ir_const_eval = @import("ir_const_eval.zig");
+const packed_integer = @import("ir_packed_integer.zig");
 const sema = @import("../frontend/sema.zig");
 const sema_helpers = @import("../frontend/sema_helpers.zig");
+const sema_attrs = @import("../frontend/sema_attrs.zig");
 const token_mod = @import("../frontend/token.zig");
 
 const Ast = ast_mod.Ast;
@@ -454,19 +456,33 @@ const FunctionBuilder = struct {
                 try args.append(self.allocator, try self.lower_value_expr(arg_node));
             }
         }
-        if (!is_constructor and kind == .builtin and std.mem.eql(u8, name, "unpack4xU8")) {
-            if (args.items.len != 1) return error.InvalidIr;
-            if (self.function.exprs.items[args.items[0]].ty == self.semantic.abstract_int_type) {
-                var value = try constant_from_node(self.allocator, self.tree, self.semantic, self.failure, self.tree.extra_data.items[node.data.lhs], 0) orelse return error.UnsupportedConstruct;
-                defer value.deinit(self.allocator);
-                if (value != .int or value.int > std.math.maxInt(u32)) return error.InvalidIr;
-                args.items[0] = try self.function.append_expr(self.allocator, .{
-                    .ty = self.semantic.u32_type,
-                    .category = .value,
-                    .data = .{ .int_lit = value.int },
-                });
+        if (!is_constructor and kind == .builtin) {
+            if (packed_integer.lookup(name)) |op| {
+                if (!op.isPack()) for (args.items, 0..) |*arg, index| {
+                    if (self.function.exprs.items[arg.*].ty != self.semantic.abstract_int_type) continue;
+                    var value = try constant_from_node(self.allocator, self.tree, self.semantic, self.failure, self.tree.extra_data.items[node.data.lhs + index], 0) orelse return error.UnsupportedConstruct;
+                    defer value.deinit(self.allocator);
+                    if (value != .int or value.int > std.math.maxInt(u32)) return error.InvalidIr;
+                    arg.* = try self.function.append_expr(self.allocator, .{ .ty = self.semantic.u32_type, .category = .value, .data = .{ .int_lit = value.int } });
+                };
+                if (op.isPack()) {
+                    const arg_node = self.tree.extra_data.items[node.data.lhs];
+                    if (sema_attrs.isAbstractVectorConstructor(self.semantic, arg_node)) {
+                        var values = try constant_from_node(self.allocator, self.tree, self.semantic, self.failure, arg_node, 0) orelse return error.UnsupportedConstruct;
+                        defer values.deinit(self.allocator);
+                        try validate_packed_materialization(values, op.isSigned());
+                    }
+                }
+                const lowering = packed_integer.Lowering{
+                    .allocator = self.allocator,
+                    .function = self.function,
+                    .u32_ty = self.semantic.u32_type,
+                    .i32_ty = self.semantic.i32_type,
+                    .vec_u32_ty = self.vector_type(self.semantic.u32_type) orelse return error.InvalidIr,
+                    .vec_i32_ty = self.vector_type(self.semantic.i32_type) orelse return error.InvalidIr,
+                };
+                return lowering.lower(op, args.items);
             }
-            return try self.lower_unpack_bytes(args.items[0], self.semantic.nodeType(node_idx));
         }
         const range = try self.function.append_expr_args(self.allocator, args.items);
         if (is_constructor) {
@@ -475,40 +491,11 @@ const FunctionBuilder = struct {
         return .{ .call = .{ .name = try ir.dup_string(self.allocator, name), .kind = kind, .args = range } };
     }
 
-    fn lower_unpack_bytes(self: *FunctionBuilder, argument: ir.ExprId, result_ty: ir.TypeId) !ir.Expr {
-        const byte_bits = @bitSizeOf(u8);
-        const byte_mask = std.math.maxInt(u8);
-        var shifts: [@sizeOf(u32)]ir.ExprId = undefined;
-        for (&shifts, 0..) |*shift, lane| {
-            shift.* = try self.function.append_expr(self.allocator, .{
-                .ty = self.semantic.u32_type,
-                .category = .value,
-                .data = .{ .int_lit = lane * byte_bits },
-            });
+    fn vector_type(self: *FunctionBuilder, elem: ir.TypeId) ?ir.TypeId {
+        for (self.semantic.types.items.items, 0..) |ty, index| {
+            if (ty == .vector and ty.vector.elem == elem and ty.vector.len == 4) return @intCast(index);
         }
-        const mask = try self.function.append_expr(self.allocator, .{
-            .ty = self.semantic.u32_type,
-            .category = .value,
-            .data = .{ .int_lit = byte_mask },
-        });
-        // A scalar splat evaluates the source once, including calls with side effects.
-        const splat = try self.append_vector_construct(result_ty, &.{argument});
-        const offsets = try self.append_vector_construct(result_ty, &shifts);
-        const masks = try self.append_vector_construct(result_ty, &.{mask});
-        const shifted = try self.function.append_expr(self.allocator, .{
-            .ty = result_ty,
-            .category = .value,
-            .data = .{ .binary = .{ .op = .shift_right, .lhs = splat, .rhs = offsets } },
-        });
-        return .{ .binary = .{ .op = .bit_and, .lhs = shifted, .rhs = masks } };
-    }
-
-    fn append_vector_construct(self: *FunctionBuilder, ty: ir.TypeId, args: []const ir.ExprId) !ir.ExprId {
-        return try self.function.append_expr(self.allocator, .{
-            .ty = ty,
-            .category = .value,
-            .data = .{ .construct = .{ .ty = ty, .args = try self.function.append_expr_args(self.allocator, args) } },
-        });
+        return null;
     }
 
     fn lower_generic_call(self: *FunctionBuilder, _: u32, node: Node) !ir.Expr {
@@ -685,6 +672,20 @@ fn constant_from_node(
         },
         .call_expr => blk: {
             const name = tree.tokenSlice(node.main_token);
+            if (semantic.tryResolveNamedType(name) != null or std.mem.eql(u8, name, "vec2") or std.mem.eql(u8, name, "vec3") or std.mem.eql(u8, name, "vec4")) {
+                break :blk try constant_construct(allocator, tree, semantic, failure, semantic.nodeType(node_idx), node.data.lhs, node.data.rhs, depth);
+            }
+            if (packed_integer.lookup(name)) |op| {
+                if (node.data.rhs > 2) return error.InvalidIr;
+                var values: [2]ir.ConstantValue = undefined;
+                var initialized: usize = 0;
+                defer for (values[0..initialized]) |*value| value.deinit(allocator);
+                while (initialized < node.data.rhs) : (initialized += 1) {
+                    values[initialized] = try constant_from_node(allocator, tree, semantic, failure, tree.extra_data.items[node.data.lhs + initialized], depth + 1) orelse return error.UnsupportedConstruct;
+                }
+                if (op.isPack() and sema_attrs.isAbstractVectorConstructor(semantic, tree.extra_data.items[node.data.lhs])) try validate_packed_materialization(values[0], op.isSigned());
+                break :blk try packed_integer.fold(allocator, op, values[0..initialized]);
+            }
             if (!std.mem.eql(u8, name, "countOneBits") or node.data.rhs != 1) return error.UnsupportedConstruct;
             var value = try constant_from_node(allocator, tree, semantic, failure, tree.extra_data.items[node.data.lhs], depth + 1) orelse return error.UnsupportedConstruct;
             errdefer value.deinit(allocator);
@@ -693,26 +694,7 @@ fn constant_from_node(
         },
         .construct_expr => blk: {
             const span = sema_helpers.decode_packed_span(node.data.rhs);
-            if (span.len == 1) {
-                switch (semantic.types.get(semantic.nodeType(node_idx))) {
-                    .scalar => {
-                        const arg_node = tree.extra_data.items[span.start];
-                        break :blk try constant_from_node(allocator, tree, semantic, failure, arg_node, depth + 1);
-                    },
-                    else => {},
-                }
-            }
-            var values = try allocator.alloc(ir.ConstantValue, span.len);
-            var initialized: usize = 0;
-            errdefer {
-                for (values[0..initialized]) |*value| value.deinit(allocator);
-                allocator.free(values);
-            }
-            while (initialized < span.len) : (initialized += 1) {
-                const arg_node = tree.extra_data.items[span.start + initialized];
-                values[initialized] = try constant_from_node(allocator, tree, semantic, failure, arg_node, depth + 1) orelse return error.UnsupportedConstruct;
-            }
-            break :blk ir.ConstantValue{ .composite = values };
+            break :blk try constant_construct(allocator, tree, semantic, failure, semantic.nodeType(node_idx), span.start, span.len, depth);
         },
         else => null,
     };
@@ -729,4 +711,61 @@ fn captureFailureNode(failure: *FailureContext, tree: *const Ast, node_idx: u32)
         .node_idx = node_idx,
         .token_idx = if (node.main_token < tree.tokens.items.len) node.main_token else null,
     };
+}
+
+fn constant_construct(allocator: std.mem.Allocator, tree: *const Ast, semantic: *const sema.SemanticModule, failure: *FailureContext, ty: ir.TypeId, start: u32, len: u32, depth: u8) BuildError!?ir.ConstantValue {
+    const target = semantic.types.get(ty);
+    if (len == 1 and target == .scalar) {
+        var value = try constant_from_node(allocator, tree, semantic, failure, tree.extra_data.items[start], depth + 1) orelse return error.UnsupportedConstruct;
+        if (value == .int and (target.scalar == .u32 or target.scalar == .i32)) value.int = @as(u32, @truncate(value.int));
+        return value;
+    }
+    if (target != .vector) {
+        const values = try allocator.alloc(ir.ConstantValue, len);
+        var initialized: usize = 0;
+        errdefer {
+            for (values[0..initialized]) |*value| value.deinit(allocator);
+            allocator.free(values);
+        }
+        while (initialized < len) : (initialized += 1) values[initialized] = try constant_from_node(allocator, tree, semantic, failure, tree.extra_data.items[start + initialized], depth + 1) orelse return error.UnsupportedConstruct;
+        return .{ .composite = values };
+    }
+    const count = if (target == .vector) target.vector.len else len;
+    const values = try allocator.alloc(ir.ConstantValue, count);
+    var initialized: usize = 0;
+    errdefer {
+        for (values[0..initialized]) |*value| value.deinit(allocator);
+        allocator.free(values);
+    }
+    for (0..len) |index| {
+        var argument = try constant_from_node(allocator, tree, semantic, failure, tree.extra_data.items[start + index], depth + 1) orelse return error.UnsupportedConstruct;
+        defer argument.deinit(allocator);
+        if (argument == .composite and target == .vector) {
+            for (argument.composite) |value| {
+                if (initialized >= count or value == .composite) return error.InvalidIr;
+                values[initialized] = value;
+                initialized += 1;
+            }
+        } else {
+            const repeat = if (target == .vector and len == 1) count else 1;
+            for (0..repeat) |_| {
+                if (initialized >= count or argument == .composite) return error.UnsupportedConstruct;
+                values[initialized] = argument;
+                initialized += 1;
+            }
+        }
+    }
+    if (initialized != count) return error.InvalidIr;
+    return .{ .composite = values };
+}
+
+fn validate_packed_materialization(values: ir.ConstantValue, signed: bool) BuildError!void {
+    if (values != .composite) return error.InvalidIr;
+    for (values.composite) |value| {
+        if (value != .int) return error.InvalidIr;
+        if (signed) {
+            const integer: i64 = @bitCast(value.int);
+            if (integer < std.math.minInt(i32) or integer > std.math.maxInt(i32)) return error.InvalidIr;
+        } else if (value.int > std.math.maxInt(u32)) return error.InvalidIr;
+    }
 }

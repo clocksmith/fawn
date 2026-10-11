@@ -1,0 +1,373 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Physical WGSL packed-integer correctness controls",
+  "oneOf": [
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "classification",
+        "provider",
+        "identity",
+        "runnerSha256",
+        "providerModuleSha256",
+        "nativeLibrarySha256",
+        "languageFeatures",
+        "providerInfo",
+        "loadedLibraryObserved",
+        "results",
+        "passed"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "const": 1
+        },
+        "classification": {
+          "const": "packed-integer-correctness"
+        },
+        "provider": {
+          "enum": [
+            "doe",
+            "dawn"
+          ]
+        },
+        "identity": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "vendor",
+            "device",
+            "architecture",
+            "description"
+          ],
+          "properties": {
+            "vendor": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "device": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "architecture": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "description": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        },
+        "runnerSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "providerModuleSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "nativeLibrarySha256": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "languageFeatures": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "providerInfo": {
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "loadedLibraryObserved": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "results": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 5,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "name",
+              "shaderSha256",
+              "inputSha256",
+              "expectedSha256",
+              "observedSha256",
+              "outputWords",
+              "dispatches",
+              "oracle",
+              "passed",
+              "failure"
+            ],
+            "properties": {
+              "name": {
+                "enum": [
+                  "integer-family",
+                  "single-evaluation",
+                  "normalized-packing",
+                  "module-constants",
+                  "normalized-16"
+                ]
+              },
+              "shaderSha256": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              "inputSha256": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              "expectedSha256": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              "observedSha256": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^[a-f0-9]{64}$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "outputWords": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "dispatches": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "oracle": {
+                "enum": [
+                  "exact-u32",
+                  "exact-normalized-and-adjacent-binary16"
+                ]
+              },
+              "passed": {
+                "type": "boolean"
+              },
+              "failure": {
+                "anyOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "message",
+                      "stack"
+                    ],
+                    "properties": {
+                      "message": {
+                        "type": "string"
+                      },
+                      "stack": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "passed": {
+          "type": "boolean"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "classification",
+        "sourceBase",
+        "sourceFiles",
+        "retainedFiles",
+        "nativeLibrary",
+        "commands",
+        "wgslTests",
+        "runtimeTests",
+        "physicalDoePassed",
+        "physicalDawnPassed",
+        "performanceClaim",
+        "physicalMetalQualified",
+        "physicalD3D12Qualified",
+        "acceleratedIntegerDotQualified"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "const": 1
+        },
+        "classification": {
+          "const": "bounded-correctness"
+        },
+        "sourceBase": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{40}$"
+        },
+        "sourceFiles": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "path",
+              "sha256"
+            ],
+            "properties": {
+              "path": {
+                "type": "string",
+                "minLength": 1
+              },
+              "sha256": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              }
+            }
+          }
+        },
+        "retainedFiles": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "path",
+              "sha256"
+            ],
+            "properties": {
+              "path": {
+                "type": "string",
+                "minLength": 1
+              },
+              "sha256": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              }
+            }
+          }
+        },
+        "nativeLibrary": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "path",
+            "sha256"
+          ],
+          "properties": {
+            "path": {
+              "type": "string",
+              "minLength": 1
+            },
+            "sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            }
+          }
+        },
+        "commands": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "wgslTests": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "passed",
+            "failed"
+          ],
+          "properties": {
+            "passed": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "failed": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "skipped": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "runtimeTests": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "passed",
+            "failed"
+          ],
+          "properties": {
+            "passed": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "failed": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "skipped": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "physicalDoePassed": {
+          "type": "boolean"
+        },
+        "physicalDawnPassed": {
+          "type": "boolean"
+        },
+        "performanceClaim": {
+          "type": "boolean"
+        },
+        "physicalMetalQualified": {
+          "type": "boolean"
+        },
+        "physicalD3D12Qualified": {
+          "type": "boolean"
+        },
+        "acceleratedIntegerDotQualified": {
+          "type": "boolean"
+        }
+      }
+    }
+  ]
+}

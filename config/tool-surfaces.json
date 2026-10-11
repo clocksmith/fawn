@@ -124,7 +124,8 @@
         "bench/external-projects/onnx-webgpu-substitution/verify.py",
         "bench/external-projects/onnx-webgpu-substitution/build_adapter.py",
         "bench/external-projects/onnx-webgpu-substitution/run_adapter.py",
-        "bench/external-projects/onnx-webgpu-substitution/verify_adapter.py"
+        "bench/external-projects/onnx-webgpu-substitution/verify_adapter.py",
+        "bench/executors/run-packed-integer-controls.mjs"
       ],
       "docs": [
         "bench/README.md",

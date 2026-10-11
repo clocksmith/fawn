@@ -1874,6 +1874,7 @@ function createFullSurfaceClasses({
 
   const WGSL_LANGUAGE_FEATURES = Object.freeze(new Set([
     'readonly-and-readwrite-storage-textures',
+    'packed_4x8_integer_dot_product',
   ]));
 
   class DoeGPU {

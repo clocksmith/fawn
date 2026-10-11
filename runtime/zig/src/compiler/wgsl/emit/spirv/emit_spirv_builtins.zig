@@ -92,16 +92,28 @@ pub fn emit_builtin(self: anytype, call: anytype, result_ty: ir.TypeId) !?u32 {
         return result_id;
     }
     if (std.mem.eql(u8, call.name, "pack2x16float")) {
-        return try emit_glsl_ext_inst_args(self, call, result_ty, 60);
+        return try emit_glsl_ext_inst_args(self, call, result_ty, 58);
     }
     if (std.mem.eql(u8, call.name, "unpack2x16float")) {
         return try emit_glsl_ext_inst_args(self, call, result_ty, 62);
     }
     if (std.mem.eql(u8, call.name, "pack4x8unorm")) {
-        return try emit_glsl_ext_inst_args(self, call, result_ty, 58);
+        return try emit_normalized_pack(self, call, result_ty, 55, 255, false);
     }
     if (std.mem.eql(u8, call.name, "pack4x8snorm")) {
-        return try emit_glsl_ext_inst_args(self, call, result_ty, 59);
+        return try emit_normalized_pack(self, call, result_ty, 54, 127, true);
+    }
+    if (std.mem.eql(u8, call.name, "pack2x16unorm")) {
+        return try emit_normalized_pack(self, call, result_ty, 57, 65535, false);
+    }
+    if (std.mem.eql(u8, call.name, "pack2x16snorm")) {
+        return try emit_normalized_pack(self, call, result_ty, 56, 32767, true);
+    }
+    if (std.mem.eql(u8, call.name, "unpack2x16snorm")) {
+        return try emit_glsl_ext_inst_args(self, call, result_ty, 60);
+    }
+    if (std.mem.eql(u8, call.name, "unpack2x16unorm")) {
+        return try emit_glsl_ext_inst_args(self, call, result_ty, 61);
     }
     if (std.mem.eql(u8, call.name, "unpack4x8snorm")) {
         return try emit_glsl_ext_inst_args(self, call, result_ty, 63);
@@ -343,6 +355,33 @@ pub fn emit_builtin(self: anytype, call: anytype, result_ty: ir.TypeId) !?u32 {
 }
 
 const SubgroupArithmeticOp = enum { add, mul, min, max };
+
+fn emit_normalized_pack(self: anytype, call: anytype, result_ty: ir.TypeId, instruction: u32, scale: f32, signed: bool) !u32 {
+    if (call.args.len != 1) return error.InvalidIr;
+    const arg = self.function.expr_args.items[call.args.start];
+    const vector_ty = self.function.exprs.items[arg].ty;
+    const vector = switch (self.emitter.module.types.get(vector_ty)) {
+        .vector => |value| value,
+        else => return error.InvalidIr,
+    };
+    if (vector.len != 2 and vector.len != 4) return error.InvalidIr;
+    const result_type = try self.emitter.lower_type(vector_ty);
+    const import_id = try self.emitter.builder.glsl450_import_id();
+    var constants: [4]u32 = undefined;
+    for ([_]f32{ if (signed) -1 else 0, 1, scale, 0.5 }, 0..) |value, index| {
+        const scalar = try self.emitter.builder.const_f32_bits(@bitCast(value));
+        const lanes = [_]u32{scalar} ** 4;
+        constants[index] = try self.emitter.builder.const_composite(result_type, lanes[0..vector.len]);
+    }
+    const clamped = try emit_result_inst(self, spirv.Opcode.ExtInst, result_type, &.{ import_id, 43, try self.emit_value_expr(arg), constants[0], constants[1] });
+    const scaled = try emit_result_inst(self, spirv.Opcode.FMul, result_type, &.{ clamped, constants[2] });
+    const biased = try emit_result_inst(self, spirv.Opcode.FAdd, result_type, &.{ scaled, constants[3] });
+    // GLSL pack's round-to-even disagrees with WGSL's floor(0.5 + x) at
+    // halfway values. Prequantization removes that tie before native packing.
+    const rounded = try emit_result_inst(self, spirv.Opcode.ExtInst, result_type, &.{ import_id, 8, biased });
+    const normalized = try emit_result_inst(self, spirv.Opcode.FDiv, result_type, &.{ rounded, constants[2] });
+    return emit_result_inst(self, spirv.Opcode.ExtInst, try self.emitter.lower_type(result_ty), &.{ import_id, instruction, normalized });
+}
 
 fn emit_glsl_ext_inst_args(self: anytype, call: anytype, result_ty: ir.TypeId, inst: u32) !u32 {
     const result_type = try self.emitter.lower_type(result_ty);

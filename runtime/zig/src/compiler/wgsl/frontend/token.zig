@@ -79,7 +79,7 @@ pub const Token = struct {
     }
 };
 
-// Reserved words, plus the keyword `requires` (not yet a directive token).
+// Reserved words. `requires` is a directive keyword and cannot name declarations.
 // https://www.w3.org/TR/2026/CRD-WGSL-20260921/#reserved-words
 const NON_IDENTIFIER_WORDS = std.StaticStringMap(void).initComptime(.{
     .{ "NULL", {} },             .{ "Self", {} },          .{ "abstract", {} },        .{ "active", {} },
@@ -197,6 +197,7 @@ pub const Tag = enum(u8) {
     kw_case,
     kw_default,
     kw_enable,
+    kw_requires,
     kw_true,
     kw_false,
     kw_discard,
@@ -282,6 +283,7 @@ const KEYWORDS = [_]KW{
     .{ "discard", .kw_discard },
     .{ "else", .kw_else },
     .{ "enable", .kw_enable },
+    .{ "requires", .kw_requires },
     .{ "f16", .kw_f16 },
     .{ "f32", .kw_f32 },
     .{ "false", .kw_false },

@@ -794,6 +794,9 @@ function wrapAdapter(raw) {
 function wrapGpu(raw) {
   return {
     _raw: raw,
+    get wgslLanguageFeatures() {
+      return raw.wgslLanguageFeatures;
+    },
     /**
      * Request a compute-only adapter facade.
      *

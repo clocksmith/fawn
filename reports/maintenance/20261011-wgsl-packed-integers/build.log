@@ -1,0 +1,21 @@
+
+Build Summary: 15/15 steps succeeded
+dropin success
++- install webgpu_doe success
+|  +- compile lib webgpu_doe ReleaseFast native success 36s MaxRSS:729M
+|     +- options cached
++- install generated to share/doe-build-metadata.json success
+   +- WriteFile doe-build-metadata.json success
+emit-spirv success
++- install doe-emit-spirv success
+   +- compile exe doe-emit-spirv ReleaseFast native success 13s MaxRSS:380M
+      +- options (reused)
+emit-msl success
++- install doe-emit-msl success
+   +- compile exe doe-emit-msl ReleaseFast native success 11s MaxRSS:343M
+      +- options (reused)
+emit-hlsl success
++- install doe-emit-hlsl success
+   +- compile exe doe-emit-hlsl ReleaseFast native success 11s MaxRSS:339M
+      +- options (reused)
+

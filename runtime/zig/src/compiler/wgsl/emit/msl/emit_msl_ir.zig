@@ -1,5 +1,6 @@
 const std = @import("std");
 const ir = @import("../../ir/ir.zig");
+const integer_dot = @import("../emit_integer_dot.zig");
 const maps = @import("emit_msl_maps.zig");
 const stage_render = @import("emit_msl_stage.zig");
 const subgroups = @import("emit_msl_subgroups.zig");
@@ -114,6 +115,7 @@ const Emitter = struct {
         try self.write("#include <metal_stdlib>\nusing namespace metal;\n");
         // Simdgroup header only needed when subgroup builtins are present.
         if (subgroups.module_uses_subgroups(self.module)) try self.write(subgroups.SIMDGROUP_INCLUDE);
+        try integer_dot.emitHelpers(self, true);
         try self.emit_structs();
         try self.emit_globals();
         try self.emit_functions();
@@ -803,10 +805,13 @@ const Emitter = struct {
         switch (constant) {
             .bool => |value| try self.write(if (value) "true" else "false"),
             .int => |value| {
-                try self.write_u64(value);
-                switch (self.module.types.get(ty)) {
-                    .scalar => |scalar| if (scalar == .u32) try self.write("u"),
-                    else => {},
+                if (ir.is_scalar(&self.module.types, ty, .i32)) {
+                    var buffer: [32]u8 = undefined;
+                    const text = std.fmt.bufPrint(&buffer, "{}", .{@as(i32, @bitCast(@as(u32, @truncate(value))))}) catch return error.OutputTooLarge;
+                    try self.write(text);
+                } else {
+                    try self.write_u64(value);
+                    if (ir.is_scalar(&self.module.types, ty, .u32)) try self.write("u");
                 }
             },
             .float => |value| try self.write_float(value),

@@ -28109,6 +28109,982 @@
       "targets": [
         "src/compiler/wgsl/ir/ir_builder.zig"
       ]
+    },
+    {
+      "context": [
+        {
+          "path": "bench/executors/run-packed-integer-controls.mjs",
+          "sha256": "714721095a903771f4a4af53846c9a492b0fd2faf1c44a38571e399d70fb271a"
+        },
+        {
+          "path": "runtime/zig/tests/wgsl/coverage_builtin_spec_test.zig",
+          "sha256": "2b9e53a37609979212d88473f201d4d8434f9e01deeff31d2cbaff01f68f7947"
+        }
+      ],
+      "evidence": [
+        {
+          "path": "reports/maintenance/20261011-wgsl-packed-integers/doe.json",
+          "sha256": "8b8c2f7ef75c346eeb857ebceeaed77c607e4f5cd5e745c0674ac1108367a599"
+        },
+        {
+          "path": "reports/maintenance/20261011-wgsl-packed-integers/manifest.json",
+          "sha256": "84bc945cde4be4354cbafe1af17aa6c28ae5073533496268bbc6572a8d54348d"
+        },
+        {
+          "path": "reports/maintenance/20261011-wgsl-packed-integers/shader-validation.json",
+          "sha256": "25c7949f859619aa643f5675544e5a75611033cea342c13e5ed7b602e8051662"
+        }
+      ],
+      "findings": [],
+      "inputHash": "ce8110be3e5c5d52a3a1132069a3a78b5807912be153ad816e7fea31123725c8",
+      "level": "file",
+      "nextAction": "Review the complete file and remaining callers against its charter before granting whole-file verification.",
+      "prerequisites": [],
+      "resolvedFindings": [
+        "The affected packed-integer or normalized-packing path has retained compiler tests and independent AMD/Vulkan output controls. MSL/HLSL evidence covers translation only."
+      ],
+      "reviewId": "packed_integer_20261011_00",
+      "reviewedAt": "2026-10-11T18:50:13.121889+00:00",
+      "reviewer": "codex",
+      "sourceCommit": "5d32e51a9366211da3e24246c61355c74c6ea63d",
+      "status": "in_progress",
+      "summary": "Examined the packed-integer admission, lowering, constant ownership, emission, or capability changes in this file. Complete broader file review remains open.",
+      "supersedes": null,
+      "targets": [
+        "src/compiler/wgsl/emit/hlsl/emit_hlsl.zig"
+      ]
+    },
+    {
+      "context": [
+        {
+          "path": "bench/executors/run-packed-integer-controls.mjs",
+          "sha256": "714721095a903771f4a4af53846c9a492b0fd2faf1c44a38571e399d70fb271a"
+        },
+        {
+          "path": "runtime/zig/tests/wgsl/coverage_builtin_spec_test.zig",
+          "sha256": "2b9e53a37609979212d88473f201d4d8434f9e01deeff31d2cbaff01f68f7947"
+        }
+      ],
+      "evidence": [
+        {
+          "path": "reports/maintenance/20261011-wgsl-packed-integers/doe.json",
+          "sha256": "8b8c2f7ef75c346eeb857ebceeaed77c607e4f5cd5e745c0674ac1108367a599"
+        },
+        {
+          "path": "reports/maintenance/20261011-wgsl-packed-integers/manifest.json",
+          "sha256": "84bc945cde4be4354cbafe1af17aa6c28ae5073533496268bbc6572a8d54348d"
+        },
+        {
+          "path": "reports/maintenance/20261011-wgsl-packed-integers/shader-validation.json",
+          "sha256": "25c7949f859619aa643f5675544e5a75611033cea342c13e5ed7b602e8051662"
+        }
+      ],
+      "findings": [],
+      "inputHash": "d20b5efffc775441863ddf22c14641b1af8bcdb4d046c4ebbc902bfbfe157f12",
+      "level": "file",
+      "nextAction": "Review the complete file and remaining callers against its charter before granting whole-file verification.",
+      "prerequisites": [],
+      "resolvedFindings": [
+        "The affected packed-integer or normalized-packing path has retained compiler tests and independent AMD/Vulkan output controls. MSL/HLSL evidence covers translation only."
+      ],
+      "reviewId": "packed_integer_20261011_01",
+      "reviewedAt": "2026-10-11T18:50:14.878468+00:00",
+      "reviewer": "codex",
+      "sourceCommit": "5d32e51a9366211da3e24246c61355c74c6ea63d",
+      "status": "in_progress",
+      "summary": "Examined the packed-integer admission, lowering, constant ownership, emission, or capability changes in this file. Complete broader file review remains open.",
+      "supersedes": null,
+      "targets": [
+        "src/compiler/wgsl/emit/hlsl/emit_hlsl_builtins.zig"
+      ]
+    },
+    {
+      "context": [
+        {
+          "path": "bench/executors/run-packed-integer-controls.mjs",
+          "sha256": "714721095a903771f4a4af53846c9a492b0fd2faf1c44a38571e399d70fb271a"
+        },
+        {
+          "path": "runtime/zig/tests/wgsl/coverage_builtin_spec_test.zig",
+          "sha256": "2b9e53a37609979212d88473f201d4d8434f9e01deeff31d2cbaff01f68f7947"
+        }
+      ],
+      "evidence": [
+        {
+          "path": "reports/maintenance/20261011-wgsl-packed-integers/doe.json",
+          "sha256": "8b8c2f7ef75c346eeb857ebceeaed77c607e4f5cd5e745c0674ac1108367a599"
+        },
+        {
+          "path": "reports/maintenance/20261011-wgsl-packed-integers/manifest.json",
+          "sha256": "84bc945cde4be4354cbafe1af17aa6c28ae5073533496268bbc6572a8d54348d"
+        },
+        {
+          "path": "reports/maintenance/20261011-wgsl-packed-integers/shader-validation.json",
+          "sha256": "25c7949f859619aa643f5675544e5a75611033cea342c13e5ed7b602e8051662"
+        }
+      ],
+      "findings": [],
+      "inputHash": "ab37330c456e208892e56b1143e2c215357ff89e016d545dc36b8c48f49e43e6",
+      "level": "file",
+      "nextAction": "Review the complete file and remaining callers against its charter before granting whole-file verification.",
+      "prerequisites": [],
+      "resolvedFindings": [
+        "The affected packed-integer or normalized-packing path has retained compiler tests and independent AMD/Vulkan output controls. MSL/HLSL evidence covers translation only."
+      ],
+      "reviewId": "packed_integer_20261011_02",
+      "reviewedAt": "2026-10-11T18:50:16.647083+00:00",
+      "reviewer": "codex",
+      "sourceCommit": "5d32e51a9366211da3e24246c61355c74c6ea63d",
+      "status": "in_progress",
+      "summary": "Examined the packed-integer admission, lowering, constant ownership, emission, or capability changes in this file. Complete broader file review remains open.",
+      "supersedes": null,
+      "targets": [
+        "src/compiler/wgsl/emit/hlsl/emit_hlsl_maps.zig"
+      ]
+    },
+    {
+      "context": [
+        {
+          "path": "bench/executors/run-packed-integer-controls.mjs",
+          "sha256": "714721095a903771f4a4af53846c9a492b0fd2faf1c44a38571e399d70fb271a"
+        },
+        {
+          "path": "runtime/zig/tests/wgsl/coverage_builtin_spec_test.zig",
+          "sha256": "2b9e53a37609979212d88473f201d4d8434f9e01deeff31d2cbaff01f68f7947"
+        }
+      ],
+      "evidence": [
+        {
+          "path": "reports/maintenance/20261011-wgsl-packed-integers/doe.json",
+          "sha256": "8b8c2f7ef75c346eeb857ebceeaed77c607e4f5cd5e745c0674ac1108367a599"
+        },
+        {
+          "path": "reports/maintenance/20261011-wgsl-packed-integers/manifest.json",
+          "sha256": "84bc945cde4be4354cbafe1af17aa6c28ae5073533496268bbc6572a8d54348d"
+        },
+        {
+          "path": "reports/maintenance/20261011-wgsl-packed-integers/shader-validation.json",
+          "sha256": "25c7949f859619aa643f5675544e5a75611033cea342c13e5ed7b602e8051662"
+        }
+      ],
+      "findings": [],
+      "inputHash": "869812ac1861bffc027773b53dbb261b9e5f7c86af72d9dc409a67d98a849a57",
+      "level": "file",
+      "nextAction": "Review the complete file and remaining callers against its charter before granting whole-file verification.",
+      "prerequisites": [],
+      "resolvedFindings": [
+        "The affected packed-integer or normalized-packing path has retained compiler tests and independent AMD/Vulkan output controls. MSL/HLSL evidence covers translation only."
+      ],
+      "reviewId": "packed_integer_20261011_03",
+      "reviewedAt": "2026-10-11T18:50:18.363874+00:00",
+      "reviewer": "codex",
+      "sourceCommit": "5d32e51a9366211da3e24246c61355c74c6ea63d",
+      "status": "in_progress",
+      "summary": "Examined the packed-integer admission, lowering, constant ownership, emission, or capability changes in this file. Complete broader file review remains open.",
+      "supersedes": null,
+      "targets": [
+        "src/compiler/wgsl/emit/msl/emit_msl_ir.zig"
+      ]
+    },
+    {
+      "context": [
+        {
+          "path": "bench/executors/run-packed-integer-controls.mjs",
+          "sha256": "714721095a903771f4a4af53846c9a492b0fd2faf1c44a38571e399d70fb271a"
+        },
+        {
+          "path": "runtime/zig/tests/wgsl/coverage_builtin_spec_test.zig",
+          "sha256": "2b9e53a37609979212d88473f201d4d8434f9e01deeff31d2cbaff01f68f7947"
+        }
+      ],
+      "evidence": [
+        {
+          "path": "reports/maintenance/20261011-wgsl-packed-integers/doe.json",
+          "sha256": "8b8c2f7ef75c346eeb857ebceeaed77c607e4f5cd5e745c0674ac1108367a599"
+        },
+        {
+          "path": "reports/maintenance/20261011-wgsl-packed-integers/manifest.json",
+          "sha256": "84bc945cde4be4354cbafe1af17aa6c28ae5073533496268bbc6572a8d54348d"
+        },
+        {
+          "path": "reports/maintenance/20261011-wgsl-packed-integers/shader-validation.json",
+          "sha256": "25c7949f859619aa643f5675544e5a75611033cea342c13e5ed7b602e8051662"
+        }
+      ],
+      "findings": [],
+      "inputHash": "7e8a52dd2b7ca36b135adb02b49b6c5b438cde96b2161c21f63b0e940651cf5c",
+      "level": "file",
+      "nextAction": "Review the complete file and remaining callers against its charter before granting whole-file verification.",
+      "prerequisites": [],
+      "resolvedFindings": [
+        "The affected packed-integer or normalized-packing path has retained compiler tests and independent AMD/Vulkan output controls. MSL/HLSL evidence covers translation only."
+      ],
+      "reviewId": "packed_integer_20261011_04",
+      "reviewedAt": "2026-10-11T18:50:20.133323+00:00",
+      "reviewer": "codex",
+      "sourceCommit": "5d32e51a9366211da3e24246c61355c74c6ea63d",
+      "status": "in_progress",
+      "summary": "Examined the packed-integer admission, lowering, constant ownership, emission, or capability changes in this file. Complete broader file review remains open.",
+      "supersedes": null,
+      "targets": [
+        "src/compiler/wgsl/emit/msl/emit_msl_ir_builtins.zig"
+      ]
+    },
+    {
+      "context": [
+        {
+          "path": "bench/executors/run-packed-integer-controls.mjs",
+          "sha256": "714721095a903771f4a4af53846c9a492b0fd2faf1c44a38571e399d70fb271a"
+        },
+        {
+          "path": "runtime/zig/tests/wgsl/coverage_builtin_spec_test.zig",
+          "sha256": "2b9e53a37609979212d88473f201d4d8434f9e01deeff31d2cbaff01f68f7947"
+        }
+      ],
+      "evidence": [
+        {
+          "path": "reports/maintenance/20261011-wgsl-packed-integers/doe.json",
+          "sha256": "8b8c2f7ef75c346eeb857ebceeaed77c607e4f5cd5e745c0674ac1108367a599"
+        },
+        {
+          "path": "reports/maintenance/20261011-wgsl-packed-integers/manifest.json",
+          "sha256": "84bc945cde4be4354cbafe1af17aa6c28ae5073533496268bbc6572a8d54348d"
+        },
+        {
+          "path": "reports/maintenance/20261011-wgsl-packed-integers/shader-validation.json",
+          "sha256": "25c7949f859619aa643f5675544e5a75611033cea342c13e5ed7b602e8051662"
+        }
+      ],
+      "findings": [],
+      "inputHash": "77ff41f25812e0c1f686305fe8c177072cd9eb41bd372f296addf26eb6252c82",
+      "level": "file",
+      "nextAction": "Review the complete file and remaining callers against its charter before granting whole-file verification.",
+      "prerequisites": [],
+      "resolvedFindings": [
+        "The affected packed-integer or normalized-packing path has retained compiler tests and independent AMD/Vulkan output controls. MSL/HLSL evidence covers translation only."
+      ],
+      "reviewId": "packed_integer_20261011_05",
+      "reviewedAt": "2026-10-11T18:50:21.873060+00:00",
+      "reviewer": "codex",
+      "sourceCommit": "5d32e51a9366211da3e24246c61355c74c6ea63d",
+      "status": "in_progress",
+      "summary": "Examined the packed-integer admission, lowering, constant ownership, emission, or capability changes in this file. Complete broader file review remains open.",
+      "supersedes": "native_doppler_compiler_20261011_0",
+      "targets": [
+        "src/compiler/wgsl/emit/spirv/emit_spirv_builtins.zig"
+      ]
+    },
+    {
+      "context": [
+        {
+          "path": "bench/executors/run-packed-integer-controls.mjs",
+          "sha256": "714721095a903771f4a4af53846c9a492b0fd2faf1c44a38571e399d70fb271a"
+        },
+        {
+          "path": "runtime/zig/tests/wgsl/coverage_builtin_spec_test.zig",
+          "sha256": "2b9e53a37609979212d88473f201d4d8434f9e01deeff31d2cbaff01f68f7947"
+        }
+      ],
+      "evidence": [
+        {
+          "path": "reports/maintenance/20261011-wgsl-packed-integers/doe.json",
+          "sha256": "8b8c2f7ef75c346eeb857ebceeaed77c607e4f5cd5e745c0674ac1108367a599"
+        },
+        {
+          "path": "reports/maintenance/20261011-wgsl-packed-integers/manifest.json",
+          "sha256": "84bc945cde4be4354cbafe1af17aa6c28ae5073533496268bbc6572a8d54348d"
+        },
+        {
+          "path": "reports/maintenance/20261011-wgsl-packed-integers/shader-validation.json",
+          "sha256": "25c7949f859619aa643f5675544e5a75611033cea342c13e5ed7b602e8051662"
+        }
+      ],
+      "findings": [],
+      "inputHash": "022ea5710692b19d06b052e6e6fa2c54f9bec66a382b2e22a5399d69e4fbe9df",
+      "level": "file",
+      "nextAction": "Review the complete file and remaining callers against its charter before granting whole-file verification.",
+      "prerequisites": [],
+      "resolvedFindings": [
+        "The affected packed-integer or normalized-packing path has retained compiler tests and independent AMD/Vulkan output controls. MSL/HLSL evidence covers translation only."
+      ],
+      "reviewId": "packed_integer_20261011_06",
+      "reviewedAt": "2026-10-11T18:50:23.546483+00:00",
+      "reviewer": "codex",
+      "sourceCommit": "5d32e51a9366211da3e24246c61355c74c6ea63d",
+      "status": "in_progress",
+      "summary": "Examined the packed-integer admission, lowering, constant ownership, emission, or capability changes in this file. Complete broader file review remains open.",
+      "supersedes": null,
+      "targets": [
+        "src/compiler/wgsl/frontend/ast.zig"
+      ]
+    },
+    {
+      "context": [
+        {
+          "path": "bench/executors/run-packed-integer-controls.mjs",
+          "sha256": "714721095a903771f4a4af53846c9a492b0fd2faf1c44a38571e399d70fb271a"
+        },
+        {
+          "path": "runtime/zig/tests/wgsl/coverage_builtin_spec_test.zig",
+          "sha256": "2b9e53a37609979212d88473f201d4d8434f9e01deeff31d2cbaff01f68f7947"
+        }
+      ],
+      "evidence": [
+        {
+          "path": "reports/maintenance/20261011-wgsl-packed-integers/doe.json",
+          "sha256": "8b8c2f7ef75c346eeb857ebceeaed77c607e4f5cd5e745c0674ac1108367a599"
+        },
+        {
+          "path": "reports/maintenance/20261011-wgsl-packed-integers/manifest.json",
+          "sha256": "84bc945cde4be4354cbafe1af17aa6c28ae5073533496268bbc6572a8d54348d"
+        },
+        {
+          "path": "reports/maintenance/20261011-wgsl-packed-integers/shader-validation.json",
+          "sha256": "25c7949f859619aa643f5675544e5a75611033cea342c13e5ed7b602e8051662"
+        }
+      ],
+      "findings": [],
+      "inputHash": "ebfa7111385083f55ce2492cd9fd7162c7e748654e3eac868f5e5af16a4b02d7",
+      "level": "file",
+      "nextAction": "Review the complete file and remaining callers against its charter before granting whole-file verification.",
+      "prerequisites": [],
+      "resolvedFindings": [
+        "The affected packed-integer or normalized-packing path has retained compiler tests and independent AMD/Vulkan output controls. MSL/HLSL evidence covers translation only."
+      ],
+      "reviewId": "packed_integer_20261011_07",
+      "reviewedAt": "2026-10-11T18:50:25.189433+00:00",
+      "reviewer": "codex",
+      "sourceCommit": "5d32e51a9366211da3e24246c61355c74c6ea63d",
+      "status": "in_progress",
+      "summary": "Examined the packed-integer admission, lowering, constant ownership, emission, or capability changes in this file. Complete broader file review remains open.",
+      "supersedes": null,
+      "targets": [
+        "src/compiler/wgsl/frontend/parser.zig"
+      ]
+    },
+    {
+      "context": [
+        {
+          "path": "bench/executors/run-packed-integer-controls.mjs",
+          "sha256": "714721095a903771f4a4af53846c9a492b0fd2faf1c44a38571e399d70fb271a"
+        },
+        {
+          "path": "runtime/zig/tests/wgsl/coverage_builtin_spec_test.zig",
+          "sha256": "2b9e53a37609979212d88473f201d4d8434f9e01deeff31d2cbaff01f68f7947"
+        }
+      ],
+      "evidence": [
+        {
+          "path": "reports/maintenance/20261011-wgsl-packed-integers/doe.json",
+          "sha256": "8b8c2f7ef75c346eeb857ebceeaed77c607e4f5cd5e745c0674ac1108367a599"
+        },
+        {
+          "path": "reports/maintenance/20261011-wgsl-packed-integers/manifest.json",
+          "sha256": "84bc945cde4be4354cbafe1af17aa6c28ae5073533496268bbc6572a8d54348d"
+        },
+        {
+          "path": "reports/maintenance/20261011-wgsl-packed-integers/shader-validation.json",
+          "sha256": "25c7949f859619aa643f5675544e5a75611033cea342c13e5ed7b602e8051662"
+        }
+      ],
+      "findings": [],
+      "inputHash": "5f05e6fe4f8d8fdecf49ae6a08ae56c0909d110f4bd7a07189cac85af385b4be",
+      "level": "file",
+      "nextAction": "Review the complete file and remaining callers against its charter before granting whole-file verification.",
+      "prerequisites": [],
+      "resolvedFindings": [
+        "The affected packed-integer or normalized-packing path has retained compiler tests and independent AMD/Vulkan output controls. MSL/HLSL evidence covers translation only."
+      ],
+      "reviewId": "packed_integer_20261011_08",
+      "reviewedAt": "2026-10-11T18:50:26.820240+00:00",
+      "reviewer": "codex",
+      "sourceCommit": "5d32e51a9366211da3e24246c61355c74c6ea63d",
+      "status": "in_progress",
+      "summary": "Examined the packed-integer admission, lowering, constant ownership, emission, or capability changes in this file. Complete broader file review remains open.",
+      "supersedes": null,
+      "targets": [
+        "src/compiler/wgsl/frontend/parser_decl.zig"
+      ]
+    },
+    {
+      "context": [
+        {
+          "path": "bench/executors/run-packed-integer-controls.mjs",
+          "sha256": "714721095a903771f4a4af53846c9a492b0fd2faf1c44a38571e399d70fb271a"
+        },
+        {
+          "path": "runtime/zig/tests/wgsl/coverage_builtin_spec_test.zig",
+          "sha256": "2b9e53a37609979212d88473f201d4d8434f9e01deeff31d2cbaff01f68f7947"
+        }
+      ],
+      "evidence": [
+        {
+          "path": "reports/maintenance/20261011-wgsl-packed-integers/doe.json",
+          "sha256": "8b8c2f7ef75c346eeb857ebceeaed77c607e4f5cd5e745c0674ac1108367a599"
+        },
+        {
+          "path": "reports/maintenance/20261011-wgsl-packed-integers/manifest.json",
+          "sha256": "84bc945cde4be4354cbafe1af17aa6c28ae5073533496268bbc6572a8d54348d"
+        },
+        {
+          "path": "reports/maintenance/20261011-wgsl-packed-integers/shader-validation.json",
+          "sha256": "25c7949f859619aa643f5675544e5a75611033cea342c13e5ed7b602e8051662"
+        }
+      ],
+      "findings": [],
+      "inputHash": "75fb7f95e6afc746545df5a2623b883e881d33c5ce987c66ceb57cfe7a758cd9",
+      "level": "file",
+      "nextAction": "Review the complete file and remaining callers against its charter before granting whole-file verification.",
+      "prerequisites": [],
+      "resolvedFindings": [
+        "The affected packed-integer or normalized-packing path has retained compiler tests and independent AMD/Vulkan output controls. MSL/HLSL evidence covers translation only."
+      ],
+      "reviewId": "packed_integer_20261011_09",
+      "reviewedAt": "2026-10-11T18:50:28.448730+00:00",
+      "reviewer": "codex",
+      "sourceCommit": "5d32e51a9366211da3e24246c61355c74c6ea63d",
+      "status": "in_progress",
+      "summary": "Examined the packed-integer admission, lowering, constant ownership, emission, or capability changes in this file. Complete broader file review remains open.",
+      "supersedes": null,
+      "targets": [
+        "src/compiler/wgsl/frontend/sema.zig"
+      ]
+    },
+    {
+      "context": [
+        {
+          "path": "bench/executors/run-packed-integer-controls.mjs",
+          "sha256": "714721095a903771f4a4af53846c9a492b0fd2faf1c44a38571e399d70fb271a"
+        },
+        {
+          "path": "runtime/zig/tests/wgsl/coverage_builtin_spec_test.zig",
+          "sha256": "2b9e53a37609979212d88473f201d4d8434f9e01deeff31d2cbaff01f68f7947"
+        }
+      ],
+      "evidence": [
+        {
+          "path": "reports/maintenance/20261011-wgsl-packed-integers/doe.json",
+          "sha256": "8b8c2f7ef75c346eeb857ebceeaed77c607e4f5cd5e745c0674ac1108367a599"
+        },
+        {
+          "path": "reports/maintenance/20261011-wgsl-packed-integers/manifest.json",
+          "sha256": "84bc945cde4be4354cbafe1af17aa6c28ae5073533496268bbc6572a8d54348d"
+        },
+        {
+          "path": "reports/maintenance/20261011-wgsl-packed-integers/shader-validation.json",
+          "sha256": "25c7949f859619aa643f5675544e5a75611033cea342c13e5ed7b602e8051662"
+        }
+      ],
+      "findings": [],
+      "inputHash": "0083eb3059b2805c754292321fc05905d650134860ac2901ec1e5cca5d25b90b",
+      "level": "file",
+      "nextAction": "Review the complete file and remaining callers against its charter before granting whole-file verification.",
+      "prerequisites": [],
+      "resolvedFindings": [
+        "The affected packed-integer or normalized-packing path has retained compiler tests and independent AMD/Vulkan output controls. MSL/HLSL evidence covers translation only."
+      ],
+      "reviewId": "packed_integer_20261011_10",
+      "reviewedAt": "2026-10-11T18:50:30.133241+00:00",
+      "reviewer": "codex",
+      "sourceCommit": "5d32e51a9366211da3e24246c61355c74c6ea63d",
+      "status": "in_progress",
+      "summary": "Examined the packed-integer admission, lowering, constant ownership, emission, or capability changes in this file. Complete broader file review remains open.",
+      "supersedes": null,
+      "targets": [
+        "src/compiler/wgsl/frontend/sema_attrs.zig"
+      ]
+    },
+    {
+      "context": [
+        {
+          "path": "bench/executors/run-packed-integer-controls.mjs",
+          "sha256": "714721095a903771f4a4af53846c9a492b0fd2faf1c44a38571e399d70fb271a"
+        },
+        {
+          "path": "runtime/zig/tests/wgsl/coverage_builtin_spec_test.zig",
+          "sha256": "2b9e53a37609979212d88473f201d4d8434f9e01deeff31d2cbaff01f68f7947"
+        }
+      ],
+      "evidence": [
+        {
+          "path": "reports/maintenance/20261011-wgsl-packed-integers/doe.json",
+          "sha256": "8b8c2f7ef75c346eeb857ebceeaed77c607e4f5cd5e745c0674ac1108367a599"
+        },
+        {
+          "path": "reports/maintenance/20261011-wgsl-packed-integers/manifest.json",
+          "sha256": "84bc945cde4be4354cbafe1af17aa6c28ae5073533496268bbc6572a8d54348d"
+        },
+        {
+          "path": "reports/maintenance/20261011-wgsl-packed-integers/shader-validation.json",
+          "sha256": "25c7949f859619aa643f5675544e5a75611033cea342c13e5ed7b602e8051662"
+        }
+      ],
+      "findings": [],
+      "inputHash": "d0e8c29f3177235dbe88dd3b08d417e1ac4e789b10102120345342e9850e1bda",
+      "level": "file",
+      "nextAction": "Review the complete file and remaining callers against its charter before granting whole-file verification.",
+      "prerequisites": [],
+      "resolvedFindings": [
+        "The affected packed-integer or normalized-packing path has retained compiler tests and independent AMD/Vulkan output controls. MSL/HLSL evidence covers translation only."
+      ],
+      "reviewId": "packed_integer_20261011_11",
+      "reviewedAt": "2026-10-11T18:50:31.815765+00:00",
+      "reviewer": "codex",
+      "sourceCommit": "5d32e51a9366211da3e24246c61355c74c6ea63d",
+      "status": "in_progress",
+      "summary": "Examined the packed-integer admission, lowering, constant ownership, emission, or capability changes in this file. Complete broader file review remains open.",
+      "supersedes": null,
+      "targets": [
+        "src/compiler/wgsl/frontend/token.zig"
+      ]
+    },
+    {
+      "context": [
+        {
+          "path": "bench/executors/run-packed-integer-controls.mjs",
+          "sha256": "714721095a903771f4a4af53846c9a492b0fd2faf1c44a38571e399d70fb271a"
+        },
+        {
+          "path": "runtime/zig/tests/wgsl/coverage_builtin_spec_test.zig",
+          "sha256": "2b9e53a37609979212d88473f201d4d8434f9e01deeff31d2cbaff01f68f7947"
+        }
+      ],
+      "evidence": [
+        {
+          "path": "reports/maintenance/20261011-wgsl-packed-integers/doe.json",
+          "sha256": "8b8c2f7ef75c346eeb857ebceeaed77c607e4f5cd5e745c0674ac1108367a599"
+        },
+        {
+          "path": "reports/maintenance/20261011-wgsl-packed-integers/manifest.json",
+          "sha256": "84bc945cde4be4354cbafe1af17aa6c28ae5073533496268bbc6572a8d54348d"
+        },
+        {
+          "path": "reports/maintenance/20261011-wgsl-packed-integers/shader-validation.json",
+          "sha256": "25c7949f859619aa643f5675544e5a75611033cea342c13e5ed7b602e8051662"
+        }
+      ],
+      "findings": [],
+      "inputHash": "beba7a7d373a3615a104785d826eabfbf13f9dac5bbba26e90b89d1e5f419b9a",
+      "level": "file",
+      "nextAction": "Review the complete file and remaining callers against its charter before granting whole-file verification.",
+      "prerequisites": [],
+      "resolvedFindings": [
+        "The affected packed-integer or normalized-packing path has retained compiler tests and independent AMD/Vulkan output controls. MSL/HLSL evidence covers translation only."
+      ],
+      "reviewId": "packed_integer_20261011_12",
+      "reviewedAt": "2026-10-11T18:50:33.494438+00:00",
+      "reviewer": "codex",
+      "sourceCommit": "5d32e51a9366211da3e24246c61355c74c6ea63d",
+      "status": "in_progress",
+      "summary": "Examined the packed-integer admission, lowering, constant ownership, emission, or capability changes in this file. Complete broader file review remains open.",
+      "supersedes": "native_doppler_compiler_20261011_2",
+      "targets": [
+        "src/compiler/wgsl/ir/ir_builder.zig"
+      ]
+    },
+    {
+      "context": [
+        {
+          "path": "bench/executors/run-packed-integer-controls.mjs",
+          "sha256": "714721095a903771f4a4af53846c9a492b0fd2faf1c44a38571e399d70fb271a"
+        },
+        {
+          "path": "config/webgpu-abi-source.json",
+          "sha256": "4221b6f7e706bd975abd3fb3b50bb9d073efd584abcea3c2dc2b7a813e9813eb"
+        },
+        {
+          "path": "runtime/zig/tests/wgsl/coverage_builtin_spec_test.zig",
+          "sha256": "2b9e53a37609979212d88473f201d4d8434f9e01deeff31d2cbaff01f68f7947"
+        },
+        {
+          "path": "runtime/zig/tools/generate_webgpu_abi.py",
+          "sha256": "fabc30aa661553e98c8860a0e428f09d4995ff92ae81941ac2c80bf846c396a6"
+        }
+      ],
+      "evidence": [
+        {
+          "path": "reports/maintenance/20261011-wgsl-packed-integers/doe.json",
+          "sha256": "8b8c2f7ef75c346eeb857ebceeaed77c607e4f5cd5e745c0674ac1108367a599"
+        },
+        {
+          "path": "reports/maintenance/20261011-wgsl-packed-integers/manifest.json",
+          "sha256": "84bc945cde4be4354cbafe1af17aa6c28ae5073533496268bbc6572a8d54348d"
+        },
+        {
+          "path": "reports/maintenance/20261011-wgsl-packed-integers/shader-validation.json",
+          "sha256": "25c7949f859619aa643f5675544e5a75611033cea342c13e5ed7b602e8051662"
+        }
+      ],
+      "findings": [],
+      "inputHash": "feb530b3a7020d6ddf0c130b651eb5b8dc38e90911d4aa03f999f957608c8f2d",
+      "level": "file",
+      "nextAction": "Review the complete file and remaining callers against its charter before granting whole-file verification.",
+      "prerequisites": [],
+      "resolvedFindings": [
+        "The affected packed-integer or normalized-packing path has retained compiler tests and independent AMD/Vulkan output controls. MSL/HLSL evidence covers translation only."
+      ],
+      "reviewId": "packed_integer_20261011_13",
+      "reviewedAt": "2026-10-11T18:50:35.147328+00:00",
+      "reviewer": "codex",
+      "sourceCommit": "5d32e51a9366211da3e24246c61355c74c6ea63d",
+      "status": "in_progress",
+      "summary": "Examined the packed-integer admission, lowering, constant ownership, emission, or capability changes in this file. Complete broader file review remains open.",
+      "supersedes": null,
+      "targets": [
+        "src/core/abi/generated/webgpu_upstream.zig"
+      ]
+    },
+    {
+      "context": [
+        {
+          "path": "bench/executors/run-packed-integer-controls.mjs",
+          "sha256": "714721095a903771f4a4af53846c9a492b0fd2faf1c44a38571e399d70fb271a"
+        },
+        {
+          "path": "runtime/zig/tests/wgsl/coverage_builtin_spec_test.zig",
+          "sha256": "2b9e53a37609979212d88473f201d4d8434f9e01deeff31d2cbaff01f68f7947"
+        }
+      ],
+      "evidence": [
+        {
+          "path": "reports/maintenance/20261011-wgsl-packed-integers/doe.json",
+          "sha256": "8b8c2f7ef75c346eeb857ebceeaed77c607e4f5cd5e745c0674ac1108367a599"
+        },
+        {
+          "path": "reports/maintenance/20261011-wgsl-packed-integers/manifest.json",
+          "sha256": "84bc945cde4be4354cbafe1af17aa6c28ae5073533496268bbc6572a8d54348d"
+        },
+        {
+          "path": "reports/maintenance/20261011-wgsl-packed-integers/shader-validation.json",
+          "sha256": "25c7949f859619aa643f5675544e5a75611033cea342c13e5ed7b602e8051662"
+        }
+      ],
+      "findings": [],
+      "inputHash": "123f7833122a63157da4e0553f3de00d1bb4a8a76aaaef1075f7af697a2faf94",
+      "level": "file",
+      "nextAction": "Review the complete file and remaining callers against its charter before granting whole-file verification.",
+      "prerequisites": [],
+      "resolvedFindings": [
+        "The affected packed-integer or normalized-packing path has retained compiler tests and independent AMD/Vulkan output controls. MSL/HLSL evidence covers translation only."
+      ],
+      "reviewId": "packed_integer_20261011_14",
+      "reviewedAt": "2026-10-11T18:50:36.782550+00:00",
+      "reviewer": "codex",
+      "sourceCommit": "5d32e51a9366211da3e24246c61355c74c6ea63d",
+      "status": "in_progress",
+      "summary": "Examined the packed-integer admission, lowering, constant ownership, emission, or capability changes in this file. Complete broader file review remains open.",
+      "supersedes": null,
+      "targets": [
+        "src/core/abi/procs/wgpu_p1_capability_procs.zig"
+      ]
+    },
+    {
+      "context": [
+        {
+          "path": "bench/executors/run-packed-integer-controls.mjs",
+          "sha256": "714721095a903771f4a4af53846c9a492b0fd2faf1c44a38571e399d70fb271a"
+        },
+        {
+          "path": "runtime/zig/tests/wgsl/coverage_builtin_spec_test.zig",
+          "sha256": "2b9e53a37609979212d88473f201d4d8434f9e01deeff31d2cbaff01f68f7947"
+        }
+      ],
+      "evidence": [
+        {
+          "path": "reports/maintenance/20261011-wgsl-packed-integers/doe.json",
+          "sha256": "8b8c2f7ef75c346eeb857ebceeaed77c607e4f5cd5e745c0674ac1108367a599"
+        },
+        {
+          "path": "reports/maintenance/20261011-wgsl-packed-integers/manifest.json",
+          "sha256": "84bc945cde4be4354cbafe1af17aa6c28ae5073533496268bbc6572a8d54348d"
+        },
+        {
+          "path": "reports/maintenance/20261011-wgsl-packed-integers/shader-validation.json",
+          "sha256": "25c7949f859619aa643f5675544e5a75611033cea342c13e5ed7b602e8051662"
+        }
+      ],
+      "findings": [],
+      "inputHash": "5f43b7e3164792facb10c58962681796dfbf93c1e658429d8fd52679e1b0b1f5",
+      "level": "file",
+      "nextAction": "Review the complete file and remaining callers against its charter before granting whole-file verification.",
+      "prerequisites": [],
+      "resolvedFindings": [
+        "The affected packed-integer or normalized-packing path has retained compiler tests and independent AMD/Vulkan output controls. MSL/HLSL evidence covers translation only."
+      ],
+      "reviewId": "packed_integer_20261011_15",
+      "reviewedAt": "2026-10-11T18:50:38.414538+00:00",
+      "reviewer": "codex",
+      "sourceCommit": "5d32e51a9366211da3e24246c61355c74c6ea63d",
+      "status": "in_progress",
+      "summary": "Examined the packed-integer admission, lowering, constant ownership, emission, or capability changes in this file. Complete broader file review remains open.",
+      "supersedes": null,
+      "targets": [
+        "src/dropin/wgpu_dropin_ext_a_core.zig"
+      ]
+    },
+    {
+      "context": [
+        {
+          "path": "bench/executors/run-packed-integer-controls.mjs",
+          "sha256": "714721095a903771f4a4af53846c9a492b0fd2faf1c44a38571e399d70fb271a"
+        },
+        {
+          "path": "runtime/zig/tests/wgsl/coverage_builtin_spec_test.zig",
+          "sha256": "2b9e53a37609979212d88473f201d4d8434f9e01deeff31d2cbaff01f68f7947"
+        }
+      ],
+      "evidence": [
+        {
+          "path": "reports/maintenance/20261011-wgsl-packed-integers/doe.json",
+          "sha256": "8b8c2f7ef75c346eeb857ebceeaed77c607e4f5cd5e745c0674ac1108367a599"
+        },
+        {
+          "path": "reports/maintenance/20261011-wgsl-packed-integers/manifest.json",
+          "sha256": "84bc945cde4be4354cbafe1af17aa6c28ae5073533496268bbc6572a8d54348d"
+        },
+        {
+          "path": "reports/maintenance/20261011-wgsl-packed-integers/shader-validation.json",
+          "sha256": "25c7949f859619aa643f5675544e5a75611033cea342c13e5ed7b602e8051662"
+        }
+      ],
+      "findings": [],
+      "inputHash": "3bc4ae0c375bb72cd38c29889242d177e57c540180de75ceeb154150b3032ee5",
+      "level": "file",
+      "nextAction": "Review the complete file and remaining callers against its charter before granting whole-file verification.",
+      "prerequisites": [],
+      "resolvedFindings": [
+        "The affected packed-integer or normalized-packing path has retained compiler tests and independent AMD/Vulkan output controls. MSL/HLSL evidence covers translation only."
+      ],
+      "reviewId": "packed_integer_20261011_16",
+      "reviewedAt": "2026-10-11T18:50:40.050530+00:00",
+      "reviewer": "codex",
+      "sourceCommit": "5d32e51a9366211da3e24246c61355c74c6ea63d",
+      "status": "in_progress",
+      "summary": "Examined the packed-integer admission, lowering, constant ownership, emission, or capability changes in this file. Complete broader file review remains open.",
+      "supersedes": null,
+      "targets": [
+        "src/dropin/wgpu_dropin_ext_a_exports.zig"
+      ]
+    },
+    {
+      "context": [
+        {
+          "path": "bench/executors/run-packed-integer-controls.mjs",
+          "sha256": "714721095a903771f4a4af53846c9a492b0fd2faf1c44a38571e399d70fb271a"
+        },
+        {
+          "path": "runtime/zig/tests/wgsl/coverage_builtin_spec_test.zig",
+          "sha256": "2b9e53a37609979212d88473f201d4d8434f9e01deeff31d2cbaff01f68f7947"
+        }
+      ],
+      "evidence": [
+        {
+          "path": "reports/maintenance/20261011-wgsl-packed-integers/doe.json",
+          "sha256": "8b8c2f7ef75c346eeb857ebceeaed77c607e4f5cd5e745c0674ac1108367a599"
+        },
+        {
+          "path": "reports/maintenance/20261011-wgsl-packed-integers/manifest.json",
+          "sha256": "84bc945cde4be4354cbafe1af17aa6c28ae5073533496268bbc6572a8d54348d"
+        },
+        {
+          "path": "reports/maintenance/20261011-wgsl-packed-integers/shader-validation.json",
+          "sha256": "25c7949f859619aa643f5675544e5a75611033cea342c13e5ed7b602e8051662"
+        }
+      ],
+      "findings": [],
+      "inputHash": "021ad4a4e7962db10721acbb860deb22cceac8c5a3cec95a6f8ca6b06bf66b93",
+      "level": "file",
+      "nextAction": "Review the complete file and remaining callers against its charter before granting whole-file verification.",
+      "prerequisites": [],
+      "resolvedFindings": [
+        "The affected packed-integer or normalized-packing path has retained compiler tests and independent AMD/Vulkan output controls. MSL/HLSL evidence covers translation only."
+      ],
+      "reviewId": "packed_integer_20261011_17",
+      "reviewedAt": "2026-10-11T18:50:41.692636+00:00",
+      "reviewer": "codex",
+      "sourceCommit": "5d32e51a9366211da3e24246c61355c74c6ea63d",
+      "status": "in_progress",
+      "summary": "Examined the packed-integer admission, lowering, constant ownership, emission, or capability changes in this file. Complete broader file review remains open.",
+      "supersedes": null,
+      "targets": [
+        "tests/dropin/dropin_behavior_policy_test.zig"
+      ]
+    },
+    {
+      "context": [
+        {
+          "path": "bench/executors/run-packed-integer-controls.mjs",
+          "sha256": "714721095a903771f4a4af53846c9a492b0fd2faf1c44a38571e399d70fb271a"
+        },
+        {
+          "path": "runtime/zig/tests/wgsl/coverage_builtin_spec_test.zig",
+          "sha256": "2b9e53a37609979212d88473f201d4d8434f9e01deeff31d2cbaff01f68f7947"
+        }
+      ],
+      "evidence": [
+        {
+          "path": "reports/maintenance/20261011-wgsl-packed-integers/doe.json",
+          "sha256": "8b8c2f7ef75c346eeb857ebceeaed77c607e4f5cd5e745c0674ac1108367a599"
+        },
+        {
+          "path": "reports/maintenance/20261011-wgsl-packed-integers/manifest.json",
+          "sha256": "84bc945cde4be4354cbafe1af17aa6c28ae5073533496268bbc6572a8d54348d"
+        },
+        {
+          "path": "reports/maintenance/20261011-wgsl-packed-integers/shader-validation.json",
+          "sha256": "25c7949f859619aa643f5675544e5a75611033cea342c13e5ed7b602e8051662"
+        }
+      ],
+      "findings": [],
+      "inputHash": "8988c5de2f1a20eab84b4e0aa082172e5a1fb7edd949daf9b72fe778262c980f",
+      "level": "file",
+      "nextAction": "Review the complete file and remaining callers against its charter before granting whole-file verification.",
+      "prerequisites": [],
+      "resolvedFindings": [
+        "The affected packed-integer or normalized-packing path has retained compiler tests and independent AMD/Vulkan output controls. MSL/HLSL evidence covers translation only."
+      ],
+      "reviewId": "packed_integer_20261011_18",
+      "reviewedAt": "2026-10-11T18:50:43.342165+00:00",
+      "reviewer": "codex",
+      "sourceCommit": "5d32e51a9366211da3e24246c61355c74c6ea63d",
+      "status": "in_progress",
+      "summary": "Examined the packed-integer admission, lowering, constant ownership, emission, or capability changes in this file. Complete broader file review remains open.",
+      "supersedes": null,
+      "targets": [
+        "tests/wgsl/coverage_builtin_spec_test.zig"
+      ]
+    },
+    {
+      "context": [
+        {
+          "path": "bench/executors/run-packed-integer-controls.mjs",
+          "sha256": "714721095a903771f4a4af53846c9a492b0fd2faf1c44a38571e399d70fb271a"
+        },
+        {
+          "path": "runtime/zig/tests/wgsl/coverage_builtin_spec_test.zig",
+          "sha256": "2b9e53a37609979212d88473f201d4d8434f9e01deeff31d2cbaff01f68f7947"
+        }
+      ],
+      "evidence": [
+        {
+          "path": "reports/maintenance/20261011-wgsl-packed-integers/doe.json",
+          "sha256": "8b8c2f7ef75c346eeb857ebceeaed77c607e4f5cd5e745c0674ac1108367a599"
+        },
+        {
+          "path": "reports/maintenance/20261011-wgsl-packed-integers/manifest.json",
+          "sha256": "84bc945cde4be4354cbafe1af17aa6c28ae5073533496268bbc6572a8d54348d"
+        },
+        {
+          "path": "reports/maintenance/20261011-wgsl-packed-integers/shader-validation.json",
+          "sha256": "25c7949f859619aa643f5675544e5a75611033cea342c13e5ed7b602e8051662"
+        }
+      ],
+      "findings": [],
+      "inputHash": "0a9fb3907dfa1eeeaa1f591ab25c2f3ba968d7bdf8e6410e84f5f71d4b14c484",
+      "level": "file",
+      "nextAction": "Review the complete file and remaining callers against its charter before granting whole-file verification.",
+      "prerequisites": [],
+      "resolvedFindings": [
+        "The affected packed-integer or normalized-packing path has retained compiler tests and independent AMD/Vulkan output controls. MSL/HLSL evidence covers translation only."
+      ],
+      "reviewId": "packed_integer_20261011_19",
+      "reviewedAt": "2026-10-11T18:50:45.074080+00:00",
+      "reviewer": "codex",
+      "sourceCommit": "5d32e51a9366211da3e24246c61355c74c6ea63d",
+      "status": "in_progress",
+      "summary": "Examined the packed-integer admission, lowering, constant ownership, emission, or capability changes in this file. Complete broader file review remains open.",
+      "supersedes": null,
+      "targets": [
+        "tests/wgsl/mod_api_translation_basics_test.zig"
+      ]
+    },
+    {
+      "context": [
+        {
+          "path": "bench/executors/run-packed-integer-controls.mjs",
+          "sha256": "714721095a903771f4a4af53846c9a492b0fd2faf1c44a38571e399d70fb271a"
+        },
+        {
+          "path": "runtime/zig/tests/wgsl/coverage_builtin_spec_test.zig",
+          "sha256": "2b9e53a37609979212d88473f201d4d8434f9e01deeff31d2cbaff01f68f7947"
+        }
+      ],
+      "evidence": [
+        {
+          "path": "reports/maintenance/20261011-wgsl-packed-integers/doe.json",
+          "sha256": "8b8c2f7ef75c346eeb857ebceeaed77c607e4f5cd5e745c0674ac1108367a599"
+        },
+        {
+          "path": "reports/maintenance/20261011-wgsl-packed-integers/manifest.json",
+          "sha256": "84bc945cde4be4354cbafe1af17aa6c28ae5073533496268bbc6572a8d54348d"
+        },
+        {
+          "path": "reports/maintenance/20261011-wgsl-packed-integers/shader-validation.json",
+          "sha256": "25c7949f859619aa643f5675544e5a75611033cea342c13e5ed7b602e8051662"
+        }
+      ],
+      "findings": [],
+      "inputHash": "b9484410dc5425a92b40682a6f8b98954140f25ff58e36cb460472de1c26c2a3",
+      "level": "file",
+      "nextAction": "Review the complete file and remaining callers against its charter before granting whole-file verification.",
+      "prerequisites": [],
+      "resolvedFindings": [
+        "The affected packed-integer or normalized-packing path has retained compiler tests and independent AMD/Vulkan output controls. MSL/HLSL evidence covers translation only."
+      ],
+      "reviewId": "packed_integer_20261011_20",
+      "reviewedAt": "2026-10-11T18:50:46.773927+00:00",
+      "reviewer": "codex",
+      "sourceCommit": "5d32e51a9366211da3e24246c61355c74c6ea63d",
+      "status": "in_progress",
+      "summary": "Examined the packed-integer admission, lowering, constant ownership, emission, or capability changes in this file. Complete broader file review remains open.",
+      "supersedes": null,
+      "targets": [
+        "src/compiler/wgsl/ir/ir_packed_integer.zig"
+      ]
+    },
+    {
+      "context": [
+        {
+          "path": "bench/executors/run-packed-integer-controls.mjs",
+          "sha256": "714721095a903771f4a4af53846c9a492b0fd2faf1c44a38571e399d70fb271a"
+        },
+        {
+          "path": "runtime/zig/tests/wgsl/coverage_builtin_spec_test.zig",
+          "sha256": "2b9e53a37609979212d88473f201d4d8434f9e01deeff31d2cbaff01f68f7947"
+        }
+      ],
+      "evidence": [
+        {
+          "path": "reports/maintenance/20261011-wgsl-packed-integers/doe.json",
+          "sha256": "8b8c2f7ef75c346eeb857ebceeaed77c607e4f5cd5e745c0674ac1108367a599"
+        },
+        {
+          "path": "reports/maintenance/20261011-wgsl-packed-integers/manifest.json",
+          "sha256": "84bc945cde4be4354cbafe1af17aa6c28ae5073533496268bbc6572a8d54348d"
+        },
+        {
+          "path": "reports/maintenance/20261011-wgsl-packed-integers/shader-validation.json",
+          "sha256": "25c7949f859619aa643f5675544e5a75611033cea342c13e5ed7b602e8051662"
+        }
+      ],
+      "findings": [],
+      "inputHash": "a8e1fd573def46516affa9901e7d008d9f2bf04a95f074d1f0514aef655f44ee",
+      "level": "file",
+      "nextAction": "Review the complete file and remaining callers against its charter before granting whole-file verification.",
+      "prerequisites": [],
+      "resolvedFindings": [
+        "The affected packed-integer or normalized-packing path has retained compiler tests and independent AMD/Vulkan output controls. MSL/HLSL evidence covers translation only."
+      ],
+      "reviewId": "packed_integer_20261011_21",
+      "reviewedAt": "2026-10-11T18:50:48.442060+00:00",
+      "reviewer": "codex",
+      "sourceCommit": "5d32e51a9366211da3e24246c61355c74c6ea63d",
+      "status": "in_progress",
+      "summary": "Examined the packed-integer admission, lowering, constant ownership, emission, or capability changes in this file. Complete broader file review remains open.",
+      "supersedes": null,
+      "targets": [
+        "src/compiler/wgsl/emit/emit_integer_dot.zig"
+      ]
     }
   ],
   "schemaVersion": 1
