@@ -1,0 +1,13 @@
+{
+  "artifacts": {
+    "README.md": "cee2c761432c79f34c84523d08c5884a73af1eb653e4c5e13f1ccde6a41fdbd3",
+    "controls.json": "7e9ec46f53544cece8cea59cad2471432085ed551a8a610d10d5bc0eb56ea063",
+    "results.json": "ab23c0fd5e3bfe4ecbaec62857ca8056877a7d4ae705a0d91a8f45d61e3c1f31"
+  },
+  "classification": "Chrome application diagnostics; emulated mobile viewports",
+  "sources": {
+    "browser/chromium/resources/fawn-prismatic-fluids.html": "0131ad2e3f4694dc6b79e4cf230d9f8351947901d88422ab4026f95f64e44175",
+    "browser/chromium/scripts/test-fawn-prismatic-controls.mjs": "39530b167d98a117a09956439664f5ca8a078b3752d54cd109fd644b4c00da26",
+    "browser/chromium/scripts/test-fawn-prismatic-response.mjs": "f9f60c2bdec9127ad624b712cd2458b411c0352420a131fa628163159950ddcb"
+  }
+}
