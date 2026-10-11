@@ -50,3 +50,18 @@ attempted with the existing Fawn deploy command and a cached Firebase CLI,
 but Firebase rejected authentication. The corrected page is not claimed live.
 See `hosting-smoke-default.log`, `hosting-smoke-physical.log`,
 `deploy.log`, and `package-release.json`.
+
+After Firebase sign-in, publication to `canvascontext-9da05` succeeded with
+Doe source commit `5fbfd7b8cad4dc94622c03b767698465a6ae3edc` and D4DA source
+commit `a581fcef4dfd439e39a219ce8b2932aa2169df55`. The fixed HTML is unchanged
+from the earlier diagnostic. [Hosted identity](hosted/identity.json) verifies
+all eight published files byte-for-byte, the main route and excluded routes at
+`https://canvascontext.com/`. [Deployment log](hosted/deploy.log) retains the
+successful Firebase publication, separately from the earlier authentication
+failure.
+
+[Hosted application results](hosted/results.json) passed the same three-cycle
+GPU readback, rotation, touch-release, reset and keyboard checks on both emulated
+mobile viewports and desktop against the public origin. This is Chrome browser
+evidence on the test machine's GPU; it does not qualify a physical phone.
+Representative GPU canvas captures are retained beside the results.
