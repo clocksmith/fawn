@@ -28,6 +28,44 @@ const allocator = testing.allocator;
 const MAX_SPIRV_OUTPUT = mod.MAX_SPIRV_OUTPUT;
 const translateToSpirv = mod.translateToSpirv;
 
+test "SPIR-V returning switches terminate unreachable merges and preserve explicit breaks" {
+    const source =
+        \\@group(0) @binding(0) var<storage, read_write> buf: array<u32>;
+        \\fn returning(x: u32) -> u32 {
+        \\  switch x { case 0u: { return 7u; } default: { return 9u; } }
+        \\}
+        \\fn breaking(x: u32) -> u32 {
+        \\  switch x { case 0u: { break; } default: { return 9u; } }
+        \\  return 11u;
+        \\}
+        \\fn nested(x: u32) -> u32 {
+        \\  switch x {
+        \\    case 0u: {
+        \\      switch buf[2] { case 0u: { break; } default: { return 3u; } }
+        \\      return 5u;
+        \\    }
+        \\    default: { return 9u; }
+        \\  }
+        \\}
+        \\@compute @workgroup_size(1) fn main() {
+        \\  buf[0] = returning(buf[1]);
+        \\  buf[1] = breaking(buf[2]);
+        \\  buf[2] = nested(buf[3]);
+        \\}
+    ;
+    var out: [MAX_SPIRV_OUTPUT]u8 = undefined;
+    const len = try translateToSpirv(allocator, source, &out);
+    try expect_spirv_magic(out[0..len]);
+    try testing.expectEqual(@as(u32, 2), count_spirv_opcode(out[0..len], spirv.Opcode.Unreachable));
+    try testing.expectEqual(@as(u32, 7), count_spirv_opcode(out[0..len], spirv.Opcode.ReturnValue));
+    try testing.checkAllAllocationFailures(allocator, struct {
+        fn compile(alloc: std.mem.Allocator) !void {
+            var binary: [MAX_SPIRV_OUTPUT]u8 = undefined;
+            _ = try translateToSpirv(alloc, source, &binary);
+        }
+    }.compile, .{});
+}
+
 fn read_u32_le(bytes: []const u8, offset: usize) u32 {
     return std.mem.readInt(u32, @as(*const [4]u8, @ptrCast(bytes[offset .. offset + 4].ptr)), .little);
 }

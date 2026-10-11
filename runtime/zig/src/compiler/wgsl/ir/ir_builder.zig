@@ -321,9 +321,11 @@ const FunctionBuilder = struct {
         const extra = self.tree.extra_data.items;
         const case_start = node.data.rhs & 0xFFFF;
         const case_count = node.data.rhs >> 16;
-        const cases_range = ir.Range{
-            .start = @intCast(self.function.switch_cases.items.len),
-            .len = case_count,
+        var cases = std.ArrayListUnmanaged(ir.SwitchCase){};
+        defer cases.deinit(self.allocator);
+        var transferred = false;
+        defer if (!transferred) {
+            for (cases.items) |*case_ir| case_ir.deinit(self.allocator);
         };
 
         var i: u32 = 0;
@@ -341,8 +343,17 @@ const FunctionBuilder = struct {
             while (j < selector_count) : (j += 1) {
                 try case_ir.selectors.append(self.allocator, try self.lower_value_expr(extra[selector_start + j]));
             }
-            try self.function.switch_cases.append(self.allocator, case_ir);
+            try cases.append(self.allocator, case_ir);
         }
+
+        // Lowering a case body may append a nested switch's cases. Publish
+        // this switch's contiguous range only after those bodies are lowered.
+        const cases_range = ir.Range{
+            .start = @intCast(self.function.switch_cases.items.len),
+            .len = case_count,
+        };
+        try self.function.switch_cases.appendSlice(self.allocator, cases.items);
+        transferred = true;
 
         return try self.function.append_stmt(self.allocator, .{ .switch_ = .{
             .expr = try self.lower_value_expr(node.data.lhs),

@@ -2302,15 +2302,15 @@
       },
       "src/compiler/wgsl/emit/spirv/emit_spirv_builtins.zig": {
         "decision": "Keep",
-        "moduleSha256": "7089329d46e786d4e19ba875d710e201d2e6d037198c44103645e89883e48d1d",
-        "reason": "Keep: the shared SPIR-V builtin family owns signature checks and typed instruction emission; texture and function storage stay delegated. Integer dot evaluates each vector once and emits integer multiplication and scalar reduction; floating dot keeps its existing opcode. No source rewriting, scheduling, policy selection, or new imports enter this owner.",
-        "reviewer": "codex-onnx-integer-dot/2026-10-05"
+        "moduleSha256": "0493b118aeadde5340d57c25f7ceceb6ff0688f8c2f980c638a5520fea8ad8a0",
+        "reason": "Keep: typed builtin emission owns GLSL integer search opcodes. Correct firstLeadingBit and countLeadingZeros mappings without shader rewrites or selection policy.",
+        "reviewer": "codex-native-doppler-compatibility/2026-10-11"
       },
       "src/compiler/wgsl/emit/spirv/emit_spirv_fn.zig": {
         "decision": "Keep",
-        "moduleSha256": "e12d83fdeb0c97135158c6395dccc5c26478b86596d380ea7821b33719a0cefe",
-        "reviewer": "codex-onnx-store-materialization/2026-10-05",
-        "reason": "Keep: SPIR-V function lowering materializes admitted assignment and initializer values to destination types and applies WGSL default initialization at declaration execution; instruction and reference ownership remain unchanged."
+        "moduleSha256": "b14a79f337481fc16b34e3c5e0453162a0a0efbb621fda3042f818b7474ca99e",
+        "reviewer": "codex-native-doppler-compatibility/2026-10-11",
+        "reason": "Keep: SPIR-V control flow owns switch merge reachability. Break target identity and incoming edges remain in the function state; unreachable merges terminate without discarding explicit break paths."
       },
       "src/compiler/wgsl/emit/spirv/emit_spirv_fn_helpers.zig": {
         "decision": "Keep",
@@ -2464,9 +2464,9 @@
       },
       "src/compiler/wgsl/ir/ir_builder.zig": {
         "decision": "Keep",
-        "moduleSha256": "287f16284894c4e21bc2aaffa49049dbd66d5856ef6256355f101150feb2eff8",
-        "reason": "Keep: WGSL IR lowering preserves address-of, dereference, and pointer-valued let and call expressions.",
-        "reviewer": "codex-doe-pointer-reference-20260928"
+        "moduleSha256": "7eb4546fa22c07f90b323f7beb99f48a7da29f88d9a74ebf190755db13b579ae",
+        "reason": "Keep: AST-to-IR lowering owns contiguous switch case publication. Temporary selectors retain explicit ownership until publication; nested case ranges and allocation rollback stay local.",
+        "reviewer": "codex-native-doppler-compatibility/2026-10-11"
       },
       "src/compiler/wgsl/ir/ir_const_eval.zig": {
         "decision": "Keep",

@@ -663,6 +663,29 @@ test "spirv builtin: firstLeadingBit produces valid SPIR-V" {
     try testing.expectEqual(spirv.MAGIC, read_u32_le(&out, 0));
 }
 
+test "SPIR-V leading-bit builtins use the GLSL integer search instructions" {
+    inline for (.{ "u32", "i32" }) |element| {
+        const source = "@group(0) @binding(0) var<storage, read_write> buf: array<" ++ element ++ ">;" ++
+            "@compute @workgroup_size(1) fn main() { buf[0] = firstLeadingBit(buf[1]); }";
+        var out: [MAX_SPIRV_OUTPUT]u8 = undefined;
+        const len = try translateToSpirv(allocator, source, &out);
+        var offset: usize = 5;
+        var found = false;
+        while (offset < len / 4) {
+            const instruction = read_u32_le(&out, offset * 4);
+            const words = instruction >> 16;
+            try testing.expect(words > 0);
+            if (@as(u16, @truncate(instruction)) == spirv.Opcode.ExtInst and words == 6 and
+                read_u32_le(&out, (offset + 4) * 4) == @as(u32, if (element[0] == 'i') 74 else 75))
+            {
+                found = true;
+            }
+            offset += words;
+        }
+        try testing.expect(found);
+    }
+}
+
 test "spirv builtin: firstTrailingBit produces valid SPIR-V" {
     const source =
         \\@group(0) @binding(0) var<storage, read_write> buf: array<u32>;

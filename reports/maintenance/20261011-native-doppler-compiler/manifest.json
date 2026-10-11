@@ -1,0 +1,77 @@
+{
+  "schemaVersion": 1,
+  "classification": "bounded-compiler-compatibility",
+  "sourceCommit": "c8fb0f46e5cc7b7f947f15fcec4a70ebf318320b",
+  "dopplerSourceCommit": "3f1cd76251fcb7d7741ee82d9cb88b9e81b922c9",
+  "platform": "Node 22.22.1 / Linux / AMD 1002:1586 / Vulkan",
+  "externalInstructionReference": "https://raw.githubusercontent.com/KhronosGroup/SPIRV-Headers/main/include/spirv/unified1/extinst.glsl.std.450.grammar.json",
+  "artifacts": [
+    {
+      "path": "current-doe-qualification.json",
+      "sha256": "d13febc469f4cd051e94716c7ebfcab21b438237a2bfba09441dee8d812b6bc0"
+    },
+    {
+      "path": "corrected-doe-qualification.json",
+      "sha256": "021c4b984ec494f7fdb03bf1cae600054dd76a4b1791de5eef4886b8735cb90d"
+    },
+    {
+      "path": "doe-compiler-controls.json",
+      "sha256": "1f6d033d4bbcaec760e2b470cdea7c7d0a46bc6e0339d15887de733731f458e5"
+    },
+    {
+      "path": "dawn-compiler-controls.json",
+      "sha256": "fec890237c47bda978e63be003b9d64ccb878b94743dc117463b091098975da3"
+    },
+    {
+      "path": "compiler-full-final.log",
+      "sha256": "384f67c9d4bd266875519ab2802d96b3c6b2e8a847d1dbaeff1f83a326b343ff"
+    },
+    {
+      "path": "runtime-full.log",
+      "sha256": "63475b7ed8b0f531b72ef678ce0560261d855cc7412aa75d23a99665948f3346"
+    },
+    {
+      "path": "log_refined.wgsl",
+      "sha256": "d60e0f085a1708233fdf931aeca1e990566aaa06a8d48168043d69b1e4d7fbea"
+    },
+    {
+      "path": "sincos_refined.wgsl",
+      "sha256": "2203172a7b074d699620d1a6da33ddeeb0d67be2a5f20afe48d77c37aa6a63ce"
+    },
+    {
+      "path": "log_refined.spv",
+      "sha256": "8a7d2bffd4a38fdfc518642740d5e7924d229ae19fd7d90e972d94b78aea8e0a"
+    },
+    {
+      "path": "log_refined-corrected.spv",
+      "sha256": "397cea1c6e504a2db42bcc1b5ed8dd7ae63cb2b26ffd61d64915067d1f913a65"
+    },
+    {
+      "path": "sincos_refined-corrected.spv",
+      "sha256": "1073b7b9ca4e5a5b5fcdb9abdb1220474f9fb5e9693a44356a02646592d5991d"
+    },
+    {
+      "path": "rope-corrected.spv",
+      "sha256": "5e78fddaddb62759f84bda494705ca364e344c20decd6bc9eeee352cf73fab33"
+    },
+    {
+      "path": "corrected-providers.json",
+      "sha256": "38a8fb0aee5f4c209d1c2ad9744d2946a322f07898c101d8707fa8106279eb1f"
+    },
+    {
+      "path": "compiler.patch",
+      "sha256": "7747ab1915472b2e75602f334846796385b98fb2e25339688cc53755b757153f"
+    }
+  ],
+  "nativeLibrarySha256": "f3c8c42e56d3d037402dda29256b9ba7c42acb988a570cb2696ea33ea56579ec",
+  "claims": [
+    "Current pinned Doppler source executes its frozen generation/cancellation/reuse case through Doe on the tested AMD host.",
+    "Integer leading-bit and nested/returning switch physical readbacks match the CPU oracle."
+  ],
+  "notEstablished": [
+    "General compiler/WebGPU conformance",
+    "Memory or latency advantage",
+    "Reploid native contribution",
+    "Other devices or backends"
+  ]
+}
