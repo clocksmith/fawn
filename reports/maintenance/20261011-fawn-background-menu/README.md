@@ -32,3 +32,10 @@ On this test machine the Chrome launch additionally uses physical Vulkan flags:
 `--use-angle=vulkan --enable-features=Vulkan --disable-vulkan-surface`.
 Artifacts default to `bench/out/fawn-demo-switcher/`; `FAWN_REPORT_DIR` changes
 the destination. Source and retained artifact hashes are recorded in `custody.json`.
+
+Publication succeeded at `https://canvascontext.com/` from Doe source commit
+`fef0ae7d9581dcadf0fec89a0c50a638646ad813`.
+[Hosted identity](hosted/identity.json) verifies all eight package files and the
+root route against published bytes. Hosting smoke checks all three pages render
+and reset, retired service-worker cache behavior, and exclusion of repository-only
+demos. The hosting smoke and successful deployment logs are retained.
