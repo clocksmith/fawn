@@ -1,0 +1,109 @@
+{
+  "schemaVersion": 1,
+  "classification": "packed-integer-correctness",
+  "provider": "doe",
+  "identity": {
+    "vendor": "AMD",
+    "device": "Radeon 8060S Graphics (RADV STRIX_HALO)",
+    "architecture": "vulkan",
+    "description": "Radeon 8060S Graphics (RADV STRIX_HALO)"
+  },
+  "runnerSha256": "714721095a903771f4a4af53846c9a492b0fd2faf1c44a38571e399d70fb271a",
+  "providerModuleSha256": "f0c7e4c93097a4960e91034f0a56f399ed702a250cf1bf38fb2afb5565b651a7",
+  "nativeLibrarySha256": "df0f18c5b4caf6d4ff935d59c442cf3fd438c2e46bb0ab30530b9dd2da2f2f17",
+  "languageFeatures": [
+    "readonly-and-readwrite-storage-textures",
+    "packed_4x8_integer_dot_product"
+  ],
+  "providerInfo": {
+    "module": "doe-gpu",
+    "loaded": true,
+    "loadError": "",
+    "defaultCreateArgs": [],
+    "doeNative": true,
+    "libraryFlavor": "doe-dropin",
+    "doeLibraryPath": "/home/x/deco/doe/bench/out/wgsl-packed-integers/20261011/final-build/lib/libwebgpu_doe.so",
+    "buildMetadataSource": "workspace",
+    "buildMetadataPath": "/home/x/deco/doe/bench/out/wgsl-packed-integers/20261011/final-build/share/doe-build-metadata.json",
+    "leanVerifiedBuild": false,
+    "proofArtifactSha256": null,
+    "nativeFastPaths": {
+      "appleFastPathCompiled": false,
+      "queueFlush": true,
+      "queueFlushBreakdown": true,
+      "queueWriteBufferBatch": true,
+      "queueWriteBufferBatchDataPtrs": true,
+      "computeDispatchFlush": true,
+      "computeDispatchFlushBreakdown": true,
+      "computeDispatchBatchFlush": true,
+      "computeDispatchBatchCopyFlush": true,
+      "computeDispatchBatchCopyFlushBreakdown": true,
+      "computePrewarmDispatchBindings": true,
+      "bufferMapReadCopyUnmap": true
+    }
+  },
+  "loadedLibraryObserved": true,
+  "results": [
+    {
+      "name": "integer-family",
+      "shaderSha256": "68e6dc8c5fcbff48636968eca75b9def8fd5d952149f55688715609714d10cbf",
+      "inputSha256": "b9868170184f47ba2878585aa716fd7bbb06e839a4464456f496a236b7df7440",
+      "expectedSha256": "1ec8d5b15fe8c7f1ce84737a5a08d4fcc513f8b4e8184894035efd7826ae14c8",
+      "observedSha256": "1ec8d5b15fe8c7f1ce84737a5a08d4fcc513f8b4e8184894035efd7826ae14c8",
+      "outputWords": 1065168,
+      "dispatches": 1041,
+      "oracle": "exact-u32",
+      "passed": true,
+      "failure": null
+    },
+    {
+      "name": "single-evaluation",
+      "shaderSha256": "edd69d18f7016c2b112d2c302c4fab64e4c941cc754004a3cac693588ad889cb",
+      "inputSha256": "83598963b2e9b0b806df59636f0a34c178ffdb5007fee4efcb01712be44efb20",
+      "expectedSha256": "640fe4e31ebebbb473c21287fc428da373bd04cb9bf2fa8d3d69354cc34a05fe",
+      "observedSha256": "640fe4e31ebebbb473c21287fc428da373bd04cb9bf2fa8d3d69354cc34a05fe",
+      "outputWords": 9,
+      "dispatches": 1,
+      "oracle": "exact-u32",
+      "passed": true,
+      "failure": null
+    },
+    {
+      "name": "normalized-packing",
+      "shaderSha256": "3cb71f631ece3cea1431abf86a3d761059c28eff986ea4c13efef5c9f61d5764",
+      "inputSha256": "5e4bdd38c4e9c8cf0881c1402265e1363489ba669affe87fda785cbdbf2b8de0",
+      "expectedSha256": "679010f448c0d78dc66fc8948c6b568a26dafe61ab4755773dd2bc0330230497",
+      "observedSha256": "839aa8d8d18240e99b72540af3e210cfaf89a50a2d32890bf78e9fbf538701e0",
+      "outputWords": 36,
+      "dispatches": 12,
+      "oracle": "exact-normalized-and-adjacent-binary16",
+      "passed": true,
+      "failure": null
+    },
+    {
+      "name": "module-constants",
+      "shaderSha256": "aceae5fb5b32add192c72bb23096c026bfa9043b6dcbdac77b754b5a79b2a516",
+      "inputSha256": "e8a4b2ee7ede79a3afb332b5b6cc3d952a65fd8cffb897f5d18016577c33d7cc",
+      "expectedSha256": "726c07acf12aff9d356576485413b168f9698225b6b26cac7ed70bdacda1dcad",
+      "observedSha256": "726c07acf12aff9d356576485413b168f9698225b6b26cac7ed70bdacda1dcad",
+      "outputWords": 20,
+      "dispatches": 1,
+      "oracle": "exact-u32",
+      "passed": true,
+      "failure": null
+    },
+    {
+      "name": "normalized-16",
+      "shaderSha256": "4ce8237521119e77bdaea6a9625af4f044a35f7196a4ef342e41f57bfeabdd9f",
+      "inputSha256": "5e4bdd38c4e9c8cf0881c1402265e1363489ba669affe87fda785cbdbf2b8de0",
+      "expectedSha256": "c6262171770e6febb3f790f5374fc646162a7387e401e43c445189bfa605f45a",
+      "observedSha256": "c6262171770e6febb3f790f5374fc646162a7387e401e43c445189bfa605f45a",
+      "outputWords": 48,
+      "dispatches": 12,
+      "oracle": "exact-u32",
+      "passed": true,
+      "failure": null
+    }
+  ],
+  "passed": true
+}

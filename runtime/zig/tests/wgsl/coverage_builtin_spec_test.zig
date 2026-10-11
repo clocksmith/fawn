@@ -9,6 +9,140 @@ const translateToMsl = mod.translateToMsl;
 const translateToSpirv = mod.translateToSpirv;
 const MAX_OUTPUT = mod.MAX_OUTPUT;
 const MAX_SPIRV_OUTPUT = mod.MAX_SPIRV_OUTPUT;
+const analysis = @import("../../src/compiler/wgsl/pipeline/analysis.zig");
+const validate_ir = @import("../../src/compiler/wgsl/ir/ir_validate.zig").validate;
+
+const PACKED_INTEGER_SOURCE =
+    \\requires packed_4x8_integer_dot_product;
+    \\@group(0) @binding(0) var<storage, read_write> output: array<u32>;
+    \\var<private> calls: u32;
+    \\fn word() -> u32 { calls += 1u; return 0x80ff017fu; }
+    \\fn negative_values() -> vec4i { calls += 1u; return vec4i(-129, -128, 127, 128); }
+    \\fn positive_values() -> vec4u { calls += 1u; return vec4u(0u, 255u, 256u, 0xffffffffu); }
+    \\@compute @workgroup_size(1) fn main() {
+    \\    output[0] = pack4xI8(negative_values());
+    \\    output[1] = pack4xI8Clamp(negative_values());
+    \\    output[2] = pack4xU8(positive_values());
+    \\    output[3] = pack4xU8Clamp(positive_values());
+    \\    output[4] = u32(unpack4xI8(word()).w);
+    \\    output[5] = unpack4xU8(word()).w;
+    \\    output[6] = u32(dot4I8Packed(word(), word()));
+    \\    output[7] = dot4U8Packed(word(), word());
+    \\    output[8] = calls;
+    \\}
+;
+
+test "packed integers preserve source calls across all shader targets" {
+    var text: [MAX_OUTPUT]u8 = undefined;
+    inline for (.{ mod.translateToMsl, mod.translateToHlsl }) |translate| {
+        const len = try translate(std.testing.allocator, PACKED_INTEGER_SOURCE, &text);
+        try std.testing.expectEqual(@as(usize, 7), std.mem.count(u8, text[0..len], "word("));
+        try std.testing.expectEqual(@as(usize, 3), std.mem.count(u8, text[0..len], "negative_values("));
+        try std.testing.expectEqual(@as(usize, 3), std.mem.count(u8, text[0..len], "positive_values("));
+        try std.testing.expect(contains(text[0..len], "__doe_integer_dot_i4("));
+        try std.testing.expect(contains(text[0..len], "__doe_integer_dot_u4("));
+        try std.testing.expect(!contains(text[0..len], "dot4I8Packed"));
+    }
+    var binary: [MAX_SPIRV_OUTPUT]u8 = undefined;
+    try std.testing.expect(try translateToSpirv(std.testing.allocator, PACKED_INTEGER_SOURCE, &binary) > 0);
+}
+
+fn packedAllocationControl(allocator: std.mem.Allocator) !void {
+    var module = try analysis.analyzeToIr(allocator, PACKED_INTEGER_SOURCE);
+    defer module.deinit();
+    try validate_ir(&module);
+}
+
+test "packed integers unwind every lowering allocation failure" {
+    try std.testing.checkAllAllocationFailures(std.testing.allocator, packedAllocationControl, .{});
+}
+
+const PACKED_CONSTANT_SOURCE =
+    \\const signed_word = pack4xI8(vec4i(-129, -128, 127, 128));
+    \\const unsigned_word = pack4xU8(vec4u(0u, 255u, 256u, 0xffffffffu));
+    \\const signed_clamp = pack4xI8Clamp(vec4i(-129, -128, 127, 128));
+    \\const unsigned_clamp = pack4xU8Clamp(vec4u(0u, 255u, 256u, 0xffffffffu));
+    \\const signed_bytes = unpack4xI8(0x80ff017f);
+    \\const unsigned_bytes = unpack4xU8(0x80ff017f);
+    \\const signed_dot = dot4I8Packed(0x80808080, 0x7f7f7f7f);
+    \\const unsigned_dot = dot4U8Packed(0xffffffff, 0xffffffff);
+    \\const splat = pack4xI8(vec4i(-1));
+    \\const joined = pack4xU8(vec4u(vec2u(1u, 2u), vec2u(3u, 4u)));
+    \\@group(0) @binding(0) var<storage, read_write> output: array<u32>;
+    \\@compute @workgroup_size(1) fn main() { output[0] = signed_word + unsigned_word; }
+;
+
+fn packedConstantAllocationControl(allocator: std.mem.Allocator) !void {
+    var module = try analysis.analyzeToIr(allocator, PACKED_CONSTANT_SOURCE);
+    defer module.deinit();
+    try validate_ir(&module);
+    const expected = [_]u64{ 0x807f807f, 0xff00ff00, 0x7f7f8080, 0xffffff00, 0, 0, @as(u32, @bitCast(@as(i32, -65024))), 260100, 0xffffffff, 0x04030201 };
+    for (expected, 0..) |value, index| {
+        const constant = module.globals.items[index].initializer.?;
+        if (index == 4 or index == 5) {
+            const bytes = if (index == 4) [_]u32{ 127, 1, 0xffffffff, 0xffffff80 } else [_]u32{ 127, 1, 255, 128 };
+            for (bytes, constant.composite) |byte, actual| try std.testing.expectEqual(@as(u64, byte), actual.int);
+        } else try std.testing.expectEqual(value, constant.int);
+    }
+}
+
+test "packed integers fold all constant overloads and composite constructors" {
+    try packedConstantAllocationControl(std.testing.allocator);
+    var output: [MAX_OUTPUT]u8 = undefined;
+    inline for (.{ mod.translateToMsl, mod.translateToHlsl }) |translate| _ = try translate(std.testing.allocator, PACKED_CONSTANT_SOURCE, &output);
+    var binary: [MAX_SPIRV_OUTPUT]u8 = undefined;
+    _ = try translateToSpirv(std.testing.allocator, PACKED_CONSTANT_SOURCE, &binary);
+}
+
+test "packed integers unwind constant ownership on allocation failure" {
+    try std.testing.checkAllAllocationFailures(std.testing.allocator, packedConstantAllocationControl, .{});
+}
+
+test "packed integers reject mismatched argument types and arity" {
+    inline for (.{
+        .{ "pack4xI8()", error.UnsupportedBuiltin },
+        .{ "pack4xU8(vec4u(1u), vec4u(2u))", error.UnsupportedBuiltin },
+        .{ "pack4xI8(vec4u(1u))", error.TypeMismatch },
+        .{ "pack4xU8Clamp(vec4i(1))", error.TypeMismatch },
+        .{ "pack4xI8Clamp(vec3i(1))", error.TypeMismatch },
+        .{ "pack4xU8(vec4f(1.0))", error.TypeMismatch },
+        .{ "unpack4xI8(1i)", error.TypeMismatch },
+        .{ "unpack4xI8(1u, 2u)", error.UnsupportedBuiltin },
+        .{ "dot4I8Packed(1u)", error.UnsupportedBuiltin },
+        .{ "dot4U8Packed(1u, 2i)", error.TypeMismatch },
+        .{ "dot4U8Packed(-1, 2)", error.InvalidIr },
+    }) |case| {
+        var output: [MAX_SPIRV_OUTPUT]u8 = undefined;
+        try std.testing.expectError(case[1], translateToSpirv(std.testing.allocator, "@compute @workgroup_size(1) fn main() { let value = " ++ case[0] ++ "; }", &output));
+    }
+}
+
+test "normalized packing uses the specified GLSL instruction numbers" {
+    const source =
+        \\@group(0) @binding(0) var<storage, read> input: array<f32>;
+        \\@group(0) @binding(1) var<storage, read_write> output: array<u32>;
+        \\@compute @workgroup_size(1) fn main() {
+        \\    output[0] = pack4x8unorm(vec4f(input[0], input[1], input[2], input[3]));
+        \\    output[1] = pack4x8snorm(vec4f(input[0], input[1], input[2], input[3]));
+        \\    output[2] = pack2x16float(vec2f(input[0], input[1]));
+        \\}
+    ;
+    var binary: [MAX_SPIRV_OUTPUT]u8 = undefined;
+    const len = try translateToSpirv(std.testing.allocator, source, &binary);
+    var seen = [_]bool{ false, false, false };
+    var offset: usize = 20;
+    while (offset < len) {
+        const instruction = std.mem.readInt(u32, binary[offset..][0..4], .little);
+        if (@as(u16, @truncate(instruction)) == 12) {
+            const number = std.mem.readInt(u32, binary[offset + 16 ..][0..4], .little);
+            for ([_]u32{ 55, 54, 58 }, 0..) |expected, index| if (number == expected) {
+                seen[index] = true;
+            };
+        }
+        offset += (instruction >> 16) * 4;
+    }
+    for (seen) |present| try std.testing.expect(present);
+}
 
 fn contains(haystack: []const u8, needle: []const u8) bool {
     return std.mem.indexOf(u8, haystack, needle) != null;
@@ -403,5 +537,34 @@ test "builtins: passthrough surface coverage — every mapped name resolves" {
     };
     for (names) |name| {
         try std.testing.expect(msl_maps.msl_builtin_passthrough_name(name) != null);
+    }
+}
+
+test "packed integers admit requires and reject unknown or misplaced requirements" {
+    var output: [MAX_SPIRV_OUTPUT]u8 = undefined;
+    _ = try translateToSpirv(std.testing.allocator, "requires packed_4x8_integer_dot_product, packed_4x8_integer_dot_product,; @compute @workgroup_size(1) fn main() {}", &output);
+    try std.testing.expectError(error.UnsupportedConstruct, translateToSpirv(std.testing.allocator, "requires unknown_extension; @compute @workgroup_size(1) fn main() {}", &output));
+    inline for (.{ "requires;", "requires packed_4x8_integer_dot_product", "const x = 1u; requires packed_4x8_integer_dot_product;" }) |source| {
+        try std.testing.expectError(error.UnexpectedToken, translateToSpirv(std.testing.allocator, source ++ " @compute @workgroup_size(1) fn main() {}", &output));
+    }
+}
+
+test "packed integers materialize inferred constructors without converting typed signed vectors" {
+    const source =
+        \\@group(0) @binding(0) var<storage, read_write> output: array<u32>;
+        \\const packed_constant = pack4xU8(vec4(1, 2, 3, 4));
+        \\@compute @workgroup_size(1) fn main() {
+        \\    output[0] = pack4xU8(vec4(1, 2, 3, 4));
+        \\    output[1] = pack4xI8(vec4(-1, -2, 3, 4));
+        \\    output[2] = pack4xU8(vec4(output[0]));
+        \\    output[3] = pack4xU8(vec4(vec2(1, 2), vec2(3, 4)));
+        \\    output[4] = packed_constant;
+        \\}
+    ;
+    var output: [MAX_SPIRV_OUTPUT]u8 = undefined;
+    _ = try translateToSpirv(std.testing.allocator, source, &output);
+    inline for (.{ "pack4xU8(vec4(-1, 2, 3, 4))", "pack4xI8(vec4(0x80000000, 2, 3, 4))", "pack4xU8(vec4(0x100000000, 2, 3, 4))" }) |expression| {
+        try std.testing.expectError(error.InvalidIr, translateToSpirv(std.testing.allocator, "@compute @workgroup_size(1) fn main() { let x = " ++ expression ++ "; }", &output));
+        try std.testing.expectError(error.InvalidIr, translateToSpirv(std.testing.allocator, "const x = " ++ expression ++ "; @compute @workgroup_size(1) fn main() {}", &output));
     }
 }

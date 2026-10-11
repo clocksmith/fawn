@@ -342,14 +342,16 @@ pub export fn wgpuInstanceCreateSurface(a0: types.WGPUInstance, a1: *const surfa
     return proc(a0, a1);
 }
 
+const WGSL_LANGUAGE_FEATURES = [_]p1cap.WGPUWGSLLanguageFeatureName{p1cap.WGPUWGSLLanguageFeatureName_Packed4x8IntegerDotProduct};
+
 pub export fn wgpuInstanceGetWGSLLanguageFeatures(a0: types.WGPUInstance, a1: *p1cap.SupportedWGSLLanguageFeatures) callconv(.c) void {
     _ = a0;
-    a1.* = p1cap.initSupportedWGSLLanguageFeatures();
+    a1.* = .{ .featureCount = WGSL_LANGUAGE_FEATURES.len, .features = &WGSL_LANGUAGE_FEATURES };
 }
 
 pub export fn wgpuInstanceHasWGSLLanguageFeature(a0: types.WGPUInstance, a1: p1cap.WGPUWGSLLanguageFeatureName) callconv(.c) types.WGPUBool {
     _ = a0;
-    _ = a1;
+    for (WGSL_LANGUAGE_FEATURES) |feature| if (feature == a1) return types.WGPU_TRUE;
     return types.WGPU_FALSE;
 }
 

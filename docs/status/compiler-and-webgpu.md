@@ -3,6 +3,18 @@
 This is the live status front door for the non-TSIR WGSL compiler and WebGPU
 runtime path. Artifacts and executable tests own pass/fail state.
 
+## Packed integer correctness
+
+The [packed-integer checkpoint](../../reports/maintenance/20261011-wgsl-packed-integers/README.md)
+implements the packed signed/unsigned byte family through shared typed lowering
+and constant evaluation, and exposes its native language feature. It repairs
+normalized packing instruction selection and floor-based rounding. Independent
+CPU references and ordinary AMD/Vulkan submission, completion, and mapped readback
+qualify the retained fixtures. MSL/HLSL translation is covered separately;
+physical Metal/D3D12, accelerated integer-dot lowering, and inference advantages
+remain unqualified. Retained Dawn normalized-packing failures are control outcomes,
+not a performance comparison or full-provider conformance verdict.
+
 ## Independent graphics screen closed
 
 The [Three.js fog-scattering screen](../../reports/browser-compiler/20261004/three-screen/README.md)

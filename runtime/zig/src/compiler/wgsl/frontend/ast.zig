@@ -32,6 +32,8 @@ pub const NodeTag = enum(u8) {
 
     /// `enable <ident>;`  main_token = `enable`, data.lhs = ident token index.
     enable_directive,
+    /// `requires <ident>, ...;` data.lhs/rhs describe extension-name tokens in extra_data.
+    requires_directive,
 
     /// `diagnostic(off, ...);`  main_token = `diagnostic`.
     diagnostic_directive,

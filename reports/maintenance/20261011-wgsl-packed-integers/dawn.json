@@ -1,0 +1,96 @@
+{
+  "schemaVersion": 1,
+  "classification": "packed-integer-correctness",
+  "provider": "dawn",
+  "identity": {
+    "vendor": "amd",
+    "device": "radeon-8060s-graphics-radv-strix-halo-",
+    "architecture": "rdna-3",
+    "description": "radv: Mesa 26.0.3-1ubuntu1"
+  },
+  "runnerSha256": "714721095a903771f4a4af53846c9a492b0fd2faf1c44a38571e399d70fb271a",
+  "providerModuleSha256": "18a44f1e81cd3697156e7ddd3456e9f0d346a0afabb76588379b5b2f6dca50b4",
+  "nativeLibrarySha256": null,
+  "languageFeatures": [
+    "uniform_buffer_standard_layout",
+    "unrestricted_pointer_parameters",
+    "subgroup_id",
+    "texture_formats_tier1",
+    "texture_and_sampler_let",
+    "readonly_and_readwrite_storage_textures",
+    "packed_4x8_integer_dot_product",
+    "pointer_composite_access",
+    "subgroup_uniformity"
+  ],
+  "providerInfo": null,
+  "loadedLibraryObserved": null,
+  "results": [
+    {
+      "name": "integer-family",
+      "shaderSha256": "68e6dc8c5fcbff48636968eca75b9def8fd5d952149f55688715609714d10cbf",
+      "inputSha256": "b9868170184f47ba2878585aa716fd7bbb06e839a4464456f496a236b7df7440",
+      "expectedSha256": "1ec8d5b15fe8c7f1ce84737a5a08d4fcc513f8b4e8184894035efd7826ae14c8",
+      "observedSha256": "1ec8d5b15fe8c7f1ce84737a5a08d4fcc513f8b4e8184894035efd7826ae14c8",
+      "outputWords": 1065168,
+      "dispatches": 1041,
+      "oracle": "exact-u32",
+      "passed": true,
+      "failure": null
+    },
+    {
+      "name": "single-evaluation",
+      "shaderSha256": "edd69d18f7016c2b112d2c302c4fab64e4c941cc754004a3cac693588ad889cb",
+      "inputSha256": "83598963b2e9b0b806df59636f0a34c178ffdb5007fee4efcb01712be44efb20",
+      "expectedSha256": "640fe4e31ebebbb473c21287fc428da373bd04cb9bf2fa8d3d69354cc34a05fe",
+      "observedSha256": "640fe4e31ebebbb473c21287fc428da373bd04cb9bf2fa8d3d69354cc34a05fe",
+      "outputWords": 9,
+      "dispatches": 1,
+      "oracle": "exact-u32",
+      "passed": true,
+      "failure": null
+    },
+    {
+      "name": "normalized-packing",
+      "shaderSha256": "3cb71f631ece3cea1431abf86a3d761059c28eff986ea4c13efef5c9f61d5764",
+      "inputSha256": "5e4bdd38c4e9c8cf0881c1402265e1363489ba669affe87fda785cbdbf2b8de0",
+      "expectedSha256": "679010f448c0d78dc66fc8948c6b568a26dafe61ab4755773dd2bc0330230497",
+      "observedSha256": "5671eef09f74a4647d10bc2682186ab89b0c8dc1e66ec800586967be1763882e",
+      "outputWords": 36,
+      "dispatches": 12,
+      "oracle": "exact-normalized-and-adjacent-binary16",
+      "passed": false,
+      "failure": {
+        "message": "normalized-packing: output word 1: 12616065",
+        "stack": "AssertionError [ERR_ASSERTION]: normalized-packing: output word 1: 12616065\n    at runCase (file:///home/x/deco/doe/bench/executors/run-packed-integer-controls.mjs:142:20)\n    at async file:///home/x/deco/doe/bench/executors/run-packed-integer-controls.mjs:192:3"
+      }
+    },
+    {
+      "name": "module-constants",
+      "shaderSha256": "aceae5fb5b32add192c72bb23096c026bfa9043b6dcbdac77b754b5a79b2a516",
+      "inputSha256": "e8a4b2ee7ede79a3afb332b5b6cc3d952a65fd8cffb897f5d18016577c33d7cc",
+      "expectedSha256": "726c07acf12aff9d356576485413b168f9698225b6b26cac7ed70bdacda1dcad",
+      "observedSha256": "726c07acf12aff9d356576485413b168f9698225b6b26cac7ed70bdacda1dcad",
+      "outputWords": 20,
+      "dispatches": 1,
+      "oracle": "exact-u32",
+      "passed": true,
+      "failure": null
+    },
+    {
+      "name": "normalized-16",
+      "shaderSha256": "4ce8237521119e77bdaea6a9625af4f044a35f7196a4ef342e41f57bfeabdd9f",
+      "inputSha256": "5e4bdd38c4e9c8cf0881c1402265e1363489ba669affe87fda785cbdbf2b8de0",
+      "expectedSha256": "c6262171770e6febb3f790f5374fc646162a7387e401e43c445189bfa605f45a",
+      "observedSha256": "fb9693e76fe6d3400ce0e7d53c0671fc047438afc8ee3fcf282c7cda38b327c3",
+      "outputWords": 48,
+      "dispatches": 12,
+      "oracle": "exact-u32",
+      "passed": false,
+      "failure": {
+        "message": "normalized-16: output word 5\n+ actual - expected\n\n+ 3221258241\n- 3221323777\n      ^\n",
+        "stack": "AssertionError [ERR_ASSERTION]: normalized-16: output word 5\n+ actual - expected\n\n+ 3221258241\n- 3221323777\n      ^\n\n    at runCase (file:///home/x/deco/doe/bench/executors/run-packed-integer-controls.mjs:143:19)\n    at async file:///home/x/deco/doe/bench/executors/run-packed-integer-controls.mjs:245:3"
+      }
+    }
+  ],
+  "passed": false
+}

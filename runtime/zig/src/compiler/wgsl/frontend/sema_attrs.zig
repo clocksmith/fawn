@@ -1,6 +1,7 @@
 const std = @import("std");
 const ast_mod = @import("ast.zig");
 const ir = @import("../ir/ir.zig");
+const packed_integer = @import("../ir/ir_packed_integer.zig");
 const sema_helpers = @import("sema_helpers.zig");
 const sema_type_syntax = @import("sema_type_syntax.zig");
 const sema_types = @import("sema_types.zig");
@@ -153,6 +154,32 @@ pub fn parse_io_attr(self: anytype, attrs_start: u32, attrs_len: u32) !?ir.IoAtt
     return if (seen) result else null;
 }
 
+pub fn materializePackedConstructor(self: anytype, name: []const u8, arg_node: u32, arg_ty: ir.TypeId) !ir.TypeId {
+    const op = packed_integer.lookup(name) orelse return arg_ty;
+    if (!op.isPack() or !isAbstractVectorConstructor(self.module, arg_node)) return arg_ty;
+    const vector = switch (self.module.types.get(arg_ty)) {
+        .vector => |value| value,
+        else => return arg_ty,
+    };
+    const elem = if (op.isSigned()) self.module.i32_type else self.module.u32_type;
+    const ty = try self.module.types.intern(.{ .vector = .{ .elem = elem, .len = vector.len } });
+    self.module.node_info.items[arg_node].ty = ty;
+    return ty;
+}
+
+pub fn isAbstractVectorConstructor(module: *const sema_types.SemanticModule, node_idx: u32) bool {
+    const node = module.tree.nodes.items[node_idx];
+    const type_node = if (node.tag == .construct_expr) module.tree.nodes.items[node.data.lhs] else node;
+    if (node.tag != .call_expr and (node.tag != .construct_expr or type_node.tag != .type_name)) return false;
+    const name = module.tree.tokenSlice(type_node.main_token);
+    if (!std.mem.eql(u8, name, "vec2") and !std.mem.eql(u8, name, "vec3") and !std.mem.eql(u8, name, "vec4")) return false;
+    const span: @TypeOf(decode_packed_span(0)) = if (node.tag == .construct_expr) decode_packed_span(node.data.rhs) else .{ .start = node.data.lhs, .len = node.data.rhs };
+    for (module.tree.extra_data.items[span.start..][0..span.len]) |arg| {
+        if (module.nodeType(arg) != module.abstract_int_type and !isAbstractVectorConstructor(module, arg)) return false;
+    }
+    return true;
+}
+
 pub fn infer_builtin_call(self: anytype, name: []const u8, arg_types: []const ir.TypeId) !ir.TypeId {
     if (std.mem.eql(u8, name, "workgroupBarrier") or std.mem.eql(u8, name, "storageBarrier") or std.mem.eql(u8, name, "textureBarrier")) return self.module.void_type;
     if (std.mem.eql(u8, name, "arrayLength")) return self.module.u32_type;
@@ -271,23 +298,24 @@ pub fn infer_builtin_call(self: anytype, name: []const u8, arg_types: []const ir
     if (std.mem.eql(u8, name, "subgroupAll") or std.mem.eql(u8, name, "subgroupAny") or std.mem.eql(u8, name, "subgroupElect")) {
         return try self.module.types.intern(.{ .scalar = .bool });
     }
-    // Pack builtins return u32.
-    if (is_pack_builtin(name)) {
-        return try self.module.types.intern(.{ .scalar = .u32 });
+    if (packed_integer.lookup(name)) |op| {
+        return packed_integer.inferType(op, &self.module.types, self.module.u32_type, self.module.i32_type, self.module.abstract_int_type, arg_types);
     }
-    if (std.mem.eql(u8, name, "unpack4xU8")) {
+    if (is_pack_builtin(name)) {
+        if (arg_types.len != 1) return error.UnsupportedBuiltin;
+        const vector = switch (self.module.types.get(arg_types[0])) {
+            .vector => |value| value,
+            else => return error.TypeMismatch,
+        };
+        const expected_len: u8 = if (std.mem.startsWith(u8, name, "pack2")) 2 else 4;
+        if (vector.len != expected_len or vector.elem != self.module.f32_type) return error.TypeMismatch;
+        return self.module.u32_type;
+    }
+    if (is_unpack_2_builtin(name) or is_unpack_4_builtin(name)) {
         if (arg_types.len != 1) return error.UnsupportedBuiltin;
         if (arg_types[0] != self.module.u32_type and arg_types[0] != self.module.abstract_int_type) return error.TypeMismatch;
-        return try self.module.types.intern(.{ .vector = .{ .elem = self.module.u32_type, .len = 4 } });
-    }
-    // Normalized and floating-point unpack builtins return vec2f or vec4f.
-    if (is_unpack_2_builtin(name)) {
-        const f32_ty = try self.module.types.intern(.{ .scalar = .f32 });
-        return try self.module.types.intern(.{ .vector = .{ .elem = f32_ty, .len = 2 } });
-    }
-    if (is_unpack_4_builtin(name)) {
-        const f32_ty = try self.module.types.intern(.{ .scalar = .f32 });
-        return try self.module.types.intern(.{ .vector = .{ .elem = f32_ty, .len = 4 } });
+        const len: u8 = if (is_unpack_2_builtin(name)) 2 else 4;
+        return self.module.types.intern(.{ .vector = .{ .elem = self.module.f32_type, .len = len } });
     }
     // transpose(mat<C,R>) returns mat<R,C> (dimensions swapped).
     if (std.mem.eql(u8, name, "transpose")) {

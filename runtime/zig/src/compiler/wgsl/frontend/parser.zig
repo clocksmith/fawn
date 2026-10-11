@@ -103,9 +103,13 @@ pub const Parser = struct {
         const scratch_top = self.scratch.items.len;
         defer self.scratch.shrinkRetainingCapacity(scratch_top);
 
+        var seen_declaration = false;
         while (self.peekTag() != .eof) {
+            if (self.peekTag() == .kw_requires and seen_declaration) return error.UnexpectedToken;
             const decl = try self.parseTopLevelDecl();
             if (decl != NULL_NODE) {
+                const tag = self.tree.nodes.items[decl].tag;
+                if (tag != .enable_directive and tag != .requires_directive and tag != .diagnostic_directive) seen_declaration = true;
                 try self.scratch.append(self.allocator, decl);
             }
         }
@@ -129,6 +133,7 @@ pub const Parser = struct {
 
         return switch (self.peekTag()) {
             .kw_enable => parser_decl.parseEnableDirective(self),
+            .kw_requires => parser_decl.parseRequiresDirective(self),
             .kw_diagnostic => parser_decl.parseDiagnosticDirective(self),
             .kw_struct => parser_decl.parseStructDecl(self, attrs),
             .kw_fn => parser_decl.parseFnDecl(self, attrs),

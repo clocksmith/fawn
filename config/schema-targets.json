@@ -2,6 +2,18 @@
   "schemaVersion": 2,
   "targets": [
     {
+      "schema": "config/wgsl-packed-integer-controls.schema.json",
+      "data": "reports/maintenance/20261011-wgsl-packed-integers/doe.json"
+    },
+    {
+      "schema": "config/wgsl-packed-integer-controls.schema.json",
+      "data": "reports/maintenance/20261011-wgsl-packed-integers/dawn.json"
+    },
+    {
+      "schema": "config/wgsl-packed-integer-controls.schema.json",
+      "data": "reports/maintenance/20261011-wgsl-packed-integers/manifest.json"
+    },
+    {
       "schema": "config/onnx-vulkan-release-evidence.schema.json",
       "data": "reports/releases/20261009-onnx-vulkan-evaluation/installation.json"
     },

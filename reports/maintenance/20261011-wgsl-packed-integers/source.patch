@@ -1,0 +1,1257 @@
+diff --git a/packages/doe-gpu/src/vendor/webgpu/compute.js b/packages/doe-gpu/src/vendor/webgpu/compute.js
+index 5ba2c1621..84773d9cd 100644
+--- a/packages/doe-gpu/src/vendor/webgpu/compute.js
++++ b/packages/doe-gpu/src/vendor/webgpu/compute.js
+@@ -794,6 +794,9 @@ function wrapAdapter(raw) {
+ function wrapGpu(raw) {
+   return {
+     _raw: raw,
++    get wgslLanguageFeatures() {
++      return raw.wgslLanguageFeatures;
++    },
+     /**
+      * Request a compute-only adapter facade.
+      *
+diff --git a/packages/doe-gpu/src/vendor/webgpu/shared/full-surface.js b/packages/doe-gpu/src/vendor/webgpu/shared/full-surface.js
+index 33880d0ec..587d16b79 100644
+--- a/packages/doe-gpu/src/vendor/webgpu/shared/full-surface.js
++++ b/packages/doe-gpu/src/vendor/webgpu/shared/full-surface.js
+@@ -1874,6 +1874,7 @@ function createFullSurfaceClasses({
+ 
+   const WGSL_LANGUAGE_FEATURES = Object.freeze(new Set([
+     'readonly-and-readwrite-storage-textures',
++    'packed_4x8_integer_dot_product',
+   ]));
+ 
+   class DoeGPU {
+diff --git a/runtime/zig/source-layout.json b/runtime/zig/source-layout.json
+index ffe8f7f39..7212ce5d2 100644
+--- a/runtime/zig/source-layout.json
++++ b/runtime/zig/source-layout.json
+@@ -2194,21 +2194,21 @@
+       },
+       "src/compiler/wgsl/emit/hlsl/emit_hlsl.zig": {
+         "decision": "Keep",
+-        "moduleSha256": "e70f4934408309f38fbd7fd01bbbe6768e53946c638a73f434f3ffdf06b4f56f",
+-        "reason": "Keep: HLSL expression and statement lowering owns lvalue reconstruction and captured indices for WGSL pointer aliases.",
+-        "reviewer": "codex-doe-pointer-reference-20260928"
++        "moduleSha256": "8e837b001c7c25cee4317f51503e41fb677358c289ddb4b9914b884f2a433da6",
++        "reason": "Keep: packed integer admission and arithmetic stay compiler-owned; shared typed lowering preserves signedness and single evaluation. Source targets share an exact integer reduction, while Vulkan owns GLSL instruction selection.",
++        "reviewer": "codex-packed-integers/2026-10-11"
+       },
+       "src/compiler/wgsl/emit/hlsl/emit_hlsl_builtins.zig": {
+         "decision": "Keep",
+-        "moduleSha256": "b23be9c701970165fb2195c98abc99eb677a16f13eb5326e14134ccdda285c3d",
+-        "reason": "Keep: reachable compiler implementation with a distinct named responsibility and no merge, elevation, recomposition, or deletion signal.",
+-        "reviewer": "codex-recomposition-review/2026-08-08"
++        "moduleSha256": "f4321516a457707eeef56a1f5d8026dcd668eb5dbaab0c205049d42a4c513a0e",
++        "reason": "Keep: packed integer admission and arithmetic stay compiler-owned; shared typed lowering preserves signedness and single evaluation. Source targets share an exact integer reduction, while Vulkan owns GLSL instruction selection.",
++        "reviewer": "codex-packed-integers/2026-10-11"
+       },
+       "src/compiler/wgsl/emit/hlsl/emit_hlsl_maps.zig": {
+         "decision": "Keep",
+-        "moduleSha256": "db615460ff486aa5025fca18b05647809362eb01d593a4c818157fd41410daa4",
+-        "reason": "Keep: reachable compiler implementation shared by 4 production consumers with no conflicting ownership signal.",
+-        "reviewer": "codex-dry-recomposition/2026-08-09"
++        "moduleSha256": "e416be1540e4ac887a14f95abdf74d638d9d8c5a6d5754d75507e7d8432dde81",
++        "reason": "Keep: ABI feature identity and native enumeration stay at existing capability boundaries; target-specific builtin names stay with HLSL maps.",
++        "reviewer": "codex-packed-integers/2026-10-11"
+       },
+       "src/compiler/wgsl/emit/hlsl/emit_hlsl_stage.zig": {
+         "decision": "Keep",
+@@ -2236,15 +2236,15 @@
+       },
+       "src/compiler/wgsl/emit/msl/emit_msl_ir.zig": {
+         "decision": "Keep",
+-        "moduleSha256": "dd4c03d99ec97087e2a7620a9b06fb76ff6aa492e5af1dbcdabc0d7953060bf8",
+-        "reason": "Keep: MSL target lowering binds pointer lets as writable references and emits address and dereference expressions.",
+-        "reviewer": "codex-doe-pointer-reference-20260928"
++        "moduleSha256": "23fec4ff27eb8214d77be498395ae31f42ccfa01c24f5e2f4ce12fac90272909",
++        "reason": "Keep: packed integer admission and arithmetic stay compiler-owned; shared typed lowering preserves signedness and single evaluation. Source targets share an exact integer reduction, while Vulkan owns GLSL instruction selection.",
++        "reviewer": "codex-packed-integers/2026-10-11"
+       },
+       "src/compiler/wgsl/emit/msl/emit_msl_ir_builtins.zig": {
+         "decision": "Keep",
+-        "moduleSha256": "448e0f3371d02165319e85d886bfca917642953beec9550bfd75b08282046b50",
+-        "reason": "Keep: reachable compiler implementation with a distinct named responsibility and no merge, elevation, recomposition, or deletion signal.",
+-        "reviewer": "codex-world-labs-compatibility/2026-08-16"
++        "moduleSha256": "8b471795851991e1368cf07887b807817c13bfd508eec55433fe48821c2f766d",
++        "reason": "Keep: packed integer admission and arithmetic stay compiler-owned; shared typed lowering preserves signedness and single evaluation. Source targets share an exact integer reduction, while Vulkan owns GLSL instruction selection.",
++        "reviewer": "codex-packed-integers/2026-10-11"
+       },
+       "src/compiler/wgsl/emit/msl/emit_msl_maps.zig": {
+         "decision": "Keep",
+@@ -2302,9 +2302,9 @@
+       },
+       "src/compiler/wgsl/emit/spirv/emit_spirv_builtins.zig": {
+         "decision": "Keep",
+-        "moduleSha256": "0493b118aeadde5340d57c25f7ceceb6ff0688f8c2f980c638a5520fea8ad8a0",
+-        "reason": "Keep: typed builtin emission owns GLSL integer search opcodes. Correct firstLeadingBit and countLeadingZeros mappings without shader rewrites or selection policy.",
+-        "reviewer": "codex-native-doppler-compatibility/2026-10-11"
++        "moduleSha256": "4e0e39dc3000555b7468921160d210d8436eebf5f45cc8b4968c0dda01f7714c",
++        "reason": "Keep: packed integer admission and arithmetic stay compiler-owned; shared typed lowering preserves signedness and single evaluation. Source targets share an exact integer reduction, while Vulkan owns GLSL instruction selection.",
++        "reviewer": "codex-packed-integers/2026-10-11"
+       },
+       "src/compiler/wgsl/emit/spirv/emit_spirv_fn.zig": {
+         "decision": "Keep",
+@@ -2362,9 +2362,9 @@
+       },
+       "src/compiler/wgsl/frontend/ast.zig": {
+         "decision": "Keep",
+-        "moduleSha256": "7310628172880b75e7c84ccfaaccf52b9f0e10919badd646da72c0d33c98efd6",
+-        "reason": "Keep: reachable compiler implementation shared by 12 production consumers with no conflicting ownership signal.",
+-        "reviewer": "codex-recomposition-review/2026-08-08"
++        "moduleSha256": "57367d06ce6eb260d4aa2e5b45e714686940600331fd03f2053746e786d3e425",
++        "reason": "Keep: requires syntax and supported extension admission remain frontend-owned and reject malformed or unknown requirements.",
++        "reviewer": "codex-packed-integers/2026-10-11"
+       },
+       "src/compiler/wgsl/frontend/lexer.zig": {
+         "decision": "Keep",
+@@ -2374,9 +2374,9 @@
+       },
+       "src/compiler/wgsl/frontend/parser.zig": {
+         "decision": "Keep",
+-        "moduleSha256": "96be44be7514f3b14288a37da81bde5060a9d3d34b87e8c179fea1a819f84b13",
+-        "reason": "Keep: lexical eligibility belongs to token definitions; one parser helper admits declaration names and preserves exact failure spans without changing AST ownership.",
+-        "reviewer": "codex-wgsl-identifiers/2026-10-04"
++        "moduleSha256": "debdfefbb1c04e5160c5a086bc94d6383676df66d23a321bd1ceb09199e57104",
++        "reason": "Keep: requires syntax and supported extension admission remain frontend-owned and reject malformed or unknown requirements.",
++        "reviewer": "codex-packed-integers/2026-10-11"
+       },
+       "src/compiler/wgsl/frontend/parser_attrs.zig": {
+         "decision": "Keep",
+@@ -2386,9 +2386,9 @@
+       },
+       "src/compiler/wgsl/frontend/parser_decl.zig": {
+         "decision": "Keep",
+-        "moduleSha256": "a955fa1659e2cb644acf7107fd985569ee1c337fc61818d028a1663b7a8ec501",
+-        "reason": "Keep: lexical eligibility belongs to token definitions; one parser helper admits declaration names and preserves exact failure spans without changing AST ownership.",
+-        "reviewer": "codex-wgsl-identifiers/2026-10-04"
++        "moduleSha256": "e985318f878594475e5fe5ed81027ca2a16b9d248cfba854b8d9e142c26459fd",
++        "reason": "Keep: requires syntax and supported extension admission remain frontend-owned and reject malformed or unknown requirements.",
++        "reviewer": "codex-packed-integers/2026-10-11"
+       },
+       "src/compiler/wgsl/frontend/parser_expr.zig": {
+         "decision": "Keep",
+@@ -2404,15 +2404,15 @@
+       },
+       "src/compiler/wgsl/frontend/sema.zig": {
+         "decision": "Keep",
+-        "moduleSha256": "7bff624a53baf4e83cd78da24a47c64b62c110a613da068ab94854af80cd844a",
+-        "reason": "Keep: WGSL semantic type compatibility requires pointer values for pointer parameters.",
+-        "reviewer": "codex-doe-pointer-reference-20260928"
++        "moduleSha256": "4d54213442860057b92b7bb6b0843f550db35a06e9954e0393352782cf3d2d86",
++        "reason": "Keep: requires syntax and supported extension admission remain frontend-owned and reject malformed or unknown requirements.",
++        "reviewer": "codex-packed-integers/2026-10-11"
+       },
+       "src/compiler/wgsl/frontend/sema_attrs.zig": {
+         "decision": "Keep",
+-        "moduleSha256": "2609450290962058ab6963f9bbdb844eaea1d44d48dd6d4ec84ff4eb4cde7f77",
+-        "reason": "Keep: builtin argument and result typing remains frontend-owned; unsigned byte unpacking adds no runtime or backend dependency.",
+-        "reviewer": "codex-doppler-unpack/2026-09-20"
++        "moduleSha256": "42d61272cbb6e28532f18e2191aa6bc1eed0db7e38bd4c6f6d73c9b6a4d198cb",
++        "reason": "Keep: packed integer admission and arithmetic stay compiler-owned; shared typed lowering preserves signedness and single evaluation. Source targets share an exact integer reduction, while Vulkan owns GLSL instruction selection.",
++        "reviewer": "codex-packed-integers/2026-10-11"
+       },
+       "src/compiler/wgsl/frontend/sema_expr.zig": {
+         "decision": "Keep",
+@@ -2452,9 +2452,9 @@
+       },
+       "src/compiler/wgsl/frontend/token.zig": {
+         "decision": "Keep",
+-        "moduleSha256": "05566c3c62611909ee4713ca98398531ea774c12731fc81fb5611afc531e812a",
+-        "reason": "Keep: lexical eligibility belongs to token definitions; one parser helper admits declaration names and preserves exact failure spans without changing AST ownership.",
+-        "reviewer": "codex-wgsl-identifiers/2026-10-04"
++        "moduleSha256": "c69bbd47c91a243efc4b8e06c9549c28a45a6cd6115f868e144c5a91628712fd",
++        "reason": "Keep: requires syntax and supported extension admission remain frontend-owned and reject malformed or unknown requirements.",
++        "reviewer": "codex-packed-integers/2026-10-11"
+       },
+       "src/compiler/wgsl/ir/ir.zig": {
+         "decision": "Keep",
+@@ -2464,9 +2464,9 @@
+       },
+       "src/compiler/wgsl/ir/ir_builder.zig": {
+         "decision": "Keep",
+-        "moduleSha256": "7eb4546fa22c07f90b323f7beb99f48a7da29f88d9a74ebf190755db13b579ae",
+-        "reason": "Keep: AST-to-IR lowering owns contiguous switch case publication. Temporary selectors retain explicit ownership until publication; nested case ranges and allocation rollback stay local.",
+-        "reviewer": "codex-native-doppler-compatibility/2026-10-11"
++        "moduleSha256": "633b72a81780f10491c54ac69237a99e313822e6d4fb68d666baa1b45c72e706",
++        "reason": "Keep: packed integer admission and arithmetic stay compiler-owned; shared typed lowering preserves signedness and single evaluation. Source targets share an exact integer reduction, while Vulkan owns GLSL instruction selection.",
++        "reviewer": "codex-packed-integers/2026-10-11"
+       },
+       "src/compiler/wgsl/ir/ir_const_eval.zig": {
+         "decision": "Keep",
+@@ -2914,9 +2914,9 @@
+       },
+       "src/core/abi/generated/webgpu_upstream.zig": {
+         "decision": "Keep",
+-        "moduleSha256": "01127b0c039ffc3e0b69f02c47197014621a903433e9eb833136b5e7c617c036",
++        "moduleSha256": "f9ed72523004a3831bd8e1bc2fbad2b753e1ab049822fe901725ed6cbcaf1650",
+         "reason": "Keep: isolated C/OS FFI boundary at src/core/abi/generated/webgpu_upstream.zig.",
+-        "reviewer": "codex-recomposition-review/2026-08-08"
++        "reviewer": "codex-packed-integers/2026-10-11"
+       },
+       "src/core/abi/procs/wgpu_async_procs.zig": {
+         "decision": "Keep",
+@@ -2932,9 +2932,9 @@
+       },
+       "src/core/abi/procs/wgpu_p1_capability_procs.zig": {
+         "decision": "Keep",
+-        "moduleSha256": "ebe362c2e2d89aa55f70a6fef0ad1691901560b0286273a3942db511d317acdd",
+-        "reason": "Keep: reachable core implementation shared by 6 production consumers with no conflicting ownership signal.",
+-        "reviewer": "codex-recomposition-review/2026-08-08"
++        "moduleSha256": "0c703a38e83870defb549b2534f6ead0504e1b336b6e1bbc5ae2a315951f755d",
++        "reason": "Keep: ABI feature identity and native enumeration stay at existing capability boundaries; target-specific builtin names stay with HLSL maps.",
++        "reviewer": "codex-packed-integers/2026-10-11"
+       },
+       "src/core/abi/procs/wgpu_p1_resource_table_procs.zig": {
+         "decision": "Keep",
+@@ -3208,15 +3208,15 @@
+       },
+       "src/dropin/wgpu_dropin_ext_a_core.zig": {
+         "decision": "Keep",
+-        "moduleSha256": "9b19086cd4daa72596d84b6302c1e581303693ec060f51f7cca6209c7aa74564",
++        "moduleSha256": "85057ad434193ada28d44b6325e5c1d3397c0235653b255f65bbd9e7c858487b",
+         "reason": "Keep: reachable dropin implementation shared by 3 production consumers with no conflicting ownership signal.",
+-        "reviewer": "codex-vulkan-adapter-provenance/2026-08-10"
++        "reviewer": "codex-packed-integers/2026-10-11"
+       },
+       "src/dropin/wgpu_dropin_ext_a_exports.zig": {
+         "decision": "Keep",
+-        "moduleSha256": "e8e4fc93c3f73b0d0e18219c7489046c6466b3f933ba7231b62a5773bfb9e202",
+-        "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission.",
+-        "reviewer": "codex"
++        "moduleSha256": "c54904aa72bc40498bdd391539e8618af4cb89155423420b26a7a8d24afff2df",
++        "reason": "Keep: ABI feature identity and native enumeration stay at existing capability boundaries; target-specific builtin names stay with HLSL maps.",
++        "reviewer": "codex-packed-integers/2026-10-11"
+       },
+       "src/dropin/wgpu_dropin_ext_a_pipeline.zig": {
+         "decision": "Keep",
+@@ -4411,6 +4411,18 @@
+         "moduleSha256": "04044b38f47e68a86b6c6070dc9de9a2be04e8cf08174335a675e7e7e60f9c13",
+         "reason": "Keep: owns one descriptor loss obligation, instance future, weak device identity and scoped callback lease; independent of platform cleanup.",
+         "reviewer": "codex"
++      },
++      "src/compiler/wgsl/ir/ir_packed_integer.zig": {
++        "decision": "Keep",
++        "moduleSha256": "06cc08fa6e020660fafeb0b5448d6c1b28ae88966b401d56072df17c1a17dc4e",
++        "reason": "Keep: packed integer admission and arithmetic stay compiler-owned; shared typed lowering preserves signedness and single evaluation. Source targets share an exact integer reduction, while Vulkan owns GLSL instruction selection.",
++        "reviewer": "codex-packed-integers/2026-10-11"
++      },
++      "src/compiler/wgsl/emit/emit_integer_dot.zig": {
++        "decision": "Keep",
++        "moduleSha256": "68f747f81b0ff22ebde9746ff6b455852cc2d78ff35e00dbba8f348deb207840",
++        "reason": "Keep: packed integer admission and arithmetic stay compiler-owned; shared typed lowering preserves signedness and single evaluation. Source targets share an exact integer reduction, while Vulkan owns GLSL instruction selection.",
++        "reviewer": "codex-packed-integers/2026-10-11"
+       }
+     },
+     "linePolicy": {
+diff --git a/runtime/zig/src/compiler/wgsl/WGSL_SUPPORT.md b/runtime/zig/src/compiler/wgsl/WGSL_SUPPORT.md
+index 7595b8ecc..55e3cad43 100644
+--- a/runtime/zig/src/compiler/wgsl/WGSL_SUPPORT.md
++++ b/runtime/zig/src/compiler/wgsl/WGSL_SUPPORT.md
+@@ -32,14 +32,18 @@ name-resolution, directive, or WGSL conformance qualification. The
+ [admission and subgroup checkpoint](../../../../../reports/benchmarks/amd-vulkan/20261004-identifiers-subgroups/README.md)
+ retains independent compiler and physical package checks.
+ 
+-`unpack4xU8` function expressions lower to shared unsigned vector shifts and
+-masks, with one evaluation of the argument. Frontend checks reject wrong
+-argument types and arity; abstract integer inputs must fit `u32`. MSL, HLSL,
+-and SPIR-V translation fixtures cover this path. Module initializer evaluation
+-remains the explicit subset described below. Physical byte-output checks and
+-the retained Doppler reranker diagnostic are indexed in
+-[`bench/out/doppler-search/20260920-admission/README.md`](../../../../../bench/out/doppler-search/20260920-admission/README.md).
+-This does not qualify Metal, D3D12, or the complete Doppler model catalog.
++The packed-integer family (`pack4xI8`, `pack4xU8`, their `Clamp` variants,
++`unpack4xI8`, `unpack4xU8`, `dot4I8Packed`, and `dot4U8Packed`) has shared typed
++lowering and constant evaluation. Signedness, byte order, truncation, clamping,
++argument arity, and single evaluation are checked. The compiler accepts
++`requires packed_4x8_integer_dot_product;`, and the native provider advertises
++that language feature. Dot products use portable integer arithmetic; dedicated
++hardware dot-product instructions are not promised. Normalized packing uses
++WGSL's floor-based rounding and the corresponding GLSL.std.450 instructions.
++See the [packed-integer checkpoint](../../../../../reports/maintenance/20261011-wgsl-packed-integers/README.md)
++for independent CPU references, physical AMD/Vulkan output, and retained Dawn
++controls. MSL and HLSL evidence covers translation, not physical execution.
++Other module initializers retain the explicit subset described below.
+ 
+ | Category              | Status              | Notes                                              |
+ |-----------------------|---------------------|----------------------------------------------------|
+@@ -50,7 +54,7 @@ This does not qualify Metal, D3D12, or the complete Doppler model catalog.
+ | Struct types          | Full (flat)         | Nested structs parsed but not exercised in tests   |
+ | var\<workgroup\>      | Full                | Workgroup-memory allocation emitted correctly      |
+ | Override constants    | Full                | Emitted as pipeline-overridable specialization     |
+-| Module initializers   | Explicit subset     | Literal, alias, constructor, supported scalar arithmetic, and scalar/vector `countOneBits` evaluation; unevaluated declared initializers fail with `UnsupportedConstruct` instead of becoming zero defaults |
++| Module initializers   | Explicit subset     | Literal, alias, constructor, supported scalar arithmetic, and scalar/vector `countOneBits` and packed-integer evaluation; unevaluated declared initializers fail with `UnsupportedConstruct` instead of becoming zero defaults |
+ | Enable extensions     | Full (f16, subgrp)  | `enable f16` and `enable subgroups` pass through   |
+ | Helper functions      | Full                | 702+ helpers in Doppler corpus, all passing        |
+ | Builtins              | Full (compute set)  | subgroup ops, atomics, barriers, 45+ math (fract, mix, inverseSqrt, degrees, radians, atan2, ldexp, fma, smoothstep, etc.), pack/unpack (2x16float, 4x8snorm, 4x8unorm), bitcast, select, arrayLength |
+diff --git a/runtime/zig/src/compiler/wgsl/emit/hlsl/emit_hlsl.zig b/runtime/zig/src/compiler/wgsl/emit/hlsl/emit_hlsl.zig
+index ab2ab4ab1..ddbc29b1c 100644
+--- a/runtime/zig/src/compiler/wgsl/emit/hlsl/emit_hlsl.zig
++++ b/runtime/zig/src/compiler/wgsl/emit/hlsl/emit_hlsl.zig
+@@ -1,5 +1,6 @@
+ const std = @import("std");
+ const ir = @import("../../ir/ir.zig");
++const integer_dot = @import("../emit_integer_dot.zig");
+ const ir_query = @import("../../ir/ir_query.zig");
+ const ir_const_eval = @import("../../ir/ir_const_eval.zig");
+ const maps = @import("emit_hlsl_maps.zig");
+@@ -55,11 +56,16 @@ const Emitter = struct {
+         try self.write("uint doe_pack2x16float(float2 v) { return f32tof16(v.x) | (f32tof16(v.y) << 16u); }\n");
+         try self.write("float4 doe_unpack4x8unorm(uint v) { return float4(v & 0xFFu, (v >> 8u) & 0xFFu, (v >> 16u) & 0xFFu, v >> 24u) / 255.0; }\n");
+         try self.write("float4 doe_unpack4x8snorm(uint v) { int4 s = int4(int(v << 24u) >> 24, int(v << 16u) >> 24, int(v << 8u) >> 24, int(v) >> 24); return clamp(float4(s) / 127.0, -1.0, 1.0); }\n");
+-        try self.write("uint doe_pack4x8unorm(float4 v) { uint4 c = uint4(round(saturate(v) * 255.0)); return c.x | (c.y << 8u) | (c.z << 16u) | (c.w << 24u); }\n");
+-        try self.write("uint doe_pack4x8snorm(float4 v) { int4 c = int4(round(clamp(v, -1.0, 1.0) * 127.0)); uint4 b = uint4(c) & 0xFFu; return b.x | (b.y << 8u) | (b.z << 16u) | (b.w << 24u); }\n");
++        try self.write("uint doe_pack4x8unorm(float4 v) { uint4 c = uint4(floor(0.5 + saturate(v) * 255.0)); return c.x | (c.y << 8u) | (c.z << 16u) | (c.w << 24u); }\n");
++        try self.write("uint doe_pack4x8snorm(float4 v) { int4 c = int4(floor(0.5 + clamp(v, -1.0, 1.0) * 127.0)); uint4 b = uint4(c) & 0xFFu; return b.x | (b.y << 8u) | (b.z << 16u) | (b.w << 24u); }\n");
++        try self.write("uint doe_pack2x16unorm(float2 v) { uint2 c = uint2(floor(0.5 + saturate(v) * 65535.0)); return c.x | (c.y << 16u); }\n");
++        try self.write("uint doe_pack2x16snorm(float2 v) { uint2 c = asuint(int2(floor(0.5 + clamp(v, -1.0, 1.0) * 32767.0))) & 0xFFFFu; return c.x | (c.y << 16u); }\n");
++        try self.write("float2 doe_unpack2x16unorm(uint v) { return float2(v & 0xFFFFu, v >> 16u) / 65535.0; }\n");
++        try self.write("float2 doe_unpack2x16snorm(uint v) { int2 c = int2(asint(v << 16u) >> 16, asint(v) >> 16); return max(float2(c) / 32767.0, -1.0); }\n");
+         if (module_uses_num_workgroups(self.module)) {
+             try self.emit_dispatch_info_contract();
+         }
++        try integer_dot.emitHelpers(self, false);
+         try self.emit_structs();
+         try self.emit_globals();
+         try self.emit_global_helpers();
+@@ -661,19 +667,31 @@ const Emitter = struct {
+     fn emit_constant(self: *Emitter, constant: ir.ConstantValue, ty: ir.TypeId) EmitError!void {
+         switch (constant) {
+             .bool => |value| try self.write(if (value) "true" else "false"),
+-            .int => |value| try self.write_u64(value),
++            .int => |value| {
++                if (ir.is_scalar(&self.module.types, ty, .i32)) {
++                    var buffer: [32]u8 = undefined;
++                    const text = std.fmt.bufPrint(&buffer, "{}", .{@as(i32, @bitCast(@as(u32, @truncate(value))))}) catch return error.OutputTooLarge;
++                    try self.write(text);
++                } else {
++                    try self.write_u64(value);
++                    if (ir.is_scalar(&self.module.types, ty, .u32)) try self.write("u");
++                }
++            },
+             .float => |value| try self.write_float(value),
+             .composite => |values| {
++                const is_vector = self.module.types.get(ty) == .vector;
+                 const elem_ty = switch (self.module.types.get(ty)) {
+                     .array => |array| array.elem,
++                    .vector => |vector| if (values.len == vector.len) vector.elem else return error.InvalidIr,
+                     else => return error.InvalidIr,
+                 };
+-                try self.write("{");
++                if (is_vector) try self.emit_type_only(ty);
++                try self.write(if (is_vector) "(" else "{");
+                 for (values, 0..) |value, index| {
+                     if (index > 0) try self.write(", ");
+                     try self.emit_constant(value, elem_ty);
+                 }
+-                try self.write("}");
++                try self.write(if (is_vector) ")" else "}");
+             },
+         }
+     }
+diff --git a/runtime/zig/src/compiler/wgsl/emit/hlsl/emit_hlsl_builtins.zig b/runtime/zig/src/compiler/wgsl/emit/hlsl/emit_hlsl_builtins.zig
+index 89fb0fa4d..77f629a5f 100644
+--- a/runtime/zig/src/compiler/wgsl/emit/hlsl/emit_hlsl_builtins.zig
++++ b/runtime/zig/src/compiler/wgsl/emit/hlsl/emit_hlsl_builtins.zig
+@@ -1,5 +1,6 @@
+ const std = @import("std");
+ const ir = @import("../../ir/ir.zig");
++const integer_dot = @import("../emit_integer_dot.zig");
+ const maps = @import("emit_hlsl_maps.zig");
+ const texture = @import("emit_hlsl_texture.zig");
+ const layout = @import("../../ir/layout_utils.zig");
+@@ -22,6 +23,8 @@ pub fn emit_builtin_call(
+     call_name: []const u8,
+     call_args: ir.Range,
+ ) EmitError!void {
++    if (std.mem.eql(u8, call_name, "dot") and try integer_dot.emitCall(self, function, result_ty, call_args)) return;
++
+     // Barriers
+     if (std.mem.eql(u8, call_name, "workgroupBarrier")) {
+         try self.write("GroupMemoryBarrierWithGroupSync()");
+diff --git a/runtime/zig/src/compiler/wgsl/emit/hlsl/emit_hlsl_maps.zig b/runtime/zig/src/compiler/wgsl/emit/hlsl/emit_hlsl_maps.zig
+index c83f3dec5..9c731ca3b 100644
+--- a/runtime/zig/src/compiler/wgsl/emit/hlsl/emit_hlsl_maps.zig
++++ b/runtime/zig/src/compiler/wgsl/emit/hlsl/emit_hlsl_maps.zig
+@@ -82,6 +82,10 @@ const HLSL_RENAMED_BUILTINS = [_]struct { wgsl: []const u8, hlsl: []const u8 }{
+     .{ .wgsl = "atomicExchange", .hlsl = "doe_atomicExchange" },
+     .{ .wgsl = "unpack2x16float", .hlsl = "doe_unpack2x16float" },
+     .{ .wgsl = "pack2x16float", .hlsl = "doe_pack2x16float" },
++    .{ .wgsl = "pack2x16unorm", .hlsl = "doe_pack2x16unorm" },
++    .{ .wgsl = "pack2x16snorm", .hlsl = "doe_pack2x16snorm" },
++    .{ .wgsl = "unpack2x16unorm", .hlsl = "doe_unpack2x16unorm" },
++    .{ .wgsl = "unpack2x16snorm", .hlsl = "doe_unpack2x16snorm" },
+     .{ .wgsl = "unpack4x8unorm", .hlsl = "doe_unpack4x8unorm" },
+     .{ .wgsl = "unpack4x8snorm", .hlsl = "doe_unpack4x8snorm" },
+     .{ .wgsl = "pack4x8unorm", .hlsl = "doe_pack4x8unorm" },
+diff --git a/runtime/zig/src/compiler/wgsl/emit/msl/emit_msl_ir.zig b/runtime/zig/src/compiler/wgsl/emit/msl/emit_msl_ir.zig
+index 60ab602ca..105c93492 100644
+--- a/runtime/zig/src/compiler/wgsl/emit/msl/emit_msl_ir.zig
++++ b/runtime/zig/src/compiler/wgsl/emit/msl/emit_msl_ir.zig
+@@ -1,5 +1,6 @@
+ const std = @import("std");
+ const ir = @import("../../ir/ir.zig");
++const integer_dot = @import("../emit_integer_dot.zig");
+ const maps = @import("emit_msl_maps.zig");
+ const stage_render = @import("emit_msl_stage.zig");
+ const subgroups = @import("emit_msl_subgroups.zig");
+@@ -114,6 +115,7 @@ const Emitter = struct {
+         try self.write("#include <metal_stdlib>\nusing namespace metal;\n");
+         // Simdgroup header only needed when subgroup builtins are present.
+         if (subgroups.module_uses_subgroups(self.module)) try self.write(subgroups.SIMDGROUP_INCLUDE);
++        try integer_dot.emitHelpers(self, true);
+         try self.emit_structs();
+         try self.emit_globals();
+         try self.emit_functions();
+@@ -803,10 +805,13 @@ const Emitter = struct {
+         switch (constant) {
+             .bool => |value| try self.write(if (value) "true" else "false"),
+             .int => |value| {
+-                try self.write_u64(value);
+-                switch (self.module.types.get(ty)) {
+-                    .scalar => |scalar| if (scalar == .u32) try self.write("u"),
+-                    else => {},
++                if (ir.is_scalar(&self.module.types, ty, .i32)) {
++                    var buffer: [32]u8 = undefined;
++                    const text = std.fmt.bufPrint(&buffer, "{}", .{@as(i32, @bitCast(@as(u32, @truncate(value))))}) catch return error.OutputTooLarge;
++                    try self.write(text);
++                } else {
++                    try self.write_u64(value);
++                    if (ir.is_scalar(&self.module.types, ty, .u32)) try self.write("u");
+                 }
+             },
+             .float => |value| try self.write_float(value),
+diff --git a/runtime/zig/src/compiler/wgsl/emit/msl/emit_msl_ir_builtins.zig b/runtime/zig/src/compiler/wgsl/emit/msl/emit_msl_ir_builtins.zig
+index 643a51692..baa7891ae 100644
+--- a/runtime/zig/src/compiler/wgsl/emit/msl/emit_msl_ir_builtins.zig
++++ b/runtime/zig/src/compiler/wgsl/emit/msl/emit_msl_ir_builtins.zig
+@@ -6,6 +6,7 @@
+ 
+ const std = @import("std");
+ const ir = @import("../../ir/ir.zig");
++const integer_dot = @import("../emit_integer_dot.zig");
+ const maps = @import("emit_msl_maps.zig");
+ const texture_builtins = @import("emit_msl_texture.zig");
+ const layout = @import("../../ir/layout_utils.zig");
+@@ -20,6 +21,7 @@ pub const EmitError = error{
+ 
+ pub fn emit_call(self: anytype, function: ir.Function, result_ty: ir.TypeId, call: @FieldType(ir.Expr, "call")) EmitError!void {
+     if (call.kind == .builtin) {
++        if (std.mem.eql(u8, call.name, "dot") and try integer_dot.emitCall(self, function, result_ty, call.args)) return;
+         if (std.mem.eql(u8, call.name, "workgroupBarrier")) {
+             try self.write(if (workgroup_policy.singleInvocationWorkgroup(function))
+                 "(void)0"
+@@ -80,14 +82,14 @@ pub fn emit_call(self: anytype, function: ir.Function, result_ty: ir.TypeId, cal
+         }
+         if (std.mem.eql(u8, call.name, "pack4x8unorm")) {
+             if (call.args.len != 1) return error.InvalidIr;
+-            try self.write("as_type<uint>(uchar4(round(clamp(");
++            try self.write("as_type<uint>(uchar4(floor(0.5 + clamp(");
+             try self.emit_expr(function, function.expr_args.items[call.args.start]);
+             try self.write(", 0.0, 1.0) * 255.0)))");
+             return;
+         }
+         if (std.mem.eql(u8, call.name, "pack4x8snorm")) {
+             if (call.args.len != 1) return error.InvalidIr;
+-            try self.write("as_type<uint>(char4(round(clamp(");
++            try self.write("as_type<uint>(char4(floor(0.5 + clamp(");
+             try self.emit_expr(function, function.expr_args.items[call.args.start]);
+             try self.write(", -1.0, 1.0) * 127.0)))");
+             return;
+@@ -202,16 +204,16 @@ pub fn emit_call(self: anytype, function: ir.Function, result_ty: ir.TypeId, cal
+         }
+         if (std.mem.eql(u8, call.name, "pack2x16snorm")) {
+             if (call.args.len != 1) return error.InvalidIr;
+-            try self.write("pack_float_to_snorm2x16(");
++            try self.write("pack_float_to_snorm2x16(floor(0.5 + clamp(");
+             try self.emit_expr(function, function.expr_args.items[call.args.start]);
+-            try self.write(")");
++            try self.write(", -1.0, 1.0) * 32767.0) / 32767.0)");
+             return;
+         }
+         if (std.mem.eql(u8, call.name, "pack2x16unorm")) {
+             if (call.args.len != 1) return error.InvalidIr;
+-            try self.write("pack_float_to_unorm2x16(");
++            try self.write("pack_float_to_unorm2x16(floor(0.5 + clamp(");
+             try self.emit_expr(function, function.expr_args.items[call.args.start]);
+-            try self.write(")");
++            try self.write(", 0.0, 1.0) * 65535.0) / 65535.0)");
+             return;
+         }
+         if (std.mem.eql(u8, call.name, "unpack2x16snorm")) {
+diff --git a/runtime/zig/src/compiler/wgsl/emit/spirv/emit_spirv_builtins.zig b/runtime/zig/src/compiler/wgsl/emit/spirv/emit_spirv_builtins.zig
+index f971d2660..594e0e9fd 100644
+--- a/runtime/zig/src/compiler/wgsl/emit/spirv/emit_spirv_builtins.zig
++++ b/runtime/zig/src/compiler/wgsl/emit/spirv/emit_spirv_builtins.zig
+@@ -92,16 +92,28 @@ pub fn emit_builtin(self: anytype, call: anytype, result_ty: ir.TypeId) !?u32 {
+         return result_id;
+     }
+     if (std.mem.eql(u8, call.name, "pack2x16float")) {
+-        return try emit_glsl_ext_inst_args(self, call, result_ty, 60);
++        return try emit_glsl_ext_inst_args(self, call, result_ty, 58);
+     }
+     if (std.mem.eql(u8, call.name, "unpack2x16float")) {
+         return try emit_glsl_ext_inst_args(self, call, result_ty, 62);
+     }
+     if (std.mem.eql(u8, call.name, "pack4x8unorm")) {
+-        return try emit_glsl_ext_inst_args(self, call, result_ty, 58);
++        return try emit_normalized_pack(self, call, result_ty, 55, 255, false);
+     }
+     if (std.mem.eql(u8, call.name, "pack4x8snorm")) {
+-        return try emit_glsl_ext_inst_args(self, call, result_ty, 59);
++        return try emit_normalized_pack(self, call, result_ty, 54, 127, true);
++    }
++    if (std.mem.eql(u8, call.name, "pack2x16unorm")) {
++        return try emit_normalized_pack(self, call, result_ty, 57, 65535, false);
++    }
++    if (std.mem.eql(u8, call.name, "pack2x16snorm")) {
++        return try emit_normalized_pack(self, call, result_ty, 56, 32767, true);
++    }
++    if (std.mem.eql(u8, call.name, "unpack2x16snorm")) {
++        return try emit_glsl_ext_inst_args(self, call, result_ty, 60);
++    }
++    if (std.mem.eql(u8, call.name, "unpack2x16unorm")) {
++        return try emit_glsl_ext_inst_args(self, call, result_ty, 61);
+     }
+     if (std.mem.eql(u8, call.name, "unpack4x8snorm")) {
+         return try emit_glsl_ext_inst_args(self, call, result_ty, 63);
+@@ -344,6 +356,33 @@ pub fn emit_builtin(self: anytype, call: anytype, result_ty: ir.TypeId) !?u32 {
+ 
+ const SubgroupArithmeticOp = enum { add, mul, min, max };
+ 
++fn emit_normalized_pack(self: anytype, call: anytype, result_ty: ir.TypeId, instruction: u32, scale: f32, signed: bool) !u32 {
++    if (call.args.len != 1) return error.InvalidIr;
++    const arg = self.function.expr_args.items[call.args.start];
++    const vector_ty = self.function.exprs.items[arg].ty;
++    const vector = switch (self.emitter.module.types.get(vector_ty)) {
++        .vector => |value| value,
++        else => return error.InvalidIr,
++    };
++    if (vector.len != 2 and vector.len != 4) return error.InvalidIr;
++    const result_type = try self.emitter.lower_type(vector_ty);
++    const import_id = try self.emitter.builder.glsl450_import_id();
++    var constants: [4]u32 = undefined;
++    for ([_]f32{ if (signed) -1 else 0, 1, scale, 0.5 }, 0..) |value, index| {
++        const scalar = try self.emitter.builder.const_f32_bits(@bitCast(value));
++        const lanes = [_]u32{scalar} ** 4;
++        constants[index] = try self.emitter.builder.const_composite(result_type, lanes[0..vector.len]);
++    }
++    const clamped = try emit_result_inst(self, spirv.Opcode.ExtInst, result_type, &.{ import_id, 43, try self.emit_value_expr(arg), constants[0], constants[1] });
++    const scaled = try emit_result_inst(self, spirv.Opcode.FMul, result_type, &.{ clamped, constants[2] });
++    const biased = try emit_result_inst(self, spirv.Opcode.FAdd, result_type, &.{ scaled, constants[3] });
++    // GLSL pack's round-to-even disagrees with WGSL's floor(0.5 + x) at
++    // halfway values. Prequantization removes that tie before native packing.
++    const rounded = try emit_result_inst(self, spirv.Opcode.ExtInst, result_type, &.{ import_id, 8, biased });
++    const normalized = try emit_result_inst(self, spirv.Opcode.FDiv, result_type, &.{ rounded, constants[2] });
++    return emit_result_inst(self, spirv.Opcode.ExtInst, try self.emitter.lower_type(result_ty), &.{ import_id, instruction, normalized });
++}
++
+ fn emit_glsl_ext_inst_args(self: anytype, call: anytype, result_ty: ir.TypeId, inst: u32) !u32 {
+     const result_type = try self.emitter.lower_type(result_ty);
+     const result_id = self.emitter.builder.reserve_id();
+diff --git a/runtime/zig/src/compiler/wgsl/frontend/ast.zig b/runtime/zig/src/compiler/wgsl/frontend/ast.zig
+index 0b62b814f..4f9b7905f 100644
+--- a/runtime/zig/src/compiler/wgsl/frontend/ast.zig
++++ b/runtime/zig/src/compiler/wgsl/frontend/ast.zig
+@@ -32,6 +32,8 @@ pub const NodeTag = enum(u8) {
+ 
+     /// `enable <ident>;`  main_token = `enable`, data.lhs = ident token index.
+     enable_directive,
++    /// `requires <ident>, ...;` data.lhs/rhs describe extension-name tokens in extra_data.
++    requires_directive,
+ 
+     /// `diagnostic(off, ...);`  main_token = `diagnostic`.
+     diagnostic_directive,
+diff --git a/runtime/zig/src/compiler/wgsl/frontend/parser.zig b/runtime/zig/src/compiler/wgsl/frontend/parser.zig
+index 6527d8f84..c5df0d77b 100644
+--- a/runtime/zig/src/compiler/wgsl/frontend/parser.zig
++++ b/runtime/zig/src/compiler/wgsl/frontend/parser.zig
+@@ -103,9 +103,13 @@ pub const Parser = struct {
+         const scratch_top = self.scratch.items.len;
+         defer self.scratch.shrinkRetainingCapacity(scratch_top);
+ 
++        var seen_declaration = false;
+         while (self.peekTag() != .eof) {
++            if (self.peekTag() == .kw_requires and seen_declaration) return error.UnexpectedToken;
+             const decl = try self.parseTopLevelDecl();
+             if (decl != NULL_NODE) {
++                const tag = self.tree.nodes.items[decl].tag;
++                if (tag != .enable_directive and tag != .requires_directive and tag != .diagnostic_directive) seen_declaration = true;
+                 try self.scratch.append(self.allocator, decl);
+             }
+         }
+@@ -129,6 +133,7 @@ pub const Parser = struct {
+ 
+         return switch (self.peekTag()) {
+             .kw_enable => parser_decl.parseEnableDirective(self),
++            .kw_requires => parser_decl.parseRequiresDirective(self),
+             .kw_diagnostic => parser_decl.parseDiagnosticDirective(self),
+             .kw_struct => parser_decl.parseStructDecl(self, attrs),
+             .kw_fn => parser_decl.parseFnDecl(self, attrs),
+diff --git a/runtime/zig/src/compiler/wgsl/frontend/parser_decl.zig b/runtime/zig/src/compiler/wgsl/frontend/parser_decl.zig
+index 7e9b061a3..0ccbe55ff 100644
+--- a/runtime/zig/src/compiler/wgsl/frontend/parser_decl.zig
++++ b/runtime/zig/src/compiler/wgsl/frontend/parser_decl.zig
+@@ -29,6 +29,26 @@ pub fn parseEnableDirective(self: anytype) @TypeOf(self.*).Error!u32 {
+     });
+ }
+ 
++pub fn parseRequiresDirective(self: anytype) @TypeOf(self.*).Error!u32 {
++    const main_token = self.token_idx;
++    self.advance();
++    const scratch_top = self.scratch.items.len;
++    defer self.scratch.shrinkRetainingCapacity(scratch_top);
++    while (true) {
++        try self.scratch.append(self.allocator, try self.expectIdentifier());
++        if (self.peekTag() != .@",") break;
++        self.advance();
++        if (self.peekTag() == .@";") break;
++    }
++    _ = try self.expect(.@";");
++    const names = self.scratch.items[scratch_top..];
++    return self.tree.addNode(.{
++        .tag = .requires_directive,
++        .main_token = main_token,
++        .data = .{ .lhs = try self.tree.addExtraSlice(names), .rhs = @intCast(names.len) },
++    });
++}
++
+ pub fn parseDiagnosticDirective(self: anytype) @TypeOf(self.*).Error!u32 {
+     const main_token = self.token_idx;
+     self.advance(); // consume `diagnostic`
+diff --git a/runtime/zig/src/compiler/wgsl/frontend/sema.zig b/runtime/zig/src/compiler/wgsl/frontend/sema.zig
+index 9672f45b7..ab0b8ba92 100644
+--- a/runtime/zig/src/compiler/wgsl/frontend/sema.zig
++++ b/runtime/zig/src/compiler/wgsl/frontend/sema.zig
+@@ -155,6 +155,11 @@ const Analyzer = struct {
+         sema_typeutils.captureFailureNode(self.module.tree, node_idx, self.failure);
+         const node = self.module.tree.nodes.items[node_idx];
+         switch (node.tag) {
++            .requires_directive => {
++                for (self.module.tree.extra_data.items[node.data.lhs..][0..node.data.rhs]) |token_idx| {
++                    if (!std.mem.eql(u8, self.module.tree.tokenSlice(token_idx), "packed_4x8_integer_dot_product")) return error.UnsupportedConstruct;
++                }
++            },
+             .struct_decl => try self.register_struct(node),
+             .alias_decl => try self.register_alias(node),
+             .global_var, .const_decl, .override_decl => try self.register_global(node, node_idx),
+@@ -615,6 +620,7 @@ const Analyzer = struct {
+             }
+             return fn_info.return_type;
+         }
++        if (args_len == 1) arg_types_buf[0] = try sema_attrs.materializePackedConstructor(self, name, self.module.tree.extra_data.items[args_start], arg_types_buf[0]);
+         return try sema_attrs.infer_builtin_call(self, name, arg_types_buf[0..args_len]);
+     }
+ 
+diff --git a/runtime/zig/src/compiler/wgsl/frontend/sema_attrs.zig b/runtime/zig/src/compiler/wgsl/frontend/sema_attrs.zig
+index 10583732b..116911114 100644
+--- a/runtime/zig/src/compiler/wgsl/frontend/sema_attrs.zig
++++ b/runtime/zig/src/compiler/wgsl/frontend/sema_attrs.zig
+@@ -1,6 +1,7 @@
+ const std = @import("std");
+ const ast_mod = @import("ast.zig");
+ const ir = @import("../ir/ir.zig");
++const packed_integer = @import("../ir/ir_packed_integer.zig");
+ const sema_helpers = @import("sema_helpers.zig");
+ const sema_type_syntax = @import("sema_type_syntax.zig");
+ const sema_types = @import("sema_types.zig");
+@@ -153,6 +154,32 @@ pub fn parse_io_attr(self: anytype, attrs_start: u32, attrs_len: u32) !?ir.IoAtt
+     return if (seen) result else null;
+ }
+ 
++pub fn materializePackedConstructor(self: anytype, name: []const u8, arg_node: u32, arg_ty: ir.TypeId) !ir.TypeId {
++    const op = packed_integer.lookup(name) orelse return arg_ty;
++    if (!op.isPack() or !isAbstractVectorConstructor(self.module, arg_node)) return arg_ty;
++    const vector = switch (self.module.types.get(arg_ty)) {
++        .vector => |value| value,
++        else => return arg_ty,
++    };
++    const elem = if (op.isSigned()) self.module.i32_type else self.module.u32_type;
++    const ty = try self.module.types.intern(.{ .vector = .{ .elem = elem, .len = vector.len } });
++    self.module.node_info.items[arg_node].ty = ty;
++    return ty;
++}
++
++pub fn isAbstractVectorConstructor(module: *const sema_types.SemanticModule, node_idx: u32) bool {
++    const node = module.tree.nodes.items[node_idx];
++    const type_node = if (node.tag == .construct_expr) module.tree.nodes.items[node.data.lhs] else node;
++    if (node.tag != .call_expr and (node.tag != .construct_expr or type_node.tag != .type_name)) return false;
++    const name = module.tree.tokenSlice(type_node.main_token);
++    if (!std.mem.eql(u8, name, "vec2") and !std.mem.eql(u8, name, "vec3") and !std.mem.eql(u8, name, "vec4")) return false;
++    const span: @TypeOf(decode_packed_span(0)) = if (node.tag == .construct_expr) decode_packed_span(node.data.rhs) else .{ .start = node.data.lhs, .len = node.data.rhs };
++    for (module.tree.extra_data.items[span.start..][0..span.len]) |arg| {
++        if (module.nodeType(arg) != module.abstract_int_type and !isAbstractVectorConstructor(module, arg)) return false;
++    }
++    return true;
++}
++
+ pub fn infer_builtin_call(self: anytype, name: []const u8, arg_types: []const ir.TypeId) !ir.TypeId {
+     if (std.mem.eql(u8, name, "workgroupBarrier") or std.mem.eql(u8, name, "storageBarrier") or std.mem.eql(u8, name, "textureBarrier")) return self.module.void_type;
+     if (std.mem.eql(u8, name, "arrayLength")) return self.module.u32_type;
+@@ -271,23 +298,24 @@ pub fn infer_builtin_call(self: anytype, name: []const u8, arg_types: []const ir
+     if (std.mem.eql(u8, name, "subgroupAll") or std.mem.eql(u8, name, "subgroupAny") or std.mem.eql(u8, name, "subgroupElect")) {
+         return try self.module.types.intern(.{ .scalar = .bool });
+     }
+-    // Pack builtins return u32.
++    if (packed_integer.lookup(name)) |op| {
++        return packed_integer.inferType(op, &self.module.types, self.module.u32_type, self.module.i32_type, self.module.abstract_int_type, arg_types);
++    }
+     if (is_pack_builtin(name)) {
+-        return try self.module.types.intern(.{ .scalar = .u32 });
++        if (arg_types.len != 1) return error.UnsupportedBuiltin;
++        const vector = switch (self.module.types.get(arg_types[0])) {
++            .vector => |value| value,
++            else => return error.TypeMismatch,
++        };
++        const expected_len: u8 = if (std.mem.startsWith(u8, name, "pack2")) 2 else 4;
++        if (vector.len != expected_len or vector.elem != self.module.f32_type) return error.TypeMismatch;
++        return self.module.u32_type;
+     }
+-    if (std.mem.eql(u8, name, "unpack4xU8")) {
++    if (is_unpack_2_builtin(name) or is_unpack_4_builtin(name)) {
+         if (arg_types.len != 1) return error.UnsupportedBuiltin;
+         if (arg_types[0] != self.module.u32_type and arg_types[0] != self.module.abstract_int_type) return error.TypeMismatch;
+-        return try self.module.types.intern(.{ .vector = .{ .elem = self.module.u32_type, .len = 4 } });
+-    }
+-    // Normalized and floating-point unpack builtins return vec2f or vec4f.
+-    if (is_unpack_2_builtin(name)) {
+-        const f32_ty = try self.module.types.intern(.{ .scalar = .f32 });
+-        return try self.module.types.intern(.{ .vector = .{ .elem = f32_ty, .len = 2 } });
+-    }
+-    if (is_unpack_4_builtin(name)) {
+-        const f32_ty = try self.module.types.intern(.{ .scalar = .f32 });
+-        return try self.module.types.intern(.{ .vector = .{ .elem = f32_ty, .len = 4 } });
++        const len: u8 = if (is_unpack_2_builtin(name)) 2 else 4;
++        return self.module.types.intern(.{ .vector = .{ .elem = self.module.f32_type, .len = len } });
+     }
+     // transpose(mat<C,R>) returns mat<R,C> (dimensions swapped).
+     if (std.mem.eql(u8, name, "transpose")) {
+diff --git a/runtime/zig/src/compiler/wgsl/frontend/token.zig b/runtime/zig/src/compiler/wgsl/frontend/token.zig
+index d42d1fef4..b16d7b3b4 100644
+--- a/runtime/zig/src/compiler/wgsl/frontend/token.zig
++++ b/runtime/zig/src/compiler/wgsl/frontend/token.zig
+@@ -79,7 +79,7 @@ pub const Token = struct {
+     }
+ };
+ 
+-// Reserved words, plus the keyword `requires` (not yet a directive token).
++// Reserved words. `requires` is a directive keyword and cannot name declarations.
+ // https://www.w3.org/TR/2026/CRD-WGSL-20260921/#reserved-words
+ const NON_IDENTIFIER_WORDS = std.StaticStringMap(void).initComptime(.{
+     .{ "NULL", {} },             .{ "Self", {} },          .{ "abstract", {} },        .{ "active", {} },
+@@ -197,6 +197,7 @@ pub const Tag = enum(u8) {
+     kw_case,
+     kw_default,
+     kw_enable,
++    kw_requires,
+     kw_true,
+     kw_false,
+     kw_discard,
+@@ -282,6 +283,7 @@ const KEYWORDS = [_]KW{
+     .{ "discard", .kw_discard },
+     .{ "else", .kw_else },
+     .{ "enable", .kw_enable },
++    .{ "requires", .kw_requires },
+     .{ "f16", .kw_f16 },
+     .{ "f32", .kw_f32 },
+     .{ "false", .kw_false },
+diff --git a/runtime/zig/src/compiler/wgsl/ir/ir_builder.zig b/runtime/zig/src/compiler/wgsl/ir/ir_builder.zig
+index 5aab35684..673c27049 100644
+--- a/runtime/zig/src/compiler/wgsl/ir/ir_builder.zig
++++ b/runtime/zig/src/compiler/wgsl/ir/ir_builder.zig
+@@ -2,8 +2,10 @@ const std = @import("std");
+ const ast_mod = @import("../frontend/ast.zig");
+ const ir = @import("ir.zig");
+ const ir_const_eval = @import("ir_const_eval.zig");
++const packed_integer = @import("ir_packed_integer.zig");
+ const sema = @import("../frontend/sema.zig");
+ const sema_helpers = @import("../frontend/sema_helpers.zig");
++const sema_attrs = @import("../frontend/sema_attrs.zig");
+ const token_mod = @import("../frontend/token.zig");
+ 
+ const Ast = ast_mod.Ast;
+@@ -454,19 +456,33 @@ const FunctionBuilder = struct {
+                 try args.append(self.allocator, try self.lower_value_expr(arg_node));
+             }
+         }
+-        if (!is_constructor and kind == .builtin and std.mem.eql(u8, name, "unpack4xU8")) {
+-            if (args.items.len != 1) return error.InvalidIr;
+-            if (self.function.exprs.items[args.items[0]].ty == self.semantic.abstract_int_type) {
+-                var value = try constant_from_node(self.allocator, self.tree, self.semantic, self.failure, self.tree.extra_data.items[node.data.lhs], 0) orelse return error.UnsupportedConstruct;
+-                defer value.deinit(self.allocator);
+-                if (value != .int or value.int > std.math.maxInt(u32)) return error.InvalidIr;
+-                args.items[0] = try self.function.append_expr(self.allocator, .{
+-                    .ty = self.semantic.u32_type,
+-                    .category = .value,
+-                    .data = .{ .int_lit = value.int },
+-                });
++        if (!is_constructor and kind == .builtin) {
++            if (packed_integer.lookup(name)) |op| {
++                if (!op.isPack()) for (args.items, 0..) |*arg, index| {
++                    if (self.function.exprs.items[arg.*].ty != self.semantic.abstract_int_type) continue;
++                    var value = try constant_from_node(self.allocator, self.tree, self.semantic, self.failure, self.tree.extra_data.items[node.data.lhs + index], 0) orelse return error.UnsupportedConstruct;
++                    defer value.deinit(self.allocator);
++                    if (value != .int or value.int > std.math.maxInt(u32)) return error.InvalidIr;
++                    arg.* = try self.function.append_expr(self.allocator, .{ .ty = self.semantic.u32_type, .category = .value, .data = .{ .int_lit = value.int } });
++                };
++                if (op.isPack()) {
++                    const arg_node = self.tree.extra_data.items[node.data.lhs];
++                    if (sema_attrs.isAbstractVectorConstructor(self.semantic, arg_node)) {
++                        var values = try constant_from_node(self.allocator, self.tree, self.semantic, self.failure, arg_node, 0) orelse return error.UnsupportedConstruct;
++                        defer values.deinit(self.allocator);
++                        try validate_packed_materialization(values, op.isSigned());
++                    }
++                }
++                const lowering = packed_integer.Lowering{
++                    .allocator = self.allocator,
++                    .function = self.function,
++                    .u32_ty = self.semantic.u32_type,
++                    .i32_ty = self.semantic.i32_type,
++                    .vec_u32_ty = self.vector_type(self.semantic.u32_type) orelse return error.InvalidIr,
++                    .vec_i32_ty = self.vector_type(self.semantic.i32_type) orelse return error.InvalidIr,
++                };
++                return lowering.lower(op, args.items);
+             }
+-            return try self.lower_unpack_bytes(args.items[0], self.semantic.nodeType(node_idx));
+         }
+         const range = try self.function.append_expr_args(self.allocator, args.items);
+         if (is_constructor) {
+@@ -475,40 +491,11 @@ const FunctionBuilder = struct {
+         return .{ .call = .{ .name = try ir.dup_string(self.allocator, name), .kind = kind, .args = range } };
+     }
+ 
+-    fn lower_unpack_bytes(self: *FunctionBuilder, argument: ir.ExprId, result_ty: ir.TypeId) !ir.Expr {
+-        const byte_bits = @bitSizeOf(u8);
+-        const byte_mask = std.math.maxInt(u8);
+-        var shifts: [@sizeOf(u32)]ir.ExprId = undefined;
+-        for (&shifts, 0..) |*shift, lane| {
+-            shift.* = try self.function.append_expr(self.allocator, .{
+-                .ty = self.semantic.u32_type,
+-                .category = .value,
+-                .data = .{ .int_lit = lane * byte_bits },
+-            });
++    fn vector_type(self: *FunctionBuilder, elem: ir.TypeId) ?ir.TypeId {
++        for (self.semantic.types.items.items, 0..) |ty, index| {
++            if (ty == .vector and ty.vector.elem == elem and ty.vector.len == 4) return @intCast(index);
+         }
+-        const mask = try self.function.append_expr(self.allocator, .{
+-            .ty = self.semantic.u32_type,
+-            .category = .value,
+-            .data = .{ .int_lit = byte_mask },
+-        });
+-        // A scalar splat evaluates the source once, including calls with side effects.
+-        const splat = try self.append_vector_construct(result_ty, &.{argument});
+-        const offsets = try self.append_vector_construct(result_ty, &shifts);
+-        const masks = try self.append_vector_construct(result_ty, &.{mask});
+-        const shifted = try self.function.append_expr(self.allocator, .{
+-            .ty = result_ty,
+-            .category = .value,
+-            .data = .{ .binary = .{ .op = .shift_right, .lhs = splat, .rhs = offsets } },
+-        });
+-        return .{ .binary = .{ .op = .bit_and, .lhs = shifted, .rhs = masks } };
+-    }
+-
+-    fn append_vector_construct(self: *FunctionBuilder, ty: ir.TypeId, args: []const ir.ExprId) !ir.ExprId {
+-        return try self.function.append_expr(self.allocator, .{
+-            .ty = ty,
+-            .category = .value,
+-            .data = .{ .construct = .{ .ty = ty, .args = try self.function.append_expr_args(self.allocator, args) } },
+-        });
++        return null;
+     }
+ 
+     fn lower_generic_call(self: *FunctionBuilder, _: u32, node: Node) !ir.Expr {
+@@ -685,6 +672,20 @@ fn constant_from_node(
+         },
+         .call_expr => blk: {
+             const name = tree.tokenSlice(node.main_token);
++            if (semantic.tryResolveNamedType(name) != null or std.mem.eql(u8, name, "vec2") or std.mem.eql(u8, name, "vec3") or std.mem.eql(u8, name, "vec4")) {
++                break :blk try constant_construct(allocator, tree, semantic, failure, semantic.nodeType(node_idx), node.data.lhs, node.data.rhs, depth);
++            }
++            if (packed_integer.lookup(name)) |op| {
++                if (node.data.rhs > 2) return error.InvalidIr;
++                var values: [2]ir.ConstantValue = undefined;
++                var initialized: usize = 0;
++                defer for (values[0..initialized]) |*value| value.deinit(allocator);
++                while (initialized < node.data.rhs) : (initialized += 1) {
++                    values[initialized] = try constant_from_node(allocator, tree, semantic, failure, tree.extra_data.items[node.data.lhs + initialized], depth + 1) orelse return error.UnsupportedConstruct;
++                }
++                if (op.isPack() and sema_attrs.isAbstractVectorConstructor(semantic, tree.extra_data.items[node.data.lhs])) try validate_packed_materialization(values[0], op.isSigned());
++                break :blk try packed_integer.fold(allocator, op, values[0..initialized]);
++            }
+             if (!std.mem.eql(u8, name, "countOneBits") or node.data.rhs != 1) return error.UnsupportedConstruct;
+             var value = try constant_from_node(allocator, tree, semantic, failure, tree.extra_data.items[node.data.lhs], depth + 1) orelse return error.UnsupportedConstruct;
+             errdefer value.deinit(allocator);
+@@ -693,26 +694,7 @@ fn constant_from_node(
+         },
+         .construct_expr => blk: {
+             const span = sema_helpers.decode_packed_span(node.data.rhs);
+-            if (span.len == 1) {
+-                switch (semantic.types.get(semantic.nodeType(node_idx))) {
+-                    .scalar => {
+-                        const arg_node = tree.extra_data.items[span.start];
+-                        break :blk try constant_from_node(allocator, tree, semantic, failure, arg_node, depth + 1);
+-                    },
+-                    else => {},
+-                }
+-            }
+-            var values = try allocator.alloc(ir.ConstantValue, span.len);
+-            var initialized: usize = 0;
+-            errdefer {
+-                for (values[0..initialized]) |*value| value.deinit(allocator);
+-                allocator.free(values);
+-            }
+-            while (initialized < span.len) : (initialized += 1) {
+-                const arg_node = tree.extra_data.items[span.start + initialized];
+-                values[initialized] = try constant_from_node(allocator, tree, semantic, failure, arg_node, depth + 1) orelse return error.UnsupportedConstruct;
+-            }
+-            break :blk ir.ConstantValue{ .composite = values };
++            break :blk try constant_construct(allocator, tree, semantic, failure, semantic.nodeType(node_idx), span.start, span.len, depth);
+         },
+         else => null,
+     };
+@@ -730,3 +712,60 @@ fn captureFailureNode(failure: *FailureContext, tree: *const Ast, node_idx: u32)
+         .token_idx = if (node.main_token < tree.tokens.items.len) node.main_token else null,
+     };
+ }
++
++fn constant_construct(allocator: std.mem.Allocator, tree: *const Ast, semantic: *const sema.SemanticModule, failure: *FailureContext, ty: ir.TypeId, start: u32, len: u32, depth: u8) BuildError!?ir.ConstantValue {
++    const target = semantic.types.get(ty);
++    if (len == 1 and target == .scalar) {
++        var value = try constant_from_node(allocator, tree, semantic, failure, tree.extra_data.items[start], depth + 1) orelse return error.UnsupportedConstruct;
++        if (value == .int and (target.scalar == .u32 or target.scalar == .i32)) value.int = @as(u32, @truncate(value.int));
++        return value;
++    }
++    if (target != .vector) {
++        const values = try allocator.alloc(ir.ConstantValue, len);
++        var initialized: usize = 0;
++        errdefer {
++            for (values[0..initialized]) |*value| value.deinit(allocator);
++            allocator.free(values);
++        }
++        while (initialized < len) : (initialized += 1) values[initialized] = try constant_from_node(allocator, tree, semantic, failure, tree.extra_data.items[start + initialized], depth + 1) orelse return error.UnsupportedConstruct;
++        return .{ .composite = values };
++    }
++    const count = if (target == .vector) target.vector.len else len;
++    const values = try allocator.alloc(ir.ConstantValue, count);
++    var initialized: usize = 0;
++    errdefer {
++        for (values[0..initialized]) |*value| value.deinit(allocator);
++        allocator.free(values);
++    }
++    for (0..len) |index| {
++        var argument = try constant_from_node(allocator, tree, semantic, failure, tree.extra_data.items[start + index], depth + 1) orelse return error.UnsupportedConstruct;
++        defer argument.deinit(allocator);
++        if (argument == .composite and target == .vector) {
++            for (argument.composite) |value| {
++                if (initialized >= count or value == .composite) return error.InvalidIr;
++                values[initialized] = value;
++                initialized += 1;
++            }
++        } else {
++            const repeat = if (target == .vector and len == 1) count else 1;
++            for (0..repeat) |_| {
++                if (initialized >= count or argument == .composite) return error.UnsupportedConstruct;
++                values[initialized] = argument;
++                initialized += 1;
++            }
++        }
++    }
++    if (initialized != count) return error.InvalidIr;
++    return .{ .composite = values };
++}
++
++fn validate_packed_materialization(values: ir.ConstantValue, signed: bool) BuildError!void {
++    if (values != .composite) return error.InvalidIr;
++    for (values.composite) |value| {
++        if (value != .int) return error.InvalidIr;
++        if (signed) {
++            const integer: i64 = @bitCast(value.int);
++            if (integer < std.math.minInt(i32) or integer > std.math.maxInt(i32)) return error.InvalidIr;
++        } else if (value.int > std.math.maxInt(u32)) return error.InvalidIr;
++    }
++}
+diff --git a/runtime/zig/src/core/abi/generated/webgpu_upstream.zig b/runtime/zig/src/core/abi/generated/webgpu_upstream.zig
+index 402a2815c..ad64ca776 100644
+--- a/runtime/zig/src/core/abi/generated/webgpu_upstream.zig
++++ b/runtime/zig/src/core/abi/generated/webgpu_upstream.zig
+@@ -106,6 +106,7 @@ pub const WGPUTextureViewDimension = c.WGPUTextureViewDimension;
+ pub const WGPUUncapturedErrorCallback = c.WGPUUncapturedErrorCallback;
+ pub const WGPUUncapturedErrorCallbackInfo = c.WGPUUncapturedErrorCallbackInfo;
+ pub const WGPUWGSLLanguageFeatureName = c.WGPUWGSLLanguageFeatureName;
++pub const WGPUWGSLLanguageFeatureName_Packed4x8IntegerDotProduct = c.WGPUWGSLLanguageFeatureName_Packed4x8IntegerDotProduct;
+ pub const WGPUWaitStatus = c.WGPUWaitStatus;
+ 
+ pub const proc_names = [_][]const u8{
+@@ -1049,6 +1050,7 @@ comptime {
+     _ = WGPUUncapturedErrorCallback;
+     _ = WGPUUncapturedErrorCallbackInfo;
+     _ = WGPUWGSLLanguageFeatureName;
++    _ = WGPUWGSLLanguageFeatureName_Packed4x8IntegerDotProduct;
+     _ = WGPUWaitStatus;
+     _ = ProcTypes;
+     _ = ProcTable;
+diff --git a/runtime/zig/src/core/abi/procs/wgpu_p1_capability_procs.zig b/runtime/zig/src/core/abi/procs/wgpu_p1_capability_procs.zig
+index 2176ca44e..831aa6f11 100644
+--- a/runtime/zig/src/core/abi/procs/wgpu_p1_capability_procs.zig
++++ b/runtime/zig/src/core/abi/procs/wgpu_p1_capability_procs.zig
+@@ -10,6 +10,7 @@ pub const WGPUWGSLLanguageFeatureName = upstream.WGPUWGSLLanguageFeatureName;
+ pub const WGPUProc = ?*const fn () callconv(.c) void;
+ 
+ pub const WGPUInstanceFeatureName_TimedWaitAny: WGPUInstanceFeatureName = 0x00000001;
++pub const WGPUWGSLLanguageFeatureName_Packed4x8IntegerDotProduct = upstream.WGPUWGSLLanguageFeatureName_Packed4x8IntegerDotProduct;
+ pub const WGPUWGSLLanguageFeatureName_ReadonlyAndReadwriteStorageTextures: WGPUWGSLLanguageFeatureName = 0x00000001;
+ pub const WGPUFeatureName_AdapterPropertiesMemoryHeaps: abi_feature.WGPUFeatureName = 0x00050014;
+ pub const WGPUFeatureName_DawnDrmFormatCapabilities: abi_feature.WGPUFeatureName = 0x00050018;
+diff --git a/runtime/zig/src/dropin/wgpu_dropin_ext_a_core.zig b/runtime/zig/src/dropin/wgpu_dropin_ext_a_core.zig
+index 43be69641..ef2c59d9b 100644
+--- a/runtime/zig/src/dropin/wgpu_dropin_ext_a_core.zig
++++ b/runtime/zig/src/dropin/wgpu_dropin_ext_a_core.zig
+@@ -25,6 +25,7 @@ pub const types = struct {
+     pub const WGPUStatus_Success = abi_core.WGPUStatus_Success;
+     pub const WGPUStringView = abi_core.WGPUStringView;
+     pub const WGPUTextureFormat = abi_texture.WGPUTextureFormat;
++    pub const WGPU_TRUE = abi_core.WGPU_TRUE;
+     pub const WGPU_FALSE = abi_core.WGPU_FALSE;
+     pub const WGPUConstantEntry = abi_pipeline.WGPUConstantEntry;
+     pub const WGPUComputePipelineDescriptor = abi_pipeline.WGPUComputePipelineDescriptor;
+diff --git a/runtime/zig/src/dropin/wgpu_dropin_ext_a_exports.zig b/runtime/zig/src/dropin/wgpu_dropin_ext_a_exports.zig
+index a52ac86e3..bc60b6f49 100644
+--- a/runtime/zig/src/dropin/wgpu_dropin_ext_a_exports.zig
++++ b/runtime/zig/src/dropin/wgpu_dropin_ext_a_exports.zig
+@@ -342,14 +342,16 @@ pub export fn wgpuInstanceCreateSurface(a0: types.WGPUInstance, a1: *const surfa
+     return proc(a0, a1);
+ }
+ 
++const WGSL_LANGUAGE_FEATURES = [_]p1cap.WGPUWGSLLanguageFeatureName{p1cap.WGPUWGSLLanguageFeatureName_Packed4x8IntegerDotProduct};
++
+ pub export fn wgpuInstanceGetWGSLLanguageFeatures(a0: types.WGPUInstance, a1: *p1cap.SupportedWGSLLanguageFeatures) callconv(.c) void {
+     _ = a0;
+-    a1.* = p1cap.initSupportedWGSLLanguageFeatures();
++    a1.* = .{ .featureCount = WGSL_LANGUAGE_FEATURES.len, .features = &WGSL_LANGUAGE_FEATURES };
+ }
+ 
+ pub export fn wgpuInstanceHasWGSLLanguageFeature(a0: types.WGPUInstance, a1: p1cap.WGPUWGSLLanguageFeatureName) callconv(.c) types.WGPUBool {
+     _ = a0;
+-    _ = a1;
++    for (WGSL_LANGUAGE_FEATURES) |feature| if (feature == a1) return types.WGPU_TRUE;
+     return types.WGPU_FALSE;
+ }
+ 
+diff --git a/runtime/zig/tests/dropin/dropin_behavior_policy_test.zig b/runtime/zig/tests/dropin/dropin_behavior_policy_test.zig
+index cad362e5e..c7f246cad 100644
+--- a/runtime/zig/tests/dropin/dropin_behavior_policy_test.zig
++++ b/runtime/zig/tests/dropin/dropin_behavior_policy_test.zig
+@@ -1,6 +1,17 @@
+ const std = @import("std");
+ const policy = @import("../../src/dropin/dropin_behavior_policy.zig");
+ 
++test "packed WGSL feature enumeration agrees with feature queries" {
++    const exports = @import("../../src/dropin/wgpu_dropin_ext_a_exports.zig");
++    const capabilities = @import("../../src/core/abi/procs/wgpu_p1_capability_procs.zig");
++    const feature = capabilities.WGPUWGSLLanguageFeatureName_Packed4x8IntegerDotProduct;
++    var supported = capabilities.initSupportedWGSLLanguageFeatures();
++    exports.wgpuInstanceGetWGSLLanguageFeatures(null, &supported);
++    try std.testing.expect(capabilities.hasWGSLLanguageFeatureInList(supported, feature));
++    try std.testing.expectEqual(@as(u32, 1), exports.wgpuInstanceHasWGSLLanguageFeature(null, feature));
++    try std.testing.expectEqual(@as(u32, 0), exports.wgpuInstanceHasWGSLLanguageFeature(null, 0x7fffffff));
++}
++
+ test "behavior mode parser accepts strict mode" {
+     try std.testing.expect(policy.parse_behavior_mode("doe_metal_ownership") != null);
+ }
+diff --git a/runtime/zig/tests/wgsl/coverage_builtin_spec_test.zig b/runtime/zig/tests/wgsl/coverage_builtin_spec_test.zig
+index 9311ec789..74b145b23 100644
+--- a/runtime/zig/tests/wgsl/coverage_builtin_spec_test.zig
++++ b/runtime/zig/tests/wgsl/coverage_builtin_spec_test.zig
+@@ -9,6 +9,140 @@ const translateToMsl = mod.translateToMsl;
+ const translateToSpirv = mod.translateToSpirv;
+ const MAX_OUTPUT = mod.MAX_OUTPUT;
+ const MAX_SPIRV_OUTPUT = mod.MAX_SPIRV_OUTPUT;
++const analysis = @import("../../src/compiler/wgsl/pipeline/analysis.zig");
++const validate_ir = @import("../../src/compiler/wgsl/ir/ir_validate.zig").validate;
++
++const PACKED_INTEGER_SOURCE =
++    \\requires packed_4x8_integer_dot_product;
++    \\@group(0) @binding(0) var<storage, read_write> output: array<u32>;
++    \\var<private> calls: u32;
++    \\fn word() -> u32 { calls += 1u; return 0x80ff017fu; }
++    \\fn negative_values() -> vec4i { calls += 1u; return vec4i(-129, -128, 127, 128); }
++    \\fn positive_values() -> vec4u { calls += 1u; return vec4u(0u, 255u, 256u, 0xffffffffu); }
++    \\@compute @workgroup_size(1) fn main() {
++    \\    output[0] = pack4xI8(negative_values());
++    \\    output[1] = pack4xI8Clamp(negative_values());
++    \\    output[2] = pack4xU8(positive_values());
++    \\    output[3] = pack4xU8Clamp(positive_values());
++    \\    output[4] = u32(unpack4xI8(word()).w);
++    \\    output[5] = unpack4xU8(word()).w;
++    \\    output[6] = u32(dot4I8Packed(word(), word()));
++    \\    output[7] = dot4U8Packed(word(), word());
++    \\    output[8] = calls;
++    \\}
++;
++
++test "packed integers preserve source calls across all shader targets" {
++    var text: [MAX_OUTPUT]u8 = undefined;
++    inline for (.{ mod.translateToMsl, mod.translateToHlsl }) |translate| {
++        const len = try translate(std.testing.allocator, PACKED_INTEGER_SOURCE, &text);
++        try std.testing.expectEqual(@as(usize, 7), std.mem.count(u8, text[0..len], "word("));
++        try std.testing.expectEqual(@as(usize, 3), std.mem.count(u8, text[0..len], "negative_values("));
++        try std.testing.expectEqual(@as(usize, 3), std.mem.count(u8, text[0..len], "positive_values("));
++        try std.testing.expect(contains(text[0..len], "__doe_integer_dot_i4("));
++        try std.testing.expect(contains(text[0..len], "__doe_integer_dot_u4("));
++        try std.testing.expect(!contains(text[0..len], "dot4I8Packed"));
++    }
++    var binary: [MAX_SPIRV_OUTPUT]u8 = undefined;
++    try std.testing.expect(try translateToSpirv(std.testing.allocator, PACKED_INTEGER_SOURCE, &binary) > 0);
++}
++
++fn packedAllocationControl(allocator: std.mem.Allocator) !void {
++    var module = try analysis.analyzeToIr(allocator, PACKED_INTEGER_SOURCE);
++    defer module.deinit();
++    try validate_ir(&module);
++}
++
++test "packed integers unwind every lowering allocation failure" {
++    try std.testing.checkAllAllocationFailures(std.testing.allocator, packedAllocationControl, .{});
++}
++
++const PACKED_CONSTANT_SOURCE =
++    \\const signed_word = pack4xI8(vec4i(-129, -128, 127, 128));
++    \\const unsigned_word = pack4xU8(vec4u(0u, 255u, 256u, 0xffffffffu));
++    \\const signed_clamp = pack4xI8Clamp(vec4i(-129, -128, 127, 128));
++    \\const unsigned_clamp = pack4xU8Clamp(vec4u(0u, 255u, 256u, 0xffffffffu));
++    \\const signed_bytes = unpack4xI8(0x80ff017f);
++    \\const unsigned_bytes = unpack4xU8(0x80ff017f);
++    \\const signed_dot = dot4I8Packed(0x80808080, 0x7f7f7f7f);
++    \\const unsigned_dot = dot4U8Packed(0xffffffff, 0xffffffff);
++    \\const splat = pack4xI8(vec4i(-1));
++    \\const joined = pack4xU8(vec4u(vec2u(1u, 2u), vec2u(3u, 4u)));
++    \\@group(0) @binding(0) var<storage, read_write> output: array<u32>;
++    \\@compute @workgroup_size(1) fn main() { output[0] = signed_word + unsigned_word; }
++;
++
++fn packedConstantAllocationControl(allocator: std.mem.Allocator) !void {
++    var module = try analysis.analyzeToIr(allocator, PACKED_CONSTANT_SOURCE);
++    defer module.deinit();
++    try validate_ir(&module);
++    const expected = [_]u64{ 0x807f807f, 0xff00ff00, 0x7f7f8080, 0xffffff00, 0, 0, @as(u32, @bitCast(@as(i32, -65024))), 260100, 0xffffffff, 0x04030201 };
++    for (expected, 0..) |value, index| {
++        const constant = module.globals.items[index].initializer.?;
++        if (index == 4 or index == 5) {
++            const bytes = if (index == 4) [_]u32{ 127, 1, 0xffffffff, 0xffffff80 } else [_]u32{ 127, 1, 255, 128 };
++            for (bytes, constant.composite) |byte, actual| try std.testing.expectEqual(@as(u64, byte), actual.int);
++        } else try std.testing.expectEqual(value, constant.int);
++    }
++}
++
++test "packed integers fold all constant overloads and composite constructors" {
++    try packedConstantAllocationControl(std.testing.allocator);
++    var output: [MAX_OUTPUT]u8 = undefined;
++    inline for (.{ mod.translateToMsl, mod.translateToHlsl }) |translate| _ = try translate(std.testing.allocator, PACKED_CONSTANT_SOURCE, &output);
++    var binary: [MAX_SPIRV_OUTPUT]u8 = undefined;
++    _ = try translateToSpirv(std.testing.allocator, PACKED_CONSTANT_SOURCE, &binary);
++}
++
++test "packed integers unwind constant ownership on allocation failure" {
++    try std.testing.checkAllAllocationFailures(std.testing.allocator, packedConstantAllocationControl, .{});
++}
++
++test "packed integers reject mismatched argument types and arity" {
++    inline for (.{
++        .{ "pack4xI8()", error.UnsupportedBuiltin },
++        .{ "pack4xU8(vec4u(1u), vec4u(2u))", error.UnsupportedBuiltin },
++        .{ "pack4xI8(vec4u(1u))", error.TypeMismatch },
++        .{ "pack4xU8Clamp(vec4i(1))", error.TypeMismatch },
++        .{ "pack4xI8Clamp(vec3i(1))", error.TypeMismatch },
++        .{ "pack4xU8(vec4f(1.0))", error.TypeMismatch },
++        .{ "unpack4xI8(1i)", error.TypeMismatch },
++        .{ "unpack4xI8(1u, 2u)", error.UnsupportedBuiltin },
++        .{ "dot4I8Packed(1u)", error.UnsupportedBuiltin },
++        .{ "dot4U8Packed(1u, 2i)", error.TypeMismatch },
++        .{ "dot4U8Packed(-1, 2)", error.InvalidIr },
++    }) |case| {
++        var output: [MAX_SPIRV_OUTPUT]u8 = undefined;
++        try std.testing.expectError(case[1], translateToSpirv(std.testing.allocator, "@compute @workgroup_size(1) fn main() { let value = " ++ case[0] ++ "; }", &output));
++    }
++}
++
++test "normalized packing uses the specified GLSL instruction numbers" {
++    const source =
++        \\@group(0) @binding(0) var<storage, read> input: array<f32>;
++        \\@group(0) @binding(1) var<storage, read_write> output: array<u32>;
++        \\@compute @workgroup_size(1) fn main() {
++        \\    output[0] = pack4x8unorm(vec4f(input[0], input[1], input[2], input[3]));
++        \\    output[1] = pack4x8snorm(vec4f(input[0], input[1], input[2], input[3]));
++        \\    output[2] = pack2x16float(vec2f(input[0], input[1]));
++        \\}
++    ;
++    var binary: [MAX_SPIRV_OUTPUT]u8 = undefined;
++    const len = try translateToSpirv(std.testing.allocator, source, &binary);
++    var seen = [_]bool{ false, false, false };
++    var offset: usize = 20;
++    while (offset < len) {
++        const instruction = std.mem.readInt(u32, binary[offset..][0..4], .little);
++        if (@as(u16, @truncate(instruction)) == 12) {
++            const number = std.mem.readInt(u32, binary[offset + 16 ..][0..4], .little);
++            for ([_]u32{ 55, 54, 58 }, 0..) |expected, index| if (number == expected) {
++                seen[index] = true;
++            };
++        }
++        offset += (instruction >> 16) * 4;
++    }
++    for (seen) |present| try std.testing.expect(present);
++}
+ 
+ fn contains(haystack: []const u8, needle: []const u8) bool {
+     return std.mem.indexOf(u8, haystack, needle) != null;
+@@ -405,3 +539,32 @@ test "builtins: passthrough surface coverage — every mapped name resolves" {
+         try std.testing.expect(msl_maps.msl_builtin_passthrough_name(name) != null);
+     }
+ }
++
++test "packed integers admit requires and reject unknown or misplaced requirements" {
++    var output: [MAX_SPIRV_OUTPUT]u8 = undefined;
++    _ = try translateToSpirv(std.testing.allocator, "requires packed_4x8_integer_dot_product, packed_4x8_integer_dot_product,; @compute @workgroup_size(1) fn main() {}", &output);
++    try std.testing.expectError(error.UnsupportedConstruct, translateToSpirv(std.testing.allocator, "requires unknown_extension; @compute @workgroup_size(1) fn main() {}", &output));
++    inline for (.{ "requires;", "requires packed_4x8_integer_dot_product", "const x = 1u; requires packed_4x8_integer_dot_product;" }) |source| {
++        try std.testing.expectError(error.UnexpectedToken, translateToSpirv(std.testing.allocator, source ++ " @compute @workgroup_size(1) fn main() {}", &output));
++    }
++}
++
++test "packed integers materialize inferred constructors without converting typed signed vectors" {
++    const source =
++        \\@group(0) @binding(0) var<storage, read_write> output: array<u32>;
++        \\const packed_constant = pack4xU8(vec4(1, 2, 3, 4));
++        \\@compute @workgroup_size(1) fn main() {
++        \\    output[0] = pack4xU8(vec4(1, 2, 3, 4));
++        \\    output[1] = pack4xI8(vec4(-1, -2, 3, 4));
++        \\    output[2] = pack4xU8(vec4(output[0]));
++        \\    output[3] = pack4xU8(vec4(vec2(1, 2), vec2(3, 4)));
++        \\    output[4] = packed_constant;
++        \\}
++    ;
++    var output: [MAX_SPIRV_OUTPUT]u8 = undefined;
++    _ = try translateToSpirv(std.testing.allocator, source, &output);
++    inline for (.{ "pack4xU8(vec4(-1, 2, 3, 4))", "pack4xI8(vec4(0x80000000, 2, 3, 4))", "pack4xU8(vec4(0x100000000, 2, 3, 4))" }) |expression| {
++        try std.testing.expectError(error.InvalidIr, translateToSpirv(std.testing.allocator, "@compute @workgroup_size(1) fn main() { let x = " ++ expression ++ "; }", &output));
++        try std.testing.expectError(error.InvalidIr, translateToSpirv(std.testing.allocator, "const x = " ++ expression ++ "; @compute @workgroup_size(1) fn main() {}", &output));
++    }
++}
+diff --git a/runtime/zig/tests/wgsl/mod_api_translation_basics_test.zig b/runtime/zig/tests/wgsl/mod_api_translation_basics_test.zig
+index f2efc9e7b..8628a5792 100644
+--- a/runtime/zig/tests/wgsl/mod_api_translation_basics_test.zig
++++ b/runtime/zig/tests/wgsl/mod_api_translation_basics_test.zig
+@@ -430,8 +430,8 @@ test "translate pack and unpack 4x8 normalized builtins to MSL" {
+     var out: [MAX_OUTPUT]u8 = undefined;
+     const len = try translateToMsl(std.testing.allocator, source, &out);
+     try std.testing.expect(len > 0);
+-    try std.testing.expect(std.mem.indexOf(u8, out[0..len], "as_type<uint>(uchar4(round(clamp(") != null);
+-    try std.testing.expect(std.mem.indexOf(u8, out[0..len], "as_type<uint>(char4(round(clamp(") != null);
++    try std.testing.expect(std.mem.indexOf(u8, out[0..len], "as_type<uint>(uchar4(floor(0.5 + clamp(") != null);
++    try std.testing.expect(std.mem.indexOf(u8, out[0..len], "as_type<uint>(char4(floor(0.5 + clamp(") != null);
+     try std.testing.expect(std.mem.indexOf(u8, out[0..len], "float4(as_type<uchar4>(") != null);
+     try std.testing.expect(std.mem.indexOf(u8, out[0..len], "float4(as_type<char4>(") != null);
+ }

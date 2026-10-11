@@ -430,8 +430,8 @@ test "translate pack and unpack 4x8 normalized builtins to MSL" {
     var out: [MAX_OUTPUT]u8 = undefined;
     const len = try translateToMsl(std.testing.allocator, source, &out);
     try std.testing.expect(len > 0);
-    try std.testing.expect(std.mem.indexOf(u8, out[0..len], "as_type<uint>(uchar4(round(clamp(") != null);
-    try std.testing.expect(std.mem.indexOf(u8, out[0..len], "as_type<uint>(char4(round(clamp(") != null);
+    try std.testing.expect(std.mem.indexOf(u8, out[0..len], "as_type<uint>(uchar4(floor(0.5 + clamp(") != null);
+    try std.testing.expect(std.mem.indexOf(u8, out[0..len], "as_type<uint>(char4(floor(0.5 + clamp(") != null);
     try std.testing.expect(std.mem.indexOf(u8, out[0..len], "float4(as_type<uchar4>(") != null);
     try std.testing.expect(std.mem.indexOf(u8, out[0..len], "float4(as_type<char4>(") != null);
 }

@@ -155,6 +155,11 @@ const Analyzer = struct {
         sema_typeutils.captureFailureNode(self.module.tree, node_idx, self.failure);
         const node = self.module.tree.nodes.items[node_idx];
         switch (node.tag) {
+            .requires_directive => {
+                for (self.module.tree.extra_data.items[node.data.lhs..][0..node.data.rhs]) |token_idx| {
+                    if (!std.mem.eql(u8, self.module.tree.tokenSlice(token_idx), "packed_4x8_integer_dot_product")) return error.UnsupportedConstruct;
+                }
+            },
             .struct_decl => try self.register_struct(node),
             .alias_decl => try self.register_alias(node),
             .global_var, .const_decl, .override_decl => try self.register_global(node, node_idx),
@@ -615,6 +620,7 @@ const Analyzer = struct {
             }
             return fn_info.return_type;
         }
+        if (args_len == 1) arg_types_buf[0] = try sema_attrs.materializePackedConstructor(self, name, self.module.tree.extra_data.items[args_start], arg_types_buf[0]);
         return try sema_attrs.infer_builtin_call(self, name, arg_types_buf[0..args_len]);
     }
 

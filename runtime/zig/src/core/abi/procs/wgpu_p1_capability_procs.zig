@@ -10,6 +10,7 @@ pub const WGPUWGSLLanguageFeatureName = upstream.WGPUWGSLLanguageFeatureName;
 pub const WGPUProc = ?*const fn () callconv(.c) void;
 
 pub const WGPUInstanceFeatureName_TimedWaitAny: WGPUInstanceFeatureName = 0x00000001;
+pub const WGPUWGSLLanguageFeatureName_Packed4x8IntegerDotProduct = upstream.WGPUWGSLLanguageFeatureName_Packed4x8IntegerDotProduct;
 pub const WGPUWGSLLanguageFeatureName_ReadonlyAndReadwriteStorageTextures: WGPUWGSLLanguageFeatureName = 0x00000001;
 pub const WGPUFeatureName_AdapterPropertiesMemoryHeaps: abi_feature.WGPUFeatureName = 0x00050014;
 pub const WGPUFeatureName_DawnDrmFormatCapabilities: abi_feature.WGPUFeatureName = 0x00050018;

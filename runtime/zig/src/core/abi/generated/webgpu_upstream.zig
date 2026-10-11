@@ -106,6 +106,7 @@ pub const WGPUTextureViewDimension = c.WGPUTextureViewDimension;
 pub const WGPUUncapturedErrorCallback = c.WGPUUncapturedErrorCallback;
 pub const WGPUUncapturedErrorCallbackInfo = c.WGPUUncapturedErrorCallbackInfo;
 pub const WGPUWGSLLanguageFeatureName = c.WGPUWGSLLanguageFeatureName;
+pub const WGPUWGSLLanguageFeatureName_Packed4x8IntegerDotProduct = c.WGPUWGSLLanguageFeatureName_Packed4x8IntegerDotProduct;
 pub const WGPUWaitStatus = c.WGPUWaitStatus;
 
 pub const proc_names = [_][]const u8{
@@ -1049,6 +1050,7 @@ comptime {
     _ = WGPUUncapturedErrorCallback;
     _ = WGPUUncapturedErrorCallbackInfo;
     _ = WGPUWGSLLanguageFeatureName;
+    _ = WGPUWGSLLanguageFeatureName_Packed4x8IntegerDotProduct;
     _ = WGPUWaitStatus;
     _ = ProcTypes;
     _ = ProcTable;

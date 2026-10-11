@@ -1,5 +1,6 @@
 const std = @import("std");
 const ir = @import("../../ir/ir.zig");
+const integer_dot = @import("../emit_integer_dot.zig");
 const maps = @import("emit_hlsl_maps.zig");
 const texture = @import("emit_hlsl_texture.zig");
 const layout = @import("../../ir/layout_utils.zig");
@@ -22,6 +23,8 @@ pub fn emit_builtin_call(
     call_name: []const u8,
     call_args: ir.Range,
 ) EmitError!void {
+    if (std.mem.eql(u8, call_name, "dot") and try integer_dot.emitCall(self, function, result_ty, call_args)) return;
+
     // Barriers
     if (std.mem.eql(u8, call_name, "workgroupBarrier")) {
         try self.write("GroupMemoryBarrierWithGroupSync()");

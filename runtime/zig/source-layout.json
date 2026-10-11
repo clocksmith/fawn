@@ -2194,21 +2194,21 @@
       },
       "src/compiler/wgsl/emit/hlsl/emit_hlsl.zig": {
         "decision": "Keep",
-        "moduleSha256": "e70f4934408309f38fbd7fd01bbbe6768e53946c638a73f434f3ffdf06b4f56f",
-        "reason": "Keep: HLSL expression and statement lowering owns lvalue reconstruction and captured indices for WGSL pointer aliases.",
-        "reviewer": "codex-doe-pointer-reference-20260928"
+        "moduleSha256": "8e837b001c7c25cee4317f51503e41fb677358c289ddb4b9914b884f2a433da6",
+        "reason": "Keep: packed integer admission and arithmetic stay compiler-owned; shared typed lowering preserves signedness and single evaluation. Source targets share an exact integer reduction, while Vulkan owns GLSL instruction selection.",
+        "reviewer": "codex-packed-integers/2026-10-11"
       },
       "src/compiler/wgsl/emit/hlsl/emit_hlsl_builtins.zig": {
         "decision": "Keep",
-        "moduleSha256": "b23be9c701970165fb2195c98abc99eb677a16f13eb5326e14134ccdda285c3d",
-        "reason": "Keep: reachable compiler implementation with a distinct named responsibility and no merge, elevation, recomposition, or deletion signal.",
-        "reviewer": "codex-recomposition-review/2026-08-08"
+        "moduleSha256": "f4321516a457707eeef56a1f5d8026dcd668eb5dbaab0c205049d42a4c513a0e",
+        "reason": "Keep: packed integer admission and arithmetic stay compiler-owned; shared typed lowering preserves signedness and single evaluation. Source targets share an exact integer reduction, while Vulkan owns GLSL instruction selection.",
+        "reviewer": "codex-packed-integers/2026-10-11"
       },
       "src/compiler/wgsl/emit/hlsl/emit_hlsl_maps.zig": {
         "decision": "Keep",
-        "moduleSha256": "db615460ff486aa5025fca18b05647809362eb01d593a4c818157fd41410daa4",
-        "reason": "Keep: reachable compiler implementation shared by 4 production consumers with no conflicting ownership signal.",
-        "reviewer": "codex-dry-recomposition/2026-08-09"
+        "moduleSha256": "e416be1540e4ac887a14f95abdf74d638d9d8c5a6d5754d75507e7d8432dde81",
+        "reason": "Keep: ABI feature identity and native enumeration stay at existing capability boundaries; target-specific builtin names stay with HLSL maps.",
+        "reviewer": "codex-packed-integers/2026-10-11"
       },
       "src/compiler/wgsl/emit/hlsl/emit_hlsl_stage.zig": {
         "decision": "Keep",
@@ -2236,15 +2236,15 @@
       },
       "src/compiler/wgsl/emit/msl/emit_msl_ir.zig": {
         "decision": "Keep",
-        "moduleSha256": "dd4c03d99ec97087e2a7620a9b06fb76ff6aa492e5af1dbcdabc0d7953060bf8",
-        "reason": "Keep: MSL target lowering binds pointer lets as writable references and emits address and dereference expressions.",
-        "reviewer": "codex-doe-pointer-reference-20260928"
+        "moduleSha256": "23fec4ff27eb8214d77be498395ae31f42ccfa01c24f5e2f4ce12fac90272909",
+        "reason": "Keep: packed integer admission and arithmetic stay compiler-owned; shared typed lowering preserves signedness and single evaluation. Source targets share an exact integer reduction, while Vulkan owns GLSL instruction selection.",
+        "reviewer": "codex-packed-integers/2026-10-11"
       },
       "src/compiler/wgsl/emit/msl/emit_msl_ir_builtins.zig": {
         "decision": "Keep",
-        "moduleSha256": "448e0f3371d02165319e85d886bfca917642953beec9550bfd75b08282046b50",
-        "reason": "Keep: reachable compiler implementation with a distinct named responsibility and no merge, elevation, recomposition, or deletion signal.",
-        "reviewer": "codex-world-labs-compatibility/2026-08-16"
+        "moduleSha256": "8b471795851991e1368cf07887b807817c13bfd508eec55433fe48821c2f766d",
+        "reason": "Keep: packed integer admission and arithmetic stay compiler-owned; shared typed lowering preserves signedness and single evaluation. Source targets share an exact integer reduction, while Vulkan owns GLSL instruction selection.",
+        "reviewer": "codex-packed-integers/2026-10-11"
       },
       "src/compiler/wgsl/emit/msl/emit_msl_maps.zig": {
         "decision": "Keep",
@@ -2302,9 +2302,9 @@
       },
       "src/compiler/wgsl/emit/spirv/emit_spirv_builtins.zig": {
         "decision": "Keep",
-        "moduleSha256": "0493b118aeadde5340d57c25f7ceceb6ff0688f8c2f980c638a5520fea8ad8a0",
-        "reason": "Keep: typed builtin emission owns GLSL integer search opcodes. Correct firstLeadingBit and countLeadingZeros mappings without shader rewrites or selection policy.",
-        "reviewer": "codex-native-doppler-compatibility/2026-10-11"
+        "moduleSha256": "4e0e39dc3000555b7468921160d210d8436eebf5f45cc8b4968c0dda01f7714c",
+        "reason": "Keep: packed integer admission and arithmetic stay compiler-owned; shared typed lowering preserves signedness and single evaluation. Source targets share an exact integer reduction, while Vulkan owns GLSL instruction selection.",
+        "reviewer": "codex-packed-integers/2026-10-11"
       },
       "src/compiler/wgsl/emit/spirv/emit_spirv_fn.zig": {
         "decision": "Keep",
@@ -2362,9 +2362,9 @@
       },
       "src/compiler/wgsl/frontend/ast.zig": {
         "decision": "Keep",
-        "moduleSha256": "7310628172880b75e7c84ccfaaccf52b9f0e10919badd646da72c0d33c98efd6",
-        "reason": "Keep: reachable compiler implementation shared by 12 production consumers with no conflicting ownership signal.",
-        "reviewer": "codex-recomposition-review/2026-08-08"
+        "moduleSha256": "57367d06ce6eb260d4aa2e5b45e714686940600331fd03f2053746e786d3e425",
+        "reason": "Keep: requires syntax and supported extension admission remain frontend-owned and reject malformed or unknown requirements.",
+        "reviewer": "codex-packed-integers/2026-10-11"
       },
       "src/compiler/wgsl/frontend/lexer.zig": {
         "decision": "Keep",
@@ -2374,9 +2374,9 @@
       },
       "src/compiler/wgsl/frontend/parser.zig": {
         "decision": "Keep",
-        "moduleSha256": "96be44be7514f3b14288a37da81bde5060a9d3d34b87e8c179fea1a819f84b13",
-        "reason": "Keep: lexical eligibility belongs to token definitions; one parser helper admits declaration names and preserves exact failure spans without changing AST ownership.",
-        "reviewer": "codex-wgsl-identifiers/2026-10-04"
+        "moduleSha256": "debdfefbb1c04e5160c5a086bc94d6383676df66d23a321bd1ceb09199e57104",
+        "reason": "Keep: requires syntax and supported extension admission remain frontend-owned and reject malformed or unknown requirements.",
+        "reviewer": "codex-packed-integers/2026-10-11"
       },
       "src/compiler/wgsl/frontend/parser_attrs.zig": {
         "decision": "Keep",
@@ -2386,9 +2386,9 @@
       },
       "src/compiler/wgsl/frontend/parser_decl.zig": {
         "decision": "Keep",
-        "moduleSha256": "a955fa1659e2cb644acf7107fd985569ee1c337fc61818d028a1663b7a8ec501",
-        "reason": "Keep: lexical eligibility belongs to token definitions; one parser helper admits declaration names and preserves exact failure spans without changing AST ownership.",
-        "reviewer": "codex-wgsl-identifiers/2026-10-04"
+        "moduleSha256": "e985318f878594475e5fe5ed81027ca2a16b9d248cfba854b8d9e142c26459fd",
+        "reason": "Keep: requires syntax and supported extension admission remain frontend-owned and reject malformed or unknown requirements.",
+        "reviewer": "codex-packed-integers/2026-10-11"
       },
       "src/compiler/wgsl/frontend/parser_expr.zig": {
         "decision": "Keep",
@@ -2404,15 +2404,15 @@
       },
       "src/compiler/wgsl/frontend/sema.zig": {
         "decision": "Keep",
-        "moduleSha256": "7bff624a53baf4e83cd78da24a47c64b62c110a613da068ab94854af80cd844a",
-        "reason": "Keep: WGSL semantic type compatibility requires pointer values for pointer parameters.",
-        "reviewer": "codex-doe-pointer-reference-20260928"
+        "moduleSha256": "4d54213442860057b92b7bb6b0843f550db35a06e9954e0393352782cf3d2d86",
+        "reason": "Keep: requires syntax and supported extension admission remain frontend-owned and reject malformed or unknown requirements.",
+        "reviewer": "codex-packed-integers/2026-10-11"
       },
       "src/compiler/wgsl/frontend/sema_attrs.zig": {
         "decision": "Keep",
-        "moduleSha256": "2609450290962058ab6963f9bbdb844eaea1d44d48dd6d4ec84ff4eb4cde7f77",
-        "reason": "Keep: builtin argument and result typing remains frontend-owned; unsigned byte unpacking adds no runtime or backend dependency.",
-        "reviewer": "codex-doppler-unpack/2026-09-20"
+        "moduleSha256": "42d61272cbb6e28532f18e2191aa6bc1eed0db7e38bd4c6f6d73c9b6a4d198cb",
+        "reason": "Keep: packed integer admission and arithmetic stay compiler-owned; shared typed lowering preserves signedness and single evaluation. Source targets share an exact integer reduction, while Vulkan owns GLSL instruction selection.",
+        "reviewer": "codex-packed-integers/2026-10-11"
       },
       "src/compiler/wgsl/frontend/sema_expr.zig": {
         "decision": "Keep",
@@ -2452,9 +2452,9 @@
       },
       "src/compiler/wgsl/frontend/token.zig": {
         "decision": "Keep",
-        "moduleSha256": "05566c3c62611909ee4713ca98398531ea774c12731fc81fb5611afc531e812a",
-        "reason": "Keep: lexical eligibility belongs to token definitions; one parser helper admits declaration names and preserves exact failure spans without changing AST ownership.",
-        "reviewer": "codex-wgsl-identifiers/2026-10-04"
+        "moduleSha256": "c69bbd47c91a243efc4b8e06c9549c28a45a6cd6115f868e144c5a91628712fd",
+        "reason": "Keep: requires syntax and supported extension admission remain frontend-owned and reject malformed or unknown requirements.",
+        "reviewer": "codex-packed-integers/2026-10-11"
       },
       "src/compiler/wgsl/ir/ir.zig": {
         "decision": "Keep",
@@ -2464,9 +2464,9 @@
       },
       "src/compiler/wgsl/ir/ir_builder.zig": {
         "decision": "Keep",
-        "moduleSha256": "7eb4546fa22c07f90b323f7beb99f48a7da29f88d9a74ebf190755db13b579ae",
-        "reason": "Keep: AST-to-IR lowering owns contiguous switch case publication. Temporary selectors retain explicit ownership until publication; nested case ranges and allocation rollback stay local.",
-        "reviewer": "codex-native-doppler-compatibility/2026-10-11"
+        "moduleSha256": "633b72a81780f10491c54ac69237a99e313822e6d4fb68d666baa1b45c72e706",
+        "reason": "Keep: packed integer admission and arithmetic stay compiler-owned; shared typed lowering preserves signedness and single evaluation. Source targets share an exact integer reduction, while Vulkan owns GLSL instruction selection.",
+        "reviewer": "codex-packed-integers/2026-10-11"
       },
       "src/compiler/wgsl/ir/ir_const_eval.zig": {
         "decision": "Keep",
@@ -2914,9 +2914,9 @@
       },
       "src/core/abi/generated/webgpu_upstream.zig": {
         "decision": "Keep",
-        "moduleSha256": "01127b0c039ffc3e0b69f02c47197014621a903433e9eb833136b5e7c617c036",
+        "moduleSha256": "f9ed72523004a3831bd8e1bc2fbad2b753e1ab049822fe901725ed6cbcaf1650",
         "reason": "Keep: isolated C/OS FFI boundary at src/core/abi/generated/webgpu_upstream.zig.",
-        "reviewer": "codex-recomposition-review/2026-08-08"
+        "reviewer": "codex-packed-integers/2026-10-11"
       },
       "src/core/abi/procs/wgpu_async_procs.zig": {
         "decision": "Keep",
@@ -2932,9 +2932,9 @@
       },
       "src/core/abi/procs/wgpu_p1_capability_procs.zig": {
         "decision": "Keep",
-        "moduleSha256": "ebe362c2e2d89aa55f70a6fef0ad1691901560b0286273a3942db511d317acdd",
-        "reason": "Keep: reachable core implementation shared by 6 production consumers with no conflicting ownership signal.",
-        "reviewer": "codex-recomposition-review/2026-08-08"
+        "moduleSha256": "0c703a38e83870defb549b2534f6ead0504e1b336b6e1bbc5ae2a315951f755d",
+        "reason": "Keep: ABI feature identity and native enumeration stay at existing capability boundaries; target-specific builtin names stay with HLSL maps.",
+        "reviewer": "codex-packed-integers/2026-10-11"
       },
       "src/core/abi/procs/wgpu_p1_resource_table_procs.zig": {
         "decision": "Keep",
@@ -3208,15 +3208,15 @@
       },
       "src/dropin/wgpu_dropin_ext_a_core.zig": {
         "decision": "Keep",
-        "moduleSha256": "9b19086cd4daa72596d84b6302c1e581303693ec060f51f7cca6209c7aa74564",
+        "moduleSha256": "85057ad434193ada28d44b6325e5c1d3397c0235653b255f65bbd9e7c858487b",
         "reason": "Keep: reachable dropin implementation shared by 3 production consumers with no conflicting ownership signal.",
-        "reviewer": "codex-vulkan-adapter-provenance/2026-08-10"
+        "reviewer": "codex-packed-integers/2026-10-11"
       },
       "src/dropin/wgpu_dropin_ext_a_exports.zig": {
         "decision": "Keep",
-        "moduleSha256": "e8e4fc93c3f73b0d0e18219c7489046c6466b3f933ba7231b62a5773bfb9e202",
-        "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission.",
-        "reviewer": "codex"
+        "moduleSha256": "c54904aa72bc40498bdd391539e8618af4cb89155423420b26a7a8d24afff2df",
+        "reason": "Keep: ABI feature identity and native enumeration stay at existing capability boundaries; target-specific builtin names stay with HLSL maps.",
+        "reviewer": "codex-packed-integers/2026-10-11"
       },
       "src/dropin/wgpu_dropin_ext_a_pipeline.zig": {
         "decision": "Keep",
@@ -4411,6 +4411,18 @@
         "moduleSha256": "04044b38f47e68a86b6c6070dc9de9a2be04e8cf08174335a675e7e7e60f9c13",
         "reason": "Keep: owns one descriptor loss obligation, instance future, weak device identity and scoped callback lease; independent of platform cleanup.",
         "reviewer": "codex"
+      },
+      "src/compiler/wgsl/ir/ir_packed_integer.zig": {
+        "decision": "Keep",
+        "moduleSha256": "06cc08fa6e020660fafeb0b5448d6c1b28ae88966b401d56072df17c1a17dc4e",
+        "reason": "Keep: packed integer admission and arithmetic stay compiler-owned; shared typed lowering preserves signedness and single evaluation. Source targets share an exact integer reduction, while Vulkan owns GLSL instruction selection.",
+        "reviewer": "codex-packed-integers/2026-10-11"
+      },
+      "src/compiler/wgsl/emit/emit_integer_dot.zig": {
+        "decision": "Keep",
+        "moduleSha256": "68f747f81b0ff22ebde9746ff6b455852cc2d78ff35e00dbba8f348deb207840",
+        "reason": "Keep: packed integer admission and arithmetic stay compiler-owned; shared typed lowering preserves signedness and single evaluation. Source targets share an exact integer reduction, while Vulkan owns GLSL instruction selection.",
+        "reviewer": "codex-packed-integers/2026-10-11"
       }
     },
     "linePolicy": {

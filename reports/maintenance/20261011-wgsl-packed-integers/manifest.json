@@ -1,0 +1,204 @@
+{
+  "schemaVersion": 1,
+  "classification": "bounded-correctness",
+  "sourceBase": "5d32e51a9366211da3e24246c61355c74c6ea63d",
+  "sourceFiles": [
+    {
+      "path": "bench/executors/run-packed-integer-controls.mjs",
+      "sha256": "714721095a903771f4a4af53846c9a492b0fd2faf1c44a38571e399d70fb271a"
+    },
+    {
+      "path": "packages/doe-gpu/src/vendor/webgpu/compute.js",
+      "sha256": "383477dd829d3f5c922615a49a2b3c023ecbd2e5a6a86222d5d3dcf042bdb9b5"
+    },
+    {
+      "path": "packages/doe-gpu/src/vendor/webgpu/shared/full-surface.js",
+      "sha256": "c8afe7b63d3790ea4b55fd1e29226ee6c09b7ac052e3f762e3afff61b1f06bc2"
+    },
+    {
+      "path": "runtime/zig/source-layout.json",
+      "sha256": "a2feec3228411ce7c3c0d5f8b14e5218415012d5c860e4d6cc0557169573b6c3"
+    },
+    {
+      "path": "runtime/zig/src/compiler/wgsl/WGSL_SUPPORT.md",
+      "sha256": "cd97ccf167d1171c1dff57c37bacd7c727a72757fd80c59c9ae3f8065cf6852d"
+    },
+    {
+      "path": "runtime/zig/src/compiler/wgsl/emit/emit_integer_dot.zig",
+      "sha256": "68f747f81b0ff22ebde9746ff6b455852cc2d78ff35e00dbba8f348deb207840"
+    },
+    {
+      "path": "runtime/zig/src/compiler/wgsl/emit/hlsl/emit_hlsl.zig",
+      "sha256": "8e837b001c7c25cee4317f51503e41fb677358c289ddb4b9914b884f2a433da6"
+    },
+    {
+      "path": "runtime/zig/src/compiler/wgsl/emit/hlsl/emit_hlsl_builtins.zig",
+      "sha256": "f4321516a457707eeef56a1f5d8026dcd668eb5dbaab0c205049d42a4c513a0e"
+    },
+    {
+      "path": "runtime/zig/src/compiler/wgsl/emit/hlsl/emit_hlsl_maps.zig",
+      "sha256": "e416be1540e4ac887a14f95abdf74d638d9d8c5a6d5754d75507e7d8432dde81"
+    },
+    {
+      "path": "runtime/zig/src/compiler/wgsl/emit/msl/emit_msl_ir.zig",
+      "sha256": "23fec4ff27eb8214d77be498395ae31f42ccfa01c24f5e2f4ce12fac90272909"
+    },
+    {
+      "path": "runtime/zig/src/compiler/wgsl/emit/msl/emit_msl_ir_builtins.zig",
+      "sha256": "8b471795851991e1368cf07887b807817c13bfd508eec55433fe48821c2f766d"
+    },
+    {
+      "path": "runtime/zig/src/compiler/wgsl/emit/spirv/emit_spirv_builtins.zig",
+      "sha256": "4e0e39dc3000555b7468921160d210d8436eebf5f45cc8b4968c0dda01f7714c"
+    },
+    {
+      "path": "runtime/zig/src/compiler/wgsl/frontend/ast.zig",
+      "sha256": "57367d06ce6eb260d4aa2e5b45e714686940600331fd03f2053746e786d3e425"
+    },
+    {
+      "path": "runtime/zig/src/compiler/wgsl/frontend/parser.zig",
+      "sha256": "debdfefbb1c04e5160c5a086bc94d6383676df66d23a321bd1ceb09199e57104"
+    },
+    {
+      "path": "runtime/zig/src/compiler/wgsl/frontend/parser_decl.zig",
+      "sha256": "e985318f878594475e5fe5ed81027ca2a16b9d248cfba854b8d9e142c26459fd"
+    },
+    {
+      "path": "runtime/zig/src/compiler/wgsl/frontend/sema.zig",
+      "sha256": "4d54213442860057b92b7bb6b0843f550db35a06e9954e0393352782cf3d2d86"
+    },
+    {
+      "path": "runtime/zig/src/compiler/wgsl/frontend/sema_attrs.zig",
+      "sha256": "42d61272cbb6e28532f18e2191aa6bc1eed0db7e38bd4c6f6d73c9b6a4d198cb"
+    },
+    {
+      "path": "runtime/zig/src/compiler/wgsl/frontend/token.zig",
+      "sha256": "c69bbd47c91a243efc4b8e06c9549c28a45a6cd6115f868e144c5a91628712fd"
+    },
+    {
+      "path": "runtime/zig/src/compiler/wgsl/ir/ir_builder.zig",
+      "sha256": "633b72a81780f10491c54ac69237a99e313822e6d4fb68d666baa1b45c72e706"
+    },
+    {
+      "path": "runtime/zig/src/compiler/wgsl/ir/ir_packed_integer.zig",
+      "sha256": "06cc08fa6e020660fafeb0b5448d6c1b28ae88966b401d56072df17c1a17dc4e"
+    },
+    {
+      "path": "runtime/zig/src/core/abi/generated/webgpu_upstream.zig",
+      "sha256": "f9ed72523004a3831bd8e1bc2fbad2b753e1ab049822fe901725ed6cbcaf1650"
+    },
+    {
+      "path": "runtime/zig/src/core/abi/procs/wgpu_p1_capability_procs.zig",
+      "sha256": "0c703a38e83870defb549b2534f6ead0504e1b336b6e1bbc5ae2a315951f755d"
+    },
+    {
+      "path": "runtime/zig/src/dropin/wgpu_dropin_ext_a_core.zig",
+      "sha256": "85057ad434193ada28d44b6325e5c1d3397c0235653b255f65bbd9e7c858487b"
+    },
+    {
+      "path": "runtime/zig/src/dropin/wgpu_dropin_ext_a_exports.zig",
+      "sha256": "c54904aa72bc40498bdd391539e8618af4cb89155423420b26a7a8d24afff2df"
+    },
+    {
+      "path": "runtime/zig/tests/dropin/dropin_behavior_policy_test.zig",
+      "sha256": "ce6df4975e46cf99ea8954f807516bc6def90b9b06ec60da2f38da6df8565d9c"
+    },
+    {
+      "path": "runtime/zig/tests/wgsl/coverage_builtin_spec_test.zig",
+      "sha256": "2b9e53a37609979212d88473f201d4d8434f9e01deeff31d2cbaff01f68f7947"
+    },
+    {
+      "path": "runtime/zig/tests/wgsl/mod_api_translation_basics_test.zig",
+      "sha256": "70025b61be2ceb93e82c06ff7d0c9d7d0c8c692c6faab94bde63e867584ff725"
+    }
+  ],
+  "retainedFiles": [
+    {
+      "path": "reports/maintenance/20261011-wgsl-packed-integers/baseline-validation.log",
+      "sha256": "bc9b02bbd5000ae1c0c2702f02ad0a3484cabdeb3c650d191b9f52b4f088495c"
+    },
+    {
+      "path": "reports/maintenance/20261011-wgsl-packed-integers/baseline.spv",
+      "sha256": "14e12dd19aa6cf71ad22dc6c3146f4b116b79871acae8d81eafa53bfb81893e8"
+    },
+    {
+      "path": "reports/maintenance/20261011-wgsl-packed-integers/baseline.wgsl",
+      "sha256": "ef898c7fce54e85282243b78a54723e377df8a82f270b226cc59ab8c65bbfbfd"
+    },
+    {
+      "path": "reports/maintenance/20261011-wgsl-packed-integers/build-metadata.json",
+      "sha256": "9b3ad175faea0c04c63caec3db1be0ab8c59c16cc0e595327bb5185fad381c18"
+    },
+    {
+      "path": "reports/maintenance/20261011-wgsl-packed-integers/build.log",
+      "sha256": "4c143fd70a5d489100b54a17399e14831482667d3c1a0f51bbb48042a9defddf"
+    },
+    {
+      "path": "reports/maintenance/20261011-wgsl-packed-integers/dawn.json",
+      "sha256": "5aadb9d07d802d2cd3a1150f2549d22d3a501483fc9b4e4deac627b8c666e2eb"
+    },
+    {
+      "path": "reports/maintenance/20261011-wgsl-packed-integers/doe.json",
+      "sha256": "8b8c2f7ef75c346eeb857ebceeaed77c607e4f5cd5e745c0674ac1108367a599"
+    },
+    {
+      "path": "reports/maintenance/20261011-wgsl-packed-integers/opcode-correction.spv",
+      "sha256": "f3aa54f586fef58eca4039bac137e609fc2bc506e4b0b3670eab7844ca0562bf"
+    },
+    {
+      "path": "reports/maintenance/20261011-wgsl-packed-integers/raw-controls.tar.gz",
+      "sha256": "e598645be774a194781234e7101455ed3ca1f610bd3a092a6e1e7a80fe9393c0"
+    },
+    {
+      "path": "reports/maintenance/20261011-wgsl-packed-integers/runtime-tests.log",
+      "sha256": "76b8d07dc92010b6cef0d1fa596c61c06646189e8f98b08436c5858e6d657681"
+    },
+    {
+      "path": "reports/maintenance/20261011-wgsl-packed-integers/shader-validation.json",
+      "sha256": "25c7949f859619aa643f5675544e5a75611033cea342c13e5ed7b602e8051662"
+    },
+    {
+      "path": "reports/maintenance/20261011-wgsl-packed-integers/source.patch",
+      "sha256": "a19c40ecafdf96d2a9fb8a18fbeac801bea10c45c16ed88289a4eff08d07ef3a"
+    },
+    {
+      "path": "reports/maintenance/20261011-wgsl-packed-integers/vulkan-summary.txt",
+      "sha256": "90b091244d9d095e44b24b81433ccd28abe7c7fc60add557dd0fab7e51e59064"
+    },
+    {
+      "path": "reports/maintenance/20261011-wgsl-packed-integers/wgsl-tests.log",
+      "sha256": "813854c5beeb287b54d7b11c88de658e9006090b3d76ac0ac8130beab8b80c29"
+    },
+    {
+      "path": "reports/maintenance/20261011-wgsl-packed-integers/package-contracts.log",
+      "sha256": "abc1e1f20438c846a97ffc8495386cf87f7a060335d744d1838b8e8b0742988f"
+    }
+  ],
+  "nativeLibrary": {
+    "path": "bench/out/wgsl-packed-integers/20261011/final-build/lib/libwebgpu_doe.so",
+    "sha256": "df0f18c5b4caf6d4ff935d59c442cf3fd438c2e46bb0ab30530b9dd2da2f2f17"
+  },
+  "commands": [
+    "zig build test-wgsl --summary all",
+    "zig build test --summary all",
+    "zig build dropin emit-spirv emit-msl emit-hlsl -Doptimize=ReleaseFast --prefix <output>/final-build --summary all",
+    "node bench/executors/run-packed-integer-controls.mjs packages/doe-gpu/src/compute.js <output>/final-build/lib/libwebgpu_doe.so <output>/qualified-doe",
+    "node bench/executors/run-packed-integer-controls.mjs bench/out/doppler-generation/20261004/installed/dawn/index.js dawn <output>/qualified-dawn",
+    "spirv-val --target-env vulkan1.1 <each physical fixture>.spv"
+  ],
+  "wgslTests": {
+    "passed": 1162,
+    "failed": 0
+  },
+  "runtimeTests": {
+    "passed": 2356,
+    "failed": 0,
+    "skipped": 11
+  },
+  "physicalDoePassed": true,
+  "physicalDawnPassed": false,
+  "performanceClaim": false,
+  "physicalMetalQualified": false,
+  "physicalD3D12Qualified": false,
+  "acceleratedIntegerDotQualified": false
+}

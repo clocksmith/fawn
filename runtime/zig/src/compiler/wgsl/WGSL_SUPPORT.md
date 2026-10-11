@@ -32,14 +32,18 @@ name-resolution, directive, or WGSL conformance qualification. The
 [admission and subgroup checkpoint](../../../../../reports/benchmarks/amd-vulkan/20261004-identifiers-subgroups/README.md)
 retains independent compiler and physical package checks.
 
-`unpack4xU8` function expressions lower to shared unsigned vector shifts and
-masks, with one evaluation of the argument. Frontend checks reject wrong
-argument types and arity; abstract integer inputs must fit `u32`. MSL, HLSL,
-and SPIR-V translation fixtures cover this path. Module initializer evaluation
-remains the explicit subset described below. Physical byte-output checks and
-the retained Doppler reranker diagnostic are indexed in
-[`bench/out/doppler-search/20260920-admission/README.md`](../../../../../bench/out/doppler-search/20260920-admission/README.md).
-This does not qualify Metal, D3D12, or the complete Doppler model catalog.
+The packed-integer family (`pack4xI8`, `pack4xU8`, their `Clamp` variants,
+`unpack4xI8`, `unpack4xU8`, `dot4I8Packed`, and `dot4U8Packed`) has shared typed
+lowering and constant evaluation. Signedness, byte order, truncation, clamping,
+argument arity, and single evaluation are checked. The compiler accepts
+`requires packed_4x8_integer_dot_product;`, and the native provider advertises
+that language feature. Dot products use portable integer arithmetic; dedicated
+hardware dot-product instructions are not promised. Normalized packing uses
+WGSL's floor-based rounding and the corresponding GLSL.std.450 instructions.
+See the [packed-integer checkpoint](../../../../../reports/maintenance/20261011-wgsl-packed-integers/README.md)
+for independent CPU references, physical AMD/Vulkan output, and retained Dawn
+controls. MSL and HLSL evidence covers translation, not physical execution.
+Other module initializers retain the explicit subset described below.
 
 | Category              | Status              | Notes                                              |
 |-----------------------|---------------------|----------------------------------------------------|
@@ -50,7 +54,7 @@ This does not qualify Metal, D3D12, or the complete Doppler model catalog.
 | Struct types          | Full (flat)         | Nested structs parsed but not exercised in tests   |
 | var\<workgroup\>      | Full                | Workgroup-memory allocation emitted correctly      |
 | Override constants    | Full                | Emitted as pipeline-overridable specialization     |
-| Module initializers   | Explicit subset     | Literal, alias, constructor, supported scalar arithmetic, and scalar/vector `countOneBits` evaluation; unevaluated declared initializers fail with `UnsupportedConstruct` instead of becoming zero defaults |
+| Module initializers   | Explicit subset     | Literal, alias, constructor, supported scalar arithmetic, and scalar/vector `countOneBits` and packed-integer evaluation; unevaluated declared initializers fail with `UnsupportedConstruct` instead of becoming zero defaults |
 | Enable extensions     | Full (f16, subgrp)  | `enable f16` and `enable subgroups` pass through   |
 | Helper functions      | Full                | 702+ helpers in Doppler corpus, all passing        |
 | Builtins              | Full (compute set)  | subgroup ops, atomics, barriers, 45+ math (fract, mix, inverseSqrt, degrees, radians, atan2, ldexp, fma, smoothstep, etc.), pack/unpack (2x16float, 4x8snorm, 4x8unorm), bitcast, select, arrayLength |
