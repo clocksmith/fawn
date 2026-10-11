@@ -1,6 +1,10 @@
 {
   "artifacts": {
-    "README.md": "7b1050043f8ff931604596634fc571f82e7788f1a5d037711d2bcd44e5b5e93f",
+    "README.md": "0d6e10cf6d6569c31b17654a53da944c138b226aa7c0856d4efd080b6c3a5ec8",
+    "hosted/deploy.log": "d8a9af995b09971b2642792911fdc37ea9c0b63936301c1c21580241ace81a34",
+    "hosted/identity.json": "1356ae2b6600dbea6ff303fc5de93b9fcf9895298dc7c8b9149973f0b41f9021",
+    "hosted/results.json": "bd6ca894575a92ae86926f6b289c7f366afe2f5a6edfee1a37f6603d888eba5a",
+    "hosting-smoke.log": "38226cb62408288bbdd6214a9533b1d8c1e62522a3dd1bd4e24bbb2f496d764c",
     "results.json": "ee886ba04674e8906b9b4d9137120b688d5ddd1f651fb1128bc92f3c77bce92f"
   },
   "classification": "Chrome application diagnostics; emulated mobile viewports",

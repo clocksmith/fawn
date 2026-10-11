@@ -35,3 +35,10 @@ Set `FAWN_TEST_ORIGIN=https://canvascontext.com` to run against the public
 backgrounds; that mode omits the local preceding-source reproduction. Generated
 artifacts default to `bench/out/fawn-magnetic-transition/` and may be redirected
 with `FAWN_REPORT_DIR`. Source and report hashes are retained in `custody.json`.
+
+Publication succeeded at `https://canvascontext.com/` from Doe commit
+`6edc4f33bb0c05150d1fb8f885a2267d88fd845f`. [Hosted identity](hosted/identity.json)
+checks all eight package files and the root route against published bytes.
+[Hosted application results](hosted/results.json) pass the same continuous input,
+GPU state, desktop/touch and background menu checks against the public origin.
+The local hosting smoke and successful publication logs are retained separately.
