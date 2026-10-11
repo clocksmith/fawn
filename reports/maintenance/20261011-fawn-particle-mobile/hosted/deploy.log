@@ -1,0 +1,28 @@
+
+> d4da-app@0.1.0 deploy:fawn
+> firebase deploy --config firebase.fawn.json --only hosting --project canvascontext-9da05
+
+
+=== Deploying to 'canvascontext-9da05'...
+
+i  deploying hosting
+Running command: npm run build:fawn
+
+> d4da-app@0.1.0 build:fawn
+> node scripts/package-fawn-hosting.mjs
+
+Packaged Fawn demo from Doe 5fbfd7b8cad4dc94622c03b767698465a6ae3edc: /home/clocksmith/deco/d4da/.fawn-hosting
+✔  hosting: Finished running predeploy script.
+i  hosting[canvascontext-9da05]: beginning deploy...
+i  hosting[canvascontext-9da05]: found 8 files in .fawn-hosting
+i  hosting: upload complete
+✔  hosting[canvascontext-9da05]: file upload complete
+i  hosting[canvascontext-9da05]: finalizing version...
+✔  hosting[canvascontext-9da05]: version finalized
+i  hosting[canvascontext-9da05]: releasing new version...
+✔  hosting[canvascontext-9da05]: release complete
+
+✔  Deploy complete!
+
+Project Console: https://console.firebase.google.com/project/canvascontext-9da05/overview
+Hosting URL: https://canvascontext-9da05.web.app
