@@ -1,0 +1,2407 @@
+{
+  "classification": "Chrome application correctness; emulated viewports; no forced-Doe or performance claim",
+  "observedAt": "2026-10-11T18:32:14.011Z",
+  "browser": "136.0.7103.59",
+  "baselineRef": "3faa1940dc229aad61fda24d5042549f271b6088",
+  "sourceHashes": {
+    "baseline": "b2e6cb8504933cf52b03eceb0f5b6bea0455bfbc18fdd4ba9d92b8cfd6f046f0",
+    "candidate": "c7286fc43c5604b58e7768d009157dfa3670a720186ce990466620d01fa85272"
+  },
+  "method": {
+    "frameMs": 16.666666666666668,
+    "cycles": 3,
+    "particleCount": 65536,
+    "occupiedCellWidth": 0.1,
+    "minimumOccupiedCells": 8
+  },
+  "baseline": [
+    {
+      "seconds": 12,
+      "visibleFraction": 0,
+      "edgeFraction": 1,
+      "cells": 1,
+      "count": 65536,
+      "digest": "bfe076004250e96d2d99cd5a70daf7ed0608a670a16b0f6d993cdb1e0abb7522",
+      "uniforms": [
+        0.004166666883975267,
+        12,
+        0.4620853066444397,
+        0,
+        0,
+        0,
+        0.7301885485649109,
+        1
+      ],
+      "allocations": 2,
+      "canvas": {
+        "width": 780,
+        "height": 1688
+      },
+      "adapter": {
+        "vendor": "intel",
+        "architecture": "gen-12lp",
+        "isFallbackAdapter": false
+      },
+      "errors": []
+    }
+  ],
+  "cases": [
+    {
+      "name": "mobile",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "samples": [
+        {
+          "seconds": 0,
+          "visibleFraction": 1,
+          "edgeFraction": 0,
+          "cells": 256,
+          "count": 65536,
+          "digest": "4ad204fe35a5f1c0b885bab79235ecce9f6e2169e4506e951d89a60efa6850d9",
+          "uniforms": [],
+          "allocations": 2,
+          "canvas": {
+            "width": 780,
+            "height": 1688
+          },
+          "adapter": {
+            "vendor": "intel",
+            "architecture": "gen-12lp",
+            "isFallbackAdapter": false
+          },
+          "errors": []
+        },
+        {
+          "seconds": 3,
+          "visibleFraction": 1,
+          "edgeFraction": 0,
+          "cells": 85,
+          "count": 65536,
+          "digest": "77051b8362b6230824eeffc5e957d62e437ff1fdecd15d26e4cf0d74df31c20f",
+          "uniforms": [
+            0.004166666883975267,
+            3,
+            0.4620853066444397,
+            0,
+            0,
+            0,
+            0.7301885485649109,
+            0
+          ],
+          "allocations": 2,
+          "canvas": {
+            "width": 780,
+            "height": 1688
+          },
+          "adapter": {
+            "vendor": "intel",
+            "architecture": "gen-12lp",
+            "isFallbackAdapter": false
+          },
+          "errors": []
+        },
+        {
+          "seconds": 6,
+          "visibleFraction": 1,
+          "edgeFraction": 0,
+          "cells": 36,
+          "count": 65536,
+          "digest": "6525ffefa13c5798f18e15b96841a2b0a8dc932252971befb4f9c82a8d264bb4",
+          "uniforms": [
+            0.004166666883975267,
+            6,
+            0.4620853066444397,
+            0,
+            0,
+            0,
+            0.7301885485649109,
+            3.407879110554771e-28
+          ],
+          "allocations": 2,
+          "canvas": {
+            "width": 780,
+            "height": 1688
+          },
+          "adapter": {
+            "vendor": "intel",
+            "architecture": "gen-12lp",
+            "isFallbackAdapter": false
+          },
+          "errors": []
+        },
+        {
+          "seconds": 9,
+          "visibleFraction": 1,
+          "edgeFraction": 0,
+          "cells": 57,
+          "count": 65536,
+          "digest": "e8cd682a089504dc1594dfb90b6fe8c37603810edd466fe84b98295e1bde81ae",
+          "uniforms": [
+            0.004166666883975267,
+            9,
+            0.4620853066444397,
+            0,
+            0,
+            0,
+            0.7301885485649109,
+            1
+          ],
+          "allocations": 2,
+          "canvas": {
+            "width": 780,
+            "height": 1688
+          },
+          "adapter": {
+            "vendor": "intel",
+            "architecture": "gen-12lp",
+            "isFallbackAdapter": false
+          },
+          "errors": []
+        },
+        {
+          "seconds": 12,
+          "visibleFraction": 1,
+          "edgeFraction": 0,
+          "cells": 72,
+          "count": 65536,
+          "digest": "4f15f9a8af58b8c01872393014226f5aeb11cb5312501c74382f9206ec23d206",
+          "uniforms": [
+            0.004166666883975267,
+            12,
+            0.4620853066444397,
+            0,
+            0,
+            0,
+            0.7301885485649109,
+            1
+          ],
+          "allocations": 2,
+          "canvas": {
+            "width": 780,
+            "height": 1688
+          },
+          "adapter": {
+            "vendor": "intel",
+            "architecture": "gen-12lp",
+            "isFallbackAdapter": false
+          },
+          "errors": []
+        },
+        {
+          "seconds": 15,
+          "visibleFraction": 1,
+          "edgeFraction": 0,
+          "cells": 51,
+          "count": 65536,
+          "digest": "ccd8a5580bcaf42a1433d838a3cea2470cd17cc80a38501119e47b42638018dd",
+          "uniforms": [
+            0.004166666883975267,
+            15,
+            0.4620853066444397,
+            0,
+            0,
+            0,
+            0.7301885485649109,
+            2
+          ],
+          "allocations": 2,
+          "canvas": {
+            "width": 780,
+            "height": 1688
+          },
+          "adapter": {
+            "vendor": "intel",
+            "architecture": "gen-12lp",
+            "isFallbackAdapter": false
+          },
+          "errors": []
+        },
+        {
+          "seconds": 18,
+          "visibleFraction": 1,
+          "edgeFraction": 0,
+          "cells": 22,
+          "count": 65536,
+          "digest": "beb5cc5050daa2b90e018dcb37ada9a8d2deab18cce311d08410e24b7d1e5d84",
+          "uniforms": [
+            0.004166666883975267,
+            18,
+            0.4620853066444397,
+            0,
+            0,
+            0,
+            0.7301885485649109,
+            2
+          ],
+          "allocations": 2,
+          "canvas": {
+            "width": 780,
+            "height": 1688
+          },
+          "adapter": {
+            "vendor": "intel",
+            "architecture": "gen-12lp",
+            "isFallbackAdapter": false
+          },
+          "errors": []
+        },
+        {
+          "seconds": 21,
+          "visibleFraction": 1,
+          "edgeFraction": 0,
+          "cells": 20,
+          "count": 65536,
+          "digest": "4a0e7e7e10b16902c1df4a6801f2b03494be4f370f955f3aca00fcfbdb3de271",
+          "uniforms": [
+            0.004166666883975267,
+            21,
+            0.4620853066444397,
+            0,
+            0,
+            0,
+            0.7301885485649109,
+            0
+          ],
+          "allocations": 2,
+          "canvas": {
+            "width": 780,
+            "height": 1688
+          },
+          "adapter": {
+            "vendor": "intel",
+            "architecture": "gen-12lp",
+            "isFallbackAdapter": false
+          },
+          "errors": []
+        },
+        {
+          "seconds": 24,
+          "visibleFraction": 1,
+          "edgeFraction": 0,
+          "cells": 36,
+          "count": 65536,
+          "digest": "151c8c73f623f9c008dd6b731221c9f50287f4bd05bb9ebe057644b6ede4304d",
+          "uniforms": [
+            0.004166666883975267,
+            24,
+            0.4620853066444397,
+            0,
+            0,
+            0,
+            0.7301885485649109,
+            0
+          ],
+          "allocations": 2,
+          "canvas": {
+            "width": 780,
+            "height": 1688
+          },
+          "adapter": {
+            "vendor": "intel",
+            "architecture": "gen-12lp",
+            "isFallbackAdapter": false
+          },
+          "errors": []
+        },
+        {
+          "seconds": 27,
+          "visibleFraction": 1,
+          "edgeFraction": 0,
+          "cells": 36,
+          "count": 65536,
+          "digest": "d88758c2ddc5ef39ed32e89ed0eda0f76c178b183c50c141edaaf78fa66111f0",
+          "uniforms": [
+            0.004166666883975267,
+            27,
+            0.4620853066444397,
+            0,
+            0,
+            0,
+            0.7301885485649109,
+            4.98947580576324e-24
+          ],
+          "allocations": 2,
+          "canvas": {
+            "width": 780,
+            "height": 1688
+          },
+          "adapter": {
+            "vendor": "intel",
+            "architecture": "gen-12lp",
+            "isFallbackAdapter": false
+          },
+          "errors": []
+        },
+        {
+          "seconds": 30,
+          "visibleFraction": 1,
+          "edgeFraction": 0,
+          "cells": 60,
+          "count": 65536,
+          "digest": "60d8cee176bb78032f62602d132dd7e276d0cf00c9f043a4de9a9bc2e74e9e15",
+          "uniforms": [
+            0.004166666883975267,
+            30,
+            0.4620853066444397,
+            0,
+            0,
+            0,
+            0.7301885485649109,
+            1
+          ],
+          "allocations": 2,
+          "canvas": {
+            "width": 780,
+            "height": 1688
+          },
+          "adapter": {
+            "vendor": "intel",
+            "architecture": "gen-12lp",
+            "isFallbackAdapter": false
+          },
+          "errors": []
+        },
+        {
+          "seconds": 33,
+          "visibleFraction": 1,
+          "edgeFraction": 0,
+          "cells": 70,
+          "count": 65536,
+          "digest": "9f76d0c584c0233b29acd8e25e48d87ad76003a20b40448bd300c5c684f92d8c",
+          "uniforms": [
+            0.004166666883975267,
+            33,
+            0.4620853066444397,
+            0,
+            0,
+            0,
+            0.7301885485649109,
+            1
+          ],
+          "allocations": 2,
+          "canvas": {
+            "width": 780,
+            "height": 1688
+          },
+          "adapter": {
+            "vendor": "intel",
+            "architecture": "gen-12lp",
+            "isFallbackAdapter": false
+          },
+          "errors": []
+        },
+        {
+          "seconds": 36,
+          "visibleFraction": 1,
+          "edgeFraction": 0,
+          "cells": 52,
+          "count": 65536,
+          "digest": "ebc320b0c3f8d130bb38a3ba52e66f699f84dbed23bb9e08c3d6d2d706e78d35",
+          "uniforms": [
+            0.004166666883975267,
+            36,
+            0.4620853066444397,
+            0,
+            0,
+            0,
+            0.7301885485649109,
+            2
+          ],
+          "allocations": 2,
+          "canvas": {
+            "width": 780,
+            "height": 1688
+          },
+          "adapter": {
+            "vendor": "intel",
+            "architecture": "gen-12lp",
+            "isFallbackAdapter": false
+          },
+          "errors": []
+        },
+        {
+          "seconds": 39,
+          "visibleFraction": 1,
+          "edgeFraction": 0,
+          "cells": 22,
+          "count": 65536,
+          "digest": "7bb3315c19b3e76f8fc2053a4f3c226d0517567d56bd437fd0b9743540650a09",
+          "uniforms": [
+            0.004166666883975267,
+            39,
+            0.4620853066444397,
+            0,
+            0,
+            0,
+            0.7301885485649109,
+            2
+          ],
+          "allocations": 2,
+          "canvas": {
+            "width": 780,
+            "height": 1688
+          },
+          "adapter": {
+            "vendor": "intel",
+            "architecture": "gen-12lp",
+            "isFallbackAdapter": false
+          },
+          "errors": []
+        },
+        {
+          "seconds": 42,
+          "visibleFraction": 1,
+          "edgeFraction": 0,
+          "cells": 20,
+          "count": 65536,
+          "digest": "5399d5f3a1c0452a2024ee9dab84280361e75de096b983049120607cd8e49602",
+          "uniforms": [
+            0.004166666883975267,
+            42,
+            0.4620853066444397,
+            0,
+            0,
+            0,
+            0.7301885485649109,
+            0
+          ],
+          "allocations": 2,
+          "canvas": {
+            "width": 780,
+            "height": 1688
+          },
+          "adapter": {
+            "vendor": "intel",
+            "architecture": "gen-12lp",
+            "isFallbackAdapter": false
+          },
+          "errors": []
+        },
+        {
+          "seconds": 45,
+          "visibleFraction": 1,
+          "edgeFraction": 0,
+          "cells": 36,
+          "count": 65536,
+          "digest": "7fa798627aa5b5c82d610f3ec636f2646f06c5aefce73f2b5ce5d1ab320c0e7d",
+          "uniforms": [
+            0.004166666883975267,
+            45,
+            0.4620853066444397,
+            0,
+            0,
+            0,
+            0.7301885485649109,
+            0
+          ],
+          "allocations": 2,
+          "canvas": {
+            "width": 780,
+            "height": 1688
+          },
+          "adapter": {
+            "vendor": "intel",
+            "architecture": "gen-12lp",
+            "isFallbackAdapter": false
+          },
+          "errors": []
+        },
+        {
+          "seconds": 48,
+          "visibleFraction": 1,
+          "edgeFraction": 0,
+          "cells": 36,
+          "count": 65536,
+          "digest": "d48915ebda02928c53021f259c2155f9cfcd449f2c20481695b93f36897be250",
+          "uniforms": [
+            0.004166666883975267,
+            48,
+            0.4620853066444397,
+            0,
+            0,
+            0,
+            0.7301885485649109,
+            3.733369430936202e-24
+          ],
+          "allocations": 2,
+          "canvas": {
+            "width": 780,
+            "height": 1688
+          },
+          "adapter": {
+            "vendor": "intel",
+            "architecture": "gen-12lp",
+            "isFallbackAdapter": false
+          },
+          "errors": []
+        },
+        {
+          "seconds": 51,
+          "visibleFraction": 1,
+          "edgeFraction": 0,
+          "cells": 70,
+          "count": 65536,
+          "digest": "a3ba68e5d06fc3163bf9c442f7a118e5196e555b20c659bc7e2182f5f56354d2",
+          "uniforms": [
+            0.004166666883975267,
+            51,
+            0.4620853066444397,
+            0,
+            0,
+            0,
+            0.7301885485649109,
+            1
+          ],
+          "allocations": 2,
+          "canvas": {
+            "width": 780,
+            "height": 1688
+          },
+          "adapter": {
+            "vendor": "intel",
+            "architecture": "gen-12lp",
+            "isFallbackAdapter": false
+          },
+          "errors": []
+        },
+        {
+          "seconds": 54,
+          "visibleFraction": 1,
+          "edgeFraction": 0,
+          "cells": 70,
+          "count": 65536,
+          "digest": "72c62c1528f3597f7fd608377f07b20f88ec03a39cc751aa11a1a7f3625ebb34",
+          "uniforms": [
+            0.004166666883975267,
+            54,
+            0.4620853066444397,
+            0,
+            0,
+            0,
+            0.7301885485649109,
+            1
+          ],
+          "allocations": 2,
+          "canvas": {
+            "width": 780,
+            "height": 1688
+          },
+          "adapter": {
+            "vendor": "intel",
+            "architecture": "gen-12lp",
+            "isFallbackAdapter": false
+          },
+          "errors": []
+        },
+        {
+          "seconds": 57,
+          "visibleFraction": 1,
+          "edgeFraction": 0,
+          "cells": 52,
+          "count": 65536,
+          "digest": "9ee076b509dfc48f30bab0a459bfa35d69a6aa4fa5b052baf5069e0857e62125",
+          "uniforms": [
+            0.004166666883975267,
+            57,
+            0.4620853066444397,
+            0,
+            0,
+            0,
+            0.7301885485649109,
+            2
+          ],
+          "allocations": 2,
+          "canvas": {
+            "width": 780,
+            "height": 1688
+          },
+          "adapter": {
+            "vendor": "intel",
+            "architecture": "gen-12lp",
+            "isFallbackAdapter": false
+          },
+          "errors": []
+        },
+        {
+          "seconds": 60,
+          "visibleFraction": 1,
+          "edgeFraction": 0,
+          "cells": 23,
+          "count": 65536,
+          "digest": "20f08a85fe9ca714716dc350710430e0e154f8cec973a541cfceaa5967201f05",
+          "uniforms": [
+            0.004166666883975267,
+            60,
+            0.4620853066444397,
+            0,
+            0,
+            0,
+            0.7301885485649109,
+            2
+          ],
+          "allocations": 2,
+          "canvas": {
+            "width": 780,
+            "height": 1688
+          },
+          "adapter": {
+            "vendor": "intel",
+            "architecture": "gen-12lp",
+            "isFallbackAdapter": false
+          },
+          "errors": []
+        },
+        {
+          "seconds": 63,
+          "visibleFraction": 1,
+          "edgeFraction": 0,
+          "cells": 20,
+          "count": 65536,
+          "digest": "bea05a73740e457e02559cf77bf6f4355da46b367996965a2d57c4ac1e266c63",
+          "uniforms": [
+            0.004166666883975267,
+            63,
+            0.4620853066444397,
+            0,
+            0,
+            0,
+            0.7301885485649109,
+            0
+          ],
+          "allocations": 2,
+          "canvas": {
+            "width": 780,
+            "height": 1688
+          },
+          "adapter": {
+            "vendor": "intel",
+            "architecture": "gen-12lp",
+            "isFallbackAdapter": false
+          },
+          "errors": []
+        }
+      ],
+      "resize": {
+        "before": {
+          "visibleFraction": 1,
+          "edgeFraction": 0,
+          "cells": 20,
+          "count": 65536,
+          "digest": "bea05a73740e457e02559cf77bf6f4355da46b367996965a2d57c4ac1e266c63",
+          "uniforms": [
+            0.004166666883975267,
+            63,
+            0.4620853066444397,
+            0,
+            0,
+            0,
+            0.7301885485649109,
+            0
+          ],
+          "allocations": 2,
+          "canvas": {
+            "width": 780,
+            "height": 1688
+          },
+          "adapter": {
+            "vendor": "intel",
+            "architecture": "gen-12lp",
+            "isFallbackAdapter": false
+          },
+          "errors": []
+        },
+        "after": {
+          "visibleFraction": 1,
+          "edgeFraction": 0,
+          "cells": 20,
+          "count": 65536,
+          "digest": "bea05a73740e457e02559cf77bf6f4355da46b367996965a2d57c4ac1e266c63",
+          "uniforms": [
+            0,
+            63,
+            2.164102554321289,
+            0,
+            0,
+            0,
+            1,
+            0
+          ],
+          "allocations": 2,
+          "canvas": {
+            "width": 1688,
+            "height": 780
+          },
+          "adapter": {
+            "vendor": "intel",
+            "architecture": "gen-12lp",
+            "isFallbackAdapter": false
+          },
+          "errors": []
+        }
+      },
+      "touch": {
+        "held": {
+          "visibleFraction": 1,
+          "edgeFraction": 0,
+          "cells": 28,
+          "count": 65536,
+          "digest": "889c51bb14d123cb48ecd62d7f677f5d1054136b87333ba87e9180cddbfe8459",
+          "uniforms": [
+            0.004166666883975267,
+            63.516666412353516,
+            0.4620853066444397,
+            26.463180541992188,
+            0.5,
+            0.4000000059604645,
+            0.7301885485649109,
+            0
+          ],
+          "allocations": 2,
+          "canvas": {
+            "width": 780,
+            "height": 1688
+          },
+          "adapter": {
+            "vendor": "intel",
+            "architecture": "gen-12lp",
+            "isFallbackAdapter": false
+          },
+          "errors": []
+        },
+        "released": {
+          "visibleFraction": 1,
+          "edgeFraction": 0,
+          "cells": 70,
+          "count": 65536,
+          "digest": "597b46b391b741fa32d0785c7c50c2983d9f16ca3409e90d90ba5457416cc433",
+          "uniforms": [
+            0.004166666883975267,
+            65.51667022705078,
+            0.4620853066444397,
+            8.972492793191122e-8,
+            0.5,
+            0.4000000059604645,
+            0.7301885485649109,
+            0
+          ],
+          "allocations": 2,
+          "canvas": {
+            "width": 780,
+            "height": 1688
+          },
+          "adapter": {
+            "vendor": "intel",
+            "architecture": "gen-12lp",
+            "isFallbackAdapter": false
+          },
+          "errors": []
+        }
+      }
+    },
+    {
+      "name": "small-mobile",
+      "viewport": {
+        "width": 320,
+        "height": 568
+      },
+      "samples": [
+        {
+          "seconds": 0,
+          "visibleFraction": 1,
+          "edgeFraction": 0,
+          "cells": 256,
+          "count": 65536,
+          "digest": "4ad204fe35a5f1c0b885bab79235ecce9f6e2169e4506e951d89a60efa6850d9",
+          "uniforms": [],
+          "allocations": 2,
+          "canvas": {
+            "width": 640,
+            "height": 1136
+          },
+          "adapter": {
+            "vendor": "intel",
+            "architecture": "gen-12lp",
+            "isFallbackAdapter": false
+          },
+          "errors": []
+        },
+        {
+          "seconds": 3,
+          "visibleFraction": 1,
+          "edgeFraction": 0,
+          "cells": 85,
+          "count": 65536,
+          "digest": "77051b8362b6230824eeffc5e957d62e437ff1fdecd15d26e4cf0d74df31c20f",
+          "uniforms": [
+            0.004166666883975267,
+            3,
+            0.5633803009986877,
+            0,
+            0,
+            0,
+            0.8900862336158752,
+            0
+          ],
+          "allocations": 2,
+          "canvas": {
+            "width": 640,
+            "height": 1136
+          },
+          "adapter": {
+            "vendor": "intel",
+            "architecture": "gen-12lp",
+            "isFallbackAdapter": false
+          },
+          "errors": []
+        },
+        {
+          "seconds": 6,
+          "visibleFraction": 1,
+          "edgeFraction": 0,
+          "cells": 36,
+          "count": 65536,
+          "digest": "6525ffefa13c5798f18e15b96841a2b0a8dc932252971befb4f9c82a8d264bb4",
+          "uniforms": [
+            0.004166666883975267,
+            6,
+            0.5633803009986877,
+            0,
+            0,
+            0,
+            0.8900862336158752,
+            3.407879110554771e-28
+          ],
+          "allocations": 2,
+          "canvas": {
+            "width": 640,
+            "height": 1136
+          },
+          "adapter": {
+            "vendor": "intel",
+            "architecture": "gen-12lp",
+            "isFallbackAdapter": false
+          },
+          "errors": []
+        },
+        {
+          "seconds": 9,
+          "visibleFraction": 1,
+          "edgeFraction": 0,
+          "cells": 57,
+          "count": 65536,
+          "digest": "e8cd682a089504dc1594dfb90b6fe8c37603810edd466fe84b98295e1bde81ae",
+          "uniforms": [
+            0.004166666883975267,
+            9,
+            0.5633803009986877,
+            0,
+            0,
+            0,
+            0.8900862336158752,
+            1
+          ],
+          "allocations": 2,
+          "canvas": {
+            "width": 640,
+            "height": 1136
+          },
+          "adapter": {
+            "vendor": "intel",
+            "architecture": "gen-12lp",
+            "isFallbackAdapter": false
+          },
+          "errors": []
+        },
+        {
+          "seconds": 12,
+          "visibleFraction": 1,
+          "edgeFraction": 0,
+          "cells": 72,
+          "count": 65536,
+          "digest": "4f15f9a8af58b8c01872393014226f5aeb11cb5312501c74382f9206ec23d206",
+          "uniforms": [
+            0.004166666883975267,
+            12,
+            0.5633803009986877,
+            0,
+            0,
+            0,
+            0.8900862336158752,
+            1
+          ],
+          "allocations": 2,
+          "canvas": {
+            "width": 640,
+            "height": 1136
+          },
+          "adapter": {
+            "vendor": "intel",
+            "architecture": "gen-12lp",
+            "isFallbackAdapter": false
+          },
+          "errors": []
+        },
+        {
+          "seconds": 15,
+          "visibleFraction": 1,
+          "edgeFraction": 0,
+          "cells": 51,
+          "count": 65536,
+          "digest": "ccd8a5580bcaf42a1433d838a3cea2470cd17cc80a38501119e47b42638018dd",
+          "uniforms": [
+            0.004166666883975267,
+            15,
+            0.5633803009986877,
+            0,
+            0,
+            0,
+            0.8900862336158752,
+            2
+          ],
+          "allocations": 2,
+          "canvas": {
+            "width": 640,
+            "height": 1136
+          },
+          "adapter": {
+            "vendor": "intel",
+            "architecture": "gen-12lp",
+            "isFallbackAdapter": false
+          },
+          "errors": []
+        },
+        {
+          "seconds": 18,
+          "visibleFraction": 1,
+          "edgeFraction": 0,
+          "cells": 22,
+          "count": 65536,
+          "digest": "beb5cc5050daa2b90e018dcb37ada9a8d2deab18cce311d08410e24b7d1e5d84",
+          "uniforms": [
+            0.004166666883975267,
+            18,
+            0.5633803009986877,
+            0,
+            0,
+            0,
+            0.8900862336158752,
+            2
+          ],
+          "allocations": 2,
+          "canvas": {
+            "width": 640,
+            "height": 1136
+          },
+          "adapter": {
+            "vendor": "intel",
+            "architecture": "gen-12lp",
+            "isFallbackAdapter": false
+          },
+          "errors": []
+        },
+        {
+          "seconds": 21,
+          "visibleFraction": 1,
+          "edgeFraction": 0,
+          "cells": 20,
+          "count": 65536,
+          "digest": "4a0e7e7e10b16902c1df4a6801f2b03494be4f370f955f3aca00fcfbdb3de271",
+          "uniforms": [
+            0.004166666883975267,
+            21,
+            0.5633803009986877,
+            0,
+            0,
+            0,
+            0.8900862336158752,
+            0
+          ],
+          "allocations": 2,
+          "canvas": {
+            "width": 640,
+            "height": 1136
+          },
+          "adapter": {
+            "vendor": "intel",
+            "architecture": "gen-12lp",
+            "isFallbackAdapter": false
+          },
+          "errors": []
+        },
+        {
+          "seconds": 24,
+          "visibleFraction": 1,
+          "edgeFraction": 0,
+          "cells": 36,
+          "count": 65536,
+          "digest": "151c8c73f623f9c008dd6b731221c9f50287f4bd05bb9ebe057644b6ede4304d",
+          "uniforms": [
+            0.004166666883975267,
+            24,
+            0.5633803009986877,
+            0,
+            0,
+            0,
+            0.8900862336158752,
+            0
+          ],
+          "allocations": 2,
+          "canvas": {
+            "width": 640,
+            "height": 1136
+          },
+          "adapter": {
+            "vendor": "intel",
+            "architecture": "gen-12lp",
+            "isFallbackAdapter": false
+          },
+          "errors": []
+        },
+        {
+          "seconds": 27,
+          "visibleFraction": 1,
+          "edgeFraction": 0,
+          "cells": 36,
+          "count": 65536,
+          "digest": "d88758c2ddc5ef39ed32e89ed0eda0f76c178b183c50c141edaaf78fa66111f0",
+          "uniforms": [
+            0.004166666883975267,
+            27,
+            0.5633803009986877,
+            0,
+            0,
+            0,
+            0.8900862336158752,
+            4.98947580576324e-24
+          ],
+          "allocations": 2,
+          "canvas": {
+            "width": 640,
+            "height": 1136
+          },
+          "adapter": {
+            "vendor": "intel",
+            "architecture": "gen-12lp",
+            "isFallbackAdapter": false
+          },
+          "errors": []
+        },
+        {
+          "seconds": 30,
+          "visibleFraction": 1,
+          "edgeFraction": 0,
+          "cells": 60,
+          "count": 65536,
+          "digest": "60d8cee176bb78032f62602d132dd7e276d0cf00c9f043a4de9a9bc2e74e9e15",
+          "uniforms": [
+            0.004166666883975267,
+            30,
+            0.5633803009986877,
+            0,
+            0,
+            0,
+            0.8900862336158752,
+            1
+          ],
+          "allocations": 2,
+          "canvas": {
+            "width": 640,
+            "height": 1136
+          },
+          "adapter": {
+            "vendor": "intel",
+            "architecture": "gen-12lp",
+            "isFallbackAdapter": false
+          },
+          "errors": []
+        },
+        {
+          "seconds": 33,
+          "visibleFraction": 1,
+          "edgeFraction": 0,
+          "cells": 70,
+          "count": 65536,
+          "digest": "9f76d0c584c0233b29acd8e25e48d87ad76003a20b40448bd300c5c684f92d8c",
+          "uniforms": [
+            0.004166666883975267,
+            33,
+            0.5633803009986877,
+            0,
+            0,
+            0,
+            0.8900862336158752,
+            1
+          ],
+          "allocations": 2,
+          "canvas": {
+            "width": 640,
+            "height": 1136
+          },
+          "adapter": {
+            "vendor": "intel",
+            "architecture": "gen-12lp",
+            "isFallbackAdapter": false
+          },
+          "errors": []
+        },
+        {
+          "seconds": 36,
+          "visibleFraction": 1,
+          "edgeFraction": 0,
+          "cells": 52,
+          "count": 65536,
+          "digest": "ebc320b0c3f8d130bb38a3ba52e66f699f84dbed23bb9e08c3d6d2d706e78d35",
+          "uniforms": [
+            0.004166666883975267,
+            36,
+            0.5633803009986877,
+            0,
+            0,
+            0,
+            0.8900862336158752,
+            2
+          ],
+          "allocations": 2,
+          "canvas": {
+            "width": 640,
+            "height": 1136
+          },
+          "adapter": {
+            "vendor": "intel",
+            "architecture": "gen-12lp",
+            "isFallbackAdapter": false
+          },
+          "errors": []
+        },
+        {
+          "seconds": 39,
+          "visibleFraction": 1,
+          "edgeFraction": 0,
+          "cells": 22,
+          "count": 65536,
+          "digest": "7bb3315c19b3e76f8fc2053a4f3c226d0517567d56bd437fd0b9743540650a09",
+          "uniforms": [
+            0.004166666883975267,
+            39,
+            0.5633803009986877,
+            0,
+            0,
+            0,
+            0.8900862336158752,
+            2
+          ],
+          "allocations": 2,
+          "canvas": {
+            "width": 640,
+            "height": 1136
+          },
+          "adapter": {
+            "vendor": "intel",
+            "architecture": "gen-12lp",
+            "isFallbackAdapter": false
+          },
+          "errors": []
+        },
+        {
+          "seconds": 42,
+          "visibleFraction": 1,
+          "edgeFraction": 0,
+          "cells": 20,
+          "count": 65536,
+          "digest": "5399d5f3a1c0452a2024ee9dab84280361e75de096b983049120607cd8e49602",
+          "uniforms": [
+            0.004166666883975267,
+            42,
+            0.5633803009986877,
+            0,
+            0,
+            0,
+            0.8900862336158752,
+            0
+          ],
+          "allocations": 2,
+          "canvas": {
+            "width": 640,
+            "height": 1136
+          },
+          "adapter": {
+            "vendor": "intel",
+            "architecture": "gen-12lp",
+            "isFallbackAdapter": false
+          },
+          "errors": []
+        },
+        {
+          "seconds": 45,
+          "visibleFraction": 1,
+          "edgeFraction": 0,
+          "cells": 36,
+          "count": 65536,
+          "digest": "7fa798627aa5b5c82d610f3ec636f2646f06c5aefce73f2b5ce5d1ab320c0e7d",
+          "uniforms": [
+            0.004166666883975267,
+            45,
+            0.5633803009986877,
+            0,
+            0,
+            0,
+            0.8900862336158752,
+            0
+          ],
+          "allocations": 2,
+          "canvas": {
+            "width": 640,
+            "height": 1136
+          },
+          "adapter": {
+            "vendor": "intel",
+            "architecture": "gen-12lp",
+            "isFallbackAdapter": false
+          },
+          "errors": []
+        },
+        {
+          "seconds": 48,
+          "visibleFraction": 1,
+          "edgeFraction": 0,
+          "cells": 36,
+          "count": 65536,
+          "digest": "d48915ebda02928c53021f259c2155f9cfcd449f2c20481695b93f36897be250",
+          "uniforms": [
+            0.004166666883975267,
+            48,
+            0.5633803009986877,
+            0,
+            0,
+            0,
+            0.8900862336158752,
+            3.733369430936202e-24
+          ],
+          "allocations": 2,
+          "canvas": {
+            "width": 640,
+            "height": 1136
+          },
+          "adapter": {
+            "vendor": "intel",
+            "architecture": "gen-12lp",
+            "isFallbackAdapter": false
+          },
+          "errors": []
+        },
+        {
+          "seconds": 51,
+          "visibleFraction": 1,
+          "edgeFraction": 0,
+          "cells": 70,
+          "count": 65536,
+          "digest": "a3ba68e5d06fc3163bf9c442f7a118e5196e555b20c659bc7e2182f5f56354d2",
+          "uniforms": [
+            0.004166666883975267,
+            51,
+            0.5633803009986877,
+            0,
+            0,
+            0,
+            0.8900862336158752,
+            1
+          ],
+          "allocations": 2,
+          "canvas": {
+            "width": 640,
+            "height": 1136
+          },
+          "adapter": {
+            "vendor": "intel",
+            "architecture": "gen-12lp",
+            "isFallbackAdapter": false
+          },
+          "errors": []
+        },
+        {
+          "seconds": 54,
+          "visibleFraction": 1,
+          "edgeFraction": 0,
+          "cells": 70,
+          "count": 65536,
+          "digest": "72c62c1528f3597f7fd608377f07b20f88ec03a39cc751aa11a1a7f3625ebb34",
+          "uniforms": [
+            0.004166666883975267,
+            54,
+            0.5633803009986877,
+            0,
+            0,
+            0,
+            0.8900862336158752,
+            1
+          ],
+          "allocations": 2,
+          "canvas": {
+            "width": 640,
+            "height": 1136
+          },
+          "adapter": {
+            "vendor": "intel",
+            "architecture": "gen-12lp",
+            "isFallbackAdapter": false
+          },
+          "errors": []
+        },
+        {
+          "seconds": 57,
+          "visibleFraction": 1,
+          "edgeFraction": 0,
+          "cells": 52,
+          "count": 65536,
+          "digest": "9ee076b509dfc48f30bab0a459bfa35d69a6aa4fa5b052baf5069e0857e62125",
+          "uniforms": [
+            0.004166666883975267,
+            57,
+            0.5633803009986877,
+            0,
+            0,
+            0,
+            0.8900862336158752,
+            2
+          ],
+          "allocations": 2,
+          "canvas": {
+            "width": 640,
+            "height": 1136
+          },
+          "adapter": {
+            "vendor": "intel",
+            "architecture": "gen-12lp",
+            "isFallbackAdapter": false
+          },
+          "errors": []
+        },
+        {
+          "seconds": 60,
+          "visibleFraction": 1,
+          "edgeFraction": 0,
+          "cells": 23,
+          "count": 65536,
+          "digest": "20f08a85fe9ca714716dc350710430e0e154f8cec973a541cfceaa5967201f05",
+          "uniforms": [
+            0.004166666883975267,
+            60,
+            0.5633803009986877,
+            0,
+            0,
+            0,
+            0.8900862336158752,
+            2
+          ],
+          "allocations": 2,
+          "canvas": {
+            "width": 640,
+            "height": 1136
+          },
+          "adapter": {
+            "vendor": "intel",
+            "architecture": "gen-12lp",
+            "isFallbackAdapter": false
+          },
+          "errors": []
+        },
+        {
+          "seconds": 63,
+          "visibleFraction": 1,
+          "edgeFraction": 0,
+          "cells": 20,
+          "count": 65536,
+          "digest": "bea05a73740e457e02559cf77bf6f4355da46b367996965a2d57c4ac1e266c63",
+          "uniforms": [
+            0.004166666883975267,
+            63,
+            0.5633803009986877,
+            0,
+            0,
+            0,
+            0.8900862336158752,
+            0
+          ],
+          "allocations": 2,
+          "canvas": {
+            "width": 640,
+            "height": 1136
+          },
+          "adapter": {
+            "vendor": "intel",
+            "architecture": "gen-12lp",
+            "isFallbackAdapter": false
+          },
+          "errors": []
+        }
+      ],
+      "resize": {
+        "before": {
+          "visibleFraction": 1,
+          "edgeFraction": 0,
+          "cells": 20,
+          "count": 65536,
+          "digest": "bea05a73740e457e02559cf77bf6f4355da46b367996965a2d57c4ac1e266c63",
+          "uniforms": [
+            0.004166666883975267,
+            63,
+            0.5633803009986877,
+            0,
+            0,
+            0,
+            0.8900862336158752,
+            0
+          ],
+          "allocations": 2,
+          "canvas": {
+            "width": 640,
+            "height": 1136
+          },
+          "adapter": {
+            "vendor": "intel",
+            "architecture": "gen-12lp",
+            "isFallbackAdapter": false
+          },
+          "errors": []
+        },
+        "after": {
+          "visibleFraction": 1,
+          "edgeFraction": 0,
+          "cells": 20,
+          "count": 65536,
+          "digest": "bea05a73740e457e02559cf77bf6f4355da46b367996965a2d57c4ac1e266c63",
+          "uniforms": [
+            0,
+            63,
+            1.774999976158142,
+            0,
+            0,
+            0,
+            1,
+            0
+          ],
+          "allocations": 2,
+          "canvas": {
+            "width": 1136,
+            "height": 640
+          },
+          "adapter": {
+            "vendor": "intel",
+            "architecture": "gen-12lp",
+            "isFallbackAdapter": false
+          },
+          "errors": []
+        }
+      },
+      "touch": {
+        "held": {
+          "visibleFraction": 1,
+          "edgeFraction": 0,
+          "cells": 28,
+          "count": 65536,
+          "digest": "c85097fcb8dc528247119f332216290416feff7a20aab5452f8290fa09054b8e",
+          "uniforms": [
+            0.004166666883975267,
+            63.516666412353516,
+            0.5633803009986877,
+            26.463180541992188,
+            0.5,
+            0.40000003576278687,
+            0.8900862336158752,
+            0
+          ],
+          "allocations": 2,
+          "canvas": {
+            "width": 640,
+            "height": 1136
+          },
+          "adapter": {
+            "vendor": "intel",
+            "architecture": "gen-12lp",
+            "isFallbackAdapter": false
+          },
+          "errors": []
+        },
+        "released": {
+          "visibleFraction": 1,
+          "edgeFraction": 0,
+          "cells": 70,
+          "count": 65536,
+          "digest": "ad5cc31219577f2bb173d8ec0671ce6fc5b0ab616d2346184037349b452a166a",
+          "uniforms": [
+            0.004166666883975267,
+            65.51667022705078,
+            0.5633803009986877,
+            8.972492793191122e-8,
+            0.5,
+            0.40000003576278687,
+            0.8900862336158752,
+            0
+          ],
+          "allocations": 2,
+          "canvas": {
+            "width": 640,
+            "height": 1136
+          },
+          "adapter": {
+            "vendor": "intel",
+            "architecture": "gen-12lp",
+            "isFallbackAdapter": false
+          },
+          "errors": []
+        }
+      }
+    },
+    {
+      "name": "desktop",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "samples": [
+        {
+          "seconds": 0,
+          "visibleFraction": 1,
+          "edgeFraction": 0,
+          "cells": 256,
+          "count": 65536,
+          "digest": "4ad204fe35a5f1c0b885bab79235ecce9f6e2169e4506e951d89a60efa6850d9",
+          "uniforms": [],
+          "allocations": 2,
+          "canvas": {
+            "width": 1440,
+            "height": 900
+          },
+          "adapter": {
+            "vendor": "intel",
+            "architecture": "gen-12lp",
+            "isFallbackAdapter": false
+          },
+          "errors": []
+        },
+        {
+          "seconds": 3,
+          "visibleFraction": 1,
+          "edgeFraction": 0,
+          "cells": 85,
+          "count": 65536,
+          "digest": "77051b8362b6230824eeffc5e957d62e437ff1fdecd15d26e4cf0d74df31c20f",
+          "uniforms": [
+            0.004166666883975267,
+            3,
+            1.600000023841858,
+            0,
+            0,
+            0,
+            1,
+            0
+          ],
+          "allocations": 2,
+          "canvas": {
+            "width": 1440,
+            "height": 900
+          },
+          "adapter": {
+            "vendor": "intel",
+            "architecture": "gen-12lp",
+            "isFallbackAdapter": false
+          },
+          "errors": []
+        },
+        {
+          "seconds": 6,
+          "visibleFraction": 1,
+          "edgeFraction": 0,
+          "cells": 36,
+          "count": 65536,
+          "digest": "6525ffefa13c5798f18e15b96841a2b0a8dc932252971befb4f9c82a8d264bb4",
+          "uniforms": [
+            0.004166666883975267,
+            6,
+            1.600000023841858,
+            0,
+            0,
+            0,
+            1,
+            3.407879110554771e-28
+          ],
+          "allocations": 2,
+          "canvas": {
+            "width": 1440,
+            "height": 900
+          },
+          "adapter": {
+            "vendor": "intel",
+            "architecture": "gen-12lp",
+            "isFallbackAdapter": false
+          },
+          "errors": []
+        },
+        {
+          "seconds": 9,
+          "visibleFraction": 1,
+          "edgeFraction": 0,
+          "cells": 57,
+          "count": 65536,
+          "digest": "e8cd682a089504dc1594dfb90b6fe8c37603810edd466fe84b98295e1bde81ae",
+          "uniforms": [
+            0.004166666883975267,
+            9,
+            1.600000023841858,
+            0,
+            0,
+            0,
+            1,
+            1
+          ],
+          "allocations": 2,
+          "canvas": {
+            "width": 1440,
+            "height": 900
+          },
+          "adapter": {
+            "vendor": "intel",
+            "architecture": "gen-12lp",
+            "isFallbackAdapter": false
+          },
+          "errors": []
+        },
+        {
+          "seconds": 12,
+          "visibleFraction": 1,
+          "edgeFraction": 0,
+          "cells": 72,
+          "count": 65536,
+          "digest": "4f15f9a8af58b8c01872393014226f5aeb11cb5312501c74382f9206ec23d206",
+          "uniforms": [
+            0.004166666883975267,
+            12,
+            1.600000023841858,
+            0,
+            0,
+            0,
+            1,
+            1
+          ],
+          "allocations": 2,
+          "canvas": {
+            "width": 1440,
+            "height": 900
+          },
+          "adapter": {
+            "vendor": "intel",
+            "architecture": "gen-12lp",
+            "isFallbackAdapter": false
+          },
+          "errors": []
+        },
+        {
+          "seconds": 15,
+          "visibleFraction": 1,
+          "edgeFraction": 0,
+          "cells": 51,
+          "count": 65536,
+          "digest": "ccd8a5580bcaf42a1433d838a3cea2470cd17cc80a38501119e47b42638018dd",
+          "uniforms": [
+            0.004166666883975267,
+            15,
+            1.600000023841858,
+            0,
+            0,
+            0,
+            1,
+            2
+          ],
+          "allocations": 2,
+          "canvas": {
+            "width": 1440,
+            "height": 900
+          },
+          "adapter": {
+            "vendor": "intel",
+            "architecture": "gen-12lp",
+            "isFallbackAdapter": false
+          },
+          "errors": []
+        },
+        {
+          "seconds": 18,
+          "visibleFraction": 1,
+          "edgeFraction": 0,
+          "cells": 22,
+          "count": 65536,
+          "digest": "beb5cc5050daa2b90e018dcb37ada9a8d2deab18cce311d08410e24b7d1e5d84",
+          "uniforms": [
+            0.004166666883975267,
+            18,
+            1.600000023841858,
+            0,
+            0,
+            0,
+            1,
+            2
+          ],
+          "allocations": 2,
+          "canvas": {
+            "width": 1440,
+            "height": 900
+          },
+          "adapter": {
+            "vendor": "intel",
+            "architecture": "gen-12lp",
+            "isFallbackAdapter": false
+          },
+          "errors": []
+        },
+        {
+          "seconds": 21,
+          "visibleFraction": 1,
+          "edgeFraction": 0,
+          "cells": 20,
+          "count": 65536,
+          "digest": "4a0e7e7e10b16902c1df4a6801f2b03494be4f370f955f3aca00fcfbdb3de271",
+          "uniforms": [
+            0.004166666883975267,
+            21,
+            1.600000023841858,
+            0,
+            0,
+            0,
+            1,
+            0
+          ],
+          "allocations": 2,
+          "canvas": {
+            "width": 1440,
+            "height": 900
+          },
+          "adapter": {
+            "vendor": "intel",
+            "architecture": "gen-12lp",
+            "isFallbackAdapter": false
+          },
+          "errors": []
+        },
+        {
+          "seconds": 24,
+          "visibleFraction": 1,
+          "edgeFraction": 0,
+          "cells": 36,
+          "count": 65536,
+          "digest": "151c8c73f623f9c008dd6b731221c9f50287f4bd05bb9ebe057644b6ede4304d",
+          "uniforms": [
+            0.004166666883975267,
+            24,
+            1.600000023841858,
+            0,
+            0,
+            0,
+            1,
+            0
+          ],
+          "allocations": 2,
+          "canvas": {
+            "width": 1440,
+            "height": 900
+          },
+          "adapter": {
+            "vendor": "intel",
+            "architecture": "gen-12lp",
+            "isFallbackAdapter": false
+          },
+          "errors": []
+        },
+        {
+          "seconds": 27,
+          "visibleFraction": 1,
+          "edgeFraction": 0,
+          "cells": 36,
+          "count": 65536,
+          "digest": "d88758c2ddc5ef39ed32e89ed0eda0f76c178b183c50c141edaaf78fa66111f0",
+          "uniforms": [
+            0.004166666883975267,
+            27,
+            1.600000023841858,
+            0,
+            0,
+            0,
+            1,
+            4.98947580576324e-24
+          ],
+          "allocations": 2,
+          "canvas": {
+            "width": 1440,
+            "height": 900
+          },
+          "adapter": {
+            "vendor": "intel",
+            "architecture": "gen-12lp",
+            "isFallbackAdapter": false
+          },
+          "errors": []
+        },
+        {
+          "seconds": 30,
+          "visibleFraction": 1,
+          "edgeFraction": 0,
+          "cells": 60,
+          "count": 65536,
+          "digest": "60d8cee176bb78032f62602d132dd7e276d0cf00c9f043a4de9a9bc2e74e9e15",
+          "uniforms": [
+            0.004166666883975267,
+            30,
+            1.600000023841858,
+            0,
+            0,
+            0,
+            1,
+            1
+          ],
+          "allocations": 2,
+          "canvas": {
+            "width": 1440,
+            "height": 900
+          },
+          "adapter": {
+            "vendor": "intel",
+            "architecture": "gen-12lp",
+            "isFallbackAdapter": false
+          },
+          "errors": []
+        },
+        {
+          "seconds": 33,
+          "visibleFraction": 1,
+          "edgeFraction": 0,
+          "cells": 70,
+          "count": 65536,
+          "digest": "9f76d0c584c0233b29acd8e25e48d87ad76003a20b40448bd300c5c684f92d8c",
+          "uniforms": [
+            0.004166666883975267,
+            33,
+            1.600000023841858,
+            0,
+            0,
+            0,
+            1,
+            1
+          ],
+          "allocations": 2,
+          "canvas": {
+            "width": 1440,
+            "height": 900
+          },
+          "adapter": {
+            "vendor": "intel",
+            "architecture": "gen-12lp",
+            "isFallbackAdapter": false
+          },
+          "errors": []
+        },
+        {
+          "seconds": 36,
+          "visibleFraction": 1,
+          "edgeFraction": 0,
+          "cells": 52,
+          "count": 65536,
+          "digest": "ebc320b0c3f8d130bb38a3ba52e66f699f84dbed23bb9e08c3d6d2d706e78d35",
+          "uniforms": [
+            0.004166666883975267,
+            36,
+            1.600000023841858,
+            0,
+            0,
+            0,
+            1,
+            2
+          ],
+          "allocations": 2,
+          "canvas": {
+            "width": 1440,
+            "height": 900
+          },
+          "adapter": {
+            "vendor": "intel",
+            "architecture": "gen-12lp",
+            "isFallbackAdapter": false
+          },
+          "errors": []
+        },
+        {
+          "seconds": 39,
+          "visibleFraction": 1,
+          "edgeFraction": 0,
+          "cells": 22,
+          "count": 65536,
+          "digest": "7bb3315c19b3e76f8fc2053a4f3c226d0517567d56bd437fd0b9743540650a09",
+          "uniforms": [
+            0.004166666883975267,
+            39,
+            1.600000023841858,
+            0,
+            0,
+            0,
+            1,
+            2
+          ],
+          "allocations": 2,
+          "canvas": {
+            "width": 1440,
+            "height": 900
+          },
+          "adapter": {
+            "vendor": "intel",
+            "architecture": "gen-12lp",
+            "isFallbackAdapter": false
+          },
+          "errors": []
+        },
+        {
+          "seconds": 42,
+          "visibleFraction": 1,
+          "edgeFraction": 0,
+          "cells": 20,
+          "count": 65536,
+          "digest": "5399d5f3a1c0452a2024ee9dab84280361e75de096b983049120607cd8e49602",
+          "uniforms": [
+            0.004166666883975267,
+            42,
+            1.600000023841858,
+            0,
+            0,
+            0,
+            1,
+            0
+          ],
+          "allocations": 2,
+          "canvas": {
+            "width": 1440,
+            "height": 900
+          },
+          "adapter": {
+            "vendor": "intel",
+            "architecture": "gen-12lp",
+            "isFallbackAdapter": false
+          },
+          "errors": []
+        },
+        {
+          "seconds": 45,
+          "visibleFraction": 1,
+          "edgeFraction": 0,
+          "cells": 36,
+          "count": 65536,
+          "digest": "7fa798627aa5b5c82d610f3ec636f2646f06c5aefce73f2b5ce5d1ab320c0e7d",
+          "uniforms": [
+            0.004166666883975267,
+            45,
+            1.600000023841858,
+            0,
+            0,
+            0,
+            1,
+            0
+          ],
+          "allocations": 2,
+          "canvas": {
+            "width": 1440,
+            "height": 900
+          },
+          "adapter": {
+            "vendor": "intel",
+            "architecture": "gen-12lp",
+            "isFallbackAdapter": false
+          },
+          "errors": []
+        },
+        {
+          "seconds": 48,
+          "visibleFraction": 1,
+          "edgeFraction": 0,
+          "cells": 36,
+          "count": 65536,
+          "digest": "d48915ebda02928c53021f259c2155f9cfcd449f2c20481695b93f36897be250",
+          "uniforms": [
+            0.004166666883975267,
+            48,
+            1.600000023841858,
+            0,
+            0,
+            0,
+            1,
+            3.733369430936202e-24
+          ],
+          "allocations": 2,
+          "canvas": {
+            "width": 1440,
+            "height": 900
+          },
+          "adapter": {
+            "vendor": "intel",
+            "architecture": "gen-12lp",
+            "isFallbackAdapter": false
+          },
+          "errors": []
+        },
+        {
+          "seconds": 51,
+          "visibleFraction": 1,
+          "edgeFraction": 0,
+          "cells": 70,
+          "count": 65536,
+          "digest": "a3ba68e5d06fc3163bf9c442f7a118e5196e555b20c659bc7e2182f5f56354d2",
+          "uniforms": [
+            0.004166666883975267,
+            51,
+            1.600000023841858,
+            0,
+            0,
+            0,
+            1,
+            1
+          ],
+          "allocations": 2,
+          "canvas": {
+            "width": 1440,
+            "height": 900
+          },
+          "adapter": {
+            "vendor": "intel",
+            "architecture": "gen-12lp",
+            "isFallbackAdapter": false
+          },
+          "errors": []
+        },
+        {
+          "seconds": 54,
+          "visibleFraction": 1,
+          "edgeFraction": 0,
+          "cells": 70,
+          "count": 65536,
+          "digest": "72c62c1528f3597f7fd608377f07b20f88ec03a39cc751aa11a1a7f3625ebb34",
+          "uniforms": [
+            0.004166666883975267,
+            54,
+            1.600000023841858,
+            0,
+            0,
+            0,
+            1,
+            1
+          ],
+          "allocations": 2,
+          "canvas": {
+            "width": 1440,
+            "height": 900
+          },
+          "adapter": {
+            "vendor": "intel",
+            "architecture": "gen-12lp",
+            "isFallbackAdapter": false
+          },
+          "errors": []
+        },
+        {
+          "seconds": 57,
+          "visibleFraction": 1,
+          "edgeFraction": 0,
+          "cells": 52,
+          "count": 65536,
+          "digest": "9ee076b509dfc48f30bab0a459bfa35d69a6aa4fa5b052baf5069e0857e62125",
+          "uniforms": [
+            0.004166666883975267,
+            57,
+            1.600000023841858,
+            0,
+            0,
+            0,
+            1,
+            2
+          ],
+          "allocations": 2,
+          "canvas": {
+            "width": 1440,
+            "height": 900
+          },
+          "adapter": {
+            "vendor": "intel",
+            "architecture": "gen-12lp",
+            "isFallbackAdapter": false
+          },
+          "errors": []
+        },
+        {
+          "seconds": 60,
+          "visibleFraction": 1,
+          "edgeFraction": 0,
+          "cells": 23,
+          "count": 65536,
+          "digest": "20f08a85fe9ca714716dc350710430e0e154f8cec973a541cfceaa5967201f05",
+          "uniforms": [
+            0.004166666883975267,
+            60,
+            1.600000023841858,
+            0,
+            0,
+            0,
+            1,
+            2
+          ],
+          "allocations": 2,
+          "canvas": {
+            "width": 1440,
+            "height": 900
+          },
+          "adapter": {
+            "vendor": "intel",
+            "architecture": "gen-12lp",
+            "isFallbackAdapter": false
+          },
+          "errors": []
+        },
+        {
+          "seconds": 63,
+          "visibleFraction": 1,
+          "edgeFraction": 0,
+          "cells": 20,
+          "count": 65536,
+          "digest": "bea05a73740e457e02559cf77bf6f4355da46b367996965a2d57c4ac1e266c63",
+          "uniforms": [
+            0.004166666883975267,
+            63,
+            1.600000023841858,
+            0,
+            0,
+            0,
+            1,
+            0
+          ],
+          "allocations": 2,
+          "canvas": {
+            "width": 1440,
+            "height": 900
+          },
+          "adapter": {
+            "vendor": "intel",
+            "architecture": "gen-12lp",
+            "isFallbackAdapter": false
+          },
+          "errors": []
+        }
+      ],
+      "resize": {
+        "before": {
+          "visibleFraction": 1,
+          "edgeFraction": 0,
+          "cells": 20,
+          "count": 65536,
+          "digest": "bea05a73740e457e02559cf77bf6f4355da46b367996965a2d57c4ac1e266c63",
+          "uniforms": [
+            0.004166666883975267,
+            63,
+            1.600000023841858,
+            0,
+            0,
+            0,
+            1,
+            0
+          ],
+          "allocations": 2,
+          "canvas": {
+            "width": 1440,
+            "height": 900
+          },
+          "adapter": {
+            "vendor": "intel",
+            "architecture": "gen-12lp",
+            "isFallbackAdapter": false
+          },
+          "errors": []
+        },
+        "after": {
+          "visibleFraction": 1,
+          "edgeFraction": 0,
+          "cells": 20,
+          "count": 65536,
+          "digest": "bea05a73740e457e02559cf77bf6f4355da46b367996965a2d57c4ac1e266c63",
+          "uniforms": [
+            0,
+            63,
+            0.625,
+            0,
+            0,
+            0,
+            0.7905694246292114,
+            0
+          ],
+          "allocations": 2,
+          "canvas": {
+            "width": 900,
+            "height": 1440
+          },
+          "adapter": {
+            "vendor": "intel",
+            "architecture": "gen-12lp",
+            "isFallbackAdapter": false
+          },
+          "errors": []
+        }
+      },
+      "touch": {
+        "held": {
+          "visibleFraction": 1,
+          "edgeFraction": 0,
+          "cells": 28,
+          "count": 65536,
+          "digest": "889c51bb14d123cb48ecd62d7f677f5d1054136b87333ba87e9180cddbfe8459",
+          "uniforms": [
+            0.004166666883975267,
+            63.516666412353516,
+            1.600000023841858,
+            26.463180541992188,
+            0.5,
+            0.4000000059604645,
+            1,
+            0
+          ],
+          "allocations": 2,
+          "canvas": {
+            "width": 1440,
+            "height": 900
+          },
+          "adapter": {
+            "vendor": "intel",
+            "architecture": "gen-12lp",
+            "isFallbackAdapter": false
+          },
+          "errors": []
+        },
+        "released": {
+          "visibleFraction": 1,
+          "edgeFraction": 0,
+          "cells": 70,
+          "count": 65536,
+          "digest": "597b46b391b741fa32d0785c7c50c2983d9f16ca3409e90d90ba5457416cc433",
+          "uniforms": [
+            0.004166666883975267,
+            65.51667022705078,
+            1.600000023841858,
+            8.972492793191122e-8,
+            0.5,
+            0.4000000059604645,
+            1,
+            0
+          ],
+          "allocations": 2,
+          "canvas": {
+            "width": 1440,
+            "height": 900
+          },
+          "adapter": {
+            "vendor": "intel",
+            "architecture": "gen-12lp",
+            "isFallbackAdapter": false
+          },
+          "errors": []
+        }
+      }
+    }
+  ],
+  "pixels": [
+    {
+      "name": "baseline-mobile",
+      "width": 780,
+      "height": 1688,
+      "brightPixels": 0,
+      "sha256": "50fec77a69476cab7e63535928eeeea02332f751021a82d6d78ff83b5c87c64b"
+    },
+    {
+      "name": "mobile-12",
+      "width": 780,
+      "height": 1688,
+      "brightPixels": 147064,
+      "sha256": "093780be44c2f4ef096eb8427c7c6fcf9b322fc6e4d7e57fb16318d33c1985a3"
+    },
+    {
+      "name": "mobile-42",
+      "width": 780,
+      "height": 1688,
+      "brightPixels": 28660,
+      "sha256": "ff02135c05396c233b450c6a66afce0479ea3b0a02764d801cd84ea460797e45"
+    },
+    {
+      "name": "mobile-63",
+      "width": 780,
+      "height": 1688,
+      "brightPixels": 29010,
+      "sha256": "eb42af6c142a43a17aa94817dde24781e7089034893f0476f32e34651dcf40a2"
+    },
+    {
+      "name": "mobile-interaction",
+      "width": 780,
+      "height": 1688,
+      "brightPixels": 394798,
+      "sha256": "ff20e4eb50859a746ac8005ed77eb718a818ba7a39cdd29a5148086ee21bc4ae"
+    },
+    {
+      "name": "small-mobile-12",
+      "width": 640,
+      "height": 1136,
+      "brightPixels": 81703,
+      "sha256": "447633cef779fa3c441c605b79a7c79cbe02ec06f3cd53044e2b3dfd2eb068a7"
+    },
+    {
+      "name": "small-mobile-42",
+      "width": 640,
+      "height": 1136,
+      "brightPixels": 15970,
+      "sha256": "79ce1d7078eb45ed387e930bb884861ab899e78629a092582fdbfd161d1683ac"
+    },
+    {
+      "name": "small-mobile-63",
+      "width": 640,
+      "height": 1136,
+      "brightPixels": 16119,
+      "sha256": "82927c7ae851f2c58dbcbc212f12eb4d17cbb6a939ddaa036f9c3f9ebcc17f01"
+    },
+    {
+      "name": "small-mobile-interaction",
+      "width": 640,
+      "height": 1136,
+      "brightPixels": 226888,
+      "sha256": "5622d57955aaee3b5359934755ba20b90a6d9120a0d44e14ad68ccc9ce606f23"
+    },
+    {
+      "name": "desktop-12",
+      "width": 1440,
+      "height": 900,
+      "brightPixels": 138964,
+      "sha256": "2184ca916b16d0258bf4f85e4a819a1217c230607d9c21798bcd5f4a395334f1"
+    },
+    {
+      "name": "desktop-42",
+      "width": 1440,
+      "height": 900,
+      "brightPixels": 27333,
+      "sha256": "eb8a94d3f2cddb3ff8a43b3aed5f49f8b29f08e9a7e02842bba9629b6371de35"
+    },
+    {
+      "name": "desktop-63",
+      "width": 1440,
+      "height": 900,
+      "brightPixels": 27511,
+      "sha256": "4fa398587cf822263f0f4d621ca3cd4c71bc2b1fba320b8966874e539e94426d"
+    },
+    {
+      "name": "desktop-interaction",
+      "width": 1440,
+      "height": 900,
+      "brightPixels": 327304,
+      "sha256": "be713d17a48345c80b709e21e6e6bb75782596e7ff34fc4e0b5ab0047b504d6f"
+    }
+  ],
+  "errors": [],
+  "passed": true
+}
