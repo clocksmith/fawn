@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Fawn</title>
+<title>Drift · Fawn</title>
 <link rel="icon" type="image/svg+xml" href="./fawn-icon.svg">
 <style>
 :root { color-scheme: dark; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #fff; background: #020405; --edge: #ffffff38; --glass: #080d16d9; }
@@ -55,13 +55,16 @@ summary::after { content: ' +'; }
 }
 @media (prefers-reduced-motion: reduce) { button { transition: none; } }
 
-.demo-switcher { position: relative; }
-.demo-switcher > summary { display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 12px; border: 1px solid #ffffff24; border-radius: 14px; background: #080d1680; white-space: nowrap; }
-.demo-switcher > summary::after { content: '⌄'; }
-.demo-switcher[open] > summary { background: var(--glass); }
-.demo-menu { position: absolute; z-index: 10; top: calc(100% + 8px); right: 0; width: 220px; max-width: calc(100vw - 32px); max-height: calc(100dvh - 100px); overflow-y: auto; padding: 6px; border: 1px solid var(--edge); border-radius: 14px; background: #080d16; }
-.demo-menu a { display: flex; align-items: center; justify-content: space-between; min-height: 44px; padding: 0 12px; border-radius: 8px; font-size: 13px; text-decoration: none; }
-.demo-menu a:hover, .demo-menu a[aria-current="page"] { background: #ffffff16; }
+.demo-switcher { position: relative; width: 160px; flex: none; }
+.demo-switcher > summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 44px; padding: 0 12px; border-radius: 8px; color: #ffffffc4; white-space: nowrap; }
+.demo-switcher > summary::after { content: ''; width: 6px; height: 6px; margin: -3px 2px 0 0; border: solid currentColor; border-width: 0 1.5px 1.5px 0; transform: rotate(45deg); }
+.demo-switcher > summary:hover, .demo-switcher[open] > summary { color: #fff; background: #ffffff08; }
+.demo-switcher[open] > summary::after { margin-top: 3px; transform: rotate(225deg); }
+.demo-menu { position: absolute; z-index: 10; top: calc(100% + 4px); right: 0; width: 100%; max-height: calc(100dvh - 100px); overflow-y: auto; padding: 4px; border: 1px solid #ffffff1f; border-radius: 8px; background: #090c10f5; }
+.demo-menu a { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 44px; padding: 0 7px; border-radius: 4px; color: #ffffffa6; font-size: 13px; text-decoration: none; }
+.demo-menu a::after { content: ''; width: 12px; flex: none; text-align: center; }
+.demo-menu a:hover, .demo-menu a:focus-visible { color: #fff; background: #ffffff10; }
+.demo-menu a[aria-current="page"] { color: #fff; background: #ffffff08; }
 .demo-menu a[aria-current="page"]::after { content: '✓'; }
 </style>
 </head>
@@ -83,9 +86,9 @@ summary::after { content: ' +'; }
 </svg><span>fawn</span></a>
  <details class="demo-switcher"><summary>Backgrounds</summary>
   <nav class="demo-menu" aria-label="Fawn backgrounds">
-   <a href="./fawn-start.html" aria-current="page">Particles (main)</a>
-   <a href="./fawn-magnetic-fluids.html">Magnetic Fluids</a>
-   <a href="./fawn-prismatic-fluids.html">Prismatic Fluids</a>
+   <a href="./fawn-start.html" aria-current="page">Drift</a>
+   <a href="./fawn-magnetic-fluids.html">Black Opal</a>
+   <a href="./fawn-prismatic-fluids.html">Chroma</a>
   </nav>
  </details>
 </header>
