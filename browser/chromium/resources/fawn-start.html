@@ -142,9 +142,21 @@ fn safeNormalize(v: vec2<f32>) -> vec2<f32> {
   return v * inverseSqrt(lenSq);
 }
 
+const VIEWPORT_EDGE: f32 = 0.98;
+
+// Position and velocity use normalized viewport coordinates, independent of canvas aspect.
 fn sceneField(phase: u32, pos: vec2<f32>, mouseDir: vec2<f32>, mouseDistSq: f32) -> vec2<f32> {
   if (phase == 1u) {
-    let flow = vec2<f32>(cos(pos.y * 3.0 + u.time * 0.2), sin(pos.x * 2.0 - u.time * 0.16));
+    // Stream-function derivatives give a circulating field tangent to the viewport edges.
+    let angle = pos * 1.5707963;
+    let wave = pos * 2.0 + vec2<f32>(u.time * 0.2, -u.time * 0.16);
+    let modulation = 1.0 + 0.35 * sin(wave.x) * sin(wave.y);
+    let flow = vec2<f32>(
+      cos(angle.x) * (-1.5707963 * sin(angle.y) * modulation
+        + cos(angle.y) * 0.7 * sin(wave.x) * cos(wave.y)),
+      cos(angle.y) * (1.5707963 * sin(angle.x) * modulation
+        - cos(angle.x) * 0.7 * cos(wave.x) * sin(wave.y))
+    );
     return flow * 0.045 + mouseDir * (u.mouseForce * 0.0014 / mouseDistSq);
   }
   let orbit = safeNormalize(vec2<f32>(-pos.y, pos.x));
@@ -152,7 +164,7 @@ fn sceneField(phase: u32, pos: vec2<f32>, mouseDir: vec2<f32>, mouseDistSq: f32)
   if (phase == 2u) {
     return orbit * 0.035 + inward * 0.025 - mouseDir * (u.mouseForce * 0.0018 / mouseDistSq);
   }
-  let radius = length(pos / vec2<f32>(u.aspect, 1.0));
+  let radius = length(pos);
   let mouseOrbit = vec2<f32>(-mouseDir.y, mouseDir.x);
   var field = orbit * (0.020 + 0.034 * (1.0 - smoothstep(0.18, 1.05, radius)));
   field += inward * (0.006 + 0.014 * (1.0 - smoothstep(0.24, 1.08, radius)));
@@ -180,6 +192,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>, @builtin(num_workgroups) 
   if (blend > 0.0) {
     field = mix(field, sceneField((phase + 1u) % 3u, pos, mouseDir, mouseDistSq), blend);
   }
+  field -= sign(pos) * smoothstep(vec2<f32>(0.80), vec2<f32>(VIEWPORT_EDGE), abs(pos)) * 0.09;
   field += -vel * 0.010;
 
   var nextVel = vel * 0.986 + field * (u.dt * 60.0);
@@ -189,14 +202,13 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>, @builtin(num_workgroups) 
   }
 
   var nextPos = pos + nextVel * u.dt;
-  let maxX = u.aspect * 1.02;
-  if (nextPos.x < -maxX || nextPos.x > maxX) {
-    nextPos.x = clamp(nextPos.x, -maxX, maxX);
-    nextVel.x = -nextVel.x * 0.92;
+  if (abs(nextPos.x) > VIEWPORT_EDGE) {
+    nextPos.x = sign(nextPos.x) * (2.0 * VIEWPORT_EDGE - abs(nextPos.x));
+    nextVel.x = -sign(nextPos.x) * abs(nextVel.x) * 0.92;
   }
-  if (nextPos.y < -1.02 || nextPos.y > 1.02) {
-    nextPos.y = clamp(nextPos.y, -1.02, 1.02);
-    nextVel.y = -nextVel.y * 0.92;
+  if (abs(nextPos.y) > VIEWPORT_EDGE) {
+    nextPos.y = sign(nextPos.y) * (2.0 * VIEWPORT_EDGE - abs(nextPos.y));
+    nextVel.y = -sign(nextPos.y) * abs(nextVel.y) * 0.92;
   }
 
   p.pos = nextPos;
@@ -243,10 +255,10 @@ fn vs(@builtin(vertex_index) vertexIndex: u32, @builtin(instance_index) instance
   let p = particles[instanceIndex];
   let local = quad[vertexIndex];
   let size = p.color.w * max(u.pad.x, 0.1);
-  let world = p.pos + local * size;
+  let world = p.pos + local * vec2<f32>(size / u.aspect, size);
 
   var out: VSOut;
-  out.position = vec4<f32>(world.x / u.aspect, world.y, 0.0, 1.0);
+  out.position = vec4<f32>(world, 0.0, 1.0);
   out.local = local;
   out.color = p.color.xyz;
   out.energy = clamp(length(p.vel) * 0.85, 0.0, 1.0);
@@ -466,14 +478,14 @@ function scenePhase(seconds) {
     workloadEl.textContent = `${particleCount.toLocaleString()} particles · ${stepsPerFrame} steps`;
   }
 
-  function createParticleData(count, aspect, start, total) {
+  function createParticleData(count, start, total) {
     const data = new Float32Array(count * PARTICLE_STRIDE_FLOATS);
     const goldenAngle = Math.PI * (3 - Math.sqrt(5));
     for (let i = 0; i < count; i++) {
       const t = (start + i) / total;
       const radius = Math.sqrt(t) * 0.92;
       const angle = (start + i) * goldenAngle;
-      const x = Math.cos(angle) * radius * aspect * 0.92;
+      const x = Math.cos(angle) * radius * 0.92;
       const y = Math.sin(angle) * radius * 0.92;
       const tangentX = -Math.sin(angle);
       const tangentY = Math.cos(angle);
@@ -616,10 +628,9 @@ function scenePhase(seconds) {
     createParticleBuffers();
     recreateBindGroups();
 
-    const aspect = canvas.width > 0 && canvas.height > 0 ? canvas.width / canvas.height : 1;
     for (let start = 0; start < particleCount; start += PARTICLE_UPLOAD_CHUNK) {
       const count = Math.min(PARTICLE_UPLOAD_CHUNK, particleCount - start);
-      const data = createParticleData(count, aspect, start, particleCount);
+      const data = createParticleData(count, start, particleCount);
       const offset = start * PARTICLE_STRIDE_FLOATS * Float32Array.BYTES_PER_ELEMENT;
       device.queue.writeBuffer(particleBuffers[0], offset, data);
       device.queue.writeBuffer(particleBuffers[1], offset, data);
@@ -730,10 +741,9 @@ function scenePhase(seconds) {
 
   function updatePointerFromEvent(event) {
     const rect = canvas.getBoundingClientRect();
-    const aspect = canvas.width > 0 && canvas.height > 0 ? canvas.width / canvas.height : 1;
     const x = rect.width > 0 ? (event.clientX - rect.left) / rect.width : 0.5;
     const y = rect.height > 0 ? (event.clientY - rect.top) / rect.height : 0.5;
-    pointer.x = (x * 2 - 1) * aspect;
+    pointer.x = x * 2 - 1;
     pointer.y = -(y * 2 - 1);
   }
 
@@ -926,8 +936,7 @@ function scenePhase(seconds) {
     if (offsets[event.key]) {
       event.preventDefault();
       const [x, y] = offsets[event.key];
-      const aspect = canvas.width / canvas.height;
-      pointer.x = Math.max(-aspect, Math.min(aspect, pointer.x + x));
+      pointer.x = Math.max(-1, Math.min(1, pointer.x + x));
       pointer.y = Math.max(-1, Math.min(1, pointer.y + y));
     }
     if (event.code === 'Space') { event.preventDefault(); pointer.active = true; }
@@ -940,7 +949,8 @@ function scenePhase(seconds) {
     if (document.hidden) { cancelAnimationFrame(raf); raf = 0; }
     else schedule();
   });
-  addEventListener('resize', () => { if (running) { resizeCanvas(); schedule(); } });
+  const resizeView = () => { if (running) { resizeCanvas(); schedule(); } };
+  addEventListener('resize', resizeView);
   addEventListener('pagehide', () => {
     running = false;
     cancelAnimationFrame(raf);
@@ -951,6 +961,7 @@ function scenePhase(seconds) {
   try {
     updateWorkloadLabel();
     await initialize();
+    new ResizeObserver(resizeView).observe(canvas);
     pauseButton.disabled = false;
     restartButton.disabled = false;
     pauseButton.textContent = paused ? 'Resume' : 'Pause';

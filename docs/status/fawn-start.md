@@ -56,6 +56,18 @@ These demos have no established Doe-versus-Dawn application speed comparison;
 local diagnostics use Chrome's existing WebGPU provider. The current menu is
 checked by the switcher script and references the existing packaged simulators.
 
+The main particle page keeps simulated positions in normalized viewport
+coordinates. Its circulating flow and reflective, inward-guided edges prevent
+particles from collapsing into an offscreen corner. Canvas size observation
+updates drawing targets across viewport changes without reseeding particles.
+[Mobile regression evidence](../../reports/maintenance/20261011-fawn-particle-mobile/README.md)
+retains the preceding-source failure, GPU state and pixel readback, repeated
+cycles, rotation, and input checks. The [viewport regression](../../browser/chromium/scripts/test-fawn-particle-mobile.mjs)
+and [independent field oracle](../../browser/chromium/scripts/test-fawn-particle-fields.mjs)
+exercise the corrected application. These checks use Chrome WebGPU with
+emulated mobile viewports; physical phone and forced-Doe browser qualification
+remain separate.
+
 The landing page retains particle settings, continuous field transitions,
 pointer and keyboard interaction, pause, reset, and reduced-motion
 startup. The particle renderer uses triangle strips and draws fading trails and
