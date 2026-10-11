@@ -40,3 +40,13 @@ check requires Chrome and a physical WebGPU adapter and uses a controlled frame
 clock. Its displayed frame rate is not a performance measurement. These are
 application correctness diagnostics on Chrome's WebGPU provider, not physical
 phone qualification, a forced-Doe browser release, or deployment evidence.
+
+The D4DA Fawn package was built from source commit
+`7060626cf21b1e40a3cafbae530ffbea1513f30f`. Its hosting smoke check passed with
+physical-GPU Chrome flags, including all three public pages and retirement of
+the old worker while preserving user data. The default headless launch timed
+out; both attempts are retained. Publication to `canvascontext-9da05` was
+attempted with the existing Fawn deploy command and a cached Firebase CLI,
+but Firebase rejected authentication. The corrected page is not claimed live.
+See `hosting-smoke-default.log`, `hosting-smoke-physical.log`,
+`deploy.log`, and `package-release.json`.
