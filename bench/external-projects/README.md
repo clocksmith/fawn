@@ -9,8 +9,16 @@ directory named with its registry ID. Ready harness manifests end in
 A harness must pin the upstream repository, commit, and license; describe the
 smallest provider seam and patch set; require hardware execution; reject CPU,
 mock, software-renderer, and unknown-provider fallback; and bind immutable
-inputs to a reviewed output oracle. Dawn and Doe must execute the same command,
-dispatch, synchronization, and readback shape.
+inputs to a reviewed output oracle. Declare the
+[comparison class](../../docs/performance-strategy.md#comparison-classes).
+Application replacement preserves requested computation, numerical requirements,
+validation, visibility, lifetime and complete measurement boundaries. Internal
+allocations, copies, submissions and cache strategies may differ. Fixed-operation
+experiments additionally preserve the controls needed to isolate their declared
+treatment, including command/dispatch shape and effective paths where required.
+Verified elimination of unnecessary work is distinct from omitted required work.
+Keep existing frozen contracts and verdicts unchanged; new comparison obligations
+need matching executable checks before promotion.
 
 Required evidence includes clean-process success, crashes, hangs, timeouts,
 peak memory, cold and warm p50/p95/p99 latency, adapter and driver identity,

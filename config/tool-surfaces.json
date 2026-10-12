@@ -94,6 +94,11 @@
       ],
       "entrypoints": [
         "bench/cli.py compare",
+        "bench/cli.py generation",
+        "bench/cli.py generation-memory",
+        "bench/cli.py onnx-measure",
+        "bench/cli.py projection-cost",
+        "bench/cli.py compile-compare",
         "bench/runners/run_release_pipeline.py",
         "bench/runners/run_blocking_gates.py",
         "bench/gates/catscan_gate.py",
