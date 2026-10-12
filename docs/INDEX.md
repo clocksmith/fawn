@@ -72,7 +72,6 @@ evidence boundaries are clear.
 
 - [`shader-compiler-architecture.md`](shader-compiler-architecture.md)
 - [`tsir-contract.md`](tsir-contract.md)
-- [`tsir-contract.md`](tsir-contract.md)
 - [`lean-bounds-elimination-design.md`](lean-bounds-elimination-design.md)
 - [`doppler-ingest.md`](doppler-ingest.md)
 - [`gpu-math-api-proposal.md`](gpu-math-api-proposal.md)
