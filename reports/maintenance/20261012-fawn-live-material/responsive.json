@@ -1,0 +1,644 @@
+{
+  "passed": true,
+  "baselineRef": "5583b0638",
+  "classification": "Chrome application render and layout; emulated sizes/DPR; no physical phone or Doe performance claim",
+  "cases": [
+    {
+      "name": "fawn-start.html",
+      "config": {
+        "viewport": {
+          "width": 320,
+          "height": 568
+        },
+        "deviceScaleFactor": 1
+      },
+      "initial": {
+        "css": [
+          320,
+          568
+        ],
+        "buffer": [
+          320,
+          568
+        ],
+        "dpr": 1,
+        "viewport": [
+          320,
+          568
+        ],
+        "limit": 8192,
+        "adapter": {
+          "vendor": "apple",
+          "architecture": "metal-3",
+          "isFallbackAdapter": false
+        },
+        "outline": "none",
+        "border": "none",
+        "shadow": "none",
+        "textures": 2,
+        "errors": [],
+        "overflow": false
+      },
+      "resized": {
+        "css": [
+          568,
+          320
+        ],
+        "buffer": [
+          568,
+          320
+        ],
+        "dpr": 1,
+        "viewport": [
+          568,
+          320
+        ],
+        "limit": 8192,
+        "adapter": {
+          "vendor": "apple",
+          "architecture": "metal-3",
+          "isFallbackAdapter": false
+        },
+        "outline": "none",
+        "border": "none",
+        "shadow": "none",
+        "textures": 4,
+        "errors": [],
+        "overflow": false
+      }
+    },
+    {
+      "name": "fawn-start.html",
+      "config": {
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "deviceScaleFactor": 3
+      },
+      "initial": {
+        "css": [
+          390,
+          844
+        ],
+        "buffer": [
+          780,
+          1688
+        ],
+        "dpr": 3,
+        "viewport": [
+          390,
+          844
+        ],
+        "limit": 8192,
+        "adapter": {
+          "vendor": "apple",
+          "architecture": "metal-3",
+          "isFallbackAdapter": false
+        },
+        "outline": "none",
+        "border": "none",
+        "shadow": "none",
+        "textures": 2,
+        "errors": [],
+        "overflow": false
+      },
+      "resized": {
+        "css": [
+          844,
+          390
+        ],
+        "buffer": [
+          1688,
+          780
+        ],
+        "dpr": 3,
+        "viewport": [
+          844,
+          390
+        ],
+        "limit": 8192,
+        "adapter": {
+          "vendor": "apple",
+          "architecture": "metal-3",
+          "isFallbackAdapter": false
+        },
+        "outline": "none",
+        "border": "none",
+        "shadow": "none",
+        "textures": 4,
+        "errors": [],
+        "overflow": false
+      }
+    },
+    {
+      "name": "fawn-start.html",
+      "config": {
+        "viewport": {
+          "width": 1600,
+          "height": 500
+        },
+        "deviceScaleFactor": 2
+      },
+      "initial": {
+        "css": [
+          1600,
+          500
+        ],
+        "buffer": [
+          3200,
+          1000
+        ],
+        "dpr": 2,
+        "viewport": [
+          1600,
+          500
+        ],
+        "limit": 8192,
+        "adapter": {
+          "vendor": "apple",
+          "architecture": "metal-3",
+          "isFallbackAdapter": false
+        },
+        "outline": "none",
+        "border": "none",
+        "shadow": "none",
+        "textures": 2,
+        "errors": [],
+        "overflow": false
+      },
+      "resized": {
+        "css": [
+          500,
+          1600
+        ],
+        "buffer": [
+          1000,
+          3200
+        ],
+        "dpr": 2,
+        "viewport": [
+          500,
+          1600
+        ],
+        "limit": 8192,
+        "adapter": {
+          "vendor": "apple",
+          "architecture": "metal-3",
+          "isFallbackAdapter": false
+        },
+        "outline": "none",
+        "border": "none",
+        "shadow": "none",
+        "textures": 4,
+        "errors": [],
+        "overflow": false
+      }
+    },
+    {
+      "name": "fawn-prismatic-fluids.html",
+      "config": {
+        "viewport": {
+          "width": 320,
+          "height": 568
+        },
+        "deviceScaleFactor": 1
+      },
+      "initial": {
+        "css": [
+          320,
+          568
+        ],
+        "buffer": [
+          320,
+          568
+        ],
+        "dpr": 1,
+        "viewport": [
+          320,
+          568
+        ],
+        "limit": 8192,
+        "adapter": {
+          "vendor": "apple",
+          "architecture": "metal-3",
+          "isFallbackAdapter": false
+        },
+        "outline": "solid",
+        "border": "none",
+        "shadow": "none",
+        "textures": 0,
+        "errors": [],
+        "overflow": false
+      },
+      "resized": {
+        "css": [
+          568,
+          320
+        ],
+        "buffer": [
+          568,
+          320
+        ],
+        "dpr": 1,
+        "viewport": [
+          568,
+          320
+        ],
+        "limit": 8192,
+        "adapter": {
+          "vendor": "apple",
+          "architecture": "metal-3",
+          "isFallbackAdapter": false
+        },
+        "outline": "solid",
+        "border": "none",
+        "shadow": "none",
+        "textures": 0,
+        "errors": [],
+        "overflow": false
+      }
+    },
+    {
+      "name": "fawn-prismatic-fluids.html",
+      "config": {
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "deviceScaleFactor": 3
+      },
+      "initial": {
+        "css": [
+          390,
+          844
+        ],
+        "buffer": [
+          1170,
+          2532
+        ],
+        "dpr": 3,
+        "viewport": [
+          390,
+          844
+        ],
+        "limit": 8192,
+        "adapter": {
+          "vendor": "apple",
+          "architecture": "metal-3",
+          "isFallbackAdapter": false
+        },
+        "outline": "solid",
+        "border": "none",
+        "shadow": "none",
+        "textures": 0,
+        "errors": [],
+        "overflow": false
+      },
+      "resized": {
+        "css": [
+          844,
+          390
+        ],
+        "buffer": [
+          2532,
+          1170
+        ],
+        "dpr": 3,
+        "viewport": [
+          844,
+          390
+        ],
+        "limit": 8192,
+        "adapter": {
+          "vendor": "apple",
+          "architecture": "metal-3",
+          "isFallbackAdapter": false
+        },
+        "outline": "solid",
+        "border": "none",
+        "shadow": "none",
+        "textures": 0,
+        "errors": [],
+        "overflow": false
+      }
+    },
+    {
+      "name": "fawn-prismatic-fluids.html",
+      "config": {
+        "viewport": {
+          "width": 1600,
+          "height": 500
+        },
+        "deviceScaleFactor": 2
+      },
+      "initial": {
+        "css": [
+          1600,
+          500
+        ],
+        "buffer": [
+          3200,
+          1000
+        ],
+        "dpr": 2,
+        "viewport": [
+          1600,
+          500
+        ],
+        "limit": 8192,
+        "adapter": {
+          "vendor": "apple",
+          "architecture": "metal-3",
+          "isFallbackAdapter": false
+        },
+        "outline": "solid",
+        "border": "none",
+        "shadow": "none",
+        "textures": 0,
+        "errors": [],
+        "overflow": false
+      },
+      "resized": {
+        "css": [
+          500,
+          1600
+        ],
+        "buffer": [
+          1000,
+          3200
+        ],
+        "dpr": 2,
+        "viewport": [
+          500,
+          1600
+        ],
+        "limit": 8192,
+        "adapter": {
+          "vendor": "apple",
+          "architecture": "metal-3",
+          "isFallbackAdapter": false
+        },
+        "outline": "solid",
+        "border": "none",
+        "shadow": "none",
+        "textures": 0,
+        "errors": [],
+        "overflow": false
+      }
+    },
+    {
+      "name": "fawn-magnetic-fluids.html",
+      "config": {
+        "viewport": {
+          "width": 320,
+          "height": 568
+        },
+        "deviceScaleFactor": 1
+      },
+      "initial": {
+        "css": [
+          320,
+          568
+        ],
+        "buffer": [
+          320,
+          568
+        ],
+        "dpr": 1,
+        "viewport": [
+          320,
+          568
+        ],
+        "limit": 8192,
+        "adapter": {
+          "vendor": "apple",
+          "architecture": "metal-3",
+          "isFallbackAdapter": false
+        },
+        "outline": "solid",
+        "border": "none",
+        "shadow": "none",
+        "textures": 0,
+        "errors": [],
+        "overflow": false
+      },
+      "resized": {
+        "css": [
+          568,
+          320
+        ],
+        "buffer": [
+          568,
+          320
+        ],
+        "dpr": 1,
+        "viewport": [
+          568,
+          320
+        ],
+        "limit": 8192,
+        "adapter": {
+          "vendor": "apple",
+          "architecture": "metal-3",
+          "isFallbackAdapter": false
+        },
+        "outline": "solid",
+        "border": "none",
+        "shadow": "none",
+        "textures": 0,
+        "errors": [],
+        "overflow": false
+      }
+    },
+    {
+      "name": "fawn-magnetic-fluids.html",
+      "config": {
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "deviceScaleFactor": 3
+      },
+      "initial": {
+        "css": [
+          390,
+          844
+        ],
+        "buffer": [
+          1170,
+          2532
+        ],
+        "dpr": 3,
+        "viewport": [
+          390,
+          844
+        ],
+        "limit": 8192,
+        "adapter": {
+          "vendor": "apple",
+          "architecture": "metal-3",
+          "isFallbackAdapter": false
+        },
+        "outline": "solid",
+        "border": "none",
+        "shadow": "none",
+        "textures": 0,
+        "errors": [],
+        "overflow": false
+      },
+      "resized": {
+        "css": [
+          844,
+          390
+        ],
+        "buffer": [
+          2532,
+          1170
+        ],
+        "dpr": 3,
+        "viewport": [
+          844,
+          390
+        ],
+        "limit": 8192,
+        "adapter": {
+          "vendor": "apple",
+          "architecture": "metal-3",
+          "isFallbackAdapter": false
+        },
+        "outline": "solid",
+        "border": "none",
+        "shadow": "none",
+        "textures": 0,
+        "errors": [],
+        "overflow": false
+      }
+    },
+    {
+      "name": "fawn-magnetic-fluids.html",
+      "config": {
+        "viewport": {
+          "width": 1600,
+          "height": 500
+        },
+        "deviceScaleFactor": 2
+      },
+      "initial": {
+        "css": [
+          1600,
+          500
+        ],
+        "buffer": [
+          3200,
+          1000
+        ],
+        "dpr": 2,
+        "viewport": [
+          1600,
+          500
+        ],
+        "limit": 8192,
+        "adapter": {
+          "vendor": "apple",
+          "architecture": "metal-3",
+          "isFallbackAdapter": false
+        },
+        "outline": "solid",
+        "border": "none",
+        "shadow": "none",
+        "textures": 0,
+        "errors": [],
+        "overflow": false
+      },
+      "resized": {
+        "css": [
+          500,
+          1600
+        ],
+        "buffer": [
+          1000,
+          3200
+        ],
+        "dpr": 2,
+        "viewport": [
+          500,
+          1600
+        ],
+        "limit": 8192,
+        "adapter": {
+          "vendor": "apple",
+          "architecture": "metal-3",
+          "isFallbackAdapter": false
+        },
+        "outline": "solid",
+        "border": "none",
+        "shadow": "none",
+        "textures": 0,
+        "errors": [],
+        "overflow": false
+      }
+    }
+  ],
+  "errors": [],
+  "sources": [
+    {
+      "name": "fawn-start.html",
+      "sha256": "5298be9659e3c3a2cd39a7c6a733287adfe5e61d2f5fba613842bd15bb508552"
+    },
+    {
+      "name": "fawn-prismatic-fluids.html",
+      "sha256": "e28973199222f4c3b3962e187c8449f993f9ee499209569b994ff36e4b18a3d0"
+    },
+    {
+      "name": "fawn-magnetic-fluids.html",
+      "sha256": "5baffd735050ea2f99ec0e04f1608dca6c1eb607e917a682efbd3a1f4870cc0d"
+    },
+    {
+      "name": "fawn-formation.js",
+      "sha256": "30f5bc12118153d86bfc3c3b6a78fea936c03a748e5ab24b5b048dd0790fc8e9"
+    }
+  ],
+  "harnessSha256": "155907be6dff3d7006fb1663d3182b7f13d91848731eacefa8fafbb5103f0344",
+  "browser": "155.0.8059.39",
+  "previousOutline": "solid",
+  "material": {
+    "results": {
+      "baseline": {
+        "dim": [
+          7,
+          7,
+          9
+        ],
+        "pigment": [
+          52,
+          34,
+          20
+        ],
+        "edge": [
+          36,
+          24,
+          18
+        ]
+      },
+      "candidate": {
+        "dim": [
+          67,
+          36,
+          30
+        ],
+        "pigment": [
+          109,
+          69,
+          52
+        ],
+        "edge": [
+          99,
+          62,
+          48
+        ]
+      }
+    },
+    "errors": []
+  }
+}
