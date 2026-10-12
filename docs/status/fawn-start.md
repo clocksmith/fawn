@@ -13,9 +13,10 @@ redirect to CanvasContext with their demo filenames intact.
 The [live release manifest](https://canvascontext.com/release.json) identifies
 the published demo source and hosting package.
 
-The hosted main page previews the local HTML start page selected by Fawn's
-launcher. Packaging copies that source into the app bundle; an existing
-installation can retain an older copy. The preview visibly links to Fawn's
+The current hosting package opens Flow, while Particles remains available through
+the background switcher and its named page. Local changes do not update the live
+site until deployed. The browser launcher has its own local start page; existing
+installations can retain an older packaged copy. The preview visibly links to Fawn's
 Chromium integration on GitHub and identifies the visitor's browser WebGPU
 backend in Settings. The preview has no search/address field.
 
@@ -27,8 +28,9 @@ Particle Trails and Image Lab are repository-only. Lifecycle probes navigate
 directly to the fluid fixture rather
 than requiring a public navigation link.
 
-The three hosted pages have a compact Backgrounds disclosure and no instruction
-subtitle block. Its trigger and dropdown share their width and text alignment;
+The three hosted pages have a compact background disclosure labelled with the
+active demo and no instruction subtitle block. Its trigger and dropdown share
+their width and text alignment;
 rows retain touch targets and a current-selection checkmark.
 It switches between Flow (Prismatic Fluids), Wave (Magnetic Fluids),
 and Particles (the particle cycle). [Menu diagnostics](../../reports/maintenance/20261011-fawn-background-menu/README.md)
@@ -45,6 +47,9 @@ Wave's moving fields and bubbles use the `WAVE_ACTIVITY` configuration in its
 source, with source positions prepared once per frame for the surface shader.
 Particles use bounded alpha compositing and edge-faded trail history to prevent
 bright rims around dense clouds and the viewport.
+The visible footer contains FPS, its sparkline, and a GitHub link. Workload and
+GPU details appear in Settings; operational status remains available to assistive
+technology and failures retain their visible alert.
 
 The benchmark pages align Particle Trails, Magnetic
 Fluids, Prismatic Fluids, and Image Lab with the main page's fullscreen canvas,
