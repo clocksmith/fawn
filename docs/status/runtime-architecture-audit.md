@@ -2,6 +2,14 @@
 
 ## Current boundary
 
+The [tooling guide](../internal-tooling.md) and
+[benchmark directory map](../../bench/README.md#directory-map) route contributor
+commands to existing owners. Repository health uses the canonical source-layout
+and schema gates. Unused competing line-limit and evidence-pruning scripts are
+retired; retained benchmark evidence and dependency caches require a custody
+review before removal. These tooling changes do not alter runtime behavior or
+the native performance verdict.
+
 The [architecture](../architecture.md), applicable component charters, and
 [source-layout manifest](../../runtime/zig/source-layout.json) own implementation
 boundaries. The [generated source map](../../runtime/zig/src/README.md) and
