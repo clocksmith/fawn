@@ -16,12 +16,12 @@
 
 This file is the source of truth for Doe work only.
 Do not apply `dream/AGENTS.md` or `doppler/AGENTS.md` as process for this project.
-It is acceptable to reuse selected technical principles from those files, as listed here, when directly useful.
 
-Repository mission and durable goals live in [`GOALS.md`](GOALS.md). Component
-authority and invariants live in the applicable [`CATSCAN.md`](CATSCAN.md)
-chain. This file enforces discovery and working protocol; it does not redefine
-component goals.
+[GOALS.md](GOALS.md) owns product goals, constraints, and exclusions;
+[INTENT.md](INTENT.md) owns system invariants; [the thesis](docs/thesis.md) owns
+rationale and sequencing; the applicable [CATSCAN.md](CATSCAN.md) chain owns
+component boundaries and acceptance. This file owns contributor instructions
+and links technical policy rather than restating it.
 
 ## Component intent
 
@@ -84,6 +84,7 @@ historical docs.
 Before changing Doe behavior, read:
 
 - `GOALS.md`
+- `INTENT.md`
 - the applicable root-to-target `CATSCAN.md` chain
 - `docs/thesis.md`
 - `docs/architecture.md`
@@ -114,41 +115,32 @@ claim-discipline gate depend on `docs/cerebras-evidence-bundle.md` and
 
 ## Current work selection
 
-Vulkan is the current engineering focus. Work proceeds in bounded batches.
-Switching to Metal requires an explicit prioritization decision and handoff;
-D3D12 remains deferred. Existing regression checks do not constitute parallel
-optimization campaigns. The pinned ONNX Vulkan integration and local isolated
-installation already have evidence; start at `docs/onnx-vulkan-installation.md`.
-Doppler is the first engineering customer: prioritize unchanged generation through
-Vulkan, repair demonstrated correctness failures, then select one general improvement
-from measured complete-generation costs. Independent correctness references and a
-competent Dawn control provide technical evidence; external recruitment is not an
-engineering gate. Independent installation and retained use remain adoption evidence. Compiler adoption is independent of runtime adoption; select
-new compiler opportunities explicitly and keep closed browser experiments closed.
+Follow [GOALS.md's constraints](GOALS.md#strategic-constraints) and
+[the thesis's current focus](docs/thesis.md#focus-and-founder-responsibilities).
+Consult the [ONNX installation guide](docs/onnx-vulkan-installation.md) for the
+existing evaluation distribution; do not repeat completed substitution discovery.
+Selecting work does not promote evidence or reopen rejected campaigns.
 
-## Core principles (adopted)
+## Canonical technical policies
 
-1. Config as code
-- controls and thresholds live in `config/*.json`
-- deterministic defaults and tunables come from config/schema, not ad-hoc code branches
+Read and apply the owner relevant to the change; do not copy its policy here:
 
-2. Explicit over implicit
-- behavior must be explainable from inputs, schema, and artifact contracts
-- no hidden heuristics and no undocumented fallback modes in runtime paths
+- System identity, fail-closed behavior, lifecycle safety, config/schema,
+  placeholders, synthetic-state rejection, and offline promotion:
+  [INTENT.md](INTENT.md).
+- Stages, blocking gates, proof admission, artifact/trace requirements, and
+  refactor acceptance: [process law](docs/process.md).
+- Runtime/compiler boundaries and Zig-first proof elimination:
+  [architecture](docs/architecture.md#verification-boundary) and the charter chain.
+- Comparison classes, structural work, timing scope, statistical reliability,
+  and suspicious-result audits: [performance contract](docs/performance-strategy.md).
+- Public/internal/archive surface classification:
+  [tooling manifest](config/tool-surfaces.json) and [guide](docs/internal-tooling.md).
 
-3. Contracts first
-- change contracts via `config/*schema*.json` and migration notes
-- update schemas when runtime-visible behavior changes
+A contract change must update its canonical policy, schemas/migration notes,
+applicable gates, and status in the same change. References never waive a rule.
 
-4. No silent capability branching
-- unsupported capabilities fail with explicit, actionable errors
-- do not auto-switch to hidden behavior not declared in contracts
-
-5. Reproducibility
-- every quality decision should emit artifacts required by gates in `docs/process.md`
-- benchmark and trace artifacts must include traceability fields (module/op hash chain)
-
-## Intent-First Operations
+## Intent-first operations
 
 - Treat Doe intent as source-preserving compiler/runtime evidence, not package copy or benchmark prose.
 - If the user asks whether a Doe claim is true, inspect the current artifacts, gates, raw benchmark rows, browser smoke outputs, and source files before answering.
@@ -163,100 +155,6 @@ new compiler opportunities explicitly and keep closed browser experiments closed
 - If the user asks for real browser/demo benchmarks, inventory existing particle/WebGPU HTML demos, verify whether they run in Fawn, and name the benchmark harness needed before discussing evidence boundaries.
 - Public claims must point to artifact paths or release files. Prose must not substitute for missing evidence.
 - If a result looks suspicious, say so directly and treat it as a harness or methodology problem until the artifact proves otherwise.
-
-## Non-negotiables
-
-1. No undocumented manual toggles in runtime
-- any production behavior change must be reflected in versioned config.
-
-2. Placeholder discipline
-- placeholders are allowed only for benchmark/gate bootstrap thresholds when explicitly flagged in config and tracked in the status log (`docs/status.md` front door plus the relevant live topical shard under `docs/status/*.md`) and gate policy.
-- runtime behavior placeholders are not allowed in `zig` execution paths; implement fully or fail with explicit unsupported taxonomy.
-
-3. Schema discipline
-- never add fields that are not represented by a schema or migration entry.
-
-4. Artifact discipline
-- all artifact inputs and outputs for a stage must be versioned and hash-linked where appropriate.
-
-5. Synthetic runtime-state ban
-- no backend file may implement fake/synthetic runtime-state behavior, including any `*_runtime_state.zig` module; backend timing and capability behavior must be native or explicit unsupported behavior.
-- any native/runtime module import or file matching that pattern is a hard rejection in `runtime/zig/tools/check_core_import_fence.py`.
-
-6. Gate discipline
-- blocking in v0: schema, correctness, trace, verification
-- advisory in v0: performance
-- release only when blocking gates are green.
-
-7. Dawn apples-to-apples discipline
-- declare either unchanged-application replacement or fixed-operation/shader experiment before freezing the workload; follow `docs/performance-strategy.md#comparison-classes`.
-- equivalent application work does not require identical internal implementation work. Missing required execution invalidates a comparison; verified elimination of unnecessary work may constitute the advantage.
-- unchanged-application replacement preserves application inputs, requested work, output/numerical requirements, validation obligations, and complete timing boundaries. Internal allocations, copies, submissions, caches, and generated programs may differ when those obligations remain equivalent.
-- fixed-operation/shader experiments preserve the declared execution shape, effective paths, and cache/preparation controls needed to isolate the named transformation. Differences outside that treatment make the result diagnostic.
-- strict comparability is required for claimable results; methodology and treatment must be explicit in versioned workload contracts and checked by fail-fast gates. Directional runs remain non-comparable.
-- do not bypass existing gates using this prospective clarification. Existing frozen contracts, thresholds, and historical verdicts retain their meaning; a new comparison class needs matching executable checks before promotion.
-- compute/pipeline operation-speed claims stay on selected operation timing. Workload-unit wall cannot rescue a failed selected-operation claim.
-- host kernel/pipeline prewarm remains diagnostic overhead outside selected execution timing unless the contract declares a separate timing class; retain its cost and provenance. Do not hide preparation outside a complete-application boundary.
-- if selected-operation timing and workload-unit wall disagree on claim sign, audit scope and retain both. Neither result establishes the other claim.
-- observe effective readback paths, completion, and output visibility. Different mechanisms can qualify an application replacement when semantics and complete boundaries match; fixed-path operation experiments require the declared path parity.
-- hardware-specific elimination such as shared-memory access replacing staging requires verified semantics and explicit hardware/transferability caveats. Record `pathAsymmetry` where required by the workload schema; it cannot become a general hardware claim.
-- inspect raw `baselineStatsMs` and `comparisonStatsMs`, compute the speed ratio, and verify work and timing before accepting `claimStatus=claimable`.
-- speedups at or above `reliability.suspiciousSpeedupRatio` in `config/benchmark-methodology-thresholds.json`, or near `+90%` under percent-of-comparison, trigger fairness audits. Check omitted work, hidden fallback, asymmetric warmup/precomputation, cache opportunities, and costs moved outside measurement.
-- flag suspicious results immediately even if existing gates label them comparable.
-
-8. Incumbent development discipline
-- preserve application-level work, backend/adapter constraints, repeat accounting, and timing normalization. Match internal operation shape where the fixed-operation contract requires it.
-- give controls equivalent application-level reuse opportunities, starting state, input history, and warmup. Disclose internal caching and preparation rather than requiring identical implementation strategies.
-- reports must state every methodology deviation explicitly.
-
-9. Contract update discipline
-- runtime-visible field changes require schema updates and migration notes in the same change.
-- process/gate docs and status tracking must be updated in the same change when behavior or contracts change.
-
-10. Structural work equivalence discipline
-- verify required execution for every domain against the declared comparison class, not just matching methodology metadata.
-- unsupported results, omitted required commands, hidden fallback, or absent required completion/readback invalidate the comparison.
-- fixed-operation experiments check declared dispatch/command counts and success counts. Application replacements may eliminate or combine internal work only with independent evidence of equivalent requested computation and lifecycle semantics.
-- unexplained zero dispatches or an identically zero phase trigger an instrumentation/work audit. Keep results diagnostic until evidence distinguishes verified elimination from missing execution or observation.
-- positive deltas from mismatched application requirements or undeclared experimental treatments are not speed claims.
-
-11. Timing-scope completeness discipline
-- both sides measure the same declared boundary and required completion. Encode-only cannot compare with setup+encode+submit+wait.
-- corresponding internal phases need not cost equally or all exist; every required cost must be inside its declared boundary. Record and substantiate eliminated work rather than fabricating phase symmetry.
-- render execution without required GPU completion is incomparable. Shared-memory upload replacing staging may qualify only under equivalent application semantics and explicit hardware scope.
-- retain cold initialization, preparation, resident execution, and cleanup as declared. No asymmetric warmup, moved costs, or post-result choice of timing class.
-
-## Stage discipline (must preserve order)
-
-1. Mine
-2. Normalize
-3. Verify
-4. Bind
-5. Gate
-6. Benchmark
-7. Release
-
-Do not bypass earlier stages to satisfy later-stage outcomes.
-
-## Verification guidance
-
-- verification mode governs whether Lean is advisory or blocking.
-- map verification obligations to config (`verificationMode`, `safetyClass` where present) then execute.
-- if a verification requirement is unmet for `lean_required`, the result is a blocking gate failure.
-
-## Runtime boundaries
-
-- ingestion and policy should remain in `pipeline/agent/`, `pipeline/trace/`, and `bench/` tooling;
-- proof-bound work belongs to `pipeline/lean/`;
-- specialization work belongs to `runtime/zig/`;
-- shared orchestration in `docs/process.md` and config files.
-
-## Zig-first, Lean-eliminate policy
-
-- for latency-critical runtime behavior and incumbent replacement paths, implement deterministic behavior in Zig first.
-- then attempt proof-driven elimination: if Lean can discharge a runtime condition, remove that branch from runtime Zig paths and hoist it into verified artifacts/config.
-- "leaning out" means deleting runtime logic, not moving hot-path execution into a runtime Lean interpreter.
-- if a condition cannot be proven/hoisted yet, keep the explicit Zig implementation and measure it.
 
 ## Systematic Zig review
 
@@ -303,6 +201,10 @@ existing charter chain and architecture manifest.
 ## Documentation style
 
 - Markdown document titles and section headings use sentence case
+- Use the [documentation ownership map](docs/INDEX.md#canonical-strategy).
+  Consolidate repeated sections into their canonical owner before considering
+  file deletion. Preserve concrete architecture, installation, and contract
+  details, plus evidence reports and rejected experiments.
 
 ## File size
 
@@ -357,33 +259,11 @@ editing code in that surface:
 
 ## Benchmark style
 
-- fairness is the first benchmark requirement; a faster number is not useful
-  until the benchmark proves both sides did equivalent work
-- benchmark output must conform to the trace-meta schema
-- include traceability fields: module, hash chain, timing source, timing class
-- warmup before timed runs; discard warmup from reported metrics
-- use shared stats for percentiles and outlier filtering
-- comparisons require equivalent requested work, repeat accounting, and sampling; fixed-operation experiments additionally preserve their declared dispatch geometry
-- report deviations from baseline methodology explicitly in comparison notes
-- regression thresholds belong in config, not hardcoded in harness code
-- Dawn-vs-Doe upload benchmarking must explicitly specify and report: first-op handling, upload buffer usage flags, submit cadence, and per-op normalization divisors.
-- Dawn-vs-Doe strict mode must fail when apples-to-apples requirements are not met.
-- Claimable "faster" results require reliability checks in addition to strict comparability:
-  minimum timed-sample floor and positive tails (`p50` + `p95`; include `p99` for release claims).
-- Upload claim runs must use timing-source semantics that stay consistent with the measured operation scope.
-  If timing-source and ignore-first adjustments mix scopes, classify the run as diagnostic.
-- Before accepting a claimable result, verify work equivalence against the
-  declared comparison class and observe actual execution, completion, and readback.
-  Fixed-operation controls retain required path/dispatch parity; application
-  replacements may demonstrate verified elimination under complete timing scopes.
-- Treat implausibly large speedups as suspicious until audited. Before citing
-  them, check for cache/prepared-session differences, skipped work, one-sided
-  setup/upload/submit/readback cost, mismatched runtime paths, hidden fallback,
-  stale artifacts, and timing-scope errors. If the cause is not proven fair,
-  label the result diagnostic instead of claimable.
-- Zero-phase anomaly: unexplained zero setup, encode, or submit_wait triggers an
-  audit. Keep affected results diagnostic until verified elimination or complete
-  instrumentation establishes that the declared obligations were met.
+Apply the [performance contract](docs/performance-strategy.md) before accepting
+or reporting any timing result. Use its comparison-class, work-equivalence,
+timing-scope, upload, and fairness-audit requirements; inspect the raw artifacts
+rather than relying on `claimStatus` alone. A failed or suspicious comparison
+stays diagnostic until its obligations are established.
 
 ## Benchmark front doors
 

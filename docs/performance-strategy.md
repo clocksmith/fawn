@@ -98,6 +98,46 @@ that verify those obligations before claiming a result. If an existing gate only
 supports fixed-operation parity, extend that contract and its checks in the new
 campaign; prose is not permission to bypass a failing gate or relabel old results.
 
+## Timing and fairness audits
+
+Host kernel/pipeline prewarm is diagnostic overhead outside selected execution
+timing unless the contract declares another timing class. Retain its cost and
+provenance; complete-application boundaries cannot hide preparation. If selected
+operation timing and workload-unit wall disagree on claim sign, audit and retain
+both. Neither establishes the other's claim. Encode-only cannot compare with
+setup+encode+submit+wait, and rendering without required GPU completion is
+incomparable.
+
+Inspect raw `baselineStatsMs` and `comparisonStatsMs`, calculate their speed
+ratio, and verify actual work before accepting `claimStatus=claimable`. Speedups
+at or above `reliability.suspiciousSpeedupRatio` in
+`config/benchmark-methodology-thresholds.json`, or near `+90%` under
+percent-of-comparison, trigger a fairness audit. Flag suspicious results
+immediately even when current gates label them comparable. Check omitted work,
+unexplained zero dispatches or phases, hidden fallback, asymmetric warmup or
+precomputation, cache/prepared-session opportunities, stale artifacts, and
+setup/upload/submit/readback costs moved outside measurement. Keep the result
+diagnostic until equivalent work or verified elimination is established.
+
+Record effective readback paths and required `pathAsymmetry` fields. A
+hardware-specific elimination needs explicit hardware and transferability caveats;
+it cannot become a general hardware claim. Reports disclose every methodology
+deviation. Directional runs remain non-comparable; strict mode fails closed.
+
+## Benchmark recording and upload scope
+
+- Outputs conform to the trace-meta schema, including module identity, hash chain,
+  timing source, and timing class.
+- Warm up before timed runs and exclude warmup from reported metrics. Use shared
+  statistics for percentiles and outlier filtering, with matched repeat accounting
+  and sampling. Policy and regression thresholds come from versioned config.
+- Upload comparisons explicitly record first-operation handling, buffer usage
+  flags, submit cadence, and per-operation normalization divisors.
+- Upload timing sources and ignore-first adjustments must describe the same
+  operation scope; mixed scopes are diagnostic.
+- Claimable speed results require strict comparability, the configured sample
+  floor, and positive p50/p95 tails, plus p99 for release claims.
+
 ## Statistical requirements
 
 - Report p50, p95, and p99 for release claims.

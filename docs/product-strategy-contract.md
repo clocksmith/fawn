@@ -39,52 +39,29 @@ claiming application-level elimination. No runtime API or numerical behavior
 changes. The prior schema migration and removed milestone IDs remain historical;
 old receipts never acquire new meanings or promotion.
 
-## Product roles
+## Canonical policy references
 
-| Surface | Role | Acceptance |
-| --- | --- | --- |
-| WGSL compiler | Independently adoptable primary surface | Compilation latency, diagnostics, supported semantics, and generated-program performance; separate consumer adoption and retention |
-| DoeRuntime | Independently adoptable primary surface | Resources, submission, completion, memory, and application integration; material advantage and retained independent adoption |
-| DoeProof | Supporting feature | Independently qualifies incumbent and Doe without interfering with execution |
-| Fawn | Retained experimental distribution | Optional browser route requiring explicit selection, native wins, transfer, and separate browser admission |
-| DoeLab | Operating model | Turns retained failures into minimized regressions and qualified corrections |
+The strategy's `surfaces` projection retains the independently adoptable compiler
+and runtime, supporting DoeProof, experimental Fawn, and the DoeLab operating
+model. Product goals and constraints live in [GOALS.md](../GOALS.md), rationale
+and sequencing in [the thesis](thesis.md), and enforceable system invariants in
+[INTENT.md](../INTENT.md). This migration guide does not redefine them.
 
-A new compiler campaign needs a concrete opportunity. Independent compiler
-adoption does not reopen closed browser optimization experiments.
-
-## Comparison and adoption law
-
-Freeze the strongest eligible incumbent, exact application/WGSL/inputs, independent
-oracle, hardware and driver, fallback policy, application-level cache/preparation
-conditions, timing scope, reliability
-gates, and material threshold. Preserve I0, I1, W0, D0, and credible eligible P0
-controls. A W0 qualification alone is feature value, not runtime adoption. D0
-testing does not require a preceding paid DoeProof engagement.
-
-Vulkan is the current engineering focus. Work proceeds in bounded batches.
-Switching to Metal requires an explicit prioritization decision and handoff;
-D3D12 remains deferred. Existing regression checks do not constitute parallel
-optimization campaigns. A customer requirement informs selection without silently
-changing this boundary. Each host and backend earns support independently. Distinguish unchanged provider
-integration from a frozen declared-program treatment. Require parity, lifecycle
-and recovery, raw measurements, an external
-maintainer's adoption decision, and repeat retention. Payment, internal
-benchmarks, compiler breadth, receipts, and Doppler interoperability cannot
-substitute for these evidence fields; the schema enforces their presence.
-
-For unchanged-application replacement, require equivalent application work,
-outputs, validation, and complete boundaries; verified elimination of unnecessary
-internal allocations, copies, submissions, or preparation can be the advantage.
-Fixed-operation/shader experiments preserve the declared execution shape and
-controls needed to isolate their treatment. Both follow
-[the performance contract](performance-strategy.md#comparison-classes), with
-no hidden fallback, omitted work, asymmetric warmup, or shifted costs.
-
-The browser comparison policy preserves A/B/C/D causal meanings and separate
-K0 eligibility. Its version 2 changes product priority, not comparison semantics.
-Fawn's B-over-A result does not grant DoeRuntime C-over-B credit. D-over-C still
-isolates Direct Protocol. Ineligible K0 work never becomes a Fawn win.
-`doe-gpu/browser` is an incumbent wrapper until Doe occupies the Chromium seam.
+- The [runtime ownership decision](runtime-ownership-decision.md) owns I0, I1,
+  W0, D0, and credible eligible P0 controls, application/runtime attribution, and
+  adoption admission. W0 qualification is not runtime adoption, and D0 testing
+  does not require a preceding paid DoeProof engagement.
+- The [performance contract](performance-strategy.md#comparison-classes) owns
+  unchanged-application replacement versus fixed-operation/shader experiments,
+  work equivalence, complete boundaries, and comparison audits. The schema
+  projects these rules; unchanged historical gates and verdicts retain meaning.
+- Backend work follows [GOALS.md](../GOALS.md#strategic-constraints); support and
+  adoption evidence remain separately admitted for each host and backend.
+- The browser comparison policy preserves A/B/C/D causal meanings and separate
+  K0 eligibility. Version 2 changes product priority, not comparison semantics:
+  B-over-A grants no C-over-B credit; D-over-C isolates Direct Protocol;
+  ineligible K0 work never becomes a Fawn win. `doe-gpu/browser` remains an
+  incumbent wrapper until Doe occupies the Chromium seam.
 
 ## Evidence custody and current state
 
