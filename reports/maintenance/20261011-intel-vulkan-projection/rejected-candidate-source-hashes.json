@@ -1,0 +1,9 @@
+{
+  "runtime/zig/src/cli/entrypoints/main_emit_spirv.zig": "bb40233e1f60ce821f84da3f759f48ee2e4021b7bf658927ed620ccf9984ff9b",
+  "runtime/zig/src/compiler/wgsl/emit/spirv/emit_spirv.zig": "e1a662f88e229d7b0a2dd92c69e573c6d59719460a5b1a4dfe5d0819fc34fe88",
+  "runtime/zig/src/compiler/wgsl/emit/spirv/emit_spirv_builtins.zig": "b5f92cdfaf4658e0330a1f6643ad011db7ed7d1aac6b65eb5dd7ee6eecceb728",
+  "runtime/zig/src/compiler/wgsl/emit/spirv/spirv_builder.zig": "7fcf2cfe911391e10156c198731d3d8f700ec87733563c491690ce0dea3299fe",
+  "runtime/zig/src/compiler/wgsl/emit/spirv/spirv_spec.zig": "35a506577cd7b0cbf8f76d619bb98cff621c9f04313780f38674ef5bd5ccac3e",
+  "runtime/zig/src/compiler/wgsl/ir/ir_packed_integer.zig": "7581bbb6ae25de5016e55e1a85a18a7cf760796d13e1e27ac5a92ded96866aa7",
+  "runtime/zig/src/compiler/wgsl/runtime/runtime_compute_translation.zig": "7315a3157a0412cff4340cf986b55db2619f128fb100aa6f6113215193254f50"
+}

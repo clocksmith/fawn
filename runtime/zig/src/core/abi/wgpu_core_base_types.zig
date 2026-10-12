@@ -36,9 +36,9 @@ pub const WGPUMapMode = WGPUFlags;
 pub const WGPUAlphaMode = u32;
 pub const WGPUSType = layout.WGPUSType;
 
-pub const WGPUSType_ShaderSourceWGSL: WGPUSType = 0x00000002;
+pub const WGPUSType_ShaderSourceWGSL: WGPUSType = @intCast(upstream.c.WGPUSType_ShaderSourceWGSL);
 pub const WGPUSType_ShaderSourceMSL: WGPUSType = 0x00000003;
-pub const WGPUSType_ShaderSourceSPIRV: WGPUSType = 0x00000004;
+pub const WGPUSType_ShaderSourceSPIRV: WGPUSType = @intCast(upstream.c.WGPUSType_ShaderSourceSPIRV);
 pub const WGPUSType_ShaderSourceHLSL: WGPUSType = 0x00000005;
 pub const WGPUSType_RenderPassMaxDrawCount: WGPUSType = 0x00000003;
 pub const WGPUSType_TextureComponentSwizzleDescriptor: WGPUSType = 0x0000000C;

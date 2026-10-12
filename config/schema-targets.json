@@ -1928,6 +1928,30 @@
     {
       "schema": "config/doppler-generation-memory-evidence.schema.json",
       "data": "reports/maintenance/20261011-doppler-generation-memory/summary.json"
+    },
+    {
+      "schema": "config/intel-projection-evidence.schema.json",
+      "data": "reports/maintenance/20261011-intel-vulkan-projection/doe.json"
+    },
+    {
+      "schema": "config/intel-projection-evidence.schema.json",
+      "data": "reports/maintenance/20261011-intel-vulkan-projection/dawn.json"
+    },
+    {
+      "schema": "config/intel-projection-evidence.schema.json",
+      "data": "reports/maintenance/20261011-intel-vulkan-projection/matrix.json"
+    },
+    {
+      "schema": "config/intel-projection-evidence.schema.json",
+      "data": "reports/maintenance/20261011-intel-vulkan-projection/cohort.json"
+    },
+    {
+      "schema": "config/intel-projection-evidence.schema.json",
+      "data": "reports/maintenance/20261011-intel-vulkan-projection/policy.json"
+    },
+    {
+      "schema": "config/intel-projection-evidence.schema.json",
+      "data": "reports/maintenance/20261011-intel-vulkan-projection/manifest.json"
     }
   ],
   "globTargets": [

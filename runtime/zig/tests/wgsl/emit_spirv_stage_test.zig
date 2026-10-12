@@ -10,6 +10,41 @@ const allocator = testing.allocator;
 const MAX_SPIRV_OUTPUT = mod.MAX_SPIRV_OUTPUT;
 const translateToSpirv = mod.translateToSpirv;
 
+test "SPIR-V entry-point interface names cannot collide with generated function bodies" {
+    const sources = .{
+        "@compute @workgroup_size(1) fn main() {}",
+        "@fragment fn main() -> @location(0) vec4f { return vec4f(1.0); }",
+        "@vertex fn main() -> @builtin(position) vec4f { return vec4f(0.0); }",
+    };
+    inline for (sources) |source| {
+        var output: [MAX_SPIRV_OUTPUT]u8 = undefined;
+        const len = try translateToSpirv(allocator, source, &output);
+        var word: usize = 5;
+        var authored_name_count: usize = 0;
+        var authored_name_id: u32 = 0;
+        var entry_point_id: u32 = 0;
+        while (word < len / 4) {
+            const instruction = read_u32_le(&output, word * 4);
+            const count: usize = instruction >> 16;
+            const opcode: u16 = @truncate(instruction);
+            try testing.expect(count > 0 and word + count <= len / 4);
+            if (opcode == spirv.Opcode.Name) {
+                const encoded = output[(word + 2) * 4 .. (word + count) * 4];
+                const end = std.mem.indexOfScalar(u8, encoded, 0) orelse return error.InvalidSpirvName;
+                if (std.mem.eql(u8, encoded[0..end], "main")) {
+                    authored_name_count += 1;
+                    authored_name_id = read_u32_le(&output, (word + 1) * 4);
+                }
+            }
+            if (opcode == spirv.Opcode.EntryPoint) entry_point_id = read_u32_le(&output, (word + 2) * 4);
+            word += count;
+        }
+        try testing.expectEqual(@as(usize, 1), authored_name_count);
+        try testing.expect(entry_point_id != 0);
+        try testing.expectEqual(entry_point_id, authored_name_id);
+    }
+}
+
 fn read_u32_le(bytes: []const u8, offset: usize) u32 {
     return std.mem.readInt(u32, @as(*const [4]u8, @ptrCast(bytes[offset .. offset + 4].ptr)), .little);
 }

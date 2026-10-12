@@ -124,6 +124,9 @@ pub const VulkanFeatureCaps = struct {
     texture_formats_tier1: bool = false,
     texture_formats_tier2: bool = false,
     variable_pointers_storage_buffer: bool = false,
+    integer_dot_product: bool = false,
+    packed_signed_dot_accelerated: bool = false,
+    packed_unsigned_dot_accelerated: bool = false,
 };
 
 pub const VulkanFeatureQuery = struct {
@@ -133,6 +136,11 @@ pub const VulkanFeatureQuery = struct {
     enabled_variable_pointers_features: c.VkPhysicalDeviceVariablePointersFeatures = init_enabled_variable_pointers_features(),
     enabled_subgroup_size_control_features: c.VkPhysicalDeviceSubgroupSizeControlFeatures = init_enabled_subgroup_size_control_features(),
     enabled_vulkan12_features: c.VkPhysicalDeviceVulkan12Features = init_enabled_vulkan12_features(),
+    enabled_integer_dot_features: c.VkPhysicalDeviceShaderIntegerDotProductFeatures = .{
+        .sType = c.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_INTEGER_DOT_PRODUCT_FEATURES,
+        .pNext = null,
+        .shaderIntegerDotProduct = c.VK_FALSE,
+    },
 };
 
 pub fn enabled_core_features(raw: c.VkPhysicalDeviceFeatures) c.VkPhysicalDeviceFeatures {
@@ -177,8 +185,11 @@ fn init_enabled_vulkan12_features() c.VkPhysicalDeviceVulkan12Features {
 }
 
 pub fn query(physical_device: c.VkPhysicalDevice) VulkanFeatureQuery {
+    var integer_dot_features = std.mem.zeroes(c.VkPhysicalDeviceShaderIntegerDotProductFeatures);
+    integer_dot_features.sType = c.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_INTEGER_DOT_PRODUCT_FEATURES;
     var raw_variable_pointers_features = init_enabled_variable_pointers_features();
     var raw_storage16_features = init_enabled_storage16_features();
+    raw_variable_pointers_features.pNext = @ptrCast(&integer_dot_features);
     raw_storage16_features.pNext = @ptrCast(&raw_variable_pointers_features);
     var raw_subgroup_size_control_features = init_enabled_subgroup_size_control_features();
     raw_subgroup_size_control_features.pNext = @ptrCast(&raw_storage16_features);
@@ -191,7 +202,9 @@ pub fn query(physical_device: c.VkPhysicalDevice) VulkanFeatureQuery {
 
     var subgroup_properties = std.mem.zeroes(c.VkPhysicalDeviceSubgroupProperties);
     subgroup_properties.sType = c.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBGROUP_PROPERTIES;
-    subgroup_properties.pNext = null;
+    var integer_dot_properties = std.mem.zeroes(c.VkPhysicalDeviceShaderIntegerDotProductProperties);
+    integer_dot_properties.sType = c.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_INTEGER_DOT_PRODUCT_PROPERTIES;
+    subgroup_properties.pNext = @ptrCast(&integer_dot_properties);
     var subgroup_size_control_properties = std.mem.zeroes(c.VkPhysicalDeviceSubgroupSizeControlProperties);
     subgroup_size_control_properties.sType = c.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBGROUP_SIZE_CONTROL_PROPERTIES;
     subgroup_size_control_properties.pNext = @ptrCast(&subgroup_properties);
@@ -225,6 +238,9 @@ pub fn query(physical_device: c.VkPhysicalDevice) VulkanFeatureQuery {
         .texture_formats_tier1 = supports_all_formats(physical_device, &TIER1_STORAGE_FORMATS, supports_storage_image),
         .texture_formats_tier2 = false,
         .variable_pointers_storage_buffer = raw_variable_pointers_features.variablePointersStorageBuffer == c.VK_TRUE,
+        .integer_dot_product = integer_dot_features.shaderIntegerDotProduct == c.VK_TRUE,
+        .packed_signed_dot_accelerated = integer_dot_properties.integerDotProduct4x8BitPackedSignedAccelerated == c.VK_TRUE,
+        .packed_unsigned_dot_accelerated = integer_dot_properties.integerDotProduct4x8BitPackedUnsignedAccelerated == c.VK_TRUE,
     };
 
     var resolved_caps = caps;
@@ -236,6 +252,7 @@ pub fn query(physical_device: c.VkPhysicalDevice) VulkanFeatureQuery {
         .caps = resolved_caps,
         .enabled_features = enabled_core_features(raw_features2.features),
     };
+    query_result.enabled_integer_dot_features.shaderIntegerDotProduct = @intFromBool(resolved_caps.integer_dot_product);
     if (resolved_caps.dual_source_blending) {
         query_result.enabled_features.dualSrcBlend = c.VK_TRUE;
     }

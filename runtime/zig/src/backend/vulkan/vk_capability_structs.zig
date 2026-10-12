@@ -90,6 +90,47 @@ pub const VkPhysicalDeviceVariablePointersFeatures = extern struct {
     variablePointers: vk.VkBool32,
 };
 
+pub const VkPhysicalDeviceShaderIntegerDotProductFeatures = extern struct {
+    sType: vk.VkStructureType,
+    pNext: ?*anyopaque,
+    shaderIntegerDotProduct: vk.VkBool32,
+};
+
+pub const VkPhysicalDeviceShaderIntegerDotProductProperties = extern struct {
+    sType: vk.VkStructureType,
+    pNext: ?*anyopaque,
+    integerDotProduct8BitUnsignedAccelerated: vk.VkBool32,
+    integerDotProduct8BitSignedAccelerated: vk.VkBool32,
+    integerDotProduct8BitMixedSignednessAccelerated: vk.VkBool32,
+    integerDotProduct4x8BitPackedUnsignedAccelerated: vk.VkBool32,
+    integerDotProduct4x8BitPackedSignedAccelerated: vk.VkBool32,
+    integerDotProduct4x8BitPackedMixedSignednessAccelerated: vk.VkBool32,
+    integerDotProduct16BitUnsignedAccelerated: vk.VkBool32,
+    integerDotProduct16BitSignedAccelerated: vk.VkBool32,
+    integerDotProduct16BitMixedSignednessAccelerated: vk.VkBool32,
+    integerDotProduct32BitUnsignedAccelerated: vk.VkBool32,
+    integerDotProduct32BitSignedAccelerated: vk.VkBool32,
+    integerDotProduct32BitMixedSignednessAccelerated: vk.VkBool32,
+    integerDotProduct64BitUnsignedAccelerated: vk.VkBool32,
+    integerDotProduct64BitSignedAccelerated: vk.VkBool32,
+    integerDotProduct64BitMixedSignednessAccelerated: vk.VkBool32,
+    integerDotProductAccumulatingSaturating8BitUnsignedAccelerated: vk.VkBool32,
+    integerDotProductAccumulatingSaturating8BitSignedAccelerated: vk.VkBool32,
+    integerDotProductAccumulatingSaturating8BitMixedSignednessAccelerated: vk.VkBool32,
+    integerDotProductAccumulatingSaturating4x8BitPackedUnsignedAccelerated: vk.VkBool32,
+    integerDotProductAccumulatingSaturating4x8BitPackedSignedAccelerated: vk.VkBool32,
+    integerDotProductAccumulatingSaturating4x8BitPackedMixedSignednessAccelerated: vk.VkBool32,
+    integerDotProductAccumulatingSaturating16BitUnsignedAccelerated: vk.VkBool32,
+    integerDotProductAccumulatingSaturating16BitSignedAccelerated: vk.VkBool32,
+    integerDotProductAccumulatingSaturating16BitMixedSignednessAccelerated: vk.VkBool32,
+    integerDotProductAccumulatingSaturating32BitUnsignedAccelerated: vk.VkBool32,
+    integerDotProductAccumulatingSaturating32BitSignedAccelerated: vk.VkBool32,
+    integerDotProductAccumulatingSaturating32BitMixedSignednessAccelerated: vk.VkBool32,
+    integerDotProductAccumulatingSaturating64BitUnsignedAccelerated: vk.VkBool32,
+    integerDotProductAccumulatingSaturating64BitSignedAccelerated: vk.VkBool32,
+    integerDotProductAccumulatingSaturating64BitMixedSignednessAccelerated: vk.VkBool32,
+};
+
 pub const VkPhysicalDeviceSubgroupSizeControlFeatures = extern struct {
     sType: vk.VkStructureType,
     pNext: ?*anyopaque,

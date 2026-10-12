@@ -1234,8 +1234,8 @@
       },
       "src/backend/vulkan/native_runtime.zig": {
         "decision": "Keep",
-        "moduleSha256": "babea4dcb61bdb008b04db45b455740f331a30c75c9df9fc8d2c2c51fd518735",
-        "reviewer": "codex-vulkan-selection/2026-10-02",
+        "moduleSha256": "58e2d4acaf78c20da58dbccad6220db7efae8030731571bd55159435a24fabd1",
+        "reviewer": "codex-focused-projection-interchange/2026-10-11",
         "reason": "Keep: per-device runtime borrows the adapter-selected Vulkan instance while retaining its own VkDevice and queue; runtime teardown never destroys the borrowed instance."
       },
       "src/backend/vulkan/vk_adapter_probe.zig": {
@@ -1258,9 +1258,9 @@
       },
       "src/backend/vulkan/vk_capability_structs.zig": {
         "decision": "Keep",
-        "moduleSha256": "6b287a152dca819319596bc858a04bcc699ce86e011adc7f5ed63549f71ad5c0",
-        "reason": "Keep: reachable backend implementation shared by 2 production consumers with no conflicting ownership signal.",
-        "reviewer": "codex-doe-wgsl-vulkan-capabilities/2026-09-01"
+        "moduleSha256": "1af41c016be269ec93b56c01e21b2afe0e3bb9528ebf108b0a157b37b285c6b4",
+        "reason": "Keep: Vulkan capability/device owner. Integer-dot operation availability and signed/unsigned packed acceleration remain distinct; logical-device admission enables the observed feature and extension only when both are available.",
+        "reviewer": "codex-focused-projection-interchange/2026-10-11"
       },
       "src/backend/vulkan/vk_command_buffers.zig": {
         "decision": "Keep",
@@ -1276,15 +1276,15 @@
       },
       "src/backend/vulkan/vk_constants.zig": {
         "decision": "Keep",
-        "moduleSha256": "2d2bf7a44697ab6164ee4a1cdca5a43af40d7e442ce09bf92d9eff315cbb9d25",
-        "reason": "Keep: existing native recording, query ownership, queue submission or Vulkan ABI owner. Logical occlusion spans completed native draws; native query metadata does not cross the public ABI.",
-        "reviewer": "codex-production-query/2026-09-28"
+        "moduleSha256": "d3bede73edcb5a131fe6274259191959a63a24e3b319902a417e81e8d1ed76c9",
+        "reason": "Keep: Vulkan capability/device owner. Integer-dot operation availability and signed/unsigned packed acceleration remain distinct; logical-device admission enables the observed feature and extension only when both are available.",
+        "reviewer": "codex-focused-projection-interchange/2026-10-11"
       },
       "src/backend/vulkan/vk_device.zig": {
         "decision": "Keep",
-        "moduleSha256": "f1f6003fa65bd85b5d7a2ba08f4d9d508ba45ea9b4131ab0fa1d1ab9c31f6e33",
-        "reviewer": "codex-vulkan-selection/2026-10-02",
-        "reason": "Keep: device bootstrap reuses the adapter-owned selected instance and queue family while retaining extension and feature admission."
+        "moduleSha256": "017c64f64b28ca4b4c9b25c02431b0cd5ef6be90a416c69305bd19c48f6f0a35",
+        "reviewer": "codex-focused-projection-interchange/2026-10-11",
+        "reason": "Keep: Vulkan capability/device owner. Integer-dot operation availability and signed/unsigned packed acceleration remain distinct; logical-device admission enables the observed feature and extension only when both are available."
       },
       "src/backend/vulkan/vk_device_caps.zig": {
         "decision": "Keep",
@@ -1306,9 +1306,9 @@
       },
       "src/backend/vulkan/vk_feature_caps.zig": {
         "decision": "Keep",
-        "moduleSha256": "e3cf69a5008e3e5bd420a377fec9f228b07de1d744b3edea780d23695345a9f1",
-        "reason": "Keep: reachable backend implementation shared by 4 production consumers with no conflicting ownership signal.",
-        "reviewer": "codex-doe-wgsl-vulkan-capabilities/2026-09-01"
+        "moduleSha256": "3317a92ff51e84baacc6de5f7fea0063a1ed8e99e8e81493606a170fd8298e41",
+        "reason": "Keep: Vulkan capability/device owner. Integer-dot operation availability and signed/unsigned packed acceleration remain distinct; logical-device admission enables the observed feature and extension only when both are available.",
+        "reviewer": "codex-focused-projection-interchange/2026-10-11"
       },
       "src/backend/vulkan/vk_feature_probe.zig": {
         "decision": "Keep",
@@ -1336,9 +1336,9 @@
       },
       "src/backend/vulkan/vk_pipeline.zig": {
         "decision": "Keep",
-        "moduleSha256": "38acbb7de6189332bab8d30f9aa93e9dd3bbdf836282dd37bb49160f03e211ea",
+        "moduleSha256": "14e94ebae2f2a0e4bf6c4cf853c20220ab02cc0f1d52088f11417adc824d5b5b",
         "reason": "Keep: pipeline selection reads retained immutable shader facts while recomputing effective subgroup policy and exact pipeline identity; submission and retirement remain with existing owners.",
-        "reviewer": "codex-vulkan-submission/2026-10-04"
+        "reviewer": "codex-focused-projection-interchange/2026-10-11"
       },
       "src/backend/vulkan/vk_pipeline_cache.zig": {
         "decision": "Keep",
@@ -1396,9 +1396,9 @@
       },
       "src/backend/vulkan/vk_spirv_inspect.zig": {
         "decision": "Keep",
-        "moduleSha256": "6658a202d087cf55ce315915fc22e1aa54ceb2661a523843cfbc356bcdaf8d0b",
+        "moduleSha256": "f55326c25e38f0924cbcd70e42d16de17ee493beb5eebfe777b604da41a6504e",
         "reason": "Keep: bounded SPIR-V inspection owns immutable compute metadata; no device policy, allocation or second reflection implementation.",
-        "reviewer": "codex-vulkan-submission/2026-10-04"
+        "reviewer": "codex-focused-projection-interchange/2026-10-11"
       },
       "src/backend/vulkan/vk_structs.zig": {
         "decision": "Keep",
@@ -1528,9 +1528,9 @@
       },
       "src/cli/entrypoints/main_emit_spirv.zig": {
         "decision": "Keep",
-        "moduleSha256": "92e6b825cd65ea04c06ae00d91e6da3b7f567316db5eed12a4e7f9b4883a86b7",
-        "reason": "Keep: executable process root at src/cli/entrypoints/main_emit_spirv.zig.",
-        "reviewer": "codex-recomposition-review/2026-08-08"
+        "moduleSha256": "ec6509f57a4781881f0ca93c022123f6eceeeae4d5a3f82e18f7143540e34a4d",
+        "reason": "Keep: compiler process root; bounded numeric overrides borrow argv until existing typed Vulkan translation completes. Unknown arguments and duplicate or nonfinite overrides reject.",
+        "reviewer": "codex-focused-projection-interchange/2026-10-11"
       },
       "src/cli/entrypoints/main_emit_tsir_attention_canary.zig": {
         "decision": "Keep",
@@ -2296,9 +2296,9 @@
       },
       "src/compiler/wgsl/emit/spirv/emit_spirv.zig": {
         "decision": "Keep",
-        "moduleSha256": "2a168a62be39cb71172fd85ed1d110011aefbad8b336d159f4df96d525fe410f",
-        "reason": "Keep: SPIR-V module and function setup owns immutable pointer locals as SSA pointer values. Private default initialization remains owned by global emission and typed SPIR-V constants.",
-        "reviewer": "codex-vulkan-generated-20261004"
+        "moduleSha256": "779517661826121736b7de071fee064b25527845cfae9284cfc652fb90d75c83",
+        "reason": "Keep: SPIR-V emission owner. Entry-point wrappers retain authored interface names; generated bodies use a reserved name to preserve SPIR-V reader interoperability without altering arithmetic or bindings.",
+        "reviewer": "codex-focused-projection-interchange/2026-10-11"
       },
       "src/compiler/wgsl/emit/spirv/emit_spirv_builtins.zig": {
         "decision": "Keep",
@@ -2332,9 +2332,9 @@
       },
       "src/compiler/wgsl/emit/spirv/emit_spirv_stages.zig": {
         "decision": "Keep",
-        "moduleSha256": "9e83409aed7ee31024627bb7705a35aee8d1ae18cda00ae5eb9ae1e02fdabc33",
-        "reason": "Keep: reachable compiler implementation shared by 2 production consumers with no conflicting ownership signal.",
-        "reviewer": "codex-gigi-compatibility/2026-08-15"
+        "moduleSha256": "c9040010376f535bf61b3cc0d3b2c5b388beabaab667f1b92ace26b2407f7e0c",
+        "reason": "Keep: SPIR-V emission owner. Entry-point wrappers retain authored interface names; generated bodies use a reserved name to preserve SPIR-V reader interoperability without altering arithmetic or bindings.",
+        "reviewer": "codex-focused-projection-interchange/2026-10-11"
       },
       "src/compiler/wgsl/emit/spirv/emit_spirv_texture.zig": {
         "decision": "Keep",
@@ -2980,9 +2980,9 @@
       },
       "src/core/abi/wgpu_core_base_types.zig": {
         "decision": "Keep",
-        "moduleSha256": "a83cd90ccb99c27099d788e1cc3fe48c38011b107ba8c6daa395ba66f18f4824",
-        "reason": "Keep: reachable core implementation shared by 35 production consumers with no conflicting ownership signal.",
-        "reviewer": "codex-recomposition-review/2026-08-08"
+        "moduleSha256": "a549bd6f5745e4009adc2a42fa5d16b465aac4c9d243a88d18d1ea55d52b6e2f",
+        "reason": "Keep: shared native ABI owner. Standard WGSL/SPIR-V source tags derive from the pinned header; private MSL/HLSL tags and all other ABI values are preserved.",
+        "reviewer": "codex-focused-projection-interchange/2026-10-11"
       },
       "src/core/abi/wgpu_execution_types.zig": {
         "decision": "Keep",
@@ -4234,9 +4234,9 @@
       },
       "src/backend/vulkan/vk_shared_pipeline.zig": {
         "decision": "Keep",
-        "moduleSha256": "8c6b8c90474eb7751cd35019a6f650618515df4eddbeeb164e79f8b07aaa879f",
+        "moduleSha256": "ac45fc2d1c40518de3a3a2967598d7f8948329e91c9d9d396d053083ef24710a",
         "reason": "Keep: device-owned shared native pipelines retain shader words and derived compute metadata together through explicit reference release; no new cache or allocation.",
-        "reviewer": "codex-vulkan-submission/2026-10-04"
+        "reviewer": "codex-focused-projection-interchange/2026-10-11"
       },
       "src/backend/vulkan/vk_descriptor_identity.zig": {
         "decision": "Keep",

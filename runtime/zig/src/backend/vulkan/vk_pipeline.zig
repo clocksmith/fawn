@@ -240,6 +240,7 @@ pub fn set_compute_shader_spirv_with_hashes(
         .entry_point = entry_point orelse "main",
         .bindings = bindings orelse &.{},
         .required_subgroup_size = required_subgroup_size_for_pipeline(self, words, pipeline_hash),
+        .integer_dot_product_enabled = self.integer_dot_product_enabled,
     };
     const cache_hash = try vk_pipeline_cache.resolve_compute_state_hash(self, pipeline_hash, request);
     if (!self.has_pipeline or cache_hash != self.current_pipeline_hash) {
@@ -278,6 +279,7 @@ pub fn build_pipeline_for_words(
         .entry_point = entry_point orelse "main",
         .bindings = bindings orelse &.{},
         .required_subgroup_size = required_subgroup_size_for_pipeline(self, words, pipeline_hash),
+        .integer_dot_product_enabled = self.integer_dot_product_enabled,
     }, pipeline_hash, layout_hash);
 }
 

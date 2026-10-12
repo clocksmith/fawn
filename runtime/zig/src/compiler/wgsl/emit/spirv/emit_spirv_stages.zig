@@ -37,8 +37,7 @@ pub fn emit_stage_entry_wrapper(emitter: anytype, entry: ir.EntryPoint) EmitErro
     const wrapper_id = emitter.entry_wrapper_ids[entry.function];
     const void_type = try emitter.builder.type_void();
     const fn_type = try emitter.builder.type_function(void_type, &.{});
-    const wrapper_name = try std.fmt.allocPrint(emitter.alloc, "{s}_entry", .{function.name});
-    defer emitter.alloc.free(wrapper_name);
+    const wrapper_name = function.name;
 
     var interface_ids = std.ArrayListUnmanaged(u32){};
     defer interface_ids.deinit(emitter.alloc);

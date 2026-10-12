@@ -1,0 +1,263 @@
+{
+  "schemaVersion": 1,
+  "classification": "frozen-projection-correctness",
+  "provider": "dawn",
+  "compiler": "tint",
+  "observedAt": "2026-10-12T00:09:16.603Z",
+  "fixtureManifestSha256": "ec010299625dee594dac5617857e29a4afeee7041d05157f906f611b58843e37",
+  "runnerSha256": "a9f60061bb2e964bb5f57564efbb3561dfe947598c7adcba7c826d1572bac8e5",
+  "providerModuleSha256": "18a44f1e81cd3697156e7ddd3456e9f0d346a0afabb76588379b5b2f6dca50b4",
+  "nativeLibrary": {
+    "path": "/home/clocksmith/deco/doe/bench/node_modules/webgpu/dist/linux-x64.dawn.node",
+    "sha256": "fbfe599055b469963e4c9bfc900a702843db962dcaba0799b3c81ae33fa43db1",
+    "loaded": true
+  },
+  "identity": {
+    "vendor": "intel",
+    "device": "intel-r-uhd-graphics-tgl-gt2-",
+    "architecture": "gen-12lp",
+    "description": "Intel open-source Mesa driver: Mesa 24.2.8-1ubuntu1~24.04.1"
+  },
+  "providerInfo": null,
+  "shape": {
+    "M": 1,
+    "N": 1024,
+    "K": 640
+  },
+  "languageFeatures": [
+    "unrestricted_pointer_parameters",
+    "subgroup_id",
+    "texture_and_sampler_let",
+    "subgroup_uniformity",
+    "readonly_and_readwrite_storage_textures",
+    "packed_4x8_integer_dot_product",
+    "pointer_composite_access",
+    "texture_formats_tier1",
+    "uniform_buffer_standard_layout"
+  ],
+  "sequences": [
+    {
+      "name": "portable",
+      "preparationMs": 23.098516999999994,
+      "executionMs": 4.89476599999999,
+      "stages": [
+        {
+          "id": "quantize",
+          "shaderSha256": "d01bbb40e706e027c70cdd5360eb5745b6e0412db7d2f05203a8d67cc8260899",
+          "entryPoint": "main",
+          "constants": {
+            "WORKGROUP_SIZE": 256
+          },
+          "dispatch": [
+            1,
+            1,
+            1
+          ],
+          "compileAndPrepareMs": 5.826523000000002
+        },
+        {
+          "id": "portable-dot",
+          "shaderSha256": "adb69e32003508afddb0844bdf4b4cc62f72e6ec0f01d66e80c44dc3a886d00e",
+          "entryPoint": "main",
+          "constants": {
+            "WORKGROUP_SIZE": 64
+          },
+          "dispatch": [
+            16,
+            1,
+            1
+          ],
+          "compileAndPrepareMs": 3.7456339999999955
+        },
+        {
+          "id": "activation-rescale",
+          "shaderSha256": "84779a6e84571b2733f5f4e5ba96127e31d452ee04ab94c1224f82e7b8459884",
+          "entryPoint": "main",
+          "constants": {
+            "WORKGROUP_SIZE": 256,
+            "INPUT_IS_I32": true,
+            "SCALE_BY_ROW": true
+          },
+          "dispatch": [
+            4,
+            1,
+            1
+          ],
+          "compileAndPrepareMs": 4.241123000000002
+        },
+        {
+          "id": "weight-rescale",
+          "shaderSha256": "84779a6e84571b2733f5f4e5ba96127e31d452ee04ab94c1224f82e7b8459884",
+          "entryPoint": "main",
+          "constants": {
+            "WORKGROUP_SIZE": 256,
+            "INPUT_IS_I32": false,
+            "SCALE_BY_ROW": false
+          },
+          "dispatch": [
+            4,
+            1,
+            1
+          ],
+          "compileAndPrepareMs": 5.651976999999988
+        }
+      ],
+      "outputs": [
+        {
+          "buffer": "packedActivation",
+          "sizeBytes": 644,
+          "expectedSha256": "1a0388f381864d4c55671e52e95c007d8a3c7e65bd4de323dff2200132c2dd6a",
+          "observedSha256": "1a0388f381864d4c55671e52e95c007d8a3c7e65bd4de323dff2200132c2dd6a",
+          "exact": true
+        },
+        {
+          "buffer": "accumulator",
+          "sizeBytes": 4096,
+          "expectedSha256": "771e484cab75fa6629c22c0f4db9937a4aef075ec145ed25e06e565aee80af12",
+          "observedSha256": "771e484cab75fa6629c22c0f4db9937a4aef075ec145ed25e06e565aee80af12",
+          "exact": true
+        },
+        {
+          "buffer": "activationScaled",
+          "sizeBytes": 4096,
+          "expectedSha256": "55dad71a6d9d33a1391e7489d4fcc6a859b59d1857157d817bac4db816c59d1e",
+          "observedSha256": "55dad71a6d9d33a1391e7489d4fcc6a859b59d1857157d817bac4db816c59d1e",
+          "exact": true
+        },
+        {
+          "buffer": "output",
+          "sizeBytes": 4096,
+          "expectedSha256": "a39d4b04cfa92cf6522c98d8ed23508c8c2b584d340cc64dc3aef8f148cb3e53",
+          "observedSha256": "a39d4b04cfa92cf6522c98d8ed23508c8c2b584d340cc64dc3aef8f148cb3e53",
+          "exact": true
+        },
+        {
+          "buffer": "status",
+          "sizeBytes": 4,
+          "expectedSha256": "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119",
+          "observedSha256": "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119",
+          "exact": true
+        }
+      ],
+      "passed": true,
+      "failure": null,
+      "cleanup": {
+        "settled": true,
+        "destroyedBuffers": 13
+      }
+    },
+    {
+      "name": "packed",
+      "preparationMs": 18.257436,
+      "executionMs": 2.057670999999999,
+      "stages": [
+        {
+          "id": "quantize",
+          "shaderSha256": "d01bbb40e706e027c70cdd5360eb5745b6e0412db7d2f05203a8d67cc8260899",
+          "entryPoint": "main",
+          "constants": {
+            "WORKGROUP_SIZE": 256
+          },
+          "dispatch": [
+            1,
+            1,
+            1
+          ],
+          "compileAndPrepareMs": 3.8781899999999894
+        },
+        {
+          "id": "packed-dot",
+          "shaderSha256": "073aaece4131b2ec3fcbd6cbc304f4a5497ddd62a3f1954d01bd7f9a33424d1b",
+          "entryPoint": "main",
+          "constants": {
+            "WORKGROUP_SIZE": 64
+          },
+          "dispatch": [
+            16,
+            1,
+            1
+          ],
+          "compileAndPrepareMs": 6.845169999999996
+        },
+        {
+          "id": "activation-rescale",
+          "shaderSha256": "84779a6e84571b2733f5f4e5ba96127e31d452ee04ab94c1224f82e7b8459884",
+          "entryPoint": "main",
+          "constants": {
+            "WORKGROUP_SIZE": 256,
+            "INPUT_IS_I32": true,
+            "SCALE_BY_ROW": true
+          },
+          "dispatch": [
+            4,
+            1,
+            1
+          ],
+          "compileAndPrepareMs": 3.3198660000000046
+        },
+        {
+          "id": "weight-rescale",
+          "shaderSha256": "84779a6e84571b2733f5f4e5ba96127e31d452ee04ab94c1224f82e7b8459884",
+          "entryPoint": "main",
+          "constants": {
+            "WORKGROUP_SIZE": 256,
+            "INPUT_IS_I32": false,
+            "SCALE_BY_ROW": false
+          },
+          "dispatch": [
+            4,
+            1,
+            1
+          ],
+          "compileAndPrepareMs": 3.4541750000000064
+        }
+      ],
+      "outputs": [
+        {
+          "buffer": "packedActivation",
+          "sizeBytes": 644,
+          "expectedSha256": "1a0388f381864d4c55671e52e95c007d8a3c7e65bd4de323dff2200132c2dd6a",
+          "observedSha256": "1a0388f381864d4c55671e52e95c007d8a3c7e65bd4de323dff2200132c2dd6a",
+          "exact": true
+        },
+        {
+          "buffer": "accumulator",
+          "sizeBytes": 4096,
+          "expectedSha256": "771e484cab75fa6629c22c0f4db9937a4aef075ec145ed25e06e565aee80af12",
+          "observedSha256": "771e484cab75fa6629c22c0f4db9937a4aef075ec145ed25e06e565aee80af12",
+          "exact": true
+        },
+        {
+          "buffer": "activationScaled",
+          "sizeBytes": 4096,
+          "expectedSha256": "55dad71a6d9d33a1391e7489d4fcc6a859b59d1857157d817bac4db816c59d1e",
+          "observedSha256": "55dad71a6d9d33a1391e7489d4fcc6a859b59d1857157d817bac4db816c59d1e",
+          "exact": true
+        },
+        {
+          "buffer": "output",
+          "sizeBytes": 4096,
+          "expectedSha256": "a39d4b04cfa92cf6522c98d8ed23508c8c2b584d340cc64dc3aef8f148cb3e53",
+          "observedSha256": "a39d4b04cfa92cf6522c98d8ed23508c8c2b584d340cc64dc3aef8f148cb3e53",
+          "exact": true
+        },
+        {
+          "buffer": "status",
+          "sizeBytes": 4,
+          "expectedSha256": "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119",
+          "observedSha256": "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119",
+          "exact": true
+        }
+      ],
+      "passed": true,
+      "failure": null,
+      "cleanup": {
+        "settled": true,
+        "destroyedBuffers": 13
+      }
+    }
+  ],
+  "errors": [],
+  "passed": true,
+  "failure": null
+}
