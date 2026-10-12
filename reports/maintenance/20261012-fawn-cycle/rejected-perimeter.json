@@ -1,0 +1,65 @@
+{
+  "passed": false,
+  "classification": "Chrome WebGPU artwork and emulated screens; no native Doe, physical-phone or performance qualification",
+  "policy": {
+    "version": 1,
+    "effects": [
+      "flow",
+      "wave",
+      "particles"
+    ],
+    "holdS": 12,
+    "blendS": 4,
+    "idleS": 2,
+    "maxDtS": 0.033
+  },
+  "sources": [
+    {
+      "file": "fawn-cycle.html",
+      "sha256": "752b6ab025b530ff16f3261939f80f213e27e095a2fe6994e4755c48a251298b"
+    },
+    {
+      "file": "fawn-cycle.js",
+      "sha256": "e9e539e39286caa309143ff6d52f6ff69b5b5356774b947d9e67d747ce4cbac0"
+    },
+    {
+      "file": "fawn-cycle-clock.js",
+      "sha256": "9c05ceb110613d2e384d6ed5d4a17e72e2af3c7972dfde7bc20a78b2fc883e7b"
+    },
+    {
+      "file": "fawn-cycle-gpu.js",
+      "sha256": "d4831244cf7d9acb261de7e25fec25a20fe1a9570310e9e9392c7c43c13a19ca"
+    },
+    {
+      "file": "fawn-cycle-transfers.js",
+      "sha256": "45f3da04a68be2f2ca1f97434d9f5f8b7047b46917902b8b74ca6a460196bb1c"
+    },
+    {
+      "file": "fawn-shaders.js",
+      "sha256": "d4afb6914d309588813d5fffda6330b4ad7208f84d15b49e59e55e5229e9e03b"
+    },
+    {
+      "file": "fawn-formation.js",
+      "sha256": "30f5bc12118153d86bfc3c3b6a78fea936c03a748e5ab24b5b048dd0790fc8e9"
+    }
+  ],
+  "oracles": [
+    {
+      "boundary": "Flow → Wave",
+      "maxError": 3.2139778083362103e-7
+    },
+    {
+      "boundary": "Wave → Particles",
+      "positionError": 0,
+      "colorError": 1.9868214962137642e-8
+    },
+    {
+      "boundary": "Particles → Flow",
+      "maxError": 0.0006510615348815918
+    }
+  ],
+  "journeys": [],
+  "harnessSha256": "709c8d7e7535d43b61260a1b99d63e5f80a6dec969d35dfdd0fb2f2ce35ae686",
+  "browser": "155.0.8059.39",
+  "error": "AssertionError [ERR_ASSERTION]: Incoming particles retain material in the center\n    at file:///Users/xyz/deco/doe/browser/chromium/scripts/test-fawn-cycle.js:384:12"
+}
