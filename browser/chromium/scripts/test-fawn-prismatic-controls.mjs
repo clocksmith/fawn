@@ -43,6 +43,8 @@ async function openPage(options = {}) {
     GPUQueue.prototype.writeBuffer = function (buffer, offset, data, ...args) {
       if (data instanceof Float32Array && data.length === 16) {
         window.gpuActivity.simulationTime = data[9];
+        window.gpuActivity.pointerRadius = data[7];
+        window.gpuActivity.pointerStrength = data[6];
       }
       return write.call(this, buffer, offset, data, ...args);
     };
@@ -86,7 +88,11 @@ try {
     await page.waitForFunction(() => /\d/.test(document.querySelector('#frame').textContent));
     const boxes = await layout(page);
     await page.mouse.move(viewport.width * .35, viewport.height * .4);
+    await page.waitForFunction(() => window.gpuActivity.pointerStrength === Math.fround(0.28));
+    assert.equal(await page.evaluate(() => window.gpuActivity.pointerRadius), Math.fround(0.05));
     await page.mouse.down();
+    await page.waitForFunction(() => window.gpuActivity.pointerStrength === Math.fround(1.4));
+    assert.equal(await page.evaluate(() => window.gpuActivity.pointerRadius), Math.fround(0.10));
     await page.mouse.move(viewport.width * .65, viewport.height * .55, { steps: 16 });
     await page.mouse.up();
     await page.locator('#pause').click();
