@@ -12,7 +12,7 @@ const server = http.createServer(async (request, response) => {
     const path = new URL(request.url, 'http://localhost').pathname;
     const file = new URL('.' + path, resources);
     if (!file.href.startsWith(resources.href)) throw new Error('Outside resources');
-    response.setHeader('Content-Type', path.endsWith('.svg') ? 'image/svg+xml' : 'text/html');
+    response.setHeader('Content-Type', path.endsWith('.svg') ? 'image/svg+xml' : path.endsWith('.js') ? 'text/javascript' : 'text/html');
     response.end(await readFile(file));
   } catch { response.writeHead(404).end(); }
 });
@@ -20,7 +20,8 @@ await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
 const origin = process.env.FAWN_UI_ORIGIN || `http://127.0.0.1:${server.address().port}`;
 const route = origin + '/fawn-prismatic-fluids.html';
 const browser = await chromium.launch({
-  channel: 'chrome', headless: true, args: ['--enable-unsafe-webgpu'],
+  channel: 'chrome', headless: process.env.FAWN_HEADED !== '1',
+  args: process.env.FAWN_CHROME_ARGS ? JSON.parse(process.env.FAWN_CHROME_ARGS) : ['--enable-unsafe-webgpu'],
 });
 const results = [];
 const errors = [];

@@ -20,6 +20,10 @@ const report = { classification: 'Chrome application correctness; emulated mobil
   cases: [], errors: [], passed: false };
 const server = http.createServer(async (request, response) => {
   const path = new URL(request.url, 'http://localhost').pathname;
+  if (path.endsWith('/fawn-flow-logo.js')) {
+    response.setHeader('Content-Type', 'text/javascript');
+    response.end(await readFile('browser/chromium/resources/fawn-flow-logo.js')); return;
+  }
   if (path.endsWith('.svg')) {
     response.setHeader('Content-Type', 'image/svg+xml');
     response.end(await readFile('browser/chromium/resources/fawn-icon.svg')); return;

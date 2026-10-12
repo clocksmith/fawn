@@ -1,5 +1,13 @@
 # Fawn hosted demonstrations
 
+Flow now includes an optional logo-guidance experiment: seeded pigment noise
+settles into the canonical Fawn paths; stirring disturbs it, and release reforms
+the mark. Logo disables guidance without restarting. Reset reseeds the dye and
+preserves pause. [Application evidence](../../reports/maintenance/20261012-fawn-logo-flow/README.md)
+binds the field/shader source, GPU readback, actual rendered desktop/mobile
+captures and lifecycle checks. This changes Flow's initial state, forcing and
+drawing; it does not qualify native Doe or the Fawn browser.
+
 [Canvas and failure regressions](../../reports/maintenance/20261011-fawn-canvas-lifecycle/README.md)
 retain the default-canvas initialization repair, aspect-preserving device-limit
 scaling, and Chroma terminal resource cleanup. The report separates reproduced
@@ -55,8 +63,8 @@ The benchmark pages align Particle Trails, Magnetic
 Fluids, Prismatic Fluids, and Image Lab with the main page's fullscreen canvas,
 Fawn branding, Settings panel, GitHub link, and compact footer. It has no address
 field. The packaged simulators are published on CanvasContext; Particle Trails
-and Image Lab remain repository-only. Simulation
-shaders, default workloads, and image-processing resolution remain unchanged.
+and Image Lab remain repository-only. That alignment preserved simulation shaders, default workloads and image-processing
+resolution; the later Flow logo experiment has its own changed-source evidence.
 Pause freezes simulation and shader time; reset and resize can redraw while
 paused. Image Lab renders on demand and reports completed-update latency.
 
