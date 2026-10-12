@@ -76,7 +76,16 @@ try {
   assert.equal(changed[3], frozen[3], 'Paused redraw must not advance the pointer-force filter');
   await page.keyboard.up('Space');
   await page.locator('.details').evaluate(el => { el.open = false; });
+  await page.locator('#restart').click(); await frames(page, 1, Infinity);
+  const restarted = await page.evaluate(() => clockProbe.uniforms);
+  report.cases.push({ name: 'paused reset clears gesture', beforeForce: changed[3], afterForce: restarted[3], time: restarted[1] });
+  assert.ok(changed[3] > 0, 'Reset must exercise an outstanding pointer response');
+  assert.equal(restarted[3], 0, 'Reset must clear the previous gesture response');
+  assert.equal(restarted[1], 0); assert.equal(restarted[0], 0);
+  assert.equal(await page.locator('#pause').textContent(), 'Resume');
   await page.locator('#pause').evaluate(el => el.click());
+  await frames(page, 1, 60);
+  assert.equal(await page.evaluate(() => clockProbe.uniforms[3]), 0, 'Resume must not restore the old gesture');
   for (const hz of [40, 60, 120]) for (const steps of [1, 8]) {
     // Compare partitions of one accepted world; reset through actual controls.
     await page.keyboard.up('Space'); await frames(page, 160, 40);
@@ -97,6 +106,9 @@ try {
     assert.equal(await page.locator('#failure').isVisible(), false);
   }
   assert.deepEqual(report.errors, []); report.passed = true;
+} catch (error) {
+  report.failure = error.message;
+  throw error;
 } finally {
   await writeFile(path.join(output, 'report.json'), JSON.stringify(report, null, 2) + '\n');
   await browser.close(); await new Promise(resolve => server.close(resolve));

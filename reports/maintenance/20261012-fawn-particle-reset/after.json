@@ -1,0 +1,115 @@
+{
+  "passed": true,
+  "classification": "Chrome WebGPU pointer response; controlled model clock with actual GPU submissions, no performance or native Doe claim.",
+  "source": {
+    "file": "fawn-start.html",
+    "sha256": "2e6d305a85ccb3d38ac27ec7e4c0e552e7cbe4af0bda1bc44aac16102e3627ef"
+  },
+  "cases": [
+    {
+      "name": "paused redraw",
+      "beforeForce": 16.609346389770508,
+      "afterForce": 16.609346389770508,
+      "beforeTime": 0.10000000149011612,
+      "afterTime": 0.10000000149011612,
+      "adapter": {
+        "vendor": "intel",
+        "architecture": "gen-12lp",
+        "isFallbackAdapter": false
+      }
+    },
+    {
+      "name": "paused reset clears gesture",
+      "beforeForce": 16.609346389770508,
+      "afterForce": 0,
+      "time": 0
+    },
+    {
+      "name": "equal model time",
+      "hz": 40,
+      "steps": 1,
+      "time": 0.10000000149011612,
+      "force": 16.609346389770508,
+      "expectedForce": 16.609346249999998,
+      "adapter": {
+        "vendor": "intel",
+        "architecture": "gen-12lp",
+        "isFallbackAdapter": false
+      }
+    },
+    {
+      "name": "equal model time",
+      "hz": 40,
+      "steps": 8,
+      "time": 0.10000000149011612,
+      "force": 16.609346389770508,
+      "expectedForce": 16.609346249999998,
+      "adapter": {
+        "vendor": "intel",
+        "architecture": "gen-12lp",
+        "isFallbackAdapter": false
+      }
+    },
+    {
+      "name": "equal model time",
+      "hz": 60,
+      "steps": 1,
+      "time": 0.10000000149011612,
+      "force": 16.609346389770508,
+      "expectedForce": 16.609346249999998,
+      "adapter": {
+        "vendor": "intel",
+        "architecture": "gen-12lp",
+        "isFallbackAdapter": false
+      }
+    },
+    {
+      "name": "equal model time",
+      "hz": 60,
+      "steps": 8,
+      "time": 0.10000000149011612,
+      "force": 16.609346389770508,
+      "expectedForce": 16.609346249999998,
+      "adapter": {
+        "vendor": "intel",
+        "architecture": "gen-12lp",
+        "isFallbackAdapter": false
+      }
+    },
+    {
+      "name": "equal model time",
+      "hz": 120,
+      "steps": 1,
+      "time": 0.10000000149011612,
+      "force": 16.609346389770508,
+      "expectedForce": 16.609346249999998,
+      "adapter": {
+        "vendor": "intel",
+        "architecture": "gen-12lp",
+        "isFallbackAdapter": false
+      }
+    },
+    {
+      "name": "equal model time",
+      "hz": 120,
+      "steps": 8,
+      "time": 0.10000000149011612,
+      "force": 16.609346389770508,
+      "expectedForce": 16.609346249999998,
+      "adapter": {
+        "vendor": "intel",
+        "architecture": "gen-12lp",
+        "isFallbackAdapter": false
+      }
+    }
+  ],
+  "errors": [],
+  "browser": "136.0.7103.59",
+  "browserArgs": [
+    "--enable-unsafe-webgpu",
+    "--use-angle=vulkan",
+    "--enable-features=Vulkan",
+    "--disable-vulkan-surface"
+  ],
+  "origin": "local"
+}

@@ -1,5 +1,11 @@
 # Fawn hosted demonstrations
 
+[Particle reset evidence](../../reports/maintenance/20261012-fawn-particle-reset/README.md)
+retains the preceding-source gesture leak and corrected reset behavior. Reset
+clears particle input alongside positions and time while preserving pause and
+settings. This is Chrome WebGPU application evidence; the live release manifest
+below identifies the deployed source.
+
 Flow now includes an optional logo-guidance experiment: seeded pigment noise
 settles into the canonical Fawn paths; stirring disturbs it, and release reforms
 the mark. Logo disables guidance without restarting. Reset reseeds the dye and
