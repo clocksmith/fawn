@@ -97,12 +97,26 @@ backend policies, and claim rules. Do not copy mutable values into this README.
 | `bench/cli.py` | Stable operator front door |
 | `bench/workloads/` | Workload definitions, assets, and metadata |
 | `bench/oracles/` | Independent correctness oracles |
-| `bench/runners/` | Governed orchestration |
+| `bench/runners/` | Governed run and cohort orchestration |
+| `bench/executors/` | Workload execution in native and application hosts |
+| `bench/native_compare_modules/` | Comparison implementation used by the operator front door |
+| `bench/native-compare/` | Declared native comparison profiles |
 | `bench/browser/` | Browser smoke and release evidence validation |
 | `bench/gates/` | Blocking and advisory decisions |
 | `bench/tools/` | Builders, checkers, and reports |
 | `bench/docs/` | Focused operator and integration references |
 | `bench/out/` | Generated run artifacts and receipts |
+
+Keep operator commands in `bench/cli.py`; executors and comparison modules
+implement those commands rather than defining competing front doors. Standalone
+diagnostics retain their declared recipes and cannot promote a result themselves.
+Repository health glue lives in `scripts/`; benchmark builders, artifact readers,
+and reporting helpers belong in `bench/tools/`.
+
+`bench/out/` includes retained evidence and pinned dependencies, not just scratch
+files. Establish references and custody before deleting a run. The CI cleanup
+tool, `bench/tools/cleanup_out.py`, applies retention rules to its runner output;
+it does not establish that a local evidence archive is safe to prune.
 
 `config/tool-surfaces.json` owns whether any tool is public or repo-only.
 Browser release receipt ownership and existing admission commands are mapped in

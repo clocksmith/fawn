@@ -72,6 +72,7 @@
       ],
       "entrypoints": [
         "runtime/zig/build.zig",
+        "runtime/zig/tools/check_line_limits.py",
         "runtime/zig/src/cli/entrypoints/main.zig"
       ],
       "docs": [
@@ -207,7 +208,6 @@
       "entrypoints": [
         "scripts/check-health.py",
         "scripts/check-public-claim-surfaces.py",
-        "scripts/check_zig_line_limit.py",
         "scripts/update_browser_spec_index.py"
       ],
       "docs": [

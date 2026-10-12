@@ -13,6 +13,22 @@ The map distinguishes WebGPU object ownership, command execution through the
 WebGPU ABI, shared execution services, and module incubation. Historical names
 such as `core` and `full` are not evidence of which build ships a module.
 
+Route changes by responsibility:
+
+| Owner | Responsibility |
+| --- | --- |
+| `src/compiler/` | Shader semantics and target lowering |
+| `src/native/` | WebGPU objects, resource lifetimes, and native provider behavior |
+| `src/backend/` | Backend interfaces and platform execution |
+| `src/dropin/` | Exported WebGPU ABI routing and behavior policy |
+| `src/core/`, `src/full/` | Commands executed through the WebGPU ABI |
+| [`packages/doe-gpu/`](../../packages/doe-gpu/README.md) | Public JavaScript integration |
+| [`runtime/bridge/`](../bridge/) | External application adapters |
+
+Command execution through the ABI is distinct from implementing native WebGPU
+objects behind it. Use the generated map for individual module placement and
+allowed dependencies; this table does not redefine that policy.
+
 Use the nearest owner rather than adding catch-all utilities. The import fence
 enforces dependency direction; organization quality still requires reviewing
 responsibility splits and actual consumers.
