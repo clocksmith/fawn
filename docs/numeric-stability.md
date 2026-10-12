@@ -2,10 +2,9 @@
 
 ## Purpose
 
-This is the single planning and claim-boundary document for Doe numeric
-stability. It replaces the older split strategy, claim-discipline plan,
-demo plan, contract roadmap, auto-detection, decode-validation, and
-semantic-envelope planning notes.
+This page owns numeric-stability route and claim requirements.
+[GOALS.md](../GOALS.md) selects work; the configuration, schemas, and bound
+receipts linked below own executable policy and evidence.
 
 The strategy boundary is narrow:
 
@@ -96,19 +95,21 @@ The source artifacts are:
 - `examples/numeric-stability-semantic-envelope.sample.json`
 - `pipeline/lean/Doe/Core/NumericStabilityPolicy.lean`
 
-## What is left
+## Promotion conditions
 
-| ID | Area | Status | Work left | Done when |
-| --- | --- | --- | --- | --- |
-| N-1 | Evidence freeze | Active | Keep the promoted corpus, policy config, route semantics, and Lean proof surface synchronized. | Config schemas validate, promoted cases replay, and policy route proofs still match the runtime route enum. |
-| N-2 | Runtime receipt | Active | Keep the runtime receipt contract explicit for operator family, policy, route, fast/stable/reference values, and proof/config identity. | A receipt from ordinary execution can be validated against schema and traced back to config + proof artifacts. |
-| N-3 | Auto-detection | Pending | Move from annotated `matmul.logits` to automatic fragile-operator detection during ordinary execution. Start with `matmul.logits`, then expand to `softmax.denominator`, `rmsnorm.output`, `layernorm.output`, and `attention.output` only after measured overhead is acceptable. | Ordinary execution emits a numeric-stability receipt without requiring an explicit capture override for the first operator family. |
-| N-4 | Route effect | Pending | Make `prefer-stable` change the committed downstream result under an explicit policy, not just report an observation. | A runtime test proves the committed output differs when the route selects the stable path, and the receipt records that route effect. |
-| N-5 | Decode boundary | Pending | Promote `sample.token` from mined fragility states into a receipt surface with meaningful-token filtering, short suffix consequence, and backend promotion rules. | Decode-boundary cases are promoted only when they change a meaningful token or short suffix, not just a junk tie. |
-| N-6 | Semantic envelope | Design | Represent semantic equivalence and ambiguity across prompt, decode, numeric, and candidate-context views without combinatorial explosion. | A `numeric-stability-semantic-envelope` artifact validates against schema and is attached to at least one promoted case. |
-| N-7 | Package surface | Pending | Expose the same route semantics through `doe-gpu` package APIs without creating a separate product contract. | `stableToken`, `stableChoice`, and `reviewedChoice` consume the same runtime receipt shape as native Doe. |
-| N-8 | Browser promotion | Pending | Carry promoted runtime receipts into the browser lane. | Browser evidence uses the same config/proof/receipt identity chain, with no separate browser-only semantics. |
-| N-9 | Performance budget | Pending | Bound rerun overhead through operator-local capture, suffix replay, and measured defaults. | Receipts include cost fields, and promotion rules reject cases that exceed the configured overhead budget. |
+These conditions bound a selected claim; they do not authorize expansion.
+
+| ID | Boundary | Required evidence |
+| --- | --- | --- |
+| N-1 | Evidence freeze | Config schemas validate, promoted cases replay, and policy route proofs still match the runtime route enum. |
+| N-2 | Runtime receipt | A receipt from ordinary execution can be validated against schema and traced back to config + proof artifacts. |
+| N-3 | Auto-detection | Ordinary execution emits a numeric-stability receipt without requiring an explicit capture override for the first operator family. |
+| N-4 | Route effect | A runtime test proves the committed output differs when the route selects the stable path, and the receipt records that route effect. |
+| N-5 | Decode boundary | Decode-boundary cases are promoted only when they change a meaningful token or short suffix, not just a junk tie. |
+| N-6 | Semantic envelope | A `numeric-stability-semantic-envelope` artifact validates against schema and is attached to at least one promoted case. |
+| N-7 | Package surface | `stableToken`, `stableChoice`, and `reviewedChoice` consume the same runtime receipt shape as native Doe. |
+| N-8 | Browser promotion | Browser evidence uses the same config/proof/receipt identity chain, with no separate browser-only semantics. |
+| N-9 | Performance budget | Receipts include cost fields, and promotion rules reject cases that exceed the configured overhead budget. |
 
 ## Semantic envelope
 

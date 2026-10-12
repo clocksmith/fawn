@@ -491,15 +491,14 @@ trace or an output oracle.
 - [`docs/thesis.md`](./thesis.md) for project rationale
 - [`docs/process.md`](./process.md) for stage order and gates
 - [`docs/csl-architecture.md`](./csl-architecture.md) for the CSL-specific abstraction boundary and host-plan lowering model
-- [`docs/tsir-lowering-plan.md`](./tsir-lowering-plan.md) for the
+- [`docs/tsir-contract.md`](./tsir-contract.md) for the
   parity-oracle-first WGSL -> TSIR -> multi-backend lowering architecture
   (Phase A compiler surface landed; live status in
   [`docs/status/tsir.md`](./status/tsir.md))
-- [`docs/numeric-stability.md`](./numeric-stability.md) for the numeric-stability integration path, claim boundary, demo bar, semantic envelope, and live runtime contract roadmap
+- [`docs/numeric-stability.md`](./numeric-stability.md) for the numeric-stability integration path, claim boundary, demo bar, semantic envelope, and runtime claim boundary
 - [`pipeline/lean/README.md`](../pipeline/lean/README.md) for Lean proof categories and the artifact boundary
 - [`bench/README.md`](../bench/README.md) for compare and claim workflows
 - [`docs/workload-system.md`](./workload-system.md) for the shared workload,
   executor, oracle, and ledger contract
-- [`docs/runtime-hexagonal-architecture-plan.md`](./runtime-hexagonal-architecture-plan.md) for completed migration history and current Zig architecture owners
 - [`runtime/zig/README.md`](../runtime/zig/README.md) for runtime details
 - [`browser/chromium/README.md`](../browser/chromium/README.md) for the Chromium lane

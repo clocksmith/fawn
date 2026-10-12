@@ -25,7 +25,7 @@ the kernels or execution behavior that Doppler already owns.
 | --- | --- | --- |
 | Doppler Program Bundle | Doppler | Manifest and execution identity, packaged hash-bound WGSL and constrained host-JS bytes, runtime/capture profile, artifact IDs, and reference transcript. |
 | WebGPU capture graph | Doe | Observed GPU command graph from running the declared program under a supported provider/capture profile. |
-| TSIR semantic + realization | Doe | Two-level lowering contract between WGSL IR and backend emitters; semantic is target-independent, realization pins target + planner choices. Both are hashable; digests bind into `integrityExtensions.lowerings[]`. See `docs/tsir-lowering-plan.md` + `docs/status/tsir.md`. |
+| TSIR semantic + realization | Doe | Two-level lowering contract between WGSL IR and backend emitters; semantic is target-independent, realization pins target + planner choices. Both are hashable; digests bind into `integrityExtensions.lowerings[]`. See `docs/tsir-contract.md` + `docs/status/tsir.md`. |
 | HostPlan | Doe | Runtime orchestration contract for launches, tensors, scheduling, streams, and receipts derived from the declared/captured program surface. It is not the planned long-term place where kernel meaning, residency, or collective semantics are rediscovered. |
 | CSL bundle and receipts | Doe | Backend output plus SDK compile, simfabric, parity, and hardware validation receipts. |
 | Cross-repo CUJ narrative | Ouroboros | Milestone map and proof journey that links repo-local contracts without owning their fields. |
@@ -38,7 +38,7 @@ journey, but the enforceable contract fields live with the owning repository.
 The Doe-owned lowering of a Doppler Program Bundle is not a single monolithic
 boundary. It splits into two concerns at different levels of the stack:
 
-1. **Kernel-level lowering — the TSIR contract.** `docs/tsir-lowering-plan.md`
+1. **Kernel-level lowering — the TSIR contract.** `docs/tsir-contract.md`
    defines the compiler architecture: a Tiled Spatial IR between
    WGSL IR and backend emitters, with a parity oracle defined against TSIR
    rather than against any backend. TSIR is where tiling, residency,
@@ -158,7 +158,7 @@ WGSL IR -> TSIR -> HostPlan / CSL artifacts
 In that target architecture, HostPlan remains the runtime orchestration
 boundary for the CSL lane, but TSIR owns kernel-level lowering decisions such
 as tiling, residency, collectives, and exactness. See
-`docs/tsir-lowering-plan.md` for the lowering architecture (Phase A compiler
+`docs/tsir-contract.md` for the lowering architecture (Phase A compiler
 surface landed; `docs/status/tsir.md` has live status) and
 `docs/csl-architecture.md` for the current HostPlan/classifier path that this
 migrates from.

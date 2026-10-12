@@ -1,6 +1,6 @@
 """Lock the TSIR bootstrap kernel catalog's internal integrity.
 
-Step 1.5 of `docs/tsir-lowering-plan.md` pins a small catalog of WGSL
+Step 1.5 of `docs/tsir-contract.md` pins a small catalog of WGSL
 snapshots with hand-sketched TSIR under
 `runtime/zig/tests/tsir/bootstrap/`. This module's tests fail closed
 on any break in those artifacts' internal contracts:

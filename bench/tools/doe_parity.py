@@ -1100,15 +1100,15 @@ def main() -> int:
             raise ValueError(
                 f"--doppler-transcript is not valid for bootstrap kernel "
                 f"{normalized_kernel!r}; bootstrap kernels route to the Zig "
-                "scalar oracle by design. See docs/tsir-lowering-plan.md "
-                "Step 1."
+                "scalar oracle by design. See docs/tsir-contract.md "
+                "Numerical and oracle contract."
             )
         if not is_bootstrap_kernel and doppler_transcript is None:
             raise ValueError(
                 f"real kernel {normalized_kernel!r} requires "
                 "--doppler-transcript under the re-scoped plan (real-kernel "
                 "reference is Doppler's browser WebGPU transcript, not the "
-                "Zig oracle). See docs/tsir-lowering-plan.md Step 1."
+                "Zig oracle). See docs/tsir-contract.md Numerical and oracle contract."
             )
 
         expected_output_elements: int | None = None

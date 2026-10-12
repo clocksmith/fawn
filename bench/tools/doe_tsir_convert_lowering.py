@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 """AOT convert-time TSIR lowering orchestrator.
 
-Under the re-scoped plan (see `docs/tsir-lowering-plan.md` Move 3 and
-Step 11), this is the Doe-side entry point that Doppler's `convert`
+Under the manifest/convert boundary in `docs/tsir-contract.md`, this is the Doe-side entry point that Doppler's `convert`
 stage will invoke. It iterates over the kernels declared in a manifest's
 `inference.execution.kernels`, and for each `(kernelRef, backend)` in
 the declared target matrix it produces:
@@ -17,7 +16,7 @@ It also drives `doe_parity.py` to emit per-`(kernel, backend)` parity
 receipts under the declared receipts directory. Bootstrap kernels
 route to the Zig scalar oracle; real kernels route to the Doppler
 reference transcript supplied via `--doppler-transcript`. See
-`docs/tsir-lowering-plan.md` Step 1 for the dual-regime contract.
+`docs/tsir-contract.md` Numerical and oracle contract for the dual-regime contract.
 
 The tool is deliberately narrow. It does not yet extend TSIR frontend
 coverage to real kernels — that is Move 4 work. What it DOES do is
@@ -397,7 +396,7 @@ def reject_real_kernel_pair(
             "frontend. Move 4 extends frontend coverage to the WS4 "
             "per-PE blockers first (embed, lm_head_gemv, "
             "attn_head256, attn_head512). See "
-            "docs/tsir-lowering-plan.md Step 9."
+            "docs/tsir-contract.md Emission and parity requirements."
         ),
     )
 

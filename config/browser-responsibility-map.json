@@ -275,7 +275,7 @@
       "scopeStatus": "doe_claim_candidate",
       "rationale": "Shader compilation is claimable only through Doe-vs-Tint evidence with source/output hashes and validation receipts.",
       "claimBinding": {
-        "contractPath": "docs/chromium-webgpu-task-list.md",
+        "contractPath": "browser/chromium/acceptance.md",
         "schemaPath": "config/tint-compiler-evidence.schema.json",
         "workloadPath": "bench/native-compare/compare_doe_vs_tint.config.json",
         "gatePath": "bench/gates/tint_compiler_evidence_gate.py",
@@ -315,7 +315,7 @@
       "scopeStatus": "doe_claim_candidate",
       "rationale": "Compiler evidence can link source to IR and backend output for browser shader rows.",
       "claimBinding": {
-        "contractPath": "docs/chromium-webgpu-task-list.md",
+        "contractPath": "browser/chromium/acceptance.md",
         "schemaPath": "config/tint-compiler-evidence.schema.json",
         "workloadPath": "bench/native-compare/compare_doe_vs_tint.config.json",
         "gatePath": "bench/gates/tint_compiler_evidence_gate.py",

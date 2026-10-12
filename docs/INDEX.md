@@ -34,7 +34,6 @@ evidence boundaries are clear.
 - [`architecture.md`](architecture.md#technical-diagrams): compiler/runtime ownership, native submission, prepared-resource lifetimes, and system surfaces
 - [`implementation-peers.md`](implementation-peers.md): generated implementation
   inventory, compiler identities, provider IDs and tracking pointers
-- [`runtime-hexagonal-architecture-plan.md`](runtime-hexagonal-architecture-plan.md): completed Zig migration history and current architecture owners
 - [`process.md`](process.md): stage, gate, and release law
 - [`status.md`](status.md): concise current-status routing
 - [`repo-taxonomy.md`](repo-taxonomy.md): repository ownership
@@ -72,8 +71,8 @@ evidence boundaries are clear.
 ## Compiler and TSIR
 
 - [`shader-compiler-architecture.md`](shader-compiler-architecture.md)
-- [`tsir-lowering-plan.md`](tsir-lowering-plan.md)
-- [`loop-protocol.md`](loop-protocol.md)
+- [`tsir-contract.md`](tsir-contract.md)
+- [`tsir-contract.md`](tsir-contract.md)
 - [`lean-bounds-elimination-design.md`](lean-bounds-elimination-design.md)
 - [`doppler-ingest.md`](doppler-ingest.md)
 - [`gpu-math-api-proposal.md`](gpu-math-api-proposal.md)
@@ -82,7 +81,6 @@ evidence boundaries are clear.
 
 - [`browser-lane.md`](browser-lane.md): A/B/C/D attribution plus the separate
   Cloudflare Kitesurf K0 external-product comparator
-- [`chromium-webgpu-task-list.md`](chromium-webgpu-task-list.md)
 - [`fawn-fork-maintenance-policy.md`](fawn-fork-maintenance-policy.md)
 
 ## Cerebras and CSL

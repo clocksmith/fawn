@@ -23,8 +23,7 @@ the executable state.
 
 ## Ground truth
 
-- Architecture and sequence: [`../tsir-lowering-plan.md`](../tsir-lowering-plan.md)
-- Iteration discipline: [`../loop-protocol.md`](../loop-protocol.md)
+- Lowering contract: [`../tsir-contract.md`](../tsir-contract.md)
 - Receipts: `reports/parity/`
 - Historical entries:
   [`archive/2026-04-to-2026-07-tsir.md`](archive/2026-04-to-2026-07-tsir.md)

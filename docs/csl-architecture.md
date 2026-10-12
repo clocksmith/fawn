@@ -41,7 +41,7 @@ The current CSL lowering stack is:
 In the current classifier/template path, the explicit `HostPlan` is the
 contract boundary between higher-level execution intent and Cerebras-specific
 emission. That role is not the intended steady state: under the TSIR migration
-described in `docs/tsir-lowering-plan.md` and
+described in `docs/tsir-contract.md` and
 `docs/doppler-ingest.md` §Lowering architecture, kernel meaning, residency,
 collectives, and numerical exactness move into TSIR (semantic + realization),
 and `HostPlan` sits downstream of TSIR realization as the
@@ -83,7 +83,7 @@ WGSL IR -> TSIR semantic -> TSIR realization -> mechanical CSL emitter
 with a parity oracle defined against TSIR rather than against any backend.
 
 That architecture is documented in
-[`docs/tsir-lowering-plan.md`](./tsir-lowering-plan.md); live status is in
+[`docs/tsir-contract.md`](./tsir-contract.md); live status is in
 [`docs/status/tsir.md`](./status/tsir.md). The in-tree
 `runtime/zig/src/compiler/tsir/` surface is the Phase A compiler surface for that
 plan — schema, digests, frontend, residency planner, reference interpreter,
@@ -451,7 +451,7 @@ Related user-facing entrypoints:
 
 - [`runtime/zig/README.md`](../runtime/zig/README.md)
 - [`runtime/zig/examples/csl-runtime-smoke.json`](../runtime/zig/examples/csl-runtime-smoke.json)
-- [`docs/tsir-lowering-plan.md`](./tsir-lowering-plan.md)
+- [`docs/tsir-contract.md`](./tsir-contract.md)
 - [`docs/status/cerebras-csl.md`](./status/cerebras-csl.md) — live
   status for the CSL lane (INT4 PLE progress, active blockers,
   landed infrastructure)

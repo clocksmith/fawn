@@ -82,7 +82,7 @@ and current artifacts before making compatibility claims.
 
 - WGSL architecture:
   [`../../docs/shader-compiler-architecture.md`](../../docs/shader-compiler-architecture.md)
-- TSIR plan: [`../../docs/tsir-lowering-plan.md`](../../docs/tsir-lowering-plan.md)
+- TSIR contract: [`../../docs/tsir-contract.md`](../../docs/tsir-contract.md)
 - CSL architecture: [`../../docs/csl-architecture.md`](../../docs/csl-architecture.md)
 - Proof elimination:
   [`../../docs/lean-bounds-elimination-design.md`](../../docs/lean-bounds-elimination-design.md)
