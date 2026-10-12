@@ -1,7 +1,19 @@
-(function attachFawnFlowLogo(root) {
+(function attachFawnFormation(root) {
   'use strict';
   const POLICY = Object.freeze({ version: 1, delayS: 0.8, settleS: 7, size: 0.76,
     noiseSeed: 7319, dyeRate: 1.6, diffusionRate: 5, force: 0.7, warp: 0.05 });
+
+  function configure(select) {
+    const key = 'fawn.formation';
+    try {
+      const stored = localStorage.getItem(key);
+      if (stored === 'free' || stored === 'branded') select.value = stored;
+    } catch { /* Storage may be unavailable; the authored default still works. */ }
+    select.addEventListener('change', () => {
+      try { localStorage.setItem(key, select.value); } catch { /* In-memory setting remains usable. */ }
+    });
+    return select.value === 'branded';
+  }
 
   function strength(ageS, enabled) {
     if (!enabled) return 0;
@@ -36,11 +48,11 @@
 
   function field(grid, canvas, logo) {
     if (!Number.isInteger(grid) || grid < 2 || !logo?.querySelector('path')) {
-      throw Error('Fawn flow requires a valid grid and logo paths');
+      throw Error('Fawn formation requires a valid grid and logo paths');
     }
     const raster = document.createElement('canvas'); raster.width = raster.height = grid;
     const ctx = raster.getContext('2d', { willReadFrequently: true });
-    if (!ctx) throw Error('Fawn flow target requires Canvas 2D');
+    if (!ctx) throw Error('Fawn formation target requires Canvas 2D');
     const box = logo.viewBox.baseVal;
     const scale = POLICY.size * Math.min(canvas.clientWidth / box.width,
       canvas.clientHeight / box.height);
@@ -84,6 +96,17 @@
     return { dye, velocity };
   }
 
+  // A bounded point cloud reuses the same aspect-correct silhouette for particle targets.
+  function points(grid, canvas, logo) {
+    const raster = field(grid, canvas, logo), result = [];
+    for (let i = 0; i < grid * grid; i++) if (raster[i * 4 + 2] > 0.5) {
+      result.push(((i % grid) + 0.5) / grid * 2 - 1,
+        (Math.floor(i / grid) + 0.5) / grid * 2 - 1);
+    }
+    if (!result.length) throw Error('Fawn formation requires visible logo geometry');
+    return new Float32Array(result);
+  }
+
   const WGSL = `
 fn logo_at(uv: vec2<f32>) -> vec4<f32> {
   let p = clamp(uv * u.grid.xy - vec2<f32>(0.5), vec2<f32>(0.0), u.grid.xy - vec2<f32>(1.0));
@@ -103,5 +126,5 @@ fn logo_target(uv: vec2<f32>) -> vec3<f32> {
   return palette * shape * band;
 }
 `;
-  root.FawnFlowLogo = Object.freeze({ POLICY, strength, field, seed, WGSL });
+  root.FawnFormation = Object.freeze({ POLICY, configure, strength, field, points, seed, WGSL });
 })(globalThis);

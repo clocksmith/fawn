@@ -99,7 +99,7 @@ summary::after { content: ' +'; }
    <details class="details"><summary>Settings</summary><div class="details-panel">
     <p id="adapter">Connecting to your GPU…</p>
 
-    <div class="settings"><label>Particles<select id="count-select"><option value="32768">32,768</option><option value="65536" selected>65,536</option><option value="131072">131,072</option><option value="262144">262,144</option><option value="524288">524,288</option><option value="1048576">1,048,576</option><option value="2097152">2,097,152</option><option value="4194304">4,194,304</option><option value="8388608">8,388,608</option><option value="16777216">16,777,216</option></select></label><label>Steps / frame<select id="steps-select"><option value="2">2</option><option value="4" selected>4</option><option value="8">8</option></select></label></div>
+    <div class="settings"><label>Formation<select id="formation-select" disabled><option value="free">Free</option><option value="branded" selected>Branded</option></select></label><label>Particles<select id="count-select"><option value="32768">32,768</option><option value="65536" selected>65,536</option><option value="131072">131,072</option><option value="262144">262,144</option><option value="524288">524,288</option><option value="1048576">1,048,576</option><option value="2097152">2,097,152</option><option value="4194304">4,194,304</option><option value="8388608">8,388,608</option><option value="16777216">16,777,216</option></select></label><label>Steps / frame<select id="steps-select"><option value="2">2</option><option value="4" selected>4</option><option value="8">8</option></select></label></div>
     <p>FPS = completed frames per second.</p>
     <p>This preview runs on your browser’s WebGPU.</p>
     <p id="workload">65,536 particles</p>
@@ -110,10 +110,16 @@ summary::after { content: ' +'; }
 </main>
 </div>
 <div id="failure" role="alert" hidden></div>
+<script src="./fawn-formation.js"></script>
 <script>
 
 const WORKGROUP_SIZE = 128;
-const SIM_UNIFORM_FLOATS = 8;
+const SIM_UNIFORM_FLOATS = 12;
+const LOGO_POINT_GRID = 192;
+const PARTICLE_SETTLE_RATE = 2.0;
+const PARTICLE_SETTLE_DAMPING = 8.0;
+const PARTICLE_BRANDED_SIZE = 1.3;
+const PARTICLE_BRANDED_BRIGHTNESS = 1.8;
 const PARTICLE_STRIDE_FLOATS = 8;
 const MAX_PARTICLE_COUNT = 2 ** 24;
 const PARTICLE_UPLOAD_CHUNK = 2 ** 16;
@@ -126,6 +132,7 @@ struct Params {
   mouseForce: f32,
   mouse: vec2<f32>,
   pad: vec2<f32>,
+  formation: vec4<f32>,
 }
 
 struct Particle {
@@ -137,6 +144,7 @@ struct Particle {
 @group(0) @binding(0) var<uniform> u: Params;
 @group(0) @binding(1) var<storage, read> srcParticles: array<Particle>;
 @group(0) @binding(2) var<storage, read_write> dstParticles: array<Particle>;
+@group(0) @binding(3) var<storage, read> logoPoints: array<vec2<f32>>;
 
 fn safeNormalize(v: vec2<f32>) -> vec2<f32> {
   let lenSq = max(dot(v, v), 1e-6);
@@ -195,6 +203,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>, @builtin(num_workgroups) 
   }
   field -= sign(pos) * smoothstep(vec2<f32>(0.80), vec2<f32>(VIEWPORT_EDGE), abs(pos)) * 0.09;
   field += -vel * 0.010;
+  field *= 1.0 - u.formation.x;
 
   var nextVel = vel * 0.986 + field * (u.dt * 60.0);
   let speed = length(nextVel);
@@ -212,6 +221,14 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>, @builtin(num_workgroups) 
     nextVel.y = -sign(nextPos.y) * abs(nextVel.y) * 0.92;
   }
 
+  if (u.formation.x > 0.0) {
+    // A stable hash assigns each particle a target without allocating per-particle goals.
+    let hash = (i * 1664525u + 1013904223u) ^ (i >> 9u);
+    let destination = logoPoints[hash % arrayLength(&logoPoints)];
+    let recovery = (1.0 - exp(-${PARTICLE_SETTLE_RATE} * u.dt)) * u.formation.x;
+    nextPos = mix(nextPos, destination, recovery);
+    nextVel *= exp(-${PARTICLE_SETTLE_DAMPING} * u.dt * u.formation.x);
+  }
   p.pos = nextPos;
   p.vel = nextVel;
   p.color.w = clamp(0.0016 + speed * 0.0018, 0.0016, 0.0040);
@@ -234,6 +251,7 @@ struct Params {
   mouseForce: f32,
   mouse: vec2<f32>,
   pad: vec2<f32>,
+  formation: vec4<f32>,
 }
 
 struct Particle {
@@ -263,13 +281,15 @@ fn vs(@builtin(vertex_index) vertexIndex: u32, @builtin(instance_index) instance
   );
   let p = particles[instanceIndex];
   let local = quad[vertexIndex];
-  let size = p.color.w * max(u.pad.x, 0.1);
+  let size = p.color.w * max(u.pad.x, 0.1) * mix(1.0, ${PARTICLE_BRANDED_SIZE}, u.formation.x);
   let world = p.pos + local * vec2<f32>(size / u.aspect, size);
 
   var out: VSOut;
   out.position = vec4<f32>(world, 0.0, 1.0);
   out.local = local;
-  out.color = p.color.xyz;
+  let palette = vec3<f32>(0.55, 0.64, 0.63) + vec3<f32>(0.34, 0.27, 0.32)
+    * cos(vec3<f32>(0.0, 2.1, 4.2) + (p.pos.x * 0.65 + p.pos.y * 0.35) * 3.14159);
+  out.color = mix(p.color.xyz, palette, u.formation.x);
   out.energy = clamp(length(p.vel) * 0.85, 0.0, 1.0);
   out.visibility = 1.0 - smoothstep(${PARTICLE_EDGE_FADE_START}, ${PARTICLE_EDGE_FADE_END},
     max(abs(p.pos.x), abs(p.pos.y)));
@@ -285,7 +305,8 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
   let core = smoothstep(1.0, 0.0, d);
   let halo = pow(max(0.0, 1.0 - d), 3.0);
   let color = in.color * 0.55;
-  let alpha = (core * 0.06 + halo * (0.18 + in.energy * 0.08)) * in.visibility;
+  let alpha = (core * 0.06 + halo * (0.18 + in.energy * 0.08)) * in.visibility
+    * mix(1.0, ${PARTICLE_BRANDED_BRIGHTNESS}, u.formation.x);
   return vec4<f32>(color * alpha, alpha);
 }
 `;
@@ -393,6 +414,8 @@ function scenePhase(seconds) {
   const frameEl = document.getElementById('frame');
   const graphCanvas = document.getElementById('fps-graph');
   const workloadEl = document.getElementById('workload');
+  const formationSelect = document.getElementById('formation-select');
+  let logoEnabled = FawnFormation.configure(formationSelect), settlingAgeS = 0, logoBuffer = null;
   const countSelect = document.getElementById('count-select');
   const stepsSelect = document.getElementById('steps-select');
   const restartButton = document.getElementById('restart');
@@ -443,7 +466,7 @@ function scenePhase(seconds) {
   let pointer = { x: 0, y: 0, active: false, force: 0.0 };
   let running = false;
   let lastFrameTime = performance.now();
-  const uniformData = new Float32Array(8);
+  const uniformData = new Float32Array(SIM_UNIFORM_FLOATS);
 
   function resizeGraphCanvas() {
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -591,6 +614,7 @@ function scenePhase(seconds) {
           { binding: 0, resource: { buffer: simUniformBuffer } },
           { binding: 1, resource: { buffer: particleBuffers[0] } },
           { binding: 2, resource: { buffer: particleBuffers[1] } },
+          { binding: 3, resource: { buffer: logoBuffer } },
         ],
       }),
       device.createBindGroup({
@@ -599,6 +623,7 @@ function scenePhase(seconds) {
           { binding: 0, resource: { buffer: simUniformBuffer } },
           { binding: 1, resource: { buffer: particleBuffers[1] } },
           { binding: 2, resource: { buffer: particleBuffers[0] } },
+          { binding: 3, resource: { buffer: logoBuffer } },
         ],
       }),
     ];
@@ -621,6 +646,16 @@ function scenePhase(seconds) {
     ];
   }
 
+  function updateLogoPoints() {
+    const points = FawnFormation.points(LOGO_POINT_GRID, canvas, document.querySelector('.brand-logo'));
+    const previous = logoBuffer;
+    logoBuffer = device.createBuffer({ label: 'Fawn particle targets', size: points.byteLength,
+      usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST });
+    device.queue.writeBuffer(logoBuffer, 0, points);
+    if (particleBuffers.length) recreateBindGroups();
+    previous?.destroy();
+  }
+
   function resizeCanvas() {
     const cssWidth = Math.max(1, canvas.clientWidth);
     const cssHeight = Math.max(1, canvas.clientHeight);
@@ -634,10 +669,12 @@ function scenePhase(seconds) {
     context.configure({ device, format, alphaMode: 'opaque' });
     canvasConfigured = true;
     createTrailTargets();
+    updateLogoPoints();
     drawFpsGraph();
   }
 
   function resetSimulation() {
+    settlingAgeS = 0;
     particleCount = parseInt(countSelect.value, 10);
     stepsPerFrame = parseInt(stepsSelect.value, 10);
     updateWorkloadLabel();
@@ -805,6 +842,7 @@ function scenePhase(seconds) {
     restartButton.disabled = true;
     countSelect.disabled = true;
     stepsSelect.disabled = true;
+    formationSelect.disabled = true;
     device?.destroy();
   }
 
@@ -833,6 +871,7 @@ function scenePhase(seconds) {
     const aspect = canvas.width > 0 && canvas.height > 0 ? canvas.width / canvas.height : 1;
     const resolutionScale = Math.max(0.55, Math.min(1.0, Math.sqrt(900 / Math.max(canvas.height, 1))));
 
+    if (!paused) settlingAgeS = pointer.active ? 0 : settlingAgeS + dt;
     const pulse = pointer.active ? 1.0 : 0.0;
     pointer.force = pointer.force * 0.85 + pulse * 4.0;
     uniformData.set([
@@ -844,6 +883,7 @@ function scenePhase(seconds) {
       pointer.y,
       resolutionScale,
       scenePhase(sceneElapsed),
+      FawnFormation.strength(settlingAgeS, logoEnabled), 0, 0, 0,
     ]);
     device.queue.writeBuffer(simUniformBuffer, 0, uniformData);
 
@@ -918,6 +958,10 @@ function scenePhase(seconds) {
     schedule();
   }
 
+  formationSelect.addEventListener('change', () => {
+    logoEnabled = formationSelect.value === 'branded'; settlingAgeS = 0;
+    schedule();
+  });
   countSelect.addEventListener('change', refresh);
   stepsSelect.addEventListener('change', () => {
     stepsPerFrame = Number(stepsSelect.value);
@@ -979,6 +1023,7 @@ function scenePhase(seconds) {
     new ResizeObserver(resizeView).observe(canvas);
     pauseButton.disabled = false;
     restartButton.disabled = false;
+    formationSelect.disabled = false;
     pauseButton.textContent = paused ? 'Resume' : 'Pause';
     resetMeter();
     lastFrameTime = performance.now();
