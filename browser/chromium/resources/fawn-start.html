@@ -127,6 +127,9 @@ const PARTICLE_BRANDED_BRIGHTNESS = 1.8;
 const PARTICLE_STRIDE_FLOATS = 8;
 const MAX_PARTICLE_COUNT = 2 ** 24;
 const PARTICLE_UPLOAD_CHUNK = 2 ** 16;
+const POINTER_RESPONSE = Object.freeze({ version: 1, referenceHz: 60, retention: 0.85, injection: 4 });
+const POINTER_RESPONSE_RATE = -Math.log(POINTER_RESPONSE.retention) * POINTER_RESPONSE.referenceHz;
+const POINTER_TARGET_FORCE = POINTER_RESPONSE.injection / (1 - POINTER_RESPONSE.retention);
 
 const COMPUTE_WGSL = `
 struct Params {
@@ -881,8 +884,10 @@ function scenePhase(seconds) {
     const resolutionScale = radius * 2 / Math.max(canvas.clientWidth, canvas.clientHeight);
 
     if (!paused) settlingAgeS = pointer.active ? 0 : settlingAgeS + dt;
-    const pulse = pointer.active ? 1.0 : 0.0;
-    pointer.force = pointer.force * 0.85 + pulse * 4.0;
+    if (!paused) {
+      const targetForce = pointer.active ? POINTER_TARGET_FORCE : 0;
+      pointer.force += (targetForce - pointer.force) * -Math.expm1(-POINTER_RESPONSE_RATE * dt);
+    }
     uniformData.set([
       dt / stepsPerFrame,
       elapsed,
