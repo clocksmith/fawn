@@ -1,0 +1,31 @@
+{
+  "passed": false,
+  "classification": "Chrome WebGPU pointer response; controlled model clock with actual GPU submissions, no performance or native Doe claim.",
+  "source": {
+    "file": "fawn-start.html",
+    "sha256": "017be2d35f75f99e3efe7ae94b123c04ade38e352d08c95bcbbbde3903253b79"
+  },
+  "cases": [
+    {
+      "name": "paused redraw",
+      "beforeForce": 16.609346389770508,
+      "afterForce": 18.117944717407227,
+      "beforeTime": 0.10000000149011612,
+      "afterTime": 0.10000000149011612,
+      "adapter": {
+        "vendor": "intel",
+        "architecture": "gen-12lp",
+        "isFallbackAdapter": false
+      }
+    }
+  ],
+  "errors": [],
+  "browser": "136.0.7103.59",
+  "browserArgs": [
+    "--enable-unsafe-webgpu",
+    "--use-angle=vulkan",
+    "--enable-features=Vulkan",
+    "--disable-vulkan-surface"
+  ],
+  "origin": "local"
+}
