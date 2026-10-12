@@ -10,7 +10,7 @@ const { chromium } = await import(process.env.FAWN_PLAYWRIGHT_MODULE || 'playwri
 const output = resolve(process.env.FAWN_REPORT_DIR || 'bench/out/fawn-demo-switcher');
 const baselineRef = 'b599d2e3a8ad09fa3aff66a2d08d3fa1515647fb';
 const names = ['prismatic-fluids', 'magnetic-fluids', 'start'];
-const labels = ['Chroma', 'Black Opal', 'Drift'];
+const labels = ['Flow', 'Wave', 'Particles'];
 const sources = {};
 const hash = source => createHash('sha256').update(source).digest('hex');
 await mkdir(output, { recursive: true });

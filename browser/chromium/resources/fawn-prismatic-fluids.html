@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Chroma · Fawn</title>
+<title>Flow · Fawn</title>
 <link rel="icon" type="image/svg+xml" href="./fawn-icon.svg">
 <style>
 :root { color-scheme: dark; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #fff; background: #020405; --edge: #ffffff38; --glass: #080d16d9; }
@@ -87,9 +87,9 @@ summary::after { content: ' +'; }
 </svg><span>fawn</span></a>
  <details class="demo-switcher"><summary>Backgrounds</summary>
   <nav class="demo-menu" aria-label="Fawn backgrounds">
-   <a href="./fawn-prismatic-fluids.html" aria-current="page">Chroma</a>
-   <a href="./fawn-magnetic-fluids.html">Black Opal</a>
-   <a href="./fawn-start.html">Drift</a>
+   <a href="./fawn-prismatic-fluids.html" aria-current="page">Flow</a>
+   <a href="./fawn-magnetic-fluids.html">Wave</a>
+   <a href="./fawn-start.html">Particles</a>
   </nav>
  </details>
 </header>
@@ -128,6 +128,7 @@ const SIM_DENSITY_SCALE = 0.5;
 const PRESS_STRENGTH = 1.4;
 const HOVER_STRENGTH = 0.28;
 const POINTER_RADIUS = 0.10;
+const HOVER_RADIUS = POINTER_RADIUS * 0.5;
 const DRAG_GAIN = 8.0;
 const PRESS_IMPULSE = 0.65;
 const SWIRL_ACCELERATION = 0.9;
@@ -944,7 +945,7 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
     uniformData[4] = pointer.x;
     uniformData[5] = pointer.y;
     uniformData[6] = mouseForce;
-    uniformData[7] = POINTER_RADIUS;
+    uniformData[7] = mouseForce > HOVER_STRENGTH ? POINTER_RADIUS : HOVER_RADIUS;
     uniformData[8] = dt * 0.82;
     if (!paused) simulationTime = now - pausedMs;
     uniformData[9] = simulationTime * 0.001;
