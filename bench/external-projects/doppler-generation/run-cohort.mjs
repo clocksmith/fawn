@@ -6,6 +6,8 @@ import { fileURLToPath } from 'node:url';
 import assert from 'node:assert/strict';
 const [contractPath, providersPath, referencePath, outputRoot, cohort] = process.argv.slice(2);
 const contract = JSON.parse(await readFile(contractPath));
+assert(!contract.latencyCampaign,
+  'Complete-generation v2 requires independent-process A/A controls; historical resident A/B controls cannot admit it');
 assert(cohort && /^[a-z0-9-]+$/.test(cohort));
 const worker = resolve(dirname(fileURLToPath(import.meta.url)), 'run-generation.mjs');
 const executions = [];

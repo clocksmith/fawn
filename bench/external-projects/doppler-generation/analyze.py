@@ -15,6 +15,8 @@ def main() -> int:
     parser.add_argument('--out', type=Path, required=True)
     args = parser.parse_args()
     contract = json.loads(args.contract.read_text())
+    if 'latencyCampaign' in contract:
+        raise ValueError('Complete-generation v2 requires multi-case independent-process analysis')
     analysis = json.loads((Path(__file__).parent / 'analysis.json').read_text())
     rng = np.random.default_rng(analysis['seed'])
     results = {}

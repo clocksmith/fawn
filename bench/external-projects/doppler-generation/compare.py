@@ -20,6 +20,8 @@ def main() -> int:
     baseline = json.loads(args.baseline.read_text())
     candidate = json.loads(args.candidate.read_text())
     contract = json.loads(args.contract.read_text())
+    if 'latencyCampaign' in contract:
+        raise ValueError('Historical candidate admission cannot promote complete-generation v2')
     policy = json.loads(args.candidate_policy.read_text()) if args.candidate_policy else None
     if policy and (policy['candidateId'] != 'batched-buffer-descriptor-retirement-v1'
                    or policy['primaryMetric'] != 'resident completeMs p50'):

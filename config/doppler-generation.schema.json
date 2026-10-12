@@ -79,6 +79,7 @@
     },
     "contract": {
       "type": "object",
+      "allOf": [{"if": {"properties": {"workloadId": {"const": "doppler_complete_generation_amd_vulkan_v2"}}}, "then": {"required": ["latencyCampaign"], "properties": {"cases": {"minItems": 3, "maxItems": 3}}}, "else": {"not": {"required": ["latencyCampaign"]}}}],
       "additionalProperties": false,
       "required": [
         "schemaVersion",
@@ -97,7 +98,145 @@
       ],
       "properties": {
         "schemaVersion": {"const": 1},
-        "workloadId": {"enum": ["doppler_full_generation_native_vulkan_v1", "doppler_installed_generation_native_vulkan_v1"]},
+        "latencyCampaign": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "version",
+            "dopplerArchiveSha256",
+            "dawnArchiveSha256",
+            "contextCapacityTokens",
+            "primaryMetric",
+            "minimumDawnGainRatio",
+            "minimumCorrectedDoeGainRatio",
+            "maximumCaseLatencyRegressionRatio",
+            "maximumFirstTokenRegressionRatio",
+            "maximumCpuRegressionRatio",
+            "maximumOpeningRegressionRatio",
+            "maximumTeardownRegressionRatio",
+            "maximumRequestedAllocationRegressionRatio",
+            "maximumInstrumentationPerturbationRatio",
+            "maximumControlRatio",
+            "confidence",
+            "bootstrapSamples",
+            "bootstrapSeed",
+            "independentProcessesPerLabel",
+            "controlLabels",
+            "controlOrder",
+            "aggregation",
+            "memory",
+            "stoppingRule",
+            "admission"
+          ],
+          "properties": {
+            "version": {
+              "const": 1
+            },
+            "dopplerArchiveSha256": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "dawnArchiveSha256": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "contextCapacityTokens": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "primaryMetric": {
+              "type": "string",
+              "minLength": 1
+            },
+            "minimumDawnGainRatio": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "minimumCorrectedDoeGainRatio": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "maximumCaseLatencyRegressionRatio": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "maximumFirstTokenRegressionRatio": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "maximumCpuRegressionRatio": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "maximumOpeningRegressionRatio": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "maximumTeardownRegressionRatio": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "maximumRequestedAllocationRegressionRatio": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "maximumInstrumentationPerturbationRatio": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "maximumControlRatio": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "confidence": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "bootstrapSamples": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "bootstrapSeed": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "independentProcessesPerLabel": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "controlLabels": {
+              "const": [
+                "A",
+                "B"
+              ]
+            },
+            "controlOrder": {
+              "const": [
+                "A",
+                "B",
+                "B",
+                "A"
+              ]
+            },
+            "aggregation": {
+              "type": "string",
+              "minLength": 1
+            },
+            "memory": {
+              "type": "string",
+              "minLength": 1
+            },
+            "stoppingRule": {
+              "type": "string",
+              "minLength": 1
+            },
+            "admission": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "workloadId": {"enum": ["doppler_full_generation_native_vulkan_v1", "doppler_installed_generation_native_vulkan_v1", "doppler_complete_generation_amd_vulkan_v2"]},
         "classification": {"type": "string"},
         "dopplerSourceCommit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
         "doeSourceCommit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
