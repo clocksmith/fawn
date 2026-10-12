@@ -157,6 +157,11 @@ pub fn create_device_and_queue(self: anytype) !void {
     surface_features.swapchainMaintenance1 = @intFromBool(enable_surface_completion);
     var feature_query = vk_feature_caps.query(self.physical_device);
     if (!feature_query.caps.robust_buffer_access) return error.UnsupportedFeature;
+    const enable_integer_dot = feature_query.caps.integer_dot_product and detect_device_extension(
+        self.physical_device,
+        c.VK_KHR_SHADER_INTEGER_DOT_PRODUCT_EXTENSION_NAME,
+    );
+    if (enable_integer_dot) feature_query.enabled_variable_pointers_features.pNext = @ptrCast(&feature_query.enabled_integer_dot_features);
     feature_query.enabled_storage16_features.pNext = @ptrCast(&feature_query.enabled_variable_pointers_features);
     const enable_subgroup_size_control = subgroup_size_control_available and feature_query.caps.subgroup_size_control;
     if (enable_subgroup_size_control) {
@@ -179,6 +184,10 @@ pub fn create_device_and_queue(self: anytype) !void {
     }
     if (enable_subgroup_size_control) {
         all_exts[total_ext_count] = c.VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME;
+        total_ext_count += 1;
+    }
+    if (enable_integer_dot) {
+        all_exts[total_ext_count] = c.VK_KHR_SHADER_INTEGER_DOT_PRODUCT_EXTENSION_NAME;
         total_ext_count += 1;
     }
 
@@ -209,6 +218,7 @@ pub fn create_device_and_queue(self: anytype) !void {
         .pEnabledFeatures = @ptrCast(&feature_query.enabled_features),
     };
     try c.check_vk(c.vkCreateDevice(self.physical_device, &device_info, null, &self.device));
+    self.integer_dot_product_enabled = enable_integer_dot;
     self.has_device = true;
     self.has_surface_completion = enable_surface_completion;
     self.has_depth_clip_enable_ext = depth_clip_available;

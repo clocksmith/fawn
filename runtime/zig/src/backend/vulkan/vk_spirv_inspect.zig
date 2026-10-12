@@ -2,6 +2,21 @@ const SPIRV_OP_EXECUTION_MODE: u16 = 16;
 const SPIRV_OP_VARIABLE: u16 = 59;
 const SPIRV_EXECUTION_MODE_LOCAL_SIZE: u32 = 17;
 const SPIRV_STORAGE_CLASS_WORKGROUP: u32 = 4;
+const SPIRV_OP_CAPABILITY: u16 = 17;
+const SPIRV_CAPABILITY_DOT_PRODUCT: u32 = 6019;
+
+pub fn requires_integer_dot_product(words: []const u32) bool {
+    if (words.len < 5) return false;
+    var index: usize = 5;
+    while (index < words.len) {
+        const instruction = words[index];
+        const length = instruction >> 16;
+        if (length == 0 or length > words.len - index) return false;
+        if (@as(u16, @truncate(instruction)) == SPIRV_OP_CAPABILITY and length == 2 and words[index + 1] == SPIRV_CAPABILITY_DOT_PRODUCT) return true;
+        index += length;
+    }
+    return false;
+}
 
 pub const LocalSize = struct {
     x: u32,

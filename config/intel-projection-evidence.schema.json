@@ -1,0 +1,1598 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Bounded Intel projection diagnostic evidence",
+  "oneOf": [
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "classification",
+        "provider",
+        "compiler",
+        "observedAt",
+        "fixtureManifestSha256",
+        "runnerSha256",
+        "providerModuleSha256",
+        "nativeLibrary",
+        "identity",
+        "providerInfo",
+        "shape",
+        "languageFeatures",
+        "sequences",
+        "errors",
+        "passed",
+        "failure"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "const": 1
+        },
+        "classification": {
+          "const": "frozen-projection-correctness"
+        },
+        "provider": {
+          "enum": [
+            "doe",
+            "dawn"
+          ]
+        },
+        "compiler": {
+          "enum": [
+            "doe",
+            "tint"
+          ]
+        },
+        "observedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "fixtureManifestSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "runnerSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "providerModuleSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "nativeLibrary": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "path",
+            "sha256",
+            "loaded"
+          ],
+          "properties": {
+            "path": {
+              "type": "string"
+            },
+            "sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "loaded": {
+              "type": "boolean"
+            }
+          }
+        },
+        "identity": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "vendor",
+            "device",
+            "architecture",
+            "description"
+          ],
+          "properties": {
+            "vendor": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "device": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "architecture": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "description": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          }
+        },
+        "providerInfo": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "description": "Provider-owned metadata is an intentional extension; custody is separately mandatory."
+        },
+        "shape": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "M",
+            "N",
+            "K"
+          ],
+          "properties": {
+            "M": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "N": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "K": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        },
+        "languageFeatures": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "sequences": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "name",
+              "preparationMs",
+              "executionMs",
+              "stages",
+              "outputs",
+              "passed",
+              "failure",
+              "cleanup"
+            ],
+            "properties": {
+              "name": {
+                "enum": [
+                  "portable",
+                  "packed"
+                ]
+              },
+              "preparationMs": {
+                "anyOf": [
+                  {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "executionMs": {
+                "anyOf": [
+                  {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "stages": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "id",
+                    "shaderSha256",
+                    "entryPoint",
+                    "constants",
+                    "dispatch",
+                    "compileAndPrepareMs"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "shaderSha256": {
+                      "type": "string",
+                      "pattern": "^[a-f0-9]{64}$"
+                    },
+                    "entryPoint": {
+                      "type": "string"
+                    },
+                    "constants": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": [
+                          "number",
+                          "boolean"
+                        ]
+                      }
+                    },
+                    "dispatch": {
+                      "type": "array",
+                      "items": {
+                        "type": "integer"
+                      }
+                    },
+                    "compileAndPrepareMs": {
+                      "type": "number",
+                      "minimum": 0
+                    }
+                  }
+                }
+              },
+              "outputs": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "buffer",
+                    "sizeBytes",
+                    "expectedSha256",
+                    "observedSha256",
+                    "exact"
+                  ],
+                  "properties": {
+                    "buffer": {
+                      "type": "string"
+                    },
+                    "sizeBytes": {
+                      "type": "integer"
+                    },
+                    "expectedSha256": {
+                      "type": "string",
+                      "pattern": "^[a-f0-9]{64}$"
+                    },
+                    "observedSha256": {
+                      "type": "string",
+                      "pattern": "^[a-f0-9]{64}$"
+                    },
+                    "exact": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              },
+              "passed": {
+                "type": "boolean"
+              },
+              "failure": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "message",
+                      "stack"
+                    ],
+                    "properties": {
+                      "message": {
+                        "type": "string"
+                      },
+                      "stack": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "cleanup": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "settled",
+                  "destroyedBuffers"
+                ],
+                "properties": {
+                  "settled": {
+                    "type": "boolean"
+                  },
+                  "destroyedBuffers": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "errors": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "passed": {
+          "type": "boolean"
+        },
+        "failure": {
+          "anyOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "message",
+                "stack"
+              ],
+              "properties": {
+                "message": {
+                  "type": "string"
+                },
+                "stack": {
+                  "type": "string"
+                }
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "classification",
+        "fixtureManifestSha256",
+        "shape",
+        "inputs",
+        "compilations",
+        "arms",
+        "sampling",
+        "performanceClaim"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "const": 1
+        },
+        "classification": {
+          "const": "compiler-runtime-attribution-diagnostic"
+        },
+        "fixtureManifestSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "shape": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "M",
+            "N",
+            "K"
+          ],
+          "properties": {
+            "M": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "N": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "K": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        },
+        "inputs": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "path",
+              "sha256"
+            ],
+            "properties": {
+              "path": {
+                "type": "string"
+              },
+              "sha256": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              }
+            }
+          }
+        },
+        "compilations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "command",
+              "returnCode",
+              "processWallMs",
+              "logSha256",
+              "compiler",
+              "stage",
+              "sourceSha256",
+              "constants",
+              "spirvSha256",
+              "validation"
+            ],
+            "properties": {
+              "command": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "returnCode": {
+                "type": "integer"
+              },
+              "processWallMs": {
+                "type": "number",
+                "minimum": 0
+              },
+              "logSha256": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              "compiler": {
+                "enum": [
+                  "doe",
+                  "tint"
+                ]
+              },
+              "stage": {
+                "type": "string"
+              },
+              "sourceSha256": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              "constants": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": [
+                    "number",
+                    "boolean"
+                  ]
+                }
+              },
+              "spirvSha256": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^[a-f0-9]{64}$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "validation": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "command",
+                      "returnCode",
+                      "processWallMs",
+                      "logSha256"
+                    ],
+                    "properties": {
+                      "command": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "returnCode": {
+                        "type": "integer"
+                      },
+                      "processWallMs": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "logSha256": {
+                        "type": "string",
+                        "pattern": "^[a-f0-9]{64}$"
+                      }
+                    }
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "arms": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "compiler",
+              "runtime",
+              "sequences",
+              "directCompilerReplacementQualified",
+              "qualification"
+            ],
+            "properties": {
+              "compiler": {
+                "enum": [
+                  "doe",
+                  "tint"
+                ]
+              },
+              "runtime": {
+                "enum": [
+                  "doe",
+                  "dawn"
+                ]
+              },
+              "sequences": {
+                "type": "array",
+                "items": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "command",
+                        "returnCode",
+                        "processWallMs",
+                        "logSha256",
+                        "sequence",
+                        "planSha256",
+                        "observations",
+                        "status",
+                        "unsupportedReason",
+                        "vulkanCustody",
+                        "compilerProductPreserved",
+                        "deviceCapabilities"
+                      ],
+                      "properties": {
+                        "command": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "returnCode": {
+                          "type": "integer"
+                        },
+                        "processWallMs": {
+                          "type": "number",
+                          "minimum": 0
+                        },
+                        "logSha256": {
+                          "type": "string",
+                          "pattern": "^[a-f0-9]{64}$"
+                        },
+                        "sequence": {
+                          "enum": [
+                            "portable",
+                            "packed"
+                          ]
+                        },
+                        "planSha256": {
+                          "type": "string",
+                          "pattern": "^[a-f0-9]{64}$"
+                        },
+                        "observations": {
+                          "type": "array",
+                          "items": {
+                            "oneOf": [
+                              {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": [
+                                  "kind",
+                                  "observed"
+                                ],
+                                "properties": {
+                                  "kind": {
+                                    "const": "loadedLibrary"
+                                  },
+                                  "observed": {
+                                    "type": "boolean"
+                                  }
+                                }
+                              },
+                              {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": [
+                                  "kind",
+                                  "vendorId",
+                                  "deviceId",
+                                  "physicalIntelVulkan"
+                                ],
+                                "properties": {
+                                  "kind": {
+                                    "const": "adapter"
+                                  },
+                                  "vendorId": {
+                                    "type": "integer"
+                                  },
+                                  "deviceId": {
+                                    "type": "integer"
+                                  },
+                                  "physicalIntelVulkan": {
+                                    "type": "boolean"
+                                  }
+                                }
+                              },
+                              {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": [
+                                  "kind",
+                                  "ms"
+                                ],
+                                "properties": {
+                                  "kind": {
+                                    "const": "preparation"
+                                  },
+                                  "ms": {
+                                    "type": "number",
+                                    "minimum": 0
+                                  }
+                                }
+                              },
+                              {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": [
+                                  "kind",
+                                  "iteration",
+                                  "ms",
+                                  "cpuMs",
+                                  "exact",
+                                  "dispatches"
+                                ],
+                                "properties": {
+                                  "kind": {
+                                    "const": "sample"
+                                  },
+                                  "iteration": {
+                                    "type": "integer"
+                                  },
+                                  "ms": {
+                                    "type": "number",
+                                    "minimum": 0
+                                  },
+                                  "cpuMs": {
+                                    "type": "number",
+                                    "minimum": 0
+                                  },
+                                  "exact": {
+                                    "type": "boolean"
+                                  },
+                                  "dispatches": {
+                                    "type": "integer"
+                                  }
+                                }
+                              },
+                              {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": [
+                                  "kind",
+                                  "buffer",
+                                  "word",
+                                  "actual",
+                                  "expected"
+                                ],
+                                "properties": {
+                                  "kind": {
+                                    "const": "mismatch"
+                                  },
+                                  "buffer": {
+                                    "type": "integer"
+                                  },
+                                  "word": {
+                                    "type": "integer"
+                                  },
+                                  "actual": {
+                                    "type": "integer"
+                                  },
+                                  "expected": {
+                                    "type": "integer"
+                                  }
+                                }
+                              },
+                              {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": [
+                                  "kind",
+                                  "cpuMs",
+                                  "peakRssKiB"
+                                ],
+                                "properties": {
+                                  "kind": {
+                                    "const": "processResources"
+                                  },
+                                  "cpuMs": {
+                                    "type": "number",
+                                    "minimum": 0
+                                  },
+                                  "peakRssKiB": {
+                                    "type": "integer"
+                                  }
+                                }
+                              },
+                              {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": [
+                                  "kind",
+                                  "passed"
+                                ],
+                                "properties": {
+                                  "kind": {
+                                    "const": "cleanup"
+                                  },
+                                  "passed": {
+                                    "type": "boolean"
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        "status": {
+                          "enum": [
+                            "passed",
+                            "failed",
+                            "unsupported"
+                          ]
+                        },
+                        "unsupportedReason": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "vulkanCustody": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                              "sequence",
+                              "result",
+                              "sizeBytes",
+                              "artifact",
+                              "retained",
+                              "sha256"
+                            ],
+                            "properties": {
+                              "sequence": {
+                                "type": "integer"
+                              },
+                              "result": {
+                                "type": "integer"
+                              },
+                              "sizeBytes": {
+                                "type": "integer"
+                              },
+                              "artifact": {
+                                "type": "string"
+                              },
+                              "retained": {
+                                "type": "boolean"
+                              },
+                              "sha256": {
+                                "anyOf": [
+                                  {
+                                    "type": "string",
+                                    "pattern": "^[a-f0-9]{64}$"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              }
+                            }
+                          }
+                        },
+                        "compilerProductPreserved": {
+                          "type": "boolean"
+                        },
+                        "deviceCapabilities": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                              "result",
+                              "vendorId",
+                              "deviceId",
+                              "integerDotAvailable",
+                              "packedSignedAccelerated",
+                              "packedUnsignedAccelerated",
+                              "integerDotEnabled"
+                            ],
+                            "properties": {
+                              "result": {
+                                "type": "integer"
+                              },
+                              "vendorId": {
+                                "type": "integer"
+                              },
+                              "deviceId": {
+                                "type": "integer"
+                              },
+                              "integerDotAvailable": {
+                                "type": "boolean"
+                              },
+                              "packedSignedAccelerated": {
+                                "type": "boolean"
+                              },
+                              "packedUnsignedAccelerated": {
+                                "type": "boolean"
+                              },
+                              "integerDotEnabled": {
+                                "type": "boolean"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "sequence",
+                        "status",
+                        "reason"
+                      ],
+                      "properties": {
+                        "sequence": {
+                          "enum": [
+                            "portable",
+                            "packed"
+                          ]
+                        },
+                        "status": {
+                          "const": "failed"
+                        },
+                        "reason": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              "directCompilerReplacementQualified": {
+                "type": "boolean"
+              },
+              "qualification": {
+                "enum": [
+                  "unestablished",
+                  "exact-projection-output-passed"
+                ]
+              }
+            }
+          }
+        },
+        "sampling": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "iterations",
+            "warmup"
+          ],
+          "properties": {
+            "iterations": {
+              "type": "integer"
+            },
+            "warmup": {
+              "type": "integer"
+            }
+          }
+        },
+        "performanceClaim": {
+          "const": false
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "scope",
+        "comparisonClass",
+        "processPairs",
+        "iterations",
+        "warmup",
+        "primaryMetric",
+        "maximumPrimaryRatio",
+        "maximumRegressionRatio",
+        "regressionMetrics",
+        "gpuActivity",
+        "baseline",
+        "candidate",
+        "librarySha256",
+        "executorSha256",
+        "modelAcceptanceRequiredForGeneration",
+        "fullGenerationPerformanceClaim"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "const": 1
+        },
+        "scope": {
+          "type": "string"
+        },
+        "comparisonClass": {
+          "const": "fixed-operation"
+        },
+        "processPairs": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "iterations": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "warmup": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "primaryMetric": {
+          "const": "paired-process-median-complete-projection-ms"
+        },
+        "maximumPrimaryRatio": {
+          "type": "number",
+          "minimum": 0
+        },
+        "maximumRegressionRatio": {
+          "type": "number",
+          "minimum": 0
+        },
+        "regressionMetrics": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "preparationMs",
+              "cpuMs",
+              "peakRssKiB"
+            ]
+          }
+        },
+        "gpuActivity": {
+          "const": "reject-observed-linux-drm"
+        },
+        "baseline": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "plan",
+            "sha256"
+          ],
+          "properties": {
+            "plan": {
+              "type": "string"
+            },
+            "sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            }
+          }
+        },
+        "candidate": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "plan",
+            "sha256"
+          ],
+          "properties": {
+            "plan": {
+              "type": "string"
+            },
+            "sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            }
+          }
+        },
+        "librarySha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "executorSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "modelAcceptanceRequiredForGeneration": {
+          "const": true
+        },
+        "fullGenerationPerformanceClaim": {
+          "const": false
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "classification",
+        "policySha256",
+        "target",
+        "rows",
+        "pairedRatios",
+        "metrics",
+        "accepted",
+        "fullGenerationPerformanceClaim",
+        "allRunsAdmitted"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "const": 1
+        },
+        "classification": {
+          "const": "packed-projection-experiment"
+        },
+        "policySha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "target": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "renderNode",
+            "pciDevice",
+            "vendorId",
+            "deviceId"
+          ],
+          "properties": {
+            "renderNode": {
+              "type": "string"
+            },
+            "pciDevice": {
+              "type": "string"
+            },
+            "vendorId": {
+              "type": "integer"
+            },
+            "deviceId": {
+              "type": "integer"
+            }
+          }
+        },
+        "rows": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "pair",
+              "label",
+              "command",
+              "returnCode",
+              "observations",
+              "gpuActivity",
+              "passed"
+            ],
+            "properties": {
+              "pair": {
+                "type": "integer"
+              },
+              "label": {
+                "enum": [
+                  "portable",
+                  "accelerated"
+                ]
+              },
+              "command": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "returnCode": {
+                "type": "integer"
+              },
+              "observations": {
+                "type": "array",
+                "items": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "kind",
+                        "observed"
+                      ],
+                      "properties": {
+                        "kind": {
+                          "const": "loadedLibrary"
+                        },
+                        "observed": {
+                          "type": "boolean"
+                        }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "kind",
+                        "vendorId",
+                        "deviceId",
+                        "physicalIntelVulkan"
+                      ],
+                      "properties": {
+                        "kind": {
+                          "const": "adapter"
+                        },
+                        "vendorId": {
+                          "type": "integer"
+                        },
+                        "deviceId": {
+                          "type": "integer"
+                        },
+                        "physicalIntelVulkan": {
+                          "type": "boolean"
+                        }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "kind",
+                        "ms"
+                      ],
+                      "properties": {
+                        "kind": {
+                          "const": "preparation"
+                        },
+                        "ms": {
+                          "type": "number",
+                          "minimum": 0
+                        }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "kind",
+                        "iteration",
+                        "ms",
+                        "cpuMs",
+                        "exact",
+                        "dispatches"
+                      ],
+                      "properties": {
+                        "kind": {
+                          "const": "sample"
+                        },
+                        "iteration": {
+                          "type": "integer"
+                        },
+                        "ms": {
+                          "type": "number",
+                          "minimum": 0
+                        },
+                        "cpuMs": {
+                          "type": "number",
+                          "minimum": 0
+                        },
+                        "exact": {
+                          "type": "boolean"
+                        },
+                        "dispatches": {
+                          "type": "integer"
+                        }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "kind",
+                        "buffer",
+                        "word",
+                        "actual",
+                        "expected"
+                      ],
+                      "properties": {
+                        "kind": {
+                          "const": "mismatch"
+                        },
+                        "buffer": {
+                          "type": "integer"
+                        },
+                        "word": {
+                          "type": "integer"
+                        },
+                        "actual": {
+                          "type": "integer"
+                        },
+                        "expected": {
+                          "type": "integer"
+                        }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "kind",
+                        "cpuMs",
+                        "peakRssKiB"
+                      ],
+                      "properties": {
+                        "kind": {
+                          "const": "processResources"
+                        },
+                        "cpuMs": {
+                          "type": "number",
+                          "minimum": 0
+                        },
+                        "peakRssKiB": {
+                          "type": "integer"
+                        }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "kind",
+                        "passed"
+                      ],
+                      "properties": {
+                        "kind": {
+                          "const": "cleanup"
+                        },
+                        "passed": {
+                          "type": "boolean"
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              "gpuActivity": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "snapshots",
+                  "failure"
+                ],
+                "properties": {
+                  "snapshots": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "monotonicNs",
+                        "fdinfo",
+                        "unreadableProcesses"
+                      ],
+                      "properties": {
+                        "monotonicNs": {
+                          "type": "integer"
+                        },
+                        "fdinfo": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "description": "Intentional observer-owned record extension; validated by reject_activity."
+                          }
+                        },
+                        "unreadableProcesses": {
+                          "type": "array",
+                          "items": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "failure": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                }
+              },
+              "passed": {
+                "type": "boolean"
+              },
+              "medianMs": {
+                "type": "number",
+                "minimum": 0
+              },
+              "cpuMs": {
+                "type": "number",
+                "minimum": 0
+              },
+              "preparationMs": {
+                "type": "number",
+                "minimum": 0
+              },
+              "peakRssKiB": {
+                "type": "integer"
+              }
+            }
+          }
+        },
+        "pairedRatios": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "pair",
+              "medianMs",
+              "preparationMs",
+              "cpuMs",
+              "peakRssKiB"
+            ],
+            "properties": {
+              "pair": {
+                "type": "integer"
+              },
+              "medianMs": {
+                "type": "number",
+                "minimum": 0
+              },
+              "preparationMs": {
+                "type": "number",
+                "minimum": 0
+              },
+              "cpuMs": {
+                "type": "number",
+                "minimum": 0
+              },
+              "peakRssKiB": {
+                "type": "number",
+                "minimum": 0
+              }
+            }
+          }
+        },
+        "metrics": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "medianPairedRatio"
+            ],
+            "properties": {
+              "medianPairedRatio": {
+                "type": "number",
+                "minimum": 0
+              }
+            }
+          }
+        },
+        "accepted": {
+          "type": "boolean"
+        },
+        "fullGenerationPerformanceClaim": {
+          "const": false
+        },
+        "allRunsAdmitted": {
+          "type": "boolean"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "classification",
+        "sourceBase",
+        "hardware",
+        "artifacts",
+        "sourceFiles",
+        "binaries",
+        "dawnSourceCommit",
+        "modelGate",
+        "fullGenerationPerformanceClaim",
+        "candidateRetained"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "const": 1
+        },
+        "classification": {
+          "const": "bounded-intel-projection-evidence"
+        },
+        "sourceBase": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{40}$"
+        },
+        "hardware": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "vendorId",
+            "deviceId",
+            "name",
+            "driver",
+            "apiVersion"
+          ],
+          "properties": {
+            "vendorId": {
+              "type": "integer"
+            },
+            "deviceId": {
+              "type": "integer"
+            },
+            "name": {
+              "type": "string"
+            },
+            "driver": {
+              "type": "string"
+            },
+            "apiVersion": {
+              "type": "string"
+            }
+          }
+        },
+        "artifacts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "path",
+              "sha256",
+              "sizeBytes"
+            ],
+            "properties": {
+              "path": {
+                "type": "string"
+              },
+              "sha256": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              "sizeBytes": {
+                "type": "integer"
+              }
+            }
+          }
+        },
+        "sourceFiles": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "path",
+              "sha256"
+            ],
+            "properties": {
+              "path": {
+                "type": "string"
+              },
+              "sha256": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              }
+            }
+          }
+        },
+        "binaries": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "path",
+              "sha256"
+            ],
+            "properties": {
+              "path": {
+                "type": "string"
+              },
+              "sha256": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              }
+            }
+          }
+        },
+        "dawnSourceCommit": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{40}$"
+        },
+        "modelGate": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "sourcePath",
+            "sha256",
+            "passed"
+          ],
+          "properties": {
+            "sourcePath": {
+              "type": "string"
+            },
+            "sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "passed": {
+              "const": false
+            }
+          }
+        },
+        "fullGenerationPerformanceClaim": {
+          "const": false
+        },
+        "candidateRetained": {
+          "const": false
+        }
+      }
+    }
+  ]
+}

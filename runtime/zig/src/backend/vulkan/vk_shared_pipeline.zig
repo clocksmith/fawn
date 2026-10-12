@@ -37,7 +37,20 @@ pub const Request = struct {
     entry_point: []const u8,
     bindings: []const compute.KernelBinding,
     required_subgroup_size: ?u32,
+    integer_dot_product_enabled: bool = false,
 };
+
+test "integer-dot SPIR-V rejects before allocation when the logical device feature is disabled" {
+    const words = [_]u32{ 0x07230203, 0x00010300, 0, 3, 0, (2 << 16) | 17, 6019 };
+    var registry = Registry{};
+    try std.testing.expectError(error.UnsupportedFeature, registry.acquire(std.testing.allocator, null, c.VK_NULL_U64, &.{}, .{
+        .words = &words,
+        .entry_point = "main",
+        .bindings = &.{},
+        .required_subgroup_size = null,
+    }, false));
+    try std.testing.expectEqual(@as(usize, 0), registry.entries.items.len);
+}
 
 pub const Pipeline = struct {
     handle: c.VkPipeline,
@@ -84,6 +97,7 @@ pub const Registry = struct {
         request: Request,
         share: bool,
     ) !*Pipeline {
+        if (!request.integer_dot_product_enabled and spirv_inspect.requires_integer_dot_product(request.words)) return error.UnsupportedFeature;
         if (share) for (self.entries.items) |entry| {
             if (try entry.matches(request)) {
                 try entry.retain();

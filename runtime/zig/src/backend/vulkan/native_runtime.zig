@@ -63,6 +63,7 @@ pub const NativeVulkanRuntime = struct {
     retirement: vk_sync.Retirement = .{},
     has_surface_maintenance_instance: bool = false,
     has_surface_completion: bool = false,
+    integer_dot_product_enabled: bool = false,
 
     adapter_ordinal_value: ?u32 = null,
     queue_family_index: u32 = 0,
@@ -316,6 +317,7 @@ pub const NativeVulkanRuntime = struct {
             self.pipeline_cache.deinit(self.device);
             c.vkDestroyDevice(self.device, null);
             self.has_device = false;
+            self.integer_dot_product_enabled = false;
             self.device = null;
             self.queue = null;
         }

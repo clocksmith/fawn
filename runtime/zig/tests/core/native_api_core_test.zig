@@ -14,6 +14,12 @@ const abi_core = @import("../../src/core/abi/wgpu_core_base_types.zig");
 const abi_pipeline = @import("../../src/core/abi/wgpu_pipeline_descriptor_types.zig");
 const abi_texture = @import("../../src/core/abi/wgpu_texture_base_types.zig");
 
+test "native shader source tags match the pinned public C ABI" {
+    const upstream = @import("../../src/core/abi/generated/webgpu_upstream.zig").c;
+    try std.testing.expectEqual(@as(u32, @intCast(upstream.WGPUSType_ShaderSourceSPIRV)), abi_core.WGPUSType_ShaderSourceSPIRV);
+    try std.testing.expectEqual(@as(u32, @intCast(upstream.WGPUSType_ShaderSourceWGSL)), abi_core.WGPUSType_ShaderSourceWGSL);
+}
+
 // ============================================================
 // 1. doe_wgpu_native.zig — Export existence via comptime @hasDecl
 // ============================================================

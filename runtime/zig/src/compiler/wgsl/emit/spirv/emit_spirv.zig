@@ -262,7 +262,15 @@ pub const Emitter = struct {
         }
 
         const fn_type = try self.builder.type_function(return_type, param_types.items);
-        try self.builder.emit_name(fn_id, function.name);
+        if (self.entry_wrapper_ids[function_index] != 0) {
+            // SPIR-V readers share function and entry-point names. Reserve the
+            // authored name for the interface wrapper rather than its body.
+            const body_name = try std.fmt.allocPrint(self.alloc, "__doe_entry_body_{}", .{function_index});
+            defer self.alloc.free(body_name);
+            try self.builder.emit_name(fn_id, body_name);
+        } else {
+            try self.builder.emit_name(fn_id, function.name);
+        }
         try self.builder.begin_function(return_type, fn_id, fn_type);
 
         const param_value_ids = try self.alloc.alloc(u32, function.params.items.len);
@@ -344,8 +352,7 @@ pub const Emitter = struct {
         const wrapper_id = self.entry_wrapper_ids[entry.function];
         const void_type = try self.builder.type_void();
         const fn_type = try self.builder.type_function(void_type, &.{});
-        const wrapper_name = try std.fmt.allocPrint(self.alloc, "{s}_entry", .{function.name});
-        defer self.alloc.free(wrapper_name);
+        const wrapper_name = function.name;
 
         var interface_ids = std.ArrayListUnmanaged(u32){};
         defer interface_ids.deinit(self.alloc);

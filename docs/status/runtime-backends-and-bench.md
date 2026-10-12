@@ -2,6 +2,14 @@
 
 ## Doppler-driven Vulkan engineering
 
+The [Intel projection interchange and acceleration experiment](../../reports/maintenance/20261011-intel-vulkan-projection/README.md)
+records the user-selected Intel Vulkan hardware scope, exact native projection
+output and actual imported shader custody. The acceleration candidate is rejected
+and removed. The supplied model's failed quality gate and absent measured
+application advantage leave complete-generation and unrelated-workload transfer
+unqualified. The matrix timings are diagnostic; no compiler or runtime speed
+claim is promoted.
+
 The [current Doppler compiler compatibility repair](../../reports/maintenance/20261011-native-doppler-compiler/README.md)
 corrects integer-search instruction emission and returning/nested switch lowering.
 The [installed Node memory campaign](../../reports/maintenance/20261011-doppler-generation-memory/README.md)

@@ -1,0 +1,1386 @@
+{
+  "schemaVersion": 1,
+  "classification": "compiler-runtime-attribution-diagnostic",
+  "fixtureManifestSha256": "ec010299625dee594dac5617857e29a4afeee7041d05157f906f611b58843e37",
+  "shape": {
+    "M": 1,
+    "N": 1024,
+    "K": 640
+  },
+  "inputs": {
+    "doe_compiler": {
+      "path": "/home/clocksmith/deco/doe/bench/out/intel-vulkan-projection/20261011/final-build/bin/doe-emit-spirv",
+      "sha256": "abf67e30b06c7d0b46f248e4356af87b0c9d4de0d4694ab8210b6249468bcf92"
+    },
+    "tint": {
+      "path": "/home/clocksmith/deco/doe/bench/vendor/dawn/out/Release/tint",
+      "sha256": "4a358538b6d649e6a57ff4fe29051a29f9b79ff972db2fe27a1b13687032e2ed"
+    },
+    "spirv_val": {
+      "path": "/home/clocksmith/deco/doe/.tooling/shader-tools/usr/bin/spirv-val",
+      "sha256": "20c5998a46f02310f56bf11be238c34d374bb50104b7ccf85bb909f9da883ff9"
+    },
+    "doe_library": {
+      "path": "/home/clocksmith/deco/doe/bench/out/intel-vulkan-projection/20261011/final-build/lib/libwebgpu_doe.so",
+      "sha256": "20397ca65d27fe2f1dce6d6a930227feec2bdc054ae842cd0b5019ef13b8ff85"
+    },
+    "dawn_library": {
+      "path": "/home/clocksmith/deco/doe/bench/vendor/dawn/out/Release/libwebgpu_dawn.so",
+      "sha256": "352a295ea99ac586e085581f09c144f7e85790f9368056800cf31f404970b256"
+    },
+    "doe_executor": {
+      "path": "/home/clocksmith/deco/doe/bench/out/intel-vulkan-projection/20261011/projection-native-final-doe",
+      "sha256": "823da9af2ed048fd36eb9f56231251264a744b2a438ea1910749cecdda3c3f92"
+    },
+    "dawn_executor": {
+      "path": "/home/clocksmith/deco/doe/bench/out/intel-vulkan-projection/20261011/projection-native-final-dawn",
+      "sha256": "823da9af2ed048fd36eb9f56231251264a744b2a438ea1910749cecdda3c3f92"
+    },
+    "custody_layer": {
+      "path": "/home/clocksmith/deco/doe/bench/out/intel-vulkan-projection/20261011/custody-layer/libprojection-custody.so",
+      "sha256": "d4de6760f72e4130306d7b3d441c6680334f39a8e864abf1fd2f3d85621b05d9"
+    }
+  },
+  "compilations": [
+    {
+      "command": [
+        "/home/clocksmith/deco/doe/bench/out/intel-vulkan-projection/20261011/final-build/bin/doe-emit-spirv",
+        "--shader-path",
+        "/home/clocksmith/deco/doe/bench/out/intel-vulkan-projection/20261011/fixture/quantize_w8a8.wgsl",
+        "--out",
+        "/home/clocksmith/deco/doe/bench/out/intel-vulkan-projection/20261011/matrix-final/doe/quantize.spv",
+        "--mode",
+        "vulkan-compute-runtime",
+        "--overrides",
+        "WORKGROUP_SIZE=256"
+      ],
+      "returnCode": 0,
+      "processWallMs": 1.294117,
+      "logSha256": "a3680b6601c39b586ea892ad2bbaa58a7f72b62a64f73917b09aa8c5f188110e",
+      "compiler": "doe",
+      "stage": "quantize",
+      "sourceSha256": "d01bbb40e706e027c70cdd5360eb5745b6e0412db7d2f05203a8d67cc8260899",
+      "constants": {
+        "WORKGROUP_SIZE": 256
+      },
+      "spirvSha256": "a0dd49f536d79ac49c21e04254a3fae14bacc52697f70cb394629f07bfa16cb8",
+      "validation": {
+        "command": [
+          "/home/clocksmith/deco/doe/.tooling/shader-tools/usr/bin/spirv-val",
+          "--target-env",
+          "vulkan1.1",
+          "/home/clocksmith/deco/doe/bench/out/intel-vulkan-projection/20261011/matrix-final/doe/quantize.spv"
+        ],
+        "returnCode": 0,
+        "processWallMs": 2.335311,
+        "logSha256": "a3680b6601c39b586ea892ad2bbaa58a7f72b62a64f73917b09aa8c5f188110e"
+      }
+    },
+    {
+      "command": [
+        "/home/clocksmith/deco/doe/bench/out/intel-vulkan-projection/20261011/final-build/bin/doe-emit-spirv",
+        "--shader-path",
+        "/home/clocksmith/deco/doe/bench/out/intel-vulkan-projection/20261011/fixture/matmul_w8a8.wgsl",
+        "--out",
+        "/home/clocksmith/deco/doe/bench/out/intel-vulkan-projection/20261011/matrix-final/doe/portable-dot.spv",
+        "--mode",
+        "vulkan-compute-runtime",
+        "--overrides",
+        "WORKGROUP_SIZE=64"
+      ],
+      "returnCode": 0,
+      "processWallMs": 1.141929,
+      "logSha256": "a3680b6601c39b586ea892ad2bbaa58a7f72b62a64f73917b09aa8c5f188110e",
+      "compiler": "doe",
+      "stage": "portable-dot",
+      "sourceSha256": "adb69e32003508afddb0844bdf4b4cc62f72e6ec0f01d66e80c44dc3a886d00e",
+      "constants": {
+        "WORKGROUP_SIZE": 64
+      },
+      "spirvSha256": "ca5c435fc3ceb09c163afb49282b31bf55493c6d0e191af62c54744cacf34acd",
+      "validation": {
+        "command": [
+          "/home/clocksmith/deco/doe/.tooling/shader-tools/usr/bin/spirv-val",
+          "--target-env",
+          "vulkan1.1",
+          "/home/clocksmith/deco/doe/bench/out/intel-vulkan-projection/20261011/matrix-final/doe/portable-dot.spv"
+        ],
+        "returnCode": 0,
+        "processWallMs": 1.989976,
+        "logSha256": "a3680b6601c39b586ea892ad2bbaa58a7f72b62a64f73917b09aa8c5f188110e"
+      }
+    },
+    {
+      "command": [
+        "/home/clocksmith/deco/doe/bench/out/intel-vulkan-projection/20261011/final-build/bin/doe-emit-spirv",
+        "--shader-path",
+        "/home/clocksmith/deco/doe/bench/out/intel-vulkan-projection/20261011/fixture/matmul_w8a8_packed.wgsl",
+        "--out",
+        "/home/clocksmith/deco/doe/bench/out/intel-vulkan-projection/20261011/matrix-final/doe/packed-dot.spv",
+        "--mode",
+        "vulkan-compute-runtime",
+        "--overrides",
+        "WORKGROUP_SIZE=64"
+      ],
+      "returnCode": 0,
+      "processWallMs": 1.084229,
+      "logSha256": "a3680b6601c39b586ea892ad2bbaa58a7f72b62a64f73917b09aa8c5f188110e",
+      "compiler": "doe",
+      "stage": "packed-dot",
+      "sourceSha256": "073aaece4131b2ec3fcbd6cbc304f4a5497ddd62a3f1954d01bd7f9a33424d1b",
+      "constants": {
+        "WORKGROUP_SIZE": 64
+      },
+      "spirvSha256": "75c31f332b190cc333fa5dd7c647d99af502b884e4aff9981026b62161508728",
+      "validation": {
+        "command": [
+          "/home/clocksmith/deco/doe/.tooling/shader-tools/usr/bin/spirv-val",
+          "--target-env",
+          "vulkan1.1",
+          "/home/clocksmith/deco/doe/bench/out/intel-vulkan-projection/20261011/matrix-final/doe/packed-dot.spv"
+        ],
+        "returnCode": 0,
+        "processWallMs": 2.127554,
+        "logSha256": "a3680b6601c39b586ea892ad2bbaa58a7f72b62a64f73917b09aa8c5f188110e"
+      }
+    },
+    {
+      "command": [
+        "/home/clocksmith/deco/doe/bench/out/intel-vulkan-projection/20261011/final-build/bin/doe-emit-spirv",
+        "--shader-path",
+        "/home/clocksmith/deco/doe/bench/out/intel-vulkan-projection/20261011/fixture/rescale_w8a8.wgsl",
+        "--out",
+        "/home/clocksmith/deco/doe/bench/out/intel-vulkan-projection/20261011/matrix-final/doe/activation-rescale.spv",
+        "--mode",
+        "vulkan-compute-runtime",
+        "--overrides",
+        "WORKGROUP_SIZE=256,INPUT_IS_I32=1,SCALE_BY_ROW=1"
+      ],
+      "returnCode": 0,
+      "processWallMs": 1.238192,
+      "logSha256": "a3680b6601c39b586ea892ad2bbaa58a7f72b62a64f73917b09aa8c5f188110e",
+      "compiler": "doe",
+      "stage": "activation-rescale",
+      "sourceSha256": "84779a6e84571b2733f5f4e5ba96127e31d452ee04ab94c1224f82e7b8459884",
+      "constants": {
+        "WORKGROUP_SIZE": 256,
+        "INPUT_IS_I32": true,
+        "SCALE_BY_ROW": true
+      },
+      "spirvSha256": "acf40b35bd00741d3b1246166387950b20d305431fee0ad5e74dc31d52c7c8c5",
+      "validation": {
+        "command": [
+          "/home/clocksmith/deco/doe/.tooling/shader-tools/usr/bin/spirv-val",
+          "--target-env",
+          "vulkan1.1",
+          "/home/clocksmith/deco/doe/bench/out/intel-vulkan-projection/20261011/matrix-final/doe/activation-rescale.spv"
+        ],
+        "returnCode": 0,
+        "processWallMs": 2.028255,
+        "logSha256": "a3680b6601c39b586ea892ad2bbaa58a7f72b62a64f73917b09aa8c5f188110e"
+      }
+    },
+    {
+      "command": [
+        "/home/clocksmith/deco/doe/bench/out/intel-vulkan-projection/20261011/final-build/bin/doe-emit-spirv",
+        "--shader-path",
+        "/home/clocksmith/deco/doe/bench/out/intel-vulkan-projection/20261011/fixture/rescale_w8a8.wgsl",
+        "--out",
+        "/home/clocksmith/deco/doe/bench/out/intel-vulkan-projection/20261011/matrix-final/doe/weight-rescale.spv",
+        "--mode",
+        "vulkan-compute-runtime",
+        "--overrides",
+        "WORKGROUP_SIZE=256,INPUT_IS_I32=0,SCALE_BY_ROW=0"
+      ],
+      "returnCode": 0,
+      "processWallMs": 1.159085,
+      "logSha256": "a3680b6601c39b586ea892ad2bbaa58a7f72b62a64f73917b09aa8c5f188110e",
+      "compiler": "doe",
+      "stage": "weight-rescale",
+      "sourceSha256": "84779a6e84571b2733f5f4e5ba96127e31d452ee04ab94c1224f82e7b8459884",
+      "constants": {
+        "WORKGROUP_SIZE": 256,
+        "INPUT_IS_I32": false,
+        "SCALE_BY_ROW": false
+      },
+      "spirvSha256": "65a29c802ad5d7fa8b1379d6195d5371c6d00f92052817ae37c6c19f1b94d447",
+      "validation": {
+        "command": [
+          "/home/clocksmith/deco/doe/.tooling/shader-tools/usr/bin/spirv-val",
+          "--target-env",
+          "vulkan1.1",
+          "/home/clocksmith/deco/doe/bench/out/intel-vulkan-projection/20261011/matrix-final/doe/weight-rescale.spv"
+        ],
+        "returnCode": 0,
+        "processWallMs": 2.135189,
+        "logSha256": "a3680b6601c39b586ea892ad2bbaa58a7f72b62a64f73917b09aa8c5f188110e"
+      }
+    },
+    {
+      "command": [
+        "/home/clocksmith/deco/doe/bench/vendor/dawn/out/Release/tint",
+        "/home/clocksmith/deco/doe/bench/out/intel-vulkan-projection/20261011/fixture/quantize_w8a8.wgsl",
+        "--format",
+        "spirv",
+        "--output-name",
+        "/home/clocksmith/deco/doe/bench/out/intel-vulkan-projection/20261011/matrix-final/tint/quantize.spv",
+        "--entry-point",
+        "main",
+        "--overrides",
+        "WORKGROUP_SIZE=256"
+      ],
+      "returnCode": 0,
+      "processWallMs": 15.341874,
+      "logSha256": "a3680b6601c39b586ea892ad2bbaa58a7f72b62a64f73917b09aa8c5f188110e",
+      "compiler": "tint",
+      "stage": "quantize",
+      "sourceSha256": "d01bbb40e706e027c70cdd5360eb5745b6e0412db7d2f05203a8d67cc8260899",
+      "constants": {
+        "WORKGROUP_SIZE": 256
+      },
+      "spirvSha256": "512f94369bb2492ecf3f6e8c7c79dbfdf407828dc5556e5b525bb524e48d7766",
+      "validation": {
+        "command": [
+          "/home/clocksmith/deco/doe/.tooling/shader-tools/usr/bin/spirv-val",
+          "--target-env",
+          "vulkan1.1",
+          "/home/clocksmith/deco/doe/bench/out/intel-vulkan-projection/20261011/matrix-final/tint/quantize.spv"
+        ],
+        "returnCode": 0,
+        "processWallMs": 2.850486,
+        "logSha256": "a3680b6601c39b586ea892ad2bbaa58a7f72b62a64f73917b09aa8c5f188110e"
+      }
+    },
+    {
+      "command": [
+        "/home/clocksmith/deco/doe/bench/vendor/dawn/out/Release/tint",
+        "/home/clocksmith/deco/doe/bench/out/intel-vulkan-projection/20261011/fixture/matmul_w8a8.wgsl",
+        "--format",
+        "spirv",
+        "--output-name",
+        "/home/clocksmith/deco/doe/bench/out/intel-vulkan-projection/20261011/matrix-final/tint/portable-dot.spv",
+        "--entry-point",
+        "main",
+        "--overrides",
+        "WORKGROUP_SIZE=64"
+      ],
+      "returnCode": 0,
+      "processWallMs": 11.885861,
+      "logSha256": "a3680b6601c39b586ea892ad2bbaa58a7f72b62a64f73917b09aa8c5f188110e",
+      "compiler": "tint",
+      "stage": "portable-dot",
+      "sourceSha256": "adb69e32003508afddb0844bdf4b4cc62f72e6ec0f01d66e80c44dc3a886d00e",
+      "constants": {
+        "WORKGROUP_SIZE": 64
+      },
+      "spirvSha256": "2e078f77293eb8bdb604ae8e42e32b3707d55236c949e0657aafbac25864a3c1",
+      "validation": {
+        "command": [
+          "/home/clocksmith/deco/doe/.tooling/shader-tools/usr/bin/spirv-val",
+          "--target-env",
+          "vulkan1.1",
+          "/home/clocksmith/deco/doe/bench/out/intel-vulkan-projection/20261011/matrix-final/tint/portable-dot.spv"
+        ],
+        "returnCode": 0,
+        "processWallMs": 2.508687,
+        "logSha256": "a3680b6601c39b586ea892ad2bbaa58a7f72b62a64f73917b09aa8c5f188110e"
+      }
+    },
+    {
+      "command": [
+        "/home/clocksmith/deco/doe/bench/vendor/dawn/out/Release/tint",
+        "/home/clocksmith/deco/doe/bench/out/intel-vulkan-projection/20261011/fixture/matmul_w8a8_packed.wgsl",
+        "--format",
+        "spirv",
+        "--output-name",
+        "/home/clocksmith/deco/doe/bench/out/intel-vulkan-projection/20261011/matrix-final/tint/packed-dot.spv",
+        "--entry-point",
+        "main",
+        "--overrides",
+        "WORKGROUP_SIZE=64"
+      ],
+      "returnCode": 0,
+      "processWallMs": 10.256495,
+      "logSha256": "a3680b6601c39b586ea892ad2bbaa58a7f72b62a64f73917b09aa8c5f188110e",
+      "compiler": "tint",
+      "stage": "packed-dot",
+      "sourceSha256": "073aaece4131b2ec3fcbd6cbc304f4a5497ddd62a3f1954d01bd7f9a33424d1b",
+      "constants": {
+        "WORKGROUP_SIZE": 64
+      },
+      "spirvSha256": "3c10979211d355e5468ef0d83eb240340d0a228fe3d50cf3b864d0e230af9a9c",
+      "validation": {
+        "command": [
+          "/home/clocksmith/deco/doe/.tooling/shader-tools/usr/bin/spirv-val",
+          "--target-env",
+          "vulkan1.1",
+          "/home/clocksmith/deco/doe/bench/out/intel-vulkan-projection/20261011/matrix-final/tint/packed-dot.spv"
+        ],
+        "returnCode": 0,
+        "processWallMs": 2.442803,
+        "logSha256": "a3680b6601c39b586ea892ad2bbaa58a7f72b62a64f73917b09aa8c5f188110e"
+      }
+    },
+    {
+      "command": [
+        "/home/clocksmith/deco/doe/bench/vendor/dawn/out/Release/tint",
+        "/home/clocksmith/deco/doe/bench/out/intel-vulkan-projection/20261011/fixture/rescale_w8a8.wgsl",
+        "--format",
+        "spirv",
+        "--output-name",
+        "/home/clocksmith/deco/doe/bench/out/intel-vulkan-projection/20261011/matrix-final/tint/activation-rescale.spv",
+        "--entry-point",
+        "main",
+        "--overrides",
+        "WORKGROUP_SIZE=256,INPUT_IS_I32=1,SCALE_BY_ROW=1"
+      ],
+      "returnCode": 0,
+      "processWallMs": 14.318623,
+      "logSha256": "a3680b6601c39b586ea892ad2bbaa58a7f72b62a64f73917b09aa8c5f188110e",
+      "compiler": "tint",
+      "stage": "activation-rescale",
+      "sourceSha256": "84779a6e84571b2733f5f4e5ba96127e31d452ee04ab94c1224f82e7b8459884",
+      "constants": {
+        "WORKGROUP_SIZE": 256,
+        "INPUT_IS_I32": true,
+        "SCALE_BY_ROW": true
+      },
+      "spirvSha256": "2985b7f089aa78fe575c99f9ff8c1f7330a78d97e2dfda558b5e28277ae84af5",
+      "validation": {
+        "command": [
+          "/home/clocksmith/deco/doe/.tooling/shader-tools/usr/bin/spirv-val",
+          "--target-env",
+          "vulkan1.1",
+          "/home/clocksmith/deco/doe/bench/out/intel-vulkan-projection/20261011/matrix-final/tint/activation-rescale.spv"
+        ],
+        "returnCode": 0,
+        "processWallMs": 2.627813,
+        "logSha256": "a3680b6601c39b586ea892ad2bbaa58a7f72b62a64f73917b09aa8c5f188110e"
+      }
+    },
+    {
+      "command": [
+        "/home/clocksmith/deco/doe/bench/vendor/dawn/out/Release/tint",
+        "/home/clocksmith/deco/doe/bench/out/intel-vulkan-projection/20261011/fixture/rescale_w8a8.wgsl",
+        "--format",
+        "spirv",
+        "--output-name",
+        "/home/clocksmith/deco/doe/bench/out/intel-vulkan-projection/20261011/matrix-final/tint/weight-rescale.spv",
+        "--entry-point",
+        "main",
+        "--overrides",
+        "WORKGROUP_SIZE=256,INPUT_IS_I32=0,SCALE_BY_ROW=0"
+      ],
+      "returnCode": 0,
+      "processWallMs": 14.270307,
+      "logSha256": "a3680b6601c39b586ea892ad2bbaa58a7f72b62a64f73917b09aa8c5f188110e",
+      "compiler": "tint",
+      "stage": "weight-rescale",
+      "sourceSha256": "84779a6e84571b2733f5f4e5ba96127e31d452ee04ab94c1224f82e7b8459884",
+      "constants": {
+        "WORKGROUP_SIZE": 256,
+        "INPUT_IS_I32": false,
+        "SCALE_BY_ROW": false
+      },
+      "spirvSha256": "08e754f61d46d55a521371bbc8e62008935b7efc0ac84925e4259fa8e5b7acf1",
+      "validation": {
+        "command": [
+          "/home/clocksmith/deco/doe/.tooling/shader-tools/usr/bin/spirv-val",
+          "--target-env",
+          "vulkan1.1",
+          "/home/clocksmith/deco/doe/bench/out/intel-vulkan-projection/20261011/matrix-final/tint/weight-rescale.spv"
+        ],
+        "returnCode": 0,
+        "processWallMs": 2.631352,
+        "logSha256": "a3680b6601c39b586ea892ad2bbaa58a7f72b62a64f73917b09aa8c5f188110e"
+      }
+    }
+  ],
+  "arms": [
+    {
+      "compiler": "tint",
+      "runtime": "dawn",
+      "sequences": [
+        {
+          "command": [
+            "/home/clocksmith/deco/doe/bench/out/intel-vulkan-projection/20261011/projection-native-final-dawn",
+            "/home/clocksmith/deco/doe/bench/vendor/dawn/out/Release/libwebgpu_dawn.so",
+            "/home/clocksmith/deco/doe/bench/out/intel-vulkan-projection/20261011/matrix-final/tint-dawn-portable.plan",
+            "3",
+            "1"
+          ],
+          "returnCode": 0,
+          "processWallMs": 58.352813,
+          "logSha256": "254d3c3e96855eb01aa997d266e8621179e06d140afcb8790f11d5e7388accbf",
+          "sequence": "portable",
+          "planSha256": "d3583cc45cba6bc90b72d907207d2ea7c891d3dfec4ea53748211e2fda7f943f",
+          "observations": [
+            {
+              "kind": "loadedLibrary",
+              "observed": true
+            },
+            {
+              "kind": "adapter",
+              "vendorId": 32902,
+              "deviceId": 39544,
+              "physicalIntelVulkan": true
+            },
+            {
+              "kind": "preparation",
+              "ms": 37.794581413
+            },
+            {
+              "kind": "sample",
+              "iteration": -1,
+              "ms": 4.674521446,
+              "cpuMs": 4.665,
+              "exact": true,
+              "dispatches": 4
+            },
+            {
+              "kind": "sample",
+              "iteration": 0,
+              "ms": 1.992860794,
+              "cpuMs": 1.985,
+              "exact": true,
+              "dispatches": 4
+            },
+            {
+              "kind": "sample",
+              "iteration": 1,
+              "ms": 1.399308205,
+              "cpuMs": 1.395,
+              "exact": true,
+              "dispatches": 4
+            },
+            {
+              "kind": "sample",
+              "iteration": 2,
+              "ms": 1.395687103,
+              "cpuMs": 1.371,
+              "exact": true,
+              "dispatches": 4
+            },
+            {
+              "kind": "processResources",
+              "cpuMs": 57.418,
+              "peakRssKiB": 31968
+            },
+            {
+              "kind": "cleanup",
+              "passed": true
+            }
+          ],
+          "status": "passed",
+          "unsupportedReason": null,
+          "vulkanCustody": [
+            {
+              "sequence": 1,
+              "result": 0,
+              "sizeBytes": 13408,
+              "artifact": "module-1.spv",
+              "retained": true,
+              "sha256": "28349d2b61a2560d52259572df0c3e79669e74b16ea36427aa4a1a30bc087903"
+            },
+            {
+              "sequence": 2,
+              "result": 0,
+              "sizeBytes": 9992,
+              "artifact": "module-2.spv",
+              "retained": true,
+              "sha256": "10639eefc2ae3674e119bc77feacd69b35f465aeadce0e15c44209566228c9f7"
+            },
+            {
+              "sequence": 3,
+              "result": 0,
+              "sizeBytes": 11252,
+              "artifact": "module-3.spv",
+              "retained": true,
+              "sha256": "67d90f198364daad9ee7995522b65507f63becae8cabad5380a05bebcd38ac44"
+            },
+            {
+              "sequence": 4,
+              "result": 0,
+              "sizeBytes": 11252,
+              "artifact": "module-4.spv",
+              "retained": true,
+              "sha256": "c4a7c6c66df53e9015e6902e7b6bfd404a3a65a5825d8cde84af1f589297cb84"
+            }
+          ],
+          "compilerProductPreserved": false,
+          "deviceCapabilities": [
+            {
+              "result": 0,
+              "vendorId": 32902,
+              "deviceId": 39544,
+              "integerDotAvailable": true,
+              "packedSignedAccelerated": true,
+              "packedUnsignedAccelerated": true,
+              "integerDotEnabled": true
+            }
+          ]
+        },
+        {
+          "command": [
+            "/home/clocksmith/deco/doe/bench/out/intel-vulkan-projection/20261011/projection-native-final-dawn",
+            "/home/clocksmith/deco/doe/bench/vendor/dawn/out/Release/libwebgpu_dawn.so",
+            "/home/clocksmith/deco/doe/bench/out/intel-vulkan-projection/20261011/matrix-final/tint-dawn-packed.plan",
+            "3",
+            "1"
+          ],
+          "returnCode": 1,
+          "processWallMs": 44.046499,
+          "logSha256": "e43a7edd59e5d81541c939d02db902deb5ce955331cb0c9b934dc64d3ed006ce",
+          "sequence": "packed",
+          "planSha256": "91df14a96788fcd881c91e79dc7180070c164c7fe9cf0fecc3bcf8ba7a01caca",
+          "observations": [
+            {
+              "kind": "loadedLibrary",
+              "observed": true
+            },
+            {
+              "kind": "adapter",
+              "vendorId": 32902,
+              "deviceId": 39544,
+              "physicalIntelVulkan": true
+            },
+            {
+              "kind": "preparation",
+              "ms": 33.30304718
+            },
+            {
+              "kind": "mismatch",
+              "buffer": 3,
+              "word": 0,
+              "actual": 0,
+              "expected": 1040187392
+            },
+            {
+              "kind": "mismatch",
+              "buffer": 4,
+              "word": 0,
+              "actual": 0,
+              "expected": 2542060
+            },
+            {
+              "kind": "mismatch",
+              "buffer": 5,
+              "word": 0,
+              "actual": 0,
+              "expected": 1218127792
+            },
+            {
+              "kind": "mismatch",
+              "buffer": 6,
+              "word": 0,
+              "actual": 0,
+              "expected": 1192961968
+            },
+            {
+              "kind": "sample",
+              "iteration": -1,
+              "ms": 0.10101223,
+              "cpuMs": 0.102,
+              "exact": false,
+              "dispatches": 4
+            },
+            {
+              "kind": "processResources",
+              "cpuMs": 43.042,
+              "peakRssKiB": 31968
+            },
+            {
+              "kind": "cleanup",
+              "passed": false
+            }
+          ],
+          "status": "unsupported",
+          "unsupportedReason": "Dawn's Tint SPIR-V reader rejects the integer-dot extension",
+          "vulkanCustody": [
+            {
+              "sequence": 1,
+              "result": 0,
+              "sizeBytes": 13408,
+              "artifact": "module-1.spv",
+              "retained": true,
+              "sha256": "28349d2b61a2560d52259572df0c3e79669e74b16ea36427aa4a1a30bc087903"
+            },
+            {
+              "sequence": 2,
+              "result": 0,
+              "sizeBytes": 11252,
+              "artifact": "module-2.spv",
+              "retained": true,
+              "sha256": "67d90f198364daad9ee7995522b65507f63becae8cabad5380a05bebcd38ac44"
+            },
+            {
+              "sequence": 3,
+              "result": 0,
+              "sizeBytes": 11252,
+              "artifact": "module-3.spv",
+              "retained": true,
+              "sha256": "c4a7c6c66df53e9015e6902e7b6bfd404a3a65a5825d8cde84af1f589297cb84"
+            }
+          ],
+          "compilerProductPreserved": false,
+          "deviceCapabilities": [
+            {
+              "result": 0,
+              "vendorId": 32902,
+              "deviceId": 39544,
+              "integerDotAvailable": true,
+              "packedSignedAccelerated": true,
+              "packedUnsignedAccelerated": true,
+              "integerDotEnabled": true
+            }
+          ]
+        }
+      ],
+      "directCompilerReplacementQualified": false,
+      "qualification": "unestablished"
+    },
+    {
+      "compiler": "tint",
+      "runtime": "doe",
+      "sequences": [
+        {
+          "command": [
+            "/home/clocksmith/deco/doe/bench/out/intel-vulkan-projection/20261011/projection-native-final-doe",
+            "/home/clocksmith/deco/doe/bench/out/intel-vulkan-projection/20261011/final-build/lib/libwebgpu_doe.so",
+            "/home/clocksmith/deco/doe/bench/out/intel-vulkan-projection/20261011/matrix-final/tint-doe-portable.plan",
+            "3",
+            "1"
+          ],
+          "returnCode": 0,
+          "processWallMs": 26.130539,
+          "logSha256": "e806a303c1d608693a835debd1e8f07f020f320e5ded601f8e6b0cf425390038",
+          "sequence": "portable",
+          "planSha256": "d3583cc45cba6bc90b72d907207d2ea7c891d3dfec4ea53748211e2fda7f943f",
+          "observations": [
+            {
+              "kind": "loadedLibrary",
+              "observed": true
+            },
+            {
+              "kind": "adapter",
+              "vendorId": 32902,
+              "deviceId": 39544,
+              "physicalIntelVulkan": true
+            },
+            {
+              "kind": "preparation",
+              "ms": 1.230710983
+            },
+            {
+              "kind": "sample",
+              "iteration": -1,
+              "ms": 6.328295708,
+              "cpuMs": 5.081,
+              "exact": true,
+              "dispatches": 4
+            },
+            {
+              "kind": "sample",
+              "iteration": 0,
+              "ms": 2.114258766,
+              "cpuMs": 1.299,
+              "exact": true,
+              "dispatches": 4
+            },
+            {
+              "kind": "sample",
+              "iteration": 1,
+              "ms": 2.125364304,
+              "cpuMs": 1.802,
+              "exact": true,
+              "dispatches": 4
+            },
+            {
+              "kind": "sample",
+              "iteration": 2,
+              "ms": 2.126250267,
+              "cpuMs": 1.849,
+              "exact": true,
+              "dispatches": 4
+            },
+            {
+              "kind": "processResources",
+              "cpuMs": 22.927,
+              "peakRssKiB": 31968
+            },
+            {
+              "kind": "cleanup",
+              "passed": true
+            }
+          ],
+          "status": "passed",
+          "unsupportedReason": null,
+          "vulkanCustody": [
+            {
+              "sequence": 1,
+              "result": 0,
+              "sizeBytes": 12368,
+              "artifact": "module-1.spv",
+              "retained": true,
+              "sha256": "512f94369bb2492ecf3f6e8c7c79dbfdf407828dc5556e5b525bb524e48d7766"
+            },
+            {
+              "sequence": 2,
+              "result": 0,
+              "sizeBytes": 8824,
+              "artifact": "module-2.spv",
+              "retained": true,
+              "sha256": "2e078f77293eb8bdb604ae8e42e32b3707d55236c949e0657aafbac25864a3c1"
+            },
+            {
+              "sequence": 3,
+              "result": 0,
+              "sizeBytes": 11148,
+              "artifact": "module-3.spv",
+              "retained": true,
+              "sha256": "2985b7f089aa78fe575c99f9ff8c1f7330a78d97e2dfda558b5e28277ae84af5"
+            },
+            {
+              "sequence": 4,
+              "result": 0,
+              "sizeBytes": 11148,
+              "artifact": "module-4.spv",
+              "retained": true,
+              "sha256": "08e754f61d46d55a521371bbc8e62008935b7efc0ac84925e4259fa8e5b7acf1"
+            }
+          ],
+          "compilerProductPreserved": true,
+          "deviceCapabilities": [
+            {
+              "result": 0,
+              "vendorId": 32902,
+              "deviceId": 39544,
+              "integerDotAvailable": true,
+              "packedSignedAccelerated": true,
+              "packedUnsignedAccelerated": true,
+              "integerDotEnabled": true
+            }
+          ]
+        },
+        {
+          "command": [
+            "/home/clocksmith/deco/doe/bench/out/intel-vulkan-projection/20261011/projection-native-final-doe",
+            "/home/clocksmith/deco/doe/bench/out/intel-vulkan-projection/20261011/final-build/lib/libwebgpu_doe.so",
+            "/home/clocksmith/deco/doe/bench/out/intel-vulkan-projection/20261011/matrix-final/tint-doe-packed.plan",
+            "3",
+            "1"
+          ],
+          "returnCode": 0,
+          "processWallMs": 15.205676,
+          "logSha256": "f58d51af640b750f4ec556cfb498f80803d27784b7693d17c953c7ada74da1ec",
+          "sequence": "packed",
+          "planSha256": "91df14a96788fcd881c91e79dc7180070c164c7fe9cf0fecc3bcf8ba7a01caca",
+          "observations": [
+            {
+              "kind": "loadedLibrary",
+              "observed": true
+            },
+            {
+              "kind": "adapter",
+              "vendorId": 32902,
+              "deviceId": 39544,
+              "physicalIntelVulkan": true
+            },
+            {
+              "kind": "preparation",
+              "ms": 0.941328049
+            },
+            {
+              "kind": "sample",
+              "iteration": -1,
+              "ms": 3.008036613,
+              "cpuMs": 3.011,
+              "exact": true,
+              "dispatches": 4
+            },
+            {
+              "kind": "sample",
+              "iteration": 0,
+              "ms": 0.909674644,
+              "cpuMs": 0.91,
+              "exact": true,
+              "dispatches": 4
+            },
+            {
+              "kind": "sample",
+              "iteration": 1,
+              "ms": 0.728595734,
+              "cpuMs": 0.729,
+              "exact": true,
+              "dispatches": 4
+            },
+            {
+              "kind": "sample",
+              "iteration": 2,
+              "ms": 0.827373505,
+              "cpuMs": 0.818,
+              "exact": true,
+              "dispatches": 4
+            },
+            {
+              "kind": "processResources",
+              "cpuMs": 14.664,
+              "peakRssKiB": 31968
+            },
+            {
+              "kind": "cleanup",
+              "passed": true
+            }
+          ],
+          "status": "passed",
+          "unsupportedReason": null,
+          "vulkanCustody": [
+            {
+              "sequence": 1,
+              "result": 0,
+              "sizeBytes": 12368,
+              "artifact": "module-1.spv",
+              "retained": true,
+              "sha256": "512f94369bb2492ecf3f6e8c7c79dbfdf407828dc5556e5b525bb524e48d7766"
+            },
+            {
+              "sequence": 2,
+              "result": 0,
+              "sizeBytes": 8288,
+              "artifact": "module-2.spv",
+              "retained": true,
+              "sha256": "3c10979211d355e5468ef0d83eb240340d0a228fe3d50cf3b864d0e230af9a9c"
+            },
+            {
+              "sequence": 3,
+              "result": 0,
+              "sizeBytes": 11148,
+              "artifact": "module-3.spv",
+              "retained": true,
+              "sha256": "2985b7f089aa78fe575c99f9ff8c1f7330a78d97e2dfda558b5e28277ae84af5"
+            },
+            {
+              "sequence": 4,
+              "result": 0,
+              "sizeBytes": 11148,
+              "artifact": "module-4.spv",
+              "retained": true,
+              "sha256": "08e754f61d46d55a521371bbc8e62008935b7efc0ac84925e4259fa8e5b7acf1"
+            }
+          ],
+          "compilerProductPreserved": true,
+          "deviceCapabilities": [
+            {
+              "result": 0,
+              "vendorId": 32902,
+              "deviceId": 39544,
+              "integerDotAvailable": true,
+              "packedSignedAccelerated": true,
+              "packedUnsignedAccelerated": true,
+              "integerDotEnabled": true
+            }
+          ]
+        }
+      ],
+      "directCompilerReplacementQualified": true,
+      "qualification": "exact-projection-output-passed"
+    },
+    {
+      "compiler": "doe",
+      "runtime": "dawn",
+      "sequences": [
+        {
+          "command": [
+            "/home/clocksmith/deco/doe/bench/out/intel-vulkan-projection/20261011/projection-native-final-dawn",
+            "/home/clocksmith/deco/doe/bench/vendor/dawn/out/Release/libwebgpu_dawn.so",
+            "/home/clocksmith/deco/doe/bench/out/intel-vulkan-projection/20261011/matrix-final/doe-dawn-portable.plan",
+            "3",
+            "1"
+          ],
+          "returnCode": 0,
+          "processWallMs": 41.23997,
+          "logSha256": "968dccc297af889d39de0f2a717c081b99af4171d4031161a7ab5c8da16606c3",
+          "sequence": "portable",
+          "planSha256": "3aa842b72bdad01adcccec228352e6ea0a090db3ebdd1e16d0026bbb088d454c",
+          "observations": [
+            {
+              "kind": "loadedLibrary",
+              "observed": true
+            },
+            {
+              "kind": "adapter",
+              "vendorId": 32902,
+              "deviceId": 39544,
+              "physicalIntelVulkan": true
+            },
+            {
+              "kind": "preparation",
+              "ms": 26.647519112
+            },
+            {
+              "kind": "sample",
+              "iteration": -1,
+              "ms": 2.397518158,
+              "cpuMs": 2.386,
+              "exact": true,
+              "dispatches": 4
+            },
+            {
+              "kind": "sample",
+              "iteration": 0,
+              "ms": 0.701715469,
+              "cpuMs": 0.698,
+              "exact": true,
+              "dispatches": 4
+            },
+            {
+              "kind": "sample",
+              "iteration": 1,
+              "ms": 0.61230278,
+              "cpuMs": 0.607,
+              "exact": true,
+              "dispatches": 4
+            },
+            {
+              "kind": "sample",
+              "iteration": 2,
+              "ms": 0.611528397,
+              "cpuMs": 0.606,
+              "exact": true,
+              "dispatches": 4
+            },
+            {
+              "kind": "processResources",
+              "cpuMs": 40.34,
+              "peakRssKiB": 31968
+            },
+            {
+              "kind": "cleanup",
+              "passed": true
+            }
+          ],
+          "status": "passed",
+          "unsupportedReason": null,
+          "vulkanCustody": [
+            {
+              "sequence": 1,
+              "result": 0,
+              "sizeBytes": 10736,
+              "artifact": "module-1.spv",
+              "retained": true,
+              "sha256": "376a651cd955424a05d28101c4ea17504f75509be8185605c3e8a70306d0853a"
+            },
+            {
+              "sequence": 2,
+              "result": 0,
+              "sizeBytes": 7600,
+              "artifact": "module-2.spv",
+              "retained": true,
+              "sha256": "1880800994b876e35e484efce0144e41d6f1dffa2ebaad8c7a3d59ace00bff6c"
+            },
+            {
+              "sequence": 3,
+              "result": 0,
+              "sizeBytes": 9412,
+              "artifact": "module-3.spv",
+              "retained": true,
+              "sha256": "7f48ede00a5b138b06c06d49a4be8a9eaa98cc87e403695a6d2158fcd69f73cf"
+            },
+            {
+              "sequence": 4,
+              "result": 0,
+              "sizeBytes": 9412,
+              "artifact": "module-4.spv",
+              "retained": true,
+              "sha256": "109780adf765f06a5bf4f94c8c5926f1f1630b0b562c43519958e23f6fb0e166"
+            }
+          ],
+          "compilerProductPreserved": false,
+          "deviceCapabilities": [
+            {
+              "result": 0,
+              "vendorId": 32902,
+              "deviceId": 39544,
+              "integerDotAvailable": true,
+              "packedSignedAccelerated": true,
+              "packedUnsignedAccelerated": true,
+              "integerDotEnabled": true
+            }
+          ]
+        },
+        {
+          "command": [
+            "/home/clocksmith/deco/doe/bench/out/intel-vulkan-projection/20261011/projection-native-final-dawn",
+            "/home/clocksmith/deco/doe/bench/vendor/dawn/out/Release/libwebgpu_dawn.so",
+            "/home/clocksmith/deco/doe/bench/out/intel-vulkan-projection/20261011/matrix-final/doe-dawn-packed.plan",
+            "3",
+            "1"
+          ],
+          "returnCode": 0,
+          "processWallMs": 42.697087,
+          "logSha256": "183ceafc26dc2b33821b42d8917c7f37b27b97fb8777e30da05517fb5596f550",
+          "sequence": "packed",
+          "planSha256": "4d98278743ed219ede1cc88f0ac4ce8a70537a693f31e1d40ca403631163ae64",
+          "observations": [
+            {
+              "kind": "loadedLibrary",
+              "observed": true
+            },
+            {
+              "kind": "adapter",
+              "vendorId": 32902,
+              "deviceId": 39544,
+              "physicalIntelVulkan": true
+            },
+            {
+              "kind": "preparation",
+              "ms": 26.847376823
+            },
+            {
+              "kind": "sample",
+              "iteration": -1,
+              "ms": 2.5215168,
+              "cpuMs": 2.507,
+              "exact": true,
+              "dispatches": 4
+            },
+            {
+              "kind": "sample",
+              "iteration": 0,
+              "ms": 0.793683052,
+              "cpuMs": 0.788,
+              "exact": true,
+              "dispatches": 4
+            },
+            {
+              "kind": "sample",
+              "iteration": 1,
+              "ms": 0.618457794,
+              "cpuMs": 0.615,
+              "exact": true,
+              "dispatches": 4
+            },
+            {
+              "kind": "sample",
+              "iteration": 2,
+              "ms": 0.618995667,
+              "cpuMs": 0.615,
+              "exact": true,
+              "dispatches": 4
+            },
+            {
+              "kind": "processResources",
+              "cpuMs": 41.452,
+              "peakRssKiB": 31968
+            },
+            {
+              "kind": "cleanup",
+              "passed": true
+            }
+          ],
+          "status": "passed",
+          "unsupportedReason": null,
+          "vulkanCustody": [
+            {
+              "sequence": 1,
+              "result": 0,
+              "sizeBytes": 10736,
+              "artifact": "module-1.spv",
+              "retained": true,
+              "sha256": "376a651cd955424a05d28101c4ea17504f75509be8185605c3e8a70306d0853a"
+            },
+            {
+              "sequence": 2,
+              "result": 0,
+              "sizeBytes": 7712,
+              "artifact": "module-2.spv",
+              "retained": true,
+              "sha256": "f8b64371c1f0088573112855464e9fdc87287a4ba52b50209ec84d26870e06fb"
+            },
+            {
+              "sequence": 3,
+              "result": 0,
+              "sizeBytes": 9412,
+              "artifact": "module-3.spv",
+              "retained": true,
+              "sha256": "7f48ede00a5b138b06c06d49a4be8a9eaa98cc87e403695a6d2158fcd69f73cf"
+            },
+            {
+              "sequence": 4,
+              "result": 0,
+              "sizeBytes": 9412,
+              "artifact": "module-4.spv",
+              "retained": true,
+              "sha256": "109780adf765f06a5bf4f94c8c5926f1f1630b0b562c43519958e23f6fb0e166"
+            }
+          ],
+          "compilerProductPreserved": false,
+          "deviceCapabilities": [
+            {
+              "result": 0,
+              "vendorId": 32902,
+              "deviceId": 39544,
+              "integerDotAvailable": true,
+              "packedSignedAccelerated": true,
+              "packedUnsignedAccelerated": true,
+              "integerDotEnabled": true
+            }
+          ]
+        }
+      ],
+      "directCompilerReplacementQualified": false,
+      "qualification": "exact-projection-output-passed"
+    },
+    {
+      "compiler": "doe",
+      "runtime": "doe",
+      "sequences": [
+        {
+          "command": [
+            "/home/clocksmith/deco/doe/bench/out/intel-vulkan-projection/20261011/projection-native-final-doe",
+            "/home/clocksmith/deco/doe/bench/out/intel-vulkan-projection/20261011/final-build/lib/libwebgpu_doe.so",
+            "/home/clocksmith/deco/doe/bench/out/intel-vulkan-projection/20261011/matrix-final/doe-doe-portable.plan",
+            "3",
+            "1"
+          ],
+          "returnCode": 0,
+          "processWallMs": 15.27616,
+          "logSha256": "12c03306354b73cc20f02827cbe0485b33ae2b06e94bee8d9584620a0ac932f6",
+          "sequence": "portable",
+          "planSha256": "3aa842b72bdad01adcccec228352e6ea0a090db3ebdd1e16d0026bbb088d454c",
+          "observations": [
+            {
+              "kind": "loadedLibrary",
+              "observed": true
+            },
+            {
+              "kind": "adapter",
+              "vendorId": 32902,
+              "deviceId": 39544,
+              "physicalIntelVulkan": true
+            },
+            {
+              "kind": "preparation",
+              "ms": 0.978337288
+            },
+            {
+              "kind": "sample",
+              "iteration": -1,
+              "ms": 3.32084465,
+              "cpuMs": 3.279,
+              "exact": true,
+              "dispatches": 4
+            },
+            {
+              "kind": "sample",
+              "iteration": 0,
+              "ms": 0.861886978,
+              "cpuMs": 0.863,
+              "exact": true,
+              "dispatches": 4
+            },
+            {
+              "kind": "sample",
+              "iteration": 1,
+              "ms": 0.751235008,
+              "cpuMs": 0.752,
+              "exact": true,
+              "dispatches": 4
+            },
+            {
+              "kind": "sample",
+              "iteration": 2,
+              "ms": 0.747617722,
+              "cpuMs": 0.749,
+              "exact": true,
+              "dispatches": 4
+            },
+            {
+              "kind": "processResources",
+              "cpuMs": 14.782,
+              "peakRssKiB": 31968
+            },
+            {
+              "kind": "cleanup",
+              "passed": true
+            }
+          ],
+          "status": "passed",
+          "unsupportedReason": null,
+          "vulkanCustody": [
+            {
+              "sequence": 1,
+              "result": 0,
+              "sizeBytes": 6956,
+              "artifact": "module-1.spv",
+              "retained": true,
+              "sha256": "a0dd49f536d79ac49c21e04254a3fae14bacc52697f70cb394629f07bfa16cb8"
+            },
+            {
+              "sequence": 2,
+              "result": 0,
+              "sizeBytes": 5332,
+              "artifact": "module-2.spv",
+              "retained": true,
+              "sha256": "ca5c435fc3ceb09c163afb49282b31bf55493c6d0e191af62c54744cacf34acd"
+            },
+            {
+              "sequence": 3,
+              "result": 0,
+              "sizeBytes": 6688,
+              "artifact": "module-3.spv",
+              "retained": true,
+              "sha256": "acf40b35bd00741d3b1246166387950b20d305431fee0ad5e74dc31d52c7c8c5"
+            },
+            {
+              "sequence": 4,
+              "result": 0,
+              "sizeBytes": 6688,
+              "artifact": "module-4.spv",
+              "retained": true,
+              "sha256": "65a29c802ad5d7fa8b1379d6195d5371c6d00f92052817ae37c6c19f1b94d447"
+            }
+          ],
+          "compilerProductPreserved": true,
+          "deviceCapabilities": [
+            {
+              "result": 0,
+              "vendorId": 32902,
+              "deviceId": 39544,
+              "integerDotAvailable": true,
+              "packedSignedAccelerated": true,
+              "packedUnsignedAccelerated": true,
+              "integerDotEnabled": true
+            }
+          ]
+        },
+        {
+          "command": [
+            "/home/clocksmith/deco/doe/bench/out/intel-vulkan-projection/20261011/projection-native-final-doe",
+            "/home/clocksmith/deco/doe/bench/out/intel-vulkan-projection/20261011/final-build/lib/libwebgpu_doe.so",
+            "/home/clocksmith/deco/doe/bench/out/intel-vulkan-projection/20261011/matrix-final/doe-doe-packed.plan",
+            "3",
+            "1"
+          ],
+          "returnCode": 0,
+          "processWallMs": 16.388122,
+          "logSha256": "bbcc1dd516c543f99d1cf70b8e578a36341311bbd03821de7b3ff9811e983d53",
+          "sequence": "packed",
+          "planSha256": "4d98278743ed219ede1cc88f0ac4ce8a70537a693f31e1d40ca403631163ae64",
+          "observations": [
+            {
+              "kind": "loadedLibrary",
+              "observed": true
+            },
+            {
+              "kind": "adapter",
+              "vendorId": 32902,
+              "deviceId": 39544,
+              "physicalIntelVulkan": true
+            },
+            {
+              "kind": "preparation",
+              "ms": 1.191644669
+            },
+            {
+              "kind": "sample",
+              "iteration": -1,
+              "ms": 3.892336845,
+              "cpuMs": 3.895,
+              "exact": true,
+              "dispatches": 4
+            },
+            {
+              "kind": "sample",
+              "iteration": 0,
+              "ms": 0.8592062,
+              "cpuMs": 0.855,
+              "exact": true,
+              "dispatches": 4
+            },
+            {
+              "kind": "sample",
+              "iteration": 1,
+              "ms": 0.831850052,
+              "cpuMs": 0.833,
+              "exact": true,
+              "dispatches": 4
+            },
+            {
+              "kind": "sample",
+              "iteration": 2,
+              "ms": 0.74917984,
+              "cpuMs": 0.751,
+              "exact": true,
+              "dispatches": 4
+            },
+            {
+              "kind": "processResources",
+              "cpuMs": 15.888,
+              "peakRssKiB": 31968
+            },
+            {
+              "kind": "cleanup",
+              "passed": true
+            }
+          ],
+          "status": "passed",
+          "unsupportedReason": null,
+          "vulkanCustody": [
+            {
+              "sequence": 1,
+              "result": 0,
+              "sizeBytes": 6956,
+              "artifact": "module-1.spv",
+              "retained": true,
+              "sha256": "a0dd49f536d79ac49c21e04254a3fae14bacc52697f70cb394629f07bfa16cb8"
+            },
+            {
+              "sequence": 2,
+              "result": 0,
+              "sizeBytes": 5728,
+              "artifact": "module-2.spv",
+              "retained": true,
+              "sha256": "75c31f332b190cc333fa5dd7c647d99af502b884e4aff9981026b62161508728"
+            },
+            {
+              "sequence": 3,
+              "result": 0,
+              "sizeBytes": 6688,
+              "artifact": "module-3.spv",
+              "retained": true,
+              "sha256": "acf40b35bd00741d3b1246166387950b20d305431fee0ad5e74dc31d52c7c8c5"
+            },
+            {
+              "sequence": 4,
+              "result": 0,
+              "sizeBytes": 6688,
+              "artifact": "module-4.spv",
+              "retained": true,
+              "sha256": "65a29c802ad5d7fa8b1379d6195d5371c6d00f92052817ae37c6c19f1b94d447"
+            }
+          ],
+          "compilerProductPreserved": true,
+          "deviceCapabilities": [
+            {
+              "result": 0,
+              "vendorId": 32902,
+              "deviceId": 39544,
+              "integerDotAvailable": true,
+              "packedSignedAccelerated": true,
+              "packedUnsignedAccelerated": true,
+              "integerDotEnabled": true
+            }
+          ]
+        }
+      ],
+      "directCompilerReplacementQualified": true,
+      "qualification": "exact-projection-output-passed"
+    }
+  ],
+  "sampling": {
+    "iterations": 3,
+    "warmup": 1
+  },
+  "performanceClaim": false
+}

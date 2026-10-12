@@ -17,8 +17,8 @@ test "sType: ShaderSourceMSL is 0x00000003" {
     try std.testing.expectEqual(@as(types.WGPUSType, 0x00000003), types.WGPUSType_ShaderSourceMSL);
 }
 
-test "sType: ShaderSourceSPIRV is 0x00000004" {
-    try std.testing.expectEqual(@as(types.WGPUSType, 0x00000004), types.WGPUSType_ShaderSourceSPIRV);
+test "sType: ShaderSourceSPIRV is the public C ABI value 0x00000001" {
+    try std.testing.expectEqual(@as(types.WGPUSType, 0x00000001), types.WGPUSType_ShaderSourceSPIRV);
 }
 
 test "sType: ShaderSourceHLSL is 0x00000005" {

@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "scope": "fixed complete projection, F32 activation through quantization, packing, dot, two rescale passes, completion, exact readback; prepacked resident weights",
+  "comparisonClass": "fixed-operation",
+  "processPairs": 12,
+  "iterations": 64,
+  "warmup": 12,
+  "primaryMetric": "paired-process-median-complete-projection-ms",
+  "maximumPrimaryRatio": 0.9,
+  "maximumRegressionRatio": 1.05,
+  "regressionMetrics": [
+    "preparationMs",
+    "cpuMs",
+    "peakRssKiB"
+  ],
+  "gpuActivity": "reject-observed-linux-drm",
+  "baseline": {
+    "plan": "portable-measured.plan",
+    "sha256": "886c999dfc63d136eb24c06b4d6c7380852889ac1a3817c58af6376751de703b"
+  },
+  "candidate": {
+    "plan": "accelerated-measured.plan",
+    "sha256": "6479b01ebd7c4d05301045b582311b47db0491cf01c76889ba365a6feeee8dc1"
+  },
+  "librarySha256": "f7dfa619e93bb20657332969039e3624905cba0a0b88e4fcb0d02866f998fa65",
+  "executorSha256": "823da9af2ed048fd36eb9f56231251264a744b2a438ea1910749cecdda3c3f92",
+  "modelAcceptanceRequiredForGeneration": true,
+  "fullGenerationPerformanceClaim": false
+}

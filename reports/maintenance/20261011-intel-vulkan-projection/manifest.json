@@ -1,0 +1,228 @@
+{
+  "schemaVersion": 1,
+  "classification": "bounded-intel-projection-evidence",
+  "sourceBase": "3d3b9c30b7939828d8ce07958475449db1fde25b",
+  "hardware": {
+    "vendorId": 32902,
+    "deviceId": 39544,
+    "name": "Intel UHD Graphics (TGL GT2)",
+    "driver": "Mesa 24.2.8",
+    "apiVersion": "Vulkan 1.3.289"
+  },
+  "artifacts": [
+    {
+      "path": "README.md",
+      "sha256": "b20058d32e9191e7ea3e5d80f715df40bb855e6aa0b96a82137f33bddc41e493",
+      "sizeBytes": 9783
+    },
+    {
+      "path": "cohort.json",
+      "sha256": "15b38696e4b3fbcab0431b1591bb0742d5b2a94eb5e3bd9d1dfc3ad185806516",
+      "sizeBytes": 663314
+    },
+    {
+      "path": "dawn.json",
+      "sha256": "1abca6d8ca4fe8591d37922e1c8724feda79dc78aa4515057e3405ab0d128d42",
+      "sizeBytes": 8294
+    },
+    {
+      "path": "doe.json",
+      "sha256": "d594e6f60e84ce893b60c63a8a1825f08c39cb2ad7aee88af5d7db84b14559dd",
+      "sizeBytes": 9127
+    },
+    {
+      "path": "matrix.json",
+      "sha256": "ef27003d75f4e86dec306af82d853f42add09dabc35739afb9380d5613e61fb2",
+      "sizeBytes": 47675
+    },
+    {
+      "path": "policy.json",
+      "sha256": "4da4156b2c67fadf23533a1da66d08404bbdd79b6530b83b138ced95c35195b1",
+      "sizeBytes": 1098
+    },
+    {
+      "path": "projection.tar.gz",
+      "sha256": "128bbc084593483c2f4e4c532f8b118e2c25b68d7f7f1b0dd3ee73adec8911af",
+      "sizeBytes": 51487
+    },
+    {
+      "path": "raw-evidence.tar.gz",
+      "sha256": "c2010e26a38d19d465ff6f530b3b0a0c0265deddc1b2d9ca448a33037b269e77",
+      "sizeBytes": 1341671
+    },
+    {
+      "path": "rejected-candidate-source-hashes.json",
+      "sha256": "344ff964d74721e598250f9f0e03a89112f5dc41730acf2fe72dda50a2f92fa6",
+      "sizeBytes": 927
+    },
+    {
+      "path": "rejected-candidate.patch.gz",
+      "sha256": "43de843d732578451299ef55080a3d43120799930dee9067cb449ea123bcafa3",
+      "sizeBytes": 10953
+    }
+  ],
+  "sourceFiles": [
+    {
+      "path": "bench/executors/projection-native.c",
+      "sha256": "37a58319f0fb41d83bc8c34b90849814a56c20e69eb9b8f58d190f37db4e774b"
+    },
+    {
+      "path": "bench/executors/run-projection-cohort.py",
+      "sha256": "94a95f5d7f862921fbe40b5305e9e6fcfcaf15933b34ded6037b13685846a22f"
+    },
+    {
+      "path": "bench/executors/run-projection-controls.mjs",
+      "sha256": "a9f60061bb2e964bb5f57564efbb3561dfe947598c7adcba7c826d1572bac8e5"
+    },
+    {
+      "path": "bench/executors/run-projection-matrix.py",
+      "sha256": "7d6bad181a8a96a2a151b525933d31b71c009b3dec01502c1165998510290514"
+    },
+    {
+      "path": "bench/executors/validate-projection-evidence.py",
+      "sha256": "6fe385715edd93dd32a131141e991a460062bd92b89e7e6b980afd92b5cdef9b"
+    },
+    {
+      "path": "bench/executors/vulkan-shader-custody.c",
+      "sha256": "a632845b355fc2a6a540a68b4e84911cd564ca4ed78387b971f780023df7092c"
+    },
+    {
+      "path": "bench/tests/test_projection_evidence.py",
+      "sha256": "6d958fa538e52e6d9ac09c69b78222563aa2cbec24d3eb04e846f041cb1c9357"
+    },
+    {
+      "path": "config/intel-projection-evidence.schema.json",
+      "sha256": "5b134adc9e1b28aec72dc76459bff3c4cae4173ae5dc1cd8745186ba37d28da5"
+    },
+    {
+      "path": "config/schema-targets.json",
+      "sha256": "e000e4fc856c33d2065f5ee3645f5d4619114a55a4cd58986aae515eb8b21afc"
+    },
+    {
+      "path": "docs/status/compiler-and-webgpu.md",
+      "sha256": "d59f75ed0488e8544eb1b4453b81ffffa44a6be2d3eded237881acf3e5b92c3a"
+    },
+    {
+      "path": "docs/status/runtime-backends-and-bench.md",
+      "sha256": "77e0dc6f82d91227095f10220128498ff3724149b232b5d06a55ae80965795bd"
+    },
+    {
+      "path": "runtime/zig/source-layout.json",
+      "sha256": "9cc2713a7c2bb6393901686b9c772d9d3db1766e2071a14a4917090291b44312"
+    },
+    {
+      "path": "runtime/zig/src/backend/vulkan/native_runtime.zig",
+      "sha256": "58e2d4acaf78c20da58dbccad6220db7efae8030731571bd55159435a24fabd1"
+    },
+    {
+      "path": "runtime/zig/src/backend/vulkan/vk_capability_structs.zig",
+      "sha256": "1af41c016be269ec93b56c01e21b2afe0e3bb9528ebf108b0a157b37b285c6b4"
+    },
+    {
+      "path": "runtime/zig/src/backend/vulkan/vk_constants.zig",
+      "sha256": "d3bede73edcb5a131fe6274259191959a63a24e3b319902a417e81e8d1ed76c9"
+    },
+    {
+      "path": "runtime/zig/src/backend/vulkan/vk_device.zig",
+      "sha256": "017c64f64b28ca4b4c9b25c02431b0cd5ef6be90a416c69305bd19c48f6f0a35"
+    },
+    {
+      "path": "runtime/zig/src/backend/vulkan/vk_feature_caps.zig",
+      "sha256": "3317a92ff51e84baacc6de5f7fea0063a1ed8e99e8e81493606a170fd8298e41"
+    },
+    {
+      "path": "runtime/zig/src/backend/vulkan/vk_pipeline.zig",
+      "sha256": "14e94ebae2f2a0e4bf6c4cf853c20220ab02cc0f1d52088f11417adc824d5b5b"
+    },
+    {
+      "path": "runtime/zig/src/backend/vulkan/vk_shared_pipeline.zig",
+      "sha256": "ac45fc2d1c40518de3a3a2967598d7f8948329e91c9d9d396d053083ef24710a"
+    },
+    {
+      "path": "runtime/zig/src/backend/vulkan/vk_spirv_inspect.zig",
+      "sha256": "f55326c25e38f0924cbcd70e42d16de17ee493beb5eebfe777b604da41a6504e"
+    },
+    {
+      "path": "runtime/zig/src/cli/entrypoints/main_emit_spirv.zig",
+      "sha256": "ec6509f57a4781881f0ca93c022123f6eceeeae4d5a3f82e18f7143540e34a4d"
+    },
+    {
+      "path": "runtime/zig/src/compiler/wgsl/emit/spirv/emit_spirv.zig",
+      "sha256": "779517661826121736b7de071fee064b25527845cfae9284cfc652fb90d75c83"
+    },
+    {
+      "path": "runtime/zig/src/compiler/wgsl/emit/spirv/emit_spirv_stages.zig",
+      "sha256": "c9040010376f535bf61b3cc0d3b2c5b388beabaab667f1b92ace26b2407f7e0c"
+    },
+    {
+      "path": "runtime/zig/src/core/abi/wgpu_core_base_types.zig",
+      "sha256": "a549bd6f5745e4009adc2a42fa5d16b465aac4c9d243a88d18d1ea55d52b6e2f"
+    },
+    {
+      "path": "runtime/zig/tests/core/native_api_core_test.zig",
+      "sha256": "ba8005b6dcfd70db81133425f6582add40085ba586bc577971e1f49e647b1d23"
+    },
+    {
+      "path": "runtime/zig/tests/core/precompiled_shader_test.zig",
+      "sha256": "c4b8b83a327abe6f896ca92a5892955c0d0569ed8d7ccc6fa192d877fbf62938"
+    },
+    {
+      "path": "runtime/zig/tests/wgsl/emit_spirv_stage_test.zig",
+      "sha256": "c7906e00d5a83cb18431e8b353f46ceb052a240f748391fe9c3607a7fa0c8bc6"
+    }
+  ],
+  "binaries": [
+    {
+      "path": "bench/out/intel-vulkan-projection/20261011/final-build/lib/libwebgpu_doe.so",
+      "sha256": "20397ca65d27fe2f1dce6d6a930227feec2bdc054ae842cd0b5019ef13b8ff85"
+    },
+    {
+      "path": "bench/out/intel-vulkan-projection/20261011/final-build/bin/doe-emit-spirv",
+      "sha256": "abf67e30b06c7d0b46f248e4356af87b0c9d4de0d4694ab8210b6249468bcf92"
+    },
+    {
+      "path": "bench/vendor/dawn/out/Release/tint",
+      "sha256": "4a358538b6d649e6a57ff4fe29051a29f9b79ff972db2fe27a1b13687032e2ed"
+    },
+    {
+      "path": "bench/vendor/dawn/out/Release/libwebgpu_dawn.so",
+      "sha256": "352a295ea99ac586e085581f09c144f7e85790f9368056800cf31f404970b256"
+    },
+    {
+      "path": "bench/out/intel-vulkan-projection/20261011/packed-candidate-build/lib/libwebgpu_doe.so",
+      "sha256": "f7dfa619e93bb20657332969039e3624905cba0a0b88e4fcb0d02866f998fa65"
+    },
+    {
+      "path": "bench/out/intel-vulkan-projection/20261011/packed-candidate-build/bin/doe-emit-spirv",
+      "sha256": "d3a7c5723ad9815c1f2f4e6702b34727e70d00997e66a9176a44f4a4c615c873"
+    },
+    {
+      "path": "bench/out/intel-vulkan-projection/20261011/projection-native-doe",
+      "sha256": "823da9af2ed048fd36eb9f56231251264a744b2a438ea1910749cecdda3c3f92"
+    },
+    {
+      "path": "bench/out/intel-vulkan-projection/20261011/projection-native-final-doe",
+      "sha256": "823da9af2ed048fd36eb9f56231251264a744b2a438ea1910749cecdda3c3f92"
+    },
+    {
+      "path": "bench/out/intel-vulkan-projection/20261011/projection-native-final-dawn",
+      "sha256": "823da9af2ed048fd36eb9f56231251264a744b2a438ea1910749cecdda3c3f92"
+    },
+    {
+      "path": "bench/out/intel-vulkan-projection/20261011/custody-layer/libprojection-custody.so",
+      "sha256": "d4de6760f72e4130306d7b3d441c6680334f39a8e864abf1fd2f3d85621b05d9"
+    },
+    {
+      "path": ".tooling/shader-tools/usr/bin/spirv-val",
+      "sha256": "20c5998a46f02310f56bf11be238c34d374bb50104b7ccf85bb909f9da883ff9"
+    }
+  ],
+  "dawnSourceCommit": "36cf1fae0cd8a81a4fb4580751648b80b2e6255c",
+  "modelGate": {
+    "sourcePath": "/home/clocksmith/deco/doppler/artifacts/w8a8-model-qualification-20261011/README.md",
+    "sha256": "06c19d6605a679c18f2b5c3061ae2ba22fbafa8fc98e2799121babac2b9f8255",
+    "passed": false
+  },
+  "fullGenerationPerformanceClaim": false,
+  "candidateRetained": false
+}

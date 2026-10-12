@@ -3,6 +3,16 @@
 This is the live status front door for the non-TSIR WGSL compiler and WebGPU
 runtime path. Artifacts and executable tests own pass/fail state.
 
+## Intel projection interchange
+
+The [Intel projection checkpoint](../../reports/maintenance/20261011-intel-vulkan-projection/README.md)
+qualifies the frozen projection's exact outputs through ordinary native Node
+providers and direct compiler-product custody through Doe. Dawn recompiles imports
+through Tint; its integer-dot reader leaves one matrix sequence unsupported.
+Portable lowering remains retained after the accelerated candidate failed its
+frozen complete-operation requirement. Arbitrary SPIR-V conformance, a qualified
+W8A8 model and a whole-application advantage remain open. Vulkan stays active.
+
 ## Packed integer correctness
 
 The [packed-integer checkpoint](../../reports/maintenance/20261011-wgsl-packed-integers/README.md)
