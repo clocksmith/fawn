@@ -88,7 +88,8 @@ function instrument() {
 async function open(path, viewport, mobile) {
   await browser?.close();
   browser = await chromium.launch({ channel: 'chrome', headless: true,
-    args: ['--enable-unsafe-webgpu', '--use-angle=vulkan', '--enable-features=Vulkan', '--disable-vulkan-surface'] });
+    args: process.platform === 'darwin' ? ['--enable-unsafe-webgpu', '--use-angle=metal']
+      : ['--enable-unsafe-webgpu', '--use-angle=vulkan', '--enable-features=Vulkan', '--disable-vulkan-surface'] });
   report.browser = browser.version();
   const context = await browser.newContext({ viewport, isMobile: mobile, hasTouch: mobile });
   await context.addInitScript(instrument);
@@ -110,8 +111,27 @@ async function frames(page, count) {
   }, count);
 }
 async function sample(page) {
-  return page.evaluate(() => ({ uniforms: magnetTest.uniforms, adapter: magnetTest.adapter,
-    error: magnetTest.error, callbacks: magnetTest.callbacks.size }));
+  return page.evaluate(async () => {
+    const s = magnetTest;
+    const fields = [];
+    for (const buffer of s.buffers.slice(-2)) {
+      const read = s.device.createBuffer({ size: buffer.size,
+        usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST });
+      const encoder = s.device.createCommandEncoder();
+      encoder.copyBufferToBuffer(buffer, 0, read, 0, buffer.size);
+      s.device.queue.submit([encoder.finish()]);
+      await read.mapAsync(GPUMapMode.READ);
+      const values = new Float32Array(read.getMappedRange());
+      let minHeight = Infinity, maxHeight = -Infinity;
+      for (let i = 0; i < values.length; i += 4) {
+        minHeight = Math.min(minHeight, values[i]); maxHeight = Math.max(maxHeight, values[i]);
+      }
+      fields.push({ finite: values.every(Number.isFinite), minHeight, maxHeight });
+      read.unmap(); read.destroy();
+    }
+    return { uniforms: s.uniforms, adapter: s.adapter, error: s.error,
+      callbacks: s.callbacks.size, fields };
+  });
 }
 async function dispatch(page, type, pointerType, x = .75, y = .3) {
   await page.evaluate(({ type, pointerType, x, y }) => document.querySelector('#view')
@@ -143,8 +163,11 @@ try {
     else { await page.mouse.move(viewport.width * .75, viewport.height * .3); await page.mouse.down(); }
     await frames(page, 1); const first = await sample(page);
     assert.ok(first.uniforms[6] > 0 && first.uniforms[6] < .1, 'first press frame is intermediate');
+    assert.equal(first.uniforms.length, 108, 'All moving sources are submitted in the expanded uniform layout');
+    assert.ok(first.fields.every(field => field.finite && field.minHeight >= -.201 && field.maxHeight <= 1.601));
     assert.ok(first.uniforms[4] > .5 && first.uniforms[4] < .75, 'magnet position interpolates');
     await frames(page, 30); const held = await sample(page); assert.ok(held.uniforms[6] > .99);
+    assert.ok(held.fields.every(field => field.finite && field.minHeight >= -.201 && field.maxHeight <= 1.601));
     if (mobile) await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
     else await page.mouse.up();
     await frames(page, 1); const release = await sample(page);
