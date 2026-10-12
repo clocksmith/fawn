@@ -98,23 +98,7 @@ summary::after { content: ' +'; }
  <div class="toolbar">
   <div class="controls"><button id="pause" disabled>Pause</button><button id="restart" disabled>Reset</button>
    <details class="details"><summary>Settings</summary><div class="details-panel">
-    <p id="adapter">Connecting to your GPU…</p><div class="settings"><label>Formation<select id="formation-select" disabled><option value="free">Free</option><option value="branded" selected>Branded</option></select></label><label>Grid<select id="grid-select" disabled>
-          <option value="192">192 × 192</option>
-          <option value="256">256 × 256</option>
-          <option value="320">320 × 320</option>
-          <option value="384">384 × 384</option>
-          <option value="448">448 × 448</option>
-          <option value="512">512 × 512</option>
-          <option value="640">640 × 640</option>
-          <option value="768">768 × 768</option>
-          <option value="1024" selected>1024 × 1024</option>
-        </select></label><label>Pressure<select id="pressure-select" disabled>
-          <option value="20">20 iters</option>
-          <option value="24" selected>24 iters</option>
-          <option value="32">32 iters</option>
-          <option value="36">36 iters</option>
-          <option value="48">48 iters</option>
-        </select></label></div><p>FPS = completed frames per second.</p>
+    <p id="adapter">Connecting to your GPU…</p><div class="settings"><label>Formation<select id="formation-select" disabled><option value="free">Free</option><option value="branded" selected>Branded</option></select></label><label>Count<select id="count-select" disabled></select></label><label>Steps<select id="steps-select" disabled></select></label></div><p>FPS = completed frames per second.</p>
     <p id="load">Connecting…</p>
    </div></details>
   </div>
@@ -127,7 +111,7 @@ summary::after { content: ' +'; }
 <script>
 const LOGO_FLOW = FawnFormation;
 const WORKGROUP_SIZE = 16;
-const SIM_DENSITY_SCALE = 0.5;
+const PRESSURE_ITERATIONS = 12;
 const PRESS_STRENGTH = 1.4;
 const HOVER_STRENGTH = 0.28;
 const POINTER_RADIUS = 0.10;
@@ -145,6 +129,7 @@ struct Params {
   mouse: vec4<f32>,
   sim: vec4<f32>,
   pointerDelta: vec4<f32>,
+  viewport: vec4<f32>,
 }
 
 fn idx_at(x: i32, y: i32) -> u32 {
@@ -210,16 +195,16 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
   let uv = (vec2<f32>(gid.xy) + 0.5) * u.grid.zw;
   let currentVel = sample_vel(uv);
   let prevUv = clamp(uv - currentVel * u.sim.x, u.grid.zw * 0.5, vec2<f32>(1.0) - u.grid.zw * 0.5);
-  var vel = sample_vel(prevUv) * 0.989;
+  var vel = sample_vel(prevUv) * pow(0.989, u.sim.x * 60.0 / 0.82);
 
   let delta = uv - u.mouse.xy;
   let falloff = pointer_falloff(uv, u.mouse.w);
-  let drag = u.pointerDelta.xy;
+  let drag = u.pointerDelta.xy / u.viewport.z;
   let swirl = vec2<f32>(-delta.y, delta.x);
   // Drag is displacement: consume its impulse once, without another dt factor.
   vel += drag * ${DRAG_GAIN} * falloff;
   vel += (safe_norm(swirl) * ${SWIRL_ACCELERATION} * u.sim.x
-    + safe_norm(delta) * ${PRESS_IMPULSE} * u.pointerDelta.z) * falloff;
+    + safe_norm(delta) * ${PRESS_IMPULSE} * u.pointerDelta.z / u.viewport.z) * falloff;
   if (u.sim.w > 0.0) {
     let guide = logo_at(uv);
     let tangent = vec2<f32>(-guide.y, guide.x);
@@ -403,7 +388,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
   let uv = (vec2<f32>(gid.xy) + 0.5) * u.grid.zw;
   let vel = sample_vel(uv);
   let prevUv = clamp(uv - vel * u.sim.x, u.grid.zw * 0.5, vec2<f32>(1.0) - u.grid.zw * 0.5);
-  var dye = sample_dye(prevUv) * 0.992;
+  var dye = sample_dye(prevUv) * pow(0.992, u.sim.x * 60.0 / 0.82);
 
   let falloff = pointer_falloff(uv, u.mouse.w * 0.85);
   let tint = 0.5 + 0.5 * cos(
@@ -414,8 +399,8 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
       u.sim.y * 0.19 + (uv.x + uv.y) * 5.0
     )
   );
-  dye += tint * falloff * (${DYE_RATE} * u.sim.x + ${PRESS_DYE} * u.pointerDelta.z);
-  dye *= 0.996;
+  dye += tint * falloff * (${DYE_RATE} * u.sim.x + ${PRESS_DYE} * u.pointerDelta.z / u.viewport.z);
+  dye *= pow(0.996, u.sim.x * 60.0 / 0.82);
   if (u.sim.w > 0.0) {
     let x = i32(gid.x); let y = i32(gid.y);
     let neighbors = (dyeSrc[idx_at(x - 1, y)].xyz + dyeSrc[idx_at(x + 1, y)].xyz
@@ -482,7 +467,7 @@ fn vs(@builtin(vertex_index) vertexIndex: u32) -> VSOut {
   let pos = positions[vertexIndex];
   var out: VSOut;
   out.position = vec4<f32>(pos, 0.0, 1.0);
-  out.uv = pos * 0.5 + vec2<f32>(0.5, 0.5);
+  out.uv = pos * 0.5 * u.viewport.xy + vec2<f32>(0.5, 0.5);
   return out;
 }
 
@@ -528,8 +513,9 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
   const loadEl = document.getElementById('load');
   const pauseButton = document.getElementById('pause');
   const failureEl = document.getElementById('failure');
-  const gridSelect = document.getElementById('grid-select');
-  const pressureSelect = document.getElementById('pressure-select');
+  const countSelect = document.getElementById('count-select');
+  const stepsSelect = document.getElementById('steps-select');
+  FawnFormation.configureWorkload(countSelect, stepsSelect, 'flow');
   const restartButton = document.getElementById('restart');
   const formationSelect = document.getElementById('formation-select');
   let logoEnabled = FawnFormation.configure(formationSelect);
@@ -545,8 +531,8 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
   let canvasConfigured = false;
   let format = null;
   let uniformBuffer = null;
-  let currentGrid = parseInt(gridSelect.value, 10);
-  let pressureIterations = parseInt(pressureSelect.value, 10);
+  let particleCount = parseInt(countSelect.value, 10);
+  let stepsPerFrame = parseInt(stepsSelect.value, 10);
   let running = false;
   let failed = false;
   let paused = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -555,7 +541,7 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
   let pausedMs = 0;
   let simulationTime = pausedSince;
   let lastFrameTime = performance.now();
-  const uniformData = new Float32Array(16);
+  const uniformData = new Float32Array(20);
 
   let velocityBuffers = [];
   let dyeBuffers = [];
@@ -579,7 +565,7 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
 
   const pointer = { x: 0.5, y: 0.5, hover: false, down: false,
     dx: 0, dy: 0, press: 0, strokeForce: 0 };
-  const simGrid = () => Math.max(96, Math.floor(currentGrid * SIM_DENSITY_SCALE));
+  const simGrid = () => Math.sqrt(particleCount);
 
   function resizeGraphCanvas() {
     const dpr = window.devicePixelRatio || 1;
@@ -627,8 +613,7 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
   }
 
   function updateLoadLabel() {
-    const effectiveGrid = simGrid();
-    loadEl.textContent = `${currentGrid}² selected · ${effectiveGrid}² sim · ${pressureIterations} pressure iterations`;
+    loadEl.textContent = `${particleCount.toLocaleString()} cells · ${stepsPerFrame} steps`;
   }
 
   function createBuffer(byteLength, usage) {
@@ -815,9 +800,7 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
   }
 
   function updatePointer(event, moving = true) {
-    const rect = canvas.getBoundingClientRect();
-    const nextX = rect.width > 0 ? (event.clientX - rect.left) / rect.width : 0.5;
-    const nextY = rect.height > 0 ? 1.0 - (event.clientY - rect.top) / rect.height : 0.5;
+    const [nextX, nextY] = FawnFormation.screenPoint(event, canvas);
     if (moving && !paused) {
       pointer.dx += nextX - pointer.x;
       pointer.dy += nextY - pointer.y;
@@ -832,6 +815,8 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
     adapter = await requestAdapter();
     if (!adapter) throw new Error('No adapter');
     device = await adapter.requestDevice();
+    FawnFormation.limitCount(countSelect, Math.floor(Math.min(device.limits.maxStorageBufferBindingSize, device.limits.maxBufferSize) / 16));
+    particleCount = Number(countSelect.value);
     const activeDevice = device;
     device.lost.then((info) => {
       if (device !== activeDevice || !running) return;
@@ -844,7 +829,7 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
     format = navigator.gpu.getPreferredCanvasFormat();
 
     uniformBuffer = device.createBuffer({
-      size: 64,
+      size: uniformData.byteLength,
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     });
 
@@ -977,7 +962,7 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
     uniformData[5] = pointer.y;
     uniformData[6] = mouseForce;
     uniformData[7] = mouseForce > HOVER_STRENGTH ? POINTER_RADIUS : HOVER_RADIUS;
-    uniformData[8] = dt * 0.82;
+    uniformData[8] = dt * 0.82 / stepsPerFrame;
     if (!paused) simulationTime = now - pausedMs;
     uniformData[9] = simulationTime * 0.001;
     uniformData[10] = 2.0;
@@ -989,6 +974,7 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
     uniformData[13] = pointer.dy;
     uniformData[14] = pointer.press;
     uniformData[15] = 0.0;
+    uniformData.set([...FawnFormation.viewport(canvas), stepsPerFrame, 0], 16);
     device.queue.writeBuffer(uniformBuffer, 0, uniformData);
     pointer.dx = 0;
     pointer.dy = 0;
@@ -998,35 +984,37 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
     const encoder = device.createCommandEncoder();
     if (!paused) {
       const pass = encoder.beginComputePass();
-      {
-        pass.setPipeline(advectVelPipeline);
-        pass.setBindGroup(0, advectVelBindGroup);
-        pass.dispatchWorkgroups(Math.ceil(effectiveGrid / WORKGROUP_SIZE), Math.ceil(effectiveGrid / WORKGROUP_SIZE));
-      }
-      {
-        pass.setPipeline(divCurlPipeline);
-        pass.setBindGroup(0, divCurlBindGroup);
-        pass.dispatchWorkgroups(Math.ceil(effectiveGrid / WORKGROUP_SIZE), Math.ceil(effectiveGrid / WORKGROUP_SIZE));
-      }
-      let pressureIndex = 0;
-      for (let i = 0; i < pressureIterations; i++) {
-        pass.setPipeline(pressurePipeline);
-        pass.setBindGroup(0, pressureBindGroups[pressureIndex]);
-        pass.dispatchWorkgroups(Math.ceil(effectiveGrid / WORKGROUP_SIZE), Math.ceil(effectiveGrid / WORKGROUP_SIZE));
-        pressureIndex = 1 - pressureIndex;
-      }
-      {
-        pass.setPipeline(projectPipeline);
-        pass.setBindGroup(0, projectBindGroup);
-        pass.dispatchWorkgroups(Math.ceil(effectiveGrid / WORKGROUP_SIZE), Math.ceil(effectiveGrid / WORKGROUP_SIZE));
-      }
-      {
-        pass.setPipeline(advectDyePipeline);
-        pass.setBindGroup(0, advectDyeBindGroups[currentDyeIndex]);
-        pass.dispatchWorkgroups(Math.ceil(effectiveGrid / WORKGROUP_SIZE), Math.ceil(effectiveGrid / WORKGROUP_SIZE));
+      for (let step = 0; step < stepsPerFrame; step++) {
+        {
+          pass.setPipeline(advectVelPipeline);
+          pass.setBindGroup(0, advectVelBindGroup);
+          pass.dispatchWorkgroups(Math.ceil(effectiveGrid / WORKGROUP_SIZE), Math.ceil(effectiveGrid / WORKGROUP_SIZE));
+        }
+        {
+          pass.setPipeline(divCurlPipeline);
+          pass.setBindGroup(0, divCurlBindGroup);
+          pass.dispatchWorkgroups(Math.ceil(effectiveGrid / WORKGROUP_SIZE), Math.ceil(effectiveGrid / WORKGROUP_SIZE));
+        }
+        let pressureIndex = 0;
+        for (let i = 0; i < PRESSURE_ITERATIONS; i++) {
+          pass.setPipeline(pressurePipeline);
+          pass.setBindGroup(0, pressureBindGroups[pressureIndex]);
+          pass.dispatchWorkgroups(Math.ceil(effectiveGrid / WORKGROUP_SIZE), Math.ceil(effectiveGrid / WORKGROUP_SIZE));
+          pressureIndex = 1 - pressureIndex;
+        }
+        {
+          pass.setPipeline(projectPipeline);
+          pass.setBindGroup(0, projectBindGroup);
+          pass.dispatchWorkgroups(Math.ceil(effectiveGrid / WORKGROUP_SIZE), Math.ceil(effectiveGrid / WORKGROUP_SIZE));
+        }
+        {
+          pass.setPipeline(advectDyePipeline);
+          pass.setBindGroup(0, advectDyeBindGroups[currentDyeIndex]);
+          pass.dispatchWorkgroups(Math.ceil(effectiveGrid / WORKGROUP_SIZE), Math.ceil(effectiveGrid / WORKGROUP_SIZE));
+        }
+        currentDyeIndex = 1 - currentDyeIndex;
       }
       pass.end();
-      currentDyeIndex = 1 - currentDyeIndex;
     }
 
     const renderPass = encoder.beginRenderPass({
@@ -1046,12 +1034,12 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
 
   }
 
-  gridSelect.addEventListener('change', () => {
-    currentGrid = parseInt(gridSelect.value, 10);
+  countSelect.addEventListener('change', () => {
+    particleCount = parseInt(countSelect.value, 10);
     rebuildSimulationBuffers();
   });
-  pressureSelect.addEventListener('change', () => {
-    pressureIterations = parseInt(pressureSelect.value, 10);
+  stepsSelect.addEventListener('change', () => {
+    stepsPerFrame = parseInt(stepsSelect.value, 10);
     updateLoadLabel();
   });
   function fail(error) {
@@ -1062,8 +1050,8 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
     raf = 0;
     pauseButton.disabled = true;
     restartButton.disabled = true;
-    gridSelect.disabled = true;
-    pressureSelect.disabled = true;
+    countSelect.disabled = true;
+    stepsSelect.disabled = true;
     formationSelect.disabled = true;
     statusEl.textContent = `Error: ${error.message}`;
     failureEl.textContent = error.message;
@@ -1142,8 +1130,8 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
     new ResizeObserver(resizeCanvas).observe(canvas);
     pauseButton.disabled = false;
     restartButton.disabled = false;
-    gridSelect.disabled = false;
-    pressureSelect.disabled = false;
+    countSelect.disabled = false;
+    stepsSelect.disabled = false;
     formationSelect.disabled = false;
     pauseButton.textContent = paused ? 'Resume' : 'Pause';
     pauseButton.setAttribute('aria-pressed', String(paused));

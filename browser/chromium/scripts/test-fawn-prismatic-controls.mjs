@@ -42,7 +42,7 @@ async function openPage(options = {}) {
     };
     const write = GPUQueue.prototype.writeBuffer;
     GPUQueue.prototype.writeBuffer = function (buffer, offset, data, ...args) {
-      if (data instanceof Float32Array && data.length === 16) {
+      if (data instanceof Float32Array && data.length === 20) {
         window.gpuActivity.simulationTime = data[9];
         window.gpuActivity.pointerRadius = data[7];
         window.gpuActivity.pointerStrength = data[6];
@@ -107,9 +107,9 @@ try {
     assert.ok(panel.x >= 0 && panel.y >= 0);
     assert.ok(panel.x + panel.width <= viewport.width);
     assert.ok(panel.y + panel.height <= viewport.height);
-    await page.locator('#grid-select').selectOption('192');
-    await page.locator('#pressure-select').selectOption('48');
-    assert.match(await page.locator('#load').textContent(), /192² selected · 96² sim · 48/);
+    await page.locator('#count-select').selectOption('16384');
+    await page.locator('#steps-select').selectOption('8');
+    assert.match(await page.locator('#load').textContent(), /16,384 cells · 8 steps/);
     const rebuilt = await settledActivity(page);
     assert.equal(rebuilt.computePasses, frozen.computePasses, 'paused grid rebuild skips simulation');
     assert.equal(rebuilt.simulationTime, frozen.simulationTime, 'paused redraw freezes shader time');

@@ -103,7 +103,7 @@ try {
       await page.screenshot({ path: path.join(output, name) }); row.captures.push(name);
     };
     await page.click('.details > summary');
-    await page.selectOption('#grid-select', '192');
+    await page.selectOption('#count-select', '65536');
     await page.click('.details > summary');
     await frames(page, 1); row.noise = await sample(page); await capture('noise');
     assert.equal(row.noise.strength, 0);

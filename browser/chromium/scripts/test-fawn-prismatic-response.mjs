@@ -35,7 +35,10 @@ const server = http.createServer(async (request, response) => {
 await new Promise(done => server.listen(0, '127.0.0.1', done));
 let browser;
 function instrument() {
-  const s = window.responseTest = { clock: 1000, callbacks: new Map(), id: 0, buffers: [], uniforms: [], errors: [] };
+  const s = window.responseTest = { clock: 1000, callbacks: new Map(), id: 0, buffers: [], uniforms: [], errors: [], pointerEvents: [] };
+  for (const type of ['pointerdown', 'pointermove', 'pointerup', 'pointercancel']) {
+    addEventListener(type, event => s.pointerEvents.push({ type, pointerType: event.pointerType }), true);
+  }
   Object.defineProperty(performance, 'now', { value: () => s.clock });
   requestAnimationFrame = fn => { s.callbacks.set(++s.id, fn); return s.id; };
   cancelAnimationFrame = id => s.callbacks.delete(id);
@@ -99,7 +102,8 @@ async function sample(page, stroke = false) {
       }
       if (stroke) {
         const grid = s.uniforms[0];
-        for (const x of [.53, .56, .59, .62]) {
+        for (const fraction of [.2, .4, .6, .8]) {
+          const x = s.uniforms[4] - s.uniforms[12] * (1 - fraction);
           const i = (Math.floor(.5 * grid) * grid + Math.floor(x * grid)) * 4;
           row.strokeMinSpeed = Math.min(row.strokeMinSpeed, Math.hypot(values[i], values[i + 1]));
         }
@@ -118,9 +122,14 @@ try {
     for (const variant of variants) {
       const { page, context } = await open(variant, viewport, mobile);
       const cdp = await context.newCDPSession(page);
-      const touch = async (type, x = .5) => cdp.send('Input.dispatchTouchEvent', { type,
-        touchPoints: type === 'touchEnd' || type === 'touchCancel' ? []
-          : [{ x: viewport.width * x, y: viewport.height * .5 }] });
+      const touch = async (type, x = .5) => {
+        const expected = { touchStart: 'pointerdown', touchMove: 'pointermove', touchEnd: 'pointerup', touchCancel: 'pointercancel' }[type];
+        const before = await page.evaluate(type => responseTest.pointerEvents.filter(event => event.type === type).length, expected);
+        await cdp.send('Input.dispatchTouchEvent', { type,
+          touchPoints: type === 'touchEnd' || type === 'touchCancel' ? []
+            : [{ x: viewport.width * x, y: viewport.height * .5 }] });
+        await page.waitForFunction(({ type, before }) => responseTest.pointerEvents.filter(event => event.type === type).length > before, { type: expected, before });
+      };
       await frames(page, 1);
       if (mobile) await touch('touchStart');
       else { await page.mouse.move(viewport.width * .5, viewport.height * .5); await page.mouse.down(); }
@@ -128,7 +137,8 @@ try {
       if (mobile) await touch('touchMove', .65);
       else await page.mouse.move(viewport.width * .65, viewport.height * .5);
       await frames(page, 1); const drag = await sample(page, true);
-      assert.ok(Math.abs(drag.uniforms[12] - .15) < 1e-6);
+      const expectedDelta = .15 * (variant === 'candidate' ? viewport.width / Math.max(viewport.width, viewport.height) : 1);
+      assert.ok(Math.abs(drag.uniforms[12] - expectedDelta) < 1e-6);
       await frames(page, 1); const stopped = await sample(page);
       if (mobile) await touch('touchEnd'); else await page.mouse.up();
       await frames(page, 1); const released = await sample(page);

@@ -285,10 +285,13 @@ try {
         const idle = await activity(page);
         assert.equal(idle.submissions, frozen.submissions, 'Paused GPU work stops');
         await page.locator('.details > summary').click();
-        await page.locator(name === 'heavy-particles' ? '#count-select' : '#grid-select')
-          .selectOption(name === 'heavy-particles' ? '32768' : name === 'magnetic-fluids' ? '256' : '192');
-        await page.locator(name === 'prismatic-fluids' ? '#pressure-select' : '#steps-select')
-          .selectOption(name === 'prismatic-fluids' ? '48' : name === 'heavy-particles' ? '8' : '10');
+        if (await page.locator('.settings #count-select').count()) {
+          await page.selectOption('#count-select', name === 'heavy-particles' ? '32768' : '16384');
+          await page.selectOption('#steps-select', '8');
+        } else {
+          await page.selectOption('#grid-select', name === 'magnetic-fluids' ? '256' : '192');
+          await page.selectOption(name === 'prismatic-fluids' ? '#pressure-select' : '#steps-select', name === 'prismatic-fluids' ? '48' : '10');
+        }
         await page.locator('.details > summary').click();
         await page.locator('#restart').click();
         const reset = await settled(page);
