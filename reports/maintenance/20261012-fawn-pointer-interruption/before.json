@@ -1,0 +1,41 @@
+{
+  "passed": false,
+  "classification": "Chrome WebGPU window-blur input event handling; no physical OS-focus or native Doe claim.",
+  "cases": [
+    {
+      "kind": "flow",
+      "gesture": "pointer",
+      "guidanceAfterBlur": 0.03765152022242546,
+      "paused": false,
+      "passed": true
+    },
+    {
+      "kind": "wave",
+      "gesture": "pointer",
+      "guidanceAfterBlur": 0.03619825094938278,
+      "paused": false,
+      "passed": true
+    },
+    {
+      "kind": "particles",
+      "gesture": "pointer",
+      "guidanceAfterBlur": 0,
+      "paused": false
+    }
+  ],
+  "errors": [],
+  "sources": [
+    {
+      "file": "fawn-prismatic-fluids.html",
+      "sha256": "df6f9efe1cb369484261a2df804c2156b00b1849b90be3a338e735e04c2e626c"
+    },
+    {
+      "file": "fawn-magnetic-fluids.html",
+      "sha256": "3fe12cbc53154f8815a41786d47cd5cba1a4d0e4e48d42e2067ae2d4a17b525d"
+    },
+    {
+      "file": "fawn-start.html",
+      "sha256": "30935f6fc1c348156b1dd30369de8c146d0eab9fa0259beac06365fbb0f79e72"
+    }
+  ]
+}

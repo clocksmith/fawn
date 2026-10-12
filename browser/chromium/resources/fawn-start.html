@@ -1001,6 +1001,7 @@ function scenePhase(seconds) {
   canvas.addEventListener('pointercancel', releasePointer);
   canvas.addEventListener('lostpointercapture', releasePointer);
   canvas.addEventListener('blur', releasePointer);
+  addEventListener('blur', releasePointer);
   canvas.addEventListener('keydown', event => {
     const offsets = { ArrowLeft: [-.08, 0], ArrowRight: [.08, 0], ArrowUp: [0, .08], ArrowDown: [0, -.08] };
     if (offsets[event.key]) {
