@@ -605,6 +605,7 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
   async function frame(now) {
     raf = 0;
     if (!running || document.hidden || (paused && !redrawRequested)) return;
+    resizeCanvas();
     const generation = metricGeneration;
     pendingFrames += 1;
     try {

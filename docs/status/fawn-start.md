@@ -1,5 +1,12 @@
 # Fawn hosted demonstrations
 
+[Responsive canvas and material evidence](../../reports/maintenance/20261012-fawn-responsive/README.md)
+reproduces and removes Particles' HTML focus frame, checks backing resolution and
+paused rotation across all hosted pages, and compares brighter Flow pigment on
+identical GPU inputs. Flow uses interpolated relief and mild local contrast;
+its solver and Particles' shaders are unchanged. These are local Chrome artwork
+checks; the live release manifest below remains the publication authority.
+
 Flow and Wave open as Fawn in Branded mode, disperse, and reform at rest.
 Guidance and Wave's highlights blend through accepted state during interaction
 and mode changes. [Fluid-transition evidence](../../reports/maintenance/20261012-fawn-fluid-transitions/README.md)
