@@ -2,6 +2,12 @@
 
 ## Doppler-driven Vulkan engineering
 
+The [benchmark guide](../../bench/README.md#choose-the-benchmark) routes
+application confirmation, independent transfer and focused attribution through
+existing owners. CLI dispatches preserve their frozen policies; available
+profiles do not establish executed or accepted results. The installed generation
+memory policy remains distinct from a new complete-generation latency campaign.
+
 The [AMD projection cost diagnostic](../../reports/maintenance/20261012-amd-projection-cost/README.md)
 preserves the historical executor and adds a separate resident-transfer
 boundary with mandatory status validation, complete-output controls and host/GPU

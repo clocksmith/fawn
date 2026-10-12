@@ -24,6 +24,28 @@ from pathlib import Path
 from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+WORKFLOW_COMMANDS = {
+    "generation": (
+        [sys.executable, "bench/external-projects/doppler-generation/installed-generation.py"],
+        "Prepare, run or verify isolated installed Doppler generation",
+    ),
+    "generation-memory": (
+        [sys.executable, "bench/external-projects/doppler-generation/run-memory-cohort.py"],
+        "Run the existing qualified Node memory cohort; not latency acceptance",
+    ),
+    "onnx-measure": (
+        [sys.executable, "bench/external-projects/onnx-vulkan-campaign/measure.py"],
+        "Measure safety-qualified ONNX application arms under their frozen policy",
+    ),
+    "projection-cost": (
+        [sys.executable, "-m", "bench.executors.projection_cost"],
+        "Attribute the frozen native projection; diagnostic only",
+    ),
+    "compile-compare": (
+        [sys.executable, "bench/native-compare/compare_doe_vs_tint_compilation.py"],
+        "Compare WGSL-to-target compilation through existing compiler tooling",
+    ),
+}
 PROGRAM_COMMANDS = {
     "candidate": (
         [sys.executable, "-m", "bench.runners.run_program_candidate"],
@@ -664,6 +686,13 @@ def main() -> int:
         ),
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
+
+    for name, (_, description) in WORKFLOW_COMMANDS.items():
+        subparsers.add_parser(name, help=description, add_help=False)
+    if argv and argv[0] in WORKFLOW_COMMANDS:
+        command, _ = WORKFLOW_COMMANDS[argv[0]]
+        os.chdir(REPO_ROOT)
+        os.execvpe(command[0], [*command, *argv[1:]], os.environ)
 
     workload_parser = subparsers.add_parser(
         "workload",
