@@ -13,11 +13,12 @@ Pointer interaction suspends guidance, and release resumes settling. Free mode
 removes guidance without replacing the current numerical state. Reset preserves
 the mode and pause preference. Reduced motion starts paused.
 
-`formation.json` binds current source to actual GPU buffer checks and headed
+`formation.json` binds its recorded source to actual GPU buffer checks and headed
 Wave/Particles desktop and emulated-mobile captures. `flow.json` separately
 checks dye formation and disturbance/recovery. `lifecycle.json` checks resize,
 resource failure and canvas/device limits; `controls.json` checks Flow controls.
-These are browser application checks on the reported adapter, not performance
+The toolbar spacing cleanup is checked by `controls.json`; formation shader
+behavior is unchanged by that CSS-only follow-up. These are browser application checks on the reported adapter, not performance
 benchmarks or qualification of a custom Fawn binary. Mobile is browser emulation.
 
 Run `browser/chromium/scripts/test-fawn-formation.mjs` and
