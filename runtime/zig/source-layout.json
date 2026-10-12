@@ -524,7 +524,8 @@
       },
       "generated": {
         "globs": [
-          "src/core/abi/generated/webgpu_upstream.zig"
+          "src/core/abi/generated/webgpu_upstream.zig",
+          "src/compiler/wgsl/emit/spirv/glsl_std450.zig"
         ]
       },
       "package-root": {
@@ -701,6 +702,23 @@
         ],
         "owner": "core/abi",
         "reason": "derive upstream WebGPU types, procedure types, procedure table fields, and loader metadata from the pinned webgpu.h"
+      },
+      "src/compiler/wgsl/emit/spirv/glsl_std450.zig": {
+        "check": [
+          "python3",
+          "tools/generate_glsl_std450.py",
+          "--check"
+        ],
+        "generator": [
+          "python3",
+          "tools/generate_glsl_std450.py"
+        ],
+        "inputs": [
+          "tools/generate_glsl_std450.py",
+          "vendor/spirv-headers/GLSL.std.450.h"
+        ],
+        "owner": "compiler/wgsl",
+        "reason": "derive GLSL extended-instruction names from the authenticated pinned Khronos header"
       }
     },
     "moduleDecisionReviews": {
@@ -1696,9 +1714,9 @@
       },
       "src/compiler/tsir/collective_synthesis.zig": {
         "decision": "Keep",
-        "moduleSha256": "d1e475dacdb0665978dfd1292559bbc8ab42039452d923fa56e0066819e55397",
-        "reason": "Keep: reachable compiler implementation with a distinct named responsibility and no merge, elevation, recomposition, or deletion signal.",
-        "reviewer": "codex-recomposition-review/2026-08-08"
+        "moduleSha256": "9780a70865aee59d16297c280ef1bfcf21f6d186d234059c368132f70533bac0",
+        "reason": "Keep: reviewed 2651f8670 comment-only contract-reference changes; TSIR collective realization and planning ownership are unchanged.",
+        "reviewer": "codex-glsl-mapping/2026-10-12"
       },
       "src/compiler/tsir/digest.zig": {
         "decision": "Keep",
@@ -1858,9 +1876,9 @@
       },
       "src/compiler/tsir/planner.zig": {
         "decision": "Keep",
-        "moduleSha256": "4da8841a68b233f6407865f75d0b12bb9b055d411e205d20173e6988b6944cec",
-        "reason": "Keep: reachable compiler implementation with a distinct named responsibility and no merge, elevation, recomposition, or deletion signal.",
-        "reviewer": "codex-recomposition-review/2026-08-08"
+        "moduleSha256": "fc48dcb98c3c497ff99192581c91ab44b377f67260252a83c716f57759f56f6a",
+        "reason": "Keep: reviewed 2651f8670 comment-only contract-reference changes; TSIR collective realization and planning ownership are unchanged.",
+        "reviewer": "codex-glsl-mapping/2026-10-12"
       },
       "src/compiler/tsir/planner_support.zig": {
         "decision": "Keep",
@@ -2302,9 +2320,9 @@
       },
       "src/compiler/wgsl/emit/spirv/emit_spirv_builtins.zig": {
         "decision": "Keep",
-        "moduleSha256": "4e0e39dc3000555b7468921160d210d8436eebf5f45cc8b4968c0dda01f7714c",
-        "reason": "Keep: packed integer admission and arithmetic stay compiler-owned; shared typed lowering preserves signedness and single evaluation. Source targets share an exact integer reduction, while Vulkan owns GLSL instruction selection.",
-        "reviewer": "codex-packed-integers/2026-10-11"
+        "moduleSha256": "36a749f58b4379104c77deddc60ec678559f3f274d8a6426a89aef1d3f0ea2d8",
+        "reason": "Keep: WGSL signature validation remains frontend-owned; pinned GLSL instruction encoding remains SPIR-V-owned. Runtime operands and argument evaluation are preserved.",
+        "reviewer": "codex-glsl-mapping/2026-10-12"
       },
       "src/compiler/wgsl/emit/spirv/emit_spirv_fn.zig": {
         "decision": "Keep",
@@ -2410,9 +2428,9 @@
       },
       "src/compiler/wgsl/frontend/sema_attrs.zig": {
         "decision": "Keep",
-        "moduleSha256": "42d61272cbb6e28532f18e2191aa6bc1eed0db7e38bd4c6f6d73c9b6a4d198cb",
-        "reason": "Keep: packed integer admission and arithmetic stay compiler-owned; shared typed lowering preserves signedness and single evaluation. Source targets share an exact integer reduction, while Vulkan owns GLSL instruction selection.",
-        "reviewer": "codex-packed-integers/2026-10-11"
+        "moduleSha256": "64b8ad0a572a474b311728cb0ccdf88d628924ee32345ede95c86a26c9c82f9c",
+        "reason": "Keep: frontend validates ldexp overloads and result types; typed IR expresses abstract-integer argument conversion once before backend instruction emission.",
+        "reviewer": "codex-glsl-mapping/2026-10-12"
       },
       "src/compiler/wgsl/frontend/sema_expr.zig": {
         "decision": "Keep",
@@ -2464,9 +2482,9 @@
       },
       "src/compiler/wgsl/ir/ir_builder.zig": {
         "decision": "Keep",
-        "moduleSha256": "633b72a81780f10491c54ac69237a99e313822e6d4fb68d666baa1b45c72e706",
-        "reason": "Keep: packed integer admission and arithmetic stay compiler-owned; shared typed lowering preserves signedness and single evaluation. Source targets share an exact integer reduction, while Vulkan owns GLSL instruction selection.",
-        "reviewer": "codex-packed-integers/2026-10-11"
+        "moduleSha256": "2f5e1cfac1618ab3ef668a3c18d8a2007f6ad0d4d34ebaa78fc24317d25cbc4c",
+        "reason": "Keep: frontend validates ldexp overloads and result types; typed IR expresses abstract-integer argument conversion once before backend instruction emission.",
+        "reviewer": "codex-glsl-mapping/2026-10-12"
       },
       "src/compiler/wgsl/ir/ir_const_eval.zig": {
         "decision": "Keep",

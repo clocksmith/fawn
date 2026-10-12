@@ -1,6 +1,7 @@
 const std = @import("std");
 const ir = @import("../../ir/ir.zig");
 const spirv = @import("spirv_builder.zig");
+const glsl = @import("glsl_std450.zig");
 const emit_spirv_shared = @import("emit_spirv_shared.zig");
 const texture = @import("emit_spirv_texture.zig");
 
@@ -92,34 +93,34 @@ pub fn emit_builtin(self: anytype, call: anytype, result_ty: ir.TypeId) !?u32 {
         return result_id;
     }
     if (std.mem.eql(u8, call.name, "pack2x16float")) {
-        return try emit_glsl_ext_inst_args(self, call, result_ty, 58);
+        return try emit_glsl_ext_inst_args(self, call, result_ty, glsl.PackHalf2x16);
     }
     if (std.mem.eql(u8, call.name, "unpack2x16float")) {
-        return try emit_glsl_ext_inst_args(self, call, result_ty, 62);
+        return try emit_glsl_ext_inst_args(self, call, result_ty, glsl.UnpackHalf2x16);
     }
     if (std.mem.eql(u8, call.name, "pack4x8unorm")) {
-        return try emit_normalized_pack(self, call, result_ty, 55, 255, false);
+        return try emit_normalized_pack(self, call, result_ty, glsl.PackUnorm4x8, 255, false);
     }
     if (std.mem.eql(u8, call.name, "pack4x8snorm")) {
-        return try emit_normalized_pack(self, call, result_ty, 54, 127, true);
+        return try emit_normalized_pack(self, call, result_ty, glsl.PackSnorm4x8, 127, true);
     }
     if (std.mem.eql(u8, call.name, "pack2x16unorm")) {
-        return try emit_normalized_pack(self, call, result_ty, 57, 65535, false);
+        return try emit_normalized_pack(self, call, result_ty, glsl.PackUnorm2x16, 65535, false);
     }
     if (std.mem.eql(u8, call.name, "pack2x16snorm")) {
-        return try emit_normalized_pack(self, call, result_ty, 56, 32767, true);
+        return try emit_normalized_pack(self, call, result_ty, glsl.PackSnorm2x16, 32767, true);
     }
     if (std.mem.eql(u8, call.name, "unpack2x16snorm")) {
-        return try emit_glsl_ext_inst_args(self, call, result_ty, 60);
+        return try emit_glsl_ext_inst_args(self, call, result_ty, glsl.UnpackSnorm2x16);
     }
     if (std.mem.eql(u8, call.name, "unpack2x16unorm")) {
-        return try emit_glsl_ext_inst_args(self, call, result_ty, 61);
+        return try emit_glsl_ext_inst_args(self, call, result_ty, glsl.UnpackUnorm2x16);
     }
     if (std.mem.eql(u8, call.name, "unpack4x8snorm")) {
-        return try emit_glsl_ext_inst_args(self, call, result_ty, 63);
+        return try emit_glsl_ext_inst_args(self, call, result_ty, glsl.UnpackSnorm4x8);
     }
     if (std.mem.eql(u8, call.name, "unpack4x8unorm")) {
-        return try emit_glsl_ext_inst_args(self, call, result_ty, 64);
+        return try emit_glsl_ext_inst_args(self, call, result_ty, glsl.UnpackUnorm4x8);
     }
     if (std.mem.eql(u8, call.name, "subgroupAdd")) {
         return try emit_subgroup_reduce(self, call, result_ty, subgroup_arithmetic_opcode(self.scalar_kind(result_ty), .add) orelse return error.UnsupportedConstruct);
@@ -199,20 +200,20 @@ pub fn emit_builtin(self: anytype, call: anytype, result_ty: ir.TypeId) !?u32 {
             try self.emit_value_expr(self.function.expr_args.items[call.args.start]),
         });
     }
-    // saturate(x) = clamp(x, 0.0, 1.0) via NClamp(x, 0, 1) GLSL.std.450 inst 44
+    // saturate keeps floating-point clamp semantics and operand shape.
     if (std.mem.eql(u8, call.name, "saturate")) {
         if (call.args.len != 1) return error.InvalidIr;
         const result_type = try self.emitter.lower_type(result_ty);
         const result_id = self.emitter.builder.reserve_id();
         const import_id = try self.emitter.builder.glsl450_import_id();
-        const zero = try self.emitter.builder.const_f32_bits(@as(u32, @bitCast(@as(f32, 0.0))));
-        const one = try self.emitter.builder.const_f32_bits(@as(u32, @bitCast(@as(f32, 1.0))));
+        const zero = try emit_float_splat(self, result_ty, 0);
+        const one = try emit_float_splat(self, result_ty, 1);
         var operands = std.ArrayListUnmanaged(u32){};
         defer operands.deinit(self.emitter.alloc);
         try operands.append(self.emitter.alloc, result_type);
         try operands.append(self.emitter.alloc, result_id);
         try operands.append(self.emitter.alloc, import_id);
-        try operands.append(self.emitter.alloc, 44); // NClamp
+        try operands.append(self.emitter.alloc, glsl.FClamp);
         try operands.append(self.emitter.alloc, try self.emit_value_expr(self.function.expr_args.items[call.args.start]));
         try operands.append(self.emitter.alloc, zero);
         try operands.append(self.emitter.alloc, one);
@@ -311,32 +312,32 @@ pub fn emit_builtin(self: anytype, call: anytype, result_ty: ir.TypeId) !?u32 {
     }
 
     if (std.mem.eql(u8, call.name, "length")) {
-        return try emit_glsl_ext_inst_args(self, call, result_ty, 66);
+        return try emit_glsl_ext_inst_args(self, call, result_ty, glsl.Length);
     }
     if (std.mem.eql(u8, call.name, "distance")) {
-        return try emit_glsl_ext_inst_args(self, call, result_ty, 67);
+        return try emit_glsl_ext_inst_args(self, call, result_ty, glsl.Distance);
     }
     if (std.mem.eql(u8, call.name, "cross")) {
-        return try emit_glsl_ext_inst_args(self, call, result_ty, 68);
+        return try emit_glsl_ext_inst_args(self, call, result_ty, glsl.Cross);
     }
     if (std.mem.eql(u8, call.name, "reflect")) {
-        return try emit_glsl_ext_inst_args(self, call, result_ty, 71);
+        return try emit_glsl_ext_inst_args(self, call, result_ty, glsl.Reflect);
     }
     if (std.mem.eql(u8, call.name, "refract")) {
-        return try emit_glsl_ext_inst_args(self, call, result_ty, 72);
+        return try emit_glsl_ext_inst_args(self, call, result_ty, glsl.Refract);
     }
     if (std.mem.eql(u8, call.name, "determinant")) {
-        return try emit_glsl_ext_inst_args(self, call, result_ty, 33);
+        return try emit_glsl_ext_inst_args(self, call, result_ty, glsl.Determinant);
     }
     // GLSL.std.450 FindSMsb / FindUMsb for firstLeadingBit.
     if (std.mem.eql(u8, call.name, "firstLeadingBit")) {
         return try emit_glsl_ext_inst_args(self, call, result_ty, switch (self.scalar_kind(result_ty)) {
-            .signed => 74, // FindSMsb
-            else => 75, // FindUMsb
+            .signed => glsl.FindSMsb,
+            else => glsl.FindUMsb,
         });
     }
     if (std.mem.eql(u8, call.name, "firstTrailingBit")) {
-        return try emit_glsl_ext_inst_args(self, call, result_ty, 73); // FindILsb
+        return try emit_glsl_ext_inst_args(self, call, result_ty, glsl.FindILsb); // FindILsb
     }
     // countLeadingZeros and countTrailingZeros are not direct GLSL.std.450 ops,
     // but WGSL specifies them. For SPIR-V we can approximate using FindUMsb/FindILsb
@@ -373,14 +374,38 @@ fn emit_normalized_pack(self: anytype, call: anytype, result_ty: ir.TypeId, inst
         const lanes = [_]u32{scalar} ** 4;
         constants[index] = try self.emitter.builder.const_composite(result_type, lanes[0..vector.len]);
     }
-    const clamped = try emit_result_inst(self, spirv.Opcode.ExtInst, result_type, &.{ import_id, 43, try self.emit_value_expr(arg), constants[0], constants[1] });
+    const clamped = try emit_result_inst(self, spirv.Opcode.ExtInst, result_type, &.{ import_id, glsl.FClamp, try self.emit_value_expr(arg), constants[0], constants[1] });
     const scaled = try emit_result_inst(self, spirv.Opcode.FMul, result_type, &.{ clamped, constants[2] });
     const biased = try emit_result_inst(self, spirv.Opcode.FAdd, result_type, &.{ scaled, constants[3] });
     // GLSL pack's round-to-even disagrees with WGSL's floor(0.5 + x) at
     // halfway values. Prequantization removes that tie before native packing.
-    const rounded = try emit_result_inst(self, spirv.Opcode.ExtInst, result_type, &.{ import_id, 8, biased });
+    const rounded = try emit_result_inst(self, spirv.Opcode.ExtInst, result_type, &.{ import_id, glsl.Floor, biased });
     const normalized = try emit_result_inst(self, spirv.Opcode.FDiv, result_type, &.{ rounded, constants[2] });
     return emit_result_inst(self, spirv.Opcode.ExtInst, try self.emitter.lower_type(result_ty), &.{ import_id, instruction, normalized });
+}
+
+fn emit_float_splat(self: anytype, ty: ir.TypeId, value: f32) !u32 {
+    const type_info = self.emitter.module.types.get(ty);
+    const element = switch (type_info) {
+        .vector => |vector| vector.elem,
+        .scalar => ty,
+        else => return error.InvalidIr,
+    };
+    const scalar = switch (self.emitter.module.types.get(element)) {
+        .scalar => |kind| switch (kind) {
+            .f16 => try self.emitter.builder.const_f16_bits(@bitCast(@as(f16, @floatCast(value)))),
+            .f32, .abstract_float => try self.emitter.builder.const_f32_bits(@bitCast(value)),
+            else => return error.InvalidIr,
+        },
+        else => return error.InvalidIr,
+    };
+    return switch (type_info) {
+        .vector => |vector| blk: {
+            const lanes = [_]u32{scalar} ** 4;
+            break :blk try self.emitter.builder.const_composite(try self.emitter.lower_type(ty), lanes[0..vector.len]);
+        },
+        else => scalar,
+    };
 }
 
 fn emit_glsl_ext_inst_args(self: anytype, call: anytype, result_ty: ir.TypeId, inst: u32) !u32 {
@@ -538,57 +563,57 @@ fn derivative_requires_control(opcode: u16) bool {
 }
 
 fn builtin_inst_1(name: []const u8, kind: anytype) ?u32 {
-    if (std.mem.eql(u8, name, "sin")) return 13;
-    if (std.mem.eql(u8, name, "fract")) return 10;
-    if (std.mem.eql(u8, name, "cos")) return 14;
-    if (std.mem.eql(u8, name, "exp")) return 27;
-    if (std.mem.eql(u8, name, "log")) return 28;
-    if (std.mem.eql(u8, name, "exp2")) return 29;
-    if (std.mem.eql(u8, name, "log2")) return 30;
-    if (std.mem.eql(u8, name, "sqrt")) return 31;
-    if (std.mem.eql(u8, name, "inverseSqrt")) return 32;
-    if (std.mem.eql(u8, name, "floor")) return 8;
-    if (std.mem.eql(u8, name, "ceil")) return 9;
-    if (std.mem.eql(u8, name, "round")) return 1;
-    if (std.mem.eql(u8, name, "trunc")) return 3;
-    if (std.mem.eql(u8, name, "tanh")) return 21;
-    if (std.mem.eql(u8, name, "normalize")) return 69;
-    if (std.mem.eql(u8, name, "degrees")) return 11;
-    if (std.mem.eql(u8, name, "radians")) return 12;
-    if (std.mem.eql(u8, name, "tan")) return 15;
-    if (std.mem.eql(u8, name, "asin")) return 16;
-    if (std.mem.eql(u8, name, "acos")) return 17;
-    if (std.mem.eql(u8, name, "atan")) return 18;
-    if (std.mem.eql(u8, name, "sinh")) return 19;
-    if (std.mem.eql(u8, name, "cosh")) return 20;
+    if (std.mem.eql(u8, name, "sin")) return glsl.Sin;
+    if (std.mem.eql(u8, name, "fract")) return glsl.Fract;
+    if (std.mem.eql(u8, name, "cos")) return glsl.Cos;
+    if (std.mem.eql(u8, name, "exp")) return glsl.Exp;
+    if (std.mem.eql(u8, name, "log")) return glsl.Log;
+    if (std.mem.eql(u8, name, "exp2")) return glsl.Exp2;
+    if (std.mem.eql(u8, name, "log2")) return glsl.Log2;
+    if (std.mem.eql(u8, name, "sqrt")) return glsl.Sqrt;
+    if (std.mem.eql(u8, name, "inverseSqrt")) return glsl.InverseSqrt;
+    if (std.mem.eql(u8, name, "floor")) return glsl.Floor;
+    if (std.mem.eql(u8, name, "ceil")) return glsl.Ceil;
+    if (std.mem.eql(u8, name, "round")) return glsl.Round;
+    if (std.mem.eql(u8, name, "trunc")) return glsl.Trunc;
+    if (std.mem.eql(u8, name, "tanh")) return glsl.Tanh;
+    if (std.mem.eql(u8, name, "normalize")) return glsl.Normalize;
+    if (std.mem.eql(u8, name, "degrees")) return glsl.Degrees;
+    if (std.mem.eql(u8, name, "radians")) return glsl.Radians;
+    if (std.mem.eql(u8, name, "tan")) return glsl.Tan;
+    if (std.mem.eql(u8, name, "asin")) return glsl.Asin;
+    if (std.mem.eql(u8, name, "acos")) return glsl.Acos;
+    if (std.mem.eql(u8, name, "atan")) return glsl.Atan;
+    if (std.mem.eql(u8, name, "sinh")) return glsl.Sinh;
+    if (std.mem.eql(u8, name, "cosh")) return glsl.Cosh;
     if (std.mem.eql(u8, name, "sign")) return switch (kind) {
-        .float => 6,
-        .signed => 7,
+        .float => glsl.FSign,
+        .signed => glsl.SSign,
         else => null,
     };
     if (std.mem.eql(u8, name, "abs")) return switch (kind) {
-        .float => 4,
-        .signed => 5,
+        .float => glsl.FAbs,
+        .signed => glsl.SAbs,
         else => null,
     };
     return null;
 }
 
 fn builtin_inst_2(name: []const u8, kind: anytype) ?u32 {
-    if (std.mem.eql(u8, name, "pow")) return 26;
-    if (std.mem.eql(u8, name, "step")) return 48;
-    if (std.mem.eql(u8, name, "atan2")) return 25;
-    if (std.mem.eql(u8, name, "ldexp")) return 71;
+    if (std.mem.eql(u8, name, "pow")) return glsl.Pow;
+    if (std.mem.eql(u8, name, "step")) return glsl.Step;
+    if (std.mem.eql(u8, name, "atan2")) return glsl.Atan2;
+    if (std.mem.eql(u8, name, "ldexp")) return glsl.Ldexp;
     if (std.mem.eql(u8, name, "min")) return switch (kind) {
-        .float => 37,
-        .unsigned => 38,
-        .signed => 39,
+        .float => glsl.FMin,
+        .unsigned => glsl.UMin,
+        .signed => glsl.SMin,
         else => null,
     };
     if (std.mem.eql(u8, name, "max")) return switch (kind) {
-        .float => 40,
-        .unsigned => 41,
-        .signed => 42,
+        .float => glsl.FMax,
+        .unsigned => glsl.UMax,
+        .signed => glsl.SMax,
         else => null,
     };
     return null;
@@ -596,14 +621,14 @@ fn builtin_inst_2(name: []const u8, kind: anytype) ?u32 {
 
 fn builtin_inst_3(name: []const u8, kind: anytype) ?u32 {
     if (std.mem.eql(u8, name, "clamp")) return switch (kind) {
-        .float => 43,
-        .unsigned => 44,
-        .signed => 45,
+        .float => glsl.FClamp,
+        .unsigned => glsl.UClamp,
+        .signed => glsl.SClamp,
         else => null,
     };
-    if (std.mem.eql(u8, name, "mix")) return 46;
-    if (std.mem.eql(u8, name, "smoothstep")) return 49;
-    if (std.mem.eql(u8, name, "fma")) return 50;
+    if (std.mem.eql(u8, name, "mix")) return glsl.FMix;
+    if (std.mem.eql(u8, name, "smoothstep")) return glsl.SmoothStep;
+    if (std.mem.eql(u8, name, "fma")) return glsl.Fma;
     return null;
 }
 
@@ -826,7 +851,7 @@ fn emit_count_leading_zeros(self: anytype, call: anytype, result_ty: ir.TypeId) 
         try ops.append(self.emitter.alloc, result_type);
         try ops.append(self.emitter.alloc, msb_id);
         try ops.append(self.emitter.alloc, import_id);
-        try ops.append(self.emitter.alloc, 75); // FindUMsb
+        try ops.append(self.emitter.alloc, glsl.FindUMsb);
         try ops.append(self.emitter.alloc, val_id);
         try self.emitter.builder.append_function_inst(spirv.Opcode.ExtInst, ops.items);
     }
@@ -860,7 +885,7 @@ fn emit_count_trailing_zeros(self: anytype, call: anytype, result_ty: ir.TypeId)
         try ops.append(self.emitter.alloc, result_type);
         try ops.append(self.emitter.alloc, lsb_id);
         try ops.append(self.emitter.alloc, import_id);
-        try ops.append(self.emitter.alloc, 73); // FindILsb
+        try ops.append(self.emitter.alloc, glsl.FindILsb);
         try ops.append(self.emitter.alloc, val_id);
         try self.emitter.builder.append_function_inst(spirv.Opcode.ExtInst, ops.items);
     }

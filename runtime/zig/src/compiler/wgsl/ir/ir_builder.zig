@@ -457,6 +457,22 @@ const FunctionBuilder = struct {
             }
         }
         if (!is_constructor and kind == .builtin) {
+            if (std.mem.eql(u8, name, "ldexp") and args.items.len == 2) {
+                const source_ty = self.function.exprs.items[args.items[0]].ty;
+                const element = switch (self.semantic.types.get(source_ty)) {
+                    .vector => |vector| vector.elem,
+                    else => source_ty,
+                };
+                if (element == self.semantic.abstract_int_type) {
+                    const target_ty = self.semantic.nodeType(node_idx);
+                    const conversion_args = try self.function.append_expr_args(self.allocator, args.items[0..1]);
+                    args.items[0] = try self.function.append_expr(self.allocator, .{
+                        .ty = target_ty,
+                        .category = .value,
+                        .data = .{ .construct = .{ .ty = target_ty, .args = conversion_args } },
+                    });
+                }
+            }
             if (packed_integer.lookup(name)) |op| {
                 if (!op.isPack()) for (args.items, 0..) |*arg, index| {
                     if (self.function.exprs.items[arg.*].ty != self.semantic.abstract_int_type) continue;

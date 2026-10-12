@@ -3,6 +3,14 @@
 This is the live status front door for the non-TSIR WGSL compiler and WebGPU
 runtime path. Artifacts and executable tests own pass/fail state.
 
+## GLSL instruction mappings
+
+The [mapping repair](../../reports/maintenance/20261012-glsl-instruction-mappings/README.md)
+passes compiler/runtime suites and SPIR-V validation. It corrects `ldexp`, angular
+conversions and floating saturation using pinned Khronos definitions. Physical
+AMD readback remains blocked on a reserved GPU window; no performance advantage
+or broader WGSL conformance is established by these checks.
+
 ## Intel projection interchange
 
 The [Intel projection checkpoint](../../reports/maintenance/20261011-intel-vulkan-projection/README.md)

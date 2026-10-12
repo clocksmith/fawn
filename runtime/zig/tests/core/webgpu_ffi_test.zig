@@ -444,7 +444,8 @@ test "constant values: WGPUShaderStage flags" {
 test "constant values: WGPUSType shader source constants" {
     try std.testing.expectEqual(@as(u32, 0x00000002), types.WGPUSType_ShaderSourceWGSL);
     try std.testing.expectEqual(@as(u32, 0x00000003), types.WGPUSType_ShaderSourceMSL);
-    try std.testing.expectEqual(@as(u32, 0x00000004), types.WGPUSType_ShaderSourceSPIRV);
+    // Pinned vendor/webgpu-headers/webgpu.h; SPIR-V uses upstream sType 1.
+    try std.testing.expectEqual(@as(u32, 0x00000001), types.WGPUSType_ShaderSourceSPIRV);
     try std.testing.expectEqual(@as(u32, 0x00000005), types.WGPUSType_ShaderSourceHLSL);
     try std.testing.expectEqual(@as(u32, 0x00050002), types.WGPUSType_ExternalTextureBindingLayout);
     try std.testing.expectEqual(@as(u32, 0x00050001), types.WGPUSType_ExternalTextureBindingEntry);
