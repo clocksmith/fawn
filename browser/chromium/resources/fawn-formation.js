@@ -1,7 +1,42 @@
 (function attachFawnFormation(root) {
   'use strict';
-  const POLICY = Object.freeze({ version: 1, delayS: 0.8, settleS: 7, size: 0.76,
+  const POLICY = Object.freeze({ version: 2, delayS: 0.8, settleS: 7, size: 0.76,
     noiseSeed: 7319, dyeRate: 1.6, diffusionRate: 5, force: 0.7, warp: 0.05 });
+
+  const WORKLOAD = Object.freeze({ version: 1, counts: [1024, 4096, 16384, 65536, 262144, 1048576, 4194304, 16777216],
+    steps: [1, 2, 4, 8], defaultCount: 65536, defaultSteps: 4,
+    defaultCounts: Object.freeze({ flow: 65536, wave: 65536, particles: 4096 }) });
+
+  function configureWorkload(count, steps, kind) {
+    if (!(kind in WORKLOAD.defaultCounts)) throw Error(`Unknown Fawn workload: ${kind}`);
+    count.replaceChildren(...WORKLOAD.counts.map(value => new Option(value.toLocaleString(), String(value))));
+    steps.replaceChildren(...WORKLOAD.steps.map(value => new Option(String(value), String(value))));
+    count.value = String(WORKLOAD.defaultCounts[kind]); steps.value = String(WORKLOAD.defaultSteps);
+  }
+
+  function limitCount(select, maximum) {
+    for (const option of select.options) {
+      option.disabled = Number(option.value) > maximum;
+      if (option.disabled) option.textContent += ' (GPU limit)';
+    }
+    if (Number(select.value) > maximum) {
+      const available = [...select.options].filter(option => !option.disabled);
+      if (!available.length) throw Error('GPU storage limit cannot support this workload');
+      select.value = available.at(-1).value;
+    }
+  }
+
+  // Cover a square world: crop extra space instead of stretching its axes.
+  function viewport(canvas) {
+    const side = Math.max(canvas.clientWidth, canvas.clientHeight, 1);
+    return [canvas.clientWidth / side, canvas.clientHeight / side];
+  }
+
+  function screenPoint(event, canvas) {
+    const rect = canvas.getBoundingClientRect(), side = Math.max(rect.width, rect.height, 1);
+    return [0.5 + (event.clientX - rect.left - rect.width / 2) / side,
+      0.5 - (event.clientY - rect.top - rect.height / 2) / side];
+  }
 
   function configure(select) {
     const key = 'fawn.formation';
@@ -56,8 +91,9 @@
     const box = logo.viewBox.baseVal;
     const scale = POLICY.size * Math.min(canvas.clientWidth / box.width,
       canvas.clientHeight / box.height);
-    const width = box.width * scale / canvas.clientWidth * grid;
-    const height = box.height * scale / canvas.clientHeight * grid;
+    const side = Math.max(canvas.clientWidth, canvas.clientHeight, 1);
+    const width = box.width * scale / side * grid;
+    const height = box.height * scale / side * grid;
     ctx.translate((grid - width) / 2, (grid - height) / 2);
     ctx.scale(width / box.width, height / box.height); ctx.translate(-box.x, -box.y);
     ctx.fillStyle = '#fff';
@@ -96,12 +132,12 @@
     return { dye, velocity };
   }
 
-  // A bounded point cloud reuses the same aspect-correct silhouette for particle targets.
+  // Each particle target stores square-world XY, inward distance, and one reserved float.
   function points(grid, canvas, logo) {
     const raster = field(grid, canvas, logo), result = [];
     for (let i = 0; i < grid * grid; i++) if (raster[i * 4 + 2] > 0.5) {
       result.push(((i % grid) + 0.5) / grid * 2 - 1,
-        (Math.floor(i / grid) + 0.5) / grid * 2 - 1);
+        (Math.floor(i / grid) + 0.5) / grid * 2 - 1, Math.max(0, raster[i * 4 + 3]) * 2, 0);
     }
     if (!result.length) throw Error('Fawn formation requires visible logo geometry');
     return new Float32Array(result);
@@ -126,5 +162,5 @@ fn logo_target(uv: vec2<f32>) -> vec3<f32> {
   return palette * shape * band;
 }
 `;
-  root.FawnFormation = Object.freeze({ POLICY, configure, strength, field, points, seed, WGSL });
+  root.FawnFormation = Object.freeze({ POLICY, WORKLOAD, configureWorkload, limitCount, viewport, screenPoint, configure, strength, field, points, seed, WGSL });
 })(globalThis);

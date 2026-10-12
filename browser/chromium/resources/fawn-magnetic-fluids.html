@@ -98,22 +98,7 @@ summary::after { content: ' +'; }
  <div class="toolbar">
   <div class="controls"><button id="pause" disabled>Pause</button><button id="restart" disabled>Reset</button>
    <details class="details"><summary>Settings</summary><div class="details-panel">
-    <p id="adapter">Connecting to your GPU…</p><div class="settings"><label>Formation<select id="formation-select" disabled><option value="free">Free</option><option value="branded" selected>Branded</option></select></label><label>Grid<select id="grid-select" disabled>
-          <option value="256">256 × 256</option>
-          <option value="320">320 × 320</option>
-          <option value="384">384 × 384</option>
-          <option value="448">448 × 448</option>
-          <option value="512">512 × 512</option>
-          <option value="640">640 × 640</option>
-          <option value="768">768 × 768</option>
-          <option value="1024" selected>1024 × 1024</option>
-        </select></label><label>Substeps / frame<select id="steps-select" disabled>
-          <option value="2">2</option>
-          <option value="4">4</option>
-          <option value="6" selected>6</option>
-          <option value="8">8</option>
-          <option value="10">10</option>
-        </select></label></div><p>Moving wells and pulses drive this stylized surface. FPS = completed frames per second.</p>
+    <p id="adapter">Connecting to your GPU…</p><div class="settings"><label>Formation<select id="formation-select" disabled><option value="free">Free</option><option value="branded" selected>Branded</option></select></label><label>Count<select id="count-select" disabled></select></label><label>Steps<select id="steps-select" disabled></select></label></div><p>Moving wells and pulses drive this stylized surface. FPS = completed frames per second.</p>
     <p id="load">Connecting…</p>
    </div></details>
   </div>
@@ -128,6 +113,7 @@ const WORKGROUP_SIZE = 16;
 const MAGNET_RESPONSE = 18;
 const HOVER_STRENGTH = 0.55;
 const WAVE_ACTIVITY = 3;
+const WAVE_RELAXATION_RATE = 12;
 const LOGO_RELIEF = Object.freeze({ height: 0.42, amplitude: 0.035, frequency: 90, drift: 0.3 });
 const MAGNET_COUNT = 5 * WAVE_ACTIVITY;
 const BUBBLE_COUNT = 3 * WAVE_ACTIVITY;
@@ -248,7 +234,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
 
   var nextV = v + (lap * 0.30 + (targetHeight - h) * 0.74 + bubbles * 0.16 * (1.0 - u.sim.w) - v * 0.16) * u.sim.x * 60.0;
   var nextH = h + nextV * u.sim.x * 2.1;
-  nextH = mix(nextH, targetHeight, 0.035);
+  nextH = mix(nextH, targetHeight, 1.0 - exp(-${WAVE_RELAXATION_RATE}.0 * u.sim.x));
   nextH = clamp(nextH, -0.2, 1.6);
   dst[i] = vec4<f32>(nextH, nextV, mix(max(spikes, bubbles), relief, u.sim.w), mix(field + bubbles * 3.0, relief * 3.0, u.sim.w));
 }
@@ -302,7 +288,7 @@ fn vs(@builtin(vertex_index) vertexIndex: u32) -> VSOut {
   let pos = positions[vertexIndex];
   var out: VSOut;
   out.position = vec4<f32>(pos, 0.0, 1.0);
-  out.uv = pos * 0.5 + vec2<f32>(0.5, 0.5);
+  out.uv = pos * 0.5 * vec2<f32>(min(1.0, u.sim.z), min(1.0, 1.0 / u.sim.z)) + vec2<f32>(0.5, 0.5);
   return out;
 }
 
@@ -343,8 +329,9 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
   const loadEl = document.getElementById('load');
   const formationSelect = document.getElementById('formation-select');
   let logoEnabled = FawnFormation.configure(formationSelect), settlingAgeS = 0, logoBuffer = null;
-  const gridSelect = document.getElementById('grid-select');
+  const countSelect = document.getElementById('count-select');
   const stepsSelect = document.getElementById('steps-select');
+  FawnFormation.configureWorkload(countSelect, stepsSelect, 'wave');
   const restartButton = document.getElementById('restart');
   const pauseButton = document.getElementById('pause');
   const canvas = document.getElementById('view');
@@ -359,7 +346,8 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
   let uniformBuffer = null;
   let computePipeline = null;
   let renderPipeline = null;
-  let currentGrid = parseInt(gridSelect.value, 10);
+  let particleCount = parseInt(countSelect.value, 10);
+  let currentGrid = Math.sqrt(particleCount);
   let substeps = parseInt(stepsSelect.value, 10);
   let stateBuffers = [];
   let bindGroups = [];
@@ -424,8 +412,7 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
   }
 
   function updateLoadLabel() {
-    const cells = currentGrid * currentGrid;
-    loadEl.textContent = `${currentGrid}² cells · ${substeps} substeps/frame · ${(cells * substeps).toLocaleString()} surface updates/frame`;
+    loadEl.textContent = `${particleCount.toLocaleString()} cells · ${substeps} steps`;
   }
 
   function resizeCanvas() {
@@ -507,9 +494,7 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
   }
 
   function updatePointer(event) {
-    const rect = canvas.getBoundingClientRect();
-    pointer.x = rect.width > 0 ? (event.clientX - rect.left) / rect.width : 0.5;
-    pointer.y = rect.height > 0 ? 1.0 - (event.clientY - rect.top) / rect.height : 0.5;
+    [pointer.x, pointer.y] = FawnFormation.screenPoint(event, canvas);
   }
 
   async function init() {
@@ -517,6 +502,8 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
     adapter = await navigator.gpu.requestAdapter({ powerPreference: 'high-performance' });
     if (!adapter) throw new Error('No adapter');
     device = await adapter.requestDevice();
+    FawnFormation.limitCount(countSelect, Math.floor(Math.min(device.limits.maxStorageBufferBindingSize, device.limits.maxBufferSize) / 16));
+    particleCount = Number(countSelect.value); currentGrid = Math.sqrt(particleCount);
     device.lost.then(info => {
       if (!running) return;
       fail(new Error(`WebGPU device lost: ${info.message || info.reason}`));
@@ -643,9 +630,9 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
     uniformData[5] = magnet.y;
     uniformData[6] = magnet.strength;
     uniformData[7] = 0;
-    uniformData[8] = dt * 1.1;
+    uniformData[8] = dt * 1.1 / substeps;
     uniformData[9] = simulationTime * 0.001;
-    uniformData[10] = 0;
+    uniformData[10] = canvas.clientWidth / canvas.clientHeight;
     if (!paused) settlingAgeS = pointer.down ? 0 : settlingAgeS + dt;
     uniformData[11] = FawnFormation.strength(settlingAgeS, logoEnabled);
     updateWaveSources(uniformData, uniformData[9]);
@@ -714,8 +701,8 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
     logoEnabled = formationSelect.value === 'branded'; settlingAgeS = 0;
     redrawRequested = true; schedule();
   });
-  gridSelect.addEventListener('change', () => {
-    currentGrid = parseInt(gridSelect.value, 10);
+  countSelect.addEventListener('change', () => {
+    particleCount = Number(countSelect.value); currentGrid = Math.sqrt(particleCount);
     rebuildBuffers();
   });
   stepsSelect.addEventListener('change', () => {

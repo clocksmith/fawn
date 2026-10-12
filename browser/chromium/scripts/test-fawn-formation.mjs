@@ -10,6 +10,7 @@ const output = path.resolve(process.env.FAWN_REPORT_DIR || 'bench/out/fawn-forma
 await mkdir(output, { recursive: true });
 const files = ['fawn-start.html', 'fawn-magnetic-fluids.html', 'fawn-prismatic-fluids.html', 'fawn-formation.js'];
 const report = { passed: false, classification: 'Browser WebGPU artwork; desktop and emulated mobile. No native Doe or physical fluid qualification.',
+  metrics: { wave: 'IoU of height above 0.2 against logo coverage above 0.5', particles: 'Fraction of positions inside logo coverage above 0.5' },
   sourceFiles: await Promise.all(files.map(async file => ({ file, sha256: createHash('sha256').update(await readFile(new URL(file, resources))).digest('hex') }))), cases: [], errors: [] };
 const server = http.createServer(async (request, response) => {
   const pathname = new URL(request.url, 'http://localhost').pathname;
@@ -74,14 +75,16 @@ async function state(page, kind) {
     let covered = 0, error = 0, sum = 0, square = 0;
     if (kind === 'wave') {
       const field = await read(live.find(b => b.label === 'Fawn target field').buffer);
+      let intersection = 0, union = 0;
       for (let i = 0; i < values.length; i += 4) {
         const expected = field[i + 2] > 0.5, present = values[i] > 0.2;
-        if (expected === present) covered++;
+        if (expected && present) intersection++;
+        if (expected || present) union++;
         error += Math.abs(values[i] - (expected ? 0.42 : 0));
       }
-      covered /= values.length / 4; error /= values.length / 4;
+      covered = intersection / Math.max(union, 1); error /= values.length / 4;
     } else {
-      const grid = 192, field = FawnFormation.field(grid, document.querySelector('#view'), document.querySelector('.brand-logo'));
+      const grid = 384, field = FawnFormation.field(grid, document.querySelector('#view'), document.querySelector('.brand-logo'));
       for (let i = 0; i < values.length; i += 8) {
         const x = Math.max(0, Math.min(grid - 1, Math.floor((values[i] + 1) * 0.5 * grid)));
         const y = Math.max(0, Math.min(grid - 1, Math.floor((values[i + 1] + 1) * 0.5 * grid)));
@@ -112,12 +115,17 @@ try {
     await page.goto(origin + (kind === 'wave' ? '/fawn-magnetic-fluids.html' : '/fawn-start.html'));
     await page.waitForFunction(() => !document.querySelector('#formation-select').disabled);
     await page.locator('.details').evaluate(el => { el.open = true; });
-    await page.selectOption(kind === 'wave' ? '#grid-select' : '#count-select', kind === 'wave' ? '256' : '32768');
+    await page.selectOption('#count-select', kind === 'wave' ? '65536' : '4096');
     await page.locator('.details').evaluate(el => { el.open = false; });
     const row = { kind, viewport }; report.cases.push(row);
     const capture = phase => page.screenshot({ path: path.join(output, `${kind}-${viewport.width}-${phase}.png`) });
     row.initial = await state(page, kind); await capture('initial');
     await settle(page, kind); row.formed = await state(page, kind); await capture('formed');
+    if (kind === 'particles') {
+      await page.waitForTimeout(350); row.wandering = await state(page, kind);
+      assert.notEqual(row.wandering.sum, row.formed.sum, 'Settled particles keep moving');
+      assert.ok(row.wandering.finite && row.wandering.covered > 0.90);
+    }
     assert.ok(row.formed.finite && row.formed.covered > 0.90, JSON.stringify(row.formed));
     assert.ok(row.formed.covered > row.initial.covered + (kind === 'wave' ? 0.10 : 0.5));
     await page.mouse.move(viewport.width * 0.40, viewport.height * 0.52); await page.mouse.down();
