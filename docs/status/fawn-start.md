@@ -41,6 +41,10 @@ navigates to that separate implementation. Escape restores focus and outside
 interaction closes the disclosure.
 Flow uses a narrower hover radius than its pressed-pointer radius, declared by
 `HOVER_RADIUS` and `POINTER_RADIUS` in the prismatic-fluid source.
+Wave's moving fields and bubbles use the `WAVE_ACTIVITY` configuration in its
+source, with source positions prepared once per frame for the surface shader.
+Particles use bounded alpha compositing and edge-faded trail history to prevent
+bright rims around dense clouds and the viewport.
 
 The benchmark pages align Particle Trails, Magnetic
 Fluids, Prismatic Fluids, and Image Lab with the main page's fullscreen canvas,

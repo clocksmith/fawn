@@ -218,6 +218,13 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>, @builtin(num_workgroups) 
 }
 `;
 
+const PARTICLE_BLEND = Object.freeze({
+  color: { srcFactor: 'one', dstFactor: 'one-minus-src-alpha', operation: 'add' },
+  alpha: { srcFactor: 'one', dstFactor: 'one-minus-src-alpha', operation: 'add' },
+});
+const PARTICLE_EDGE_FADE_START = 0.82;
+const PARTICLE_EDGE_FADE_END = 0.96;
+
 const PARTICLE_WGSL = `
 struct Params {
   dt: f32,
@@ -239,6 +246,7 @@ struct VSOut {
   @location(0) local: vec2<f32>,
   @location(1) color: vec3<f32>,
   @location(2) energy: f32,
+  @location(3) visibility: f32,
 }
 
 @group(0) @binding(0) var<uniform> u: Params;
@@ -262,19 +270,21 @@ fn vs(@builtin(vertex_index) vertexIndex: u32, @builtin(instance_index) instance
   out.local = local;
   out.color = p.color.xyz;
   out.energy = clamp(length(p.vel) * 0.85, 0.0, 1.0);
+  out.visibility = 1.0 - smoothstep(${PARTICLE_EDGE_FADE_START}, ${PARTICLE_EDGE_FADE_END},
+    max(abs(p.pos.x), abs(p.pos.y)));
   return out;
 }
 
 @fragment
 fn fs(in: VSOut) -> @location(0) vec4<f32> {
   let d = length(in.local);
-  if (d > 1.0) {
+  if (d > 1.0 || in.visibility <= 0.0) {
     discard;
   }
   let core = smoothstep(1.0, 0.0, d);
   let halo = pow(max(0.0, 1.0 - d), 3.0);
-  let color = mix(in.color * 0.55, vec3<f32>(0.98, 0.97, 0.86), in.energy * 0.35);
-  let alpha = core * 0.06 + halo * (0.18 + in.energy * 0.08);
+  let color = in.color * 0.55;
+  let alpha = (core * 0.06 + halo * (0.18 + in.energy * 0.08)) * in.visibility;
   return vec4<f32>(color * alpha, alpha);
 }
 `;
@@ -308,7 +318,9 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
   let uv = in.uv * 2.0 - 1.0;
   let vignette = 1.0 - smoothstep(0.15, 1.2, length(uv));
   let background = vec3<f32>(0.010, 0.016, 0.013) + vignette * vec3<f32>(0.008, 0.020, 0.012);
-  let faded = prev.rgb * 0.972;
+  let edgeVisibility = 1.0 - smoothstep(${PARTICLE_EDGE_FADE_START}, ${PARTICLE_EDGE_FADE_END},
+    max(abs(uv.x), abs(uv.y)));
+  let faded = prev.rgb * (0.972 * edgeVisibility);
   return vec4<f32>(max(faded, background), 1.0);
 }
 `;
@@ -693,10 +705,7 @@ function scenePhase(seconds) {
         entryPoint: 'fs',
         targets: [{
           format,
-          blend: {
-            color: { srcFactor: 'one', dstFactor: 'one', operation: 'add' },
-            alpha: { srcFactor: 'one', dstFactor: 'one-minus-src-alpha', operation: 'add' },
-          },
+          blend: PARTICLE_BLEND,
         }],
       },
       primitive: { topology: 'triangle-strip' },
