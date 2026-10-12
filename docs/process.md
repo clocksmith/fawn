@@ -7,8 +7,9 @@ for their fields and values.
 
 ## Strategy and comparison clarification
 
-The [strategy migration](product-strategy-contract.md) governs independent compiler
-and runtime adoption, bounded Vulkan work selection, and optional browser expansion.
+[GOALS.md](../GOALS.md) owns adoption and backend constraints; [the thesis](thesis.md)
+owns work selection and sequencing. The [strategy contract](product-strategy-contract.md)
+documents their machine-readable projection and migrations.
 [Comparison classes](performance-strategy.md#comparison-classes) distinguish
 unchanged-application replacement from fixed-operation/shader experiments.
 Existing gates and frozen contracts retain their meaning. Any future campaign

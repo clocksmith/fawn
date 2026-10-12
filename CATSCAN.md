@@ -4,15 +4,16 @@ Parent: none
 
 ## Target
 
-Earn independent WGSL compiler and native WebGPU runtime adoption with separate
-evidence. Ordinary execution, framework integration, and application transfer
-establish runtime value. Browser replacement is optional and separately selected.
-DoeProof evaluates impartially.
+Keep compiler, runtime, package, browser, and qualification components independently
+owned and accepted under the repository's goals and system invariants.
 
 ## Authority
 
-- Owns execution, evidence, and component-boundary law.
-- Does not own application planning, browser policy, model selection, or external hardware governance.
+- Owns component boundaries and acceptance routing.
+- Compiler owns shader meaning; runtime owns execution and lifetime;
+  qualification owns impartial evidence, not application execution policy.
+- Excludes application planning, browser policy, model selection, and external
+  hardware governance.
 
 ## Scope
 
@@ -21,35 +22,33 @@ DoeProof evaluates impartially.
 ## Contracts
 
 Inputs:
-- Strategic goals: [`GOALS.md`](GOALS.md).
-- System intent and invariants: [`INTENT.md`](INTENT.md).
-- Product strategy: [`docs/thesis.md`](docs/thesis.md).
-- Process law: [`docs/process.md`](docs/process.md).
+- Goals and exclusions: [GOALS.md](GOALS.md).
+- System invariants: [INTENT.md](INTENT.md).
+- Strategic sequence: [thesis](docs/thesis.md).
+- Stage and gate law: [process](docs/process.md).
 
 Outputs:
 - Package, runtime, compiler, and qualification artifacts.
-- Component authority index: [`docs/component-index.md`](docs/component-index.md).
+- [Component authority index](docs/component-index.md).
 
 ## Invariants
 
-- Provider, backend, program, hardware, fallback, and result identities remain explicit.
-- Unsupported or unproved behavior fails closed at its declared boundary.
-- Package, native, browser, simulator, and hardware evidence cannot inherit claims.
-- Runtime ownership requires governed comparison.
-- Receipts do not prove adoption or become prerequisites for ordinary execution.
-- Exact program/resource identity authorizes reuse; affected changes invalidate prepared state.
-- Unknown completion retains ownership; timeout never authorizes unsafe reuse.
-- Compiler meaning, runtime execution, and offline improvement have distinct owners.
+- Every component inherits [system invariants](INTENT.md) and its parent charter.
+- Children cannot broaden authority, weaken invariants, or transfer evidence
+  between independently admitted surfaces.
+- Boundary changes require affected charters and acceptance evidence to change
+  together; existing code or failed receipts cannot redefine authority.
 
 ## Acceptance
 
-- Component charters and their generated index pass the blocking CATSCAN gate.
-- Behavioral evidence must satisfy [INTENT.md](INTENT.md) and [GOALS.md](GOALS.md).
-- Evidence: [`bench/gates/catscan_gate.py`](bench/gates/catscan_gate.py).
+- Charters and their generated index pass the blocking CATSCAN gate.
+- Evidence: [CATSCAN gate](bench/gates/catscan_gate.py).
+- Each component supplies behavioral evidence for its contracts under
+  [INTENT.md](INTENT.md); charter structure alone does not qualify behavior.
 
 ## Non-goals
 
-- Universal WebGPU compatibility, universal Dawn replacement, or a general agent framework without separately promoted evidence.
+- Product strategy, application ownership, or promotion outside declared boundaries.
 
 ## Freedom
 

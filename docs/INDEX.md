@@ -9,18 +9,21 @@ evidence boundaries are clear.
 
 ## Canonical strategy
 
-- [`../GOALS.md`](../GOALS.md): repository mission, value, and durable goals
-- [`../CATSCAN.md`](../CATSCAN.md): root component authority and invariants
+- [`../GOALS.md`](../GOALS.md): the eight product goals, constraints, and exclusions
+- [`../INTENT.md`](../INTENT.md): enforceable system invariants
+- [`../CATSCAN.md`](../CATSCAN.md): root component ownership and acceptance boundaries
+- [`../AGENTS.md`](../AGENTS.md): contributor instructions and canonical-policy discovery
 - [`component-index.md`](component-index.md): generated recursive component map
 - [`component-charters.md`](component-charters.md): charter placement,
   precedence, required shape, validation, and handoff protocol
-- [`thesis.md`](thesis.md): the single Doe-first product strategy; verifiable
-  local compute vision, owned tracks, supporting-project roles, Node/Bun wedge,
-  downstream portfolio, browser path, and expansion boundaries
-- [`product-strategy-contract.md`](product-strategy-contract.md): validated
-  DoeProof offer, product-independence boundary, quad roles, comparison law,
-  K0 external-product comparison, evidence custody, platform sequence,
-  milestones, and claim boundaries
+- [`thesis.md`](thesis.md): strategic rationale, work selection, and sequencing
+- [`product-strategy-contract.md`](product-strategy-contract.md): machine-readable
+  strategy projection, schema migrations, evidence custody, and validation
+
+Keep each governing rule at its owner and link it from other front doors.
+Architecture, installation guides, and contracts retain concrete implementation
+and usage details. Reports retain evidence and rejected experiments; consolidation
+of repeated prose does not delete them.
 - Cross-project documentation authority is maintained in the program registry
   outside this repository; Doe remains canonical for Doe behavior and
   measurements

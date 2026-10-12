@@ -1,24 +1,17 @@
 # Doe strategy: better execution for existing applications
 
-Build the independent WebGPU compiler and runtime that makes existing local
-applications materially faster, less memory intensive, and cheaper in CPU overhead
-when they replace their execution provider. Local AI is an entry point; browser
-replacement is an optional, separately selected adoption route.
+[GOALS.md](../GOALS.md) owns the eight product goals, constraints, and exclusions.
+This document explains their rationale and sequencing; it does not maintain a
+second goal list. [INTENT.md](../INTENT.md) owns enforceable invariants, component
+charters assign authority, and artifacts establish current results.
 
-Doe develops an independently usable WGSL compiler and native WebGPU runtime.
-Either may earn adoption without requiring the other. Their contributions require
-separate evidence. Compiler outcomes are compilation latency, diagnostics,
-supported shader semantics, and generated-program performance. Runtime outcomes
-are resource management, submission, completion, memory, and application integration.
-A new independent compiler campaign requires a concrete opportunity; closed
-browser optimizer experiments remain closed.
-
-The compiler owns WGSL meaning and target lowering; DoeRuntime owns resource
-management and GPU execution.
-Doppler owns models and inference and remains a demanding customer. Independent
-applications establish that improvements belong to the execution layer. DoeProof
-evaluates providers impartially. This document owns strategy; component charters
-constrain implementation and artifacts establish current results.
+Local AI supplies demanding existing workloads and repeated execution costs to
+improve. Doppler is the first engineering customer and owns its models and
+inference. Transferring an improvement to unrelated applications establishes that
+it belongs to the execution layer rather than a model-specific accommodation.
+Compiler opportunities can be selected independently when they have their own
+consumer and attributable outcome. Browser replacement is a later, optional
+integration route, not a prerequisite for native value.
 
 ## Ordered execution milestones
 
@@ -67,11 +60,11 @@ is not an engineering gate. Transfer evidence and voluntary adoption remain sepa
 Supported embedding, maintained binaries, and support are commercial hypotheses;
 validate repeated voluntary use before expanding paid offerings.
 
-Freeze primary metrics, material thresholds, regression bounds, percentile rules,
-and comparison scope before execution. Retain process variation, uncertainty,
-losses, and raw samples. Keep startup separate from resident operations and label
-memory observations by scope. Ordinary execution must not depend on a special
-program API, diagnostics, or agents.
+Execute each milestone under the [performance contract](performance-strategy.md)
+and [system invariants](../INTENT.md). The ordinary, qualification, and offline
+improvement loops remain distinct: execute a selected version; independently
+evaluate it against frozen criteria; then promote or reject a bounded candidate.
+Ordinary applications do not have to run the latter two loops.
 
 ## Own the executable program
 
@@ -81,13 +74,11 @@ Optimize allocations, pipeline preparation, transfers, command construction,
 synchronization, and repeated submission as well as kernels. Retain useful
 state and rebuild only affected assumptions.
 
-Safe reuse is an execution mechanism subordinate to the milestones. Shape,
-binding, shader, driver, or device changes must invalidate affected state. Removing a check without proving
-its precondition is a correctness bug. Where explicit reuse is justified,
-begin with declared fixed-shape compute, retain deterministic
-Zig guards, and eliminate work through Lean only
-when current proof artifacts discharge the actual preconditions. Keep ordinary
-execution available where reuse is unsuitable.
+Safe reuse is an execution mechanism subordinate to the milestones. Start with
+declared fixed-shape computation when repeated preparation is a measured cost;
+keep ordinary execution available where reuse is unsuitable. Identity, lifetime,
+replacement, and proof obligations belong to [INTENT.md](../INTENT.md), refined
+by the [reusable-program contract](reusable-compute-programs.md).
 
 The WGSL compiler, native backends, resource contracts, and declarative plan
 executor are foundations. Their existence does not establish a complete program
@@ -125,12 +116,9 @@ application outcomes; graph execution is not a Doe invention.
 Ordinary browser imports still use browser-owned WebGPU. Browser replacement
 requires its own integration, artifact, and acceptance evidence.
 
-The deployment promise is no mandatory browser or cloud service. Platform drivers
-and frameworks remain dependencies. Allocation reductions require measurements
-on named paths; neither zero dependencies nor universal zero allocation is a
-product promise. iOS and Android support requires implemented integration and
-physical qualification. Prioritize compute without weakening shared graphics
-semantics, and keep one implementation across applications and hardware vendors.
+Deployment and platform promises remain bounded by
+[GOALS.md](../GOALS.md#strategic-constraints). Reduce installation and repeated
+execution costs on named consumer paths before expanding the support matrix.
 
 ## Make corrections transferable
 
@@ -195,12 +183,11 @@ do not establish continued use.
 
 ## Ownership and independent controls
 
-The WGSL compiler and DoeRuntime are independently adoptable. Compiler evidence
-does not require runtime substitution; each surface must establish its own value
-and retained use. DoeProof remains useful around the strongest eligible
-incumbent and cannot select a favorable execution provider. Doppler remains
-a demanding inference customer; it receives no qualification preference and
-cannot supply independent adoption evidence.
+Independent adoption and impartial qualification follow
+[GOALS.md](../GOALS.md#strategic-constraints) and
+[INTENT.md](../INTENT.md#promotion-and-evidence-integrity). Use those boundaries
+when choosing an opportunity: a compiler customer need not replace its runtime,
+and Doppler's engineering feedback does not establish external retained use.
 
 Preserve I0, I1, W0, D0, and credible eligible P0 under the governed
 [runtime ownership decision](runtime-ownership-decision.md). An unchanged
@@ -214,11 +201,9 @@ Receipts cannot compensate for incorrect, unstable, incompatible, or slower work
 
 ## Focus and founder responsibilities
 
-Vulkan is the current engineering focus. Work proceeds in bounded batches.
-Switching to Metal requires an explicit prioritization decision and handoff;
-D3D12 remains deferred. Existing regression checks do not constitute parallel
-optimization campaigns. A consumer requirement informs the next selection; it
-cannot silently override this backend boundary.
+Select bounded work under the [backend-focus constraint](../GOALS.md#strategic-constraints).
+A consumer requirement informs the next selection; it cannot silently override
+that boundary or authorize a parallel campaign.
 
 The immediate emphasis is Doppler-driven Vulkan engineering; the existing ONNX
 evaluation distribution is sufficient for adoption work.
@@ -242,9 +227,8 @@ resource lifecycle, and backend execution. Application/evaluation ownership
 covers integration, packaging, independent controls, diagnostics, and reproducible
 tests. Both own the frozen application outcome and transfer test.
 
-Exclude browser construction, Flutter replacement, peer networks, distributed
-training, and universal accelerator support from the first demonstration. Dynamic
-shapes follow explicit fixed-shape assumptions and verified invalidation.
+Keep the first demonstration inside [the explicit exclusions](../GOALS.md#explicit-exclusions).
+Dynamic shapes require a separately qualified extension of the fixed-shape contract.
 
 The ONNX Vulkan evaluation package is the current native integration front door.
 Independent reproduction and retained adoption remain open. Browser replacement
@@ -337,7 +321,8 @@ is technical context, not Doe qualification.
 
 ## Strategy execution map
 
-- [GOALS.md](../GOALS.md) owns mission and durable goals.
+- [GOALS.md](../GOALS.md) owns the product goals, constraints, and exclusions.
+- [INTENT.md](../INTENT.md) owns enforceable system invariants.
 - [CATSCAN.md](../CATSCAN.md) and child charters own component authority.
 - [Reusable compute programs](reusable-compute-programs.md) owns initial API,
   invalidation, reproduction, and limitations.

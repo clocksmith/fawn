@@ -7,9 +7,11 @@ mechanically guarded without constraining internal algorithms.
 
 | File | Owns |
 | --- | --- |
-| `GOALS.md` | Repository mission, value, and durable goals |
-| `CATSCAN.md` | One component's target, authority, scope, contracts, invariants, and acceptance |
-| `AGENTS.md` | Charter discovery, precedence, and change protocol |
+| `GOALS.md` | Product goals, constraints, and exclusions |
+| `docs/thesis.md` | Strategic rationale and sequencing |
+| `INTENT.md` | Enforceable system invariants |
+| `CATSCAN.md` | One component's target, authority, scope, contracts, inherited/local invariants, and acceptance |
+| `AGENTS.md` | Contributor instructions and canonical-policy discovery |
 | `README.md` | Human usage and navigation |
 | ADR or design document | Why a mechanism was selected |
 | Tests, registries, reports, receipts | Current evidence and status |
