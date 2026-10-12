@@ -1,0 +1,80 @@
+{
+  "schemaVersion": 1,
+  "kind": "projection-cost-manifest",
+  "performanceClaim": false,
+  "sourceBase": "f988282a9dc232ecafde8c508d26a1031461e994",
+  "artifacts": [
+    {
+      "path": "reports/maintenance/20261012-amd-projection-cost/README.md",
+      "sha256": "0785628baa622421ccdbdc117586853f69dba277d760a1547d6fd6f7be83fe86"
+    },
+    {
+      "path": "reports/maintenance/20261012-amd-projection-cost/analysis.json",
+      "sha256": "addfe3c9f560fd4cef8926bdc979bf2cfca462554722efa8189e4daa08bb1602"
+    },
+    {
+      "path": "reports/maintenance/20261012-amd-projection-cost/cohort.json",
+      "sha256": "06162ece1c363804288b8e740c7c61121eb361ac08f46bc1d225dc30739d6f6f"
+    },
+    {
+      "path": "reports/maintenance/20261012-amd-projection-cost/policy.json",
+      "sha256": "1f1cbd6aa07682f8afcb456a50486906cc3d35130138573d5fa7ba251d8a28aa"
+    },
+    {
+      "path": "reports/maintenance/20261012-amd-projection-cost/raw-evidence.tar.gz",
+      "sha256": "42551bb146250c9ba5b62d5fa5b01bb1926496eb22529c36a88be99ee9e61c36"
+    }
+  ],
+  "binaries": [
+    {
+      "path": "bench/out/projection-cost-20261012/build/lib/libwebgpu_doe.so",
+      "sha256": "60d32f1345c394656be37f9a6bd70e3c32b1746ebd2a8a7196423591dc7cf221"
+    },
+    {
+      "path": "bench/out/projection-cost-20261012/projection-cost-native",
+      "sha256": "2d46539da9db8c2a84c89bef5afbb981ebfde428331d7325e256bb977368c8c6"
+    },
+    {
+      "path": "bench/out/projection-cost-20261012/custody-layer/libprojection-custody.so",
+      "sha256": "9c9810bf13a5bc1032e23f8502c59bb83f122e97afcacf00d7305980532d5708"
+    },
+    {
+      "path": "/usr/bin/spirv-val",
+      "sha256": "85367fefdb7e93ae45654255ac2b7f8dc7056b6df78a6fdeb03ce395c7477239"
+    },
+    {
+      "path": "/usr/bin/cc",
+      "sha256": "b5f1b773a7c733738352000c92a077dc5852a1a2fc6d836b1e411be1e9ec5f88"
+    }
+  ],
+  "sources": [
+    {
+      "path": "bench/executors/projection-cost-native.c",
+      "sha256": "ba1fa5053dea1efca24a7e67775e882c44cbce65c171f26a7f0faf983e4e5a7e"
+    },
+    {
+      "path": "bench/executors/projection_cost.py",
+      "sha256": "b73f154dfb6eeb44ca91f2c86c7a6fcc567bbe66618f7f3921c61bf2aa578bed"
+    },
+    {
+      "path": "bench/executors/projection_cost_analysis.py",
+      "sha256": "7b19ba70976b46721639659ce258ce8b809b82900fba01b670d8807d3b5d4a05"
+    },
+    {
+      "path": "bench/tests/test_projection_cost.py",
+      "sha256": "f66400496f2aad2f08520ad47ce7d0a7ad335dbab96c040f7c2bf4e30e1ba762"
+    },
+    {
+      "path": "config/projection-cost.schema.json",
+      "sha256": "cf56ffbab9bb6035327480ffba11dccb3b56263bd9ee0cee4a62cb631d74bea0"
+    },
+    {
+      "path": "config/projection-cost.amd.json",
+      "sha256": "1f1cbd6aa07682f8afcb456a50486906cc3d35130138573d5fa7ba251d8a28aa"
+    }
+  ],
+  "historicalExecutor": {
+    "path": "bench/executors/projection-native.c",
+    "sha256": "37a58319f0fb41d83bc8c34b90849814a56c20e69eb9b8f58d190f37db4e774b"
+  }
+}

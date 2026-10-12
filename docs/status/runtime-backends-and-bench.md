@@ -2,6 +2,15 @@
 
 ## Doppler-driven Vulkan engineering
 
+The [AMD projection cost diagnostic](../../reports/maintenance/20261012-amd-projection-cost/README.md)
+preserves the historical executor and adds a separate resident-transfer
+boundary with mandatory status validation, complete-output controls and host/GPU
+attribution. Retained Tint and Doe programs execute exactly through the selected
+AMD Doe runtime. Instrumentation perturbation, A/A variation and foreign GPU
+clients prevent selecting a performance correction or promoting a speed claim.
+Reserved-hardware calibration precedes unchanged Node generation and ONNX
+transfer; the supplied W8A8 model remains quality-rejected.
+
 The [Intel projection interchange and acceleration experiment](../../reports/maintenance/20261011-intel-vulkan-projection/README.md)
 records the user-selected Intel Vulkan hardware scope, exact native projection
 output and actual imported shader custody. The acceleration candidate is rejected

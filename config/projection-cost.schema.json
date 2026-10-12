@@ -1,0 +1,568 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Diagnostic projection cost policy and report",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "kind"
+  ],
+  "additionalProperties": true,
+  "description": "Top level is closed by each oneOf variant; raw process logs are hash-bound diagnostic records checked by the executor validator.",
+  "oneOf": [
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "kind",
+        "comparisonClass",
+        "vendorId",
+        "deviceId",
+        "iterations",
+        "warmup",
+        "repeats",
+        "processTimeoutSeconds",
+        "driverCache",
+        "timingBoundary",
+        "verificationBoundary",
+        "gpuInstrumentation",
+        "performanceClaim"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "const": 1
+        },
+        "kind": {
+          "const": "projection-cost-policy"
+        },
+        "comparisonClass": {
+          "const": "fixed-operation-diagnostic"
+        },
+        "vendorId": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "deviceId": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 65535
+        },
+        "iterations": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10000
+        },
+        "warmup": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10000
+        },
+        "repeats": {
+          "type": "integer",
+          "minimum": 2,
+          "maximum": 32
+        },
+        "processTimeoutSeconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 300
+        },
+        "driverCache": {
+          "const": "disabled-mesa-per-process-xdg"
+        },
+        "timingBoundary": {
+          "const": "record-submit-complete-status-copy-map-validate-unmap"
+        },
+        "verificationBoundary": {
+          "const": "before-after-all-oracles-outside-resident-samples"
+        },
+        "gpuInstrumentation": {
+          "const": "split-passes-resolve-and-read-included"
+        },
+        "performanceClaim": {
+          "const": false
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "kind",
+        "performanceClaim",
+        "inputs",
+        "runs",
+        "passed",
+        "failure"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "const": 1
+        },
+        "kind": {
+          "const": "projection-cost-report"
+        },
+        "performanceClaim": {
+          "const": false
+        },
+        "inputs": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "path",
+              "sha256"
+            ],
+            "properties": {
+              "path": {
+                "type": "string",
+                "minLength": 1
+              },
+              "sha256": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              }
+            }
+          }
+        },
+        "runs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "label",
+              "compiler",
+              "sequence",
+              "mode",
+              "transfer",
+              "custody",
+              "returnCode",
+              "logSha256",
+              "summary"
+            ],
+            "properties": {
+              "label": {
+                "type": "string",
+                "minLength": 1
+              },
+              "compiler": {
+                "enum": [
+                  "tint",
+                  "doe"
+                ]
+              },
+              "sequence": {
+                "enum": [
+                  "portable",
+                  "packed"
+                ]
+              },
+              "mode": {
+                "enum": [
+                  "none",
+                  "host",
+                  "gpu"
+                ]
+              },
+              "transfer": {
+                "enum": [
+                  "resident",
+                  "verification"
+                ]
+              },
+              "custody": {
+                "type": "boolean"
+              },
+              "returnCode": {
+                "type": "integer"
+              },
+              "logSha256": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              "summary": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "medianMs",
+                      "medianCpuMs",
+                      "phases",
+                      "gpuStageNs"
+                    ],
+                    "properties": {
+                      "medianMs": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "medianCpuMs": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "phases": {
+                        "anyOf": [
+                          {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                              "recordMs",
+                              "submitMs",
+                              "waitMs",
+                              "mapMs",
+                              "compareMs",
+                              "timestampReadMs",
+                              "polls"
+                            ],
+                            "properties": {
+                              "recordMs": {
+                                "type": "number",
+                                "minimum": 0
+                              },
+                              "submitMs": {
+                                "type": "number",
+                                "minimum": 0
+                              },
+                              "waitMs": {
+                                "type": "number",
+                                "minimum": 0
+                              },
+                              "mapMs": {
+                                "type": "number",
+                                "minimum": 0
+                              },
+                              "compareMs": {
+                                "type": "number",
+                                "minimum": 0
+                              },
+                              "timestampReadMs": {
+                                "type": "number",
+                                "minimum": 0
+                              },
+                              "polls": {
+                                "type": "number",
+                                "minimum": 0
+                              }
+                            }
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "gpuStageNs": {
+                        "type": "array",
+                        "items": {
+                          "type": "number",
+                          "minimum": 0
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "passed": {
+          "type": "boolean"
+        },
+        "failure": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "kind",
+        "performanceClaim",
+        "reportSha256",
+        "policySha256",
+        "comparisons",
+        "observations"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "const": 1
+        },
+        "kind": {
+          "const": "projection-cost-analysis"
+        },
+        "performanceClaim": {
+          "const": false
+        },
+        "reportSha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "policySha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "comparisons": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "name",
+              "ratios",
+              "medianRatio",
+              "minimumRatio",
+              "maximumRatio"
+            ],
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "ratios": {
+                "type": "array",
+                "items": {
+                  "type": "number",
+                  "minimum": 0
+                }
+              },
+              "medianRatio": {
+                "type": "number",
+                "minimum": 0
+              },
+              "minimumRatio": {
+                "type": "number",
+                "minimum": 0
+              },
+              "maximumRatio": {
+                "type": "number",
+                "minimum": 0
+              }
+            }
+          }
+        },
+        "observations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "compiler",
+              "sequence",
+              "transfer",
+              "medianWallMs",
+              "medianCpuMs",
+              "hostPhases",
+              "gpuStageNs"
+            ],
+            "properties": {
+              "compiler": {
+                "enum": [
+                  "doe",
+                  "tint"
+                ]
+              },
+              "sequence": {
+                "enum": [
+                  "portable",
+                  "packed"
+                ]
+              },
+              "transfer": {
+                "enum": [
+                  "resident",
+                  "verification"
+                ]
+              },
+              "medianWallMs": {
+                "type": "number",
+                "minimum": 0
+              },
+              "medianCpuMs": {
+                "type": "number",
+                "minimum": 0
+              },
+              "hostPhases": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "recordMs",
+                  "submitMs",
+                  "waitMs",
+                  "mapMs",
+                  "compareMs",
+                  "timestampReadMs",
+                  "polls"
+                ],
+                "properties": {
+                  "recordMs": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "submitMs": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "waitMs": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "mapMs": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "compareMs": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "timestampReadMs": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "polls": {
+                    "type": "number",
+                    "minimum": 0
+                  }
+                }
+              },
+              "gpuStageNs": {
+                "type": "array",
+                "minItems": 4,
+                "maxItems": 4,
+                "items": {
+                  "type": "number",
+                  "minimum": 0
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "kind",
+        "performanceClaim",
+        "sourceBase",
+        "artifacts",
+        "binaries",
+        "sources",
+        "historicalExecutor"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "const": 1
+        },
+        "kind": {
+          "const": "projection-cost-manifest"
+        },
+        "performanceClaim": {
+          "const": false
+        },
+        "sourceBase": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$"
+        },
+        "artifacts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "path",
+              "sha256"
+            ],
+            "properties": {
+              "path": {
+                "type": "string",
+                "minLength": 1
+              },
+              "sha256": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              }
+            }
+          }
+        },
+        "binaries": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "path",
+              "sha256"
+            ],
+            "properties": {
+              "path": {
+                "type": "string",
+                "minLength": 1
+              },
+              "sha256": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              }
+            }
+          }
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "path",
+              "sha256"
+            ],
+            "properties": {
+              "path": {
+                "type": "string",
+                "minLength": 1
+              },
+              "sha256": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              }
+            }
+          }
+        },
+        "historicalExecutor": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "path",
+            "sha256"
+          ],
+          "properties": {
+            "path": {
+              "type": "string",
+              "minLength": 1
+            },
+            "sha256": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

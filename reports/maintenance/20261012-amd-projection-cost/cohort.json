@@ -1,0 +1,2875 @@
+{
+  "failure": null,
+  "inputs": {
+    "custody_layer": {
+      "path": "/home/x/deco/doe/bench/out/projection-cost-20261012/custody-layer/libprojection-custody.so",
+      "sha256": "9c9810bf13a5bc1032e23f8502c59bb83f122e97afcacf00d7305980532d5708"
+    },
+    "doe/activation-rescale": {
+      "path": "/home/x/deco/doe/bench/out/projection-cost-20261012/retained/matrix-final/doe/activation-rescale.spv",
+      "sha256": "acf40b35bd00741d3b1246166387950b20d305431fee0ad5e74dc31d52c7c8c5"
+    },
+    "doe/packed-dot": {
+      "path": "/home/x/deco/doe/bench/out/projection-cost-20261012/retained/matrix-final/doe/packed-dot.spv",
+      "sha256": "75c31f332b190cc333fa5dd7c647d99af502b884e4aff9981026b62161508728"
+    },
+    "doe/portable-dot": {
+      "path": "/home/x/deco/doe/bench/out/projection-cost-20261012/retained/matrix-final/doe/portable-dot.spv",
+      "sha256": "ca5c435fc3ceb09c163afb49282b31bf55493c6d0e191af62c54744cacf34acd"
+    },
+    "doe/quantize": {
+      "path": "/home/x/deco/doe/bench/out/projection-cost-20261012/retained/matrix-final/doe/quantize.spv",
+      "sha256": "a0dd49f536d79ac49c21e04254a3fae14bacc52697f70cb394629f07bfa16cb8"
+    },
+    "doe/weight-rescale": {
+      "path": "/home/x/deco/doe/bench/out/projection-cost-20261012/retained/matrix-final/doe/weight-rescale.spv",
+      "sha256": "65a29c802ad5d7fa8b1379d6195d5371c6d00f92052817ae37c6c19f1b94d447"
+    },
+    "executor": {
+      "path": "/home/x/deco/doe/bench/out/projection-cost-20261012/projection-cost-native",
+      "sha256": "2d46539da9db8c2a84c89bef5afbb981ebfde428331d7325e256bb977368c8c6"
+    },
+    "fixtureManifest": {
+      "path": "/home/x/deco/doe/bench/out/projection-cost-20261012/fixture/manifest.json",
+      "sha256": "ec010299625dee594dac5617857e29a4afeee7041d05157f906f611b58843e37"
+    },
+    "icd": {
+      "path": "/usr/share/vulkan/icd.d/radeon_icd.json",
+      "sha256": "ea05ad7109cee152ef4e801a022dfa40b655dc06a08da7d0d7b042f619a0947c"
+    },
+    "library": {
+      "path": "/home/x/deco/doe/bench/out/projection-cost-20261012/build/lib/libwebgpu_doe.so",
+      "sha256": "60d32f1345c394656be37f9a6bd70e3c32b1746ebd2a8a7196423591dc7cf221"
+    },
+    "policy": {
+      "path": "/home/x/deco/doe/config/projection-cost.amd.json",
+      "sha256": "1f1cbd6aa07682f8afcb456a50486906cc3d35130138573d5fa7ba251d8a28aa"
+    },
+    "program_manifest": {
+      "path": "/home/x/deco/doe/reports/maintenance/20261011-intel-vulkan-projection/matrix.json",
+      "sha256": "ef27003d75f4e86dec306af82d853f42add09dabc35739afb9380d5613e61fb2"
+    },
+    "projection-cost-native.c": {
+      "path": "/home/x/deco/doe/bench/executors/projection-cost-native.c",
+      "sha256": "ba1fa5053dea1efca24a7e67775e882c44cbce65c171f26a7f0faf983e4e5a7e"
+    },
+    "projection_cost.py": {
+      "path": "/home/x/deco/doe/bench/executors/projection_cost.py",
+      "sha256": "19a18be0236de05a9d938ddee95c3a0144ea32d699b520dff479b9616dea40b1"
+    },
+    "spirv_val": {
+      "path": "/usr/bin/spirv-val",
+      "sha256": "85367fefdb7e93ae45654255ac2b7f8dc7056b6df78a6fdeb03ce395c7477239"
+    },
+    "tint/activation-rescale": {
+      "path": "/home/x/deco/doe/bench/out/projection-cost-20261012/retained/matrix-final/tint/activation-rescale.spv",
+      "sha256": "2985b7f089aa78fe575c99f9ff8c1f7330a78d97e2dfda558b5e28277ae84af5"
+    },
+    "tint/packed-dot": {
+      "path": "/home/x/deco/doe/bench/out/projection-cost-20261012/retained/matrix-final/tint/packed-dot.spv",
+      "sha256": "3c10979211d355e5468ef0d83eb240340d0a228fe3d50cf3b864d0e230af9a9c"
+    },
+    "tint/portable-dot": {
+      "path": "/home/x/deco/doe/bench/out/projection-cost-20261012/retained/matrix-final/tint/portable-dot.spv",
+      "sha256": "2e078f77293eb8bdb604ae8e42e32b3707d55236c949e0657aafbac25864a3c1"
+    },
+    "tint/quantize": {
+      "path": "/home/x/deco/doe/bench/out/projection-cost-20261012/retained/matrix-final/tint/quantize.spv",
+      "sha256": "512f94369bb2492ecf3f6e8c7c79dbfdf407828dc5556e5b525bb524e48d7766"
+    },
+    "tint/weight-rescale": {
+      "path": "/home/x/deco/doe/bench/out/projection-cost-20261012/retained/matrix-final/tint/weight-rescale.spv",
+      "sha256": "08e754f61d46d55a521371bbc8e62008935b7efc0ac84925e4259fa8e5b7acf1"
+    }
+  },
+  "kind": "projection-cost-report",
+  "passed": true,
+  "performanceClaim": false,
+  "runs": [
+    {
+      "compiler": "tint",
+      "custody": true,
+      "label": "custody-tint-portable",
+      "logSha256": "5ef575466740849425107910c4ee5f2b353b42b87c19d3c910f944562b155098",
+      "mode": "none",
+      "returnCode": 0,
+      "sequence": "portable",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.112,
+        "medianMs": 0.1118149755,
+        "phases": null
+      },
+      "transfer": "resident"
+    },
+    {
+      "compiler": "tint",
+      "custody": true,
+      "label": "custody-tint-packed",
+      "logSha256": "11c7b2ec11b0be746f933cc0d07d5daaca49527975e7779d164b1863afd87482",
+      "mode": "none",
+      "returnCode": 0,
+      "sequence": "packed",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.105,
+        "medianMs": 0.1042313575,
+        "phases": null
+      },
+      "transfer": "resident"
+    },
+    {
+      "compiler": "doe",
+      "custody": true,
+      "label": "custody-doe-portable",
+      "logSha256": "ddfd0429a5944617ac575555b6c818429fa00219090a653d55ff4d7366c24433",
+      "mode": "none",
+      "returnCode": 0,
+      "sequence": "portable",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.105,
+        "medianMs": 0.105167866,
+        "phases": null
+      },
+      "transfer": "resident"
+    },
+    {
+      "compiler": "doe",
+      "custody": true,
+      "label": "custody-doe-packed",
+      "logSha256": "ecbe2b055b712ae7f9824cec7215a86e9147bc08afbd577df192ea51fadccf04",
+      "mode": "none",
+      "returnCode": 0,
+      "sequence": "packed",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.1125,
+        "medianMs": 0.1125116345,
+        "phases": null
+      },
+      "transfer": "resident"
+    },
+    {
+      "compiler": "tint",
+      "custody": false,
+      "label": "r0-tint-portable-resident-none-a",
+      "logSha256": "2607069b26622a29bc46e88f6de9d50f489b23eec0985b3fe7767b50eeaa20dd",
+      "mode": "none",
+      "returnCode": 0,
+      "sequence": "portable",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.12,
+        "medianMs": 0.1199712755,
+        "phases": null
+      },
+      "transfer": "resident"
+    },
+    {
+      "compiler": "tint",
+      "custody": false,
+      "label": "r0-tint-portable-resident-none-b",
+      "logSha256": "ffc6c4108845d1cd037b6ef3148a70dcac88a3afc171e0e01ffc9a3dcae1e7f7",
+      "mode": "none",
+      "returnCode": 0,
+      "sequence": "portable",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.1085,
+        "medianMs": 0.1084189415,
+        "phases": null
+      },
+      "transfer": "resident"
+    },
+    {
+      "compiler": "tint",
+      "custody": false,
+      "label": "r0-tint-portable-resident-host",
+      "logSha256": "0c4070cdc36982c3afc1b3d2bcfdf2c62be6f114287f4bc0805719ff619ed206",
+      "mode": "host",
+      "returnCode": 0,
+      "sequence": "portable",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.109,
+        "medianMs": 0.1089701655,
+        "phases": {
+          "compareMs": 0.000149727,
+          "mapMs": 0.025888920000000003,
+          "polls": 2.0,
+          "recordMs": 0.0048689844999999995,
+          "submitMs": 0.011311531,
+          "timestampReadMs": 0.0,
+          "waitMs": 0.06742239
+        }
+      },
+      "transfer": "resident"
+    },
+    {
+      "compiler": "tint",
+      "custody": false,
+      "label": "r0-tint-portable-resident-gpu",
+      "logSha256": "dfec9619ac58001a6178d0a49ed058d00a473bbdc60e1921c334ab0777e19164",
+      "mode": "gpu",
+      "returnCode": 0,
+      "sequence": "portable",
+      "summary": {
+        "gpuStageNs": [
+          3567.0,
+          41398.0,
+          2605.0,
+          2525.0
+        ],
+        "medianCpuMs": 0.1395,
+        "medianMs": 0.13894605650000003,
+        "phases": {
+          "compareMs": 0.000150204,
+          "mapMs": 0.0245313645,
+          "polls": 3.0,
+          "recordMs": 0.007479191,
+          "submitMs": 0.013781070999999999,
+          "timestampReadMs": 0.000300407,
+          "waitMs": 0.09174776100000001
+        }
+      },
+      "transfer": "resident"
+    },
+    {
+      "compiler": "tint",
+      "custody": false,
+      "label": "r0-tint-portable-verification-none-a",
+      "logSha256": "d888decf6156a31e4dc0b45ffa59ac390b4e0254560214e89325739ab19c2521",
+      "mode": "none",
+      "returnCode": 0,
+      "sequence": "portable",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.111,
+        "medianMs": 0.11068296450000001,
+        "phases": null
+      },
+      "transfer": "verification"
+    },
+    {
+      "compiler": "tint",
+      "custody": false,
+      "label": "r0-tint-portable-verification-none-b",
+      "logSha256": "10880d267221ab91397d07f1df790ded66530a38dc973dcf9c3f31b7d0a3c5c4",
+      "mode": "none",
+      "returnCode": 0,
+      "sequence": "portable",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.1315,
+        "medianMs": 0.13141679750000002,
+        "phases": null
+      },
+      "transfer": "verification"
+    },
+    {
+      "compiler": "tint",
+      "custody": false,
+      "label": "r0-tint-portable-verification-host",
+      "logSha256": "864b82df0a0c54d4aed72257e4d5471ae6d94798dcac6d5939f6fb00f0fad1f3",
+      "mode": "host",
+      "returnCode": 0,
+      "sequence": "portable",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.109,
+        "medianMs": 0.1079735755,
+        "phases": {
+          "compareMs": 0.000840187,
+          "mapMs": 0.0020451545,
+          "polls": 6.0,
+          "recordMs": 0.006982803,
+          "submitMs": 0.0127687455,
+          "timestampReadMs": 0.0,
+          "waitMs": 0.084854603
+        }
+      },
+      "transfer": "verification"
+    },
+    {
+      "compiler": "tint",
+      "custody": false,
+      "label": "r0-tint-portable-verification-gpu",
+      "logSha256": "aa1704e8c4bb85761a3062c6047dbd2e2f0d1c88e39fcdcf22164e096dd70b0d",
+      "mode": "gpu",
+      "returnCode": 0,
+      "sequence": "portable",
+      "summary": {
+        "gpuStageNs": [
+          3527.0,
+          41479.0,
+          2565.0,
+          2525.0
+        ],
+        "medianCpuMs": 0.149,
+        "medianMs": 0.14847517,
+        "phases": {
+          "compareMs": 0.000962257,
+          "mapMs": 0.0021705630000000004,
+          "polls": 7.0,
+          "recordMs": 0.012152672,
+          "submitMs": 0.018354416,
+          "timestampReadMs": 0.00040102,
+          "waitMs": 0.113779068
+        }
+      },
+      "transfer": "verification"
+    },
+    {
+      "compiler": "tint",
+      "custody": false,
+      "label": "r0-tint-packed-resident-none-a",
+      "logSha256": "7a712094992ea05df04ad7f9823b99871283bc6c16f4906370925e67922e1242",
+      "mode": "none",
+      "returnCode": 0,
+      "sequence": "packed",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.111,
+        "medianMs": 0.111114502,
+        "phases": null
+      },
+      "transfer": "resident"
+    },
+    {
+      "compiler": "tint",
+      "custody": false,
+      "label": "r0-tint-packed-resident-none-b",
+      "logSha256": "0e259111f4d266aed06f30d8d45b220a6db655665a600285ba14d6d1e5aea2fa",
+      "mode": "none",
+      "returnCode": 0,
+      "sequence": "packed",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.1055,
+        "medianMs": 0.1051278115,
+        "phases": null
+      },
+      "transfer": "resident"
+    },
+    {
+      "compiler": "tint",
+      "custody": false,
+      "label": "r0-tint-packed-resident-host",
+      "logSha256": "8a790754876ffa812355ce81213d7cabca4283ede8eca13b8762af2e6d5de053",
+      "mode": "host",
+      "returnCode": 0,
+      "sequence": "packed",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.115,
+        "medianMs": 0.114581108,
+        "phases": {
+          "compareMs": 0.000150681,
+          "mapMs": 0.031408786999999994,
+          "polls": 2.0,
+          "recordMs": 0.004848956999999999,
+          "submitMs": 0.0110349655,
+          "timestampReadMs": 0.0,
+          "waitMs": 0.066790581
+        }
+      },
+      "transfer": "resident"
+    },
+    {
+      "compiler": "tint",
+      "custody": false,
+      "label": "r0-tint-packed-resident-gpu",
+      "logSha256": "c228c206fb28bd596fb797bd59d38b6a2bdec87002ac60e1b37d5a55fa14f2de",
+      "mode": "gpu",
+      "returnCode": 0,
+      "sequence": "packed",
+      "summary": {
+        "gpuStageNs": [
+          3527.0,
+          39956.0,
+          2565.0,
+          2525.0
+        ],
+        "medianCpuMs": 0.137,
+        "medianMs": 0.1364421845,
+        "phases": {
+          "compareMs": 0.000155449,
+          "mapMs": 0.019591808500000002,
+          "polls": 3.0,
+          "recordMs": 0.010725975,
+          "submitMs": 0.0166769025,
+          "timestampReadMs": 0.000400543,
+          "waitMs": 0.0891370775
+        }
+      },
+      "transfer": "resident"
+    },
+    {
+      "compiler": "tint",
+      "custody": false,
+      "label": "r0-tint-packed-verification-none-a",
+      "logSha256": "f41811040d721e59d94c9bb47d0a73ab21d1d1596578b64da1959f9f7464dd3d",
+      "mode": "none",
+      "returnCode": 0,
+      "sequence": "packed",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.105,
+        "medianMs": 0.10451173750000001,
+        "phases": null
+      },
+      "transfer": "verification"
+    },
+    {
+      "compiler": "tint",
+      "custody": false,
+      "label": "r0-tint-packed-verification-none-b",
+      "logSha256": "a79955d36272554b21ba53004a09a4fe0d16be9b428c7c1d9a1487e3de56a9e4",
+      "mode": "none",
+      "returnCode": 0,
+      "sequence": "packed",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.109,
+        "medianMs": 0.10881996199999999,
+        "phases": null
+      },
+      "transfer": "verification"
+    },
+    {
+      "compiler": "tint",
+      "custody": false,
+      "label": "r0-tint-packed-verification-host",
+      "logSha256": "e89b9c2e16f22f8f941ce74ee3b558d5d307f35ff87e008d854917b7957a4510",
+      "mode": "host",
+      "returnCode": 0,
+      "sequence": "packed",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.132,
+        "medianMs": 0.1321234705,
+        "phases": {
+          "compareMs": 0.0010323525,
+          "mapMs": 0.002145767,
+          "polls": 6.0,
+          "recordMs": 0.0092425345,
+          "submitMs": 0.014893054999999999,
+          "timestampReadMs": 0.0,
+          "waitMs": 0.101521492
+        }
+      },
+      "transfer": "verification"
+    },
+    {
+      "compiler": "tint",
+      "custody": false,
+      "label": "r0-tint-packed-verification-gpu",
+      "logSha256": "9488605f053695ac1da8468fb432d9c59e6dd5524fa1ce3ecb34a7413ae0a651",
+      "mode": "gpu",
+      "returnCode": 0,
+      "sequence": "packed",
+      "summary": {
+        "gpuStageNs": [
+          3567.0,
+          40316.5,
+          2605.0,
+          2565.0
+        ],
+        "medianCpuMs": 0.147,
+        "medianMs": 0.147342205,
+        "phases": {
+          "compareMs": 0.001001835,
+          "mapMs": 0.002174854,
+          "polls": 7.0,
+          "recordMs": 0.012153148499999999,
+          "submitMs": 0.0198068615,
+          "timestampReadMs": 0.000401497,
+          "waitMs": 0.11107921600000001
+        }
+      },
+      "transfer": "verification"
+    },
+    {
+      "compiler": "doe",
+      "custody": false,
+      "label": "r0-doe-portable-resident-none-a",
+      "logSha256": "1e162be9875ed118a5b37fb97fdf5bb8a37d773d50f5fe3b835a9e5a923f9291",
+      "mode": "none",
+      "returnCode": 0,
+      "sequence": "portable",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.114,
+        "medianMs": 0.11321306249999999,
+        "phases": null
+      },
+      "transfer": "resident"
+    },
+    {
+      "compiler": "doe",
+      "custody": false,
+      "label": "r0-doe-portable-resident-none-b",
+      "logSha256": "3e765d7d31e4ace8761b34a6dde2997e9f610bcf0e783ca11fea3457d8ce01c4",
+      "mode": "none",
+      "returnCode": 0,
+      "sequence": "portable",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.108,
+        "medianMs": 0.107547283,
+        "phases": null
+      },
+      "transfer": "resident"
+    },
+    {
+      "compiler": "doe",
+      "custody": false,
+      "label": "r0-doe-portable-resident-host",
+      "logSha256": "84c2f37b13d5bc647cd5e86555542dd36ea3f19bf8b8b00c23e11d14e2282952",
+      "mode": "host",
+      "returnCode": 0,
+      "sequence": "portable",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.096,
+        "medianMs": 0.095465183,
+        "phases": {
+          "compareMs": 0.000160217,
+          "mapMs": 0.0204582215,
+          "polls": 2.0,
+          "recordMs": 0.004858971,
+          "submitMs": 0.010313511000000001,
+          "timestampReadMs": 0.0,
+          "waitMs": 0.059516906999999994
+        }
+      },
+      "transfer": "resident"
+    },
+    {
+      "compiler": "doe",
+      "custody": false,
+      "label": "r0-doe-portable-resident-gpu",
+      "logSha256": "b97bcf52ec373005f9086aa6c42e2f0bb0fd7700d30c069b6c64b4023419db5b",
+      "mode": "gpu",
+      "returnCode": 0,
+      "sequence": "portable",
+      "summary": {
+        "gpuStageNs": [
+          3306.5,
+          33584.0,
+          2565.0,
+          2485.0
+        ],
+        "medianCpuMs": 0.137,
+        "medianMs": 0.1365866665,
+        "phases": {
+          "compareMs": 0.000150204,
+          "mapMs": 0.031498432,
+          "polls": 3.0,
+          "recordMs": 0.007534504,
+          "submitMs": 0.013636112499999999,
+          "timestampReadMs": 0.000290394,
+          "waitMs": 0.0846190455
+        }
+      },
+      "transfer": "resident"
+    },
+    {
+      "compiler": "doe",
+      "custody": false,
+      "label": "r0-doe-portable-verification-none-a",
+      "logSha256": "ef72830e85fa36725908c32a9008975c8dc014dbd55ba97cc2824260a8268aeb",
+      "mode": "none",
+      "returnCode": 0,
+      "sequence": "portable",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.098,
+        "medianMs": 0.097632885,
+        "phases": null
+      },
+      "transfer": "verification"
+    },
+    {
+      "compiler": "doe",
+      "custody": false,
+      "label": "r0-doe-portable-verification-none-b",
+      "logSha256": "f247d607c9a0f268454ea8d92f9ad2b2b05e8b533f8170caf12b9575b5750283",
+      "mode": "none",
+      "returnCode": 0,
+      "sequence": "portable",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.10200000000000001,
+        "medianMs": 0.1018071175,
+        "phases": null
+      },
+      "transfer": "verification"
+    },
+    {
+      "compiler": "doe",
+      "custody": false,
+      "label": "r0-doe-portable-verification-host",
+      "logSha256": "d1c0f191b594d8a4e6786fb84b732659f3f4035d9629b4efa049d509a5fb7d3a",
+      "mode": "host",
+      "returnCode": 0,
+      "sequence": "portable",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.1015,
+        "medianMs": 0.101445675,
+        "phases": {
+          "compareMs": 0.00095129,
+          "mapMs": 0.002161503,
+          "polls": 6.0,
+          "recordMs": 0.0092225075,
+          "submitMs": 0.0141010285,
+          "timestampReadMs": 0.0,
+          "waitMs": 0.07405424099999999
+        }
+      },
+      "transfer": "verification"
+    },
+    {
+      "compiler": "doe",
+      "custody": false,
+      "label": "r0-doe-portable-verification-gpu",
+      "logSha256": "69052a96590ebd17734ab506a1a41901ac833028e711771f73f4fb8e73a8f01c",
+      "mode": "gpu",
+      "returnCode": 0,
+      "sequence": "portable",
+      "summary": {
+        "gpuStageNs": [
+          3286.0,
+          33583.5,
+          2525.0,
+          2485.0
+        ],
+        "medianCpuMs": 0.14,
+        "medianMs": 0.14000320449999998,
+        "phases": {
+          "compareMs": 0.000960827,
+          "mapMs": 0.002164841,
+          "polls": 7.0,
+          "recordMs": 0.012063026,
+          "submitMs": 0.0179634095,
+          "timestampReadMs": 0.00040102,
+          "waitMs": 0.105935097
+        }
+      },
+      "transfer": "verification"
+    },
+    {
+      "compiler": "doe",
+      "custody": false,
+      "label": "r0-doe-packed-resident-none-a",
+      "logSha256": "597edb346f61c0823110fb0b1e65baa4e3d9127628c6bc76816e87edae137848",
+      "mode": "none",
+      "returnCode": 0,
+      "sequence": "packed",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.104,
+        "medianMs": 0.1031637195,
+        "phases": null
+      },
+      "transfer": "resident"
+    },
+    {
+      "compiler": "doe",
+      "custody": false,
+      "label": "r0-doe-packed-resident-none-b",
+      "logSha256": "a29eded7b6dc8fe9234c4c31182b9850d3dcb1daf224440015775de8feed54e1",
+      "mode": "none",
+      "returnCode": 0,
+      "sequence": "packed",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.096,
+        "medianMs": 0.095855236,
+        "phases": null
+      },
+      "transfer": "resident"
+    },
+    {
+      "compiler": "doe",
+      "custody": false,
+      "label": "r0-doe-packed-resident-host",
+      "logSha256": "90ced969a27915fff3b224a790d94c608837a379bdec5562ba2f83b04dc877dd",
+      "mode": "host",
+      "returnCode": 0,
+      "sequence": "packed",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.1005,
+        "medianMs": 0.10011816,
+        "phases": {
+          "compareMs": 0.000160217,
+          "mapMs": 0.020233631000000002,
+          "polls": 2.0,
+          "recordMs": 0.0071935655000000005,
+          "submitMs": 0.012147903500000001,
+          "timestampReadMs": 0.0,
+          "waitMs": 0.060072422
+        }
+      },
+      "transfer": "resident"
+    },
+    {
+      "compiler": "doe",
+      "custody": false,
+      "label": "r0-doe-packed-resident-gpu",
+      "logSha256": "db194329812f1cec086651c3ccaeffdf3acd0e0717f794c2e26b2dde7a6836e3",
+      "mode": "gpu",
+      "returnCode": 0,
+      "sequence": "packed",
+      "summary": {
+        "gpuStageNs": [
+          3287.0,
+          33563.5,
+          2565.0,
+          2504.5
+        ],
+        "medianCpuMs": 0.133,
+        "medianMs": 0.1330361365,
+        "phases": {
+          "compareMs": 0.000160217,
+          "mapMs": 0.0192718505,
+          "polls": 3.0,
+          "recordMs": 0.010670662000000001,
+          "submitMs": 0.0158600805,
+          "timestampReadMs": 0.000401497,
+          "waitMs": 0.086191654
+        }
+      },
+      "transfer": "resident"
+    },
+    {
+      "compiler": "doe",
+      "custody": false,
+      "label": "r0-doe-packed-verification-none-a",
+      "logSha256": "aff768dd0866f4829bd86805c857936a1f54e4e8992c242130b1f86525cb363b",
+      "mode": "none",
+      "returnCode": 0,
+      "sequence": "packed",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.0985,
+        "medianMs": 0.09820985800000001,
+        "phases": null
+      },
+      "transfer": "verification"
+    },
+    {
+      "compiler": "doe",
+      "custody": false,
+      "label": "r0-doe-packed-verification-none-b",
+      "logSha256": "f527c3bfa94575049733933677a7c1c7a08f654689d075ccf266dc82e47b3f16",
+      "mode": "none",
+      "returnCode": 0,
+      "sequence": "packed",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.091,
+        "medianMs": 0.0910768505,
+        "phases": null
+      },
+      "transfer": "verification"
+    },
+    {
+      "compiler": "doe",
+      "custody": false,
+      "label": "r0-doe-packed-verification-host",
+      "logSha256": "50f896e5b2be71ab4f77a1dc9f238aba8b9a974843431c1137c428d6a1bf174a",
+      "mode": "host",
+      "returnCode": 0,
+      "sequence": "packed",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.098,
+        "medianMs": 0.09799909600000001,
+        "phases": {
+          "compareMs": 0.00095129,
+          "mapMs": 0.0021739005,
+          "polls": 6.0,
+          "recordMs": 0.009197235,
+          "submitMs": 0.013990879000000001,
+          "timestampReadMs": 0.0,
+          "waitMs": 0.0711894035
+        }
+      },
+      "transfer": "verification"
+    },
+    {
+      "compiler": "doe",
+      "custody": false,
+      "label": "r0-doe-packed-verification-gpu",
+      "logSha256": "e894af5a8e85900ec95d02bcedab80e293a4f3e42463c8ec033f878455c73ee4",
+      "mode": "gpu",
+      "returnCode": 0,
+      "sequence": "packed",
+      "summary": {
+        "gpuStageNs": [
+          3306.5,
+          33623.5,
+          2565.0,
+          2524.0
+        ],
+        "medianCpuMs": 0.14,
+        "medianMs": 0.139823437,
+        "phases": {
+          "compareMs": 0.000959873,
+          "mapMs": 0.002169132,
+          "polls": 7.0,
+          "recordMs": 0.012083054,
+          "submitMs": 0.01813364,
+          "timestampReadMs": 0.00040102,
+          "waitMs": 0.10505771650000001
+        }
+      },
+      "transfer": "verification"
+    },
+    {
+      "compiler": "doe",
+      "custody": false,
+      "label": "r1-doe-packed-verification-gpu",
+      "logSha256": "f7aa8b13ec11780364c3e5b6002545418a2693387712fce6a276574914d417c9",
+      "mode": "gpu",
+      "returnCode": 0,
+      "sequence": "packed",
+      "summary": {
+        "gpuStageNs": [
+          3326.0,
+          33584.0,
+          2525.0,
+          2485.0
+        ],
+        "medianCpuMs": 0.14,
+        "medianMs": 0.139618397,
+        "phases": {
+          "compareMs": 0.000823021,
+          "mapMs": 0.002164841,
+          "polls": 7.0,
+          "recordMs": 0.012107849,
+          "submitMs": 0.017613411,
+          "timestampReadMs": 0.000401497,
+          "waitMs": 0.1058449745
+        }
+      },
+      "transfer": "verification"
+    },
+    {
+      "compiler": "doe",
+      "custody": false,
+      "label": "r1-doe-packed-verification-host",
+      "logSha256": "ab964f7d5d8c708d2da47fff6aad88411ae8f9eac423274636bcc46682230652",
+      "mode": "host",
+      "returnCode": 0,
+      "sequence": "packed",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.093,
+        "medianMs": 0.0922431945,
+        "phases": {
+          "compareMs": 0.000887394,
+          "mapMs": 0.0021538735000000003,
+          "polls": 6.0,
+          "recordMs": 0.009648323,
+          "submitMs": 0.0143818855,
+          "timestampReadMs": 0.0,
+          "waitMs": 0.0635652545
+        }
+      },
+      "transfer": "verification"
+    },
+    {
+      "compiler": "doe",
+      "custody": false,
+      "label": "r1-doe-packed-verification-none-b",
+      "logSha256": "310e223dbd0116ec3dafe39cdedc53ba2bcfe349b8c48fed6b907820c2c93b98",
+      "mode": "none",
+      "returnCode": 0,
+      "sequence": "packed",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.089,
+        "medianMs": 0.0885219575,
+        "phases": null
+      },
+      "transfer": "verification"
+    },
+    {
+      "compiler": "doe",
+      "custody": false,
+      "label": "r1-doe-packed-verification-none-a",
+      "logSha256": "fed2c320576953fc1cbf972c65d67b85c145bba72b15f6ba806888fe75a0f7ea",
+      "mode": "none",
+      "returnCode": 0,
+      "sequence": "packed",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.088,
+        "medianMs": 0.087940693,
+        "phases": null
+      },
+      "transfer": "verification"
+    },
+    {
+      "compiler": "doe",
+      "custody": false,
+      "label": "r1-doe-packed-resident-gpu",
+      "logSha256": "a014944e76a9e0bb42f17ac67e7f26a362325de30a0f13593e5e95335a1427af",
+      "mode": "gpu",
+      "returnCode": 0,
+      "sequence": "packed",
+      "summary": {
+        "gpuStageNs": [
+          3286.0,
+          33544.0,
+          2525.0,
+          2445.0
+        ],
+        "medianCpuMs": 0.134,
+        "medianMs": 0.133852005,
+        "phases": {
+          "compareMs": 0.000150681,
+          "mapMs": 0.0199327465,
+          "polls": 3.0,
+          "recordMs": 0.0105395315,
+          "submitMs": 0.0157394405,
+          "timestampReadMs": 0.0004057885,
+          "waitMs": 0.08670854550000001
+        }
+      },
+      "transfer": "resident"
+    },
+    {
+      "compiler": "doe",
+      "custody": false,
+      "label": "r1-doe-packed-resident-host",
+      "logSha256": "b830f0aca245f289b5bc777817044187b619da2e259561fe00b1e42fd44f0850",
+      "mode": "host",
+      "returnCode": 0,
+      "sequence": "packed",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.109,
+        "medianMs": 0.1087450985,
+        "phases": {
+          "compareMs": 0.000149727,
+          "mapMs": 0.031319141499999995,
+          "polls": 2.0,
+          "recordMs": 0.0049843785,
+          "submitMs": 0.0117120745,
+          "timestampReadMs": 0.0,
+          "waitMs": 0.0599880215
+        }
+      },
+      "transfer": "resident"
+    },
+    {
+      "compiler": "doe",
+      "custody": false,
+      "label": "r1-doe-packed-resident-none-b",
+      "logSha256": "d0fbd1aba9bce86987db25eb9974df442ca3fa4f222eea7907ea9caa72fcd453",
+      "mode": "none",
+      "returnCode": 0,
+      "sequence": "packed",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.109,
+        "medianMs": 0.1093063355,
+        "phases": null
+      },
+      "transfer": "resident"
+    },
+    {
+      "compiler": "doe",
+      "custody": false,
+      "label": "r1-doe-packed-resident-none-a",
+      "logSha256": "c679fa0f8b7e4bda35099bc93044ae152c27be66f5c14841a532d45881485965",
+      "mode": "none",
+      "returnCode": 0,
+      "sequence": "packed",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.1,
+        "medianMs": 0.100168228,
+        "phases": null
+      },
+      "transfer": "resident"
+    },
+    {
+      "compiler": "doe",
+      "custody": false,
+      "label": "r1-doe-portable-verification-gpu",
+      "logSha256": "81de89d94af6db447a937462607a48e4196f274f2f3bf80b71939521d57f4805",
+      "mode": "gpu",
+      "returnCode": 0,
+      "sequence": "portable",
+      "summary": {
+        "gpuStageNs": [
+          3287.0,
+          33583.5,
+          2525.0,
+          2485.0
+        ],
+        "medianCpuMs": 0.134,
+        "medianMs": 0.133861542,
+        "phases": {
+          "compareMs": 0.0008511545,
+          "mapMs": 0.0015039444999999999,
+          "polls": 7.0,
+          "recordMs": 0.008346081,
+          "submitMs": 0.0154037475,
+          "timestampReadMs": 0.000289917,
+          "waitMs": 0.10505342449999999
+        }
+      },
+      "transfer": "verification"
+    },
+    {
+      "compiler": "doe",
+      "custody": false,
+      "label": "r1-doe-portable-verification-host",
+      "logSha256": "12ada7f716c6401838eeca797431fdd3e298874ea4336b68a2c7561a50788a6f",
+      "mode": "host",
+      "returnCode": 0,
+      "sequence": "portable",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.098,
+        "medianMs": 0.0983958245,
+        "phases": {
+          "compareMs": 0.000851631,
+          "mapMs": 0.001514435,
+          "polls": 6.0,
+          "recordMs": 0.0067472455,
+          "submitMs": 0.012638568999999999,
+          "timestampReadMs": 0.0,
+          "waitMs": 0.0761790275
+        }
+      },
+      "transfer": "verification"
+    },
+    {
+      "compiler": "doe",
+      "custody": false,
+      "label": "r1-doe-portable-verification-none-b",
+      "logSha256": "f10903151a417251697c84e42f028bba028c8d87eb80e708124293722f80b9ed",
+      "mode": "none",
+      "returnCode": 0,
+      "sequence": "portable",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.087,
+        "medianMs": 0.0867033005,
+        "phases": null
+      },
+      "transfer": "verification"
+    },
+    {
+      "compiler": "doe",
+      "custody": false,
+      "label": "r1-doe-portable-verification-none-a",
+      "logSha256": "d0d86557e1d192373a58c7386d8b34f552f4c40aa616cd627999e926b6bc880a",
+      "mode": "none",
+      "returnCode": 0,
+      "sequence": "portable",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.101,
+        "medianMs": 0.100724697,
+        "phases": null
+      },
+      "transfer": "verification"
+    },
+    {
+      "compiler": "doe",
+      "custody": false,
+      "label": "r1-doe-portable-resident-gpu",
+      "logSha256": "86a869f9bc73ec68c7fca2888b5d2a6d4334b01dc130022a37ec54e7e19241fe",
+      "mode": "gpu",
+      "returnCode": 0,
+      "sequence": "portable",
+      "summary": {
+        "gpuStageNs": [
+          3286.0,
+          33584.0,
+          2525.0,
+          2485.0
+        ],
+        "medianCpuMs": 0.1475,
+        "medianMs": 0.1472015385,
+        "phases": {
+          "compareMs": 0.000150681,
+          "mapMs": 0.031605243500000005,
+          "polls": 3.0,
+          "recordMs": 0.0105142595,
+          "submitMs": 0.0170669555,
+          "timestampReadMs": 0.000401497,
+          "waitMs": 0.08798027050000001
+        }
+      },
+      "transfer": "resident"
+    },
+    {
+      "compiler": "doe",
+      "custody": false,
+      "label": "r1-doe-portable-resident-host",
+      "logSha256": "e76309f2d9eca8c8813fc89dd7728bbdaa6462a2280d4950c27fd6a565b73626",
+      "mode": "host",
+      "returnCode": 0,
+      "sequence": "portable",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.098,
+        "medianMs": 0.097328186,
+        "phases": {
+          "compareMs": 0.000149727,
+          "mapMs": 0.021149635,
+          "polls": 2.0,
+          "recordMs": 0.004878998,
+          "submitMs": 0.010505199,
+          "timestampReadMs": 0.0,
+          "waitMs": 0.0600938795
+        }
+      },
+      "transfer": "resident"
+    },
+    {
+      "compiler": "doe",
+      "custody": false,
+      "label": "r1-doe-portable-resident-none-b",
+      "logSha256": "2e60161fd745583ebc797a330d1c55a94ed76ef20a900e13c4cb1ccb96ddaa35",
+      "mode": "none",
+      "returnCode": 0,
+      "sequence": "portable",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.096,
+        "medianMs": 0.0957303045,
+        "phases": null
+      },
+      "transfer": "resident"
+    },
+    {
+      "compiler": "doe",
+      "custody": false,
+      "label": "r1-doe-portable-resident-none-a",
+      "logSha256": "efc7e6971462aace10f77a6384165defd7efe4a7bc50302070bd7255ae73506e",
+      "mode": "none",
+      "returnCode": 0,
+      "sequence": "portable",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.097,
+        "medianMs": 0.09679269800000001,
+        "phases": null
+      },
+      "transfer": "resident"
+    },
+    {
+      "compiler": "tint",
+      "custody": false,
+      "label": "r1-tint-packed-verification-gpu",
+      "logSha256": "beb8a3fa6542f559741882c3932c715703b981ec504e5035d9fc98c7e439bc73",
+      "mode": "gpu",
+      "returnCode": 0,
+      "sequence": "packed",
+      "summary": {
+        "gpuStageNs": [
+          3567.0,
+          40958.0,
+          2605.0,
+          2565.0
+        ],
+        "medianCpuMs": 0.144,
+        "medianMs": 0.1440763475,
+        "phases": {
+          "compareMs": 0.0009770395,
+          "mapMs": 0.0015087125,
+          "polls": 7.0,
+          "recordMs": 0.008490085500000001,
+          "submitMs": 0.015414238,
+          "timestampReadMs": 0.000300407,
+          "waitMs": 0.114816189
+        }
+      },
+      "transfer": "verification"
+    },
+    {
+      "compiler": "tint",
+      "custody": false,
+      "label": "r1-tint-packed-verification-host",
+      "logSha256": "8cae215755c5104aa58b5f4547b54cb8d1efe262fc5384c67b3f135a708d9319",
+      "mode": "host",
+      "returnCode": 0,
+      "sequence": "packed",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.128,
+        "medianMs": 0.12732028950000002,
+        "phases": {
+          "compareMs": 0.001072407,
+          "mapMs": 0.002174377,
+          "polls": 6.0,
+          "recordMs": 0.0097932815,
+          "submitMs": 0.01461792,
+          "timestampReadMs": 0.0,
+          "waitMs": 0.0967378615
+        }
+      },
+      "transfer": "verification"
+    },
+    {
+      "compiler": "tint",
+      "custody": false,
+      "label": "r1-tint-packed-verification-none-b",
+      "logSha256": "c3d8eea056d63c5045358a9d217ad4a31dd46cc7253d9a7c319a8ed39d92acfb",
+      "mode": "none",
+      "returnCode": 0,
+      "sequence": "packed",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.1235,
+        "medianMs": 0.12287664400000001,
+        "phases": null
+      },
+      "transfer": "verification"
+    },
+    {
+      "compiler": "tint",
+      "custody": false,
+      "label": "r1-tint-packed-verification-none-a",
+      "logSha256": "422e5a7926ae550f393f5bb98635ab04a55ad5e89aadfc16a392ad19750b957c",
+      "mode": "none",
+      "returnCode": 0,
+      "sequence": "packed",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.1145,
+        "medianMs": 0.11439991,
+        "phases": null
+      },
+      "transfer": "verification"
+    },
+    {
+      "compiler": "tint",
+      "custody": false,
+      "label": "r1-tint-packed-resident-gpu",
+      "logSha256": "c31a4f12dac6e5b752e24f16b0fc76a9344470d5cddcf58aaad32c1c9321103c",
+      "mode": "gpu",
+      "returnCode": 0,
+      "sequence": "packed",
+      "summary": {
+        "gpuStageNs": [
+          3526.0,
+          39916.0,
+          2564.0,
+          2504.5
+        ],
+        "medianCpuMs": 0.131,
+        "medianMs": 0.1307115555,
+        "phases": {
+          "compareMs": 0.000150681,
+          "mapMs": 0.020258426500000003,
+          "polls": 3.0,
+          "recordMs": 0.007534504,
+          "submitMs": 0.013700962,
+          "timestampReadMs": 0.000281334,
+          "waitMs": 0.0863628385
+        }
+      },
+      "transfer": "resident"
+    },
+    {
+      "compiler": "tint",
+      "custody": false,
+      "label": "r1-tint-packed-resident-host",
+      "logSha256": "ebb1ec4e9400da6eeacd8624169fb429133781373600915a471f932a09a2ba69",
+      "mode": "host",
+      "returnCode": 0,
+      "sequence": "packed",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.106,
+        "medianMs": 0.1063952445,
+        "phases": {
+          "compareMs": 0.0001511575,
+          "mapMs": 0.021080017,
+          "polls": 2.0,
+          "recordMs": 0.005676270000000001,
+          "submitMs": 0.0122580525,
+          "timestampReadMs": 0.0,
+          "waitMs": 0.064596653
+        }
+      },
+      "transfer": "resident"
+    },
+    {
+      "compiler": "tint",
+      "custody": false,
+      "label": "r1-tint-packed-resident-none-b",
+      "logSha256": "39d62b4885f5a92cda84f7ebd8f601814a2afa304558e71df4fb45f18f7a3cfe",
+      "mode": "none",
+      "returnCode": 0,
+      "sequence": "packed",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.121,
+        "medianMs": 0.1206922535,
+        "phases": null
+      },
+      "transfer": "resident"
+    },
+    {
+      "compiler": "tint",
+      "custody": false,
+      "label": "r1-tint-packed-resident-none-a",
+      "logSha256": "0d1ec14430e6f0e063d47719c964387de9862c30e17fdfdbc547e103982b7013",
+      "mode": "none",
+      "returnCode": 0,
+      "sequence": "packed",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.1105,
+        "medianMs": 0.1107435225,
+        "phases": null
+      },
+      "transfer": "resident"
+    },
+    {
+      "compiler": "tint",
+      "custody": false,
+      "label": "r1-tint-portable-verification-gpu",
+      "logSha256": "e807b7733d102f7341ac4a7b4eb1e5057fb147c5bed974552527675952b349db",
+      "mode": "gpu",
+      "returnCode": 0,
+      "sequence": "portable",
+      "summary": {
+        "gpuStageNs": [
+          3607.0,
+          42361.0,
+          2645.0,
+          2605.0
+        ],
+        "medianCpuMs": 0.1455,
+        "medianMs": 0.1456637385,
+        "phases": {
+          "compareMs": 0.001041412,
+          "mapMs": 0.002174854,
+          "polls": 7.0,
+          "recordMs": 0.012096882,
+          "submitMs": 0.0185251235,
+          "timestampReadMs": 0.000400543,
+          "waitMs": 0.10926055949999999
+        }
+      },
+      "transfer": "verification"
+    },
+    {
+      "compiler": "tint",
+      "custody": false,
+      "label": "r1-tint-portable-verification-host",
+      "logSha256": "07dc43e3e4f92b2b6161ff1edc1c47c13e47415d0986f351eadc7d83db0b11a6",
+      "mode": "host",
+      "returnCode": 0,
+      "sequence": "portable",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.1305,
+        "medianMs": 0.13024997700000002,
+        "phases": {
+          "compareMs": 0.000989914,
+          "mapMs": 0.0021796230000000003,
+          "polls": 6.0,
+          "recordMs": 0.0092172625,
+          "submitMs": 0.014482021500000001,
+          "timestampReadMs": 0.0,
+          "waitMs": 0.101656437
+        }
+      },
+      "transfer": "verification"
+    },
+    {
+      "compiler": "tint",
+      "custody": false,
+      "label": "r1-tint-portable-verification-none-b",
+      "logSha256": "f74f6839d468942bf2461fc94ee391684d307664142a3bed28530fadf5ca33d8",
+      "mode": "none",
+      "returnCode": 0,
+      "sequence": "portable",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.131,
+        "medianMs": 0.13068628300000001,
+        "phases": null
+      },
+      "transfer": "verification"
+    },
+    {
+      "compiler": "tint",
+      "custody": false,
+      "label": "r1-tint-portable-verification-none-a",
+      "logSha256": "cf5beba401b249411d5e1651f5eb0b6f65e78539c24bb35e83cf6d4aea666d42",
+      "mode": "none",
+      "returnCode": 0,
+      "sequence": "portable",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.111,
+        "medianMs": 0.1108136175,
+        "phases": null
+      },
+      "transfer": "verification"
+    },
+    {
+      "compiler": "tint",
+      "custody": false,
+      "label": "r1-tint-portable-resident-gpu",
+      "logSha256": "c485a118aa5b75e242754788205fd337f4944e02fab6723d6821797d5a37cded",
+      "mode": "gpu",
+      "returnCode": 0,
+      "sequence": "portable",
+      "summary": {
+        "gpuStageNs": [
+          3546.5,
+          41339.0,
+          2565.0,
+          2525.0
+        ],
+        "medianCpuMs": 0.1425,
+        "medianMs": 0.1420226095,
+        "phases": {
+          "compareMs": 0.0001654625,
+          "mapMs": 0.030572890999999998,
+          "polls": 3.0,
+          "recordMs": 0.009994030000000001,
+          "submitMs": 0.016264915499999998,
+          "timestampReadMs": 0.0004153255,
+          "waitMs": 0.093276024
+        }
+      },
+      "transfer": "resident"
+    },
+    {
+      "compiler": "tint",
+      "custody": false,
+      "label": "r1-tint-portable-resident-host",
+      "logSha256": "88196d9370a4cb63fffab93eccaf1d4a802be24653524e0afc453a0c10b4988e",
+      "mode": "host",
+      "returnCode": 0,
+      "sequence": "portable",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.1055,
+        "medianMs": 0.10492229450000001,
+        "phases": {
+          "compareMs": 0.000150681,
+          "mapMs": 0.020663738,
+          "polls": 2.0,
+          "recordMs": 0.004908562,
+          "submitMs": 0.0095682145,
+          "timestampReadMs": 0.0,
+          "waitMs": 0.0674324035
+        }
+      },
+      "transfer": "resident"
+    },
+    {
+      "compiler": "tint",
+      "custody": false,
+      "label": "r1-tint-portable-resident-none-b",
+      "logSha256": "d88cbc8a5ff493e90ba034f7cf21b5da2b275f521c2e5eea95c15f9de45afb4c",
+      "mode": "none",
+      "returnCode": 0,
+      "sequence": "portable",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.107,
+        "medianMs": 0.10691070550000001,
+        "phases": null
+      },
+      "transfer": "resident"
+    },
+    {
+      "compiler": "tint",
+      "custody": false,
+      "label": "r1-tint-portable-resident-none-a",
+      "logSha256": "bae62e38af4090376748b451d3c65bb8a0dfbef4fe393f760f4465c81ee2a5b5",
+      "mode": "none",
+      "returnCode": 0,
+      "sequence": "portable",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.1065,
+        "medianMs": 0.106265068,
+        "phases": null
+      },
+      "transfer": "resident"
+    },
+    {
+      "compiler": "tint",
+      "custody": false,
+      "label": "r2-tint-portable-resident-none-a",
+      "logSha256": "bacd978b5147b56d7fb1244d962fd1cbb21f671c6a55e08522890c0fafdf951b",
+      "mode": "none",
+      "returnCode": 0,
+      "sequence": "portable",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.108,
+        "medianMs": 0.1073622705,
+        "phases": null
+      },
+      "transfer": "resident"
+    },
+    {
+      "compiler": "tint",
+      "custody": false,
+      "label": "r2-tint-portable-resident-none-b",
+      "logSha256": "a77ea1bfba8bfca526de435efa5ddac1eecf91f2f4aa94e6dcf857597353626e",
+      "mode": "none",
+      "returnCode": 0,
+      "sequence": "portable",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.106,
+        "medianMs": 0.1062059405,
+        "phases": null
+      },
+      "transfer": "resident"
+    },
+    {
+      "compiler": "tint",
+      "custody": false,
+      "label": "r2-tint-portable-resident-host",
+      "logSha256": "b2a92c78dfb4f1afe0a2fb764069e22db2f721199b25a81724d3289ffbf1ec2b",
+      "mode": "host",
+      "returnCode": 0,
+      "sequence": "portable",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.1085,
+        "medianMs": 0.1083545685,
+        "phases": {
+          "compareMs": 0.000150204,
+          "mapMs": 0.021511078,
+          "polls": 2.0,
+          "recordMs": 0.004979134,
+          "submitMs": 0.01106596,
+          "timestampReadMs": 0.0,
+          "waitMs": 0.0676164625
+        }
+      },
+      "transfer": "resident"
+    },
+    {
+      "compiler": "tint",
+      "custody": false,
+      "label": "r2-tint-portable-resident-gpu",
+      "logSha256": "53694c6431a0b7c18be7b183de0b0ca04c9a36ec15fef174354b5ee72f85e2cf",
+      "mode": "gpu",
+      "returnCode": 0,
+      "sequence": "portable",
+      "summary": {
+        "gpuStageNs": [
+          3527.0,
+          41338.5,
+          2565.0,
+          2524.0
+        ],
+        "medianCpuMs": 0.14,
+        "medianMs": 0.1394324305,
+        "phases": {
+          "compareMs": 0.000150681,
+          "mapMs": 0.0202775,
+          "polls": 3.0,
+          "recordMs": 0.010735988500000002,
+          "submitMs": 0.016616344499999998,
+          "timestampReadMs": 0.000400543,
+          "waitMs": 0.090961933
+        }
+      },
+      "transfer": "resident"
+    },
+    {
+      "compiler": "tint",
+      "custody": false,
+      "label": "r2-tint-portable-verification-none-a",
+      "logSha256": "a039d1b9f8b0f9bd35bed1de4acbc0934f621f4b883785479c6e151550eb9708",
+      "mode": "none",
+      "returnCode": 0,
+      "sequence": "portable",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.107,
+        "medianMs": 0.1067562105,
+        "phases": null
+      },
+      "transfer": "verification"
+    },
+    {
+      "compiler": "tint",
+      "custody": false,
+      "label": "r2-tint-portable-verification-none-b",
+      "logSha256": "0c81d2932c21698d7dc6b7c4e3d26dc2c5607348b85abf294c05055e8667c8a8",
+      "mode": "none",
+      "returnCode": 0,
+      "sequence": "portable",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.13,
+        "medianMs": 0.1302051545,
+        "phases": null
+      },
+      "transfer": "verification"
+    },
+    {
+      "compiler": "tint",
+      "custody": false,
+      "label": "r2-tint-portable-verification-host",
+      "logSha256": "2629263bdb5695413322104237932465a5ec33355130f20d95430c4cb8e8be69",
+      "mode": "host",
+      "returnCode": 0,
+      "sequence": "portable",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.13,
+        "medianMs": 0.1297597885,
+        "phases": {
+          "compareMs": 0.000972748,
+          "mapMs": 0.0021600724999999996,
+          "polls": 6.0,
+          "recordMs": 0.009979248,
+          "submitMs": 0.015233993500000001,
+          "timestampReadMs": 0.0,
+          "waitMs": 0.0985097885
+        }
+      },
+      "transfer": "verification"
+    },
+    {
+      "compiler": "tint",
+      "custody": false,
+      "label": "r2-tint-portable-verification-gpu",
+      "logSha256": "39bc406e62dcd8d40d31ea83100ea71b171d199236b542aaee07307958b1d833",
+      "mode": "gpu",
+      "returnCode": 0,
+      "sequence": "portable",
+      "summary": {
+        "gpuStageNs": [
+          3567.0,
+          41398.5,
+          2605.0,
+          2564.5
+        ],
+        "medianCpuMs": 0.148,
+        "medianMs": 0.1479492185,
+        "phases": {
+          "compareMs": 0.00093317,
+          "mapMs": 0.0021762845000000003,
+          "polls": 7.0,
+          "recordMs": 0.012242794000000001,
+          "submitMs": 0.018380165,
+          "timestampReadMs": 0.000401497,
+          "waitMs": 0.11297750449999999
+        }
+      },
+      "transfer": "verification"
+    },
+    {
+      "compiler": "tint",
+      "custody": false,
+      "label": "r2-tint-packed-resident-none-a",
+      "logSha256": "9c840f2bcbaa9a860f93c5290656a7d6b575b682e42cc9c5de070fd8d291cf0e",
+      "mode": "none",
+      "returnCode": 0,
+      "sequence": "packed",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.107,
+        "medianMs": 0.10656595199999999,
+        "phases": null
+      },
+      "transfer": "resident"
+    },
+    {
+      "compiler": "tint",
+      "custody": false,
+      "label": "r2-tint-packed-resident-none-b",
+      "logSha256": "0f3012aec2f876b8d7d485e6ba7a62e01cf3cda384e7a2682a9ab7f59e6c86d3",
+      "mode": "none",
+      "returnCode": 0,
+      "sequence": "packed",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.11,
+        "medianMs": 0.109831333,
+        "phases": null
+      },
+      "transfer": "resident"
+    },
+    {
+      "compiler": "tint",
+      "custody": false,
+      "label": "r2-tint-packed-resident-host",
+      "logSha256": "289501a71ebef4f2ef5636017b3fe385fd0df96bb4bc47cddff9e21ab8ceca9d",
+      "mode": "host",
+      "returnCode": 0,
+      "sequence": "packed",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.115,
+        "medianMs": 0.115176678,
+        "phases": {
+          "compareMs": 0.000149727,
+          "mapMs": 0.0313887595,
+          "polls": 2.0,
+          "recordMs": 0.0049395559999999995,
+          "submitMs": 0.011211394999999999,
+          "timestampReadMs": 0.0,
+          "waitMs": 0.0670814515
+        }
+      },
+      "transfer": "resident"
+    },
+    {
+      "compiler": "tint",
+      "custody": false,
+      "label": "r2-tint-packed-resident-gpu",
+      "logSha256": "1b678591f0a6b724a69780e53277516f864610e83b59267eb9e385df7aa4e491",
+      "mode": "gpu",
+      "returnCode": 0,
+      "sequence": "packed",
+      "summary": {
+        "gpuStageNs": [
+          3526.0,
+          39956.0,
+          2565.0,
+          2525.0
+        ],
+        "medianCpuMs": 0.151,
+        "medianMs": 0.1502580645,
+        "phases": {
+          "compareMs": 0.000150204,
+          "mapMs": 0.028863430000000002,
+          "polls": 3.0,
+          "recordMs": 0.010720730000000001,
+          "submitMs": 0.016445637,
+          "timestampReadMs": 0.000451088,
+          "waitMs": 0.09217929799999999
+        }
+      },
+      "transfer": "resident"
+    },
+    {
+      "compiler": "tint",
+      "custody": false,
+      "label": "r2-tint-packed-verification-none-a",
+      "logSha256": "d8268ab7a05832b0376df32b0d31612c761f11eaeb2b9adadbcbdf3f9c093ab5",
+      "mode": "none",
+      "returnCode": 0,
+      "sequence": "packed",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.104,
+        "medianMs": 0.1038451195,
+        "phases": null
+      },
+      "transfer": "verification"
+    },
+    {
+      "compiler": "tint",
+      "custody": false,
+      "label": "r2-tint-packed-verification-none-b",
+      "logSha256": "943fe0eab9fb3c90ed9abdea42e89906aa80d64da6a68dca66422aeee55811ab",
+      "mode": "none",
+      "returnCode": 0,
+      "sequence": "packed",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.0965,
+        "medianMs": 0.096326351,
+        "phases": null
+      },
+      "transfer": "verification"
+    },
+    {
+      "compiler": "tint",
+      "custody": false,
+      "label": "r2-tint-packed-verification-host",
+      "logSha256": "11fd8c3871b406ae82fbaf6a6a278300323ab7af0950a7b1f350d5388627dca2",
+      "mode": "host",
+      "returnCode": 0,
+      "sequence": "packed",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.1315,
+        "medianMs": 0.13149786000000002,
+        "phases": {
+          "compareMs": 0.0010671615,
+          "mapMs": 0.002215385,
+          "polls": 6.0,
+          "recordMs": 0.0093479155,
+          "submitMs": 0.0147128105,
+          "timestampReadMs": 0.0,
+          "waitMs": 0.103164196
+        }
+      },
+      "transfer": "verification"
+    },
+    {
+      "compiler": "tint",
+      "custody": false,
+      "label": "r2-tint-packed-verification-gpu",
+      "logSha256": "694da319c81d3c329221e100e9a0d78f516c85a8c44aad9edaf99b3f159c1f11",
+      "mode": "gpu",
+      "returnCode": 0,
+      "sequence": "packed",
+      "summary": {
+        "gpuStageNs": [
+          3607.0,
+          40958.0,
+          2605.0,
+          2605.0
+        ],
+        "medianCpuMs": 0.149,
+        "medianMs": 0.14856004750000001,
+        "phases": {
+          "compareMs": 0.0009455685,
+          "mapMs": 0.0014886855,
+          "polls": 7.0,
+          "recordMs": 0.008731365500000001,
+          "submitMs": 0.0161247255,
+          "timestampReadMs": 0.000301361,
+          "waitMs": 0.12055683149999999
+        }
+      },
+      "transfer": "verification"
+    },
+    {
+      "compiler": "doe",
+      "custody": false,
+      "label": "r2-doe-portable-resident-none-a",
+      "logSha256": "6737148334a3c5188cbfa913120d6f8948c3bd7da414bcd36bf33f9bf169c637",
+      "mode": "none",
+      "returnCode": 0,
+      "sequence": "portable",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.113,
+        "medianMs": 0.11270284650000001,
+        "phases": null
+      },
+      "transfer": "resident"
+    },
+    {
+      "compiler": "doe",
+      "custody": false,
+      "label": "r2-doe-portable-resident-none-b",
+      "logSha256": "b4a6f157180e30e8cb59fcabde96fc7dc6e16c79ef5467e34c37e5c61407ea22",
+      "mode": "none",
+      "returnCode": 0,
+      "sequence": "portable",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.098,
+        "medianMs": 0.09795904150000001,
+        "phases": null
+      },
+      "transfer": "resident"
+    },
+    {
+      "compiler": "doe",
+      "custody": false,
+      "label": "r2-doe-portable-resident-host",
+      "logSha256": "fc165468fff3c81d2fed4261d0e8913d87411a031a0dc065e221001cf5075fba",
+      "mode": "host",
+      "returnCode": 0,
+      "sequence": "portable",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.1035,
+        "medianMs": 0.1030135155,
+        "phases": {
+          "compareMs": 0.000160217,
+          "mapMs": 0.0208392145,
+          "polls": 2.0,
+          "recordMs": 0.007078171,
+          "submitMs": 0.012368202,
+          "timestampReadMs": 0.0,
+          "waitMs": 0.059175967999999995
+        }
+      },
+      "transfer": "resident"
+    },
+    {
+      "compiler": "doe",
+      "custody": false,
+      "label": "r2-doe-portable-resident-gpu",
+      "logSha256": "908b8cca8661296a69b66239ae36f5cbacf43378f5e1be00e2e4e1c45077ee85",
+      "mode": "gpu",
+      "returnCode": 0,
+      "sequence": "portable",
+      "summary": {
+        "gpuStageNs": [
+          3286.0,
+          33583.5,
+          2525.0,
+          2485.0
+        ],
+        "medianCpuMs": 0.1345,
+        "medianMs": 0.1344122885,
+        "phases": {
+          "compareMs": 0.0001549725,
+          "mapMs": 0.0200676915,
+          "polls": 3.0,
+          "recordMs": 0.0100140575,
+          "submitMs": 0.0156946185,
+          "timestampReadMs": 0.000401497,
+          "waitMs": 0.0845098495
+        }
+      },
+      "transfer": "resident"
+    },
+    {
+      "compiler": "doe",
+      "custody": false,
+      "label": "r2-doe-portable-verification-none-a",
+      "logSha256": "88938692839d874c618059cd7161d7d884c1b112dbd87b01ab14d7d71b7b037b",
+      "mode": "none",
+      "returnCode": 0,
+      "sequence": "portable",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.088,
+        "medianMs": 0.08809566499999999,
+        "phases": null
+      },
+      "transfer": "verification"
+    },
+    {
+      "compiler": "doe",
+      "custody": false,
+      "label": "r2-doe-portable-verification-none-b",
+      "logSha256": "12d263ce384b4f37dfc034b01419d9d3ae44ea1ef46aeae23e9f4d4a1dd5d22c",
+      "mode": "none",
+      "returnCode": 0,
+      "sequence": "portable",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.099,
+        "medianMs": 0.098670483,
+        "phases": null
+      },
+      "transfer": "verification"
+    },
+    {
+      "compiler": "doe",
+      "custody": false,
+      "label": "r2-doe-portable-verification-host",
+      "logSha256": "c8a90c6a7f01c38f629cfa547fecd00e6961fc8e5fd14ab26283a227d31940ed",
+      "mode": "host",
+      "returnCode": 0,
+      "sequence": "portable",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.101,
+        "medianMs": 0.1007595065,
+        "phases": {
+          "compareMs": 0.0010375975,
+          "mapMs": 0.002302647,
+          "polls": 6.0,
+          "recordMs": 0.0095133785,
+          "submitMs": 0.014322281,
+          "timestampReadMs": 0.0,
+          "waitMs": 0.07405948600000001
+        }
+      },
+      "transfer": "verification"
+    },
+    {
+      "compiler": "doe",
+      "custody": false,
+      "label": "r2-doe-portable-verification-gpu",
+      "logSha256": "8ee262fed7bb566a7881dd23f3a9812ba698b659671a88c9562fe7fd76dd73e3",
+      "mode": "gpu",
+      "returnCode": 0,
+      "sequence": "portable",
+      "summary": {
+        "gpuStageNs": [
+          3326.0,
+          33904.5,
+          2565.0,
+          2525.0
+        ],
+        "medianCpuMs": 0.139,
+        "medianMs": 0.13951778450000002,
+        "phases": {
+          "compareMs": 0.000892162,
+          "mapMs": 0.001501083,
+          "polls": 7.0,
+          "recordMs": 0.00838089,
+          "submitMs": 0.015088558,
+          "timestampReadMs": 0.000290394,
+          "waitMs": 0.112607002
+        }
+      },
+      "transfer": "verification"
+    },
+    {
+      "compiler": "doe",
+      "custody": false,
+      "label": "r2-doe-packed-resident-none-a",
+      "logSha256": "96ded4ec895a6b12bccab19a690845021a45141b1ddf854bd2adda0366e1de09",
+      "mode": "none",
+      "returnCode": 0,
+      "sequence": "packed",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.098,
+        "medianMs": 0.0977740285,
+        "phases": null
+      },
+      "transfer": "resident"
+    },
+    {
+      "compiler": "doe",
+      "custody": false,
+      "label": "r2-doe-packed-resident-none-b",
+      "logSha256": "cea84cf6a6fd8281b1aa2de518bd134cd0fec8c195f9703abec7cd1ec6d6c69f",
+      "mode": "none",
+      "returnCode": 0,
+      "sequence": "packed",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.101,
+        "medianMs": 0.100824356,
+        "phases": null
+      },
+      "transfer": "resident"
+    },
+    {
+      "compiler": "doe",
+      "custody": false,
+      "label": "r2-doe-packed-resident-host",
+      "logSha256": "17efb69d4492420c44162a732432b85c4a7cde7e8e7364abc31488200b138ca3",
+      "mode": "host",
+      "returnCode": 0,
+      "sequence": "packed",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.106,
+        "medianMs": 0.1058092115,
+        "phases": {
+          "compareMs": 0.000150681,
+          "mapMs": 0.020839691,
+          "polls": 2.0,
+          "recordMs": 0.007238388,
+          "submitMs": 0.0121126175,
+          "timestampReadMs": 0.0,
+          "waitMs": 0.059066295500000005
+        }
+      },
+      "transfer": "resident"
+    },
+    {
+      "compiler": "doe",
+      "custody": false,
+      "label": "r2-doe-packed-resident-gpu",
+      "logSha256": "e7233268c7d731d3e84df35984f3b2788adf8d5329169a4339c907f53722785f",
+      "mode": "gpu",
+      "returnCode": 0,
+      "sequence": "packed",
+      "summary": {
+        "gpuStageNs": [
+          3326.5,
+          34545.0,
+          2565.0,
+          2525.0
+        ],
+        "medianCpuMs": 0.134,
+        "medianMs": 0.133661747,
+        "phases": {
+          "compareMs": 0.0001797675,
+          "mapMs": 0.019716739499999997,
+          "polls": 3.0,
+          "recordMs": 0.010790348000000002,
+          "submitMs": 0.0159754755,
+          "timestampReadMs": 0.000411034,
+          "waitMs": 0.0866127015
+        }
+      },
+      "transfer": "resident"
+    },
+    {
+      "compiler": "doe",
+      "custody": false,
+      "label": "r2-doe-packed-verification-none-a",
+      "logSha256": "2b3fa672546a2d059fd35d2baf082e48f2fdf85a71c2c9b7869164bef7f0d312",
+      "mode": "none",
+      "returnCode": 0,
+      "sequence": "packed",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.098,
+        "medianMs": 0.097969055,
+        "phases": null
+      },
+      "transfer": "verification"
+    },
+    {
+      "compiler": "doe",
+      "custody": false,
+      "label": "r2-doe-packed-verification-none-b",
+      "logSha256": "bea96c8bd55529c679d9ed6549d7482c940bf512fe70f69b7d0858bc98cf3cda",
+      "mode": "none",
+      "returnCode": 0,
+      "sequence": "packed",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.0995,
+        "medianMs": 0.099392414,
+        "phases": null
+      },
+      "transfer": "verification"
+    },
+    {
+      "compiler": "doe",
+      "custody": false,
+      "label": "r2-doe-packed-verification-host",
+      "logSha256": "7b219487cf6830cf82e94210b9532539749d0dc04314d1c907250b04ba09dbde",
+      "mode": "host",
+      "returnCode": 0,
+      "sequence": "packed",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.099,
+        "medianMs": 0.099252224,
+        "phases": {
+          "compareMs": 0.0009818075,
+          "mapMs": 0.002173424,
+          "polls": 6.0,
+          "recordMs": 0.0094127655,
+          "submitMs": 0.013916969500000001,
+          "timestampReadMs": 0.0,
+          "waitMs": 0.07178545
+        }
+      },
+      "transfer": "verification"
+    },
+    {
+      "compiler": "doe",
+      "custody": false,
+      "label": "r2-doe-packed-verification-gpu",
+      "logSha256": "9b21afb168c438e241555dc0f9f8e3c39fd624809463e2c4e2ca8c5705dbd444",
+      "mode": "gpu",
+      "returnCode": 0,
+      "sequence": "packed",
+      "summary": {
+        "gpuStageNs": [
+          3366.0,
+          34546.0,
+          2605.0,
+          2565.0
+        ],
+        "medianCpuMs": 0.142,
+        "medianMs": 0.1416420935,
+        "phases": {
+          "compareMs": 0.000969887,
+          "mapMs": 0.001483917,
+          "polls": 7.0,
+          "recordMs": 0.008400917,
+          "submitMs": 0.015533924000000001,
+          "timestampReadMs": 0.000301361,
+          "waitMs": 0.11410999299999999
+        }
+      },
+      "transfer": "verification"
+    },
+    {
+      "compiler": "doe",
+      "custody": false,
+      "label": "r3-doe-packed-verification-gpu",
+      "logSha256": "f09943f9f93f1aa926aab8f68f16aa679c1bcb602f7de8eea899f6f23e867d76",
+      "mode": "gpu",
+      "returnCode": 0,
+      "sequence": "packed",
+      "summary": {
+        "gpuStageNs": [
+          3286.0,
+          33583.0,
+          2525.0,
+          2484.5
+        ],
+        "medianCpuMs": 0.1395,
+        "medianMs": 0.1391119955,
+        "phases": {
+          "compareMs": 0.00097084,
+          "mapMs": 0.0021734235,
+          "polls": 7.0,
+          "recordMs": 0.012573719,
+          "submitMs": 0.0183148385,
+          "timestampReadMs": 0.000400543,
+          "waitMs": 0.10253763199999999
+        }
+      },
+      "transfer": "verification"
+    },
+    {
+      "compiler": "doe",
+      "custody": false,
+      "label": "r3-doe-packed-verification-host",
+      "logSha256": "6c74a3aaee32f107de4b640b343a8c05b0dc4329f07c3aaa8dee543ed898805f",
+      "mode": "host",
+      "returnCode": 0,
+      "sequence": "packed",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.1,
+        "medianMs": 0.0998926165,
+        "phases": {
+          "compareMs": 0.0010375975,
+          "mapMs": 0.002329826,
+          "polls": 6.0,
+          "recordMs": 0.009277344,
+          "submitMs": 0.0142769815,
+          "timestampReadMs": 0.0,
+          "waitMs": 0.07152462000000001
+        }
+      },
+      "transfer": "verification"
+    },
+    {
+      "compiler": "doe",
+      "custody": false,
+      "label": "r3-doe-packed-verification-none-b",
+      "logSha256": "4ca2d858b113d7972ca843ff8730ccaab256baaaf26377842774697c04ddcef2",
+      "mode": "none",
+      "returnCode": 0,
+      "sequence": "packed",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.0955,
+        "medianMs": 0.094848633,
+        "phases": null
+      },
+      "transfer": "verification"
+    },
+    {
+      "compiler": "doe",
+      "custody": false,
+      "label": "r3-doe-packed-verification-none-a",
+      "logSha256": "3dc9eb7f69db85a205c6e8cab98f96883e8c0562e2bd1df73a4c8de79c96127f",
+      "mode": "none",
+      "returnCode": 0,
+      "sequence": "packed",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.11599999999999999,
+        "medianMs": 0.11592388149999999,
+        "phases": null
+      },
+      "transfer": "verification"
+    },
+    {
+      "compiler": "doe",
+      "custody": false,
+      "label": "r3-doe-packed-resident-gpu",
+      "logSha256": "685a18692be010edd546e433e531921fa03fbb6be842737f3f9009ee1720b721",
+      "mode": "gpu",
+      "returnCode": 0,
+      "sequence": "packed",
+      "summary": {
+        "gpuStageNs": [
+          3366.0,
+          34506.0,
+          2605.0,
+          2565.0
+        ],
+        "medianCpuMs": 0.1405,
+        "medianMs": 0.14023923849999997,
+        "phases": {
+          "compareMs": 0.0001597405,
+          "mapMs": 0.029405117,
+          "polls": 3.0,
+          "recordMs": 0.010043620999999999,
+          "submitMs": 0.0159401895,
+          "timestampReadMs": 0.000401497,
+          "waitMs": 0.08477401749999999
+        }
+      },
+      "transfer": "resident"
+    },
+    {
+      "compiler": "doe",
+      "custody": false,
+      "label": "r3-doe-packed-resident-host",
+      "logSha256": "a8677b5ae39c234c4e93509a43c44dedbd54f9da72127b9fffdf0d360ba96758",
+      "mode": "host",
+      "returnCode": 0,
+      "sequence": "packed",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.11,
+        "medianMs": 0.10956668850000001,
+        "phases": {
+          "compareMs": 0.000150681,
+          "mapMs": 0.0297317505,
+          "polls": 2.0,
+          "recordMs": 0.007164001,
+          "submitMs": 0.011777401,
+          "timestampReadMs": 0.0,
+          "waitMs": 0.06045866
+        }
+      },
+      "transfer": "resident"
+    },
+    {
+      "compiler": "doe",
+      "custody": false,
+      "label": "r3-doe-packed-resident-none-b",
+      "logSha256": "86213830e65c546640ed0ba19184c794c9eba8b6854e3ba82e3bc02800551c27",
+      "mode": "none",
+      "returnCode": 0,
+      "sequence": "packed",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.098,
+        "medianMs": 0.0974287985,
+        "phases": null
+      },
+      "transfer": "resident"
+    },
+    {
+      "compiler": "doe",
+      "custody": false,
+      "label": "r3-doe-packed-resident-none-a",
+      "logSha256": "05710cdcc2a3c17a006f70dfbee2a03ed2d26a3ac6acc09b6ade9a0fd66c6809",
+      "mode": "none",
+      "returnCode": 0,
+      "sequence": "packed",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.109,
+        "medianMs": 0.10874939,
+        "phases": null
+      },
+      "transfer": "resident"
+    },
+    {
+      "compiler": "doe",
+      "custody": false,
+      "label": "r3-doe-portable-verification-gpu",
+      "logSha256": "c285ca6eea17ad3bc7dd3366f9861b7b32aec995ac5b1c239bb2067cbedb3a7a",
+      "mode": "gpu",
+      "returnCode": 0,
+      "sequence": "portable",
+      "summary": {
+        "gpuStageNs": [
+          3286.5,
+          33544.0,
+          2525.0,
+          2485.0
+        ],
+        "medianCpuMs": 0.14,
+        "medianMs": 0.13999366800000002,
+        "phases": {
+          "compareMs": 0.0008573535,
+          "mapMs": 0.00229454,
+          "polls": 7.0,
+          "recordMs": 0.0122532845,
+          "submitMs": 0.018353462,
+          "timestampReadMs": 0.000400543,
+          "waitMs": 0.1049175265
+        }
+      },
+      "transfer": "verification"
+    },
+    {
+      "compiler": "doe",
+      "custody": false,
+      "label": "r3-doe-portable-verification-host",
+      "logSha256": "d670a8c5ed69a3016fa7473ffb868124fcd370dca006ec8083d9dada1024ebfb",
+      "mode": "host",
+      "returnCode": 0,
+      "sequence": "portable",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.09,
+        "medianMs": 0.0896835325,
+        "phases": {
+          "compareMs": 0.000850677,
+          "mapMs": 0.001525402,
+          "polls": 6.0,
+          "recordMs": 0.006988525000000001,
+          "submitMs": 0.012352943500000001,
+          "timestampReadMs": 0.0,
+          "waitMs": 0.0678329465
+        }
+      },
+      "transfer": "verification"
+    },
+    {
+      "compiler": "doe",
+      "custody": false,
+      "label": "r3-doe-portable-verification-none-b",
+      "logSha256": "090e6eee1e8fc29cf2fe4db5051189c1f70e9e622d1cb0f4396a4cde37c40337",
+      "mode": "none",
+      "returnCode": 0,
+      "sequence": "portable",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.089,
+        "medianMs": 0.088832378,
+        "phases": null
+      },
+      "transfer": "verification"
+    },
+    {
+      "compiler": "doe",
+      "custody": false,
+      "label": "r3-doe-portable-verification-none-a",
+      "logSha256": "245a1e3bfae7d2d18744242ab2c7e52c8bb0b4540777f3946eb0d6e3d46f1b78",
+      "mode": "none",
+      "returnCode": 0,
+      "sequence": "portable",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.09,
+        "medianMs": 0.089447975,
+        "phases": null
+      },
+      "transfer": "verification"
+    },
+    {
+      "compiler": "doe",
+      "custody": false,
+      "label": "r3-doe-portable-resident-gpu",
+      "logSha256": "b69ca17b5440a60db80c12501ef7be58884e1427ef3eb3acc2c14d515d02703e",
+      "mode": "gpu",
+      "returnCode": 0,
+      "sequence": "portable",
+      "summary": {
+        "gpuStageNs": [
+          3287.0,
+          33824.0,
+          2525.0,
+          2485.0
+        ],
+        "medianCpuMs": 0.149,
+        "medianMs": 0.14873552299999998,
+        "phases": {
+          "compareMs": 0.000161171,
+          "mapMs": 0.031845093000000005,
+          "polls": 3.0,
+          "recordMs": 0.0109305385,
+          "submitMs": 0.017622948,
+          "timestampReadMs": 0.000461578,
+          "waitMs": 0.08727836650000001
+        }
+      },
+      "transfer": "resident"
+    },
+    {
+      "compiler": "doe",
+      "custody": false,
+      "label": "r3-doe-portable-resident-host",
+      "logSha256": "ae4ce57060553747da589bc45497b74860040bf4033506e55d5d2ff1f3e5e613",
+      "mode": "host",
+      "returnCode": 0,
+      "sequence": "portable",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.111,
+        "medianMs": 0.11018753049999999,
+        "phases": {
+          "compareMs": 0.000159264,
+          "mapMs": 0.029730797,
+          "polls": 2.0,
+          "recordMs": 0.007059097,
+          "submitMs": 0.012332916,
+          "timestampReadMs": 0.0,
+          "waitMs": 0.060274124
+        }
+      },
+      "transfer": "resident"
+    },
+    {
+      "compiler": "doe",
+      "custody": false,
+      "label": "r3-doe-portable-resident-none-b",
+      "logSha256": "4300b456d236fb3b58d4f52b84a9f36722bbd9505886f5469ae152833f22f8fa",
+      "mode": "none",
+      "returnCode": 0,
+      "sequence": "portable",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.097,
+        "medianMs": 0.0974826815,
+        "phases": null
+      },
+      "transfer": "resident"
+    },
+    {
+      "compiler": "doe",
+      "custody": false,
+      "label": "r3-doe-portable-resident-none-a",
+      "logSha256": "b916b9b332c77e421fb0075d6ae52333d764566f99dcbce74475c45c0c62a238",
+      "mode": "none",
+      "returnCode": 0,
+      "sequence": "portable",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.111,
+        "medianMs": 0.1102075575,
+        "phases": null
+      },
+      "transfer": "resident"
+    },
+    {
+      "compiler": "tint",
+      "custody": false,
+      "label": "r3-tint-packed-verification-gpu",
+      "logSha256": "b2189028a198c04cab1007c33c7c445ec47bced1afde6d56fab3386c4496671b",
+      "mode": "gpu",
+      "returnCode": 0,
+      "sequence": "packed",
+      "summary": {
+        "gpuStageNs": [
+          3566.5,
+          39996.0,
+          2565.0,
+          2544.5
+        ],
+        "medianCpuMs": 0.146,
+        "medianMs": 0.1455397605,
+        "phases": {
+          "compareMs": 0.000905037,
+          "mapMs": 0.001773357,
+          "polls": 7.0,
+          "recordMs": 0.009137154,
+          "submitMs": 0.015724182500000003,
+          "timestampReadMs": 0.000300407,
+          "waitMs": 0.1150369645
+        }
+      },
+      "transfer": "verification"
+    },
+    {
+      "compiler": "tint",
+      "custody": false,
+      "label": "r3-tint-packed-verification-host",
+      "logSha256": "638b8c42744a11b8683ae0ef54423a7b90be39a7ba46c66d58686bf856fec39f",
+      "mode": "host",
+      "returnCode": 0,
+      "sequence": "packed",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.098,
+        "medianMs": 0.09764814399999999,
+        "phases": {
+          "compareMs": 0.000843048,
+          "mapMs": 0.001507759,
+          "polls": 6.0,
+          "recordMs": 0.0070333485,
+          "submitMs": 0.0126991275,
+          "timestampReadMs": 0.0,
+          "waitMs": 0.07431507100000001
+        }
+      },
+      "transfer": "verification"
+    },
+    {
+      "compiler": "tint",
+      "custody": false,
+      "label": "r3-tint-packed-verification-none-b",
+      "logSha256": "395935292ab05bef4b63a193b46551893f770931a526334579828a8a9b201b5b",
+      "mode": "none",
+      "returnCode": 0,
+      "sequence": "packed",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.097,
+        "medianMs": 0.09716749150000001,
+        "phases": null
+      },
+      "transfer": "verification"
+    },
+    {
+      "compiler": "tint",
+      "custody": false,
+      "label": "r3-tint-packed-verification-none-a",
+      "logSha256": "82fb8581960bb07eb3c241004c55415dbd7ffa1ecb1747065bfedcc841150575",
+      "mode": "none",
+      "returnCode": 0,
+      "sequence": "packed",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.098,
+        "medianMs": 0.097723961,
+        "phases": null
+      },
+      "transfer": "verification"
+    },
+    {
+      "compiler": "tint",
+      "custody": false,
+      "label": "r3-tint-packed-resident-gpu",
+      "logSha256": "c4927a11e4298efa67ddc3c3f306b530a0700d1095b68ef5570d242ab7236978",
+      "mode": "gpu",
+      "returnCode": 0,
+      "sequence": "packed",
+      "summary": {
+        "gpuStageNs": [
+          3586.5,
+          40958.0,
+          2605.0,
+          2605.0
+        ],
+        "medianCpuMs": 0.1435,
+        "medianMs": 0.143290043,
+        "phases": {
+          "compareMs": 0.000160217,
+          "mapMs": 0.020508765999999998,
+          "polls": 3.0,
+          "recordMs": 0.0108551975,
+          "submitMs": 0.016726017,
+          "timestampReadMs": 0.000401497,
+          "waitMs": 0.09461784349999999
+        }
+      },
+      "transfer": "resident"
+    },
+    {
+      "compiler": "tint",
+      "custody": false,
+      "label": "r3-tint-packed-resident-host",
+      "logSha256": "e7e55bb8ab16c8a1d3e9fc8b0fce9012a6c6f2cd9a172789925a4ee313869aa9",
+      "mode": "host",
+      "returnCode": 0,
+      "sequence": "packed",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.109,
+        "medianMs": 0.10898447,
+        "phases": {
+          "compareMs": 0.000149727,
+          "mapMs": 0.021284580499999997,
+          "polls": 2.0,
+          "recordMs": 0.004909515,
+          "submitMs": 0.011011124,
+          "timestampReadMs": 0.0,
+          "waitMs": 0.06652069099999999
+        }
+      },
+      "transfer": "resident"
+    },
+    {
+      "compiler": "tint",
+      "custody": false,
+      "label": "r3-tint-packed-resident-none-b",
+      "logSha256": "d966141bba1e3bb0bd6794e1500d4117f891566eb59e3fa58c6c1c69cb4b562f",
+      "mode": "none",
+      "returnCode": 0,
+      "sequence": "packed",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.104,
+        "medianMs": 0.10402584100000001,
+        "phases": null
+      },
+      "transfer": "resident"
+    },
+    {
+      "compiler": "tint",
+      "custody": false,
+      "label": "r3-tint-packed-resident-none-a",
+      "logSha256": "ed9193e60506cb28d2a3fca6da306dac771867419f2fdf9a5cdedd074e6424b6",
+      "mode": "none",
+      "returnCode": 0,
+      "sequence": "packed",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.107,
+        "medianMs": 0.106340885,
+        "phases": null
+      },
+      "transfer": "resident"
+    },
+    {
+      "compiler": "tint",
+      "custody": false,
+      "label": "r3-tint-portable-verification-gpu",
+      "logSha256": "358d4036fad71a01d766b01ed6e61de03c3653f4459697eaa793221b3bdccea5",
+      "mode": "gpu",
+      "returnCode": 0,
+      "sequence": "portable",
+      "summary": {
+        "gpuStageNs": [
+          3526.0,
+          41358.0,
+          2565.0,
+          2525.0
+        ],
+        "medianCpuMs": 0.148,
+        "medianMs": 0.147462368,
+        "phases": {
+          "compareMs": 0.0010967255,
+          "mapMs": 0.002383232,
+          "polls": 7.0,
+          "recordMs": 0.012544155500000001,
+          "submitMs": 0.019987106,
+          "timestampReadMs": 0.00042057,
+          "waitMs": 0.11006736750000001
+        }
+      },
+      "transfer": "verification"
+    },
+    {
+      "compiler": "tint",
+      "custody": false,
+      "label": "r3-tint-portable-verification-host",
+      "logSha256": "24cb9fd30e332a98ed1fb50c56b1e449b1bc20d1a0926c8034f0a07d89a8b5c4",
+      "mode": "host",
+      "returnCode": 0,
+      "sequence": "portable",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.105,
+        "medianMs": 0.1049323085,
+        "phases": {
+          "compareMs": 0.000880718,
+          "mapMs": 0.0017027855,
+          "polls": 6.0,
+          "recordMs": 0.007258415000000001,
+          "submitMs": 0.0119071005,
+          "timestampReadMs": 0.0,
+          "waitMs": 0.0822148325
+        }
+      },
+      "transfer": "verification"
+    },
+    {
+      "compiler": "tint",
+      "custody": false,
+      "label": "r3-tint-portable-verification-none-b",
+      "logSha256": "598e86078d76ec0204e98027655b55d519c69451b282a2d8d106770c2ff71a41",
+      "mode": "none",
+      "returnCode": 0,
+      "sequence": "portable",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.104,
+        "medianMs": 0.1034851075,
+        "phases": null
+      },
+      "transfer": "verification"
+    },
+    {
+      "compiler": "tint",
+      "custody": false,
+      "label": "r3-tint-portable-verification-none-a",
+      "logSha256": "7e943e7f2d77cfd97b36f4d9ce65c2e6a6229d1f2326f5b84c1576110a891ca0",
+      "mode": "none",
+      "returnCode": 0,
+      "sequence": "portable",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.105,
+        "medianMs": 0.105223656,
+        "phases": null
+      },
+      "transfer": "verification"
+    },
+    {
+      "compiler": "tint",
+      "custody": false,
+      "label": "r3-tint-portable-resident-gpu",
+      "logSha256": "444c60d1ebfea86cb6d936e3ffd671590d9dc990051c1fdd160ac65b4f317022",
+      "mode": "gpu",
+      "returnCode": 0,
+      "sequence": "portable",
+      "summary": {
+        "gpuStageNs": [
+          3527.0,
+          41398.0,
+          2565.0,
+          2525.0
+        ],
+        "medianCpuMs": 0.141,
+        "medianMs": 0.14140081399999999,
+        "phases": {
+          "compareMs": 0.000150681,
+          "mapMs": 0.0310988425,
+          "polls": 3.0,
+          "recordMs": 0.007514,
+          "submitMs": 0.0140008925,
+          "timestampReadMs": 0.000290871,
+          "waitMs": 0.0881567
+        }
+      },
+      "transfer": "resident"
+    },
+    {
+      "compiler": "tint",
+      "custody": false,
+      "label": "r3-tint-portable-resident-host",
+      "logSha256": "50d4876f35efe7984b4d788792c793421937d0b5ef1a0489124c0dfc30a94d7d",
+      "mode": "host",
+      "returnCode": 0,
+      "sequence": "portable",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.105,
+        "medianMs": 0.1048173905,
+        "phases": {
+          "compareMs": 0.000150681,
+          "mapMs": 0.0193519595,
+          "polls": 2.0,
+          "recordMs": 0.006833076,
+          "submitMs": 0.011806964999999999,
+          "timestampReadMs": 0.0,
+          "waitMs": 0.066195011
+        }
+      },
+      "transfer": "resident"
+    },
+    {
+      "compiler": "tint",
+      "custody": false,
+      "label": "r3-tint-portable-resident-none-b",
+      "logSha256": "eb98c6eda66bc64b6189a4235bd4241e4595fc0022eb0a964ce77b3293f5959e",
+      "mode": "none",
+      "returnCode": 0,
+      "sequence": "portable",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.116,
+        "medianMs": 0.1155576705,
+        "phases": null
+      },
+      "transfer": "resident"
+    },
+    {
+      "compiler": "tint",
+      "custody": false,
+      "label": "r3-tint-portable-resident-none-a",
+      "logSha256": "22ddaf572b7cf2330ad35a0637198da01db5e4c53dfb271a8688225c084a71a4",
+      "mode": "none",
+      "returnCode": 0,
+      "sequence": "portable",
+      "summary": {
+        "gpuStageNs": [],
+        "medianCpuMs": 0.1105,
+        "medianMs": 0.1102132795,
+        "phases": null
+      },
+      "transfer": "resident"
+    }
+  ],
+  "schemaVersion": 1
+}

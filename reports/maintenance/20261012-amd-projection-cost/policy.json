@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "kind": "projection-cost-policy",
+  "comparisonClass": "fixed-operation-diagnostic",
+  "vendorId": 4098,
+  "deviceId": 5510,
+  "iterations": 32,
+  "warmup": 8,
+  "repeats": 4,
+  "processTimeoutSeconds": 120,
+  "driverCache": "disabled-mesa-per-process-xdg",
+  "timingBoundary": "record-submit-complete-status-copy-map-validate-unmap",
+  "verificationBoundary": "before-after-all-oracles-outside-resident-samples",
+  "gpuInstrumentation": "split-passes-resolve-and-read-included",
+  "performanceClaim": false
+}
