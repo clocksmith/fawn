@@ -1,14 +1,13 @@
 // TSIR realization planner.
 //
-// This pass is the Step 5/6 bridge between backend-independent TSIR
+// This pass is the bridge between backend-independent TSIR
 // semantics and mechanical emitters. It is deliberately conservative:
 // first-fit tiles, explicit residency decisions, descriptor-declared
 // collective support, and typed rejections instead of template rescue.
 //
-// Collective synthesis itself lives in `collective_synthesis.zig` per
-// `docs/tsir-lowering-plan.md §Step 6`; this planner calls into that
-// pass while owning residency, tiles, reductions, and overall plan
-// assembly.
+// Collective synthesis lives in `collective_synthesis.zig`; this planner
+// owns residency, tiles, reductions, and overall plan assembly under
+// `docs/tsir-contract.md §Frontend and planning`.
 
 const std = @import("std");
 const targets = @import("../targets/mod.zig");
