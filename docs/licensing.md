@@ -70,6 +70,14 @@ license is retained at `runtime/zig/vendor/webgpu-headers/LICENSE`.
 This header is an interface definition only. It is intentionally independent
 of the mutable Dawn benchmark checkout under `bench/vendor/dawn/`.
 
+## Khronos GLSL extended instructions (MIT)
+
+`runtime/zig/vendor/spirv-headers/` retains the pinned Khronos
+`GLSL.std.450.h`, its license, and source identity. The authenticated header
+generates `glsl_std450.zig`; it supplies instruction definitions, not compiler
+implementation. Preserve its notice and license in distributions containing
+these definitions.
+
 ## ONNX Runtime plugin EP headers (MIT)
 
 Doe vendors ONNX Runtime public plugin-EP headers under:

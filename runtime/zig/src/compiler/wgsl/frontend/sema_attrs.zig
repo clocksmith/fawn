@@ -280,6 +280,41 @@ pub fn infer_builtin_call(self: anytype, name: []const u8, arg_types: []const ir
         }
         return value_ty;
     }
+    if (std.mem.eql(u8, name, "ldexp")) {
+        if (arg_types.len != 2) return error.UnsupportedBuiltin;
+        const exponent = self.module.types.get(arg_types[1]);
+        const element = switch (self.module.types.get(arg_types[0])) {
+            .scalar => blk: {
+                if (arg_types[1] != self.module.i32_type and arg_types[1] != self.module.abstract_int_type) return error.TypeMismatch;
+                break :blk arg_types[0];
+            },
+            .vector => |vector| blk: {
+                const power = switch (exponent) {
+                    .vector => |value| value,
+                    else => return error.TypeMismatch,
+                };
+                if (power.len != vector.len or (power.elem != self.module.i32_type and power.elem != self.module.abstract_int_type)) return error.TypeMismatch;
+                break :blk vector.elem;
+            },
+            else => return error.TypeMismatch,
+        };
+        switch (self.module.types.get(element)) {
+            .scalar => |scalar| switch (scalar) {
+                .f16, .f32, .abstract_float, .abstract_int => {},
+                else => return error.TypeMismatch,
+            },
+            else => return error.TypeMismatch,
+        }
+        const exponent_element = if (exponent == .vector) exponent.vector.elem else arg_types[1];
+        const floating_element = if (element == self.module.abstract_int_type or element == self.module.abstract_float_type)
+            (if (exponent_element == self.module.i32_type) self.module.f32_type else self.module.abstract_float_type)
+        else
+            element;
+        return switch (self.module.types.get(arg_types[0])) {
+            .vector => |vector| try self.module.types.intern(.{ .vector = .{ .elem = floating_element, .len = vector.len } }),
+            else => floating_element,
+        };
+    }
     if (is_passthrough_math(name)) {
         if (arg_types.len == 0) return error.UnsupportedBuiltin;
         return arg_types[0];

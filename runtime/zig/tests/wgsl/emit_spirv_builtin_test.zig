@@ -15,6 +15,79 @@ const allocator = testing.allocator;
 const MAX_SPIRV_OUTPUT = mod.MAX_SPIRV_OUTPUT;
 const translateToSpirv = mod.translateToSpirv;
 
+test "SPIR-V GLSL mappings preserve runtime ldexp types and single evaluation" {
+    var binary: [MAX_SPIRV_OUTPUT]u8 = undefined;
+    const len = try translateToSpirv(allocator, @embedFile("glsl_instruction_runtime.wgsl"), &binary);
+    var offset: usize = 5;
+    var ldexp_count: usize = 0;
+    var calls: usize = 0;
+    var callees: [3]u32 = undefined;
+    var clamp_count: usize = 0;
+    while (offset < len / 4) {
+        const instruction = read_u32_le(&binary, offset * 4);
+        const words = instruction >> 16;
+        try testing.expect(words > 0);
+        const opcode: u16 = @truncate(instruction);
+        if (opcode == spirv.Opcode.FunctionCall) {
+            try testing.expect(calls < callees.len);
+            const callee = read_u32_le(&binary, (offset + 3) * 4);
+            for (callees[0..calls]) |previous| try testing.expect(previous != callee);
+            callees[calls] = callee;
+            calls += 1;
+        }
+        if (opcode == spirv.Opcode.ExtInst) {
+            const extended = read_u32_le(&binary, (offset + 4) * 4);
+            if (extended == 53) ldexp_count += 1;
+            if (extended == 43) clamp_count += 1;
+            try testing.expect(extended != 71 and extended != 44);
+        }
+        offset += words;
+    }
+    try testing.expectEqual(@as(usize, 8), ldexp_count);
+    // Two side-effecting arguments plus the generated entry-point wrapper.
+    try testing.expectEqual(@as(usize, 3), calls);
+    try testing.expectEqual(@as(usize, 1), clamp_count);
+}
+
+test "SPIR-V ldexp rejects invalid runtime signatures" {
+    const prefix = "@group(0) @binding(0) var<storage, read> x: vec4<f32>;" ++
+        "@group(0) @binding(1) var<storage, read> e: vec4<i32>;" ++
+        "@compute @workgroup_size(1) fn main() { let result = ";
+    inline for (.{ "ldexp(x.x, 2u)", "ldexp(x.x, x.y)", "ldexp(e.x, e.y)", "ldexp(x, e.xy)", "ldexp(x, e.x)", "ldexp(x.x, e)", "ldexp(true, e.x)" }) |expression| {
+        var binary: [MAX_SPIRV_OUTPUT]u8 = undefined;
+        try testing.expectError(error.TypeMismatch, translateToSpirv(allocator, prefix ++ expression ++ "; }", &binary));
+    }
+    inline for (.{ "ldexp()", "ldexp(x.x)", "ldexp(x.x, e.x, e.y)" }) |expression| {
+        var binary: [MAX_SPIRV_OUTPUT]u8 = undefined;
+        try testing.expectError(error.UnsupportedBuiltin, translateToSpirv(allocator, prefix ++ expression ++ "; }", &binary));
+    }
+}
+
+test "SPIR-V ldexp and saturate retain floating widths and shapes" {
+    inline for (.{ "f16", "f32" }) |element| {
+        inline for (.{ "", "2", "3", "4" }) |lanes| {
+            const value = if (lanes.len == 0) element else "vec" ++ lanes ++ "<" ++ element ++ ">";
+            const exponent = if (lanes.len == 0) "i32" else "vec" ++ lanes ++ "<i32>";
+            const source = "enable f16; @group(0) @binding(0) var<storage, read> x: " ++ value ++ ";" ++
+                "@group(0) @binding(1) var<storage, read> e: " ++ exponent ++ ";" ++
+                "@group(0) @binding(2) var<storage, read_write> y: " ++ value ++ ";" ++
+                "@compute @workgroup_size(1) fn main() { y = saturate(ldexp(x, e)); }";
+            var binary: [MAX_SPIRV_OUTPUT]u8 = undefined;
+            try testing.expect((try translateToSpirv(allocator, source, &binary)) > 20);
+        }
+    }
+}
+
+test "SPIR-V ldexp materializes abstract integer values as floats" {
+    inline for (.{ "ldexp(1, 3)", "ldexp(1, e)", "ldexp(1.5, e)" }) |expression| {
+        const source = "@group(0) @binding(0) var<storage, read> e: i32;" ++
+            "@group(0) @binding(1) var<storage, read_write> y: f32;" ++
+            "@compute @workgroup_size(1) fn main() { let x = " ++ expression ++ "; y = x; }";
+        var binary: [MAX_SPIRV_OUTPUT]u8 = undefined;
+        try testing.expect((try translateToSpirv(allocator, source, &binary)) > 20);
+    }
+}
+
 test "SPIR-V integer dot keeps signed and unsigned products and reductions in integer arithmetic" {
     inline for (.{ "i32", "u32" }) |element| {
         inline for (.{ "2", "3", "4" }) |lanes| {
