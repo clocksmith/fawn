@@ -1,0 +1,619 @@
+{
+  "comparisons": [
+    {
+      "maximumRatio": 1.0484913526232562,
+      "medianRatio": 0.9976526847129772,
+      "minimumRatio": 0.9037075003841232,
+      "name": "tint/portable/resident/none-b-over-none-a",
+      "ratios": [
+        0.9037075003841232,
+        1.0060757265971918,
+        0.9892296428287627,
+        1.0484913526232562
+      ]
+    },
+    {
+      "maximumRatio": 1.0092425206301874,
+      "medianRatio": 0.9692026567384182,
+      "minimumRatio": 0.9083021335386235,
+      "name": "tint/portable/resident/host-over-none-a",
+      "ratios": [
+        0.9083021335386235,
+        0.9873639237684392,
+        1.0092425206301874,
+        0.9510413897083971
+      ]
+    },
+    {
+      "maximumRatio": 1.3364938466891114,
+      "medianRatio": 1.2908420793604143,
+      "minimumRatio": 1.1581610341385429,
+      "name": "tint/portable/resident/gpu-over-none-a",
+      "ratios": [
+        1.1581610341385429,
+        1.3364938466891114,
+        1.298709778124523,
+        1.2829743805963054
+      ]
+    },
+    {
+      "maximumRatio": 1.2196494601126742,
+      "medianRatio": 1.1833302357734325,
+      "minimumRatio": 0.9834775889178381,
+      "name": "tint/portable/verification/none-b-over-none-a",
+      "ratios": [
+        1.187326325181686,
+        1.1793341463651794,
+        1.2196494601126742,
+        0.9834775889178381
+      ]
+    },
+    {
+      "maximumRatio": 1.2154776559814289,
+      "medianRatio": 1.086314005087341,
+      "minimumRatio": 0.9755211742634522,
+      "name": "tint/portable/verification/host-over-none-a",
+      "ratios": [
+        0.9755211742634522,
+        1.1753968504818464,
+        1.2154776559814289,
+        0.9972311596928356
+      ]
+    },
+    {
+      "maximumRatio": 1.4014184034814379,
+      "medianRatio": 1.3636530393118083,
+      "minimumRatio": 1.3144931262622124,
+      "name": "tint/portable/verification/gpu-over-none-a",
+      "ratios": [
+        1.3414455482894116,
+        1.3144931262622124,
+        1.3858605303342049,
+        1.4014184034814379
+      ]
+    },
+    {
+      "maximumRatio": 1.0839181624919343,
+      "medianRatio": 1.0265481324675978,
+      "minimumRatio": 0.9589531539298408,
+      "name": "tint/portable/resident-over-verification",
+      "ratios": [
+        1.0839181624919343,
+        0.9589531539298408,
+        1.0056770467700331,
+        1.0474192181651625
+      ]
+    },
+    {
+      "maximumRatio": 1.0898357824946376,
+      "medianRatio": 1.0044359256754036,
+      "minimumRatio": 0.9461214297662064,
+      "name": "tint/packed/resident/none-b-over-none-a",
+      "ratios": [
+        0.9461214297662064,
+        1.0898357824946376,
+        1.0306418789370926,
+        0.9782299724137148
+      ]
+    },
+    {
+      "maximumRatio": 1.0808018493561622,
+      "medianRatio": 1.028029018664982,
+      "minimumRatio": 0.9607355996825909,
+      "name": "tint/packed/resident/host-over-none-a",
+      "ratios": [
+        1.0311985018841194,
+        0.9607355996825909,
+        1.0808018493561622,
+        1.0248595354458447
+      ]
+    },
+    {
+      "maximumRatio": 1.4100006773270324,
+      "medianRatio": 1.2877008772549134,
+      "minimumRatio": 1.1803088121926046,
+      "name": "tint/packed/resident/gpu-over-none-a",
+      "ratios": [
+        1.2279421861603628,
+        1.1803088121926046,
+        1.4100006773270324,
+        1.3474595683494641
+      ]
+    },
+    {
+      "maximumRatio": 1.0740973834682215,
+      "medianRatio": 1.017764049553893,
+      "minimumRatio": 0.9275963229066341,
+      "name": "tint/packed/verification/none-b-over-none-a",
+      "ratios": [
+        1.0412223985846565,
+        1.0740973834682215,
+        0.9275963229066341,
+        0.9943057005231297
+      ]
+    },
+    {
+      "maximumRatio": 1.2662883015893687,
+      "medianRatio": 1.1885689521683758,
+      "minimumRatio": 0.9992241718487035,
+      "name": "tint/packed/verification/host-over-none-a",
+      "ratios": [
+        1.2641974352402283,
+        1.112940469096523,
+        1.2662883015893687,
+        0.9992241718487035
+      ]
+    },
+    {
+      "maximumRatio": 1.489294529312008,
+      "medianRatio": 1.4202036933926994,
+      "minimumRatio": 1.2594096227872908,
+      "name": "tint/packed/verification/gpu-over-none-a",
+      "ratios": [
+        1.4098149023692195,
+        1.2594096227872908,
+        1.4305924844161793,
+        1.489294529312008
+      ]
+    },
+    {
+      "maximumRatio": 1.0881761638785803,
+      "medianRatio": 1.0446890617032882,
+      "minimumRatio": 0.968038545659695,
+      "name": "tint/packed/resident-over-verification",
+      "ratios": [
+        1.0631772531769457,
+        0.968038545659695,
+        1.0262008702296308,
+        1.0881761638785803
+      ]
+    },
+    {
+      "maximumRatio": 1.0421441832606742,
+      "medianRatio": 0.9787237105727118,
+      "minimumRatio": 0.9261758828262187,
+      "name": "tint/resident/packed-over-portable",
+      "ratios": [
+        0.9261758828262187,
+        1.0421441832606742,
+        0.9925828832019717,
+        0.9648645379434517
+      ]
+    },
+    {
+      "maximumRatio": 1.0323632833302279,
+      "medianRatio": 0.9584877624389585,
+      "minimumRatio": 0.9287261507051228,
+      "name": "tint/verification/packed-over-portable",
+      "ratios": [
+        0.9442441117485609,
+        1.0323632833302279,
+        0.9727314131293561,
+        0.9287261507051228
+      ]
+    },
+    {
+      "maximumRatio": 0.9890240325773334,
+      "medianRatio": 0.9172459467745218,
+      "minimumRatio": 0.8691798347790621,
+      "name": "doe/portable/resident/none-b-over-none-a",
+      "ratios": [
+        0.949954719226856,
+        0.9890240325773334,
+        0.8691798347790621,
+        0.8845371743221875
+      ]
+    },
+    {
+      "maximumRatio": 1.0055323181506934,
+      "medianRatio": 0.9569229538235822,
+      "minimumRatio": 0.8432347018260371,
+      "name": "doe/portable/resident/host-over-none-a",
+      "ratios": [
+        0.8432347018260371,
+        1.0055323181506934,
+        0.9140276283971229,
+        0.9998182792500414
+      ]
+    },
+    {
+      "maximumRatio": 1.5207917698502422,
+      "medianRatio": 1.2780256817886144,
+      "minimumRatio": 1.1926254985937732,
+      "name": "doe/portable/resident/gpu-over-none-a",
+      "ratios": [
+        1.2064567770172283,
+        1.5207917698502422,
+        1.1926254985937732,
+        1.3495945865600005
+      ]
+    },
+    {
+      "maximumRatio": 1.1200378928974544,
+      "medianRatio": 1.0179360954150134,
+      "minimumRatio": 0.8607948505419678,
+      "name": "doe/portable/verification/none-b-over-none-a",
+      "ratios": [
+        1.0427543701079816,
+        0.8607948505419678,
+        1.1200378928974544,
+        0.9931178207220455
+      ]
+    },
+    {
+      "maximumRatio": 1.1437510177146628,
+      "medianRatio": 1.0208428856632656,
+      "minimumRatio": 0.9768788334007101,
+      "name": "doe/portable/verification/host-over-none-a",
+      "ratios": [
+        1.0390523131627216,
+        0.9768788334007101,
+        1.1437510177146628,
+        1.0026334581638097
+      ]
+    },
+    {
+      "maximumRatio": 1.583707717059631,
+      "medianRatio": 1.499530362682548,
+      "minimumRatio": 1.3289843105708226,
+      "name": "doe/portable/verification/gpu-over-none-a",
+      "ratios": [
+        1.43397590371318,
+        1.3289843105708226,
+        1.583707717059631,
+        1.5650848216519158
+      ]
+    },
+    {
+      "maximumRatio": 1.27932340938683,
+      "medianRatio": 1.1958323742118533,
+      "minimumRatio": 0.9609629106156558,
+      "name": "doe/portable/resident-over-verification",
+      "ratios": [
+        1.1595791981359558,
+        0.9609629106156558,
+        1.27932340938683,
+        1.232085550287751
+      ]
+    },
+    {
+      "maximumRatio": 1.0912276046252911,
+      "medianRatio": 0.9801770917694224,
+      "minimumRatio": 0.8959020229906577,
+      "name": "doe/packed/resident/none-b-over-none-a",
+      "ratios": [
+        0.9291564560155278,
+        1.0912276046252911,
+        1.0311977275233168,
+        0.8959020229906577
+      ]
+    },
+    {
+      "maximumRatio": 1.0856246603463924,
+      "medianRatio": 1.044848294921511,
+      "minimumRatio": 0.9704783860570285,
+      "name": "doe/packed/resident/host-over-none-a",
+      "ratios": [
+        0.9704783860570285,
+        1.0856246603463924,
+        1.0821811591817556,
+        1.0075154306612664
+      ]
+    },
+    {
+      "maximumRatio": 1.367047559056033,
+      "medianRatio": 1.3129177578668756,
+      "minimumRatio": 1.2895632024977541,
+      "name": "doe/packed/resident/gpu-over-none-a",
+      "ratios": [
+        1.2895632024977541,
+        1.3362720662284253,
+        1.367047559056033,
+        1.2895634495053256
+      ]
+    },
+    {
+      "maximumRatio": 1.0145286590750517,
+      "medianRatio": 0.9669897366042264,
+      "minimumRatio": 0.8181975255892376,
+      "name": "doe/packed/verification/none-b-over-none-a",
+      "ratios": [
+        0.9273697402148773,
+        1.0066097329935755,
+        1.0145286590750517,
+        0.8181975255892376
+      ]
+    },
+    {
+      "maximumRatio": 1.0489250351938892,
+      "medianRatio": 1.005475829955564,
+      "minimumRatio": 0.8617086937345176,
+      "name": "doe/packed/verification/host-over-none-a",
+      "ratios": [
+        0.9978539628883284,
+        1.0489250351938892,
+        1.0130976970227996,
+        0.8617086937345176
+      ]
+    },
+    {
+      "maximumRatio": 1.5876426741372165,
+      "medianRatio": 1.4347525053325738,
+      "minimumRatio": 1.2000287921691097,
+      "name": "doe/packed/verification/gpu-over-none-a",
+      "ratios": [
+        1.4237209975397784,
+        1.5876426741372165,
+        1.4457840131253692,
+        1.2000287921691097
+      ]
+    },
+    {
+      "maximumRatio": 1.1390429684241856,
+      "medianRatio": 1.0242254480944848,
+      "minimumRatio": 0.9381103237127202,
+      "name": "doe/packed/resident-over-verification",
+      "ratios": [
+        1.0504415911078906,
+        1.1390429684241856,
+        0.9980093050810789,
+        0.9381103237127202
+      ]
+    },
+    {
+      "maximumRatio": 1.0348738083527746,
+      "medianRatio": 0.9490020127094254,
+      "minimumRatio": 0.867538234715305,
+      "name": "doe/resident/packed-over-portable",
+      "ratios": [
+        0.9112351280136072,
+        1.0348738083527746,
+        0.867538234715305,
+        0.9867688974052438
+      ]
+    },
+    {
+      "maximumRatio": 1.2959922401820723,
+      "medianRatio": 1.0589926966233267,
+      "minimumRatio": 0.8730797472639704,
+      "name": "doe/verification/packed-over-portable",
+      "ratios": [
+        1.005909617440886,
+        0.8730797472639704,
+        1.1120757758057676,
+        1.2959922401820723
+      ]
+    },
+    {
+      "maximumRatio": 1.04974350835846,
+      "medianRatio": 0.9718080782972927,
+      "minimumRatio": 0.9108609237421276,
+      "name": "portable/resident/doe-over-tint",
+      "ratios": [
+        0.9436680741132905,
+        0.9108609237421276,
+        1.04974350835846,
+        0.9999480824812949
+      ]
+    },
+    {
+      "maximumRatio": 0.9089559502919395,
+      "medianRatio": 0.8660848635317013,
+      "minimumRatio": 0.8252041224337013,
+      "name": "portable/verification/doe-over-tint",
+      "ratios": [
+        0.8820949587052305,
+        0.9089559502919395,
+        0.8252041224337013,
+        0.8500747683581722
+      ]
+    },
+    {
+      "maximumRatio": 1.0226489087428603,
+      "medianRatio": 0.9229714799195146,
+      "minimumRatio": 0.904506428355663,
+      "name": "packed/resident/doe-over-tint",
+      "ratios": [
+        0.9284451412111805,
+        0.904506428355663,
+        0.9174978186278485,
+        1.0226489087428603
+      ]
+    },
+    {
+      "maximumRatio": 1.1862380557824503,
+      "medianRatio": 0.941558408666062,
+      "minimumRatio": 0.7687129561552977,
+      "name": "packed/verification/doe-over-tint",
+      "ratios": [
+        0.939701705753385,
+        0.7687129561552977,
+        0.9434151115787391,
+        1.1862380557824503
+      ]
+    }
+  ],
+  "kind": "projection-cost-analysis",
+  "observations": [
+    {
+      "compiler": "tint",
+      "gpuStageNs": [
+        3536.75,
+        41368.5,
+        2565.0,
+        2525.0
+      ],
+      "hostPhases": {
+        "compareMs": 0.0001504425,
+        "mapMs": 0.021087408000000002,
+        "polls": 2.0,
+        "recordMs": 0.004943848,
+        "submitMs": 0.0111887455,
+        "timestampReadMs": 0.0,
+        "waitMs": 0.06742739675000001
+      },
+      "medianCpuMs": 0.10925,
+      "medianWallMs": 0.108787775,
+      "sequence": "portable",
+      "transfer": "resident"
+    },
+    {
+      "compiler": "tint",
+      "gpuStageNs": [
+        3547.0,
+        41438.75,
+        2585.0,
+        2544.75
+      ],
+      "hostPhases": {
+        "compareMs": 0.0009267329999999999,
+        "mapMs": 0.0021026135,
+        "polls": 6.0,
+        "recordMs": 0.00823783875,
+        "submitMs": 0.013625383500000001,
+        "timestampReadMs": 0.0,
+        "waitMs": 0.09168219575
+      },
+      "medianCpuMs": 0.109,
+      "medianWallMs": 0.1087195875,
+      "sequence": "portable",
+      "transfer": "verification"
+    },
+    {
+      "compiler": "tint",
+      "gpuStageNs": [
+        3526.5,
+        39956.0,
+        2565.0,
+        2525.0
+      ],
+      "hostPhases": {
+        "compareMs": 0.000150204,
+        "mapMs": 0.02633667,
+        "polls": 2.0,
+        "recordMs": 0.0049245355,
+        "submitMs": 0.01112318025,
+        "timestampReadMs": 0.0,
+        "waitMs": 0.06665563599999999
+      },
+      "medianCpuMs": 0.10875,
+      "medianWallMs": 0.10865473725,
+      "sequence": "packed",
+      "transfer": "resident"
+    },
+    {
+      "compiler": "tint",
+      "gpuStageNs": [
+        3567.0,
+        40637.25,
+        2605.0,
+        2565.0
+      ],
+      "hostPhases": {
+        "compareMs": 0.0010497570000000001,
+        "mapMs": 0.002160072,
+        "polls": 6.0,
+        "recordMs": 0.009295225,
+        "submitMs": 0.01466536525,
+        "timestampReadMs": 0.0,
+        "waitMs": 0.09912967675
+      },
+      "medianCpuMs": 0.1045,
+      "medianWallMs": 0.1041784285,
+      "sequence": "packed",
+      "transfer": "verification"
+    },
+    {
+      "compiler": "doe",
+      "gpuStageNs": [
+        3286.5,
+        33584.0,
+        2525.0,
+        2485.0
+      ],
+      "hostPhases": {
+        "compareMs": 0.0001597405,
+        "mapMs": 0.02099442475,
+        "polls": 2.0,
+        "recordMs": 0.0059690475,
+        "submitMs": 0.0114190575,
+        "timestampReadMs": 0.0,
+        "waitMs": 0.05980539325
+      },
+      "medianCpuMs": 0.112,
+      "medianWallMs": 0.111455202,
+      "sequence": "portable",
+      "transfer": "resident"
+    },
+    {
+      "compiler": "doe",
+      "gpuStageNs": [
+        3286.75,
+        33583.5,
+        2525.0,
+        2485.0
+      ],
+      "hostPhases": {
+        "compareMs": 0.0009014605,
+        "mapMs": 0.0018434525,
+        "polls": 6.0,
+        "recordMs": 0.00810551625,
+        "submitMs": 0.013369798749999998,
+        "timestampReadMs": 0.0,
+        "waitMs": 0.0740568635
+      },
+      "medianCpuMs": 0.094,
+      "medianWallMs": 0.09354043000000001,
+      "sequence": "portable",
+      "transfer": "verification"
+    },
+    {
+      "compiler": "doe",
+      "gpuStageNs": [
+        3306.75,
+        34034.75,
+        2565.0,
+        2514.75
+      ],
+      "hostPhases": {
+        "compareMs": 0.000150681,
+        "mapMs": 0.02528572075,
+        "polls": 2.0,
+        "recordMs": 0.00717878325,
+        "submitMs": 0.01194500925,
+        "timestampReadMs": 0.0,
+        "waitMs": 0.06003022175
+      },
+      "medianCpuMs": 0.10200000000000001,
+      "medianWallMs": 0.10166597375,
+      "sequence": "packed",
+      "transfer": "resident"
+    },
+    {
+      "compiler": "doe",
+      "gpuStageNs": [
+        3316.25,
+        33603.75,
+        2545.0,
+        2504.5
+      ],
+      "hostPhases": {
+        "compareMs": 0.0009665487500000001,
+        "mapMs": 0.00217366225,
+        "polls": 6.0,
+        "recordMs": 0.00934505475,
+        "submitMs": 0.014133930250000001,
+        "timestampReadMs": 0.0,
+        "waitMs": 0.07135701175
+      },
+      "medianCpuMs": 0.09825,
+      "medianWallMs": 0.0980894565,
+      "sequence": "packed",
+      "transfer": "verification"
+    }
+  ],
+  "performanceClaim": false,
+  "policySha256": "1f1cbd6aa07682f8afcb456a50486906cc3d35130138573d5fa7ba251d8a28aa",
+  "reportSha256": "06162ece1c363804288b8e740c7c61121eb361ac08f46bc1d225dc30739d6f6f",
+  "schemaVersion": 1
+}

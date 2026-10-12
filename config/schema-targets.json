@@ -1952,6 +1952,26 @@
     {
       "schema": "config/intel-projection-evidence.schema.json",
       "data": "reports/maintenance/20261011-intel-vulkan-projection/manifest.json"
+    },
+    {
+      "schema": "config/projection-cost.schema.json",
+      "data": "config/projection-cost.amd.json"
+    },
+    {
+      "schema": "config/projection-cost.schema.json",
+      "data": "reports/maintenance/20261012-amd-projection-cost/manifest.json"
+    },
+    {
+      "schema": "config/projection-cost.schema.json",
+      "data": "reports/maintenance/20261012-amd-projection-cost/cohort.json"
+    },
+    {
+      "schema": "config/projection-cost.schema.json",
+      "data": "reports/maintenance/20261012-amd-projection-cost/analysis.json"
+    },
+    {
+      "schema": "config/projection-cost.schema.json",
+      "data": "reports/maintenance/20261012-amd-projection-cost/policy.json"
     }
   ],
   "globTargets": [
