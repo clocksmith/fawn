@@ -693,6 +693,8 @@ function scenePhase(seconds) {
 
   function resetSimulation() {
     settlingAgeS = 0;
+    pointer.active = false;
+    pointer.force = 0;
     particleCount = parseInt(countSelect.value, 10);
     stepsPerFrame = parseInt(stepsSelect.value, 10);
     updateWorkloadLabel();

@@ -1,0 +1,38 @@
+{
+  "passed": false,
+  "classification": "Chrome WebGPU pointer response; controlled model clock with actual GPU submissions, no performance or native Doe claim.",
+  "source": {
+    "file": "fawn-start.html",
+    "sha256": "675d0233a02c1ab0e8af7cc8ea508a5a262b46c147fd92c878c529a8900769bf"
+  },
+  "cases": [
+    {
+      "name": "paused redraw",
+      "beforeForce": 16.609346389770508,
+      "afterForce": 16.609346389770508,
+      "beforeTime": 0.10000000149011612,
+      "afterTime": 0.10000000149011612,
+      "adapter": {
+        "vendor": "intel",
+        "architecture": "gen-12lp",
+        "isFallbackAdapter": false
+      }
+    },
+    {
+      "name": "paused reset clears gesture",
+      "beforeForce": 16.609346389770508,
+      "afterForce": 16.609346389770508,
+      "time": 0
+    }
+  ],
+  "errors": [],
+  "browser": "136.0.7103.59",
+  "browserArgs": [
+    "--enable-unsafe-webgpu",
+    "--use-angle=vulkan",
+    "--enable-features=Vulkan",
+    "--disable-vulkan-surface"
+  ],
+  "origin": "local",
+  "failure": "Reset must clear the previous gesture response\n+ actual - expected\n\n+ 16.609346389770508\n- 0\n"
+}
