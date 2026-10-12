@@ -1,0 +1,30 @@
+// One visible-time clock; interaction holds both the schedule and an in-progress blend.
+const CYCLE_POLICY = Object.freeze({ version: 1, effects: ['flow', 'wave', 'particles'], holdS: 12, blendS: 4, idleS: 2, maxDtS: 0.033 });
+function createCycleClock() {
+  let index = 0, age = 0, progress = 0, idle = CYCLE_POLICY.idleS;
+  return {
+    advance(dt, interacting = false) {
+      idle = interacting ? 0 : idle + dt;
+      let started = false, completed = false;
+      if (idle >= CYCLE_POLICY.idleS) {
+        if (age < CYCLE_POLICY.holdS) {
+          age += dt;
+          if (age >= CYCLE_POLICY.holdS) started = true;
+        } else {
+          progress = Math.min(1, progress + dt / CYCLE_POLICY.blendS);
+          if (progress === 1) {
+            index = (index + 1) % CYCLE_POLICY.effects.length;
+            age = 0; progress = 0; completed = true;
+          }
+        }
+      }
+      return { ...this.state(), started, completed };
+    },
+    state() {
+      return { index, effect: CYCLE_POLICY.effects[index], next: CYCLE_POLICY.effects[(index + 1) % 3],
+        transitioning: age >= CYCLE_POLICY.holdS, blend: progress * progress * (3 - 2 * progress) };
+    },
+    reset() { index = 0; age = 0; progress = 0; idle = CYCLE_POLICY.idleS; },
+  };
+}
+export { CYCLE_POLICY, createCycleClock };
