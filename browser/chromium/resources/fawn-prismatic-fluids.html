@@ -16,7 +16,7 @@ button, select { min-height: 44px; padding: 0 18px; cursor: pointer; }
 button { position: relative; overflow: hidden; transition: border-color .2s, background .2s; }
 button:hover { border-color: #fff; background: #344464; }
 button:active { background: #6857ae; }
-button[aria-pressed="true"] { background: #fff; color: #000; border-color: #fff; }
+button[aria-checked="true"], button[aria-pressed="true"] { background: #fff; color: #000; border-color: #fff; }
 button:disabled { cursor: wait; border-style: dashed; }
 :focus-visible { outline: 2px solid #b4c8ff; outline-offset: 4px; }
 a { color: inherit; text-underline-offset: 4px; }
@@ -52,7 +52,7 @@ summary::after { content: ' +'; }
  .chrome { padding: max(18px, env(safe-area-inset-top)) 16px max(18px, env(safe-area-inset-bottom)); }
  .brand-logo { width: 36px; height: 32px; }
  .bottom { gap: 14px; } .toolbar { gap: 12px; }
- .controls { width: 100%; } .details { margin-left: auto; } .metrics { gap: 8px 16px; font-size: 11px; } #status { margin-left: 0; } #fps-graph { width: 72px; }
+ .controls { width: 100%; gap: 8px; } .controls > button { padding: 0 12px; } .details { margin-left: auto; } .metrics { gap: 8px 16px; font-size: 11px; } #status { margin-left: 0; } #fps-graph { width: 72px; }
 }
 @media (prefers-reduced-motion: reduce) { button { transition: none; } }
 
@@ -71,7 +71,7 @@ summary::after { content: ' +'; }
 </style>
 </head>
 <body>
-<canvas id="view" tabindex="0" aria-label="Drag to stir the spectrum."></canvas>
+<canvas id="view" tabindex="0" aria-label="Liquid flow. Drag to stir; release to form the Fawn logo."></canvas>
 <div class="chrome">
 <header>
  <a class="brand" href="./fawn-prismatic-fluids.html" aria-label="Fawn home"><svg class="brand-logo" viewBox="0 0 1024 912" aria-hidden="true" focusable="false">
@@ -96,7 +96,7 @@ summary::after { content: ' +'; }
 </header>
 <main class="bottom">
  <div class="toolbar">
-  <div class="controls"><button id="pause" disabled>Pause</button><button id="restart" disabled>Reset</button>
+  <div class="controls"><button id="pause" disabled>Pause</button><button id="restart" disabled>Reset</button><button id="logo" role="switch" aria-checked="true" aria-label="Form Fawn logo" disabled>Logo</button>
    <details class="details"><summary>Settings</summary><div class="details-panel">
     <p id="adapter">Connecting to your GPU…</p><div class="settings"><label>Grid<select id="grid-select" disabled>
           <option value="192">192 × 192</option>
@@ -115,7 +115,7 @@ summary::after { content: ' +'; }
           <option value="36">36 iters</option>
           <option value="48">48 iters</option>
         </select></label></div><p>FPS = completed frames per second.</p>
-    <p id="load">Connecting…</p>
+    <p id="load">Connecting…</p><p>Fawn guides the dye as it settles.</p>
    </div></details>
   </div>
  </div>
@@ -123,7 +123,9 @@ summary::after { content: ' +'; }
 </main>
 </div>
 <div id="failure" role="alert" hidden></div>
+<script src="./fawn-flow-logo.js"></script>
 <script>
+const LOGO_FLOW = FawnFlowLogo;
 const WORKGROUP_SIZE = 16;
 const SIM_DENSITY_SCALE = 0.5;
 const PRESS_STRENGTH = 1.4;
@@ -177,6 +179,8 @@ ${SHARED_HELPERS}
 @group(0) @binding(0) var<uniform> u: Params;
 @group(0) @binding(1) var<storage, read> velSrc: array<vec4<f32>>;
 @group(0) @binding(2) var<storage, read_write> velDst: array<vec4<f32>>;
+@group(0) @binding(3) var<storage, read> logoField: array<vec4<f32>>;
+${LOGO_FLOW.WGSL}
 
 fn sample_vel(uv: vec2<f32>) -> vec2<f32> {
   let gridPos = uv_to_grid(clamp(uv, u.grid.zw * 0.5, vec2<f32>(1.0) - u.grid.zw * 0.5));
@@ -216,6 +220,14 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
   vel += drag * ${DRAG_GAIN} * falloff;
   vel += (safe_norm(swirl) * ${SWIRL_ACCELERATION} * u.sim.x
     + safe_norm(delta) * ${PRESS_IMPULSE} * u.pointerDelta.z) * falloff;
+  if (u.sim.w > 0.0) {
+    let guide = logo_at(uv);
+    let tangent = vec2<f32>(-guide.y, guide.x);
+    vel += (guide.xy * clamp(-guide.w, 0.0, 0.12) * ${LOGO_FLOW.POLICY.force}
+      + tangent * 0.008 * sin(guide.w * 80.0 + u.sim.y * 0.3))
+      * u.sim.w * u.sim.x * (1.0 - min(falloff, 1.0));
+    vel *= exp(-u.sim.w * u.sim.x * 0.55);
+  }
   vel *= min(1.0, ${MAX_FLUID_SPEED} / max(length(vel), 1e-5));
 
   if (gid.x <= 1u || gid.y <= 1u || gid.x >= width - 2u || gid.y >= height - 2u) {
@@ -343,6 +355,8 @@ ${SHARED_HELPERS}
 @group(0) @binding(1) var<storage, read> dyeSrc: array<vec4<f32>>;
 @group(0) @binding(2) var<storage, read> velSrc: array<vec4<f32>>;
 @group(0) @binding(3) var<storage, read_write> dyeDst: array<vec4<f32>>;
+@group(0) @binding(4) var<storage, read> logoField: array<vec4<f32>>;
+${LOGO_FLOW.WGSL}
 
 fn sample_vel(uv: vec2<f32>) -> vec2<f32> {
   let gridPos = uv_to_grid(clamp(uv, u.grid.zw * 0.5, vec2<f32>(1.0) - u.grid.zw * 0.5));
@@ -402,6 +416,15 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
   );
   dye += tint * falloff * (${DYE_RATE} * u.sim.x + ${PRESS_DYE} * u.pointerDelta.z);
   dye *= 0.996;
+  if (u.sim.w > 0.0) {
+    let x = i32(gid.x); let y = i32(gid.y);
+    let neighbors = (dyeSrc[idx_at(x - 1, y)].xyz + dyeSrc[idx_at(x + 1, y)].xyz
+      + dyeSrc[idx_at(x, y - 1)].xyz + dyeSrc[idx_at(x, y + 1)].xyz) * 0.25;
+    dye = mix(dye, neighbors, min(0.18, ${LOGO_FLOW.POLICY.diffusionRate} * u.sim.x));
+    let recovery = (1.0 - exp(-${LOGO_FLOW.POLICY.dyeRate} * u.sim.x))
+      * u.sim.w * (1.0 - min(falloff, 1.0));
+    dye = mix(dye, logo_target(uv), recovery);
+  }
   dyeDst[idx_at(i32(gid.x), i32(gid.y))] = vec4<f32>(dye, 1.0);
 }
 `;
@@ -418,25 +441,11 @@ struct VSOut {
 @group(0) @binding(2) var<storage, read> velBuf: array<vec4<f32>>;
 @group(0) @binding(3) var<storage, read> divCurl: array<vec4<f32>>;
 
-fn sample_dye_nearest(uv: vec2<f32>) -> vec3<f32> {
-  let gridPos = uv_to_grid(clamp(uv, u.grid.zw * 0.5, vec2<f32>(1.0) - u.grid.zw * 0.5));
-  let x = i32(round(gridPos.x));
-  let y = i32(round(gridPos.y));
-  return dyeBuf[idx_at(x, y)].xyz;
-}
-
-fn sample_vel_nearest(uv: vec2<f32>) -> vec2<f32> {
-  let gridPos = uv_to_grid(clamp(uv, u.grid.zw * 0.5, vec2<f32>(1.0) - u.grid.zw * 0.5));
-  let x = i32(round(gridPos.x));
-  let y = i32(round(gridPos.y));
-  return velBuf[idx_at(x, y)].xy;
-}
-
-fn sample_curl_nearest(uv: vec2<f32>) -> f32 {
-  let gridPos = uv_to_grid(clamp(uv, u.grid.zw * 0.5, vec2<f32>(1.0) - u.grid.zw * 0.5));
-  let x = i32(round(gridPos.x));
-  let y = i32(round(gridPos.y));
-  return divCurl[idx_at(x, y)].y;
+fn sample_dye_smooth(uv: vec2<f32>) -> vec3<f32> {
+  let p = clamp(uv_to_grid(uv), vec2<f32>(0.0), u.grid.xy - vec2<f32>(1.0));
+  let b = vec2<i32>(floor(p)); let f = fract(p);
+  return mix(mix(dyeBuf[idx_at(b.x, b.y)].xyz, dyeBuf[idx_at(b.x + 1, b.y)].xyz, f.x),
+    mix(dyeBuf[idx_at(b.x, b.y + 1)].xyz, dyeBuf[idx_at(b.x + 1, b.y + 1)].xyz, f.x), f.y);
 }
 
 fn dye_at(x: i32, y: i32) -> vec3<f32> {
@@ -482,7 +491,7 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
   let gridPos = uv_to_grid(clamp(in.uv, u.grid.zw * 0.5, vec2<f32>(1.0) - u.grid.zw * 0.5));
   let gx = i32(round(gridPos.x));
   let gy = i32(round(gridPos.y));
-  let dye = dye_at(gx, gy);
+  let dye = sample_dye_smooth(in.uv);
   let vel = vel_at(gx, gy);
   let curl = curl_at(gx, gy);
   let speed = length(vel);
@@ -495,14 +504,16 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
   let normal = normalize(vec3<f32>(-grad.x * 1.25, -grad.y * 1.25, 1.0));
   let view = normalize(vec3<f32>(0.0, 0.0, 1.0));
   let fresnel = pow(1.0 - max(dot(normal, view), 0.0), 3.0);
-  let prism = spectral(hc * 0.22 + abs(curl) * 0.36 + u.sim.y * 0.020);
+  let prism = spectral(hc * 0.22 + min(abs(curl), 12.0) * 0.035 + u.sim.y * 0.020);
   let secondary = spectral(speed * 0.30 + normal.x * 0.15 - normal.y * 0.08);
   let glint = pow(max(dot(reflect(normalize(vec3<f32>(0.20, -0.16, -1.0)), normal), view), 0.0), 20.0);
-  let fluidGlow = dye * (0.92 + speed * 0.24) + prism * abs(curl) * 0.030;
+  let pigment = clamp(length(dye), 0.0, 1.0);
+  let fluidGlow = dye * (0.92 + min(speed, 2.0) * 0.12)
+    + prism * min(abs(curl), 12.0) * 0.006 * pigment;
   let metallic = mix(vec3<f32>(0.05, 0.06, 0.08), prism, 0.52)
     + secondary * fresnel * 0.22
     + vec3<f32>(1.0, 0.96, 0.93) * glint * 0.34;
-  let base = fluidGlow + metallic * (0.22 + hc * 0.14);
+  let base = fluidGlow + metallic * (0.22 + hc * 0.14) * pigment;
   let vignette = 1.0 - smoothstep(0.15, 0.92, length(in.uv * 2.0 - 1.0));
   let bg = vec3<f32>(0.018, 0.024, 0.030) + vignette * vec3<f32>(0.020, 0.032, 0.040);
   return vec4<f32>(max(base, bg), 1.0);
@@ -520,6 +531,10 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
   const gridSelect = document.getElementById('grid-select');
   const pressureSelect = document.getElementById('pressure-select');
   const restartButton = document.getElementById('restart');
+  const logoButton = document.getElementById('logo');
+  let logoEnabled = true;
+  let settlingAgeS = 0;
+  let logoBuffer = null;
   const canvas = document.getElementById('view');
   const graphCtx = graphCanvas.getContext('2d');
   const fpsHistory = [];
@@ -633,6 +648,7 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
     canvas.height = height;
     context.configure({ device, format, alphaMode: 'opaque' });
     canvasConfigured = true;
+    if (logoBuffer) updateLogoField();
     drawFpsGraph();
     redrawRequested = true;
     schedule();
@@ -666,6 +682,11 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
     return data;
   }
 
+  function updateLogoField() {
+    device.queue.writeBuffer(logoBuffer, 0,
+      LOGO_FLOW.field(simGrid(), canvas, document.querySelector('.brand-logo')));
+  }
+
   function rebuildSimulationBuffers() {
     resetMeter();
     const effectiveGrid = simGrid();
@@ -673,6 +694,10 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
     if (divCurlBuffer) divCurlBuffer.destroy();
 
     const byteLength = effectiveGrid * effectiveGrid * 16;
+    logoBuffer?.destroy();
+    logoBuffer = device.createBuffer({ label: 'Fawn target field', size: byteLength,
+      usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST });
+    updateLogoField(); settlingAgeS = 0;
     velocityBuffers = [
       createBuffer(byteLength, GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST),
       createBuffer(byteLength, GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST),
@@ -687,7 +712,9 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
     ];
     divCurlBuffer = createBuffer(byteLength, GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST);
 
-    const dye = seedDye(effectiveGrid);
+    const seed = logoEnabled ? LOGO_FLOW.seed(effectiveGrid) : null;
+    const dye = seed?.dye ?? seedDye(effectiveGrid);
+    if (seed) for (const buffer of velocityBuffers) device.queue.writeBuffer(buffer, 0, seed.velocity);
     device.queue.writeBuffer(dyeBuffers[0], 0, dye);
     device.queue.writeBuffer(dyeBuffers[1], 0, dye);
     currentDyeIndex = 0;
@@ -698,6 +725,7 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
         { binding: 0, resource: { buffer: uniformBuffer } },
         { binding: 1, resource: { buffer: velocityBuffers[0] } },
         { binding: 2, resource: { buffer: velocityBuffers[1] } },
+        { binding: 3, resource: { buffer: logoBuffer } },
       ],
     });
     divCurlBindGroup = device.createBindGroup({
@@ -746,6 +774,7 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
           { binding: 1, resource: { buffer: dyeBuffers[0] } },
           { binding: 2, resource: { buffer: velocityBuffers[0] } },
           { binding: 3, resource: { buffer: dyeBuffers[1] } },
+          { binding: 4, resource: { buffer: logoBuffer } },
         ],
       }),
       device.createBindGroup({
@@ -755,6 +784,7 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
           { binding: 1, resource: { buffer: dyeBuffers[1] } },
           { binding: 2, resource: { buffer: velocityBuffers[0] } },
           { binding: 3, resource: { buffer: dyeBuffers[0] } },
+          { binding: 4, resource: { buffer: logoBuffer } },
         ],
       }),
     ];
@@ -951,7 +981,10 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
     if (!paused) simulationTime = now - pausedMs;
     uniformData[9] = simulationTime * 0.001;
     uniformData[10] = 2.0;
-    uniformData[11] = 0.95;
+    if (!paused) {
+      settlingAgeS = pointer.down || pointer.press || pointer.dx || pointer.dy ? 0 : settlingAgeS + dt;
+    }
+    uniformData[11] = LOGO_FLOW.strength(settlingAgeS, logoEnabled);
     uniformData[12] = pointer.dx;
     uniformData[13] = pointer.dy;
     uniformData[14] = pointer.press;
@@ -1031,6 +1064,7 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
     restartButton.disabled = true;
     gridSelect.disabled = true;
     pressureSelect.disabled = true;
+    logoButton.disabled = true;
     statusEl.textContent = `Error: ${error.message}`;
     failureEl.textContent = error.message;
     failureEl.hidden = false;
@@ -1038,6 +1072,11 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
     device?.destroy();
   }
 
+  logoButton.addEventListener('click', () => {
+    logoEnabled = !logoEnabled; settlingAgeS = 0;
+    logoButton.setAttribute('aria-checked', String(logoEnabled));
+    redrawRequested = true; schedule();
+  });
   pauseButton.addEventListener('click', () => {
     const now = performance.now();
     paused = !paused;
@@ -1106,6 +1145,7 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
     restartButton.disabled = false;
     gridSelect.disabled = false;
     pressureSelect.disabled = false;
+    logoButton.disabled = false;
     pauseButton.textContent = paused ? 'Resume' : 'Pause';
     pauseButton.setAttribute('aria-pressed', String(paused));
     drawFpsGraph();

@@ -22,6 +22,10 @@ for (const name of names) {
 const server = http.createServer(async (request, response) => {
   const path = new URL(request.url, 'http://localhost').pathname;
   const [, variant, filename] = path.split('/');
+  if (filename === 'fawn-flow-logo.js') {
+    response.setHeader('Content-Type', 'text/javascript');
+    response.end(await readFile('browser/chromium/resources/fawn-flow-logo.js')); return;
+  }
   if (filename === 'fawn-icon.svg') {
     response.setHeader('Content-Type', 'image/svg+xml');
     response.end(await readFile('browser/chromium/resources/fawn-icon.svg')); return;
