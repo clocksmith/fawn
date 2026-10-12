@@ -5,8 +5,8 @@
 These views trace source at `49f6e0af0`: compiler ownership, native execution,
 and optional prepared-program lifetimes. They explain implementation boundaries;
 they do not extend the [qualified support matrix](doe-support-matrix.md).
-The README contains component and lifetime diagrams. This guide includes the
-submission sequence, source boundaries and execution contracts.
+The README contains the graphical system overview and component map. This guide
+retains lifecycle diagrams, the submission sequence, and source contracts.
 
 ### Compiler and runtime ownership
 
@@ -79,10 +79,25 @@ and [queue lifecycle](../runtime/zig/src/native/queue/doe_queue_lifecycle.zig).
 ### Optional prepared-program resource lifetime
 
 `doe-gpu/compute-program` adds explicit reuse for fixed-shape buffer computation.
-Ordinary WebGPU does not require it. The diagram separates the immutable
-description, prepared resources, each invocation, and structural replacement.
+Ordinary WebGPU does not require it. The diagram separates preparation, each
+invocation, completion, reuse, and final resource release. Prepare structural
+replacements before activation; failed preparation preserves the working program.
 
-[View this diagram in the README.](../README.md#optional-prepared-program-resource-lifetime)
+```mermaid
+flowchart TB
+    PREP["Prepare program and resources"] --> READY["Ready"]
+    READY --> SUBMIT["Submit invocation"]
+    SUBMIT --> WAIT["Await GPU completion"]
+    WAIT --> RESULT["Read result<br/>release invocation resources"]
+    RESULT -->|reuse| READY
+    READY -->|close| FREE["Settle pending work<br/>release owned resources"]
+    classDef contract fill:#f3edff,stroke:#7c3aed,color:#111827
+    classDef resource fill:#edf3ff,stroke:#2563eb,color:#111827
+    classDef compute fill:#fff0f3,stroke:#e11d48,color:#111827
+    class PREP contract
+    class READY,RESULT,FREE resource
+    class SUBMIT,WAIT compute
+```
 
 The selectable modes are `webgpu`, `native-recorded`, and the supported Vulkan
 `gpu-recorded` path. A missing provider or incompatible native contract is an
