@@ -12,6 +12,8 @@ assert(['doe', 'dawn'].includes(lane), 'Expected doe or dawn lane');
 const read = async (path) => JSON.parse(await readFile(path));
 const hash = async (path) => createHash('sha256').update(await readFile(path)).digest('hex');
 const contract = await read(contractPath);
+assert(!contract.latencyCampaign || mode === 'qualification',
+  'Complete-generation v2 timing requires independent-process multi-case admission; the historical single-case timing driver cannot admit it');
 const providers = await read(providersPath);
 const reference = await read(referencePath);
 assert.equal(contract.performance.residentRuns, 2, 'This cohort declares one balanced A/B pair');

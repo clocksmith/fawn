@@ -6,6 +6,7 @@ import io
 import tarfile
 import tempfile
 import unittest
+import subprocess
 from pathlib import Path
 
 SCRIPT = (Path(__file__).resolve().parents[1] / 'external-projects'
@@ -17,6 +18,21 @@ SPEC.loader.exec_module(INSTALLATION)
 
 
 class TestInstalledGenerationAdmission(unittest.TestCase):
+    def test_new_latency_campaign_cannot_use_historical_timing(self) -> None:
+        campaign = SCRIPT.parent / 'complete-generation-v2.json'
+        commands = [
+            ['node', str(SCRIPT.parent / 'run-generation.mjs'), str(campaign),
+             'missing-providers', 'missing-reference', 'doe', '/unused', 'timing'],
+            ['node', str(SCRIPT.parent / 'run-cohort.mjs'), str(campaign),
+             'missing-providers', 'missing-reference', '/unused', 'baseline'],
+        ]
+        for command in commands:
+            with self.subTest(driver=command[1]):
+                result = subprocess.run(command, text=True, capture_output=True, check=False)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn('Complete-generation v2', result.stderr)
+                self.assertNotIn('ENOENT', result.stderr)
+
     def test_dependency_symlink_cannot_escape_installation(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

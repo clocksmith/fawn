@@ -45,6 +45,22 @@ RAM admission fails, foreign Chrome GPU activity disqualifies the timings, and
 the Doe load regression bound fails. No material performance claim, browser
 contribution or unrelated-application memory transfer is promoted.
 
+## Complete-generation campaign
+
+The additive [complete-generation v2 policy](complete-generation-v2.json) freezes
+three cases and complete-generation acceptance for the corrected GLSL baseline.
+It selects the retained Q4 Gemma package, not the rejected W8A8 configuration.
+Its exact CPU reference can be produced with the existing `reference.py`; the
+existing worker supports output qualification using that contract and reference.
+New cases still require physical qualification on both providers.
+
+This policy is not executed performance evidence. Independent-process A/A and
+multi-case admission remain to be connected through the existing runner and
+analysis owners. Historical resident A/B analysis and single-case candidate
+admission explicitly reject it. Do not route it through those gates or credit
+its frozen thresholds as measured gains. Published binaries and old policies
+retain their identities and verdicts.
+
 ## Prepare identical inputs
 
 Use the source commits, dependency lock, model manifest, tokenizer and shard

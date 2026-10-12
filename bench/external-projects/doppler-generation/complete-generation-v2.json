@@ -1,0 +1,174 @@
+{
+  "schemaVersion": 1,
+  "workloadId": "doppler_complete_generation_amd_vulkan_v2",
+  "classification": "unchanged-application-replacement",
+  "dopplerSourceCommit": "3f1cd76251fcb7d7741ee82d9cb88b9e81b922c9",
+  "doeSourceCommit": "7556862002ff55cbbc51416878a3c6a692ad3f3c",
+  "publicApi": "doppler-gpu/compat: load, model.generate, model.advanced tokenization/stats, model.unload",
+  "model": {
+    "path": "/home/x/deco/doppler/models/local/gemma-3-270m-it-q4k-ehf16-af32",
+    "files": [
+      {
+        "path": "manifest.json",
+        "sha256": "afecba81640288d0849838c8d4d8c763af80edc1fc22051853ce6700dda4b315",
+        "bytes": 112143
+      },
+      {
+        "path": "origin.json",
+        "sha256": "4e1d26c6502080a66c14169f5b289d43b67991bc3096d4f230e2aa82d44a1bcc",
+        "bytes": 261
+      },
+      {
+        "path": "tokenizer.json",
+        "sha256": "be6955513a2509d69d18e82180c2a477ad99358d15212fb81d957566d8186075",
+        "bytes": 14386247
+      },
+      {
+        "path": "tokenizer.model",
+        "sha256": "1299c11d7cf632ef3b4e11937501358ada021bbdf7c47638d13c0ee982f2e79c",
+        "bytes": 4689074
+      },
+      {
+        "path": "shard_00000.bin",
+        "sha256": "93d8ad2033e7ec42376dafb41c1e89753d0ca40896835c6f012efe47dbdda6d1",
+        "bytes": 67108864
+      },
+      {
+        "path": "shard_00001.bin",
+        "sha256": "7896aa344a3da4539cdb76bdbfec3a5f665da5e23d15d15ef9a3b0536ebcf3c5",
+        "bytes": 67108864
+      },
+      {
+        "path": "shard_00002.bin",
+        "sha256": "ff2fc36d9b0008d734f0a82923d47db2383e5a5bae055172630e8ad93ad23ca5",
+        "bytes": 67108864
+      },
+      {
+        "path": "shard_00003.bin",
+        "sha256": "6170b5f1376dbfe33a58de2603987abde826c0eb7318d6c0a1baa78cdf42f77b",
+        "bytes": 67108864
+      },
+      {
+        "path": "shard_00004.bin",
+        "sha256": "5c8767e71c920596247b7ea3d0d55b45d6af4255757758dda6aedd907cfa3e2c",
+        "bytes": 67108864
+      },
+      {
+        "path": "shard_00005.bin",
+        "sha256": "81ff27711b246ec27e3396871547e77f5e4d5d3d029357a66a8f547b6f32c015",
+        "bytes": 63812864
+      }
+    ]
+  },
+  "generation": {
+    "temperature": 0,
+    "topK": 1,
+    "topP": 1,
+    "repetitionPenalty": 1,
+    "presencePenalty": 0,
+    "useChatTemplate": true,
+    "eosTokenIds": [
+      1,
+      106
+    ]
+  },
+  "cases": [
+    {
+      "id": "short_prompt_long_output",
+      "prompt": "Write a short story in five paragraphs about a gardener who discovers why the leaves of a plant are turning yellow. Include the discovery, the remedy, and the recovery.",
+      "maxTokens": 192,
+      "stopSequences": []
+    },
+    {
+      "id": "long_prompt_short_output",
+      "prompt": "Read the records below and answer only with the final shipment destination.\nRecord 1: the garden team catalogued pots, checked soil moisture, watered seedlings, labelled trays, and stored tools. This record does not change the shipment destination.\nRecord 2: the garden team catalogued pots, checked soil moisture, watered seedlings, labelled trays, and stored tools. This record does not change the shipment destination.\nRecord 3: the garden team catalogued pots, checked soil moisture, watered seedlings, labelled trays, and stored tools. This record does not change the shipment destination.\nRecord 4: the garden team catalogued pots, checked soil moisture, watered seedlings, labelled trays, and stored tools. This record does not change the shipment destination.\nRecord 5: the garden team catalogued pots, checked soil moisture, watered seedlings, labelled trays, and stored tools. This record does not change the shipment destination.\nRecord 6: the garden team catalogued pots, checked soil moisture, watered seedlings, labelled trays, and stored tools. This record does not change the shipment destination.\nRecord 7: the garden team catalogued pots, checked soil moisture, watered seedlings, labelled trays, and stored tools. This record does not change the shipment destination.\nRecord 8: the garden team catalogued pots, checked soil moisture, watered seedlings, labelled trays, and stored tools. This record does not change the shipment destination.\nRecord 9: the garden team catalogued pots, checked soil moisture, watered seedlings, labelled trays, and stored tools. This record does not change the shipment destination.\nRecord 10: the garden team catalogued pots, checked soil moisture, watered seedlings, labelled trays, and stored tools. This record does not change the shipment destination.\nRecord 11: the garden team catalogued pots, checked soil moisture, watered seedlings, labelled trays, and stored tools. This record does not change the shipment destination.\nRecord 12: the garden team catalogued pots, checked soil moisture, watered seedlings, labelled trays, and stored tools. This record does not change the shipment destination.\nRecord 13: the garden team catalogued pots, checked soil moisture, watered seedlings, labelled trays, and stored tools. This record does not change the shipment destination.\nRecord 14: the garden team catalogued pots, checked soil moisture, watered seedlings, labelled trays, and stored tools. This record does not change the shipment destination.\nRecord 15: the garden team catalogued pots, checked soil moisture, watered seedlings, labelled trays, and stored tools. This record does not change the shipment destination.\nRecord 16: the garden team catalogued pots, checked soil moisture, watered seedlings, labelled trays, and stored tools. This record does not change the shipment destination.\nRecord 17: the garden team catalogued pots, checked soil moisture, watered seedlings, labelled trays, and stored tools. This record does not change the shipment destination.\nRecord 18: the garden team catalogued pots, checked soil moisture, watered seedlings, labelled trays, and stored tools. This record does not change the shipment destination.\nRecord 19: the garden team catalogued pots, checked soil moisture, watered seedlings, labelled trays, and stored tools. This record does not change the shipment destination.\nRecord 20: the garden team catalogued pots, checked soil moisture, watered seedlings, labelled trays, and stored tools. This record does not change the shipment destination.\nRecord 21: the garden team catalogued pots, checked soil moisture, watered seedlings, labelled trays, and stored tools. This record does not change the shipment destination.\nRecord 22: the garden team catalogued pots, checked soil moisture, watered seedlings, labelled trays, and stored tools. This record does not change the shipment destination.\nRecord 23: the garden team catalogued pots, checked soil moisture, watered seedlings, labelled trays, and stored tools. This record does not change the shipment destination.\nRecord 24: the garden team catalogued pots, checked soil moisture, watered seedlings, labelled trays, and stored tools. This record does not change the shipment destination.\nFinal shipment destination: Portland.\nWhat is the final shipment destination?",
+      "maxTokens": 24,
+      "stopSequences": []
+    },
+    {
+      "id": "resident_reuse",
+      "prompt": "Explain why leaves are green in one sentence.",
+      "maxTokens": 32,
+      "stopSequences": []
+    }
+  ],
+  "oracle": {
+    "cpuThreads": 4,
+    "modelConfig": {
+      "vocab_size": 262144,
+      "hidden_size": 640,
+      "intermediate_size": 2048,
+      "num_hidden_layers": 18,
+      "num_attention_heads": 4,
+      "num_key_value_heads": 1,
+      "head_dim": 256,
+      "max_position_embeddings": 32768,
+      "sliding_window": 512,
+      "query_pre_attn_scalar": 256,
+      "rms_norm_eps": 1e-06,
+      "hidden_activation": "gelu_pytorch_tanh",
+      "tie_word_embeddings": true,
+      "bos_token_id": 2,
+      "eos_token_id": 1
+    },
+    "acceptance": "Exact prompt IDs, generated IDs, complete decoded stream and stop reason against independent CPU reference; fail before performance on any mismatch."
+  },
+  "performance": {
+    "processes": 8,
+    "warmupResidentRuns": 1,
+    "residentRuns": 2,
+    "minimumLatencyGainRatio": 1.25,
+    "maximumTailRegressionRatio": 1.05,
+    "maximumMemoryRegressionRatio": 1.05,
+    "maximumControlRatio": 1.05,
+    "sampleOrder": [
+      "dawn",
+      "doe",
+      "doe",
+      "dawn"
+    ],
+    "cacheScope": "Fresh process with per-process empty driver/provider cache directories; identical explicit cache policy. OS file cache uncontrolled. Separate opening, initial generation, resident generation and settled teardown. No acquisition claim.",
+    "failurePolicy": "No outcome-selected retry or promotion; retain all failures and unfavorable cohorts.",
+    "timingAdmission": "Require exact independent output/stopping and cancellation/reuse/settlement qualification, physical shader correctness, reserved AMD access, then independent-process identical-byte A/A stability for every case before attribution or candidate timing."
+  },
+  "cancellation": {
+    "abortAfterStreamChunks": 2,
+    "requireFollowingGenerationCorrect": true
+  },
+  "scope": "New complete-generation campaign; historical contracts and rejected candidates unchanged. Frozen candidate-doppler.tgz SHA256 308ebeeb19ee235c6de3d49aa5738aefa72aa742ce3bbf7e7f96530cb74b189b includes the retained sampled-logits ownership correction, against the recorded package source lineage. Requalify all three new cases independently. W8A8 excluded. Starting Doe commit is provenance only: baseline must bind corrected source and new library bytes before any physical execution. Doppler source field identifies the package base; the retained ownership.patch.gz and exact archive identify the two-file correction, not an unmodified checkout.",
+  "latencyCampaign": {
+    "version": 1,
+    "dopplerArchiveSha256": "308ebeeb19ee235c6de3d49aa5738aefa72aa742ce3bbf7e7f96530cb74b189b",
+    "dawnArchiveSha256": "d8835c95790d7d34299283619568f4cce97b4358581d9e2b56e7f63e3a86e062",
+    "contextCapacityTokens": 4096,
+    "primaryMetric": "complete-generation latency: equal-weight geometric mean of per-case resident process medians",
+    "minimumDawnGainRatio": 1.25,
+    "minimumCorrectedDoeGainRatio": 1.1,
+    "maximumCaseLatencyRegressionRatio": 1.05,
+    "maximumFirstTokenRegressionRatio": 1.05,
+    "maximumCpuRegressionRatio": 1.05,
+    "maximumOpeningRegressionRatio": 1.05,
+    "maximumTeardownRegressionRatio": 1.05,
+    "maximumRequestedAllocationRegressionRatio": 1.05,
+    "maximumInstrumentationPerturbationRatio": 1.05,
+    "maximumControlRatio": 1.05,
+    "confidence": 0.95,
+    "bootstrapSamples": 20000,
+    "bootstrapSeed": 20261012,
+    "independentProcessesPerLabel": 8,
+    "controlLabels": [
+      "A",
+      "B"
+    ],
+    "controlOrder": [
+      "A",
+      "B",
+      "B",
+      "A"
+    ],
+    "aggregation": "One process is one independent block. Linear-interpolated p50/p95; bootstrap independent process blocks, never tokens. Both 95% confidence limits of each A/A complete-generation ratio must lie within [1/1.05,1.05]. Both comparisons require the aggregate lower confidence bound to reach their gain threshold. Each case initial/resident latency, first token, and p95 must obey the 1.05 regression bound against each control.",
+    "memory": "Measure process high-water RSS, logical requested allocation bytes, retained pool capacity, and observed DRM memory separately. Maximum RSS and requested/retained capacity ratios 1.05; unchanged 1073741824-byte requested-buffer budget. Observed DRM residency is diagnostic, not exclusive physical GPU RAM.",
+    "stoppingRule": "Fixed eight independent processes per label/provider, one warmup and two resident requests per case per process. No optional stopping or outcome-selected retry. Retain failed invocations. One candidate after attributable critical-path opportunity and recoverable-time estimate. Failed qualification, unstable controls, unresolved instrumentation perturbation, or any failed safeguard prevents promotion. Correct interference before a new fully retained cohort; never lower thresholds.",
+    "admission": "Policy frozen before measurement; executable campaign admission and all physical checks must pass before any superiority claim. Existing single-case analyzers cannot admit this multi-case campaign."
+  }
+}

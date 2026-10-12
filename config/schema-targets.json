@@ -1972,6 +1972,14 @@
     {
       "schema": "config/projection-cost.schema.json",
       "data": "reports/maintenance/20261012-amd-projection-cost/policy.json"
+    },
+    {
+      "schema": "config/doppler-generation.schema.json",
+      "data": "bench/external-projects/doppler-generation/complete-generation-v2.json"
+    },
+    {
+      "schema": "config/doppler-generation.schema.json",
+      "data": "reports/maintenance/20261012-generation-campaign/reference.json"
     }
   ],
   "globTargets": [
