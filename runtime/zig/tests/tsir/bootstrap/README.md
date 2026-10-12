@@ -7,7 +7,7 @@ code is written — that the TSIR schema, the parity oracle's reference
 semantics, and the target descriptors can actually represent the first
 three nontrivial kernel families the project intends to lower.
 
-See [`docs/tsir-lowering-plan.md`](../../../../../docs/tsir-lowering-plan.md)
+See [`docs/tsir-contract.md`](../../../../../docs/tsir-contract.md)
 § Step 1.5 for the rationale.
 
 ## What's here

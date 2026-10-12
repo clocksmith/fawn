@@ -246,17 +246,13 @@ dispatch dimensions, array lengths). Zig `comptime` cannot enumerate
 these — the domains are unbounded. This is where Lean earns its keep,
 exactly matching the criterion established in `pipeline/lean/README.md`.
 
-## Implementation sequence
+## Qualification boundary
 
-1. **Done**: `ir_transform_robustness.zig` — unconditional clamping (Layer 1)
-2. **Done**: `Doe/Shader/ComputeBounds.lean` — formal proofs
-3. **Done**: `Extract.lean` updated to import Shader module and emit `boundsEliminations`
-4. **Done**: Pattern recognizer in `ir_transform_robustness.zig` — matches gid storage-buffer access patterns, guarded gid texture coordinate patterns, direct/affine/tiled dispatch-fit texture coordinate patterns, and constant mip-level texture accesses
-5. **Done**: `lean_proof.zig` — validates shader theorem/artifact coverage and exposes the comptime availability flags
-6. **Done/Partial**: explicit proof-aware analysis path now powers native compute runtime translation; default/public translation remains conservative
-7. **Done**: `_doe_sizes` requirement now derives from surviving IR `arrayLength` use, and proof-covered robustness clamps no longer keep `_doe_sizes` alive on Metal
-8. **Done**: host-side storage-buffer and texture dispatch precondition checks in native compute dispatch paths (`doeNativeComputeDispatchFlush`, `doe_compute_ext_native.zig`, `doe_vulkan_compute_native.zig`)
-9. **Future**: broader guarded texture patterns, a policy decision for public/non-runtime proof consumption, mixed affine+tiled texture coord families, and deeper non-counted/data-dependent loop range analysis beyond the current counted-loop proof contract
+Broader guarded textures, mixed affine/tiled coordinates, public proof
+consumption, and non-counted/data-dependent loops require their own declared
+proof and dispatch preconditions. This design does not select those extensions.
+[Compiler status](status/compiler-and-webgpu.md) owns unresolved implementation
+findings; the proof and runtime contract above remain unchanged.
 
 ## File map
 

@@ -269,7 +269,7 @@ JS / C application
 
 ## Corpus routing
 
-The Chromium WebGPU task list routes browser-facing compiler coverage through
+The Chromium acceptance contract routes browser-facing compiler coverage through
 the schema-backed WGSL corpus manifest at
 [`config/wgsl-browser-corpus.json`](../config/wgsl-browser-corpus.json). The
 manifest rows bind source path, normalized source hash, expected validity,
@@ -291,7 +291,7 @@ collectives, and exactness are declared in one place instead of re-derived by
 per-kernel emitters.
 
 This path is documented in
-[`docs/tsir-lowering-plan.md`](./tsir-lowering-plan.md). Phase A compiler
+[`docs/tsir-contract.md`](./tsir-contract.md). Phase A compiler
 surface (schema, digests, frontend, planner, reference interpreter,
 collective-synthesis pass, and five backend emitters whose realization-only
 entry points still serialize contract skeletons while their semantic-aware
@@ -306,8 +306,8 @@ MSL/SPIR-V/HLSL WebGPU lanes remain live.
 
 Dawn is Google's WebGPU implementation. Tint is Dawn's shader compiler.
 Tint is therefore a first-class Doe target, not incidental background. The
-Chromium task list in
-[`chromium-webgpu-task-list.md`](./chromium-webgpu-task-list.md) requires
+Chromium acceptance in
+[`../browser/chromium/acceptance.md`](./../browser/chromium/acceptance.md) requires
 compiler evidence against Tint before any Chromium WebGPU replacement claim can
 promote.
 
@@ -536,11 +536,11 @@ gates, not from prose in this architecture note.
   story)
 - [`docs/csl-architecture.md`](./csl-architecture.md) — sibling
   compiler doc covering the Cerebras CSL lane
-- [`docs/tsir-lowering-plan.md`](./tsir-lowering-plan.md) for the
+- [`docs/tsir-contract.md`](./tsir-contract.md) for the
   WGSL -> TSIR -> backend lowering architecture and parity-oracle contract
   (Phase A compiler surface landed; live status in
   [`docs/status/tsir.md`](./status/tsir.md))
-- [`docs/loop-protocol.md`](./loop-protocol.md) — build-iteration vs
+- [`docs/tsir-contract.md`](./tsir-contract.md) — build-iteration vs
   parity-iteration discipline that drives incremental TSIR + parity
   landing
 

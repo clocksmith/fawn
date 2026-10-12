@@ -14,8 +14,8 @@ KERNEL_ALIASES = {
     "fused-gemv": "fused_gemv",
 }
 
-# Reference-source taxonomy under the re-scope (see docs/tsir-lowering-plan.md
-# Step 1 "Real-kernel regime" and Step 8 "Backend lane rules").
+# Reference-source taxonomy under the re-scope (see docs/tsir-contract.md
+# Numerical and oracle contract, and Parity and promotion).
 REFERENCE_SOURCE_ZIG = "zig-tsir-oracle"
 REFERENCE_SOURCE_DOPPLER = "doppler-reference-transcript"
 REFERENCE_TRANSCRIPT_SCHEMA_ID = "doppler.reference-transcript/v1"

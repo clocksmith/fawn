@@ -5,8 +5,8 @@ and milestone state live elsewhere.
 
 ## Sources of truth
 
-- Tasks: [`../../docs/chromium-webgpu-task-list.md`](../../docs/chromium-webgpu-task-list.md)
-- Acceptance: [`plan.md`](plan.md)
+- Tasks: [`../../browser/chromium/acceptance.md`](../../browser/chromium/acceptance.md)
+- Acceptance: [`plan.md`](acceptance.md)
 - Milestones: [`bench/workflows/browser-milestones.json`](bench/workflows/browser-milestones.json)
 - Integration boundary: [`README.md`](README.md)
 

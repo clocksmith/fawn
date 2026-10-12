@@ -1,10 +1,5 @@
 """Lock markdown-link integrity across Doe docs.
 
-Tick 19 found a load-bearing file (`docs/loop-protocol.md`) missing from
-disk while `docs/status.md`, `docs/tsir-lowering-plan.md`, and every
-recent status-shard entry linked to it. Nobody caught it for a long
-time because there was no test for the class.
-
 This test walks `docs/**/*.md` (excluding `docs/status/archive/`),
 extracts every markdown link that resolves to a local relative path
 inside the doe repo, and asserts the target exists on disk. External

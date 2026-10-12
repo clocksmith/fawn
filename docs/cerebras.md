@@ -24,7 +24,7 @@ Per-model evidence checklists with acceptance bars and active blocker queues:
 | CSL emit (classifier/template path) | `runtime/zig/src/compiler/wgsl/emit/csl/` |
 | Hardware runners (Gemma/Qwen HostPlan + bounded cells) | `bench/runners/csl-runners/` |
 | Bundle / verify / status tools | `bench/tools/cerebras_*`, `bench/tools/*evidence*`, `bench/tools/synthesize_*` |
-| TSIR architecture plan | [`docs/tsir-lowering-plan.md`](tsir-lowering-plan.md) |
+| TSIR lowering contract | [`docs/tsir-contract.md`](tsir-contract.md) |
 | CSL abstraction stack | [`docs/csl-architecture.md`](csl-architecture.md) |
 
 ## Reproduce
@@ -74,5 +74,5 @@ Governance + claim scope: [`docs/hardware-validation-appendix.md`](hardware-vali
 - Roadmap timing. Status snapshot + evidence ledgers carry current state;
   blockers are named without estimates.
 - Internal iteration jargon. Build-iteration vs parity-iteration discipline
-  for the TSIR rewrite lives in [`docs/loop-protocol.md`](loop-protocol.md);
+  for the TSIR rewrite lives in [`docs/tsir-contract.md`](tsir-contract.md);
   it sits outside the Cerebras lane progress signal.

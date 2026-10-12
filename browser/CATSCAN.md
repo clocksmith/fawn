@@ -33,7 +33,7 @@ Outputs:
 ## Acceptance
 
 - Browser work routes through the Chromium acceptance and release contracts.
-- Evidence: [`chromium/plan.md`](chromium/plan.md).
+- Evidence: [`chromium/plan.md`](chromium/acceptance.md).
 
 ## Non-goals
 

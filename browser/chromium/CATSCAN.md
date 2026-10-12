@@ -18,7 +18,7 @@ Produce an installable Chromium-family artifact that runs a named unchanged appl
 ## Contracts
 
 Inputs:
-- Acceptance plan: [`plan.md`](plan.md).
+- Acceptance plan: [`plan.md`](acceptance.md).
 - Browser contracts: [`contracts/README.md`](contracts/README.md).
 
 Outputs:

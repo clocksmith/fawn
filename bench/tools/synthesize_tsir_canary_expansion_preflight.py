@@ -143,7 +143,7 @@ def main() -> int:
                     "bench/tools/doe_parity.py because the re-scoped "
                     "TSIR plan uses Doppler's browser WebGPU transcript "
                     "as the reference oracle for real shapes (Step 1 of "
-                    "docs/tsir-lowering-plan.md). The canary at "
+                    "docs/tsir-contract.md). The canary at "
                     "bench/gates/nightly_tsir_parity_canary.py does not "
                     "thread that argument."
                 ),

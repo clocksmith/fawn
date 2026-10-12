@@ -1,8 +1,9 @@
-# Chromium integration acceptance plan
+# Chromium integration acceptance
 
-This file defines milestone acceptance. Tasks live in
-[`../../docs/chromium-webgpu-task-list.md`](../../docs/chromium-webgpu-task-list.md)
-and state lives in [`bench/workflows/browser-milestones.json`](bench/workflows/browser-milestones.json).
+This file owns browser integration acceptance. The milestone manifest
+[`bench/workflows/browser-milestones.json`](bench/workflows/browser-milestones.json)
+owns state; [GOALS.md](../../GOALS.md) selects work. Browser replacement remains
+separately selected and cannot inherit native or package qualification.
 
 ## Scope
 
@@ -69,6 +70,51 @@ hardware, never a synthetic `Doe` GPU vendor.
   not satisfy this criterion.
 - Reload, teardown, concurrency, recovery, and memory-growth receipts pass for
   the promoted application lane.
+
+## Compiler obligations
+
+- Run Doe and Tint over the same versioned WGSL corpus.
+- Preserve source, IR, backend-output, validator, and compiler identity.
+- Close semantic, diagnostic, robustness, and backend-emission gaps exposed by
+  real browser and downstream-project shaders.
+- Publish only phase comparisons with equivalent boundaries and enough samples.
+- Link CTS shader evidence to the same source/output identity chain.
+
+## Native runtime obligations
+
+- Require independent output oracles for promoted compute and render rows.
+- Match upload, command, submit, completion, and readback work against Dawn.
+- Cover crash, hang, device loss, recovery, concurrency, teardown, and memory.
+- Preserve typed errors through C, Zig, browser, and JavaScript boundaries.
+- Keep cache, synchronization, fallback, and hardware shortcuts explicit.
+- Produce backend-specific Metal, Vulkan, and D3D12 evidence before broadening
+  platform claims.
+
+## Chromium seam obligations
+
+- Maintain explicit `dawn`, `doe`, and governed `auto` selection.
+- Make forced `doe` fail closed when Doe cannot initialize.
+- Record browser executable, Doe runtime, Dawn fallback, compiler, adapter,
+  driver, selector, and fallback identity in every promoted artifact.
+- Preserve Chromium process, sandbox, renderer, media, accessibility, and
+  security boundaries outside the WebGPU implementation seam.
+- Validate canvas, presentation, external texture, media, worker, recovery,
+  and device-loss behavior under forced Doe.
+- Run browser CTS and application workloads under both forced runtimes.
+
+## Published-browser obligations
+
+- Produce a downloadable, hash-bound Chromium-family archive.
+- Bind the browser binary, Doe runtime, Dawn fallback, and compiler artifacts.
+- Publish a successful HTTPS download receipt.
+- Provide a proof page that exposes active runtime, fallback state, and recent
+  receipt links.
+- Provide hosted application pages and same-workload Dawn/Doe comparison
+  receipts.
+- Pass the published-release, proof-surface, launch, finalizer, and
+  release-candidate contracts under `browser/chromium/contracts/`.
+
+Until these obligations pass, browser evidence remains diagnostic.
 
 ## Promotion rule
 

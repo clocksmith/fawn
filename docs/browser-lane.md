@@ -12,10 +12,8 @@ strategy change grants no browser promotion.
 
 - Product and package boundary:
   [`runtime-surface-boundary.md`](runtime-surface-boundary.md)
-- Canonical browser tasks:
-  [`chromium-webgpu-task-list.md`](chromium-webgpu-task-list.md)
-- Acceptance plan:
-  [`../browser/chromium/plan.md`](../browser/chromium/plan.md)
+- Integration acceptance:
+  [`../browser/chromium/acceptance.md`](../browser/chromium/acceptance.md)
 - Integration-layer usage:
   [`../browser/chromium/README.md`](../browser/chromium/README.md)
 - Machine-owned milestone state:

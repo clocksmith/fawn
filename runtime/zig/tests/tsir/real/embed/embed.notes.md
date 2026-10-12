@@ -1,7 +1,7 @@
 # Real-kernel embed fixture (Gemma 4 E2B)
 
 Scope: Move 4 of the re-scoped TSIR plan. First non-bootstrap kernel
-through the TSIR pipeline. See `docs/tsir-lowering-plan.md` Step 9.
+through the TSIR pipeline. See `docs/tsir-contract.md` Step 9.
 
 ## Target dimensions
 

@@ -25,8 +25,7 @@ remain browser-owned.
 
 ## Source of truth
 
-- Tasks: [`../../docs/chromium-webgpu-task-list.md`](../../docs/chromium-webgpu-task-list.md)
-- Acceptance: [`plan.md`](plan.md)
+- Acceptance: [`plan.md`](acceptance.md)
 - Milestones: [`bench/workflows/browser-milestones.json`](bench/workflows/browser-milestones.json)
 - Contracts: [`contracts/`](contracts/)
 - Live status:
@@ -60,7 +59,7 @@ Do not add a parallel task list, strategy, or artifact inventory to this file.
 ## Verification
 
 Use the scripts and commands named by the milestone manifest and acceptance
-plan. The manifest owns which checks are required for each milestone; this
+contract. The manifest owns which checks are required for each milestone; this
 README intentionally does not copy the changing command inventory.
 
 ## Current boundary
@@ -72,4 +71,4 @@ not yet establish an unchanged-application release gate, broad browser
 compatibility, a promoted release, or a general performance claim.
 
 Archived Track B module designs remain historical references only. New work
-must attach to the canonical task list and milestone manifest.
+requires explicit selection under GOALS.md and the milestone manifest.

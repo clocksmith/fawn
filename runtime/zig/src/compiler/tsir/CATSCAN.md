@@ -18,7 +18,7 @@ Represent semantic kernels and target realizations explicitly enough for determi
 ## Contracts
 
 Inputs:
-- Lowering plan: [`../../../../../docs/tsir-lowering-plan.md`](../../../../../docs/tsir-lowering-plan.md).
+- Lowering contract: [`../../../../../docs/tsir-contract.md`](../../../../../docs/tsir-contract.md).
 - Source kernels and hash-bound target descriptors.
 
 Outputs:

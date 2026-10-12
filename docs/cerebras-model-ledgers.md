@@ -1,7 +1,8 @@
 # Doe Cerebras model ledgers
 
-Per-model acceptance bars and blocker queues for the Doppler -> Doe ->
-Cerebras lane. This file is the active ledger for model-specific state.
+Model-specific inference acceptance for the Doppler -> Doe -> Cerebras lane.
+This page defines requirements, not a work queue. [GOALS.md](../GOALS.md) selects
+work; generated snapshots and receipts own model-specific state.
 
 Current counts and verdicts belong in receipts and generated snapshots, not in
 this prose file. Refresh the status snapshot from [`cerebras.md`](cerebras.md)
@@ -66,7 +67,7 @@ byte/digest instability. The end-to-end receipt catches composition,
 phase-order, lm-head routing, graph completeness, and inter-kernel handoff
 bugs. Neither side subsumes the other.
 
-### Active fail-closed queue
+### Inference requirements
 
 These items gate any claim that Gemma 4 31B af16 runs real prefill/decode on
 the Cerebras simulator or hardware:
@@ -128,7 +129,7 @@ and Cerebras WSE with the same source-identity chain discipline as Gemma.
 - Manifest / HostPlan / CSL / reference-fixture hash chain is unbroken
   end-to-end.
 
-### Active gates
+### Hardware acceptance
 
 - Full-prompt HostPlan hardware receipt from
   `run_qwen3_6_27b_af16_hardware_path.sh`.
@@ -154,25 +155,12 @@ and Cerebras WSE with the same source-identity chain discipline as Gemma.
 - `sample` is never valid as token-output evidence without a typed logits input
   from the compatible lm-head launch.
 
-## Post-hardware optimization roadmap
-
-Correctness-first lowering is the rule until the first returned hardware
-receipt. After that receipt:
-
-1. Extend mixed precision to still-f32 wide paths: KV cache, attention
-   Q/K/V/O buffers, residual stream, RMSNorm storage, and SUMMA tiled matmul
-   output.
-2. Extend fused-dequant SUMMA tiled matmul, or add a Q4K -> f16 pre-pass kernel
-   that materializes tiles in PE SRAM.
-3. Port cross-kernel fusion into CSL emit: RMSNorm+matmul, matmul+residual,
-   and gate+up+activation families behind capability flags.
-
-## Long-tail
+## Evidence routing
 
 - TSIR-as-source-of-truth migrations: live status in [`status/tsir.md`](status/tsir.md).
 - E2B control-lane diagnostics: evidence bundle and status shards carry the
   current artifact map.
 - Performance baselines: require hardware receipt plus separate performance
   receipt and claim-policy review.
-- Doppler-on-Doe Metal parity, second Doe model lanes, and operator-diff tools:
-  track in the relevant status shard.
+- Backend and model expansion require their own selected workload and acceptance;
+  a Cerebras receipt never promotes Metal or another model automatically.
