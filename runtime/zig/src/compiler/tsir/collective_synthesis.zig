@@ -1,10 +1,10 @@
-// TSIR Step 6 — collective synthesis pass.
+// TSIR collective synthesis pass.
 //
 // Consumes `SemanticFunction.collectives` (subgroup / barrier / fabric nodes
 // declared by the frontend) and emits `CollectiveRealizationNode`s pinned to
 // descriptor-declared native capabilities. Fabric colors are assigned in
 // source order against the descriptor's fabric-color budget; tree shape is
-// currently first-fit linear pending Step 6 numerical-contract work.
+// currently first-fit linear.
 //
 // Rejections are emitted when:
 //   - the collective dtype is not a native numerical mode on the target
@@ -12,10 +12,10 @@
 //   - the target's fabric-color budget is exhausted before the node is
 //     assigned a color
 //
-// This file was carved out of `planner.zig` per
-// `docs/tsir-lowering-plan.md §Step 6` — the pass is named, isolated, and
-// composable with the Phase-B numerical-contract extensions that this step
-// will gain (accumulation dtype, declared reduction tree, NaN/Inf policy).
+// This pass remains separate from `planner.zig`. Numerical guarantees,
+// including accumulation dtype, reduction tree, and NaN/Inf policy, require
+// the declared contract and scoped evidence in
+// `docs/tsir-contract.md §Numerical and oracle contract`.
 
 const std = @import("std");
 const targets = @import("../targets/mod.zig");
