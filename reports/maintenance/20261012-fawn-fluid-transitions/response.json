@@ -1,0 +1,1127 @@
+{
+  "classification": "Chrome application correctness; emulated mobile; no performance claim",
+  "observedAt": "2026-10-12T16:39:38.646Z",
+  "origin": "local",
+  "baselineRef": "e365eee31",
+  "sourceHashes": {
+    "baseline": "ffa80f400e863971dbf23855f4d5a452bece73a3e7797117fd1514368f28188c",
+    "candidate": "acebafd781fc57ad463aeeaefb820971602acfdaf0300c985af820831baffa36"
+  },
+  "cases": [
+    {
+      "name": "desktop",
+      "variant": "baseline",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "press": {
+        "uniforms": [
+          512,
+          512,
+          0.001953125,
+          0.001953125,
+          0.5,
+          0.5,
+          0.8199999928474426,
+          0.10000000149011612,
+          0.01366666704416275,
+          1.0333333015441895,
+          2,
+          0.949999988079071,
+          0,
+          0,
+          0,
+          0
+        ],
+        "stats": [
+          {
+            "finite": true,
+            "maxSpeed": 0.0014190345046153224,
+            "maxDye": 0.0010685166344046593,
+            "strokeMinSpeed": null
+          },
+          {
+            "finite": true,
+            "maxSpeed": 0.0008960249595024631,
+            "maxDye": 0.0008754111477173865,
+            "strokeMinSpeed": null
+          },
+          {
+            "finite": true,
+            "maxSpeed": 0.045820951764928584,
+            "maxDye": 0.045685987919569016,
+            "strokeMinSpeed": null
+          },
+          {
+            "finite": true,
+            "maxSpeed": 0.04637598221429106,
+            "maxDye": 0.04623938351869583,
+            "strokeMinSpeed": null
+          }
+        ],
+        "errors": [],
+        "adapter": {
+          "vendor": "intel",
+          "architecture": "gen-12lp",
+          "isFallbackAdapter": false
+        }
+      },
+      "drag": {
+        "uniforms": [
+          512,
+          512,
+          0.001953125,
+          0.001953125,
+          0.6499999761581421,
+          0.5,
+          0.8199999928474426,
+          0.10000000149011612,
+          0.01366666704416275,
+          1.0499999523162842,
+          2,
+          0.949999988079071,
+          0.15000000596046448,
+          0,
+          0,
+          0
+        ],
+        "stats": [
+          {
+            "finite": true,
+            "maxSpeed": 0.00389649792003987,
+            "maxDye": 0.0038270121440291405,
+            "strokeMinSpeed": 0.0003195291927763224
+          },
+          {
+            "finite": true,
+            "maxSpeed": 0.0034799500939266394,
+            "maxDye": 0.0034755291417241096,
+            "strokeMinSpeed": 0.00030598785665114344
+          },
+          {
+            "finite": true,
+            "maxSpeed": 0.045820951764928584,
+            "maxDye": 0.045685987919569016,
+            "strokeMinSpeed": 0.01126255786841576
+          },
+          {
+            "finite": true,
+            "maxSpeed": 0.06605632348122795,
+            "maxDye": 0.05037326365709305,
+            "strokeMinSpeed": 0.01112800403175307
+          }
+        ],
+        "errors": [],
+        "adapter": {
+          "vendor": "intel",
+          "architecture": "gen-12lp",
+          "isFallbackAdapter": false
+        }
+      },
+      "stopped": {
+        "uniforms": [
+          512,
+          512,
+          0.001953125,
+          0.001953125,
+          0.6499999761581421,
+          0.5,
+          0.8199999928474426,
+          0.10000000149011612,
+          0.01366666704416275,
+          1.0666667222976685,
+          2,
+          0.949999988079071,
+          0.1080000028014183,
+          0,
+          0,
+          0
+        ],
+        "stats": [
+          {
+            "finite": true,
+            "maxSpeed": 0.007698416536365107,
+            "maxDye": 0.007474010344594717,
+            "strokeMinSpeed": null
+          },
+          {
+            "finite": true,
+            "maxSpeed": 0.006503041731533302,
+            "maxDye": 0.006392248906195164,
+            "strokeMinSpeed": null
+          },
+          {
+            "finite": true,
+            "maxSpeed": 0.10216881793010783,
+            "maxDye": 0.07440847903490067,
+            "strokeMinSpeed": null
+          },
+          {
+            "finite": true,
+            "maxSpeed": 0.06605632348122795,
+            "maxDye": 0.05037326365709305,
+            "strokeMinSpeed": null
+          }
+        ],
+        "errors": [],
+        "adapter": {
+          "vendor": "intel",
+          "architecture": "gen-12lp",
+          "isFallbackAdapter": false
+        }
+      },
+      "released": {
+        "uniforms": [
+          512,
+          512,
+          0.001953125,
+          0.001953125,
+          0.6499999761581421,
+          0.5,
+          0.2800000011920929,
+          0.10000000149011612,
+          0.01366666704416275,
+          1.0833333730697632,
+          2,
+          0.949999988079071,
+          0.0777600035071373,
+          0,
+          0,
+          0
+        ],
+        "stats": [
+          {
+            "finite": true,
+            "maxSpeed": 0.009967177470910402,
+            "maxDye": 0.00951091106981039,
+            "strokeMinSpeed": null
+          },
+          {
+            "finite": true,
+            "maxSpeed": 0.008164984495479921,
+            "maxDye": 0.007912646047770977,
+            "strokeMinSpeed": null
+          },
+          {
+            "finite": true,
+            "maxSpeed": 0.10216881793010783,
+            "maxDye": 0.07440847903490067,
+            "strokeMinSpeed": null
+          },
+          {
+            "finite": true,
+            "maxSpeed": 0.11373036488512298,
+            "maxDye": 0.08206313848495483,
+            "strokeMinSpeed": null
+          }
+        ],
+        "errors": [],
+        "adapter": {
+          "vendor": "intel",
+          "architecture": "gen-12lp",
+          "isFallbackAdapter": false
+        }
+      },
+      "tap": {
+        "uniforms": [
+          512,
+          512,
+          0.001953125,
+          0.001953125,
+          0.5,
+          0.5,
+          0.2800000011920929,
+          0.10000000149011612,
+          0.01366666704416275,
+          1.1333333253860474,
+          2,
+          0.949999988079071,
+          -0.1080000028014183,
+          0,
+          0,
+          0
+        ],
+        "stats": [
+          {
+            "finite": true,
+            "maxSpeed": 0.0024921154720389136,
+            "maxDye": 0.0008579923305660486,
+            "strokeMinSpeed": null
+          },
+          {
+            "finite": true,
+            "maxSpeed": 0.002165038144004331,
+            "maxDye": 0.0006504929042421281,
+            "strokeMinSpeed": null
+          },
+          {
+            "finite": true,
+            "maxSpeed": 0.045820951764928584,
+            "maxDye": 0.045685987919569016,
+            "strokeMinSpeed": null
+          },
+          {
+            "finite": true,
+            "maxSpeed": 0.04527256637225639,
+            "maxDye": 0.045139215886592865,
+            "strokeMinSpeed": null
+          }
+        ],
+        "errors": [],
+        "adapter": {
+          "vendor": "intel",
+          "architecture": "gen-12lp",
+          "isFallbackAdapter": false
+        }
+      }
+    },
+    {
+      "name": "desktop",
+      "variant": "candidate",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "press": {
+        "uniforms": [
+          256,
+          256,
+          0.00390625,
+          0.00390625,
+          0.5,
+          0.5,
+          1.399999976158142,
+          0.10000000149011612,
+          0.0034166667610406876,
+          1.0333333015441895,
+          2,
+          0.9918630719184875,
+          0,
+          0,
+          1,
+          0,
+          1,
+          0.625,
+          4,
+          0
+        ],
+        "stats": [
+          {
+            "finite": true,
+            "maxSpeed": 0.4342882511333344,
+            "maxDye": 0.4308313727378845,
+            "strokeMinSpeed": null
+          },
+          {
+            "finite": true,
+            "maxSpeed": 0.5627677580752773,
+            "maxDye": 0.5588935017585754,
+            "strokeMinSpeed": null
+          },
+          {
+            "finite": true,
+            "maxSpeed": 0.8777122413680126,
+            "maxDye": 0.8704267740249634,
+            "strokeMinSpeed": null
+          },
+          {
+            "finite": true,
+            "maxSpeed": 0.8812580395257386,
+            "maxDye": 0.8748775124549866,
+            "strokeMinSpeed": null
+          }
+        ],
+        "errors": [],
+        "adapter": {
+          "vendor": "intel",
+          "architecture": "gen-12lp",
+          "isFallbackAdapter": false
+        }
+      },
+      "drag": {
+        "uniforms": [
+          256,
+          256,
+          0.00390625,
+          0.00390625,
+          0.6499999761581421,
+          0.5,
+          1.399999976158142,
+          0.10000000149011612,
+          0.0034166667610406876,
+          1.0499999523162842,
+          2,
+          0.9701759219169617,
+          0.15000000596046448,
+          0,
+          0,
+          0,
+          1,
+          0.625,
+          4,
+          0
+        ],
+        "stats": [
+          {
+            "finite": true,
+            "maxSpeed": 1.8230509614464643,
+            "maxDye": 1.8212074041366577,
+            "strokeMinSpeed": 1.4946845107572366
+          },
+          {
+            "finite": true,
+            "maxSpeed": 1.837417578455774,
+            "maxDye": 1.8363089561462402,
+            "strokeMinSpeed": 1.5764399795505997
+          },
+          {
+            "finite": true,
+            "maxSpeed": 0.8649846033124221,
+            "maxDye": 0.8535853624343872,
+            "strokeMinSpeed": 0.10081726293964197
+          },
+          {
+            "finite": true,
+            "maxSpeed": 0.8684712300752983,
+            "maxDye": 0.8576659560203552,
+            "strokeMinSpeed": 0.07660844309269839
+          }
+        ],
+        "errors": [],
+        "adapter": {
+          "vendor": "intel",
+          "architecture": "gen-12lp",
+          "isFallbackAdapter": false
+        }
+      },
+      "stopped": {
+        "uniforms": [
+          256,
+          256,
+          0.00390625,
+          0.00390625,
+          0.6499999761581421,
+          0.5,
+          1.399999976158142,
+          0.10000000149011612,
+          0.0034166667610406876,
+          1.0666667222976685,
+          2,
+          0.9384480714797974,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0.625,
+          4,
+          0
+        ],
+        "stats": [
+          {
+            "finite": true,
+            "maxSpeed": 1.7316295870737872,
+            "maxDye": 1.7287626266479492,
+            "strokeMinSpeed": null
+          },
+          {
+            "finite": true,
+            "maxSpeed": 1.7582520381331084,
+            "maxDye": 1.755464792251587,
+            "strokeMinSpeed": null
+          },
+          {
+            "finite": true,
+            "maxSpeed": 0.8526481919278143,
+            "maxDye": 0.8372576832771301,
+            "strokeMinSpeed": null
+          },
+          {
+            "finite": true,
+            "maxSpeed": 0.8555979956679864,
+            "maxDye": 0.8413336873054504,
+            "strokeMinSpeed": null
+          }
+        ],
+        "errors": [],
+        "adapter": {
+          "vendor": "intel",
+          "architecture": "gen-12lp",
+          "isFallbackAdapter": false
+        }
+      },
+      "released": {
+        "uniforms": [
+          256,
+          256,
+          0.00390625,
+          0.00390625,
+          0.6499999761581421,
+          0.5,
+          0.2800000011920929,
+          0.05000000074505806,
+          0.0034166667610406876,
+          1.0833333730697632,
+          2,
+          0.8995242118835449,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0.625,
+          4,
+          0
+        ],
+        "stats": [
+          {
+            "finite": true,
+            "maxSpeed": 1.4771188487097717,
+            "maxDye": 1.4736350774765015,
+            "strokeMinSpeed": null
+          },
+          {
+            "finite": true,
+            "maxSpeed": 1.5435949166952163,
+            "maxDye": 1.540347933769226,
+            "strokeMinSpeed": null
+          },
+          {
+            "finite": true,
+            "maxSpeed": 0.8370348791008716,
+            "maxDye": 0.8213950395584106,
+            "strokeMinSpeed": null
+          },
+          {
+            "finite": true,
+            "maxSpeed": 0.8405442180973809,
+            "maxDye": 0.8251073956489563,
+            "strokeMinSpeed": null
+          }
+        ],
+        "errors": [],
+        "adapter": {
+          "vendor": "intel",
+          "architecture": "gen-12lp",
+          "isFallbackAdapter": false
+        }
+      },
+      "tap": {
+        "uniforms": [
+          256,
+          256,
+          0.00390625,
+          0.00390625,
+          0.5,
+          0.5,
+          1.399999976158142,
+          0.10000000149011612,
+          0.0034166667610406876,
+          1.1333333253860474,
+          2,
+          0,
+          0,
+          0,
+          1,
+          0,
+          1,
+          0.625,
+          4,
+          0
+        ],
+        "stats": [
+          {
+            "finite": true,
+            "maxSpeed": 0.4370240850693339,
+            "maxDye": 0.43024423718452454,
+            "strokeMinSpeed": null
+          },
+          {
+            "finite": true,
+            "maxSpeed": 0.5660555734491066,
+            "maxDye": 0.5588597655296326,
+            "strokeMinSpeed": null
+          },
+          {
+            "finite": true,
+            "maxSpeed": 0.7451893404047304,
+            "maxDye": 0.6632314920425415,
+            "strokeMinSpeed": null
+          },
+          {
+            "finite": true,
+            "maxSpeed": 0.7474357470453318,
+            "maxDye": 0.665364682674408,
+            "strokeMinSpeed": null
+          }
+        ],
+        "errors": [],
+        "adapter": {
+          "vendor": "intel",
+          "architecture": "gen-12lp",
+          "isFallbackAdapter": false
+        }
+      }
+    },
+    {
+      "name": "mobile",
+      "variant": "baseline",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "press": {
+        "uniforms": [
+          512,
+          512,
+          0.001953125,
+          0.001953125,
+          0.5,
+          0.5,
+          0.8199999928474426,
+          0.10000000149011612,
+          0.01366666704416275,
+          1.0333333015441895,
+          2,
+          0.949999988079071,
+          0,
+          0,
+          0,
+          0
+        ],
+        "stats": [
+          {
+            "finite": true,
+            "maxSpeed": 0.0014190345046153224,
+            "maxDye": 0.0010685166344046593,
+            "strokeMinSpeed": null
+          },
+          {
+            "finite": true,
+            "maxSpeed": 0.0008960249595024631,
+            "maxDye": 0.0008754111477173865,
+            "strokeMinSpeed": null
+          },
+          {
+            "finite": true,
+            "maxSpeed": 0.045820951764928584,
+            "maxDye": 0.045685987919569016,
+            "strokeMinSpeed": null
+          },
+          {
+            "finite": true,
+            "maxSpeed": 0.04637598221429106,
+            "maxDye": 0.04623938351869583,
+            "strokeMinSpeed": null
+          }
+        ],
+        "errors": [],
+        "adapter": {
+          "vendor": "intel",
+          "architecture": "gen-12lp",
+          "isFallbackAdapter": false
+        }
+      },
+      "drag": {
+        "uniforms": [
+          512,
+          512,
+          0.001953125,
+          0.001953125,
+          0.6499999761581421,
+          0.5,
+          0.8199999928474426,
+          0.10000000149011612,
+          0.01366666704416275,
+          1.0499999523162842,
+          2,
+          0.949999988079071,
+          0.15000000596046448,
+          0,
+          0,
+          0
+        ],
+        "stats": [
+          {
+            "finite": true,
+            "maxSpeed": 0.00389649792003987,
+            "maxDye": 0.0038270121440291405,
+            "strokeMinSpeed": 0.0003195291927763224
+          },
+          {
+            "finite": true,
+            "maxSpeed": 0.0034799500939266394,
+            "maxDye": 0.0034755291417241096,
+            "strokeMinSpeed": 0.00030598785665114344
+          },
+          {
+            "finite": true,
+            "maxSpeed": 0.045820951764928584,
+            "maxDye": 0.045685987919569016,
+            "strokeMinSpeed": 0.01126255786841576
+          },
+          {
+            "finite": true,
+            "maxSpeed": 0.06605632348122795,
+            "maxDye": 0.05037326365709305,
+            "strokeMinSpeed": 0.01112800403175307
+          }
+        ],
+        "errors": [],
+        "adapter": {
+          "vendor": "intel",
+          "architecture": "gen-12lp",
+          "isFallbackAdapter": false
+        }
+      },
+      "stopped": {
+        "uniforms": [
+          512,
+          512,
+          0.001953125,
+          0.001953125,
+          0.6499999761581421,
+          0.5,
+          0.8199999928474426,
+          0.10000000149011612,
+          0.01366666704416275,
+          1.0666667222976685,
+          2,
+          0.949999988079071,
+          0.1080000028014183,
+          0,
+          0,
+          0
+        ],
+        "stats": [
+          {
+            "finite": true,
+            "maxSpeed": 0.007698416536365107,
+            "maxDye": 0.007474010344594717,
+            "strokeMinSpeed": null
+          },
+          {
+            "finite": true,
+            "maxSpeed": 0.006503041731533302,
+            "maxDye": 0.006392248906195164,
+            "strokeMinSpeed": null
+          },
+          {
+            "finite": true,
+            "maxSpeed": 0.10216881793010783,
+            "maxDye": 0.07440847903490067,
+            "strokeMinSpeed": null
+          },
+          {
+            "finite": true,
+            "maxSpeed": 0.06605632348122795,
+            "maxDye": 0.05037326365709305,
+            "strokeMinSpeed": null
+          }
+        ],
+        "errors": [],
+        "adapter": {
+          "vendor": "intel",
+          "architecture": "gen-12lp",
+          "isFallbackAdapter": false
+        }
+      },
+      "released": {
+        "uniforms": [
+          512,
+          512,
+          0.001953125,
+          0.001953125,
+          0.6499999761581421,
+          0.5,
+          0,
+          0.10000000149011612,
+          0.01366666704416275,
+          1.0833333730697632,
+          2,
+          0.949999988079071,
+          0.0777600035071373,
+          0,
+          0,
+          0
+        ],
+        "stats": [
+          {
+            "finite": true,
+            "maxSpeed": 0.009049873265150301,
+            "maxDye": 0.008628339506685734,
+            "strokeMinSpeed": null
+          },
+          {
+            "finite": true,
+            "maxSpeed": 0.007425098744091561,
+            "maxDye": 0.007189195137470961,
+            "strokeMinSpeed": null
+          },
+          {
+            "finite": true,
+            "maxSpeed": 0.10216881793010783,
+            "maxDye": 0.07440847903490067,
+            "strokeMinSpeed": null
+          },
+          {
+            "finite": true,
+            "maxSpeed": 0.10093869028953263,
+            "maxDye": 0.07351510226726532,
+            "strokeMinSpeed": null
+          }
+        ],
+        "errors": [],
+        "adapter": {
+          "vendor": "intel",
+          "architecture": "gen-12lp",
+          "isFallbackAdapter": false
+        }
+      },
+      "tap": {
+        "uniforms": [
+          512,
+          512,
+          0.001953125,
+          0.001953125,
+          0.5,
+          0.5,
+          0,
+          0.10000000149011612,
+          0.01366666704416275,
+          1.1166666746139526,
+          2,
+          0.949999988079071,
+          -0.15000000596046448,
+          0,
+          0,
+          0
+        ],
+        "stats": [
+          {
+            "finite": true,
+            "maxSpeed": 0,
+            "maxDye": 0,
+            "strokeMinSpeed": null
+          },
+          {
+            "finite": true,
+            "maxSpeed": 0,
+            "maxDye": 0,
+            "strokeMinSpeed": null
+          },
+          {
+            "finite": true,
+            "maxSpeed": 0.045820951764928584,
+            "maxDye": 0.045685987919569016,
+            "strokeMinSpeed": null
+          },
+          {
+            "finite": true,
+            "maxSpeed": 0.04637598221429106,
+            "maxDye": 0.04623938351869583,
+            "strokeMinSpeed": null
+          }
+        ],
+        "errors": [],
+        "adapter": {
+          "vendor": "intel",
+          "architecture": "gen-12lp",
+          "isFallbackAdapter": false
+        }
+      }
+    },
+    {
+      "name": "mobile",
+      "variant": "candidate",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "press": {
+        "uniforms": [
+          256,
+          256,
+          0.00390625,
+          0.00390625,
+          0.5,
+          0.5,
+          1.399999976158142,
+          0.10000000149011612,
+          0.0034166667610406876,
+          1.0333333015441895,
+          2,
+          0.9918630719184875,
+          0,
+          0,
+          1,
+          0,
+          0.4620853066444397,
+          1,
+          4,
+          0
+        ],
+        "stats": [
+          {
+            "finite": true,
+            "maxSpeed": 0.4339798917418253,
+            "maxDye": 0.4267541468143463,
+            "strokeMinSpeed": null
+          },
+          {
+            "finite": true,
+            "maxSpeed": 0.5627316416445048,
+            "maxDye": 0.555402398109436,
+            "strokeMinSpeed": null
+          },
+          {
+            "finite": true,
+            "maxSpeed": 0.8221789192768636,
+            "maxDye": 0.8006010055541992,
+            "strokeMinSpeed": null
+          },
+          {
+            "finite": true,
+            "maxSpeed": 0.8107482205597573,
+            "maxDye": 0.7898964285850525,
+            "strokeMinSpeed": null
+          }
+        ],
+        "errors": [],
+        "adapter": {
+          "vendor": "intel",
+          "architecture": "gen-12lp",
+          "isFallbackAdapter": false
+        }
+      },
+      "drag": {
+        "uniforms": [
+          256,
+          256,
+          0.00390625,
+          0.00390625,
+          0.5693128108978271,
+          0.5,
+          1.399999976158142,
+          0.10000000149011612,
+          0.0034166667610406876,
+          1.0499999523162842,
+          2,
+          0.9701759219169617,
+          0.06931279599666595,
+          0,
+          0,
+          0,
+          0.4620853066444397,
+          1,
+          4,
+          0
+        ],
+        "stats": [
+          {
+            "finite": true,
+            "maxSpeed": 0.8743710842066031,
+            "maxDye": 0.8725225925445557,
+            "strokeMinSpeed": 0.6255596218628754
+          },
+          {
+            "finite": true,
+            "maxSpeed": 0.9273981835248544,
+            "maxDye": 0.9250835180282593,
+            "strokeMinSpeed": 0.6760794553936587
+          },
+          {
+            "finite": true,
+            "maxSpeed": 0.8404699494010154,
+            "maxDye": 0.8150173425674438,
+            "strokeMinSpeed": 0.22685948740597417
+          },
+          {
+            "finite": true,
+            "maxSpeed": 0.8304696732612844,
+            "maxDye": 0.8082406520843506,
+            "strokeMinSpeed": 0.19331399057904333
+          }
+        ],
+        "errors": [],
+        "adapter": {
+          "vendor": "intel",
+          "architecture": "gen-12lp",
+          "isFallbackAdapter": false
+        }
+      },
+      "stopped": {
+        "uniforms": [
+          256,
+          256,
+          0.00390625,
+          0.00390625,
+          0.5693128108978271,
+          0.5,
+          1.399999976158142,
+          0.10000000149011612,
+          0.0034166667610406876,
+          1.0666667222976685,
+          2,
+          0.9384480714797974,
+          0,
+          0,
+          0,
+          0,
+          0.4620853066444397,
+          1,
+          4,
+          0
+        ],
+        "stats": [
+          {
+            "finite": true,
+            "maxSpeed": 0.6397587021892491,
+            "maxDye": 0.6394678950309753,
+            "strokeMinSpeed": null
+          },
+          {
+            "finite": true,
+            "maxSpeed": 0.6795396764786428,
+            "maxDye": 0.679348886013031,
+            "strokeMinSpeed": null
+          },
+          {
+            "finite": true,
+            "maxSpeed": 0.8202705846040697,
+            "maxDye": 0.794951856136322,
+            "strokeMinSpeed": null
+          },
+          {
+            "finite": true,
+            "maxSpeed": 0.8241836009886513,
+            "maxDye": 0.7983458638191223,
+            "strokeMinSpeed": null
+          }
+        ],
+        "errors": [],
+        "adapter": {
+          "vendor": "intel",
+          "architecture": "gen-12lp",
+          "isFallbackAdapter": false
+        }
+      },
+      "released": {
+        "uniforms": [
+          256,
+          256,
+          0.00390625,
+          0.00390625,
+          0.5693128108978271,
+          0.5,
+          0,
+          0.05000000074505806,
+          0.0034166667610406876,
+          1.0833333730697632,
+          2,
+          0.8995242118835449,
+          0,
+          0,
+          0,
+          0,
+          0.4620853066444397,
+          1,
+          4,
+          0
+        ],
+        "stats": [
+          {
+            "finite": true,
+            "maxSpeed": 0.5009288593346372,
+            "maxDye": 0.5006877779960632,
+            "strokeMinSpeed": null
+          },
+          {
+            "finite": true,
+            "maxSpeed": 0.5209000107370598,
+            "maxDye": 0.5208755135536194,
+            "strokeMinSpeed": null
+          },
+          {
+            "finite": true,
+            "maxSpeed": 0.7884079319533049,
+            "maxDye": 0.7645667791366577,
+            "strokeMinSpeed": null
+          },
+          {
+            "finite": true,
+            "maxSpeed": 0.7947593356953496,
+            "maxDye": 0.7703999280929565,
+            "strokeMinSpeed": null
+          }
+        ],
+        "errors": [],
+        "adapter": {
+          "vendor": "intel",
+          "architecture": "gen-12lp",
+          "isFallbackAdapter": false
+        }
+      },
+      "tap": {
+        "uniforms": [
+          256,
+          256,
+          0.00390625,
+          0.00390625,
+          0.5,
+          0.5,
+          1.399999976158142,
+          0.10000000149011612,
+          0.0034166667610406876,
+          1.1166666746139526,
+          2,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0.4620853066444397,
+          1,
+          4,
+          0
+        ],
+        "stats": [
+          {
+            "finite": true,
+            "maxSpeed": 0.4360581641659639,
+            "maxDye": 0.42956191301345825,
+            "strokeMinSpeed": null
+          },
+          {
+            "finite": true,
+            "maxSpeed": 0.5655761638909487,
+            "maxDye": 0.55843186378479,
+            "strokeMinSpeed": null
+          },
+          {
+            "finite": true,
+            "maxSpeed": 0.7542155929976999,
+            "maxDye": 0.6717673540115356,
+            "strokeMinSpeed": null
+          },
+          {
+            "finite": true,
+            "maxSpeed": 0.7564891623890481,
+            "maxDye": 0.6739106178283691,
+            "strokeMinSpeed": null
+          }
+        ],
+        "errors": [],
+        "adapter": {
+          "vendor": "intel",
+          "architecture": "gen-12lp",
+          "isFallbackAdapter": false
+        }
+      }
+    }
+  ],
+  "errors": [],
+  "passed": true,
+  "browser": "136.0.7103.59"
+}

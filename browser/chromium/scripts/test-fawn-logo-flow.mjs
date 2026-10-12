@@ -29,7 +29,7 @@ const headless = process.env.FAWN_HEADED !== '1';
 const browser = await chromium.launch({ channel: 'chrome', headless, args });
 report.browser = browser.version(); report.browserArgs = args; report.headless = headless;
 function instrument() {
-  const s = globalThis.flowProbe = { frames: 0, buffers: [], uniforms: [], errors: [] };
+  const s = globalThis.flowProbe = { frames: 0, buffers: [], uniforms: [], errors: [], history: [] };
   const request = GPUAdapter.prototype.requestDevice;
   GPUAdapter.prototype.requestDevice = async function(...args) {
     s.adapter = { vendor: this.info.vendor, architecture: this.info.architecture,
@@ -49,7 +49,11 @@ function instrument() {
     };
     const write = device.queue.writeBuffer.bind(device.queue);
     device.queue.writeBuffer = (buffer, offset, data, ...args) => {
-      if (buffer.usage & GPUBufferUsage.UNIFORM) { s.uniforms = Array.from(data); s.frames++; }
+      if (buffer.usage & GPUBufferUsage.UNIFORM) {
+        s.uniforms = Array.from(data); s.frames++;
+        s.history.push({ guide: data[11], openingForce: data[15], dt: data[8] * data[18] / 0.82 });
+        if (s.frames === 1) queueMicrotask(() => document.querySelector('#pause').click());
+      }
       return write(buffer, offset, data, ...args);
     };
     return device;
@@ -102,23 +106,30 @@ try {
       const name = `${viewport.width}-${phase}.png`;
       await page.screenshot({ path: path.join(output, name) }); row.captures.push(name);
     };
-    await page.click('.details > summary');
-    await page.selectOption('#count-select', '65536');
-    await page.click('.details > summary');
-    await frames(page, 1); row.noise = await sample(page); await capture('noise');
-    assert.equal(row.noise.strength, 0);
+    await page.waitForFunction(() => document.querySelector('#pause').textContent === 'Resume');
+    row.intro = await sample(page); await capture('intro');
+    assert.equal(row.intro.strength, 1);
+    assert.ok(row.intro.rows.every(r => r.finite && r.iou > 0.85), JSON.stringify(row.intro));
+    await page.click('#pause');
+    await page.waitForFunction(() => flowProbe.uniforms[11] < 0.01, null, { timeout: 30000 });
+    row.dispersed = await sample(page); await capture('dispersed');
+    row.openingForce = await page.evaluate(() => Math.max(...flowProbe.history.map(h => h.openingForce)));
+    assert.ok(row.openingForce > 0.85, 'Opening dispersion must reach the GPU solver');
+    assert.ok(row.dispersed.rows[0].iou < row.intro.rows[0].iou - 0.15, JSON.stringify(row.dispersed));
     await frames(page, 650); row.formed = await sample(page); await capture('formed');
     assert.equal(row.formed.strength, 1); assert.ok(row.formed.targetFinite);
     assert.ok(row.formed.rows.every(r => r.finite && r.iou > 0.65 && r.insideMean > r.outsideMean * 6), JSON.stringify(row.formed));
-    assert.ok(row.formed.rows[0].iou > row.noise.rows[0].iou + 0.4);
+    assert.ok(row.formed.rows[0].iou > row.dispersed.rows[0].iou + 0.15);
     await page.mouse.move(viewport.width * 0.4, viewport.height * 0.52); await page.mouse.down();
     await page.mouse.move(viewport.width * 0.67, viewport.height * 0.52, { steps: 10 });
     await frames(page, 25); row.stirred = await sample(page); await capture('stirred');
-    assert.equal(row.stirred.strength, 0);
+    assert.ok(row.stirred.strength < 0.25, 'Stirring smoothly releases logo guidance');
     assert.ok(row.stirred.rows.some((r, i) => Math.abs(r.iou - row.formed.rows[i].iou) > 0.02));
     await page.mouse.up(); await page.evaluate(() => dispatchEvent(new Event('blur')));
     await frames(page, 650); row.recovered = await sample(page); await capture('recovered');
     assert.ok(row.recovered.rows.every(r => r.finite && r.iou > 0.65));
+    row.maxBlendStep = await page.evaluate(() => Math.max(...flowProbe.history.slice(1).map((h, i) => Math.abs(h.guide - flowProbe.history[i].guide))));
+    assert.ok(row.maxBlendStep < 0.12, 'Guidance must blend rather than switch');
     await page.click('#pause'); const frozen = await sample(page); await page.waitForTimeout(200);
     assert.deepEqual((await sample(page)).rows, frozen.rows); assert.equal((await sample(page)).time, frozen.time);
     await page.click('#restart'); await page.waitForTimeout(100); row.reset = await sample(page);
@@ -127,7 +138,9 @@ try {
     await page.selectOption('#formation-select', 'free'); await page.waitForTimeout(100);
     assert.equal(await page.inputValue('#formation-select'), 'free');
     await page.click('.details > summary');
-    await page.click('#pause'); await frames(page, 10); assert.equal((await sample(page)).strength, 0);
+    await page.click('#pause');
+    await page.waitForFunction(() => flowProbe.uniforms[11] === 0, null, { timeout: 30000 });
+    assert.equal((await sample(page)).strength, 0);
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
     row.passed = true; assert.deepEqual(row.recovered.errors, []);
     console.log(JSON.stringify({ viewport, formed: row.formed.rows[0].iou, recovered: row.recovered.rows[0].iou, passed: true }));

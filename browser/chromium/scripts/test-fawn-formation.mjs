@@ -37,7 +37,7 @@ if (process.env.FAWN_TEST_ORIGIN) {
 const browser = await chromium.launch({ channel: 'chrome', headless: process.env.FAWN_HEADED !== '1', args });
 report.browser = browser.version(); report.headless = process.env.FAWN_HEADED !== '1'; report.browserArgs = args;
 function instrument() {
-  const s = globalThis.formationProbe = { frames: 0, buffers: [], errors: [] };
+  const s = globalThis.formationProbe = { frames: 0, buffers: [], errors: [], history: [] };
   const request = GPUAdapter.prototype.requestDevice;
   GPUAdapter.prototype.requestDevice = async function(...args) {
     s.adapter = { vendor: this.info.vendor, architecture: this.info.architecture, isFallbackAdapter: this.info.isFallbackAdapter };
@@ -56,7 +56,13 @@ function instrument() {
     };
     const write = device.queue.writeBuffer.bind(device.queue);
     device.queue.writeBuffer = (buffer, offset, data, ...args) => {
-      if (buffer.usage & GPUBufferUsage.UNIFORM) { s.uniforms = Array.from(data); s.frames++; }
+      if (buffer.usage & GPUBufferUsage.UNIFORM) {
+        s.uniforms = Array.from(data); s.frames++;
+        s.history.push(data[11]);
+        if (s.frames === 1 && location.pathname.includes('magnetic')) {
+          queueMicrotask(() => document.querySelector('#pause').click());
+        }
+      }
       return write(buffer, offset, data, ...args);
     };
     return device;
@@ -114,11 +120,26 @@ try {
     const page = await context.newPage(); page.on('pageerror', e => report.errors.push(e.message));
     await page.goto(origin + (kind === 'wave' ? '/fawn-magnetic-fluids.html' : '/fawn-start.html'));
     await page.waitForFunction(() => !document.querySelector('#formation-select').disabled);
-    await page.locator('.details').evaluate(el => { el.open = true; });
-    await page.selectOption('#count-select', kind === 'wave' ? '65536' : '4096');
-    await page.locator('.details').evaluate(el => { el.open = false; });
     const row = { kind, viewport }; report.cases.push(row);
     const capture = phase => page.screenshot({ path: path.join(output, `${kind}-${viewport.width}-${phase}.png`) });
+    if (kind === 'wave') {
+      await page.waitForFunction(() => document.querySelector('#pause').textContent === 'Resume');
+      row.intro = await state(page, kind); await capture('intro');
+      assert.equal(row.intro.strength, 1); assert.ok(row.intro.covered > 0.90);
+      row.anchorCoverage = await page.evaluate(() => {
+        const field = FawnFormation.field(96, document.querySelector('#view'), document.querySelector('.brand-logo'));
+        const sources = formationProbe.uniforms.slice(12);
+        let covered = 0;
+        for (let i = 0; i < sources.length; i += 4) {
+          const x = Math.min(95, Math.floor(sources[i] * 96)), y = Math.min(95, Math.floor(sources[i + 1] * 96));
+          if (field[(y * 96 + x) * 4 + 2] > 0.5) covered++;
+        }
+        return covered / (sources.length / 4);
+      });
+      assert.equal(row.anchorCoverage, 1, 'Highlights originate inside the Fawn shape');
+      await page.click('#pause');
+      await page.waitForFunction(() => formationProbe.uniforms[11] < 0.01, null, { timeout: 30000 });
+    }
     row.initial = await state(page, kind); await capture('initial');
     await settle(page, kind); row.formed = await state(page, kind); await capture('formed');
     if (kind === 'particles') {
@@ -131,16 +152,23 @@ try {
     await page.mouse.move(viewport.width * 0.40, viewport.height * 0.52); await page.mouse.down();
     await page.mouse.move(viewport.width * 0.67, viewport.height * 0.52, { steps: 12 });
     await page.waitForTimeout(1200); row.stirred = await state(page, kind); await capture('stirred');
-    assert.equal(row.stirred.strength, 0); assert.ok(Math.abs(row.stirred.sum - row.formed.sum) > 1);
+    assert.ok(row.stirred.strength < 0.001); assert.ok(Math.abs(row.stirred.sum - row.formed.sum) > 1);
     await page.mouse.up(); await page.evaluate(() => dispatchEvent(new Event('blur')));
     await settle(page, kind); row.recovered = await state(page, kind); await capture('recovered');
     assert.ok(row.recovered.finite && row.recovered.covered > 0.90, JSON.stringify(row.recovered));
+    if (kind === 'wave') {
+      row.maxBlendStep = await page.evaluate(() => Math.max(...formationProbe.history.slice(1).map((v, i) => Math.abs(v - formationProbe.history[i]))));
+      assert.ok(row.maxBlendStep < 0.12, 'Wave guidance blends continuously');
+    }
     await page.click('#pause'); await page.waitForTimeout(100); const frozen = await state(page, kind);
     await page.waitForTimeout(200); assert.deepEqual(await state(page, kind), frozen);
     await mode(page, 'free'); await page.waitForTimeout(100); const switched = await state(page, kind);
-    assert.equal(switched.strength, 0); assert.equal(switched.sum, frozen.sum); assert.equal(switched.time, frozen.time);
+    assert.equal(switched.strength, kind === 'wave' ? frozen.strength : 0);
+    assert.equal(switched.sum, frozen.sum); assert.equal(switched.time, frozen.time);
     assert.equal(await page.textContent('#pause'), 'Resume');
-    await page.click('#pause'); await page.waitForTimeout(1000); row.free = await state(page, kind);
+    await page.click('#pause');
+    await page.waitForFunction(kind => formationProbe.uniforms[kind === 'wave' ? 11 : 8] === 0, kind, { timeout: 30000 });
+    await page.waitForTimeout(100); row.free = await state(page, kind);
     assert.equal(row.free.strength, 0); assert.notEqual(row.free.sum, switched.sum);
     await page.click('#pause'); await page.click('#restart'); await page.waitForTimeout(150);
     assert.equal(await page.textContent('#pause'), 'Resume');

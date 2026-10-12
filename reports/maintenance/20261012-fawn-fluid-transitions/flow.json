@@ -1,0 +1,429 @@
+{
+  "sourceFiles": [
+    {
+      "file": "fawn-prismatic-fluids.html",
+      "sha256": "2c7e6570dc6f0f3bfcfe873e7c7d6310dc09cdfa253f442cc834ff621dc0ef5c"
+    },
+    {
+      "file": "fawn-formation.js",
+      "sha256": "97fc59e704621215bda7b66908c86a9dd8f823ea98d95f0e078134f0a8cc4fc0"
+    }
+  ],
+  "classification": "Chrome fluid artwork; native animation frames, GPU buffer readback, emulated mobile. No model inference, mass-conservation, native Doe, or performance claim.",
+  "cases": [
+    {
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "captures": [
+        "1280-intro.png",
+        "1280-dispersed.png",
+        "1280-formed.png",
+        "1280-stirred.png",
+        "1280-recovered.png"
+      ],
+      "intro": {
+        "rows": [
+          {
+            "iou": 0.9299533022014677,
+            "insideMean": 0.6412966974517879,
+            "outsideMean": 0.0018779331273152328,
+            "max": 0.9398939609527588,
+            "finite": true,
+            "cells": 65536,
+            "targetCells": 5576
+          },
+          {
+            "iou": 0.9299533022014677,
+            "insideMean": 0.6412966974517879,
+            "outsideMean": 0.0018779331273152328,
+            "max": 0.9398939609527588,
+            "finite": true,
+            "cells": 65536,
+            "targetCells": 5576
+          }
+        ],
+        "strength": 1,
+        "errors": [],
+        "adapter": {
+          "vendor": "intel",
+          "architecture": "gen-12lp",
+          "isFallbackAdapter": false
+        },
+        "time": 0.2864280045032501,
+        "targetFinite": true
+      },
+      "dispersed": {
+        "rows": [
+          {
+            "iou": 0.22838214783821478,
+            "insideMean": 0.08821847840593414,
+            "outsideMean": 0.015420954536117935,
+            "max": 0.21210521459579468,
+            "finite": true,
+            "cells": 65536,
+            "targetCells": 5576
+          },
+          {
+            "iou": 0.22771362586605082,
+            "insideMean": 0.08849775834546887,
+            "outsideMean": 0.015510197351284765,
+            "max": 0.21436980366706848,
+            "finite": true,
+            "cells": 65536,
+            "targetCells": 5576
+          }
+        ],
+        "strength": 0.007293310482054949,
+        "errors": [],
+        "adapter": {
+          "vendor": "intel",
+          "architecture": "gen-12lp",
+          "isFallbackAdapter": false
+        },
+        "time": 2.5999999046325684,
+        "targetFinite": true
+      },
+      "openingForce": 0.8990556597709656,
+      "formed": {
+        "rows": [
+          {
+            "iou": 0.8502592253735896,
+            "insideMean": 0.43632090535586754,
+            "outsideMean": 0.004538913617358929,
+            "max": 0.6006397604942322,
+            "finite": true,
+            "cells": 65536,
+            "targetCells": 5576
+          },
+          {
+            "iou": 0.8503888973615983,
+            "insideMean": 0.4363035277478194,
+            "outsideMean": 0.004538828408462827,
+            "max": 0.600639820098877,
+            "finite": true,
+            "cells": 65536,
+            "targetCells": 5576
+          }
+        ],
+        "strength": 1,
+        "errors": [],
+        "adapter": {
+          "vendor": "intel",
+          "architecture": "gen-12lp",
+          "isFallbackAdapter": false
+        },
+        "time": 16.066099166870117,
+        "targetFinite": true
+      },
+      "stirred": {
+        "rows": [
+          {
+            "iou": 0.4271060879475734,
+            "insideMean": 0.2577668717591651,
+            "outsideMean": 0.03463406178551228,
+            "max": 1.1800681352615356,
+            "finite": true,
+            "cells": 65536,
+            "targetCells": 5576
+          },
+          {
+            "iou": 0.42891107941036616,
+            "insideMean": 0.2588348847568675,
+            "outsideMean": 0.034481872104043625,
+            "max": 1.1837913990020752,
+            "finite": true,
+            "cells": 65536,
+            "targetCells": 5576
+          }
+        ],
+        "strength": 0.034757763147354126,
+        "errors": [],
+        "adapter": {
+          "vendor": "intel",
+          "architecture": "gen-12lp",
+          "isFallbackAdapter": false
+        },
+        "time": 16.98270034790039,
+        "targetFinite": true
+      },
+      "recovered": {
+        "rows": [
+          {
+            "iou": 0.8887472107108703,
+            "insideMean": 0.44081460380688886,
+            "outsideMean": 0.003878696081012197,
+            "max": 0.6021085977554321,
+            "finite": true,
+            "cells": 65536,
+            "targetCells": 5576
+          },
+          {
+            "iou": 0.888605577689243,
+            "insideMean": 0.44084261597496277,
+            "outsideMean": 0.003878979943076845,
+            "max": 0.6021242141723633,
+            "finite": true,
+            "cells": 65536,
+            "targetCells": 5576
+          }
+        ],
+        "strength": 1,
+        "errors": [],
+        "adapter": {
+          "vendor": "intel",
+          "architecture": "gen-12lp",
+          "isFallbackAdapter": false
+        },
+        "time": 30.065500259399414,
+        "targetFinite": true
+      },
+      "maxBlendStep": 0.0964968204498291,
+      "reset": {
+        "rows": [
+          {
+            "iou": 0.08166037977111437,
+            "insideMean": 0.3313719950358476,
+            "outsideMean": 0.35157375556961684,
+            "max": 0.6955410838127136,
+            "finite": true,
+            "cells": 65536,
+            "targetCells": 5576
+          },
+          {
+            "iou": 0.08166037977111437,
+            "insideMean": 0.3313719950358476,
+            "outsideMean": 0.35157375556961684,
+            "max": 0.6955410838127136,
+            "finite": true,
+            "cells": 65536,
+            "targetCells": 5576
+          }
+        ],
+        "strength": 0,
+        "errors": [],
+        "adapter": {
+          "vendor": "intel",
+          "architecture": "gen-12lp",
+          "isFallbackAdapter": false
+        },
+        "time": 30.348800659179688,
+        "targetFinite": true
+      },
+      "passed": true
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "captures": [
+        "390-intro.png",
+        "390-dispersed.png",
+        "390-formed.png",
+        "390-stirred.png",
+        "390-recovered.png"
+      ],
+      "intro": {
+        "rows": [
+          {
+            "iou": 0.8877079482439926,
+            "insideMean": 0.5527241874305858,
+            "outsideMean": 0.0009686943150084378,
+            "max": 0.8240513205528259,
+            "finite": true,
+            "cells": 65536,
+            "targetCells": 1921
+          },
+          {
+            "iou": 0.8877079482439926,
+            "insideMean": 0.5527241874305858,
+            "outsideMean": 0.0009686943150084378,
+            "max": 0.8240513205528259,
+            "finite": true,
+            "cells": 65536,
+            "targetCells": 1921
+          }
+        ],
+        "strength": 1,
+        "errors": [],
+        "adapter": {
+          "vendor": "intel",
+          "architecture": "gen-12lp",
+          "isFallbackAdapter": false
+        },
+        "time": 0.11666599661111832,
+        "targetFinite": true
+      },
+      "dispersed": {
+        "rows": [
+          {
+            "iou": 0.06257982120051085,
+            "insideMean": 0.05597919418290112,
+            "outsideMean": 0.005230243986292307,
+            "max": 0.14189913868904114,
+            "finite": true,
+            "cells": 65536,
+            "targetCells": 1921
+          },
+          {
+            "iou": 0.06480304955527319,
+            "insideMean": 0.05632345391708481,
+            "outsideMean": 0.005240765631603382,
+            "max": 0.14245104789733887,
+            "finite": true,
+            "cells": 65536,
+            "targetCells": 1921
+          }
+        ],
+        "strength": 0.007246524095535278,
+        "errors": [],
+        "adapter": {
+          "vendor": "intel",
+          "architecture": "gen-12lp",
+          "isFallbackAdapter": false
+        },
+        "time": 2.5088000297546387,
+        "targetFinite": true
+      },
+      "openingForce": 0.8999931812286377,
+      "formed": {
+        "rows": [
+          {
+            "iou": 0.795774647887324,
+            "insideMean": 0.4049781602475247,
+            "outsideMean": 0.0021949619524652977,
+            "max": 0.5492058396339417,
+            "finite": true,
+            "cells": 65536,
+            "targetCells": 1921
+          },
+          {
+            "iou": 0.795774647887324,
+            "insideMean": 0.4049425943018185,
+            "outsideMean": 0.002194900881259495,
+            "max": 0.5491597652435303,
+            "finite": true,
+            "cells": 65536,
+            "targetCells": 1921
+          }
+        ],
+        "strength": 1,
+        "errors": [],
+        "adapter": {
+          "vendor": "intel",
+          "architecture": "gen-12lp",
+          "isFallbackAdapter": false
+        },
+        "time": 13.441699981689453,
+        "targetFinite": true
+      },
+      "stirred": {
+        "rows": [
+          {
+            "iou": 0.31898671913428434,
+            "insideMean": 0.3142880087416633,
+            "outsideMean": 0.016515655052457744,
+            "max": 1.5623806715011597,
+            "finite": true,
+            "cells": 65536,
+            "targetCells": 1921
+          },
+          {
+            "iou": 0.3203835751167937,
+            "insideMean": 0.31491893023464107,
+            "outsideMean": 0.016463280947092932,
+            "max": 1.556451439857483,
+            "finite": true,
+            "cells": 65536,
+            "targetCells": 1921
+          }
+        ],
+        "strength": 0.0429433211684227,
+        "errors": [],
+        "adapter": {
+          "vendor": "intel",
+          "architecture": "gen-12lp",
+          "isFallbackAdapter": false
+        },
+        "time": 14.17490005493164,
+        "targetFinite": true
+      },
+      "recovered": {
+        "rows": [
+          {
+            "iou": 0.812605752961083,
+            "insideMean": 0.43526779722571685,
+            "outsideMean": 0.0020991271950416526,
+            "max": 0.5739266276359558,
+            "finite": true,
+            "cells": 65536,
+            "targetCells": 1921
+          },
+          {
+            "iou": 0.812605752961083,
+            "insideMean": 0.435292148887956,
+            "outsideMean": 0.002099269500384223,
+            "max": 0.5739059448242188,
+            "finite": true,
+            "cells": 65536,
+            "targetCells": 1921
+          }
+        ],
+        "strength": 1,
+        "errors": [],
+        "adapter": {
+          "vendor": "intel",
+          "architecture": "gen-12lp",
+          "isFallbackAdapter": false
+        },
+        "time": 25.141199111938477,
+        "targetFinite": true
+      },
+      "maxBlendStep": 0.08168339729309082,
+      "reset": {
+        "rows": [
+          {
+            "iou": 0.029509673061769295,
+            "insideMean": 0.3633403136825915,
+            "outsideMean": 0.3494477070767878,
+            "max": 0.6955410838127136,
+            "finite": true,
+            "cells": 65536,
+            "targetCells": 1921
+          },
+          {
+            "iou": 0.029509673061769295,
+            "insideMean": 0.3633403136825915,
+            "outsideMean": 0.3494477070767878,
+            "max": 0.6955410838127136,
+            "finite": true,
+            "cells": 65536,
+            "targetCells": 1921
+          }
+        ],
+        "strength": 0,
+        "errors": [],
+        "adapter": {
+          "vendor": "intel",
+          "architecture": "gen-12lp",
+          "isFallbackAdapter": false
+        },
+        "time": 25.274599075317383,
+        "targetFinite": true
+      },
+      "passed": true
+    }
+  ],
+  "errors": [],
+  "passed": true,
+  "browser": "136.0.7103.59",
+  "browserArgs": [
+    "--enable-unsafe-webgpu",
+    "--use-angle=vulkan",
+    "--enable-features=Vulkan",
+    "--disable-vulkan-surface"
+  ],
+  "headless": false
+}

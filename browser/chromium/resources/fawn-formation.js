@@ -2,6 +2,10 @@
   'use strict';
   const POLICY = Object.freeze({ version: 2, delayS: 0.8, settleS: 7, size: 0.76,
     noiseSeed: 7319, dyeRate: 1.6, diffusionRate: 5, force: 0.7, warp: 0.05 });
+  const TRANSITION = Object.freeze({ version: 1, holdS: 0.3, disperseS: 1.6,
+    responseRate: 8, epsilon: 0.00001, disperseForce: 0.9 });
+  const PALETTE = Object.freeze({ base: Object.freeze([0.52, 0.64, 0.63]),
+    span: Object.freeze([0.34, 0.27, 0.32]), phase: 2.1 });
 
   const WORKLOAD = Object.freeze({ version: 1, counts: [1024, 4096, 16384, 65536, 262144, 1048576, 4194304, 16777216],
     steps: [1, 2, 4, 8], defaultCount: 65536, defaultSteps: 4,
@@ -54,6 +58,44 @@
     if (!enabled) return 0;
     const t = Math.min(1, Math.max(0, (ageS - POLICY.delayS) / POLICY.settleS));
     return t * t * (3 - 2 * t);
+  }
+
+  function transition() {
+    let age = 0, idle = 0, opening = false, value = 0, velocity = 0;
+    return Object.freeze({
+      reset(enabled, intro = false) {
+        age = idle = velocity = 0; opening = enabled && intro; value = opening ? 1 : 0;
+      },
+      advance(dt, enabled, active) {
+        if (dt <= 0) return value;
+        if (!enabled || active) { opening = false; idle = 0; }
+        age += dt;
+        let target;
+        if (opening) {
+          const t = Math.min(1, Math.max(0, (age - TRANSITION.holdS) / TRANSITION.disperseS));
+          idle = Math.max(0, age - TRANSITION.holdS - TRANSITION.disperseS);
+          target = Math.max(1 - t * t * (3 - 2 * t), strength(idle, true));
+        } else {
+          if (!active && enabled) idle += dt;
+          target = strength(idle, enabled);
+        }
+        // Preserve value and velocity as targets change, including interruptions.
+        const offset = value - target, rate = velocity + TRANSITION.responseRate * offset;
+        const decay = Math.exp(-TRANSITION.responseRate * dt);
+        value = target + (offset + rate * dt) * decay;
+        velocity = (velocity - TRANSITION.responseRate * rate * dt) * decay;
+        if (Math.abs(value - target) < TRANSITION.epsilon && Math.abs(velocity) < TRANSITION.epsilon) {
+          value = target; velocity = 0;
+        }
+        return Math.max(0, Math.min(1, value));
+      },
+      disperse() {
+        if (!opening) return 0;
+        const t = (age - TRANSITION.holdS) / TRANSITION.disperseS;
+        return t > 0 && t < 1 ? Math.sin(t * Math.PI) ** 2 * TRANSITION.disperseForce : 0;
+      },
+      retarget() { opening = false; idle = 0; },
+    });
   }
 
   function distances(mask, grid, inside) {
@@ -116,7 +158,7 @@
     return data;
   }
 
-  function seed(grid) {
+  function seed(grid, mark = null) {
     const dye = new Float32Array(grid * grid * 4), velocity = new Float32Array(dye.length);
     let random = POLICY.noiseSeed;
     for (let y = 0; y < grid; y++) for (let x = 0; x < grid; x++) {
@@ -124,7 +166,13 @@
       random ^= random << 13; random ^= random >>> 17; random ^= random << 5;
       const grain = (random >>> 0) / 4294967296;
       const cloud = 0.35 + 0.3 * Math.sin(u * 21 + Math.sin(v * 13)) * Math.cos(v * 18 - u * 6);
-      for (let c = 0; c < 3; c++) dye[i + c] = cloud * (0.55 + 0.45 * Math.cos(u * 9 + v * 7 + c * 2.1)) + grain * 0.055;
+      for (let c = 0; c < 3; c++) {
+        if (mark) {
+          const palette = PALETTE.base[c] + PALETTE.span[c]
+            * Math.cos(c * PALETTE.phase + (u * 0.65 + v * 0.35) * Math.PI * 2);
+          dye[i + c] = palette * mark[i + 2] * (0.82 + 0.18 * Math.sin(mark[i + 3] * 110 + v * 8));
+        } else dye[i + c] = cloud * (0.55 + 0.45 * Math.cos(u * 9 + v * 7 + c * 2.1)) + grain * 0.055;
+      }
       dye[i + 3] = 1;
       velocity[i] = 0.09 * Math.sin(v * Math.PI * 4) * Math.sin(u * Math.PI);
       velocity[i + 1] = -0.09 * Math.sin(u * Math.PI * 4) * Math.sin(v * Math.PI);
@@ -157,10 +205,10 @@ fn logo_target(uv: vec2<f32>) -> vec3<f32> {
   let softness = max(u.grid.z * 1.4, (1.0 - u.sim.w) * 0.026);
   let shape = smoothstep(-softness, softness, field.w);
   let band = 0.82 + 0.18 * sin(field.w * 110.0 + uv.y * 8.0 - u.sim.y * 0.16);
-  let palette = vec3<f32>(0.52, 0.64, 0.63) + vec3<f32>(0.34, 0.27, 0.32)
-    * cos(vec3<f32>(0.0, 2.1, 4.2) + (uv.x * 0.65 + uv.y * 0.35) * 6.28318);
+  let palette = vec3<f32>(${PALETTE.base.join(', ')}) + vec3<f32>(${PALETTE.span.join(', ')})
+    * cos(vec3<f32>(0.0, ${PALETTE.phase}, ${PALETTE.phase * 2}) + (uv.x * 0.65 + uv.y * 0.35) * 6.28318);
   return palette * shape * band;
 }
 `;
-  root.FawnFormation = Object.freeze({ POLICY, WORKLOAD, configureWorkload, limitCount, viewport, screenPoint, configure, strength, field, points, seed, WGSL });
+  root.FawnFormation = Object.freeze({ POLICY, TRANSITION, WORKLOAD, configureWorkload, limitCount, viewport, screenPoint, configure, strength, transition, field, points, seed, WGSL });
 })(globalThis);

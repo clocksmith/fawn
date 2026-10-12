@@ -205,6 +205,10 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
   vel += drag * ${DRAG_GAIN} * falloff;
   vel += (safe_norm(swirl) * ${SWIRL_ACCELERATION} * u.sim.x
     + safe_norm(delta) * ${PRESS_IMPULSE} * u.pointerDelta.z / u.viewport.z) * falloff;
+  // Cross-axis currents are divergence-free, so projection preserves the opening motion.
+  let openingFlow = vec2<f32>(sin(uv.y * 6.28318), -sin(uv.x * 6.28318))
+    + vec2<f32>(sin(uv.y * 18.84954), cos(uv.x * 18.84954)) * 0.35;
+  vel += openingFlow * u.pointerDelta.w * u.sim.x;
   if (u.sim.w > 0.0) {
     let guide = logo_at(uv);
     let tangent = vec2<f32>(-guide.y, guide.x);
@@ -519,7 +523,8 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
   const restartButton = document.getElementById('restart');
   const formationSelect = document.getElementById('formation-select');
   let logoEnabled = FawnFormation.configure(formationSelect);
-  let settlingAgeS = 0;
+  const formation = FawnFormation.transition();
+  let firstBuild = true;
   let logoBuffer = null;
   const canvas = document.getElementById('view');
   const graphCtx = graphCanvas.getContext('2d');
@@ -668,8 +673,9 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
   }
 
   function updateLogoField() {
-    device.queue.writeBuffer(logoBuffer, 0,
-      LOGO_FLOW.field(simGrid(), canvas, document.querySelector('.brand-logo')));
+    const mark = LOGO_FLOW.field(simGrid(), canvas, document.querySelector('.brand-logo'));
+    device.queue.writeBuffer(logoBuffer, 0, mark);
+    return mark;
   }
 
   function rebuildSimulationBuffers() {
@@ -682,7 +688,9 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
     logoBuffer?.destroy();
     logoBuffer = device.createBuffer({ label: 'Fawn target field', size: byteLength,
       usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST });
-    updateLogoField(); settlingAgeS = 0;
+    const mark = updateLogoField();
+    const intro = firstBuild && logoEnabled;
+    formation.reset(logoEnabled, intro); firstBuild = false;
     velocityBuffers = [
       createBuffer(byteLength, GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST),
       createBuffer(byteLength, GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST),
@@ -697,7 +705,7 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
     ];
     divCurlBuffer = createBuffer(byteLength, GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST);
 
-    const seed = logoEnabled ? LOGO_FLOW.seed(effectiveGrid) : null;
+    const seed = logoEnabled ? LOGO_FLOW.seed(effectiveGrid, intro ? mark : null) : null;
     const dye = seed?.dye ?? seedDye(effectiveGrid);
     if (seed) for (const buffer of velocityBuffers) device.queue.writeBuffer(buffer, 0, seed.velocity);
     device.queue.writeBuffer(dyeBuffers[0], 0, dye);
@@ -966,14 +974,12 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
     if (!paused) simulationTime = now - pausedMs;
     uniformData[9] = simulationTime * 0.001;
     uniformData[10] = 2.0;
-    if (!paused) {
-      settlingAgeS = pointer.down || pointer.press || pointer.dx || pointer.dy ? 0 : settlingAgeS + dt;
-    }
-    uniformData[11] = LOGO_FLOW.strength(settlingAgeS, logoEnabled);
+    uniformData[11] = formation.advance(paused ? 0 : dt, logoEnabled,
+      Boolean(pointer.down || pointer.press || pointer.dx || pointer.dy));
     uniformData[12] = pointer.dx;
     uniformData[13] = pointer.dy;
     uniformData[14] = pointer.press;
-    uniformData[15] = 0.0;
+    uniformData[15] = formation.disperse();
     uniformData.set([...FawnFormation.viewport(canvas), stepsPerFrame, 0], 16);
     device.queue.writeBuffer(uniformBuffer, 0, uniformData);
     pointer.dx = 0;
@@ -1061,7 +1067,7 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
   }
 
   formationSelect.addEventListener('change', () => {
-    logoEnabled = formationSelect.value === 'branded'; settlingAgeS = 0;
+    logoEnabled = formationSelect.value === 'branded'; formation.retarget();
     redrawRequested = true; schedule();
   });
   pauseButton.addEventListener('click', () => {

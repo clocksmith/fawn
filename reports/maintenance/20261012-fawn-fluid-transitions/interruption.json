@@ -1,0 +1,72 @@
+{
+  "passed": true,
+  "classification": "Chrome WebGPU window-blur input event handling; no physical OS-focus or native Doe claim.",
+  "cases": [
+    {
+      "kind": "flow",
+      "gesture": "pointer",
+      "guidanceAfterBlur": 0.019690169021487236,
+      "paused": false,
+      "adapter": {
+        "vendor": "intel",
+        "architecture": "gen-12lp",
+        "isFallbackAdapter": false
+      },
+      "passed": true
+    },
+    {
+      "kind": "wave",
+      "gesture": "pointer",
+      "guidanceAfterBlur": 0.019696513190865517,
+      "paused": false,
+      "adapter": {
+        "vendor": "intel",
+        "architecture": "gen-12lp",
+        "isFallbackAdapter": false
+      },
+      "passed": true
+    },
+    {
+      "kind": "particles",
+      "gesture": "pointer",
+      "guidanceAfterBlur": 0.038897283375263214,
+      "paused": false,
+      "adapter": {
+        "vendor": "intel",
+        "architecture": "gen-12lp",
+        "isFallbackAdapter": false
+      },
+      "passed": true
+    },
+    {
+      "kind": "particles",
+      "gesture": "keyboard",
+      "guidanceAfterBlur": 0.04040723294019699,
+      "paused": false,
+      "adapter": {
+        "vendor": "intel",
+        "architecture": "gen-12lp",
+        "isFallbackAdapter": false
+      },
+      "passed": true
+    }
+  ],
+  "errors": [],
+  "sources": [
+    {
+      "file": "fawn-prismatic-fluids.html",
+      "sha256": "acebafd781fc57ad463aeeaefb820971602acfdaf0300c985af820831baffa36"
+    },
+    {
+      "file": "fawn-magnetic-fluids.html",
+      "sha256": "c9b9f0bd8165b10481a37a298101a1efbf5f62e58338eb264ab3d517f7bcd6e2"
+    },
+    {
+      "file": "fawn-start.html",
+      "sha256": "2e6d305a85ccb3d38ac27ec7e4c0e552e7cbe4af0bda1bc44aac16102e3627ef"
+    }
+  ],
+  "browser": "136.0.7103.59",
+  "headless": true,
+  "origin": "local"
+}

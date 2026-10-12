@@ -1,18 +1,21 @@
 # Fawn hosted demonstrations
 
+Flow and Wave open as Fawn in Branded mode, disperse, and reform at rest.
+Guidance and Wave's highlights blend through accepted state during interaction
+and mode changes. [Fluid-transition evidence](../../reports/maintenance/20261012-fawn-fluid-transitions/README.md)
+binds the tested sources to GPU state and rendered desktop/mobile captures.
+Free mode skips the opening logo; Reset preserves pause and reseeds the existing
+initial conditions. The live release manifest below identifies deployed source.
+
 [Particle reset evidence](../../reports/maintenance/20261012-fawn-particle-reset/README.md)
 retains the preceding-source gesture leak and corrected reset behavior. Reset
 clears particle input alongside positions and time while preserving pause and
 settings. This is Chrome WebGPU application evidence; the live release manifest
 below identifies the deployed source.
 
-Flow now includes an optional logo-guidance experiment: seeded pigment noise
-settles into the canonical Fawn paths; stirring disturbs it, and release reforms
-the mark. Logo disables guidance without restarting. Reset reseeds the dye and
-preserves pause. [Application evidence](../../reports/maintenance/20261012-fawn-logo-flow/README.md)
-binds the field/shader source, GPU readback, actual rendered desktop/mobile
-captures and lifecycle checks. This changes Flow's initial state, forcing and
-drawing; it does not qualify native Doe or the Fawn browser.
+[The original Flow formation evidence](../../reports/maintenance/20261012-fawn-logo-flow/README.md)
+retains the earlier noise-to-logo experiment. These application checks do not
+qualify native Doe or the Fawn browser binary.
 
 [Canvas and failure regressions](../../reports/maintenance/20261011-fawn-canvas-lifecycle/README.md)
 retain the default-canvas initialization repair, aspect-preserving device-limit
