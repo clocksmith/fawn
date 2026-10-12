@@ -1,0 +1,396 @@
+{
+  "classification": "Chrome WebGPU application correctness; emulated viewports; no Doe or performance claim",
+  "observedAt": "2026-10-12T15:07:54.881Z",
+  "baselineRef": "3d3b9c30b7939828d8ce07958475449db1fde25b",
+  "browserArgs": [
+    "--enable-unsafe-webgpu",
+    "--use-angle=vulkan",
+    "--enable-features=Vulkan",
+    "--disable-vulkan-surface"
+  ],
+  "passed": true,
+  "cases": [
+    {
+      "name": "default canvas initialization",
+      "variant": "baseline",
+      "result": {
+        "width": 300,
+        "height": 150,
+        "cssWidth": 300,
+        "cssHeight": 150,
+        "limit": 8192,
+        "configurations": 0,
+        "unconfigurations": 0,
+        "submissions": 0,
+        "destroyed": 1,
+        "errors": [],
+        "failure": "Failed to execute 'beginRenderPass' on 'GPUCommandEncoder': Failed to read the 'colorAttachments' property from 'GPURenderPassDescriptor': Failed to read the 'view' property from 'GPURenderPassColorAttachment': Required member is undefined.. Try a WebGPU-enabled browser, or reload to reconnect.",
+        "controlsDisabled": true,
+        "adapter": {
+          "vendor": "intel",
+          "architecture": "gen-12lp",
+          "isFallbackAdapter": false
+        }
+      }
+    },
+    {
+      "name": "start high-DPR limit and controls",
+      "variant": "baseline",
+      "result": {
+        "width": 9000,
+        "height": 400,
+        "cssWidth": 4500,
+        "cssHeight": 200,
+        "limit": 8192,
+        "configurations": 1,
+        "unconfigurations": 0,
+        "submissions": 0,
+        "destroyed": 1,
+        "errors": [
+          "Texture size ([Extent3D width:9000, height:400, depthOrArrayLayers:1]) exceeded maximum texture size ([Extent3D width:8192, height:8192, depthOrArrayLayers:256]). This adapter supports a higher maxTextureDimension2D of 16384, which can be specified in requiredLimits when calling requestDevice(). Limits differ by hardware, so always check the adapter limits prior to requesting a higher limit.\n    at ValidateTextureSize (../../third_party/dawn/src/dawn/native/Texture.cpp:352)\n",
+          "Texture size ([Extent3D width:9000, height:400, depthOrArrayLayers:1]) exceeded maximum texture size ([Extent3D width:8192, height:8192, depthOrArrayLayers:256]). This adapter supports a higher maxTextureDimension2D of 16384, which can be specified in requiredLimits when calling requestDevice(). Limits differ by hardware, so always check the adapter limits prior to requesting a higher limit.\n - While validating [TextureDescriptor].\n - While calling [Device].CreateTexture([TextureDescriptor]).\n",
+          "[Invalid Texture] is invalid.\n - While calling [Invalid Texture].CreateView([TextureViewDescriptor]).\n",
+          "Texture size ([Extent3D width:9000, height:400, depthOrArrayLayers:1]) exceeded maximum texture size ([Extent3D width:8192, height:8192, depthOrArrayLayers:256]). This adapter supports a higher maxTextureDimension2D of 16384, which can be specified in requiredLimits when calling requestDevice(). Limits differ by hardware, so always check the adapter limits prior to requesting a higher limit.\n - While validating [TextureDescriptor].\n - While calling [Device].CreateTexture([TextureDescriptor]).\n",
+          "[Invalid Texture] is invalid.\n - While calling [Invalid Texture].CreateView([TextureViewDescriptor]).\n",
+          "[Invalid TextureView] is invalid.\n - While validating entries[1] as a Sampled Texture.\nExpected entry layout: {sampleType: TextureSampleType::Float, viewDimension: 2, multisampled: 0}\n - While validating [BindGroupDescriptor] against [BindGroupLayout (unlabeled)]\n - While calling [Device].CreateBindGroup([BindGroupDescriptor]).\n",
+          "[Invalid TextureView] is invalid.\n - While validating entries[1] as a Sampled Texture.\nExpected entry layout: {sampleType: TextureSampleType::Float, viewDimension: 2, multisampled: 0}\n - While validating [BindGroupDescriptor] against [BindGroupLayout (unlabeled)]\n - While calling [Device].CreateBindGroup([BindGroupDescriptor]).\n",
+          "[Invalid TextureView] is invalid.\n - While validating entries[1] as a Sampled Texture.\nExpected entry layout: {sampleType: TextureSampleType::Float, viewDimension: 2, multisampled: 0}\n - While validating [BindGroupDescriptor] against [BindGroupLayout (unlabeled)]\n - While calling [Device].CreateBindGroup([BindGroupDescriptor]).\n",
+          "[Invalid TextureView] is invalid.\n - While validating entries[1] as a Sampled Texture.\nExpected entry layout: {sampleType: TextureSampleType::Float, viewDimension: 2, multisampled: 0}\n - While validating [BindGroupDescriptor] against [BindGroupLayout (unlabeled)]\n - While calling [Device].CreateBindGroup([BindGroupDescriptor]).\n"
+        ],
+        "failure": "Texture size ([Extent3D width:9000, height:400, depthOrArrayLayers:1]) exceeded maximum texture size ([Extent3D width:8192, height:8192, depthOrArrayLayers:256]). This adapter supports a higher maxTextureDimension2D of 16384, which can be specified in requiredLimits when calling requestDevice(). Limits differ by hardware, so always check the adapter limits prior to requesting a higher limit.\n    at ValidateTextureSize (../../third_party/dawn/src/dawn/native/Texture.cpp:352)\n. Try a WebGPU-enabled browser, or reload to reconnect.",
+        "controlsDisabled": true,
+        "adapter": {
+          "vendor": "intel",
+          "architecture": "gen-12lp",
+          "isFallbackAdapter": false
+        }
+      }
+    },
+    {
+      "name": "magnetic-fluids high-DPR limit and controls",
+      "variant": "baseline",
+      "result": {
+        "width": 13500,
+        "height": 600,
+        "cssWidth": 4500,
+        "cssHeight": 200,
+        "limit": 8192,
+        "configurations": 1,
+        "unconfigurations": 0,
+        "submissions": 1,
+        "destroyed": 5,
+        "errors": [
+          "Texture size ([Extent3D width:13500, height:600, depthOrArrayLayers:1]) exceeded maximum texture size ([Extent3D width:8192, height:8192, depthOrArrayLayers:256]). This adapter supports a higher maxTextureDimension2D of 16384, which can be specified in requiredLimits when calling requestDevice(). Limits differ by hardware, so always check the adapter limits prior to requesting a higher limit.\n    at ValidateTextureSize (../../third_party/dawn/src/dawn/native/Texture.cpp:352)\n",
+          "Could not create the swapchain texture.\n    at APIInjectError (../../third_party/dawn/src/dawn/native/Device.cpp:1968)\n",
+          "[Invalid Texture] is invalid.\n - While calling [Invalid Texture].CreateView([TextureViewDescriptor]).\n",
+          "[Invalid TextureView] is invalid.\n - While validating colorAttachments[0].\n - While encoding [CommandEncoder (unlabeled)].BeginRenderPass([null]).\n - While finishing [CommandEncoder (unlabeled)].\n",
+          "[Invalid CommandBuffer] is invalid.\n - While calling [Queue].Submit([[Invalid CommandBuffer]])\n"
+        ],
+        "failure": "[Invalid CommandBuffer] is invalid.\n - While calling [Queue].Submit([[Invalid CommandBuffer]])\n",
+        "controlsDisabled": true,
+        "adapter": {
+          "vendor": "intel",
+          "architecture": "gen-12lp",
+          "isFallbackAdapter": false
+        }
+      }
+    },
+    {
+      "name": "prismatic-fluids high-DPR limit and controls",
+      "variant": "baseline",
+      "result": {
+        "width": 13500,
+        "height": 600,
+        "cssWidth": 4500,
+        "cssHeight": 200,
+        "limit": 8192,
+        "configurations": 1,
+        "unconfigurations": 0,
+        "submissions": 0,
+        "destroyed": 0,
+        "errors": [
+          "Texture size ([Extent3D width:13500, height:600, depthOrArrayLayers:1]) exceeded maximum texture size ([Extent3D width:8192, height:8192, depthOrArrayLayers:256]). This adapter supports a higher maxTextureDimension2D of 16384, which can be specified in requiredLimits when calling requestDevice(). Limits differ by hardware, so always check the adapter limits prior to requesting a higher limit.\n    at ValidateTextureSize (../../third_party/dawn/src/dawn/native/Texture.cpp:352)\n"
+        ],
+        "failure": "Texture size ([Extent3D width:13500, height:600, depthOrArrayLayers:1]) exceeded maximum texture size ([Extent3D width:8192, height:8192, depthOrArrayLayers:256]). This adapter supports a higher maxTextureDimension2D of 16384, which can be specified in requiredLimits when calling requestDevice(). Limits differ by hardware, so always check the adapter limits prior to requesting a higher limit.\n    at ValidateTextureSize (../../third_party/dawn/src/dawn/native/Texture.cpp:352)\n",
+        "controlsDisabled": true,
+        "adapter": {
+          "vendor": "intel",
+          "architecture": "gen-12lp",
+          "isFallbackAdapter": false
+        }
+      }
+    },
+    {
+      "name": "terminal error cleanup",
+      "variant": "baseline",
+      "result": {
+        "width": 800,
+        "height": 600,
+        "cssWidth": 800,
+        "cssHeight": 600,
+        "limit": 8192,
+        "configurations": 1,
+        "unconfigurations": 0,
+        "submissions": 1,
+        "destroyed": 0,
+        "errors": [
+          "Injected terminal validation failure"
+        ],
+        "failure": "Injected terminal validation failure",
+        "controlsDisabled": true,
+        "adapter": {
+          "vendor": "intel",
+          "architecture": "gen-12lp",
+          "isFallbackAdapter": false
+        }
+      }
+    },
+    {
+      "name": "partial initialization cleanup",
+      "variant": "baseline",
+      "result": {
+        "width": 300,
+        "height": 150,
+        "cssWidth": 800,
+        "cssHeight": 600,
+        "limit": 8192,
+        "configurations": 0,
+        "unconfigurations": 0,
+        "submissions": 0,
+        "destroyed": 0,
+        "errors": [],
+        "failure": "Injected initialization failure",
+        "controlsDisabled": true,
+        "adapter": {
+          "vendor": "intel",
+          "architecture": "gen-12lp",
+          "isFallbackAdapter": false
+        }
+      }
+    },
+    {
+      "name": "default canvas initialization",
+      "variant": "candidate",
+      "result": {
+        "width": 300,
+        "height": 150,
+        "cssWidth": 300,
+        "cssHeight": 150,
+        "limit": 8192,
+        "configurations": 1,
+        "unconfigurations": 0,
+        "submissions": 1,
+        "destroyed": 0,
+        "errors": [],
+        "failure": null,
+        "controlsDisabled": false,
+        "adapter": {
+          "vendor": "intel",
+          "architecture": "gen-12lp",
+          "isFallbackAdapter": false
+        }
+      }
+    },
+    {
+      "name": "start high-DPR limit and controls",
+      "variant": "candidate",
+      "result": {
+        "width": 8192,
+        "height": 364,
+        "cssWidth": 4500,
+        "cssHeight": 200,
+        "limit": 8192,
+        "configurations": 1,
+        "unconfigurations": 0,
+        "submissions": 1,
+        "destroyed": 0,
+        "errors": [],
+        "failure": null,
+        "controlsDisabled": false,
+        "adapter": {
+          "vendor": "intel",
+          "architecture": "gen-12lp",
+          "isFallbackAdapter": false
+        }
+      }
+    },
+    {
+      "name": "start tall high-DPR resize",
+      "variant": "candidate",
+      "result": {
+        "width": 364,
+        "height": 8192,
+        "cssWidth": 200,
+        "cssHeight": 4500,
+        "limit": 8192,
+        "configurations": 2,
+        "unconfigurations": 0,
+        "submissions": 2,
+        "destroyed": 0,
+        "errors": [],
+        "failure": null,
+        "controlsDisabled": false,
+        "adapter": {
+          "vendor": "intel",
+          "architecture": "gen-12lp",
+          "isFallbackAdapter": false
+        }
+      }
+    },
+    {
+      "name": "magnetic-fluids high-DPR limit and controls",
+      "variant": "candidate",
+      "result": {
+        "width": 8192,
+        "height": 364,
+        "cssWidth": 4500,
+        "cssHeight": 200,
+        "limit": 8192,
+        "configurations": 1,
+        "unconfigurations": 0,
+        "submissions": 1,
+        "destroyed": 0,
+        "errors": [],
+        "failure": null,
+        "controlsDisabled": false,
+        "adapter": {
+          "vendor": "intel",
+          "architecture": "gen-12lp",
+          "isFallbackAdapter": false
+        }
+      }
+    },
+    {
+      "name": "magnetic-fluids tall high-DPR resize",
+      "variant": "candidate",
+      "result": {
+        "width": 364,
+        "height": 8192,
+        "cssWidth": 200,
+        "cssHeight": 4500,
+        "limit": 8192,
+        "configurations": 2,
+        "unconfigurations": 0,
+        "submissions": 2,
+        "destroyed": 0,
+        "errors": [],
+        "failure": null,
+        "controlsDisabled": false,
+        "adapter": {
+          "vendor": "intel",
+          "architecture": "gen-12lp",
+          "isFallbackAdapter": false
+        }
+      }
+    },
+    {
+      "name": "prismatic-fluids high-DPR limit and controls",
+      "variant": "candidate",
+      "result": {
+        "width": 8192,
+        "height": 364,
+        "cssWidth": 4500,
+        "cssHeight": 200,
+        "limit": 8192,
+        "configurations": 1,
+        "unconfigurations": 0,
+        "submissions": 1,
+        "destroyed": 0,
+        "errors": [],
+        "failure": null,
+        "controlsDisabled": false,
+        "adapter": {
+          "vendor": "intel",
+          "architecture": "gen-12lp",
+          "isFallbackAdapter": false
+        }
+      }
+    },
+    {
+      "name": "prismatic-fluids tall high-DPR resize",
+      "variant": "candidate",
+      "result": {
+        "width": 364,
+        "height": 8192,
+        "cssWidth": 200,
+        "cssHeight": 4500,
+        "limit": 8192,
+        "configurations": 2,
+        "unconfigurations": 0,
+        "submissions": 2,
+        "destroyed": 0,
+        "errors": [],
+        "failure": null,
+        "controlsDisabled": false,
+        "adapter": {
+          "vendor": "intel",
+          "architecture": "gen-12lp",
+          "isFallbackAdapter": false
+        }
+      }
+    },
+    {
+      "name": "terminal error cleanup",
+      "variant": "candidate",
+      "result": {
+        "width": 800,
+        "height": 600,
+        "cssWidth": 800,
+        "cssHeight": 600,
+        "limit": 8192,
+        "configurations": 1,
+        "unconfigurations": 1,
+        "submissions": 1,
+        "destroyed": 1,
+        "errors": [
+          "Injected terminal validation failure"
+        ],
+        "failure": "Injected terminal validation failure",
+        "controlsDisabled": true,
+        "adapter": {
+          "vendor": "intel",
+          "architecture": "gen-12lp",
+          "isFallbackAdapter": false
+        }
+      }
+    },
+    {
+      "name": "partial initialization cleanup",
+      "variant": "candidate",
+      "result": {
+        "width": 300,
+        "height": 150,
+        "cssWidth": 800,
+        "cssHeight": 600,
+        "limit": 8192,
+        "configurations": 0,
+        "unconfigurations": 1,
+        "submissions": 0,
+        "destroyed": 1,
+        "errors": [],
+        "failure": "Injected initialization failure",
+        "controlsDisabled": true,
+        "adapter": {
+          "vendor": "intel",
+          "architecture": "gen-12lp",
+          "isFallbackAdapter": false
+        }
+      }
+    }
+  ],
+  "sourceHashes": {
+    "start": {
+      "baseline": "b078f9c4a22ee07b971c7d26f82447158329a8c5d286f59c1380f0d72f80e3a7",
+      "candidate": "f121d666a6de0b0c7b6618d423408755f961ff99f38c5f5c36ac2811a2d3c5e9"
+    },
+    "magnetic-fluids": {
+      "baseline": "fc241943cd8dfe1240673861d012dd5838e321ccfd260cbbd8dfbcd9b417f5f2",
+      "candidate": "4275091b26e2ca980a2db2e32a946681bdeeac502e8252dbb21d1c3c6ee317bc"
+    },
+    "prismatic-fluids": {
+      "baseline": "7f4f89b9a69579730bdf9439f9122e0fd418cd57c7980a15557b591e974c4fbb",
+      "candidate": "f6074c507a53bd9eb6b90a24ba2b37bd913d42184935199552ce9dbe0cef403b"
+    }
+  },
+  "browser": "136.0.7103.59"
+}

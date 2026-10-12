@@ -25,9 +25,9 @@ const server = http.createServer(async (request, response) => {
   const url = new URL(request.url, 'http://localhost');
   const [, variant, name] = url.pathname.split('/');
   let source = sources[name]?.[variant];
-  if (url.pathname.endsWith('fawn-flow-logo.js')) {
+  if (url.pathname.endsWith('fawn-formation.js')) {
     response.setHeader('Content-Type', 'text/javascript');
-    response.end(await readFile('browser/chromium/resources/fawn-flow-logo.js')); return;
+    response.end(await readFile('browser/chromium/resources/fawn-formation.js')); return;
   }
   if (url.pathname.endsWith('fawn-icon.svg')) {
     response.setHeader('Content-Type', 'image/svg+xml');

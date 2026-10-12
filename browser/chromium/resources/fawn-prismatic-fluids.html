@@ -71,7 +71,7 @@ summary::after { content: ' +'; }
 </style>
 </head>
 <body>
-<canvas id="view" tabindex="0" aria-label="Liquid flow. Drag to stir; release to form the Fawn logo."></canvas>
+<canvas id="view" tabindex="0" aria-label="Liquid flow. Drag to stir."></canvas>
 <div class="chrome">
 <header>
  <a class="brand" href="./fawn-prismatic-fluids.html" aria-label="Fawn home"><svg class="brand-logo" viewBox="0 0 1024 912" aria-hidden="true" focusable="false">
@@ -96,9 +96,9 @@ summary::after { content: ' +'; }
 </header>
 <main class="bottom">
  <div class="toolbar">
-  <div class="controls"><button id="pause" disabled>Pause</button><button id="restart" disabled>Reset</button><button id="logo" role="switch" aria-checked="true" aria-label="Form Fawn logo" disabled>Logo</button>
+  <div class="controls"><button id="pause" disabled>Pause</button><button id="restart" disabled>Reset</button>
    <details class="details"><summary>Settings</summary><div class="details-panel">
-    <p id="adapter">Connecting to your GPU…</p><div class="settings"><label>Grid<select id="grid-select" disabled>
+    <p id="adapter">Connecting to your GPU…</p><div class="settings"><label>Formation<select id="formation-select" disabled><option value="free">Free</option><option value="branded" selected>Branded</option></select></label><label>Grid<select id="grid-select" disabled>
           <option value="192">192 × 192</option>
           <option value="256">256 × 256</option>
           <option value="320">320 × 320</option>
@@ -115,7 +115,7 @@ summary::after { content: ' +'; }
           <option value="36">36 iters</option>
           <option value="48">48 iters</option>
         </select></label></div><p>FPS = completed frames per second.</p>
-    <p id="load">Connecting…</p><p>Fawn guides the dye as it settles.</p>
+    <p id="load">Connecting…</p>
    </div></details>
   </div>
  </div>
@@ -123,9 +123,9 @@ summary::after { content: ' +'; }
 </main>
 </div>
 <div id="failure" role="alert" hidden></div>
-<script src="./fawn-flow-logo.js"></script>
+<script src="./fawn-formation.js"></script>
 <script>
-const LOGO_FLOW = FawnFlowLogo;
+const LOGO_FLOW = FawnFormation;
 const WORKGROUP_SIZE = 16;
 const SIM_DENSITY_SCALE = 0.5;
 const PRESS_STRENGTH = 1.4;
@@ -531,8 +531,8 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
   const gridSelect = document.getElementById('grid-select');
   const pressureSelect = document.getElementById('pressure-select');
   const restartButton = document.getElementById('restart');
-  const logoButton = document.getElementById('logo');
-  let logoEnabled = true;
+  const formationSelect = document.getElementById('formation-select');
+  let logoEnabled = FawnFormation.configure(formationSelect);
   let settlingAgeS = 0;
   let logoBuffer = null;
   const canvas = document.getElementById('view');
@@ -1064,7 +1064,7 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
     restartButton.disabled = true;
     gridSelect.disabled = true;
     pressureSelect.disabled = true;
-    logoButton.disabled = true;
+    formationSelect.disabled = true;
     statusEl.textContent = `Error: ${error.message}`;
     failureEl.textContent = error.message;
     failureEl.hidden = false;
@@ -1072,9 +1072,8 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
     device?.destroy();
   }
 
-  logoButton.addEventListener('click', () => {
-    logoEnabled = !logoEnabled; settlingAgeS = 0;
-    logoButton.setAttribute('aria-checked', String(logoEnabled));
+  formationSelect.addEventListener('change', () => {
+    logoEnabled = formationSelect.value === 'branded'; settlingAgeS = 0;
     redrawRequested = true; schedule();
   });
   pauseButton.addEventListener('click', () => {
@@ -1145,7 +1144,7 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
     restartButton.disabled = false;
     gridSelect.disabled = false;
     pressureSelect.disabled = false;
-    logoButton.disabled = false;
+    formationSelect.disabled = false;
     pauseButton.textContent = paused ? 'Resume' : 'Pause';
     pauseButton.setAttribute('aria-pressed', String(paused));
     drawFpsGraph();

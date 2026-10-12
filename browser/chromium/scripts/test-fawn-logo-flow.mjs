@@ -8,7 +8,7 @@ const { chromium } = await import(process.env.FAWN_PLAYWRIGHT_MODULE || 'playwri
 const resources = new URL('../resources/', import.meta.url);
 const output = path.resolve(process.env.FAWN_REPORT_DIR || 'bench/out/fawn-logo-flow/formation');
 await mkdir(output, { recursive: true });
-const sourceFiles = ['fawn-prismatic-fluids.html', 'fawn-flow-logo.js'];
+const sourceFiles = ['fawn-prismatic-fluids.html', 'fawn-formation.js'];
 const identities = await Promise.all(sourceFiles.map(async file => ({ file,
   sha256: createHash('sha256').update(await readFile(new URL(file, resources))).digest('hex') })));
 const report = { sourceFiles: identities, classification: 'Chrome fluid artwork; native animation frames, GPU buffer readback, emulated mobile. No model inference, mass-conservation, native Doe, or performance claim.', cases: [], errors: [], passed: false };
@@ -123,8 +123,10 @@ try {
     assert.deepEqual((await sample(page)).rows, frozen.rows); assert.equal((await sample(page)).time, frozen.time);
     await page.click('#restart'); await page.waitForTimeout(100); row.reset = await sample(page);
     assert.ok(row.reset.rows.every(r => r.iou < 0.2)); assert.equal(await page.textContent('#pause'), 'Resume');
-    await page.click('#logo'); await page.waitForTimeout(100);
-    assert.equal(await page.getAttribute('#logo', 'aria-checked'), 'false');
+    await page.click('.details > summary');
+    await page.selectOption('#formation-select', 'free'); await page.waitForTimeout(100);
+    assert.equal(await page.inputValue('#formation-select'), 'free');
+    await page.click('.details > summary');
     await page.click('#pause'); await frames(page, 10); assert.equal((await sample(page)).strength, 0);
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
     row.passed = true; assert.deepEqual(row.recovered.errors, []);

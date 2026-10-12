@@ -1,0 +1,425 @@
+{
+  "passed": true,
+  "classification": "Browser WebGPU artwork; desktop and emulated mobile. No native Doe or physical fluid qualification.",
+  "sourceFiles": [
+    {
+      "file": "fawn-start.html",
+      "sha256": "f121d666a6de0b0c7b6618d423408755f961ff99f38c5f5c36ac2811a2d3c5e9"
+    },
+    {
+      "file": "fawn-magnetic-fluids.html",
+      "sha256": "4275091b26e2ca980a2db2e32a946681bdeeac502e8252dbb21d1c3c6ee317bc"
+    },
+    {
+      "file": "fawn-prismatic-fluids.html",
+      "sha256": "f6074c507a53bd9eb6b90a24ba2b37bd913d42184935199552ce9dbe0cef403b"
+    },
+    {
+      "file": "fawn-formation.js",
+      "sha256": "26878debf3b176a90c4c6c433a6945244144e73b807930e6286e083ee34cfe1e"
+    }
+  ],
+  "cases": [
+    {
+      "kind": "wave",
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "initial": {
+        "covered": 0.5019989013671875,
+        "error": 0.44395678487932333,
+        "sum": 7061325.416546193,
+        "square": 16104840.680529436,
+        "finite": true,
+        "strength": 0,
+        "time": 0.7053999900817871,
+        "adapter": {
+          "vendor": "intel",
+          "architecture": "gen-12lp",
+          "isFallbackAdapter": false
+        },
+        "errors": []
+      },
+      "formed": {
+        "covered": 0.999969482421875,
+        "error": 0.007438538157123936,
+        "sum": 313970.03303925524,
+        "square": 78171.12304960658,
+        "finite": true,
+        "strength": 1,
+        "time": 11.038399696350098,
+        "adapter": {
+          "vendor": "intel",
+          "architecture": "gen-12lp",
+          "isFallbackAdapter": false
+        },
+        "errors": []
+      },
+      "stirred": {
+        "covered": 0.4320831298828125,
+        "error": 0.6197659394839108,
+        "sum": 10993997.650656044,
+        "square": 78877467.6838003,
+        "finite": true,
+        "strength": 0,
+        "time": 12.821599960327148,
+        "adapter": {
+          "vendor": "intel",
+          "architecture": "gen-12lp",
+          "isFallbackAdapter": false
+        },
+        "errors": []
+      },
+      "recovered": {
+        "covered": 0.9999847412109375,
+        "error": 0.007466414045574774,
+        "sum": 313606.8981065043,
+        "square": 78135.82312364923,
+        "finite": true,
+        "strength": 1,
+        "time": 23.554500579833984,
+        "adapter": {
+          "vendor": "intel",
+          "architecture": "gen-12lp",
+          "isFallbackAdapter": false
+        },
+        "errors": []
+      },
+      "free": {
+        "covered": 0.562835693359375,
+        "error": 0.42012361958917255,
+        "sum": 6961773.559521028,
+        "square": 15567314.788823538,
+        "finite": true,
+        "strength": 0,
+        "time": 24.866300582885742,
+        "adapter": {
+          "vendor": "intel",
+          "architecture": "gen-12lp",
+          "isFallbackAdapter": false
+        },
+        "errors": []
+      },
+      "resized": {
+        "covered": 0.9999847412109375,
+        "error": 0.007208072743519786,
+        "sum": 305939.6897425759,
+        "square": 76187.86191387752,
+        "finite": true,
+        "strength": 1,
+        "time": 35.31769943237305,
+        "adapter": {
+          "vendor": "intel",
+          "architecture": "gen-12lp",
+          "isFallbackAdapter": false
+        },
+        "errors": []
+      },
+      "passed": true
+    },
+    {
+      "kind": "wave",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "initial": {
+        "covered": 0.4983673095703125,
+        "error": 0.45088452786129085,
+        "sum": 7048540.210957118,
+        "square": 16068246.393102298,
+        "finite": true,
+        "strength": 0,
+        "time": 0.636900007724762,
+        "adapter": {
+          "vendor": "intel",
+          "architecture": "gen-12lp",
+          "isFallbackAdapter": false
+        },
+        "errors": []
+      },
+      "formed": {
+        "covered": 0.9999847412109375,
+        "error": 0.004683489684411828,
+        "sum": 165685.58520959012,
+        "square": 40473.868880829,
+        "finite": true,
+        "strength": 1,
+        "time": 10.886500358581543,
+        "adapter": {
+          "vendor": "intel",
+          "architecture": "gen-12lp",
+          "isFallbackAdapter": false
+        },
+        "errors": []
+      },
+      "stirred": {
+        "covered": 0.3748779296875,
+        "error": 0.6356179517849398,
+        "sum": 10963932.17928939,
+        "square": 82153340.66640912,
+        "finite": true,
+        "strength": 0,
+        "time": 12.369799613952637,
+        "adapter": {
+          "vendor": "intel",
+          "architecture": "gen-12lp",
+          "isFallbackAdapter": false
+        },
+        "errors": []
+      },
+      "recovered": {
+        "covered": 1,
+        "error": 0.005686091790270274,
+        "sum": 164495.08216485314,
+        "square": 40384.539278696255,
+        "finite": true,
+        "strength": 1,
+        "time": 22.852699279785156,
+        "adapter": {
+          "vendor": "intel",
+          "architecture": "gen-12lp",
+          "isFallbackAdapter": false
+        },
+        "errors": []
+      },
+      "free": {
+        "covered": 0.5152740478515625,
+        "error": 0.44061653337634893,
+        "sum": 7134407.933756384,
+        "square": 16247203.33377863,
+        "finite": true,
+        "strength": 0,
+        "time": 23.973499298095703,
+        "adapter": {
+          "vendor": "intel",
+          "architecture": "gen-12lp",
+          "isFallbackAdapter": false
+        },
+        "errors": []
+      },
+      "resized": {
+        "covered": 0.9999237060546875,
+        "error": 0.004535536797613141,
+        "sum": 157620.12078772255,
+        "square": 38312.80633667956,
+        "finite": true,
+        "strength": 1,
+        "time": 34.35770034790039,
+        "adapter": {
+          "vendor": "intel",
+          "architecture": "gen-12lp",
+          "isFallbackAdapter": false
+        },
+        "errors": []
+      },
+      "passed": true
+    },
+    {
+      "kind": "particles",
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "initial": {
+        "covered": 0.21514892578125,
+        "error": 0.0581255693985554,
+        "sum": 537082.0330468006,
+        "square": 55280.24476780519,
+        "finite": true,
+        "strength": 0,
+        "time": 0.048670001327991486,
+        "adapter": {
+          "vendor": "intel",
+          "architecture": "gen-12lp",
+          "isFallbackAdapter": false
+        },
+        "errors": []
+      },
+      "formed": {
+        "covered": 1,
+        "error": 0,
+        "sum": 504616.8089509286,
+        "square": 49633.6458835537,
+        "finite": true,
+        "strength": 1,
+        "time": 10.337138175964355,
+        "adapter": {
+          "vendor": "intel",
+          "architecture": "gen-12lp",
+          "isFallbackAdapter": false
+        },
+        "errors": []
+      },
+      "stirred": {
+        "covered": 0.064208984375,
+        "error": 0.0056671216354118314,
+        "sum": 582551.9528744931,
+        "square": 71862.09113141753,
+        "finite": true,
+        "strength": 0,
+        "time": 12.013737678527832,
+        "adapter": {
+          "vendor": "intel",
+          "architecture": "gen-12lp",
+          "isFallbackAdapter": false
+        },
+        "errors": []
+      },
+      "recovered": {
+        "covered": 1,
+        "error": 0,
+        "sum": 504616.69104011694,
+        "square": 49633.36913744427,
+        "finite": true,
+        "strength": 1,
+        "time": 22.583038330078125,
+        "adapter": {
+          "vendor": "intel",
+          "architecture": "gen-12lp",
+          "isFallbackAdapter": false
+        },
+        "errors": []
+      },
+      "free": {
+        "covered": 0.455657958984375,
+        "error": 0.01473269042057268,
+        "sum": 612863.9592108624,
+        "square": 65042.06625057124,
+        "finite": true,
+        "strength": 0,
+        "time": 23.805837631225586,
+        "adapter": {
+          "vendor": "intel",
+          "architecture": "gen-12lp",
+          "isFallbackAdapter": false
+        },
+        "errors": []
+      },
+      "resized": {
+        "covered": 1,
+        "error": 0,
+        "sum": 503748.3344447074,
+        "square": 49520.135927383555,
+        "finite": true,
+        "strength": 1,
+        "time": 10.32610034942627,
+        "adapter": {
+          "vendor": "intel",
+          "architecture": "gen-12lp",
+          "isFallbackAdapter": false
+        },
+        "errors": []
+      },
+      "passed": true
+    },
+    {
+      "kind": "particles",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "initial": {
+        "covered": 0.111846923828125,
+        "error": 0.10954634651662332,
+        "sum": 537088.3964544997,
+        "square": 56308.971686358345,
+        "finite": true,
+        "strength": 0,
+        "time": 0.06400000303983688,
+        "adapter": {
+          "vendor": "intel",
+          "architecture": "gen-12lp",
+          "isFallbackAdapter": false
+        },
+        "errors": []
+      },
+      "formed": {
+        "covered": 1,
+        "error": 0,
+        "sum": 518873.1058162359,
+        "square": 48410.19107903783,
+        "finite": true,
+        "strength": 1,
+        "time": 10.32759952545166,
+        "adapter": {
+          "vendor": "intel",
+          "architecture": "gen-12lp",
+          "isFallbackAdapter": false
+        },
+        "errors": []
+      },
+      "stirred": {
+        "covered": 1,
+        "error": 0,
+        "sum": 625539.0841130152,
+        "square": 70890.29632734,
+        "finite": true,
+        "strength": 0,
+        "time": 11.859600067138672,
+        "adapter": {
+          "vendor": "intel",
+          "architecture": "gen-12lp",
+          "isFallbackAdapter": false
+        },
+        "errors": []
+      },
+      "recovered": {
+        "covered": 1,
+        "error": 0,
+        "sum": 518872.52848747757,
+        "square": 48409.97831681665,
+        "finite": true,
+        "strength": 1,
+        "time": 22.292400360107422,
+        "adapter": {
+          "vendor": "intel",
+          "architecture": "gen-12lp",
+          "isFallbackAdapter": false
+        },
+        "errors": []
+      },
+      "free": {
+        "covered": 0.112823486328125,
+        "error": 0.05213536228144733,
+        "sum": 606865.2094585886,
+        "square": 64292.141489741094,
+        "finite": true,
+        "strength": 0,
+        "time": 23.453100204467773,
+        "adapter": {
+          "vendor": "intel",
+          "architecture": "gen-12lp",
+          "isFallbackAdapter": false
+        },
+        "errors": []
+      },
+      "resized": {
+        "covered": 1,
+        "error": 0,
+        "sum": 519969.5314489148,
+        "square": 48402.039536101336,
+        "finite": true,
+        "strength": 1,
+        "time": 10.3371000289917,
+        "adapter": {
+          "vendor": "intel",
+          "architecture": "gen-12lp",
+          "isFallbackAdapter": false
+        },
+        "errors": []
+      },
+      "passed": true
+    }
+  ],
+  "errors": [],
+  "browser": "136.0.7103.59",
+  "headless": false,
+  "browserArgs": [
+    "--enable-unsafe-webgpu",
+    "--use-angle=vulkan",
+    "--enable-features=Vulkan",
+    "--disable-vulkan-surface"
+  ]
+}

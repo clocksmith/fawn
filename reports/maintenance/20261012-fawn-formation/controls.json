@@ -1,0 +1,126 @@
+{
+  "origin": "http://127.0.0.1:44241",
+  "results": [
+    {
+      "name": "desktop",
+      "boxes": {
+        "canvas": {
+          "x": 0,
+          "y": 0,
+          "width": 1440,
+          "height": 900
+        },
+        "header": {
+          "x": 28,
+          "y": 24,
+          "width": 1384,
+          "height": 44
+        },
+        "footer": {
+          "x": 28,
+          "y": 768,
+          "width": 1384,
+          "height": 108
+        },
+        "viewport": {
+          "width": 1440,
+          "height": 900
+        },
+        "overflow": false
+      },
+      "frozen": {
+        "submissions": 52,
+        "computePasses": 52,
+        "simulationTime": 1.4630999565124512,
+        "pointerRadius": 0.05000000074505806,
+        "pointerStrength": 0.2800000011920929
+      },
+      "rebuilt": {
+        "submissions": 53,
+        "computePasses": 52,
+        "simulationTime": 1.4630999565124512,
+        "pointerRadius": 0.05000000074505806,
+        "pointerStrength": 0
+      },
+      "reset": {
+        "submissions": 54,
+        "computePasses": 52,
+        "simulationTime": 1.4630999565124512,
+        "pointerRadius": 0.05000000074505806,
+        "pointerStrength": 0
+      },
+      "resized": {
+        "submissions": 55,
+        "computePasses": 52,
+        "simulationTime": 1.4630999565124512,
+        "pointerRadius": 0.05000000074505806,
+        "pointerStrength": 0.2800000011920929
+      },
+      "controls": "passed"
+    },
+    {
+      "name": "mobile",
+      "boxes": {
+        "canvas": {
+          "x": 0,
+          "y": 0,
+          "width": 390,
+          "height": 844
+        },
+        "header": {
+          "x": 16,
+          "y": 18,
+          "width": 358,
+          "height": 44
+        },
+        "footer": {
+          "x": 16,
+          "y": 724,
+          "width": 358,
+          "height": 102
+        },
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "overflow": false
+      },
+      "frozen": {
+        "submissions": 48,
+        "computePasses": 48,
+        "simulationTime": 1.3220000267028809,
+        "pointerRadius": 0.05000000074505806,
+        "pointerStrength": 0.2800000011920929
+      },
+      "rebuilt": {
+        "submissions": 49,
+        "computePasses": 48,
+        "simulationTime": 1.3220000267028809,
+        "pointerRadius": 0.05000000074505806,
+        "pointerStrength": 0
+      },
+      "reset": {
+        "submissions": 50,
+        "computePasses": 48,
+        "simulationTime": 1.3220000267028809,
+        "pointerRadius": 0.05000000074505806,
+        "pointerStrength": 0
+      },
+      "resized": {
+        "submissions": 51,
+        "computePasses": 48,
+        "simulationTime": 1.3220000267028809,
+        "pointerRadius": 0.05000000074505806,
+        "pointerStrength": 0.2800000011920929
+      },
+      "controls": "passed"
+    },
+    {
+      "reducedMotion": "passed"
+    },
+    {
+      "unsupportedGpu": "visible error; disabled controls"
+    }
+  ],
+  "errors": []
+}
