@@ -122,8 +122,7 @@ const SWIRL_ACCELERATION = 0.9;
 const MAX_FLUID_SPEED = 6.0;
 const DYE_RATE = 4.0;
 const PRESS_DYE = 0.18;
-const FLOW_MATERIAL = Object.freeze({ exposure: 1.65, pigment: 1.25,
-  background: [0.026, 0.038, 0.050], contrast: 0.18 });
+const FLOW_MATERIAL = Object.freeze({ exposure: 1.65, background: [0.040, 0.055, 0.070], contrast: 0.18 });
 
 const SHARED_HELPERS = `
 struct Params {
@@ -166,8 +165,6 @@ ${SHARED_HELPERS}
 @group(0) @binding(0) var<uniform> u: Params;
 @group(0) @binding(1) var<storage, read> velSrc: array<vec4<f32>>;
 @group(0) @binding(2) var<storage, read_write> velDst: array<vec4<f32>>;
-@group(0) @binding(3) var<storage, read> logoField: array<vec4<f32>>;
-${LOGO_FLOW.WGSL}
 
 fn sample_vel(uv: vec2<f32>) -> vec2<f32> {
   let gridPos = uv_to_grid(clamp(uv, u.grid.zw * 0.5, vec2<f32>(1.0) - u.grid.zw * 0.5));
@@ -211,14 +208,6 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
   let openingFlow = vec2<f32>(sin(uv.y * 6.28318), -sin(uv.x * 6.28318))
     + vec2<f32>(sin(uv.y * 18.84954), cos(uv.x * 18.84954)) * 0.35;
   vel += openingFlow * u.pointerDelta.w * u.sim.x;
-  if (u.sim.w > 0.0) {
-    let guide = logo_at(uv);
-    let tangent = vec2<f32>(-guide.y, guide.x);
-    vel += (guide.xy * clamp(-guide.w, 0.0, 0.12) * ${LOGO_FLOW.POLICY.force}
-      + tangent * 0.008 * sin(guide.w * 80.0 + u.sim.y * 0.3))
-      * u.sim.w * u.sim.x * (1.0 - min(falloff, 1.0));
-    vel *= exp(-u.sim.w * u.sim.x * 0.55);
-  }
   vel *= min(1.0, ${MAX_FLUID_SPEED} / max(length(vel), 1e-5));
 
   if (gid.x <= 1u || gid.y <= 1u || gid.x >= width - 2u || gid.y >= height - 2u) {
@@ -346,8 +335,6 @@ ${SHARED_HELPERS}
 @group(0) @binding(1) var<storage, read> dyeSrc: array<vec4<f32>>;
 @group(0) @binding(2) var<storage, read> velSrc: array<vec4<f32>>;
 @group(0) @binding(3) var<storage, read_write> dyeDst: array<vec4<f32>>;
-@group(0) @binding(4) var<storage, read> logoField: array<vec4<f32>>;
-${LOGO_FLOW.WGSL}
 
 fn sample_vel(uv: vec2<f32>) -> vec2<f32> {
   let gridPos = uv_to_grid(clamp(uv, u.grid.zw * 0.5, vec2<f32>(1.0) - u.grid.zw * 0.5));
@@ -407,15 +394,6 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
   );
   dye += tint * falloff * (${DYE_RATE} * u.sim.x + ${PRESS_DYE} * u.pointerDelta.z / u.viewport.z);
   dye *= pow(0.996, u.sim.x * 60.0 / 0.82);
-  if (u.sim.w > 0.0) {
-    let x = i32(gid.x); let y = i32(gid.y);
-    let neighbors = (dyeSrc[idx_at(x - 1, y)].xyz + dyeSrc[idx_at(x + 1, y)].xyz
-      + dyeSrc[idx_at(x, y - 1)].xyz + dyeSrc[idx_at(x, y + 1)].xyz) * 0.25;
-    dye = mix(dye, neighbors, min(0.18, ${LOGO_FLOW.POLICY.diffusionRate} * u.sim.x));
-    let recovery = (1.0 - exp(-${LOGO_FLOW.POLICY.dyeRate} * u.sim.x))
-      * u.sim.w * (1.0 - min(falloff, 1.0));
-    dye = mix(dye, logo_target(uv), recovery);
-  }
   dyeDst[idx_at(i32(gid.x), i32(gid.y))] = vec4<f32>(dye, 1.0);
 }
 `;
@@ -425,6 +403,7 @@ ${SHARED_HELPERS}
 struct VSOut {
   @builtin(position) position: vec4<f32>,
   @location(0) uv: vec2<f32>,
+  @location(1) materialUV: vec2<f32>,
 }
 
 @group(0) @binding(0) var<uniform> u: Params;
@@ -444,9 +423,7 @@ fn curl_at(x: i32, y: i32) -> f32 {
   return divCurl[idx_at(x, y)].y;
 }
 
-fn scalar_height(x: i32, y: i32, dye: vec3<f32>) -> f32 {
-  let vel = vel_at(x, y);
-  let curl = curl_at(x, y);
+fn scalar_height(dye: vec3<f32>, vel: vec2<f32>, curl: f32) -> f32 {
   return clamp(length(dye) * 0.64 + abs(curl) * 0.016 + length(vel) * 0.10, 0.0, 1.3);
 }
 
@@ -454,19 +431,9 @@ fn spectral(t: f32) -> vec3<f32> {
   return 0.5 + 0.5 * cos(vec3<f32>(0.0, 2.0, 4.0) + t * 6.28318);
 }
 
-@vertex
-fn vs(@builtin(vertex_index) vertexIndex: u32) -> VSOut {
-  var positions = array<vec2<f32>, 3>(
-    vec2<f32>(-1.0, -3.0),
-    vec2<f32>(-1.0,  1.0),
-    vec2<f32>( 3.0,  1.0)
-  );
-  let pos = positions[vertexIndex];
-  var out: VSOut;
-  out.position = vec4<f32>(pos, 0.0, 1.0);
-  out.uv = pos * 0.5 * u.viewport.xy + vec2<f32>(0.5, 0.5);
-  return out;
-}
+@group(0) @binding(4) var<storage, read> materialDestinations: array<vec4<f32>>;
+fn materialViewport() -> vec2<f32> { return u.viewport.xy; }
+${FawnFormation.MATERIAL_VERTEX}
 
 @fragment
 fn fs(in: VSOut) -> @location(0) vec4<f32> {
@@ -480,14 +447,18 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
   let d01 = dye_at(gx, gy + 1);
   let d11 = dye_at(gx + 1, gy + 1);
   let dye = mix(mix(d00, d10, cell.x), mix(d01, d11, cell.x), cell.y);
-  let vel = vel_at(gx, gy);
-  let curl = curl_at(gx, gy);
+  let v00 = vel_at(gx, gy); let v10 = vel_at(gx + 1, gy);
+  let v01 = vel_at(gx, gy + 1); let v11 = vel_at(gx + 1, gy + 1);
+  let c00 = curl_at(gx, gy); let c10 = curl_at(gx + 1, gy);
+  let c01 = curl_at(gx, gy + 1); let c11 = curl_at(gx + 1, gy + 1);
+  let vel = mix(mix(v00, v10, cell.x), mix(v01, v11, cell.x), cell.y);
+  let curl = mix(mix(c00, c10, cell.x), mix(c01, c11, cell.x), cell.y);
   let speed = length(vel);
   // Interpolate the actual height derivatives instead of stepping normals at cell borders.
-  let h00 = scalar_height(gx, gy, d00);
-  let h10 = scalar_height(gx + 1, gy, d10);
-  let h01 = scalar_height(gx, gy + 1, d01);
-  let h11 = scalar_height(gx + 1, gy + 1, d11);
+  let h00 = scalar_height(d00, v00, c00);
+  let h10 = scalar_height(d10, v10, c10);
+  let h01 = scalar_height(d01, v01, c01);
+  let h11 = scalar_height(d11, v11, c11);
   let hc = mix(mix(h00, h10, cell.x), mix(h01, h11, cell.x), cell.y);
   let grad = vec2<f32>(mix(h10 - h00, h11 - h01, cell.y),
     mix(h01 - h00, h11 - h10, cell.x));
@@ -496,20 +467,17 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
   let normal = normalize(vec3<f32>(-grad.x * 1.25, -grad.y * 1.25, 1.0));
   let view = normalize(vec3<f32>(0.0, 0.0, 1.0));
   let fresnel = pow(1.0 - max(dot(normal, view), 0.0), 3.0);
-  let prism = spectral(hc * 0.22 + min(abs(curl), 12.0) * 0.035 + u.sim.y * 0.020);
+  let prism = spectral(hc * 0.22 + abs(curl) * 0.36 + u.sim.y * 0.020);
   let secondary = spectral(speed * 0.30 + normal.x * 0.15 - normal.y * 0.08);
   let glint = pow(max(dot(reflect(normalize(vec3<f32>(0.20, -0.16, -1.0)), normal), view), 0.0), 20.0);
-  let pigment = clamp(length(dye), 0.0, 1.0);
-  let fluidGlow = crispDye * (${FLOW_MATERIAL.pigment} + min(speed, 2.0) * 0.12)
-    + prism * min(abs(curl), 12.0) * 0.006 * pigment;
+  let fluidGlow = crispDye * (0.92 + speed * 0.24) + prism * abs(curl) * 0.030;
   let metallic = mix(vec3<f32>(0.05, 0.06, 0.08), prism, 0.52)
     + secondary * fresnel * 0.22
     + vec3<f32>(1.0, 0.96, 0.93) * glint * 0.34;
-  let base = fluidGlow + metallic * (0.22 + hc * 0.14) * pigment;
+  let base = fluidGlow + metallic * (0.22 + hc * 0.14);
   let bg = vec3<f32>(${FLOW_MATERIAL.background.join(', ')});
-  // Lift dim pigment while rolling bright highlights off instead of clipping them to white.
   let color = vec3<f32>(1.0) - exp(-max(base, vec3<f32>(0.0)) * ${FLOW_MATERIAL.exposure});
-  return vec4<f32>(max(color, bg), 1.0);
+  return vec4<f32>(mix(bg, max(color, bg), materialCoverage(in.materialUV)), 1.0);
 }
 `;
 
@@ -528,8 +496,7 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
   const formationSelect = document.getElementById('formation-select');
   let logoEnabled = FawnFormation.configure(formationSelect);
   const formation = FawnFormation.transition();
-  let firstBuild = true;
-  let logoBuffer = null;
+  let logoBuffer = null, materialDestinations = null;
   const canvas = document.getElementById('view');
   const graphCtx = graphCanvas.getContext('2d');
   const fpsHistory = [];
@@ -658,28 +625,9 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
     return null;
   }
 
-  function seedDye(grid) {
-    const data = new Float32Array(grid * grid * 4);
-    for (let y = 0; y < grid; y++) {
-      for (let x = 0; x < grid; x++) {
-        const i = (y * grid + x) * 4;
-        const nx = x / grid - 0.5;
-        const ny = y / grid - 0.5;
-        const r = Math.sqrt(nx * nx + ny * ny);
-        const ring = Math.max(0, 0.18 - Math.abs(r - 0.22));
-        data[i + 0] = ring * 0.22;
-        data[i + 1] = ring * 0.14;
-        data[i + 2] = ring * 0.26;
-        data[i + 3] = 1.0;
-      }
-    }
-    return data;
-  }
-
   function updateLogoField() {
-    const mark = LOGO_FLOW.field(simGrid(), canvas, document.querySelector('.brand-logo'));
-    device.queue.writeBuffer(logoBuffer, 0, mark);
-    return mark;
+    materialDestinations = FawnFormation.materialDestinations(simGrid(), canvas, document.querySelector('.brand-logo'));
+    device.queue.writeBuffer(logoBuffer, 0, materialDestinations);
   }
 
   function rebuildSimulationBuffers() {
@@ -690,11 +638,10 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
 
     const byteLength = effectiveGrid * effectiveGrid * 16;
     logoBuffer?.destroy();
-    logoBuffer = device.createBuffer({ label: 'Fawn target field', size: byteLength,
+    logoBuffer = device.createBuffer({ label: 'Fawn material destinations', size: byteLength,
       usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST });
-    const mark = updateLogoField();
-    const intro = firstBuild && logoEnabled;
-    formation.reset(logoEnabled, intro); firstBuild = false;
+    updateLogoField();
+    formation.reset(logoEnabled);
     velocityBuffers = [
       createBuffer(byteLength, GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST),
       createBuffer(byteLength, GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST),
@@ -709,9 +656,9 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
     ];
     divCurlBuffer = createBuffer(byteLength, GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST);
 
-    const seed = logoEnabled ? LOGO_FLOW.seed(effectiveGrid, intro ? mark : null) : null;
-    const dye = seed?.dye ?? seedDye(effectiveGrid);
-    if (seed) for (const buffer of velocityBuffers) device.queue.writeBuffer(buffer, 0, seed.velocity);
+    const seed = LOGO_FLOW.seed(effectiveGrid);
+    const dye = seed.dye;
+    for (const buffer of velocityBuffers) device.queue.writeBuffer(buffer, 0, seed.velocity);
     device.queue.writeBuffer(dyeBuffers[0], 0, dye);
     device.queue.writeBuffer(dyeBuffers[1], 0, dye);
     currentDyeIndex = 0;
@@ -722,7 +669,6 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
         { binding: 0, resource: { buffer: uniformBuffer } },
         { binding: 1, resource: { buffer: velocityBuffers[0] } },
         { binding: 2, resource: { buffer: velocityBuffers[1] } },
-        { binding: 3, resource: { buffer: logoBuffer } },
       ],
     });
     divCurlBindGroup = device.createBindGroup({
@@ -771,7 +717,6 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
           { binding: 1, resource: { buffer: dyeBuffers[0] } },
           { binding: 2, resource: { buffer: velocityBuffers[0] } },
           { binding: 3, resource: { buffer: dyeBuffers[1] } },
-          { binding: 4, resource: { buffer: logoBuffer } },
         ],
       }),
       device.createBindGroup({
@@ -781,7 +726,6 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
           { binding: 1, resource: { buffer: dyeBuffers[1] } },
           { binding: 2, resource: { buffer: velocityBuffers[0] } },
           { binding: 3, resource: { buffer: dyeBuffers[0] } },
-          { binding: 4, resource: { buffer: logoBuffer } },
         ],
       }),
     ];
@@ -793,6 +737,7 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
           { binding: 1, resource: { buffer: dyeBuffers[0] } },
           { binding: 2, resource: { buffer: velocityBuffers[0] } },
           { binding: 3, resource: { buffer: divCurlBuffer } },
+          { binding: 4, resource: { buffer: logoBuffer } },
         ],
       }),
       device.createBindGroup({
@@ -802,6 +747,7 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
           { binding: 1, resource: { buffer: dyeBuffers[1] } },
           { binding: 2, resource: { buffer: velocityBuffers[0] } },
           { binding: 3, resource: { buffer: divCurlBuffer } },
+          { binding: 4, resource: { buffer: logoBuffer } },
         ],
       }),
     ];
@@ -870,7 +816,7 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
       layout: 'auto',
       vertex: { module: renderShader, entryPoint: 'vs' },
       fragment: { module: renderShader, entryPoint: 'fs', targets: [{ format }] },
-      primitive: { topology: 'triangle-list' },
+      primitive: { topology: 'triangle-strip' },
     });
 
     const info = adapter.info || {};
@@ -975,14 +921,20 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
     uniformData[5] = pointer.y;
     uniformData[6] = mouseForce;
     uniformData[7] = mouseForce > HOVER_STRENGTH ? POINTER_RADIUS : HOVER_RADIUS;
-    uniformData[8] = dt * 0.82 / stepsPerFrame;
-    if (!paused) simulationTime = now - pausedMs;
-    uniformData[9] = simulationTime * 0.001;
+
     uniformData[10] = 2.0;
     uniformData[11] = formation.advance(paused ? 0 : dt, logoEnabled,
       Boolean(pointer.down || pointer.press || pointer.dx || pointer.dy));
-    uniformData[12] = pointer.dx;
-    uniformData[13] = pointer.dy;
+    const liveRate = 1 - uniformData[11];
+    uniformData[8] = dt * 0.82 * liveRate / stepsPerFrame;
+    if (!paused) simulationTime += dt * 1000 * liveRate;
+    uniformData[9] = simulationTime * 0.001;
+    if (mouseForce > 0) {
+      const mapped = FawnFormation.materialPoint([pointer.x, pointer.y], materialDestinations, uniformData[11]);
+      uniformData[4] = mapped[0]; uniformData[5] = mapped[1];
+      const from = FawnFormation.materialPoint([pointer.x - pointer.dx, pointer.y - pointer.dy], materialDestinations, uniformData[11]);
+      uniformData[12] = mapped[0] - from[0]; uniformData[13] = mapped[1] - from[1];
+    } else { uniformData[12] = 0; uniformData[13] = 0; }
     uniformData[14] = pointer.press;
     uniformData[15] = formation.disperse();
     uniformData.set([...FawnFormation.viewport(canvas), stepsPerFrame, 0], 16);
@@ -993,7 +945,7 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
     pointer.strokeForce = 0;
 
     const encoder = device.createCommandEncoder();
-    if (!paused) {
+    if (!paused && uniformData[11] < 1) {
       const pass = encoder.beginComputePass();
       for (let step = 0; step < stepsPerFrame; step++) {
         {
@@ -1031,14 +983,14 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
     const renderPass = encoder.beginRenderPass({
       colorAttachments: [{
         view: context.getCurrentTexture().createView(),
-        clearValue: { r: 0.02, g: 0.03, b: 0.028, a: 1.0 },
+        clearValue: { r: FLOW_MATERIAL.background[0], g: FLOW_MATERIAL.background[1], b: FLOW_MATERIAL.background[2], a: 1.0 },
         loadOp: 'clear',
         storeOp: 'store',
       }],
     });
     renderPass.setPipeline(renderPipeline);
     renderPass.setBindGroup(0, renderBindGroups[currentDyeIndex]);
-    renderPass.draw(3);
+    renderPass.draw(4);
     renderPass.end();
 
     device.queue.submit([encoder.finish()]);

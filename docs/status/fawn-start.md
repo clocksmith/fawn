@@ -7,12 +7,18 @@ identical GPU inputs. Flow uses interpolated relief and mild local contrast;
 its solver and Particles' shaders are unchanged. These are local Chrome artwork
 checks; the live release manifest below remains the publication authority.
 
-Flow and Wave open as Fawn in Branded mode, disperse, and reform at rest.
-Guidance and Wave's highlights blend through accepted state during interaction
-and mode changes. [Fluid-transition evidence](../../reports/maintenance/20261012-fawn-fluid-transitions/README.md)
-binds the tested sources to GPU state and rendered desktop/mobile captures.
-Free mode skips the opening logo; Reset preserves pause and reseeds the existing
-initial conditions. The live release manifest below identifies deployed source.
+Flow and Wave now settle by deforming their currently active fluid surface into
+the mark, carrying existing color, curls and soap-film relief. The
+[live-material evidence](../../reports/maintenance/20261012-fawn-live-material/README.md)
+checks interpolation, unchanged buffers at mode selection, distinct histories,
+rest, interruption, pause and responsive rendering. Flow restores curl-driven
+prisms and brighter background/metallic lighting. Particles is unchanged.
+
+The [earlier seeded-opening and field-painting evidence](../../reports/maintenance/20261012-fawn-fluid-transitions/README.md)
+retains its preceding-source meaning. Both fluid modes now begin from their live
+initial fields; Branded settles at rest rather than seeding a separate opening
+logo. Explicit Reset and Count retain their rebuild behavior. The live release
+manifest below identifies the published source.
 
 [Particle reset evidence](../../reports/maintenance/20261012-fawn-particle-reset/README.md)
 retains the preceding-source gesture leak and corrected reset behavior. Reset

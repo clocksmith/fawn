@@ -129,14 +129,18 @@ try {
     for (const [variant, code] of Object.entries(shaders)) {
       const module=device.createShaderModule({code}); const info=await module.getCompilationInfo();
       if(info.messages.some(m=>m.type==='error')) throw Error(info.messages.map(m=>m.message).join('\n'));
-      const pipeline=device.createRenderPipeline({layout:'auto',vertex:{module,entryPoint:'vs'},fragment:{module,entryPoint:'fs',targets:[{format}]}});
-      const group=device.createBindGroup({layout:pipeline.getBindGroupLayout(0),entries:[uniform,...buffers].map((buffer,binding)=>({binding,resource:{buffer}}))});
+      const pipeline=device.createRenderPipeline({layout:'auto',vertex:{module,entryPoint:'vs'},fragment:{module,entryPoint:'fs',targets:[{format}]},
+        primitive:{topology:variant==='candidate'?'triangle-strip':'triangle-list'}});
+      const transport = device.createBuffer({size:values.byteLength,usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST});
+      const entries=[uniform,...buffers]; if(variant==='candidate') entries.push(transport);
+      const group=device.createBindGroup({layout:pipeline.getBindGroupLayout(0),entries:entries.map((buffer,binding)=>({binding,resource:{buffer}}))});
       const read=device.createBuffer({size:size*256,usage:GPUBufferUsage.COPY_DST|GPUBufferUsage.MAP_READ});
       const encoder=device.createCommandEncoder(), pass=encoder.beginRenderPass({colorAttachments:[{view:target.createView(),loadOp:'clear',storeOp:'store',clearValue:[0,0,0,1]}]});
-      pass.setPipeline(pipeline);pass.setBindGroup(0,group);pass.draw(3);pass.end();encoder.copyTextureToBuffer({texture:target},{buffer:read,bytesPerRow:256},[size,size]);
+      pass.setPipeline(pipeline);pass.setBindGroup(0,group);
+      if(variant==='candidate') pass.draw(4); else pass.draw(3);pass.end();encoder.copyTextureToBuffer({texture:target},{buffer:read,bytesPerRow:256},[size,size]);
       device.queue.submit([encoder.finish()]);await read.mapAsync(GPUMapMode.READ);
       const bytes=new Uint8Array(read.getMappedRange());const pixel=x=>Array.from(bytes.slice((32*size+x)*4,(32*size+x)*4+3));
-      results[variant]={dim:pixel(8),pigment:pixel(48),edge:pixel(32)};read.unmap();read.destroy();
+      results[variant]={dim:pixel(8),pigment:pixel(48),edge:pixel(32)};read.unmap();read.destroy();transport.destroy();
     }
     uniform.destroy();buffers.forEach(b=>b.destroy());target.destroy();device.destroy();return{results,errors};
   }, shaders);

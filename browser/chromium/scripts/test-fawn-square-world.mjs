@@ -72,6 +72,16 @@ try {
     await page.locator('.details').evaluate(el => { el.open = false; });
     await page.waitForTimeout(100);
     const row = { kind, viewport, adapter: await page.evaluate(() => squareProbe.adapter) }; report.cases.push(row);
+    // Lighting can color a zero field. Measure the circle against that identical backdrop.
+    await page.evaluate(kind => {
+      const s = squareProbe, live = s.buffers.filter(b => !b.destroyed && !b.label?.startsWith('Fawn'));
+      for (const entry of (kind === 'flow' ? live.slice(2, 4) : live)) {
+        s.device.queue.writeBuffer(entry.buffer, 0, new Float32Array(entry.buffer.size / 4));
+      }
+      document.querySelector('#formation-select').dispatchEvent(new Event('change'));
+    }, kind);
+    await page.waitForTimeout(150);
+    const background = await page.screenshot();
     row.oracle = await page.evaluate(kind => {
       const s = squareProbe, live = s.buffers.filter(b => !b.destroyed && !b.label?.startsWith('Fawn'));
       const count = Number(document.querySelector('#count-select').value), grid = Math.sqrt(count);
@@ -99,21 +109,23 @@ try {
     await page.waitForTimeout(150);
     const filename = `${kind}-${viewport.width}x${viewport.height}-circle.png`;
     const screenshot = await page.screenshot({ path: path.join(output, filename) });
-    row.pixels = await page.evaluate(async base64 => {
+    row.pixels = await page.evaluate(async ({ base64, background }) => {
       const bitmap = await createImageBitmap(await (await fetch('data:image/png;base64,' + base64)).blob());
       const canvas = document.createElement('canvas'); canvas.width = bitmap.width; canvas.height = bitmap.height;
       const ctx = canvas.getContext('2d'); ctx.drawImage(bitmap, 0, 0);
       const { width, height } = canvas, pixels = ctx.getImageData(0, 0, width, height).data;
+      const backdrop = await createImageBitmap(await (await fetch('data:image/png;base64,' + background)).blob());
+      ctx.drawImage(backdrop, 0, 0); const reference = ctx.getImageData(0, 0, width, height).data;
       const margin = Math.max(width, height) * 0.10 + 8;
       let x0 = width, y0 = height, x1 = 0, y1 = 0, count = 0;
       for (let y = Math.floor(height / 2 - margin); y < height / 2 + margin; y++) for (let x = Math.floor(width / 2 - margin); x < width / 2 + margin; x++) {
         const i = (y * width + x) * 4;
-        if (Math.max(pixels[i], pixels[i + 1], pixels[i + 2]) > 45) {
+        if (Math.max(...[0, 1, 2].map(channel => Math.abs(pixels[i + channel] - reference[i + channel]))) > 45) {
           x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); count++;
         }
       }
       return { width: x1 - x0 + 1, height: y1 - y0 + 1, count };
-    }, screenshot.toString('base64'));
+    }, { base64: screenshot.toString('base64'), background: background.toString('base64') });
     assert.ok(row.pixels.count > 50, JSON.stringify(row));
     const diameter = Math.max(viewport.width, viewport.height) * 0.16;
     assert.ok(Math.abs(row.pixels.width - diameter) < Math.max(8, diameter * 0.06), JSON.stringify(row));
