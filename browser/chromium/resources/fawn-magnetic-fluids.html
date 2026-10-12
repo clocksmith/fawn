@@ -114,13 +114,14 @@ const MAGNET_RESPONSE = 18;
 const HOVER_STRENGTH = 0.55;
 const WAVE_ACTIVITY = 3;
 const WAVE_RELAXATION_RATE = 12;
+const WAVE_ANCHOR_GRID = 96;
 const LOGO_RELIEF = Object.freeze({ height: 0.42, amplitude: 0.035, frequency: 90, drift: 0.3 });
 const MAGNET_COUNT = 5 * WAVE_ACTIVITY;
 const BUBBLE_COUNT = 3 * WAVE_ACTIVITY;
 const WAVE_UNIFORM_FLOATS = 12 + 4 * (MAGNET_COUNT + BUBBLE_COUNT);
 
 // Animate each source once per frame, rather than repeating trigonometry per cell.
-function updateWaveSources(data, time) {
+function updateWaveSources(data, time, anchors, blend) {
   const motionTime = time * WAVE_ACTIVITY;
   for (let i = 0; i < MAGNET_COUNT; i++) {
     const phase = i * 2.399963;
@@ -137,6 +138,12 @@ function updateWaveSources(data, time) {
     data[offset + 1] = 0.16 + Math.floor(i / 3) * 0.34 + Math.cos(motionTime * (0.16 + (i % 4) * 0.035) + phase) * 0.10;
     data[offset + 2] = 0.035 + 0.055 * (0.5 + 0.5 * Math.sin(motionTime * (0.8 + (i % 3) * 0.15) + phase));
     data[offset + 3] = 0.50 + (i % 3) * 0.08;
+  }
+  for (let i = 0; i < MAGNET_COUNT + BUBBLE_COUNT; i++) {
+    const offset = 12 + i * 4;
+    data[offset] += (anchors[i * 2] - data[offset]) * blend;
+    data[offset + 1] += (anchors[i * 2 + 1] - data[offset + 1]) * blend;
+    if (i >= MAGNET_COUNT) data[offset + 2] *= 1 - blend * 0.85;
   }
 }
 
@@ -236,7 +243,10 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
   var nextH = h + nextV * u.sim.x * 2.1;
   nextH = mix(nextH, targetHeight, 1.0 - exp(-${WAVE_RELAXATION_RATE}.0 * u.sim.x));
   nextH = clamp(nextH, -0.2, 1.6);
-  dst[i] = vec4<f32>(nextH, nextV, mix(max(spikes, bubbles), relief, u.sim.w), mix(field + bubbles * 3.0, relief * 3.0, u.sim.w));
+  let response = 1.0 - exp(-${WAVE_RELAXATION_RATE}.0 * u.sim.x);
+  let glow = mix(state.z, relief * u.sim.w, response);
+  let reflection = mix(state.w, mix(field + bubbles * 3.0, relief * 3.0, u.sim.w), response);
+  dst[i] = vec4<f32>(nextH, nextV, glow, reflection);
 }
 `;
 
@@ -314,7 +324,7 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
   let halfVector = normalize(light + view);
   let spec = pow(max(dot(normal, halfVector), 0.0), 64.0) * ridge;
   // A dark body and raised relief carry spectral reflection bands.
-  let body = vec3<f32>(0.003, 0.004, 0.006) + spectral(in.uv.x * 0.5 + in.uv.y * 0.3) * smoothstep(0.10, 0.35, c.x) * u.sim.w * 0.32;
+  let body = vec3<f32>(0.003, 0.004, 0.006) + spectral(in.uv.x * 0.5 + in.uv.y * 0.3) * smoothstep(0.10, 0.35, c.x) * clamp(c.z, 0.0, 1.0) * 0.32;
   let iridescence = prism * ridge * (0.02 + contour * 0.40 + fresnel * 0.16);
   let silver = vec3<f32>(0.80, 0.88, 1.0) * spec * 0.28;
   return vec4<f32>(body + iridescence + silver, 1.0);
@@ -328,7 +338,10 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
   const graphCanvas = document.getElementById('fps-graph');
   const loadEl = document.getElementById('load');
   const formationSelect = document.getElementById('formation-select');
-  let logoEnabled = FawnFormation.configure(formationSelect), settlingAgeS = 0, logoBuffer = null;
+  let logoEnabled = FawnFormation.configure(formationSelect), logoBuffer = null;
+  const formation = FawnFormation.transition();
+  const anchors = new Float32Array((MAGNET_COUNT + BUBBLE_COUNT) * 2);
+  let firstBuild = true;
   const countSelect = document.getElementById('count-select');
   const stepsSelect = document.getElementById('steps-select');
   FawnFormation.configureWorkload(countSelect, stepsSelect, 'wave');
@@ -435,8 +448,15 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
   }
 
   function updateLogoField() {
-    device.queue.writeBuffer(logoBuffer, 0,
-      FawnFormation.field(currentGrid, canvas, document.querySelector('.brand-logo')));
+    const mark = FawnFormation.field(currentGrid, canvas, document.querySelector('.brand-logo'));
+    device.queue.writeBuffer(logoBuffer, 0, mark);
+    const points = FawnFormation.points(WAVE_ANCHOR_GRID, canvas, document.querySelector('.brand-logo'));
+    for (let i = 0; i < anchors.length / 2; i++) {
+      const index = Math.floor((i + 0.5) / (anchors.length / 2) * (points.length / 4)) * 4;
+      anchors[i * 2] = (points[index] + 1) * 0.5;
+      anchors[i * 2 + 1] = (points[index + 1] + 1) * 0.5;
+    }
+    return mark;
   }
 
   function rebuildBuffers() {
@@ -446,11 +466,25 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
     logoBuffer?.destroy();
     logoBuffer = device.createBuffer({ label: 'Fawn target field', size: byteLength,
       usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST });
-    updateLogoField(); settlingAgeS = 0;
+    const mark = updateLogoField();
+    const intro = firstBuild && logoEnabled;
+    formation.reset(logoEnabled, intro); firstBuild = false;
     stateBuffers = [
       device.createBuffer({ size: byteLength, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST }),
       device.createBuffer({ size: byteLength, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST }),
     ];
+    if (intro) {
+      const state = new Float32Array(currentGrid * currentGrid * 4);
+      for (let i = 0; i < state.length; i += 4) {
+        const t = Math.max(0, Math.min(1, (mark[i + 3] * currentGrid + 1.5) / 3));
+        const relief = t * t * (3 - 2 * t);
+        const y = (Math.floor(i / 4 / currentGrid) + 0.5) / currentGrid;
+        state[i] = relief * (LOGO_RELIEF.height + LOGO_RELIEF.amplitude
+          * Math.sin(mark[i + 3] * LOGO_RELIEF.frequency + y * 10));
+        state[i + 2] = relief; state[i + 3] = relief * 3;
+      }
+      for (const buffer of stateBuffers) device.queue.writeBuffer(buffer, 0, state);
+    }
     bindGroups = [
       device.createBindGroup({
         layout: computePipeline.getBindGroupLayout(0),
@@ -633,9 +667,8 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
     uniformData[8] = dt * 1.1 / substeps;
     uniformData[9] = simulationTime * 0.001;
     uniformData[10] = canvas.clientWidth / canvas.clientHeight;
-    if (!paused) settlingAgeS = pointer.down ? 0 : settlingAgeS + dt;
-    uniformData[11] = FawnFormation.strength(settlingAgeS, logoEnabled);
-    updateWaveSources(uniformData, uniformData[9]);
+    uniformData[11] = formation.advance(dt, logoEnabled, pointer.down);
+    updateWaveSources(uniformData, uniformData[9], anchors, uniformData[11]);
     device.queue.writeBuffer(uniformBuffer, 0, uniformData);
 
     const encoder = device.createCommandEncoder();
@@ -698,7 +731,7 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
     schedule();
   });
   formationSelect.addEventListener('change', () => {
-    logoEnabled = formationSelect.value === 'branded'; settlingAgeS = 0;
+    logoEnabled = formationSelect.value === 'branded'; formation.retarget();
     redrawRequested = true; schedule();
   });
   countSelect.addEventListener('change', () => {

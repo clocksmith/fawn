@@ -1,0 +1,98 @@
+{
+  "sourceFiles": [
+    {
+      "file": "fawn-prismatic-fluids.html",
+      "sha256": "acebafd781fc57ad463aeeaefb820971602acfdaf0300c985af820831baffa36"
+    },
+    {
+      "file": "fawn-formation.js",
+      "sha256": "97fc59e704621215bda7b66908c86a9dd8f823ea98d95f0e078134f0a8cc4fc0"
+    }
+  ],
+  "classification": "Chrome fluid artwork; native animation frames, GPU buffer readback, emulated mobile. No model inference, mass-conservation, native Doe, or performance claim.",
+  "cases": [
+    {
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "captures": [
+        "1280-intro.png",
+        "1280-dispersed.png"
+      ],
+      "intro": {
+        "rows": [
+          {
+            "iou": 0.9299533022014677,
+            "insideMean": 0.6412966974517879,
+            "outsideMean": 0.0018779331273152328,
+            "max": 0.9398939609527588,
+            "finite": true,
+            "cells": 65536,
+            "targetCells": 5576
+          },
+          {
+            "iou": 0.9299533022014677,
+            "insideMean": 0.6412966974517879,
+            "outsideMean": 0.0018779331273152328,
+            "max": 0.9398939609527588,
+            "finite": true,
+            "cells": 65536,
+            "targetCells": 5576
+          }
+        ],
+        "strength": 1,
+        "errors": [],
+        "adapter": {
+          "vendor": "intel",
+          "architecture": "gen-12lp",
+          "isFallbackAdapter": false
+        },
+        "time": 0.21099600195884705,
+        "targetFinite": true
+      },
+      "dispersed": {
+        "rows": [
+          {
+            "iou": 0.5751624752755016,
+            "insideMean": 0.16197223063198446,
+            "outsideMean": 0.009023013613766251,
+            "max": 0.3100317120552063,
+            "finite": true,
+            "cells": 65536,
+            "targetCells": 5576
+          },
+          {
+            "iou": 0.5759413340854604,
+            "insideMean": 0.16293907461363397,
+            "outsideMean": 0.009066620161294458,
+            "max": 0.31188225746154785,
+            "finite": true,
+            "cells": 65536,
+            "targetCells": 5576
+          }
+        ],
+        "strength": 0.009120013564825058,
+        "errors": [],
+        "adapter": {
+          "vendor": "intel",
+          "architecture": "gen-12lp",
+          "isFallbackAdapter": false
+        },
+        "time": 2.5102999210357666,
+        "targetFinite": true
+      },
+      "openingForce": 0
+    }
+  ],
+  "errors": [],
+  "passed": false,
+  "browser": "136.0.7103.59",
+  "browserArgs": [
+    "--enable-unsafe-webgpu",
+    "--use-angle=vulkan",
+    "--enable-features=Vulkan",
+    "--disable-vulkan-surface"
+  ],
+  "headless": false
+}

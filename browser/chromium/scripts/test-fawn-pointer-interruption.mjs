@@ -44,8 +44,8 @@ try {
     await page.waitForFunction(() => !document.querySelector('#pause').disabled);
     if (gesture === 'pointer') { await page.mouse.move(450, 450); await page.mouse.down(); }
     else { await page.locator('#view').focus(); await page.keyboard.down('Space'); }
-    await page.waitForTimeout(200);
     const strengthIndex = kind === 'particles' ? 8 : 11;
+    await page.waitForFunction(i => interruptionProbe.uniforms[i] === 0, strengthIndex, { timeout: 30000 });
     assert.equal(await page.evaluate(i => interruptionProbe.uniforms[i], strengthIndex), 0);
     await page.evaluate(() => dispatchEvent(new Event('blur')));
     await page.waitForTimeout(1600);
