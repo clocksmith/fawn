@@ -124,22 +124,25 @@ def validate_public_docs(errors: list[str]) -> None:
                 fail(errors, f"{rel} hardcodes package benchmark percentage: {match.group(0)}")
 
     readme = read_text(ROOT / "README.md")
-    evidence_table_header = (
-        "| Backend | Surface or workload | Comparator | Result | Evidence state | Evidence |"
-    )
-    if evidence_table_header not in readme:
-        fail(errors, "README.md must contain the native Markdown backend evidence table")
-    if "Intel Tiger Lake Vulkan" not in readme:
-        fail(errors, "README.md backend evidence table must include Intel Tiger Lake Vulkan")
+    for evidence_path in (
+        "docs/backend-evidence-matrix.md",
+        "docs/doe-support-matrix.md",
+    ):
+        if evidence_path not in readme:
+            fail(errors, f"README.md must reference {evidence_path}")
+    backend_evidence = read_text(ROOT / "docs" / "backend-evidence-matrix.md")
+    if "Intel Tiger Lake Vulkan" not in backend_evidence:
+        fail(errors, "backend evidence matrix must include Intel Tiger Lake Vulkan")
     if "assets/readme/backend-evidence-summary.svg" in readme:
-        fail(errors, "README.md must use the native Markdown evidence table, not the legacy SVG")
+        fail(errors, "README.md must link current evidence, not the legacy SVG")
     if "reports/claim-index.json" not in readme:
         fail(errors, "README.md must reference reports/claim-index.json")
 
     package_readme = read_text(ROOT / "packages" / "doe-gpu" / "README.md")
     if "claim-indexed" not in package_readme or "diagnostic" not in package_readme:
         fail(errors, "packages/doe-gpu/README.md must explain claim-indexed and diagnostic evidence")
-    if "browser's incumbent WebGPU" not in package_readme:
+    browser_boundaries = ("browser's incumbent WebGPU", "browser's existing WebGPU")
+    if not any(boundary in package_readme for boundary in browser_boundaries):
         fail(errors, "packages/doe-gpu/README.md must keep doe-gpu/browser boundary explicit")
 
 
