@@ -1,5 +1,17 @@
 # Fawn hosted demonstrations
 
+The unified `fawn-cycle.html` rotates Flow → Wave → Particles on one simulation
+canvas and device. A shared visible-time controller pauses the schedule during
+input, manual pause and hidden tabs. GPU handoffs convert live dye/velocity to
+film relief, film cells to particles, and particle pigment/velocity back to the
+fluid grid. Material coordinates and formation strength remain shared while
+rendered effects blend. [Cycle evidence](../../reports/maintenance/20261012-fawn-cycle/README.md)
+records independent conversion references, complete rotations, buffer reuse,
+input, pause, reset, viewport/DPR changes and terminal failure. The cycle uses
+velocity advection for particles to retain interior material; the standalone
+benchmarks keep their preceding simulation definitions. This is browser artwork
+acceptance, not native Doe, physical-phone or performance qualification.
+
 [Responsive canvas and material evidence](../../reports/maintenance/20261012-fawn-responsive/README.md)
 reproduces and removes Particles' HTML focus frame, checks backing resolution and
 paused rotation across all hosted pages, and compares brighter Flow pigment on
@@ -43,9 +55,9 @@ redirect to CanvasContext with their demo filenames intact.
 The [live release manifest](https://canvascontext.com/release.json) identifies
 the published demo source and hosting package.
 
-The current hosting package opens Flow, while Particles remains available through
-the background switcher and its named page. Local changes do not update the live
-site until deployed. The browser launcher has its own local start page; existing
+The current hosting package opens the unified cycle with Flow first and no
+background selector. Named standalone pages remain benchmark reproduction routes.
+Local changes do not update the live site until deployed. The browser launcher has its own local start page; existing
 installations can retain an older packaged copy. The preview visibly links to Fawn's
 Chromium integration on GitHub and identifies the visitor's browser WebGPU
 backend in Settings. The preview has no search/address field.
