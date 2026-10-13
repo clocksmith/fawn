@@ -2,8 +2,12 @@
 
 This file owns browser integration acceptance. The milestone manifest
 [`bench/workflows/browser-milestones.json`](bench/workflows/browser-milestones.json)
-owns state; [GOALS.md](../../GOALS.md) selects work. Browser replacement remains
-separately selected and cannot inherit native or package qualification.
+owns state; [GOALS.md](../../GOALS.md) selects work. Chromium hooks and
+browser-runtime integration are added only when measured benefits justify their
+compatibility and maintenance costs; this file defines acceptance once that
+selection is made. Browser replacement cannot inherit native or package
+qualification. Fawn's durable workspaces above stock Chromium are governed
+separately by the [workspace contract](../../docs/fawn-workspace-contract.md).
 
 ## Scope
 
@@ -14,11 +18,12 @@ separately selected and cannot inherit native or package qualification.
 
 ## Product target
 
-Fawn is successful when a released Chromium-family archive runs an unchanged
-WebGPU application through forced Doe with independently verified output, real
-hardware identity, reliable lifecycle behavior, and either a narrowly measured
-advantage or a demonstrated compatibility benefit. Browser benchmark rows are
-supporting evidence, not the product outcome.
+The Chromium runtime integration is successful when a released Chromium-family
+archive runs an unchanged WebGPU application through forced Doe with
+independently verified output, real hardware identity, reliable lifecycle
+behavior, and a measured benefit that justifies the integration's compatibility
+and maintenance costs. Browser benchmark rows are supporting evidence, not the
+product outcome.
 
 The first promotion target is one exact-oracle application lane. Provider
 identity must come from the fail-closed runtime selector and bound runtime

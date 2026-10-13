@@ -129,7 +129,7 @@ Executors are adapters beneath the workload law:
 | --- | --- |
 | `pure` | Deterministic transforms, schemas, hashing, and rejection paths |
 | `native` | Runtime, compiler, and device-backed execution |
-| `browser` | Fawn or Chromium execution with browser and device evidence |
+| `browser` | Stock or forced-Doe Chromium execution with browser and device evidence |
 | `comparison` | Matched multi-product execution and structural equivalence |
 
 `zig test`, Python processes, native Metal, browser lanes, and Doe-versus-Dawn
@@ -185,7 +185,7 @@ corruption workload changes the expected digest and passes only when both
 providers reject it.
 
 The browser render slice executes one manifest row through stock Chromium with
-Dawn and Fawn with Doe. The projection manifest owns the render dimensions,
+Dawn and the forced-Doe Chromium build with Doe. The projection manifest owns the render dimensions,
 viewport/scissor rectangle, inside and outside colors, row layout, and expected
 SHA-256. Each runtime must match every RGBA8 byte and prove the selected runtime
 identity. Its paired corruption workload changes only the expected digest and

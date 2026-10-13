@@ -2,12 +2,15 @@
 
 This is a routing note, not a task list or status log.
 
-Fawn is the integrated durable browser-work product in the [strategy](thesis.md).
-The [workspace contract](fawn-workspace-contract.md) governs its selected shared
-service above stock Chromium/CDP/Playwright. Its roadmap lives in `fawnWorkspace`
+Fawn provides durable browser workspaces in the [strategy](thesis.md).
+The [workspace contract](fawn-workspace-contract.md) governs its shared
+observation, action, and recovery service above stock Chromium/CDP/Playwright,
+which is the next build. Its roadmap lives in `fawnWorkspace`
 in [the strategy projection](../config/doe-product-strategy.json); native runtime
 wins are not prerequisites. Workspace implementation and acceptance remain absent.
 
+Chromium hooks and browser-runtime integration are added only when measured
+benefits justify their compatibility and maintenance costs.
 Browser replacement is an optional deeper capability. Its bounded
 Chromium milestone follows ordinary execution, independent framework integration,
 and binding application transfer. Preserve WebGPU behavior through validation and
@@ -39,8 +42,9 @@ It submits through browser-owned WebGPU. The separately authorized native-loader
 investigation permits additional local software. Its
 [retained evidence](../reports/browser-runtime/20261005-stock-chrome/README.md)
 establishes loading and independent Doe computation inside Chrome's GPU process;
-the webpage's work remains Dawn-owned. Browser replacement is deferred while
-active integration returns to ONNX's procedure-table boundary.
+the webpage's work remains Dawn-owned. Browser replacement is deferred;
+DoeRuntime work stays on the Doppler Node generation advantage over Dawn on
+Vulkan and its subsequent ONNX transfer.
 
 When native browser replacement is explicitly reopened, first trace an ordinary
 webpage request through device creation, shader compilation, submission, mapped
@@ -63,7 +67,9 @@ comparison uses the same stock browser and runtime for the shared-service
 treatment and a competent Chromium/Playwright baseline. Legacy receipts retain
 their original meaning; neither shell gains nor GPU recovery qualify the service.
 
-The vertical product thesis evaluates four distinct operational lanes:
+In these retained lanes, `Fawn` names the legacy modified-Chromium shell build
+used by the matrix, not Fawn's durable workspace service above stock Chromium.
+The four distinct operational lanes are:
 
 - **Lane A:** Stock Chromium + Playwright + Dawn
 - **Lane B:** Fawn + Playwright + Dawn
@@ -104,8 +110,12 @@ an unchanged externally reachable application.
 
 ### Falsifiable decision rules
 
+A passing lane is necessary, not sufficient: adding a Chromium hook, the Direct
+Protocol, or browser-runtime integration also requires measured benefits that
+justify its compatibility and maintenance costs.
+
 1. **If B beats A but C does not beat B:**  
-   The Fawn browser shell and agent features have standalone value; DoeRuntime has not earned browser ownership.
+   The legacy Fawn shell build has standalone shell value; DoeRuntime has not earned browser ownership.
 2. **If C beats B but D does not beat C:**  
    DoeRuntime provides demonstrable browser acceleration; the Direct Protocol is unnecessary or immature.
 3. **If D reduces tokens but increases total task time:**  
@@ -119,7 +129,7 @@ an unchanged externally reachable application.
    Reject the measured shell-product claim; this cannot promote or qualify the
    independently governed workspace service.
 7. **If B does not beat A:**
-   Fawn has not earned standalone shell value.
+   The legacy Fawn shell build has not earned standalone shell value.
 8. **If C does not beat B:**
    DoeRuntime has not earned browser execution for that tuple.
 9. **If D does not beat C on the declared total task outcome:**

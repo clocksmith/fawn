@@ -7,7 +7,7 @@
   "required": ["$schema", "schemaVersion", "strategyVersion", "artifactKind", "authority", "positioning", "independenceBoundary", "surfaces", "commercialOffer", "comparisonLaw", "externalProductComparison", "evidenceSpine", "customerEvidencePolicy", "platformSequence", "milestones", "claimBoundary", "reusableProgram", "executionOwnership", "provingSet", "developmentEffectiveness", "fawnWorkspace"],
   "properties": {
     "$schema": { "type": "string", "const": "doe-product-strategy.schema.json" },
-    "schemaVersion": { "type": "integer", "const": 7 },
+    "schemaVersion": { "type": "integer", "const": 8 },
     "strategyVersion": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
     "artifactKind": { "type": "string", "const": "doe-product-strategy" },
     "authority": {
@@ -702,7 +702,7 @@
                 },
                 "requiredEvidence": {
                   "const": [
-                    "chromium-hooks-require-unavailable-authority-visibility-or-efficiency",
+                    "chromium-hooks-and-runtime-integration-require-measured-benefits-justifying-compatibility-and-maintenance-costs",
                     "doppler-owns-model-semantics",
                     "doeruntime-explicit-integration-independent-qualification",
                     "doelab-offline-improvements",

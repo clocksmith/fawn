@@ -450,7 +450,8 @@ Physical Metal and D3D12 testing are excluded from this milestone; AMD evidence
 does not qualify them or Electron renderer execution. Independent adoption is a
 separate product outcome. Release admission and authorized publication retain
 their own requirements. Broader shader, conformance, and model-transcript scope
-lives in [compiler and WebGPU](compiler-and-webgpu.md); Fawn remains experimental.
+lives in [compiler and WebGPU](compiler-and-webgpu.md); Chromium runtime
+integration remains experimental.
 
 ## Ground truth
 

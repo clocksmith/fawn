@@ -40,7 +40,7 @@ of repeated prose does not delete them.
 - [`process.md`](process.md): stage, gate, and release law
 - [`status.md`](status.md): concise current-status routing
 - [`repo-taxonomy.md`](repo-taxonomy.md): repository ownership
-- [`glossary.md`](glossary.md): terminology
+- [`glossary.md`](glossary.md): product names and qualified legacy terms
 - [`licensing.md`](licensing.md): licensing and third-party boundaries
 - [`upgrade-policy.md`](upgrade-policy.md): compatibility and migrations
 
@@ -81,13 +81,17 @@ of repeated prose does not delete them.
 
 ## Browser
 
-- [`fawn-workspace-contract.md`](fawn-workspace-contract.md): durable human/agent
-  workspace authority, action recovery, reusable workflows and prospective acceptance
+- [`fawn-workspace-contract.md`](fawn-workspace-contract.md): Fawn's durable
+  browser workspaces — authority, action recovery, reusable workflows and
+  prospective acceptance
 - [`status/fawn-workspace.md`](status/fawn-workspace.md): missing implementation
   and acceptance boundary, independent of artwork and runtime integration
-- [`browser-lane.md`](browser-lane.md): A/B/C/D attribution plus the separate
-  Cloudflare Kitesurf K0 external-product comparator
-- [`fawn-fork-maintenance-policy.md`](fawn-fork-maintenance-policy.md)
+- [`browser-lane.md`](browser-lane.md): optional Chromium runtime integration,
+  retained A/B/C/D attribution, and the separate Cloudflare Kitesurf K0
+  external-product comparator
+- [`fawn-fork-maintenance-policy.md`](fawn-fork-maintenance-policy.md):
+  conditional Chromium fork maintenance cost, applicable only after a
+  measured-benefit selection
 
 ## Cerebras and CSL
 

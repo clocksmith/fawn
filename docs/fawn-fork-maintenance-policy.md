@@ -1,5 +1,12 @@
 # Doe Chromium fork maintenance policy
 
+Status: **conditional; no maintained fork is currently selected**. Chromium hooks
+and browser-runtime integration are added only when measured benefits justify
+their compatibility and maintenance costs. This policy states the maintenance
+cost such a selection accepts and applies only after that decision. Fawn's
+durable browser workspaces run above stock Chromium and require no fork; see the
+[workspace contract](fawn-workspace-contract.md).
+
 Purpose:
 - define how the Doe Chromium lane stays current on Chromium security updates while carrying the minimum Doe integration delta.
 

@@ -38,7 +38,7 @@ and retired root directories. Generated output and dependency trees are outside
 the owned Python source scan. There is no second Zig line-limit policy.
 
 Vulkan is the current engineering focus. The [browser integration](../browser/chromium/README.md),
-[Fawn resources](../browser/chromium/resources/), [demos](../demos/),
+[hosted demonstration pages](../browser/chromium/resources/), [demos](../demos/),
 [spatial/Cerebras path](cerebras.md), and
 [upstream research](../pipeline/agent/README.md) retain separate owners and
 acceptance boundaries. Their presence does not select another optimization
