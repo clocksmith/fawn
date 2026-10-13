@@ -1,10 +1,17 @@
 # Fawn hosted demonstrations
 
-[Magnetic release and interaction timing](../../reports/maintenance/20261013-fawn-magnetic-release/README.md)
-soften Magnetic attraction and add a bounded outward release pulse charged by
-holding. Mouse and touch cancellation do not trigger it. Interaction preserves
-early scene progress and caps late progress before the transition quiet interval;
-an existing blend is held continuously and its GPU handoff is not repeated.
+[Cycle timing repair](../../reports/maintenance/20261013-fawn-cycle-24s/README.md)
+implements the user-selected complete rotation and per-background transition
+policy. Movement defers upcoming blends; started blends finish uninterrupted.
+Logo formation preserves progress and resumes smoothly after the quiet interval.
+Software WebGPU rotations and input checks pass; complete Safari rotation remains
+unqualified because automation became hidden. The live release manifest below
+identifies deployed bytes.
+
+[Magnetic release](../../reports/maintenance/20261013-fawn-magnetic-release/README.md)
+softens attraction and adds a bounded outward pulse charged by holding. Mouse
+and touch cancellation do not trigger it. Its retained clock-deferral evidence
+predates the cycle timing repair above.
 
 [Softer Particle input](../../reports/maintenance/20261013-fawn-particle-soften/report.json)
 reduces the Particle press multiplier while retaining outward motion. Magnetic

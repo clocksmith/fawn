@@ -43,12 +43,10 @@ report.harnessSha256 = createHash('sha256')
 const clock = createCycleClock();
 assert.equal(clock.advance(CYCLE_POLICY.holdS).started, true);
 assert.equal(clock.advance(CYCLE_POLICY.blendS / 2).blend, 0.5);
-const deferred = clock.advance(0.5, true);
-assert.equal(deferred.phaseS, CYCLE_POLICY.holdS - CYCLE_POLICY.interactionQuietS);
-assert.equal(deferred.blend, 0.5, 'Late input preserves the visible blend');
-assert.equal(deferred.started, false, 'Late input must not repeat a GPU handoff');
-assert.equal(clock.advance(CYCLE_POLICY.interactionQuietS).blend, 0.5);
-assert.equal(clock.advance(CYCLE_POLICY.blendS).effect, 'wave');
+const continuing = clock.advance(0.5, true);
+assert.ok(continuing.blend > 0.5, 'Input cannot pause an active blend');
+assert.equal(continuing.started, false, 'Input must not repeat a GPU handoff');
+assert.equal(clock.advance(CYCLE_POLICY.blendS / 2 - 0.5).effect, 'wave');
 assert.equal(clock.advance(0).blend, 0);
 assert.throws(() => clock.advance(-1), /Invalid cycle timestep/);
 clock.reset();
@@ -551,14 +549,10 @@ try {
       'Incoming particles retain material in the center',
     );
     assert.ok(timeline[2].fields['Cycle dye 0'].energy > 0);
-    // Held input releases the logo and caps late scene time without restarting it.
-    await advance(
-      page,
-      Math.floor(
-        (CYCLE_POLICY.holdS - 100 * CYCLE_POLICY.maxDtS + CYCLE_POLICY.blendS / 2) /
-          CYCLE_POLICY.maxDtS,
-      ),
-    );
+    // Hold before a transition starts; an already active blend must finish.
+    await page.locator('#restart').click();
+    await advance(page, 2);
+    await advance(page, 120);
     const before = await state(page);
     await page.mouse.move(viewport.width / 2, viewport.height / 2);
     await page.mouse.down();
@@ -572,8 +566,8 @@ try {
       'Pressing releases the branded formation',
     );
     await page.mouse.up();
-    await advance(page, 200 + Math.ceil(
-      (CYCLE_POLICY.interactionQuietS + CYCLE_POLICY.blendS) / CYCLE_POLICY.maxDtS,
+    await advance(page, Math.ceil(
+      (CYCLE_POLICY.interactionQuietS + CYCLE_POLICY.blendS + 5) / CYCLE_POLICY.maxDtS,
     ));
     assert.ok(
       (await page.evaluate(
