@@ -1,5 +1,10 @@
 # Fawn hosted demonstrations
 
+[Softer Particle input](../../reports/maintenance/20261013-fawn-particle-soften/report.json)
+reduces the Particle press multiplier while retaining outward motion. Magnetic
+attraction and hover keep their prior strengths; signed forces blend continuously
+between scenes. Software WebGPU readback verifies direction and finite state.
+
 [Settlement evidence](../../reports/maintenance/20261013-fawn-settlement/README.md)
 retains the slow-frame mismatch between the formation envelope and actual parcel
 positions. Parcel gathering now uses the same capped visible time as formation,
