@@ -47,3 +47,8 @@ qualification. Hosted release identity remains `https://canvascontext.com/releas
   final browser receipt separately binds the corrected layout and runtime.
 - [`timing.json`](timing.json): unchanged scene cadence and input attenuation,
   shared formation continuity, and the shorter cycle-only envelope pass.
+
+- [`footer.json`](footer.json): the corrected graph flexes to keep the populated
+  FPS counter, Settings and GitHub on one row; physical gathering/dwell still
+  passes across every effect at desktop and narrow mobile sizes. This follows
+  screenshot review that exposed wrapping after the initial counter updated.

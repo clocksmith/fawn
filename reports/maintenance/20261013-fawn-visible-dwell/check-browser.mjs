@@ -132,6 +132,7 @@ try {
     });
     if (!baseline) {
       assert.equal(await page.locator('#pause, #restart').count(), 0);
+      await page.evaluate(() => document.querySelector('#frame').textContent = '240 fps');
       const boxes = await page.locator('.metrics #frame, .metrics summary, .metrics .project-link').evaluateAll(elements => elements.map(e => {const r=e.getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height};}));
       assert.equal(boxes.length, 3);
       assert.ok(Math.max(...boxes.map(b => b.y+b.height/2))-Math.min(...boxes.map(b => b.y+b.height/2)) < 2, 'FPS, Settings and GitHub share the footer row');

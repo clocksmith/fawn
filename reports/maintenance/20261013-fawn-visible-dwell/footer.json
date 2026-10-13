@@ -1,0 +1,205 @@
+{
+  "passed": true,
+  "baseline": null,
+  "harnessSha256": "dd4f37e5ed6585e3d375bb816235954161521e3a28e096076104bfa9ee1d1368",
+  "classification": "Software WebGPU continuity diagnostic; no physical GPU, Safari or performance qualification",
+  "sources": [
+    {
+      "file": "fawn-cycle.js",
+      "sha256": "aeed1a22a01d091030d9964a8b4cac4f93f67ce3fd26c04f2872a0c1e8859c7d"
+    },
+    {
+      "file": "fawn-cycle-clock.js",
+      "sha256": "bfddcd36e5239275a6cb63357803988a25fdf7c7106b6765a2fef968a2e31dca"
+    },
+    {
+      "file": "fawn-cycle-gpu.js",
+      "sha256": "58459e181b52f9a8483b703a4c05a57c28e8fe38443a9e46f94374e123a892a2"
+    },
+    {
+      "file": "fawn-formation.js",
+      "sha256": "1884541f507e4f3350207f4972fa95f33248e96c90f6b6c0ebc7019e7cc61fd1"
+    },
+    {
+      "file": "fawn-parcels.js",
+      "sha256": "7204dd4254e16ec4f0fb157a682c80447f1dc9dcb0af5cbabd352a81b6c28ca2"
+    },
+    {
+      "file": "fawn-parcel-renderer.js",
+      "sha256": "33ed18454c0c060f0846a97b357ba9c580ce7ed7cac2e527591c7415ae8d9cad"
+    },
+    {
+      "file": "fawn-cycle-transfers.js",
+      "sha256": "2b82e3b8014b548a369e3712b76a2240737bdb80ce4142013e3a19a965b404f1"
+    },
+    {
+      "file": "fawn-shaders.js",
+      "sha256": "b4707394916fda87a3dfadb041928610e9e7ef255898d69ed95644b7266c7898"
+    },
+    {
+      "file": "fawn-cycle.html",
+      "sha256": "e44a840e9fa890e9cd49a90dae8cefa29ed2b88de05b6b2b3ff1c9241f0230c0"
+    }
+  ],
+  "cases": [
+    {
+      "viewport": {
+        "width": 640,
+        "height": 400
+      },
+      "count": 1024,
+      "boundaries": [
+        {
+          "scene": 0,
+          "gathered": {
+            "within": 1,
+            "p95": 0.00001913596886236297,
+            "max": 0.000033322250276650835
+          },
+          "held": {
+            "within": 1,
+            "p95": 6.332993507385254e-8,
+            "max": 1.3328003749250113e-7
+          },
+          "verifiedDwellS": 1.2,
+          "shape": 1,
+          "elapsed": 7.050000190734863,
+          "middle": [
+            0.5,
+            0.5,
+            0
+          ],
+          "effect": "Magnets",
+          "handoffs": 1
+        },
+        {
+          "scene": 1,
+          "gathered": {
+            "within": 1,
+            "p95": 0.0000061806057710783984,
+            "max": 0.000020413791378057807
+          },
+          "held": {
+            "within": 1,
+            "p95": 4.2146848510894035e-8,
+            "max": 1.0745380149674385e-7
+          },
+          "verifiedDwellS": 1.2,
+          "shape": 1,
+          "elapsed": 14.050000190734863,
+          "middle": [
+            0,
+            0.5,
+            0.5
+          ],
+          "effect": "Particles",
+          "handoffs": 1
+        },
+        {
+          "scene": 2,
+          "gathered": {
+            "within": 1,
+            "p95": 0.000007996560155192397,
+            "max": 0.000016926466375407257
+          },
+          "held": {
+            "within": 1,
+            "p95": 4.2146848510894035e-8,
+            "max": 8.429369702178807e-8
+          },
+          "verifiedDwellS": 1.2,
+          "shape": 1,
+          "elapsed": 21.049999237060547,
+          "middle": [
+            0.5,
+            0,
+            0.5
+          ],
+          "effect": "Flows",
+          "handoffs": 3
+        }
+      ],
+      "interactions": []
+    },
+    {
+      "viewport": {
+        "width": 300,
+        "height": 500
+      },
+      "count": 1024,
+      "boundaries": [
+        {
+          "scene": 0,
+          "gathered": {
+            "within": 1,
+            "p95": 0.000015485884353537332,
+            "max": 0.000029684125586811095
+          },
+          "held": {
+            "within": 1,
+            "p95": 5.6864088484919626e-8,
+            "max": 1.490161593425986e-7
+          },
+          "verifiedDwellS": 1.2,
+          "shape": 1,
+          "elapsed": 7.050000190734863,
+          "middle": [
+            0.5,
+            0.5,
+            0
+          ],
+          "effect": "Magnets",
+          "handoffs": 1
+        },
+        {
+          "scene": 1,
+          "gathered": {
+            "within": 1,
+            "p95": 0.000006277205971799219,
+            "max": 0.00001689975798558973
+          },
+          "held": {
+            "within": 1,
+            "p95": 3.332000937312528e-8,
+            "max": 9.424321830774485e-8
+          },
+          "verifiedDwellS": 1.2,
+          "shape": 1,
+          "elapsed": 14.050000190734863,
+          "middle": [
+            0,
+            0.5,
+            0.5
+          ],
+          "effect": "Particles",
+          "handoffs": 1
+        },
+        {
+          "scene": 2,
+          "gathered": {
+            "within": 1,
+            "p95": 0.000006759422990633455,
+            "max": 0.000017081800100741985
+          },
+          "held": {
+            "within": 1,
+            "p95": 4.2146848510894035e-8,
+            "max": 8.524050380680232e-8
+          },
+          "verifiedDwellS": 1.2,
+          "shape": 1,
+          "elapsed": 21.049999237060547,
+          "middle": [
+            0.5,
+            0,
+            0.5
+          ],
+          "effect": "Flows",
+          "handoffs": 3
+        }
+      ],
+      "interactions": []
+    }
+  ],
+  "browser": "155.0.8059.40"
+}
