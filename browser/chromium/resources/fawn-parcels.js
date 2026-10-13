@@ -1,6 +1,6 @@
 // Persistent moving material. Formation edits parcel positions, never the camera or a quad.
 const PARCEL_POLICY = Object.freeze({
-  version: 1,
+  version: 2,
   strideFloats: 12,
   workgroup: 128,
   targetGrid: 384,
@@ -71,7 +71,8 @@ fn main(@builtin(global_invocation_id) gid:vec3<u32>) {
  let goal=goals[hash%arrayLength(&goals)].xy;
  // Different parcel arrival rates break the rectangular envelope of a uniform zoom.
  let arrival=0.35+1.65*f32((hash>>16u)&65535u)/65535.0;
- let recovery=(1.0-exp(-${PARCEL_POLICY.settleRate}.0*dt*arrival))*shape;
+ // Gathering follows visible formation time, independently of the fluid stability timestep.
+ let recovery=1.0-exp(-${PARCEL_POLICY.settleRate}.0*u.pointer.w*arrival*shape);
  p.pos=mix(p.pos,goal,recovery);
  let index=cell(vec2<i32>((p.pos*0.5+0.5)*u.grid.x));
  let dye=clamp(flowDye[index].rgb,vec3<f32>(0),vec3<f32>(8));

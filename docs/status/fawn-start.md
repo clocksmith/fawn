@@ -1,5 +1,12 @@
 # Fawn hosted demonstrations
 
+[Settlement evidence](../../reports/maintenance/20261013-fawn-settlement/README.md)
+retains the slow-frame mismatch between the formation envelope and actual parcel
+positions. Parcel gathering now uses the same capped visible time as formation,
+while fluid integration retains its stability limit. Recovery is exponential in
+elapsed time and strength. Input recovery and repeated cycle checks are software
+WebGPU diagnostics; physical Safari and performance qualification remain separate.
+
 [Pointer-direction checks](../../reports/maintenance/20261013-fawn-pointer-direction/report.json)
 confirm that pressed Magnetic input attracts parcels while pressed Particle input
 repels them. Direction blends with the active scene weights; gentler hover and
