@@ -1,6 +1,6 @@
 // Persistent moving material. Formation edits parcel positions, never the camera or a quad.
 const PARCEL_POLICY = Object.freeze({
-  version: 4,
+  version: 5,
   strideFloats: 12,
   workgroup: 128,
   targetGrid: 384,
@@ -9,7 +9,8 @@ const PARCEL_POLICY = Object.freeze({
   velocityResponse: 12,
   colorResponse: 3,
   settleRate: 6,
-  settleDamping: 8,
+  boundaryBand: 0.025,
+  boundaryIterations: 3,
   worldEdge: 1.65,
   initialRadius: 1.65,
 });
@@ -24,6 +25,16 @@ struct Params { grid: vec4<f32>, theme: vec4<f32>, pointer: vec4<f32>, burst: ve
 @group(0) @binding(5) var<storage,read> flowDye: array<vec4<f32>>;
 @group(0) @binding(6) var<storage,read> waveSurface: array<vec4<f32>>;
 @group(0) @binding(7) var<storage,read> flowCurl: array<vec4<f32>>;
+@group(0) @binding(8) var<storage,read> logoBoundary: array<vec4<f32>>;
+fn mark_at(pos:vec2<f32>)->vec4<f32> {
+ let size=${PARCEL_POLICY.targetGrid}.0;
+ let p=clamp((pos*0.5+0.5)*size-0.5,vec2<f32>(0),vec2<f32>(size-1));
+ let b=vec2<u32>(floor(p));let f=fract(p);let edge=u32(size)-1u;
+ let q=min(b+vec2<u32>(1),vec2<u32>(edge));
+ let mark=mix(mix(logoBoundary[b.y*u32(size)+b.x],logoBoundary[b.y*u32(size)+q.x],f.x),
+   mix(logoBoundary[q.y*u32(size)+b.x],logoBoundary[q.y*u32(size)+q.x],f.x),f.y);
+ return vec4<f32>(mark.xyz,mark.w*2.0);
+}
 fn cell(p:vec2<i32>)->u32 {
  let q=clamp(p,vec2<i32>(0),vec2<i32>(i32(u.grid.x)-1));return u32(q.y)*u32(u.grid.x)+u32(q.x);
 }
@@ -60,9 +71,9 @@ fn spectral(phase:f32)->vec3<f32> { return 0.5+0.5*cos(vec3<f32>(0,2,4)+phase*6.
 @compute @workgroup_size(${PARCEL_POLICY.workgroup})
 fn main(@builtin(global_invocation_id) gid:vec3<u32>) {
  let i=gid.x;if(i>=arrayLength(&src)){return;}
- var p=src[i];let dt=u.grid.z;let shape=u.theme.w;let live=1.0-shape;
+ var p=src[i];let dt=u.grid.z;let shape=u.theme.w;
  let hash=(i*1664525u+1013904223u)^(i>>9u);
- let v0=velocity_at(p.pos);let midpoint=p.pos+v0*(dt*live*0.5);
+ let v0=velocity_at(p.pos);let midpoint=p.pos+v0*(dt*0.5);
  var targetVelocity=velocity_at(midpoint);
  if(u.burst.z>0.0){
   let away=p.pos-u.burst.xy;let distance=length(away);
@@ -72,16 +83,28 @@ fn main(@builtin(global_invocation_id) gid:vec3<u32>) {
   targetVelocity+=direction*u.burst.z*(1.0-smoothstep(0.0,u.burst.w,distance));
   targetVelocity/=max(1.0,length(targetVelocity)/${PARCEL_POLICY.speedLimit});
  }
+ // The mark constrains the boundary; the interior still follows its live vector field.
+ let before=mark_at(p.pos);
+ let inward=before.xy/max(length(before.xy),0.000001);
+ let nearEdge=1.0-smoothstep(0.0,${PARCEL_POLICY.boundaryBand},before.w);
+ targetVelocity-=inward*min(0.0,dot(targetVelocity,inward))*nearEdge*shape;
  let response=1.0-exp(-${PARCEL_POLICY.velocityResponse}.0*dt);
- p.vel=mix(p.vel,targetVelocity,response)*exp(-${PARCEL_POLICY.settleDamping}.0*dt*shape);
- p.pos+=targetVelocity*(dt*live);
+ p.vel=mix(p.vel,targetVelocity,response);
+ p.pos+=targetVelocity*dt;
  p.pos/=max(1.0,length(p.pos)/${PARCEL_POLICY.worldEdge});
  let goal=goals[hash%arrayLength(&goals)].xy;
  // Different parcel arrival rates break the rectangular envelope of a uniform zoom.
  let arrival=0.35+1.65*f32((hash>>16u)&65535u)/65535.0;
  // Gathering follows visible formation time, independently of the fluid stability timestep.
- let recovery=1.0-exp(-${PARCEL_POLICY.settleRate}.0*u.pointer.w*arrival*shape);
+ let inside=smoothstep(-${PARCEL_POLICY.boundaryBand},0.0,before.w);
+ let recovery=1.0-exp(-${PARCEL_POLICY.settleRate}.0*u.pointer.w*arrival*shape*(1.0-inside));
  p.pos=mix(p.pos,goal,recovery);
+ // Project only captured material, so distant parcels gather continuously from their own state.
+ for(var step=0;step<${PARCEL_POLICY.boundaryIterations};step++){
+  let mark=mark_at(p.pos);let normal=mark.xy/max(length(mark.xy),0.000001);
+  let captured=smoothstep(-${PARCEL_POLICY.boundaryBand},0.0,before.w);
+  p.pos-=normal*min(0.0,mark.w)*shape*captured;
+ }
  let index=cell(vec2<i32>((p.pos*0.5+0.5)*u.grid.x));
  let dye=clamp(flowDye[index].rgb,vec3<f32>(0),vec3<f32>(8));
  let flow=flow_at(p.pos);let film=wave_at(p.pos);let curl=flowCurl[index].y;
@@ -90,7 +113,7 @@ fn main(@builtin(global_invocation_id) gid:vec3<u32>) {
  let wantedColor=mix(p.color.rgb,dye,0.12)*u.theme.x+waveColor*u.theme.y+p.color.rgb*u.theme.z;
  let wantedMaterial=vec4<f32>((dot(dye,vec3<f32>(0.333))+length(flow.xy)*0.18)*u.theme.x+film.x*u.theme.y,
    reflection,sign(curl)*log(1.0+abs(curl)),length(p.vel));
- let colorResponse=(1.0-exp(-${PARCEL_POLICY.colorResponse}.0*dt))*live;
+ let colorResponse=1.0-exp(-${PARCEL_POLICY.colorResponse}.0*dt);
  p.color=vec4<f32>(mix(p.color.rgb,wantedColor,colorResponse),1);
  p.material=clamp(mix(p.material,wantedMaterial,colorResponse),vec4<f32>(-8),vec4<f32>(8));
  dst[i]=p;

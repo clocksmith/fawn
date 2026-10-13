@@ -1,6 +1,6 @@
 // Surface and point appearances reconstruct the same independently moving parcels.
 const PARCEL_RENDER_POLICY = Object.freeze({
-  version: 5,
+  version: 6,
   accumulationCapacity: 4096,
   materialBound: 8,
   fluidRadiusCells: 2.2,
@@ -12,6 +12,8 @@ const PARCEL_RENDER_POLICY = Object.freeze({
   flowGlintSharpness: 12,
   flowSaturation: 0.7,
   backgroundGlintStrength: 0.032,
+  filmPigmentMix: 0.62,
+  filmAmbientLight: 0.65,
 });
 const HEADER = `
 struct Params { view:vec4<f32>, screen:vec4<f32>, theme:vec4<f32>, material:vec4<f32> }
@@ -81,15 +83,20 @@ fn spectral(t:f32)->vec3<f32> {return 0.5+0.5*cos(vec3<f32>(0,2,4)+t*6.28318);}
  let flowLight=pigment*(0.92+material.w*0.24)+flowPrism*abs(material.z)*0.030
    +metallic*(0.22+material.x*0.14)
    +vec3<f32>(1.0,0.96,0.93)*shimmer*(0.25+glint*0.75)*${PARCEL_RENDER_POLICY.flowGlintStrength};
- let flowTone=1.0-exp(-max(flowLight,vec3<f32>(0))*${PARCEL_RENDER_POLICY.exposure});
- let flowColor=mix(vec3<f32>(dot(flowTone,vec3<f32>(0.2126,0.7152,0.0722))),flowTone,${PARCEL_RENDER_POLICY.flowSaturation});
- let waveColor=prism*ridge*(0.02+contour*0.40+fresnel*0.16)+vec3<f32>(0.8,0.88,1)*specular*ridge*0.28;
+ let waveLight=mix(pigment,prism,${PARCEL_RENDER_POLICY.filmPigmentMix})*(${PARCEL_RENDER_POLICY.filmAmbientLight}+ridge*(0.02+contour*0.40+fresnel*0.16))
+   +vec3<f32>(0.8,0.88,1)*specular*ridge*0.28;
+ let fluidWeight=u.theme.x+u.theme.y;
+ // Interpolate carried material in linear light before exposure, keeping relief-free film visible.
+ let fluidLight=(flowLight*u.theme.x+waveLight*u.theme.y)/max(fluidWeight,0.000001);
+ let fluidTone=1.0-exp(-max(fluidLight,vec3<f32>(0))*${PARCEL_RENDER_POLICY.exposure});
+ let saturation=1.0-(1.0-${PARCEL_RENDER_POLICY.flowSaturation})*u.theme.x;
+ let fluidColor=mix(vec3<f32>(dot(fluidTone,vec3<f32>(0.2126,0.7152,0.0722))),fluidTone,saturation);
  let pointColor=pigment*(0.85+material.w*0.15);
  let coverage=1.0-exp(-density*${PARCEL_RENDER_POLICY.coverageGain});
  let background=vec3<f32>(0.040,0.055,0.070)*u.theme.x+vec3<f32>(0.003,0.004,0.006)*u.theme.y
    +vec3<f32>(0.010,0.016,0.013)*u.theme.z
    +vec3<f32>(1.0,0.96,0.93)*shimmer*${PARCEL_RENDER_POLICY.backgroundGlintStrength}*u.theme.x;
- let appearance=flowColor*u.theme.x+waveColor*u.theme.y+pointColor*u.theme.z;
+ let appearance=fluidColor*fluidWeight+pointColor*u.theme.z;
  return vec4<f32>(mix(background,max(appearance,background),coverage),1);
 }
 `;

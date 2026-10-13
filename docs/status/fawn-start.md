@@ -1,13 +1,12 @@
 # Fawn hosted demonstrations
 
-[Visible logo dwell and footer controls](../../reports/maintenance/20261013-fawn-visible-dwell/README.md)
-correct the formation-versus-transition mismatch while preserving the scheduled
-scene cadence. Physical parcel readback checks gathering before the fade and
-continued dwell; formation-envelope checks alone were insufficient.
-[Deployment verification](../../reports/maintenance/20261013-fawn-visible-dwell/deployment.json)
-binds the published bytes and hosted checks. Settings now shares the footer with FPS and GitHub. Pause and Reset buttons
-are removed; keyboard motion control and reduced-motion behavior remain.
-[Prior envelope-only status](archive/20261013-fawn-envelope-only.md) is retained.
+[Living logo and material transitions](../../reports/maintenance/20261013-fawn-living-logo/README.md)
+replace static target locking with a silhouette boundary. Live vector fields,
+parcel advection and carried material continue during branding. Fluid lighting
+interpolates before exposure and preserves visible film without requiring relief.
+The source-bound diagnostic compares live GPU state and transition pixels against
+the retained frozen/dark baseline. Scene timing and footer controls remain unchanged.
+[Prior static-dwell status](archive/20261013-fawn-static-dwell.md) is retained.
 
 [Magnetic release](../../reports/maintenance/20261013-fawn-magnetic-release/README.md)
 softens attraction and adds a bounded outward pulse charged by holding. Mouse

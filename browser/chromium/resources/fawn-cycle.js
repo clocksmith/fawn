@@ -159,13 +159,12 @@ async function frame(now) {
     shape = formation.advance(
       elapsedDt, logoEnabled, interacting || cycle.transitioning, interacting, cycle.blend,
     );
-    const liveDt = dt * (1 - shape);
-    time += liveDt;
+    time += dt;
     gpu.uniforms(dt, time, shape, pointer, Number(stepsSelect.value), weights, elapsedDt, burst,
       cycle.interactionScale);
     const encoder = device.createCommandEncoder({ label: 'Fawn cycle frame' });
     if (cycle.started) gpu.handoff(encoder, cycle.effect);
-    if (liveDt > 0) {
+    if (dt > 0) {
       gpu.simulate(encoder, cycle.effect, Number(stepsSelect.value));
       if (cycle.transitioning) gpu.simulate(encoder, cycle.next, Number(stepsSelect.value));
     }

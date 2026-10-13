@@ -29,11 +29,12 @@ Outputs:
 - Release candidates pass isolated clean installation using only packaged inputs.
 - Forced Doe fails closed; governed fallback remains explicit and typed.
 - Browser launch alone is integration evidence, not application or performance value.
-- Hosted artwork switches scenes on its visible-time schedule independently of
-  pointer and touch input. Crossfades smoothly attenuate input forces without
-  delaying GPU handoffs or resetting the moving material.
+- Hosted artwork keeps input-independent visible-time scheduling and smooth input
+  attenuation without delaying GPU handoffs or resetting the moving material.
 - Logo recovery leaves a readable dwell before a scheduled crossfade; acceptance
   checks actual parcel positions rather than the formation envelope alone.
+- Branded silhouettes retain live fields, parcel advection and material updates.
+  Fluid transitions interpolate carried light and keep flat film visible.
 
 ## Acceptance
 
