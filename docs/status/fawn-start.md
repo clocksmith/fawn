@@ -1,10 +1,18 @@
 # Fawn hosted demonstrations
 
+[Cycle continuity checks](../../reports/maintenance/20261013-fawn-cycle-continuity/README.md)
+retain the preceding abrupt-release failure and repeated wraparound checks.
+Scheduled formation release follows the effect blend; delayed frames cannot skip
+the visible handoff. Flow's background shimmer is brighter without changing its
+fluid saturation or foreground highlights. Evidence remains software WebGPU
+artwork diagnostics; physical Safari and device performance are not established.
+
 The unified `fawn-cycle.html` rotates Flows → Magnets → Particles on one simulation
 canvas and device. Initial particle counts use desktop or mobile presets;
 Settings choices survive rotation and Reset. Standalone benchmark defaults
 retain their prior definitions. Scene time advances independently
-of input and the clamped physics timestep. Input releases logo formation; idle
+of input and the clamped physics timestep, with bounded catch-up after a stall.
+Input releases logo formation; idle
 input returns to Fawn. Pause and hidden tabs still stop the schedule.
 All effects render the same resident parcels, preserving their
 positions and carried pigment through mode changes. The live Flow and Wave fields

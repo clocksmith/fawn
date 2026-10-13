@@ -1,0 +1,121 @@
+{
+  "baselineRef": "68e0ff8e4",
+  "classification": "Software WebGPU artwork comparison; no native Doe, physical GPU, or performance qualification",
+  "sources": {
+    "baseline": "b68edc4109fd65b88478938e87e54032e2df998e930f06d2cb2d231303a46ebf",
+    "candidate": "33ed18454c0c060f0846a97b357ba9c580ce7ed7cac2e527591c7415ae8d9cad"
+  },
+  "screens": [
+    {
+      "width": 1100,
+      "effects": {
+        "flow": {
+          "meanChannelDelta": 0.002523524720893142,
+          "changedFraction": 0.007305023923444976,
+          "maxRGBDelta": 8
+        },
+        "wave": {
+          "meanChannelDelta": 0,
+          "changedFraction": 0,
+          "maxRGBDelta": 0
+        },
+        "particles": {
+          "meanChannelDelta": 0,
+          "changedFraction": 0,
+          "maxRGBDelta": 0
+        },
+        "chroma": {
+          "before": 42.37687918660287,
+          "after": 42.3770538277512
+        },
+        "backgroundLight": {
+          "Before": {
+            "mean": 14.456816188197408,
+            "max": 17
+          },
+          "After": {
+            "mean": 15.22148963317094,
+            "max": 21.666666666666668
+          }
+        },
+        "background": {
+          "meanChannelDelta": 0.7646734449760766,
+          "changedFraction": 0.3268672248803828,
+          "maxRGBDelta": 14
+        },
+        "backgroundAnimation": {
+          "meanChannelDelta": 0.6101570972886763,
+          "changedFraction": 0.36046052631578945,
+          "maxRGBDelta": 10
+        },
+        "animation": {
+          "meanChannelDelta": 1.1831945773524721,
+          "changedFraction": 0.892433014354067,
+          "maxRGBDelta": 25
+        }
+      },
+      "adapter": {
+        "vendor": "google",
+        "architecture": "swiftshader"
+      },
+      "errors": [],
+      "count": 65536
+    },
+    {
+      "width": 390,
+      "effects": {
+        "flow": {
+          "meanChannelDelta": 0.0023695456590193432,
+          "changedFraction": 0.00701417004048583,
+          "maxRGBDelta": 3
+        },
+        "wave": {
+          "meanChannelDelta": 0,
+          "changedFraction": 0,
+          "maxRGBDelta": 0
+        },
+        "particles": {
+          "meanChannelDelta": 0,
+          "changedFraction": 0,
+          "maxRGBDelta": 0
+        },
+        "chroma": {
+          "before": 42.4497334682861,
+          "after": 42.44957827260459
+        },
+        "backgroundLight": {
+          "Before": {
+            "mean": 14.46026540710681,
+            "max": 17
+          },
+          "After": {
+            "mean": 15.231132478631782,
+            "max": 21.666666666666668
+          }
+        },
+        "background": {
+          "meanChannelDelta": 0.7708670715249663,
+          "changedFraction": 0.3291531713900135,
+          "maxRGBDelta": 14
+        },
+        "backgroundAnimation": {
+          "meanChannelDelta": 0.616736392262708,
+          "changedFraction": 0.363168016194332,
+          "maxRGBDelta": 10
+        },
+        "animation": {
+          "meanChannelDelta": 1.1894107062528114,
+          "changedFraction": 0.8950067476383265,
+          "maxRGBDelta": 26
+        }
+      },
+      "adapter": {
+        "vendor": "google",
+        "architecture": "swiftshader"
+      },
+      "errors": [],
+      "count": 16384
+    }
+  ],
+  "passed": true
+}

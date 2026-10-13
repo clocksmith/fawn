@@ -1,0 +1,58 @@
+{
+  "passed": false,
+  "baseline": "68e0ff8e4",
+  "classification": "Software WebGPU continuity diagnostic; no physical GPU, Safari or performance qualification",
+  "sources": [
+    {
+      "file": "fawn-cycle.js",
+      "sha256": "6447dab40dfd9a907acff388660e8a7005c06ec6172333881a3ddd2c0d6b8619"
+    },
+    {
+      "file": "fawn-cycle-clock.js",
+      "sha256": "55dee8b77c2ed2756d63a88860bc9ef6376408381fa88dd7a62c13c225ab99fa"
+    },
+    {
+      "file": "fawn-cycle-gpu.js",
+      "sha256": "6dff490648fa1e760de20bb77d648dfdc93d6a545c56031c149c2e0f76c865ef"
+    },
+    {
+      "file": "fawn-formation.js",
+      "sha256": "113ac7e232d30309f738bc21aea9443398155e530fc82a01fc97755ba3cdd4c3"
+    },
+    {
+      "file": "fawn-parcels.js",
+      "sha256": "cf4d6a58ee305bb61f30d9d819dfc239fe278ef749f5959b0a75c053d78da089"
+    },
+    {
+      "file": "fawn-parcel-renderer.js",
+      "sha256": "b68edc4109fd65b88478938e87e54032e2df998e930f06d2cb2d231303a46ebf"
+    },
+    {
+      "file": "fawn-cycle-transfers.js",
+      "sha256": "2b82e3b8014b548a369e3712b76a2240737bdb80ce4142013e3a19a965b404f1"
+    },
+    {
+      "file": "fawn-shaders.js",
+      "sha256": "8cd08572b951965c0c9c22513f5c3bd24f4d5b9224ebc85668ed09e348b32080"
+    },
+    {
+      "file": "fawn-cycle.html",
+      "sha256": "f9dcbb1c181a79b87175c282de0ccb75160b9121868378ababe08fc384772c99"
+    }
+  ],
+  "cases": [
+    {
+      "viewport": {
+        "width": 640,
+        "height": 400
+      },
+      "adapter": {
+        "vendor": "google",
+        "architecture": "swiftshader"
+      },
+      "boundaries": []
+    }
+  ],
+  "browser": "145.0.7632.6",
+  "error": "AssertionError [ERR_ASSERTION]: Formation jumps at 11s: 1 -> 0.8647595643997192\n    at file:///Users/xyz/deco/doe/browser/chromium/scripts/test-fawn-cycle-continuity.js:145:14"
+}

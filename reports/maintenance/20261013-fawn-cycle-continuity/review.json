@@ -1,0 +1,65 @@
+{
+  "component": "Fawn artwork cycle",
+  "intent": "preserved",
+  "boundaryEffects": "Scheduled formation release and delayed-frame pacing; brighter Flow background only",
+  "finalSources": [
+    {
+      "file": "fawn-cycle.js",
+      "sha256": "a056047edb4ed7515f8918e5426d540f5c9b3b2ada53f2d222acf67d494a6266",
+      "changedAfterStart": false
+    },
+    {
+      "file": "fawn-cycle-clock.js",
+      "sha256": "5ff036d690471bef93f7bf9b09c1bd78040d23f644fcc0161691b13397481d36",
+      "changedAfterStart": false
+    },
+    {
+      "file": "fawn-cycle-gpu.js",
+      "sha256": "6dff490648fa1e760de20bb77d648dfdc93d6a545c56031c149c2e0f76c865ef",
+      "changedAfterStart": false
+    },
+    {
+      "file": "fawn-formation.js",
+      "sha256": "65d2ca0e08732b39e3f43bbaca07eacce4be00a0f5fbf7dbad9b5eb36b0301a8",
+      "changedAfterStart": false
+    },
+    {
+      "file": "fawn-parcels.js",
+      "sha256": "cf4d6a58ee305bb61f30d9d819dfc239fe278ef749f5959b0a75c053d78da089",
+      "changedAfterStart": false
+    },
+    {
+      "file": "fawn-parcel-renderer.js",
+      "sha256": "33ed18454c0c060f0846a97b357ba9c580ce7ed7cac2e527591c7415ae8d9cad",
+      "changedAfterStart": false
+    },
+    {
+      "file": "fawn-cycle-transfers.js",
+      "sha256": "2b82e3b8014b548a369e3712b76a2240737bdb80ce4142013e3a19a965b404f1",
+      "changedAfterStart": false
+    },
+    {
+      "file": "fawn-shaders.js",
+      "sha256": "e90ddb142caef7b471239c07273c19eeaafecea548061d91d46ec37f49cc77c5",
+      "changedAfterStart": true
+    },
+    {
+      "file": "fawn-cycle.html",
+      "sha256": "f9dcbb1c181a79b87175c282de0ccb75160b9121868378ababe08fc384772c99",
+      "changedAfterStart": false
+    }
+  ],
+  "checks": {
+    "cycle": true,
+    "shaderBundleCheck": true,
+    "standaloneScenePhase": true,
+    "legacyFormationExactComparison": true,
+    "rendererComparison": true
+  },
+  "limitations": [
+    "Software WebGPU, reduced-count cycle; not Safari or physical-device performance qualification.",
+    "The generated shader bundle source-identity row was regenerated during the cycle test; shader strings did not change. Final bundle passes generator check and hosting smoke must bind the final files.",
+    "An extra legacy standalone clock check timed out before executing assertions because its default RAF-based readiness wait uses the deliberately frozen test clock. Preserved in standalone-clock-timeout.json; not counted as passed."
+  ],
+  "harnessSha256": "9715e7f6f70f9e6890151b1ea7b2465156453ade8c3359cff8cd626af9574717"
+}
