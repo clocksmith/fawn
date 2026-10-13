@@ -4,7 +4,7 @@ import { FLOW_TO_WAVE, PARTICLE_DEPOSIT, RESOLVE_DEPOSIT } from './fawn-cycle-tr
 import { PARCEL_POLICY, PARCEL_UPDATE, createParcelData } from './fawn-parcels.js';
 import { createParcelRenderer } from './fawn-parcel-renderer.js';
 const GPU_POLICY = Object.freeze({
-  version: 5,
+  version: 6,
   maxCount: 262144,
   pressureIterations: flow.PRESSURE_ITERATIONS,
   flowGroup: flow.WORKGROUP_SIZE,
@@ -12,7 +12,8 @@ const GPU_POLICY = Object.freeze({
   parcelGroup: PARCEL_POLICY.workgroup,
   parcelBytes: PARCEL_POLICY.strideFloats * 4,
   hoverStrengthScale: 1 / 3,
-  magneticParticlePressScale: 3,
+  magneticPressScale: 3,
+  particlePressScale: 1,
 });
 function createCycleGpu(device, canvas, format, count) {
   if (!FawnFormation.WORKLOAD.cycleCounts.includes(count) || count > GPU_POLICY.maxCount)
@@ -149,7 +150,8 @@ function createCycleGpu(device, canvas, format, count) {
   function uniforms(dt, time, shape, pointer, steps, weights, settleDt = dt) {
     const viewport = FawnFormation.viewport(canvas),
       liveDt = dt * (1 - shape);
-    const pressDirection = weights[1] - weights[2];
+    const pressScale = weights[1] * GPU_POLICY.magneticPressScale
+      - weights[2] * GPU_POLICY.particlePressScale;
     const force = pointer.hover ? (pointer.down ? 1.4 : 0.28 * GPU_POLICY.hoverStrengthScale) : 0;
     device.queue.writeBuffer(
       flowUniform,
@@ -184,7 +186,7 @@ function createCycleGpu(device, canvas, format, count) {
       1 / grid,
       pointer.x,
       pointer.y,
-      pointer.hover ? (pointer.down ? GPU_POLICY.magneticParticlePressScale
+      pointer.hover ? (pointer.down ? GPU_POLICY.magneticPressScale
         : 0.55 * GPU_POLICY.hoverStrengthScale) : 0,
       0,
       (liveDt * 1.1) / steps,
@@ -206,7 +208,7 @@ function createCycleGpu(device, canvas, format, count) {
         shape,
         pointer.x * 2 - 1,
         pointer.y * 2 - 1,
-        pointer.hover ? (pointer.down ? 26.67 * GPU_POLICY.magneticParticlePressScale * pressDirection
+        pointer.hover ? (pointer.down ? 26.67 * pressScale
           : 2 * GPU_POLICY.hoverStrengthScale) : 0,
         settleDt,
         ...viewport,
