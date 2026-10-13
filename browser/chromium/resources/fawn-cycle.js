@@ -136,12 +136,16 @@ async function frame(now) {
   pending = true;
   try {
     resize();
-    const elapsedDt = paused || !lastTime ? 0 : Math.max(0, (now - lastTime) / 1000);
+    // A stalled frame must not skip the visible blend or its GPU handoff.
+    const elapsedDt = paused || !lastTime ? 0 :
+      Math.min(CYCLE_POLICY.maxFrameS, Math.max(0, (now - lastTime) / 1000));
     const dt = Math.min(CYCLE_POLICY.maxDtS, elapsedDt);
     lastTime = now;
     const interacting = pointer.down || pointer.moved;
     const cycle = clock.advance(elapsedDt);
-    shape = formation.advance(elapsedDt, logoEnabled, interacting || cycle.transitioning, interacting);
+    shape = formation.advance(
+      elapsedDt, logoEnabled, interacting || cycle.transitioning, interacting, cycle.blend,
+    );
     const liveDt = dt * (1 - shape);
     time += liveDt;
     const weights = CYCLE_POLICY.effects.map(

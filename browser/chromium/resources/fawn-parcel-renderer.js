@@ -1,6 +1,6 @@
 // Surface and point appearances reconstruct the same independently moving parcels.
 const PARCEL_RENDER_POLICY = Object.freeze({
-  version: 4,
+  version: 5,
   accumulationCapacity: 4096,
   materialBound: 8,
   fluidRadiusCells: 2.2,
@@ -11,7 +11,7 @@ const PARCEL_RENDER_POLICY = Object.freeze({
   flowGlintStrength: 0.08,
   flowGlintSharpness: 12,
   flowSaturation: 0.7,
-  backgroundGlintStrength: 0.012,
+  backgroundGlintStrength: 0.032,
 });
 const HEADER = `
 struct Params { view:vec4<f32>, screen:vec4<f32>, theme:vec4<f32>, material:vec4<f32> }

@@ -1,11 +1,12 @@
 // Scene time advances independently of input; the host pauses it for pause/hidden tabs.
 const CYCLE_POLICY = Object.freeze({
-  version: 3,
+  version: 4,
   effects: Object.freeze(['flow', 'wave', 'particles']),
   labels: Object.freeze({ flow: 'Flows', wave: 'Magnets', particles: 'Particles' }),
   holdS: 11,
   blendS: 5,
   maxDtS: 0.033,
+  maxFrameS: 0.1,
 });
 function createCycleClock() {
   let elapsed = 0;

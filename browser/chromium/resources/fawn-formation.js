@@ -3,7 +3,7 @@
   const POLICY = Object.freeze({ version: 3, delayS: 0.8, settleS: 7,
     interactionDelayS: 0.4, interactionSettleS: 3, size: 0.76,
     noiseSeed: 7319, dyeRate: 1.6, diffusionRate: 5, force: 0.7, warp: 0.05 });
-  const TRANSITION = Object.freeze({ version: 1, holdS: 0.3, disperseS: 1.6,
+  const TRANSITION = Object.freeze({ version: 2, holdS: 0.3, disperseS: 1.6,
     responseRate: 8, epsilon: 0.00001, disperseForce: 0.9 });
   const PALETTE = Object.freeze({ base: Object.freeze([0.52, 0.64, 0.63]),
     span: Object.freeze([0.34, 0.27, 0.32]), phase: 2.1 });
@@ -69,14 +69,17 @@
 
   function transition() {
     let age = 0, idle = 0, opening = false, recovering = false, value = 0, velocity = 0;
+    let releaseStart = null;
     return Object.freeze({
       reset(enabled, intro = false) {
-        age = idle = velocity = 0; recovering = false;
+        age = idle = velocity = 0; recovering = false; releaseStart = null;
         opening = enabled && intro; value = opening ? 1 : 0;
       },
-      advance(dt, enabled, active, interacting = active) {
+      advance(dt, enabled, active, interacting = active, releaseProgress = 1) {
         if (dt <= 0) return value;
         if (interacting) recovering = true;
+        if (!active || interacting || !enabled) releaseStart = null;
+        else if (releaseStart === null) releaseStart = value;
         if (!enabled || active) { opening = false; idle = 0; }
         age += dt;
         let target;
@@ -87,6 +90,8 @@
         } else {
           if (!active && enabled) idle += dt;
           target = strength(idle, enabled, recovering);
+          // Scheduled release follows the appearance blend; input still releases immediately.
+          if (releaseStart !== null) target = releaseStart * (1 - releaseProgress);
         }
         // Preserve value and velocity as targets change, including interruptions.
         const offset = value - target, rate = velocity + TRANSITION.responseRate * offset;
@@ -103,7 +108,7 @@
         const t = (age - TRANSITION.holdS) / TRANSITION.disperseS;
         return t > 0 && t < 1 ? Math.sin(t * Math.PI) ** 2 * TRANSITION.disperseForce : 0;
       },
-      retarget() { opening = recovering = false; idle = 0; },
+      retarget() { opening = recovering = false; idle = 0; releaseStart = null; },
     });
   }
 

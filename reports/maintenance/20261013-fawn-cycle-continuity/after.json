@@ -1,0 +1,220 @@
+{
+  "passed": true,
+  "baseline": null,
+  "classification": "Software WebGPU continuity diagnostic; no physical GPU, Safari or performance qualification",
+  "sources": [
+    {
+      "file": "fawn-cycle.js",
+      "sha256": "a056047edb4ed7515f8918e5426d540f5c9b3b2ada53f2d222acf67d494a6266"
+    },
+    {
+      "file": "fawn-cycle-clock.js",
+      "sha256": "5ff036d690471bef93f7bf9b09c1bd78040d23f644fcc0161691b13397481d36"
+    },
+    {
+      "file": "fawn-cycle-gpu.js",
+      "sha256": "6dff490648fa1e760de20bb77d648dfdc93d6a545c56031c149c2e0f76c865ef"
+    },
+    {
+      "file": "fawn-formation.js",
+      "sha256": "65d2ca0e08732b39e3f43bbaca07eacce4be00a0f5fbf7dbad9b5eb36b0301a8"
+    },
+    {
+      "file": "fawn-parcels.js",
+      "sha256": "cf4d6a58ee305bb61f30d9d819dfc239fe278ef749f5959b0a75c053d78da089"
+    },
+    {
+      "file": "fawn-parcel-renderer.js",
+      "sha256": "33ed18454c0c060f0846a97b357ba9c580ce7ed7cac2e527591c7415ae8d9cad"
+    },
+    {
+      "file": "fawn-cycle-transfers.js",
+      "sha256": "2b82e3b8014b548a369e3712b76a2240737bdb80ce4142013e3a19a965b404f1"
+    },
+    {
+      "file": "fawn-shaders.js",
+      "sha256": "8cd08572b951965c0c9c22513f5c3bd24f4d5b9224ebc85668ed09e348b32080"
+    },
+    {
+      "file": "fawn-cycle.html",
+      "sha256": "f9dcbb1c181a79b87175c282de0ccb75160b9121868378ababe08fc384772c99"
+    }
+  ],
+  "cases": [
+    {
+      "viewport": {
+        "width": 640,
+        "height": 400
+      },
+      "adapter": {
+        "vendor": "google",
+        "architecture": "swiftshader"
+      },
+      "boundaries": [
+        {
+          "second": 11,
+          "before": 1,
+          "after": 0.9999935030937195,
+          "maxPositionStep": 0.003063842769903517
+        },
+        {
+          "second": 16,
+          "before": 0.004376412369310856,
+          "after": 0.0016810590168461204,
+          "maxPositionStep": 0.20206797097140086
+        },
+        {
+          "second": 27,
+          "before": 1,
+          "after": 0.9999935030937195,
+          "maxPositionStep": 0.005365674978943077
+        },
+        {
+          "second": 32,
+          "before": 0.004376412369310856,
+          "after": 0.0016810590168461204,
+          "maxPositionStep": 0.07637472419188782
+        },
+        {
+          "second": 43,
+          "before": 1,
+          "after": 0.9999863505363464,
+          "maxPositionStep": 0.002441825336109947
+        },
+        {
+          "second": 48,
+          "before": 0.003480874700471759,
+          "after": 0.0013049948029220104,
+          "maxPositionStep": 0.013031267594181842
+        },
+        {
+          "second": 59,
+          "before": 1,
+          "after": 0.9999863505363464,
+          "maxPositionStep": 0.0008766159851309314
+        },
+        {
+          "second": 64,
+          "before": 0.003480874700471759,
+          "after": 0.0013049948029220104,
+          "maxPositionStep": 0.20137161979837004
+        },
+        {
+          "second": 75,
+          "before": 1,
+          "after": 0.9999863505363464,
+          "maxPositionStep": 0.003244438902552713
+        },
+        {
+          "second": 80,
+          "before": 0.003480874700471759,
+          "after": 0.0013049948029220104,
+          "maxPositionStep": 0.07537251085523379
+        },
+        {
+          "second": 91,
+          "before": 1,
+          "after": 0.9999863505363464,
+          "maxPositionStep": 0.0014837487869643349
+        },
+        {
+          "second": 96,
+          "before": 0.003480874700471759,
+          "after": 0.0013049948029220104,
+          "maxPositionStep": 0.014951195142876506
+        }
+      ],
+      "stallAdvance": 0.09999847412109375,
+      "inputRecovery": true,
+      "pauseFrozen": true
+    },
+    {
+      "viewport": {
+        "width": 300,
+        "height": 500
+      },
+      "adapter": {
+        "vendor": "google",
+        "architecture": "swiftshader"
+      },
+      "boundaries": [
+        {
+          "second": 11,
+          "before": 1,
+          "after": 0.9999935030937195,
+          "maxPositionStep": 0.0030463761428140977
+        },
+        {
+          "second": 16,
+          "before": 0.004376412369310856,
+          "after": 0.0016810590168461204,
+          "maxPositionStep": 0.20255057790200304
+        },
+        {
+          "second": 27,
+          "before": 1,
+          "after": 0.9999935030937195,
+          "maxPositionStep": 0.004608662860080347
+        },
+        {
+          "second": 32,
+          "before": 0.004376412369310856,
+          "after": 0.0016810590168461204,
+          "maxPositionStep": 0.07486901573445111
+        },
+        {
+          "second": 43,
+          "before": 1,
+          "after": 0.9999863505363464,
+          "maxPositionStep": 0.0017143071764391968
+        },
+        {
+          "second": 48,
+          "before": 0.003480874700471759,
+          "after": 0.0013049948029220104,
+          "maxPositionStep": 0.013267257934505386
+        },
+        {
+          "second": 59,
+          "before": 1,
+          "after": 0.9999863505363464,
+          "maxPositionStep": 0.0007552476435854501
+        },
+        {
+          "second": 64,
+          "before": 0.003480874700471759,
+          "after": 0.0013049948029220104,
+          "maxPositionStep": 0.20603702364089338
+        },
+        {
+          "second": 75,
+          "before": 1,
+          "after": 0.9999863505363464,
+          "maxPositionStep": 0.002968035264711994
+        },
+        {
+          "second": 80,
+          "before": 0.003480874700471759,
+          "after": 0.0013049948029220104,
+          "maxPositionStep": 0.07100609765379234
+        },
+        {
+          "second": 91,
+          "before": 1,
+          "after": 0.9999863505363464,
+          "maxPositionStep": 0.0013071683309220257
+        },
+        {
+          "second": 96,
+          "before": 0.003480874700471759,
+          "after": 0.0013049948029220104,
+          "maxPositionStep": 0.012914691837573268
+        }
+      ],
+      "stallAdvance": 0.09999847412109375,
+      "inputRecovery": true,
+      "pauseFrozen": true
+    }
+  ],
+  "browser": "145.0.7632.6"
+}
