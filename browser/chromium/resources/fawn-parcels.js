@@ -1,6 +1,6 @@
 // Persistent moving material. Formation edits parcel positions, never the camera or a quad.
 const PARCEL_POLICY = Object.freeze({
-  version: 2,
+  version: 3,
   strideFloats: 12,
   workgroup: 128,
   targetGrid: 384,
@@ -15,7 +15,7 @@ const PARCEL_POLICY = Object.freeze({
 });
 const PARCEL_UPDATE = `
 struct Parcel { pos: vec2<f32>, vel: vec2<f32>, color: vec4<f32>, material: vec4<f32> }
-struct Params { grid: vec4<f32>, theme: vec4<f32>, pointer: vec4<f32>, viewport: vec4<f32> }
+struct Params { grid: vec4<f32>, theme: vec4<f32>, pointer: vec4<f32>, burst: vec4<f32> }
 @group(0) @binding(0) var<uniform> u: Params;
 @group(0) @binding(1) var<storage,read> src: array<Parcel>;
 @group(0) @binding(2) var<storage,read_write> dst: array<Parcel>;
@@ -61,13 +61,21 @@ fn spectral(phase:f32)->vec3<f32> { return 0.5+0.5*cos(vec3<f32>(0,2,4)+phase*6.
 fn main(@builtin(global_invocation_id) gid:vec3<u32>) {
  let i=gid.x;if(i>=arrayLength(&src)){return;}
  var p=src[i];let dt=u.grid.z;let shape=u.theme.w;let live=1.0-shape;
+ let hash=(i*1664525u+1013904223u)^(i>>9u);
  let v0=velocity_at(p.pos);let midpoint=p.pos+v0*(dt*live*0.5);
- let targetVelocity=velocity_at(midpoint);
+ var targetVelocity=velocity_at(midpoint);
+ if(u.burst.z>0.0){
+  let away=p.pos-u.burst.xy;let distance=length(away);
+  // Coincident gathered parcels need distinct directions when the magnet releases.
+  let angle=f32(hash&65535u)/65535.0*6.2831853;
+  let direction=select(vec2<f32>(cos(angle),sin(angle)),away/max(distance,0.00001),distance>0.005);
+  targetVelocity+=direction*u.burst.z*(1.0-smoothstep(0.0,u.burst.w,distance));
+  targetVelocity/=max(1.0,length(targetVelocity)/${PARCEL_POLICY.speedLimit});
+ }
  let response=1.0-exp(-${PARCEL_POLICY.velocityResponse}.0*dt);
  p.vel=mix(p.vel,targetVelocity,response)*exp(-${PARCEL_POLICY.settleDamping}.0*dt*shape);
  p.pos+=targetVelocity*(dt*live);
  p.pos/=max(1.0,length(p.pos)/${PARCEL_POLICY.worldEdge});
- let hash=(i*1664525u+1013904223u)^(i>>9u);
  let goal=goals[hash%arrayLength(&goals)].xy;
  // Different parcel arrival rates break the rectangular envelope of a uniform zoom.
  let arrival=0.35+1.65*f32((hash>>16u)&65535u)/65535.0;

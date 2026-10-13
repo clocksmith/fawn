@@ -1,5 +1,11 @@
 # Fawn hosted demonstrations
 
+[Magnetic release and interaction timing](../../reports/maintenance/20261013-fawn-magnetic-release/README.md)
+soften Magnetic attraction and add a bounded outward release pulse charged by
+holding. Mouse and touch cancellation do not trigger it. Interaction preserves
+early scene progress and caps late progress before the transition quiet interval;
+an existing blend is held continuously and its GPU handoff is not repeated.
+
 [Softer Particle input](../../reports/maintenance/20261013-fawn-particle-soften/report.json)
 reduces the Particle press multiplier while retaining outward motion. Magnetic
 attraction and hover keep their prior strengths; signed forces blend continuously
@@ -34,8 +40,9 @@ artwork diagnostics; physical Safari and device performance are not established.
 The unified `fawn-cycle.html` rotates Flows → Magnets → Particles on one simulation
 canvas and device. Initial particle counts use desktop or mobile presets;
 Settings choices survive rotation and Reset. Standalone benchmark defaults
-retain their prior definitions. Scene time advances independently
-of input and the clamped physics timestep, with bounded catch-up after a stall.
+retain their prior definitions. Ambient time remains monotonic; late interaction
+defers the scene clock without restarting early progress. Visible time remains
+separate from the clamped physics timestep, with bounded catch-up after a stall.
 Input releases logo formation; idle
 input returns to Fawn. Pause and hidden tabs still stop the schedule.
 All effects render the same resident parcels, preserving their
