@@ -4,7 +4,7 @@ import { FLOW_TO_WAVE, PARTICLE_DEPOSIT, RESOLVE_DEPOSIT } from './fawn-cycle-tr
 import { PARCEL_POLICY, PARCEL_UPDATE, createParcelData } from './fawn-parcels.js';
 import { createParcelRenderer } from './fawn-parcel-renderer.js';
 const GPU_POLICY = Object.freeze({
-  version: 7,
+  version: 8,
   maxCount: 262144,
   pressureIterations: flow.PRESSURE_ITERATIONS,
   flowGroup: flow.WORKGROUP_SIZE,
@@ -147,12 +147,14 @@ function createCycleGpu(device, canvas, format, count) {
     dyeIndex = waveIndex = parcelIndex = 0;
     resize();
   }
-  function uniforms(dt, time, shape, pointer, steps, weights, settleDt = dt, burst = null) {
+  function uniforms(dt, time, shape, pointer, steps, weights, settleDt = dt, burst = null,
+    interactionScale = 1) {
     const viewport = FawnFormation.viewport(canvas),
       liveDt = dt * (1 - shape);
     const pressScale = weights[1] * GPU_POLICY.magneticPressScale
       - weights[2] * GPU_POLICY.particlePressScale;
-    const force = pointer.hover ? (pointer.down ? 1.4 : 0.28 * GPU_POLICY.hoverStrengthScale) : 0;
+    const force = (pointer.hover ? (pointer.down ? 1.4 : 0.28 * GPU_POLICY.hoverStrengthScale) : 0)
+      * interactionScale;
     device.queue.writeBuffer(
       flowUniform,
       0,
@@ -187,7 +189,7 @@ function createCycleGpu(device, canvas, format, count) {
       pointer.x,
       pointer.y,
       pointer.hover && !burst?.strength ? (pointer.down ? GPU_POLICY.magneticPressScale
-        : 0.55 * GPU_POLICY.hoverStrengthScale) : 0,
+        : 0.55 * GPU_POLICY.hoverStrengthScale) * interactionScale : 0,
       0,
       (liveDt * 1.1) / steps,
       time,
@@ -209,11 +211,11 @@ function createCycleGpu(device, canvas, format, count) {
         pointer.x * 2 - 1,
         pointer.y * 2 - 1,
         pointer.hover && !burst?.strength ? (pointer.down ? 26.67 * pressScale
-          : 2 * GPU_POLICY.hoverStrengthScale) : 0,
+          : 2 * GPU_POLICY.hoverStrengthScale) * interactionScale : 0,
         settleDt,
         (burst?.x ?? pointer.x) * 2 - 1,
         (burst?.y ?? pointer.y) * 2 - 1,
-        burst?.strength ?? 0,
+        (burst?.strength ?? 0) * interactionScale,
         burst?.radius ?? 0,
       ]),
     );

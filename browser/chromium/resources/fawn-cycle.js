@@ -146,7 +146,7 @@ async function frame(now) {
       Math.min(CYCLE_POLICY.maxFrameS, Math.max(0, (now - lastTime) / 1000));
     const dt = Math.min(CYCLE_POLICY.maxDtS, elapsedDt);
     lastTime = now;
-    const cycle = clock.advance(elapsedDt, !paused && (pointer.down || pointer.moved));
+    const cycle = clock.advance(elapsedDt);
     const weights = CYCLE_POLICY.effects.map(
       (effect) =>
         (effect === cycle.effect ? 1 - cycle.blend : 0) +
@@ -164,7 +164,8 @@ async function frame(now) {
     );
     const liveDt = dt * (1 - shape);
     time += liveDt;
-    gpu.uniforms(dt, time, shape, pointer, Number(stepsSelect.value), weights, elapsedDt, burst);
+    gpu.uniforms(dt, time, shape, pointer, Number(stepsSelect.value), weights, elapsedDt, burst,
+      cycle.interactionScale);
     const encoder = device.createCommandEncoder({ label: 'Fawn cycle frame' });
     if (cycle.started) gpu.handoff(encoder, cycle.effect);
     if (liveDt > 0) {

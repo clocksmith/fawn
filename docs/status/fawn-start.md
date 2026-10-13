@@ -1,12 +1,11 @@
 # Fawn hosted demonstrations
 
-[Cycle timing repair](../../reports/maintenance/20261013-fawn-cycle-24s/README.md)
-implements the user-selected complete rotation and per-background transition
-policy. Movement defers upcoming blends; started blends finish uninterrupted.
-Logo formation preserves progress and resumes smoothly after the quiet interval.
-Software WebGPU rotations and input checks pass; complete Safari rotation remains
-unqualified because automation became hidden. The live release manifest below
-identifies deployed bytes.
+[Scheduled crossfades](../../reports/maintenance/20261013-fawn-cycle-7s/README.md)
+implement input-independent scene timing and a smooth interaction-strength curve.
+The clock and software WebGPU diagnostics bind the changed source; publication
+identity remains in the live release manifest. Logo recovery keeps its own quiet
+interval and cannot defer a scene switch. [Prior input-deferral status](archive/20261013-fawn-cycle-deferral.md)
+is retained separately.
 
 [Magnetic release](../../reports/maintenance/20261013-fawn-magnetic-release/README.md)
 softens attraction and adds a bounded outward pulse charged by holding. Mouse
