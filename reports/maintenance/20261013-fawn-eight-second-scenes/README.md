@@ -39,6 +39,8 @@ These deliberate diagnostic uploads are separate from ordinary transition checks
 - [`integration.json`](integration.json) retains independent shader/transfer
   references, branded advection, lifecycle, input-held rotation and resize checks.
 - [`timing.json`](timing.json) checks the cadence and input-independent clock.
+- [`defaults.json`](defaults.json) checks the same corrected source, moving
+  silhouettes, magnetic-field ablation and all blends at the normal device counts.
 
 Run from the Doe project root:
 
@@ -53,3 +55,9 @@ Screenshots stay in
 ignored `bench/out/` and are reviewed locally. These checks are Chrome software
 WebGPU artwork diagnostics, not native Doe, physical-phone, Safari or performance
 qualification. Hosted publication requires its separate byte and browser checks.
+
+[`publication.json`](publication.json) retains preview browser checks, exact hosted
+bytes and the initial network failure followed by a successful hosting retry.
+Those checks did not establish per-particle formation quality. The subsequent
+[continuous-morph report](../20261013-fawn-continuous-morph/README.md) owns that
+local correction and retains the additional regression.
