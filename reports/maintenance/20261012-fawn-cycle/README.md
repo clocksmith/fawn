@@ -1,5 +1,10 @@
 # Continuous Fawn background cycle
 
+Historical receipt: the user subsequently rejected this sheet-based formation
+for its visible rectangle and zoom. These tests did not establish parcel motion
+for the fluids. The [replacement evidence](../20261012-fawn-parcel-continuity/README.md)
+checks actual parcel updates and fixed projection. Retained receipts are unchanged.
+
 Component: Fawn preview artwork. Intent: changed to one rotating experience.
 Boundary effects: Doe owns the cycle, shader projection and retained standalone
 benchmarks; D4DA packages the new homepage and its imported modules. No native
