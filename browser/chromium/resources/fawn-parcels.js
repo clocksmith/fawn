@@ -1,6 +1,6 @@
 // Persistent moving material. Formation edits parcel positions, never the camera or a quad.
 const PARCEL_POLICY = Object.freeze({
-  version: 5,
+  version: 6,
   strideFloats: 12,
   workgroup: 128,
   targetGrid: 384,
@@ -8,7 +8,11 @@ const PARCEL_POLICY = Object.freeze({
   fieldSpeed: 12,
   velocityResponse: 12,
   colorResponse: 3,
-  settleRate: 6,
+  anchorRate: 3,
+  arrivalExponentMin: 0.85,
+  arrivalExponentSpan: 0.3,
+  formationEpsilon: 0.00001,
+  formationCompleteFraction: 0.98,
   boundaryBand: 0.025,
   boundaryIterations: 3,
   worldEdge: 1.65,
@@ -93,12 +97,14 @@ fn main(@builtin(global_invocation_id) gid:vec3<u32>) {
  p.pos+=targetVelocity*dt;
  p.pos/=max(1.0,length(p.pos)/${PARCEL_POLICY.worldEdge});
  let goal=goals[hash%arrayLength(&goals)].xy;
- // Different parcel arrival rates break the rectangular envelope of a uniform zoom.
- let arrival=0.35+1.65*f32((hash>>16u)&65535u)/65535.0;
- // Gathering follows visible formation time, independently of the fluid stability timestep.
- let inside=smoothstep(-${PARCEL_POLICY.boundaryBand},0.0,before.w);
- let recovery=1.0-exp(-${PARCEL_POLICY.settleRate}.0*u.pointer.w*arrival*shape*(1.0-inside));
- p.pos=mix(p.pos,goal,recovery);
+ // Advance each live trajectory by the change in its morph weight, never by opacity.
+ let arrival=${PARCEL_POLICY.arrivalExponentMin}+${PARCEL_POLICY.arrivalExponentSpan}*f32((hash>>16u)&65535u)/65535.0;
+ let phase=pow(clamp(shape/${PARCEL_POLICY.formationCompleteFraction},0.0,1.0),arrival);
+ let progress=phase*phase*(3.0-2.0*phase);let previous=clamp(p.color.a,0.0,1.0);
+ let gather=clamp((progress-previous)/max(1.0-previous,${PARCEL_POLICY.formationEpsilon}),0.0,1.0);
+ // Interior material stays distributed while its field continues moving it.
+ let anchor=select(0.0,1.0-exp(-${PARCEL_POLICY.anchorRate}.0*dt),progress>=1.0-${PARCEL_POLICY.formationEpsilon});
+ p.pos=mix(p.pos,goal,max(gather,anchor));
  // Project only captured material, so distant parcels gather continuously from their own state.
  for(var step=0;step<${PARCEL_POLICY.boundaryIterations};step++){
   let mark=mark_at(p.pos);let normal=mark.xy/max(length(mark.xy),0.000001);
@@ -114,7 +120,8 @@ fn main(@builtin(global_invocation_id) gid:vec3<u32>) {
  let wantedMaterial=vec4<f32>((dot(dye,vec3<f32>(0.333))+length(flow.xy)*0.18)*u.theme.x+film.x*u.theme.y,
    reflection,sign(curl)*log(1.0+abs(curl)),length(p.vel));
  let colorResponse=1.0-exp(-${PARCEL_POLICY.colorResponse}.0*dt);
- p.color=vec4<f32>(mix(p.color.rgb,wantedColor,colorResponse),1);
+ // Alpha stores the prior morph weight; rendering coverage comes from the live splats.
+ p.color=vec4<f32>(mix(p.color.rgb,wantedColor,colorResponse),progress);
  p.material=clamp(mix(p.material,wantedMaterial,colorResponse),vec4<f32>(-8),vec4<f32>(8));
  dst[i]=p;
 }
@@ -134,7 +141,7 @@ function createParcelData(grid, seed, count = grid * grid) {
     const v = Array.from(seed.velocity.slice(cell * 4, cell * 4 + 2));
     const height = (color[0] + color[1] + color[2]) / 3 + Math.hypot(...v) * 0.18;
     data.set(
-      [x, y, ...v.map((n) => n * 2), ...color, 1, height, 0, 0, Math.hypot(...v) * 2],
+      [x, y, ...v.map((n) => n * 2), ...color, 0, height, 0, 0, Math.hypot(...v) * 2],
       i * PARCEL_POLICY.strideFloats,
     );
   }

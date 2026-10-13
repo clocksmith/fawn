@@ -1,5 +1,10 @@
 # Fawn hosted demonstrations
 
+[Continuous per-particle formation](../../reports/maintenance/20261013-fawn-continuous-morph/README.md)
+is a local correction awaiting user visual review. It restores individual
+positional trajectories and a filled, moving interior under the shared boundary.
+It has not been deployed; the publication evidence below keeps its prior meaning.
+
 [Magnetic relief and scene dwell](../../reports/maintenance/20261013-fawn-eight-second-scenes/README.md)
 owns the current artwork correction. The renderer reads the live magnetic solver
 field for soap-film reflections while transported parcels supply the silhouette.
