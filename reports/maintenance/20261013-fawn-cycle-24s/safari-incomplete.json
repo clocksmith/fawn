@@ -1,0 +1,47 @@
+{
+  "browser": "Safari 26.6.2",
+  "scope": "Actual Mac Safari, small artwork check; not model qualification",
+  "rows": [
+    {
+      "effect": "Flows",
+      "status": "WebGPU active",
+      "failure": "",
+      "gpu": true,
+      "paused": "Pause",
+      "count": "1024"
+    },
+    {
+      "effect": "Flows",
+      "status": "WebGPU active",
+      "failure": "",
+      "gpu": true,
+      "paused": "Pause",
+      "count": "1024"
+    },
+    {
+      "effect": "Flows",
+      "status": "WebGPU active",
+      "failure": "",
+      "gpu": true,
+      "paused": "Pause",
+      "count": "1024"
+    },
+    {
+      "effect": "Flows",
+      "status": "WebGPU active",
+      "failure": "",
+      "gpu": true,
+      "paused": "Pause",
+      "count": "1024"
+    },
+    {
+      "effect": "Flows",
+      "status": "WebGPU active",
+      "failure": "",
+      "gpu": true,
+      "paused": "Pause",
+      "count": "1024"
+    }
+  ],
+  "passed": false
+}

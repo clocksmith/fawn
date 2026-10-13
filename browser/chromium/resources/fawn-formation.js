@@ -1,7 +1,7 @@
 (function attachFawnFormation(root) {
   'use strict';
-  const POLICY = Object.freeze({ version: 3, delayS: 0.8, settleS: 7,
-    interactionDelayS: 0.4, interactionSettleS: 3, size: 0.76,
+  const POLICY = Object.freeze({ version: 4, delayS: 0.8, settleS: 3,
+    interactionQuietS: 1, size: 0.76,
     noiseSeed: 7319, dyeRate: 1.6, diffusionRate: 5, force: 0.7, warp: 0.05 });
   const TRANSITION = Object.freeze({ version: 2, holdS: 0.3, disperseS: 1.6,
     responseRate: 8, epsilon: 0.00001, disperseForce: 0.9 });
@@ -60,27 +60,29 @@
     return t ** 3 * (t * (t * 6 - 15) + 10);
   }
 
-  function strength(ageS, enabled, recovering = false) {
+  function strength(ageS, enabled) {
     if (!enabled) return 0;
-    const delay = recovering ? POLICY.interactionDelayS : POLICY.delayS;
-    const settle = recovering ? POLICY.interactionSettleS : POLICY.settleS;
+    const delay = POLICY.delayS, settle = POLICY.settleS;
     return ease(Math.min(1, Math.max(0, (ageS - delay) / settle)));
   }
 
   function transition() {
-    let age = 0, idle = 0, opening = false, recovering = false, value = 0, velocity = 0;
+    let age = 0, idle = 0, opening = false, quiet = 0, value = 0, velocity = 0;
     let releaseStart = null;
     return Object.freeze({
       reset(enabled, intro = false) {
-        age = idle = velocity = 0; recovering = false; releaseStart = null;
+        age = idle = velocity = 0; quiet = 0; releaseStart = null;
         opening = enabled && intro; value = opening ? 1 : 0;
       },
       advance(dt, enabled, active, interacting = active, releaseProgress = 1) {
         if (dt <= 0) return value;
-        if (interacting) recovering = true;
+        const previousQuiet = quiet;
+        quiet = interacting ? POLICY.interactionQuietS : Math.max(0, quiet - dt);
+        const settlingDt = interacting ? 0 : Math.max(0, dt - previousQuiet);
         if (!active || interacting || !enabled) releaseStart = null;
         else if (releaseStart === null) releaseStart = value;
-        if (!enabled || active) { opening = false; idle = 0; }
+        if (!enabled) { idle = 0; quiet = 0; }
+        if (!enabled || active) opening = false;
         age += dt;
         let target;
         if (opening) {
@@ -88,8 +90,8 @@
           idle = Math.max(0, age - TRANSITION.holdS - TRANSITION.disperseS);
           target = Math.max(1 - ease(t), strength(idle, true));
         } else {
-          if (!active && enabled) idle += dt;
-          target = strength(idle, enabled, recovering);
+          if (!active && enabled) idle += settlingDt;
+          target = active || quiet > 0 ? 0 : strength(idle, enabled);
           // Scheduled release follows the appearance blend; input still releases immediately.
           if (releaseStart !== null) target = releaseStart * (1 - releaseProgress);
         }
@@ -108,7 +110,7 @@
         const t = (age - TRANSITION.holdS) / TRANSITION.disperseS;
         return t > 0 && t < 1 ? Math.sin(t * Math.PI) ** 2 * TRANSITION.disperseForce : 0;
       },
-      retarget() { opening = recovering = false; idle = 0; releaseStart = null; },
+      retarget() { opening = false; idle = 0; releaseStart = null; },
     });
   }
 

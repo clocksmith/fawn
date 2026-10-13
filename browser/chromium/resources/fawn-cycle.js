@@ -158,6 +158,7 @@ async function frame(now) {
     burst.strength = burst.charge * MAGNETIC_RELEASE.speed * (1 - releaseProgress) ** 2;
     burst.age += elapsedDt;
     const interacting = pointer.down || pointer.moved || burst.strength > 0;
+    if (cycle.completed) formation.retarget();
     shape = formation.advance(
       elapsedDt, logoEnabled, interacting || cycle.transitioning, interacting, cycle.blend,
     );
@@ -177,7 +178,6 @@ async function frame(now) {
     pointer.dy = 0;
     pointer.press = 0;
     pointer.moved = false;
-    if (cycle.completed) formation.retarget();
     document.querySelector('#effect').textContent = CYCLE_POLICY.labels[cycle.effect];
     canvas.setAttribute('aria-label', `${CYCLE_POLICY.labels[cycle.effect]}. Drag to stir.`);
     await device.queue.onSubmittedWorkDone();
