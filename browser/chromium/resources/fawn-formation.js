@@ -1,6 +1,6 @@
 (function attachFawnFormation(root) {
   'use strict';
-  const POLICY = Object.freeze({ version: 2, delayS: 0.8, settleS: 7, size: 0.76,
+  const POLICY = Object.freeze({ version: 2, delayS: 0.8, settleS: 6, size: 0.76,
     noiseSeed: 7319, dyeRate: 1.6, diffusionRate: 5, force: 0.7, warp: 0.05 });
   const TRANSITION = Object.freeze({ version: 1, holdS: 0.3, disperseS: 1.6,
     responseRate: 8, epsilon: 0.00001, disperseForce: 0.9 });

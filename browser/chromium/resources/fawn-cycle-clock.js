@@ -2,9 +2,9 @@
 const CYCLE_POLICY = Object.freeze({
   version: 1,
   effects: Object.freeze(['flow', 'wave', 'particles']),
-  holdS: 12,
+  holdS: 10,
   blendS: 4,
-  idleS: 2,
+  idleS: 1,
   maxDtS: 0.033,
 });
 function createCycleClock() {
