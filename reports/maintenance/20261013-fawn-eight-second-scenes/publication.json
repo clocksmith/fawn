@@ -1,0 +1,217 @@
+{
+  "classification": "Hosting file identity and preview Chrome software WebGPU checks; not physical visual acceptance",
+  "demoSourceCommit": "4ec2ed765018fbc3d666652e305ba7b6a583afb0",
+  "hostingSourceCommit": "c3ed57e8e377c948747f3e2a151d4ca119b7eb85",
+  "preview": {
+    "passed": true,
+    "checkedAt": "2026-10-13T22:54:55.546Z",
+    "origin": "https://canvascontext-9da05--fawn-domain-move-ctts5ol1.web.app",
+    "release": {
+      "sourceCommit": "c3ed57e8e377c948747f3e2a151d4ca119b7eb85",
+      "demoSourceCommit": "4ec2ed765018fbc3d666652e305ba7b6a583afb0",
+      "application": "fawn-demo",
+      "canonicalUrl": "https://canvascontext.com/"
+    },
+    "files": [
+      {
+        "path": "demo/sw.js",
+        "bytes": 384,
+        "sha256": "1af3b17eaff4838ff753eda2de85cdd64941f7a994673a8ea1f4819bee2c6d27"
+      },
+      {
+        "path": "fawn-cycle-clock.js",
+        "bytes": 1864,
+        "sha256": "52df6cbcf769e93f891a3f84dcbc976f826b2f4ec2cb35e87d476c8671c692c9"
+      },
+      {
+        "path": "fawn-cycle-gpu.js",
+        "bytes": 10724,
+        "sha256": "b9d3634ba58d4f0683510aba6602f86a128829fa2e8c64d0e86708901e105113"
+      },
+      {
+        "path": "fawn-cycle-transfers.js",
+        "bytes": 3231,
+        "sha256": "2b82e3b8014b548a369e3712b76a2240737bdb80ce4142013e3a19a965b404f1"
+      },
+      {
+        "path": "fawn-cycle.html",
+        "bytes": 13382,
+        "sha256": "9ce333f07646d25bc66f7f0a77e6a51af765139503cf92c18697363b35fc6ff3"
+      },
+      {
+        "path": "fawn-cycle.js",
+        "bytes": 12390,
+        "sha256": "4a909f02a4c2b5ca7280ff82e74b8f683efcef22b024aa724d304d2ce8acf4c1"
+      },
+      {
+        "path": "fawn-domain-migration.js",
+        "bytes": 737,
+        "sha256": "0d7722d0b89ee742d20d1b0945ec9118ff5012aa0cf0116de9cb136d5ffde3cc"
+      },
+      {
+        "path": "fawn-formation.js",
+        "bytes": 13953,
+        "sha256": "1884541f507e4f3350207f4972fa95f33248e96c90f6b6c0ebc7019e7cc61fd1"
+      },
+      {
+        "path": "fawn-icon.svg",
+        "bytes": 7538,
+        "sha256": "e016e06419ee291494372c4383f0cb5cc2409a02b744c98f96fd7bd653126a07"
+      },
+      {
+        "path": "fawn-magnetic-fluids.html",
+        "bytes": 13382,
+        "sha256": "9ce333f07646d25bc66f7f0a77e6a51af765139503cf92c18697363b35fc6ff3"
+      },
+      {
+        "path": "fawn-parcel-renderer.js",
+        "bytes": 11857,
+        "sha256": "a868d8b3742a20fbcf6f4f241192a10505a91b07c7f737414ac8f6018d13d315"
+      },
+      {
+        "path": "fawn-parcels.js",
+        "bytes": 7782,
+        "sha256": "887229e508dc031efd61ec3b115a80e84c10bbf8d09a03748a4a92c22de045e6"
+      },
+      {
+        "path": "fawn-prismatic-fluids.html",
+        "bytes": 13382,
+        "sha256": "9ce333f07646d25bc66f7f0a77e6a51af765139503cf92c18697363b35fc6ff3"
+      },
+      {
+        "path": "fawn-shaders.js",
+        "bytes": 35038,
+        "sha256": "b4707394916fda87a3dfadb041928610e9e7ef255898d69ed95644b7266c7898"
+      },
+      {
+        "path": "fawn-start.html",
+        "bytes": 13382,
+        "sha256": "9ce333f07646d25bc66f7f0a77e6a51af765139503cf92c18697363b35fc6ff3"
+      },
+      {
+        "path": "index.html",
+        "bytes": 13382,
+        "sha256": "9ce333f07646d25bc66f7f0a77e6a51af765139503cf92c18697363b35fc6ff3"
+      },
+      {
+        "path": "release.json",
+        "bytes": 209,
+        "sha256": "4b4f86d0afb06f0390b23f4865b2a3517dd10ff6794dba887c719be1ab4178f7"
+      }
+    ]
+  },
+  "live": {
+    "passed": true,
+    "checkedAt": "2026-10-13T22:57:58.061Z",
+    "origin": "https://canvascontext.com",
+    "release": {
+      "sourceCommit": "c3ed57e8e377c948747f3e2a151d4ca119b7eb85",
+      "demoSourceCommit": "4ec2ed765018fbc3d666652e305ba7b6a583afb0",
+      "application": "fawn-demo",
+      "canonicalUrl": "https://canvascontext.com/"
+    },
+    "files": [
+      {
+        "path": "demo/sw.js",
+        "bytes": 384,
+        "sha256": "1af3b17eaff4838ff753eda2de85cdd64941f7a994673a8ea1f4819bee2c6d27"
+      },
+      {
+        "path": "fawn-cycle-clock.js",
+        "bytes": 1864,
+        "sha256": "52df6cbcf769e93f891a3f84dcbc976f826b2f4ec2cb35e87d476c8671c692c9"
+      },
+      {
+        "path": "fawn-cycle-gpu.js",
+        "bytes": 10724,
+        "sha256": "b9d3634ba58d4f0683510aba6602f86a128829fa2e8c64d0e86708901e105113"
+      },
+      {
+        "path": "fawn-cycle-transfers.js",
+        "bytes": 3231,
+        "sha256": "2b82e3b8014b548a369e3712b76a2240737bdb80ce4142013e3a19a965b404f1"
+      },
+      {
+        "path": "fawn-cycle.html",
+        "bytes": 13382,
+        "sha256": "9ce333f07646d25bc66f7f0a77e6a51af765139503cf92c18697363b35fc6ff3"
+      },
+      {
+        "path": "fawn-cycle.js",
+        "bytes": 12390,
+        "sha256": "4a909f02a4c2b5ca7280ff82e74b8f683efcef22b024aa724d304d2ce8acf4c1"
+      },
+      {
+        "path": "fawn-domain-migration.js",
+        "bytes": 737,
+        "sha256": "0d7722d0b89ee742d20d1b0945ec9118ff5012aa0cf0116de9cb136d5ffde3cc"
+      },
+      {
+        "path": "fawn-formation.js",
+        "bytes": 13953,
+        "sha256": "1884541f507e4f3350207f4972fa95f33248e96c90f6b6c0ebc7019e7cc61fd1"
+      },
+      {
+        "path": "fawn-icon.svg",
+        "bytes": 7538,
+        "sha256": "e016e06419ee291494372c4383f0cb5cc2409a02b744c98f96fd7bd653126a07"
+      },
+      {
+        "path": "fawn-magnetic-fluids.html",
+        "bytes": 13382,
+        "sha256": "9ce333f07646d25bc66f7f0a77e6a51af765139503cf92c18697363b35fc6ff3"
+      },
+      {
+        "path": "fawn-parcel-renderer.js",
+        "bytes": 11857,
+        "sha256": "a868d8b3742a20fbcf6f4f241192a10505a91b07c7f737414ac8f6018d13d315"
+      },
+      {
+        "path": "fawn-parcels.js",
+        "bytes": 7782,
+        "sha256": "887229e508dc031efd61ec3b115a80e84c10bbf8d09a03748a4a92c22de045e6"
+      },
+      {
+        "path": "fawn-prismatic-fluids.html",
+        "bytes": 13382,
+        "sha256": "9ce333f07646d25bc66f7f0a77e6a51af765139503cf92c18697363b35fc6ff3"
+      },
+      {
+        "path": "fawn-shaders.js",
+        "bytes": 35038,
+        "sha256": "b4707394916fda87a3dfadb041928610e9e7ef255898d69ed95644b7266c7898"
+      },
+      {
+        "path": "fawn-start.html",
+        "bytes": 13382,
+        "sha256": "9ce333f07646d25bc66f7f0a77e6a51af765139503cf92c18697363b35fc6ff3"
+      },
+      {
+        "path": "index.html",
+        "bytes": 13382,
+        "sha256": "9ce333f07646d25bc66f7f0a77e6a51af765139503cf92c18697363b35fc6ff3"
+      },
+      {
+        "path": "release.json",
+        "bytes": 209,
+        "sha256": "4b4f86d0afb06f0390b23f4865b2a3517dd10ff6794dba887c719be1ab4178f7"
+      }
+    ]
+  },
+  "previewBrowser": {
+    "passed": true,
+    "exitCode": 0,
+    "output": "Previous Doppler worker and shell caches retired; model cache, local storage, and OPFS preserved.\nFawn rendered and reset: https://canvascontext-9da05--fawn-domain-move-ctts5ol1.web.app/\nFawn rendered and reset: https://canvascontext-9da05--fawn-domain-move-ctts5ol1.web.app/fawn-cycle.html\nFawn rendered and reset: https://canvascontext-9da05--fawn-domain-move-ctts5ol1.web.app/fawn-start.html\nFawn rendered and reset: https://canvascontext-9da05--fawn-domain-move-ctts5ol1.web.app/fawn-magnetic-fluids.html\nFawn rendered and reset: https://canvascontext-9da05--fawn-domain-move-ctts5ol1.web.app/fawn-prismatic-fluids.html\nFawn mobile default and manual selection: 390 \u00d7 844\nFawn mobile default and manual selection: 844 \u00d7 390\nRepository-only demo excluded: https://canvascontext-9da05--fawn-domain-move-ctts5ol1.web.app/fawn-heavy-particles.html\nRepository-only demo excluded: https://canvascontext-9da05--fawn-domain-move-ctts5ol1.web.app/fawn-image-lab.html\n"
+  },
+  "productionAttempts": [
+    {
+      "exitCode": 1,
+      "error": "Failed request to firebasehosting.googleapis.com/v1beta1/projects/-/sites/canvascontext-9da05/versions"
+    },
+    {
+      "exitCode": 0,
+      "result": "Hosting release complete"
+    }
+  ],
+  "liveBrowser": "Not rerun after source-byte verification; user requested local iteration. Later formation defects are retained in the continuous-morph report."
+}
