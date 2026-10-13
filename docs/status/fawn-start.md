@@ -185,4 +185,9 @@ before/after observations. These are application diagnostics on the visitor's
 browser WebGPU backend. They do not qualify a forced-Doe Chromium release or
 establish a portable optimality claim. Tail variation remains in the raw report.
 
+Flow’s shared parcel material includes fine prismatic glints driven by its existing
+material and visible-time clock. [Matched-frame artwork comparisons](../../reports/maintenance/20261013-fawn-flow-shimmer/comparison.json)
+retain desktop and emulated-phone software WebGPU evidence; hosted deployment and
+physical-device performance are separate.
+
 History: [the earlier start-page preview](archive/20261005-fawn-start-preview.md).

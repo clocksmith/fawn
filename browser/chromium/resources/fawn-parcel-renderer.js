@@ -1,12 +1,15 @@
 // Surface and point appearances reconstruct the same independently moving parcels.
 const PARCEL_RENDER_POLICY = Object.freeze({
-  version: 1,
+  version: 2,
   accumulationCapacity: 4096,
   materialBound: 8,
   fluidRadiusCells: 2.2,
   particleRadiusPx: 1.6,
   coverageGain: 2.5,
   exposure: 1.65,
+  flowGlintPixels: 1.25,
+  flowGlintStrength: 0.16,
+  flowGlintSharpness: 32,
 });
 const HEADER = `
 struct Params { view:vec4<f32>, screen:vec4<f32>, theme:vec4<f32>, material:vec4<f32> }
@@ -65,8 +68,13 @@ fn spectral(t:f32)->vec3<f32> {return 0.5+0.5*cos(vec3<f32>(0,2,4)+t*6.28318);}
  let light=normalize(vec3<f32>(0.45,0.60,1));let halfVector=normalize(light+vec3<f32>(0,0,1));
  let specular=pow(max(dot(normal,halfVector),0.0),64.0);
  let flowPrism=spectral(material.x*0.22+abs(material.z)*0.36+u.screen.w*0.020);
+ // Fine facets catch the changing carried material without disturbing its broad relief.
+ let facet=floor(in.position.xy/${PARCEL_RENDER_POLICY.flowGlintPixels});
+ let grain=fract(sin(dot(facet,vec2<f32>(12.9898,78.233)))*43758.5453);
+ let shimmer=pow(0.5+0.5*sin(grain*6.28318+material.x*32.0+material.z*8.0+u.screen.w*1.8),${PARCEL_RENDER_POLICY.flowGlintSharpness}.0);
  let flowLight=pigment*(0.92+material.w*0.24)+flowPrism*abs(material.z)*0.030
-   +(prism*(0.22+material.x*0.14)+vec3<f32>(specular*0.30));
+   +(prism*(0.22+material.x*0.14)+vec3<f32>(specular*0.30))
+   +mix(prism,vec3<f32>(1.0),0.5)*shimmer*${PARCEL_RENDER_POLICY.flowGlintStrength};
  let flowColor=1.0-exp(-max(flowLight,vec3<f32>(0))*${PARCEL_RENDER_POLICY.exposure});
  let waveColor=prism*ridge*(0.02+contour*0.40+fresnel*0.16)+vec3<f32>(0.8,0.88,1)*specular*ridge*0.28;
  let pointColor=pigment*(0.85+material.w*0.15);
