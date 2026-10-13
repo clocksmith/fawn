@@ -1,52 +1,22 @@
-// Resident solvers share a device, coordinates, and one source-preserving handoff path.
-import { flow, wave, particles, updateWaveSources } from './fawn-shaders.js';
-import {
-  FLOW_TO_WAVE,
-  WAVE_TO_PARTICLES,
-  PARTICLE_DEPOSIT,
-  RESOLVE_DEPOSIT,
-} from './fawn-cycle-transfers.js';
+// One parcel population survives every effect handoff and formation change.
+import { flow, wave, updateWaveSources } from './fawn-shaders.js';
+import { FLOW_TO_WAVE, PARTICLE_DEPOSIT, RESOLVE_DEPOSIT } from './fawn-cycle-transfers.js';
+import { PARCEL_POLICY, PARCEL_UPDATE, createParcelData } from './fawn-parcels.js';
+import { createParcelRenderer } from './fawn-parcel-renderer.js';
 const GPU_POLICY = Object.freeze({
-  version: 1,
+  version: 2,
   maxCount: 262144,
   pressureIterations: flow.PRESSURE_ITERATIONS,
-  radiusPx: particles.PARTICLE_RADIUS_PX,
-  radiusMinPx: 1.2,
-  radiusMaxPx: 2.0,
-  particleExposure: 2.0,
-  particleSourceFadeStart: 0.7,
-  particleSourceFadeEnd: 0.98,
-  particleFieldPhase: 1,
-  particleVelocityScale: 12,
   flowGroup: flow.WORKGROUP_SIZE,
   waveGroup: wave.WORKGROUP_SIZE,
-  particleGroup: particles.WORKGROUP_SIZE,
+  parcelGroup: PARCEL_POLICY.workgroup,
+  parcelBytes: PARCEL_POLICY.strideFloats * 4,
 });
-function particleAdvectionShader() {
-  // Midpoint advection retains interior material in the circulating film field.
-  return particles.COMPUTE_WGSL.replace(
-    'var nextVel = vel * pow(0.986, u.dt * 60.0) + field * (u.dt * 60.0);',
-    `let firstVelocity = field * ${GPU_POLICY.particleVelocityScale}.0;
-  let midpoint = pos + firstVelocity / max(1.0, length(firstVelocity) / 1.75) * (u.dt * 0.5);
-  let midpointDelta = u.mouse - midpoint;
-  let midpointDistance = max(dot(midpointDelta, midpointDelta), 0.018);
-  let midpointDirection = safeNormalize(midpointDelta);
-  var midpointField = sceneField(phase, midpoint, midpointDirection, midpointDistance);
-  if (blend > 0.0) {
-    midpointField = mix(midpointField, sceneField((phase + 1u) % 3u, midpoint, midpointDirection, midpointDistance), blend);
-  }
-  midpointField -= sign(midpoint) * smoothstep(vec2<f32>(0.80), vec2<f32>(VIEWPORT_EDGE), abs(midpoint)) * 0.09;
-  midpointField -= vel * 0.010;
-  var nextVel = midpointField * (${GPU_POLICY.particleVelocityScale}.0 * (1.0 - u.formation.x));`,
-  );
-}
 function createCycleGpu(device, canvas, format, count) {
-  if (!FawnFormation.WORKLOAD.counts.includes(count) || count > GPU_POLICY.maxCount) {
+  if (!FawnFormation.WORKLOAD.counts.includes(count) || count > GPU_POLICY.maxCount)
     throw new Error(`Unsupported cycle workload: ${count}`);
-  }
   const grid = Math.sqrt(count),
-    buffers = [],
-    textures = [];
+    buffers = [];
   const buffer = (label, size, uniform = false) => {
     const b = device.createBuffer({
       label,
@@ -66,55 +36,40 @@ function createCycleGpu(device, canvas, format, count) {
       layout: 'auto',
       compute: { module: device.createShaderModule({ label, code }), entryPoint: 'main' },
     });
-  const render = (label, code, blend) => {
-    const module = device.createShaderModule({ label, code });
-    return device.createRenderPipeline({
-      label,
-      layout: 'auto',
-      vertex: { module, entryPoint: 'vs' },
-      fragment: { module, entryPoint: 'fs', targets: [{ format, ...(blend ? { blend } : {}) }] },
-      primitive: { topology: 'triangle-strip' },
-    });
-  };
-  const group = (pipeline, bindings) =>
+  const group = (pipeline, resources) =>
     device.createBindGroup({
       layout: pipeline.getBindGroupLayout(0),
-      entries: bindings.map(([binding, resource]) => ({
+      entries: resources.map((resource, binding) => ({
         binding,
         resource: resource instanceof GPUBuffer ? { buffer: resource } : resource,
       })),
     });
-  const sequential = (pipeline, resources) =>
-    group(
-      pipeline,
-      resources.map((r, i) => [i, r]),
-    );
   const dispatch = (pass, pipeline, bindings, surfaceGroup = null) => {
     pass.setPipeline(pipeline);
     pass.setBindGroup(0, bindings);
     if (surfaceGroup)
       pass.dispatchWorkgroups(Math.ceil(grid / surfaceGroup), Math.ceil(grid / surfaceGroup));
-    else pass.dispatchWorkgroups(Math.ceil(count / GPU_POLICY.particleGroup));
+    else pass.dispatchWorkgroups(Math.ceil(count / GPU_POLICY.parcelGroup));
   };
   const flowUniform = buffer('Cycle Flow uniforms', 80, true);
   const waveUniform = buffer('Cycle Wave uniforms', wave.WAVE_UNIFORM_FLOATS * 4, true);
-  const particleUniform = buffer('Cycle Particles uniforms', 64, true);
+  const parcelUniform = buffer('Cycle parcel uniforms', 64, true);
   const transferUniform = buffer('Cycle transfer uniforms', 48, true);
-  const logo = field('Cycle material destinations');
   const velocities = [field('Cycle velocity 0'), field('Cycle velocity 1')];
   const dyes = [field('Cycle dye 0'), field('Cycle dye 1')];
   const pressures = [buffer('Cycle pressure 0', count * 4), buffer('Cycle pressure 1', count * 4)];
   const curl = field('Cycle divergence and curl');
   const waves = [field('Cycle surface 0'), field('Cycle surface 1')];
-  const points = [buffer('Cycle particles 0', count * 32), buffer('Cycle particles 1', count * 32)];
+  const parcels = [
+    buffer('Cycle parcels 0', count * GPU_POLICY.parcelBytes),
+    buffer('Cycle parcels 1', count * GPU_POLICY.parcelBytes),
+  ];
+  const goals = buffer('Cycle logo targets', PARCEL_POLICY.targetGrid ** 2 * 16);
   const deposits = buffer('Cycle deposits', count * 24);
   let dyeIndex = 0,
     waveIndex = 0,
-    particleIndex = 0;
-  let destinations,
-    targets = [],
-    trailTargets = [],
-    trailIndex = 0;
+    parcelIndex = 0,
+    parcelGroups;
   const flowCompute = [
     'ADVECT_VEL_WGSL',
     'DIV_CURL_WGSL',
@@ -122,142 +77,72 @@ function createCycleGpu(device, canvas, format, count) {
     'PROJECT_WGSL',
     'ADVECT_DYE_WGSL',
   ].map((name) => compute(`Cycle Flow ${name}`, flow[name]));
-  const flowRender = render('Cycle Flow material', flow.RENDER_WGSL);
-  // Reflection stays driven by the live surface, with pigment inherited from the preceding fluid.
-  const waveCode = wave.RENDER_WGSL.replace(
-    '@fragment',
-    '@group(0) @binding(3) var<storage,read> pigment: array<vec4<f32>>;\n@fragment',
-  )
-    .replace('let prism = spectral(', 'let prismBase = spectral(')
-    .replace(
-      'let contour =',
-      `let pigmentColor = pigment[idx_at(i32(in.uv.x*u.grid.x),i32(in.uv.y*u.grid.y))].rgb;
-      let prism = mix(prismBase, pigmentColor / max(max(pigmentColor.r,pigmentColor.g),max(pigmentColor.b,0.001)),0.32);
-      let contour =`,
-    );
-  const waveCompute = compute('Cycle Wave solver', wave.COMPUTE_WGSL);
-  const waveRender = render('Cycle Wave material', waveCode);
-  const particleCompute = compute('Cycle Particles solver', particleAdvectionShader());
-  // All effects deform the same material sheet, so handoffs never change logo coordinates.
-  const particleCode = particles.PARTICLE_WGSL.replace(
-    '@vertex',
-    '@group(0) @binding(2) var<storage,read> destinations: array<vec4<f32>>;\n@vertex',
-  )
-    .replace(
-      'let world = (p.pos + local * vec2<f32>(size)) / u.viewport.xy;',
-      `let uv=p.pos*0.5+0.5;
-      let destination=mix(destinations[0].xy,destinations[1].xy,uv);
-      let mapped=mix(uv,destination,u.formation.x);
-      let world=(mapped*2.0-1.0+local*vec2<f32>(size))/u.viewport.xy;`,
-    )
-    .replace(
-      'out.color = mix(p.color.xyz, palette, u.formation.x)',
-      `out.color = p.color.xyz * ${GPU_POLICY.particleExposure}`,
-    )
-    .replace(
-      'out.visibility = 1.0 - smoothstep(',
-      `let cx=clamp(i32(mapped.x*u.viewport.z),0,i32(u.viewport.z)-1);
-      let cy=clamp(i32(mapped.y*u.viewport.z),0,i32(u.viewport.z)-1);
-      let mark=destinations[u32(cy)*u32(u.viewport.z)+u32(cx)].z;
-      out.visibility = mix(1.0,mark,smoothstep(0.35,1.0,u.formation.x)) * (1.0 - smoothstep(`,
-    )
-    .replace(
-      'max(abs(p.pos.x), abs(p.pos.y)));',
-      `max(abs(p.pos.x), abs(p.pos.y))));
-      let birth = (vec2<f32>(f32(instanceIndex % u32(u.viewport.z)), f32(instanceIndex / u32(u.viewport.z))) + 0.5) / u.viewport.z * 2.0 - 1.0;
-      out.visibility *= 1.0 - smoothstep(${GPU_POLICY.particleSourceFadeStart}, ${GPU_POLICY.particleSourceFadeEnd}, max(abs(birth.x), abs(birth.y)));`,
-    );
-  const particleRender = render('Cycle Particles material', particleCode, particles.PARTICLE_BLEND);
-  const fadeCode = particles.FADE_WGSL.replace('array<vec2<f32>, 3>', 'array<vec2<f32>, 4>')
-    .replace('vec2<f32>(-1.0, -3.0),', 'vec2<f32>(-1.0, -1.0),')
-    .replace('vec2<f32>( 3.0,  1.0)', 'vec2<f32>(1.0, -1.0), vec2<f32>(1.0,1.0)');
-  // Strip order is bottom-left, top-left, bottom-right, top-right.
-  const fade = render('Cycle particle trails', fadeCode);
-  const transfers = [FLOW_TO_WAVE, WAVE_TO_PARTICLES, PARTICLE_DEPOSIT, RESOLVE_DEPOSIT].map(
-    (code, i) => compute(`Cycle handoff ${i}`, code),
-  );
   const flowGroups = {
-    advect: sequential(flowCompute[0], [flowUniform, velocities[0], velocities[1]]),
-    curl: sequential(flowCompute[1], [flowUniform, velocities[1], curl]),
+    advect: group(flowCompute[0], [flowUniform, velocities[0], velocities[1]]),
+    curl: group(flowCompute[1], [flowUniform, velocities[1], curl]),
     pressure: [0, 1].map((i) =>
-      sequential(flowCompute[2], [flowUniform, pressures[i], curl, pressures[1 - i]]),
+      group(flowCompute[2], [flowUniform, pressures[i], curl, pressures[1 - i]]),
     ),
-    project: sequential(flowCompute[3], [
-      flowUniform,
-      velocities[1],
-      pressures[0],
-      curl,
-      velocities[0],
-    ]),
+    project: group(flowCompute[3], [flowUniform, velocities[1], pressures[0], curl, velocities[0]]),
     dye: [0, 1].map((i) =>
-      sequential(flowCompute[4], [flowUniform, dyes[i], velocities[0], dyes[1 - i]]),
-    ),
-    render: [0, 1].map((i) =>
-      sequential(flowRender, [flowUniform, dyes[i], velocities[0], curl, logo]),
+      group(flowCompute[4], [flowUniform, dyes[i], velocities[0], dyes[1 - i]]),
     ),
   };
-  const waveGroups = [0, 1].map((i) =>
-    sequential(waveCompute, [waveUniform, waves[i], waves[1 - i]]),
+  const waveCompute = compute('Cycle Wave solver', wave.COMPUTE_WGSL);
+  const waveGroups = [0, 1].map((i) => group(waveCompute, [waveUniform, waves[i], waves[1 - i]]));
+  const parcelCompute = compute('Cycle moving parcels', PARCEL_UPDATE);
+  const transfers = [FLOW_TO_WAVE, PARTICLE_DEPOSIT, RESOLVE_DEPOSIT].map((code, i) =>
+    compute(`Cycle handoff ${i}`, code),
   );
-  const waveRenders = [0, 1].map((i) =>
-    [0, 1].map((j) => sequential(waveRender, [waveUniform, waves[i], logo, dyes[j]])),
-  );
-  const particleGroups = [0, 1].map((i) =>
-    sequential(particleCompute, [particleUniform, points[i], points[1 - i], logo]),
-  );
-  const sampler = device.createSampler({ minFilter: 'linear', magFilter: 'linear' });
-  let fadeGroups = [],
-    copyGroups = [];
-  function updateLogo() {
-    destinations = FawnFormation.materialDestinations(
-      grid,
+  const handoffGroups = {
+    wave: [0, 1].map((i) =>
+      group(transfers[0], [transferUniform, dyes[i], velocities[0], waves[0]]),
+    ),
+    deposit: [0, 1].map((i) => group(transfers[1], [transferUniform, parcels[i], deposits])),
+    resolve: group(transfers[2], [transferUniform, deposits, dyes[0], velocities[0]]),
+  };
+  const renderer = createParcelRenderer(device, canvas, format, count, parcels);
+  function resize() {
+    const targets = FawnFormation.points(
+      PARCEL_POLICY.targetGrid,
       canvas,
       document.querySelector('.brand-logo'),
     );
-    device.queue.writeBuffer(logo, 0, destinations);
-  }
-  function resize() {
-    textures.splice(0).forEach((t) => t.destroy());
-    const target = (label) => {
-      const t = device.createTexture({
-        label,
-        size: [canvas.width, canvas.height],
-        format,
-        usage:
-          GPUTextureUsage.RENDER_ATTACHMENT |
-          GPUTextureUsage.TEXTURE_BINDING |
-          GPUTextureUsage.COPY_SRC,
-      });
-      textures.push(t);
-      return t;
-    };
-    targets = [target('Cycle effect image 0'), target('Cycle effect image 1')];
-    trailTargets = [target('Cycle particle history 0'), target('Cycle particle history 1')];
-    fadeGroups = trailTargets.map((t) => sequential(fade, [sampler, t.createView()]));
-    copyGroups = trailTargets.map((t) => sequential(copy, [sampler, t.createView()]));
-    trailIndex = 0;
-    updateLogo();
+    device.queue.writeBuffer(goals, 0, targets);
+    // Bind the populated range only: spare capacity is not a target at the origin.
+    parcelGroups = [0, 1].map((p) =>
+      [0, 1].map((d) =>
+        [0, 1].map((w) =>
+          group(parcelCompute, [
+            parcelUniform,
+            parcels[p],
+            parcels[1 - p],
+            { buffer: goals, size: targets.byteLength },
+            velocities[0],
+            dyes[d],
+            waves[w],
+            curl,
+          ]),
+        ),
+      ),
+    );
+    renderer.resize();
   }
   function reset() {
-    const seed = FawnFormation.seed(grid);
+    const seed = FawnFormation.seed(grid),
+      material = createParcelData(grid, seed);
     dyes.forEach((b) => device.queue.writeBuffer(b, 0, seed.dye));
     velocities.forEach((b) => device.queue.writeBuffer(b, 0, seed.velocity));
+    parcels.forEach((b) => device.queue.writeBuffer(b, 0, material));
     const encoder = device.createCommandEncoder();
-    [...waves, ...points, ...pressures, curl, deposits].forEach((b) => encoder.clearBuffer(b));
+    [...waves, ...pressures, curl, deposits].forEach((b) => encoder.clearBuffer(b));
     device.queue.submit([encoder.finish()]);
-    dyeIndex = 0;
-    waveIndex = 0;
-    particleIndex = 0;
+    dyeIndex = waveIndex = parcelIndex = 0;
     resize();
   }
-  function uniforms(dt, time, shape, pointer, steps) {
-    const viewport = FawnFormation.viewport(canvas);
-    const mapped = FawnFormation.materialPoint([pointer.x, pointer.y], destinations, shape);
-    const previous = FawnFormation.materialPoint(
-      [pointer.x - pointer.dx, pointer.y - pointer.dy],
-      destinations,
-      shape,
-    );
+  function uniforms(dt, time, shape, pointer, steps, weights) {
+    const viewport = FawnFormation.viewport(canvas),
+      liveDt = dt * (1 - shape);
     const force = pointer.hover ? (pointer.down ? 1.4 : 0.28) : 0;
     device.queue.writeBuffer(
       flowUniform,
@@ -267,15 +152,16 @@ function createCycleGpu(device, canvas, format, count) {
         grid,
         1 / grid,
         1 / grid,
-        ...mapped,
+        pointer.x,
+        pointer.y,
         force,
         force > 0.28 ? 0.1 : 0.05,
-        (dt * 0.82) / steps,
+        (liveDt * 0.82) / steps,
         time,
         2,
-        shape,
-        mapped[0] - previous[0],
-        mapped[1] - previous[1],
+        0,
+        pointer.dx,
+        pointer.dy,
         pointer.press,
         0,
         ...viewport,
@@ -289,70 +175,46 @@ function createCycleGpu(device, canvas, format, count) {
       grid,
       1 / grid,
       1 / grid,
-      ...mapped,
+      pointer.x,
+      pointer.y,
       pointer.hover ? (pointer.down ? 1 : 0.55) : 0,
       0,
-      (dt * 1.1) / steps,
+      (liveDt * 1.1) / steps,
       time,
       canvas.width / canvas.height,
-      shape,
+      0,
     ]);
     updateWaveSources(w, time);
     device.queue.writeBuffer(waveUniform, 0, w);
-    const radius =
-      (Math.max(
-        GPU_POLICY.radiusMinPx,
-        Math.min(
-          GPU_POLICY.radiusMaxPx,
-          GPU_POLICY.radiusPx * (FawnFormation.WORKLOAD.defaultCounts.particles / count) ** 0.25,
-        ),
-      ) *
-        2) /
-      Math.max(canvas.clientWidth, canvas.clientHeight);
     device.queue.writeBuffer(
-      particleUniform,
+      parcelUniform,
       0,
       new Float32Array([
-        dt / steps,
+        grid,
+        count,
+        dt,
         time,
-        canvas.width / canvas.height,
-        pointer.down ? 26.67 : 0,
+        ...weights,
+        shape,
         pointer.x * 2 - 1,
         pointer.y * 2 - 1,
-        radius,
-        GPU_POLICY.particleFieldPhase,
-        0,
-        0,
-        0,
+        pointer.hover ? (pointer.down ? 26.67 : 2) : 0,
         0,
         ...viewport,
-        grid,
+        0,
         0,
       ]),
     );
-    // Particle simulation remains in source coordinates; only its render deforms the sheet.
-    const pRender = new Float32Array([
-      dt / steps,
-      time,
-      canvas.width / canvas.height,
+    device.queue.writeBuffer(
+      transferUniform,
       0,
-      0,
-      0,
-      radius,
-      0,
-      shape,
-      0,
-      0,
-      0,
-      ...viewport,
-      grid,
-      0,
-    ]);
-    return pRender;
+      new Float32Array([grid, grid, 1 / grid, 1 / grid, 0, 0, 0, 0, 0, 0, 0, 0]),
+    );
   }
   function simulate(encoder, effect, steps) {
+    if (effect === 'particles') return;
     const pass = encoder.beginComputePass();
-    if (effect === 'flow') {
+    if (effect === 'flow')
       for (let step = 0; step < steps; step++) {
         dispatch(pass, flowCompute[0], flowGroups.advect, GPU_POLICY.flowGroup);
         dispatch(pass, flowCompute[1], flowGroups.curl, GPU_POLICY.flowGroup);
@@ -362,172 +224,52 @@ function createCycleGpu(device, canvas, format, count) {
         dispatch(pass, flowCompute[4], flowGroups.dye[dyeIndex], GPU_POLICY.flowGroup);
         dyeIndex = 1 - dyeIndex;
       }
-    } else if (effect === 'wave') {
+    else
       for (let i = 0; i < steps; i++) {
         dispatch(pass, waveCompute, waveGroups[waveIndex], GPU_POLICY.waveGroup);
         waveIndex = 1 - waveIndex;
       }
-    } else {
-      for (let i = 0; i < steps; i++) {
-        dispatch(pass, particleCompute, particleGroups[particleIndex]);
-        particleIndex = 1 - particleIndex;
-      }
-    }
     pass.end();
   }
-  function handoff(encoder, effect, shape, sourceImage) {
-    const viewport = FawnFormation.viewport(canvas);
-    device.queue.writeBuffer(
-      transferUniform,
-      0,
-      new Float32Array([
-        grid,
-        grid,
-        1 / grid,
-        1 / grid,
-        ...viewport,
-        shape,
-        0,
-        destinations[0],
-        destinations[1],
-        destinations[4],
-        destinations[5],
-      ]),
-    );
+  function advanceParcels(encoder) {
+    const pass = encoder.beginComputePass();
+    dispatch(pass, parcelCompute, parcelGroups[parcelIndex][dyeIndex][waveIndex]);
+    pass.end();
+    parcelIndex = 1 - parcelIndex;
+  }
+  function handoff(encoder, effect) {
+    // Wave -> Particles changes the field weights only; every parcel stays resident.
+    if (effect === 'wave') return;
+    if (effect === 'particles') encoder.clearBuffer(deposits);
+    const pass = encoder.beginComputePass();
     if (effect === 'flow') {
-      const computePass = encoder.beginComputePass();
-      dispatch(
-        computePass,
-        transfers[0],
-        sequential(transfers[0], [transferUniform, dyes[dyeIndex], velocities[0], waves[0]]),
-      );
-      computePass.end();
+      dispatch(pass, transfers[0], handoffGroups.wave[dyeIndex]);
       waveIndex = 0;
-    } else if (effect === 'wave') {
-      const computePass = encoder.beginComputePass();
-      dispatch(
-        computePass,
-        transfers[1],
-        sequential(transfers[1], [
-          transferUniform,
-          waves[waveIndex],
-          dyes[dyeIndex],
-          points[0],
-          sourceImage.createView(),
-        ]),
-      );
-      computePass.end();
-      particleIndex = 0;
-      // Trails inherit the visible film on their first frame, then decay normally.
-      const pass = encoder.beginRenderPass({
-        colorAttachments: [
-          {
-            view: trailTargets[0].createView(),
-            loadOp: 'clear',
-            storeOp: 'store',
-            clearValue: [0, 0, 0, 1],
-          },
-        ],
-      });
-      pass.setPipeline(fade);
-      pass.setBindGroup(0, sequential(fade, [sampler, sourceImage.createView()]));
-      pass.draw(4);
-      pass.end();
-      trailIndex = 0;
     } else {
-      encoder.clearBuffer(deposits);
-      const computePass = encoder.beginComputePass();
-      dispatch(
-        computePass,
-        transfers[2],
-        sequential(transfers[2], [transferUniform, points[particleIndex], deposits]),
-      );
-      dispatch(
-        computePass,
-        transfers[3],
-        sequential(transfers[3], [transferUniform, deposits, dyes[0], velocities[0]]),
-      );
-      computePass.end();
-      encoder.clearBuffer(pressures[0]);
-      encoder.clearBuffer(pressures[1]);
-      encoder.clearBuffer(curl);
+      dispatch(pass, transfers[1], handoffGroups.deposit[parcelIndex]);
+      dispatch(pass, transfers[2], handoffGroups.resolve);
       dyeIndex = 0;
     }
-  }
-  function draw(encoder, effect, slot, particleRenderUniform) {
-    const texture = targets[slot];
-    const background =
-      effect === 'flow'
-        ? flow.FLOW_MATERIAL.background
-        : effect === 'wave'
-          ? [0.003, 0.004, 0.006]
-          : [0.01, 0.016, 0.013];
-    const attachment = (view) => ({
-      view,
-      loadOp: 'clear',
-      storeOp: 'store',
-      clearValue: [...background, 1],
-    });
+    pass.end();
     if (effect === 'particles') {
-      // Separate render uniforms avoid one queue write changing already-encoded compute uniforms.
-      device.queue.writeBuffer(particleRenderUniformBuffer, 0, particleRenderUniform);
-      const next = 1 - trailIndex;
-      const pass = encoder.beginRenderPass({
-        colorAttachments: [attachment(trailTargets[next].createView())],
-      });
-      pass.setPipeline(fade);
-      pass.setBindGroup(0, fadeGroups[trailIndex]);
-      pass.draw(4);
-      pass.setPipeline(particleRender);
-      pass.setBindGroup(0, particleRenderGroups[particleIndex]);
-      pass.draw(4, count);
-      pass.end();
-      const image = encoder.beginRenderPass({
-        colorAttachments: [attachment(texture.createView())],
-      });
-      image.setPipeline(copy);
-      image.setBindGroup(0, copyGroups[next]);
-      image.draw(4);
-      image.end();
-      trailIndex = next;
-    } else {
-      const pass = encoder.beginRenderPass({
-        colorAttachments: [attachment(texture.createView())],
-      });
-      pass.setPipeline(effect === 'flow' ? flowRender : waveRender);
-      pass.setBindGroup(
-        0,
-        effect === 'flow' ? flowGroups.render[dyeIndex] : waveRenders[waveIndex][dyeIndex],
-      );
-      pass.draw(4);
-      pass.end();
+      pressures.forEach((b) => encoder.clearBuffer(b));
+      encoder.clearBuffer(curl);
     }
-    return texture;
   }
-  const copy = render(
-    'Cycle image copy',
-    fadeCode.replace(
-      'return vec4<f32>(max(faded, background), 1.0);',
-      'return vec4<f32>(prev.rgb,1.0);',
-    ),
-  );
-  const particleRenderUniformBuffer = buffer('Cycle particle render uniforms', 64, true);
-  const particleRenderGroups = [0, 1].map((i) =>
-    sequential(particleRender, [particleRenderUniformBuffer, points[i], logo]),
-  );
   reset();
   return {
     uniforms,
     simulate,
+    advanceParcels,
     handoff,
-    draw,
     resize,
     reset,
-    textures: () => targets,
+    draw: (encoder, view, weights, time) =>
+      renderer.draw(encoder, view, parcelIndex, weights, time),
     destroy() {
+      renderer.destroy();
       buffers.forEach((b) => b.destroy());
-      textures.forEach((t) => t.destroy());
     },
   };
 }
-export { GPU_POLICY, createCycleGpu, particleAdvectionShader };
+export { GPU_POLICY, createCycleGpu };

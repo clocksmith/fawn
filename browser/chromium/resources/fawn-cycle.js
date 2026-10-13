@@ -15,14 +15,7 @@ const clock = createCycleClock(),
   formation = FawnFormation.transition();
 let logoEnabled = FawnFormation.configure(formationSelect);
 FawnFormation.configureWorkload(countSelect, stepsSelect, 'flow');
-let device,
-  context,
-  gpu,
-  format,
-  composition,
-  compositionUniform,
-  sampler,
-  imageGroups = [];
+let device, context, gpu, format;
 let configured = false,
   refreshPending = false;
 let running = false,
@@ -48,42 +41,12 @@ const pointer = {
   id: null,
 };
 const fps = [];
-const COMPOSITION = `
-struct Output { @builtin(position) position: vec4<f32>, @location(0) uv: vec2<f32> }
-@group(0) @binding(0) var imageSampler: sampler;
-@group(0) @binding(1) var fromImage: texture_2d<f32>;
-@group(0) @binding(2) var toImage: texture_2d<f32>;
-@group(0) @binding(3) var<uniform> blend: vec4<f32>;
-@vertex fn vs(@builtin(vertex_index) i:u32)->Output {
- let points=array<vec2<f32>,4>(vec2<f32>(-1,-1),vec2<f32>(1,-1),vec2<f32>(-1,1),vec2<f32>(1,1));
- var out:Output;out.position=vec4<f32>(points[i],0,1);out.uv=points[i]*vec2<f32>(0.5,-0.5)+0.5;return out;
-}
-@fragment fn fs(in:Output)->@location(0) vec4<f32> {
- let a=textureSample(fromImage,imageSampler,in.uv).rgb;
- let b=textureSample(toImage,imageSampler,in.uv).rgb;
- // Mix linear light rather than dimming the midpoint between different materials.
- return vec4<f32>(sqrt(mix(a*a,b*b,blend.x)),1);
-}`;
 function updateControls() {
   pause.textContent = paused ? 'Resume' : 'Pause';
   pause.setAttribute('aria-pressed', String(paused));
   status.textContent = paused ? 'Paused' : 'WebGPU active';
   document.querySelector('#load').textContent =
     `${Number(countSelect.value).toLocaleString()} cells / particles · ${stepsSelect.value} steps`;
-}
-function composeGroups() {
-  const textures = gpu.textures();
-  imageGroups = [textures[0], textures[1]].map((texture) =>
-    device.createBindGroup({
-      layout: composition.getBindGroupLayout(0),
-      entries: [
-        { binding: 0, resource: sampler },
-        { binding: 1, resource: textures[0].createView() },
-        { binding: 2, resource: texture.createView() },
-        { binding: 3, resource: { buffer: compositionUniform } },
-      ],
-    }),
-  );
 }
 function resize() {
   const side = Math.max(canvas.clientWidth, canvas.clientHeight, 1);
@@ -101,7 +64,6 @@ function resize() {
   configured = true;
   if (gpu) {
     gpu.resize();
-    composeGroups();
   }
 }
 function reset() {
@@ -116,7 +78,6 @@ function reset() {
     gpu = null;
   }
   gpu = createCycleGpu(device, canvas, format, Number(countSelect.value));
-  composeGroups();
   updateControls();
   lastTime = 0;
   lastCompletion = 0;
@@ -178,30 +139,20 @@ async function frame(now) {
     shape = formation.advance(dt, logoEnabled, interacting || cycle.transitioning);
     const liveDt = dt * (1 - shape);
     time += liveDt;
-    const renderUniform = gpu.uniforms(liveDt, time, shape, pointer, Number(stepsSelect.value));
+    const weights = CYCLE_POLICY.effects.map(
+      (effect) =>
+        (effect === cycle.effect ? 1 - cycle.blend : 0) +
+        (cycle.transitioning && effect === cycle.next ? cycle.blend : 0),
+    );
+    gpu.uniforms(dt, time, shape, pointer, Number(stepsSelect.value), weights);
     const encoder = device.createCommandEncoder({ label: 'Fawn cycle frame' });
-    if (cycle.started) gpu.handoff(encoder, cycle.effect, shape, gpu.textures()[0]);
+    if (cycle.started) gpu.handoff(encoder, cycle.effect);
     if (liveDt > 0) {
       gpu.simulate(encoder, cycle.effect, Number(stepsSelect.value));
       if (cycle.transitioning) gpu.simulate(encoder, cycle.next, Number(stepsSelect.value));
     }
-    gpu.draw(encoder, cycle.effect, 0, renderUniform);
-    if (cycle.transitioning) gpu.draw(encoder, cycle.next, 1, renderUniform);
-    device.queue.writeBuffer(compositionUniform, 0, new Float32Array([cycle.blend, 0, 0, 0]));
-    const pass = encoder.beginRenderPass({
-      colorAttachments: [
-        {
-          view: context.getCurrentTexture().createView(),
-          clearValue: [0, 0, 0, 1],
-          loadOp: 'clear',
-          storeOp: 'store',
-        },
-      ],
-    });
-    pass.setPipeline(composition);
-    pass.setBindGroup(0, imageGroups[cycle.transitioning ? 1 : 0]);
-    pass.draw(4);
-    pass.end();
+    if (dt > 0) gpu.advanceParcels(encoder);
+    gpu.draw(encoder, context.getCurrentTexture().createView(), weights, time);
     device.queue.submit([encoder.finish()]);
     pointer.dx = 0;
     pointer.dy = 0;
@@ -386,25 +337,11 @@ addEventListener('pagehide', () => {
       Math.min(
         GPU_POLICY.maxCount,
         Math.floor(
-          Math.min(device.limits.maxStorageBufferBindingSize, device.limits.maxBufferSize) / 32,
+          Math.min(device.limits.maxStorageBufferBindingSize, device.limits.maxBufferSize) /
+            GPU_POLICY.parcelBytes,
         ),
       ),
     );
-    const module = device.createShaderModule({
-      label: 'Fawn continuous materials',
-      code: COMPOSITION,
-    });
-    composition = device.createRenderPipeline({
-      layout: 'auto',
-      vertex: { module, entryPoint: 'vs' },
-      fragment: { module, entryPoint: 'fs', targets: [{ format }] },
-      primitive: { topology: 'triangle-strip' },
-    });
-    compositionUniform = device.createBuffer({
-      size: 16,
-      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-    });
-    sampler = device.createSampler({ minFilter: 'linear', magFilter: 'linear' });
     document.querySelector('#adapter').textContent =
       [adapter.info?.vendor, adapter.info?.architecture].filter(Boolean).join(' · ') ||
       'WebGPU connected';

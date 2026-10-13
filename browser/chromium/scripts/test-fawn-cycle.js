@@ -15,6 +15,8 @@ const files = [
   'fawn-cycle-clock.js',
   'fawn-cycle-gpu.js',
   'fawn-cycle-transfers.js',
+  'fawn-parcels.js',
+  'fawn-parcel-renderer.js',
   'fawn-shaders.js',
   'fawn-formation.js',
 ];
@@ -178,17 +180,21 @@ async function state(page) {
         read.unmap();
         read.destroy();
         let central = 0;
-        if (label.startsWith('Cycle particles '))
-          for (let i = 0; i < values.length; i += 8) {
+        if (label.startsWith('Cycle parcels '))
+          for (let i = 0; i < values.length; i += 12) {
             if (Math.abs(values[i]) < 0.25 && Math.abs(values[i + 1]) < 0.25) central++;
           }
         fields[label] = {
-          ...(label.startsWith('Cycle particles ') ? { central } : {}),
+          ...(label.startsWith('Cycle parcels ') ? { central } : {}),
           finite: label === 'Cycle deposits' || values.every(Number.isFinite),
           energy: values.reduce((s, x) => s + Math.abs(x), 0),
         };
       }
-    const blend = p.writes.filter((w) => w.label === '').at(-1)?.values?.[0];
+    const weights = p.writes
+      .filter((w) => w.label === 'Cycle parcel uniforms')
+      .at(-1)
+      ?.values?.slice(4, 7);
+    const blend = weights?.find((w) => w > 0 && w < 1) || 0;
     return {
       effect: document.querySelector('#effect').textContent,
       fields,
@@ -232,7 +238,7 @@ try {
     const dye = buffer(count * 16),
       velocity = buffer(count * 16),
       surface = buffer(count * 16),
-      points = buffer(count * 32),
+      points = buffer(count * 48),
       deposit = buffer(count * 24);
     const d = new Float32Array(count * 4),
       v = new Float32Array(count * 4);
@@ -289,32 +295,26 @@ try {
       );
     }
     if (error > 1e-5) throw new Error(`Flow-to-Wave reference mismatch: ${error}`);
-    const image = device.createTexture({
-      size: [grid, grid],
-      format: 'rgba8unorm',
-      usage: GPUTextureUsage.COPY_DST | GPUTextureUsage.TEXTURE_BINDING,
-    });
-    const pixels = new Uint8Array(count * 4);
-    for (let i = 0; i < count; i++) pixels.set([120, 80, 40, 255], i * 4);
-    device.queue.writeTexture({ texture: image }, pixels, { bytesPerRow: grid * 4 }, [grid, grid]);
-    run(codes.WAVE_TO_PARTICLES, [uniform, surface, dye, points, image.createView()]);
-    const p = await read(points);
-    let positionError = 0,
-      colorError = 0;
-    for (let i = 0; i < count; i++) {
-      positionError = Math.max(
-        positionError,
-        Math.abs(p[i * 8] - ((((i % grid) + 0.5) / grid) * 2 - 1)),
-        Math.abs(p[i * 8 + 1] - (((Math.floor(i / grid) + 0.5) / grid) * 2 - 1)),
+    const p = new Float32Array(count * 12);
+    for (let i = 0; i < count; i++)
+      p.set(
+        [
+          (((i % grid) + 0.5) / grid) * 2 - 1,
+          ((Math.floor(i / grid) + 0.5) / grid) * 2 - 1,
+          0.1,
+          -0.15,
+          0.8,
+          0.3,
+          0.2,
+          1,
+          0.7,
+          0.2,
+          0.1,
+          0.04,
+        ],
+        i * 12,
       );
-      for (let channel = 0; channel < 3; channel++)
-        colorError = Math.max(
-          colorError,
-          Math.abs(p[i * 8 + 4 + channel] - [1, 80 / 120, 40 / 120][channel]),
-        );
-    }
-    if (positionError > 1e-6 || colorError > 1e-5)
-      throw new Error(`Wave-to-Particles reference mismatch: ${positionError}, ${colorError}`);
+    device.queue.writeBuffer(points, 0, p);
     // Centered source cells deposit their actual pigment and half their source velocity back to Flow.
     run(codes.PARTICLE_DEPOSIT, [uniform, points, deposit]);
     run(codes.RESOLVE_DEPOSIT, [uniform, deposit, dye, velocity]);
@@ -323,36 +323,44 @@ try {
     let depositError = 0;
     for (let i = 0; i < count; i++) {
       for (let c = 0; c < 3; c++)
-        depositError = Math.max(depositError, Math.abs(resolved[i * 4 + c] - p[i * 8 + 4 + c]));
+        depositError = Math.max(depositError, Math.abs(resolved[i * 4 + c] - p[i * 12 + 4 + c]));
       for (let c = 0; c < 2; c++)
         depositError = Math.max(
           depositError,
-          Math.abs(resolvedV[i * 4 + c] - p[i * 8 + 2 + c] * 0.5),
+          Math.abs(resolvedV[i * 4 + c] - p[i * 12 + 2 + c] * 0.5),
         );
     }
     if (depositError > 1 / codes.TRANSFER_POLICY.fixedScale)
       throw new Error(`Particle deposit reference mismatch: ${depositError}`);
     await device.queue.onSubmittedWorkDone();
     if (errors.length) throw new Error(errors.join('\n'));
-    const { particleAdvectionShader, GPU_POLICY } = await import('./fawn-cycle-gpu.js');
-    const particleUniform = buffer(64, true),
-      moved = buffer(count * 32),
-      target = buffer(count * 16);
-    const pose = [0.15, 0.2],
-      motion = [0.04, -0.02],
-      dt = 0.01,
-      time = 0.8;
-    const input = new Float32Array(count * 8);
-    for (let i = 0; i < count; i++) input.set([...pose, ...motion, 1, 0.5, 0.25, 1], i * 8);
+    const { PARCEL_UPDATE, PARCEL_POLICY } = await import('./fawn-parcels.js');
+    const parcelUniform = buffer(64, true),
+      moved = buffer(count * 48),
+      target = buffer(count * 16),
+      curl = buffer(count * 16);
+    const goals = new Float32Array(count * 4);
+    for (let i = 0; i < count; i++) goals.set([0.15 + i * 0.006, -0.12 + i * 0.008, 1, 0], i * 4);
+    device.queue.writeBuffer(target, 0, goals);
+    const dt = 0.01,
+      time = 0.8,
+      input = p.slice(),
+      pose = [0.15, 0.2],
+      motion = [0.04, -0.02];
+    for (let i = 0; i < count; i++)
+      input.set([...pose, ...motion, 1, 0.5, 0.25, 1, 0.7, 0.2, 0.1, 0.04], i * 12);
     device.queue.writeBuffer(points, 0, input);
-    device.queue.writeBuffer(
-      particleUniform,
-      0,
-      new Float32Array([dt, time, 1, 0, 0, 0, 0.01, 1, 0, 0, 0, 0, 1, 1, grid, 0]),
-    );
-    run(particleAdvectionShader(), [particleUniform, points, moved, target]);
+    const parcelRun = (weights, shape) => {
+      device.queue.writeBuffer(
+        parcelUniform,
+        0,
+        new Float32Array([grid, count, dt, time, ...weights, shape, 0, 0, 0, 0, 1, 1, 0, 0]),
+      );
+      run(PARCEL_UPDATE, [parcelUniform, points, moved, target, velocity, dye, surface, curl]);
+    };
+    parcelRun([0, 0, 1], 0);
     const advanced = await read(moved);
-    // Independently differentiate the stream function, instead of copying its WGSL derivatives.
+    // Independently differentiate the stream function; no copied analytic WGSL derivative.
     const stream = ([x, y]) =>
       Math.cos((x * Math.PI) / 2) *
       Math.cos((y * Math.PI) / 2) *
@@ -361,28 +369,66 @@ try {
     const velocityAt = ([x, y]) => {
       const h = 1e-5;
       return [
-        ((stream([x, y + h]) - stream([x, y - h])) / (2 * h) - motion[0] * 0.01) *
-          GPU_POLICY.particleVelocityScale,
-        (-(stream([x + h, y]) - stream([x - h, y])) / (2 * h) - motion[1] * 0.01) *
-          GPU_POLICY.particleVelocityScale,
+        ((stream([x, y + h]) - stream([x, y - h])) / (2 * h)) * PARCEL_POLICY.fieldSpeed,
+        (-(stream([x + h, y]) - stream([x - h, y])) / (2 * h)) * PARCEL_POLICY.fieldSpeed,
       ];
     };
     const startVelocity = velocityAt(pose),
-      startScale = Math.max(1, Math.hypot(...startVelocity) / 1.75);
-    const midpoint = pose.map((p, i) => p + ((startVelocity[i] / startScale) * dt) / 2);
-    const nextVelocity = velocityAt(midpoint),
-      nextScale = Math.max(1, Math.hypot(...nextVelocity) / 1.75);
+      scale = Math.max(1, Math.hypot(...startVelocity) / PARCEL_POLICY.speedLimit);
+    const midpoint = pose.map((p, i) => p + ((startVelocity[i] / scale) * dt) / 2),
+      nextVelocity = velocityAt(midpoint);
+    const nextScale = Math.max(1, Math.hypot(...nextVelocity) / PARCEL_POLICY.speedLimit);
     const expected = pose.map((p, i) => p + (nextVelocity[i] / nextScale) * dt);
     const advectionError = Math.max(...expected.map((p, i) => Math.abs(advanced[i] - p)));
-    if (advectionError > 1e-5)
-      throw new Error(`Midpoint advection reference mismatch: ${advectionError}`);
+    if (advectionError > 1e-5) throw new Error(`Midpoint advection mismatch: ${advectionError}`);
+    const formation = [];
+    for (const [name, weights] of [
+      ['flow', [1, 0, 0]],
+      ['wave', [0, 1, 0]],
+      ['particles', [0, 0, 1]],
+    ]) {
+      // Irregular live positions must settle from their own values, never be respawned on a grid.
+      for (let i = 0; i < count; i++) input.set([-0.5 + i * 0.04, 0.42 - i * 0.027], i * 12);
+      device.queue.writeBuffer(points, 0, input);
+      parcelRun(weights, 1);
+      const settled = await read(moved);
+      let formationError = 0,
+        colorError = 0;
+      const distances = [];
+      for (let i = 0; i < count; i++) {
+        const hash = ((Math.imul(i, 1664525) + 1013904223) ^ (i >>> 9)) >>> 0;
+        const arrival = 0.35 + (1.65 * ((hash >>> 16) & 65535)) / 65535;
+        const factor = 1 - Math.exp(-PARCEL_POLICY.settleRate * dt * arrival);
+        for (let c = 0; c < 2; c++)
+          formationError = Math.max(
+            formationError,
+            Math.abs(
+              settled[i * 12 + c] -
+                (input[i * 12 + c] + (goals[(hash % count) * 4 + c] - input[i * 12 + c]) * factor),
+            ),
+          );
+        for (let c = 4; c < 12; c++)
+          colorError = Math.max(colorError, Math.abs(settled[i * 12 + c] - input[i * 12 + c]));
+        distances.push(
+          Math.hypot(settled[i * 12] - input[i * 12], settled[i * 12 + 1] - input[i * 12 + 1]),
+        );
+      }
+      if (formationError > 1e-6 || colorError > 1e-6)
+        throw new Error(`${name} per-parcel formation mismatch: ${formationError}, ${colorError}`);
+      formation.push({
+        name,
+        formationError,
+        carriedMaterialError: colorError,
+        maxStep: Math.max(...distances),
+      });
+    }
     await device.queue.onSubmittedWorkDone();
     if (errors.length) throw new Error(errors.join('\n'));
     device.destroy();
     return [
-      { boundary: 'Particle midpoint advection', maxError: advectionError },
+      { boundary: 'Parcel midpoint advection', maxError: advectionError },
+      { boundary: 'All three per-parcel logo formations', formation },
       { boundary: 'Flow → Wave', maxError: error },
-      { boundary: 'Wave → Particles', positionError, colorError },
       { boundary: 'Particles → Flow', maxError: depositError },
     ];
   });
@@ -408,6 +454,23 @@ try {
     await page.locator('.details').evaluate((e) => (e.open = false));
     await advance(page, 100);
     const initial = await state(page);
+    const projection = await page.evaluate(() => {
+      const writes = cycleProbe.writes.filter((w) => w.label === 'Cycle parcel rendering uniforms');
+      const poses = cycleProbe.writes
+        .filter((w) => w.label === 'Cycle parcel uniforms')
+        .map((w) => w.values[7]);
+      const origin = writes[0].values.slice(0, 3);
+      return {
+        fixed: writes.every((w) => w.values.slice(0, 3).every((n, i) => n === origin[i])),
+        formationAdvanced: Math.max(...poses) > 0.1,
+      };
+    });
+    assert.equal(
+      projection.fixed,
+      true,
+      'Logo formation must never zoom the viewport or splat radius',
+    );
+    assert.equal(projection.formationAdvanced, true);
     const timeline = [];
     for (let i = 0; i < 4; i++) {
       await advance(page, 500);
@@ -425,9 +488,9 @@ try {
       assert.equal(s.allocations, initial.allocations);
       assert.ok(Object.values(s.fields).every((f) => f.finite));
     }
-    assert.ok(timeline[1].fields['Cycle particles 0'].energy > 0);
+    assert.ok(timeline[1].fields['Cycle parcels 0'].energy > 0);
     assert.ok(
-      timeline[1].fields['Cycle particles 0'].central > 0,
+      timeline[1].fields['Cycle parcels 0'].central > 0,
       'Incoming particles retain material in the center',
     );
     assert.ok(timeline[2].fields['Cycle dye 0'].energy > 0);
@@ -483,6 +546,7 @@ try {
       viewport,
       adapter: await page.evaluate(() => cycleProbe.adapter),
       timeline: timeline.map((s) => ({ effect: s.effect, handoffs: s.handoffs, fields: s.fields })),
+      fixedProjectionDuringFormation: projection,
       uploads: initial.uploads,
       allocations: initial.allocations,
       interactionHeld: true,
