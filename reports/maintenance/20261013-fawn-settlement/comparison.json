@@ -1,8 +1,0 @@
-{
-  "passed": true,
-  "meanGoalDistanceLimit": 0.025,
-  "beforeSlowFailed": 0.19219586298628447,
-  "afterSlow": 0.0066721724917276634,
-  "afterFast": 0.007689666352636027,
-  "longRecoveryCases": 18
-}

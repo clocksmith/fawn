@@ -1,9 +1,9 @@
 # Previous envelope-only Fawn check
 
-[Scheduled crossfades](../../reports/maintenance/20261013-fawn-cycle-7s/README.md)
+[Scheduled crossfades](https://github.com/doerun/doe/blob/18d9841be39f4c8263f76905c75c65781da81382/reports/maintenance/20261013-fawn-cycle-7s/README.md)
 implement input-independent scene timing and a smooth interaction-strength curve.
 The clock and software WebGPU diagnostics bind the changed source;
-[deployment verification](../../reports/maintenance/20261013-fawn-cycle-7s/deployment.json)
+[deployment verification](https://github.com/doerun/doe/blob/18d9841be39f4c8263f76905c75c65781da81382/reports/maintenance/20261013-fawn-cycle-7s/deployment.json)
 binds its published bytes and hosted checks to the live release manifest. Logo recovery keeps its own quiet
 interval and cannot defer a scene switch. [Prior input-deferral status](archive/20261013-fawn-cycle-deferral.md)
 is retained separately.

@@ -1,11 +1,33 @@
 # Reports
 
-Tracked report fixtures and parity receipts that are small enough to keep in
-tree.
+## Retention
 
-Use `bench/out/` for generated run workspaces, large benchmark outputs, and
-machine-local evidence. Keep files here only when they are stable reference
-artifacts that tests, docs, or reviews may inspect directly.
+Reports retain evidence needed to assess a release, qualification decision or
+regression fixture. They are not an engineering diary or a test-output directory.
+
+Default to ignored `bench/out/` for logs, screenshots, intermediate candidates,
+local smoke results and debugging output. Routine edits need relevant checks;
+they do not need a new dated folder, permanent README or archived status entry.
+Fawn visual tuning uses its existing tests and ignored output directory.
+
+Retain an artifact when it has a concrete consumer: a named gate or regression
+fixture, a source-bound qualification acceptance/rejection, or a pinned release
+decision. Retain the failures required to assess that decision alongside the
+accepted result. A routine passing test alone does not qualify for retention.
+The owning record names the consumer, source identity and evidence limits.
+
+Reusable harnesses belong in their owning test/tool directory. Release receipts
+belong in `releases/`; benchmark and qualification evidence use their existing
+governed locations. Existing schema-registered and claim-indexed artifacts keep
+their identities and paths unless every consumer is deliberately migrated.
+
+Before pruning, check code, schema, gate and claim dependencies. Historical
+documentation may link to immutable Git versions of retired routine reports;
+do not turn old results into new results or rewrite their meaning. Keep local
+debugging copies in ignored storage when useful. Do not force-add routine output
+to bypass the ignore policy.
+
+## Existing governed artifacts
 
 - `refactors/` contains schema-backed characterization receipts for structural
   changes. A receipt distinguishes preserved cases from explicit contract
