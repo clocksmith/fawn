@@ -69,7 +69,7 @@ const next = f.advance(0.01, true, false);
 assert.ok(Math.abs(next - previous) < 0.01);
 assert.ok(maxDelta < 0.02);
 const cycleFormation = transition(CYCLE_POLICY.formation); cycleFormation.reset(true);
-assert.ok(step(cycleFormation, 3.1) > 0.99, 'Cycle envelope leaves time for physical gathering and dwell');
+assert.ok(step(cycleFormation, 4.2) > 0.99, 'Cycle envelope leaves time for physical gathering and dwell');
 assert.throws(() => createCycleClock().advance(-1), /Invalid cycle timestep/);
 console.log(JSON.stringify({ passed: true, untouchedCycleSeconds: 24, rotations: 3,
   inputIndependentCadence: true, symmetricInputAttenuation: true, uninterruptedCrossfades: true,

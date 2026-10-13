@@ -2,12 +2,16 @@
 import assert from 'node:assert/strict';
 import { readFile, mkdir, writeFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
+import { execFileSync } from 'node:child_process';
 import http from 'node:http';
 import path from 'node:path';
 import { CYCLE_POLICY, createCycleClock } from '../resources/fawn-cycle-clock.js';
 import { PARCEL_POLICY, createParcelData } from '../resources/fawn-parcels.js';
 const { chromium } = await import(process.env.FAWN_PLAYWRIGHT_MODULE || 'playwright');
 const resources = new URL('../resources/', import.meta.url);
+const baselineRef = process.env.FAWN_PARCEL_BASELINE;
+const baselineSource = baselineRef ? execFileSync('git', ['show', `${baselineRef}:browser/chromium/resources/fawn-parcels.js`]) : null;
+const baselineShader = baselineSource ? (await import('data:text/javascript;base64,' + baselineSource.toString('base64'))).PARCEL_UPDATE : null;
 const output = path.resolve(process.env.FAWN_REPORT_DIR || 'bench/out/fawn-cycle');
 await mkdir(output, { recursive: true });
 const files = [
@@ -28,6 +32,8 @@ const report = {
   policy: CYCLE_POLICY,
   journeyCountOverride: process.env.FAWN_JOURNEY_COUNT || null,
   sources: [],
+  baselineParcelShader: baselineShader ? { ref: baselineRef, sha256: createHash('sha256').update(baselineShader).digest('hex') } : null,
+  oracleOnly: Boolean(process.env.FAWN_ORACLE_ONLY),
   oracles: [],
   journeys: [],
 };
@@ -244,7 +250,7 @@ async function state(page) {
 try {
   const oracle = await browser.newPage();
   await oracle.goto(origin + '/fawn-icon.svg');
-  report.oracles = await oracle.evaluate(async () => {
+  report.oracles = await oracle.evaluate(async ({ baselineShader }) => {
     const codes = await import('./fawn-cycle-transfers.js');
     const adapter = await navigator.gpu.requestAdapter(),
       device = await adapter.requestDevice();
@@ -279,11 +285,13 @@ try {
     }
     device.queue.writeBuffer(dye, 0, d);
     device.queue.writeBuffer(velocity, 0, v);
+    const pipelines = new Map();
     const run = (code, entries) => {
-      const pipeline = device.createComputePipeline({
+      const pipeline = pipelines.get(code) || device.createComputePipeline({
         layout: 'auto',
         compute: { module: device.createShaderModule({ code }), entryPoint: 'main' },
       });
+      pipelines.set(code, pipeline);
       const group = device.createBindGroup({
         layout: pipeline.getBindGroupLayout(0),
         entries: entries.map((r, i) => ({
@@ -385,13 +393,13 @@ try {
     for (let i = 0; i < count; i++)
       input.set([...pose, ...motion, 1, 0.5, 0.25, 1, 0.7, 0.2, 0.1, 0.04], i * 12);
     device.queue.writeBuffer(points, 0, input);
-    const parcelRun = (weights, shape) => {
+    const parcelRun = (weights, shape, step = dt) => {
       device.queue.writeBuffer(
         parcelUniform,
         0,
-        new Float32Array([grid, count, dt, time, ...weights, shape, 0, 0, 0, dt, 1, 1, 0, 0]),
+        new Float32Array([grid, count, step, time, ...weights, shape, 0, 0, 0, step, 1, 1, 0, 0]),
       );
-      run(PARCEL_UPDATE, [parcelUniform, points, moved, target, velocity, dye, surface, curl, boundary]);
+      run(baselineShader || PARCEL_UPDATE, [parcelUniform, points, moved, target, velocity, dye, surface, curl, boundary]);
     };
     parcelRun([0, 0, 1], 0);
     const advanced = await read(moved);
@@ -416,6 +424,28 @@ try {
     const expected = pose.map((p, i) => p + (nextVelocity[i] / nextScale) * dt);
     const advectionError = Math.max(...expected.map((p, i) => Math.abs(advanced[i] - p)));
     if (advectionError > 1e-5) throw new Error(`Midpoint advection mismatch: ${advectionError}`);
+    let morphError = 0;
+    for (const weights of [[1, 0, 0], [0, 1, 0], [0, 0, 1]]) {
+      for (let i = 0; i < count; i++) input.set([...pose, ...motion, 1, 0.5, 0.25, 0, 0.7, 0.2, 0.1, 0.04], i * 12);
+      device.queue.writeBuffer(points, 0, input);
+      for (const progress of [0.1, 0.25, 0.5, 0.75, 1]) {
+        parcelRun(weights, progress, 0);
+        const output = await read(moved);
+        for (let i = 0; i < count; i++) {
+          const hash = (((Math.imul(i, 1664525) + 1013904223) >>> 0) ^ (i >>> 9)) >>> 0;
+          const exponent = PARCEL_POLICY.arrivalExponentMin + PARCEL_POLICY.arrivalExponentSpan * (hash >>> 16) / 65535;
+          const phase = Math.pow(Math.min(1, progress / PARCEL_POLICY.formationCompleteFraction), exponent);
+          const amount = phase * phase * (3 - 2 * phase);
+          for (let c = 0; c < 2; c++) {
+            const expected = pose[c] * (1 - amount) + goals[(hash % count) * 4 + c] * amount;
+            morphError = Math.max(morphError, Math.abs(output[i * 12 + c] - expected));
+          }
+          if (output[i * 12 + 4] !== input[i * 12 + 4]) throw Error('Formation must not fade pigment');
+        }
+        device.queue.writeBuffer(points, 0, output);
+      }
+    }
+    if (morphError > 1e-5) throw Error(`Per-particle trajectory mismatch: ${morphError}`);
     const formation = [];
     for (let i = 0; i < count; i++) {
       const x = (((i % grid) + 0.5) / grid) * 2 - 1;
@@ -432,13 +462,23 @@ try {
       ['wave', [0, 1, 0], [-0.01, 0.02]],
       ['particles', [0, 0, 1], nextVelocity.map(x => x / nextScale)],
     ]) {
-      // Inside the mark, branding must not pin live parcels or suppress their material updates.
-      for (let i = 0; i < count; i++) input.set([...pose, ...motion, 1, 0.5, 0.25, 1, 0.7, 0.2, 0.1, 0.04], i * 12);
+      // A filled mark keeps every parcel's identity while its field and material stay live.
+      for (let i = 0; i < count; i++) {
+        const hash = (((Math.imul(i, 1664525) + 1013904223) >>> 0) ^ (i >>> 9)) >>> 0;
+        input.set([...goals.slice((hash % count) * 4, (hash % count) * 4 + 2), ...motion, 1, 0.5, 0.25, 1, 0.7, 0.2, 0.1, 0.04], i * 12);
+      }
       device.queue.writeBuffer(points, 0, input);
       parcelRun(weights, 1);
       const movedState = await read(moved);
-      const error = Math.max(...expectedVelocity.map((v, c) =>
-        Math.abs(movedState[c] - (pose[c] + v * dt))));
+      const start = Array.from(input.slice(0, 2));
+      let speed = expectedVelocity;
+      if (name === 'particles') {
+        const v0 = velocityAt(start);
+        const mid = start.map((x, c) => x + v0[c] * dt * 0.5);
+        speed = velocityAt(mid);
+      }
+      const error = Math.max(...speed.map((v, c) =>
+        Math.abs(movedState[c] - (start[c] + v * dt * Math.exp(-PARCEL_POLICY.anchorRate * dt)))));
       const materialChange = Math.max(...Array.from(movedState.slice(4, 12),
         (value, c) => Math.abs(value - input[4 + c])));
       if (error > 1e-5 || materialChange < 1e-6)
@@ -453,26 +493,29 @@ try {
     device.queue.writeBuffer(boundary, 0, mark);
     for (let i = 0; i < count; i++) {
       input.set([0.001, 0.2], i * 12);
+      goals.set([0.001, 0.2, 1, 0], i * 4);
       v.set([-0.1, -0.2, 0, 0], i * 4);
     }
     device.queue.writeBuffer(points, 0, input); device.queue.writeBuffer(velocity, 0, v);
+    device.queue.writeBuffer(target, 0, goals);
     parcelRun([1, 0, 0], 1);
     const alongWall = await read(moved);
-    if (alongWall[0] < 0 || Math.abs(alongWall[1] - (0.2 - 0.4 * dt)) > 1e-5)
+    if (alongWall[0] < 0 || Math.abs(alongWall[1] - (0.2 - 0.4 * dt * Math.exp(-PARCEL_POLICY.anchorRate * dt))) > 1e-5)
       throw new Error(`Logo wall must preserve tangent flow: ${alongWall.slice(0, 2)}`);
     await device.queue.onSubmittedWorkDone();
     if (errors.length) throw new Error(errors.join('\n'));
     device.destroy();
     return [
       { boundary: 'Parcel midpoint advection', maxError: advectionError },
+      { boundary: 'Per-particle positional morph with unchanged pigment', maxError: morphError },
       { boundary: 'Live branded advection, material update and logo wall', formation },
       { boundary: 'Flow → Wave', maxError: error },
       { boundary: 'Particles → Flow', maxError: depositError },
     ];
-  });
+  }, { baselineShader });
   await oracle.close();
   const diagnosticWorkload = Boolean(process.env.FAWN_JOURNEY_COUNT);
-  const journeyViewports = diagnosticWorkload
+  const journeyViewports = process.env.FAWN_ORACLE_ONLY ? [] : diagnosticWorkload
     ? [{ width: 800, height: 400 }, { width: 300, height: 500 }]
     : [{ width: 1200, height: 800 }, { width: 390, height: 844 }];
   for (const viewport of journeyViewports) {
@@ -654,7 +697,7 @@ try {
     );
   }
   report.lifecycle = [];
-  for (const reducedMotion of ['no-preference', 'reduce']) {
+  for (const reducedMotion of process.env.FAWN_ORACLE_ONLY ? [] : ['no-preference', 'reduce']) {
     const page = await browser.newPage({
       viewport: { width: 300, height: 150 },
       deviceScaleFactor: 1,
