@@ -1,15 +1,22 @@
 # Browser
 
-`browser/` contains exploratory Chromium-facing integration surfaces:
+`browser/` contains Doe's browser-facing surfaces:
 
+- `browser/workspace/`
+  - Fawn's durable browser workspaces: the prospective shared observation,
+    action, and recovery service above stock Chromium. It holds a charter only;
+    the [workspace contract](../docs/fawn-workspace-contract.md) owns its
+    requirements and [status](../docs/status/fawn-workspace.md) records the
+    missing implementation.
 - `browser/chromium/`
-  - docs, contracts, scripts, and browser diagnostics
+  - optional Chromium runtime-integration contracts, scripts, and diagnostics,
+    plus the hosted demonstration pages under `resources/`
 - `browser/chromium_webgpu_lane/`
-  - the Chromium checkout/build workspace when kept in-tree
+  - the Chromium checkout/build tree when kept in-tree
 
-Keep browser smoke, browser benchmark projection, and Chromium workspace
-management separate even when they share scripts or artifacts.
+Fawn's workspace service is the next build. Chromium hooks and browser-runtime
+integration are added only when measured benefits justify their compatibility
+and maintenance costs; Dawn remains the incumbent browser runtime.
 
-This directory is not the current Doe product center. It exists for future
-Chromium-lane integration work while Dawn remains the incumbent browser
-runtime.
+Keep workspace authority, browser smoke, browser benchmark projection, and
+Chromium checkout management separate even when they share scripts or artifacts.

@@ -1,5 +1,10 @@
 # Track B (modules) prototype lane
 
+Status: archived. Track B internal-module proposals are retired under
+[Chromium integration acceptance](../acceptance.md#archived-work). These
+prototypes and their `fawn_*` module ids remain as historical fixtures; they are
+not an active lane and do not name Fawn's durable workspace service.
+
 This directory contains executable Track B (modules) incubation artifacts for the browser
 integration layer.
 

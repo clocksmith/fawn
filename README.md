@@ -1,9 +1,15 @@
 # Doe
 
-A WGSL compiler and native WebGPU runtime for existing GPU applications.
-Use either independently. Vulkan is the current engineering focus.
+Doe builds the environment where agents work. Fawn provides durable browser
+workspaces; DoeRuntime supplies independently useful GPU execution; DoeLab tests
+improvements; DoeProof records evidence.
 
-**[Evaluate ONNX on Vulkan](docs/onnx-vulkan-installation.md)** · [Package API](packages/doe-gpu/README.md) · [Documentation](docs/INDEX.md)
+What installs today is DoeRuntime, a native WebGPU runtime for existing GPU
+applications, with an independently usable WGSL compiler. Vulkan is the current
+engineering focus. Fawn's shared workspace service is the next build and is
+[not implemented yet](docs/status/fawn-workspace.md).
+
+**[Package API](packages/doe-gpu/README.md)** · [Evaluate ONNX on Vulkan](docs/onnx-vulkan-installation.md) · [Goals](GOALS.md) · [Documentation](docs/INDEX.md)
 
 ![Doe brings compiled WGSL and bound resources together through its selected native backend.](assets/readme/execution.svg)
 
@@ -36,6 +42,10 @@ resource retirement. The application and platform driver/GPU are external.
 
 ## Evidence
 
+DoeRuntime engineering is focused on one correct, reproducible Doppler Node
+generation advantage over Dawn on Vulkan, then transfer to ONNX. That advantage
+is [not established yet](docs/status/runtime-backends-and-bench.md).
+
 The [ONNX delivery report](reports/releases/20261009-onnx-vulkan-evaluation/README.md)
 records bounded SqueezeNet execution and lifecycle checks, including local
 isolated installation. Broader compatibility, external reproduction, retained
@@ -44,15 +54,17 @@ adoption, and material replacement advantage remain unestablished.
 Compiler correctness, runtime performance, and application benefit require
 separate evidence. See the [claim index](reports/claim-index.json),
 [backend evidence](docs/backend-evidence-matrix.md), and [current status](docs/status.md).
-Native results do not qualify browser replacement. Fawn's selected
+Native results do not qualify browser replacement. Fawn's
 [durable workspace contract](docs/fawn-workspace-contract.md) has no implemented
-shared service or behavioral acceptance yet. The optional
-[browser runtime integration](browser/chromium/README.md) retains separate evidence.
+shared service or behavioral acceptance yet. Chromium hooks and the optional
+[browser runtime integration](browser/chromium/README.md) are added only when
+measured benefits justify their compatibility and maintenance costs; existing
+browser evidence stays separate.
 
 ## Read next
 
 - [Architecture](docs/architecture.md) — subsystem boundaries and execution details.
-- [Goals](GOALS.md) — Fawn durable browser work and independent compiler/runtime adoption.
+- [Goals](GOALS.md) — the environment where agents work: Fawn workspaces, DoeRuntime, DoeLab, and DoeProof.
 - [Contributing](AGENTS.md) — repository workflow and component ownership.
 
 ## License

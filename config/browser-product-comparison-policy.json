@@ -20,7 +20,7 @@
   },
   "internalCausalLanes": [
     { "laneId": "A", "browser": "stock Chromium with Playwright", "runtime": "Dawn", "isolates": "incumbent browser and runtime control" },
-    { "laneId": "B", "browser": "Fawn with Playwright", "runtime": "Dawn", "isolates": "Fawn shell and agent-facing browser behavior" },
+    { "laneId": "B", "browser": "Fawn with Playwright", "runtime": "Dawn", "isolates": "legacy Fawn shell build and agent-facing browser behavior" },
     { "laneId": "C", "browser": "Fawn with Playwright", "runtime": "DoeRuntime", "isolates": "DoeRuntime beneath the same Fawn surface" },
     { "laneId": "D", "browser": "Fawn Direct Protocol", "runtime": "DoeRuntime", "isolates": "Direct Protocol beyond the Fawn plus DoeRuntime control" }
   ],
@@ -61,7 +61,7 @@
     {
       "id": "doeproof-incumbent-value",
       "comparison": "I1 to W0",
-      "requiredInterpretation": "DoeProof qualifies the incumbent independently as a supporting feature; W0 value alone does not establish primary-product adoption.",
+      "requiredInterpretation": "DoeProof records independent evidence for the incumbent as a supporting feature; W0 value alone does not establish primary-product adoption.",
       "forbiddenInference": "DoeProof value grants DoeRuntime ownership."
     },
     {
@@ -105,13 +105,13 @@
     {
       "forkId": "doeruntime-browser",
       "decisionAuthorityPath": "docs/runtime-ownership-decision.md",
-      "fundWhen": "C beats B materially and the exact D0 tuple also beats W0 and every authorized P0.",
+      "fundWhen": "C beats B materially, the exact D0 tuple also beats W0 and every authorized P0, and the measured benefit justifies the integration's compatibility and maintenance costs.",
       "stopWhen": "C does not beat B or a governed incumbent meets the application outcome at lower durable cost."
     },
     {
       "forkId": "fawn-direct-protocol",
       "decisionAuthorityPath": "docs/browser-lane.md",
-      "fundWhen": "D beats C on the complete task outcome under the same oracle and lifecycle scope.",
+      "fundWhen": "D beats C on the complete task outcome under the same oracle and lifecycle scope, and the measured benefit justifies the hook's compatibility and maintenance costs.",
       "stopWhen": "D does not beat C or reduces tokens while worsening the customer's declared total task outcome."
     }
   ],
@@ -119,7 +119,8 @@
     "Reject the measured shell-product claim when K0 wins shared tasks and customers do not value differentiation; workspace acceptance remains independently governed.",
     "Do not grant Fawn shell value unless B beats A.",
     "Do not grant DoeRuntime browser ownership unless C beats B for the exact measured tuple.",
-    "Do not continue Direct Protocol funding unless D beats C on the declared total task outcome."
+    "Do not continue Direct Protocol funding unless D beats C on the declared total task outcome.",
+    "Do not add Chromium hooks or browser-runtime integration unless measured benefits justify their compatibility and maintenance costs."
   ],
   "evidenceReferences": [
     "browser/chromium/bench/workflows/browser-milestones.json",

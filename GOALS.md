@@ -2,13 +2,14 @@
 
 ## Mission and thesis
 
-**Build Fawn as the integrated environment where humans and agents perform
-durable browser work. GPU programs remain independently useful software:
-executable, inspectable, and portable across hardware.**
+**Doe builds the environment where agents work. Fawn provides durable browser
+workspaces; DoeRuntime supplies independently useful GPU execution; DoeLab tests
+improvements; DoeProof records evidence.**
 
-Fawn begins above stock Chromium through a trusted workspace service and narrow
-CDP/Playwright adapters. Doe also develops an independently usable WGSL compiler
-and native WebGPU runtime; neither their adoption nor Fawn requires the other.
+Fawn begins above stock Chromium through one shared observation, action, and
+recovery service with narrow CDP/Playwright adapters. DoeRuntime and the
+independently usable WGSL compiler keep GPU programs executable, inspectable, and
+portable across hardware; neither their adoption nor Fawn requires the other.
 This file owns the product goals, constraints, and exclusions. These are desired
 outcomes, not claims of qualified support or completed adoption.
 [The thesis](docs/thesis.md) owns the rationale and execution sequence.
@@ -16,10 +17,13 @@ outcomes, not claims of qualified support or completed adoption.
 ## Desired outcomes
 
 Fawn provides one reusable workspace contract spanning observation, action,
-ownership and recovery. Workflow adapters share this machinery. Durable authority
-and honest uncertainty precede product-value claims; browser modifications require
-demonstrated authority, visibility or efficiency unavailable through existing
-interfaces. [The workspace contract](docs/fawn-workspace-contract.md) owns its
+ownership and recovery. The service persists ownership generations, rejects stale
+commands, and retains completed, failed, or unknown outcomes across restart.
+Research, form-submission, and export workflow adapters share this machinery and
+must behave consistently. Durable authority and honest uncertainty precede
+product-value claims. Chromium hooks and browser-runtime integration are added
+only when measured benefits justify their compatibility and maintenance costs.
+[The workspace contract](docs/fawn-workspace-contract.md) owns its
 requirements; the [strategy](config/doe-product-strategy.json) owns its ordered
 acceptance steps. These are intended outcomes, not implemented service claims.
 
@@ -52,7 +56,8 @@ The independent compiler and runtime retain these outcomes:
 7. **Practical independent adoption.** Provide native and JavaScript integration,
    predictable installation, and qualified support. Compiler and runtime adoption
    are independent; neither Doppler nor Reploid is mandatory. Browser replacement
-   requires an explicitly selected integration and its own evidence.
+   requires measured benefits, an explicitly selected integration, and its own
+   evidence.
 8. **Exceptional implementation quality.** Keep compiler, object, and backend
    boundaries readable and independently testable. Reduce duplication and
    measure build cost and reproduction-to-verified-improvement time. Zig enables
@@ -84,10 +89,13 @@ The independent compiler and runtime retain these outcomes:
 - Diagnostics: report the best established source, validation, resource,
   submission, or native failure location. Never invent a shader location for an
   unattributed hardware fault.
-- Work selection: Fawn workspace implementation above Chromium is selected,
-  independently of native runtime wins. New compiler opportunities and browser
-  replacement require
-  explicit selection. Closed browser optimizer experiments remain closed.
+- Work selection: Fawn's shared workspace service above Chromium is the next
+  build, independently of native runtime wins. Separately, DoeRuntime stays
+  focused on one correct, reproducible Doppler Node generation advantage over
+  Dawn on Vulkan, then ONNX transfer. New compiler opportunities require explicit
+  selection. Chromium hooks and browser-runtime integration require measured
+  benefits that justify their compatibility and maintenance costs. Closed browser
+  optimizer experiments remain closed.
   [Ordered milestones](docs/thesis.md#ordered-execution-milestones) do not block
   correctness repairs, independent installation, or technical release.
 

@@ -1,6 +1,8 @@
 # Doe status: Cerebras and CSL
 
 This is the live status front door for the Doppler to Doe to Cerebras lane.
+[GOALS.md](../../GOALS.md#strategic-constraints) selects work; this lane is not in
+the current selection, so the blockers below are its open items, not selected work.
 Do not copy launch counts, verdicts, hashes, or transcript results into this
 file.
 

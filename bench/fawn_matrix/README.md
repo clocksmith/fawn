@@ -1,5 +1,10 @@
 # Fawn-Doe four-lane matrix
 
+In this retained matrix, `Fawn` names the legacy modified-Chromium shell build,
+not Fawn's durable browser workspace service above stock Chromium. The matrix
+dispatches fixture actions directly; its receipts cannot qualify the
+[workspace contract](../../docs/fawn-workspace-contract.md).
+
 This benchmark executes `context_snapshot_diff` through four independent lanes:
 
 | Lane | Browser | Transport | WebGPU runtime |

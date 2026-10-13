@@ -24,7 +24,8 @@ Concrete implementation and qualification contracts refine these requirements.
 
 - Fawn-controlled automated browser mutations use the trusted workspace
   dispatcher. Durable owner generations serialize handoff, admission and
-  dispatch; restart restores authority before accepting commands.
+  dispatch; stale commands are rejected, and restart restores authority before
+  accepting commands.
 - Versioned observations bind authorized intent, targets and dispatch-time
   preconditions. Browser/external effects are not promised atomic.
 - Persist browser-action intent before dispatch. Preserve completed, failed,
@@ -86,11 +87,12 @@ transition, invalidation, and acceptance details.
 
 ## Promotion and evidence integrity
 
-- Improvement agents propose changes offline. Frozen tests and independent
+- DoeLab tests proposed improvements offline. Frozen tests and independent
   comparisons govern reversible promotion; application requests cannot silently
   rewrite the selected compiler or runtime. Retain failures and rejected trials.
-- DoeProof evaluates providers impartially. Supporting-feature value and receipts
-  neither prove runtime adoption nor become prerequisites for ordinary execution.
+- DoeProof records evidence impartially for every provider. Its receipts and
+  supporting-feature value neither prove runtime adoption nor become
+  prerequisites for ordinary execution.
   Compiler and runtime contributions require separately attributed evidence.
 - Runtime ownership requires the [governed comparison](docs/runtime-ownership-decision.md).
   Work equivalence, timing completeness, controls, audits, and claim eligibility

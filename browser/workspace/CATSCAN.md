@@ -4,7 +4,8 @@ Parent: [Browser](../CATSCAN.md)
 
 ## Target
 
-Provide one durable human/agent browser workspace service above stock Chromium.
+Provide durable browser workspaces for agents through one shared observation,
+action and recovery service above stock Chromium.
 
 ## Authority
 
@@ -31,8 +32,10 @@ Outputs:
 ## Invariants
 
 - All Fawn automated mutations pass the trusted dispatcher.
-- Handoff/restart preserves authority and uncertainty; missing acknowledgment
-  never authorizes another external submission.
+- Owner generations persist; every adapter rejects stale commands identically.
+- Completed, failed and unknown outcomes survive restart and handoff; missing
+  acknowledgment never authorizes another external submission.
+- Research, form-submission and export adapters behave consistently.
 - Workspace acceptance is separate from browser/GPU recovery and artwork receipts.
 
 ## Acceptance

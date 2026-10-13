@@ -4,8 +4,8 @@ Parent: [Doe](../CATSCAN.md)
 
 ## Target
 
-Govern Fawn durable browser work and optional browser-hosted Doe execution as
-separately admitted surfaces independent of package and native claims.
+Govern Fawn durable browser workspaces and optional browser-hosted Doe execution
+as separately admitted surfaces independent of package and native claims.
 
 ## Authority
 
@@ -32,6 +32,8 @@ Outputs:
 - The incumbent browser wrapper is not represented as Doe beneath `navigator.gpu`.
 - Forced-provider identity and fallback state remain explicit.
 - Workspace authority/recovery acceptance never inherits GPU/browser receipts.
+- Chromium hooks and browser-runtime integration are added only when measured
+  benefits justify their compatibility and maintenance costs.
 
 ## Acceptance
 

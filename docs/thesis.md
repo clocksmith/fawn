@@ -5,26 +5,33 @@ This document explains their rationale and sequencing; it does not maintain a
 second goal list. [INTENT.md](../INTENT.md) owns enforceable invariants, component
 charters assign authority, and artifacts establish current results.
 
-Fawn is the integrated environment for humans and agents doing durable browser
-work. Start with one trusted workspace service above stock Chromium, using narrow
-CDP/Playwright adapters. Its shared contract spans observations, actions,
-ownership and recovery; task-specific workflows remain outside that machinery.
+Doe builds the environment where agents work. Fawn provides durable browser
+workspaces; DoeRuntime supplies independently useful GPU execution; DoeLab tests
+improvements; DoeProof records evidence.
+
+Next, build Fawn's shared observation, action, and recovery service above stock
+Chromium, using narrow CDP/Playwright adapters. Persist ownership generations,
+reject stale commands, and retain completed, failed, or unknown outcomes across
+restart. Prove consistent behavior across research, form submission, and export
+workflows; task-specific logic remains outside the shared machinery.
 The [workspace contract](fawn-workspace-contract.md) defines acceptance, and
 `fawnWorkspace` in the [strategy projection](../config/doe-product-strategy.json)
 owns the ordered work. This service is not implemented or qualified yet.
 
 Fawn acceptance does not wait for native runtime wins. First establish durable
 authority and uncertainty handling, then prove reuse and complete-task value
-against competent Chromium/Playwright automation. Chromium hooks require a
-demonstrated need unavailable through existing interfaces. Doppler retains model
-semantics; independently qualified DoeRuntime integration serves workflows where
-useful. DoeLab improves offline and DoeProof records adoption evidence. Neither
-browser hooks nor runtime replacement defines the integrated product.
+against competent Chromium/Playwright automation. Add Chromium hooks and
+browser-runtime integration only when measured benefits justify their
+compatibility and maintenance costs. Doppler retains model semantics;
+independently qualified DoeRuntime integration serves workflows where useful.
+Neither browser hooks nor runtime replacement defines the integrated product.
 
-Local AI supplies demanding existing workloads and repeated execution costs to
-improve. Doppler is the first engineering customer and owns its models and
-inference. Transferring an improvement to unrelated applications establishes that
-it belongs to the execution layer rather than a model-specific accommodation.
+Separately, keep DoeRuntime focused on one correct, reproducible Doppler Node
+generation advantage over Dawn on Vulkan, then ONNX transfer. Local AI supplies
+demanding existing workloads and repeated execution costs to improve. Doppler is
+the first engineering customer and owns its models and inference. Transferring
+the improvement through the existing ONNX integration establishes that it belongs
+to the execution layer rather than a model-specific accommodation.
 Compiler opportunities can be selected independently when they have their own
 consumer and attributable outcome. Browser replacement is a later, optional
 integration route, not a prerequisite for native value.
@@ -36,15 +43,19 @@ owns the native/runtime milestone IDs, binding proving set, and development metr
 This preserved sequence governs optional runtime substitution, independently of
 the selected Fawn workspace roadmap.
 
-1. Close ordinary execution. Retain accepted improvements and correctness repairs;
+1. Close ordinary execution with one correct, reproducible Doppler Node
+   generation advantage over Dawn on Vulkan. Retain accepted improvements and
+   correctness repairs;
    finish one bounded, evidence-backed optimization against a frozen baseline.
    Require repeatable material advantage in a declared complete-application outcome
    with predeclared regression limits for the others. Simultaneous latency, CPU,
    and memory victory is not required. Reject ineffective candidates, preserve
    the baseline, and record a new prioritization decision instead of extending
    one reranker indefinitely. Rejection does not satisfy the advantage milestone.
-2. Deliver independent framework integration. The pinned ONNX Runtime WebGPU
-   substitution already executes existing operators on the qualified Vulkan host.
+2. Transfer to ONNX through independent framework integration. Confirm that the
+   accepted Doppler correction carries through the pinned ONNX Runtime WebGPU
+   substitution, which already executes existing operators on the qualified
+   Vulkan host.
    The [campaign](onnx-vulkan-campaign-contract.md),
    [lifecycle contract](native-device-lifecycle-contract.md), and
    [evaluation installation](onnx-vulkan-installation.md) establish bounded
@@ -62,7 +73,8 @@ the selected Fawn workspace roadmap.
    rendering test generality without hidden model-specific behavior. Expand
    hardware around demonstrated advantages, with separate physical qualification.
 4. Optionally select bounded Chromium integration after an explicit prioritization
-   decision, independent native wins, and transfer evidence. Preserve ordinary
+   decision, independent native wins, transfer evidence, and measured benefits
+   that justify its compatibility and maintenance costs. Preserve ordinary
    WebGPU behavior through validation and process boundaries. Browser adoption requires
    compatibility, hostile-input security, graphics correctness, device recovery,
    maintainability, and application benefits. Existing browser evidence remains
@@ -70,11 +82,12 @@ the selected Fawn workspace roadmap.
 
 These are ordered acceptance milestones, not a requirement to delay technical
 release or correctness work until a performance win or customer payment. The
-current engineering customer is Doppler. Qualify unchanged generation on current
-Vulkan, diagnose dominant complete-generation costs, and select one general compiler
-or runtime improvement against frozen acceptance. A competent Dawn control and an
-independent numerical reference provide technical evidence; external recruitment
-is not an engineering gate. Transfer evidence and voluntary adoption remain separate.
+current engineering customer is Doppler. Qualify unchanged Node generation on
+current Vulkan, diagnose dominant complete-generation costs, and select one general
+compiler or runtime improvement against frozen acceptance. A competent Dawn
+control and an independent numerical reference provide technical evidence;
+external recruitment is not an engineering gate. ONNX transfer follows the
+accepted advantage; transfer evidence and voluntary adoption remain separate.
 Supported embedding, maintained binaries, and support are commercial hypotheses;
 validate repeated voluntary use before expanding paid offerings.
 
@@ -154,7 +167,8 @@ application failure or measured repeated work
 -> maintained release gate
 ```
 
-DoeLab owns this failure-to-correction process. Its next product-level test is
+DoeLab owns this failure-to-correction process and tests each improvement
+against frozen criteria before promotion. Its next product-level test is
 whether accumulated corrections make subsequent applications easier to support,
 not whether the regression archive grows. Keep source, interfaces, and
 reproduction tools open. Compound development momentum, maintained integrations,
@@ -223,9 +237,9 @@ Select bounded work under the [backend-focus constraint](../GOALS.md#strategic-c
 A consumer requirement informs the next selection; it cannot silently override
 that boundary or authorize a parallel campaign.
 
-Independent compiler/runtime emphasis remains Doppler-driven Vulkan engineering;
-the existing ONNX
-evaluation distribution is sufficient for adoption work.
+DoeRuntime emphasis remains one correct, reproducible Doppler Node generation
+advantage over Dawn on Vulkan, then ONNX transfer; the existing ONNX evaluation
+distribution is sufficient for adoption work.
 Measure reproduction-to-verified-improvement time from the retained reproducible problem
 to independent confirmation under frozen acceptance. Link timestamps, source,
 and evidence in existing work records; keep rejected and unresolved attempts
@@ -249,11 +263,13 @@ tests. Both own the frozen application outcome and transfer test.
 Keep the first demonstration inside [the explicit exclusions](../GOALS.md#explicit-exclusions).
 Dynamic shapes require a separately qualified extension of the fixed-shape contract.
 
-The ONNX Vulkan evaluation package is the current native integration front door.
-Independent reproduction and retained adoption remain open. Browser replacement
-requires a separate selection decision and stays deferred. Fawn workspace work
-above stock Chromium is selected independently. Existing A/B/C/D and
-K0 browser laws retain their meaning. Accelerator work retains separate hardware
+The ONNX Vulkan evaluation package remains the native installation front door and
+the transfer target after the Doppler advantage. Independent reproduction and
+retained adoption remain open. Chromium hooks and browser-runtime integration
+stay deferred until measured benefits justify their compatibility and maintenance
+costs and a separate selection decision is made. Fawn's shared workspace service
+above stock Chromium is the next build, selected independently. Existing A/B/C/D
+and K0 browser laws retain their meaning. Accelerator work retains separate hardware
 admission and cannot broaden the active matrix through simulator evidence.
 
 ## Application and partner contexts

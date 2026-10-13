@@ -7,8 +7,10 @@ for their fields and values.
 
 ## Strategy and comparison clarification
 
-[GOALS.md](../GOALS.md) owns adoption and backend constraints; [the thesis](thesis.md)
-owns work selection and sequencing. The [strategy contract](product-strategy-contract.md)
+[GOALS.md](../GOALS.md) owns the goal, adoption and backend constraints;
+[the thesis](thesis.md) owns work selection and sequencing: Fawn's shared
+workspace service next, and separately one Doppler Node generation advantage over
+Dawn on Vulkan, then ONNX transfer. The [strategy contract](product-strategy-contract.md)
 documents their machine-readable projection and migrations.
 [Comparison classes](performance-strategy.md#comparison-classes) distinguish
 unchanged-application replacement from fixed-operation/shader experiments.
@@ -567,8 +569,8 @@ classified and cannot be promoted by benchmark results.
   physical support target, toolchain, and Doe/provider artifacts. The release
   gate opens and verifies that receipt; a manifest declaration alone is not
   evidence.
-- A Fawn browser release candidate must bind a complete archive manifest and a
-  passing clean-install check. The check extracts the published archive into a
+- A Chromium runtime-integration release candidate must bind a complete archive
+  manifest and a passing clean-install check. The check extracts the published archive into a
   fresh temporary directory, borrows no package members, runs the packaged
   browser, and verifies forced Dawn and forced Doe WebGPU execution against the
   packaged artifact hashes. A declared launch receipt without that observation
@@ -584,6 +586,17 @@ classified and cannot be promoted by benchmark results.
   equivalence, timing/sample policy, claimability, and indexed evidence gates
   selected by the claim contract.
 - Advisory performance evidence cannot override a blocking failure.
+- Fawn workspace completion and release claims are blocked until the implemented
+  shared service passes the behavioral gates in the
+  [workspace contract](fawn-workspace-contract.md): persisted owner generations,
+  identical stale-command rejection in every adapter, and completed, failed, or
+  unknown outcomes retained across restart, consistent across research,
+  form-submission, and export workflows. Policy-projection tests, hosted artwork,
+  Chromium receipts, and GPU results cannot satisfy this gate; native runtime
+  results are not a prerequisite for it.
+- Chromium hooks and browser-runtime integration enter a stage only after
+  measured benefits justify their compatibility and maintenance costs under
+  [GOALS.md](../GOALS.md#strategic-constraints).
 - Unsupported behavior, stale generated artifacts, missing provenance, unknown
   fields, placeholder semantics, and absent proof metadata fail closed.
 - Platform-specific lanes may be skipped only when their checked-in policy

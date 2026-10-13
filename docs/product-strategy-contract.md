@@ -6,6 +6,31 @@ It is the machine-readable source for milestone order, the binding proving set,
 and development-effectiveness recording. Status routes evidence; it does not
 maintain another roadmap.
 
+## Alignment to the agent-environment goal
+
+Schema version 8 and strategy version 6.1.0 project the current goal: Doe builds
+the environment where agents work; Fawn provides durable browser workspaces;
+DoeRuntime supplies independently useful GPU execution; DoeLab tests
+improvements; DoeProof records evidence. `positioning` and the surface jobs carry
+that wording. Surface ids, roles and the independent compiler surface are
+unchanged.
+
+The final `fawnWorkspace` step replaces
+`chromium-hooks-require-unavailable-authority-visibility-or-efficiency` with
+`chromium-hooks-and-runtime-integration-require-measured-benefits-justifying-compatibility-and-maintenance-costs`.
+Chromium hooks and browser-runtime integration are added only when measured
+benefits justify their compatibility and maintenance costs; a capability already
+available through existing interfaces is not such a benefit. This schema change
+renames one required-evidence id; no field is added or removed.
+
+`executionOwnership.operatingObjective` and the first two milestone outcomes name
+the runtime focus: one correct, reproducible Doppler Node generation advantage
+over Dawn on Vulkan, then ONNX transfer. Milestone ids, order, required evidence
+and assessments are otherwise unchanged, and nothing is promoted. The browser
+comparison policy keeps its version and shape; its fork conditions and stop
+conditions add the same measured-benefit requirement, and its lane text names the
+legacy Fawn shell build to keep it distinct from the workspace service.
+
 ## Migration to the integrated Fawn workspace
 
 Schema version 7 and strategy version 6.0.0 select Fawn as the integrated

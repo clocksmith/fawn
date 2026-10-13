@@ -20,8 +20,9 @@ Vulkan is the active engineering focus; other targets retain their own scope.
 
 The browser wrapper uses the browser's existing WebGPU provider. It does not
 install this native runtime into ordinary Chrome. Browser compiler use and the
-experimental Fawn runtime integration are separate entry points. DoeProof and
-offline improvement tooling are outside the ordinary execution path.
+experimental Chromium runtime integration are separate entry points. DoeProof
+evidence recording and DoeLab's offline improvement testing are outside the
+ordinary execution path.
 
 | Boundary | Implementation |
 | --- | --- |
@@ -117,13 +118,20 @@ defines supported shapes and mode limits.
 
 ## System surfaces
 
-Doe develops an independently usable WGSL compiler and native WebGPU runtime.
-Either can earn adoption without requiring the other; their contributions need
-separate evidence. The current native integration front door is the
+Doe builds the environment where agents work. Fawn provides durable browser
+workspaces; DoeRuntime supplies independently useful GPU execution; DoeLab tests
+improvements; DoeProof records evidence. [The glossary](glossary.md) owns these
+names. This guide covers the GPU execution surfaces: DoeRuntime and the
+independently usable WGSL compiler. Either can earn adoption without requiring
+the other; their contributions need separate evidence.
+
+DoeRuntime engineering is focused on one correct, reproducible Doppler Node
+generation advantage over Dawn on Vulkan, then ONNX transfer. The native
+installation front door and transfer target is the
 [ONNX Vulkan evaluation package](onnx-vulkan-installation.md), with bounded
 [execution and installation evidence](../reports/releases/20261009-onnx-vulkan-evaluation/README.md).
-Vulkan is the active engineering focus; optional integrations and qualification
-tooling support compilation and execution.
+Optional integrations and qualification tooling support compilation and
+execution.
 
 1. `runtime/zig`
    The core Doe runtime: WGSL pipeline, backend execution, runtime artifacts,
@@ -132,7 +140,7 @@ tooling support compilation and execution.
    The JavaScript package surface for Node.js, Bun, Deno, and browser-facing
    wrappers.
 3. `browser/chromium`
-   The experimental Fawn/Chromium distribution lane: integration contracts, release
+   The experimental Chromium runtime-integration lane: integration contracts, release
    packaging, clean-install verification, browser probes, and evidence gates.
 4. `bench`
    Compare harnesses, gates, and evidence workflows.
@@ -143,13 +151,15 @@ These surfaces are related, but they are not interchangeable.
 
 They also sit at different maturity levels. Dawn remains the WebGPU runtime
 used in Chromium and much of the browser ecosystem. Doe's native/package lane
-has physical evidence; the optional Fawn runtime-distribution lane has diagnostic
-browser evidence. Fawn's selected integrated workspace product is separate and
-has no implemented shared service or behavioral acceptance yet.
+has physical evidence; the optional Chromium runtime-integration lane has
+diagnostic browser evidence. Fawn's durable browser workspaces are separate: the
+shared service is the next build and has no implementation or behavioral
+acceptance yet.
 
 ## Strategic decomposition
 
-Doe owns independently adoptable compiler and runtime surfaces. Controlled
+Within GPU execution, Doe owns independently adoptable compiler and runtime
+surfaces. Controlled
 package/native hosts provide the compatibility entry; explicitly declared repeated programs expose
 work that can be prepared and retained. The decomposition is:
 
@@ -183,8 +193,8 @@ and binds specialized evidence through typed extensions; see
    (`src/contracts/` -> `src/backend/ports/` -> `src/app/` -> leaf backends).
    No browser-specific globals, no direct cross-backend imports.
 2. **Outside the Zig Runtime:** Applications select `DoeRuntime` through the
-   package or native embedding. `DoeLab` supplies correction workflows and
-   `DoeProof` evaluates execution. Compiler users may adopt WGSL processing and
+   package or native embedding. `DoeLab` tests improvements offline and
+   `DoeProof` records evidence. Compiler users may adopt WGSL processing and
    target lowering independently. Browser replacement is optional and deferred,
    requiring explicit selection, native wins, transfer, and separate qualification.
 3. **Cross-Layer Optimization:** Governed through explicit contracts
@@ -199,7 +209,7 @@ The important boundary distinctions are:
 - `runtime/bridge/onnxruntime-ep` retains a historical repo-only plugin experiment and routes to the qualified existing-provider ONNX Vulkan integration
 - `doe-gpu` is the package surface over that runtime
 - `doe-gpu/browser` is a browser wrapper, not the Doe runtime running inside the browser
-- `browser/chromium` owns the experimental Fawn browser-runtime integration
+- `browser/chromium` owns the experimental Chromium runtime integration
 - `browser/workspace` scopes the prospective durable service above stock Chromium;
   [its contract](fawn-workspace-contract.md) does not claim an implementation
 - `bench` owns evaluation tooling; its explicitly public ONNX evaluation distribution packages the supported integration without transferring runtime ownership
@@ -457,8 +467,9 @@ Those paths answer different questions and should not be described as the same
 thing.
 
 They also sit at different maturity levels. The browser shim is a present
-compatibility surface. Fawn/Chromium is a retained experimental integration,
-deferred until explicitly selected. Its evidence remains diagnostic until a
+compatibility surface. The Chromium runtime integration is a retained
+experiment, deferred until measured benefits justify its compatibility and
+maintenance costs and it is explicitly selected. Its evidence remains diagnostic until a
 complete archive passes isolated clean install,
 forced-provider identity, an unchanged application oracle, and lifecycle gates.
 This restriction concerns runtime replacement, not Fawn's workspace service.

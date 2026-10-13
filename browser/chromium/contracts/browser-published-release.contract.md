@@ -10,7 +10,8 @@ The proof surface is a downloadable Chromium-family browser build with Doe wired
 into the WebGPU runtime path.
 
 The release name may be `Doe Browser` or `Fawn Doe`, but the artifact must make
-the active runtime visible and verifiable.
+the active runtime visible and verifiable. Both names identify the forced-Doe
+Chromium archive, not Fawn's durable workspace service above stock Chromium.
 
 ## Required release artifact
 

@@ -95,7 +95,7 @@ performance does not belong in the compilation-latency result.
 
 After a credible application improvement, test ONNX transfer only where it
 exercises the changed mechanism. Keep its operators, independent full-output
-oracle and disabled CPU fallback. General-compute/render smoke and browser/Fawn
+oracle and disabled CPU fallback. General-compute/render smoke and forced-Doe Chromium
 visuals cannot stand in for a native application speed result.
 
 ## Available backend recipes

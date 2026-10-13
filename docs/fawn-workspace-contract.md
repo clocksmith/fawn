@@ -8,11 +8,11 @@ owns ordered steps and their current assessments. Do not add a competing roadmap
 
 ## Service and workflow boundaries
 
-Fawn is the integrated environment where humans and agents perform durable
-browser work. Begin with a trusted workspace service above stock Chromium, with
-narrow CDP/Playwright adapters. Persist workspace identity, authorization,
-ownership generation, observation versions and action records. Workflow adapters
-implement task-specific logic using the same machinery.
+Fawn provides durable browser workspaces in the environment Doe builds for
+agents. Begin with one shared observation, action, and recovery service above
+stock Chromium, with narrow CDP/Playwright adapters. Persist workspace identity,
+authorization, ownership generation, observation versions and action records.
+Workflow adapters implement task-specific logic using the same machinery.
 
 The service is an authority boundary, not another unconstrained automation
 client. All Fawn-controlled automated browser mutations pass through its trusted
@@ -21,9 +21,10 @@ and must be accounted for by observation and preconditions. Direct CDP access
 cannot be an undocumented route around Fawn's dispatch checks. Define adapter
 credentials, caller authentication and mutation coverage before runtime admission.
 
-Browser hooks require a demonstrated need for authority, visibility or efficiency
-unavailable through existing interfaces. The workspace does not depend on native
-runtime wins. Chromium security and semantics remain browser-owned; workflow
+Add Chromium hooks and browser-runtime integration only when measured benefits
+justify their compatibility and maintenance costs. Authority, visibility or
+efficiency already available through existing interfaces is not such a benefit.
+The workspace does not depend on native runtime wins. Chromium security and semantics remain browser-owned; workflow
 policy cannot move into the GPU runtime or shared authority machinery.
 
 ## Versioned observations and action admission
@@ -82,7 +83,8 @@ current authorization, owner generation and dispatch preconditions.
 ## Reuse and behavioral acceptance
 
 Implement document research, controlled form submission and artifact export
-through the same service. Only workflow adapters differ. Freeze fixtures,
+through the same service and prove consistent behavior across all three. Only
+workflow adapters differ. Freeze fixtures,
 expected task outcomes, authorization scopes, failure locations and independent
 oracles before testing. Every adapter must reject stale commands identically and
 preserve unknown outcomes across restart. Required cases include:
@@ -129,11 +131,11 @@ claims.
 
 Local computation supports accepted workflows where useful. Doppler owns model
 semantics. DoeRuntime integration is explicit and independently qualified;
-workspace acceptance does not qualify the runtime or a model. DoeLab develops
-offline corrections and DoeProof records independently evaluated adoption
-evidence. Fawn remains the integrated product. Chromium hooks and runtime
-replacement earn inclusion through demonstrated need and separately attributed
-workflow value.
+workspace acceptance does not qualify the runtime or a model. DoeLab tests
+improvements offline and DoeProof records the independently evaluated evidence.
+Fawn remains the integrated product. Chromium hooks and browser-runtime
+integration earn inclusion only through measured, separately attributed workflow
+benefits that justify their compatibility and maintenance costs.
 
 ## Current admission boundary
 

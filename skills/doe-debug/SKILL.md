@@ -35,7 +35,7 @@ source -> ingest/normalize -> lowering or HostPlan -> backend selection
 - Wrong result: source preservation -> lowering -> backend output -> oracle
 - Missing backend: capability/profile -> selection -> explicit unsupported error
 - Package failure: JS API -> native addon resolution -> staged prebuild -> call
-- Browser failure: Fawn/Chromium build -> adapter -> dispatch -> smoke artifact
+- Browser failure: forced-Doe Chromium build -> adapter -> dispatch -> smoke artifact
 - Proof failure: obligation -> Lean artifact -> verification mode -> gate
 - Benchmark anomaly: workload -> encoded commands -> dispatch/readback telemetry
   -> timing scope -> statistics

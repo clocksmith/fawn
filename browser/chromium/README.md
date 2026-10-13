@@ -4,9 +4,11 @@
 scripts, milestone checks, and diagnostic artifacts. It is not the Chromium
 checkout itself and it does not change the public `doe-gpu/browser` contract.
 
-Fawn's integrated product begins with the
-[workspace service above Chromium](../../docs/fawn-workspace-contract.md).
-This directory owns its optional runtime-integration lane. Lane success means a released
+Fawn provides durable browser workspaces through the
+[workspace service above stock Chromium](../../docs/fawn-workspace-contract.md).
+This directory owns the separate, optional Chromium runtime-integration lane.
+Chromium hooks and browser-runtime integration are added only when measured
+benefits justify their compatibility and maintenance costs. Lane success means a released
 Chromium-family archive runs an unchanged WebGPU application through forced
 Doe with an independent oracle, physical hardware identity, reliable
 lifecycle behavior, and a narrow compatibility or performance benefit. It
@@ -73,4 +75,5 @@ not yet establish an unchanged-application release gate, broad browser
 compatibility, a promoted release, or a general performance claim.
 
 Archived Track B module designs remain historical references only. New work
-requires explicit selection under GOALS.md and the milestone manifest.
+requires measured benefits that justify its compatibility and maintenance costs,
+plus explicit selection under GOALS.md and the milestone manifest.

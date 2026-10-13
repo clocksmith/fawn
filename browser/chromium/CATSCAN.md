@@ -1,10 +1,10 @@
-# CATSCAN: Fawn Chromium integration
+# CATSCAN: Chromium runtime integration
 
 Parent: [Browser](../CATSCAN.md)
 
 ## Target
 
-Produce an installable Chromium-family artifact that runs a named unchanged application through forced Doe with independently validated output.
+When measured benefits justify its compatibility and maintenance costs, produce an installable Chromium-family artifact that runs a named unchanged application through forced Doe with independently validated output.
 
 ## Authority
 

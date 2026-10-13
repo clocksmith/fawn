@@ -15,8 +15,8 @@ the [strategy contract](product-strategy-contract.md); it does not require or
 establish the runtime ownership decision here. Their contributions remain
 experimentally separable:
 
-- **DoeProof**: workload identity, execution policy, independent oracles,
-  receipts, replay, comparison, and release admission;
+- **DoeProof**: the evidence record — workload identity, execution policy,
+  independent oracles, receipts, replay, comparison, and release admission;
 - **DoeRuntime**: the owned compiler, runtime, backend, lifecycle, scheduling,
   memory, cache, synchronization, and readback implementation.
 
@@ -339,27 +339,31 @@ correctness-localization task and cannot reopen Doppler runtime ownership.
 
 ## Expansion admission
 
-### Fawn and Chromium
+### Chromium hooks and browser-runtime integration
 
-Fawn is an optional, deferred route. It proceeds from diagnostic integration to
+Fawn's durable browser workspaces above stock Chromium are selected independently
+under the [workspace contract](fawn-workspace-contract.md) and are not governed
+here. This section covers Chromium hooks and Doe beneath `navigator.gpu`: an
+optional, deferred route added only when measured benefits justify its
+compatibility and maintenance costs. It proceeds from diagnostic integration to
 product promotion only when:
 
 - an explicit prioritization decision selects browser integration;
-
 - a named application or adopter requires a browser provider rather than the
   package surface;
 - the package surface cannot serve the workload;
-- an installable, hash-bound Fawn release candidate exists;
+- an installable, hash-bound Chromium-family release candidate exists;
 - forced Doe identity and prohibited-fallback rejection pass;
 - an unchanged browser application passes its independent oracle and lifecycle
   gates;
-- matched A/B/C/D evidence isolates the Fawn shell, DoeRuntime, and Direct
-  Protocol contributions under the same browser evidence contract.
+- matched A/B/C/D evidence isolates the legacy Fawn shell build, DoeRuntime, and
+  Direct Protocol contributions under the same browser evidence contract;
+- the measured benefit exceeds the declared compatibility and maintenance costs.
 
 Browser launch by itself is integration evidence, not application value. A
-passing B-versus-A decision may promote Fawn while rejecting DoeRuntime browser
-ownership. C-versus-B owns that runtime decision, and D-versus-C separately owns
-the Direct Protocol decision.
+passing B-versus-A decision may credit the legacy shell build while rejecting
+DoeRuntime browser ownership. C-versus-B owns that runtime decision, and
+D-versus-C separately owns the Direct Protocol decision.
 
 ### Lean
 
@@ -377,7 +381,11 @@ consumer and next admission gate remains quarantined research.
 
 ## Product validation boundary
 
-The first runtime adoption objective is one unchanged external non-Doppler
+DoeRuntime engineering stays focused on one correct, reproducible Doppler Node
+generation advantage over Dawn on Vulkan, then ONNX transfer. That campaign is a
+separately frozen hypothesis; the earlier Doppler package verdicts above keep
+their terminal meaning. Doppler results are engineering evidence, not adoption:
+the first runtime adoption objective remains one unchanged external non-Doppler
 application on the current AMD/Vulkan focus. Work proceeds in bounded batches.
 Metal requires explicit prioritization and a handoff; D3D12 remains deferred.
 Existing regression checks do not open parallel optimization campaigns, and a

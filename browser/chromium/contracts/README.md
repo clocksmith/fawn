@@ -2,6 +2,14 @@
 
 This directory contains contract drafts for the Chromium WebGPU lane.
 
+Chromium hooks and browser-runtime integration are added only when measured
+benefits justify their compatibility and maintenance costs. Every draft here,
+including any execution cadence, approval schedule, or release name it states,
+applies only after that selection; no draft authorizes integration work or a
+standing maintenance commitment by itself. Fawn's durable browser workspaces
+above stock Chromium are governed by the
+[workspace contract](../../../docs/fawn-workspace-contract.md), not these drafts.
+
 These files define candidate module boundaries and promotion expectations before implementation.
 
 Archived Track B module filenames retain their historical `fawn-*` identifiers
@@ -64,7 +72,7 @@ because the archived schemas and fixtures still use those ids.
    - Browser CTS subset contract for paired Dawn and forced-Doe evidence.
 22. `browser-published-release.contract.md`
    - Published Chromium-family browser release contract for downloadable
-     Doe/Fawn browser artifacts, per-run receipts, Dawn-vs-Doe comparison mode,
+     forced-Doe Chromium browser artifacts, per-run receipts, Dawn-vs-Doe comparison mode,
      hosted proof gallery with public comparison links, and local diagnostics
      page requirements.
 23. `../bench/workflows/browser-milestones.json`
