@@ -157,7 +157,7 @@ async function frame(now) {
       if (cycle.transitioning) gpu.simulate(encoder, cycle.next, Number(stepsSelect.value));
     }
     if (dt > 0) gpu.advanceParcels(encoder);
-    gpu.draw(encoder, context.getCurrentTexture().createView(), weights, cycle.elapsedS);
+    gpu.draw(encoder, context.getCurrentTexture().createView(), weights, time, cycle.elapsedS);
     device.queue.submit([encoder.finish()]);
     pointer.dx = 0;
     pointer.dy = 0;

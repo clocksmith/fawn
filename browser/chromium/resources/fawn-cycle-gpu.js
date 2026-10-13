@@ -268,8 +268,8 @@ function createCycleGpu(device, canvas, format, count) {
     handoff,
     resize,
     reset,
-    draw: (encoder, view, weights, time) =>
-      renderer.draw(encoder, view, parcelIndex, weights, time),
+    draw: (encoder, view, weights, time, shimmerTime) =>
+      renderer.draw(encoder, view, parcelIndex, weights, time, shimmerTime),
     destroy() {
       renderer.destroy();
       buffers.forEach((b) => b.destroy());

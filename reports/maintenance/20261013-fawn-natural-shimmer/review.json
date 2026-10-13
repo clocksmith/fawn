@@ -1,0 +1,29 @@
+{
+  "component": "Fawn Flow material and rendering clock",
+  "intent": "preserved",
+  "baseline": "995ce8b5f7b1e8ccee701ce0da1abf79d77c4ea0",
+  "changes": [
+    "Restore the retained standalone Flow metallic and reflected warm-light treatment.",
+    "Mix Flow tone toward equal luminance with saturation factor 0.7.",
+    "Halve sparkle amplitude; broaden and slow glints with neutral warm tint.",
+    "Pass simulation time for fluid color and separate visible scene time for shimmer through existing uniform padding.",
+    "Preserve transition timing and background shimmer."
+  ],
+  "evidence": [
+    "comparison.json",
+    "journey.json"
+  ],
+  "commands": [
+    "node reports/maintenance/20261013-fawn-natural-shimmer/compare.mjs",
+    "node reports/maintenance/20261013-fawn-natural-shimmer/journey.mjs",
+    "node browser/chromium/scripts/build-fawn-shaders.js --check",
+    "python3 bench/gates/catscan_gate.py --root . --json",
+    "git diff --check"
+  ],
+  "limits": [
+    "SwiftShader software WebGPU artwork only; no Safari, physical hardware, or performance qualification.",
+    "Full cycle lifecycle uses 1024 parcels; same-input material comparisons use default desktop/mobile counts.",
+    "Comparison confirms lower mean RGB channel spread, not a perceptual color-quality verdict."
+  ],
+  "boundaryEffects": "Flow appearance and renderer clock plumbing; no simulation, formation timing, or resource layout changes."
+}
