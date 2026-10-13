@@ -381,7 +381,7 @@ try {
       device.queue.writeBuffer(
         parcelUniform,
         0,
-        new Float32Array([grid, count, dt, time, ...weights, shape, 0, 0, 0, 0, 1, 1, 0, 0]),
+        new Float32Array([grid, count, dt, time, ...weights, shape, 0, 0, 0, dt, 1, 1, 0, 0]),
       );
       run(PARCEL_UPDATE, [parcelUniform, points, moved, target, velocity, dye, surface, curl]);
     };

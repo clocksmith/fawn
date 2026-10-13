@@ -4,7 +4,7 @@ import { FLOW_TO_WAVE, PARTICLE_DEPOSIT, RESOLVE_DEPOSIT } from './fawn-cycle-tr
 import { PARCEL_POLICY, PARCEL_UPDATE, createParcelData } from './fawn-parcels.js';
 import { createParcelRenderer } from './fawn-parcel-renderer.js';
 const GPU_POLICY = Object.freeze({
-  version: 4,
+  version: 5,
   maxCount: 262144,
   pressureIterations: flow.PRESSURE_ITERATIONS,
   flowGroup: flow.WORKGROUP_SIZE,
@@ -146,7 +146,7 @@ function createCycleGpu(device, canvas, format, count) {
     dyeIndex = waveIndex = parcelIndex = 0;
     resize();
   }
-  function uniforms(dt, time, shape, pointer, steps, weights) {
+  function uniforms(dt, time, shape, pointer, steps, weights, settleDt = dt) {
     const viewport = FawnFormation.viewport(canvas),
       liveDt = dt * (1 - shape);
     const pressDirection = weights[1] - weights[2];
@@ -208,7 +208,7 @@ function createCycleGpu(device, canvas, format, count) {
         pointer.y * 2 - 1,
         pointer.hover ? (pointer.down ? 26.67 * GPU_POLICY.magneticParticlePressScale * pressDirection
           : 2 * GPU_POLICY.hoverStrengthScale) : 0,
-        0,
+        settleDt,
         ...viewport,
         0,
         0,
