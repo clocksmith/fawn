@@ -1,11 +1,11 @@
 // Scene cadence is independent of input; crossfades soften its force instead.
 const CYCLE_POLICY = Object.freeze({
-  version: 8,
+  version: 9,
   effects: Object.freeze(['flow', 'wave', 'particles']),
   labels: Object.freeze({ flow: 'Flows', wave: 'Magnets', particles: 'Particles' }),
-  holdS: 4.5,
-  blendS: 2.5,
-  formation: Object.freeze({ delayS: 0.3, settleS: 1.2 }),
+  holdS: 6,
+  blendS: 2,
+  formation: Object.freeze({ delayS: 1.5, settleS: 1.2 }),
   transitionInputFloor: 0.15,
   maxDtS: 0.033,
   maxFrameS: 0.1,

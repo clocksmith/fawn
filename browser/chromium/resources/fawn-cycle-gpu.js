@@ -4,7 +4,7 @@ import { FLOW_TO_WAVE, PARTICLE_DEPOSIT, RESOLVE_DEPOSIT } from './fawn-cycle-tr
 import { PARCEL_POLICY, PARCEL_UPDATE, createParcelData } from './fawn-parcels.js';
 import { createParcelRenderer } from './fawn-parcel-renderer.js';
 const GPU_POLICY = Object.freeze({
-  version: 9,
+  version: 10,
   maxCount: 262144,
   pressureIterations: flow.PRESSURE_ITERATIONS,
   flowGroup: flow.WORKGROUP_SIZE,
@@ -109,7 +109,7 @@ function createCycleGpu(device, canvas, format, count) {
     deposit: [0, 1].map((i) => group(transfers[1], [transferUniform, parcels[i], deposits])),
     resolve: group(transfers[2], [transferUniform, deposits, dyes[0], velocities[0]]),
   };
-  const renderer = createParcelRenderer(device, canvas, format, count, parcels);
+  const renderer = createParcelRenderer(device, canvas, format, count, parcels, waves, grid);
   function resize() {
     const targets = FawnFormation.points(
       PARCEL_POLICY.targetGrid,
@@ -283,7 +283,7 @@ function createCycleGpu(device, canvas, format, count) {
     resize,
     reset,
     draw: (encoder, view, weights, time, shimmerTime) =>
-      renderer.draw(encoder, view, parcelIndex, weights, time, shimmerTime),
+      renderer.draw(encoder, view, parcelIndex, weights, time, shimmerTime, waveIndex),
     destroy() {
       renderer.destroy();
       buffers.forEach((b) => b.destroy());

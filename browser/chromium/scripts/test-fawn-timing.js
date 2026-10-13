@@ -3,21 +3,21 @@ import { CYCLE_POLICY, createCycleClock } from '../resources/fawn-cycle-clock.js
 import '../resources/fawn-formation.js';
 
 const { transition } = globalThis.FawnFormation;
-assert.equal(CYCLE_POLICY.holdS + CYCLE_POLICY.blendS, 7);
+assert.equal(CYCLE_POLICY.holdS + CYCLE_POLICY.blendS, 8);
 for (const input of [false, true]) {
   for (let rotation = 0, clock = createCycleClock(); rotation < 3; rotation++) {
     for (const effect of ['flow', 'wave', 'particles']) {
       assert.equal(clock.state().effect, effect);
-      assert.equal(clock.advance(4.5, input).started, true);
-      const middle = clock.advance(1.25, input);
+      assert.equal(clock.advance(6, input).started, true);
+      const middle = clock.advance(1, input);
       assert.equal(middle.blend, 0.5);
       assert.ok(Math.abs(middle.interactionScale - 0.15) < 1e-12);
-      assert.equal(clock.advance(1.25, input).completed, true);
+      assert.equal(clock.advance(1, input).completed, true);
     }
-    assert.equal(clock.state().elapsedS, (rotation + 1) * 21);
+    assert.equal(clock.state().elapsedS, (rotation + 1) * 24);
   }
 }
-for (const at of [0, 2, 4.49, 4.5, 5.75, 6.99]) {
+for (const at of [0, 2, 5.99, 6, 7, 7.99]) {
   const untouched = createCycleClock(), interacting = createCycleClock();
   untouched.advance(at); interacting.advance(at);
   for (let frame = 0; frame < 200; frame++) {
@@ -29,7 +29,7 @@ for (const at of [0, 2, 4.49, 4.5, 5.75, 6.99]) {
 const curve = [];
 for (let i = 0; i <= 1000; i++) {
   const clock = createCycleClock();
-  curve.push(clock.advance(4.5 + 2.5 * i / 1000).interactionScale);
+  curve.push(clock.advance(6 + 2 * i / 1000).interactionScale);
 }
 assert.equal(curve[0], 1); assert.equal(curve.at(-1), 1);
 for (let i = 0; i < curve.length; i++) {
@@ -69,8 +69,8 @@ const next = f.advance(0.01, true, false);
 assert.ok(Math.abs(next - previous) < 0.01);
 assert.ok(maxDelta < 0.02);
 const cycleFormation = transition(CYCLE_POLICY.formation); cycleFormation.reset(true);
-assert.ok(step(cycleFormation, 1.9) > 0.99, 'Cycle envelope leaves time for physical gathering and dwell');
+assert.ok(step(cycleFormation, 3.1) > 0.99, 'Cycle envelope leaves time for physical gathering and dwell');
 assert.throws(() => createCycleClock().advance(-1), /Invalid cycle timestep/);
-console.log(JSON.stringify({ passed: true, untouchedCycleSeconds: 21, rotations: 3,
+console.log(JSON.stringify({ passed: true, untouchedCycleSeconds: 24, rotations: 3,
   inputIndependentCadence: true, symmetricInputAttenuation: true, uninterruptedCrossfades: true,
   formationProgressRetained: true, quietSeconds: 1, maxFormationFrameDelta: maxDelta }));

@@ -1,6 +1,6 @@
 // Surface and point appearances reconstruct the same independently moving parcels.
 const PARCEL_RENDER_POLICY = Object.freeze({
-  version: 7,
+  version: 8,
   accumulationCapacity: 4096,
   materialBound: 8,
   fluidRadiusCells: 2.2,
@@ -12,8 +12,8 @@ const PARCEL_RENDER_POLICY = Object.freeze({
   flowGlintSharpness: 12,
   flowSaturation: 0.7,
   backgroundGlintStrength: 0.032,
-  filmPigmentMix: 0.62,
-  filmAmbientLight: 0.65,
+  filmPigmentMix: 0.8,
+  filmAmbientLight: 0.18,
 });
 const HEADER = `
 struct Params { view:vec4<f32>, screen:vec4<f32>, theme:vec4<f32>, material:vec4<f32> }
@@ -52,6 +52,13 @@ const PARCEL_SURFACE =
 @group(0) @binding(1) var imageSampler:sampler;
 @group(0) @binding(2) var colorField:texture_2d<f32>;
 @group(0) @binding(3) var geometryField:texture_2d<f32>;
+@group(0) @binding(4) var<storage,read> magneticField:array<vec4<f32>>;
+fn filmAt(uv:vec2<f32>)->vec4<f32> {
+ let size=u.material.w;let p=clamp(uv*size-0.5,vec2<f32>(0),vec2<f32>(size-1));
+ let b=vec2<u32>(floor(p));let f=fract(p);let q=min(b+vec2<u32>(1),vec2<u32>(u32(size)-1u));
+ return mix(mix(magneticField[b.y*u32(size)+b.x],magneticField[b.y*u32(size)+q.x],f.x),
+   mix(magneticField[q.y*u32(size)+b.x],magneticField[q.y*u32(size)+q.x],f.x),f.y);
+}
 struct Out { @builtin(position) position:vec4<f32>,@location(0) uv:vec2<f32> }
 @vertex fn vs(@builtin(vertex_index) i:u32)->Out {
  let quad=array<vec2<f32>,4>(vec2<f32>(-1,-1),vec2<f32>(1,-1),vec2<f32>(-1,1),vec2<f32>(1,1));
@@ -89,8 +96,21 @@ fn spectral(t:f32)->vec3<f32> {return 0.5+0.5*cos(vec3<f32>(0,2,4)+t*6.28318);}
  let flowLight=pigment*(0.92+material.w*0.24)+flowPrism*abs(material.z)*0.030
    +metallic*(0.22+material.x*0.14)
    +vec3<f32>(1.0,0.96,0.93)*shimmer*(0.25+glint*0.75)*${PARCEL_RENDER_POLICY.flowGlintStrength};
- let waveLight=mix(pigment,prism,${PARCEL_RENDER_POLICY.filmPigmentMix})*(${PARCEL_RENDER_POLICY.filmAmbientLight}+ridge*(0.02+contour*0.40+fresnel*0.16))
-   +vec3<f32>(0.8,0.88,1)*specular*ridge*0.28;
+ // Resolve the live magnetic relief directly: parcel moment averaging erases narrow bubble rings.
+ let filmUV=(in.uv*vec2<f32>(2,-2)+vec2<f32>(-1,1))*u.view.xy*0.5+0.5;
+ let c=filmAt(filmUV);let step=1.0/u.material.w;
+ let filmGradient=vec2<f32>(filmAt(filmUV+vec2<f32>(step,0)).x-filmAt(filmUV-vec2<f32>(step,0)).x,
+   filmAt(filmUV+vec2<f32>(0,step)).x-filmAt(filmUV-vec2<f32>(0,step)).x)*u.material.w*0.5;
+ let filmNormal=normalize(vec3<f32>(-filmGradient*0.12,1));
+ let filmFresnel=pow(1.0-max(filmNormal.z,0.0),3.0);
+ let filmRidge=smoothstep(0.20,4.0,length(filmGradient));
+ let fieldPhase=log(1.0+max(c.w,0.0));
+ let filmPrism=spectral(c.x*0.34+fieldPhase*0.14+filmFresnel*0.55+dot(filmNormal.xy,vec2<f32>(0.4,-0.3))+u.screen.w*0.015);
+ let filmContour=pow(0.5+0.5*sin(fieldPhase*8.0-c.x*2.0),12.0);
+ let filmSpec=pow(max(dot(filmNormal,halfVector),0.0),64.0)*filmRidge;
+ let waveLight=mix(pigment,filmPrism,${PARCEL_RENDER_POLICY.filmPigmentMix})*${PARCEL_RENDER_POLICY.filmAmbientLight}
+   +filmPrism*filmRidge*(0.02+filmContour*0.40+filmFresnel*0.16)
+   +vec3<f32>(0.8,0.88,1)*filmSpec*0.28;
  let fluidWeight=u.theme.x+u.theme.y;
  // Interpolate carried material in linear light before exposure, keeping relief-free film visible.
  let fluidLight=(flowLight*u.theme.x+waveLight*u.theme.y)/max(fluidWeight,0.000001);
@@ -106,7 +126,7 @@ fn spectral(t:f32)->vec3<f32> {return 0.5+0.5*cos(vec3<f32>(0,2,4)+t*6.28318);}
  return vec4<f32>(mix(background,max(appearance,background),coverage),1);
 }
 `;
-function createParcelRenderer(device, canvas, format, count, parcels) {
+function createParcelRenderer(device, canvas, format, count, parcels, waves, grid) {
   const uniform = device.createBuffer({
     label: 'Cycle parcel rendering uniforms',
     size: 64,
@@ -167,17 +187,18 @@ function createParcelRenderer(device, canvas, format, count, parcels) {
           GPUTextureUsage.COPY_SRC,
       }),
     );
-    resolve = device.createBindGroup({
+    resolve = waves.map(wave => device.createBindGroup({
       layout: surface.getBindGroupLayout(0),
       entries: [
         { binding: 0, resource: { buffer: uniform } },
         { binding: 1, resource: sampler },
         { binding: 2, resource: textures[0].createView() },
         { binding: 3, resource: textures[1].createView() },
+        { binding: 4, resource: { buffer: wave } },
       ],
-    });
+    }));
   }
-  function draw(encoder, view, index, weights, time, shimmerTime = time) {
+  function draw(encoder, view, index, weights, time, shimmerTime = time, waveIndex = 0) {
     const side = Math.max(canvas.clientWidth, canvas.clientHeight, 1);
     const fluidRadius = (2 / Math.sqrt(count)) * PARCEL_RENDER_POLICY.fluidRadiusCells;
     const particleRadius = (PARCEL_RENDER_POLICY.particleRadiusPx * 2) / side;
@@ -199,7 +220,7 @@ function createParcelRenderer(device, canvas, format, count, parcels) {
         shimmerTime,
         particleRadius,
         fluidRadius,
-        0,
+        grid,
       ]),
     );
     const pass = encoder.beginRenderPass({
@@ -220,7 +241,7 @@ function createParcelRenderer(device, canvas, format, count, parcels) {
       colorAttachments: [{ view, loadOp: 'clear', storeOp: 'store', clearValue: [0, 0, 0, 1] }],
     });
     output.setPipeline(surface);
-    output.setBindGroup(0, resolve);
+    output.setBindGroup(0, resolve[waveIndex]);
     output.draw(4);
     output.end();
   }
