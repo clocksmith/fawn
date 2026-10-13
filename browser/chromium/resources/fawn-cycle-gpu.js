@@ -4,13 +4,15 @@ import { FLOW_TO_WAVE, PARTICLE_DEPOSIT, RESOLVE_DEPOSIT } from './fawn-cycle-tr
 import { PARCEL_POLICY, PARCEL_UPDATE, createParcelData } from './fawn-parcels.js';
 import { createParcelRenderer } from './fawn-parcel-renderer.js';
 const GPU_POLICY = Object.freeze({
-  version: 2,
+  version: 3,
   maxCount: 262144,
   pressureIterations: flow.PRESSURE_ITERATIONS,
   flowGroup: flow.WORKGROUP_SIZE,
   waveGroup: wave.WORKGROUP_SIZE,
   parcelGroup: PARCEL_POLICY.workgroup,
   parcelBytes: PARCEL_POLICY.strideFloats * 4,
+  hoverStrengthScale: 1 / 3,
+  magneticParticlePressScale: 3,
 });
 function createCycleGpu(device, canvas, format, count) {
   if (!FawnFormation.WORKLOAD.cycleCounts.includes(count) || count > GPU_POLICY.maxCount)
@@ -147,7 +149,7 @@ function createCycleGpu(device, canvas, format, count) {
   function uniforms(dt, time, shape, pointer, steps, weights) {
     const viewport = FawnFormation.viewport(canvas),
       liveDt = dt * (1 - shape);
-    const force = pointer.hover ? (pointer.down ? 1.4 : 0.28) : 0;
+    const force = pointer.hover ? (pointer.down ? 1.4 : 0.28 * GPU_POLICY.hoverStrengthScale) : 0;
     device.queue.writeBuffer(
       flowUniform,
       0,
@@ -159,7 +161,7 @@ function createCycleGpu(device, canvas, format, count) {
         pointer.x,
         pointer.y,
         force,
-        force > 0.28 ? 0.1 : 0.05,
+        pointer.down ? 0.1 : 0.05,
         (liveDt * 0.82) / steps,
         time,
         2,
@@ -181,7 +183,8 @@ function createCycleGpu(device, canvas, format, count) {
       1 / grid,
       pointer.x,
       pointer.y,
-      pointer.hover ? (pointer.down ? 1 : 0.55) : 0,
+      pointer.hover ? (pointer.down ? GPU_POLICY.magneticParticlePressScale
+        : 0.55 * GPU_POLICY.hoverStrengthScale) : 0,
       0,
       (liveDt * 1.1) / steps,
       time,
@@ -202,7 +205,8 @@ function createCycleGpu(device, canvas, format, count) {
         shape,
         pointer.x * 2 - 1,
         pointer.y * 2 - 1,
-        pointer.hover ? (pointer.down ? 26.67 : 2) : 0,
+        pointer.hover ? (pointer.down ? 26.67 * GPU_POLICY.magneticParticlePressScale
+          : 2 * GPU_POLICY.hoverStrengthScale) : 0,
         0,
         ...viewport,
         0,

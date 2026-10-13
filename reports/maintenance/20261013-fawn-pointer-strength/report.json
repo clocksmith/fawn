@@ -1,0 +1,86 @@
+{
+  "passed": true,
+  "classification": "Software WebGPU input/finite-state diagnostic; not physical performance or Safari qualification",
+  "sources": {
+    "baseline": "6dff490648fa1e760de20bb77d648dfdc93d6a545c56031c149c2e0f76c865ef",
+    "candidate": "5bf9f9770b8ec7863a562c4e613d603f54151a7118e4776f5d389abb284704b9"
+  },
+  "cases": [
+    {
+      "version": "before",
+      "hover": {
+        "flow": 0.2800000011920929,
+        "radius": 0.05000000074505806,
+        "magnetic": 0.550000011920929,
+        "parcels": 2
+      },
+      "pressed": {
+        "flow": 1.399999976158142,
+        "radius": 0.10000000149011612,
+        "magnetic": 1,
+        "parcels": 26.670000076293945
+      },
+      "released": {
+        "flow": 0.2800000011920929,
+        "radius": 0.05000000074505806,
+        "magnetic": 0.550000011920929,
+        "parcels": 2
+      },
+      "absent": {
+        "flow": 0,
+        "radius": 0.05000000074505806,
+        "magnetic": 0,
+        "parcels": 0
+      },
+      "adapter": {
+        "vendor": "google",
+        "architecture": "swiftshader"
+      }
+    },
+    {
+      "version": "after",
+      "hover": {
+        "flow": 0.09333333373069763,
+        "radius": 0.05000000074505806,
+        "magnetic": 0.18333333730697632,
+        "parcels": 0.6666666865348816
+      },
+      "pressed": {
+        "flow": 1.399999976158142,
+        "radius": 0.10000000149011612,
+        "magnetic": 3,
+        "parcels": 80.01000213623047
+      },
+      "released": {
+        "flow": 0.09333333373069763,
+        "radius": 0.05000000074505806,
+        "magnetic": 0.18333333730697632,
+        "parcels": 0.6666666865348816
+      },
+      "absent": {
+        "flow": 0,
+        "radius": 0.05000000074505806,
+        "magnetic": 0,
+        "parcels": 0
+      },
+      "adapter": {
+        "vendor": "google",
+        "architecture": "swiftshader"
+      },
+      "execution": [
+        {
+          "effect": "flow",
+          "finite": true
+        },
+        {
+          "effect": "wave",
+          "finite": true
+        },
+        {
+          "effect": "particles",
+          "finite": true
+        }
+      ]
+    }
+  ]
+}
