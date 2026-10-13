@@ -42,7 +42,7 @@ async function open(steps = 4) {
     };
   });
   await page.goto(origin + '/fawn-start.html');
-  try { await page.waitForFunction(() => !document.querySelector('#pause').disabled); }
+  try { await page.waitForFunction(() => !document.querySelector('#pause').disabled, null, { polling: 100 }); }
   catch (error) { report.errors.push({ failure: await page.locator('#failure').textContent(), gpuErrors: await page.evaluate(() => clockProbe.errors) }); throw error; }
   await page.locator('.details').evaluate(el => { el.open = true; });
   await page.selectOption('#steps-select', String(steps));
