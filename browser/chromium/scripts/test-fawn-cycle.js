@@ -5,6 +5,7 @@ import { createHash } from 'node:crypto';
 import http from 'node:http';
 import path from 'node:path';
 import { CYCLE_POLICY, createCycleClock } from '../resources/fawn-cycle-clock.js';
+import { PARCEL_POLICY, createParcelData } from '../resources/fawn-parcels.js';
 const { chromium } = await import(process.env.FAWN_PLAYWRIGHT_MODULE || 'playwright');
 const resources = new URL('../resources/', import.meta.url);
 const output = path.resolve(process.env.FAWN_REPORT_DIR || 'bench/out/fawn-cycle');
@@ -49,6 +50,28 @@ assert.equal(clock.advance(0).blend, 0);
 assert.throws(() => clock.advance(-1), /Invalid cycle timestep/);
 clock.reset();
 assert.equal(clock.state().effect, 'flow');
+// Every square viewport fits inside the circular reservoir, including its corners.
+const seedGrid = 64,
+  seedCount = seedGrid ** 2;
+const initialized = createParcelData(seedGrid, {
+  dye: new Float32Array(seedCount * 4).fill(0.5),
+  velocity: new Float32Array(seedCount * 4),
+});
+const reservoir = [];
+for (let i = 0; i < seedCount; i++)
+  reservoir.push(Math.hypot(initialized[i * 12], initialized[i * 12 + 1]));
+assert.ok(Math.max(...reservoir) > Math.SQRT2);
+assert.ok(Math.max(...reservoir) <= PARCEL_POLICY.initialRadius + 1e-6);
+for (const x of [-0.95, 0, 0.95])
+  for (const y of [-0.95, 0, 0.95]) {
+    assert.ok(
+      reservoir.some(
+        (_, i) => Math.hypot(initialized[i * 12] - x, initialized[i * 12 + 1] - y) < 0.06,
+      ),
+      `No empty grid border near ${x},${y}`,
+    );
+  }
+report.initialReservoir = { squareCornersCovered: true, circularBoundaryOutsideViewport: true };
 const server = http.createServer(async (req, res) => {
   const file = new URL('.' + new URL(req.url, 'http://localhost').pathname, resources);
   if (!file.href.startsWith(resources.href)) {

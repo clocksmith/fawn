@@ -1,16 +1,22 @@
 # Fawn hosted demonstrations
 
 The unified `fawn-cycle.html` rotates Flow → Wave → Particles on one simulation
-canvas and device. A shared visible-time controller pauses the schedule during
-input, manual pause and hidden tabs. GPU handoffs convert live dye/velocity to
-film relief, film cells to particles, and particle pigment/velocity back to the
-fluid grid. Material coordinates and formation strength remain shared while
-rendered effects blend. [Cycle evidence](../../reports/maintenance/20261012-fawn-cycle/README.md)
-records independent conversion references, complete rotations, buffer reuse,
-input, pause, reset, viewport/DPR changes and terminal failure. The cycle uses
-velocity advection for particles to retain interior material; the standalone
-benchmarks keep their preceding simulation definitions. This is browser artwork
-acceptance, not native Doe, physical-phone or performance qualification.
+canvas and device. All effects render the same resident parcels, preserving their
+positions and carried pigment through mode changes. The live Flow and Wave fields
+drive their movement and material; Particles uses midpoint advection. Formation
+moves each parcel from its accepted position toward an SVG target at a staggered
+rate. It does not shrink a rectangle, change the camera, or mask a grid into the
+logo. The circular initial reservoir extends beyond square viewport corners.
+
+[Parcel continuity evidence](../../reports/maintenance/20261012-fawn-parcel-continuity/README.md)
+contains independent GPU references for all three formations and advection,
+fixed projection during settling, full rotations, buffer reuse, input, pause,
+reset, viewport/DPR changes and terminal failure. The earlier
+[sheet-cycle receipt](../../reports/maintenance/20261012-fawn-cycle/README.md)
+remains historical: its tests did not reject the square/zoom reported by the user.
+This is Chrome artwork evidence, not native Doe, physical-phone or performance
+qualification. D4DA's packager aliases all legacy public demo filenames to the
+unified experience. Standalone source pages remain repository-only benchmarks.
 
 [Responsive canvas and material evidence](../../reports/maintenance/20261012-fawn-responsive/README.md)
 reproduces and removes Particles' HTML focus frame, checks backing resolution and
@@ -19,7 +25,7 @@ identical GPU inputs. Flow uses interpolated relief and mild local contrast;
 its solver and Particles' shaders are unchanged. These are local Chrome artwork
 checks; the live release manifest below remains the publication authority.
 
-Flow and Wave now settle by deforming their currently active fluid surface into
+The preceding standalone Flow and Wave pages settled by deforming their active fluid surface into
 the mark, carrying existing color, curls and soap-film relief. The
 [live-material evidence](../../reports/maintenance/20261012-fawn-live-material/README.md)
 checks interpolation, unchanged buffers at mode selection, distinct histories,
@@ -56,7 +62,8 @@ The [live release manifest](https://canvascontext.com/release.json) identifies
 the published demo source and hosting package.
 
 The current hosting package opens the unified cycle with Flow first and no
-background selector. Named standalone pages remain benchmark reproduction routes.
+background selector. All named public demo URLs alias the same unified experience; the standalone
+benchmark sources remain in this repository.
 Local changes do not update the live site until deployed. The browser launcher has its own local start page; existing
 installations can retain an older packaged copy. The preview visibly links to Fawn's
 Chromium integration on GitHub and identifies the visitor's browser WebGPU
@@ -65,12 +72,12 @@ backend in Settings. The preview has no search/address field.
 The main page is the public demo entry point. Settings and the README no longer
 send visitors to standalone demos. Particle Trails, Magnetic Fluids, Prismatic
 Fluids, and Image Lab remain in `browser/chromium/resources/` for benchmarks and
-diagnostics. Magnetic Fluids and Prismatic Fluids remain public fixtures;
-Particle Trails and Image Lab are repository-only. Lifecycle probes navigate
+diagnostics. All standalone sources are repository-only; the old public filenames serve
+the unified cycle. Lifecycle probes navigate
 directly to the fluid fixture rather
 than requiring a public navigation link.
 
-The three hosted pages have a compact background disclosure labelled with the
+The preceding standalone pages had a compact background disclosure labelled with the
 active demo and no instruction subtitle block. Its trigger and dropdown share
 their width and text alignment;
 rows retain touch targets and a current-selection checkmark.
