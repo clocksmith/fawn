@@ -5,7 +5,9 @@ replace static target locking with a silhouette boundary. Live vector fields,
 parcel advection and carried material continue during branding. Fluid lighting
 interpolates before exposure and preserves visible film without requiring relief.
 The source-bound diagnostic compares live GPU state and transition pixels against
-the retained frozen/dark baseline. Scene timing and footer controls remain unchanged.
+the retained frozen/dark baseline.
+[Deployment verification](../../reports/maintenance/20261013-fawn-living-logo/deployment.json)
+binds the live files and hosted checks. Scene timing and footer controls remain unchanged.
 [Prior static-dwell status](archive/20261013-fawn-static-dwell.md) is retained.
 
 [Magnetic release](../../reports/maintenance/20261013-fawn-magnetic-release/README.md)

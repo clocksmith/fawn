@@ -57,3 +57,13 @@ physical-phone, Safari or performance qualification.
   alongside live branded motion and all transition pixels. The earlier integration
   receipt predates this rendering correction; its numerical/lifecycle scope is
   preserved, while this receipt binds the corrected rendering source.
+
+- [`defaults.json`](defaults.json) binds the final source to moving branded
+  silhouettes and transition pixels at the normal desktop and mobile counts.
+  All effects and handoffs pass. Local screenshots were inspected; captures stay
+  outside version control.
+
+- [`timing.json`](timing.json) verifies unchanged cadence, transition input
+  attenuation and formation-controller continuity.
+- [`deployment.json`](deployment.json) binds successful preview/live publication,
+  exact packaged/hosted bytes and hosted Chrome checks to the tested code revision.
