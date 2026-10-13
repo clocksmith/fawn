@@ -1,10 +1,10 @@
 // Scene time advances independently of input; the host pauses it for pause/hidden tabs.
 const CYCLE_POLICY = Object.freeze({
-  version: 2,
+  version: 3,
   effects: Object.freeze(['flow', 'wave', 'particles']),
   labels: Object.freeze({ flow: 'Flows', wave: 'Magnets', particles: 'Particles' }),
-  holdS: 10,
-  blendS: 4,
+  holdS: 11,
+  blendS: 5,
   maxDtS: 0.033,
 });
 function createCycleClock() {
@@ -26,11 +26,12 @@ function createCycleClock() {
       const phase = elapsed % sceneS;
       const progress = Math.max(0, (phase - CYCLE_POLICY.holdS) / CYCLE_POLICY.blendS);
       return {
+        elapsedS: elapsed,
         index,
         effect: CYCLE_POLICY.effects[index],
         next: CYCLE_POLICY.effects[(index + 1) % CYCLE_POLICY.effects.length],
         transitioning: phase >= CYCLE_POLICY.holdS,
-        blend: progress * progress * (3 - 2 * progress),
+        blend: progress ** 3 * (progress * (progress * 6 - 15) + 10),
       };
     },
     reset() {

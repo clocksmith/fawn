@@ -64,7 +64,7 @@ export const particles = Object.freeze({
   "PARTICLE_RADIUS_PX": 1.6
 });
 export const sourceHashes = Object.freeze({
-  "fawn-formation.js": "efbef755aaced02bb2c9baa8cc599ea363d15fef7e2d55f4b65c801aa98a655f",
+  "fawn-formation.js": "113ac7e232d30309f738bc21aea9443398155e530fc82a01fc97755ba3cdd4c3",
   "fawn-prismatic-fluids.html": "e28973199222f4c3b3962e187c8449f993f9ee499209569b994ff36e4b18a3d0",
   "fawn-magnetic-fluids.html": "5baffd735050ea2f99ec0e04f1608dca6c1eb607e917a682efbd3a1f4870cc0d",
   "fawn-start.html": "5298be9659e3c3a2cd39a7c6a733287adfe5e61d2f5fba613842bd15bb508552"

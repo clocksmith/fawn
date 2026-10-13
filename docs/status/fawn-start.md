@@ -13,6 +13,11 @@ moves each parcel from its accepted position toward an SVG target at a staggered
 rate. It does not shrink a rectangle, change the camera, or mask a grid into the
 logo. The circular initial reservoir extends beyond square viewport corners.
 
+[Transition and background-shimmer checks](../../reports/maintenance/20261013-fawn-transition-background/review.json)
+cover gentler scene blending, distinct automatic/interaction settling, ambient
+Flow glints, the visible-time clock and paused rendering. These are software
+WebGPU artwork checks; browser/hardware performance qualification remains separate.
+
 [Current device-default checks](../../reports/maintenance/20261012-fawn-device-defaults/README.md)
 cover complete rotations at both selected defaults. The preceding
 [Labels, workload and clock checks](../../reports/maintenance/20261012-fawn-labels-load-clock/README.md)
