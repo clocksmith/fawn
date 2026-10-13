@@ -1,7 +1,9 @@
 // Fullscreen cycle: one device, one canvas, one visible-time clock, resident GPU handoffs.
 import { CYCLE_POLICY, createCycleClock } from './fawn-cycle-clock.js';
 import { GPU_POLICY, createCycleGpu } from './fawn-cycle-gpu.js';
-const HOST_POLICY = Object.freeze({ version: 1, maxDpr: 2, metricS: 0.5, graphSamples: 60 });
+const HOST_POLICY = Object.freeze({ version: 2, maxDpr: 2, metricS: 0.5, graphSamples: 60 });
+const MAGNETIC_RELEASE = Object.freeze({ chargeS: 1.5, durationS: 0.7,
+  minimumCharge: 0.2, speed: 1.6, radius: 0.65 });
 const canvas = document.querySelector('#view');
 const status = document.querySelector('#status');
 const pause = document.querySelector('#pause');
@@ -44,7 +46,10 @@ const pointer = {
   press: 0,
   moved: false,
   id: null,
+  heldS: 0,
 };
+const burst = { x: 0.5, y: 0.5, age: 0, charge: 0, strength: 0,
+  radius: MAGNETIC_RELEASE.radius };
 const fps = [];
 function updateControls() {
   pause.textContent = paused ? 'Resume' : 'Pause';
@@ -141,19 +146,24 @@ async function frame(now) {
       Math.min(CYCLE_POLICY.maxFrameS, Math.max(0, (now - lastTime) / 1000));
     const dt = Math.min(CYCLE_POLICY.maxDtS, elapsedDt);
     lastTime = now;
-    const interacting = pointer.down || pointer.moved;
-    const cycle = clock.advance(elapsedDt);
-    shape = formation.advance(
-      elapsedDt, logoEnabled, interacting || cycle.transitioning, interacting, cycle.blend,
-    );
-    const liveDt = dt * (1 - shape);
-    time += liveDt;
+    const cycle = clock.advance(elapsedDt, !paused && (pointer.down || pointer.moved));
     const weights = CYCLE_POLICY.effects.map(
       (effect) =>
         (effect === cycle.effect ? 1 - cycle.blend : 0) +
         (cycle.transitioning && effect === cycle.next ? cycle.blend : 0),
     );
-    gpu.uniforms(dt, time, shape, pointer, Number(stepsSelect.value), weights, elapsedDt);
+    if (pointer.down)
+      pointer.heldS = Math.min(MAGNETIC_RELEASE.chargeS, pointer.heldS + elapsedDt * weights[1]);
+    const releaseProgress = Math.min(1, burst.age / MAGNETIC_RELEASE.durationS);
+    burst.strength = burst.charge * MAGNETIC_RELEASE.speed * (1 - releaseProgress) ** 2;
+    burst.age += elapsedDt;
+    const interacting = pointer.down || pointer.moved || burst.strength > 0;
+    shape = formation.advance(
+      elapsedDt, logoEnabled, interacting || cycle.transitioning, interacting, cycle.blend,
+    );
+    const liveDt = dt * (1 - shape);
+    time += liveDt;
+    gpu.uniforms(dt, time, shape, pointer, Number(stepsSelect.value), weights, elapsedDt, burst);
     const encoder = device.createCommandEncoder({ label: 'Fawn cycle frame' });
     if (cycle.started) gpu.handoff(encoder, cycle.effect);
     if (liveDt > 0) {
@@ -215,7 +225,9 @@ function clearPointer() {
     dy: 0,
     press: 0,
     moved: false,
+    heldS: 0,
   });
+  burst.charge = burst.strength = 0;
 }
 function point(event) {
   const [x, y] = FawnFormation.screenPoint(event, canvas);
@@ -234,6 +246,8 @@ canvas.addEventListener('pointerdown', (event) => {
   pointer.down = true;
   pointer.hover = true;
   pointer.press = 1;
+  pointer.heldS = 0;
+  burst.charge = burst.strength = 0;
   canvas.setPointerCapture(event.pointerId);
   canvas.focus({ preventScroll: true });
   schedule();
@@ -246,7 +260,19 @@ canvas.addEventListener('pointermove', (event) => {
 });
 function release(event) {
   if (pointer.id !== event.pointerId) return;
+  if (event.type === 'pointerup' && pointer.down && !paused) {
+    const cycle = clock.state();
+    const weight = (cycle.effect === 'wave' ? 1 - cycle.blend : 0)
+      + (cycle.transitioning && cycle.next === 'wave' ? cycle.blend : 0);
+    burst.x = pointer.x;
+    burst.y = pointer.y;
+    burst.age = 0;
+    burst.charge = weight * (MAGNETIC_RELEASE.minimumCharge
+      + (1 - MAGNETIC_RELEASE.minimumCharge) * pointer.heldS / MAGNETIC_RELEASE.chargeS);
+  } else burst.charge = burst.strength = 0;
   pointer.down = false;
+  pointer.heldS = 0;
+  pointer.moved = true;
   pointer.press = 0;
   pointer.id = null;
   const rect = canvas.getBoundingClientRect();
@@ -276,6 +302,7 @@ pause.addEventListener('click', () => {
   document.querySelector('#frame').textContent = paused ? 'Paused' : '— fps';
   updateControls();
   if (paused) {
+    clearPointer();
     cancelAnimationFrame(raf);
     raf = 0;
   } else schedule();

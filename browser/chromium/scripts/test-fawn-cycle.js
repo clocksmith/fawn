@@ -43,8 +43,12 @@ report.harnessSha256 = createHash('sha256')
 const clock = createCycleClock();
 assert.equal(clock.advance(CYCLE_POLICY.holdS).started, true);
 assert.equal(clock.advance(CYCLE_POLICY.blendS / 2).blend, 0.5);
-assert.ok(clock.advance(0.5, true).blend > 0.5, 'Input cannot stall a scene blend');
-assert.equal(clock.advance(CYCLE_POLICY.blendS / 2 - 0.5, true).effect, 'wave');
+const deferred = clock.advance(0.5, true);
+assert.equal(deferred.phaseS, CYCLE_POLICY.holdS - CYCLE_POLICY.interactionQuietS);
+assert.equal(deferred.blend, 0.5, 'Late input preserves the visible blend');
+assert.equal(deferred.started, false, 'Late input must not repeat a GPU handoff');
+assert.equal(clock.advance(CYCLE_POLICY.interactionQuietS).blend, 0.5);
+assert.equal(clock.advance(CYCLE_POLICY.blendS).effect, 'wave');
 assert.equal(clock.advance(0).blend, 0);
 assert.throws(() => clock.advance(-1), /Invalid cycle timestep/);
 clock.reset();
@@ -547,7 +551,7 @@ try {
       'Incoming particles retain material in the center',
     );
     assert.ok(timeline[2].fields['Cycle dye 0'].energy > 0);
-    // Input releases the logo but never stalls or restarts the scheduled scene blend.
+    // Held input releases the logo and caps late scene time without restarting it.
     await advance(
       page,
       Math.floor(
@@ -560,7 +564,7 @@ try {
     await page.mouse.down();
     await advance(page, 120);
     const held = await state(page);
-    assert.notEqual(held.effect, before.effect, 'Scene transition completes while pressed');
+    assert.equal(held.effect, before.effect, 'Held input defers the scene transition');
     assert.ok(
       (await page.evaluate(
         () => cycleProbe.writes.filter((w) => w.label === 'Cycle parcel uniforms').at(-1).values[7],
@@ -568,7 +572,9 @@ try {
       'Pressing releases the branded formation',
     );
     await page.mouse.up();
-    await advance(page, 200);
+    await advance(page, 200 + Math.ceil(
+      (CYCLE_POLICY.interactionQuietS + CYCLE_POLICY.blendS) / CYCLE_POLICY.maxDtS,
+    ));
     assert.ok(
       (await page.evaluate(
         () => cycleProbe.writes.filter((w) => w.label === 'Cycle parcel uniforms').at(-1).values[7],

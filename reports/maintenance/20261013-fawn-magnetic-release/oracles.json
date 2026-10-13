@@ -1,0 +1,104 @@
+{
+  "passed": true,
+  "classification": "Software WebGPU oracle checks; no physical GPU, Safari or performance qualification",
+  "policy": {
+    "version": 5,
+    "effects": [
+      "flow",
+      "wave",
+      "particles"
+    ],
+    "labels": {
+      "flow": "Flows",
+      "wave": "Magnets",
+      "particles": "Particles"
+    },
+    "holdS": 11,
+    "blendS": 5,
+    "interactionQuietS": 1,
+    "maxDtS": 0.033,
+    "maxFrameS": 0.1
+  },
+  "sources": [
+    {
+      "file": "fawn-cycle.html",
+      "sha256": "f9dcbb1c181a79b87175c282de0ccb75160b9121868378ababe08fc384772c99"
+    },
+    {
+      "file": "fawn-cycle.js",
+      "sha256": "11f34f3c07a8991bffbebcd172f272dd863ecf7bc8f5a8ff2a025f7d2b400d0f"
+    },
+    {
+      "file": "fawn-cycle-clock.js",
+      "sha256": "ff7fed2a3cd1098707ce6994805c54eb676cab10ad381df1156b7e11e306dd73"
+    },
+    {
+      "file": "fawn-cycle-gpu.js",
+      "sha256": "1679dcb0a39435dd3eadb12e9866cc0244e64bee94c0d064d9122bbad12e492d"
+    },
+    {
+      "file": "fawn-cycle-transfers.js",
+      "sha256": "2b82e3b8014b548a369e3712b76a2240737bdb80ce4142013e3a19a965b404f1"
+    },
+    {
+      "file": "fawn-parcels.js",
+      "sha256": "398bdf6ddf00cf53be4ef2c43324f4eaa9ab0b8f675a0c18cbc3aba275150060"
+    },
+    {
+      "file": "fawn-parcel-renderer.js",
+      "sha256": "33ed18454c0c060f0846a97b357ba9c580ce7ed7cac2e527591c7415ae8d9cad"
+    },
+    {
+      "file": "fawn-shaders.js",
+      "sha256": "e90ddb142caef7b471239c07273c19eeaafecea548061d91d46ec37f49cc77c5"
+    },
+    {
+      "file": "fawn-formation.js",
+      "sha256": "65d2ca0e08732b39e3f43bbaca07eacce4be00a0f5fbf7dbad9b5eb36b0301a8"
+    }
+  ],
+  "oracles": [
+    {
+      "boundary": "Parcel midpoint advection",
+      "maxError": 1.0540491818256115e-7
+    },
+    {
+      "boundary": "All three per-parcel logo formations",
+      "formation": [
+        {
+          "name": "flow",
+          "formationError": 6.441408861856956e-8,
+          "carriedMaterialError": 0,
+          "maxStep": 0.012491784003322952
+        },
+        {
+          "name": "wave",
+          "formationError": 6.441408861856956e-8,
+          "carriedMaterialError": 0,
+          "maxStep": 0.012491784003322952
+        },
+        {
+          "name": "particles",
+          "formationError": 6.441408861856956e-8,
+          "carriedMaterialError": 0,
+          "maxStep": 0.012491784003322952
+        }
+      ]
+    },
+    {
+      "boundary": "Flow → Wave",
+      "maxError": 3.2139778083362103e-7
+    },
+    {
+      "boundary": "Particles → Flow",
+      "maxError": 0.0007812529802322388
+    }
+  ],
+  "journeys": [],
+  "harnessSha256": "f5a5b7516aaab70104cd793f669c2d14672dd4533d04804936815e98e5ab41e5",
+  "initialReservoir": {
+    "squareCornersCovered": true,
+    "circularBoundaryOutsideViewport": true
+  },
+  "browser": "155.0.8059.40"
+}
