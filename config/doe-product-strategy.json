@@ -1,7 +1,7 @@
 {
   "$schema": "doe-product-strategy.schema.json",
-  "schemaVersion": 6,
-  "strategyVersion": "5.0.0",
+  "schemaVersion": 7,
+  "strategyVersion": "6.0.0",
   "artifactKind": "doe-product-strategy",
   "authority": {
     "goals": "GOALS.md",
@@ -11,13 +11,13 @@
     "currentClaims": "reports/claim-index.json"
   },
   "positioning": {
-    "category": "Independent WebGPU compiler and runtime for existing applications",
-    "promise": "Deliver independently usable WGSL compilation and native WebGPU execution; earn adoption through separately measured compiler or application value.",
-    "governingQuestion": "Does the selected compiler or runtime surface preserve its declared semantics and materially improve its consumer outcome under independent evidence?",
+    "category": "Fawn durable browser workspace with independently useful GPU compiler and runtime",
+    "promise": "Build Fawn as the integrated environment where humans and agents perform durable browser work; preserve independently usable WGSL compilation and native WebGPU execution with separate qualification.",
+    "governingQuestion": "Does each selected product preserve its authority and semantics and improve complete user workflows against competent independent controls?",
     "operatingLaw": "Hexagonal inside; vertically integrated outside."
   },
   "independenceBoundary": {
-    "rule": "The WGSL compiler and native WebGPU runtime can earn adoption independently; neither requires the other. Doppler owns models and inference. Independent installation, a real consumer requirement and retained use guide bounded work. Browser replacement is optional and separately selected; prepared-program integration is a separate treatment.",
+    "rule": "Fawn starts above stock Chromium through narrow CDP/Playwright adapters and does not require native runtime wins. The WGSL compiler and native WebGPU runtime can earn adoption independently; neither requires the other or Fawn. Doppler owns model semantics. Browser modifications and runtime substitution earn separate admission; prepared-program integration remains a separate treatment.",
     "requiredEvidence": [
       "externally owned non-Doppler consumer of the selected compiler or runtime surface",
       "independent semantic oracle, pinned inputs and reproducible installation",
@@ -62,14 +62,14 @@
     },
     {
       "id": "fawn",
-      "portfolioRole": "experimental-distribution",
-      "marketRole": "runtime-distribution",
-      "job": "Retain experimental browser integration as an optional, separately selected adoption route after native wins and application transfer.",
-      "promotionGate": "Requires explicit prioritization, prior transferred runtime application wins and separately hash-bound browser integration with unchanged causal controls.",
+      "portfolioRole": "primary-product",
+      "marketRole": "durable-browser-work",
+      "job": "Own the integrated human/agent workspace product above Chromium: durable authority, versioned observation, trusted action dispatch, recovery and reusable workflow adapters.",
+      "promotionGate": "A shared implemented service passes authority, uncertainty and workflow fault tests and demonstrates complete-task value against competent stock Chromium/Playwright. Documentation, artwork and GPU/browser receipts do not establish workspace acceptance.",
       "authorityPaths": [
-        "docs/browser-lane.md",
-        "config/browser-product-comparison-policy.json",
-        "browser/chromium/bench/workflows/browser-milestones.json"
+        "docs/fawn-workspace-contract.md",
+        "browser/workspace/CATSCAN.md",
+        "docs/status/fawn-workspace.md"
       ]
     },
     {
@@ -237,7 +237,7 @@
     ],
     "decisionRules": [
       "K0 remains separate from A, B, C, and D because it changes execution location and service architecture rather than one component.",
-      "If K0 wins shared tasks and customers assign no material value to the local-persistent suite, Fawn is not promoted as a product.",
+      "If K0 wins shared tasks and customers assign no value to differentiation, reject the measured shell-product claim; workspace value requires its own competent-baseline evidence.",
       "B must beat A before Fawn earns standalone value; C must beat B before DoeRuntime earns browser execution; D must beat C before the Direct Protocol survives.",
       "An ineligible K0 row is retained as an eligibility result and never scored as a Fawn win."
     ]
@@ -441,7 +441,10 @@
       "Paid qualification, DoeProof receipts, compiler breadth, internal benchmarks, and Doppler interoperability cannot substitute for DoeRuntime adoption.",
       "Compiler adoption does not establish native runtime adoption, or conversely.",
       "Verified elimination under a prospective application-replacement contract cannot relabel historical fixed-operation results.",
-      "Local isolated installation does not establish external operator reproduction or retained adoption."
+      "Local isolated installation does not establish external operator reproduction or retained adoption.",
+      "Workspace policy validation does not establish implemented dispatch, durable ownership or safe action recovery.",
+      "Existing Chromium, GPU recovery, artwork or A/B/C/D receipts cannot establish Fawn workspace acceptance.",
+      "Fawn workspace value does not establish Chromium hook, DoeRuntime or Doppler model qualification."
     ],
     "currentStateAuthority": "reports/claim-index.json"
   },
@@ -485,5 +488,120 @@
     "stop": "Timestamp of independently verified improvement against frozen correctness and application acceptance.",
     "recordingRule": "Record elapsed time and evidence links in existing work records; retain unresolved and rejected attempts separately. No new measurement framework is required.",
     "engineeringRule": "Keep compiler, backends and host adapters independently testable. Reuse, refactoring and agent assistance serve the ordered milestones; avoid abstractions that add execution overhead."
+  },
+  "fawnWorkspace": {
+    "contractPath": "docs/fawn-workspace-contract.md",
+    "statusPath": "docs/status/fawn-workspace.md",
+    "charterPath": "browser/workspace/CATSCAN.md",
+    "implementationStatus": "not-implemented",
+    "currentAssessment": "unestablished",
+    "requiresNativeRuntimeWins": false,
+    "initialIntegration": "stock-chromium-cdp-playwright",
+    "releaseAdmission": "blocked-until-implemented-and-independently-qualified",
+    "steps": [
+      {
+        "order": 1,
+        "id": "shared-workspace-service",
+        "dependsOn": [],
+        "implementationStatus": "not-implemented",
+        "currentAssessment": "unestablished",
+        "requiredEvidence": [
+          "persistent-workspace-identity",
+          "persistent-authorization",
+          "persistent-ownership-generation",
+          "persistent-observation-versions",
+          "persistent-action-records",
+          "narrow-cdp-playwright-adapters",
+          "workflow-logic-outside-shared-service"
+        ]
+      },
+      {
+        "order": 2,
+        "id": "observation-action-binding",
+        "dependsOn": [
+          "shared-workspace-service"
+        ],
+        "implementationStatus": "not-implemented",
+        "currentAssessment": "unestablished",
+        "requiredEvidence": [
+          "versioned-observations-and-page-changes",
+          "workspace-owner-intent-target-observation-preconditions",
+          "dispatch-time-authorization-and-preconditions",
+          "reject-stale-or-unauthorized-actions",
+          "disclose-nonatomic-browser-external-boundary"
+        ]
+      },
+      {
+        "order": 3,
+        "id": "durable-ownership",
+        "dependsOn": [
+          "observation-action-binding"
+        ],
+        "implementationStatus": "not-implemented",
+        "currentAssessment": "unestablished",
+        "requiredEvidence": [
+          "all-fawn-automated-mutations-through-dispatcher",
+          "serialize-handoff-admission-dispatch",
+          "durably-advance-generation-before-admission",
+          "invalidate-old-owner-queue",
+          "reject-stale-generation-after-restart",
+          "restore-authority-before-command-admission",
+          "handoff-outstanding-action-records",
+          "disclose-in-flight-external-effects"
+        ]
+      },
+      {
+        "order": 4,
+        "id": "uncertainty-recovery",
+        "dependsOn": [
+          "durable-ownership"
+        ],
+        "implementationStatus": "not-implemented",
+        "currentAssessment": "unestablished",
+        "requiredEvidence": [
+          "persist-intent-before-dispatch",
+          "completed-failed-unknown-outcomes",
+          "prove-never-dispatched-separately",
+          "missing-completion-never-authorizes-resubmission",
+          "preserve-unknown-across-restart",
+          "reconcile-state-or-external-idempotency-or-human-review",
+          "local-action-id-is-not-external-idempotency"
+        ]
+      },
+      {
+        "order": 5,
+        "id": "reuse-and-product-value",
+        "dependsOn": [
+          "uncertainty-recovery"
+        ],
+        "implementationStatus": "not-implemented",
+        "currentAssessment": "unestablished",
+        "requiredEvidence": [
+          "shared-service-document-research-form-submission-artifact-export",
+          "failure-before-dispatch-after-submission-before-acknowledgment",
+          "handoff-races-stale-queues-restart-outstanding-requests",
+          "identical-stale-rejection-and-unknown-preservation-for-every-adapter",
+          "competent-stock-chromium-playwright-baseline",
+          "task-success-incorrect-actions-recovery-observation-volume-latency-overhead-integration-effort"
+        ]
+      },
+      {
+        "order": 6,
+        "id": "selective-deeper-capabilities",
+        "dependsOn": [
+          "reuse-and-product-value"
+        ],
+        "implementationStatus": "not-implemented",
+        "currentAssessment": "unestablished",
+        "requiredEvidence": [
+          "chromium-hooks-require-unavailable-authority-visibility-or-efficiency",
+          "doppler-owns-model-semantics",
+          "doeruntime-explicit-integration-independent-qualification",
+          "doelab-offline-improvements",
+          "doeproof-adoption-evidence",
+          "fawn-remains-integrated-product"
+        ]
+      }
+    ]
   }
 }

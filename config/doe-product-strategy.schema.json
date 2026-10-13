@@ -4,10 +4,10 @@
   "title": "Doe product strategy contract",
   "type": "object",
   "additionalProperties": false,
-  "required": ["$schema", "schemaVersion", "strategyVersion", "artifactKind", "authority", "positioning", "independenceBoundary", "surfaces", "commercialOffer", "comparisonLaw", "externalProductComparison", "evidenceSpine", "customerEvidencePolicy", "platformSequence", "milestones", "claimBoundary", "reusableProgram", "executionOwnership", "provingSet", "developmentEffectiveness"],
+  "required": ["$schema", "schemaVersion", "strategyVersion", "artifactKind", "authority", "positioning", "independenceBoundary", "surfaces", "commercialOffer", "comparisonLaw", "externalProductComparison", "evidenceSpine", "customerEvidencePolicy", "platformSequence", "milestones", "claimBoundary", "reusableProgram", "executionOwnership", "provingSet", "developmentEffectiveness", "fawnWorkspace"],
   "properties": {
     "$schema": { "type": "string", "const": "doe-product-strategy.schema.json" },
-    "schemaVersion": { "type": "integer", "const": 6 },
+    "schemaVersion": { "type": "integer", "const": 7 },
     "strategyVersion": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
     "artifactKind": { "type": "string", "const": "doe-product-strategy" },
     "authority": {
@@ -209,6 +209,7 @@
       }
     },
     "externalProductComparison": { "$ref": "#/$defs/externalProductComparison" },
+    "fawnWorkspace": { "$ref": "#/$defs/fawnWorkspace" },
     "evidenceSpine": {
       "type": "array",
       "minItems": 7,
@@ -419,6 +420,302 @@
     }
   },
   "$defs": {
+    "fawnWorkspace": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contractPath",
+        "statusPath",
+        "charterPath",
+        "implementationStatus",
+        "currentAssessment",
+        "requiresNativeRuntimeWins",
+        "initialIntegration",
+        "releaseAdmission",
+        "steps"
+      ],
+      "properties": {
+        "contractPath": {
+          "const": "docs/fawn-workspace-contract.md"
+        },
+        "statusPath": {
+          "const": "docs/status/fawn-workspace.md"
+        },
+        "charterPath": {
+          "const": "browser/workspace/CATSCAN.md"
+        },
+        "implementationStatus": {
+          "const": "not-implemented"
+        },
+        "currentAssessment": {
+          "const": "unestablished"
+        },
+        "requiresNativeRuntimeWins": {
+          "const": false
+        },
+        "initialIntegration": {
+          "const": "stock-chromium-cdp-playwright"
+        },
+        "releaseAdmission": {
+          "const": "blocked-until-implemented-and-independently-qualified"
+        },
+        "steps": {
+          "type": "array",
+          "minItems": 6,
+          "maxItems": 6,
+          "items": false,
+          "prefixItems": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "order",
+                "id",
+                "dependsOn",
+                "implementationStatus",
+                "currentAssessment",
+                "requiredEvidence"
+              ],
+              "properties": {
+                "order": {
+                  "const": 1
+                },
+                "id": {
+                  "const": "shared-workspace-service"
+                },
+                "dependsOn": {
+                  "const": []
+                },
+                "implementationStatus": {
+                  "const": "not-implemented"
+                },
+                "currentAssessment": {
+                  "const": "unestablished"
+                },
+                "requiredEvidence": {
+                  "const": [
+                    "persistent-workspace-identity",
+                    "persistent-authorization",
+                    "persistent-ownership-generation",
+                    "persistent-observation-versions",
+                    "persistent-action-records",
+                    "narrow-cdp-playwright-adapters",
+                    "workflow-logic-outside-shared-service"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "order",
+                "id",
+                "dependsOn",
+                "implementationStatus",
+                "currentAssessment",
+                "requiredEvidence"
+              ],
+              "properties": {
+                "order": {
+                  "const": 2
+                },
+                "id": {
+                  "const": "observation-action-binding"
+                },
+                "dependsOn": {
+                  "const": [
+                    "shared-workspace-service"
+                  ]
+                },
+                "implementationStatus": {
+                  "const": "not-implemented"
+                },
+                "currentAssessment": {
+                  "const": "unestablished"
+                },
+                "requiredEvidence": {
+                  "const": [
+                    "versioned-observations-and-page-changes",
+                    "workspace-owner-intent-target-observation-preconditions",
+                    "dispatch-time-authorization-and-preconditions",
+                    "reject-stale-or-unauthorized-actions",
+                    "disclose-nonatomic-browser-external-boundary"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "order",
+                "id",
+                "dependsOn",
+                "implementationStatus",
+                "currentAssessment",
+                "requiredEvidence"
+              ],
+              "properties": {
+                "order": {
+                  "const": 3
+                },
+                "id": {
+                  "const": "durable-ownership"
+                },
+                "dependsOn": {
+                  "const": [
+                    "observation-action-binding"
+                  ]
+                },
+                "implementationStatus": {
+                  "const": "not-implemented"
+                },
+                "currentAssessment": {
+                  "const": "unestablished"
+                },
+                "requiredEvidence": {
+                  "const": [
+                    "all-fawn-automated-mutations-through-dispatcher",
+                    "serialize-handoff-admission-dispatch",
+                    "durably-advance-generation-before-admission",
+                    "invalidate-old-owner-queue",
+                    "reject-stale-generation-after-restart",
+                    "restore-authority-before-command-admission",
+                    "handoff-outstanding-action-records",
+                    "disclose-in-flight-external-effects"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "order",
+                "id",
+                "dependsOn",
+                "implementationStatus",
+                "currentAssessment",
+                "requiredEvidence"
+              ],
+              "properties": {
+                "order": {
+                  "const": 4
+                },
+                "id": {
+                  "const": "uncertainty-recovery"
+                },
+                "dependsOn": {
+                  "const": [
+                    "durable-ownership"
+                  ]
+                },
+                "implementationStatus": {
+                  "const": "not-implemented"
+                },
+                "currentAssessment": {
+                  "const": "unestablished"
+                },
+                "requiredEvidence": {
+                  "const": [
+                    "persist-intent-before-dispatch",
+                    "completed-failed-unknown-outcomes",
+                    "prove-never-dispatched-separately",
+                    "missing-completion-never-authorizes-resubmission",
+                    "preserve-unknown-across-restart",
+                    "reconcile-state-or-external-idempotency-or-human-review",
+                    "local-action-id-is-not-external-idempotency"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "order",
+                "id",
+                "dependsOn",
+                "implementationStatus",
+                "currentAssessment",
+                "requiredEvidence"
+              ],
+              "properties": {
+                "order": {
+                  "const": 5
+                },
+                "id": {
+                  "const": "reuse-and-product-value"
+                },
+                "dependsOn": {
+                  "const": [
+                    "uncertainty-recovery"
+                  ]
+                },
+                "implementationStatus": {
+                  "const": "not-implemented"
+                },
+                "currentAssessment": {
+                  "const": "unestablished"
+                },
+                "requiredEvidence": {
+                  "const": [
+                    "shared-service-document-research-form-submission-artifact-export",
+                    "failure-before-dispatch-after-submission-before-acknowledgment",
+                    "handoff-races-stale-queues-restart-outstanding-requests",
+                    "identical-stale-rejection-and-unknown-preservation-for-every-adapter",
+                    "competent-stock-chromium-playwright-baseline",
+                    "task-success-incorrect-actions-recovery-observation-volume-latency-overhead-integration-effort"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "order",
+                "id",
+                "dependsOn",
+                "implementationStatus",
+                "currentAssessment",
+                "requiredEvidence"
+              ],
+              "properties": {
+                "order": {
+                  "const": 6
+                },
+                "id": {
+                  "const": "selective-deeper-capabilities"
+                },
+                "dependsOn": {
+                  "const": [
+                    "reuse-and-product-value"
+                  ]
+                },
+                "implementationStatus": {
+                  "const": "not-implemented"
+                },
+                "currentAssessment": {
+                  "const": "unestablished"
+                },
+                "requiredEvidence": {
+                  "const": [
+                    "chromium-hooks-require-unavailable-authority-visibility-or-efficiency",
+                    "doppler-owns-model-semantics",
+                    "doeruntime-explicit-integration-independent-qualification",
+                    "doelab-offline-improvements",
+                    "doeproof-adoption-evidence",
+                    "fawn-remains-integrated-product"
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
     "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
     "path": { "type": "string", "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$)).+$" },
     "stringList": {
@@ -449,7 +746,7 @@
       "properties": {
         "id": { "type": "string", "enum": ["doecompiler","doeproof","doeruntime","fawn","doelab"] },
         "portfolioRole": { "type": "string", "enum": ["primary-product", "product-feature", "secondary-product", "operating-model", "experimental-distribution"] },
-        "marketRole": { "type": "string", "enum": ["compiler-adoption","runtime-adoption","qualification-evidence","runtime-distribution","learning-loop"] },
+        "marketRole": { "type": "string", "enum": ["compiler-adoption","runtime-adoption","qualification-evidence","runtime-distribution","learning-loop","durable-browser-work"] },
         "job": { "type": "string", "minLength": 1 },
         "promotionGate": { "type": "string", "minLength": 1 },
         "authorityPaths": { "$ref": "#/$defs/pathList" }
@@ -504,8 +801,8 @@
           },
           "then": {
             "properties": {
-              "portfolioRole": { "const": "experimental-distribution" },
-              "marketRole": { "const": "runtime-distribution" }
+              "portfolioRole": { "const": "primary-product" },
+              "marketRole": { "const": "durable-browser-work" }
             }
           }
         },

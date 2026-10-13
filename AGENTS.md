@@ -142,7 +142,9 @@ applicable gates, and status in the same change. References never waive a rule.
 
 ## Intent-first operations
 
-- Treat Doe intent as source-preserving compiler/runtime evidence, not package copy or benchmark prose.
+- Treat Doe intent as durable workspace authority and source-preserving
+  compiler/runtime evidence, not package copy or benchmark prose. Fawn workspace
+  qualification is separate from hosted artwork and Chromium runtime receipts.
 - If the user asks whether a Doe claim is true, inspect the current artifacts, gates, raw benchmark rows, browser smoke outputs, and source files before answering.
 - For publish-readiness or stale-claim questions, inspect `reports/claim-index.json` and every referenced sidecar before answering.
 - When a Dawn-vs-Doe comparison is distrusted, fix or harden the benchmark fairness gate before changing README/docs language.

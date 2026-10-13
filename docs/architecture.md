@@ -143,8 +143,9 @@ These surfaces are related, but they are not interchangeable.
 
 They also sit at different maturity levels. Dawn remains the WebGPU runtime
 used in Chromium and much of the browser ecosystem. Doe's native/package lane
-has physical evidence; Fawn is an experimental distribution target whose
-current browser evidence remains diagnostic.
+has physical evidence; the optional Fawn runtime-distribution lane has diagnostic
+browser evidence. Fawn's selected integrated workspace product is separate and
+has no implemented shared service or behavioral acceptance yet.
 
 ## Strategic decomposition
 
@@ -199,6 +200,8 @@ The important boundary distinctions are:
 - `doe-gpu` is the package surface over that runtime
 - `doe-gpu/browser` is a browser wrapper, not the Doe runtime running inside the browser
 - `browser/chromium` owns the experimental Fawn browser-runtime integration
+- `browser/workspace` scopes the prospective durable service above stock Chromium;
+  [its contract](fawn-workspace-contract.md) does not claim an implementation
 - `bench` owns evaluation tooling; its explicitly public ONNX evaluation distribution packages the supported integration without transferring runtime ownership
 
 Current scope:
@@ -207,7 +210,8 @@ Current scope:
 - Doe runs in Node.js, Bun, Deno, drop-in, and embedded/native lanes
 - pinned ONNX Runtime WebGPU operators execute through Doe's explicit proc-table integration; local installation and bounded lifecycle evidence are established
 - material ONNX replacement advantage, broader compatibility, external reproduction, and retained adoption remain unestablished
-- browser `navigator.gpu` replacement is an optional, separately selected route; Fawn and browser optimization remain deferred
+- browser `navigator.gpu` replacement and browser optimization remain deferred
+  optional routes; Fawn workspace work above Chromium is selected independently
 
 That separation is deliberate. It keeps package ergonomics, runtime behavior,
 and browser integration from getting blurred together in docs or benchmarks.
@@ -457,6 +461,9 @@ compatibility surface. Fawn/Chromium is a retained experimental integration,
 deferred until explicitly selected. Its evidence remains diagnostic until a
 complete archive passes isolated clean install,
 forced-provider identity, an unchanged application oracle, and lifecycle gates.
+This restriction concerns runtime replacement, not Fawn's workspace service.
+Workspace authority and external-action recovery require their own implemented
+service and independent acceptance under [its contract](fawn-workspace-contract.md).
 
 ## Build and evidence outputs
 

@@ -4,11 +4,12 @@ Parent: [Doe](../CATSCAN.md)
 
 ## Target
 
-Govern browser-hosted Doe execution as an independently admitted product surface separate from package and native claims.
+Govern Fawn durable browser work and optional browser-hosted Doe execution as
+separately admitted surfaces independent of package and native claims.
 
 ## Authority
 
-- Owns browser integration boundaries and routing to browser-specific contracts and evidence.
+- Owns workspace authority above Chromium and optional runtime integration boundaries.
 - Does not own Chromium-wide policy, package wrappers, native runtime semantics, or browser claims without a released artifact.
 
 ## Scope
@@ -20,6 +21,7 @@ Govern browser-hosted Doe execution as an independently admitted product surface
 Inputs:
 - Browser boundary: [`../docs/browser-lane.md`](../docs/browser-lane.md).
 - Runtime surface law: [`../docs/runtime-surface-boundary.md`](../docs/runtime-surface-boundary.md).
+- Workspace contract: [`../docs/fawn-workspace-contract.md`](../docs/fawn-workspace-contract.md).
 
 Outputs:
 - Governed browser integration components and separately classified browser evidence.
@@ -29,15 +31,18 @@ Outputs:
 - Browser evidence never inherits package or native claim status.
 - The incumbent browser wrapper is not represented as Doe beneath `navigator.gpu`.
 - Forced-provider identity and fallback state remain explicit.
+- Workspace authority/recovery acceptance never inherits GPU/browser receipts.
 
 ## Acceptance
 
-- Browser work routes through the Chromium acceptance and release contracts.
+- Workspace work routes through its shared-service contract; runtime substitution
+  routes through Chromium acceptance and release contracts.
 - Evidence: [`chromium/acceptance.md`](chromium/acceptance.md).
 
 ## Non-goals
 
-- Browser automation, Chromium-wide replacement, or generic browser benchmark claims.
+- Uncontrolled automation outside the workspace contract, Chromium-wide replacement,
+  or generic browser benchmark claims.
 
 ## Freedom
 

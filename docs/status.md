@@ -15,7 +15,8 @@ verdicts. Historical narrative lives under [`status/archive/`](status/archive/).
 | Cerebras and CSL | [`status/cerebras-csl.md`](status/cerebras-csl.md) | `bench/out/r3-cerebras-status/snapshot.{json,md}` |
 | CSL runtime bring-up | [`status/cerebras-csl-runtime-bringup.md`](status/cerebras-csl-runtime-bringup.md) | Cerebras snapshot and model ledgers |
 | Continuous integration | [`status/ci.md`](status/ci.md) | workflows and CI inventory tests |
-| Chromium | [`browser-lane.md`](browser-lane.md) | browser milestone manifest and artifacts |
+| Fawn durable workspace | [`status/fawn-workspace.md`](status/fawn-workspace.md) | [workspace contract](fawn-workspace-contract.md), `config/doe-product-strategy.json#fawnWorkspace` |
+| Optional Chromium runtime integration | [`browser-lane.md`](browser-lane.md) | browser milestone manifest and artifacts |
 | Fawn preview and benchmark pages | [`status/fawn-start.md`](status/fawn-start.md) | [application evidence](../reports/maintenance/20261005-fawn-demo-switcher/README.md), `browser/chromium/resources/`, and user visual review |
 
 Do not add dated progress entries here. Update the owning artifact or live

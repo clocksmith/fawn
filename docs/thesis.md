@@ -1,9 +1,25 @@
-# Doe strategy: better execution for existing applications
+# Doe strategy: durable browser work and independent GPU execution
 
-[GOALS.md](../GOALS.md) owns the eight product goals, constraints, and exclusions.
+[GOALS.md](../GOALS.md) owns product goals, constraints, and exclusions.
 This document explains their rationale and sequencing; it does not maintain a
 second goal list. [INTENT.md](../INTENT.md) owns enforceable invariants, component
 charters assign authority, and artifacts establish current results.
+
+Fawn is the integrated environment for humans and agents doing durable browser
+work. Start with one trusted workspace service above stock Chromium, using narrow
+CDP/Playwright adapters. Its shared contract spans observations, actions,
+ownership and recovery; task-specific workflows remain outside that machinery.
+The [workspace contract](fawn-workspace-contract.md) defines acceptance, and
+`fawnWorkspace` in the [strategy projection](../config/doe-product-strategy.json)
+owns the ordered work. This service is not implemented or qualified yet.
+
+Fawn acceptance does not wait for native runtime wins. First establish durable
+authority and uncertainty handling, then prove reuse and complete-task value
+against competent Chromium/Playwright automation. Chromium hooks require a
+demonstrated need unavailable through existing interfaces. Doppler retains model
+semantics; independently qualified DoeRuntime integration serves workflows where
+useful. DoeLab improves offline and DoeProof records adoption evidence. Neither
+browser hooks nor runtime replacement defines the integrated product.
 
 Local AI supplies demanding existing workloads and repeated execution costs to
 improve. Doppler is the first engineering customer and owns its models and
@@ -16,7 +32,9 @@ integration route, not a prerequisite for native value.
 ## Ordered execution milestones
 
 The schema-validated [strategy contract](../config/doe-product-strategy.json)
-owns the ordered milestone IDs, binding proving set, and development metric.
+owns the native/runtime milestone IDs, binding proving set, and development metric.
+This preserved sequence governs optional runtime substitution, independently of
+the selected Fawn workspace roadmap.
 
 1. Close ordinary execution. Retain accepted improvements and correctness repairs;
    finish one bounded, evidence-backed optimization against a frozen baseline.
@@ -205,7 +223,8 @@ Select bounded work under the [backend-focus constraint](../GOALS.md#strategic-c
 A consumer requirement informs the next selection; it cannot silently override
 that boundary or authorize a parallel campaign.
 
-The immediate emphasis is Doppler-driven Vulkan engineering; the existing ONNX
+Independent compiler/runtime emphasis remains Doppler-driven Vulkan engineering;
+the existing ONNX
 evaluation distribution is sufficient for adoption work.
 Measure reproduction-to-verified-improvement time from the retained reproducible problem
 to independent confirmation under frozen acceptance. Link timestamps, source,
@@ -232,7 +251,8 @@ Dynamic shapes require a separately qualified extension of the fixed-shape contr
 
 The ONNX Vulkan evaluation package is the current native integration front door.
 Independent reproduction and retained adoption remain open. Browser replacement
-requires a separate selection decision; Fawn stays deferred. Existing A/B/C/D and
+requires a separate selection decision and stays deferred. Fawn workspace work
+above stock Chromium is selected independently. Existing A/B/C/D and
 K0 browser laws retain their meaning. Accelerator work retains separate hardware
 admission and cannot broaden the active matrix through simulator evidence.
 

@@ -22,6 +22,18 @@ Concrete implementation and qualification contracts refine these requirements.
 
 ## Execution and lifetime safety
 
+- Fawn-controlled automated browser mutations use the trusted workspace
+  dispatcher. Durable owner generations serialize handoff, admission and
+  dispatch; restart restores authority before accepting commands.
+- Versioned observations bind authorized intent, targets and dispatch-time
+  preconditions. Browser/external effects are not promised atomic.
+- Persist browser-action intent before dispatch. Preserve completed, failed,
+  unknown and separately provable never-dispatched outcomes. Missing completion
+  never permits implicit resubmission; recovery cannot erase uncertainty.
+  [The workspace contract](docs/fawn-workspace-contract.md) defines reconciliation,
+  in-flight handoff limits and prospective acceptance. These requirements do not
+  claim an implemented service or inherit GPU qualification.
+
 - Unsupported capabilities, overflow, provider/backend mismatches, and faults
   fail closed with inspectable, actionable errors. No hidden heuristics,
   undocumented fallback modes, silent no-ops, or unverified CPU substitution.

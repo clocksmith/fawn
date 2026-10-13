@@ -4,11 +4,13 @@
 scripts, milestone checks, and diagnostic artifacts. It is not the Chromium
 checkout itself and it does not change the public `doe-gpu/browser` contract.
 
-Fawn is Doe's first-class browser product target. Success means a released
+Fawn's integrated product begins with the
+[workspace service above Chromium](../../docs/fawn-workspace-contract.md).
+This directory owns its optional runtime-integration lane. Lane success means a released
 Chromium-family archive runs an unchanged WebGPU application through forced
 Doe with an independent oracle, physical hardware identity, reliable
 lifecycle behavior, and a narrow compatibility or performance benefit. It
-does not mean a general browser benchmark win.
+does not mean a general browser benchmark win or qualified workspace authority.
 
 ## Boundaries
 

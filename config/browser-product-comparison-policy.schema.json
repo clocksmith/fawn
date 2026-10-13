@@ -17,12 +17,13 @@
     "forkAuthorities",
     "stopConditions",
     "evidenceReferences",
-    "claimBoundary"
+    "claimBoundary",
+    "workspaceComparison"
   ],
   "properties": {
     "$schema": { "type": "string", "const": "browser-product-comparison-policy.schema.json" },
-    "schemaVersion": { "type": "integer", "const": 2 },
-    "policyId": { "type": "string", "const": "fawn-external-product-comparison-v2" },
+    "schemaVersion": { "type": "integer", "const": 3 },
+    "policyId": { "type": "string", "const": "fawn-external-product-comparison-v3" },
     "authority": {
       "type": "object",
       "additionalProperties": false,
@@ -85,6 +86,38 @@
     },
     "stopConditions": { "$ref": "#/$defs/stringList" },
     "evidenceReferences": { "$ref": "#/$defs/pathList" },
+    "workspaceComparison": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contractPath",
+        "strategyPath",
+        "control",
+        "treatment",
+        "scope",
+        "requiresNativeRuntimeWins"
+      ],
+      "properties": {
+        "contractPath": {
+          "const": "docs/fawn-workspace-contract.md"
+        },
+        "strategyPath": {
+          "const": "config/doe-product-strategy.json#fawnWorkspace"
+        },
+        "control": {
+          "const": "competent-stock-chromium-playwright"
+        },
+        "treatment": {
+          "const": "same-browser-and-runtime-with-fawn-workspace-service"
+        },
+        "scope": {
+          "const": "Prospective independent workflow comparison; existing A/B/C/D and K0 receipts retain their meanings and cannot satisfy it."
+        },
+        "requiresNativeRuntimeWins": {
+          "const": false
+        }
+      }
+    },
     "claimBoundary": { "$ref": "#/$defs/text" }
   },
   "$defs": {
@@ -108,7 +141,7 @@
       "additionalProperties": false,
       "required": ["id", "requiredOutcome", "authorityPath"],
       "properties": {
-        "id": { "type": "string", "const": "doeruntime-application-adoption" },
+        "id": { "type": "string", "const": "fawn-durable-workspace" },
         "requiredOutcome": { "$ref": "#/$defs/text" },
         "authorityPath": { "$ref": "#/$defs/path" }
       }
