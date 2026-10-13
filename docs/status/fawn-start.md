@@ -1,5 +1,11 @@
 # Fawn hosted demonstrations
 
+[Pointer-strength checks](../../reports/maintenance/20261013-fawn-pointer-strength/report.json)
+verify gentler hover across the hosted cycle and stronger pressed Magnetic and
+Particle input, with the existing Flow press force and pointer radii preserved.
+Actual pointer events, release/leave and finite simulation state are checked
+through software WebGPU; physical-device performance remains separate.
+
 [Cycle continuity checks](../../reports/maintenance/20261013-fawn-cycle-continuity/README.md)
 retain the preceding abrupt-release failure and repeated wraparound checks.
 Scheduled formation release follows the effect blend; delayed frames cannot skip
