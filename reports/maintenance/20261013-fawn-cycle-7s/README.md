@@ -44,6 +44,10 @@ or application controls change.
   selected smaller software workload recorded in the receipt. The earlier
   full-size software attempt was stopped before completion; it is not default
   workload performance evidence.
+- [`deployment.json`](deployment.json): completed Firebase publication, exact
+  preview/live file hashes, and passing hosted browser checks. The first
+  production version-creation request failed; the successful retry and original
+  failure are both retained.
 - [`check-browser.mjs`](check-browser.mjs) is the retained diagnostic producer.
   Raw runs and screenshots remain under `bench/out/fawn-cycle-7s/` and are not
   added as compressed test captures.
@@ -51,7 +55,7 @@ or application controls change.
 These are artwork diagnostics using software WebGPU and emulated input, not
 physical-phone, Safari, native Doe or performance qualification. The live
 [`release.json`](https://canvascontext.com/release.json) remains publication
-identity; local source changes do not replace its deployed bytes.
+identity; the deployment receipt binds the published bytes to the tested source.
 
 ```bash
 node browser/chromium/scripts/test-fawn-timing.js
