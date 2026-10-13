@@ -45,8 +45,8 @@ Earlier reports include provider-specific evidence work inside startup timing.
 Their values and verdicts remain historical. New comparisons reject mixed
 startup scopes, including legacy startup measurements from different provider
 families. A shorter measurement after this correction is not a runtime speedup.
-The [retained diagnosis](../bench/out/compute-program/20260908-startup-scope/README.md)
-and [uninstrumented validation](../bench/out/compute-program/20260908-startup-scope/validation/outcome.json)
+The retained diagnosis (unavailable artifact: `bench/out/compute-program/20260908-startup-scope/README.md`)
+and uninstrumented validation (unavailable artifact: `bench/out/compute-program/20260908-startup-scope/validation/outcome.json`)
 keep the original observations and corrected scope separate.
 
 ## Bounded candidate jobs

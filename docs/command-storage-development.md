@@ -176,10 +176,10 @@ also requires a separate comparison.
 
 Build, native, calibration, and bounded-candidate evidence for the initial
 implementation lives under
-[`20260912-command-storage-contract`](../bench/out/compute-program/20260912-command-storage-contract/).
+`20260912-command-storage-contract` (unavailable artifact: `bench/out/compute-program/20260912-command-storage-contract`).
 The completed uncertainty procedure, qualified policy control, ordinary
 application experiment, and retained decision are indexed in the
-[completion record](../bench/out/compute-program/20260912-command-storage-completion/README.md).
+completion record (unavailable artifact: `bench/out/compute-program/20260912-command-storage-completion/README.md`).
 
 ## Migration
 

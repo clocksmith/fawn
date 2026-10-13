@@ -28,7 +28,7 @@ combined into this series.
 
 ## Ordinary measurement warmup and cost attribution
 
-The [resolution diagnosis](../../bench/out/compute-program/20260912-runtime-resolution-final/README.md)
+The resolution diagnosis (unavailable artifact: `bench/out/compute-program/20260912-runtime-resolution-final/README.md`)
 retains an ordinary warmup comparison, separate host and V8 profiles, and
 physical evidence replay against the accepted package. Extended warmup reduces
 within-process useful-latency drift while encoding remains variable. Queue
@@ -47,13 +47,13 @@ for read-only evidence replay.
 
 ## Command storage decisions and measurement resolution
 
-The [command-storage record](../../bench/out/compute-program/20260912-command-storage-completion/README.md)
+The command-storage record (unavailable artifact: `bench/out/compute-program/20260912-command-storage-completion/README.md`)
 connects build-checked policy, derived diagnostics, package qualification, and
 ordinary application evaluation. The accepted Linux library remains unchanged.
-The [earlier calibration](../../bench/out/compute-program/20260912-command-storage-calibration-uncertainty/report.json)
+The earlier calibration (unavailable artifact: `bench/out/compute-program/20260912-command-storage-calibration-uncertainty/report.json`)
 separates A/A null consistency from precision adequate for promotion. Unresolved
 regression bands still prevent accepting small improvements. The
-[bounded experiment](../../bench/out/compute-program/20260912-command-storage-experiment-ordinary/report.json)
+bounded experiment (unavailable artifact: `bench/out/compute-program/20260912-command-storage-experiment-ordinary/report.json`)
 retains the rejected policy control and the cost endpoints supporting its
 decision; it does not establish a successful runtime optimization or unfamiliar
 external application adoption. Earlier threshold-only calibration failures
@@ -75,13 +75,13 @@ enforce that asymmetric rows cannot be marked claimable regardless of speed rati
 
 ## Current A/A findings and correctness repairs
 
-The [accepted-package A/A control](../../bench/out/compute-program/20260908-startup-aa/completion.md)
+The accepted-package A/A control (unavailable artifact: `bench/out/compute-program/20260908-startup-aa/completion.md`)
 violates regression limits despite identical archives. It does not waive prior
-failures. The subsequent [adapter instance experiment](../../bench/out/compute-program/20260908-adapter-instance/completion.md)
+failures. The subsequent adapter instance experiment (unavailable artifact: `bench/out/compute-program/20260908-adapter-instance/completion.md`)
 removes repeated instance creation but fails frozen application regression
 limits; its optimization remains isolated and rejected.
 
-The separate [helper cleanup repair](../../bench/out/compute-program/20260908-helper-cleanup/README.md)
+The separate helper cleanup repair (unavailable artifact: `bench/out/compute-program/20260908-helper-cleanup/README.md`)
 releases one-shot temporary resources, preserves borrowed inputs and concurrent
 calls, repairs Bun callback lifetime, and preserves native allocation failures.
 Installed qualification is retained across the controlled package hosts. Public
@@ -91,7 +91,7 @@ remain open.
 
 ## Rejected startup correction and reproducible handoff
 
-The [startup experiment](../../bench/out/compute-program/20260908-startup-enumeration/completion.md)
+The startup experiment (unavailable artifact: `bench/out/compute-program/20260908-startup-enumeration/completion.md`)
 completed its frozen uninstrumented application comparison after unrelated GPU
 work stopped. Native tests, retained-package qualification, numerical outputs,
 execution identity, and observed-GPU admission passed. Lower startup medians do
@@ -99,7 +99,7 @@ not outweigh the development application's preparation and cold-tail regressions
 or the simulation's warm-tail regressions. The native candidate is rejected;
 the accepted runtime remains unchanged. Earlier failed attempts stay intact.
 
-The [reproduction bundle](../../bench/out/compute-program/20260908-startup-enumeration/reproduction-bundle.tar.gz)
+The reproduction bundle (unavailable artifact: `bench/out/compute-program/20260908-startup-enumeration/reproduction-bundle.tar.gz`)
 retains exact packages, workloads, oracles, gates, policies, and declared host
 prerequisites. Its offline relocation audit passed with the workspace absent.
 This is local reproduction by the producing operator on the same machine,
@@ -109,18 +109,18 @@ and additional physical hardware qualification remain open.
 
 ## Corrected startup measurement
 
-The [startup diagnosis](../../bench/out/compute-program/20260908-startup-scope/README.md)
+The startup diagnosis (unavailable artifact: `bench/out/compute-program/20260908-startup-scope/README.md`)
 reproduces provider-specific evidence work inside the old device-startup timer.
 Current evaluation reports separate device readiness from identity collection
 and file retention, and comparison guards reject incompatible startup scopes.
 Original observations remain intact. The
-[uninstrumented ordinary checks](../../bench/out/compute-program/20260908-startup-scope/validation/outcome.json)
+uninstrumented ordinary checks (unavailable artifact: `bench/out/compute-program/20260908-startup-scope/validation/outcome.json`)
 pass numerical and native audits but do not establish an accepted application
 advantage. No native change is accepted from this measurement correction.
 
 ## Restricted candidate execution
 
-The [isolation and cancellation record](../../bench/out/compute-program/20260908-candidate-isolation/README.md)
+The isolation and cancellation record (unavailable artifact: `bench/out/compute-program/20260908-candidate-isolation/README.md`)
 closes the reproduced host-access and CLI-cancellation gaps in the existing
 candidate evaluator. Current Linux evaluation requires explicit render-device
 access, read-only acceptance inputs, network isolation, and verified cgroup
@@ -137,11 +137,11 @@ equipment integration, and additional physical hardware remain open.
 
 ## Ordinary comparison, rejected polling, and offline handoff
 
-The [ordinary Node continuation](../../bench/out/compute-program/20260908-ordinary-node-resume/README.md)
+The ordinary Node continuation (unavailable artifact: `bench/out/compute-program/20260908-ordinary-node-resume/README.md`)
 completed under the existing numerical, execution, identity, and observed-GPU
 admission rules. It does not establish application advantage over Dawn.
 Connected invocation diagnostics motivated the
-[bounded completion-polling experiment](../../bench/out/compute-program/20260908-timeline-poll-experiment/README.md).
+bounded completion-polling experiment (unavailable artifact: `bench/out/compute-program/20260908-timeline-poll-experiment/README.md`).
 That candidate improved measured latency but failed the frozen cost limits;
 its runtime change is rejected and the accepted main-checkout binaries remain
 unchanged. Exact candidate sources, archives, and unfavorable evidence are retained.
@@ -151,7 +151,7 @@ and slow-tail observations. Regression tests reproduce the earlier omission.
 Historical comparisons remain intact; the experiment retains a separate stricter
 assessment. Report schemas and application acceptance inputs are unchanged.
 
-The [simulation handoff bundle](../../bench/out/compute-program/20260908-live-handoff/README.md)
+The simulation handoff bundle (unavailable artifact: `bench/out/compute-program/20260908-live-handoff/README.md`)
 passed installation, prolonged correctness, cleanup, reset, cancellation, and
 reopening with networking disabled and the workspace absent. This is local
 reproduction on the same machine. Independent operation, ordinary application
@@ -160,7 +160,7 @@ hardware qualification remain open under the existing journey prerequisites.
 
 ## Current demonstration priority
 
-The [target journeys](../thesis.md#prioritized-target-journeys) put unchanged
+The [target journeys](../thesis.md#application-and-partner-contexts) put unchanged
 ordinary Node provider substitution before interactive reuse and agent-assisted
 acceleration. Existing live-simulation and candidate-runner records below remain
 bounded implementation evidence, not proof that these target outcomes are met.
@@ -171,7 +171,7 @@ support or customer status from this priority change.
 
 ## Ordinary comparison and terminal integration follow-up
 
-The [ordinary Node recheck](../../bench/out/compute-program/20260908-ordinary-node-recheck/README.md)
+The ordinary Node recheck (unavailable artifact: `bench/out/compute-program/20260908-ordinary-node-recheck/README.md`)
 keeps the accepted archives and compares ordinary WebGPU with pinned Dawn.
 It excludes prepared execution and the unresolved Deno host/polling lane.
 The first attempt exposed an order-dependent adapter-identity matcher; the
@@ -181,12 +181,12 @@ Adversarial gate tests cover that correction. The separate corrected attempt
 passed numerical audits but was rejected for unrelated observed GPU activity.
 No timing advantage or new runtime optimization is accepted from these attempts.
 
-The [terminal integration record](../../bench/out/compute-program/20260908-live-terminal/README.md)
+The terminal integration record (unavailable artifact: `bench/out/compute-program/20260908-live-terminal/README.md`)
 extends the existing application with a checked GPU heat-field view, preparation
 and preflight reporting, and explicit close/reopen controls. Reopening initializes
 fresh state using the last accepted shader, format, and rate; it is not execution
 resume or driver-loss recovery. Package qualification is retained
-[separately](../../bench/out/compute-program/20260908-live-terminal-qualified/summary.json),
+separately (unavailable artifact: `bench/out/compute-program/20260908-live-terminal-qualified/summary.json`),
 including the physical Node terminal regression. The native platform archive and
 loaded library remain identical to the accepted baseline. Presentation stays
 outside Zig. Independent operator reproduction and a measured interaction benefit
@@ -194,7 +194,7 @@ remain open; this is an application slice, not closure of the interactive journe
 
 ## Focused tail experiment
 
-The [completion record](../../bench/out/compute-program/20260908-tail-experiment/README.md)
+The completion record (unavailable artifact: `bench/out/compute-program/20260908-tail-experiment/README.md`)
 retains the original comparison, frozen process repetitions, expanded sampling,
 invocation-linked host and native observations, and the rejected candidate.
 Slow invocations recur, but the observations do not establish a single tail cause.
@@ -219,13 +219,13 @@ new failing reproduction; keep previous accepted artifacts intact.
 
 - [x] Freeze the comparison baseline — runtime and integration owners: exact
   archives, qualification receipts, native/addon identities, frozen inputs and
-  policies are bound in the [baseline manifest](../../bench/out/compute-program/20260908-tail-experiment/baseline-manifest.tsv).
-  The [replay bundle](../../bench/out/compute-program/20260908-tail-experiment/reproduction-bundle/README.md)
+  policies are bound in the baseline manifest (unavailable artifact: `bench/out/compute-program/20260908-tail-experiment/baseline-manifest.tsv`).
+  The replay bundle (unavailable artifact: `bench/out/compute-program/20260908-tail-experiment/reproduction-bundle/README.md`)
   passed clean installation and application audits outside the checkout.
 - [x] Profile heat diffusion's ordinary encoding tail — runtime owner: start from
   [ordinary incumbent measurements](../../bench/out/compute-program/20260907-command-storage/ordinary-incumbents.tsv).
   Completed in
-  [heat-diffusion-ordinary-encoding-profile.json](../../bench/out/compute-program/20260907-command-storage/heat-diffusion-ordinary-encoding-profile.json):
+  heat-diffusion-ordinary-encoding-profile.json (unavailable artifact: `bench/out/compute-program/20260907-command-storage/heat-diffusion-ordinary-encoding-profile.json`):
   `encode` p99 is 0.327536 ms (max 0.456610 ms); `submitWait` p99 is 0.357644 ms (max 0.382580 ms).
   Responsibility is in `packages/doe-gpu/src/compute-program.js` (`encode` at lines
   127-145, execution path at 246-313). Separation is preserved, and next-step correction
