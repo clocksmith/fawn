@@ -26,36 +26,10 @@ const FLOW_TO_WAVE =
  surface[i]=vec4<f32>(clamp(brightness*0.65,0.0,1.6),length(velocity[i].xy)*0.08,0.0,brightness*12.0);
 }
 `;
-const WAVE_TO_PARTICLES =
-  HEADER +
-  `
-struct Particle { pos: vec2<f32>, vel: vec2<f32>, color: vec4<f32> }
-@group(0) @binding(1) var<storage,read> surface: array<vec4<f32>>;
-@group(0) @binding(2) var<storage,read> dye: array<vec4<f32>>;
-@group(0) @binding(3) var<storage,read_write> particles: array<Particle>;
-@group(0) @binding(4) var image: texture_2d<f32>;
-@compute @workgroup_size(128) fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
- let i=gid.x; if(i>=arrayLength(&particles)){return;}
- let width=u32(u.grid.x); let xy=vec2<i32>(i32(i%width),i32(i/width));
- let uv=(vec2<f32>(xy)+0.5)/u.grid.x;
- let world=mix(uv,mix(u.bounds.xy,u.bounds.zw,uv),u.transport.z);
- let screen=(world*2.0-1.0)/u.transport.xy;
- let texUV=screen*vec2<f32>(0.5,-0.5)+0.5;
- let pixel=clamp(vec2<i32>(texUV*vec2<f32>(textureDimensions(image))),vec2<i32>(0),vec2<i32>(textureDimensions(image))-1);
- let seen=textureLoad(image,pixel,0).rgb;
- let pigment=dye[i].rgb/(vec3<f32>(1.0)+dye[i].rgb);
- let color=select(pigment,max(seen,pigment*0.15),all(texUV>=vec2<f32>(0.0))&&all(texUV<=vec2<f32>(1.0)));
- let grad=vec2<f32>(surface[cell(xy+vec2<i32>(1,0))].x-surface[cell(xy-vec2<i32>(1,0))].x,
-   surface[cell(xy+vec2<i32>(0,1))].x-surface[cell(xy-vec2<i32>(0,1))].x)*u.grid.x*0.025;
- let v=vec2<f32>(-grad.y,grad.x)+vec2<f32>(surface[i].y)*0.02;
- let bright=color/max(${TRANSFER_POLICY.pigmentFloor},max(max(color.r,color.g),color.b))*${TRANSFER_POLICY.particleBrightness};
- particles[i]=Particle(uv*2.0-1.0,v/max(1.0,length(v)/${TRANSFER_POLICY.particleVelocityLimit}),vec4<f32>(bright,0.002));
-}
-`;
 const PARTICLE_DEPOSIT =
   HEADER +
   `
-struct Particle { pos: vec2<f32>, vel: vec2<f32>, color: vec4<f32> }
+struct Particle { pos: vec2<f32>, vel: vec2<f32>, color: vec4<f32>, material: vec4<f32> }
 struct Deposit { weight: atomic<i32>, r: atomic<i32>, g: atomic<i32>, b: atomic<i32>, vx: atomic<i32>, vy: atomic<i32> }
 @group(0) @binding(1) var<storage,read> particles: array<Particle>;
 @group(0) @binding(2) var<storage,read_write> deposits: array<Deposit>;
@@ -89,4 +63,4 @@ struct Deposit { weight: i32, r: i32, g: i32, b: i32, vx: i32, vy: i32 }
  velocity[i]=vec4<f32>(vec2<f32>(f32(d.vx),f32(d.vy))/weight*0.5,0.0,0.0);
 }
 `;
-export { TRANSFER_POLICY, FLOW_TO_WAVE, WAVE_TO_PARTICLES, PARTICLE_DEPOSIT, RESOLVE_DEPOSIT };
+export { TRANSFER_POLICY, FLOW_TO_WAVE, PARTICLE_DEPOSIT, RESOLVE_DEPOSIT };
