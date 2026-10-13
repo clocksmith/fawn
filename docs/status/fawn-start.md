@@ -1,5 +1,11 @@
 # Fawn hosted demonstrations
 
+[Pointer-direction checks](../../reports/maintenance/20261013-fawn-pointer-direction/report.json)
+confirm that pressed Magnetic input attracts parcels while pressed Particle input
+repels them. Direction blends with the active scene weights; gentler hover and
+stronger presses remain. Actual parcel readback checks direction and finite state
+through software WebGPU, without claiming physical-device or Safari qualification.
+
 [Pointer-strength checks](../../reports/maintenance/20261013-fawn-pointer-strength/report.json)
 verify gentler hover across the hosted cycle and stronger pressed Magnetic and
 Particle input, with the existing Flow press force and pointer radii preserved.

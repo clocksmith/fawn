@@ -1,0 +1,31 @@
+{
+  "passed": true,
+  "classification": "Software WebGPU direction diagnostic; not physical performance or Safari qualification",
+  "sourceHash": "00d6a3cee74ab5d93f07afea258acd99de1c03ba436e6e6290c3e1b0b0ae14e1",
+  "cases": [
+    {
+      "mode": "magnetic",
+      "hoverForce": 0.6666666865348816,
+      "pressedForce": 80.01000213623047,
+      "meanOutwardDisplacementFromClick": -0.027882444023423176,
+      "samples": 127,
+      "finite": true
+    },
+    {
+      "mode": "blend",
+      "hoverForce": 0.6666666865348816,
+      "pressedForce": 0,
+      "meanOutwardDisplacementFromClick": 0,
+      "samples": 127,
+      "finite": true
+    },
+    {
+      "mode": "particles",
+      "hoverForce": 0.6666666865348816,
+      "pressedForce": -80.01000213623047,
+      "meanOutwardDisplacementFromClick": 0.02689132059490617,
+      "samples": 127,
+      "finite": true
+    }
+  ]
+}
