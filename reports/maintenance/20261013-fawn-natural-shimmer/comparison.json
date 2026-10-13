@@ -1,0 +1,101 @@
+{
+  "baselineRef": "995ce8b5f7b1e8ccee701ce0da1abf79d77c4ea0",
+  "classification": "Software WebGPU artwork comparison; no native Doe, physical GPU, or performance qualification",
+  "sources": {
+    "baseline": "cef8e5d9f4959ebdb7d41c6d22d5b9facb61eb4b7cd909f6f1f651a70931b828",
+    "candidate": "b68edc4109fd65b88478938e87e54032e2df998e930f06d2cb2d231303a46ebf"
+  },
+  "screens": [
+    {
+      "width": 1100,
+      "effects": {
+        "flow": {
+          "meanChannelDelta": 18.35197727272727,
+          "changedFraction": 1,
+          "maxRGBDelta": 280
+        },
+        "wave": {
+          "meanChannelDelta": 0,
+          "changedFraction": 0,
+          "maxRGBDelta": 0
+        },
+        "particles": {
+          "meanChannelDelta": 0,
+          "changedFraction": 0,
+          "maxRGBDelta": 0
+        },
+        "chroma": {
+          "before": 68.68751076555024,
+          "after": 42.37687918660287
+        },
+        "background": {
+          "meanChannelDelta": 0.6494043062200957,
+          "changedFraction": 0.4002858851674641,
+          "maxRGBDelta": 9
+        },
+        "backgroundAnimation": {
+          "meanChannelDelta": 0.24462759170653908,
+          "changedFraction": 0.3095131578947368,
+          "maxRGBDelta": 4
+        },
+        "animation": {
+          "meanChannelDelta": 1.1819972089314195,
+          "changedFraction": 0.8924066985645933,
+          "maxRGBDelta": 25
+        }
+      },
+      "adapter": {
+        "vendor": "google",
+        "architecture": "swiftshader"
+      },
+      "errors": [],
+      "count": 65536
+    },
+    {
+      "width": 390,
+      "effects": {
+        "flow": {
+          "meanChannelDelta": 18.308373819163293,
+          "changedFraction": 1,
+          "maxRGBDelta": 235
+        },
+        "wave": {
+          "meanChannelDelta": 0,
+          "changedFraction": 0,
+          "maxRGBDelta": 0
+        },
+        "particles": {
+          "meanChannelDelta": 0,
+          "changedFraction": 0,
+          "maxRGBDelta": 0
+        },
+        "chroma": {
+          "before": 68.15574224021593,
+          "after": 42.4497334682861
+        },
+        "background": {
+          "meanChannelDelta": 0.652757534862798,
+          "changedFraction": 0.40174089068825913,
+          "maxRGBDelta": 9
+        },
+        "backgroundAnimation": {
+          "meanChannelDelta": 0.24690958164642376,
+          "changedFraction": 0.31168353576248314,
+          "maxRGBDelta": 4
+        },
+        "animation": {
+          "meanChannelDelta": 1.1882231219073325,
+          "changedFraction": 0.8949932523616734,
+          "maxRGBDelta": 26
+        }
+      },
+      "adapter": {
+        "vendor": "google",
+        "architecture": "swiftshader"
+      },
+      "errors": [],
+      "count": 16384
+    }
+  ],
+  "passed": true
+}

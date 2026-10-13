@@ -13,6 +13,11 @@ moves each parcel from its accepted position toward an SVG target at a staggered
 rate. It does not shrink a rectangle, change the camera, or mask a grid into the
 logo. The circular initial reservoir extends beyond square viewport corners.
 
+[Flow material correction](../../reports/maintenance/20261013-fawn-natural-shimmer/review.json)
+restores softer metallic light, reduces chroma and separates ambient shimmer time
+from fluid color time. Same-input material comparisons and rest/pause checks
+remain software WebGPU artwork evidence.
+
 [Transition and background-shimmer checks](../../reports/maintenance/20261013-fawn-transition-background/review.json)
 cover gentler scene blending, distinct automatic/interaction settling, ambient
 Flow glints, the visible-time clock and paused rendering. These are software

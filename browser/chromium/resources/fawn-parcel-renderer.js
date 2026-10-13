@@ -1,6 +1,6 @@
 // Surface and point appearances reconstruct the same independently moving parcels.
 const PARCEL_RENDER_POLICY = Object.freeze({
-  version: 3,
+  version: 4,
   accumulationCapacity: 4096,
   materialBound: 8,
   fluidRadiusCells: 2.2,
@@ -8,8 +8,9 @@ const PARCEL_RENDER_POLICY = Object.freeze({
   coverageGain: 2.5,
   exposure: 1.65,
   flowGlintPixels: 1.25,
-  flowGlintStrength: 0.16,
-  flowGlintSharpness: 32,
+  flowGlintStrength: 0.08,
+  flowGlintSharpness: 12,
+  flowSaturation: 0.7,
   backgroundGlintStrength: 0.012,
 });
 const HEADER = `
@@ -69,20 +70,25 @@ fn spectral(t:f32)->vec3<f32> {return 0.5+0.5*cos(vec3<f32>(0,2,4)+t*6.28318);}
  let light=normalize(vec3<f32>(0.45,0.60,1));let halfVector=normalize(light+vec3<f32>(0,0,1));
  let specular=pow(max(dot(normal,halfVector),0.0),64.0);
  let flowPrism=spectral(material.x*0.22+abs(material.z)*0.36+u.screen.w*0.020);
- // Fine facets catch the changing carried material without disturbing its broad relief.
+ // Soft highlights follow the carried relief; ambient light can move while the fluid rests.
  let facet=floor(in.position.xy/${PARCEL_RENDER_POLICY.flowGlintPixels});
  let grain=fract(sin(dot(facet,vec2<f32>(12.9898,78.233)))*43758.5453);
- let shimmer=pow(0.5+0.5*sin(grain*6.28318+material.x*32.0+material.z*8.0+u.screen.w*1.8),${PARCEL_RENDER_POLICY.flowGlintSharpness}.0);
+ let shimmer=pow(0.5+0.5*sin(grain*6.28318+material.x*8.0+material.z*3.0+u.material.x*0.65),${PARCEL_RENDER_POLICY.flowGlintSharpness}.0);
+ let glint=pow(max(dot(reflect(normalize(vec3<f32>(0.20,-0.16,-1.0)),normal),vec3<f32>(0,0,1)),0.0),20.0);
+ let secondary=spectral(material.w*0.30+normal.x*0.15-normal.y*0.08);
+ let metallic=mix(vec3<f32>(0.05,0.06,0.08),flowPrism,0.52)
+   +secondary*fresnel*0.22+vec3<f32>(1.0,0.96,0.93)*glint*0.34;
  let flowLight=pigment*(0.92+material.w*0.24)+flowPrism*abs(material.z)*0.030
-   +(prism*(0.22+material.x*0.14)+vec3<f32>(specular*0.30))
-   +mix(prism,vec3<f32>(1.0),0.5)*shimmer*${PARCEL_RENDER_POLICY.flowGlintStrength};
- let flowColor=1.0-exp(-max(flowLight,vec3<f32>(0))*${PARCEL_RENDER_POLICY.exposure});
+   +metallic*(0.22+material.x*0.14)
+   +vec3<f32>(1.0,0.96,0.93)*shimmer*(0.25+glint*0.75)*${PARCEL_RENDER_POLICY.flowGlintStrength};
+ let flowTone=1.0-exp(-max(flowLight,vec3<f32>(0))*${PARCEL_RENDER_POLICY.exposure});
+ let flowColor=mix(vec3<f32>(dot(flowTone,vec3<f32>(0.2126,0.7152,0.0722))),flowTone,${PARCEL_RENDER_POLICY.flowSaturation});
  let waveColor=prism*ridge*(0.02+contour*0.40+fresnel*0.16)+vec3<f32>(0.8,0.88,1)*specular*ridge*0.28;
  let pointColor=pigment*(0.85+material.w*0.15);
  let coverage=1.0-exp(-density*${PARCEL_RENDER_POLICY.coverageGain});
  let background=vec3<f32>(0.040,0.055,0.070)*u.theme.x+vec3<f32>(0.003,0.004,0.006)*u.theme.y
    +vec3<f32>(0.010,0.016,0.013)*u.theme.z
-   +mix(prism,vec3<f32>(1.0),0.5)*shimmer*${PARCEL_RENDER_POLICY.backgroundGlintStrength}*u.theme.x;
+   +vec3<f32>(1.0,0.96,0.93)*shimmer*${PARCEL_RENDER_POLICY.backgroundGlintStrength}*u.theme.x;
  let appearance=flowColor*u.theme.x+waveColor*u.theme.y+pointColor*u.theme.z;
  return vec4<f32>(mix(background,max(appearance,background),coverage),1);
 }
@@ -158,7 +164,7 @@ function createParcelRenderer(device, canvas, format, count, parcels) {
       ],
     });
   }
-  function draw(encoder, view, index, weights, time) {
+  function draw(encoder, view, index, weights, time, shimmerTime = time) {
     const side = Math.max(canvas.clientWidth, canvas.clientHeight, 1);
     const fluidRadius = (2 / Math.sqrt(count)) * PARCEL_RENDER_POLICY.fluidRadiusCells;
     const particleRadius = (PARCEL_RENDER_POLICY.particleRadiusPx * 2) / side;
@@ -177,7 +183,7 @@ function createParcelRenderer(device, canvas, format, count, parcels) {
         time,
         ...weights,
         0,
-        0,
+        shimmerTime,
         0,
         0,
         0,
