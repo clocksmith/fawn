@@ -54,12 +54,14 @@
     "shaderBundleCheck": true,
     "standaloneScenePhase": true,
     "legacyFormationExactComparison": true,
-    "rendererComparison": true
+    "rendererComparison": true,
+    "standaloneClock": true
   },
   "limitations": [
     "Software WebGPU, reduced-count cycle; not Safari or physical-device performance qualification.",
     "The generated shader bundle source-identity row was regenerated during the cycle test; shader strings did not change. Final bundle passes generator check and hosting smoke must bind the final files.",
-    "An extra legacy standalone clock check timed out before executing assertions because its default RAF-based readiness wait uses the deliberately frozen test clock. Preserved in standalone-clock-timeout.json; not counted as passed."
+    "The legacy standalone clock harness initially timed out on its own frozen RAF readiness wait (standalone-clock-timeout.json). Switching readiness polling to wall-clock intervals makes its unchanged assertions pass (standalone-clock.json)."
   ],
-  "harnessSha256": "9715e7f6f70f9e6890151b1ea7b2465156453ade8c3359cff8cd626af9574717"
+  "harnessSha256": "9715e7f6f70f9e6890151b1ea7b2465156453ade8c3359cff8cd626af9574717",
+  "standaloneClockHarnessSha256": "7a7c47b7cff432f4e06508015a9e7b8e3362df22ee1988e50459c989578f2be5"
 }
