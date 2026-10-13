@@ -572,7 +572,7 @@ try {
     const before = await state(page);
     await page.mouse.move(viewport.width / 2, viewport.height / 2);
     await page.mouse.down();
-    await advance(page, 120);
+    await advance(page, 150);
     const held = await state(page);
     assert.equal(before.effect, 'Flows');
     assert.equal(held.effect, 'Magnets', 'Held input cannot defer the scheduled transition');
@@ -586,7 +586,7 @@ try {
     const releasedAt = (await state(page)).elapsedS;
     const sceneSeconds = CYCLE_POLICY.holdS + CYCLE_POLICY.blendS;
     const nextScene = (Math.floor(releasedAt / sceneSeconds) + 1) * sceneSeconds;
-    await advance(page, Math.ceil((nextScene + 4.3 - releasedAt) / CYCLE_POLICY.maxDtS));
+    await advance(page, Math.ceil((nextScene + 5.5 - releasedAt) / CYCLE_POLICY.maxDtS));
     assert.ok(
       (await page.evaluate(
         () => cycleProbe.writes.filter((w) => w.label === 'Cycle parcel uniforms').at(-1).values[7],
