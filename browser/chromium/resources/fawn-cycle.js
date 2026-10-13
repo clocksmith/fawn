@@ -14,7 +14,7 @@ const graph = document.querySelector('#fps-graph'),
 const clock = createCycleClock(),
   formation = FawnFormation.transition();
 let logoEnabled = FawnFormation.configure(formationSelect);
-FawnFormation.configureWorkload(countSelect, stepsSelect, 'flow');
+FawnFormation.configureWorkload(countSelect, stepsSelect, 'cycle');
 let device, context, gpu, format;
 let configured = false,
   refreshPending = false;
@@ -46,7 +46,7 @@ function updateControls() {
   pause.setAttribute('aria-pressed', String(paused));
   status.textContent = paused ? 'Paused' : 'WebGPU active';
   document.querySelector('#load').textContent =
-    `${Number(countSelect.value).toLocaleString()} cells / particles · ${stepsSelect.value} steps`;
+    `${(Math.ceil(Math.sqrt(Number(countSelect.value))) ** 2).toLocaleString()} cells / ${Number(countSelect.value).toLocaleString()} particles · ${stepsSelect.value} steps`;
 }
 function resize() {
   const side = Math.max(canvas.clientWidth, canvas.clientHeight, 1);
@@ -84,7 +84,7 @@ function reset() {
   samples = 0;
   sampleTime = 0;
   fps.length = 0;
-  document.querySelector('#effect').textContent = 'Flow';
+  document.querySelector('#effect').textContent = CYCLE_POLICY.labels.flow;
   schedule();
 }
 function meter(now) {
@@ -131,12 +131,12 @@ async function frame(now) {
   pending = true;
   try {
     resize();
-    const dt =
-      paused || !lastTime ? 0 : Math.min(CYCLE_POLICY.maxDtS, Math.max(0, (now - lastTime) / 1000));
+    const elapsedDt = paused || !lastTime ? 0 : Math.max(0, (now - lastTime) / 1000);
+    const dt = Math.min(CYCLE_POLICY.maxDtS, elapsedDt);
     lastTime = now;
     const interacting = pointer.down || pointer.moved;
-    const cycle = clock.advance(dt, interacting);
-    shape = formation.advance(dt, logoEnabled, interacting || cycle.transitioning);
+    const cycle = clock.advance(elapsedDt);
+    shape = formation.advance(elapsedDt, logoEnabled, interacting || cycle.transitioning);
     const liveDt = dt * (1 - shape);
     time += liveDt;
     const weights = CYCLE_POLICY.effects.map(
@@ -159,9 +159,8 @@ async function frame(now) {
     pointer.press = 0;
     pointer.moved = false;
     if (cycle.completed) formation.retarget();
-    document.querySelector('#effect').textContent =
-      cycle.effect[0].toUpperCase() + cycle.effect.slice(1);
-    canvas.setAttribute('aria-label', `${cycle.effect}. Drag to stir.`);
+    document.querySelector('#effect').textContent = CYCLE_POLICY.labels[cycle.effect];
+    canvas.setAttribute('aria-label', `${CYCLE_POLICY.labels[cycle.effect]}. Drag to stir.`);
     await device.queue.onSubmittedWorkDone();
     if (!running || currentGeneration !== generation) return;
     if (!paused) meter(performance.now());

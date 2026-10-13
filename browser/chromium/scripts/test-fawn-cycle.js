@@ -43,9 +43,8 @@ report.harnessSha256 = createHash('sha256')
 const clock = createCycleClock();
 assert.equal(clock.advance(CYCLE_POLICY.holdS).started, true);
 assert.equal(clock.advance(CYCLE_POLICY.blendS / 2).blend, 0.5);
-assert.equal(clock.advance(100, true).blend, 0.5);
-assert.equal(clock.advance(CYCLE_POLICY.idleS / 2).blend, 0.5);
-assert.equal(clock.advance(CYCLE_POLICY.blendS).effect, 'wave');
+assert.ok(clock.advance(0.5, true).blend > 0.5, 'Input cannot stall a scene blend');
+assert.equal(clock.advance(CYCLE_POLICY.blendS / 2 - 0.5, true).effect, 'wave');
 assert.equal(clock.advance(0).blend, 0);
 assert.throws(() => clock.advance(-1), /Invalid cycle timestep/);
 clock.reset();
@@ -109,6 +108,7 @@ function instrument() {
     buffers: new Map(),
     writes: [],
     dispatches: [],
+    workgroups: [],
     errors: [],
     requests: 0,
     canvasContexts: 0,
@@ -159,6 +159,7 @@ function instrument() {
         };
         pass.dispatchWorkgroups = (...args) => {
           p.dispatches.push(label);
+          p.workgroups.push({ label, groups: args });
           return dispatch(...args);
         };
         return pass;
@@ -173,17 +174,20 @@ function instrument() {
     return getContext.call(this, kind, ...args);
   };
 }
-async function advance(page, count) {
-  await page.evaluate(async (count) => {
-    for (let i = 0; i < count; i++) {
-      cycleProbe.clock += 33;
-      const callbacks = [...cycleProbe.callbacks.values()];
-      cycleProbe.callbacks.clear();
-      callbacks.forEach((cb) => cb(cycleProbe.clock));
-      await cycleProbe.device.queue.onSubmittedWorkDone();
-      await Promise.resolve();
-    }
-  }, count);
+async function advance(page, count, millis = 33) {
+  await page.evaluate(
+    async ({ count, millis }) => {
+      for (let i = 0; i < count; i++) {
+        cycleProbe.clock += millis;
+        const callbacks = [...cycleProbe.callbacks.values()];
+        cycleProbe.callbacks.clear();
+        callbacks.forEach((cb) => cb(cycleProbe.clock));
+        await cycleProbe.device.queue.onSubmittedWorkDone();
+        await Promise.resolve();
+      }
+    },
+    { count, millis },
+  );
 }
 async function state(page) {
   return page.evaluate(async () => {
@@ -471,9 +475,22 @@ try {
       { polling: 100 },
     );
     assert.equal(await page.locator('.demo-switcher').count(), 0);
+    assert.equal(await page.locator('#count-select').inputValue(), '32768');
+    assert.equal(await page.locator('#steps-select').inputValue(), '4');
+    assert.equal(
+      await page.evaluate(() => cycleProbe.buffers.get('Cycle parcels 0').size),
+      32768 * 48,
+    );
+    assert.equal(
+      await page.evaluate(() => cycleProbe.buffers.get('Cycle dye 0').size),
+      182 * 182 * 16,
+    );
+
     await page.locator('.details').evaluate((e) => (e.open = true));
-    await page.selectOption('#count-select', '4096');
-    await page.selectOption('#steps-select', '1');
+    if (viewport.width < 600) {
+      await page.selectOption('#count-select', '4096');
+      await page.selectOption('#steps-select', '1');
+    }
     await page.locator('.details').evaluate((e) => (e.open = false));
     await advance(page, 100);
     const initial = await state(page);
@@ -504,7 +521,7 @@ try {
     }
     assert.deepEqual(
       timeline.map((s) => s.effect),
-      ['Wave', 'Particles', 'Flow', 'Wave'],
+      ['Magnets', 'Particles', 'Flows', 'Magnets'],
     );
     for (const s of timeline) {
       assert.deepEqual(s.errors, []);
@@ -514,13 +531,28 @@ try {
       assert.equal(s.allocations, initial.allocations);
       assert.ok(Object.values(s.fields).every((f) => f.finite));
     }
+    if (viewport.width >= 600) {
+      const dispatches = await page.evaluate(() => cycleProbe.workgroups);
+      assert.ok(
+        dispatches.some(
+          (d) => d.label === 'Cycle handoff 0' && d.groups[0] === Math.ceil((182 * 182) / 128),
+        ),
+        'Flow-to-film conversion must include the tail cells beyond the parcel count',
+      );
+      assert.ok(
+        dispatches.some(
+          (d) => d.label === 'Cycle handoff 2' && d.groups[0] === Math.ceil((182 * 182) / 128),
+        ),
+        'Deposit resolution must include all fluid cells',
+      );
+    }
     assert.ok(timeline[1].fields['Cycle parcels 0'].energy > 0);
     assert.ok(
       timeline[1].fields['Cycle parcels 0'].central > 0,
       'Incoming particles retain material in the center',
     );
     assert.ok(timeline[2].fields['Cycle dye 0'].energy > 0);
-    // Enter a cross-material blend, hold it with a pressed pointer, then finish it after release.
+    // Input releases the logo but never stalls or restarts the scheduled scene blend.
     await advance(
       page,
       Math.floor(
@@ -533,10 +565,21 @@ try {
     await page.mouse.down();
     await advance(page, 120);
     const held = await state(page);
-    assert.equal(held.effect, before.effect);
-    assert.equal(held.blend, before.blend);
+    assert.notEqual(held.effect, before.effect, 'Scene transition completes while pressed');
+    assert.ok(
+      (await page.evaluate(
+        () => cycleProbe.writes.filter((w) => w.label === 'Cycle parcel uniforms').at(-1).values[7],
+      )) < 0.1,
+      'Pressing releases the branded formation',
+    );
     await page.mouse.up();
     await advance(page, 200);
+    assert.ok(
+      (await page.evaluate(
+        () => cycleProbe.writes.filter((w) => w.label === 'Cycle parcel uniforms').at(-1).values[7],
+      )) > 0.75,
+      'Idle input returns to branded Fawn',
+    );
     await page.locator('#pause').click();
     const paused = await state(page);
     await advance(page, 120);
@@ -556,7 +599,7 @@ try {
     );
     await page.locator('#restart').click();
     await advance(page, 1);
-    assert.equal((await state(page)).effect, 'Flow');
+    assert.equal((await state(page)).effect, 'Flows');
     assert.equal(await page.locator('#pause').textContent(), 'Resume');
     await page.locator('#pause').click();
     await advance(page, 2);
@@ -572,7 +615,7 @@ try {
       document.dispatchEvent(new Event('visibilitychange'));
     });
     await advance(page, 1);
-    assert.equal((await state(page)).effect, 'Flow');
+    assert.equal((await state(page)).effect, 'Flows');
     assert.deepEqual(errors, []);
     report.journeys.push({
       viewport,
@@ -581,7 +624,7 @@ try {
       fixedProjectionDuringFormation: projection,
       uploads: initial.uploads,
       allocations: initial.allocations,
-      interactionHeld: true,
+      interactionContinued: true,
       pauseFrozen: true,
       hiddenFrozen: true,
       rotation: true,
@@ -625,6 +668,12 @@ try {
       await advance(page, 2);
       assert.equal((await state(page)).width, 600);
       assert.equal((await state(page)).height, 300);
+      await advance(page, Math.ceil((CYCLE_POLICY.holdS + CYCLE_POLICY.blendS) / 0.04) + 1, 40);
+      assert.equal(
+        (await state(page)).effect,
+        'Magnets',
+        '25 fps must not stretch the scene schedule',
+      );
     }
     await page.evaluate(() =>
       cycleProbe.device.dispatchEvent(
@@ -643,6 +692,7 @@ try {
       reducedMotion,
       initialCanvasConfigured: true,
       dprOnly: reducedMotion === 'no-preference',
+      elapsedSceneTimeAt25fps: reducedMotion === 'no-preference',
       terminalError: true,
     });
     await page.close();
