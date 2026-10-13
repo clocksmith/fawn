@@ -1,6 +1,7 @@
 (function attachFawnFormation(root) {
   'use strict';
-  const POLICY = Object.freeze({ version: 2, delayS: 0.8, settleS: 6, size: 0.76,
+  const POLICY = Object.freeze({ version: 3, delayS: 0.8, settleS: 7,
+    interactionDelayS: 0.4, interactionSettleS: 3, size: 0.76,
     noiseSeed: 7319, dyeRate: 1.6, diffusionRate: 5, force: 0.7, warp: 0.05 });
   const TRANSITION = Object.freeze({ version: 1, holdS: 0.3, disperseS: 1.6,
     responseRate: 8, epsilon: 0.00001, disperseForce: 0.9 });
@@ -55,30 +56,37 @@
     return select.value === 'branded';
   }
 
-  function strength(ageS, enabled) {
+  function ease(t) {
+    return t ** 3 * (t * (t * 6 - 15) + 10);
+  }
+
+  function strength(ageS, enabled, recovering = false) {
     if (!enabled) return 0;
-    const t = Math.min(1, Math.max(0, (ageS - POLICY.delayS) / POLICY.settleS));
-    return t * t * (3 - 2 * t);
+    const delay = recovering ? POLICY.interactionDelayS : POLICY.delayS;
+    const settle = recovering ? POLICY.interactionSettleS : POLICY.settleS;
+    return ease(Math.min(1, Math.max(0, (ageS - delay) / settle)));
   }
 
   function transition() {
-    let age = 0, idle = 0, opening = false, value = 0, velocity = 0;
+    let age = 0, idle = 0, opening = false, recovering = false, value = 0, velocity = 0;
     return Object.freeze({
       reset(enabled, intro = false) {
-        age = idle = velocity = 0; opening = enabled && intro; value = opening ? 1 : 0;
+        age = idle = velocity = 0; recovering = false;
+        opening = enabled && intro; value = opening ? 1 : 0;
       },
-      advance(dt, enabled, active) {
+      advance(dt, enabled, active, interacting = active) {
         if (dt <= 0) return value;
+        if (interacting) recovering = true;
         if (!enabled || active) { opening = false; idle = 0; }
         age += dt;
         let target;
         if (opening) {
           const t = Math.min(1, Math.max(0, (age - TRANSITION.holdS) / TRANSITION.disperseS));
           idle = Math.max(0, age - TRANSITION.holdS - TRANSITION.disperseS);
-          target = Math.max(1 - t * t * (3 - 2 * t), strength(idle, true));
+          target = Math.max(1 - ease(t), strength(idle, true));
         } else {
           if (!active && enabled) idle += dt;
-          target = strength(idle, enabled);
+          target = strength(idle, enabled, recovering);
         }
         // Preserve value and velocity as targets change, including interruptions.
         const offset = value - target, rate = velocity + TRANSITION.responseRate * offset;
@@ -95,7 +103,7 @@
         const t = (age - TRANSITION.holdS) / TRANSITION.disperseS;
         return t > 0 && t < 1 ? Math.sin(t * Math.PI) ** 2 * TRANSITION.disperseForce : 0;
       },
-      retarget() { opening = false; idle = 0; },
+      retarget() { opening = recovering = false; idle = 0; },
     });
   }
 

@@ -141,7 +141,7 @@ async function frame(now) {
     lastTime = now;
     const interacting = pointer.down || pointer.moved;
     const cycle = clock.advance(elapsedDt);
-    shape = formation.advance(elapsedDt, logoEnabled, interacting || cycle.transitioning);
+    shape = formation.advance(elapsedDt, logoEnabled, interacting || cycle.transitioning, interacting);
     const liveDt = dt * (1 - shape);
     time += liveDt;
     const weights = CYCLE_POLICY.effects.map(
@@ -157,7 +157,7 @@ async function frame(now) {
       if (cycle.transitioning) gpu.simulate(encoder, cycle.next, Number(stepsSelect.value));
     }
     if (dt > 0) gpu.advanceParcels(encoder);
-    gpu.draw(encoder, context.getCurrentTexture().createView(), weights, time);
+    gpu.draw(encoder, context.getCurrentTexture().createView(), weights, cycle.elapsedS);
     device.queue.submit([encoder.finish()]);
     pointer.dx = 0;
     pointer.dy = 0;

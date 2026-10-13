@@ -1,6 +1,6 @@
 // Surface and point appearances reconstruct the same independently moving parcels.
 const PARCEL_RENDER_POLICY = Object.freeze({
-  version: 2,
+  version: 3,
   accumulationCapacity: 4096,
   materialBound: 8,
   fluidRadiusCells: 2.2,
@@ -10,6 +10,7 @@ const PARCEL_RENDER_POLICY = Object.freeze({
   flowGlintPixels: 1.25,
   flowGlintStrength: 0.16,
   flowGlintSharpness: 32,
+  backgroundGlintStrength: 0.012,
 });
 const HEADER = `
 struct Params { view:vec4<f32>, screen:vec4<f32>, theme:vec4<f32>, material:vec4<f32> }
@@ -80,7 +81,8 @@ fn spectral(t:f32)->vec3<f32> {return 0.5+0.5*cos(vec3<f32>(0,2,4)+t*6.28318);}
  let pointColor=pigment*(0.85+material.w*0.15);
  let coverage=1.0-exp(-density*${PARCEL_RENDER_POLICY.coverageGain});
  let background=vec3<f32>(0.040,0.055,0.070)*u.theme.x+vec3<f32>(0.003,0.004,0.006)*u.theme.y
-   +vec3<f32>(0.010,0.016,0.013)*u.theme.z;
+   +vec3<f32>(0.010,0.016,0.013)*u.theme.z
+   +mix(prism,vec3<f32>(1.0),0.5)*shimmer*${PARCEL_RENDER_POLICY.backgroundGlintStrength}*u.theme.x;
  let appearance=flowColor*u.theme.x+waveColor*u.theme.y+pointColor*u.theme.z;
  return vec4<f32>(mix(background,max(appearance,background),coverage),1);
 }

@@ -1,0 +1,64 @@
+{
+  "passed": true,
+  "classification": "Software WebGPU visual lifecycle diagnostic at 1024 parcels; no physical GPU or browser performance qualification",
+  "sources": [
+    {
+      "file": "fawn-cycle.js",
+      "sha256": "5f135bf9da3ae118033916e8dc0b40e1363c77f392fe51c929164b0728c9ba1f"
+    },
+    {
+      "file": "fawn-cycle-clock.js",
+      "sha256": "55dee8b77c2ed2756d63a88860bc9ef6376408381fa88dd7a62c13c225ab99fa"
+    },
+    {
+      "file": "fawn-formation.js",
+      "sha256": "113ac7e232d30309f738bc21aea9443398155e530fc82a01fc97755ba3cdd4c3"
+    },
+    {
+      "file": "fawn-parcel-renderer.js",
+      "sha256": "cef8e5d9f4959ebdb7d41c6d22d5b9facb61eb4b7cd909f6f1f651a70931b828"
+    },
+    {
+      "file": "fawn-shaders.js",
+      "sha256": "8cd08572b951965c0c9c22513f5c3bd24f4d5b9224ebc85668ed09e348b32080"
+    }
+  ],
+  "timing": {
+    "before": {
+      "automatic99S": 6.7416666666667915,
+      "interaction99S": 6.7416666666667915
+    },
+    "after": {
+      "automatic99S": 7.350000000000155,
+      "interaction99S": 3.433333333333324
+    }
+  },
+  "journey": {
+    "settled": {
+      "shape": 1,
+      "renderTime": 9.206999778747559,
+      "effect": "Flows"
+    },
+    "resting": {
+      "shape": 1,
+      "renderTime": 9.866999626159668,
+      "effect": "Flows"
+    },
+    "recovered": {
+      "shape": 0.9991247653961182,
+      "renderTime": 4.751999855041504,
+      "effect": "Flows"
+    },
+    "effects": [
+      "Flows",
+      "Magnets",
+      "Particles",
+      "Flows"
+    ],
+    "pauseFrozen": true,
+    "adapter": {
+      "vendor": "google",
+      "architecture": "swiftshader"
+    }
+  }
+}
