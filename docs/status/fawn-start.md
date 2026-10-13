@@ -1,8 +1,9 @@
 # Fawn hosted demonstrations
 
 The unified `fawn-cycle.html` rotates Flows → Magnets → Particles on one simulation
-canvas and device. The default shared parcel workload is reduced; standalone
-benchmark defaults retain their prior definitions. Scene time advances independently
+canvas and device. Initial particle counts use desktop or mobile presets;
+Settings choices survive rotation and Reset. Standalone benchmark defaults
+retain their prior definitions. Scene time advances independently
 of input and the clamped physics timestep. Input releases logo formation; idle
 input returns to Fawn. Pause and hidden tabs still stop the schedule.
 All effects render the same resident parcels, preserving their
@@ -12,7 +13,9 @@ moves each parcel from its accepted position toward an SVG target at a staggered
 rate. It does not shrink a rectangle, change the camera, or mask a grid into the
 logo. The circular initial reservoir extends beyond square viewport corners.
 
-[Current labels, workload and clock checks](../../reports/maintenance/20261012-fawn-labels-load-clock/README.md)
+[Current device-default checks](../../reports/maintenance/20261012-fawn-device-defaults/README.md)
+cover complete rotations at both selected defaults. The preceding
+[Labels, workload and clock checks](../../reports/maintenance/20261012-fawn-labels-load-clock/README.md)
 cover the reduced default through complete rotations, input-held scene completion,
 idle logo recovery and elapsed scene time at a reduced frame rate. Earlier
 [Parcel continuity evidence](../../reports/maintenance/20261012-fawn-parcel-continuity/README.md)

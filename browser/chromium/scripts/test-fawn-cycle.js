@@ -475,23 +475,18 @@ try {
       { polling: 100 },
     );
     assert.equal(await page.locator('.demo-switcher').count(), 0);
-    assert.equal(await page.locator('#count-select').inputValue(), '32768');
+    const defaultCount = viewport.width < 600 ? 16384 : 65536;
+    assert.equal(await page.locator('#count-select').inputValue(), String(defaultCount));
     assert.equal(await page.locator('#steps-select').inputValue(), '4');
     assert.equal(
       await page.evaluate(() => cycleProbe.buffers.get('Cycle parcels 0').size),
-      32768 * 48,
+      defaultCount * 48,
     );
     assert.equal(
       await page.evaluate(() => cycleProbe.buffers.get('Cycle dye 0').size),
-      182 * 182 * 16,
+      defaultCount * 16,
     );
 
-    await page.locator('.details').evaluate((e) => (e.open = true));
-    if (viewport.width < 600) {
-      await page.selectOption('#count-select', '4096');
-      await page.selectOption('#steps-select', '1');
-    }
-    await page.locator('.details').evaluate((e) => (e.open = false));
     await advance(page, 100);
     const initial = await state(page);
     const projection = await page.evaluate(() => {
@@ -535,13 +530,13 @@ try {
       const dispatches = await page.evaluate(() => cycleProbe.workgroups);
       assert.ok(
         dispatches.some(
-          (d) => d.label === 'Cycle handoff 0' && d.groups[0] === Math.ceil((182 * 182) / 128),
+          (d) => d.label === 'Cycle handoff 0' && d.groups[0] === Math.ceil(defaultCount / 128),
         ),
         'Flow-to-film conversion must include the tail cells beyond the parcel count',
       );
       assert.ok(
         dispatches.some(
-          (d) => d.label === 'Cycle handoff 2' && d.groups[0] === Math.ceil((182 * 182) / 128),
+          (d) => d.label === 'Cycle handoff 2' && d.groups[0] === Math.ceil(defaultCount / 128),
         ),
         'Deposit resolution must include all fluid cells',
       );

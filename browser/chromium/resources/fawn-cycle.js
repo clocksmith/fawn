@@ -14,7 +14,12 @@ const graph = document.querySelector('#fps-graph'),
 const clock = createCycleClock(),
   formation = FawnFormation.transition();
 let logoEnabled = FawnFormation.configure(formationSelect);
-FawnFormation.configureWorkload(countSelect, stepsSelect, 'cycle');
+FawnFormation.configureWorkload(
+  countSelect,
+  stepsSelect,
+  'cycle',
+  matchMedia('(max-width: 768px), (pointer: coarse)').matches,
+);
 let device, context, gpu, format;
 let configured = false,
   refreshPending = false;
