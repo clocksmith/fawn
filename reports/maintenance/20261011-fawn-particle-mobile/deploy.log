@@ -1,6 +1,0 @@
-
-> d4da-app@0.1.0 deploy:fawn
-> firebase deploy --config firebase.fawn.json --only hosting --project canvascontext-9da05
-
-
-Error: Failed to authenticate, have you run firebase login?

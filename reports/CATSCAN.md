@@ -30,6 +30,8 @@ Outputs:
 - Claim-indexed, diagnostic, status-only, and scaffolded evidence never conflate.
 - Reports retain workload, provider, hardware, oracle, and source-artifact identity.
 - A summary cannot strengthen the claim class of its inputs.
+- Retention follows [README.md](README.md); routine output and reusable harnesses
+  belong in ignored run storage and owning test/tool directories respectively.
 
 ## Acceptance
 

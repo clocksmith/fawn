@@ -1,7 +1,0 @@
-{
-  "passed": true,
-  "shaderBodiesByteIdentical": true,
-  "previousBundleSha256": "e90ddb142caef7b471239c07273c19eeaafecea548061d91d46ec37f49cc77c5",
-  "regeneratedBundleSha256": "4c49d353ccafebaa4e36397ea5dcd9f49478ac699767e09c42a7ea3862880169",
-  "change": "Formation source hash only; hosting predeploy initially rejected stale provenance and passes after regeneration."
-}

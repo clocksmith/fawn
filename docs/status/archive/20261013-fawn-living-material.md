@@ -1,45 +1,45 @@
 # Fawn hosted demonstrations
 
-[Living logo and material transitions](../../../reports/maintenance/20261013-fawn-living-logo/README.md)
+[Living logo and material transitions](https://github.com/doerun/doe/blob/18d9841be39f4c8263f76905c75c65781da81382/reports/maintenance/20261013-fawn-living-logo/README.md)
 replace static target locking with a silhouette boundary. Live vector fields,
 parcel advection and carried material continue during branding. Fluid lighting
 interpolates before exposure and preserves visible film without requiring relief.
 The source-bound diagnostic compares live GPU state and transition pixels against
 the retained frozen/dark baseline.
-[Deployment verification](../../../reports/maintenance/20261013-fawn-living-logo/deployment.json)
+[Deployment verification](https://github.com/doerun/doe/blob/18d9841be39f4c8263f76905c75c65781da81382/reports/maintenance/20261013-fawn-living-logo/deployment.json)
 binds the live files and hosted checks. Scene timing and footer controls remain unchanged.
 [Prior static-dwell status](20261013-fawn-static-dwell.md) is retained.
 
-[Magnetic release](../../../reports/maintenance/20261013-fawn-magnetic-release/README.md)
+[Magnetic release](https://github.com/doerun/doe/blob/18d9841be39f4c8263f76905c75c65781da81382/reports/maintenance/20261013-fawn-magnetic-release/README.md)
 softens attraction and adds a bounded outward pulse charged by holding. Mouse
 and touch cancellation do not trigger it. Its retained clock-deferral evidence
 predates the cycle timing repair above.
 
-[Softer Particle input](../../../reports/maintenance/20261013-fawn-particle-soften/report.json)
+[Softer Particle input](https://github.com/doerun/doe/blob/18d9841be39f4c8263f76905c75c65781da81382/reports/maintenance/20261013-fawn-particle-soften/report.json)
 reduces the Particle press multiplier while retaining outward motion. Magnetic
 attraction and hover keep their prior strengths; signed forces blend continuously
 between scenes. Software WebGPU readback verifies direction and finite state.
 
-[Settlement evidence](../../../reports/maintenance/20261013-fawn-settlement/README.md)
+[Settlement evidence](https://github.com/doerun/doe/blob/18d9841be39f4c8263f76905c75c65781da81382/reports/maintenance/20261013-fawn-settlement/README.md)
 retains the slow-frame mismatch between the formation envelope and actual parcel
 positions. Parcel gathering now uses the same capped visible time as formation,
 while fluid integration retains its stability limit. Recovery is exponential in
 elapsed time and strength. Input recovery and repeated cycle checks are software
 WebGPU diagnostics; physical Safari and performance qualification remain separate.
 
-[Pointer-direction checks](../../../reports/maintenance/20261013-fawn-pointer-direction/report.json)
+[Pointer-direction checks](https://github.com/doerun/doe/blob/18d9841be39f4c8263f76905c75c65781da81382/reports/maintenance/20261013-fawn-pointer-direction/report.json)
 confirm that pressed Magnetic input attracts parcels while pressed Particle input
 repels them. Direction blends with the active scene weights; gentler hover and
 stronger presses remain. Actual parcel readback checks direction and finite state
 through software WebGPU, without claiming physical-device or Safari qualification.
 
-[Pointer-strength checks](../../../reports/maintenance/20261013-fawn-pointer-strength/report.json)
+[Pointer-strength checks](https://github.com/doerun/doe/blob/18d9841be39f4c8263f76905c75c65781da81382/reports/maintenance/20261013-fawn-pointer-strength/report.json)
 verify gentler hover across the hosted cycle and stronger pressed Magnetic and
 Particle input, with the existing Flow press force and pointer radii preserved.
 Actual pointer events, release/leave and finite simulation state are checked
 through software WebGPU; physical-device performance remains separate.
 
-[Cycle continuity checks](../../../reports/maintenance/20261013-fawn-cycle-continuity/README.md)
+[Cycle continuity checks](https://github.com/doerun/doe/blob/18d9841be39f4c8263f76905c75c65781da81382/reports/maintenance/20261013-fawn-cycle-continuity/README.md)
 retain the preceding abrupt-release failure and repeated wraparound checks.
 Scheduled formation release follows the effect blend; delayed frames cannot skip
 the visible handoff. Flow's background shimmer is brighter without changing its
@@ -61,32 +61,32 @@ moves each parcel from its accepted position toward an SVG target at a staggered
 rate. It does not shrink a rectangle, change the camera, or mask a grid into the
 logo. The circular initial reservoir extends beyond square viewport corners.
 
-[Flow material correction](../../../reports/maintenance/20261013-fawn-natural-shimmer/review.json)
+[Flow material correction](https://github.com/doerun/doe/blob/18d9841be39f4c8263f76905c75c65781da81382/reports/maintenance/20261013-fawn-natural-shimmer/review.json)
 restores softer metallic light, reduces chroma and separates ambient shimmer time
 from fluid color time. Same-input material comparisons and rest/pause checks
 remain software WebGPU artwork evidence.
 
-[Transition and background-shimmer checks](../../../reports/maintenance/20261013-fawn-transition-background/review.json)
+[Transition and background-shimmer checks](https://github.com/doerun/doe/blob/18d9841be39f4c8263f76905c75c65781da81382/reports/maintenance/20261013-fawn-transition-background/review.json)
 cover gentler scene blending, distinct automatic/interaction settling, ambient
 Flow glints, the visible-time clock and paused rendering. These are software
 WebGPU artwork checks; browser/hardware performance qualification remains separate.
 
-[Current device-default checks](../../../reports/maintenance/20261012-fawn-device-defaults/README.md)
+[Current device-default checks](https://github.com/doerun/doe/blob/18d9841be39f4c8263f76905c75c65781da81382/reports/maintenance/20261012-fawn-device-defaults/README.md)
 cover complete rotations at both selected defaults. The preceding
-[Labels, workload and clock checks](../../../reports/maintenance/20261012-fawn-labels-load-clock/README.md)
+[Labels, workload and clock checks](https://github.com/doerun/doe/blob/18d9841be39f4c8263f76905c75c65781da81382/reports/maintenance/20261012-fawn-labels-load-clock/README.md)
 cover the reduced default through complete rotations, input-held scene completion,
 idle logo recovery and elapsed scene time at a reduced frame rate. Earlier
-[Parcel continuity evidence](../../../reports/maintenance/20261012-fawn-parcel-continuity/README.md)
+[Parcel continuity evidence](https://github.com/doerun/doe/blob/18d9841be39f4c8263f76905c75c65781da81382/reports/maintenance/20261012-fawn-parcel-continuity/README.md)
 contains independent GPU references for all three formations and advection,
 fixed projection during settling, full rotations, buffer reuse, input, pause,
 reset, viewport/DPR changes and terminal failure. The earlier
-[sheet-cycle receipt](../../../reports/maintenance/20261012-fawn-cycle/README.md)
+[sheet-cycle receipt](https://github.com/doerun/doe/blob/18d9841be39f4c8263f76905c75c65781da81382/reports/maintenance/20261012-fawn-cycle/README.md)
 remains historical: its tests did not reject the square/zoom reported by the user.
 This is Chrome artwork evidence, not native Doe, physical-phone or performance
 qualification. D4DA's packager aliases all legacy public demo filenames to the
 unified experience. Standalone source pages remain repository-only benchmarks.
 
-[Responsive canvas and material evidence](../../../reports/maintenance/20261012-fawn-responsive/README.md)
+[Responsive canvas and material evidence](https://github.com/doerun/doe/blob/18d9841be39f4c8263f76905c75c65781da81382/reports/maintenance/20261012-fawn-responsive/README.md)
 reproduces and removes Particles' HTML focus frame, checks backing resolution and
 paused rotation across all hosted pages, and compares brighter Flow pigment on
 identical GPU inputs. Flow uses interpolated relief and mild local contrast;
@@ -95,28 +95,28 @@ checks; the live release manifest below remains the publication authority.
 
 The preceding standalone Flow and Wave pages settled by deforming their active fluid surface into
 the mark, carrying existing color, curls and soap-film relief. The
-[live-material evidence](../../../reports/maintenance/20261012-fawn-live-material/README.md)
+[live-material evidence](https://github.com/doerun/doe/blob/18d9841be39f4c8263f76905c75c65781da81382/reports/maintenance/20261012-fawn-live-material/README.md)
 checks interpolation, unchanged buffers at mode selection, distinct histories,
 rest, interruption, pause and responsive rendering. Flow restores curl-driven
 prisms and brighter background/metallic lighting. Particles is unchanged.
 
-The [earlier seeded-opening and field-painting evidence](../../../reports/maintenance/20261012-fawn-fluid-transitions/README.md)
+The [earlier seeded-opening and field-painting evidence](https://github.com/doerun/doe/blob/18d9841be39f4c8263f76905c75c65781da81382/reports/maintenance/20261012-fawn-fluid-transitions/README.md)
 retains its preceding-source meaning. Both fluid modes now begin from their live
 initial fields; Branded settles at rest rather than seeding a separate opening
 logo. Explicit Reset and Count retain their rebuild behavior. The live release
 manifest below identifies the published source.
 
-[Particle reset evidence](../../../reports/maintenance/20261012-fawn-particle-reset/README.md)
+[Particle reset evidence](https://github.com/doerun/doe/blob/18d9841be39f4c8263f76905c75c65781da81382/reports/maintenance/20261012-fawn-particle-reset/README.md)
 retains the preceding-source gesture leak and corrected reset behavior. Reset
 clears particle input alongside positions and time while preserving pause and
 settings. This is Chrome WebGPU application evidence; the live release manifest
 below identifies the deployed source.
 
-[The original Flow formation evidence](../../../reports/maintenance/20261012-fawn-logo-flow/README.md)
+[The original Flow formation evidence](https://github.com/doerun/doe/blob/18d9841be39f4c8263f76905c75c65781da81382/reports/maintenance/20261012-fawn-logo-flow/README.md)
 retains the earlier noise-to-logo experiment. These application checks do not
 qualify native Doe or the Fawn browser binary.
 
-[Canvas and failure regressions](../../../reports/maintenance/20261011-fawn-canvas-lifecycle/README.md)
+[Canvas and failure regressions](https://github.com/doerun/doe/blob/18d9841be39f4c8263f76905c75c65781da81382/reports/maintenance/20261011-fawn-canvas-lifecycle/README.md)
 retain the default-canvas initialization repair, aspect-preserving device-limit
 scaling, and Chroma terminal resource cleanup. The report separates reproduced
 preceding-source failures, harness corrections, adapter acquisition failures,
@@ -150,7 +150,7 @@ active demo and no instruction subtitle block. Its trigger and dropdown share
 their width and text alignment;
 rows retain touch targets and a current-selection checkmark.
 It switches between Flow (Prismatic Fluids), Wave (Magnetic Fluids),
-and Particles (the particle cycle). [Menu diagnostics](../../../reports/maintenance/20261011-fawn-background-menu/README.md)
+and Particles (the particle cycle). [Menu diagnostics](https://github.com/doerun/doe/blob/18d9841be39f4c8263f76905c75c65781da81382/reports/maintenance/20261011-fawn-background-menu/README.md)
 retain desktop and emulated mobile layout, naming, keyboard and navigation checks.
 Particle Trails and Image Lab are
 excluded from the menu and hosting package, and retained as repository-only
@@ -177,7 +177,7 @@ resolution; the later Flow logo experiment has its own changed-source evidence.
 Pause freezes simulation and shader time; reset and resize can redraw while
 paused. Image Lab renders on demand and reports completed-update latency.
 
-[Alignment application evidence](../../../reports/maintenance/20261005-fawn-demo-pages/README.md)
+[Alignment application evidence](https://github.com/doerun/doe/blob/18d9841be39f4c8263f76905c75c65781da81382/reports/maintenance/20261005-fawn-demo-pages/README.md)
 binds the preceding alignment source to matched GPU state and pixels, allocation/upload counts,
 desktop/mobile controls, pause/reset/resize, image upload recovery, and device
 lifecycle checks. [The standalone-page check](../../../browser/chromium/scripts/test-fawn-demo-pages.mjs)
@@ -186,7 +186,7 @@ artifacts go under `bench/out/fawn-demo-pages/` by default. The
 [prismatic-specific UI check](../../../browser/chromium/scripts/test-fawn-prismatic-controls.mjs)
 remains available for narrower validation.
 
-[Switcher and clock evidence](../../../reports/maintenance/20261005-fawn-demo-switcher/README.md)
+[Switcher and clock evidence](https://github.com/doerun/doe/blob/18d9841be39f4c8263f76905c75c65781da81382/reports/maintenance/20261005-fawn-demo-switcher/README.md)
 binds the switcher-introduction source to navigation, desktop/mobile layout, keyboard dismissal,
 and a real particle cycle. RAF timestamps earlier than initialization now produce
 zero elapsed time instead of negative simulation steps or a negative field phase.
@@ -198,7 +198,7 @@ The main particle page keeps simulated positions in normalized viewport
 coordinates. Its circulating flow and reflective, inward-guided edges prevent
 particles from collapsing into an offscreen corner. Canvas size observation
 updates drawing targets across viewport changes without reseeding particles.
-[Mobile regression evidence](../../../reports/maintenance/20261011-fawn-particle-mobile/README.md)
+[Mobile regression evidence](https://github.com/doerun/doe/blob/18d9841be39f4c8263f76905c75c65781da81382/reports/maintenance/20261011-fawn-particle-mobile/README.md)
 retains the preceding-source failure, GPU state and pixel readback, repeated
 cycles, rotation, and input checks. The [viewport regression](../../../browser/chromium/scripts/test-fawn-particle-mobile.mjs)
 and [independent field oracle](../../../browser/chromium/scripts/test-fawn-particle-fields.mjs)
@@ -217,14 +217,14 @@ completed-frame intervals separately from clamped simulation time.
 Magnetic Fluids uses a critically damped response for magnet position and
 strength across hover, press, drag, release and cancellation. Mouse release
 returns to hover strength; touch release removes the magnet. Pause freezes this
-response with the surface. [Transition diagnostics](../../../reports/maintenance/20261011-fawn-magnetic-transition/README.md)
+response with the surface. [Transition diagnostics](https://github.com/doerun/doe/blob/18d9841be39f4c8263f76905c75c65781da81382/reports/maintenance/20261011-fawn-magnetic-transition/README.md)
 bind the input response to an independent ODE reference, GPU fluid state and
 desktop/emulated mobile controls.
 
 The magnetic surface has a black body with spectral color concentrated in curved
 reflection bands. Surface-coordinate gradients preserve the appearance across
 simulation grid sizes; normalized lighting avoids a bright wash over flat areas.
-[Material diagnostics](../../../reports/maintenance/20261011-fawn-magnetic-material/README.md)
+[Material diagnostics](https://github.com/doerun/doe/blob/18d9841be39f4c8263f76905c75c65781da81382/reports/maintenance/20261011-fawn-magnetic-material/README.md)
 retain matched-field GPU pixel comparisons and the existing interaction checks.
 The fluid simulation and magnet response are unchanged by this material revision.
 
@@ -232,11 +232,11 @@ Prismatic Fluids consumes pointer displacement once as an immediate stroke
 impulse. Velocity and dye cover the segment between sampled pointer positions;
 presses add a stronger impulse and color burst, including taps between frames.
 Input history no longer decays into later frames, and only one rendering frame
-may remain in flight. [Response diagnostics](../../../reports/maintenance/20261011-fawn-prismatic-response/README.md)
+may remain in flight. [Response diagnostics](https://github.com/doerun/doe/blob/18d9841be39f4c8263f76905c75c65781da81382/reports/maintenance/20261011-fawn-prismatic-response/README.md)
 retain preceding-source comparisons, first-frame GPU fluid state, mouse/touch
 release and cancellation, and the existing control checks.
 
-[Retained application evidence](../../../reports/maintenance/20261005-fawn-demo-optimization/README.md)
+[Retained application evidence](https://github.com/doerun/doe/blob/18d9841be39f4c8263f76905c75c65781da81382/reports/maintenance/20261005-fawn-demo-optimization/README.md)
 binds the source HTML to physical Chrome GPU state comparisons, screenshot
 identity, field-transition checks, controls, lifecycle checks, and alternating
 before/after observations. These are application diagnostics on the visitor's
@@ -244,7 +244,7 @@ browser WebGPU backend. They do not qualify a forced-Doe Chromium release or
 establish a portable optimality claim. Tail variation remains in the raw report.
 
 Flow’s shared parcel material includes fine prismatic glints driven by its existing
-material and visible-time clock. [Matched-frame artwork comparisons](../../../reports/maintenance/20261013-fawn-flow-shimmer/comparison.json)
+material and visible-time clock. [Matched-frame artwork comparisons](https://github.com/doerun/doe/blob/18d9841be39f4c8263f76905c75c65781da81382/reports/maintenance/20261013-fawn-flow-shimmer/comparison.json)
 retain desktop and emulated-phone software WebGPU evidence; hosted deployment and
 physical-device performance are separate.
 

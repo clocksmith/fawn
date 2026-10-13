@@ -187,6 +187,10 @@ existing charter chain and architecture manifest.
 
 ## Documentation drift prevention
 
+- Evidence retention follows [reports/README.md](reports/README.md). Routine
+  checks and debugging output go to ignored `bench/out/`; a successful test or
+  visual tweak does not require a report folder, README, or archived status entry.
+  Reusable harnesses belong in the owning test/tool directory, not reports.
 - never embed counts, percentages, or benchmark results in prose; reference the artifact path
 - structural claims ("Doe has a native DXIL emitter") are validated by CI against file existence
 - when a doc needs a specific number, use the pattern: "See `path/to/artifact.json` for current count."
@@ -206,7 +210,8 @@ existing charter chain and architecture manifest.
 - Use the [documentation ownership map](docs/INDEX.md#canonical-strategy).
   Consolidate repeated sections into their canonical owner before considering
   file deletion. Preserve concrete architecture, installation, and contract
-  details, plus evidence reports and rejected experiments.
+  details and admitted evidence under the retention policy. Historical routine
+  runs may leave the working tree when their immutable Git history remains linked.
 
 ## File size
 
@@ -301,6 +306,8 @@ For each change set, verify:
   declared fixed-operation controls or substantiated application-level elimination,
   hardware scope, and the fairness audit for any unusually large speedup
 - the status log (`docs/status.md` plus the relevant topical shard) records remaining placeholders, temporary methodology choices, and follow-up work
+- update live status when a boundary or blocker changes; do not archive routine
+  edits or passing checks just to document activity
 
 ## Pick the real fix
 

@@ -237,3 +237,5 @@ wio_flows_tmpdir.*/
 # invoked without a scratch cwd (e.g. `Relu`). Same root cause as the
 # blocks above; ignore as defense in depth.
 /Relu
+# Routine Fawn UI iterations are run output, not permanent maintenance dossiers.
+reports/maintenance/*-fawn-*/
