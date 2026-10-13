@@ -52,3 +52,14 @@ qualification. Hosted release identity remains `https://canvascontext.com/releas
   FPS counter, Settings and GitHub on one row; physical gathering/dwell still
   passes across every effect at desktop and narrow mobile sizes. This follows
   screenshot review that exposed wrapping after the initial counter updated.
+
+- [`deployment.json`](deployment.json): successful preview and production
+  publication, exact packaged/live file identity and passing hosted browser
+  checks, including footer controls, aliases and mobile workload selection.
+  [`verify-hosted.mjs`](verify-hosted.mjs) is the byte-identity producer, run
+  from D4DA against its generated package.
+
+- [`defaults.json`](defaults.json): the final source and exact producer pass
+  physical gathering and visible dwell for every effect with the normal
+  desktop and mobile counts. Screenshots were visually checked locally and
+  remain outside version control.
