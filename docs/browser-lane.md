@@ -2,7 +2,13 @@
 
 This is a routing note, not a task list or status log.
 
-Browser replacement is the destination in the [strategy](thesis.md). Its bounded
+Fawn is the integrated durable browser-work product in the [strategy](thesis.md).
+The [workspace contract](fawn-workspace-contract.md) governs its selected shared
+service above stock Chromium/CDP/Playwright. Its roadmap lives in `fawnWorkspace`
+in [the strategy projection](../config/doe-product-strategy.json); native runtime
+wins are not prerequisites. Workspace implementation and acceptance remain absent.
+
+Browser replacement is an optional deeper capability. Its bounded
 Chromium milestone follows ordinary execution, independent framework integration,
 and binding application transfer. Preserve WebGPU behavior through validation and
 process boundaries; broader adoption also requires compatibility, hostile-input
@@ -50,6 +56,12 @@ does not establish acceleration; product acceptance still requires correct,
 unchanged applications receiving a repeatable material advantage.
 
 ## Four-lane Fawn-Doe experimental matrix
+
+These retained runtime/shell experiments do not establish workspace authority,
+safe external submissions or durable recovery. The prospective workspace
+comparison uses the same stock browser and runtime for the shared-service
+treatment and a competent Chromium/Playwright baseline. Legacy receipts retain
+their original meaning; neither shell gains nor GPU recovery qualify the service.
 
 The vertical product thesis evaluates four distinct operational lanes:
 
@@ -104,7 +116,8 @@ an unchanged externally reachable application.
    Record an end-to-end challenger outcome only; it does not bypass the B/A,
    C/B, or D/C attribution gates.
 6. **If K0 wins shared tasks and customers do not value differentiation:**
-   Stop treating Fawn as a product.
+   Reject the measured shell-product claim; this cannot promote or qualify the
+   independently governed workspace service.
 7. **If B does not beat A:**
    Fawn has not earned standalone shell value.
 8. **If C does not beat B:**

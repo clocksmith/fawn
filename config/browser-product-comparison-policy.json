@@ -1,7 +1,7 @@
 {
   "$schema": "browser-product-comparison-policy.schema.json",
-  "schemaVersion": 2,
-  "policyId": "fawn-external-product-comparison-v2",
+  "schemaVersion": 3,
+  "policyId": "fawn-external-product-comparison-v3",
   "authority": {
     "strategyPath": "docs/thesis.md",
     "browserLanePath": "docs/browser-lane.md",
@@ -9,12 +9,12 @@
     "claimStatePath": "reports/claim-index.json"
   },
   "noRegretTrunk": {
-    "definition": "Work required under every plausible strategy; it is not an assurance of commercial success.",
+    "definition": "The selected Fawn product starts with shared durable browser work above Chromium. Independent native application adoption remains a separate product track; neither is a prerequisite for the other.",
     "workItems": [
       {
-        "id": "doeruntime-application-adoption",
-        "requiredOutcome": "An unchanged external non-Doppler application compares I0, I1, W0, D0 and eligible P0, adopts DoeRuntime for a predeclared material advantage, and retains it across another release or workload.",
-        "authorityPath": "docs/product-strategy-contract.md"
+        "id": "fawn-durable-workspace",
+        "requiredOutcome": "The shared service passes durable authority and uncertain-action recovery acceptance across reusable workflows, then establishes complete-task value against competent stock Chromium/Playwright. Native runtime wins are not a prerequisite.",
+        "authorityPath": "docs/fawn-workspace-contract.md"
       }
     ]
   },
@@ -98,9 +98,9 @@
     },
     {
       "forkId": "fawn-product",
-      "decisionAuthorityPath": "docs/browser-lane.md",
-      "fundWhen": "A clean-install candidate and frozen suites support measurement, B beats A, and the customer values differentiation after K0 is measured on the shared suite.",
-      "stopWhen": "K0 wins shared tasks and customers do not value the differentiation suite, or B does not beat A."
+      "decisionAuthorityPath": "docs/fawn-workspace-contract.md",
+      "fundWhen": "Implement and independently qualify the selected shared workspace service above stock Chromium, then compare complete workflows against competent Chromium/Playwright; native runtime wins are not prerequisites.",
+      "stopWhen": "Unsafe authority or recovery blocks acceptance; failure to improve complete workflows rejects product-value claims. K0 outcomes retain their external-comparator scope."
     },
     {
       "forkId": "doeruntime-browser",
@@ -116,7 +116,7 @@
     }
   ],
   "stopConditions": [
-    "Do not treat Fawn as a product when K0 wins shared tasks and customers do not value differentiation.",
+    "Reject the measured shell-product claim when K0 wins shared tasks and customers do not value differentiation; workspace acceptance remains independently governed.",
     "Do not grant Fawn shell value unless B beats A.",
     "Do not grant DoeRuntime browser ownership unless C beats B for the exact measured tuple.",
     "Do not continue Direct Protocol funding unless D beats C on the declared total task outcome."
@@ -131,7 +131,17 @@
     "bench/fawn_matrix/k0_cli.py",
     "bench/tests/test_fawn_k0_connector.py",
     "reports/claim-index.json",
-    "docs/status/runtime-backends-and-bench.md"
+    "docs/status/runtime-backends-and-bench.md",
+    "docs/fawn-workspace-contract.md",
+    "docs/status/fawn-workspace.md"
   ],
+  "workspaceComparison": {
+    "contractPath": "docs/fawn-workspace-contract.md",
+    "strategyPath": "config/doe-product-strategy.json#fawnWorkspace",
+    "control": "competent-stock-chromium-playwright",
+    "treatment": "same-browser-and-runtime-with-fawn-workspace-service",
+    "scope": "Prospective independent workflow comparison; existing A/B/C/D and K0 receipts retain their meanings and cannot satisfy it.",
+    "requiresNativeRuntimeWins": false
+  },
   "claimBoundary": "This policy defines experiments and decisions. Until schema-valid physical receipts exist, K0 and A/B/C/D have no promoted comparative product outcome."
 }

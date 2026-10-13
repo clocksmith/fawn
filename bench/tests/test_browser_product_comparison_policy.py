@@ -50,11 +50,11 @@ class BrowserProductComparisonPolicyTests(unittest.TestCase):
             surfaces["doeproof"]["portfolioRole"], "product-feature"
         )
         self.assertEqual(
-            surfaces["fawn"]["portfolioRole"], "experimental-distribution"
+            surfaces["fawn"]["portfolioRole"], "primary-product"
         )
         surfaces["fawn"]["portfolioRole"] = "secondary-product"
         self.assertFalse(validator.is_valid(strategy))
-        surfaces["fawn"]["portfolioRole"] = "experimental-distribution"
+        surfaces["fawn"]["portfolioRole"] = "primary-product"
         surfaces["doeproof"]["portfolioRole"] = "primary-product"
         self.assertFalse(validator.is_valid(strategy))
 
@@ -139,12 +139,15 @@ class BrowserProductComparisonPolicyTests(unittest.TestCase):
         gate["requiredEvidence"] = ["paid-qualification"]
         self.assertFalse(validator.is_valid(strategy))
 
-    def test_primary_outcome_is_runtime_application_adoption(self) -> None:
+    def test_selected_browser_outcome_is_durable_workspace(self) -> None:
         policy = _load_policy()
 
         self.assertEqual(
             [item["id"] for item in policy["noRegretTrunk"]["workItems"]],
-            ["doeruntime-application-adoption"],
+            ["fawn-durable-workspace"],
+        )
+        self.assertFalse(
+            policy["workspaceComparison"]["requiresNativeRuntimeWins"]
         )
 
     def test_internal_lanes_preserve_abcd_causal_order(self) -> None:

@@ -44,13 +44,15 @@ adoption, and material replacement advantage remain unestablished.
 Compiler correctness, runtime performance, and application benefit require
 separate evidence. See the [claim index](reports/claim-index.json),
 [backend evidence](docs/backend-evidence-matrix.md), and [current status](docs/status.md).
-Native results do not qualify browser replacement. Fawn remains a
-[retained browser integration](browser/chromium/README.md).
+Native results do not qualify browser replacement. Fawn's selected
+[durable workspace contract](docs/fawn-workspace-contract.md) has no implemented
+shared service or behavioral acceptance yet. The optional
+[browser runtime integration](browser/chromium/README.md) retains separate evidence.
 
 ## Read next
 
 - [Architecture](docs/architecture.md) — subsystem boundaries and execution details.
-- [Goals](GOALS.md) — independent compiler/runtime adoption and Vulkan priorities.
+- [Goals](GOALS.md) — Fawn durable browser work and independent compiler/runtime adoption.
 - [Contributing](AGENTS.md) — repository workflow and component ownership.
 
 ## License

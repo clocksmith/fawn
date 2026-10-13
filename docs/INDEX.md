@@ -9,7 +9,7 @@ evidence boundaries are clear.
 
 ## Canonical strategy
 
-- [`../GOALS.md`](../GOALS.md): the eight product goals, constraints, and exclusions
+- [`../GOALS.md`](../GOALS.md): product goals, constraints, and exclusions
 - [`../INTENT.md`](../INTENT.md): enforceable system invariants
 - [`../CATSCAN.md`](../CATSCAN.md): root component ownership and acceptance boundaries
 - [`../AGENTS.md`](../AGENTS.md): contributor instructions and canonical-policy discovery
@@ -81,6 +81,10 @@ of repeated prose does not delete them.
 
 ## Browser
 
+- [`fawn-workspace-contract.md`](fawn-workspace-contract.md): durable human/agent
+  workspace authority, action recovery, reusable workflows and prospective acceptance
+- [`status/fawn-workspace.md`](status/fawn-workspace.md): missing implementation
+  and acceptance boundary, independent of artwork and runtime integration
 - [`browser-lane.md`](browser-lane.md): A/B/C/D attribution plus the separate
   Cloudflare Kitesurf K0 external-product comparator
 - [`fawn-fork-maintenance-policy.md`](fawn-fork-maintenance-policy.md)

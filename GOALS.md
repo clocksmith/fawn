@@ -2,14 +2,28 @@
 
 ## Mission and thesis
 
-**GPU programs should be ordinary software: executable, inspectable, and portable across hardware.**
+**Build Fawn as the integrated environment where humans and agents perform
+durable browser work. GPU programs remain independently useful software:
+executable, inspectable, and portable across hardware.**
 
-Doe develops an independently usable WGSL compiler and native WebGPU runtime.
+Fawn begins above stock Chromium through a trusted workspace service and narrow
+CDP/Playwright adapters. Doe also develops an independently usable WGSL compiler
+and native WebGPU runtime; neither their adoption nor Fawn requires the other.
 This file owns the product goals, constraints, and exclusions. These are desired
 outcomes, not claims of qualified support or completed adoption.
 [The thesis](docs/thesis.md) owns the rationale and execution sequence.
 
 ## Desired outcomes
+
+Fawn provides one reusable workspace contract spanning observation, action,
+ownership and recovery. Workflow adapters share this machinery. Durable authority
+and honest uncertainty precede product-value claims; browser modifications require
+demonstrated authority, visibility or efficiency unavailable through existing
+interfaces. [The workspace contract](docs/fawn-workspace-contract.md) owns its
+requirements; the [strategy](config/doe-product-strategy.json) owns its ordered
+acceptance steps. These are intended outcomes, not implemented service claims.
+
+The independent compiler and runtime retain these outcomes:
 
 1. **Faster unchanged applications.** Replace a supported application's WebGPU
    provider without changing its shaders, models, inputs, application logic, or
@@ -70,16 +84,22 @@ outcomes, not claims of qualified support or completed adoption.
 - Diagnostics: report the best established source, validation, resource,
   submission, or native failure location. Never invent a shader location for an
   unattributed hardware fault.
-- Work selection: new compiler opportunities and browser replacement require
+- Work selection: Fawn workspace implementation above Chromium is selected,
+  independently of native runtime wins. New compiler opportunities and browser
+  replacement require
   explicit selection. Closed browser optimizer experiments remain closed.
   [Ordered milestones](docs/thesis.md#ordered-execution-milestones) do not block
   correctness repairs, independent installation, or technical release.
 
 ## Explicit exclusions
 
-Doe does not build browser user interfaces, Flutter engine replacements,
+Fawn owns its integrated workspace interface and controlled automation. Shared
+workspace machinery excludes workflow-specific planning and model semantics;
+the compiler/runtime exclude browser policy. Doe does not build Flutter engine
+replacements,
 peer-to-peer compute protocols, distributed cloud training or multi-node
-scheduling, or a general application/agent orchestration framework. Universal
+scheduling, or unrestricted application/agent orchestration outside the Fawn
+workspace contract. Universal
 WebGPU compatibility, universal Dawn replacement, and universal accelerator
 support are not promises; any expanded surface needs its own admission evidence.
 
