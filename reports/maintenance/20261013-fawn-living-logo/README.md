@@ -20,8 +20,9 @@ remain active throughout branding. The boundary is resident, updated on resize,
 and uses the supported storage-binding budget.
 
 Fluid shading blends carried lighting before exposure and includes film pigment
-and ambient illumination even on flat relief. Particle radius and appearance
-continue interpolating through the same population. No scene reset, CPU readback,
+and ambient illumination even on flat relief. Surface and point kernels interpolate at each live parcel position, preserving
+coverage as point footprints replace the broader surface footprint. Appearance
+continues interpolating through the same population. No scene reset, CPU readback,
 new animation canvas, or model/provider behavior is introduced.
 The existing scene order, cadence, input attenuation, keyboard controls and footer
 are preserved. Versioned policies own the new boundary and lighting parameters.
@@ -47,3 +48,12 @@ physical-phone, Safari or performance qualification.
   retention and transition pixels on desktop and narrow mobile sizes.
 - [`integration.json`](integration.json) retains independent shader references,
   live branded/tangent advection and the existing complete lifecycle journey.
+
+- [`footprint-dip-failure.json`](footprint-dip-failure.json) retains the normal
+  desktop-count rejection: shrinking a single splat radius lost coverage during
+  the film-to-point transition. Interpolated endpoint kernels repair that boundary.
+
+- [`footprints.json`](footprints.json) checks the corrected kernel interpolation
+  alongside live branded motion and all transition pixels. The earlier integration
+  receipt predates this rendering correction; its numerical/lifecycle scope is
+  preserved, while this receipt binds the corrected rendering source.

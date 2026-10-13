@@ -1,6 +1,6 @@
 // Surface and point appearances reconstruct the same independently moving parcels.
 const PARCEL_RENDER_POLICY = Object.freeze({
-  version: 6,
+  version: 7,
   accumulationCapacity: 4096,
   materialBound: 8,
   fluidRadiusCells: 2.2,
@@ -36,7 +36,13 @@ struct Out { @builtin(position) position:vec4<f32>, @location(0) local:vec2<f32>
 }
 struct Moments { @location(0) color:vec4<f32>, @location(1) geometry:vec4<f32> }
 @fragment fn fs(in:Out)->Moments {
- let r2=dot(in.local,in.local);let kernel=pow(max(0.0,1.0-r2),2.0)*u.view.w;
+ let r2=dot(in.local,in.local);
+ let fluidScale=u.view.z/max(u.material.z,0.000001);
+ let pointScale=u.view.z/max(u.material.y,0.000001);
+ let fluidKernel=pow(max(0.0,1.0-r2*fluidScale*fluidScale),2.0);
+ let pointKernel=pow(max(0.0,1.0-r2*pointScale*pointScale),2.0);
+ // Blend both endpoint footprints at the same live position, preserving transition coverage.
+ let kernel=mix(fluidKernel,pointKernel,u.theme.z)*u.view.w;
  var out:Moments;out.color=vec4<f32>(in.color*kernel,kernel);out.geometry=in.material*kernel;return out;
 }
 `;
@@ -175,7 +181,7 @@ function createParcelRenderer(device, canvas, format, count, parcels) {
     const side = Math.max(canvas.clientWidth, canvas.clientHeight, 1);
     const fluidRadius = (2 / Math.sqrt(count)) * PARCEL_RENDER_POLICY.fluidRadiusCells;
     const particleRadius = (PARCEL_RENDER_POLICY.particleRadiusPx * 2) / side;
-    const radius = fluidRadius + (particleRadius - fluidRadius) * weights[2];
+    const radius = weights[2] === 1 ? particleRadius : Math.max(fluidRadius, particleRadius);
     const normalization = Math.min(1, PARCEL_RENDER_POLICY.accumulationCapacity / count);
     device.queue.writeBuffer(
       uniform,
@@ -191,8 +197,8 @@ function createParcelRenderer(device, canvas, format, count, parcels) {
         ...weights,
         0,
         shimmerTime,
-        0,
-        0,
+        particleRadius,
+        fluidRadius,
         0,
       ]),
     );

@@ -1,0 +1,622 @@
+{
+  "passed": false,
+  "baseline": null,
+  "harnessSha256": "30139af69b8ba729b229bae51e5f90426d37ddffe95fdf1d52d7e2deb94c3ba0",
+  "classification": "Software WebGPU continuity diagnostic; no physical GPU, Safari or performance qualification",
+  "sources": [
+    {
+      "file": "fawn-cycle.js",
+      "sha256": "4a909f02a4c2b5ca7280ff82e74b8f683efcef22b024aa724d304d2ce8acf4c1"
+    },
+    {
+      "file": "fawn-cycle-clock.js",
+      "sha256": "bfddcd36e5239275a6cb63357803988a25fdf7c7106b6765a2fef968a2e31dca"
+    },
+    {
+      "file": "fawn-cycle-gpu.js",
+      "sha256": "74ffbef7c9c46128d3200dedf8d32695573f305c26a70571322804c1abc511be"
+    },
+    {
+      "file": "fawn-formation.js",
+      "sha256": "1884541f507e4f3350207f4972fa95f33248e96c90f6b6c0ebc7019e7cc61fd1"
+    },
+    {
+      "file": "fawn-parcels.js",
+      "sha256": "887229e508dc031efd61ec3b115a80e84c10bbf8d09a03748a4a92c22de045e6"
+    },
+    {
+      "file": "fawn-parcel-renderer.js",
+      "sha256": "e2368b332e27c38f08f2d0bc2d55121e47634316fc4c9e7d83e2f88b8b9bf2a3"
+    },
+    {
+      "file": "fawn-cycle-transfers.js",
+      "sha256": "2b82e3b8014b548a369e3712b76a2240737bdb80ce4142013e3a19a965b404f1"
+    },
+    {
+      "file": "fawn-shaders.js",
+      "sha256": "b4707394916fda87a3dfadb041928610e9e7ef255898d69ed95644b7266c7898"
+    },
+    {
+      "file": "fawn-cycle.html",
+      "sha256": "e44a840e9fa890e9cd49a90dae8cefa29ed2b88de05b6b2b3ff1c9241f0230c0"
+    }
+  ],
+  "cases": [
+    {
+      "viewport": {
+        "width": 640,
+        "height": 400
+      },
+      "count": 65536,
+      "scenes": [
+        {
+          "effect": "Flows",
+          "inside": 1,
+          "heldInside": 1,
+          "motion": {
+            "meanDistance": 0.009238365316405742,
+            "maxDistance": 0.021529188866581884,
+            "materialChange": 0.16298673490759286
+          },
+          "gatheredPixels": {
+            "meanLuminance": 0.09941029691334362,
+            "litFraction": 0.260498046875
+          },
+          "heldPixels": {
+            "meanLuminance": 0.09450772212653649,
+            "litFraction": 0.24195149739583333
+          },
+          "samples": [
+            {
+              "elapsed": 4.849999904632568,
+              "weights": [
+                0.9779996871948242,
+                0.02200029417872429,
+                0
+              ],
+              "pixels": {
+                "meanLuminance": 0.09109047781355989,
+                "litFraction": 0.2279541015625
+              }
+            },
+            {
+              "elapsed": 5.349999904632568,
+              "weights": [
+                0.7801491618156433,
+                0.21985085308551788,
+                0
+              ],
+              "pixels": {
+                "meanLuminance": 0.07945873914297986,
+                "litFraction": 0.195361328125
+              }
+            },
+            {
+              "elapsed": 5.75,
+              "weights": [
+                0.5,
+                0.5,
+                0
+              ],
+              "pixels": {
+                "meanLuminance": 0.06995577279924445,
+                "litFraction": 0.18794759114583334
+              }
+            },
+            {
+              "elapsed": 6.25,
+              "weights": [
+                0.16308000683784485,
+                0.8369200229644775,
+                0
+              ],
+              "pixels": {
+                "meanLuminance": 0.06808402555010244,
+                "litFraction": 0.21486002604166668
+              }
+            },
+            {
+              "elapsed": 6.75,
+              "weights": [
+                0.008559999987483025,
+                0.9914399981498718,
+                0
+              ],
+              "pixels": {
+                "meanLuminance": 0.10463988467636316,
+                "litFraction": 0.33251953125
+              }
+            },
+            {
+              "elapsed": 7.050000190734863,
+              "weights": [
+                0,
+                1,
+                0
+              ],
+              "pixels": {
+                "meanLuminance": 0.1127689780689353,
+                "litFraction": 0.3531901041666667
+              }
+            }
+          ]
+        },
+        {
+          "effect": "Magnets",
+          "inside": 1,
+          "heldInside": 1,
+          "motion": {
+            "meanDistance": 0.015254441878814671,
+            "maxDistance": 0.15159785908554915,
+            "materialChange": 0.4098881319709771
+          },
+          "gatheredPixels": {
+            "meanLuminance": 0.049317494076741394,
+            "litFraction": 0.18274739583333333
+          },
+          "heldPixels": {
+            "meanLuminance": 0.045504906166966376,
+            "litFraction": 0.16681315104166666
+          },
+          "samples": [
+            {
+              "elapsed": 11.850000381469727,
+              "weights": [
+                0,
+                0.9779996871948242,
+                0.02200029417872429
+              ],
+              "pixels": {
+                "meanLuminance": 0.04103547319234365,
+                "litFraction": 0.15192057291666666
+              }
+            },
+            {
+              "elapsed": 12.350000381469727,
+              "weights": [
+                0,
+                0.7801491618156433,
+                0.21985085308551788
+              ],
+              "pixels": {
+                "meanLuminance": 0.034702821001815855,
+                "litFraction": 0.1206787109375
+              }
+            },
+            {
+              "elapsed": 12.75,
+              "weights": [
+                0,
+                0.5,
+                0.5
+              ],
+              "pixels": {
+                "meanLuminance": 0.02923466113920711,
+                "litFraction": 0.08446451822916666
+              }
+            },
+            {
+              "elapsed": 13.25,
+              "weights": [
+                0,
+                0.16308000683784485,
+                0.8369200229644775
+              ],
+              "pixels": {
+                "meanLuminance": 0.02349738507200964,
+                "litFraction": 0.04596354166666667
+              }
+            },
+            {
+              "elapsed": 13.75,
+              "weights": [
+                0,
+                0.008559999987483025,
+                0.9914399981498718
+              ],
+              "pixels": {
+                "meanLuminance": 0.036849162607173774,
+                "litFraction": 0.0858154296875
+              }
+            },
+            {
+              "elapsed": 14.050000190734863,
+              "weights": [
+                0,
+                0,
+                1
+              ],
+              "pixels": {
+                "meanLuminance": 0.044170965143642126,
+                "litFraction": 0.108251953125
+              }
+            }
+          ]
+        },
+        {
+          "effect": "Particles",
+          "inside": 1,
+          "heldInside": 1,
+          "motion": {
+            "meanDistance": 0.011817888708812587,
+            "maxDistance": 0.05978859939404134,
+            "materialChange": 0.1336241043834081
+          },
+          "gatheredPixels": {
+            "meanLuminance": 0.022033645048274084,
+            "litFraction": 0.031388346354166666
+          },
+          "heldPixels": {
+            "meanLuminance": 0.020570106892124018,
+            "litFraction": 0.024300130208333333
+          },
+          "samples": [
+            {
+              "elapsed": 18.850000381469727,
+              "weights": [
+                0.02200029417872429,
+                0,
+                0.9779996871948242
+              ],
+              "pixels": {
+                "meanLuminance": 0.020641283528653073,
+                "litFraction": 0.023046875
+              }
+            },
+            {
+              "elapsed": 19.350000381469727,
+              "weights": [
+                0.21985085308551788,
+                0,
+                0.7801491618156433
+              ],
+              "pixels": {
+                "meanLuminance": 0.03051153289676524,
+                "litFraction": 0.031103515625
+              }
+            },
+            {
+              "elapsed": 19.75,
+              "weights": [
+                0.5,
+                0,
+                0.5
+              ],
+              "pixels": {
+                "meanLuminance": 0.0456106294487706,
+                "litFraction": 0.04480794270833333
+              }
+            },
+            {
+              "elapsed": 20.25,
+              "weights": [
+                0.8369200229644775,
+                0,
+                0.16308000683784485
+              ],
+              "pixels": {
+                "meanLuminance": 0.06406601856112935,
+                "litFraction": 0.06195475260416667
+              }
+            },
+            {
+              "elapsed": 20.75,
+              "weights": [
+                0.9914399981498718,
+                0,
+                0.008559999987483025
+              ],
+              "pixels": {
+                "meanLuminance": 0.07325556576169964,
+                "litFraction": 0.09916178385416667
+              }
+            },
+            {
+              "elapsed": 21.049999237060547,
+              "weights": [
+                1,
+                0,
+                0
+              ],
+              "pixels": {
+                "meanLuminance": 0.07375690303957813,
+                "litFraction": 0.103662109375
+              }
+            }
+          ]
+        }
+      ],
+      "issues": [
+        "Black dip in Magnets transition: [{\"elapsed\":11.850000381469727,\"weights\":[0,0.9779996871948242,0.02200029417872429],\"pixels\":{\"meanLuminance\":0.04103547319234365,\"litFraction\":0.15192057291666666}},{\"elapsed\":12.350000381469727,\"weights\":[0,0.7801491618156433,0.21985085308551788],\"pixels\":{\"meanLuminance\":0.034702821001815855,\"litFraction\":0.1206787109375}},{\"elapsed\":12.75,\"weights\":[0,0.5,0.5],\"pixels\":{\"meanLuminance\":0.02923466113920711,\"litFraction\":0.08446451822916666}},{\"elapsed\":13.25,\"weights\":[0,0.16308000683784485,0.8369200229644775],\"pixels\":{\"meanLuminance\":0.02349738507200964,\"litFraction\":0.04596354166666667}},{\"elapsed\":13.75,\"weights\":[0,0.008559999987483025,0.9914399981498718],\"pixels\":{\"meanLuminance\":0.036849162607173774,\"litFraction\":0.0858154296875}},{\"elapsed\":14.050000190734863,\"weights\":[0,0,1],\"pixels\":{\"meanLuminance\":0.044170965143642126,\"litFraction\":0.108251953125}}]"
+      ]
+    },
+    {
+      "viewport": {
+        "width": 300,
+        "height": 500
+      },
+      "count": 16384,
+      "scenes": [
+        {
+          "effect": "Flows",
+          "inside": 1,
+          "heldInside": 1,
+          "motion": {
+            "meanDistance": 0.009435968997178851,
+            "maxDistance": 0.022796261828243184,
+            "materialChange": 0.13193487027553208
+          },
+          "gatheredPixels": {
+            "meanLuminance": 0.11760675713514514,
+            "litFraction": 0.30519444444444443
+          },
+          "heldPixels": {
+            "meanLuminance": 0.11225909543580714,
+            "litFraction": 0.28808333333333336
+          },
+          "samples": [
+            {
+              "elapsed": 4.849999904632568,
+              "weights": [
+                0.9779996871948242,
+                0.02200029417872429,
+                0
+              ],
+              "pixels": {
+                "meanLuminance": 0.10847286582794595,
+                "litFraction": 0.278125
+              }
+            },
+            {
+              "elapsed": 5.349999904632568,
+              "weights": [
+                0.7801491618156433,
+                0.21985085308551788,
+                0
+              ],
+              "pixels": {
+                "meanLuminance": 0.09672485791939503,
+                "litFraction": 0.24927777777777776
+              }
+            },
+            {
+              "elapsed": 5.75,
+              "weights": [
+                0.5,
+                0.5,
+                0
+              ],
+              "pixels": {
+                "meanLuminance": 0.08670642269060608,
+                "litFraction": 0.23818055555555556
+              }
+            },
+            {
+              "elapsed": 6.25,
+              "weights": [
+                0.16308000683784485,
+                0.8369200229644775,
+                0
+              ],
+              "pixels": {
+                "meanLuminance": 0.07420146580602494,
+                "litFraction": 0.22319444444444445
+              }
+            },
+            {
+              "elapsed": 6.75,
+              "weights": [
+                0.008559999987483025,
+                0.9914399981498718,
+                0
+              ],
+              "pixels": {
+                "meanLuminance": 0.09985479488012246,
+                "litFraction": 0.3057361111111111
+              }
+            },
+            {
+              "elapsed": 7.050000190734863,
+              "weights": [
+                0,
+                1,
+                0
+              ],
+              "pixels": {
+                "meanLuminance": 0.10553375871454553,
+                "litFraction": 0.3205277777777778
+              }
+            }
+          ]
+        },
+        {
+          "effect": "Magnets",
+          "inside": 1,
+          "heldInside": 1,
+          "motion": {
+            "meanDistance": 0.014937106825367558,
+            "maxDistance": 0.13038507752336906,
+            "materialChange": 0.30567602699979435
+          },
+          "gatheredPixels": {
+            "meanLuminance": 0.06689537737467202,
+            "litFraction": 0.231875
+          },
+          "heldPixels": {
+            "meanLuminance": 0.06582513672107586,
+            "litFraction": 0.22356944444444443
+          },
+          "samples": [
+            {
+              "elapsed": 11.850000381469727,
+              "weights": [
+                0,
+                0.9779996871948242,
+                0.02200029417872429
+              ],
+              "pixels": {
+                "meanLuminance": 0.06384601947706826,
+                "litFraction": 0.21620833333333334
+              }
+            },
+            {
+              "elapsed": 12.350000381469727,
+              "weights": [
+                0,
+                0.7801491618156433,
+                0.21985085308551788
+              ],
+              "pixels": {
+                "meanLuminance": 0.05236675517428967,
+                "litFraction": 0.17277777777777778
+              }
+            },
+            {
+              "elapsed": 12.75,
+              "weights": [
+                0,
+                0.5,
+                0.5
+              ],
+              "pixels": {
+                "meanLuminance": 0.03865168391067708,
+                "litFraction": 0.11461111111111111
+              }
+            },
+            {
+              "elapsed": 13.25,
+              "weights": [
+                0,
+                0.16308000683784485,
+                0.8369200229644775
+              ],
+              "pixels": {
+                "meanLuminance": 0.02486352519606355,
+                "litFraction": 0.050222222222222224
+              }
+            },
+            {
+              "elapsed": 13.75,
+              "weights": [
+                0,
+                0.008559999987483025,
+                0.9914399981498718
+              ],
+              "pixels": {
+                "meanLuminance": 0.026620647723312928,
+                "litFraction": 0.050416666666666665
+              }
+            },
+            {
+              "elapsed": 14.050000190734863,
+              "weights": [
+                0,
+                0,
+                1
+              ],
+              "pixels": {
+                "meanLuminance": 0.030551553213525616,
+                "litFraction": 0.06216666666666667
+              }
+            }
+          ]
+        },
+        {
+          "effect": "Particles",
+          "inside": 1,
+          "heldInside": 1,
+          "motion": {
+            "meanDistance": 0.011001625743317426,
+            "maxDistance": 0.059306055696178,
+            "materialChange": 0.14099856363867547
+          },
+          "gatheredPixels": {
+            "meanLuminance": 0.021243112592587897,
+            "litFraction": 0.030875
+          },
+          "heldPixels": {
+            "meanLuminance": 0.02051050812635635,
+            "litFraction": 0.02725
+          },
+          "samples": [
+            {
+              "elapsed": 18.850000381469727,
+              "weights": [
+                0.02200029417872429,
+                0,
+                0.9779996871948242
+              ],
+              "pixels": {
+                "meanLuminance": 0.02098462294116641,
+                "litFraction": 0.02776388888888889
+              }
+            },
+            {
+              "elapsed": 19.350000381469727,
+              "weights": [
+                0.21985085308551788,
+                0,
+                0.7801491618156433
+              ],
+              "pixels": {
+                "meanLuminance": 0.03382101869281247,
+                "litFraction": 0.04815277777777778
+              }
+            },
+            {
+              "elapsed": 19.75,
+              "weights": [
+                0.5,
+                0,
+                0.5
+              ],
+              "pixels": {
+                "meanLuminance": 0.05438918234205338,
+                "litFraction": 0.08030555555555556
+              }
+            },
+            {
+              "elapsed": 20.25,
+              "weights": [
+                0.8369200229644775,
+                0,
+                0.16308000683784485
+              ],
+              "pixels": {
+                "meanLuminance": 0.08150594761440925,
+                "litFraction": 0.1223888888888889
+              }
+            },
+            {
+              "elapsed": 20.75,
+              "weights": [
+                0.9914399981498718,
+                0,
+                0.008559999987483025
+              ],
+              "pixels": {
+                "meanLuminance": 0.09492932516350404,
+                "litFraction": 0.16872222222222222
+              }
+            },
+            {
+              "elapsed": 21.049999237060547,
+              "weights": [
+                1,
+                0,
+                0
+              ],
+              "pixels": {
+                "meanLuminance": 0.09545456234215335,
+                "litFraction": 0.17319444444444446
+              }
+            }
+          ]
+        }
+      ],
+      "issues": []
+    }
+  ],
+  "browser": "155.0.8059.40",
+  "error": "AssertionError [ERR_ASSERTION]: Live logo/transition acceptance failed; see retained report\n    at file:///Users/xyz/deco/doe/reports/maintenance/20261013-fawn-living-logo/check-browser.mjs:190:10"
+}
