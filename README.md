@@ -25,7 +25,7 @@ and follow its installation, verification, and execution guide.
 
 ### Compiler and runtime ownership
 
-![Nine components connect Doe's bindings, WGSL compiler, resource ownership, pipeline preparation, command recording, backend submission, and completion.](assets/readme/technical-architecture.svg)
+![Red preparation branches converge on command recording inside Doe, then reach an external GPU. Completion returns results and gates safe resource retirement.](assets/readme/technical-architecture.svg)
 
 The compiler is independently callable and remains part of Doe's complete WebGPU
 implementation. Target code and reflection feed device pipelines; bind groups and
