@@ -60,13 +60,13 @@
     return t ** 3 * (t * (t * 6 - 15) + 10);
   }
 
-  function strength(ageS, enabled) {
+  function strength(ageS, enabled, schedule = POLICY) {
     if (!enabled) return 0;
-    const delay = POLICY.delayS, settle = POLICY.settleS;
+    const delay = schedule.delayS, settle = schedule.settleS;
     return ease(Math.min(1, Math.max(0, (ageS - delay) / settle)));
   }
 
-  function transition() {
+  function transition(schedule = POLICY) {
     let age = 0, idle = 0, opening = false, quiet = 0, value = 0, velocity = 0;
     let releaseStart = null;
     return Object.freeze({
@@ -88,10 +88,10 @@
         if (opening) {
           const t = Math.min(1, Math.max(0, (age - TRANSITION.holdS) / TRANSITION.disperseS));
           idle = Math.max(0, age - TRANSITION.holdS - TRANSITION.disperseS);
-          target = Math.max(1 - ease(t), strength(idle, true));
+          target = Math.max(1 - ease(t), strength(idle, true, schedule));
         } else {
           if (!active && enabled) idle += settlingDt;
-          target = active || quiet > 0 ? 0 : strength(idle, enabled);
+          target = active || quiet > 0 ? 0 : strength(idle, enabled, schedule);
           // Scheduled release follows the appearance blend; input still releases immediately.
           if (releaseStart !== null) target = releaseStart * (1 - releaseProgress);
         }

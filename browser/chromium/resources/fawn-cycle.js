@@ -6,7 +6,6 @@ const MAGNETIC_RELEASE = Object.freeze({ chargeS: 1.5, durationS: 0.7,
   minimumCharge: 0.2, speed: 1.6, radius: 0.65 });
 const canvas = document.querySelector('#view');
 const status = document.querySelector('#status');
-const pause = document.querySelector('#pause');
 const failure = document.querySelector('#failure');
 const countSelect = document.querySelector('#count-select');
 const stepsSelect = document.querySelector('#steps-select');
@@ -14,7 +13,7 @@ const formationSelect = document.querySelector('#formation-select');
 const graph = document.querySelector('#fps-graph'),
   graphContext = graph.getContext('2d');
 const clock = createCycleClock(),
-  formation = FawnFormation.transition();
+  formation = FawnFormation.transition(CYCLE_POLICY.formation);
 let logoEnabled = FawnFormation.configure(formationSelect);
 FawnFormation.configureWorkload(
   countSelect,
@@ -52,8 +51,6 @@ const burst = { x: 0.5, y: 0.5, age: 0, charge: 0, strength: 0,
   radius: MAGNETIC_RELEASE.radius };
 const fps = [];
 function updateControls() {
-  pause.textContent = paused ? 'Resume' : 'Pause';
-  pause.setAttribute('aria-pressed', String(paused));
   status.textContent = paused ? 'Paused' : 'WebGPU active';
   document.querySelector('#load').textContent =
     `${(Math.ceil(Math.sqrt(Number(countSelect.value))) ** 2).toLocaleString()} cells / ${Number(countSelect.value).toLocaleString()} particles · ${stepsSelect.value} steps`;
@@ -203,11 +200,9 @@ function fail(error) {
   failure.hidden = false;
   failure.textContent = error.message || String(error);
   for (const control of [
-    pause,
     countSelect,
     stepsSelect,
     formationSelect,
-    document.querySelector('#restart'),
   ])
     control.disabled = true;
   gpu?.destroy();
@@ -293,7 +288,7 @@ canvas.addEventListener('pointerleave', () => {
   pointer.hover = false;
   if (!pointer.down) pointer.moved = false;
 });
-pause.addEventListener('click', () => {
+function toggleMotion() {
   paused = !paused;
   generation++;
   lastTime = 0;
@@ -307,10 +302,7 @@ pause.addEventListener('click', () => {
     cancelAnimationFrame(raf);
     raf = 0;
   } else schedule();
-});
-document.querySelector('#restart').addEventListener('click', () => {
-  reset();
-});
+}
 countSelect.addEventListener('change', () => reset());
 stepsSelect.addEventListener('change', () => {
   updateControls();
@@ -334,7 +326,7 @@ document.addEventListener('visibilitychange', () => {
 canvas.addEventListener('keydown', (event) => {
   if (event.code === 'Space') {
     event.preventDefault();
-    pause.click();
+    toggleMotion();
   } else if (event.key.toLowerCase() === 'r') {
     event.preventDefault();
     reset();
@@ -381,13 +373,7 @@ addEventListener('pagehide', () => {
     document.querySelector('#adapter').textContent =
       [adapter.info?.vendor, adapter.info?.architecture].filter(Boolean).join(' · ') ||
       'WebGPU connected';
-    for (const control of [
-      pause,
-      countSelect,
-      stepsSelect,
-      formationSelect,
-      document.querySelector('#restart'),
-    ])
+    for (const control of [countSelect, stepsSelect, formationSelect])
       control.disabled = false;
     resize();
     running = true;

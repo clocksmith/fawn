@@ -1,6 +1,6 @@
 // Persistent moving material. Formation edits parcel positions, never the camera or a quad.
 const PARCEL_POLICY = Object.freeze({
-  version: 3,
+  version: 4,
   strideFloats: 12,
   workgroup: 128,
   targetGrid: 384,
@@ -8,7 +8,7 @@ const PARCEL_POLICY = Object.freeze({
   fieldSpeed: 12,
   velocityResponse: 12,
   colorResponse: 3,
-  settleRate: 2,
+  settleRate: 6,
   settleDamping: 8,
   worldEdge: 1.65,
   initialRadius: 1.65,

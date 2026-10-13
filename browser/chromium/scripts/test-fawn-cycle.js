@@ -559,7 +559,7 @@ try {
     );
     assert.ok(timeline[2].fields['Cycle dye 0'].energy > 0);
     // Holding cannot move the next scheduled scene boundary.
-    await page.locator('#restart').click();
+    await page.locator('#view').press('r');
     await advance(page, 2);
     await advance(page, 120);
     const before = await state(page);
@@ -586,7 +586,7 @@ try {
       )) > 0.75,
       'Idle input returns to branded Fawn',
     );
-    await page.locator('#pause').click();
+    await page.locator('#view').press('Space');
     const paused = await state(page);
     await advance(page, 120);
     const still = await state(page);
@@ -605,11 +605,11 @@ try {
       await page.evaluate(() => document.documentElement.scrollWidth > innerWidth),
       false,
     );
-    await page.locator('#restart').click();
+    await page.locator('#view').press('r');
     await advance(page, 1);
     assert.equal((await state(page)).effect, 'Flows');
-    assert.equal(await page.locator('#pause').textContent(), 'Resume');
-    await page.locator('#pause').click();
+    assert.equal(await page.locator('#status').textContent(), 'Paused');
+    await page.locator('#view').press('Space');
     await advance(page, 2);
     await page.evaluate(() => {
       Object.defineProperty(document, 'hidden', { configurable: true, value: true });
@@ -668,7 +668,7 @@ try {
     assert.equal(initial.height, 150);
     assert.deepEqual(initial.errors, []);
     if (reducedMotion === 'reduce') {
-      assert.equal(await page.locator('#pause').textContent(), 'Resume');
+      assert.equal(await page.locator('#status').textContent(), 'Paused');
       await advance(page, 500);
       assert.deepEqual((await state(page)).fields, initial.fields);
     } else {
@@ -694,7 +694,7 @@ try {
     );
     assert.equal(await page.locator('#status').textContent(), 'Unavailable');
     assert.equal(await page.locator('#failure').textContent(), 'Cycle fixture terminal error');
-    assert.equal(await page.locator('#pause').isDisabled(), true);
+    assert.equal(await page.locator('#count-select').isDisabled(), true);
     await advance(page, 10);
     assert.equal(await page.evaluate(() => cycleProbe.callbacks.size), 0);
     assert.deepEqual(errors, []);

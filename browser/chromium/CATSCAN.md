@@ -32,6 +32,8 @@ Outputs:
 - Hosted artwork switches scenes on its visible-time schedule independently of
   pointer and touch input. Crossfades smoothly attenuate input forces without
   delaying GPU handoffs or resetting the moving material.
+- Logo recovery leaves a readable dwell before a scheduled crossfade; acceptance
+  checks actual parcel positions rather than the formation envelope alone.
 
 ## Acceptance
 

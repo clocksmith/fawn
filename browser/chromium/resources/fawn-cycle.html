@@ -23,18 +23,17 @@ a { color: inherit; text-underline-offset: 4px; }
 #view { position: fixed; inset: 0; width: 100%; height: 100dvh; touch-action: none; outline-offset: -6px; }
 .chrome { position: fixed; inset: 0; padding: max(24px, env(safe-area-inset-top)) max(28px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(28px, env(safe-area-inset-left)); display: flex; flex-direction: column; justify-content: space-between; pointer-events: none; background: linear-gradient(#020405b3, transparent 22%, transparent 50%, #020405b3 80%, #020405ed); }
 .chrome button, .chrome details, .chrome a, .chrome select { pointer-events: auto; }
-header, .toolbar, .metrics, .controls { display: flex; align-items: center; gap: 12px; }
+header, .metrics { display: flex; align-items: center; gap: 12px; }
 header { justify-content: space-between; }
 .brand { display: inline-flex; align-items: center; gap: 10px; font-size: 26px; font-weight: 650; letter-spacing: -.06em; text-decoration: none; }
 .brand-logo { width: 46px; height: 41px; fill: currentColor; flex: none; }
 .bottom { display: grid; gap: 20px; }
 .project-link { display: inline-flex; align-items: center; min-height: 44px; font-size: 13px; }
-.toolbar { justify-content: space-between; flex-wrap: wrap; }
 .metrics { font: 12px/1.5 ui-monospace, monospace; flex-wrap: wrap; gap: 12px 24px; min-height: 32px; }
 #fps-graph { width: 110px; height: 24px; }
 #status { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .metrics .project-link { margin-left: auto; }
-.controls { position: relative; }
+.metrics { position: relative; }
 .details { position: static; }
 summary { cursor: pointer; list-style: none; padding: 12px; font-size: 13px; }
 summary::-webkit-details-marker { display: none; }
@@ -51,8 +50,8 @@ summary::after { content: ' +'; }
 @media (max-width: 650px) {
  .chrome { padding: max(18px, env(safe-area-inset-top)) 16px max(18px, env(safe-area-inset-bottom)); }
  .brand-logo { width: 36px; height: 32px; }
- .bottom { gap: 14px; } .toolbar { gap: 12px; }
- .controls { width: 100%; } .details { margin-left: auto; } .metrics { gap: 8px 16px; font-size: 11px; } #status { margin-left: 0; } #fps-graph { width: 72px; }
+ .bottom { gap: 14px; }
+ .metrics { gap: 8px; font-size: 11px; } .metrics summary { padding: 12px 8px; font-size: 12px; } #status { margin-left: 0; } #fps-graph { width: 72px; }
 }
 @media (prefers-reduced-motion: reduce) { button { transition: none; } }
 
@@ -62,7 +61,7 @@ summary::after { content: ' +'; }
 </style>
 </head>
 <body>
-<canvas id="view" tabindex="0" aria-label="Flows, Magnets, and Particles. Drag to stir."></canvas>
+<canvas id="view" tabindex="0" aria-keyshortcuts="Space R" aria-description="Press Space to pause or resume animation." aria-label="Flows, Magnets, and Particles. Drag to stir."></canvas>
 <div class="chrome">
 <header>
  <a class="brand" href="./" aria-label="Fawn home"><svg class="brand-logo" viewBox="0 0 1024 912" aria-hidden="true" focusable="false">
@@ -80,15 +79,13 @@ summary::after { content: ' +'; }
  <span id="effect" aria-label="Current background">Flows</span>
 </header>
 <main class="bottom">
- <div class="toolbar">
-  <div class="controls"><button id="pause" disabled>Pause</button><button id="restart" disabled>Reset</button>
-   <details class="details"><summary>Settings</summary><div class="details-panel">
-    <p id="adapter">Connecting to your GPU…</p><div class="settings"><label>Formation<select id="formation-select" disabled><option value="free">Free</option><option value="branded" selected>Branded</option></select></label><label>Count<select id="count-select" disabled></select></label><label>Steps<select id="steps-select" disabled></select></label></div><p>FPS = completed frames per second.</p>
-    <p id="load">Connecting…</p>
-   </div></details>
-  </div>
+ <div class="metrics"><span id="frame">— fps</span><canvas id="fps-graph" aria-label="Completed frames per second over time"></canvas><span id="status" role="status">Connecting…</span>
+  <details class="details"><summary>Settings</summary><div class="details-panel">
+   <p id="adapter">Connecting to your GPU…</p><div class="settings"><label>Formation<select id="formation-select" disabled><option value="free">Free</option><option value="branded" selected>Branded</option></select></label><label>Count<select id="count-select" disabled></select></label><label>Steps<select id="steps-select" disabled></select></label></div><p>FPS = completed frames per second.</p>
+   <p id="load">Connecting…</p>
+  </div></details>
+  <a class="project-link" href="https://github.com/doerun/doe/tree/main/browser/chromium">GitHub</a>
  </div>
- <div class="metrics"><span id="frame">— fps</span><canvas id="fps-graph" aria-label="Completed frames per second over time"></canvas><span id="status" role="status">Connecting…</span><a class="project-link" href="https://github.com/doerun/doe/tree/main/browser/chromium">GitHub</a></div>
 </main>
 </div>
 <div id="failure" role="alert" hidden></div>

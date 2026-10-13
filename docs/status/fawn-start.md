@@ -1,12 +1,12 @@
 # Fawn hosted demonstrations
 
-[Scheduled crossfades](../../reports/maintenance/20261013-fawn-cycle-7s/README.md)
-implement input-independent scene timing and a smooth interaction-strength curve.
-The clock and software WebGPU diagnostics bind the changed source;
-[deployment verification](../../reports/maintenance/20261013-fawn-cycle-7s/deployment.json)
-binds its published bytes and hosted checks to the live release manifest. Logo recovery keeps its own quiet
-interval and cannot defer a scene switch. [Prior input-deferral status](archive/20261013-fawn-cycle-deferral.md)
-is retained separately.
+[Visible logo dwell and footer controls](../../reports/maintenance/20261013-fawn-visible-dwell/README.md)
+correct the formation-versus-transition mismatch while preserving the scheduled
+scene cadence. Physical parcel readback checks gathering before the fade and
+continued dwell; formation-envelope checks alone were insufficient.
+Settings now shares the footer with FPS and GitHub. Pause and Reset buttons
+are removed; keyboard motion control and reduced-motion behavior remain.
+[Prior envelope-only status](archive/20261013-fawn-envelope-only.md) is retained.
 
 [Magnetic release](../../reports/maintenance/20261013-fawn-magnetic-release/README.md)
 softens attraction and adds a bounded outward pulse charged by holding. Mouse

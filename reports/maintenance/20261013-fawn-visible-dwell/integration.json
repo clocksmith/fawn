@@ -1,0 +1,684 @@
+{
+  "passed": true,
+  "classification": "Chrome WebGPU artwork and emulated screens; no native Doe, physical-phone or performance qualification",
+  "policy": {
+    "version": 8,
+    "effects": [
+      "flow",
+      "wave",
+      "particles"
+    ],
+    "labels": {
+      "flow": "Flows",
+      "wave": "Magnets",
+      "particles": "Particles"
+    },
+    "holdS": 4.5,
+    "blendS": 2.5,
+    "formation": {
+      "delayS": 0.3,
+      "settleS": 1.2
+    },
+    "transitionInputFloor": 0.15,
+    "maxDtS": 0.033,
+    "maxFrameS": 0.1
+  },
+  "journeyCountOverride": "1024",
+  "sources": [
+    {
+      "file": "fawn-cycle.html",
+      "sha256": "a8f018f67e1e3fa595644b4a1b8cdcf79aaa03e4bb56106737f2b1615fcd65d9"
+    },
+    {
+      "file": "fawn-cycle.js",
+      "sha256": "21fc85736a3ab136fd1c103e4f0b8507310e343fb2773a3ff33a6d7bc5df5789"
+    },
+    {
+      "file": "fawn-cycle-clock.js",
+      "sha256": "bfddcd36e5239275a6cb63357803988a25fdf7c7106b6765a2fef968a2e31dca"
+    },
+    {
+      "file": "fawn-cycle-gpu.js",
+      "sha256": "58459e181b52f9a8483b703a4c05a57c28e8fe38443a9e46f94374e123a892a2"
+    },
+    {
+      "file": "fawn-cycle-transfers.js",
+      "sha256": "2b82e3b8014b548a369e3712b76a2240737bdb80ce4142013e3a19a965b404f1"
+    },
+    {
+      "file": "fawn-parcels.js",
+      "sha256": "7204dd4254e16ec4f0fb157a682c80447f1dc9dcb0af5cbabd352a81b6c28ca2"
+    },
+    {
+      "file": "fawn-parcel-renderer.js",
+      "sha256": "33ed18454c0c060f0846a97b357ba9c580ce7ed7cac2e527591c7415ae8d9cad"
+    },
+    {
+      "file": "fawn-shaders.js",
+      "sha256": "b4707394916fda87a3dfadb041928610e9e7ef255898d69ed95644b7266c7898"
+    },
+    {
+      "file": "fawn-formation.js",
+      "sha256": "1884541f507e4f3350207f4972fa95f33248e96c90f6b6c0ebc7019e7cc61fd1"
+    }
+  ],
+  "oracles": [
+    {
+      "boundary": "Parcel midpoint advection",
+      "maxError": 1.0540491818256115e-7
+    },
+    {
+      "boundary": "All three per-parcel logo formations",
+      "formation": [
+        {
+          "name": "flow",
+          "formationError": 9.100620745883248e-8,
+          "carriedMaterialError": 0,
+          "maxStep": 0.0369279204891253
+        },
+        {
+          "name": "wave",
+          "formationError": 9.100620745883248e-8,
+          "carriedMaterialError": 0,
+          "maxStep": 0.0369279204891253
+        },
+        {
+          "name": "particles",
+          "formationError": 9.100620745883248e-8,
+          "carriedMaterialError": 0,
+          "maxStep": 0.0369279204891253
+        }
+      ]
+    },
+    {
+      "boundary": "Flow → Wave",
+      "maxError": 3.2139778083362103e-7
+    },
+    {
+      "boundary": "Particles → Flow",
+      "maxError": 0.0007812529802322388
+    }
+  ],
+  "journeys": [
+    {
+      "viewport": {
+        "width": 800,
+        "height": 400
+      },
+      "defaultCount": 65536,
+      "executedCount": 1024,
+      "adapter": {
+        "vendor": "google",
+        "architecture": "swiftshader",
+        "isFallbackAdapter": true
+      },
+      "timeline": [
+        {
+          "effect": "Magnets",
+          "handoffs": [
+            "Cycle handoff 0"
+          ],
+          "fields": {
+            "Cycle velocity 0": {
+              "finite": true,
+              "energy": 22.243191842984743
+            },
+            "Cycle velocity 1": {
+              "finite": true,
+              "energy": 22.198752685346335
+            },
+            "Cycle dye 0": {
+              "finite": true,
+              "energy": 1166.4691656115465
+            },
+            "Cycle dye 1": {
+              "finite": true,
+              "energy": 1167.3048796372022
+            },
+            "Cycle pressure 0": {
+              "finite": true,
+              "energy": 2.6901235512013955
+            },
+            "Cycle pressure 1": {
+              "finite": true,
+              "energy": 2.691178801062051
+            },
+            "Cycle divergence and curl": {
+              "finite": true,
+              "energy": 439.3904445412336
+            },
+            "Cycle surface 0": {
+              "finite": true,
+              "energy": 11703.277189338463
+            },
+            "Cycle surface 1": {
+              "finite": true,
+              "energy": 11703.277191822533
+            },
+            "Cycle parcels 0": {
+              "central": 654,
+              "finite": true,
+              "energy": 6774.030239542943
+            },
+            "Cycle parcels 1": {
+              "central": 654,
+              "finite": true,
+              "energy": 6774.031179750476
+            },
+            "Cycle logo targets": {
+              "finite": true,
+              "energy": 2171.505765382899
+            },
+            "Cycle deposits": {
+              "finite": true,
+              "energy": 0
+            }
+          }
+        },
+        {
+          "effect": "Particles",
+          "handoffs": [
+            "Cycle handoff 0"
+          ],
+          "fields": {
+            "Cycle velocity 0": {
+              "finite": true,
+              "energy": 22.243191842984743
+            },
+            "Cycle velocity 1": {
+              "finite": true,
+              "energy": 22.198752685346335
+            },
+            "Cycle dye 0": {
+              "finite": true,
+              "energy": 1166.4691656115465
+            },
+            "Cycle dye 1": {
+              "finite": true,
+              "energy": 1167.3048796372022
+            },
+            "Cycle pressure 0": {
+              "finite": true,
+              "energy": 2.6901235512013955
+            },
+            "Cycle pressure 1": {
+              "finite": true,
+              "energy": 2.691178801062051
+            },
+            "Cycle divergence and curl": {
+              "finite": true,
+              "energy": 439.3904445412336
+            },
+            "Cycle surface 0": {
+              "finite": true,
+              "energy": 11551.984347053804
+            },
+            "Cycle surface 1": {
+              "finite": true,
+              "energy": 11555.746850174153
+            },
+            "Cycle parcels 0": {
+              "central": 654,
+              "finite": true,
+              "energy": 5898.857847237803
+            },
+            "Cycle parcels 1": {
+              "central": 654,
+              "finite": true,
+              "energy": 5898.858343366937
+            },
+            "Cycle logo targets": {
+              "finite": true,
+              "energy": 2171.505765382899
+            },
+            "Cycle deposits": {
+              "finite": true,
+              "energy": 0
+            }
+          }
+        },
+        {
+          "effect": "Flows",
+          "handoffs": [
+            "Cycle handoff 0",
+            "Cycle handoff 1",
+            "Cycle handoff 2"
+          ],
+          "fields": {
+            "Cycle velocity 0": {
+              "finite": true,
+              "energy": 4.507335387312651
+            },
+            "Cycle velocity 1": {
+              "finite": true,
+              "energy": 4.507379425351246
+            },
+            "Cycle dye 0": {
+              "finite": true,
+              "energy": 1056.4253459608822
+            },
+            "Cycle dye 1": {
+              "finite": true,
+              "energy": 1056.4253459608822
+            },
+            "Cycle pressure 0": {
+              "finite": true,
+              "energy": 0.18025650360618783
+            },
+            "Cycle pressure 1": {
+              "finite": true,
+              "energy": 0.17992743560398594
+            },
+            "Cycle divergence and curl": {
+              "finite": true,
+              "energy": 115.52982281121513
+            },
+            "Cycle surface 0": {
+              "finite": true,
+              "energy": 11551.984347053804
+            },
+            "Cycle surface 1": {
+              "finite": true,
+              "energy": 11555.746850174153
+            },
+            "Cycle parcels 0": {
+              "central": 654,
+              "finite": true,
+              "energy": 4997.579082627996
+            },
+            "Cycle parcels 1": {
+              "central": 654,
+              "finite": true,
+              "energy": 4997.579068547776
+            },
+            "Cycle logo targets": {
+              "finite": true,
+              "energy": 2171.505765382899
+            },
+            "Cycle deposits": {
+              "finite": true,
+              "energy": null
+            }
+          }
+        },
+        {
+          "effect": "Magnets",
+          "handoffs": [
+            "Cycle handoff 0",
+            "Cycle handoff 1",
+            "Cycle handoff 2",
+            "Cycle handoff 0"
+          ],
+          "fields": {
+            "Cycle velocity 0": {
+              "finite": true,
+              "energy": 2.7059505551978873
+            },
+            "Cycle velocity 1": {
+              "finite": true,
+              "energy": 2.6974266647093827
+            },
+            "Cycle dye 0": {
+              "finite": true,
+              "energy": 1039.3840866620294
+            },
+            "Cycle dye 1": {
+              "finite": true,
+              "energy": 1039.4749375932092
+            },
+            "Cycle pressure 0": {
+              "finite": true,
+              "energy": 0.5997101178054436
+            },
+            "Cycle pressure 1": {
+              "finite": true,
+              "energy": 0.6010650656753569
+            },
+            "Cycle divergence and curl": {
+              "finite": true,
+              "energy": 85.55314170180645
+            },
+            "Cycle surface 0": {
+              "finite": true,
+              "energy": 11246.456315965392
+            },
+            "Cycle surface 1": {
+              "finite": true,
+              "energy": 11246.456306361593
+            },
+            "Cycle parcels 0": {
+              "central": 654,
+              "finite": true,
+              "energy": 7802.295956394536
+            },
+            "Cycle parcels 1": {
+              "central": 654,
+              "finite": true,
+              "energy": 7802.29606496067
+            },
+            "Cycle logo targets": {
+              "finite": true,
+              "energy": 2171.505765382899
+            },
+            "Cycle deposits": {
+              "finite": true,
+              "energy": null
+            }
+          }
+        }
+      ],
+      "fixedProjectionDuringFormation": {
+        "fixed": true,
+        "formationAdvanced": true
+      },
+      "uploads": 14,
+      "allocations": 18,
+      "interactionContinued": true,
+      "pauseFrozen": true,
+      "hiddenFrozen": true,
+      "rotation": true,
+      "reset": true
+    },
+    {
+      "viewport": {
+        "width": 300,
+        "height": 500
+      },
+      "defaultCount": 16384,
+      "executedCount": 1024,
+      "adapter": {
+        "vendor": "google",
+        "architecture": "swiftshader",
+        "isFallbackAdapter": true
+      },
+      "timeline": [
+        {
+          "effect": "Magnets",
+          "handoffs": [
+            "Cycle handoff 0"
+          ],
+          "fields": {
+            "Cycle velocity 0": {
+              "finite": true,
+              "energy": 22.243191842984743
+            },
+            "Cycle velocity 1": {
+              "finite": true,
+              "energy": 22.198752685346335
+            },
+            "Cycle dye 0": {
+              "finite": true,
+              "energy": 1166.4691656115465
+            },
+            "Cycle dye 1": {
+              "finite": true,
+              "energy": 1167.3048796372022
+            },
+            "Cycle pressure 0": {
+              "finite": true,
+              "energy": 2.6901235512013955
+            },
+            "Cycle pressure 1": {
+              "finite": true,
+              "energy": 2.691178801062051
+            },
+            "Cycle divergence and curl": {
+              "finite": true,
+              "energy": 439.3904445412336
+            },
+            "Cycle surface 0": {
+              "finite": true,
+              "energy": 11703.277189338463
+            },
+            "Cycle surface 1": {
+              "finite": true,
+              "energy": 11703.277191822533
+            },
+            "Cycle parcels 0": {
+              "central": 560,
+              "finite": true,
+              "energy": 6894.468672406063
+            },
+            "Cycle parcels 1": {
+              "central": 560,
+              "finite": true,
+              "energy": 6894.469769595264
+            },
+            "Cycle logo targets": {
+              "finite": true,
+              "energy": 2646.0987822427414
+            },
+            "Cycle deposits": {
+              "finite": true,
+              "energy": 0
+            }
+          }
+        },
+        {
+          "effect": "Particles",
+          "handoffs": [
+            "Cycle handoff 0"
+          ],
+          "fields": {
+            "Cycle velocity 0": {
+              "finite": true,
+              "energy": 22.243191842984743
+            },
+            "Cycle velocity 1": {
+              "finite": true,
+              "energy": 22.198752685346335
+            },
+            "Cycle dye 0": {
+              "finite": true,
+              "energy": 1166.4691656115465
+            },
+            "Cycle dye 1": {
+              "finite": true,
+              "energy": 1167.3048796372022
+            },
+            "Cycle pressure 0": {
+              "finite": true,
+              "energy": 2.6901235512013955
+            },
+            "Cycle pressure 1": {
+              "finite": true,
+              "energy": 2.691178801062051
+            },
+            "Cycle divergence and curl": {
+              "finite": true,
+              "energy": 439.3904445412336
+            },
+            "Cycle surface 0": {
+              "finite": true,
+              "energy": 11551.984347053804
+            },
+            "Cycle surface 1": {
+              "finite": true,
+              "energy": 11555.746850174153
+            },
+            "Cycle parcels 0": {
+              "central": 560,
+              "finite": true,
+              "energy": 5885.544985393715
+            },
+            "Cycle parcels 1": {
+              "central": 560,
+              "finite": true,
+              "energy": 5885.545561432333
+            },
+            "Cycle logo targets": {
+              "finite": true,
+              "energy": 2646.0987822427414
+            },
+            "Cycle deposits": {
+              "finite": true,
+              "energy": 0
+            }
+          }
+        },
+        {
+          "effect": "Flows",
+          "handoffs": [
+            "Cycle handoff 0",
+            "Cycle handoff 1",
+            "Cycle handoff 2"
+          ],
+          "fields": {
+            "Cycle velocity 0": {
+              "finite": true,
+              "energy": 4.878038167468361
+            },
+            "Cycle velocity 1": {
+              "finite": true,
+              "energy": 4.87803611809769
+            },
+            "Cycle dye 0": {
+              "finite": true,
+              "energy": 1059.661779937448
+            },
+            "Cycle dye 1": {
+              "finite": true,
+              "energy": 1059.661779937448
+            },
+            "Cycle pressure 0": {
+              "finite": true,
+              "energy": 0.09407166599544325
+            },
+            "Cycle pressure 1": {
+              "finite": true,
+              "energy": 0.09316052640218686
+            },
+            "Cycle divergence and curl": {
+              "finite": true,
+              "energy": 125.53750287047603
+            },
+            "Cycle surface 0": {
+              "finite": true,
+              "energy": 11551.984347053804
+            },
+            "Cycle surface 1": {
+              "finite": true,
+              "energy": 11555.746850174153
+            },
+            "Cycle parcels 0": {
+              "central": 560,
+              "finite": true,
+              "energy": 5027.335947418807
+            },
+            "Cycle parcels 1": {
+              "central": 560,
+              "finite": true,
+              "energy": 5027.335934303064
+            },
+            "Cycle logo targets": {
+              "finite": true,
+              "energy": 2646.0987822427414
+            },
+            "Cycle deposits": {
+              "finite": true,
+              "energy": null
+            }
+          }
+        },
+        {
+          "effect": "Magnets",
+          "handoffs": [
+            "Cycle handoff 0",
+            "Cycle handoff 1",
+            "Cycle handoff 2",
+            "Cycle handoff 0"
+          ],
+          "fields": {
+            "Cycle velocity 0": {
+              "finite": true,
+              "energy": 2.986172753692159
+            },
+            "Cycle velocity 1": {
+              "finite": true,
+              "energy": 2.9759240588017803
+            },
+            "Cycle dye 0": {
+              "finite": true,
+              "energy": 1040.9731405348582
+            },
+            "Cycle dye 1": {
+              "finite": true,
+              "energy": 1041.0731640144822
+            },
+            "Cycle pressure 0": {
+              "finite": true,
+              "energy": 0.6647343085228385
+            },
+            "Cycle pressure 1": {
+              "finite": true,
+              "energy": 0.665327267441171
+            },
+            "Cycle divergence and curl": {
+              "finite": true,
+              "energy": 97.85933345227795
+            },
+            "Cycle surface 0": {
+              "finite": true,
+              "energy": 11246.456316768657
+            },
+            "Cycle surface 1": {
+              "finite": true,
+              "energy": 11246.456307164859
+            },
+            "Cycle parcels 0": {
+              "central": 560,
+              "finite": true,
+              "energy": 7756.552196510433
+            },
+            "Cycle parcels 1": {
+              "central": 560,
+              "finite": true,
+              "energy": 7756.552230520011
+            },
+            "Cycle logo targets": {
+              "finite": true,
+              "energy": 2646.0987822427414
+            },
+            "Cycle deposits": {
+              "finite": true,
+              "energy": null
+            }
+          }
+        }
+      ],
+      "fixedProjectionDuringFormation": {
+        "fixed": true,
+        "formationAdvanced": true
+      },
+      "uploads": 14,
+      "allocations": 18,
+      "interactionContinued": true,
+      "pauseFrozen": true,
+      "hiddenFrozen": true,
+      "rotation": true,
+      "reset": true
+    }
+  ],
+  "harnessSha256": "1f138942ed1c255b3602f0377b2bf177aaf29a9aa2ab1bd94111fe3319ef5f99",
+  "initialReservoir": {
+    "squareCornersCovered": true,
+    "circularBoundaryOutsideViewport": true
+  },
+  "browser": "155.0.8059.40",
+  "lifecycle": [
+    {
+      "reducedMotion": "no-preference",
+      "initialCanvasConfigured": true,
+      "dprOnly": true,
+      "elapsedSceneTimeAt25fps": true,
+      "terminalError": true
+    },
+    {
+      "reducedMotion": "reduce",
+      "initialCanvasConfigured": true,
+      "dprOnly": false,
+      "elapsedSceneTimeAt25fps": false,
+      "terminalError": true
+    }
+  ]
+}
