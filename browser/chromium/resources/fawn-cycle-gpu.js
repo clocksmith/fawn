@@ -4,7 +4,7 @@ import { FLOW_TO_WAVE, PARTICLE_DEPOSIT, RESOLVE_DEPOSIT } from './fawn-cycle-tr
 import { PARCEL_POLICY, PARCEL_UPDATE, createParcelData } from './fawn-parcels.js';
 import { createParcelRenderer } from './fawn-parcel-renderer.js';
 const GPU_POLICY = Object.freeze({
-  version: 8,
+  version: 9,
   maxCount: 262144,
   pressureIterations: flow.PRESSURE_ITERATIONS,
   flowGroup: flow.WORKGROUP_SIZE,
@@ -72,6 +72,7 @@ function createCycleGpu(device, canvas, format, count) {
     buffer('Cycle parcels 1', count * GPU_POLICY.parcelBytes),
   ];
   const goals = buffer('Cycle logo targets', PARCEL_POLICY.targetGrid ** 2 * 16);
+  const boundary = buffer('Cycle logo boundary', PARCEL_POLICY.targetGrid ** 2 * 16);
   const deposits = buffer('Cycle deposits', fieldCount * 24);
   let dyeIndex = 0,
     waveIndex = 0,
@@ -116,6 +117,9 @@ function createCycleGpu(device, canvas, format, count) {
       document.querySelector('.brand-logo'),
     );
     device.queue.writeBuffer(goals, 0, targets);
+    device.queue.writeBuffer(boundary, 0, FawnFormation.field(
+      PARCEL_POLICY.targetGrid, canvas, document.querySelector('.brand-logo'),
+    ));
     // Bind the populated range only: spare capacity is not a target at the origin.
     parcelGroups = [0, 1].map((p) =>
       [0, 1].map((d) =>
@@ -129,6 +133,7 @@ function createCycleGpu(device, canvas, format, count) {
             dyes[d],
             waves[w],
             curl,
+            boundary,
           ]),
         ),
       ),
@@ -149,8 +154,7 @@ function createCycleGpu(device, canvas, format, count) {
   }
   function uniforms(dt, time, shape, pointer, steps, weights, settleDt = dt, burst = null,
     interactionScale = 1) {
-    const viewport = FawnFormation.viewport(canvas),
-      liveDt = dt * (1 - shape);
+    const viewport = FawnFormation.viewport(canvas);
     const pressScale = weights[1] * GPU_POLICY.magneticPressScale
       - weights[2] * GPU_POLICY.particlePressScale;
     const force = (pointer.hover ? (pointer.down ? 1.4 : 0.28 * GPU_POLICY.hoverStrengthScale) : 0)
@@ -167,7 +171,7 @@ function createCycleGpu(device, canvas, format, count) {
         pointer.y,
         force,
         pointer.down ? 0.1 : 0.05,
-        (liveDt * 0.82) / steps,
+        (dt * 0.82) / steps,
         time,
         2,
         0,
@@ -191,7 +195,7 @@ function createCycleGpu(device, canvas, format, count) {
       pointer.hover && !burst?.strength ? (pointer.down ? GPU_POLICY.magneticPressScale
         : 0.55 * GPU_POLICY.hoverStrengthScale) * interactionScale : 0,
       0,
-      (liveDt * 1.1) / steps,
+      (dt * 1.1) / steps,
       time,
       canvas.width / canvas.height,
       0,

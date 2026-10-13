@@ -369,7 +369,11 @@ try {
     const parcelUniform = buffer(64, true),
       moved = buffer(count * 48),
       target = buffer(count * 16),
-      curl = buffer(count * 16);
+      curl = buffer(count * 16),
+      boundary = buffer(PARCEL_POLICY.targetGrid ** 2 * 16);
+    const mark = new Float32Array(PARCEL_POLICY.targetGrid ** 2 * 4);
+    for (let i = 0; i < mark.length; i += 4) mark.set([0, 0, 1, 0.25], i);
+    device.queue.writeBuffer(boundary, 0, mark);
     const goals = new Float32Array(count * 4);
     for (let i = 0; i < count; i++) goals.set([0.15 + i * 0.006, -0.12 + i * 0.008, 1, 0], i * 4);
     device.queue.writeBuffer(target, 0, goals);
@@ -387,7 +391,7 @@ try {
         0,
         new Float32Array([grid, count, dt, time, ...weights, shape, 0, 0, 0, dt, 1, 1, 0, 0]),
       );
-      run(PARCEL_UPDATE, [parcelUniform, points, moved, target, velocity, dye, surface, curl]);
+      run(PARCEL_UPDATE, [parcelUniform, points, moved, target, velocity, dye, surface, curl, boundary]);
     };
     parcelRun([0, 0, 1], 0);
     const advanced = await read(moved);
@@ -413,52 +417,55 @@ try {
     const advectionError = Math.max(...expected.map((p, i) => Math.abs(advanced[i] - p)));
     if (advectionError > 1e-5) throw new Error(`Midpoint advection mismatch: ${advectionError}`);
     const formation = [];
-    for (const [name, weights] of [
-      ['flow', [1, 0, 0]],
-      ['wave', [0, 1, 0]],
-      ['particles', [0, 0, 1]],
+    for (let i = 0; i < count; i++) {
+      const x = (((i % grid) + 0.5) / grid) * 2 - 1;
+      const y = ((Math.floor(i / grid) + 0.5) / grid) * 2 - 1;
+      d.set([0.8, 0.3, 0.2, 1], i * 4);
+      v.set([0.1, -0.2, 0, 0], i * 4);
+      s.set([x * 0.2 + y * 0.1, 0, 0, 1], i * 4);
+    }
+    device.queue.writeBuffer(dye, 0, d);
+    device.queue.writeBuffer(velocity, 0, v);
+    device.queue.writeBuffer(surface, 0, s);
+    for (const [name, weights, expectedVelocity] of [
+      ['flow', [1, 0, 0], [0.2, -0.4]],
+      ['wave', [0, 1, 0], [-0.01, 0.02]],
+      ['particles', [0, 0, 1], nextVelocity.map(x => x / nextScale)],
     ]) {
-      // Irregular live positions must settle from their own values, never be respawned on a grid.
-      for (let i = 0; i < count; i++) input.set([-0.5 + i * 0.04, 0.42 - i * 0.027], i * 12);
+      // Inside the mark, branding must not pin live parcels or suppress their material updates.
+      for (let i = 0; i < count; i++) input.set([...pose, ...motion, 1, 0.5, 0.25, 1, 0.7, 0.2, 0.1, 0.04], i * 12);
       device.queue.writeBuffer(points, 0, input);
       parcelRun(weights, 1);
-      const settled = await read(moved);
-      let formationError = 0,
-        colorError = 0;
-      const distances = [];
-      for (let i = 0; i < count; i++) {
-        const hash = ((Math.imul(i, 1664525) + 1013904223) ^ (i >>> 9)) >>> 0;
-        const arrival = 0.35 + (1.65 * ((hash >>> 16) & 65535)) / 65535;
-        const factor = 1 - Math.exp(-PARCEL_POLICY.settleRate * dt * arrival);
-        for (let c = 0; c < 2; c++)
-          formationError = Math.max(
-            formationError,
-            Math.abs(
-              settled[i * 12 + c] -
-                (input[i * 12 + c] + (goals[(hash % count) * 4 + c] - input[i * 12 + c]) * factor),
-            ),
-          );
-        for (let c = 4; c < 12; c++)
-          colorError = Math.max(colorError, Math.abs(settled[i * 12 + c] - input[i * 12 + c]));
-        distances.push(
-          Math.hypot(settled[i * 12] - input[i * 12], settled[i * 12 + 1] - input[i * 12 + 1]),
-        );
-      }
-      if (formationError > 1e-6 || colorError > 1e-6)
-        throw new Error(`${name} per-parcel formation mismatch: ${formationError}, ${colorError}`);
-      formation.push({
-        name,
-        formationError,
-        carriedMaterialError: colorError,
-        maxStep: Math.max(...distances),
-      });
+      const movedState = await read(moved);
+      const error = Math.max(...expectedVelocity.map((v, c) =>
+        Math.abs(movedState[c] - (pose[c] + v * dt))));
+      const materialChange = Math.max(...Array.from(movedState.slice(4, 12),
+        (value, c) => Math.abs(value - input[4 + c])));
+      if (error > 1e-5 || materialChange < 1e-6)
+        throw new Error(`${name} live branded material mismatch: ${error}, ${materialChange}`);
+      formation.push({ name, advectionError: error, materialChange });
     }
+    // A planar logo wall removes outward motion but preserves tangential flow.
+    for (let y = 0; y < PARCEL_POLICY.targetGrid; y++) for (let x = 0; x < PARCEL_POLICY.targetGrid; x++) {
+      const worldX = ((x + 0.5) / PARCEL_POLICY.targetGrid) * 2 - 1;
+      mark.set([1, 0, worldX >= 0 ? 1 : 0, worldX / 2], (y * PARCEL_POLICY.targetGrid + x) * 4);
+    }
+    device.queue.writeBuffer(boundary, 0, mark);
+    for (let i = 0; i < count; i++) {
+      input.set([0.001, 0.2], i * 12);
+      v.set([-0.1, -0.2, 0, 0], i * 4);
+    }
+    device.queue.writeBuffer(points, 0, input); device.queue.writeBuffer(velocity, 0, v);
+    parcelRun([1, 0, 0], 1);
+    const alongWall = await read(moved);
+    if (alongWall[0] < 0 || Math.abs(alongWall[1] - (0.2 - 0.4 * dt)) > 1e-5)
+      throw new Error(`Logo wall must preserve tangent flow: ${alongWall.slice(0, 2)}`);
     await device.queue.onSubmittedWorkDone();
     if (errors.length) throw new Error(errors.join('\n'));
     device.destroy();
     return [
       { boundary: 'Parcel midpoint advection', maxError: advectionError },
-      { boundary: 'All three per-parcel logo formations', formation },
+      { boundary: 'Live branded advection, material update and logo wall', formation },
       { boundary: 'Flow → Wave', maxError: error },
       { boundary: 'Particles → Flow', maxError: depositError },
     ];
