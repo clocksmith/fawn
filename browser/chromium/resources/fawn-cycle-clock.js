@@ -1,11 +1,11 @@
-// Input defers an upcoming blend; a started blend always finishes.
+// Scene cadence is independent of input; crossfades soften its force instead.
 const CYCLE_POLICY = Object.freeze({
-  version: 6,
+  version: 7,
   effects: Object.freeze(['flow', 'wave', 'particles']),
   labels: Object.freeze({ flow: 'Flows', wave: 'Magnets', particles: 'Particles' }),
-  holdS: 6,
-  blendS: 2,
-  interactionQuietS: 1,
+  holdS: 4.5,
+  blendS: 2.5,
+  transitionInputFloor: 0.15,
   maxDtS: 0.033,
   maxFrameS: 0.1,
 });
@@ -13,16 +13,12 @@ function createCycleClock() {
   let elapsed = 0, phase = 0, scene = 0, prepared = false;
   const sceneS = CYCLE_POLICY.holdS + CYCLE_POLICY.blendS;
   return {
-    advance(dt, interacting = false) {
+    advance(dt) {
       if (!Number.isFinite(dt) || dt < 0) throw new Error(`Invalid cycle timestep: ${dt}`);
       const previousScene = scene;
-      const transitioning = this.state().transitioning;
       elapsed += dt;
       phase += dt;
-      const latest = CYCLE_POLICY.holdS - CYCLE_POLICY.interactionQuietS;
-      if (interacting && !transitioning && phase > latest) {
-        phase = latest;
-      } else if (phase >= sceneS) {
+      if (phase >= sceneS) {
         scene += Math.floor(phase / sceneS);
         phase %= sceneS;
         prepared = false;
@@ -43,6 +39,8 @@ function createCycleClock() {
         next: CYCLE_POLICY.effects[(index + 1) % CYCLE_POLICY.effects.length],
         transitioning: phase >= CYCLE_POLICY.holdS,
         blend: progress ** 3 * (progress * (progress * 6 - 15) + 10),
+        interactionScale: 1 - (1 - CYCLE_POLICY.transitionInputFloor)
+          * Math.sin(Math.PI * progress) ** 2,
       };
     },
     reset() {

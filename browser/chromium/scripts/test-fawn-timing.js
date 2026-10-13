@@ -3,32 +3,43 @@ import { CYCLE_POLICY, createCycleClock } from '../resources/fawn-cycle-clock.js
 import '../resources/fawn-formation.js';
 
 const { transition } = globalThis.FawnFormation;
-assert.equal(3 * (CYCLE_POLICY.holdS + CYCLE_POLICY.blendS), 24);
-for (let rotation = 0, clock = createCycleClock(); rotation < 3; rotation++) {
-  for (const effect of ['flow', 'wave', 'particles']) {
-    assert.equal(clock.state().effect, effect);
-    assert.equal(clock.advance(6).started, true);
-    assert.equal(clock.advance(1).blend, 0.5);
-    assert.equal(clock.advance(1).completed, true);
+assert.equal(CYCLE_POLICY.holdS + CYCLE_POLICY.blendS, 7);
+for (const input of [false, true]) {
+  for (let rotation = 0, clock = createCycleClock(); rotation < 3; rotation++) {
+    for (const effect of ['flow', 'wave', 'particles']) {
+      assert.equal(clock.state().effect, effect);
+      assert.equal(clock.advance(4.5, input).started, true);
+      const middle = clock.advance(1.25, input);
+      assert.equal(middle.blend, 0.5);
+      assert.ok(Math.abs(middle.interactionScale - 0.15) < 1e-12);
+      assert.equal(clock.advance(1.25, input).completed, true);
+    }
+    assert.equal(clock.state().elapsedS, (rotation + 1) * 21);
   }
-  assert.equal(clock.state().elapsedS, (rotation + 1) * 24);
 }
-for (const at of [0, 2, 4.9, 5, 5.5, 5.99]) {
+for (const at of [0, 2, 4.49, 4.5, 5.75, 6.99]) {
+  const untouched = createCycleClock(), interacting = createCycleClock();
+  untouched.advance(at); interacting.advance(at);
+  for (let frame = 0; frame < 200; frame++) {
+    const control = untouched.advance(0.05);
+    assert.deepEqual(interacting.advance(0.05, frame % 3 === 0), control,
+      'Early, late and continuous input cannot alter phase, blend or handoff');
+  }
+}
+const curve = [];
+for (let i = 0; i <= 1000; i++) {
   const clock = createCycleClock();
-  clock.advance(at);
-  assert.equal(clock.advance(0, true).phaseS, Math.min(at, 5));
-  for (let i = 0; i < 100; i++) assert.ok(clock.advance(0.1, true).phaseS <= 5);
-  assert.equal(clock.advance(0.99).transitioning, false);
-  assert.equal(clock.advance(0.02).started, true);
+  curve.push(clock.advance(4.5 + 2.5 * i / 1000).interactionScale);
 }
-for (const at of [6, 6.01, 6.5, 7, 7.99]) {
-  const clock = createCycleClock(); clock.advance(at);
-  const before = clock.state();
-  const next = clock.advance(0.005, true);
-  assert.ok(next.blend >= before.blend);
-  assert.equal(next.started, false);
-  assert.equal(clock.advance(8 - next.phaseS, true).completed, true);
+assert.equal(curve[0], 1); assert.equal(curve.at(-1), 1);
+for (let i = 0; i < curve.length; i++) {
+  assert.ok(curve[i] >= 0.15 - 1e-12 && curve[i] <= 1);
+  assert.ok(Math.abs(curve[i] - curve[1000 - i]) < 1e-12, 'Input curve is symmetric');
+  if (i > 0 && i <= 500) assert.ok(curve[i] <= curve[i - 1]);
+  if (i > 500) assert.ok(curve[i] >= curve[i - 1]);
 }
+assert.ok(Math.abs(curve[1] - curve[0]) < 0.00001, 'No force jump entering the blend');
+assert.ok(Math.abs(curve.at(-1) - curve.at(-2)) < 0.00001, 'No force jump leaving the blend');
 const step = (f, seconds, active = false, interacting = active, blend = 0) => {
   let value;
   for (let i = 0; i < Math.round(seconds * 100); i++)
@@ -58,6 +69,6 @@ const next = f.advance(0.01, true, false);
 assert.ok(Math.abs(next - previous) < 0.01);
 assert.ok(maxDelta < 0.02);
 assert.throws(() => createCycleClock().advance(-1), /Invalid cycle timestep/);
-console.log(JSON.stringify({ passed: true, untouchedCycleSeconds: 24, rotations: 3,
-  earlyAndLateInteraction: true, uninterruptedCrossfades: true,
+console.log(JSON.stringify({ passed: true, untouchedCycleSeconds: 21, rotations: 3,
+  inputIndependentCadence: true, symmetricInputAttenuation: true, uninterruptedCrossfades: true,
   formationProgressRetained: true, quietSeconds: 1, maxFormationFrameDelta: maxDelta }));

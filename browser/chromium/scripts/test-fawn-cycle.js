@@ -26,6 +26,7 @@ const report = {
   classification:
     'Chrome WebGPU artwork and emulated screens; no native Doe, physical-phone or performance qualification',
   policy: CYCLE_POLICY,
+  journeyCountOverride: process.env.FAWN_JOURNEY_COUNT || null,
   sources: [],
   oracles: [],
   journeys: [],
@@ -226,6 +227,7 @@ async function state(page) {
     const blend = weights?.find((w) => w > 0 && w < 1) || 0;
     return {
       effect: document.querySelector('#effect').textContent,
+      elapsedS: p.writes.filter(w => w.label === 'Cycle parcel rendering uniforms').at(-1).values[12],
       fields,
       requests: p.requests,
       contexts: p.canvasContexts,
@@ -462,11 +464,12 @@ try {
     ];
   });
   await oracle.close();
-  for (const viewport of [
-    { width: 1200, height: 800 },
-    { width: 390, height: 844 },
-  ]) {
-    const page = await browser.newPage({ viewport, deviceScaleFactor: 3 });
+  const diagnosticWorkload = Boolean(process.env.FAWN_JOURNEY_COUNT);
+  const journeyViewports = diagnosticWorkload
+    ? [{ width: 800, height: 400 }, { width: 300, height: 500 }]
+    : [{ width: 1200, height: 800 }, { width: 390, height: 844 }];
+  for (const viewport of journeyViewports) {
+    const page = await browser.newPage({ viewport, deviceScaleFactor: diagnosticWorkload ? 1 : 3 });
     const errors = [];
     page.on('pageerror', (e) => errors.push(e.message));
     await page.addInitScript(instrument);
@@ -489,6 +492,12 @@ try {
       defaultCount * 16,
     );
 
+    // Software-rendered diagnostics can select a smaller declared workload after checking default allocations.
+    const journeyCount = Number(process.env.FAWN_JOURNEY_COUNT || defaultCount);
+    assert.ok(Number.isInteger(journeyCount));
+    assert.ok(await page.locator(`#count-select option[value="${journeyCount}"]`).count(),
+      'The diagnostic workload must be an available authored option');
+    if (journeyCount !== defaultCount) await page.locator('#count-select').selectOption(String(journeyCount), { force: true });
     await advance(page, 100);
     const initial = await state(page);
     const projection = await page.evaluate(() => {
@@ -532,13 +541,13 @@ try {
       const dispatches = await page.evaluate(() => cycleProbe.workgroups);
       assert.ok(
         dispatches.some(
-          (d) => d.label === 'Cycle handoff 0' && d.groups[0] === Math.ceil(defaultCount / 128),
+          (d) => d.label === 'Cycle handoff 0' && d.groups[0] === Math.ceil((Math.ceil(Math.sqrt(journeyCount)) ** 2) / 128),
         ),
         'Flow-to-film conversion must include the tail cells beyond the parcel count',
       );
       assert.ok(
         dispatches.some(
-          (d) => d.label === 'Cycle handoff 2' && d.groups[0] === Math.ceil(defaultCount / 128),
+          (d) => d.label === 'Cycle handoff 2' && d.groups[0] === Math.ceil((Math.ceil(Math.sqrt(journeyCount)) ** 2) / 128),
         ),
         'Deposit resolution must include all fluid cells',
       );
@@ -549,7 +558,7 @@ try {
       'Incoming particles retain material in the center',
     );
     assert.ok(timeline[2].fields['Cycle dye 0'].energy > 0);
-    // Hold before a transition starts; an already active blend must finish.
+    // Holding cannot move the next scheduled scene boundary.
     await page.locator('#restart').click();
     await advance(page, 2);
     await advance(page, 120);
@@ -558,7 +567,8 @@ try {
     await page.mouse.down();
     await advance(page, 120);
     const held = await state(page);
-    assert.equal(held.effect, before.effect, 'Held input defers the scene transition');
+    assert.equal(before.effect, 'Flows');
+    assert.equal(held.effect, 'Magnets', 'Held input cannot defer the scheduled transition');
     assert.ok(
       (await page.evaluate(
         () => cycleProbe.writes.filter((w) => w.label === 'Cycle parcel uniforms').at(-1).values[7],
@@ -566,9 +576,10 @@ try {
       'Pressing releases the branded formation',
     );
     await page.mouse.up();
-    await advance(page, Math.ceil(
-      (CYCLE_POLICY.interactionQuietS + CYCLE_POLICY.blendS + 5) / CYCLE_POLICY.maxDtS,
-    ));
+    const releasedAt = (await state(page)).elapsedS;
+    const sceneSeconds = CYCLE_POLICY.holdS + CYCLE_POLICY.blendS;
+    const nextScene = (Math.floor(releasedAt / sceneSeconds) + 1) * sceneSeconds;
+    await advance(page, Math.ceil((nextScene + 4.3 - releasedAt) / CYCLE_POLICY.maxDtS));
     assert.ok(
       (await page.evaluate(
         () => cycleProbe.writes.filter((w) => w.label === 'Cycle parcel uniforms').at(-1).values[7],
@@ -582,6 +593,8 @@ try {
     assert.deepEqual(still.fields, paused.fields);
     assert.equal(still.effect, paused.effect);
     assert.equal(still.blend, paused.blend);
+    if (diagnosticWorkload) await page.evaluate(() =>
+      Object.defineProperty(window, 'devicePixelRatio', { configurable: true, value: 2 }));
     await page.setViewportSize({ width: viewport.height, height: viewport.width });
     await page.waitForTimeout(80);
     await advance(page, 2);
@@ -614,6 +627,8 @@ try {
     assert.deepEqual(errors, []);
     report.journeys.push({
       viewport,
+      defaultCount,
+      executedCount: journeyCount,
       adapter: await page.evaluate(() => cycleProbe.adapter),
       timeline: timeline.map((s) => ({ effect: s.effect, handoffs: s.handoffs, fields: s.fields })),
       fixedProjectionDuringFormation: projection,
