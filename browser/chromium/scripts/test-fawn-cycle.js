@@ -496,7 +496,10 @@ try {
     assert.equal(projection.formationAdvanced, true);
     const timeline = [];
     for (let i = 0; i < 4; i++) {
-      await advance(page, 500);
+      await advance(
+        page,
+        Math.ceil((CYCLE_POLICY.holdS + CYCLE_POLICY.blendS) / CYCLE_POLICY.maxDtS),
+      );
       timeline.push(await state(page));
     }
     assert.deepEqual(
@@ -518,7 +521,13 @@ try {
     );
     assert.ok(timeline[2].fields['Cycle dye 0'].energy > 0);
     // Enter a cross-material blend, hold it with a pressed pointer, then finish it after release.
-    await advance(page, 273);
+    await advance(
+      page,
+      Math.floor(
+        (CYCLE_POLICY.holdS - 100 * CYCLE_POLICY.maxDtS + CYCLE_POLICY.blendS / 2) /
+          CYCLE_POLICY.maxDtS,
+      ),
+    );
     const before = await state(page);
     await page.mouse.move(viewport.width / 2, viewport.height / 2);
     await page.mouse.down();
