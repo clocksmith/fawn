@@ -1,0 +1,83 @@
+{
+  "at": "2026-10-13T18:32:32.906Z",
+  "origin": "https://canvascontext.com",
+  "release": {
+    "sourceCommit": "ce30d277c7bb182498c02df29535684076cdb7e1",
+    "demoSourceCommit": "c006f87fdc30f6f5d7ae5bd4b9425167387cac08",
+    "application": "fawn-demo",
+    "canonicalUrl": "https://canvascontext.com/"
+  },
+  "passed": true,
+  "homepageMatches": true,
+  "files": [
+    {
+      "path": "fawn-cycle-clock.js",
+      "sha256": "199c3295b3a6919d77f5a7cd26851da5c39023af2ac708e010db99374fa297ff"
+    },
+    {
+      "path": "fawn-cycle-gpu.js",
+      "sha256": "1679dcb0a39435dd3eadb12e9866cc0244e64bee94c0d064d9122bbad12e492d"
+    },
+    {
+      "path": "fawn-cycle-transfers.js",
+      "sha256": "2b82e3b8014b548a369e3712b76a2240737bdb80ce4142013e3a19a965b404f1"
+    },
+    {
+      "path": "fawn-cycle.html",
+      "sha256": "92ecb569454613e1b1a34509a7ae2bbd55b31dfc8da5ce033ca666d93dbfa901"
+    },
+    {
+      "path": "fawn-cycle.js",
+      "sha256": "b018dcf273afb221f111137a09184c4b87ff56bfda5163e926f8eeed0b11b29b"
+    },
+    {
+      "path": "fawn-domain-migration.js",
+      "sha256": "0d7722d0b89ee742d20d1b0945ec9118ff5012aa0cf0116de9cb136d5ffde3cc"
+    },
+    {
+      "path": "fawn-formation.js",
+      "sha256": "bb066d40538e07a3d93ee15019c90f41b1e2bf56846ccc0a1946dd60596ca26d"
+    },
+    {
+      "path": "fawn-icon.svg",
+      "sha256": "e016e06419ee291494372c4383f0cb5cc2409a02b744c98f96fd7bd653126a07"
+    },
+    {
+      "path": "fawn-magnetic-fluids.html",
+      "sha256": "92ecb569454613e1b1a34509a7ae2bbd55b31dfc8da5ce033ca666d93dbfa901"
+    },
+    {
+      "path": "fawn-parcel-renderer.js",
+      "sha256": "33ed18454c0c060f0846a97b357ba9c580ce7ed7cac2e527591c7415ae8d9cad"
+    },
+    {
+      "path": "fawn-parcels.js",
+      "sha256": "398bdf6ddf00cf53be4ef2c43324f4eaa9ab0b8f675a0c18cbc3aba275150060"
+    },
+    {
+      "path": "fawn-prismatic-fluids.html",
+      "sha256": "92ecb569454613e1b1a34509a7ae2bbd55b31dfc8da5ce033ca666d93dbfa901"
+    },
+    {
+      "path": "fawn-shaders.js",
+      "sha256": "4c49d353ccafebaa4e36397ea5dcd9f49478ac699767e09c42a7ea3862880169"
+    },
+    {
+      "path": "fawn-start.html",
+      "sha256": "92ecb569454613e1b1a34509a7ae2bbd55b31dfc8da5ce033ca666d93dbfa901"
+    },
+    {
+      "path": "index.html",
+      "sha256": "92ecb569454613e1b1a34509a7ae2bbd55b31dfc8da5ce033ca666d93dbfa901"
+    },
+    {
+      "path": "release.json",
+      "sha256": "37c6e9b722b326b2e4c4732c6d5024a4aa1c121d5f69011647d44f5c1b2ae8e0"
+    },
+    {
+      "path": "demo/sw.js",
+      "sha256": "1af3b17eaff4838ff753eda2de85cdd64941f7a994673a8ea1f4819bee2c6d27"
+    }
+  ],
+  "previewSmoke": "tests/fawn-hosting-smoke.mjs exited 0 on the preview; software WebGPU, desktop/mobile aliases, reset, cleanup and exclusions"
+}
