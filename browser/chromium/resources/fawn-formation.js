@@ -8,12 +8,13 @@
     span: Object.freeze([0.34, 0.27, 0.32]), phase: 2.1 });
 
   const WORKLOAD = Object.freeze({ version: 1, counts: [1024, 4096, 16384, 65536, 262144, 1048576, 4194304, 16777216],
+    cycleCounts: [1024, 4096, 16384, 32768, 65536, 262144],
     steps: [1, 2, 4, 8], defaultCount: 65536, defaultSteps: 4,
-    defaultCounts: Object.freeze({ flow: 65536, wave: 65536, particles: 4096 }) });
+    defaultCounts: Object.freeze({ flow: 65536, wave: 65536, particles: 4096, cycle: 32768 }) });
 
   function configureWorkload(count, steps, kind) {
     if (!(kind in WORKLOAD.defaultCounts)) throw Error(`Unknown Fawn workload: ${kind}`);
-    count.replaceChildren(...WORKLOAD.counts.map(value => new Option(value.toLocaleString(), String(value))));
+    count.replaceChildren(...(kind === 'cycle' ? WORKLOAD.cycleCounts : WORKLOAD.counts).map(value => new Option(value.toLocaleString(), String(value))));
     steps.replaceChildren(...WORKLOAD.steps.map(value => new Option(String(value), String(value))));
     count.value = String(WORKLOAD.defaultCounts[kind]); steps.value = String(WORKLOAD.defaultSteps);
   }

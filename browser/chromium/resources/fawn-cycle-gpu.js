@@ -13,9 +13,10 @@ const GPU_POLICY = Object.freeze({
   parcelBytes: PARCEL_POLICY.strideFloats * 4,
 });
 function createCycleGpu(device, canvas, format, count) {
-  if (!FawnFormation.WORKLOAD.counts.includes(count) || count > GPU_POLICY.maxCount)
+  if (!FawnFormation.WORKLOAD.cycleCounts.includes(count) || count > GPU_POLICY.maxCount)
     throw new Error(`Unsupported cycle workload: ${count}`);
-  const grid = Math.sqrt(count),
+  const grid = Math.ceil(Math.sqrt(count)),
+    fieldCount = grid * grid,
     buffers = [];
   const buffer = (label, size, uniform = false) => {
     const b = device.createBuffer({
@@ -29,7 +30,7 @@ function createCycleGpu(device, canvas, format, count) {
     buffers.push(b);
     return b;
   };
-  const field = (label) => buffer(label, count * 16);
+  const field = (label) => buffer(label, fieldCount * 16);
   const compute = (label, code) =>
     device.createComputePipeline({
       label,
@@ -44,12 +45,12 @@ function createCycleGpu(device, canvas, format, count) {
         resource: resource instanceof GPUBuffer ? { buffer: resource } : resource,
       })),
     });
-  const dispatch = (pass, pipeline, bindings, surfaceGroup = null) => {
+  const dispatch = (pass, pipeline, bindings, surfaceGroup = null, invocations = count) => {
     pass.setPipeline(pipeline);
     pass.setBindGroup(0, bindings);
     if (surfaceGroup)
       pass.dispatchWorkgroups(Math.ceil(grid / surfaceGroup), Math.ceil(grid / surfaceGroup));
-    else pass.dispatchWorkgroups(Math.ceil(count / GPU_POLICY.parcelGroup));
+    else pass.dispatchWorkgroups(Math.ceil(invocations / GPU_POLICY.parcelGroup));
   };
   const flowUniform = buffer('Cycle Flow uniforms', 80, true);
   const waveUniform = buffer('Cycle Wave uniforms', wave.WAVE_UNIFORM_FLOATS * 4, true);
@@ -57,7 +58,10 @@ function createCycleGpu(device, canvas, format, count) {
   const transferUniform = buffer('Cycle transfer uniforms', 48, true);
   const velocities = [field('Cycle velocity 0'), field('Cycle velocity 1')];
   const dyes = [field('Cycle dye 0'), field('Cycle dye 1')];
-  const pressures = [buffer('Cycle pressure 0', count * 4), buffer('Cycle pressure 1', count * 4)];
+  const pressures = [
+    buffer('Cycle pressure 0', fieldCount * 4),
+    buffer('Cycle pressure 1', fieldCount * 4),
+  ];
   const curl = field('Cycle divergence and curl');
   const waves = [field('Cycle surface 0'), field('Cycle surface 1')];
   const parcels = [
@@ -65,7 +69,7 @@ function createCycleGpu(device, canvas, format, count) {
     buffer('Cycle parcels 1', count * GPU_POLICY.parcelBytes),
   ];
   const goals = buffer('Cycle logo targets', PARCEL_POLICY.targetGrid ** 2 * 16);
-  const deposits = buffer('Cycle deposits', count * 24);
+  const deposits = buffer('Cycle deposits', fieldCount * 24);
   let dyeIndex = 0,
     waveIndex = 0,
     parcelIndex = 0,
@@ -130,7 +134,7 @@ function createCycleGpu(device, canvas, format, count) {
   }
   function reset() {
     const seed = FawnFormation.seed(grid),
-      material = createParcelData(grid, seed);
+      material = createParcelData(grid, seed, count);
     dyes.forEach((b) => device.queue.writeBuffer(b, 0, seed.dye));
     velocities.forEach((b) => device.queue.writeBuffer(b, 0, seed.velocity));
     parcels.forEach((b) => device.queue.writeBuffer(b, 0, material));
@@ -243,11 +247,11 @@ function createCycleGpu(device, canvas, format, count) {
     if (effect === 'particles') encoder.clearBuffer(deposits);
     const pass = encoder.beginComputePass();
     if (effect === 'flow') {
-      dispatch(pass, transfers[0], handoffGroups.wave[dyeIndex]);
+      dispatch(pass, transfers[0], handoffGroups.wave[dyeIndex], null, fieldCount);
       waveIndex = 0;
     } else {
       dispatch(pass, transfers[1], handoffGroups.deposit[parcelIndex]);
-      dispatch(pass, transfers[2], handoffGroups.resolve);
+      dispatch(pass, transfers[2], handoffGroups.resolve, null, fieldCount);
       dyeIndex = 0;
     }
     pass.end();

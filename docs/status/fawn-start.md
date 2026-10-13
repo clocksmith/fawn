@@ -1,13 +1,20 @@
 # Fawn hosted demonstrations
 
-The unified `fawn-cycle.html` rotates Flow → Wave → Particles on one simulation
-canvas and device. All effects render the same resident parcels, preserving their
+The unified `fawn-cycle.html` rotates Flows → Magnets → Particles on one simulation
+canvas and device. The default shared parcel workload is reduced; standalone
+benchmark defaults retain their prior definitions. Scene time advances independently
+of input and the clamped physics timestep. Input releases logo formation; idle
+input returns to Fawn. Pause and hidden tabs still stop the schedule.
+All effects render the same resident parcels, preserving their
 positions and carried pigment through mode changes. The live Flow and Wave fields
 drive their movement and material; Particles uses midpoint advection. Formation
 moves each parcel from its accepted position toward an SVG target at a staggered
 rate. It does not shrink a rectangle, change the camera, or mask a grid into the
 logo. The circular initial reservoir extends beyond square viewport corners.
 
+[Current labels, workload and clock checks](../../reports/maintenance/20261012-fawn-labels-load-clock/README.md)
+cover the reduced default through complete rotations, input-held scene completion,
+idle logo recovery and elapsed scene time at a reduced frame rate. Earlier
 [Parcel continuity evidence](../../reports/maintenance/20261012-fawn-parcel-continuity/README.md)
 contains independent GPU references for all three formations and advection,
 fixed projection during settling, full rotations, buffer reuse, input, pause,

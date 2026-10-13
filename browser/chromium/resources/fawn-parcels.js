@@ -87,9 +87,8 @@ fn main(@builtin(global_invocation_id) gid:vec3<u32>) {
  dst[i]=p;
 }
 `;
-function createParcelData(grid, seed) {
-  const count = grid * grid,
-    data = new Float32Array(count * PARCEL_POLICY.strideFloats);
+function createParcelData(grid, seed, count = grid * grid) {
+  const data = new Float32Array(count * PARCEL_POLICY.strideFloats);
   for (let i = 0; i < count; i++) {
     // A uniform disc with an offscreen boundary avoids showing a rectangular grid edge.
     const angle = i * Math.PI * (3 - Math.sqrt(5));
