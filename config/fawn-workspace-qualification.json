@@ -1,7 +1,7 @@
 {
   "$schema": "fawn-workspace-qualification.schema.json",
   "schemaVersion": 1,
-  "caseSetVersion": "2026-10-14-behavioral-v1",
+  "caseSetVersion": "2026-10-14-behavioral-v2",
   "contractPath": "docs/fawn-workspace-contract.md",
   "serviceConfigPath": "config/fawn-workspace-service.json",
   "strategyPath": "config/doe-product-strategy.json#fawnWorkspace",
@@ -734,6 +734,39 @@
         },
         "commandRejections": [],
         "oracle": { "effectRequests": 1, "receipts": 1 }
+      }
+    },
+    {
+      "id": "export-recovery-after-crash",
+      "procedure": "recover-after-crash",
+      "workflows": ["export"],
+      "failureLocation": "while-the-application-holds-the-effect",
+      "crashAt": "while-effect-held",
+      "requirements": [
+        "preserve-unknown-across-restart",
+        "failure-before-dispatch-after-submission-before-acknowledgment",
+        "shared-service-document-research-form-submission-artifact-export"
+      ],
+      "expected": {
+        "steps": {
+          "crash": { "signal": "SIGKILL" },
+          "afterRestart": {
+            "outcome": "unknown",
+            "outcomeBasis": "restart-after-dispatch-start",
+            "isUncertain": true
+          },
+          "recovery": { "status": "completed", "artifact": "/export/report.csv", "recovered": "rerun" }
+        },
+        "actions": {
+          "effect": { "dispatchStatus": "dispatched", "outcome": "unknown" },
+          "resubmission": {
+            "dispatchStatus": "dispatched",
+            "outcome": "completed",
+            "outcomeBasis": "artifact-saved"
+          }
+        },
+        "commandRejections": [],
+        "oracle": { "effectRequests": 2 }
       }
     },
     {

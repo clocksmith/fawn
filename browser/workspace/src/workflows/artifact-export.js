@@ -34,4 +34,20 @@ async function runArtifactExport(session, { runId, intent, exportUrl, linkText }
   };
 }
 
-export { runArtifactExport };
+/**
+ * Finish an export task after an interruption. A download the service already recorded as
+ * completed is reused; otherwise the export runs again under a fresh run identity, since action
+ * ids are never reused and a download is not an external effect.
+ * @param {ReturnType<import('./owner-session.js').createOwnerSession>} session
+ * @param {Parameters<typeof runArtifactExport>[1]} task
+ */
+async function recoverArtifactExport(session, task) {
+  const downloadId = `${task.runId}-download`;
+  const prior = (await session.outstanding()).find((action) => action.actionId === downloadId);
+  if (prior?.outcome === OUTCOMES.COMPLETED) {
+    return { status: OUTCOMES.COMPLETED, artifact: prior.evidence.effect, recovered: 'recorded-outcome', steps: [] };
+  }
+  return { ...await runArtifactExport(session, { ...task, runId: `${task.runId}-resume` }), recovered: 'rerun' };
+}
+
+export { recoverArtifactExport, runArtifactExport };

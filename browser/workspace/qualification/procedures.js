@@ -9,6 +9,8 @@ import { copyFileSync, readFileSync, writeFileSync } from 'node:fs';
 import { summarizeAction } from './summaries.js';
 
 const OWNER_B = 'agent-b';
+// Recovery workflows rerun under a derived run identity; action ids are never reused.
+const RECOVERY_RUN_SUFFIX = Object.freeze({ form: '-resubmit', export: '-resume' });
 const CORRUPTED_OWNER = 'agent-z';
 
 /** Hold the workflow's effect at the fixture, kill the host while it is held, then release it. */
@@ -303,11 +305,11 @@ const PROCEDURES = Object.freeze({
 
   async 'recover-after-crash'(ctx) {
     const { owner } = await ctx.setup();
-    await fetch(`${ctx.origin}/control/seed?count=${ctx.caseSpec.seedReceipts}`);
+    if (ctx.caseSpec.seedReceipts) await fetch(`${ctx.origin}/control/seed?count=${ctx.caseSpec.seedReceipts}`);
     const runId = ctx.runId(1);
     const effectId = ctx.effectId(runId);
     ctx.actionRefs.effect = effectId;
-    ctx.actionRefs.resubmission = ctx.effectId(`${runId}-resubmit`);
+    ctx.actionRefs.resubmission = ctx.effectId(`${runId}${RECOVERY_RUN_SUFFIX[ctx.workflowName]}`);
     if (ctx.caseSpec.crashAt === 'while-effect-held') {
       ctx.record('crash', await crashWhileEffectHeld(ctx, owner, runId));
     } else {
