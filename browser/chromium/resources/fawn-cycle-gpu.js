@@ -4,7 +4,7 @@ import { FLOW_TO_WAVE, PARTICLE_DEPOSIT, RESOLVE_DEPOSIT } from './fawn-cycle-tr
 import { PARCEL_POLICY, PARCEL_UPDATE, createParcelData } from './fawn-parcels.js';
 import { createParcelRenderer } from './fawn-parcel-renderer.js';
 const GPU_POLICY = Object.freeze({
-  version: 13,
+  version: 14,
   maxCount: 262144,
   pressureIterations: flow.PRESSURE_ITERATIONS,
   flowGroup: flow.WORKGROUP_SIZE,
@@ -12,8 +12,9 @@ const GPU_POLICY = Object.freeze({
   parcelGroup: PARCEL_POLICY.workgroup,
   parcelBytes: PARCEL_POLICY.strideFloats * 4,
   hoverStrengthScale: 1 / 3,
-  magneticPressScale: 0.18,
-  particlePressScale: 0.13,
+  magneticPressScale: 0.4,
+  particlePressScale: 0.33,
+  pressSweepLimit: 4,
   flowPressForce: 0.7,
   magneticSpinRate: 2.25,
   magneticArrivalPower: 2,
@@ -163,6 +164,9 @@ function createCycleGpu(device, canvas, format, count) {
     const pressScale = pointWeight > 0 ? (weights[1] * GPU_POLICY.magneticPressScale
       - weights[2] * GPU_POLICY.particlePressScale) / pointWeight : 0;
     const pressing = pointer.hover && pointer.down && !burst?.strength;
+    // World-space hand velocity for a held drag, bounded so a fast flick cannot fling material.
+    const hand = pressing && dt > 0 ? [pointer.dx * 2 / dt, pointer.dy * 2 / dt] : [0, 0];
+    const sweep = hand.map((v) => v / Math.max(1, Math.hypot(...hand) / GPU_POLICY.pressSweepLimit));
     const force = pointer.hover ? (pointer.down ? GPU_POLICY.flowPressForce : 0.28 * GPU_POLICY.hoverStrengthScale) : 0;
     device.queue.writeBuffer(
       flowUniform,
@@ -229,8 +233,7 @@ function createCycleGpu(device, canvas, format, count) {
         burst?.strength ?? 0,
         burst?.radius ?? 0,
         ...viewport,
-        0,
-        0,
+        ...sweep,
       ]),
     );
     device.queue.writeBuffer(

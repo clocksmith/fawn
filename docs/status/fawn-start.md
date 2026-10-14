@@ -10,8 +10,9 @@ Each scene shows its full field before the mark gathers late in the hold. A pres
 each scene's response through every blend: Magnets attract, Particles repel, a held
 press swirls where the two cancel, and material under it leaves its formation and
 return springs until release. Material spirals into the mark on the live field rather than
-taking straight lines. Unformed magnetic film draws only where material is continuous and
-the field holds it. Fluid relief carries pixel glitter. Particles follow the standalone
+taking straight lines. Magnetic material is drawn into the magnets and draws only where it is
+continuous and the field holds it; the forming mark becomes one film. The hand acts on
+nearby material faster than the fields do, and a held drag sweeps it along. Fluid relief carries pixel glitter. Particles follow the standalone
 particle page's galaxy with fading trails and form the mark in its positional palette.
 
 [`fawn-cycle-gpu.js`](../../browser/chromium/resources/fawn-cycle-gpu.js) runs the
