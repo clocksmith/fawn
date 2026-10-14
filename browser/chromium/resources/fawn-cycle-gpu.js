@@ -4,7 +4,7 @@ import { FLOW_TO_WAVE, PARTICLE_DEPOSIT, RESOLVE_DEPOSIT } from './fawn-cycle-tr
 import { PARCEL_POLICY, PARCEL_UPDATE, createParcelData } from './fawn-parcels.js';
 import { createParcelRenderer } from './fawn-parcel-renderer.js';
 const GPU_POLICY = Object.freeze({
-  version: 12,
+  version: 13,
   maxCount: 262144,
   pressureIterations: flow.PRESSURE_ITERATIONS,
   flowGroup: flow.WORKGROUP_SIZE,
@@ -156,13 +156,14 @@ function createCycleGpu(device, canvas, format, count) {
     dyeIndex = waveIndex = parcelIndex = 0;
     resize();
   }
-  function uniforms(dt, time, shape, pointer, steps, weights, settleDt = dt, burst = null,
-    interactionScale = 1) {
+  function uniforms(dt, time, shape, pointer, steps, weights, burst = null) {
     const viewport = FawnFormation.viewport(canvas);
-    const pressScale = weights[1] * GPU_POLICY.magneticPressScale
-      - weights[2] * GPU_POLICY.particlePressScale;
-    const force = (pointer.hover ? (pointer.down ? GPU_POLICY.flowPressForce : 0.28 * GPU_POLICY.hoverStrengthScale) : 0)
-      * interactionScale;
+    // The parcel shader applies the scene weight once; this is the press's per-scene character.
+    const pointWeight = weights[1] + weights[2];
+    const pressScale = pointWeight > 0 ? (weights[1] * GPU_POLICY.magneticPressScale
+      - weights[2] * GPU_POLICY.particlePressScale) / pointWeight : 0;
+    const pressing = pointer.hover && pointer.down && !burst?.strength;
+    const force = pointer.hover ? (pointer.down ? GPU_POLICY.flowPressForce : 0.28 * GPU_POLICY.hoverStrengthScale) : 0;
     device.queue.writeBuffer(
       flowUniform,
       0,
@@ -197,7 +198,7 @@ function createCycleGpu(device, canvas, format, count) {
       pointer.x,
       pointer.y,
       pointer.hover && !burst?.strength ? (pointer.down ? GPU_POLICY.magneticPressScale
-        : 0.55 * GPU_POLICY.hoverStrengthScale) * interactionScale : 0,
+        : 0.55 * GPU_POLICY.hoverStrengthScale) : 0,
       0,
       (dt * 1.1) / steps,
       time,
@@ -221,11 +222,11 @@ function createCycleGpu(device, canvas, format, count) {
         pointer.x * 2 - 1,
         pointer.y * 2 - 1,
         pointer.hover && !burst?.strength ? (pointer.down ? 26.67 * pressScale
-          : 2 * GPU_POLICY.hoverStrengthScale) * interactionScale : 0,
-        settleDt,
+          : 2 * GPU_POLICY.hoverStrengthScale) : 0,
+        pressing ? 1 : 0,
         (burst?.x ?? pointer.x) * 2 - 1,
         (burst?.y ?? pointer.y) * 2 - 1,
-        (burst?.strength ?? 0) * interactionScale,
+        burst?.strength ?? 0,
         burst?.radius ?? 0,
       ]),
     );
