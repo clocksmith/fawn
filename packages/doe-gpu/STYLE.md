@@ -5,9 +5,8 @@ This guide is the JavaScript style contract for `packages/doe-gpu`.
 ## Core principles
 
 - Pure ESM throughout. No CommonJS, no dynamic `require()`.
-- Runtime validation over static types. Use JSDoc for public API intent.
+- Runtime validation over static types; JSDoc for public API intent.
 - Fail fast with path-based error context.
-- Freeze constant objects. Prefer `Object.freeze()` for enum-like tables.
 - The checked-in `src/vendor/` is maintained source; its name grants no review exemption.
 - WGSL execution belongs to the native compiler and runtime. Never replace shader
   work with host results selected from source patterns, names, or comments.
@@ -17,32 +16,23 @@ This guide is the JavaScript style contract for `packages/doe-gpu`.
 ## Modules
 
 - All modules are ESM via `"type": "module"` in `package.json`.
-- Use named imports: `import { x, y } from './module.js'`.
-- Always include the `.js` extension in import paths.
+- Use named imports with the `.js` extension: `import { x, y } from './module.js'`.
 - Avoid new default exports in authored internal modules. Vendor-synced
-  compatibility modules may retain upstream defaults, and package entrypoints
-  may use either named or default exports when that keeps the public surface
-  explicit.
-
-```javascript
-import { createDoeNamespace } from './vendor/doe-namespace.js';
-import { KNOWN_FEATURES } from './vendor/webgpu/shared/capabilities.js';
-import { assertObject } from './vendor/webgpu/shared/resource-lifecycle.js';
-import { normalizeEnumKey } from './vendor/webgpu/shared/validation.js';
-```
+  compatibility modules may keep upstream defaults; package entrypoints may use
+  named or default exports when that keeps the public surface explicit.
 
 ## File naming
 
-- `kebab-case.js` for all source files.
-- No `.mjs` extension. ESM is declared via `package.json`, not file extension.
-- Test files: `test-<scope>.js` (e.g. `test-smoke-load.js`,
-  `test-integration-gpu-namespace.js`).
+- `kebab-case.js` for all source files; no `.mjs` (ESM is declared in
+  `package.json`).
+- Test files: `test-<scope>.js` in `test/smoke/` and `test/integration/`
+  (e.g. `test-smoke-load.js`, `test-integration-gpu-namespace.js`);
+  `<scope>.test.js` in `test/unit/`.
 - Runtime shims: named by runtime (`bun.js`, `deno.js`, `browser.js`).
 
 ## Naming
 
-- Functions and methods: `camelCase`
-- Variables and properties: `camelCase`
+- Functions, methods, variables, and properties: `camelCase`
 - Boolean predicates: `is`/`has`/`should` prefix (`isBCFormat()`,
   `hasStencilAspect()`)
 - Classes: `PascalCase`
@@ -59,28 +49,11 @@ import { normalizeEnumKey } from './vendor/webgpu/shared/validation.js';
 - No bare magic numbers. Name all thresholds and limits.
 - Place constants at file top, after imports.
 
-```javascript
-const SAMPLER_BINDING_TYPES = Object.freeze({
-  filtering: 'filtering',
-  'non-filtering': 'non-filtering',
-  comparison: 'comparison',
-});
-```
-
 ## Exports
 
-- Prefer named exports grouped at the end of authored modules.
-- Small facades, package entrypoints, and vendor-synced modules may export
-  inline when that is clearer.
+- Prefer named exports grouped at the end of authored modules; small facades,
+  package entrypoints, and vendor-synced modules may export inline when clearer.
 - Re-export barrels use `export * from` or `export { name } from`.
-
-```javascript
-export {
-  MAX_SAFE_U64,
-  failValidation,
-  describeResourceLabel,
-};
-```
 
 ## Error handling
 
@@ -93,17 +66,11 @@ export {
 - Use try-catch only for expected failure modes (import probing, optional
   features).
 
-```javascript
-function failValidation(path, message) {
-  throw new Error(`${path}: ${message}`);
-}
-```
-
 ## Validation
 
 - Validate at API boundaries using runtime type checks.
-- Keep JSON schema, runtime validator field tables, and `.d.ts` declarations in
-  parity. `npm run check:plan-schema` is the plan/capture contract check.
+- JSON schema, runtime validator field tables, and `.d.ts` declarations agree.
+  When you change the plan/capture contract, run `npm run check:plan-schema`.
 - Validation failures expose stable `code`, `path`, `expected`, and `received`
   fields in addition to a readable message.
 - Use helper functions (`assertObject`, `assertArray`, `assertBoolean`,
@@ -134,8 +101,7 @@ function failValidation(path, message) {
 - Line length: prefer under 100 characters.
 - Prefer single quotes in authored package code. Follow the surrounding file's
   existing quote style in vendor-synced or generated modules.
-- No trailing commas in function parameter lists.
-- Trailing commas in array/object literals.
+- Trailing commas in array/object literals, not function parameter lists.
 
 ## Testing
 
@@ -143,8 +109,10 @@ function failValidation(path, message) {
   detail?)` helpers.
 - Smoke tests: sequential checks, exit 0/1, output `ok:` or `FAIL:` lines.
 - Integration tests: discovered by pattern (`test-integration-*.js`), spawned
-  as subprocesses.
-- Test files live in `test/smoke/` and `test/integration/`.
+  as subprocesses; most need the native addon and a GPU adapter.
+- Run the touched test file with `node`. `npm test` chains contracts, smoke,
+  and native integration (and runs in `prepublishOnly`); it is not a default
+  development gate.
 
 ## Dependencies
 

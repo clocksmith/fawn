@@ -5,15 +5,15 @@ Zig version pinned in [`../../config/toolchains.json`](../../config/toolchains.j
 Component intent comes from the applicable `CATSCAN.md` chain; source ownership
 and size policy come from [`source-layout.json`](source-layout.json).
 
-Readable code makes its inputs, decisions, ownership, and failure paths visible.
-Shorter code is useful when it removes repetition or indirection; line count
-alone does not establish quality.
+Readable code makes its inputs, decisions, ownership, and failure paths
+visible. Shorter is better only when it removes repetition or indirection.
 
 ## Core principles
 
 - Prefer explicit typed contracts over inferred behavior.
 - Keep runtime decisions deterministic and traceable.
-- Fail fast on invalid/unsupported inputs with actionable errors.
+- Fail fast on invalid/unsupported inputs with actionable errors stating what
+  was expected and what was received.
 - Keep hot-path execution allocation-light after initialization.
 - Give every semantic fact one authoritative owner and every subsystem one
   narrow public surface.
@@ -22,8 +22,8 @@ alone does not establish quality.
 
 ## Invariant registry
 
-These identifiers are normative and should be named by reviews, regression
-tests, and receipts when a change touches the corresponding boundary.
+These identifiers are normative; reviews, regression tests, and receipts name
+them when a change touches the corresponding boundary.
 
 | ID | Invariant | Enforcement surface |
 | --- | --- | --- |
@@ -41,42 +41,41 @@ tests, and receipts when a change touches the corresponding boundary.
 | `INV-LIVE-012` | Re-export reachability is not evidence of use. Incubation modules require a real consumer or are removed from production roots. | architecture reachability reports, consumer search, affected package tests |
 
 No prose-only waiver satisfies an invariant. If the named global gate cannot
-observe a changed behavior, the affected subsystem must add a focused
+observe a changed behavior, the affected subsystem adds a focused
 characterization or parity test in the same change.
 
 ## Build decisions and observed costs
 
-- Build decisions produce immutable typed values from versioned policy. Reject
+- Build decisions are immutable typed values from versioned policy, rejecting
   unsupported versions, missing fields, and incompatible selections before
-  compiling consumers. Device facts resolve once per device; changing invocation
-  inputs retain explicit validation. Algorithm constants stay with the algorithm.
+  consumers compile. Device facts resolve once per device; changing invocation
+  inputs keep explicit validation. Algorithm constants stay with the algorithm.
 - Derive diagnostic identity and coverage metadata from the owning contract.
-  Compile-time completeness is structural evidence; validators, executors, and
-  resource lifetimes still require independent behavioral tests.
-- Declare allocation sites in steady execution and distinguish reserved capacity
+  Compile-time completeness is only structural evidence; validators, executors,
+  and resource lifetimes need behavioral tests.
+- Declare steady-execution allocation sites, distinguishing reserved capacity
   from allocator calls. Every cache specifies identity, owner, capacity,
-  invalidation, and full-capacity behavior. Owning structs cannot be freely copied;
-  Zig supplies no general ownership checker.
-- Keep pointers, casts, native handles, and foreign callbacks at narrow adapters.
-  Required metadata and allocation failures remain errors. API admission and
-  checked arithmetic must work in every supported optimization mode.
-- Instrument the real execution path. Optional observation has bounded storage,
-  explicit unavailable values, and overflow reporting. Export outside the measured
-  operation and confirm benefit in the ordinary configuration. Specialization,
-  forced inlining, and vector variants require application, binary-size, and build
-  evidence before adoption.
-
-- Telemetry snapshots read existing state. File output and configuration reads
-  belong to an explicit fallible collection boundary outside the measured
-  operation. Deferred capture owns its inputs until publication or cleanup.
-- Content hashes require actual artifact bytes. Derived identifiers, observed
-  source hashes, and unobserved compiler stages must remain distinguishable in
-  versioned evidence; a configured tool is not evidence that it executed.
-- Elapsed-time measurements use a suitable elapsed clock rather than calendar
-  time. Preserve unavailable timing explicitly; legacy zero sentinels must never
-  become a duration measured from the clock's epoch.
-- Filesystem lookup may continue on absence. Permission, allocation, and other
-  access failures retain their causes instead of selecting another candidate.
+  invalidation, and full-capacity behavior. Owning structs cannot be freely
+  copied; Zig has no general ownership checker.
+- Keep pointers, casts, native handles, and foreign callbacks at narrow
+  adapters. Required metadata and allocation failures stay errors; API
+  admission and checked arithmetic work in every supported optimization mode.
+- Instrument the real execution path with bounded optional observation,
+  explicit unavailable values, and overflow reporting; confirm benefit in the
+  ordinary configuration. Telemetry snapshots read existing state; export,
+  file output, and configuration reads happen at an explicit fallible
+  collection boundary outside the measured operation. Deferred capture owns
+  its inputs until publication or cleanup.
+- Specialization, forced inlining, and vector variants need application,
+  binary-size, and build evidence before adoption.
+- Content hashes need actual artifact bytes. Versioned evidence keeps derived
+  identifiers, observed source hashes, and unobserved compiler stages distinct;
+  a configured tool is no evidence it ran.
+- Elapsed-time measurements use an elapsed clock, not calendar time; keep
+  unavailable timing explicit, never a legacy zero read as a duration from the
+  clock's epoch.
+- Filesystem lookup may continue on absence; permission, allocation, and other
+  access failures keep their causes instead of selecting another candidate.
 
 ## Repository conventions
 
@@ -84,93 +83,74 @@ characterization or parity test in the same change.
   the subsystem that owns the input language.
 - Quirk selection belongs to `quirk/`; execution orchestration, trace, and
   replay belong to `runtime/`; WebGPU ABI contracts belong to `core/abi/`.
-- The current ownership directories and compatibility facades are generated in
-  `src/README.md` from `source-layout.json`. Do not duplicate that changing
-  module inventory in this guide.
+- Generated `src/README.md` (from `source-layout.json`) lists current ownership
+  directories and compatibility facades; do not duplicate it here.
 
-`source-layout.json` is the architecture manifest, not merely a directory
-inventory. Its architecture-aware version must own layers, import permissions,
-special roles, compatibility-facade lifecycle, generated sources, and any
-cohesive-module size justification. Do not create a second policy file for
-those facts.
+`source-layout.json` is the architecture manifest, not just a directory
+inventory: it owns layers, import permissions, special roles,
+compatibility-facade lifecycle, generated sources, and cohesive-module size
+justifications. Do not create a second policy file for those facts.
 
 ## Architectural decoupling
 
-- Treat directories as subsystem boundaries, not just file buckets.
-- Prefer dependency direction: contracts -> helpers -> subsystem
-  implementation -> facade/orchestration.
-- `src/mod.zig` is the only production Zig file allowed directly under `src/`.
-  `source-layout.json` assigns every implementation to an ownership directory,
-  and `tools/check_source_layout.py` enforces that boundary.
-- `core` must remain one-way with respect to `full`. If shared behavior is
-  needed, extract it into `core`, `backend/common`, or a new contract module
-  rather than importing upward.
-- Backend-specific code must not import sibling backends directly. Cross-backend
-  sharing belongs in `backend/common`.
-- `composition/backend_factory.zig` is the ordinary runtime provider
-  construction root. Drop-in FFI modules that must translate provider-native
-  objects are an explicit, source-enforced integration-root set; adding one is
-  an architecture change, not an automatic privilege of living in `backend/`.
-- Provider configuration is passed at construction. Mutable cache paths,
+- Directories are subsystem boundaries, not file buckets. Prefer dependency
+  direction: contracts -> helpers -> subsystem implementation ->
+  facade/orchestration.
+- `src/mod.zig` is the only production Zig file directly under `src/`;
+  `source-layout.json` assigns every implementation an ownership directory.
+- `core` never imports `full`; extract shared behavior into `core`,
+  `backend/common`, or a new contract module instead.
+- Backends never import sibling backends; cross-backend sharing belongs in
+  `backend/common`.
+- `composition/backend_factory.zig` is the ordinary provider construction
+  root. Drop-in FFI modules that translate provider-native objects form an
+  explicit, source-enforced integration-root set; adding one is an architecture
+  change, not a privilege of living in `backend/`.
+- Provider configuration is passed at construction; mutable cache paths,
   enablement flags, handles, telemetry, and device identity belong to the
-  selected provider instance, never a process-global configuration shim.
-- Non-backend implementation files must reach backend-specific behavior through
-  backend-owned seam modules such as `backend/dropin_*.zig`, not by importing
-  `backend/metal/*`, `backend/vulkan/*`, or `backend/d3d12/*` directly. The
-  import fence enforces this boundary.
-- Keep `compiler/wgsl` self-contained except for explicit shared
-  proof/contracts.
-- Keep `quirk` limited to quirk logic plus shared contracts/proof inputs; it
-  should not depend on backend execution modules.
-- Prefer narrow context/state types over monolithic runtime structs when
-  crossing subsystem boundaries.
-- Avoid introducing new import cycles. If an import would create one, extract a
-  smaller contract/state module and depend on that instead.
-- When splitting a high-fan-in file, move definitions first and retain a
-  compatibility facade only when an exercised compatibility contract requires
-  it. Every retained facade must be declared in `source-layout.json`.
-- Shared types should live with the subsystem that owns their semantics, not in
-  whichever orchestration file currently imports them most often.
+  provider instance, never a process-global shim.
+- Non-backend files reach backend-specific behavior through backend-owned seam
+  modules such as `backend/dropin_*.zig`, never by importing `backend/metal/*`,
+  `backend/vulkan/*`, or `backend/d3d12/*` directly (import-fence enforced).
+- `compiler/wgsl` is self-contained except for explicit shared proof/contracts.
+- `quirk` holds quirk logic plus shared contracts/proof inputs and never depends
+  on backend execution modules.
+- Prefer narrow context/state types over monolithic runtime structs across
+  subsystem boundaries.
+- No new import cycles; extract a smaller contract/state module instead.
 - New implementation code must not import `compat/`; the compatibility surface
   is for compatibility tests and declared consumers only.
-- Native implementation code should import the narrowest support, contract,
-  value-type, or ABI shard that owns the required symbols. Broad aggregation
-  modules are compatibility/facade surfaces, not default implementation
-  dependencies.
 
 ## Module roots and facades
 
 - Module roots may re-export contracts, normalize public inputs, delegate to
-  feature owners, and translate errors at the public boundary.
-- A package-root re-export does not prove a module has a production consumer.
-  Modules used only by their own characterization tests remain incubation
-  scaffolding and must not be described as a completed production route.
+  feature owners, and translate errors.
+- Modules used only by their own characterization tests are incubation
+  scaffolding (`INV-LIVE-012`), never described as a completed production route.
 - Module roots must not own mutable diagnostic state, semantic transforms,
   backend realization, resource state machines, or substantive feature tests.
-- Compatibility facades may contain aliases and delegation required by a
-  declared consumer. They must not introduce independent policy or execution
-  semantics.
-- Every compatibility facade must be declared in `source-layout.json` and
-  name its external consumer, reason, owner, consumer-facing test, and removal
-  condition.
-- When moving implementation out of a root or facade, definitions move first;
-  the facade remains only until its declared consumers migrate.
+- Compatibility facades hold only aliases and delegation a declared consumer
+  requires, declared in `source-layout.json` with that external consumer,
+  reason, owner, consumer-facing test, and removal condition.
+- When moving implementation out of a root, facade, or high-fan-in file,
+  move definitions first; keep a facade only while an exercised declared
+  consumer needs it.
 
 ## File size
 
-The active `architecture.linePolicy` in `source-layout.json` sets the advisory
-review threshold, justification threshold, and hard maximum for handwritten
-production source under `src/`. Generated specification or table files require
-a declared, reproducible generation contract. Build tooling and test files are
-outside that production line gate; they still require cohesive responsibilities.
+`architecture.linePolicy` in `source-layout.json` sets the advisory,
+justification, and hard-maximum thresholds for handwritten production source
+under `src/`. Generated specification or table files need a declared,
+reproducible generation contract. Build tooling and tests are outside the
+production line gate but still need cohesive responsibilities.
 
-The thresholds are not targets. A file that owns multiple state machines,
-artifact kinds, input languages, or execution phases must split even below the
-advisory signal. Split by cohesive functionality, keep related code together,
-and do not create a module whose only identity is satisfying a line limit.
+Thresholds are not targets. A file owning multiple state machines, artifact
+kinds, input languages, or execution phases splits even below the advisory
+signal. Split by cohesive functionality, keep related code together, and never
+create a module whose only identity is satisfying a line limit.
 
-File-count reduction and size distribution are campaign observations. Report
-production, generated, test, and build/tooling code separately, and exclude
+File-count reduction and size distribution are campaign observations; report
+production, generated, test, and build/tooling code separately, excluding
 retained benchmark source snapshots from active-tree totals.
 
 ## Semantic inventory decisions
@@ -183,15 +163,15 @@ Architecture analysis assigns every production file one decision:
 - **Merge**: one production importer, no independent contract or test identity,
   same owner as its consumer, and only forwarding declarations, private
   constants, or a tiny private record.
-- **Elevate**: a semantic fact used across layers currently lives inside one
-  implementation; move it to the neutral owner.
+- **Elevate**: a cross-layer semantic fact lives inside one implementation;
+  move it to the neutral owner.
 - **Recompose**: one file owns multiple state machines, policies, contexts,
   artifact kinds, or pipeline phases; reorganize by those responsibilities.
 - **Delete**: unreachable, superseded, duplicated, or an unconsumed
   compatibility facade.
 
-Physical size, fan-in, fan-out, and co-change frequency are diagnostic evidence
-for these decisions. None decides the outcome alone.
+Size, fan-in, fan-out, and co-change frequency inform these decisions; none
+decides alone.
 
 ## Canonical contract families
 
@@ -205,15 +185,15 @@ Resolve duplicate sources of truth in this order:
 6. texture-format and binding mappings;
 7. backend selection and fallback policy.
 
-Each family has one neutral typed owner. Backend-specific conversion and native
-control flow remain local to the backend. Prefer an explicit tagged union plus
-complete metadata table before considering type generation.
+Each family has one neutral typed owner; backend-specific conversion and
+native control flow stay in the backend. Prefer an explicit tagged union plus a
+complete metadata table over type generation.
 
 Command accounting rules are required metadata, not catch-all defaults. Payload
 counts must name an existing `u32` field; dynamic capability policies must bind
 the command they inspect. Keep independent tests for count normalization and
-required capabilities because structural completeness cannot establish either
-rule's semantic correctness.
+required capabilities; structural completeness cannot establish their semantic
+correctness.
 
 ## Formatting
 
@@ -225,192 +205,166 @@ zig build fmt
 ```
 
 `fmt-check` checks without writing; `fmt` applies Zig's formatter. Both cover the
-runtime tree, including tests, generated suite roots, and build/tooling code,
-excluding `vendor/`, `.zig-cache/`, and `zig-out/`. Format generated source through
-its generator when a generator check would otherwise reject the result.
+runtime tree (tests, generated suite roots, build/tooling code), excluding
+`vendor/`, `.zig-cache/`, and `zig-out/`. Format generated source through its
+generator when a generator check would otherwise reject the result.
 
-Formatting is blocking in the default install step and every canonical test
-suite. The WGSL CI workflow also runs it explicitly before compilation. A named
-artifact-only build step is not a substitute for these checks.
+`fmt-check` already runs in the default install step, every canonical test
+step, and the WGSL CI workflow; artifact-only build steps skip it.
 
 ## Imports
 
-- `std` and `builtin` first.
-- Then local modules, with shared contracts before domain-specific imports.
-- Group domain imports by subsystem (e.g. backend modules together).
-- Prefer small feature-scoped modules over catch-all utility files.
-- Prefer importing feature-local contract/state modules over whole runtime
-  orchestrators.
-- Before importing a broad hub such as a facade or backend runtime, check
-  whether a narrower contract module is the real dependency.
+- `std` and `builtin` first, then local modules: shared contracts before
+  domain-specific imports, grouped by subsystem (e.g. backend modules together).
+- Import the narrowest support, contract, value-type, ABI, or feature-local
+  state module that owns the symbols. Facades, broad aggregation modules, and
+  runtime orchestrators are compatibility surfaces, not default dependencies.
 
 ## Naming
 
 - Types, including type-returning factory functions: `PascalCase`.
 - Ordinary functions and methods: `camelCase`.
-- Local values, parameters, fields, enum tags, and module import bindings:
-  `snake_case`. A local `const` is still a local value.
+- Local values (including local `const`), parameters, fields, enum tags, and
+  module import bindings: `snake_case`.
 - Named domain, ABI, and policy constants: `UPPER_SNAKE_CASE`.
-- File names: `snake_case.zig`.
-- Doe runtime files stay `snake_case.zig` even when a file is centered on one
-  primary type; do not introduce `PascalCase.zig` files in `runtime/zig/src/`.
+- File names: `snake_case.zig`, even when a file centers on one primary type;
+  no `PascalCase.zig` files in `runtime/zig/src/`.
 
-Preserve spellings imposed by foreign symbols, generated bindings, serialized
-schemas, and external interfaces. Those contracts take precedence over a local
-naming preference. Rename private implementation symbols with their consumers
-when touching the responsibility they belong to; do not silently rename a
-public declaration, error, or serialized field for style. Existing mixed naming
-is review debt, not evidence that an automated naming gate exists.
+Spellings imposed by foreign symbols, generated bindings, serialized schemas,
+and external interfaces win over local naming. Rename private symbols with
+their consumers when touching their responsibility; never silently rename a
+public declaration, error, or serialized field for style. Existing mixed
+naming is review debt; no automated naming gate exists.
 
-Choose names for the represented fact: `retained_bytes` distinguishes capacity
-from a live allocation count. Avoid `data`, `state`, and `result` when several
-different concepts share the scope. Use short names where their meaning is
-unambiguous, such as a loop index.
+Name the represented fact: `retained_bytes` distinguishes capacity from a live
+allocation count. Avoid `data`, `state`, and `result` when several concepts
+share the scope; short names suit unambiguous cases such as a loop index.
 
 ## Constants and magic numbers
 
 - Inline `0`, `1`, simple index arithmetic, and language-level sentinels when
   they are the clearest expression of local mechanics.
-- Name domain, ABI, policy, threshold, size, retry, and timing values.
-- Use named `UPPER_SNAKE_CASE` comptime constants or config values.
+- Name domain, ABI, policy, threshold, size, retry, and timing values as
+  `UPPER_SNAKE_CASE` comptime constants or config values.
 - Place module constants after imports; keep type-owned constants with the type.
-- Domain-shared constants belong in the narrow contract module that owns their
-  semantics, such as `model_texture_value_types.zig`,
-  `model_binding_value_types.zig`, `wgpu_core_base_types.zig`, or
-  `wgpu_texture_base_types.zig`.
-- Module-specific constants stay in the module that uses them.
-- If a value appears in more than one file, it must have a single source of truth.
+- Domain-shared constants live in the narrow contract module owning their
+  semantics (e.g. `model_texture_value_types.zig`,
+  `model_binding_value_types.zig`, `wgpu_core_base_types.zig`,
+  `wgpu_texture_base_types.zig`); module-specific constants stay in their
+  module. A value used in more than one file has a single source of truth.
 
 ## Canonical serialization
 
 - Each schema-owned artifact kind owns its canonical field walk and validation.
 - Shared byte, number, string, and key emission belongs in one narrow canonical
   writer module.
-- Do not combine unrelated artifact walkers in a catch-all digest module only
-  because they share SHA-256 or JSON emission.
+- Sharing SHA-256 or JSON emission does not justify a catch-all digest module
+  of unrelated artifact walkers.
 - Canonicalization refactors must preserve exact bytes, semantic digests, error
   classification, and allocation cleanup through characterization tests.
 
 ## Control flow
 
-- Prefer `switch` on enums over long `if` ladders.
-- Exhaust meaningful alternatives. Use `else` only for a deliberate shared
-  policy; do not let a new enum tag silently acquire success behavior.
+- Prefer `switch` on enums over long `if` ladders, exhausting meaningful
+  alternatives. Use `else` only for a deliberate shared policy; a new enum tag
+  must not silently acquire success behavior.
 - Use early returns for invalid states.
-- Keep fallback behavior explicit and auditable.
-- Do not introduce silent capability switching.
-- Prefer immutable locals and the smallest useful scope. Represent mutually
-  exclusive states with a tagged union when independent flags permit invalid
-  combinations.
+- Keep fallback behavior explicit and auditable; no silent capability switching.
+- Prefer immutable locals in the smallest useful scope, and a tagged union over
+  independent flags that permit invalid combinations.
 - Extract a helper when it names a responsibility or removes duplicated
-  semantics. A forwarding wrapper, generic callback, or new module must earn
-  its indirection through an actual contract or consumer.
+  semantics. A forwarding wrapper, generic callback, or new module earns its
+  indirection only through an actual contract or consumer.
 
 ## Prepared operation parity
 
 These rules govern the command-oriented executor. Ordinary native WebGPU and
-package compute programs retain their own submission interfaces while consuming
-the same applicable shader, resource, ownership, and error contracts.
+package compute programs keep their own submission interfaces but consume the
+same applicable shader, resource, ownership, and error contracts.
 
 - Resolve policy, bindings, work shape, entry point, specialization, and
-  fallback eligibility before selecting an executor.
-- Immediate, recorded, replayed, direct, indirect, and backend-specific paths
-  consume the same read-only prepared-operation contract.
+  fallback eligibility before selecting an executor. Immediate, recorded,
+  replayed, direct, indirect, and backend-specific paths consume the same
+  read-only prepared-operation contract.
 - `PreparedOperation` is a borrowed view for one synchronous execution and its
-  observer callbacks. Anything that queues, retries asynchronously, records
-  payloads for later replay, or otherwise retains the operation must own an
-  `OwnedPreparedOperation` snapshot and release it explicitly.
-- Snapshot cloning must reject pointer forms without a declared ownership rule,
-  preserve slice alignment and sentinels, and release partial allocations on
-  failure. Opaque handles and callbacks remain identities whose external owners
-  must outlive their use; copying an address does not retain the resource.
-- Canonical command-to-operation conversion is owned by `app/prepare.zig`.
-  Inbound adapters may not call the lower-level conversion directly.
-- Executor adapters may differ only in submission, resource retention,
-  completion, readback scheduling, and evidence capture.
-- An executor must not reinterpret bindings, invent defaults, change dispatch
-  shape, or select a different shader or pipeline.
-- Every executor split or merge requires a parity test that changes one plan
-  field and proves all applicable adapters observe the same change.
+  observer callbacks. Anything that queues, retries asynchronously, records for
+  later replay, or otherwise retains it owns an `OwnedPreparedOperation`
+  snapshot and releases it explicitly.
+- Snapshot cloning rejects pointer forms without a declared ownership rule,
+  preserves slice alignment and sentinels, and releases partial allocations on
+  failure. Opaque handles and callbacks stay identities whose external owners
+  outlive their use; copying an address does not retain the resource.
+- `app/prepare.zig` owns canonical command-to-operation conversion; inbound
+  adapters may not call the lower-level conversion directly.
+- Executor adapters differ only in submission, resource retention, completion,
+  readback scheduling, and evidence capture; they never reinterpret bindings,
+  invent defaults, change dispatch shape, or select another shader or pipeline.
+- Every executor split or merge needs a parity test that changes one plan
+  field and proves all applicable adapters observe the change.
 
 Promoted execution interfaces use named types such as `ComputeContext`,
-`DispatchRequest`, and `DispatchReport`. `anytype` remains acceptable for
-private, local, compile-time-generic helpers; it is forbidden where it hides
-the dependencies or output contract of a subsystem or promoted execution path.
+`DispatchRequest`, and `DispatchReport`. `anytype` is fine for private,
+compile-time-generic helpers, never where it hides a subsystem's or promoted
+path's dependencies or output contract.
 
 ## Errors and diagnostics
 
-- Compiler lowering must emit either a valid typed semantic value or a typed
-  rejection with source/node location and reason. Placeholder scalar types,
-  shapes, or handles are forbidden in promotable semantic artifacts.
-- Artifacts carrying semantic rejections are diagnostic-only and cannot enter
-  code generation, parity promotion, or claim-bearing workloads.
+- Compiler lowering emits a valid typed semantic value or a typed rejection
+  with source/node location and reason; placeholder scalar types, shapes, or
+  handles are forbidden in promotable semantic artifacts.
+- Artifacts carrying semantic rejections are diagnostic-only, barred from code
+  generation, parity promotion, and claim-bearing workloads.
 - Return explicit error unions (`!T`) for recoverable failures.
 - Keep unsupported behavior explicit (`unsupported` taxonomy), never silent no-op.
-- Include actionable context: what was expected, what was received.
-- Route runtime observability through pipeline/trace/trace-meta contracts.
-- No ad-hoc `std.debug.print` in runtime paths; use structured trace output.
-- Investigation-only debug output must be removed before committing runtime
-  code; retained diagnostics use the owned trace contract.
-- When a parameter is required by an interface or callback but intentionally
-  unused, suppress it explicitly with `_ = param;` rather than relying on broad
-  placeholder naming.
+- Route runtime observability through pipeline/trace/trace-meta contracts; no
+  ad-hoc `std.debug.print` in runtime paths, and remove investigation-only
+  debug output before committing.
+- Suppress intentionally unused interface or callback parameters with
+  `_ = param;`, not placeholder naming.
 
 ## Comments
 
-- Comments explain why, not what.
-- Do not add comments that restate the code.
-- Use `///` to explain public intent, ownership, lifetimes, and failure conditions
-  that a caller cannot infer from the signature. Do not repeat the identifier.
+- Comments explain why, not what; do not restate the code.
+- Use `///` for public intent, ownership, lifetimes, and failure conditions a
+  caller cannot infer from the signature, without repeating the identifier.
 - Inline comments are for preconditions, control-flow rationale, or non-obvious constraints.
-- Do not add TODO/FIXME inline; track follow-ups in the status log (`docs/status.md`, with dated entries in the current `docs/status/*.md` shard).
+- No inline TODO/FIXME; track follow-ups in the status log (`docs/status.md`, with dated entries in the current `docs/status/*.md` shard).
 
 ## Memory
 
-- Functions that allocate must take an explicit allocator parameter unless the
-  allocator is already owned by the receiving struct/context.
-- Use explicit allocator ownership.
-- Structs that own heap-backed state should store the allocator needed to
-  release that state and provide an explicit `deinit` path.
-- Scope temporary allocations with `defer` cleanup.
-- Use `errdefer` for partial initialization rollback and multi-step allocation
-  or acquisition paths that can fail after earlier resources are acquired.
-- Place `defer`/`errdefer` immediately after the acquisition they clean up when
-  the pairing is not obvious from a tighter local scope.
+- Allocating functions take an explicit allocator unless the receiving
+  struct/context owns one. Structs owning heap-backed state store the allocator
+  that releases it and provide an explicit `deinit`.
+- Scope temporary allocations with `defer`; use `errdefer` for partial
+  initialization and multi-step acquisition rollback. Place each right after
+  the acquisition it cleans up unless a tighter scope makes the pairing obvious.
 - Keep long-lived caches explicit in owning structs.
-- Do not use process-global mutable state to transmit per-session provider
-  configuration or telemetry. A global registry is acceptable only when the
-  process itself is the declared resource owner and concurrency semantics are
-  explicit and tested.
-- Prefer arena allocators only for clearly bounded lifetimes such as one parse,
-  one request, or one artifact build; do not use arenas to hide long-lived
-  ownership.
-- Resource contracts should make ownership state explicit where a value crosses
-  a subsystem boundary: `borrowed`, `scope_owned`, `submit_owned`,
-  `transferred`, or `retained`.
-- Ownership transitions belong to the resource owner, not to convenience
-  callers. Each transition must have one success cleanup path and one tested
-  failure cleanup path.
-- Submission retains resources until established terminal completion. Timeout
-  or unknown completion cannot authorize reuse or destruction. Terminal failure
-  allows retirement but must remain an error to consumers.
+- Process-global mutable state is acceptable only when the process is the
+  declared resource owner with explicit, tested concurrency semantics; never
+  for per-session provider configuration or telemetry.
+- Arenas suit bounded lifetimes (one parse, request, or artifact build), never
+  hidden long-lived ownership.
+- Values crossing a subsystem boundary carry explicit ownership: `borrowed`,
+  `scope_owned`, `submit_owned`, `transferred`, or `retained`.
+- Ownership transitions belong to the resource owner, not convenience callers,
+  each with one success cleanup path and one tested failure cleanup path.
+- Submission retains resources until established terminal completion; timeout
+  or unknown completion never authorizes reuse or destruction. Terminal failure
+  allows retirement but stays an error to consumers.
 
 ## FFI and C interop
 
 - Define C function pointer types as `pub const Fn<Name> = *const fn (...) callconv(.c) <ReturnType>`.
 - Collect function pointers into a `Procs` struct in `wgpu_types.zig`.
-- Required procs are non-optional fields. Optional/conditional procs use `?` wrapper.
-- Load required procs with `loadProc()` (error on missing symbol). Load optional procs with `loadOptionalProc()` (returns null on missing symbol).
+- Required procs are non-optional fields loaded with `loadProc()` (error on missing symbol); optional/conditional procs use a `?` wrapper and `loadOptionalProc()` (null on missing symbol).
 - Check optional proc availability before call:
   `if (procs.someFn) |proc| proc(...) else return error.Unsupported`.
 - C callbacks use `callconv(.c)` and cast `?*anyopaque` userdata to known state
   structs via `@ptrCast(@alignCast(...))` only under the adapter's alignment,
   nullability, and lifetime contract. Completion status must survive delivery;
   setting a done flag alone does not establish success.
-- Suppress unused callback parameters with `_ = param;`.
-- Keep `@cImport` isolated to support or backend-boundary modules when
-  unavoidable; do not spread ad-hoc C imports through general runtime logic
-  when an existing typed seam or ABI module already owns that contract.
+- Keep unavoidable `@cImport` in support or backend-boundary modules, not
+  general runtime logic, when a typed seam or ABI module owns that contract.
 
 ## Determinism and trace
 
@@ -420,8 +374,8 @@ the dependencies or output contract of a subsystem or promoted execution path.
 
 ## Structural refactor receipts
 
-Before moving runtime or compiler behavior, capture the observable contract for
-the affected path. The retained evidence must cover every applicable field:
+Before moving runtime or compiler behavior, capture the affected path's
+observable contract, covering every applicable field:
 
 - resolved policy and runtime identity;
 - semantic or prepared-operation plan;
@@ -432,8 +386,8 @@ the affected path. The retained evidence must cover every applicable field:
 - diagnostic classification and first failure boundary.
 
 After the move, compare the receipt, semantic digest, trace chain, output
-oracle, and performance class. Remove a compatibility facade only after its
-declared consumers use the new owner and the parity evidence remains green.
+oracle, and performance class; remove a facade only after its declared
+consumers migrate and parity evidence stays green.
 
 Before a recomposition campaign begins, bind the baseline to one commit and
 retain:
@@ -448,27 +402,30 @@ retain:
 - clean and incremental compilation measurements, promoted hot-path medians,
   and binary sizes.
 
-Every structural change is classified as exact equivalence, an explicitly
-approved contract change, or failure. Public API changes require a manifest
-diff; no rename, move, or split may silently change an error name, import path,
-shader output, fallback decision, synchronization behavior, or receipt field.
+Every structural change is exact equivalence, an explicitly approved contract
+change, or failure. Public API changes need a manifest diff; no rename, move,
+or split may silently change an error name, import path, shader output,
+fallback decision, synchronization behavior, or receipt field.
 
 ## Testing
 
 - Use inline `test` blocks for private, pure, module-local behavior.
-- Use dedicated external tests for integration, ABI, backend execution, golden
+- Use external tests for integration, ABI, backend execution, golden
   artifacts, cross-module characterization, and cross-backend parity.
-- Shared fixtures belong in one domain-local fixture module when multiple tests
-  genuinely share setup.
-- Generate suite imports from the owned test inventory instead of maintaining
-  parallel manual aggregator lists.
+- Tests that genuinely share setup use one domain-local fixture module.
+- Generate suite imports from the owned test inventory, not parallel manual
+  aggregator lists.
 - Test names are descriptive behavior strings: `test "vendor comparison ignores case"`.
 - Use `std.testing.expect` and `std.testing.expectEqual` for assertions.
-- Prefer `std.testing.allocator` for tests that exercise allocation-owning code
-  unless the allocator choice itself is part of the behavior under test.
-- Run `zig build test` for affected runtime modules.
-- Verify replay/trace gate compatibility for runtime-visible changes.
-- For WebGPU API-surface changes, update config coverage + benchmark contracts in the same change.
+- Prefer `std.testing.allocator` for allocation-owning code unless the
+  allocator choice is itself the behavior under test.
+- Run the narrowest step covering the change: the lane step (`test-wgsl`,
+  `test-core`, `test-full`, `test-d3d12`) and `-Dtest-filter=<name>` where it
+  fits; use `zig build test` when the change spans lanes.
+- When a change alters trace or replay output, run the replay/trace gate for
+  that path.
+- For WebGPU API-surface changes, update config coverage and benchmark
+  contracts in the same change.
 
 ## Consistency checks and review
 
@@ -481,31 +438,32 @@ shader output, fallback decision, synchronization behavior, or receipt field.
 | Types and command coverage | Compilation of the affected consumers | Correct validation, execution, and complete exercised paths |
 | Resource lifetime and allocation | Focused lifetime and allocation-failure tests | Complete ownership reasoning across asynchronous and foreign calls |
 
-Record systematic coverage in the [hierarchical review ledger](reviews/README.md).
-File, directory, internal relationships, cross-directory relationships, and
-whole-runtime reviews are distinct. A partial cleanup does not establish that
-the entire file has been reviewed. Append new findings and evidence; let the
-generated queue determine whether earlier reviews remain current.
+The default install step and the canonical test steps already run the format,
+layout, ABI, line-limit, and inventory checks; invoke one by name only when
+changing what it checks.
+
+Systematic reviews follow the [hierarchical review ledger](reviews/README.md):
+its levels are distinct, a partial cleanup does not review the whole file, and
+its generated queue decides whether earlier reviews remain current.
 
 For each cleanup, work through one named responsibility:
 
 1. Read its charter, consumers, and existing tests. Use the generated
-   `reports/architecture/` inventory to investigate duplicate declarations,
-   dependency edges, and reachability; inspect the code before accepting a
-   suggested merge or deletion.
-2. Name the concrete ambiguity or duplication being removed. Define what must
-   remain identical, including public names, errors, serialized bytes, and
-   resource lifetime where applicable.
-3. Make the smallest coherent change, migrate its consumers, and remove the
-   obsolete path. Prefer an existing typed contract or standard-library
+   `reports/architecture/` inventory for duplicate declarations, dependency
+   edges, and reachability; inspect the code before accepting a suggested
+   merge or deletion.
+2. Name the ambiguity or duplication being removed and what must stay
+   identical (public names, errors, serialized bytes, resource lifetime).
+3. Make the smallest coherent change, migrate consumers, and remove the
+   obsolete path, preferring an existing typed contract or standard-library
    operation over another registry, wrapper, or generic utility.
-4. Format, run the relevant structural gates and behavioral tests, and retain
-   the applicable equivalence receipt. Style-only edits do not need tests that
-   merely repeat the implementation. New enforcement must demonstrate that it
-   rejects the condition it claims to detect.
-5. Record remaining debt with the semantic owner and next concrete target in
+4. Format, run the structural gates and behavioral tests that cover the touched
+   responsibility, and retain an equivalence receipt when behavior moved.
+   Style-only edits need no tests that merely repeat the implementation; new
+   enforcement must show it rejects the condition it claims to detect.
+5. Record remaining debt with its semantic owner and next concrete target in
    the live status shard. Update this guide only when the rule generalizes;
-   keep policy values and module inventories with their existing owners.
+   policy values and module inventories stay with their owners.
 
-Measure execution changes with the frozen application procedure. A cleaner
-diff, fewer allocations, or a successful compile is not performance evidence.
+Performance claims need the frozen application procedure. A cleaner diff, fewer
+allocations, or a successful compile is not performance evidence.

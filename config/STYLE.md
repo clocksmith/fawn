@@ -4,14 +4,14 @@ This guide is the JSON and configuration file style contract for `config/`.
 
 ## Core principles
 
-- Schema-first. Every hand-authored config file should have a corresponding
+- Schema-first: every hand-authored config file has a corresponding
   `.schema.json`; legacy and generated artifacts are documented separately.
-- Strict validation. Most schemas use `"additionalProperties": false`. When a
-  schema intentionally allows extension, say so explicitly in the schema and
+- Strict validation: schemas default to `"additionalProperties": false`; a
+  schema that intentionally allows extension says so in the schema and
   migration notes.
-- Config is the source of truth for runtime behavior. No hidden defaults in
-  code that override config values.
-- Machine-readable. Config files are consumed by tooling, not just humans.
+- Config is the source of truth for runtime behavior; no hidden code defaults
+  override config values.
+- Machine-readable: config files are consumed by tooling, not just humans.
 
 ## File naming
 
@@ -27,21 +27,12 @@ This guide is the JSON and configuration file style contract for `config/`.
 
 - `camelCase` for new JSON object keys.
 - Existing `snake_case` fields are part of the on-disk contract in several
-  registries and trace outputs; do not rename them without a migration.
+  registries and trace outputs; renaming them needs a migration.
 - ID fields use `Id` suffix: `backendId`, `moduleId`, `policyId`,
   `workloadId`.
 - Boolean fields use `is`/`has`/`requires` prefix when the bare noun is
-  ambiguous: `isBlocking`, `requiresLean`. Bare booleans are fine when
-  unambiguous: `blocking`, `shipped`, `applicable`.
-
-```json
-{
-  "schemaVersion": 1,
-  "backendId": "doe_metal",
-  "policyId": "stable-token/lowest-index-among-max-v1",
-  "isBlocking": true
-}
-```
+  ambiguous (`isBlocking`, `requiresLean`); bare booleans are fine when
+  unambiguous (`blocking`, `shipped`, `applicable`).
 
 ## Identifier naming
 
@@ -57,27 +48,11 @@ This guide is the JSON and configuration file style contract for `config/`.
   `required` at the top level.
 - Lock `schemaVersion` with `"const"` constraint.
 - Use `"enum"` for restricted string values.
-- Nest object schemas with their own `additionalProperties` and `required`;
-  default to `false` unless the contract intentionally allows extension.
+- Nested object schemas carry their own `additionalProperties` (default
+  `false`) and `required`.
 - Use `"format": "date-time"` for ISO 8601 timestamps and `"format": "uri"`
   for repository references.
-
-```json
-{
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Backend runtime policy",
-  "type": "object",
-  "additionalProperties": false,
-  "required": ["schemaVersion", "backends"],
-  "properties": {
-    "schemaVersion": { "type": "integer", "const": 1 },
-    "backends": {
-      "type": "array",
-      "items": { "$ref": "#/$defs/Backend" }
-    }
-  }
-}
-```
+- `config/backend-runtime-policy.schema.json` is a representative template.
 
 ## Versioning
 
@@ -86,15 +61,8 @@ Two versioning dimensions, never conflated:
 - **Schema version** (`schemaVersion`): integer, locked in schema with
   `"const"`. Increments when the config structure changes.
 - **Content version** (`registryVersion`, `catalogVersion`): stable
-  human-readable identifier. It may be date-stamped, semantic, or a mixed
-  release label such as `2026-03-29-execution-profiles-v1`.
-
-```json
-{
-  "schemaVersion": 2,
-  "registryVersion": "2026-03-28"
-}
-```
+  human-readable identifier: date-stamped, semantic, or a mixed release label
+  such as `2026-03-29-execution-profiles-v1`.
 
 ## Cross-references
 
@@ -102,7 +70,7 @@ Two versioning dimensions, never conflated:
   `"sourcePolicyPath": "config/backend-runtime-policy.json"`.
 - Reference by **ID** when the consumer looks up in a registry:
   `"triggerPolicyId": "numeric-instability/selected-token-disagreement-v1"`.
-- Do not embed the content of one config inside another. Reference and resolve.
+- Never embed one config's content inside another; reference and resolve.
 
 ## Hash and provenance
 
@@ -120,8 +88,7 @@ Two versioning dimensions, never conflated:
 
 ## Formatting
 
-- 2-space indentation.
-- Trailing newline.
+- 2-space indentation and a trailing newline.
 - Keys sorted alphabetically within objects when generated; hand-authored files
   may use logical grouping.
 - `json.dumps(value, indent=2, sort_keys=True) + "\n"` is the canonical
@@ -135,7 +102,8 @@ Two versioning dimensions, never conflated:
 
 ## Validation
 
-- `config_validation.py` loads and validates configs against their schemas.
-- CI runs schema validation as a blocking gate.
-- Test coverage: `bench/tests/test_config_schemas.py` generates positive and
-  negative cases per schema.
+- `bench/lib/config_validation.py` validates configs against their schemas;
+  `bench/gates/schema_gate.py` (blocking-gate runner) checks every registered
+  pair; `bench/tests/test_config_schemas.py` generates positive and negative
+  cases per schema.
+- Run the schema gate when you edit a config or schema, not otherwise.

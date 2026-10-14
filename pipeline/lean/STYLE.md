@@ -4,10 +4,9 @@ This guide is the Lean style contract for `pipeline/lean/`.
 
 ## Core principles
 
-- Theorems exist to eliminate runtime branches. Every theorem must have a
+- Theorems exist to eliminate runtime branches; every theorem has a
   corresponding runtime callsite or obligation gate.
-- Classify every theorem. The classification determines whether it is
-  advisory or blocking.
+- Classify every theorem; the classification decides advisory vs blocking.
 - Build incrementally: prove base lemmas, compose into stronger theorems.
 - Keep proof artifacts reproducible via provenance metadata.
 
@@ -22,39 +21,34 @@ Doe/
   Extract.lean  -- artifact extraction program
 ```
 
-- This diagram is representative, not exhaustive; it names the main module
-  families without listing every file.
-- `Core/` holds types and theorems that mirror `runtime/zig/src/` runtime
-  logic.
-- `Full/` holds higher-level obligation models and fixture tests.
-- `Shader/` holds bounds proofs for WGSL/IR transforms.
-- `Generated/` holds files produced by
-  `pipeline/lean/generate_comparability_contract.py`. The proof artifact
-  itself is emitted by `pipeline/lean/extract.sh`. Do not hand-edit either
-  output.
+- The diagram is representative, not exhaustive.
+- `Core/` holds types and theorems mirroring `runtime/zig/src/` runtime logic;
+  `Full/` higher-level obligation models and fixture tests; `Shader/` bounds
+  proofs for WGSL/IR transforms.
+- `Generated/` holds `pipeline/lean/generate_comparability_contract.py`
+  output; `pipeline/lean/extract.sh` emits the proof artifact. Never hand-edit
+  either.
 - Backward-compatibility re-export shims live at `Doe/Model.lean`,
-  `Doe/Runtime.lean`, etc. Keep them thin when practical; some legacy shims are
-  longer because they bridge staged migrations.
+  `Doe/Runtime.lean`, etc. Keep them thin when practical; some legacy shims
+  bridge staged migrations.
 
 ## File naming
 
 - `PascalCase.lean` for all module files: `Model.lean`, `Runtime.lean`,
   `ComputeBounds.lean`, `IrTypePreserved.lean`.
-- Directory structure mirrors the Lean namespace: `Doe/Core/Model.lean`
-  defines `Doe.Core.Model`.
-- Generated files go in `Doe/Generated/`.
+- Directories mirror the Lean namespace: `Doe/Core/Model.lean` defines
+  `Doe.Core.Model`.
 
 ## Naming
 
 - **Types and structures**: `PascalCase` (`DeviceProfile`, `Quirk`,
   `WorkloadGeometry`, `DispatchDecision`)
-- **Inductive constructors**: follow the existing constructor style in the
-  file. Many single-word constructors use lowercase tags such as `.vulkan` and
-  `.metal`; multiword constructors often keep camelCase spelling such as
-  `.copyBufferToTexture` and `.dispatchIndirect`.
-- **Theorems**: use the established naming family for the file. `camelCase`
-  is common in `Core/`; snake_case also appears in shader/bounds theorem
-  families (`scopeCommandTableComplete`, `gid_component_lt_total`,
+- **Inductive constructors**: follow the file's existing style; single-word
+  tags are often lowercase (`.vulkan`, `.metal`), multiword ones camelCase
+  (`.copyBufferToTexture`, `.dispatchIndirect`).
+- **Theorems**: follow the file's naming family; `camelCase` is common in
+  `Core/`, snake_case appears in shader/bounds families
+  (`scopeCommandTableComplete`, `gid_component_lt_total`,
   `identityActionPreservesCommand`)
 - **Definitions and functions**: `camelCase` (`vendorMatch`,
   `profileMatches`, `scoreQuirk`, `selectForProfile`)
@@ -64,8 +58,8 @@ Doe/
 
 ## Theorem classification
 
-Theorems that feed runtime gates, extraction artifacts, or review fixtures
-should carry a classification comment. The five categories are:
+Theorems feeding runtime gates, extraction artifacts, or review fixtures
+should carry a classification comment in one of five categories:
 
 | Category | Meaning | Requires Lean |
 |----------|---------|---------------|
@@ -75,21 +69,12 @@ should carry a classification comment. The five categories are:
 | `lean_required` | Blocking; must pass for runtime gate | Yes |
 | `lean_fixture` | Concrete test case with `native_decide` | Yes |
 
-Place the classification as a comment above or below the theorem:
-
-```lean
--- Classification: lean_verified (quantified over unbounded Nat domains).
-theorem gid_component_lt_total
-    (workgroup_id local_id workgroup_size num_workgroups array_length : Nat)
-    (h_wid : workgroup_id < num_workgroups)
-    (h_lid : local_id < workgroup_size)
-    (h_fit : workgroup_size * num_workgroups ≤ array_length)
-    : globalInvocationId workgroup_id local_id workgroup_size < array_length :=
-```
+Place it as a `-- Classification: <category> (<reason>).` comment above or
+below the theorem, as in the `native_decide` example below.
 
 ## Proof style
 
-**Tactic mode** is the default. Use `by` blocks:
+**Tactic mode** (`by` blocks) is the default:
 
 ```lean
 theorem toggleAlwaysSupported (q : Quirk) :
@@ -98,7 +83,7 @@ theorem toggleAlwaysSupported (q : Quirk) :
   simp [supportsQuirk, supportsScope, h]
 ```
 
-**Term mode / `rfl`** for trivial reflexivity:
+**`rfl`** for trivial reflexivity:
 
 ```lean
 theorem critical_is_max_rank :
@@ -137,9 +122,8 @@ theorem applyPass_is_prefix (arr : ExprTypeArray) (pass : TransformPass) :
 
 ## Preconditions
 
-- Name preconditions as explicit hypotheses, not embedded in the goal.
-- Document which preconditions are GPU hardware guarantees vs host-side
-  checks.
+- Name preconditions as explicit hypotheses, not embedded in the goal, and
+  document which are GPU hardware guarantees vs host-side checks.
 
 ```lean
 -- Preconditions:
@@ -150,19 +134,18 @@ theorem applyPass_is_prefix (arr : ExprTypeArray) (pass : TransformPass) :
 
 ## Lemma composition
 
-- Prove base lemmas first, then compose into stronger results.
-- Reuse existing theorems via `have h := theorem_name ...`.
-- Do not duplicate proof logic across theorems.
+- Reuse existing theorems via `have h := theorem_name ...` instead of
+  duplicating proof logic.
 
 ## Comments
 
-- File header: `--` comment block identifying the module, what it mirrors
-  in the runtime, and its classification.
+- File header: `--` block naming the module, the runtime code it mirrors, and
+  its classification.
 - `/-- ... --/` doc comments for definitions and public theorems.
 - `-- ...` inline comments for proof strategy notes.
 - Section separators: `-- ---` lines for major sections.
-- Some foundational legacy files still omit file headers; add them when those
-  files are edited for substantive work.
+- Some legacy files omit headers; add one when editing such a file
+  substantively.
 
 ```lean
 -- Doe/Shader/ComputeBounds.lean
@@ -176,27 +159,26 @@ theorem applyPass_is_prefix (arr : ExprTypeArray) (pass : TransformPass) :
 
 - Every extracted theorem has one generated `theoremMetadata` row.
 - Runtime-elimination metadata binds the Zig source path, mirrored symbol, and
-  source SHA-256. Extraction fails when a source or symbol is absent.
-- Comments may explain the model, but they are not the runtime mirror
-  authority.
-- When the Zig source changes, the Lean model must be updated in the same
-  change or flagged as stale in the status log (`docs/status.md`, with dated
-  entries in the current `docs/status/*.md` shard).
+  source SHA-256; extraction fails when a source or symbol is absent.
+- Comments may explain the model but are not the runtime mirror authority.
+- When a mirrored Zig source changes, update the Lean model in the same change
+  or flag it stale in the status log (`docs/status.md`, with dated entries in
+  the current `docs/status/*.md` shard).
 
 ## Extraction and artifacts
 
-- Theorems are extracted to `pipeline/lean/artifacts/proven-conditions.json`
-  via `Doe/Extract.lean` and `pipeline/lean/extract.sh`.
-- The artifact includes provenance: toolchain ref, source tree hash,
-  generated contract hash, and theorem-metadata generator hash.
-- The artifact schema is `config/proof-artifact.schema.json`.
+- `Doe/Extract.lean` and `pipeline/lean/extract.sh` extract theorems to
+  `pipeline/lean/artifacts/proven-conditions.json`.
+- Artifact provenance: toolchain ref, source tree hash, generated contract
+  hash, and theorem-metadata generator hash. Schema:
+  `config/proof-artifact.schema.json`.
 - Zig consumes the artifact at compile time via `-Dlean-verified=true`.
 
 ## Toolchain
 
-- Lean version is pinned in `config/toolchains.json` and the repo build/check
+- The Lean version is pinned in `config/toolchains.json` and the build/check
   scripts.
 - Build via `pipeline/lean/check.sh` and `pipeline/lean/extract.sh` with
-  explicit `LEAN_PATH`.
-- CI workflows run typecheck and extraction; blocking policy is governed by
-  `docs/process.md`.
+  explicit `LEAN_PATH`, only when you edit Lean sources or need a new artifact.
+- CI (`lean-check.yml`) runs typecheck and extraction; `docs/process.md`
+  governs blocking policy.
