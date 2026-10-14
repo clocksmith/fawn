@@ -1,10 +1,11 @@
-// Scene cadence is independent of input; crossfades soften its force instead.
+// Scene cadence is independent of input; material blends soften its force instead.
 const CYCLE_POLICY = Object.freeze({
-  version: 10,
+  version: 11,
   effects: Object.freeze(['flow', 'wave', 'particles']),
   labels: Object.freeze({ flow: 'Flows', wave: 'Magnets', particles: 'Particles' }),
   holdS: 8,
   blendS: 4,
+  arrivalBlendS: Object.freeze({ wave: 6 }),
   formation: Object.freeze({ delayS: 1.5, settleS: 3, responseRate: 4 }),
   transitionInputFloor: 0.15,
   maxDtS: 0.033,
@@ -12,16 +13,27 @@ const CYCLE_POLICY = Object.freeze({
 });
 function createCycleClock() {
   let elapsed = 0, phase = 0, scene = 0, prepared = false;
-  const sceneS = CYCLE_POLICY.holdS + CYCLE_POLICY.blendS;
+  const cycleDuration = CYCLE_POLICY.effects.reduce((total, effect) => total + CYCLE_POLICY.holdS
+    + (CYCLE_POLICY.arrivalBlendS[effect] ?? CYCLE_POLICY.blendS), 0);
+  const blendDuration = () => {
+    const next = CYCLE_POLICY.effects[(scene + 1) % CYCLE_POLICY.effects.length];
+    return CYCLE_POLICY.arrivalBlendS[next] ?? CYCLE_POLICY.blendS;
+  };
   return {
     advance(dt) {
       if (!Number.isFinite(dt) || dt < 0) throw new Error(`Invalid cycle timestep: ${dt}`);
       const previousScene = scene;
       elapsed += dt;
       phase += dt;
-      if (phase >= sceneS) {
-        scene += Math.floor(phase / sceneS);
-        phase %= sceneS;
+      const cycles = Math.floor(phase / cycleDuration);
+      if (cycles > 0) {
+        phase -= cycles * cycleDuration;
+        scene += cycles * CYCLE_POLICY.effects.length;
+        prepared = false;
+      }
+      while (phase >= CYCLE_POLICY.holdS + blendDuration()) {
+        phase -= CYCLE_POLICY.holdS + blendDuration();
+        scene++;
         prepared = false;
       }
       const state = this.state();
@@ -31,7 +43,7 @@ function createCycleClock() {
     },
     state() {
       const index = scene % CYCLE_POLICY.effects.length;
-      const progress = Math.max(0, (phase - CYCLE_POLICY.holdS) / CYCLE_POLICY.blendS);
+      const progress = Math.max(0, (phase - CYCLE_POLICY.holdS) / blendDuration());
       return {
         elapsedS: elapsed,
         phaseS: phase,
