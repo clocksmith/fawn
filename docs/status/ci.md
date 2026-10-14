@@ -49,7 +49,9 @@ Silicon runner, pins Node, Bun, and Electron, stages the Darwin platform
 package, and emits schema-version-2 candidate and reliability receipts. The
 tested wrapper and platform tarballs stay beside those receipts in a
 self-contained bundle. An independent gate verifies source-commit blobs,
-tarball members and hashes, runtime-set completeness, tuple identity, oracle,
+tarball members and hashes, completeness against the runtime set the candidate
+declares with `--runtimes` (Node mandatory; this workflow declares Node, Bun
+and Electron, and a Node-only candidate makes a Node-only claim), tuple identity, oracle,
 replay, lifecycle, and reliability joins before the workflow seals and uploads
 all passing or failed evidence. The workflow does not publish to npm or sign a
 customer qualification decision.

@@ -16,7 +16,11 @@ import jsonschema
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 SCHEMA_PATH = Path("config/doe-gpu-native-release-candidate.schema.json")
-REQUIRED_RUNTIMES = ("node", "bun", "electron")
+SUPPORTED_RUNTIMES = ("node", "bun", "electron")
+# Node is the runtime every package candidate must cover; Bun and Electron are
+# separately qualified declarations, never waived once declared and never
+# required when undeclared.
+MANDATORY_RUNTIME = "node"
 EXPECTED_OUTPUT = [2, 4, 6, 8, 10, 12, 14, 16]
 EXPECTED_OUTPUT_SHA256 = (
     "sha256:9d42cad41af4aaf3ae973e5a48d96f61e4708edc57bf7dd29a497ebd96f506cf"
@@ -559,9 +563,12 @@ def validate_candidate_set(
     candidate_paths: list[Path],
     expected_platform: str,
     expected_arch: str,
-    required_runtimes: tuple[str, ...] = REQUIRED_RUNTIMES,
+    declared_runtimes: tuple[str, ...],
 ) -> list[str]:
     failures: list[str] = []
+    runtime_failures = declared_runtime_failures(declared_runtimes)
+    if runtime_failures:
+        return runtime_failures
     repo_root = repo_root.resolve()
     if (expected_platform, expected_arch) not in PLATFORM_PACKAGES:
         return [f"unsupported candidate tuple: {expected_platform}-{expected_arch}"]
@@ -593,10 +600,10 @@ def validate_candidate_set(
         )
 
     runtimes = [report["runtime"]["host"] for _, report in loaded]
-    if sorted(runtimes) != sorted(required_runtimes):
+    if sorted(runtimes) != sorted(declared_runtimes):
         failures.append(
             "candidate set runtime mismatch: "
-            f"expected {sorted(required_runtimes)}, received {sorted(runtimes)}"
+            f"declared {sorted(declared_runtimes)}, received {sorted(runtimes)}"
         )
     if loaded:
         bundle_roots = {path.parent for path, _ in loaded}
@@ -640,12 +647,34 @@ def validate_candidate_set(
     return failures
 
 
+def declared_runtime_failures(declared_runtimes: tuple[str, ...]) -> list[str]:
+    failures: list[str] = []
+    if len(set(declared_runtimes)) != len(declared_runtimes):
+        failures.append(f"declared runtimes repeat an entry: {list(declared_runtimes)}")
+    unknown = sorted(set(declared_runtimes) - set(SUPPORTED_RUNTIMES))
+    if unknown:
+        failures.append(
+            f"declared runtimes {unknown} are not supported; expected a subset of {list(SUPPORTED_RUNTIMES)}"
+        )
+    if MANDATORY_RUNTIME not in declared_runtimes:
+        failures.append(
+            f"declared runtimes {list(declared_runtimes)} omit the mandatory {MANDATORY_RUNTIME} runtime"
+        )
+    return failures
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("candidates", nargs="+", type=Path)
     parser.add_argument("--repo-root", type=Path, default=REPO_ROOT)
     parser.add_argument("--expected-platform", required=True, choices=("linux", "darwin"))
     parser.add_argument("--expected-arch", required=True, choices=("x64", "arm64"))
+    parser.add_argument(
+        "--runtimes",
+        required=True,
+        type=lambda value: tuple(item.strip() for item in value.split(",") if item.strip()),
+        help="comma-separated runtimes this candidate declares; node is mandatory",
+    )
     return parser.parse_args()
 
 
@@ -656,6 +685,7 @@ def main() -> int:
         args.candidates,
         args.expected_platform,
         args.expected_arch,
+        args.runtimes,
     )
     if failures:
         print("doe-gpu native release candidate gate: failed")
@@ -665,7 +695,7 @@ def main() -> int:
     print(
         "doe-gpu native release candidate gate: passed "
         f"{args.expected_platform}-{args.expected_arch} "
-        f"({', '.join(REQUIRED_RUNTIMES)})"
+        f"({', '.join(args.runtimes)})"
     )
     return 0
 

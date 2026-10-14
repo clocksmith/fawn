@@ -46,8 +46,9 @@ Gate classes:
 - **Tool surfaces** (`tool_surface_gate.py`) — fail when the public/internal
   surface manifest drifts from shipped package exports or declared files.
 - **Native package candidates** (`doe_gpu_native_release_candidate_gate.py`) —
-  require one self-contained retained-tarball bundle for Node, Bun, and
-  Electron; verify the declared source commit, package members, receipt
+  require one self-contained retained-tarball bundle covering exactly the
+  runtimes the candidate declares with `--runtimes` (Node mandatory; Bun and
+  Electron optional, never waived once declared); verify the declared source commit, package members, receipt
   digests, physical tuple, oracle, replay, lifecycle, and reliability joins.
 - **Fixture regen** (`cluster_b_fixture_regen_gate.py`) — pin fixture
   freshness for cross-repo bring-up lanes.
