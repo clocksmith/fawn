@@ -1,10 +1,13 @@
 // Surface and point appearances reconstruct the same independently moving parcels.
 const PARCEL_RENDER_POLICY = Object.freeze({
-  version: 8,
+  version: 9,
   accumulationCapacity: 4096,
   materialBound: 8,
   fluidRadiusCells: 2.2,
   particleRadiusPx: 1.6,
+  particleStretch: 0.75,
+  maximumParticleStretch: 1.6,
+  radianceFloor: 0.001,
   coverageGain: 2.5,
   exposure: 1.65,
   flowGlintPixels: 1.25,
@@ -31,20 +34,18 @@ struct Out { @builtin(position) position:vec4<f32>, @location(0) local:vec2<f32>
 @vertex fn vs(@builtin(vertex_index) vertex:u32,@builtin(instance_index) instance:u32)->Out {
  let quad=array<vec2<f32>,4>(vec2<f32>(-1,-1),vec2<f32>(1,-1),vec2<f32>(-1,1),vec2<f32>(1,1));
  let p=parcels[instance];let local=quad[vertex];var out:Out;
- // Camera coordinates depend only on the accepted position and viewport.
- out.position=vec4<f32>((p.pos+local*u.view.z)/u.view.xy,0,1);
+ let direction=select(vec2<f32>(1,0),p.vel/max(length(p.vel),0.000001),length(p.vel)>0.000001);
+ let stretch=1.0+u.theme.z*min(length(p.vel)*${PARCEL_RENDER_POLICY.particleStretch},${PARCEL_RENDER_POLICY.maximumParticleStretch}-1.0);
+ let offset=(direction*local.x*stretch+vec2<f32>(-direction.y,direction.x)*local.y)*u.view.z;
+ out.position=vec4<f32>((p.pos+offset)/u.view.xy,0,1);
  out.local=local;out.color=clamp(p.color.rgb,vec3<f32>(0),vec3<f32>(${PARCEL_RENDER_POLICY.materialBound}));
  out.material=clamp(p.material,vec4<f32>(-${PARCEL_RENDER_POLICY.materialBound}),vec4<f32>(${PARCEL_RENDER_POLICY.materialBound}));return out;
 }
 struct Moments { @location(0) color:vec4<f32>, @location(1) geometry:vec4<f32> }
 @fragment fn fs(in:Out)->Moments {
  let r2=dot(in.local,in.local);
- let fluidScale=u.view.z/max(u.material.z,0.000001);
- let pointScale=u.view.z/max(u.material.y,0.000001);
- let fluidKernel=pow(max(0.0,1.0-r2*fluidScale*fluidScale),2.0);
- let pointKernel=pow(max(0.0,1.0-r2*pointScale*pointScale),2.0);
- // Blend both endpoint footprints at the same live position, preserving transition coverage.
- let kernel=mix(fluidKernel,pointKernel,u.theme.z)*u.view.w;
+ // The quad's radius and elongation morph; there is only one material footprint.
+ let kernel=pow(max(0.0,1.0-r2),2.0)*u.view.w;
  var out:Moments;out.color=vec4<f32>(in.color*kernel,kernel);out.geometry=in.material*kernel;return out;
 }
 `;
@@ -64,10 +65,9 @@ fn flowCell(p:vec2<i32>)->u32 {
 fn flowRelief(d:vec3<f32>,v:vec2<f32>,c:f32)->f32 {
  return clamp(length(d)*0.64+abs(c)*0.016+length(v)*0.10,0.0,1.3);
 }
-// Live prismatic shading straight from the dye field keeps Flow's fine detail and color
-// separation; parcels take over only as the material gathers into the mark. Alpha fades the
-// no-slip wall cells, whose stagnant dye would otherwise draw a line at the sheet edge.
-fn liveFlow(uv:vec2<f32>)->vec4<f32> {
+struct FlowState { pigment:vec3<f32>, height:f32, slope:vec2<f32>, speed:f32, curl:f32, wall:f32 }
+// Sample physical state, then interpolate surface properties before lighting it once.
+fn liveFlow(uv:vec2<f32>)->FlowState {
  let n=u.material.w;let at=clamp(uv*n-0.5,vec2<f32>(0),vec2<f32>(n-1));
  let b=vec2<i32>(floor(at));let f=at-floor(at);
  let i00=flowCell(b);let i10=flowCell(b+vec2<i32>(1,0));
@@ -83,15 +83,8 @@ fn liveFlow(uv:vec2<f32>)->vec4<f32> {
  let height=mix(mix(h00,h10,f.x),mix(h01,h11,f.x),f.y);
  let slope=vec2<f32>(mix(h10-h00,h11-h01,f.y),mix(h01-h00,h11-h10,f.x));
  let crisp=max(vec3<f32>(0),color+(color-(d00+d10+d01+d11)*0.25)*${PARCEL_RENDER_POLICY.liveFlowContrast});
- let normal=normalize(vec3<f32>(-slope*1.25,1));
- let fresnel=pow(1.0-max(normal.z,0.0),3.0);
- let prism=spectral(height*0.22+abs(curl)*0.36+u.screen.w*0.020);
- let secondary=spectral(speed*0.30+normal.x*0.15-normal.y*0.08);
- let glint=pow(max(reflect(normalize(vec3<f32>(0.20,-0.16,-1.0)),normal).z,0.0),20.0);
- let glow=crisp*(0.92+speed*0.24)+prism*abs(curl)*0.030;
- let metallic=mix(vec3<f32>(0.05,0.06,0.08),prism,0.52)+secondary*fresnel*0.22+vec3<f32>(1.0,0.96,0.93)*glint*0.34;
  let inset=min(min(at.x,at.y),min(n-1.0-at.x,n-1.0-at.y));
- return vec4<f32>(glow+metallic*(0.22+height*0.14),
+ return FlowState(crisp,height,slope,speed,curl,
    smoothstep(${PARCEL_RENDER_POLICY.liveFlowWall[0]},${PARCEL_RENDER_POLICY.liveFlowWall[1]},inset));
 }
 fn filmAt(uv:vec2<f32>)->vec4<f32> {
@@ -118,56 +111,56 @@ fn spectral(t:f32)->vec3<f32> {return 0.5+0.5*cos(vec3<f32>(0,2,4)+t*6.28318);}
  let b=materialAt(in.uv+vec2<f32>(0,u.screen.y)).x;
  let t=materialAt(in.uv-vec2<f32>(0,u.screen.y)).x;
  let gradient=vec2<f32>(r-l,t-b)*(u.screen.z*0.25);
- let normal=normalize(vec3<f32>(-gradient*0.12,1));
+ let fieldUV=(in.uv*vec2<f32>(2,-2)+vec2<f32>(-1,1))*u.view.xy*0.5+0.5;
+ let live=liveFlow(fieldUV);let liveWeight=(1.0-u.theme.w)*live.wall;
+ let fluidWeight=u.theme.x+u.theme.y;
+ let magnetic=u.theme.y/max(fluidWeight,0.000001);
+ let pointness=u.theme.z;
+ let c=filmAt(fieldUV);let step=1.0/u.material.w;
+ let filmGradient=vec2<f32>(filmAt(fieldUV+vec2<f32>(step,0)).x-filmAt(fieldUV-vec2<f32>(step,0)).x,
+   filmAt(fieldUV+vec2<f32>(0,step)).x-filmAt(fieldUV-vec2<f32>(0,step)).x)*u.material.w*0.5;
+ let flowSlope=mix(gradient*0.12,live.slope*1.25,liveWeight);
+ let slope=mix(flowSlope,filmGradient*0.12,magnetic);
+ let normal=normalize(vec3<f32>(-slope*(1.0-pointness),1));
  let fresnel=pow(1.0-max(normal.z,0.0),3.0);
- let ridge=smoothstep(0.20,4.0,length(gradient));
- let phase=material.x*0.34+material.y*0.14+fresnel*0.55+dot(normal.xy,vec2<f32>(0.4,-0.3))+u.screen.w*0.015;
- let prism=spectral(phase);let contour=pow(0.5+0.5*sin(material.y*8.0-material.x*2.0),12.0);
+ let ridge=smoothstep(0.20,4.0,length(filmGradient));
+ let height=mix(material.x,live.height,liveWeight);
+ let curl=mix(abs(material.z),abs(live.curl),liveWeight);
+ let speed=mix(material.w,live.speed,liveWeight);
+ let reflection=log(1.0+max(c.w,0.0));
+ let flowPhase=height*0.22+curl*0.36+u.screen.w*0.020;
+ let filmPhase=c.x*0.34+reflection*0.14+fresnel*0.55+dot(normal.xy,vec2<f32>(0.4,-0.3))+u.screen.w*0.015;
+ let prism=spectral(mix(flowPhase,filmPhase,magnetic));
+ let contour=pow(0.5+0.5*sin(reflection*8.0-c.x*2.0),12.0);
+ let bodyPigment=mix(pigment,live.pigment,liveWeight*(1.0-magnetic)*(1.0-pointness));
  let light=normalize(vec3<f32>(0.45,0.60,1));let halfVector=normalize(light+vec3<f32>(0,0,1));
- let specular=pow(max(dot(normal,halfVector),0.0),64.0);
- let flowPrism=spectral(material.x*0.22+abs(material.z)*0.36+u.screen.w*0.020);
  // Soft highlights follow the carried relief; ambient light can move while the fluid rests.
  let facet=floor(in.position.xy/${PARCEL_RENDER_POLICY.flowGlintPixels});
  let grain=fract(sin(dot(facet,vec2<f32>(12.9898,78.233)))*43758.5453);
  let shimmer=pow(0.5+0.5*sin(grain*6.28318+material.x*8.0+material.z*3.0+u.material.x*0.65),${PARCEL_RENDER_POLICY.flowGlintSharpness}.0);
  let glint=pow(max(dot(reflect(normalize(vec3<f32>(0.20,-0.16,-1.0)),normal),vec3<f32>(0,0,1)),0.0),20.0);
- let secondary=spectral(material.w*0.30+normal.x*0.15-normal.y*0.08);
- let metallic=mix(vec3<f32>(0.05,0.06,0.08),flowPrism,0.52)
+ let secondary=spectral(speed*0.30+normal.x*0.15-normal.y*0.08);
+ let metallic=mix(vec3<f32>(0.05,0.06,0.08),prism,0.52)
    +secondary*fresnel*0.22+vec3<f32>(1.0,0.96,0.93)*glint*0.34;
- let carriedFlowLight=pigment*(0.92+material.w*0.24)+flowPrism*abs(material.z)*0.030
-   +metallic*(0.22+material.x*0.14)
-   +vec3<f32>(1.0,0.96,0.93)*shimmer*(0.25+glint*0.75)*${PARCEL_RENDER_POLICY.flowGlintStrength};
- // Resolve the live magnetic relief directly: parcel moment averaging erases narrow bubble rings.
- let filmUV=(in.uv*vec2<f32>(2,-2)+vec2<f32>(-1,1))*u.view.xy*0.5+0.5;
- let live=liveFlow(filmUV);let liveWeight=(1.0-u.theme.w)*live.a;
- let flowLight=mix(carriedFlowLight,live.rgb,liveWeight);
- let c=filmAt(filmUV);let step=1.0/u.material.w;
- let filmGradient=vec2<f32>(filmAt(filmUV+vec2<f32>(step,0)).x-filmAt(filmUV-vec2<f32>(step,0)).x,
-   filmAt(filmUV+vec2<f32>(0,step)).x-filmAt(filmUV-vec2<f32>(0,step)).x)*u.material.w*0.5;
- let filmNormal=normalize(vec3<f32>(-filmGradient*0.12,1));
- let filmFresnel=pow(1.0-max(filmNormal.z,0.0),3.0);
- let filmRidge=smoothstep(0.20,4.0,length(filmGradient));
- let fieldPhase=log(1.0+max(c.w,0.0));
- let filmPrism=spectral(c.x*0.34+fieldPhase*0.14+filmFresnel*0.55+dot(filmNormal.xy,vec2<f32>(0.4,-0.3))+u.screen.w*0.015);
- let filmContour=pow(0.5+0.5*sin(fieldPhase*8.0-c.x*2.0),12.0);
- let filmSpec=pow(max(dot(filmNormal,halfVector),0.0),64.0)*filmRidge;
- let waveLight=mix(pigment,filmPrism,${PARCEL_RENDER_POLICY.filmPigmentMix})*${PARCEL_RENDER_POLICY.filmAmbientLight}
-   +filmPrism*filmRidge*(0.02+filmContour*0.40+filmFresnel*0.16)
-   +vec3<f32>(0.8,0.88,1)*filmSpec*0.28;
- let fluidWeight=u.theme.x+u.theme.y;
- // Interpolate carried material in linear light before exposure, keeping relief-free film visible.
- let fluidLight=(flowLight*u.theme.x+waveLight*u.theme.y)/max(fluidWeight,0.000001);
- let fluidTone=1.0-exp(-max(fluidLight,vec3<f32>(0))*${PARCEL_RENDER_POLICY.exposure});
+ let albedo=mix(bodyPigment,prism,${PARCEL_RENDER_POLICY.filmPigmentMix}*magnetic);
+ let bodyGain=mix(0.92+speed*0.24,${PARCEL_RENDER_POLICY.filmAmbientLight},magnetic);
+ let filmSpec=pow(max(dot(normal,halfVector),0.0),64.0)*ridge;
+ let fluidLight=albedo*bodyGain
+   +(prism*curl*0.030+metallic*(0.22+height*0.14))*(1.0-magnetic)
+   +magnetic*(prism*ridge*(0.02+contour*0.40+fresnel*0.16)+vec3<f32>(0.8,0.88,1)*filmSpec*0.28)
+   +vec3<f32>(1.0,0.96,0.93)*shimmer*(0.25+glint*0.75)*${PARCEL_RENDER_POLICY.flowGlintStrength}*(1.0-liveWeight)*(1.0-magnetic);
+ let pointColor=clamp(pigment*(0.85+material.w*0.15),vec3<f32>(0),vec3<f32>(1.0-${PARCEL_RENDER_POLICY.radianceFloor}));
+ let pointRadiance=-log(max(1.0-pointColor,vec3<f32>(${PARCEL_RENDER_POLICY.radianceFloor})))/${PARCEL_RENDER_POLICY.exposure};
+ let radiance=mix(fluidLight,pointRadiance,pointness);
+ let tone=1.0-exp(-max(radiance,vec3<f32>(0))*${PARCEL_RENDER_POLICY.exposure});
  let saturation=1.0-(1.0-${PARCEL_RENDER_POLICY.flowSaturation})*u.theme.x*(1.0-liveWeight);
- let fluidColor=mix(vec3<f32>(dot(fluidTone,vec3<f32>(0.2126,0.7152,0.0722))),fluidTone,saturation);
- let pointColor=pigment*(0.85+material.w*0.15);
+ let appearance=mix(vec3<f32>(dot(tone,vec3<f32>(0.2126,0.7152,0.0722))),tone,saturation);
  let carried=1.0-exp(-density*${PARCEL_RENDER_POLICY.coverageGain});
- // Live fluids fill the sheet until they gather into the mark; points always draw where they are.
- let coverage=carried+(1.0-carried)*(1.0-u.theme.w)*fluidWeight;
+ // Visibility belongs to moving material; no full-sheet image fills or fades underneath it.
+ let coverage=carried;
  let background=vec3<f32>(0.040,0.055,0.070)*u.theme.x+vec3<f32>(0.003,0.004,0.006)*u.theme.y
    +vec3<f32>(0.010,0.016,0.013)*u.theme.z
    +vec3<f32>(1.0,0.96,0.93)*shimmer*${PARCEL_RENDER_POLICY.backgroundGlintStrength}*u.theme.x;
- let appearance=fluidColor*fluidWeight+pointColor*u.theme.z;
  return vec4<f32>(mix(background,max(appearance,background),coverage),1);
 }
 `;
@@ -252,7 +245,7 @@ function createParcelRenderer(device, canvas, format, count, parcels, waves, gri
     const side = Math.max(canvas.clientWidth, canvas.clientHeight, 1);
     const fluidRadius = (2 / Math.sqrt(count)) * PARCEL_RENDER_POLICY.fluidRadiusCells;
     const particleRadius = (PARCEL_RENDER_POLICY.particleRadiusPx * 2) / side;
-    const radius = weights[2] === 1 ? particleRadius : Math.max(fluidRadius, particleRadius);
+    const radius = fluidRadius + (particleRadius - fluidRadius) * weights[2];
     const normalization = Math.min(1, PARCEL_RENDER_POLICY.accumulationCapacity / count);
     device.queue.writeBuffer(
       uniform,
