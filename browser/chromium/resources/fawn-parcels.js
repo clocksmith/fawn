@@ -1,6 +1,6 @@
 // Persistent moving material. Formation steers momentum, never projects positions onto a mask.
 const PARCEL_POLICY = Object.freeze({
-  version: 9,
+  version: 10,
   strideFloats: 16,
   workgroup: 128,
   targetGrid: 384,
@@ -20,6 +20,8 @@ const PARCEL_POLICY = Object.freeze({
   releaseSpring: 9,
   releaseResponse: 2,
   releaseDistance: 0.12,
+  pressSwirl: 7,
+  pressReach: 0.35,
   boundaryBand: 0.025,
   particleBoundaryBand: 0.08,
   worldEdge: 1.65,
@@ -82,8 +84,10 @@ fn velocity_at(pos:vec2<f32>)->vec2<f32> {
    +${PARCEL_POLICY.formationCirculation}*u.theme.w*u.theme.x;
  if(drift>0.0){v+=particle_flow(pos)*drift;}
  let pointerDelta=u.pointer.xy-pos;
- let force=u.pointer.z/max(dot(pointerDelta,pointerDelta),0.018);
- v+=pointerDelta*force*0.012*(u.theme.y+u.theme.z);
+ let reach=0.012/max(dot(pointerDelta,pointerDelta),0.018);
+ // Magnets attract and Particles repel; where they cancel mid-blend a held press swirls instead.
+ let swirl=u.pointer.w*min(u.theme.y,u.theme.z)*${PARCEL_POLICY.pressSwirl}.0;
+ v+=(pointerDelta*u.pointer.z*(u.theme.y+u.theme.z)+vec2<f32>(-pointerDelta.y,pointerDelta.x)*swirl)*reach;
  // The outer boundary is circular and outside every supported viewport, not a visible box.
  v-=pos/max(length(pos),0.001)*smoothstep(1.45,${PARCEL_POLICY.worldEdge},length(pos))*0.35;
  return v/max(1.0,length(v)/${PARCEL_POLICY.speedLimit});
@@ -122,10 +126,12 @@ fn main(@builtin(global_invocation_id) gid:vec3<u32>) {
  let arrived=1.0-smoothstep(0.0,${PARCEL_POLICY.releaseDistance},homeDistance);
  release*=exp(-${PARCEL_POLICY.releaseResponse}.0*dt*(arrived+shape));
  let releaseWeight=release*(1.0-shape);
+ // Material under a held press follows the hand; formation and return resume on release.
+ let held=u.pointer.w*(1.0-smoothstep(0.0,${PARCEL_POLICY.pressReach},length(u.pointer.xy-p.pos)));
  // Particles retain their free-flight momentum longer before the gather force builds.
- let gather=shape*mix(1.0,shape,u.theme.z);
+ let gather=shape*mix(1.0,shape,u.theme.z)*(1.0-held);
  let spring=${PARCEL_POLICY.formationSpring}.0*arrival*gather*pull;
- let spread=${PARCEL_POLICY.releaseSpring}.0*releaseWeight;
+ let spread=${PARCEL_POLICY.releaseSpring}.0*releaseWeight*(1.0-held);
  let fieldResponse=mix(velocityResponse,${PARCEL_POLICY.formationFieldResponse}.0,gather*(1.0-inside));
  let drag=fieldResponse+${PARCEL_POLICY.formationDrag}*2.0*sqrt(spring+spread);
  let force=targetVelocity*fieldResponse+(goal-p.pos)*spring+(p.home-p.pos)*spread

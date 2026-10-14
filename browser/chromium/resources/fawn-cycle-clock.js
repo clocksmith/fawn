@@ -1,13 +1,13 @@
-// Scene cadence is independent of input; material blends soften its force instead.
+// Scene cadence is independent of input. Each scene shows its full field before the mark
+// gathers late in the hold; input keeps each scene's response through every blend.
 const CYCLE_POLICY = Object.freeze({
-  version: 11,
+  version: 12,
   effects: Object.freeze(['flow', 'wave', 'particles']),
   labels: Object.freeze({ flow: 'Flows', wave: 'Magnets', particles: 'Particles' }),
   holdS: 8,
   blendS: 4,
   arrivalBlendS: Object.freeze({ wave: 6 }),
-  formation: Object.freeze({ delayS: 1.5, settleS: 3, responseRate: 4 }),
-  transitionInputFloor: 0.15,
+  formation: Object.freeze({ delayS: 3.5, settleS: 2.5, responseRate: 4 }),
   maxDtS: 0.033,
   maxFrameS: 0.1,
 });
@@ -52,8 +52,6 @@ function createCycleClock() {
         next: CYCLE_POLICY.effects[(index + 1) % CYCLE_POLICY.effects.length],
         transitioning: phase >= CYCLE_POLICY.holdS,
         blend: progress ** 3 * (progress * (progress * 6 - 15) + 10),
-        interactionScale: 1 - (1 - CYCLE_POLICY.transitionInputFloor)
-          * Math.sin(Math.PI * progress) ** 2,
       };
     },
     reset() {

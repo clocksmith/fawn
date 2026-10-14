@@ -29,8 +29,8 @@ Outputs:
 - Release candidates pass isolated clean installation using only packaged inputs.
 - Forced Doe fails closed; governed fallback remains explicit and typed.
 - Browser launch alone is integration evidence, not application or performance value.
-- Hosted artwork keeps input-independent visible-time scheduling and smooth input
-  attenuation without delaying GPU handoffs or resetting the moving material.
+- Hosted artwork keeps input-independent visible-time scheduling; input keeps each
+  scene's weighted response through transitions without delaying handoffs or resetting material.
 - Logo recovery lerps live parcels into a shared boundary before its dwell, and
   release retraces them across the scene; checks follow positions, not opacity.
 - Branded silhouettes retain live fields and parcel advection. Unformed fluids

@@ -6,6 +6,10 @@ scene and transition, and gathers into the mark while the scene's field keeps mo
 it. Release retraces each parcel toward its place in the even starting spread, so
 material floats back across the scene instead of staying clumped. Unformed Flows and
 Magnets shade their live fields directly; parcels take over as the mark gathers.
+Each scene shows its full field before the mark gathers late in the hold. A press keeps
+each scene's response through every blend: Magnets attract, Particles repel, a held
+press swirls where the two cancel, and material under it leaves its formation and
+return springs until release.
 
 [`fawn-cycle-gpu.js`](../../browser/chromium/resources/fawn-cycle-gpu.js) runs the
 solvers and handoffs, [`fawn-parcels.js`](../../browser/chromium/resources/fawn-parcels.js)

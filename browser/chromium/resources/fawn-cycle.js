@@ -160,8 +160,7 @@ async function frame(now) {
       elapsedDt, logoEnabled, interacting || cycle.transitioning, interacting, cycle.blend,
     );
     time += dt;
-    gpu.uniforms(dt, time, shape, pointer, Number(stepsSelect.value), weights, elapsedDt, burst,
-      cycle.interactionScale);
+    gpu.uniforms(dt, time, shape, pointer, Number(stepsSelect.value), weights, burst);
     const encoder = device.createCommandEncoder({ label: 'Fawn cycle frame' });
     if (cycle.started) gpu.handoff(encoder, cycle.effect);
     if (dt > 0) {
