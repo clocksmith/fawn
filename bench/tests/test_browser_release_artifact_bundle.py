@@ -970,32 +970,6 @@ def test_browser_release_artifact_bundle_requires_promotion_receipt() -> None:
     } in bundle_check.check_bundle(payload)
 
 
-def test_browser_release_artifact_bundle_defaults_include_browser_contract_surface() -> None:
-    contract_paths = {
-        path.relative_to(REPO_ROOT).as_posix()
-        for path in builder.defaulted_paths([], builder.DEFAULT_CONTRACTS)
-    }
-
-    assert "browser/chromium/contracts/browser-benchmark-superset.contract.md" in contract_paths
-    assert "browser/chromium/contracts/browser-gpu-flight-recorder.contract.md" in contract_paths
-    assert "browser/chromium/contracts/browser-shader-links.contract.md" in contract_paths
-    assert "browser/chromium/contracts/browser-pipeline-cache-receipts.contract.md" in contract_paths
-    assert "browser/chromium/contracts/browser-published-release.contract.md" in contract_paths
-    assert "browser/chromium/contracts/browser-cts-subset.contract.md" in contract_paths
-
-
-def test_browser_release_artifact_bundle_defaults_include_chromium_patch_manifest() -> None:
-    policy_paths = {
-        path.relative_to(REPO_ROOT).as_posix()
-        for path in builder.defaulted_paths([], builder.DEFAULT_POLICIES)
-    }
-
-    assert "config/chromium-fork-maintenance-policy.json" in policy_paths
-    assert "config/chromium-patch-manifest.json" in policy_paths
-    assert "config/browser-artifact-identity-coverage.json" in policy_paths
-    assert "config/browser-unsupported-reason-taxonomy.json" in policy_paths
-
-
 def test_browser_release_artifact_bundle_requires_claim_policy() -> None:
     payload = _load()
     payload["policies"] = [

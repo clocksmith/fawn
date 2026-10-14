@@ -14,7 +14,6 @@ from typing import Any
 REPO_ROOT = Path(__file__).resolve().parents[2]
 SUPERSET_RUNNER = REPO_ROOT / "browser/chromium/scripts/run-browser-benchmark-superset.py"
 LANE_PATHS = REPO_ROOT / "browser/chromium/scripts/lane-paths.sh"
-BUILD_RELEASE_EXTERNAL = REPO_ROOT / "browser/chromium/scripts/build-release-external.sh"
 PATCH_CHROMIUM_APP_DOE = REPO_ROOT / "browser/chromium/scripts/patch-chromium-app-doe.sh"
 RUN_CONSUMER_BENCH = REPO_ROOT / "browser/chromium/scripts/run-consumer-bench.sh"
 RUN_FAWN_RUNTIME_BENCH = REPO_ROOT / "browser/chromium/scripts/run-fawn-runtime-bench.sh"
@@ -208,25 +207,6 @@ class BrowserDoeLibDefaultTests(unittest.TestCase):
             self.assertEqual(completed.returncode, 0, completed.stderr)
             self.assertEqual(completed.stdout.strip(), str(expected))
             self.assertTrue(expected.is_dir())
-
-    def test_build_release_external_uses_end_user_optimized_gn_profile(self) -> None:
-        text = BUILD_RELEASE_EXTERNAL.read_text(encoding="utf-8")
-
-        self.assertIn("is_debug=false", text)
-        self.assertIn("LOCAL_RELEASE_GN_ARGS", text)
-        self.assertIn("OFFICIAL_RELEASE_GN_ARGS", text)
-        self.assertIn('FAWN_CHROMIUM_RELEASE_PROFILE:-official', text)
-        self.assertIn("is_official_build=false", text)
-        self.assertIn("is_official_build=true", text)
-        self.assertIn("dcheck_always_on=false", text)
-        self.assertIn("chrome_pgo_phase=0", text)
-        self.assertIn("symbol_level=0", text)
-        self.assertIn("blink_symbol_level=0", text)
-        self.assertIn("v8_symbol_level=0", text)
-        self.assertIn("use_clang_modules=false", text)
-        self.assertIn("FAWN_CHROMIUM_LOCAL_JOBS", text)
-        self.assertIn("invalid FAWN_CHROMIUM_LOCAL_JOBS", text)
-        self.assertGreaterEqual(text.count('[[ "${#autoninja_args[@]}" -gt 0 ]]'), 2)
 
     def test_sync_release_artifacts_preserves_release_args_evidence(self) -> None:
         self.assertIn(

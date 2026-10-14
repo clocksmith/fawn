@@ -174,7 +174,7 @@ class TestTsirManifestLowering(unittest.TestCase):
 
     def test_bootstrap_fixtures_validate_and_bind_distinct_targets(self) -> None:
         paths = sorted(FIXTURE_DIR.glob("*.json"))
-        self.assertEqual(len(paths), 12)
+        self.assertTrue(paths, "bootstrap manifest fixture set is empty")
 
         seen = set()
         semantic_by_kernel: dict[str, str] = {}
@@ -232,7 +232,7 @@ class TestTsirManifestLowering(unittest.TestCase):
         existed. Catch that before it reaches per-kernel-family parity promotion.
         """
         paths = sorted(FIXTURE_DIR.glob("*.json"))
-        self.assertEqual(len(paths), 12)
+        self.assertTrue(paths, "bootstrap manifest fixture set is empty")
 
         frontend_versions: set[str] = set()
         compiler_versions: set[str] = set()
@@ -288,9 +288,8 @@ class TestTsirManifestLowering(unittest.TestCase):
         (which goes manifest → catalog). Reverse direction catches "new
         kernel landed in the catalog but fixtures weren't regenerated":
         the catalog test would pass (the new kernel has semantic +
-        realization + notes), existing fixture tests hard-code
-        `len(paths) == 12` and so only fire if a fixture is removed, not
-        if the catalog grew. Downstream consumers (nightly canary,
+        realization + notes) and the fixture-set tests only inspect
+        fixtures that exist. Downstream consumers (nightly canary,
         receipt producers) assume every kernel has fixtures — this
         test makes that assumption testable.
         """

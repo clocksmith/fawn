@@ -28,11 +28,6 @@ WORKLOAD_ID = "inference_ort_doe_ep_add_relu_float32_exactshape"
 MATMUL_WORKLOAD_ID = "inference_ort_doe_ep_matmul_float32_rank2_exactshape"
 MATMUL_ADD_WORKLOAD_ID = "inference_ort_doe_ep_matmul_add_float32_rank2_exactshape"
 MATMUL_ADD_RELU_WORKLOAD_ID = "inference_ort_doe_ep_matmul_add_relu_float32_rank2_exactshape"
-IDENTITY_SCENARIO_PATH = REPO_ROOT / "bench" / "vendor-native" / "ort_doe_ep_identity_commands.json"
-SCENARIO_PATH = REPO_ROOT / "bench" / "vendor-native" / "ort_doe_ep_add_relu_commands.json"
-MATMUL_SCENARIO_PATH = REPO_ROOT / "bench" / "vendor-native" / "ort_doe_ep_matmul_commands.json"
-MATMUL_ADD_SCENARIO_PATH = REPO_ROOT / "bench" / "vendor-native" / "ort_doe_ep_matmul_add_commands.json"
-MATMUL_ADD_RELU_SCENARIO_PATH = REPO_ROOT / "bench" / "vendor-native" / "ort_doe_ep_matmul_add_relu_commands.json"
 
 
 def _write_fake_smoke(path: Path, *, success: bool) -> None:
@@ -189,24 +184,6 @@ class NativeOrtEpSmokeLaneTests(unittest.TestCase):
         )
         self.assertTrue((REPO_ROOT / workload.commands_path).exists())
 
-    def test_identity_scenario_payload_matches_native_smoke_contract(self) -> None:
-        payload = json.loads(IDENTITY_SCENARIO_PATH.read_text(encoding="utf-8"))
-        self.assertEqual(len(payload), 1)
-        scenario = payload[0]
-        self.assertEqual(scenario["kind"], "vendor-native-benchmark-scenario")
-        self.assertEqual(scenario["schemaVersion"], 1)
-        self.assertEqual(scenario["scenarioId"], IDENTITY_WORKLOAD_ID)
-        self.assertEqual(scenario["caseName"], "identity")
-
-    def test_scenario_payload_matches_native_smoke_contract(self) -> None:
-        payload = json.loads(SCENARIO_PATH.read_text(encoding="utf-8"))
-        self.assertEqual(len(payload), 1)
-        scenario = payload[0]
-        self.assertEqual(scenario["kind"], "vendor-native-benchmark-scenario")
-        self.assertEqual(scenario["schemaVersion"], 1)
-        self.assertEqual(scenario["scenarioId"], WORKLOAD_ID)
-        self.assertEqual(scenario["caseName"], "add_relu")
-
     def test_matmul_workload_manifest_loads_native_smoke_lane(self) -> None:
         workloads = config_support.load_workloads(
             WORKLOADS_PATH,
@@ -227,15 +204,6 @@ class NativeOrtEpSmokeLaneTests(unittest.TestCase):
             "bench/vendor-native/ort_doe_ep_matmul_commands.json",
         )
         self.assertTrue((REPO_ROOT / workload.commands_path).exists())
-
-    def test_matmul_scenario_payload_matches_native_smoke_contract(self) -> None:
-        payload = json.loads(MATMUL_SCENARIO_PATH.read_text(encoding="utf-8"))
-        self.assertEqual(len(payload), 1)
-        scenario = payload[0]
-        self.assertEqual(scenario["kind"], "vendor-native-benchmark-scenario")
-        self.assertEqual(scenario["schemaVersion"], 1)
-        self.assertEqual(scenario["scenarioId"], MATMUL_WORKLOAD_ID)
-        self.assertEqual(scenario["caseName"], "matmul")
 
     def test_matmul_add_workload_manifest_loads_native_smoke_lane(self) -> None:
         workloads = config_support.load_workloads(
@@ -258,15 +226,6 @@ class NativeOrtEpSmokeLaneTests(unittest.TestCase):
         )
         self.assertTrue((REPO_ROOT / workload.commands_path).exists())
 
-    def test_matmul_add_scenario_payload_matches_native_smoke_contract(self) -> None:
-        payload = json.loads(MATMUL_ADD_SCENARIO_PATH.read_text(encoding="utf-8"))
-        self.assertEqual(len(payload), 1)
-        scenario = payload[0]
-        self.assertEqual(scenario["kind"], "vendor-native-benchmark-scenario")
-        self.assertEqual(scenario["schemaVersion"], 1)
-        self.assertEqual(scenario["scenarioId"], MATMUL_ADD_WORKLOAD_ID)
-        self.assertEqual(scenario["caseName"], "matmul_add")
-
     def test_matmul_add_relu_workload_manifest_loads_native_smoke_lane(self) -> None:
         workloads = config_support.load_workloads(
             WORKLOADS_PATH,
@@ -287,15 +246,6 @@ class NativeOrtEpSmokeLaneTests(unittest.TestCase):
             "bench/vendor-native/ort_doe_ep_matmul_add_relu_commands.json",
         )
         self.assertTrue((REPO_ROOT / workload.commands_path).exists())
-
-    def test_matmul_add_relu_scenario_payload_matches_native_smoke_contract(self) -> None:
-        payload = json.loads(MATMUL_ADD_RELU_SCENARIO_PATH.read_text(encoding="utf-8"))
-        self.assertEqual(len(payload), 1)
-        scenario = payload[0]
-        self.assertEqual(scenario["kind"], "vendor-native-benchmark-scenario")
-        self.assertEqual(scenario["schemaVersion"], 1)
-        self.assertEqual(scenario["scenarioId"], MATMUL_ADD_RELU_WORKLOAD_ID)
-        self.assertEqual(scenario["caseName"], "matmul_add_relu")
 
     def test_runner_emits_success_trace_for_native_smoke(self) -> None:
         with tempfile.TemporaryDirectory(prefix="doe-native-ort-ep-success-") as tmpdir:

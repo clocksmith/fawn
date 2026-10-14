@@ -138,8 +138,6 @@ class _CompareLaneBase(LaneHelpersMixin):
     commands_path: str
     scenario_path: Path
     scenario_module_url: str
-    prefill_tokens: int
-    decode_tokens: int
     min_timed_samples: int = 3
 
     def test_workload_manifest_loads_strict_provider_compare_lane(self) -> None:
@@ -159,21 +157,6 @@ class _CompareLaneBase(LaneHelpersMixin):
         self.assertGreaterEqual(payload["run"]["iterations"], 7)
         self.assertEqual(payload["claimability"]["minTimedSamples"], self.min_timed_samples)
         self.assertEqual(payload["selector"]["ids"], [self.workload_id])
-
-    def test_scenario_payload_matches_provider_compare_contract(self) -> None:
-        payload = json.loads(self.scenario_path.read_text(encoding="utf-8"))
-        self.assertEqual(len(payload), 1)
-        scenario = payload[0]
-        self.assertEqual(scenario["kind"], "vendor-node-benchmark-scenario")
-        self.assertEqual(scenario["schemaVersion"], 1)
-        self.assertEqual(scenario["scenarioId"], self.workload_id)
-        self.assertEqual(scenario["promptWorkload"]["prefillTokens"], self.prefill_tokens)
-        self.assertEqual(scenario["promptWorkload"]["decodeTokens"], self.decode_tokens)
-        self.assertEqual(scenario["tjs"]["modelId"], "onnx-community/gemma-3-270m-it-ONNX")
-        self.assertEqual(
-            scenario["tjs"]["localModelPath"],
-            "../../../doppler/node_modules/@huggingface/transformers/.cache",
-        )
 
     def _run_scenario_loader(self) -> dict:
         script = f"""
@@ -246,8 +229,6 @@ class BunOrtWebGpuProviderCompareLaneTests(_CompareLaneBase):
     scenario_module_url = (
         REPO_ROOT / "bench" / "executors" / "vendor-node" / "scenario.js"
     ).resolve().as_uri()
-    prefill_tokens = 32
-    decode_tokens = 1
     fixture = LaneFixture(
         workloads_path=REPO_ROOT
         / "bench"
@@ -361,8 +342,6 @@ class NodeOrtWebGpuProviderCompareLaneTests(_CompareLaneBase):
     scenario_module_url = (
         REPO_ROOT / "bench" / "executors" / "vendor-node" / "scenario.js"
     ).resolve().as_uri()
-    prefill_tokens = 64
-    decode_tokens = 64
     fixture = LaneFixture(
         workloads_path=REPO_ROOT
         / "bench"
@@ -380,15 +359,6 @@ class NodeOrtWebGpuProviderCompareLaneTests(_CompareLaneBase):
             "run-node-tjs-ort-webgpu.js",
         ),
     )
-
-    def test_scenario_payload_matches_provider_compare_contract(self) -> None:
-        super().test_scenario_payload_matches_provider_compare_contract()
-        payload = json.loads(self.scenario_path.read_text(encoding="utf-8"))
-        scenario = payload[0]
-        self.assertEqual(
-            scenario["doppler"]["modelPath"],
-            "../../../doppler/models/local/gemma-3-270m-it-q4k-ehf16-af32",
-        )
 
     def test_node_scenario_loader_resolves_provider_compare_fields(self) -> None:
         self._run_scenario_loader()

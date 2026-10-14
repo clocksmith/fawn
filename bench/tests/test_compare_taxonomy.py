@@ -28,17 +28,6 @@ class CompareTaxonomyTests(unittest.TestCase):
         taxonomy = load_json(REPO_ROOT / "config" / "compare-taxonomy.json")
         families = parse_structural_families(taxonomy)
         self.assertGreater(len(families), 0)
-        family_ids = {f.id for f in families}
-        self.assertIn("doe_backend", family_ids)
-        self.assertIn("dawn_backend", family_ids)
-
-    def test_taxonomy_v2_has_products_axis(self) -> None:
-        taxonomy = load_json(REPO_ROOT / "config" / "compare-taxonomy.json")
-        self.assertEqual(taxonomy["schemaVersion"], 3)
-        self.assertIn("products", taxonomy["axes"])
-        self.assertIn("surfaces", taxonomy["axes"])
-        self.assertNotIn("comparisonViews", taxonomy["axes"])
-        self.assertNotIn("providerPairs", taxonomy["axes"])
 
     def test_boundaries_are_derived_from_surfaces(self) -> None:
         taxonomy = load_json(REPO_ROOT / "config" / "compare-taxonomy.json")

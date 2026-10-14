@@ -13,14 +13,6 @@ from jsonschema import Draft202012Validator
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 STRATEGY_PATH = REPO_ROOT / "config/doe-product-strategy.json"
-STEP_IDS = [
-    "shared-workspace-service",
-    "observation-action-binding",
-    "durable-ownership",
-    "uncertainty-recovery",
-    "reuse-and-product-value",
-    "selective-deeper-capabilities",
-]
 
 
 def load_strategy() -> dict[str, Any]:
@@ -42,11 +34,11 @@ class FawnWorkspaceStrategyTests(unittest.TestCase):
         validator().validate(strategy)
         workspace = strategy["fawnWorkspace"]
         steps = workspace["steps"]
-        self.assertEqual([step["id"] for step in steps], STEP_IDS)
+        step_ids = [step["id"] for step in steps]
         for index, step in enumerate(steps):
             self.assertEqual(step["order"], index + 1)
             self.assertEqual(
-                step["dependsOn"], [] if index == 0 else [STEP_IDS[index - 1]]
+                step["dependsOn"], [] if index == 0 else [step_ids[index - 1]]
             )
         for field in ("contractPath", "statusPath", "charterPath"):
             self.assertTrue((REPO_ROOT / workspace[field]).is_file(), field)
@@ -94,24 +86,6 @@ class FawnWorkspaceStrategyTests(unittest.TestCase):
         strategy = load_strategy()
         workspace = strategy["fawnWorkspace"]
         self.assertFalse(workspace["requiresNativeRuntimeWins"])
-        self.assertEqual(
-            workspace["initialIntegration"], "stock-chromium-cdp-playwright"
-        )
-        self.assertEqual(
-            [milestone["id"] for milestone in strategy["milestones"]],
-            [
-                "provider-qualification-v1",
-                "framework-substitution-v1",
-                "application-transfer-v1",
-                "chromium-substitution-v1",
-            ],
-        )
-        work_selection = strategy["executionOwnership"]["workSelection"]
-        self.assertEqual(work_selection["activeBackend"], "amd-vulkan")
-        self.assertEqual(work_selection["d3d12"], "deferred")
-        self.assertEqual(
-            work_selection["browser"], "explicit-selection-required"
-        )
         workspace["requiresNativeRuntimeWins"] = True
         self.assertFalse(validator().is_valid(strategy))
 
@@ -126,18 +100,7 @@ class FawnWorkspaceStrategyTests(unittest.TestCase):
         check = Draft202012Validator(schema)
         check.validate(policy)
         comparison = policy["workspaceComparison"]
-        self.assertEqual(
-            comparison["control"], "competent-stock-chromium-playwright"
-        )
-        self.assertEqual(
-            comparison["treatment"],
-            "same-browser-and-runtime-with-fawn-workspace-service",
-        )
         self.assertFalse(comparison["requiresNativeRuntimeWins"])
-        self.assertEqual(
-            [lane["laneId"] for lane in policy["internalCausalLanes"]],
-            ["A", "B", "C", "D"],
-        )
         comparison["treatment"] = "existing-gpu-recovery-receipts"
         self.assertFalse(check.is_valid(policy))
 

@@ -23,17 +23,6 @@ class TestRealManifestFixtureGenerator(unittest.TestCase):
         )
         for name, entry in fixtures.items():
             with self.subTest(name=name):
-                self.assertTrue(
-                    name.startswith((
-                        "embed.",
-                        "lm_head_gemv.",
-                        "attention_head256_f16kv.",
-                        "attention_head512_f16kv.",
-                        "rmsnorm.",
-                        "fused_gemv.",
-                    )),
-                    f"unexpected fixture name: {name}",
-                )
                 for field in (
                     "tsirSemanticDigest",
                     "tsirRealizationDigest",

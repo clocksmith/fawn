@@ -20,10 +20,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - name: Check CLAUDE.md/AGENTS.md/GEMINI.md are in sync
+      - name: Check CLAUDE.md/GEMINI.md are symlinks to AGENTS.md
         run: |
-          diff CLAUDE.md AGENTS.md || { echo "AGENTS.md is out of sync with CLAUDE.md"; exit 1; }
-          diff CLAUDE.md GEMINI.md || { echo "GEMINI.md is out of sync with CLAUDE.md"; exit 1; }
-          echo "Agent instruction files are in sync."
+          for name in CLAUDE.md GEMINI.md; do
+            test -L "$name" && test "$(readlink "$name")" = AGENTS.md || { echo "$name must be a symlink to AGENTS.md"; exit 1; }
+          done
       - name: Check CI workflow contracts
         run: python3 bench/tests/test_ci_workflow_surface.py

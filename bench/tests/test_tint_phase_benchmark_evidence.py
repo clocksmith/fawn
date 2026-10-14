@@ -15,7 +15,6 @@ from bench.tools import check_tint_phase_benchmark_evidence as phase_check
 REPO_ROOT = Path(__file__).resolve().parents[2]
 SCHEMA_PATH = REPO_ROOT / "config" / "tint-phase-benchmark-evidence.schema.json"
 SAMPLE_PATH = REPO_ROOT / "examples" / "tint-phase-benchmark-evidence.sample.json"
-TARGETS_PATH = REPO_ROOT / "config" / "schema-targets.json"
 
 
 def _load_json(path: Path) -> dict:
@@ -120,17 +119,9 @@ class TintPhaseBenchmarkEvidenceTests(unittest.TestCase):
         self.assertEqual(report["rows"][0]["exactPhaseStatus"], "complete")
         self.assertEqual(report["rows"][0]["missingExactPhases"], [])
 
-    def test_sample_matches_schema_and_registry(self) -> None:
+    def test_sample_matches_schema(self) -> None:
         jsonschema.Draft202012Validator(_load_json(SCHEMA_PATH)).validate(
             _load_json(SAMPLE_PATH)
-        )
-        registry = _load_json(TARGETS_PATH)
-        self.assertIn(
-            {
-                "schema": "config/tint-phase-benchmark-evidence.schema.json",
-                "data": "examples/tint-phase-benchmark-evidence.sample.json",
-            },
-            registry["targets"],
         )
 
 

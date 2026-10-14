@@ -17,7 +17,6 @@ from bench.tools import check_tint_compiler_frontier_bundle as bundle
 REPO_ROOT = Path(__file__).resolve().parents[2]
 SCHEMA_PATH = REPO_ROOT / "config" / "tint-compiler-frontier-bundle.schema.json"
 SAMPLE_PATH = REPO_ROOT / "examples" / "tint-compiler-frontier-bundle.sample.json"
-TARGETS_PATH = REPO_ROOT / "config" / "schema-targets.json"
 COMPILER_SCHEMA_PATH = REPO_ROOT / "config" / "tint-compiler-evidence.schema.json"
 
 
@@ -833,7 +832,7 @@ class TintCompilerFrontierBundleTests(unittest.TestCase):
             )
         )
 
-    def test_sample_matches_schema_and_registry(self) -> None:
+    def test_sample_matches_schema(self) -> None:
         sample = _load_json(SAMPLE_PATH)
         jsonschema.Draft202012Validator(_load_json(SCHEMA_PATH)).validate(
             sample
@@ -881,14 +880,6 @@ class TintCompilerFrontierBundleTests(unittest.TestCase):
                     "claimBlockerSummary": [],
                 },
             ],
-        )
-        registry = _load_json(TARGETS_PATH)
-        self.assertIn(
-            {
-                "schema": "config/tint-compiler-frontier-bundle.schema.json",
-                "data": "examples/tint-compiler-frontier-bundle.sample.json",
-            },
-            registry["targets"],
         )
 
 

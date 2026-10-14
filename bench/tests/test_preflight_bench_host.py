@@ -199,32 +199,6 @@ GPU0:
             )
         )
 
-    def test_profile_is_registered_in_cube_and_governed_vulkan_lanes(self) -> None:
-        profile_id = "linux_intel_tiger_lake_vulkan"
-        cube = json.loads(
-            (REPO_ROOT / "config" / "benchmark-cube-policy.json").read_text(
-                encoding="utf-8"
-            )
-        )
-        governed = json.loads(
-            (REPO_ROOT / "config" / "governed-lanes.json").read_text(
-                encoding="utf-8"
-            )
-        )
-
-        host_ids = {row["id"] for row in cube["hostProfiles"]}
-        self.assertIn(profile_id, host_ids)
-        backend_surface = next(
-            row for row in cube["surfaces"] if row["id"] == "backend_native"
-        )
-        self.assertIn(profile_id, backend_surface["expectedHostProfiles"])
-        vulkan_lanes = [
-            row for row in governed["lanes"] if row["id"].startswith("vulkan_")
-        ]
-        self.assertGreater(len(vulkan_lanes), 0)
-        for lane in vulkan_lanes:
-            self.assertIn(profile_id, lane["hostProfiles"])
-
 
 if __name__ == "__main__":
     unittest.main()

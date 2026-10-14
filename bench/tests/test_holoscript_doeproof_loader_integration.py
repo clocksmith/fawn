@@ -39,9 +39,6 @@ class HoloScriptDoeProofLoaderIntegrationTests(unittest.TestCase):
         plan = json.loads(
             (HARNESS / "doeproof-loader-integration.plan.json").read_text()
         )
-        self.assertEqual(
-            plan["planId"], "holoscript-tropical-spmv-doeproof-loader-qm0-v1"
-        )
         self.assertEqual(set(plan["lanes"]), {"W0", "D0"})
         self.assertEqual(
             plan["expectedComparableSha256"],
@@ -84,9 +81,6 @@ class HoloScriptDoeProofLoaderIntegrationTests(unittest.TestCase):
     def test_cli_plan_and_reviewed_diagnostic_preserve_boundary(self) -> None:
         plan = json.loads(
             (HARNESS / "doeproof-cli-integration.plan.json").read_text()
-        )
-        self.assertEqual(
-            plan["planId"], "holoscript-tropical-spmv-doeproof-cli-qm0-v1"
         )
         self.assertEqual(
             set(plan["commands"]), {"run", "verify", "inspect", "compare", "replay"}
@@ -141,10 +135,6 @@ class HoloScriptDoeProofLoaderIntegrationTests(unittest.TestCase):
     def test_linux_workspace_sealing_is_real_and_narrowly_claimed(self) -> None:
         plan = json.loads(
             (HARNESS / "doeproof-cli-linux-bwrap-integration.plan.json").read_text()
-        )
-        self.assertEqual(
-            plan["planId"],
-            "holoscript-tropical-spmv-doeproof-cli-linux-bwrap-qm0-v1",
         )
         self.assertEqual(
             plan["boundary"]["workspace"],

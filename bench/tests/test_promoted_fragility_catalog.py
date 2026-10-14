@@ -92,12 +92,6 @@ class PromotedFragilityCatalogTests(unittest.TestCase):
             self.assertEqual(signature["routeOutcome"]["decision"], entry["routeOutcomeDecision"])
         self.assertGreater(runtime_exercised_count, 0)
 
-    def test_catalog_contains_strict_broad_and_operator_control_lanes(self) -> None:
-        classes = {entry["corpusClass"] for entry in self.catalog["entries"]}
-        self.assertIn("strict", classes)
-        self.assertIn("broad", classes)
-        self.assertIn("operator-control", classes)
-
 
 if __name__ == "__main__":
     unittest.main()

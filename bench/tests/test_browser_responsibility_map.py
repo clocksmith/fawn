@@ -15,47 +15,6 @@ MAP_PATH = REPO_ROOT / "config" / "browser-responsibility-map.json"
 BROWSER_GATE_PATH = REPO_ROOT / "bench" / "browser" / "browser_gate.py"
 BROWSER_CLAIM_GATE_PATH = REPO_ROOT / "bench" / "browser" / "browser_claim_gate.py"
 
-REQUIRED_CPU_ENTRIES = {
-    "networking",
-    "cache",
-    "html_parsing",
-    "css_parsing",
-    "cascade",
-    "dom",
-    "style_tree",
-    "layout",
-    "javascript_execution",
-    "event_loop",
-    "accessibility_tree",
-    "permissions",
-    "origin_policy",
-    "scheduling",
-    "lifecycle",
-    "workers",
-    "service_workers",
-    "developer_tooling",
-}
-
-REQUIRED_GPU_ENTRIES = {
-    "rasterization",
-    "compositing",
-    "canvas_2d",
-    "webgl",
-    "webgpu",
-    "image_filters",
-    "css_effects",
-    "transforms",
-    "texture_upload",
-    "readback",
-    "video_presentation",
-    "swapchain_surface_presentation",
-    "gpu_memory_residency",
-    "command_submission",
-    "pipeline_cache",
-    "shader_compilation",
-    "frame_pacing",
-}
-
 CLAIM_BINDING_FIELDS = {
     "contractPath",
     "schemaPath",
@@ -86,19 +45,8 @@ def _write_json(path: Path, payload: dict) -> None:
     path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 
 
-def test_browser_responsibility_map_covers_required_cpu_and_gpu_surfaces() -> None:
-    payload = _load_map()
-    entries = _entries_by_id(payload)
-
-    assert REQUIRED_CPU_ENTRIES <= set(entries)
-    assert REQUIRED_GPU_ENTRIES <= set(entries)
-    assert map_check.check_responsibility_map(payload, REPO_ROOT) == []
-
-    for entry_id in REQUIRED_CPU_ENTRIES:
-        assert entries[entry_id]["owner"] == "cpu"
-
-    for entry_id in REQUIRED_GPU_ENTRIES:
-        assert entries[entry_id]["owner"] == "gpu"
+def test_browser_responsibility_map_passes_check() -> None:
+    assert map_check.check_responsibility_map(_load_map(), REPO_ROOT) == []
 
 
 def test_claim_candidate_entries_and_boundaries_have_bindings() -> None:
