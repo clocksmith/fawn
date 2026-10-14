@@ -1,6 +1,6 @@
 // Flows: incompressible prismatic dye with vorticity confinement. Dragging stirs and paints
 // along the stroke; drifting emitters keep the fluid alive between gestures.
-import { CELL_WORKGROUP, FRAME_WGSL, fieldSampler, sheetWgsl } from './fawn-gpu.js';
+import { CELL_WORKGROUP, FRAME_WGSL, SHEET_WGSL, fieldSampler } from './fawn-gpu.js';
 
 const FLOW_POLICY = Object.freeze({
   timeScale: 0.82,
@@ -154,10 +154,10 @@ ${CELL_MAIN}
   dyeOut[cell(p)] = vec4<f32>((dye + tint * paint) * retention(${P.dyeDecay}), 1.0);
 }`;
 
-const RENDER = /* wgsl */ `${COMMON}${sheetWgsl(1)}
-@group(0) @binding(2) var<storage, read> dye: array<vec4<f32>>;
-@group(0) @binding(3) var<storage, read> velocity: array<vec4<f32>>;
-@group(0) @binding(4) var<storage, read> divergenceCurl: array<vec4<f32>>;
+const RENDER = /* wgsl */ `${COMMON}${SHEET_WGSL}
+@group(0) @binding(1) var<storage, read> dye: array<vec4<f32>>;
+@group(0) @binding(2) var<storage, read> velocity: array<vec4<f32>>;
+@group(0) @binding(3) var<storage, read> divergenceCurl: array<vec4<f32>>;
 fn relief(d: vec3<f32>, v: vec2<f32>, curl: f32) -> f32 {
   return clamp(length(d) * 0.64 + abs(curl) * 0.016 + length(v) * 0.10, 0.0, 1.3);
 }
@@ -197,7 +197,7 @@ fn relief(d: vec3<f32>, v: vec2<f32>, curl: f32) -> f32 {
   // No-slip walls hold stagnant dye, so the sheet fades out over its outermost cells.
   let inset = min(min(at.x, at.y), min(frame.grid.x - 1.0 - at.x, frame.grid.y - 1.0 - at.y));
   let wall = smoothstep(${P.wallFade[0]}, ${P.wallFade[1]}, inset);
-  return vec4<f32>(mix(background, max(lit, background), coverage(in.placed) * wall), 1.0);
+  return vec4<f32>(mix(background, max(lit, background), wall), 1.0);
 }`;
 
 const EXPORT = /* wgsl */ `${COMMON}
@@ -218,7 +218,7 @@ ${CELL_MAIN}
   velocity[cell(p)] = vec4<f32>(carryMotion[cell(p)].xy, 0.0, 0.0);
 }`;
 
-function createFlow({ kit, grid, frame, logoMask, carry }) {
+function createFlow({ kit, grid, frame, carry }) {
   const cells = grid * grid;
   const field = (label) => kit.storage(`Flow ${label}`, cells * 16);
   const velocity = [field('velocity 0'), field('velocity 1')];
@@ -242,7 +242,7 @@ function createFlow({ kit, grid, frame, logoMask, carry }) {
     pressure: pair((i) => kit.bind(pipelines.pressure, [frame, pressure[i], divergenceCurl, pressure[1 - i]])),
     project: kit.bind(pipelines.project, [frame, velocity[1], pressure[0], divergenceCurl, velocity[0]]),
     advectDye: pair((i) => kit.bind(pipelines.advectDye, [frame, dye[i], velocity[0], dye[1 - i]])),
-    render: pair((i) => kit.bind(pipelines.render, [frame, logoMask, dye[i], velocity[0], divergenceCurl])),
+    render: pair((i) => kit.bind(pipelines.render, [frame, dye[i], velocity[0], divergenceCurl])),
     // Indexed [current dye][carry slot].
     exportCarry: pair((i) => carry.map((slot) =>
       kit.bind(pipelines.exportCarry, [frame, dye[i], velocity[0], slot.color, slot.motion]))),

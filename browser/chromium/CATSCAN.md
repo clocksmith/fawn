@@ -33,8 +33,8 @@ Outputs:
   attenuation without delaying GPU handoffs or resetting the moving material.
 - Each background keeps its own simulation, shading, and pointer response; scene
   changes hand outgoing state to the next scene and one carried population.
-- Logo formation moves each scene's live sheet into one shared boundary without
-  pausing its simulation.
+- Logo formation moves live material on individual paths into one shared mark,
+  never a scaled or masked rectangle; scenes keep simulating.
 
 ## Acceptance
 

@@ -4,11 +4,14 @@ The hosted background cycles Flows, Magnets, and Particles on one canvas. Each
 scene holds with its own simulation, shading, and pointer response. A scene change
 hands the outgoing state to the incoming scene and to one carried population that
 moves it under both scenes' motion while the three images blend. Logo formation
-moves each scene's live sheet into the mark without pausing its simulation.
+carries the live image into the mark as moving material: each region travels its
+own curved path to its own place in the mark while the scene keeps simulating, and
+release reverses the same paths.
 
 [`fawn-scenes.js`](../../browser/chromium/resources/fawn-scenes.js) is the single
 orchestrator. Each scene module owns its shaders; [`fawn-gpu.js`](../../browser/chromium/resources/fawn-gpu.js)
-holds the shared frame uniform, sheet placement, and pipeline helpers. The retained
+holds the shared frame uniform and pipeline helpers, and [`fawn-mark.js`](../../browser/chromium/resources/fawn-mark.js)
+owns formation for every scene. The retained
 standalone benchmark pages are separate workloads, not shader sources.
 
 Checks are local visual and lifecycle checks in a WebGPU browser; no artwork test

@@ -1,6 +1,6 @@
 // Carrier: during a scene change, one live population moves the outgoing material through the
 // blended motion of both scenes and takes on the incoming scene's color, size, and background.
-import { FRAME_WGSL, ITEM_WORKGROUP, SCREEN_VERTEX_WGSL, fieldSampler, sheetWgsl } from './fawn-gpu.js';
+import { FRAME_WGSL, ITEM_WORKGROUP, SCREEN_VERTEX_WGSL, fieldSampler } from './fawn-gpu.js';
 
 const CARRIER_POLICY = Object.freeze({
   strideBytes: 32,
@@ -57,35 +57,30 @@ fn main(@builtin(global_invocation_id) id: vec3<u32>) {
   parcelsOut[i] = Parcel(clamp(p.pos + velocity * dt, vec2<f32>(-1.0), vec2<f32>(1.0)), velocity, p.color);
 }`;
 
-const SPLAT = /* wgsl */ `${COMMON}${sheetWgsl(1)}
-@group(0) @binding(2) var<uniform> look: Look;
-@group(0) @binding(3) var<storage, read> parcels: array<Parcel>;
-@group(0) @binding(4) var<storage, read> toColor: array<vec4<f32>>;
+const SPLAT = /* wgsl */ `${COMMON}
+@group(0) @binding(1) var<uniform> look: Look;
+@group(0) @binding(2) var<storage, read> parcels: array<Parcel>;
+@group(0) @binding(3) var<storage, read> toColor: array<vec4<f32>>;
 ${fieldSampler('incomingColor', 'toColor', 'vec3<f32>', '.rgb')}
 struct Out {
   @builtin(position) position: vec4<f32>,
   @location(0) local: vec2<f32>,
   @location(1) color: vec3<f32>,
-  @location(2) weight: f32,
 }
 @vertex fn vs(@builtin(vertex_index) corner: u32, @builtin(instance_index) instance: u32) -> Out {
   let p = parcels[instance];
   let local = vec2<f32>(f32(corner & 1u), f32(corner >> 1u)) * 2.0 - 1.0;
-  let uv = p.pos * 0.5 + 0.5;
-  let placed = placeSheet(uv);
   let blend = frame.clock.w;
   var out: Out;
-  out.position = vec4<f32>(screenClip(placed) + local * mix(look.radius.x, look.radius.y, blend) / frame.view.xy,
-    0.0, 1.0);
+  out.position = vec4<f32>((p.pos + local * mix(look.radius.x, look.radius.y, blend)) / frame.view.xy, 0.0, 1.0);
   out.local = local;
   // Each parcel keeps its own carried color and takes on the incoming material where it lands.
-  out.color = mix(p.color.rgb, incomingColor(uv), blend);
-  out.weight = coverage(placed);
+  out.color = mix(p.color.rgb, incomingColor(p.pos * 0.5 + 0.5), blend);
   return out;
 }
 struct Moments { @location(0) value: vec4<f32> }
 @fragment fn fs(in: Out) -> Moments {
-  let kernel = pow(max(0.0, 1.0 - dot(in.local, in.local)), 2.0) * in.weight;
+  let kernel = pow(max(0.0, 1.0 - dot(in.local, in.local)), 2.0);
   return Moments(vec4<f32>(in.color * kernel, kernel));
 }`;
 
@@ -99,7 +94,7 @@ const RESOLVE = /* wgsl */ `${SCREEN_VERTEX_WGSL}${LOOK_WGSL}
   return vec4<f32>(mix(background, max(color, background), 1.0 - exp(-m.a * ${C.coverageGain})), 1.0);
 }`;
 
-function createCarrier({ kit, count, canvas, frame, logoMask, carry }) {
+function createCarrier({ kit, count, canvas, frame, carry }) {
   const parcels = [0, 1].map((i) => kit.storage(`Carrier parcels ${i}`, count * C.strideBytes));
   const look = kit.uniform('Carrier look', 64);
   const columns = Math.ceil(Math.sqrt(count));
@@ -119,7 +114,7 @@ function createCarrier({ kit, count, canvas, frame, logoMask, carry }) {
     seed: kit.bind(pipelines.seed, [frame, look, carry[0].color, carry[0].motion, parcels[0]]),
     advect: pair((i) => kit.bind(pipelines.advect,
       [frame, parcels[i], parcels[1 - i], carry[0].motion, carry[1].motion])),
-    splat: pair((i) => kit.bind(pipelines.splat, [frame, logoMask, look, parcels[i], carry[1].color])),
+    splat: pair((i) => kit.bind(pipelines.splat, [frame, look, parcels[i], carry[1].color])),
   };
   let current = 0, from = null, to = null, moments = null, resolveGroup = null;
   return {
