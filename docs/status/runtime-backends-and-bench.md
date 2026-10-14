@@ -312,7 +312,8 @@ successful execution. Injection is distinct from physical hardware loss.
   Self-consistent unsigned or untrusted signed receipts cannot establish trust.
 - CTS coverage must complete the policy-defined required query scope before
   supporting conformance language. Subset runs remain diagnostic.
-- Fawn remains experimental distribution work. Browser smoke and local builds
+- Chromium runtime integration remains experimental distribution work. Browser
+  smoke and local builds
   do not establish a release-class archive or replace native/package evidence.
   Current browser obligations are routed through [`../browser-lane.md`](../browser-lane.md).
 - Recomposition evidence must bind the frozen candidate, matching native ABI,

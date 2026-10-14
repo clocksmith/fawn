@@ -22,8 +22,8 @@
   ],
   "properties": {
     "$schema": { "type": "string", "const": "browser-product-comparison-policy.schema.json" },
-    "schemaVersion": { "type": "integer", "const": 3 },
-    "policyId": { "type": "string", "const": "fawn-external-product-comparison-v3" },
+    "schemaVersion": { "type": "integer", "const": 4 },
+    "policyId": { "type": "string", "const": "fawn-external-product-comparison-v4" },
     "authority": {
       "type": "object",
       "additionalProperties": false,

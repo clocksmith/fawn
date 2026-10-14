@@ -22,14 +22,23 @@ Chromium hooks and browser-runtime integration are added only when measured
 benefits justify their compatibility and maintenance costs; a capability already
 available through existing interfaces is not such a benefit. This schema change
 renames one required-evidence id; no field is added or removed.
+`independenceBoundary.rule` and `externalProductComparison.decisionRules` carry
+the same rule in prose, and one decision rule is added.
 
 `executionOwnership.operatingObjective` and the first two milestone outcomes name
 the runtime focus: one correct, reproducible Doppler Node generation advantage
-over Dawn on Vulkan, then ONNX transfer. Milestone ids, order, required evidence
-and assessments are otherwise unchanged, and nothing is promoted. The browser
-comparison policy keeps its version and shape; its fork conditions and stop
-conditions add the same measured-benefit requirement, and its lane text names the
-legacy Fawn shell build to keep it distinct from the workspace service.
+over Dawn on Vulkan, then ONNX transfer. The second outcome is conditional on the
+first: no Doppler correction is accepted yet. The fourth milestone's outcome and
+its application-benefit evidence entry now require measured benefits that justify
+compatibility and maintenance costs. Milestone ids, order, assessments and all
+other required evidence are unchanged, and nothing is promoted.
+
+The browser comparison policy moves to schema version 4
+(`fawn-external-product-comparison-v4`). Its shape is unchanged, but its meaning
+is not: two fork conditions and one added stop condition carry the
+measured-benefit requirement, the DoeProof interpretation says it records
+evidence, and prose that meant the modified Chromium binary now says legacy Fawn
+shell build. Lane ids, lane order and the pinned lane labels are unchanged.
 
 ## Migration to the integrated Fawn workspace
 
@@ -114,7 +123,7 @@ and sequencing in [the thesis](thesis.md), and enforceable system invariants in
 - The browser comparison policy preserves A/B/C/D causal meanings and separate
   K0 eligibility. Version 3 adds workspace admission without changing those comparisons:
   B-over-A grants no C-over-B credit; D-over-C isolates Direct Protocol;
-  ineligible K0 work never becomes a Fawn win. `doe-gpu/browser` remains an
+  ineligible K0 work never becomes a win for Fawn or the legacy Fawn shell build. `doe-gpu/browser` remains an
   incumbent wrapper until Doe occupies the Chromium seam.
 
 ## Evidence custody and current state

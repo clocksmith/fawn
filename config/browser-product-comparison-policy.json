@@ -1,7 +1,7 @@
 {
   "$schema": "browser-product-comparison-policy.schema.json",
-  "schemaVersion": 3,
-  "policyId": "fawn-external-product-comparison-v3",
+  "schemaVersion": 4,
+  "policyId": "fawn-external-product-comparison-v4",
   "authority": {
     "strategyPath": "docs/thesis.md",
     "browserLanePath": "docs/browser-lane.md",
@@ -40,7 +40,7 @@
       ],
       "executorPath": "bench/fawn_matrix/k0_cli.py",
       "admissionPolicyPath": "config/fawn-k0-workloads.json",
-      "claimBoundary": "Cloudflare product documentation establishes comparator scope only; it is not Doe or Fawn execution evidence."
+      "claimBoundary": "Cloudflare product documentation establishes comparator scope only; it is not Doe, Fawn workspace or legacy Fawn shell build execution evidence."
     }
   ],
   "suites": [
@@ -67,8 +67,8 @@
     {
       "id": "fawn-shell-value",
       "comparison": "B to A",
-      "requiredInterpretation": "Only a B-over-A application outcome grants Fawn shell value.",
-      "forbiddenInference": "Fawn shell value grants DoeRuntime or Direct Protocol value."
+      "requiredInterpretation": "Only a B-over-A application outcome grants legacy Fawn shell build value.",
+      "forbiddenInference": "Legacy Fawn shell build value grants DoeRuntime or Direct Protocol value."
     },
     {
       "id": "doeruntime-browser-value",
@@ -86,7 +86,7 @@
       "id": "external-comparator-separation",
       "comparison": "K0 beside A/B/C/D",
       "requiredInterpretation": "K0 compares external product outcomes and never changes the causal meaning of A/B/C/D.",
-      "forbiddenInference": "A K0 result identifies the value of a Fawn or DoeRuntime component."
+      "forbiddenInference": "A K0 result identifies the value of a legacy Fawn shell build or DoeRuntime component."
     }
   ],
   "forkAuthorities": [
@@ -117,7 +117,7 @@
   ],
   "stopConditions": [
     "Reject the measured shell-product claim when K0 wins shared tasks and customers do not value differentiation; workspace acceptance remains independently governed.",
-    "Do not grant Fawn shell value unless B beats A.",
+    "Do not grant legacy Fawn shell build value unless B beats A.",
     "Do not grant DoeRuntime browser ownership unless C beats B for the exact measured tuple.",
     "Do not continue Direct Protocol funding unless D beats C on the declared total task outcome.",
     "Do not add Chromium hooks or browser-runtime integration unless measured benefits justify their compatibility and maintenance costs."

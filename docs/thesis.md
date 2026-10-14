@@ -52,10 +52,10 @@ the selected Fawn workspace roadmap.
    and memory victory is not required. Reject ineffective candidates, preserve
    the baseline, and record a new prioritization decision instead of extending
    one reranker indefinitely. Rejection does not satisfy the advantage milestone.
-2. Transfer to ONNX through independent framework integration. Confirm that the
-   accepted Doppler correction carries through the pinned ONNX Runtime WebGPU
-   substitution, which already executes existing operators on the qualified
-   Vulkan host.
+2. Transfer to ONNX through independent framework integration. Once milestone 1
+   accepts a Doppler correction, confirm that it carries through the pinned ONNX
+   Runtime WebGPU substitution, which already executes existing operators on the
+   qualified Vulkan host. No such correction is accepted yet.
    The [campaign](onnx-vulkan-campaign-contract.md),
    [lifecycle contract](native-device-lifecycle-contract.md), and
    [evaluation installation](onnx-vulkan-installation.md) establish bounded

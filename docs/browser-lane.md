@@ -94,8 +94,9 @@ The differentiation suite covers persistent authentication, restart recovery,
 offline local operation, WebGL, WebGPU, private state, and long-running
 sessions. K0 runs only on workloads admitted by its documented product
 boundary. Unsupported rows remain `ineligible`: they are retained, are never
-scored as Fawn wins, and do not prove Fawn quality or customer value. Fawn must
-still pass its own application oracle, lifecycle, and release gates.
+scored as wins for the legacy Fawn shell build, and do not prove its quality or
+customer value. That build must still pass its own application oracle,
+lifecycle, and release gates.
 
 The repository-owned K0 connector is
 [`bench/fawn_matrix/k0_cli.py`](../bench/fawn_matrix/k0_cli.py). Its admission
