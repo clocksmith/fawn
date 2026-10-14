@@ -1,6 +1,6 @@
 // Persistent moving material. Formation steers momentum, never projects positions onto a mask.
 const PARCEL_POLICY = Object.freeze({
-  version: 11,
+  version: 12,
   strideFloats: 16,
   workgroup: 128,
   targetGrid: 384,
@@ -10,6 +10,12 @@ const PARCEL_POLICY = Object.freeze({
   particleVelocityResponse: 2,
   particleDriftGain: 0.6,
   particleFormationGain: 4,
+  magneticFormationGain: 2.5,
+  magneticPull: 0.4,
+  pressSweep: 0.8,
+  pressResponse: 10,
+  pressResponseSpeed: Object.freeze([0.3, 1.2]),
+  pressSweepRadius: 0.2,
   particleWander: 0.012,
   particleReleaseSpring: 0.35,
   particleReleaseDecay: 1,
@@ -95,19 +101,27 @@ fn velocity_at(pos:vec2<f32>)->vec2<f32> {
   let delta=2.0/u.grid.x;
   let gradient=vec2<f32>(wave_at(pos+vec2<f32>(delta,0)).x-wave_at(pos-vec2<f32>(delta,0)).x,
     wave_at(pos+vec2<f32>(0,delta)).x-wave_at(pos-vec2<f32>(0,delta)).x)*u.grid.x*0.025;
-  v+=vec2<f32>(-gradient.y,gradient.x)*u.theme.y;
+  // Material circulates around the magnets and is drawn into them, leaving no stray fluid between;
+  // the forming mark keeps the circulation but not the pull, so it stays one whole film.
+  v+=(vec2<f32>(-gradient.y,gradient.x)+gradient*${PARCEL_POLICY.magneticPull}*(1.0-u.theme.w))*u.theme.y;
  }
  let drift=${PARCEL_POLICY.particleDriftGain}*free
    +${PARCEL_POLICY.formationCirculation}*u.theme.w*u.theme.x;
  if(drift>0.0){v+=particle_flow(pos)*drift;}
  if(free>0.0){v+=particle_spiral(pos)*free;}
+ // The outer boundary is circular and outside every supported viewport, not a visible box.
+ v-=pos/max(length(pos),0.001)*smoothstep(1.45,${PARCEL_POLICY.worldEdge},length(pos))*0.35;
+ return v/max(1.0,length(v)/${PARCEL_POLICY.speedLimit});
+}
+fn hand_at(pos:vec2<f32>)->vec2<f32> {
  let pointerDelta=u.pointer.xy-pos;
  let reach=0.012/max(dot(pointerDelta,pointerDelta),0.018);
  // Magnets attract and Particles repel; where they cancel mid-blend a held press swirls instead.
  let swirl=u.pointer.w*min(u.theme.y,u.theme.z)*${PARCEL_POLICY.pressSwirl}.0;
- v+=(pointerDelta*u.pointer.z*(u.theme.y+u.theme.z)+vec2<f32>(-pointerDelta.y,pointerDelta.x)*swirl)*reach;
- // The outer boundary is circular and outside every supported viewport, not a visible box.
- v-=pos/max(length(pos),0.001)*smoothstep(1.45,${PARCEL_POLICY.worldEdge},length(pos))*0.35;
+ var v=(pointerDelta*u.pointer.z*(u.theme.y+u.theme.z)+vec2<f32>(-pointerDelta.y,pointerDelta.x)*swirl)*reach;
+ // A held drag sweeps nearby magnetic and particle material along with the hand.
+ v+=u.view.zw*${PARCEL_POLICY.pressSweep}*(u.theme.y+u.theme.z)
+   *exp(-dot(pointerDelta,pointerDelta)/(${PARCEL_POLICY.pressSweepRadius}*${PARCEL_POLICY.pressSweepRadius}));
  return v/max(1.0,length(v)/${PARCEL_POLICY.speedLimit});
 }
 fn spectral(phase:f32)->vec3<f32> { return 0.5+0.5*cos(vec3<f32>(0,2,4)+phase*6.28318); }
@@ -141,8 +155,8 @@ fn main(@builtin(global_invocation_id) gid:vec3<u32>) {
  let arrival=0.35+1.65*f32((hash>>16u)&65535u)/65535.0;
  let boundaryBand=mix(${PARCEL_POLICY.boundaryBand},${PARCEL_POLICY.particleBoundaryBand},u.theme.z);
  let inside=smoothstep(-boundaryBand,0.0,before.w);
- // Fluid inside the mark floats; particles still take their own places so the mark fills.
- let pull=mix(1.0,${PARCEL_POLICY.insidePull},inside*(1.0-u.theme.z));
+ // Fluid inside the mark floats; magnetic film and particles take their places so the mark fills.
+ let pull=mix(1.0,${PARCEL_POLICY.insidePull},inside*u.theme.x);
  // Remember release until the material has spread; a zero shape must not leave it clumped.
  let previous=p.formation.x;
  var release=min(1.0,p.formation.y+max(0.0,previous-shape));
@@ -155,8 +169,8 @@ fn main(@builtin(global_invocation_id) gid:vec3<u32>) {
  let held=u.pointer.w*(1.0-smoothstep(0.0,${PARCEL_POLICY.pressReach},length(u.pointer.xy-p.pos)));
  // Particles retain their free-flight momentum longer before the gather force builds.
  let gather=shape*mix(1.0,shape,u.theme.z)*(1.0-held);
- let spring=${PARCEL_POLICY.formationSpring}.0*arrival*gather*pull
-   *mix(1.0,${PARCEL_POLICY.particleFormationGain}.0,u.theme.z);
+ let spring=${PARCEL_POLICY.formationSpring}.0*arrival*gather*pull*(u.theme.x
+   +${PARCEL_POLICY.magneticFormationGain}*u.theme.y+${PARCEL_POLICY.particleFormationGain}.0*u.theme.z);
  // Material spirals in while the live field keeps carrying it, rather than taking straight lines.
  let toGoal=goal-p.pos;
  // The outline only catches material that has reached it; distant material is not squeezed inward.
@@ -165,8 +179,13 @@ fn main(@builtin(global_invocation_id) gid:vec3<u32>) {
  let spread=${PARCEL_POLICY.releaseSpring}.0*releaseWeight*(1.0-held)
    *mix(1.0,${PARCEL_POLICY.particleReleaseSpring},u.theme.z);
  let fieldResponse=mix(velocityResponse,${PARCEL_POLICY.formationFieldResponse}.0,gather*(1.0-inside));
- let drag=fieldResponse+${PARCEL_POLICY.formationDrag}*2.0*sqrt(spring+spread);
- let force=targetVelocity*fieldResponse
+ // The hand acts quickly on every material, independent of the particles' slow field response.
+ let hand=hand_at(p.pos);let handResponse=${PARCEL_POLICY.pressResponse}.0
+   *smoothstep(${PARCEL_POLICY.pressResponseSpeed.join(',')},length(hand));
+ let moving=targetVelocity+hand;let carried=moving/max(1.0,length(moving)/${PARCEL_POLICY.speedLimit});
+ let response=fieldResponse+handResponse;
+ let drag=response+${PARCEL_POLICY.formationDrag}*2.0*sqrt(spring+spread);
+ let force=carried*response
    +(toGoal+vec2<f32>(-toGoal.y,toGoal.x)*${PARCEL_POLICY.formationSwirl}*(1.0-inside))*spring
    +(p.home-p.pos)*spread+inward*edge*${PARCEL_POLICY.boundarySpring}.0*gather;
  // Integrate a damped force through the retained velocity; no shape-dependent position edits.
@@ -193,7 +212,8 @@ fn main(@builtin(global_invocation_id) gid:vec3<u32>) {
    +dot(normal.xy,vec2<f32>(0.4,-0.3))+u.grid.w*0.015);
  // Gathered fluid carries its colors instead of repainting every parcel from one small region.
  let carriedDye=mix(dye,p.color.rgb,shape*${PARCEL_POLICY.formationPigmentRetention});
- let carriedFilm=mix(waveColor,p.color.rgb,shape*${PARCEL_POLICY.formationPigmentRetention});
+ // Gathering film keeps its iridescence; released material takes the field's color again.
+ let carriedFilm=mix(waveColor,p.color.rgb,shape*(1.0-release)*${PARCEL_POLICY.formationPigmentRetention});
  // The particle mark takes the original particle page's positional palette as it forms.
  let palette=vec3<f32>(0.55,0.64,0.63)+vec3<f32>(0.34,0.27,0.32)
    *cos(vec3<f32>(0.0,2.1,4.2)+(goal.x*0.65+goal.y*0.35)*3.14159);
