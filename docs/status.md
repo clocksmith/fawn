@@ -17,7 +17,7 @@ verdicts. Historical narrative lives under [`status/archive/`](status/archive/).
 | Continuous integration | [`status/ci.md`](status/ci.md) | workflows and CI inventory tests |
 | Fawn durable workspace | [`status/fawn-workspace.md`](status/fawn-workspace.md) | [workspace contract](fawn-workspace-contract.md), `config/doe-product-strategy.json#fawnWorkspace` |
 | Optional Chromium runtime integration | [`browser-lane.md`](browser-lane.md) | browser milestone manifest and artifacts |
-| Hosted demonstrations (artwork and benchmark pages) | [`status/fawn-start.md`](status/fawn-start.md) | [scene orchestrator](../browser/chromium/resources/fawn-scenes.js), [publication receipt](../reports/releases/fawn/20261013-publication.json) and user visual review |
+| Hosted demonstrations (artwork and benchmark pages) | [`status/fawn-start.md`](status/fawn-start.md) | [cycle GPU](../browser/chromium/resources/fawn-cycle-gpu.js), [publication receipt](../reports/releases/fawn/20261013-publication.json) and user visual review |
 
 Do not add dated progress entries here. Update the owning artifact or live
 boundary, and preserve resolved narrative in an archive shard.
