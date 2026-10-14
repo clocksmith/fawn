@@ -8,9 +8,9 @@
   const PALETTE = Object.freeze({ base: Object.freeze([0.52, 0.64, 0.63]),
     span: Object.freeze([0.34, 0.27, 0.32]), phase: 2.1 });
 
-  const WORKLOAD = Object.freeze({ version: 1, counts: [1024, 4096, 16384, 65536, 262144, 1048576, 4194304, 16777216],
+  const WORKLOAD = Object.freeze({ version: 2, counts: [1024, 4096, 16384, 65536, 262144, 1048576, 4194304, 16777216],
     cycleCounts: [1024, 4096, 16384, 32768, 65536, 262144],
-    steps: [1, 2, 4, 8], defaultCount: 65536, defaultSteps: 4, mobileCycleCount: 16384,
+    steps: [1, 2, 4, 8], defaultCount: 65536, defaultSteps: 4, mobileCycleCount: 32768,
     defaultCounts: Object.freeze({ flow: 65536, wave: 65536, particles: 4096, cycle: 65536 }) });
 
   function configureWorkload(count, steps, kind, mobile = false) {

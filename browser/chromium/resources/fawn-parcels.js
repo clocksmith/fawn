@@ -1,13 +1,13 @@
 // Persistent moving material. Formation edits parcel positions, never the camera or a quad.
 const PARCEL_POLICY = Object.freeze({
-  version: 6,
+  version: 7,
   strideFloats: 12,
   workgroup: 128,
   targetGrid: 384,
   speedLimit: 1.75,
   fieldSpeed: 12,
   velocityResponse: 12,
-  particleVelocityResponse: 2.5,
+  particleVelocityResponse: 2,
   particleDriftGain: 2,
   colorResponse: 3,
   settleRate: 6,
@@ -96,8 +96,8 @@ fn main(@builtin(global_invocation_id) gid:vec3<u32>) {
  let velocityResponse=mix(${PARCEL_POLICY.velocityResponse}.0,${PARCEL_POLICY.particleVelocityResponse},u.theme.z);
  let response=1.0-exp(-velocityResponse*dt);
  p.vel=mix(p.vel,targetVelocity,response);
- // Particle trajectories use their retained velocity, so drift and nudges carry momentum.
- p.pos+=mix(targetVelocity,p.vel,u.theme.z)*dt;
+ // One retained velocity carries the trajectory through every field handoff.
+ p.pos+=p.vel*dt;
  p.pos/=max(1.0,length(p.pos)/${PARCEL_POLICY.worldEdge});
  let goal=goals[hash%arrayLength(&goals)].xy;
  // Different parcel arrival rates break the rectangular envelope of a uniform zoom.
@@ -126,7 +126,7 @@ fn main(@builtin(global_invocation_id) gid:vec3<u32>) {
  let flow=flow_at(p.pos);let film=wave_at(p.pos);let curl=flowCurl[index].y;
  let reflection=log(1.0+max(film.w,0.0));
  let waveColor=spectral(film.x*0.34+reflection*0.14);
- let wantedColor=mix(p.color.rgb,dye,0.12)*u.theme.x+waveColor*u.theme.y+p.color.rgb*u.theme.z;
+ let wantedColor=dye*u.theme.x+waveColor*u.theme.y+p.color.rgb*u.theme.z;
  let wantedMaterial=vec4<f32>((dot(dye,vec3<f32>(0.333))+length(flow.xy)*0.18)*u.theme.x+film.x*u.theme.y,
    reflection,sign(curl)*log(1.0+abs(curl)),length(p.vel));
  let colorResponse=1.0-exp(-${PARCEL_POLICY.colorResponse}.0*dt);
