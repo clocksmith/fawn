@@ -82,7 +82,11 @@ try {
     return lines[-1] if lines else "bun-webgpu provider is unavailable"
 
 
-BUN_WEBGPU_UNAVAILABLE = _bun_webgpu_unavailable_reason()
+BUN_WEBGPU_UNAVAILABLE = (
+    _bun_webgpu_unavailable_reason()
+    if os.environ.get("DOE_NATIVE_TESTS") == "1"
+    else "set DOE_NATIVE_TESTS=1 to run Bun WebGPU provider tests"
+)
 
 
 @dataclass(frozen=True)

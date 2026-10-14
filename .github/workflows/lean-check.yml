@@ -2,10 +2,38 @@ name: fawn-lean-check
 
 on:
   pull_request:
+    paths:
+      - ".github/workflows/lean-check.yml"
+      - "pipeline/lean/**"
+      - "config/toolchains.json"
+      - "config/comparability-obligations.json"
+      - "config/lean-proof-patterns.json"
+      - "config/proof-artifact.schema.json"
+      - "bench/native_compare_modules/comparability.py"
+      - "runtime/zig/src/compiler/wgsl/emit/msl/emit_msl_ir.zig"
+      - "runtime/zig/src/compiler/wgsl/ir/ir_transform_robustness.zig"
+      - "runtime/zig/src/compiler/wgsl/mod.zig"
+      - "runtime/zig/src/native/compute/doe_compute_bind_groups.zig"
+      - "runtime/zig/src/native/resource/doe_buffer_ops_native.zig"
+      - "runtime/zig/src/quirk/runtime.zig"
   push:
     branches:
       - main
       - master
+    paths:
+      - ".github/workflows/lean-check.yml"
+      - "pipeline/lean/**"
+      - "config/toolchains.json"
+      - "config/comparability-obligations.json"
+      - "config/lean-proof-patterns.json"
+      - "config/proof-artifact.schema.json"
+      - "bench/native_compare_modules/comparability.py"
+      - "runtime/zig/src/compiler/wgsl/emit/msl/emit_msl_ir.zig"
+      - "runtime/zig/src/compiler/wgsl/ir/ir_transform_robustness.zig"
+      - "runtime/zig/src/compiler/wgsl/mod.zig"
+      - "runtime/zig/src/native/compute/doe_compute_bind_groups.zig"
+      - "runtime/zig/src/native/resource/doe_buffer_ops_native.zig"
+      - "runtime/zig/src/quirk/runtime.zig"
   workflow_dispatch:
 
 permissions:

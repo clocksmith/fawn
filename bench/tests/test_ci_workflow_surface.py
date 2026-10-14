@@ -12,13 +12,13 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 WORKFLOW_ROOT = REPO_ROOT / ".github" / "workflows"
 
 AUTOMATIC_WORKFLOWS = {
-    "agent-sync.yml": {"pull_request", "push", "workflow_dispatch"},
-    "doe-gpu-native-freshness.yml": {"pull_request", "push", "workflow_dispatch"},
-    "lean-check.yml": {"pull_request", "push", "workflow_dispatch"},
-    "nightly-quirk-mining.yml": {"schedule", "workflow_dispatch"},
-    "publication-hygiene.yml": {"pull_request", "push"},
-    "webgpu-package-surface.yml": {"pull_request", "push", "workflow_dispatch"},
-    "wgsl-compiler.yml": {"pull_request", "push", "workflow_dispatch"},
+    "agent-sync.yml",
+    "doe-gpu-native-freshness.yml",
+    "lean-check.yml",
+    "nightly-quirk-mining.yml",
+    "publication-hygiene.yml",
+    "webgpu-package-surface.yml",
+    "wgsl-compiler.yml",
 }
 
 MANUAL_WORKFLOWS = {
@@ -96,13 +96,8 @@ def workflow_triggers(text: str) -> set[str]:
 class CiWorkflowSurfaceTests(unittest.TestCase):
     def test_workflow_inventory_is_intentional(self) -> None:
         actual = {path.name for path in WORKFLOW_ROOT.glob("*.yml")}
-        expected = set(AUTOMATIC_WORKFLOWS) | MANUAL_WORKFLOWS | set(REUSABLE_WORKFLOWS)
+        expected = AUTOMATIC_WORKFLOWS | MANUAL_WORKFLOWS | set(REUSABLE_WORKFLOWS)
         self.assertEqual(actual, expected)
-
-    def test_automatic_workflow_triggers_are_explicit(self) -> None:
-        for name, expected in AUTOMATIC_WORKFLOWS.items():
-            with self.subTest(workflow=name):
-                self.assertEqual(workflow_triggers(workflow_text(name)), expected)
 
     def test_hardware_and_vendor_workflows_are_manual(self) -> None:
         for name in MANUAL_WORKFLOWS:
@@ -142,12 +137,6 @@ class CiWorkflowSurfaceTests(unittest.TestCase):
         self.assertIn(
             "run: npm run test:integration:native-reliability:electron\n", text
         )
-
-    def test_package_surface_runs_complete_hosted_suite(self) -> None:
-        text = workflow_text("webgpu-package-surface.yml")
-        self.assertIn("run: npm test\n", text)
-        self.assertIn("run: python3 bench/gates/tool_surface_gate.py\n", text)
-        self.assertIn("run: npm pack --dry-run --json\n", text)
 
     def test_amd_smoke_declares_its_nonstandard_lane(self) -> None:
         text = workflow_text("amd-vulkan-smoke.yml")

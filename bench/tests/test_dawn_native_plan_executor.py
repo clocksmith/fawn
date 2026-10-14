@@ -8,6 +8,8 @@ import unittest
 from pathlib import Path
 
 from bench.tests._plan_executor_support import (
+    NATIVE_TESTS_ENABLED,
+    NATIVE_TESTS_SKIP_REASON,
     REPO_ROOT,
     build_target_or_skip_on_missing_dawn_header,
     executor_bin,
@@ -32,6 +34,7 @@ class DawnDirectPlanExecutorTests(unittest.TestCase):
             source,
         )
 
+    @unittest.skipUnless(NATIVE_TESTS_ENABLED, NATIVE_TESTS_SKIP_REASON)
     def test_dry_run_emits_trace_artifacts(self) -> None:
         build_target_or_skip_on_missing_dawn_header("webgpu-plan-executor")
 

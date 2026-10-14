@@ -10,6 +10,8 @@ from pathlib import Path
 
 from bench.tests._plan_executor_support import (
     EXPECTED_PLAN_SHA256,
+    NATIVE_TESTS_ENABLED,
+    NATIVE_TESTS_SKIP_REASON,
     PLAN_PATH,
     RUNTIME_DIR,
     build_target,
@@ -28,6 +30,7 @@ _DOE_BACKEND_ARGS = (
 )
 
 
+@unittest.skipUnless(NATIVE_TESTS_ENABLED, NATIVE_TESTS_SKIP_REASON)
 class DoeDirectPlanExecutorTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:

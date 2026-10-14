@@ -23,7 +23,7 @@ jobs:
         run: |
           zig build dropin
           zig build module-core-runner
-          zig build test
+          zig build test test-device
       - name: Run promoted blocking gates
         run: |
           STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
