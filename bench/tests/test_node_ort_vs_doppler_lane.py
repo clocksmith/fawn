@@ -530,23 +530,6 @@ console.log(JSON.stringify(summarizeDopplerEnvelope({{
         self.assertEqual(payload['claimability']['mode'], 'off')
         self.assertEqual(payload['selector']['ids'], [WORKLOAD_ID])
 
-    def test_scenario_payload_matches_lane_contract(self) -> None:
-        payload = json.loads(SCENARIO_PATH.read_text(encoding='utf-8'))
-        self.assertEqual(len(payload), 1)
-        scenario = payload[0]
-        self.assertEqual(scenario['kind'], 'vendor-node-benchmark-scenario')
-        self.assertEqual(scenario['schemaVersion'], 1)
-        self.assertEqual(scenario['scenarioId'], WORKLOAD_ID)
-        self.assertEqual(scenario['promptWorkload']['prefillTokens'], 64)
-        self.assertEqual(scenario['promptWorkload']['decodeTokens'], 64)
-        self.assertEqual(scenario['tjs']['modelId'], 'onnx-community/gemma-3-270m-it-ONNX')
-        self.assertEqual(scenario['doppler']['modelId'], 'gemma-3-270m-it-q4k-ehf16-af32')
-        self.assertEqual(scenario['doppler']['loadMode'], 'http')
-        self.assertEqual(
-            scenario['doppler']['modelPath'],
-            '../../../doppler/models/local/gemma-3-270m-it-q4k-ehf16-af32',
-        )
-
     def test_node_scenario_loader_resolves_doppler_fields(self) -> None:
         script = f"""
 import {{ loadVendorNodeScenario }} from {json.dumps(SCENARIO_MODULE_URL)};

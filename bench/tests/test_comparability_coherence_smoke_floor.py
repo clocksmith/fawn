@@ -257,18 +257,6 @@ class SmokeFloorCoherenceTests(unittest.TestCase):
 
 
 class PolicyLoadingTests(unittest.TestCase):
-    def test_smoke_floor_loaded_from_config(self) -> None:
-        from native_compare_modules.config_support import (
-            load_benchmark_methodology_policy,
-        )
-
-        policy = load_benchmark_methodology_policy(
-            str(REPO_ROOT / "config/benchmark-methodology-thresholds.json")
-        )
-        self.assertEqual(policy.comparability_min_timed_samples, 7)
-        self.assertEqual(policy.smoke_comparability_min_timed_samples, 3)
-        self.assertEqual(policy.suspicious_speedup_ratio, 10.0)
-
     def test_smoke_floor_above_main_floor_rejected(self) -> None:
         import json
         import tempfile

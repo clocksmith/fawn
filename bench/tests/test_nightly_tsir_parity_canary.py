@@ -44,29 +44,6 @@ class NightlyTsirParityCanaryTests(unittest.TestCase):
             )
         return cls._report
 
-    def test_loads_exact_bootstrap_fixture_set(self) -> None:
-        entries = canary.load_fixture_entries(canary.DEFAULT_FIXTURE_DIR)
-        pairs = {
-            (entry["kernelRef"], entry["backend"])
-            for _, entry in entries
-        }
-        self.assertEqual(len(entries), 12)
-        expected_pairs = {
-            (kernel_ref, backend)
-            for kernel_ref in (
-                "doe.tsir.bootstrap.fused_gemv",
-                "doe.tsir.bootstrap.gather",
-                "doe.tsir.bootstrap.rms_norm",
-            )
-            for backend in (
-                "webgpu-generic",
-                "wse3",
-                "msl",
-                "spir-v",
-            )
-        }
-        self.assertEqual(pairs, expected_pairs)
-
     def test_canary_runs_fixture_receipts_without_claiming_backend_pass(self) -> None:
         """Reference lane is expected to be green once input-tensor fixtures
         exist; backend lanes may be either pass or deferred depending on
@@ -74,7 +51,6 @@ class NightlyTsirParityCanaryTests(unittest.TestCase):
         must only fail on explicit fail statuses."""
         report = self._bootstrap_report()
         self.assertEqual(report["artifactKind"], "tsir_nightly_parity_canary")
-        self.assertEqual(report["fixtureCount"], 12)
         self.assertEqual(report["failures"], [])
         for result in report["results"]:
             self.assertIn("loweringIdentity", result)

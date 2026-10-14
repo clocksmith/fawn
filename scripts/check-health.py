@@ -35,7 +35,6 @@ GOVERNED_OVERSIZE_PYTHON = {
     "bench/browser/browser_gate.py",
     "bench/gates/claim_index_browser_release.py",
     "bench/gates/claim_index_browser_release_proof.py",
-    "bench/gates/claim_index_browser_release_receipts.py",
     "bench/lib/ecosystem_registry.py",
     "bench/native-compare/compare_doe_vs_tint_compilation.py",
     "bench/native_compare_modules/compare_assessment.py",

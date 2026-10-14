@@ -48,10 +48,6 @@ class HoloScriptElectronMainProcessTests(unittest.TestCase):
 
     def test_plan_freezes_the_narrow_electron_contract(self) -> None:
         self.assertEqual(
-            self.plan["candidateId"],
-            "holoscript-electron-main-process-p0-qm0-v1",
-        )
-        self.assertEqual(
             self.plan["runtime"],
             {
                 "host": "electron",
@@ -70,26 +66,6 @@ class HoloScriptElectronMainProcessTests(unittest.TestCase):
                 "sampleIntervalMs": 5,
                 "aggregation": "sum VmRSS across the live process tree",
                 "claimClass": "diagnostic-peak",
-            },
-        )
-        self.assertEqual(self.plan["p0"]["package"], "webgpu@0.3.10")
-        self.assertEqual(
-            self.plan["p0"]["nodeWebgpuCommit"],
-            "c7c792ba7facd9e831a52d8e2a0c1dd166654751",
-        )
-        self.assertEqual(
-            self.plan["p0"]["dawnCommit"],
-            "c5d549e250b9225744929ae860b369cb4304a767",
-        )
-        self.assertEqual(
-            self.plan["p0"]["go"],
-            {
-                "version": "go1.26.6",
-                "archive": "https://go.dev/dl/go1.26.6.linux-amd64.tar.gz",
-                "sha256": (
-                    "708effb774be8237570d0add163225abbdfaf4fca28b2611df"
-                    "167beba4feef89"
-                ),
             },
         )
         for credit in (

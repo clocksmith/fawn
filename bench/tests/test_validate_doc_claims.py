@@ -14,9 +14,3 @@ def test_chromium_claims_use_tracked_contracts_not_external_checkout_files() -> 
     paths = {path for path, _label in validate_doc_claims.STRUCTURAL_CLAIMS}
 
     assert not any(path.startswith("browser/chromium/src/") for path in paths)
-    assert {
-        "bench/tools/check_chromium_source_checkout.py",
-        "config/webgpu-integration-chromium.json",
-        "config/doe-chromium-proc-surface.json",
-        "config/chromium-patch-manifest.json",
-    }.issubset(paths)

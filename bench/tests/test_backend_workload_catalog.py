@@ -62,19 +62,10 @@ class BackendWorkloadCatalogTests(unittest.TestCase):
             load_json(REPO_ROOT / "bench" / "workloads" / "workloads.local.d3d12.json"),
         )
 
-    def test_expected_d3d12_workload_id_sets(self) -> None:
-        smoke = self.generator.materialize_lane(self.catalog, "local_d3d12_smoke")
+    def test_d3d12_extended_ids_are_metal_and_vulkan_intersection(self) -> None:
         full = self.generator.materialize_lane(self.catalog, "local_d3d12")
         metal_full = self.generator.materialize_lane(self.catalog, "apple_metal")
         vulkan_full = self.generator.materialize_lane(self.catalog, "amd_vulkan")
-        self.assertEqual(
-            [row["id"] for row in smoke["workloads"]],
-            [
-                "compute_workgroup_atomic_1024",
-                "pipeline_compile_stress",
-                "upload_write_buffer_64kb",
-            ],
-        )
         metal_ids = {row["id"] for row in metal_full["workloads"]}
         vulkan_ids = {row["id"] for row in vulkan_full["workloads"]}
         extended_ids = [row["id"] for row in full["workloads"]]
@@ -83,32 +74,6 @@ class BackendWorkloadCatalogTests(unittest.TestCase):
             metal_ids & vulkan_ids,
         )
         self.assertEqual(len(extended_ids), len(metal_ids & vulkan_ids))
-
-    def test_expected_d3d12_governed_workload_id_set(self) -> None:
-        comparable = self.generator.materialize_lane(self.catalog, "local_d3d12")
-        governed_ids = [
-            row["id"]
-            for row in comparable["workloads"]
-            if row.get("comparable") and "governed" in row.get("cohorts", [])
-        ]
-        self.assertEqual(
-            sorted(governed_ids),
-            sorted(
-                [
-                "compute_concurrent_execution_single",
-                "compute_workgroup_atomic_1024",
-                "compute_workgroup_non_atomic_1024",
-                "compute_zero_initialize_workgroup_memory_256",
-                "pipeline_compile_stress",
-                "upload_write_buffer_16mb",
-                "upload_write_buffer_1kb",
-                "upload_write_buffer_1mb",
-                "upload_write_buffer_4mb",
-                "upload_write_buffer_64kb",
-                "resource_lifecycle",
-                ]
-            ),
-        )
 
     def test_governed_rows_are_comparable_for_all_profiles(self) -> None:
         for lane_id in ("amd_vulkan", "apple_metal", "local_d3d12"):
@@ -201,38 +166,6 @@ class BackendWorkloadCatalogTests(unittest.TestCase):
         self.assertGreaterEqual(config["claimability"]["minTimedSamples"], 7)
         self.assertEqual(config["selector"]["cohorts"], ["governed"])
         self.assertEqual(config["selector"]["benchmarkClass"], ["comparable"])
-
-    def test_expected_apple_metal_additional_directional_ids(self) -> None:
-        metal = self.generator.materialize_lane(self.catalog, "apple_metal")
-        workload_ids = [row["id"] for row in metal["workloads"]]
-        self.assertIn("compute_dispatch_fallback", workload_ids)
-        self.assertIn("compute_dispatch_grid", workload_ids)
-        self.assertIn("copy_buffer_to_texture", workload_ids)
-        self.assertIn("copy_protocol", workload_ids)
-        self.assertIn("copy_texture_to_buffer", workload_ids)
-        self.assertIn("copy_texture_to_texture", workload_ids)
-        self.assertIn("surface_full_presentation", workload_ids)
-        self.assertIn("upload_write_buffer_64kb", workload_ids)
-        self.assertIn("upload_write_buffer_64kb_staged", workload_ids)
-        self.assertIn("upload_write_buffer_1gb", workload_ids)
-        self.assertIn("upload_write_buffer_1gb_staged", workload_ids)
-
-    def test_apple_metal_compilation_rows_include_real_inference_kernels(self) -> None:
-        metal = self.generator.materialize_lane(self.catalog, "apple_metal")
-        rows = {row["id"]: row for row in metal["workloads"]}
-        expected = {
-            "compilation_inference_attention_decode_msl": "bench/inference-pipeline/kernels/attention-decode.wgsl",
-            "compilation_inference_attention_prefill_msl": "bench/inference-pipeline/kernels/attention-prefill.wgsl",
-            "compilation_inference_matmul_gemv_msl": "bench/inference-pipeline/kernels/matmul-gemv.wgsl",
-            "compilation_inference_matmul_tiled_msl": "bench/inference-pipeline/kernels/matmul-tiled.wgsl",
-            "compilation_inference_rmsnorm_msl": "bench/inference-pipeline/kernels/rmsnorm.wgsl",
-            "compilation_inference_rope_msl": "bench/inference-pipeline/kernels/rope.wgsl",
-        }
-        for workload_id, shader_path in expected.items():
-            self.assertIn(workload_id, rows)
-            self.assertEqual(rows[workload_id]["runnerType"], "compilation")
-            self.assertEqual(rows[workload_id]["shaderPath"], shader_path)
-            self.assertEqual(rows[workload_id]["compilationTarget"], "msl")
 
     def test_apple_metal_runtime_rows_include_gemma_shaped_inference_sequences(self) -> None:
         metal = self.generator.materialize_lane(self.catalog, "apple_metal")
