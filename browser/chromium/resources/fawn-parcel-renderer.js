@@ -1,4 +1,5 @@
 // Surface and point appearances reconstruct the same independently moving parcels.
+import { PARCEL_STRUCT } from './fawn-parcels.js';
 const PARCEL_RENDER_POLICY = Object.freeze({
   version: 9,
   accumulationCapacity: 4096,
@@ -27,7 +28,7 @@ struct Params { view:vec4<f32>, screen:vec4<f32>, theme:vec4<f32>, material:vec4
 const PARCEL_SPLATS =
   HEADER +
   `
-struct Parcel { pos:vec2<f32>, vel:vec2<f32>, color:vec4<f32>, material:vec4<f32> }
+${PARCEL_STRUCT}
 @group(0) @binding(1) var<storage,read> parcels:array<Parcel>;
 struct Out { @builtin(position) position:vec4<f32>, @location(0) local:vec2<f32>,
  @location(1) color:vec3<f32>, @location(2) material:vec4<f32> }

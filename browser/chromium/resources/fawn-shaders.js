@@ -24,14 +24,14 @@ export const wave = Object.freeze({
   "WAVE_UNIFORM_FLOATS": 108,
   "WORKGROUP_SIZE": 16
 });
-export const updateWaveSources = function updateWaveSources(data, time) {
-  const motionTime = time * 3;
+export const updateWaveSources = function updateWaveSources(data, time, strength = 1, spinRate = 1) {
+  const motionTime = time * 3 * spinRate;
   for (let i = 0; i < 15; i++) {
     const phase = i * 2.399963;
     const offset = 12 + i * 4;
     data[offset] = 0.12 + (i % 5) * 0.19 + Math.sin(motionTime * (0.17 + (i % 4) * 0.04) + phase) * 0.08;
     data[offset + 1] = 0.18 + Math.floor(i / 5) * 0.31 + Math.cos(motionTime * (0.19 + (i % 3) * 0.05) + phase) * 0.10;
-    data[offset + 2] = 0.028 + (i % 3) * 0.005;
+    data[offset + 2] = (0.028 + (i % 3) * 0.005) * strength;
     data[offset + 3] = 0.0006;
   }
   for (let i = 0; i < 9; i++) {
@@ -40,7 +40,7 @@ export const updateWaveSources = function updateWaveSources(data, time) {
     data[offset] = 0.16 + (i % 3) * 0.34 + Math.sin(motionTime * (0.18 + (i % 3) * 0.025) + phase) * 0.10;
     data[offset + 1] = 0.16 + Math.floor(i / 3) * 0.34 + Math.cos(motionTime * (0.16 + (i % 4) * 0.035) + phase) * 0.10;
     data[offset + 2] = 0.035 + 0.055 * (0.5 + 0.5 * Math.sin(motionTime * (0.8 + (i % 3) * 0.15) + phase));
-    data[offset + 3] = 0.50 + (i % 3) * 0.08;
+    data[offset + 3] = (0.50 + (i % 3) * 0.08) * strength;
   }
 
 };
@@ -66,6 +66,6 @@ export const particles = Object.freeze({
 export const sourceHashes = Object.freeze({
   "fawn-formation.js": "7a731ceb26b4acb569e29bf89abf00cd52b0ea1a70eaa9c4aa2c134d7b0cb988",
   "fawn-prismatic-fluids.html": "e28973199222f4c3b3962e187c8449f993f9ee499209569b994ff36e4b18a3d0",
-  "fawn-magnetic-fluids.html": "5baffd735050ea2f99ec0e04f1608dca6c1eb607e917a682efbd3a1f4870cc0d",
+  "fawn-magnetic-fluids.html": "074e6cc3cc71e312bce26077aff3cb109a5b3446d713d4b34f57b1ffd7150edf",
   "fawn-start.html": "5298be9659e3c3a2cd39a7c6a733287adfe5e61d2f5fba613842bd15bb508552"
 });

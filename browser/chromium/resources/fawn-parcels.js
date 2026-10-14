@@ -1,7 +1,7 @@
-// Persistent moving material. Formation edits parcel positions, never the camera or a quad.
+// Persistent moving material. Formation steers momentum, never projects positions onto a mask.
 const PARCEL_POLICY = Object.freeze({
-  version: 7,
-  strideFloats: 12,
+  version: 8,
+  strideFloats: 16,
   workgroup: 128,
   targetGrid: 384,
   speedLimit: 1.75,
@@ -10,15 +10,25 @@ const PARCEL_POLICY = Object.freeze({
   particleVelocityResponse: 2,
   particleDriftGain: 2,
   colorResponse: 3,
-  settleRate: 6,
-  insidePull: 0.15,
+  formationSpring: 64,
+  insidePull: 0.04,
+  formationCirculation: 0.15,
+  formationDrag: 0.8,
+  formationFieldResponse: 4,
+  boundarySpring: 128,
+  releaseSpring: 9,
+  releaseResponse: 2,
+  releaseDistance: 0.12,
   boundaryBand: 0.025,
-  boundaryIterations: 3,
   worldEdge: 1.65,
   initialRadius: 1.65,
 });
+const PARCEL_STRUCT = `struct Parcel {
+ pos:vec2<f32>, vel:vec2<f32>, color:vec4<f32>, material:vec4<f32>,
+ home:vec2<f32>, formation:vec2<f32>
+}`;
 const PARCEL_UPDATE = `
-struct Parcel { pos: vec2<f32>, vel: vec2<f32>, color: vec4<f32>, material: vec4<f32> }
+${PARCEL_STRUCT}
 struct Params { grid: vec4<f32>, theme: vec4<f32>, pointer: vec4<f32>, burst: vec4<f32> }
 @group(0) @binding(0) var<uniform> u: Params;
 @group(0) @binding(1) var<storage,read> src: array<Parcel>;
@@ -79,6 +89,7 @@ fn main(@builtin(global_invocation_id) gid:vec3<u32>) {
  let v0=velocity_at(p.pos);let midpoint=p.pos+v0*(dt*0.5);
  var targetVelocity=velocity_at(midpoint);
  targetVelocity+=particle_flow(midpoint)*(${PARCEL_POLICY.particleDriftGain}.0-1.0)*u.theme.z;
+ targetVelocity+=particle_flow(midpoint)*${PARCEL_POLICY.formationCirculation}*shape*u.theme.x;
  targetVelocity/=max(1.0,length(targetVelocity)/${PARCEL_POLICY.speedLimit});
  if(u.burst.z>0.0){
   let away=p.pos-u.burst.xy;let distance=length(away);
@@ -88,39 +99,32 @@ fn main(@builtin(global_invocation_id) gid:vec3<u32>) {
   targetVelocity+=direction*u.burst.z*(1.0-smoothstep(0.0,u.burst.w,distance));
   targetVelocity/=max(1.0,length(targetVelocity)/${PARCEL_POLICY.speedLimit});
  }
- // The mark constrains the boundary; the interior still follows its live vector field.
+ // The outline is a soft restoring force: material may cross it and flow back.
  let before=mark_at(p.pos);
  let inward=before.xy/max(length(before.xy),0.000001);
- let nearEdge=1.0-smoothstep(0.0,${PARCEL_POLICY.boundaryBand},before.w);
- targetVelocity-=inward*min(0.0,dot(targetVelocity,inward))*nearEdge*shape;
  let velocityResponse=mix(${PARCEL_POLICY.velocityResponse}.0,${PARCEL_POLICY.particleVelocityResponse},u.theme.z);
- let response=1.0-exp(-velocityResponse*dt);
- p.vel=mix(p.vel,targetVelocity,response);
- // One retained velocity carries the trajectory through every field handoff.
- p.pos+=p.vel*dt;
- p.pos/=max(1.0,length(p.pos)/${PARCEL_POLICY.worldEdge});
  let goal=goals[hash%arrayLength(&goals)].xy;
- // Different parcel arrival rates break the rectangular envelope of a uniform zoom.
  let arrival=0.35+1.65*f32((hash>>16u)&65535u)/65535.0;
- // Gathering follows visible formation time, independently of the fluid stability timestep.
  let inside=smoothstep(-${PARCEL_POLICY.boundaryBand},0.0,before.w);
- // Material already inside the mark still drifts toward its own place, so clumps spread into a
- // filled silhouette, but gently enough that the field keeps it floating.
  let pull=mix(1.0,${PARCEL_POLICY.insidePull},inside);
- let recovery=1.0-exp(-${PARCEL_POLICY.settleRate}.0*u.pointer.w*arrival*shape*pull);
- p.pos=mix(p.pos,goal,recovery);
- // Releasing the mark retraces each parcel toward its own place in the even starting spread, so
- // gathered material floats back across the scene instead of staying clumped where the mark was.
- let previous=clamp(p.color.a,0.0,1.0);
- let home=vec2<f32>(cos(f32(i)*2.39996323),sin(f32(i)*2.39996323))
-   *sqrt((f32(i)+0.5)/u.grid.y)*${PARCEL_POLICY.initialRadius};
- p.pos=mix(p.pos,home,clamp((previous-shape)/max(previous,0.00001),0.0,1.0));
- // Project only captured material, so distant parcels gather continuously from their own state.
- for(var step=0;step<${PARCEL_POLICY.boundaryIterations};step++){
-  let mark=mark_at(p.pos);let normal=mark.xy/max(length(mark.xy),0.000001);
-  let captured=smoothstep(-${PARCEL_POLICY.boundaryBand},0.0,before.w);
-  p.pos-=normal*min(0.0,mark.w)*shape*captured;
- }
+ // Remember release until the material has spread; a zero shape must not leave it clumped.
+ let previous=p.formation.x;
+ var release=min(1.0,p.formation.y+max(0.0,previous-shape));
+ let homeDistance=length(p.home-p.pos);
+ let arrived=1.0-smoothstep(0.0,${PARCEL_POLICY.releaseDistance},homeDistance);
+ release*=exp(-${PARCEL_POLICY.releaseResponse}.0*dt*(arrived+shape));
+ let releaseWeight=release*(1.0-shape);
+ let spring=${PARCEL_POLICY.formationSpring}.0*arrival*shape*pull;
+ let spread=${PARCEL_POLICY.releaseSpring}.0*releaseWeight;
+ let fieldResponse=mix(velocityResponse,${PARCEL_POLICY.formationFieldResponse}.0,shape*(1.0-inside));
+ let drag=fieldResponse+${PARCEL_POLICY.formationDrag}*2.0*sqrt(spring+spread);
+ let force=targetVelocity*fieldResponse+(goal-p.pos)*spring+(p.home-p.pos)*spread
+   +inward*max(0.0,-before.w)*${PARCEL_POLICY.boundarySpring}.0*shape;
+ // Integrate a damped force through the retained velocity; no shape-dependent position edits.
+ p.vel=mix(p.vel,force/max(drag,0.000001),1.0-exp(-drag*dt));
+ p.vel/=max(1.0,length(p.vel)/${PARCEL_POLICY.speedLimit});
+ p.pos+=p.vel*dt;
+ p.formation=vec2<f32>(shape,release);
  let index=cell(vec2<i32>((p.pos*0.5+0.5)*u.grid.x));
  let dye=clamp(flowDye[index].rgb,vec3<f32>(0),vec3<f32>(8));
  let flow=flow_at(p.pos);let film=wave_at(p.pos);let curl=flowCurl[index].y;
@@ -130,8 +134,7 @@ fn main(@builtin(global_invocation_id) gid:vec3<u32>) {
  let wantedMaterial=vec4<f32>((dot(dye,vec3<f32>(0.333))+length(flow.xy)*0.18)*u.theme.x+film.x*u.theme.y,
    reflection,sign(curl)*log(1.0+abs(curl)),length(p.vel));
  let colorResponse=1.0-exp(-${PARCEL_POLICY.colorResponse}.0*dt);
- // Alpha stores the shape this parcel last saw, which sizes the next release step.
- p.color=vec4<f32>(mix(p.color.rgb,wantedColor,colorResponse),shape);
+ p.color=vec4<f32>(mix(p.color.rgb,wantedColor,colorResponse),1.0);
  p.material=clamp(mix(p.material,wantedMaterial,colorResponse),vec4<f32>(-8),vec4<f32>(8));
  dst[i]=p;
 }
@@ -151,10 +154,10 @@ function createParcelData(grid, seed, count = grid * grid) {
     const v = Array.from(seed.velocity.slice(cell * 4, cell * 4 + 2));
     const height = (color[0] + color[1] + color[2]) / 3 + Math.hypot(...v) * 0.18;
     data.set(
-      [x, y, ...v.map((n) => n * 2), ...color, 0, height, 0, 0, Math.hypot(...v) * 2],
+      [x, y, ...v.map((n) => n * 2), ...color, 1, height, 0, 0, Math.hypot(...v) * 2, x, y, 0, 0],
       i * PARCEL_POLICY.strideFloats,
     );
   }
   return data;
 }
-export { PARCEL_POLICY, PARCEL_UPDATE, createParcelData };
+export { PARCEL_POLICY, PARCEL_STRUCT, PARCEL_UPDATE, createParcelData };
