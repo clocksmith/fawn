@@ -6,40 +6,34 @@ and Python helper tooling under `runtime/zig/tools/`.
 ## Core principles
 
 - Fail fast with descriptive errors. No silent fallbacks.
-- Type-annotate all function signatures.
-- Prefer `pathlib.Path` over `os.path`.
-- Keep modules focused. Shard at 1200 lines.
+- Keep modules focused (see File size).
 - Fairness before speed: benchmark code must prove both sides did equivalent
   work before presenting a faster result as evidence.
 - For package/runtime benchmarks, compare the effective readback path from
-  trace telemetry. A requested readback mode is not enough; native
-  map-read-copy-unmap versus `mapAsync` requires the declared comparison class.
-  Fixed-path experiments require path parity; application replacement requires
-  equivalent output/completion semantics and complete timing boundaries. Follow
-  `docs/performance-strategy.md`; existing frozen gates retain their meaning.
-- Read raw timing before percent deltas. Use `baselineStatsMs` and
-  `comparisonStatsMs` to compute the speed ratio before saying a result is a
-  win.
-- Treat speedups at or above the configured
-  `reliability.suspiciousSpeedupRatio` as suspected path or measurement
-  differences until the report proves otherwise. Check cache/prepared-session
-  state, skipped work, one-sided setup/upload/submit/readback costs, hidden
-  fallback, stale artifacts, and timing scope before accepting the result.
+  trace telemetry, not the requested mode; native map-read-copy-unmap versus
+  `mapAsync` needs the declared comparison class. Fixed-path experiments need
+  path parity; application replacement needs equivalent output/completion
+  semantics and complete timing boundaries. Follow
+  `docs/performance-strategy.md`; existing frozen gates keep their meaning.
+- Read raw timing before percent deltas: compute the speed ratio from
+  `baselineStatsMs` and `comparisonStatsMs` before calling a result a win.
+- Treat speedups at or above `reliability.suspiciousSpeedupRatio` as suspected
+  path or measurement differences until the report proves otherwise: check
+  cache/prepared-session state, skipped work, one-sided
+  setup/upload/submit/readback costs, hidden fallback, stale artifacts, and
+  timing scope.
 
 ## File naming
 
 - Modules: `snake_case.py` (e.g. `bench_utils.py`, `config_validation.py`).
 - Test files: `test_<module>.py` (e.g. `test_mine_quirks.py`,
   `test_config_schemas.py`).
-- Shell-invoked entry points: prefer `kebab-case.py`
-  (e.g. `check-health.py`).
-- Imported utility modules may stay `snake_case.py` even when they are also
-  runnable as scripts.
+- Shell-invoked entry points: prefer `kebab-case.py` (e.g. `check-health.py`).
+  Imported utility modules may stay `snake_case.py` even when also runnable.
 
 ## Imports
 
-- Use `from __future__ import annotations` in new files and keep it at the top
-  when present.
+- Use `from __future__ import annotations` in new files, kept at the top.
 - Standard library first, then third-party, then local.
 - Use absolute imports. No relative imports.
 - Package modules and canonical front doors must not mutate `sys.path`.
@@ -47,19 +41,8 @@ and Python helper tooling under `runtime/zig/tools/`.
   entrypoints with `python3 -m ...`.
   `config/python-import-boundaries.json` isolates legacy directly executed
   scripts, and the blocking schema gate enforces protected paths.
-- Prefer `pathlib.Path` for new code; legacy files still use `os.path` in a
-  few places.
-
-```python
-from __future__ import annotations
-
-import argparse
-import json
-import sys
-from dataclasses import dataclass
-from pathlib import Path
-from typing import Any
-```
+- Prefer `pathlib.Path` over `os.path` in new code; some legacy files still use
+  `os.path`.
 
 ## Naming
 
@@ -77,10 +60,9 @@ from typing import Any
 ## Type hints
 
 - Annotate all function parameters and return types.
-- Use modern union syntax: `str | None`, not `Optional[str]`.
-- Use built-in generic syntax: `list[str]`, `dict[str, Any]`, not
-  `List[str]`.
-- Use `Any` sparingly. Prefer narrow types when the shape is known.
+- Use `str | None`, not `Optional[str]`, and built-in generics
+  (`list[str]`, `dict[str, Any]`), not `List[str]`.
+- Use `Any` sparingly; prefer narrow types when the shape is known.
 
 ```python
 def load_validated_config(
@@ -92,8 +74,8 @@ def load_validated_config(
 ## Docstrings
 
 - NumPy-style with triple double quotes.
-- Module-level docstrings for all non-trivial modules.
-- Function docstrings for public functions. Omit for trivial helpers.
+- Module docstrings for non-trivial modules; function docstrings for public
+  functions, omitted for trivial helpers.
 - Use `Parameters`, `Returns`, `Raises` sections for complex signatures.
 
 ```python
@@ -107,45 +89,27 @@ def load_json(path: Path) -> Any:
 
 ## Error handling
 
-- Raise specific exception types: `FileNotFoundError`, `ValueError`,
-  `json.JSONDecodeError`.
+- Raise specific exception types (`FileNotFoundError`, `ValueError`,
+  `json.JSONDecodeError`). Avoid bare `Exception` in new code; a few legacy
+  aggregation paths keep it to continue processing.
 - Include actionable context: what was expected, what was received, which
   file.
 - Use `from exc` for exception chaining.
-- Prefer specific exception types. Bare `Exception` still appears in a few
-  legacy aggregation paths that need to keep processing, but it should be
-  avoided in new code.
-
-```python
-if not config_path.exists():
-    raise FileNotFoundError(f"config file not found: {config_path}")
-```
 
 ## Entry points
 
 - Use `def main() -> int:` returning 0/1.
 - Prefer `if __name__ == "__main__": raise SystemExit(main())` for new
   scripts.
-- Most entry points parse arguments in a separate `parse_args()` function, but
-  small legacy helpers may inline CLI setup.
-
-```python
-def main() -> int:
-    args = parse_args()
-    # ... work ...
-    return 0
-
-if __name__ == "__main__":
-    raise SystemExit(main())
-```
+- Parse arguments in a separate `parse_args()`; small legacy helpers may
+  inline CLI setup.
 
 ## CLI arguments
 
 - Use `argparse` with structured argument definitions.
 - Hyphenated names: `--source-root`, `--allow-suffix`.
 - `help` text for every argument.
-- `required=True` for mandatory arguments.
-- `choices=[]` for enumerated values.
+- `required=True` for mandatory arguments; `choices=[]` for enumerated values.
 
 ## JSON handling
 
@@ -153,38 +117,31 @@ if __name__ == "__main__":
 - Canonical output: `json.dumps(value, indent=2, sort_keys=True) + "\n"`.
 - JSONL: one object per line, skip blank lines on read.
 
-```python
-path.write_text(
-    json.dumps(payload, indent=2, sort_keys=True) + "\n",
-    encoding="utf-8",
-)
-```
-
 ## Data classes
 
-- Use `@dataclass` for simple structured data.
-- Use `@dataclass(frozen=True)` for immutable records.
-- Prefer dataclasses over raw dicts for typed internal state.
+- Prefer `@dataclass` over raw dicts for typed internal state;
+  `@dataclass(frozen=True)` for immutable records.
 
 ## Formatting
 
 - Line length: prefer 80 characters in new and touched files; the tree is not
-  uniformly enforced yet.
+  uniformly enforced.
 - 4-space indentation (PEP 8 default).
-- Run formatters before commit. No specific tool mandated, but output must
-  comply with line length and PEP 8.
+- No formatter is mandated; touched code follows PEP 8 and the line length.
 
 ## Testing
 
-- Workloads are the promotion and evidence category; focused module tests remain
-  valid executor mechanisms when they provide a smaller first-failure boundary
-  or unique oracle sensitivity.
-- Remove a focused test only after the workload duplicate-removal gate proves
-  equivalent sensitivity.
-- Use `unittest.TestCase` class-based tests.
-- Test naming: `test_<what_is_being_tested>` (descriptive, snake_case).
+- Workloads are the promotion and evidence category; focused module tests stay
+  valid for a smaller first-failure boundary or unique oracle sensitivity.
+- Remove a focused behavioral test as a workload duplicate only after the
+  duplicate-removal gate proves equivalent sensitivity. Tests that only pin
+  config literals or restate another file need no gate; remove the duplication.
+- Use `unittest.TestCase` class-based tests named
+  `test_<what_is_being_tested>` (descriptive, snake_case).
 - Dynamic test generation with `setattr` for schema fuzz tests.
-- Run with `python -m unittest discover` or direct `unittest.main()`.
+- Run the touched module (`python3 -m unittest bench.tests.test_<module>`).
+  `python3 -m unittest discover bench.tests` is the full suite, not a default
+  gate.
 
 ```python
 class TestSchemaCompliance(unittest.TestCase):
@@ -202,6 +159,6 @@ class TestSchemaCompliance(unittest.TestCase):
 
 ## File size
 
-- 1200 lines max per Python file.
-- When exceeded, add a tracked sharding follow-up in the current status shard.
+- 1200 lines max per Python file; when exceeded, add a tracked sharding
+  follow-up in the current status shard.
 - Split by cohesive functionality, not arbitrary line count.
