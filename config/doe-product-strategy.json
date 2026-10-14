@@ -1,7 +1,7 @@
 {
   "$schema": "doe-product-strategy.schema.json",
-  "schemaVersion": 8,
-  "strategyVersion": "6.1.0",
+  "schemaVersion": 9,
+  "strategyVersion": "6.2.0",
   "artifactKind": "doe-product-strategy",
   "authority": {
     "goals": "GOALS.md",
@@ -494,7 +494,9 @@
     "contractPath": "docs/fawn-workspace-contract.md",
     "statusPath": "docs/status/fawn-workspace.md",
     "charterPath": "browser/workspace/CATSCAN.md",
-    "implementationStatus": "not-implemented",
+    "implementationPath": "browser/workspace/src",
+    "developmentTestsPath": "browser/workspace/test",
+    "implementationStatus": "partially-implemented-unqualified",
     "currentAssessment": "unestablished",
     "requiresNativeRuntimeWins": false,
     "initialIntegration": "stock-chromium-cdp-playwright",
@@ -504,7 +506,7 @@
         "order": 1,
         "id": "shared-workspace-service",
         "dependsOn": [],
-        "implementationStatus": "not-implemented",
+        "implementationStatus": "implemented-unqualified",
         "currentAssessment": "unestablished",
         "requiredEvidence": [
           "persistent-workspace-identity",
@@ -522,7 +524,7 @@
         "dependsOn": [
           "shared-workspace-service"
         ],
-        "implementationStatus": "not-implemented",
+        "implementationStatus": "implemented-unqualified",
         "currentAssessment": "unestablished",
         "requiredEvidence": [
           "versioned-observations-and-page-changes",
@@ -538,7 +540,7 @@
         "dependsOn": [
           "observation-action-binding"
         ],
-        "implementationStatus": "not-implemented",
+        "implementationStatus": "implemented-unqualified",
         "currentAssessment": "unestablished",
         "requiredEvidence": [
           "all-fawn-automated-mutations-through-dispatcher",
@@ -557,7 +559,7 @@
         "dependsOn": [
           "durable-ownership"
         ],
-        "implementationStatus": "not-implemented",
+        "implementationStatus": "implemented-unqualified",
         "currentAssessment": "unestablished",
         "requiredEvidence": [
           "persist-intent-before-dispatch",

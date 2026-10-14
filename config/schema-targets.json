@@ -370,6 +370,10 @@
       "data": "config/browser-product-comparison-policy.json"
     },
     {
+      "schema": "config/fawn-workspace-service.schema.json",
+      "data": "config/fawn-workspace-service.json"
+    },
+    {
       "schema": "config/fawn-k0-workloads.schema.json",
       "data": "config/fawn-k0-workloads.json"
     },

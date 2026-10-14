@@ -1,0 +1,117 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://doe.local/schemas/fawn-workspace-service.schema.json",
+  "title": "Fawn workspace service configuration",
+  "description": "Tunables and protocol coverage for the Fawn shared observation, action and recovery service in browser/workspace. Implementation existence does not qualify the service; docs/fawn-workspace-contract.md owns acceptance.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schemaVersion",
+    "configVersion",
+    "protocolVersion",
+    "contractPath",
+    "journal",
+    "credentials",
+    "observation",
+    "dispatch",
+    "browser",
+    "actionKinds",
+    "conditionKinds",
+    "reconciliationMethods"
+  ],
+  "properties": {
+    "$schema": { "type": "string", "const": "fawn-workspace-service.schema.json" },
+    "schemaVersion": { "type": "integer", "const": 1 },
+    "configVersion": { "type": "string", "minLength": 1 },
+    "protocolVersion": { "type": "integer", "const": 1 },
+    "contractPath": { "type": "string", "const": "docs/fawn-workspace-contract.md" },
+    "journal": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["fileName", "lockFileName", "hashAlgorithm"],
+      "properties": {
+        "fileName": { "type": "string", "pattern": "^[a-z0-9.-]+$" },
+        "lockFileName": { "type": "string", "pattern": "^[a-z0-9.-]+$" },
+        "hashAlgorithm": { "type": "string", "enum": ["sha256"] }
+      }
+    },
+    "credentials": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["secretBytes"],
+      "properties": {
+        "secretBytes": { "type": "integer", "minimum": 32, "maximum": 64 }
+      }
+    },
+    "observation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["maxAgeMs", "maxTextChars", "maxElements"],
+      "properties": {
+        "maxAgeMs": { "type": "integer", "minimum": 1000 },
+        "maxTextChars": { "type": "integer", "minimum": 1 },
+        "maxElements": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "dispatch": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["actionTimeoutMs", "completionTimeoutMs", "completionPollMs"],
+      "properties": {
+        "actionTimeoutMs": { "type": "integer", "minimum": 1 },
+        "completionTimeoutMs": { "type": "integer", "minimum": 1 },
+        "completionPollMs": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "browser": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["engine", "transport", "headless", "persistentProfiles"],
+      "properties": {
+        "engine": { "type": "string", "enum": ["chromium"] },
+        "transport": {
+          "type": "string",
+          "enum": ["pipe"],
+          "description": "The service launches Chromium over a private pipe so no remote-debugging endpoint bypasses dispatch."
+        },
+        "headless": { "type": "boolean" },
+        "persistentProfiles": { "type": "boolean", "const": true }
+      }
+    },
+    "actionKinds": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": ["navigate", "click", "fill", "select", "submit", "download"]
+      }
+    },
+    "conditionKinds": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "url-equals",
+          "url-prefix",
+          "element-present",
+          "element-absent",
+          "element-text-includes",
+          "input-value-equals"
+        ]
+      }
+    },
+    "reconciliationMethods": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": ["application-state", "external-idempotency", "human-review"]
+      }
+    }
+  }
+}

@@ -1,0 +1,65 @@
+// Fawn workspace tests — parent side of service-host.js.
+import { spawn } from 'node:child_process';
+import { createInterface } from 'node:readline';
+import { fileURLToPath } from 'node:url';
+
+const HOST_PATH = fileURLToPath(new URL('./service-host.js', import.meta.url));
+
+class HostError extends Error {
+  constructor(error) {
+    super(error.message);
+    this.code = error.code;
+  }
+}
+
+/**
+ * Start a service host and resolve once it has restored authority (or failed to).
+ */
+function startHost(options) {
+  const child = spawn(process.execPath, [HOST_PATH, JSON.stringify(options)], { stdio: ['pipe', 'pipe', 'inherit'] });
+  const pending = new Map();
+  let nextId = 1;
+  const exited = new Promise((resolve) => child.on('exit', (code, signal) => resolve({ code, signal })));
+  const ready = new Promise((resolve, reject) => {
+    createInterface({ input: child.stdout }).on('line', (line) => {
+      const message = JSON.parse(line);
+      if (message.event === 'ready') resolve();
+      else if (message.event === 'open-failed') reject(new HostError(message.error));
+      else {
+        const waiter = pending.get(message.id);
+        pending.delete(message.id);
+        if (message.ok) waiter.resolve(message.result);
+        else waiter.reject(new HostError(message.error));
+      }
+    });
+    exited.then(({ code, signal }) => {
+      const error = new Error(`service host exited (${signal ?? code})`);
+      error.exit = { code, signal };
+      for (const waiter of pending.values()) waiter.reject(error);
+      pending.clear();
+      reject(error);
+    });
+  });
+  const send = (op, args) => new Promise((resolve, reject) => {
+    const id = nextId++;
+    pending.set(id, { resolve, reject });
+    child.stdin.write(`${JSON.stringify({ id, op, args })}\n`);
+  });
+  return ready.then(() => ({
+    call: (method, args) => send('call', { method, args }),
+    submitAndWait: (args) => send('submitAndWait', args),
+    workflow: (name, owner, task, fault = null) => send('workflow', { name, owner, task, fault }),
+    close: async () => {
+      await send('close', {});
+      return exited;
+    },
+    kill: () => {
+      child.kill('SIGKILL');
+      return exited;
+    },
+    exited,
+    pid: child.pid,
+  }));
+}
+
+export { startHost };

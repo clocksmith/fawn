@@ -1,4 +1,4 @@
-"""Protect prospective workspace authority without claiming a service exists."""
+"""Protect workspace authority status: implemented machinery is not qualified."""
 
 from __future__ import annotations
 
@@ -27,7 +27,7 @@ def validator() -> Draft202012Validator:
 
 
 class FawnWorkspaceStrategyTests(unittest.TestCase):
-    """These are intent checks; runtime admission remains absent and blocked."""
+    """These are policy checks; runtime admission remains blocked."""
 
     def test_ordered_workspace_steps_have_one_canonical_owner(self) -> None:
         strategy = load_strategy()
@@ -42,6 +42,8 @@ class FawnWorkspaceStrategyTests(unittest.TestCase):
             )
         for field in ("contractPath", "statusPath", "charterPath"):
             self.assertTrue((REPO_ROOT / workspace[field]).is_file(), field)
+        for field in ("implementationPath", "developmentTestsPath"):
+            self.assertTrue((REPO_ROOT / workspace[field]).is_dir(), field)
         reversed_steps = copy.deepcopy(strategy)
         reversed_steps["fawnWorkspace"]["steps"].reverse()
         self.assertFalse(validator().is_valid(reversed_steps))
@@ -61,7 +63,13 @@ class FawnWorkspaceStrategyTests(unittest.TestCase):
     def test_contract_cannot_fabricate_implemented_or_qualified_state(self) -> None:
         strategy = load_strategy()
         workspace = strategy["fawnWorkspace"]
-        self.assertEqual(workspace["implementationStatus"], "not-implemented")
+        self.assertEqual(
+            workspace["implementationStatus"], "partially-implemented-unqualified"
+        )
+        self.assertEqual(
+            [step["implementationStatus"] for step in workspace["steps"]],
+            ["implemented-unqualified"] * 4 + ["not-implemented"] * 2,
+        )
         self.assertEqual(workspace["currentAssessment"], "unestablished")
         self.assertEqual(
             workspace["releaseAdmission"],
@@ -71,12 +79,17 @@ class FawnWorkspaceStrategyTests(unittest.TestCase):
         for target in [workspace, *workspace["steps"]]:
             for field, value in (
                 ("implementationStatus", "implemented"),
+                ("implementationStatus", "qualified"),
                 ("currentAssessment", "claimable"),
             ):
                 original = target[field]
                 target[field] = value
                 self.assertFalse(check.is_valid(strategy))
                 target[field] = original
+        for step in workspace["steps"][4:]:
+            step["implementationStatus"] = "implemented-unqualified"
+            self.assertFalse(check.is_valid(strategy))
+            step["implementationStatus"] = "not-implemented"
         workspace["releaseAdmission"] = "qualified"
         self.assertFalse(check.is_valid(strategy))
 

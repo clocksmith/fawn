@@ -1,6 +1,7 @@
 # Fawn durable workspace contract
 
-Status: **requirements only; shared service not implemented or qualified**.
+Status: **shared service implemented in [`browser/workspace`](../browser/workspace/README.md);
+not qualified**.
 This contract owns prospective shared-service behavior and acceptance.
 [Goals](../GOALS.md) own product intent, [the thesis](thesis.md) owns rationale,
 and `fawnWorkspace` in [the strategy projection](../config/doe-product-strategy.json)
@@ -139,8 +140,14 @@ benefits that justify their compatibility and maintenance costs.
 
 ## Current admission boundary
 
-No trusted dispatcher, durable ownership service, versioned-observation admission
-or uncertain-action journal is implemented for this contract. The existing
+The trusted dispatcher, durable ownership generations, versioned-observation
+admission and uncertain-action journal are implemented in
+[`browser/workspace`](../browser/workspace/README.md), whose protocol v1 section
+specifies target identity, authorization scope, observation expiry, precondition
+evaluation, migration, adapter credentials, caller authentication and mutation
+coverage. Its fixture tests are development evidence: the frozen fixture set,
+expected outcomes and oracles this contract requires have not been admitted, and
+no competent-baseline comparison exists. The existing
 [fixture executor](../bench/fawn_matrix/executors/live_workloads.mjs) directly
 dispatches fixture actions; it is benchmark machinery, not this service.
 [GPU/browser recovery parity](../browser/chromium/contracts/browser-recovery-parity.contract.md)
@@ -149,7 +156,7 @@ their original meaning and status.
 
 Workspace completion and release claims remain blocked until the implemented
 service and independent behavioral/workflow evidence satisfy this contract.
-The current strategy schema deliberately rejects a completed/qualified workspace
-assessment: admitting future implemented evidence requires a versioned contract
-extension and an actual semantic evidence validator. Passing
-`bench.tests.test_fawn_workspace_strategy` checks prospective intent only.
+The strategy schema records the implemented steps as `implemented-unqualified`
+and still rejects any completed, claimable or qualified assessment: admitting
+evidence requires a versioned contract extension and an actual semantic evidence
+validator. Passing `bench.tests.test_fawn_workspace_strategy` checks policy only.
