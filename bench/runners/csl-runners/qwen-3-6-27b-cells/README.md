@@ -1,5 +1,7 @@
 # Qwen 3.6 27B simfabric-cell drivers
 
+Status: the Doppler → Doe → Cerebras lane is not in Doe's current selection ([GOALS.md](../../../../GOALS.md#strategic-constraints)). It proceeds only under the accelerator admission rule linked from [the lane front door](../../../../docs/cerebras.md); this page describes the lane, not selected work.
+
 Tracked source for the small-shape end-to-end simfabric runs of the
 Qwen 3.6 27B cell set: `rmsnorm`, `rope_partial`, `residual`, `silu`,
 `embed`, `tiled` (SUMMA matmul), `kv_write`, `gemv` (Q4_K dequant +

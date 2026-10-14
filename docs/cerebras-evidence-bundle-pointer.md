@@ -1,5 +1,7 @@
 # Cerebras evidence bundle — current pointer
 
+Status: the Doppler → Doe → Cerebras lane is not in Doe's current selection ([GOALS.md](../GOALS.md#strategic-constraints)). It proceeds only under the accelerator admission rule linked from [the lane front door](cerebras.md); this page describes the lane, not selected work.
+
 **Auto-generated** by
 `bench/tools/prepare_cerebras_validation_bundle.sh` on each clean
 run. Do not hand-edit; the prep script overwrites this file so it
