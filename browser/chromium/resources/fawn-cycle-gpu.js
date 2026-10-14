@@ -4,7 +4,7 @@ import { FLOW_TO_WAVE, PARTICLE_DEPOSIT, RESOLVE_DEPOSIT } from './fawn-cycle-tr
 import { PARCEL_POLICY, PARCEL_UPDATE, createParcelData } from './fawn-parcels.js';
 import { createParcelRenderer } from './fawn-parcel-renderer.js';
 const GPU_POLICY = Object.freeze({
-  version: 10,
+  version: 11,
   maxCount: 262144,
   pressureIterations: flow.PRESSURE_ITERATIONS,
   flowGroup: flow.WORKGROUP_SIZE,
@@ -15,6 +15,8 @@ const GPU_POLICY = Object.freeze({
   magneticPressScale: 0.13,
   particlePressScale: 0.13,
   flowPressForce: 0.7,
+  magneticSpinRate: 1.75,
+  magneticArrivalPower: 2,
 });
 function createCycleGpu(device, canvas, format, count) {
   if (!FawnFormation.WORKLOAD.cycleCounts.includes(count) || count > GPU_POLICY.maxCount)
@@ -202,7 +204,9 @@ function createCycleGpu(device, canvas, format, count) {
       canvas.width / canvas.height,
       0,
     ]);
-    updateWaveSources(w, time);
+    // Growing source strength slows the field's arrival without slowing its motion.
+    const arrival = weights[1] ** GPU_POLICY.magneticArrivalPower;
+    updateWaveSources(w, time, arrival, GPU_POLICY.magneticSpinRate);
     device.queue.writeBuffer(waveUniform, 0, w);
     device.queue.writeBuffer(
       parcelUniform,

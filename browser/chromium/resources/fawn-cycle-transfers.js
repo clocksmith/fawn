@@ -1,4 +1,5 @@
 // GPU handoffs preserve source coordinates, pigment, and the moving field. No CPU readback.
+import { PARCEL_STRUCT } from './fawn-parcels.js';
 const TRANSFER_POLICY = Object.freeze({
   version: 1,
   fixedScale: 1024,
@@ -29,9 +30,9 @@ const FLOW_TO_WAVE =
 const PARTICLE_DEPOSIT =
   HEADER +
   `
-struct Particle { pos: vec2<f32>, vel: vec2<f32>, color: vec4<f32>, material: vec4<f32> }
+${PARCEL_STRUCT}
 struct Deposit { weight: atomic<i32>, r: atomic<i32>, g: atomic<i32>, b: atomic<i32>, vx: atomic<i32>, vy: atomic<i32> }
-@group(0) @binding(1) var<storage,read> particles: array<Particle>;
+@group(0) @binding(1) var<storage,read> particles: array<Parcel>;
 @group(0) @binding(2) var<storage,read_write> deposits: array<Deposit>;
 @compute @workgroup_size(128) fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
  let i=gid.x; if(i>=arrayLength(&particles)){return;}
