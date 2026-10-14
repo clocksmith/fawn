@@ -1,0 +1,13 @@
+{
+  "name": "@doe/fawn-workspace",
+  "private": true,
+  "type": "module",
+  "description": "Fawn shared observation, action and recovery service above stock Chromium (repo-only, unqualified).",
+  "scripts": {
+    "test": "node test/run-tests.js",
+    "test:browser": "node test/run-tests.js --browser"
+  },
+  "dependencies": {
+    "playwright-core": "1.58.2"
+  }
+}

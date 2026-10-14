@@ -6,9 +6,23 @@ It is the machine-readable source for milestone order, the binding proving set,
 and development-effectiveness recording. Status routes evidence; it does not
 maintain another roadmap.
 
+## Implemented, unqualified workspace machinery
+
+Schema version 9 and strategy version 6.2.0 record that the shared workspace
+service exists in [`browser/workspace`](../browser/workspace/README.md).
+`fawnWorkspace` adds the required `implementationPath` and
+`developmentTestsPath` fields. Its `implementationStatus` becomes
+`partially-implemented-unqualified`, and steps 1–4 (service, observation/action
+binding, durable ownership, uncertainty recovery) become
+`implemented-unqualified`. Steps 5–6 stay `not-implemented`. Every
+`currentAssessment` remains `unestablished`, release admission remains blocked,
+and the schema still rejects implemented-as-qualified, claimable or qualified
+states. Development tests do not admit evidence; that still requires the frozen
+behavioral gates, the competent-baseline comparison and a semantic validator.
+
 ## Alignment to the agent-environment goal
 
-Schema version 8 and strategy version 6.1.0 project the current goal: Doe builds
+Schema version 8 and strategy version 6.1.0 projected the current goal: Doe builds
 the environment where agents work; Fawn provides durable browser workspaces;
 DoeRuntime supplies independently useful GPU execution; DoeLab tests
 improvements; DoeProof records evidence. `positioning` and the surface jobs carry

@@ -3,11 +3,12 @@
 `browser/` contains Doe's browser-facing surfaces:
 
 - `browser/workspace/`
-  - Fawn's durable browser workspaces: the prospective shared observation,
-    action, and recovery service above stock Chromium. It holds a charter only;
-    the [workspace contract](../docs/fawn-workspace-contract.md) owns its
-    requirements and [status](../docs/status/fawn-workspace.md) records the
-    missing implementation.
+  - Fawn's durable browser workspaces: the shared observation, action, and
+    recovery service above stock Chromium, implemented and unqualified (see its
+    [README](workspace/README.md)). The
+    [workspace contract](../docs/fawn-workspace-contract.md) owns its
+    requirements and [status](../docs/status/fawn-workspace.md) records what is
+    established.
 - `browser/chromium/`
   - optional Chromium runtime-integration contracts, scripts, and diagnostics,
     plus the hosted demonstration pages under `resources/`

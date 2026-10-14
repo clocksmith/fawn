@@ -161,6 +161,25 @@
       ]
     },
     {
+      "id": "fawn-workspace-service",
+      "audience": "internal",
+      "kind": "browser_lane",
+      "stability": "experimental",
+      "shipped": false,
+      "summary": "Repo-only Fawn shared observation, action and recovery service above stock Chromium, with Playwright and raw-CDP adapters. Implemented and unqualified; no public API.",
+      "rootPaths": [
+        "browser/workspace"
+      ],
+      "entrypoints": [
+        "browser/workspace/src/service.js",
+        "browser/workspace/test/run-tests.js"
+      ],
+      "docs": [
+        "browser/workspace/README.md",
+        "docs/fawn-workspace-contract.md"
+      ]
+    },
+    {
       "id": "cts-provider-tooling",
       "audience": "internal",
       "kind": "operator_cli",

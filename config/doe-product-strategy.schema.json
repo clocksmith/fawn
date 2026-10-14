@@ -7,7 +7,7 @@
   "required": ["$schema", "schemaVersion", "strategyVersion", "artifactKind", "authority", "positioning", "independenceBoundary", "surfaces", "commercialOffer", "comparisonLaw", "externalProductComparison", "evidenceSpine", "customerEvidencePolicy", "platformSequence", "milestones", "claimBoundary", "reusableProgram", "executionOwnership", "provingSet", "developmentEffectiveness", "fawnWorkspace"],
   "properties": {
     "$schema": { "type": "string", "const": "doe-product-strategy.schema.json" },
-    "schemaVersion": { "type": "integer", "const": 8 },
+    "schemaVersion": { "type": "integer", "const": 9 },
     "strategyVersion": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
     "artifactKind": { "type": "string", "const": "doe-product-strategy" },
     "authority": {
@@ -427,6 +427,8 @@
         "contractPath",
         "statusPath",
         "charterPath",
+        "implementationPath",
+        "developmentTestsPath",
         "implementationStatus",
         "currentAssessment",
         "requiresNativeRuntimeWins",
@@ -444,8 +446,15 @@
         "charterPath": {
           "const": "browser/workspace/CATSCAN.md"
         },
+        "implementationPath": {
+          "const": "browser/workspace/src"
+        },
+        "developmentTestsPath": {
+          "const": "browser/workspace/test"
+        },
         "implementationStatus": {
-          "const": "not-implemented"
+          "description": "Shared machinery exists without qualification; completion and release admission stay blocked.",
+          "const": "partially-implemented-unqualified"
         },
         "currentAssessment": {
           "const": "unestablished"
@@ -487,7 +496,7 @@
                   "const": []
                 },
                 "implementationStatus": {
-                  "const": "not-implemented"
+                  "const": "implemented-unqualified"
                 },
                 "currentAssessment": {
                   "const": "unestablished"
@@ -529,7 +538,7 @@
                   ]
                 },
                 "implementationStatus": {
-                  "const": "not-implemented"
+                  "const": "implemented-unqualified"
                 },
                 "currentAssessment": {
                   "const": "unestablished"
@@ -569,7 +578,7 @@
                   ]
                 },
                 "implementationStatus": {
-                  "const": "not-implemented"
+                  "const": "implemented-unqualified"
                 },
                 "currentAssessment": {
                   "const": "unestablished"
@@ -612,7 +621,7 @@
                   ]
                 },
                 "implementationStatus": {
-                  "const": "not-implemented"
+                  "const": "implemented-unqualified"
                 },
                 "currentAssessment": {
                   "const": "unestablished"

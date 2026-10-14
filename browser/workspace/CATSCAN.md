@@ -16,8 +16,9 @@ action and recovery service above stock Chromium.
 
 ## Scope
 
-- Prospective shared service and narrow CDP/Playwright adapters; no implementation
-  or runtime acceptance is established by this charter.
+- The shared service, its narrow Playwright and raw-CDP adapters, and the
+  research, form-submission and export workflow adapters in this directory.
+  Implementation existence and development tests establish no runtime acceptance.
 
 ## Contracts
 
@@ -40,9 +41,11 @@ Outputs:
 
 ## Acceptance
 
-- Implement the shared service and pass the workspace contract's behavioral gates.
-- Evidence: [prospective policy tests](../../bench/tests/test_fawn_workspace_strategy.py);
-  they cannot qualify runtime behavior or replace missing behavioral evidence.
+- Pass the workspace contract's behavioral gates and competent-baseline comparison.
+- Evidence: [development tests](test/run-tests.js) (`npm test`, `npm run test:browser`;
+  see the [README](README.md)) and [policy tests](../../bench/tests/test_fawn_workspace_strategy.py)
+  that keep the strategy projection unqualified. Neither replaces the contract's
+  frozen behavioral and baseline evidence.
 
 ## Non-goals
 
