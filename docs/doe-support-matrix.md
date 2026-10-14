@@ -35,6 +35,7 @@ carry the changing state.
 | --- | --- | --- | --- | --- |
 | macOS arm64 / Apple Metal | Narrow Node/Bun evidence; Electron unproved | Narrow native evidence | Separate diagnostic lane | Read claim index per row |
 | Linux x64 / AMD Vulkan | Narrow Node/Bun and Electron main-process evidence | Narrow native evidence | Separate diagnostic lane | Read claim index per row |
+| Linux x64 / AMD Strix Halo, RADV (initial qualification target) | Unqualified on the frozen tuple | Unqualified on the frozen tuple | Not promoted | Engineering target only; see below |
 | Linux / Intel Tiger Lake Vulkan | Diagnostic host evidence | Diagnostic host evidence | Not promoted | Do not generalize |
 | Windows / D3D12 | Not promoted | Scaffolded | Not promoted | Fresh Windows evidence required |
 | Other tuples | Unsupported unless explicitly listed | Unsupported unless explicitly listed | Unsupported | Fail with typed cause |
@@ -42,6 +43,18 @@ carry the changing state.
 The table intentionally contains no benchmark percentages or mutable pass
 counts. Current evidence lives in `reports/claim-index.json` and the status
 artifacts it references.
+
+## Initial qualification target
+
+One workstation (AMD Ryzen AI Max+ 395, Radeon 8060S, RADV) is the initial
+engineering target. Its [host record](../reports/benchmarks/amd-vulkan/20261014-initial-qualification-target/README.md)
+freezes CPU, system memory, OS and kernel, firmware, Mesa/RADV, the selected
+Vulkan driver, GPU allocation limits and process limits. It binds existing
+workload and binary receipts by hash. System RAM, GPU allocation limits and
+measured residency are separate quantities. The label stays "initial
+qualification target" until the applicable acceptance below passes for a named
+surface. Existing CTS evidence covers only its recorded queries, and any changed
+tuple field needs a new record.
 
 ## Controlled JavaScript runtime promotion requirements
 

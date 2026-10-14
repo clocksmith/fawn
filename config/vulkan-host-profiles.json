@@ -44,6 +44,30 @@
         "driver": "24.2.8"
       },
       "backendLane": "vulkan_doe_comparable"
+    },
+    {
+      "id": "linux_strix_halo_radv",
+      "displayName": "AMD Strix Halo Linux Vulkan (RADV) initial qualification target",
+      "cubeHostProfile": "linux_strix_halo_radv",
+      "os": "linux",
+      "arch": "x64",
+      "vendorId": "0x1002",
+      "icdPaths": [
+        "/usr/share/vulkan/icd.d/radeon_icd.json"
+      ],
+      "deviceIds": [
+        "0x1586"
+      ],
+      "driverVersions": [
+        "26.0.3"
+      ],
+      "runtimeProfile": {
+        "vendor": "amd",
+        "api": "vulkan",
+        "family": "gfx1151",
+        "driver": "26.0.3"
+      },
+      "backendLane": "vulkan_doe_comparable"
     }
   ]
 }

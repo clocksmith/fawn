@@ -6,6 +6,32 @@ It is the machine-readable source for milestone order, the binding proving set,
 and development-effectiveness recording. Status routes evidence; it does not
 maintain another roadmap.
 
+## Hardware-first initial target and complete-system comparison
+
+Schema version 10 and strategy version 6.3.0 adopt a hardware-first entry point
+without changing Fawn's goal. `positioning.initialDeploymentStrategy` records
+hardware-first local execution as the initial deployment strategy, not a mandatory
+dependency or universal performance claim. Doe enters only through explicit
+integration with independent qualification. The `amd-vulkan` platform lane gains
+`initialQualificationTarget`, which binds host profile `linux_strix_halo_radv` and
+the [frozen host record](../reports/benchmarks/amd-vulkan/20261014-initial-qualification-target/README.md).
+The schema fixes its label, keeps it `unqualified-until-applicable-acceptance-passes`,
+limits existing evidence to recorded coverage, and keeps system RAM, GPU
+allocation limits and measured residency separate. `comparisonLaw.categories`
+separates provider attribution (Doppler+Doe versus Doppler+Dawn, which isolates
+the provider) from the complete-system alternative (which does not).
+
+The browser comparison policy moves to schema version 5
+(`fawn-external-product-comparison-v5`) and adds `alternativeCompleteSystem`.
+This is ordinary Chromium plus a native inference engine, separate from the
+A/B/C/D lanes, K0 and provider attribution. It requires matched task quality,
+context, output requirements, concurrency and resource budgets, and records
+differing quantization, model format, backend and engine build. N0 pins one
+llama.cpp build (commit, build options, Vulkan backend) and one hash-pinned GGUF
+model, and has not run. Ollama (N1) and LM Studio (N2) remain unassessed
+candidates until their execution paths and workload eligibility are established.
+No lane, comparator, milestone or assessment changes meaning.
+
 ## Implemented, unqualified workspace machinery
 
 Schema version 9 and strategy version 6.2.0 record that the shared workspace

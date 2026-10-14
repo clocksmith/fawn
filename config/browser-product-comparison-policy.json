@@ -1,7 +1,7 @@
 {
   "$schema": "browser-product-comparison-policy.schema.json",
-  "schemaVersion": 4,
-  "policyId": "fawn-external-product-comparison-v4",
+  "schemaVersion": 5,
+  "policyId": "fawn-external-product-comparison-v5",
   "authority": {
     "strategyPath": "docs/thesis.md",
     "browserLanePath": "docs/browser-lane.md",
@@ -143,6 +143,78 @@
     "treatment": "same-browser-and-runtime-with-fawn-workspace-service",
     "scope": "Prospective independent workflow comparison; existing A/B/C/D and K0 receipts retain their meanings and cannot satisfy it.",
     "requiresNativeRuntimeWins": false
+  },
+  "alternativeCompleteSystem": {
+    "categoryId": "alternative-complete-system",
+    "strategyPath": "config/doe-product-strategy.json#comparisonLaw",
+    "treatment": "Fawn workspace with explicitly integrated, independently qualified Doppler+Doe local execution",
+    "control": "ordinary-chromium-plus-native-inference-engine",
+    "separateFrom": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "K0",
+      "provider-attribution"
+    ],
+    "initialTargetPath": "config/doe-product-strategy.json#platformSequence/0/initialQualificationTarget",
+    "matchedConditions": [
+      "task-quality",
+      "context",
+      "output-requirements",
+      "concurrency",
+      "resource-budgets"
+    ],
+    "recordedDifferences": [
+      "quantization",
+      "model-format",
+      "backend",
+      "engine-build"
+    ],
+    "isolatesDoeCompiler": false,
+    "isolatesDoeRuntime": false,
+    "alternatives": [
+      {
+        "alternativeId": "N0",
+        "engine": "llama.cpp server",
+        "admissionState": "pinned-not-run",
+        "browser": "stock Chromium driven by Playwright, without Doe",
+        "engineSource": {
+          "repository": "https://github.com/ggml-org/llama.cpp",
+          "commit": "f4884293809b5227d7307140a942f1bc4176a603",
+          "describe": "b8007-10-gf48842938",
+          "buildType": "Release",
+          "backend": "Vulkan (ggml-vulkan) on RADV",
+          "buildOptions": [
+            "GGML_VULKAN=ON",
+            "GGML_NATIVE=ON"
+          ]
+        },
+        "model": {
+          "repository": "ggml-org/gemma-3-270m-it-GGUF",
+          "revision": "e7647be17ae1108f2f605ed061ca0608b171afff",
+          "file": "gemma-3-270m-it-Q8_0.gguf",
+          "sha256": "0ef57d2c838458a1952664260dcba38e5bdda37494f3af732f06e4add24068e3",
+          "bytes": 291545600,
+          "quantization": "GGUF Q8_0"
+        },
+        "treatmentModelPath": "reports/benchmarks/amd-vulkan/20261005-installed-generation/contract.json",
+        "treatmentQuantization": "Doppler RDRR q4k weights with f16 embeddings and head, f32 activations"
+      },
+      {
+        "alternativeId": "N1",
+        "engine": "Ollama",
+        "admissionState": "candidate-unassessed",
+        "admissionRequirement": "Establish its actual execution path (bundled engine, version and GPU backend on the target) and workload eligibility before any run."
+      },
+      {
+        "alternativeId": "N2",
+        "engine": "LM Studio",
+        "admissionState": "candidate-unassessed",
+        "admissionRequirement": "Establish its actual execution path (runtime, version and GPU backend on the target) and workload eligibility before any run."
+      }
+    ],
+    "claimBoundary": "A complete-system result compares whole local systems on the initial qualification target under matched conditions; it cannot isolate Doe's compiler or runtime, grants no provider attribution, and does not replace Doppler+Doe versus Doppler+Dawn."
   },
   "claimBoundary": "This policy defines experiments and decisions. Until schema-valid physical receipts exist, K0 and A/B/C/D have no promoted comparative product outcome."
 }

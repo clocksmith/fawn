@@ -1,7 +1,7 @@
 {
   "$schema": "doe-product-strategy.schema.json",
-  "schemaVersion": 9,
-  "strategyVersion": "6.2.0",
+  "schemaVersion": 10,
+  "strategyVersion": "6.3.0",
   "artifactKind": "doe-product-strategy",
   "authority": {
     "goals": "GOALS.md",
@@ -14,7 +14,8 @@
     "category": "Environment where agents work: Fawn durable browser workspaces with independently useful GPU execution",
     "promise": "Doe builds the environment where agents work. Fawn provides durable browser workspaces; DoeRuntime supplies independently useful GPU execution; DoeLab tests improvements; DoeProof records evidence. WGSL compilation remains independently usable with separate qualification.",
     "governingQuestion": "Does each selected product preserve its authority and semantics and improve complete user workflows against competent independent controls?",
-    "operatingLaw": "Hexagonal inside; vertically integrated outside."
+    "operatingLaw": "Hexagonal inside; vertically integrated outside.",
+    "initialDeploymentStrategy": "Hardware-first local execution: the first deployment targets one frozen AMD Ryzen AI Max+ 395 / Radeon 8060S / RADV workstation, the initial qualification target. Local execution is a deployment strategy, not a mandatory dependency or a universal performance claim; Fawn's goal remains durable browser workspaces, and Doe enters only through explicit integration with independent qualification."
   },
   "independenceBoundary": {
     "rule": "Fawn starts above stock Chromium through narrow CDP/Playwright adapters and does not require native runtime wins. The WGSL compiler and native WebGPU runtime can earn adoption independently; neither requires the other or Fawn. Doppler owns model semantics. Chromium hooks and browser-runtime integration are added only when measured benefits justify their compatibility and maintenance costs, and earn separate admission; prepared-program integration remains a separate treatment.",
@@ -192,6 +193,20 @@
     "classes": [
       "unchanged-application-replacement",
       "fixed-operation-or-shader"
+    ],
+    "categories": [
+      {
+        "id": "provider-attribution",
+        "comparison": "Doppler+Doe versus Doppler+Dawn",
+        "authorityPath": "docs/runtime-ownership-decision.md",
+        "isolatesProvider": true
+      },
+      {
+        "id": "alternative-complete-system",
+        "comparison": "Fawn with explicitly integrated, independently qualified Doppler+Doe local execution versus ordinary Chromium plus a native inference engine",
+        "authorityPath": "config/browser-product-comparison-policy.json#alternativeCompleteSystem",
+        "isolatesProvider": false
+      }
     ]
   },
   "externalProductComparison": {
@@ -328,7 +343,20 @@
       "id": "amd-vulkan",
       "purpose": "Current engineering focus; bounded Vulkan installation, correctness and consumer-led improvement batches.",
       "supportAuthorityPath": "docs/doe-support-matrix.md",
-      "inheritsPromotion": false
+      "inheritsPromotion": false,
+      "initialQualificationTarget": {
+        "label": "initial qualification target",
+        "hostProfileId": "linux_strix_halo_radv",
+        "hostProfilePath": "config/vulkan-host-profiles.json",
+        "hostRecordPath": "reports/benchmarks/amd-vulkan/20261014-initial-qualification-target/host-record.json",
+        "qualificationState": "unqualified-until-applicable-acceptance-passes",
+        "existingEvidenceScope": "recorded-coverage-only",
+        "memoryAccounting": [
+          "system-ram",
+          "gpu-allocation-limits",
+          "measured-residency"
+        ]
+      }
     },
     {
       "order": 2,
