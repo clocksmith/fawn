@@ -110,9 +110,9 @@ This guide is the JavaScript style contract for `packages/doe-gpu`.
 - Smoke tests: sequential checks, exit 0/1, output `ok:` or `FAIL:` lines.
 - Integration tests: discovered by pattern (`test-integration-*.js`), spawned
   as subprocesses; most need the native addon and a GPU adapter.
-- Run the touched test file with `node`. `npm test` chains contracts, smoke,
-  and native integration (and runs in `prepublishOnly`); it is not a default
-  development gate.
+- Run the touched test file with `node`. `npm test` chains contracts and smoke;
+  native integration is `npm run test:integration`. `prepublishOnly` runs both;
+  neither is a default development gate.
 
 ## Dependencies
 

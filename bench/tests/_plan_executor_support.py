@@ -8,6 +8,7 @@ artifact read pattern that all three tests share.
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import unittest
 from pathlib import Path
@@ -21,6 +22,8 @@ PLAN_PATH = (
 )
 EXPECTED_PLAN_SHA256 = "0d3316fab695566c11da52e44bdfcbaa366d082c8d9449802f32dd423a23b981"
 DEFAULT_WORKLOAD = "inference_gemma3_270m_prefill_32tok"
+NATIVE_TESTS_ENABLED = os.environ.get("DOE_NATIVE_TESTS") == "1"
+NATIVE_TESTS_SKIP_REASON = "set DOE_NATIVE_TESTS=1 to build and run native plan executors"
 
 
 def build_target(target: str) -> subprocess.CompletedProcess[str]:

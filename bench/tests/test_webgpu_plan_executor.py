@@ -10,6 +10,8 @@ from pathlib import Path
 
 from bench.tests._plan_executor_support import (
     EXPECTED_PLAN_SHA256,
+    NATIVE_TESTS_ENABLED,
+    NATIVE_TESTS_SKIP_REASON,
     PLAN_PATH,
     build_target_or_skip_on_missing_dawn_header,
     executor_bin,
@@ -18,6 +20,7 @@ from bench.tests._plan_executor_support import (
 )
 
 
+@unittest.skipUnless(NATIVE_TESTS_ENABLED, NATIVE_TESTS_SKIP_REASON)
 class DawnPlanExecutorTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:

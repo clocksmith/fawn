@@ -46,8 +46,10 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: "22"
-      - name: Run complete package surface and clean-install tests
+      - name: Run package contract and smoke tests
         run: npm test
+      - name: Run native package integration tests
+        run: npm run test:integration
       - name: Verify public tool-surface declaration
         working-directory: .
         run: python3 bench/gates/tool_surface_gate.py

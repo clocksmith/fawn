@@ -5,37 +5,11 @@
       "output": "test_suite.zig",
       "entries": [
         {
-          "path": "tests/metal/metal_mod_integration_test.zig",
-          "kind": "backend"
-        },
-        {
           "path": "tests/metal/metal_render_state_test.zig",
           "kind": "backend"
         },
         {
           "path": "tests/metal/metal_resources_test.zig",
-          "kind": "backend"
-        },
-        {
-          "path": "tests/metal/metal_library_cache_test.zig",
-          "kind": "backend"
-        },
-        {
-          "path": "tests/metal/metal_timing_semantics_test.zig",
-          "kind": "characterization"
-        },
-        {
-          "path": "tests/vulkan/vulkan_mod_integration_test.zig",
-          "platforms": [
-            "linux"
-          ],
-          "kind": "backend"
-        },
-        {
-          "path": "tests/vulkan/vulkan_native_runtime_test.zig",
-          "platforms": [
-            "linux"
-          ],
           "kind": "backend"
         },
         {
@@ -51,13 +25,6 @@
             "linux"
           ],
           "kind": "backend"
-        },
-        {
-          "path": "tests/vulkan/vulkan_timing_semantics_test.zig",
-          "platforms": [
-            "linux"
-          ],
-          "kind": "characterization"
         },
         {
           "path": "tests/backend/common_artifact_meta_test.zig",
@@ -536,6 +503,44 @@
         {
           "path": "src/native/support/doe_device_loss.zig",
           "kind": "inline"
+        }
+      ]
+    },
+    "device": {
+      "output": "test_suite_device.zig",
+      "entries": [
+        {
+          "path": "tests/metal/metal_mod_integration_test.zig",
+          "kind": "backend"
+        },
+        {
+          "path": "tests/metal/metal_library_cache_test.zig",
+          "kind": "backend"
+        },
+        {
+          "path": "tests/metal/metal_timing_semantics_test.zig",
+          "kind": "characterization"
+        },
+        {
+          "path": "tests/vulkan/vulkan_mod_integration_test.zig",
+          "platforms": [
+            "linux"
+          ],
+          "kind": "backend"
+        },
+        {
+          "path": "tests/vulkan/vulkan_native_runtime_test.zig",
+          "platforms": [
+            "linux"
+          ],
+          "kind": "backend"
+        },
+        {
+          "path": "tests/vulkan/vulkan_timing_semantics_test.zig",
+          "platforms": [
+            "linux"
+          ],
+          "kind": "characterization"
         }
       ]
     },
@@ -1049,7 +1054,8 @@
         }
       ],
       "includes": [
-        "aggregate"
+        "aggregate",
+        "device"
       ]
     },
     "wgsl": {

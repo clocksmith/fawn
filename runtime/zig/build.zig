@@ -1310,22 +1310,18 @@ pub fn build(b: *std.Build) void {
     const source_layout_check = b.addSystemCommand(&.{ "python3", "tools/check_source_layout.py" });
     const source_layout_step = b.step("source-layout", "Validate Zig source ownership boundaries");
     source_layout_step.dependOn(&source_layout_check.step);
-    b.getInstallStep().dependOn(&source_layout_check.step);
 
     const webgpu_abi_check = b.addSystemCommand(&.{ "python3", "tools/generate_webgpu_abi.py", "--check" });
     const webgpu_abi_step = b.step("webgpu-abi", "Validate generated WebGPU ABI against the pinned upstream header");
     webgpu_abi_step.dependOn(&webgpu_abi_check.step);
-    b.getInstallStep().dependOn(&webgpu_abi_check.step);
 
     const line_limit_check = b.addSystemCommand(&.{ "python3", "tools/check_line_limits.py" });
     const line_limit_step = b.step("line-limits", "Validate Zig source line-count policy");
     line_limit_step.dependOn(&line_limit_check.step);
-    b.getInstallStep().dependOn(&line_limit_check.step);
 
     const test_inventory_check = b.addSystemCommand(&.{ "python3", "tools/generate_test_suites.py", "--check" });
     const test_inventory_step = b.step("test-inventory", "Validate generated Zig test-suite roots");
     test_inventory_step.dependOn(&test_inventory_check.step);
-    b.getInstallStep().dependOn(&test_inventory_check.step);
 
     const bridge_manifest_check = b.addSystemCommand(&.{ "python3", "tools/check_metal_bridge_manifest.py" });
     const bridge_manifest_step = b.step("bridge-manifest", "Validate the Metal bridge manifest against Zig declarations and bridge sources");
@@ -1473,6 +1469,31 @@ pub fn build(b: *std.Build) void {
     test_step.dependOn(&test_inventory_check.step);
     test_step.dependOn(&bridge_manifest_check.step);
     test_step.dependOn(&run_tests.step);
+
+    const device_test_step = b.step("test-device", "Run Metal/Vulkan device Zig tests (opens a GPU device when present)");
+    device_test_step.dependOn(&fmt_check.step);
+    const device_test_root_module = b.createModule(.{
+        .root_source_file = b.path("test_suite_device.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "build_options", .module = build_options_module },
+        },
+    });
+    addSourceModuleIncludePaths(device_test_root_module, b);
+    const device_test_exec = b.addTest(.{
+        .root_module = device_test_root_module,
+        .filters = test_filters,
+    });
+    configureNativeGraphics(device_test_exec, b, target);
+    const run_device_tests = b.addRunArtifact(device_test_exec);
+    device_test_step.dependOn(&import_fence_check.step);
+    device_test_step.dependOn(&source_layout_check.step);
+    device_test_step.dependOn(&webgpu_abi_check.step);
+    device_test_step.dependOn(&line_limit_check.step);
+    device_test_step.dependOn(&test_inventory_check.step);
+    device_test_step.dependOn(&bridge_manifest_check.step);
+    device_test_step.dependOn(&run_device_tests.step);
 
     const core_test_step = b.step("test-core", "Run core-lane Zig unit tests");
     core_test_step.dependOn(&fmt_check.step);

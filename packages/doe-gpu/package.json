@@ -90,7 +90,7 @@
     "build:addon": "node scripts/build-addon.js",
     "install": "node scripts/install.js",
     "stage:prebuilds": "node scripts/stage-prebuilds.js",
-    "test": "npm run test:contracts && npm run test:smoke && npm run test:integration",
+    "test": "npm run test:contracts && npm run test:smoke",
     "test:contracts": "node test/run-contracts.js",
     "check:plan-schema": "node scripts/check-plan-schema-parity.js",
     "sync:program-bundle-schema": "node scripts/sync-program-bundle-schema.js",
@@ -104,7 +104,7 @@
     "test:integration:native-reliability:electron": "node test/integration/test-integration-native-clean-install-reliability.js --required --runtime electron",
     "test:integration:bun": "bun test/integration/run-integration.js --runtime bun",
     "test:integration:deno": "deno run --allow-all test/integration/run-integration.js --runtime deno",
-    "prepublishOnly": "node scripts/verify-publish-readiness.js && npm test",
+    "prepublishOnly": "node scripts/verify-publish-readiness.js && npm test && npm run test:integration",
     "sync-vendor": "node scripts/sync-vendor.js",
     "build:browser-compiler": "node scripts/build-browser-compiler.js",
     "demo:browser-compiler": "node scripts/serve-browser-compiler.js"
