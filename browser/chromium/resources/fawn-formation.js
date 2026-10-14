@@ -67,6 +67,7 @@
   }
 
   function transition(schedule = POLICY) {
+    const responseRate = schedule.responseRate ?? TRANSITION.responseRate;
     let age = 0, idle = 0, opening = false, quiet = 0, value = 0, velocity = 0;
     let releaseStart = null;
     return Object.freeze({
@@ -96,10 +97,10 @@
           if (releaseStart !== null) target = releaseStart * (1 - releaseProgress);
         }
         // Preserve value and velocity as targets change, including interruptions.
-        const offset = value - target, rate = velocity + TRANSITION.responseRate * offset;
-        const decay = Math.exp(-TRANSITION.responseRate * dt);
+        const offset = value - target, rate = velocity + responseRate * offset;
+        const decay = Math.exp(-responseRate * dt);
         value = target + (offset + rate * dt) * decay;
-        velocity = (velocity - TRANSITION.responseRate * rate * dt) * decay;
+        velocity = (velocity - responseRate * rate * dt) * decay;
         if (Math.abs(value - target) < TRANSITION.epsilon && Math.abs(velocity) < TRANSITION.epsilon) {
           value = target; velocity = 0;
         }
