@@ -1,6 +1,6 @@
 // Particles: a glowing point cloud riding a circulating stream field, drawn with fading trails.
 // Hovering draws particles in; pressing pushes them away.
-import { CELL_WORKGROUP, FRAME_WGSL, ITEM_WORKGROUP, SCREEN_VERTEX_WGSL, sheetWgsl } from './fawn-gpu.js';
+import { CELL_WORKGROUP, FRAME_WGSL, ITEM_WORKGROUP, SCREEN_VERTEX_WGSL } from './fawn-gpu.js';
 
 const PARTICLE_POLICY = Object.freeze({
   strideBytes: 32,
@@ -16,7 +16,6 @@ const PARTICLE_POLICY = Object.freeze({
   radiusRangePx: Object.freeze([0.65, 2]),
   referenceCount: 65536,
   colorGain: 2,
-  brandedBrightness: 1.8,
   trailRetention: 0.55,
   importSpeedLimit: 0.18,
   darkest: 0.004,
@@ -71,9 +70,9 @@ fn main(@builtin(global_invocation_id) id: vec3<u32>) {
   particlesOut[i] = Particle(pos, vel, p.color);
 }`;
 
-const DRAW = /* wgsl */ `${COMMON}${sheetWgsl(1)}
-@group(0) @binding(2) var<uniform> look: Look;
-@group(0) @binding(3) var<storage, read> particles: array<Particle>;
+const DRAW = /* wgsl */ `${COMMON}
+@group(0) @binding(1) var<uniform> look: Look;
+@group(0) @binding(2) var<storage, read> particles: array<Particle>;
 struct Out {
   @builtin(position) position: vec4<f32>,
   @location(0) local: vec2<f32>,
@@ -85,14 +84,12 @@ struct Out {
   let p = particles[instance];
   let local = vec2<f32>(f32(corner & 1u), f32(corner >> 1u)) * 2.0 - 1.0;
   let size = look.size * (0.75 + 0.5 * fract(f32(instance) * 0.618034));
-  let placed = placeSheet(p.pos * 0.5 + 0.5);
   var out: Out;
-  out.position = vec4<f32>(screenClip(placed) + local * size / frame.view.xy, 0.0, 1.0);
+  out.position = vec4<f32>((p.pos + local * size) / frame.view.xy, 0.0, 1.0);
   out.local = local;
   out.color = p.color.rgb * ${P.colorGain} * (0.85 + 0.15 * sin(frame.clock.y * 1.3 + f32(instance % 997u)));
   out.energy = clamp(length(p.vel) * 0.85, 0.0, 1.0);
-  out.visibility = (1.0 - smoothstep(${P.fadeStart}, ${P.fadeEnd}, max(abs(p.pos.x), abs(p.pos.y))))
-    * coverage(placed);
+  out.visibility = 1.0 - smoothstep(${P.fadeStart}, ${P.fadeEnd}, max(abs(p.pos.x), abs(p.pos.y)));
   return out;
 }
 @fragment fn fs(in: Out) -> @location(0) vec4<f32> {
@@ -100,8 +97,7 @@ struct Out {
   if (d > 1.0 || in.visibility <= 0.0) { discard; }
   let core = 1.0 - smoothstep(0.0, 1.0, d);
   let halo = pow(1.0 - d, 3.0);
-  let alpha = (core * 0.10 + halo * (0.14 + in.energy * 0.08)) * in.visibility
-    * mix(1.0, ${P.brandedBrightness}, frame.view.w);
+  let alpha = (core * 0.10 + halo * (0.14 + in.energy * 0.08)) * in.visibility;
   return vec4<f32>(in.color * 0.85 * alpha, alpha);
 }`;
 
@@ -177,7 +173,7 @@ fn main(@builtin(global_invocation_id) id: vec3<u32>) {
   particles[i] = Particle(uv * 2.0 - 1.0, velocity, vec4<f32>(hue(carryColor[c].rgb, ${P.darkest}), 0.0));
 }`;
 
-function createParticles({ kit, grid, count, canvas, frame, logoMask, carry, images }) {
+function createParticles({ kit, grid, count, canvas, frame, carry, images }) {
   const particles = [0, 1].map((i) => kit.storage(`Particles ${i}`, count * P.strideBytes));
   const deposits = kit.storage('Particle deposits', grid * grid * 16);
   const look = kit.uniform('Particle look', 16);
@@ -194,7 +190,7 @@ function createParticles({ kit, grid, count, canvas, frame, logoMask, carry, ima
   const pair = (make) => [0, 1].map(make);
   const groups = {
     step: pair((i) => kit.bind(pipelines.step, [frame, particles[i], particles[1 - i]])),
-    draw: pair((i) => kit.bind(pipelines.draw, [frame, logoMask, look, particles[i]])),
+    draw: pair((i) => kit.bind(pipelines.draw, [frame, look, particles[i]])),
     deposit: pair((i) => kit.bind(pipelines.deposit, [frame, particles[i], deposits])),
     resolve: carry.map((slot) => kit.bind(pipelines.resolve, [frame, deposits, slot.color, slot.motion])),
     seed: carry.map((slot) => kit.bind(pipelines.seed, [frame, look, slot.color, slot.motion, particles[0]])),

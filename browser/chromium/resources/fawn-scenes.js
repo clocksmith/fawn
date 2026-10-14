@@ -1,10 +1,12 @@
 // Fawn scenes: one frame uniform and shared sheet, three resident scenes, and a carrier that
 // moves live material between them. Holds draw a scene natively; a scene change hands the
 // outgoing state to the incoming scene and the carrier, then blends all three in linear light.
+// While the logo forms, the finished image is handed to the mark, which moves it into the Fawn.
 import { FRAME_FLOATS, createImagePasses, createKit } from './fawn-gpu.js';
 import { createCarrier } from './fawn-carrier.js';
 import { createFlow } from './fawn-flow.js';
 import { createMagnets } from './fawn-magnets.js';
+import { createMark } from './fawn-mark.js';
 import { PARTICLE_POLICY, createParticles } from './fawn-particles.js';
 
 const SCENE_POLICY = Object.freeze({
@@ -34,44 +36,33 @@ function createScenes(device, canvas, format, count) {
   const shared = {
     kit, canvas, grid, count,
     frame: kit.uniform('Fawn frame', FRAME_FLOATS * 4),
-    logoMask: kit.storage('Fawn logo mask', cells * 4),
     carry: [carrySlot(0), carrySlot(1)],
     images: createImagePasses(kit),
   };
   const scenes = Object.fromEntries(
     Object.entries(SCENE_POLICY.scenes).map(([name, create]) => [name, create(shared)]));
   const carrier = createCarrier(shared);
+  const mark = createMark(shared);
   const frameData = new Float32Array(FRAME_FLOATS);
-  let logoBox = [0, 0, 1, 1], targets = [];
+  let targets = [], image = null;
 
   function resize() {
-    const logo = document.querySelector('.brand-logo');
-    const mark = FawnFormation.materialDestinations(grid, canvas, logo);
-    logoBox = [mark[0], mark[1], mark[4], mark[5]];
-    device.queue.writeBuffer(shared.logoMask, 0, mark.filter((_, i) => i % 4 === 2));
-    kit.release(targets);
+    kit.release([...targets, image].filter(Boolean));
     targets = [0, 1, 2].map((i) => kit.texture(`Fawn transition image ${i}`, canvas.width, canvas.height));
+    image = kit.texture('Fawn scene image', canvas.width, canvas.height);
     Object.values(scenes).forEach((scene) => scene.resize?.());
     carrier.resize();
-  }
-
-  // Screen points map onto the moving sheet so gestures act under the pointer while the logo forms.
-  function sheetPoint(x, y, shape) {
-    const [x0, y0, x1, y1] = logoBox;
-    return [(x - x0 * shape) / (1 + (x1 - x0 - 1) * shape), (y - y0 * shape) / (1 + (y1 - y0 - 1) * shape)];
+    mark.resize(image);
   }
 
   function writeFrame({ cycle, dt, time, steps, shape, pointer, burst }) {
-    const [x, y] = sheetPoint(pointer.x, pointer.y, shape);
-    const [px, py] = sheetPoint(pointer.x - pointer.dx, pointer.y - pointer.dy, shape);
     frameData.set([
       grid, grid, 1 / grid, 1 / grid,
       ...FawnFormation.viewport(canvas), canvas.width / canvas.height, shape,
       dt / steps, time, steps, cycle.blend,
-      x, y, x - px, y - py,
+      pointer.x, pointer.y, pointer.dx, pointer.dy,
       Number(pointer.hover), Number(pointer.down), pointer.press, cycle.interactionScale,
-      ...sheetPoint(burst.x, burst.y, shape), burst.radius, burst.strength * cycle.interactionScale,
-      ...logoBox,
+      burst.x, burst.y, burst.radius, burst.strength * cycle.interactionScale,
     ]);
     device.queue.writeBuffer(shared.frame, 0, frameData);
   }
@@ -98,11 +89,15 @@ function createScenes(device, canvas, format, count) {
       }
       pass.end();
     }
-    if (!cycle.transitioning) return outgoing.render(encoder, view);
-    outgoing.render(encoder, targets[0]);
-    incoming.render(encoder, targets[1]);
-    carrier.render(encoder, targets[2], cycle.blend);
-    shared.images.compose(encoder, view, targets, transitionWeights(cycle.blend));
+    const output = state.shape > 0 ? image : view;
+    if (!cycle.transitioning) outgoing.render(encoder, output);
+    else {
+      outgoing.render(encoder, targets[0]);
+      incoming.render(encoder, targets[1]);
+      carrier.render(encoder, targets[2], cycle.blend);
+      shared.images.compose(encoder, output, targets, transitionWeights(cycle.blend));
+    }
+    if (state.shape > 0) mark.draw(encoder, view, state.shape);
   }
 
   resize();

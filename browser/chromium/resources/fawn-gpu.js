@@ -1,12 +1,10 @@
 // Fawn GPU kit: resource ownership, pipeline builders, and WGSL shared by every scene.
 //
 // Every scene shader binds the per-frame `Frame` uniform at binding 0. All state lives in one
-// square "sheet" (uv 0..1, or -1..1 for point positions); the Fawn mark only changes where the
-// sheet is drawn, so simulation never pauses or reseeds while the logo forms.
-const FRAME_FLOATS = 28;
+// square "sheet" (uv 0..1, or -1..1 for point positions) cropped to the canvas aspect.
+const FRAME_FLOATS = 24;
 const CELL_WORKGROUP = 16;
 const ITEM_WORKGROUP = 128;
-const SHEET_SHAPE_START = 0.35;
 
 const FRAME_WGSL = /* wgsl */ `
 struct Frame {
@@ -16,7 +14,6 @@ struct Frame {
   pointer: vec4<f32>, // sheet uv x, y; travel since the previous frame x, y
   input: vec4<f32>,   // hover, held, press impulse, transition attenuation
   burst: vec4<f32>,   // magnet release: sheet uv x, y; ring radius; strength
-  logo: vec4<f32>,    // logo box in screen uv: min x, min y, max x, max y
 }
 @group(0) @binding(0) var<uniform> frame: Frame;
 fn cell(p: vec2<i32>) -> u32 {
@@ -50,33 +47,19 @@ fn ${name}(uv: vec2<f32>) -> ${type} {
 }`;
 }
 
-// Placement of the live sheet: the whole material moves into the logo box, and the mask only
-// trims the final silhouette once most of the motion is complete.
-function sheetWgsl(maskBinding) {
-  return /* wgsl */ `
-@group(0) @binding(${maskBinding}) var<storage, read> logoMask: array<f32>;
-${fieldSampler('logoMaskAt', 'logoMask', 'f32')}
-fn placeSheet(sheet: vec2<f32>) -> vec2<f32> {
-  return mix(sheet, mix(frame.logo.xy, frame.logo.zw, sheet), frame.view.w);
-}
-fn screenClip(placed: vec2<f32>) -> vec2<f32> { return (placed * 2.0 - 1.0) / frame.view.xy; }
-fn coverage(placed: vec2<f32>) -> f32 {
-  return mix(1.0, logoMaskAt(placed), smoothstep(${SHEET_SHAPE_START}, 1.0, frame.view.w));
-}
+// The square sheet covers the canvas, cropping whichever axis is shorter.
+const SHEET_WGSL = /* wgsl */ `
 struct SheetOut {
   @builtin(position) position: vec4<f32>,
   @location(0) uv: vec2<f32>,
-  @location(1) placed: vec2<f32>,
 }
 @vertex fn sheetVertex(@builtin(vertex_index) i: u32) -> SheetOut {
   let uv = vec2<f32>(f32(i & 1u), f32(i >> 1u));
   var out: SheetOut;
-  out.placed = placeSheet(uv);
-  out.position = vec4<f32>(screenClip(out.placed), 0.0, 1.0);
+  out.position = vec4<f32>((uv * 2.0 - 1.0) / frame.view.xy, 0.0, 1.0);
   out.uv = uv;
   return out;
 }`;
-}
 
 const SCREEN_VERTEX_WGSL = /* wgsl */ `
 @vertex fn screenVertex(@builtin(vertex_index) i: u32) -> @builtin(position) vec4<f32> {
@@ -204,8 +187,8 @@ export {
   FRAME_WGSL,
   ITEM_WORKGROUP,
   SCREEN_VERTEX_WGSL,
+  SHEET_WGSL,
   createImagePasses,
   createKit,
   fieldSampler,
-  sheetWgsl,
 };

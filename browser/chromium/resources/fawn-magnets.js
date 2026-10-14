@@ -1,6 +1,6 @@
 // Magnets: an iridescent ferrofluid film raised into spikes by drifting magnets and soap-bubble
 // rings. Holding the pointer adds a magnet and charges it; releasing sends the charge out as a ring.
-import { CELL_WORKGROUP, FRAME_WGSL, fieldSampler, sheetWgsl } from './fawn-gpu.js';
+import { CELL_WORKGROUP, FRAME_WGSL, SHEET_WGSL, fieldSampler } from './fawn-gpu.js';
 
 const MAGNET_POLICY = Object.freeze({
   timeScale: 1.1,
@@ -79,21 +79,17 @@ ${CELL_MAIN}
     mix(state.w, field + bubbles * 3.0, response));
 }`;
 
-const RENDER = /* wgsl */ `${COMMON}${sheetWgsl(1)}
-@group(0) @binding(2) var<storage, read> surface: array<vec4<f32>>;
-@group(0) @binding(3) var<storage, read> pigment: array<vec4<f32>>;
+const RENDER = /* wgsl */ `${COMMON}${SHEET_WGSL}
+@group(0) @binding(1) var<storage, read> surface: array<vec4<f32>>;
+@group(0) @binding(2) var<storage, read> pigment: array<vec4<f32>>;
 ${fieldSampler('surfaceAt', 'surface')}
 ${fieldSampler('pigmentAt', 'pigment', 'vec3<f32>', '.rgb')}
 @fragment fn fs(in: SheetOut) -> @location(0) vec4<f32> {
   let c = surfaceAt(in.uv);
   let dx = vec2<f32>(frame.grid.z, 0.0);
   let dy = vec2<f32>(0.0, frame.grid.w);
-  let relief = reliefSlope(surfaceAt(in.uv - dx).x, surfaceAt(in.uv + dx).x,
+  let slope = reliefSlope(surfaceAt(in.uv - dx).x, surfaceAt(in.uv + dx).x,
     surfaceAt(in.uv - dy).x, surfaceAt(in.uv + dy).x);
-  // The carried sheet has a real silhouette edge as well as its bubble relief.
-  let edge = reliefSlope(coverage(in.placed - dx), coverage(in.placed + dx),
-    coverage(in.placed - dy), coverage(in.placed + dy));
-  let slope = relief + edge * 0.16;
   let normal = normalize(vec3<f32>(-slope * 0.12, 1.0));
   let fresnel = pow(1.0 - max(normal.z, 0.0), 3.0);
   let ridge = smoothstep(0.20, 4.0, length(slope));
@@ -102,7 +98,7 @@ ${fieldSampler('pigmentAt', 'pigment', 'vec3<f32>', '.rgb')}
   let halfVector = normalize(normalize(vec3<f32>(0.45, 0.60, 1.0)) + vec3<f32>(0.0, 0.0, 1.0));
   let specular = pow(max(dot(normal, halfVector), 0.0), 64.0) * ridge;
   let film = prism * ridge * (0.02 + contour * 0.40 + fresnel * 0.16) + vec3<f32>(0.80, 0.88, 1.0) * specular * 0.28;
-  return vec4<f32>(vec3<f32>(${M.body.join(', ')}) + film * coverage(in.placed), 1.0);
+  return vec4<f32>(vec3<f32>(${M.body.join(', ')}) + film, 1.0);
 }`;
 
 const EXPORT = /* wgsl */ `${COMMON}
@@ -156,7 +152,7 @@ function writeSources(data, time) {
   }
 }
 
-function createMagnets({ kit, grid, frame, logoMask, carry }) {
+function createMagnets({ kit, grid, frame, carry }) {
   const cells = grid * grid;
   const surface = [kit.storage('Magnets surface 0', cells * 16), kit.storage('Magnets surface 1', cells * 16)];
   const pigment = kit.storage('Magnets pigment', cells * 16);
@@ -171,7 +167,7 @@ function createMagnets({ kit, grid, frame, logoMask, carry }) {
   const pair = (make) => [0, 1].map(make);
   const groups = {
     step: pair((i) => kit.bind(pipelines.step, [frame, sources, surface[i], surface[1 - i]])),
-    render: pair((i) => kit.bind(pipelines.render, [frame, logoMask, surface[i], pigment])),
+    render: pair((i) => kit.bind(pipelines.render, [frame, surface[i], pigment])),
     exportCarry: pair((i) => carry.map((slot) =>
       kit.bind(pipelines.exportCarry, [frame, surface[i], pigment, slot.color, slot.motion]))),
     importCarry: carry.map((slot) =>
