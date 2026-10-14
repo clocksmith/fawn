@@ -1,67 +1,52 @@
-// Fullscreen cycle: one device, one canvas, one visible-time clock, resident GPU handoffs.
-import { CYCLE_POLICY, createCycleClock } from './fawn-cycle-clock.js';
-import { GPU_POLICY, createCycleGpu } from './fawn-cycle-gpu.js';
-const HOST_POLICY = Object.freeze({ version: 2, maxDpr: 2, metricS: 0.5, graphSamples: 60 });
-const MAGNETIC_RELEASE = Object.freeze({ chargeS: 1.5, durationS: 0.7,
-  minimumCharge: 0.2, speed: 1.6, radius: 0.65 });
-const canvas = document.querySelector('#view');
-const status = document.querySelector('#status');
-const failure = document.querySelector('#failure');
-const countSelect = document.querySelector('#count-select');
-const stepsSelect = document.querySelector('#steps-select');
-const formationSelect = document.querySelector('#formation-select');
-const graph = document.querySelector('#fps-graph'),
-  graphContext = graph.getContext('2d');
-const clock = createCycleClock(),
-  formation = FawnFormation.transition(CYCLE_POLICY.formation);
-let logoEnabled = FawnFormation.configure(formationSelect);
-FawnFormation.configureWorkload(
-  countSelect,
-  stepsSelect,
-  'cycle',
-  matchMedia('(max-width: 768px), (pointer: coarse)').matches,
-);
-let device, context, gpu, format;
-let configured = false,
-  refreshPending = false;
-let running = false,
-  paused = matchMedia('(prefers-reduced-motion: reduce)').matches;
-let raf = 0,
-  lastTime = 0,
-  time = 0,
-  pending = false,
-  shape = 0;
-let sampleTime = 0,
-  samples = 0,
-  lastCompletion = 0,
-  generation = 0;
-const pointer = {
-  x: 0.5,
-  y: 0.5,
-  dx: 0,
-  dy: 0,
-  hover: false,
-  down: false,
-  press: 0,
-  moved: false,
-  id: null,
-  heldS: 0,
-};
-const burst = { x: 0.5, y: 0.5, age: 0, charge: 0, strength: 0,
-  radius: MAGNETIC_RELEASE.radius };
-const fps = [];
-function updateControls() {
-  status.textContent = paused ? 'Paused' : 'WebGPU active';
-  document.querySelector('#load').textContent =
-    `${(Math.ceil(Math.sqrt(Number(countSelect.value))) ** 2).toLocaleString()} cells / ${Number(countSelect.value).toLocaleString()} particles · ${stepsSelect.value} steps`;
+// Fawn background cycle: Flows, Magnets, and Particles on one canvas with one visible-time clock.
+// This file owns the page lifecycle; fawn-scenes.js owns everything drawn on the GPU.
+import { CYCLE_POLICY, createCycleClock, sceneWeight } from './fawn-cycle-clock.js';
+import { createPointer } from './fawn-input.js';
+import { createMeter } from './fawn-meter.js';
+import { SCENE_POLICY, createScenes } from './fawn-scenes.js';
+
+const HOST_POLICY = Object.freeze({
+  maxDpr: 2,
+  mobileQuery: '(max-width: 768px), (pointer: coarse)',
+  gpuRecoveries: 2,
+});
+const $ = (selector) => document.querySelector(selector);
+const canvas = $('#view');
+const controls = Object.freeze({ count: $('#count-select'), steps: $('#steps-select'),
+  formation: $('#formation-select') });
+const clock = createCycleClock();
+const formation = FawnFormation.transition(CYCLE_POLICY.formation);
+const meter = createMeter($('#frame'), $('#fps-graph'));
+let device = null, context = null, format = null, scenes = null;
+let running = false, paused = matchMedia('(prefers-reduced-motion: reduce)').matches;
+let raf = 0, pending = false, redraw = false, configured = false;
+let lastTime = 0, time = 0, generation = 0, recoveries = 0, shownEffect = null;
+const pointer = createPointer(canvas, {
+  magnetWeight: () => (paused ? 0 : sceneWeight('wave', clock.state())),
+  onInput: () => schedule(),
+});
+let logoEnabled = FawnFormation.configure(controls.formation);
+FawnFormation.configureWorkload(controls.count, controls.steps, 'cycle',
+  matchMedia(HOST_POLICY.mobileQuery).matches);
+const steps = () => Number(controls.steps.value);
+
+function showEffect(effect) {
+  if (effect === shownEffect) return;
+  shownEffect = effect;
+  $('#effect').textContent = CYCLE_POLICY.labels[effect];
+  canvas.setAttribute('aria-label', `${CYCLE_POLICY.labels[effect]}. Drag to stir.`);
 }
+
+function describe() {
+  const count = Number(controls.count.value);
+  $('#status').textContent = paused ? 'Paused' : 'WebGPU active';
+  $('#load').textContent = `${(Math.ceil(Math.sqrt(count)) ** 2).toLocaleString()} cells / `
+    + `${count.toLocaleString()} particles · ${steps()} steps`;
+}
+
 function resize() {
   const side = Math.max(canvas.clientWidth, canvas.clientHeight, 1);
-  const scale = Math.min(
-    device.limits.maxTextureDimension2D / side,
-    devicePixelRatio,
-    HOST_POLICY.maxDpr,
-  );
+  const scale = Math.min(device.limits.maxTextureDimension2D / side, devicePixelRatio, HOST_POLICY.maxDpr);
   const width = Math.max(1, Math.round(canvas.clientWidth * scale));
   const height = Math.max(1, Math.round(canvas.clientHeight * scale));
   if (configured && canvas.width === width && canvas.height === height) return;
@@ -69,258 +54,153 @@ function resize() {
   canvas.height = height;
   context.configure({ device, format, alphaMode: 'opaque' });
   configured = true;
-  if (gpu) {
-    gpu.resize();
-  }
+  scenes?.resize();
 }
+
+// Restart the cycle from Flows with freshly seeded GPU state; every scene keeps its own physics.
 function reset() {
   generation++;
   clock.reset();
   formation.reset(logoEnabled);
-  shape = 0;
-  time = 0;
-  clearPointer();
-  if (gpu) {
-    gpu.destroy();
-    gpu = null;
-  }
-  gpu = createCycleGpu(device, canvas, format, Number(countSelect.value));
-  updateControls();
-  lastTime = 0;
-  lastCompletion = 0;
-  samples = 0;
-  sampleTime = 0;
-  fps.length = 0;
-  document.querySelector('#effect').textContent = CYCLE_POLICY.labels.flow;
+  pointer.clear();
+  time = lastTime = 0;
+  scenes?.destroy();
+  scenes = createScenes(device, canvas, format, Number(controls.count.value));
+  meter.clear();
+  describe();
+  showEffect(CYCLE_POLICY.effects[0]);
   schedule();
 }
-function meter(now) {
-  if (lastCompletion) {
-    sampleTime += (now - lastCompletion) / 1000;
-    samples++;
-  }
-  lastCompletion = now;
-  if (sampleTime < HOST_POLICY.metricS) return;
-  const value = samples / sampleTime;
-  document.querySelector('#frame').textContent = `${Math.round(value)} fps`;
-  fps.push(value);
-  if (fps.length > HOST_POLICY.graphSamples) fps.shift();
-  samples = 0;
-  sampleTime = 0;
-  const dpr = Math.min(devicePixelRatio, HOST_POLICY.maxDpr);
-  graph.width = Math.round(graph.clientWidth * dpr);
-  graph.height = Math.round(graph.clientHeight * dpr);
-  graphContext.clearRect(0, 0, graph.width, graph.height);
-  graphContext.strokeStyle = '#ffffff80';
-  graphContext.lineWidth = dpr;
-  graphContext.beginPath();
-  const ceiling = Math.max(60, ...fps);
-  fps.forEach((v, i) => {
-    const x = (i / (HOST_POLICY.graphSamples - 1)) * graph.width,
-      y = graph.height * (1 - v / ceiling);
-    if (i) graphContext.lineTo(x, y);
-    else graphContext.moveTo(x, y);
-  });
-  graphContext.stroke();
-}
+
 function schedule() {
   if (!running || document.hidden) return;
   if (pending) {
-    refreshPending = true;
+    redraw = true;
     return;
   }
   if (!raf) raf = requestAnimationFrame(frame);
 }
+
 async function frame(now) {
   raf = 0;
   if (!running || document.hidden) return;
-  const currentGeneration = generation;
+  const frameGeneration = generation;
   pending = true;
   try {
     resize();
-    // A stalled frame must not skip the visible blend or its GPU handoff.
-    const elapsedDt = paused || !lastTime ? 0 :
-      Math.min(CYCLE_POLICY.maxFrameS, Math.max(0, (now - lastTime) / 1000));
-    const dt = Math.min(CYCLE_POLICY.maxDtS, elapsedDt);
+    // A stalled frame still advances the visible clock so blends and handoffs are never skipped;
+    // only the simulation step is capped.
+    const elapsed = paused || !lastTime ? 0
+      : Math.min(CYCLE_POLICY.maxFrameS, Math.max(0, (now - lastTime) / 1000));
+    const dt = Math.min(CYCLE_POLICY.maxDtS, elapsed);
     lastTime = now;
-    const cycle = clock.advance(elapsedDt);
-    const weights = CYCLE_POLICY.effects.map(
-      (effect) =>
-        (effect === cycle.effect ? 1 - cycle.blend : 0) +
-        (cycle.transitioning && effect === cycle.next ? cycle.blend : 0),
-    );
-    if (pointer.down)
-      pointer.heldS = Math.min(MAGNETIC_RELEASE.chargeS, pointer.heldS + elapsedDt * weights[1]);
-    const releaseProgress = Math.min(1, burst.age / MAGNETIC_RELEASE.durationS);
-    burst.strength = burst.charge * MAGNETIC_RELEASE.speed * (1 - releaseProgress) ** 2;
-    burst.age += elapsedDt;
-    const interacting = pointer.down || pointer.moved || burst.strength > 0;
+    const cycle = clock.advance(elapsed);
+    pointer.advance(elapsed, sceneWeight('wave', cycle));
     if (cycle.completed) formation.retarget();
-    shape = formation.advance(
-      elapsedDt, logoEnabled, interacting || cycle.transitioning, interacting, cycle.blend,
-    );
+    const interacting = pointer.interacting;
+    const shape = formation.advance(elapsed, logoEnabled, interacting || cycle.transitioning, interacting,
+      cycle.blend);
     time += dt;
-    gpu.uniforms(dt, time, shape, pointer, Number(stepsSelect.value), weights, elapsedDt, burst,
-      cycle.interactionScale);
-    const encoder = device.createCommandEncoder({ label: 'Fawn cycle frame' });
-    if (cycle.started) gpu.handoff(encoder, cycle.effect);
-    if (dt > 0) {
-      gpu.simulate(encoder, cycle.effect, Number(stepsSelect.value));
-      if (cycle.transitioning) gpu.simulate(encoder, cycle.next, Number(stepsSelect.value));
-    }
-    if (dt > 0) gpu.advanceParcels(encoder);
-    gpu.draw(encoder, context.getCurrentTexture().createView(), weights, time, cycle.elapsedS);
+    const encoder = device.createCommandEncoder({ label: 'Fawn frame' });
+    scenes.draw(encoder, context.getCurrentTexture().createView(), {
+      cycle, dt, time, steps: steps(), shape, pointer: pointer.state, burst: pointer.burst,
+    });
     device.queue.submit([encoder.finish()]);
-    pointer.dx = 0;
-    pointer.dy = 0;
-    pointer.press = 0;
-    pointer.moved = false;
-    document.querySelector('#effect').textContent = CYCLE_POLICY.labels[cycle.effect];
-    canvas.setAttribute('aria-label', `${CYCLE_POLICY.labels[cycle.effect]}. Drag to stir.`);
+    pointer.endFrame();
+    showEffect(cycle.effect);
     await device.queue.onSubmittedWorkDone();
-    if (!running || currentGeneration !== generation) return;
-    if (!paused) meter(performance.now());
+    if (running && !paused && frameGeneration === generation) meter.complete(performance.now());
   } catch (error) {
     fail(error);
   } finally {
     pending = false;
-    if (!paused || refreshPending) {
-      refreshPending = false;
+    if (!paused || redraw) {
+      redraw = false;
       schedule();
     }
   }
 }
-function fail(error) {
+
+function stop() {
   running = false;
   generation++;
   cancelAnimationFrame(raf);
   raf = 0;
-  status.textContent = 'Unavailable';
+  pointer.clear();
+  scenes?.destroy();
+  scenes = null;
+}
+
+function fail(error) {
+  stop();
+  $('#status').textContent = 'Unavailable';
+  const failure = $('#failure');
   failure.hidden = false;
   failure.textContent = error.message || String(error);
-  for (const control of [
-    countSelect,
-    stepsSelect,
-    formationSelect,
-  ])
-    control.disabled = true;
-  gpu?.destroy();
-  gpu = null;
+  Object.values(controls).forEach((control) => { control.disabled = true; });
   context?.unconfigure();
   device?.destroy();
 }
-function clearPointer() {
-  if (pointer.id !== null && canvas.hasPointerCapture(pointer.id))
-    canvas.releasePointerCapture(pointer.id);
-  Object.assign(pointer, {
-    id: null,
-    down: false,
-    hover: false,
-    dx: 0,
-    dy: 0,
-    press: 0,
-    moved: false,
-    heldS: 0,
-  });
-  burst.charge = burst.strength = 0;
-}
-function point(event) {
-  const [x, y] = FawnFormation.screenPoint(event, canvas);
-  if (pointer.hover || pointer.down) {
-    pointer.dx += x - pointer.x;
-    pointer.dy += y - pointer.y;
-  }
-  pointer.x = x;
-  pointer.y = y;
-  pointer.moved = true;
-}
-canvas.addEventListener('pointerdown', (event) => {
-  if (pointer.id !== null && pointer.id !== event.pointerId) return;
-  pointer.id = event.pointerId;
-  point(event);
-  pointer.down = true;
-  pointer.hover = true;
-  pointer.press = 1;
-  pointer.heldS = 0;
-  burst.charge = burst.strength = 0;
-  canvas.setPointerCapture(event.pointerId);
-  canvas.focus({ preventScroll: true });
-  schedule();
-});
-canvas.addEventListener('pointermove', (event) => {
-  if (pointer.id !== null && pointer.id !== event.pointerId) return;
-  point(event);
-  pointer.hover = true;
-  schedule();
-});
-function release(event) {
-  if (pointer.id !== event.pointerId) return;
-  if (event.type === 'pointerup' && pointer.down && !paused) {
-    const cycle = clock.state();
-    const weight = (cycle.effect === 'wave' ? 1 - cycle.blend : 0)
-      + (cycle.transitioning && cycle.next === 'wave' ? cycle.blend : 0);
-    burst.x = pointer.x;
-    burst.y = pointer.y;
-    burst.age = 0;
-    burst.charge = weight * (MAGNETIC_RELEASE.minimumCharge
-      + (1 - MAGNETIC_RELEASE.minimumCharge) * pointer.heldS / MAGNETIC_RELEASE.chargeS);
-  } else burst.charge = burst.strength = 0;
-  pointer.down = false;
-  pointer.heldS = 0;
-  pointer.moved = true;
-  pointer.press = 0;
-  pointer.id = null;
-  const rect = canvas.getBoundingClientRect();
-  pointer.hover =
-    event.type === 'pointerup' &&
-    event.pointerType === 'mouse' &&
-    event.clientX >= rect.left &&
-    event.clientX <= rect.right &&
-    event.clientY >= rect.top &&
-    event.clientY <= rect.bottom;
-  schedule();
-}
-canvas.addEventListener('pointerup', release);
-canvas.addEventListener('pointercancel', release);
-canvas.addEventListener('lostpointercapture', release);
-canvas.addEventListener('pointerleave', () => {
-  pointer.hover = false;
-  if (!pointer.down) pointer.moved = false;
-});
+
 function toggleMotion() {
   paused = !paused;
   generation++;
   lastTime = 0;
-  lastCompletion = 0;
-  sampleTime = 0;
-  samples = 0;
-  document.querySelector('#frame').textContent = paused ? 'Paused' : '— fps';
-  updateControls();
+  meter.restart(paused ? 'Paused' : '— fps');
+  describe();
   if (paused) {
-    clearPointer();
+    pointer.clear();
     cancelAnimationFrame(raf);
     raf = 0;
   } else schedule();
 }
-countSelect.addEventListener('change', () => reset());
-stepsSelect.addEventListener('change', () => {
-  updateControls();
+
+// A lost device restarts the cycle on a new one; repeated losses surface the failure instead.
+function recover(info) {
+  if (!running || info.reason === 'destroyed') return;
+  if (recoveries++ >= HOST_POLICY.gpuRecoveries) {
+    fail(new Error(`GPU connection lost: ${info.message || info.reason}`));
+    return;
+  }
+  stop();
+  start();
+}
+
+async function start() {
+  try {
+    if (!navigator.gpu) throw new Error('WebGPU is unavailable in this browser.');
+    const adapter = await navigator.gpu.requestAdapter({ powerPreference: 'high-performance' });
+    if (!adapter) throw new Error('No WebGPU adapter is available.');
+    device = await adapter.requestDevice();
+    device.lost.then(recover);
+    device.addEventListener('uncapturederror', (event) => { if (running) fail(event.error); });
+    format = navigator.gpu.getPreferredCanvasFormat();
+    context = canvas.getContext('webgpu');
+    configured = false;
+    if (!context) throw new Error('WebGPU canvas is unavailable.');
+    const storageLimit = Math.min(device.limits.maxStorageBufferBindingSize, device.limits.maxBufferSize);
+    FawnFormation.limitCount(controls.count,
+      Math.min(SCENE_POLICY.maxCount, Math.floor(storageLimit / SCENE_POLICY.particleBytes)));
+    $('#adapter').textContent = [adapter.info?.vendor, adapter.info?.architecture].filter(Boolean)
+      .join(' · ') || 'WebGPU connected';
+    Object.values(controls).forEach((control) => { control.disabled = false; });
+    resize();
+    running = true;
+    reset();
+  } catch (error) {
+    fail(error);
+  }
+}
+
+controls.count.addEventListener('change', () => reset());
+controls.steps.addEventListener('change', () => {
+  describe();
   schedule();
 });
-formationSelect.addEventListener('change', () => {
-  logoEnabled = formationSelect.value === 'branded';
+controls.formation.addEventListener('change', () => {
+  logoEnabled = controls.formation.value === 'branded';
   formation.retarget();
   schedule();
-});
-document.addEventListener('visibilitychange', () => {
-  generation++;
-  lastTime = 0;
-  lastCompletion = 0;
-  clearPointer();
-  if (document.hidden) {
-    cancelAnimationFrame(raf);
-    raf = 0;
-  } else schedule();
 });
 canvas.addEventListener('keydown', (event) => {
   if (event.code === 'Space') {
@@ -331,53 +211,26 @@ canvas.addEventListener('keydown', (event) => {
     reset();
   }
 });
+document.addEventListener('visibilitychange', () => {
+  generation++;
+  lastTime = 0;
+  pointer.clear();
+  meter.restart(paused ? 'Paused' : '— fps');
+  if (document.hidden) {
+    cancelAnimationFrame(raf);
+    raf = 0;
+  } else schedule();
+});
 addEventListener('blur', () => {
-  clearPointer();
+  pointer.clear();
   schedule();
 });
 addEventListener('resize', () => schedule());
 new ResizeObserver(() => schedule()).observe(canvas);
 addEventListener('pagehide', () => {
-  running = false;
-  generation++;
-  cancelAnimationFrame(raf);
-  gpu?.destroy();
+  stop();
   device?.destroy();
 });
-(async () => {
-  try {
-    if (!navigator.gpu) throw new Error('WebGPU is unavailable in this browser.');
-    const adapter = await navigator.gpu.requestAdapter({ powerPreference: 'high-performance' });
-    if (!adapter) throw new Error('No WebGPU adapter is available.');
-    device = await adapter.requestDevice();
-    device.lost.then((info) => {
-      if (running) fail(new Error(`GPU connection lost: ${info.message || info.reason}`));
-    });
-    device.addEventListener('uncapturederror', (event) => {
-      if (running) fail(event.error);
-    });
-    format = navigator.gpu.getPreferredCanvasFormat();
-    context = canvas.getContext('webgpu');
-    if (!context) throw new Error('WebGPU canvas is unavailable.');
-    FawnFormation.limitCount(
-      countSelect,
-      Math.min(
-        GPU_POLICY.maxCount,
-        Math.floor(
-          Math.min(device.limits.maxStorageBufferBindingSize, device.limits.maxBufferSize) /
-            GPU_POLICY.parcelBytes,
-        ),
-      ),
-    );
-    document.querySelector('#adapter').textContent =
-      [adapter.info?.vendor, adapter.info?.architecture].filter(Boolean).join(' · ') ||
-      'WebGPU connected';
-    for (const control of [countSelect, stepsSelect, formationSelect])
-      control.disabled = false;
-    resize();
-    running = true;
-    reset();
-  } catch (error) {
-    fail(error);
-  }
-})();
+// A page restored from the back-forward cache has no device left to draw with.
+addEventListener('pageshow', (event) => { if (event.persisted) location.reload(); });
+start();

@@ -1,17 +1,21 @@
 # Fawn hosted demonstrations
 
-Local source uses individual positional formation with a shared moving boundary.
-It remains awaiting user visual review and has not been deployed. The hosted
-[publication receipt](../../reports/releases/fawn/20261013-publication.json)
-retains its original source identities and evidence limits.
+The hosted background cycles Flows, Magnets, and Particles on one canvas. Each
+scene holds with its own simulation, shading, and pointer response. A scene change
+hands the outgoing state to the incoming scene and to one carried population that
+moves it under both scenes' motion while the three images blend. Logo formation
+moves each scene's live sheet into the mark without pausing its simulation.
 
-[Cycle and lifecycle checks](../../browser/chromium/scripts/test-fawn-cycle.js),
-[material continuity checks](../../browser/chromium/scripts/test-fawn-material-continuity.js)
-and [timing checks](../../browser/chromium/scripts/test-fawn-timing.js) own the
-reusable regressions. Their current output goes to ignored `bench/out/` under
-[the retention policy](../../reports/README.md). These are artwork checks;
-physical-phone, Safari, native Doe and performance qualification remain separate.
-[Workspace status](fawn-workspace.md) covers the prospective durable-work service.
+[`fawn-scenes.js`](../../browser/chromium/resources/fawn-scenes.js) is the single
+orchestrator. Each scene module owns its shaders; [`fawn-gpu.js`](../../browser/chromium/resources/fawn-gpu.js)
+holds the shared frame uniform, sheet placement, and pipeline helpers. The retained
+standalone benchmark pages are separate workloads, not shader sources.
+
+Checks are local visual and lifecycle checks in a WebGPU browser; no artwork test
+suite is retained. Physical-phone, Safari, native Doe and performance qualification
+remain separate. The [20261013 publication receipt](../../reports/releases/fawn/20261013-publication.json)
+records the previous hosted identity. [Workspace status](fawn-workspace.md) covers
+the prospective durable-work service.
 
 Doe owns the source under `browser/chromium/resources/`; sibling D4DA owns the
 isolated package through `firebase.fawn.json`. The canonical surface is
