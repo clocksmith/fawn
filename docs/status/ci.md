@@ -1,9 +1,11 @@
 # CI status
 
-GitHub-hosted push and pull-request checks cover deterministic workflow,
-compiler, proof, package, and source-contract surfaces. Hardware-dependent AMD
-Vulkan, drop-in, macOS browser, release, and claim-trend lanes remain explicit
-manual workflows.
+GitHub-hosted push and pull-request checks are smoke tests: the WGSL compiler
+tests, Lean proof typecheck and extraction, the doe-gpu package tests and packed
+contents, and publication hygiene. Config, mirror, and freshness checks are not
+CI gates; run them when a change edits what they check. Hardware-dependent AMD
+Vulkan, drop-in, macOS browser, native freshness, release, and claim-trend lanes
+remain explicit manual workflows.
 
 The AMD Vulkan smoke and release, Fawn matrix, and Windows D3D12 qualification
 workflows require an exact full Git revision and an approved self-hosted runner
@@ -16,9 +18,7 @@ qualification workflows seal collected files with SHA-256 and upload failures
 as well as successful results; protected signing remains a separate
 environment-owned step.
 
-The machine-owned workflow inventory and trigger policy are checked by
-`bench/tests/test_ci_workflow_surface.py`. Workflow files under
-`.github/workflows/` are the source of truth.
+Workflow files under `.github/workflows/` are the source of truth.
 
 The manual self-hosted Linux native-freshness job rebuilds and stages the
 platform package, then clean-installs the wrapper and staged platform tarballs
@@ -30,18 +30,14 @@ concurrent-process, and same-process lifecycle diagnostics for all three
 runtimes. Electron uses an explicitly installed executable, creates no
 renderer, and earns no browser evidence.
 
-The normal package pull-request workflow runs the complete package contract,
-smoke, and integration suite, checks the public tool surface, and inspects the
-packed contents. It also verifies that the reviewed HoloScript Electron
-diagnostic remains hash-bound to every tracked input and retains exact hashes
-for its declared external capture inputs, native library, incumbent, and
-zero-credit decision. The hosted checkout does not contain those external raw
-bytes, so this deterministic contract check does not claim to revalidate them.
-It replays no GPU work and grants no new evidence; the manual self-hosted
-workflow owns runtime-specific execution. Hosted execution may skip native
-checks when staged platform artifacts or physical GPUs are absent.
-Repository-wide performance remains advisory rather than a promoted
-JavaScript-runtime release requirement.
+The package workflow runs the doe-gpu package tests and inspects the packed
+contents. It replays no GPU work and grants no new evidence; hosted execution
+skips native checks when staged platform artifacts or physical GPUs are absent.
+The native integration suite, the tool-surface gate
+(`bench/gates/tool_surface_gate.py`), and the HoloScript Electron diagnostic
+contract run on demand or in the manual self-hosted workflow. Repository-wide
+performance remains advisory rather than a promoted JavaScript-runtime release
+requirement.
 
 The separate manual native-candidate workflow owns the macOS arm64 package
 admission path. It requires an exact full Git revision and approved Apple

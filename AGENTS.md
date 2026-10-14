@@ -195,7 +195,7 @@ baseline on `main` to enforce history preservation.
 - never embed counts, percentages, or benchmark results in prose; say what
   kind of thing exists and cite the artifact ("See `path/to/artifact.json` for
   current count.")
-- CI validates structural claims ("Doe has a native DXIL emitter") against file existence
+- structural claims ("Doe has a native DXIL emitter") are checked against file existence, not prose
 - `docs/status.md` is the concise status front door; live details go at the top of topical shards `docs/status/*.md` (LOC-capped; split by subdomain before the cap); dated append-only history in `docs/status/archive/*.md` changes only in deliberate archive maintenance
 - artifacts, not docs, are the source of truth:
   - theorem count/categories: `pipeline/lean/artifacts/proven-conditions.json`
