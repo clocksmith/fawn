@@ -128,6 +128,7 @@ jobs:
           python3 bench/gates/doe_gpu_native_release_candidate_gate.py \
             --expected-platform darwin \
             --expected-arch arm64 \
+            --runtimes node,bun,electron \
             "${CANDIDATE_ROOT}/doe-gpu-node-native-release-candidate.json" \
             "${CANDIDATE_ROOT}/doe-gpu-bun-native-release-candidate.json" \
             "${CANDIDATE_ROOT}/doe-gpu-electron-native-release-candidate.json" \

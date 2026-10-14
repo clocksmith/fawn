@@ -142,7 +142,38 @@ def build_retained_bundle(bundle_root: Path) -> dict[str, Path]:
     return candidate_paths
 
 
+ALL_RUNTIMES = ("node", "bun", "electron")
+
+
 class DoeGpuNativeReleaseCandidateTests(unittest.TestCase):
+    def test_node_only_candidate_passes_when_it_declares_only_node(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            candidates = build_retained_bundle(Path(temporary))
+            failures = validate_candidate_set(ROOT, [candidates["node"]], "linux", "x64", ("node",))
+            self.assertEqual(failures, [])
+
+    def test_gate_rejects_a_declaration_without_node(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            candidates = build_retained_bundle(Path(temporary))
+            failures = validate_candidate_set(
+                ROOT, [candidates["bun"], candidates["electron"]], "linux", "x64", ("bun", "electron")
+            )
+            self.assertTrue(any("omit the mandatory node runtime" in item for item in failures))
+
+    def test_gate_rejects_unknown_or_repeated_declarations(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            candidates = build_retained_bundle(Path(temporary))
+            failures = validate_candidate_set(ROOT, [candidates["node"]], "linux", "x64", ("node", "deno"))
+            self.assertTrue(any("are not supported" in item for item in failures))
+            failures = validate_candidate_set(ROOT, [candidates["node"]], "linux", "x64", ("node", "node"))
+            self.assertTrue(any("repeat an entry" in item for item in failures))
+
+    def test_gate_rejects_a_declared_runtime_without_its_receipt(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            candidates = build_retained_bundle(Path(temporary))
+            failures = validate_candidate_set(ROOT, [candidates["node"]], "linux", "x64", ("node", "bun"))
+            self.assertTrue(any("candidate set runtime mismatch" in item for item in failures))
+
     def test_retained_candidate_set_passes_independent_gate(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             candidates = build_retained_bundle(Path(temporary))
@@ -151,6 +182,7 @@ class DoeGpuNativeReleaseCandidateTests(unittest.TestCase):
                 list(candidates.values()),
                 "linux",
                 "x64",
+                ALL_RUNTIMES,
             )
             self.assertEqual(failures, [])
 
@@ -164,6 +196,7 @@ class DoeGpuNativeReleaseCandidateTests(unittest.TestCase):
                 list(candidates.values()),
                 "linux",
                 "x64",
+                ALL_RUNTIMES,
             )
             self.assertTrue(any("referenced file is missing" in item for item in failures))
 
@@ -179,6 +212,7 @@ class DoeGpuNativeReleaseCandidateTests(unittest.TestCase):
                 list(candidates.values()),
                 "linux",
                 "x64",
+                ALL_RUNTIMES,
             )
             self.assertIn(
                 "doe-gpu-node-native-release-candidate.json: primary receipt digest mismatch",
@@ -193,6 +227,7 @@ class DoeGpuNativeReleaseCandidateTests(unittest.TestCase):
                 [candidates["node"], candidates["bun"]],
                 "linux",
                 "x64",
+                ALL_RUNTIMES,
             )
             self.assertTrue(any("candidate set runtime mismatch" in item for item in failures))
 
@@ -208,6 +243,7 @@ class DoeGpuNativeReleaseCandidateTests(unittest.TestCase):
                 list(candidates.values()),
                 "linux",
                 "x64",
+                ALL_RUNTIMES,
             )
             self.assertTrue(any("runner: SHA-256 mismatch" in item for item in failures))
             self.assertTrue(
@@ -231,6 +267,7 @@ class DoeGpuNativeReleaseCandidateTests(unittest.TestCase):
                 list(candidates.values()),
                 "linux",
                 "x64",
+                ALL_RUNTIMES,
             )
             self.assertIn(
                 "doe-gpu-node-native-release-candidate.json: reliability: "
@@ -255,6 +292,7 @@ class DoeGpuNativeReleaseCandidateTests(unittest.TestCase):
                 list(candidates.values()),
                 "linux",
                 "x64",
+                ALL_RUNTIMES,
             )
             self.assertIn(
                 "doe-gpu-node-native-release-candidate.json: reliability: "

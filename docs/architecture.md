@@ -496,7 +496,10 @@ wrapper and platform tarballs share one bundle directory. Tracked
 implementation references resolve against the declared clean Git commit;
 shipped manifests, first-kernel entrypoints, addons, build metadata, and native
 library hashes resolve from the retained tarballs. `bench` independently joins
-the three Node, Bun, and Electron receipts before package-candidate admission.
+the receipt of every runtime the candidate declares before package-candidate
+admission. Node is mandatory; Bun and Electron are separately qualified
+declarations that are never waived once declared and never required when
+undeclared, so a Node-only candidate is admissible with a Node-only claim.
 Schema-version-1 reports that bind hashes without retaining the bytes remain
 diagnostic history and cannot cross this boundary.
 
