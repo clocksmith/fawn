@@ -31,10 +31,10 @@ Outputs:
 - Browser launch alone is integration evidence, not application or performance value.
 - Hosted artwork keeps input-independent visible-time scheduling and smooth input
   attenuation without delaying GPU handoffs or resetting the moving material.
-- Logo recovery lerps live parcels under a shared boundary before its dwell;
-  acceptance checks trajectories and positions, not opacity or the envelope.
-- Branded silhouettes retain live fields, parcel advection and material updates.
-  Fluid transitions interpolate carried light and keep flat film visible.
+- Each background keeps its own simulation, shading, and pointer response; scene
+  changes hand outgoing state to the next scene and one carried population.
+- Logo formation moves each scene's live sheet into one shared boundary without
+  pausing its simulation.
 
 ## Acceptance
 

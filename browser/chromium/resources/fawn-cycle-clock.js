@@ -51,4 +51,9 @@ function createCycleClock() {
     },
   };
 }
-export { CYCLE_POLICY, createCycleClock };
+// How much of the visible image a scene currently owns.
+function sceneWeight(effect, cycle) {
+  return (cycle.effect === effect ? 1 - cycle.blend : 0)
+    + (cycle.transitioning && cycle.next === effect ? cycle.blend : 0);
+}
+export { CYCLE_POLICY, createCycleClock, sceneWeight };

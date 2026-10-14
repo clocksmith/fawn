@@ -43,7 +43,7 @@ Do not add a parallel task list, strategy, or artifact inventory to this file.
 | --- | --- |
 | `contracts/` | Formal runtime, benchmark, receipt, and release obligations |
 | `scripts/` | Lane builders, checkers, and launch helpers |
-| `resources/` | Main demo in `fawn-start.html`; standalone particle, fluid, and image workloads retained for benchmarks |
+| `resources/` | Hosted background cycle in `fawn-cycle.html` and its `fawn-*.js` modules; standalone particle, fluid, and image workloads retained for benchmarks |
 | `bench/` | Browser workload and milestone configuration |
 | `artifacts/` | Checked-in diagnostics and governed browser evidence |
 | `src/` | Optional external checkout link or workspace, not Doe-owned source |
