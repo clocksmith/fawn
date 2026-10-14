@@ -239,7 +239,14 @@ that boundary or authorize a parallel campaign.
 
 DoeRuntime emphasis remains one correct, reproducible Doppler Node generation
 advantage over Dawn on Vulkan, then ONNX transfer; the existing ONNX evaluation
-distribution is sufficient for adoption work.
+distribution is sufficient for adoption work. The first engineering target is
+one frozen Strix Halo workstation, the initial qualification target
+([host record](../reports/benchmarks/amd-vulkan/20261014-initial-qualification-target/README.md)).
+Its qualified Node baseline comes before any advantage claim. Hardware-first
+local execution is Fawn's initial deployment strategy, not a dependency of the
+workspace. Doppler+Doe versus Doppler+Dawn attributes the provider; ordinary
+Chromium plus a pinned native engine is a separate complete-system alternative
+that cannot isolate Doe's compiler or runtime.
 Measure reproduction-to-verified-improvement time from the retained reproducible problem
 to independent confirmation under frozen acceptance. Link timestamps, source,
 and evidence in existing work records; keep rejected and unresolved attempts

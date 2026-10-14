@@ -1,0 +1,146 @@
+{
+  "artifactKind": "vulkan-host-profile-probe",
+  "host": {
+    "arch": "x64",
+    "os": "linux"
+  },
+  "hostRecord": {
+    "bindings": [
+      {
+        "path": "reports/benchmarks/amd-vulkan/20260810T222323Z/webgpu-cts-subset.json",
+        "sha256": "6990c9c3536f19b533057a266220f1bd0506232834611da3071b6b77138cd472"
+      },
+      {
+        "path": "reports/benchmarks/amd-vulkan/20261005-installed-generation/installation.json",
+        "sha256": "09840397988afe4c56c78bc8cbd12caa096337f9dc14dbb3c980347dcea6c76d"
+      },
+      {
+        "path": "reports/benchmarks/amd-vulkan/20261005-installed-generation/providers.json",
+        "sha256": "7c1642bc219ef90ced985c85e93a452692048dec53e7d19b193a9a25bdaaab5c"
+      },
+      {
+        "path": "reports/benchmarks/amd-vulkan/20261005-installed-generation/contract.json",
+        "sha256": "cbbabc1979812c10e08eb07ae66e8f0d68c82563fc331b61504baba7921d13a2"
+      },
+      {
+        "path": "reports/benchmarks/amd-vulkan/20261008-onnx-vulkan-device-lifecycle/manifest.json",
+        "sha256": "7a19c1accead497cb2bb5df6654c7eb1fcc4a9a1b09e575a264fec482da5dd36"
+      }
+    ],
+    "cpu": {
+      "logicalProcessors": 32,
+      "model": "AMD RYZEN AI MAX+ 395 w/ Radeon 8060S"
+    },
+    "driverPackages": {
+      "libdrm-amdgpu1": "2.4.131-1",
+      "linux-firmware": "20260319.git217ca6e4.1ubuntu",
+      "mesa-vulkan-drivers": "26.0.3-1ubuntu1"
+    },
+    "firmware": {
+      "gpu": {
+        "vbios_build": "00107962",
+        "vbios_version": "113-STRXLGEN-001"
+      },
+      "platform": {
+        "bios_date": "11/19/2025",
+        "bios_vendor": "INSYDE Corp.",
+        "bios_version": "03.04",
+        "board_name": "FRANMFCP06",
+        "product_name": "Desktop (AMD Ryzen AI Max 300 Series)",
+        "sys_vendor": "Framework"
+      }
+    },
+    "gpuAllocationLimits": {
+      "dedicatedCarveoutBytes": 536870912,
+      "gttBytes": 65945591808,
+      "ttmPagesLimitBytes": 65945591808,
+      "vulkan": {
+        "limits": {
+          "maxBufferSize": 4294967292,
+          "maxComputeSharedMemorySize": 65536,
+          "maxComputeWorkGroupInvocations": 1024,
+          "maxMemoryAllocationCount": 4294967295,
+          "maxMemoryAllocationSize": 4294967292,
+          "maxStorageBufferRange": 4294967295
+        },
+        "memoryHeaps": [
+          {
+            "flags": [],
+            "index": 0,
+            "sizeBytes": 22160818176
+          },
+          {
+            "flags": [
+              "MEMORY_HEAP_DEVICE_LOCAL_BIT"
+            ],
+            "index": 1,
+            "sizeBytes": 44321644544
+          }
+        ]
+      }
+    },
+    "measuredResidency": null,
+    "operatingSystem": {
+      "kernelRelease": "7.0.0-29-generic",
+      "kernelVersion": "#29-Ubuntu SMP PREEMPT_DYNAMIC Fri Jul 17 20:52:35 UTC 2026",
+      "name": "Ubuntu 26.04 LTS",
+      "versionId": "26.04"
+    },
+    "processLimits": {
+      "addressSpace": [
+        -1,
+        -1
+      ],
+      "memlock": [
+        8388608,
+        8388608
+      ],
+      "openFiles": [
+        524288,
+        524288
+      ]
+    },
+    "selectedVulkanDriver": {
+      "apiVersion": "1.4.335",
+      "deviceName": "Radeon 8060S Graphics (RADV STRIX_HALO)",
+      "driverInfo": "Mesa 26.0.3-1ubuntu1",
+      "driverVersion": "26.0.3",
+      "libraryPath": "/usr/lib/x86_64-linux-gnu/libvulkan_radeon.so",
+      "librarySha256": "0949baaa43f5ea34fc785f28f31863ca5ea4949478fae96b37c37675a489f830",
+      "manifestPath": "/usr/share/vulkan/icd.d/radeon_icd.json",
+      "manifestSha256": "ea05ad7109cee152ef4e801a022dfa40b655dc06a08da7d0d7b042f619a0947c"
+    },
+    "systemMemory": {
+      "kernelMemTotalBytes": 131891187712,
+      "onlinePhysicalBytes": 137438953472,
+      "swapTotalBytes": 8589930496
+    }
+  },
+  "icdPath": "/usr/share/vulkan/icd.d/radeon_icd.json",
+  "matchingDevices": [
+    {
+      "apiVersion": "1.4.335",
+      "conformanceVersion": "1.4.0.0",
+      "deviceID": "0x1586",
+      "deviceName": "Radeon 8060S Graphics (RADV STRIX_HALO)",
+      "deviceType": "PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU",
+      "deviceUUID": "00000000-c200-0000-0000-000000000000",
+      "driverID": "DRIVER_ID_MESA_RADV",
+      "driverInfo": "Mesa 26.0.3-1ubuntu1",
+      "driverName": "radv",
+      "driverUUID": "414d442d-4d45-5341-2d44-525600000000",
+      "driverVersion": "26.0.3",
+      "ordinal": "0",
+      "vendorID": "0x1002"
+    }
+  ],
+  "ok": true,
+  "probeMessage": "ok",
+  "profileId": "linux_strix_halo_radv",
+  "renderNode": {
+    "path": "/dev/dri/renderD128",
+    "readableWritable": true
+  },
+  "schemaVersion": 1,
+  "vendorId": "0x1002"
+}

@@ -7,7 +7,7 @@
   "required": ["$schema", "schemaVersion", "strategyVersion", "artifactKind", "authority", "positioning", "independenceBoundary", "surfaces", "commercialOffer", "comparisonLaw", "externalProductComparison", "evidenceSpine", "customerEvidencePolicy", "platformSequence", "milestones", "claimBoundary", "reusableProgram", "executionOwnership", "provingSet", "developmentEffectiveness", "fawnWorkspace"],
   "properties": {
     "$schema": { "type": "string", "const": "doe-product-strategy.schema.json" },
-    "schemaVersion": { "type": "integer", "const": 9 },
+    "schemaVersion": { "type": "integer", "const": 10 },
     "strategyVersion": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
     "artifactKind": { "type": "string", "const": "doe-product-strategy" },
     "authority": {
@@ -95,12 +95,13 @@
     "positioning": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["category", "promise", "governingQuestion", "operatingLaw"],
+      "required": ["category", "promise", "governingQuestion", "operatingLaw", "initialDeploymentStrategy"],
       "properties": {
         "category": { "type": "string", "minLength": 1 },
         "promise": { "type": "string", "minLength": 1 },
         "governingQuestion": { "type": "string", "minLength": 1 },
-        "operatingLaw": { "type": "string", "minLength": 1 }
+        "operatingLaw": { "type": "string", "minLength": 1 },
+        "initialDeploymentStrategy": { "type": "string", "minLength": 1 }
       }
     },
     "independenceBoundary": { "$ref": "#/$defs/independenceBoundary" },
@@ -169,7 +170,8 @@
         "lanes",
         "selectionOutcomes",
         "measurementAuthorityPath",
-        "classes"
+        "classes",
+        "categories"
       ],
       "properties": {
         "authorityPath": {
@@ -204,6 +206,37 @@
           "const": [
             "unchanged-application-replacement",
             "fixed-operation-or-shader"
+          ]
+        },
+        "categories": {
+          "description": "Provider attribution and complete-system alternatives are separate comparisons; only the first can isolate the provider.",
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": false,
+          "prefixItems": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["id", "comparison", "authorityPath", "isolatesProvider"],
+              "properties": {
+                "id": { "const": "provider-attribution" },
+                "comparison": { "const": "Doppler+Doe versus Doppler+Dawn" },
+                "authorityPath": { "const": "docs/runtime-ownership-decision.md" },
+                "isolatesProvider": { "const": true }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["id", "comparison", "authorityPath", "isolatesProvider"],
+              "properties": {
+                "id": { "const": "alternative-complete-system" },
+                "comparison": { "type": "string", "minLength": 1 },
+                "authorityPath": { "const": "config/browser-product-comparison-policy.json#alternativeCompleteSystem" },
+                "isolatesProvider": { "const": false }
+              }
+            }
           ]
         }
       }
@@ -965,7 +998,23 @@
         "id": { "type": "string", "enum": ["amd-vulkan","apple-metal","windows-d3d12"] },
         "purpose": { "type": "string", "minLength": 1 },
         "supportAuthorityPath": { "$ref": "#/$defs/path" },
-        "inheritsPromotion": { "type": "boolean", "const": false }
+        "inheritsPromotion": { "type": "boolean", "const": false },
+        "initialQualificationTarget": { "$ref": "#/$defs/initialQualificationTarget" }
+      }
+    },
+    "initialQualificationTarget": {
+      "description": "One frozen machine selected as the initial engineering target; never a qualified or supported configuration by itself.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["label", "hostProfileId", "hostProfilePath", "hostRecordPath", "qualificationState", "existingEvidenceScope", "memoryAccounting"],
+      "properties": {
+        "label": { "const": "initial qualification target" },
+        "hostProfileId": { "type": "string", "minLength": 1 },
+        "hostProfilePath": { "const": "config/vulkan-host-profiles.json" },
+        "hostRecordPath": { "$ref": "#/$defs/path" },
+        "qualificationState": { "const": "unqualified-until-applicable-acceptance-passes" },
+        "existingEvidenceScope": { "const": "recorded-coverage-only" },
+        "memoryAccounting": { "const": ["system-ram", "gpu-allocation-limits", "measured-residency"] }
       }
     },
     "milestone": {

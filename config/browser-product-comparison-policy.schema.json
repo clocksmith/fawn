@@ -18,12 +18,13 @@
     "stopConditions",
     "evidenceReferences",
     "claimBoundary",
-    "workspaceComparison"
+    "workspaceComparison",
+    "alternativeCompleteSystem"
   ],
   "properties": {
     "$schema": { "type": "string", "const": "browser-product-comparison-policy.schema.json" },
-    "schemaVersion": { "type": "integer", "const": 4 },
-    "policyId": { "type": "string", "const": "fawn-external-product-comparison-v4" },
+    "schemaVersion": { "type": "integer", "const": 5 },
+    "policyId": { "type": "string", "const": "fawn-external-product-comparison-v5" },
     "authority": {
       "type": "object",
       "additionalProperties": false,
@@ -118,9 +119,114 @@
         }
       }
     },
+    "alternativeCompleteSystem": {
+      "description": "Ordinary Chromium plus a native inference engine as a complete-system alternative. It is separate from component comparisons and cannot attribute results to Doe's compiler or runtime.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "categoryId",
+        "strategyPath",
+        "treatment",
+        "control",
+        "separateFrom",
+        "initialTargetPath",
+        "matchedConditions",
+        "recordedDifferences",
+        "isolatesDoeCompiler",
+        "isolatesDoeRuntime",
+        "alternatives",
+        "claimBoundary"
+      ],
+      "properties": {
+        "categoryId": { "const": "alternative-complete-system" },
+        "strategyPath": { "const": "config/doe-product-strategy.json#comparisonLaw" },
+        "treatment": { "$ref": "#/$defs/text" },
+        "control": { "const": "ordinary-chromium-plus-native-inference-engine" },
+        "separateFrom": { "const": ["A", "B", "C", "D", "K0", "provider-attribution"] },
+        "initialTargetPath": { "const": "config/doe-product-strategy.json#platformSequence/0/initialQualificationTarget" },
+        "matchedConditions": {
+          "const": ["task-quality", "context", "output-requirements", "concurrency", "resource-budgets"]
+        },
+        "recordedDifferences": { "const": ["quantization", "model-format", "backend", "engine-build"] },
+        "isolatesDoeCompiler": { "const": false },
+        "isolatesDoeRuntime": { "const": false },
+        "alternatives": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "oneOf": [
+              { "$ref": "#/$defs/pinnedNativeEngine" },
+              { "$ref": "#/$defs/candidateNativeEngine" }
+            ]
+          }
+        },
+        "claimBoundary": { "$ref": "#/$defs/text" }
+      }
+    },
     "claimBoundary": { "$ref": "#/$defs/text" }
   },
   "$defs": {
+    "sha1": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "pinnedNativeEngine": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "alternativeId",
+        "engine",
+        "admissionState",
+        "browser",
+        "engineSource",
+        "model",
+        "treatmentModelPath",
+        "treatmentQuantization"
+      ],
+      "properties": {
+        "alternativeId": { "type": "string", "pattern": "^N[0-9]+$" },
+        "engine": { "$ref": "#/$defs/text" },
+        "admissionState": { "const": "pinned-not-run" },
+        "browser": { "$ref": "#/$defs/text" },
+        "engineSource": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["repository", "commit", "describe", "buildType", "backend", "buildOptions"],
+          "properties": {
+            "repository": { "type": "string", "format": "uri" },
+            "commit": { "$ref": "#/$defs/sha1" },
+            "describe": { "$ref": "#/$defs/text" },
+            "buildType": { "$ref": "#/$defs/text" },
+            "backend": { "$ref": "#/$defs/text" },
+            "buildOptions": { "$ref": "#/$defs/stringList" }
+          }
+        },
+        "model": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["repository", "revision", "file", "sha256", "bytes", "quantization"],
+          "properties": {
+            "repository": { "$ref": "#/$defs/text" },
+            "revision": { "$ref": "#/$defs/sha1" },
+            "file": { "$ref": "#/$defs/text" },
+            "sha256": { "$ref": "#/$defs/sha256" },
+            "bytes": { "type": "integer", "minimum": 1 },
+            "quantization": { "$ref": "#/$defs/text" }
+          }
+        },
+        "treatmentModelPath": { "type": "string", "pattern": "^(?!/).+$" },
+        "treatmentQuantization": { "$ref": "#/$defs/text" }
+      }
+    },
+    "candidateNativeEngine": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["alternativeId", "engine", "admissionState", "admissionRequirement"],
+      "properties": {
+        "alternativeId": { "type": "string", "pattern": "^N[0-9]+$" },
+        "engine": { "$ref": "#/$defs/text" },
+        "admissionState": { "const": "candidate-unassessed" },
+        "admissionRequirement": { "$ref": "#/$defs/text" }
+      }
+    },
     "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
     "text": { "type": "string", "minLength": 1 },
     "path": { "type": "string", "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$)).+$" },

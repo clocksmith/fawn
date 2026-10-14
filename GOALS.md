@@ -68,6 +68,13 @@ The independent compiler and runtime retain these outcomes:
 - Backend focus: **Vulkan now; Metal after explicit prioritization and handoff; D3D12 deferred.**
   Work proceeds in bounded batches. Existing regression checks do not authorize
   parallel optimization campaigns or silently expand that boundary.
+- Initial deployment: hardware-first local execution on one frozen workstation
+  (AMD Ryzen AI Max+ 395, Radeon 8060S, RADV), labelled the
+  [initial qualification target](config/doe-product-strategy.json) until the
+  applicable acceptance passes. It is an engineering target, not a qualified
+  configuration, a mandatory dependency, or a universal performance claim.
+  Fawn's goal stays durable browser workspaces; Doe enters only through explicit
+  integration with independent qualification.
 - Supported scope: qualify a bounded matrix of real workloads, runtimes,
   platforms, adapters, drivers, and backends. Each additional tuple earns support
   separately; iOS and Android require implemented paths and physical tests.
@@ -92,7 +99,10 @@ The independent compiler and runtime retain these outcomes:
 - Work selection: Fawn's shared workspace service above Chromium is the next
   build, independently of native runtime wins. Separately, DoeRuntime stays
   focused on one correct, reproducible Doppler Node generation advantage over
-  Dawn on Vulkan, then ONNX transfer. New compiler opportunities require explicit
+  Dawn on Vulkan, starting from a qualified Node baseline on the initial
+  qualification target, then ONNX transfer. Provider attribution (Doppler+Doe
+  versus Doppler+Dawn) and complete-system alternatives (ordinary Chromium plus
+  a native inference engine) are separate comparisons. New compiler opportunities require explicit
   selection. Chromium hooks and browser-runtime integration require measured
   benefits that justify their compatibility and maintenance costs. Closed browser
   optimizer experiments remain closed.

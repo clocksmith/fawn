@@ -225,6 +225,16 @@ are preserved.
 
 ## Current boundary
 
+The [initial qualification target](../../reports/benchmarks/amd-vulkan/20261014-initial-qualification-target/README.md)
+freezes this AMD Strix Halo workstation as an unqualified engineering target. Its
+qualified Node baseline (Doppler with the pinned Dawn control) is the next
+DoeRuntime step and is not established. Reserved-hardware calibration comes
+first. When the target was frozen, foreign GPU clients were active (desktop
+compositor, Chrome, a model-serving Node process, another Doppler check), so
+baseline timings would be ineligible until those clients are stopped for the
+run. The complete-system alternative (Chromium plus pinned llama.cpp, N0) has not
+run.
+
 The [strategy contract](../../config/doe-product-strategy.json) separates compiler
 and runtime adoption; its [migration](../product-strategy-contract.md) owns current
 work selection and prospective comparison classes. Vulkan remains the focus;
