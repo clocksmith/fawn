@@ -228,12 +228,27 @@ are preserved.
 The [initial qualification target](../../reports/benchmarks/amd-vulkan/20261014-initial-qualification-target/README.md)
 freezes this AMD Strix Halo workstation as an unqualified engineering target. Its
 qualified Node baseline (Doppler with the pinned Dawn control) is the next
-DoeRuntime step and is not established. Reserved-hardware calibration comes
-first. When the target was frozen, foreign GPU clients were active (desktop
-compositor, Chrome, a model-serving Node process, another Doppler check), so
-baseline timings would be ineligible until those clients are stopped for the
-run. The complete-system alternative (Chromium plus pinned llama.cpp, N0) has not
-run.
+DoeRuntime step and is not established. When the target was frozen, foreign GPU
+clients were active (desktop compositor, Chrome, a model-serving Node process,
+another Doppler check), so baseline timings would be ineligible.
+
+The baseline stays blocked until a coordinated reserved-GPU window; no
+contaminated run is forced. For that window:
+- owners finish their tests
+- the Reploid participant drains its admitted work before contribution stops
+- browser and desktop GPU activity is closed only with explicit approval
+- a console session alone does not establish exclusivity
+
+Within the window, in order:
+1. Qualify exact Doe and Dawn outputs, cancellation, reuse and cleanup.
+2. Establish identical-build stability.
+3. Run the balanced, uninstrumented generation comparison with its predeclared
+   cases.
+
+One quiet invocation is not a reproducible baseline. The frozen hardware
+identity and existing acceptance thresholds apply unchanged, and current evidence
+establishes no application advantage. The complete-system alternative (Chromium
+plus pinned llama.cpp, N0) has not run.
 
 The [strategy contract](../../config/doe-product-strategy.json) separates compiler
 and runtime adoption; its [migration](../product-strategy-contract.md) owns current

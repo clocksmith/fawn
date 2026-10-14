@@ -7,7 +7,7 @@
   "required": ["$schema", "schemaVersion", "strategyVersion", "artifactKind", "authority", "positioning", "independenceBoundary", "surfaces", "commercialOffer", "comparisonLaw", "externalProductComparison", "evidenceSpine", "customerEvidencePolicy", "platformSequence", "milestones", "claimBoundary", "reusableProgram", "executionOwnership", "provingSet", "developmentEffectiveness", "fawnWorkspace"],
   "properties": {
     "$schema": { "type": "string", "const": "doe-product-strategy.schema.json" },
-    "schemaVersion": { "type": "integer", "const": 10 },
+    "schemaVersion": { "type": "integer", "const": 11 },
     "strategyVersion": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
     "artifactKind": { "type": "string", "const": "doe-product-strategy" },
     "authority": {
@@ -462,6 +462,7 @@
         "charterPath",
         "implementationPath",
         "developmentTestsPath",
+        "qualificationEvidence",
         "implementationStatus",
         "currentAssessment",
         "requiresNativeRuntimeWins",
@@ -485,9 +486,26 @@
         "developmentTestsPath": {
           "const": "browser/workspace/test"
         },
+        "qualificationEvidence": {
+          "description": "Admitted evidence the step assessments are bound to. bench/tests/test_fawn_workspace_strategy.py requires every requirement of an established step to be established in the admitted verdict for the named commit.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["caseSetPath", "validatorPath", "admittedVerdictPath", "comparisonPath", "sourceCommit", "scope"],
+          "properties": {
+            "caseSetPath": { "const": "config/fawn-workspace-qualification.json" },
+            "validatorPath": { "const": "browser/workspace/qualification/validate.js" },
+            "admittedVerdictPath": { "type": "string", "pattern": "^reports/fawn-workspace/[0-9]{8}-[a-z0-9-]+/qualification/verdict\\.json$" },
+            "comparisonPath": { "type": "string", "pattern": "^reports/fawn-workspace/[0-9]{8}-[a-z0-9-]+/comparison/comparison\\.json$" },
+            "sourceCommit": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+            "scope": {
+              "description": "Admission covers the frozen case set on the recorded browser binary and host; it is not release qualification.",
+              "const": "frozen-case-set-on-recorded-browser-and-host"
+            }
+          }
+        },
         "implementationStatus": {
-          "description": "Shared machinery exists without qualification; completion and release admission stay blocked.",
-          "const": "partially-implemented-unqualified"
+          "description": "Behavioral gates pass on admitted evidence for steps 1-4; product value and deeper capabilities are not established, and release admission stays blocked.",
+          "const": "partially-implemented-behavior-qualified"
         },
         "currentAssessment": {
           "const": "unestablished"
@@ -529,10 +547,10 @@
                   "const": []
                 },
                 "implementationStatus": {
-                  "const": "implemented-unqualified"
+                  "const": "implemented-behavior-qualified"
                 },
                 "currentAssessment": {
-                  "const": "unestablished"
+                  "const": "established-on-frozen-case-set"
                 },
                 "requiredEvidence": {
                   "const": [
@@ -571,10 +589,10 @@
                   ]
                 },
                 "implementationStatus": {
-                  "const": "implemented-unqualified"
+                  "const": "implemented-behavior-qualified"
                 },
                 "currentAssessment": {
-                  "const": "unestablished"
+                  "const": "established-on-frozen-case-set"
                 },
                 "requiredEvidence": {
                   "const": [
@@ -611,10 +629,10 @@
                   ]
                 },
                 "implementationStatus": {
-                  "const": "implemented-unqualified"
+                  "const": "implemented-behavior-qualified"
                 },
                 "currentAssessment": {
-                  "const": "unestablished"
+                  "const": "established-on-frozen-case-set"
                 },
                 "requiredEvidence": {
                   "const": [
@@ -654,10 +672,10 @@
                   ]
                 },
                 "implementationStatus": {
-                  "const": "implemented-unqualified"
+                  "const": "implemented-behavior-qualified"
                 },
                 "currentAssessment": {
-                  "const": "unestablished"
+                  "const": "established-on-frozen-case-set"
                 },
                 "requiredEvidence": {
                   "const": [
@@ -696,7 +714,7 @@
                   ]
                 },
                 "implementationStatus": {
-                  "const": "not-implemented"
+                  "const": "implemented-compared"
                 },
                 "currentAssessment": {
                   "const": "unestablished"

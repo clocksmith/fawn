@@ -1,0 +1,223 @@
+{
+  "requests": [
+    {
+      "seq": 1,
+      "at": "2026-10-14T23:11:23.831Z",
+      "server": "main",
+      "method": "GET",
+      "path": "/form",
+      "search": "",
+      "kind": "document",
+      "status": 200
+    },
+    {
+      "seq": 2,
+      "at": "2026-10-14T23:11:23.939Z",
+      "server": "main",
+      "method": "POST",
+      "path": "/form/submit",
+      "search": "",
+      "kind": "submission",
+      "status": 303,
+      "fields": {
+        "name": "Ada crash-during-submission-treatment-warmup",
+        "email": "ada@example.test",
+        "reference": ""
+      },
+      "receiptId": 1,
+      "duplicateOf": null
+    },
+    {
+      "seq": 3,
+      "at": "2026-10-14T23:11:23.940Z",
+      "server": "main",
+      "method": "GET",
+      "path": "/form/confirmation",
+      "search": "?id=1",
+      "kind": "document",
+      "status": 200
+    },
+    {
+      "seq": 4,
+      "at": "2026-10-14T23:11:24.454Z",
+      "server": "main",
+      "method": "GET",
+      "path": "/control/live",
+      "search": "?state=ready",
+      "kind": "control",
+      "status": 200
+    },
+    {
+      "seq": 5,
+      "at": "2026-10-14T23:11:24.459Z",
+      "server": "main",
+      "method": "GET",
+      "path": "/form",
+      "search": "",
+      "kind": "document",
+      "status": 200
+    },
+    {
+      "seq": 6,
+      "at": "2026-10-14T23:11:24.539Z",
+      "server": "main",
+      "method": "POST",
+      "path": "/form/submit",
+      "search": "",
+      "kind": "submission",
+      "status": 303,
+      "fields": {
+        "name": "Ada crash-during-submission-treatment-1",
+        "email": "ada@example.test",
+        "reference": ""
+      },
+      "receiptId": 2,
+      "duplicateOf": null,
+      "held": true
+    },
+    {
+      "seq": 7,
+      "at": "2026-10-14T23:11:24.996Z",
+      "server": "main",
+      "method": "GET",
+      "path": "/submissions",
+      "search": "",
+      "kind": "document",
+      "status": 200
+    },
+    {
+      "seq": 8,
+      "at": "2026-10-14T23:11:26.102Z",
+      "server": "main",
+      "method": "GET",
+      "path": "/control/live",
+      "search": "?state=ready",
+      "kind": "control",
+      "status": 200
+    },
+    {
+      "seq": 9,
+      "at": "2026-10-14T23:11:26.113Z",
+      "server": "main",
+      "method": "GET",
+      "path": "/form",
+      "search": "",
+      "kind": "document",
+      "status": 200
+    },
+    {
+      "seq": 10,
+      "at": "2026-10-14T23:11:26.207Z",
+      "server": "main",
+      "method": "POST",
+      "path": "/form/submit",
+      "search": "",
+      "kind": "submission",
+      "status": 303,
+      "fields": {
+        "name": "Ada crash-during-submission-treatment-2",
+        "email": "ada@example.test",
+        "reference": ""
+      },
+      "receiptId": 3,
+      "duplicateOf": null,
+      "held": true
+    },
+    {
+      "seq": 11,
+      "at": "2026-10-14T23:11:26.661Z",
+      "server": "main",
+      "method": "GET",
+      "path": "/submissions",
+      "search": "",
+      "kind": "document",
+      "status": 200
+    },
+    {
+      "seq": 12,
+      "at": "2026-10-14T23:11:26.683Z",
+      "server": "main",
+      "method": "GET",
+      "path": "/control/live",
+      "search": "?state=ready",
+      "kind": "control",
+      "status": 200
+    },
+    {
+      "seq": 13,
+      "at": "2026-10-14T23:11:26.688Z",
+      "server": "main",
+      "method": "GET",
+      "path": "/form",
+      "search": "",
+      "kind": "document",
+      "status": 200
+    },
+    {
+      "seq": 14,
+      "at": "2026-10-14T23:11:26.773Z",
+      "server": "main",
+      "method": "POST",
+      "path": "/form/submit",
+      "search": "",
+      "kind": "submission",
+      "status": 303,
+      "fields": {
+        "name": "Ada crash-during-submission-treatment-3",
+        "email": "ada@example.test",
+        "reference": ""
+      },
+      "receiptId": 4,
+      "duplicateOf": null,
+      "held": true
+    },
+    {
+      "seq": 15,
+      "at": "2026-10-14T23:11:27.243Z",
+      "server": "main",
+      "method": "GET",
+      "path": "/submissions",
+      "search": "",
+      "kind": "document",
+      "status": 200
+    }
+  ],
+  "receipts": [
+    {
+      "id": 1,
+      "fields": {
+        "name": "Ada crash-during-submission-treatment-warmup",
+        "email": "ada@example.test",
+        "reference": ""
+      },
+      "receivedAt": "2026-10-14T23:11:23.939Z"
+    },
+    {
+      "id": 2,
+      "fields": {
+        "name": "Ada crash-during-submission-treatment-1",
+        "email": "ada@example.test",
+        "reference": ""
+      },
+      "receivedAt": "2026-10-14T23:11:24.539Z"
+    },
+    {
+      "id": 3,
+      "fields": {
+        "name": "Ada crash-during-submission-treatment-2",
+        "email": "ada@example.test",
+        "reference": ""
+      },
+      "receivedAt": "2026-10-14T23:11:26.207Z"
+    },
+    {
+      "id": 4,
+      "fields": {
+        "name": "Ada crash-during-submission-treatment-3",
+        "email": "ada@example.test",
+        "reference": ""
+      },
+      "receivedAt": "2026-10-14T23:11:26.773Z"
+    }
+  ]
+}

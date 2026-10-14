@@ -166,7 +166,7 @@
       "kind": "browser_lane",
       "stability": "experimental",
       "shipped": false,
-      "summary": "Repo-only Fawn shared observation, action and recovery service above stock Chromium, with Playwright and raw-CDP adapters. Implemented and unqualified; no public API.",
+      "summary": "Repo-only Fawn shared observation, action and recovery service above stock Chromium, with Playwright and raw-CDP adapters, qualification harness and baseline comparison. Behavior qualified on its frozen case set; no public API.",
       "rootPaths": [
         "browser/workspace"
       ],

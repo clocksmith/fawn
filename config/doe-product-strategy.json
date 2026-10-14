@@ -1,7 +1,7 @@
 {
   "$schema": "doe-product-strategy.schema.json",
-  "schemaVersion": 10,
-  "strategyVersion": "6.3.0",
+  "schemaVersion": 11,
+  "strategyVersion": "6.4.0",
   "artifactKind": "doe-product-strategy",
   "authority": {
     "goals": "GOALS.md",
@@ -524,7 +524,15 @@
     "charterPath": "browser/workspace/CATSCAN.md",
     "implementationPath": "browser/workspace/src",
     "developmentTestsPath": "browser/workspace/test",
-    "implementationStatus": "partially-implemented-unqualified",
+    "qualificationEvidence": {
+      "caseSetPath": "config/fawn-workspace-qualification.json",
+      "validatorPath": "browser/workspace/qualification/validate.js",
+      "admittedVerdictPath": "reports/fawn-workspace/20261014-behavioral-qualification/qualification/verdict.json",
+      "comparisonPath": "reports/fawn-workspace/20261014-behavioral-qualification/comparison/comparison.json",
+      "sourceCommit": "973a8fb29a668bbec419c04180fbfa4a136770b6",
+      "scope": "frozen-case-set-on-recorded-browser-and-host"
+    },
+    "implementationStatus": "partially-implemented-behavior-qualified",
     "currentAssessment": "unestablished",
     "requiresNativeRuntimeWins": false,
     "initialIntegration": "stock-chromium-cdp-playwright",
@@ -534,8 +542,8 @@
         "order": 1,
         "id": "shared-workspace-service",
         "dependsOn": [],
-        "implementationStatus": "implemented-unqualified",
-        "currentAssessment": "unestablished",
+        "implementationStatus": "implemented-behavior-qualified",
+        "currentAssessment": "established-on-frozen-case-set",
         "requiredEvidence": [
           "persistent-workspace-identity",
           "persistent-authorization",
@@ -552,8 +560,8 @@
         "dependsOn": [
           "shared-workspace-service"
         ],
-        "implementationStatus": "implemented-unqualified",
-        "currentAssessment": "unestablished",
+        "implementationStatus": "implemented-behavior-qualified",
+        "currentAssessment": "established-on-frozen-case-set",
         "requiredEvidence": [
           "versioned-observations-and-page-changes",
           "workspace-owner-intent-target-observation-preconditions",
@@ -568,8 +576,8 @@
         "dependsOn": [
           "observation-action-binding"
         ],
-        "implementationStatus": "implemented-unqualified",
-        "currentAssessment": "unestablished",
+        "implementationStatus": "implemented-behavior-qualified",
+        "currentAssessment": "established-on-frozen-case-set",
         "requiredEvidence": [
           "all-fawn-automated-mutations-through-dispatcher",
           "serialize-handoff-admission-dispatch",
@@ -587,8 +595,8 @@
         "dependsOn": [
           "durable-ownership"
         ],
-        "implementationStatus": "implemented-unqualified",
-        "currentAssessment": "unestablished",
+        "implementationStatus": "implemented-behavior-qualified",
+        "currentAssessment": "established-on-frozen-case-set",
         "requiredEvidence": [
           "persist-intent-before-dispatch",
           "completed-failed-unknown-outcomes",
@@ -605,7 +613,7 @@
         "dependsOn": [
           "uncertainty-recovery"
         ],
-        "implementationStatus": "not-implemented",
+        "implementationStatus": "implemented-compared",
         "currentAssessment": "unestablished",
         "requiredEvidence": [
           "shared-service-document-research-form-submission-artifact-export",
