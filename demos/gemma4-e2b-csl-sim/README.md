@@ -1,5 +1,7 @@
 # Gemma 4 E2B WebGPU / CSL simulator demo
 
+Status: the Doppler → Doe → Cerebras lane is not in Doe's current selection ([GOALS.md](../../GOALS.md#strategic-constraints)). It proceeds only under the accelerator admission rule linked from [the lane front door](../../docs/cerebras.md); this page describes the lane, not selected work.
+
 This is the interactive demo for the Doppler -> Doe -> CSL proof path.
 The claimable default is the L1 synthetic layer-block plus the
 BF16-derived real-weight smoke receipt. Deeper selector depths are

@@ -1,5 +1,7 @@
 # Cerebras evidence-bundle tools
 
+Status: the Doppler → Doe → Cerebras lane is not in Doe's current selection ([GOALS.md](../../GOALS.md#strategic-constraints)). It proceeds only under the accelerator admission rule linked from [the lane front door](../../docs/cerebras.md); this page describes the lane, not selected work.
+
 Narrow index of the tools that together prepare, verify, and
 summarize a Cerebras hardware-validation evidence bundle. Not
 exhaustive of `bench/tools/` — this file only covers the bundle

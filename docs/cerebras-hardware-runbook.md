@@ -1,5 +1,7 @@
 # Cerebras hardware runbook
 
+Status: the Doppler → Doe → Cerebras lane is not in Doe's current selection ([GOALS.md](../GOALS.md#strategic-constraints)). It proceeds only under the accelerator admission rule linked from [the lane front door](cerebras.md); this page describes the lane, not selected work.
+
 Operator-facing entry point for testing Doe's Gemma 4 31B and Qwen 3.6 27B
 lanes on Cerebras WSE/WSC. Deeper architecture, claim taxonomy, and acceptance
 bars live under the cross-references at the bottom.

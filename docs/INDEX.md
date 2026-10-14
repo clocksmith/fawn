@@ -95,6 +95,8 @@ of repeated prose does not delete them.
 
 ## Cerebras and CSL
 
+Not in the current selection; these pages describe the lane. See [`cerebras.md`](cerebras.md) for the admission rule.
+
 - [`cerebras.md`](cerebras.md): lane front door
 - [`csl-architecture.md`](csl-architecture.md)
 - [`csl-quickstart.md`](csl-quickstart.md)

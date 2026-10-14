@@ -1,5 +1,7 @@
 # Doe CSL-plan quickstart
 
+Status: the Doppler → Doe → Cerebras lane is not in Doe's current selection ([GOALS.md](../GOALS.md#strategic-constraints)). It proceeds only under the accelerator admission rule linked from [the lane front door](cerebras.md); this page describes the lane, not selected work.
+
 ## Run the evidence sweep
 
 ```

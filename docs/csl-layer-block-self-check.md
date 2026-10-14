@@ -1,5 +1,7 @@
 # CSL layer-block self-check
 
+Status: the Doppler → Doe → Cerebras lane is not in Doe's current selection ([GOALS.md](../GOALS.md#strategic-constraints)). It proceeds only under the accelerator admission rule linked from [the lane front door](cerebras.md); this page describes the lane, not selected work.
+
 Reference for the in-loop pipeline that takes the generated E2B layer-block
 kernel from CSL source through to a model receipt with a parity-contract
 verdict. The parity-contract gate consumes the artifacts described here; this
