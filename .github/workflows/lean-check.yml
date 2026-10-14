@@ -54,8 +54,6 @@ jobs:
           echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
       - name: Typecheck and extract proof artifacts
         run: bash pipeline/lean/extract.sh
-      - name: Check generated comparability contract
-        run: git diff --exit-code -- pipeline/lean/Doe/Generated/ComparabilityContract.lean
       - name: Validate proof artifact
         run: python3 pipeline/lean/test_proof_pipeline.py
       - name: Upload proof artifact

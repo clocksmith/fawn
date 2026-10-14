@@ -174,7 +174,6 @@ retains source-miner outputs. Cache loss is safe: the configured
 python3 -m unittest pipeline.upstream_intelligence.test_upstream_intelligence
 python3 -m unittest pipeline.agent.test_mine_quirks
 python3 -m unittest bench.tests.test_config_schemas
-python3 bench/tests/test_ci_workflow_surface.py
 ```
 
 Tests cover Gerrit pagination and truncation, nested current-revision metadata,

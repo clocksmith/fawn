@@ -56,6 +56,11 @@ IMMUTABLE_RAW_EVIDENCE_FILES = frozenset(
             "browser/chromium/artifacts/20260724T204526Z/"
             "dawn-vs-doe.browser.playwright-smoke.diagnostic.json"
         ),
+        "reports/maintenance/20261011-intel-vulkan-projection/cohort.json",
+        "reports/maintenance/20261011-intel-vulkan-projection/dawn.json",
+        "reports/maintenance/20261011-intel-vulkan-projection/doe.json",
+        "reports/maintenance/20261011-intel-vulkan-projection/manifest.json",
+        "reports/maintenance/20261011-intel-vulkan-projection/matrix.json",
     }
 )
 PUBLIC_CORPUS_PREFIXES = ("pipeline/dawn-research/data/",)
