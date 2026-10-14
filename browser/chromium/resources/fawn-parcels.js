@@ -1,12 +1,14 @@
 // Persistent moving material. Formation edits parcel positions, never the camera or a quad.
 const PARCEL_POLICY = Object.freeze({
-  version: 5,
+  version: 6,
   strideFloats: 12,
   workgroup: 128,
   targetGrid: 384,
   speedLimit: 1.75,
   fieldSpeed: 12,
   velocityResponse: 12,
+  particleVelocityResponse: 2.5,
+  particleDriftGain: 2,
   colorResponse: 3,
   settleRate: 6,
   insidePull: 0.15,
@@ -76,6 +78,8 @@ fn main(@builtin(global_invocation_id) gid:vec3<u32>) {
  let hash=(i*1664525u+1013904223u)^(i>>9u);
  let v0=velocity_at(p.pos);let midpoint=p.pos+v0*(dt*0.5);
  var targetVelocity=velocity_at(midpoint);
+ targetVelocity+=particle_flow(midpoint)*(${PARCEL_POLICY.particleDriftGain}.0-1.0)*u.theme.z;
+ targetVelocity/=max(1.0,length(targetVelocity)/${PARCEL_POLICY.speedLimit});
  if(u.burst.z>0.0){
   let away=p.pos-u.burst.xy;let distance=length(away);
   // Coincident gathered parcels need distinct directions when the magnet releases.
@@ -89,9 +93,11 @@ fn main(@builtin(global_invocation_id) gid:vec3<u32>) {
  let inward=before.xy/max(length(before.xy),0.000001);
  let nearEdge=1.0-smoothstep(0.0,${PARCEL_POLICY.boundaryBand},before.w);
  targetVelocity-=inward*min(0.0,dot(targetVelocity,inward))*nearEdge*shape;
- let response=1.0-exp(-${PARCEL_POLICY.velocityResponse}.0*dt);
+ let velocityResponse=mix(${PARCEL_POLICY.velocityResponse}.0,${PARCEL_POLICY.particleVelocityResponse},u.theme.z);
+ let response=1.0-exp(-velocityResponse*dt);
  p.vel=mix(p.vel,targetVelocity,response);
- p.pos+=targetVelocity*dt;
+ // Particle trajectories use their retained velocity, so drift and nudges carry momentum.
+ p.pos+=mix(targetVelocity,p.vel,u.theme.z)*dt;
  p.pos/=max(1.0,length(p.pos)/${PARCEL_POLICY.worldEdge});
  let goal=goals[hash%arrayLength(&goals)].xy;
  // Different parcel arrival rates break the rectangular envelope of a uniform zoom.
