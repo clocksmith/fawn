@@ -1,7 +1,7 @@
 // Surface and point appearances reconstruct the same independently moving parcels.
 import { PARCEL_STRUCT } from './fawn-parcels.js';
 const PARCEL_RENDER_POLICY = Object.freeze({
-  version: 10,
+  version: 11,
   accumulationCapacity: 4096,
   materialBound: 8,
   fluidRadiusCells: 2.2,
@@ -23,6 +23,8 @@ const PARCEL_RENDER_POLICY = Object.freeze({
   filmBackground: Object.freeze([0.045, 0.062, 0.085]),
   liveFlowContrast: 0.28,
   liveFlowWall: Object.freeze([1.5, 5]),
+  filmDensity: Object.freeze([1.2, 2]),
+  filmHeight: Object.freeze([0.02, 0.08]),
 });
 const HEADER = `
 struct Params { view:vec4<f32>, screen:vec4<f32>, theme:vec4<f32>, material:vec4<f32> }
@@ -174,7 +176,11 @@ fn spectral(t:f32)->vec3<f32> {return 0.5+0.5*cos(vec3<f32>(0,2,4)+t*6.28318);}
  let saturation=1.0-(1.0-${PARCEL_RENDER_POLICY.flowSaturation})*u.theme.x*(1.0-liveWeight);
  let appearance=mix(vec3<f32>(dot(tone,vec3<f32>(0.2126,0.7152,0.0722))),tone,saturation);
  // Visibility belongs to moving material; no full-sheet image fills or fades underneath it.
- let coverage=carried;
+ // Unformed magnetic film is continuous material the field holds: stray parcels and weak-field
+ // areas stay clear instead of showing single fluid parcels.
+ let film=smoothstep(${PARCEL_RENDER_POLICY.filmDensity.join(',')},density)
+   *smoothstep(${PARCEL_RENDER_POLICY.filmHeight.join(',')},c.x);
+ let coverage=mix(carried,film,magnetic*(1.0-pointness)*(1.0-u.theme.w));
  let background=vec3<f32>(0.040,0.055,0.070)*u.theme.x+vec3<f32>(${PARCEL_RENDER_POLICY.filmBackground.join(',')})*u.theme.y
    +vec3<f32>(0.010,0.016,0.013)*u.theme.z
    +vec3<f32>(1.0,0.96,0.93)*shimmer*${PARCEL_RENDER_POLICY.backgroundGlintStrength}*u.theme.x;

@@ -1,6 +1,6 @@
 // Persistent moving material. Formation steers momentum, never projects positions onto a mask.
 const PARCEL_POLICY = Object.freeze({
-  version: 10,
+  version: 11,
   strideFloats: 16,
   workgroup: 128,
   targetGrid: 384,
@@ -10,13 +10,15 @@ const PARCEL_POLICY = Object.freeze({
   particleVelocityResponse: 2,
   particleDriftGain: 2,
   colorResponse: 3,
-  formationSpring: 64,
+  formationSpring: 12,
+  formationSwirl: 0.6,
   insidePull: 0.04,
   formationCirculation: 0.15,
   formationPigmentRetention: 0.85,
   formationDrag: 0.8,
-  formationFieldResponse: 4,
+  formationFieldResponse: 8,
   boundarySpring: 128,
+  boundaryReach: 0.08,
   releaseSpring: 9,
   releaseResponse: 2,
   releaseDistance: 0.12,
@@ -131,11 +133,16 @@ fn main(@builtin(global_invocation_id) gid:vec3<u32>) {
  // Particles retain their free-flight momentum longer before the gather force builds.
  let gather=shape*mix(1.0,shape,u.theme.z)*(1.0-held);
  let spring=${PARCEL_POLICY.formationSpring}.0*arrival*gather*pull;
+ // Material spirals in while the live field keeps carrying it, rather than taking straight lines.
+ let toGoal=goal-p.pos;
+ // The outline only catches material that has reached it; distant material is not squeezed inward.
+ let edge=max(0.0,-before.w)*(1.0-smoothstep(0.0,${PARCEL_POLICY.boundaryReach},-before.w));
  let spread=${PARCEL_POLICY.releaseSpring}.0*releaseWeight*(1.0-held);
  let fieldResponse=mix(velocityResponse,${PARCEL_POLICY.formationFieldResponse}.0,gather*(1.0-inside));
  let drag=fieldResponse+${PARCEL_POLICY.formationDrag}*2.0*sqrt(spring+spread);
- let force=targetVelocity*fieldResponse+(goal-p.pos)*spring+(p.home-p.pos)*spread
-   +inward*max(0.0,-before.w)*${PARCEL_POLICY.boundarySpring}.0*gather;
+ let force=targetVelocity*fieldResponse
+   +(toGoal+vec2<f32>(-toGoal.y,toGoal.x)*${PARCEL_POLICY.formationSwirl}*(1.0-inside))*spring
+   +(p.home-p.pos)*spread+inward*edge*${PARCEL_POLICY.boundarySpring}.0*gather;
  // Integrate a damped force through the retained velocity; no shape-dependent position edits.
  p.vel=mix(p.vel,force/max(drag,0.000001),1.0-exp(-drag*dt));
  p.vel/=max(1.0,length(p.vel)/${PARCEL_POLICY.speedLimit});
