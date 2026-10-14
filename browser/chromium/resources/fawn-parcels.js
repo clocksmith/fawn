@@ -1,6 +1,6 @@
 // Persistent moving material. Formation steers momentum, never projects positions onto a mask.
 const PARCEL_POLICY = Object.freeze({
-  version: 8,
+  version: 9,
   strideFloats: 16,
   workgroup: 128,
   targetGrid: 384,
@@ -13,6 +13,7 @@ const PARCEL_POLICY = Object.freeze({
   formationSpring: 64,
   insidePull: 0.04,
   formationCirculation: 0.15,
+  formationPigmentRetention: 0.85,
   formationDrag: 0.8,
   formationFieldResponse: 4,
   boundarySpring: 128,
@@ -20,6 +21,7 @@ const PARCEL_POLICY = Object.freeze({
   releaseResponse: 2,
   releaseDistance: 0.12,
   boundaryBand: 0.025,
+  particleBoundaryBand: 0.08,
   worldEdge: 1.65,
   initialRadius: 1.65,
 });
@@ -68,11 +70,17 @@ fn particle_flow(pos:vec2<f32>)->vec2<f32> {
    cos(angle.y)*(1.5707963*sin(angle.x)*modulation-cos(angle.x)*0.7*cos(wave.x)*sin(wave.y)))*0.045*${PARCEL_POLICY.fieldSpeed}.0;
 }
 fn velocity_at(pos:vec2<f32>)->vec2<f32> {
- let delta=2.0/u.grid.x;
- let gradient=vec2<f32>(wave_at(pos+vec2<f32>(delta,0)).x-wave_at(pos-vec2<f32>(delta,0)).x,
-   wave_at(pos+vec2<f32>(0,delta)).x-wave_at(pos-vec2<f32>(0,delta)).x)*u.grid.x*0.025;
- let filmVelocity=vec2<f32>(-gradient.y,gradient.x);
- var v=flow_at(pos).xy*2.0*u.theme.x+filmVelocity*u.theme.y+particle_flow(pos)*u.theme.z;
+ var v=vec2<f32>(0);
+ if(u.theme.x>0.0){v+=flow_at(pos).xy*2.0*u.theme.x;}
+ if(u.theme.y>0.0){
+  let delta=2.0/u.grid.x;
+  let gradient=vec2<f32>(wave_at(pos+vec2<f32>(delta,0)).x-wave_at(pos-vec2<f32>(delta,0)).x,
+    wave_at(pos+vec2<f32>(0,delta)).x-wave_at(pos-vec2<f32>(0,delta)).x)*u.grid.x*0.025;
+  v+=vec2<f32>(-gradient.y,gradient.x)*u.theme.y;
+ }
+ let drift=${PARCEL_POLICY.particleDriftGain}.0*u.theme.z
+   +${PARCEL_POLICY.formationCirculation}*u.theme.w*u.theme.x;
+ if(drift>0.0){v+=particle_flow(pos)*drift;}
  let pointerDelta=u.pointer.xy-pos;
  let force=u.pointer.z/max(dot(pointerDelta,pointerDelta),0.018);
  v+=pointerDelta*force*0.012*(u.theme.y+u.theme.z);
@@ -88,8 +96,6 @@ fn main(@builtin(global_invocation_id) gid:vec3<u32>) {
  let hash=(i*1664525u+1013904223u)^(i>>9u);
  let v0=velocity_at(p.pos);let midpoint=p.pos+v0*(dt*0.5);
  var targetVelocity=velocity_at(midpoint);
- targetVelocity+=particle_flow(midpoint)*(${PARCEL_POLICY.particleDriftGain}.0-1.0)*u.theme.z;
- targetVelocity+=particle_flow(midpoint)*${PARCEL_POLICY.formationCirculation}*shape*u.theme.x;
  targetVelocity/=max(1.0,length(targetVelocity)/${PARCEL_POLICY.speedLimit});
  if(u.burst.z>0.0){
   let away=p.pos-u.burst.xy;let distance=length(away);
@@ -100,12 +106,14 @@ fn main(@builtin(global_invocation_id) gid:vec3<u32>) {
   targetVelocity/=max(1.0,length(targetVelocity)/${PARCEL_POLICY.speedLimit});
  }
  // The outline is a soft restoring force: material may cross it and flow back.
- let before=mark_at(p.pos);
+ var before=vec4<f32>(0,0,0,1);
+ if(shape>0.0){before=mark_at(p.pos);}
  let inward=before.xy/max(length(before.xy),0.000001);
  let velocityResponse=mix(${PARCEL_POLICY.velocityResponse}.0,${PARCEL_POLICY.particleVelocityResponse},u.theme.z);
  let goal=goals[hash%arrayLength(&goals)].xy;
  let arrival=0.35+1.65*f32((hash>>16u)&65535u)/65535.0;
- let inside=smoothstep(-${PARCEL_POLICY.boundaryBand},0.0,before.w);
+ let boundaryBand=mix(${PARCEL_POLICY.boundaryBand},${PARCEL_POLICY.particleBoundaryBand},u.theme.z);
+ let inside=smoothstep(-boundaryBand,0.0,before.w);
  let pull=mix(1.0,${PARCEL_POLICY.insidePull},inside);
  // Remember release until the material has spread; a zero shape must not leave it clumped.
  let previous=p.formation.x;
@@ -114,23 +122,31 @@ fn main(@builtin(global_invocation_id) gid:vec3<u32>) {
  let arrived=1.0-smoothstep(0.0,${PARCEL_POLICY.releaseDistance},homeDistance);
  release*=exp(-${PARCEL_POLICY.releaseResponse}.0*dt*(arrived+shape));
  let releaseWeight=release*(1.0-shape);
- let spring=${PARCEL_POLICY.formationSpring}.0*arrival*shape*pull;
+ // Particles retain their free-flight momentum longer before the gather force builds.
+ let gather=shape*mix(1.0,shape,u.theme.z);
+ let spring=${PARCEL_POLICY.formationSpring}.0*arrival*gather*pull;
  let spread=${PARCEL_POLICY.releaseSpring}.0*releaseWeight;
- let fieldResponse=mix(velocityResponse,${PARCEL_POLICY.formationFieldResponse}.0,shape*(1.0-inside));
+ let fieldResponse=mix(velocityResponse,${PARCEL_POLICY.formationFieldResponse}.0,gather*(1.0-inside));
  let drag=fieldResponse+${PARCEL_POLICY.formationDrag}*2.0*sqrt(spring+spread);
  let force=targetVelocity*fieldResponse+(goal-p.pos)*spring+(p.home-p.pos)*spread
-   +inward*max(0.0,-before.w)*${PARCEL_POLICY.boundarySpring}.0*shape;
+   +inward*max(0.0,-before.w)*${PARCEL_POLICY.boundarySpring}.0*gather;
  // Integrate a damped force through the retained velocity; no shape-dependent position edits.
  p.vel=mix(p.vel,force/max(drag,0.000001),1.0-exp(-drag*dt));
  p.vel/=max(1.0,length(p.vel)/${PARCEL_POLICY.speedLimit});
  p.pos+=p.vel*dt;
  p.formation=vec2<f32>(shape,release);
  let index=cell(vec2<i32>((p.pos*0.5+0.5)*u.grid.x));
- let dye=clamp(flowDye[index].rgb,vec3<f32>(0),vec3<f32>(8));
- let flow=flow_at(p.pos);let film=wave_at(p.pos);let curl=flowCurl[index].y;
+ var dye=vec3<f32>(0);var flow=vec4<f32>(0);var film=vec4<f32>(0);var curl=0.0;
+ if(u.theme.x>0.0){
+  dye=clamp(flowDye[index].rgb,vec3<f32>(0),vec3<f32>(8));
+  flow=flow_at(p.pos);curl=flowCurl[index].y;
+ }
+ if(u.theme.y>0.0){film=wave_at(p.pos);}
  let reflection=log(1.0+max(film.w,0.0));
  let waveColor=spectral(film.x*0.34+reflection*0.14);
- let wantedColor=dye*u.theme.x+waveColor*u.theme.y+p.color.rgb*u.theme.z;
+ // Gathered fluid carries its colors instead of repainting every parcel from one small region.
+ let carriedDye=mix(dye,p.color.rgb,shape*${PARCEL_POLICY.formationPigmentRetention});
+ let wantedColor=carriedDye*u.theme.x+waveColor*u.theme.y+p.color.rgb*u.theme.z;
  let wantedMaterial=vec4<f32>((dot(dye,vec3<f32>(0.333))+length(flow.xy)*0.18)*u.theme.x+film.x*u.theme.y,
    reflection,sign(curl)*log(1.0+abs(curl)),length(p.vel));
  let colorResponse=1.0-exp(-${PARCEL_POLICY.colorResponse}.0*dt);

@@ -4,7 +4,7 @@ import { FLOW_TO_WAVE, PARTICLE_DEPOSIT, RESOLVE_DEPOSIT } from './fawn-cycle-tr
 import { PARCEL_POLICY, PARCEL_UPDATE, createParcelData } from './fawn-parcels.js';
 import { createParcelRenderer } from './fawn-parcel-renderer.js';
 const GPU_POLICY = Object.freeze({
-  version: 11,
+  version: 12,
   maxCount: 262144,
   pressureIterations: flow.PRESSURE_ITERATIONS,
   flowGroup: flow.WORKGROUP_SIZE,
@@ -12,10 +12,10 @@ const GPU_POLICY = Object.freeze({
   parcelGroup: PARCEL_POLICY.workgroup,
   parcelBytes: PARCEL_POLICY.strideFloats * 4,
   hoverStrengthScale: 1 / 3,
-  magneticPressScale: 0.13,
+  magneticPressScale: 0.18,
   particlePressScale: 0.13,
   flowPressForce: 0.7,
-  magneticSpinRate: 1.75,
+  magneticSpinRate: 2.25,
   magneticArrivalPower: 2,
 });
 function createCycleGpu(device, canvas, format, count) {

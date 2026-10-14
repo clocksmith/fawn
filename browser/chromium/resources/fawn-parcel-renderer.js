@@ -1,10 +1,11 @@
 // Surface and point appearances reconstruct the same independently moving parcels.
 import { PARCEL_STRUCT } from './fawn-parcels.js';
 const PARCEL_RENDER_POLICY = Object.freeze({
-  version: 9,
+  version: 10,
   accumulationCapacity: 4096,
   materialBound: 8,
   fluidRadiusCells: 2.2,
+  formedFluidRadiusScale: 0.65,
   particleRadiusPx: 1.6,
   particleStretch: 0.75,
   maximumParticleStretch: 1.6,
@@ -12,13 +13,15 @@ const PARCEL_RENDER_POLICY = Object.freeze({
   coverageGain: 2.5,
   exposure: 1.65,
   flowGlintPixels: 1.25,
-  flowGlintStrength: 0.08,
+  flowGlintStrength: 0.10,
   flowGlintSharpness: 12,
-  flowSaturation: 0.7,
+  flowSaturation: 0.82,
+  flowBodyLight: 1.08,
   backgroundGlintStrength: 0.032,
   filmPigmentMix: 0.8,
-  filmAmbientLight: 0.18,
-  liveFlowContrast: 0.18,
+  filmAmbientLight: 0.48,
+  filmBackground: Object.freeze([0.045, 0.062, 0.085]),
+  liveFlowContrast: 0.28,
   liveFlowWall: Object.freeze([1.5, 5]),
 });
 const HEADER = `
@@ -46,7 +49,7 @@ struct Moments { @location(0) color:vec4<f32>, @location(1) geometry:vec4<f32> }
 @fragment fn fs(in:Out)->Moments {
  let r2=dot(in.local,in.local);
  // The quad's radius and elongation morph; there is only one material footprint.
- let kernel=pow(max(0.0,1.0-r2),2.0)*u.view.w;
+ let footprint=max(0.0,1.0-r2);let kernel=footprint*footprint*u.view.w;
  var out:Moments;out.color=vec4<f32>(in.color*kernel,kernel);out.geometry=in.material*kernel;return out;
 }
 `;
@@ -107,19 +110,34 @@ fn spectral(t:f32)->vec3<f32> {return 0.5+0.5*cos(vec3<f32>(0,2,4)+t*6.28318);}
 @fragment fn fs(in:Out)->@location(0) vec4<f32> {
  let color=textureSample(colorField,imageSampler,in.uv);let density=color.a/max(u.view.w,0.000001);
  let pigment=color.rgb/max(color.a,0.000001);let material=materialAt(in.uv);
- let l=materialAt(in.uv-vec2<f32>(u.screen.x,0)).x;
- let r=materialAt(in.uv+vec2<f32>(u.screen.x,0)).x;
- let b=materialAt(in.uv+vec2<f32>(0,u.screen.y)).x;
- let t=materialAt(in.uv-vec2<f32>(0,u.screen.y)).x;
- let gradient=vec2<f32>(r-l,t-b)*(u.screen.z*0.25);
+ let pointColor=clamp(pigment*(0.85+material.w*0.15),vec3<f32>(0),vec3<f32>(1.0-${PARCEL_RENDER_POLICY.radianceFloor}));
+ let carried=1.0-exp(-density*${PARCEL_RENDER_POLICY.coverageGain});
+ // At the particle endpoint no surface solver or lighting sample contributes.
+ if(u.theme.z==1.0){
+  let background=vec3<f32>(0.010,0.016,0.013);
+  return vec4<f32>(mix(background,max(pointColor,background),carried),1);
+ }
+ var gradient=vec2<f32>(0);
+ if(u.theme.x>0.0){
+  let l=materialAt(in.uv-vec2<f32>(u.screen.x,0)).x;
+  let r=materialAt(in.uv+vec2<f32>(u.screen.x,0)).x;
+  let b=materialAt(in.uv+vec2<f32>(0,u.screen.y)).x;
+  let t=materialAt(in.uv-vec2<f32>(0,u.screen.y)).x;
+  gradient=vec2<f32>(r-l,t-b)*(u.screen.z*0.25);
+ }
  let fieldUV=(in.uv*vec2<f32>(2,-2)+vec2<f32>(-1,1))*u.view.xy*0.5+0.5;
- let live=liveFlow(fieldUV);let liveWeight=(1.0-u.theme.w)*live.wall;
+ var live=FlowState(vec3<f32>(0),0,vec2<f32>(0),0,0,0);
+ if(u.theme.x>0.0){live=liveFlow(fieldUV);}
+ let liveWeight=(1.0-u.theme.w)*live.wall;
  let fluidWeight=u.theme.x+u.theme.y;
  let magnetic=u.theme.y/max(fluidWeight,0.000001);
  let pointness=u.theme.z;
- let c=filmAt(fieldUV);let step=1.0/u.material.w;
- let filmGradient=vec2<f32>(filmAt(fieldUV+vec2<f32>(step,0)).x-filmAt(fieldUV-vec2<f32>(step,0)).x,
-   filmAt(fieldUV+vec2<f32>(0,step)).x-filmAt(fieldUV-vec2<f32>(0,step)).x)*u.material.w*0.5;
+ var c=vec4<f32>(0);var filmGradient=vec2<f32>(0);
+ if(u.theme.y>0.0){
+  c=filmAt(fieldUV);let step=1.0/u.material.w;
+  filmGradient=vec2<f32>(filmAt(fieldUV+vec2<f32>(step,0)).x-filmAt(fieldUV-vec2<f32>(step,0)).x,
+    filmAt(fieldUV+vec2<f32>(0,step)).x-filmAt(fieldUV-vec2<f32>(0,step)).x)*u.material.w*0.5;
+ }
  let flowSlope=mix(gradient*0.12,live.slope*1.25,liveWeight);
  let slope=mix(flowSlope,filmGradient*0.12,magnetic);
  let normal=normalize(vec3<f32>(-slope*(1.0-pointness),1));
@@ -144,22 +162,20 @@ fn spectral(t:f32)->vec3<f32> {return 0.5+0.5*cos(vec3<f32>(0,2,4)+t*6.28318);}
  let metallic=mix(vec3<f32>(0.05,0.06,0.08),prism,0.52)
    +secondary*fresnel*0.22+vec3<f32>(1.0,0.96,0.93)*glint*0.34;
  let albedo=mix(bodyPigment,prism,${PARCEL_RENDER_POLICY.filmPigmentMix}*magnetic);
- let bodyGain=mix(0.92+speed*0.24,${PARCEL_RENDER_POLICY.filmAmbientLight},magnetic);
+ let bodyGain=mix(${PARCEL_RENDER_POLICY.flowBodyLight}+speed*0.24,${PARCEL_RENDER_POLICY.filmAmbientLight},magnetic);
  let filmSpec=pow(max(dot(normal,halfVector),0.0),64.0)*ridge;
  let fluidLight=albedo*bodyGain
    +(prism*curl*0.030+metallic*(0.22+height*0.14))*(1.0-magnetic)
    +magnetic*(prism*ridge*(0.02+contour*0.40+fresnel*0.16)+vec3<f32>(0.8,0.88,1)*filmSpec*0.28)
    +vec3<f32>(1.0,0.96,0.93)*shimmer*(0.25+glint*0.75)*${PARCEL_RENDER_POLICY.flowGlintStrength}*(1.0-liveWeight)*(1.0-magnetic);
- let pointColor=clamp(pigment*(0.85+material.w*0.15),vec3<f32>(0),vec3<f32>(1.0-${PARCEL_RENDER_POLICY.radianceFloor}));
  let pointRadiance=-log(max(1.0-pointColor,vec3<f32>(${PARCEL_RENDER_POLICY.radianceFloor})))/${PARCEL_RENDER_POLICY.exposure};
  let radiance=mix(fluidLight,pointRadiance,pointness);
  let tone=1.0-exp(-max(radiance,vec3<f32>(0))*${PARCEL_RENDER_POLICY.exposure});
  let saturation=1.0-(1.0-${PARCEL_RENDER_POLICY.flowSaturation})*u.theme.x*(1.0-liveWeight);
  let appearance=mix(vec3<f32>(dot(tone,vec3<f32>(0.2126,0.7152,0.0722))),tone,saturation);
- let carried=1.0-exp(-density*${PARCEL_RENDER_POLICY.coverageGain});
  // Visibility belongs to moving material; no full-sheet image fills or fades underneath it.
  let coverage=carried;
- let background=vec3<f32>(0.040,0.055,0.070)*u.theme.x+vec3<f32>(0.003,0.004,0.006)*u.theme.y
+ let background=vec3<f32>(0.040,0.055,0.070)*u.theme.x+vec3<f32>(${PARCEL_RENDER_POLICY.filmBackground.join(',')})*u.theme.y
    +vec3<f32>(0.010,0.016,0.013)*u.theme.z
    +vec3<f32>(1.0,0.96,0.93)*shimmer*${PARCEL_RENDER_POLICY.backgroundGlintStrength}*u.theme.x;
  return vec4<f32>(mix(background,max(appearance,background),coverage),1);
@@ -244,7 +260,9 @@ function createParcelRenderer(device, canvas, format, count, parcels, waves, gri
   function draw(encoder, view, index, weights, time, shimmerTime = time, waveIndex = 0, dyeIndex = 0,
     shape = 0) {
     const side = Math.max(canvas.clientWidth, canvas.clientHeight, 1);
-    const fluidRadius = (2 / Math.sqrt(count)) * PARCEL_RENDER_POLICY.fluidRadiusCells;
+    // Gathered material is denser; smaller footprints retain detail and avoid heavy overdraw.
+    const fluidRadius = (2 / Math.sqrt(count)) * PARCEL_RENDER_POLICY.fluidRadiusCells
+      * (1 - (1 - PARCEL_RENDER_POLICY.formedFluidRadiusScale) * shape);
     const particleRadius = (PARCEL_RENDER_POLICY.particleRadiusPx * 2) / side;
     const radius = fluidRadius + (particleRadius - fluidRadius) * weights[2];
     const normalization = Math.min(1, PARCEL_RENDER_POLICY.accumulationCapacity / count);
