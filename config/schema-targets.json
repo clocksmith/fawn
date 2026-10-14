@@ -374,6 +374,10 @@
       "data": "config/fawn-workspace-service.json"
     },
     {
+      "schema": "config/fawn-workspace-qualification.schema.json",
+      "data": "config/fawn-workspace-qualification.json"
+    },
+    {
       "schema": "config/fawn-k0-workloads.schema.json",
       "data": "config/fawn-k0-workloads.json"
     },

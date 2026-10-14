@@ -5,7 +5,9 @@
   "description": "Fawn shared observation, action and recovery service above stock Chromium (repo-only, unqualified).",
   "scripts": {
     "test": "node test/run-tests.js",
-    "test:browser": "node test/run-tests.js --browser"
+    "test:browser": "node test/run-tests.js --browser",
+    "qualify": "node qualification/run.js",
+    "compare": "node qualification/compare.js"
   },
   "dependencies": {
     "playwright-core": "1.58.2"

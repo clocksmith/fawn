@@ -5,10 +5,12 @@
 
 import { join } from 'node:path';
 import {
+  REGIONS_SCOPE,
   authenticateAdmin,
   authenticateOwner,
   checkAdmission,
   checkDispatchAuthority,
+  validateRegionSelectors,
 } from './admission.js';
 import { issueCredential } from './authority.js';
 import { evaluateConditions, validateConditions } from './conditions.js';
@@ -193,8 +195,8 @@ class WorkspaceService {
     return withTimeout(promise, this.#config.dispatch.actionTimeoutMs);
   }
 
-  #snapshot(workspaceId) {
-    return this.#bounded(this.#adapter.snapshot(workspaceId));
+  #snapshot(workspaceId, regions = []) {
+    return this.#bounded(this.#adapter.snapshot(workspaceId, { regions }));
   }
 
   #nowMs() {
@@ -215,6 +217,9 @@ class WorkspaceService {
     const targetFormActions = Object.fromEntries(snapshot.elements
       .filter((element) => element.formAction)
       .map((element) => [element.selector, element.formAction]));
+    const targetNavigations = Object.fromEntries(snapshot.elements
+      .filter((element) => element.href)
+      .map((element) => [element.selector, element.href]));
     this.#append(RECORD_TYPES.OBSERVATION_RECORDED, {
       workspaceId: workspace.workspaceId,
       observationVersion: workspace.observationVersion + 1,
@@ -226,6 +231,8 @@ class WorkspaceService {
       expiresAt: new Date(issuedMs + this.#config.observation.maxAgeMs).toISOString(),
       targetDigests,
       targetFormActions,
+      targetNavigations,
+      regions: snapshot.regionDigests,
     });
     return { ...workspace.observation, title: snapshot.title, text: snapshot.text, elements: snapshot.elements };
   }
@@ -345,14 +352,18 @@ class WorkspaceService {
 
   /**
    * Observe the workspace page under the current owner generation; returns a new version.
+   * `regions` names page regions whose digests the observation records, so a later action can
+   * bind its staleness to them instead of to the whole page.
    */
   async observe(command) {
     const workspace = this.#workspace(command.workspaceId);
     authenticateOwner(workspace, command);
+    const regions = command.regions ?? [];
+    if (command.regions !== undefined) validateRegionSelectors(regions, this.#config, 'regions');
     await this.#page(command.workspaceId);
     return this.#runtimeFor(command.workspaceId).mutex.run(async () => {
       authenticateOwner(workspace, command);
-      const snapshot = await this.#snapshot(command.workspaceId);
+      const snapshot = await this.#snapshot(command.workspaceId, regions);
       return { ...this.#recordObservation(workspace, snapshot, 'observe'), boundary: NONATOMIC_BOUNDARY };
     });
   }
@@ -413,11 +424,14 @@ class WorkspaceService {
     const { workspaceId } = workspace;
     const request = action.request;
     checkDispatchAuthority(workspace, request, this.#nowMs());
-    const snapshot = await this.#snapshot(workspaceId);
+    const scope = request.observationScope;
+    const regions = scope?.kind === REGIONS_SCOPE ? scope.selectors : [];
+    const snapshot = await this.#snapshot(workspaceId, regions);
     if (snapshot.contentHash !== workspace.observation.contentHash || snapshot.url !== workspace.observation.url) {
       this.#recordObservation(workspace, snapshot, 'page-change');
     }
-    checkDispatchAuthority(workspace, request, this.#nowMs());
+    const live = { url: snapshot.url, regions: snapshot.regionDigests };
+    checkDispatchAuthority(workspace, request, this.#nowMs(), live);
     const probe = this.#probe(workspaceId);
     let targetDigest = null;
     if (request.target.selector) {
@@ -435,7 +449,12 @@ class WorkspaceService {
         results: preconditions.results,
       });
     }
-    return { targetDigest, preconditionResults: preconditions.results };
+    return {
+      targetDigest,
+      preconditionResults: preconditions.results,
+      observationScope: scope ?? { kind: 'page' },
+      liveRegions: regions.length > 0 ? live.regions : null,
+    };
   }
 
   async #dispatchOne(workspaceId, actionId) {

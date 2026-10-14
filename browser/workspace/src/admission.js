@@ -12,6 +12,9 @@ const URL_TARGET_KINDS = Object.freeze(['navigate']);
 const VALUE_KINDS = Object.freeze(['fill', 'select']);
 const COMPLETION_REQUIRED_KINDS = Object.freeze(['submit']);
 const FORM_CONTROL_KINDS = Object.freeze(['submit']);
+const LINK_FOLLOWING_KINDS = Object.freeze(['click', 'download']);
+const PAGE_SCOPE = Object.freeze({ kind: 'page' });
+const REGIONS_SCOPE = 'regions';
 
 function reject(code, message, details) {
   throw workspaceError(code, message, details);
@@ -33,6 +36,34 @@ function originOf(url, path) {
   } catch {
     return reject(REJECTION_CODES.INVALID_COMMAND, `${path}: expected absolute URL`, { path, received: url });
   }
+}
+
+/**
+ * Validate a list of region selectors against config.observation.maxRegions.
+ */
+function validateRegionSelectors(selectors, config, path) {
+  if (!Array.isArray(selectors) || selectors.length === 0
+    || selectors.some((selector) => typeof selector !== 'string' || selector.length === 0)) {
+    reject(REJECTION_CODES.INVALID_COMMAND, `${path}: expected non-empty array of selectors`, { path, received: selectors });
+  }
+  if (selectors.length > config.observation.maxRegions || new Set(selectors).size !== selectors.length) {
+    reject(REJECTION_CODES.INVALID_COMMAND, `${path}: expected at most ${config.observation.maxRegions} distinct selectors`, {
+      path,
+      received: selectors,
+    });
+  }
+}
+
+function validateObservationScope(scope, config) {
+  if (scope === undefined) return;
+  if (!config.observationScopes.includes(scope?.kind)) {
+    reject(REJECTION_CODES.INVALID_COMMAND, 'observationScope.kind', {
+      path: 'observationScope.kind',
+      expected: config.observationScopes,
+      received: scope?.kind,
+    });
+  }
+  if (scope.kind === REGIONS_SCOPE) validateRegionSelectors(scope.selectors, config, 'observationScope.selectors');
 }
 
 function authenticateAdmin(workspace, adminCredential) {
@@ -87,6 +118,7 @@ function validateActionShape(command, config) {
       received: command.observationVersion,
     });
   }
+  validateObservationScope(command.observationScope, config);
   validateConditions(command.preconditions ?? [], config.conditionKinds, 'preconditions');
   const effect = command.effect ?? { external: false };
   if (typeof effect.external !== 'boolean') {
@@ -112,29 +144,50 @@ function validateActionShape(command, config) {
   }
 }
 
-function targetOrigin(command, workspace) {
-  if (URL_TARGET_KINDS.includes(command.kind)) return originOf(command.target.url, 'target.url');
-  return workspace.observation ? originOf(workspace.observation.url, 'observation.url') : null;
+/**
+ * Every origin an action touches: the navigation URL, or the cited page plus the destination of
+ * a followed link or submitted form.
+ */
+function touchedOrigins(command, cited) {
+  if (URL_TARGET_KINDS.includes(command.kind)) return [originOf(command.target.url, 'target.url')];
+  if (!cited) return [null];
+  const origins = [originOf(cited.url, 'observation.url')];
+  const selector = command.target?.selector;
+  const formAction = cited.targetFormActions?.[selector];
+  if (command.kind === 'submit' && formAction) origins.push(originOf(formAction, 'target.formAction'));
+  if (LINK_FOLLOWING_KINDS.includes(command.kind)) {
+    // Protocol 1 observations did not record link destinations; they cannot authorize one.
+    if (!cited.targetNavigations) return [...origins, null];
+    const destination = cited.targetNavigations[selector];
+    if (destination) origins.push(originOf(destination, 'target.href'));
+  }
+  return origins;
 }
 
 /**
- * Require a current, unexpired grant covering intent, action kind and every target origin.
+ * Require at least one current, unexpired grant for the owner and intent. Checked before the
+ * observation, so a revoked or expired grant is reported as such whatever the page did.
  */
-function authorize(workspace, command, nowMs) {
-  const live = [...workspace.grants.values()].filter(
+function grantsForIntent(workspace, command, nowMs) {
+  const forIntent = [...workspace.grants.values()].filter(
     (grant) => grant.ownerId === command.ownerId
-      && (grant.expiresAt === null || Date.parse(grant.expiresAt) > nowMs),
+      && (grant.expiresAt === null || Date.parse(grant.expiresAt) > nowMs)
+      && grant.intents.includes(command.authorizedIntent),
   );
-  const forIntent = live.filter((grant) => grant.intents.includes(command.authorizedIntent));
   if (forIntent.length === 0) {
     reject(REJECTION_CODES.UNAUTHORIZED_INTENT, `intent ${command.authorizedIntent}`, {
       ownerId: command.ownerId,
       authorizedIntent: command.authorizedIntent,
     });
   }
-  const origins = [targetOrigin(command, workspace)];
-  const formAction = workspace.observation?.targetFormActions?.[command.target?.selector];
-  if (command.kind === 'submit' && formAction) origins.push(originOf(formAction, 'target.formAction'));
+  return forIntent;
+}
+
+/**
+ * Require one of the intent's grants to cover the action kind and every target origin.
+ */
+function authorize(forIntent, command, cited) {
+  const origins = touchedOrigins(command, cited);
   const grant = forIntent.find((candidate) => candidate.actionKinds.includes(command.kind)
     && origins.every((origin) => origin !== null && candidate.targetOrigins.includes(origin)));
   if (!grant) {
@@ -147,38 +200,82 @@ function authorize(workspace, command, nowMs) {
 }
 
 /**
- * Require the action's observation to be the workspace's current, unexpired observation under
- * the current owner generation, and its element target to appear in that observation.
+ * A regions-scoped action stays current while its URL and every scoped region are unchanged
+ * since the cited observation. Later recorded observations are compared at admission; the live
+ * page is compared at dispatch.
  */
-function checkObservation(workspace, command, nowMs) {
-  const observation = workspace.observation;
-  if (!observation || command.observationVersion > workspace.observationVersion || command.observationVersion < 1) {
-    reject(REJECTION_CODES.UNKNOWN_OBSERVATION, `observation ${command.observationVersion}`, {
-      observationVersion: command.observationVersion,
+function checkRegions(workspace, cited, scope, live) {
+  const missing = scope.selectors.filter((selector) => !cited.regions?.[selector]);
+  if (missing.length > 0) {
+    reject(REJECTION_CODES.INVALID_COMMAND, `observation ${cited.observationVersion} has no unique region ${missing.join(', ')}`, {
+      path: 'observationScope.selectors',
+      missing,
     });
   }
-  if (command.observationVersion !== workspace.observationVersion
-    || observation.ownerGeneration !== workspace.ownerGeneration) {
-    reject(REJECTION_CODES.STALE_OBSERVATION, `observation ${command.observationVersion} is not current`, {
-      observationVersion: command.observationVersion,
+  const changes = [];
+  const compare = (url, regions, source) => {
+    if (url !== cited.url) changes.push({ source, url });
+    for (const selector of scope.selectors) {
+      if (regions && selector in regions && regions[selector] !== cited.regions[selector]) {
+        changes.push({ source, selector });
+      }
+    }
+  };
+  for (const [version, observation] of workspace.observations) {
+    if (version > cited.observationVersion) compare(observation.url, observation.regions, `observation ${version}`);
+  }
+  if (live) {
+    compare(live.url, live.regions, 'dispatch');
+    const unread = scope.selectors.filter((selector) => !(selector in (live.regions ?? {})));
+    if (unread.length > 0) changes.push({ source: 'dispatch', unread });
+  }
+  if (changes.length > 0) {
+    reject(REJECTION_CODES.STALE_OBSERVATION, `scoped regions of observation ${cited.observationVersion} changed`, {
+      observationVersion: cited.observationVersion,
+      scope: REGIONS_SCOPE,
+      changes,
+    });
+  }
+}
+
+/**
+ * Require the cited observation to be current under the current owner generation and unexpired,
+ * and its element target to appear in it. Page scope requires the latest version; regions scope
+ * requires the scoped regions to be unchanged. Returns the cited observation.
+ */
+function checkObservation(workspace, command, nowMs, live = null) {
+  const version = command.observationVersion;
+  if (!workspace.observation || version > workspace.observationVersion || version < 1) {
+    reject(REJECTION_CODES.UNKNOWN_OBSERVATION, `observation ${version}`, { observationVersion: version });
+  }
+  const cited = workspace.observations.get(version);
+  if (!cited || cited.ownerGeneration !== workspace.ownerGeneration) {
+    reject(REJECTION_CODES.STALE_OBSERVATION, `observation ${version} is from an earlier owner generation`, {
+      observationVersion: version,
       currentVersion: workspace.observationVersion,
-      observationOwnerGeneration: observation.ownerGeneration,
     });
   }
-  if (Date.parse(observation.expiresAt) <= nowMs) {
-    reject(REJECTION_CODES.EXPIRED_OBSERVATION, `observation ${observation.observationVersion} expired`, {
-      expiresAt: observation.expiresAt,
+  if (Date.parse(cited.expiresAt) <= nowMs) {
+    reject(REJECTION_CODES.EXPIRED_OBSERVATION, `observation ${version} expired`, { expiresAt: cited.expiresAt });
+  }
+  const scope = command.observationScope ?? PAGE_SCOPE;
+  if (scope.kind === REGIONS_SCOPE) {
+    checkRegions(workspace, cited, scope, live);
+  } else if (version !== workspace.observationVersion) {
+    reject(REJECTION_CODES.STALE_OBSERVATION, `observation ${version} is not current`, {
+      observationVersion: version,
+      currentVersion: workspace.observationVersion,
     });
   }
   if (!URL_TARGET_KINDS.includes(command.kind)) {
-    if (observation.targetFormActions?.[command.target.selector] && !FORM_CONTROL_KINDS.includes(command.kind)) {
+    if (cited.targetFormActions?.[command.target.selector] && !FORM_CONTROL_KINDS.includes(command.kind)) {
       reject(REJECTION_CODES.INVALID_COMMAND, `${command.target.selector} submits a form; use kind submit`, {
         selector: command.target.selector,
         expected: FORM_CONTROL_KINDS,
         received: command.kind,
       });
     }
-    const digest = observation.targetDigests?.[command.target.selector];
+    const digest = cited.targetDigests?.[command.target.selector];
     if (!digest) {
       reject(REJECTION_CODES.UNKNOWN_TARGET, `target ${command.target.selector} not in observation`, {
         selector: command.target.selector,
@@ -190,6 +287,7 @@ function checkObservation(workspace, command, nowMs) {
       });
     }
   }
+  return cited;
 }
 
 function priorsForEffect(workspace, effectKey, excludeActionId) {
@@ -270,24 +368,34 @@ function checkAdmission(workspace, command, config, nowMs) {
   if (workspace.actions.has(command.actionId)) {
     reject(REJECTION_CODES.DUPLICATE_ACTION_ID, command.actionId, { actionId: command.actionId });
   }
-  checkObservation(workspace, command, nowMs);
-  const grantId = authorize(workspace, command, nowMs);
+  const forIntent = grantsForIntent(workspace, command, nowMs);
+  const cited = checkObservation(workspace, command, nowMs);
+  const grantId = authorize(forIntent, command, cited);
   checkEffect(workspace, command);
   return { grantId };
 }
 
 /**
- * Dispatch-time authority: generation, owner and grant must still hold for the admitted request.
+ * Dispatch-time authority: generation, owner, observation currency and grant must still hold for
+ * the admitted request. `live` is the dispatch-time page read (URL and scoped region digests).
  */
-function checkDispatchAuthority(workspace, request, nowMs) {
+function checkDispatchAuthority(workspace, request, nowMs, live = null) {
   if (request.ownerGeneration !== workspace.ownerGeneration || request.ownerId !== workspace.ownerId) {
     reject(REJECTION_CODES.STALE_OWNER_GENERATION, 'owner generation advanced before dispatch', {
       admittedGeneration: request.ownerGeneration,
       currentGeneration: workspace.ownerGeneration,
     });
   }
-  checkObservation(workspace, request, nowMs);
-  authorize(workspace, request, nowMs);
+  const forIntent = grantsForIntent(workspace, request, nowMs);
+  const cited = checkObservation(workspace, request, nowMs, live);
+  authorize(forIntent, request, cited);
 }
 
-export { authenticateAdmin, authenticateOwner, checkAdmission, checkDispatchAuthority };
+export {
+  REGIONS_SCOPE,
+  authenticateAdmin,
+  authenticateOwner,
+  checkAdmission,
+  checkDispatchAuthority,
+  validateRegionSelectors,
+};

@@ -1,0 +1,269 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://doe.local/schemas/fawn-workspace-qualification.schema.json",
+  "title": "Fawn workspace behavioral qualification case set",
+  "description": "Frozen fixtures, authorization scopes, failure locations, expected outcomes and independent oracles for docs/fawn-workspace-contract.md. browser/workspace/qualification/run.js executes the cases and validate.js admits results; changing a case, oracle or the fixture site hash is a new freeze.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schemaVersion",
+    "caseSetVersion",
+    "contractPath",
+    "serviceConfigPath",
+    "strategyPath",
+    "harness",
+    "adapters",
+    "owners",
+    "oracles",
+    "workflows",
+    "cases"
+  ],
+  "properties": {
+    "$schema": { "const": "fawn-workspace-qualification.schema.json" },
+    "schemaVersion": { "type": "integer", "const": 1 },
+    "caseSetVersion": { "type": "string", "minLength": 1 },
+    "contractPath": { "const": "docs/fawn-workspace-contract.md" },
+    "serviceConfigPath": { "const": "config/fawn-workspace-service.json" },
+    "strategyPath": { "const": "config/doe-product-strategy.json#fawnWorkspace" },
+    "harness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["runnerPath", "validatorPath", "fixtureSite"],
+      "properties": {
+        "runnerPath": { "const": "browser/workspace/qualification/run.js" },
+        "validatorPath": { "const": "browser/workspace/qualification/validate.js" },
+        "fixtureSite": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["path", "sha256"],
+          "properties": {
+            "path": { "const": "browser/workspace/qualification/fixture-site.js" },
+            "sha256": { "$ref": "#/$defs/sha256" }
+          }
+        }
+      }
+    },
+    "adapters": {
+      "type": "array",
+      "minItems": 2,
+      "uniqueItems": true,
+      "items": { "enum": ["playwright", "cdp"] }
+    },
+    "owners": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "uniqueItems": true,
+      "items": { "type": "string", "pattern": "^[a-z0-9-]+$" }
+    },
+    "oracles": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reportSha256", "researchFindingTitles"],
+      "properties": {
+        "reportSha256": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": { "$ref": "#/$defs/sha256" }
+        },
+        "researchFindingTitles": { "$ref": "#/$defs/stringList" }
+      }
+    },
+    "workflows": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["research", "form", "export"],
+      "properties": {
+        "research": { "$ref": "#/$defs/workflow" },
+        "form": { "$ref": "#/$defs/workflow" },
+        "export": { "$ref": "#/$defs/workflow" }
+      }
+    },
+    "cases": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/case" }
+    }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "stringList": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "condition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind"],
+      "properties": {
+        "kind": { "type": "string", "minLength": 1 },
+        "selector": { "type": "string", "minLength": 1 },
+        "value": { "type": "string", "minLength": 1 }
+      }
+    },
+    "workflow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["intent", "actionKinds", "effectActionSuffix", "effectRequest", "task"],
+      "properties": {
+        "intent": { "type": "string", "minLength": 1 },
+        "actionKinds": { "$ref": "#/$defs/stringList" },
+        "effectActionSuffix": { "type": "string", "pattern": "^-[a-z0-9-]+$" },
+        "effectRequest": {
+          "description": "The application request that is the workflow's effect, counted from the fixture's own log.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["server", "method", "path"],
+          "properties": {
+            "server": { "enum": ["main", "foreign"] },
+            "method": { "enum": ["GET", "POST"] },
+            "path": { "type": "string", "pattern": "^/" }
+          }
+        },
+        "task": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "indexPath": { "type": "string", "pattern": "^/" },
+            "topics": { "$ref": "#/$defs/stringList" },
+            "maxDocuments": { "type": "integer", "minimum": 1 },
+            "formPath": { "type": "string", "pattern": "^/" },
+            "subjectPrefix": { "type": "string", "minLength": 1 },
+            "email": { "type": "string", "minLength": 1 },
+            "completedWhen": { "type": "array", "items": { "$ref": "#/$defs/condition" } },
+            "failedWhen": { "type": "array", "items": { "$ref": "#/$defs/condition" } },
+            "submissionsPath": { "type": "string", "pattern": "^/" },
+            "submissionsSelector": { "type": "string", "minLength": 1 },
+            "exportPath": { "type": "string", "pattern": "^/" },
+            "linkText": { "type": "string", "minLength": 1 }
+          }
+        }
+      }
+    },
+    "expected": {
+      "description": "Partial expectations: steps are what callers saw, actions are replayed from the journal, oracle counts come from the fixture's log and receipts.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "steps": { "type": "object" },
+        "actions": { "type": "object" },
+        "commandRejections": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "oracle": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "effectRequests": { "type": "integer", "minimum": 0 },
+            "receipts": { "type": "integer", "minimum": 0 },
+            "foreignRequests": { "type": "integer", "minimum": 0 },
+            "markerRequests": { "type": "integer", "minimum": 0 },
+            "applicationDeduplicated": { "type": "integer", "minimum": 0 },
+            "requests": { "type": "integer", "minimum": 0 },
+            "downloads": { "type": "object", "additionalProperties": { "type": "integer", "minimum": 0 } }
+          }
+        },
+        "journal": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "minPageChangeObservations": { "type": "integer", "minimum": 0 }
+          }
+        }
+      }
+    },
+    "case": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "procedure", "workflows", "failureLocation", "requirements", "expected"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+        "procedure": {
+          "enum": [
+            "run-workflow",
+            "stale-observation",
+            "stale-owner-restart",
+            "failure-before-dispatch",
+            "failure-after-effect-started",
+            "failure-after-completion",
+            "queue-behind-held-effect",
+            "handoff-race",
+            "mutation-surface",
+            "external-idempotency",
+            "human-review",
+            "recover-after-crash",
+            "authority-unavailable"
+          ]
+        },
+        "workflows": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "enum": ["research", "form", "export", "none"] }
+        },
+        "failureLocation": { "type": "string", "minLength": 1 },
+        "requirements": {
+          "description": "Requirement ids from the strategy's fawnWorkspace steps; the validator rejects unknown ids.",
+          "$ref": "#/$defs/stringList"
+        },
+        "expected": { "$ref": "#/$defs/expected" },
+        "expectedByWorkflow": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "research": { "$ref": "#/$defs/expected" },
+            "form": { "$ref": "#/$defs/expected" },
+            "export": { "$ref": "#/$defs/expected" }
+          }
+        },
+        "taskOverrides": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "intent": { "type": "string", "minLength": 1 },
+            "origin": { "enum": ["foreign"] },
+            "email": { "type": "string", "minLength": 1 },
+            "exportPath": { "type": "string", "pattern": "^/" }
+          }
+        },
+        "fault": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind"],
+          "properties": {
+            "kind": { "enum": ["effect-precondition", "before-effect-control"] },
+            "precondition": { "$ref": "#/$defs/condition" },
+            "liveState": { "type": ["string", "null"], "enum": [null, "ready", "rebuilding", "replaced"] },
+            "settleMs": { "type": "integer", "minimum": 0 }
+          }
+        },
+        "sessionRegions": { "$ref": "#/$defs/stringList" },
+        "interruption": { "enum": ["handoff", "revoke"] },
+        "crashAt": { "enum": ["while-effect-held", "afterIntentPersisted", "afterDispatchStarted"] },
+        "seedReceipts": { "type": "integer", "minimum": 1 },
+        "race": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["iterations", "allowedClasses"],
+          "properties": {
+            "iterations": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["order", "delayMs"],
+                "properties": {
+                  "order": { "enum": ["handoff-first", "submit-first", "at-dispatch-start"] },
+                  "delayMs": { "type": "integer", "minimum": 0 },
+                  "expectedClass": { "type": "string", "minLength": 1 }
+                }
+              }
+            },
+            "allowedClasses": { "$ref": "#/$defs/stringList" }
+          }
+        }
+      }
+    }
+  }
+}

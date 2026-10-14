@@ -17,14 +17,19 @@
     "dispatch",
     "browser",
     "actionKinds",
+    "observationScopes",
     "conditionKinds",
     "reconciliationMethods"
   ],
   "properties": {
     "$schema": { "type": "string", "const": "fawn-workspace-service.schema.json" },
-    "schemaVersion": { "type": "integer", "const": 1 },
+    "schemaVersion": { "type": "integer", "const": 2 },
     "configVersion": { "type": "string", "minLength": 1 },
-    "protocolVersion": { "type": "integer", "const": 1 },
+    "protocolVersion": {
+      "type": "integer",
+      "const": 2,
+      "description": "Protocol 2 adds observation regions and regions-scoped actions; protocol 1 journals replay unchanged, and their observations cannot authorize link-following actions."
+    },
     "contractPath": { "type": "string", "const": "docs/fawn-workspace-contract.md" },
     "journal": {
       "type": "object",
@@ -47,11 +52,12 @@
     "observation": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["maxAgeMs", "maxTextChars", "maxElements"],
+      "required": ["maxAgeMs", "maxTextChars", "maxElements", "maxRegions"],
       "properties": {
         "maxAgeMs": { "type": "integer", "minimum": 1000 },
         "maxTextChars": { "type": "integer", "minimum": 1 },
-        "maxElements": { "type": "integer", "minimum": 1 }
+        "maxElements": { "type": "integer", "minimum": 1 },
+        "maxRegions": { "type": "integer", "minimum": 1 }
       }
     },
     "dispatch": {
@@ -88,6 +94,13 @@
         "enum": ["navigate", "click", "fill", "select", "submit", "download"]
       }
     },
+    "observationScopes": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "description": "page binds an action to the whole cited page; regions binds it to the cited observation's URL and named regions, with target identity still checked.",
+      "items": { "type": "string", "enum": ["page", "regions"] }
+    },
     "conditionKinds": {
       "type": "array",
       "minItems": 1,
@@ -100,6 +113,7 @@
           "element-present",
           "element-absent",
           "element-text-includes",
+          "element-text-excludes",
           "input-value-equals"
         ]
       }

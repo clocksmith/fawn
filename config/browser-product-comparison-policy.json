@@ -1,7 +1,7 @@
 {
   "$schema": "browser-product-comparison-policy.schema.json",
-  "schemaVersion": 5,
-  "policyId": "fawn-external-product-comparison-v5",
+  "schemaVersion": 6,
+  "policyId": "fawn-external-product-comparison-v6",
   "authority": {
     "strategyPath": "docs/thesis.md",
     "browserLanePath": "docs/browser-lane.md",
@@ -142,7 +142,113 @@
     "control": "competent-stock-chromium-playwright",
     "treatment": "same-browser-and-runtime-with-fawn-workspace-service",
     "scope": "Prospective independent workflow comparison; existing A/B/C/D and K0 receipts retain their meanings and cannot satisfy it.",
-    "requiresNativeRuntimeWins": false
+    "requiresNativeRuntimeWins": false,
+    "comparisonVersion": "2026-10-14-workspace-comparison-v1",
+    "runnerPath": "browser/workspace/qualification/compare.js",
+    "controlImplementationPath": "browser/workspace/qualification/baseline",
+    "fixtureSitePath": "browser/workspace/qualification/fixture-site.js",
+    "browserRuntime": {
+      "driver": "playwright-core",
+      "browser": "chromium-headless-shell",
+      "treatmentAdapter": "playwright",
+      "headless": true
+    },
+    "controlCapabilities": [
+      "persistent-profile",
+      "durable-progress-file",
+      "origin-allowlist-including-form-actions",
+      "exact-accessible-name-locators-resolved-at-action-time",
+      "application-idempotency-reference",
+      "application-state-check-before-resubmission"
+    ],
+    "equalOpportunities": [
+      "same-fixture-site-and-inputs",
+      "same-browser-binary-and-driver",
+      "same-granted-origins",
+      "same-action-timeout",
+      "same-process-and-ipc-shape",
+      "same-submissions-page-for-recovery"
+    ],
+    "scenarios": [
+      {
+        "id": "clean-research",
+        "workflow": "research",
+        "fault": "none",
+        "oracle": "research-findings",
+        "repetitions": 5
+      },
+      {
+        "id": "clean-form",
+        "workflow": "form",
+        "fault": "none",
+        "oracle": "single-receipt",
+        "repetitions": 5
+      },
+      {
+        "id": "clean-export",
+        "workflow": "export",
+        "fault": "none",
+        "oracle": "report-artifact",
+        "repetitions": 5
+      },
+      {
+        "id": "crash-during-submission",
+        "workflow": "form",
+        "fault": "kill-while-effect-held",
+        "oracle": "single-receipt",
+        "repetitions": 3
+      },
+      {
+        "id": "crash-during-export",
+        "workflow": "export",
+        "fault": "kill-while-effect-held",
+        "oracle": "report-artifact",
+        "repetitions": 3
+      },
+      {
+        "id": "background-changes",
+        "workflow": "export",
+        "fault": "background-settle",
+        "pagePath": "/live/export",
+        "treatmentRegions": ["#export-panel"],
+        "oracle": "report-artifact",
+        "repetitions": 3
+      },
+      {
+        "id": "target-replaced",
+        "workflow": "export",
+        "fault": "replace-target",
+        "pagePath": "/live/export",
+        "treatmentRegions": ["#export-panel"],
+        "oracle": "no-replaced-artifact",
+        "repetitions": 3
+      }
+    ],
+    "excludedScenarios": [
+      {
+        "id": "owner-handoff",
+        "reason": "The control has no owner authority; an equivalent would have to reimplement the workspace service, so handoff is qualified by the behavioral case set instead."
+      }
+    ],
+    "measures": [
+      "taskSuccess",
+      "incorrectActions",
+      "recovery",
+      "observationBytes",
+      "completeTaskLatencyMs",
+      "serviceOverheadMs",
+      "integrationLines"
+    ],
+    "criteria": {
+      "latency": {
+        "statistic": "median",
+        "regressionRatio": 1.5,
+        "advantageRatio": 0.67,
+        "minimumDeltaMs": 250
+      },
+      "materialWhenDifferent": ["taskSuccess", "incorrectActions", "recovery"],
+      "informativeOnly": ["observationBytes", "serviceOverheadMs", "integrationLines"]
+    }
   },
   "alternativeCompleteSystem": {
     "categoryId": "alternative-complete-system",

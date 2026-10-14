@@ -13,6 +13,7 @@ const CONDITION_FIELDS = Object.freeze({
   'element-present': ['selector'],
   'element-absent': ['selector'],
   'element-text-includes': ['selector', 'value'],
+  'element-text-excludes': ['selector', 'value'],
   'input-value-equals': ['selector', 'value'],
 });
 
@@ -36,6 +37,12 @@ const CONDITION_EVALUATORS = Object.freeze({
   'element-text-includes': async (probe, condition) => {
     const element = await probe.element(condition.selector);
     const established = element.count === SINGLE_MATCH && element.text.includes(condition.value);
+    return { established, observed: { count: element.count, text: element.text } };
+  },
+  // Absence needs positive evidence: exactly one element whose text lacks the value.
+  'element-text-excludes': async (probe, condition) => {
+    const element = await probe.element(condition.selector);
+    const established = element.count === SINGLE_MATCH && !element.text.includes(condition.value);
     return { established, observed: { count: element.count, text: element.text } };
   },
   'input-value-equals': async (probe, condition) => {

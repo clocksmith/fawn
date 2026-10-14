@@ -172,7 +172,10 @@
       ],
       "entrypoints": [
         "browser/workspace/src/service.js",
-        "browser/workspace/test/run-tests.js"
+        "browser/workspace/test/run-tests.js",
+        "browser/workspace/qualification/run.js",
+        "browser/workspace/qualification/validate.js",
+        "browser/workspace/qualification/compare.js"
       ],
       "docs": [
         "browser/workspace/README.md",

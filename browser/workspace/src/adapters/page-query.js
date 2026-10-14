@@ -10,7 +10,7 @@ const ELEMENT_MODE = 'element';
 const ELEMENT_TEXT_CHARS = 200;
 
 // Runs inside the page; must stay self-contained.
-function queryPage({ mode, selector, maxElements, maxTextChars, elementTextChars }) {
+function queryPage({ mode, selector, maxElements, maxTextChars, elementTextChars, regions = [] }) {
   const INTERACTIVE = 'a[href], button, input, select, textarea, [role="button"], [role="link"]';
   const isUnique = (candidate) => {
     try {
@@ -40,6 +40,16 @@ function queryPage({ mode, selector, maxElements, maxTextChars, elementTextChars
     if (href) candidates.push(`${tag}[href="${CSS.escape(href)}"]`);
     return candidates.find(isUnique) ?? pathSelector(node);
   };
+  // FNV-1a over the full text, so identity covers text beyond the displayed prefix.
+  const fingerprint = (text) => {
+    let hash = 0x811c9dc5;
+    for (let index = 0; index < text.length; index += 1) {
+      hash ^= text.charCodeAt(index);
+      hash = Math.imul(hash, 0x01000193) >>> 0;
+    }
+    return `${text.length}:${hash.toString(16)}`;
+  };
+  const fullText = (node) => (node.innerText ?? node.textContent ?? '').trim();
   const describe = (node) => {
     const attributes = [...node.attributes]
       .map((attribute) => [attribute.name, attribute.value])
@@ -47,10 +57,12 @@ function queryPage({ mode, selector, maxElements, maxTextChars, elementTextChars
     const formAction = node.form && ['submit', 'image'].includes(node.type)
       ? (node.formAction || node.form.action)
       : null;
+    const text = fullText(node);
     return {
       tag: node.tagName.toLowerCase(),
       attributes,
-      text: (node.innerText ?? node.textContent ?? '').trim().slice(0, elementTextChars),
+      text: text.slice(0, elementTextChars),
+      textFingerprint: fingerprint(text),
       value: 'value' in node ? String(node.value) : null,
       href: node.href ?? null,
       formAction,
@@ -58,8 +70,22 @@ function queryPage({ mode, selector, maxElements, maxTextChars, elementTextChars
   };
   if (mode === 'element') {
     const nodes = document.querySelectorAll(selector);
-    return { count: nodes.length, element: nodes.length === 1 ? describe(nodes[0]) : null };
+    if (nodes.length !== 1) return { count: nodes.length, element: null, fullText: null };
+    return { count: 1, element: describe(nodes[0]), fullText: fullText(nodes[0]) };
   }
+  const CONTROLS = 'input, select, textarea';
+  const readRegion = (regionSelector) => {
+    let matches;
+    try {
+      matches = document.querySelectorAll(regionSelector);
+    } catch {
+      return { selector: regionSelector, count: 0, html: null, values: null };
+    }
+    if (matches.length !== 1) return { selector: regionSelector, count: matches.length, html: null, values: null };
+    const [region] = matches;
+    const controls = [...(region.matches(CONTROLS) ? [region] : []), ...region.querySelectorAll(CONTROLS)];
+    return { selector: regionSelector, count: 1, html: region.outerHTML, values: controls.map((control) => String(control.value)) };
+  };
   const nodes = [...document.querySelectorAll(INTERACTIVE)];
   return {
     url: location.href,
@@ -68,20 +94,32 @@ function queryPage({ mode, selector, maxElements, maxTextChars, elementTextChars
     text: (document.body?.innerText ?? '').slice(0, maxTextChars),
     isTruncated: nodes.length > maxElements,
     elements: nodes.slice(0, maxElements).map((node) => ({ selector: stableSelector(node), ...describe(node) })),
+    regions: regions.map(readRegion),
   };
 }
 
 function elementDigest(element) {
-  return sha256Hex(canonicalJson({ tag: element.tag, attributes: element.attributes, text: element.text }));
+  return sha256Hex(canonicalJson({
+    tag: element.tag,
+    attributes: element.attributes,
+    text: element.text,
+    textFingerprint: element.textFingerprint,
+  }));
 }
 
-function snapshotArgs(config) {
+function snapshotArgs(config, regions = []) {
   return {
     mode: SNAPSHOT_MODE,
     maxElements: config.observation.maxElements,
     maxTextChars: config.observation.maxTextChars,
     elementTextChars: ELEMENT_TEXT_CHARS,
+    regions,
   };
+}
+
+/** A region digest covers its markup and control values; a missing or ambiguous region has none. */
+function regionDigest(region) {
+  return region.count === 1 ? sha256Hex(canonicalJson({ html: region.html, values: region.values })) : null;
 }
 
 function elementArgs(selector) {
@@ -101,16 +139,20 @@ function buildSnapshot(raw, pageCount) {
     elements,
     pageCount,
     contentHash: sha256Hex(canonicalJson({ url: raw.url, html: raw.html, controlValues })),
+    regionDigests: Object.fromEntries((raw.regions ?? []).map((region) => [region.selector, regionDigest(region)])),
   };
 }
 
-/** Convert an in-page element probe into the service's probe result. */
+/**
+ * Convert an in-page element probe into the service's probe result. Conditions read the full
+ * text: a displayed prefix would make text-excludes report absence that is not established.
+ */
 function buildProbe(result) {
   if (!result.element) return { count: result.count, digest: null, text: null, value: null };
   return {
     count: result.count,
     digest: elementDigest(result.element),
-    text: result.element.text,
+    text: result.fullText,
     value: result.element.value,
   };
 }

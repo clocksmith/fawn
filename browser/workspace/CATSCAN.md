@@ -16,19 +16,21 @@ action and recovery service above stock Chromium.
 
 ## Scope
 
-- The shared service, its narrow Playwright and raw-CDP adapters, and the
-  research, form-submission and export workflow adapters in this directory.
-  Implementation existence and development tests establish no runtime acceptance.
+- The shared service, its Playwright and raw-CDP adapters, the research,
+  form-submission and export workflow adapters, and the qualification and
+  baseline-comparison harness in this directory.
 
 ## Contracts
 
 Inputs:
 - [Workspace contract](../../docs/fawn-workspace-contract.md).
 - [Ordered workspace roadmap](../../config/doe-product-strategy.json).
+- Frozen [behavioral case set](../../config/fawn-workspace-qualification.json) and
+  [comparison scenarios and criteria](../../config/browser-product-comparison-policy.json).
 
 Outputs:
-- Durable authority/action records and versioned observations after implementation.
-- Independent reusable-workflow, fault-injection and baseline evidence.
+- Durable authority/action records and versioned observations.
+- Workflow, fault-injection and baseline evidence, admitted only by the validator.
 
 ## Invariants
 
@@ -42,10 +44,10 @@ Outputs:
 ## Acceptance
 
 - Pass the workspace contract's behavioral gates and competent-baseline comparison.
-- Evidence: [development tests](test/run-tests.js) (`npm test`, `npm run test:browser`;
-  see the [README](README.md)) and [policy tests](../../bench/tests/test_fawn_workspace_strategy.py)
-  that keep the strategy projection unqualified. Neither replaces the contract's
-  frozen behavioral and baseline evidence.
+- Evidence: a full [qualification](README.md#qualification) result admitted by
+  `qualification/validate.js` for committed source, and a frozen-criteria comparison.
+  [Development](test/run-tests.js) and [policy tests](../../bench/tests/test_fawn_workspace_strategy.py)
+  replace neither.
 
 ## Non-goals
 

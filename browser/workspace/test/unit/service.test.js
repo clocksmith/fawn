@@ -102,6 +102,64 @@ async function rejects(promise, code) {
   await service.close();
 }
 
+// Regions scope: background changes outside the scoped regions do not stale an action; changes
+// inside them do, and target identity is still checked.
+{
+  const { service, session, adapter } = await setupWorkspace();
+  await openForm(session, 'nav-1');
+  const scoped = (observation, actionId, selector, extra = {}) => ({
+    actionId,
+    authorizedIntent: FORM_INTENT,
+    kind: 'fill',
+    target: findElement(observation, (element) => element.selector === selector, selector),
+    params: { value: 'Ada' },
+    observationScope: { kind: 'regions', selectors: ['#contact'] },
+    ...extra,
+  });
+  const observeContact = () => service.observe({ ...session.identity, regions: ['#contact'] });
+  let observed = await observeContact();
+  assert.ok(observed.regions['#contact']);
+  await rejects(session.submit(observed, { ...scoped(observed, 'missing', '#name'),
+    observationScope: { kind: 'regions', selectors: ['#absent'] } }), 'invalid-command');
+  adapter.mutate(WORKSPACE_ID);
+  const background = await session.act(observed, scoped(observed, 'background', '#name'));
+  assert.equal(background.outcome, 'completed', JSON.stringify(background));
+  observed = await observeContact();
+  adapter.mutate(WORKSPACE_ID);
+  const pageScope = await session.act(observed, { ...scoped(observed, 'page-scope', '#email'), observationScope: undefined });
+  assert.equal(pageScope.neverDispatched.code, 'stale-observation');
+  observed = await observeContact();
+  adapter.mutate(WORKSPACE_ID, '#contact');
+  const inside = await session.act(observed, scoped(observed, 'inside', '#email'));
+  assert.equal(inside.neverDispatched.code, 'stale-observation');
+  const unrecorded = await service.observe(session.identity);
+  await rejects(session.submit(unrecorded, scoped(unrecorded, 'unrecorded-region', '#email')), 'invalid-command');
+  observed = await observeContact();
+  adapter.changeText(WORKSPACE_ID, '#other', 'Other (moved)');
+  const target = await session.act(observed, {
+    ...scoped(observed, 'target', '#other'),
+    kind: 'click',
+    params: undefined,
+  });
+  assert.equal(target.neverDispatched.code, 'target-changed');
+  assert.deepEqual(adapter.executions, ['nav-1', 'background']);
+  await service.close();
+}
+
+// Link-following actions need a grant for the link's destination origin.
+{
+  const { service, session, adapter } = await setupWorkspace();
+  const form = await openForm(session, 'nav-1');
+  await rejects(session.submit(form, {
+    actionId: 'follow-elsewhere',
+    authorizedIntent: FORM_INTENT,
+    kind: 'click',
+    target: findElement(form, (element) => element.selector === '#elsewhere', 'elsewhere'),
+  }), 'unauthorized-target');
+  assert.deepEqual(adapter.executions, ['nav-1']);
+  await service.close();
+}
+
 // Dispatch-time authorization and preconditions.
 {
   let revoke = null;

@@ -6,14 +6,15 @@ import { readFileSync } from 'node:fs';
 import { REJECTION_CODES, workspaceError } from './errors.js';
 
 const DEFAULT_CONFIG_URL = new URL('../../../config/fawn-workspace-service.json', import.meta.url);
-const SUPPORTED_SCHEMA_VERSION = 1;
-const SUPPORTED_PROTOCOL_VERSION = 1;
+const SUPPORTED_SCHEMA_VERSION = 2;
+const SUPPORTED_PROTOCOL_VERSION = 2;
 
 const POSITIVE_INTEGER_FIELDS = Object.freeze([
   'credentials.secretBytes',
   'observation.maxAgeMs',
   'observation.maxTextChars',
   'observation.maxElements',
+  'observation.maxRegions',
   'dispatch.actionTimeoutMs',
   'dispatch.completionTimeoutMs',
   'dispatch.completionPollMs',
@@ -21,6 +22,7 @@ const POSITIVE_INTEGER_FIELDS = Object.freeze([
 
 const NON_EMPTY_LIST_FIELDS = Object.freeze([
   'actionKinds',
+  'observationScopes',
   'conditionKinds',
   'reconciliationMethods',
 ]);

@@ -23,8 +23,8 @@
   ],
   "properties": {
     "$schema": { "type": "string", "const": "browser-product-comparison-policy.schema.json" },
-    "schemaVersion": { "type": "integer", "const": 5 },
-    "policyId": { "type": "string", "const": "fawn-external-product-comparison-v5" },
+    "schemaVersion": { "type": "integer", "const": 6 },
+    "policyId": { "type": "string", "const": "fawn-external-product-comparison-v6" },
     "authority": {
       "type": "object",
       "additionalProperties": false,
@@ -96,7 +96,18 @@
         "control",
         "treatment",
         "scope",
-        "requiresNativeRuntimeWins"
+        "requiresNativeRuntimeWins",
+        "comparisonVersion",
+        "runnerPath",
+        "controlImplementationPath",
+        "fixtureSitePath",
+        "browserRuntime",
+        "controlCapabilities",
+        "equalOpportunities",
+        "scenarios",
+        "excludedScenarios",
+        "measures",
+        "criteria"
       ],
       "properties": {
         "contractPath": {
@@ -116,6 +127,112 @@
         },
         "requiresNativeRuntimeWins": {
           "const": false
+        },
+        "comparisonVersion": { "type": "string", "minLength": 1 },
+        "runnerPath": { "const": "browser/workspace/qualification/compare.js" },
+        "controlImplementationPath": { "const": "browser/workspace/qualification/baseline" },
+        "fixtureSitePath": { "const": "browser/workspace/qualification/fixture-site.js" },
+        "browserRuntime": {
+          "description": "Treatment and control drive the same browser binary through the same driver.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["driver", "browser", "treatmentAdapter", "headless"],
+          "properties": {
+            "driver": { "const": "playwright-core" },
+            "browser": { "const": "chromium-headless-shell" },
+            "treatmentAdapter": { "const": "playwright" },
+            "headless": { "type": "boolean" }
+          }
+        },
+        "controlCapabilities": {
+          "description": "Reasonable state handling the control keeps; removing one would cripple the baseline.",
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 },
+          "allOf": [
+            { "contains": { "const": "persistent-profile" } },
+            { "contains": { "const": "durable-progress-file" } },
+            { "contains": { "const": "origin-allowlist-including-form-actions" } },
+            { "contains": { "const": "application-idempotency-reference" } },
+            { "contains": { "const": "application-state-check-before-resubmission" } }
+          ]
+        },
+        "equalOpportunities": { "$ref": "#/$defs/stringList" },
+        "scenarios": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "workflow", "fault", "oracle", "repetitions"],
+            "properties": {
+              "id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+              "workflow": { "enum": ["research", "form", "export"] },
+              "fault": { "enum": ["none", "kill-while-effect-held", "background-settle", "replace-target"] },
+              "pagePath": { "type": "string", "pattern": "^/" },
+              "treatmentRegions": { "$ref": "#/$defs/stringList" },
+              "oracle": { "enum": ["research-findings", "single-receipt", "report-artifact", "no-replaced-artifact"] },
+              "repetitions": { "type": "integer", "minimum": 1 }
+            }
+          }
+        },
+        "excludedScenarios": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "reason"],
+            "properties": {
+              "id": { "type": "string", "minLength": 1 },
+              "reason": { "type": "string", "minLength": 1 }
+            }
+          }
+        },
+        "measures": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "taskSuccess",
+              "incorrectActions",
+              "recovery",
+              "observationBytes",
+              "completeTaskLatencyMs",
+              "serviceOverheadMs",
+              "integrationLines"
+            ]
+          },
+          "minItems": 7
+        },
+        "criteria": {
+          "description": "Frozen before execution. Success, safety and recovery differ materially whenever their counts differ; latency uses the median rule; the rest is reported, never decisive.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["latency", "materialWhenDifferent", "informativeOnly"],
+          "properties": {
+            "latency": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["statistic", "regressionRatio", "advantageRatio", "minimumDeltaMs"],
+              "properties": {
+                "statistic": { "const": "median" },
+                "regressionRatio": { "type": "number", "exclusiveMinimum": 1 },
+                "advantageRatio": { "type": "number", "exclusiveMaximum": 1, "exclusiveMinimum": 0 },
+                "minimumDeltaMs": { "type": "integer", "minimum": 0 }
+              }
+            },
+            "materialWhenDifferent": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": { "enum": ["taskSuccess", "incorrectActions", "recovery"] },
+              "minItems": 3
+            },
+            "informativeOnly": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": { "enum": ["observationBytes", "serviceOverheadMs", "integrationLines"] }
+            }
+          }
         }
       }
     },

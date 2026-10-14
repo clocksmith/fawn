@@ -8,6 +8,7 @@ import { canonicalJson, sha256Hex } from '../../src/journal.js';
 
 const BLANK_URL = 'about:blank';
 const ORIGIN = 'https://fixture.test';
+const FOREIGN_ORIGIN = 'https://foreign.test';
 
 const SITE = Object.freeze({
   [`${ORIGIN}/form`]: {
@@ -25,7 +26,15 @@ const SITE = Object.freeze({
         submitsTo: `${ORIGIN}/form/done`,
       },
       { selector: '#other', tag: 'a', attributes: [['href', '/other'], ['id', 'other']], text: 'Other', navigatesTo: `${ORIGIN}/other` },
+      {
+        selector: '#elsewhere',
+        tag: 'a',
+        attributes: [['href', `${FOREIGN_ORIGIN}/`], ['id', 'elsewhere']],
+        text: 'Elsewhere',
+        navigatesTo: `${FOREIGN_ORIGIN}/`,
+      },
     ],
+    regions: { '#contact': ['#name', '#email', '#send'] },
   },
   [`${ORIGIN}/form/done`]: {
     title: 'Done',
@@ -40,12 +49,23 @@ const SITE = Object.freeze({
   [`${ORIGIN}/export`]: {
     title: 'Export',
     text: 'Export',
-    elements: [{ selector: '#report', tag: 'a', attributes: [['href', '/report.csv'], ['id', 'report']], text: 'Report', downloads: 'a,b\n1,2\n' }],
+    elements: [{
+      selector: '#report',
+      tag: 'a',
+      attributes: [['href', '/report.csv'], ['id', 'report']],
+      text: 'Report',
+      href: `${ORIGIN}/report.csv`,
+      downloads: 'a,b\n1,2\n',
+    }],
   },
 });
 
 function digestOf(element) {
   return sha256Hex(canonicalJson({ tag: element.tag, attributes: element.attributes, text: element.text }));
+}
+
+function freshPage(url) {
+  return { url, values: {}, mutation: 0, regionMutations: {}, textOverrides: {} };
 }
 
 class FakeAdapter {
@@ -58,7 +78,7 @@ class FakeAdapter {
   }
 
   async openWorkspace(workspaceId) {
-    if (!this.pages.has(workspaceId)) this.pages.set(workspaceId, { url: BLANK_URL, values: {}, mutation: 0 });
+    if (!this.pages.has(workspaceId)) this.pages.set(workspaceId, freshPage(BLANK_URL));
   }
 
   _page(workspaceId) {
@@ -70,16 +90,30 @@ class FakeAdapter {
   _elements(page) {
     const site = SITE[page.url];
     if (!site) return [];
-    return site.elements.map((element) => ({
-      ...element,
-      value: element.isInput ? (page.values[element.selector] ?? '') : null,
-      href: element.navigatesTo ?? null,
-      formAction: element.formAction ?? null,
-      digest: digestOf(element),
+    return site.elements.map((element) => {
+      const shown = { ...element, text: page.textOverrides[element.selector] ?? element.text };
+      return {
+        ...shown,
+        value: element.isInput ? (page.values[element.selector] ?? '') : null,
+        href: element.href ?? element.navigatesTo ?? null,
+        formAction: element.formAction ?? null,
+        digest: digestOf(shown),
+      };
+    });
+  }
+
+  _regionDigest(page, selector) {
+    const members = SITE[page.url]?.regions?.[selector];
+    if (!members) return null;
+    const elements = this._elements(page).filter((element) => members.includes(element.selector));
+    return sha256Hex(canonicalJson({
+      selector,
+      members: elements.map((element) => [element.digest, element.value]),
+      mutation: page.regionMutations[selector] ?? 0,
     }));
   }
 
-  async snapshot(workspaceId) {
+  async snapshot(workspaceId, { regions = [] } = {}) {
     const page = this._page(workspaceId);
     const site = SITE[page.url] ?? { title: '', text: '' };
     return {
@@ -89,7 +123,13 @@ class FakeAdapter {
       isTruncated: false,
       elements: this._elements(page),
       pageCount: 1,
-      contentHash: sha256Hex(canonicalJson({ url: page.url, values: page.values, mutation: page.mutation })),
+      contentHash: sha256Hex(canonicalJson({
+        url: page.url,
+        values: page.values,
+        mutation: page.mutation,
+        textOverrides: page.textOverrides,
+      })),
+      regionDigests: Object.fromEntries(regions.map((selector) => [selector, this._regionDigest(page, selector)])),
     };
   }
 
@@ -104,9 +144,16 @@ class FakeAdapter {
     return { count: 1, digest: element.digest, text: element.text, value: element.value };
   }
 
-  /** Simulate human or page activity between observation and dispatch. */
-  mutate(workspaceId) {
-    this._page(workspaceId).mutation += 1;
+  /** Simulate human or page activity between observation and dispatch, optionally inside a region. */
+  mutate(workspaceId, region = null) {
+    const page = this._page(workspaceId);
+    page.mutation += 1;
+    if (region) page.regionMutations[region] = (page.regionMutations[region] ?? 0) + 1;
+  }
+
+  /** Change an element's text, as a page script replacing a control would. */
+  changeText(workspaceId, selector, text) {
+    this._page(workspaceId).textOverrides[selector] = text;
   }
 
   /** Hold the next effect in flight until the returned release function is called. */
@@ -142,9 +189,8 @@ class FakeAdapter {
       throw new Error(message);
     }
     if (request.kind === 'navigate') {
-      page.url = request.target.url;
-      page.values = {};
-      return { finalUrl: page.url };
+      this.pages.set(workspaceId, freshPage(request.target.url));
+      return { finalUrl: request.target.url };
     }
     const element = this._elements(page).find((candidate) => candidate.selector === request.target.selector);
     if (!element) throw new Error(`no element ${request.target.selector}`);
@@ -162,14 +208,10 @@ class FakeAdapter {
         externalIdempotencyKey: request.effect?.externalIdempotencyKey ?? null,
         values: page.values,
       })}\n`);
-      page.url = element.submitsTo;
-      page.values = {};
+      this.pages.set(workspaceId, freshPage(element.submitsTo));
       return { selector: element.selector };
     }
-    if (element.navigatesTo) {
-      page.url = element.navigatesTo;
-      page.values = {};
-    }
+    if (element.navigatesTo) this.pages.set(workspaceId, freshPage(element.navigatesTo));
     return { selector: element.selector };
   }
 
@@ -178,4 +220,4 @@ class FakeAdapter {
   }
 }
 
-export { FakeAdapter, ORIGIN };
+export { FOREIGN_ORIGIN, FakeAdapter, ORIGIN };
