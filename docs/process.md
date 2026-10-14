@@ -586,19 +586,21 @@ classified and cannot be promoted by benchmark results.
   equivalence, timing/sample policy, claimability, and indexed evidence gates
   selected by the claim contract.
 - Advisory performance evidence cannot override a blocking failure.
-- Fawn workspace completion and release claims are blocked until the implemented
-  shared service passes the behavioral gates in the
-  [workspace contract](fawn-workspace-contract.md): persisted owner generations,
-  identical stale-command rejection in every adapter, and completed, failed, or
-  unknown outcomes retained across restart, consistent across research,
-  form-submission, and export workflows. Policy-projection tests, hosted artwork,
-  Chromium receipts, and GPU results cannot satisfy this gate; native runtime
-  results are not a prerequisite for it. The service exists in
-  [`browser/workspace`](../browser/workspace/README.md) with development tests;
-  the strategy schema records it as implemented-unqualified and rejects any
-  claimable or qualified workspace state
-  ([policy tests](../bench/tests/test_fawn_workspace_strategy.py)). The frozen
-  behavioral gates themselves are not implemented.
+- Fawn workspace behavioral gates are the frozen
+  [case set](../config/fawn-workspace-qualification.json). A step's assessment
+  may become established only from a full result admitted by
+  [the semantic validator](../browser/workspace/qualification/validate.js) for
+  committed source. That result must have persisted owner generations, identical
+  stale-command rejection in every adapter, and completed, failed or unknown
+  outcomes retained across restart, consistently across the research,
+  form-submission and export workflows.
+  [Policy tests](../bench/tests/test_fawn_workspace_strategy.py) require every
+  requirement of an established step to be established in the bound verdict.
+  Policy projections, development tests, hosted artwork, Chromium receipts and
+  GPU results cannot satisfy this gate; native runtime results are not a
+  prerequisite for it. Product value additionally needs the frozen
+  competent-baseline comparison, and workspace completion and release claims
+  stay blocked.
 - Chromium hooks and browser-runtime integration enter a stage only after
   measured benefits justify their compatibility and maintenance costs under
   [GOALS.md](../GOALS.md#strategic-constraints).

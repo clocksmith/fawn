@@ -6,6 +6,38 @@ It is the machine-readable source for milestone order, the binding proving set,
 and development-effectiveness recording. Status routes evidence; it does not
 maintain another roadmap.
 
+## Behavioral qualification bound to admitted evidence
+
+Schema version 11 and strategy version 6.4.0 bind workspace assessments to
+evidence. `fawnWorkspace.qualificationEvidence` names:
+- the frozen [case set](../config/fawn-workspace-qualification.json) and the
+  [validator](../browser/workspace/qualification/validate.js)
+- the admitted verdict and comparison under `reports/fawn-workspace/`
+- the source commit they ran
+- the scope: the frozen case set on the recorded browser and host, which is not
+  release qualification
+
+Steps 1–4 become `implemented-behavior-qualified` with assessment
+`established-on-frozen-case-set`; the policy tests require each of their
+requirements to be established in that verdict. Step 5 becomes
+`implemented-compared`, and its assessment stays `unestablished`. The overall
+status becomes `partially-implemented-behavior-qualified`. Release admission stays
+blocked, and claimable or release-qualified states remain rejected.
+
+The browser comparison policy moves to schema version 6
+(`fawn-external-product-comparison-v6`). `workspaceComparison` freezes:
+- the runner and the competent control implementation
+- the shared browser runtime, the control's state-handling capabilities and the
+  equal opportunities
+- the scenarios with their oracles and repetitions, and the excluded handoff
+  scenario with its reason
+- the measures and the material criteria
+
+The workspace service config moves to schema version 2 and protocol 2: observation
+regions, regions-scoped actions, link-destination authorization, full-text
+element fingerprints and `element-text-excludes`. Protocol 1 journals replay
+unchanged.
+
 ## Hardware-first initial target and complete-system comparison
 
 Schema version 10 and strategy version 6.3.0 adopt a hardware-first entry point

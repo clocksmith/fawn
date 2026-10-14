@@ -1,7 +1,7 @@
 # Fawn durable workspace contract
 
 Status: **shared service implemented in [`browser/workspace`](../browser/workspace/README.md);
-not qualified**.
+behavioral gates frozen; see [status](status/fawn-workspace.md) for admitted evidence**.
 This contract owns prospective shared-service behavior and acceptance.
 [Goals](../GOALS.md) own product intent, [the thesis](thesis.md) owns rationale,
 and `fawnWorkspace` in [the strategy projection](../config/doe-product-strategy.json)
@@ -142,21 +142,32 @@ benefits that justify their compatibility and maintenance costs.
 
 The trusted dispatcher, durable ownership generations, versioned-observation
 admission and uncertain-action journal are implemented in
-[`browser/workspace`](../browser/workspace/README.md), whose protocol v1 section
-specifies target identity, authorization scope, observation expiry, precondition
-evaluation, migration, adapter credentials, caller authentication and mutation
-coverage. Its fixture tests are development evidence: the frozen fixture set,
-expected outcomes and oracles this contract requires have not been admitted, and
-no competent-baseline comparison exists. The existing
-[fixture executor](../bench/fawn_matrix/executors/live_workloads.mjs) directly
-dispatches fixture actions; it is benchmark machinery, not this service.
+[`browser/workspace`](../browser/workspace/README.md). Its protocol section
+specifies target identity, authorization scope, observation expiry and scope,
+precondition evaluation, migration, adapter credentials, caller authentication
+and mutation coverage.
+
+The behavioral gates are frozen in
+[`config/fawn-workspace-qualification.json`](../config/fawn-workspace-qualification.json).
+It holds cases, authorization scopes, failure locations, expected outcomes, the
+fixture site's hash and its independent oracles. The
+[qualification harness](../browser/workspace/README.md#qualification) runs every
+case through each adapter and workflow. Its semantic validator admits a full
+result only for committed source matching the frozen identities, after
+re-verifying every journal and reconciling effects with the fixture's own
+receipts. The product-value comparison's scenarios, measures and material
+criteria are frozen in `workspaceComparison` of
+[the comparison policy](../config/browser-product-comparison-policy.json).
+[Status](status/fawn-workspace.md) records which results are admitted.
+
+The existing [fixture executor](../bench/fawn_matrix/executors/live_workloads.mjs)
+directly dispatches fixture actions; it is benchmark machinery, not this service.
 [GPU/browser recovery parity](../browser/chromium/contracts/browser-recovery-parity.contract.md)
-has a different scope. Existing browser milestones and historical receipts retain
+has a different scope. Existing browser milestones and historical receipts keep
 their original meaning and status.
 
 Workspace completion and release claims remain blocked until the implemented
-service and independent behavioral/workflow evidence satisfy this contract.
-The strategy schema records the implemented steps as `implemented-unqualified`
-and still rejects any completed, claimable or qualified assessment: admitting
-evidence requires a versioned contract extension and an actual semantic evidence
-validator. Passing `bench.tests.test_fawn_workspace_strategy` checks policy only.
+service and independent behavioral and workflow evidence satisfy this contract.
+`fawnWorkspace` in the strategy schema binds each step's assessment to admitted
+evidence; passing `bench.tests.test_fawn_workspace_strategy` checks that binding,
+not runtime behavior.
