@@ -1,24 +1,23 @@
 # Fawn hosted demonstrations
 
-The hosted background cycles Flows, Magnets, and Particles on one canvas. Each
-scene holds with its own simulation, shading, and pointer response. A scene change
-hands the outgoing state to the incoming scene and to one carried population that
-moves it under both scenes' motion while the three images blend. Logo formation
-carries the live image into the mark as moving material: each region travels its
-own curved path to its own place in the mark while the scene keeps simulating, and
-release reverses the same paths.
+The hosted background cycles Flows, Magnets, and Particles on one canvas. One
+population of parcels carries position, velocity, color, and material through every
+scene and transition, and gathers into the mark while the scene's field keeps moving
+it. Release retraces each parcel toward its place in the even starting spread, so
+material floats back across the scene instead of staying clumped. Unformed Flows and
+Magnets shade their live fields directly; parcels take over as the mark gathers.
 
-[`fawn-scenes.js`](../../browser/chromium/resources/fawn-scenes.js) is the single
-orchestrator. Each scene module owns its shaders; [`fawn-gpu.js`](../../browser/chromium/resources/fawn-gpu.js)
-holds the shared frame uniform and pipeline helpers, and [`fawn-mark.js`](../../browser/chromium/resources/fawn-mark.js)
-owns formation for every scene. The retained
-standalone benchmark pages are separate workloads, not shader sources.
+[`fawn-cycle-gpu.js`](../../browser/chromium/resources/fawn-cycle-gpu.js) runs the
+solvers and handoffs, [`fawn-parcels.js`](../../browser/chromium/resources/fawn-parcels.js)
+moves the parcels, and [`fawn-parcel-renderer.js`](../../browser/chromium/resources/fawn-parcel-renderer.js)
+shades them. Solver shaders are generated from the retained standalone pages by
+[`build-fawn-shaders.js`](../../browser/chromium/scripts/build-fawn-shaders.js).
 
 Checks are local visual and lifecycle checks in a WebGPU browser; no artwork test
 suite is retained. Physical-phone, Safari, native Doe and performance qualification
 remain separate. The [20261013 publication receipt](../../reports/releases/fawn/20261013-publication.json)
-records the previous hosted identity. [Workspace status](fawn-workspace.md) covers
-the prospective durable-work service.
+records an earlier hosted identity. [Workspace status](fawn-workspace.md) covers the
+prospective durable-work service.
 
 Doe owns the source under `browser/chromium/resources/`; sibling D4DA owns the
 isolated package through `firebase.fawn.json`. The canonical surface is
