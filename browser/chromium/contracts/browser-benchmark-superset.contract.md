@@ -92,7 +92,7 @@ These hashes are blocking for contract synchronization.
 
 `fawn_visual_resource` workflow entries additionally define `resourcePath`,
 which must point to a checked-in `browser/chromium/resources/*.html` page. These
-rows are optional diagnostics for visible Fawn pages and must use
+rows are optional diagnostics for the visible hosted demonstration pages and must use
 `comparabilityExpectation=none`, `requiredStatus=optional`, and
 `claimScope=l2_diagnostic_only`. Layered reports and score rows must include
 the current SHA-256 for each referenced visual resource; checker drift means the

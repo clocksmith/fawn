@@ -240,7 +240,7 @@
       "If K0 wins shared tasks and customers assign no value to differentiation, reject the measured shell-product claim; workspace value requires its own competent-baseline evidence.",
       "B must beat A before the legacy Fawn shell build earns standalone value; C must beat B before DoeRuntime earns browser execution; D must beat C before the Direct Protocol survives.",
       "A passing lane is necessary, not sufficient: Chromium hooks, the Direct Protocol and browser-runtime integration are added only when measured benefits justify their compatibility and maintenance costs.",
-      "An ineligible K0 row is retained as an eligibility result and never scored as a Fawn win."
+      "An ineligible K0 row is retained as an eligibility result and never scored as a win for the Fawn workspace or the legacy Fawn shell build."
     ]
   },
   "evidenceSpine": [
@@ -369,7 +369,7 @@
     {
       "order": 2,
       "id": "framework-substitution-v1",
-      "outcome": "Transfer the accepted Doppler correction to ONNX and deliver the bounded integration beneath ONNX Runtime's existing WebGPU provider for independent installation. Pinned execution, matched source-built comparison, lifecycle qualification and local isolated package acceptance are established; material replacement advantage, broader compatibility, external reproduction and retained adoption remain unestablished.",
+      "outcome": "Once milestone 1 accepts a Doppler correction, transfer it to ONNX; deliver the bounded integration beneath ONNX Runtime's existing WebGPU provider for independent installation. Pinned execution, matched source-built comparison, lifecycle qualification and local isolated package acceptance are established; material replacement advantage, broader compatibility, external reproduction and retained adoption remain unestablished.",
       "requiredEvidence": [
         "pinned ONNX Runtime and Dawn build plus existing provider baseline",
         "explicit proc-table/context adaptation, ABI dependencies, compatibility boundaries and maintenance costs",
@@ -430,10 +430,10 @@
   "claimBoundary": {
     "forbiddenInferences": [
       "DoeProof value does not imply DoeRuntime ownership.",
-      "Fawn shell value does not imply DoeRuntime or Direct Protocol value.",
-      "K0 is an external product comparator and never identifies the value of an internal Fawn or DoeRuntime component.",
-      "Cloudflare documentation and vendor measurements define comparator scope but do not constitute Doe or Fawn execution evidence.",
-      "A K0 limitation or ineligible row does not imply Fawn product value.",
+      "Legacy Fawn shell build value does not imply DoeRuntime or Direct Protocol value.",
+      "K0 is an external product comparator and never identifies the value of an internal legacy Fawn shell build or DoeRuntime component.",
+      "Cloudflare documentation and vendor measurements define comparator scope but do not constitute Doe, Fawn workspace or legacy Fawn shell build execution evidence.",
+      "A K0 limitation or ineligible row does not imply Fawn workspace or legacy Fawn shell build product value.",
       "K0 is an external product comparator and never a fifth A/B/C/D causal lane.",
       "DoeProof value and qualification cannot depend on Doppler availability or provider preference.",
       "A component timing win does not imply an application win.",

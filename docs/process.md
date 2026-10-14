@@ -593,7 +593,11 @@ classified and cannot be promoted by benchmark results.
   unknown outcomes retained across restart, consistent across research,
   form-submission, and export workflows. Policy-projection tests, hosted artwork,
   Chromium receipts, and GPU results cannot satisfy this gate; native runtime
-  results are not a prerequisite for it.
+  results are not a prerequisite for it. Until the service exists, the only
+  executable enforcement is the strategy schema, which rejects any implemented,
+  claimable or qualified workspace state
+  ([policy tests](../bench/tests/test_fawn_workspace_strategy.py)). The behavioral
+  gates themselves are not implemented.
 - Chromium hooks and browser-runtime integration enter a stage only after
   measured benefits justify their compatibility and maintenance costs under
   [GOALS.md](../GOALS.md#strategic-constraints).
