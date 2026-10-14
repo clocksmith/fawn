@@ -1,7 +1,7 @@
 // Surface and point appearances reconstruct the same independently moving parcels.
 import { PARCEL_STRUCT } from './fawn-parcels.js';
 const PARCEL_RENDER_POLICY = Object.freeze({
-  version: 11,
+  version: 12,
   accumulationCapacity: 4096,
   materialBound: 8,
   fluidRadiusCells: 2.2,
@@ -12,8 +12,8 @@ const PARCEL_RENDER_POLICY = Object.freeze({
   radianceFloor: 0.001,
   coverageGain: 2.5,
   exposure: 1.65,
-  flowGlintPixels: 1.25,
-  flowGlintStrength: 0.10,
+  flowGlintPixels: 2,
+  flowGlintStrength: 0.2,
   flowGlintSharpness: 12,
   flowSaturation: 0.82,
   flowBodyLight: 1.08,
@@ -23,11 +23,13 @@ const PARCEL_RENDER_POLICY = Object.freeze({
   filmBackground: Object.freeze([0.045, 0.062, 0.085]),
   liveFlowContrast: 0.28,
   liveFlowWall: Object.freeze([1.5, 5]),
-  filmDensity: Object.freeze([1.2, 2]),
-  filmHeight: Object.freeze([0.02, 0.08]),
+  particleTrailS: 0.4,
+  filmDensity: Object.freeze([0.7, 1.4]),
+  filmDensityTapPx: 4,
+  filmHeight: Object.freeze([0.13, 0.25]),
 });
 const HEADER = `
-struct Params { view:vec4<f32>, screen:vec4<f32>, theme:vec4<f32>, material:vec4<f32> }
+struct Params { view:vec4<f32>, screen:vec4<f32>, theme:vec4<f32>, material:vec4<f32>, trail:vec4<f32> }
 @group(0) @binding(0) var<uniform> u:Params;
 `;
 const PARCEL_SPLATS =
@@ -65,6 +67,7 @@ const PARCEL_SURFACE =
 @group(0) @binding(5) var<storage,read> flowDye:array<vec4<f32>>;
 @group(0) @binding(6) var<storage,read> flowVelocity:array<vec4<f32>>;
 @group(0) @binding(7) var<storage,read> flowCurl:array<vec4<f32>>;
+@group(0) @binding(8) var trailField:texture_2d<f32>;
 fn flowCell(p:vec2<i32>)->u32 {
  let n=i32(u.material.w);let q=clamp(p,vec2<i32>(0),vec2<i32>(n-1));return u32(q.y*n+q.x);
 }
@@ -109,7 +112,8 @@ fn materialAt(uv:vec2<f32>)->vec4<f32> {
  return textureSample(geometryField,imageSampler,uv)/max(weight,0.000001);
 }
 fn spectral(t:f32)->vec3<f32> {return 0.5+0.5*cos(vec3<f32>(0,2,4)+t*6.28318);}
-@fragment fn fs(in:Out)->@location(0) vec4<f32> {
+fn densityAt(uv:vec2<f32>)->f32 {return textureSample(colorField,imageSampler,uv).a/max(u.view.w,0.000001);}
+fn shade(in:Out)->vec4<f32> {
  let color=textureSample(colorField,imageSampler,in.uv);let density=color.a/max(u.view.w,0.000001);
  let pigment=color.rgb/max(color.a,0.000001);let material=materialAt(in.uv);
  let pointColor=clamp(pigment*(0.85+material.w*0.15),vec3<f32>(0),vec3<f32>(1.0-${PARCEL_RENDER_POLICY.radianceFloor}));
@@ -158,7 +162,8 @@ fn spectral(t:f32)->vec3<f32> {return 0.5+0.5*cos(vec3<f32>(0,2,4)+t*6.28318);}
  // Soft highlights follow the carried relief; ambient light can move while the fluid rests.
  let facet=floor(in.position.xy/${PARCEL_RENDER_POLICY.flowGlintPixels});
  let grain=fract(sin(dot(facet,vec2<f32>(12.9898,78.233)))*43758.5453);
- let shimmer=pow(0.5+0.5*sin(grain*6.28318+material.x*8.0+material.z*3.0+u.material.x*0.65),${PARCEL_RENDER_POLICY.flowGlintSharpness}.0);
+ // Pixel glitter rides the visible relief, live or carried.
+ let shimmer=pow(0.5+0.5*sin(grain*6.28318+height*8.0+curl*3.0+u.material.x*0.65),${PARCEL_RENDER_POLICY.flowGlintSharpness}.0);
  let glint=pow(max(dot(reflect(normalize(vec3<f32>(0.20,-0.16,-1.0)),normal),vec3<f32>(0,0,1)),0.0),20.0);
  let secondary=spectral(speed*0.30+normal.x*0.15-normal.y*0.08);
  let metallic=mix(vec3<f32>(0.05,0.06,0.08),prism,0.52)
@@ -169,7 +174,7 @@ fn spectral(t:f32)->vec3<f32> {return 0.5+0.5*cos(vec3<f32>(0,2,4)+t*6.28318);}
  let fluidLight=albedo*bodyGain
    +(prism*curl*0.030+metallic*(0.22+height*0.14))*(1.0-magnetic)
    +magnetic*(prism*ridge*(0.02+contour*0.40+fresnel*0.16)+vec3<f32>(0.8,0.88,1)*filmSpec*0.28)
-   +vec3<f32>(1.0,0.96,0.93)*shimmer*(0.25+glint*0.75)*${PARCEL_RENDER_POLICY.flowGlintStrength}*(1.0-liveWeight)*(1.0-magnetic);
+   +vec3<f32>(1.0,0.96,0.93)*shimmer*(0.25+glint*0.75)*${PARCEL_RENDER_POLICY.flowGlintStrength}*(1.0-magnetic);
  let pointRadiance=-log(max(1.0-pointColor,vec3<f32>(${PARCEL_RENDER_POLICY.radianceFloor})))/${PARCEL_RENDER_POLICY.exposure};
  let radiance=mix(fluidLight,pointRadiance,pointness);
  let tone=1.0-exp(-max(radiance,vec3<f32>(0))*${PARCEL_RENDER_POLICY.exposure});
@@ -178,19 +183,30 @@ fn spectral(t:f32)->vec3<f32> {return 0.5+0.5*cos(vec3<f32>(0,2,4)+t*6.28318);}
  // Visibility belongs to moving material; no full-sheet image fills or fades underneath it.
  // Unformed magnetic film is continuous material the field holds: stray parcels and weak-field
  // areas stay clear instead of showing single fluid parcels.
- let film=smoothstep(${PARCEL_RENDER_POLICY.filmDensity.join(',')},density)
-   *smoothstep(${PARCEL_RENDER_POLICY.filmHeight.join(',')},c.x);
- let coverage=mix(carried,film,magnetic*(1.0-pointness)*(1.0-u.theme.w));
+ let tap=u.screen.xy*${PARCEL_RENDER_POLICY.filmDensityTapPx}.0;
+ let filmDensity=(density+densityAt(in.uv+tap)+densityAt(in.uv-tap)
+   +densityAt(in.uv+vec2<f32>(tap.x,-tap.y))+densityAt(in.uv+vec2<f32>(-tap.x,tap.y)))*0.2;
+ // The forming mark keeps the continuous film but leaves the field mask so it shows whole.
+ let film=smoothstep(${PARCEL_RENDER_POLICY.filmDensity.join(',')},filmDensity)
+   *mix(smoothstep(${PARCEL_RENDER_POLICY.filmHeight.join(',')},c.x),1.0,u.theme.w);
+ let coverage=mix(carried,film,magnetic*(1.0-pointness));
  let background=vec3<f32>(0.040,0.055,0.070)*u.theme.x+vec3<f32>(${PARCEL_RENDER_POLICY.filmBackground.join(',')})*u.theme.y
    +vec3<f32>(0.010,0.016,0.013)*u.theme.z
    +vec3<f32>(1.0,0.96,0.93)*shimmer*${PARCEL_RENDER_POLICY.backgroundGlintStrength}*u.theme.x;
  return vec4<f32>(mix(background,max(appearance,background),coverage),1);
 }
+struct Surface { @location(0) color:vec4<f32>, @location(1) trail:vec4<f32> }
+@fragment fn fs(in:Out)->Surface {
+ // Particles leave fading paths, as the standalone particle page did; other materials leave none.
+ let previous=textureSample(trailField,imageSampler,in.uv).rgb*u.trail.x*u.theme.z;
+ let color=vec4<f32>(max(shade(in).rgb,previous),1);
+ return Surface(color,color);
+}
 `;
 function createParcelRenderer(device, canvas, format, count, parcels, waves, grid, flow) {
   const uniform = device.createBuffer({
     label: 'Cycle parcel rendering uniforms',
-    size: 64,
+    size: 80,
     usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
   });
   const module = device.createShaderModule({ label: 'Fawn parcel splats', code: PARCEL_SPLATS });
@@ -220,7 +236,7 @@ function createParcelRenderer(device, canvas, format, count, parcels, waves, gri
     label: 'Fawn full canvas surface',
     layout: 'auto',
     vertex: { module: lighting, entryPoint: 'vs' },
-    fragment: { module: lighting, entryPoint: 'fs', targets: [{ format }] },
+    fragment: { module: lighting, entryPoint: 'fs', targets: [{ format }, { format: 'rgba16float' }] },
     primitive: { topology: 'triangle-strip' },
   });
   const groups = parcels.map((buffer) =>
@@ -234,9 +250,19 @@ function createParcelRenderer(device, canvas, format, count, parcels, waves, gri
   );
   const sampler = device.createSampler({ minFilter: 'linear', magFilter: 'linear' });
   let textures = [],
+    trails = [],
+    trailIndex = 0,
+    lastTime = null,
     resolve;
   function resize() {
-    textures.forEach((t) => t.destroy());
+    [...textures, ...trails].forEach((t) => t.destroy());
+    trails = [0, 1].map((i) => device.createTexture({
+      label: `Cycle particle trail ${i}`,
+      size: [canvas.width, canvas.height],
+      format: 'rgba16float',
+      usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING,
+    }));
+    trailIndex = 0;
     textures = ['color', 'geometry'].map((kind) =>
       device.createTexture({
         label: `Cycle parcel ${kind} moments`,
@@ -248,8 +274,8 @@ function createParcelRenderer(device, canvas, format, count, parcels, waves, gri
           GPUTextureUsage.COPY_SRC,
       }),
     );
-    // Indexed [wave field][dye field] to follow both solvers' ping-pong buffers.
-    resolve = waves.map(wave => flow.dyes.map(dye => device.createBindGroup({
+    // Indexed [wave field][dye field][trail] to follow every ping-pong resource.
+    resolve = waves.map(wave => flow.dyes.map(dye => trails.map(trail => device.createBindGroup({
       layout: surface.getBindGroupLayout(0),
       entries: [
         { binding: 0, resource: { buffer: uniform } },
@@ -260,8 +286,9 @@ function createParcelRenderer(device, canvas, format, count, parcels, waves, gri
         { binding: 5, resource: { buffer: dye } },
         { binding: 6, resource: { buffer: flow.velocity } },
         { binding: 7, resource: { buffer: flow.curl } },
+        { binding: 8, resource: trail.createView() },
       ],
-    })));
+    }))));
   }
   function draw(encoder, view, index, weights, time, shimmerTime = time, waveIndex = 0, dyeIndex = 0,
     shape = 0) {
@@ -272,6 +299,8 @@ function createParcelRenderer(device, canvas, format, count, parcels, waves, gri
     const particleRadius = (PARCEL_RENDER_POLICY.particleRadiusPx * 2) / side;
     const radius = fluidRadius + (particleRadius - fluidRadius) * weights[2];
     const normalization = Math.min(1, PARCEL_RENDER_POLICY.accumulationCapacity / count);
+    const trailRetention = Math.exp(-Math.max(0, time - (lastTime ?? time)) / PARCEL_RENDER_POLICY.particleTrailS);
+    lastTime = time;
     device.queue.writeBuffer(
       uniform,
       0,
@@ -289,6 +318,10 @@ function createParcelRenderer(device, canvas, format, count, parcels, waves, gri
         particleRadius,
         fluidRadius,
         grid,
+        trailRetention,
+        0,
+        0,
+        0,
       ]),
     );
     const pass = encoder.beginRenderPass({
@@ -306,12 +339,16 @@ function createParcelRenderer(device, canvas, format, count, parcels, waves, gri
     pass.end();
     const output = encoder.beginRenderPass({
       label: 'Fawn full canvas lighting',
-      colorAttachments: [{ view, loadOp: 'clear', storeOp: 'store', clearValue: [0, 0, 0, 1] }],
+      colorAttachments: [
+        { view, loadOp: 'clear', storeOp: 'store', clearValue: [0, 0, 0, 1] },
+        { view: trails[1 - trailIndex].createView(), loadOp: 'clear', storeOp: 'store', clearValue: [0, 0, 0, 0] },
+      ],
     });
     output.setPipeline(surface);
-    output.setBindGroup(0, resolve[waveIndex][dyeIndex]);
+    output.setBindGroup(0, resolve[waveIndex][dyeIndex][trailIndex]);
     output.draw(4);
     output.end();
+    trailIndex = 1 - trailIndex;
   }
   resize();
   return {
@@ -319,7 +356,7 @@ function createParcelRenderer(device, canvas, format, count, parcels, waves, gri
     draw,
     destroy() {
       uniform.destroy();
-      textures.forEach((t) => t.destroy());
+      [...textures, ...trails].forEach((t) => t.destroy());
     },
   };
 }
