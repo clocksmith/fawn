@@ -35,6 +35,7 @@ const TREATMENT_WORKFLOW_FILES = Object.freeze([
 ]);
 const CONTROL_WORKFLOW_FILES = Object.freeze(['qualification/baseline/baseline-workflows.js']);
 const WORKSPACE_ROOT = fileURLToPath(new URL('../', import.meta.url));
+const TREATMENT_RECOVERY = Object.freeze({ form: 'form-recovery', export: 'export-recovery' });
 
 function parseArgs(argv) {
   const options = {};
@@ -148,8 +149,9 @@ class Side {
     return request.then((value) => ({ ...value, error: null }), (error) => ({ result: null, observationBytes: null, error: { code: error.code ?? null, message: error.message } }));
   }
 
+  /** The treatment resumes through each workflow's recovery; the control reruns with its progress file. */
   recoveryWorkflow(scenario) {
-    return this.name === 'treatment' && scenario.workflow === 'form' ? 'form-recovery' : scenario.workflow;
+    return this.name === 'treatment' ? TREATMENT_RECOVERY[scenario.workflow] : scenario.workflow;
   }
 
   async kill() {

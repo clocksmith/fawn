@@ -24,7 +24,7 @@ const WORKFLOW_SUMMARIES = Object.freeze({
     skipped: result.skipped.length,
   }),
   form: (result) => ({ recovered: result.recovered ?? null }),
-  export: (result) => ({ artifactSha256: result.artifact?.sha256 ?? null }),
+  export: (result) => ({ artifactSha256: result.artifact?.sha256 ?? null, recovered: result.recovered ?? null }),
 });
 
 function summarizeWorkflow(workflow, result) {

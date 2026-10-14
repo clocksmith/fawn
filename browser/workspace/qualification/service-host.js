@@ -9,7 +9,7 @@ import { createInterface } from 'node:readline';
 import { loadServiceConfig } from '../src/config.js';
 import { WorkspaceService } from '../src/service.js';
 import { createOwnerSession } from '../src/workflows/owner-session.js';
-import { runArtifactExport } from '../src/workflows/artifact-export.js';
+import { recoverArtifactExport, runArtifactExport } from '../src/workflows/artifact-export.js';
 import { runDocumentResearch } from '../src/workflows/document-research.js';
 import { recoverFormSubmission, runFormSubmission } from '../src/workflows/form-submission.js';
 
@@ -37,6 +37,7 @@ const WORKFLOWS = Object.freeze({
   form: runFormSubmission,
   'form-recovery': recoverFormSubmission,
   export: runArtifactExport,
+  'export-recovery': recoverArtifactExport,
 });
 
 // Hooks: a declared crash point kills this process; race arrangements register one-shot hooks.

@@ -217,8 +217,8 @@ class RunContext {
   }
 
   recover(owner, runId) {
-    return this.host.workflow('form-recovery', identityOf(owner), this.task(runId), null, this.sessionOptions())
-      .then((result) => summarizeWorkflow('form', result), summarizeError);
+    return this.host.workflow(`${this.workflowName}-recovery`, identityOf(owner), this.task(runId), null, this.sessionOptions())
+      .then((result) => summarizeWorkflow(this.workflowName, result), summarizeError);
   }
 
   settle(promise) {
