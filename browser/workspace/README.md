@@ -20,13 +20,15 @@ evidence, not the contract's behavioral gates or product-value comparison.
 - `src/workflows/`: document research, controlled form submission and artifact
   export. They contain the task logic and reach the browser only through the
   service API.
-- `test/`: unit tests (fake adapter, real process kills) and real-Chromium
-  workflow tests with an independent fixture server.
+- `qualification/`: the behavioral qualification harness and the
+  competent-baseline comparison (see [Qualification](#qualification)).
+- `test/`: unit tests (fake adapter, real process kills) and a real-Chromium
+  qualification subset that also checks the validator rejects tampered evidence.
 
 Tunables and protocol coverage come from
 [`config/fawn-workspace-service.json`](../../config/fawn-workspace-service.json).
 
-## Protocol v1
+## Protocol v2
 
 The contract's semantic names map to these concrete rules.
 
@@ -47,22 +49,37 @@ The contract's semantic names map to these concrete rules.
 - **Authorization scope.** An admin grant names one owner, a set of intents,
   action kinds and exact target origins, with an optional expiry. An action needs
   one live grant that covers its `authorizedIntent`, its `kind` and every origin
-  it touches: the navigation URL, the current page and, for `submit`, the form
-  action. Revoking or expiring a grant before dispatch ends the action
-  undispatched.
+  it touches: the navigation URL, the current page, the destination of a
+  followed link (`click`, `download`) and, for `submit`, the form action. The
+  intent check runs before the observation check, so a revoked or expired grant
+  is reported as `unauthorized-intent` whatever the page did. Revoking or
+  expiring a grant before dispatch ends the action undispatched.
 - **Observations and expiry.** Every `observe` records a new version carrying
   the owner generation, a content hash (URL, DOM and control values), element
-  target digests, and an expiry of `observation.maxAgeMs`. An action must cite
-  the current, unexpired version from the current generation. At dispatch, the
-  service re-reads the page; any change records a `page-change` version and
-  rejects the action as `stale-observation`.
+  target digests, link and form destinations, and an expiry of
+  `observation.maxAgeMs`. `observe` may name up to `observation.maxRegions`
+  region selectors; the version records a digest of each region's markup and
+  control values, or none when the selector does not match exactly one element.
+- **Observation scope.** An action's `observationScope` (one of
+  `observationScopes`) binds its staleness:
+  - `page` (the default): the cited version must be the current one. At
+    dispatch the service re-reads the page; any change records a `page-change`
+    version and rejects the action as `stale-observation`.
+  - `regions`: the cited version may be older, but it must come from the current
+    generation, be unexpired and have recorded every scoped region. Later
+    versions and the live page at dispatch must keep the cited URL and every
+    scoped region digest; otherwise the action is `stale-observation`. Changes
+    outside the scoped regions are still recorded as `page-change` versions.
+  Target identity is checked in both scopes.
 - **Target identity.** An element target is a `selector` plus the element
-  digest (tag, attributes, text) from the cited observation. At dispatch the
-  selector must match exactly one element with the same digest
-  (`target-changed` otherwise).
+  digest (tag, attributes, displayed text and a fingerprint of the full text)
+  from the cited observation. At dispatch the selector must match exactly one
+  element with the same digest (`target-changed` otherwise).
 - **Preconditions.** These are declarative `conditionKinds`, evaluated against
-  the live page at dispatch. Text and value conditions need exactly one match.
-  A condition that throws or times out is unestablished and blocks dispatch.
+  the live page at dispatch. Text and value conditions need exactly one match
+  and read the element's full text; `element-text-excludes` is positive
+  evidence of absence only for that one element. A condition that throws or
+  times out is unestablished and blocks dispatch.
 - **Action records.** Intent is journaled (`action-admitted`) before queueing,
   and `action-dispatch-started` is journaled before the browser effect. Outcomes
   are `completed` or `failed` only with positive evidence: completion or failure
@@ -89,9 +106,44 @@ The contract's semantic names map to these concrete rules.
   then accepts commands. A corrupt record or a live lock holder fails closed. A
   final record without its terminator was never acted on and is discarded with
   a recorded hash.
-- **Migration.** The journal and config carry `protocolVersion` 1. A later
-  protocol must replay or explicitly migrate v1 journals. Unknown record types
+- **Migration.** Protocol 2 adds observation regions, `observationScope`, link
+  destinations and full-text fingerprints. Protocol 1 journals replay unchanged:
+  their observations carry no regions, and an observation without recorded link
+  destinations cannot authorize a `click` or `download`. Unknown record types
   fail closed.
+
+## Qualification
+
+[`config/fawn-workspace-qualification.json`](../../config/fawn-workspace-qualification.json)
+freezes the behavioral case set: cases, authorization scopes, failure locations,
+expected outcomes, the fixture site's hash and the oracles. Each case names a
+procedure in `qualification/procedures.js` and runs through every adapter and
+every listed workflow.
+
+- `fixture-site.js` serves the corpus, the contact form, export pages and a live
+  export page that changes in the background, on a main and a foreign origin.
+  Its own request log and receipts are the independent oracle.
+- `service-host.js` runs the service in a separate process. The runner kills it
+  at declared points, reopens its state and issues concurrent commands so
+  handoff can race admission and dispatch.
+- `identity.js` binds results to source trees, configs, the commit and the
+  browser executable actually running under the host, read from `/proc`.
+- `validate.js` admits a full result only if it names committed source and
+  matches the frozen case set and fixture. For every run it then:
+  - re-verifies and replays the journal and checks ordering invariants
+  - compares what callers saw, the journal and the fixture's logs with the
+    expectations
+  - judges external effects by the application's receipts
+  - requires identical behavior across adapters and no debugging endpoint
+
+  It reports coverage of every strategy requirement.
+- `compare.js` and `baseline/` compare the same workflows against competent
+  stock Playwright automation, under the frozen scenarios and criteria in
+  `workspaceComparison` of
+  [the comparison policy](../../config/browser-product-comparison-policy.json).
+  The baseline keeps a persistent profile, a durable progress file, an origin
+  allowlist, exact locators, the application's idempotency reference and a
+  submissions check before resubmitting.
 
 ## Commands
 
@@ -99,16 +151,23 @@ The contract's semantic names map to these concrete rules.
 cd browser/workspace
 npm ci
 npm test               # unit tests: journal, service rules, process-kill restart
-npm run test:browser   # adds real headless Chromium through both adapters
+npm run test:browser   # adds a qualification subset through both adapters
+npm run qualify        # full case set; writes bench/out/fawn-workspace-qualification/<stamp>
+npm run compare        # baseline comparison; writes bench/out/fawn-workspace-comparison/<stamp>
+node qualification/validate.js <resultDir> --require-current-source
 ```
 
 The browser tests need Playwright's Chromium headless shell
-(`npx playwright-core install --only-shell chromium`).
+(`npx playwright-core install --only-shell chromium`). Qualification reads
+`/proc`, so it runs on Linux.
 
 ## Known limits
 
 - One page per workspace; popups and additional tabs are only counted.
-- Content hashing treats any DOM change as a page change, so continuously
-  changing pages make every dispatch stale.
-- One process holds a journal; the journal is not compacted.
-- No competent stock Chromium/Playwright baseline comparison exists yet.
+- Page scope treats any DOM change as a page change, so continuously changing
+  pages need `regions` scope with the regions an action depends on.
+- Chromium answers no page evaluation while a navigation is pending, so
+  observations and probes wait for it to commit, bounded by
+  `dispatch.actionTimeoutMs`.
+- One process holds a journal; the journal is not compacted, and observation
+  history is kept for the current owner generation.

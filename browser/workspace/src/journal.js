@@ -103,6 +103,23 @@ function verifyRecords(filePath, lines) {
   return { records, lastHash: prevHash };
 }
 
+/**
+ * Verify journal text without opening it for writing: every terminated record must chain.
+ */
+function parseJournalText(filePath, text) {
+  const terminatedEnd = text.lastIndexOf(RECORD_TERMINATOR) + 1;
+  const tornTail = text.slice(terminatedEnd);
+  const lines = terminatedEnd === 0 ? [] : text.slice(0, terminatedEnd - 1).split(RECORD_TERMINATOR);
+  const { records, lastHash } = verifyRecords(filePath, lines);
+  return { records, lastHash, tornTail, terminatedBytes: Buffer.byteLength(text.slice(0, terminatedEnd)) };
+}
+
+/** Read and verify a journal file read-only, as an evidence validator does. */
+function readVerifiedJournal(filePath) {
+  const { records, tornTail } = parseJournalText(filePath, readFileSync(filePath, 'utf8'));
+  return { records, tornTailBytes: Buffer.byteLength(tornTail) };
+}
+
 class Journal {
   constructor({ filePath, lockPath, fd, records, lastHash, recovery }) {
     this._filePath = filePath;
@@ -124,11 +141,8 @@ class Journal {
     const lockRecovery = acquireLock(lockPath);
     try {
       const text = existsSync(filePath) ? readFileSync(filePath, 'utf8') : '';
-      const terminatedEnd = text.lastIndexOf(RECORD_TERMINATOR) + 1;
-      const tornTail = text.slice(terminatedEnd);
-      const lines = terminatedEnd === 0 ? [] : text.slice(0, terminatedEnd - 1).split(RECORD_TERMINATOR);
-      const { records, lastHash } = verifyRecords(filePath, lines);
-      if (tornTail.length > 0) truncateSync(filePath, Buffer.byteLength(text.slice(0, terminatedEnd)));
+      const { records, lastHash, tornTail, terminatedBytes } = parseJournalText(filePath, text);
+      if (tornTail.length > 0) truncateSync(filePath, terminatedBytes);
       const fd = openSync(filePath, 'a');
       const recovery = {
         lockRecoveredFromPid: lockRecovery?.recoveredFromPid ?? null,
@@ -172,4 +186,4 @@ class Journal {
   }
 }
 
-export { Journal, canonicalJson, sha256Hex };
+export { Journal, canonicalJson, readVerifiedJournal, sha256Hex };

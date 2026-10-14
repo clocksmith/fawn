@@ -60,6 +60,7 @@ const REDUCERS = Object.freeze({
       grants: new Map(),
       observationVersion: 0,
       observation: null,
+      observations: new Map(),
       actions: new Map(),
     });
   },
@@ -78,6 +79,8 @@ const REDUCERS = Object.freeze({
     workspace.ownerGeneration = body.ownerGeneration;
     workspace.ownerId = body.ownerId;
     workspace.ownerCredentialHashes.set(body.ownerGeneration, body.ownerCredentialHash);
+    // Observations from earlier generations can never be cited again.
+    workspace.observations.clear();
   },
   [RECORD_TYPES.OBSERVATION_RECORDED]: (state, body, record) => {
     const workspace = requireWorkspace(state, body.workspaceId, record);
@@ -85,7 +88,8 @@ const REDUCERS = Object.freeze({
       throw new Error(`journal seq ${record.seq}: observation version must advance by one`);
     }
     workspace.observationVersion = body.observationVersion;
-    workspace.observation = { ...body };
+    workspace.observation = { ...body, regions: body.regions ?? {} };
+    workspace.observations.set(body.observationVersion, workspace.observation);
   },
   [RECORD_TYPES.ACTION_ADMITTED]: (state, body, record) => {
     const workspace = requireWorkspace(state, body.workspaceId, record);

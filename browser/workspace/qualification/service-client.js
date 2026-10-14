@@ -1,4 +1,4 @@
-// Fawn workspace tests — parent side of service-host.js.
+// Fawn workspace qualification — parent side of service-host.js.
 import { spawn } from 'node:child_process';
 import { createInterface } from 'node:readline';
 import { fileURLToPath } from 'node:url';
@@ -15,8 +15,8 @@ class HostError extends Error {
 /**
  * Start a service host and resolve once it has restored authority (or failed to).
  */
-function startHost(options) {
-  const child = spawn(process.execPath, [HOST_PATH, JSON.stringify(options)], { stdio: ['pipe', 'pipe', 'inherit'] });
+function startHost(options, hostPath = HOST_PATH) {
+  const child = spawn(process.execPath, [hostPath, JSON.stringify(options)], { stdio: ['pipe', 'pipe', 'inherit'] });
   const pending = new Map();
   let nextId = 1;
   const exited = new Promise((resolve) => child.on('exit', (code, signal) => resolve({ code, signal })));
@@ -46,9 +46,22 @@ function startHost(options) {
     child.stdin.write(`${JSON.stringify({ id, op, args })}\n`);
   });
   return ready.then(() => ({
+    request: send,
     call: (method, args) => send('call', { method, args }),
     submitAndWait: (args) => send('submitAndWait', args),
-    workflow: (name, owner, task, fault = null) => send('workflow', { name, owner, task, fault }),
+    submit: (args) => send('submit', args),
+    awaitAction: (actionId) => send('awaitAction', { actionId }),
+    queueBehindEffect: (args) => send('queueBehindEffect', args),
+    awaitAdmission: (actionId) => send('awaitAdmission', { actionId }),
+    workflow: (name, owner, task, fault = null, sessionOptions = {}) => send('workflow', {
+      name,
+      owner,
+      task,
+      fault,
+      sessionOptions,
+    }),
+    raceWorkflow: (args) => send('raceWorkflow', args),
+    surface: (owner) => send('surface', { owner }),
     close: async () => {
       await send('close', {});
       return exited;

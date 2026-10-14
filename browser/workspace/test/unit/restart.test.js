@@ -4,7 +4,7 @@ import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { loadServiceConfig } from '../../src/config.js';
-import { startHost } from '../support/service-client.js';
+import { startHost } from '../../qualification/service-client.js';
 import { ORIGIN } from '../support/fake-adapter.js';
 
 const config = loadServiceConfig();

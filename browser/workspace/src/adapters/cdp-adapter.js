@@ -158,9 +158,9 @@ class CdpWorkspaceAdapter {
     return this._evaluate(workspaceId, `(${queryPage.toString()})(${JSON.stringify(args)})`);
   }
 
-  async snapshot(workspaceId) {
+  async snapshot(workspaceId, { regions = [] } = {}) {
     const { cdp } = this._entry(workspaceId);
-    const raw = await this._query(workspaceId, snapshotArgs(this._config));
+    const raw = await this._query(workspaceId, snapshotArgs(this._config, regions));
     const { targetInfos } = await cdp.send('Target.getTargets');
     return buildSnapshot(raw, targetInfos.filter((target) => target.type === 'page').length);
   }

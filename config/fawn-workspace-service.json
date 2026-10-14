@@ -1,8 +1,8 @@
 {
   "$schema": "fawn-workspace-service.schema.json",
-  "schemaVersion": 1,
-  "configVersion": "2026-10-14-workspace-service-v1",
-  "protocolVersion": 1,
+  "schemaVersion": 2,
+  "configVersion": "2026-10-14-workspace-service-v2.1",
+  "protocolVersion": 2,
   "contractPath": "docs/fawn-workspace-contract.md",
   "journal": {
     "fileName": "journal.jsonl",
@@ -15,7 +15,8 @@
   "observation": {
     "maxAgeMs": 120000,
     "maxTextChars": 20000,
-    "maxElements": 200
+    "maxElements": 200,
+    "maxRegions": 16
   },
   "dispatch": {
     "actionTimeoutMs": 15000,
@@ -36,12 +37,17 @@
     "submit",
     "download"
   ],
+  "observationScopes": [
+    "page",
+    "regions"
+  ],
   "conditionKinds": [
     "url-equals",
     "url-prefix",
     "element-present",
     "element-absent",
     "element-text-includes",
+    "element-text-excludes",
     "input-value-equals"
   ],
   "reconciliationMethods": [
