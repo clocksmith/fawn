@@ -60,7 +60,7 @@ function createCycleGpu(device, canvas, format, count) {
   };
   const flowUniform = buffer('Cycle Flow uniforms', 80, true);
   const waveUniform = buffer('Cycle Wave uniforms', wave.WAVE_UNIFORM_FLOATS * 4, true);
-  const parcelUniform = buffer('Cycle parcel uniforms', 64, true);
+  const parcelUniform = buffer('Cycle parcel uniforms', 80, true);
   const transferUniform = buffer('Cycle transfer uniforms', 48, true);
   const velocities = [field('Cycle velocity 0'), field('Cycle velocity 1')];
   const dyes = [field('Cycle dye 0'), field('Cycle dye 1')];
@@ -228,6 +228,9 @@ function createCycleGpu(device, canvas, format, count) {
         (burst?.y ?? pointer.y) * 2 - 1,
         burst?.strength ?? 0,
         burst?.radius ?? 0,
+        ...viewport,
+        0,
+        0,
       ]),
     );
     device.queue.writeBuffer(

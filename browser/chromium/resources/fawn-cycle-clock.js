@@ -7,7 +7,7 @@ const CYCLE_POLICY = Object.freeze({
   holdS: 8,
   blendS: 4,
   arrivalBlendS: Object.freeze({ wave: 6 }),
-  formation: Object.freeze({ delayS: 3.5, settleS: 2.5, responseRate: 4 }),
+  formation: Object.freeze({ delayS: 3, settleS: 2.5, responseRate: 4 }),
   maxDtS: 0.033,
   maxFrameS: 0.1,
 });

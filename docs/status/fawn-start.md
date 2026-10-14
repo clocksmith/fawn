@@ -9,7 +9,10 @@ Magnets shade their live fields directly; parcels take over as the mark gathers.
 Each scene shows its full field before the mark gathers late in the hold. A press keeps
 each scene's response through every blend: Magnets attract, Particles repel, a held
 press swirls where the two cancel, and material under it leaves its formation and
-return springs until release.
+return springs until release. Material spirals into the mark on the live field rather than
+taking straight lines. Unformed magnetic film draws only where material is continuous and
+the field holds it. Fluid relief carries pixel glitter. Particles follow the standalone
+particle page's galaxy with fading trails and form the mark in its positional palette.
 
 [`fawn-cycle-gpu.js`](../../browser/chromium/resources/fawn-cycle-gpu.js) runs the
 solvers and handoffs, [`fawn-parcels.js`](../../browser/chromium/resources/fawn-parcels.js)
