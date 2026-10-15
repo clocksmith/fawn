@@ -8,7 +8,7 @@
 // Every billed request is charged to one ledger shared across modes, under the approved ceiling.
 
 import { createHash } from 'node:crypto';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { Checkpoint } from '../agents/checkpoint.js';
@@ -28,6 +28,7 @@ const FULL_RUN_MARKER = 'full-run-started.json';
 const COMPATIBILITY_FILE = 'compatibility.json';
 const SMOKE_FILE = 'smoke.json';
 const KEY_FILE = join(homedir(), '.config/anthropic/api-key');
+const KEY_FILE_SHARED_BITS = 0o077;
 const ARMS = Object.freeze(['treatment', 'control']);
 // The frozen fill tool also sets select controls, so the treatment's grant covers select.
 const MODEL_ACTION_KINDS = Object.freeze([...AGENT_ACTION_KINDS, 'select']);
@@ -69,10 +70,30 @@ function buildScenarios(comparison, frozen) {
   return [...development, ...heldOut];
 }
 
-function readApiKey() {
-  if (process.env.ANTHROPIC_API_KEY) return process.env.ANTHROPIC_API_KEY;
-  if (existsSync(KEY_FILE)) return readFileSync(KEY_FILE, 'utf8').trim();
-  return null;
+// The key never reaches child processes (service host, tool host, browsers), receipts or logs.
+let secret = null;
+
+function readApiKey(fromEnvironment) {
+  if (fromEnvironment) return fromEnvironment;
+  if (!existsSync(KEY_FILE)) return null;
+  if (statSync(KEY_FILE).mode & KEY_FILE_SHARED_BITS) throw new Error(`${KEY_FILE} must be readable only by its owner (chmod 600)`);
+  return readFileSync(KEY_FILE, 'utf8').trim();
+}
+
+function guarded(text, where) {
+  if (secret && text.includes(secret)) throw new Error(`refusing to write ${where}: it contains the API key`);
+  return text;
+}
+
+const writeReceipt = (path, value) => writeFileSync(path, guarded(typeof value === 'string' ? value : `${JSON.stringify(value, null, 2)}\n`, path));
+const log = (line) => console.log(guarded(line, 'the log'));
+
+/** Each application fixture's current hash against the hash bound after implementation. */
+function fixtureIdentity(suite) {
+  return suite.fixtureSites.sites.map((site) => {
+    const current = sha256(site.path);
+    return { ...site, current, matches: current === site.sha256 };
+  });
 }
 
 async function runModelArm({ name, scenario, repetition, frozen, suite, client, ledger, mode, humanHoldMs }) {
@@ -242,9 +263,12 @@ async function runModelDriven(options) {
   const suite = comparison.modelDrivenDifferentiation;
   const frozen = loadFrozen(suite);
   const mode = options.mode ?? 'full';
+  const environmentKey = process.env.ANTHROPIC_API_KEY;
+  delete process.env.ANTHROPIC_API_KEY;
+  const fixtures = fixtureIdentity(suite);
+  const fixturesMatchFrozen = fixtures.every((site) => site.matches);
   const stamp = new Date().toISOString().replace(/[:.]/g, '').slice(0, 15);
   const outDir = options.out ?? join(REPO_ROOT, OUT_ROOT, `${mode}-${stamp}Z`);
-  mkdirSync(outDir, { recursive: true });
   const ledgerDir = join(REPO_ROOT, OUT_ROOT);
   mkdirSync(ledgerDir, { recursive: true });
   let client;
@@ -252,10 +276,16 @@ async function runModelDriven(options) {
   if (mode === 'offline') {
     client = createScriptedClient();
   } else {
-    const apiKey = readApiKey();
+    const apiKey = readApiKey(environmentKey);
     if (!apiKey) throw new Error(`model API credentials are required: set ANTHROPIC_API_KEY or write ${KEY_FILE} (mode 0600)`);
+    secret = apiKey;
     ledger = new SpendLedger({ path: join(ledgerDir, LEDGER_FILE), ceilingUsd: suite.spend.approvedCeilingUsd, prices: suite.spend.pricesPerMillionTokensUsd });
     client = createClient({ apiKey, agent: suite.agent, ledger });
+  }
+  const git = gitState();
+  if (mode !== 'offline') {
+    const changes = git.workingTreeChanges ?? ['unknown'];
+    if (changes.length) throw new Error(`billed runs need committed source; uncommitted: ${changes.join('; ')}`);
   }
   if (mode === 'compatibility') {
     const response = await client.turn({ system: frozen.system, tools: frozen.tools,
@@ -263,22 +293,23 @@ async function runModelDriven(options) {
     const record = { model: response.model, stopReason: response.stop_reason, usage: response.usage,
       contentTypes: response.content.map((block) => block.type), request: { model: suite.agent.model, thinking: suite.agent.thinking, samplingParameters: suite.agent.samplingParameters },
       passed: response.model?.startsWith(suite.agent.model) && !response.content.some((block) => block.type === 'thinking'),
-      spentUsd: ledger.spentUsd };
-    writeFileSync(join(ledgerDir, COMPATIBILITY_FILE), `${JSON.stringify(record, null, 2)}\n`);
-    console.log(JSON.stringify(record));
+      sourceCommit: git.commit, spentUsd: ledger.spentUsd };
+    writeReceipt(join(ledgerDir, COMPATIBILITY_FILE), record);
+    log(JSON.stringify(record));
     return;
   }
   const passed = (file) => existsSync(join(ledgerDir, file)) && JSON.parse(readFileSync(join(ledgerDir, file), 'utf8')).passed === true;
   if (mode === 'smoke' || mode === 'full') {
-    const changes = gitState().workingTreeChanges ?? ['unknown'];
-    if (changes.length) throw new Error(`billed runs need committed source; uncommitted: ${changes.join('; ')}`);
     if (!passed(COMPATIBILITY_FILE)) throw new Error('the compatibility request has not passed');
+    const changed = fixtures.filter((site) => !site.matches).map((site) => site.path);
+    if (changed.length) throw new Error(`fixtures differ from their bound hashes: ${changed.join(', ')}`);
   }
   if (mode === 'full') {
     if (!passed(SMOKE_FILE)) throw new Error('the wiring smoke has not completed');
     if (existsSync(join(ledgerDir, FULL_RUN_MARKER))) throw new Error('the full suite has already been started once');
-    writeFileSync(join(ledgerDir, FULL_RUN_MARKER), `${JSON.stringify({ startedAt: new Date().toISOString(), outDir })}\n`);
+    writeReceipt(join(ledgerDir, FULL_RUN_MARKER), { startedAt: new Date().toISOString(), outDir });
   }
+  mkdirSync(outDir, { recursive: true });
   const all = buildScenarios(comparison, frozen);
   const SCOPES = {
     offline: { scenarios: options.scenarios ?? suite.wiringSmoke.scenarios, repetitions: 1 },
@@ -305,7 +336,7 @@ async function runModelDriven(options) {
             stopped = 'the browser binary differs from the frozen binary';
             break outer;
           }
-          console.log(`ran: ${scenario.id} ${name} ${repetition}: ${run.row.taskSuccess ? 'success' : 'failure'} (${run.row.details.status})`
+          log(`ran: ${scenario.id} ${name} ${repetition}: ${run.row.taskSuccess ? 'success' : 'failure'} (${run.row.details.status})`
             + ` incorrect ${run.row.incorrectExternalEffects} reviews ${run.row.humanReviews} obs-tokens ${run.row.observationTokens}`
             + ` cost ${run.row.inferenceCostUsd.toFixed(3)} spent ${ledger ? ledger.spentUsd.toFixed(2) : 'offline'}`);
         } catch (error) {
@@ -325,6 +356,9 @@ async function runModelDriven(options) {
     scope: isFull ? 'full' : (mode === 'full' ? 'stopped' : mode),
     stopped,
     identity: resultIdentity(),
+    fixtureSites: fixtures,
+    fixturesMatchFrozen,
+    knownRepresentationDifferences: suite.knownRepresentationDifferences,
     agent: suite.agent,
     browsers,
     sameFrozenBrowser: browsers.length === 1 && browsers[0].sha256 === suite.browserBinary.sha256,
@@ -332,14 +366,14 @@ async function runModelDriven(options) {
     ...evaluation,
     rows,
   };
-  writeFileSync(join(outDir, 'model-driven.json'), `${JSON.stringify(result, null, 2)}\n`);
+  writeReceipt(join(outDir, 'model-driven.json'), result);
   if (mode === 'smoke') {
-    writeFileSync(join(ledgerDir, SMOKE_FILE), `${JSON.stringify({ passed: !stopped && result.sameFrozenBrowser, stopped, result: join(outDir, 'model-driven.json') }, null, 2)}\n`);
+    writeReceipt(join(ledgerDir, SMOKE_FILE), { passed: !stopped && result.sameFrozenBrowser && fixturesMatchFrozen, stopped, result: join(outDir, 'model-driven.json') });
   }
-  writeFileSync(join(outDir, 'transcripts.json'), `${JSON.stringify(evidence)}\n`);
-  for (const requirement of evaluation.requirements) console.log(`${requirement.area}: ${requirement.status}`);
-  if (stopped) console.log(`stopped: ${stopped}`);
-  console.log(`product advantage established: ${evaluation.productAdvantage.established}; spent ${result.spentUsd.toFixed(2)}; ${join(outDir, 'model-driven.json')}`);
+  writeReceipt(join(outDir, 'transcripts.json'), `${JSON.stringify(evidence)}\n`);
+  for (const requirement of evaluation.requirements) log(`${requirement.area}: ${requirement.status}`);
+  if (stopped) log(`stopped: ${stopped}`);
+  log(`product advantage established: ${evaluation.productAdvantage.established}; spent ${result.spentUsd.toFixed(2)}; ${join(outDir, 'model-driven.json')}`);
   if (stopped) process.exitCode = 1;
 }
 

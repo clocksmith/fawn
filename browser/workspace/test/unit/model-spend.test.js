@@ -61,4 +61,12 @@ const directory = mkdtempSync(join(tmpdir(), 'fawn-model-spend-'));
   assert.equal(sent.length, 0);
 }
 
+{
+  const apiKey = 'sk-test-secret';
+  const fetchImpl = async () => new Response(`{"error":"bad key ${apiKey}"}`, { status: 401 });
+  const ledger = new SpendLedger({ path: join(directory, 'redaction.json'), ceilingUsd: CEILING_USD, prices: PRICES });
+  await assert.rejects(createClient({ apiKey, agent: AGENT, ledger, fetchImpl, backoffMs: 0 }).turn(turn),
+    (error) => error instanceof ProviderError && !error.message.includes(apiKey) && error.message.includes('[redacted]'));
+}
+
 console.log('ok: model-spend');

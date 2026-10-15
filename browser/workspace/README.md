@@ -226,6 +226,7 @@ The browser tests need Playwright's Chromium headless shell
 ## Known limits
 
 - One page per workspace; popups and additional tabs are only counted.
+- The outline names a select control by its option text, not its label.
 - Page scope treats any DOM change as a page change, so continuously changing
   pages need `regions` scope with the regions an action depends on.
 - Chromium answers no page evaluation while a navigation is pending, so

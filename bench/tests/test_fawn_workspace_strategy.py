@@ -211,7 +211,8 @@ class FawnWorkspaceStrategyTests(unittest.TestCase):
         self.assertEqual(binding_failures(strategy, verdict), [])
         comparison = load_json(evidence["comparisonPath"])
         policy = load_json("config/browser-product-comparison-policy.json")
-        self.assertEqual(comparison["identity"]["git"]["commit"], evidence["sourceCommit"])
+        self.assertEqual(comparison["identity"]["git"]["commit"], evidence["comparisonSourceCommit"])
+        self.assertEqual(evidence["comparisonSourceCommit"], strategy["fawnWorkspace"]["differentiationEvidence"]["sourceCommit"])
         self.assertEqual(
             comparison["comparisonVersion"],
             policy["workspaceComparison"]["comparisonVersion"],
@@ -254,6 +255,10 @@ class FawnWorkspaceStrategyTests(unittest.TestCase):
             with self.subTest(path=artifact["path"]):
                 digest = hashlib.sha256((REPO_ROOT / artifact["path"]).read_bytes()).hexdigest()
                 self.assertEqual(digest, artifact["sha256"], "a frozen prompt, tool description or held-out specification changed")
+        for site in suite["fixtureSites"]["sites"]:
+            with self.subTest(path=site["path"]):
+                digest = hashlib.sha256((REPO_ROOT / site["path"]).read_bytes()).hexdigest()
+                self.assertEqual(digest, site["sha256"], "an application fixture changed after its hash was bound")
 
     def test_binding_rejects_evidence_that_does_not_establish_a_step(self) -> None:
         strategy = load_strategy()

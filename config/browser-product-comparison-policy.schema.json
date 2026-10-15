@@ -23,8 +23,8 @@
   ],
   "properties": {
     "$schema": { "type": "string", "const": "browser-product-comparison-policy.schema.json" },
-    "schemaVersion": { "type": "integer", "const": 10 },
-    "policyId": { "type": "string", "const": "fawn-external-product-comparison-v10" },
+    "schemaVersion": { "type": "integer", "const": 11 },
+    "policyId": { "type": "string", "const": "fawn-external-product-comparison-v11" },
     "authority": {
       "type": "object",
       "additionalProperties": false,
@@ -295,9 +295,9 @@
       "additionalProperties": false,
       "required": [
         "suiteVersion", "status", "purpose", "runnerPath", "frozenArtifacts", "agent", "spend", "wiringSmoke", "fullRuns",
-        "browserBinary", "control", "treatment",
+        "browserBinary", "fixtureSites", "control", "treatment",
         "sharedConditions", "repetitions", "workflows", "measures", "measurement", "improvementRequirements",
-        "productAdvantageRule", "runPrerequisites", "knownControlLimits"
+        "productAdvantageRule", "runPrerequisites", "knownControlLimits", "knownRepresentationDifferences"
       ],
       "properties": {
         "suiteVersion": { "type": "string", "minLength": 1 },
@@ -317,6 +317,29 @@
             }
           }
         },
+        "fixtureSites": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["description", "sites"],
+          "properties": {
+            "description": { "type": "string", "minLength": 1 },
+            "sites": {
+              "type": "array",
+              "minItems": 4,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["app", "path", "sha256"],
+                "properties": {
+                  "app": { "enum": ["procurement", "helpdesk", "clinic-booking", "expense-filing"] },
+                  "path": { "type": "string", "pattern": "^browser/workspace/qualification/([a-z-]+/)?[a-z-]+-site\\.js$" },
+                  "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+                }
+              }
+            }
+          }
+        },
+        "knownRepresentationDifferences": { "$ref": "#/$defs/stringList" },
         "agent": {
           "type": "object",
           "additionalProperties": false,

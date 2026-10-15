@@ -1,7 +1,7 @@
 {
   "$schema": "browser-product-comparison-policy.schema.json",
-  "schemaVersion": 10,
-  "policyId": "fawn-external-product-comparison-v10",
+  "schemaVersion": 11,
+  "policyId": "fawn-external-product-comparison-v11",
   "authority": {
     "strategyPath": "docs/thesis.md",
     "browserLanePath": "docs/browser-lane.md",
@@ -599,6 +599,15 @@
         "version": "Google Chrome for Testing 145.0.7632.6",
         "sha256": "27e55cc30e487493b89b663085d6deeb0707be201a568657c922fac9076c317c"
       },
+      "fixtureSites": {
+        "description": "Every application fixture, bound by hash after implementation; billed runs refuse a fixture that differs. Each held-out fixture includes a portal root linking to its first frozen page, because the frozen task prompts name only the origin.",
+        "sites": [
+          { "app": "procurement", "path": "browser/workspace/qualification/workbench-site.js", "sha256": "b8e8c5c9c1e11e47b05dfbde1b867a514987dc6a567523cec9ecd6a4bc9b2059" },
+          { "app": "helpdesk", "path": "browser/workspace/qualification/helpdesk-site.js", "sha256": "ec29aa6ee757ea9f44ba42355fbe55beb0439ad13cf825c82739ee9f84d891b7" },
+          { "app": "clinic-booking", "path": "browser/workspace/qualification/held-out/clinic-site.js", "sha256": "9830ed8158fe7bae8ce43cd8e974faf9f5c4464483e8ba892670615e92ce2265" },
+          { "app": "expense-filing", "path": "browser/workspace/qualification/held-out/expense-site.js", "sha256": "817a852ef6ff9de3bef1e6da62c2d528a51c43cfde69b2d1db0c4d3ff82ecbf9" }
+        ]
+      },
       "control": {
         "id": "playwright-agent-tooling-with-revalidation",
         "observation": "page-wide-playwright-agent-snapshot-incremental-when-since-last-regions-accepted-but-not-scoped",
@@ -743,6 +752,9 @@
       ],
       "knownControlLimits": [
         "Playwright's ref-bearing agent snapshot is page-wide; scoped reads without refs would need site-specific locators the model does not have."
+      ],
+      "knownRepresentationDifferences": [
+        "The treatment's outline names a select control by its option text (for example combobox \"Choose\\nMeals\\nTravel\"), not by its label; the control's snapshot names it by its label (combobox \"Category\"). Unchanged for this campaign; accessible naming changes only in a later protocol version with full requalification."
       ]
     }
   },
