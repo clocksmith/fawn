@@ -10,6 +10,20 @@ workspace evidence bindings. Status routes evidence; it does not maintain a
 roadmap. The commercial plan and the ordered roadmap are maintained in the
 owner's private strategy repository.
 
+## Integrated comparison version 2
+
+Contract `fawn-doe-integrated-comparison-v2` (schema version 2) supersedes
+version 1 (commit `258dc2551`) before any implementation and records the user's
+approvals:
+- fresh browser processes per label per arm rise, because the earlier count was
+  too weak for a p95 decision and the A/A gate
+- Three.js correctness captures pin frame number, animation clock, viewport,
+  color space and warmup, and mask no pixels; the frame tolerance is approved
+- the Three.js margin is approved as the first rendering threshold, at p50 and p95
+- the hardware-Vulkan launch arguments are approved with the sandbox enabled
+- the agent suite has an approved hard ceiling, and no billed request may run
+  before the forced-Doe build passes its complete build gate
+
 ## Commercial strategy and roadmap moved out
 
 Schema version 15 and strategy version 7.0.0 remove the commercial and roadmap
