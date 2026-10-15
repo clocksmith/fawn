@@ -214,8 +214,12 @@ The frozen case set passed in full, through both adapters, on Playwright's
 Chrome for Testing headless shell and on installed Google Chrome stable, a later
 major version with a different headless mode
 ([verdict](../../reports/fawn-workspace/20261015-revalidated-control/compatibility-chrome/verdict.json)).
-This is compatibility evidence on this Linux host, not release qualification;
-other engines, operating systems and headed sessions are untested.
+It also passed headed on Chrome stable, on a virtual display (Xvfb)
+([verdict](../../reports/fawn-workspace/20261015-revalidated-control/compatibility-chrome-headed/verdict.json)).
+This is compatibility evidence on this Linux host, not release qualification.
+Other engines, operating systems, physical-display sessions and multiple pages
+are untested; multi-page support waits until the model-driven comparison is
+done.
 
 ## Limits and open work
 

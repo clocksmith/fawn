@@ -116,10 +116,12 @@ def compatibility_failures(strategy: dict[str, Any]) -> list[str]:
         result = load_json(build["verdictPath"].replace("verdict.json", "result.json"))
         if not verdict["admitted"] or verdict["caseSetVersion"] != case_set["caseSetVersion"]:
             failures.append(f"{build['channel']}: not an admitted run of the frozen case set")
-        if verdict["identity"]["git"]["commit"] != evidence["sourceCommit"]:
-            failures.append(f"{build['channel']}: ran another commit")
-        if result["browserChannel"] != build["channel"] or not all(verdict["browsers"].values()):
-            failures.append(f"{build['channel']}: browser channel or identity missing")
+        if verdict["identity"]["git"]["commit"] != build["sourceCommit"] or verdict["identity"]["git"]["workingTreeChanges"]:
+            failures.append(f"{build['channel']}: ran another or uncommitted commit")
+        if result["browserChannel"] != build["channel"] or result.get("headless", True) != build["headless"]:
+            failures.append(f"{build['channel']}: browser channel or headless mode differs")
+        if not all(verdict["browsers"].values()):
+            failures.append(f"{build['channel']}: browser identity missing")
     return failures
 
 

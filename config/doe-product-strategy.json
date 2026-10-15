@@ -1,7 +1,7 @@
 {
   "$schema": "doe-product-strategy.schema.json",
   "schemaVersion": 13,
-  "strategyVersion": "6.6.0",
+  "strategyVersion": "6.6.1",
   "artifactKind": "doe-product-strategy",
   "authority": {
     "goals": "GOALS.md",
@@ -549,10 +549,17 @@
       "builds": [
         {
           "channel": "chrome",
-          "verdictPath": "reports/fawn-workspace/20261015-revalidated-control/compatibility-chrome/verdict.json"
+          "headless": true,
+          "verdictPath": "reports/fawn-workspace/20261015-revalidated-control/compatibility-chrome/verdict.json",
+          "sourceCommit": "9f522f7d98406eca21a2db5062d76c917c375c47"
+        },
+        {
+          "channel": "chrome",
+          "headless": false,
+          "verdictPath": "reports/fawn-workspace/20261015-revalidated-control/compatibility-chrome-headed/verdict.json",
+          "sourceCommit": "581a16510ab7d0bd87497adb5194f7ebce21ad4a"
         }
       ],
-      "sourceCommit": "9f522f7d98406eca21a2db5062d76c917c375c47",
       "scope": "frozen-case-set-on-recorded-builds-not-release-qualification"
     },
     "implementationStatus": "partially-implemented-behavior-qualified",

@@ -20,6 +20,11 @@ Git history at commit `5d2eb189e`, under
 - [`compatibility-chrome/`](compatibility-chrome/): the same frozen case set on
   installed Google Chrome stable, through both adapters
   ([verdict](compatibility-chrome/verdict.json)).
+- [`compatibility-chrome-headed/`](compatibility-chrome-headed/): the same frozen
+  case set on Google Chrome stable in a headed session on a virtual display
+  (Xvfb), through both adapters, on commit `581a16510`
+  ([verdict](compatibility-chrome-headed/verdict.json)). This is headed
+  compatibility evidence only.
 - [`comparison/`](comparison/): the scripted comparison against competent stock
   Playwright automation.
 - [`differentiation/differentiation.json`](differentiation/differentiation.json):
@@ -31,8 +36,11 @@ Git history at commit `5d2eb189e`, under
 
 ## Source identity
 
-Every result ran commit `9f522f7d98406eca21a2db5062d76c917c375c47` with no
-working-tree changes under `browser/workspace` or `config`. Each records:
+Every result except the headed run ran commit
+`9f522f7d98406eca21a2db5062d76c917c375c47`; the headed run used
+`581a16510ab7d0bd87497adb5194f7ebce21ad4a`, which adds the launch-failure fix and
+the headed override. Neither had working-tree changes under `browser/workspace`
+or `config`. Each records:
 - source and harness tree digests
 - config and package-lock hashes
 - Node and `playwright-core` versions, and the operating system and kernel
@@ -51,8 +59,10 @@ node qualification/validate.js ../../reports/fawn-workspace/20261015-revalidated
 
 ## Limits
 
-- Behavior is qualified on two Chromium builds on this Linux host, not on other
-  engines, operating systems or headed sessions, and is not release qualification.
+- Behavior is qualified on two Chromium builds on this Linux host, headless and,
+  for Chrome stable, headed on a virtual display. Other engines, operating
+  systems and physical-display sessions are untested. None of this is release
+  qualification.
 - Scripted workflows show no material advantage over competent stock automation.
 - Against the stronger control, gaps from changing decision inputs and human
   handoff close. The advantages that remain are durable outcomes across agent
