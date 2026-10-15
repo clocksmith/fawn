@@ -250,8 +250,11 @@ v2 campaign](../../bench/external-projects/doppler-generation/README.md#complete
 schedules identical-byte A/A labels and both providers in the frozen balanced
 order. It refuses to start while foreign GPU clients are active. Its analyzer
 admits a valid baseline only with qualified providers, bound receipts, no foreign
-GPU activity and A/A intervals inside the frozen band for every case. It makes no
-performance claim.
+GPU activity and A/A intervals inside the frozen band for every case. If any A/A
+case fails, it withholds every Doe-versus-Dawn statistic. It makes no
+performance claim. It still needs an explicitly reserved GPU window: Reploid
+native participants and long-running Chrome GPU processes hold the device, and
+they are not stopped until their owners settle their work.
 
 One quiet invocation is not a reproducible baseline. The frozen hardware
 identity and existing acceptance thresholds apply unchanged, and current evidence

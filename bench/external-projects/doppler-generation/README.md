@@ -77,8 +77,10 @@ The campaign has its own runner and analyzer:
   - every per-case and aggregate A/A complete-generation interval lies inside
     the control band
 
-  It also computes the frozen superiority criteria as diagnostics, but never
-  promotes performance or sets a claim.
+  If any A/A case falls outside the band, it reports the A/A intervals and
+  withholds every Doe-versus-Dawn statistic (`doeVersusDawn: withheld`).
+  Otherwise it computes the frozen superiority criteria as diagnostics, but
+  never promotes performance or sets a claim.
 
 ```bash
 python3 bench/external-projects/doppler-generation/run-campaign.py --dry-run \
