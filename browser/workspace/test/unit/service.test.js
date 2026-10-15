@@ -146,6 +146,43 @@ async function rejects(promise, code) {
   await service.close();
 }
 
+// Outline view: compact regions with stable handles, deltas against a base version, handle targets.
+{
+  const { service, session, adapter } = await setupWorkspace();
+  await openForm(session, 'nav-1');
+  const read = { ...session.identity, view: 'outline', regions: ['#contact'] };
+  const first = await service.observe(read);
+  assert.deepEqual(Object.keys(first).sort(), ['baseVersion', 'boundary', 'observationVersion', 'regions', 'url']);
+  assert.equal(first.regions['#contact'].outline, '[hname] | [hemail] | [hsend]');
+  adapter.mutate(WORKSPACE_ID);
+  const delta = await service.observe({ ...read, sinceVersion: first.observationVersion });
+  assert.deepEqual(delta.regions['#contact'], { unchanged: true });
+  assert.equal(delta.baseVersion, first.observationVersion);
+  const byHandle = await session.act(delta, {
+    actionId: 'fill-by-handle',
+    authorizedIntent: FORM_INTENT,
+    kind: 'fill',
+    target: { handle: 'hname' },
+    params: { value: 'Ada' },
+    observationScope: { kind: 'regions', selectors: ['#contact'] },
+  });
+  assert.equal(byHandle.outcome, 'completed', JSON.stringify(byHandle));
+  const changed = await service.observe({ ...read, sinceVersion: delta.observationVersion });
+  assert.ok(changed.regions['#contact'].outline);
+  await rejects(session.submit(changed, {
+    actionId: 'ghost-handle',
+    authorizedIntent: FORM_INTENT,
+    kind: 'click',
+    target: { handle: 'hghost' },
+  }), 'unknown-target');
+  const navigated = await session.act(changed, {
+    ...navigateSpec('nav-unscoped', `${ORIGIN}/other`),
+    observationScope: { kind: 'regions', selectors: [] },
+  });
+  assert.equal(navigated.outcome, 'completed');
+  await service.close();
+}
+
 // Link-following actions need a grant for the link's destination origin.
 {
   const { service, session, adapter } = await setupWorkspace();

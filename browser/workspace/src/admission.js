@@ -39,12 +39,13 @@ function originOf(url, path) {
 }
 
 /**
- * Validate a list of region selectors against config.observation.maxRegions.
+ * Validate a list of region selectors against config.observation.maxRegions. An empty regions
+ * scope means the action depends on no page content beyond the cited URL and target identity.
  */
-function validateRegionSelectors(selectors, config, path) {
-  if (!Array.isArray(selectors) || selectors.length === 0
+function validateRegionSelectors(selectors, config, path, { allowEmpty = false } = {}) {
+  if (!Array.isArray(selectors) || (selectors.length === 0 && !allowEmpty)
     || selectors.some((selector) => typeof selector !== 'string' || selector.length === 0)) {
-    reject(REJECTION_CODES.INVALID_COMMAND, `${path}: expected non-empty array of selectors`, { path, received: selectors });
+    reject(REJECTION_CODES.INVALID_COMMAND, `${path}: expected array of selectors`, { path, received: selectors });
   }
   if (selectors.length > config.observation.maxRegions || new Set(selectors).size !== selectors.length) {
     reject(REJECTION_CODES.INVALID_COMMAND, `${path}: expected at most ${config.observation.maxRegions} distinct selectors`, {
@@ -63,7 +64,9 @@ function validateObservationScope(scope, config) {
       received: scope?.kind,
     });
   }
-  if (scope.kind === REGIONS_SCOPE) validateRegionSelectors(scope.selectors, config, 'observationScope.selectors');
+  if (scope.kind === REGIONS_SCOPE) {
+    validateRegionSelectors(scope.selectors, config, 'observationScope.selectors', { allowEmpty: true });
+  }
 }
 
 function authenticateAdmin(workspace, adminCredential) {
@@ -107,6 +110,8 @@ function validateActionShape(command, config) {
   }
   if (URL_TARGET_KINDS.includes(command.kind)) {
     requireString(command.target?.url, 'target.url');
+  } else if (command.target?.handle !== undefined) {
+    requireString(command.target.handle, 'target.handle');
   } else {
     requireString(command.target?.selector, 'target.selector');
     requireString(command.target?.digest, 'target.digest');
@@ -360,19 +365,38 @@ function checkEffect(workspace, command) {
 }
 
 /**
- * Admission: shape, owner authority, authorization, observation binding and effect safety.
+ * A handle names an element in the cited observation; it resolves to that observation's
+ * selector and digest, so dispatch checks the same target identity as an explicit target.
  */
-function checkAdmission(workspace, command, config, nowMs) {
-  validateActionShape(command, config);
-  authenticateOwner(workspace, command);
-  if (workspace.actions.has(command.actionId)) {
-    reject(REJECTION_CODES.DUPLICATE_ACTION_ID, command.actionId, { actionId: command.actionId });
+function resolveHandle(workspace, command) {
+  if (URL_TARGET_KINDS.includes(command.kind) || command.target?.handle === undefined) return command;
+  const cited = workspace.observations.get(command.observationVersion);
+  const selector = cited?.handles?.[command.target.handle];
+  if (!cited) return command;
+  if (!selector) {
+    reject(REJECTION_CODES.UNKNOWN_TARGET, `handle ${command.target.handle} not in observation ${command.observationVersion}`, {
+      handle: command.target.handle,
+    });
   }
-  const forIntent = grantsForIntent(workspace, command, nowMs);
+  return { ...command, target: { handle: command.target.handle, selector, digest: cited.targetDigests[selector] } };
+}
+
+/**
+ * Admission: shape, owner authority, authorization, observation binding and effect safety.
+ * Returns the command with any handle target resolved.
+ */
+function checkAdmission(workspace, submitted, config, nowMs) {
+  validateActionShape(submitted, config);
+  authenticateOwner(workspace, submitted);
+  if (workspace.actions.has(submitted.actionId)) {
+    reject(REJECTION_CODES.DUPLICATE_ACTION_ID, submitted.actionId, { actionId: submitted.actionId });
+  }
+  const forIntent = grantsForIntent(workspace, submitted, nowMs);
+  const command = resolveHandle(workspace, submitted);
   const cited = checkObservation(workspace, command, nowMs);
   const grantId = authorize(forIntent, command, cited);
   checkEffect(workspace, command);
-  return { grantId };
+  return { grantId, command };
 }
 
 /**

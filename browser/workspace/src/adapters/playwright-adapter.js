@@ -39,8 +39,8 @@ class PlaywrightWorkspaceAdapter {
     return entry.page;
   }
 
-  async snapshot(workspaceId, { regions = [] } = {}) {
-    const raw = await this._page(workspaceId).evaluate(queryPage, snapshotArgs(this._config, regions));
+  async snapshot(workspaceId, read = {}) {
+    const raw = await this._page(workspaceId).evaluate(queryPage, snapshotArgs(this._config, read));
     return buildSnapshot(raw, this._workspaces.get(workspaceId).context.pages().length);
   }
 

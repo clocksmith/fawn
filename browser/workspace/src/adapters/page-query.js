@@ -10,7 +10,7 @@ const ELEMENT_MODE = 'element';
 const ELEMENT_TEXT_CHARS = 200;
 
 // Runs inside the page; must stay self-contained.
-function queryPage({ mode, selector, maxElements, maxTextChars, elementTextChars, regions = [] }) {
+function queryPage({ mode, selector, maxElements, maxTextChars, elementTextChars, regions = [], regionGroups = [], outline = false }) {
   const INTERACTIVE = 'a[href], button, input, select, textarea, [role="button"], [role="link"]';
   const isUnique = (candidate) => {
     try {
@@ -74,27 +74,84 @@ function queryPage({ mode, selector, maxElements, maxTextChars, elementTextChars
     return { count: 1, element: describe(nodes[0]), fullText: fullText(nodes[0]) };
   }
   const CONTROLS = 'input, select, textarea';
+  const VALUE_TAGS = ['INPUT', 'SELECT', 'TEXTAREA'];
+  const SKIPPED_TAGS = ['SCRIPT', 'STYLE', 'TEMPLATE'];
+  const ROLES = { a: 'link', button: 'button', select: 'combobox', textarea: 'textbox' };
+  const nodes = [...document.querySelectorAll(INTERACTIVE)];
+  // A handle names an element by its stable selector, so it survives unrelated page changes.
+  const handleFor = (stable) => `h${fingerprint(stable).split(':')[1]}`;
+  const handles = new Map();
+  const issued = new Set();
+  for (const node of nodes) {
+    let handle = handleFor(stableSelector(node));
+    for (let suffix = 2; issued.has(handle); suffix += 1) handle = `${handleFor(stableSelector(node))}-${suffix}`;
+    issued.add(handle);
+    handles.set(node, handle);
+  }
+  const roleOf = (node) => {
+    const tag = node.tagName.toLowerCase();
+    if (tag === 'input') return ['checkbox', 'radio', 'submit', 'button'].includes(node.type) ? node.type : 'textbox';
+    return node.getAttribute('role') ?? ROLES[tag] ?? tag;
+  };
+  // Compact outline: collapsed text and interactive elements as [handle role "name" = "value"].
+  const renderOutline = (root) => {
+    const parts = [];
+    const visit = (node) => {
+      if (node.nodeType === Node.TEXT_NODE) {
+        const text = node.textContent.replace(/\s+/g, ' ').trim();
+        if (text) parts.push(text);
+        return;
+      }
+      if (node.nodeType !== Node.ELEMENT_NODE || SKIPPED_TAGS.includes(node.tagName)) return;
+      const handle = handles.get(node);
+      if (handle) {
+        const name = (node.innerText ?? '').trim() || node.getAttribute('aria-label') || node.getAttribute('name') || '';
+        const value = VALUE_TAGS.includes(node.tagName) ? ` = ${JSON.stringify(String(node.value))}` : '';
+        parts.push(`[${handle} ${roleOf(node)} ${JSON.stringify(name)}${value}]`);
+        return;
+      }
+      node.childNodes.forEach(visit);
+    };
+    visit(root);
+    return parts.join(' | ').slice(0, maxTextChars);
+  };
+  const describeRegion = (regionSelector, region, group = null) => {
+    const controls = [...(region.matches(CONTROLS) ? [region] : []), ...region.querySelectorAll(CONTROLS)];
+    return {
+      selector: regionSelector,
+      group,
+      count: 1,
+      html: region.outerHTML,
+      values: controls.map((control) => String(control.value)),
+      outline: outline ? renderOutline(region) : null,
+    };
+  };
   const readRegion = (regionSelector) => {
     let matches;
     try {
       matches = document.querySelectorAll(regionSelector);
     } catch {
-      return { selector: regionSelector, count: 0, html: null, values: null };
+      return { selector: regionSelector, count: 0, html: null, values: null, outline: null };
     }
-    if (matches.length !== 1) return { selector: regionSelector, count: matches.length, html: null, values: null };
-    const [region] = matches;
-    const controls = [...(region.matches(CONTROLS) ? [region] : []), ...region.querySelectorAll(CONTROLS)];
-    return { selector: regionSelector, count: 1, html: region.outerHTML, values: controls.map((control) => String(control.value)) };
+    if (matches.length !== 1) return { selector: regionSelector, count: matches.length, html: null, values: null, outline: null };
+    return describeRegion(regionSelector, matches[0]);
   };
-  const nodes = [...document.querySelectorAll(INTERACTIVE)];
+  // Every element matching a group selector becomes its own region, named by its stable selector.
+  const readGroup = (groupSelector) => {
+    try {
+      return [...document.querySelectorAll(groupSelector)].map((node) => describeRegion(stableSelector(node), node, groupSelector));
+    } catch {
+      return [];
+    }
+  };
   return {
     url: location.href,
     title: document.title,
     html: document.documentElement.outerHTML,
     text: (document.body?.innerText ?? '').slice(0, maxTextChars),
     isTruncated: nodes.length > maxElements,
-    elements: nodes.slice(0, maxElements).map((node) => ({ selector: stableSelector(node), ...describe(node) })),
-    regions: regions.map(readRegion),
+    elements: nodes.slice(0, maxElements).map((node) => ({ selector: stableSelector(node), handle: handles.get(node), ...describe(node) })),
+    regions: [...regions.map(readRegion), ...regionGroups.flatMap(readGroup)],
   };
 }
 
@@ -107,13 +164,15 @@ function elementDigest(element) {
   }));
 }
 
-function snapshotArgs(config, regions = []) {
+function snapshotArgs(config, { regions = [], regionGroups = [], outline = false } = {}) {
   return {
     mode: SNAPSHOT_MODE,
     maxElements: config.observation.maxElements,
     maxTextChars: config.observation.maxTextChars,
     elementTextChars: ELEMENT_TEXT_CHARS,
     regions,
+    regionGroups,
+    outline,
   };
 }
 
@@ -140,6 +199,8 @@ function buildSnapshot(raw, pageCount) {
     pageCount,
     contentHash: sha256Hex(canonicalJson({ url: raw.url, html: raw.html, controlValues })),
     regionDigests: Object.fromEntries((raw.regions ?? []).map((region) => [region.selector, regionDigest(region)])),
+    regionOutlines: Object.fromEntries((raw.regions ?? []).filter((region) => region.outline !== null)
+      .map((region) => [region.selector, region.outline])),
   };
 }
 

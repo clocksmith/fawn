@@ -29,7 +29,7 @@ established. Development tests are not the behavioral gates.
 Tunables and protocol coverage come from
 [`config/fawn-workspace-service.json`](../../config/fawn-workspace-service.json).
 
-## Protocol v2
+## Protocol v3
 
 The contract's semantic names map to these concrete rules.
 
@@ -71,7 +71,22 @@ The contract's semantic names map to these concrete rules.
     versions and the live page at dispatch must keep the cited URL and every
     scoped region digest; otherwise the action is `stale-observation`. Changes
     outside the scoped regions are still recorded as `page-change` versions.
-  Target identity is checked in both scopes.
+  An empty regions list means the action depends on no page content beyond the
+  cited URL; navigation uses it on continuously changing pages. Target identity
+  is checked in both scopes.
+- **Views for agents.** `observe` also accepts `regionGroups`: every element
+  matching a group selector is recorded as its own region under its stable
+  selector, for example each product row. `view: 'outline'` returns only:
+  - the version, URL and non-atomic boundary
+  - each region as a compact outline of its text, with interactive elements
+    written as `[handle role "name" = "value"]`
+
+  With `sinceVersion`, a region whose digest matches that version is returned
+  as `unchanged`. Digests, element tables and handle tables stay in the journal.
+- **Handles.** A handle names an element by a hash of its stable selector, so it
+  survives unrelated page changes. An action target `{handle}` resolves through
+  the cited observation's handle table to that observation's selector and
+  digest, and dispatch checks it like an explicit target.
 - **Target identity.** An element target is a `selector` plus the element
   digest (tag, attributes, displayed text and a fingerprint of the full text)
   from the cited observation. At dispatch the selector must match exactly one
@@ -107,11 +122,12 @@ The contract's semantic names map to these concrete rules.
   then accepts commands. A corrupt record or a live lock holder fails closed. A
   final record without its terminator was never acted on and is discarded with
   a recorded hash.
-- **Migration.** Protocol 2 adds observation regions, `observationScope`, link
-  destinations and full-text fingerprints. Protocol 1 journals replay unchanged:
-  their observations carry no regions, and an observation without recorded link
-  destinations cannot authorize a `click` or `download`. Unknown record types
-  fail closed.
+- **Migration.** Protocol 2 added observation regions, `observationScope`, link
+  destinations and full-text fingerprints. Protocol 3 adds region groups, the
+  outline view with deltas, handle targets and empty regions scopes. Earlier
+  journals replay unchanged. Their observations carry no handles, and an
+  observation without recorded link destinations cannot authorize a `click` or
+  `download`. Unknown record types fail closed.
 
 ## Qualification
 
@@ -145,6 +161,17 @@ every listed workflow.
   The baseline keeps a persistent profile, a durable progress file, an origin
   allowlist, exact locators, the application's idempotency reference and a
   submissions check before resubmitting.
+- `differentiate.js`, `workbench-site.js` and `agents/` run the frozen
+  differentiation suite (`workspaceComparison.differentiation`).
+  - Workload: multipage agent workflows on a live workbench site, judged by that
+    site's own orders, cart and mutation log.
+  - Agent: one shared policy (`agents/procurement-policy.js`) decides on both
+    sides with the same think time.
+  - Treatment: `agents/fawn-agent.js`, a client of this service using outline
+    views, region-bound decisions and ownership handoff.
+  - Control: `agents/playwright-agent.js` with `agents/playwright-tool-host.js`,
+    using Playwright's page-wide incremental agent snapshots and aria-ref actions
+    on a browser host that outlives the agent.
 
 ## Commands
 
@@ -155,6 +182,7 @@ npm test               # unit tests: journal, service rules, process-kill restar
 npm run test:browser   # adds a qualification subset through both adapters
 npm run qualify        # full case set; writes bench/out/fawn-workspace-qualification/<stamp>
 npm run compare        # baseline comparison; writes bench/out/fawn-workspace-comparison/<stamp>
+npm run differentiate  # differentiation suite; writes bench/out/fawn-workspace-differentiation/<stamp>
 node qualification/validate.js <resultDir> --require-current-source
 ```
 

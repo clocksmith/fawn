@@ -18,17 +18,18 @@
     "browser",
     "actionKinds",
     "observationScopes",
+    "observationViews",
     "conditionKinds",
     "reconciliationMethods"
   ],
   "properties": {
     "$schema": { "type": "string", "const": "fawn-workspace-service.schema.json" },
-    "schemaVersion": { "type": "integer", "const": 2 },
+    "schemaVersion": { "type": "integer", "const": 3 },
     "configVersion": { "type": "string", "minLength": 1 },
     "protocolVersion": {
       "type": "integer",
-      "const": 2,
-      "description": "Protocol 2 adds observation regions and regions-scoped actions; protocol 1 journals replay unchanged, and their observations cannot authorize link-following actions."
+      "const": 3,
+      "description": "Protocol 3 adds region groups, the outline view with deltas against a base version, and handle targets; protocol 2 added regions-scoped actions and link destinations. Earlier journals replay unchanged; their observations carry no handles, and protocol 1 observations cannot authorize link-following actions."
     },
     "contractPath": { "type": "string", "const": "docs/fawn-workspace-contract.md" },
     "journal": {
@@ -100,6 +101,13 @@
       "uniqueItems": true,
       "description": "page binds an action to the whole cited page; regions binds it to the cited observation's URL and named regions, with target identity still checked.",
       "items": { "type": "string", "enum": ["page", "regions"] }
+    },
+    "observationViews": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "description": "full returns elements, text and digests; outline returns compact region outlines with stable handles, and only changed regions relative to a base version.",
+      "items": { "type": "string", "enum": ["full", "outline"] }
     },
     "conditionKinds": {
       "type": "array",
