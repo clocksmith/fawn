@@ -23,8 +23,8 @@
   ],
   "properties": {
     "$schema": { "type": "string", "const": "browser-product-comparison-policy.schema.json" },
-    "schemaVersion": { "type": "integer", "const": 8 },
-    "policyId": { "type": "string", "const": "fawn-external-product-comparison-v8" },
+    "schemaVersion": { "type": "integer", "const": 9 },
+    "policyId": { "type": "string", "const": "fawn-external-product-comparison-v9" },
     "authority": {
       "type": "object",
       "additionalProperties": false,
@@ -109,7 +109,8 @@
         "measures",
         "criteria",
         "differentiation",
-        "revalidatedDifferentiation"
+        "revalidatedDifferentiation",
+        "modelDrivenDifferentiation"
       ],
       "properties": {
         "contractPath": {
@@ -237,7 +238,8 @@
           }
         },
         "differentiation": { "$ref": "#/$defs/workspaceDifferentiation" },
-        "revalidatedDifferentiation": { "$ref": "#/$defs/revalidatedDifferentiation" }
+        "revalidatedDifferentiation": { "$ref": "#/$defs/revalidatedDifferentiation" },
+        "modelDrivenDifferentiation": { "$ref": "#/$defs/modelDrivenDifferentiation" }
       }
     },
     "alternativeCompleteSystem": {
@@ -287,6 +289,152 @@
     "claimBoundary": { "$ref": "#/$defs/text" }
   },
   "$defs": {
+    "modelDrivenDifferentiation": {
+      "description": "Frozen before implementation: one model drives both sides through identical tools on familiar and held-out applications, with inference cost counted. Prompts, tool descriptions and held-out specifications are pinned by hash.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "suiteVersion", "status", "purpose", "runnerPath", "frozenArtifacts", "agent", "browserBinary", "control", "treatment",
+        "sharedConditions", "repetitions", "workflows", "measures", "measurement", "improvementRequirements",
+        "productAdvantageRule", "runPrerequisites", "knownControlLimits"
+      ],
+      "properties": {
+        "suiteVersion": { "type": "string", "minLength": 1 },
+        "status": { "enum": ["frozen-before-implementation", "implemented-not-run", "run"] },
+        "purpose": { "type": "string", "minLength": 1 },
+        "runnerPath": { "const": "browser/workspace/qualification/differentiate.js" },
+        "frozenArtifacts": {
+          "type": "array",
+          "minItems": 4,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["path", "sha256"],
+            "properties": {
+              "path": { "type": "string", "pattern": "^browser/workspace/qualification/model-agent/[a-z-]+\\.(md|json)$" },
+              "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+            }
+          }
+        },
+        "agent": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["provider", "model", "sampling", "extendedThinking", "maxOutputTokensPerTurn", "maxTurnsPerTask",
+            "maxInputTokensPerTask", "budgetExceeded", "identicalOnBothSides"],
+          "properties": {
+            "provider": { "const": "anthropic-messages-api" },
+            "model": { "type": "string", "pattern": "^claude-[a-z0-9-]+$" },
+            "sampling": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["temperature"],
+              "properties": { "temperature": { "type": "number", "minimum": 0, "maximum": 1 } }
+            },
+            "extendedThinking": { "type": "boolean" },
+            "maxOutputTokensPerTurn": { "type": "integer", "minimum": 1 },
+            "maxTurnsPerTask": { "type": "integer", "minimum": 1 },
+            "maxInputTokensPerTask": { "type": "integer", "minimum": 1 },
+            "budgetExceeded": { "const": "task-failure" },
+            "identicalOnBothSides": {
+              "type": "array",
+              "items": { "type": "string" },
+              "allOf": [
+                { "contains": { "const": "model" } },
+                { "contains": { "const": "tool-descriptions" } },
+                { "contains": { "const": "token-budget" } }
+              ]
+            }
+          }
+        },
+        "browserBinary": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["channel", "version", "sha256"],
+          "properties": {
+            "channel": { "enum": ["chromium-headless-shell", "chromium", "chrome"] },
+            "version": { "type": "string", "minLength": 1 },
+            "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+          }
+        },
+        "control": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "observation", "actions", "revalidation", "takeover", "capabilities", "pendingEffects"],
+          "properties": {
+            "id": { "const": "playwright-agent-tooling-with-revalidation" },
+            "observation": { "type": "string", "minLength": 1 },
+            "actions": { "const": "aria-ref-locators-from-the-latest-snapshot" },
+            "revalidation": { "type": "string", "minLength": 1 },
+            "takeover": { "type": "string", "minLength": 1 },
+            "capabilities": {
+              "type": "array",
+              "items": { "type": "string" },
+              "allOf": [
+                { "contains": { "const": "revalidate-decision-inputs-with-a-fresh-snapshot-before-every-mutation" } },
+                { "contains": { "const": "cancel-pending-calls-and-observe-again-after-human-control" } }
+              ]
+            },
+            "pendingEffects": { "type": "string", "minLength": 1 }
+          }
+        },
+        "treatment": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "observation", "actions", "takeover", "pendingEffects"],
+          "properties": {
+            "id": { "const": "fawn-workspace-service" },
+            "observation": { "type": "string", "minLength": 1 },
+            "actions": { "type": "string", "minLength": 1 },
+            "takeover": { "const": "owner-handoff-to-the-human-and-back" },
+            "pendingEffects": { "type": "string", "minLength": 1 }
+          }
+        },
+        "sharedConditions": { "$ref": "#/$defs/stringList" },
+        "repetitions": { "type": "integer", "minimum": 1 },
+        "workflows": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["development", "heldOut"],
+          "properties": {
+            "development": { "type": "object", "additionalProperties": { "type": "string" } },
+            "heldOut": { "const": "browser/workspace/qualification/model-agent/held-out-workflows.json" }
+          }
+        },
+        "measures": { "$ref": "#/$defs/stringList" },
+        "measurement": { "type": "object", "additionalProperties": { "type": "string" } },
+        "improvementRequirements": {
+          "type": "array",
+          "minItems": 4,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["area", "kind", "scenarios", "treatmentBar"],
+            "properties": {
+              "area": { "enum": ["interruption-recovery", "incremental-observation", "held-out-generalization", "built-in-guarantees"] },
+              "kind": { "enum": ["advantage", "non-inferiority"] },
+              "scenarios": { "$ref": "#/$defs/stringList" },
+              "treatmentBar": { "type": "object", "minProperties": 1, "additionalProperties": { "type": ["boolean", "number"] } },
+              "materialImprovement": { "type": "object" },
+              "reporting": { "type": "string", "minLength": 1 }
+            }
+          }
+        },
+        "productAdvantageRule": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["requiresAreasMet", "requiresNonInferiority", "latencyRegressionRule", "maximumTotalInferenceCostRatio", "doesNotEstablish"],
+          "properties": {
+            "requiresAreasMet": { "const": ["interruption-recovery", "incremental-observation"] },
+            "requiresNonInferiority": { "const": ["held-out-generalization", "built-in-guarantees"] },
+            "latencyRegressionRule": { "const": "workspaceComparison.criteria.latency" },
+            "maximumTotalInferenceCostRatio": { "type": "number", "exclusiveMinimum": 0 },
+            "doesNotEstablish": { "$ref": "#/$defs/stringList" }
+          }
+        },
+        "runPrerequisites": { "$ref": "#/$defs/stringList" },
+        "knownControlLimits": { "$ref": "#/$defs/stringList" }
+      }
+    },
     "workspaceDifferentiation": {
       "description": "Frozen before implementation: agent-workflow scenarios, the strongest generic Playwright agent control, measurable improvement requirements per target area and the rule that would establish scoped product advantage.",
       "type": "object",

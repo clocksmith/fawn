@@ -21,17 +21,19 @@ the shared machinery.
 Three states stay distinct:
 - **Behaviorally qualified**: established on the frozen case set for a recorded
   commit, browser binary and host.
-- **Product-advantaged**: established only on the frozen differentiation suite.
-  On persistent multipage agent workflows, Playwright agent tooling made
-  incorrect actions or needed human review in each target area:
-  - decision dependencies that changed while the agent thought
-  - a human taking control while an agent call was pending
-  - agent death while the application held an order
+- **Product-advantaged**: established only on the frozen differentiation
+  suites. The product message: Fawn preserves trustworthy browser-work outcomes
+  across agent interruption and gives agents efficient, scoped views of changing
+  applications.
+  - On two applications, against Playwright agent tooling (including tooling that
+    revalidates every decision and cancels pending calls on takeover), the
+    workspace's recorded outcomes let an interrupted agent resume without human
+    review or duplicates.
+  - Its region-scoped views carry far fewer observation bytes on changing pages.
+  - Stale-decision rejection and safe human handoff are built-in guarantees, not
+    general advantages: a well-engineered control reproduced both with more
+    orchestration.
 
-  It also received far more observation bytes under page churn. On a second
-  application, against tooling that revalidates every decision and cancels
-  pending calls on takeover, the decision and handoff gaps close. Durable
-  outcomes across agent interruption and region-scoped observation remain.
   Scripted workflows show no material advantage over competent stock
   automation, and this is not broad product superiority.
 - **Release-qualified**: not established.

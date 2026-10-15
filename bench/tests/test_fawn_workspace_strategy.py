@@ -246,6 +246,13 @@ class FawnWorkspaceStrategyTests(unittest.TestCase):
             tamper(altered)
             self.assertTrue(stronger_control_failures(strategy, altered))
 
+    def test_model_driven_freeze_matches_its_pinned_artifacts(self) -> None:
+        suite = load_json("config/browser-product-comparison-policy.json")["workspaceComparison"]["modelDrivenDifferentiation"]
+        for artifact in suite["frozenArtifacts"]:
+            with self.subTest(path=artifact["path"]):
+                digest = hashlib.sha256((REPO_ROOT / artifact["path"]).read_bytes()).hexdigest()
+                self.assertEqual(digest, artifact["sha256"], "a frozen prompt, tool description or held-out specification changed")
+
     def test_binding_rejects_evidence_that_does_not_establish_a_step(self) -> None:
         strategy = load_strategy()
         evidence = strategy["fawnWorkspace"]["qualificationEvidence"]
