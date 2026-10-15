@@ -1,7 +1,7 @@
 {
   "$schema": "browser-product-comparison-policy.schema.json",
-  "schemaVersion": 7,
-  "policyId": "fawn-external-product-comparison-v7",
+  "schemaVersion": 8,
+  "policyId": "fawn-external-product-comparison-v8",
   "authority": {
     "strategyPath": "docs/thesis.md",
     "browserLanePath": "docs/browser-lane.md",
@@ -391,6 +391,148 @@
       },
       "knownControlLimits": [
         "A harness that revalidates every decision before acting, discards pending calls on human takeover or scopes reads with site-specific locators would narrow these gaps; that is task-specific scripting, which the scripted scenarios above already compare."
+      ]
+    },
+    "revalidatedDifferentiation": {
+      "suiteVersion": "2026-10-15-revalidating-control-v1",
+      "status": "frozen-before-implementation",
+      "purpose": "Whether the agent-workflow advantages survive a stronger control on a different application: Playwright agent tooling that revalidates every decision's inputs before mutating and cancels pending calls when a human takes control.",
+      "runnerPath": "browser/workspace/qualification/differentiate.js",
+      "fixtureSitePath": "browser/workspace/qualification/helpdesk-site.js",
+      "agentPolicyPath": "browser/workspace/qualification/agents/helpdesk-policy.js",
+      "task": "Take the oldest open, unclaimed ticket for the agent's product from the live queue, claim it, send exactly one reply (the approved template unless a supervisor has edited the draft) and save the ticket transcript.",
+      "control": {
+        "id": "playwright-agent-tooling-with-revalidation",
+        "observation": "page-wide-playwright-agent-snapshot-with-incremental-tracking",
+        "actions": "aria-ref-locators-from-the-latest-snapshot",
+        "browserLifetime": "browser-host-outlives-the-agent-process",
+        "capabilities": [
+          "persistent-profile",
+          "durable-agent-checkpoint-before-and-after-each-tool-call",
+          "application-idempotency-reference-when-offered",
+          "application-state-check-before-resubmission",
+          "current-page-check-after-an-interrupted-call",
+          "cooperative-pause-during-human-control",
+          "origin-allowlist-including-form-actions",
+          "revalidate-decision-inputs-with-a-fresh-snapshot-before-every-mutation",
+          "cancel-pending-calls-and-observe-again-after-human-control"
+        ],
+        "humanControlSemantics": "cancel-the-pending-tool-call-then-observe-again"
+      },
+      "treatment": {
+        "id": "fawn-workspace-service",
+        "agentProcess": "separate-client-of-a-workspace-that-outlives-it",
+        "humanControlSemantics": "owner-handoff-to-the-human-and-back"
+      },
+      "sharedConditions": [
+        "same-agent-policy-and-think-time",
+        "same-browser-binary-and-driver",
+        "same-fixture-inputs-and-perturbation-points",
+        "same-action-timeout",
+        "same-granted-origins",
+        "same-checkpoint-file-durability"
+      ],
+      "thinkTimeMs": 400,
+      "targetAreas": ["changing-content", "incremental-observation", "human-handoff", "interruption-recovery"],
+      "scenarios": [
+        { "id": "helpdesk-clean", "area": "none", "perturbation": "none", "repetitions": 5 },
+        {
+          "id": "ticket-claimed-during-think-time",
+          "area": "changing-content",
+          "perturbation": "another-agent-claims-the-chosen-ticket-after-observation-before-claim",
+          "repetitions": 3
+        },
+        {
+          "id": "live-queue-churn",
+          "area": "incremental-observation",
+          "perturbation": "an-incoming-ticket-feed-updates-continuously-beside-the-queue",
+          "repetitions": 3
+        },
+        {
+          "id": "supervisor-edits-draft",
+          "area": "human-handoff",
+          "perturbation": "a-supervisor-edits-the-reply-draft-while-the-agent-send-is-pending",
+          "repetitions": 3
+        },
+        {
+          "id": "agent-killed-during-send",
+          "area": "interruption-recovery",
+          "perturbation": "the-agent-process-dies-while-the-application-holds-the-reply",
+          "application": "no-sent-list-no-idempotency-and-a-confirmation-that-redirects-away",
+          "repetitions": 3
+        }
+      ],
+      "measures": [
+        "taskSuccess",
+        "incorrectActions",
+        "constraintViolatingMutations",
+        "mutationsDuringHumanControl",
+        "humanReviews",
+        "duplicateEffects",
+        "observationBytes",
+        "completeTaskLatencyMs",
+        "controlHarnessLines"
+      ],
+      "oracle": "The helpdesk's own ticket, reply and mutation log decides success and incorrect actions: a claim of the oldest open unclaimed ticket for the product at claim time, no claim taken from another agent, at most one reply, the draft text the supervisor left or else the template, and a saved transcript matching the ticket.",
+      "improvementRequirements": [
+        {
+          "area": "changing-content",
+          "scenario": "ticket-claimed-during-think-time",
+          "treatmentBar": { "taskSuccessEveryRepetition": true, "incorrectActions": 0 },
+          "materialImprovement": { "measure": "incorrectActions", "treatmentBelowControl": true }
+        },
+        {
+          "area": "incremental-observation",
+          "scenario": "live-queue-churn",
+          "treatmentBar": { "taskSuccessEveryRepetition": true, "incorrectActions": 0 },
+          "materialImprovement": {
+            "measure": "observationBytes",
+            "statistic": "median",
+            "maximumTreatmentToControlRatio": 0.5
+          }
+        },
+        {
+          "area": "human-handoff",
+          "scenario": "supervisor-edits-draft",
+          "treatmentBar": {
+            "taskSuccessEveryRepetition": true,
+            "incorrectActions": 0,
+            "mutationsDuringHumanControl": 0
+          },
+          "materialImprovement": { "measure": "incorrectActions", "treatmentBelowControl": true }
+        },
+        {
+          "area": "interruption-recovery",
+          "scenario": "agent-killed-during-send",
+          "treatmentBar": { "taskSuccessEveryRepetition": true, "duplicateEffects": 0, "humanReviews": 0 },
+          "materialImprovement": {
+            "measure": "humanReviewsPlusDuplicateEffects",
+            "treatmentBelowControl": true
+          }
+        }
+      ],
+      "productAdvantageRule": {
+        "minimumAreasMet": 2,
+        "everyRepetition": true,
+        "noMaterialRegressionIn": [
+          "workspaceComparison.scenarios",
+          "workspaceComparison.differentiation.scenarios",
+          "workspaceComparison.revalidatedDifferentiation.scenarios"
+        ],
+        "latencyRegressionRule": "workspaceComparison.criteria.latency",
+        "doesNotEstablish": [
+          "broad-product-superiority",
+          "release-qualification",
+          "compatibility-beyond-the-fixtures",
+          "model-driven-agent-results"
+        ]
+      },
+      "modelDrivenStage": {
+        "status": "planned-requires-its-own-freeze",
+        "requirement": "Before any model-driven run, a later suite version freezes the model, prompt, tool descriptions, sampling settings and repetition count, and replaces the deterministic policy on both sides with that agent; these scenarios and requirements apply unchanged."
+      },
+      "knownControlLimits": [
+        "Revalidation and cancellation leave the same non-atomic window between the last check and the browser effect that the treatment discloses; a perturbation inside that window is not part of this suite."
       ]
     }
   },

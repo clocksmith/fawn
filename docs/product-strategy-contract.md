@@ -6,6 +6,18 @@ It is the machine-readable source for milestone order, the binding proving set,
 and development-effectiveness recording. Status routes evidence; it does not
 maintain another roadmap.
 
+## Second comparison frozen against a stronger control
+
+The browser comparison policy moves to schema version 8
+(`fawn-external-product-comparison-v8`) and adds
+`workspaceComparison.revalidatedDifferentiation`, frozen before implementation.
+It runs on a different application, a helpdesk. Its control is Playwright agent
+tooling that revalidates every decision's inputs with a fresh snapshot before
+mutating, and cancels a pending call and observes again after human control. It
+keeps the four target areas with their own requirements. Its product-advantage
+rule also requires no regression in the first suite. A model-driven stage is
+recorded as planned and needs its own freeze. No strategy state changes.
+
 ## Product advantage bound to the frozen differentiation result
 
 Schema version 12 and strategy version 6.5.0 add the required

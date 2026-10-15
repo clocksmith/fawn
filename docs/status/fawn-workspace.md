@@ -138,6 +138,17 @@ release qualification. A control harness that revalidates every decision,
 discards pending calls on human takeover, or scopes reads with site-specific
 locators would narrow these gaps; that is task-specific scripting.
 
+## Second comparison (frozen before implementation)
+
+`revalidatedDifferentiation` in `workspaceComparison` tests whether these
+advantages survive a stronger control on a different application. The
+application is a helpdesk. The control is Playwright agent tooling that:
+- revalidates decision inputs with a fresh snapshot before every mutation
+- cancels a pending call and observes again after human control
+
+It keeps the four target areas, with requirements set before implementation. A
+model-driven stage needs its own later freeze.
+
 ## Limits and open work
 
 Known limits:

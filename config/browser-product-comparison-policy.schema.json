@@ -23,8 +23,8 @@
   ],
   "properties": {
     "$schema": { "type": "string", "const": "browser-product-comparison-policy.schema.json" },
-    "schemaVersion": { "type": "integer", "const": 7 },
-    "policyId": { "type": "string", "const": "fawn-external-product-comparison-v7" },
+    "schemaVersion": { "type": "integer", "const": 8 },
+    "policyId": { "type": "string", "const": "fawn-external-product-comparison-v8" },
     "authority": {
       "type": "object",
       "additionalProperties": false,
@@ -108,7 +108,8 @@
         "excludedScenarios",
         "measures",
         "criteria",
-        "differentiation"
+        "differentiation",
+        "revalidatedDifferentiation"
       ],
       "properties": {
         "contractPath": {
@@ -235,7 +236,8 @@
             }
           }
         },
-        "differentiation": { "$ref": "#/$defs/workspaceDifferentiation" }
+        "differentiation": { "$ref": "#/$defs/workspaceDifferentiation" },
+        "revalidatedDifferentiation": { "$ref": "#/$defs/revalidatedDifferentiation" }
       }
     },
     "alternativeCompleteSystem": {
@@ -404,6 +406,138 @@
           }
         },
         "knownControlLimits": { "$ref": "#/$defs/stringList" }
+      }
+    },
+    "revalidatedDifferentiation": {
+      "description": "Frozen before implementation: the second comparison on a different application against Playwright agent tooling that revalidates decisions before mutating and cancels pending calls on human takeover; a model-driven stage needs its own later freeze.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "suiteVersion", "status", "purpose", "runnerPath", "fixtureSitePath", "agentPolicyPath", "task", "control",
+        "treatment", "sharedConditions", "thinkTimeMs", "targetAreas", "scenarios", "measures", "oracle",
+        "improvementRequirements", "productAdvantageRule", "knownControlLimits", "modelDrivenStage"
+      ],
+      "properties": {
+        "suiteVersion": { "type": "string", "minLength": 1 },
+        "status": { "enum": ["frozen-before-implementation", "implemented-not-run", "run"] },
+        "purpose": { "type": "string", "minLength": 1 },
+        "runnerPath": { "const": "browser/workspace/qualification/differentiate.js" },
+        "fixtureSitePath": { "const": "browser/workspace/qualification/helpdesk-site.js" },
+        "agentPolicyPath": { "const": "browser/workspace/qualification/agents/helpdesk-policy.js" },
+        "task": { "type": "string", "minLength": 1 },
+        "control": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "observation", "actions", "browserLifetime", "capabilities", "humanControlSemantics"],
+          "properties": {
+            "id": { "const": "playwright-agent-tooling-with-revalidation" },
+            "observation": { "const": "page-wide-playwright-agent-snapshot-with-incremental-tracking" },
+            "actions": { "const": "aria-ref-locators-from-the-latest-snapshot" },
+            "browserLifetime": { "const": "browser-host-outlives-the-agent-process" },
+            "capabilities": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": { "type": "string", "minLength": 1 },
+              "allOf": [
+                { "contains": { "const": "durable-agent-checkpoint-before-and-after-each-tool-call" } },
+                { "contains": { "const": "application-idempotency-reference-when-offered" } },
+                { "contains": { "const": "application-state-check-before-resubmission" } },
+                { "contains": { "const": "current-page-check-after-an-interrupted-call" } },
+                { "contains": { "const": "cooperative-pause-during-human-control" } },
+                { "contains": { "const": "revalidate-decision-inputs-with-a-fresh-snapshot-before-every-mutation" } },
+                { "contains": { "const": "cancel-pending-calls-and-observe-again-after-human-control" } }
+              ]
+            },
+            "humanControlSemantics": { "const": "cancel-the-pending-tool-call-then-observe-again" }
+          }
+        },
+        "treatment": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "agentProcess", "humanControlSemantics"],
+          "properties": {
+            "id": { "const": "fawn-workspace-service" },
+            "agentProcess": { "const": "separate-client-of-a-workspace-that-outlives-it" },
+            "humanControlSemantics": { "const": "owner-handoff-to-the-human-and-back" }
+          }
+        },
+        "sharedConditions": { "$ref": "#/$defs/stringList" },
+        "thinkTimeMs": { "type": "integer", "minimum": 1 },
+        "targetAreas": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "enum": ["changing-content", "incremental-observation", "human-handoff", "interruption-recovery"] },
+          "minItems": 4
+        },
+        "scenarios": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "area", "perturbation", "repetitions"],
+            "properties": {
+              "id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+              "area": { "enum": ["none", "changing-content", "incremental-observation", "human-handoff", "interruption-recovery"] },
+              "perturbation": { "type": "string", "minLength": 1 },
+              "application": { "type": "string", "minLength": 1 },
+              "repetitions": { "type": "integer", "minimum": 1 }
+            }
+          }
+        },
+        "measures": { "$ref": "#/$defs/stringList" },
+        "oracle": { "type": "string", "minLength": 1 },
+        "improvementRequirements": {
+          "type": "array",
+          "minItems": 4,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["area", "scenario", "treatmentBar", "materialImprovement"],
+            "properties": {
+              "area": { "enum": ["changing-content", "incremental-observation", "human-handoff", "interruption-recovery"] },
+              "scenario": { "type": "string", "minLength": 1 },
+              "treatmentBar": {
+                "type": "object",
+                "minProperties": 1,
+                "additionalProperties": { "type": ["boolean", "integer"] }
+              },
+              "materialImprovement": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["measure"],
+                "properties": {
+                  "measure": { "type": "string", "minLength": 1 },
+                  "treatmentBelowControl": { "const": true },
+                  "statistic": { "const": "median" },
+                  "maximumTreatmentToControlRatio": { "type": "number", "exclusiveMinimum": 0, "exclusiveMaximum": 1 }
+                }
+              }
+            }
+          }
+        },
+        "productAdvantageRule": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["minimumAreasMet", "everyRepetition", "noMaterialRegressionIn", "latencyRegressionRule", "doesNotEstablish"],
+          "properties": {
+            "minimumAreasMet": { "type": "integer", "minimum": 2, "maximum": 4 },
+            "everyRepetition": { "const": true },
+            "noMaterialRegressionIn": { "$ref": "#/$defs/stringList" },
+            "latencyRegressionRule": { "const": "workspaceComparison.criteria.latency" },
+            "doesNotEstablish": { "$ref": "#/$defs/stringList" }
+          }
+        },
+        "knownControlLimits": { "$ref": "#/$defs/stringList" },
+        "modelDrivenStage": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["status", "requirement"],
+          "properties": {
+            "status": { "enum": ["planned-requires-its-own-freeze"] },
+            "requirement": { "type": "string", "minLength": 1 }
+          }
+        }
       }
     },
     "sha1": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
