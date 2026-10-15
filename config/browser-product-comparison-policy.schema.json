@@ -23,8 +23,8 @@
   ],
   "properties": {
     "$schema": { "type": "string", "const": "browser-product-comparison-policy.schema.json" },
-    "schemaVersion": { "type": "integer", "const": 9 },
-    "policyId": { "type": "string", "const": "fawn-external-product-comparison-v9" },
+    "schemaVersion": { "type": "integer", "const": 10 },
+    "policyId": { "type": "string", "const": "fawn-external-product-comparison-v10" },
     "authority": {
       "type": "object",
       "additionalProperties": false,
@@ -294,7 +294,8 @@
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "suiteVersion", "status", "purpose", "runnerPath", "frozenArtifacts", "agent", "browserBinary", "control", "treatment",
+        "suiteVersion", "status", "purpose", "runnerPath", "frozenArtifacts", "agent", "spend", "wiringSmoke", "fullRuns",
+        "browserBinary", "control", "treatment",
         "sharedConditions", "repetitions", "workflows", "measures", "measurement", "improvementRequirements",
         "productAdvantageRule", "runPrerequisites", "knownControlLimits"
       ],
@@ -319,18 +320,23 @@
         "agent": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["provider", "model", "sampling", "extendedThinking", "maxOutputTokensPerTurn", "maxTurnsPerTask",
-            "maxInputTokensPerTask", "budgetExceeded", "identicalOnBothSides"],
+          "required": ["provider", "model", "samplingParameters", "extendedThinking", "thinking", "compatibilityRequest",
+            "maxOutputTokensPerTurn", "maxTurnsPerTask", "maxInputTokensPerTask", "budgetExceeded", "identicalOnBothSides"],
           "properties": {
             "provider": { "const": "anthropic-messages-api" },
             "model": { "type": "string", "pattern": "^claude-[a-z0-9-]+$" },
-            "sampling": {
+            "samplingParameters": {
+              "description": "No temperature, top_p or top_k is sent; current models reject non-default values.",
+              "const": "omitted"
+            },
+            "extendedThinking": { "const": false },
+            "thinking": {
               "type": "object",
               "additionalProperties": false,
-              "required": ["temperature"],
-              "properties": { "temperature": { "type": "number", "minimum": 0, "maximum": 1 } }
+              "required": ["type"],
+              "properties": { "type": { "const": "disabled" } }
             },
-            "extendedThinking": { "type": "boolean" },
+            "compatibilityRequest": { "type": "string", "minLength": 1 },
             "maxOutputTokensPerTurn": { "type": "integer", "minimum": 1 },
             "maxTurnsPerTask": { "type": "integer", "minimum": 1 },
             "maxInputTokensPerTask": { "type": "integer", "minimum": 1 },
@@ -346,6 +352,36 @@
             }
           }
         },
+        "spend": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["approvedCeilingUsd", "approvedOn", "pricesPerMillionTokensUsd", "worstCaseUsd", "guard", "retries"],
+          "properties": {
+            "approvedCeilingUsd": { "type": "number", "exclusiveMinimum": 0 },
+            "approvedOn": { "type": "string", "format": "date" },
+            "pricesPerMillionTokensUsd": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["input", "output"],
+              "properties": { "input": { "type": "number", "minimum": 0 }, "output": { "type": "number", "minimum": 0 } }
+            },
+            "worstCaseUsd": { "type": "number", "minimum": 0 },
+            "guard": { "type": "string", "minLength": 1 },
+            "retries": { "type": "string", "minLength": 1 }
+          }
+        },
+        "wiringSmoke": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["scenarios", "repetitions", "heldOutExcluded", "purpose"],
+          "properties": {
+            "scenarios": { "$ref": "#/$defs/stringList" },
+            "repetitions": { "type": "integer", "minimum": 1 },
+            "heldOutExcluded": { "const": true },
+            "purpose": { "type": "string", "minLength": 1 }
+          }
+        },
+        "fullRuns": { "const": 1 },
         "browserBinary": {
           "type": "object",
           "additionalProperties": false,

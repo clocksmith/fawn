@@ -6,6 +6,23 @@ It is the machine-readable source for milestone order, the binding proving set,
 and development-effectiveness recording. Status routes evidence; it does not
 maintain another roadmap.
 
+## Model-driven contract corrected before implementation
+
+The browser comparison policy moves to schema version 10
+(`fawn-external-product-comparison-v10`). The model-driven suite becomes
+`2026-10-15-model-driven-v2`. Current models reject non-default `temperature`,
+`top_p` and `top_k`, so no sampling parameter is sent; `thinking` is requested
+as `disabled`, and one compatibility request must succeed before any measured
+run. The suite also records:
+- the approved spend ceiling and per-token prices, and a guard that stops
+  before any request that could cross the ceiling
+- a wiring smoke limited to the procurement and helpdesk clean scenarios, never
+  the held-out ones
+- a single full run
+
+The prompts, tool descriptions, held-out specifications, model, budgets and
+acceptance rules are unchanged.
+
 ## Model-driven comparison frozen
 
 The browser comparison policy moves to schema version 9

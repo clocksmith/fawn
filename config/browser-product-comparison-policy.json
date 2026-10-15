@@ -1,7 +1,7 @@
 {
   "$schema": "browser-product-comparison-policy.schema.json",
-  "schemaVersion": 9,
-  "policyId": "fawn-external-product-comparison-v9",
+  "schemaVersion": 10,
+  "policyId": "fawn-external-product-comparison-v10",
   "authority": {
     "strategyPath": "docs/thesis.md",
     "browserLanePath": "docs/browser-lane.md",
@@ -536,7 +536,7 @@
       ]
     },
     "modelDrivenDifferentiation": {
-      "suiteVersion": "2026-10-15-model-driven-v1",
+      "suiteVersion": "2026-10-15-model-driven-v2",
       "status": "frozen-before-implementation",
       "purpose": "Whether durable outcome recovery and scoped observation efficiency hold when one model drives both sides through identical tools, on familiar and held-out applications, with total inference cost counted.",
       "runnerPath": "browser/workspace/qualification/differentiate.js",
@@ -561,8 +561,10 @@
       "agent": {
         "provider": "anthropic-messages-api",
         "model": "claude-sonnet-5-5",
-        "sampling": { "temperature": 0 },
+        "samplingParameters": "omitted",
         "extendedThinking": false,
+        "thinking": { "type": "disabled" },
+        "compatibilityRequest": "Before any measured run, one request with the frozen model, system prompt, tools and thinking setting must succeed; its response metadata is recorded with the run.",
         "maxOutputTokensPerTurn": 2048,
         "maxTurnsPerTask": 60,
         "maxInputTokensPerTask": 600000,
@@ -577,6 +579,21 @@
           "turn-limit"
         ]
       },
+      "spend": {
+        "approvedCeilingUsd": 275,
+        "approvedOn": "2026-10-15",
+        "pricesPerMillionTokensUsd": { "input": 2, "output": 10 },
+        "worstCaseUsd": 247.74,
+        "guard": "The runner keeps a spend ledger across the compatibility request, the wiring smoke and the full run, and stops before any request whose worst case could cross the ceiling.",
+        "retries": "Transient provider errors are retried with backoff at most three times per request; every billed attempt counts against the ceiling."
+      },
+      "wiringSmoke": {
+        "scenarios": ["agent-clean", "helpdesk-clean"],
+        "repetitions": 1,
+        "heldOutExcluded": true,
+        "purpose": "Verify the harness end to end; smoke results are not evidence."
+      },
+      "fullRuns": 1,
       "browserBinary": {
         "channel": "chromium-headless-shell",
         "version": "Google Chrome for Testing 145.0.7632.6",
@@ -721,7 +738,7 @@
       },
       "runPrerequisites": [
         "model API credentials for the frozen provider",
-        "the user's approval of the inference spend, bounded by repetitions, scenarios, both sides and maxInputTokensPerTask",
+        "a successful compatibility request",
         "held-out fixtures implemented to their frozen specifications"
       ],
       "knownControlLimits": [
