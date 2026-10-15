@@ -10,6 +10,8 @@ import { chromium } from 'playwright-core';
 import { buildProbe, buildSnapshot, elementArgs, queryPage, snapshotArgs } from './page-query.js';
 
 const UNSAFE_FILENAME_CHARS = /[^A-Za-z0-9._-]/g;
+// Playwright launches its headless shell when no channel is named.
+const PLAYWRIGHT_CHANNELS = Object.freeze({ 'chromium-headless-shell': undefined, chromium: 'chromium', chrome: 'chrome' });
 
 class PlaywrightWorkspaceAdapter {
   constructor({ config, profileRoot, artifactRoot }) {
@@ -24,6 +26,7 @@ class PlaywrightWorkspaceAdapter {
     const profileDir = join(this._profileRoot, workspaceId);
     mkdirSync(profileDir, { recursive: true });
     const context = await chromium.launchPersistentContext(profileDir, {
+      channel: PLAYWRIGHT_CHANNELS[this._config.browser.channel],
       headless: this._config.browser.headless,
       acceptDownloads: true,
       timeout: this._config.dispatch.actionTimeoutMs,

@@ -2,16 +2,12 @@
 //
 // Each view takes a page-wide agent snapshot; the agent pays for the incremental text when there
 // is one, and parses the full snapshot it is given alongside. Actions target aria refs from the
-// latest snapshot. Consequential calls are checkpointed before and after, every call waits while
-// a human holds control, and an interrupted order is resolved from the application's order list,
-// its idempotency reference, or the current page.
-
-const ITEM = /^\s*- text: (.+?) \$(\d+)\.(\d{2})(?: (\d+) in stock| (out of stock))?$/;
-const BUTTON = /^\s*- button "([^"]+)" (?:\[[^\]]+\] )*\[ref=(e\d+)\]/;
-const TEXTBOX = /^\s*- textbox "([^"]+)" (?:\[[^\]]+\] )*\[ref=(e\d+)\](?:: (.*))?$/;
-const LINK = /^\s*- link "([^"]+)" \[ref=(e\d+)\]/;
-const HEADING = /^\s*- heading "([^"]+)"/;
-const ORDER_ROW = /Order (\d+): (.+?) to (.+?); reference (.+?)"?$/;
+// latest snapshot. Consequential calls are checkpointed before and after, and every call waits
+// while a human holds control. Two frozen control variants add behavior:
+// - revalidate: before a mutation, take a fresh snapshot and re-check the decision's inputs
+// - cancelOnTakeover: a call decided before a human takeover is cancelled and the agent observes
+//   again, instead of resuming it
+// A profile supplies each application's parsers, actions and interrupted-call resolution.
 
 class AgentKilled extends Error {
   constructor() {
@@ -20,56 +16,27 @@ class AgentKilled extends Error {
   }
 }
 
-/** Pairs each "- text: Name $p ..." line with the button that follows it. */
-function itemsWithButtons(lines, buttonName) {
-  const found = [];
-  lines.forEach((line, index) => {
-    const item = ITEM.exec(line);
-    if (!item) return;
-    const button = BUTTON.exec(lines[index + 1] ?? '');
-    if (!button || button[1] !== buttonName) return;
-    found.push({
-      name: item[1],
-      price: Number(item[2]) * 100 + Number(item[3]),
-      stock: item[5] ? 0 : Number(item[4] ?? 0),
-      ref: button[2],
-    });
-  });
-  return found;
+class Redecide extends Error {
+  constructor(code) {
+    super(`refused: ${code}`);
+    this.code = code;
+    this.redecide = true;
+  }
 }
 
-const PARSERS = Object.freeze({
-  catalog: (lines) => ({ items: itemsWithButtons(lines, 'Add to cart') }),
-  cart: (lines) => ({ lines: itemsWithButtons(lines, 'Remove') }),
-  checkout: (lines) => {
-    const field = (name) => {
-      const line = lines.map((candidate) => TEXTBOX.exec(candidate)).find((match) => match?.[1] === name);
-      return line ? { ref: line[2], value: line[3] ?? '' } : null;
-    };
-    const place = lines.map((line) => BUTTON.exec(line)).find((match) => match?.[1] === 'Place order');
-    return { address: field('Address'), reference: field('Reference'), place: place ? { ref: place[2] } : null };
-  },
-  confirmation: (lines) => {
-    const heading = lines.map((line) => HEADING.exec(line)).find(Boolean)?.[1] ?? '';
-    const link = lines.map((line) => LINK.exec(line)).find((match) => match?.[1] === 'Download invoice');
-    return { orderId: Number(/Order (\d+) placed/.exec(heading)?.[1]) || null, invoice: link ? { ref: link[2] } : null, heading, lines };
-  },
-  orders: (lines) => ({
-    found: lines.some((line) => HEADING.exec(line)?.[1] === 'Orders'),
-    orders: lines.map((line) => ORDER_ROW.exec(line)).filter(Boolean)
-      .map(([, id, items, address, reference]) => ({ id: Number(id), items, address, reference })),
-  }),
-});
-
 class PlaywrightAgent {
-  constructor({ host, pause, checkpoint, thinkTimeMs, task }) {
+  constructor({ host, pause, checkpoint, thinkTimeMs, task, profile, revalidate = false, cancelOnTakeover = false }) {
     this.host = host;
     this.pause = pause;
     this.checkpoint = checkpoint;
     this.thinkTimeMs = thinkTimeMs;
     this.task = task;
+    this.profile = profile;
+    this.revalidate = revalidate;
+    this.cancelOnTakeover = cancelOnTakeover;
     this.observationBytes = 0;
     this.dead = false;
+    this._takeoversSeen = pause.takeovers();
   }
 
   kill() {
@@ -80,10 +47,13 @@ class PlaywrightAgent {
     if (this.dead) throw new AgentKilled();
   }
 
-  async _tool(op, args = {}, { consequential = false } = {}) {
+  async tool(op, args = {}, { consequential = false } = {}) {
     this._live();
     await this.pause.whileHeld();
     this._live();
+    if (consequential && this.cancelOnTakeover && this.pause.takeovers() > this._takeoversSeen) {
+      throw new Redecide('human-took-control');
+    }
     if (consequential) this.checkpoint.update({ lastCall: { op, args, phase: 'calling' } });
     const result = await this.host.request(op, args);
     this._live();
@@ -91,57 +61,43 @@ class PlaywrightAgent {
     return result;
   }
 
-  async _snapshot() {
-    const snapshot = await this._tool('snapshot');
+  async snapshot() {
+    const snapshot = await this.tool('snapshot');
+    this._takeoversSeen = this.pause.takeovers();
     this.observationBytes += Buffer.byteLength(JSON.stringify({ url: snapshot.url, snapshot: snapshot.incremental ?? snapshot.full }));
     return snapshot;
   }
 
   async view(kind) {
-    const snapshot = await this._snapshot();
-    return PARSERS[kind](snapshot.full.split('\n'));
+    const snapshot = await this.snapshot();
+    return this.profile.parsers[kind](snapshot.full.split('\n'));
   }
 
-  _requireAllowed(url) {
+  requireAllowed(url) {
     if (new URL(url).origin !== this.task.origin) throw new Error(`origin of ${url} is not allowed`);
   }
 
   async navigate(url) {
-    this._requireAllowed(url);
-    await this._tool('navigate', { url });
-  }
-
-  async act(kind, target, { value } = {}) {
-    if (kind === 'fill') return this._tool('fill', { ref: target.ref, value }, { consequential: true });
-    if (kind === 'download') return this._tool('download', { ref: target.ref }, { consequential: true });
-    if (kind === 'place') {
-      this._requireAllowed((await this._tool('formAction')).action);
-      const placed = await this._tool('click', { ref: target.ref }, { consequential: true });
-      return { orderId: Number(/\/orders\/(\d+)/.exec(placed.url)?.[1]) || null };
-    }
-    return this._tool('click', { ref: target.ref }, { consequential: true });
+    this.requireAllowed(url);
+    await this.tool('navigate', { url });
   }
 
   /**
-   * The order call began but its result was lost. Check the page the browser is on, then the
-   * application's order list; with an idempotency reference a resubmission is safe; otherwise
-   * the outcome is unknown and goes to human review.
+   * With revalidation, `options.revalidate` names the view to read again and a function that
+   * returns the decision's target from the fresh view, or null when the decision no longer holds.
    */
-  async resolveInterruptedOrder(task, progress) {
-    const current = PARSERS.confirmation((await this._snapshot()).full.split('\n'));
-    if (current.orderId && current.lines.some((line) => line.includes(`Ship to: ${progress.address};`))) {
-      return { orderId: current.orderId };
+  async act(kind, target, options = {}) {
+    let current = target;
+    if (this.revalidate && options.revalidate) {
+      current = options.revalidate.find(await this.view(options.revalidate.view));
+      if (!current) throw new Redecide('revalidation-failed');
     }
-    await this.navigate(`${task.origin}/orders`);
-    const list = await this.view('orders');
-    if (list.found) {
-      const match = list.orders.find((order) => order.address === progress.address
-        && order.reference === (progress.reference ?? 'none'));
-      return match ? { orderId: match.id } : { retry: true };
-    }
-    if (progress.reference) return { retry: true };
-    return { humanReview: true, reason: 'order outcome unknown: no confirmation on the page, no order list, no idempotency' };
+    return this.profile.act[kind](this, current, options);
+  }
+
+  resolveInterrupted(task, progress) {
+    return this.profile.resolveInterrupted(this, task, progress);
   }
 }
 
-export { PlaywrightAgent };
+export { PlaywrightAgent, Redecide };

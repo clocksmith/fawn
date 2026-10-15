@@ -3,7 +3,8 @@
 // Observations use the outline view with deltas against the agent's previous version; unchanged
 // regions come from the agent's own cache. Each action cites the observation its decision used
 // and binds staleness to the regions that decision read. A handoff makes the agent wait for
-// ownership and observe again before acting.
+// ownership and observe again before acting. A profile supplies each application's views,
+// actions and interrupted-effect resolution.
 
 const OWNERSHIP_POLL_MS = 50;
 const OWNERSHIP_WAIT_MS = 30000;
@@ -11,72 +12,6 @@ const OUTCOME_POLL_MS = 50;
 const OUTCOME_WAIT_MS = 20000;
 const REDECIDE_CODES = Object.freeze(['stale-observation', 'target-changed', 'precondition-unestablished', 'expired-observation']);
 const OWNERSHIP_CODES = Object.freeze(['stale-owner-generation', 'unauthenticated']);
-
-const VIEWS = Object.freeze({
-  catalog: { regionGroups: ['.product-row'], regions: ['#pager', '#cart-summary'] },
-  cart: { regionGroups: ['.cart-row'], regions: ['#cart-total'] },
-  checkout: { regions: ['#order-form'] },
-  confirmation: { regions: ['h1', '#invoice'] },
-});
-
-const MONEY = /\$(\d+)\.(\d{2})/;
-const HANDLE = /\[(h[0-9a-z-]+) (\w+) "([^"]*)"(?: = ("(?:[^"\\]|\\.)*"))?\]/g;
-
-function cents(text) {
-  const match = MONEY.exec(text);
-  return match ? Number(match[1]) * 100 + Number(match[2]) : null;
-}
-
-function controls(outline) {
-  return [...outline.matchAll(HANDLE)].map(([, handle, role, name, value]) => ({
-    handle,
-    role,
-    name,
-    value: value === undefined ? null : JSON.parse(value),
-  }));
-}
-
-const PARSERS = Object.freeze({
-  catalog: (regions, version) => ({
-    items: Object.entries(regions).filter(([selector]) => selector.startsWith('#row-')).map(([selector, outline]) => {
-      const [name, price, stock] = outline.split(' | ');
-      return {
-        name,
-        price: cents(price),
-        stock: stock === 'out of stock' ? 0 : Number.parseInt(stock, 10),
-        handle: controls(outline).find((control) => control.name === 'Add to cart')?.handle,
-        region: selector,
-        version,
-      };
-    }),
-  }),
-  cart: (regions, version) => ({
-    lines: Object.entries(regions).filter(([selector]) => selector.startsWith('#cart-') && selector !== '#cart-total')
-      .map(([selector, outline]) => ({
-        name: outline.split(' | ')[0],
-        price: cents(outline),
-        handle: controls(outline).find((control) => control.name === 'Remove')?.handle,
-        region: selector,
-        version,
-      })),
-  }),
-  checkout: (regions, version) => {
-    const fields = controls(regions['#order-form'] ?? '');
-    const field = (name) => {
-      const control = fields.find((candidate) => candidate.name === name);
-      return control ? { handle: control.handle, value: control.value ?? '', version } : null;
-    };
-    return {
-      address: field('address'),
-      reference: field('reference'),
-      place: { handle: fields.find((control) => control.name === 'Place order')?.handle, version },
-    };
-  },
-  confirmation: (regions, version) => {
-    const link = controls(regions['#invoice'] ?? '').find((control) => control.name === 'Download invoice');
-    return { orderId: Number(/Order (\d+) placed/.exec(regions.h1 ?? '')?.[1]) || null, invoice: link ? { handle: link.handle, version } : null };
-  },
-});
 
 class AgentKilled extends Error {
   constructor() {
@@ -94,8 +29,9 @@ class Redecide extends Error {
 }
 
 class FawnAgent {
-  constructor({ host, identity, checkpoint, thinkTimeMs, task }) {
+  constructor({ host, identity, checkpoint, thinkTimeMs, task, profile }) {
     this.host = host;
+    this.profile = profile;
     this.identity = identity;
     this.checkpoint = checkpoint;
     this.thinkTimeMs = thinkTimeMs;
@@ -157,8 +93,8 @@ class FawnAgent {
   }
 
   async view(kind) {
-    const observed = await this._observe(VIEWS[kind]);
-    return PARSERS[kind](observed.regions, observed.version);
+    const observed = await this._observe(this.profile.views[kind]);
+    return this.profile.parsers[kind](observed.regions, observed.version);
   }
 
   /** Submit one action; refusals that call for a fresh decision become Redecide. */
@@ -210,67 +146,47 @@ class FawnAgent {
     }
   }
 
-  async act(kind, target, { value, reference } = {}) {
-    const scoped = (selectors) => ({ observationVersion: target.version, observationScope: { kind: 'regions', selectors } });
-    const base = { authorizedIntent: this.task.intent, target: { handle: target.handle } };
-    const ACTIONS = {
-      add: () => ({
-        ...base,
-        actionId: this._actionId('add'),
-        kind: 'click',
-        ...scoped([target.region]),
-        effect: { external: true, effectKey: `cart-add:${this.task.id}:${target.name}:${this._sequence}` },
-        completion: { completedWhen: [{ kind: 'element-text-includes', selector: '#cart-summary', value: target.name }] },
-      }),
-      remove: () => ({
-        ...base,
-        actionId: this._actionId('remove'),
-        kind: 'click',
-        ...scoped([target.region]),
-        effect: { external: true, effectKey: `cart-remove:${this.task.id}:${target.name}:${this._sequence}` },
-        completion: { completedWhen: [{ kind: 'element-absent', selector: target.region }] },
-      }),
-      fill: () => ({ ...base, actionId: this._actionId('fill'), kind: 'fill', ...scoped(['#order-form']), params: { value } }),
-      place: () => ({
-        ...base,
-        actionId: this._actionId('place'),
-        kind: 'submit',
-        ...scoped(['#order-form']),
-        effect: {
-          external: true,
-          effectKey: `order:${this.task.id}`,
-          ...(reference ? { externalIdempotencyKey: reference } : {}),
-        },
-        completion: { completedWhen: [{ kind: 'url-prefix', value: `${this.task.origin}/orders/` }] },
-      }),
-      download: () => ({ ...base, actionId: this._actionId('download'), kind: 'download', ...scoped(['#invoice']) }),
+  async act(kind, target, options = {}) {
+    const helpers = {
+      task: this.task,
+      sequence: () => this._sequence,
+      actionId: (label) => this._actionId(label),
+      scoped: (selectors) => ({ observationVersion: target.version, observationScope: { kind: 'regions', selectors } }),
+      base: { authorizedIntent: this.task.intent, target: { handle: target.handle } },
     };
-    const record = await this._submit(ACTIONS[kind]());
-    if (kind === 'place') return { orderId: orderIdFrom(record) };
-    if (kind === 'download') return { sha256: record.evidence.effect.sha256 };
-    return record;
+    const record = await this._submit(this.profile.actions[kind](target, options, helpers));
+    return this.profile.results[kind]?.(record) ?? record;
+  }
+
+  outstanding() {
+    return this._call('outstanding', {});
+  }
+
+  acknowledge(actionId) {
+    return this._call('acknowledge', { actionId });
   }
 
   /** The workspace kept dispatching while the agent was gone; its record says what happened. */
-  async resolveInterruptedOrder() {
+  async resolveInterrupted() {
+    const { effectKey, idFrom } = this.profile.interrupted(this.task);
     const deadline = Date.now() + OUTCOME_WAIT_MS;
     for (;;) {
-      const order = (await this._call('outstanding', {})).filter((entry) => entry.effectKey === `order:${this.task.id}`).at(-1);
-      if (!order || order.dispatchStatus === 'never-dispatched') return { retry: true };
-      if (order.outcome === 'completed') {
-        await this._call('acknowledge', { actionId: order.actionId });
-        return { orderId: orderIdFrom(order) };
+      const effect = (await this.outstanding()).filter((entry) => entry.effectKey === effectKey).at(-1);
+      if (!effect || effect.dispatchStatus === 'never-dispatched') return { retry: true };
+      if (effect.outcome === 'completed') {
+        await this.acknowledge(effect.actionId);
+        return { id: idFrom(effect) };
       }
-      if (order.outcome !== null) return { humanReview: true, reason: `order outcome ${order.outcome}` };
-      if (Date.now() > deadline) return { humanReview: true, reason: 'order dispatch has not settled' };
+      if (effect.outcome !== null) return { humanReview: true, reason: `effect outcome ${effect.outcome}` };
+      if (Date.now() > deadline) return { humanReview: true, reason: 'effect dispatch has not settled' };
       await new Promise((resolve) => setTimeout(resolve, OUTCOME_POLL_MS));
     }
   }
 }
 
-function orderIdFrom(record) {
-  const observed = record.evidence?.conditions?.results?.[0]?.observed ?? '';
-  return Number(/\/orders\/(\d+)/.exec(observed)?.[1]) || null;
+/** The URL a completed navigation-style effect ended on, from its completion evidence. */
+function completedUrl(record) {
+  return record.evidence?.conditions?.results?.[0]?.observed ?? '';
 }
 
-export { FawnAgent };
+export { FawnAgent, Redecide, completedUrl };

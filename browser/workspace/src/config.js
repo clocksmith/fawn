@@ -20,6 +20,8 @@ const POSITIVE_INTEGER_FIELDS = Object.freeze([
   'dispatch.completionPollMs',
 ]);
 
+const BROWSER_CHANNELS = Object.freeze(['chromium-headless-shell', 'chromium', 'chrome']);
+
 const NON_EMPTY_LIST_FIELDS = Object.freeze([
   'actionKinds',
   'observationScopes',
@@ -66,14 +68,21 @@ function validateServiceConfig(config) {
     }
   }
   if (config.browser?.transport !== 'pipe') throw invalid('browser.transport', 'pipe', config.browser?.transport);
+  if (!BROWSER_CHANNELS.includes(config.browser?.channel)) throw invalid('browser.channel', BROWSER_CHANNELS.join(' | '), config.browser?.channel);
   if (config.browser?.persistentProfiles !== true) {
     throw invalid('browser.persistentProfiles', true, config.browser?.persistentProfiles);
   }
   return Object.freeze(config);
 }
 
-function loadServiceConfig(configUrl = DEFAULT_CONFIG_URL) {
-  return validateServiceConfig(JSON.parse(readFileSync(configUrl, 'utf8')));
+/**
+ * @param {URL} [configUrl]
+ * @param {{browserChannel?: string}} [overrides] a compatibility run names another browser channel
+ */
+function loadServiceConfig(configUrl = DEFAULT_CONFIG_URL, { browserChannel } = {}) {
+  const config = JSON.parse(readFileSync(configUrl, 'utf8'));
+  if (browserChannel) config.browser = { ...config.browser, channel: browserChannel };
+  return validateServiceConfig(config);
 }
 
 export { loadServiceConfig, validateServiceConfig };

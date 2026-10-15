@@ -1,7 +1,7 @@
 {
   "$schema": "fawn-workspace-service.schema.json",
   "schemaVersion": 3,
-  "configVersion": "2026-10-15-workspace-service-v3",
+  "configVersion": "2026-10-15-workspace-service-v3.2",
   "protocolVersion": 3,
   "contractPath": "docs/fawn-workspace-contract.md",
   "journal": {
@@ -21,11 +21,12 @@
   "dispatch": {
     "actionTimeoutMs": 15000,
     "completionTimeoutMs": 10000,
-    "completionPollMs": 50
+    "completionPollMs": 10
   },
   "browser": {
     "engine": "chromium",
     "transport": "pipe",
+    "channel": "chromium-headless-shell",
     "headless": true,
     "persistentProfiles": true
   },

@@ -74,13 +74,18 @@
     "browser": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["engine", "transport", "headless", "persistentProfiles"],
+      "required": ["engine", "transport", "channel", "headless", "persistentProfiles"],
       "properties": {
         "engine": { "type": "string", "enum": ["chromium"] },
         "transport": {
           "type": "string",
           "enum": ["pipe"],
           "description": "The service launches Chromium over a private pipe so no remote-debugging endpoint bypasses dispatch."
+        },
+        "channel": {
+          "type": "string",
+          "enum": ["chromium-headless-shell", "chromium", "chrome"],
+          "description": "The browser build both adapters launch, as Playwright's registry names it; a compatibility run may name another."
         },
         "headless": { "type": "boolean" },
         "persistentProfiles": { "type": "boolean", "const": true }

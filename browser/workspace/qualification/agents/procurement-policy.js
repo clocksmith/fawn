@@ -98,10 +98,10 @@ async function runProcurement(agent, task, hooks) {
   const progress = agent.checkpoint.get();
   let orderId = progress.orderId ?? null;
   if (!orderId && progress.order === 'calling') {
-    const resolved = await agent.resolveInterruptedOrder(task, progress);
+    const resolved = await agent.resolveInterrupted(task, progress);
     if (resolved.humanReview) return { status: 'human-review', reason: resolved.reason };
-    if (resolved.orderId) {
-      orderId = resolved.orderId;
+    if (resolved.id) {
+      orderId = resolved.id;
       agent.checkpoint.update({ order: 'done', orderId });
     } else {
       agent.checkpoint.update({ order: null });

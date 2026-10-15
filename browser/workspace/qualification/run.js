@@ -33,7 +33,13 @@ function parseArgs(argv) {
     options[flag.slice(2)] = value;
   }
   const list = (name) => (options[name] ? options[name].split(',') : null);
-  return { out: options.out ?? null, adapters: list('adapters'), cases: list('cases'), workflows: list('workflows') };
+  return {
+    out: options.out ?? null,
+    adapters: list('adapters'),
+    cases: list('cases'),
+    workflows: list('workflows'),
+    browserChannel: options['browser-channel'] ?? null,
+  };
 }
 
 const TASK_BUILDERS = Object.freeze({
@@ -78,7 +84,8 @@ function identityOf(owner) {
 }
 
 class RunContext {
-  constructor({ caseSet, caseSpec, workflowName, adapter, site, runDir, token }) {
+  constructor({ caseSet, caseSpec, workflowName, adapter, site, runDir, token, browserChannel }) {
+    this.browserChannel = browserChannel;
     this.caseSet = caseSet;
     this.caseSpec = caseSpec;
     this.workflowName = workflowName;
@@ -104,14 +111,14 @@ class RunContext {
   }
 
   async start(extra = {}) {
-    this.host = await startHost({ stateDir: this.stateDir, adapter: this.adapter, ...extra });
+    this.host = await startHost({ stateDir: this.stateDir, adapter: this.adapter, browserChannel: this.browserChannel, ...extra });
     this.hostOpens += 1;
     return this.host;
   }
 
   /** Start a second host against the same state without replacing the current one. */
   startDetached() {
-    return startHost({ stateDir: this.stateDir, adapter: this.adapter });
+    return startHost({ stateDir: this.stateDir, adapter: this.adapter, browserChannel: this.browserChannel });
   }
 
   async close() {
@@ -259,12 +266,12 @@ function plannedRuns(caseSet, filters) {
   return runs;
 }
 
-async function executeRun({ caseSet, caseSpec, workflowName, adapter, outDir, index }) {
+async function executeRun({ caseSet, caseSpec, workflowName, adapter, outDir, index, browserChannel }) {
   const runDir = join(outDir, 'runs', caseSpec.id, workflowName, adapter);
   mkdirSync(runDir, { recursive: true });
   const site = await startFixtureSite();
   const token = `q${index}`;
-  const ctx = new RunContext({ caseSet, caseSpec, workflowName, adapter, site, runDir, token });
+  const ctx = new RunContext({ caseSet, caseSpec, workflowName, adapter, site, runDir, token, browserChannel });
   const startedAt = new Date();
   let error = null;
   try {
@@ -313,7 +320,7 @@ async function main() {
   const runs = [];
   const planned = plannedRuns(caseSet, filters);
   for (const [index, plan] of planned.entries()) {
-    const run = await executeRun({ caseSet, ...plan, outDir, index });
+    const run = await executeRun({ caseSet, ...plan, outDir, index, browserChannel: filters.browserChannel });
     runs.push(run);
     console.log(`${run.error ? 'error' : 'ran'}: ${plan.caseSpec.id} ${plan.workflowName} ${plan.adapter} (${run.durationMs} ms)`
       + (run.error ? ` ${run.error.message}` : ''));
@@ -322,6 +329,7 @@ async function main() {
     schemaVersion: RESULT_SCHEMA_VERSION,
     caseSetVersion: caseSet.caseSetVersion,
     scope: filters.cases || filters.workflows || filters.adapters ? 'subset' : 'full',
+    browserChannel: filters.browserChannel ?? loadServiceConfig().browser.channel,
     filters,
     adapters: filters.adapters ?? caseSet.adapters,
     startedAt: runs[0]?.startedAt ?? null,
