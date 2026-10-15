@@ -10,6 +10,22 @@ workspace evidence bindings. Status routes evidence; it does not maintain a
 roadmap. The commercial plan and the ordered roadmap are maintained in the
 owner's private strategy repository.
 
+## WebGPU graphics and later Chromium rendering
+
+Strategy version 7.1.0 adds WebGPU application graphics to proof 1's required
+evidence and records the later Chromium rendering family in its selection rule.
+[Graphics proof families](thesis.md#graphics-proof-families) owns the workload
+scope and execution-path distinction. Schema version 15 is unchanged because
+this changes policy content within existing fields, not the object shape.
+
+The proof count, ordering and assessments remain unchanged. Existing frozen
+generation and proof-3 contracts, thresholds, budget and build gate retain their
+meaning. New graphics contracts and executable admission checks are still
+required; this strategy update is not campaign qualification or a runtime change.
+The closed compiler screens remain rejected. Wider rendering requires its own
+selected integration and component authority before implementation, including
+where Skia Graphite already uses Dawn.
+
 ## Integrated comparison version 2
 
 Contract `fawn-doe-integrated-comparison-v2` (schema version 2) supersedes

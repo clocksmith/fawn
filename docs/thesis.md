@@ -64,7 +64,9 @@ repairs, independent installation and technical release are not blocked by them.
 1. **Current Doe against Dawn on the initial qualification target.** Re-run the
    native and package rows on current code, audit suspicious wins, then run
    complete Doppler generation. Acceptance requires correctness, stable A/A
-   controls, a p50 and p95 advantage, and CPU and memory bounds.
+   controls, a p50 and p95 advantage, and CPU and memory bounds. The immediate
+   WebGPU graphics family below is also required; inference alone cannot
+   establish this proof's application win set.
 2. **Current Metal confirmation.** Reproduce the strongest rows on current code,
    audit every result at or above the suspicious-speedup ratio in
    [the methodology thresholds](../config/benchmark-methodology-thresholds.json),
@@ -82,6 +84,47 @@ Fawn earns the larger claim only when the complete integrated system beats stock
 Chromium in task success, latency, memory, recovery and demanding GPU workloads.
 Until then, Doe has promising execution evidence and Fawn has scoped workspace
 advantages; neither has achieved the final objective.
+
+## Graphics proof families
+
+WebGPU application graphics is immediate Doe-versus-Dawn work under proof 1.
+The selected family covers a complex Three.js WebGPU scene, a 2D image/filter
+pipeline, particles or fluids, and texture upload through canvas presentation.
+Keep application code, shaders, assets, inputs and rendering requirements
+unchanged between providers. A Three.js WebGL renderer is a different path.
+
+Freeze each workload's independent correctness oracle, provider and browser
+identity, viewport, animation/input sequence, cache policy, sampling and winning
+margins before measuring. Require complete-frame p50/p95, preparation, CPU cost,
+GPU execution observations and GPU memory accounting, with process RSS and
+requested allocations reported separately. Distinguish application submission,
+GPU completion and displayed-frame timing; requestAnimationFrame intervals or
+offscreen readback alone do not establish canvas presentation. Stable A/A
+controls, failures, tails and memory bounds follow the
+[performance contract](performance-strategy.md). Missing work or metrics blocks
+admission. New frozen campaign contracts and executable checks must implement
+these requirements before timing can establish a win.
+
+Wider Chromium rendering is a later, separate family: animated CSS blur and
+backdrop-filter, transforms and opacity, scrolling and compositing, Canvas 2D
+and SVG rasterization, and video with filtered overlays. Blink, Skia, cc, Viz,
+ANGLE and media paths have distinct responsibilities; GPU acceleration does not
+imply that the work crosses the page WebGPU seam. Chromium's
+[cc overview](https://chromium.googlesource.com/chromium/src/+/main/docs/how_cc_works.md)
+describes rasterization, scrolling and frame submission. Skia
+[Graphite uses Dawn](https://blog.google/chromium/introducing-skia-graphite-chromes/)
+for native GPU access, including rasterization and compositing, so some browser
+rendering can already reach Dawn without a page calling WebGPU. Record the
+actual backend for the pinned browser instead of assuming a universal path.
+
+After WebGPU application wins are established, select integration below or
+beside Skia/Viz/ANGLE, including Graphite's Dawn backend where applicable, only
+when measured opportunity justifies it. Qualify ownership, output, compatibility,
+complete-frame benefit and maintenance cost separately. This expands intended
+future scope, not current Chromium component authority. The frozen proof-3
+contract and its build gate remain unchanged; its page-WebGPU attribution does
+not establish wider rendering ownership. Historical compiler screens retain
+their rejected verdicts and do not qualify either new family.
 
 ## Own the executable program
 

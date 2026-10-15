@@ -20,6 +20,28 @@ unestablished. Doe has promising execution evidence, not the final objective.
   another Mac.
 - **Proof 3, integrated comparison:** see [the Fawn status](fawn-workspace.md).
 
+## Graphics proof readiness
+
+The [selected WebGPU graphics family](../thesis.md#graphics-proof-families)
+requires new frozen campaign contracts and executable admission checks. The
+existing [Three.js screen](../../bench/external-projects/three-webgpu-screen/README.md)
+supplies pinned application inputs and observation tooling; its failed
+attribution remains closed. Proof 3 separately freezes a Three.js workload in
+the [integrated contract](../../config/fawn-doe-integrated-comparison.json),
+whose build gate and campaign are unchanged.
+
+The [image lab](../../browser/chromium/resources/fawn-image-lab.html),
+[particles](../../browser/chromium/resources/fawn-heavy-particles.html) and
+[fluids](../../browser/chromium/resources/fawn-prismatic-fluids.html) contain
+WebGPU paths. These are reusable application inputs, not qualified provider
+comparisons. The [render oracle runner](../../bench/tools/run_browser_render_oracle.py)
+provides a separate correctness harness. Missing acceptance work includes
+freezing the selected cases and oracles, binding real Doe/Dawn providers,
+excluding fallback, measuring texture upload through actual presentation, and
+admitting frame tails, preparation, CPU and GPU memory under matched controls.
+Wider Chromium rendering has no selected Doe integration in this family and
+remains later work; page-WebGPU receipts cannot qualify it.
+
 ## Doppler-driven Vulkan engineering
 
 The [benchmark guide](../../bench/README.md#choose-the-benchmark) routes
