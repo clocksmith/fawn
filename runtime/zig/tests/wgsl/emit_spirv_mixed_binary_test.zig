@@ -28,6 +28,68 @@ const allocator = testing.allocator;
 const MAX_SPIRV_OUTPUT = mod.MAX_SPIRV_OUTPUT;
 const translateToSpirv = mod.translateToSpirv;
 
+test "SPIR-V mix broadcasts a scalar factor once at each floating vector width" {
+    inline for (.{ "f16", "f32" }) |element| {
+        inline for (.{ "2", "3", "4" }) |lanes| {
+            const vector = "vec" ++ lanes ++ "<" ++ element ++ ">";
+            const source = "enable f16; " ++
+                "@group(0) @binding(0) var<storage, read> input: array<" ++ vector ++ ">;" ++
+                "@group(0) @binding(1) var<storage, read_write> output: array<" ++ vector ++ ">;" ++
+                "var<private> calls: u32;" ++
+                "fn factor() -> " ++ element ++ " { calls++; return input[2].x; }" ++
+                "@compute @workgroup_size(1) fn main() { output[0] = mix(input[0], input[1], factor()); output[1] = " ++ vector ++ "(" ++ element ++ "(calls)); }";
+            var binary: [MAX_SPIRV_OUTPUT]u8 = undefined;
+            const len = try translateToSpirv(allocator, source, &binary);
+            var offset: usize = 5;
+            var mixes: usize = 0;
+            while (offset < len / 4) {
+                const instruction = read_u32_le(&binary, offset * 4);
+                const words = instruction >> 16;
+                try testing.expect(words > 0);
+                if (@as(u16, @truncate(instruction)) == spirv.Opcode.ExtInst and
+                    read_u32_le(&binary, (offset + 4) * 4) == 46)
+                {
+                    mixes += 1;
+                    const result_type = read_u32_le(&binary, (offset + 1) * 4);
+                    const factor = read_u32_le(&binary, (offset + 7) * 4);
+                    var cursor: usize = 5;
+                    var found = false;
+                    while (cursor < offset) {
+                        const previous = read_u32_le(&binary, cursor * 4);
+                        const count = previous >> 16;
+                        if (@as(u16, @truncate(previous)) == spirv.Opcode.CompositeConstruct and
+                            read_u32_le(&binary, (cursor + 2) * 4) == factor)
+                        {
+                            found = true;
+                            try testing.expectEqual(result_type, read_u32_le(&binary, (cursor + 1) * 4));
+                            try testing.expectEqual(@as(u32, lanes[0] - '0' + 3), count);
+                            const scalar = read_u32_le(&binary, (cursor + 3) * 4);
+                            for (4..count) |word| try testing.expectEqual(scalar, read_u32_le(&binary, (cursor + word) * 4));
+                        }
+                        cursor += count;
+                    }
+                    try testing.expect(found);
+                }
+                offset += words;
+            }
+            try testing.expectEqual(@as(usize, 1), mixes);
+            // One factor evaluation and the entry-point wrapper call.
+            try testing.expectEqual(@as(u32, 2), count_spirv_opcode(binary[0..len], spirv.Opcode.FunctionCall));
+        }
+    }
+}
+
+test "SPIR-V mix retains scalar and vector factor overloads" {
+    inline for (.{ "f16", "f32", "vec2<f32>", "vec3<f32>", "vec4<f32>" }) |value_type| {
+        const source = "enable f16; @group(0) @binding(0) var<storage, read> input: array<" ++ value_type ++ ">;" ++
+            "@group(0) @binding(1) var<storage, read_write> output: array<" ++ value_type ++ ">;" ++
+            "@compute @workgroup_size(1) fn main() { output[0] = mix(input[0], input[1], input[2]); }";
+        var binary: [MAX_SPIRV_OUTPUT]u8 = undefined;
+        const len = try translateToSpirv(allocator, source, &binary);
+        try testing.expectEqual(@as(u32, 0), count_spirv_opcode(binary[0..len], spirv.Opcode.CompositeConstruct));
+    }
+}
+
 test "SPIR-V returning switches terminate unreachable merges and preserve explicit breaks" {
     const source =
         \\@group(0) @binding(0) var<storage, read_write> buf: array<u32>;

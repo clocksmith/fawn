@@ -422,7 +422,24 @@ fn emit_glsl_ext_inst_args(self: anytype, call: anytype, result_ty: ir.TypeId, i
 
     var i: u32 = 0;
     while (i < call.args.len) : (i += 1) {
-        try operands.append(self.emitter.alloc, try self.emit_value_expr(self.function.expr_args.items[call.args.start + i]));
+        const arg = self.function.expr_args.items[call.args.start + i];
+        var value = try self.emit_value_expr(arg);
+        // WGSL mix permits a scalar factor for vector endpoints; FMix requires
+        // every operand to have the result type. Evaluate the factor only once.
+        if (inst == glsl.FMix and i == 2) {
+            switch (self.emitter.module.types.get(result_ty)) {
+                .vector => |vector| {
+                    const factor_ty = self.function.exprs.items[arg].ty;
+                    if (self.emitter.module.types.get(factor_ty) == .scalar) {
+                        if (try self.emitter.lower_type(factor_ty) != try self.emitter.lower_type(vector.elem)) return error.InvalidIr;
+                        const lanes = [_]u32{value} ** 4;
+                        value = try emit_result_inst(self, spirv.Opcode.CompositeConstruct, result_type, lanes[0..vector.len]);
+                    }
+                },
+                else => {},
+            }
+        }
+        try operands.append(self.emitter.alloc, value);
     }
 
     try self.emitter.builder.append_function_inst(spirv.Opcode.ExtInst, operands.items);

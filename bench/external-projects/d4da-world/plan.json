@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "application": "sites/d4da-com/index.html",
+  "comparisonClass": "unchanged-application-replacement",
+  "viewport": {"width": 1280, "height": 720},
+  "deviceScaleFactor": 1,
+  "warmupFrames": 60,
+  "sampleFrames": 180,
+  "timeoutMs": 60000,
+  "cases": [
+    {"id": "solid", "alpha": 1},
+    {"id": "translucent", "alpha": 0.7},
+    {"id": "ghost", "alpha": 0.3}
+  ],
+  "oracle": {"size": 16, "canvasSize": 512, "gridStep": 0.7088607594936709, "origin": -28, "channelTolerance": 2},
+  "browserArgs": ["--no-sandbox", "--enable-unsafe-webgpu", "--ignore-gpu-blocklist", "--use-angle=vulkan", "--enable-features=Vulkan", "--disable-vulkan-surface"],
+  "stoppingRule": "One browser process, independent terrain pixel oracle, then the declared application cases. Retain failures. No performance promotion from this diagnostic baseline.",
+  "limitations": ["Live animation inputs are not deterministic across providers", "Frame cadence and queue completion are not physical display scanout latency", "The terrain oracle does not qualify the entire scene", "Observer perturbation and independent process variation are unqualified", "Forced-Doe page ownership remains a separate prerequisite"]
+}

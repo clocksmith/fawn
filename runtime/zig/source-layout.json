@@ -2320,9 +2320,9 @@
       },
       "src/compiler/wgsl/emit/spirv/emit_spirv_builtins.zig": {
         "decision": "Keep",
-        "moduleSha256": "36a749f58b4379104c77deddc60ec678559f3f274d8a6426a89aef1d3f0ea2d8",
-        "reason": "Keep: WGSL signature validation remains frontend-owned; pinned GLSL instruction encoding remains SPIR-V-owned. Runtime operands and argument evaluation are preserved.",
-        "reviewer": "codex-glsl-mapping/2026-10-12"
+        "moduleSha256": "8bb9db73708c70160c11ff935404620efc4a84901a6d347ec26622f9b35f76ab",
+        "reason": "Keep: WGSL signature validation remains frontend-owned; SPIR-V emission broadcasts scalar mix factors to the result vector for GLSL FMix without repeating argument evaluation. Other instruction signatures retain their own operand shapes.",
+        "reviewer": "codex-d4da-graphics/2026-10-15"
       },
       "src/compiler/wgsl/emit/spirv/emit_spirv_fn.zig": {
         "decision": "Keep",
