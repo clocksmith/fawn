@@ -9,18 +9,32 @@ Doe builds the environment where agents work. Fawn provides durable browser
 workspaces; DoeRuntime supplies independently useful GPU execution; DoeLab tests
 improvements; DoeProof records evidence.
 
-Next, build Fawn's shared observation, action, and recovery service above stock
-Chromium, using narrow CDP/Playwright adapters. Persist ownership generations,
-reject stale commands, and retain completed, failed, or unknown outcomes across
-restart. Prove consistent behavior across research, form submission, and export
-workflows; task-specific logic remains outside the shared machinery.
-The [workspace contract](fawn-workspace-contract.md) defines acceptance, and
-`fawnWorkspace` in the [strategy projection](../config/doe-product-strategy.json)
-owns the ordered work. This service is not implemented or qualified yet.
+Fawn's shared workspace service has passed scoped behavioral qualification. The
+next milestone is demonstrating material complete-task value over competent
+Chromium/Playwright, followed by broader compatibility and deployment
+qualification. The service runs above stock Chromium with narrow CDP/Playwright
+adapters, persists ownership generations, rejects stale commands, and retains
+completed, failed, or unknown outcomes across restart, consistently across the
+research, form-submission and export workflows; task-specific logic stays outside
+the shared machinery.
 
-Fawn acceptance does not wait for native runtime wins. First establish durable
-authority and uncertainty handling, then prove reuse and complete-task value
-against competent Chromium/Playwright automation. Add Chromium hooks and
+Three states stay distinct:
+- **Behaviorally qualified**: established on the frozen case set for a recorded
+  commit, browser binary and host.
+- **Product-advantaged**: not established. A competent baseline matched the
+  service's success, safety and recovery in every compared scenario.
+- **Release-qualified**: not established.
+
+The [workspace contract](fawn-workspace-contract.md) defines acceptance,
+`fawnWorkspace` in the [strategy projection](../config/doe-product-strategy.json)
+owns the ordered work, and [status](status/fawn-workspace.md) records the admitted
+evidence.
+
+Fawn acceptance does not wait for native runtime wins. Durable authority and
+uncertainty handling came first; complete-task value against competent
+Chromium/Playwright automation is next. Fawn must show why someone would choose
+it, and DoeRuntime why someone would replace Dawn; neither result depends on the
+other. Add Chromium hooks and
 browser-runtime integration only when measured benefits justify their
 compatibility and maintenance costs. Doppler retains model semantics;
 independently qualified DoeRuntime integration serves workflows where useful.
@@ -274,8 +288,9 @@ The ONNX Vulkan evaluation package remains the native installation front door an
 the transfer target after the Doppler advantage. Independent reproduction and
 retained adoption remain open. Chromium hooks and browser-runtime integration
 stay deferred until measured benefits justify their compatibility and maintenance
-costs and a separate selection decision is made. Fawn's shared workspace service
-above stock Chromium is the next build, selected independently. Existing A/B/C/D
+costs and a separate selection decision is made. Fawn's next milestone, selected
+independently, is material complete-task value over competent Chromium/Playwright.
+Existing A/B/C/D
 and K0 browser laws retain their meaning. Accelerator work retains separate hardware
 admission and cannot broaden the active matrix through simulator evidence.
 

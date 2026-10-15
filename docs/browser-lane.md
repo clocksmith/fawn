@@ -4,10 +4,11 @@ This is a routing note, not a task list or status log.
 
 Fawn provides durable browser workspaces in the [strategy](thesis.md).
 The [workspace contract](fawn-workspace-contract.md) governs its shared
-observation, action, and recovery service above stock Chromium/CDP/Playwright,
-which is the next build. Its roadmap lives in `fawnWorkspace`
-in [the strategy projection](../config/doe-product-strategy.json); native runtime
-wins are not prerequisites. Workspace implementation and acceptance remain absent.
+observation, action, and recovery service above stock Chromium/CDP/Playwright.
+The service has passed scoped behavioral qualification; complete-task value over
+competent automation and release qualification are not established. Its roadmap
+lives in `fawnWorkspace` in [the strategy projection](../config/doe-product-strategy.json);
+native runtime wins are not prerequisites.
 
 Chromium hooks and browser-runtime integration are added only when measured
 benefits justify their compatibility and maintenance costs.
