@@ -6,6 +6,21 @@ It is the machine-readable source for milestone order, the binding proving set,
 and development-effectiveness recording. Status routes evidence; it does not
 maintain another roadmap.
 
+## Frozen differentiation requirements
+
+The browser comparison policy moves to schema version 7
+(`fawn-external-product-comparison-v7`) and adds
+`workspaceComparison.differentiation`, frozen before implementation. It names:
+- the agent-workflow scenarios
+- the control: Playwright agent tooling with page-wide incremental snapshots,
+  aria-ref actions, a browser host that outlives the agent, checkpoints,
+  idempotency and application-state checks, and pause-then-resume human control
+- the shared conditions and think time
+- one improvement requirement per target area
+- the product-advantage rule
+
+No strategy state changes; step 5 stays unestablished until that rule passes.
+
 ## Behavioral qualification bound to admitted evidence
 
 Schema version 11 and strategy version 6.4.0 bind workspace assessments to

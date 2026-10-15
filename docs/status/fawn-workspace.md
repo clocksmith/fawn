@@ -86,6 +86,30 @@ browser binary, fixture inputs, origins, timeout and process shape.
 The comparison therefore does not establish product value over competent stock
 automation for these workflows. Step 5 stays unestablished.
 
+## Differentiation suite (frozen before implementation)
+
+`differentiation` in `workspaceComparison` freezes the next comparison before
+any of it is built. It covers persistent multipage agent workflows on a new
+fixture site, using one shared agent policy and think time on both sides.
+The control is the strongest generic agent tooling on stock Chromium:
+- Playwright's page-wide agent snapshot with incremental tracking and aria-ref
+  actions
+- a browser host that outlives the agent, with durable checkpoints, the
+  application's idempotency reference, application-state and current-page
+  checks, and a cooperative pause during human control
+
+Investigation before the freeze found that this tooling's snapshots are far
+smaller than the service's current observations. It also already refuses a ref
+whose element changed. Each of the four target areas therefore carries a
+treatment bar and a material improvement over the control:
+- changing decision dependencies
+- region-scoped incremental observation
+- human handoff with a pending agent call
+- agent death while the application holds an order
+
+Scoped product advantage needs at least two areas met in every repetition, with
+no material regression in this suite or in the scripted comparison above.
+
 ## Limits and open work
 
 Known limits:
