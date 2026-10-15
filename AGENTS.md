@@ -146,8 +146,10 @@ applicable gates, and status in the same change. References never waive a rule.
 
 ## Intent-first operations
 
-- Doe intent is durable workspace authority and source-preserving
-  compiler/runtime evidence, not package copy or benchmark prose. Fawn workspace
+- Doe's central intent is Chromium GPU execution ownership with unchanged
+  application wins and explicit maintainability acceptance. Compute is one
+  proving lane; Node, Bun, Doppler and ONNX supply workloads and regressions.
+  Follow the acceptance hierarchy in `GOALS.md`. Fawn workspace
   qualification is separate from hosted artwork and Chromium runtime receipts.
 - `Fawn` alone means only the durable browser workspace product; name the
   forced-Doe Chromium build, hosted demonstrations, and Fawn matrix explicitly

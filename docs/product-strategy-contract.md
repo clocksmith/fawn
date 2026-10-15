@@ -10,6 +10,32 @@ workspace evidence bindings. Status routes evidence; it does not maintain a
 roadmap. The commercial plan and the ordered roadmap are maintained in the
 owner's private strategy repository.
 
+## Chromium foundation and maintainability
+
+Schema version 16 and strategy version 8.0.0 add required `gpuFoundation`:
+the objective, workload role, acceptance authority, admission rule and ordered
+hierarchy. Its stages are unchanged WebGPU application wins, Chromium page
+WebGPU ownership, wider Chromium GPU paths, and maintainability. The schema
+rejects missing/reordered stages and established assessments without a new
+evidence-bearing contract. Existing strategy readers continue using their named
+sections; version-15 documents must add this hierarchy before validation.
+
+The [goals](../GOALS.md#acceptance-hierarchy) define intent; the
+[Chromium acceptance contract](../browser/chromium/acceptance.md#maintainability-acceptance)
+defines concrete patch, build, rebase, duplication, cost and ownership evidence.
+Maintainability is required throughout integration. Numeric bounds and version
+sequences must be frozen before qualification; no defaults or existing milestone
+labels supply a pass. The strategy schema is policy validation, not an executable
+maintainability assessment. Campaign validators and bound receipts remain needed.
+
+The runtime's job now centers Chromium GPU execution. Node, Bun, Doppler and ONNX
+remain useful workload and regression surfaces; compiler/native adoption and
+Fawn workspace qualification remain independent. The three existing proof
+campaigns, their order, assessments, frozen thresholds, build gate and budget
+are unchanged. They cannot alone discharge the broader hierarchy. Browser
+charters now route selected wider GPU integration and mandatory maintainability
+acceptance without transferring authority over unrelated Chromium policy.
+
 ## WebGPU graphics and later Chromium rendering
 
 Strategy version 7.1.0 adds WebGPU application graphics to proof 1's required

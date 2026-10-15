@@ -7,6 +7,17 @@ for their fields and values.
 
 ## Strategy and comparison clarification
 
+The [acceptance hierarchy](../GOALS.md#acceptance-hierarchy), represented by
+`gpuFoundation` in the strategy contract, defines the Chromium GPU foundation
+objective. Existing proof campaigns remain separately frozen. Foundation
+acceptance requires the [maintainability evidence](../browser/chromium/acceptance.md#maintainability-acceptance)
+alongside correctness and performance: patch scope, reproducible builds,
+upstream-version rebases, backend deduplication, bounded build/test costs and
+reviewed ownership/diagnostics. Collect it during integration. Missing frozen
+bounds, executable admission or candidate-bound receipts blocks this acceptance;
+schema validation or historical milestone labels cannot supply it. Ordinary
+development continues to use focused checks, not repeated full qualification.
+
 [GOALS.md](../GOALS.md) owns the goal, adoption and backend constraints;
 [the thesis](thesis.md) owns the technical rationale and the
 [three proofs](thesis.md#three-proofs) that select current work. The

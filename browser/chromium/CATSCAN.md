@@ -4,21 +4,21 @@ Parent: [Browser](../CATSCAN.md)
 
 ## Target
 
-Produce the forced-Doe Chromium artifact for [proof 3](../../docs/thesis.md#three-proofs): Doe owns page WebGPU work with independently validated output; release needs measured benefits.
+Own page WebGPU for Doe's Chromium GPU foundation; require correctness, benefit and maintainability.
 
 ## Authority
 
 - Owns Chromium integration contracts, runtime selection, artifact packaging, browser lifecycle probes, and release evidence.
-- Does not own Chromium policy outside the WebGPU seam or inherit package evidence.
+- Wider GPU integration requires traced paths, measured selection and separate acceptance; excludes unrelated Chromium policy and inherited package evidence.
 
 ## Scope
 
-- Includes files beneath this directory except child-chartered components, which narrow this authority.
+- Includes this directory, subject to child charters.
 
 ## Contracts
 
 Inputs:
-- Acceptance plan: [`plan.md`](acceptance.md).
+- Acceptance: [`acceptance.md`](acceptance.md).
 - Browser contracts: [`contracts/README.md`](contracts/README.md).
 
 Outputs:
@@ -39,6 +39,7 @@ Outputs:
 ## Acceptance
 
 - The machine-owned milestone manifest defines and passes the applicable browser gates.
+- Foundation acceptance requires [maintainability](acceptance.md#maintainability-acceptance); historical milestones cannot discharge it.
 - Evidence: [`bench/workflows/browser-milestones.json`](bench/workflows/browser-milestones.json).
 
 ## Non-goals

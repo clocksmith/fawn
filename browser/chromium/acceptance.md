@@ -2,7 +2,10 @@
 
 This file owns browser integration acceptance. The milestone manifest
 [`bench/workflows/browser-milestones.json`](bench/workflows/browser-milestones.json)
-owns state; [GOALS.md](../../GOALS.md) selects work. Chromium hooks and
+owns milestone state; [GOALS.md](../../GOALS.md) selects work and the
+`gpuFoundation` hierarchy in
+[`config/doe-product-strategy.json`](../../config/doe-product-strategy.json)
+records the broader unestablished objective. Chromium hooks and
 browser-runtime integration are added only when measured benefits justify their
 compatibility and maintenance costs; this file defines acceptance once that
 selection is made. Browser replacement cannot inherit native or package
@@ -15,6 +18,8 @@ separately by the [workspace contract](../../docs/fawn-workspace-contract.md).
 - Preserve browser-owned process, sandbox, API, media, and security behavior.
 - Keep fallback explicit and disable it in forced-Doe evidence.
 - Bind source, runtime, browser, output, and receipt identity.
+- Admit wider GPU paths separately after tracing and proving their benefit;
+  page WebGPU evidence cannot establish ownership of them.
 
 ## Product target
 
@@ -22,7 +27,8 @@ The Chromium runtime integration is successful when a released Chromium-family
 archive runs an unchanged WebGPU application through forced Doe with
 independently verified output, real hardware identity, reliable lifecycle
 behavior, and a measured benefit that justifies the integration's compatibility
-and maintenance costs. Browser benchmark rows are supporting evidence, not the
+and maintenance costs, with the maintainability acceptance below satisfied.
+Browser benchmark rows are supporting evidence, not the
 product outcome.
 
 The first promotion target is one exact-oracle application lane. Provider
@@ -97,6 +103,12 @@ hardware, never a synthetic `Doe` GPU vendor.
 
 ## Chromium seam obligations
 
+- Trace an ordinary webpage from device creation through shader/resource
+  creation, submission, completion, readback, canvas presentation and destruction
+  under Doe. Disabling Doe must make that page operation fail.
+- Compare stock Chromium+Dawn and forced-Doe Chromium from the same pinned
+  source and build configuration except for the declared integration; preserve
+  ordinary application code and exclude Fawn workspace changes from attribution.
 - Maintain explicit `dawn`, `doe`, and governed `auto` selection.
 - Make forced `doe` fail closed when Doe cannot initialize.
 - Record browser executable, Doe runtime, Dawn fallback, compiler, adapter,
@@ -106,6 +118,32 @@ hardware, never a synthetic `Doe` GPU vendor.
 - Validate canvas, presentation, external texture, media, worker, recovery,
   and device-loss behavior under forced Doe.
 - Run browser CTS and application workloads under both forced runtimes.
+
+## Maintainability acceptance
+
+Maintainability is required for accepting Doe as Chromium's GPU foundation,
+alongside correctness and application performance. Collect evidence during
+integration and revalidate it on each claimed upstream-version transition.
+Before qualification, freeze the Chromium version sequence, supported host,
+patch scope, duplication baseline, commands, repetitions and numeric cost
+bounds in a versioned campaign contract. Missing bounds or evidence fail
+acceptance; qualitative descriptions such as "small" or "easy to rebase" do not
+pass. Existing milestone receipts do not establish these new requirements.
+
+| Requirement | Required evidence and acceptance |
+| --- | --- |
+| Narrow Chromium patch set | An ordered patch series bound to upstream revisions, touched components and diff size, with the reason and owner for each seam. It stays within the frozen scope and size bounds; unexplained unrelated browser changes fail. |
+| Reproducible builds | Independent clean builds from pinned source, dependencies, toolchains, arguments and patches. Retain commands, logs and artifact hashes. Declare any unavoidable nondeterministic metadata before building and verify normalized artifact equivalence without ignoring executable differences. Clean installation and the same functional gates pass for each build. |
+| Chromium-version rebases | A predeclared sequence of upstream version transitions, with retained conflicts, resolutions and patch changes. Every transition builds and passes page ownership, correctness, lifecycle and required performance regressions; a clean patch application alone does not pass. Retain failed attempts. |
+| Reduced duplicated backend code | A frozen inventory of duplicated responsibilities across Doe and Chromium adapters, source-bound before/after implementations and measured reduction. Name the remaining owner of each responsibility and retain behavior/regression evidence. Moving copies, dropping supported behavior or adding a shared layer without removing duplication does not pass. |
+| Bounded build/test cost | Clean and incremental build wall time, CPU, peak RSS and disk, plus focused development and qualification test costs, on the pinned host with declared cache state and repetitions. Both absolute budgets and regression limits must pass; reducing coverage to meet a bound fails. |
+| Readable ownership and diagnostics | A reviewed map from webpage API through integration, compiler, runtime and backend, naming lifetime and error ownership. Retained fault reproductions expose the failing boundary, provider, source/build identity and available source location. Unattributed faults remain explicit; hidden fallback, duplicate ownership or invented locations fail. |
+
+Qualification tooling must bind these receipts to the exact candidate and
+enforce the frozen bounds before a foundation claim. The strategy schema records
+required evidence and rejects a premature established assessment; it is not a
+physical build, rebase, cost or ownership validator. Until those validators and
+receipts exist, maintainability remains unestablished.
 
 ## Published-browser obligations
 

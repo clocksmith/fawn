@@ -4,12 +4,12 @@ Parent: [Doe](../CATSCAN.md)
 
 ## Target
 
-Govern Fawn durable browser workspaces and optional browser-hosted Doe execution
+Govern Fawn durable browser workspaces and Doe's Chromium GPU execution integration
 as separately admitted surfaces independent of package and native claims.
 
 ## Authority
 
-- Owns workspace authority above Chromium and optional runtime integration boundaries.
+- Owns workspace authority above Chromium and selected GPU integration boundaries.
 - Does not own Chromium-wide policy, package wrappers, native runtime semantics, or browser claims without a released artifact.
 
 ## Scope
