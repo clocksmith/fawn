@@ -7,9 +7,11 @@ owns enforceable invariants, component charters assign authority, and artifacts
 establish current results. The commercial plan and the ordered roadmap are
 maintained in the owner's private strategy repository, not here.
 
-Doe builds the environment where agents work. Fawn provides durable browser
-workspaces; DoeRuntime supplies independently useful GPU execution; DoeLab tests
-improvements; DoeProof records evidence.
+Doe aims to become Chromium's superior GPU execution foundation. The
+[acceptance hierarchy](../GOALS.md#acceptance-hierarchy) requires unchanged
+WebGPU application wins, page WebGPU ownership, measured expansion into wider
+GPU paths, and maintainability. Fawn provides durable browser workspaces;
+DoeLab tests improvements and DoeProof records evidence.
 
 ## Independent results
 
@@ -37,13 +39,33 @@ Doppler retains model semantics; independently qualified DoeRuntime integration
 serves workflows where useful. Neither browser hooks nor runtime replacement
 defines the integrated product.
 
-Local AI supplies demanding existing workloads and repeated execution costs to
-improve. Doppler is the first engineering consumer and owns its models and
-inference. Transferring an improvement through the existing ONNX integration
-establishes that it belongs to the execution layer rather than a model-specific
-accommodation. Compiler opportunities can be selected independently when they
-have their own consumer and attributable outcome. Browser replacement is an
-optional integration route, not a prerequisite for native value.
+Node, Bun, Doppler and ONNX supply workloads, integration surfaces and
+regressions. Inference and general compute are proving lanes alongside graphics;
+they do not define Doe. Doppler retains model semantics. Transfer across
+applications helps distinguish an execution-layer improvement from an
+application-specific accommodation. Independently useful compiler and native
+execution remain valid outcomes; the central objective additionally requires
+Chromium ownership and maintainability.
+
+## Chromium foundation acceptance
+
+`gpuFoundation` in [the strategy contract](../config/doe-product-strategy.json)
+records the ordered acceptance hierarchy separately from the existing campaigns.
+Page ownership requires a trace from an ordinary webpage's device creation
+through shaders, resources, submission, completion, readback, presentation and
+destruction, bound to the Doe runtime. A disabled-Doe negative control must
+make the operation fail. Compare stock Chromium+Dawn with forced-Doe Chromium
+on the same pinned source and build configuration except for the declared
+integration. Application code remains unchanged and fallback is forbidden.
+Fawn workspace changes must not confound this provider comparison.
+
+The [maintainability contract](../browser/chromium/acceptance.md#maintainability-acceptance)
+requires reviewable patch scope, independently reproducible builds, successful
+version rebases, measured backend deduplication, build/test costs within frozen
+bounds, and ownership/diagnostic evidence. Gather these during each integration;
+their place last in the hierarchy does not defer maintenance until after
+performance tuning. Missing bounds, failed rebases or absent evidence prevent
+accepting the foundation even when correctness and performance pass.
 
 ## Three proofs
 
@@ -57,9 +79,12 @@ Current evidence shows promise, not that result:
 - Fawn improves agent work on Chromium; it has not beaten Chromium as an
   integrated browser.
 
-Three proofs select current technical work, recorded in `roadmapProofs` of
+Three retained campaigns select current technical work within that hierarchy,
+recorded in `roadmapProofs` of
 [the strategy contract](../config/doe-product-strategy.json). Correctness
 repairs, independent installation and technical release are not blocked by them.
+Their frozen contracts remain unchanged; passing them alone does not discharge
+the full Chromium foundation hierarchy or its maintainability requirements.
 
 1. **Current Doe against Dawn on the initial qualification target.** Re-run the
    native and package rows on current code, audit suspicious wins, then run
@@ -120,10 +145,10 @@ actual backend for the pinned browser instead of assuming a universal path.
 After WebGPU application wins are established, select integration below or
 beside Skia/Viz/ANGLE, including Graphite's Dawn backend where applicable, only
 when measured opportunity justifies it. Qualify ownership, output, compatibility,
-complete-frame benefit and maintenance cost separately. This expands intended
-future scope, not current Chromium component authority. The frozen proof-3
-contract and its build gate remain unchanged; its page-WebGPU attribution does
-not establish wider rendering ownership. Historical compiler screens retain
+complete-frame benefit and maintenance cost separately. The Chromium component
+owns selected integration; wider paths require selection before implementation.
+The frozen proof-3 contract and its build gate remain unchanged; its page-WebGPU
+attribution does not establish wider rendering ownership. Historical compiler screens retain
 their rejected verdicts and do not qualify either new family.
 
 ## Own the executable program

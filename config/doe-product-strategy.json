@@ -1,7 +1,7 @@
 {
   "$schema": "doe-product-strategy.schema.json",
-  "schemaVersion": 15,
-  "strategyVersion": "7.1.0",
+  "schemaVersion": 16,
+  "strategyVersion": "8.0.0",
   "artifactKind": "doe-product-strategy",
   "authority": {
     "goals": "GOALS.md",
@@ -32,8 +32,8 @@
     },
     {
       "id": "doeruntime",
-      "job": "Supply independently useful GPU execution: own WebGPU validation, resources, submission, completion, memory, synchronization and application integration. Runtime adoption does not require independent adoption of the owned compiler.",
-      "promotionGate": "A frozen non-Doppler application demonstrates a material advantage over the strongest eligible controls; declared-program changes are disclosed; external adoption and repeat retention remain independently evidenced.",
+      "job": "Become Chromium's superior GPU execution foundation: own WebGPU validation, resources, submission, completion, memory, synchronization and selected browser GPU integration. Preserve independently useful native execution and compiler adoption.",
+      "promotionGate": "The gpuFoundation hierarchy requires unchanged application wins, full page WebGPU ownership, separately qualified wider GPU paths and explicit maintainability acceptance. A frozen non-Doppler application advantage remains necessary for independent runtime adoption; declared-program changes are disclosed, and external adoption and repeat retention remain independently evidenced.",
       "authorityPaths": [
         "docs/runtime-ownership-decision.md",
         "docs/doe-support-matrix.md"
@@ -221,6 +221,59 @@
       "inheritsPromotion": false
     }
   ],
+  "gpuFoundation": {
+    "objective": "Doe becomes Chromium's superior GPU execution foundation.",
+    "workloadRole": "Compute is one proving lane alongside graphics. Node, Bun, Doppler and ONNX supply workloads, integration surfaces and regressions; they do not define the product.",
+    "acceptanceAuthorityPath": "browser/chromium/acceptance.md",
+    "admissionRule": "All hierarchy obligations must pass for the foundation claim. Collect maintainability evidence throughout integration. Freeze measurable bounds and version sequences before qualification; missing validators, bounds or bound receipts prevent admission. Existing roadmapProofs campaigns and their frozen contracts retain their verdicts and cannot alone establish this hierarchy.",
+    "hierarchy": [
+      {
+        "order": 1,
+        "id": "unchanged-webgpu-applications",
+        "outcome": "Beat Dawn for unchanged WebGPU applications.",
+        "requiredEvidence": [
+          "inference and general compute, a Three.js scene, an image/filter pipeline, particles or fluids, and texture upload through actual canvas presentation",
+          "p50/p95 advantage, preparation, CPU, GPU memory, independent correctness and no fallback under frozen workload contracts"
+        ],
+        "currentAssessment": "unestablished"
+      },
+      {
+        "order": 2,
+        "id": "chromium-page-webgpu-ownership",
+        "outcome": "Own real webpage WebGPU inside Chromium from device creation through destruction.",
+        "requiredEvidence": [
+          "stock Chromium+Dawn versus forced-Doe Chromium from the same pinned source and build configuration except for the declared integration; ordinary applications unchanged",
+          "Doe-owned device and resource creation, shader compilation, submission, completion, readback, presentation and destruction; disabling Doe makes page operations fail",
+          "preserved lifecycle, process, sandbox and security behavior; no fallback and no workspace-treatment confounding"
+        ],
+        "currentAssessment": "unestablished"
+      },
+      {
+        "order": 3,
+        "id": "wider-chromium-gpu-paths",
+        "outcome": "Expand into Chromium's wider GPU paths only after WebGPU application wins, page ownership, real-path tracing and measured integration selection.",
+        "requiredEvidence": [
+          "trace actual Graphite/Skia rasterization and compositing, CSS filters and backdrop filters, Canvas 2D, SVG, scrolling and video overlays on the pinned browser",
+          "separate source-bound ownership, correctness, compatibility and complete-operation benefit for each selected path; page WebGPU receipts do not transfer"
+        ],
+        "currentAssessment": "unestablished"
+      },
+      {
+        "order": 4,
+        "id": "maintainability",
+        "outcome": "Prove maintainability with evidence collected throughout integration; correctness and speed cannot substitute.",
+        "requiredEvidence": [
+          "narrow Chromium patch series within predeclared scope and size bounds",
+          "independent reproducible clean builds and clean installation from pinned inputs, with artifact equivalence",
+          "successful Chromium-version rebases across a frozen sequence, including build, ownership, correctness, lifecycle and performance checks",
+          "measured reduction of duplicated backend responsibilities against a frozen source baseline, preserving behavior",
+          "clean/incremental build and development/qualification test cost within frozen absolute budgets and regression limits",
+          "reviewed readable ownership and diagnostics, with boundary-attributed fault reproductions"
+        ],
+        "currentAssessment": "unestablished"
+      }
+    ]
+  },
   "roadmapProofs": {
     "finalObjective": "Removing Doe or Fawn and returning to Dawn or stock Chromium makes the product measurably worse. Usefulness beside Dawn and Chromium does not meet this bar.",
     "currentStatement": "Doe has promising execution evidence; Fawn has scoped workspace advantages. Neither has achieved the final objective.",

@@ -2,9 +2,9 @@
 
 ## Mission and thesis
 
-**Doe builds the environment where agents work. Fawn provides durable browser
-workspaces; DoeRuntime supplies independently useful GPU execution; DoeLab tests
-improvements; DoeProof records evidence.**
+**Doe's central objective is to become Chromium's superior GPU execution
+foundation. Compute is one proving lane alongside graphics. Fawn provides
+durable browser workspaces; DoeLab tests improvements; DoeProof records evidence.**
 
 Fawn begins above stock Chromium through one shared observation, action, and
 recovery service with narrow CDP/Playwright adapters. DoeRuntime and the
@@ -21,6 +21,35 @@ makes the product measurably worse. Usefulness beside Dawn and Chromium does not
 meet this bar. Doe has promising execution evidence and Fawn has scoped workspace
 advantages; neither has achieved the objective. [Three proofs](docs/thesis.md#three-proofs)
 select the current work.
+
+## Acceptance hierarchy
+
+1. **Beat Dawn for unchanged WebGPU applications.** Qualify inference and
+   general compute, a Three.js scene, an image/filter pipeline, particles or
+   fluids, and texture upload through actual canvas presentation. Require
+   p50/p95 advantage, preparation, CPU, GPU memory, independent correctness and
+   no fallback under frozen workload contracts.
+2. **Own page WebGPU inside Chromium.** Real webpage device creation through
+   destruction must be Doe-owned. Compare stock Chromium+Dawn with forced-Doe
+   Chromium using ordinary applications unchanged, including lifecycle and
+   security behavior.
+3. **Expand into Chromium's wider GPU paths.** Trace the real execution path
+   before selecting Graphite/Skia rasterization and compositing, CSS filters and
+   backdrop filters, Canvas 2D, SVG, scrolling or video overlays. Each integration
+   must prove its own benefit after the preceding WebGPU obligations.
+4. **Prove maintainability.** Require a narrow Chromium patch set, reproducible
+   builds, successful Chromium-version rebases, reduced duplicated backend code,
+   bounded build/test cost, and readable ownership and diagnostics. Collect this
+   evidence throughout integration; performance and correctness alone cannot
+   establish the final objective. The
+   [Chromium acceptance contract](browser/chromium/acceptance.md#maintainability-acceptance)
+   defines the required evidence and failure conditions.
+
+Node, Bun, Doppler and ONNX remain workload generators, integration surfaces and
+regressions. They do not define the product. Independent native/compiler use
+remains supported; it does not satisfy Chromium ownership or maintainability.
+The existing three proofs are campaigns within this hierarchy, not substitutes
+for its acceptance. Fawn workspace acceptance remains separate.
 
 ## Desired outcomes
 
@@ -74,8 +103,9 @@ The independent compiler and runtime retain these outcomes:
    evidence.
 8. **Exceptional implementation quality.** Keep compiler, object, and backend
    boundaries readable and independently testable. Reduce duplication and
-   measure build cost and reproduction-to-verified-improvement time. Zig enables
-   engineering discipline; choosing it is not itself a product advantage.
+   measure build cost and reproduction-to-verified-improvement time. The
+   maintainability acceptance above is mandatory for the Chromium foundation.
+   Zig enables engineering discipline; choosing it is not itself a product advantage.
 
 ## Strategic constraints
 

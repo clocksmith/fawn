@@ -6,6 +6,7 @@ verdicts. Historical narrative lives under [`status/archive/`](status/archive/).
 | Area | Live status | Ground truth |
 | --- | --- | --- |
 | Strategy milestones | [`status/runtime-backends-and-bench.md`](status/runtime-backends-and-bench.md) | [`config/doe-product-strategy.json`](../config/doe-product-strategy.json), [migration](product-strategy-contract.md) |
+| Chromium foundation and maintainability | [`status/runtime-backends-and-bench.md#chromium-foundation-acceptance`](status/runtime-backends-and-bench.md#chromium-foundation-acceptance) | [`gpuFoundation`](../config/doe-product-strategy.json), [acceptance](../browser/chromium/acceptance.md#maintainability-acceptance) |
 | Runtime and benchmarks | [`status/runtime-backends-and-bench.md`](status/runtime-backends-and-bench.md) | `reports/claim-index.json`, `bench/out/` |
 | Graphics proof readiness | [`status/runtime-backends-and-bench.md#graphics-proof-readiness`](status/runtime-backends-and-bench.md#graphics-proof-readiness) | [Selected families](thesis.md#graphics-proof-families); campaign admission remains open |
 | Independent framework integration | [`status/runtime-backends-and-bench.md#onnx-vulkan-evaluation-delivery`](status/runtime-backends-and-bench.md#onnx-vulkan-evaluation-delivery) | [ONNX Vulkan evaluation delivery](../reports/releases/20261009-onnx-vulkan-evaluation/README.md), [lifecycle qualification](../reports/benchmarks/amd-vulkan/20261008-onnx-vulkan-device-lifecycle/README.md) |

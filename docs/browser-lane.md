@@ -2,6 +2,14 @@
 
 This is a routing note, not a task list or status log.
 
+Doe's central objective is Chromium GPU execution under the
+[acceptance hierarchy](../GOALS.md#acceptance-hierarchy). Unchanged application
+wins lead to page WebGPU ownership, then separately selected wider GPU paths;
+[maintainability](../browser/chromium/acceptance.md#maintainability-acceptance)
+is mandatory and measured throughout. Stock Chromium+Dawn versus forced-Doe
+Chromium isolates the provider with ordinary applications unchanged. Fawn
+workspace treatment has separate acceptance and cannot stand in for that proof.
+
 Fawn provides durable browser workspaces ([thesis](thesis.md)).
 The [workspace contract](fawn-workspace-contract.md) governs its shared
 observation, action, and recovery service above stock Chromium/CDP/Playwright.

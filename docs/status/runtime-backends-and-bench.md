@@ -1,5 +1,18 @@
 # Doe status: runtime backends and benchmarks
 
+## Chromium foundation acceptance
+
+The [hierarchy](../../GOALS.md#acceptance-hierarchy) and `gpuFoundation` in the
+[strategy contract](../../config/doe-product-strategy.json) define the objective;
+its assessments remain unestablished. The
+[maintainability contract](../../browser/chromium/acceptance.md#maintainability-acceptance)
+now requires explicit patch, build, rebase, backend duplication, build/test cost
+and ownership/diagnostic evidence. A frozen qualification contract with numeric
+bounds and a version sequence, executable admission and candidate-bound receipts
+are still required. Strategy/schema checks provide no physical qualification.
+Existing proof campaigns and browser milestone receipts retain their meaning;
+none is promoted by this intent change.
+
 ## Roadmap proofs
 
 [Three proofs](../thesis.md#three-proofs) select current work; all are
