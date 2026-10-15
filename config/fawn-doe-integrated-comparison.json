@@ -1,9 +1,29 @@
 {
   "$schema": "fawn-doe-integrated-comparison.schema.json",
-  "schemaVersion": 1,
-  "contractId": "fawn-doe-integrated-comparison-v1",
+  "schemaVersion": 2,
+  "contractId": "fawn-doe-integrated-comparison-v2",
   "status": "frozen-before-implementation",
   "frozenOn": "2026-10-15",
+  "supersedes": {
+    "contractId": "fawn-doe-integrated-comparison-v1",
+    "commit": "258dc2551",
+    "changes": [
+      "fresh browser processes per label per arm raised from 8 to 30",
+      "Three.js correctness captures pin frame number, animation clock, viewport, color space and warmup, and mask no pixels",
+      "the agent-suite spend ceiling is approved at 400 USD, with no billed request before the forced-Doe build passes its complete build gate"
+    ]
+  },
+  "approvals": {
+    "approvedOn": "2026-10-15",
+    "approvedBy": "user",
+    "items": [
+      "Three.js frame tolerance: mean absolute channel difference at most 1 and p99 at most 4, with pinned captures",
+      "Three.js margin: 1.10 at both p50 and p95, the first rendering threshold",
+      "30 fresh browser processes per label per arm",
+      "the retained hardware-Vulkan launch arguments with the sandbox enabled",
+      "a 400 USD hard ceiling for the agent suite"
+    ]
+  },
   "strategyProof": "integrated-fawn-doe-versus-stock-chromium-dawn",
   "purpose": "Whether the complete Fawn workspace with Doe beats stock Chromium with Dawn on identical browser and agent workloads, and which part earns each difference: the workspace (B over A) or the provider (C over B).",
   "host": {
@@ -63,8 +83,9 @@
         "pricesPerMillionTokensUsd": { "input": 2, "output": 10 },
         "tasks": 153,
         "worstCaseUsd": 371.61,
-        "approvedCeilingUsd": null,
-        "rule": "No billed request runs before the user approves a ceiling for this contract; the model-driven campaign's ceiling does not cover it. The runner refuses any request whose worst case could cross the approved ceiling."
+        "approvedCeilingUsd": 400,
+        "billingPrecondition": "forced-doe-build-gate-passed",
+        "rule": "No billed request runs before the forced-Doe build passes its complete build gate. The model-driven campaign's ceiling does not cover this contract. The runner keeps its own ledger and refuses any request whose worst case could cross the approved ceiling."
       }
     },
     {
@@ -121,18 +142,26 @@
       "viewport": { "width": 1920, "height": 1080, "deviceScaleFactor": 1 },
       "input": "One fixed scripted pointer and keyboard sequence for the application's FirstPersonControls, replayed identically on every arm.",
       "oracle": {
-        "rule": "A harness init script, identical on every arm, pins the animation clock for correctness captures. Frames captured at fixed times on C match A within the tolerance, and A/A captures stay within it.",
-        "tolerance": { "unit": "8-bit channel levels", "meanAbsoluteDifference": 1, "p99AbsoluteDifference": 4 }
+        "rule": "A harness init script, identical on every arm, drives correctness captures. Each capture on C matches A within the tolerance, and A/A captures stay within it.",
+        "capture": {
+          "warmupFrames": 6,
+          "frameNumbers": [30, 90, 180],
+          "animationClock": "Frame n renders at animation time n/60 seconds, set by the init script; wall-clock time never advances the scene.",
+          "viewport": "the workload viewport and device scale factor",
+          "colorSpace": "srgb canvas, read back as 8-bit sRGB RGBA of the full canvas",
+          "maskedPixels": "none"
+        },
+        "tolerance": { "unit": "8-bit channel levels", "comparison": "at-most", "meanAbsoluteDifference": 1, "p99AbsoluteDifference": 4 }
       },
       "timing": "Frame time during the scripted input, from requestAnimationFrame intervals and the engine's GPU timestamps; both recorded.",
       "statistic": "p50 and p95 of frame time",
       "marginRatio": 1.10,
-      "marginSource": "adopted from the UMAP material margin; no earlier rendering margin exists"
+      "marginSource": "approved on 2026-10-15 as the first rendering threshold, at both p50 and p95"
     }
   ],
   "sampling": {
     "gpuWorkloads": {
-      "processesPerLabel": 8,
+      "processesPerLabel": 30,
       "labelsPerArm": ["copy-1", "copy-2"],
       "labelRule": "Each arm runs two identical-byte copies of its browser executable as separate labels.",
       "order": "Balanced blocks that rotate arm order and label order.",

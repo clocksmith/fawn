@@ -5,11 +5,31 @@
   "description": "Frozen before any Chromium checkout or build: arms, workloads, oracles, sampling, controls and decision rules for the complete Fawn workspace with Doe against stock Chromium with Dawn.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["$schema", "schemaVersion", "contractId", "status", "frozenOn", "strategyProof", "purpose", "host", "chromiumSource", "browserBuilds", "buildGate", "arms", "workloads", "sampling", "controls", "memory", "decisionRules", "claimRule", "runPolicy", "doesNotEstablish"],
+  "required": ["$schema", "schemaVersion", "contractId", "status", "frozenOn", "supersedes", "approvals", "strategyProof", "purpose", "host", "chromiumSource", "browserBuilds", "buildGate", "arms", "workloads", "sampling", "controls", "memory", "decisionRules", "claimRule", "runPolicy", "doesNotEstablish"],
   "properties": {
     "$schema": { "const": "fawn-doe-integrated-comparison.schema.json" },
-    "schemaVersion": { "const": 1 },
-    "contractId": { "const": "fawn-doe-integrated-comparison-v1" },
+    "schemaVersion": { "const": 2 },
+    "contractId": { "const": "fawn-doe-integrated-comparison-v2" },
+    "supersedes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["contractId", "commit", "changes"],
+      "properties": {
+        "contractId": { "const": "fawn-doe-integrated-comparison-v1" },
+        "commit": { "type": "string", "pattern": "^[0-9a-f]{9,40}$" },
+        "changes": { "$ref": "#/$defs/textList" }
+      }
+    },
+    "approvals": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["approvedOn", "approvedBy", "items"],
+      "properties": {
+        "approvedOn": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" },
+        "approvedBy": { "const": "user" },
+        "items": { "$ref": "#/$defs/textList" }
+      }
+    },
     "status": { "enum": ["frozen-before-implementation", "implemented-not-run", "run"] },
     "frozenOn": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" },
     "strategyProof": { "const": "integrated-fawn-doe-versus-stock-chromium-dawn" },
@@ -77,7 +97,43 @@
         { "$ref": "#/$defs/agentWorkload" },
         { "allOf": [{ "$ref": "#/$defs/gpuWorkload" }, { "properties": { "id": { "const": "doppler-browser-generation" }, "marginRatio": { "const": 1.25 } } }] },
         { "allOf": [{ "$ref": "#/$defs/gpuWorkload" }, { "properties": { "id": { "const": "umap-sgd" }, "marginRatio": { "const": 1.10 } } }] },
-        { "allOf": [{ "$ref": "#/$defs/gpuWorkload" }, { "required": ["viewport", "input"], "properties": { "id": { "const": "three-fog-scattering" }, "marginRatio": { "const": 1.10 } } }] }
+        {
+          "allOf": [
+            { "$ref": "#/$defs/gpuWorkload" },
+            {
+              "required": ["viewport", "input"],
+              "properties": {
+                "id": { "const": "three-fog-scattering" },
+                "marginRatio": { "const": 1.10 },
+                "oracle": {
+                  "required": ["rule", "capture", "tolerance"],
+                  "properties": {
+                    "capture": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["warmupFrames", "frameNumbers", "animationClock", "viewport", "colorSpace", "maskedPixels"],
+                      "properties": {
+                        "warmupFrames": { "type": "integer", "minimum": 1 },
+                        "frameNumbers": { "type": "array", "minItems": 1, "items": { "type": "integer", "minimum": 1 } },
+                        "animationClock": { "$ref": "#/$defs/text" },
+                        "viewport": { "$ref": "#/$defs/text" },
+                        "colorSpace": { "$ref": "#/$defs/text" },
+                        "maskedPixels": { "const": "none" }
+                      }
+                    },
+                    "tolerance": {
+                      "properties": {
+                        "comparison": { "const": "at-most" },
+                        "meanAbsoluteDifference": { "const": 1 },
+                        "p99AbsoluteDifference": { "const": 4 }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        }
       ]
     },
     "sampling": {
@@ -90,7 +146,7 @@
           "additionalProperties": false,
           "required": ["processesPerLabel", "labelsPerArm", "labelRule", "order", "isolation", "retries"],
           "properties": {
-            "processesPerLabel": { "type": "integer", "minimum": 8 },
+            "processesPerLabel": { "type": "integer", "minimum": 30 },
             "labelsPerArm": { "const": ["copy-1", "copy-2"] },
             "labelRule": { "$ref": "#/$defs/text" },
             "order": { "$ref": "#/$defs/text" },
@@ -207,7 +263,7 @@
         "spend": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["pricesPerMillionTokensUsd", "tasks", "worstCaseUsd", "approvedCeilingUsd", "rule"],
+          "required": ["pricesPerMillionTokensUsd", "tasks", "worstCaseUsd", "approvedCeilingUsd", "billingPrecondition", "rule"],
           "properties": {
             "pricesPerMillionTokensUsd": {
               "type": "object",
@@ -217,7 +273,8 @@
             },
             "tasks": { "type": "integer", "minimum": 1 },
             "worstCaseUsd": { "type": "number" },
-            "approvedCeilingUsd": { "description": "Null until the user approves a ceiling for this contract.", "type": ["number", "null"] },
+            "approvedCeilingUsd": { "description": "The hard ceiling the user approved for this contract.", "const": 400 },
+            "billingPrecondition": { "const": "forced-doe-build-gate-passed" },
             "rule": { "$ref": "#/$defs/text" }
           }
         }
@@ -246,8 +303,8 @@
             "tolerance": {
               "type": "object",
               "additionalProperties": false,
-              "required": ["unit", "meanAbsoluteDifference", "p99AbsoluteDifference"],
-              "properties": { "unit": { "type": "string" }, "meanAbsoluteDifference": { "type": "number" }, "p99AbsoluteDifference": { "type": "number" } }
+              "required": ["unit", "comparison", "meanAbsoluteDifference", "p99AbsoluteDifference"],
+              "properties": { "unit": { "type": "string" }, "comparison": { "type": "string" }, "meanAbsoluteDifference": { "type": "number" }, "p99AbsoluteDifference": { "type": "number" } }
             }
           }
         },

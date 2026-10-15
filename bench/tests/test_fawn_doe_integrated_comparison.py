@@ -59,6 +59,7 @@ class IntegratedComparisonContractTests(unittest.TestCase):
                     + suite["agent"]["maxTurnsPerTask"] * suite["agent"]["maxOutputTokensPerTurn"] * prices["output"]) / 1e6
         self.assertEqual(agent["spend"]["tasks"], tasks)
         self.assertAlmostEqual(agent["spend"]["worstCaseUsd"], round(tasks * per_task, 2), places=2)
+        self.assertLessEqual(agent["spend"]["worstCaseUsd"], agent["spend"]["approvedCeilingUsd"])
         self.assertEqual(prices, suite["spend"]["pricesPerMillionTokensUsd"])
 
     def test_schema_rejects_weakened_contracts(self) -> None:
@@ -73,6 +74,14 @@ class IntegratedComparisonContractTests(unittest.TestCase):
             lambda c: c["decisionRules"].pop(),
             lambda c: c["runPolicy"].update(fullRuns=2),
             lambda c: c["runPolicy"].update(outcomeSelectedRetries=True),
+            lambda c: c["sampling"]["gpuWorkloads"].update(processesPerLabel=8),
+            lambda c: c["workloads"][3]["oracle"]["capture"].update(maskedPixels="overlay"),
+            lambda c: c["workloads"][3]["oracle"]["capture"].pop("animationClock"),
+            lambda c: c["workloads"][3]["oracle"]["tolerance"].update(p99AbsoluteDifference=8),
+            lambda c: c["workloads"][3].update(marginRatio=1.05),
+            lambda c: c["workloads"][0]["spend"].update(approvedCeilingUsd=500),
+            lambda c: c["workloads"][0]["spend"].pop("billingPrecondition"),
+            lambda c: c.pop("supersedes"),
         ):
             candidate = copy.deepcopy(self.contract)
             mutate(candidate)

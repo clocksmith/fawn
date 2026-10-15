@@ -11,13 +11,12 @@ unestablished. Doe has promising execution evidence, not the final objective.
 - **Proof 2, current Metal confirmation:** the Metal rows exist only as
   historical ignored output, which does not count. Several upload rows exceed the
   suspicious-speedup ratio without fairness audits, and the Node ONNX Runtime
-  row shows a tail loss. It needs the Apple M3 host of the earlier runs,
-  frozen first by chip, macOS, SDK, Dawn and Doe binaries and idle-state policy.
-  The only recorded M3 identity
-  (`bench/out/apple-metal/diagnostic/20260712T191716Z/receipt.json`) is a
-  MacBook Air with less unified memory than the host named for this proof, and
-  the Metal comparison reports record no chip, so the host is not yet identified
-  or reachable from this workstation. Proof 2 stays blocked rather than moving to
+  row shows a tail loss. The only recorded Metal candidate is a MacBook Air
+  (Mac15,12, Apple M3, 24 GB unified memory, macOS 26.3 build 25D125) in
+  `bench/out/apple-metal/diagnostic/20260712T191716Z/receipt.json`; the Metal
+  comparison reports record no chip. Its exact chip, macOS, SDK, Dawn and Doe
+  binaries and idle-state policy are frozen only once it is reachable. It is not
+  reachable from this workstation, so proof 2 stays blocked rather than moving to
   another Mac.
 - **Proof 3, integrated comparison:** see [the Fawn status](fawn-workspace.md).
 

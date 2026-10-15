@@ -260,8 +260,9 @@ Open work:
   which the page's WebGPU work is Doe-owned. None exists here: the external
   Chromium lane drive is not attached, the local checkout is empty, and the last
   legacy-shell archive (`browser/chromium/artifacts/20260811T130500Z/`) failed
-  clean installation and its smoke checks. Its agent-suite spend needs its own
-  approved ceiling.
+  clean installation and its smoke checks. Its agent suite has its own approved
+  hard ceiling, and no billed request runs before the forced-Doe build passes its
+  complete build gate.
 - broader workloads, compatibility, deployment qualification and selective
   deeper capabilities wait until the proofs resolve
 - release admission, which stays blocked
