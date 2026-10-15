@@ -201,9 +201,12 @@ recovery and scoped observation must be met. Held-out workflows and the
 stale-decision and handoff scenarios need only non-inferiority; those two are
 reported as built-in guarantees, never as advantages.
 
-Running it needs model API credentials, which this machine does not have, and
-approval of the inference spend. The bound is the frozen repetitions × scenarios
-× both sides × the per-task token budget.
+Suite version 2 sends no sampling parameter, which current models reject, and
+requests thinking disabled, which one compatibility request confirms before the
+measured run. Spend is approved up to a hard ceiling that the runner enforces
+from a ledger. The wiring smoke covers only the procurement and helpdesk clean
+scenarios, and the full suite runs once. It still needs model API credentials,
+which this machine does not have.
 
 ## Compatibility
 
