@@ -39,13 +39,13 @@ contains:
 
 ## Behavioral qualification
 
-The [admitted result](../../reports/fawn-workspace/20261015-agent-differentiation/README.md) ran the frozen
+The [admitted result](../../reports/fawn-workspace/20261015-revalidated-control/README.md) ran the frozen
 [case set](../../config/fawn-workspace-qualification.json) through both adapters
-and all three workflows on commit `59b95f9ce`.
+and all three workflows on commit `9f522f7d9`.
 [The semantic validator](../../browser/workspace/qualification/validate.js)
 admitted it with no failures. Every requirement of strategy steps 1–4, and the
 behavioral requirements of step 5, are established in its
-[verdict](../../reports/fawn-workspace/20261015-agent-differentiation/qualification/verdict.json).
+[verdict](../../reports/fawn-workspace/20261015-revalidated-control/qualification/verdict.json).
 
 The cases cover:
 - process kills before dispatch, while the application holds the effect, and
@@ -69,7 +69,7 @@ Qualification found and fixed these defects:
 
 ## Competent-baseline comparison
 
-The [comparison](../../reports/fawn-workspace/20261015-agent-differentiation/comparison/comparison.json), rerun on the same commit, ran
+The [comparison](../../reports/fawn-workspace/20261015-revalidated-control/comparison/comparison.json), rerun on the same commit, ran
 the frozen scenarios and criteria in `workspaceComparison` of
 [the comparison policy](../../config/browser-product-comparison-policy.json).
 The control was stock Playwright automation with a persistent profile, a progress
@@ -95,8 +95,8 @@ automation.
 ## Agent-workflow differentiation
 
 `differentiation` in `workspaceComparison` was frozen before implementation
-(commit `02239e6dc`), then run in full on commit `59b95f9ce`
-([result](../../reports/fawn-workspace/20261015-agent-differentiation/differentiation/differentiation.json)). The workload is a
+(commit `02239e6dc`), then run in full again on commit `9f522f7d9`
+([result](../../reports/fawn-workspace/20261015-revalidated-control/differentiation/differentiation.json)). The workload is a
 persistent multipage task on a live workbench site: buy the cheapest valid item
 across catalog pages, ship it, and save its invoice. One shared agent policy and
 think time drive both sides. The control is the strongest generic agent tooling
@@ -128,9 +128,14 @@ requirement was met in every repetition:
 
 With an order list and an idempotency reference, both sides recover. The frozen
 product-advantage rule passed: all four areas met, with no material regression
-in the suite or in the scripted comparison rerun on the same commit. The service
-costs latency on every task. The clean and churn runs sit just inside the frozen
-latency rule, so later service overhead can turn them into a regression.
+in the suite or in the scripted comparison rerun on the same commit.
+
+Most service overhead came from the treatment agent's tooling, not the service.
+The agent bound each checkout field decision to the whole form, so its own fill
+made the next decision stale and cost another think cycle. Binding each field
+decision to that field still detects concurrent human edits, and it brought
+clean tasks close to the control's latency. The remaining visible cost is
+re-deciding after a handoff.
 
 This establishes advantage only for this suite, against this control. It does
 not establish broad product superiority, compatibility beyond the fixture or
@@ -138,16 +143,46 @@ release qualification. A control harness that revalidates every decision,
 discards pending calls on human takeover, or scopes reads with site-specific
 locators would narrow these gaps; that is task-specific scripting.
 
-## Second comparison (frozen before implementation)
+## Second comparison: a stronger control on a different application
 
-`revalidatedDifferentiation` in `workspaceComparison` tests whether these
-advantages survive a stronger control on a different application. The
-application is a helpdesk. The control is Playwright agent tooling that:
-- revalidates decision inputs with a fresh snapshot before every mutation
-- cancels a pending call and observes again after human control
+`revalidatedDifferentiation` in `workspaceComparison` was frozen before
+implementation (commit `a9686d47e`), then run in full on commit `9f522f7d9`
+([result](../../reports/fawn-workspace/20261015-revalidated-control/revalidated-differentiation/differentiation.json)).
+It uses a helpdesk: claim the oldest open, unclaimed ticket for a product, send
+one reply, and save the transcript. Its control is the first suite's Playwright
+agent tooling plus two behaviors:
+- it revalidates every decision's inputs with a fresh snapshot before mutating
+- it cancels a pending call after human control and observes again
 
-It keeps the four target areas, with requirements set before implementation. A
-model-driven stage needs its own later freeze.
+Against this control:
+- **Changing content: not met.** Another agent claims the chosen ticket during
+  the think time. Revalidation sees the claim, and both sides move to the next
+  ticket.
+- **Human handoff: not met.** A supervisor edits the draft while the send is
+  pending. Cancelling and observing again makes both sides send the supervisor's
+  text.
+- **Incremental observation: met.** Region-scoped outlines carry well under the
+  frozen share of the control's snapshot bytes beside a churning feed.
+- **Interruption recovery: met.** The agent dies while the application holds the
+  reply, and the application offers no reply list, no idempotency and only a
+  transient confirmation. The control needs human review in every repetition.
+  The workspace's recorded outcome lets the treatment resume without review or
+  duplicates.
+
+The suite's frozen rule passed: two areas met in every repetition, with no
+material regression in this suite, the first suite or the scripted comparison.
+The durable advantage is ownership of outcomes across agent interruption.
+Decision binding and handoff safety match what a careful harness can build per
+task. A model-driven stage needs its own freeze.
+
+## Compatibility
+
+The frozen case set passed in full, through both adapters, on Playwright's
+Chrome for Testing headless shell and on installed Google Chrome stable, a later
+major version with a different headless mode
+([verdict](../../reports/fawn-workspace/20261015-revalidated-control/compatibility-chrome/verdict.json)).
+This is compatibility evidence on this Linux host, not release qualification;
+other engines, operating systems and headed sessions are untested.
 
 ## Limits and open work
 
@@ -159,7 +194,8 @@ Known limits:
   per owner generation
 
 Open work:
-- broader workloads, compatibility and deployment qualification
+- broader workloads, a model-driven agent stage, broader compatibility and
+  deployment qualification
 - selective deeper capabilities
 - release admission, which stays blocked
 

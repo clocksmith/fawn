@@ -1,0 +1,181 @@
+{
+  "requests": [
+    {
+      "seq": 1,
+      "at": "2026-10-15T12:08:22.909Z",
+      "server": "main",
+      "method": "GET",
+      "path": "/export",
+      "search": "",
+      "kind": "document",
+      "status": 200
+    },
+    {
+      "seq": 2,
+      "at": "2026-10-15T12:08:22.978Z",
+      "server": "main",
+      "method": "GET",
+      "path": "/export/report.csv",
+      "search": "",
+      "kind": "download",
+      "status": 200,
+      "sha256": "98e79f8c6f16f49f82a7b94c42fc4ca04944cf7dddde39078df92522d5428146"
+    },
+    {
+      "seq": 3,
+      "at": "2026-10-15T12:08:23.419Z",
+      "server": "main",
+      "method": "GET",
+      "path": "/control/live",
+      "search": "?state=ready",
+      "kind": "control",
+      "status": 200
+    },
+    {
+      "seq": 4,
+      "at": "2026-10-15T12:08:23.427Z",
+      "server": "main",
+      "method": "GET",
+      "path": "/export",
+      "search": "",
+      "kind": "document",
+      "status": 200
+    },
+    {
+      "seq": 5,
+      "at": "2026-10-15T12:08:23.477Z",
+      "server": "main",
+      "method": "GET",
+      "path": "/export/report.csv",
+      "search": "",
+      "kind": "download",
+      "status": 200,
+      "sha256": "98e79f8c6f16f49f82a7b94c42fc4ca04944cf7dddde39078df92522d5428146"
+    },
+    {
+      "seq": 6,
+      "at": "2026-10-15T12:08:23.625Z",
+      "server": "main",
+      "method": "GET",
+      "path": "/control/live",
+      "search": "?state=ready",
+      "kind": "control",
+      "status": 200
+    },
+    {
+      "seq": 7,
+      "at": "2026-10-15T12:08:23.630Z",
+      "server": "main",
+      "method": "GET",
+      "path": "/export",
+      "search": "",
+      "kind": "document",
+      "status": 200
+    },
+    {
+      "seq": 8,
+      "at": "2026-10-15T12:08:23.676Z",
+      "server": "main",
+      "method": "GET",
+      "path": "/export/report.csv",
+      "search": "",
+      "kind": "download",
+      "status": 200,
+      "sha256": "98e79f8c6f16f49f82a7b94c42fc4ca04944cf7dddde39078df92522d5428146"
+    },
+    {
+      "seq": 9,
+      "at": "2026-10-15T12:08:23.690Z",
+      "server": "main",
+      "method": "GET",
+      "path": "/control/live",
+      "search": "?state=ready",
+      "kind": "control",
+      "status": 200
+    },
+    {
+      "seq": 10,
+      "at": "2026-10-15T12:08:23.694Z",
+      "server": "main",
+      "method": "GET",
+      "path": "/export",
+      "search": "",
+      "kind": "document",
+      "status": 200
+    },
+    {
+      "seq": 11,
+      "at": "2026-10-15T12:08:23.743Z",
+      "server": "main",
+      "method": "GET",
+      "path": "/export/report.csv",
+      "search": "",
+      "kind": "download",
+      "status": 200,
+      "sha256": "98e79f8c6f16f49f82a7b94c42fc4ca04944cf7dddde39078df92522d5428146"
+    },
+    {
+      "seq": 12,
+      "at": "2026-10-15T12:08:23.890Z",
+      "server": "main",
+      "method": "GET",
+      "path": "/control/live",
+      "search": "?state=ready",
+      "kind": "control",
+      "status": 200
+    },
+    {
+      "seq": 13,
+      "at": "2026-10-15T12:08:23.896Z",
+      "server": "main",
+      "method": "GET",
+      "path": "/export",
+      "search": "",
+      "kind": "document",
+      "status": 200
+    },
+    {
+      "seq": 14,
+      "at": "2026-10-15T12:08:23.942Z",
+      "server": "main",
+      "method": "GET",
+      "path": "/export/report.csv",
+      "search": "",
+      "kind": "download",
+      "status": 200,
+      "sha256": "98e79f8c6f16f49f82a7b94c42fc4ca04944cf7dddde39078df92522d5428146"
+    },
+    {
+      "seq": 15,
+      "at": "2026-10-15T12:08:23.955Z",
+      "server": "main",
+      "method": "GET",
+      "path": "/control/live",
+      "search": "?state=ready",
+      "kind": "control",
+      "status": 200
+    },
+    {
+      "seq": 16,
+      "at": "2026-10-15T12:08:23.960Z",
+      "server": "main",
+      "method": "GET",
+      "path": "/export",
+      "search": "",
+      "kind": "document",
+      "status": 200
+    },
+    {
+      "seq": 17,
+      "at": "2026-10-15T12:08:24.010Z",
+      "server": "main",
+      "method": "GET",
+      "path": "/export/report.csv",
+      "search": "",
+      "kind": "download",
+      "status": 200,
+      "sha256": "98e79f8c6f16f49f82a7b94c42fc4ca04944cf7dddde39078df92522d5428146"
+    }
+  ],
+  "receipts": []
+}

@@ -1,0 +1,68 @@
+{
+  "origin": "http://127.0.0.1:33953",
+  "foreignOrigin": "http://127.0.0.1:43547",
+  "requests": [
+    {
+      "seq": 1,
+      "at": "2026-10-15T12:06:39.272Z",
+      "server": "main",
+      "method": "GET",
+      "path": "/form",
+      "search": "",
+      "kind": "document",
+      "status": 200
+    },
+    {
+      "seq": 2,
+      "at": "2026-10-15T12:06:39.379Z",
+      "server": "main",
+      "method": "POST",
+      "path": "/form/submit",
+      "search": "",
+      "kind": "submission",
+      "status": 303,
+      "fields": {
+        "name": "Ada q84",
+        "email": "ada@example.test",
+        "reference": ""
+      },
+      "receiptId": 1,
+      "duplicateOf": null
+    },
+    {
+      "seq": 3,
+      "at": "2026-10-15T12:06:39.379Z",
+      "server": "main",
+      "method": "GET",
+      "path": "/form/confirmation",
+      "search": "?id=1",
+      "kind": "document",
+      "status": 200
+    },
+    {
+      "seq": 4,
+      "at": "2026-10-15T12:06:39.404Z",
+      "server": "main",
+      "method": "GET",
+      "path": "/form",
+      "search": "",
+      "kind": "document",
+      "status": 200
+    }
+  ],
+  "receipts": [
+    {
+      "id": 1,
+      "fields": {
+        "name": "Ada q84",
+        "email": "ada@example.test",
+        "reference": ""
+      },
+      "receivedAt": "2026-10-15T12:06:39.379Z"
+    }
+  ],
+  "reportSha256": {
+    "/export/report.csv": "98e79f8c6f16f49f82a7b94c42fc4ca04944cf7dddde39078df92522d5428146",
+    "/export/report-v2.csv": "d3b0e0c3d5158608348ac368583104e9269f3f55f0751334372819c47839887d"
+  }
+}

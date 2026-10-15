@@ -6,6 +6,20 @@ It is the machine-readable source for milestone order, the binding proving set,
 and development-effectiveness recording. Status routes evidence; it does not
 maintain another roadmap.
 
+## Stronger-control and compatibility evidence
+
+Schema version 13 and strategy version 6.6.0 add two required blocks:
+- `fawnWorkspace.strongerControlEvidence` binds the full second-suite result:
+  the helpdesk against revalidating Playwright agent tooling. Its frozen rule
+  passed with two areas, and the first suite was a clean prior.
+- `fawnWorkspace.compatibilityEvidence` binds admitted runs of the frozen case
+  set on further browser builds, currently installed Google Chrome stable.
+
+All evidence blocks now name commit `9f522f7d9`. Step 5's label is unchanged and
+the second suite only narrows it: the remaining advantages are durable outcomes
+across interruption and region-scoped observation. The second suite's status
+becomes `run`. Release admission stays blocked.
+
 ## Second comparison frozen against a stronger control
 
 The browser comparison policy moves to schema version 8

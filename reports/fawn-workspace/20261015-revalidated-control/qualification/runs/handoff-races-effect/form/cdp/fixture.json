@@ -1,0 +1,196 @@
+{
+  "origin": "http://127.0.0.1:34095",
+  "foreignOrigin": "http://127.0.0.1:46617",
+  "requests": [
+    {
+      "seq": 1,
+      "at": "2026-10-15T12:06:36.557Z",
+      "server": "main",
+      "method": "GET",
+      "path": "/form",
+      "search": "",
+      "kind": "document",
+      "status": 200
+    },
+    {
+      "seq": 2,
+      "at": "2026-10-15T12:06:36.629Z",
+      "server": "main",
+      "method": "POST",
+      "path": "/form/submit",
+      "search": "",
+      "kind": "submission",
+      "status": 303,
+      "fields": {
+        "name": "Ada q79 race-2",
+        "email": "ada@example.test",
+        "reference": ""
+      },
+      "receiptId": 1,
+      "duplicateOf": null
+    },
+    {
+      "seq": 3,
+      "at": "2026-10-15T12:06:36.630Z",
+      "server": "main",
+      "method": "GET",
+      "path": "/form/confirmation",
+      "search": "?id=1",
+      "kind": "document",
+      "status": 200
+    },
+    {
+      "seq": 4,
+      "at": "2026-10-15T12:06:36.638Z",
+      "server": "main",
+      "method": "GET",
+      "path": "/form",
+      "search": "",
+      "kind": "document",
+      "status": 200
+    },
+    {
+      "seq": 5,
+      "at": "2026-10-15T12:06:36.679Z",
+      "server": "main",
+      "method": "POST",
+      "path": "/form/submit",
+      "search": "",
+      "kind": "submission",
+      "status": 303,
+      "fields": {
+        "name": "Ada q79 race-3",
+        "email": "ada@example.test",
+        "reference": ""
+      },
+      "receiptId": 2,
+      "duplicateOf": null
+    },
+    {
+      "seq": 6,
+      "at": "2026-10-15T12:06:36.680Z",
+      "server": "main",
+      "method": "GET",
+      "path": "/form/confirmation",
+      "search": "?id=2",
+      "kind": "document",
+      "status": 200
+    },
+    {
+      "seq": 7,
+      "at": "2026-10-15T12:06:36.687Z",
+      "server": "main",
+      "method": "GET",
+      "path": "/form",
+      "search": "",
+      "kind": "document",
+      "status": 200
+    },
+    {
+      "seq": 8,
+      "at": "2026-10-15T12:06:36.728Z",
+      "server": "main",
+      "method": "POST",
+      "path": "/form/submit",
+      "search": "",
+      "kind": "submission",
+      "status": 303,
+      "fields": {
+        "name": "Ada q79 race-4",
+        "email": "ada@example.test",
+        "reference": ""
+      },
+      "receiptId": 3,
+      "duplicateOf": null
+    },
+    {
+      "seq": 9,
+      "at": "2026-10-15T12:06:36.729Z",
+      "server": "main",
+      "method": "GET",
+      "path": "/form/confirmation",
+      "search": "?id=3",
+      "kind": "document",
+      "status": 200
+    },
+    {
+      "seq": 10,
+      "at": "2026-10-15T12:06:36.736Z",
+      "server": "main",
+      "method": "GET",
+      "path": "/form",
+      "search": "",
+      "kind": "document",
+      "status": 200
+    },
+    {
+      "seq": 11,
+      "at": "2026-10-15T12:06:36.778Z",
+      "server": "main",
+      "method": "POST",
+      "path": "/form/submit",
+      "search": "",
+      "kind": "submission",
+      "status": 303,
+      "fields": {
+        "name": "Ada q79 race-5",
+        "email": "ada@example.test",
+        "reference": ""
+      },
+      "receiptId": 4,
+      "duplicateOf": null
+    },
+    {
+      "seq": 12,
+      "at": "2026-10-15T12:06:36.779Z",
+      "server": "main",
+      "method": "GET",
+      "path": "/form/confirmation",
+      "search": "?id=4",
+      "kind": "document",
+      "status": 200
+    }
+  ],
+  "receipts": [
+    {
+      "id": 1,
+      "fields": {
+        "name": "Ada q79 race-2",
+        "email": "ada@example.test",
+        "reference": ""
+      },
+      "receivedAt": "2026-10-15T12:06:36.629Z"
+    },
+    {
+      "id": 2,
+      "fields": {
+        "name": "Ada q79 race-3",
+        "email": "ada@example.test",
+        "reference": ""
+      },
+      "receivedAt": "2026-10-15T12:06:36.679Z"
+    },
+    {
+      "id": 3,
+      "fields": {
+        "name": "Ada q79 race-4",
+        "email": "ada@example.test",
+        "reference": ""
+      },
+      "receivedAt": "2026-10-15T12:06:36.728Z"
+    },
+    {
+      "id": 4,
+      "fields": {
+        "name": "Ada q79 race-5",
+        "email": "ada@example.test",
+        "reference": ""
+      },
+      "receivedAt": "2026-10-15T12:06:36.778Z"
+    }
+  ],
+  "reportSha256": {
+    "/export/report.csv": "98e79f8c6f16f49f82a7b94c42fc4ca04944cf7dddde39078df92522d5428146",
+    "/export/report-v2.csv": "d3b0e0c3d5158608348ac368583104e9269f3f55f0751334372819c47839887d"
+  }
+}
