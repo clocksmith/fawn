@@ -6,14 +6,16 @@ import assert from 'node:assert/strict';
 import { fileURLToPath } from 'node:url';
 import { observeDevicePhases } from './observe-phases.mjs';
 
-const [contractPath, providersPath, referencePath, lane, output, mode = 'qualification', processIndex = '0'] = process.argv.slice(2);
-assert(['qualification', 'profile', 'timing'].includes(mode));
+const [contractPath, providersPath, referencePath, lane, output, mode = 'qualification', processIndex = '0', controlLabel = null] = process.argv.slice(2);
+assert(['qualification', 'profile', 'timing', 'campaign'].includes(mode));
 assert(['doe', 'dawn'].includes(lane), 'Expected doe or dawn lane');
 const read = async (path) => JSON.parse(await readFile(path));
 const hash = async (path) => createHash('sha256').update(await readFile(path)).digest('hex');
 const contract = await read(contractPath);
-assert(!contract.latencyCampaign || mode === 'qualification',
+assert(!contract.latencyCampaign || ['qualification', 'campaign'].includes(mode),
   'Complete-generation v2 timing requires independent-process multi-case admission; the historical single-case timing driver cannot admit it');
+assert(mode !== 'campaign' || (contract.latencyCampaign && contract.latencyCampaign.controlLabels.includes(controlLabel)),
+  'Campaign mode requires a latencyCampaign contract and one of its control labels');
 const providers = await read(providersPath);
 const reference = await read(referencePath);
 assert.equal(contract.performance.residentRuns, 2, 'This cohort declares one balanced A/B pair');
@@ -90,6 +92,13 @@ try {
   console.log(JSON.stringify({ lane, stage: 'loaded', identity, loadMs }));
   if (mode === 'qualification') {
     for (const test of contract.cases) await recordGeneration(test, test.id);
+  } else if (mode === 'campaign') {
+    // One independent process: every frozen case once initial, then warmup and resident requests.
+    for (const test of contract.cases) {
+      await recordGeneration(test, 'initial');
+      for (let index = 0; index < contract.performance.warmupResidentRuns; index++) await recordGeneration(test, 'warmup');
+      for (let index = 0; index < contract.performance.residentRuns; index++) await recordGeneration(test, 'resident');
+    }
   } else {
     const test = contract.cases[0];
     await recordGeneration(test, 'initial');
@@ -128,7 +137,10 @@ finally {
     for (const device of devices) if (!destroyed.has(device)) { await device.queue.onSubmittedWorkDone();device.destroy(); }
     cleanup = { unloaded: model ? !model.loaded : null, devicesDestroyed: devices.filter((device) => destroyed.has(device)).length, elapsedMs: performance.now() - cleanupStart };
   } catch (error) { cleanup = { error: error.message }; }
-  await writeFile(output, JSON.stringify({ schemaVersion: 1, classification: mode, lane, mode, processIndex: Number(processIndex), loadMs, phaseEvents,
+  const cpu = process.resourceUsage();
+  const campaignFields = mode === 'campaign' ? { controlLabel, cpuMs: (cpu.userCPUTime + cpu.systemCPUTime) / 1000 } : {};
+  await writeFile(output, JSON.stringify({ schemaVersion: 1, classification: mode, lane, mode, processIndex: Number(processIndex),
+    ...campaignFields, loadMs, phaseEvents,
     runnerSha256: await hash(fileURLToPath(import.meta.url)), completeProcessWorkMs: performance.now() - started, peakProcessRssBytes: process.resourceUsage().maxRSS * 1024,
     contractSha256: await hash(contractPath), providerManifestSha256: await hash(providersPath),
     referenceSha256: await hash(referencePath), providerInfo: provider.providerInfo?.() ?? null,

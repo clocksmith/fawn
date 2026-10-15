@@ -54,12 +54,46 @@ Its exact CPU reference can be produced with the existing `reference.py`; the
 existing worker supports output qualification using that contract and reference.
 New cases still require physical qualification on both providers.
 
-This policy is not executed performance evidence. Independent-process A/A and
-multi-case admission remain to be connected through the existing runner and
-analysis owners. Historical resident A/B analysis and single-case candidate
-admission explicitly reject it. Do not route it through those gates or credit
-its frozen thresholds as measured gains. Published binaries and old policies
-retain their identities and verdicts.
+This policy is not executed performance evidence. Historical resident A/B
+analysis and single-case candidate admission explicitly reject it. Do not route
+it through those gates or credit its frozen thresholds as measured gains.
+Published binaries and old policies retain their identities and verdicts.
+
+The campaign has its own runner and analyzer:
+- `run-generation.mjs` in `campaign` mode runs one independent process: each
+  frozen case once initial, then its warmup and resident requests, followed by
+  the existing cancellation, reuse and teardown settlement.
+- `run-campaign.py` schedules the frozen balanced order: providers alternate by
+  the sample order and identical-byte labels A/B by the control order, until
+  each provider and label has its fixed processes. It refuses to start unless
+  the GPU is reserved: no foreign DRM client may advance during a preflight
+  window, checked with the existing DRM observer, which then watches every
+  process. Each sample is a fresh process with empty caches; there are no
+  retries, and a failed process stops the campaign with every receipt retained.
+- `analyze-campaign.py` admits the cohort as a valid baseline only when:
+  - both providers are qualified
+  - every receipt is bound to the same contract, providers and reference
+  - no foreign GPU activity was observed
+  - every per-case and aggregate A/A complete-generation interval lies inside
+    the control band
+
+  It also computes the frozen superiority criteria as diagnostics, but never
+  promotes performance or sets a claim.
+
+```bash
+python3 bench/external-projects/doppler-generation/run-campaign.py --dry-run \
+  bench/external-projects/doppler-generation/complete-generation-v2.json x x x
+python3 bench/external-projects/doppler-generation/run-campaign.py \
+  bench/external-projects/doppler-generation/complete-generation-v2.json \
+  "$RUN/providers.json" "$RUN/reference.json" "$RUN"
+python3 bench/external-projects/doppler-generation/analyze-campaign.py \
+  --root "$RUN" --contract bench/external-projects/doppler-generation/complete-generation-v2.json \
+  --out "$RUN/campaign-summary.json"
+```
+
+`RUN` must already hold passing `doe-qualification.json` and
+`dawn-qualification.json` for the v2 contract. Requested and retained memory come
+from the separate memory cohort (`--memory-report`).
 
 ## Prepare identical inputs
 
