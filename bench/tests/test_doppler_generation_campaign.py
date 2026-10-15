@@ -94,6 +94,7 @@ class CampaignAdmissionTests(unittest.TestCase):
         memory = next(c for c in summary['checks'] if c['id'] == 'requested-and-retained-memory')
         self.assertFalse(memory['passed'], 'superiority needs the separate memory cohort')
         self.assertFalse(summary['superiorityCriteriaPassed'])
+        self.assertEqual(summary['doeVersusDawn'], 'diagnostic')
 
     def test_unstable_controls_reject_the_baseline(self) -> None:
         summary = self.analyze(slow_label_b=1.10)
@@ -101,6 +102,12 @@ class CampaignAdmissionTests(unittest.TestCase):
         failed = {c['id'] for c in summary['checks'] if not c['passed']}
         self.assertIn('doe-aa-aggregate', failed)
         self.assertFalse(summary['performancePromoted'])
+        self.assertIsNotNone(summary['controls'], 'the A/A intervals are reported')
+        self.assertTrue(summary['doeVersusDawn'].startswith('withheld: A/A'))
+        self.assertIsNone(summary['comparison'])
+        self.assertIsNone(summary['providers'])
+        self.assertFalse([c for c in summary['checks'] if c['kind'] == 'superiority-criterion'])
+        self.assertFalse(summary['superiorityCriteriaPassed'])
 
     def test_foreign_gpu_activity_rejects_the_baseline(self) -> None:
         summary = self.analyze(foreign_activity=True)

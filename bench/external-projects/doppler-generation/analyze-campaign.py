@@ -107,7 +107,7 @@ def analyze(root: Path, contract_path: Path, memory_report: Path | None = None) 
         count = len(processes[provider][label])
         check(f'{provider}-{label}-processes', count == campaign['independentProcessesPerLabel'], count)
     if not all(entry['passed'] for entry in checks):
-        return result(contract_path, record, checks, None, None, None)
+        return result(contract_path, record, checks, None, None, None, 'withheld: the cohort is ineligible')
 
     rng = np.random.default_rng(campaign['bootstrapSeed'])
     samples, confidence, band = campaign['bootstrapSamples'], campaign['confidence'], campaign['maximumControlRatio']
@@ -120,6 +120,11 @@ def analyze(root: Path, contract_path: Path, memory_report: Path | None = None) 
         controls[provider] = {'cases': per_case, 'aggregate': aggregate}
         for case, interval in [*per_case.items(), ('aggregate', aggregate)]:
             check(f'{provider}-aa-{case}', 1 / band <= interval['lower'] and interval['upper'] <= band, interval)
+    # Doe-versus-Dawn statistics are not computed unless every A/A case is inside the frozen band.
+    unstable = [entry['id'] for entry in checks if '-aa-' in entry['id'] and not entry['passed']]
+    if unstable:
+        return result(contract_path, record, checks, controls, None, None,
+                      f'withheld: A/A outside the frozen stability band ({", ".join(unstable)})')
 
     pooled = {provider: processes[provider][a_label] + processes[provider][b_label] for provider in PROVIDERS}
     gain = bootstrap_ratio(rng, pooled['dawn'], pooled['doe'], lambda group: primary(group, case_ids), samples, confidence)
@@ -155,10 +160,10 @@ def analyze(root: Path, contract_path: Path, memory_report: Path | None = None) 
     check('instrumentation-perturbation', True, 'not applicable: campaign processes run without observers', 'superiority-criterion')
     providers = {provider: {'primaryMs': primary(pooled[provider], case_ids),
                             'processes': len(pooled[provider])} for provider in PROVIDERS}
-    return result(contract_path, record, checks, controls, providers, {'gain': gain, 'ratios': comparisons})
+    return result(contract_path, record, checks, controls, providers, {'gain': gain, 'ratios': comparisons}, 'diagnostic')
 
 
-def result(contract_path: Path, record: dict, checks: list[dict], controls, providers, comparison) -> dict:
+def result(contract_path: Path, record: dict, checks: list[dict], controls, providers, comparison, doe_versus_dawn: str) -> dict:
     baseline_checks = [entry for entry in checks if entry['kind'] == 'baseline']
     criteria = [entry for entry in checks if entry['kind'] == 'superiority-criterion']
     return {
@@ -172,6 +177,7 @@ def result(contract_path: Path, record: dict, checks: list[dict], controls, prov
         'performancePromoted': False,
         'claimStatus': 'not-claimed',
         'controls': controls,
+        'doeVersusDawn': doe_versus_dawn,
         'providers': providers,
         'comparison': comparison,
         'checks': checks,
@@ -189,7 +195,8 @@ def main() -> int:
     args = parser.parse_args()
     summary = analyze(args.root, args.contract, args.memory_report)
     args.out.write_text(json.dumps(summary, indent=2) + '\n')
-    print(json.dumps({'baselineValid': summary['baselineValid'], 'superiorityCriteriaPassed': summary['superiorityCriteriaPassed'],
+    print(json.dumps({'baselineValid': summary['baselineValid'], 'doeVersusDawn': summary['doeVersusDawn'],
+                      'superiorityCriteriaPassed': summary['superiorityCriteriaPassed'],
                       'failedChecks': [entry['id'] for entry in summary['checks'] if not entry['passed']]}))
     return 0
 
