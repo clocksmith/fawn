@@ -1,0 +1,6215 @@
+{
+  "schemaVersion": 1,
+  "caseSetVersion": "2026-10-14-behavioral-v2",
+  "scope": "full",
+  "browserChannel": "chrome",
+  "headless": false,
+  "filters": {
+    "out": "../../bench/out/fawn-workspace-qualification/20261015-headed-chrome",
+    "adapters": null,
+    "cases": null,
+    "workflows": null,
+    "browserChannel": "chrome",
+    "headless": false
+  },
+  "adapters": [
+    "playwright",
+    "cdp"
+  ],
+  "startedAt": "2026-10-15T12:43:27.244Z",
+  "identity": {
+    "caseSet": {
+      "path": "config/fawn-workspace-qualification.json",
+      "sha256": "786a1936c151126d79812750956c1abf06338292542ad8e3114c29978a52605a"
+    },
+    "serviceConfig": {
+      "path": "config/fawn-workspace-service.json",
+      "sha256": "bc82567bcb37f742a16a3ecb365e2cc82614d0c461d8546482224cd377d5c844"
+    },
+    "comparisonPolicy": {
+      "path": "config/browser-product-comparison-policy.json",
+      "sha256": "46bbd45f21f76ba147d04ab122c4943f5f4dc0d566c9e6c2203c462cfff648e0"
+    },
+    "serviceSource": {
+      "path": "browser/workspace/src",
+      "sha256": "093c4dfbb4d0e1d47816d59f1431ca6969544f3b2eb3a17c127a6891214a0526",
+      "fileCount": 15
+    },
+    "harness": {
+      "path": "browser/workspace/qualification",
+      "sha256": "58626524645c412b58a9e143a60bde7b19f3785bb8658f67da230486e33d79d4",
+      "fileCount": 28
+    },
+    "packageLock": {
+      "path": "browser/workspace/package-lock.json",
+      "sha256": "39f0a7a6ee1132526dbd806276c2d90f8f9a3833d4d200a9d36a33df617d0c49"
+    },
+    "fixtureSite": {
+      "path": "browser/workspace/qualification/fixture-site.js",
+      "sha256": "26d88112a09468f07398f6677a6bdce393f9b6a54169359ec4d3f5ec5e82dc41"
+    },
+    "node": "v22.22.1",
+    "playwrightCore": "1.58.2",
+    "os": {
+      "platform": "linux",
+      "release": "7.0.0-29-generic",
+      "arch": "x64"
+    },
+    "git": {
+      "commit": "581a16510ab7d0bd87497adb5194f7ebce21ad4a",
+      "workingTreeChanges": []
+    }
+  },
+  "runs": [
+    {
+      "caseId": "workflow-completes",
+      "workflow": "research",
+      "adapter": "playwright",
+      "token": "q0",
+      "origin": "http://127.0.0.1:33333",
+      "startedAt": "2026-10-15T12:43:27.244Z",
+      "durationMs": 2043,
+      "hostOpens": 1,
+      "steps": {
+        "workflow": {
+          "status": "completed",
+          "findingTitles": [
+            "Vulkan memory model",
+            "Vulkan synchronization"
+          ],
+          "skipped": 1
+        }
+      },
+      "actionRefs": {
+        "effect": "q0-r1-open-0"
+      },
+      "inspections": [
+        {
+          "processCount": 8,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/workflow-completes/research/playwright",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "workflow-completes",
+      "workflow": "research",
+      "adapter": "cdp",
+      "token": "q1",
+      "origin": "http://127.0.0.1:36977",
+      "startedAt": "2026-10-15T12:43:29.289Z",
+      "durationMs": 1411,
+      "hostOpens": 1,
+      "steps": {
+        "workflow": {
+          "status": "completed",
+          "findingTitles": [
+            "Vulkan memory model",
+            "Vulkan synchronization"
+          ],
+          "skipped": 1
+        }
+      },
+      "actionRefs": {
+        "effect": "q1-r1-open-0"
+      },
+      "inspections": [
+        {
+          "processCount": 11,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/workflow-completes/research/cdp",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "workflow-completes",
+      "workflow": "form",
+      "adapter": "playwright",
+      "token": "q2",
+      "origin": "http://127.0.0.1:35545",
+      "startedAt": "2026-10-15T12:43:30.701Z",
+      "durationMs": 1610,
+      "hostOpens": 1,
+      "steps": {
+        "workflow": {
+          "status": "completed",
+          "recovered": null
+        }
+      },
+      "actionRefs": {
+        "effect": "q2-r1-submit"
+      },
+      "inspections": [
+        {
+          "processCount": 8,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/workflow-completes/form/playwright",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "workflow-completes",
+      "workflow": "form",
+      "adapter": "cdp",
+      "token": "q3",
+      "origin": "http://127.0.0.1:36367",
+      "startedAt": "2026-10-15T12:43:32.312Z",
+      "durationMs": 1430,
+      "hostOpens": 1,
+      "steps": {
+        "workflow": {
+          "status": "completed",
+          "recovered": null
+        }
+      },
+      "actionRefs": {
+        "effect": "q3-r1-submit"
+      },
+      "inspections": [
+        {
+          "processCount": 11,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/workflow-completes/form/cdp",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "workflow-completes",
+      "workflow": "export",
+      "adapter": "playwright",
+      "token": "q4",
+      "origin": "http://127.0.0.1:35203",
+      "startedAt": "2026-10-15T12:43:33.744Z",
+      "durationMs": 1654,
+      "hostOpens": 1,
+      "steps": {
+        "workflow": {
+          "status": "completed",
+          "artifactSha256": "98e79f8c6f16f49f82a7b94c42fc4ca04944cf7dddde39078df92522d5428146",
+          "recovered": null
+        }
+      },
+      "actionRefs": {
+        "effect": "q4-r1-download"
+      },
+      "inspections": [
+        {
+          "processCount": 8,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/workflow-completes/export/playwright",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "workflow-completes",
+      "workflow": "export",
+      "adapter": "cdp",
+      "token": "q5",
+      "origin": "http://127.0.0.1:36831",
+      "startedAt": "2026-10-15T12:43:35.399Z",
+      "durationMs": 1261,
+      "hostOpens": 1,
+      "steps": {
+        "workflow": {
+          "status": "completed",
+          "artifactSha256": "98e79f8c6f16f49f82a7b94c42fc4ca04944cf7dddde39078df92522d5428146",
+          "recovered": null
+        }
+      },
+      "actionRefs": {
+        "effect": "q5-r1-download"
+      },
+      "inspections": [
+        {
+          "processCount": 13,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/workflow-completes/export/cdp",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "failure-condition",
+      "workflow": "form",
+      "adapter": "playwright",
+      "token": "q6",
+      "origin": "http://127.0.0.1:33401",
+      "startedAt": "2026-10-15T12:43:36.661Z",
+      "durationMs": 1365,
+      "hostOpens": 1,
+      "steps": {
+        "workflow": {
+          "status": "failed",
+          "recovered": null
+        }
+      },
+      "actionRefs": {
+        "effect": "q6-r1-submit"
+      },
+      "inspections": [
+        {
+          "processCount": 8,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/failure-condition/form/playwright",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "failure-condition",
+      "workflow": "form",
+      "adapter": "cdp",
+      "token": "q7",
+      "origin": "http://127.0.0.1:45661",
+      "startedAt": "2026-10-15T12:43:38.027Z",
+      "durationMs": 1388,
+      "hostOpens": 1,
+      "steps": {
+        "workflow": {
+          "status": "failed",
+          "recovered": null
+        }
+      },
+      "actionRefs": {
+        "effect": "q7-r1-submit"
+      },
+      "inspections": [
+        {
+          "processCount": 11,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/failure-condition/form/cdp",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "unauthorized-intent",
+      "workflow": "research",
+      "adapter": "playwright",
+      "token": "q8",
+      "origin": "http://127.0.0.1:45379",
+      "startedAt": "2026-10-15T12:43:39.416Z",
+      "durationMs": 1156,
+      "hostOpens": 1,
+      "steps": {
+        "workflow": {
+          "rejection": "unauthorized-intent",
+          "message": "unauthorized-intent: intent admin:delete"
+        }
+      },
+      "actionRefs": {
+        "effect": "q8-r1-open-0"
+      },
+      "inspections": [
+        {
+          "processCount": 8,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/unauthorized-intent/research/playwright",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "unauthorized-intent",
+      "workflow": "research",
+      "adapter": "cdp",
+      "token": "q9",
+      "origin": "http://127.0.0.1:32879",
+      "startedAt": "2026-10-15T12:43:40.572Z",
+      "durationMs": 838,
+      "hostOpens": 1,
+      "steps": {
+        "workflow": {
+          "rejection": "unauthorized-intent",
+          "message": "unauthorized-intent: intent admin:delete"
+        }
+      },
+      "actionRefs": {
+        "effect": "q9-r1-open-0"
+      },
+      "inspections": [
+        {
+          "processCount": 11,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/unauthorized-intent/research/cdp",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "unauthorized-intent",
+      "workflow": "form",
+      "adapter": "playwright",
+      "token": "q10",
+      "origin": "http://127.0.0.1:36173",
+      "startedAt": "2026-10-15T12:43:41.411Z",
+      "durationMs": 1381,
+      "hostOpens": 1,
+      "steps": {
+        "workflow": {
+          "rejection": "unauthorized-intent",
+          "message": "unauthorized-intent: intent admin:delete"
+        }
+      },
+      "actionRefs": {
+        "effect": "q10-r1-submit"
+      },
+      "inspections": [
+        {
+          "processCount": 8,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/unauthorized-intent/form/playwright",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "unauthorized-intent",
+      "workflow": "form",
+      "adapter": "cdp",
+      "token": "q11",
+      "origin": "http://127.0.0.1:37353",
+      "startedAt": "2026-10-15T12:43:42.793Z",
+      "durationMs": 906,
+      "hostOpens": 1,
+      "steps": {
+        "workflow": {
+          "rejection": "unauthorized-intent",
+          "message": "unauthorized-intent: intent admin:delete"
+        }
+      },
+      "actionRefs": {
+        "effect": "q11-r1-submit"
+      },
+      "inspections": [
+        {
+          "processCount": 11,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/unauthorized-intent/form/cdp",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "unauthorized-intent",
+      "workflow": "export",
+      "adapter": "playwright",
+      "token": "q12",
+      "origin": "http://127.0.0.1:46493",
+      "startedAt": "2026-10-15T12:43:43.700Z",
+      "durationMs": 1333,
+      "hostOpens": 1,
+      "steps": {
+        "workflow": {
+          "rejection": "unauthorized-intent",
+          "message": "unauthorized-intent: intent admin:delete"
+        }
+      },
+      "actionRefs": {
+        "effect": "q12-r1-download"
+      },
+      "inspections": [
+        {
+          "processCount": 8,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/unauthorized-intent/export/playwright",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "unauthorized-intent",
+      "workflow": "export",
+      "adapter": "cdp",
+      "token": "q13",
+      "origin": "http://127.0.0.1:37623",
+      "startedAt": "2026-10-15T12:43:45.034Z",
+      "durationMs": 895,
+      "hostOpens": 1,
+      "steps": {
+        "workflow": {
+          "rejection": "unauthorized-intent",
+          "message": "unauthorized-intent: intent admin:delete"
+        }
+      },
+      "actionRefs": {
+        "effect": "q13-r1-download"
+      },
+      "inspections": [
+        {
+          "processCount": 11,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/unauthorized-intent/export/cdp",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "unauthorized-target",
+      "workflow": "research",
+      "adapter": "playwright",
+      "token": "q14",
+      "origin": "http://127.0.0.1:33787",
+      "startedAt": "2026-10-15T12:43:45.929Z",
+      "durationMs": 1193,
+      "hostOpens": 1,
+      "steps": {
+        "workflow": {
+          "rejection": "unauthorized-target",
+          "message": "unauthorized-target: navigate on http://127.0.0.1:38709"
+        }
+      },
+      "actionRefs": {
+        "effect": "q14-r1-open-0"
+      },
+      "inspections": [
+        {
+          "processCount": 8,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/unauthorized-target/research/playwright",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "unauthorized-target",
+      "workflow": "research",
+      "adapter": "cdp",
+      "token": "q15",
+      "origin": "http://127.0.0.1:43577",
+      "startedAt": "2026-10-15T12:43:47.123Z",
+      "durationMs": 1107,
+      "hostOpens": 1,
+      "steps": {
+        "workflow": {
+          "rejection": "unauthorized-target",
+          "message": "unauthorized-target: navigate on http://127.0.0.1:42335"
+        }
+      },
+      "actionRefs": {
+        "effect": "q15-r1-open-0"
+      },
+      "inspections": [
+        {
+          "processCount": 11,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/unauthorized-target/research/cdp",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "unauthorized-target",
+      "workflow": "form",
+      "adapter": "playwright",
+      "token": "q16",
+      "origin": "http://127.0.0.1:39917",
+      "startedAt": "2026-10-15T12:43:48.231Z",
+      "durationMs": 778,
+      "hostOpens": 1,
+      "steps": {
+        "workflow": {
+          "rejection": "unauthorized-target",
+          "message": "unauthorized-target: navigate on http://127.0.0.1:40947"
+        }
+      },
+      "actionRefs": {
+        "effect": "q16-r1-submit"
+      },
+      "inspections": [
+        {
+          "processCount": 8,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/unauthorized-target/form/playwright",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "unauthorized-target",
+      "workflow": "form",
+      "adapter": "cdp",
+      "token": "q17",
+      "origin": "http://127.0.0.1:36129",
+      "startedAt": "2026-10-15T12:43:49.009Z",
+      "durationMs": 717,
+      "hostOpens": 1,
+      "steps": {
+        "workflow": {
+          "rejection": "unauthorized-target",
+          "message": "unauthorized-target: navigate on http://127.0.0.1:38735"
+        }
+      },
+      "actionRefs": {
+        "effect": "q17-r1-submit"
+      },
+      "inspections": [
+        {
+          "processCount": 11,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/unauthorized-target/form/cdp",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "unauthorized-target",
+      "workflow": "export",
+      "adapter": "playwright",
+      "token": "q18",
+      "origin": "http://127.0.0.1:39431",
+      "startedAt": "2026-10-15T12:43:49.727Z",
+      "durationMs": 1033,
+      "hostOpens": 1,
+      "steps": {
+        "workflow": {
+          "rejection": "unauthorized-target",
+          "message": "unauthorized-target: navigate on http://127.0.0.1:44729"
+        }
+      },
+      "actionRefs": {
+        "effect": "q18-r1-download"
+      },
+      "inspections": [
+        {
+          "processCount": 8,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/unauthorized-target/export/playwright",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "unauthorized-target",
+      "workflow": "export",
+      "adapter": "cdp",
+      "token": "q19",
+      "origin": "http://127.0.0.1:45225",
+      "startedAt": "2026-10-15T12:43:50.761Z",
+      "durationMs": 554,
+      "hostOpens": 1,
+      "steps": {
+        "workflow": {
+          "rejection": "unauthorized-target",
+          "message": "unauthorized-target: navigate on http://127.0.0.1:44543"
+        }
+      },
+      "actionRefs": {
+        "effect": "q19-r1-download"
+      },
+      "inspections": [
+        {
+          "processCount": 11,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/unauthorized-target/export/cdp",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "violated-precondition",
+      "workflow": "research",
+      "adapter": "playwright",
+      "token": "q20",
+      "origin": "http://127.0.0.1:45661",
+      "startedAt": "2026-10-15T12:43:51.316Z",
+      "durationMs": 670,
+      "hostOpens": 1,
+      "steps": {
+        "workflow": {
+          "status": "stopped",
+          "findingTitles": [],
+          "skipped": 0
+        }
+      },
+      "actionRefs": {
+        "effect": "q20-r1-open-0"
+      },
+      "inspections": [
+        {
+          "processCount": 8,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/violated-precondition/research/playwright",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "violated-precondition",
+      "workflow": "research",
+      "adapter": "cdp",
+      "token": "q21",
+      "origin": "http://127.0.0.1:35327",
+      "startedAt": "2026-10-15T12:43:51.987Z",
+      "durationMs": 652,
+      "hostOpens": 1,
+      "steps": {
+        "workflow": {
+          "status": "stopped",
+          "findingTitles": [],
+          "skipped": 0
+        }
+      },
+      "actionRefs": {
+        "effect": "q21-r1-open-0"
+      },
+      "inspections": [
+        {
+          "processCount": 11,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/violated-precondition/research/cdp",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "violated-precondition",
+      "workflow": "form",
+      "adapter": "playwright",
+      "token": "q22",
+      "origin": "http://127.0.0.1:39749",
+      "startedAt": "2026-10-15T12:43:52.640Z",
+      "durationMs": 759,
+      "hostOpens": 1,
+      "steps": {
+        "workflow": {
+          "status": "never-dispatched",
+          "recovered": null
+        }
+      },
+      "actionRefs": {
+        "effect": "q22-r1-submit"
+      },
+      "inspections": [
+        {
+          "processCount": 7,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/violated-precondition/form/playwright",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "violated-precondition",
+      "workflow": "form",
+      "adapter": "cdp",
+      "token": "q23",
+      "origin": "http://127.0.0.1:46605",
+      "startedAt": "2026-10-15T12:43:53.399Z",
+      "durationMs": 634,
+      "hostOpens": 1,
+      "steps": {
+        "workflow": {
+          "status": "never-dispatched",
+          "recovered": null
+        }
+      },
+      "actionRefs": {
+        "effect": "q23-r1-submit"
+      },
+      "inspections": [
+        {
+          "processCount": 11,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/violated-precondition/form/cdp",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "violated-precondition",
+      "workflow": "export",
+      "adapter": "playwright",
+      "token": "q24",
+      "origin": "http://127.0.0.1:44715",
+      "startedAt": "2026-10-15T12:43:54.033Z",
+      "durationMs": 709,
+      "hostOpens": 1,
+      "steps": {
+        "workflow": {
+          "status": "never-dispatched",
+          "artifactSha256": null,
+          "recovered": null
+        }
+      },
+      "actionRefs": {
+        "effect": "q24-r1-download"
+      },
+      "inspections": [
+        {
+          "processCount": 8,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/violated-precondition/export/playwright",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "violated-precondition",
+      "workflow": "export",
+      "adapter": "cdp",
+      "token": "q25",
+      "origin": "http://127.0.0.1:35109",
+      "startedAt": "2026-10-15T12:43:54.742Z",
+      "durationMs": 825,
+      "hostOpens": 1,
+      "steps": {
+        "workflow": {
+          "status": "never-dispatched",
+          "artifactSha256": null,
+          "recovered": null
+        }
+      },
+      "actionRefs": {
+        "effect": "q25-r1-download"
+      },
+      "inspections": [
+        {
+          "processCount": 11,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/violated-precondition/export/cdp",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "background-change-page-scope",
+      "workflow": "export",
+      "adapter": "playwright",
+      "token": "q26",
+      "origin": "http://127.0.0.1:38251",
+      "startedAt": "2026-10-15T12:43:55.568Z",
+      "durationMs": 1107,
+      "hostOpens": 1,
+      "steps": {
+        "workflow": {
+          "status": "never-dispatched",
+          "artifactSha256": null,
+          "recovered": null
+        }
+      },
+      "actionRefs": {
+        "effect": "q26-r1-download"
+      },
+      "inspections": [
+        {
+          "processCount": 8,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/background-change-page-scope/export/playwright",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "background-change-page-scope",
+      "workflow": "export",
+      "adapter": "cdp",
+      "token": "q27",
+      "origin": "http://127.0.0.1:34093",
+      "startedAt": "2026-10-15T12:43:56.675Z",
+      "durationMs": 1086,
+      "hostOpens": 1,
+      "steps": {
+        "workflow": {
+          "status": "never-dispatched",
+          "artifactSha256": null,
+          "recovered": null
+        }
+      },
+      "actionRefs": {
+        "effect": "q27-r1-download"
+      },
+      "inspections": [
+        {
+          "processCount": 11,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/background-change-page-scope/export/cdp",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "background-change-regions-scope",
+      "workflow": "export",
+      "adapter": "playwright",
+      "token": "q28",
+      "origin": "http://127.0.0.1:39637",
+      "startedAt": "2026-10-15T12:43:57.762Z",
+      "durationMs": 1742,
+      "hostOpens": 1,
+      "steps": {
+        "workflow": {
+          "status": "completed",
+          "artifactSha256": "98e79f8c6f16f49f82a7b94c42fc4ca04944cf7dddde39078df92522d5428146",
+          "recovered": null
+        }
+      },
+      "actionRefs": {
+        "effect": "q28-r1-download"
+      },
+      "inspections": [
+        {
+          "processCount": 8,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/background-change-regions-scope/export/playwright",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "background-change-regions-scope",
+      "workflow": "export",
+      "adapter": "cdp",
+      "token": "q29",
+      "origin": "http://127.0.0.1:43149",
+      "startedAt": "2026-10-15T12:43:59.505Z",
+      "durationMs": 1215,
+      "hostOpens": 1,
+      "steps": {
+        "workflow": {
+          "status": "completed",
+          "artifactSha256": "98e79f8c6f16f49f82a7b94c42fc4ca04944cf7dddde39078df92522d5428146",
+          "recovered": null
+        }
+      },
+      "actionRefs": {
+        "effect": "q29-r1-download"
+      },
+      "inspections": [
+        {
+          "processCount": 13,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/background-change-regions-scope/export/cdp",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "background-change-target-replaced",
+      "workflow": "export",
+      "adapter": "playwright",
+      "token": "q30",
+      "origin": "http://127.0.0.1:35155",
+      "startedAt": "2026-10-15T12:44:00.721Z",
+      "durationMs": 1444,
+      "hostOpens": 1,
+      "steps": {
+        "workflow": {
+          "status": "never-dispatched",
+          "artifactSha256": null,
+          "recovered": null
+        }
+      },
+      "actionRefs": {
+        "effect": "q30-r1-download"
+      },
+      "inspections": [
+        {
+          "processCount": 8,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/background-change-target-replaced/export/playwright",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "background-change-target-replaced",
+      "workflow": "export",
+      "adapter": "cdp",
+      "token": "q31",
+      "origin": "http://127.0.0.1:44973",
+      "startedAt": "2026-10-15T12:44:02.166Z",
+      "durationMs": 1331,
+      "hostOpens": 1,
+      "steps": {
+        "workflow": {
+          "status": "never-dispatched",
+          "artifactSha256": null,
+          "recovered": null
+        }
+      },
+      "actionRefs": {
+        "effect": "q31-r1-download"
+      },
+      "inspections": [
+        {
+          "processCount": 11,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/background-change-target-replaced/export/cdp",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "background-change-scoped-region-changed",
+      "workflow": "export",
+      "adapter": "playwright",
+      "token": "q32",
+      "origin": "http://127.0.0.1:38705",
+      "startedAt": "2026-10-15T12:44:03.498Z",
+      "durationMs": 1192,
+      "hostOpens": 1,
+      "steps": {
+        "workflow": {
+          "status": "never-dispatched",
+          "artifactSha256": null,
+          "recovered": null
+        }
+      },
+      "actionRefs": {
+        "effect": "q32-r1-download"
+      },
+      "inspections": [
+        {
+          "processCount": 8,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/background-change-scoped-region-changed/export/playwright",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "background-change-scoped-region-changed",
+      "workflow": "export",
+      "adapter": "cdp",
+      "token": "q33",
+      "origin": "http://127.0.0.1:46483",
+      "startedAt": "2026-10-15T12:44:04.690Z",
+      "durationMs": 1120,
+      "hostOpens": 1,
+      "steps": {
+        "workflow": {
+          "status": "never-dispatched",
+          "artifactSha256": null,
+          "recovered": null
+        }
+      },
+      "actionRefs": {
+        "effect": "q33-r1-download"
+      },
+      "inspections": [
+        {
+          "processCount": 11,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/background-change-scoped-region-changed/export/cdp",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "stale-observation",
+      "workflow": "research",
+      "adapter": "playwright",
+      "token": "q34",
+      "origin": "http://127.0.0.1:38207",
+      "startedAt": "2026-10-15T12:44:05.811Z",
+      "durationMs": 839,
+      "hostOpens": 1,
+      "steps": {
+        "workflow": {
+          "rejection": "stale-observation",
+          "message": "stale-observation: observation 1 is not current"
+        }
+      },
+      "actionRefs": {},
+      "inspections": [
+        {
+          "processCount": 8,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/stale-observation/research/playwright",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "stale-observation",
+      "workflow": "research",
+      "adapter": "cdp",
+      "token": "q35",
+      "origin": "http://127.0.0.1:41387",
+      "startedAt": "2026-10-15T12:44:06.651Z",
+      "durationMs": 785,
+      "hostOpens": 1,
+      "steps": {
+        "workflow": {
+          "rejection": "stale-observation",
+          "message": "stale-observation: observation 1 is not current"
+        }
+      },
+      "actionRefs": {},
+      "inspections": [
+        {
+          "processCount": 11,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/stale-observation/research/cdp",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "stale-observation",
+      "workflow": "form",
+      "adapter": "playwright",
+      "token": "q36",
+      "origin": "http://127.0.0.1:45617",
+      "startedAt": "2026-10-15T12:44:07.436Z",
+      "durationMs": 804,
+      "hostOpens": 1,
+      "steps": {
+        "workflow": {
+          "rejection": "stale-observation",
+          "message": "stale-observation: observation 1 is not current"
+        }
+      },
+      "actionRefs": {},
+      "inspections": [
+        {
+          "processCount": 8,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/stale-observation/form/playwright",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "stale-observation",
+      "workflow": "form",
+      "adapter": "cdp",
+      "token": "q37",
+      "origin": "http://127.0.0.1:40449",
+      "startedAt": "2026-10-15T12:44:08.241Z",
+      "durationMs": 763,
+      "hostOpens": 1,
+      "steps": {
+        "workflow": {
+          "rejection": "stale-observation",
+          "message": "stale-observation: observation 1 is not current"
+        }
+      },
+      "actionRefs": {},
+      "inspections": [
+        {
+          "processCount": 11,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/stale-observation/form/cdp",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "stale-observation",
+      "workflow": "export",
+      "adapter": "playwright",
+      "token": "q38",
+      "origin": "http://127.0.0.1:39825",
+      "startedAt": "2026-10-15T12:44:09.005Z",
+      "durationMs": 876,
+      "hostOpens": 1,
+      "steps": {
+        "workflow": {
+          "rejection": "stale-observation",
+          "message": "stale-observation: observation 1 is not current"
+        }
+      },
+      "actionRefs": {},
+      "inspections": [
+        {
+          "processCount": 8,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/stale-observation/export/playwright",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "stale-observation",
+      "workflow": "export",
+      "adapter": "cdp",
+      "token": "q39",
+      "origin": "http://127.0.0.1:36909",
+      "startedAt": "2026-10-15T12:44:09.882Z",
+      "durationMs": 785,
+      "hostOpens": 1,
+      "steps": {
+        "workflow": {
+          "rejection": "stale-observation",
+          "message": "stale-observation: observation 1 is not current"
+        }
+      },
+      "actionRefs": {},
+      "inspections": [
+        {
+          "processCount": 11,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/stale-observation/export/cdp",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "stale-owner-after-handoff-and-restart",
+      "workflow": "research",
+      "adapter": "playwright",
+      "token": "q40",
+      "origin": "http://127.0.0.1:43391",
+      "startedAt": "2026-10-15T12:44:10.667Z",
+      "durationMs": 1920,
+      "hostOpens": 2,
+      "steps": {
+        "staleWorkflow": {
+          "rejection": "stale-owner-generation",
+          "message": "stale-owner-generation: owner generation is no longer current"
+        },
+        "staleObserveAfterRestart": {
+          "rejection": "stale-owner-generation",
+          "message": "stale-owner-generation: owner generation is no longer current"
+        },
+        "restartedWorkflow": {
+          "status": "completed",
+          "findingTitles": [
+            "Vulkan memory model",
+            "Vulkan synchronization"
+          ],
+          "skipped": 1
+        }
+      },
+      "actionRefs": {
+        "effect": "q40-r2-open-0"
+      },
+      "inspections": [
+        {
+          "processCount": 8,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/stale-owner-after-handoff-and-restart/research/playwright",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "stale-owner-after-handoff-and-restart",
+      "workflow": "research",
+      "adapter": "cdp",
+      "token": "q41",
+      "origin": "http://127.0.0.1:39559",
+      "startedAt": "2026-10-15T12:44:12.588Z",
+      "durationMs": 1586,
+      "hostOpens": 2,
+      "steps": {
+        "staleWorkflow": {
+          "rejection": "stale-owner-generation",
+          "message": "stale-owner-generation: owner generation is no longer current"
+        },
+        "staleObserveAfterRestart": {
+          "rejection": "stale-owner-generation",
+          "message": "stale-owner-generation: owner generation is no longer current"
+        },
+        "restartedWorkflow": {
+          "status": "completed",
+          "findingTitles": [
+            "Vulkan memory model",
+            "Vulkan synchronization"
+          ],
+          "skipped": 1
+        }
+      },
+      "actionRefs": {
+        "effect": "q41-r2-open-0"
+      },
+      "inspections": [
+        {
+          "processCount": 10,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/stale-owner-after-handoff-and-restart/research/cdp",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "stale-owner-after-handoff-and-restart",
+      "workflow": "form",
+      "adapter": "playwright",
+      "token": "q42",
+      "origin": "http://127.0.0.1:37887",
+      "startedAt": "2026-10-15T12:44:14.175Z",
+      "durationMs": 1697,
+      "hostOpens": 2,
+      "steps": {
+        "staleWorkflow": {
+          "rejection": "stale-owner-generation",
+          "message": "stale-owner-generation: owner generation is no longer current"
+        },
+        "staleObserveAfterRestart": {
+          "rejection": "stale-owner-generation",
+          "message": "stale-owner-generation: owner generation is no longer current"
+        },
+        "restartedWorkflow": {
+          "status": "completed",
+          "recovered": null
+        }
+      },
+      "actionRefs": {
+        "effect": "q42-r2-submit"
+      },
+      "inspections": [
+        {
+          "processCount": 8,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/stale-owner-after-handoff-and-restart/form/playwright",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "stale-owner-after-handoff-and-restart",
+      "workflow": "form",
+      "adapter": "cdp",
+      "token": "q43",
+      "origin": "http://127.0.0.1:38799",
+      "startedAt": "2026-10-15T12:44:15.872Z",
+      "durationMs": 1610,
+      "hostOpens": 2,
+      "steps": {
+        "staleWorkflow": {
+          "rejection": "stale-owner-generation",
+          "message": "stale-owner-generation: owner generation is no longer current"
+        },
+        "staleObserveAfterRestart": {
+          "rejection": "stale-owner-generation",
+          "message": "stale-owner-generation: owner generation is no longer current"
+        },
+        "restartedWorkflow": {
+          "status": "completed",
+          "recovered": null
+        }
+      },
+      "actionRefs": {
+        "effect": "q43-r2-submit"
+      },
+      "inspections": [
+        {
+          "processCount": 10,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/stale-owner-after-handoff-and-restart/form/cdp",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "stale-owner-after-handoff-and-restart",
+      "workflow": "export",
+      "adapter": "playwright",
+      "token": "q44",
+      "origin": "http://127.0.0.1:38133",
+      "startedAt": "2026-10-15T12:44:17.482Z",
+      "durationMs": 1691,
+      "hostOpens": 2,
+      "steps": {
+        "staleWorkflow": {
+          "rejection": "stale-owner-generation",
+          "message": "stale-owner-generation: owner generation is no longer current"
+        },
+        "staleObserveAfterRestart": {
+          "rejection": "stale-owner-generation",
+          "message": "stale-owner-generation: owner generation is no longer current"
+        },
+        "restartedWorkflow": {
+          "status": "completed",
+          "artifactSha256": "98e79f8c6f16f49f82a7b94c42fc4ca04944cf7dddde39078df92522d5428146",
+          "recovered": null
+        }
+      },
+      "actionRefs": {
+        "effect": "q44-r2-download"
+      },
+      "inspections": [
+        {
+          "processCount": 8,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/stale-owner-after-handoff-and-restart/export/playwright",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "stale-owner-after-handoff-and-restart",
+      "workflow": "export",
+      "adapter": "cdp",
+      "token": "q45",
+      "origin": "http://127.0.0.1:36919",
+      "startedAt": "2026-10-15T12:44:19.173Z",
+      "durationMs": 1626,
+      "hostOpens": 2,
+      "steps": {
+        "staleWorkflow": {
+          "rejection": "stale-owner-generation",
+          "message": "stale-owner-generation: owner generation is no longer current"
+        },
+        "staleObserveAfterRestart": {
+          "rejection": "stale-owner-generation",
+          "message": "stale-owner-generation: owner generation is no longer current"
+        },
+        "restartedWorkflow": {
+          "status": "completed",
+          "artifactSha256": "98e79f8c6f16f49f82a7b94c42fc4ca04944cf7dddde39078df92522d5428146",
+          "recovered": null
+        }
+      },
+      "actionRefs": {
+        "effect": "q45-r2-download"
+      },
+      "inspections": [
+        {
+          "processCount": 12,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/stale-owner-after-handoff-and-restart/export/cdp",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "failure-before-dispatch",
+      "workflow": "research",
+      "adapter": "playwright",
+      "token": "q46",
+      "origin": "http://127.0.0.1:36681",
+      "startedAt": "2026-10-15T12:44:20.799Z",
+      "durationMs": 2509,
+      "hostOpens": 3,
+      "steps": {
+        "crash": {
+          "signal": "SIGKILL"
+        },
+        "afterRestart": {
+          "dispatchStatus": "never-dispatched",
+          "outcome": null,
+          "outcomeBasis": null,
+          "isUncertain": false,
+          "neverDispatchedCode": "restart-invalidated-queue",
+          "neverDispatchedStage": "restart",
+          "reconciliationResult": null,
+          "acknowledged": false,
+          "ownerGeneration": 1
+        },
+        "retry": {
+          "status": "completed",
+          "findingTitles": [
+            "Vulkan memory model",
+            "Vulkan synchronization"
+          ],
+          "skipped": 1
+        }
+      },
+      "actionRefs": {
+        "effect": "q46-r1-open-0",
+        "retryEffect": "q46-r2-open-0"
+      },
+      "inspections": [
+        {
+          "processCount": 8,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/failure-before-dispatch/research/playwright",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "failure-before-dispatch",
+      "workflow": "research",
+      "adapter": "cdp",
+      "token": "q47",
+      "origin": "http://127.0.0.1:37235",
+      "startedAt": "2026-10-15T12:44:23.309Z",
+      "durationMs": 1857,
+      "hostOpens": 3,
+      "steps": {
+        "crash": {
+          "signal": "SIGKILL"
+        },
+        "afterRestart": {
+          "dispatchStatus": "never-dispatched",
+          "outcome": null,
+          "outcomeBasis": null,
+          "isUncertain": false,
+          "neverDispatchedCode": "restart-invalidated-queue",
+          "neverDispatchedStage": "restart",
+          "reconciliationResult": null,
+          "acknowledged": false,
+          "ownerGeneration": 1
+        },
+        "retry": {
+          "status": "completed",
+          "findingTitles": [
+            "Vulkan memory model",
+            "Vulkan synchronization"
+          ],
+          "skipped": 1
+        }
+      },
+      "actionRefs": {
+        "effect": "q47-r1-open-0",
+        "retryEffect": "q47-r2-open-0"
+      },
+      "inspections": [
+        {
+          "processCount": 9,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/failure-before-dispatch/research/cdp",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "failure-before-dispatch",
+      "workflow": "form",
+      "adapter": "playwright",
+      "token": "q48",
+      "origin": "http://127.0.0.1:41173",
+      "startedAt": "2026-10-15T12:44:25.166Z",
+      "durationMs": 2343,
+      "hostOpens": 3,
+      "steps": {
+        "crash": {
+          "signal": "SIGKILL"
+        },
+        "afterRestart": {
+          "dispatchStatus": "never-dispatched",
+          "outcome": null,
+          "outcomeBasis": null,
+          "isUncertain": false,
+          "neverDispatchedCode": "restart-invalidated-queue",
+          "neverDispatchedStage": "restart",
+          "reconciliationResult": null,
+          "acknowledged": false,
+          "ownerGeneration": 1
+        },
+        "implicitRetry": {
+          "rejection": "resubmission-not-permitted",
+          "message": "resubmission-not-permitted: name prior attempt q48-r1-submit"
+        },
+        "retry": {
+          "status": "completed",
+          "recovered": null
+        }
+      },
+      "actionRefs": {
+        "effect": "q48-r1-submit",
+        "retryEffect": "q48-r3-submit"
+      },
+      "inspections": [
+        {
+          "processCount": 8,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/failure-before-dispatch/form/playwright",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "failure-before-dispatch",
+      "workflow": "form",
+      "adapter": "cdp",
+      "token": "q49",
+      "origin": "http://127.0.0.1:40963",
+      "startedAt": "2026-10-15T12:44:27.509Z",
+      "durationMs": 2321,
+      "hostOpens": 3,
+      "steps": {
+        "crash": {
+          "signal": "SIGKILL"
+        },
+        "afterRestart": {
+          "dispatchStatus": "never-dispatched",
+          "outcome": null,
+          "outcomeBasis": null,
+          "isUncertain": false,
+          "neverDispatchedCode": "restart-invalidated-queue",
+          "neverDispatchedStage": "restart",
+          "reconciliationResult": null,
+          "acknowledged": false,
+          "ownerGeneration": 1
+        },
+        "implicitRetry": {
+          "rejection": "resubmission-not-permitted",
+          "message": "resubmission-not-permitted: name prior attempt q49-r1-submit"
+        },
+        "retry": {
+          "status": "completed",
+          "recovered": null
+        }
+      },
+      "actionRefs": {
+        "effect": "q49-r1-submit",
+        "retryEffect": "q49-r3-submit"
+      },
+      "inspections": [
+        {
+          "processCount": 9,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/failure-before-dispatch/form/cdp",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "failure-before-dispatch",
+      "workflow": "export",
+      "adapter": "playwright",
+      "token": "q50",
+      "origin": "http://127.0.0.1:46117",
+      "startedAt": "2026-10-15T12:44:29.831Z",
+      "durationMs": 3777,
+      "hostOpens": 3,
+      "steps": {
+        "crash": {
+          "signal": "SIGKILL"
+        },
+        "afterRestart": {
+          "dispatchStatus": "never-dispatched",
+          "outcome": null,
+          "outcomeBasis": null,
+          "isUncertain": false,
+          "neverDispatchedCode": "restart-invalidated-queue",
+          "neverDispatchedStage": "restart",
+          "reconciliationResult": null,
+          "acknowledged": false,
+          "ownerGeneration": 1
+        },
+        "retry": {
+          "status": "completed",
+          "artifactSha256": "98e79f8c6f16f49f82a7b94c42fc4ca04944cf7dddde39078df92522d5428146",
+          "recovered": null
+        }
+      },
+      "actionRefs": {
+        "effect": "q50-r1-download",
+        "retryEffect": "q50-r2-download"
+      },
+      "inspections": [
+        {
+          "processCount": 8,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/failure-before-dispatch/export/playwright",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "failure-before-dispatch",
+      "workflow": "export",
+      "adapter": "cdp",
+      "token": "q51",
+      "origin": "http://127.0.0.1:42767",
+      "startedAt": "2026-10-15T12:44:33.609Z",
+      "durationMs": 2594,
+      "hostOpens": 3,
+      "steps": {
+        "crash": {
+          "signal": "SIGKILL"
+        },
+        "afterRestart": {
+          "dispatchStatus": "never-dispatched",
+          "outcome": null,
+          "outcomeBasis": null,
+          "isUncertain": false,
+          "neverDispatchedCode": "restart-invalidated-queue",
+          "neverDispatchedStage": "restart",
+          "reconciliationResult": null,
+          "acknowledged": false,
+          "ownerGeneration": 1
+        },
+        "retry": {
+          "status": "completed",
+          "artifactSha256": "98e79f8c6f16f49f82a7b94c42fc4ca04944cf7dddde39078df92522d5428146",
+          "recovered": null
+        }
+      },
+      "actionRefs": {
+        "effect": "q51-r1-download",
+        "retryEffect": "q51-r2-download"
+      },
+      "inspections": [
+        {
+          "processCount": 11,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/failure-before-dispatch/export/cdp",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "failure-after-effect-started",
+      "workflow": "research",
+      "adapter": "playwright",
+      "token": "q52",
+      "origin": "http://127.0.0.1:39311",
+      "startedAt": "2026-10-15T12:44:36.204Z",
+      "durationMs": 2835,
+      "hostOpens": 3,
+      "steps": {
+        "crash": {
+          "signal": "SIGKILL"
+        },
+        "afterRestart": {
+          "dispatchStatus": "dispatched",
+          "outcome": "unknown",
+          "outcomeBasis": "restart-after-dispatch-start",
+          "isUncertain": true,
+          "neverDispatchedCode": null,
+          "neverDispatchedStage": null,
+          "reconciliationResult": null,
+          "acknowledged": false,
+          "ownerGeneration": 1
+        },
+        "afterSecondRestart": {
+          "dispatchStatus": "dispatched",
+          "outcome": "unknown",
+          "outcomeBasis": "restart-after-dispatch-start",
+          "isUncertain": true,
+          "neverDispatchedCode": null,
+          "neverDispatchedStage": null,
+          "reconciliationResult": null,
+          "acknowledged": false,
+          "ownerGeneration": 1
+        },
+        "handoff": {
+          "effect": {
+            "dispatchStatus": "dispatched",
+            "outcome": "unknown",
+            "outcomeBasis": "restart-after-dispatch-start",
+            "isUncertain": true,
+            "neverDispatchedCode": null,
+            "neverDispatchedStage": null,
+            "reconciliationResult": null,
+            "acknowledged": false,
+            "ownerGeneration": 1
+          }
+        },
+        "rerun": {
+          "status": "completed",
+          "findingTitles": [
+            "Vulkan memory model",
+            "Vulkan synchronization"
+          ],
+          "skipped": 1
+        }
+      },
+      "actionRefs": {
+        "effect": "q52-r1-open-0"
+      },
+      "inspections": [
+        {
+          "processCount": 8,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/failure-after-effect-started/research/playwright",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "failure-after-effect-started",
+      "workflow": "research",
+      "adapter": "cdp",
+      "token": "q53",
+      "origin": "http://127.0.0.1:34197",
+      "startedAt": "2026-10-15T12:44:39.040Z",
+      "durationMs": 2213,
+      "hostOpens": 3,
+      "steps": {
+        "crash": {
+          "signal": "SIGKILL"
+        },
+        "afterRestart": {
+          "dispatchStatus": "dispatched",
+          "outcome": "unknown",
+          "outcomeBasis": "restart-after-dispatch-start",
+          "isUncertain": true,
+          "neverDispatchedCode": null,
+          "neverDispatchedStage": null,
+          "reconciliationResult": null,
+          "acknowledged": false,
+          "ownerGeneration": 1
+        },
+        "afterSecondRestart": {
+          "dispatchStatus": "dispatched",
+          "outcome": "unknown",
+          "outcomeBasis": "restart-after-dispatch-start",
+          "isUncertain": true,
+          "neverDispatchedCode": null,
+          "neverDispatchedStage": null,
+          "reconciliationResult": null,
+          "acknowledged": false,
+          "ownerGeneration": 1
+        },
+        "handoff": {
+          "effect": {
+            "dispatchStatus": "dispatched",
+            "outcome": "unknown",
+            "outcomeBasis": "restart-after-dispatch-start",
+            "isUncertain": true,
+            "neverDispatchedCode": null,
+            "neverDispatchedStage": null,
+            "reconciliationResult": null,
+            "acknowledged": false,
+            "ownerGeneration": 1
+          }
+        },
+        "rerun": {
+          "status": "completed",
+          "findingTitles": [
+            "Vulkan memory model",
+            "Vulkan synchronization"
+          ],
+          "skipped": 1
+        }
+      },
+      "actionRefs": {
+        "effect": "q53-r1-open-0"
+      },
+      "inspections": [
+        {
+          "processCount": 9,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/failure-after-effect-started/research/cdp",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "failure-after-effect-started",
+      "workflow": "form",
+      "adapter": "playwright",
+      "token": "q54",
+      "origin": "http://127.0.0.1:36273",
+      "startedAt": "2026-10-15T12:44:41.254Z",
+      "durationMs": 2406,
+      "hostOpens": 3,
+      "steps": {
+        "crash": {
+          "signal": "SIGKILL"
+        },
+        "afterRestart": {
+          "dispatchStatus": "dispatched",
+          "outcome": "unknown",
+          "outcomeBasis": "restart-after-dispatch-start",
+          "isUncertain": true,
+          "neverDispatchedCode": null,
+          "neverDispatchedStage": null,
+          "reconciliationResult": null,
+          "acknowledged": false,
+          "ownerGeneration": 1
+        },
+        "afterSecondRestart": {
+          "dispatchStatus": "dispatched",
+          "outcome": "unknown",
+          "outcomeBasis": "restart-after-dispatch-start",
+          "isUncertain": true,
+          "neverDispatchedCode": null,
+          "neverDispatchedStage": null,
+          "reconciliationResult": null,
+          "acknowledged": false,
+          "ownerGeneration": 1
+        },
+        "handoff": {
+          "effect": {
+            "dispatchStatus": "dispatched",
+            "outcome": "unknown",
+            "outcomeBasis": "restart-after-dispatch-start",
+            "isUncertain": true,
+            "neverDispatchedCode": null,
+            "neverDispatchedStage": null,
+            "reconciliationResult": null,
+            "acknowledged": false,
+            "ownerGeneration": 1
+          }
+        },
+        "resubmitBeforeReconcile": {
+          "rejection": "effect-unresolved",
+          "message": "effect-unresolved: effect form:b2e3d123bc5479e49a78ed8c1e69d12854a2d00f41470157c760160ae293e0c5 has attempt q54-r1-submit"
+        },
+        "reconcile": {
+          "dispatchStatus": "dispatched",
+          "outcome": "unknown",
+          "outcomeBasis": "restart-after-dispatch-start",
+          "isUncertain": false,
+          "neverDispatchedCode": null,
+          "neverDispatchedStage": null,
+          "reconciliationResult": "effect-present",
+          "acknowledged": false,
+          "ownerGeneration": 1
+        },
+        "resubmitAfterReconcile": {
+          "rejection": "effect-already-completed",
+          "message": "effect-already-completed: effect form:b2e3d123bc5479e49a78ed8c1e69d12854a2d00f41470157c760160ae293e0c5 has attempt q54-r1-submit"
+        }
+      },
+      "actionRefs": {
+        "effect": "q54-r1-submit"
+      },
+      "inspections": [
+        {
+          "processCount": 8,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/failure-after-effect-started/form/playwright",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "failure-after-effect-started",
+      "workflow": "form",
+      "adapter": "cdp",
+      "token": "q55",
+      "origin": "http://127.0.0.1:45825",
+      "startedAt": "2026-10-15T12:44:43.661Z",
+      "durationMs": 2092,
+      "hostOpens": 3,
+      "steps": {
+        "crash": {
+          "signal": "SIGKILL"
+        },
+        "afterRestart": {
+          "dispatchStatus": "dispatched",
+          "outcome": "unknown",
+          "outcomeBasis": "restart-after-dispatch-start",
+          "isUncertain": true,
+          "neverDispatchedCode": null,
+          "neverDispatchedStage": null,
+          "reconciliationResult": null,
+          "acknowledged": false,
+          "ownerGeneration": 1
+        },
+        "afterSecondRestart": {
+          "dispatchStatus": "dispatched",
+          "outcome": "unknown",
+          "outcomeBasis": "restart-after-dispatch-start",
+          "isUncertain": true,
+          "neverDispatchedCode": null,
+          "neverDispatchedStage": null,
+          "reconciliationResult": null,
+          "acknowledged": false,
+          "ownerGeneration": 1
+        },
+        "handoff": {
+          "effect": {
+            "dispatchStatus": "dispatched",
+            "outcome": "unknown",
+            "outcomeBasis": "restart-after-dispatch-start",
+            "isUncertain": true,
+            "neverDispatchedCode": null,
+            "neverDispatchedStage": null,
+            "reconciliationResult": null,
+            "acknowledged": false,
+            "ownerGeneration": 1
+          }
+        },
+        "resubmitBeforeReconcile": {
+          "rejection": "effect-unresolved",
+          "message": "effect-unresolved: effect form:cf7652f0c64fea9ed27f367c2f46df02e3346c21690c7d68847ecd3d3965fc3b has attempt q55-r1-submit"
+        },
+        "reconcile": {
+          "dispatchStatus": "dispatched",
+          "outcome": "unknown",
+          "outcomeBasis": "restart-after-dispatch-start",
+          "isUncertain": false,
+          "neverDispatchedCode": null,
+          "neverDispatchedStage": null,
+          "reconciliationResult": "effect-present",
+          "acknowledged": false,
+          "ownerGeneration": 1
+        },
+        "resubmitAfterReconcile": {
+          "rejection": "effect-already-completed",
+          "message": "effect-already-completed: effect form:cf7652f0c64fea9ed27f367c2f46df02e3346c21690c7d68847ecd3d3965fc3b has attempt q55-r1-submit"
+        }
+      },
+      "actionRefs": {
+        "effect": "q55-r1-submit"
+      },
+      "inspections": [
+        {
+          "processCount": 9,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/failure-after-effect-started/form/cdp",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "failure-after-effect-started",
+      "workflow": "export",
+      "adapter": "playwright",
+      "token": "q56",
+      "origin": "http://127.0.0.1:39225",
+      "startedAt": "2026-10-15T12:44:45.753Z",
+      "durationMs": 2272,
+      "hostOpens": 3,
+      "steps": {
+        "crash": {
+          "signal": "SIGKILL"
+        },
+        "afterRestart": {
+          "dispatchStatus": "dispatched",
+          "outcome": "unknown",
+          "outcomeBasis": "restart-after-dispatch-start",
+          "isUncertain": true,
+          "neverDispatchedCode": null,
+          "neverDispatchedStage": null,
+          "reconciliationResult": null,
+          "acknowledged": false,
+          "ownerGeneration": 1
+        },
+        "afterSecondRestart": {
+          "dispatchStatus": "dispatched",
+          "outcome": "unknown",
+          "outcomeBasis": "restart-after-dispatch-start",
+          "isUncertain": true,
+          "neverDispatchedCode": null,
+          "neverDispatchedStage": null,
+          "reconciliationResult": null,
+          "acknowledged": false,
+          "ownerGeneration": 1
+        },
+        "handoff": {
+          "effect": {
+            "dispatchStatus": "dispatched",
+            "outcome": "unknown",
+            "outcomeBasis": "restart-after-dispatch-start",
+            "isUncertain": true,
+            "neverDispatchedCode": null,
+            "neverDispatchedStage": null,
+            "reconciliationResult": null,
+            "acknowledged": false,
+            "ownerGeneration": 1
+          }
+        },
+        "rerun": {
+          "status": "completed",
+          "artifactSha256": "98e79f8c6f16f49f82a7b94c42fc4ca04944cf7dddde39078df92522d5428146",
+          "recovered": null
+        }
+      },
+      "actionRefs": {
+        "effect": "q56-r1-download"
+      },
+      "inspections": [
+        {
+          "processCount": 8,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/failure-after-effect-started/export/playwright",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "failure-after-effect-started",
+      "workflow": "export",
+      "adapter": "cdp",
+      "token": "q57",
+      "origin": "http://127.0.0.1:33897",
+      "startedAt": "2026-10-15T12:44:48.026Z",
+      "durationMs": 1870,
+      "hostOpens": 3,
+      "steps": {
+        "crash": {
+          "signal": "SIGKILL"
+        },
+        "afterRestart": {
+          "dispatchStatus": "dispatched",
+          "outcome": "unknown",
+          "outcomeBasis": "restart-after-dispatch-start",
+          "isUncertain": true,
+          "neverDispatchedCode": null,
+          "neverDispatchedStage": null,
+          "reconciliationResult": null,
+          "acknowledged": false,
+          "ownerGeneration": 1
+        },
+        "afterSecondRestart": {
+          "dispatchStatus": "dispatched",
+          "outcome": "unknown",
+          "outcomeBasis": "restart-after-dispatch-start",
+          "isUncertain": true,
+          "neverDispatchedCode": null,
+          "neverDispatchedStage": null,
+          "reconciliationResult": null,
+          "acknowledged": false,
+          "ownerGeneration": 1
+        },
+        "handoff": {
+          "effect": {
+            "dispatchStatus": "dispatched",
+            "outcome": "unknown",
+            "outcomeBasis": "restart-after-dispatch-start",
+            "isUncertain": true,
+            "neverDispatchedCode": null,
+            "neverDispatchedStage": null,
+            "reconciliationResult": null,
+            "acknowledged": false,
+            "ownerGeneration": 1
+          }
+        },
+        "rerun": {
+          "status": "completed",
+          "artifactSha256": "98e79f8c6f16f49f82a7b94c42fc4ca04944cf7dddde39078df92522d5428146",
+          "recovered": null
+        }
+      },
+      "actionRefs": {
+        "effect": "q57-r1-download"
+      },
+      "inspections": [
+        {
+          "processCount": 11,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/failure-after-effect-started/export/cdp",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "failure-after-completion-before-acknowledgment",
+      "workflow": "research",
+      "adapter": "playwright",
+      "token": "q58",
+      "origin": "http://127.0.0.1:44029",
+      "startedAt": "2026-10-15T12:44:49.896Z",
+      "durationMs": 1904,
+      "hostOpens": 3,
+      "steps": {
+        "crash": {
+          "signal": "SIGKILL"
+        },
+        "afterRestart": {
+          "dispatchStatus": "dispatched",
+          "outcome": "completed",
+          "outcomeBasis": "completion-condition",
+          "isUncertain": false,
+          "neverDispatchedCode": null,
+          "neverDispatchedStage": null,
+          "reconciliationResult": null,
+          "acknowledged": false,
+          "ownerGeneration": 1
+        },
+        "outstandingBeforeAcknowledgment": {
+          "includesEffect": true
+        },
+        "outstandingAfterAcknowledgment": {
+          "includesEffect": false
+        }
+      },
+      "actionRefs": {
+        "effect": "q58-r1-open-0"
+      },
+      "inspections": [
+        {
+          "processCount": 0,
+          "executables": [],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/failure-after-completion-before-acknowledgment/research/playwright",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "failure-after-completion-before-acknowledgment",
+      "workflow": "research",
+      "adapter": "cdp",
+      "token": "q59",
+      "origin": "http://127.0.0.1:44993",
+      "startedAt": "2026-10-15T12:44:51.801Z",
+      "durationMs": 1616,
+      "hostOpens": 3,
+      "steps": {
+        "crash": {
+          "signal": "SIGKILL"
+        },
+        "afterRestart": {
+          "dispatchStatus": "dispatched",
+          "outcome": "completed",
+          "outcomeBasis": "completion-condition",
+          "isUncertain": false,
+          "neverDispatchedCode": null,
+          "neverDispatchedStage": null,
+          "reconciliationResult": null,
+          "acknowledged": false,
+          "ownerGeneration": 1
+        },
+        "outstandingBeforeAcknowledgment": {
+          "includesEffect": true
+        },
+        "outstandingAfterAcknowledgment": {
+          "includesEffect": false
+        }
+      },
+      "actionRefs": {
+        "effect": "q59-r1-open-0"
+      },
+      "inspections": [
+        {
+          "processCount": 0,
+          "executables": [],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/failure-after-completion-before-acknowledgment/research/cdp",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "failure-after-completion-before-acknowledgment",
+      "workflow": "form",
+      "adapter": "playwright",
+      "token": "q60",
+      "origin": "http://127.0.0.1:33977",
+      "startedAt": "2026-10-15T12:44:53.417Z",
+      "durationMs": 2465,
+      "hostOpens": 3,
+      "steps": {
+        "crash": {
+          "signal": "SIGKILL"
+        },
+        "afterRestart": {
+          "dispatchStatus": "dispatched",
+          "outcome": "completed",
+          "outcomeBasis": "completion-condition",
+          "isUncertain": false,
+          "neverDispatchedCode": null,
+          "neverDispatchedStage": null,
+          "reconciliationResult": null,
+          "acknowledged": false,
+          "ownerGeneration": 1
+        },
+        "outstandingBeforeAcknowledgment": {
+          "includesEffect": true
+        },
+        "outstandingAfterAcknowledgment": {
+          "includesEffect": false
+        },
+        "resubmit": {
+          "rejection": "effect-already-completed",
+          "message": "effect-already-completed: effect form:2b48bca94348d21be59aeb235c15a4b5468bb5871859bfc69c03d740660ce53b has attempt q60-r1-submit"
+        }
+      },
+      "actionRefs": {
+        "effect": "q60-r1-submit"
+      },
+      "inspections": [
+        {
+          "processCount": 8,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/failure-after-completion-before-acknowledgment/form/playwright",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "failure-after-completion-before-acknowledgment",
+      "workflow": "form",
+      "adapter": "cdp",
+      "token": "q61",
+      "origin": "http://127.0.0.1:39873",
+      "startedAt": "2026-10-15T12:44:55.882Z",
+      "durationMs": 2048,
+      "hostOpens": 3,
+      "steps": {
+        "crash": {
+          "signal": "SIGKILL"
+        },
+        "afterRestart": {
+          "dispatchStatus": "dispatched",
+          "outcome": "completed",
+          "outcomeBasis": "completion-condition",
+          "isUncertain": false,
+          "neverDispatchedCode": null,
+          "neverDispatchedStage": null,
+          "reconciliationResult": null,
+          "acknowledged": false,
+          "ownerGeneration": 1
+        },
+        "outstandingBeforeAcknowledgment": {
+          "includesEffect": true
+        },
+        "outstandingAfterAcknowledgment": {
+          "includesEffect": false
+        },
+        "resubmit": {
+          "rejection": "effect-already-completed",
+          "message": "effect-already-completed: effect form:f63eac9ea8f1401c45912144ba5460679efc6acd66523e7bdb732fc0c3516c6e has attempt q61-r1-submit"
+        }
+      },
+      "actionRefs": {
+        "effect": "q61-r1-submit"
+      },
+      "inspections": [
+        {
+          "processCount": 9,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/failure-after-completion-before-acknowledgment/form/cdp",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "failure-after-completion-before-acknowledgment",
+      "workflow": "export",
+      "adapter": "playwright",
+      "token": "q62",
+      "origin": "http://127.0.0.1:43823",
+      "startedAt": "2026-10-15T12:44:57.931Z",
+      "durationMs": 1750,
+      "hostOpens": 3,
+      "steps": {
+        "crash": {
+          "signal": "SIGKILL"
+        },
+        "afterRestart": {
+          "dispatchStatus": "dispatched",
+          "outcome": "completed",
+          "outcomeBasis": "artifact-saved",
+          "isUncertain": false,
+          "neverDispatchedCode": null,
+          "neverDispatchedStage": null,
+          "reconciliationResult": null,
+          "acknowledged": false,
+          "ownerGeneration": 1
+        },
+        "outstandingBeforeAcknowledgment": {
+          "includesEffect": true
+        },
+        "outstandingAfterAcknowledgment": {
+          "includesEffect": false
+        }
+      },
+      "actionRefs": {
+        "effect": "q62-r1-download"
+      },
+      "inspections": [
+        {
+          "processCount": 0,
+          "executables": [],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/failure-after-completion-before-acknowledgment/export/playwright",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "failure-after-completion-before-acknowledgment",
+      "workflow": "export",
+      "adapter": "cdp",
+      "token": "q63",
+      "origin": "http://127.0.0.1:36179",
+      "startedAt": "2026-10-15T12:44:59.681Z",
+      "durationMs": 1789,
+      "hostOpens": 3,
+      "steps": {
+        "crash": {
+          "signal": "SIGKILL"
+        },
+        "afterRestart": {
+          "dispatchStatus": "dispatched",
+          "outcome": "completed",
+          "outcomeBasis": "artifact-saved",
+          "isUncertain": false,
+          "neverDispatchedCode": null,
+          "neverDispatchedStage": null,
+          "reconciliationResult": null,
+          "acknowledged": false,
+          "ownerGeneration": 1
+        },
+        "outstandingBeforeAcknowledgment": {
+          "includesEffect": true
+        },
+        "outstandingAfterAcknowledgment": {
+          "includesEffect": false
+        }
+      },
+      "actionRefs": {
+        "effect": "q63-r1-download"
+      },
+      "inspections": [
+        {
+          "processCount": 0,
+          "executables": [],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/failure-after-completion-before-acknowledgment/export/cdp",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "handoff-while-queued",
+      "workflow": "research",
+      "adapter": "playwright",
+      "token": "q64",
+      "origin": "http://127.0.0.1:33347",
+      "startedAt": "2026-10-15T12:45:01.471Z",
+      "durationMs": 1005,
+      "hostOpens": 1,
+      "steps": {
+        "queuedAdmission": {
+          "actionId": "q64-r2-marker"
+        },
+        "interruption": {
+          "effect": {
+            "dispatchStatus": "dispatched",
+            "outcome": null,
+            "outcomeBasis": null,
+            "isUncertain": false,
+            "neverDispatchedCode": null,
+            "neverDispatchedStage": null,
+            "reconciliationResult": null,
+            "acknowledged": false,
+            "ownerGeneration": 1
+          },
+          "queued": {
+            "dispatchStatus": "never-dispatched",
+            "outcome": null,
+            "outcomeBasis": null,
+            "isUncertain": false,
+            "neverDispatchedCode": "stale-owner-generation",
+            "neverDispatchedStage": "handoff",
+            "reconciliationResult": null,
+            "acknowledged": false,
+            "ownerGeneration": 1
+          },
+          "isAtomic": false
+        },
+        "workflow": {
+          "rejection": "stale-owner-generation",
+          "message": "stale-owner-generation: owner generation is no longer current"
+        },
+        "queued": {
+          "dispatchStatus": "never-dispatched",
+          "outcome": null,
+          "outcomeBasis": null,
+          "isUncertain": false,
+          "neverDispatchedCode": "stale-owner-generation",
+          "neverDispatchedStage": "handoff",
+          "reconciliationResult": null,
+          "acknowledged": false,
+          "ownerGeneration": 1
+        },
+        "oldOwnerObserve": {
+          "rejection": "stale-owner-generation",
+          "message": "stale-owner-generation: owner generation is no longer current"
+        }
+      },
+      "actionRefs": {
+        "effect": "q64-r1-open-0",
+        "queued": "q64-r2-marker"
+      },
+      "inspections": [
+        {
+          "processCount": 8,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/handoff-while-queued/research/playwright",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "handoff-while-queued",
+      "workflow": "research",
+      "adapter": "cdp",
+      "token": "q65",
+      "origin": "http://127.0.0.1:42569",
+      "startedAt": "2026-10-15T12:45:02.477Z",
+      "durationMs": 1032,
+      "hostOpens": 1,
+      "steps": {
+        "queuedAdmission": {
+          "actionId": "q65-r2-marker"
+        },
+        "interruption": {
+          "effect": {
+            "dispatchStatus": "dispatched",
+            "outcome": null,
+            "outcomeBasis": null,
+            "isUncertain": false,
+            "neverDispatchedCode": null,
+            "neverDispatchedStage": null,
+            "reconciliationResult": null,
+            "acknowledged": false,
+            "ownerGeneration": 1
+          },
+          "queued": {
+            "dispatchStatus": "never-dispatched",
+            "outcome": null,
+            "outcomeBasis": null,
+            "isUncertain": false,
+            "neverDispatchedCode": "stale-owner-generation",
+            "neverDispatchedStage": "handoff",
+            "reconciliationResult": null,
+            "acknowledged": false,
+            "ownerGeneration": 1
+          },
+          "isAtomic": false
+        },
+        "workflow": {
+          "rejection": "stale-owner-generation",
+          "message": "stale-owner-generation: owner generation is no longer current"
+        },
+        "queued": {
+          "dispatchStatus": "never-dispatched",
+          "outcome": null,
+          "outcomeBasis": null,
+          "isUncertain": false,
+          "neverDispatchedCode": "stale-owner-generation",
+          "neverDispatchedStage": "handoff",
+          "reconciliationResult": null,
+          "acknowledged": false,
+          "ownerGeneration": 1
+        },
+        "oldOwnerObserve": {
+          "rejection": "stale-owner-generation",
+          "message": "stale-owner-generation: owner generation is no longer current"
+        }
+      },
+      "actionRefs": {
+        "effect": "q65-r1-open-0",
+        "queued": "q65-r2-marker"
+      },
+      "inspections": [
+        {
+          "processCount": 11,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/handoff-while-queued/research/cdp",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "handoff-while-queued",
+      "workflow": "form",
+      "adapter": "playwright",
+      "token": "q66",
+      "origin": "http://127.0.0.1:38099",
+      "startedAt": "2026-10-15T12:45:03.510Z",
+      "durationMs": 1246,
+      "hostOpens": 1,
+      "steps": {
+        "queuedAdmission": {
+          "actionId": "q66-r2-marker"
+        },
+        "interruption": {
+          "effect": {
+            "dispatchStatus": "dispatched",
+            "outcome": null,
+            "outcomeBasis": null,
+            "isUncertain": false,
+            "neverDispatchedCode": null,
+            "neverDispatchedStage": null,
+            "reconciliationResult": null,
+            "acknowledged": false,
+            "ownerGeneration": 1
+          },
+          "queued": {
+            "dispatchStatus": "never-dispatched",
+            "outcome": null,
+            "outcomeBasis": null,
+            "isUncertain": false,
+            "neverDispatchedCode": "stale-owner-generation",
+            "neverDispatchedStage": "handoff",
+            "reconciliationResult": null,
+            "acknowledged": false,
+            "ownerGeneration": 1
+          },
+          "isAtomic": false
+        },
+        "workflow": {
+          "status": "completed",
+          "recovered": null
+        },
+        "queued": {
+          "dispatchStatus": "never-dispatched",
+          "outcome": null,
+          "outcomeBasis": null,
+          "isUncertain": false,
+          "neverDispatchedCode": "stale-owner-generation",
+          "neverDispatchedStage": "handoff",
+          "reconciliationResult": null,
+          "acknowledged": false,
+          "ownerGeneration": 1
+        },
+        "oldOwnerObserve": {
+          "rejection": "stale-owner-generation",
+          "message": "stale-owner-generation: owner generation is no longer current"
+        }
+      },
+      "actionRefs": {
+        "effect": "q66-r1-submit",
+        "queued": "q66-r2-marker"
+      },
+      "inspections": [
+        {
+          "processCount": 8,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/handoff-while-queued/form/playwright",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "handoff-while-queued",
+      "workflow": "form",
+      "adapter": "cdp",
+      "token": "q67",
+      "origin": "http://127.0.0.1:36427",
+      "startedAt": "2026-10-15T12:45:04.756Z",
+      "durationMs": 1134,
+      "hostOpens": 1,
+      "steps": {
+        "queuedAdmission": {
+          "actionId": "q67-r2-marker"
+        },
+        "interruption": {
+          "effect": {
+            "dispatchStatus": "dispatched",
+            "outcome": null,
+            "outcomeBasis": null,
+            "isUncertain": false,
+            "neverDispatchedCode": null,
+            "neverDispatchedStage": null,
+            "reconciliationResult": null,
+            "acknowledged": false,
+            "ownerGeneration": 1
+          },
+          "queued": {
+            "dispatchStatus": "never-dispatched",
+            "outcome": null,
+            "outcomeBasis": null,
+            "isUncertain": false,
+            "neverDispatchedCode": "stale-owner-generation",
+            "neverDispatchedStage": "handoff",
+            "reconciliationResult": null,
+            "acknowledged": false,
+            "ownerGeneration": 1
+          },
+          "isAtomic": false
+        },
+        "workflow": {
+          "status": "completed",
+          "recovered": null
+        },
+        "queued": {
+          "dispatchStatus": "never-dispatched",
+          "outcome": null,
+          "outcomeBasis": null,
+          "isUncertain": false,
+          "neverDispatchedCode": "stale-owner-generation",
+          "neverDispatchedStage": "handoff",
+          "reconciliationResult": null,
+          "acknowledged": false,
+          "ownerGeneration": 1
+        },
+        "oldOwnerObserve": {
+          "rejection": "stale-owner-generation",
+          "message": "stale-owner-generation: owner generation is no longer current"
+        }
+      },
+      "actionRefs": {
+        "effect": "q67-r1-submit",
+        "queued": "q67-r2-marker"
+      },
+      "inspections": [
+        {
+          "processCount": 11,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/handoff-while-queued/form/cdp",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "handoff-while-queued",
+      "workflow": "export",
+      "adapter": "playwright",
+      "token": "q68",
+      "origin": "http://127.0.0.1:34679",
+      "startedAt": "2026-10-15T12:45:05.891Z",
+      "durationMs": 1595,
+      "hostOpens": 1,
+      "steps": {
+        "queuedAdmission": {
+          "actionId": "q68-r2-marker"
+        },
+        "interruption": {
+          "effect": {
+            "dispatchStatus": "dispatched",
+            "outcome": null,
+            "outcomeBasis": null,
+            "isUncertain": false,
+            "neverDispatchedCode": null,
+            "neverDispatchedStage": null,
+            "reconciliationResult": null,
+            "acknowledged": false,
+            "ownerGeneration": 1
+          },
+          "queued": {
+            "dispatchStatus": "never-dispatched",
+            "outcome": null,
+            "outcomeBasis": null,
+            "isUncertain": false,
+            "neverDispatchedCode": "stale-owner-generation",
+            "neverDispatchedStage": "handoff",
+            "reconciliationResult": null,
+            "acknowledged": false,
+            "ownerGeneration": 1
+          },
+          "isAtomic": false
+        },
+        "workflow": {
+          "status": "completed",
+          "artifactSha256": "98e79f8c6f16f49f82a7b94c42fc4ca04944cf7dddde39078df92522d5428146",
+          "recovered": null
+        },
+        "queued": {
+          "dispatchStatus": "never-dispatched",
+          "outcome": null,
+          "outcomeBasis": null,
+          "isUncertain": false,
+          "neverDispatchedCode": "stale-owner-generation",
+          "neverDispatchedStage": "handoff",
+          "reconciliationResult": null,
+          "acknowledged": false,
+          "ownerGeneration": 1
+        },
+        "oldOwnerObserve": {
+          "rejection": "stale-owner-generation",
+          "message": "stale-owner-generation: owner generation is no longer current"
+        }
+      },
+      "actionRefs": {
+        "effect": "q68-r1-download",
+        "queued": "q68-r2-marker"
+      },
+      "inspections": [
+        {
+          "processCount": 8,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/handoff-while-queued/export/playwright",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "handoff-while-queued",
+      "workflow": "export",
+      "adapter": "cdp",
+      "token": "q69",
+      "origin": "http://127.0.0.1:44807",
+      "startedAt": "2026-10-15T12:45:07.487Z",
+      "durationMs": 1052,
+      "hostOpens": 1,
+      "steps": {
+        "queuedAdmission": {
+          "actionId": "q69-r2-marker"
+        },
+        "interruption": {
+          "effect": {
+            "dispatchStatus": "dispatched",
+            "outcome": null,
+            "outcomeBasis": null,
+            "isUncertain": false,
+            "neverDispatchedCode": null,
+            "neverDispatchedStage": null,
+            "reconciliationResult": null,
+            "acknowledged": false,
+            "ownerGeneration": 1
+          },
+          "queued": {
+            "dispatchStatus": "never-dispatched",
+            "outcome": null,
+            "outcomeBasis": null,
+            "isUncertain": false,
+            "neverDispatchedCode": "stale-owner-generation",
+            "neverDispatchedStage": "handoff",
+            "reconciliationResult": null,
+            "acknowledged": false,
+            "ownerGeneration": 1
+          },
+          "isAtomic": false
+        },
+        "workflow": {
+          "status": "completed",
+          "artifactSha256": "98e79f8c6f16f49f82a7b94c42fc4ca04944cf7dddde39078df92522d5428146",
+          "recovered": null
+        },
+        "queued": {
+          "dispatchStatus": "never-dispatched",
+          "outcome": null,
+          "outcomeBasis": null,
+          "isUncertain": false,
+          "neverDispatchedCode": "stale-owner-generation",
+          "neverDispatchedStage": "handoff",
+          "reconciliationResult": null,
+          "acknowledged": false,
+          "ownerGeneration": 1
+        },
+        "oldOwnerObserve": {
+          "rejection": "stale-owner-generation",
+          "message": "stale-owner-generation: owner generation is no longer current"
+        }
+      },
+      "actionRefs": {
+        "effect": "q69-r1-download",
+        "queued": "q69-r2-marker"
+      },
+      "inspections": [
+        {
+          "processCount": 13,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/handoff-while-queued/export/cdp",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "revoked-while-queued",
+      "workflow": "research",
+      "adapter": "playwright",
+      "token": "q70",
+      "origin": "http://127.0.0.1:41475",
+      "startedAt": "2026-10-15T12:45:08.540Z",
+      "durationMs": 1193,
+      "hostOpens": 1,
+      "steps": {
+        "queuedAdmission": {
+          "actionId": "q70-r2-marker"
+        },
+        "workflow": {
+          "rejection": "unauthorized-intent",
+          "message": "unauthorized-intent: intent research:read"
+        },
+        "queued": {
+          "dispatchStatus": "never-dispatched",
+          "outcome": null,
+          "outcomeBasis": null,
+          "isUncertain": false,
+          "neverDispatchedCode": "unauthorized-intent",
+          "neverDispatchedStage": "dispatch",
+          "reconciliationResult": null,
+          "acknowledged": false,
+          "ownerGeneration": 1
+        }
+      },
+      "actionRefs": {
+        "effect": "q70-r1-open-0",
+        "queued": "q70-r2-marker"
+      },
+      "inspections": [
+        {
+          "processCount": 8,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/revoked-while-queued/research/playwright",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "revoked-while-queued",
+      "workflow": "research",
+      "adapter": "cdp",
+      "token": "q71",
+      "origin": "http://127.0.0.1:46833",
+      "startedAt": "2026-10-15T12:45:09.734Z",
+      "durationMs": 1157,
+      "hostOpens": 1,
+      "steps": {
+        "queuedAdmission": {
+          "actionId": "q71-r2-marker"
+        },
+        "workflow": {
+          "rejection": "unauthorized-intent",
+          "message": "unauthorized-intent: intent research:read"
+        },
+        "queued": {
+          "dispatchStatus": "never-dispatched",
+          "outcome": null,
+          "outcomeBasis": null,
+          "isUncertain": false,
+          "neverDispatchedCode": "unauthorized-intent",
+          "neverDispatchedStage": "dispatch",
+          "reconciliationResult": null,
+          "acknowledged": false,
+          "ownerGeneration": 1
+        }
+      },
+      "actionRefs": {
+        "effect": "q71-r1-open-0",
+        "queued": "q71-r2-marker"
+      },
+      "inspections": [
+        {
+          "processCount": 11,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/revoked-while-queued/research/cdp",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "revoked-while-queued",
+      "workflow": "form",
+      "adapter": "playwright",
+      "token": "q72",
+      "origin": "http://127.0.0.1:45317",
+      "startedAt": "2026-10-15T12:45:10.891Z",
+      "durationMs": 1451,
+      "hostOpens": 1,
+      "steps": {
+        "queuedAdmission": {
+          "actionId": "q72-r2-marker"
+        },
+        "workflow": {
+          "status": "completed",
+          "recovered": null
+        },
+        "queued": {
+          "dispatchStatus": "never-dispatched",
+          "outcome": null,
+          "outcomeBasis": null,
+          "isUncertain": false,
+          "neverDispatchedCode": "unauthorized-intent",
+          "neverDispatchedStage": "dispatch",
+          "reconciliationResult": null,
+          "acknowledged": false,
+          "ownerGeneration": 1
+        }
+      },
+      "actionRefs": {
+        "effect": "q72-r1-submit",
+        "queued": "q72-r2-marker"
+      },
+      "inspections": [
+        {
+          "processCount": 8,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/revoked-while-queued/form/playwright",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "revoked-while-queued",
+      "workflow": "form",
+      "adapter": "cdp",
+      "token": "q73",
+      "origin": "http://127.0.0.1:46109",
+      "startedAt": "2026-10-15T12:45:12.343Z",
+      "durationMs": 1414,
+      "hostOpens": 1,
+      "steps": {
+        "queuedAdmission": {
+          "actionId": "q73-r2-marker"
+        },
+        "workflow": {
+          "status": "completed",
+          "recovered": null
+        },
+        "queued": {
+          "dispatchStatus": "never-dispatched",
+          "outcome": null,
+          "outcomeBasis": null,
+          "isUncertain": false,
+          "neverDispatchedCode": "unauthorized-intent",
+          "neverDispatchedStage": "dispatch",
+          "reconciliationResult": null,
+          "acknowledged": false,
+          "ownerGeneration": 1
+        }
+      },
+      "actionRefs": {
+        "effect": "q73-r1-submit",
+        "queued": "q73-r2-marker"
+      },
+      "inspections": [
+        {
+          "processCount": 11,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/revoked-while-queued/form/cdp",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "revoked-while-queued",
+      "workflow": "export",
+      "adapter": "playwright",
+      "token": "q74",
+      "origin": "http://127.0.0.1:37329",
+      "startedAt": "2026-10-15T12:45:13.758Z",
+      "durationMs": 1401,
+      "hostOpens": 1,
+      "steps": {
+        "queuedAdmission": {
+          "actionId": "q74-r2-marker"
+        },
+        "workflow": {
+          "status": "completed",
+          "artifactSha256": "98e79f8c6f16f49f82a7b94c42fc4ca04944cf7dddde39078df92522d5428146",
+          "recovered": null
+        },
+        "queued": {
+          "dispatchStatus": "never-dispatched",
+          "outcome": null,
+          "outcomeBasis": null,
+          "isUncertain": false,
+          "neverDispatchedCode": "unauthorized-intent",
+          "neverDispatchedStage": "dispatch",
+          "reconciliationResult": null,
+          "acknowledged": false,
+          "ownerGeneration": 1
+        }
+      },
+      "actionRefs": {
+        "effect": "q74-r1-download",
+        "queued": "q74-r2-marker"
+      },
+      "inspections": [
+        {
+          "processCount": 8,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/revoked-while-queued/export/playwright",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "revoked-while-queued",
+      "workflow": "export",
+      "adapter": "cdp",
+      "token": "q75",
+      "origin": "http://127.0.0.1:43899",
+      "startedAt": "2026-10-15T12:45:15.159Z",
+      "durationMs": 1231,
+      "hostOpens": 1,
+      "steps": {
+        "queuedAdmission": {
+          "actionId": "q75-r2-marker"
+        },
+        "workflow": {
+          "status": "completed",
+          "artifactSha256": "98e79f8c6f16f49f82a7b94c42fc4ca04944cf7dddde39078df92522d5428146",
+          "recovered": null
+        },
+        "queued": {
+          "dispatchStatus": "never-dispatched",
+          "outcome": null,
+          "outcomeBasis": null,
+          "isUncertain": false,
+          "neverDispatchedCode": "unauthorized-intent",
+          "neverDispatchedStage": "dispatch",
+          "reconciliationResult": null,
+          "acknowledged": false,
+          "ownerGeneration": 1
+        }
+      },
+      "actionRefs": {
+        "effect": "q75-r1-download",
+        "queued": "q75-r2-marker"
+      },
+      "inspections": [
+        {
+          "processCount": 13,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/revoked-while-queued/export/cdp",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "handoff-races-effect",
+      "workflow": "research",
+      "adapter": "playwright",
+      "token": "q76",
+      "origin": "http://127.0.0.1:39779",
+      "startedAt": "2026-10-15T12:45:16.391Z",
+      "durationMs": 1556,
+      "hostOpens": 1,
+      "steps": {
+        "race": [
+          {
+            "order": "handoff-first",
+            "delayMs": 0,
+            "effectReached": true,
+            "handoffAfterWorkflow": false,
+            "workflow": {
+              "rejection": "stale-owner-generation",
+              "message": "stale-owner-generation: owner generation is no longer current"
+            },
+            "handoffError": null,
+            "handoffGeneration": 2,
+            "handoffDisclosed": null
+          },
+          {
+            "order": "submit-first",
+            "delayMs": 0,
+            "effectReached": true,
+            "handoffAfterWorkflow": false,
+            "workflow": {
+              "status": "stopped",
+              "findingTitles": [],
+              "skipped": 0
+            },
+            "handoffError": null,
+            "handoffGeneration": 3,
+            "handoffDisclosed": {
+              "dispatchStatus": "never-dispatched",
+              "outcome": null,
+              "outcomeBasis": null,
+              "isUncertain": false,
+              "neverDispatchedCode": "stale-owner-generation",
+              "neverDispatchedStage": "handoff",
+              "reconciliationResult": null,
+              "acknowledged": false,
+              "ownerGeneration": 2
+            }
+          },
+          {
+            "order": "at-dispatch-start",
+            "delayMs": 0,
+            "effectReached": true,
+            "handoffAfterWorkflow": false,
+            "workflow": {
+              "rejection": "stale-owner-generation",
+              "message": "stale-owner-generation: owner generation is no longer current"
+            },
+            "handoffError": null,
+            "handoffGeneration": 4,
+            "handoffDisclosed": {
+              "dispatchStatus": "dispatched",
+              "outcome": null,
+              "outcomeBasis": null,
+              "isUncertain": false,
+              "neverDispatchedCode": null,
+              "neverDispatchedStage": null,
+              "reconciliationResult": null,
+              "acknowledged": false,
+              "ownerGeneration": 3
+            }
+          },
+          {
+            "order": "submit-first",
+            "delayMs": 2,
+            "effectReached": true,
+            "handoffAfterWorkflow": false,
+            "workflow": {
+              "rejection": "stale-owner-generation",
+              "message": "stale-owner-generation: owner generation is no longer current"
+            },
+            "handoffError": null,
+            "handoffGeneration": 5,
+            "handoffDisclosed": {
+              "dispatchStatus": "dispatched",
+              "outcome": null,
+              "outcomeBasis": null,
+              "isUncertain": false,
+              "neverDispatchedCode": null,
+              "neverDispatchedStage": null,
+              "reconciliationResult": null,
+              "acknowledged": false,
+              "ownerGeneration": 4
+            }
+          },
+          {
+            "order": "submit-first",
+            "delayMs": 8,
+            "effectReached": true,
+            "handoffAfterWorkflow": false,
+            "workflow": {
+              "rejection": "stale-owner-generation",
+              "message": "stale-owner-generation: owner generation is no longer current"
+            },
+            "handoffError": null,
+            "handoffGeneration": 6,
+            "handoffDisclosed": {
+              "dispatchStatus": "dispatched",
+              "outcome": null,
+              "outcomeBasis": null,
+              "isUncertain": false,
+              "neverDispatchedCode": null,
+              "neverDispatchedStage": null,
+              "reconciliationResult": null,
+              "acknowledged": false,
+              "ownerGeneration": 5
+            }
+          },
+          {
+            "order": "submit-first",
+            "delayMs": 30,
+            "effectReached": true,
+            "handoffAfterWorkflow": false,
+            "workflow": {
+              "rejection": "stale-owner-generation",
+              "message": "stale-owner-generation: owner generation is no longer current"
+            },
+            "handoffError": null,
+            "handoffGeneration": 7,
+            "handoffDisclosed": {
+              "dispatchStatus": "dispatched",
+              "outcome": null,
+              "outcomeBasis": null,
+              "isUncertain": false,
+              "neverDispatchedCode": null,
+              "neverDispatchedStage": null,
+              "reconciliationResult": null,
+              "acknowledged": false,
+              "ownerGeneration": 6
+            }
+          }
+        ]
+      },
+      "actionRefs": {
+        "race-0": "q76-r1-open-0",
+        "race-1": "q76-r2-open-0",
+        "race-2": "q76-r3-open-0",
+        "race-3": "q76-r4-open-0",
+        "race-4": "q76-r5-open-0",
+        "race-5": "q76-r6-open-0"
+      },
+      "inspections": [
+        {
+          "processCount": 8,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/handoff-races-effect/research/playwright",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "handoff-races-effect",
+      "workflow": "research",
+      "adapter": "cdp",
+      "token": "q77",
+      "origin": "http://127.0.0.1:39191",
+      "startedAt": "2026-10-15T12:45:17.948Z",
+      "durationMs": 1571,
+      "hostOpens": 1,
+      "steps": {
+        "race": [
+          {
+            "order": "handoff-first",
+            "delayMs": 0,
+            "effectReached": true,
+            "handoffAfterWorkflow": false,
+            "workflow": {
+              "rejection": "stale-owner-generation",
+              "message": "stale-owner-generation: owner generation is no longer current"
+            },
+            "handoffError": null,
+            "handoffGeneration": 2,
+            "handoffDisclosed": null
+          },
+          {
+            "order": "submit-first",
+            "delayMs": 0,
+            "effectReached": true,
+            "handoffAfterWorkflow": false,
+            "workflow": {
+              "status": "stopped",
+              "findingTitles": [],
+              "skipped": 0
+            },
+            "handoffError": null,
+            "handoffGeneration": 3,
+            "handoffDisclosed": {
+              "dispatchStatus": "never-dispatched",
+              "outcome": null,
+              "outcomeBasis": null,
+              "isUncertain": false,
+              "neverDispatchedCode": "stale-owner-generation",
+              "neverDispatchedStage": "handoff",
+              "reconciliationResult": null,
+              "acknowledged": false,
+              "ownerGeneration": 2
+            }
+          },
+          {
+            "order": "at-dispatch-start",
+            "delayMs": 0,
+            "effectReached": true,
+            "handoffAfterWorkflow": false,
+            "workflow": {
+              "rejection": "stale-owner-generation",
+              "message": "stale-owner-generation: owner generation is no longer current"
+            },
+            "handoffError": null,
+            "handoffGeneration": 4,
+            "handoffDisclosed": {
+              "dispatchStatus": "dispatched",
+              "outcome": null,
+              "outcomeBasis": null,
+              "isUncertain": false,
+              "neverDispatchedCode": null,
+              "neverDispatchedStage": null,
+              "reconciliationResult": null,
+              "acknowledged": false,
+              "ownerGeneration": 3
+            }
+          },
+          {
+            "order": "submit-first",
+            "delayMs": 2,
+            "effectReached": true,
+            "handoffAfterWorkflow": false,
+            "workflow": {
+              "rejection": "stale-owner-generation",
+              "message": "stale-owner-generation: owner generation is no longer current"
+            },
+            "handoffError": null,
+            "handoffGeneration": 5,
+            "handoffDisclosed": {
+              "dispatchStatus": "dispatched",
+              "outcome": null,
+              "outcomeBasis": null,
+              "isUncertain": false,
+              "neverDispatchedCode": null,
+              "neverDispatchedStage": null,
+              "reconciliationResult": null,
+              "acknowledged": false,
+              "ownerGeneration": 4
+            }
+          },
+          {
+            "order": "submit-first",
+            "delayMs": 8,
+            "effectReached": true,
+            "handoffAfterWorkflow": false,
+            "workflow": {
+              "rejection": "stale-owner-generation",
+              "message": "stale-owner-generation: owner generation is no longer current"
+            },
+            "handoffError": null,
+            "handoffGeneration": 6,
+            "handoffDisclosed": {
+              "dispatchStatus": "dispatched",
+              "outcome": null,
+              "outcomeBasis": null,
+              "isUncertain": false,
+              "neverDispatchedCode": null,
+              "neverDispatchedStage": null,
+              "reconciliationResult": null,
+              "acknowledged": false,
+              "ownerGeneration": 5
+            }
+          },
+          {
+            "order": "submit-first",
+            "delayMs": 30,
+            "effectReached": true,
+            "handoffAfterWorkflow": false,
+            "workflow": {
+              "rejection": "stale-owner-generation",
+              "message": "stale-owner-generation: owner generation is no longer current"
+            },
+            "handoffError": null,
+            "handoffGeneration": 7,
+            "handoffDisclosed": {
+              "dispatchStatus": "dispatched",
+              "outcome": "completed",
+              "outcomeBasis": "completion-condition",
+              "isUncertain": false,
+              "neverDispatchedCode": null,
+              "neverDispatchedStage": null,
+              "reconciliationResult": null,
+              "acknowledged": false,
+              "ownerGeneration": 6
+            }
+          }
+        ]
+      },
+      "actionRefs": {
+        "race-0": "q77-r1-open-0",
+        "race-1": "q77-r2-open-0",
+        "race-2": "q77-r3-open-0",
+        "race-3": "q77-r4-open-0",
+        "race-4": "q77-r5-open-0",
+        "race-5": "q77-r6-open-0"
+      },
+      "inspections": [
+        {
+          "processCount": 11,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/handoff-races-effect/research/cdp",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "handoff-races-effect",
+      "workflow": "form",
+      "adapter": "playwright",
+      "token": "q78",
+      "origin": "http://127.0.0.1:35811",
+      "startedAt": "2026-10-15T12:45:19.520Z",
+      "durationMs": 1672,
+      "hostOpens": 1,
+      "steps": {
+        "race": [
+          {
+            "order": "handoff-first",
+            "delayMs": 0,
+            "effectReached": true,
+            "handoffAfterWorkflow": false,
+            "workflow": {
+              "rejection": "stale-owner-generation",
+              "message": "stale-owner-generation: owner generation is no longer current"
+            },
+            "handoffError": null,
+            "handoffGeneration": 2,
+            "handoffDisclosed": null
+          },
+          {
+            "order": "submit-first",
+            "delayMs": 0,
+            "effectReached": true,
+            "handoffAfterWorkflow": false,
+            "workflow": {
+              "status": "never-dispatched",
+              "recovered": null
+            },
+            "handoffError": null,
+            "handoffGeneration": 3,
+            "handoffDisclosed": {
+              "dispatchStatus": "never-dispatched",
+              "outcome": null,
+              "outcomeBasis": null,
+              "isUncertain": false,
+              "neverDispatchedCode": "stale-owner-generation",
+              "neverDispatchedStage": "handoff",
+              "reconciliationResult": null,
+              "acknowledged": false,
+              "ownerGeneration": 2
+            }
+          },
+          {
+            "order": "at-dispatch-start",
+            "delayMs": 0,
+            "effectReached": true,
+            "handoffAfterWorkflow": false,
+            "workflow": {
+              "status": "completed",
+              "recovered": null
+            },
+            "handoffError": null,
+            "handoffGeneration": 4,
+            "handoffDisclosed": {
+              "dispatchStatus": "dispatched",
+              "outcome": null,
+              "outcomeBasis": null,
+              "isUncertain": false,
+              "neverDispatchedCode": null,
+              "neverDispatchedStage": null,
+              "reconciliationResult": null,
+              "acknowledged": false,
+              "ownerGeneration": 3
+            }
+          },
+          {
+            "order": "submit-first",
+            "delayMs": 2,
+            "effectReached": true,
+            "handoffAfterWorkflow": false,
+            "workflow": {
+              "status": "completed",
+              "recovered": null
+            },
+            "handoffError": null,
+            "handoffGeneration": 5,
+            "handoffDisclosed": {
+              "dispatchStatus": "dispatched",
+              "outcome": null,
+              "outcomeBasis": null,
+              "isUncertain": false,
+              "neverDispatchedCode": null,
+              "neverDispatchedStage": null,
+              "reconciliationResult": null,
+              "acknowledged": false,
+              "ownerGeneration": 4
+            }
+          },
+          {
+            "order": "submit-first",
+            "delayMs": 8,
+            "effectReached": true,
+            "handoffAfterWorkflow": false,
+            "workflow": {
+              "status": "completed",
+              "recovered": null
+            },
+            "handoffError": null,
+            "handoffGeneration": 6,
+            "handoffDisclosed": {
+              "dispatchStatus": "dispatched",
+              "outcome": null,
+              "outcomeBasis": null,
+              "isUncertain": false,
+              "neverDispatchedCode": null,
+              "neverDispatchedStage": null,
+              "reconciliationResult": null,
+              "acknowledged": false,
+              "ownerGeneration": 5
+            }
+          },
+          {
+            "order": "submit-first",
+            "delayMs": 30,
+            "effectReached": true,
+            "handoffAfterWorkflow": false,
+            "workflow": {
+              "status": "completed",
+              "recovered": null
+            },
+            "handoffError": null,
+            "handoffGeneration": 7,
+            "handoffDisclosed": {
+              "dispatchStatus": "dispatched",
+              "outcome": null,
+              "outcomeBasis": null,
+              "isUncertain": false,
+              "neverDispatchedCode": null,
+              "neverDispatchedStage": null,
+              "reconciliationResult": null,
+              "acknowledged": false,
+              "ownerGeneration": 6
+            }
+          }
+        ]
+      },
+      "actionRefs": {
+        "race-0": "q78-r1-submit",
+        "race-1": "q78-r2-submit",
+        "race-2": "q78-r3-submit",
+        "race-3": "q78-r4-submit",
+        "race-4": "q78-r5-submit",
+        "race-5": "q78-r6-submit"
+      },
+      "inspections": [
+        {
+          "processCount": 8,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/handoff-races-effect/form/playwright",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "handoff-races-effect",
+      "workflow": "form",
+      "adapter": "cdp",
+      "token": "q79",
+      "origin": "http://127.0.0.1:46409",
+      "startedAt": "2026-10-15T12:45:21.193Z",
+      "durationMs": 1586,
+      "hostOpens": 1,
+      "steps": {
+        "race": [
+          {
+            "order": "handoff-first",
+            "delayMs": 0,
+            "effectReached": true,
+            "handoffAfterWorkflow": false,
+            "workflow": {
+              "rejection": "stale-owner-generation",
+              "message": "stale-owner-generation: owner generation is no longer current"
+            },
+            "handoffError": null,
+            "handoffGeneration": 2,
+            "handoffDisclosed": null
+          },
+          {
+            "order": "submit-first",
+            "delayMs": 0,
+            "effectReached": true,
+            "handoffAfterWorkflow": false,
+            "workflow": {
+              "status": "never-dispatched",
+              "recovered": null
+            },
+            "handoffError": null,
+            "handoffGeneration": 3,
+            "handoffDisclosed": {
+              "dispatchStatus": "never-dispatched",
+              "outcome": null,
+              "outcomeBasis": null,
+              "isUncertain": false,
+              "neverDispatchedCode": "stale-owner-generation",
+              "neverDispatchedStage": "handoff",
+              "reconciliationResult": null,
+              "acknowledged": false,
+              "ownerGeneration": 2
+            }
+          },
+          {
+            "order": "at-dispatch-start",
+            "delayMs": 0,
+            "effectReached": true,
+            "handoffAfterWorkflow": false,
+            "workflow": {
+              "status": "completed",
+              "recovered": null
+            },
+            "handoffError": null,
+            "handoffGeneration": 4,
+            "handoffDisclosed": {
+              "dispatchStatus": "dispatched",
+              "outcome": null,
+              "outcomeBasis": null,
+              "isUncertain": false,
+              "neverDispatchedCode": null,
+              "neverDispatchedStage": null,
+              "reconciliationResult": null,
+              "acknowledged": false,
+              "ownerGeneration": 3
+            }
+          },
+          {
+            "order": "submit-first",
+            "delayMs": 2,
+            "effectReached": true,
+            "handoffAfterWorkflow": false,
+            "workflow": {
+              "status": "completed",
+              "recovered": null
+            },
+            "handoffError": null,
+            "handoffGeneration": 5,
+            "handoffDisclosed": {
+              "dispatchStatus": "dispatched",
+              "outcome": null,
+              "outcomeBasis": null,
+              "isUncertain": false,
+              "neverDispatchedCode": null,
+              "neverDispatchedStage": null,
+              "reconciliationResult": null,
+              "acknowledged": false,
+              "ownerGeneration": 4
+            }
+          },
+          {
+            "order": "submit-first",
+            "delayMs": 8,
+            "effectReached": true,
+            "handoffAfterWorkflow": false,
+            "workflow": {
+              "status": "completed",
+              "recovered": null
+            },
+            "handoffError": null,
+            "handoffGeneration": 6,
+            "handoffDisclosed": {
+              "dispatchStatus": "dispatched",
+              "outcome": null,
+              "outcomeBasis": null,
+              "isUncertain": false,
+              "neverDispatchedCode": null,
+              "neverDispatchedStage": null,
+              "reconciliationResult": null,
+              "acknowledged": false,
+              "ownerGeneration": 5
+            }
+          },
+          {
+            "order": "submit-first",
+            "delayMs": 30,
+            "effectReached": true,
+            "handoffAfterWorkflow": false,
+            "workflow": {
+              "status": "completed",
+              "recovered": null
+            },
+            "handoffError": null,
+            "handoffGeneration": 7,
+            "handoffDisclosed": {
+              "dispatchStatus": "dispatched",
+              "outcome": null,
+              "outcomeBasis": null,
+              "isUncertain": false,
+              "neverDispatchedCode": null,
+              "neverDispatchedStage": null,
+              "reconciliationResult": null,
+              "acknowledged": false,
+              "ownerGeneration": 6
+            }
+          }
+        ]
+      },
+      "actionRefs": {
+        "race-0": "q79-r1-submit",
+        "race-1": "q79-r2-submit",
+        "race-2": "q79-r3-submit",
+        "race-3": "q79-r4-submit",
+        "race-4": "q79-r5-submit",
+        "race-5": "q79-r6-submit"
+      },
+      "inspections": [
+        {
+          "processCount": 11,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/handoff-races-effect/form/cdp",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "handoff-races-effect",
+      "workflow": "export",
+      "adapter": "playwright",
+      "token": "q80",
+      "origin": "http://127.0.0.1:44821",
+      "startedAt": "2026-10-15T12:45:22.780Z",
+      "durationMs": 1729,
+      "hostOpens": 1,
+      "steps": {
+        "race": [
+          {
+            "order": "handoff-first",
+            "delayMs": 0,
+            "effectReached": true,
+            "handoffAfterWorkflow": false,
+            "workflow": {
+              "rejection": "stale-owner-generation",
+              "message": "stale-owner-generation: owner generation is no longer current"
+            },
+            "handoffError": null,
+            "handoffGeneration": 2,
+            "handoffDisclosed": null
+          },
+          {
+            "order": "submit-first",
+            "delayMs": 0,
+            "effectReached": true,
+            "handoffAfterWorkflow": false,
+            "workflow": {
+              "status": "never-dispatched",
+              "artifactSha256": null,
+              "recovered": null
+            },
+            "handoffError": null,
+            "handoffGeneration": 3,
+            "handoffDisclosed": {
+              "dispatchStatus": "never-dispatched",
+              "outcome": null,
+              "outcomeBasis": null,
+              "isUncertain": false,
+              "neverDispatchedCode": "stale-owner-generation",
+              "neverDispatchedStage": "handoff",
+              "reconciliationResult": null,
+              "acknowledged": false,
+              "ownerGeneration": 2
+            }
+          },
+          {
+            "order": "at-dispatch-start",
+            "delayMs": 0,
+            "effectReached": true,
+            "handoffAfterWorkflow": false,
+            "workflow": {
+              "status": "completed",
+              "artifactSha256": "98e79f8c6f16f49f82a7b94c42fc4ca04944cf7dddde39078df92522d5428146",
+              "recovered": null
+            },
+            "handoffError": null,
+            "handoffGeneration": 4,
+            "handoffDisclosed": {
+              "dispatchStatus": "dispatched",
+              "outcome": null,
+              "outcomeBasis": null,
+              "isUncertain": false,
+              "neverDispatchedCode": null,
+              "neverDispatchedStage": null,
+              "reconciliationResult": null,
+              "acknowledged": false,
+              "ownerGeneration": 3
+            }
+          },
+          {
+            "order": "submit-first",
+            "delayMs": 2,
+            "effectReached": true,
+            "handoffAfterWorkflow": false,
+            "workflow": {
+              "status": "completed",
+              "artifactSha256": "98e79f8c6f16f49f82a7b94c42fc4ca04944cf7dddde39078df92522d5428146",
+              "recovered": null
+            },
+            "handoffError": null,
+            "handoffGeneration": 5,
+            "handoffDisclosed": {
+              "dispatchStatus": "dispatched",
+              "outcome": null,
+              "outcomeBasis": null,
+              "isUncertain": false,
+              "neverDispatchedCode": null,
+              "neverDispatchedStage": null,
+              "reconciliationResult": null,
+              "acknowledged": false,
+              "ownerGeneration": 4
+            }
+          },
+          {
+            "order": "submit-first",
+            "delayMs": 8,
+            "effectReached": true,
+            "handoffAfterWorkflow": false,
+            "workflow": {
+              "status": "completed",
+              "artifactSha256": "98e79f8c6f16f49f82a7b94c42fc4ca04944cf7dddde39078df92522d5428146",
+              "recovered": null
+            },
+            "handoffError": null,
+            "handoffGeneration": 6,
+            "handoffDisclosed": {
+              "dispatchStatus": "dispatched",
+              "outcome": null,
+              "outcomeBasis": null,
+              "isUncertain": false,
+              "neverDispatchedCode": null,
+              "neverDispatchedStage": null,
+              "reconciliationResult": null,
+              "acknowledged": false,
+              "ownerGeneration": 5
+            }
+          },
+          {
+            "order": "submit-first",
+            "delayMs": 30,
+            "effectReached": true,
+            "handoffAfterWorkflow": false,
+            "workflow": {
+              "status": "completed",
+              "artifactSha256": "98e79f8c6f16f49f82a7b94c42fc4ca04944cf7dddde39078df92522d5428146",
+              "recovered": null
+            },
+            "handoffError": null,
+            "handoffGeneration": 7,
+            "handoffDisclosed": {
+              "dispatchStatus": "dispatched",
+              "outcome": null,
+              "outcomeBasis": null,
+              "isUncertain": false,
+              "neverDispatchedCode": null,
+              "neverDispatchedStage": null,
+              "reconciliationResult": null,
+              "acknowledged": false,
+              "ownerGeneration": 6
+            }
+          }
+        ]
+      },
+      "actionRefs": {
+        "race-0": "q80-r1-download",
+        "race-1": "q80-r2-download",
+        "race-2": "q80-r3-download",
+        "race-3": "q80-r4-download",
+        "race-4": "q80-r5-download",
+        "race-5": "q80-r6-download"
+      },
+      "inspections": [
+        {
+          "processCount": 8,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/handoff-races-effect/export/playwright",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "handoff-races-effect",
+      "workflow": "export",
+      "adapter": "cdp",
+      "token": "q81",
+      "origin": "http://127.0.0.1:34723",
+      "startedAt": "2026-10-15T12:45:24.510Z",
+      "durationMs": 1406,
+      "hostOpens": 1,
+      "steps": {
+        "race": [
+          {
+            "order": "handoff-first",
+            "delayMs": 0,
+            "effectReached": true,
+            "handoffAfterWorkflow": false,
+            "workflow": {
+              "rejection": "stale-owner-generation",
+              "message": "stale-owner-generation: owner generation is no longer current"
+            },
+            "handoffError": null,
+            "handoffGeneration": 2,
+            "handoffDisclosed": null
+          },
+          {
+            "order": "submit-first",
+            "delayMs": 0,
+            "effectReached": true,
+            "handoffAfterWorkflow": false,
+            "workflow": {
+              "status": "never-dispatched",
+              "artifactSha256": null,
+              "recovered": null
+            },
+            "handoffError": null,
+            "handoffGeneration": 3,
+            "handoffDisclosed": {
+              "dispatchStatus": "never-dispatched",
+              "outcome": null,
+              "outcomeBasis": null,
+              "isUncertain": false,
+              "neverDispatchedCode": "stale-owner-generation",
+              "neverDispatchedStage": "handoff",
+              "reconciliationResult": null,
+              "acknowledged": false,
+              "ownerGeneration": 2
+            }
+          },
+          {
+            "order": "at-dispatch-start",
+            "delayMs": 0,
+            "effectReached": true,
+            "handoffAfterWorkflow": false,
+            "workflow": {
+              "status": "completed",
+              "artifactSha256": "98e79f8c6f16f49f82a7b94c42fc4ca04944cf7dddde39078df92522d5428146",
+              "recovered": null
+            },
+            "handoffError": null,
+            "handoffGeneration": 4,
+            "handoffDisclosed": {
+              "dispatchStatus": "dispatched",
+              "outcome": null,
+              "outcomeBasis": null,
+              "isUncertain": false,
+              "neverDispatchedCode": null,
+              "neverDispatchedStage": null,
+              "reconciliationResult": null,
+              "acknowledged": false,
+              "ownerGeneration": 3
+            }
+          },
+          {
+            "order": "submit-first",
+            "delayMs": 2,
+            "effectReached": true,
+            "handoffAfterWorkflow": false,
+            "workflow": {
+              "status": "completed",
+              "artifactSha256": "98e79f8c6f16f49f82a7b94c42fc4ca04944cf7dddde39078df92522d5428146",
+              "recovered": null
+            },
+            "handoffError": null,
+            "handoffGeneration": 5,
+            "handoffDisclosed": {
+              "dispatchStatus": "dispatched",
+              "outcome": null,
+              "outcomeBasis": null,
+              "isUncertain": false,
+              "neverDispatchedCode": null,
+              "neverDispatchedStage": null,
+              "reconciliationResult": null,
+              "acknowledged": false,
+              "ownerGeneration": 4
+            }
+          },
+          {
+            "order": "submit-first",
+            "delayMs": 8,
+            "effectReached": true,
+            "handoffAfterWorkflow": false,
+            "workflow": {
+              "status": "completed",
+              "artifactSha256": "98e79f8c6f16f49f82a7b94c42fc4ca04944cf7dddde39078df92522d5428146",
+              "recovered": null
+            },
+            "handoffError": null,
+            "handoffGeneration": 6,
+            "handoffDisclosed": {
+              "dispatchStatus": "dispatched",
+              "outcome": null,
+              "outcomeBasis": null,
+              "isUncertain": false,
+              "neverDispatchedCode": null,
+              "neverDispatchedStage": null,
+              "reconciliationResult": null,
+              "acknowledged": false,
+              "ownerGeneration": 5
+            }
+          },
+          {
+            "order": "submit-first",
+            "delayMs": 30,
+            "effectReached": true,
+            "handoffAfterWorkflow": false,
+            "workflow": {
+              "status": "completed",
+              "artifactSha256": "98e79f8c6f16f49f82a7b94c42fc4ca04944cf7dddde39078df92522d5428146",
+              "recovered": null
+            },
+            "handoffError": null,
+            "handoffGeneration": 7,
+            "handoffDisclosed": {
+              "dispatchStatus": "dispatched",
+              "outcome": null,
+              "outcomeBasis": null,
+              "isUncertain": false,
+              "neverDispatchedCode": null,
+              "neverDispatchedStage": null,
+              "reconciliationResult": null,
+              "acknowledged": false,
+              "ownerGeneration": 6
+            }
+          }
+        ]
+      },
+      "actionRefs": {
+        "race-0": "q81-r1-download",
+        "race-1": "q81-r2-download",
+        "race-2": "q81-r3-download",
+        "race-3": "q81-r4-download",
+        "race-4": "q81-r5-download",
+        "race-5": "q81-r6-download"
+      },
+      "inspections": [
+        {
+          "processCount": 11,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/handoff-races-effect/export/cdp",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "mutation-surface",
+      "workflow": "research",
+      "adapter": "playwright",
+      "token": "q82",
+      "origin": "http://127.0.0.1:44919",
+      "startedAt": "2026-10-15T12:45:25.916Z",
+      "durationMs": 1345,
+      "hostOpens": 1,
+      "steps": {
+        "workflow": {
+          "status": "completed",
+          "findingTitles": [
+            "Vulkan memory model",
+            "Vulkan synchronization"
+          ],
+          "skipped": 1
+        },
+        "surface": {
+          "serviceOwnKeys": [],
+          "serviceExposesAdapter": false,
+          "sessionKeys": [
+            "acknowledge",
+            "act",
+            "action",
+            "identity",
+            "observe",
+            "outstanding",
+            "reconcile",
+            "submit"
+          ]
+        },
+        "endpoints": {
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        },
+        "unsupportedKind": {
+          "rejection": "unsupported-action-kind",
+          "message": "unsupported-action-kind: kind evaluate-script"
+        }
+      },
+      "actionRefs": {
+        "effect": "q82-r1-open-0"
+      },
+      "inspections": [
+        {
+          "processCount": 8,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/mutation-surface/research/playwright",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "mutation-surface",
+      "workflow": "research",
+      "adapter": "cdp",
+      "token": "q83",
+      "origin": "http://127.0.0.1:45459",
+      "startedAt": "2026-10-15T12:45:27.261Z",
+      "durationMs": 1360,
+      "hostOpens": 1,
+      "steps": {
+        "workflow": {
+          "status": "completed",
+          "findingTitles": [
+            "Vulkan memory model",
+            "Vulkan synchronization"
+          ],
+          "skipped": 1
+        },
+        "surface": {
+          "serviceOwnKeys": [],
+          "serviceExposesAdapter": false,
+          "sessionKeys": [
+            "acknowledge",
+            "act",
+            "action",
+            "identity",
+            "observe",
+            "outstanding",
+            "reconcile",
+            "submit"
+          ]
+        },
+        "endpoints": {
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        },
+        "unsupportedKind": {
+          "rejection": "unsupported-action-kind",
+          "message": "unsupported-action-kind: kind evaluate-script"
+        }
+      },
+      "actionRefs": {
+        "effect": "q83-r1-open-0"
+      },
+      "inspections": [
+        {
+          "processCount": 11,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/mutation-surface/research/cdp",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "mutation-surface",
+      "workflow": "form",
+      "adapter": "playwright",
+      "token": "q84",
+      "origin": "http://127.0.0.1:34153",
+      "startedAt": "2026-10-15T12:45:28.622Z",
+      "durationMs": 1530,
+      "hostOpens": 1,
+      "steps": {
+        "workflow": {
+          "status": "completed",
+          "recovered": null
+        },
+        "surface": {
+          "serviceOwnKeys": [],
+          "serviceExposesAdapter": false,
+          "sessionKeys": [
+            "acknowledge",
+            "act",
+            "action",
+            "identity",
+            "observe",
+            "outstanding",
+            "reconcile",
+            "submit"
+          ]
+        },
+        "endpoints": {
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        },
+        "unsupportedKind": {
+          "rejection": "unsupported-action-kind",
+          "message": "unsupported-action-kind: kind evaluate-script"
+        }
+      },
+      "actionRefs": {
+        "effect": "q84-r1-submit"
+      },
+      "inspections": [
+        {
+          "processCount": 8,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/mutation-surface/form/playwright",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "mutation-surface",
+      "workflow": "form",
+      "adapter": "cdp",
+      "token": "q85",
+      "origin": "http://127.0.0.1:44397",
+      "startedAt": "2026-10-15T12:45:30.153Z",
+      "durationMs": 1103,
+      "hostOpens": 1,
+      "steps": {
+        "workflow": {
+          "status": "completed",
+          "recovered": null
+        },
+        "surface": {
+          "serviceOwnKeys": [],
+          "serviceExposesAdapter": false,
+          "sessionKeys": [
+            "acknowledge",
+            "act",
+            "action",
+            "identity",
+            "observe",
+            "outstanding",
+            "reconcile",
+            "submit"
+          ]
+        },
+        "endpoints": {
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        },
+        "unsupportedKind": {
+          "rejection": "unsupported-action-kind",
+          "message": "unsupported-action-kind: kind evaluate-script"
+        }
+      },
+      "actionRefs": {
+        "effect": "q85-r1-submit"
+      },
+      "inspections": [
+        {
+          "processCount": 11,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/mutation-surface/form/cdp",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "mutation-surface",
+      "workflow": "export",
+      "adapter": "playwright",
+      "token": "q86",
+      "origin": "http://127.0.0.1:42893",
+      "startedAt": "2026-10-15T12:45:31.257Z",
+      "durationMs": 1141,
+      "hostOpens": 1,
+      "steps": {
+        "workflow": {
+          "status": "completed",
+          "artifactSha256": "98e79f8c6f16f49f82a7b94c42fc4ca04944cf7dddde39078df92522d5428146",
+          "recovered": null
+        },
+        "surface": {
+          "serviceOwnKeys": [],
+          "serviceExposesAdapter": false,
+          "sessionKeys": [
+            "acknowledge",
+            "act",
+            "action",
+            "identity",
+            "observe",
+            "outstanding",
+            "reconcile",
+            "submit"
+          ]
+        },
+        "endpoints": {
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        },
+        "unsupportedKind": {
+          "rejection": "unsupported-action-kind",
+          "message": "unsupported-action-kind: kind evaluate-script"
+        }
+      },
+      "actionRefs": {
+        "effect": "q86-r1-download"
+      },
+      "inspections": [
+        {
+          "processCount": 8,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/mutation-surface/export/playwright",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "mutation-surface",
+      "workflow": "export",
+      "adapter": "cdp",
+      "token": "q87",
+      "origin": "http://127.0.0.1:43187",
+      "startedAt": "2026-10-15T12:45:32.399Z",
+      "durationMs": 1086,
+      "hostOpens": 1,
+      "steps": {
+        "workflow": {
+          "status": "completed",
+          "artifactSha256": "98e79f8c6f16f49f82a7b94c42fc4ca04944cf7dddde39078df92522d5428146",
+          "recovered": null
+        },
+        "surface": {
+          "serviceOwnKeys": [],
+          "serviceExposesAdapter": false,
+          "sessionKeys": [
+            "acknowledge",
+            "act",
+            "action",
+            "identity",
+            "observe",
+            "outstanding",
+            "reconcile",
+            "submit"
+          ]
+        },
+        "endpoints": {
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        },
+        "unsupportedKind": {
+          "rejection": "unsupported-action-kind",
+          "message": "unsupported-action-kind: kind evaluate-script"
+        }
+      },
+      "actionRefs": {
+        "effect": "q87-r1-download"
+      },
+      "inspections": [
+        {
+          "processCount": 13,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/mutation-surface/export/cdp",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "external-idempotency",
+      "workflow": "form",
+      "adapter": "playwright",
+      "token": "q88",
+      "origin": "http://127.0.0.1:45971",
+      "startedAt": "2026-10-15T12:45:33.485Z",
+      "durationMs": 2490,
+      "hostOpens": 2,
+      "steps": {
+        "localActionIdKey": {
+          "rejection": "invalid-idempotency-key",
+          "message": "invalid-idempotency-key: a local action id is not an external idempotency key"
+        },
+        "crash": {
+          "signal": "SIGKILL"
+        },
+        "afterRestart": {
+          "dispatchStatus": "dispatched",
+          "outcome": "unknown",
+          "outcomeBasis": "restart-after-dispatch-start",
+          "isUncertain": true,
+          "neverDispatchedCode": null,
+          "neverDispatchedStage": null,
+          "reconciliationResult": null,
+          "acknowledged": false,
+          "ownerGeneration": 1
+        },
+        "reconcile": {
+          "dispatchStatus": "dispatched",
+          "outcome": "unknown",
+          "outcomeBasis": "restart-after-dispatch-start",
+          "isUncertain": true,
+          "neverDispatchedCode": null,
+          "neverDispatchedStage": null,
+          "reconciliationResult": "idempotent-resubmission-permitted",
+          "acknowledged": false,
+          "ownerGeneration": 1
+        },
+        "keylessResubmit": {
+          "rejection": "resubmission-not-permitted",
+          "message": "resubmission-not-permitted: resubmission must reuse the external idempotency key"
+        },
+        "keyedResubmit": {
+          "status": "completed",
+          "recovered": null
+        }
+      },
+      "actionRefs": {
+        "effect": "q88-r2-submit",
+        "retryEffect": "q88-r4-submit"
+      },
+      "inspections": [
+        {
+          "processCount": 8,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/external-idempotency/form/playwright",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "external-idempotency",
+      "workflow": "form",
+      "adapter": "cdp",
+      "token": "q89",
+      "origin": "http://127.0.0.1:46181",
+      "startedAt": "2026-10-15T12:45:35.976Z",
+      "durationMs": 1722,
+      "hostOpens": 2,
+      "steps": {
+        "localActionIdKey": {
+          "rejection": "invalid-idempotency-key",
+          "message": "invalid-idempotency-key: a local action id is not an external idempotency key"
+        },
+        "crash": {
+          "signal": "SIGKILL"
+        },
+        "afterRestart": {
+          "dispatchStatus": "dispatched",
+          "outcome": "unknown",
+          "outcomeBasis": "restart-after-dispatch-start",
+          "isUncertain": true,
+          "neverDispatchedCode": null,
+          "neverDispatchedStage": null,
+          "reconciliationResult": null,
+          "acknowledged": false,
+          "ownerGeneration": 1
+        },
+        "reconcile": {
+          "dispatchStatus": "dispatched",
+          "outcome": "unknown",
+          "outcomeBasis": "restart-after-dispatch-start",
+          "isUncertain": true,
+          "neverDispatchedCode": null,
+          "neverDispatchedStage": null,
+          "reconciliationResult": "idempotent-resubmission-permitted",
+          "acknowledged": false,
+          "ownerGeneration": 1
+        },
+        "keylessResubmit": {
+          "rejection": "resubmission-not-permitted",
+          "message": "resubmission-not-permitted: resubmission must reuse the external idempotency key"
+        },
+        "keyedResubmit": {
+          "status": "completed",
+          "recovered": null
+        }
+      },
+      "actionRefs": {
+        "effect": "q89-r2-submit",
+        "retryEffect": "q89-r4-submit"
+      },
+      "inspections": [
+        {
+          "processCount": 9,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/external-idempotency/form/cdp",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "human-review",
+      "workflow": "form",
+      "adapter": "playwright",
+      "token": "q90",
+      "origin": "http://127.0.0.1:42535",
+      "startedAt": "2026-10-15T12:45:37.699Z",
+      "durationMs": 1897,
+      "hostOpens": 2,
+      "steps": {
+        "crash": {
+          "signal": "SIGKILL"
+        },
+        "handoff": {
+          "effect": {
+            "dispatchStatus": "dispatched",
+            "outcome": "unknown",
+            "outcomeBasis": "restart-after-dispatch-start",
+            "isUncertain": true,
+            "neverDispatchedCode": null,
+            "neverDispatchedStage": null,
+            "reconciliationResult": null,
+            "acknowledged": false,
+            "ownerGeneration": 1
+          }
+        },
+        "review": {
+          "dispatchStatus": "dispatched",
+          "outcome": "unknown",
+          "outcomeBasis": "restart-after-dispatch-start",
+          "isUncertain": true,
+          "neverDispatchedCode": null,
+          "neverDispatchedStage": null,
+          "reconciliationResult": "human-review-requested",
+          "acknowledged": false,
+          "ownerGeneration": 1
+        },
+        "resubmitDuringReview": {
+          "rejection": "effect-unresolved",
+          "message": "effect-unresolved: effect form:8842c34dd1b4271ad588f2d10b0ec772e0388550172d30417c38adfc3f11e2d2 has attempt q90-r1-submit"
+        },
+        "decision": {
+          "dispatchStatus": "dispatched",
+          "outcome": "unknown",
+          "outcomeBasis": "restart-after-dispatch-start",
+          "isUncertain": false,
+          "neverDispatchedCode": null,
+          "neverDispatchedStage": null,
+          "reconciliationResult": "effect-present",
+          "acknowledged": false,
+          "ownerGeneration": 1
+        },
+        "resubmitAfterDecision": {
+          "rejection": "effect-already-completed",
+          "message": "effect-already-completed: effect form:8842c34dd1b4271ad588f2d10b0ec772e0388550172d30417c38adfc3f11e2d2 has attempt q90-r1-submit"
+        }
+      },
+      "actionRefs": {
+        "effect": "q90-r1-submit"
+      },
+      "inspections": [
+        {
+          "processCount": 8,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/human-review/form/playwright",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "human-review",
+      "workflow": "form",
+      "adapter": "cdp",
+      "token": "q91",
+      "origin": "http://127.0.0.1:40577",
+      "startedAt": "2026-10-15T12:45:39.597Z",
+      "durationMs": 1621,
+      "hostOpens": 2,
+      "steps": {
+        "crash": {
+          "signal": "SIGKILL"
+        },
+        "handoff": {
+          "effect": {
+            "dispatchStatus": "dispatched",
+            "outcome": "unknown",
+            "outcomeBasis": "restart-after-dispatch-start",
+            "isUncertain": true,
+            "neverDispatchedCode": null,
+            "neverDispatchedStage": null,
+            "reconciliationResult": null,
+            "acknowledged": false,
+            "ownerGeneration": 1
+          }
+        },
+        "review": {
+          "dispatchStatus": "dispatched",
+          "outcome": "unknown",
+          "outcomeBasis": "restart-after-dispatch-start",
+          "isUncertain": true,
+          "neverDispatchedCode": null,
+          "neverDispatchedStage": null,
+          "reconciliationResult": "human-review-requested",
+          "acknowledged": false,
+          "ownerGeneration": 1
+        },
+        "resubmitDuringReview": {
+          "rejection": "effect-unresolved",
+          "message": "effect-unresolved: effect form:ac55b8f263afd4a99ebba2f4217293b873c99a20b6bb98c5a426a3b8f3f844b6 has attempt q91-r1-submit"
+        },
+        "decision": {
+          "dispatchStatus": "dispatched",
+          "outcome": "unknown",
+          "outcomeBasis": "restart-after-dispatch-start",
+          "isUncertain": false,
+          "neverDispatchedCode": null,
+          "neverDispatchedStage": null,
+          "reconciliationResult": "effect-present",
+          "acknowledged": false,
+          "ownerGeneration": 1
+        },
+        "resubmitAfterDecision": {
+          "rejection": "effect-already-completed",
+          "message": "effect-already-completed: effect form:ac55b8f263afd4a99ebba2f4217293b873c99a20b6bb98c5a426a3b8f3f844b6 has attempt q91-r1-submit"
+        }
+      },
+      "actionRefs": {
+        "effect": "q91-r1-submit"
+      },
+      "inspections": [
+        {
+          "processCount": 9,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/human-review/form/cdp",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "recovery-effect-present",
+      "workflow": "form",
+      "adapter": "playwright",
+      "token": "q92",
+      "origin": "http://127.0.0.1:44661",
+      "startedAt": "2026-10-15T12:45:41.219Z",
+      "durationMs": 1960,
+      "hostOpens": 2,
+      "steps": {
+        "crash": {
+          "signal": "SIGKILL"
+        },
+        "afterRestart": {
+          "dispatchStatus": "dispatched",
+          "outcome": "unknown",
+          "outcomeBasis": "restart-after-dispatch-start",
+          "isUncertain": true,
+          "neverDispatchedCode": null,
+          "neverDispatchedStage": null,
+          "reconciliationResult": null,
+          "acknowledged": false,
+          "ownerGeneration": 1
+        },
+        "recovery": {
+          "status": "completed",
+          "recovered": "application-state"
+        }
+      },
+      "actionRefs": {
+        "effect": "q92-r1-submit",
+        "resubmission": "q92-r1-resubmit-submit"
+      },
+      "inspections": [
+        {
+          "processCount": 8,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/recovery-effect-present/form/playwright",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "recovery-effect-present",
+      "workflow": "form",
+      "adapter": "cdp",
+      "token": "q93",
+      "origin": "http://127.0.0.1:44067",
+      "startedAt": "2026-10-15T12:45:43.180Z",
+      "durationMs": 1565,
+      "hostOpens": 2,
+      "steps": {
+        "crash": {
+          "signal": "SIGKILL"
+        },
+        "afterRestart": {
+          "dispatchStatus": "dispatched",
+          "outcome": "unknown",
+          "outcomeBasis": "restart-after-dispatch-start",
+          "isUncertain": true,
+          "neverDispatchedCode": null,
+          "neverDispatchedStage": null,
+          "reconciliationResult": null,
+          "acknowledged": false,
+          "ownerGeneration": 1
+        },
+        "recovery": {
+          "status": "completed",
+          "recovered": "application-state"
+        }
+      },
+      "actionRefs": {
+        "effect": "q93-r1-submit",
+        "resubmission": "q93-r1-resubmit-submit"
+      },
+      "inspections": [
+        {
+          "processCount": 9,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/recovery-effect-present/form/cdp",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "recovery-effect-absent",
+      "workflow": "form",
+      "adapter": "playwright",
+      "token": "q94",
+      "origin": "http://127.0.0.1:45149",
+      "startedAt": "2026-10-15T12:45:44.745Z",
+      "durationMs": 2118,
+      "hostOpens": 3,
+      "steps": {
+        "crash": {
+          "signal": "SIGKILL"
+        },
+        "afterRestart": {
+          "dispatchStatus": "dispatched",
+          "outcome": "unknown",
+          "outcomeBasis": "restart-after-dispatch-start",
+          "isUncertain": true,
+          "neverDispatchedCode": null,
+          "neverDispatchedStage": null,
+          "reconciliationResult": null,
+          "acknowledged": false,
+          "ownerGeneration": 1
+        },
+        "recovery": {
+          "status": "completed",
+          "recovered": "resubmitted-after-absence"
+        }
+      },
+      "actionRefs": {
+        "effect": "q94-r1-submit",
+        "resubmission": "q94-r1-resubmit-submit"
+      },
+      "inspections": [
+        {
+          "processCount": 8,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/recovery-effect-absent/form/playwright",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "recovery-effect-absent",
+      "workflow": "form",
+      "adapter": "cdp",
+      "token": "q95",
+      "origin": "http://127.0.0.1:39259",
+      "startedAt": "2026-10-15T12:45:46.863Z",
+      "durationMs": 2065,
+      "hostOpens": 3,
+      "steps": {
+        "crash": {
+          "signal": "SIGKILL"
+        },
+        "afterRestart": {
+          "dispatchStatus": "dispatched",
+          "outcome": "unknown",
+          "outcomeBasis": "restart-after-dispatch-start",
+          "isUncertain": true,
+          "neverDispatchedCode": null,
+          "neverDispatchedStage": null,
+          "reconciliationResult": null,
+          "acknowledged": false,
+          "ownerGeneration": 1
+        },
+        "recovery": {
+          "status": "completed",
+          "recovered": "resubmitted-after-absence"
+        }
+      },
+      "actionRefs": {
+        "effect": "q95-r1-submit",
+        "resubmission": "q95-r1-resubmit-submit"
+      },
+      "inspections": [
+        {
+          "processCount": 9,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/recovery-effect-absent/form/cdp",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "recovery-never-dispatched",
+      "workflow": "form",
+      "adapter": "playwright",
+      "token": "q96",
+      "origin": "http://127.0.0.1:39165",
+      "startedAt": "2026-10-15T12:45:48.929Z",
+      "durationMs": 2483,
+      "hostOpens": 3,
+      "steps": {
+        "crash": {
+          "signal": "SIGKILL"
+        },
+        "afterRestart": {
+          "dispatchStatus": "never-dispatched",
+          "outcome": null,
+          "outcomeBasis": null,
+          "isUncertain": false,
+          "neverDispatchedCode": "restart-invalidated-queue",
+          "neverDispatchedStage": "restart",
+          "reconciliationResult": null,
+          "acknowledged": false,
+          "ownerGeneration": 1
+        },
+        "recovery": {
+          "status": "completed",
+          "recovered": "resubmitted-never-dispatched"
+        }
+      },
+      "actionRefs": {
+        "effect": "q96-r1-submit",
+        "resubmission": "q96-r1-resubmit-submit"
+      },
+      "inspections": [
+        {
+          "processCount": 8,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/recovery-never-dispatched/form/playwright",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "recovery-never-dispatched",
+      "workflow": "form",
+      "adapter": "cdp",
+      "token": "q97",
+      "origin": "http://127.0.0.1:33875",
+      "startedAt": "2026-10-15T12:45:51.413Z",
+      "durationMs": 2259,
+      "hostOpens": 3,
+      "steps": {
+        "crash": {
+          "signal": "SIGKILL"
+        },
+        "afterRestart": {
+          "dispatchStatus": "never-dispatched",
+          "outcome": null,
+          "outcomeBasis": null,
+          "isUncertain": false,
+          "neverDispatchedCode": "restart-invalidated-queue",
+          "neverDispatchedStage": "restart",
+          "reconciliationResult": null,
+          "acknowledged": false,
+          "ownerGeneration": 1
+        },
+        "recovery": {
+          "status": "completed",
+          "recovered": "resubmitted-never-dispatched"
+        }
+      },
+      "actionRefs": {
+        "effect": "q97-r1-submit",
+        "resubmission": "q97-r1-resubmit-submit"
+      },
+      "inspections": [
+        {
+          "processCount": 9,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/recovery-never-dispatched/form/cdp",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "export-recovery-after-crash",
+      "workflow": "export",
+      "adapter": "playwright",
+      "token": "q98",
+      "origin": "http://127.0.0.1:43755",
+      "startedAt": "2026-10-15T12:45:53.673Z",
+      "durationMs": 2742,
+      "hostOpens": 2,
+      "steps": {
+        "crash": {
+          "signal": "SIGKILL"
+        },
+        "afterRestart": {
+          "dispatchStatus": "dispatched",
+          "outcome": "unknown",
+          "outcomeBasis": "restart-after-dispatch-start",
+          "isUncertain": true,
+          "neverDispatchedCode": null,
+          "neverDispatchedStage": null,
+          "reconciliationResult": null,
+          "acknowledged": false,
+          "ownerGeneration": 1
+        },
+        "recovery": {
+          "status": "completed",
+          "artifactSha256": "98e79f8c6f16f49f82a7b94c42fc4ca04944cf7dddde39078df92522d5428146",
+          "recovered": "rerun"
+        }
+      },
+      "actionRefs": {
+        "effect": "q98-r1-download",
+        "resubmission": "q98-r1-resume-download"
+      },
+      "inspections": [
+        {
+          "processCount": 8,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/export-recovery-after-crash/export/playwright",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "export-recovery-after-crash",
+      "workflow": "export",
+      "adapter": "cdp",
+      "token": "q99",
+      "origin": "http://127.0.0.1:44251",
+      "startedAt": "2026-10-15T12:45:56.416Z",
+      "durationMs": 2716,
+      "hostOpens": 2,
+      "steps": {
+        "crash": {
+          "signal": "SIGKILL"
+        },
+        "afterRestart": {
+          "dispatchStatus": "dispatched",
+          "outcome": "unknown",
+          "outcomeBasis": "restart-after-dispatch-start",
+          "isUncertain": true,
+          "neverDispatchedCode": null,
+          "neverDispatchedStage": null,
+          "reconciliationResult": null,
+          "acknowledged": false,
+          "ownerGeneration": 1
+        },
+        "recovery": {
+          "status": "completed",
+          "artifactSha256": "98e79f8c6f16f49f82a7b94c42fc4ca04944cf7dddde39078df92522d5428146",
+          "recovered": "rerun"
+        }
+      },
+      "actionRefs": {
+        "effect": "q99-r1-download",
+        "resubmission": "q99-r1-resume-download"
+      },
+      "inspections": [
+        {
+          "processCount": 11,
+          "executables": [
+            {
+              "path": "/opt/google/chrome/chrome",
+              "sha256": "163bebf7c62e813523c35b12f8cc59f158b2c428c539ec4a3b5142a6b3c65010",
+              "byteLength": 269765848,
+              "version": "Google Chrome 146.0.7680.177"
+            }
+          ],
+          "listeningTcpSockets": 0,
+          "devToolsActivePortFiles": 0
+        }
+      ],
+      "evidence": {
+        "directory": "runs/export-recovery-after-crash/export/cdp",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "authority-unavailable",
+      "workflow": "none",
+      "adapter": "playwright",
+      "token": "q100",
+      "origin": "http://127.0.0.1:34199",
+      "startedAt": "2026-10-15T12:45:59.133Z",
+      "durationMs": 2641,
+      "hostOpens": 1,
+      "steps": {
+        "lockedOpen": {
+          "rejection": "journal-locked",
+          "message": "journal-locked: journal held by a live process"
+        },
+        "corruptOpen": {
+          "rejection": "journal-corrupt",
+          "message": "journal-corrupt: /tmp/fawn-qualification-playwright-uxh9Px/state/journal.jsonl:3: hash mismatch"
+        }
+      },
+      "actionRefs": {},
+      "inspections": [],
+      "evidence": {
+        "directory": "runs/authority-unavailable/none/playwright",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl",
+        "corruptJournal": "corrupt-journal.jsonl"
+      },
+      "error": null
+    },
+    {
+      "caseId": "authority-unavailable",
+      "workflow": "none",
+      "adapter": "cdp",
+      "token": "q101",
+      "origin": "http://127.0.0.1:42233",
+      "startedAt": "2026-10-15T12:46:01.775Z",
+      "durationMs": 1845,
+      "hostOpens": 1,
+      "steps": {
+        "lockedOpen": {
+          "rejection": "journal-locked",
+          "message": "journal-locked: journal held by a live process"
+        },
+        "corruptOpen": {
+          "rejection": "journal-corrupt",
+          "message": "journal-corrupt: /tmp/fawn-qualification-cdp-fwiDpJ/state/journal.jsonl:3: hash mismatch"
+        }
+      },
+      "actionRefs": {},
+      "inspections": [],
+      "evidence": {
+        "directory": "runs/authority-unavailable/none/cdp",
+        "fixture": "fixture.json",
+        "journal": "journal.jsonl",
+        "corruptJournal": "corrupt-journal.jsonl"
+      },
+      "error": null
+    }
+  ]
+}
