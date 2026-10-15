@@ -1,5 +1,19 @@
 # Doe status: runtime backends and benchmarks
 
+## Roadmap proofs
+
+[Three proofs](../thesis.md#three-proofs) select current work; all are
+unestablished. Doe has promising execution evidence, not the final objective.
+- **Proof 1, current Doe against Dawn on the initial qualification target:**
+  the native and package rows in `reports/claim-index.json` predate current code
+  and need re-running and auditing; complete Doppler generation waits for an
+  uncontended GPU window (see the complete-generation campaign below).
+- **Proof 2, current Metal confirmation:** the Metal rows exist only as
+  historical ignored output, which does not count. Several upload rows exceed the
+  suspicious-speedup ratio without fairness audits, and the Node ONNX Runtime
+  row shows a tail loss. It needs an Apple Metal host; this workstation is Linux.
+- **Proof 3, integrated comparison:** see [the Fawn status](fawn-workspace.md).
+
 ## Doppler-driven Vulkan engineering
 
 The [benchmark guide](../../bench/README.md#choose-the-benchmark) routes

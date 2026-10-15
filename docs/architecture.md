@@ -125,8 +125,10 @@ names. This guide covers the GPU execution surfaces: DoeRuntime and the
 independently usable WGSL compiler. Either can earn adoption without requiring
 the other; their contributions need separate evidence.
 
-DoeRuntime engineering is focused on one correct, reproducible Doppler Node
-generation advantage over Dawn on Vulkan, then ONNX transfer. The native
+DoeRuntime engineering is focused on [proofs 1 and 2](thesis.md#three-proofs):
+current Doe against Dawn on Vulkan, ending in one correct, reproducible Doppler
+Node generation advantage, then a current Metal confirmation; ONNX transfer
+waits. The native
 installation front door and transfer target is the
 [ONNX Vulkan evaluation package](onnx-vulkan-installation.md), with bounded
 [execution and installation evidence](../reports/releases/20261009-onnx-vulkan-evaluation/README.md).

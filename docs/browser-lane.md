@@ -11,11 +11,11 @@ release qualification is not established. Its roadmap
 lives in `fawnWorkspace` in [the strategy projection](../config/doe-product-strategy.json);
 native runtime wins are not prerequisites.
 
-Chromium hooks and browser-runtime integration are added only when measured
-benefits justify their compatibility and maintenance costs.
-Browser replacement is an optional deeper capability. Its bounded
-Chromium milestone follows ordinary execution, independent framework integration,
-and binding application transfer. Preserve WebGPU behavior through validation and
+[Proof 3](thesis.md#three-proofs) selects the forced-Doe Chromium path for one
+integrated comparison: stock Chromium with Dawn, the Fawn workspace with Dawn, and
+the Fawn workspace with Doe, on identical browser and agent workloads. Adopting
+Chromium hooks or browser-runtime integration still requires measured benefits
+that justify their compatibility and maintenance costs. Preserve WebGPU behavior through validation and
 process boundaries; broader adoption also requires compatibility, hostile-input
 security, graphics correctness, device recovery, maintainability, and application
 benefit. Existing browser artifacts retain their separate assessments; the
@@ -44,11 +44,10 @@ It submits through browser-owned WebGPU. The separately authorized native-loader
 investigation permits additional local software. Its
 [retained evidence](../reports/browser-runtime/20261005-stock-chrome/README.md)
 establishes loading and independent Doe computation inside Chrome's GPU process;
-the webpage's work remains Dawn-owned. Browser replacement is deferred;
-DoeRuntime work stays on the Doppler Node generation advantage over Dawn on
-Vulkan and its subsequent ONNX transfer.
+the webpage's work remains Dawn-owned. Proof 3 reopens native browser replacement
+for its comparison build.
 
-When native browser replacement is explicitly reopened, first trace an ordinary
+Its first gate: trace an ordinary
 webpage request through device creation, shader compilation, submission, mapped
 readback and destruction, all owned by Doe. Disable Doe execution as a negative
 control and require that page operation to fail. Preserve validation, state
@@ -78,7 +77,8 @@ The four distinct operational lanes are:
 - **Lane C:** Fawn + Playwright + Doe
 - **Lane D:** Fawn Direct Protocol + Doe
 
-These four lanes retain their causal semantics. **K0** is Cloudflare Browser
+These four lanes retain their causal semantics. Proof 3's arms use the workspace
+service, not the legacy shell. **K0** is Cloudflare Browser
 Run plus Kitesurf. It is measured beside A/B/C/D as an external product
 comparator and is never treated as a component substitution lane. The policy
 records Cloudflare's official
