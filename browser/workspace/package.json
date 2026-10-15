@@ -2,7 +2,7 @@
   "name": "@doe/fawn-workspace",
   "private": true,
   "type": "module",
-  "description": "Fawn shared observation, action and recovery service above stock Chromium (repo-only; behavior qualified on its frozen case set).",
+  "description": "Fawn shared observation, action and recovery service above stock Chromium (repo-only; behavior qualified on its frozen case set, advantaged only on its frozen differentiation suite).",
   "scripts": {
     "test": "node test/run-tests.js",
     "test:browser": "node test/run-tests.js --browser",

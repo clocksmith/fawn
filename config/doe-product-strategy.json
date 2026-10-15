@@ -1,7 +1,7 @@
 {
   "$schema": "doe-product-strategy.schema.json",
-  "schemaVersion": 11,
-  "strategyVersion": "6.4.0",
+  "schemaVersion": 12,
+  "strategyVersion": "6.5.0",
   "artifactKind": "doe-product-strategy",
   "authority": {
     "goals": "GOALS.md",
@@ -527,10 +527,17 @@
     "qualificationEvidence": {
       "caseSetPath": "config/fawn-workspace-qualification.json",
       "validatorPath": "browser/workspace/qualification/validate.js",
-      "admittedVerdictPath": "reports/fawn-workspace/20261014-behavioral-qualification/qualification/verdict.json",
-      "comparisonPath": "reports/fawn-workspace/20261014-behavioral-qualification/comparison/comparison.json",
-      "sourceCommit": "973a8fb29a668bbec419c04180fbfa4a136770b6",
+      "admittedVerdictPath": "reports/fawn-workspace/20261015-agent-differentiation/qualification/verdict.json",
+      "comparisonPath": "reports/fawn-workspace/20261015-agent-differentiation/comparison/comparison.json",
+      "sourceCommit": "59b95f9ce7eb98a93ddd3d6d8e4e14f5af2aa685",
       "scope": "frozen-case-set-on-recorded-browser-and-host"
+    },
+    "differentiationEvidence": {
+      "suitePath": "config/browser-product-comparison-policy.json#workspaceComparison.differentiation",
+      "resultPath": "reports/fawn-workspace/20261015-agent-differentiation/differentiation/differentiation.json",
+      "scriptedComparisonPath": "reports/fawn-workspace/20261015-agent-differentiation/comparison/comparison.json",
+      "sourceCommit": "59b95f9ce7eb98a93ddd3d6d8e4e14f5af2aa685",
+      "scope": "frozen-differentiation-suite-against-playwright-agent-tooling"
     },
     "implementationStatus": "partially-implemented-behavior-qualified",
     "currentAssessment": "unestablished",
@@ -614,7 +621,7 @@
           "uncertainty-recovery"
         ],
         "implementationStatus": "implemented-compared",
-        "currentAssessment": "unestablished",
+        "currentAssessment": "advantaged-on-frozen-differentiation-suite",
         "requiredEvidence": [
           "shared-service-document-research-form-submission-artifact-export",
           "failure-before-dispatch-after-submission-before-acknowledgment",

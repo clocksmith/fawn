@@ -598,9 +598,10 @@ classified and cannot be promoted by benchmark results.
   requirement of an established step to be established in the bound verdict.
   Policy projections, development tests, hosted artwork, Chromium receipts and
   GPU results cannot satisfy this gate; native runtime results are not a
-  prerequisite for it. Product value additionally needs the frozen
-  competent-baseline comparison, and workspace completion and release claims
-  stay blocked.
+  prerequisite for it. Product advantage needs a full run of the frozen
+  differentiation suite on committed source that passes its frozen rule, with no
+  material regression in the scripted comparison. Workspace completion and
+  release claims stay blocked.
 - Chromium hooks and browser-runtime integration enter a stage only after
   measured benefits justify their compatibility and maintenance costs under
   [GOALS.md](../GOALS.md#strategic-constraints).

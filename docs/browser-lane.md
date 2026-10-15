@@ -5,8 +5,9 @@ This is a routing note, not a task list or status log.
 Fawn provides durable browser workspaces in the [strategy](thesis.md).
 The [workspace contract](fawn-workspace-contract.md) governs its shared
 observation, action, and recovery service above stock Chromium/CDP/Playwright.
-The service has passed scoped behavioral qualification; complete-task value over
-competent automation and release qualification are not established. Its roadmap
+The service has passed scoped behavioral qualification and shows complete-task
+value over Playwright agent tooling only on its frozen differentiation suite;
+release qualification is not established. Its roadmap
 lives in `fawnWorkspace` in [the strategy projection](../config/doe-product-strategy.json);
 native runtime wins are not prerequisites.
 

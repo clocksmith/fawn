@@ -6,22 +6,28 @@ owns authority, observation/action binding, recovery and acceptance.
 `fawnWorkspace` in [the strategy projection](../../config/doe-product-strategy.json)
 owns ordered steps and binds their assessments to admitted evidence.
 
-**Behavior is qualified on the frozen case set; product value is not
-established.** The scope is the recorded headless Chromium binary and this Linux
-host, not release qualification.
+**Three states stay distinct:**
+- **Behaviorally qualified**: established on the frozen case set.
+- **Product-advantaged**: established only on the frozen differentiation suite,
+  against Playwright agent tooling.
+- **Release-qualified**: not established.
+
+The scope is the recorded headless Chromium binary and this Linux host. Scripted
+workflows show no material advantage over competent stock automation.
 
 ## Service
 
 The shared service is implemented in
-[`browser/workspace`](../../browser/workspace/README.md) (protocol 2). It
+[`browser/workspace`](../../browser/workspace/README.md) (protocol 3). It
 contains:
 - a hash-chained, fsynced journal that restores authority before accepting
   commands and fails closed on corruption or a live lock holder
 - owner generations with credential-bound handoff
 - grants scoped by intent, action kind and every touched origin, including link
   and form destinations
-- versioned, expiring observations with full-text element target digests, and
-  optional region digests
+- versioned, expiring observations with full-text element target digests,
+  optional region and region-group digests, and a compact outline view with
+  stable handles and deltas against a base version
 - a dispatcher that rechecks authority, observation currency (whole page or
   scoped regions), target identity and preconditions at dispatch
 - action records that keep never-dispatched, completed, failed and unknown
@@ -33,13 +39,13 @@ contains:
 
 ## Behavioral qualification
 
-The [admitted result](../../reports/fawn-workspace/20261014-behavioral-qualification/README.md)
-ran the frozen [case set](../../config/fawn-workspace-qualification.json)
-through both adapters and all three workflows on commit `973a8fb29`.
+The [admitted result](../../reports/fawn-workspace/20261015-agent-differentiation/README.md) ran the frozen
+[case set](../../config/fawn-workspace-qualification.json) through both adapters
+and all three workflows on commit `59b95f9ce`.
 [The semantic validator](../../browser/workspace/qualification/validate.js)
 admitted it with no failures. Every requirement of strategy steps 1–4, and the
 behavioral requirements of step 5, are established in its
-[verdict](../../reports/fawn-workspace/20261014-behavioral-qualification/qualification/verdict.json).
+[verdict](../../reports/fawn-workspace/20261015-agent-differentiation/qualification/verdict.json).
 
 The cases cover:
 - process kills before dispatch, while the application holds the effect, and
@@ -63,8 +69,8 @@ Qualification found and fixed these defects:
 
 ## Competent-baseline comparison
 
-The [comparison](../../reports/fawn-workspace/20261014-behavioral-qualification/comparison/comparison.json)
-ran the frozen scenarios and criteria in `workspaceComparison` of
+The [comparison](../../reports/fawn-workspace/20261015-agent-differentiation/comparison/comparison.json), rerun on the same commit, ran
+the frozen scenarios and criteria in `workspaceComparison` of
 [the comparison policy](../../config/browser-product-comparison-policy.json).
 The control was stock Playwright automation with a persistent profile, a progress
 file, an origin allowlist, exact locators, the application's idempotency
@@ -83,32 +89,54 @@ browser binary, fixture inputs, origins, timeout and process shape.
 - Owner handoff is excluded because the control has no owner authority; the
   behavioral cases qualify it instead.
 
-The comparison therefore does not establish product value over competent stock
-automation for these workflows. Step 5 stays unestablished.
+Scripted workflows therefore show no material advantage over competent stock
+automation.
 
-## Differentiation suite (frozen before implementation)
+## Agent-workflow differentiation
 
-`differentiation` in `workspaceComparison` freezes the next comparison before
-any of it is built. It covers persistent multipage agent workflows on a new
-fixture site, using one shared agent policy and think time on both sides.
-The control is the strongest generic agent tooling on stock Chromium:
+`differentiation` in `workspaceComparison` was frozen before implementation
+(commit `02239e6dc`), then run in full on commit `59b95f9ce`
+([result](../../reports/fawn-workspace/20261015-agent-differentiation/differentiation/differentiation.json)). The workload is a
+persistent multipage task on a live workbench site: buy the cheapest valid item
+across catalog pages, ship it, and save its invoice. One shared agent policy and
+think time drive both sides. The control is the strongest generic agent tooling
+on stock Chromium:
 - Playwright's page-wide agent snapshot with incremental tracking and aria-ref
   actions
-- a browser host that outlives the agent, with durable checkpoints, the
-  application's idempotency reference, application-state and current-page
-  checks, and a cooperative pause during human control
+- a browser host that outlives the agent
+- durable checkpoints, the application's idempotency reference, application-state
+  and current-page checks, and a cooperative pause during human control
 
-Investigation before the freeze found that this tooling's snapshots are far
-smaller than the service's current observations. It also already refuses a ref
-whose element changed. Each of the four target areas therefore carries a
-treatment bar and a material improvement over the control:
-- changing decision dependencies
-- region-scoped incremental observation
-- human handoff with a pending agent call
-- agent death while the application holds an order
+The workbench's own orders, cart and mutation log judge every run. Every
+requirement was met in every repetition:
+- **Changing content.** The chosen item's price rises past the budget while the
+  agent thinks. The control's ref still resolves, so it adds the over-budget
+  item and must remove it. The service refuses the stale decision because its
+  row changed, and the agent re-decides.
+- **Incremental observation.** On pages with a large, continuously changing
+  activity panel, the region-scoped outline view delivers well under the frozen
+  share of the bytes that the control's incremental snapshots carry.
+- **Human handoff.** A human enters a shipping address while the agent's fill is
+  pending. The control resumes the pending call and overwrites it. The service
+  refuses the old owner's call, so the agent observes again and keeps the
+  human's address.
+- **Interruption recovery.** The agent dies while the application holds its
+  order, and the application offers no order list, no idempotency and only a
+  transient confirmation. The control must ask for human review. The workspace
+  recorded the outcome while the agent was gone, so the agent resumes without
+  review or duplicates.
 
-Scoped product advantage needs at least two areas met in every repetition, with
-no material regression in this suite or in the scripted comparison above.
+With an order list and an idempotency reference, both sides recover. The frozen
+product-advantage rule passed: all four areas met, with no material regression
+in the suite or in the scripted comparison rerun on the same commit. The service
+costs latency on every task. The clean and churn runs sit just inside the frozen
+latency rule, so later service overhead can turn them into a regression.
+
+This establishes advantage only for this suite, against this control. It does
+not establish broad product superiority, compatibility beyond the fixture or
+release qualification. A control harness that revalidates every decision,
+discards pending calls on human takeover, or scopes reads with site-specific
+locators would narrow these gaps; that is task-specific scripting.
 
 ## Limits and open work
 
@@ -120,7 +148,7 @@ Known limits:
   per owner generation
 
 Open work:
-- product value over competent automation
+- broader workloads, compatibility and deployment qualification
 - selective deeper capabilities
 - release admission, which stays blocked
 

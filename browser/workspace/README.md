@@ -4,8 +4,9 @@ The shared observation, action and recovery service above stock Chromium.
 [The workspace contract](../../docs/fawn-workspace-contract.md) owns requirements
 and acceptance; [status](../../docs/status/fawn-workspace.md) records what is
 established. Its behavior is qualified on the frozen case set for a recorded
-commit, browser binary and host; product value over competent automation is not
-established. Development tests are not the behavioral gates.
+commit, browser binary and host. It shows complete-task value over Playwright
+agent tooling only on the frozen differentiation suite, and none over competent
+scripted automation. Development tests are not the behavioral gates.
 
 ## Layout
 

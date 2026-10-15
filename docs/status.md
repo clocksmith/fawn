@@ -15,7 +15,7 @@ verdicts. Historical narrative lives under [`status/archive/`](status/archive/).
 | Cerebras and CSL | [`status/cerebras-csl.md`](status/cerebras-csl.md) | `bench/out/r3-cerebras-status/snapshot.{json,md}` |
 | CSL runtime bring-up | [`status/cerebras-csl-runtime-bringup.md`](status/cerebras-csl-runtime-bringup.md) | Cerebras snapshot and model ledgers |
 | Continuous integration | [`status/ci.md`](status/ci.md) | workflows and CI inventory tests |
-| Fawn durable workspace | [`status/fawn-workspace.md`](status/fawn-workspace.md) | [admitted qualification and comparison](../reports/fawn-workspace/20261014-behavioral-qualification/README.md), [frozen case set](../config/fawn-workspace-qualification.json), `config/doe-product-strategy.json#fawnWorkspace` |
+| Fawn durable workspace | [`status/fawn-workspace.md`](status/fawn-workspace.md) | [admitted qualification, comparison and differentiation](../reports/fawn-workspace/20261015-agent-differentiation/README.md), [frozen case set](../config/fawn-workspace-qualification.json), `config/doe-product-strategy.json#fawnWorkspace` |
 | Optional Chromium runtime integration | [`browser-lane.md`](browser-lane.md) | browser milestone manifest and artifacts |
 | Hosted demonstrations (artwork and benchmark pages) | [`status/fawn-start.md`](status/fawn-start.md) | [cycle GPU](../browser/chromium/resources/fawn-cycle-gpu.js), [publication receipt](../reports/releases/fawn/20261013-publication.json) and user visual review |
 

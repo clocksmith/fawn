@@ -7,7 +7,7 @@
   "required": ["$schema", "schemaVersion", "strategyVersion", "artifactKind", "authority", "positioning", "independenceBoundary", "surfaces", "commercialOffer", "comparisonLaw", "externalProductComparison", "evidenceSpine", "customerEvidencePolicy", "platformSequence", "milestones", "claimBoundary", "reusableProgram", "executionOwnership", "provingSet", "developmentEffectiveness", "fawnWorkspace"],
   "properties": {
     "$schema": { "type": "string", "const": "doe-product-strategy.schema.json" },
-    "schemaVersion": { "type": "integer", "const": 11 },
+    "schemaVersion": { "type": "integer", "const": 12 },
     "strategyVersion": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
     "artifactKind": { "type": "string", "const": "doe-product-strategy" },
     "authority": {
@@ -463,6 +463,7 @@
         "implementationPath",
         "developmentTestsPath",
         "qualificationEvidence",
+        "differentiationEvidence",
         "implementationStatus",
         "currentAssessment",
         "requiresNativeRuntimeWins",
@@ -500,6 +501,22 @@
             "scope": {
               "description": "Admission covers the frozen case set on the recorded browser binary and host; it is not release qualification.",
               "const": "frozen-case-set-on-recorded-browser-and-host"
+            }
+          }
+        },
+        "differentiationEvidence": {
+          "description": "The frozen differentiation result step 5 is bound to. The policy tests require a full result for the named commit whose frozen product-advantage rule passed, with no regression in the suite or the scripted comparison it names.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["suitePath", "resultPath", "scriptedComparisonPath", "sourceCommit", "scope"],
+          "properties": {
+            "suitePath": { "const": "config/browser-product-comparison-policy.json#workspaceComparison.differentiation" },
+            "resultPath": { "type": "string", "pattern": "^reports/fawn-workspace/[0-9]{8}-[a-z0-9-]+/differentiation/differentiation\\.json$" },
+            "scriptedComparisonPath": { "type": "string", "pattern": "^reports/fawn-workspace/[0-9]{8}-[a-z0-9-]+/comparison/comparison\\.json$" },
+            "sourceCommit": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+            "scope": {
+              "description": "Advantage over Playwright agent tooling on the frozen workbench suite only; not broad product superiority, compatibility beyond the fixture or release qualification.",
+              "const": "frozen-differentiation-suite-against-playwright-agent-tooling"
             }
           }
         },
@@ -717,7 +734,7 @@
                   "const": "implemented-compared"
                 },
                 "currentAssessment": {
-                  "const": "unestablished"
+                  "const": "advantaged-on-frozen-differentiation-suite"
                 },
                 "requiredEvidence": {
                   "const": [

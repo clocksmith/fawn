@@ -251,7 +251,7 @@
     },
     "differentiation": {
       "suiteVersion": "2026-10-15-agent-workflows-v1",
-      "status": "implemented-not-run",
+      "status": "run",
       "purpose": "Material complete-task value over competent agent tooling on stock Chromium for persistent multipage agent workflows; the scripted comparison above showed parity.",
       "runnerPath": "browser/workspace/qualification/differentiate.js",
       "fixtureSitePath": "browser/workspace/qualification/workbench-site.js",
