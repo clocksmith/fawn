@@ -97,6 +97,7 @@ function outlineView(workspace, recorded, snapshot, sinceVersion) {
     url: recorded.url,
     baseVersion: base ? sinceVersion : null,
     regions,
+    regionGroups: snapshot.regionGroups ?? {},
     boundary: { isAtomic: false },
   };
 }

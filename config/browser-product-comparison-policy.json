@@ -537,7 +537,7 @@
     },
     "modelDrivenDifferentiation": {
       "suiteVersion": "2026-10-15-model-driven-v2",
-      "status": "frozen-before-implementation",
+      "status": "implemented-not-run",
       "purpose": "Whether durable outcome recovery and scoped observation efficiency hold when one model drives both sides through identical tools, on familiar and held-out applications, with total inference cost counted.",
       "runnerPath": "browser/workspace/qualification/differentiate.js",
       "frozenArtifacts": [

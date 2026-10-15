@@ -181,9 +181,9 @@ The durable advantage is ownership of outcomes across agent interruption.
 Decision binding and handoff safety match what a careful harness can build per
 task. A model-driven stage needs its own freeze.
 
-## Model-driven comparison (frozen, not run)
+## Model-driven comparison (implemented, not run)
 
-`modelDrivenDifferentiation` in `workspaceComparison` is frozen before
+`modelDrivenDifferentiation` in `workspaceComparison` was frozen before
 implementation. One model drives both sides with the same:
 - model, sampling and token budget
 - system prompt and task prompts
@@ -205,7 +205,15 @@ Suite version 2 sends no sampling parameter, which current models reject, and
 requests thinking disabled, which one compatibility request confirms before the
 measured run. Spend is approved up to a hard ceiling that the runner enforces
 from a ledger. The wiring smoke covers only the procurement and helpdesk clean
-scenarios, and the full suite runs once. It still needs model API credentials,
+scenarios, and the full suite runs once.
+
+The runner, both backends and the held-out fixtures are implemented
+([`model-agent/`](../../browser/workspace/qualification/model-agent/)). Each held-out
+fixture serves a portal root linking to its first frozen page, because the frozen
+task prompts name only the origin. A scripted stand-in model drove every scenario
+through both backends offline: every tool, every perturbation and every restart
+path. That checks wiring only; it is not evidence about a model. The
+compatibility request, smoke and full run still need model API credentials,
 which this machine does not have.
 
 ## Compatibility

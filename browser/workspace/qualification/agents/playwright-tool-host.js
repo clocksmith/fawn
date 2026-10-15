@@ -13,6 +13,10 @@ import { chromium } from 'playwright-core';
 
 const options = JSON.parse(process.argv[2]);
 const SNAPSHOT_TRACK = 'agent';
+// The harness keeps its own snapshot baseline, taken with each model observation, so that
+// revalidation sees what changed since the model last looked without disturbing the model's track.
+const REVALIDATION_TRACK = 'revalidate';
+const CHANGED_REF = /<changed>[^\n]*\[ref=(e\d+)\]/g;
 
 function emit(message) {
   process.stdout.write(`${JSON.stringify(message)}\n`);
@@ -41,6 +45,36 @@ const OPERATIONS = Object.freeze({
     const current = await page();
     const snapshot = await current._snapshotForAI({ track: SNAPSHOT_TRACK });
     return { url: current.url(), full: snapshot.full, incremental: snapshot.incremental ?? null };
+  },
+  async observeForModel() {
+    const current = await page();
+    const snapshot = await current._snapshotForAI({ track: SNAPSHOT_TRACK });
+    await current._snapshotForAI({ track: REVALIDATION_TRACK });
+    return { url: current.url(), full: snapshot.full, incremental: snapshot.incremental ?? null };
+  },
+  /**
+   * Before a mutation: is the target ref still on the page, and did anything change since the
+   * model's last observation inside (or around) the regions its decision named?
+   */
+  async revalidate({ regions, ref }) {
+    const current = await page();
+    if (await current.locator(`aria-ref=${ref}`).count() !== 1) return { stale: true, detail: 'the element is no longer on the page' };
+    const snapshot = await current._snapshotForAI({ track: REVALIDATION_TRACK });
+    if (regions.length === 0 || !snapshot.incremental) return { stale: false };
+    for (const [, changedRef] of snapshot.incremental.matchAll(CHANGED_REF)) {
+      const changed = await current.locator(`aria-ref=${changedRef}`).elementHandle().catch(() => null);
+      if (!changed) continue;
+      for (const region of regions) {
+        const overlaps = await current.locator(region).evaluateAll(
+          (roots, element) => roots.some((root) => root.contains(element) || element.contains(root)), changed);
+        if (overlaps) return { stale: true, detail: `${region} changed: ${snapshot.incremental.slice(0, 600)}` };
+      }
+    }
+    return { stale: false };
+  },
+  async select({ ref, value }) {
+    await (await byRef(ref)).selectOption(value);
+    return { ok: true };
   },
   async navigate({ url }) {
     const current = await page();

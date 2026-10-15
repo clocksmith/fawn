@@ -201,6 +201,8 @@ function buildSnapshot(raw, pageCount) {
     regionDigests: Object.fromEntries((raw.regions ?? []).map((region) => [region.selector, regionDigest(region)])),
     regionOutlines: Object.fromEntries((raw.regions ?? []).filter((region) => region.outline !== null)
       .map((region) => [region.selector, region.outline])),
+    regionGroups: (raw.regions ?? []).filter((region) => region.group !== undefined && region.group !== null)
+      .reduce((groups, region) => ({ ...groups, [region.group]: [...(groups[region.group] ?? []), region.selector] }), {}),
   };
 }
 
