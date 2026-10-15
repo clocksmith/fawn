@@ -43,7 +43,9 @@ The contract's semantic names map to these concrete rules.
   is `stale-owner-generation`, and any other credential is `unauthenticated`.
 - **Adapter credentials and mutation coverage.** The service constructs its
   adapter from a factory and never exposes it. Chromium is launched over a
-  private pipe, so no debugging port exists for another client. Automated
+  private pipe, so no debugging port exists for another client. `browser.channel`
+  names the build both adapters launch: Playwright's headless shell, Chromium,
+  or installed Google Chrome. Automated
   mutations are limited to `actionKinds` in the config: `navigate`, `click`,
   `fill`, `select`, `submit` and `download`. A control that submits a form must
   use `submit`. Anything else is `unsupported-action-kind`. Human browser
@@ -162,12 +164,19 @@ every listed workflow.
   The baseline keeps a persistent profile, a durable progress file, an origin
   allowlist, exact locators, the application's idempotency reference and a
   submissions check before resubmitting.
-- `differentiate.js`, `workbench-site.js` and `agents/` run the frozen
-  differentiation suite (`workspaceComparison.differentiation`).
-  - Workload: multipage agent workflows on a live workbench site, judged by that
-    site's own orders, cart and mutation log.
-  - Agent: one shared policy (`agents/procurement-policy.js`) decides on both
-    sides with the same think time.
+- `differentiate.js`, `differentiation-suites.js` and `agents/` run the frozen
+  differentiation suites in `workspaceComparison`:
+  - `differentiation`: a procurement workbench (`workbench-site.js`)
+  - `revalidatedDifferentiation`: a helpdesk (`helpdesk-site.js`) against a
+    stronger control that revalidates decisions before mutating and cancels
+    pending calls on human takeover
+
+  Each agent has a core (`fawn-agent.js`, `playwright-agent.js`) and a
+  per-application profile (`procurement-tools.js`, `helpdesk-tools.js`).
+  - Workload: multipage agent workflows on a live site, judged by that site's
+    own records.
+  - Agent: one shared policy per application (`agents/procurement-policy.js`,
+    `agents/helpdesk-policy.js`) decides on both sides with the same think time.
   - Treatment: `agents/fawn-agent.js`, a client of this service using outline
     views, region-bound decisions and ownership handoff.
   - Control: `agents/playwright-agent.js` with `agents/playwright-tool-host.js`,
@@ -183,7 +192,8 @@ npm test               # unit tests: journal, service rules, process-kill restar
 npm run test:browser   # adds a qualification subset through both adapters
 npm run qualify        # full case set; writes bench/out/fawn-workspace-qualification/<stamp>
 npm run compare        # baseline comparison; writes bench/out/fawn-workspace-comparison/<stamp>
-npm run differentiate  # differentiation suite; writes bench/out/fawn-workspace-differentiation/<stamp>
+npm run differentiate  # first suite; --suite revalidatedDifferentiation runs the second
+npm run qualify -- --browser-channel chrome   # the case set on installed Google Chrome
 node qualification/validate.js <resultDir> --require-current-source
 ```
 

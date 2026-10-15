@@ -395,7 +395,7 @@
     },
     "revalidatedDifferentiation": {
       "suiteVersion": "2026-10-15-revalidating-control-v1",
-      "status": "frozen-before-implementation",
+      "status": "implemented-not-run",
       "purpose": "Whether the agent-workflow advantages survive a stronger control on a different application: Playwright agent tooling that revalidates every decision's inputs before mutating and cancels pending calls when a human takes control.",
       "runnerPath": "browser/workspace/qualification/differentiate.js",
       "fixtureSitePath": "browser/workspace/qualification/helpdesk-site.js",

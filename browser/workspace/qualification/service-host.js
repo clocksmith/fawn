@@ -70,7 +70,7 @@ let service;
 try {
   service = await WorkspaceService.open({
     stateDir: options.stateDir,
-    config: loadServiceConfig(),
+    config: loadServiceConfig(undefined, { browserChannel: options.browserChannel }),
     createAdapter: await loadAdapter(),
     hooks: serviceHooks(options.crash),
   });

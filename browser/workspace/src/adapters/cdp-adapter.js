@@ -25,13 +25,10 @@ const LAUNCH_ARGS = Object.freeze([
   '--disable-background-networking',
 ]);
 
-const HEADLESS_EXECUTABLE = 'chromium-headless-shell';
-const HEADED_EXECUTABLE = 'chromium';
-
-function chromiumExecutable(headless) {
-  const name = headless ? HEADLESS_EXECUTABLE : HEADED_EXECUTABLE;
-  const path = playwrightRegistry.registry.findExecutable(name)?.executablePath();
-  if (!path) throw new Error(`no installed ${name} executable in the Playwright registry`);
+/** The executable for a configured channel, as Playwright's registry installs or finds it. */
+function chromiumExecutable(channel) {
+  const path = playwrightRegistry.registry.findExecutable(channel)?.executablePath();
+  if (!path) throw new Error(`no installed ${channel} executable in the Playwright registry`);
   return path;
 }
 
@@ -126,7 +123,7 @@ class CdpWorkspaceAdapter {
     mkdirSync(profileDir, { recursive: true });
     mkdirSync(downloadDir, { recursive: true });
     const headless = this._config.browser.headless ? ['--headless'] : [];
-    const child = spawn(chromiumExecutable(this._config.browser.headless), [...LAUNCH_ARGS, ...headless, `--user-data-dir=${profileDir}`,
+    const child = spawn(chromiumExecutable(this._config.browser.channel), [...LAUNCH_ARGS, ...headless, `--user-data-dir=${profileDir}`,
       'about:blank'], { stdio: PIPE_STDIO });
     const cdp = new CdpConnection(child, this._config.dispatch.actionTimeoutMs);
     const { targetInfos } = await cdp.send('Target.getTargets');
