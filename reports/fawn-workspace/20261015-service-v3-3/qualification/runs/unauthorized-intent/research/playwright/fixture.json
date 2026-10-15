@@ -1,0 +1,10 @@
+{
+  "origin": "http://127.0.0.1:38119",
+  "foreignOrigin": "http://127.0.0.1:46105",
+  "requests": [],
+  "receipts": [],
+  "reportSha256": {
+    "/export/report.csv": "98e79f8c6f16f49f82a7b94c42fc4ca04944cf7dddde39078df92522d5428146",
+    "/export/report-v2.csv": "d3b0e0c3d5158608348ac368583104e9269f3f55f0751334372819c47839887d"
+  }
+}

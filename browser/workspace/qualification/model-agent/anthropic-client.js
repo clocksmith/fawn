@@ -26,7 +26,7 @@ function createClient({ apiKey, agent, ledger, fetchImpl = fetch, backoffMs = BA
       const response = await fetchImpl(url, { method: 'POST', headers, body: JSON.stringify(body) });
       const text = await response.text();
       if (response.ok) return JSON.parse(text);
-      if (!RETRYABLE.includes(response.status) || attempt >= MAX_RETRIES) throw new ProviderError(response.status, text);
+      if (!RETRYABLE.includes(response.status) || attempt >= MAX_RETRIES) throw new ProviderError(response.status, text.replaceAll(apiKey, '[redacted]'));
       await new Promise((resolve) => setTimeout(resolve, backoffMs * 2 ** attempt));
     }
   }

@@ -6,6 +6,21 @@ It is the machine-readable source for milestone order, the binding proving set,
 and development-effectiveness recording. Status routes evidence; it does not
 maintain another roadmap.
 
+## Qualification rebound to current service source
+
+Strategy version 6.6.2 binds `fawnWorkspace.qualificationEvidence` to the full
+admitted qualification of commit `a1f8e4573`, which follows the service change
+for the model-driven runner. Its scripted comparison keeps its own commit in
+`comparisonSourceCommit`, the commit of step 5's evidence. No step label or
+claim changes.
+
+The browser comparison policy moves to schema version 11
+(`fawn-external-product-comparison-v11`). The model-driven suite binds every
+application fixture by hash in `fixtureSites`, including each held-out portal
+root, and records the select-control naming difference in
+`knownRepresentationDifferences`. Prompts, tasks, acceptance rules, model,
+budgets and the spend ceiling are unchanged.
+
 ## Model-driven contract corrected before implementation
 
 The browser comparison policy moves to schema version 10

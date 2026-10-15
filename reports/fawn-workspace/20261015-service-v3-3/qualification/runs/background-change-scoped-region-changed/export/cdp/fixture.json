@@ -1,0 +1,91 @@
+{
+  "origin": "http://127.0.0.1:41335",
+  "foreignOrigin": "http://127.0.0.1:33339",
+  "requests": [
+    {
+      "seq": 1,
+      "at": "2026-10-15T13:14:57.174Z",
+      "server": "main",
+      "method": "GET",
+      "path": "/live/export",
+      "search": "",
+      "kind": "document",
+      "status": 200
+    },
+    {
+      "seq": 2,
+      "at": "2026-10-15T13:14:57.196Z",
+      "server": "main",
+      "method": "GET",
+      "path": "/control/live",
+      "search": "?state=rebuilding",
+      "kind": "control",
+      "status": 200
+    },
+    {
+      "seq": 3,
+      "at": "2026-10-15T13:14:57.230Z",
+      "server": "main",
+      "method": "GET",
+      "path": "/live/state",
+      "search": "",
+      "kind": "poll",
+      "status": 200
+    },
+    {
+      "seq": 4,
+      "at": "2026-10-15T13:14:57.279Z",
+      "server": "main",
+      "method": "GET",
+      "path": "/live/state",
+      "search": "",
+      "kind": "poll",
+      "status": 200
+    },
+    {
+      "seq": 5,
+      "at": "2026-10-15T13:14:57.329Z",
+      "server": "main",
+      "method": "GET",
+      "path": "/live/state",
+      "search": "",
+      "kind": "poll",
+      "status": 200
+    },
+    {
+      "seq": 6,
+      "at": "2026-10-15T13:14:57.379Z",
+      "server": "main",
+      "method": "GET",
+      "path": "/live/state",
+      "search": "",
+      "kind": "poll",
+      "status": 200
+    },
+    {
+      "seq": 7,
+      "at": "2026-10-15T13:14:57.429Z",
+      "server": "main",
+      "method": "GET",
+      "path": "/live/state",
+      "search": "",
+      "kind": "poll",
+      "status": 200
+    },
+    {
+      "seq": 8,
+      "at": "2026-10-15T13:14:57.479Z",
+      "server": "main",
+      "method": "GET",
+      "path": "/live/state",
+      "search": "",
+      "kind": "poll",
+      "status": 200
+    }
+  ],
+  "receipts": [],
+  "reportSha256": {
+    "/export/report.csv": "98e79f8c6f16f49f82a7b94c42fc4ca04944cf7dddde39078df92522d5428146",
+    "/export/report-v2.csv": "d3b0e0c3d5158608348ac368583104e9269f3f55f0751334372819c47839887d"
+  }
+}

@@ -45,13 +45,18 @@ contains:
 
 ## Behavioral qualification
 
-The [admitted result](../../reports/fawn-workspace/20261015-revalidated-control/README.md) ran the frozen
+The [admitted result](../../reports/fawn-workspace/20261015-service-v3-3/README.md) ran the frozen
 [case set](../../config/fawn-workspace-qualification.json) through both adapters
-and all three workflows on commit `9f522f7d9`.
+and all three workflows on commit `a1f8e4573`, the current service source.
 [The semantic validator](../../browser/workspace/qualification/validate.js)
 admitted it with no failures. Every requirement of strategy steps 1–4, and the
 behavioral requirements of step 5, are established in its
-[verdict](../../reports/fawn-workspace/20261015-revalidated-control/qualification/verdict.json).
+[verdict](../../reports/fawn-workspace/20261015-service-v3-3/qualification/verdict.json).
+It requalifies the service after the `url-not-equals` condition and region-group
+membership in the outline view. Step 5's suites, the scripted comparison and the
+Chrome stable runs keep their own commits and their own
+[qualification](../../reports/fawn-workspace/20261015-revalidated-control/qualification/verdict.json)
+of the source they ran.
 
 The cases cover:
 - process kills before dispatch, while the application holds the effect, and
@@ -212,7 +217,13 @@ The runner, both backends and the held-out fixtures are implemented
 fixture serves a portal root linking to its first frozen page, because the frozen
 task prompts name only the origin. A scripted stand-in model drove every scenario
 through both backends offline: every tool, every perturbation and every restart
-path. That checks wiring only; it is not evidence about a model. The
+path. That checks wiring only; it is not evidence about a model.
+
+Every application fixture is bound by hash in `fixtureSites`, and billed runs
+refuse a fixture that differs. One known representation difference stays for
+this campaign: the treatment's outline names a select control by its option
+text, the control's snapshot by its label. Accessible naming changes only in a
+later protocol version, with full requalification. The
 compatibility request, smoke and full run still need model API credentials,
 which this machine does not have.
 

@@ -1,7 +1,7 @@
 {
   "$schema": "doe-product-strategy.schema.json",
   "schemaVersion": 13,
-  "strategyVersion": "6.6.1",
+  "strategyVersion": "6.6.2",
   "artifactKind": "doe-product-strategy",
   "authority": {
     "goals": "GOALS.md",
@@ -527,9 +527,10 @@
     "qualificationEvidence": {
       "caseSetPath": "config/fawn-workspace-qualification.json",
       "validatorPath": "browser/workspace/qualification/validate.js",
-      "admittedVerdictPath": "reports/fawn-workspace/20261015-revalidated-control/qualification/verdict.json",
+      "admittedVerdictPath": "reports/fawn-workspace/20261015-service-v3-3/qualification/verdict.json",
       "comparisonPath": "reports/fawn-workspace/20261015-revalidated-control/comparison/comparison.json",
-      "sourceCommit": "9f522f7d98406eca21a2db5062d76c917c375c47",
+      "sourceCommit": "a1f8e4573361c7e81c61571ac46d95e842649bd4",
+      "comparisonSourceCommit": "9f522f7d98406eca21a2db5062d76c917c375c47",
       "scope": "frozen-case-set-on-recorded-browser-and-host"
     },
     "differentiationEvidence": {

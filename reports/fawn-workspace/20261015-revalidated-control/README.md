@@ -3,10 +3,14 @@
 **Consumers:** `fawnWorkspace` in
 [the strategy projection](../../../config/doe-product-strategy.json), enforced by
 [`bench/tests/test_fawn_workspace_strategy.py`](../../../bench/tests/test_fawn_workspace_strategy.py):
-- `qualificationEvidence` binds the behavioral verdict
+- `qualificationEvidence` binds the scripted comparison (`comparisonSourceCommit`)
 - `differentiationEvidence` binds the first suite
 - `strongerControlEvidence` binds the second suite
-- `compatibilityEvidence` binds the Chrome run
+- `compatibilityEvidence` binds the Chrome runs
+
+The behavioral verdict in `qualification/` qualifies the service source these
+suites ran. Steps 1–4 now bind to the requalification of the changed service in
+[`20261015-service-v3-3`](../20261015-service-v3-3/README.md).
 
 These results replace the record for commit `59b95f9ce`. That record remains in
 Git history at commit `5d2eb189e`, under
@@ -53,9 +57,12 @@ Re-validate the behavioral results with:
 
 ```bash
 cd browser/workspace
-node qualification/validate.js ../../reports/fawn-workspace/20261015-revalidated-control/qualification --require-current-source
+node qualification/validate.js ../../reports/fawn-workspace/20261015-revalidated-control/qualification
 node qualification/validate.js ../../reports/fawn-workspace/20261015-revalidated-control/compatibility-chrome
 ```
+
+`--require-current-source` admits them only on a checkout of the commit each ran,
+because it compares the source, config and harness digests with the current tree.
 
 ## Limits
 

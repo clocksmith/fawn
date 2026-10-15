@@ -493,13 +493,18 @@
           "description": "Admitted evidence the step assessments are bound to. bench/tests/test_fawn_workspace_strategy.py requires every requirement of an established step to be established in the admitted verdict for the named commit.",
           "type": "object",
           "additionalProperties": false,
-          "required": ["caseSetPath", "validatorPath", "admittedVerdictPath", "comparisonPath", "sourceCommit", "scope"],
+          "required": ["caseSetPath", "validatorPath", "admittedVerdictPath", "comparisonPath", "sourceCommit", "comparisonSourceCommit", "scope"],
           "properties": {
             "caseSetPath": { "const": "config/fawn-workspace-qualification.json" },
             "validatorPath": { "const": "browser/workspace/qualification/validate.js" },
             "admittedVerdictPath": { "type": "string", "pattern": "^reports/fawn-workspace/[0-9]{8}-[a-z0-9-]+/qualification/verdict\\.json$" },
             "comparisonPath": { "type": "string", "pattern": "^reports/fawn-workspace/[0-9]{8}-[a-z0-9-]+/comparison/comparison\\.json$" },
             "sourceCommit": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+            "comparisonSourceCommit": {
+              "description": "Commit the scripted comparison ran; it stays bound to step 5's evidence when the service is requalified on later source.",
+              "type": "string",
+              "pattern": "^[0-9a-f]{40}$"
+            },
             "scope": {
               "description": "Admission covers the frozen case set on the recorded browser binary and host; it is not release qualification.",
               "const": "frozen-case-set-on-recorded-browser-and-host"
