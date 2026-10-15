@@ -25,7 +25,7 @@ Checks are local visual and lifecycle checks in a WebGPU browser; no artwork tes
 suite is retained. Physical-phone, Safari, native Doe and performance qualification
 remain separate. The [20261013 publication receipt](../../reports/releases/fawn/20261013-publication.json)
 records an earlier hosted identity. [Workspace status](fawn-workspace.md) covers the
-prospective durable-work service.
+durable-work service.
 
 Doe owns the source under `browser/chromium/resources/`; sibling D4DA owns the
 isolated package through `firebase.fawn.json`. The canonical surface is

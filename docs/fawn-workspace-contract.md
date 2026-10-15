@@ -4,8 +4,9 @@ Status: **shared service implemented in [`browser/workspace`](../browser/workspa
 behavioral gates frozen; see [status](status/fawn-workspace.md) for admitted evidence**.
 This contract owns prospective shared-service behavior and acceptance.
 [Goals](../GOALS.md) own product intent, [the thesis](thesis.md) owns rationale,
-and `fawnWorkspace` in [the strategy projection](../config/doe-product-strategy.json)
-owns ordered steps and their current assessments. Do not add a competing roadmap.
+and `fawnWorkspace` in [the strategy contract](../config/doe-product-strategy.json)
+binds the steps' current assessments to admitted evidence. Do not add a roadmap
+here.
 
 ## Service and workflow boundaries
 

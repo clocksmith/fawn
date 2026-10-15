@@ -22,7 +22,7 @@ owned and accepted under the repository's goals and system invariants.
 Inputs:
 - Goals and exclusions: [GOALS.md](GOALS.md).
 - System invariants: [INTENT.md](INTENT.md).
-- Strategic sequence: [thesis](docs/thesis.md).
+- Technical rationale and current proofs: [thesis](docs/thesis.md).
 - Stage and gate law: [process](docs/process.md).
 Outputs:
 - Workspace records, package, runtime, compiler, and qualification artifacts.

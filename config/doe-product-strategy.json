@@ -1,7 +1,7 @@
 {
   "$schema": "doe-product-strategy.schema.json",
-  "schemaVersion": 14,
-  "strategyVersion": "6.7.0",
+  "schemaVersion": 15,
+  "strategyVersion": "7.0.0",
   "artifactKind": "doe-product-strategy",
   "authority": {
     "goals": "GOALS.md",
@@ -9,13 +9,6 @@
     "runtimeOwnership": "docs/runtime-ownership-decision.md",
     "support": "docs/doe-support-matrix.md",
     "currentClaims": "reports/claim-index.json"
-  },
-  "positioning": {
-    "category": "Environment where agents work: Fawn durable browser workspaces with independently useful GPU execution",
-    "promise": "Doe builds the environment where agents work. Fawn provides durable browser workspaces; DoeRuntime supplies independently useful GPU execution; DoeLab tests improvements; DoeProof records evidence. WGSL compilation remains independently usable with separate qualification.",
-    "governingQuestion": "Does each selected product preserve its authority and semantics and improve complete user workflows against competent independent controls?",
-    "operatingLaw": "Hexagonal inside; vertically integrated outside.",
-    "initialDeploymentStrategy": "Hardware-first local execution: the first deployment targets one frozen AMD Ryzen AI Max+ 395 / Radeon 8060S / RADV workstation, the initial qualification target. Local execution is a deployment strategy, not a mandatory dependency or a universal performance claim; Fawn's goal remains durable browser workspaces, and Doe enters only through explicit integration with independent qualification."
   },
   "independenceBoundary": {
     "rule": "Fawn starts above stock Chromium through narrow CDP/Playwright adapters and does not require native runtime wins. The WGSL compiler and native WebGPU runtime can earn adoption independently; neither requires the other or Fawn. Doppler owns model semantics. Chromium hooks and browser-runtime integration are added only when measured benefits justify their compatibility and maintenance costs, and earn separate admission; prepared-program integration remains a separate treatment.",
@@ -30,8 +23,6 @@
   "surfaces": [
     {
       "id": "doecompiler",
-      "portfolioRole": "primary-product",
-      "marketRole": "compiler-adoption",
       "job": "Provide independently usable WGSL analysis and target lowering. Evaluate compilation latency, diagnostics, supported shader semantics and generated-program performance separately from runtime execution.",
       "promotionGate": "A concrete external compiler consumer verifies its declared outcome against independent controls and retains use without requiring DoeRuntime. New campaigns need explicit opportunity selection; closed browser transformations stay closed.",
       "authorityPaths": [
@@ -41,8 +32,6 @@
     },
     {
       "id": "doeruntime",
-      "portfolioRole": "primary-product",
-      "marketRole": "runtime-adoption",
       "job": "Supply independently useful GPU execution: own WebGPU validation, resources, submission, completion, memory, synchronization and application integration. Runtime adoption does not require independent adoption of the owned compiler.",
       "promotionGate": "A frozen non-Doppler application demonstrates a material advantage over the strongest eligible controls; declared-program changes are disclosed; external adoption and repeat retention remain independently evidenced.",
       "authorityPaths": [
@@ -52,8 +41,6 @@
     },
     {
       "id": "doeproof",
-      "portfolioRole": "product-feature",
-      "marketRole": "qualification-evidence",
       "job": "Record evidence of provider identity, correctness, fallback, replay, lifecycle, and release admissibility without requiring runtime replacement.",
       "promotionGate": "Record incumbent and DoeRuntime evidence impartially with independent output validation, provider identity, explicit fallback, and replay; this feature does not itself prove runtime adoption.",
       "authorityPaths": [
@@ -63,8 +50,6 @@
     },
     {
       "id": "fawn",
-      "portfolioRole": "primary-product",
-      "marketRole": "durable-browser-work",
       "job": "Provide durable browser workspaces where agents work, above Chromium: one shared service for durable authority, versioned observation, trusted action dispatch, recovery and reusable workflow adapters.",
       "promotionGate": "A shared implemented service passes authority, uncertainty and workflow fault tests and demonstrates complete-task value against competent stock Chromium/Playwright. Documentation, artwork and GPU/browser receipts do not establish workspace acceptance.",
       "authorityPaths": [
@@ -75,8 +60,6 @@
     },
     {
       "id": "doelab",
-      "portfolioRole": "operating-model",
-      "marketRole": "learning-loop",
       "job": "Test improvements offline: turn retained physical failures into minimized reproductions, candidate corrections, and permanent regression gates.",
       "promotionGate": "A retained field failure produces a reusable qualified correction without weakening evidence or promotion rules.",
       "authorityPaths": [
@@ -85,71 +68,6 @@
       ]
     }
   ],
-  "commercialOffer": {
-    "id": "doeruntime-application-adoption",
-    "name": "DoeRuntime Application Integration",
-    "deliveryMode": "provider-substitution-or-declared-program",
-    "promise": "Earn voluntary use through independently measured ordinary provider-substitution advantage; optional declared computation remains a separate treatment. Supported embedding, binaries and support remain commercial hypotheses; independent installation, a real consumer requirement and retained use precede expansion of paid offerings. Payment is not a technical-release prerequisite.",
-    "buyers": [
-      "local-AI vendors",
-      "Electron application teams",
-      "developer-platform companies",
-      "OEM qualification teams",
-      "GPU application teams shipping across heterogeneous PCs"
-    ],
-    "intake": [
-      "pinned application revision and unchanged workload",
-      "expected application result and independent oracle",
-      "declared operating-system, adapter, driver, backend, and provider tuple",
-      "strongest eligible incumbent control",
-      "predeclared reliability and material-advantage criteria"
-    ],
-    "deliverables": [
-      "exact application, shader, runtime, binary, adapter, driver, and backend identities",
-      "independent output validation and explicit fallback state",
-      "clean-process replay and untouched raw artifacts",
-      "crash, timeout, cancellation, concurrency, teardown, memory-growth, and device-loss evidence",
-      "matched I0, I1, W0, D0, and conditional P0 decisions",
-      "signed qualification, rejection, or requalification decision suitable for CI",
-      "unchanged provider integration, maintainer decision, and subsequent release or workload requalification"
-    ],
-    "acceptance": [
-      "correctness and independent oracle pass",
-      "declared physical hardware and effective provider identity",
-      "no hidden fallback",
-      "equivalent work and measurement scope for comparisons",
-      "required reliability and lifecycle gates pass",
-      "performance is claimable only under predeclared material thresholds"
-    ],
-    "ciDecision": {
-      "mode": "blocking",
-      "outcomes": [
-        "qualify",
-        "reject",
-        "requalify"
-      ],
-      "failureBehavior": "Missing, stale, conflicting, or failed evidence blocks release; it never silently downgrades the gate."
-    },
-    "requalificationTriggers": [
-      "application or workload revision",
-      "shader, program, runtime, provider, or binary identity change",
-      "browser, operating-system, driver, adapter, or hardware change",
-      "oracle, policy, threshold, or support-tuple change",
-      "revocation, incident, or expired evidence"
-    ],
-    "commercialPromotionGate": {
-      "requiredOutcome": "An externally owned unchanged non-Doppler application voluntarily adopts DoeRuntime because its predeclared outcome improves, then retains it across another release or workload.",
-      "currentAssessment": "unestablished",
-      "requiredEvidence": [
-        "external-unchanged-application",
-        "non-doppler-first-adopter",
-        "independent-oracle-parity",
-        "d0-over-w0-and-eligible-p0",
-        "maintainer-adoption",
-        "repeat-retention"
-      ]
-    }
-  },
   "comparisonLaw": {
     "authorityPath": "docs/runtime-ownership-decision.md",
     "lanes": [
@@ -207,55 +125,6 @@
         "authorityPath": "config/browser-product-comparison-policy.json#alternativeCompleteSystem",
         "isolatesProvider": false
       }
-    ]
-  },
-  "externalProductComparison": {
-    "authorityPath": "config/browser-product-comparison-policy.json",
-    "causalMatrixUnchanged": true,
-    "comparators": [
-      {
-        "id": "K0",
-        "product": "Cloudflare Browser Run + Kitesurf",
-        "architecture": "remote-stateless-workers-browser",
-        "role": "external-product-comparator",
-        "eligibilityRule": "Run only workloads supported by the documented product boundary; retain persistent authentication, WebGL, video, and real TLS bot-handshake rows as ineligible rather than scoring them as losses."
-      }
-    ],
-    "suites": [
-      {
-        "id": "shared-agent-browser-tasks",
-        "purpose": "Compare complete product outcomes on tasks supported by every admitted product.",
-        "measurements": [
-          "HTML extraction",
-          "screenshots",
-          "navigation",
-          "automation success",
-          "complete wall time",
-          "context tokens",
-          "observable CPU and memory",
-          "total customer cost"
-        ]
-      },
-      {
-        "id": "fawn-differentiation-tasks",
-        "purpose": "Test whether endpoint ownership creates material application value beyond a remote stateless service.",
-        "measurements": [
-          "persistent authentication",
-          "restart recovery",
-          "offline and local operation",
-          "WebGL and WebGPU capability",
-          "private endpoint state",
-          "local model execution",
-          "long-running sessions"
-        ]
-      }
-    ],
-    "decisionRules": [
-      "K0 remains separate from A, B, C, and D because it changes execution location and service architecture rather than one component.",
-      "If K0 wins shared tasks and customers assign no value to differentiation, reject the measured shell-product claim; workspace value requires its own competent-baseline evidence.",
-      "B must beat A before the legacy Fawn shell build earns standalone value; C must beat B before DoeRuntime earns browser execution; D must beat C before the Direct Protocol survives.",
-      "A passing lane is necessary, not sufficient: Chromium hooks, the Direct Protocol and browser-runtime integration are added only when measured benefits justify their compatibility and maintenance costs.",
-      "An ineligible K0 row is retained as an eligibility result and never scored as a win for the Fawn workspace or the legacy Fawn shell build."
     ]
   },
   "evidenceSpine": [
@@ -316,27 +185,6 @@
       ]
     }
   ],
-  "customerEvidencePolicy": {
-    "defaultRule": "Customer content and customer-specific knowledge remain isolated unless explicit authority permits a narrower transfer.",
-    "classes": [
-      {
-        "id": "customer-content",
-        "crossProductRule": "never-by-default"
-      },
-      {
-        "id": "customer-derived",
-        "crossProductRule": "explicit-authorization"
-      },
-      {
-        "id": "sanitized-runtime-failure",
-        "crossProductRule": "sanitized-only"
-      },
-      {
-        "id": "reproducible-backend-defect",
-        "crossProductRule": "reproducible-evidence-only"
-      }
-    ]
-  },
   "platformSequence": [
     {
       "order": 1,
@@ -361,7 +209,7 @@
     {
       "order": 2,
       "id": "apple-metal",
-      "purpose": "Requires an explicit prioritization decision and backend handoff after the selected Vulkan batch; existing regressions do not open an optimization campaign.",
+      "purpose": "Selected for the current Metal confirmation only (roadmap proof 2); existing regressions do not open an optimization campaign.",
       "supportAuthorityPath": "docs/doe-support-matrix.md",
       "inheritsPromotion": false
     },
@@ -376,7 +224,7 @@
   "roadmapProofs": {
     "finalObjective": "Removing Doe or Fawn and returning to Dawn or stock Chromium makes the product measurably worse. Usefulness beside Dawn and Chromium does not meet this bar.",
     "currentStatement": "Doe has promising execution evidence; Fawn has scoped workspace advantages. Neither has achieved the final objective.",
-    "selectionRule": "These proofs select current work. Milestone 1 completes within proof 1; milestones 2 and 3 wait until the proofs resolve; proof 3 selects the forced-Doe Chromium build for its comparison only, not for adoption. Correctness repairs, independent installation and technical release are not blocked.",
+    "selectionRule": "These proofs select current technical work. Proof 3 selects the forced-Doe Chromium build for its comparison only, not for adoption. Correctness repairs, independent installation and technical release are not blocked.",
     "proofs": [
       {
         "order": 1,
@@ -420,101 +268,14 @@
       }
     ]
   },
-  "milestones": [
-    {
-      "order": 1,
-      "id": "provider-qualification-v1",
-      "outcome": "Close ordinary execution with one correct, reproducible Doppler Node generation advantage over Dawn on Vulkan: a repeatable material application advantage against the frozen baseline. Retain accepted improvements and correctness repairs; finish one bounded evidence-backed optimization and record acceptance or rejection without extending one reranker indefinitely.",
-      "requiredEvidence": [
-        "unchanged application, shaders, inputs, installation and independent oracle",
-        "pinned source, libraries, compiler, adapter, driver and incumbent identities",
-        "predeclared primary complete-operation outcome, material threshold, regression limits and percentile definitions",
-        "fresh interleaved independent processes, raw samples and process variation with diagnostics disabled",
-        "startup separate from resident execution; latency tails, CPU consumption and explicitly scoped memory observations",
-        "correctness, resource lifecycle, recovery and rollback preserved",
-        "candidate disposition against frozen criteria; failure preserves accepted baseline and leaves advantage unestablished",
-        "material improvement in the primary outcome with other outcomes within declared bounds; simultaneous latency, CPU and memory victory is not required"
-      ],
-      "currentAssessment": "unestablished",
-      "stateAuthorityPaths": [
-        "docs/status/runtime-backends-and-bench.md",
-        "reports/claim-index.json"
-      ]
-    },
-    {
-      "order": 2,
-      "id": "framework-substitution-v1",
-      "outcome": "Once milestone 1 accepts a Doppler correction, transfer it to ONNX; deliver the bounded integration beneath ONNX Runtime's existing WebGPU provider for independent installation. Pinned execution, matched source-built comparison, lifecycle qualification and local isolated package acceptance are established; material replacement advantage, broader compatibility, external reproduction and retained adoption remain unestablished.",
-      "requiredEvidence": [
-        "pinned ONNX Runtime and Dawn build plus existing provider baseline",
-        "explicit proc-table/context adaptation, ABI dependencies, compatibility boundaries and maintenance costs",
-        "retained unchanged-model execution through existing ONNX WebGPU operators and independent output oracle",
-        "matched complete-operation comparison with rejected material advantage preserved",
-        "versioned installable integration with initialization failures, callbacks, cleanup and supported-host qualification",
-        "external operator reproduction from delivered package without a producer checkout",
-        "one concrete consumer requirement and frozen acceptance for further engineering",
-        "separate plugin-provider experiment remains historical unless independently selected"
-      ],
-      "currentAssessment": "unestablished",
-      "stateAuthorityPaths": [
-        "docs/status/runtime-backends-and-bench.md",
-        "reports/claim-index.json",
-        "reports/releases/20261009-onnx-vulkan-evaluation/README.md",
-        "reports/benchmarks/amd-vulkan/20261005-onnx-vulkan-campaign/README.md"
-      ]
-    },
-    {
-      "order": 3,
-      "id": "application-transfer-v1",
-      "outcome": "Make transfer evidence binding across the compact proving set before broad claims or browser promotion. Independent framework integration must earn externally operated adoption separately from Doppler diagnostics.",
-      "requiredEvidence": [
-        "all families in provingSet exercised through unchanged applications",
-        "independent correctness references and frozen acceptance for every family",
-        "complete-operation startup, resident latency, CPU, scoped memory and responsiveness measurements where applicable",
-        "primary material advantage and declared regression bounds assessed across the proving set",
-        "no model-name recognition, hidden application changes or missing GPU work",
-        "external maintainer adoption and retained use across another revision or workload",
-        "additional hardware selected around demonstrated advantages and separately qualified"
-      ],
-      "currentAssessment": "unestablished",
-      "stateAuthorityPaths": [
-        "docs/status/runtime-backends-and-bench.md",
-        "reports/claim-index.json"
-      ]
-    },
-    {
-      "order": 4,
-      "id": "chromium-substitution-v1",
-      "outcome": "Optionally select bounded Chromium integration after explicit prioritization, independent native advantage, binding transfer evidence, and measured benefits that justify its compatibility and maintenance costs. Browser replacement is not required for compiler or native runtime adoption; broader browser acceptance requires compatibility, security, maintainability and application benefit.",
-      "requiredEvidence": [
-        "explicit prioritization decision selecting the optional browser adoption route",
-        "prior ordinary-execution advantage and independent native framework and transfer evidence",
-        "pinned Chromium artifact and narrow unchanged application with independent oracle",
-        "ordinary WebGPU semantics preserved through validation and process boundaries",
-        "hostile-input handling, graphics correctness, sandbox boundaries and device recovery",
-        "measured complete-operation application benefit that justifies declared compatibility and integration maintenance costs, with declared regression bounds",
-        "separate browser qualification and unchanged browser causal controls; native evidence grants no browser promotion"
-      ],
-      "currentAssessment": "unestablished",
-      "stateAuthorityPaths": [
-        "docs/browser-lane.md",
-        "browser/chromium/bench/workflows/browser-milestones.json"
-      ]
-    }
-  ],
   "claimBoundary": {
     "forbiddenInferences": [
       "DoeProof value does not imply DoeRuntime ownership.",
       "Legacy Fawn shell build value does not imply DoeRuntime or Direct Protocol value.",
-      "K0 is an external product comparator and never identifies the value of an internal legacy Fawn shell build or DoeRuntime component.",
-      "Cloudflare documentation and vendor measurements define comparator scope but do not constitute Doe, Fawn workspace or legacy Fawn shell build execution evidence.",
-      "A K0 limitation or ineligible row does not imply Fawn workspace or legacy Fawn shell build product value.",
-      "K0 is an external product comparator and never a fifth A/B/C/D causal lane.",
       "DoeProof value and qualification cannot depend on Doppler availability or provider preference.",
       "A component timing win does not imply an application win.",
       "Node, native, Apple, AMD, browser, and Windows evidence never inherit promotion from one another.",
-      "A first qualification does not establish recurring commercial demand.",
-      "Paid qualification, DoeProof receipts, compiler breadth, internal benchmarks, and Doppler interoperability cannot substitute for DoeRuntime adoption.",
+      "DoeProof receipts, compiler breadth, internal benchmarks, and Doppler interoperability cannot substitute for DoeRuntime adoption.",
       "Compiler adoption does not establish native runtime adoption, or conversely.",
       "Verified elimination under a prospective application-replacement contract cannot relabel historical fixed-operation results.",
       "Local isolated installation does not establish external operator reproduction or retained adoption.",
@@ -532,38 +293,12 @@
     "demonstrationGate": "Independent numerical parity, meaningful predeclared application outcome against persistent Dawn and wgpu, lifecycle and memory evidence, AMD Vulkan to Apple Metal reproduction, and transfer to another application.",
     "adoptionBoundary": "Repository demonstrations do not establish external voluntary adoption or retention."
   },
-  "executionOwnership": {
-    "operatingObjective": "Doppler is the first engineering customer. Keep DoeRuntime focused on roadmap proofs 1 and 2: current Doe against Dawn on Vulkan, ending in one correct, reproducible Doppler Node generation advantage, then a current Metal confirmation; ONNX transfer waits. Qualify unchanged Node generation on current Vulkan, diagnose dominant complete-generation costs, and select one general compiler or runtime improvement under frozen acceptance with an independent numerical reference and a competent Dawn control. External recruitment is not an engineering gate. Transfer evidence and voluntary adoption remain separate; existing ONNX distribution is sufficient.",
-    "workSelection": {
-      "mode": "bounded-batches",
-      "activeBackend": "amd-vulkan",
-      "metalTransition": "selected-for-current-confirmation",
-      "d3d12": "deferred",
-      "browser": "selected-for-integrated-comparison",
-      "commercialFocus": [
-        "independent-installation",
-        "consumer-requirement",
-        "retained-use"
-      ]
-    },
-    "expansionPrerequisite": "Finish each selected Vulkan batch before selecting another. Existing backend regressions do not constitute parallel optimization campaigns. New compiler work needs a concrete opportunity. Expand support through explicit prioritization and separate physical qualification; customer payment is not a prerequisite for technical progress."
-  },
-  "provingSet": {
-    "families": [
-      "inference",
-      "general-computation",
-      "interactive-rendering"
-    ],
-    "isBinding": true,
-    "applicationRule": "Unchanged applications and independent correctness references; Doppler exposes inference problems, while another framework establishes independent adoption.",
-    "measurementRule": "Freeze complete-operation scope, primary advantage and regression limits before execution; retain startup, resident costs, responsiveness, uncertainty and raw samples."
-  },
   "developmentEffectiveness": {
     "metric": "reproduction-to-verified-improvement",
     "start": "Timestamp of a retained reproducible problem with pinned source and inputs.",
     "stop": "Timestamp of independently verified improvement against frozen correctness and application acceptance.",
     "recordingRule": "Record elapsed time and evidence links in existing work records; retain unresolved and rejected attempts separately. No new measurement framework is required.",
-    "engineeringRule": "Keep compiler, backends and host adapters independently testable. Reuse, refactoring and agent assistance serve the ordered milestones; avoid abstractions that add execution overhead."
+    "engineeringRule": "Keep compiler, backends and host adapters independently testable. Reuse, refactoring and agent assistance serve the selected technical work; avoid abstractions that add execution overhead."
   },
   "fawnWorkspace": {
     "contractPath": "docs/fawn-workspace-contract.md",

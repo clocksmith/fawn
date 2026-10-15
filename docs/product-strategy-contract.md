@@ -1,10 +1,46 @@
-# Doe product strategy contract
+# Doe strategy contract
 
-`config/doe-product-strategy.json` is the schema-validated projection of
-[`thesis.md`](thesis.md), beneath the durable goals in [`GOALS.md`](../GOALS.md).
-It is the machine-readable source for milestone order, the binding proving set,
-and development-effectiveness recording. Status routes evidence; it does not
-maintain another roadmap.
+`config/doe-product-strategy.json` is the schema-validated technical strategy
+contract beneath the durable goals in [`GOALS.md`](../GOALS.md) and the rationale
+in [`thesis.md`](thesis.md). It is the machine-readable source for the surfaces'
+jobs and promotion gates, the comparison law, the evidence spine, the backend
+lanes and initial qualification target, the three proofs, the claim boundary,
+the reusable-program contract, development-effectiveness recording and the Fawn
+workspace evidence bindings. Status routes evidence; it does not maintain a
+roadmap. The commercial plan and the ordered roadmap are maintained in the
+owner's private strategy repository.
+
+## Commercial strategy and roadmap moved out
+
+Schema version 15 and strategy version 7.0.0 remove the commercial and roadmap
+sections at the owner's direction:
+- `positioning`, and each surface's `portfolioRole` and `marketRole`
+- `commercialOffer`, `externalProductComparison` and `customerEvidencePolicy`
+- `milestones`, `provingSet` and `executionOwnership`
+- the K0 and commercial entries of `claimBoundary.forbiddenInferences`; the
+  K0 rules stay enforced by the browser comparison policy and its connector
+
+These sections are kept, with unchanged meaning:
+- the surfaces' ids, jobs, promotion gates and authority paths
+- `independenceBoundary`, `comparisonLaw`, `evidenceSpine`, `reusableProgram`
+  and `developmentEffectiveness`
+- `platformSequence`: the frozen comparison policy points at its initial
+  qualification target
+- `roadmapProofs`: the integrated comparison contract binds proof 3
+- `fawnWorkspace`: the qualification validator reads its required evidence
+
+Three texts change. The `apple-metal` lane's purpose now states proof 2's
+confirmation instead of a later handoff, matching the selected work.
+`roadmapProofs.selectionRule` drops the milestone ordering, and
+`developmentEffectiveness.engineeringRule` serves the selected work rather than
+milestones. No assessment, evidence binding or verdict changes, and nothing is
+promoted.
+
+The browser comparison policy is unchanged byte for byte: proof 3's frozen
+contract pins its hash, so its K0, fork-authority and stop-condition sections
+stay. The policy tests no longer check portfolio roles, work-selection constants,
+milestone order or the commercial promotion gate. The three proofs, the
+comparison law and the workspace bindings keep their schema checks.
 
 ## Integrated comparison frozen before implementation
 
@@ -38,12 +74,8 @@ Dawn or stock Chromium makes the product measurably worse) and the three proofs:
 - integrated Fawn and Doe against stock Chromium and Dawn, across three fixed arms
 
 Each proof is `unestablished`; the schema accepts nothing else, so establishing
-one needs bound evidence and a schema change. Work selection records Metal as
-`selected-for-current-confirmation` and the browser as
-`selected-for-integrated-comparison`; the active backend stays AMD Vulkan. The
-milestones keep their order: milestone 1 completes within proof 1, milestones 2
-and 3 wait, and proof 3 builds the forced-Doe Chromium path for comparison only,
-ahead of milestone 4's adoption decision. No assessment changes.
+one needs bound evidence and a schema change. Proof 3 builds the forced-Doe
+Chromium path for comparison only. No assessment changes.
 
 ## Qualification rebound to current service source
 
@@ -244,14 +276,6 @@ renames one required-evidence id; no field is added or removed.
 `independenceBoundary.rule` and `externalProductComparison.decisionRules` carry
 the same rule in prose, and one decision rule is added.
 
-`executionOwnership.operatingObjective` and the first two milestone outcomes name
-the runtime focus: one correct, reproducible Doppler Node generation advantage
-over Dawn on Vulkan, then ONNX transfer. The second outcome is conditional on the
-first: no Doppler correction is accepted yet. The fourth milestone's outcome and
-its application-benefit evidence entry now require measured benefits that justify
-compatibility and maintenance costs. Milestone ids, order, assessments and all
-other required evidence are unchanged, and nothing is promoted.
-
 The browser comparison policy moves to schema version 4
 (`fawn-external-product-comparison-v4`). Its shape is unchanged, but its meaning
 is not: two fork conditions and one added stop condition carry the
@@ -306,13 +330,6 @@ reproduction, material replacement value, and retained use remain unestablished.
 Start at the [installation guide](onnx-vulkan-installation.md) and
 [delivery report](../reports/releases/20261009-onnx-vulkan-evaluation/README.md).
 
-`executionOwnership.workSelection` replaces fixed percentage allocations and the
-minimum application count with bounded batches, Vulkan focus, explicit Metal
-handoff, deferred D3D12, and optional browser selection. Commercial emphasis is
-independent installation, one real consumer requirement, and retained use.
-Supported embedding, binaries, and maintenance remain commercial hypotheses;
-payment is not a prerequisite for technical progress.
-
 `comparisonLaw` now names the comparison classes and their measurement authority.
 This is a prospective policy clarification, not a benchmark harness migration.
 Existing workload schemas, checks, thresholds, and rejected results are unchanged.
@@ -332,7 +349,7 @@ and sequencing in [the thesis](thesis.md), and enforceable system invariants in
 - The [runtime ownership decision](runtime-ownership-decision.md) owns I0, I1,
   W0, D0, and credible eligible P0 controls, application/runtime attribution, and
   adoption admission. W0 qualification is not runtime adoption, and D0 testing
-  does not require a preceding paid DoeProof engagement.
+  does not require a preceding DoeProof engagement.
 - The [performance contract](performance-strategy.md#comparison-classes) owns
   unchanged-application replacement versus fixed-operation/shader experiments,
   work equivalence, complete boundaries, and comparison audits. The schema
@@ -345,11 +362,7 @@ and sequencing in [the thesis](thesis.md), and enforceable system invariants in
   ineligible K0 work never becomes a win for Fawn or the legacy Fawn shell build. `doe-gpu/browser` remains an
   incumbent wrapper until Doe occupies the Chromium seam.
 
-## Evidence custody and current state
-
-Customer content never crosses products by default. Customer-derived knowledge
-requires explicit authorization; only sanitized failures or reproducible backend
-defects enter shared learning under the declared custody rules.
+## Current state
 
 The strategy records intended admission rules, not achieved support or adoption.
 [`doe-support-matrix.md`](doe-support-matrix.md), `reports/claim-index.json`, and
@@ -366,15 +379,7 @@ python3 bench/gates/catscan_gate.py
 python3 -m unittest bench.tests.test_config_schemas bench.tests.test_browser_product_comparison_policy bench.tests.test_fawn_workspace_strategy bench.tests.test_doc_link_coverage
 ```
 
-The policy tests reject loss of the independent compiler role, implicit backend
-expansion, missing comparison classes, and reordered acceptance milestones.
+The policy tests reject loss of the independent compiler surface, missing
+comparison classes, an established or reordered proof, and a missing proof-3 arm.
 Historical evidence and numerical thresholds remain untouched. Schema and
 component checks validate this strategy migration; GPU qualification is separate.
-
-The independent runtime operating objective retains Doppler-driven Vulkan
-engineering. Existing
-fields and ordered adoption milestones are unchanged: independent correctness
-evidence does not require an external customer. The published ONNX evaluation
-remains available while current-source generation correctness and dominant costs
-guide native implementation. The workspace roadmap proceeds independently; no
-historical verdict is changed.

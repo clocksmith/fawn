@@ -36,8 +36,8 @@ discovered agent instructions. Supporting archives live with their owning famili
 ### Browser
 
 - `browser/workspace`
-  - Fawn's durable browser workspaces: the prospective shared service above
-    stock Chromium (charter only; no implementation yet)
+  - Fawn's durable browser workspaces: the shared service above stock Chromium
+    (implemented; see [its status](status/fawn-workspace.md))
 - `browser/chromium`
   - the repo-local, optional Chromium runtime-integration layer
 - `browser/chromium_webgpu_lane`

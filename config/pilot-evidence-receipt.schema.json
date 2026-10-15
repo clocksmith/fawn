@@ -37,7 +37,7 @@
           "type": "integer",
           "minimum": 1,
           "maximum": 4,
-          "description": "Tier per the pilot-candidate outreach doc: 1 = strongest ICP, 4 = browser-vendor."
+          "description": "Candidate priority tier assigned at selection: 1 = highest priority, 4 = browser vendor."
         },
         "name": {
           "type": "string",
@@ -129,7 +129,7 @@
       "properties": {
         "reproduced": {
           "type": "boolean",
-          "description": "True when the driving issue is observable on this host. False when Doe executes cleanly where the public issue reports failure — that's still outreach-useful evidence."
+          "description": "True when the driving issue is observable on this host. False when Doe executes cleanly where the public issue reports failure; that result is still retained evidence."
         },
         "divergenceKind": {
           "type": "string",

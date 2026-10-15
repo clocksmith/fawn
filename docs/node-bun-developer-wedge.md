@@ -1,8 +1,8 @@
 # Controlled JavaScript runtime developer wedge
 
 This page is the implementation and promotion contract for the initial wedge.
-The objective, priority order, downstream flywheel, commercial journey, and
-expansion boundaries live only in [`thesis.md`](thesis.md).
+[`thesis.md`](thesis.md) owns the technical rationale; product strategy and the
+commercial plan are maintained in the owner's private strategy repository.
 
 ## Candidate boundary
 

@@ -69,7 +69,7 @@ fixes a host rejection during Doppler's device-loss cleanup. Unchanged generatio
 and cancellation/reuse pass without the prior deferred-destruction warning;
 arbitrary driver loss and full application leak qualification remain separate.
 
-Doppler is the first engineering customer. The [descriptor-retirement candidate](../../reports/benchmarks/amd-vulkan/20261010-doppler-descriptor-retirement/README.md)
+Doppler is the first engineering consumer. The [descriptor-retirement candidate](../../reports/benchmarks/amd-vulkan/20261010-doppler-descriptor-retirement/README.md)
 is rejected: baseline stability and material complete-generation admission failed.
 Its patch is archived and the prior descriptor-retirement mechanism remains active.
 API destruction cost did not translate into an accepted algorithmic gain. The
@@ -283,10 +283,9 @@ establishes no application advantage. The complete-system alternative (Chromium
 plus pinned llama.cpp, N0) has not run.
 
 The [strategy contract](../../config/doe-product-strategy.json) separates compiler
-and runtime adoption; its [migration](../product-strategy-contract.md) owns current
-work selection and prospective comparison classes. Vulkan remains the focus;
-Metal needs an explicit handoff, D3D12 stays deferred, and browser replacement is
-optional and separately selected. Initial ONNX execution and local isolated
+and runtime adoption and records the comparison classes; current work follows the
+[three proofs](../thesis.md#three-proofs) and the
+[backend focus](../../GOALS.md#strategic-constraints). Initial ONNX execution and local isolated
 installation are established by the reports above. External reproduction,
 material application advantage, retained adoption, and complete transfer remain
 unestablished. No successor performance campaign is automatically selected.

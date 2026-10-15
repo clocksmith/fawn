@@ -16,17 +16,18 @@ evidence boundaries are clear.
 - [`component-index.md`](component-index.md): generated recursive component map
 - [`component-charters.md`](component-charters.md): charter placement,
   precedence, required shape, validation, and handoff protocol
-- [`thesis.md`](thesis.md): strategic rationale, work selection, and sequencing
-- [`product-strategy-contract.md`](product-strategy-contract.md): machine-readable
-  strategy projection, schema migrations, evidence custody, and validation
+- [`thesis.md`](thesis.md): technical rationale and the three proofs that select
+  current work
+- [`product-strategy-contract.md`](product-strategy-contract.md): the technical
+  strategy contract, its schema migrations, and validation
 
 Keep each governing rule at its owner and link it from other front doors.
 Architecture, installation guides, and contracts retain concrete implementation
 and usage details. Reports retain evidence and rejected experiments; consolidation
 of repeated prose does not delete them.
-- Cross-project documentation authority is maintained in the program registry
-  outside this repository; Doe remains canonical for Doe behavior and
-  measurements
+- Cross-project documentation authority, the commercial plan, and the ordered
+  roadmap are maintained in the owner's private strategy repository; Doe remains
+  canonical for Doe behavior and measurements
 
 ## Product and project contracts
 

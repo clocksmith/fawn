@@ -40,9 +40,11 @@ This file is the source of truth for Doe work only; do not apply
 
 [GOALS.md](GOALS.md) owns product goals, constraints, and exclusions;
 [INTENT.md](INTENT.md) owns system invariants; [the thesis](docs/thesis.md) owns
-rationale and sequencing; the applicable [CATSCAN.md](CATSCAN.md) chain owns
-component boundaries and acceptance. This file owns contributor instructions
-and links technical policy rather than restating it.
+technical rationale and the proofs that select current work; the applicable
+[CATSCAN.md](CATSCAN.md) chain owns component boundaries and acceptance. This
+file owns contributor instructions and links technical policy rather than
+restating it. Commercial strategy and the ordered roadmap live in the owner's
+private strategy repository; do not add them here.
 
 ## Component intent
 
@@ -117,7 +119,7 @@ do not delete or rename those.
 ## Current work selection
 
 Follow [GOALS.md's constraints](GOALS.md#strategic-constraints) and
-[the thesis's current focus](docs/thesis.md#focus-and-founder-responsibilities);
+[the three proofs](docs/thesis.md#three-proofs);
 Chromium hooks or browser-runtime integration need the measured-benefit
 selection GOALS.md requires. Consult the
 [ONNX installation guide](docs/onnx-vulkan-installation.md) for the existing

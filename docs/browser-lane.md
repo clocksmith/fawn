@@ -2,14 +2,14 @@
 
 This is a routing note, not a task list or status log.
 
-Fawn provides durable browser workspaces in the [strategy](thesis.md).
+Fawn provides durable browser workspaces ([thesis](thesis.md)).
 The [workspace contract](fawn-workspace-contract.md) governs its shared
 observation, action, and recovery service above stock Chromium/CDP/Playwright.
 The service has passed scoped behavioral qualification and shows complete-task
 value over Playwright agent tooling only on its frozen differentiation suite;
-release qualification is not established. Its roadmap
-lives in `fawnWorkspace` in [the strategy projection](../config/doe-product-strategy.json);
-native runtime wins are not prerequisites.
+release qualification is not established. `fawnWorkspace` in
+[the strategy contract](../config/doe-product-strategy.json) binds its acceptance
+steps to admitted evidence; native runtime wins are not prerequisites.
 
 [Proof 3](thesis.md#three-proofs) selects the forced-Doe Chromium path for one
 integrated comparison: stock Chromium with Dawn, the Fawn workspace with Dawn, and
@@ -79,13 +79,11 @@ The four distinct operational lanes are:
 - **Lane D:** Fawn Direct Protocol + Doe
 
 These four lanes retain their causal semantics. Proof 3's arms use the workspace
-service, not the legacy shell. **K0** is Cloudflare Browser
-Run plus Kitesurf. It is measured beside A/B/C/D as an external product
-comparator and is never treated as a component substitution lane. The policy
-records Cloudflare's official
-[announcement](https://blog.cloudflare.com/kitesurf/) and
-[documentation](https://developers.cloudflare.com/browser-run/kitesurf/), the
-comparator freshness rule, fork authorities, and claim boundary.
+service, not the legacy shell. **K0** (Cloudflare Browser Run plus Kitesurf) is
+an external product comparator measured beside A/B/C/D, never a component
+substitution lane; the
+[comparison policy](../config/browser-product-comparison-policy.json) records its
+sources, freshness rule and claim boundary.
 
 ## Frozen product suites
 
@@ -98,7 +96,7 @@ offline local operation, WebGL, WebGPU, private state, and long-running
 sessions. K0 runs only on workloads admitted by its documented product
 boundary. Unsupported rows remain `ineligible`: they are retained, are never
 scored as wins for the legacy Fawn shell build, and do not prove its quality or
-customer value. That build must still pass its own application oracle,
+value. That build must still pass its own application oracle,
 lifecycle, and release gates.
 
 The repository-owned K0 connector is
@@ -109,35 +107,25 @@ navigation and frozen automation. Every eligible binding supplies an exact
 response SHA-256 oracle. The connector retains all differentiation rows as
 ineligible and emits `claimAllowed: false`, `fawnCreditAllowed: false`,
 `doeRuntimeCreditAllowed: false`, and `directProtocolCreditAllowed: false`.
-Network execution still requires customer-authorized Cloudflare credentials and
-an unchanged externally reachable application.
+Network execution still requires authorized Cloudflare credentials and an
+unchanged externally reachable application.
 
-### Falsifiable decision rules
+### Attribution rules
 
 A passing lane is necessary, not sufficient: adding a Chromium hook, the Direct
 Protocol, or browser-runtime integration also requires measured benefits that
 justify its compatibility and maintenance costs.
 
-1. **If B beats A but C does not beat B:**  
-   The legacy Fawn shell build has standalone shell value; DoeRuntime has not earned browser ownership.
-2. **If C beats B but D does not beat C:**  
-   DoeRuntime provides demonstrable browser acceleration; the Direct Protocol is unnecessary or immature.
-3. **If D reduces tokens but increases total task time:**  
-   Retain Direct Protocol only for workloads where context cost dominates wall-clock latency.
-4. **If none beat A:**  
-   Do not rationalize the result; redirect DoeRuntime focus to Node/Bun/Electron package lanes.
-5. **If D materially beats A across task success, latency, memory, and recovery:**  
-   Record an end-to-end challenger outcome only; it does not bypass the B/A,
-   C/B, or D/C attribution gates.
-6. **If K0 wins shared tasks and customers do not value differentiation:**
-   Reject the measured shell-product claim; this cannot promote or qualify the
-   independently governed workspace service.
-7. **If B does not beat A:**
-   The legacy Fawn shell build has not earned standalone shell value.
-8. **If C does not beat B:**
-   DoeRuntime has not earned browser execution for that tuple.
-9. **If D does not beat C on the declared total task outcome:**
-   Stop funding Direct Protocol for that workload.
+1. Only a B-over-A application outcome grants the legacy Fawn shell build
+   standalone shell value.
+2. Only a C-over-B application outcome grants DoeRuntime browser execution, and
+   only for the measured tuple.
+3. Only a D-over-C total task outcome credits the Direct Protocol, and only for
+   the measured workload; a lower token count alone does not.
+4. A material D-over-A result is an end-to-end challenger outcome only; it does
+   not bypass the B/A, C/B, or D/C attribution gates.
+5. A K0 result never changes the meaning of A/B/C/D and cannot promote or
+   qualify the independently governed workspace service.
 
 Contract Markdown under `browser/chromium/contracts/` owns detailed browser
 artifact requirements. Do not duplicate those requirements here.

@@ -110,19 +110,3 @@ I agree to the Doe Contributor License Agreement v1.0.
 Either form covers all past and future Contributions you make to this
 project unless and until you withdraw the agreement in writing for
 Contributions not yet submitted.
-
----
-
-## Notes for the Owner
-
-- This CLA does not change the license under which Contributions are
-  **distributed** today (currently Apache License 2.0). It only secures the
-  Owner's right to **relicense** the project later if needed.
-- Past Contributions made before this CLA was adopted are governed by their
-  original Apache 2.0 inbound terms. Those Contributions can be redistributed
-  under any Apache-2.0-compatible license but cannot be relicensed under
-  incompatible terms (e.g., AGPL or BSL) without retroactive consent from
-  each original Contributor.
-- For the relicensing path to be clean, every external Contribution from this
-  point forward should be accompanied by either a signed-off commit or a
-  CONTRIBUTORS.md row.

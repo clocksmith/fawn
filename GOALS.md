@@ -12,7 +12,9 @@ independently usable WGSL compiler keep GPU programs executable, inspectable, an
 portable across hardware; neither their adoption nor Fawn requires the other.
 This file owns the product goals, constraints, and exclusions. These are desired
 outcomes, not claims of qualified support or completed adoption.
-[The thesis](docs/thesis.md) owns the rationale and execution sequence.
+[The thesis](docs/thesis.md) owns the technical rationale and the proofs that
+select current work; the commercial plan and ordered roadmap are maintained in
+the owner's private strategy repository.
 
 **Final objective:** removing Doe or Fawn and returning to Dawn or stock Chromium
 makes the product measurably worse. Usefulness beside Dawn and Chromium does not
@@ -30,8 +32,9 @@ must behave consistently. Durable authority and honest uncertainty precede
 product-value claims. Chromium hooks and browser-runtime integration are added
 only when measured benefits justify their compatibility and maintenance costs.
 [The workspace contract](docs/fawn-workspace-contract.md) owns its
-requirements; the [strategy](config/doe-product-strategy.json) owns its ordered
-acceptance steps. These are intended outcomes, not implemented service claims.
+requirements; `fawnWorkspace` in the [strategy contract](config/doe-product-strategy.json)
+binds its acceptance steps to admitted evidence. These are intended outcomes, not
+implemented service claims.
 
 The independent compiler and runtime retain these outcomes:
 
@@ -102,34 +105,15 @@ The independent compiler and runtime retain these outcomes:
 - Diagnostics: report the best established source, validation, resource,
   submission, or native failure location. Never invent a shader location for an
   unattributed hardware fault.
-- Work selection: Fawn preserves trustworthy browser-work outcomes across agent
-  interruption and gives agents efficient, scoped views of changing applications.
-  That scoped advantage holds on the frozen differentiation suites against
-  Playwright agent tooling, including a control that revalidates decisions and
-  cancels pending calls on takeover. Stale-decision rejection and human handoff
-  are built-in guarantees, not general advantages: well-engineered orchestration
-  can reproduce them. Scripted workflows show no material advantage over competent
-  stock automation.
-  - The frozen model-driven comparison runs once credentials exist; it
-    measures only the scoped workspace advantage.
-  - Work outside [the three proofs](docs/thesis.md#three-proofs) waits until they
-    resolve, including multiple pages and tabs, another operating system, and
-    release packaging and upgrades.
-
-  Behaviorally qualified, product-advantaged and release-qualified stay
-  distinct. The first holds on the frozen case set, the second only on those
-  suites, and the third is not established. None depends on native runtime
-  wins; the integrated claim does. DoeRuntime's work is proofs 1 and 2: current
-  Doe against Dawn on the initial qualification target, ending in complete
-  Doppler generation from a qualified Node baseline, then a current Metal
-  confirmation. ONNX transfer waits. Provider attribution (Doppler+Doe
-  versus Doppler+Dawn) and complete-system alternatives (ordinary Chromium plus
-  a native inference engine) are separate comparisons. New compiler opportunities require explicit
-  selection. Proof 3 selects the forced-Doe Chromium path for its integrated
-  comparison; adopting Chromium hooks or browser-runtime integration still requires
-  that comparison's measured benefits to justify their compatibility and
-  maintenance costs. Closed browser optimizer experiments remain closed.
-  [Ordered milestones](docs/thesis.md#ordered-execution-milestones) do not block
+- Work selection: [the three proofs](docs/thesis.md#three-proofs) select current
+  technical work: current Doe against Dawn on the initial qualification target, a
+  current Metal confirmation, and integrated Fawn and Doe against stock Chromium
+  and Dawn. Behaviorally qualified, product-advantaged and release-qualified stay
+  distinct; [Fawn's status](docs/status/fawn-workspace.md) records which holds and
+  where. Provider attribution (Doppler+Doe versus Doppler+Dawn) and complete-system
+  alternatives (ordinary Chromium plus a native inference engine) are separate
+  comparisons. New compiler opportunities require explicit selection, closed
+  browser optimizer experiments remain closed, and selection never blocks
   correctness repairs, independent installation, or technical release.
 
 ## Explicit exclusions
@@ -148,7 +132,7 @@ support are not promises; any expanded surface needs its own admission evidence.
 
 - [INTENT.md](INTENT.md): enforceable system invariants.
 - [CATSCAN.md](CATSCAN.md): component ownership and acceptance boundaries.
-- [docs/thesis.md](docs/thesis.md): strategic rationale and sequencing.
+- [docs/thesis.md](docs/thesis.md): technical rationale and the current proofs.
 - [AGENTS.md](AGENTS.md): contributor instructions and canonical-policy discovery.
 - [Documentation index](docs/INDEX.md): architecture, installation, contracts,
   status, and retained evidence.

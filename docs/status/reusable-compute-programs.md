@@ -2,9 +2,9 @@
 
 ## Strategy boundary
 
-Reuse and its calibration work support the ordered milestones in the
-[strategy contract](../../config/doe-product-strategy.json). They do not precede
-ONNX Runtime substitution or replace ordinary-execution and transfer acceptance.
+Reuse and its calibration work are subordinate to the
+[three proofs](../thesis.md#three-proofs). They do not precede ONNX Runtime
+substitution or replace ordinary-execution and transfer acceptance.
 The observations below retain their original scope; their local next actions
 do not define the product work order.
 
@@ -160,14 +160,13 @@ hardware qualification remain open under the existing journey prerequisites.
 
 ## Current demonstration priority
 
-The [target journeys](../thesis.md#application-and-partner-contexts) put unchanged
-ordinary Node provider substitution before interactive reuse and agent-assisted
-acceleration. Existing live-simulation and candidate-runner records below remain
-bounded implementation evidence, not proof that these target outcomes are met.
+Unchanged ordinary Node provider substitution comes before interactive reuse
+and agent-assisted acceleration. Existing live-simulation and candidate-runner records below remain
+bounded implementation evidence, not proof that these outcomes are met.
 The ordinary application advantage and independent reproduction remain open;
 the retained tail experiment must not be relabeled as a win. Additional hosts,
 equipment integrations, and chip-platform evaluations receive no inherited
-support or customer status from this priority change.
+support or adoption status from this priority change.
 
 ## Ordinary comparison and terminal integration follow-up
 

@@ -1,13 +1,13 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://doe.local/schemas/doe-product-strategy.schema.json",
-  "title": "Doe product strategy contract",
+  "title": "Doe technical strategy contract",
   "type": "object",
   "additionalProperties": false,
-  "required": ["$schema", "schemaVersion", "strategyVersion", "artifactKind", "authority", "positioning", "independenceBoundary", "surfaces", "commercialOffer", "comparisonLaw", "externalProductComparison", "evidenceSpine", "customerEvidencePolicy", "platformSequence", "roadmapProofs", "milestones", "claimBoundary", "reusableProgram", "executionOwnership", "provingSet", "developmentEffectiveness", "fawnWorkspace"],
+  "required": ["$schema", "schemaVersion", "strategyVersion", "artifactKind", "authority", "independenceBoundary", "surfaces", "comparisonLaw", "evidenceSpine", "platformSequence", "roadmapProofs", "claimBoundary", "reusableProgram", "developmentEffectiveness", "fawnWorkspace"],
   "properties": {
     "$schema": { "type": "string", "const": "doe-product-strategy.schema.json" },
-    "schemaVersion": { "type": "integer", "const": 14 },
+    "schemaVersion": { "type": "integer", "const": 15 },
     "strategyVersion": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
     "artifactKind": { "type": "string", "const": "doe-product-strategy" },
     "authority": {
@@ -20,43 +20,6 @@
         "runtimeOwnership": { "$ref": "#/$defs/path" },
         "support": { "$ref": "#/$defs/path" },
         "currentClaims": { "$ref": "#/$defs/path" }
-      }
-    },
-    "provingSet": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "families",
-        "isBinding",
-        "applicationRule",
-        "measurementRule"
-      ],
-      "properties": {
-        "families": {
-          "type": "array",
-          "minItems": 3,
-          "maxItems": 3,
-          "uniqueItems": true,
-          "items": {
-            "enum": [
-              "inference",
-              "general-computation",
-              "interactive-rendering"
-            ]
-          }
-        },
-        "isBinding": {
-          "type": "boolean",
-          "const": true
-        },
-        "applicationRule": {
-          "type": "string",
-          "minLength": 1
-        },
-        "measurementRule": {
-          "type": "string",
-          "minLength": 1
-        }
       }
     },
     "developmentEffectiveness": {
@@ -90,18 +53,6 @@
           "type": "string",
           "minLength": 1
         }
-      }
-    },
-    "positioning": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["category", "promise", "governingQuestion", "operatingLaw", "initialDeploymentStrategy"],
-      "properties": {
-        "category": { "type": "string", "minLength": 1 },
-        "promise": { "type": "string", "minLength": 1 },
-        "governingQuestion": { "type": "string", "minLength": 1 },
-        "operatingLaw": { "type": "string", "minLength": 1 },
-        "initialDeploymentStrategy": { "type": "string", "minLength": 1 }
       }
     },
     "independenceBoundary": { "$ref": "#/$defs/independenceBoundary" },
@@ -161,7 +112,6 @@
         }
       ]
     },
-    "commercialOffer": { "$ref": "#/$defs/commercialOffer" },
     "comparisonLaw": {
       "type": "object",
       "additionalProperties": false,
@@ -241,26 +191,11 @@
         }
       }
     },
-    "externalProductComparison": { "$ref": "#/$defs/externalProductComparison" },
     "fawnWorkspace": { "$ref": "#/$defs/fawnWorkspace" },
     "evidenceSpine": {
       "type": "array",
       "minItems": 7,
       "items": { "$ref": "#/$defs/evidencePrimitive" }
-    },
-    "customerEvidencePolicy": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["defaultRule", "classes"],
-      "properties": {
-        "defaultRule": { "type": "string", "minLength": 1 },
-        "classes": {
-          "type": "array",
-          "minItems": 4,
-          "maxItems": 4,
-          "items": { "$ref": "#/$defs/evidenceClass" }
-        }
-      }
     },
     "platformSequence": {
       "type": "array",
@@ -269,7 +204,7 @@
       "items": { "$ref": "#/$defs/platformLane" }
     },
     "roadmapProofs": {
-      "description": "The final objective and the three proofs that select current work; milestones keep their order but wait behind them.",
+      "description": "The final objective and the three proofs that select current technical work.",
       "type": "object",
       "additionalProperties": false,
       "required": ["finalObjective", "currentStatement", "selectionRule", "proofs"],
@@ -302,82 +237,6 @@
           ]
         }
       }
-    },
-    "milestones": {
-      "type": "array",
-      "minItems": 4,
-      "maxItems": 4,
-      "items": false,
-      "prefixItems": [
-        {
-          "allOf": [
-            {
-              "$ref": "#/$defs/milestone"
-            },
-            {
-              "properties": {
-                "id": {
-                  "const": "provider-qualification-v1"
-                },
-                "order": {
-                  "const": 1
-                }
-              }
-            }
-          ]
-        },
-        {
-          "allOf": [
-            {
-              "$ref": "#/$defs/milestone"
-            },
-            {
-              "properties": {
-                "id": {
-                  "const": "framework-substitution-v1"
-                },
-                "order": {
-                  "const": 2
-                }
-              }
-            }
-          ]
-        },
-        {
-          "allOf": [
-            {
-              "$ref": "#/$defs/milestone"
-            },
-            {
-              "properties": {
-                "id": {
-                  "const": "application-transfer-v1"
-                },
-                "order": {
-                  "const": 3
-                }
-              }
-            }
-          ]
-        },
-        {
-          "allOf": [
-            {
-              "$ref": "#/$defs/milestone"
-            },
-            {
-              "properties": {
-                "id": {
-                  "const": "chromium-substitution-v1"
-                },
-                "order": {
-                  "const": 4
-                }
-              }
-            }
-          ]
-        }
-      ]
     },
     "claimBoundary": {
       "type": "object",
@@ -426,61 +285,6 @@
           "minLength": 1
         },
         "adoptionBoundary": {
-          "type": "string",
-          "minLength": 1
-        }
-      }
-    },
-    "executionOwnership": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "operatingObjective",
-        "workSelection",
-        "expansionPrerequisite"
-      ],
-      "properties": {
-        "operatingObjective": {
-          "type": "string",
-          "minLength": 1
-        },
-        "workSelection": {
-          "type": "object",
-          "additionalProperties": false,
-          "required": [
-            "mode",
-            "activeBackend",
-            "metalTransition",
-            "d3d12",
-            "browser",
-            "commercialFocus"
-          ],
-          "properties": {
-            "mode": {
-              "const": "bounded-batches"
-            },
-            "activeBackend": {
-              "const": "amd-vulkan"
-            },
-            "metalTransition": {
-              "const": "selected-for-current-confirmation"
-            },
-            "d3d12": {
-              "const": "deferred"
-            },
-            "browser": {
-              "const": "selected-for-integrated-comparison"
-            },
-            "commercialFocus": {
-              "const": [
-                "independent-installation",
-                "consumer-requirement",
-                "retained-use"
-              ]
-            }
-          }
-        },
-        "expansionPrerequisite": {
           "type": "string",
           "minLength": 1
         }
@@ -915,135 +719,12 @@
     "surface": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "portfolioRole", "marketRole", "job", "promotionGate", "authorityPaths"],
+      "required": ["id", "job", "promotionGate", "authorityPaths"],
       "properties": {
         "id": { "type": "string", "enum": ["doecompiler","doeproof","doeruntime","fawn","doelab"] },
-        "portfolioRole": { "type": "string", "enum": ["primary-product", "product-feature", "secondary-product", "operating-model", "experimental-distribution"] },
-        "marketRole": { "type": "string", "enum": ["compiler-adoption","runtime-adoption","qualification-evidence","runtime-distribution","learning-loop","durable-browser-work"] },
         "job": { "type": "string", "minLength": 1 },
         "promotionGate": { "type": "string", "minLength": 1 },
         "authorityPaths": { "$ref": "#/$defs/pathList" }
-      },
-      "allOf": [
-        {
-          "if": {
-            "properties": { "id": { "const": "doecompiler" } },
-            "required": ["id"]
-          },
-          "then": {
-            "properties": {
-              "portfolioRole": { "const": "primary-product" },
-              "marketRole": { "const": "compiler-adoption" }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "id": { "const": "doeruntime" }
-            },
-            "required": ["id"]
-          },
-          "then": {
-            "properties": {
-              "portfolioRole": { "const": "primary-product" },
-              "marketRole": { "const": "runtime-adoption" }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "id": { "const": "doeproof" }
-            },
-            "required": ["id"]
-          },
-          "then": {
-            "properties": {
-              "portfolioRole": { "const": "product-feature" },
-              "marketRole": { "const": "qualification-evidence" }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "id": { "const": "fawn" }
-            },
-            "required": ["id"]
-          },
-          "then": {
-            "properties": {
-              "portfolioRole": { "const": "primary-product" },
-              "marketRole": { "const": "durable-browser-work" }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "id": { "const": "doelab" }
-            },
-            "required": ["id"]
-          },
-          "then": {
-            "properties": {
-              "portfolioRole": { "const": "operating-model" },
-              "marketRole": { "const": "learning-loop" }
-            }
-          }
-        }
-      ]
-    },
-    "commercialOffer": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["id", "name", "deliveryMode", "promise", "buyers", "intake", "deliverables", "acceptance", "ciDecision", "requalificationTriggers", "commercialPromotionGate"],
-      "properties": {
-        "id": { "$ref": "#/$defs/id" },
-        "name": { "type": "string", "minLength": 1 },
-        "deliveryMode": { "type": "string", "const": "provider-substitution-or-declared-program" },
-        "promise": { "type": "string", "minLength": 1 },
-        "buyers": { "$ref": "#/$defs/stringList" },
-        "intake": { "$ref": "#/$defs/stringList" },
-        "deliverables": { "$ref": "#/$defs/stringList" },
-        "acceptance": { "$ref": "#/$defs/stringList" },
-        "ciDecision": {
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["mode", "outcomes", "failureBehavior"],
-          "properties": {
-            "mode": { "type": "string", "const": "blocking" },
-            "outcomes": {
-              "type": "array",
-              "minItems": 3,
-              "maxItems": 3,
-              "uniqueItems": true,
-              "items": { "type": "string", "enum": ["qualify","reject","requalify"] }
-            },
-            "failureBehavior": { "type": "string", "minLength": 1 }
-          }
-        },
-        "requalificationTriggers": { "$ref": "#/$defs/stringList" },
-        "commercialPromotionGate": {
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["requiredOutcome", "currentAssessment", "requiredEvidence"],
-          "properties": {
-            "requiredOutcome": { "type": "string", "minLength": 1 },
-            "currentAssessment": { "type": "string", "const": "unestablished" },
-            "requiredEvidence": {
-              "const": [
-                "external-unchanged-application",
-                "non-doppler-first-adopter",
-                "independent-oracle-parity",
-                "d0-over-w0-and-eligible-p0",
-                "maintainer-adoption",
-                "repeat-retention"
-              ]
-            }
-          }
-        }
       }
     },
     "comparisonLane": {
@@ -1057,50 +738,6 @@
         "conditional": { "type": "boolean" }
       }
     },
-    "externalProductComparison": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["authorityPath", "causalMatrixUnchanged", "comparators", "suites", "decisionRules"],
-      "properties": {
-        "authorityPath": { "$ref": "#/$defs/path" },
-        "causalMatrixUnchanged": { "type": "boolean", "const": true },
-        "comparators": {
-          "type": "array",
-          "minItems": 1,
-          "maxItems": 1,
-          "items": { "$ref": "#/$defs/externalProductComparator" }
-        },
-        "suites": {
-          "type": "array",
-          "minItems": 2,
-          "maxItems": 2,
-          "items": { "$ref": "#/$defs/externalProductSuite" }
-        },
-        "decisionRules": { "$ref": "#/$defs/stringList" }
-      }
-    },
-    "externalProductComparator": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["id", "product", "architecture", "role", "eligibilityRule"],
-      "properties": {
-        "id": { "type": "string", "const": "K0" },
-        "product": { "type": "string", "const": "Cloudflare Browser Run + Kitesurf" },
-        "architecture": { "type": "string", "const": "remote-stateless-workers-browser" },
-        "role": { "type": "string", "const": "external-product-comparator" },
-        "eligibilityRule": { "type": "string", "minLength": 1 }
-      }
-    },
-    "externalProductSuite": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["id", "purpose", "measurements"],
-      "properties": {
-        "id": { "type": "string", "enum": ["shared-agent-browser-tasks","fawn-differentiation-tasks"] },
-        "purpose": { "type": "string", "minLength": 1 },
-        "measurements": { "$ref": "#/$defs/stringList" }
-      }
-    },
     "evidencePrimitive": {
       "type": "object",
       "additionalProperties": false,
@@ -1109,15 +746,6 @@
         "id": { "$ref": "#/$defs/id" },
         "canonicalJob": { "type": "string", "minLength": 1 },
         "ownerPaths": { "$ref": "#/$defs/pathList" }
-      }
-    },
-    "evidenceClass": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["id", "crossProductRule"],
-      "properties": {
-        "id": { "type": "string", "enum": ["customer-content","customer-derived","sanitized-runtime-failure","reproducible-backend-defect"] },
-        "crossProductRule": { "type": "string", "enum": ["never-by-default","explicit-authorization","sanitized-only","reproducible-evidence-only"] }
       }
     },
     "platformLane": {
@@ -1146,19 +774,6 @@
         "qualificationState": { "const": "unqualified-until-applicable-acceptance-passes" },
         "existingEvidenceScope": { "const": "recorded-coverage-only" },
         "memoryAccounting": { "const": ["system-ram", "gpu-allocation-limits", "measured-residency"] }
-      }
-    },
-    "milestone": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["order", "id", "outcome", "requiredEvidence", "currentAssessment", "stateAuthorityPaths"],
-      "properties": {
-        "order": { "type": "integer", "minimum": 1, "maximum": 4 },
-        "id": { "type": "string", "enum": ["provider-qualification-v1", "framework-substitution-v1", "application-transfer-v1", "chromium-substitution-v1"] },
-        "outcome": { "type": "string", "minLength": 1 },
-        "requiredEvidence": { "$ref": "#/$defs/stringList" },
-        "currentAssessment": { "type": "string", "enum": ["unestablished","diagnostic","claimable"] },
-        "stateAuthorityPaths": { "$ref": "#/$defs/pathList" }
       }
     }
   }

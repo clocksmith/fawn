@@ -8,7 +8,7 @@ mechanically guarded without constraining internal algorithms.
 | File | Owns |
 | --- | --- |
 | `GOALS.md` | Product goals, constraints, and exclusions |
-| `docs/thesis.md` | Strategic rationale and sequencing |
+| `docs/thesis.md` | Technical rationale and current proofs |
 | `INTENT.md` | Enforceable system invariants |
 | `CATSCAN.md` | One component's target, authority, scope, contracts, inherited/local invariants, and acceptance |
 | `AGENTS.md` | Contributor instructions and canonical-policy discovery |
