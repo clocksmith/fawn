@@ -23,21 +23,7 @@ def _load_policy() -> dict[str, Any]:
 class BrowserProductComparisonPolicyTests(unittest.TestCase):
     """Protect causal lanes, external comparison, and fork boundaries."""
 
-    def test_runtime_primary_and_feature_role_are_schema_enforced(self) -> None:
-        strategy = json.loads(STRATEGY_PATH.read_text(encoding="utf-8"))
-        schema_path = STRATEGY_PATH.with_suffix(".schema.json")
-        validator = Draft202012Validator(
-            json.loads(schema_path.read_text(encoding="utf-8"))
-        )
-        validator.validate(strategy)
-        surfaces = {row["id"]: row for row in strategy["surfaces"]}
-        surfaces["fawn"]["portfolioRole"] = "secondary-product"
-        self.assertFalse(validator.is_valid(strategy))
-        surfaces["fawn"]["portfolioRole"] = "primary-product"
-        surfaces["doeproof"]["portfolioRole"] = "primary-product"
-        self.assertFalse(validator.is_valid(strategy))
-
-    def test_strategy_rejects_implicit_expansion_and_coupled_adoption(
+    def test_strategy_keeps_independent_surfaces_and_unestablished_proofs(
         self,
     ) -> None:
         strategy = json.loads(STRATEGY_PATH.read_text(encoding="utf-8"))
@@ -57,21 +43,6 @@ class BrowserProductComparisonPolicyTests(unittest.TestCase):
             if row["id"] != "doecompiler"
         ]
         cases.append(missing_compiler)
-        coupled = copy.deepcopy(strategy)
-        compiler = next(
-            row for row in coupled["surfaces"] if row["id"] == "doecompiler"
-        )
-        compiler["marketRole"] = "runtime-adoption"
-        cases.append(coupled)
-        for key, value in (
-            ("activeBackend", "apple-metal"),
-            ("metalTransition", "customer-request"),
-            ("d3d12", "active"),
-            ("browser", "required-destination"),
-        ):
-            expanded = copy.deepcopy(strategy)
-            expanded["executionOwnership"]["workSelection"][key] = value
-            cases.append(expanded)
         established = copy.deepcopy(strategy)
         established["roadmapProofs"]["proofs"][2]["currentAssessment"] = "established"
         cases.append(established)
@@ -85,9 +56,7 @@ class BrowserProductComparisonPolicyTests(unittest.TestCase):
             with self.subTest(case=index):
                 self.assertFalse(validator.is_valid(candidate))
 
-    def test_strategy_preserves_comparison_classes_and_acceptance_order(
-        self,
-    ) -> None:
+    def test_strategy_preserves_comparison_classes(self) -> None:
         strategy = json.loads(STRATEGY_PATH.read_text(encoding="utf-8"))
         validator = Draft202012Validator(
             json.loads(
@@ -101,31 +70,6 @@ class BrowserProductComparisonPolicyTests(unittest.TestCase):
             candidate = copy.deepcopy(strategy)
             candidate["comparisonLaw"]["classes"].remove(comparison_class)
             self.assertFalse(validator.is_valid(candidate))
-        strategy["milestones"][0], strategy["milestones"][1] = (
-            strategy["milestones"][1],
-            strategy["milestones"][0],
-        )
-        self.assertFalse(validator.is_valid(strategy))
-
-    def test_qualification_cannot_replace_adoption_and_repeat_retention(
-        self,
-    ) -> None:
-        strategy = json.loads(STRATEGY_PATH.read_text(encoding="utf-8"))
-        schema = json.loads(
-            STRATEGY_PATH.with_suffix(".schema.json").read_text(
-                encoding="utf-8"
-            )
-        )
-        validator = Draft202012Validator(schema)
-        gate = strategy["commercialOffer"]["commercialPromotionGate"]
-        original = gate["requiredEvidence"]
-        for field in original:
-            gate["requiredEvidence"] = [
-                item for item in original if item != field
-            ]
-            self.assertFalse(validator.is_valid(strategy), field)
-        gate["requiredEvidence"] = ["paid-qualification"]
-        self.assertFalse(validator.is_valid(strategy))
 
     def test_external_comparators_are_not_component_substitutions(self) -> None:
         policy = _load_policy()

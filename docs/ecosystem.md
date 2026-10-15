@@ -1,8 +1,8 @@
 # Ecosystem registry
 
-This page defines registry governance only. Doe's product strategy,
-downstream-application portfolio, promotion flywheel, and commercial journey
-live only in [`thesis.md`](thesis.md).
+This page defines registry governance only. Product strategy and the
+commercial plan are maintained in the owner's private strategy repository;
+[`thesis.md`](thesis.md) owns the technical rationale.
 
 Doe keeps ecosystem research as governed evidence rather than a sales
 spreadsheet. The canonical actor records live in

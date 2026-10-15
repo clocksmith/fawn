@@ -125,11 +125,8 @@ names. This guide covers the GPU execution surfaces: DoeRuntime and the
 independently usable WGSL compiler. Either can earn adoption without requiring
 the other; their contributions need separate evidence.
 
-DoeRuntime engineering is focused on [proofs 1 and 2](thesis.md#three-proofs):
-current Doe against Dawn on Vulkan, ending in one correct, reproducible Doppler
-Node generation advantage, then a current Metal confirmation; ONNX transfer
-waits. The native
-installation front door and transfer target is the
+DoeRuntime's current work is [proofs 1 and 2](thesis.md#three-proofs). The
+native installation front door is the
 [ONNX Vulkan evaluation package](onnx-vulkan-installation.md), with bounded
 [execution and installation evidence](../reports/releases/20261009-onnx-vulkan-evaluation/README.md).
 Optional integrations and qualification tooling support compilation and
@@ -213,8 +210,8 @@ The important boundary distinctions are:
 - `doe-gpu` is the package surface over that runtime
 - `doe-gpu/browser` is a browser wrapper, not the Doe runtime running inside the browser
 - `browser/chromium` owns the experimental Chromium runtime integration
-- `browser/workspace` scopes the prospective durable service above stock Chromium;
-  [its contract](fawn-workspace-contract.md) does not claim an implementation
+- `browser/workspace` owns the durable workspace service above stock Chromium;
+  [its status](status/fawn-workspace.md) records the admitted evidence
 - `bench` owns evaluation tooling; its explicitly public ONNX evaluation distribution packages the supported integration without transferring runtime ownership
 
 Current scope:
@@ -343,8 +340,8 @@ do not prove that a declared accounting rule is semantically correct.
 
 The [source-layout manifest](../runtime/zig/source-layout.json) owns module
 responsibilities and dependency permissions; its [generated source map](../runtime/zig/src/README.md)
-is the navigation surface. The [application contexts](thesis.md#application-and-partner-contexts)
-exercise these owners rather than defining separate product subsystems. An
+is the navigation surface. Applications exercise these owners rather than
+defining separate product subsystems. An
 image-processing integration supplies shaders, declared work, and acceptance
 tests; image-editor policy does not belong in resource management.
 

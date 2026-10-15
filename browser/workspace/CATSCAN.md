@@ -24,7 +24,7 @@ action and recovery service above stock Chromium.
 
 Inputs:
 - [Workspace contract](../../docs/fawn-workspace-contract.md).
-- [Ordered workspace roadmap](../../config/doe-product-strategy.json).
+- [Workspace acceptance bindings](../../config/doe-product-strategy.json).
 - Frozen [behavioral case set](../../config/fawn-workspace-qualification.json) and
   [comparison scenarios and criteria](../../config/browser-product-comparison-policy.json).
 

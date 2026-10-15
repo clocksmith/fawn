@@ -50,4 +50,4 @@ declares with `--runtimes` (Node mandatory; this workflow declares Node, Bun
 and Electron, and a Node-only candidate makes a Node-only claim), tuple identity, oracle,
 replay, lifecycle, and reliability joins before the workflow seals and uploads
 all passing or failed evidence. The workflow does not publish to npm or sign a
-customer qualification decision.
+qualification decision.

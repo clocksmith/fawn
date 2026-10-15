@@ -8,11 +8,10 @@ for their fields and values.
 ## Strategy and comparison clarification
 
 [GOALS.md](../GOALS.md) owns the goal, adoption and backend constraints;
-[the thesis](thesis.md) owns work selection and sequencing through
-[three proofs](thesis.md#three-proofs): current Doe against Dawn on the initial
-qualification target, a current Metal confirmation, and integrated Fawn and Doe
-against stock Chromium and Dawn. The [strategy contract](product-strategy-contract.md)
-documents their machine-readable projection and migrations.
+[the thesis](thesis.md) owns the technical rationale and the
+[three proofs](thesis.md#three-proofs) that select current work. The
+[strategy contract](product-strategy-contract.md) documents their
+machine-readable form and migrations.
 [Comparison classes](performance-strategy.md#comparison-classes) distinguish
 unchanged-application replacement from fixed-operation/shader experiments.
 Existing gates and frozen contracts retain their meaning. Any future campaign

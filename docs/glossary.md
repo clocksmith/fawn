@@ -18,7 +18,7 @@
     release receipts
 - `WGSL compiler`
   - independently usable WGSL analysis and target lowering; `doecompiler` in
-    the [strategy projection](../config/doe-product-strategy.json)
+    the [strategy contract](../config/doe-product-strategy.json)
 - `doe-gpu`
   - the current JavaScript package surface for Doe
 - `@simulatte/webgpu`

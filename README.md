@@ -5,9 +5,10 @@ workspaces; DoeRuntime supplies independently useful GPU execution; DoeLab tests
 improvements; DoeProof records evidence.
 
 What installs today is DoeRuntime, a native WebGPU runtime for existing GPU
-applications, with an independently usable WGSL compiler. Vulkan is the current
-engineering focus. Fawn's shared workspace service is the next build and is
-[not implemented yet](docs/status/fawn-workspace.md).
+applications, with an independently usable WGSL compiler. Fawn's shared
+workspace service is implemented and behaviorally qualified on a frozen case set,
+not release-qualified ([status](docs/status/fawn-workspace.md)).
+[Three proofs](docs/thesis.md#three-proofs) select current technical work.
 
 **[Package API](packages/doe-gpu/README.md)** · [Evaluate ONNX on Vulkan](docs/onnx-vulkan-installation.md) · [Goals](GOALS.md) · [Documentation](docs/INDEX.md)
 
@@ -42,9 +43,8 @@ resource retirement. The application and platform driver/GPU are external.
 
 ## Evidence
 
-DoeRuntime engineering is focused on one correct, reproducible Doppler Node
-generation advantage over Dawn on Vulkan, then transfer to ONNX. That advantage
-is [not established yet](docs/status/runtime-backends-and-bench.md).
+A current Doe advantage over Dawn, including complete Doppler generation on
+Vulkan, is [not established yet](docs/status/runtime-backends-and-bench.md).
 
 The [ONNX delivery report](reports/releases/20261009-onnx-vulkan-evaluation/README.md)
 records bounded SqueezeNet execution and lifecycle checks, including local
@@ -55,8 +55,8 @@ Compiler correctness, runtime performance, and application benefit require
 separate evidence. See the [claim index](reports/claim-index.json),
 [backend evidence](docs/backend-evidence-matrix.md), and [current status](docs/status.md).
 Native results do not qualify browser replacement. Fawn's
-[durable workspace contract](docs/fawn-workspace-contract.md) has no implemented
-shared service or behavioral acceptance yet. Chromium hooks and the optional
+[durable workspace contract](docs/fawn-workspace-contract.md) governs its
+service; workspace evidence and runtime evidence stay separate. Chromium hooks and the optional
 [browser runtime integration](browser/chromium/README.md) are added only when
 measured benefits justify their compatibility and maintenance costs; existing
 browser evidence stays separate.

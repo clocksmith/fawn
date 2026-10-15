@@ -1,8 +1,8 @@
 # Runtime ownership decision contract
 
 This document defines how Doe decides whether an application needs the owned
-Doe runtime. It is an implementation and promotion contract for the strategy in
-[`thesis.md`](thesis.md), not a separate product strategy.
+Doe runtime. It is an implementation and promotion contract under the rationale
+in [`thesis.md`](thesis.md), not a product strategy.
 
 ## Governing hypothesis
 
@@ -381,15 +381,11 @@ consumer and next admission gate remains quarantined research.
 
 ## Product validation boundary
 
-DoeRuntime engineering stays focused on [proofs 1 and 2](thesis.md#three-proofs):
-current Doe against Dawn on Vulkan, ending in one correct, reproducible Doppler
-Node generation advantage, then a current Metal confirmation; ONNX transfer
-waits. That campaign is a
+DoeRuntime's current work is [proofs 1 and 2](thesis.md#three-proofs), under
+the [backend focus](../GOALS.md#strategic-constraints). That campaign is a
 separately frozen hypothesis; the earlier Doppler package verdicts above keep
 their terminal meaning. Doppler results are engineering evidence, not adoption:
-the first runtime adoption objective remains one unchanged external non-Doppler
-application on the current AMD/Vulkan focus. Work proceeds in bounded batches.
-Metal requires explicit prioritization and a handoff; D3D12 remains deferred.
+runtime adoption requires an unchanged external non-Doppler application.
 Existing regression checks do not open parallel optimization campaigns, and a
 consumer request cannot silently change this boundary. Each lane needs clean installation,
 effective provider identity, independent output validation, lifecycle coverage,

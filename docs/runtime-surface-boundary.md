@@ -7,7 +7,7 @@ Doe surfaces do not inherit one another's claims.
 | Public JavaScript package | `packages/doe-gpu/` | Package and declared native-provider behavior only |
 | Native runtime and ABI | `runtime/zig/` | Backend- and host-specific runtime evidence |
 | Benchmark tooling | `bench/` | Repo-only tooling that may produce public artifacts |
-| Fawn durable browser workspaces | `browser/workspace/` | Prospective shared service above stock Chromium; no implementation or acceptance yet |
+| Fawn durable browser workspaces | `browser/workspace/` | Shared service above stock Chromium; behaviorally qualified on a frozen case set, not release-qualified ([status](status/fawn-workspace.md)) |
 | Chromium runtime integration | `browser/chromium/` | Optional forced-Doe Chromium execution and release evidence |
 | Compiler and spatial lowering | `runtime/zig/src/compiler/` | Internal until exposed by a promoted runtime contract |
 

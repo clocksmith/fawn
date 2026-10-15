@@ -3,10 +3,10 @@
 Fawn provides durable browser workspaces for agents above stock
 Chromium/CDP/Playwright. [The contract](../fawn-workspace-contract.md)
 owns authority, observation/action binding, recovery and acceptance.
-`fawnWorkspace` in [the strategy projection](../../config/doe-product-strategy.json)
-owns ordered steps and binds their assessments to admitted evidence.
+`fawnWorkspace` in [the strategy contract](../../config/doe-product-strategy.json)
+binds each step's assessment to admitted evidence.
 
-**Product message:** Fawn preserves trustworthy browser-work outcomes across agent
+**Scoped advantage:** Fawn preserves trustworthy browser-work outcomes across agent
 interruption and gives agents efficient, scoped views of changing applications.
 
 Stale-decision rejection and human handoff are built-in guarantees, not general
@@ -276,4 +276,4 @@ establish workspace authority or external-action recovery. Proof 3 builds the
 forced-Doe Chromium path for its comparison; adopting Chromium hooks or
 browser-runtime integration still waits for measured benefits that justify their
 compatibility and maintenance costs. Native compiler/runtime work retains its
-own milestone IDs, numerical gates and platform admission.
+own numerical gates and platform admission.
