@@ -96,8 +96,12 @@ The independent compiler and runtime retain these outcomes:
 - Diagnostics: report the best established source, validation, resource,
   submission, or native failure location. Never invent a shader location for an
   unattributed hardware fault.
-- Work selection: Fawn's shared workspace service above Chromium is the next
-  build, independently of native runtime wins. Separately, DoeRuntime stays
+- Work selection: Fawn's shared workspace service has passed scoped behavioral
+  qualification. The next milestone is demonstrating material complete-task value
+  over competent Chromium/Playwright, followed by broader compatibility and
+  deployment qualification. Behaviorally qualified, product-advantaged and
+  release-qualified are distinct states; only the first is established, and none
+  depends on native runtime wins. Separately, DoeRuntime stays
   focused on one correct, reproducible Doppler Node generation advantage over
   Dawn on Vulkan, starting from a qualified Node baseline on the initial
   qualification target, then ONNX transfer. Provider attribution (Doppler+Doe
