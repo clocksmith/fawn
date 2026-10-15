@@ -252,11 +252,16 @@ Known limits:
 Open work:
 - the frozen model-driven comparison, waiting for model API credentials
 - [proof 3](../thesis.md#three-proofs): stock Chromium with Dawn, the Fawn
-  workspace with Dawn, and the Fawn workspace with Doe, on identical browser and
-  agent workloads. It needs a forced-Doe Chromium build in which the page's
-  WebGPU work is Doe-owned. None exists here: the local Chromium checkout is
-  empty, and the last legacy-shell archive (`browser/chromium/artifacts/20260811T130500Z/`)
-  failed clean installation and its smoke checks.
+  workspace with Dawn, and the Fawn workspace with Doe, under
+  [the integrated comparison contract](../../config/fawn-doe-integrated-comparison.json),
+  frozen before implementation. Its workloads are the frozen model-driven agent
+  suite, unchanged browser Doppler generation, the UMAP SGD workload and a pinned
+  upstream Three.js WebGPU application. It needs a forced-Doe Chromium build in
+  which the page's WebGPU work is Doe-owned. None exists here: the external
+  Chromium lane drive is not attached, the local checkout is empty, and the last
+  legacy-shell archive (`browser/chromium/artifacts/20260811T130500Z/`) failed
+  clean installation and its smoke checks. Its agent-suite spend needs its own
+  approved ceiling.
 - broader workloads, compatibility, deployment qualification and selective
   deeper capabilities wait until the proofs resolve
 - release admission, which stays blocked

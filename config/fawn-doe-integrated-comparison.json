@@ -1,0 +1,177 @@
+{
+  "$schema": "fawn-doe-integrated-comparison.schema.json",
+  "schemaVersion": 1,
+  "contractId": "fawn-doe-integrated-comparison-v1",
+  "status": "frozen-before-implementation",
+  "frozenOn": "2026-10-15",
+  "strategyProof": "integrated-fawn-doe-versus-stock-chromium-dawn",
+  "purpose": "Whether the complete Fawn workspace with Doe beats stock Chromium with Dawn on identical browser and agent workloads, and which part earns each difference: the workspace (B over A) or the provider (C over B).",
+  "host": {
+    "target": "initial-qualification-target",
+    "hostRecordPath": "reports/benchmarks/amd-vulkan/20261014-initial-qualification-target/README.md",
+    "reservation": "Before and around every browser process, no foreign DRM client advances on the target GPU, checked with bench/lib/compute_program_gpu_activity. No Reploid or other foreign GPU workload runs. No process is terminated to obtain the window; owners settle their work first.",
+    "isolation": "No checkout sync, build or measured run while Reploid workloads need predictable CPU, memory or disk behavior."
+  },
+  "chromiumSource": {
+    "acquisitionOrder": ["existing-external-lane-drive", "fresh-checkout-on-external-ssd"],
+    "existingLanePath": "/run/media/x/LINUX/doe/chromium_webgpu_lane",
+    "internalDiskAllowed": false,
+    "inspectBeforeUse": [
+      "checkout revision and working-tree state",
+      "depot_tools revision",
+      "Doe integration patches, each by SHA-256",
+      "args.gn by SHA-256",
+      "prior build artifacts, each by SHA-256"
+    ],
+    "rule": "Use the existing lane only if its inspection shows a coherent checkout, patch set and build configuration; otherwise create a fresh checkout on an external SSD. The inspection is retained before any build."
+  },
+  "browserBuilds": {
+    "rule": "The stock and forced-Doe builds come from one pinned Chromium revision and one build configuration. The forced-Doe build differs only by the Doe provider integration patch set. Each build records its revision, args.gn hash, patch-set hash and executable SHA-256.",
+    "launch": {
+      "mode": "headless-with-hardware-gpu",
+      "arguments": ["--enable-unsafe-webgpu", "--ignore-gpu-blocklist", "--use-angle=vulkan", "--enable-features=Vulkan", "--disable-vulkan-surface"],
+      "sandbox": "enabled",
+      "identicalAcrossArms": true
+    }
+  },
+  "buildGate": [
+    "An ordinary webpage WebGPU request is traced through device creation, shader compilation, submission, mapped readback and destruction, all owned by Doe.",
+    "With Doe execution disabled as a negative control, that page operation fails.",
+    "Forced Doe fails closed: no fallback to Dawn, recorded per page device.",
+    "Validation, state tracking, resource lifetimes and the browser sandbox are preserved; the sandbox is not disabled.",
+    "The forced-Doe build passes isolated clean installation from packaged inputs."
+  ],
+  "arms": [
+    { "id": "A", "name": "stock-chromium-with-dawn", "browser": "stock", "webgpuProvider": "dawn", "agentHarness": "playwright-agent-tooling-with-revalidation" },
+    { "id": "B", "name": "fawn-workspace-with-dawn", "browser": "stock", "webgpuProvider": "dawn", "agentHarness": "fawn-workspace-service" },
+    { "id": "C", "name": "fawn-workspace-with-doe", "browser": "forced-doe", "webgpuProvider": "doe", "agentHarness": "fawn-workspace-service" }
+  ],
+  "workloads": [
+    {
+      "id": "agent-suite",
+      "kind": "agent-workspace",
+      "source": {
+        "policyPath": "config/browser-product-comparison-policy.json",
+        "policySha256": "6bfb8c1ed17e32316cf453f5e833711dd51f19854831f3a76061eba3bd8e688c",
+        "suite": "workspaceComparison.modelDrivenDifferentiation",
+        "suiteVersion": "2026-10-15-model-driven-v2"
+      },
+      "reuse": "Prompts, tools, tasks, held-out and development fixtures, model, sampling, budgets and the suite's judges are reused unchanged, including interruption recovery and scoped observation. Only the browser differs: each arm uses this contract's build instead of the suite's frozen binary.",
+      "armRoles": { "A": "control", "B": "treatment", "C": "treatment" },
+      "repetitions": 3,
+      "spend": {
+        "pricesPerMillionTokensUsd": { "input": 2, "output": 10 },
+        "tasks": 153,
+        "worstCaseUsd": 371.61,
+        "approvedCeilingUsd": null,
+        "rule": "No billed request runs before the user approves a ceiling for this contract; the model-driven campaign's ceiling does not cover it. The runner refuses any request whose worst case could cross the approved ceiling."
+      }
+    },
+    {
+      "id": "doppler-browser-generation",
+      "kind": "gpu-application",
+      "source": {
+        "dopplerSourceCommit": "3f1cd76251fcb7d7741ee82d9cb88b9e81b922c9",
+        "browserEntry": "src/index-browser.js",
+        "contractPath": "bench/external-projects/doppler-generation/complete-generation-v2.json",
+        "contractSha256": "39693ac4547c9bf303641a50ae43271180e2a1ee32e57617642a523c834bec58",
+        "reuse": "The contract's model files by hash, cases and generation settings, unchanged, served to the page from a local origin."
+      },
+      "oracle": {
+        "referencePath": "bench/external-projects/doppler-generation/reference.py",
+        "referenceSha256": "fd7a11bc03cdf536a971bdcaec6dd4ee228d14d502998fd0387d5dcfee5a39b3",
+        "rule": "Exact prompt token IDs, generated token IDs, complete decoded text and stop reason against the independent CPU reference, on every run of every arm; a mismatch fails the run before performance."
+      },
+      "timing": "Complete generation per case, initial and resident, from the generate call to the final token materialized in the page; opening and teardown reported separately.",
+      "statistic": "geometric mean across cases of each case's p50 and p95",
+      "marginRatio": 1.25,
+      "marginSource": "complete-generation-v2.json performance.minimumLatencyGainRatio"
+    },
+    {
+      "id": "umap-sgd",
+      "kind": "gpu-application",
+      "source": {
+        "upstreamRepository": "https://github.com/Achuttarsing/umap-gpu",
+        "upstreamCommit": "7884b287f49bc057df7e0856c5539f130a20e0ad",
+        "inputsPath": "bench/external-projects/umap-gpu/sgd-benchmark.inputs.json",
+        "inputsSha256": "2d453439b8f597fd38d4dddd4e88b4b5de83fa0d18ab4dd68767d674e9184b39",
+        "reuse": "The pinned upstream GPUSgd implementation and both WGSL shaders run unchanged in the page with the declared deterministic generator."
+      },
+      "oracle": {
+        "oraclePath": "bench/external-projects/umap-gpu/sgd-benchmark.oracle.md",
+        "oracleSha256": "7f4937e8fd86fae2a167e80e7d9a6abb52e98cba96f064c7a177ce92d290b552",
+        "rule": "The frozen semantic oracle on every run, and exact output-byte replay within each arm."
+      },
+      "timing": "GPUSgd.init() plus all epochs, synchronization, mapped readback and output materialization.",
+      "statistic": "p50 and p95 of complete operations",
+      "marginRatio": 1.10,
+      "marginSource": "bench/external-projects/umap-gpu/sgd-benchmark.harness.json runtimeOwnershipPlan.materialOutcome"
+    },
+    {
+      "id": "three-fog-scattering",
+      "kind": "gpu-application",
+      "source": {
+        "upstreamRepository": "https://github.com/mrdoob/three.js",
+        "upstreamCommit": "3d3a92e467aafd6749eb06f732a5f42e6d117fe4",
+        "application": "examples/webgpu_custom_fog_scattering.html",
+        "dependencyManifestPath": "reports/browser-compiler/20261004/three-screen/dependencies.json",
+        "dependencyManifestSha256": "e0c161efa894f97d20fe7adab688c0ba9152d36457acff29da34a0c2d18b916e",
+        "reuse": "Every acquired upstream file runs unchanged, verified against the manifest's Git blob and SHA-256."
+      },
+      "viewport": { "width": 1920, "height": 1080, "deviceScaleFactor": 1 },
+      "input": "One fixed scripted pointer and keyboard sequence for the application's FirstPersonControls, replayed identically on every arm.",
+      "oracle": {
+        "rule": "A harness init script, identical on every arm, pins the animation clock for correctness captures. Frames captured at fixed times on C match A within the tolerance, and A/A captures stay within it.",
+        "tolerance": { "unit": "8-bit channel levels", "meanAbsoluteDifference": 1, "p99AbsoluteDifference": 4 }
+      },
+      "timing": "Frame time during the scripted input, from requestAnimationFrame intervals and the engine's GPU timestamps; both recorded.",
+      "statistic": "p50 and p95 of frame time",
+      "marginRatio": 1.10,
+      "marginSource": "adopted from the UMAP material margin; no earlier rendering margin exists"
+    }
+  ],
+  "sampling": {
+    "gpuWorkloads": {
+      "processesPerLabel": 8,
+      "labelsPerArm": ["copy-1", "copy-2"],
+      "labelRule": "Each arm runs two identical-byte copies of its browser executable as separate labels.",
+      "order": "Balanced blocks that rotate arm order and label order.",
+      "isolation": "Every sample is a fresh browser process with a fresh profile and empty provider caches.",
+      "retries": "none"
+    },
+    "bootstrap": { "seed": 20261015, "samples": 20000, "confidence": 0.95, "unit": "independent process" }
+  },
+  "controls": {
+    "maximumControlRatio": 1.05,
+    "source": "complete-generation-v2.json performance.maximumControlRatio",
+    "rule": "For every GPU workload and arm, the A/A interval between the two labels must lie within the band. If any fails, every performance comparison is withheld and the evidence retained."
+  },
+  "memory": {
+    "measures": ["peak resident memory of the browser process tree", "peak GPU device memory of the GPU process from DRM fdinfo"],
+    "maximumRegressionRatio": 1.05,
+    "source": "complete-generation-v2.json performance.maximumMemoryRegressionRatio"
+  },
+  "decisionRules": [
+    { "id": "build-gate", "rule": "The build gate passes before any arm runs." },
+    { "id": "controls-stable", "rule": "Every A/A interval lies within the control band; otherwise performance is withheld." },
+    { "id": "correctness", "rule": "Every run of every arm passes its workload oracle; any failure on C fails the proof." },
+    { "id": "b-over-a-workspace", "rule": "On the agent suite, B against A passes the frozen model-driven product-advantage rule, with B as treatment and A as control." },
+    { "id": "c-over-b-gpu", "rule": "For every GPU workload, C over B at p50 and at p95, each bootstrap lower bound at or above the workload's margin, with every memory measure within the regression ratio." },
+    { "id": "c-preserves-b", "rule": "On the agent suite, C is non-inferior to B: success rate no more than the suite's non-inferiority margin below B, incorrect external effects and human reviews not above B, recovery not below B." },
+    { "id": "c-over-a-complete", "rule": "C against A passes the frozen model-driven product-advantage rule, and for every GPU workload C beats A at p50 and p95 by the workload's margin within the memory bound, with zero fallback events and application files byte-identical across arms." }
+  ],
+  "claimRule": "Proof 3 is established only when every decision rule passes in one full run; Fawn then earns the larger claim. Any other result is retained and changes no claim.",
+  "runPolicy": {
+    "fullRuns": 1,
+    "outcomeSelectedRetries": false,
+    "retainFailures": true,
+    "providerFailures": "Model-provider and infrastructure failures stop the run and are reported separately from task outcomes."
+  },
+  "doesNotEstablish": [
+    "release qualification",
+    "other hosts, GPUs or drivers",
+    "other browsers or Chromium revisions",
+    "Metal results, which belong to proof 2",
+    "results for other models"
+  ]
+}

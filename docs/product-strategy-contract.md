@@ -6,6 +6,28 @@ It is the machine-readable source for milestone order, the binding proving set,
 and development-effectiveness recording. Status routes evidence; it does not
 maintain another roadmap.
 
+## Integrated comparison frozen before implementation
+
+`config/fawn-doe-integrated-comparison.json` (schema version 1) freezes proof 3
+before any Chromium checkout or build, and `roadmapProofs` names it as proof 3's
+contract. It fixes:
+- the three arms, with stock and forced-Doe builds from one Chromium revision
+  and configuration that differ only by the Doe provider patch set
+- a build gate: page WebGPU work owned by Doe, a disabled-Doe negative control,
+  fail-closed forced Doe and an enabled sandbox
+- workloads: the frozen model-driven agent suite, unchanged browser Doppler
+  generation with its independent CPU reference, the UMAP SGD workload and the
+  pinned upstream Three.js fog-scattering application, each pinned by hash
+- identical-byte A/A labels per arm and margins reused from existing frozen
+  contracts where one exists
+- decision rules: B over A for workspace outcomes, C over B for p50 and p95 GPU
+  performance within memory bounds, C preserving B's correctness, recovery and
+  task success, and the complete C arm beating A without fallback or application
+  changes
+
+The agent suite's spend has no approved ceiling yet. The model-driven campaign
+and its comparison policy are unchanged.
+
 ## Three proofs select current work
 
 Schema version 14 and strategy version 6.7.0 add the required `roadmapProofs`

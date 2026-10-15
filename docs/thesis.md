@@ -92,7 +92,9 @@ The roadmap narrows to three proofs, recorded in `roadmapProofs` of
 3. **Integrated Fawn and Doe against stock Chromium and Dawn.** Build the
    forced-Doe Chromium path, then run identical browser and agent workloads on
    stock Chromium with Dawn, the Fawn workspace with Dawn, and the Fawn workspace
-   with Doe.
+   with Doe. [The integrated comparison contract](../config/fawn-doe-integrated-comparison.json)
+   froze its workloads, oracles, controls and decision rules before any checkout
+   or build.
 
 Fawn earns the larger claim only when the complete integrated system beats stock
 Chromium in task success, latency, memory, recovery and demanding GPU workloads.
