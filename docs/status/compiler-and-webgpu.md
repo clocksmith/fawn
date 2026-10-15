@@ -40,8 +40,10 @@ retains generated WGSL and matching Gaussian-family native captures. It identifi
 no worthwhile automatic transformation; Doe emits the blur fragments unchanged.
 Cached/incomplete engine timestamps limit pass attribution, and independent A/A
 frame differences reverse. No image oracle or application advantage is qualified.
-The browser delivery prototype is preserved. Only the existing full Doppler
-native Vulkan generation contract batch is active; graphics discovery is closed.
+The browser delivery prototype is preserved. This compiler experiment stays
+closed. The separately selected
+[WebGPU application graphics proof](../thesis.md#graphics-proof-families) requires
+new campaign contracts and provider evidence; it inherits no qualification here.
 The new screen plan and derived summary are schema-backed repo-only diagnostics.
 
 ## Browser shader attribution

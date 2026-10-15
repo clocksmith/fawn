@@ -42,6 +42,11 @@ The independent compiler and runtime retain these outcomes:
    provider without changing its shaders, models, inputs, application logic, or
    declared numerical requirements. Remove unnecessary preparation, transfers,
    synchronization, and memory overhead; earn the result in complete operations.
+   WebGPU application graphics belongs in the required win set alongside
+   compute: scenes, games, CAD, maps, particles, fluids, image and video effects,
+   charts, simulations, canvas presentation, and GPU-driven interfaces when
+   their work executes through WebGPU. Qualify each selected workload; this is
+   an intended outcome, not a claim that every application is supported or faster.
 2. **Reusable GPU programs.** Describe repeated computation once and retain
    compatible pipelines and resources. Keep descriptions, prepared resources,
    and invocations distinct; failed replacement preserves the working program.
@@ -95,8 +100,12 @@ The independent compiler and runtime retain these outcomes:
   tracing, or artifact publication. The optional fixed-shape interface and its
   extension limits belong in [reusable compute programs](docs/reusable-compute-programs.md).
 - Hardware and application impartiality: use the same compiler/runtime across
-  applications and vendors. Prioritize compute without weakening shared graphics
-  semantics. Collaborating products receive no private provider preference.
+  applications and vendors. Establish wins in both compute and WebGPU application
+  graphics before expanding into wider browser rendering. CSS, text, SVG,
+  Canvas 2D, video composition, rasterization and page compositing need separate
+  integration and measured benefit on their actual execution paths. Replacing
+  page WebGPU does not establish those benefits. Collaborating products receive
+  no private provider preference.
 - Adoption: supporting-feature value, receipts, internal benchmarks, and sibling
   integrations do not establish independent adoption or retained use.
 - Deployment: no mandatory browser or cloud service. Platform drivers and

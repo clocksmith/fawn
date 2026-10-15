@@ -21,6 +21,15 @@ failed checks or alter historical verdicts. Schema, component, policy, and
 link checks validate the documentation/configuration migration. It changes no
 runtime ABI, model arithmetic, numerical thresholds, or release evidence.
 
+The [graphics families](thesis.md#graphics-proof-families) require separate
+admission: direct WebGPU application graphics under proof 1, then wider Chromium
+rendering after measured integration selection. New graphics campaign contracts
+and executable gates must freeze and verify correctness, provider ownership,
+complete-frame timing, preparation, CPU and GPU memory obligations before
+promotion. Existing generation and proof-3 contracts are not amended by this
+selection. Page-WebGPU ownership alone cannot qualify Skia, Viz, ANGLE or media
+paths, including Graphite's separate use of Dawn.
+
 ## ONNX Vulkan campaign migration
 
 The [campaign contract](onnx-vulkan-campaign-contract.md) governs the additive
