@@ -381,8 +381,10 @@ consumer and next admission gate remains quarantined research.
 
 ## Product validation boundary
 
-DoeRuntime engineering stays focused on one correct, reproducible Doppler Node
-generation advantage over Dawn on Vulkan, then ONNX transfer. That campaign is a
+DoeRuntime engineering stays focused on [proofs 1 and 2](thesis.md#three-proofs):
+current Doe against Dawn on Vulkan, ending in one correct, reproducible Doppler
+Node generation advantage, then a current Metal confirmation; ONNX transfer
+waits. That campaign is a
 separately frozen hypothesis; the earlier Doppler package verdicts above keep
 their terminal meaning. Doppler results are engineering evidence, not adoption:
 the first runtime adoption objective remains one unchanged external non-Doppler

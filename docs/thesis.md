@@ -11,8 +11,8 @@ improvements; DoeProof records evidence.
 
 Fawn's shared workspace service has passed scoped behavioral qualification and
 has shown material complete-task value over competent Chromium/Playwright agent
-tooling on a frozen agent-workflow suite. The next milestones are broader
-workloads, compatibility and deployment qualification. The service runs above stock Chromium with narrow CDP/Playwright
+tooling on a frozen agent-workflow suite. Its next work is the integrated
+comparison in [the three proofs](#three-proofs). The service runs above stock Chromium with narrow CDP/Playwright
 adapters, persists ownership generations, rejects stale commands, and retains
 completed, failed, or unknown outcomes across restart, consistently across the
 research, form-submission and export workflows; task-specific logic stays outside
@@ -45,8 +45,8 @@ evidence.
 
 Fawn acceptance does not wait for native runtime wins. Durable authority and
 uncertainty handling came first, then scoped complete-task value against
-competent Chromium/Playwright agent tooling; broader workloads, compatibility and
-deployment qualification are next. Fawn must show why someone would choose
+competent Chromium/Playwright agent tooling; the integrated comparison is next.
+Fawn must show why someone would choose
 it, and DoeRuntime why someone would replace Dawn; neither result depends on the
 other. Add Chromium hooks and
 browser-runtime integration only when measured benefits justify their
@@ -54,8 +54,9 @@ compatibility and maintenance costs. Doppler retains model semantics;
 independently qualified DoeRuntime integration serves workflows where useful.
 Neither browser hooks nor runtime replacement defines the integrated product.
 
-Separately, keep DoeRuntime focused on one correct, reproducible Doppler Node
-generation advantage over Dawn on Vulkan, then ONNX transfer. Local AI supplies
+Separately, DoeRuntime's work is proofs 1 and 2: current Doe against Dawn on the
+initial qualification target, ending in one correct, reproducible Doppler Node
+generation advantage, then a current Metal confirmation. Local AI supplies
 demanding existing workloads and repeated execution costs to improve. Doppler is
 the first engineering customer and owns its models and inference. Transferring
 the improvement through the existing ONNX integration establishes that it belongs
@@ -64,12 +65,48 @@ Compiler opportunities can be selected independently when they have their own
 consumer and attributable outcome. Browser replacement is a later, optional
 integration route, not a prerequisite for native value.
 
+## Three proofs
+
+The bar is not usefulness beside Dawn and Chromium. Removing Doe or Fawn and
+returning to Dawn or stock Chromium must make the product measurably worse.
+Current evidence shows promise, not that result:
+- Doe's wins over Dawn are historical, uneven and partly microbenchmark-only,
+  and the decisive current real-model run is missing.
+- The extreme Metal upload rows lack fairness audits.
+- ONNX Runtime on Metal shows a tail loss.
+- Fawn improves agent work on Chromium; it has not beaten Chromium as an
+  integrated browser.
+
+The roadmap narrows to three proofs, recorded in `roadmapProofs` of
+[the strategy contract](../config/doe-product-strategy.json):
+
+1. **Current Doe against Dawn on the initial qualification target.** Re-run the
+   native and package rows on current code, audit suspicious wins, then run
+   complete Doppler generation. Acceptance requires correctness, stable A/A
+   controls, a p50 and p95 advantage, and CPU and memory bounds.
+2. **Current Metal confirmation.** Reproduce the strongest rows on current code,
+   audit every result at or above the suspicious-speedup ratio in
+   [the methodology thresholds](../config/benchmark-methodology-thresholds.json),
+   and fix or explain the ONNX Runtime tail regression. Historical artifacts in
+   ignored output do not count.
+3. **Integrated Fawn and Doe against stock Chromium and Dawn.** Build the
+   forced-Doe Chromium path, then run identical browser and agent workloads on
+   stock Chromium with Dawn, the Fawn workspace with Dawn, and the Fawn workspace
+   with Doe.
+
+Fawn earns the larger claim only when the complete integrated system beats stock
+Chromium in task success, latency, memory, recovery and demanding GPU workloads.
+Until then, Doe has promising execution evidence and Fawn has scoped workspace
+advantages; neither has achieved the final objective.
+
 ## Ordered execution milestones
 
 The schema-validated [strategy contract](../config/doe-product-strategy.json)
 owns the native/runtime milestone IDs, binding proving set, and development metric.
-This preserved sequence governs optional runtime substitution, independently of
-the selected Fawn workspace roadmap.
+The [three proofs](#three-proofs) select current work: milestone 1 completes
+within proof 1, milestones 2 and 3 wait until the proofs resolve, and proof 3
+selects the forced-Doe Chromium build for its comparison only, ahead of
+milestone 4's adoption decision.
 
 1. Close ordinary execution with one correct, reproducible Doppler Node
    generation advantage over Dawn on Vulkan. Retain accepted improvements and
@@ -265,9 +302,10 @@ Select bounded work under the [backend-focus constraint](../GOALS.md#strategic-c
 A consumer requirement informs the next selection; it cannot silently override
 that boundary or authorize a parallel campaign.
 
-DoeRuntime emphasis remains one correct, reproducible Doppler Node generation
-advantage over Dawn on Vulkan, then ONNX transfer; the existing ONNX evaluation
-distribution is sufficient for adoption work. The first engineering target is
+DoeRuntime emphasis is proofs 1 and 2: one correct, reproducible Doppler Node
+generation advantage over Dawn on Vulkan from current code, then a current Metal
+confirmation; ONNX transfer waits, and the existing ONNX evaluation distribution
+is sufficient for adoption work. The first engineering target is
 one frozen Strix Halo workstation, the initial qualification target
 ([host record](../reports/benchmarks/amd-vulkan/20261014-initial-qualification-target/README.md)).
 Its qualified Node baseline comes before any advantage claim. Hardware-first
@@ -300,11 +338,11 @@ Dynamic shapes require a separately qualified extension of the fixed-shape contr
 
 The ONNX Vulkan evaluation package remains the native installation front door and
 the transfer target after the Doppler advantage. Independent reproduction and
-retained adoption remain open. Chromium hooks and browser-runtime integration
-stay deferred until measured benefits justify their compatibility and maintenance
-costs and a separate selection decision is made. Fawn's next milestones,
-selected independently, are broader workloads, compatibility and deployment
-qualification. Existing A/B/C/D
+retained adoption remain open. Proof 3 is the selection decision for building
+the forced-Doe Chromium path; adopting Chromium hooks or browser-runtime
+integration still waits for its measured benefits to justify their compatibility
+and maintenance costs. Fawn's next work is that integrated comparison; broader
+workloads, compatibility and deployment qualification wait. Existing A/B/C/D
 and K0 browser laws retain their meaning. Accelerator work retains separate hardware
 admission and cannot broaden the active matrix through simulator evidence.
 

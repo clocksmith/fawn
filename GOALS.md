@@ -14,6 +14,12 @@ This file owns the product goals, constraints, and exclusions. These are desired
 outcomes, not claims of qualified support or completed adoption.
 [The thesis](docs/thesis.md) owns the rationale and execution sequence.
 
+**Final objective:** removing Doe or Fawn and returning to Dawn or stock Chromium
+makes the product measurably worse. Usefulness beside Dawn and Chromium does not
+meet this bar. Doe has promising execution evidence and Fawn has scoped workspace
+advantages; neither has achieved the objective. [Three proofs](docs/thesis.md#three-proofs)
+select the current work.
+
 ## Desired outcomes
 
 Fawn provides one reusable workspace contract spanning observation, action,
@@ -65,7 +71,7 @@ The independent compiler and runtime retain these outcomes:
 
 ## Strategic constraints
 
-- Backend focus: **Vulkan now; Metal after explicit prioritization and handoff; D3D12 deferred.**
+- Backend focus: **Vulkan on the initial qualification target, then a current Metal confirmation, both selected as proofs; D3D12 deferred.**
   Work proceeds in bounded batches. Existing regression checks do not authorize
   parallel optimization campaigns or silently expand that boundary.
 - Initial deployment: hardware-first local execution on one frozen workstation
@@ -104,22 +110,25 @@ The independent compiler and runtime retain these outcomes:
   are built-in guarantees, not general advantages: well-engineered orchestration
   can reproduce them. Scripted workflows show no material advantage over competent
   stock automation.
-  - Next milestone: the frozen model-driven comparison.
-  - Then compatibility, in order: headed Chrome, multiple pages and tabs,
-    another operating system, release packaging and upgrades.
+  - The frozen model-driven comparison runs once credentials exist; it
+    measures only the scoped workspace advantage.
+  - Work outside [the three proofs](docs/thesis.md#three-proofs) waits until they
+    resolve, including multiple pages and tabs, another operating system, and
+    release packaging and upgrades.
 
   Behaviorally qualified, product-advantaged and release-qualified stay
   distinct. The first holds on the frozen case set, the second only on those
   suites, and the third is not established. None depends on native runtime
-  wins. Separately, DoeRuntime stays
-  focused on one correct, reproducible Doppler Node generation advantage over
-  Dawn on Vulkan, starting from a qualified Node baseline on the initial
-  qualification target, then ONNX transfer. Provider attribution (Doppler+Doe
+  wins; the integrated claim does. DoeRuntime's work is proofs 1 and 2: current
+  Doe against Dawn on the initial qualification target, ending in complete
+  Doppler generation from a qualified Node baseline, then a current Metal
+  confirmation. ONNX transfer waits. Provider attribution (Doppler+Doe
   versus Doppler+Dawn) and complete-system alternatives (ordinary Chromium plus
   a native inference engine) are separate comparisons. New compiler opportunities require explicit
-  selection. Chromium hooks and browser-runtime integration require measured
-  benefits that justify their compatibility and maintenance costs. Closed browser
-  optimizer experiments remain closed.
+  selection. Proof 3 selects the forced-Doe Chromium path for its integrated
+  comparison; adopting Chromium hooks or browser-runtime integration still requires
+  that comparison's measured benefits to justify their compatibility and
+  maintenance costs. Closed browser optimizer experiments remain closed.
   [Ordered milestones](docs/thesis.md#ordered-execution-milestones) do not block
   correctness repairs, independent installation, or technical release.
 

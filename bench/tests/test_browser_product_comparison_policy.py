@@ -72,6 +72,15 @@ class BrowserProductComparisonPolicyTests(unittest.TestCase):
             expanded = copy.deepcopy(strategy)
             expanded["executionOwnership"]["workSelection"][key] = value
             cases.append(expanded)
+        established = copy.deepcopy(strategy)
+        established["roadmapProofs"]["proofs"][2]["currentAssessment"] = "established"
+        cases.append(established)
+        without_stock_arm = copy.deepcopy(strategy)
+        without_stock_arm["roadmapProofs"]["proofs"][2]["arms"].remove("stock-chromium-with-dawn")
+        cases.append(without_stock_arm)
+        reordered = copy.deepcopy(strategy)
+        reordered["roadmapProofs"]["proofs"].reverse()
+        cases.append(reordered)
         for index, candidate in enumerate(cases):
             with self.subTest(case=index):
                 self.assertFalse(validator.is_valid(candidate))

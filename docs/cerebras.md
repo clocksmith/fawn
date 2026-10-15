@@ -4,8 +4,7 @@ Index for the Doppler → Doe → Cerebras lane: current status, source location
 hardware runbook, bundle pointer, and claim scope.
 
 [GOALS.md](../GOALS.md#strategic-constraints) selects work. This lane is not in
-the current selection, which is Fawn's shared workspace service and DoeRuntime's
-Doppler Node generation advantage over Dawn on Vulkan, then ONNX transfer. It
+the current selection, which is [the three proofs](thesis.md#three-proofs). It
 proceeds only under the
 [accelerator admission rule](runtime-ownership-decision.md#cerebras-and-accelerator-retargeting);
 the status and blockers linked here describe the lane, not selected work.

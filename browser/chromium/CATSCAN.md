@@ -4,7 +4,7 @@ Parent: [Browser](../CATSCAN.md)
 
 ## Target
 
-When measured benefits justify its compatibility and maintenance costs, produce an installable Chromium-family artifact that runs a named unchanged application through forced Doe with independently validated output.
+Produce the forced-Doe Chromium artifact for [proof 3](../../docs/thesis.md#three-proofs): Doe owns page WebGPU work with independently validated output; release needs measured benefits.
 
 ## Authority
 

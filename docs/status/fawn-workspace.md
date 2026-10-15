@@ -250,14 +250,25 @@ Known limits:
   per owner generation
 
 Open work:
-- broader workloads, a model-driven agent stage, broader compatibility and
-  deployment qualification
-- selective deeper capabilities
+- the frozen model-driven comparison, waiting for model API credentials
+- [proof 3](../thesis.md#three-proofs): stock Chromium with Dawn, the Fawn
+  workspace with Dawn, and the Fawn workspace with Doe, on identical browser and
+  agent workloads. It needs a forced-Doe Chromium build in which the page's
+  WebGPU work is Doe-owned. None exists here: the local Chromium checkout is
+  empty, and the last legacy-shell archive (`browser/chromium/artifacts/20260811T130500Z/`)
+  failed clean installation and its smoke checks.
+- broader workloads, compatibility, deployment qualification and selective
+  deeper capabilities wait until the proofs resolve
 - release admission, which stays blocked
+
+Fawn has scoped workspace advantages, not the final objective: it earns the
+larger claim only when the integrated system beats stock Chromium in task
+success, latency, memory, recovery and demanding GPU workloads.
 
 Existing [Chromium runtime integration](../browser-lane.md) and
 [hosted artwork](fawn-start.md) keep separate evidence. Their receipts do not
-establish workspace authority or external-action recovery. Chromium hooks and
-browser-runtime integration wait for measured benefits that justify their
+establish workspace authority or external-action recovery. Proof 3 builds the
+forced-Doe Chromium path for its comparison; adopting Chromium hooks or
+browser-runtime integration still waits for measured benefits that justify their
 compatibility and maintenance costs. Native compiler/runtime work retains its
 own milestone IDs, numerical gates and platform admission.

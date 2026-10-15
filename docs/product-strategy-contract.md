@@ -6,6 +6,23 @@ It is the machine-readable source for milestone order, the binding proving set,
 and development-effectiveness recording. Status routes evidence; it does not
 maintain another roadmap.
 
+## Three proofs select current work
+
+Schema version 14 and strategy version 6.7.0 add the required `roadmapProofs`
+block. It records the final objective (removing Doe or Fawn and returning to
+Dawn or stock Chromium makes the product measurably worse) and the three proofs:
+- current Doe against Dawn on the initial qualification target
+- a current Metal confirmation
+- integrated Fawn and Doe against stock Chromium and Dawn, across three fixed arms
+
+Each proof is `unestablished`; the schema accepts nothing else, so establishing
+one needs bound evidence and a schema change. Work selection records Metal as
+`selected-for-current-confirmation` and the browser as
+`selected-for-integrated-comparison`; the active backend stays AMD Vulkan. The
+milestones keep their order: milestone 1 completes within proof 1, milestones 2
+and 3 wait, and proof 3 builds the forced-Doe Chromium path for comparison only,
+ahead of milestone 4's adoption decision. No assessment changes.
+
 ## Qualification rebound to current service source
 
 Strategy version 6.6.2 binds `fawnWorkspace.qualificationEvidence` to the full
