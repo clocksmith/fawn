@@ -13,7 +13,8 @@ native runtime wins are not prerequisites.
 
 [Proof 3](thesis.md#three-proofs) selects the forced-Doe Chromium path for one
 integrated comparison: stock Chromium with Dawn, the Fawn workspace with Dawn, and
-the Fawn workspace with Doe, on identical browser and agent workloads. Adopting
+the Fawn workspace with Doe, on identical browser and agent workloads, under
+[the integrated comparison contract](../config/fawn-doe-integrated-comparison.json). Adopting
 Chromium hooks or browser-runtime integration still requires measured benefits
 that justify their compatibility and maintenance costs. Preserve WebGPU behavior through validation and
 process boundaries; broader adoption also requires compatibility, hostile-input

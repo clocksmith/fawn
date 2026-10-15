@@ -415,6 +415,7 @@
           "the integrated system beats stock Chromium in task success, latency, memory, recovery and demanding GPU workloads"
         ],
         "claimRule": "Fawn earns the larger claim only when the complete integrated system beats stock Chromium on every required measure.",
+        "contractPath": "config/fawn-doe-integrated-comparison.json",
         "currentAssessment": "unestablished"
       }
     ]

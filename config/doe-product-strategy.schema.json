@@ -289,9 +289,10 @@
               "allOf": [
                 { "$ref": "#/$defs/roadmapProof" },
                 {
-                  "required": ["arms", "claimRule"],
+                  "required": ["arms", "claimRule", "contractPath"],
                   "properties": {
                     "id": { "const": "integrated-fawn-doe-versus-stock-chromium-dawn" },
+                    "contractPath": { "const": "config/fawn-doe-integrated-comparison.json" },
                     "order": { "const": 3 },
                     "arms": { "const": ["stock-chromium-with-dawn", "fawn-workspace-with-dawn", "fawn-workspace-with-doe"] }
                   }
@@ -498,6 +499,7 @@
         "arms": { "type": "array", "items": { "type": "string" } },
         "requiredEvidence": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
         "claimRule": { "type": "string", "minLength": 1 },
+        "contractPath": { "type": "string", "minLength": 1 },
         "currentAssessment": {
           "description": "Establishing a proof needs bound evidence and a schema change, never a label edit.",
           "const": "unestablished"

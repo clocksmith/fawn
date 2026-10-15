@@ -374,6 +374,10 @@
       "data": "config/fawn-workspace-service.json"
     },
     {
+      "schema": "config/fawn-doe-integrated-comparison.schema.json",
+      "data": "config/fawn-doe-integrated-comparison.json"
+    },
+    {
       "schema": "config/fawn-workspace-qualification.schema.json",
       "data": "config/fawn-workspace-qualification.json"
     },

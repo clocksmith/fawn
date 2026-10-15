@@ -1,0 +1,261 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://doe.local/schemas/fawn-doe-integrated-comparison.schema.json",
+  "title": "Fawn and Doe integrated comparison (roadmap proof 3)",
+  "description": "Frozen before any Chromium checkout or build: arms, workloads, oracles, sampling, controls and decision rules for the complete Fawn workspace with Doe against stock Chromium with Dawn.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "schemaVersion", "contractId", "status", "frozenOn", "strategyProof", "purpose", "host", "chromiumSource", "browserBuilds", "buildGate", "arms", "workloads", "sampling", "controls", "memory", "decisionRules", "claimRule", "runPolicy", "doesNotEstablish"],
+  "properties": {
+    "$schema": { "const": "fawn-doe-integrated-comparison.schema.json" },
+    "schemaVersion": { "const": 1 },
+    "contractId": { "const": "fawn-doe-integrated-comparison-v1" },
+    "status": { "enum": ["frozen-before-implementation", "implemented-not-run", "run"] },
+    "frozenOn": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" },
+    "strategyProof": { "const": "integrated-fawn-doe-versus-stock-chromium-dawn" },
+    "purpose": { "$ref": "#/$defs/text" },
+    "host": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["target", "hostRecordPath", "reservation", "isolation"],
+      "properties": {
+        "target": { "const": "initial-qualification-target" },
+        "hostRecordPath": { "$ref": "#/$defs/text" },
+        "reservation": { "$ref": "#/$defs/text" },
+        "isolation": { "$ref": "#/$defs/text" }
+      }
+    },
+    "chromiumSource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["acquisitionOrder", "existingLanePath", "internalDiskAllowed", "inspectBeforeUse", "rule"],
+      "properties": {
+        "acquisitionOrder": { "const": ["existing-external-lane-drive", "fresh-checkout-on-external-ssd"] },
+        "existingLanePath": { "$ref": "#/$defs/text" },
+        "internalDiskAllowed": { "const": false },
+        "inspectBeforeUse": { "$ref": "#/$defs/textList" },
+        "rule": { "$ref": "#/$defs/text" }
+      }
+    },
+    "browserBuilds": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["rule", "launch"],
+      "properties": {
+        "rule": { "$ref": "#/$defs/text" },
+        "launch": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["mode", "arguments", "sandbox", "identicalAcrossArms"],
+          "properties": {
+            "mode": { "const": "headless-with-hardware-gpu" },
+            "arguments": { "$ref": "#/$defs/textList" },
+            "sandbox": { "const": "enabled" },
+            "identicalAcrossArms": { "const": true }
+          }
+        }
+      }
+    },
+    "buildGate": { "$ref": "#/$defs/textList" },
+    "arms": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": false,
+      "prefixItems": [
+        { "$ref": "#/$defs/arm", "properties": { "id": { "const": "A" }, "name": { "const": "stock-chromium-with-dawn" }, "browser": { "const": "stock" }, "webgpuProvider": { "const": "dawn" }, "agentHarness": { "const": "playwright-agent-tooling-with-revalidation" } } },
+        { "$ref": "#/$defs/arm", "properties": { "id": { "const": "B" }, "name": { "const": "fawn-workspace-with-dawn" }, "browser": { "const": "stock" }, "webgpuProvider": { "const": "dawn" }, "agentHarness": { "const": "fawn-workspace-service" } } },
+        { "$ref": "#/$defs/arm", "properties": { "id": { "const": "C" }, "name": { "const": "fawn-workspace-with-doe" }, "browser": { "const": "forced-doe" }, "webgpuProvider": { "const": "doe" }, "agentHarness": { "const": "fawn-workspace-service" } } }
+      ]
+    },
+    "workloads": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "items": false,
+      "prefixItems": [
+        { "$ref": "#/$defs/agentWorkload" },
+        { "allOf": [{ "$ref": "#/$defs/gpuWorkload" }, { "properties": { "id": { "const": "doppler-browser-generation" }, "marginRatio": { "const": 1.25 } } }] },
+        { "allOf": [{ "$ref": "#/$defs/gpuWorkload" }, { "properties": { "id": { "const": "umap-sgd" }, "marginRatio": { "const": 1.10 } } }] },
+        { "allOf": [{ "$ref": "#/$defs/gpuWorkload" }, { "required": ["viewport", "input"], "properties": { "id": { "const": "three-fog-scattering" }, "marginRatio": { "const": 1.10 } } }] }
+      ]
+    },
+    "sampling": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["gpuWorkloads", "bootstrap"],
+      "properties": {
+        "gpuWorkloads": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["processesPerLabel", "labelsPerArm", "labelRule", "order", "isolation", "retries"],
+          "properties": {
+            "processesPerLabel": { "type": "integer", "minimum": 8 },
+            "labelsPerArm": { "const": ["copy-1", "copy-2"] },
+            "labelRule": { "$ref": "#/$defs/text" },
+            "order": { "$ref": "#/$defs/text" },
+            "isolation": { "$ref": "#/$defs/text" },
+            "retries": { "const": "none" }
+          }
+        },
+        "bootstrap": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["seed", "samples", "confidence", "unit"],
+          "properties": {
+            "seed": { "type": "integer" },
+            "samples": { "type": "integer", "minimum": 10000 },
+            "confidence": { "const": 0.95 },
+            "unit": { "const": "independent process" }
+          }
+        }
+      }
+    },
+    "controls": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["maximumControlRatio", "source", "rule"],
+      "properties": {
+        "maximumControlRatio": { "const": 1.05 },
+        "source": { "$ref": "#/$defs/text" },
+        "rule": { "$ref": "#/$defs/text" }
+      }
+    },
+    "memory": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["measures", "maximumRegressionRatio", "source"],
+      "properties": {
+        "measures": { "$ref": "#/$defs/textList" },
+        "maximumRegressionRatio": { "const": 1.05 },
+        "source": { "$ref": "#/$defs/text" }
+      }
+    },
+    "decisionRules": {
+      "type": "array",
+      "minItems": 7,
+      "maxItems": 7,
+      "items": false,
+      "prefixItems": [
+        { "$ref": "#/$defs/rule", "properties": { "id": { "const": "build-gate" } } },
+        { "$ref": "#/$defs/rule", "properties": { "id": { "const": "controls-stable" } } },
+        { "$ref": "#/$defs/rule", "properties": { "id": { "const": "correctness" } } },
+        { "$ref": "#/$defs/rule", "properties": { "id": { "const": "b-over-a-workspace" } } },
+        { "$ref": "#/$defs/rule", "properties": { "id": { "const": "c-over-b-gpu" } } },
+        { "$ref": "#/$defs/rule", "properties": { "id": { "const": "c-preserves-b" } } },
+        { "$ref": "#/$defs/rule", "properties": { "id": { "const": "c-over-a-complete" } } }
+      ]
+    },
+    "claimRule": { "$ref": "#/$defs/text" },
+    "runPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["fullRuns", "outcomeSelectedRetries", "retainFailures", "providerFailures"],
+      "properties": {
+        "fullRuns": { "const": 1 },
+        "outcomeSelectedRetries": { "const": false },
+        "retainFailures": { "const": true },
+        "providerFailures": { "$ref": "#/$defs/text" }
+      }
+    },
+    "doesNotEstablish": { "$ref": "#/$defs/textList" }
+  },
+  "$defs": {
+    "text": { "type": "string", "minLength": 1 },
+    "textList": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+    "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "commit": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "arm": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "browser", "webgpuProvider", "agentHarness"],
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "browser": { "type": "string" },
+        "webgpuProvider": { "type": "string" },
+        "agentHarness": { "type": "string" }
+      }
+    },
+    "rule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "rule"],
+      "properties": { "id": { "type": "string" }, "rule": { "$ref": "#/$defs/text" } }
+    },
+    "agentWorkload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "source", "reuse", "armRoles", "repetitions", "spend"],
+      "properties": {
+        "id": { "const": "agent-suite" },
+        "kind": { "const": "agent-workspace" },
+        "source": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["policyPath", "policySha256", "suite", "suiteVersion"],
+          "properties": {
+            "policyPath": { "const": "config/browser-product-comparison-policy.json" },
+            "policySha256": { "$ref": "#/$defs/sha256" },
+            "suite": { "const": "workspaceComparison.modelDrivenDifferentiation" },
+            "suiteVersion": { "const": "2026-10-15-model-driven-v2" }
+          }
+        },
+        "reuse": { "$ref": "#/$defs/text" },
+        "armRoles": { "const": { "A": "control", "B": "treatment", "C": "treatment" } },
+        "repetitions": { "const": 3 },
+        "spend": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["pricesPerMillionTokensUsd", "tasks", "worstCaseUsd", "approvedCeilingUsd", "rule"],
+          "properties": {
+            "pricesPerMillionTokensUsd": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["input", "output"],
+              "properties": { "input": { "type": "number" }, "output": { "type": "number" } }
+            },
+            "tasks": { "type": "integer", "minimum": 1 },
+            "worstCaseUsd": { "type": "number" },
+            "approvedCeilingUsd": { "description": "Null until the user approves a ceiling for this contract.", "type": ["number", "null"] },
+            "rule": { "$ref": "#/$defs/text" }
+          }
+        }
+      }
+    },
+    "gpuWorkload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "source", "oracle", "timing", "statistic", "marginRatio", "marginSource"],
+      "properties": {
+        "id": { "type": "string" },
+        "kind": { "const": "gpu-application" },
+        "source": { "type": "object", "required": ["reuse"], "additionalProperties": { "type": "string", "minLength": 1 } },
+        "viewport": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["width", "height", "deviceScaleFactor"],
+          "properties": { "width": { "type": "integer" }, "height": { "type": "integer" }, "deviceScaleFactor": { "type": "number" } }
+        },
+        "input": { "$ref": "#/$defs/text" },
+        "oracle": {
+          "type": "object",
+          "required": ["rule"],
+          "properties": {
+            "rule": { "$ref": "#/$defs/text" },
+            "tolerance": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["unit", "meanAbsoluteDifference", "p99AbsoluteDifference"],
+              "properties": { "unit": { "type": "string" }, "meanAbsoluteDifference": { "type": "number" }, "p99AbsoluteDifference": { "type": "number" } }
+            }
+          }
+        },
+        "timing": { "$ref": "#/$defs/text" },
+        "statistic": { "$ref": "#/$defs/text" },
+        "marginRatio": { "type": "number", "exclusiveMinimum": 1 },
+        "marginSource": { "$ref": "#/$defs/text" }
+      }
+    }
+  }
+}
