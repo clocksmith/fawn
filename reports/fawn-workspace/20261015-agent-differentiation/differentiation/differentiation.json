@@ -1,0 +1,3578 @@
+{
+  "schemaVersion": 1,
+  "suiteVersion": "2026-10-15-agent-workflows-v1",
+  "scope": "full",
+  "identity": {
+    "caseSet": {
+      "path": "config/fawn-workspace-qualification.json",
+      "sha256": "786a1936c151126d79812750956c1abf06338292542ad8e3114c29978a52605a"
+    },
+    "serviceConfig": {
+      "path": "config/fawn-workspace-service.json",
+      "sha256": "1aec65f455df3c8c13197e56c826dcc78ead2abc863f76ef259fb8be7b9ed42f"
+    },
+    "comparisonPolicy": {
+      "path": "config/browser-product-comparison-policy.json",
+      "sha256": "5ed61a18511b07fbe0899f5c481f909ad475925c04e195067444e809e58773a6"
+    },
+    "serviceSource": {
+      "path": "browser/workspace/src",
+      "sha256": "108bad218afccb03f867a05d23477d9045f95d102f8b5f92190878b6cd600701",
+      "fileCount": 15
+    },
+    "harness": {
+      "path": "browser/workspace/qualification",
+      "sha256": "e22cb691747ea303002065d8d0fd6abaf483a7c65d50025eee8d0fc84bf1e53f",
+      "fileCount": 18
+    },
+    "packageLock": {
+      "path": "browser/workspace/package-lock.json",
+      "sha256": "39f0a7a6ee1132526dbd806276c2d90f8f9a3833d4d200a9d36a33df617d0c49"
+    },
+    "fixtureSite": {
+      "path": "browser/workspace/qualification/fixture-site.js",
+      "sha256": "26d88112a09468f07398f6677a6bdce393f9b6a54169359ec4d3f5ec5e82dc41"
+    },
+    "node": "v22.22.1",
+    "playwrightCore": "1.58.2",
+    "os": {
+      "platform": "linux",
+      "release": "7.0.0-29-generic",
+      "arch": "x64"
+    },
+    "git": {
+      "commit": "59b95f9ce7eb98a93ddd3d6d8e4e14f5af2aa685",
+      "workingTreeChanges": []
+    }
+  },
+  "browsers": {
+    "treatment": [
+      {
+        "path": "/home/x/.cache/ms-playwright/chromium_headless_shell-1208/chrome-headless-shell-linux64/chrome-headless-shell",
+        "sha256": "27e55cc30e487493b89b663085d6deeb0707be201a568657c922fac9076c317c",
+        "byteLength": 183557344,
+        "version": "Google Chrome for Testing 145.0.7632.6"
+      }
+    ],
+    "control": [
+      {
+        "path": "/home/x/.cache/ms-playwright/chromium_headless_shell-1208/chrome-headless-shell-linux64/chrome-headless-shell",
+        "sha256": "27e55cc30e487493b89b663085d6deeb0707be201a568657c922fac9076c317c",
+        "byteLength": 183557344,
+        "version": "Google Chrome for Testing 145.0.7632.6"
+      }
+    ]
+  },
+  "sameBrowserBinary": true,
+  "debuggingEndpoints": 0,
+  "perturbationTiming": {
+    "thinkTimeMs": 400,
+    "humanHoldMs": 800,
+    "agentRestartDelayMs": 1500
+  },
+  "summaries": {
+    "agent-clean": {
+      "treatment": {
+        "successes": 5,
+        "repetitions": 5,
+        "incorrectActions": 0,
+        "constraintViolatingMutations": 0,
+        "humanReviews": 0,
+        "duplicateOrders": 0,
+        "mutationsDuringHumanControl": 0,
+        "medianObservationBytes": 3878,
+        "medianLatencyMs": 1624.6161170000005
+      },
+      "control": {
+        "successes": 5,
+        "repetitions": 5,
+        "incorrectActions": 0,
+        "constraintViolatingMutations": 0,
+        "humanReviews": 0,
+        "duplicateOrders": 0,
+        "mutationsDuringHumanControl": 0,
+        "medianObservationBytes": 4229,
+        "medianLatencyMs": 1123.037397
+      }
+    },
+    "price-rises-during-think-time": {
+      "treatment": {
+        "successes": 3,
+        "repetitions": 3,
+        "incorrectActions": 0,
+        "constraintViolatingMutations": 0,
+        "humanReviews": 0,
+        "duplicateOrders": 0,
+        "mutationsDuringHumanControl": 0,
+        "medianObservationBytes": 5992,
+        "medianLatencyMs": 2095.7232070000027
+      },
+      "control": {
+        "successes": 3,
+        "repetitions": 3,
+        "incorrectActions": 3,
+        "constraintViolatingMutations": 3,
+        "humanReviews": 0,
+        "duplicateOrders": 0,
+        "mutationsDuringHumanControl": 0,
+        "medianObservationBytes": 7426,
+        "medianLatencyMs": 1640.9360730000008
+      }
+    },
+    "irrelevant-activity-churn": {
+      "treatment": {
+        "successes": 3,
+        "repetitions": 3,
+        "incorrectActions": 0,
+        "constraintViolatingMutations": 0,
+        "humanReviews": 0,
+        "duplicateOrders": 0,
+        "mutationsDuringHumanControl": 0,
+        "medianObservationBytes": 3892,
+        "medianLatencyMs": 1631.1278840000014
+      },
+      "control": {
+        "successes": 3,
+        "repetitions": 3,
+        "incorrectActions": 0,
+        "constraintViolatingMutations": 0,
+        "humanReviews": 0,
+        "duplicateOrders": 0,
+        "mutationsDuringHumanControl": 0,
+        "medianObservationBytes": 12785,
+        "medianLatencyMs": 1121.6558159999986
+      }
+    },
+    "human-takes-control-at-checkout": {
+      "treatment": {
+        "successes": 3,
+        "repetitions": 3,
+        "incorrectActions": 0,
+        "constraintViolatingMutations": 0,
+        "humanReviews": 0,
+        "duplicateOrders": 0,
+        "mutationsDuringHumanControl": 0,
+        "medianObservationBytes": 3898,
+        "medianLatencyMs": 2134.5466959999976
+      },
+      "control": {
+        "successes": 0,
+        "repetitions": 3,
+        "incorrectActions": 3,
+        "constraintViolatingMutations": 0,
+        "humanReviews": 0,
+        "duplicateOrders": 0,
+        "mutationsDuringHumanControl": 0,
+        "medianObservationBytes": 4269,
+        "medianLatencyMs": 1618.2684500000032
+      }
+    },
+    "agent-killed-during-order": {
+      "treatment": {
+        "successes": 3,
+        "repetitions": 3,
+        "incorrectActions": 0,
+        "constraintViolatingMutations": 0,
+        "humanReviews": 0,
+        "duplicateOrders": 0,
+        "mutationsDuringHumanControl": 0,
+        "medianObservationBytes": 4042,
+        "medianLatencyMs": 3148.258228999999
+      },
+      "control": {
+        "successes": 3,
+        "repetitions": 3,
+        "incorrectActions": 0,
+        "constraintViolatingMutations": 0,
+        "humanReviews": 0,
+        "duplicateOrders": 0,
+        "mutationsDuringHumanControl": 0,
+        "medianObservationBytes": 4588,
+        "medianLatencyMs": 2629.4789850000016
+      }
+    },
+    "agent-killed-during-order-transient-confirmation": {
+      "treatment": {
+        "successes": 3,
+        "repetitions": 3,
+        "incorrectActions": 0,
+        "constraintViolatingMutations": 0,
+        "humanReviews": 0,
+        "duplicateOrders": 0,
+        "mutationsDuringHumanControl": 0,
+        "medianObservationBytes": 3594,
+        "medianLatencyMs": 2702.656118999992
+      },
+      "control": {
+        "successes": 0,
+        "repetitions": 3,
+        "incorrectActions": 0,
+        "constraintViolatingMutations": 0,
+        "humanReviews": 3,
+        "duplicateOrders": 0,
+        "mutationsDuringHumanControl": 0,
+        "medianObservationBytes": 4464,
+        "medianLatencyMs": 2581.6954909999913
+      }
+    }
+  },
+  "requirements": [
+    {
+      "area": "changing-content",
+      "scenario": "price-rises-during-think-time",
+      "status": "met",
+      "bar": [
+        {
+          "field": "taskSuccessEveryRepetition",
+          "expected": true,
+          "observed": true,
+          "met": true
+        },
+        {
+          "field": "incorrectActions",
+          "expected": 0,
+          "observed": 0,
+          "met": true
+        },
+        {
+          "field": "constraintViolatingMutations",
+          "expected": 0,
+          "observed": 0,
+          "met": true
+        }
+      ],
+      "improvement": {
+        "measure": "constraintViolatingMutations",
+        "treatment": 0,
+        "control": 3,
+        "met": true
+      }
+    },
+    {
+      "area": "incremental-observation",
+      "scenario": "irrelevant-activity-churn",
+      "status": "met",
+      "bar": [
+        {
+          "field": "taskSuccessEveryRepetition",
+          "expected": true,
+          "observed": true,
+          "met": true
+        },
+        {
+          "field": "incorrectActions",
+          "expected": 0,
+          "observed": 0,
+          "met": true
+        }
+      ],
+      "improvement": {
+        "measure": "observationBytes",
+        "ratio": 0.30441924129839654,
+        "maximum": 0.5,
+        "met": true
+      }
+    },
+    {
+      "area": "human-handoff",
+      "scenario": "human-takes-control-at-checkout",
+      "status": "met",
+      "bar": [
+        {
+          "field": "taskSuccessEveryRepetition",
+          "expected": true,
+          "observed": true,
+          "met": true
+        },
+        {
+          "field": "incorrectActions",
+          "expected": 0,
+          "observed": 0,
+          "met": true
+        },
+        {
+          "field": "mutationsDuringHumanControl",
+          "expected": 0,
+          "observed": 0,
+          "met": true
+        }
+      ],
+      "improvement": {
+        "measure": "incorrectActions",
+        "treatment": 0,
+        "control": 3,
+        "met": true
+      }
+    },
+    {
+      "area": "interruption-recovery",
+      "scenario": "agent-killed-during-order-transient-confirmation",
+      "status": "met",
+      "bar": [
+        {
+          "field": "taskSuccessEveryRepetition",
+          "expected": true,
+          "observed": true,
+          "met": true
+        },
+        {
+          "field": "duplicateOrders",
+          "expected": 0,
+          "observed": 0,
+          "met": true
+        },
+        {
+          "field": "humanReviews",
+          "expected": 0,
+          "observed": 0,
+          "met": true
+        }
+      ],
+      "improvement": {
+        "measure": "humanReviewsPlusDuplicateOrders",
+        "treatment": 0,
+        "control": 3,
+        "met": true
+      }
+    }
+  ],
+  "productAdvantage": {
+    "areasMet": [
+      "changing-content",
+      "incremental-observation",
+      "human-handoff",
+      "interruption-recovery"
+    ],
+    "suiteRegressions": [],
+    "scriptedRegressions": [],
+    "established": true,
+    "doesNotEstablish": [
+      "broad-product-superiority",
+      "release-qualification",
+      "compatibility-beyond-the-fixture"
+    ]
+  },
+  "rows": [
+    {
+      "scenarioId": "agent-clean",
+      "arm": "treatment",
+      "repetition": 1,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "constraintViolatingMutations": 0,
+      "mutationsDuringHumanControl": 0,
+      "humanReviews": 0,
+      "duplicateOrders": 0,
+      "details": {
+        "status": "completed",
+        "error": null,
+        "orders": [
+          {
+            "id": 1,
+            "items": [
+              "gadget-b"
+            ],
+            "address": "1 Task Street"
+          }
+        ],
+        "expectedItem": "gadget-b",
+        "addressCorrect": true,
+        "invoiceCorrect": true
+      },
+      "observationBytes": 3878,
+      "latencyMs": 1627.56906,
+      "agentIncarnations": 1
+    },
+    {
+      "scenarioId": "agent-clean",
+      "arm": "control",
+      "repetition": 1,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "constraintViolatingMutations": 0,
+      "mutationsDuringHumanControl": 0,
+      "humanReviews": 0,
+      "duplicateOrders": 0,
+      "details": {
+        "status": "completed",
+        "error": null,
+        "orders": [
+          {
+            "id": 1,
+            "items": [
+              "gadget-b"
+            ],
+            "address": "1 Task Street"
+          }
+        ],
+        "expectedItem": "gadget-b",
+        "addressCorrect": true,
+        "invoiceCorrect": true
+      },
+      "observationBytes": 4229,
+      "latencyMs": 1123.4245189999997,
+      "agentIncarnations": 1
+    },
+    {
+      "scenarioId": "agent-clean",
+      "arm": "control",
+      "repetition": 2,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "constraintViolatingMutations": 0,
+      "mutationsDuringHumanControl": 0,
+      "humanReviews": 0,
+      "duplicateOrders": 0,
+      "details": {
+        "status": "completed",
+        "error": null,
+        "orders": [
+          {
+            "id": 1,
+            "items": [
+              "gadget-b"
+            ],
+            "address": "1 Task Street"
+          }
+        ],
+        "expectedItem": "gadget-b",
+        "addressCorrect": true,
+        "invoiceCorrect": true
+      },
+      "observationBytes": 4229,
+      "latencyMs": 1132.7089670000005,
+      "agentIncarnations": 1
+    },
+    {
+      "scenarioId": "agent-clean",
+      "arm": "treatment",
+      "repetition": 2,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "constraintViolatingMutations": 0,
+      "mutationsDuringHumanControl": 0,
+      "humanReviews": 0,
+      "duplicateOrders": 0,
+      "details": {
+        "status": "completed",
+        "error": null,
+        "orders": [
+          {
+            "id": 1,
+            "items": [
+              "gadget-b"
+            ],
+            "address": "1 Task Street"
+          }
+        ],
+        "expectedItem": "gadget-b",
+        "addressCorrect": true,
+        "invoiceCorrect": true
+      },
+      "observationBytes": 3878,
+      "latencyMs": 1613.709492,
+      "agentIncarnations": 1
+    },
+    {
+      "scenarioId": "agent-clean",
+      "arm": "treatment",
+      "repetition": 3,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "constraintViolatingMutations": 0,
+      "mutationsDuringHumanControl": 0,
+      "humanReviews": 0,
+      "duplicateOrders": 0,
+      "details": {
+        "status": "completed",
+        "error": null,
+        "orders": [
+          {
+            "id": 1,
+            "items": [
+              "gadget-b"
+            ],
+            "address": "1 Task Street"
+          }
+        ],
+        "expectedItem": "gadget-b",
+        "addressCorrect": true,
+        "invoiceCorrect": true
+      },
+      "observationBytes": 3878,
+      "latencyMs": 1624.6161170000005,
+      "agentIncarnations": 1
+    },
+    {
+      "scenarioId": "agent-clean",
+      "arm": "control",
+      "repetition": 3,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "constraintViolatingMutations": 0,
+      "mutationsDuringHumanControl": 0,
+      "humanReviews": 0,
+      "duplicateOrders": 0,
+      "details": {
+        "status": "completed",
+        "error": null,
+        "orders": [
+          {
+            "id": 1,
+            "items": [
+              "gadget-b"
+            ],
+            "address": "1 Task Street"
+          }
+        ],
+        "expectedItem": "gadget-b",
+        "addressCorrect": true,
+        "invoiceCorrect": true
+      },
+      "observationBytes": 4229,
+      "latencyMs": 1112.0639190000002,
+      "agentIncarnations": 1
+    },
+    {
+      "scenarioId": "agent-clean",
+      "arm": "control",
+      "repetition": 4,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "constraintViolatingMutations": 0,
+      "mutationsDuringHumanControl": 0,
+      "humanReviews": 0,
+      "duplicateOrders": 0,
+      "details": {
+        "status": "completed",
+        "error": null,
+        "orders": [
+          {
+            "id": 1,
+            "items": [
+              "gadget-b"
+            ],
+            "address": "1 Task Street"
+          }
+        ],
+        "expectedItem": "gadget-b",
+        "addressCorrect": true,
+        "invoiceCorrect": true
+      },
+      "observationBytes": 4229,
+      "latencyMs": 1123.037397,
+      "agentIncarnations": 1
+    },
+    {
+      "scenarioId": "agent-clean",
+      "arm": "treatment",
+      "repetition": 4,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "constraintViolatingMutations": 0,
+      "mutationsDuringHumanControl": 0,
+      "humanReviews": 0,
+      "duplicateOrders": 0,
+      "details": {
+        "status": "completed",
+        "error": null,
+        "orders": [
+          {
+            "id": 1,
+            "items": [
+              "gadget-b"
+            ],
+            "address": "1 Task Street"
+          }
+        ],
+        "expectedItem": "gadget-b",
+        "addressCorrect": true,
+        "invoiceCorrect": true
+      },
+      "observationBytes": 3878,
+      "latencyMs": 1628.410852000001,
+      "agentIncarnations": 1
+    },
+    {
+      "scenarioId": "agent-clean",
+      "arm": "treatment",
+      "repetition": 5,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "constraintViolatingMutations": 0,
+      "mutationsDuringHumanControl": 0,
+      "humanReviews": 0,
+      "duplicateOrders": 0,
+      "details": {
+        "status": "completed",
+        "error": null,
+        "orders": [
+          {
+            "id": 1,
+            "items": [
+              "gadget-b"
+            ],
+            "address": "1 Task Street"
+          }
+        ],
+        "expectedItem": "gadget-b",
+        "addressCorrect": true,
+        "invoiceCorrect": true
+      },
+      "observationBytes": 3878,
+      "latencyMs": 1605.343547999999,
+      "agentIncarnations": 1
+    },
+    {
+      "scenarioId": "agent-clean",
+      "arm": "control",
+      "repetition": 5,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "constraintViolatingMutations": 0,
+      "mutationsDuringHumanControl": 0,
+      "humanReviews": 0,
+      "duplicateOrders": 0,
+      "details": {
+        "status": "completed",
+        "error": null,
+        "orders": [
+          {
+            "id": 1,
+            "items": [
+              "gadget-b"
+            ],
+            "address": "1 Task Street"
+          }
+        ],
+        "expectedItem": "gadget-b",
+        "addressCorrect": true,
+        "invoiceCorrect": true
+      },
+      "observationBytes": 4229,
+      "latencyMs": 1104.7307830000009,
+      "agentIncarnations": 1
+    },
+    {
+      "scenarioId": "price-rises-during-think-time",
+      "arm": "treatment",
+      "repetition": 1,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "constraintViolatingMutations": 0,
+      "mutationsDuringHumanControl": 0,
+      "humanReviews": 0,
+      "duplicateOrders": 0,
+      "details": {
+        "status": "completed",
+        "error": null,
+        "orders": [
+          {
+            "id": 1,
+            "items": [
+              "gizmo-a"
+            ],
+            "address": "1 Task Street"
+          }
+        ],
+        "expectedItem": "gizmo-a",
+        "addressCorrect": true,
+        "invoiceCorrect": true
+      },
+      "observationBytes": 5992,
+      "latencyMs": 2095.7232070000027,
+      "agentIncarnations": 1
+    },
+    {
+      "scenarioId": "price-rises-during-think-time",
+      "arm": "control",
+      "repetition": 1,
+      "taskSuccess": true,
+      "incorrectActions": 1,
+      "constraintViolatingMutations": 1,
+      "mutationsDuringHumanControl": 0,
+      "humanReviews": 0,
+      "duplicateOrders": 0,
+      "details": {
+        "status": "completed",
+        "error": null,
+        "orders": [
+          {
+            "id": 1,
+            "items": [
+              "gizmo-a"
+            ],
+            "address": "1 Task Street"
+          }
+        ],
+        "expectedItem": "gizmo-a",
+        "addressCorrect": true,
+        "invoiceCorrect": true
+      },
+      "observationBytes": 7426,
+      "latencyMs": 1640.9360730000008,
+      "agentIncarnations": 1
+    },
+    {
+      "scenarioId": "price-rises-during-think-time",
+      "arm": "control",
+      "repetition": 2,
+      "taskSuccess": true,
+      "incorrectActions": 1,
+      "constraintViolatingMutations": 1,
+      "mutationsDuringHumanControl": 0,
+      "humanReviews": 0,
+      "duplicateOrders": 0,
+      "details": {
+        "status": "completed",
+        "error": null,
+        "orders": [
+          {
+            "id": 1,
+            "items": [
+              "gizmo-a"
+            ],
+            "address": "1 Task Street"
+          }
+        ],
+        "expectedItem": "gizmo-a",
+        "addressCorrect": true,
+        "invoiceCorrect": true
+      },
+      "observationBytes": 7426,
+      "latencyMs": 1626.865264,
+      "agentIncarnations": 1
+    },
+    {
+      "scenarioId": "price-rises-during-think-time",
+      "arm": "treatment",
+      "repetition": 2,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "constraintViolatingMutations": 0,
+      "mutationsDuringHumanControl": 0,
+      "humanReviews": 0,
+      "duplicateOrders": 0,
+      "details": {
+        "status": "completed",
+        "error": null,
+        "orders": [
+          {
+            "id": 1,
+            "items": [
+              "gizmo-a"
+            ],
+            "address": "1 Task Street"
+          }
+        ],
+        "expectedItem": "gizmo-a",
+        "addressCorrect": true,
+        "invoiceCorrect": true
+      },
+      "observationBytes": 5992,
+      "latencyMs": 2111.7878450000026,
+      "agentIncarnations": 1
+    },
+    {
+      "scenarioId": "price-rises-during-think-time",
+      "arm": "treatment",
+      "repetition": 3,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "constraintViolatingMutations": 0,
+      "mutationsDuringHumanControl": 0,
+      "humanReviews": 0,
+      "duplicateOrders": 0,
+      "details": {
+        "status": "completed",
+        "error": null,
+        "orders": [
+          {
+            "id": 1,
+            "items": [
+              "gizmo-a"
+            ],
+            "address": "1 Task Street"
+          }
+        ],
+        "expectedItem": "gizmo-a",
+        "addressCorrect": true,
+        "invoiceCorrect": true
+      },
+      "observationBytes": 5992,
+      "latencyMs": 2075.562280000002,
+      "agentIncarnations": 1
+    },
+    {
+      "scenarioId": "price-rises-during-think-time",
+      "arm": "control",
+      "repetition": 3,
+      "taskSuccess": true,
+      "incorrectActions": 1,
+      "constraintViolatingMutations": 1,
+      "mutationsDuringHumanControl": 0,
+      "humanReviews": 0,
+      "duplicateOrders": 0,
+      "details": {
+        "status": "completed",
+        "error": null,
+        "orders": [
+          {
+            "id": 1,
+            "items": [
+              "gizmo-a"
+            ],
+            "address": "1 Task Street"
+          }
+        ],
+        "expectedItem": "gizmo-a",
+        "addressCorrect": true,
+        "invoiceCorrect": true
+      },
+      "observationBytes": 7426,
+      "latencyMs": 1689.7855520000012,
+      "agentIncarnations": 1
+    },
+    {
+      "scenarioId": "irrelevant-activity-churn",
+      "arm": "treatment",
+      "repetition": 1,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "constraintViolatingMutations": 0,
+      "mutationsDuringHumanControl": 0,
+      "humanReviews": 0,
+      "duplicateOrders": 0,
+      "details": {
+        "status": "completed",
+        "error": null,
+        "orders": [
+          {
+            "id": 1,
+            "items": [
+              "gadget-b"
+            ],
+            "address": "1 Task Street"
+          }
+        ],
+        "expectedItem": "gadget-b",
+        "addressCorrect": true,
+        "invoiceCorrect": true
+      },
+      "observationBytes": 3892,
+      "latencyMs": 1631.1278840000014,
+      "agentIncarnations": 1
+    },
+    {
+      "scenarioId": "irrelevant-activity-churn",
+      "arm": "control",
+      "repetition": 1,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "constraintViolatingMutations": 0,
+      "mutationsDuringHumanControl": 0,
+      "humanReviews": 0,
+      "duplicateOrders": 0,
+      "details": {
+        "status": "completed",
+        "error": null,
+        "orders": [
+          {
+            "id": 1,
+            "items": [
+              "gadget-b"
+            ],
+            "address": "1 Task Street"
+          }
+        ],
+        "expectedItem": "gadget-b",
+        "addressCorrect": true,
+        "invoiceCorrect": true
+      },
+      "observationBytes": 12785,
+      "latencyMs": 1121.6558159999986,
+      "agentIncarnations": 1
+    },
+    {
+      "scenarioId": "irrelevant-activity-churn",
+      "arm": "control",
+      "repetition": 2,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "constraintViolatingMutations": 0,
+      "mutationsDuringHumanControl": 0,
+      "humanReviews": 0,
+      "duplicateOrders": 0,
+      "details": {
+        "status": "completed",
+        "error": null,
+        "orders": [
+          {
+            "id": 1,
+            "items": [
+              "gadget-b"
+            ],
+            "address": "1 Task Street"
+          }
+        ],
+        "expectedItem": "gadget-b",
+        "addressCorrect": true,
+        "invoiceCorrect": true
+      },
+      "observationBytes": 12785,
+      "latencyMs": 1119.3213909999977,
+      "agentIncarnations": 1
+    },
+    {
+      "scenarioId": "irrelevant-activity-churn",
+      "arm": "treatment",
+      "repetition": 2,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "constraintViolatingMutations": 0,
+      "mutationsDuringHumanControl": 0,
+      "humanReviews": 0,
+      "duplicateOrders": 0,
+      "details": {
+        "status": "completed",
+        "error": null,
+        "orders": [
+          {
+            "id": 1,
+            "items": [
+              "gadget-b"
+            ],
+            "address": "1 Task Street"
+          }
+        ],
+        "expectedItem": "gadget-b",
+        "addressCorrect": true,
+        "invoiceCorrect": true
+      },
+      "observationBytes": 3892,
+      "latencyMs": 1665.4768760000006,
+      "agentIncarnations": 1
+    },
+    {
+      "scenarioId": "irrelevant-activity-churn",
+      "arm": "treatment",
+      "repetition": 3,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "constraintViolatingMutations": 0,
+      "mutationsDuringHumanControl": 0,
+      "humanReviews": 0,
+      "duplicateOrders": 0,
+      "details": {
+        "status": "completed",
+        "error": null,
+        "orders": [
+          {
+            "id": 1,
+            "items": [
+              "gadget-b"
+            ],
+            "address": "1 Task Street"
+          }
+        ],
+        "expectedItem": "gadget-b",
+        "addressCorrect": true,
+        "invoiceCorrect": true
+      },
+      "observationBytes": 3892,
+      "latencyMs": 1624.6014209999994,
+      "agentIncarnations": 1
+    },
+    {
+      "scenarioId": "irrelevant-activity-churn",
+      "arm": "control",
+      "repetition": 3,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "constraintViolatingMutations": 0,
+      "mutationsDuringHumanControl": 0,
+      "humanReviews": 0,
+      "duplicateOrders": 0,
+      "details": {
+        "status": "completed",
+        "error": null,
+        "orders": [
+          {
+            "id": 1,
+            "items": [
+              "gadget-b"
+            ],
+            "address": "1 Task Street"
+          }
+        ],
+        "expectedItem": "gadget-b",
+        "addressCorrect": true,
+        "invoiceCorrect": true
+      },
+      "observationBytes": 12785,
+      "latencyMs": 1139.5878070000035,
+      "agentIncarnations": 1
+    },
+    {
+      "scenarioId": "human-takes-control-at-checkout",
+      "arm": "treatment",
+      "repetition": 1,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "constraintViolatingMutations": 0,
+      "mutationsDuringHumanControl": 0,
+      "humanReviews": 0,
+      "duplicateOrders": 0,
+      "details": {
+        "status": "completed",
+        "error": null,
+        "orders": [
+          {
+            "id": 1,
+            "items": [
+              "gadget-b"
+            ],
+            "address": "9 Human Road"
+          }
+        ],
+        "expectedItem": "gadget-b",
+        "addressCorrect": true,
+        "invoiceCorrect": true
+      },
+      "observationBytes": 3898,
+      "latencyMs": 2115.5088630000027,
+      "agentIncarnations": 1
+    },
+    {
+      "scenarioId": "human-takes-control-at-checkout",
+      "arm": "control",
+      "repetition": 1,
+      "taskSuccess": false,
+      "incorrectActions": 1,
+      "constraintViolatingMutations": 0,
+      "mutationsDuringHumanControl": 0,
+      "humanReviews": 0,
+      "duplicateOrders": 0,
+      "details": {
+        "status": "completed",
+        "error": null,
+        "orders": [
+          {
+            "id": 1,
+            "items": [
+              "gadget-b"
+            ],
+            "address": "1 Task Street"
+          }
+        ],
+        "expectedItem": "gadget-b",
+        "addressCorrect": false,
+        "invoiceCorrect": true
+      },
+      "observationBytes": 4269,
+      "latencyMs": 1618.2684500000032,
+      "agentIncarnations": 1
+    },
+    {
+      "scenarioId": "human-takes-control-at-checkout",
+      "arm": "control",
+      "repetition": 2,
+      "taskSuccess": false,
+      "incorrectActions": 1,
+      "constraintViolatingMutations": 0,
+      "mutationsDuringHumanControl": 0,
+      "humanReviews": 0,
+      "duplicateOrders": 0,
+      "details": {
+        "status": "completed",
+        "error": null,
+        "orders": [
+          {
+            "id": 1,
+            "items": [
+              "gadget-b"
+            ],
+            "address": "1 Task Street"
+          }
+        ],
+        "expectedItem": "gadget-b",
+        "addressCorrect": false,
+        "invoiceCorrect": true
+      },
+      "observationBytes": 4269,
+      "latencyMs": 1619.945071000002,
+      "agentIncarnations": 1
+    },
+    {
+      "scenarioId": "human-takes-control-at-checkout",
+      "arm": "treatment",
+      "repetition": 2,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "constraintViolatingMutations": 0,
+      "mutationsDuringHumanControl": 0,
+      "humanReviews": 0,
+      "duplicateOrders": 0,
+      "details": {
+        "status": "completed",
+        "error": null,
+        "orders": [
+          {
+            "id": 1,
+            "items": [
+              "gadget-b"
+            ],
+            "address": "9 Human Road"
+          }
+        ],
+        "expectedItem": "gadget-b",
+        "addressCorrect": true,
+        "invoiceCorrect": true
+      },
+      "observationBytes": 3898,
+      "latencyMs": 2163.233714000002,
+      "agentIncarnations": 1
+    },
+    {
+      "scenarioId": "human-takes-control-at-checkout",
+      "arm": "treatment",
+      "repetition": 3,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "constraintViolatingMutations": 0,
+      "mutationsDuringHumanControl": 0,
+      "humanReviews": 0,
+      "duplicateOrders": 0,
+      "details": {
+        "status": "completed",
+        "error": null,
+        "orders": [
+          {
+            "id": 1,
+            "items": [
+              "gadget-b"
+            ],
+            "address": "9 Human Road"
+          }
+        ],
+        "expectedItem": "gadget-b",
+        "addressCorrect": true,
+        "invoiceCorrect": true
+      },
+      "observationBytes": 3898,
+      "latencyMs": 2134.5466959999976,
+      "agentIncarnations": 1
+    },
+    {
+      "scenarioId": "human-takes-control-at-checkout",
+      "arm": "control",
+      "repetition": 3,
+      "taskSuccess": false,
+      "incorrectActions": 1,
+      "constraintViolatingMutations": 0,
+      "mutationsDuringHumanControl": 0,
+      "humanReviews": 0,
+      "duplicateOrders": 0,
+      "details": {
+        "status": "completed",
+        "error": null,
+        "orders": [
+          {
+            "id": 1,
+            "items": [
+              "gadget-b"
+            ],
+            "address": "1 Task Street"
+          }
+        ],
+        "expectedItem": "gadget-b",
+        "addressCorrect": false,
+        "invoiceCorrect": true
+      },
+      "observationBytes": 4269,
+      "latencyMs": 1615.563608000004,
+      "agentIncarnations": 1
+    },
+    {
+      "scenarioId": "agent-killed-during-order",
+      "arm": "treatment",
+      "repetition": 1,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "constraintViolatingMutations": 0,
+      "mutationsDuringHumanControl": 0,
+      "humanReviews": 0,
+      "duplicateOrders": 0,
+      "details": {
+        "status": "completed",
+        "error": null,
+        "orders": [
+          {
+            "id": 1,
+            "items": [
+              "gadget-b"
+            ],
+            "address": "1 Task Street"
+          }
+        ],
+        "expectedItem": "gadget-b",
+        "addressCorrect": true,
+        "invoiceCorrect": true
+      },
+      "observationBytes": 4042,
+      "latencyMs": 3112.5335699999996,
+      "agentIncarnations": 2
+    },
+    {
+      "scenarioId": "agent-killed-during-order",
+      "arm": "control",
+      "repetition": 1,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "constraintViolatingMutations": 0,
+      "mutationsDuringHumanControl": 0,
+      "humanReviews": 0,
+      "duplicateOrders": 0,
+      "details": {
+        "status": "completed",
+        "error": null,
+        "orders": [
+          {
+            "id": 1,
+            "items": [
+              "gadget-b"
+            ],
+            "address": "1 Task Street"
+          }
+        ],
+        "expectedItem": "gadget-b",
+        "addressCorrect": true,
+        "invoiceCorrect": true
+      },
+      "observationBytes": 4588,
+      "latencyMs": 2629.4789850000016,
+      "agentIncarnations": 2
+    },
+    {
+      "scenarioId": "agent-killed-during-order",
+      "arm": "control",
+      "repetition": 2,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "constraintViolatingMutations": 0,
+      "mutationsDuringHumanControl": 0,
+      "humanReviews": 0,
+      "duplicateOrders": 0,
+      "details": {
+        "status": "completed",
+        "error": null,
+        "orders": [
+          {
+            "id": 1,
+            "items": [
+              "gadget-b"
+            ],
+            "address": "1 Task Street"
+          }
+        ],
+        "expectedItem": "gadget-b",
+        "addressCorrect": true,
+        "invoiceCorrect": true
+      },
+      "observationBytes": 4588,
+      "latencyMs": 2631.0220069999996,
+      "agentIncarnations": 2
+    },
+    {
+      "scenarioId": "agent-killed-during-order",
+      "arm": "treatment",
+      "repetition": 2,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "constraintViolatingMutations": 0,
+      "mutationsDuringHumanControl": 0,
+      "humanReviews": 0,
+      "duplicateOrders": 0,
+      "details": {
+        "status": "completed",
+        "error": null,
+        "orders": [
+          {
+            "id": 1,
+            "items": [
+              "gadget-b"
+            ],
+            "address": "1 Task Street"
+          }
+        ],
+        "expectedItem": "gadget-b",
+        "addressCorrect": true,
+        "invoiceCorrect": true
+      },
+      "observationBytes": 4042,
+      "latencyMs": 3149.9195089999994,
+      "agentIncarnations": 2
+    },
+    {
+      "scenarioId": "agent-killed-during-order",
+      "arm": "treatment",
+      "repetition": 3,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "constraintViolatingMutations": 0,
+      "mutationsDuringHumanControl": 0,
+      "humanReviews": 0,
+      "duplicateOrders": 0,
+      "details": {
+        "status": "completed",
+        "error": null,
+        "orders": [
+          {
+            "id": 1,
+            "items": [
+              "gadget-b"
+            ],
+            "address": "1 Task Street"
+          }
+        ],
+        "expectedItem": "gadget-b",
+        "addressCorrect": true,
+        "invoiceCorrect": true
+      },
+      "observationBytes": 4042,
+      "latencyMs": 3148.258228999999,
+      "agentIncarnations": 2
+    },
+    {
+      "scenarioId": "agent-killed-during-order",
+      "arm": "control",
+      "repetition": 3,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "constraintViolatingMutations": 0,
+      "mutationsDuringHumanControl": 0,
+      "humanReviews": 0,
+      "duplicateOrders": 0,
+      "details": {
+        "status": "completed",
+        "error": null,
+        "orders": [
+          {
+            "id": 1,
+            "items": [
+              "gadget-b"
+            ],
+            "address": "1 Task Street"
+          }
+        ],
+        "expectedItem": "gadget-b",
+        "addressCorrect": true,
+        "invoiceCorrect": true
+      },
+      "observationBytes": 4588,
+      "latencyMs": 2590.9841050000105,
+      "agentIncarnations": 2
+    },
+    {
+      "scenarioId": "agent-killed-during-order-transient-confirmation",
+      "arm": "treatment",
+      "repetition": 1,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "constraintViolatingMutations": 0,
+      "mutationsDuringHumanControl": 0,
+      "humanReviews": 0,
+      "duplicateOrders": 0,
+      "details": {
+        "status": "completed",
+        "error": null,
+        "orders": [
+          {
+            "id": 1,
+            "items": [
+              "gadget-b"
+            ],
+            "address": "1 Task Street"
+          }
+        ],
+        "expectedItem": "gadget-b",
+        "addressCorrect": true,
+        "invoiceCorrect": true
+      },
+      "observationBytes": 3594,
+      "latencyMs": 2698.5845370000025,
+      "agentIncarnations": 2
+    },
+    {
+      "scenarioId": "agent-killed-during-order-transient-confirmation",
+      "arm": "control",
+      "repetition": 1,
+      "taskSuccess": false,
+      "incorrectActions": 0,
+      "constraintViolatingMutations": 0,
+      "mutationsDuringHumanControl": 0,
+      "humanReviews": 1,
+      "duplicateOrders": 0,
+      "details": {
+        "status": "human-review",
+        "error": null,
+        "orders": [
+          {
+            "id": 1,
+            "items": [
+              "gadget-b"
+            ],
+            "address": "1 Task Street"
+          }
+        ],
+        "expectedItem": "gadget-b",
+        "addressCorrect": true,
+        "invoiceCorrect": false
+      },
+      "observationBytes": 4464,
+      "latencyMs": 2581.6954909999913,
+      "agentIncarnations": 2
+    },
+    {
+      "scenarioId": "agent-killed-during-order-transient-confirmation",
+      "arm": "control",
+      "repetition": 2,
+      "taskSuccess": false,
+      "incorrectActions": 0,
+      "constraintViolatingMutations": 0,
+      "mutationsDuringHumanControl": 0,
+      "humanReviews": 1,
+      "duplicateOrders": 0,
+      "details": {
+        "status": "human-review",
+        "error": null,
+        "orders": [
+          {
+            "id": 1,
+            "items": [
+              "gadget-b"
+            ],
+            "address": "1 Task Street"
+          }
+        ],
+        "expectedItem": "gadget-b",
+        "addressCorrect": true,
+        "invoiceCorrect": false
+      },
+      "observationBytes": 4464,
+      "latencyMs": 2556.0134340000077,
+      "agentIncarnations": 2
+    },
+    {
+      "scenarioId": "agent-killed-during-order-transient-confirmation",
+      "arm": "treatment",
+      "repetition": 2,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "constraintViolatingMutations": 0,
+      "mutationsDuringHumanControl": 0,
+      "humanReviews": 0,
+      "duplicateOrders": 0,
+      "details": {
+        "status": "completed",
+        "error": null,
+        "orders": [
+          {
+            "id": 1,
+            "items": [
+              "gadget-b"
+            ],
+            "address": "1 Task Street"
+          }
+        ],
+        "expectedItem": "gadget-b",
+        "addressCorrect": true,
+        "invoiceCorrect": true
+      },
+      "observationBytes": 3594,
+      "latencyMs": 2710.641402999987,
+      "agentIncarnations": 2
+    },
+    {
+      "scenarioId": "agent-killed-during-order-transient-confirmation",
+      "arm": "treatment",
+      "repetition": 3,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "constraintViolatingMutations": 0,
+      "mutationsDuringHumanControl": 0,
+      "humanReviews": 0,
+      "duplicateOrders": 0,
+      "details": {
+        "status": "completed",
+        "error": null,
+        "orders": [
+          {
+            "id": 1,
+            "items": [
+              "gadget-b"
+            ],
+            "address": "1 Task Street"
+          }
+        ],
+        "expectedItem": "gadget-b",
+        "addressCorrect": true,
+        "invoiceCorrect": true
+      },
+      "observationBytes": 3594,
+      "latencyMs": 2702.656118999992,
+      "agentIncarnations": 2
+    },
+    {
+      "scenarioId": "agent-killed-during-order-transient-confirmation",
+      "arm": "control",
+      "repetition": 3,
+      "taskSuccess": false,
+      "incorrectActions": 0,
+      "constraintViolatingMutations": 0,
+      "mutationsDuringHumanControl": 0,
+      "humanReviews": 1,
+      "duplicateOrders": 0,
+      "details": {
+        "status": "human-review",
+        "error": null,
+        "orders": [
+          {
+            "id": 1,
+            "items": [
+              "gadget-b"
+            ],
+            "address": "1 Task Street"
+          }
+        ],
+        "expectedItem": "gadget-b",
+        "addressCorrect": true,
+        "invoiceCorrect": false
+      },
+      "observationBytes": 4464,
+      "latencyMs": 2582.1368049999874,
+      "agentIncarnations": 2
+    }
+  ],
+  "evidence": [
+    {
+      "scenarioId": "agent-clean",
+      "arm": "treatment",
+      "repetition": 1,
+      "requests": 26,
+      "mutations": [
+        {
+          "seq": 1,
+          "at": "2026-10-15T02:42:59.520Z",
+          "kind": "cart-add",
+          "item": "gadget-b",
+          "price": 900,
+          "stock": 4
+        },
+        {
+          "seq": 2,
+          "at": "2026-10-15T02:43:00.500Z",
+          "kind": "order",
+          "orderId": 1,
+          "duplicateOf": null,
+          "address": "1 Task Street"
+        },
+        {
+          "seq": 3,
+          "at": "2026-10-15T02:43:00.551Z",
+          "kind": "invoice",
+          "orderId": 1,
+          "sha256": "35001f9387ec58eb30126eef749a308e860bbba88a3377953b9b21411857aa1b"
+        }
+      ],
+      "orders": [
+        {
+          "id": 1,
+          "lines": [
+            {
+              "slug": "gadget-b",
+              "name": "Gadget B",
+              "price": 900,
+              "priceAtOrder": 900,
+              "stockAtOrder": 4
+            }
+          ],
+          "address": "1 Task Street",
+          "reference": "ref-agent-clean-treatment-1",
+          "viewed": true
+        }
+      ]
+    },
+    {
+      "scenarioId": "agent-clean",
+      "arm": "control",
+      "repetition": 1,
+      "requests": 20,
+      "mutations": [
+        {
+          "seq": 1,
+          "at": "2026-10-15T02:43:01.668Z",
+          "kind": "cart-add",
+          "item": "gadget-b",
+          "price": 900,
+          "stock": 4
+        },
+        {
+          "seq": 2,
+          "at": "2026-10-15T02:43:02.165Z",
+          "kind": "order",
+          "orderId": 1,
+          "duplicateOf": null,
+          "address": "1 Task Street"
+        },
+        {
+          "seq": 3,
+          "at": "2026-10-15T02:43:02.217Z",
+          "kind": "invoice",
+          "orderId": 1,
+          "sha256": "35001f9387ec58eb30126eef749a308e860bbba88a3377953b9b21411857aa1b"
+        }
+      ],
+      "orders": [
+        {
+          "id": 1,
+          "lines": [
+            {
+              "slug": "gadget-b",
+              "name": "Gadget B",
+              "price": 900,
+              "priceAtOrder": 900,
+              "stockAtOrder": 4
+            }
+          ],
+          "address": "1 Task Street",
+          "reference": "ref-agent-clean-control-1",
+          "viewed": true
+        }
+      ]
+    },
+    {
+      "scenarioId": "agent-clean",
+      "arm": "control",
+      "repetition": 2,
+      "requests": 20,
+      "mutations": [
+        {
+          "seq": 1,
+          "at": "2026-10-15T02:43:03.135Z",
+          "kind": "cart-add",
+          "item": "gadget-b",
+          "price": 900,
+          "stock": 4
+        },
+        {
+          "seq": 2,
+          "at": "2026-10-15T02:43:03.632Z",
+          "kind": "order",
+          "orderId": 1,
+          "duplicateOf": null,
+          "address": "1 Task Street"
+        },
+        {
+          "seq": 3,
+          "at": "2026-10-15T02:43:03.684Z",
+          "kind": "invoice",
+          "orderId": 1,
+          "sha256": "35001f9387ec58eb30126eef749a308e860bbba88a3377953b9b21411857aa1b"
+        }
+      ],
+      "orders": [
+        {
+          "id": 1,
+          "lines": [
+            {
+              "slug": "gadget-b",
+              "name": "Gadget B",
+              "price": 900,
+              "priceAtOrder": 900,
+              "stockAtOrder": 4
+            }
+          ],
+          "address": "1 Task Street",
+          "reference": "ref-agent-clean-control-2",
+          "viewed": true
+        }
+      ]
+    },
+    {
+      "scenarioId": "agent-clean",
+      "arm": "treatment",
+      "repetition": 2,
+      "requests": 25,
+      "mutations": [
+        {
+          "seq": 1,
+          "at": "2026-10-15T02:43:04.635Z",
+          "kind": "cart-add",
+          "item": "gadget-b",
+          "price": 900,
+          "stock": 4
+        },
+        {
+          "seq": 2,
+          "at": "2026-10-15T02:43:05.598Z",
+          "kind": "order",
+          "orderId": 1,
+          "duplicateOf": null,
+          "address": "1 Task Street"
+        },
+        {
+          "seq": 3,
+          "at": "2026-10-15T02:43:05.649Z",
+          "kind": "invoice",
+          "orderId": 1,
+          "sha256": "35001f9387ec58eb30126eef749a308e860bbba88a3377953b9b21411857aa1b"
+        }
+      ],
+      "orders": [
+        {
+          "id": 1,
+          "lines": [
+            {
+              "slug": "gadget-b",
+              "name": "Gadget B",
+              "price": 900,
+              "priceAtOrder": 900,
+              "stockAtOrder": 4
+            }
+          ],
+          "address": "1 Task Street",
+          "reference": "ref-agent-clean-treatment-2",
+          "viewed": true
+        }
+      ]
+    },
+    {
+      "scenarioId": "agent-clean",
+      "arm": "treatment",
+      "repetition": 3,
+      "requests": 26,
+      "mutations": [
+        {
+          "seq": 1,
+          "at": "2026-10-15T02:43:06.587Z",
+          "kind": "cart-add",
+          "item": "gadget-b",
+          "price": 900,
+          "stock": 4
+        },
+        {
+          "seq": 2,
+          "at": "2026-10-15T02:43:07.565Z",
+          "kind": "order",
+          "orderId": 1,
+          "duplicateOf": null,
+          "address": "1 Task Street"
+        },
+        {
+          "seq": 3,
+          "at": "2026-10-15T02:43:07.617Z",
+          "kind": "invoice",
+          "orderId": 1,
+          "sha256": "35001f9387ec58eb30126eef749a308e860bbba88a3377953b9b21411857aa1b"
+        }
+      ],
+      "orders": [
+        {
+          "id": 1,
+          "lines": [
+            {
+              "slug": "gadget-b",
+              "name": "Gadget B",
+              "price": 900,
+              "priceAtOrder": 900,
+              "stockAtOrder": 4
+            }
+          ],
+          "address": "1 Task Street",
+          "reference": "ref-agent-clean-treatment-3",
+          "viewed": true
+        }
+      ]
+    },
+    {
+      "scenarioId": "agent-clean",
+      "arm": "control",
+      "repetition": 3,
+      "requests": 20,
+      "mutations": [
+        {
+          "seq": 1,
+          "at": "2026-10-15T02:43:08.535Z",
+          "kind": "cart-add",
+          "item": "gadget-b",
+          "price": 900,
+          "stock": 4
+        },
+        {
+          "seq": 2,
+          "at": "2026-10-15T02:43:09.031Z",
+          "kind": "order",
+          "orderId": 1,
+          "duplicateOf": null,
+          "address": "1 Task Street"
+        },
+        {
+          "seq": 3,
+          "at": "2026-10-15T02:43:09.084Z",
+          "kind": "invoice",
+          "orderId": 1,
+          "sha256": "35001f9387ec58eb30126eef749a308e860bbba88a3377953b9b21411857aa1b"
+        }
+      ],
+      "orders": [
+        {
+          "id": 1,
+          "lines": [
+            {
+              "slug": "gadget-b",
+              "name": "Gadget B",
+              "price": 900,
+              "priceAtOrder": 900,
+              "stockAtOrder": 4
+            }
+          ],
+          "address": "1 Task Street",
+          "reference": "ref-agent-clean-control-3",
+          "viewed": true
+        }
+      ]
+    },
+    {
+      "scenarioId": "agent-clean",
+      "arm": "control",
+      "repetition": 4,
+      "requests": 20,
+      "mutations": [
+        {
+          "seq": 1,
+          "at": "2026-10-15T02:43:10.002Z",
+          "kind": "cart-add",
+          "item": "gadget-b",
+          "price": 900,
+          "stock": 4
+        },
+        {
+          "seq": 2,
+          "at": "2026-10-15T02:43:10.498Z",
+          "kind": "order",
+          "orderId": 1,
+          "duplicateOf": null,
+          "address": "1 Task Street"
+        },
+        {
+          "seq": 3,
+          "at": "2026-10-15T02:43:10.551Z",
+          "kind": "invoice",
+          "orderId": 1,
+          "sha256": "35001f9387ec58eb30126eef749a308e860bbba88a3377953b9b21411857aa1b"
+        }
+      ],
+      "orders": [
+        {
+          "id": 1,
+          "lines": [
+            {
+              "slug": "gadget-b",
+              "name": "Gadget B",
+              "price": 900,
+              "priceAtOrder": 900,
+              "stockAtOrder": 4
+            }
+          ],
+          "address": "1 Task Street",
+          "reference": "ref-agent-clean-control-4",
+          "viewed": true
+        }
+      ]
+    },
+    {
+      "scenarioId": "agent-clean",
+      "arm": "treatment",
+      "repetition": 4,
+      "requests": 26,
+      "mutations": [
+        {
+          "seq": 1,
+          "at": "2026-10-15T02:43:11.487Z",
+          "kind": "cart-add",
+          "item": "gadget-b",
+          "price": 900,
+          "stock": 4
+        },
+        {
+          "seq": 2,
+          "at": "2026-10-15T02:43:12.464Z",
+          "kind": "order",
+          "orderId": 1,
+          "duplicateOf": null,
+          "address": "1 Task Street"
+        },
+        {
+          "seq": 3,
+          "at": "2026-10-15T02:43:12.516Z",
+          "kind": "invoice",
+          "orderId": 1,
+          "sha256": "35001f9387ec58eb30126eef749a308e860bbba88a3377953b9b21411857aa1b"
+        }
+      ],
+      "orders": [
+        {
+          "id": 1,
+          "lines": [
+            {
+              "slug": "gadget-b",
+              "name": "Gadget B",
+              "price": 900,
+              "priceAtOrder": 900,
+              "stockAtOrder": 4
+            }
+          ],
+          "address": "1 Task Street",
+          "reference": "ref-agent-clean-treatment-4",
+          "viewed": true
+        }
+      ]
+    },
+    {
+      "scenarioId": "agent-clean",
+      "arm": "treatment",
+      "repetition": 5,
+      "requests": 25,
+      "mutations": [
+        {
+          "seq": 1,
+          "at": "2026-10-15T02:43:13.485Z",
+          "kind": "cart-add",
+          "item": "gadget-b",
+          "price": 900,
+          "stock": 4
+        },
+        {
+          "seq": 2,
+          "at": "2026-10-15T02:43:14.448Z",
+          "kind": "order",
+          "orderId": 1,
+          "duplicateOf": null,
+          "address": "1 Task Street"
+        },
+        {
+          "seq": 3,
+          "at": "2026-10-15T02:43:14.500Z",
+          "kind": "invoice",
+          "orderId": 1,
+          "sha256": "35001f9387ec58eb30126eef749a308e860bbba88a3377953b9b21411857aa1b"
+        }
+      ],
+      "orders": [
+        {
+          "id": 1,
+          "lines": [
+            {
+              "slug": "gadget-b",
+              "name": "Gadget B",
+              "price": 900,
+              "priceAtOrder": 900,
+              "stockAtOrder": 4
+            }
+          ],
+          "address": "1 Task Street",
+          "reference": "ref-agent-clean-treatment-5",
+          "viewed": true
+        }
+      ]
+    },
+    {
+      "scenarioId": "agent-clean",
+      "arm": "control",
+      "repetition": 5,
+      "requests": 20,
+      "mutations": [
+        {
+          "seq": 1,
+          "at": "2026-10-15T02:43:15.384Z",
+          "kind": "cart-add",
+          "item": "gadget-b",
+          "price": 900,
+          "stock": 4
+        },
+        {
+          "seq": 2,
+          "at": "2026-10-15T02:43:15.881Z",
+          "kind": "order",
+          "orderId": 1,
+          "duplicateOf": null,
+          "address": "1 Task Street"
+        },
+        {
+          "seq": 3,
+          "at": "2026-10-15T02:43:15.932Z",
+          "kind": "invoice",
+          "orderId": 1,
+          "sha256": "35001f9387ec58eb30126eef749a308e860bbba88a3377953b9b21411857aa1b"
+        }
+      ],
+      "orders": [
+        {
+          "id": 1,
+          "lines": [
+            {
+              "slug": "gadget-b",
+              "name": "Gadget B",
+              "price": 900,
+              "priceAtOrder": 900,
+              "stockAtOrder": 4
+            }
+          ],
+          "address": "1 Task Street",
+          "reference": "ref-agent-clean-control-5",
+          "viewed": true
+        }
+      ]
+    },
+    {
+      "scenarioId": "price-rises-during-think-time",
+      "arm": "treatment",
+      "repetition": 1,
+      "requests": 35,
+      "mutations": [
+        {
+          "seq": 1,
+          "at": "2026-10-15T02:43:16.415Z",
+          "kind": "price-change",
+          "item": "gadget-b",
+          "price": 1500
+        },
+        {
+          "seq": 2,
+          "at": "2026-10-15T02:43:17.335Z",
+          "kind": "cart-add",
+          "item": "gizmo-a",
+          "price": 950,
+          "stock": 2
+        },
+        {
+          "seq": 3,
+          "at": "2026-10-15T02:43:18.314Z",
+          "kind": "order",
+          "orderId": 1,
+          "duplicateOf": null,
+          "address": "1 Task Street"
+        },
+        {
+          "seq": 4,
+          "at": "2026-10-15T02:43:18.366Z",
+          "kind": "invoice",
+          "orderId": 1,
+          "sha256": "87d455ca33b29b08fbeee1d62b8b4d44b3b2d07832ac8c46253de53edb4a4dd2"
+        }
+      ],
+      "orders": [
+        {
+          "id": 1,
+          "lines": [
+            {
+              "slug": "gizmo-a",
+              "name": "Gizmo A",
+              "price": 950,
+              "priceAtOrder": 950,
+              "stockAtOrder": 2
+            }
+          ],
+          "address": "1 Task Street",
+          "reference": "ref-price-rises-during-think-time-treatment-1",
+          "viewed": true
+        }
+      ]
+    },
+    {
+      "scenarioId": "price-rises-during-think-time",
+      "arm": "control",
+      "repetition": 1,
+      "requests": 32,
+      "mutations": [
+        {
+          "seq": 1,
+          "at": "2026-10-15T02:43:18.840Z",
+          "kind": "price-change",
+          "item": "gadget-b",
+          "price": 1500
+        },
+        {
+          "seq": 2,
+          "at": "2026-10-15T02:43:19.267Z",
+          "kind": "cart-add",
+          "item": "gadget-b",
+          "price": 1500,
+          "stock": 4
+        },
+        {
+          "seq": 3,
+          "at": "2026-10-15T02:43:19.316Z",
+          "kind": "cart-remove",
+          "item": "gadget-b"
+        },
+        {
+          "seq": 4,
+          "at": "2026-10-15T02:43:19.799Z",
+          "kind": "cart-add",
+          "item": "gizmo-a",
+          "price": 950,
+          "stock": 2
+        },
+        {
+          "seq": 5,
+          "at": "2026-10-15T02:43:20.280Z",
+          "kind": "order",
+          "orderId": 1,
+          "duplicateOf": null,
+          "address": "1 Task Street"
+        },
+        {
+          "seq": 6,
+          "at": "2026-10-15T02:43:20.333Z",
+          "kind": "invoice",
+          "orderId": 1,
+          "sha256": "87d455ca33b29b08fbeee1d62b8b4d44b3b2d07832ac8c46253de53edb4a4dd2"
+        }
+      ],
+      "orders": [
+        {
+          "id": 1,
+          "lines": [
+            {
+              "slug": "gizmo-a",
+              "name": "Gizmo A",
+              "price": 950,
+              "priceAtOrder": 950,
+              "stockAtOrder": 2
+            }
+          ],
+          "address": "1 Task Street",
+          "reference": "ref-price-rises-during-think-time-control-1",
+          "viewed": true
+        }
+      ]
+    },
+    {
+      "scenarioId": "price-rises-during-think-time",
+      "arm": "control",
+      "repetition": 2,
+      "requests": 32,
+      "mutations": [
+        {
+          "seq": 1,
+          "at": "2026-10-15T02:43:20.827Z",
+          "kind": "price-change",
+          "item": "gadget-b",
+          "price": 1500
+        },
+        {
+          "seq": 2,
+          "at": "2026-10-15T02:43:21.251Z",
+          "kind": "cart-add",
+          "item": "gadget-b",
+          "price": 1500,
+          "stock": 4
+        },
+        {
+          "seq": 3,
+          "at": "2026-10-15T02:43:21.299Z",
+          "kind": "cart-remove",
+          "item": "gadget-b"
+        },
+        {
+          "seq": 4,
+          "at": "2026-10-15T02:43:21.765Z",
+          "kind": "cart-add",
+          "item": "gizmo-a",
+          "price": 950,
+          "stock": 2
+        },
+        {
+          "seq": 5,
+          "at": "2026-10-15T02:43:22.247Z",
+          "kind": "order",
+          "orderId": 1,
+          "duplicateOf": null,
+          "address": "1 Task Street"
+        },
+        {
+          "seq": 6,
+          "at": "2026-10-15T02:43:22.299Z",
+          "kind": "invoice",
+          "orderId": 1,
+          "sha256": "87d455ca33b29b08fbeee1d62b8b4d44b3b2d07832ac8c46253de53edb4a4dd2"
+        }
+      ],
+      "orders": [
+        {
+          "id": 1,
+          "lines": [
+            {
+              "slug": "gizmo-a",
+              "name": "Gizmo A",
+              "price": 950,
+              "priceAtOrder": 950,
+              "stockAtOrder": 2
+            }
+          ],
+          "address": "1 Task Street",
+          "reference": "ref-price-rises-during-think-time-control-2",
+          "viewed": true
+        }
+      ]
+    },
+    {
+      "scenarioId": "price-rises-during-think-time",
+      "arm": "treatment",
+      "repetition": 2,
+      "requests": 35,
+      "mutations": [
+        {
+          "seq": 1,
+          "at": "2026-10-15T02:43:22.796Z",
+          "kind": "price-change",
+          "item": "gadget-b",
+          "price": 1500
+        },
+        {
+          "seq": 2,
+          "at": "2026-10-15T02:43:23.702Z",
+          "kind": "cart-add",
+          "item": "gizmo-a",
+          "price": 950,
+          "stock": 2
+        },
+        {
+          "seq": 3,
+          "at": "2026-10-15T02:43:24.680Z",
+          "kind": "order",
+          "orderId": 1,
+          "duplicateOf": null,
+          "address": "1 Task Street"
+        },
+        {
+          "seq": 4,
+          "at": "2026-10-15T02:43:24.749Z",
+          "kind": "invoice",
+          "orderId": 1,
+          "sha256": "87d455ca33b29b08fbeee1d62b8b4d44b3b2d07832ac8c46253de53edb4a4dd2"
+        }
+      ],
+      "orders": [
+        {
+          "id": 1,
+          "lines": [
+            {
+              "slug": "gizmo-a",
+              "name": "Gizmo A",
+              "price": 950,
+              "priceAtOrder": 950,
+              "stockAtOrder": 2
+            }
+          ],
+          "address": "1 Task Street",
+          "reference": "ref-price-rises-during-think-time-treatment-2",
+          "viewed": true
+        }
+      ]
+    },
+    {
+      "scenarioId": "price-rises-during-think-time",
+      "arm": "treatment",
+      "repetition": 3,
+      "requests": 34,
+      "mutations": [
+        {
+          "seq": 1,
+          "at": "2026-10-15T02:43:25.264Z",
+          "kind": "price-change",
+          "item": "gadget-b",
+          "price": 1500
+        },
+        {
+          "seq": 2,
+          "at": "2026-10-15T02:43:26.169Z",
+          "kind": "cart-add",
+          "item": "gizmo-a",
+          "price": 950,
+          "stock": 2
+        },
+        {
+          "seq": 3,
+          "at": "2026-10-15T02:43:27.131Z",
+          "kind": "order",
+          "orderId": 1,
+          "duplicateOf": null,
+          "address": "1 Task Street"
+        },
+        {
+          "seq": 4,
+          "at": "2026-10-15T02:43:27.182Z",
+          "kind": "invoice",
+          "orderId": 1,
+          "sha256": "87d455ca33b29b08fbeee1d62b8b4d44b3b2d07832ac8c46253de53edb4a4dd2"
+        }
+      ],
+      "orders": [
+        {
+          "id": 1,
+          "lines": [
+            {
+              "slug": "gizmo-a",
+              "name": "Gizmo A",
+              "price": 950,
+              "priceAtOrder": 950,
+              "stockAtOrder": 2
+            }
+          ],
+          "address": "1 Task Street",
+          "reference": "ref-price-rises-during-think-time-treatment-3",
+          "viewed": true
+        }
+      ]
+    },
+    {
+      "scenarioId": "price-rises-during-think-time",
+      "arm": "control",
+      "repetition": 3,
+      "requests": 32,
+      "mutations": [
+        {
+          "seq": 1,
+          "at": "2026-10-15T02:43:27.685Z",
+          "kind": "price-change",
+          "item": "gadget-b",
+          "price": 1500
+        },
+        {
+          "seq": 2,
+          "at": "2026-10-15T02:43:28.135Z",
+          "kind": "cart-add",
+          "item": "gadget-b",
+          "price": 1500,
+          "stock": 4
+        },
+        {
+          "seq": 3,
+          "at": "2026-10-15T02:43:28.181Z",
+          "kind": "cart-remove",
+          "item": "gadget-b"
+        },
+        {
+          "seq": 4,
+          "at": "2026-10-15T02:43:28.665Z",
+          "kind": "cart-add",
+          "item": "gizmo-a",
+          "price": 950,
+          "stock": 2
+        },
+        {
+          "seq": 5,
+          "at": "2026-10-15T02:43:29.164Z",
+          "kind": "order",
+          "orderId": 1,
+          "duplicateOf": null,
+          "address": "1 Task Street"
+        },
+        {
+          "seq": 6,
+          "at": "2026-10-15T02:43:29.215Z",
+          "kind": "invoice",
+          "orderId": 1,
+          "sha256": "87d455ca33b29b08fbeee1d62b8b4d44b3b2d07832ac8c46253de53edb4a4dd2"
+        }
+      ],
+      "orders": [
+        {
+          "id": 1,
+          "lines": [
+            {
+              "slug": "gizmo-a",
+              "name": "Gizmo A",
+              "price": 950,
+              "priceAtOrder": 950,
+              "stockAtOrder": 2
+            }
+          ],
+          "address": "1 Task Street",
+          "reference": "ref-price-rises-during-think-time-control-3",
+          "viewed": true
+        }
+      ]
+    },
+    {
+      "scenarioId": "irrelevant-activity-churn",
+      "arm": "treatment",
+      "repetition": 1,
+      "requests": 25,
+      "mutations": [
+        {
+          "seq": 1,
+          "at": "2026-10-15T02:43:30.169Z",
+          "kind": "cart-add",
+          "item": "gadget-b",
+          "price": 900,
+          "stock": 4
+        },
+        {
+          "seq": 2,
+          "at": "2026-10-15T02:43:31.130Z",
+          "kind": "order",
+          "orderId": 1,
+          "duplicateOf": null,
+          "address": "1 Task Street"
+        },
+        {
+          "seq": 3,
+          "at": "2026-10-15T02:43:31.182Z",
+          "kind": "invoice",
+          "orderId": 1,
+          "sha256": "35001f9387ec58eb30126eef749a308e860bbba88a3377953b9b21411857aa1b"
+        }
+      ],
+      "orders": [
+        {
+          "id": 1,
+          "lines": [
+            {
+              "slug": "gadget-b",
+              "name": "Gadget B",
+              "price": 900,
+              "priceAtOrder": 900,
+              "stockAtOrder": 4
+            }
+          ],
+          "address": "1 Task Street",
+          "reference": "ref-irrelevant-activity-churn-treatment-1",
+          "viewed": true
+        }
+      ]
+    },
+    {
+      "scenarioId": "irrelevant-activity-churn",
+      "arm": "control",
+      "repetition": 1,
+      "requests": 20,
+      "mutations": [
+        {
+          "seq": 1,
+          "at": "2026-10-15T02:43:32.101Z",
+          "kind": "cart-add",
+          "item": "gadget-b",
+          "price": 900,
+          "stock": 4
+        },
+        {
+          "seq": 2,
+          "at": "2026-10-15T02:43:32.580Z",
+          "kind": "order",
+          "orderId": 1,
+          "duplicateOf": null,
+          "address": "1 Task Street"
+        },
+        {
+          "seq": 3,
+          "at": "2026-10-15T02:43:32.632Z",
+          "kind": "invoice",
+          "orderId": 1,
+          "sha256": "35001f9387ec58eb30126eef749a308e860bbba88a3377953b9b21411857aa1b"
+        }
+      ],
+      "orders": [
+        {
+          "id": 1,
+          "lines": [
+            {
+              "slug": "gadget-b",
+              "name": "Gadget B",
+              "price": 900,
+              "priceAtOrder": 900,
+              "stockAtOrder": 4
+            }
+          ],
+          "address": "1 Task Street",
+          "reference": "ref-irrelevant-activity-churn-control-1",
+          "viewed": true
+        }
+      ]
+    },
+    {
+      "scenarioId": "irrelevant-activity-churn",
+      "arm": "control",
+      "repetition": 2,
+      "requests": 20,
+      "mutations": [
+        {
+          "seq": 1,
+          "at": "2026-10-15T02:43:33.568Z",
+          "kind": "cart-add",
+          "item": "gadget-b",
+          "price": 900,
+          "stock": 4
+        },
+        {
+          "seq": 2,
+          "at": "2026-10-15T02:43:34.047Z",
+          "kind": "order",
+          "orderId": 1,
+          "duplicateOf": null,
+          "address": "1 Task Street"
+        },
+        {
+          "seq": 3,
+          "at": "2026-10-15T02:43:34.098Z",
+          "kind": "invoice",
+          "orderId": 1,
+          "sha256": "35001f9387ec58eb30126eef749a308e860bbba88a3377953b9b21411857aa1b"
+        }
+      ],
+      "orders": [
+        {
+          "id": 1,
+          "lines": [
+            {
+              "slug": "gadget-b",
+              "name": "Gadget B",
+              "price": 900,
+              "priceAtOrder": 900,
+              "stockAtOrder": 4
+            }
+          ],
+          "address": "1 Task Street",
+          "reference": "ref-irrelevant-activity-churn-control-2",
+          "viewed": true
+        }
+      ]
+    },
+    {
+      "scenarioId": "irrelevant-activity-churn",
+      "arm": "treatment",
+      "repetition": 2,
+      "requests": 26,
+      "mutations": [
+        {
+          "seq": 1,
+          "at": "2026-10-15T02:43:35.053Z",
+          "kind": "cart-add",
+          "item": "gadget-b",
+          "price": 900,
+          "stock": 4
+        },
+        {
+          "seq": 2,
+          "at": "2026-10-15T02:43:36.031Z",
+          "kind": "order",
+          "orderId": 1,
+          "duplicateOf": null,
+          "address": "1 Task Street"
+        },
+        {
+          "seq": 3,
+          "at": "2026-10-15T02:43:36.098Z",
+          "kind": "invoice",
+          "orderId": 1,
+          "sha256": "35001f9387ec58eb30126eef749a308e860bbba88a3377953b9b21411857aa1b"
+        }
+      ],
+      "orders": [
+        {
+          "id": 1,
+          "lines": [
+            {
+              "slug": "gadget-b",
+              "name": "Gadget B",
+              "price": 900,
+              "priceAtOrder": 900,
+              "stockAtOrder": 4
+            }
+          ],
+          "address": "1 Task Street",
+          "reference": "ref-irrelevant-activity-churn-treatment-2",
+          "viewed": true
+        }
+      ]
+    },
+    {
+      "scenarioId": "irrelevant-activity-churn",
+      "arm": "treatment",
+      "repetition": 3,
+      "requests": 26,
+      "mutations": [
+        {
+          "seq": 1,
+          "at": "2026-10-15T02:43:37.101Z",
+          "kind": "cart-add",
+          "item": "gadget-b",
+          "price": 900,
+          "stock": 4
+        },
+        {
+          "seq": 2,
+          "at": "2026-10-15T02:43:38.079Z",
+          "kind": "order",
+          "orderId": 1,
+          "duplicateOf": null,
+          "address": "1 Task Street"
+        },
+        {
+          "seq": 3,
+          "at": "2026-10-15T02:43:38.131Z",
+          "kind": "invoice",
+          "orderId": 1,
+          "sha256": "35001f9387ec58eb30126eef749a308e860bbba88a3377953b9b21411857aa1b"
+        }
+      ],
+      "orders": [
+        {
+          "id": 1,
+          "lines": [
+            {
+              "slug": "gadget-b",
+              "name": "Gadget B",
+              "price": 900,
+              "priceAtOrder": 900,
+              "stockAtOrder": 4
+            }
+          ],
+          "address": "1 Task Street",
+          "reference": "ref-irrelevant-activity-churn-treatment-3",
+          "viewed": true
+        }
+      ]
+    },
+    {
+      "scenarioId": "irrelevant-activity-churn",
+      "arm": "control",
+      "repetition": 3,
+      "requests": 20,
+      "mutations": [
+        {
+          "seq": 1,
+          "at": "2026-10-15T02:43:39.053Z",
+          "kind": "cart-add",
+          "item": "gadget-b",
+          "price": 900,
+          "stock": 4
+        },
+        {
+          "seq": 2,
+          "at": "2026-10-15T02:43:39.547Z",
+          "kind": "order",
+          "orderId": 1,
+          "duplicateOf": null,
+          "address": "1 Task Street"
+        },
+        {
+          "seq": 3,
+          "at": "2026-10-15T02:43:39.599Z",
+          "kind": "invoice",
+          "orderId": 1,
+          "sha256": "35001f9387ec58eb30126eef749a308e860bbba88a3377953b9b21411857aa1b"
+        }
+      ],
+      "orders": [
+        {
+          "id": 1,
+          "lines": [
+            {
+              "slug": "gadget-b",
+              "name": "Gadget B",
+              "price": 900,
+              "priceAtOrder": 900,
+              "stockAtOrder": 4
+            }
+          ],
+          "address": "1 Task Street",
+          "reference": "ref-irrelevant-activity-churn-control-3",
+          "viewed": true
+        }
+      ]
+    },
+    {
+      "scenarioId": "human-takes-control-at-checkout",
+      "arm": "treatment",
+      "repetition": 1,
+      "requests": 32,
+      "mutations": [
+        {
+          "seq": 1,
+          "at": "2026-10-15T02:43:40.551Z",
+          "kind": "cart-add",
+          "item": "gadget-b",
+          "price": 900,
+          "stock": 4
+        },
+        {
+          "seq": 2,
+          "at": "2026-10-15T02:43:40.730Z",
+          "kind": "human-fill",
+          "value": "9 Human Road"
+        },
+        {
+          "seq": 3,
+          "at": "2026-10-15T02:43:42.013Z",
+          "kind": "order",
+          "orderId": 1,
+          "duplicateOf": null,
+          "address": "9 Human Road"
+        },
+        {
+          "seq": 4,
+          "at": "2026-10-15T02:43:42.065Z",
+          "kind": "invoice",
+          "orderId": 1,
+          "sha256": "d0fdf856de5e15a37387f5ff9a391a35062e265d71c0c3effc74639406fb96ed"
+        }
+      ],
+      "orders": [
+        {
+          "id": 1,
+          "lines": [
+            {
+              "slug": "gadget-b",
+              "name": "Gadget B",
+              "price": 900,
+              "priceAtOrder": 900,
+              "stockAtOrder": 4
+            }
+          ],
+          "address": "9 Human Road",
+          "reference": "ref-human-takes-control-at-checkout-treatment-1",
+          "viewed": true
+        }
+      ]
+    },
+    {
+      "scenarioId": "human-takes-control-at-checkout",
+      "arm": "control",
+      "repetition": 1,
+      "requests": 27,
+      "mutations": [
+        {
+          "seq": 1,
+          "at": "2026-10-15T02:43:42.984Z",
+          "kind": "cart-add",
+          "item": "gadget-b",
+          "price": 900,
+          "stock": 4
+        },
+        {
+          "seq": 2,
+          "at": "2026-10-15T02:43:43.111Z",
+          "kind": "human-fill",
+          "value": "9 Human Road"
+        },
+        {
+          "seq": 3,
+          "at": "2026-10-15T02:43:43.980Z",
+          "kind": "order",
+          "orderId": 1,
+          "duplicateOf": null,
+          "address": "1 Task Street"
+        },
+        {
+          "seq": 4,
+          "at": "2026-10-15T02:43:44.032Z",
+          "kind": "invoice",
+          "orderId": 1,
+          "sha256": "35001f9387ec58eb30126eef749a308e860bbba88a3377953b9b21411857aa1b"
+        }
+      ],
+      "orders": [
+        {
+          "id": 1,
+          "lines": [
+            {
+              "slug": "gadget-b",
+              "name": "Gadget B",
+              "price": 900,
+              "priceAtOrder": 900,
+              "stockAtOrder": 4
+            }
+          ],
+          "address": "1 Task Street",
+          "reference": "ref-human-takes-control-at-checkout-control-1",
+          "viewed": true
+        }
+      ]
+    },
+    {
+      "scenarioId": "human-takes-control-at-checkout",
+      "arm": "control",
+      "repetition": 2,
+      "requests": 27,
+      "mutations": [
+        {
+          "seq": 1,
+          "at": "2026-10-15T02:43:44.933Z",
+          "kind": "cart-add",
+          "item": "gadget-b",
+          "price": 900,
+          "stock": 4
+        },
+        {
+          "seq": 2,
+          "at": "2026-10-15T02:43:45.058Z",
+          "kind": "human-fill",
+          "value": "9 Human Road"
+        },
+        {
+          "seq": 3,
+          "at": "2026-10-15T02:43:45.930Z",
+          "kind": "order",
+          "orderId": 1,
+          "duplicateOf": null,
+          "address": "1 Task Street"
+        },
+        {
+          "seq": 4,
+          "at": "2026-10-15T02:43:45.982Z",
+          "kind": "invoice",
+          "orderId": 1,
+          "sha256": "35001f9387ec58eb30126eef749a308e860bbba88a3377953b9b21411857aa1b"
+        }
+      ],
+      "orders": [
+        {
+          "id": 1,
+          "lines": [
+            {
+              "slug": "gadget-b",
+              "name": "Gadget B",
+              "price": 900,
+              "priceAtOrder": 900,
+              "stockAtOrder": 4
+            }
+          ],
+          "address": "1 Task Street",
+          "reference": "ref-human-takes-control-at-checkout-control-2",
+          "viewed": true
+        }
+      ]
+    },
+    {
+      "scenarioId": "human-takes-control-at-checkout",
+      "arm": "treatment",
+      "repetition": 2,
+      "requests": 33,
+      "mutations": [
+        {
+          "seq": 1,
+          "at": "2026-10-15T02:43:46.916Z",
+          "kind": "cart-add",
+          "item": "gadget-b",
+          "price": 900,
+          "stock": 4
+        },
+        {
+          "seq": 2,
+          "at": "2026-10-15T02:43:47.102Z",
+          "kind": "human-fill",
+          "value": "9 Human Road"
+        },
+        {
+          "seq": 3,
+          "at": "2026-10-15T02:43:48.429Z",
+          "kind": "order",
+          "orderId": 1,
+          "duplicateOf": null,
+          "address": "9 Human Road"
+        },
+        {
+          "seq": 4,
+          "at": "2026-10-15T02:43:48.482Z",
+          "kind": "invoice",
+          "orderId": 1,
+          "sha256": "d0fdf856de5e15a37387f5ff9a391a35062e265d71c0c3effc74639406fb96ed"
+        }
+      ],
+      "orders": [
+        {
+          "id": 1,
+          "lines": [
+            {
+              "slug": "gadget-b",
+              "name": "Gadget B",
+              "price": 900,
+              "priceAtOrder": 900,
+              "stockAtOrder": 4
+            }
+          ],
+          "address": "9 Human Road",
+          "reference": "ref-human-takes-control-at-checkout-treatment-2",
+          "viewed": true
+        }
+      ]
+    },
+    {
+      "scenarioId": "human-takes-control-at-checkout",
+      "arm": "treatment",
+      "repetition": 3,
+      "requests": 32,
+      "mutations": [
+        {
+          "seq": 1,
+          "at": "2026-10-15T02:43:49.417Z",
+          "kind": "cart-add",
+          "item": "gadget-b",
+          "price": 900,
+          "stock": 4
+        },
+        {
+          "seq": 2,
+          "at": "2026-10-15T02:43:49.600Z",
+          "kind": "human-fill",
+          "value": "9 Human Road"
+        },
+        {
+          "seq": 3,
+          "at": "2026-10-15T02:43:50.879Z",
+          "kind": "order",
+          "orderId": 1,
+          "duplicateOf": null,
+          "address": "9 Human Road"
+        },
+        {
+          "seq": 4,
+          "at": "2026-10-15T02:43:50.948Z",
+          "kind": "invoice",
+          "orderId": 1,
+          "sha256": "d0fdf856de5e15a37387f5ff9a391a35062e265d71c0c3effc74639406fb96ed"
+        }
+      ],
+      "orders": [
+        {
+          "id": 1,
+          "lines": [
+            {
+              "slug": "gadget-b",
+              "name": "Gadget B",
+              "price": 900,
+              "priceAtOrder": 900,
+              "stockAtOrder": 4
+            }
+          ],
+          "address": "9 Human Road",
+          "reference": "ref-human-takes-control-at-checkout-treatment-3",
+          "viewed": true
+        }
+      ]
+    },
+    {
+      "scenarioId": "human-takes-control-at-checkout",
+      "arm": "control",
+      "repetition": 3,
+      "requests": 27,
+      "mutations": [
+        {
+          "seq": 1,
+          "at": "2026-10-15T02:43:51.849Z",
+          "kind": "cart-add",
+          "item": "gadget-b",
+          "price": 900,
+          "stock": 4
+        },
+        {
+          "seq": 2,
+          "at": "2026-10-15T02:43:51.974Z",
+          "kind": "human-fill",
+          "value": "9 Human Road"
+        },
+        {
+          "seq": 3,
+          "at": "2026-10-15T02:43:52.846Z",
+          "kind": "order",
+          "orderId": 1,
+          "duplicateOf": null,
+          "address": "1 Task Street"
+        },
+        {
+          "seq": 4,
+          "at": "2026-10-15T02:43:52.899Z",
+          "kind": "invoice",
+          "orderId": 1,
+          "sha256": "35001f9387ec58eb30126eef749a308e860bbba88a3377953b9b21411857aa1b"
+        }
+      ],
+      "orders": [
+        {
+          "id": 1,
+          "lines": [
+            {
+              "slug": "gadget-b",
+              "name": "Gadget B",
+              "price": 900,
+              "priceAtOrder": 900,
+              "stockAtOrder": 4
+            }
+          ],
+          "address": "1 Task Street",
+          "reference": "ref-human-takes-control-at-checkout-control-3",
+          "viewed": true
+        }
+      ]
+    },
+    {
+      "scenarioId": "agent-killed-during-order",
+      "arm": "treatment",
+      "repetition": 1,
+      "requests": 25,
+      "mutations": [
+        {
+          "seq": 1,
+          "at": "2026-10-15T02:43:53.834Z",
+          "kind": "cart-add",
+          "item": "gadget-b",
+          "price": 900,
+          "stock": 4
+        },
+        {
+          "seq": 2,
+          "at": "2026-10-15T02:43:54.795Z",
+          "kind": "order",
+          "orderId": 1,
+          "duplicateOf": null,
+          "address": "1 Task Street"
+        },
+        {
+          "seq": 3,
+          "at": "2026-10-15T02:43:56.347Z",
+          "kind": "invoice",
+          "orderId": 1,
+          "sha256": "35001f9387ec58eb30126eef749a308e860bbba88a3377953b9b21411857aa1b"
+        }
+      ],
+      "orders": [
+        {
+          "id": 1,
+          "lines": [
+            {
+              "slug": "gadget-b",
+              "name": "Gadget B",
+              "price": 900,
+              "priceAtOrder": 900,
+              "stockAtOrder": 4
+            }
+          ],
+          "address": "1 Task Street",
+          "reference": "ref-agent-killed-during-order-treatment-1",
+          "viewed": true
+        }
+      ]
+    },
+    {
+      "scenarioId": "agent-killed-during-order",
+      "arm": "control",
+      "repetition": 1,
+      "requests": 20,
+      "mutations": [
+        {
+          "seq": 1,
+          "at": "2026-10-15T02:43:57.232Z",
+          "kind": "cart-add",
+          "item": "gadget-b",
+          "price": 900,
+          "stock": 4
+        },
+        {
+          "seq": 2,
+          "at": "2026-10-15T02:43:57.729Z",
+          "kind": "order",
+          "orderId": 1,
+          "duplicateOf": null,
+          "address": "1 Task Street"
+        },
+        {
+          "seq": 3,
+          "at": "2026-10-15T02:43:59.298Z",
+          "kind": "invoice",
+          "orderId": 1,
+          "sha256": "35001f9387ec58eb30126eef749a308e860bbba88a3377953b9b21411857aa1b"
+        }
+      ],
+      "orders": [
+        {
+          "id": 1,
+          "lines": [
+            {
+              "slug": "gadget-b",
+              "name": "Gadget B",
+              "price": 900,
+              "priceAtOrder": 900,
+              "stockAtOrder": 4
+            }
+          ],
+          "address": "1 Task Street",
+          "reference": "ref-agent-killed-during-order-control-1",
+          "viewed": true
+        }
+      ]
+    },
+    {
+      "scenarioId": "agent-killed-during-order",
+      "arm": "control",
+      "repetition": 2,
+      "requests": 20,
+      "mutations": [
+        {
+          "seq": 1,
+          "at": "2026-10-15T02:44:00.184Z",
+          "kind": "cart-add",
+          "item": "gadget-b",
+          "price": 900,
+          "stock": 4
+        },
+        {
+          "seq": 2,
+          "at": "2026-10-15T02:44:00.679Z",
+          "kind": "order",
+          "orderId": 1,
+          "duplicateOf": null,
+          "address": "1 Task Street"
+        },
+        {
+          "seq": 3,
+          "at": "2026-10-15T02:44:02.248Z",
+          "kind": "invoice",
+          "orderId": 1,
+          "sha256": "35001f9387ec58eb30126eef749a308e860bbba88a3377953b9b21411857aa1b"
+        }
+      ],
+      "orders": [
+        {
+          "id": 1,
+          "lines": [
+            {
+              "slug": "gadget-b",
+              "name": "Gadget B",
+              "price": 900,
+              "priceAtOrder": 900,
+              "stockAtOrder": 4
+            }
+          ],
+          "address": "1 Task Street",
+          "reference": "ref-agent-killed-during-order-control-2",
+          "viewed": true
+        }
+      ]
+    },
+    {
+      "scenarioId": "agent-killed-during-order",
+      "arm": "treatment",
+      "repetition": 2,
+      "requests": 26,
+      "mutations": [
+        {
+          "seq": 1,
+          "at": "2026-10-15T02:44:03.184Z",
+          "kind": "cart-add",
+          "item": "gadget-b",
+          "price": 900,
+          "stock": 4
+        },
+        {
+          "seq": 2,
+          "at": "2026-10-15T02:44:04.162Z",
+          "kind": "order",
+          "orderId": 1,
+          "duplicateOf": null,
+          "address": "1 Task Street"
+        },
+        {
+          "seq": 3,
+          "at": "2026-10-15T02:44:05.732Z",
+          "kind": "invoice",
+          "orderId": 1,
+          "sha256": "35001f9387ec58eb30126eef749a308e860bbba88a3377953b9b21411857aa1b"
+        }
+      ],
+      "orders": [
+        {
+          "id": 1,
+          "lines": [
+            {
+              "slug": "gadget-b",
+              "name": "Gadget B",
+              "price": 900,
+              "priceAtOrder": 900,
+              "stockAtOrder": 4
+            }
+          ],
+          "address": "1 Task Street",
+          "reference": "ref-agent-killed-during-order-treatment-2",
+          "viewed": true
+        }
+      ]
+    },
+    {
+      "scenarioId": "agent-killed-during-order",
+      "arm": "treatment",
+      "repetition": 3,
+      "requests": 26,
+      "mutations": [
+        {
+          "seq": 1,
+          "at": "2026-10-15T02:44:06.669Z",
+          "kind": "cart-add",
+          "item": "gadget-b",
+          "price": 900,
+          "stock": 4
+        },
+        {
+          "seq": 2,
+          "at": "2026-10-15T02:44:07.645Z",
+          "kind": "order",
+          "orderId": 1,
+          "duplicateOf": null,
+          "address": "1 Task Street"
+        },
+        {
+          "seq": 3,
+          "at": "2026-10-15T02:44:09.213Z",
+          "kind": "invoice",
+          "orderId": 1,
+          "sha256": "35001f9387ec58eb30126eef749a308e860bbba88a3377953b9b21411857aa1b"
+        }
+      ],
+      "orders": [
+        {
+          "id": 1,
+          "lines": [
+            {
+              "slug": "gadget-b",
+              "name": "Gadget B",
+              "price": 900,
+              "priceAtOrder": 900,
+              "stockAtOrder": 4
+            }
+          ],
+          "address": "1 Task Street",
+          "reference": "ref-agent-killed-during-order-treatment-3",
+          "viewed": true
+        }
+      ]
+    },
+    {
+      "scenarioId": "agent-killed-during-order",
+      "arm": "control",
+      "repetition": 3,
+      "requests": 20,
+      "mutations": [
+        {
+          "seq": 1,
+          "at": "2026-10-15T02:44:10.118Z",
+          "kind": "cart-add",
+          "item": "gadget-b",
+          "price": 900,
+          "stock": 4
+        },
+        {
+          "seq": 2,
+          "at": "2026-10-15T02:44:10.595Z",
+          "kind": "order",
+          "orderId": 1,
+          "duplicateOf": null,
+          "address": "1 Task Street"
+        },
+        {
+          "seq": 3,
+          "at": "2026-10-15T02:44:12.147Z",
+          "kind": "invoice",
+          "orderId": 1,
+          "sha256": "35001f9387ec58eb30126eef749a308e860bbba88a3377953b9b21411857aa1b"
+        }
+      ],
+      "orders": [
+        {
+          "id": 1,
+          "lines": [
+            {
+              "slug": "gadget-b",
+              "name": "Gadget B",
+              "price": 900,
+              "priceAtOrder": 900,
+              "stockAtOrder": 4
+            }
+          ],
+          "address": "1 Task Street",
+          "reference": "ref-agent-killed-during-order-control-3",
+          "viewed": true
+        }
+      ]
+    },
+    {
+      "scenarioId": "agent-killed-during-order-transient-confirmation",
+      "arm": "treatment",
+      "repetition": 1,
+      "requests": 27,
+      "mutations": [
+        {
+          "seq": 1,
+          "at": "2026-10-15T02:44:13.065Z",
+          "kind": "cart-add",
+          "item": "gadget-b",
+          "price": 900,
+          "stock": 4
+        },
+        {
+          "seq": 2,
+          "at": "2026-10-15T02:44:13.612Z",
+          "kind": "order",
+          "orderId": 1,
+          "duplicateOf": null,
+          "address": "1 Task Street"
+        },
+        {
+          "seq": 3,
+          "at": "2026-10-15T02:44:15.181Z",
+          "kind": "invoice",
+          "orderId": 1,
+          "sha256": "35001f9387ec58eb30126eef749a308e860bbba88a3377953b9b21411857aa1b"
+        }
+      ],
+      "orders": [
+        {
+          "id": 1,
+          "lines": [
+            {
+              "slug": "gadget-b",
+              "name": "Gadget B",
+              "price": 900,
+              "priceAtOrder": 900,
+              "stockAtOrder": 4
+            }
+          ],
+          "address": "1 Task Street",
+          "reference": "",
+          "viewed": true
+        }
+      ]
+    },
+    {
+      "scenarioId": "agent-killed-during-order-transient-confirmation",
+      "arm": "control",
+      "repetition": 1,
+      "requests": 25,
+      "mutations": [
+        {
+          "seq": 1,
+          "at": "2026-10-15T02:44:16.066Z",
+          "kind": "cart-add",
+          "item": "gadget-b",
+          "price": 900,
+          "stock": 4
+        },
+        {
+          "seq": 2,
+          "at": "2026-10-15T02:44:16.561Z",
+          "kind": "order",
+          "orderId": 1,
+          "duplicateOf": null,
+          "address": "1 Task Street"
+        }
+      ],
+      "orders": [
+        {
+          "id": 1,
+          "lines": [
+            {
+              "slug": "gadget-b",
+              "name": "Gadget B",
+              "price": 900,
+              "priceAtOrder": 900,
+              "stockAtOrder": 4
+            }
+          ],
+          "address": "1 Task Street",
+          "reference": "",
+          "viewed": true
+        }
+      ]
+    },
+    {
+      "scenarioId": "agent-killed-during-order-transient-confirmation",
+      "arm": "control",
+      "repetition": 2,
+      "requests": 25,
+      "mutations": [
+        {
+          "seq": 1,
+          "at": "2026-10-15T02:44:18.965Z",
+          "kind": "cart-add",
+          "item": "gadget-b",
+          "price": 900,
+          "stock": 4
+        },
+        {
+          "seq": 2,
+          "at": "2026-10-15T02:44:19.445Z",
+          "kind": "order",
+          "orderId": 1,
+          "duplicateOf": null,
+          "address": "1 Task Street"
+        }
+      ],
+      "orders": [
+        {
+          "id": 1,
+          "lines": [
+            {
+              "slug": "gadget-b",
+              "name": "Gadget B",
+              "price": 900,
+              "priceAtOrder": 900,
+              "stockAtOrder": 4
+            }
+          ],
+          "address": "1 Task Street",
+          "reference": "",
+          "viewed": true
+        }
+      ]
+    },
+    {
+      "scenarioId": "agent-killed-during-order-transient-confirmation",
+      "arm": "treatment",
+      "repetition": 2,
+      "requests": 27,
+      "mutations": [
+        {
+          "seq": 1,
+          "at": "2026-10-15T02:44:21.884Z",
+          "kind": "cart-add",
+          "item": "gadget-b",
+          "price": 900,
+          "stock": 4
+        },
+        {
+          "seq": 2,
+          "at": "2026-10-15T02:44:22.428Z",
+          "kind": "order",
+          "orderId": 1,
+          "duplicateOf": null,
+          "address": "1 Task Street"
+        },
+        {
+          "seq": 3,
+          "at": "2026-10-15T02:44:23.997Z",
+          "kind": "invoice",
+          "orderId": 1,
+          "sha256": "35001f9387ec58eb30126eef749a308e860bbba88a3377953b9b21411857aa1b"
+        }
+      ],
+      "orders": [
+        {
+          "id": 1,
+          "lines": [
+            {
+              "slug": "gadget-b",
+              "name": "Gadget B",
+              "price": 900,
+              "priceAtOrder": 900,
+              "stockAtOrder": 4
+            }
+          ],
+          "address": "1 Task Street",
+          "reference": "",
+          "viewed": true
+        }
+      ]
+    },
+    {
+      "scenarioId": "agent-killed-during-order-transient-confirmation",
+      "arm": "treatment",
+      "repetition": 3,
+      "requests": 27,
+      "mutations": [
+        {
+          "seq": 1,
+          "at": "2026-10-15T02:44:24.915Z",
+          "kind": "cart-add",
+          "item": "gadget-b",
+          "price": 900,
+          "stock": 4
+        },
+        {
+          "seq": 2,
+          "at": "2026-10-15T02:44:25.461Z",
+          "kind": "order",
+          "orderId": 1,
+          "duplicateOf": null,
+          "address": "1 Task Street"
+        },
+        {
+          "seq": 3,
+          "at": "2026-10-15T02:44:27.030Z",
+          "kind": "invoice",
+          "orderId": 1,
+          "sha256": "35001f9387ec58eb30126eef749a308e860bbba88a3377953b9b21411857aa1b"
+        }
+      ],
+      "orders": [
+        {
+          "id": 1,
+          "lines": [
+            {
+              "slug": "gadget-b",
+              "name": "Gadget B",
+              "price": 900,
+              "priceAtOrder": 900,
+              "stockAtOrder": 4
+            }
+          ],
+          "address": "1 Task Street",
+          "reference": "",
+          "viewed": true
+        }
+      ]
+    },
+    {
+      "scenarioId": "agent-killed-during-order-transient-confirmation",
+      "arm": "control",
+      "repetition": 3,
+      "requests": 25,
+      "mutations": [
+        {
+          "seq": 1,
+          "at": "2026-10-15T02:44:27.916Z",
+          "kind": "cart-add",
+          "item": "gadget-b",
+          "price": 900,
+          "stock": 4
+        },
+        {
+          "seq": 2,
+          "at": "2026-10-15T02:44:28.411Z",
+          "kind": "order",
+          "orderId": 1,
+          "duplicateOf": null,
+          "address": "1 Task Street"
+        }
+      ],
+      "orders": [
+        {
+          "id": 1,
+          "lines": [
+            {
+              "slug": "gadget-b",
+              "name": "Gadget B",
+              "price": 900,
+              "priceAtOrder": 900,
+              "stockAtOrder": 4
+            }
+          ],
+          "address": "1 Task Street",
+          "reference": "",
+          "viewed": true
+        }
+      ]
+    }
+  ]
+}

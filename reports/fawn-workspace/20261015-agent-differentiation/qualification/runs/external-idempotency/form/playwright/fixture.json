@@ -1,0 +1,86 @@
+{
+  "origin": "http://127.0.0.1:44907",
+  "foreignOrigin": "http://127.0.0.1:33771",
+  "requests": [
+    {
+      "seq": 1,
+      "at": "2026-10-15T02:41:39.313Z",
+      "server": "main",
+      "method": "GET",
+      "path": "/form",
+      "search": "",
+      "kind": "document",
+      "status": 200
+    },
+    {
+      "seq": 2,
+      "at": "2026-10-15T02:41:39.451Z",
+      "server": "main",
+      "method": "POST",
+      "path": "/form/submit",
+      "search": "",
+      "kind": "submission",
+      "status": 303,
+      "fields": {
+        "name": "Ada q88",
+        "email": "ada@example.test",
+        "reference": "reference-q88"
+      },
+      "receiptId": 1,
+      "duplicateOf": null,
+      "held": true
+    },
+    {
+      "seq": 3,
+      "at": "2026-10-15T02:41:39.895Z",
+      "server": "main",
+      "method": "GET",
+      "path": "/form",
+      "search": "",
+      "kind": "document",
+      "status": 200
+    },
+    {
+      "seq": 4,
+      "at": "2026-10-15T02:41:40.035Z",
+      "server": "main",
+      "method": "POST",
+      "path": "/form/submit",
+      "search": "",
+      "kind": "submission",
+      "status": 303,
+      "fields": {
+        "name": "Ada q88",
+        "email": "ada@example.test",
+        "reference": "reference-q88"
+      },
+      "receiptId": 1,
+      "duplicateOf": 1
+    },
+    {
+      "seq": 5,
+      "at": "2026-10-15T02:41:40.036Z",
+      "server": "main",
+      "method": "GET",
+      "path": "/form/confirmation",
+      "search": "?id=1",
+      "kind": "document",
+      "status": 200
+    }
+  ],
+  "receipts": [
+    {
+      "id": 1,
+      "fields": {
+        "name": "Ada q88",
+        "email": "ada@example.test",
+        "reference": "reference-q88"
+      },
+      "receivedAt": "2026-10-15T02:41:39.451Z"
+    }
+  ],
+  "reportSha256": {
+    "/export/report.csv": "98e79f8c6f16f49f82a7b94c42fc4ca04944cf7dddde39078df92522d5428146",
+    "/export/report-v2.csv": "d3b0e0c3d5158608348ac368583104e9269f3f55f0751334372819c47839887d"
+  }
+}

@@ -53,6 +53,35 @@ def binding_failures(strategy: dict[str, Any], verdict: dict[str, Any]) -> list[
     return failures
 
 
+ADVANTAGED = "advantaged-on-frozen-differentiation-suite"
+
+
+def differentiation_failures(strategy: dict[str, Any], result: dict[str, Any]) -> list[str]:
+    """Step 5's advantage needs a full result for the named commit whose frozen rule passed."""
+    evidence = strategy["fawnWorkspace"]["differentiationEvidence"]
+    suite = load_json("config/browser-product-comparison-policy.json")["workspaceComparison"]["differentiation"]
+    failures = []
+    if result["scope"] != "full" or result["suiteVersion"] != suite["suiteVersion"]:
+        failures.append("result is not a full run of the frozen suite")
+    if result["identity"]["git"]["commit"] != evidence["sourceCommit"] or result["identity"]["git"]["workingTreeChanges"]:
+        failures.append("result ran other or uncommitted source")
+    advantage = result["productAdvantage"]
+    rule = suite["productAdvantageRule"]
+    if not advantage["established"] or len(advantage["areasMet"]) < rule["minimumAreasMet"]:
+        failures.append("the frozen product-advantage rule did not pass")
+    if advantage["suiteRegressions"] or advantage["scriptedRegressions"] != []:
+        failures.append("a material regression was recorded")
+    frozen = [(entry["area"], entry["scenario"]) for entry in suite["improvementRequirements"]]
+    if [(entry["area"], entry["scenario"]) for entry in result["requirements"]] != frozen:
+        failures.append("result requirements differ from the frozen ones")
+    if not result["sameBrowserBinary"] or result["debuggingEndpoints"] != 0:
+        failures.append("unequal browser or an exposed debugging endpoint")
+    scripted = load_json(evidence["scriptedComparisonPath"])
+    if scripted["identity"]["git"]["commit"] != evidence["sourceCommit"] or scripted["scope"] != "full":
+        failures.append("scripted comparison ran other source or a subset")
+    return failures
+
+
 def validator() -> Draft202012Validator:
     schema = json.loads(
         STRATEGY_PATH.with_suffix(".schema.json").read_text(encoding="utf-8")
@@ -106,7 +135,7 @@ class FawnWorkspaceStrategyTests(unittest.TestCase):
         )
         self.assertEqual(
             [step["currentAssessment"] for step in workspace["steps"]],
-            [ESTABLISHED] * 4 + ["unestablished"] * 2,
+            [ESTABLISHED] * 4 + [ADVANTAGED, "unestablished"],
         )
         self.assertEqual(workspace["currentAssessment"], "unestablished")
         self.assertEqual(
@@ -146,6 +175,21 @@ class FawnWorkspaceStrategyTests(unittest.TestCase):
         )
         self.assertEqual(comparison["scope"], "full")
         self.assertTrue(comparison["equalOpportunityChecks"]["sameBrowserBinary"])
+
+    def test_product_advantage_binds_to_the_frozen_differentiation_result(self) -> None:
+        strategy = load_strategy()
+        evidence = strategy["fawnWorkspace"]["differentiationEvidence"]
+        result = load_json(evidence["resultPath"])
+        self.assertEqual(differentiation_failures(strategy, result), [])
+        for tamper in (
+            lambda copy: copy["productAdvantage"].update(established=False),
+            lambda copy: copy["identity"]["git"].update(commit="0" * 40),
+            lambda copy: copy["productAdvantage"].update(scriptedRegressions=None),
+            lambda copy: copy["requirements"].pop(),
+        ):
+            altered = copy.deepcopy(result)
+            tamper(altered)
+            self.assertTrue(differentiation_failures(strategy, altered))
 
     def test_binding_rejects_evidence_that_does_not_establish_a_step(self) -> None:
         strategy = load_strategy()

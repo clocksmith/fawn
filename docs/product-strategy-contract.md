@@ -6,6 +6,25 @@ It is the machine-readable source for milestone order, the binding proving set,
 and development-effectiveness recording. Status routes evidence; it does not
 maintain another roadmap.
 
+## Product advantage bound to the frozen differentiation result
+
+Schema version 12 and strategy version 6.5.0 add the required
+`fawnWorkspace.differentiationEvidence`. It names:
+- the frozen suite and the full differentiation result
+- the scripted comparison rerun on the same commit
+- the source commit
+- the scope: the frozen differentiation suite against Playwright agent tooling
+
+Step 5's assessment becomes `advantaged-on-frozen-differentiation-suite`. The
+policy tests require that result to be full, for the named committed source,
+with the frozen product-advantage rule passed. They also require its
+requirements to match the frozen ones, no material regression in the suite or
+the scripted comparison, and one browser binary with no debugging endpoint.
+`qualificationEvidence` now binds the behavioral verdict for the same commit.
+The suite's status becomes `run`. Release admission stays blocked, and broad
+superiority, compatibility beyond the fixture and release qualification remain
+unestablished.
+
 ## Frozen differentiation requirements
 
 The browser comparison policy moves to schema version 7

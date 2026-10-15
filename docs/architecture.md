@@ -153,8 +153,9 @@ They also sit at different maturity levels. Dawn remains the WebGPU runtime
 used in Chromium and much of the browser ecosystem. Doe's native/package lane
 has physical evidence; the optional Chromium runtime-integration lane has
 diagnostic browser evidence. Fawn's durable browser workspaces are separate: the
-shared service has passed scoped behavioral qualification, with no established
-product advantage or release qualification.
+shared service has passed scoped behavioral qualification and shows product
+advantage only on its frozen differentiation suite, without release
+qualification.
 
 ## Strategic decomposition
 
