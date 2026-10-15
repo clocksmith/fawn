@@ -1,0 +1,2953 @@
+{
+  "schemaVersion": 1,
+  "suiteVersion": "2026-10-15-revalidating-control-v1",
+  "scope": "full",
+  "identity": {
+    "caseSet": {
+      "path": "config/fawn-workspace-qualification.json",
+      "sha256": "786a1936c151126d79812750956c1abf06338292542ad8e3114c29978a52605a"
+    },
+    "serviceConfig": {
+      "path": "config/fawn-workspace-service.json",
+      "sha256": "bc82567bcb37f742a16a3ecb365e2cc82614d0c461d8546482224cd377d5c844"
+    },
+    "comparisonPolicy": {
+      "path": "config/browser-product-comparison-policy.json",
+      "sha256": "eab551d75046b733fbe9571b778d30727bf88f0d877f5ecc2d4243c698aadaeb"
+    },
+    "serviceSource": {
+      "path": "browser/workspace/src",
+      "sha256": "1435c63dcd82157748918321ab68292e83f634b788890a8b2a5b0c9757ce579e",
+      "fileCount": 15
+    },
+    "harness": {
+      "path": "browser/workspace/qualification",
+      "sha256": "fcfc6d1dbaf45b56a5caba488a2f5d1f1a55017ad3b1adb7ad93b203cbcb07d5",
+      "fileCount": 24
+    },
+    "packageLock": {
+      "path": "browser/workspace/package-lock.json",
+      "sha256": "39f0a7a6ee1132526dbd806276c2d90f8f9a3833d4d200a9d36a33df617d0c49"
+    },
+    "fixtureSite": {
+      "path": "browser/workspace/qualification/fixture-site.js",
+      "sha256": "26d88112a09468f07398f6677a6bdce393f9b6a54169359ec4d3f5ec5e82dc41"
+    },
+    "node": "v22.22.1",
+    "playwrightCore": "1.58.2",
+    "os": {
+      "platform": "linux",
+      "release": "7.0.0-29-generic",
+      "arch": "x64"
+    },
+    "git": {
+      "commit": "9f522f7d98406eca21a2db5062d76c917c375c47",
+      "workingTreeChanges": []
+    }
+  },
+  "browsers": {
+    "treatment": [
+      {
+        "path": "/home/x/.cache/ms-playwright/chromium_headless_shell-1208/chrome-headless-shell-linux64/chrome-headless-shell",
+        "sha256": "27e55cc30e487493b89b663085d6deeb0707be201a568657c922fac9076c317c",
+        "byteLength": 183557344,
+        "version": "Google Chrome for Testing 145.0.7632.6"
+      }
+    ],
+    "control": [
+      {
+        "path": "/home/x/.cache/ms-playwright/chromium_headless_shell-1208/chrome-headless-shell-linux64/chrome-headless-shell",
+        "sha256": "27e55cc30e487493b89b663085d6deeb0707be201a568657c922fac9076c317c",
+        "byteLength": 183557344,
+        "version": "Google Chrome for Testing 145.0.7632.6"
+      }
+    ]
+  },
+  "sameBrowserBinary": true,
+  "debuggingEndpoints": 0,
+  "harnessLines": {
+    "treatment": {
+      "qualification/agents/fawn-agent.js": 162
+    },
+    "control": {
+      "qualification/agents/playwright-agent.js": 76,
+      "qualification/agents/playwright-tool-host.js": 70
+    }
+  },
+  "perturbationTiming": {
+    "thinkTimeMs": 400,
+    "humanHoldMs": 800,
+    "agentRestartDelayMs": 1500
+  },
+  "suite": "revalidatedDifferentiation",
+  "summaries": {
+    "helpdesk-clean": {
+      "treatment": {
+        "successes": 5,
+        "repetitions": 5,
+        "incorrectActions": 0,
+        "constraintViolatingMutations": 0,
+        "humanReviews": 0,
+        "duplicateEffects": 0,
+        "mutationsDuringHumanControl": 0,
+        "medianObservationBytes": 4579,
+        "medianLatencyMs": 1534.822037
+      },
+      "control": {
+        "successes": 5,
+        "repetitions": 5,
+        "incorrectActions": 0,
+        "constraintViolatingMutations": 0,
+        "humanReviews": 0,
+        "duplicateEffects": 0,
+        "mutationsDuringHumanControl": 0,
+        "medianObservationBytes": 5147,
+        "medianLatencyMs": 1524.3783789999998
+      }
+    },
+    "ticket-claimed-during-think-time": {
+      "treatment": {
+        "successes": 3,
+        "repetitions": 3,
+        "incorrectActions": 0,
+        "constraintViolatingMutations": 0,
+        "humanReviews": 0,
+        "duplicateEffects": 0,
+        "mutationsDuringHumanControl": 0,
+        "medianObservationBytes": 5195,
+        "medianLatencyMs": 1965.6873500000002
+      },
+      "control": {
+        "successes": 3,
+        "repetitions": 3,
+        "incorrectActions": 0,
+        "constraintViolatingMutations": 0,
+        "humanReviews": 0,
+        "duplicateEffects": 0,
+        "mutationsDuringHumanControl": 0,
+        "medianObservationBytes": 7802,
+        "medianLatencyMs": 1960.831255000001
+      }
+    },
+    "live-queue-churn": {
+      "treatment": {
+        "successes": 3,
+        "repetitions": 3,
+        "incorrectActions": 0,
+        "constraintViolatingMutations": 0,
+        "humanReviews": 0,
+        "duplicateEffects": 0,
+        "mutationsDuringHumanControl": 0,
+        "medianObservationBytes": 4583,
+        "medianLatencyMs": 1526.2317750000002
+      },
+      "control": {
+        "successes": 3,
+        "repetitions": 3,
+        "incorrectActions": 0,
+        "constraintViolatingMutations": 0,
+        "humanReviews": 0,
+        "duplicateEffects": 0,
+        "mutationsDuringHumanControl": 0,
+        "medianObservationBytes": 12790,
+        "medianLatencyMs": 1516.3389020000031
+      }
+    },
+    "supervisor-edits-draft": {
+      "treatment": {
+        "successes": 3,
+        "repetitions": 3,
+        "incorrectActions": 0,
+        "constraintViolatingMutations": 0,
+        "humanReviews": 0,
+        "duplicateEffects": 0,
+        "mutationsDuringHumanControl": 0,
+        "medianObservationBytes": 5364,
+        "medianLatencyMs": 2460.7111280000026
+      },
+      "control": {
+        "successes": 3,
+        "repetitions": 3,
+        "incorrectActions": 0,
+        "constraintViolatingMutations": 0,
+        "humanReviews": 0,
+        "duplicateEffects": 0,
+        "mutationsDuringHumanControl": 0,
+        "medianObservationBytes": 5388,
+        "medianLatencyMs": 2430.8932889999996
+      }
+    },
+    "agent-killed-during-send": {
+      "treatment": {
+        "successes": 3,
+        "repetitions": 3,
+        "incorrectActions": 0,
+        "constraintViolatingMutations": 0,
+        "humanReviews": 0,
+        "duplicateEffects": 0,
+        "mutationsDuringHumanControl": 0,
+        "medianObservationBytes": 3958,
+        "medianLatencyMs": 3049.0952280000056
+      },
+      "control": {
+        "successes": 0,
+        "repetitions": 3,
+        "incorrectActions": 0,
+        "constraintViolatingMutations": 0,
+        "humanReviews": 3,
+        "duplicateEffects": 0,
+        "mutationsDuringHumanControl": 0,
+        "medianObservationBytes": 6705,
+        "medianLatencyMs": 3005.534629000009
+      }
+    }
+  },
+  "requirements": [
+    {
+      "area": "changing-content",
+      "scenario": "ticket-claimed-during-think-time",
+      "status": "not-met",
+      "bar": [
+        {
+          "field": "taskSuccessEveryRepetition",
+          "expected": true,
+          "observed": true,
+          "met": true
+        },
+        {
+          "field": "incorrectActions",
+          "expected": 0,
+          "observed": 0,
+          "met": true
+        }
+      ],
+      "improvement": {
+        "measure": "incorrectActions",
+        "treatment": 0,
+        "control": 0,
+        "met": false
+      }
+    },
+    {
+      "area": "incremental-observation",
+      "scenario": "live-queue-churn",
+      "status": "met",
+      "bar": [
+        {
+          "field": "taskSuccessEveryRepetition",
+          "expected": true,
+          "observed": true,
+          "met": true
+        },
+        {
+          "field": "incorrectActions",
+          "expected": 0,
+          "observed": 0,
+          "met": true
+        }
+      ],
+      "improvement": {
+        "measure": "observationBytes",
+        "ratio": 0.3583268178264269,
+        "maximum": 0.5,
+        "met": true
+      }
+    },
+    {
+      "area": "human-handoff",
+      "scenario": "supervisor-edits-draft",
+      "status": "not-met",
+      "bar": [
+        {
+          "field": "taskSuccessEveryRepetition",
+          "expected": true,
+          "observed": true,
+          "met": true
+        },
+        {
+          "field": "incorrectActions",
+          "expected": 0,
+          "observed": 0,
+          "met": true
+        },
+        {
+          "field": "mutationsDuringHumanControl",
+          "expected": 0,
+          "observed": 0,
+          "met": true
+        }
+      ],
+      "improvement": {
+        "measure": "incorrectActions",
+        "treatment": 0,
+        "control": 0,
+        "met": false
+      }
+    },
+    {
+      "area": "interruption-recovery",
+      "scenario": "agent-killed-during-send",
+      "status": "met",
+      "bar": [
+        {
+          "field": "taskSuccessEveryRepetition",
+          "expected": true,
+          "observed": true,
+          "met": true
+        },
+        {
+          "field": "duplicateEffects",
+          "expected": 0,
+          "observed": 0,
+          "met": true
+        },
+        {
+          "field": "humanReviews",
+          "expected": 0,
+          "observed": 0,
+          "met": true
+        }
+      ],
+      "improvement": {
+        "measure": "humanReviewsPlusDuplicateEffects",
+        "treatment": 0,
+        "control": 3,
+        "met": true
+      }
+    }
+  ],
+  "productAdvantage": {
+    "areasMet": [
+      "incremental-observation",
+      "interruption-recovery"
+    ],
+    "suiteRegressions": [],
+    "scriptedRegressions": [],
+    "priorRegressions": [
+      {
+        "path": "../../bench/out/fawn-workspace-differentiation/20261015-c1-v1/differentiation.json",
+        "suiteVersion": "2026-10-15-agent-workflows-v1",
+        "full": true,
+        "regressions": []
+      }
+    ],
+    "established": true,
+    "doesNotEstablish": [
+      "broad-product-superiority",
+      "release-qualification",
+      "compatibility-beyond-the-fixtures",
+      "model-driven-agent-results"
+    ]
+  },
+  "rows": [
+    {
+      "scenarioId": "helpdesk-clean",
+      "arm": "treatment",
+      "repetition": 1,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "constraintViolatingMutations": 0,
+      "mutationsDuringHumanControl": 0,
+      "humanReviews": 0,
+      "duplicateEffects": 0,
+      "details": {
+        "status": "completed",
+        "error": null,
+        "claims": [
+          {
+            "ticket": 102,
+            "previousClaimant": null
+          }
+        ],
+        "replies": [
+          {
+            "id": 1,
+            "ticket": 102,
+            "body": "Thanks for reaching out. We are looking into this and will update you within one business day."
+          }
+        ],
+        "expectedTicket": 102,
+        "bodyCorrect": true,
+        "transcriptCorrect": true
+      },
+      "observationBytes": 4579,
+      "latencyMs": 1555.993451,
+      "agentIncarnations": 1
+    },
+    {
+      "scenarioId": "helpdesk-clean",
+      "arm": "control",
+      "repetition": 1,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "constraintViolatingMutations": 0,
+      "mutationsDuringHumanControl": 0,
+      "humanReviews": 0,
+      "duplicateEffects": 0,
+      "details": {
+        "status": "completed",
+        "error": null,
+        "claims": [
+          {
+            "ticket": 102,
+            "previousClaimant": null
+          }
+        ],
+        "replies": [
+          {
+            "id": 1,
+            "ticket": 102,
+            "body": "Thanks for reaching out. We are looking into this and will update you within one business day."
+          }
+        ],
+        "expectedTicket": 102,
+        "bodyCorrect": true,
+        "transcriptCorrect": true
+      },
+      "observationBytes": 5147,
+      "latencyMs": 1531.7069660000002,
+      "agentIncarnations": 1
+    },
+    {
+      "scenarioId": "helpdesk-clean",
+      "arm": "control",
+      "repetition": 2,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "constraintViolatingMutations": 0,
+      "mutationsDuringHumanControl": 0,
+      "humanReviews": 0,
+      "duplicateEffects": 0,
+      "details": {
+        "status": "completed",
+        "error": null,
+        "claims": [
+          {
+            "ticket": 102,
+            "previousClaimant": null
+          }
+        ],
+        "replies": [
+          {
+            "id": 1,
+            "ticket": 102,
+            "body": "Thanks for reaching out. We are looking into this and will update you within one business day."
+          }
+        ],
+        "expectedTicket": 102,
+        "bodyCorrect": true,
+        "transcriptCorrect": true
+      },
+      "observationBytes": 5107,
+      "latencyMs": 1499.5326210000003,
+      "agentIncarnations": 1
+    },
+    {
+      "scenarioId": "helpdesk-clean",
+      "arm": "treatment",
+      "repetition": 2,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "constraintViolatingMutations": 0,
+      "mutationsDuringHumanControl": 0,
+      "humanReviews": 0,
+      "duplicateEffects": 0,
+      "details": {
+        "status": "completed",
+        "error": null,
+        "claims": [
+          {
+            "ticket": 102,
+            "previousClaimant": null
+          }
+        ],
+        "replies": [
+          {
+            "id": 1,
+            "ticket": 102,
+            "body": "Thanks for reaching out. We are looking into this and will update you within one business day."
+          }
+        ],
+        "expectedTicket": 102,
+        "bodyCorrect": true,
+        "transcriptCorrect": true
+      },
+      "observationBytes": 4579,
+      "latencyMs": 1538.5828419999998,
+      "agentIncarnations": 1
+    },
+    {
+      "scenarioId": "helpdesk-clean",
+      "arm": "treatment",
+      "repetition": 3,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "constraintViolatingMutations": 0,
+      "mutationsDuringHumanControl": 0,
+      "humanReviews": 0,
+      "duplicateEffects": 0,
+      "details": {
+        "status": "completed",
+        "error": null,
+        "claims": [
+          {
+            "ticket": 102,
+            "previousClaimant": null
+          }
+        ],
+        "replies": [
+          {
+            "id": 1,
+            "ticket": 102,
+            "body": "Thanks for reaching out. We are looking into this and will update you within one business day."
+          }
+        ],
+        "expectedTicket": 102,
+        "bodyCorrect": true,
+        "transcriptCorrect": true
+      },
+      "observationBytes": 4579,
+      "latencyMs": 1518.6975300000004,
+      "agentIncarnations": 1
+    },
+    {
+      "scenarioId": "helpdesk-clean",
+      "arm": "control",
+      "repetition": 3,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "constraintViolatingMutations": 0,
+      "mutationsDuringHumanControl": 0,
+      "humanReviews": 0,
+      "duplicateEffects": 0,
+      "details": {
+        "status": "completed",
+        "error": null,
+        "claims": [
+          {
+            "ticket": 102,
+            "previousClaimant": null
+          }
+        ],
+        "replies": [
+          {
+            "id": 1,
+            "ticket": 102,
+            "body": "Thanks for reaching out. We are looking into this and will update you within one business day."
+          }
+        ],
+        "expectedTicket": 102,
+        "bodyCorrect": true,
+        "transcriptCorrect": true
+      },
+      "observationBytes": 5147,
+      "latencyMs": 1524.3783789999998,
+      "agentIncarnations": 1
+    },
+    {
+      "scenarioId": "helpdesk-clean",
+      "arm": "control",
+      "repetition": 4,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "constraintViolatingMutations": 0,
+      "mutationsDuringHumanControl": 0,
+      "humanReviews": 0,
+      "duplicateEffects": 0,
+      "details": {
+        "status": "completed",
+        "error": null,
+        "claims": [
+          {
+            "ticket": 102,
+            "previousClaimant": null
+          }
+        ],
+        "replies": [
+          {
+            "id": 1,
+            "ticket": 102,
+            "body": "Thanks for reaching out. We are looking into this and will update you within one business day."
+          }
+        ],
+        "expectedTicket": 102,
+        "bodyCorrect": true,
+        "transcriptCorrect": true
+      },
+      "observationBytes": 5147,
+      "latencyMs": 1522.0102829999996,
+      "agentIncarnations": 1
+    },
+    {
+      "scenarioId": "helpdesk-clean",
+      "arm": "treatment",
+      "repetition": 4,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "constraintViolatingMutations": 0,
+      "mutationsDuringHumanControl": 0,
+      "humanReviews": 0,
+      "duplicateEffects": 0,
+      "details": {
+        "status": "completed",
+        "error": null,
+        "claims": [
+          {
+            "ticket": 102,
+            "previousClaimant": null
+          }
+        ],
+        "replies": [
+          {
+            "id": 1,
+            "ticket": 102,
+            "body": "Thanks for reaching out. We are looking into this and will update you within one business day."
+          }
+        ],
+        "expectedTicket": 102,
+        "bodyCorrect": true,
+        "transcriptCorrect": true
+      },
+      "observationBytes": 4579,
+      "latencyMs": 1534.822037,
+      "agentIncarnations": 1
+    },
+    {
+      "scenarioId": "helpdesk-clean",
+      "arm": "treatment",
+      "repetition": 5,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "constraintViolatingMutations": 0,
+      "mutationsDuringHumanControl": 0,
+      "humanReviews": 0,
+      "duplicateEffects": 0,
+      "details": {
+        "status": "completed",
+        "error": null,
+        "claims": [
+          {
+            "ticket": 102,
+            "previousClaimant": null
+          }
+        ],
+        "replies": [
+          {
+            "id": 1,
+            "ticket": 102,
+            "body": "Thanks for reaching out. We are looking into this and will update you within one business day."
+          }
+        ],
+        "expectedTicket": 102,
+        "bodyCorrect": true,
+        "transcriptCorrect": true
+      },
+      "observationBytes": 4579,
+      "latencyMs": 1530.8383669999985,
+      "agentIncarnations": 1
+    },
+    {
+      "scenarioId": "helpdesk-clean",
+      "arm": "control",
+      "repetition": 5,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "constraintViolatingMutations": 0,
+      "mutationsDuringHumanControl": 0,
+      "humanReviews": 0,
+      "duplicateEffects": 0,
+      "details": {
+        "status": "completed",
+        "error": null,
+        "claims": [
+          {
+            "ticket": 102,
+            "previousClaimant": null
+          }
+        ],
+        "replies": [
+          {
+            "id": 1,
+            "ticket": 102,
+            "body": "Thanks for reaching out. We are looking into this and will update you within one business day."
+          }
+        ],
+        "expectedTicket": 102,
+        "bodyCorrect": true,
+        "transcriptCorrect": true
+      },
+      "observationBytes": 5147,
+      "latencyMs": 1543.1844329999985,
+      "agentIncarnations": 1
+    },
+    {
+      "scenarioId": "ticket-claimed-during-think-time",
+      "arm": "treatment",
+      "repetition": 1,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "constraintViolatingMutations": 0,
+      "mutationsDuringHumanControl": 0,
+      "humanReviews": 0,
+      "duplicateEffects": 0,
+      "details": {
+        "status": "completed",
+        "error": null,
+        "claims": [
+          {
+            "ticket": 104,
+            "previousClaimant": null
+          }
+        ],
+        "replies": [
+          {
+            "id": 1,
+            "ticket": 104,
+            "body": "Thanks for reaching out. We are looking into this and will update you within one business day."
+          }
+        ],
+        "expectedTicket": 104,
+        "bodyCorrect": true,
+        "transcriptCorrect": true
+      },
+      "observationBytes": 5195,
+      "latencyMs": 1988.2480759999999,
+      "agentIncarnations": 1
+    },
+    {
+      "scenarioId": "ticket-claimed-during-think-time",
+      "arm": "control",
+      "repetition": 1,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "constraintViolatingMutations": 0,
+      "mutationsDuringHumanControl": 0,
+      "humanReviews": 0,
+      "duplicateEffects": 0,
+      "details": {
+        "status": "completed",
+        "error": null,
+        "claims": [
+          {
+            "ticket": 104,
+            "previousClaimant": null
+          }
+        ],
+        "replies": [
+          {
+            "id": 1,
+            "ticket": 104,
+            "body": "Thanks for reaching out. We are looking into this and will update you within one business day."
+          }
+        ],
+        "expectedTicket": 104,
+        "bodyCorrect": true,
+        "transcriptCorrect": true
+      },
+      "observationBytes": 7762,
+      "latencyMs": 1949.0826469999993,
+      "agentIncarnations": 1
+    },
+    {
+      "scenarioId": "ticket-claimed-during-think-time",
+      "arm": "control",
+      "repetition": 2,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "constraintViolatingMutations": 0,
+      "mutationsDuringHumanControl": 0,
+      "humanReviews": 0,
+      "duplicateEffects": 0,
+      "details": {
+        "status": "completed",
+        "error": null,
+        "claims": [
+          {
+            "ticket": 104,
+            "previousClaimant": null
+          }
+        ],
+        "replies": [
+          {
+            "id": 1,
+            "ticket": 104,
+            "body": "Thanks for reaching out. We are looking into this and will update you within one business day."
+          }
+        ],
+        "expectedTicket": 104,
+        "bodyCorrect": true,
+        "transcriptCorrect": true
+      },
+      "observationBytes": 7802,
+      "latencyMs": 1960.831255000001,
+      "agentIncarnations": 1
+    },
+    {
+      "scenarioId": "ticket-claimed-during-think-time",
+      "arm": "treatment",
+      "repetition": 2,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "constraintViolatingMutations": 0,
+      "mutationsDuringHumanControl": 0,
+      "humanReviews": 0,
+      "duplicateEffects": 0,
+      "details": {
+        "status": "completed",
+        "error": null,
+        "claims": [
+          {
+            "ticket": 104,
+            "previousClaimant": null
+          }
+        ],
+        "replies": [
+          {
+            "id": 1,
+            "ticket": 104,
+            "body": "Thanks for reaching out. We are looking into this and will update you within one business day."
+          }
+        ],
+        "expectedTicket": 104,
+        "bodyCorrect": true,
+        "transcriptCorrect": true
+      },
+      "observationBytes": 5195,
+      "latencyMs": 1945.5497160000014,
+      "agentIncarnations": 1
+    },
+    {
+      "scenarioId": "ticket-claimed-during-think-time",
+      "arm": "treatment",
+      "repetition": 3,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "constraintViolatingMutations": 0,
+      "mutationsDuringHumanControl": 0,
+      "humanReviews": 0,
+      "duplicateEffects": 0,
+      "details": {
+        "status": "completed",
+        "error": null,
+        "claims": [
+          {
+            "ticket": 104,
+            "previousClaimant": null
+          }
+        ],
+        "replies": [
+          {
+            "id": 1,
+            "ticket": 104,
+            "body": "Thanks for reaching out. We are looking into this and will update you within one business day."
+          }
+        ],
+        "expectedTicket": 104,
+        "bodyCorrect": true,
+        "transcriptCorrect": true
+      },
+      "observationBytes": 5195,
+      "latencyMs": 1965.6873500000002,
+      "agentIncarnations": 1
+    },
+    {
+      "scenarioId": "ticket-claimed-during-think-time",
+      "arm": "control",
+      "repetition": 3,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "constraintViolatingMutations": 0,
+      "mutationsDuringHumanControl": 0,
+      "humanReviews": 0,
+      "duplicateEffects": 0,
+      "details": {
+        "status": "completed",
+        "error": null,
+        "claims": [
+          {
+            "ticket": 104,
+            "previousClaimant": null
+          }
+        ],
+        "replies": [
+          {
+            "id": 1,
+            "ticket": 104,
+            "body": "Thanks for reaching out. We are looking into this and will update you within one business day."
+          }
+        ],
+        "expectedTicket": 104,
+        "bodyCorrect": true,
+        "transcriptCorrect": true
+      },
+      "observationBytes": 7802,
+      "latencyMs": 1963.2234300000018,
+      "agentIncarnations": 1
+    },
+    {
+      "scenarioId": "live-queue-churn",
+      "arm": "treatment",
+      "repetition": 1,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "constraintViolatingMutations": 0,
+      "mutationsDuringHumanControl": 0,
+      "humanReviews": 0,
+      "duplicateEffects": 0,
+      "details": {
+        "status": "completed",
+        "error": null,
+        "claims": [
+          {
+            "ticket": 102,
+            "previousClaimant": null
+          }
+        ],
+        "replies": [
+          {
+            "id": 1,
+            "ticket": 102,
+            "body": "Thanks for reaching out. We are looking into this and will update you within one business day."
+          }
+        ],
+        "expectedTicket": 102,
+        "bodyCorrect": true,
+        "transcriptCorrect": true
+      },
+      "observationBytes": 4583,
+      "latencyMs": 1517.2404529999985,
+      "agentIncarnations": 1
+    },
+    {
+      "scenarioId": "live-queue-churn",
+      "arm": "control",
+      "repetition": 1,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "constraintViolatingMutations": 0,
+      "mutationsDuringHumanControl": 0,
+      "humanReviews": 0,
+      "duplicateEffects": 0,
+      "details": {
+        "status": "completed",
+        "error": null,
+        "claims": [
+          {
+            "ticket": 102,
+            "previousClaimant": null
+          }
+        ],
+        "replies": [
+          {
+            "id": 1,
+            "ticket": 102,
+            "body": "Thanks for reaching out. We are looking into this and will update you within one business day."
+          }
+        ],
+        "expectedTicket": 102,
+        "bodyCorrect": true,
+        "transcriptCorrect": true
+      },
+      "observationBytes": 12790,
+      "latencyMs": 1527.9905719999952,
+      "agentIncarnations": 1
+    },
+    {
+      "scenarioId": "live-queue-churn",
+      "arm": "control",
+      "repetition": 2,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "constraintViolatingMutations": 0,
+      "mutationsDuringHumanControl": 0,
+      "humanReviews": 0,
+      "duplicateEffects": 0,
+      "details": {
+        "status": "completed",
+        "error": null,
+        "claims": [
+          {
+            "ticket": 102,
+            "previousClaimant": null
+          }
+        ],
+        "replies": [
+          {
+            "id": 1,
+            "ticket": 102,
+            "body": "Thanks for reaching out. We are looking into this and will update you within one business day."
+          }
+        ],
+        "expectedTicket": 102,
+        "bodyCorrect": true,
+        "transcriptCorrect": true
+      },
+      "observationBytes": 10045,
+      "latencyMs": 1504.8268250000037,
+      "agentIncarnations": 1
+    },
+    {
+      "scenarioId": "live-queue-churn",
+      "arm": "treatment",
+      "repetition": 2,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "constraintViolatingMutations": 0,
+      "mutationsDuringHumanControl": 0,
+      "humanReviews": 0,
+      "duplicateEffects": 0,
+      "details": {
+        "status": "completed",
+        "error": null,
+        "claims": [
+          {
+            "ticket": 102,
+            "previousClaimant": null
+          }
+        ],
+        "replies": [
+          {
+            "id": 1,
+            "ticket": 102,
+            "body": "Thanks for reaching out. We are looking into this and will update you within one business day."
+          }
+        ],
+        "expectedTicket": 102,
+        "bodyCorrect": true,
+        "transcriptCorrect": true
+      },
+      "observationBytes": 4583,
+      "latencyMs": 1536.4325290000052,
+      "agentIncarnations": 1
+    },
+    {
+      "scenarioId": "live-queue-churn",
+      "arm": "treatment",
+      "repetition": 3,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "constraintViolatingMutations": 0,
+      "mutationsDuringHumanControl": 0,
+      "humanReviews": 0,
+      "duplicateEffects": 0,
+      "details": {
+        "status": "completed",
+        "error": null,
+        "claims": [
+          {
+            "ticket": 102,
+            "previousClaimant": null
+          }
+        ],
+        "replies": [
+          {
+            "id": 1,
+            "ticket": 102,
+            "body": "Thanks for reaching out. We are looking into this and will update you within one business day."
+          }
+        ],
+        "expectedTicket": 102,
+        "bodyCorrect": true,
+        "transcriptCorrect": true
+      },
+      "observationBytes": 4583,
+      "latencyMs": 1526.2317750000002,
+      "agentIncarnations": 1
+    },
+    {
+      "scenarioId": "live-queue-churn",
+      "arm": "control",
+      "repetition": 3,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "constraintViolatingMutations": 0,
+      "mutationsDuringHumanControl": 0,
+      "humanReviews": 0,
+      "duplicateEffects": 0,
+      "details": {
+        "status": "completed",
+        "error": null,
+        "claims": [
+          {
+            "ticket": 102,
+            "previousClaimant": null
+          }
+        ],
+        "replies": [
+          {
+            "id": 1,
+            "ticket": 102,
+            "body": "Thanks for reaching out. We are looking into this and will update you within one business day."
+          }
+        ],
+        "expectedTicket": 102,
+        "bodyCorrect": true,
+        "transcriptCorrect": true
+      },
+      "observationBytes": 12790,
+      "latencyMs": 1516.3389020000031,
+      "agentIncarnations": 1
+    },
+    {
+      "scenarioId": "supervisor-edits-draft",
+      "arm": "treatment",
+      "repetition": 1,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "constraintViolatingMutations": 0,
+      "mutationsDuringHumanControl": 0,
+      "humanReviews": 0,
+      "duplicateEffects": 0,
+      "details": {
+        "status": "completed",
+        "error": null,
+        "claims": [
+          {
+            "ticket": 102,
+            "previousClaimant": null
+          }
+        ],
+        "replies": [
+          {
+            "id": 1,
+            "ticket": 102,
+            "body": "Escalated to billing operations; the duplicate charge will be refunded today."
+          }
+        ],
+        "expectedTicket": 102,
+        "bodyCorrect": true,
+        "transcriptCorrect": true
+      },
+      "observationBytes": 5364,
+      "latencyMs": 2460.7111280000026,
+      "agentIncarnations": 1
+    },
+    {
+      "scenarioId": "supervisor-edits-draft",
+      "arm": "control",
+      "repetition": 1,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "constraintViolatingMutations": 0,
+      "mutationsDuringHumanControl": 0,
+      "humanReviews": 0,
+      "duplicateEffects": 0,
+      "details": {
+        "status": "completed",
+        "error": null,
+        "claims": [
+          {
+            "ticket": 102,
+            "previousClaimant": null
+          }
+        ],
+        "replies": [
+          {
+            "id": 1,
+            "ticket": 102,
+            "body": "Escalated to billing operations; the duplicate charge will be refunded today."
+          }
+        ],
+        "expectedTicket": 102,
+        "bodyCorrect": true,
+        "transcriptCorrect": true
+      },
+      "observationBytes": 5388,
+      "latencyMs": 2430.8932889999996,
+      "agentIncarnations": 1
+    },
+    {
+      "scenarioId": "supervisor-edits-draft",
+      "arm": "control",
+      "repetition": 2,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "constraintViolatingMutations": 0,
+      "mutationsDuringHumanControl": 0,
+      "humanReviews": 0,
+      "duplicateEffects": 0,
+      "details": {
+        "status": "completed",
+        "error": null,
+        "claims": [
+          {
+            "ticket": 102,
+            "previousClaimant": null
+          }
+        ],
+        "replies": [
+          {
+            "id": 1,
+            "ticket": 102,
+            "body": "Escalated to billing operations; the duplicate charge will be refunded today."
+          }
+        ],
+        "expectedTicket": 102,
+        "bodyCorrect": true,
+        "transcriptCorrect": true
+      },
+      "observationBytes": 5388,
+      "latencyMs": 2437.796193000002,
+      "agentIncarnations": 1
+    },
+    {
+      "scenarioId": "supervisor-edits-draft",
+      "arm": "treatment",
+      "repetition": 2,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "constraintViolatingMutations": 0,
+      "mutationsDuringHumanControl": 0,
+      "humanReviews": 0,
+      "duplicateEffects": 0,
+      "details": {
+        "status": "completed",
+        "error": null,
+        "claims": [
+          {
+            "ticket": 102,
+            "previousClaimant": null
+          }
+        ],
+        "replies": [
+          {
+            "id": 1,
+            "ticket": 102,
+            "body": "Escalated to billing operations; the duplicate charge will be refunded today."
+          }
+        ],
+        "expectedTicket": 102,
+        "bodyCorrect": true,
+        "transcriptCorrect": true
+      },
+      "observationBytes": 5364,
+      "latencyMs": 2452.699923,
+      "agentIncarnations": 1
+    },
+    {
+      "scenarioId": "supervisor-edits-draft",
+      "arm": "treatment",
+      "repetition": 3,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "constraintViolatingMutations": 0,
+      "mutationsDuringHumanControl": 0,
+      "humanReviews": 0,
+      "duplicateEffects": 0,
+      "details": {
+        "status": "completed",
+        "error": null,
+        "claims": [
+          {
+            "ticket": 102,
+            "previousClaimant": null
+          }
+        ],
+        "replies": [
+          {
+            "id": 1,
+            "ticket": 102,
+            "body": "Escalated to billing operations; the duplicate charge will be refunded today."
+          }
+        ],
+        "expectedTicket": 102,
+        "bodyCorrect": true,
+        "transcriptCorrect": true
+      },
+      "observationBytes": 5364,
+      "latencyMs": 2461.148730000001,
+      "agentIncarnations": 1
+    },
+    {
+      "scenarioId": "supervisor-edits-draft",
+      "arm": "control",
+      "repetition": 3,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "constraintViolatingMutations": 0,
+      "mutationsDuringHumanControl": 0,
+      "humanReviews": 0,
+      "duplicateEffects": 0,
+      "details": {
+        "status": "completed",
+        "error": null,
+        "claims": [
+          {
+            "ticket": 102,
+            "previousClaimant": null
+          }
+        ],
+        "replies": [
+          {
+            "id": 1,
+            "ticket": 102,
+            "body": "Escalated to billing operations; the duplicate charge will be refunded today."
+          }
+        ],
+        "expectedTicket": 102,
+        "bodyCorrect": true,
+        "transcriptCorrect": true
+      },
+      "observationBytes": 5388,
+      "latencyMs": 2405.9917410000053,
+      "agentIncarnations": 1
+    },
+    {
+      "scenarioId": "agent-killed-during-send",
+      "arm": "treatment",
+      "repetition": 1,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "constraintViolatingMutations": 0,
+      "mutationsDuringHumanControl": 0,
+      "humanReviews": 0,
+      "duplicateEffects": 0,
+      "details": {
+        "status": "completed",
+        "error": null,
+        "claims": [
+          {
+            "ticket": 102,
+            "previousClaimant": null
+          }
+        ],
+        "replies": [
+          {
+            "id": 1,
+            "ticket": 102,
+            "body": "Thanks for reaching out. We are looking into this and will update you within one business day."
+          }
+        ],
+        "expectedTicket": 102,
+        "bodyCorrect": true,
+        "transcriptCorrect": true
+      },
+      "observationBytes": 3958,
+      "latencyMs": 3029.3070829999997,
+      "agentIncarnations": 2
+    },
+    {
+      "scenarioId": "agent-killed-during-send",
+      "arm": "control",
+      "repetition": 1,
+      "taskSuccess": false,
+      "incorrectActions": 0,
+      "constraintViolatingMutations": 0,
+      "mutationsDuringHumanControl": 0,
+      "humanReviews": 1,
+      "duplicateEffects": 0,
+      "details": {
+        "status": "human-review",
+        "error": null,
+        "claims": [
+          {
+            "ticket": 102,
+            "previousClaimant": null
+          }
+        ],
+        "replies": [
+          {
+            "id": 1,
+            "ticket": 102,
+            "body": "Thanks for reaching out. We are looking into this and will update you within one business day."
+          }
+        ],
+        "expectedTicket": 102,
+        "bodyCorrect": true,
+        "transcriptCorrect": false
+      },
+      "observationBytes": 6705,
+      "latencyMs": 3005.534629000009,
+      "agentIncarnations": 2
+    },
+    {
+      "scenarioId": "agent-killed-during-send",
+      "arm": "control",
+      "repetition": 2,
+      "taskSuccess": false,
+      "incorrectActions": 0,
+      "constraintViolatingMutations": 0,
+      "mutationsDuringHumanControl": 0,
+      "humanReviews": 1,
+      "duplicateEffects": 0,
+      "details": {
+        "status": "human-review",
+        "error": null,
+        "claims": [
+          {
+            "ticket": 102,
+            "previousClaimant": null
+          }
+        ],
+        "replies": [
+          {
+            "id": 1,
+            "ticket": 102,
+            "body": "Thanks for reaching out. We are looking into this and will update you within one business day."
+          }
+        ],
+        "expectedTicket": 102,
+        "bodyCorrect": true,
+        "transcriptCorrect": false
+      },
+      "observationBytes": 6705,
+      "latencyMs": 3006.5449579999986,
+      "agentIncarnations": 2
+    },
+    {
+      "scenarioId": "agent-killed-during-send",
+      "arm": "treatment",
+      "repetition": 2,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "constraintViolatingMutations": 0,
+      "mutationsDuringHumanControl": 0,
+      "humanReviews": 0,
+      "duplicateEffects": 0,
+      "details": {
+        "status": "completed",
+        "error": null,
+        "claims": [
+          {
+            "ticket": 102,
+            "previousClaimant": null
+          }
+        ],
+        "replies": [
+          {
+            "id": 1,
+            "ticket": 102,
+            "body": "Thanks for reaching out. We are looking into this and will update you within one business day."
+          }
+        ],
+        "expectedTicket": 102,
+        "bodyCorrect": true,
+        "transcriptCorrect": true
+      },
+      "observationBytes": 3958,
+      "latencyMs": 3049.0952280000056,
+      "agentIncarnations": 2
+    },
+    {
+      "scenarioId": "agent-killed-during-send",
+      "arm": "treatment",
+      "repetition": 3,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "constraintViolatingMutations": 0,
+      "mutationsDuringHumanControl": 0,
+      "humanReviews": 0,
+      "duplicateEffects": 0,
+      "details": {
+        "status": "completed",
+        "error": null,
+        "claims": [
+          {
+            "ticket": 102,
+            "previousClaimant": null
+          }
+        ],
+        "replies": [
+          {
+            "id": 1,
+            "ticket": 102,
+            "body": "Thanks for reaching out. We are looking into this and will update you within one business day."
+          }
+        ],
+        "expectedTicket": 102,
+        "bodyCorrect": true,
+        "transcriptCorrect": true
+      },
+      "observationBytes": 3958,
+      "latencyMs": 3079.55698400001,
+      "agentIncarnations": 2
+    },
+    {
+      "scenarioId": "agent-killed-during-send",
+      "arm": "control",
+      "repetition": 3,
+      "taskSuccess": false,
+      "incorrectActions": 0,
+      "constraintViolatingMutations": 0,
+      "mutationsDuringHumanControl": 0,
+      "humanReviews": 1,
+      "duplicateEffects": 0,
+      "details": {
+        "status": "human-review",
+        "error": null,
+        "claims": [
+          {
+            "ticket": 102,
+            "previousClaimant": null
+          }
+        ],
+        "replies": [
+          {
+            "id": 1,
+            "ticket": 102,
+            "body": "Thanks for reaching out. We are looking into this and will update you within one business day."
+          }
+        ],
+        "expectedTicket": 102,
+        "bodyCorrect": true,
+        "transcriptCorrect": false
+      },
+      "observationBytes": 6705,
+      "latencyMs": 2999.277820999996,
+      "agentIncarnations": 2
+    }
+  ],
+  "evidence": [
+    {
+      "scenarioId": "helpdesk-clean",
+      "arm": "treatment",
+      "repetition": 1,
+      "requests": 21,
+      "mutations": [
+        {
+          "seq": 1,
+          "at": "2026-10-15T12:10:49.323Z",
+          "kind": "claim",
+          "ticket": 102,
+          "by": "agent",
+          "previousClaimant": null
+        },
+        {
+          "seq": 2,
+          "at": "2026-10-15T12:10:50.237Z",
+          "kind": "reply",
+          "replyId": 1,
+          "ticket": 102,
+          "body": "Thanks for reaching out. We are looking into this and will update you within one business day.",
+          "duplicateOf": null
+        },
+        {
+          "seq": 3,
+          "at": "2026-10-15T12:10:50.305Z",
+          "kind": "transcript",
+          "ticket": 102,
+          "sha256": "5167f596bca9c1312922ca3ae1670e52b2c2e578c313e6834b4e8613c1b99793"
+        }
+      ],
+      "replies": [
+        {
+          "id": 1,
+          "ticket": 102,
+          "body": "Thanks for reaching out. We are looking into this and will update you within one business day.",
+          "reference": "ref-helpdesk-clean-treatment-1",
+          "viewed": true
+        }
+      ]
+    },
+    {
+      "scenarioId": "helpdesk-clean",
+      "arm": "control",
+      "repetition": 1,
+      "requests": 21,
+      "mutations": [
+        {
+          "seq": 1,
+          "at": "2026-10-15T12:10:51.339Z",
+          "kind": "claim",
+          "ticket": 102,
+          "by": "agent",
+          "previousClaimant": null
+        },
+        {
+          "seq": 2,
+          "at": "2026-10-15T12:10:52.269Z",
+          "kind": "reply",
+          "replyId": 1,
+          "ticket": 102,
+          "body": "Thanks for reaching out. We are looking into this and will update you within one business day.",
+          "duplicateOf": null
+        },
+        {
+          "seq": 3,
+          "at": "2026-10-15T12:10:52.321Z",
+          "kind": "transcript",
+          "ticket": 102,
+          "sha256": "5167f596bca9c1312922ca3ae1670e52b2c2e578c313e6834b4e8613c1b99793"
+        }
+      ],
+      "replies": [
+        {
+          "id": 1,
+          "ticket": 102,
+          "body": "Thanks for reaching out. We are looking into this and will update you within one business day.",
+          "reference": "ref-helpdesk-clean-control-1",
+          "viewed": true
+        }
+      ]
+    },
+    {
+      "scenarioId": "helpdesk-clean",
+      "arm": "control",
+      "repetition": 2,
+      "requests": 21,
+      "mutations": [
+        {
+          "seq": 1,
+          "at": "2026-10-15T12:10:53.156Z",
+          "kind": "claim",
+          "ticket": 102,
+          "by": "agent",
+          "previousClaimant": null
+        },
+        {
+          "seq": 2,
+          "at": "2026-10-15T12:10:54.085Z",
+          "kind": "reply",
+          "replyId": 1,
+          "ticket": 102,
+          "body": "Thanks for reaching out. We are looking into this and will update you within one business day.",
+          "duplicateOf": null
+        },
+        {
+          "seq": 3,
+          "at": "2026-10-15T12:10:54.137Z",
+          "kind": "transcript",
+          "ticket": 102,
+          "sha256": "5167f596bca9c1312922ca3ae1670e52b2c2e578c313e6834b4e8613c1b99793"
+        }
+      ],
+      "replies": [
+        {
+          "id": 1,
+          "ticket": 102,
+          "body": "Thanks for reaching out. We are looking into this and will update you within one business day.",
+          "reference": "ref-helpdesk-clean-control-2",
+          "viewed": true
+        }
+      ]
+    },
+    {
+      "scenarioId": "helpdesk-clean",
+      "arm": "treatment",
+      "repetition": 2,
+      "requests": 21,
+      "mutations": [
+        {
+          "seq": 1,
+          "at": "2026-10-15T12:10:55.025Z",
+          "kind": "claim",
+          "ticket": 102,
+          "by": "agent",
+          "previousClaimant": null
+        },
+        {
+          "seq": 2,
+          "at": "2026-10-15T12:10:55.936Z",
+          "kind": "reply",
+          "replyId": 1,
+          "ticket": 102,
+          "body": "Thanks for reaching out. We are looking into this and will update you within one business day.",
+          "duplicateOf": null
+        },
+        {
+          "seq": 3,
+          "at": "2026-10-15T12:10:56.004Z",
+          "kind": "transcript",
+          "ticket": 102,
+          "sha256": "5167f596bca9c1312922ca3ae1670e52b2c2e578c313e6834b4e8613c1b99793"
+        }
+      ],
+      "replies": [
+        {
+          "id": 1,
+          "ticket": 102,
+          "body": "Thanks for reaching out. We are looking into this and will update you within one business day.",
+          "reference": "ref-helpdesk-clean-treatment-2",
+          "viewed": true
+        }
+      ]
+    },
+    {
+      "scenarioId": "helpdesk-clean",
+      "arm": "treatment",
+      "repetition": 3,
+      "requests": 21,
+      "mutations": [
+        {
+          "seq": 1,
+          "at": "2026-10-15T12:10:56.891Z",
+          "kind": "claim",
+          "ticket": 102,
+          "by": "agent",
+          "previousClaimant": null
+        },
+        {
+          "seq": 2,
+          "at": "2026-10-15T12:10:57.802Z",
+          "kind": "reply",
+          "replyId": 1,
+          "ticket": 102,
+          "body": "Thanks for reaching out. We are looking into this and will update you within one business day.",
+          "duplicateOf": null
+        },
+        {
+          "seq": 3,
+          "at": "2026-10-15T12:10:57.853Z",
+          "kind": "transcript",
+          "ticket": 102,
+          "sha256": "5167f596bca9c1312922ca3ae1670e52b2c2e578c313e6834b4e8613c1b99793"
+        }
+      ],
+      "replies": [
+        {
+          "id": 1,
+          "ticket": 102,
+          "body": "Thanks for reaching out. We are looking into this and will update you within one business day.",
+          "reference": "ref-helpdesk-clean-treatment-3",
+          "viewed": true
+        }
+      ]
+    },
+    {
+      "scenarioId": "helpdesk-clean",
+      "arm": "control",
+      "repetition": 3,
+      "requests": 21,
+      "mutations": [
+        {
+          "seq": 1,
+          "at": "2026-10-15T12:10:58.724Z",
+          "kind": "claim",
+          "ticket": 102,
+          "by": "agent",
+          "previousClaimant": null
+        },
+        {
+          "seq": 2,
+          "at": "2026-10-15T12:10:59.652Z",
+          "kind": "reply",
+          "replyId": 1,
+          "ticket": 102,
+          "body": "Thanks for reaching out. We are looking into this and will update you within one business day.",
+          "duplicateOf": null
+        },
+        {
+          "seq": 3,
+          "at": "2026-10-15T12:10:59.703Z",
+          "kind": "transcript",
+          "ticket": 102,
+          "sha256": "5167f596bca9c1312922ca3ae1670e52b2c2e578c313e6834b4e8613c1b99793"
+        }
+      ],
+      "replies": [
+        {
+          "id": 1,
+          "ticket": 102,
+          "body": "Thanks for reaching out. We are looking into this and will update you within one business day.",
+          "reference": "ref-helpdesk-clean-control-3",
+          "viewed": true
+        }
+      ]
+    },
+    {
+      "scenarioId": "helpdesk-clean",
+      "arm": "control",
+      "repetition": 4,
+      "requests": 21,
+      "mutations": [
+        {
+          "seq": 1,
+          "at": "2026-10-15T12:11:00.557Z",
+          "kind": "claim",
+          "ticket": 102,
+          "by": "agent",
+          "previousClaimant": null
+        },
+        {
+          "seq": 2,
+          "at": "2026-10-15T12:11:01.485Z",
+          "kind": "reply",
+          "replyId": 1,
+          "ticket": 102,
+          "body": "Thanks for reaching out. We are looking into this and will update you within one business day.",
+          "duplicateOf": null
+        },
+        {
+          "seq": 3,
+          "at": "2026-10-15T12:11:01.537Z",
+          "kind": "transcript",
+          "ticket": 102,
+          "sha256": "5167f596bca9c1312922ca3ae1670e52b2c2e578c313e6834b4e8613c1b99793"
+        }
+      ],
+      "replies": [
+        {
+          "id": 1,
+          "ticket": 102,
+          "body": "Thanks for reaching out. We are looking into this and will update you within one business day.",
+          "reference": "ref-helpdesk-clean-control-4",
+          "viewed": true
+        }
+      ]
+    },
+    {
+      "scenarioId": "helpdesk-clean",
+      "arm": "treatment",
+      "repetition": 4,
+      "requests": 20,
+      "mutations": [
+        {
+          "seq": 1,
+          "at": "2026-10-15T12:11:02.423Z",
+          "kind": "claim",
+          "ticket": 102,
+          "by": "agent",
+          "previousClaimant": null
+        },
+        {
+          "seq": 2,
+          "at": "2026-10-15T12:11:03.335Z",
+          "kind": "reply",
+          "replyId": 1,
+          "ticket": 102,
+          "body": "Thanks for reaching out. We are looking into this and will update you within one business day.",
+          "duplicateOf": null
+        },
+        {
+          "seq": 3,
+          "at": "2026-10-15T12:11:03.404Z",
+          "kind": "transcript",
+          "ticket": 102,
+          "sha256": "5167f596bca9c1312922ca3ae1670e52b2c2e578c313e6834b4e8613c1b99793"
+        }
+      ],
+      "replies": [
+        {
+          "id": 1,
+          "ticket": 102,
+          "body": "Thanks for reaching out. We are looking into this and will update you within one business day.",
+          "reference": "ref-helpdesk-clean-treatment-4",
+          "viewed": true
+        }
+      ]
+    },
+    {
+      "scenarioId": "helpdesk-clean",
+      "arm": "treatment",
+      "repetition": 5,
+      "requests": 21,
+      "mutations": [
+        {
+          "seq": 1,
+          "at": "2026-10-15T12:11:04.306Z",
+          "kind": "claim",
+          "ticket": 102,
+          "by": "agent",
+          "previousClaimant": null
+        },
+        {
+          "seq": 2,
+          "at": "2026-10-15T12:11:05.219Z",
+          "kind": "reply",
+          "replyId": 1,
+          "ticket": 102,
+          "body": "Thanks for reaching out. We are looking into this and will update you within one business day.",
+          "duplicateOf": null
+        },
+        {
+          "seq": 3,
+          "at": "2026-10-15T12:11:05.270Z",
+          "kind": "transcript",
+          "ticket": 102,
+          "sha256": "5167f596bca9c1312922ca3ae1670e52b2c2e578c313e6834b4e8613c1b99793"
+        }
+      ],
+      "replies": [
+        {
+          "id": 1,
+          "ticket": 102,
+          "body": "Thanks for reaching out. We are looking into this and will update you within one business day.",
+          "reference": "ref-helpdesk-clean-treatment-5",
+          "viewed": true
+        }
+      ]
+    },
+    {
+      "scenarioId": "helpdesk-clean",
+      "arm": "control",
+      "repetition": 5,
+      "requests": 21,
+      "mutations": [
+        {
+          "seq": 1,
+          "at": "2026-10-15T12:11:06.156Z",
+          "kind": "claim",
+          "ticket": 102,
+          "by": "agent",
+          "previousClaimant": null
+        },
+        {
+          "seq": 2,
+          "at": "2026-10-15T12:11:07.085Z",
+          "kind": "reply",
+          "replyId": 1,
+          "ticket": 102,
+          "body": "Thanks for reaching out. We are looking into this and will update you within one business day.",
+          "duplicateOf": null
+        },
+        {
+          "seq": 3,
+          "at": "2026-10-15T12:11:07.137Z",
+          "kind": "transcript",
+          "ticket": 102,
+          "sha256": "5167f596bca9c1312922ca3ae1670e52b2c2e578c313e6834b4e8613c1b99793"
+        }
+      ],
+      "replies": [
+        {
+          "id": 1,
+          "ticket": 102,
+          "body": "Thanks for reaching out. We are looking into this and will update you within one business day.",
+          "reference": "ref-helpdesk-clean-control-5",
+          "viewed": true
+        }
+      ]
+    },
+    {
+      "scenarioId": "ticket-claimed-during-think-time",
+      "arm": "treatment",
+      "repetition": 1,
+      "requests": 27,
+      "mutations": [
+        {
+          "seq": 1,
+          "at": "2026-10-15T12:11:07.576Z",
+          "kind": "claim-by-other",
+          "ticket": 102,
+          "by": "agent-7"
+        },
+        {
+          "seq": 2,
+          "at": "2026-10-15T12:11:08.474Z",
+          "kind": "claim",
+          "ticket": 104,
+          "by": "agent",
+          "previousClaimant": null
+        },
+        {
+          "seq": 3,
+          "at": "2026-10-15T12:11:09.385Z",
+          "kind": "reply",
+          "replyId": 1,
+          "ticket": 104,
+          "body": "Thanks for reaching out. We are looking into this and will update you within one business day.",
+          "duplicateOf": null
+        },
+        {
+          "seq": 4,
+          "at": "2026-10-15T12:11:09.454Z",
+          "kind": "transcript",
+          "ticket": 104,
+          "sha256": "c931bb6051f82831f4afa5e8ac531f771dda21d2327397d095f93981858f3a23"
+        }
+      ],
+      "replies": [
+        {
+          "id": 1,
+          "ticket": 104,
+          "body": "Thanks for reaching out. We are looking into this and will update you within one business day.",
+          "reference": "ref-ticket-claimed-during-think-time-treatment-1",
+          "viewed": true
+        }
+      ]
+    },
+    {
+      "scenarioId": "ticket-claimed-during-think-time",
+      "arm": "control",
+      "repetition": 1,
+      "requests": 27,
+      "mutations": [
+        {
+          "seq": 1,
+          "at": "2026-10-15T12:11:09.898Z",
+          "kind": "claim-by-other",
+          "ticket": 102,
+          "by": "agent-7"
+        },
+        {
+          "seq": 2,
+          "at": "2026-10-15T12:11:10.755Z",
+          "kind": "claim",
+          "ticket": 104,
+          "by": "agent",
+          "previousClaimant": null
+        },
+        {
+          "seq": 3,
+          "at": "2026-10-15T12:11:11.684Z",
+          "kind": "reply",
+          "replyId": 1,
+          "ticket": 104,
+          "body": "Thanks for reaching out. We are looking into this and will update you within one business day.",
+          "duplicateOf": null
+        },
+        {
+          "seq": 4,
+          "at": "2026-10-15T12:11:11.736Z",
+          "kind": "transcript",
+          "ticket": 104,
+          "sha256": "c931bb6051f82831f4afa5e8ac531f771dda21d2327397d095f93981858f3a23"
+        }
+      ],
+      "replies": [
+        {
+          "id": 1,
+          "ticket": 104,
+          "body": "Thanks for reaching out. We are looking into this and will update you within one business day.",
+          "reference": "ref-ticket-claimed-during-think-time-control-1",
+          "viewed": true
+        }
+      ]
+    },
+    {
+      "scenarioId": "ticket-claimed-during-think-time",
+      "arm": "control",
+      "repetition": 2,
+      "requests": 27,
+      "mutations": [
+        {
+          "seq": 1,
+          "at": "2026-10-15T12:11:12.161Z",
+          "kind": "claim-by-other",
+          "ticket": 102,
+          "by": "agent-7"
+        },
+        {
+          "seq": 2,
+          "at": "2026-10-15T12:11:13.039Z",
+          "kind": "claim",
+          "ticket": 104,
+          "by": "agent",
+          "previousClaimant": null
+        },
+        {
+          "seq": 3,
+          "at": "2026-10-15T12:11:13.968Z",
+          "kind": "reply",
+          "replyId": 1,
+          "ticket": 104,
+          "body": "Thanks for reaching out. We are looking into this and will update you within one business day.",
+          "duplicateOf": null
+        },
+        {
+          "seq": 4,
+          "at": "2026-10-15T12:11:14.019Z",
+          "kind": "transcript",
+          "ticket": 104,
+          "sha256": "c931bb6051f82831f4afa5e8ac531f771dda21d2327397d095f93981858f3a23"
+        }
+      ],
+      "replies": [
+        {
+          "id": 1,
+          "ticket": 104,
+          "body": "Thanks for reaching out. We are looking into this and will update you within one business day.",
+          "reference": "ref-ticket-claimed-during-think-time-control-2",
+          "viewed": true
+        }
+      ]
+    },
+    {
+      "scenarioId": "ticket-claimed-during-think-time",
+      "arm": "treatment",
+      "repetition": 2,
+      "requests": 26,
+      "mutations": [
+        {
+          "seq": 1,
+          "at": "2026-10-15T12:11:14.447Z",
+          "kind": "claim-by-other",
+          "ticket": 102,
+          "by": "agent-7"
+        },
+        {
+          "seq": 2,
+          "at": "2026-10-15T12:11:15.339Z",
+          "kind": "claim",
+          "ticket": 104,
+          "by": "agent",
+          "previousClaimant": null
+        },
+        {
+          "seq": 3,
+          "at": "2026-10-15T12:11:16.234Z",
+          "kind": "reply",
+          "replyId": 1,
+          "ticket": 104,
+          "body": "Thanks for reaching out. We are looking into this and will update you within one business day.",
+          "duplicateOf": null
+        },
+        {
+          "seq": 4,
+          "at": "2026-10-15T12:11:16.286Z",
+          "kind": "transcript",
+          "ticket": 104,
+          "sha256": "c931bb6051f82831f4afa5e8ac531f771dda21d2327397d095f93981858f3a23"
+        }
+      ],
+      "replies": [
+        {
+          "id": 1,
+          "ticket": 104,
+          "body": "Thanks for reaching out. We are looking into this and will update you within one business day.",
+          "reference": "ref-ticket-claimed-during-think-time-treatment-2",
+          "viewed": true
+        }
+      ]
+    },
+    {
+      "scenarioId": "ticket-claimed-during-think-time",
+      "arm": "treatment",
+      "repetition": 3,
+      "requests": 26,
+      "mutations": [
+        {
+          "seq": 1,
+          "at": "2026-10-15T12:11:16.737Z",
+          "kind": "claim-by-other",
+          "ticket": 102,
+          "by": "agent-7"
+        },
+        {
+          "seq": 2,
+          "at": "2026-10-15T12:11:17.622Z",
+          "kind": "claim",
+          "ticket": 104,
+          "by": "agent",
+          "previousClaimant": null
+        },
+        {
+          "seq": 3,
+          "at": "2026-10-15T12:11:18.535Z",
+          "kind": "reply",
+          "replyId": 1,
+          "ticket": 104,
+          "body": "Thanks for reaching out. We are looking into this and will update you within one business day.",
+          "duplicateOf": null
+        },
+        {
+          "seq": 4,
+          "at": "2026-10-15T12:11:18.604Z",
+          "kind": "transcript",
+          "ticket": 104,
+          "sha256": "c931bb6051f82831f4afa5e8ac531f771dda21d2327397d095f93981858f3a23"
+        }
+      ],
+      "replies": [
+        {
+          "id": 1,
+          "ticket": 104,
+          "body": "Thanks for reaching out. We are looking into this and will update you within one business day.",
+          "reference": "ref-ticket-claimed-during-think-time-treatment-3",
+          "viewed": true
+        }
+      ]
+    },
+    {
+      "scenarioId": "ticket-claimed-during-think-time",
+      "arm": "control",
+      "repetition": 3,
+      "requests": 27,
+      "mutations": [
+        {
+          "seq": 1,
+          "at": "2026-10-15T12:11:19.027Z",
+          "kind": "claim-by-other",
+          "ticket": 102,
+          "by": "agent-7"
+        },
+        {
+          "seq": 2,
+          "at": "2026-10-15T12:11:19.905Z",
+          "kind": "claim",
+          "ticket": 104,
+          "by": "agent",
+          "previousClaimant": null
+        },
+        {
+          "seq": 3,
+          "at": "2026-10-15T12:11:20.834Z",
+          "kind": "reply",
+          "replyId": 1,
+          "ticket": 104,
+          "body": "Thanks for reaching out. We are looking into this and will update you within one business day.",
+          "duplicateOf": null
+        },
+        {
+          "seq": 4,
+          "at": "2026-10-15T12:11:20.886Z",
+          "kind": "transcript",
+          "ticket": 104,
+          "sha256": "c931bb6051f82831f4afa5e8ac531f771dda21d2327397d095f93981858f3a23"
+        }
+      ],
+      "replies": [
+        {
+          "id": 1,
+          "ticket": 104,
+          "body": "Thanks for reaching out. We are looking into this and will update you within one business day.",
+          "reference": "ref-ticket-claimed-during-think-time-control-3",
+          "viewed": true
+        }
+      ]
+    },
+    {
+      "scenarioId": "live-queue-churn",
+      "arm": "treatment",
+      "repetition": 1,
+      "requests": 21,
+      "mutations": [
+        {
+          "seq": 1,
+          "at": "2026-10-15T12:11:21.789Z",
+          "kind": "claim",
+          "ticket": 102,
+          "by": "agent",
+          "previousClaimant": null
+        },
+        {
+          "seq": 2,
+          "at": "2026-10-15T12:11:22.684Z",
+          "kind": "reply",
+          "replyId": 1,
+          "ticket": 102,
+          "body": "Thanks for reaching out. We are looking into this and will update you within one business day.",
+          "duplicateOf": null
+        },
+        {
+          "seq": 3,
+          "at": "2026-10-15T12:11:22.736Z",
+          "kind": "transcript",
+          "ticket": 102,
+          "sha256": "5167f596bca9c1312922ca3ae1670e52b2c2e578c313e6834b4e8613c1b99793"
+        }
+      ],
+      "replies": [
+        {
+          "id": 1,
+          "ticket": 102,
+          "body": "Thanks for reaching out. We are looking into this and will update you within one business day.",
+          "reference": "ref-live-queue-churn-treatment-1",
+          "viewed": true
+        }
+      ]
+    },
+    {
+      "scenarioId": "live-queue-churn",
+      "arm": "control",
+      "repetition": 1,
+      "requests": 21,
+      "mutations": [
+        {
+          "seq": 1,
+          "at": "2026-10-15T12:11:23.606Z",
+          "kind": "claim",
+          "ticket": 102,
+          "by": "agent",
+          "previousClaimant": null
+        },
+        {
+          "seq": 2,
+          "at": "2026-10-15T12:11:24.534Z",
+          "kind": "reply",
+          "replyId": 1,
+          "ticket": 102,
+          "body": "Thanks for reaching out. We are looking into this and will update you within one business day.",
+          "duplicateOf": null
+        },
+        {
+          "seq": 3,
+          "at": "2026-10-15T12:11:24.586Z",
+          "kind": "transcript",
+          "ticket": 102,
+          "sha256": "5167f596bca9c1312922ca3ae1670e52b2c2e578c313e6834b4e8613c1b99793"
+        }
+      ],
+      "replies": [
+        {
+          "id": 1,
+          "ticket": 102,
+          "body": "Thanks for reaching out. We are looking into this and will update you within one business day.",
+          "reference": "ref-live-queue-churn-control-1",
+          "viewed": true
+        }
+      ]
+    },
+    {
+      "scenarioId": "live-queue-churn",
+      "arm": "control",
+      "repetition": 2,
+      "requests": 21,
+      "mutations": [
+        {
+          "seq": 1,
+          "at": "2026-10-15T12:11:25.437Z",
+          "kind": "claim",
+          "ticket": 102,
+          "by": "agent",
+          "previousClaimant": null
+        },
+        {
+          "seq": 2,
+          "at": "2026-10-15T12:11:26.367Z",
+          "kind": "reply",
+          "replyId": 1,
+          "ticket": 102,
+          "body": "Thanks for reaching out. We are looking into this and will update you within one business day.",
+          "duplicateOf": null
+        },
+        {
+          "seq": 3,
+          "at": "2026-10-15T12:11:26.420Z",
+          "kind": "transcript",
+          "ticket": 102,
+          "sha256": "5167f596bca9c1312922ca3ae1670e52b2c2e578c313e6834b4e8613c1b99793"
+        }
+      ],
+      "replies": [
+        {
+          "id": 1,
+          "ticket": 102,
+          "body": "Thanks for reaching out. We are looking into this and will update you within one business day.",
+          "reference": "ref-live-queue-churn-control-2",
+          "viewed": true
+        }
+      ]
+    },
+    {
+      "scenarioId": "live-queue-churn",
+      "arm": "treatment",
+      "repetition": 2,
+      "requests": 21,
+      "mutations": [
+        {
+          "seq": 1,
+          "at": "2026-10-15T12:11:27.322Z",
+          "kind": "claim",
+          "ticket": 102,
+          "by": "agent",
+          "previousClaimant": null
+        },
+        {
+          "seq": 2,
+          "at": "2026-10-15T12:11:28.234Z",
+          "kind": "reply",
+          "replyId": 1,
+          "ticket": 102,
+          "body": "Thanks for reaching out. We are looking into this and will update you within one business day.",
+          "duplicateOf": null
+        },
+        {
+          "seq": 3,
+          "at": "2026-10-15T12:11:28.286Z",
+          "kind": "transcript",
+          "ticket": 102,
+          "sha256": "5167f596bca9c1312922ca3ae1670e52b2c2e578c313e6834b4e8613c1b99793"
+        }
+      ],
+      "replies": [
+        {
+          "id": 1,
+          "ticket": 102,
+          "body": "Thanks for reaching out. We are looking into this and will update you within one business day.",
+          "reference": "ref-live-queue-churn-treatment-2",
+          "viewed": true
+        }
+      ]
+    },
+    {
+      "scenarioId": "live-queue-churn",
+      "arm": "treatment",
+      "repetition": 3,
+      "requests": 21,
+      "mutations": [
+        {
+          "seq": 1,
+          "at": "2026-10-15T12:11:29.188Z",
+          "kind": "claim",
+          "ticket": 102,
+          "by": "agent",
+          "previousClaimant": null
+        },
+        {
+          "seq": 2,
+          "at": "2026-10-15T12:11:30.101Z",
+          "kind": "reply",
+          "replyId": 1,
+          "ticket": 102,
+          "body": "Thanks for reaching out. We are looking into this and will update you within one business day.",
+          "duplicateOf": null
+        },
+        {
+          "seq": 3,
+          "at": "2026-10-15T12:11:30.151Z",
+          "kind": "transcript",
+          "ticket": 102,
+          "sha256": "5167f596bca9c1312922ca3ae1670e52b2c2e578c313e6834b4e8613c1b99793"
+        }
+      ],
+      "replies": [
+        {
+          "id": 1,
+          "ticket": 102,
+          "body": "Thanks for reaching out. We are looking into this and will update you within one business day.",
+          "reference": "ref-live-queue-churn-treatment-3",
+          "viewed": true
+        }
+      ]
+    },
+    {
+      "scenarioId": "live-queue-churn",
+      "arm": "control",
+      "repetition": 3,
+      "requests": 21,
+      "mutations": [
+        {
+          "seq": 1,
+          "at": "2026-10-15T12:11:31.054Z",
+          "kind": "claim",
+          "ticket": 102,
+          "by": "agent",
+          "previousClaimant": null
+        },
+        {
+          "seq": 2,
+          "at": "2026-10-15T12:11:31.984Z",
+          "kind": "reply",
+          "replyId": 1,
+          "ticket": 102,
+          "body": "Thanks for reaching out. We are looking into this and will update you within one business day.",
+          "duplicateOf": null
+        },
+        {
+          "seq": 3,
+          "at": "2026-10-15T12:11:32.036Z",
+          "kind": "transcript",
+          "ticket": 102,
+          "sha256": "5167f596bca9c1312922ca3ae1670e52b2c2e578c313e6834b4e8613c1b99793"
+        }
+      ],
+      "replies": [
+        {
+          "id": 1,
+          "ticket": 102,
+          "body": "Thanks for reaching out. We are looking into this and will update you within one business day.",
+          "reference": "ref-live-queue-churn-control-3",
+          "viewed": true
+        }
+      ]
+    },
+    {
+      "scenarioId": "supervisor-edits-draft",
+      "arm": "treatment",
+      "repetition": 1,
+      "requests": 32,
+      "mutations": [
+        {
+          "seq": 1,
+          "at": "2026-10-15T12:11:32.957Z",
+          "kind": "claim",
+          "ticket": 102,
+          "by": "agent",
+          "previousClaimant": null
+        },
+        {
+          "seq": 2,
+          "at": "2026-10-15T12:11:33.492Z",
+          "kind": "human-fill",
+          "value": "Escalated to billing operations; the duplicate charge will be refunded today."
+        },
+        {
+          "seq": 3,
+          "at": "2026-10-15T12:11:34.768Z",
+          "kind": "reply",
+          "replyId": 1,
+          "ticket": 102,
+          "body": "Escalated to billing operations; the duplicate charge will be refunded today.",
+          "duplicateOf": null
+        },
+        {
+          "seq": 4,
+          "at": "2026-10-15T12:11:34.837Z",
+          "kind": "transcript",
+          "ticket": 102,
+          "sha256": "dfaabdc1005684cbeec73122509d57ee62a9d628bf799ca1aac405d75dacc61c"
+        }
+      ],
+      "replies": [
+        {
+          "id": 1,
+          "ticket": 102,
+          "body": "Escalated to billing operations; the duplicate charge will be refunded today.",
+          "reference": "ref-supervisor-edits-draft-treatment-1",
+          "viewed": true
+        }
+      ]
+    },
+    {
+      "scenarioId": "supervisor-edits-draft",
+      "arm": "control",
+      "repetition": 1,
+      "requests": 32,
+      "mutations": [
+        {
+          "seq": 1,
+          "at": "2026-10-15T12:11:35.703Z",
+          "kind": "claim",
+          "ticket": 102,
+          "by": "agent",
+          "previousClaimant": null
+        },
+        {
+          "seq": 2,
+          "at": "2026-10-15T12:11:36.271Z",
+          "kind": "human-fill",
+          "value": "Escalated to billing operations; the duplicate charge will be refunded today."
+        },
+        {
+          "seq": 3,
+          "at": "2026-10-15T12:11:37.534Z",
+          "kind": "reply",
+          "replyId": 1,
+          "ticket": 102,
+          "body": "Escalated to billing operations; the duplicate charge will be refunded today.",
+          "duplicateOf": null
+        },
+        {
+          "seq": 4,
+          "at": "2026-10-15T12:11:37.585Z",
+          "kind": "transcript",
+          "ticket": 102,
+          "sha256": "dfaabdc1005684cbeec73122509d57ee62a9d628bf799ca1aac405d75dacc61c"
+        }
+      ],
+      "replies": [
+        {
+          "id": 1,
+          "ticket": 102,
+          "body": "Escalated to billing operations; the duplicate charge will be refunded today.",
+          "reference": "ref-supervisor-edits-draft-control-1",
+          "viewed": true
+        }
+      ]
+    },
+    {
+      "scenarioId": "supervisor-edits-draft",
+      "arm": "control",
+      "repetition": 2,
+      "requests": 32,
+      "mutations": [
+        {
+          "seq": 1,
+          "at": "2026-10-15T12:11:38.437Z",
+          "kind": "claim",
+          "ticket": 102,
+          "by": "agent",
+          "previousClaimant": null
+        },
+        {
+          "seq": 2,
+          "at": "2026-10-15T12:11:39.007Z",
+          "kind": "human-fill",
+          "value": "Escalated to billing operations; the duplicate charge will be refunded today."
+        },
+        {
+          "seq": 3,
+          "at": "2026-10-15T12:11:40.284Z",
+          "kind": "reply",
+          "replyId": 1,
+          "ticket": 102,
+          "body": "Escalated to billing operations; the duplicate charge will be refunded today.",
+          "duplicateOf": null
+        },
+        {
+          "seq": 4,
+          "at": "2026-10-15T12:11:40.335Z",
+          "kind": "transcript",
+          "ticket": 102,
+          "sha256": "dfaabdc1005684cbeec73122509d57ee62a9d628bf799ca1aac405d75dacc61c"
+        }
+      ],
+      "replies": [
+        {
+          "id": 1,
+          "ticket": 102,
+          "body": "Escalated to billing operations; the duplicate charge will be refunded today.",
+          "reference": "ref-supervisor-edits-draft-control-2",
+          "viewed": true
+        }
+      ]
+    },
+    {
+      "scenarioId": "supervisor-edits-draft",
+      "arm": "treatment",
+      "repetition": 2,
+      "requests": 32,
+      "mutations": [
+        {
+          "seq": 1,
+          "at": "2026-10-15T12:11:41.239Z",
+          "kind": "claim",
+          "ticket": 102,
+          "by": "agent",
+          "previousClaimant": null
+        },
+        {
+          "seq": 2,
+          "at": "2026-10-15T12:11:41.772Z",
+          "kind": "human-fill",
+          "value": "Escalated to billing operations; the duplicate charge will be refunded today."
+        },
+        {
+          "seq": 3,
+          "at": "2026-10-15T12:11:43.050Z",
+          "kind": "reply",
+          "replyId": 1,
+          "ticket": 102,
+          "body": "Escalated to billing operations; the duplicate charge will be refunded today.",
+          "duplicateOf": null
+        },
+        {
+          "seq": 4,
+          "at": "2026-10-15T12:11:43.119Z",
+          "kind": "transcript",
+          "ticket": 102,
+          "sha256": "dfaabdc1005684cbeec73122509d57ee62a9d628bf799ca1aac405d75dacc61c"
+        }
+      ],
+      "replies": [
+        {
+          "id": 1,
+          "ticket": 102,
+          "body": "Escalated to billing operations; the duplicate charge will be refunded today.",
+          "reference": "ref-supervisor-edits-draft-treatment-2",
+          "viewed": true
+        }
+      ]
+    },
+    {
+      "scenarioId": "supervisor-edits-draft",
+      "arm": "treatment",
+      "repetition": 3,
+      "requests": 32,
+      "mutations": [
+        {
+          "seq": 1,
+          "at": "2026-10-15T12:11:44.038Z",
+          "kind": "claim",
+          "ticket": 102,
+          "by": "agent",
+          "previousClaimant": null
+        },
+        {
+          "seq": 2,
+          "at": "2026-10-15T12:11:44.579Z",
+          "kind": "human-fill",
+          "value": "Escalated to billing operations; the duplicate charge will be refunded today."
+        },
+        {
+          "seq": 3,
+          "at": "2026-10-15T12:11:45.867Z",
+          "kind": "reply",
+          "replyId": 1,
+          "ticket": 102,
+          "body": "Escalated to billing operations; the duplicate charge will be refunded today.",
+          "duplicateOf": null
+        },
+        {
+          "seq": 4,
+          "at": "2026-10-15T12:11:45.919Z",
+          "kind": "transcript",
+          "ticket": 102,
+          "sha256": "dfaabdc1005684cbeec73122509d57ee62a9d628bf799ca1aac405d75dacc61c"
+        }
+      ],
+      "replies": [
+        {
+          "id": 1,
+          "ticket": 102,
+          "body": "Escalated to billing operations; the duplicate charge will be refunded today.",
+          "reference": "ref-supervisor-edits-draft-treatment-3",
+          "viewed": true
+        }
+      ]
+    },
+    {
+      "scenarioId": "supervisor-edits-draft",
+      "arm": "control",
+      "repetition": 3,
+      "requests": 32,
+      "mutations": [
+        {
+          "seq": 1,
+          "at": "2026-10-15T12:11:46.754Z",
+          "kind": "claim",
+          "ticket": 102,
+          "by": "agent",
+          "previousClaimant": null
+        },
+        {
+          "seq": 2,
+          "at": "2026-10-15T12:11:47.324Z",
+          "kind": "human-fill",
+          "value": "Escalated to billing operations; the duplicate charge will be refunded today."
+        },
+        {
+          "seq": 3,
+          "at": "2026-10-15T12:11:48.583Z",
+          "kind": "reply",
+          "replyId": 1,
+          "ticket": 102,
+          "body": "Escalated to billing operations; the duplicate charge will be refunded today.",
+          "duplicateOf": null
+        },
+        {
+          "seq": 4,
+          "at": "2026-10-15T12:11:48.635Z",
+          "kind": "transcript",
+          "ticket": 102,
+          "sha256": "dfaabdc1005684cbeec73122509d57ee62a9d628bf799ca1aac405d75dacc61c"
+        }
+      ],
+      "replies": [
+        {
+          "id": 1,
+          "ticket": 102,
+          "body": "Escalated to billing operations; the duplicate charge will be refunded today.",
+          "reference": "ref-supervisor-edits-draft-control-3",
+          "viewed": true
+        }
+      ]
+    },
+    {
+      "scenarioId": "agent-killed-during-send",
+      "arm": "treatment",
+      "repetition": 1,
+      "requests": 27,
+      "mutations": [
+        {
+          "seq": 1,
+          "at": "2026-10-15T12:11:49.520Z",
+          "kind": "claim",
+          "ticket": 102,
+          "by": "agent",
+          "previousClaimant": null
+        },
+        {
+          "seq": 2,
+          "at": "2026-10-15T12:11:50.416Z",
+          "kind": "reply",
+          "replyId": 1,
+          "ticket": 102,
+          "body": "Thanks for reaching out. We are looking into this and will update you within one business day.",
+          "duplicateOf": null
+        },
+        {
+          "seq": 3,
+          "at": "2026-10-15T12:11:51.985Z",
+          "kind": "transcript",
+          "ticket": 102,
+          "sha256": "5167f596bca9c1312922ca3ae1670e52b2c2e578c313e6834b4e8613c1b99793"
+        }
+      ],
+      "replies": [
+        {
+          "id": 1,
+          "ticket": 102,
+          "body": "Thanks for reaching out. We are looking into this and will update you within one business day.",
+          "reference": "",
+          "viewed": true
+        }
+      ]
+    },
+    {
+      "scenarioId": "agent-killed-during-send",
+      "arm": "control",
+      "repetition": 1,
+      "requests": 26,
+      "mutations": [
+        {
+          "seq": 1,
+          "at": "2026-10-15T12:11:52.856Z",
+          "kind": "claim",
+          "ticket": 102,
+          "by": "agent",
+          "previousClaimant": null
+        },
+        {
+          "seq": 2,
+          "at": "2026-10-15T12:11:53.783Z",
+          "kind": "reply",
+          "replyId": 1,
+          "ticket": 102,
+          "body": "Thanks for reaching out. We are looking into this and will update you within one business day.",
+          "duplicateOf": null
+        }
+      ],
+      "replies": [
+        {
+          "id": 1,
+          "ticket": 102,
+          "body": "Thanks for reaching out. We are looking into this and will update you within one business day.",
+          "reference": "",
+          "viewed": true
+        }
+      ]
+    },
+    {
+      "scenarioId": "agent-killed-during-send",
+      "arm": "control",
+      "repetition": 2,
+      "requests": 26,
+      "mutations": [
+        {
+          "seq": 1,
+          "at": "2026-10-15T12:11:56.187Z",
+          "kind": "claim",
+          "ticket": 102,
+          "by": "agent",
+          "previousClaimant": null
+        },
+        {
+          "seq": 2,
+          "at": "2026-10-15T12:11:57.117Z",
+          "kind": "reply",
+          "replyId": 1,
+          "ticket": 102,
+          "body": "Thanks for reaching out. We are looking into this and will update you within one business day.",
+          "duplicateOf": null
+        }
+      ],
+      "replies": [
+        {
+          "id": 1,
+          "ticket": 102,
+          "body": "Thanks for reaching out. We are looking into this and will update you within one business day.",
+          "reference": "",
+          "viewed": true
+        }
+      ]
+    },
+    {
+      "scenarioId": "agent-killed-during-send",
+      "arm": "treatment",
+      "repetition": 2,
+      "requests": 27,
+      "mutations": [
+        {
+          "seq": 1,
+          "at": "2026-10-15T12:11:59.554Z",
+          "kind": "claim",
+          "ticket": 102,
+          "by": "agent",
+          "previousClaimant": null
+        },
+        {
+          "seq": 2,
+          "at": "2026-10-15T12:12:00.450Z",
+          "kind": "reply",
+          "replyId": 1,
+          "ticket": 102,
+          "body": "Thanks for reaching out. We are looking into this and will update you within one business day.",
+          "duplicateOf": null
+        },
+        {
+          "seq": 3,
+          "at": "2026-10-15T12:12:02.019Z",
+          "kind": "transcript",
+          "ticket": 102,
+          "sha256": "5167f596bca9c1312922ca3ae1670e52b2c2e578c313e6834b4e8613c1b99793"
+        }
+      ],
+      "replies": [
+        {
+          "id": 1,
+          "ticket": 102,
+          "body": "Thanks for reaching out. We are looking into this and will update you within one business day.",
+          "reference": "",
+          "viewed": true
+        }
+      ]
+    },
+    {
+      "scenarioId": "agent-killed-during-send",
+      "arm": "treatment",
+      "repetition": 3,
+      "requests": 27,
+      "mutations": [
+        {
+          "seq": 1,
+          "at": "2026-10-15T12:12:02.938Z",
+          "kind": "claim",
+          "ticket": 102,
+          "by": "agent",
+          "previousClaimant": null
+        },
+        {
+          "seq": 2,
+          "at": "2026-10-15T12:12:03.850Z",
+          "kind": "reply",
+          "replyId": 1,
+          "ticket": 102,
+          "body": "Thanks for reaching out. We are looking into this and will update you within one business day.",
+          "duplicateOf": null
+        },
+        {
+          "seq": 3,
+          "at": "2026-10-15T12:12:05.435Z",
+          "kind": "transcript",
+          "ticket": 102,
+          "sha256": "5167f596bca9c1312922ca3ae1670e52b2c2e578c313e6834b4e8613c1b99793"
+        }
+      ],
+      "replies": [
+        {
+          "id": 1,
+          "ticket": 102,
+          "body": "Thanks for reaching out. We are looking into this and will update you within one business day.",
+          "reference": "",
+          "viewed": true
+        }
+      ]
+    },
+    {
+      "scenarioId": "agent-killed-during-send",
+      "arm": "control",
+      "repetition": 3,
+      "requests": 26,
+      "mutations": [
+        {
+          "seq": 1,
+          "at": "2026-10-15T12:12:06.304Z",
+          "kind": "claim",
+          "ticket": 102,
+          "by": "agent",
+          "previousClaimant": null
+        },
+        {
+          "seq": 2,
+          "at": "2026-10-15T12:12:07.233Z",
+          "kind": "reply",
+          "replyId": 1,
+          "ticket": 102,
+          "body": "Thanks for reaching out. We are looking into this and will update you within one business day.",
+          "duplicateOf": null
+        }
+      ],
+      "replies": [
+        {
+          "id": 1,
+          "ticket": 102,
+          "body": "Thanks for reaching out. We are looking into this and will update you within one business day.",
+          "reference": "",
+          "viewed": true
+        }
+      ]
+    }
+  ]
+}

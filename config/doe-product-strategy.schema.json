@@ -7,7 +7,7 @@
   "required": ["$schema", "schemaVersion", "strategyVersion", "artifactKind", "authority", "positioning", "independenceBoundary", "surfaces", "commercialOffer", "comparisonLaw", "externalProductComparison", "evidenceSpine", "customerEvidencePolicy", "platformSequence", "milestones", "claimBoundary", "reusableProgram", "executionOwnership", "provingSet", "developmentEffectiveness", "fawnWorkspace"],
   "properties": {
     "$schema": { "type": "string", "const": "doe-product-strategy.schema.json" },
-    "schemaVersion": { "type": "integer", "const": 12 },
+    "schemaVersion": { "type": "integer", "const": 13 },
     "strategyVersion": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
     "artifactKind": { "type": "string", "const": "doe-product-strategy" },
     "authority": {
@@ -464,6 +464,8 @@
         "developmentTestsPath",
         "qualificationEvidence",
         "differentiationEvidence",
+        "strongerControlEvidence",
+        "compatibilityEvidence",
         "implementationStatus",
         "currentAssessment",
         "requiresNativeRuntimeWins",
@@ -518,6 +520,41 @@
               "description": "Advantage over Playwright agent tooling on the frozen workbench suite only; not broad product superiority, compatibility beyond the fixture or release qualification.",
               "const": "frozen-differentiation-suite-against-playwright-agent-tooling"
             }
+          }
+        },
+        "strongerControlEvidence": {
+          "description": "The second frozen suite: a different application against Playwright agent tooling that revalidates decisions before mutating and cancels pending calls on human takeover. It records which areas survive that control; it narrows, never widens, step 5's scope.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["suitePath", "resultPath", "sourceCommit", "scope"],
+          "properties": {
+            "suitePath": { "const": "config/browser-product-comparison-policy.json#workspaceComparison.revalidatedDifferentiation" },
+            "resultPath": { "type": "string", "pattern": "^reports/fawn-workspace/[0-9]{8}-[a-z0-9-]+/revalidated-differentiation/differentiation\\.json$" },
+            "sourceCommit": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+            "scope": { "const": "second-application-against-revalidating-playwright-agent-tooling" }
+          }
+        },
+        "compatibilityEvidence": {
+          "description": "Admitted runs of the frozen case set on further browser builds; compatibility evidence, not release qualification.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["builds", "sourceCommit", "scope"],
+          "properties": {
+            "builds": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["channel", "verdictPath"],
+                "properties": {
+                  "channel": { "enum": ["chromium", "chrome"] },
+                  "verdictPath": { "type": "string", "pattern": "^reports/fawn-workspace/[0-9]{8}-[a-z0-9-]+/compatibility-[a-z]+/verdict\\.json$" }
+                }
+              }
+            },
+            "sourceCommit": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+            "scope": { "const": "frozen-case-set-on-recorded-builds-not-release-qualification" }
           }
         },
         "implementationStatus": {

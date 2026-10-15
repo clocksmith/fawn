@@ -82,6 +82,47 @@ def differentiation_failures(strategy: dict[str, Any], result: dict[str, Any]) -
     return failures
 
 
+def stronger_control_failures(strategy: dict[str, Any], result: dict[str, Any]) -> list[str]:
+    """The second suite must have run in full on the named commit with its frozen rule passed."""
+    evidence = strategy["fawnWorkspace"]["strongerControlEvidence"]
+    comparison = load_json("config/browser-product-comparison-policy.json")["workspaceComparison"]
+    suite = comparison["revalidatedDifferentiation"]
+    failures = []
+    if result["suite"] != "revalidatedDifferentiation" or result["scope"] != "full" or result["suiteVersion"] != suite["suiteVersion"]:
+        failures.append("result is not a full run of the second frozen suite")
+    if result["identity"]["git"]["commit"] != evidence["sourceCommit"] or result["identity"]["git"]["workingTreeChanges"]:
+        failures.append("result ran other or uncommitted source")
+    if not result["productAdvantage"]["established"] or result["productAdvantage"]["suiteRegressions"]:
+        failures.append("the second suite's frozen rule did not pass")
+    frozen = [(entry["area"], entry["scenario"]) for entry in suite["improvementRequirements"]]
+    if [(entry["area"], entry["scenario"]) for entry in result["requirements"]] != frozen:
+        failures.append("result requirements differ from the frozen ones")
+    first = comparison["differentiation"]["suiteVersion"]
+    priors = result["productAdvantage"]["priorRegressions"]
+    if not any(prior["suiteVersion"] == first and prior["full"] and not prior["regressions"] for prior in priors):
+        failures.append("the first suite was not a clean prior")
+    if not result["sameBrowserBinary"] or result["debuggingEndpoints"] != 0:
+        failures.append("unequal browser or an exposed debugging endpoint")
+    return failures
+
+
+def compatibility_failures(strategy: dict[str, Any]) -> list[str]:
+    """Each compatibility build must be a full admitted run of the frozen case set on its channel."""
+    evidence = strategy["fawnWorkspace"]["compatibilityEvidence"]
+    case_set = load_json("config/fawn-workspace-qualification.json")
+    failures = []
+    for build in evidence["builds"]:
+        verdict = load_json(build["verdictPath"])
+        result = load_json(build["verdictPath"].replace("verdict.json", "result.json"))
+        if not verdict["admitted"] or verdict["caseSetVersion"] != case_set["caseSetVersion"]:
+            failures.append(f"{build['channel']}: not an admitted run of the frozen case set")
+        if verdict["identity"]["git"]["commit"] != evidence["sourceCommit"]:
+            failures.append(f"{build['channel']}: ran another commit")
+        if result["browserChannel"] != build["channel"] or not all(verdict["browsers"].values()):
+            failures.append(f"{build['channel']}: browser channel or identity missing")
+    return failures
+
+
 def validator() -> Draft202012Validator:
     schema = json.loads(
         STRATEGY_PATH.with_suffix(".schema.json").read_text(encoding="utf-8")
@@ -190,6 +231,20 @@ class FawnWorkspaceStrategyTests(unittest.TestCase):
             altered = copy.deepcopy(result)
             tamper(altered)
             self.assertTrue(differentiation_failures(strategy, altered))
+
+    def test_stronger_control_and_compatibility_bind_to_their_results(self) -> None:
+        strategy = load_strategy()
+        result = load_json(strategy["fawnWorkspace"]["strongerControlEvidence"]["resultPath"])
+        self.assertEqual(stronger_control_failures(strategy, result), [])
+        self.assertEqual(compatibility_failures(strategy), [])
+        for tamper in (
+            lambda copy: copy.update(suite="differentiation"),
+            lambda copy: copy["productAdvantage"].update(priorRegressions=[]),
+            lambda copy: copy["identity"]["git"].update(commit="0" * 40),
+        ):
+            altered = copy.deepcopy(result)
+            tamper(altered)
+            self.assertTrue(stronger_control_failures(strategy, altered))
 
     def test_binding_rejects_evidence_that_does_not_establish_a_step(self) -> None:
         strategy = load_strategy()

@@ -28,9 +28,12 @@ Three states stay distinct:
   - a human taking control while an agent call was pending
   - agent death while the application held an order
 
-  It also received far more observation bytes under page churn. Scripted
-  workflows show no material advantage over competent stock automation, and this
-  is not broad product superiority.
+  It also received far more observation bytes under page churn. On a second
+  application, against tooling that revalidates every decision and cancels
+  pending calls on takeover, the decision and handoff gaps close. Durable
+  outcomes across agent interruption and region-scoped observation remain.
+  Scripted workflows show no material advantage over competent stock
+  automation, and this is not broad product superiority.
 - **Release-qualified**: not established.
 
 The [workspace contract](fawn-workspace-contract.md) defines acceptance,

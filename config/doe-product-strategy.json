@@ -1,7 +1,7 @@
 {
   "$schema": "doe-product-strategy.schema.json",
-  "schemaVersion": 12,
-  "strategyVersion": "6.5.0",
+  "schemaVersion": 13,
+  "strategyVersion": "6.6.0",
   "artifactKind": "doe-product-strategy",
   "authority": {
     "goals": "GOALS.md",
@@ -527,17 +527,33 @@
     "qualificationEvidence": {
       "caseSetPath": "config/fawn-workspace-qualification.json",
       "validatorPath": "browser/workspace/qualification/validate.js",
-      "admittedVerdictPath": "reports/fawn-workspace/20261015-agent-differentiation/qualification/verdict.json",
-      "comparisonPath": "reports/fawn-workspace/20261015-agent-differentiation/comparison/comparison.json",
-      "sourceCommit": "59b95f9ce7eb98a93ddd3d6d8e4e14f5af2aa685",
+      "admittedVerdictPath": "reports/fawn-workspace/20261015-revalidated-control/qualification/verdict.json",
+      "comparisonPath": "reports/fawn-workspace/20261015-revalidated-control/comparison/comparison.json",
+      "sourceCommit": "9f522f7d98406eca21a2db5062d76c917c375c47",
       "scope": "frozen-case-set-on-recorded-browser-and-host"
     },
     "differentiationEvidence": {
       "suitePath": "config/browser-product-comparison-policy.json#workspaceComparison.differentiation",
-      "resultPath": "reports/fawn-workspace/20261015-agent-differentiation/differentiation/differentiation.json",
-      "scriptedComparisonPath": "reports/fawn-workspace/20261015-agent-differentiation/comparison/comparison.json",
-      "sourceCommit": "59b95f9ce7eb98a93ddd3d6d8e4e14f5af2aa685",
+      "resultPath": "reports/fawn-workspace/20261015-revalidated-control/differentiation/differentiation.json",
+      "scriptedComparisonPath": "reports/fawn-workspace/20261015-revalidated-control/comparison/comparison.json",
+      "sourceCommit": "9f522f7d98406eca21a2db5062d76c917c375c47",
       "scope": "frozen-differentiation-suite-against-playwright-agent-tooling"
+    },
+    "strongerControlEvidence": {
+      "suitePath": "config/browser-product-comparison-policy.json#workspaceComparison.revalidatedDifferentiation",
+      "resultPath": "reports/fawn-workspace/20261015-revalidated-control/revalidated-differentiation/differentiation.json",
+      "sourceCommit": "9f522f7d98406eca21a2db5062d76c917c375c47",
+      "scope": "second-application-against-revalidating-playwright-agent-tooling"
+    },
+    "compatibilityEvidence": {
+      "builds": [
+        {
+          "channel": "chrome",
+          "verdictPath": "reports/fawn-workspace/20261015-revalidated-control/compatibility-chrome/verdict.json"
+        }
+      ],
+      "sourceCommit": "9f522f7d98406eca21a2db5062d76c917c375c47",
+      "scope": "frozen-case-set-on-recorded-builds-not-release-qualification"
     },
     "implementationStatus": "partially-implemented-behavior-qualified",
     "currentAssessment": "unestablished",

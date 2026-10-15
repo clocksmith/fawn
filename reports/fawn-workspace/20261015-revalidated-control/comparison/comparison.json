@@ -1,0 +1,994 @@
+{
+  "schemaVersion": 1,
+  "comparisonVersion": "2026-10-14-workspace-comparison-v1",
+  "scope": "full",
+  "identity": {
+    "caseSet": {
+      "path": "config/fawn-workspace-qualification.json",
+      "sha256": "786a1936c151126d79812750956c1abf06338292542ad8e3114c29978a52605a"
+    },
+    "serviceConfig": {
+      "path": "config/fawn-workspace-service.json",
+      "sha256": "bc82567bcb37f742a16a3ecb365e2cc82614d0c461d8546482224cd377d5c844"
+    },
+    "comparisonPolicy": {
+      "path": "config/browser-product-comparison-policy.json",
+      "sha256": "eab551d75046b733fbe9571b778d30727bf88f0d877f5ecc2d4243c698aadaeb"
+    },
+    "serviceSource": {
+      "path": "browser/workspace/src",
+      "sha256": "1435c63dcd82157748918321ab68292e83f634b788890a8b2a5b0c9757ce579e",
+      "fileCount": 15
+    },
+    "harness": {
+      "path": "browser/workspace/qualification",
+      "sha256": "fcfc6d1dbaf45b56a5caba488a2f5d1f1a55017ad3b1adb7ad93b203cbcb07d5",
+      "fileCount": 24
+    },
+    "packageLock": {
+      "path": "browser/workspace/package-lock.json",
+      "sha256": "39f0a7a6ee1132526dbd806276c2d90f8f9a3833d4d200a9d36a33df617d0c49"
+    },
+    "fixtureSite": {
+      "path": "browser/workspace/qualification/fixture-site.js",
+      "sha256": "26d88112a09468f07398f6677a6bdce393f9b6a54169359ec4d3f5ec5e82dc41"
+    },
+    "node": "v22.22.1",
+    "playwrightCore": "1.58.2",
+    "os": {
+      "platform": "linux",
+      "release": "7.0.0-29-generic",
+      "arch": "x64"
+    },
+    "git": {
+      "commit": "9f522f7d98406eca21a2db5062d76c917c375c47",
+      "workingTreeChanges": []
+    }
+  },
+  "browsers": {
+    "treatment": [
+      {
+        "path": "/home/x/.cache/ms-playwright/chromium_headless_shell-1208/chrome-headless-shell-linux64/chrome-headless-shell",
+        "sha256": "27e55cc30e487493b89b663085d6deeb0707be201a568657c922fac9076c317c",
+        "byteLength": 183557344,
+        "version": "Google Chrome for Testing 145.0.7632.6"
+      }
+    ],
+    "control": [
+      {
+        "path": "/home/x/.cache/ms-playwright/chromium_headless_shell-1208/chrome-headless-shell-linux64/chrome-headless-shell",
+        "sha256": "27e55cc30e487493b89b663085d6deeb0707be201a568657c922fac9076c317c",
+        "byteLength": 183557344,
+        "version": "Google Chrome for Testing 145.0.7632.6"
+      }
+    ]
+  },
+  "equalOpportunityChecks": {
+    "sameBrowserBinary": true,
+    "debuggingEndpoints": 0
+  },
+  "integrationLines": {
+    "treatment": {
+      "src/workflows/document-research.js": 54,
+      "src/workflows/form-submission.js": 104,
+      "src/workflows/artifact-export.js": 35,
+      "src/workflows/owner-session.js": 37
+    },
+    "control": {
+      "qualification/baseline/baseline-workflows.js": 121
+    }
+  },
+  "excludedScenarios": [
+    {
+      "id": "owner-handoff",
+      "reason": "The control has no owner authority; an equivalent would have to reimplement the workspace service, so handoff is qualified by the behavioral case set instead."
+    }
+  ],
+  "evaluation": [
+    {
+      "scenarioId": "clean-research",
+      "measures": {
+        "taskSuccess": {
+          "treatment": 5,
+          "control": 5,
+          "higherIsBetter": true
+        },
+        "incorrectActions": {
+          "treatment": 0,
+          "control": 0,
+          "higherIsBetter": false
+        }
+      },
+      "medianLatencyMs": {
+        "treatment": 120.15007500000002,
+        "control": 25.50307900000007
+      },
+      "serviceOverheadMs": 94.64699599999994,
+      "medianObservationBytes": {
+        "treatment": 20271,
+        "control": 679
+      },
+      "findings": []
+    },
+    {
+      "scenarioId": "clean-form",
+      "measures": {
+        "taskSuccess": {
+          "treatment": 5,
+          "control": 5,
+          "higherIsBetter": true
+        },
+        "incorrectActions": {
+          "treatment": 0,
+          "control": 0,
+          "higherIsBetter": false
+        }
+      },
+      "medianLatencyMs": {
+        "treatment": 88.41582299999982,
+        "control": 74.03092699999979
+      },
+      "serviceOverheadMs": 14.384896000000026,
+      "medianObservationBytes": {
+        "treatment": 7247,
+        "control": 42
+      },
+      "findings": []
+    },
+    {
+      "scenarioId": "clean-export",
+      "measures": {
+        "taskSuccess": {
+          "treatment": 5,
+          "control": 5,
+          "higherIsBetter": true
+        },
+        "incorrectActions": {
+          "treatment": 0,
+          "control": 0,
+          "higherIsBetter": false
+        }
+      },
+      "medianLatencyMs": {
+        "treatment": 56.851332000000184,
+        "control": 55.02160399999957
+      },
+      "serviceOverheadMs": 1.829728000000614,
+      "medianObservationBytes": {
+        "treatment": 2246,
+        "control": 20
+      },
+      "findings": []
+    },
+    {
+      "scenarioId": "crash-during-submission",
+      "measures": {
+        "taskSuccess": {
+          "treatment": 3,
+          "control": 3,
+          "higherIsBetter": true
+        },
+        "incorrectActions": {
+          "treatment": 0,
+          "control": 0,
+          "higherIsBetter": false
+        },
+        "recovery": {
+          "treatment": 3,
+          "control": 3,
+          "higherIsBetter": true
+        }
+      },
+      "medianLatencyMs": {
+        "treatment": 560.8608909999994,
+        "control": 529.6454570000005
+      },
+      "serviceOverheadMs": 31.215433999998822,
+      "medianObservationBytes": {
+        "treatment": 600,
+        "control": 173
+      },
+      "findings": []
+    },
+    {
+      "scenarioId": "crash-during-export",
+      "measures": {
+        "taskSuccess": {
+          "treatment": 3,
+          "control": 3,
+          "higherIsBetter": true
+        },
+        "incorrectActions": {
+          "treatment": 0,
+          "control": 0,
+          "higherIsBetter": false
+        },
+        "recovery": {
+          "treatment": 3,
+          "control": 3,
+          "higherIsBetter": true
+        }
+      },
+      "medianLatencyMs": {
+        "treatment": 563.2500280000004,
+        "control": 525.2340889999996
+      },
+      "serviceOverheadMs": 38.0159390000008,
+      "medianObservationBytes": {
+        "treatment": 1724,
+        "control": 20
+      },
+      "findings": []
+    },
+    {
+      "scenarioId": "background-changes",
+      "measures": {
+        "taskSuccess": {
+          "treatment": 3,
+          "control": 3,
+          "higherIsBetter": true
+        },
+        "incorrectActions": {
+          "treatment": 0,
+          "control": 0,
+          "higherIsBetter": false
+        }
+      },
+      "medianLatencyMs": {
+        "treatment": 358.14534099999946,
+        "control": 353.9937880000016
+      },
+      "serviceOverheadMs": 4.151552999997875,
+      "medianObservationBytes": {
+        "treatment": 2484,
+        "control": 20
+      },
+      "findings": []
+    },
+    {
+      "scenarioId": "target-replaced",
+      "measures": {
+        "taskSuccess": {
+          "treatment": 0,
+          "control": 0,
+          "higherIsBetter": true
+        },
+        "incorrectActions": {
+          "treatment": 0,
+          "control": 0,
+          "higherIsBetter": false
+        }
+      },
+      "medianLatencyMs": {
+        "treatment": 319.35866800000076,
+        "control": 15317.673630000005
+      },
+      "serviceOverheadMs": -14998.314962000004,
+      "medianObservationBytes": {
+        "treatment": 2499,
+        "control": null
+      },
+      "findings": [
+        {
+          "measure": "completeTaskLatencyMs",
+          "direction": "advantage",
+          "treatment": 319.35866800000076,
+          "control": 15317.673630000005
+        }
+      ]
+    }
+  ],
+  "rows": [
+    {
+      "scenarioId": "clean-research",
+      "side": "treatment",
+      "repetition": 1,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "recovered": null,
+      "latencyMs": 117.84301800000003,
+      "observationBytes": 20271,
+      "status": "completed",
+      "error": null,
+      "requestCount": 5
+    },
+    {
+      "scenarioId": "clean-research",
+      "side": "control",
+      "repetition": 1,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "recovered": null,
+      "latencyMs": 29.573779999999942,
+      "observationBytes": 679,
+      "status": "completed",
+      "error": null,
+      "requestCount": 3
+    },
+    {
+      "scenarioId": "clean-research",
+      "side": "control",
+      "repetition": 2,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "recovered": null,
+      "latencyMs": 23.80150299999991,
+      "observationBytes": 679,
+      "status": "completed",
+      "error": null,
+      "requestCount": 3
+    },
+    {
+      "scenarioId": "clean-research",
+      "side": "treatment",
+      "repetition": 2,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "recovered": null,
+      "latencyMs": 126.07851700000015,
+      "observationBytes": 20271,
+      "status": "completed",
+      "error": null,
+      "requestCount": 5
+    },
+    {
+      "scenarioId": "clean-research",
+      "side": "treatment",
+      "repetition": 3,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "recovered": null,
+      "latencyMs": 120.15007500000002,
+      "observationBytes": 20271,
+      "status": "completed",
+      "error": null,
+      "requestCount": 5
+    },
+    {
+      "scenarioId": "clean-research",
+      "side": "control",
+      "repetition": 3,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "recovered": null,
+      "latencyMs": 23.139605000000074,
+      "observationBytes": 679,
+      "status": "completed",
+      "error": null,
+      "requestCount": 3
+    },
+    {
+      "scenarioId": "clean-research",
+      "side": "control",
+      "repetition": 4,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "recovered": null,
+      "latencyMs": 25.50307900000007,
+      "observationBytes": 679,
+      "status": "completed",
+      "error": null,
+      "requestCount": 3
+    },
+    {
+      "scenarioId": "clean-research",
+      "side": "treatment",
+      "repetition": 4,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "recovered": null,
+      "latencyMs": 120.41365199999996,
+      "observationBytes": 20271,
+      "status": "completed",
+      "error": null,
+      "requestCount": 5
+    },
+    {
+      "scenarioId": "clean-research",
+      "side": "treatment",
+      "repetition": 5,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "recovered": null,
+      "latencyMs": 110.09198100000003,
+      "observationBytes": 20271,
+      "status": "completed",
+      "error": null,
+      "requestCount": 5
+    },
+    {
+      "scenarioId": "clean-research",
+      "side": "control",
+      "repetition": 5,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "recovered": null,
+      "latencyMs": 26.311222000000043,
+      "observationBytes": 679,
+      "status": "completed",
+      "error": null,
+      "requestCount": 3
+    },
+    {
+      "scenarioId": "clean-form",
+      "side": "treatment",
+      "repetition": 1,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "recovered": null,
+      "latencyMs": 88.49295900000016,
+      "observationBytes": 7246,
+      "status": "completed",
+      "error": null,
+      "requestCount": 3
+    },
+    {
+      "scenarioId": "clean-form",
+      "side": "control",
+      "repetition": 1,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "recovered": null,
+      "latencyMs": 77.0162220000002,
+      "observationBytes": 42,
+      "status": "completed",
+      "error": null,
+      "requestCount": 3
+    },
+    {
+      "scenarioId": "clean-form",
+      "side": "control",
+      "repetition": 2,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "recovered": null,
+      "latencyMs": 71.83980699999984,
+      "observationBytes": 42,
+      "status": "completed",
+      "error": null,
+      "requestCount": 3
+    },
+    {
+      "scenarioId": "clean-form",
+      "side": "treatment",
+      "repetition": 2,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "recovered": null,
+      "latencyMs": 89.869643,
+      "observationBytes": 7247,
+      "status": "completed",
+      "error": null,
+      "requestCount": 3
+    },
+    {
+      "scenarioId": "clean-form",
+      "side": "treatment",
+      "repetition": 3,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "recovered": null,
+      "latencyMs": 88.41582299999982,
+      "observationBytes": 7247,
+      "status": "completed",
+      "error": null,
+      "requestCount": 3
+    },
+    {
+      "scenarioId": "clean-form",
+      "side": "control",
+      "repetition": 3,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "recovered": null,
+      "latencyMs": 77.46099000000004,
+      "observationBytes": 42,
+      "status": "completed",
+      "error": null,
+      "requestCount": 3
+    },
+    {
+      "scenarioId": "clean-form",
+      "side": "control",
+      "repetition": 4,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "recovered": null,
+      "latencyMs": 74.03092699999979,
+      "observationBytes": 42,
+      "status": "completed",
+      "error": null,
+      "requestCount": 3
+    },
+    {
+      "scenarioId": "clean-form",
+      "side": "treatment",
+      "repetition": 4,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "recovered": null,
+      "latencyMs": 86.25638400000025,
+      "observationBytes": 7247,
+      "status": "completed",
+      "error": null,
+      "requestCount": 3
+    },
+    {
+      "scenarioId": "clean-form",
+      "side": "treatment",
+      "repetition": 5,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "recovered": null,
+      "latencyMs": 76.38336899999967,
+      "observationBytes": 7247,
+      "status": "completed",
+      "error": null,
+      "requestCount": 3
+    },
+    {
+      "scenarioId": "clean-form",
+      "side": "control",
+      "repetition": 5,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "recovered": null,
+      "latencyMs": 73.52427099999977,
+      "observationBytes": 42,
+      "status": "completed",
+      "error": null,
+      "requestCount": 3
+    },
+    {
+      "scenarioId": "clean-export",
+      "side": "treatment",
+      "repetition": 1,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "recovered": null,
+      "latencyMs": 61.54959599999984,
+      "observationBytes": 2246,
+      "status": "completed",
+      "error": null,
+      "requestCount": 2
+    },
+    {
+      "scenarioId": "clean-export",
+      "side": "control",
+      "repetition": 1,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "recovered": null,
+      "latencyMs": 55.02160399999957,
+      "observationBytes": 20,
+      "status": "completed",
+      "error": null,
+      "requestCount": 2
+    },
+    {
+      "scenarioId": "clean-export",
+      "side": "control",
+      "repetition": 2,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "recovered": null,
+      "latencyMs": 52.7871839999998,
+      "observationBytes": 20,
+      "status": "completed",
+      "error": null,
+      "requestCount": 2
+    },
+    {
+      "scenarioId": "clean-export",
+      "side": "treatment",
+      "repetition": 2,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "recovered": null,
+      "latencyMs": 55.60833999999977,
+      "observationBytes": 2246,
+      "status": "completed",
+      "error": null,
+      "requestCount": 2
+    },
+    {
+      "scenarioId": "clean-export",
+      "side": "treatment",
+      "repetition": 3,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "recovered": null,
+      "latencyMs": 56.851332000000184,
+      "observationBytes": 2246,
+      "status": "completed",
+      "error": null,
+      "requestCount": 2
+    },
+    {
+      "scenarioId": "clean-export",
+      "side": "control",
+      "repetition": 3,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "recovered": null,
+      "latencyMs": 55.78848000000016,
+      "observationBytes": 20,
+      "status": "completed",
+      "error": null,
+      "requestCount": 2
+    },
+    {
+      "scenarioId": "clean-export",
+      "side": "control",
+      "repetition": 4,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "recovered": null,
+      "latencyMs": 54.95698300000004,
+      "observationBytes": 20,
+      "status": "completed",
+      "error": null,
+      "requestCount": 2
+    },
+    {
+      "scenarioId": "clean-export",
+      "side": "treatment",
+      "repetition": 4,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "recovered": null,
+      "latencyMs": 54.987990999999965,
+      "observationBytes": 2248,
+      "status": "completed",
+      "error": null,
+      "requestCount": 2
+    },
+    {
+      "scenarioId": "clean-export",
+      "side": "treatment",
+      "repetition": 5,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "recovered": null,
+      "latencyMs": 58.3184880000008,
+      "observationBytes": 2248,
+      "status": "completed",
+      "error": null,
+      "requestCount": 2
+    },
+    {
+      "scenarioId": "clean-export",
+      "side": "control",
+      "repetition": 5,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "recovered": null,
+      "latencyMs": 56.57380900000044,
+      "observationBytes": 20,
+      "status": "completed",
+      "error": null,
+      "requestCount": 2
+    },
+    {
+      "scenarioId": "crash-during-submission",
+      "side": "treatment",
+      "repetition": 1,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "recovered": true,
+      "latencyMs": 560.8608909999994,
+      "observationBytes": 600,
+      "status": "completed",
+      "error": null,
+      "requestCount": 3
+    },
+    {
+      "scenarioId": "crash-during-submission",
+      "side": "control",
+      "repetition": 1,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "recovered": true,
+      "latencyMs": 523.5258049999993,
+      "observationBytes": 117,
+      "status": "completed",
+      "error": null,
+      "requestCount": 3
+    },
+    {
+      "scenarioId": "crash-during-submission",
+      "side": "control",
+      "repetition": 2,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "recovered": true,
+      "latencyMs": 529.6454570000005,
+      "observationBytes": 173,
+      "status": "completed",
+      "error": null,
+      "requestCount": 3
+    },
+    {
+      "scenarioId": "crash-during-submission",
+      "side": "treatment",
+      "repetition": 2,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "recovered": true,
+      "latencyMs": 557.1637820000005,
+      "observationBytes": 600,
+      "status": "completed",
+      "error": null,
+      "requestCount": 3
+    },
+    {
+      "scenarioId": "crash-during-submission",
+      "side": "treatment",
+      "repetition": 3,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "recovered": true,
+      "latencyMs": 566.8565870000002,
+      "observationBytes": 600,
+      "status": "completed",
+      "error": null,
+      "requestCount": 3
+    },
+    {
+      "scenarioId": "crash-during-submission",
+      "side": "control",
+      "repetition": 3,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "recovered": true,
+      "latencyMs": 539.5538859999997,
+      "observationBytes": 229,
+      "status": "completed",
+      "error": null,
+      "requestCount": 3
+    },
+    {
+      "scenarioId": "crash-during-export",
+      "side": "treatment",
+      "repetition": 1,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "recovered": true,
+      "latencyMs": 563.2500280000004,
+      "observationBytes": 1722,
+      "status": "completed",
+      "error": null,
+      "requestCount": 4
+    },
+    {
+      "scenarioId": "crash-during-export",
+      "side": "control",
+      "repetition": 1,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "recovered": true,
+      "latencyMs": 525.2340889999996,
+      "observationBytes": 20,
+      "status": "completed",
+      "error": null,
+      "requestCount": 4
+    },
+    {
+      "scenarioId": "crash-during-export",
+      "side": "control",
+      "repetition": 2,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "recovered": true,
+      "latencyMs": 522.1860349999988,
+      "observationBytes": 20,
+      "status": "completed",
+      "error": null,
+      "requestCount": 4
+    },
+    {
+      "scenarioId": "crash-during-export",
+      "side": "treatment",
+      "repetition": 2,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "recovered": true,
+      "latencyMs": 560.8888860000006,
+      "observationBytes": 1724,
+      "status": "completed",
+      "error": null,
+      "requestCount": 4
+    },
+    {
+      "scenarioId": "crash-during-export",
+      "side": "treatment",
+      "repetition": 3,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "recovered": true,
+      "latencyMs": 571.5809840000002,
+      "observationBytes": 1724,
+      "status": "completed",
+      "error": null,
+      "requestCount": 4
+    },
+    {
+      "scenarioId": "crash-during-export",
+      "side": "control",
+      "repetition": 3,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "recovered": true,
+      "latencyMs": 537.8739450000012,
+      "observationBytes": 20,
+      "status": "completed",
+      "error": null,
+      "requestCount": 4
+    },
+    {
+      "scenarioId": "background-changes",
+      "side": "treatment",
+      "repetition": 1,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "recovered": null,
+      "latencyMs": 363.35084200000165,
+      "observationBytes": 2384,
+      "status": "completed",
+      "error": null,
+      "requestCount": 8
+    },
+    {
+      "scenarioId": "background-changes",
+      "side": "control",
+      "repetition": 1,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "recovered": null,
+      "latencyMs": 353.9937880000016,
+      "observationBytes": 20,
+      "status": "completed",
+      "error": null,
+      "requestCount": 8
+    },
+    {
+      "scenarioId": "background-changes",
+      "side": "control",
+      "repetition": 2,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "recovered": null,
+      "latencyMs": 352.6933670000017,
+      "observationBytes": 20,
+      "status": "completed",
+      "error": null,
+      "requestCount": 8
+    },
+    {
+      "scenarioId": "background-changes",
+      "side": "treatment",
+      "repetition": 2,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "recovered": null,
+      "latencyMs": 356.7164679999987,
+      "observationBytes": 2484,
+      "status": "completed",
+      "error": null,
+      "requestCount": 9
+    },
+    {
+      "scenarioId": "background-changes",
+      "side": "treatment",
+      "repetition": 3,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "recovered": null,
+      "latencyMs": 358.14534099999946,
+      "observationBytes": 2484,
+      "status": "completed",
+      "error": null,
+      "requestCount": 9
+    },
+    {
+      "scenarioId": "background-changes",
+      "side": "control",
+      "repetition": 3,
+      "taskSuccess": true,
+      "incorrectActions": 0,
+      "recovered": null,
+      "latencyMs": 355.72792499999923,
+      "observationBytes": 20,
+      "status": "completed",
+      "error": null,
+      "requestCount": 8
+    },
+    {
+      "scenarioId": "target-replaced",
+      "side": "treatment",
+      "repetition": 1,
+      "taskSuccess": false,
+      "incorrectActions": 0,
+      "recovered": null,
+      "latencyMs": 331.4180149999993,
+      "observationBytes": 2384,
+      "status": "never-dispatched",
+      "error": null,
+      "requestCount": 8
+    },
+    {
+      "scenarioId": "target-replaced",
+      "side": "control",
+      "repetition": 1,
+      "taskSuccess": false,
+      "incorrectActions": 0,
+      "recovered": null,
+      "latencyMs": 15335.428714000001,
+      "observationBytes": null,
+      "status": null,
+      "error": {
+        "code": null,
+        "message": "page.waitForEvent: Timeout 15000ms exceeded while waiting for event \"download\"\n=========================== logs ===========================\nwaiting for event \"download\"\n============================================================"
+      },
+      "requestCount": 308
+    },
+    {
+      "scenarioId": "target-replaced",
+      "side": "control",
+      "repetition": 2,
+      "taskSuccess": false,
+      "incorrectActions": 0,
+      "recovered": null,
+      "latencyMs": 15317.673630000005,
+      "observationBytes": null,
+      "status": null,
+      "error": {
+        "code": null,
+        "message": "locator.click: Timeout 15000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('link', { name: 'Download report', exact: true })\u001b[22m\n"
+      },
+      "requestCount": 308
+    },
+    {
+      "scenarioId": "target-replaced",
+      "side": "treatment",
+      "repetition": 2,
+      "taskSuccess": false,
+      "incorrectActions": 0,
+      "recovered": null,
+      "latencyMs": 318.60267400000157,
+      "observationBytes": 2500,
+      "status": "never-dispatched",
+      "error": null,
+      "requestCount": 8
+    },
+    {
+      "scenarioId": "target-replaced",
+      "side": "treatment",
+      "repetition": 3,
+      "taskSuccess": false,
+      "incorrectActions": 0,
+      "recovered": null,
+      "latencyMs": 319.35866800000076,
+      "observationBytes": 2499,
+      "status": "never-dispatched",
+      "error": null,
+      "requestCount": 8
+    },
+    {
+      "scenarioId": "target-replaced",
+      "side": "control",
+      "repetition": 3,
+      "taskSuccess": false,
+      "incorrectActions": 0,
+      "recovered": null,
+      "latencyMs": 15314.290093000003,
+      "observationBytes": null,
+      "status": null,
+      "error": {
+        "code": null,
+        "message": "page.waitForEvent: Timeout 15000ms exceeded while waiting for event \"download\"\n=========================== logs ===========================\nwaiting for event \"download\"\n============================================================"
+      },
+      "requestCount": 308
+    }
+  ]
+}
