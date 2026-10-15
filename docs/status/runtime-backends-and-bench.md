@@ -35,6 +35,18 @@ unestablished. Doe has promising execution evidence, not the final objective.
 
 ## Graphics proof readiness
 
+The [D4DA world harness](../../bench/external-projects/d4da-world/README.md)
+now exercises the existing Three.js application unchanged through a visible
+Chromium window. Local runs under `bench/out/graphics/20261015-d4da-dawn-verified/`
+retain its independent planar-terrain pixel oracle, live canvas screenshots,
+frame cadence, CPU work, queue completion, preparation, process/DRM memory
+observations and explicit device destruction. This is a Dawn diagnostic baseline;
+whole-scene correctness, deterministic cross-provider inputs, observer calibration
+and forced-Doe ownership are not admitted. Headless captures omitted the terrain
+despite completed GPU work, so the executable runner requires a graphical display.
+Captured application shaders exposed the scalar-factor `mix` lowering failure
+tracked in [compiler status](compiler-and-webgpu.md#d4da-graphics-compatibility).
+
 The [selected WebGPU graphics family](../thesis.md#graphics-proof-families)
 requires new frozen campaign contracts and executable admission checks. The
 existing [Three.js screen](../../bench/external-projects/three-webgpu-screen/README.md)

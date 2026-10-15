@@ -65,6 +65,7 @@ python3 bench/cli.py generation-memory --help
 python3 bench/cli.py onnx-measure --help
 python3 bench/cli.py projection-cost --help
 python3 bench/cli.py compile-compare --help
+python3 bench/cli.py graphics --help
 ```
 
 These dispatches preserve existing implementations, dependencies, explicit inputs,

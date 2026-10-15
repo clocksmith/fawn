@@ -3,6 +3,24 @@
 This is the live status front door for the non-TSIR WGSL compiler and WebGPU
 runtime path. Artifacts and executable tests own pass/fail state.
 
+## D4DA graphics compatibility
+
+The [existing-world workload](../../bench/external-projects/d4da-world/README.md)
+captures unchanged Three.js WGSL from D4DA. Its fragment shaders exposed invalid
+SPIR-V `FMix` operands: WGSL permits a scalar blend factor for vector endpoints,
+while the emitted instruction requires matching vector types. The
+[SPIR-V builtin emitter](../../runtime/zig/src/compiler/wgsl/emit/spirv/emit_spirv_builtins.zig)
+now broadcasts that factor after evaluating it once. Focused
+[regressions](../../runtime/zig/tests/wgsl/emit_spirv_mixed_binary_test.zig)
+cover floating widths, vector lengths, side effects and unchanged same-shape
+overloads. Original validation failures and corrected shader validation remain
+under `bench/out/graphics/`. The focused
+[native fragment check](../../bench/external-projects/d4da-world/check-mix-readback.mjs)
+also preserves CPU-expected pixels and single factor evaluation on AMD Vulkan;
+the preceding runtime already passed that numerical fixture despite the separate
+SPIR-V validation failure. Neither check qualifies the whole scene, native
+runtime performance or forced-Doe Chromium ownership.
+
 ## GLSL instruction mappings
 
 The [mapping repair](../../reports/maintenance/20261012-glsl-instruction-mappings/README.md)
