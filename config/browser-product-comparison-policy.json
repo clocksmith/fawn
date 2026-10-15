@@ -1,7 +1,7 @@
 {
   "$schema": "browser-product-comparison-policy.schema.json",
-  "schemaVersion": 6,
-  "policyId": "fawn-external-product-comparison-v6",
+  "schemaVersion": 7,
+  "policyId": "fawn-external-product-comparison-v7",
   "authority": {
     "strategyPath": "docs/thesis.md",
     "browserLanePath": "docs/browser-lane.md",
@@ -248,6 +248,150 @@
       },
       "materialWhenDifferent": ["taskSuccess", "incorrectActions", "recovery"],
       "informativeOnly": ["observationBytes", "serviceOverheadMs", "integrationLines"]
+    },
+    "differentiation": {
+      "suiteVersion": "2026-10-15-agent-workflows-v1",
+      "status": "frozen-before-implementation",
+      "purpose": "Material complete-task value over competent agent tooling on stock Chromium for persistent multipage agent workflows; the scripted comparison above showed parity.",
+      "runnerPath": "browser/workspace/qualification/differentiate.js",
+      "fixtureSitePath": "browser/workspace/qualification/workbench-site.js",
+      "agentPolicyPath": "browser/workspace/qualification/agents/procurement-policy.js",
+      "task": "Buy one unit of the cheapest in-stock item priced at or under the budget across every catalog page, ship it to the task address unless a human has entered one, place exactly one order and save its invoice.",
+      "control": {
+        "id": "playwright-agent-tooling",
+        "observation": "page-wide-playwright-agent-snapshot-with-incremental-tracking",
+        "actions": "aria-ref-locators-from-the-latest-snapshot",
+        "browserLifetime": "browser-host-outlives-the-agent-process",
+        "capabilities": [
+          "persistent-profile",
+          "durable-agent-checkpoint-before-and-after-each-tool-call",
+          "application-idempotency-reference-when-offered",
+          "application-state-check-before-resubmission",
+          "current-page-check-after-an-interrupted-call",
+          "cooperative-pause-during-human-control",
+          "origin-allowlist-including-form-actions"
+        ],
+        "humanControlSemantics": "pause-then-resume-the-pending-tool-call"
+      },
+      "treatment": {
+        "id": "fawn-workspace-service",
+        "agentProcess": "separate-client-of-a-workspace-that-outlives-it",
+        "humanControlSemantics": "owner-handoff-to-the-human-and-back"
+      },
+      "sharedConditions": [
+        "same-agent-policy-and-think-time",
+        "same-browser-binary-and-driver",
+        "same-fixture-inputs-and-perturbation-points",
+        "same-action-timeout",
+        "same-granted-origins",
+        "same-checkpoint-file-durability"
+      ],
+      "thinkTimeMs": 400,
+      "targetAreas": ["changing-content", "incremental-observation", "human-handoff", "interruption-recovery"],
+      "scenarios": [
+        { "id": "agent-clean", "area": "none", "perturbation": "none", "repetitions": 5 },
+        {
+          "id": "price-rises-during-think-time",
+          "area": "changing-content",
+          "perturbation": "the-chosen-item-price-exceeds-the-budget-after-observation-before-add",
+          "repetitions": 3
+        },
+        {
+          "id": "irrelevant-activity-churn",
+          "area": "incremental-observation",
+          "perturbation": "a-large-activity-panel-updates-continuously-on-every-catalog-page",
+          "repetitions": 3
+        },
+        {
+          "id": "human-takes-control-at-checkout",
+          "area": "human-handoff",
+          "perturbation": "a-human-enters-a-shipping-address-while-the-agent-fill-is-pending",
+          "repetitions": 3
+        },
+        {
+          "id": "agent-killed-during-order",
+          "area": "interruption-recovery",
+          "perturbation": "the-agent-process-dies-while-the-application-holds-the-order",
+          "application": "order-list-and-idempotency-reference",
+          "repetitions": 3
+        },
+        {
+          "id": "agent-killed-during-order-transient-confirmation",
+          "area": "interruption-recovery",
+          "perturbation": "the-agent-process-dies-while-the-application-holds-the-order",
+          "application": "no-order-list-no-idempotency-and-a-confirmation-that-redirects-away",
+          "repetitions": 3
+        }
+      ],
+      "measures": [
+        "taskSuccess",
+        "incorrectActions",
+        "constraintViolatingMutations",
+        "mutationsDuringHumanControl",
+        "humanReviews",
+        "duplicateOrders",
+        "observationBytes",
+        "completeTaskLatencyMs"
+      ],
+      "oracle": "The fixture site's own order, cart and mutation log decides success and incorrect actions: an order of the cheapest valid item at order time, at most one order, the shipping address the task or the human set, and a saved invoice matching the order.",
+      "improvementRequirements": [
+        {
+          "area": "changing-content",
+          "scenario": "price-rises-during-think-time",
+          "treatmentBar": {
+            "taskSuccessEveryRepetition": true,
+            "incorrectActions": 0,
+            "constraintViolatingMutations": 0
+          },
+          "materialImprovement": { "measure": "constraintViolatingMutations", "treatmentBelowControl": true }
+        },
+        {
+          "area": "incremental-observation",
+          "scenario": "irrelevant-activity-churn",
+          "treatmentBar": { "taskSuccessEveryRepetition": true, "incorrectActions": 0 },
+          "materialImprovement": {
+            "measure": "observationBytes",
+            "statistic": "median",
+            "maximumTreatmentToControlRatio": 0.5
+          }
+        },
+        {
+          "area": "human-handoff",
+          "scenario": "human-takes-control-at-checkout",
+          "treatmentBar": {
+            "taskSuccessEveryRepetition": true,
+            "incorrectActions": 0,
+            "mutationsDuringHumanControl": 0
+          },
+          "materialImprovement": { "measure": "incorrectActions", "treatmentBelowControl": true }
+        },
+        {
+          "area": "interruption-recovery",
+          "scenario": "agent-killed-during-order-transient-confirmation",
+          "treatmentBar": { "taskSuccessEveryRepetition": true, "duplicateOrders": 0, "humanReviews": 0 },
+          "materialImprovement": {
+            "measure": "humanReviewsPlusDuplicateOrders",
+            "treatmentBelowControl": true
+          }
+        }
+      ],
+      "productAdvantageRule": {
+        "minimumAreasMet": 2,
+        "everyRepetition": true,
+        "noMaterialRegressionIn": [
+          "workspaceComparison.scenarios",
+          "workspaceComparison.differentiation.scenarios"
+        ],
+        "latencyRegressionRule": "workspaceComparison.criteria.latency",
+        "doesNotEstablish": [
+          "broad-product-superiority",
+          "release-qualification",
+          "compatibility-beyond-the-fixture"
+        ]
+      },
+      "knownControlLimits": [
+        "A harness that revalidates every decision before acting, discards pending calls on human takeover or scopes reads with site-specific locators would narrow these gaps; that is task-specific scripting, which the scripted scenarios above already compare."
+      ]
     }
   },
   "alternativeCompleteSystem": {

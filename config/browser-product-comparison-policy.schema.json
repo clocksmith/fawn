@@ -23,8 +23,8 @@
   ],
   "properties": {
     "$schema": { "type": "string", "const": "browser-product-comparison-policy.schema.json" },
-    "schemaVersion": { "type": "integer", "const": 6 },
-    "policyId": { "type": "string", "const": "fawn-external-product-comparison-v6" },
+    "schemaVersion": { "type": "integer", "const": 7 },
+    "policyId": { "type": "string", "const": "fawn-external-product-comparison-v7" },
     "authority": {
       "type": "object",
       "additionalProperties": false,
@@ -107,7 +107,8 @@
         "scenarios",
         "excludedScenarios",
         "measures",
-        "criteria"
+        "criteria",
+        "differentiation"
       ],
       "properties": {
         "contractPath": {
@@ -233,7 +234,8 @@
               "items": { "enum": ["observationBytes", "serviceOverheadMs", "integrationLines"] }
             }
           }
-        }
+        },
+        "differentiation": { "$ref": "#/$defs/workspaceDifferentiation" }
       }
     },
     "alternativeCompleteSystem": {
@@ -283,6 +285,127 @@
     "claimBoundary": { "$ref": "#/$defs/text" }
   },
   "$defs": {
+    "workspaceDifferentiation": {
+      "description": "Frozen before implementation: agent-workflow scenarios, the strongest generic Playwright agent control, measurable improvement requirements per target area and the rule that would establish scoped product advantage.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "suiteVersion", "status", "purpose", "runnerPath", "fixtureSitePath", "agentPolicyPath", "task", "control",
+        "treatment", "sharedConditions", "thinkTimeMs", "targetAreas", "scenarios", "measures", "oracle",
+        "improvementRequirements", "productAdvantageRule", "knownControlLimits"
+      ],
+      "properties": {
+        "suiteVersion": { "type": "string", "minLength": 1 },
+        "status": { "enum": ["frozen-before-implementation", "implemented-not-run", "run"] },
+        "purpose": { "type": "string", "minLength": 1 },
+        "runnerPath": { "const": "browser/workspace/qualification/differentiate.js" },
+        "fixtureSitePath": { "const": "browser/workspace/qualification/workbench-site.js" },
+        "agentPolicyPath": { "const": "browser/workspace/qualification/agents/procurement-policy.js" },
+        "task": { "type": "string", "minLength": 1 },
+        "control": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "observation", "actions", "browserLifetime", "capabilities", "humanControlSemantics"],
+          "properties": {
+            "id": { "const": "playwright-agent-tooling" },
+            "observation": { "const": "page-wide-playwright-agent-snapshot-with-incremental-tracking" },
+            "actions": { "const": "aria-ref-locators-from-the-latest-snapshot" },
+            "browserLifetime": { "const": "browser-host-outlives-the-agent-process" },
+            "capabilities": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": { "type": "string", "minLength": 1 },
+              "allOf": [
+                { "contains": { "const": "durable-agent-checkpoint-before-and-after-each-tool-call" } },
+                { "contains": { "const": "application-idempotency-reference-when-offered" } },
+                { "contains": { "const": "application-state-check-before-resubmission" } },
+                { "contains": { "const": "current-page-check-after-an-interrupted-call" } },
+                { "contains": { "const": "cooperative-pause-during-human-control" } }
+              ]
+            },
+            "humanControlSemantics": { "const": "pause-then-resume-the-pending-tool-call" }
+          }
+        },
+        "treatment": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "agentProcess", "humanControlSemantics"],
+          "properties": {
+            "id": { "const": "fawn-workspace-service" },
+            "agentProcess": { "const": "separate-client-of-a-workspace-that-outlives-it" },
+            "humanControlSemantics": { "const": "owner-handoff-to-the-human-and-back" }
+          }
+        },
+        "sharedConditions": { "$ref": "#/$defs/stringList" },
+        "thinkTimeMs": { "type": "integer", "minimum": 1 },
+        "targetAreas": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "enum": ["changing-content", "incremental-observation", "human-handoff", "interruption-recovery"] },
+          "minItems": 4
+        },
+        "scenarios": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "area", "perturbation", "repetitions"],
+            "properties": {
+              "id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+              "area": { "enum": ["none", "changing-content", "incremental-observation", "human-handoff", "interruption-recovery"] },
+              "perturbation": { "type": "string", "minLength": 1 },
+              "application": { "type": "string", "minLength": 1 },
+              "repetitions": { "type": "integer", "minimum": 1 }
+            }
+          }
+        },
+        "measures": { "$ref": "#/$defs/stringList" },
+        "oracle": { "type": "string", "minLength": 1 },
+        "improvementRequirements": {
+          "type": "array",
+          "minItems": 4,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["area", "scenario", "treatmentBar", "materialImprovement"],
+            "properties": {
+              "area": { "enum": ["changing-content", "incremental-observation", "human-handoff", "interruption-recovery"] },
+              "scenario": { "type": "string", "minLength": 1 },
+              "treatmentBar": {
+                "type": "object",
+                "minProperties": 1,
+                "additionalProperties": { "type": ["boolean", "integer"] }
+              },
+              "materialImprovement": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["measure"],
+                "properties": {
+                  "measure": { "type": "string", "minLength": 1 },
+                  "treatmentBelowControl": { "const": true },
+                  "statistic": { "const": "median" },
+                  "maximumTreatmentToControlRatio": { "type": "number", "exclusiveMinimum": 0, "exclusiveMaximum": 1 }
+                }
+              }
+            }
+          }
+        },
+        "productAdvantageRule": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["minimumAreasMet", "everyRepetition", "noMaterialRegressionIn", "latencyRegressionRule", "doesNotEstablish"],
+          "properties": {
+            "minimumAreasMet": { "type": "integer", "minimum": 2, "maximum": 4 },
+            "everyRepetition": { "const": true },
+            "noMaterialRegressionIn": { "$ref": "#/$defs/stringList" },
+            "latencyRegressionRule": { "const": "workspaceComparison.criteria.latency" },
+            "doesNotEstablish": { "$ref": "#/$defs/stringList" }
+          }
+        },
+        "knownControlLimits": { "$ref": "#/$defs/stringList" }
+      }
+    },
     "sha1": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
     "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
     "pinnedNativeEngine": {
