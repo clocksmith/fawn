@@ -77,11 +77,13 @@ function validateServiceConfig(config) {
 
 /**
  * @param {URL} [configUrl]
- * @param {{browserChannel?: string}} [overrides] a compatibility run names another browser channel
+ * @param {{browserChannel?: string, headless?: boolean}} [overrides] a compatibility run may name
+ *   another browser channel or a headed session
  */
-function loadServiceConfig(configUrl = DEFAULT_CONFIG_URL, { browserChannel } = {}) {
+function loadServiceConfig(configUrl = DEFAULT_CONFIG_URL, { browserChannel, headless } = {}) {
   const config = JSON.parse(readFileSync(configUrl, 'utf8'));
   if (browserChannel) config.browser = { ...config.browser, channel: browserChannel };
+  if (headless !== undefined) config.browser = { ...config.browser, headless };
   return validateServiceConfig(config);
 }
 

@@ -194,6 +194,7 @@ npm run qualify        # full case set; writes bench/out/fawn-workspace-qualific
 npm run compare        # baseline comparison; writes bench/out/fawn-workspace-comparison/<stamp>
 npm run differentiate  # first suite; --suite revalidatedDifferentiation runs the second
 npm run qualify -- --browser-channel chrome   # the case set on installed Google Chrome
+xvfb-run -a npm run qualify -- --browser-channel chrome --headless false   # headed, on a virtual display
 node qualification/validate.js <resultDir> --require-current-source
 ```
 

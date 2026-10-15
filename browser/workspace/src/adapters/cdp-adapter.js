@@ -12,7 +12,8 @@ import playwrightRegistry from 'playwright-core/lib/server/registry/index';
 import { buildProbe, buildSnapshot, elementArgs, queryPage, snapshotArgs } from './page-query.js';
 
 const MESSAGE_TERMINATOR = '\0';
-const PIPE_STDIO = Object.freeze(['ignore', 'ignore', 'ignore', 'pipe', 'pipe']);
+const PIPE_STDIO = Object.freeze(['ignore', 'ignore', 'pipe', 'pipe', 'pipe']);
+const STDERR_TAIL_CHARS = 2000;
 const COMMAND_FD = 3;
 const EVENT_FD = 4;
 const LEFT_BUTTON = 'left';
@@ -40,10 +41,23 @@ class CdpConnection {
     this._pending = new Map();
     this._listeners = new Set();
     this._buffer = '';
-    this._closed = new Promise((resolve) => child.once('exit', resolve));
+    this._stderr = '';
+    this._failure = null;
+    // A browser that cannot start (no display, missing libraries) exits at once; that must reject
+    // the launch with its reason, never surface as an unhandled pipe error.
+    this._closed = new Promise((resolve) => {
+      child.once('exit', (code, signal) => resolve({ code, signal }));
+      child.once('error', (error) => resolve({ code: null, signal: null, error }));
+    });
+    child.stdio[2].on('data', (chunk) => {
+      this._stderr = (this._stderr + chunk.toString('utf8')).slice(-STDERR_TAIL_CHARS);
+    });
+    for (const fd of [COMMAND_FD, EVENT_FD]) child.stdio[fd].on('error', () => {});
     child.stdio[EVENT_FD].on('data', (chunk) => this._receive(chunk));
-    this._closed.then(() => {
-      for (const waiter of this._pending.values()) waiter.reject(new Error('Chromium exited'));
+    this._closed.then(({ code, signal, error }) => {
+      const reason = error?.message ?? `exit ${signal ?? code}`;
+      this._failure = new Error(`Chromium ended (${reason}): ${this._stderr.trim().split('\n').slice(-3).join(' | ')}`);
+      for (const waiter of this._pending.values()) waiter.reject(this._failure);
       this._pending.clear();
     });
   }
@@ -66,6 +80,7 @@ class CdpConnection {
   }
 
   send(method, params = {}, sessionId = undefined) {
+    if (this._failure) return Promise.reject(this._failure);
     const id = this._nextId++;
     const message = { id, method, params, ...(sessionId ? { sessionId } : {}) };
     return new Promise((resolve, reject) => {
