@@ -6,9 +6,15 @@ owns authority, observation/action binding, recovery and acceptance.
 `fawnWorkspace` in [the strategy projection](../../config/doe-product-strategy.json)
 owns ordered steps and binds their assessments to admitted evidence.
 
+**Product message:** Fawn preserves trustworthy browser-work outcomes across agent
+interruption and gives agents efficient, scoped views of changing applications.
+
+Stale-decision rejection and human handoff are built-in guarantees, not general
+advantages: the revalidating control reproduced both.
+
 **Three states stay distinct:**
 - **Behaviorally qualified**: established on the frozen case set.
-- **Product-advantaged**: established only on the frozen differentiation suite,
+- **Product-advantaged**: established only on the frozen differentiation suites,
   against Playwright agent tooling.
 - **Release-qualified**: not established.
 
@@ -174,6 +180,30 @@ material regression in this suite, the first suite or the scripted comparison.
 The durable advantage is ownership of outcomes across agent interruption.
 Decision binding and handoff safety match what a careful harness can build per
 task. A model-driven stage needs its own freeze.
+
+## Model-driven comparison (frozen, not run)
+
+`modelDrivenDifferentiation` in `workspaceComparison` is frozen before
+implementation. One model drives both sides with the same:
+- model, sampling and token budget
+- system prompt and task prompts
+- agent-facing tool descriptions (`qualification/model-agent/`, pinned by hash)
+- browser binary and task inputs
+
+Only the backends differ. The control keeps the second suite's revalidation and
+takeover cancellation. Scenarios cover both development applications and two
+held-out applications, a clinic and an expense system. Those are specified now,
+implemented only afterwards, and never used for tuning.
+
+The measures include incorrect external effects, human review, recovery,
+observation tokens and bytes, latency and total inference cost. Durable outcome
+recovery and scoped observation must be met. Held-out workflows and the
+stale-decision and handoff scenarios need only non-inferiority; those two are
+reported as built-in guarantees, never as advantages.
+
+Running it needs model API credentials, which this machine does not have, and
+approval of the inference spend. The bound is the frozen repetitions × scenarios
+× both sides × the per-task token budget.
 
 ## Compatibility
 

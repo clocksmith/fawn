@@ -6,6 +6,22 @@ It is the machine-readable source for milestone order, the binding proving set,
 and development-effectiveness recording. Status routes evidence; it does not
 maintain another roadmap.
 
+## Model-driven comparison frozen
+
+The browser comparison policy moves to schema version 9
+(`fawn-external-product-comparison-v9`) and adds
+`workspaceComparison.modelDrivenDifferentiation`, frozen before implementation.
+It pins:
+- one model, sampling, token budget and turn limit for both sides
+- the system prompt, task prompts, agent-facing tool descriptions and held-out
+  workflow specifications, by hash
+- the browser binary
+
+Interruption recovery and scoped observation are advantage requirements;
+held-out workflows and the stale-decision and handoff scenarios are
+non-inferiority checks. Running it needs model API credentials and approval of
+the spend. No strategy state changes.
+
 ## Stronger-control and compatibility evidence
 
 Schema version 13 and strategy version 6.6.0 add two required blocks:

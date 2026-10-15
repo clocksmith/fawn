@@ -1,7 +1,7 @@
 {
   "$schema": "browser-product-comparison-policy.schema.json",
-  "schemaVersion": 8,
-  "policyId": "fawn-external-product-comparison-v8",
+  "schemaVersion": 9,
+  "policyId": "fawn-external-product-comparison-v9",
   "authority": {
     "strategyPath": "docs/thesis.md",
     "browserLanePath": "docs/browser-lane.md",
@@ -533,6 +533,199 @@
       },
       "knownControlLimits": [
         "Revalidation and cancellation leave the same non-atomic window between the last check and the browser effect that the treatment discloses; a perturbation inside that window is not part of this suite."
+      ]
+    },
+    "modelDrivenDifferentiation": {
+      "suiteVersion": "2026-10-15-model-driven-v1",
+      "status": "frozen-before-implementation",
+      "purpose": "Whether durable outcome recovery and scoped observation efficiency hold when one model drives both sides through identical tools, on familiar and held-out applications, with total inference cost counted.",
+      "runnerPath": "browser/workspace/qualification/differentiate.js",
+      "frozenArtifacts": [
+        {
+          "path": "browser/workspace/qualification/model-agent/system-prompt.md",
+          "sha256": "c5ac3c90e40697782606b92282fd3bf401508c441b92413baed984979c11d78b"
+        },
+        {
+          "path": "browser/workspace/qualification/model-agent/tools.json",
+          "sha256": "5bcb6e484ca01fe55d7910ad3376d89c6d6ef8e8c5bc5cea3110028b4f0376d2"
+        },
+        {
+          "path": "browser/workspace/qualification/model-agent/task-prompts.json",
+          "sha256": "89654fa9724d872dcc90d1b3c85d8e5023f2fb1ffb07d1855e98181219b9dcd5"
+        },
+        {
+          "path": "browser/workspace/qualification/model-agent/held-out-workflows.json",
+          "sha256": "712924e991b4a517b41871ec17b9520d51693851b0f66c4227a6ff18667778fc"
+        }
+      ],
+      "agent": {
+        "provider": "anthropic-messages-api",
+        "model": "claude-sonnet-5-5",
+        "sampling": { "temperature": 0 },
+        "extendedThinking": false,
+        "maxOutputTokensPerTurn": 2048,
+        "maxTurnsPerTask": 60,
+        "maxInputTokensPerTask": 600000,
+        "budgetExceeded": "task-failure",
+        "identicalOnBothSides": [
+          "model",
+          "system-prompt",
+          "task-prompts",
+          "tool-descriptions",
+          "sampling",
+          "token-budget",
+          "turn-limit"
+        ]
+      },
+      "browserBinary": {
+        "channel": "chromium-headless-shell",
+        "version": "Google Chrome for Testing 145.0.7632.6",
+        "sha256": "27e55cc30e487493b89b663085d6deeb0707be201a568657c922fac9076c317c"
+      },
+      "control": {
+        "id": "playwright-agent-tooling-with-revalidation",
+        "observation": "page-wide-playwright-agent-snapshot-incremental-when-since-last-regions-accepted-but-not-scoped",
+        "actions": "aria-ref-locators-from-the-latest-snapshot",
+        "revalidation": "before each mutating call the harness takes an incremental snapshot since the model's last observation and refuses the call, returning the change, when a changed element lies inside a depends_on region; without depends_on it checks only that the target ref still resolves",
+        "takeover": "a mutating call made after a human took control since the model's last observation is cancelled and reported, and the model must observe again",
+        "capabilities": [
+          "persistent-profile",
+          "durable-agent-checkpoint-before-and-after-each-tool-call",
+          "application-idempotency-reference-when-offered",
+          "application-state-check-before-resubmission",
+          "current-page-check-after-an-interrupted-call",
+          "cooperative-pause-during-human-control",
+          "origin-allowlist-including-form-actions",
+          "revalidate-decision-inputs-with-a-fresh-snapshot-before-every-mutation",
+          "cancel-pending-calls-and-observe-again-after-human-control"
+        ],
+        "pendingEffects": "from the harness checkpoint: calls issued before the agent process ended whose result was not recorded"
+      },
+      "treatment": {
+        "id": "fawn-workspace-service",
+        "observation": "outline-view-with-regions-and-deltas-since-the-agent-previous-observation",
+        "actions": "handle-targets-with-observation-scope-from-depends-on-or-the-target-identity-alone",
+        "takeover": "owner-handoff-to-the-human-and-back",
+        "pendingEffects": "from the workspace's outstanding action records"
+      },
+      "sharedConditions": [
+        "same-model-prompts-tool-descriptions-sampling-and-token-budget",
+        "same-browser-binary-and-driver",
+        "same-fixture-inputs-and-perturbation-points",
+        "same-action-timeout",
+        "same-granted-origins",
+        "same-checkpoint-file-durability",
+        "frozen-artifacts-match-their-hashes"
+      ],
+      "repetitions": 3,
+      "workflows": {
+        "development": {
+          "procurement": "workspaceComparison.differentiation.scenarios",
+          "helpdesk": "workspaceComparison.revalidatedDifferentiation.scenarios"
+        },
+        "heldOut": "browser/workspace/qualification/model-agent/held-out-workflows.json"
+      },
+      "measures": [
+        "taskSuccess",
+        "incorrectExternalEffects",
+        "humanReviews",
+        "recovery",
+        "observationTokens",
+        "observationBytes",
+        "inputTokens",
+        "outputTokens",
+        "inferenceCostUsd",
+        "completeTaskLatencyMs"
+      ],
+      "measurement": {
+        "observationTokens": "provider token count of every observe result the model received",
+        "inferenceCostUsd": "provider-reported input and output tokens priced at the provider's list prices recorded with the run",
+        "incorrectExternalEffects": "the fixture's own records: an effect contrary to the task, a duplicate, or an overwrite of a person's entry"
+      },
+      "improvementRequirements": [
+        {
+          "area": "interruption-recovery",
+          "kind": "advantage",
+          "scenarios": [
+            "agent-killed-during-order-transient-confirmation",
+            "agent-killed-during-send",
+            "clinic-agent-killed-during-booking",
+            "expense-agent-killed-during-filing"
+          ],
+          "treatmentBar": { "minimumSuccessRate": 0.9, "incorrectExternalEffects": 0, "humanReviews": 0 },
+          "materialImprovement": {
+            "measure": "humanReviewsPlusDuplicateEffects",
+            "treatmentBelowControl": true
+          }
+        },
+        {
+          "area": "incremental-observation",
+          "kind": "advantage",
+          "scenarios": [
+            "irrelevant-activity-churn",
+            "live-queue-churn",
+            "clinic-live-waiting-room",
+            "expense-busy-inbox"
+          ],
+          "treatmentBar": { "successRateNotBelowControl": true, "incorrectExternalEffects": 0 },
+          "materialImprovement": {
+            "measure": "observationTokens",
+            "statistic": "median",
+            "maximumTreatmentToControlRatio": 0.5,
+            "alsoRequires": "treatment-total-inference-cost-below-control"
+          }
+        },
+        {
+          "area": "held-out-generalization",
+          "kind": "non-inferiority",
+          "scenarios": [
+            "clinic-clean",
+            "clinic-live-waiting-room",
+            "clinic-agent-killed-during-booking",
+            "expense-clean",
+            "expense-busy-inbox",
+            "expense-agent-killed-during-filing"
+          ],
+          "treatmentBar": {
+            "maximumSuccessRateBelowControl": 0.1,
+            "incorrectExternalEffectsNotAboveControl": true
+          }
+        },
+        {
+          "area": "built-in-guarantees",
+          "kind": "non-inferiority",
+          "scenarios": [
+            "price-rises-during-think-time",
+            "human-takes-control-at-checkout",
+            "ticket-claimed-during-think-time",
+            "supervisor-edits-draft"
+          ],
+          "treatmentBar": {
+            "maximumSuccessRateBelowControl": 0.1,
+            "incorrectExternalEffectsNotAboveControl": true
+          },
+          "reporting": "Reported as guarantees the service provides without extra orchestration, never as advantages over well-engineered Playwright automation."
+        }
+      ],
+      "productAdvantageRule": {
+        "requiresAreasMet": ["interruption-recovery", "incremental-observation"],
+        "requiresNonInferiority": ["held-out-generalization", "built-in-guarantees"],
+        "latencyRegressionRule": "workspaceComparison.criteria.latency",
+        "maximumTotalInferenceCostRatio": 1.1,
+        "doesNotEstablish": [
+          "broad-product-superiority",
+          "release-qualification",
+          "compatibility-beyond-the-fixtures",
+          "results-for-other-models"
+        ]
+      },
+      "runPrerequisites": [
+        "model API credentials for the frozen provider",
+        "the user's approval of the inference spend, bounded by repetitions, scenarios, both sides and maxInputTokensPerTask",
+        "held-out fixtures implemented to their frozen specifications"
+      ],
+      "knownControlLimits": [
+        "Playwright's ref-bearing agent snapshot is page-wide; scoped reads without refs would need site-specific locators the model does not have."
       ]
     }
   },

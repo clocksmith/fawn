@@ -96,15 +96,22 @@ The independent compiler and runtime retain these outcomes:
 - Diagnostics: report the best established source, validation, resource,
   submission, or native failure location. Never invent a shader location for an
   unattributed hardware fault.
-- Work selection: Fawn's shared workspace service has passed scoped behavioral
-  qualification. It has demonstrated material complete-task value over Playwright
-  agent tooling, but only on the frozen agent-workflow differentiation suite;
-  scripted workflows show no material advantage over competent stock automation.
-  The next milestones are broader workloads, compatibility and deployment
-  qualification. Behaviorally qualified, product-advantaged and
-  release-qualified are distinct states. The first holds on the frozen case set,
-  the second only on that suite, and the third is not established. None depends
-  on native runtime wins. Separately, DoeRuntime stays
+- Work selection: Fawn preserves trustworthy browser-work outcomes across agent
+  interruption and gives agents efficient, scoped views of changing applications.
+  That scoped advantage holds on the frozen differentiation suites against
+  Playwright agent tooling, including a control that revalidates decisions and
+  cancels pending calls on takeover. Stale-decision rejection and human handoff
+  are built-in guarantees, not general advantages: well-engineered orchestration
+  can reproduce them. Scripted workflows show no material advantage over competent
+  stock automation.
+  - Next milestone: the frozen model-driven comparison.
+  - Then compatibility, in order: headed Chrome, multiple pages and tabs,
+    another operating system, release packaging and upgrades.
+
+  Behaviorally qualified, product-advantaged and release-qualified stay
+  distinct. The first holds on the frozen case set, the second only on those
+  suites, and the third is not established. None depends on native runtime
+  wins. Separately, DoeRuntime stays
   focused on one correct, reproducible Doppler Node generation advantage over
   Dawn on Vulkan, starting from a qualified Node baseline on the initial
   qualification target, then ONNX transfer. Provider attribution (Doppler+Doe
