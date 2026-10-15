@@ -9,6 +9,7 @@ const SINGLE_MATCH = 1;
 
 const CONDITION_FIELDS = Object.freeze({
   'url-equals': ['value'],
+  'url-not-equals': ['value'],
   'url-prefix': ['value'],
   'element-present': ['selector'],
   'element-absent': ['selector'],
@@ -21,6 +22,10 @@ const CONDITION_EVALUATORS = Object.freeze({
   'url-equals': async (probe, condition) => {
     const url = await probe.url();
     return { established: url === condition.value, observed: url };
+  },
+  'url-not-equals': async (probe, condition) => {
+    const url = await probe.url();
+    return { established: url !== condition.value, observed: url };
   },
   'url-prefix': async (probe, condition) => {
     const url = await probe.url();

@@ -152,7 +152,7 @@ async function rejects(promise, code) {
   await openForm(session, 'nav-1');
   const read = { ...session.identity, view: 'outline', regions: ['#contact'] };
   const first = await service.observe(read);
-  assert.deepEqual(Object.keys(first).sort(), ['baseVersion', 'boundary', 'observationVersion', 'regions', 'url']);
+  assert.deepEqual(Object.keys(first).sort(), ['baseVersion', 'boundary', 'observationVersion', 'regionGroups', 'regions', 'url']);
   assert.equal(first.regions['#contact'].outline, '[hname] | [hemail] | [hsend]');
   adapter.mutate(WORKSPACE_ID);
   const delta = await service.observe({ ...read, sinceVersion: first.observationVersion });

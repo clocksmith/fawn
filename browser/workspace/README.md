@@ -83,6 +83,8 @@ The contract's semantic names map to these concrete rules.
   - the version, URL and non-atomic boundary
   - each region as a compact outline of its text, with interactive elements
     written as `[handle role "name" = "value"]`
+  - `regionGroups`: each requested group selector with the stable selectors of
+    the regions it produced, so a scope can cite a group's members
 
   With `sinceVersion`, a region whose digest matches that version is returned
   as `unchanged`. Digests, element tables and handle tables stay in the journal.
@@ -182,6 +184,23 @@ every listed workflow.
   - Control: `agents/playwright-agent.js` with `agents/playwright-tool-host.js`,
     using Playwright's page-wide incremental agent snapshots and aria-ref actions
     on a browser host that outlives the agent.
+- `model-agent/` runs `modelDrivenDifferentiation`: one model drives both sides
+  through the frozen prompts and tools (`differentiate.js --suite
+  modelDrivenDifferentiation`):
+  - `agent-loop.js`: the checkpointed tool loop, restart notice, turn limit and
+    input budget
+  - `backends.js`: the treatment over this service, and the control over the
+    tool host with revalidation and takeover cancellation, refusing with the
+    same words
+  - `apps.js`: per-application perturbation points and judges; the held-out
+    fixtures are in `held-out/`
+  - `anthropic-client.js` and `spend-ledger.js`: the frozen request fields,
+    bounded retries and a durable ledger that refuses any request whose worst
+    case could cross the approved ceiling
+  - `model-driven.js`: modes `compatibility`, `smoke`, `full` (once) and
+    `offline`. Billed modes need committed source and run in that order.
+    `offline` drives any scenario with `scripted-model.js`, a stand-in that
+    checks wiring and proves nothing about a model.
 
 ## Commands
 
@@ -193,6 +212,8 @@ npm run test:browser   # adds a qualification subset through both adapters
 npm run qualify        # full case set; writes bench/out/fawn-workspace-qualification/<stamp>
 npm run compare        # baseline comparison; writes bench/out/fawn-workspace-comparison/<stamp>
 npm run differentiate  # first suite; --suite revalidatedDifferentiation runs the second
+npm run differentiate -- --suite modelDrivenDifferentiation --mode offline --scenarios clinic-clean   # wiring, no API
+npm run differentiate -- --suite modelDrivenDifferentiation --mode compatibility   # then smoke, then full
 npm run qualify -- --browser-channel chrome   # the case set on installed Google Chrome
 xvfb-run -a npm run qualify -- --browser-channel chrome --headless false   # headed, on a virtual display
 node qualification/validate.js <resultDir> --require-current-source

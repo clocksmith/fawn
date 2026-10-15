@@ -122,6 +122,7 @@
         "type": "string",
         "enum": [
           "url-equals",
+          "url-not-equals",
           "url-prefix",
           "element-present",
           "element-absent",
