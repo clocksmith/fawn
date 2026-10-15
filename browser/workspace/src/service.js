@@ -58,6 +58,48 @@ const RESTART_RULES = Object.freeze([
 ]);
 
 const NO_HOOKS = Object.freeze({});
+const FULL_VIEW = 'full';
+const OUTLINE_VIEW = 'outline';
+
+/** Validate an observe command's read options against config. */
+function validateObservationRead(command, config) {
+  const read = {
+    regions: command.regions ?? [],
+    regionGroups: command.regionGroups ?? [],
+    view: command.view ?? FULL_VIEW,
+    sinceVersion: command.sinceVersion,
+  };
+  if (command.regions !== undefined) validateRegionSelectors(read.regions, config, 'regions');
+  if (command.regionGroups !== undefined) validateRegionSelectors(read.regionGroups, config, 'regionGroups');
+  if (!config.observationViews.includes(read.view)) {
+    throw workspaceError(REJECTION_CODES.INVALID_COMMAND, 'view', { path: 'view', expected: config.observationViews, received: read.view });
+  }
+  if (read.sinceVersion !== undefined && !Number.isInteger(read.sinceVersion)) {
+    throw workspaceError(REJECTION_CODES.INVALID_COMMAND, 'sinceVersion: expected integer', { path: 'sinceVersion' });
+  }
+  return read;
+}
+
+/**
+ * Compact view for agents: each requested region's outline, or `unchanged` when its digest
+ * matches the base version from the same owner generation. A missing base yields full outlines.
+ * Digests, handle tables and element lists stay in the journal for admission.
+ */
+function outlineView(workspace, recorded, snapshot, sinceVersion) {
+  const base = sinceVersion === undefined ? null : workspace.observations.get(sinceVersion) ?? null;
+  const regions = Object.fromEntries(Object.entries(snapshot.regionDigests).map(([selector, digest]) => {
+    if (digest === null) return [selector, { missing: true }];
+    if (base?.regions?.[selector] === digest) return [selector, { unchanged: true }];
+    return [selector, { outline: snapshot.regionOutlines[selector] ?? '' }];
+  }));
+  return {
+    observationVersion: recorded.observationVersion,
+    url: recorded.url,
+    baseVersion: base ? sinceVersion : null,
+    regions,
+    boundary: { isAtomic: false },
+  };
+}
 const PROFILE_DIRECTORY = 'profiles';
 const ARTIFACT_DIRECTORY = 'artifacts';
 
@@ -195,8 +237,8 @@ class WorkspaceService {
     return withTimeout(promise, this.#config.dispatch.actionTimeoutMs);
   }
 
-  #snapshot(workspaceId, regions = []) {
-    return this.#bounded(this.#adapter.snapshot(workspaceId, { regions }));
+  #snapshot(workspaceId, read = {}) {
+    return this.#bounded(this.#adapter.snapshot(workspaceId, read));
   }
 
   #nowMs() {
@@ -220,6 +262,9 @@ class WorkspaceService {
     const targetNavigations = Object.fromEntries(snapshot.elements
       .filter((element) => element.href)
       .map((element) => [element.selector, element.href]));
+    const handles = Object.fromEntries(snapshot.elements
+      .filter((element) => element.handle)
+      .map((element) => [element.handle, element.selector]));
     this.#append(RECORD_TYPES.OBSERVATION_RECORDED, {
       workspaceId: workspace.workspaceId,
       observationVersion: workspace.observationVersion + 1,
@@ -232,6 +277,7 @@ class WorkspaceService {
       targetDigests,
       targetFormActions,
       targetNavigations,
+      handles,
       regions: snapshot.regionDigests,
     });
     return { ...workspace.observation, title: snapshot.title, text: snapshot.text, elements: snapshot.elements };
@@ -358,13 +404,18 @@ class WorkspaceService {
   async observe(command) {
     const workspace = this.#workspace(command.workspaceId);
     authenticateOwner(workspace, command);
-    const regions = command.regions ?? [];
-    if (command.regions !== undefined) validateRegionSelectors(regions, this.#config, 'regions');
+    const read = validateObservationRead(command, this.#config);
     await this.#page(command.workspaceId);
     return this.#runtimeFor(command.workspaceId).mutex.run(async () => {
       authenticateOwner(workspace, command);
-      const snapshot = await this.#snapshot(command.workspaceId, regions);
-      return { ...this.#recordObservation(workspace, snapshot, 'observe'), boundary: NONATOMIC_BOUNDARY };
+      const snapshot = await this.#snapshot(command.workspaceId, {
+        regions: read.regions,
+        regionGroups: read.regionGroups,
+        outline: read.view === OUTLINE_VIEW,
+      });
+      const recorded = this.#recordObservation(workspace, snapshot, 'observe');
+      if (read.view === OUTLINE_VIEW) return outlineView(workspace, recorded, snapshot, read.sinceVersion);
+      return { ...recorded, boundary: NONATOMIC_BOUNDARY };
     });
   }
 
@@ -377,8 +428,9 @@ class WorkspaceService {
     const runtime = this.#runtimeFor(command.workspaceId);
     const admitted = await runtime.mutex.run(() => {
       let grantId;
+      let resolved;
       try {
-        ({ grantId } = checkAdmission(workspace, command, this.#config, this.#nowMs()));
+        ({ grantId, command: resolved } = checkAdmission(workspace, command, this.#config, this.#nowMs()));
       } catch (error) {
         if (isWorkspaceError(error)) {
           this.#append(RECORD_TYPES.COMMAND_REJECTED, {
@@ -390,7 +442,7 @@ class WorkspaceService {
         }
         throw error;
       }
-      const request = { ...stripCredentials(command), grantId, effect: command.effect ?? { external: false } };
+      const request = { ...stripCredentials(resolved), grantId, effect: resolved.effect ?? { external: false } };
       this.#append(RECORD_TYPES.ACTION_ADMITTED, request);
       this.#hooks.afterIntentPersisted?.(request);
       const settlement = deferred();
@@ -426,7 +478,7 @@ class WorkspaceService {
     checkDispatchAuthority(workspace, request, this.#nowMs());
     const scope = request.observationScope;
     const regions = scope?.kind === REGIONS_SCOPE ? scope.selectors : [];
-    const snapshot = await this.#snapshot(workspaceId, regions);
+    const snapshot = await this.#snapshot(workspaceId, { regions });
     if (snapshot.contentHash !== workspace.observation.contentHash || snapshot.url !== workspace.observation.url) {
       this.#recordObservation(workspace, snapshot, 'page-change');
     }

@@ -178,6 +178,7 @@ function describeAction(action) {
     outcome,
     outcomeBasis: action.outcome?.basis ?? null,
     evidence: action.outcome?.evidence ?? null,
+    postObservationVersion: action.outcome?.postObservationVersion ?? null,
     isUncertain: outcome === OUTCOMES.UNKNOWN && !reconciliation?.resolvesUncertainty,
     reconciliation,
     acknowledgedGeneration: action.acknowledgedGeneration,

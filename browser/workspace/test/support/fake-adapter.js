@@ -94,6 +94,7 @@ class FakeAdapter {
       const shown = { ...element, text: page.textOverrides[element.selector] ?? element.text };
       return {
         ...shown,
+        handle: `h${element.selector.replace(/[^a-z0-9]/g, '')}`,
         value: element.isInput ? (page.values[element.selector] ?? '') : null,
         href: element.href ?? element.navigatesTo ?? null,
         formAction: element.formAction ?? null,
@@ -113,7 +114,7 @@ class FakeAdapter {
     }));
   }
 
-  async snapshot(workspaceId, { regions = [] } = {}) {
+  async snapshot(workspaceId, { regions = [], regionGroups = [] } = {}) {
     const page = this._page(workspaceId);
     const site = SITE[page.url] ?? { title: '', text: '' };
     return {
@@ -129,7 +130,9 @@ class FakeAdapter {
         mutation: page.mutation,
         textOverrides: page.textOverrides,
       })),
-      regionDigests: Object.fromEntries(regions.map((selector) => [selector, this._regionDigest(page, selector)])),
+      regionDigests: Object.fromEntries([...regions, ...regionGroups].map((selector) => [selector, this._regionDigest(page, selector)])),
+      regionOutlines: Object.fromEntries([...regions, ...regionGroups].map((selector) => [selector,
+        (SITE[page.url]?.regions?.[selector] ?? []).map((member) => `[h${member.replace(/[^a-z0-9]/g, '')}]`).join(' | ')])),
     };
   }
 

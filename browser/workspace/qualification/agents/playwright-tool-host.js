@@ -1,0 +1,83 @@
+#!/usr/bin/env node
+// Fawn workspace differentiation — control tool host: Playwright agent tooling over stock Chromium.
+//
+// The Playwright MCP mechanism as a separate process that outlives the agent: page-wide agent
+// snapshots with incremental tracking, and actions on aria refs from the latest snapshot.
+// Usage: node playwright-tool-host.js '{"stateDir": "...", "actionTimeoutMs": n, "headless": true}'
+
+import { createHash } from 'node:crypto';
+import { mkdirSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { createInterface } from 'node:readline';
+import { chromium } from 'playwright-core';
+
+const options = JSON.parse(process.argv[2]);
+const SNAPSHOT_TRACK = 'agent';
+
+function emit(message) {
+  process.stdout.write(`${JSON.stringify(message)}\n`);
+}
+
+mkdirSync(options.stateDir, { recursive: true });
+let context = null;
+
+async function page() {
+  if (!context) {
+    context = await chromium.launchPersistentContext(join(options.stateDir, 'profile'), {
+      headless: options.headless,
+      acceptDownloads: true,
+      timeout: options.actionTimeoutMs,
+    });
+  }
+  const current = context.pages()[0] ?? await context.newPage();
+  current.setDefaultTimeout(options.actionTimeoutMs);
+  return current;
+}
+
+const byRef = async (ref) => (await page()).locator(`aria-ref=${ref}`);
+
+const OPERATIONS = Object.freeze({
+  async snapshot() {
+    const current = await page();
+    const snapshot = await current._snapshotForAI({ track: SNAPSHOT_TRACK });
+    return { url: current.url(), full: snapshot.full, incremental: snapshot.incremental ?? null };
+  },
+  async navigate({ url }) {
+    const current = await page();
+    await current.goto(url, { waitUntil: 'load' });
+    return { url: current.url() };
+  },
+  async click({ ref }) {
+    await (await byRef(ref)).click();
+    return { url: (await page()).url() };
+  },
+  async fill({ ref, value }) {
+    await (await byRef(ref)).fill(value);
+    return { ok: true };
+  },
+  async formAction() {
+    return { action: await (await page()).evaluate(() => document.querySelector('form')?.action ?? null) };
+  },
+  async download({ ref }) {
+    const current = await page();
+    const [download] = await Promise.all([current.waitForEvent('download'), (await byRef(ref)).click()]);
+    const path = join(options.stateDir, `download-${Date.now()}-${download.suggestedFilename()}`);
+    await download.saveAs(path);
+    return { sha256: createHash('sha256').update(readFileSync(path)).digest('hex') };
+  },
+  async close() {
+    await context?.close();
+    setImmediate(() => process.exit(0));
+    return null;
+  },
+});
+
+emit({ event: 'ready', pid: process.pid });
+for await (const line of createInterface({ input: process.stdin })) {
+  const { id, op, args } = JSON.parse(line);
+  Promise.resolve()
+    .then(() => OPERATIONS[op](args))
+    .then((result) => emit({ id, ok: true, result }), (error) => emit({ id, ok: false, error: { code: error.code ?? null, message: error.message } }));
+}
+await context?.close();
+process.exit(0);
