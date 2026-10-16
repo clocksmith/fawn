@@ -313,6 +313,7 @@ fn resolveLocalProc(name: abi_base.WGPUStringView) p1_capability_procs.WGPUProc 
     if (symbolViewEq(name, "wgpuCreateInstance")) return fnPtr(&P.wgpuCreateInstance);
     if (symbolViewEq(name, "wgpuGetInstanceFeatures")) return fnPtr(&dropin_ext_a.exports.wgpuGetInstanceFeatures);
     if (symbolViewEq(name, "wgpuGetInstanceLimits")) return fnPtr(&dropin_ext_a.exports.wgpuGetInstanceLimits);
+    if (symbolViewEq(name, "wgpuHasInstanceFeature")) return fnPtr(&dropin_ext_a.exports.wgpuHasInstanceFeature);
     if (symbolViewEq(name, "wgpuInstanceAddRef")) return fnPtr(&dropin_ext_a.exports.wgpuInstanceAddRef);
     if (symbolViewEq(name, "wgpuInstanceRequestAdapter")) return fnPtr(&P.wgpuInstanceRequestAdapter);
     if (symbolViewEq(name, "wgpuInstanceWaitAny")) return fnPtr(&P.wgpuInstanceWaitAny);

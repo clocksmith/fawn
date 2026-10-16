@@ -3256,9 +3256,9 @@
       },
       "src/dropin/wgpu_dropin_lib.zig": {
         "decision": "Keep",
-        "moduleSha256": "caa084d309092dea4a57a919ff0b159a1f8a385ab02cf84009d0bbe42d40c7a6",
-        "reason": "Keep: reachable dropin implementation with private behavior tests and no merge, elevation, recomposition, or deletion signal.",
-        "reviewer": "codex-recomposition-review/2026-08-08"
+        "moduleSha256": "7d4269a230631607b197aacaa8205092c1b485230707772677fbd94394150369",
+        "reason": "Keep: exported WebGPU ABI lookup owns the Chromium function-table boundary; instance capability queries must resolve to the same local implementation as direct exports.",
+        "reviewer": "codex"
       },
       "src/evidence/mod.zig": {
         "decision": "Keep",
