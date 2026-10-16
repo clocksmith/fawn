@@ -207,6 +207,7 @@ Options:
   --out PATH                JSON report output path (default: browser/chromium/artifacts/<timestamp>/${DEFAULT_OUT_FILE})
   --allow-bench-out         Allow writing this diagnostic report under bench/out
   --headless true|false     Launch headless (default: true)
+  --sandbox true|false      Keep Chromium sandbox enabled (default: false)
   --api-surface SURFACE     Browser API surface: native|package-browser (default: ${DEFAULT_API_SURFACE})
   --chrome-arg ARG          Extra Chromium arg (repeatable)
   --upload-iters N          queue.writeBuffer timed iterations (default: 500)
@@ -478,6 +479,7 @@ function parseArgs(argv) {
     outPath: defaultOutPath(),
     allowBenchOut: false,
     headless: true,
+    sandbox: false,
     apiSurface: DEFAULT_API_SURFACE,
     chromeArgs: [],
     uploadIters: DEFAULT_UPLOAD_ITERS,
@@ -553,6 +555,9 @@ function parseArgs(argv) {
       i += 1;
     } else if (token === "--headless") {
       args.headless = parseBool(readOptionValue(argv, i, "--headless"), "--headless");
+      i += 1;
+    } else if (token === "--sandbox") {
+      args.sandbox = parseBool(readOptionValue(argv, i, "--sandbox"), "--sandbox");
       i += 1;
     } else if (token === "--api-surface") {
       args.apiSurface = readOptionValue(argv, i, "--api-surface").toLowerCase();
@@ -650,6 +655,10 @@ function parseArgs(argv) {
   }
 
   normalizePathArgs(args);
+  if (args.sandbox && args.chromeArgs.some((arg) =>
+    /^--(?:no-sandbox|disable-(?:gpu|setuid|namespace|seccomp-filter)-sandbox|single-process)(?:=|$)/.test(arg))) {
+    throw new Error("--sandbox true conflicts with sandbox-disabling --chrome-arg");
+  }
   if (!["dawn", "doe", "auto", "both"].includes(args.mode)) {
     throw new Error("--mode must be one of dawn, doe, auto, both");
   }
@@ -1157,10 +1166,9 @@ function startLocalServer() {
   });
 }
 
-function baseLaunchArgs(port) {
+function baseLaunchArgs(port, sandbox) {
   const args = [
-    "--no-sandbox",
-    "--disable-setuid-sandbox",
+    ...(sandbox ? [] : ["--no-sandbox", "--disable-setuid-sandbox"]),
     "--disable-dev-shm-usage",
     "--ignore-gpu-blocklist",
     "--enable-unsafe-webgpu",
@@ -1454,7 +1462,7 @@ async function runFawnPrismaticLifecycleProbe(browser, localUrl, timeoutMs) {
 async function runMode(chromium, mode, args, localUrl, localPort) {
   const selection = runtimeSelectionResolution(mode, args);
   const launchArgs = [
-    ...baseLaunchArgs(localPort),
+    ...baseLaunchArgs(localPort, args.sandbox),
     ...args.chromeArgs,
     ...runtimeArgs(selection.selectedRuntime, args.doeLibPath),
   ];
@@ -1473,6 +1481,7 @@ async function runMode(chromium, mode, args, localUrl, localPort) {
     browser = await chromium.launch({
       executablePath: args.chromePath,
       headless: args.headless,
+      chromiumSandbox: args.sandbox,
       args: launchArgs,
       timeout: 120000,
     });

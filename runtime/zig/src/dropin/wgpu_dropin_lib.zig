@@ -321,10 +321,14 @@ fn resolveLocalProc(name: abi_base.WGPUStringView) p1_capability_procs.WGPUProc 
     if (symbolViewEq(name, "wgpuAdapterAddRef")) return fnPtr(&dropin_ext_a.exports.wgpuAdapterAddRef);
     if (symbolViewEq(name, "wgpuAdapterCreateDevice")) return fnPtr(&P.wgpuAdapterCreateDevice);
     if (symbolViewEq(name, "wgpuAdapterGetFeatures")) return fnPtr(&dropin_ext_a.exports.wgpuAdapterGetFeatures);
+    if (symbolViewEq(name, "wgpuAdapterGetFormatCapabilities")) return fnPtr(&dropin_ext_a.exports.wgpuAdapterGetFormatCapabilities);
     if (symbolViewEq(name, "wgpuAdapterGetInfo")) return fnPtr(&dropin_ext_a.exports.wgpuAdapterGetInfo);
     if (symbolViewEq(name, "wgpuAdapterGetInstance")) return fnPtr(&dropin_ext_a.exports.wgpuAdapterGetInstance);
     if (symbolViewEq(name, "wgpuAdapterGetLimits")) return fnPtr(&dropin_ext_a.exports.wgpuAdapterGetLimits);
     if (symbolViewEq(name, "wgpuAdapterInfoFreeMembers")) return fnPtr(&dropin_ext_a.exports.wgpuAdapterInfoFreeMembers);
+    if (symbolViewEq(name, "wgpuAdapterPropertiesMemoryHeapsFreeMembers")) return fnPtr(&dropin_ext_a.exports.wgpuAdapterPropertiesMemoryHeapsFreeMembers);
+    if (symbolViewEq(name, "wgpuAdapterPropertiesSubgroupMatrixConfigsFreeMembers")) return fnPtr(&dropin_ext_a.exports.wgpuAdapterPropertiesSubgroupMatrixConfigsFreeMembers);
+    if (symbolViewEq(name, "wgpuDawnDrmFormatCapabilitiesFreeMembers")) return fnPtr(&dropin_ext_a.exports.wgpuDawnDrmFormatCapabilitiesFreeMembers);
     if (symbolViewEq(name, "wgpuAdapterRequestDevice")) return fnPtr(&P.wgpuAdapterRequestDevice);
     if (symbolViewEq(name, "wgpuBindGroupAddRef")) return fnPtr(&dropin_ext_a.exports.wgpuBindGroupAddRef);
     if (symbolViewEq(name, "wgpuBindGroupLayoutAddRef")) return fnPtr(&dropin_ext_a.exports.wgpuBindGroupLayoutAddRef);

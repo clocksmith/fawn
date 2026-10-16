@@ -1,6 +1,7 @@
 const core = @import("wgpu_dropin_ext_a_core.zig");
 const pipeline = @import("wgpu_dropin_ext_a_pipeline.zig");
 const process_roots = @import("../runtime/process_roots.zig");
+const upstream = @import("../core/abi/generated/webgpu_upstream.zig");
 
 // Explicit aliases from core (replaces `usingnamespace core`)
 const std = core.std;
@@ -47,8 +48,12 @@ pub export fn wgpuAdapterGetFeatures(a0: types.WGPUAdapter, a1: *p1cap.Supported
 }
 
 pub export fn wgpuAdapterGetFormatCapabilities(a0: types.WGPUAdapter, a1: types.WGPUTextureFormat, a2: *p1cap.DawnFormatCapabilities) callconv(.c) types.WGPUStatus {
-    const proc = resolveRequiredProc(*const fn (types.WGPUAdapter, types.WGPUTextureFormat, *p1cap.DawnFormatCapabilities) callconv(.c) types.WGPUStatus, "wgpuAdapterGetFormatCapabilities");
-    return proc(a0, a1, a2);
+    // Doe does not advertise DawnFormatCapabilities. A foreign provider cannot
+    // validate a Doe adapter or populate its extension outputs.
+    _ = a0;
+    _ = a1;
+    _ = a2;
+    return upstream.c.WGPUStatus_Error;
 }
 
 pub export fn wgpuAdapterGetInfo(a0: types.WGPUAdapter, a1: *p1cap.AdapterInfo) callconv(.c) types.WGPUStatus {
@@ -68,13 +73,11 @@ pub export fn wgpuAdapterInfoFreeMembers(a0: p1cap.AdapterInfo) callconv(.c) voi
 }
 
 pub export fn wgpuAdapterPropertiesMemoryHeapsFreeMembers(a0: p1cap.AdapterPropertiesMemoryHeaps) callconv(.c) void {
-    const proc = resolveRequiredProc(*const fn (p1cap.AdapterPropertiesMemoryHeaps) callconv(.c) void, "wgpuAdapterPropertiesMemoryHeapsFreeMembers");
-    proc(a0);
+    if (a0.heapInfo) |heaps| std.heap.c_allocator.free(heaps[0..a0.heapCount]);
 }
 
 pub export fn wgpuAdapterPropertiesSubgroupMatrixConfigsFreeMembers(a0: p1cap.AdapterPropertiesSubgroupMatrixConfigs) callconv(.c) void {
-    const proc = resolveRequiredProc(*const fn (p1cap.AdapterPropertiesSubgroupMatrixConfigs) callconv(.c) void, "wgpuAdapterPropertiesSubgroupMatrixConfigsFreeMembers");
-    proc(a0);
+    if (a0.configs) |configs| std.heap.c_allocator.free(configs[0..a0.configCount]);
 }
 
 pub export fn wgpuBindGroupAddRef(a0: types.WGPUBindGroup) callconv(.c) void {
@@ -144,8 +147,7 @@ pub export fn wgpuComputePipelineAddRef(a0: types.WGPUComputePipeline) callconv(
 }
 
 pub export fn wgpuDawnDrmFormatCapabilitiesFreeMembers(a0: p1cap.DawnDrmFormatCapabilities) callconv(.c) void {
-    const proc = resolveRequiredProc(*const fn (p1cap.DawnDrmFormatCapabilities) callconv(.c) void, "wgpuDawnDrmFormatCapabilitiesFreeMembers");
-    proc(a0);
+    if (a0.properties) |properties| std.heap.c_allocator.free(properties[0..a0.propertiesCount]);
 }
 
 pub export fn wgpuDeviceAddRef(a0: types.WGPUDevice) callconv(.c) void {
