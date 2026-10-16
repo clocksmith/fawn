@@ -233,7 +233,19 @@ pub fn write_stmt(module: *const ir.Module, function: ir.Function, stmt_id: ir.S
         .block => |range| {
             var i: u32 = 0;
             while (i < range.len) : (i += 1) {
-                try write_stmt(module, function, function.stmt_children.items[range.start + i], buf, pos, indent);
+                const child = function.stmt_children.items[range.start + i];
+                const nested_block = function.stmts.items[child] == .block;
+                if (nested_block) {
+                    try write_indent(buf, pos, indent.*);
+                    try write_str(buf, pos, "{\n");
+                    indent.* += 4;
+                }
+                try write_stmt(module, function, child, buf, pos, indent);
+                if (nested_block) {
+                    indent.* -= 4;
+                    try write_indent(buf, pos, indent.*);
+                    try write_str(buf, pos, "}\n");
+                }
             }
         },
         .local_decl => |decl| {
@@ -383,7 +395,10 @@ pub fn write_expr(module: *const ir.Module, function: ir.Function, expr_id: ir.E
     const expr = function.exprs.items[expr_id];
     switch (expr.data) {
         .bool_lit => |value| try write_str(buf, pos, if (value) "true" else "false"),
-        .int_lit => |value| try write_u64(buf, pos, value),
+        .int_lit => |value| {
+            try write_u64(buf, pos, value);
+            if (ir.is_scalar(&module.types, expr.ty, .u32)) try write_str(buf, pos, "u");
+        },
         .float_lit => |value| try write_float(buf, pos, value),
         .param_ref => |index| try write_str(buf, pos, function.params.items[index].name),
         .local_ref => |index| try write_str(buf, pos, function.locals.items[index].name),

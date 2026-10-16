@@ -225,6 +225,22 @@ const Emitter = struct {
     }
 
     fn emit_functions(self: *Emitter) EmitError!void {
+        // WGSL permits callees after callers; MSL requires a prior declaration.
+        for (self.module.functions.items) |function| {
+            if (function.stage != null) continue;
+            try self.emit_type(function.return_type);
+            try self.write(" ");
+            try self.write(maps.msl_function_name(function.name, null));
+            try self.write("(");
+            var need_comma = false;
+            for (function.params.items) |param| {
+                if (need_comma) try self.write(", ");
+                try self.emit_param(param);
+                need_comma = true;
+            }
+            try self.emit_helper_capture_params(&need_comma);
+            try self.write(");\n");
+        }
         for (self.module.functions.items, 0..) |_, index| {
             try self.emit_function(@intCast(index));
         }
@@ -304,10 +320,30 @@ const Emitter = struct {
     }
 
     fn emit_helper_capture_params(self: *Emitter, need_comma: *bool) EmitError!void {
-        for (self.module.globals.items) |global| {
-            if (global.binding == null) continue;
+        for (self.module.globals.items, 0..) |global, index| {
+            const captured_workgroup = workgroup_zero.helperUsesWorkgroupGlobal(self.module, @intCast(index));
+            if (global.binding == null and !captured_workgroup) continue;
             if (need_comma.*) try self.write(", ");
-            try self.emit_bound_global_param(global);
+            if (captured_workgroup) {
+                try self.write("threadgroup ");
+                switch (self.module.types.get(global.ty)) {
+                    .array => |array| {
+                        try self.emit_type(array.elem);
+                        try self.write(" (&");
+                        try self.write(global.name);
+                        try self.write(")[");
+                        try self.write_u32(array.len orelse return error.InvalidIr);
+                        try self.write("]");
+                    },
+                    else => {
+                        try self.emit_type(global.ty);
+                        try self.write("& ");
+                        try self.write(global.name);
+                    },
+                }
+            } else {
+                try self.emit_bound_global_param(global);
+            }
             need_comma.* = true;
         }
         if (self.module_needs_sizes_param()) {
@@ -320,8 +356,8 @@ const Emitter = struct {
     }
 
     pub fn emit_helper_capture_args(self: *Emitter, need_comma: *bool) EmitError!void {
-        for (self.module.globals.items) |global| {
-            if (global.binding == null) continue;
+        for (self.module.globals.items, 0..) |global, index| {
+            if (global.binding == null and !workgroup_zero.helperUsesWorkgroupGlobal(self.module, @intCast(index))) continue;
             if (need_comma.*) try self.write(", ");
             try self.write(global.name);
             need_comma.* = true;
@@ -529,7 +565,19 @@ const Emitter = struct {
             .block => |range| {
                 var i: u32 = 0;
                 while (i < range.len) : (i += 1) {
-                    try self.emit_stmt(function, function.stmt_children.items[range.start + i]);
+                    const child = function.stmt_children.items[range.start + i];
+                    const nested_block = function.stmts.items[child] == .block;
+                    if (nested_block) {
+                        try self.write_indent();
+                        try self.write("{\n");
+                        self.indent += 4;
+                    }
+                    try self.emit_stmt(function, child);
+                    if (nested_block) {
+                        self.indent -= 4;
+                        try self.write_indent();
+                        try self.write("}\n");
+                    }
                 }
             },
             .local_decl => |decl| {
@@ -721,7 +769,7 @@ const Emitter = struct {
         const expr = function.exprs.items[expr_id];
         switch (expr.data) {
             .bool_lit => |value| try self.write(if (value) "true" else "false"),
-            .int_lit => |value| try self.write_u64(value),
+            .int_lit => |value| try self.emit_constant(.{ .int = value }, expr.ty),
             .float_lit => |value| try self.write_float(value),
             .param_ref => |index| try self.write(function.params.items[index].name),
             .local_ref => |index| try self.write(function.locals.items[index].name),

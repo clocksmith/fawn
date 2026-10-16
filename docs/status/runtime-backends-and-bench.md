@@ -1,5 +1,17 @@
 # Doe status: runtime backends and benchmarks
 
+## Qwen Metal correctness
+
+Native Metal limits now use the actual device, and WGSL lowering preserves
+lexical blocks, helper declarations, unsigned constants, helper workgroup
+captures, and abstract-integer expressions. Regressions live in
+[buffer limits](../../packages/doe-gpu/test/integration/test-integration-metal-buffer-limits.js)
+and [shader semantics](../../packages/doe-gpu/test/integration/test-integration-nested-blocks.js).
+[Doppler's retained investigation](https://github.com/clocksmith/doppler/tree/main/artifacts/qwen08-perf-20261015)
+contains complete generation, cancellation/reuse, failed attempts, and binary
+identity. This establishes scoped native correctness; it does not establish a
+performance win, Chromium acceptance, or another platform's qualification.
+
 ## Chromium foundation acceptance
 
 The [hierarchy](../../GOALS.md#acceptance-hierarchy) and `gpuFoundation` in the

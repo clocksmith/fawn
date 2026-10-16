@@ -2254,9 +2254,9 @@
       },
       "src/compiler/wgsl/emit/msl/emit_msl_ir.zig": {
         "decision": "Keep",
-        "moduleSha256": "23fec4ff27eb8214d77be498395ae31f42ccfa01c24f5e2f4ce12fac90272909",
-        "reason": "Keep: packed integer admission and arithmetic stay compiler-owned; shared typed lowering preserves signedness and single evaluation. Source targets share an exact integer reduction, while Vulkan owns GLSL instruction selection.",
-        "reviewer": "codex-packed-integers/2026-10-11"
+        "moduleSha256": "1a8d553707ea052caa8edf5a44df2476e9e41c31d2d9cfa4de2f9ad038ca0ccf",
+        "reason": "Keep: MSL emission owns lexical scopes, typed literals, forward declarations and explicit helper captures. Native execution ownership is unchanged.",
+        "reviewer": "codex-qwen-metal-correctness/2026-10-15"
       },
       "src/compiler/wgsl/emit/msl/emit_msl_ir_builtins.zig": {
         "decision": "Keep",
@@ -2272,9 +2272,9 @@
       },
       "src/compiler/wgsl/emit/msl/emit_msl_shared.zig": {
         "decision": "Keep",
-        "moduleSha256": "eb774fb9c80f51e83563500b72ff5db774d9170261aa690a72fffb51834e964c",
-        "reason": "Keep: reachable compiler implementation shared by 4 production consumers with no conflicting ownership signal.",
-        "reviewer": "codex-doe-completion/2026-08-24"
+        "moduleSha256": "dc8b3825fed2a7962955da5b925048df6cdefd5be7ea4e60319de5f1453e671d",
+        "reason": "Keep: render-stage MSL statement emission preserves lexical blocks and unsigned literal types within its existing responsibility.",
+        "reviewer": "codex-qwen-metal-correctness/2026-10-15"
       },
       "src/compiler/wgsl/emit/msl/emit_msl_stage.zig": {
         "decision": "Keep",
@@ -2302,9 +2302,9 @@
       },
       "src/compiler/wgsl/emit/msl/emit_msl_workgroup_zero.zig": {
         "decision": "Keep",
-        "moduleSha256": "1ec185e367f6479bf7de71da9dc611953e6dd26a9c4b1d1a2c058571d5a18576",
-        "reason": "Keep: MSL workgroup zero analysis traverses pointer address and dereference expressions within its existing responsibility.",
-        "reviewer": "codex-doe-pointer-reference-20260928"
+        "moduleSha256": "83ed32f5e7c3d6552b7b25e84190b715671a244c9c5760f68073d409c49bc683",
+        "reason": "Keep: workgroup storage analysis preserves helper-referenced globals instead of removing or changing their address space.",
+        "reviewer": "codex-qwen-metal-correctness/2026-10-15"
       },
       "src/compiler/wgsl/emit/operator_text.zig": {
         "decision": "Keep",
@@ -2500,9 +2500,9 @@
       },
       "src/compiler/wgsl/ir/ir_opt_rewrite.zig": {
         "decision": "Keep",
-        "moduleSha256": "1db1561f05ece98080d3ac8bfe0cac1e05b881d8d05c38e226808e6a00730d13",
-        "reason": "Keep: reachable compiler implementation with private behavior tests and no merge, elevation, recomposition, or deletion signal.",
-        "reviewer": "codex-recomposition-review/2026-08-08"
+        "moduleSha256": "7ec761ae79bf009cf2b43c6315f99391a48ca9e0c7703f334bb4a13e8ea93be1",
+        "reason": "Keep: optional integer folding applies concrete 32-bit rules only to concrete types; wider abstract arithmetic remains in typed IR.",
+        "reviewer": "codex-qwen-metal-correctness/2026-10-15"
       },
       "src/compiler/wgsl/ir/ir_query.zig": {
         "decision": "Keep",
@@ -3742,9 +3742,9 @@
       },
       "src/native/support/doe_device_caps.zig": {
         "decision": "Keep",
-        "moduleSha256": "15734661555ecb65ae12998ce4e4648e07099176e8dd4671b25877c26a9885eb",
-        "reason": "Keep: reachable native implementation shared by 3 production consumers with no conflicting ownership signal.",
-        "reviewer": "codex-recomposition-review/2026-08-08"
+        "moduleSha256": "57bb5d658958ffa68482f1902230fb75090fbf191b12b728d860c662b0742e0b",
+        "reason": "Keep: native capability publication owns backend dispatch; Metal limits use the owning adapter/device handle. No boundary or ownership change.",
+        "reviewer": "codex-metal-limit-repair/2026-10-15"
       },
       "src/native/support/doe_future_ids.zig": {
         "decision": "Keep",

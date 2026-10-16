@@ -291,6 +291,10 @@ pub export fn doeNativeDeviceHasFeature(raw: ?*anyopaque, feature: u32) callconv
 // back to conservative static limits when the cache entry is absent.
 pub export fn doeNativeDeviceGetLimits(raw: ?*anyopaque, limits: ?*abi_callback.WGPULimits) callconv(.c) abi_core.WGPUStatus {
     if (native_helpers.cast(DoeDevice, raw)) |d| {
+        if (d.backend == .metal) {
+            if (limits) |l| l.* = build_limits(d.mtl_device);
+            return abi_core.WGPUStatus_Success;
+        }
         if (comptime has_vulkan) {
             if (d.backend == .vulkan) {
                 if (limits) |l| {
@@ -320,6 +324,10 @@ pub export fn doeNativeDeviceGetLimits(raw: ?*anyopaque, limits: ?*abi_callback.
 
 pub export fn doeNativeAdapterGetLimits(raw: ?*anyopaque, limits: ?*abi_callback.WGPULimits) callconv(.c) abi_core.WGPUStatus {
     if (native_helpers.cast(DoeAdapter, raw)) |a| {
+        if (a.backend == .metal) {
+            if (limits) |l| l.* = build_limits(a.mtl_device);
+            return abi_core.WGPUStatus_Success;
+        }
         if (comptime has_vulkan) {
             if (a.backend == .vulkan) {
                 if (limits) |l| {

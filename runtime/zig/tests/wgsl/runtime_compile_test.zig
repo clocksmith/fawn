@@ -456,3 +456,29 @@ test "graphics runtime emits shared stage once and releases all reflection alloc
     }
     try std.testing.expectEqual(@as(usize, 0), tracking.total_requested_bytes);
 }
+
+test "compute runtime preserves helper scope and numeric types" {
+    const source =
+        \\@group(0) @binding(0) var<storage, read_write> output: array<u32>;
+        \\var<workgroup> shared_values: array<u32, 4>;
+        \\@compute @workgroup_size(1) fn main() {
+        \\  { let value = 1u; output[0] = value; }
+        \\  { let value = 2u; output[1] = value; }
+        \\  output[2] = first(output[0]);
+        \\  output[3] = bitcast<u32>(bitcast<f32>(output[0] ^ 0x80000000u));
+        \\  output[4] = select(0u, 1u, i32(output[0]) >= -126);
+        \\}
+        \\fn first(x: u32) -> u32 { return second(x); }
+        \\fn second(x: u32) -> u32 { shared_values[0] = x; return shared_values[0]; }
+    ;
+    var out: [emit_msl.MAX_OUTPUT]u8 = undefined;
+    var result = try translateToMslForComputeRuntimeTimed(std.testing.allocator, source, &out, null, 0);
+    defer result.info.deinit(std.testing.allocator);
+    const msl = out[0..result.len];
+    try std.testing.expect(std.mem.indexOf(u8, msl, "2147483648u") != null);
+    try std.testing.expect(std.mem.indexOf(u8, msl, "(-126)") != null);
+    try std.testing.expect(std.mem.indexOf(u8, msl, "threadgroup uint (&shared_values)[4]") != null);
+    const declaration = std.mem.indexOf(u8, msl, "uint second(") orelse return error.TestUnexpectedResult;
+    const call = std.mem.indexOf(u8, msl, "return second(") orelse return error.TestUnexpectedResult;
+    try std.testing.expect(declaration < call);
+}
