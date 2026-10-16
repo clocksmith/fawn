@@ -1,0 +1,1 @@
+2026-10-16T13:41:25.252Z pw:browser [pid=14883][err] [14889:35977513:1016/094125.252210:ERROR:gpu/command_buffer/service/webgpu_decoder_impl.cc:732] Forced Doe WebGPU runtime failed: wire_proc_table_incomplete: wgpuHasInstanceFeature

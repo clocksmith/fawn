@@ -1,0 +1,403 @@
+{
+  "schemaVersion": 1,
+  "decision": "reject-browser-performance-claim",
+  "consumer": "Chromium foundation acceptance: local M3 comparison requested by user",
+  "observedAt": "2026-10-16T13:50:52.223874+00:00",
+  "sourceCommitBeforeFix": "6fd3012d47b6f45162b7b24f334a7883153891c7",
+  "sourceAfterFix": {
+    "path": "runtime/zig/src/dropin/wgpu_dropin_lib.zig",
+    "sha256": "7d4269a230631607b197aacaa8205092c1b485230707772677fbd94394150369"
+  },
+  "host": {
+    "chip": "Apple M3",
+    "memoryGiB": 24,
+    "macOS": "26.6.2"
+  },
+  "fawnChromiumVersion": "148.0.7741.0",
+  "stockChromeVersion": "155.0.8059.80",
+  "fawnFramework": {
+    "path": "browser/chromium/out/fawn_release_local/Fawn.app/Contents/Frameworks/Chromium Framework.framework/Versions/148.0.7741.0/Chromium Framework",
+    "sha256": "1ec2e2bacd151e179d0e85f16c3ac2ec76b947f8ad00485dcaa746628ff5fa39"
+  },
+  "comparisons": [
+    {
+      "kind": "paired",
+      "browserVersionMatched": true,
+      "raw": {
+        "path": "browser/chromium/artifacts/20261016-m3-current/paired/fawn-dawn-vs-fawn-doe.browser-layered.superset.diagnostic.json",
+        "sha256": "1270ef1a40292421fc27b81a18d06fe2acb44d5c37a582bfd99fc54c9bb1ca75"
+      },
+      "check": {
+        "path": "browser/chromium/artifacts/20261016-m3-current/paired/fawn-dawn-vs-fawn-doe.browser-layered.superset.check.json",
+        "sha256": "a725b313a8b04fe5e65cba890ffece9f83997af50b5f0bf8223a31adecd7461f"
+      },
+      "selectedRows": [
+        {
+          "workloadId": "compute_workgroup_atomic_1024",
+          "meaning": "workgroup atomic compute with full output oracle",
+          "metric": "usPerOp",
+          "providers": {
+            "dawn": {
+              "freshProcessSamples": [
+                331.3000011444092,
+                330.5999994277954,
+                333.6999988555908,
+                330.49999952316284
+              ],
+              "median": 330.9500002861023,
+              "sampleCount": 4,
+              "reportedSourceKernelP95": 343.23750019073486
+            },
+            "doe": {
+              "freshProcessSamples": [
+                338.30000162124634,
+                335.45000076293945,
+                334.6499991416931,
+                335.19999980926514
+              ],
+              "median": 335.3250002861023,
+              "sampleCount": 4,
+              "reportedSourceKernelP95": 357.49999940395355
+            }
+          }
+        },
+        {
+          "workloadId": "compute_workgroup_non_atomic_1024",
+          "meaning": "workgroup compute with full output oracle",
+          "metric": "usPerOp",
+          "providers": {
+            "dawn": {
+              "freshProcessSamples": [
+                329.25000190734863,
+                335.3500008583069,
+                333.1499981880188,
+                326.949999332428
+              ],
+              "median": 331.2000000476837,
+              "sampleCount": 4,
+              "reportedSourceKernelP95": 346.8124997615814
+            },
+            "doe": {
+              "freshProcessSamples": [
+                324.3499994277954,
+                330.6500005722046,
+                325.699999332428,
+                320.9999990463257
+              ],
+              "median": 325.0249993801117,
+              "sampleCount": 4,
+              "reportedSourceKernelP95": 347.6875001192093
+            }
+          }
+        },
+        {
+          "workloadId": "render_bundle_dynamic_bindings",
+          "meaning": "render bundle replay; no per-row full pixel oracle",
+          "metric": "usPerOp",
+          "providers": {
+            "dawn": {
+              "freshProcessSamples": [
+                105.52083204189937,
+                95.20833442608516,
+                98.22916736205418,
+                92.29166557391484
+              ],
+              "median": 96.71875089406967,
+              "sampleCount": 4,
+              "reportedSourceKernelP95": null
+            },
+            "doe": {
+              "freshProcessSamples": [
+                355.5729165673256,
+                353.33333164453506,
+                356.30208253860474,
+                353.33333164453506
+              ],
+              "median": 354.4531241059303,
+              "sampleCount": 4,
+              "reportedSourceKernelP95": null
+            }
+          }
+        },
+        {
+          "workloadId": "render_draw_state_bindings",
+          "meaning": "triangle render through readback; full pixel oracle",
+          "metric": "renderMs",
+          "providers": {
+            "dawn": {
+              "freshProcessSamples": [
+                1.875,
+                1.9649999141693115,
+                4.200000047683716,
+                3.359999895095825
+              ],
+              "median": 2.6624999046325684,
+              "sampleCount": 4,
+              "reportedSourceKernelP95": null
+            },
+            "doe": {
+              "freshProcessSamples": [
+                1.6499998569488525,
+                1.5199999809265137,
+                1.5750000476837158,
+                2.4200000762939453
+              ],
+              "median": 1.6124999523162842,
+              "sampleCount": 4,
+              "reportedSourceKernelP95": null
+            }
+          }
+        },
+        {
+          "workloadId": "compute_dispatch_grid",
+          "meaning": "empty-dispatch overhead, not matrix multiplication",
+          "metric": "usPerOp",
+          "providers": {
+            "dawn": {
+              "freshProcessSamples": [
+                27.74999886751175,
+                37.53125071525574,
+                31.65625035762787,
+                28.093749284744263
+              ],
+              "median": 29.874999821186066,
+              "sampleCount": 4,
+              "reportedSourceKernelP95": null
+            },
+            "doe": {
+              "freshProcessSamples": [
+                251.09374970197678,
+                246.7500001192093,
+                234.90625023841858,
+                236.8437498807907
+              ],
+              "median": 241.796875,
+              "sampleCount": 4,
+              "reportedSourceKernelP95": null
+            }
+          }
+        }
+      ]
+    },
+    {
+      "kind": "stock",
+      "browserVersionMatched": false,
+      "raw": {
+        "path": "browser/chromium/artifacts/20261016-m3-current/stock/chrome-vs-fawn.browser-layered.superset.diagnostic.json",
+        "sha256": "7ef4e1266b742acca0e61b8a611163bad954788d92308c89c84a45c0f7599132"
+      },
+      "check": {
+        "path": "browser/chromium/artifacts/20261016-m3-current/stock/chrome-vs-fawn.browser-layered.superset.check.json",
+        "sha256": "a725b313a8b04fe5e65cba890ffece9f83997af50b5f0bf8223a31adecd7461f"
+      },
+      "selectedRows": [
+        {
+          "workloadId": "compute_workgroup_atomic_1024",
+          "meaning": "workgroup atomic compute with full output oracle",
+          "metric": "usPerOp",
+          "providers": {
+            "dawn": {
+              "freshProcessSamples": [
+                324.80000019073486,
+                325.49999952316284,
+                328.25000047683716,
+                325.0500011444092
+              ],
+              "median": 325.275000333786,
+              "sampleCount": 4,
+              "reportedSourceKernelP95": 333.9124995470047
+            },
+            "doe": {
+              "freshProcessSamples": [
+                351.74999952316284,
+                341.8999981880188,
+                342.59999990463257,
+                335.6000018119812
+              ],
+              "median": 342.2499990463257,
+              "sampleCount": 4,
+              "reportedSourceKernelP95": 356.88749969005585
+            }
+          }
+        },
+        {
+          "workloadId": "compute_workgroup_non_atomic_1024",
+          "meaning": "workgroup compute with full output oracle",
+          "metric": "usPerOp",
+          "providers": {
+            "dawn": {
+              "freshProcessSamples": [
+                325.3000020980835,
+                325,
+                326.6499996185303,
+                325.0500011444092
+              ],
+              "median": 325.17500162124634,
+              "sampleCount": 4,
+              "reportedSourceKernelP95": 333.4375
+            },
+            "doe": {
+              "freshProcessSamples": [
+                324.9500012397766,
+                324.7500014305115,
+                324.24999952316284,
+                326.8499994277954
+              ],
+              "median": 324.85000133514404,
+              "sampleCount": 4,
+              "reportedSourceKernelP95": 353.06250035762787
+            }
+          }
+        },
+        {
+          "workloadId": "render_bundle_dynamic_bindings",
+          "meaning": "render bundle replay; no per-row full pixel oracle",
+          "metric": "usPerOp",
+          "providers": {
+            "dawn": {
+              "freshProcessSamples": [
+                68.38541477918625,
+                415.3124988079071,
+                66.19791686534882,
+                63.333332538604736
+              ],
+              "median": 67.29166582226753,
+              "sampleCount": 4,
+              "reportedSourceKernelP95": null
+            },
+            "doe": {
+              "freshProcessSamples": [
+                343.48958482344943,
+                340.7812515894572,
+                343.75,
+                380.9895838300387
+              ],
+              "median": 343.6197924117247,
+              "sampleCount": 4,
+              "reportedSourceKernelP95": null
+            }
+          }
+        },
+        {
+          "workloadId": "render_draw_state_bindings",
+          "meaning": "triangle render through readback; full pixel oracle",
+          "metric": "renderMs",
+          "providers": {
+            "dawn": {
+              "freshProcessSamples": [
+                4.3399999141693115,
+                1.7250001430511475,
+                2.18999981880188,
+                2.134999990463257
+              ],
+              "median": 2.1624999046325684,
+              "sampleCount": 4,
+              "reportedSourceKernelP95": null
+            },
+            "doe": {
+              "freshProcessSamples": [
+                1.7549998760223389,
+                3.0950000286102295,
+                1.8299999237060547,
+                1.6000001430511475
+              ],
+              "median": 1.7924998998641968,
+              "sampleCount": 4,
+              "reportedSourceKernelP95": null
+            }
+          }
+        },
+        {
+          "workloadId": "compute_dispatch_grid",
+          "meaning": "empty-dispatch overhead, not matrix multiplication",
+          "metric": "usPerOp",
+          "providers": {
+            "dawn": {
+              "freshProcessSamples": [
+                33.71874988079071,
+                28.187499940395355,
+                32.750000059604645,
+                27.687500417232513
+              ],
+              "median": 30.46875,
+              "sampleCount": 4,
+              "reportedSourceKernelP95": null
+            },
+            "doe": {
+              "freshProcessSamples": [
+                228.37499976158142,
+                237.2812494635582,
+                247.3124995827675,
+                256.06250017881393
+              ],
+              "median": 242.29687452316284,
+              "sampleCount": 4,
+              "reportedSourceKernelP95": null
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "instanceFeatureRegression": {
+    "source": {
+      "path": "runtime/zig/tests/instance_feature_lookup.c",
+      "sha256": "94ce7f706eea603d8331b57d21d90bb290e6f9874646872064b7d2cd05d1ebd7"
+    },
+    "command": "cc -I vendor/webgpu-headers tests/instance_feature_lookup.c -o /tmp/doe-instance-feature-lookup; /tmp/doe-instance-feature-lookup <absolute-library>",
+    "runs": [
+      {
+        "library": {
+          "path": ".cache/fawn-m3-current/lib/libwebgpu_doe_full.dylib",
+          "sha256": "e175b9b05c71dda425e474934a31ec5eebd8eea6302a7ba956a3d0b4b16261af"
+        },
+        "exitCode": 1,
+        "stdout": "",
+        "stderr": "instance feature query escaped the loaded Doe library\n"
+      },
+      {
+        "library": {
+          "path": ".cache/fawn-m3-proc-fix/lib/libwebgpu_doe_full.dylib",
+          "sha256": "b106af3c319bde5014960e2e884c3efa5293bf64e94d5a85b91713ad4d2a19e2"
+        },
+        "exitCode": 0,
+        "stdout": "PASS: both name lengths resolve to Doe; capability answers match enumeration\n",
+        "stderr": ""
+      }
+    ]
+  },
+  "ownership": {
+    "before": {
+      "path": "browser/chromium/artifacts/20261016-m3-current/ownership-probe.json",
+      "sha256": "5fd8e5919beb48c38929d228c474492632b14c16dc0c8c64d31b7657c83472d8"
+    },
+    "after": {
+      "path": "browser/chromium/artifacts/20261016-m3-current/proc-fix-sandbox-probe.json",
+      "sha256": "8ad1dcd5195bcdde497d819e467a4fa9e99406124086a834fe8306fff6bb18b2"
+    },
+    "lookupOrigins": {
+      "path": "browser/chromium/artifacts/20261016-m3-current/proc-origin-audit.json",
+      "sha256": "7ac361585e6518a9678f2aa1fc37a5268181d4520915d0eb87eb6db256776a89"
+    },
+    "beforeFailure": {
+      "path": "browser/chromium/artifacts/20261016-m3-current/sandbox-before.log",
+      "sha256": "097dbc66d7bdfdd46bfd9242177949793e48a41ed1033eef8ba5ee038123fcae"
+    },
+    "afterFailure": {
+      "path": "browser/chromium/artifacts/20261016-m3-current/sandbox-after.log",
+      "sha256": "b4d3373ef41d64e8bdf0b7b2642ff3badc2c249a9ecddc47863b95a6d4a34284"
+    }
+  },
+  "limits": [
+    "Timing harness explicitly disables the browser sandbox.",
+    "Observed fallback proc resolution to a local Dawn dylib prevents a no-fallback ownership claim.",
+    "Patched instance-feature lookup is not the runtime used for earlier timing reports.",
+    "Current sandboxed Doe initialization still fails at wgpuAdapterGetFormatCapabilities; Dawn controls execute correctly.",
+    "Stock comparison changes Chromium version as well as provider.",
+    "Four fresh processes per provider/row do not establish stable application tails or A/A calibration.",
+    "Projected empty dispatch and triangle rows are not complete application workloads.",
+    "CPU, GPU-memory and displayed-frame acceptance are not established.",
+    "Existing Chromium binary was not rebuilt; configured external source checkout is absent."
+  ],
+  "nextRequiredBoundary": "Implement and qualify required Chromium capability/interop procs with Doe-owned semantics; no Dawn native-object fallback. Rebuild/rebase Chromium from recoverable source, then repeat unchanged application comparisons with sandboxing enabled."
+}

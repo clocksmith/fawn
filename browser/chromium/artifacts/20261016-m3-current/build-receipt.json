@@ -1,0 +1,10 @@
+{
+  "doeSource": "6fd3012d47b6f45162b7b24f334a7883153891c7",
+  "buildCommand": "zig build dropin-full -Doptimize=ReleaseFast --prefix /Users/xyz/deco/doe/.cache/fawn-m3-current",
+  "zig": "0.15.2",
+  "os": "ProductName:\t\tmacOS\nProductVersion:\t\t26.6.2\nBuildVersion:\t\t25G83\n",
+  "hardware": "Apple M3\n25769803776\n",
+  "sourceCheckout": "/Volumes/MACOS/fawn-browser/src",
+  "sourceCheckoutAvailable": false,
+  "scope": "Existing Chromium 148 browser; rebuilt current Doe library. Chromium itself not rebuilt. No release qualification."
+}

@@ -25,6 +25,18 @@ are still required. Strategy/schema checks provide no physical qualification.
 Existing proof campaigns and browser milestone receipts retain their meaning;
 none is promoted by this intent change.
 
+The [local Mac comparison disposition](../../browser/chromium/artifacts/20261016-m3-current/disposition.json)
+retains same-browser provider diagnostics and a separate stock-Chrome comparison.
+Those timings used the existing sandbox-disabled harness, and native lookup
+inspection found Dawn capability fallback. The missing local instance-feature
+lookup is repaired and covered by the built-library
+[regression](../../runtime/zig/tests/instance_feature_lookup.c). Sandboxed
+Chromium now stops at `wgpuAdapterGetFormatCapabilities`, whose implementation
+still delegates to Dawn. This is an unresolved runtime integration boundary;
+neither timing set establishes a self-contained Doe browser advantage. The
+configured external Chromium source checkout is absent, so the existing browser
+binary was tested rather than rebuilt.
+
 ## Roadmap proofs
 
 [Three proofs](../thesis.md#three-proofs) select current work; all are
@@ -33,16 +45,11 @@ unestablished. Doe has promising execution evidence, not the final objective.
   the native and package rows in `reports/claim-index.json` predate current code
   and need re-running and auditing; complete Doppler generation waits for an
   uncontended GPU window (see the complete-generation campaign below).
-- **Proof 2, current Metal confirmation:** the Metal rows exist only as
-  historical ignored output, which does not count. Several upload rows exceed the
-  suspicious-speedup ratio without fairness audits, and the Node ONNX Runtime
-  row shows a tail loss. The only recorded Metal candidate is a MacBook Air
-  (Mac15,12, Apple M3, 24 GB unified memory, macOS 26.3 build 25D125) in
-  `bench/out/apple-metal/diagnostic/20260712T191716Z/receipt.json`; the Metal
-  comparison reports record no chip. Its exact chip, macOS, SDK, Dawn and Doe
-  binaries and idle-state policy are frozen only once it is reachable. It is not
-  reachable from this workstation, so proof 2 stays blocked rather than moving to
-  another Mac.
+- **Proof 2, current Metal confirmation:** the local Mac is reachable and the
+  comparison disposition above records current browser diagnostics. Historical
+  upload rows still need fairness audits, and the Node ONNX Runtime tail loss
+  remains unresolved. The new browser measurements do not discharge native,
+  package, application or sandboxed-browser acceptance.
 - **Proof 3, integrated comparison:** see [the Fawn status](fawn-workspace.md).
 
 ## Graphics proof readiness
