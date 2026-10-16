@@ -12,6 +12,7 @@ pub fn canLowerWorkgroupGlobalToThread(
     if (moduleHasWorkgroupRefParam(module)) return false;
     const global = module.globals.items[global_index];
     if (global.binding != null or global.class != .var_ or global.addr_space != .workgroup) return false;
+    if (helperUsesWorkgroupGlobal(module, global_index)) return false;
     return !typeContainsAtomic(module, global.ty) and !typeContainsArray(module, global.ty);
 }
 
@@ -27,6 +28,7 @@ pub fn unwrittenWorkgroupGlobal(
 ) bool {
     const global = module.globals.items[global_index];
     if (global.binding != null or global.class != .var_ or global.addr_space != .workgroup) return false;
+    if (helperUsesWorkgroupGlobal(module, global_index)) return false;
     for (function.stmts.items, 0..) |_, stmt_index| {
         if (stmtMutatesOrEscapesGlobal(module, function, @intCast(stmt_index), global_index)) return false;
     }
@@ -41,6 +43,18 @@ pub fn refRootGlobal(function: ir.Function, expr_id: ir.ExprId) ?u32 {
         .index => |index| refRootGlobal(function, index.base),
         else => null,
     };
+}
+
+pub fn helperUsesWorkgroupGlobal(module: *const ir.Module, global_index: u32) bool {
+    const global = module.globals.items[global_index];
+    if (global.class != .var_ or global.addr_space != .workgroup) return false;
+    for (module.functions.items) |function| {
+        if (function.stage != null) continue;
+        for (function.exprs.items) |expr| {
+            if (expr.data == .global_ref and expr.data.global_ref == global_index) return true;
+        }
+    }
+    return false;
 }
 
 fn moduleHasWorkgroupRefParam(module: *const ir.Module) bool {

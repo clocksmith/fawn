@@ -260,6 +260,8 @@ fn tryFoldConstIntegerBinary(
 ) bool {
     const result_scalar = scalarKind(module, function.exprs.items[expr_id].ty) orelse return false;
     if (!isIntegerScalar(result_scalar)) return false;
+    // These folds implement concrete 32-bit wrapping, not AbstractInt arithmetic.
+    if (result_scalar == .abstract_int) return false;
 
     const lhs_raw = ir_const_eval.resolve_constant_int(module, function, binary.lhs) orelse return false;
     const rhs_raw = ir_const_eval.resolve_constant_int(module, function, binary.rhs) orelse return false;
@@ -278,6 +280,7 @@ fn tryFoldConstIntegerUnary(
 ) bool {
     const result_scalar = scalarKind(module, function.exprs.items[expr_id].ty) orelse return false;
     if (!isIntegerScalar(result_scalar)) return false;
+    if (result_scalar == .abstract_int) return false;
 
     const operand_raw = ir_const_eval.resolve_constant_int(module, function, unary.operand) orelse return false;
     const folded = foldIntegerUnary(unary.op, result_scalar, operand_raw) orelse return false;

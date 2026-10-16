@@ -36,9 +36,13 @@ test "packed integers preserve source calls across all shader targets" {
     var text: [MAX_OUTPUT]u8 = undefined;
     inline for (.{ mod.translateToMsl, mod.translateToHlsl }) |translate| {
         const len = try translate(std.testing.allocator, PACKED_INTEGER_SOURCE, &text);
-        try std.testing.expectEqual(@as(usize, 7), std.mem.count(u8, text[0..len], "word("));
-        try std.testing.expectEqual(@as(usize, 3), std.mem.count(u8, text[0..len], "negative_values("));
-        try std.testing.expectEqual(@as(usize, 3), std.mem.count(u8, text[0..len], "positive_values("));
+        // Declarations and definitions are not evaluations of the source call.
+        try std.testing.expectEqual(@as(usize, 6), std.mem.count(u8, text[0..len], "word(") -
+            std.mem.count(u8, text[0..len], "uint word("));
+        try std.testing.expectEqual(@as(usize, 2), std.mem.count(u8, text[0..len], "negative_values(") -
+            std.mem.count(u8, text[0..len], "int4 negative_values("));
+        try std.testing.expectEqual(@as(usize, 2), std.mem.count(u8, text[0..len], "positive_values(") -
+            std.mem.count(u8, text[0..len], "uint4 positive_values("));
         try std.testing.expect(contains(text[0..len], "__doe_integer_dot_i4("));
         try std.testing.expect(contains(text[0..len], "__doe_integer_dot_u4("));
         try std.testing.expect(!contains(text[0..len], "dot4I8Packed"));
