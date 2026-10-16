@@ -66,6 +66,11 @@ Use the scripts and commands named by the milestone manifest and acceptance
 contract. The manifest owns which checks are required for each milestone; this
 README intentionally does not copy the changing command inventory.
 
+Use `scripts/run-smoke.sh --sandbox true` for sandboxed runtime diagnostics.
+The smoke runner retains its sandbox-disabled legacy default for historical
+comparisons; those runs cannot establish sandboxed browser ownership. Explicit
+sandbox mode rejects conflicting sandbox-disabling `--chrome-arg` values.
+
 ## Current boundary
 
 The lane has forced-runtime contracts, diagnostics, a governed Linux package

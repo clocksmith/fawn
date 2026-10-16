@@ -30,12 +30,18 @@ retains same-browser provider diagnostics and a separate stock-Chrome comparison
 Those timings used the existing sandbox-disabled harness, and native lookup
 inspection found Dawn capability fallback. The missing local instance-feature
 lookup is repaired and covered by the built-library
-[regression](../../runtime/zig/tests/instance_feature_lookup.c). Sandboxed
-Chromium now stops at `wgpuAdapterGetFormatCapabilities`, whose implementation
-still delegates to Dawn. This is an unresolved runtime integration boundary;
-neither timing set establishes a self-contained Doe browser advantage. The
-configured external Chromium source checkout is absent, so the existing browser
-binary was tested rather than rebuilt.
+[regression](../../runtime/zig/tests/instance_feature_lookup.c). Format-capability
+queries now reject the unadvertised extension inside Doe; capability-array
+cleanup also resolves locally. The built-library
+[capability regression](../../runtime/zig/tests/format_capability_lookup.c)
+checks resolution, feature rejection, output preservation and cleanup.
+The smoke wrapper accepts `--sandbox true` and rejects conflicting disabling
+arguments; its legacy diagnostic default remains sandbox-disabled. Sandboxed
+Chromium advances to missing `wgpuBufferCreateTexelView` ownership. This remains
+an unresolved runtime integration boundary; neither timing set establishes a
+self-contained Doe browser advantage. The configured external Chromium source
+checkout is absent on the Mac, so its existing browser binary was tested rather
+than rebuilt. The AMD checkout is separate and has uncommitted integration work.
 
 ## Roadmap proofs
 
