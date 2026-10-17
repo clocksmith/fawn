@@ -14,4 +14,4 @@ contracts remain separate:
 - matmul_gemv_subgroup.wgsl
 
 Keep mirrored files byte-identical unless both root contracts are updated in
-the same change. bench/tests/test_kernel_mirror_policy.py guards this.
+the same change. Byte identity alone does not establish kernel correctness.
