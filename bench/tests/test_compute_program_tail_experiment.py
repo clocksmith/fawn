@@ -20,11 +20,12 @@ class TailPolicyTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             directory = Path(temporary)
             tail = load_experiment_policy(POLICY)
+            evaluation_path = directory / 'revised-evaluation.json'
+            evaluation_path.write_bytes(POLICY.with_name('compute-program-evaluation.json').read_bytes())
+            tail['evaluationPolicy'] = str(evaluation_path)
             evaluation = evaluation_for_sampling(tail, 'frozen')
             evaluation['warmupRuns'] += 1
-            evaluation_path = directory / 'revised-evaluation.json'
             evaluation_path.write_text(json.dumps(evaluation), encoding='utf-8')
-            tail['evaluationPolicy'] = str(evaluation_path)
             experiment_path = directory / 'experiment-policy.json'
             experiment_path.write_text(json.dumps(tail), encoding='utf-8')
             self.assertEqual(load_experiment_policy(experiment_path), tail)

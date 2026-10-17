@@ -142,19 +142,6 @@ def target_list(payload: dict[str, Any]) -> list[str]:
     return []
 
 
-def rows_for_target(payload: dict[str, Any], target: str) -> list[dict[str, Any]]:
-    rows = payload.get("rows")
-    if not isinstance(rows, list):
-        return []
-    out: list[dict[str, Any]] = []
-    for row in rows:
-        if isinstance(row, dict) and row.get("target") == target:
-            out.append(row)
-        elif isinstance(row, dict) and row.get("backendTarget") == target:
-            out.append(row)
-    return out
-
-
 def evidence_path_from_receipt(payload: dict[str, Any]) -> str:
     value = payload.get("evidencePath")
     return value if isinstance(value, str) else ""

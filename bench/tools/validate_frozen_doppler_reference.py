@@ -168,21 +168,6 @@ def _validate_artifact(
     return observed
 
 
-def _stable_artifact_record(
-    spec: dict[str, Any],
-    observed_sha: str | None,
-) -> dict[str, Any]:
-    """Project a hash-linked-path spec down to the canonical (path, sha256)
-    fields used to compute fixtureDigest. The recorded sha256 is the cited
-    value; mismatch is reported separately."""
-    return {
-        "path": spec.get("path", ""),
-        "sha256": observed_sha if observed_sha is not None else spec.get(
-            "sha256", ""
-        ),
-    }
-
-
 def compute_fixture_digest(manifest: dict[str, Any]) -> str:
     """Compute the canonical fixtureDigest of a manifest body.
 

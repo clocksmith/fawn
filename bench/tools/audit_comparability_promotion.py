@@ -363,46 +363,6 @@ def apply_reasons_canonical(
     return applied
 
 
-def apply_reasons(
-    catalog: dict[str, Any],
-    directional_decisions: list[tuple[str, TriageDecision]],
-    promotion_candidates: list[tuple[str, TriageDecision]] | None = None,
-    inconclusive_decisions: list[tuple[str, TriageDecision]] | None = None,
-    artifact_glob: str = "",
-) -> int:
-    applied = 0
-    directional_by_id = {wid: dec for wid, dec in directional_decisions}
-    candidate_by_id = {wid: dec for wid, dec in (promotion_candidates or [])}
-    inconclusive_by_id = {wid: dec for wid, dec in (inconclusive_decisions or [])}
-    for workload in catalog.get("workloads", []) or []:
-        if not isinstance(workload, dict):
-            continue
-        workload_id = workload.get("id")
-        if not isinstance(workload_id, str):
-            continue
-        if workload.get("comparable"):
-            continue
-        if str(workload.get("directionalReason") or "").strip():
-            continue
-        decision = directional_by_id.get(workload_id)
-        if decision is not None and decision.derived_reason:
-            workload["directionalReason"] = decision.derived_reason
-            applied += 1
-            continue
-        candidate = candidate_by_id.get(workload_id)
-        if candidate is not None:
-            workload["directionalReason"] = derive_reason_for_promotion_candidate(
-                candidate.artifact_path
-            )
-            applied += 1
-            continue
-        inconclusive = inconclusive_by_id.get(workload_id)
-        if inconclusive is not None and artifact_glob:
-            workload["directionalReason"] = derive_reason_for_inconclusive(artifact_glob)
-            applied += 1
-    return applied
-
-
 def format_summary(summary: TriageSummary) -> str:
     lines: list[str] = []
     lines.append(f"promotion_candidates: {len(summary.promotion_candidates)}")

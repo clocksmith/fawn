@@ -38,7 +38,6 @@ without bringing in pyproject scaffolding.
 from __future__ import annotations
 
 import hashlib
-import json
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -207,12 +206,3 @@ def enforce_receipt_hash_spine(
         raise ReceiptHashSpineError(
             "receipt hash spine violations: " + "; ".join(report.violations)
         )
-
-
-def evaluate_receipt_path(
-    receipt_path: Path,
-    repo_root: Path | None = None,
-) -> HashSpineReport:
-    """Convenience: load a receipt JSON file and evaluate it."""
-    receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
-    return evaluate_receipt_hash_spine(receipt, repo_root=repo_root)

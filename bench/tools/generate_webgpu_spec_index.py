@@ -67,39 +67,6 @@ CONSTANT_INTERFACES = {
 DEFAULTS = {"impl": "unreviewed", "correct": "unreviewed", "perf": "unreviewed"}
 
 
-def compact_cell(verbose_cell):
-    """Convert a verbose backend cell to compact form, omitting defaults."""
-    result = {}
-    s = verbose_cell.get("implementation", {}).get("status", "unreviewed")
-    if s != DEFAULTS["impl"]:
-        result["impl"] = s
-    s = verbose_cell.get("correctness", {}).get("status", "unreviewed")
-    if s != DEFAULTS["correct"]:
-        result["correct"] = s
-    s = verbose_cell.get("performance", {}).get("status", "unreviewed")
-    if s != DEFAULTS["perf"]:
-        result["perf"] = s
-    notes = []
-    for dim in ["implementation", "correctness", "performance"]:
-        for n in verbose_cell.get(dim, {}).get("notes", []):
-            if n and n not in notes:
-                notes.append(n)
-    if notes:
-        result["notes"] = notes
-    return result
-
-
-def compact_checklist(verbose_checklist):
-    """Convert verbose checklist dict to flat backend keys, omitting all-default backends."""
-    result = {}
-    for backend in CHECKLIST_BACKENDS:
-        cell = verbose_checklist.get(backend, {})
-        cc = compact_cell(cell)
-        if cc:
-            result[backend] = cc
-    return result
-
-
 def load_existing_jsonl(output_path):
     """Load existing JSONL and build lookup maps for preserving checklist data."""
     if not output_path.exists():
