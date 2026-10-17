@@ -82,6 +82,8 @@ of repeated prose does not delete them.
 
 ## Browser
 
+- [`python-browser-scripting-incubation.md`](python-browser-scripting-incubation.md):
+  parked Python-native scripting stretch goal; documentation only
 - [`fawn-workspace-contract.md`](fawn-workspace-contract.md): Fawn's durable
   browser workspaces — authority, action recovery, reusable workflows and
   prospective acceptance
