@@ -342,22 +342,27 @@ Matching the first two does not make GPU work execute in that language. A
 Python-written WGSL compiler compiles a different language; that alone is not
 self-hosting.
 
-If separately selected, compare three bounded experiments under the existing
-[language evaluation rules](process.md#language-and-cleanup-evaluation):
+If separately selected, bound the comparison to one real compiler pass and one
+native lifecycle under the [goals](../GOALS.md#strategic-constraints) and existing
+[language evaluation rules](process.md#language-and-cleanup-evaluation). Use
+those same cases for three measurements:
 
 1. **Client overhead:** Zig, Python, and JavaScript clients use the same native
    backend, shaders, input data, dispatches, and completion semantics. Include
-   tiny repeated dispatches and large batched work. Report cold startup, warm
+   tiny repeated dispatches and large batched work within the selected lifecycle:
+   creation, submission, cancellation, device loss, and cleanup retain the same
+   ownership and failure requirements. Report cold startup, warm
    host overhead, transfers, and completed GPU work separately; a submission-only
    timer cannot stand in for execution latency.
-2. **Compiler/planning work:** implement one real pass in all three languages
+2. **Compiler work:** implement the selected real pass in all three languages
    under the same semantic contract and independent correctness oracle. Compare
    compilation/planning time, memory, code complexity, clean/incremental build
    time, and time to make a verified change. Preserve invalid-input diagnostics
    and failure behavior alongside successful outputs.
 3. **Preparation before execution:** Python or JavaScript constructs a validated
    execution plan/manifest; a small native core validates and loads it, then owns
-   latency-sensitive execution. Compare preparation, loading, and repeated
+   latency-sensitive execution. Reuse the selected pass and lifecycle rather
+   than adding another workload. Compare preparation, loading, and repeated
    execution separately against the current path. Preserve expressive source
    while testing whether interpreter decisions can leave repeated execution.
 
