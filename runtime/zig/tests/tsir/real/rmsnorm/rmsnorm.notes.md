@@ -1,7 +1,7 @@
 # RMSNorm — TSIR schema fit report
 
-Source: [`rms_norm.wgsl`](rms_norm.wgsl).
-Hand-sketched TSIR: [`rms_norm.tsir-semantic.json`](rms_norm.tsir-semantic.json).
+Source: [`rmsnorm.wgsl`](rmsnorm.wgsl).
+Hand-sketched TSIR: [`rmsnorm.tsir-semantic.json`](rmsnorm.tsir-semantic.json).
 
 ## What fits the current schema
 
@@ -82,10 +82,10 @@ target-specific placement, tiling, and reduction-tree choices on top of
 the reduction shape that *is* representable in the semantic. Schema-valid
 under `doe-tsir-realization.schema.json`.
 
-- `rms_norm.tsir-realization.wse3.json`: 8×1 PE grid, input/output row-
+- `rmsnorm.tsir-realization.wse3.json`: 8×1 PE grid, input/output row-
   sliced along the hidden axis, weight replicated. Mean-of-squares
   reduction uses a `binomial` tree across the 8 PEs (fabric reduction).
-- `rms_norm.tsir-realization.webgpu-generic.json`: 1×1 PE grid, all
+- `rmsnorm.tsir-realization.webgpu-generic.json`: 1×1 PE grid, all
   bindings `pe_replicated`, reduction tree `linear` at the TSIR layer
   (subgroup shape is hardware-chosen below TSIR).
 
@@ -104,12 +104,12 @@ Caveats that flow from the semantic gap above:
 
 ## Status
 
-- `rms_norm.wgsl`: pinned WGSL snapshot.
-- `rms_norm.tsir-semantic.json`: hand-sketched TSIR, schema-valid, with a
+- `rmsnorm.wgsl`: pinned WGSL snapshot.
+- `rmsnorm.tsir-semantic.json`: hand-sketched TSIR, schema-valid, with a
   family-level `rmsNorm` body contract. The oracle can execute this
   bootstrap contract with explicit uniform epsilon bytes; the full body
   (pre-op square, scalar tail, elementwise normalization) is still not
   represented as node-level TSIR.
-- `rms_norm.tsir-realization.wse3.json`: hand-sketched, schema-valid.
-- `rms_norm.tsir-realization.webgpu-generic.json`: hand-sketched,
+- `rmsnorm.tsir-realization.wse3.json`: hand-sketched, schema-valid.
+- `rmsnorm.tsir-realization.webgpu-generic.json`: hand-sketched,
   schema-valid.
