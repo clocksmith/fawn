@@ -290,6 +290,92 @@ owned code. Reconsider the core language only from representative
 [maintenance and runtime evidence](process.md#language-and-cleanup-evaluation),
 preserving the same contracts; theoretical simplicity does not justify a rewrite.
 
+#### Language evaluation by layer — proposed investigation
+
+A Python-heavy or JavaScript-heavy implementation is technically plausible;
+sophisticated planning could happen before the latency-sensitive execution loop.
+Evaluate that possibility by layer. This is a recorded investigation proposal,
+not an authorized rewrite, benchmark campaign, or change to the current Zig core,
+component owners, or [GPU priorities](../GOALS.md#acceptance-hierarchy). It is
+separate from [Python scripting inside browser pages](python-browser-scripting-incubation.md).
+
+**Python.** Parsing, intermediate representations, optimization passes, target-plan
+construction, tooling, and substantial GPU orchestration are candidates, not just
+thin wrappers. tinygrad's [compiler pipeline](https://docs.tinygrad.org/developer/layout/)
+and [Python runtime machinery](https://docs.tinygrad.org/developer/runtime/),
+including device and allocation management, establish a concrete precedent;
+they do not establish Doe performance or compatibility. Measure CPU-heavy graph
+traversal, object allocation, startup, packaging, and frequent native-boundary
+calls. The [Python/C API](https://docs.python.org/3/c-api/index.html) and
+[buffer protocol](https://docs.python.org/3/c-api/buffer.html) provide integration
+mechanisms; copying, synchronization, and ownership depend on the actual binding
+and resource lifetimes, not the presence of a buffer interface.
+
+**JavaScript/TypeScript.** Browser-facing tools, Fawn workflows, Doppler
+integration, manifest processing, and interactive compiler inspection are
+candidates. Shared types, tracing, and test infrastructure might reduce
+duplication; that benefit remains to be measured. A native Node addon can expose
+GPU operations through [Node-API](https://nodejs.org/api/n-api.html). Browser
+JavaScript can use browser-provided WebGPU, but that does not itself replace Dawn
+underneath Chromium or prove Doe owns page execution. Measure garbage collection,
+object churn, JIT warmup, and native-boundary costs. TypeScript's source-level
+types do not remove those runtime costs.
+
+**Zig.** Its strongest architectural case is the native execution core: explicit
+data layouts, allocation, resource lifetimes, driver calls, and embedding without
+adding a Python or JavaScript runtime dependency. The
+[language documentation](https://ziglang.org/documentation/master/#Memory)
+describes explicit memory and ownership responsibilities. Managing those details,
+build cost, and contributor friction are engineering costs to measure. Choosing
+Zig proves neither a simpler implementation nor faster execution.
+
+Using the customer's language could let contributors inspect and modify more of
+the stack, reuse libraries and debugging tools, and avoid learning another
+ecosystem. This could matter for agent-driven iteration; verify it with real
+changes rather than treating familiarity as proof. Keep three identities distinct:
+
+- The application's language, such as Python or JavaScript.
+- The language implementing Doe's compiler and runtime.
+- WGSL and the native GPU programs Doe compiles and executes.
+
+Matching the first two does not make GPU work execute in that language. A
+Python-written WGSL compiler compiles a different language; that alone is not
+self-hosting.
+
+If separately selected, compare three bounded experiments under the existing
+[language evaluation rules](process.md#language-and-cleanup-evaluation):
+
+1. **Client overhead:** Zig, Python, and JavaScript clients use the same native
+   backend, shaders, input data, dispatches, and completion semantics. Include
+   tiny repeated dispatches and large batched work. Report cold startup, warm
+   host overhead, transfers, and completed GPU work separately; a submission-only
+   timer cannot stand in for execution latency.
+2. **Compiler/planning work:** implement one real pass in all three languages
+   under the same semantic contract and independent correctness oracle. Compare
+   compilation/planning time, memory, code complexity, clean/incremental build
+   time, and time to make a verified change. Preserve invalid-input diagnostics
+   and failure behavior alongside successful outputs.
+3. **Preparation before execution:** Python or JavaScript constructs a validated
+   execution plan/manifest; a small native core validates and loads it, then owns
+   latency-sensitive execution. Compare preparation, loading, and repeated
+   execution separately against the current path. Preserve expressive source
+   while testing whether interpreter decisions can leave repeated execution.
+
+The third experiment extends the separation in
+[reusable compute programs](reusable-compute-programs.md); it does not establish
+a new manifest contract. Plans must retain shader/compiler/device identity,
+invalidation, resource ownership, and completion obligations. Precomputation
+cannot remove checks whose preconditions depend on changing invocation state.
+Count serialization, validation, bindings, duplicated decisions, deployment,
+and debugging across the entire design: moving complexity into another layer
+is not evidence of reducing it.
+
+The preferred investigation is this preparation/execution split before a
+wholesale rewrite: seriously test Python for preparation/compiler work,
+JavaScript for shared orchestration/tooling, and Zig for the low-level runtime.
+Allow the result to differ by layer. No comparative advantage is established
+until representative correctness, maintenance, and runtime evidence supports it.
+
 ### Reuse and completion obligations
 
 Keep immutable descriptions, device-specific prepared resources, and invocation
