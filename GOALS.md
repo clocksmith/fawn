@@ -31,8 +31,10 @@ select the current work.
    no fallback under frozen workload contracts.
 2. **Own page WebGPU inside Chromium.** Real webpage device creation through
    destruction must be Doe-owned. Compare stock Chromium+Dawn with forced-Doe
-   Chromium using ordinary applications unchanged, including lifecycle and
-   security behavior.
+   Chromium using ordinary applications unchanged, including presentation,
+   cancellation, device loss, cleanup, and security behavior. Keep forced provider
+   selection observable and reject fallback. Native benchmarks alone cannot
+   establish a dependable working browser replacement.
 3. **Expand into Chromium's wider GPU paths.** Trace the real execution path
    before selecting Graphite/Skia rasterization and compositing, CSS filters and
    backdrop filters, Canvas 2D, SVG, scrolling or video overlays. Each integration
@@ -65,12 +67,23 @@ requirements; `fawnWorkspace` in the [strategy contract](config/doe-product-stra
 binds its acceptance steps to admitted evidence. These are intended outcomes, not
 implemented service claims.
 
+The immediate product target is one useful durable workflow with ownership,
+interruption recovery, and explicit uncertain outcomes. Compare the complete task
+against competent stock Chromium automation, then establish an external user who
+keeps the replacement enabled. Fixture qualification and internal use do not
+establish retained external adoption.
+
 The independent compiler and runtime retain these outcomes:
 
 1. **Faster unchanged applications.** Replace a supported application's WebGPU
    provider without changing its shaders, models, inputs, application logic, or
    declared numerical requirements. Remove unnecessary preparation, transfers,
    synchronization, and memory overhead; earn the result in complete operations.
+   Finish one matched Vulkan application comparison against Dawn, then confirm
+   on Metal, preserving shaders, outputs, and lifecycle requirements. Establish
+   a material benefit in complete application latency, memory use, or reliability
+   so reverting makes the application measurably worse. This first win does not waive
+   the frozen comparison criteria or the broader acceptance hierarchy.
    WebGPU application graphics belongs in the required win set alongside
    compute: scenes, games, CAD, maps, particles, fluids, image and video effects,
    charts, simulations, canvas presentation, and GPU-driven interfaces when
@@ -102,9 +115,12 @@ The independent compiler and runtime retain these outcomes:
    requires measured benefits, an explicitly selected integration, and its own
    evidence.
 8. **Exceptional implementation quality.** Keep compiler, object, and backend
-   boundaries readable and independently testable. Reduce duplication and
-   measure build cost and reproduction-to-verified-improvement time. The
-   maintainability acceptance above is mandatory for the Chromium foundation.
+   boundaries readable and independently testable. Consolidate duplicated code
+   and contradictory guidance, remove proven dead paths, and shorten targeted
+   verification without weakening safety coverage. Measure clean builds,
+   incremental checks, agent reproduction-to-verified-improvement time, and
+   Chromium rebasing under the [evaluation rules](docs/process.md#language-and-cleanup-evaluation).
+   The maintainability acceptance above is mandatory for the Chromium foundation.
    Zig enables engineering discipline; choosing it is not itself a product advantage.
 
 ## Strategic constraints
@@ -138,6 +154,14 @@ The independent compiler and runtime retain these outcomes:
   no private provider preference.
 - Adoption: supporting-feature value, receipts, internal benchmarks, and sibling
   integrations do not establish independent adoption or retained use.
+- New experiments: bound [implementation-language comparisons](docs/architecture.md#language-evaluation-by-layer--proposed-investigation)
+  to one real compiler pass and one native lifecycle, preserving their semantic,
+  ownership, failure, and completion requirements. Evaluate preparation before
+  repeated execution within those same cases. Keep
+  [Python browser scripting](docs/python-browser-scripting-incubation.md) as
+  documentation-only incubation. These proposals do not authorize a rewrite or
+  displace current proofs; wider rendering remains gated on the existing WebGPU
+  acceptance requirements.
 - Deployment: no mandatory browser or cloud service. Platform drivers and
   frameworks remain dependencies; there is no universal zero-dependency or
   zero-allocation promise. Provider substitution must permit safe reversion.
