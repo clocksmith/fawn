@@ -1,0 +1,618 @@
+diff --git a/include/dawn/native/DawnNative.h b/include/dawn/native/DawnNative.h
+index 3b12d481a..6863031f7 100644
+--- a/include/dawn/native/DawnNative.h
++++ b/include/dawn/native/DawnNative.h
+@@ -117,6 +117,8 @@ struct DAWN_NATIVE_EXPORT DawnInstanceDescriptor : wgpu::ChainedStruct {
+     DawnInstanceDescriptor();
+     std::span<std::string_view> additionalRuntimeSearchPaths;
+     dawn::platform::Platform* platform = nullptr;
++    std::string_view webgpuExternalRuntimeLibraryPath;
++    bool webgpuExternalRuntimeRequired = false;
+ 
+     BackendValidationLevel backendValidationLevel = BackendValidationLevel::Disabled;
+     bool beginCaptureOnStartup = false;
+diff --git a/src/dawn/native/Instance.cpp b/src/dawn/native/Instance.cpp
+index 54520ef46..2eb4ec165 100644
+--- a/src/dawn/native/Instance.cpp
++++ b/src/dawn/native/Instance.cpp
+@@ -320,6 +320,8 @@ MaybeError InstanceBase::Initialize(const UnpackedPtr<InstanceDescriptor>& descr
+             mRuntimeSearchPaths.push_back(std::string(path));
+         }
+         SetPlatform(dawnDesc->platform);
++        mWebGPUExternalRuntimeLibraryPath = dawnDesc->webgpuExternalRuntimeLibraryPath;
++        mWebGPUExternalRuntimeRequired = dawnDesc->webgpuExternalRuntimeRequired;
+ 
+         mBackendValidationLevel = dawnDesc->backendValidationLevel;
+         mBeginCaptureOnStartup = dawnDesc->beginCaptureOnStartup;
+@@ -691,6 +693,14 @@ wgpu::WaitStatus InstanceBase::APIWaitAny(Span<FutureWaitInfo> futures, uint64_t
+     return mEventManager.WaitAny(futures, Nanoseconds(timeoutNS));
+ }
+ 
++const std::string& InstanceBase::GetWebGPUExternalRuntimeLibraryPath() const {
++    return mWebGPUExternalRuntimeLibraryPath;
++}
++
++bool InstanceBase::IsWebGPUExternalRuntimeRequired() const {
++    return mWebGPUExternalRuntimeRequired;
++}
++
+ const std::vector<std::string>& InstanceBase::GetRuntimeSearchPaths() const {
+     return mRuntimeSearchPaths;
+ }
+diff --git a/src/dawn/native/Instance.h b/src/dawn/native/Instance.h
+index 7d5e1972c..50fe30140 100644
+--- a/src/dawn/native/Instance.h
++++ b/src/dawn/native/Instance.h
+@@ -158,6 +158,8 @@ class InstanceBase final : public ErrorSink, public RefCounted {
+     bool HasFeature(wgpu::WGSLLanguageFeatureName feature) const;
+ 
+     const std::vector<std::string>& GetRuntimeSearchPaths() const;
++    const std::string& GetWebGPUExternalRuntimeLibraryPath() const;
++    bool IsWebGPUExternalRuntimeRequired() const;
+ 
+     const Ref<CallbackTaskManager>& GetCallbackTaskManager() const;
+     EventManager* GetEventManager();
+@@ -215,6 +217,8 @@ class InstanceBase final : public ErrorSink, public RefCounted {
+     absl::flat_hash_set<std::string> mWarningMessages;
+ 
+     std::vector<std::string> mRuntimeSearchPaths;
++    std::string mWebGPUExternalRuntimeLibraryPath;
++    bool mWebGPUExternalRuntimeRequired = false;
+ 
+     bool mBeginCaptureOnStartup = false;
+     BackendValidationLevel mBackendValidationLevel = BackendValidationLevel::Disabled;
+diff --git a/src/dawn/native/webgpu/BackendWGPU.cpp b/src/dawn/native/webgpu/BackendWGPU.cpp
+index 665dea721..b53aedde6 100644
+--- a/src/dawn/native/webgpu/BackendWGPU.cpp
++++ b/src/dawn/native/webgpu/BackendWGPU.cpp
+@@ -27,7 +27,11 @@
+ 
+ #include "src/dawn/native/webgpu/BackendWGPU.h"
+ 
++#include <cstring>
++#include <type_traits>
++
+ #include "dawn/dawn_proc_table.h"
++#include "src/utils/log.h"
+ #include "src/dawn/native/Instance.h"
+ #include "src/dawn/native/webgpu/PhysicalDeviceWGPU.h"
+ 
+@@ -35,7 +39,13 @@ namespace dawn::native::webgpu {
+ 
+ Backend::Backend(InstanceBase* instance, wgpu::BackendType backendType)
+     : BackendConnection(instance, backendType) {
+-    mDawnProcs = dawn::native::GetProcs();
++    if (instance->IsWebGPUExternalRuntimeRequired()) {
++        if (!LoadDoeWireProcTable()) {
++            return;
++        }
++    } else {
++        mDawnProcs = dawn::native::GetProcs();
++    }
+ 
+     // Enable all instance features and limits.
+     WGPUInstanceDescriptor instanceDesc = WGPU_INSTANCE_DESCRIPTOR_INIT;
+@@ -61,10 +71,480 @@ Backend::Backend(InstanceBase* instance, wgpu::BackendType backendType)
+     instanceDesc.requiredLimits = &limits;
+ 
+     mInnerInstance = mDawnProcs.createInstance(&instanceDesc);
++    if (!mInnerInstance) {
++        dawn::ErrorLog() << "runtime_initialization_failed: wgpuCreateInstance returned null";
++    }
+ 
+     mDawnProcs.supportedInstanceFeaturesFreeMembers(features);
+ }
+ 
++bool Backend::LoadDoeWireProcTable() {
++    const auto& path = GetInstance()->GetWebGPUExternalRuntimeLibraryPath();
++    std::string error;
++    if (path.empty() || !mExternalRuntimeLib.Open(path, &error)) {
++        dawn::ErrorLog() << "runtime_artifact_load_failed: " << path << ": " << error;
++        return false;
++    }
++    auto lookup = reinterpret_cast<WGPUProcGetProcAddress>(
++        mExternalRuntimeLib.GetProc("wgpuGetProcAddress", &error));
++    if (!lookup) {
++        dawn::ErrorLog() << "symbol_surface_incomplete: wgpuGetProcAddress: " << error;
++        return false;
++    }
++    mDawnProcs = {};
++    mDawnProcs.getProcAddress = lookup;
++    auto load = [&](auto* target, const char* name) {
++        auto proc = lookup({name, std::strlen(name)});
++        if (!proc) {
++            dawn::ErrorLog() << "wire_proc_table_incomplete: " << name;
++            return false;
++        }
++        *target = reinterpret_cast<std::remove_reference_t<decltype(*target)>>(proc);
++        return true;
++    };
++    if (!load(&mDawnProcs.adapterCreateDevice, "wgpuAdapterCreateDevice")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.adapterGetInfo, "wgpuAdapterGetInfo")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.adapterGetLimits, "wgpuAdapterGetLimits")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.adapterHasFeature, "wgpuAdapterHasFeature")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.adapterInfoFreeMembers, "wgpuAdapterInfoFreeMembers")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.adapterRelease, "wgpuAdapterRelease")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.bindGroupLayoutRelease, "wgpuBindGroupLayoutRelease")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.bindGroupRelease, "wgpuBindGroupRelease")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.bufferDestroy, "wgpuBufferDestroy")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.bufferGetConstMappedRange, "wgpuBufferGetConstMappedRange")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.bufferGetMapState, "wgpuBufferGetMapState")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.bufferGetMappedRange, "wgpuBufferGetMappedRange")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.bufferMapAsync, "wgpuBufferMapAsync")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.bufferRelease, "wgpuBufferRelease")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.bufferUnmap, "wgpuBufferUnmap")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.commandBufferRelease, "wgpuCommandBufferRelease")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.commandEncoderBeginComputePass, "wgpuCommandEncoderBeginComputePass")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.commandEncoderBeginRenderPass, "wgpuCommandEncoderBeginRenderPass")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.commandEncoderClearBuffer, "wgpuCommandEncoderClearBuffer")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.commandEncoderCopyBufferToBuffer,
++              "wgpuCommandEncoderCopyBufferToBuffer")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.commandEncoderCopyBufferToTexture,
++              "wgpuCommandEncoderCopyBufferToTexture")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.commandEncoderCopyTextureToBuffer,
++              "wgpuCommandEncoderCopyTextureToBuffer")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.commandEncoderCopyTextureToTexture,
++              "wgpuCommandEncoderCopyTextureToTexture")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.commandEncoderFinish, "wgpuCommandEncoderFinish")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.commandEncoderInsertDebugMarker, "wgpuCommandEncoderInsertDebugMarker")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.commandEncoderPopDebugGroup, "wgpuCommandEncoderPopDebugGroup")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.commandEncoderPushDebugGroup, "wgpuCommandEncoderPushDebugGroup")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.commandEncoderRelease, "wgpuCommandEncoderRelease")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.commandEncoderResolveQuerySet, "wgpuCommandEncoderResolveQuerySet")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.commandEncoderWriteBuffer, "wgpuCommandEncoderWriteBuffer")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.commandEncoderWriteTimestamp, "wgpuCommandEncoderWriteTimestamp")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.computePassEncoderDispatchWorkgroups,
++              "wgpuComputePassEncoderDispatchWorkgroups")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.computePassEncoderDispatchWorkgroupsIndirect,
++              "wgpuComputePassEncoderDispatchWorkgroupsIndirect")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.computePassEncoderEnd, "wgpuComputePassEncoderEnd")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.computePassEncoderInsertDebugMarker,
++              "wgpuComputePassEncoderInsertDebugMarker")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.computePassEncoderPopDebugGroup, "wgpuComputePassEncoderPopDebugGroup")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.computePassEncoderPushDebugGroup,
++              "wgpuComputePassEncoderPushDebugGroup")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.computePassEncoderSetBindGroup, "wgpuComputePassEncoderSetBindGroup")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.computePassEncoderSetImmediates, "wgpuComputePassEncoderSetImmediates")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.computePassEncoderSetPipeline, "wgpuComputePassEncoderSetPipeline")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.computePassEncoderWriteTimestamp,
++              "wgpuComputePassEncoderWriteTimestamp")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.computePipelineRelease, "wgpuComputePipelineRelease")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.createInstance, "wgpuCreateInstance")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.deviceCreateBindGroup, "wgpuDeviceCreateBindGroup")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.deviceCreateBindGroupLayout, "wgpuDeviceCreateBindGroupLayout")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.deviceCreateBuffer, "wgpuDeviceCreateBuffer")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.deviceCreateCommandEncoder, "wgpuDeviceCreateCommandEncoder")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.deviceCreateComputePipeline, "wgpuDeviceCreateComputePipeline")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.deviceCreateExternalTexture, "wgpuDeviceCreateExternalTexture")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.deviceCreatePipelineLayout, "wgpuDeviceCreatePipelineLayout")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.deviceCreateQuerySet, "wgpuDeviceCreateQuerySet")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.deviceCreateRenderBundleEncoder, "wgpuDeviceCreateRenderBundleEncoder")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.deviceCreateRenderPipeline, "wgpuDeviceCreateRenderPipeline")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.deviceCreateSampler, "wgpuDeviceCreateSampler")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.deviceCreateShaderModule, "wgpuDeviceCreateShaderModule")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.deviceCreateTexture, "wgpuDeviceCreateTexture")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.deviceDestroy, "wgpuDeviceDestroy")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.deviceGetQueue, "wgpuDeviceGetQueue")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.deviceImportSharedFence, "wgpuDeviceImportSharedFence")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.deviceImportSharedTextureMemory, "wgpuDeviceImportSharedTextureMemory")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.deviceRelease, "wgpuDeviceRelease")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.deviceTick, "wgpuDeviceTick")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.externalTextureDestroy, "wgpuExternalTextureDestroy")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.externalTextureRelease, "wgpuExternalTextureRelease")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.getInstanceFeatures, "wgpuGetInstanceFeatures")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.getInstanceLimits, "wgpuGetInstanceLimits")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.instanceCreateSurface, "wgpuInstanceCreateSurface")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.instanceProcessEvents, "wgpuInstanceProcessEvents")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.instanceRelease, "wgpuInstanceRelease")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.instanceRequestAdapter, "wgpuInstanceRequestAdapter")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.instanceWaitAny, "wgpuInstanceWaitAny")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.pipelineLayoutRelease, "wgpuPipelineLayoutRelease")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.querySetDestroy, "wgpuQuerySetDestroy")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.querySetRelease, "wgpuQuerySetRelease")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.queueOnSubmittedWorkDone, "wgpuQueueOnSubmittedWorkDone")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.queueRelease, "wgpuQueueRelease")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.queueSubmit, "wgpuQueueSubmit")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.queueWriteBuffer, "wgpuQueueWriteBuffer")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.queueWriteTexture, "wgpuQueueWriteTexture")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.renderBundleEncoderDraw, "wgpuRenderBundleEncoderDraw")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.renderBundleEncoderDrawIndexed, "wgpuRenderBundleEncoderDrawIndexed")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.renderBundleEncoderDrawIndexedIndirect,
++              "wgpuRenderBundleEncoderDrawIndexedIndirect")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.renderBundleEncoderDrawIndirect, "wgpuRenderBundleEncoderDrawIndirect")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.renderBundleEncoderFinish, "wgpuRenderBundleEncoderFinish")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.renderBundleEncoderInsertDebugMarker,
++              "wgpuRenderBundleEncoderInsertDebugMarker")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.renderBundleEncoderPopDebugGroup,
++              "wgpuRenderBundleEncoderPopDebugGroup")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.renderBundleEncoderPushDebugGroup,
++              "wgpuRenderBundleEncoderPushDebugGroup")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.renderBundleEncoderRelease, "wgpuRenderBundleEncoderRelease")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.renderBundleEncoderSetBindGroup, "wgpuRenderBundleEncoderSetBindGroup")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.renderBundleEncoderSetImmediates,
++              "wgpuRenderBundleEncoderSetImmediates")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.renderBundleEncoderSetIndexBuffer,
++              "wgpuRenderBundleEncoderSetIndexBuffer")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.renderBundleEncoderSetPipeline, "wgpuRenderBundleEncoderSetPipeline")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.renderBundleEncoderSetVertexBuffer,
++              "wgpuRenderBundleEncoderSetVertexBuffer")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.renderBundleRelease, "wgpuRenderBundleRelease")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.renderPassEncoderBeginOcclusionQuery,
++              "wgpuRenderPassEncoderBeginOcclusionQuery")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.renderPassEncoderDraw, "wgpuRenderPassEncoderDraw")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.renderPassEncoderDrawIndexed, "wgpuRenderPassEncoderDrawIndexed")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.renderPassEncoderDrawIndexedIndirect,
++              "wgpuRenderPassEncoderDrawIndexedIndirect")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.renderPassEncoderDrawIndirect, "wgpuRenderPassEncoderDrawIndirect")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.renderPassEncoderEnd, "wgpuRenderPassEncoderEnd")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.renderPassEncoderEndOcclusionQuery,
++              "wgpuRenderPassEncoderEndOcclusionQuery")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.renderPassEncoderExecuteBundles, "wgpuRenderPassEncoderExecuteBundles")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.renderPassEncoderInsertDebugMarker,
++              "wgpuRenderPassEncoderInsertDebugMarker")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.renderPassEncoderPopDebugGroup, "wgpuRenderPassEncoderPopDebugGroup")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.renderPassEncoderPushDebugGroup, "wgpuRenderPassEncoderPushDebugGroup")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.renderPassEncoderSetBindGroup, "wgpuRenderPassEncoderSetBindGroup")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.renderPassEncoderSetBlendConstant,
++              "wgpuRenderPassEncoderSetBlendConstant")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.renderPassEncoderSetImmediates, "wgpuRenderPassEncoderSetImmediates")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.renderPassEncoderSetIndexBuffer, "wgpuRenderPassEncoderSetIndexBuffer")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.renderPassEncoderSetPipeline, "wgpuRenderPassEncoderSetPipeline")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.renderPassEncoderSetScissorRect, "wgpuRenderPassEncoderSetScissorRect")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.renderPassEncoderSetStencilReference,
++              "wgpuRenderPassEncoderSetStencilReference")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.renderPassEncoderSetVertexBuffer,
++              "wgpuRenderPassEncoderSetVertexBuffer")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.renderPassEncoderSetViewport, "wgpuRenderPassEncoderSetViewport")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.renderPassEncoderWriteTimestamp, "wgpuRenderPassEncoderWriteTimestamp")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.renderPipelineRelease, "wgpuRenderPipelineRelease")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.samplerRelease, "wgpuSamplerRelease")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.shaderModuleRelease, "wgpuShaderModuleRelease")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.sharedFenceExportInfo, "wgpuSharedFenceExportInfo")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.sharedFenceRelease, "wgpuSharedFenceRelease")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.sharedFenceSetLabel, "wgpuSharedFenceSetLabel")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.sharedTextureMemoryBeginAccess, "wgpuSharedTextureMemoryBeginAccess")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.sharedTextureMemoryCreateTexture,
++              "wgpuSharedTextureMemoryCreateTexture")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.sharedTextureMemoryEndAccess, "wgpuSharedTextureMemoryEndAccess")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.sharedTextureMemoryGetProperties,
++              "wgpuSharedTextureMemoryGetProperties")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.sharedTextureMemoryRelease, "wgpuSharedTextureMemoryRelease")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.sharedTextureMemorySetLabel, "wgpuSharedTextureMemorySetLabel")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.supportedInstanceFeaturesFreeMembers,
++              "wgpuSupportedInstanceFeaturesFreeMembers")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.surfaceCapabilitiesFreeMembers, "wgpuSurfaceCapabilitiesFreeMembers")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.surfaceConfigure, "wgpuSurfaceConfigure")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.surfaceGetCapabilities, "wgpuSurfaceGetCapabilities")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.surfaceGetCurrentTexture, "wgpuSurfaceGetCurrentTexture")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.surfacePresent, "wgpuSurfacePresent")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.surfaceRelease, "wgpuSurfaceRelease")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.textureCreateView, "wgpuTextureCreateView")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.textureDestroy, "wgpuTextureDestroy")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.textureRelease, "wgpuTextureRelease")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.textureViewRelease, "wgpuTextureViewRelease")) {
++        return false;
++    }
++    return true;
++}
++
+ Backend::~Backend() {
+     if (mInnerInstance) {
+         mDawnProcs.instanceRelease(mInnerInstance);
+@@ -74,6 +554,9 @@ Backend::~Backend() {
+ 
+ std::vector<Ref<PhysicalDeviceBase>> Backend::DiscoverPhysicalDevices(
+     const UnpackedPtr<RequestAdapterOptions>& options) {
++    if (!mInnerInstance) {
++        return {};
++    }
+     // TODO(crbug.com/413053623): Expose Instance::EnumerateAdapters in DawnProcTable
+     // So that we can discover multiple WebGPU physical devices.
+ 
+diff --git a/src/dawn/native/webgpu/BackendWGPU.h b/src/dawn/native/webgpu/BackendWGPU.h
+index 399d42a2e..408cd8c8b 100644
+--- a/src/dawn/native/webgpu/BackendWGPU.h
++++ b/src/dawn/native/webgpu/BackendWGPU.h
+@@ -30,6 +30,7 @@
+ 
+ #include <vector>
+ 
++#include "src/dawn/common/DynamicLib.h"
+ #include "src/dawn/native/BackendConnection.h"
+ 
+ namespace dawn::native::webgpu {
+@@ -48,6 +49,8 @@ class Backend : public BackendConnection {
+     WGPUInstance GetInnerInstance() const;
+ 
+   private:
++    bool LoadDoeWireProcTable();
++    dawn::DynamicLib mExternalRuntimeLib;
+     // The dawn proc table used as the underlying backend. It can be specified when creating the
+     // backend. This is different from the static global gProcTable.
+     DawnProcTable mDawnProcs;
+diff --git a/src/dawn/native/webgpu/DeviceWGPU.cpp b/src/dawn/native/webgpu/DeviceWGPU.cpp
+index 8af48f595..66e850a46 100644
+--- a/src/dawn/native/webgpu/DeviceWGPU.cpp
++++ b/src/dawn/native/webgpu/DeviceWGPU.cpp
+@@ -433,6 +433,7 @@ MaybeError Device::CopyFromStagingToTextureImpl(BufferBase* source,
+ }
+ 
+ MaybeError Device::TickImpl() {
++    wgpu->instanceProcessEvents(GetInnerInstance());
+     wgpu->deviceTick(mInnerHandle);
+     return {};
+ }

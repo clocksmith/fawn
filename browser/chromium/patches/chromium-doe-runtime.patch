@@ -1,0 +1,240 @@
+diff --git a/content/browser/gpu/gpu_process_host.cc b/content/browser/gpu/gpu_process_host.cc
+index 1b29f20028..431f92682f 100644
+--- a/content/browser/gpu/gpu_process_host.cc
++++ b/content/browser/gpu/gpu_process_host.cc
+@@ -329,6 +329,9 @@ static const char* const kSwitchNames[] = {
+     switches::kGpuDriverBugListTestGroup,
+     switches::kGpuWatchdogTimeoutSeconds,
+     switches::kUseCmdDecoder,
++    switches::kUseWebGPURuntime,
++    switches::kDisableWebGPUDoe,
++    switches::kDoeWebGPULibraryPath,
+     switches::kForceVideoOverlays,
+     switches::kSkiaGraphiteDawnBackend,
+ #if BUILDFLAG(IS_ANDROID)
+diff --git a/content/common/gpu_pre_sandbox_hook_linux.cc b/content/common/gpu_pre_sandbox_hook_linux.cc
+index 2e53794fa3..d99d37ca19 100644
+--- a/content/common/gpu_pre_sandbox_hook_linux.cc
++++ b/content/common/gpu_pre_sandbox_hook_linux.cc
+@@ -16,6 +16,7 @@
+ #include <vector>
+ 
+ #include "base/base_paths.h"
++#include "base/command_line.h"
+ #include "base/files/file_enumerator.h"
+ #include "base/files/file_path.h"
+ #include "base/files/scoped_file.h"
+@@ -26,6 +27,7 @@
+ #include "build/build_config.h"
+ #include "build/buildflag.h"
+ #include "content/public/common/content_switches.h"
++#include "gpu/config/gpu_switches.h"
+ #include "media/gpu/buildflags.h"
+ #include "sandbox/linux/bpf_dsl/policy.h"
+ #include "sandbox/linux/syscall_broker/broker_command.h"
+@@ -696,6 +698,23 @@ bool LoadLibrariesForGpu(
+ }
+ 
+ bool GpuPreSandboxHook(sandbox::policy::SandboxLinux::Options options) {
++  const auto* command_line = base::CommandLine::ForCurrentProcess();
++  if (command_line->GetSwitchValueASCII(switches::kUseWebGPURuntime) == "doe" &&
++      !command_line->HasSwitch(switches::kDisableWebGPUDoe)) {
++    const auto library =
++        command_line->GetSwitchValuePath(switches::kDoeWebGPULibraryPath);
++    // Keep the selected provider mapped before the existing filesystem sandbox
++    // starts. RTLD_LOCAL preserves Dawn's independent symbol namespace.
++    void* handle = library.empty()
++                       ? nullptr
++                       : dlopen(library.value().c_str(),
++                                RTLD_NOW | RTLD_LOCAL | RTLD_NODELETE);
++    if (!handle) {
++      LOG(ERROR) << "runtime_artifact_load_failed: " << library.value();
++      return false;
++    }
++    dlclose(handle);
++  }
+   sandbox::policy::SandboxLinux::GetInstance()->StartBrokerProcess(
+       CommandSetForGPU(options), FilePermissionsForGpu(options), options);
+ 
+diff --git a/gpu/command_buffer/service/dawn_instance.cc b/gpu/command_buffer/service/dawn_instance.cc
+index 1b77642ce9..c5bcd0ebdb 100644
+--- a/gpu/command_buffer/service/dawn_instance.cc
++++ b/gpu/command_buffer/service/dawn_instance.cc
+@@ -7,12 +7,14 @@
+ #include <dawn/webgpu_cpp.h>
+ 
+ #include "base/base_paths.h"
++#include "base/command_line.h"
+ #include "base/files/file_path.h"
+ #include "base/path_service.h"
+ #include "base/strings/string_split.h"
+ #include "build/buildflag.h"
+ #include "gpu/config/gpu_finch_features.h"
+ #include "gpu/config/gpu_preferences.h"
++#include "gpu/config/gpu_switches.h"
+ 
+ #if BUILDFLAG(IS_MAC)
+ #include "base/apple/bundle_locations.h"
+@@ -104,6 +106,14 @@ std::unique_ptr<DawnInstance> DawnInstance::Create(
+   }
+   dawn_instance_desc.nextInChain = &dawn_toggle_desc;
+   dawn_instance_desc.platform = platform;
++  const auto* command_line = base::CommandLine::ForCurrentProcess();
++  const bool force_doe =
++      command_line->GetSwitchValueASCII(switches::kUseWebGPURuntime) == "doe";
++  const std::string doe_library_path =
++      command_line->GetSwitchValuePath(switches::kDoeWebGPULibraryPath)
++          .AsUTF8Unsafe();
++  dawn_instance_desc.webgpuExternalRuntimeRequired = force_doe;
++  dawn_instance_desc.webgpuExternalRuntimeLibraryPath = doe_library_path;
+ 
+   std::string_view dawn_search_path_view = dawn_search_path;
+   if (!dawn_search_path.empty()) {
+diff --git a/gpu/command_buffer/service/webgpu_decoder_impl.cc b/gpu/command_buffer/service/webgpu_decoder_impl.cc
+index 6030a9f57c..f6a24bcc8b 100644
+--- a/gpu/command_buffer/service/webgpu_decoder_impl.cc
++++ b/gpu/command_buffer/service/webgpu_decoder_impl.cc
+@@ -13,6 +13,7 @@
+ 
+ #include "base/auto_reset.h"
+ #include "base/bits.h"
++#include "base/command_line.h"
+ #include "base/compiler_specific.h"
+ #include "base/feature_list.h"
+ #include "base/logging.h"
+@@ -53,6 +54,7 @@
+ #include "gpu/config/gpu_feature_info.h"
+ #include "gpu/config/gpu_finch_features.h"
+ #include "gpu/config/gpu_preferences.h"
++#include "gpu/config/gpu_switches.h"
+ #include "gpu/config/webgpu_blocklist_impl.h"
+ #include "gpu/webgpu/callback.h"
+ #include "third_party/blink/public/common/tokens/tokens.h"
+@@ -233,6 +235,11 @@ class WebGPUDecoderImpl final : public WebGPUDecoder {
+       return;
+     }
+ 
++    if (use_doe_runtime_) {
++      for (const auto& entry : known_device_metadata_) {
++        dawn::native::DeviceTick(entry.first.Get());
++      }
++    }
+     has_polling_work_ =
+         dawn::native::InstanceProcessEvents(dawn_instance_->Get());
+ 
+@@ -435,6 +442,9 @@ class WebGPUDecoderImpl final : public WebGPUDecoder {
+   std::unique_ptr<DawnServiceMemoryTransferService> memory_transfer_service_;
+ 
+   webgpu::SafetyLevel safety_level_ = webgpu::SafetyLevel::kSafe;
++  bool use_doe_runtime_ =
++      base::CommandLine::ForCurrentProcess()->GetSwitchValueASCII(
++          switches::kUseWebGPURuntime) == "doe";
+   WebGPUAdapterName use_webgpu_adapter_ = WebGPUAdapterName::kDefault;
+   WebGPUPowerPreference use_webgpu_power_preference_ =
+       WebGPUPowerPreference::kNone;
+@@ -1666,10 +1676,15 @@ wgpu::Adapter WebGPUDecoderImpl::CreatePreferredAdapter(
+     bool force_fallback,
+     wgpu::FeatureLevel feature_level,
+     bool webgpu_on_vk_gl_interop) const {
++  if (use_doe_runtime_ &&
++      (force_fallback || base::CommandLine::ForCurrentProcess()->HasSwitch(
++                             switches::kDisableWebGPUDoe))) {
++    return nullptr;
++  }
+   // The fallback adapter is SwiftShader, which is only allowed with
+   // --enable-unsafe-webgpu. Don't make Dawn load it otherwise.
+   const bool allow_fallback_adapter =
+-      safety_level_ == webgpu::SafetyLevel::kUnsafe;
++      !use_doe_runtime_ && safety_level_ == webgpu::SafetyLevel::kUnsafe;
+   if (force_fallback && !allow_fallback_adapter) {
+     return nullptr;
+   }
+@@ -1732,6 +1747,10 @@ wgpu::Adapter WebGPUDecoderImpl::CreatePreferredAdapter(
+   dawn_adapter_toggles.disabledToggleCount =
+       require_adapter_disabled_toggles.size();
+   ChainStruct(adapter_options, &dawn_adapter_toggles);
++  wgpu::RequestAdapterWebGPUBackendOptions doe_backend_options;
++  if (use_doe_runtime_) {
++    ChainStruct(adapter_options, &doe_backend_options);
++  }
+ 
+ #if BUILDFLAG(IS_WIN)
+   // On Windows, query the LUID of ANGLE's adapter.
+@@ -1817,7 +1836,17 @@ wgpu::Adapter WebGPUDecoderImpl::CreatePreferredAdapter(
+     wgpu::AdapterInfo adapter_info = {};
+     adapter.GetInfo(&adapter_info);
+ 
+-    if (use_blocklist() && IsWebGPUAdapterBlocklisted(adapter).blocked) {
++    const auto denylist = IsWebGPUAdapterBlocklisted(adapter);
++    if (use_blocklist() && denylist.blocked) {
++      if (use_doe_runtime_) {
++        LOG(ERROR) << "profile_denylisted adapter_denylist_detail vendor_id="
++                   << adapter_info.vendorID
++                   << " device_id=" << adapter_info.deviceID << " backend_type="
++                   << static_cast<uint32_t>(adapter_info.backendType)
++                   << " adapter_type="
++                   << static_cast<uint32_t>(adapter_info.adapterType)
++                   << " blocklist_reason=" << denylist.reason;
++      }
+       return false;
+     }
+ 
+@@ -1859,7 +1888,7 @@ wgpu::Adapter WebGPUDecoderImpl::CreatePreferredAdapter(
+     // SharedTextureMemory.
+     supports_external_textures = native_adapter.SupportsExternalImages();
+ #endif
+-    if (!(supports_external_textures || is_swiftshader)) {
++    if (!(supports_external_textures || is_swiftshader || use_doe_runtime_)) {
+       return false;
+     }
+ 
+@@ -2246,7 +2275,7 @@ error::Error WebGPUDecoderImpl::HandleAssociateMailboxImmediate(
+   std::unique_ptr<SharedImageRepresentationAndAccess> representation_and_access;
+   auto it = known_device_metadata_.find(device);
+   CHECK(it != known_device_metadata_.end());
+-  if (it->second.adapterType == wgpu::AdapterType::CPU) {
++  if (it->second.adapterType == wgpu::AdapterType::CPU || use_doe_runtime_) {
+     representation_and_access = AssociateMailboxUsingSkiaFallback(
+         mailbox, flags, device, usage, internal_usage, std::move(view_formats));
+   } else {
+@@ -2348,6 +2377,10 @@ WebGPUDecoderImpl::AssociateMailboxDawnBuffer(const Mailbox& mailbox,
+                                               const wgpu::Device& device,
+                                               wgpu::BackendType backendType,
+                                               wgpu::BufferUsage usage) {
++  if (use_doe_runtime_) {
++    LOG(ERROR) << "doe_shared_buffer_unsupported";
++    return nullptr;
++  }
+   std::unique_ptr<DawnBufferRepresentation> shared_buffer =
+       shared_image_representation_factory_->ProduceDawnBuffer(
+           mailbox, device, backendType, shared_context_state_);
+diff --git a/gpu/config/gpu_switches.cc b/gpu/config/gpu_switches.cc
+index 018cc8be85..e263a3b6df 100644
+--- a/gpu/config/gpu_switches.cc
++++ b/gpu/config/gpu_switches.cc
+@@ -6,6 +6,10 @@
+ 
+ namespace switches {
+ 
++const char kUseWebGPURuntime[] = "use-webgpu-runtime";
++const char kDisableWebGPUDoe[] = "disable-webgpu-doe";
++const char kDoeWebGPULibraryPath[] = "doe-webgpu-library-path";
++
+ // Passes the number of recent GPU crashes to the GPU process.
+ const char kGpuRecentCrashCount[] = "gpu-recent-crash-count";
+ 
+diff --git a/gpu/config/gpu_switches.h b/gpu/config/gpu_switches.h
+index c4aa207273..bf1bb60efb 100644
+--- a/gpu/config/gpu_switches.h
++++ b/gpu/config/gpu_switches.h
+@@ -9,6 +9,10 @@
+ 
+ namespace switches {
+ 
++GPU_CONFIG_EXPORT extern const char kUseWebGPURuntime[];
++GPU_CONFIG_EXPORT extern const char kDisableWebGPUDoe[];
++GPU_CONFIG_EXPORT extern const char kDoeWebGPULibraryPath[];
++
+ GPU_CONFIG_EXPORT extern const char kGpuRecentCrashCount[];
+ GPU_CONFIG_EXPORT extern const char kDisableGpuRasterization[];
+ GPU_CONFIG_EXPORT extern const char kDisableMipmapGeneration[];
