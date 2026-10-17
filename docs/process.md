@@ -770,6 +770,35 @@ If a refactor intentionally tightens or changes a contract, its receipt must
 classify that delta separately from preserved cases. Compatibility facades
 remain only while an exercised consumer requires them.
 
+### Language and cleanup evaluation
+
+For each cleanup, distinguish net production lines removed from test, generated,
+documentation, and tooling changes. Report duplicate decisions eliminated,
+production helper call sites, added indirection, preserved outputs and first
+failure boundaries, fault cases exercised, focused checks, and full gates run
+or not run. Share mechanics within the owning repository only where trust,
+ownership, and failure semantics match; keep caller policy at its owner.
+
+When evaluating a language or abstraction choice, use representative changes
+under the same frozen behavioral contracts. Record the task, revisions,
+toolchain, host, check scope, and observation window alongside:
+
+- Median elapsed time from agent task start to a passing patch, with build/test
+  time and blocked time distinguished; files touched per change.
+- Clean/incremental build and focused-test latency, regressions, and ownership
+  or cleanup defects, with sample counts and exposure denominators.
+- Upstream integration and rebase work, binary size, allocation behavior,
+  submission/synchronization costs, and runtime overhead on the affected path.
+- Confirmed review findings caught mechanically before review divided by all
+  confirmed findings, with unmeasured categories left explicit.
+
+Use existing review records and build-measurement artifacts; do not create a
+parallel score registry or turn these observations into automatic promotion.
+A scoped C or C++ comparison may justify reconsidering Zig when it improves
+these measures without weakening contracts. This is an evaluation rule, not a
+new rewrite or benchmark campaign. Ordinary cleanup runs only the focused
+checks its changed behavior requires; uncollected measurements stay unclaimed.
+
 ## Debug and trace law
 
 - Diagnostics observe execution; they do not silently select different

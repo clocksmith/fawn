@@ -258,7 +258,9 @@ baseline on `main` to enforce history preservation.
 
 Read the guide for the surface you edit:
 
-- Zig: [`runtime/zig/STYLE.md`](runtime/zig/STYLE.md)
+- Zig: [`runtime/zig/STYLE.md`](runtime/zig/STYLE.md), including its restricted
+  implementation subset and cleanup-to-rule feedback loop
+- Native C/C++ adapters: [`runtime/zig/STYLE.md#native-adapter-subset`](runtime/zig/STYLE.md#native-adapter-subset)
 - JavaScript: [`packages/doe-gpu/STYLE.md`](packages/doe-gpu/STYLE.md)
 - JSON/config: [`config/STYLE.md`](config/STYLE.md)
 - Python: [`bench/STYLE.md`](bench/STYLE.md)
