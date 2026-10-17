@@ -22,6 +22,21 @@ meet this bar. Doe has promising execution evidence and Fawn has scoped workspac
 advantages; neither has achieved the objective. [Three proofs](docs/thesis.md#three-proofs)
 select the current work.
 
+## Technical proof sequence
+
+Vulkan application win → frozen Vulkan checkpoint → separate Metal confirmation
+campaign → Doe-owned webpage execution in Fawn → durable integrated Fawn workflow
+→ external retention. Engineering simplification is a continuous constraint on
+every campaign, not a later phase. Doe must become easier to improve while
+simultaneously becoming harder to replace.
+
+Fawn is the controlled Chromium proving environment; GPU ownership and useful
+durable work have distinct gates. Existing standalone workspace qualification
+remains valid in its recorded scope. It neither qualifies Doe's webpage execution
+nor skips the integrated sequence. External retention is the final adoption gate,
+not a prerequisite for technical qualification. This sequence does not relabel
+historical results or relax frozen campaign criteria.
+
 ## Acceptance hierarchy
 
 1. **Beat Dawn for unchanged WebGPU applications.** Qualify inference and
@@ -31,10 +46,14 @@ select the current work.
    no fallback under frozen workload contracts.
 2. **Own page WebGPU inside Chromium.** Real webpage device creation through
    destruction must be Doe-owned. Compare stock Chromium+Dawn with forced-Doe
-   Chromium using ordinary applications unchanged, including presentation,
-   cancellation, device loss, cleanup, and security behavior. Keep forced provider
-   selection observable and reject fallback. Native benchmarks alone cannot
-   establish a dependable working browser replacement.
+   Chromium using ordinary applications unchanged, including compute and
+   presentation, callbacks and futures, cancellation, device loss, resource
+   settlement, browser shutdown, and security behavior. Keep forced provider
+   selection observable, reject fallback, and demonstrate explicit rollback to
+   Dawn. Every object remains bound to its creating provider; existing Dawn
+   objects must never silently become Doe objects. Native benchmarks alone cannot
+   establish a dependable working browser replacement. Doe owns GPU execution
+   and diagnostics, not browser UI or agent policy.
 3. **Expand into Chromium's wider GPU paths.** Trace the real execution path
    before selecting Graphite/Skia rasterization and compositing, CSS filters and
    backdrop filters, Canvas 2D, SVG, scrolling or video overlays. Each integration
@@ -67,11 +86,12 @@ requirements; `fawnWorkspace` in the [strategy contract](config/doe-product-stra
 binds its acceptance steps to admitted evidence. These are intended outcomes, not
 implemented service claims.
 
-The immediate product target is one useful durable workflow with ownership,
-interruption recovery, and explicit uncertain outcomes. Compare the complete task
-against competent stock Chromium automation, then establish an external user who
-keeps the replacement enabled. Fixture qualification and internal use do not
-establish retained external adoption.
+After Doe-owned webpage execution passes its gate, the integrated product target
+is one useful durable workflow with ownership and task state preserved across
+interruption. Display uncertain and failed outcomes honestly. Require a material
+complete-task advantage over competent stock Chromium automation on a frozen user
+task, then establish an external user who keeps the replacement enabled. Fixture
+qualification and internal use do not establish retained external adoption.
 
 The independent compiler and runtime retain these outcomes:
 
@@ -79,11 +99,16 @@ The independent compiler and runtime retain these outcomes:
    provider without changing its shaders, models, inputs, application logic, or
    declared numerical requirements. Remove unnecessary preparation, transfers,
    synchronization, and memory overhead; earn the result in complete operations.
-   Finish one matched Vulkan application comparison against Dawn, then confirm
-   on Metal, preserving shaders, outputs, and lifecycle requirements. Establish
-   a material benefit in complete application latency, memory use, or reliability
-   so reverting makes the application measurably worse. This first win does not waive
-   the frozen comparison criteria or the broader acceptance hierarchy.
+   Finish one Vulkan application win against a source-matched Dawn control,
+   preserving the application, shaders, outputs, numerical requirements,
+   cancellation, and cleanup. Accept a material benefit in complete application
+   latency, memory use, CPU cost, or reliability; an internal counter improvement
+   alone is insufficient. Reverting the provider must make the unchanged
+   application materially worse. Freeze the accepted Vulkan checkpoint, then
+   conduct Metal confirmation as a separate campaign. The same optimization need
+   not win on both: shared compiler semantics transfer where valid, while backend
+   resource and synchronization improvements may differ. This first win does not
+   waive frozen comparison criteria or the broader acceptance hierarchy.
    WebGPU application graphics belongs in the required win set alongside
    compute: scenes, games, CAD, maps, particles, fluids, image and video effects,
    charts, simulations, canvas presentation, and GPU-driven interfaces when
@@ -117,9 +142,13 @@ The independent compiler and runtime retain these outcomes:
 8. **Exceptional implementation quality.** Keep compiler, object, and backend
    boundaries readable and independently testable. Consolidate duplicated code
    and contradictory guidance, remove proven dead paths, and shorten targeted
-   verification without weakening safety coverage. Measure clean builds,
-   incremental checks, agent reproduction-to-verified-improvement time, and
-   Chromium rebasing under the [evaluation rules](docs/process.md#language-and-cleanup-evaluation).
+   verification without weakening safety coverage. Every campaign must improve
+   or preserve engineering friction under the
+   [evaluation rules](docs/process.md#language-and-cleanup-evaluation), including
+   owner discovery, decisive tests, clean/incremental builds, agent iteration,
+   inspection burden, rebasing, and regression escape rate. Keep one authoritative
+   rule source; test reduction must preserve semantic, ownership, callback,
+   recovery, and physical-execution defect detection.
    The maintainability acceptance above is mandatory for the Chromium foundation.
    Zig enables engineering discipline; choosing it is not itself a product advantage.
 
@@ -148,16 +177,20 @@ The independent compiler and runtime retain these outcomes:
 - Hardware and application impartiality: use the same compiler/runtime across
   applications and vendors. Establish wins in both compute and WebGPU application
   graphics before expanding into wider browser rendering. CSS, text, SVG,
-  Canvas 2D, video composition, rasterization and page compositing need separate
-  integration and measured benefit on their actual execution paths. Replacing
+  Canvas 2D, WebGL-on-WebGPU, video composition, rasterization and page compositing
+  need separate integration and measured benefit on their actual execution paths. Replacing
   page WebGPU does not establish those benefits. Collaborating products receive
   no private provider preference.
 - Adoption: supporting-feature value, receipts, internal benchmarks, and sibling
   integrations do not establish independent adoption or retained use.
 - New experiments: bound [implementation-language comparisons](docs/architecture.md#language-evaluation-by-layer--proposed-investigation)
-  to one real compiler pass and one native lifecycle, preserving their semantic,
-  ownership, failure, and completion requirements. Evaluate preparation before
-  repeated execution within those same cases. Keep
+  to one compiler pass through parsing, IR, and emission, and one asynchronous
+  native device/resource lifecycle. Compare retained Zig with disciplined C++
+  and Rust; C remains eligible. The [language assessment](docs/implementation-language-assessment.md)
+  keeps high-level compiler/preparation references eligible within the same case,
+  without selecting them for the native execution core. Preserve semantic,
+  ownership, failure, and completion requirements; measure gains against migration
+  risk before any rewrite. Keep
   [Python browser scripting](docs/python-browser-scripting-incubation.md) as
   documentation-only incubation. These proposals do not authorize a rewrite or
   displace current proofs; wider rendering remains gated on the existing WebGPU

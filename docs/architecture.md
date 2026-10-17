@@ -292,94 +292,55 @@ preserving the same contracts; theoretical simplicity does not justify a rewrite
 
 #### Language evaluation by layer — proposed investigation
 
-A Python-heavy or JavaScript-heavy implementation is technically plausible;
-sophisticated planning could happen before the latency-sensitive execution loop.
-Evaluate that possibility by layer. This is a recorded investigation proposal,
-not an authorized rewrite, benchmark campaign, or change to the current Zig core,
-component owners, or [GPU priorities](../GOALS.md#acceptance-hierarchy). It is
-separate from [Python scripting inside browser pages](python-browser-scripting-incubation.md).
+The [implementation-language assessment](implementation-language-assessment.md)
+separates capabilities, project evidence, and engineering judgments. It does not
+establish a universally best language or authorize a rewrite. Retain the Zig
+core while comparing disciplined C++ and Rust as native challengers; C remains
+eligible for the bounded lifecycle and small adapters. Chromium integration keeps
+its narrow native boundary. Supported upstream Rust integration is an option to
+evaluate, not an acceptance commitment.
 
-**Python.** Parsing, intermediate representations, optimization passes, target-plan
-construction, tooling, and substantial GPU orchestration are candidates, not just
-thin wrappers. tinygrad's [compiler pipeline](https://docs.tinygrad.org/developer/layout/)
-and [Python runtime machinery](https://docs.tinygrad.org/developer/runtime/),
-including device and allocation management, establish a concrete precedent;
-they do not establish Doe performance or compatibility. Measure CPU-heavy graph
-traversal, object allocation, startup, packaging, and frequent native-boundary
-calls. The [Python/C API](https://docs.python.org/3/c-api/index.html) and
-[buffer protocol](https://docs.python.org/3/c-api/buffer.html) provide integration
-mechanisms; copying, synchronization, and ownership depend on the actual binding
-and resource lifetimes, not the presence of a buffer interface.
+Python and JavaScript/TypeScript remain credible compiler, preparation, and
+orchestration candidates, beyond thin wrappers. Python is useful for browser
+orchestration, evidence analysis, and experimental tooling; it is not selected
+for the native execution core. Dart, Java, and Kotlin remain eligible for offline
+work without selecting a ten-language campaign. This assessment is separate from
+[Python browser scripting incubation](python-browser-scripting-incubation.md).
 
-**JavaScript/TypeScript.** Browser-facing tools, Fawn workflows, Doppler
-integration, manifest processing, and interactive compiler inspection are
-candidates. Shared types, tracing, and test infrastructure might reduce
-duplication; that benefit remains to be measured. A native Node addon can expose
-GPU operations through [Node-API](https://nodejs.org/api/n-api.html). Browser
-JavaScript can use browser-provided WebGPU, but that does not itself replace Dawn
-underneath Chromium or prove Doe owns page execution. Measure garbage collection,
-object churn, JIT warmup, and native-boundary costs. TypeScript's source-level
-types do not remove those runtime costs.
+If separately selected, bound implementation comparisons to two cases:
 
-**Zig.** Its strongest architectural case is the native execution core: explicit
-data layouts, allocation, resource lifetimes, driver calls, and embedding without
-adding a Python or JavaScript runtime dependency. The
-[language documentation](https://ziglang.org/documentation/master/#Memory)
-describes explicit memory and ownership responsibilities. Managing those details,
-build cost, and contributor friction are engineering costs to measure. Choosing
-Zig proves neither a simpler implementation nor faster execution.
+1. **One compiler pass**, exercised through parsing, intermediate representation,
+   and emission. Compare native candidates under the same semantic contract,
+   independent oracle, and invalid-input diagnostics. A high-level reference or
+   preparation implementation uses this same case, not a new compiler project.
+2. **One asynchronous device/resource lifecycle**, covering creation, submission,
+   callbacks/futures, cancellation, device loss, settlement, and cleanup. Use the
+   same backend, shaders, inputs, dispatches, and completion requirements. Tiny
+   repeated dispatches and large batches are workload sizes within that case.
+   Host ownership mechanisms must not substitute for established GPU completion.
 
-Using the customer's language could let contributors inspect and modify more of
-the stack, reuse libraries and debugging tools, and avoid learning another
-ecosystem. This could matter for agent-driven iteration; verify it with real
-changes rather than treating familiarity as proof. Keep three identities distinct:
+Measure agent implementation and verified-change time, clean/incremental builds,
+debugging effort, code clarity, failure handling, integration friction, binary
+size, memory, and runtime under the existing
+[language evaluation rules](process.md#language-and-cleanup-evaluation). Separate
+cold startup, preparation, warm host overhead, transfers, and completed GPU work.
+A submission-only timer cannot establish application latency. Use representative
+maintainable implementations; neither intentionally complicated C++ nor an
+unsafe stripped-down lifecycle is a valid comparison.
 
-- The application's language, such as Python or JavaScript.
-- The language implementing Doe's compiler and runtime.
-- WGSL and the native GPU programs Doe compiles and executes.
+Within those same cases, test the preparation/execution hypothesis: Python or
+TypeScript produces a validated, versioned plan; the native core validates and
+loads it, then owns device objects and latency-sensitive execution. This extends
+[reusable compute programs](reusable-compute-programs.md), not their authority or
+existing manifest contract. Preserve shader/compiler/device identity, invalidation,
+resource lifetimes, and completion. Changing invocation state still requires
+validation. Count serialization, schemas, bindings, duplicated decisions, deployment,
+and debugging across all layers before claiming reduced complexity.
 
-Matching the first two does not make GPU work execute in that language. A
-Python-written WGSL compiler compiles a different language; that alone is not
-self-hosting.
-
-If separately selected, bound the comparison to one real compiler pass and one
-native lifecycle under the [goals](../GOALS.md#strategic-constraints) and existing
-[language evaluation rules](process.md#language-and-cleanup-evaluation). Use
-those same cases for three measurements:
-
-1. **Client overhead:** Zig, Python, and JavaScript clients use the same native
-   backend, shaders, input data, dispatches, and completion semantics. Include
-   tiny repeated dispatches and large batched work within the selected lifecycle:
-   creation, submission, cancellation, device loss, and cleanup retain the same
-   ownership and failure requirements. Report cold startup, warm
-   host overhead, transfers, and completed GPU work separately; a submission-only
-   timer cannot stand in for execution latency.
-2. **Compiler work:** implement the selected real pass in all three languages
-   under the same semantic contract and independent correctness oracle. Compare
-   compilation/planning time, memory, code complexity, clean/incremental build
-   time, and time to make a verified change. Preserve invalid-input diagnostics
-   and failure behavior alongside successful outputs.
-3. **Preparation before execution:** Python or JavaScript constructs a validated
-   execution plan/manifest; a small native core validates and loads it, then owns
-   latency-sensitive execution. Reuse the selected pass and lifecycle rather
-   than adding another workload. Compare preparation, loading, and repeated
-   execution separately against the current path. Preserve expressive source
-   while testing whether interpreter decisions can leave repeated execution.
-
-The third experiment extends the separation in
-[reusable compute programs](reusable-compute-programs.md); it does not establish
-a new manifest contract. Plans must retain shader/compiler/device identity,
-invalidation, resource ownership, and completion obligations. Precomputation
-cannot remove checks whose preconditions depend on changing invocation state.
-Count serialization, validation, bindings, duplicated decisions, deployment,
-and debugging across the entire design: moving complexity into another layer
-is not evidence of reducing it.
-
-The preferred investigation is this preparation/execution split before a
-wholesale rewrite: seriously test Python for preparation/compiler work,
-JavaScript for shared orchestration/tooling, and Zig for the low-level runtime.
-Allow the result to differ by layer. No comparative advantage is established
-until representative correctness, maintenance, and runtime evidence supports it.
+Allow the outcome to differ by responsibility. Migration requires a measured
+benefit large enough to repay migration risk while preserving the same contracts.
+No comparative result is established here; the current
+[proof sequence](../GOALS.md#technical-proof-sequence) remains the priority.
 
 ### Reuse and completion obligations
 

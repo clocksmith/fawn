@@ -36,6 +36,8 @@ of repeated prose does not delete them.
   DoeProof-versus-DoeRuntime attribution, operational trust, ownership cost,
   application tiers, and expansion admission
 - [`architecture.md`](architecture.md#technical-diagrams): compiler/runtime ownership, native submission, prepared-resource lifetimes, and system surfaces
+- [`implementation-language-assessment.md`](implementation-language-assessment.md):
+  candidate tradeoffs and preparation/execution hypothesis; not a migration decision
 - [`implementation-peers.md`](implementation-peers.md): generated implementation
   inventory, compiler identities, provider IDs and tracking pointers
 - [`process.md`](process.md): stage, gate, and release law
