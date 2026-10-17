@@ -15,6 +15,15 @@ from typing import Any
 
 import jsonschema
 
+try:
+    from bench.tools._repo_import import ensure_repo_root
+except ModuleNotFoundError:
+    from _repo_import import ensure_repo_root
+
+ensure_repo_root(__file__)
+
+from bench.lib.receipt_validation import load_json, failure, safe_repo_path  # noqa: E402
+
 ROOT = Path(__file__).resolve().parents[2]
 
 REQUIRED_BACKENDS = {"doe_metal", "doe_vulkan", "doe_d3d12"}
@@ -52,27 +61,11 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def load_json(path: Path) -> dict[str, Any]:
-    payload = json.loads(path.read_text(encoding="utf-8"))
-    if not isinstance(payload, dict):
-        raise ValueError(f"expected JSON object: {path}")
-    return payload
-
-
-def failure(code: str, path: str, message: str) -> dict[str, str]:
-    return {"code": code, "path": path, "message": message}
-
-
 def resolve_path(path_text: str, root: Path | None) -> Path:
     path = Path(path_text)
     if path.is_absolute() or root is None:
         return path
     return root / path
-
-
-def safe_repo_path(path_text: str) -> bool:
-    path = PurePosixPath(path_text)
-    return bool(path_text) and not path.is_absolute() and ".." not in path.parts
 
 
 def is_example(path_text: str) -> bool:

@@ -10,9 +10,17 @@ import sys
 from pathlib import Path
 from typing import Any
 
+try:
+    from bench.tools._repo_import import ensure_repo_root
+except ModuleNotFoundError:
+    from _repo_import import ensure_repo_root
+
+REPO_ROOT = ensure_repo_root(__file__)
+
+from bench.lib.receipt_validation import load_json, failure  # noqa: E402
+
 
 VALID_MODES = {"dawn", "doe", "auto"}
-REPO_ROOT = Path(__file__).resolve().parents[2]
 
 
 def parse_args() -> argparse.Namespace:
@@ -22,13 +30,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--receipt-id", default="")
     parser.add_argument("--out", required=True, help="Output browser claim promotion receipt JSON.")
     return parser.parse_args()
-
-
-def load_json(path: Path) -> dict[str, Any]:
-    payload = json.loads(path.read_text(encoding="utf-8"))
-    if not isinstance(payload, dict):
-        raise ValueError(f"expected JSON object: {path}")
-    return payload
 
 
 def sha256_file(path: Path) -> str:
@@ -46,10 +47,6 @@ def repo_relative(path: Path) -> str:
 def stable_hash(payload: Any) -> str:
     encoded = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
     return hashlib.sha256(encoded).hexdigest()
-
-
-def failure(code: str, path: str, message: str) -> dict[str, str]:
-    return {"code": code, "path": path, "message": message}
 
 
 def runtime_selection_mode(selection: dict[str, Any]) -> str:

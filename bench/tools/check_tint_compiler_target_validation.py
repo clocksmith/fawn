@@ -17,6 +17,8 @@ except ModuleNotFoundError:
 
 ensure_repo_root(__file__)
 
+from bench.lib.receipt_validation import load_json, failure  # noqa: E402
+
 from bench.lib.bench_utils import unsafe_repo_path_reason  # noqa: E402
 
 
@@ -59,13 +61,6 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def load_json(path: Path) -> dict[str, Any]:
-    payload = json.loads(path.read_text(encoding="utf-8"))
-    if not isinstance(payload, dict):
-        raise ValueError(f"expected JSON object: {path}")
-    return payload
-
-
 def file_sha256(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as handle:
@@ -76,10 +71,6 @@ def file_sha256(path: Path) -> str:
 
 def is_sha256(value: Any) -> bool:
     return isinstance(value, str) and len(value) == 64 and all(char in VALID_HEX for char in value)
-
-
-def failure(code: str, path: str, message: str) -> dict[str, str]:
-    return {"code": code, "path": path, "message": message}
 
 
 def resolve_path(path_text: str, verify_files_root: Path | None) -> Path:

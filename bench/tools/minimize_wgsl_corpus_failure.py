@@ -12,8 +12,17 @@ from pathlib import Path
 from pathlib import PurePosixPath
 from typing import Any
 
+try:
+    from bench.tools._repo_import import ensure_repo_root
+except ModuleNotFoundError:
+    from _repo_import import ensure_repo_root
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
+REPO_ROOT = ensure_repo_root(__file__)
+
+from bench.lib.receipt_validation import load_json, safe_repo_path  # noqa: E402
+from bench.lib.wgsl_source import normalize_source  # noqa: E402
+
+
 VALID_BACKENDS = {"msl", "spirv", "dxil", "hlsl"}
 
 
@@ -33,27 +42,8 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def load_json(path: Path) -> dict[str, Any]:
-    payload = json.loads(path.read_text(encoding="utf-8"))
-    if not isinstance(payload, dict):
-        raise ValueError(f"expected JSON object: {path}")
-    return payload
-
-
-def normalize_source(text: str) -> str:
-    normalized = text.replace("\r\n", "\n").replace("\r", "\n")
-    if not normalized.endswith("\n"):
-        normalized += "\n"
-    return normalized
-
-
 def normalized_sha256_text(text: str) -> str:
     return hashlib.sha256(normalize_source(text).encode("utf-8")).hexdigest()
-
-
-def safe_repo_path(path_text: str) -> bool:
-    path = PurePosixPath(path_text)
-    return bool(path_text) and not path.is_absolute() and ".." not in path.parts
 
 
 def resolve_repo_path(repo_root: Path, path_text: str) -> Path:

@@ -16,6 +16,8 @@ except ModuleNotFoundError:
 
 ensure_repo_root(__file__)
 
+from bench.lib.receipt_validation import load_json, failure  # noqa: E402
+
 
 VALID_TARGETS = {"msl", "spirv", "dxil", "hlsl"}
 REQUIRED_BENCHMARK_SCOPES = ("parseWgsl", "validateIr", "generateBackend")
@@ -37,17 +39,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--out", default="", help="Optional output receipt path.")
     parser.add_argument("--json", action="store_true", dest="emit_json")
     return parser.parse_args()
-
-
-def load_json(path: Path) -> dict[str, Any]:
-    payload = json.loads(path.read_text(encoding="utf-8"))
-    if not isinstance(payload, dict):
-        raise ValueError(f"expected JSON object: {path}")
-    return payload
-
-
-def failure(code: str, path: str, message: str) -> dict[str, str]:
-    return {"code": code, "path": path, "message": message}
 
 
 def normalize_required_targets(required_targets: list[str]) -> tuple[list[str], list[dict[str, str]]]:

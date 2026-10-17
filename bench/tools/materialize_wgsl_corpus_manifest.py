@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import re
 import sys
@@ -12,8 +11,17 @@ from pathlib import Path
 from pathlib import PurePosixPath
 from typing import Any
 
+try:
+    from bench.tools._repo_import import ensure_repo_root
+except ModuleNotFoundError:
+    from _repo_import import ensure_repo_root
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
+REPO_ROOT = ensure_repo_root(__file__)
+
+from bench.lib.receipt_validation import load_json, failure, safe_repo_path  # noqa: E402
+from bench.lib.wgsl_source import normalize_source, normalized_sha256  # noqa: E402
+
+
 REQUIRED_CATEGORIES = {
     "browser_shader",
     "canvas_workload",
@@ -30,33 +38,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--out-dir", required=True, help="Directory for normalized WGSL files.")
     parser.add_argument("--receipt-out", help="Optional materialization receipt path.")
     return parser.parse_args()
-
-
-def load_json(path: Path) -> dict[str, Any]:
-    payload = json.loads(path.read_text(encoding="utf-8"))
-    if not isinstance(payload, dict):
-        raise ValueError(f"expected JSON object: {path}")
-    return payload
-
-
-def normalize_source(text: str) -> str:
-    normalized = text.replace("\r\n", "\n").replace("\r", "\n")
-    if not normalized.endswith("\n"):
-        normalized += "\n"
-    return normalized
-
-
-def normalized_sha256(path: Path) -> str:
-    return hashlib.sha256(normalize_source(path.read_text(encoding="utf-8")).encode("utf-8")).hexdigest()
-
-
-def failure(code: str, path: str, message: str) -> dict[str, str]:
-    return {"code": code, "path": path, "message": message}
-
-
-def safe_repo_path(path_text: str) -> bool:
-    path = PurePosixPath(path_text)
-    return bool(path_text) and not path.is_absolute() and ".." not in path.parts
 
 
 def resolve_repo_path(repo_root: Path, path_text: str) -> Path:
