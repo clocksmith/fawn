@@ -31,10 +31,13 @@ The [workspace contract](fawn-workspace-contract.md) defines acceptance,
 binds each step's assessment to admitted evidence, and
 [status](status/fawn-workspace.md) records what is established.
 
-Fawn acceptance does not wait for native runtime wins. Fawn must show why
-someone would choose it, and DoeRuntime why someone would replace Dawn; neither
-result depends on the other. Add Chromium hooks and browser-runtime integration
-only when measured benefits justify their compatibility and maintenance costs.
+Standalone workspace qualification does not inherit or require native runtime
+wins; its recorded evidence retains that scope. The integrated product follows
+the [technical proof sequence](../GOALS.md#technical-proof-sequence): establish
+Doe-owned webpage execution before qualifying a durable workflow on that
+foundation, then establish external retention. Fawn task value and Doe provider
+value remain distinct gates. Chromium hooks and browser-runtime integration
+still require measured benefits that justify compatibility and maintenance costs.
 Doppler retains model semantics; independently qualified DoeRuntime integration
 serves workflows where useful. Neither browser hooks nor runtime replacement
 defines the integrated product.
@@ -96,7 +99,9 @@ the full Chromium foundation hierarchy or its maintainability requirements.
    audit every result at or above the suspicious-speedup ratio in
    [the methodology thresholds](../config/benchmark-methodology-thresholds.json),
    and fix or explain the ONNX Runtime tail regression. Historical artifacts in
-   ignored output do not count.
+   ignored output do not count. Begin this separate campaign after freezing the
+   accepted Vulkan application checkpoint. Shared semantics remain required;
+   backend-specific optimizations need not be identical or win on both backends.
 3. **Integrated Fawn and Doe against stock Chromium and Dawn.** Build the
    forced-Doe Chromium path, then run identical browser and agent workloads on
    stock Chromium with Dawn, the Fawn workspace with Dawn, and the Fawn workspace

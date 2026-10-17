@@ -785,6 +785,12 @@ the same change, regenerating inventories through their owner. Lack of a text
 match alone does not establish dead code. Keep independently meaningful
 implementations separate when sharing would obscure policy or lifetime.
 
+Keep one authoritative rule source. Remove proven-dead compatibility paths and
+duplicate receipt machinery only after tracing their consumers. Tests that only
+repeat implementation details may be removed with that evidence; preserve tests
+that detect semantic, ownership, callback, recovery, and physical-execution
+defects. Shorter verification must not be purchased by dropping safety coverage.
+
 Behavior-preserving refactors follow this evidence sequence:
 
 ```text
@@ -815,20 +821,30 @@ toolchain, host, check scope, and observation window alongside:
 
 - Time to locate the responsible owner, time to the first relevant test,
   and median elapsed time from task start to a passing patch; distinguish
-  build/test and blocked time. Record context documents read and files touched.
+  build/test and blocked time. Include time to the decisive test, debugging effort,
+  and counts of files and guidance documents inspected, not only files touched.
 - Regressions caught by local checks and accepted changes per iteration, with
-  attempted changes and the actual acceptance decision as denominators.
+  attempted changes and the actual acceptance decision as denominators. Report
+  regressions escaping those checks over a declared observation window and
+  accepted-change count; unobserved escapes are not a measured zero rate.
 - Clean/incremental build and focused-test latency, regressions, and ownership
   or cleanup defects, with sample counts and exposure denominators.
 - Upstream integration and rebase work, binary size, allocation behavior,
   submission/synchronization costs, and runtime overhead on the affected path.
 - Confirmed review findings caught mechanically before review divided by all
   confirmed findings, with unmeasured categories left explicit.
+- Reviewed code clarity, failure handling, and integration friction, with concrete
+  reproductions and ownership decisions rather than language preference scores.
+
+Every campaign must improve or preserve these friction measures while keeping
+safety coverage. Record regressions and tradeoffs explicitly; incomplete
+measurement cannot establish an improvement. Cleanup runs throughout the work.
 
 Use existing review records and build-measurement artifacts; do not create a
 parallel score registry or turn these observations into automatic promotion.
-A scoped C or C++ comparison may justify reconsidering Zig when it improves
-these measures without weakening contracts. This is an evaluation rule, not a
+A [bounded native-language comparison](architecture.md#language-evaluation-by-layer--proposed-investigation)
+may justify reconsidering Zig only when measured gains repay migration risk
+without weakening contracts. This is an evaluation rule, not a
 new rewrite or benchmark campaign. Ordinary cleanup runs only the focused
 checks its changed behavior requires; uncollected measurements stay unclaimed.
 
