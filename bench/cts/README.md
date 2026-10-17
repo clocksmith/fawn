@@ -1,21 +1,22 @@
 # CTS provider tooling
 
-`cts/` contains Doe's repo-only WebGPU CTS provider shims.
+`bench/cts/` contains Doe's repo-only WebGPU CTS provider shims.
 
 Current entrypoints:
 
-- `cts/fawn-node-gpu-provider.js`
-- `cts/fawn-node-gpu-provider.cjs`
-- `cts/dawn-node-gpu-provider.cjs`
-- `cts/probe-fawn-node-adapter.cjs`
+- [`fawn-node-gpu-provider.js`](fawn-node-gpu-provider.js)
+- [`fawn-node-gpu-provider.cjs`](fawn-node-gpu-provider.cjs)
+- [`dawn-node-gpu-provider.cjs`](dawn-node-gpu-provider.cjs)
+- [`probe-fawn-node-adapter.cjs`](probe-fawn-node-adapter.cjs)
 
 These files are internal operator tooling, not public package contracts. The
-main consumer today is the CTS subset runner documented in
-[`bench/README.md`](../bench/README.md).
+[CTS subset runner](../runners/run_cts_subset.py) consumes these providers.
+For benchmark entrypoints and evidence ownership, start at
+[`bench/README.md`](../README.md).
 
 Ownership and usage:
 
-- treat `cts/` as an internal conformance surface
+- treat `bench/cts/` as an internal conformance surface
 - keep provider filenames stable when benchmark/config surfaces reference them
 - bind retained CTS runs to the provider's materialized adapter identity probe
 - set `DOE_CTS_DAWN_PROVIDER_TARGET` to the governed `webgpu` package entry
