@@ -209,29 +209,6 @@ def side_name(payload: dict[str, Any], side: str) -> str:
     return side
 
 
-def read_trace_meta(sample: dict[str, Any], cache: dict[str, dict[str, Any] | None]) -> dict[str, Any] | None:
-    inline = sample.get("traceMeta")
-    if isinstance(inline, dict):
-        return inline
-
-    trace_meta_path = sample.get("traceMetaPath")
-    if not isinstance(trace_meta_path, str) or not trace_meta_path.strip():
-        return None
-    if trace_meta_path in cache:
-        return cache[trace_meta_path]
-    path = Path(trace_meta_path)
-    if not path.exists():
-        cache[trace_meta_path] = None
-        return None
-    try:
-        parsed = load_json(path)
-    except (OSError, UnicodeError, json.JSONDecodeError, ValueError):
-        cache[trace_meta_path] = None
-        return None
-    cache[trace_meta_path] = parsed
-    return parsed
-
-
 def extract_side_profiles(
     payload: dict[str, Any],
     side: str,

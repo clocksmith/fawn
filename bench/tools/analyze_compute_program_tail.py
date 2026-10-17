@@ -52,33 +52,6 @@ def correlate(path: Path) -> list[dict[str, Any]]:
     return rows
 
 
-def join_storage(native_path: Path, report_path: Path, output: Path) -> None:
-    """Join serial native encoder loans to observed host creation and invocation order."""
-    report = json.loads(report_path.read_text(encoding='utf-8'))
-    invocations = read_tsv(Path(f'{report_path}.invocations.tsv'))
-    events = read_tsv(Path(f'{report_path}.events.tsv'))
-    records = read_tsv(native_path)
-    takes = [row for row in records if row['event'] == 'take']
-    samples = [report['cold'], *report['warmups'], *report['samples'], *report['lifecycleRuns']]
-    if not (len(takes) == len(invocations) == len(samples)):
-        raise ValueError('Native encoder/invocation counts differ; cannot infer the identity join')
-    for invocation, sample in zip(invocations, samples, strict=True):
-        calls = [event for event in events if event['event'] == 'device.createCommandEncoder'
-                 and event['invocationOrdinal'] == invocation['ordinal']]
-        receipt = sample['receipt']
-        if len(calls) != 1 or invocation['invocationId'] != f"{receipt['programInstance']}:{receipt['run']}":
-            raise ValueError('Storage correlation requires one encoder per serial invocation')
-    index = -1
-    joined = []
-    for record in records:
-        if record['event'] == 'take':
-            index += 1
-        if index < 0 or record['encoder'] != takes[index]['encoder']:
-            raise ValueError('Native allocation escaped the current encoder observation')
-        joined.append({'invocationId': invocations[index]['invocationId'], **record})
-    write_tsv(output, joined)
-
-
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('directory', type=Path, help='Directory containing diagnostic process reports')

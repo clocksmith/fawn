@@ -133,15 +133,6 @@ def check_dependency(name: str) -> str:
     return binary
 
 
-def resolve_dependency(name: str, explicit: str | None, *, hint: str | None = None) -> str:
-    if explicit:
-        candidate = Path(explicit)
-        if not candidate.exists():
-            raise RuntimeError(f"explicit {name} path not found: {explicit}")
-        return str(candidate.resolve())
-    return check_dependency(name) if hint is None else resolve_dependency_with_hint(name, hint)
-
-
 def resolve_dependency_with_hint(name: str, hint: str) -> str:
     binary = shutil.which(name)
     if binary:
