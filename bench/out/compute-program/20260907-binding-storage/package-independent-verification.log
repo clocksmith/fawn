@@ -1,1 +1,0 @@
-PASS: qualification schema, archive/artifact hashes, extracted native/addon equality with staged binaries, and identical native hashes across Node/Bun/Electron

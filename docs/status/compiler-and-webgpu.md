@@ -346,4 +346,4 @@ remain at `bench/out/compute-program/20260905-resident-fusion-correction/`.
 - Compiler evidence: schema-registered artifacts under `examples/` and
   `bench/out/`
 - Historical entries:
-  [`archive/2026-04-to-2026-07-compiler-and-webgpu.md`](archive/2026-04-to-2026-07-compiler-and-webgpu.md)
+  [`archive/2026-04-to-2026-07-compiler-and-webgpu.md`](https://github.com/doerun/doe/blob/cf89bce7b9ed096c7d406cffe62dfa9e386e7902/docs/status/archive/2026-04-to-2026-07-compiler-and-webgpu.md)

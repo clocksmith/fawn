@@ -462,6 +462,6 @@ successful execution. Injection is distinct from physical hardware loss.
 
 ## History
 
-The [previous backend status snapshot](archive/2026-09-27-runtime-backends-and-bench.md)
+The [previous backend status snapshot](https://github.com/doerun/doe/blob/cf89bce7b9ed096c7d406cffe62dfa9e386e7902/docs/status/archive/2026-09-27-runtime-backends-and-bench.md)
 retains prior cohorts, branch dispositions, package checkpoints, and earlier
 archive navigation. This cleanup reruns no GPU comparison and promotes no claim.

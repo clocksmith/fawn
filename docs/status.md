@@ -1,7 +1,7 @@
 # Doe status
 
 This page routes current state. Artifacts own counts, timings, hashes, and
-verdicts. Historical narrative lives under [`status/archive/`](status/archive/).
+verdicts. Historical narrative lives under [`status/archive/`](https://github.com/doerun/doe/tree/cf89bce7b9ed096c7d406cffe62dfa9e386e7902/docs/status/archive).
 
 | Area | Live status | Ground truth |
 | --- | --- | --- |

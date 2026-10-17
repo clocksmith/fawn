@@ -11,5 +11,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Reject newly tracked generated output
+        env:
+          BASE_REF: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: python3 bench/tools/check_no_new_tracked_under_gitignore.py --base-ref "$BASE_REF"
       - name: Reject private workstation paths
         run: python3 scripts/check-publication-hygiene.py

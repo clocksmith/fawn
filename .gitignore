@@ -43,9 +43,8 @@ bench/compare_dawn_vs_doe.config.local.*.json
 !bench/compare_dawn_vs_doe.config.local.vulkan.comparable.json
 !bench/compare_dawn_vs_doe.config.local.vulkan.release.json
 !bench/compare_dawn_vs_doe.config.local.vulkan.directional.json
-# Bench outputs are generated evidence. Stable tracked receipts live either in
-# reports/ or as explicitly tracked historical fixtures; new run workspaces stay
-# local unless intentionally force-added.
+# New run workspaces stay local. Retained fixtures need a narrow exception and
+# a named gate/release consumer; force-adding output is rejected in CI.
 bench/out/**
 !bench/out/
 !bench/out/README.local.md
@@ -240,3 +239,7 @@ wio_flows_tmpdir.*/
 /Relu
 # Routine Fawn UI iterations are run output, not permanent maintenance dossiers.
 reports/maintenance/*-fawn-*/
+
+# Local caches and retired status snapshots never belong in source commits.
+/.cache/
+/docs/status/archive/

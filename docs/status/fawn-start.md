@@ -33,4 +33,4 @@ isolated package through `firebase.fawn.json`. The canonical surface is
 identifies the published source. Local edits do not update it until deployed.
 Public aliases open the same unified canvas, with Flow first and no selector.
 
-History: [the preceding living-material status](archive/20261013-fawn-living-material.md).
+History: [the preceding living-material status](https://github.com/doerun/doe/blob/cf89bce7b9ed096c7d406cffe62dfa9e386e7902/docs/status/archive/20261013-fawn-living-material.md).

@@ -27,6 +27,24 @@ do not turn old results into new results or rewrite their meaning. Keep local
 debugging copies in ignored storage when useful. Do not force-add routine output
 to bypass the ignore policy.
 
+## Retired local workspaces
+
+The dated compute-program experiment workspaces retired during repository
+cleanup remain byte-for-byte retrievable from
+[the preceding source tree](https://github.com/doerun/doe/tree/cf89bce7b9ed096c7d406cffe62dfa9e386e7902/bench/out/compute-program).
+This includes their failed runs, raw tensor outputs, source snapshots and
+reproduction scripts. Historical logs and patches keep their original paths;
+reproduce them against that commit rather than treating them as current inputs.
+Active configuration, release and fixture consumers remain tracked, including
+the calibration-bound `20260907-command-storage-applications/fixtures/holoscript_lif/`
+subtree. Retirement changes storage and navigation, never historical verdicts.
+
+New local output stays ignored. The existing ignore-policy checker runs in CI
+against the event's commit range and locally against staged additions:
+`python3 bench/tools/check_no_new_tracked_under_gitignore.py`.
+A legitimate new fixture needs a narrow ignore exception and a named consumer.
+Do not force-add a run directory or duplicate source/package downloads.
+
 ## Existing governed artifacts
 
 - `refactors/` contains schema-backed characterization receipts for structural

@@ -167,7 +167,7 @@ line-only sharding is not sufficient.
 
 ## History
 
-The [previous architecture status snapshot](archive/2026-09-27-runtime-architecture-audit.md)
+The [previous architecture status snapshot](https://github.com/doerun/doe/blob/cf89bce7b9ed096c7d406cffe62dfa9e386e7902/docs/status/archive/2026-09-27-runtime-architecture-audit.md)
 preserves implementation checkpoints, original next actions, command/snapshot
 repairs, quirk preparation evidence, and earlier archive references. The
 unfinished findings above remain live; moving their supporting narrative does
