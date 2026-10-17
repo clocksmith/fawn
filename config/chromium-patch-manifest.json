@@ -144,6 +144,38 @@
       ],
       "chromiumSourceRequired": false,
       "notes": "Schema-backed browser ownership map for Chromium/Doe claim boundaries."
+    },
+    {
+      "patchId": "chromium_doe_runtime_source",
+      "path": "browser/chromium/patches/chromium-doe-runtime.patch",
+      "patchKind": "integration_overlay",
+      "status": "active",
+      "allowedRoot": "browser/chromium/",
+      "ownership": "browser_runtime_integration",
+      "rollbackPath": "browser/chromium/contracts/runtime-selector-and-fallback.contract.md",
+      "evidencePaths": [
+        "browser/chromium/scripts/apply-runtime-patches.sh",
+        "browser/chromium/scripts/build-release-external.sh",
+        "browser/chromium/patches/README.md"
+      ],
+      "chromiumSourceRequired": true,
+      "notes": "Provider selection, Linux sandbox preload and canvas transfer for the pinned diagnostic browser build."
+    },
+    {
+      "patchId": "dawn_doe_runtime_source",
+      "path": "browser/chromium/patches/dawn-doe-runtime.patch",
+      "patchKind": "integration_overlay",
+      "status": "active",
+      "allowedRoot": "browser/chromium/",
+      "ownership": "browser_runtime_integration",
+      "rollbackPath": "browser/chromium/contracts/runtime-selector-and-fallback.contract.md",
+      "evidencePaths": [
+        "browser/chromium/scripts/apply-runtime-patches.sh",
+        "browser/chromium/scripts/build-release-external.sh",
+        "browser/chromium/patches/README.md"
+      ],
+      "chromiumSourceRequired": true,
+      "notes": "External runtime proc loading and callback pumping in the pinned WebGPU backend; Dawn validation wrappers remain."
     }
   ]
 }

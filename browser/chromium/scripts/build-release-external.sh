@@ -25,8 +25,10 @@ fi
 
 cd "${LANE_DIR}/src"
 
-LOCAL_RELEASE_GN_ARGS="is_debug=false is_official_build=false dcheck_always_on=false chrome_pgo_phase=0 symbol_level=0 blink_symbol_level=0 v8_symbol_level=0 is_chrome_for_testing=false is_chrome_for_testing_branded=false is_chrome_branded=false use_clang_modules=false"
-OFFICIAL_RELEASE_GN_ARGS="is_debug=false is_official_build=true dcheck_always_on=false chrome_pgo_phase=0 symbol_level=0 blink_symbol_level=0 v8_symbol_level=0 is_chrome_for_testing=false is_chrome_for_testing_branded=false is_chrome_branded=false use_clang_modules=false"
+"${SCRIPT_DIR}/apply-runtime-patches.sh" "${LANE_DIR}/src"
+
+LOCAL_RELEASE_GN_ARGS="is_debug=false is_official_build=false dcheck_always_on=false chrome_pgo_phase=0 symbol_level=0 blink_symbol_level=0 v8_symbol_level=0 is_chrome_for_testing=false is_chrome_for_testing_branded=false is_chrome_branded=false use_clang_modules=false dawn_enable_webgpu_on_webgpu=true"
+OFFICIAL_RELEASE_GN_ARGS="is_debug=false is_official_build=true dcheck_always_on=false chrome_pgo_phase=0 symbol_level=0 blink_symbol_level=0 v8_symbol_level=0 is_chrome_for_testing=false is_chrome_for_testing_branded=false is_chrome_branded=false use_clang_modules=false dawn_enable_webgpu_on_webgpu=true"
 release_profile="${FAWN_CHROMIUM_RELEASE_PROFILE:-official}"
 autoninja_args=()
 while [[ "$#" -gt 0 ]]; do
