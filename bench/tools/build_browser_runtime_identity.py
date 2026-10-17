@@ -16,6 +16,8 @@ except ModuleNotFoundError:
 
 REPO_ROOT = ensure_repo_root(__file__)
 
+from bench.lib.receipt_validation import load_json  # noqa: E402
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
@@ -33,13 +35,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--out", default="", help="Optional output identity path.")
     parser.add_argument("--json", action="store_true", dest="emit_json")
     return parser.parse_args()
-
-
-def load_json(path: Path) -> dict[str, Any]:
-    payload = json.loads(path.read_text(encoding="utf-8"))
-    if not isinstance(payload, dict):
-        raise ValueError(f"expected JSON object: {path}")
-    return payload
 
 
 def find_mode_entry(report: dict[str, Any], mode: str) -> dict[str, Any]:

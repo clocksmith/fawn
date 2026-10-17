@@ -9,6 +9,15 @@ import sys
 from pathlib import Path
 from typing import Any
 
+try:
+    from bench.tools._repo_import import ensure_repo_root
+except ModuleNotFoundError:
+    from _repo_import import ensure_repo_root
+
+ensure_repo_root(__file__)
+
+from bench.lib.receipt_validation import load_json  # noqa: E402
+
 
 VALID_HEX = set("0123456789abcdef")
 
@@ -19,13 +28,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--manifest", required=True, help="WGSL corpus manifest.")
     parser.add_argument("--out", required=True, help="Output lowering link receipt.")
     return parser.parse_args()
-
-
-def load_json(path: Path) -> dict[str, Any]:
-    payload = json.loads(path.read_text(encoding="utf-8"))
-    if not isinstance(payload, dict):
-        raise ValueError(f"expected JSON object: {path}")
-    return payload
 
 
 def is_sha256(value: Any) -> bool:

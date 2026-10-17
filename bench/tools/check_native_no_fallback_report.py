@@ -6,14 +6,18 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-import re
 import sys
 from pathlib import Path
-from pathlib import PurePosixPath
 from typing import Any
 
+try:
+    from bench.tools._repo_import import ensure_repo_root
+except ModuleNotFoundError:
+    from _repo_import import ensure_repo_root
 
-SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
+ensure_repo_root(__file__)
+
+from bench.lib.receipt_validation import load_json, failure, is_sha256, safe_repo_path  # noqa: E402
 
 
 def parse_args() -> argparse.Namespace:
@@ -28,21 +32,6 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def load_json(path: Path) -> dict[str, Any]:
-    payload = json.loads(path.read_text(encoding="utf-8"))
-    if not isinstance(payload, dict):
-        raise ValueError(f"expected JSON object: {path}")
-    return payload
-
-
-def failure(code: str, path: str, message: str) -> dict[str, str]:
-    return {"code": code, "path": path, "message": message}
-
-
-def is_sha256(value: Any) -> bool:
-    return isinstance(value, str) and bool(SHA256_RE.fullmatch(value))
-
-
 def sha256_file(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
@@ -52,11 +41,6 @@ def resolve_path(path_text: str, verify_files_root: Path | None) -> Path:
     if path.is_absolute() or verify_files_root is None:
         return path
     return verify_files_root / path
-
-
-def safe_repo_path(path_text: str) -> bool:
-    path = PurePosixPath(path_text)
-    return bool(path_text) and not path.is_absolute() and ".." not in path.parts
 
 
 def check_report(payload: dict[str, Any], verify_files_root: Path | None = None) -> list[dict[str, str]]:

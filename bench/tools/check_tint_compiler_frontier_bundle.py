@@ -17,6 +17,8 @@ except ModuleNotFoundError:
 
 REPO_ROOT = ensure_repo_root(__file__)
 
+from bench.lib.receipt_validation import load_json, failure  # noqa: E402
+
 from bench.gates import tint_compiler_evidence_gate  # noqa: E402
 from bench.tools import check_tint_phase_benchmark_evidence  # noqa: E402
 from bench.tools import check_tint_compiler_target_validation  # noqa: E402
@@ -85,19 +87,8 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def load_json(path: Path) -> dict[str, Any]:
-    payload = json.loads(path.read_text(encoding="utf-8"))
-    if not isinstance(payload, dict):
-        raise ValueError(f"expected JSON object: {path}")
-    return payload
-
-
 def sha256_file(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
-
-
-def failure(code: str, path: str, message: str) -> dict[str, str]:
-    return {"code": code, "path": path, "message": message}
 
 
 def resolve_repo_path(path_text: str, root: Path) -> Path:

@@ -4,16 +4,20 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
-import re
 import sys
 from pathlib import Path
-from pathlib import PurePosixPath
 from typing import Any
 
+try:
+    from bench.tools._repo_import import ensure_repo_root
+except ModuleNotFoundError:
+    from _repo_import import ensure_repo_root
 
-SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
+ensure_repo_root(__file__)
+
+from bench.lib.receipt_validation import load_json, failure, is_sha256, safe_repo_path, resolve_path  # noqa: E402
+from bench.lib.wgsl_source import normalize_source, normalized_sha256  # noqa: E402
 
 
 def parse_args() -> argparse.Namespace:
@@ -26,49 +30,6 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--json", action="store_true", dest="emit_json")
     return parser.parse_args()
-
-
-def load_json(path: Path) -> dict[str, Any]:
-    payload = json.loads(path.read_text(encoding="utf-8"))
-    if not isinstance(payload, dict):
-        raise ValueError(f"expected JSON object: {path}")
-    return payload
-
-
-def normalize_source(text: str) -> str:
-    normalized = text.replace("\r\n", "\n").replace("\r", "\n")
-    if not normalized.endswith("\n"):
-        normalized += "\n"
-    return normalized
-
-
-def normalized_sha256(path: Path) -> str:
-    return hashlib.sha256(normalize_source(path.read_text(encoding="utf-8")).encode("utf-8")).hexdigest()
-
-
-def failure(code: str, path: str, message: str) -> dict[str, str]:
-    return {"code": code, "path": path, "message": message}
-
-
-def safe_repo_path(path_text: str) -> bool:
-    path = PurePosixPath(path_text)
-    return bool(path_text) and not path.is_absolute() and ".." not in path.parts
-
-
-def is_sha256(value: Any) -> bool:
-    return isinstance(value, str) and bool(SHA256_RE.fullmatch(value))
-
-
-def resolve_path(path_text: str, verify_files_root: Path) -> Path | None:
-    root = verify_files_root.resolve()
-    path = Path(path_text)
-    candidate = path if path.is_absolute() else root.joinpath(*PurePosixPath(path_text).parts)
-    resolved = candidate.resolve()
-    try:
-        resolved.relative_to(root)
-    except ValueError:
-        return None
-    return resolved
 
 
 def check_receipt(payload: dict[str, Any], verify_files_root: Path | None = None) -> list[dict[str, str]]:
