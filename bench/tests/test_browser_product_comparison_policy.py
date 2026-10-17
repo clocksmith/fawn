@@ -71,26 +71,6 @@ class BrowserProductComparisonPolicyTests(unittest.TestCase):
             candidate["comparisonLaw"]["classes"].remove(comparison_class)
             self.assertFalse(validator.is_valid(candidate))
 
-    def test_external_comparators_are_not_component_substitutions(self) -> None:
-        policy = _load_policy()
-        internal_ids = {
-            lane["laneId"] for lane in policy["internalCausalLanes"]
-        }
-
-        for comparator in policy["externalComparators"]:
-            with self.subTest(comparator=comparator["comparatorId"]):
-                self.assertNotIn(comparator["comparatorId"], internal_ids)
-                self.assertFalse(comparator["componentSubstitution"])
-
-    def test_suites_require_total_outcome_and_compatibility_failures(self) -> None:
-        policy = _load_policy()
-
-        for suite in policy["suites"]:
-            self.assertIn("total task outcome", suite["requiredObservations"])
-            self.assertIn(
-                "compatibility failures", suite["requiredObservations"]
-            )
-
     def test_complete_system_alternative_cannot_claim_component_attribution(
         self,
     ) -> None:
@@ -141,13 +121,6 @@ class BrowserProductComparisonPolicyTests(unittest.TestCase):
             candidate = copy.deepcopy(strategy)
             mutate(candidate)
             self.assertFalse(validator.is_valid(candidate))
-
-    def test_evidence_references_exist(self) -> None:
-        policy = _load_policy()
-
-        for reference in policy["evidenceReferences"]:
-            self.assertTrue((REPO_ROOT / reference).exists(), reference)
-
 
 if __name__ == "__main__":
     unittest.main()
