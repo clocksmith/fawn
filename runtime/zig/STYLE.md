@@ -20,6 +20,34 @@ visible. Shorter is better only when it removes repetition or indirection.
 - Eliminate duplicate registries, policy maps, profile unions, errors, artifact
   fields, and conversion taxonomies before optimizing file count.
 
+## Restricted implementation style
+
+Use simple data structures, explicit state machines, functions, and narrow
+interfaces. Language features earn their place by making an invariant easier
+to inspect or enforce; terseness and generic reuse alone are insufficient.
+
+- Prefer concrete request, result, state, and owner types. `anytype` is for
+  small private generic mechanics; it must not hide a subsystem's dependencies,
+  failure contract, or ownership. A generic adapter names its required interface.
+- Keep `comptime` local and inspectable: completeness checks, typed tables, and
+  narrow adapter binding are appropriate. Avoid recursive type machinery,
+  generated object frameworks, and implicit feature discovery. Required
+  operations cannot become optional through reflection or a catch-all default.
+- Dispatch over closed instruction, command, and lifecycle sets exhaustively.
+  Name deliberately unsupported cases. A new tag must require a disposition;
+  reserve catch-all handling for genuinely open input domains or an explicitly
+  shared policy that cannot silently grant success.
+- Use checked arithmetic for sizes, offsets, counts, and allocation products
+  before casts or native calls, including optimized builds. Wrapping arithmetic
+  is confined to algorithms whose contract requires modular behavior.
+- Keep allocation, ownership transfer, and failure visible at the call site.
+  Follow [memory](#memory) and [errors and diagnostics](#errors-and-diagnostics);
+  compile-time structure does not prove lifetime safety.
+
+Small generic helpers and function-pointer interfaces are useful when they
+remove repetition without moving policy or hiding resource lifetimes. Do not
+introduce a general framework where a concrete function or tagged state suffices.
+
 ## Invariant registry
 
 These identifiers are normative; reviews, regression tests, and receipts name
@@ -303,9 +331,8 @@ same applicable shader, resource, ownership, and error contracts.
   field and proves all applicable adapters observe the change.
 
 Promoted execution interfaces use named types such as `ComputeContext`,
-`DispatchRequest`, and `DispatchReport`. `anytype` is fine for private,
-compile-time-generic helpers, never where it hides a subsystem's or promoted
-path's dependencies or output contract.
+`DispatchRequest`, and `DispatchReport`, under the
+[restricted implementation style](#restricted-implementation-style).
 
 ## Errors and diagnostics
 
@@ -366,6 +393,34 @@ path's dependencies or output contract.
 - Keep unavoidable `@cImport` in support or backend-boundary modules, not
   general runtime logic, when a typed seam or ABI module owns that contract.
 
+### Native adapter subset
+
+These rules also govern Doe-owned C/C++ adapters outside this directory, as
+routed by `AGENTS.md`. Upstream third-party implementations retain their own
+rules. [Architecture](../../docs/architecture.md#implementation-language-and-native-boundary)
+owns the language split and native compatibility boundary.
+
+- C++ adapters disable exceptions and RTTI in their owning build. Use plain
+  records, explicit result/status values, borrowed spans or views supported by
+  the pinned toolchain, and move-only resource owners. No implicit owning raw
+  pointers, hidden fallible constructor work, custom operator overloading,
+  or new inheritance frameworks. Overrides required by an upstream interface
+  stay confined to its adapter.
+- RAII expresses an existing cleanup obligation; it never treats cancellation
+  as completion or destroys resources still owned by submitted GPU work.
+  Acquisition that can fail uses an explicit fallible factory or initialization
+  operation, with partial acquisition cleanup.
+- Keep templates narrow and local. Public native headers expose C-compatible
+  records, opaque handles, status values, and function tables, not templates,
+  Zig types, C++ containers, or implementation-specific ownership conventions.
+- C shims use typed records/containers and one explicit cleanup path for partial
+  initialization. Confine `void *` to declared opaque-handle or callback userdata
+  contracts; do not use it to erase ordinary domain types. Generate exhaustive
+  dispatch from the owning registry when C cannot enforce completeness directly.
+- At every native crossing specify layout, lengths, nullability, alignment,
+  calling convention, error delivery, and which side allocates, retains, and
+  releases each resource. Preserve existing symbol and callback contracts.
+
 ## Determinism and trace
 
 - Identical inputs/config must produce stable decision and trace sequences.
@@ -418,7 +473,13 @@ fallback decision, synchronization behavior, or receipt field.
 - Test names are descriptive behavior strings: `test "vendor comparison ignores case"`.
 - Use `std.testing.expect` and `std.testing.expectEqual` for assertions.
 - Prefer `std.testing.allocator` for allocation-owning code unless the
-  allocator choice is itself the behavior under test.
+  allocator choice is itself the behavior under test. Changes to fallible
+  acquisition exercise allocation failure at each acquisition point and verify
+  partial cleanup and preservation of any previously valid object.
+- Lifecycle changes exercise the affected success, failure, cancellation, and
+  unknown-completion transitions, including delayed or repeated callbacks where
+  applicable. Assert retained ownership and observable results, not source text
+  or a second implementation of the state machine.
 - Run the narrowest step covering the change: the lane step (`test-wgsl`,
   `test-core`, `test-full`, `test-d3d12`) and `-Dtest-filter=<name>` where it
   fits; use `zig build test` when the change spans lanes.
@@ -436,7 +497,15 @@ fallback decision, synchronization behavior, or receipt field.
 | Production file size | `zig build line-limits` | Cohesion, even below the configured thresholds |
 | Generated contracts and suites | `zig build webgpu-abi test-inventory` | Independent oracle and meaningful failure coverage |
 | Types and command coverage | Compilation of the affected consumers | Correct validation, execution, and complete exercised paths |
+| Generic machinery | Type checking of instantiated interfaces | Small, inspectable `comptime`; explicit dependencies and no hidden policy |
+| Native adapters | Owning build flags and exercised ABI fixtures | Restricted C/C++ subset, caller ownership, and upstream compatibility |
 | Resource lifetime and allocation | Focused lifetime and allocation-failure tests | Complete ownership reasoning across asynchronous and foreign calls |
+
+These are enforcement surfaces, not a claim of complete repository coverage.
+Do not replace compiler checks with source-spelling tests. A new gate must reject
+an invalid fixture and accept a valid one through the real checker; behavior and
+ownership still require independent failure-path tests. Missing enforcement is
+review debt, never evidence that an invariant holds.
 
 The default install step and the canonical test steps already run the format,
 layout, ABI, line-limit, and inventory checks; invoke one by name only when
@@ -462,8 +531,11 @@ For each cleanup, work through one named responsibility:
    Style-only edits need no tests that merely repeat the implementation; new
    enforcement must show it rejects the condition it claims to detect.
 5. Record remaining debt with its semantic owner and next concrete target in
-   the live status shard. Update this guide only when the rule generalizes;
-   policy values and module inventories stay with their owners.
+   the live status shard. When a finding generalizes, update this guide and the
+   owning compiler check, gate, or behavioral test in the same change; identify
+   review-only obligations explicitly. Policy values and module inventories
+   stay with their owners. Report cleanup deltas under
+   [refactor law](../../docs/process.md#language-and-cleanup-evaluation).
 
 Performance claims need the frozen application procedure. A cleaner diff, fewer
 allocations, or a successful compile is not performance evidence.

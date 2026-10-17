@@ -271,6 +271,25 @@ Ordinary WebGPU, command-oriented execution, and prepared package programs
 remain distinct entrypoints sharing applicable semantics. A universal command
 interpreter is not required for architectural symmetry.
 
+### Implementation language and native boundary
+
+Keep the compiler and runtime core in Zig, with a stable C ABI for native
+integration. Small C++ adapters may bind upstream Chromium, Dawn, Skia, or ONNX
+interfaces when that integration requires them; small C shims may provide
+loaders and procedure tables. An adapter translates host contracts and resource
+ownership. It does not become a second compiler, backend policy owner, or
+runtime state machine. JavaScript package contracts remain separately owned.
+
+The aim is explicit systems code whose organization and external compatibility
+survive a change of implementation language. Zig is useful where its types,
+error unions, cleanup constructs, and compile-time checks make that architecture
+easier to enforce; the language choice alone proves neither safety nor speed.
+The [implementation subset](../runtime/zig/STYLE.md#restricted-implementation-style)
+and [native adapter rules](../runtime/zig/STYLE.md#native-adapter-subset) constrain
+owned code. Reconsider the core language only from representative
+[maintenance and runtime evidence](process.md#language-and-cleanup-evaluation),
+preserving the same contracts; theoretical simplicity does not justify a rewrite.
+
 ### Reuse and completion obligations
 
 Keep immutable descriptions, device-specific prepared resources, and invocation
