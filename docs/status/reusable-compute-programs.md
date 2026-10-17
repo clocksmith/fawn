@@ -211,7 +211,7 @@ relocation check is not independent reproduction; that acceptance remains open.
 ## Next ordinary-execution work
 
 The [completed revision](https://github.com/doerun/doe/commit/d4cbfe163c457f808e99bc02578423bc52e9a1d8)
-and [correction record](../../bench/out/compute-program/20260907-command-storage/README.md)
+and [correction record](https://github.com/doerun/doe/blob/cf89bce7b9ed096c7d406cffe62dfa9e386e7902/bench/out/compute-program/20260907-command-storage/README.md)
 are the reference for this follow-up. The Linux checklist below stays closed.
 Reopen ownership, reflection, reset approval, or worker isolation only with a
 new failing reproduction; keep previous accepted artifacts intact.
@@ -222,7 +222,7 @@ new failing reproduction; keep previous accepted artifacts intact.
   The replay bundle (unavailable artifact: `bench/out/compute-program/20260908-tail-experiment/reproduction-bundle/README.md`)
   passed clean installation and application audits outside the checkout.
 - [x] Profile heat diffusion's ordinary encoding tail — runtime owner: start from
-  [ordinary incumbent measurements](../../bench/out/compute-program/20260907-command-storage/ordinary-incumbents.tsv).
+  [ordinary incumbent measurements](https://github.com/doerun/doe/blob/cf89bce7b9ed096c7d406cffe62dfa9e386e7902/bench/out/compute-program/20260907-command-storage/ordinary-incumbents.tsv).
   Completed in
   heat-diffusion-ordinary-encoding-profile.json (unavailable artifact: `bench/out/compute-program/20260907-command-storage/heat-diffusion-ordinary-encoding-profile.json`):
   `encode` p99 is 0.327536 ms (max 0.456610 ms); `submitWait` p99 is 0.357644 ms (max 0.382580 ms).
@@ -277,7 +277,7 @@ and [compiler and WebGPU status](compiler-and-webgpu.md).
 
 Native devices retain bounded empty command-array capacity after resource release.
 Policy, ownership checks, qualification, and complete application comparisons:
-`bench/out/compute-program/20260907-command-storage/README.md`.
+[bench/out/compute-program/20260907-command-storage/README.md](https://github.com/doerun/doe/blob/cf89bce7b9ed096c7d406cffe62dfa9e386e7902/bench/out/compute-program/20260907-command-storage/README.md).
 
 ## Concurrent native ownership
 
@@ -332,7 +332,7 @@ at `bench/out/compute-program/20260906-live-simulation-qualified/summary.json`.
 Application comparisons from those exact packages are retained at
 `bench/out/compute-program/20260906-live-simulation-applications/summary.json`;
 the Deno/wgpu rows trigger the suspicious-speedup audit and remain diagnostic.
-See `bench/out/compute-program/20260906-live-simulation-correction/README.md`
+See [bench/out/compute-program/20260906-live-simulation-correction/README.md](https://github.com/doerun/doe/blob/cf89bce7b9ed096c7d406cffe62dfa9e386e7902/bench/out/compute-program/20260906-live-simulation-correction/README.md)
 for source identities, test commands, archive extraction, and current limits.
 
 ## Explicit simulation state changes
@@ -433,7 +433,7 @@ not independent developer reproduction or registry publication.
 
 The bounded implementation checklist is complete. Current package, model,
 comparison, and prolonged checks are indexed at
-`bench/out/compute-program/20260907-command-storage/README.md`; earlier resource
+[bench/out/compute-program/20260907-command-storage/README.md](https://github.com/doerun/doe/blob/cf89bce7b9ed096c7d406cffe62dfa9e386e7902/bench/out/compute-program/20260907-command-storage/README.md); earlier resource
 and worker evidence remains linked from that correction record.
 Peak residency, physical driver failure, shared-device mutation, and arbitrary
 worker termination are unqualified and outside this bounded milestone.
@@ -467,4 +467,4 @@ integration remains experimental.
   `bench/out/compute-program/20260905-portable-package-correction/`.
 - Blocking requirements: [process](../process.md).
 - Preserved failures and previous boundaries:
-  [historical records](archive/2026-09-reusable-compute-programs.md).
+  [historical records](https://github.com/doerun/doe/blob/cf89bce7b9ed096c7d406cffe62dfa9e386e7902/docs/status/archive/2026-09-reusable-compute-programs.md).

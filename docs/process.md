@@ -5,6 +5,29 @@ live in `docs/operator-runbook.md`, `bench/README.md`, topical runbooks, and
 executable `--help`. Checked-in schemas and policy assets remain authoritative
 for their fields and values.
 
+## Development verification
+
+- During development, choose checks for the changed behavior: syntax/type checks,
+  existing focused tests, or a local visual check. A command list is not a requirement
+  to run every suite before each commit, push, or ordinary application deployment.
+- Do not automatically run full repository suites, broad browser/device matrices,
+  GPU/model campaigns, benchmarks, or full release qualification. Run them when
+  explicitly requested or when a named correctness question cannot be answered by
+  focused checks; state that reason before starting.
+- Config-contract, mirror, drift, and freshness checks run only when the change
+  edits what they check. Don't add tests that just restate another file or pin
+  config literals. Time-box long processes.
+- Once relevant checks pass, continue. Repeat or broaden verification only after
+  another relevant change, a failure, or a concrete unresolved concern.
+- For documentation-only edits, inspect the diff and changed links. Do not run
+  application, GPU, browser, or benchmark suites for prose changes.
+- For ordinary deployments, build the changed artifact where needed and check the
+  affected route after deployment. Deployment alone does not require a new release
+  qualification campaign.
+- Keep existing acceptance thresholds and release-qualification requirements.
+  Report exactly what was checked; focused development checks do not establish
+  numerical qualification, performance, multi-device support, or full acceptance.
+
 ## Strategy and comparison clarification
 
 The [acceptance hierarchy](../GOALS.md#acceptance-hierarchy), represented by
@@ -755,6 +778,13 @@ preserved behavior and scoped regression observations. The existing Zig review
 ledger records examination, repairs, tests, and remaining lifecycle obligations;
 neither a structural gate nor a benchmark win substitutes for that review.
 
+Before deleting an implementation, trace static and dynamic consumers,
+public exports, build roots, generators, tests, and receipt dependencies.
+Remove dead callers, tests, wrappers, docs and generated inventory entries in
+the same change, regenerating inventories through their owner. Lack of a text
+match alone does not establish dead code. Keep independently meaningful
+implementations separate when sharing would obscure policy or lifetime.
+
 Behavior-preserving refactors follow this evidence sequence:
 
 ```text
@@ -783,8 +813,11 @@ When evaluating a language or abstraction choice, use representative changes
 under the same frozen behavioral contracts. Record the task, revisions,
 toolchain, host, check scope, and observation window alongside:
 
-- Median elapsed time from agent task start to a passing patch, with build/test
-  time and blocked time distinguished; files touched per change.
+- Time to locate the responsible owner, time to the first relevant test,
+  and median elapsed time from task start to a passing patch; distinguish
+  build/test and blocked time. Record context documents read and files touched.
+- Regressions caught by local checks and accepted changes per iteration, with
+  attempted changes and the actual acceptance decision as denominators.
 - Clean/incremental build and focused-test latency, regressions, and ownership
   or cleanup defects, with sample counts and exposure denominators.
 - Upstream integration and rebase work, binary size, allocation behavior,

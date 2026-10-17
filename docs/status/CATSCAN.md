@@ -22,12 +22,12 @@ Inputs:
 - Current public evidence: [`../../reports/claim-index.json`](../../reports/claim-index.json).
 
 Outputs:
-- Topical live shards and dated archives linked from [`../status.md`](../status.md).
+- Topical live shards and immutable history links routed from [`../status.md`](../status.md).
 
 ## Invariants
 
 - Live shards state boundaries and blockers without embedding mutable counts.
-- New state enters the relevant live shard; history remains in `archive/`.
+- New state enters the relevant live shard; historical snapshots remain in immutable Git history.
 - Diagnostic, claimable, scaffolded, and unsupported states remain distinct.
 
 ## Acceptance

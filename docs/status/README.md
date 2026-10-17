@@ -8,8 +8,10 @@ Live status files contain only:
 - one history pointer.
 
 They do not contain dated chronology, copied benchmark results, hashes, pass
-counts, or closed implementation notes. Move resolved narrative into
-`archive/` in the same change that updates the live boundary.
+counts, or closed implementation notes. Remove resolved narrative from the live
+boundary; Git history retains it. Link an exact commit when a historical record
+is needed, preserving its meaning without copying it into a tracked archive.
 
-Artifacts remain authoritative. Archive files may receive link and formatting
-repairs but should preserve historical meaning.
+Artifacts remain authoritative under [evidence retention](../../reports/README.md).
+Do not delete an active gate, fixture, release or claim dependency as history.
+Historical instructions and next actions never select current work.

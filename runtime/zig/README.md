@@ -39,22 +39,22 @@ records coverage separately from architecture decisions and passing tests.
 
 ## Build and test
 
-```bash
-zig build fmt-check
-zig build
-zig build test
-zig build test-core
-zig build test-full
-zig build test-wgsl
-zig build test-bench-shader
-zig build test-bench-compilation
-zig build test-bench-host-hotpaths
-zig build test-bench-metal-compute test-bench-metal-staged-write
-zig build test-runtime-compile-report
-zig build import-fence
-zig build source-layout
-zig build line-limits
-```
+Run from `runtime/zig/`. Start with the test that exercises the changed owner,
+then broaden only for a named unanswered question.
+
+| Decision | First local check | Broader evidence, when required |
+| --- | --- | --- |
+| WGSL semantics, diagnostics or emission | `zig build test-wgsl -Dtest-filter=<behavior>` | Full `test-wgsl`; independent target and physical execution evidence |
+| Command, contract or shared execution behavior | `zig build test-core -Dtest-filter=<behavior>` | Full `test-core` and affected executor parity |
+| Native object or full runtime behavior | `zig build test-full -Dtest-filter=<behavior>` | Relevant C/native fixture; matching physical backend qualification |
+| Import boundary, source placement or size policy | `zig build import-fence source-layout line-limits` | Review of actual consumers and ownership |
+| Formatting only | `zig build fmt-check` | No behavioral qualification from formatting |
+
+The local check establishes only its exercised behavior. A host test cannot
+qualify GPU execution, and `test-full` is a suite name, not a release verdict.
+Choose a test name that actually exists in the owning module or test inventory.
+`zig build test` runs the broad host suite; benchmark and release commands stay
+in their owning runbooks and `zig build --help`.
 
 Use the configured Zig toolchain and the [style guide](STYLE.md). `zig build fmt`
 formats owned Zig files; `fmt-check` is also a dependency of the default install
