@@ -325,6 +325,10 @@ fn configureNativeGraphics(artifact: *std.Build.Step.Compile, b: *std.Build, tar
             .file = b.path("src/backend/d3d12/d3d12_bridge.c"),
             .flags = &.{},
         });
+        artifact.addCSourceFile(.{
+            .file = b.path("src/backend/metal/metal_bridge_stubs.c"),
+            .flags = &.{},
+        });
     } else {
         configureNonWindowsGraphics(artifact, b, target);
     }

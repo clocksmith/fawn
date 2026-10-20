@@ -77,6 +77,8 @@ fn d3d12_buffer_heap_type(desc: *const abi_pipeline.WGPUBufferDescriptor) ?c_int
 }
 
 fn metalPrivateBuffersEnabled() bool {
+    // Windows cannot use Metal storage or the POSIX environment API.
+    if (comptime builtin.os.tag == .windows) return false;
     const value = std.posix.getenv("DOE_METAL_PRIVATE_BUFFERS") orelse return false;
     if (value.len == 0) return false;
     const first = value[0];
@@ -103,6 +105,7 @@ pub fn metalBufferShouldUsePrivateStorage(desc: *const abi_pipeline.WGPUBufferDe
 }
 
 extern fn d3d12_bridge_device_create_buffer(device: ?*anyopaque, size: usize, heap_type: c_int) callconv(.c) ?*anyopaque;
+extern fn d3d12_bridge_device_create_storage_buffer(device: ?*anyopaque, size: usize) callconv(.c) ?*anyopaque;
 extern fn d3d12_bridge_resource_map(resource: ?*anyopaque) callconv(.c) ?*anyopaque;
 extern fn d3d12_bridge_resource_unmap(resource: ?*anyopaque) callconv(.c) void;
 extern fn d3d12_bridge_release(obj: ?*anyopaque) callconv(.c) void;
@@ -171,7 +174,10 @@ fn createBuffer(dev_raw: ?*anyopaque, desc: ?*const abi_pipeline.WGPUBufferDescr
             alloc.destroy(buf);
             return null;
         };
-        buf.mtl = d3d12_bridge_device_create_buffer(rt.device, @intCast(d.size), heap_type);
+        buf.mtl = if ((d.usage & abi_core.WGPUBufferUsage_Storage) != 0 and heap_type == D3D12_HEAP_TYPE_DEFAULT)
+            d3d12_bridge_device_create_storage_buffer(rt.device, @intCast(d.size))
+        else
+            d3d12_bridge_device_create_buffer(rt.device, @intCast(d.size), heap_type);
         if (buf.mtl == null) {
             alloc.destroy(buf);
             return null;
@@ -361,6 +367,11 @@ fn performBufferMap(b: *DoeBuffer, mode: u64) u32 {
         if (expect_heap == 0 or b.d3d12_heap_type != expect_heap or b.mtl == null) {
             return WGPU_MAP_ASYNC_STATUS_ERROR;
         }
+        // Mapping must observe prior writes and wait before exposing upload
+        // memory that earlier submissions may still be reading.
+        const device = b.dev orelse return WGPU_MAP_ASYNC_STATUS_ERROR;
+        const rt = runtime_helpers.device_d3d12_runtime(device) orelse return WGPU_MAP_ASYNC_STATUS_ERROR;
+        _ = rt.flush_queue() catch return WGPU_MAP_ASYNC_STATUS_ERROR;
         if (b.d3d12_mapped_ptr == null) b.d3d12_mapped_ptr = d3d12_bridge_resource_map(b.mtl);
         if (b.d3d12_mapped_ptr == null) {
             return WGPU_MAP_ASYNC_STATUS_ERROR;

@@ -886,9 +886,9 @@
       },
       "src/backend/d3d12/d3d12_native_runtime.zig": {
         "decision": "Keep",
-        "moduleSha256": "958c1f01b751a9010fefc223c675b918a3dad8b6dab754f84b75a251a15c76f3",
-        "reason": "Keep: reachable backend implementation shared by 2 production consumers with no conflicting ownership signal.",
-        "reviewer": "codex-hexagonal-migration/2026-08-22"
+        "moduleSha256": "2980a8f6c8bcf82bf89b5c198416ec430ef06aaab451b28234fd4faef82f74cf",
+        "reason": "Keep: backend owns COM device retention and LUID-based identity. Borrowed selected devices gain one reference before bootstrap; errdefer and normal teardown release it. Existing default construction remains; no re-selection occurs for adapter-backed device requests.",
+        "reviewer": "codex-windows-identity/2026-10-19"
       },
       "src/backend/d3d12/d3d12_query_set.zig": {
         "decision": "Keep",
@@ -898,9 +898,9 @@
       },
       "src/backend/d3d12/d3d12_runtime_compute.zig": {
         "decision": "Keep",
-        "moduleSha256": "cf6e1b568b3b5e51344491b89b6a1fb8c21bddc3456c06917de9ea34958b6721",
-        "reason": "Keep: reachable backend implementation with a distinct named responsibility and no merge, elevation, recomposition, or deletion signal.",
-        "reviewer": "codex-common-audit/2026-09-19"
+        "moduleSha256": "65c7457ac6eba7b4a079b2241a9374c4efdabe8c1ca13287e2c7afbb25601194",
+        "reason": "Keep: Existing DXC owner exposes HLSL compilation for native compute integration; close-before-spawn lifetime fix retained. No shader cache, compiler architecture or CLI behavior change.",
+        "reviewer": "codex-public-d3d12-compute/2026-10-19"
       },
       "src/backend/d3d12/d3d12_runtime_upload.zig": {
         "decision": "Keep",
@@ -988,9 +988,9 @@
       },
       "src/backend/dropin_resource_ops.zig": {
         "decision": "Keep",
-        "moduleSha256": "5f4b5de2571d190f898615d90f8d206b5702f0a71866b2822770a8804556ada9",
-        "reason": "Keep: buffer/image transfers have one Vulkan recording owner; obsolete CPU readback delegation is removed.",
-        "reviewer": "codex-texture-transfer/2026-09-07"
+        "moduleSha256": "ff91219d34e44ef4d6ed5f4fbc707063c0d6109627866b51818cff76b596f0ed",
+        "reason": "Keep: Existing resource integration facade reexports D3D12 HLSL compilation owner; no behavior moved into facade.",
+        "reviewer": "codex-public-d3d12-compute/2026-10-19"
       },
       "src/backend/dropin_surface_ops.zig": {
         "decision": "Keep",
@@ -3226,15 +3226,15 @@
       },
       "src/dropin/wgpu_dropin_ext_a_core.zig": {
         "decision": "Keep",
-        "moduleSha256": "85057ad434193ada28d44b6325e5c1d3397c0235653b255f65bbd9e7c858487b",
-        "reason": "Keep: reachable dropin implementation shared by 3 production consumers with no conflicting ownership signal.",
-        "reviewer": "codex-packed-integers/2026-10-11"
+        "moduleSha256": "e071af1670dbe4098fc896472934dc46737eb64c71afc39ed3c35a8eea67c74f",
+        "reason": "Keep: ABI capability projection reads adapter-owned identity. D3D12 device name, vendor/device IDs and software CPU classification come from its retained selection; no separate enumeration or fabricated hardware identity is introduced.",
+        "reviewer": "codex-windows-identity/2026-10-19"
       },
       "src/dropin/wgpu_dropin_ext_a_exports.zig": {
         "decision": "Keep",
-        "moduleSha256": "c54904aa72bc40498bdd391539e8618af4cb89155423420b26a7a8d24afff2df",
-        "reason": "Keep: ABI feature identity and native enumeration stay at existing capability boundaries; target-specific builtin names stay with HLSL maps.",
-        "reviewer": "codex-packed-integers/2026-10-11"
+        "moduleSha256": "42288b2ca96bcf84b82336f3e0b89e9ed98e1c58cc0223b36be9119451b00fa3",
+        "reason": "Keep: reviewed pre-existing delta from 3ce13a4803e3f2b95dba49edf24086abe5a06ca1; unadvertised Dawn format queries reject without output writes or foreign-provider forwarding. Free-members remains with its ABI owner and accepts only implementation-owned outputs; the corrected C fixture checks empty extensions and an actual nonempty feature allocation/release.",
+        "reviewer": "codex-windows-provenance/2026-10-19"
       },
       "src/dropin/wgpu_dropin_ext_a_pipeline.zig": {
         "decision": "Keep",
@@ -3256,9 +3256,9 @@
       },
       "src/dropin/wgpu_dropin_lib.zig": {
         "decision": "Keep",
-        "moduleSha256": "7d4269a230631607b197aacaa8205092c1b485230707772677fbd94394150369",
-        "reason": "Keep: exported WebGPU ABI lookup owns the Chromium function-table boundary; instance capability queries must resolve to the same local implementation as direct exports.",
-        "reviewer": "codex"
+        "moduleSha256": "2280167cbc8cc65059994b2f07578a2db570af6f9ab7452edd2041393d5e3153",
+        "reason": "Keep: reviewed pre-existing delta from 8d5b020c33e7493bcd4716c86be88a12aca03f12; four capability/free-members mappings stay at the exported ABI lookup owner. C fixtures verify local/direct identity for explicit and sentinel name lengths without forwarding Doe handles to Dawn.",
+        "reviewer": "codex-windows-provenance/2026-10-19"
       },
       "src/evidence/mod.zig": {
         "decision": "Keep",
@@ -3580,9 +3580,9 @@
       },
       "src/native/lifecycle/doe_instance_device_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "f5942048797797a170b346495415c9978b0fb77283e94ebe766f30ff03393017",
-        "reason": "Keep: native construction and physical teardown owner now separates application references from internal cleanup leases and delegates the loss obligation.",
-        "reviewer": "codex"
+        "moduleSha256": "481bd29332d72a0d36b15bf133f1d8411db70d51453356511cecdc52efb287a4",
+        "reason": "Keep: native adapter owns one retained selected D3D12 device and copies identity from that device. Probe failure rejects adapter creation, device creation retains the same selection, and final adapter release drops its reference after device references finish.",
+        "reviewer": "codex-windows-identity/2026-10-19"
       },
       "src/native/mod.zig": {
         "decision": "Keep",
@@ -3610,9 +3610,9 @@
       },
       "src/native/queue/doe_queue_submit_d3d12.zig": {
         "decision": "Keep",
-        "moduleSha256": "dec0d612820946f9ca3f8363635141968ae3c7fbad7903e9a91c814a85db2618",
-        "reason": "Keep: reachable native implementation with a distinct named responsibility and no merge, elevation, recomposition, or deletion signal.",
-        "reviewer": "codex-recomposition-review/2026-08-08"
+        "moduleSha256": "7b641376ddf4991c619c229c67bb8f722d935160c99021b3b293b1f0aae0d949",
+        "reason": "Keep: Queue preflights every dispatch before execution, permits admitted compute with copies under COPY_DEST boundary, rejects mixed render and unsupported command tags, and retains all GPU objects to terminal retirement.",
+        "reviewer": "codex-public-d3d12-compute/2026-10-19"
       },
       "src/native/queue/doe_queue_submit_metal.zig": {
         "decision": "Keep",
@@ -3676,9 +3676,9 @@
       },
       "src/native/resource/doe_buffer_ops_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "eb3c5b36e7006323f44ed0e5f6563c063e7fa3205545fce71756f1277f1eb812",
-        "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission.",
-        "reviewer": "codex"
+        "moduleSha256": "a182bad31539da1c1ca347862a3368327139e1a8fbea0054944a6febe7d0b343",
+        "reason": "Keep: Buffer owner selects UAV-capable DEFAULT allocation only for storage usage; upload/readback roles and map-completion fix preserved.",
+        "reviewer": "codex-public-d3d12-compute/2026-10-19"
       },
       "src/native/resource/doe_command_texture_native.zig": {
         "decision": "Keep",
@@ -3718,9 +3718,9 @@
       },
       "src/native/shader/doe_shader_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "1edcd9971225ddc0007eec9fc67912678309ca8ccae81a89811d98e3def2d356",
-        "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission.",
-        "reviewer": "codex"
+        "moduleSha256": "39bb270af3f79d445ea8fc253a05e8c415a3f734946ffd28f2406b5b18f2d4fe",
+        "reason": "Keep: Shader owner validates and retains WGSL for D3D12; routes compute to bounded native integration; releases D3D12 PSO/root through COM, with existing shader/layout references and diagnostics preserved.",
+        "reviewer": "codex-public-d3d12-compute/2026-10-19"
       },
       "src/native/shader/doe_shader_translation_cache.zig": {
         "decision": "Keep",
@@ -3778,9 +3778,9 @@
       },
       "src/native/support/doe_native_object_types.zig": {
         "decision": "Keep",
-        "moduleSha256": "dd9abd221b315299abb051525d438ed4b0ae9cb72f15dda8bebee7722e24cd12",
-        "reason": "Keep: native object contract stores explicit logical device destruction, external reference count and one loss obligation.",
-        "reviewer": "codex"
+        "moduleSha256": "488be3285c936a5b35d96a1ee79394ed6e73ea022bceac02cdb6c13d5292e5d0",
+        "reason": "Keep: native pipeline stores whether its scalar-array extent is static or supplied by the bound descriptor; minimum binding bytes retain their validation meaning. Existing root/PSO, shader and layout ownership is preserved.",
+        "reviewer": "codex-d3d12-runtime-array/2026-10-19"
       },
       "src/native/support/doe_native_runtime_helpers.zig": {
         "decision": "Keep",
@@ -4441,6 +4441,12 @@
         "moduleSha256": "68f747f81b0ff22ebde9746ff6b455852cc2d78ff35e00dbba8f348deb207840",
         "reason": "Keep: packed integer admission and arithmetic stay compiler-owned; shared typed lowering preserves signedness and single evaluation. Source targets share an exact integer reduction, while Vulkan owns GLSL instruction selection.",
         "reviewer": "codex-packed-integers/2026-10-11"
+      },
+      "src/native/compute/doe_compute_d3d12.zig": {
+        "decision": "Keep",
+        "moduleSha256": "b884a165f779b42ba3013489fed2a945c5d6c640dcc1e2b7e681ee0aae82a114",
+        "reason": "Keep: bounded D3D12 integration derives automatic single-storage-binding layouts only after existing analyzed-IR admission, using authoritative shader buffer reflection and existing native layout constructors/releases. Per-pipeline distinct layout identity and pipeline-owned retention reuse GetBindGroupLayout and dispatch validation. Explicit layout, descriptors, shader compiler and queue ownership remain unchanged.",
+        "reviewer": "codex-d3d12-auto-layout/2026-10-19"
       }
     },
     "linePolicy": {

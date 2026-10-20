@@ -7,6 +7,47 @@
 
 const std = @import("std");
 
+test "D3D12 selected adapter identity survives application adapter release" {
+    if (@import("builtin").os.tag != .windows) return error.SkipZigTest;
+    const lifecycle = @import("../../src/native/lifecycle/doe_instance_device_native.zig");
+    const helpers = @import("../../src/native/support/doe_native_object_helpers.zig");
+    const objects = @import("../../src/native/support/doe_native_object_types.zig");
+    const runtime = @import("../../src/backend/dropin_lifecycle.zig").NativeD3D12Runtime;
+    try std.testing.expectError(error.UnsupportedFeature, runtime.initWithDevice(std.testing.allocator, null));
+    const absent = runtime{ .allocator = std.testing.allocator };
+    try std.testing.expectError(error.AdapterIdentityUnavailable, absent.adapterIdentity());
+    const info_core = @import("../../src/dropin/wgpu_dropin_ext_a_core.zig");
+    const Reply = struct {
+        fn ready(status: u32, adapter: ?*anyopaque, _: types.WGPUStringView, userdata: ?*anyopaque, _: ?*anyopaque) callconv(.c) void {
+            if (status == 1) @as(*?*anyopaque, @ptrCast(@alignCast(userdata.?))).* = adapter;
+        }
+    };
+    const instance = lifecycle.doeNativeCreateInstance(null) orelse return error.InstanceUnavailable;
+    defer lifecycle.doeNativeInstanceRelease(instance);
+    var adapter_raw: ?*anyopaque = null;
+    _ = lifecycle.doeNativeRequestAdapterFlat(instance, null, 3, Reply.ready, @ptrCast(&adapter_raw), null);
+    const adapter = helpers.cast(objects.DoeAdapter, adapter_raw) orelse return error.AdapterUnavailable;
+    defer lifecycle.doeNativeAdapterRelease(adapter_raw);
+    try std.testing.expectEqual(.d3d12, adapter.backend);
+    const device_raw = lifecycle.doeNativeAdapterCreateDevice(adapter_raw, null) orelse return error.DeviceUnavailable;
+    defer lifecycle.doeNativeDeviceRelease(device_raw);
+    const device = helpers.cast(objects.DoeDevice, device_raw).?;
+    const rt: *runtime = @ptrCast(@alignCast(device.d3d12_runtime.?));
+    try std.testing.expectEqual(adapter.d3d12_device, rt.device);
+    const identity = try rt.adapterIdentity();
+    var info = info_core.p1cap.initAdapterInfo(null);
+    try std.testing.expectEqual(info_core.abi_core.WGPUStatus_Success, info_core.fill_adapter_info_struct(@ptrCast(adapter_raw), &info));
+    try std.testing.expectEqual(identity.vendor_id, info.vendorID);
+    try std.testing.expectEqual(identity.device_id, info.deviceID);
+    try std.testing.expectEqualStrings(std.mem.sliceTo(&identity.name, 0), info.device.data[0..info.device.length]);
+    try std.testing.expectEqual(@as(u32, if (identity.software != 0) 3 else 4), info.adapterType);
+    lifecycle.doeNativeAdapterRelease(adapter_raw);
+    adapter_raw = null;
+    const after_release = try rt.adapterIdentity();
+    try std.testing.expectEqual(identity.vendor_id, after_release.vendor_id);
+    try std.testing.expectEqual(identity.device_id, after_release.device_id);
+}
+
 const WGPU_QUERY_TYPE_OCCLUSION: u32 = 0x00000001;
 
 const shader = @import("../../src/native/shader/doe_shader_native.zig");

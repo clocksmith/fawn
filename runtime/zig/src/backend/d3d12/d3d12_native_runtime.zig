@@ -120,6 +120,31 @@ pub const NativeD3D12Runtime = struct {
         return self;
     }
 
+    // The adapter owns the selection; each runtime retains that same device.
+    pub fn initWithDevice(allocator: std.mem.Allocator, device: ?*anyopaque) !NativeD3D12Runtime {
+        const selected = device orelse return error.UnsupportedFeature;
+        bridge.c.d3d12_bridge_retain(selected);
+        var self = NativeD3D12Runtime{ .allocator = allocator, .device = selected };
+        errdefer self.deinit();
+        try self.bootstrap();
+        return self;
+    }
+
+    pub fn retainDevice(self: *const NativeD3D12Runtime) ?*anyopaque {
+        bridge.c.d3d12_bridge_retain(self.device);
+        return self.device;
+    }
+
+    pub fn releaseDevice(device: ?*anyopaque) void {
+        bridge.c.d3d12_bridge_release(device);
+    }
+
+    pub fn adapterIdentity(self: *const NativeD3D12Runtime) !bridge.c.D3D12AdapterIdentity {
+        var identity: bridge.c.D3D12AdapterIdentity = undefined;
+        if (bridge.c.d3d12_bridge_device_identity(self.device, &identity) != 0) return error.AdapterIdentityUnavailable;
+        return identity;
+    }
+
     pub fn deinit(self: *NativeD3D12Runtime) void {
         if (self.has_device) {
             // Teardown recovers a failed flush with the blocking ownership barrier.
@@ -518,7 +543,7 @@ pub const NativeD3D12Runtime = struct {
     // --- Private ---
 
     fn bootstrap(self: *NativeD3D12Runtime) !void {
-        self.device = bridge.c.d3d12_bridge_create_device() orelse return error.UnsupportedFeature;
+        if (self.device == null) self.device = bridge.c.d3d12_bridge_create_device() orelse return error.UnsupportedFeature;
         self.queue = bridge.c.d3d12_bridge_device_create_command_queue(self.device) orelse return error.InvalidState;
         self.fence = bridge.c.d3d12_bridge_device_create_fence(self.device) orelse return error.InvalidState;
         self.retirement_fence = bridge.c.d3d12_bridge_device_create_fence(self.device) orelse return error.InvalidState;

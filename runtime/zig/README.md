@@ -139,6 +139,53 @@ time, per-build process RSS, and artifact size; it does not modify active work.
 See the [architecture audit](../../docs/status/runtime-architecture-audit.md)
 for the current recipe disposition and scoped evidence.
 
+## Windows D3D12 recorded compute subset
+
+The public recorded compute path admits an explicit or automatic pipeline
+layout with one group, one read/write storage buffer at group 0 / binding 0, and a
+fixed-size or runtime-sized array of `u32`, `i32`, or `f32`. The WGSL entry
+point is `main` with a one-dimensional workgroup. Dispatch is one-dimensional
+and must fit the declared array, or the bound view for a runtime-sized array.
+The binding offset must be zero. Fixed arrays require the declared size; runtime
+arrays require at least one scalar element. `arrayLength` returns the descriptor's
+element count, including when the binding is shorter than the allocation.
+DXC must be available on the invoking process's PATH.
+
+Compiler analysis and HLSL emission are reused. Proof obligations remain attached
+to the pipeline and are validated at recording and submission. The queue permits
+copies around admitted compute, retaining buffers, pipeline, root signature and
+per-dispatch descriptor heaps through completion. Indirect dispatch, other
+binding shapes, overrides, and mixed render/compute/copy
+submissions remain rejected. Pure render submission is a separate path.
+
+`tests/d3d12_compute_readback.c` dynamically loads the DLL and checks a CPU
+numerical oracle, early caller release, repeated dispatch ordering, and rejection
+without modifying a prefilled readback buffer. Build it with the pinned Zig C
+compiler and `-I vendor/webgpu-headers`, then pass the DLL path and optionally
+`float`, `int`, `repeat`, `reject`, or `unsupported`. The last mode checks pipeline
+rejection for an aggregate array. `tests/d3d12_buffer_readback.c` retains copy-only
+coverage. These focused tests do not qualify full WebGPU/D3D12 support or speed.
+
+`tests/d3d12_runtime_array_readback.c` adds bound-length numerical oracles. Its
+`short` mode checks a 16-byte view over a 32-byte allocation, preserving the tail;
+`rebind` checks two descriptor lengths in one command list. `fixture` runs the
+unchanged increment shader from `native_recorded_compute.c` using this harness's
+explicit layout. The full original application remains unqualified. The scalar,
+repeat and rejection modes are also available.
+`recover` rejects an aggregate-array pipeline, then creates and executes a valid
+runtime-array pipeline on the same device.
+
+`tests/d3d12_auto_layout_readback.c` exercises the same scalar-storage subset
+with no explicit pipeline layout. It retrieves and releases the pipeline-owned
+bind group layout, including after a sibling pipeline is released. `mismatch`
+checks rejection of a bind group made from that sibling automatic layout while
+preserving a prefilled output; `fixed` covers a fixed-size scalar array. The
+runtime-array modes above remain available. These checks cover automatic layout
+ownership and binding identity within the admitted subset. The original
+`native_recorded_compute.c` still requests Vulkan and includes texture-copy
+operations outside the D3D12 subset; its unchanged shader is not a whole-application
+qualification.
+
 ## Native callback delivery
 
 The [bounded callback contract](../../docs/native-callback-contract.md) specifies

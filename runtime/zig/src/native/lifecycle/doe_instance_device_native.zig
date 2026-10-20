@@ -186,12 +186,6 @@ fn selected_vulkan_policy() CreateDeviceError!SelectedVulkanRuntimePolicy {
     };
 }
 
-fn probe_d3d12_adapter_caps() d3d12_device_caps.D3D12DeviceCaps {
-    var rt = NativeD3D12Runtime.init(alloc, null) catch return .{};
-    defer rt.deinit();
-    return rt.device_caps;
-}
-
 fn stringView(comptime message: []const u8) abi_base.WGPUStringView {
     return .{ .data = message.ptr, .length = message.len };
 }
@@ -230,6 +224,7 @@ const CreateAdapterError = error{
     AdapterUnavailable,
     AdapterAllocationFailed,
     VkAdapterProbeFailed,
+    D3D12AdapterProbeFailed,
 };
 
 fn create_device_error_message(err: CreateDeviceError) abi_base.WGPUStringView {
@@ -249,6 +244,7 @@ fn create_adapter_error_message(err: CreateAdapterError) abi_base.WGPUStringView
         error.AdapterUnavailable => stringView(MSG_ADAPTER_UNAVAILABLE),
         error.AdapterAllocationFailed => stringView(MSG_ADAPTER_ALLOCATION_FAILED),
         error.VkAdapterProbeFailed => stringView(MSG_VK_ADAPTER_PROBE_FAILED),
+        error.D3D12AdapterProbeFailed => stringView("d3d12 selected adapter identity unavailable"),
     };
 }
 
@@ -257,10 +253,20 @@ fn create_adapter_for_instance(inst: ?*anyopaque) CreateAdapterError!*DoeAdapter
 
     switch (selected_backend()) {
         .d3d12 => {
+            var rt = NativeD3D12Runtime.init(alloc, null) catch return error.D3D12AdapterProbeFailed;
+            defer rt.deinit();
+            const identity = rt.adapterIdentity() catch return error.D3D12AdapterProbeFailed;
             const adapter = make(DoeAdapter) orelse return error.AdapterAllocationFailed;
             if (retained_instance) |instance_ref| instance_add_ref(instance_ref);
             adapter.* = .{ .backend = .d3d12, .instance = retained_instance };
-            d3d12_device_caps.set_adapter_caps(toOpaque(adapter), probe_d3d12_adapter_caps());
+            adapter.d3d12_device = rt.retainDevice();
+            adapter.vendor_id = identity.vendor_id;
+            adapter.device_id = identity.device_id;
+            adapter.adapter_type = if (identity.software != 0) 3 else 4;
+            const name = std.mem.sliceTo(&identity.name, 0);
+            adapter.device_name_len = @min(name.len, adapter.device_name.len);
+            @memcpy(adapter.device_name[0..adapter.device_name_len], name[0..adapter.device_name_len]);
+            d3d12_device_caps.set_adapter_caps(toOpaque(adapter), rt.device_caps);
             return adapter;
         },
         .vulkan => {
@@ -414,7 +420,7 @@ fn create_device_object(
             alloc.destroy(dev);
             return error.DeviceAllocationFailed;
         };
-        rt.* = NativeD3D12Runtime.init(alloc, null) catch {
+        rt.* = NativeD3D12Runtime.initWithDevice(alloc, adapter.d3d12_device) catch {
             alloc.destroy(rt);
             alloc.destroy(dev);
             return error.D3D12RuntimeInitFailed;
@@ -613,7 +619,10 @@ pub export fn doeNativeAdapterRelease(raw: ?*anyopaque) callconv(.c) void {
                 if (a.vulkan_selection) |selection| vk_adapter_probe.release_selection(alloc, selection);
             }
         }
-        if (a.backend == .d3d12) d3d12_device_caps.remove_adapter_caps(raw);
+        if (a.backend == .d3d12) {
+            d3d12_device_caps.remove_adapter_caps(raw);
+            NativeD3D12Runtime.releaseDevice(a.d3d12_device);
+        }
         if (a.backend == .metal) if (a.mtl_device) |device| metal_bridge_release(device);
         if (a.instance) |instance_ref| doeNativeInstanceRelease(toOpaque(instance_ref));
         alloc.destroy(a);

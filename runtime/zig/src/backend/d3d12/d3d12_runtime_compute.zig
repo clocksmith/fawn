@@ -362,7 +362,7 @@ pub fn stripExtension(name: []const u8) []const u8 {
     return name;
 }
 
-fn compileHlslToBytecode(alloc: std.mem.Allocator, hlsl_source: []const u8) ![]u8 {
+pub fn compileHlslToBytecode(alloc: std.mem.Allocator, hlsl_source: []const u8) ![]u8 {
     std.fs.cwd().makePath(GENERATED_SHADER_DIR) catch return error.ShaderCompileFailed;
 
     const source_hash = std.hash.Wyhash.hash(0, hlsl_source);
@@ -374,9 +374,13 @@ fn compileHlslToBytecode(alloc: std.mem.Allocator, hlsl_source: []const u8) ![]u
     defer alloc.free(cso_path);
 
     if (!try path_utils.file_exists(cso_path)) {
-        const file = std.fs.cwd().createFile(hlsl_path, .{ .truncate = true }) catch return error.ShaderCompileFailed;
-        defer file.close();
-        file.writeAll(hlsl_source) catch return error.ShaderCompileFailed;
+        {
+            const file = std.fs.cwd().createFile(hlsl_path, .{ .truncate = true }) catch return error.ShaderCompileFailed;
+            defer file.close();
+            file.writeAll(hlsl_source) catch return error.ShaderCompileFailed;
+        }
+        // DXC's Windows reader does not share write access. End our writer's
+        // lifetime before starting the compiler, including on write failure.
         try runDxc(alloc, hlsl_path, cso_path, DXC_ENTRYPOINT);
     }
 
