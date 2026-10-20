@@ -2,16 +2,29 @@
 // passing a Doe adapter into Dawn or modifying caller-owned output chains.
 // cc -I vendor/webgpu-headers tests/format_capability_lookup.c -o /tmp/format-capability-lookup
 // /tmp/format-capability-lookup /absolute/path/libwebgpu_doe_full.dylib
+#ifdef _WIN32
+#include <windows.h>
+#define RTLD_NOW 0
+#define RTLD_LOCAL 0
+#define dlopen(name, flags) ((void *)LoadLibraryA(name))
+#define dlsym(library, name) ((void *)GetProcAddress((HMODULE)(library), name))
+#define dlclose(library) FreeLibrary((HMODULE)(library))
+#else
 #include <dlfcn.h>
+#endif
 #include <stdint.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include "webgpu.h"
 
 typedef struct { void *nextInChain; } DawnFormatCapabilities;
 typedef WGPUStatus (*GetFormatCapabilities)(WGPUAdapter, WGPUTextureFormat, DawnFormatCapabilities *);
-enum { DAWN_FORMAT_CAPABILITIES = 0x00050017, DAWN_DRM_FORMAT_CAPABILITIES = 0x00050018 };
+enum {
+    ADAPTER_MEMORY_HEAPS = 0x00050014,
+    DAWN_FORMAT_CAPABILITIES = 0x00050017,
+    DAWN_DRM_FORMAT_CAPABILITIES = 0x00050018,
+    SUBGROUP_MATRIX = 0x00050034,
+};
 
 // These extension outputs share the chain/count/owned-array ABI. Their element
 // layout differs; free-members must also accept the default empty output.
@@ -35,9 +48,9 @@ static int check_free_members(void *library, WGPUProcGetProcAddress lookup) {
                 return 0;
             }
             resolved((CapabilityArray){0});
-            void *members = calloc(1, 64);
-            if (!members) return 0;
-            resolved((CapabilityArray){.count = 1, .members = members});
+            // These extensions are not produced by Doe. Only empty outputs are
+            // valid here; caller calloc memory is not an implementation-owned
+            // output and is incompatible with Zig's Windows c_allocator.
         }
     }
     return 1;
@@ -53,7 +66,14 @@ static void adapter_ready(WGPURequestAdapterStatus status, WGPUAdapter adapter,
 int main(int argc, char **argv) {
     if (argc != 2) return 2;
     void *library = dlopen(argv[1], RTLD_NOW | RTLD_LOCAL);
-    if (!library) { fprintf(stderr, "%s\n", dlerror()); return 2; }
+    if (!library) {
+#ifdef _WIN32
+        fprintf(stderr, "LoadLibrary failed: %lu\n", GetLastError());
+#else
+        fprintf(stderr, "%s\n", dlerror());
+#endif
+        return 2;
+    }
     WGPUProcGetProcAddress lookup = (WGPUProcGetProcAddress)dlsym(library, "wgpuGetProcAddress");
     GetFormatCapabilities direct = (GetFormatCapabilities)dlsym(library, "wgpuAdapterGetFormatCapabilities");
     if (!lookup || !direct) return 1;
@@ -71,9 +91,11 @@ int main(int argc, char **argv) {
     WGPUProcInstanceRequestAdapter request = (WGPUProcInstanceRequestAdapter)dlsym(library, "wgpuInstanceRequestAdapter");
     WGPUProcInstanceProcessEvents process = (WGPUProcInstanceProcessEvents)dlsym(library, "wgpuInstanceProcessEvents");
     WGPUProcAdapterHasFeature has = (WGPUProcAdapterHasFeature)dlsym(library, "wgpuAdapterHasFeature");
+    WGPUProcAdapterGetFeatures get_features = (WGPUProcAdapterGetFeatures)dlsym(library, "wgpuAdapterGetFeatures");
+    WGPUProcSupportedFeaturesFreeMembers free_features = (WGPUProcSupportedFeaturesFreeMembers)dlsym(library, "wgpuSupportedFeaturesFreeMembers");
     WGPUProcAdapterRelease release_adapter = (WGPUProcAdapterRelease)dlsym(library, "wgpuAdapterRelease");
     WGPUProcInstanceRelease release_instance = (WGPUProcInstanceRelease)dlsym(library, "wgpuInstanceRelease");
-    if (!create || !request || !process || !has || !release_adapter || !release_instance) return 1;
+    if (!create || !request || !process || !has || !get_features || !free_features || !release_adapter || !release_instance) return 1;
     WGPUInstance instance = create(NULL);
     if (!instance) return 1;
     WGPUAdapter adapter = NULL;
@@ -85,6 +107,16 @@ int main(int argc, char **argv) {
     process(instance);
     int passed = adapter != NULL;
     if (adapter) {
+        // Exercise nonempty ownership using an actual API producer and its
+        // paired release, never a fabricated allocation from the caller CRT.
+        WGPUSupportedFeatures features = WGPU_SUPPORTED_FEATURES_INIT;
+        get_features(adapter, &features);
+        passed &= features.featureCount > 0 && features.features != NULL;
+        for (size_t i = 0; features.features && i < features.featureCount; ++i)
+            passed &= has(adapter, features.features[i]);
+        free_features(features);
+        passed &= !has(adapter, (WGPUFeatureName)ADAPTER_MEMORY_HEAPS);
+        passed &= !has(adapter, (WGPUFeatureName)SUBGROUP_MATRIX);
         passed &= !has(adapter, (WGPUFeatureName)DAWN_FORMAT_CAPABILITIES);
         passed &= !has(adapter, (WGPUFeatureName)DAWN_DRM_FORMAT_CAPABILITIES);
         unsigned char chain[64];

@@ -15,6 +15,34 @@ D3D12Handle d3d12_bridge_create_device(void) {
     return (D3D12Handle)device;
 }
 
+void d3d12_bridge_retain(D3D12Handle obj) {
+    if (obj != NULL) IUnknown_AddRef((IUnknown*)obj);
+}
+
+int d3d12_bridge_device_identity(D3D12Handle device_h, D3D12AdapterIdentity* out) {
+    if (device_h == NULL || out == NULL) return -1;
+    IDXGIFactory4* factory = NULL;
+    HRESULT hr = CreateDXGIFactory1(&IID_IDXGIFactory4, (void**)&factory);
+    if (FAILED(hr)) return -1;
+    LUID luid = ID3D12Device_GetAdapterLuid((ID3D12Device*)device_h);
+    IDXGIAdapter1* adapter = NULL;
+    hr = IDXGIFactory4_EnumAdapterByLuid(factory, luid, &IID_IDXGIAdapter1, (void**)&adapter);
+    IDXGIFactory4_Release(factory);
+    if (FAILED(hr)) return -1;
+    DXGI_ADAPTER_DESC1 desc;
+    hr = IDXGIAdapter1_GetDesc1(adapter, &desc);
+    IDXGIAdapter1_Release(adapter);
+    if (FAILED(hr)) return -1;
+    D3D12AdapterIdentity identity = {0};
+    identity.vendor_id = desc.VendorId;
+    identity.device_id = desc.DeviceId;
+    identity.software = (desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE) != 0;
+    if (WideCharToMultiByte(CP_UTF8, 0, desc.Description, -1, identity.name,
+                           sizeof(identity.name), NULL, NULL) == 0) return -1;
+    *out = identity;
+    return 0;
+}
+
 void d3d12_bridge_release(D3D12Handle obj) {
     if (obj == NULL) return;
     IUnknown* unk = (IUnknown*)obj;
@@ -59,7 +87,7 @@ D3D12Handle d3d12_bridge_device_create_command_list(D3D12Handle device_h, D3D12H
     return (D3D12Handle)cmd_list;
 }
 
-D3D12Handle d3d12_bridge_device_create_buffer(D3D12Handle device_h, size_t size, int heap_type) {
+static D3D12Handle create_buffer(D3D12Handle device_h, size_t size, int heap_type, D3D12_RESOURCE_FLAGS flags) {
     ID3D12Device* device = (ID3D12Device*)device_h;
 
     D3D12_HEAP_PROPERTIES heap_props;
@@ -86,7 +114,7 @@ D3D12Handle d3d12_bridge_device_create_buffer(D3D12Handle device_h, size_t size,
     resource_desc.SampleDesc.Count   = 1;
     resource_desc.SampleDesc.Quality = 0;
     resource_desc.Layout             = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
-    resource_desc.Flags              = D3D12_RESOURCE_FLAG_NONE;
+    resource_desc.Flags              = flags;
 
     D3D12_RESOURCE_STATES initial_state;
     if (heap_type == 3) {
@@ -106,6 +134,14 @@ D3D12Handle d3d12_bridge_device_create_buffer(D3D12Handle device_h, size_t size,
     return (D3D12Handle)resource;
 }
 
+D3D12Handle d3d12_bridge_device_create_buffer(D3D12Handle device, size_t size, int heap_type) {
+    return create_buffer(device, size, heap_type, D3D12_RESOURCE_FLAG_NONE);
+}
+
+D3D12Handle d3d12_bridge_device_create_storage_buffer(D3D12Handle device, size_t size) {
+    return create_buffer(device, size, 1, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
+}
+
 uint64_t d3d12_bridge_buffer_get_size(D3D12Handle buffer_h) {
     ID3D12Resource* buffer = (ID3D12Resource*)buffer_h;
     if (buffer == NULL) return 0;
@@ -118,6 +154,34 @@ void d3d12_bridge_command_list_copy_buffer(D3D12Handle cmd_list_h, D3D12Handle d
     ID3D12Resource* dst = (ID3D12Resource*)dst_h;
     ID3D12Resource* src = (ID3D12Resource*)src_h;
     cmd_list->lpVtbl->CopyBufferRegion(cmd_list, dst, 0, src, 0, (UINT64)size);
+}
+
+int d3d12_bridge_command_list_copy_buffer_region(D3D12Handle cmd_list_h, D3D12Handle dst_h,
+    uint64_t dst_offset, D3D12Handle src_h, uint64_t src_offset, uint64_t size) {
+    if (!cmd_list_h || !src_h || !dst_h || src_h == dst_h) return -1;
+    ID3D12Resource* src = (ID3D12Resource*)src_h;
+    ID3D12Resource* dst = (ID3D12Resource*)dst_h;
+    D3D12_RESOURCE_DESC sd = ID3D12Resource_GetDesc(src);
+    D3D12_RESOURCE_DESC dd = ID3D12Resource_GetDesc(dst);
+    if (sd.Dimension != D3D12_RESOURCE_DIMENSION_BUFFER || dd.Dimension != D3D12_RESOURCE_DIMENSION_BUFFER ||
+        src_offset > sd.Width || size > sd.Width - src_offset ||
+        dst_offset > dd.Width || size > dd.Width - dst_offset ||
+        ((src_offset | dst_offset | size) & 3) != 0) return -1;
+    D3D12_HEAP_PROPERTIES sh, dh;
+    if (FAILED(ID3D12Resource_GetHeapProperties(src, &sh, NULL)) ||
+        FAILED(ID3D12Resource_GetHeapProperties(dst, &dh, NULL))) return -1;
+    if ((sh.Type != D3D12_HEAP_TYPE_DEFAULT && sh.Type != D3D12_HEAP_TYPE_UPLOAD) ||
+        (dh.Type != D3D12_HEAP_TYPE_DEFAULT && dh.Type != D3D12_HEAP_TYPE_READBACK)) return -1;
+    if (size == 0) return 0;
+    if (sh.Type == D3D12_HEAP_TYPE_DEFAULT)
+        d3d12_bridge_command_list_resource_barrier_transition(cmd_list_h, src_h,
+            D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_COPY_SOURCE);
+    ID3D12GraphicsCommandList_CopyBufferRegion((ID3D12GraphicsCommandList*)cmd_list_h,
+        dst, dst_offset, src, src_offset, size);
+    if (sh.Type == D3D12_HEAP_TYPE_DEFAULT)
+        d3d12_bridge_command_list_resource_barrier_transition(cmd_list_h, src_h,
+            D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_COPY_DEST);
+    return 0;
 }
 
 int d3d12_bridge_command_list_close_checked(D3D12Handle cmd_list_h) {

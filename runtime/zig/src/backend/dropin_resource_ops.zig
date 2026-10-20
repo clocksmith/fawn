@@ -10,6 +10,7 @@ const native_rt_helpers = @import("../native/support/doe_native_runtime_helpers.
 pub const metal_bridge = @import("metal/metal_bridge_decls.zig");
 pub const d3d12_constants = @import("d3d12/d3d12_constants.zig");
 pub const d3d12_formats = @import("d3d12/d3d12_formats.zig");
+pub const d3d12_compute = @import("d3d12/d3d12_runtime_compute.zig");
 pub const vk_constants = if (builtin.os.tag == .linux) @import("vulkan/vk_constants.zig") else struct {};
 pub const vk_resources = if (builtin.os.tag == .linux) @import("vulkan/vk_resources.zig") else struct {};
 pub const vk_timestamp = if (builtin.os.tag == .linux) @import("vulkan/vk_timestamp.zig") else struct {};

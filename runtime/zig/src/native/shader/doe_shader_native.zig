@@ -281,6 +281,20 @@ fn createFromWGSLOwned(dev: *DoeDevice, chain: *const abi_callback.WGPUChainedSt
     const wgsl = resolveStringView(wgsl_chain.code) orelse return null;
 
     if (dev.backend == .vulkan) return createFromWGSLVulkanOwned(dev, wgsl, diagnostic);
+    if (dev.backend == .d3d12) {
+        const source = retainWgslSourceOwned(wgsl, diagnostic) orelse return null;
+        const sm = make(DoeShaderModule) orelse {
+            alloc.free(source);
+            return null;
+        };
+        sm.* = .{ .wgsl_source = source };
+        ensureShaderBindings(sm) catch |err| {
+            diagnostic.capture_compile_error(err, "native_shader_create", "D3D12 WGSL validation failed");
+            doeNativeShaderModuleRelease(toOpaque(sm));
+            return null;
+        };
+        return toOpaque(sm);
+    }
 
     if (tryCreateCachedWgslShaderModule(dev, wgsl) catch |err| {
         diagnostic.capture_compile_error(err, "native_shader_create", "retaining cached Metal shader failed");
@@ -757,6 +771,20 @@ fn doeNativeDeviceCreateComputePipelineOwned(dev_raw: ?*anyopaque, desc: ?*const
         return result;
     }
 
+    if (dev.backend == .d3d12) {
+        if (d.compute.constantCount != 0) {
+            diagnostic.capture_compile_error(error.UnsupportedOverrides, "native_compile", "D3D12 compute overrides are unsupported");
+            return null;
+        }
+        const pipeline = @import("../compute/doe_compute_d3d12.zig").createPipeline(dev, sm, cast(DoePipelineLayout, d.layout), stringViewSlice(d.compute.entryPoint) orelse "main", diagnostic) catch |err| {
+            diagnostic.capture_compile_error(err, "native_compile", "D3D12 compute pipeline creation failed");
+            return null;
+        };
+        const result = toOpaque(pipeline);
+        label_store.set(result, d.label.data, d.label.length);
+        return result;
+    }
+
     // If override constants are provided, re-translate the WGSL with overrides applied.
     const has_overrides = override_slice.len > 0;
     var override_lib: ?*anyopaque = null;
@@ -868,7 +896,11 @@ pub export fn doeNativeComputePipelineRelease(raw: ?*anyopaque) callconv(.c) voi
     if (cast(DoeComputePipeline, raw)) |p| {
         if (!native_helpers.object_should_destroy(p)) return;
         label_store.remove(raw);
-        if (p.mtl_pso) |pso| metal_bridge_release(pso);
+        if (p.d3d12_root_signature) |root| {
+            const d3d = @import("../../backend/dropin_queue_submit.zig").d3d12_bridge.c;
+            d3d.d3d12_bridge_release(p.mtl_pso);
+            d3d.d3d12_bridge_release(root);
+        } else if (p.mtl_pso) |pso| metal_bridge_release(pso);
         if (p.dispatch_preconditions.len > 0) alloc.free(p.dispatch_preconditions);
         if (p.texture_dispatch_preconditions.len > 0) alloc.free(p.texture_dispatch_preconditions);
         if (p.layout) |layout| bind_group.doeNativePipelineLayoutRelease(toOpaque(layout));

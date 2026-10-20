@@ -5,6 +5,13 @@
 typedef void* D3D12Handle;
 
 typedef struct {
+    uint32_t vendor_id;
+    uint32_t device_id;
+    uint32_t software;
+    char name[256];
+} D3D12AdapterIdentity;
+
+typedef struct {
     uint32_t format;
     uint32_t input_slot;
     uint32_t aligned_byte_offset;
@@ -49,6 +56,11 @@ typedef struct {
 
 /* Device and core objects */
 D3D12Handle d3d12_bridge_create_device(void);
+/* Retains a borrowed COM handle; null is a no-op. Pair with release. */
+void d3d12_bridge_retain(D3D12Handle obj);
+/* Resolve the device's own LUID. Returns 0, or -1 leaving out unchanged.
+   out is caller-owned; name is a NUL-terminated UTF-8 string. */
+int d3d12_bridge_device_identity(D3D12Handle device, D3D12AdapterIdentity* out);
 void        d3d12_bridge_release(D3D12Handle obj);
 
 D3D12Handle d3d12_bridge_device_create_command_queue(D3D12Handle device);
@@ -58,10 +70,17 @@ D3D12Handle d3d12_bridge_device_create_command_allocator(D3D12Handle device);
 D3D12Handle d3d12_bridge_device_create_command_list(D3D12Handle device, D3D12Handle allocator);
 /* heap_type: 1 = DEFAULT (GPU-local), 2 = UPLOAD (CPU-visible), 3 = READBACK (CPU-readable) */
 D3D12Handle d3d12_bridge_device_create_buffer(D3D12Handle device, size_t size, int heap_type);
+/* DEFAULT heap, UAV capable, initial COPY_DEST state; caller owns result. */
+D3D12Handle d3d12_bridge_device_create_storage_buffer(D3D12Handle device, size_t size);
 uint64_t    d3d12_bridge_buffer_get_size(D3D12Handle buffer);
 
 /* Buffer copy */
 void d3d12_bridge_command_list_copy_buffer(D3D12Handle cmd_list, D3D12Handle dst, D3D12Handle src, size_t size);
+/* Native buffer-copy-only lists: DEFAULT buffers begin/end in COPY_DEST
+   (COMMON after execution decay is also valid). UPLOAD/READBACK stay fixed.
+   Borrows all handles; returns -1 before recording for invalid ranges/heaps. */
+int d3d12_bridge_command_list_copy_buffer_region(D3D12Handle cmd_list, D3D12Handle dst,
+    uint64_t dst_offset, D3D12Handle src, uint64_t src_offset, uint64_t size);
 void d3d12_bridge_command_list_close(D3D12Handle cmd_list);
 int d3d12_bridge_command_list_close_checked(D3D12Handle cmd_list);
 

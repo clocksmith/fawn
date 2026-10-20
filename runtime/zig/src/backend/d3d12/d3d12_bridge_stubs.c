@@ -9,9 +9,12 @@
 #include <stddef.h>
 #include <stdint.h>
 #include "d3d12_bridge.h"
+D3D12Handle d3d12_bridge_device_create_storage_buffer(D3D12Handle device, size_t size) { (void)device; (void)size; return NULL; }
 
 /* Device and core objects */
 D3D12Handle d3d12_bridge_create_device(void) { return NULL; }
+void d3d12_bridge_retain(D3D12Handle obj) { (void)obj; }
+int d3d12_bridge_device_identity(D3D12Handle device, D3D12AdapterIdentity* out) { (void)device; (void)out; return -1; }
 void        d3d12_bridge_release(D3D12Handle obj) { (void)obj; }
 
 D3D12Handle d3d12_bridge_device_create_command_queue(D3D12Handle device) { (void)device; return NULL; }
@@ -22,6 +25,7 @@ D3D12Handle d3d12_bridge_device_create_buffer(D3D12Handle device, size_t size, i
 uint64_t    d3d12_bridge_buffer_get_size(D3D12Handle buffer) { (void)buffer; return 0; }
 
 /* Buffer copy */
+int d3d12_bridge_command_list_copy_buffer_region(D3D12Handle cmd, D3D12Handle dst, uint64_t dst_offset, D3D12Handle src, uint64_t src_offset, uint64_t size) { (void)cmd; (void)dst; (void)dst_offset; (void)src; (void)src_offset; (void)size; return -1; }
 void d3d12_bridge_command_list_copy_buffer(D3D12Handle cmd_list, D3D12Handle dst, D3D12Handle src, size_t size) { (void)cmd_list; (void)dst; (void)src; (void)size; }
 void d3d12_bridge_command_list_close(D3D12Handle cmd_list) { (void)cmd_list; }
 int d3d12_bridge_command_list_close_checked(D3D12Handle cmd_list) { (void)cmd_list; return -1; }

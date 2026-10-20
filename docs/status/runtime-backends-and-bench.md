@@ -1,5 +1,23 @@
 # Doe status: runtime backends and benchmarks
 
+## Windows native correctness boundary
+
+The native Windows lane exercises the bounded D3D12 copy and scalar-storage
+compute subset described in the [runtime contract](../../runtime/zig/README.md#windows-d3d12-recorded-compute-subset).
+The [copy fixture](../../runtime/zig/tests/d3d12_buffer_readback.c),
+[fixed-array fixture](../../runtime/zig/tests/d3d12_compute_readback.c),
+[runtime-array fixture](../../runtime/zig/tests/d3d12_runtime_array_readback.c), and
+[automatic-layout fixture](../../runtime/zig/tests/d3d12_auto_layout_readback.c)
+check independent readback oracles, ordering, ownership and rejected operations.
+This is a local native correctness boundary; it does not qualify the complete
+WebGPU surface, package integration, browser execution or performance.
+
+A source-matched Windows Dawn control and usable package bindings remain
+prerequisites for a paired application comparison. Windows Chromium source,
+build prerequisites and provider-ownership acceptance remain separate blockers
+for the [browser lane](../../browser/chromium/acceptance.md). No Dawn speed win
+or Fawn browser qualification follows from these native fixtures.
+
 ## Qwen Metal correctness
 
 Native Metal limits now use the actual device, and WGSL lowering preserves
