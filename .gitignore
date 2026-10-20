@@ -46,6 +46,16 @@ bench/compare_dawn_vs_doe.config.local.*.json
 # New run workspaces stay local. Retained fixtures need a narrow exception and
 # a named gate/release consumer; force-adding output is rejected in CI.
 bench/out/**
+# Retained compile-report consumer fixtures relocated for Windows checkout.
+!bench/out/maintenance/
+!bench/out/maintenance/20260914-zig-file-reviews/
+!bench/out/maintenance/20260914-zig-file-reviews/runtime-compile-entry/
+!bench/out/maintenance/20260914-zig-file-reviews/runtime-compile-entry/quoted-source.wgsl
+!bench/out/maintenance/20260914-zig-file-reviews/runtime-compile-entry/consumer/
+!bench/out/maintenance/20260914-zig-file-reviews/runtime-compile-entry/consumer/quoted-consumer/
+!bench/out/maintenance/20260914-zig-file-reviews/runtime-compile-entry/consumer/quoted-consumer/doe/
+!bench/out/maintenance/20260914-zig-file-reviews/runtime-compile-entry/consumer/quoted-consumer/doe/compile-report.json
+!bench/out/maintenance/20260914-zig-file-reviews/runtime-compile-entry/consumer/quoted-consumer/doe/output.spv
 !bench/out/
 !bench/out/README.local.md
 !bench/out/browser-promotion/
