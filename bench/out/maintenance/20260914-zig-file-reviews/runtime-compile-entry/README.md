@@ -84,6 +84,25 @@ documents the unchanged schema and explicit tool errors. Process gates,
 runtime trace/replay contracts, accepted package policy, and physical
 calibration retain their existing authority.
 
+## Portable artifact storage
+
+The retained quoted-path regression artifacts now use Windows-compatible storage
+names. Their bytes and SHA-256 identities are unchanged:
+
+- `quoted " source.wgsl` is stored as `quoted-source.wgsl`.
+- `consumer/quote"consumer/doe/compile-report.json` is stored as
+  `consumer/quoted-consumer/doe/compile-report.json`.
+- `consumer/quote"consumer/doe/output.spv` is stored as
+  `consumer/quoted-consumer/doe/output.spv`.
+
+`consumer-result.json` locates the relocated report and output; its timing,
+validation result, and artifact hashes are unchanged. `SHA256SUMS` reflects
+the storage paths and that locator update. Historical raw reports and logs
+retain the original paths and observations. The quoted-path reproduction in
+`verify_cli.py` still requires a filesystem supporting quoted filenames, as
+the original `/dev/full` case requires a POSIX environment. These storage
+changes do not claim Windows compiler qualification.
+
 ## Component handoff
 
 Component: WGSL runtime compile-report tool, forwarding entrypoint, test root

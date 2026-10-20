@@ -3,3 +3,8 @@ reports/maintenance/**/source.diff -whitespace
 reports/maintenance/**/source.patch -whitespace
 # Preserve terminal blank lines in this checkpoint's byte-bound tool output.
 reports/maintenance/20261011-wgsl-packed-integers/*.log whitespace=-blank-at-eof
+# These retained artifacts have byte-bound identities on every host platform.
+bench/out/maintenance/20260914-zig-file-reviews/runtime-compile-entry/consumer/quoted-consumer/doe/* -text
+bench/out/maintenance/20260914-zig-file-reviews/runtime-compile-entry/quoted-source.wgsl -text
+bench/out/maintenance/20260914-zig-file-reviews/runtime-compile-entry/consumer-result.json text eol=lf
+bench/out/maintenance/20260914-zig-file-reviews/runtime-compile-entry/SHA256SUMS text eol=lf
