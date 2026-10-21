@@ -188,8 +188,8 @@ test "statements: repeated for-loop induction vars stay scoped in MSL" {
     const len = try translateToMsl(std.testing.allocator, source, &out);
     try std.testing.expect(len > 0);
     const msl = out[0..len];
-    try std.testing.expect(contains(msl, "{\n        uint i = 0;"));
-    try std.testing.expect(contains(msl, "    }\n    {\n        uint i = 4;"));
+    try std.testing.expect(contains(msl, "{\n        uint i = 0u;"));
+    try std.testing.expect(contains(msl, "    }\n    {\n        uint i = 4u;"));
 }
 
 test "statements: while loop through MSL" {

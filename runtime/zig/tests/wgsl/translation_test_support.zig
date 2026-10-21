@@ -36,7 +36,7 @@ pub fn expectRuntimeSizedConstantIndexCoercesAbstractIntForMslMin(
     const len = try translateToMslFn(allocator, source, &out);
     const msl = out[0..len];
     try std.testing.expect(std.mem.indexOf(u8, msl, "const uint _doe_len_0 = uint(_doe_sizes[0] / sizeof(uint));") != null);
-    try std.testing.expect(std.mem.indexOf(u8, msl, "min(uint(0), (_doe_len_0 - 1))") != null);
+    try std.testing.expect(std.mem.indexOf(u8, msl, "min(uint(0), (_doe_len_0 - 1u))") != null);
 }
 
 pub fn expectVertexArrayClampCoercesU32LiteralForMslMin(
@@ -58,7 +58,7 @@ pub fn expectVertexArrayClampCoercesU32LiteralForMslMin(
     var out: [max_output]u8 = undefined;
     const len = try translateToMslFn(allocator, source, &out);
     const msl = out[0..len];
-    try std.testing.expect(std.mem.indexOf(u8, msl, "min(vid, uint(2))") != null);
+    try std.testing.expect(std.mem.indexOf(u8, msl, "min(vid, uint(2u))") != null);
 }
 
 pub fn expectArrayLengthOnStructMemberCompilesToMsl(
