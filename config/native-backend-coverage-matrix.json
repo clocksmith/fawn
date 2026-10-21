@@ -152,7 +152,7 @@
       "coverageClass": "compute",
       "status": "diagnostic",
       "evidencePath": "",
-      "reasonCode": "needs_windows_artifact",
+      "reasonCode": "bounded_public_dense_storage_requires_release_coverage_receipt",
       "evidenceSha256": ""
     },
     {
