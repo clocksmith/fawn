@@ -25,6 +25,7 @@ const artifact_state = @import("../common/artifact_state.zig");
 const artifact_emit = @import("artifact_emit.zig");
 const timestamps = @import("commands/d3d12_gpu_timestamps.zig");
 const native_runtime = @import("d3d12_native_runtime.zig");
+const kernel_buffers = @import("d3d12_kernel_buffers.zig");
 
 // Uploads accumulate and flush lazily: flush_pending_uploads_if_required fires
 // once before the first non-upload command that needs to see the written data.
@@ -232,10 +233,16 @@ fn execute_barrier(self: *ZigD3D12Backend, setup_ns: u64) !webgpu.NativeExecutio
 }
 
 fn execute_kernel_dispatch(self: *ZigD3D12Backend, setup_ns: u64, kd: model.KernelDispatchCommand) !webgpu.NativeExecutionResult {
+    _ = try kernel_buffers.validate(kd.bindings);
+    if (kd.entry_point) |entry| if (!std.mem.eql(u8, entry, "main")) return error.UnsupportedFeature;
+    if (kd.bindings != null and kd.bindings.?.len != 0 and self.queue_sync_mode != .per_command) return error.UnsupportedFeature;
+    const prepare_start = common_timing.now_ns();
     const runtime = try ensure_runtime_bootstrapped(self);
+    try runtime.kernel_buffers.prepare(runtime, kd.bindings, kd.initialize_buffers_on_create);
     const bytecode = try runtime.load_kernel_cso(self.allocator, kd.kernel);
     defer self.allocator.free(bytecode);
     try runtime.set_compute_shader(bytecode);
+    const prepare_ns = common_timing.ns_delta(common_timing.now_ns(), prepare_start);
 
     var warmup_index: u32 = 0;
     while (warmup_index < kd.warmup_dispatch_count) : (warmup_index += 1) {
@@ -243,10 +250,11 @@ fn execute_kernel_dispatch(self: *ZigD3D12Backend, setup_ns: u64, kd: model.Kern
     }
 
     const metrics = try runtime.run_dispatch(kd.x, kd.y, kd.z, kd.repeat, self.queue_sync_mode, self.gpu_timestamp_mode);
+    self.telemetry.last_submit_count = metrics.submit_count;
     return .{
         .status = .ok,
         .status_message = "",
-        .setup_ns = setup_ns +| metrics.setup_ns,
+        .setup_ns = setup_ns +| prepare_ns +| metrics.setup_ns,
         .encode_ns = metrics.encode_ns,
         .submit_wait_ns = metrics.submit_wait_ns,
         .dispatch_count = metrics.dispatch_count,
@@ -587,21 +595,16 @@ fn prewarm_kernel_dispatch(
     const self = cast(ctx);
     if (kernel.len == 0) return;
     const rt = try ensure_runtime_bootstrapped(self);
-    _ = entry_point;
-    _ = bindings;
-    _ = initialize_buffers_on_create;
-    const bytecode = rt.load_kernel_cso(self.allocator, kernel) catch return;
+    if (entry_point) |entry| if (!std.mem.eql(u8, entry, "main")) return error.UnsupportedFeature;
+    try rt.kernel_buffers.prepare(rt, bindings, initialize_buffers_on_create);
+    const bytecode = try rt.load_kernel_cso(self.allocator, kernel);
     defer self.allocator.free(bytecode);
-    rt.set_compute_shader(bytecode) catch return;
+    try rt.set_compute_shader(bytecode);
 }
 
 fn capture_buffer(ctx: *anyopaque, allocator: std.mem.Allocator, handle: u64, offset: u64, size: u64) anyerror![]u8 {
-    _ = ctx;
-    _ = allocator;
-    _ = handle;
-    _ = offset;
-    _ = size;
-    return error.UnsupportedFeature;
+    const rt = try ensure_runtime_bootstrapped(cast(ctx));
+    return rt.kernel_buffers.capture(rt, allocator, handle, offset, size);
 }
 
 fn telemetry_snapshot(ctx: *anyopaque) runtime_telemetry.RuntimeTelemetry {
@@ -663,4 +666,62 @@ test "D3D12 required deferred timestamps reject before runtime work and reset ob
     try std.testing.expect(!backend.runtime.?.last_timestamp_attempted);
     try std.testing.expect(backend.runtime.?.timestamp_state.query_heap == null);
     try std.testing.expectEqual(@as(u64, 0), backend.runtime.?.fence_value);
+}
+
+test "D3D12 kernel storage admission rejects unsupported bindings and overflow ranges" {
+    const testing = std.testing;
+    var entry = model.KernelBinding{ .binding = 0, .resource_kind = .buffer, .resource_handle = 1, .buffer_type = @import("../../contracts/model/model_binding_value_types.zig").WGPUBufferBindingType_Storage, .buffer_size = 1024 };
+    try testing.expect((try kernel_buffers.validate(&.{entry})) != null);
+    entry.buffer_offset = 4;
+    try testing.expectError(error.UnsupportedFeature, kernel_buffers.validate(&.{entry}));
+    entry.buffer_offset = 0;
+    entry.buffer_size = std.math.maxInt(u64);
+    try testing.expectError(error.InvalidArgument, kernel_buffers.validate(&.{entry}));
+    entry.buffer_size = 1023;
+    try testing.expectError(error.InvalidArgument, kernel_buffers.validate(&.{entry}));
+    entry.buffer_size = 1024;
+    entry.group = 1;
+    try testing.expectError(error.UnsupportedFeature, kernel_buffers.validate(&.{entry}));
+    entry.group = 0;
+    try testing.expectError(error.UnsupportedFeature, kernel_buffers.validate(&.{ entry, entry }));
+    try kernel_buffers.validateRange(1024, 1024, 0);
+    try testing.expectError(error.InvalidArgument, kernel_buffers.validateRange(1024, 1025, 0));
+    try testing.expectError(error.InvalidArgument, kernel_buffers.validateRange(1024, 4, std.math.maxInt(u64)));
+}
+
+test "D3D12 bound shader admission retains proof bounds and rejects incompatible stride" {
+    const analysis = @import("../../compiler/wgsl/pipeline/analysis.zig");
+    const allocator = std.testing.allocator;
+    var state = kernel_buffers.State{};
+    // No native handles exist in this admission-only fixture.
+    defer state.buffers.deinit(allocator);
+    defer allocator.free(state.obligations);
+    try state.buffers.put(allocator, 7, .{ .native = null, .size = 64, .descriptor = 0 });
+    state.active = 7;
+    var diagnostic = analysis.Diagnostic{};
+    const source =
+        \\@group(0) @binding(0) var<storage, read_write> output: array<u32>;
+        \\@compute @workgroup_size(8)
+        \\fn main(@builtin(global_invocation_id) gid: vec3<u32>) { output[gid.x * 2u] = gid.x; }
+    ;
+    var module = (try analysis.analyze(.{ .allocator = allocator, .source = source, .robustness = analysis.default_translation_robustness_config(), .diagnostic = &diagnostic })).module;
+    defer module.deinit();
+    try state.admitShader(allocator, &module);
+    try state.validateDispatch(1, 1, 1);
+    try std.testing.expectError(error.UnsupportedFeature, state.validateDispatch(1, 2, 1));
+    try std.testing.expectError(error.UnsupportedFeature, state.validateDispatch(65536, 1, 1));
+    // This fits the coarse lane count but violates the compiler's gid*2 proof.
+    if (state.obligations.len != 0) try std.testing.expectError(error.DispatchPreconditionFailed, state.validateDispatch(2, 1, 1));
+    try state.validateDispatch(1, 1, 1);
+    const incompatible =
+        \\@group(0) @binding(0) var<storage, read_write> output: array<vec4<u32>, 16>;
+        \\@compute @workgroup_size(8)
+        \\fn main(@builtin(global_invocation_id) gid: vec3<u32>) { output[gid.x] = vec4<u32>(1u); }
+    ;
+    var other = (try analysis.analyze(.{ .allocator = allocator, .source = incompatible, .robustness = analysis.default_translation_robustness_config(), .diagnostic = &diagnostic })).module;
+    defer other.deinit();
+    try std.testing.expectError(error.UnsupportedFeature, state.admitShader(allocator, &other));
+    try std.testing.expectError(error.InvalidState, state.validateDispatch(1, 1, 1));
+    try state.admitShader(allocator, &module);
+    try state.validateDispatch(1, 1, 1);
 }
