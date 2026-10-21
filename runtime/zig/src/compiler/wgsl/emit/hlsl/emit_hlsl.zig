@@ -573,14 +573,14 @@ const Emitter = struct {
                 if (loop_stmt.init) |init_stmt| try self.emit_stmt(function, init_stmt);
                 try self.write_indent();
                 if (loop_stmt.continuing != null) {
-                    try self.write("bool doe_loop_break_");
+                    try self.write("bool __doe_loop_break_");
                     try self.write_u32(stmt_id);
                     try self.write(" = false;\n");
                     try self.write_indent();
                 }
                 try self.write("while (");
                 if (loop_stmt.continuing != null) {
-                    try self.write("!doe_loop_break_");
+                    try self.write("!__doe_loop_break_");
                     try self.write_u32(stmt_id);
                     try self.write(" && (");
                 }
@@ -651,7 +651,7 @@ const Emitter = struct {
                 try self.write_indent();
                 if (self.continuing_break_flag) |target| {
                     // An inlined continuing break must escape its loop, even inside a switch.
-                    try self.write("doe_loop_break_");
+                    try self.write("__doe_loop_break_");
                     try self.write_u32(target);
                     try self.write(" = true;\n");
                 } else try self.write("break;\n");

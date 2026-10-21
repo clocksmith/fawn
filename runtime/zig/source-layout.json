@@ -2212,9 +2212,9 @@
       },
       "src/compiler/wgsl/emit/hlsl/emit_hlsl.zig": {
         "decision": "Keep",
-        "moduleSha256": "7e327e5958ef01b84c0cd59b6812746fbdfd9bde3e485ea8e459bb45f106674a",
-        "reason": "Keep: HLSL emission preserves IR local identity across shadowing scopes and inlined continuing clauses, including stage and texture consumers.",
-        "reviewer": "codex-hlsl-local-identity/2026-10-21"
+        "moduleSha256": "8add698db331aa7aee3ab7862b74af5f59fded222e5ccc2fe3482d43d58ccafc",
+        "reason": "Keep: reserved generated loop flags preserve source identifier identity and continuing control flow across compute and stage emission.",
+        "reviewer": "codex-hlsl-loop-flag/2026-10-21"
       },
       "src/compiler/wgsl/emit/hlsl/emit_hlsl_builtins.zig": {
         "decision": "Keep",
@@ -2230,9 +2230,9 @@
       },
       "src/compiler/wgsl/emit/hlsl/emit_hlsl_stage.zig": {
         "decision": "Keep",
-        "moduleSha256": "31e60f8d127a2ff0d73d8f69384a87249def1c06950c944688753d874284e668",
-        "reason": "Keep: HLSL emission preserves IR local identity across shadowing scopes and inlined continuing clauses, including stage and texture consumers.",
-        "reviewer": "codex-hlsl-local-identity/2026-10-21"
+        "moduleSha256": "27f3eab3e629466ae8e2970d5a60b0a701428b756bdacc13cc20b79ddd862d79",
+        "reason": "Keep: reserved generated loop flags preserve source identifier identity and continuing control flow across compute and stage emission.",
+        "reviewer": "codex-hlsl-loop-flag/2026-10-21"
       },
       "src/compiler/wgsl/emit/hlsl/emit_hlsl_texture.zig": {
         "decision": "Keep",

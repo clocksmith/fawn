@@ -338,3 +338,20 @@ test "hlsl control flow: continuing keeps local identity through shadowing" {
     try testing.expectEqual(@as(usize, 2), std.mem.count(u8, out[0..len], "__doe_local_1 += 1;"));
     try testing.expect(!contains(out[0..len], "__doe_local_2 += 1;"));
 }
+
+test "hlsl control flow: generated loop flag cannot shadow a source local" {
+    const source =
+        \\@group(0) @binding(0) var<storage, read_write> output: array<u32, 8>;
+        \\@compute @workgroup_size(8) fn main(@builtin(global_invocation_id) gid: vec3u) {
+        \\  var doe_loop_break_5 = 0u;
+        \\  for (var i = 0u; i < 3u; i++) { doe_loop_break_5 += 1u; }
+        \\  output[gid.x] = doe_loop_break_5;
+        \\}
+    ;
+    var out: [MAX_HLSL_OUTPUT]u8 = undefined;
+    const len = try translateToHlsl(allocator, source, &out);
+    const hlsl = out[0..len];
+    try testing.expect(contains(hlsl, "uint doe_loop_break_5 = 0;"));
+    try testing.expect(contains(hlsl, "bool __doe_loop_break_"));
+    try testing.expect(!contains(hlsl, "bool doe_loop_break_"));
+}
