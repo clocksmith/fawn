@@ -315,6 +315,7 @@ pub const DoeCommandBuffer = struct {
     ref_count: u32 = 1,
     allocator: std.mem.Allocator,
     error_object: bool = false,
+    submitted: bool = false,
     dev: *DoeDevice,
     device_ref: ?*DoeDevice = null,
     cmds: std.ArrayListUnmanaged(command_types.RecordedCmd) = .{},

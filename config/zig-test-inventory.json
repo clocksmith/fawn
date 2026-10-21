@@ -1051,6 +1051,10 @@
         {
           "path": "src/native/support/doe_device_loss.zig",
           "kind": "inline"
+        },
+        {
+          "path": "src/native/queue/doe_submission_validation.zig",
+          "kind": "inline"
         }
       ],
       "includes": [
