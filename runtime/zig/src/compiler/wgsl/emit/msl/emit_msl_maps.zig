@@ -124,3 +124,5 @@ pub fn msl_storage_texture_elem(format: ir.TextureFormat) []const u8 {
         .rgba8sint, .rgba16sint, .r32sint, .rg32sint, .rgba32sint => "int",
     };
 }
+
+pub const local_name = @import("../local_names.zig").local_name;

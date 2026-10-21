@@ -172,6 +172,13 @@ def main():
         ("switch-for-continue", "var total = 0u; for (var i = 0u; i < 4u; i++) { switch i { case 1u: { i++; continue; } default: {} } total += i; } values[gid.x] = total;", 3),
         ("loop-continuing-break", "var total = 0u; var i = 0u; loop { if (i == 1u) { i++; continue; } total += i; continuing { i++; break if i >= 4u; } } values[gid.x] = total;", 3),
     ]
+    flow_cases.extend([
+        ('continuing-switch', 'var i = 0u; var total = 0u; loop { i++; if (i == 2u) { continue; } total += i; continuing { switch i { case 1u: { total += 10u; } default: {} } break if i >= 3u; } } values[gid.x] = total;', 14),
+        ('continuing-nested-loop', 'var i = 0u; var total = 0u; loop { i++; if (i < 3u) { continue; } total += i; continuing { var j = 0u; loop { j++; if (j >= 2u) { break; } } total += j; break if i >= 3u; } } values[gid.x] = total;', 9),
+        ('continuing-local', 'var i = 0u; var total = 0u; loop { if (i == 1u) { i++; continue; } total += i; continuing { let step = 1u; i += step; break if i >= 4u; } } values[gid.x] = total;', 3),
+        ('break-skips-continuing', 'var i = 0u; var total = 0u; loop { total++; if (total == 2u) { break; } continuing { i += 10u; } } values[gid.x] = i;', 10),
+        ('nested-for-continue', 'var total = 0u; for (var i = 0u; i < 3u; i++) { for (var j = 0u; j < 4u; j++) { if (j == 1u) { j++; continue; } total += j; } } values[gid.x] = total;', 9),
+    ])
     flow_cases.append(("switch-continuing-break", "var total = 0u; var i = 0u; loop { switch i { case 1u: { i += 2u; continue; } default: {} } total += i; continuing { i++; break if i >= 4u; } } values[gid.x] = total;", 0))
     for label, body, expected in flow_cases:
         source = shader(label, body)

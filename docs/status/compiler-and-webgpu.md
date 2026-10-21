@@ -3,6 +3,18 @@
 This is the live status front door for the non-TSIR WGSL compiler and WebGPU
 runtime path. Artifacts and executable tests own pass/fail state.
 
+## Source-emitter loop control
+
+The canonical MSL and HLSL emitters preserve nearest-loop continuing execution,
+including `continue` through switches, nested loops, `break if`, and shadowed
+local identity. The [compiler regressions](../../runtime/zig/tests/wgsl/coverage_expr_stmt_test.zig)
+and [scalar control-flow fixture](../../runtime/zig/tests/shader_loop_control_flow.py)
+check the declared cases against independent expected values. The latter executes
+unchanged emitted bodies through a CPU syntax adapter; it does not compile Metal
+shaders or exercise GPU behavior. The [D3D12 fixture](../../runtime/zig/tests/d3d12_cli_storage.py)
+checks physical readback separately. Physical Metal acceptance requires a usable
+Metal Toolchain and source-matched shader/runtime execution; it remains unverified.
+
 ## D4DA graphics compatibility
 
 The [existing-world workload](../../bench/external-projects/d4da-world/README.md)
