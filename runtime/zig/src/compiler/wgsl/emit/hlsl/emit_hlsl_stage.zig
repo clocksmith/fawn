@@ -344,14 +344,14 @@ fn emit_clip_distance_stmt(self: anytype, function: ir.Function, stmt_id: ir.Stm
             if (loop_stmt.init) |init_stmt| try emit_clip_distance_stmt(self, function, init_stmt, result_name, result_len);
             try self.write_indent();
             if (loop_stmt.continuing != null) {
-                try self.write("bool doe_loop_break_");
+                try self.write("bool __doe_loop_break_");
                 try self.write_u32(stmt_id);
                 try self.write(" = false;\n");
                 try self.write_indent();
             }
             try self.write("while (");
             if (loop_stmt.continuing != null) {
-                try self.write("!doe_loop_break_");
+                try self.write("!__doe_loop_break_");
                 try self.write_u32(stmt_id);
                 try self.write(" && (");
             }
@@ -422,7 +422,7 @@ fn emit_clip_distance_stmt(self: anytype, function: ir.Function, stmt_id: ir.Stm
             try self.write_indent();
             if (self.continuing_break_flag) |target| {
                 // An inlined continuing break must escape its loop, even inside a switch.
-                try self.write("doe_loop_break_");
+                try self.write("__doe_loop_break_");
                 try self.write_u32(target);
                 try self.write(" = true;\n");
             } else try self.write("break;\n");

@@ -167,6 +167,7 @@ def main():
     run("matrix-rejected-alias-access-recovery", [matrix, alias, access, matrix],
         ["ok", "unsupported", "unsupported", "ok"])
     flow_cases = [
+        ("source-loop-flag-name", "var doe_loop_break_5 = 0u; for (var i = 0u; i < 3u; i++) { doe_loop_break_5 += 1u; } values[gid.x] = doe_loop_break_5;", 3),
         ("for-continue", "var total = 0u; for (var i = 0u; i < 4u; i++) { if (i == 1u) { i++; continue; } total += i; } values[gid.x] = total;", 3),
         ("nested-while-continue", "var total = 0u; for (var i = 0u; i < 4u; i++) { var j = 0u; while (j < 2u) { j++; if (j == 1u) { continue; } total += 10u; } if (i == 1u) { i++; continue; } total += i; } values[gid.x] = total;", 33),
         ("switch-for-continue", "var total = 0u; for (var i = 0u; i < 4u; i++) { switch i { case 1u: { i++; continue; } default: {} } total += i; } values[gid.x] = total;", 3),
