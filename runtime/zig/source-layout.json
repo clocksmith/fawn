@@ -886,7 +886,7 @@
       },
       "src/backend/d3d12/d3d12_native_runtime.zig": {
         "decision": "Keep",
-        "moduleSha256": "7fd112ab9827e9cf060829d3aa108d130bdf33a3d7634a73c4fe62e41544ae57",
+        "moduleSha256": "a9afb4710c78a1cf6eb225266890e0bdb3cea295cf43388503b03039a8274c10",
         "reason": "Keep: device lifetime owns command-handle storage buffers and descriptors through checked queue completion and final retirement.",
         "reviewer": "codex-d3d12-cli-storage/2026-10-21"
       },
@@ -898,7 +898,7 @@
       },
       "src/backend/d3d12/d3d12_runtime_compute.zig": {
         "decision": "Keep",
-        "moduleSha256": "61b86c1451a98db4170fc7389b99b9f7d2e3721a7cfd845ab38e132b101230f5",
+        "moduleSha256": "ec980d7ad8313cdb25adadf71aab2bb5c70e3baa313aae4cc3f2068071c3ed57",
         "reason": "Keep: existing native compute owner binds dispatch metadata and admitted storage, orders dependent dispatches, and retains resources through checked signal/wait or terminal retirement.",
         "reviewer": "codex-d3d12-cli-storage/2026-10-21"
       },
@@ -910,7 +910,7 @@
       },
       "src/backend/d3d12/mod.zig": {
         "decision": "Keep",
-        "moduleSha256": "4a4c7849df6d6af72a399b4549d201e4104dd7f5daff2bc7b9ca5e287a032079",
+        "moduleSha256": "fead8d40acd99566bcea9c7df89781863f8ed8c97ca32da8df585bcf227c207d",
         "reason": "Keep: native command routing validates bounded storage binding and entry-point contracts, preserves preparation timing, and exposes real captured output without claiming benchmark acceptance.",
         "reviewer": "codex-d3d12-cli-storage/2026-10-21"
       },
@@ -2212,9 +2212,9 @@
       },
       "src/compiler/wgsl/emit/hlsl/emit_hlsl.zig": {
         "decision": "Keep",
-        "moduleSha256": "1b721536dd322d6def9aa58f9c469dbe893a7bac1f040c3fa126c6c14582d32f",
-        "reason": "Keep: existing HLSL target emission owns groupshared identity. Indexed workgroup atomic load/store helpers reference the actual shared array, preserve signedness and captured pointer-index evaluation, and leave other target lowering and runtime scheduling unchanged.",
-        "reviewer": "codex-d3d12-atomic-identity/2026-10-21"
+        "moduleSha256": "799cc3a27ee084419977b398da446176d4a087aa059c4cce2b8e48e43074d20e",
+        "reason": "Keep: HLSL statement emission preserves loop initializer scope while retaining existing shader semantics and target-specific lowering ownership.",
+        "reviewer": "codex-d3d12-matrix-scope/2026-10-21"
       },
       "src/compiler/wgsl/emit/hlsl/emit_hlsl_builtins.zig": {
         "decision": "Keep",
@@ -2230,9 +2230,9 @@
       },
       "src/compiler/wgsl/emit/hlsl/emit_hlsl_stage.zig": {
         "decision": "Keep",
-        "moduleSha256": "013fa6a3a57a0a127cc3bcde07f0e2032009e8fa9e5c6037442211e6e88ae366",
-        "reason": "Keep: reachable compiler implementation with a distinct named responsibility and no merge, elevation, recomposition, or deletion signal.",
-        "reviewer": "codex-doe-completion/2026-08-24"
+        "moduleSha256": "8820f301f8316954ce6b558da4cffb49d0de87ef74b0d96416de20ebb4d81f3f",
+        "reason": "Keep: HLSL statement emission preserves loop initializer scope while retaining existing shader semantics and target-specific lowering ownership.",
+        "reviewer": "codex-d3d12-matrix-scope/2026-10-21"
       },
       "src/compiler/wgsl/emit/hlsl/emit_hlsl_texture.zig": {
         "decision": "Keep",
@@ -4450,7 +4450,7 @@
       },
       "src/backend/d3d12/d3d12_kernel_buffers.zig": {
         "decision": "Keep",
-        "moduleSha256": "dcc6877b32ea23cbb1ad855f29320791ac48bc3f974576eef048b3c23c5e2dcf",
+        "moduleSha256": "aee25fb1e0e83895392c80fa75f4740249c41eca18adaf1f2dc5f85b2691fc4a",
         "reason": "Keep: cohesive command-handle storage lifecycle owns bounded allocation, exact zero initialization, descriptor identity and checked GPU readback; runtime and command consumers share its validation.",
         "reviewer": "codex-d3d12-cli-storage/2026-10-21"
       }

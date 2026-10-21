@@ -82,9 +82,9 @@ pub fn loadKernelCso(self: anytype, alloc: std.mem.Allocator, kernel_name: []con
 pub fn setComputeShader(self: anytype, bytecode: []const u8) !void {
     if (bytecode.len == 0) return error.ShaderCompileFailed;
     const hash = std.hash.Wyhash.hash(0, bytecode);
-    if (self.has_compute_pipeline and hash == self.current_shader_hash and self.compute_has_storage == (self.kernel_buffers.active != null)) return;
+    if (self.has_compute_pipeline and hash == self.current_shader_hash and self.compute_layout_key == self.kernel_buffers.layoutKey()) return;
     _ = try self.flush_queue();
-    if (self.has_root_signature and self.compute_has_storage != (self.kernel_buffers.active != null)) destroyComputeObjects(self);
+    if (self.has_root_signature and self.compute_layout_key != self.kernel_buffers.layoutKey()) destroyComputeObjects(self);
     try buildComputePipeline(self, bytecode, hash);
 }
 
@@ -251,14 +251,14 @@ fn compileWgslSource(self: anytype, alloc: std.mem.Allocator, wgsl_source: []con
 fn buildComputePipeline(self: anytype, bytecode: []const u8, shader_hash: u64) !void {
     if (!self.has_root_signature) {
         const cbv = d3d12_descriptors.DescriptorRangeDesc{ .range_type = D3D12_DESCRIPTOR_RANGE_TYPE_CBV, .num_descriptors = 1, .base_shader_register = dispatch_info.DISPATCH_INFO_REGISTER_SLOT, .register_space = dispatch_info.DISPATCH_INFO_REGISTER_SPACE };
-        const ranges = [_]d3d12_descriptors.DescriptorRangeDesc{
-            .{ .range_type = dc.DESCRIPTOR_RANGE_TYPE_UAV, .num_descriptors = 1, .base_shader_register = 0, .register_space = 0 },
-            cbv,
-        };
-        const has_storage = self.kernel_buffers.active != null;
-        const admitted = if (has_storage) ranges[0..] else ranges[1..];
-        self.root_signature = bridge.c.d3d12_bridge_device_create_root_signature_with_tables(self.device, admitted.ptr, @intCast(admitted.len), 0) orelse return error.InvalidState;
-        self.compute_has_storage = has_storage;
+        var ranges: [@import("d3d12_kernel_buffers.zig").MAX_STORAGE_BINDINGS + 1]d3d12_descriptors.DescriptorRangeDesc = undefined;
+        const selected = self.kernel_buffers.selected;
+        for (0..selected.count) |index| {
+            ranges[index] = .{ .range_type = if (selected.readonly_mask & (@as(u32, 1) << @intCast(index)) != 0) dc.DESCRIPTOR_RANGE_TYPE_SRV else dc.DESCRIPTOR_RANGE_TYPE_UAV, .num_descriptors = 1, .base_shader_register = @intCast(index), .register_space = 0 };
+        }
+        ranges[selected.count] = cbv;
+        self.root_signature = bridge.c.d3d12_bridge_device_create_root_signature_with_tables(self.device, &ranges, selected.count + 1, 0) orelse return error.InvalidState;
+        self.compute_layout_key = self.kernel_buffers.layoutKey();
         self.has_root_signature = true;
     }
 

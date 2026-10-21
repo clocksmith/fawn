@@ -49,8 +49,10 @@ The [bounded native CLI storage path](../../runtime/zig/README.md#windows-native
 executes the unchanged atomic workload with its independent exact-output oracle.
 The [CLI fixture](../../runtime/zig/tests/d3d12_cli_storage.py) also checks handle
 rebinding, dependent repeats, pipeline reuse, nonzero input, partial and chunked
-buffer writes, and rejection recovery. This admits one scalar storage binding; multi-binding pipeline stress and the broader
-catalog remain outside the accepted boundary. Process exit or a successful
+buffer writes, and rejection recovery. The unchanged three-binding matrix stress
+workload and independent nonzero identity/dense inputs now exercise read-only and
+writable storage together, including layout switching and rejected access/alias
+recovery. Broader catalog coverage remains outside the accepted boundary. Process exit or a successful
 dispatch without explicit output-oracle validation is insufficient.
 
 A source-matched Windows Dawn control remains absent. The

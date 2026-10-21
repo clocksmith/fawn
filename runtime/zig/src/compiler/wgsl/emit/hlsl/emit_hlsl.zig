@@ -542,6 +542,12 @@ const Emitter = struct {
                 }
             },
             .loop_ => |loop_stmt| {
+                // A lowered for initializer belongs to the loop, not the enclosing block.
+                if (loop_stmt.init != null) {
+                    try self.write_indent();
+                    try self.write("{\n");
+                    self.indent += 4;
+                }
                 if (loop_stmt.init) |init_stmt| try self.emit_stmt(function, init_stmt);
                 try self.write_indent();
                 try self.write("while (");
@@ -557,6 +563,11 @@ const Emitter = struct {
                 self.indent -= 4;
                 try self.write_indent();
                 try self.write("}\n");
+                if (loop_stmt.init != null) {
+                    self.indent -= 4;
+                    try self.write_indent();
+                    try self.write("}\n");
+                }
             },
             .switch_ => |switch_stmt| {
                 try self.write_indent();

@@ -13,17 +13,24 @@ pub const STORAGE_ROOT_PARAMETER: u32 = 0;
 const MAX_RESIDENT_BYTES: u64 = dc.BASELINE_MAX_BUFFER_SIZE;
 const ZERO_CHUNK_BYTES: usize = 64 * 1024;
 
-pub fn validate(bindings: ?[]const model.KernelBinding) !?model.KernelBinding {
+pub const MAX_STORAGE_BINDINGS: usize = 8;
+
+pub fn validate(bindings: ?[]const model.KernelBinding) !?[]const model.KernelBinding {
     const entries = bindings orelse return null;
     if (entries.len == 0) return null;
-    if (entries.len != 1) return error.UnsupportedFeature;
-    const entry = entries[0];
-    if (entry.group != 0 or entry.binding != 0 or entry.resource_kind != .buffer or
-        entry.buffer_type != binding.WGPUBufferBindingType_Storage or entry.buffer_offset != 0)
-        return error.UnsupportedFeature;
-    if (entry.resource_handle == 0 or entry.buffer_size == 0 or entry.buffer_size > MAX_RESIDENT_BYTES or entry.buffer_size % 4 != 0)
-        return error.InvalidArgument;
-    return entry;
+    if (entries.len > MAX_STORAGE_BINDINGS) return error.UnsupportedFeature;
+    for (entries, 0..) |entry, index| {
+        if (entry.group != 0 or entry.binding >= entries.len or entry.resource_kind != .buffer or
+            (entry.buffer_type != binding.WGPUBufferBindingType_Storage and entry.buffer_type != binding.WGPUBufferBindingType_ReadOnlyStorage) or entry.buffer_offset != 0)
+            return error.UnsupportedFeature;
+        if (entry.resource_handle == 0 or entry.buffer_size == 0 or entry.buffer_size > MAX_RESIDENT_BYTES or entry.buffer_size % 4 != 0)
+            return error.InvalidArgument;
+        // Aliases need a separate read/write hazard contract, even for distinct bindings.
+        for (entries[0..index]) |previous| {
+            if (previous.binding == entry.binding or previous.resource_handle == entry.resource_handle) return error.UnsupportedFeature;
+        }
+    }
+    return entries;
 }
 
 pub fn validateRange(capacity: u64, offset: u64, size: u64) !void {
@@ -32,68 +39,129 @@ pub fn validateRange(capacity: u64, offset: u64, size: u64) !void {
 
 pub const TransferMetrics = struct { encode_ns: u64 = 0, submit_wait_ns: u64 = 0, submit_count: u32 = 0 };
 
-const Buffer = struct { native: ?*anyopaque, size: u64, descriptor: u32 };
+const Buffer = struct { native: ?*anyopaque, size: u64 };
+const BindingSet = struct {
+    handles: [MAX_STORAGE_BINDINGS]u64 = @splat(0),
+    count: u32 = 0,
+    readonly_mask: u32 = 0,
+};
+const Table = struct { key: BindingSet, descriptor: u32 };
+
+fn addMetrics(total: *TransferMetrics, transfer: TransferMetrics) void {
+    total.encode_ns +|= transfer.encode_ns;
+    total.submit_wait_ns +|= transfer.submit_wait_ns;
+    total.submit_count += transfer.submit_count;
+}
 
 pub const State = struct {
     buffers: std.AutoHashMapUnmanaged(u64, Buffer) = .{},
     active: ?u64 = null,
+    selected: BindingSet = .{},
+    tables: std.ArrayListUnmanaged(Table) = .{},
+    table_descriptor: u32 = 0,
     resident_bytes: u64 = 0,
     obligations: []ir.DispatchPrecondition = &.{},
     workgroup: [3]u32 = .{ 0, 0, 0 },
-    minimum_bytes: u64 = 0,
-    runtime_array: bool = false,
+    minimum_bytes: [MAX_STORAGE_BINDINGS]u64 = @splat(0),
+    runtime_array: [MAX_STORAGE_BINDINGS]bool = @splat(false),
     shader_valid: bool = false,
 
     pub fn deinit(self: *State, allocator: std.mem.Allocator) void {
         var iterator = self.buffers.valueIterator();
         while (iterator.next()) |buffer| bridge.c.d3d12_bridge_release(buffer.native);
         self.buffers.deinit(allocator);
+        self.tables.deinit(allocator);
         allocator.free(self.obligations);
         self.* = .{};
     }
 
-    pub fn prepare(self: *State, rt: anytype, bindings: ?[]const model.KernelBinding, initialize: bool) !TransferMetrics {
-        self.shader_valid = false;
-        const entry = (try validate(bindings)) orelse {
-            self.active = null;
-            return .{};
-        };
-        if (rt.device_lost) return error.DeviceLost;
-        if (self.buffers.get(entry.resource_handle)) |existing| {
-            if (existing.size != entry.buffer_size) return error.InvalidArgument;
-            self.active = entry.resource_handle;
+    pub fn layoutKey(self: *const State) u32 {
+        return self.selected.count | (self.selected.readonly_mask << 8);
+    }
+
+    fn ensureBuffer(self: *State, rt: anytype, handle: u64, size: u64, initialize: bool) !TransferMetrics {
+        if (self.buffers.get(handle)) |existing| {
+            if (existing.size != size) return error.InvalidArgument;
             return .{};
         }
-        if (entry.buffer_size > MAX_RESIDENT_BYTES - self.resident_bytes) return error.UnsupportedFeature;
+        if (rt.device_lost) return error.DeviceLost;
+        if (size > MAX_RESIDENT_BYTES - self.resident_bytes) return error.UnsupportedFeature;
         try self.buffers.ensureUnusedCapacity(rt.allocator, 1);
-        const resource = bridge.c.d3d12_bridge_device_create_storage_buffer(rt.device, @intCast(entry.buffer_size)) orelse return error.OutOfMemory;
+        const resource = bridge.c.d3d12_bridge_device_create_storage_buffer(rt.device, @intCast(size)) orelse return error.OutOfMemory;
         errdefer bridge.c.d3d12_bridge_release(resource);
-        const initialization = if (initialize) try zeroBuffer(rt, resource, entry.buffer_size) else TransferMetrics{};
+        const initialization = if (initialize) try zeroBuffer(rt, resource, size) else TransferMetrics{};
+        self.buffers.putAssumeCapacity(handle, .{ .native = resource, .size = size });
+        self.resident_bytes += size;
+        return initialization;
+    }
+
+    pub fn prepare(self: *State, rt: anytype, bindings: ?[]const model.KernelBinding, initialize: bool) !TransferMetrics {
+        self.shader_valid = false;
+        self.active = null;
+        self.selected = .{};
+        const entries = (try validate(bindings)) orelse return .{};
+        if (rt.device_lost) return error.DeviceLost;
+        var key = BindingSet{ .count = @intCast(entries.len) };
+        var added: u64 = 0;
+        // Complete layout and size validation before any native allocation.
+        for (entries) |entry| {
+            key.handles[entry.binding] = entry.resource_handle;
+            if (entry.buffer_type == binding.WGPUBufferBindingType_ReadOnlyStorage) key.readonly_mask |= @as(u32, 1) << @intCast(entry.binding);
+            if (self.buffers.get(entry.resource_handle)) |existing| {
+                if (existing.size != entry.buffer_size) return error.InvalidArgument;
+            } else added += entry.buffer_size;
+        }
+        if (added > MAX_RESIDENT_BYTES - self.resident_bytes) return error.UnsupportedFeature;
+        var metrics = TransferMetrics{};
+        for (entries) |entry| addMetrics(&metrics, try self.ensureBuffer(rt, entry.resource_handle, entry.buffer_size, initialize));
+        for (self.tables.items) |table| {
+            if (std.meta.eql(table.key, key)) {
+                self.selected = key;
+                self.active = key.handles[0];
+                self.table_descriptor = table.descriptor;
+                return metrics;
+            }
+        }
+        try self.tables.ensureUnusedCapacity(rt.allocator, 1);
         try rt.descriptor_state.ensure_heaps(rt.device);
-        if (rt.descriptor_state.cbv_srv_uav_capacity - rt.descriptor_state.cbv_srv_uav_next < 2) return error.UnsupportedFeature;
+        if (rt.descriptor_state.cbv_srv_uav_capacity - rt.descriptor_state.cbv_srv_uav_next < key.count + 1) return error.UnsupportedFeature;
         if (rt.dispatch_info_buffer == null) {
             rt.dispatch_info_buffer = bridge.c.d3d12_bridge_device_create_buffer(rt.device, dispatch_info.DISPATCH_INFO_BUFFER_BYTES, dc.HEAP_TYPE_UPLOAD) orelse return error.OutOfMemory;
         }
-        // The bridge combines resource ranges into one table. Reserve the
-        // storage UAV followed immediately by this dispatch-info CBV.
-        const descriptor = try rt.descriptor_state.allocate_uav_buffer(rt.device, resource, @intCast(entry.buffer_size / 4), 4);
+        // The bridge combines all resource ranges into one table, ordered by binding.
+        const descriptor = rt.descriptor_state.cbv_srv_uav_next;
+        for (0..key.count) |index| {
+            const buffer = self.buffers.get(key.handles[index]).?;
+            const actual = if (key.readonly_mask & (@as(u32, 1) << @intCast(index)) != 0)
+                try rt.descriptor_state.allocate_srv_buffer(rt.device, buffer.native, @intCast(buffer.size / 4), 4)
+            else
+                try rt.descriptor_state.allocate_uav_buffer(rt.device, buffer.native, @intCast(buffer.size / 4), 4);
+            std.debug.assert(actual == descriptor + index);
+        }
         const constants = try rt.descriptor_state.allocate_cbv(rt.device, rt.dispatch_info_buffer, dispatch_info.DISPATCH_INFO_BUFFER_BYTES);
-        std.debug.assert(constants == descriptor + 1);
-        self.buffers.putAssumeCapacity(entry.resource_handle, .{ .native = resource, .size = entry.buffer_size, .descriptor = descriptor });
-        self.resident_bytes += entry.buffer_size;
-        self.active = entry.resource_handle;
-        return initialization;
+        std.debug.assert(constants == descriptor + key.count);
+        self.tables.appendAssumeCapacity(.{ .key = key, .descriptor = descriptor });
+        self.selected = key;
+        self.active = key.handles[0];
+        self.table_descriptor = descriptor;
+        return metrics;
     }
 
     // Admit the same analyzed module that is emitted, retaining every bounds obligation.
     pub fn admitShader(self: *State, allocator: std.mem.Allocator, module: *const ir.Module) !void {
         self.shader_valid = false;
         var count: u32 = 0;
-        var minimum: u64 = 0;
-        var dynamic = false;
+        var minimum: [MAX_STORAGE_BINDINGS]u64 = @splat(0);
+        var dynamic: [MAX_STORAGE_BINDINGS]bool = @splat(false);
+        var seen: u32 = 0;
         for (module.globals.items) |global| {
             const point = global.binding orelse continue;
-            if (point.group != 0 or point.binding != 0 or global.addr_space != .storage or global.access != .read_write) return error.UnsupportedFeature;
+            if (point.group != 0 or point.binding >= self.selected.count or global.addr_space != .storage) return error.UnsupportedFeature;
+            const bit = @as(u32, 1) << @intCast(point.binding);
+            if (seen & bit != 0) return error.UnsupportedFeature;
+            seen |= bit;
+            const readonly = self.selected.readonly_mask & bit != 0;
+            if (global.access != (if (readonly) ir.AccessMode.read else ir.AccessMode.read_write)) return error.UnsupportedFeature;
             const array = switch (module.types.get(global.ty)) {
                 .array => |value| value,
                 else => return error.UnsupportedFeature,
@@ -107,11 +175,11 @@ pub const State = struct {
             }
             const length = array.len orelse 1;
             if (length == 0) return error.UnsupportedFeature;
-            minimum = @as(u64, length) * 4;
-            dynamic = array.len == null;
+            minimum[point.binding] = @as(u64, length) * 4;
+            dynamic[point.binding] = array.len == null;
             count += 1;
         }
-        if (count != 1 or module.texture_dispatch_preconditions.items.len != 0) return error.UnsupportedFeature;
+        if (count != self.selected.count or count == 0 or module.texture_dispatch_preconditions.items.len != 0) return error.UnsupportedFeature;
         var workgroup: [3]u32 = .{ 0, 0, 0 };
         for (module.functions.items) |function| {
             if (function.stage != null) {
@@ -119,9 +187,10 @@ pub const State = struct {
                 workgroup = function.workgroup_size;
             }
         }
-        if (workgroup[0] == 0 or workgroup[0] > 1024 or workgroup[1] != 1 or workgroup[2] != 1) return error.UnsupportedFeature;
+        if (workgroup[0] == 0 or workgroup[1] == 0 or workgroup[2] == 0 or workgroup[0] > 1024 or workgroup[1] > 1024 or workgroup[2] > 64 or
+            @as(u64, workgroup[0]) * workgroup[1] * workgroup[2] > 1024) return error.UnsupportedFeature;
         for (module.dispatch_preconditions.items) |obligation| {
-            if (obligation.storage_binding.group != 0 or obligation.storage_binding.binding != 0 or obligation.kind == .uniform_extent) return error.UnsupportedFeature;
+            if (obligation.storage_binding.group != 0 or obligation.storage_binding.binding >= self.selected.count or obligation.kind == .uniform_extent) return error.UnsupportedFeature;
         }
         const obligations = try allocator.dupe(ir.DispatchPrecondition, module.dispatch_preconditions.items);
         allocator.free(self.obligations);
@@ -133,27 +202,36 @@ pub const State = struct {
     }
 
     pub fn validateDispatch(self: *const State, x: u32, y: u32, z: u32) !void {
-        const handle = self.active orelse return;
+        if (self.active == null) return;
         if (!self.shader_valid) return error.InvalidState;
-        const buffer = self.buffers.get(handle) orelse return error.InvalidState;
-        if (buffer.size < self.minimum_bytes) return error.InvalidArgument;
-        const extent = if (self.runtime_array) buffer.size else self.minimum_bytes;
-        if (x == 0 or x > 65535 or y != 1 or z != 1 or @as(u64, x) * self.workgroup[0] > extent / 4) return error.UnsupportedFeature;
+        if (x == 0 or x > 65535 or y == 0 or y > 65535 or z == 0 or z > 65535) return error.UnsupportedFeature;
+        var extents: [MAX_STORAGE_BINDINGS]u64 = @splat(0);
+        for (0..self.selected.count) |index| {
+            const buffer = self.buffers.get(self.selected.handles[index]) orelse return error.InvalidState;
+            if (buffer.size < self.minimum_bytes[index]) return error.InvalidArgument;
+            extents[index] = if (self.runtime_array[index]) buffer.size else self.minimum_bytes[index];
+            // Preserve the conservative lane bound as well as the compiler's precise obligations.
+            const lanes = @as(u64, x) * self.workgroup[0] * y * self.workgroup[1] * z * self.workgroup[2];
+            if (lanes > extents[index] / 4) return error.UnsupportedFeature;
+        }
         for (self.obligations) |obligation| {
             const required = try preconditions.required_buffer_bytes(obligation, .{ x, y, z }, self.workgroup);
-            if (required > extent) return error.DispatchPreconditionFailed;
+            if (required > extents[obligation.storage_binding.binding]) return error.DispatchPreconditionFailed;
         }
     }
 
     pub fn bind(self: *const State, rt: anytype, list: ?*anyopaque) void {
-        const buffer = self.buffers.get(self.active orelse return).?;
+        if (self.active == null) return;
         bridge.c.d3d12_bridge_command_list_set_descriptor_heaps(list, rt.descriptor_state.cbv_srv_uav_heap, rt.descriptor_state.sampler_heap);
-        bridge.c.d3d12_bridge_command_list_set_compute_root_descriptor_table(list, STORAGE_ROOT_PARAMETER, rt.descriptor_state.cbv_srv_uav_heap, buffer.descriptor);
+        bridge.c.d3d12_bridge_command_list_set_compute_root_descriptor_table(list, STORAGE_ROOT_PARAMETER, rt.descriptor_state.cbv_srv_uav_heap, self.table_descriptor);
     }
 
     pub fn transition(self: *const State, list: ?*anyopaque, before_dispatch: bool) void {
-        const buffer = self.buffers.get(self.active orelse return).?;
-        bridge.c.d3d12_bridge_command_list_resource_barrier_transition(list, buffer.native, if (before_dispatch) dc.RESOURCE_STATE_COPY_DEST else dc.RESOURCE_STATE_UNORDERED_ACCESS, if (before_dispatch) dc.RESOURCE_STATE_UNORDERED_ACCESS else dc.RESOURCE_STATE_COPY_DEST);
+        for (0..self.selected.count) |index| {
+            const buffer = self.buffers.get(self.selected.handles[index]).?;
+            const state = if (self.selected.readonly_mask & (@as(u32, 1) << @intCast(index)) != 0) dc.RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE else dc.RESOURCE_STATE_UNORDERED_ACCESS;
+            bridge.c.d3d12_bridge_command_list_resource_barrier_transition(list, buffer.native, if (before_dispatch) dc.RESOURCE_STATE_COPY_DEST else state, if (before_dispatch) state else dc.RESOURCE_STATE_COPY_DEST);
+        }
     }
 
     pub fn write(self: *State, rt: anytype, handle: u64, offset: u64, declared_size: u64, data: []const u8) !TransferMetrics {
@@ -165,8 +243,7 @@ pub const State = struct {
         if (self.buffers.get(handle)) |existing| {
             if (required > existing.size) return error.InvalidArgument;
         } else {
-            const entry = model.KernelBinding{ .binding = 0, .resource_kind = .buffer, .resource_handle = handle, .buffer_type = binding.WGPUBufferBindingType_Storage, .buffer_size = required };
-            metrics = try self.prepare(rt, &.{entry}, true);
+            metrics = try self.ensureBuffer(rt, handle, required, true);
         }
         if (rt.device_lost) return error.DeviceLost;
         const buffer = self.buffers.get(handle).?;

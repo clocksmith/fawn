@@ -265,3 +265,18 @@ test "hlsl workgroup: var<workgroup> emits groupshared" {
 
     try testing.expect(contains(hlsl, "groupshared"));
 }
+
+test "hlsl control flow: consecutive for initializers retain independent scopes" {
+    const source =
+        \\@group(0) @binding(0) var<storage, read_write> output: array<u32, 1>;
+        \\@compute @workgroup_size(1) fn main() {
+        \\  for (var inner_row = 0u; inner_row < 2u; inner_row++) { output[0] += inner_row; }
+        \\  for (var inner_row = 0u; inner_row < 3u; inner_row++) { output[0] += inner_row; }
+        \\}
+    ;
+    var out: [MAX_HLSL_OUTPUT]u8 = undefined;
+    const len = try translateToHlsl(allocator, source, &out);
+    const hlsl = out[0..len];
+    try testing.expectEqual(@as(usize, 2), std.mem.count(u8, hlsl, "{\n        uint inner_row = 0"));
+    try testing.expect(!contains(hlsl, "\n    uint inner_row = 0"));
+}

@@ -320,6 +320,12 @@ fn emit_clip_distance_stmt(self: anytype, function: ir.Function, stmt_id: ir.Stm
             }
         },
         .loop_ => |loop_stmt| {
+            // A lowered for initializer belongs to the loop, not the enclosing block.
+            if (loop_stmt.init != null) {
+                try self.write_indent();
+                try self.write("{\n");
+                self.indent += 4;
+            }
             if (loop_stmt.init) |init_stmt| try emit_clip_distance_stmt(self, function, init_stmt, result_name, result_len);
             try self.write_indent();
             try self.write("while (");
@@ -335,6 +341,11 @@ fn emit_clip_distance_stmt(self: anytype, function: ir.Function, stmt_id: ir.Stm
             self.indent -= 4;
             try self.write_indent();
             try self.write("}\n");
+            if (loop_stmt.init != null) {
+                self.indent -= 4;
+                try self.write_indent();
+                try self.write("}\n");
+            }
         },
         .switch_ => |switch_stmt| {
             try self.write_indent();

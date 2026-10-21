@@ -235,16 +235,21 @@ storage atomics or arbitrary workgroup programs.
 
 ## Windows native CLI storage boundary
 
-The native CLI admits one group 0 / binding 0 read-write scalar storage array
-from WGSL, with entry `main`, workgroup dimensions `(x, 1, 1)`, and per-command
-completion. Its [compute owner](src/backend/d3d12/d3d12_runtime_compute.zig)
+The native CLI admits up to eight consecutive group-0 scalar storage bindings
+from WGSL, with entry `main` and per-command completion. Read-only inputs use
+SRVs and writable buffers use UAVs; shader access must match the declared layout.
+Workgroup and dispatch dimensions are bounded by D3D12 limits and retained
+per-buffer compiler obligations. Physical qualification exercises the scalar
+path and the unchanged three-binding, two-dimensional matrix workload. Its [compute owner](src/backend/d3d12/d3d12_runtime_compute.zig)
 emits the admitted analyzed module and enforces the retained compiler dispatch
-preconditions. Opaque precompiled bound shaders, aggregate elements, multiple
-bindings, nonzero binding offsets and deferred bound dispatch remain unsupported.
+preconditions. Opaque precompiled bound shaders, aggregate elements, sparse or
+nonzero-group bindings, aliases, nonzero binding offsets and deferred bound
+dispatch remain unsupported.
 
 The [storage owner](src/backend/d3d12/d3d12_kernel_buffers.zig) preserves buffer
 identity across commands, caps total resident storage at the backend limit,
-and allocates a UAV/dispatch-info CBV pair in the bridge's single resource table.
+and caches ordered SRV/UAV plus dispatch-info CBV tables by exact handle/layout
+identity. Pipeline reuse also checks the complete access/count layout.
 Initialization zeroes new handles through checked GPU uploads; reusing a handle
 does not reset its contents. Dependent dispatch transitions, checked queue
 completion and real GPU readback preserve the command-graph output contract.
@@ -269,8 +274,11 @@ rebinding, dependent repeats and pipeline reuse, followed by layout, dispatch
 dimension and fixed-extent rejection/recovery cases. Nonzero seeds, partial
 updates and chunked writes use independent CPU-derived full-buffer hashes;
 write-created buffers and rejected-range recovery also check execution and
-submission counts. Original failed traces remain separate from accepted
-candidate evidence.
+submission counts. The unchanged matrix command retains its shader, workgroup,
+warmup and repeat count. Additional identity and dense seeded matrices check the
+full output against independently computed exact f32 bytes, including input
+reordering, handle reuse, scalar/matrix layout switching, rejected aliases and
+access mismatches. Original failed traces remain separate from accepted evidence.
 
 This qualifies the exercised native CLI consumer only. A source-matched Windows
 Dawn control, broader workload coverage, matched CPU/memory measurements and
