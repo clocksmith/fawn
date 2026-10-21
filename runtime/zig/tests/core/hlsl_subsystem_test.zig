@@ -774,3 +774,48 @@ test "hlsl workgroup atomic identity keeps array targets global and pointer indi
     try testing.expect(!contains(hlsl, "doe_atomicLoad(unsigned_values["));
     try testing.expect(!contains(hlsl, "doe_atomicStore(signed_values["));
 }
+
+test "hlsl scalar splat evaluates its operand once" {
+    const source =
+        \\var<private> calls: u32;
+        \\fn word() -> u32 { calls += 1u; return calls; }
+        \\@group(0) @binding(0) var<storage, read_write> output: array<u32>;
+        \\@compute @workgroup_size(1)
+        \\fn main() {
+        \\    let u = vec4u(word());
+        \\    let s = vec3i(-7);
+        \\    let f = vec2f(0.5);
+        \\    let b = vec4<bool>(true);
+        \\    let converted = vec4f(u);
+        \\    output[0] = u.x + u.y + u.z + u.w + calls;
+        \\}
+    ;
+    var out: [MAX_HLSL]u8 = undefined;
+    const len = try translateToHlsl(allocator, source, &out);
+    const hlsl = out[0..len];
+    try testing.expect(contains(hlsl, "((uint4)(word()))"));
+    try testing.expect(contains(hlsl, "((int3)("));
+    try testing.expect(contains(hlsl, "((float2)("));
+    try testing.expect(contains(hlsl, "((bool4)(true))"));
+    try testing.expect(contains(hlsl, "float4(u)"));
+    try testing.expectEqual(@as(usize, 2), std.mem.count(u8, hlsl, "word()"));
+}
+
+test "hlsl signedness local names retain identity" {
+    const source =
+        \\@group(0) @binding(0) var<storage, read_write> output: array<u32>;
+        \\@compute @workgroup_size(1) fn main() {
+        \\    var signed = 7i;
+        \\    var unsigned = 11u;
+        \\    output[0] = u32(signed) + unsigned;
+        \\}
+    ;
+    var out: [MAX_HLSL]u8 = undefined;
+    const len = try translateToHlsl(allocator, source, &out);
+    const hlsl = out[0..len];
+    try testing.expect(contains(hlsl, "int __doe_local_0 = 7;"));
+    try testing.expect(contains(hlsl, "uint __doe_local_1 = 11;"));
+    try testing.expect(contains(hlsl, "uint(__doe_local_0) + __doe_local_1"));
+    try testing.expect(!contains(hlsl, " signed"));
+    try testing.expect(!contains(hlsl, " unsigned"));
+}

@@ -127,4 +127,11 @@ pub fn hlsl_builtin_passthrough(name: []const u8) bool {
     return false;
 }
 
-pub const local_name = @import("../local_names.zig").local_name;
+pub fn local_name(module: *const ir.Module, function: ir.Function, index: u32, buffer: *[32]u8) error{OutputTooLarge}![]const u8 {
+    const name = function.locals.items[index].name;
+    // WGSL permits these signedness names; HLSL reserves them as type modifiers.
+    if (std.mem.eql(u8, name, "signed") or std.mem.eql(u8, name, "unsigned")) {
+        return std.fmt.bufPrint(buffer, "__doe_local_{d}", .{index}) catch error.OutputTooLarge;
+    }
+    return @import("../local_names.zig").local_name(module, function, index, buffer);
+}
