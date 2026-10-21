@@ -154,9 +154,20 @@ The independent compiler and runtime retain these outcomes:
 
 ## Strategic constraints
 
-- Backend focus: **Vulkan on the initial qualification target, then a current Metal confirmation, both selected as proofs; D3D12 deferred.**
-  Work proceeds in bounded batches. Existing regression checks do not authorize
-  parallel optimization campaigns or silently expand that boundary.
+- Backend focus: bounded correctness, quality and matched-performance qualification
+  across Vulkan, Metal and D3D12. Each physical backend keeps its own evidence;
+  shared source and cross-machine synchronization do not transfer qualification.
+  The initial Vulkan application proof and integrated browser gates remain open.
+- Modern-stack scope is an explicit supported OS/GPU/driver/API envelope in the
+  [support matrix](docs/doe-support-matrix.md), not a promise to cover historical
+  platforms. Prefer simpler owners and fewer compatibility paths within that
+  envelope; preserve declared behavior, independent oracles and explicit rejection
+  outside it. Never narrow the envelope after seeing a failed comparison.
+- Chromium change tracking and bounded repair are core engineering capabilities
+  for Fawn's browser implementation and Doe's GPU integration. Their
+  [acceptance](browser/chromium/acceptance.md#upstream-tracking-and-repair)
+  requires unchanged qualification, rollback and measured repair reliability;
+  a generated proposal is not an accepted repair.
 - Initial deployment: hardware-first local execution on one frozen workstation
   (AMD Ryzen AI Max+ 395, Radeon 8060S, RADV), labelled the
   [initial qualification target](config/doe-product-strategy.json) until the
