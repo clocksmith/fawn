@@ -145,6 +145,72 @@ def main():
     check = oracle(dispatch(contention), values=[1900296] * 8)  # 8 + 256*255 + 65536*28
     check["output_oracle"]["reference_id"] = "independent-eight-ticket-count-mask-sum-v1"
     run("indexed-atomic-contention", [check], ["ok"], 1)
+    # Compare-exchange returns both the old scalar and a boolean, even when
+    # replacing a value with itself. Check mismatch, signedness and neighbors.
+    for element, initial, desired, initial_words, desired_words in [
+        ("u32", "10u + tid", "2147483648u + tid", list(range(10, 18)), list(range(2147483648, 2147483656))),
+        ("i32", "-10 + i32(tid)", "-123 - i32(tid)", list(range(-10, -2)), list(range(-123, -131, -1))),
+    ]:
+        label = "indexed-atomic-cas-" + element
+        path = output / (label + ".wgsl")
+        path.write_text(f"var<workgroup> shared_values: array<atomic<{element}>, 8>;\n"
+                        "@group(0) @binding(0) var<storage, read_write> values: array<u32, 64>;\n"
+                        "@compute @workgroup_size(8) fn main(@builtin(local_invocation_index) tid: u32) {\n"
+                        f"  let initial = {initial}; let desired = {desired};\n"
+                        "  atomicStore(&shared_values[tid], initial); workgroupBarrier();\n"
+                        "  var index = tid; let pointer = &shared_values[index]; index = 0u;\n"
+                        "  let matched = atomicCompareExchangeWeak(pointer, initial, desired);\n"
+                        "  let mismatch = atomicCompareExchangeWeak(pointer, initial, initial);\n"
+                        "  let same = atomicCompareExchangeWeak(pointer, desired, desired); workgroupBarrier();\n"
+                        "  values[tid * 8u] = bitcast<u32>(matched.old_value);\n"
+                        "  values[tid * 8u + 1u] = select(0u, 1u, matched.exchanged);\n"
+                        "  values[tid * 8u + 2u] = bitcast<u32>(mismatch.old_value);\n"
+                        "  values[tid * 8u + 3u] = select(0u, 1u, mismatch.exchanged);\n"
+                        "  values[tid * 8u + 4u] = bitcast<u32>(same.old_value);\n"
+                        "  values[tid * 8u + 5u] = select(0u, 1u, same.exchanged);\n"
+                        "  values[tid * 8u + 6u] = bitcast<u32>(atomicLoad(&shared_values[tid]));\n"
+                        "  values[tid * 8u + 7u] = bitcast<u32>(atomicLoad(&shared_values[(tid + 1u) % 8u]));\n}\n",
+                        encoding="utf-8")
+        receipt.setdefault("shaders", {})[str(path)] = digest(path)
+        command = dispatch(path)
+        command["bindings"][0]["buffer_size"] = 256
+        words = []
+        for i in range(8):
+            words.extend([initial_words[i], 1, desired_words[i], 0, desired_words[i], 1,
+                          desired_words[i], desired_words[(i + 1) % 8]])
+        command = oracle(command, values=[word & 0xffffffff for word in words])
+        command["output_oracle"]["reference_id"] = "independent-strong-cas-old-flag-neighbor-" + element + "-v1"
+        run(label, [command], ["ok"], 1)
+    side_effect = output / "indexed-atomic-cas-operand-once.wgsl"
+    side_effect.write_text("var<workgroup> shared_values: array<atomic<u32>, 8>;\n"
+                           "var<private> calls: u32;\n"
+                           "fn expected_value() -> u32 { calls += 1u; return 10u; }\n"
+                           "fn desired_value() -> u32 { calls += 100u; return 13u; }\n"
+                           "@group(0) @binding(0) var<storage, read_write> values: array<u32, 8>;\n"
+                           "@compute @workgroup_size(8) fn main(@builtin(local_invocation_index) tid: u32) {\n"
+                           "  atomicStore(&shared_values[tid], 10u); workgroupBarrier();\n"
+                           "  let result = atomicCompareExchangeWeak(&shared_values[tid], expected_value(), desired_value());\n"
+                           "  values[tid] = calls + 1000u * result.old_value + select(0u, 100000u, result.exchanged) + 1000000u * atomicLoad(&shared_values[tid]);\n}\n",
+                           encoding="utf-8")
+    receipt.setdefault("shaders", {})[str(side_effect)] = digest(side_effect)
+    check = oracle(dispatch(side_effect), values=[13110101] * 8)
+    check["output_oracle"]["reference_id"] = "independent-cas-operand-once-v1"
+    run("indexed-atomic-cas-operand-once", [check], ["ok"], 1)
+    cas_contention = output / "indexed-atomic-cas-contention.wgsl"
+    cas_contention.write_text("var<workgroup> shared_values: array<atomic<u32>, 2>;\n"
+                              "@group(0) @binding(0) var<storage, read_write> values: array<u32, 8>;\n"
+                              "@compute @workgroup_size(8) fn main(@builtin(local_invocation_index) tid: u32) {\n"
+                              "  if (tid == 0u) { atomicStore(&shared_values[0], 0u); atomicStore(&shared_values[1], 0u); } workgroupBarrier();\n"
+                              "  let result = atomicCompareExchangeWeak(&shared_values[0], 0u, tid + 1u);\n"
+                              "  if (result.exchanged) { let ignored = atomicAdd(&shared_values[1], 1u); } workgroupBarrier();\n"
+                              "  let winner = atomicLoad(&shared_values[0]);\n"
+                              "  let valid_old = select(result.old_value == winner, result.old_value == 0u && winner == tid + 1u, result.exchanged);\n"
+                              "  values[tid] = select(0u, 1u, atomicLoad(&shared_values[1]) == 1u && winner >= 1u && winner <= 8u && valid_old);\n}\n",
+                              encoding="utf-8")
+    receipt.setdefault("shaders", {})[str(cas_contention)] = digest(cas_contention)
+    check = oracle(dispatch(cas_contention), values=[1] * 8)
+    check["output_oracle"]["reference_id"] = "independent-strong-cas-single-winner-v1"
+    run("indexed-atomic-cas-contention", [check], ["ok"], 1)
     inc = shader("increment", "values[gid.x] = values[gid.x] + gid.x + 1u;")
     twice = shader("double", "values[gid.x] = values[gid.x] * 2u;")
     # All commands request initialization. Existing handles must retain data.

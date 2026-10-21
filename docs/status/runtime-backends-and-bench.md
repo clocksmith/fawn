@@ -25,8 +25,10 @@ The [indexed workgroup atomic boundary](../../runtime/zig/README.md#windows-inde
 adds native signed/unsigned load/store and captured-index correctness. The CLI
 fixture additionally checks indexed shared-array arithmetic, bitwise and exchange
 RMW operations with independent old/new outputs and a contention oracle.
-Compare-exchange, storage atomics, wider pointer shapes and full compute parity
-remain unverified; CLI acceptance does not widen the public-ABI fixture claim.
+Indexed shared-array compare-exchange additionally checks semantic result fields,
+failed comparisons, operand evaluation and contention through D3D12's strong
+primitive. Storage atomics, wider pointer shapes and full compute parity remain
+unverified; CLI acceptance does not widen the public-ABI fixture claim.
 
 ## Windows benchmark parity boundary
 
