@@ -161,8 +161,10 @@ at group 0 / binding 0. Each binding is a read-only or read/write fixed-size or
 runtime-sized array of `u32`, `i32`, or `f32`; layout access must match the shader. The WGSL entry
 point is `main` with a one-dimensional workgroup. Dispatch is one-dimensional
 and must fit every declared array, or each bound view for a runtime-sized array.
-The binding offset must be zero. Fixed arrays require the declared size; runtime
-arrays require at least one scalar element. `arrayLength` returns the descriptor's
+Static binding offsets must meet the advertised storage-buffer alignment, and
+views must fit the allocation. Fixed arrays require the declared size; runtime
+arrays require at least one scalar element. `WGPU_WHOLE_SIZE` selects the bytes
+remaining after the offset. `arrayLength` returns the descriptor's
 element count, including when the binding is shorter than the allocation.
 DXC must be available on the invoking process's PATH.
 
@@ -216,6 +218,11 @@ then executes a valid automatic layout. `multi-dynamic-offsets` checks that a
 nonzero dynamic-offset count invalidates recording with a validation error and
 preserves the prefilled readback. D3D12 dynamic offsets remain unsupported; they
 must not be silently discarded.
+`multi-view`, `multi-view-whole`, `multi-view-short` and `multi-view-rebind` check
+aligned SRV/UAV subranges, whole remaining size, per-view lengths and static
+rebinding with the same scalar shader. Exact full-allocation readback checks
+both computed words and untouched prefix/suffix data. `multi-view-range` rejects
+out-of-bounds and overflowing ranges, then executes the valid view.
 These are public-ABI correctness checks, not additions to the matched benchmark
 population. The generated backend workload catalog and comparison gates remain
 unchanged; CLI qualification does not transfer to this public path.

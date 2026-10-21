@@ -1,6 +1,7 @@
 pub const formats = @import("d3d12_formats.zig");
 
 pub const MAX_CONSTANT_BUFFER_BYTES: u32 = 64 * 1024;
+pub const MIN_STORAGE_BUFFER_OFFSET_ALIGNMENT: u32 = 32;
 
 pub const BASELINE_MAX_BUFFER_SIZE: usize = 256 * 1024 * 1024;
 

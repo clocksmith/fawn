@@ -1,4 +1,4 @@
-// Windows public ABI compute oracle: runtime arrayLength over a 32-byte allocation, bounded dispatch.
+// Windows public ABI scalar-storage oracle: bounded views and dispatch.
 // zig cc -I vendor/webgpu-headers tests/d3d12_auto_layout_readback.c -o compute.exe
 // With DXC on process PATH: compute.exe <DLL>
 // Modes are documented in README.md, including dense multi-buffer views and rejection/recovery.
@@ -40,6 +40,11 @@ static void scope_ready(WGPUPopErrorScopeStatus status, WGPUErrorType type,
 int main(int argc, char **argv) {
     if (argc != 2 && argc != 3) return 2;
     const int multi = argc == 3 && strncmp(argv[2], "multi", 5) == 0;
+    const int view = multi && strncmp(argv[2], "multi-view", 10) == 0;
+    const int view_whole = view && strcmp(argv[2], "multi-view-whole") == 0;
+    const int view_short = view && strcmp(argv[2], "multi-view-short") == 0;
+    const int view_rebind = view && strcmp(argv[2], "multi-view-rebind") == 0;
+    const int view_range = view && strcmp(argv[2], "multi-view-range") == 0;
     const int dynamic_layout = multi && strcmp(argv[2], "multi-dynamic-layout") == 0;
     const int dynamic_offsets = multi && strcmp(argv[2], "multi-dynamic-offsets") == 0;
     const int multi_recover = multi && strcmp(argv[2], "multi-recover") == 0;
@@ -59,7 +64,7 @@ int main(int argc, char **argv) {
     const int fixed = argc == 3 && strcmp(argv[2], "fixed") == 0;
     const int short_binding = argc == 3 && strcmp(argv[2], "short") == 0;
     const int rebind = argc == 3 && strcmp(argv[2], "rebind") == 0;
-    const unsigned elements = short_binding || multi_short ? 4u : 8u;
+    const unsigned elements = short_binding || multi_short || view_short ? 4u : 8u;
     const int floating = argc == 3 && strcmp(argv[2], "float") == 0;
     const int repeated = multi_write || (argc == 3 && strcmp(argv[2], "repeat") == 0);
     const int reject_dispatch = multi_offset || multi_alias || mismatch || (argc == 3 && strcmp(argv[2], "reject") == 0);
@@ -71,7 +76,7 @@ int main(int argc, char **argv) {
     if (!library) { fprintf(stderr, "LoadLibrary error=%lu\n", GetLastError()); return 2; }
     LOAD(CreateInstance); LOAD(InstanceRequestAdapter); LOAD(InstanceProcessEvents);
     LOAD(AdapterGetInfo); LOAD(AdapterInfoFreeMembers); LOAD(AdapterRequestDevice);
-    LOAD(DeviceGetQueue); LOAD(DeviceCreateBuffer); LOAD(BufferGetMappedRange);
+    LOAD(DeviceGetLimits); LOAD(DeviceGetQueue); LOAD(DeviceCreateBuffer); LOAD(BufferGetMappedRange);
     LOAD(BufferUnmap); LOAD(DeviceCreateCommandEncoder); LOAD(CommandEncoderCopyBufferToBuffer);
     LOAD(CommandEncoderFinish); LOAD(QueueSubmit); LOAD(BufferMapAsync);
     LOAD(BufferGetConstMappedRange); LOAD(CommandBufferRelease); LOAD(CommandEncoderRelease);
@@ -125,11 +130,20 @@ int main(int argc, char **argv) {
     AdapterRequestDevice(adapter, &dd, dc);
     for (int i = 0; i < 20 && !device; ++i) { InstanceProcessEvents(instance); Sleep(10); }
     if (!device) goto cleanup;
+    if(view) {
+        WGPULimits limits=WGPU_LIMITS_INIT;
+        if(DeviceGetLimits(device,&limits) != WGPUStatus_Success || limits.minStorageBufferOffsetAlignment == 0 ||
+           32u % limits.minStorageBufferOffsetAlignment != 0) goto cleanup;
+        printf("storage view alignment=%u\n",limits.minStorageBufferOffsetAlignment);
+    }
     queue = DeviceGetQueue(device);
     if (!queue) goto cleanup;
     uint32_t input_words[] = {0x12345678u, 0xabcdef01u, 0u, 0xffffffffu,
                                  0x55aa55aau, 0x01020304u, 0x87654321u, 0xdeadbeefu};
-    uint32_t expected[8];
+    uint32_t expected[32];
+    const size_t result_bytes = view ? sizeof(expected) : sizeof(input_words);
+    const unsigned storage_words = view ? 32u : 8u;
+    const size_t storage_bytes = storage_words * sizeof(uint32_t);
     for (unsigned i=0; i<8; ++i) expected[i] = input_words[i] * 3u + elements;
     if (repeated) for (unsigned i=0; i<8; ++i) expected[i] = expected[i] * 3u + elements;
     if (floating) {
@@ -138,7 +152,7 @@ int main(int argc, char **argv) {
         for (unsigned i=0; i<8; ++i) oracle[i] = values[i] * 1.5f + 2.0f;
         memcpy(input_words,values,sizeof(values)); memcpy(expected,oracle,sizeof(oracle));
     }
-    if (reject_dispatch) memcpy(expected,input_words,sizeof(expected));
+    if (reject_dispatch) memcpy(expected,input_words,sizeof(input_words));
     if (signed_integer) {
         const int32_t values[8] = {-100000,-17,-1,0,1,16,128,100000};
         int32_t oracle[8];
@@ -150,12 +164,12 @@ int main(int argc, char **argv) {
     if (rebind) for(unsigned i=0;i<4;++i) expected[i]=expected[i]*3u+4u;
     if (fixture) for(unsigned i=0;i<8;++i) expected[i]=input_words[i]+1u;
     if (clear_first || clear_after) for(unsigned i=0;i<8;++i) expected[i]=clear_first ? elements : 0;
-    uint32_t input_storage[8][8];
+    uint32_t input_storage[8][32];
     memcpy(input_storage[0], input_words, sizeof(input_words));
     if (multi) {
         for (unsigned j=1; j<binding_count; ++j)
             for (unsigned i=0; i<8; ++i) input_storage[j][i]=input_words[(i+j)%8] + j*101u;
-        memcpy(expected,input_words,sizeof(expected));
+        memcpy(expected,input_words,sizeof(input_words));
         if (!multi_alias && !multi_offset && !dynamic_offsets) for (unsigned pass_index=0; pass_index<(multi_write || multi_rebind ? 2u : 1u); ++pass_index) {
             const unsigned lanes=multi_rebind && pass_index == 1 ? 4u : elements;
             for (unsigned i=0; i<lanes; ++i) {
@@ -167,16 +181,29 @@ int main(int argc, char **argv) {
             }
         }
     }
+    if(view) {
+        for(unsigned j=0;j<binding_count;++j)
+            for(unsigned i=0;i<storage_words;++i) input_storage[j][i]=input_words[(i+j)%8] + j*101u + i*53u;
+        memcpy(expected,input_storage[0],result_bytes);
+        for(unsigned pass_index=0;pass_index<(view_rebind ? 2u : 1u);++pass_index) {
+            const unsigned output_start=8u+pass_index*8u;
+            for(unsigned i=0;i<elements;++i) {
+                expected[output_start+i]=expected[output_start+i]*3u+8u;
+                for(unsigned j=1;j<binding_count;++j)
+                    expected[output_start+i]+=input_storage[j][(j+1u)*8u+i]*(j+1u)+(view_short && j==binding_count-1 ? 4u : 8u);
+            }
+        }
+    }
     stage = "buffers";
     WGPUBufferDescriptor bd = WGPU_BUFFER_DESCRIPTOR_INIT;
-    bd.size = multi ? binding_count*32u : sizeof(expected); bd.usage = WGPUBufferUsage_CopySrc; bd.mappedAtCreation = WGPU_TRUE;
+    bd.size = multi ? binding_count*storage_bytes : result_bytes; bd.usage = WGPUBufferUsage_CopySrc; bd.mappedAtCreation = WGPU_TRUE;
     source = DeviceCreateBuffer(device, &bd);
     bd.usage = WGPUBufferUsage_MapRead | WGPUBufferUsage_CopyDst; bd.mappedAtCreation = WGPU_FALSE;
-    bd.size=sizeof(expected);
+    bd.size=result_bytes;
     destination = DeviceCreateBuffer(device, &bd);
     if (!source || !destination) goto cleanup;
     {
-        bd.size = 32; bd.usage = WGPUBufferUsage_CopySrc | WGPUBufferUsage_CopyDst | WGPUBufferUsage_Storage;
+        bd.size = storage_bytes; bd.usage = WGPUBufferUsage_CopySrc | WGPUBufferUsage_CopyDst | WGPUBufferUsage_Storage;
         intermediate = DeviceCreateBuffer(device, &bd);
         if (!intermediate) goto cleanup;
     }
@@ -184,9 +211,11 @@ int main(int argc, char **argv) {
         inputs[j-1]=DeviceCreateBuffer(device,&bd);
         if(!inputs[j-1]) goto cleanup;
     }
-    void *input = BufferGetMappedRange(source, 0, multi ? binding_count*32u : sizeof(expected));
+    void *input = BufferGetMappedRange(source, 0, multi ? binding_count*storage_bytes : result_bytes);
     if (!input) goto cleanup;
-    memcpy(input, multi ? input_storage[0] : input_words, multi ? binding_count*32u : sizeof(input_words));
+    if(multi) for(unsigned j=0;j<binding_count;++j)
+        memcpy((uint8_t *)input+j*storage_bytes,input_storage[j],storage_bytes);
+    else memcpy(input,input_words,sizeof(input_words));
     BufferUnmap(source);
     stage = "compute pipeline";
     const char *wgsl = "@group(0) @binding(0) var<storage, read_write> data: array<u32>; "
@@ -314,18 +343,32 @@ int main(int argc, char **argv) {
             multi_entries[i]=(WGPUBindGroupEntry)WGPU_BIND_GROUP_ENTRY_INIT;
             multi_entries[i].binding=j;
             multi_entries[i].buffer=j && !multi_alias ? inputs[j-1] : intermediate;
-            multi_entries[i].size=(multi_short || multi_offset) && j==binding_count-1 ? 16 : 32;
+            multi_entries[i].size=(multi_short || multi_offset || view_short) && j==binding_count-1 ? 16 : 32;
             if(multi_offset && j==binding_count-1) multi_entries[i].offset=4;
+            if(view) multi_entries[i].offset=(j+1u)*32u;
+            if(view_whole && j==binding_count-1) multi_entries[i].size=WGPU_WHOLE_SIZE;
         }
         gd.entryCount=binding_count;gd.entries=multi_entries;
     }
     group=DeviceCreateBindGroup(device,&gd);
     if (!group) goto cleanup;
-    if (rebind || multi_rebind) {
+    if (rebind || multi_rebind || view_rebind) {
         if(multi_rebind) multi_entries[0].size=16;
+        if(view_rebind) multi_entries[binding_count-1].offset=64;
         be.size=16;
         short_group=DeviceCreateBindGroup(device,&gd);
         if (!short_group) goto cleanup;
+    }
+    if(view_range) {
+        stage="out-of-range view rejection";
+        const uint64_t valid_offset=multi_entries[0].offset;
+        const uint64_t invalid_offsets[]={128u,UINT64_MAX-15u};
+        for(unsigned i=0;i<2;++i) {
+            multi_entries[0].offset=invalid_offsets[i];
+            WGPUBindGroup invalid=DeviceCreateBindGroup(device,&gd);
+            if(invalid) { BindGroupRelease(invalid);goto cleanup; }
+        }
+        multi_entries[0].offset=valid_offset;
     }
     stage = "recorded compute";
     if (reject_dispatch || dynamic_offsets) {
@@ -340,8 +383,8 @@ int main(int argc, char **argv) {
     }
     encoder=DeviceCreateCommandEncoder(device,NULL);
     if (!encoder) goto cleanup;
-    CommandEncoderCopyBufferToBuffer(encoder,source,0,intermediate,0,32);
-    for(unsigned j=1;j<binding_count;++j) CommandEncoderCopyBufferToBuffer(encoder,source,j*32u,inputs[j-1],0,32);
+    CommandEncoderCopyBufferToBuffer(encoder,source,0,intermediate,0,storage_bytes);
+    for(unsigned j=1;j<binding_count;++j) CommandEncoderCopyBufferToBuffer(encoder,source,j*storage_bytes,inputs[j-1],0,storage_bytes);
     if (clear_first) CommandEncoderClearBuffer(encoder,intermediate,0,32);
     pass=CommandEncoderBeginComputePass(encoder,NULL);
     if (!pass) goto cleanup;
@@ -351,14 +394,14 @@ int main(int argc, char **argv) {
     ComputePassEncoderSetBindGroup(pass,0,group,dynamic_offsets ? 1 : 0,dynamic_offsets ? &dynamic_offset : NULL);
     ComputePassEncoderDispatchWorkgroups(pass,atomic ? 1 : multi_offset ? 4 : reject_dispatch && !mismatch && !multi_alias ? elements+1 : elements,1,1);
     if (repeated) ComputePassEncoderDispatchWorkgroups(pass,elements,1,1);
-    if (rebind || multi_rebind) {
+    if (rebind || multi_rebind || view_rebind) {
         ComputePassEncoderSetBindGroup(pass,0,short_group,0,NULL);
-        ComputePassEncoderDispatchWorkgroups(pass,4,1,1);
+        ComputePassEncoderDispatchWorkgroups(pass,view_rebind ? 8 : 4,1,1);
     }
     ComputePassEncoderEnd(pass);
     ComputePassEncoderRelease(pass); pass=NULL;
     if (clear_after) CommandEncoderClearBuffer(encoder,intermediate,0,32);
-    CommandEncoderCopyBufferToBuffer(encoder,intermediate,0,destination,0,32);
+    CommandEncoderCopyBufferToBuffer(encoder,intermediate,0,destination,0,result_bytes);
     commands = CommandEncoderFinish(encoder, NULL);
     if (!commands) goto cleanup;
     ShaderModuleRelease(shader); shader=NULL;
@@ -397,13 +440,13 @@ int main(int argc, char **argv) {
     if (intermediate) { BufferRelease(intermediate); intermediate = NULL; }
     WGPUBufferMapCallbackInfo mc = WGPU_BUFFER_MAP_CALLBACK_INFO_INIT;
     mc.mode = WGPUCallbackMode_AllowSpontaneous; mc.callback = map_ready; mc.userdata1 = &mapped;
-    BufferMapAsync(destination, WGPUMapMode_Read, 0, sizeof(expected), mc);
+    BufferMapAsync(destination, WGPUMapMode_Read, 0, result_bytes, mc);
     for (int i = 0; i < 100 && !mapped; ++i) { InstanceProcessEvents(instance); Sleep(10); }
     if (mapped != 1) goto cleanup;
     stage = "exact readback";
-    const uint32_t *output = BufferGetConstMappedRange(destination, 0, sizeof(expected));
+    const uint32_t *output = BufferGetConstMappedRange(destination, 0, result_bytes);
     if (!output) goto cleanup;
-    for (size_t i = 0; i < sizeof(expected) / sizeof(expected[0]); ++i) {
+    for (size_t i = 0; i < result_bytes / sizeof(expected[0]); ++i) {
         if (output[i] != expected[i]) {
             fprintf(stderr, "word[%zu]: expected=0x%08x actual=0x%08x\n", i, expected[i], output[i]);
             goto cleanup;
@@ -428,11 +471,11 @@ int main(int argc, char **argv) {
     DevicePopErrorScope(device, sc);
     for (int i = 0; i < 100 && !rejected; ++i) { InstanceProcessEvents(instance); Sleep(10); }
     if (rejected != 1) goto cleanup;
-    BufferMapAsync(destination, WGPUMapMode_Read, 0, sizeof(expected), mc);
+    BufferMapAsync(destination, WGPUMapMode_Read, 0, result_bytes, mc);
     for (int i = 0; i < 100 && !mapped; ++i) { InstanceProcessEvents(instance); Sleep(10); }
     if (mapped != 1) goto cleanup;
-    output = BufferGetConstMappedRange(destination, 0, sizeof(expected));
-    if (!output || memcmp(output, expected, sizeof(expected)) != 0) goto cleanup;
+    output = BufferGetConstMappedRange(destination, 0, result_bytes);
+    if (!output || memcmp(output, expected, result_bytes) != 0) goto cleanup;
     if(dynamic_offsets) {
         stage="fresh encoder after dynamic-offset rejection";
         BufferUnmap(destination);mapped=0;
@@ -440,14 +483,14 @@ int main(int argc, char **argv) {
         CommandEncoderRelease(encoder);encoder=NULL;
         encoder=DeviceCreateCommandEncoder(device,NULL);
         if(!encoder) goto cleanup;
-        CommandEncoderClearBuffer(encoder,destination,0,sizeof(expected));
+        CommandEncoderClearBuffer(encoder,destination,0,result_bytes);
         commands=CommandEncoderFinish(encoder,NULL);
         if(!commands) goto cleanup;
         QueueSubmit(queue,1,&commands);
-        BufferMapAsync(destination,WGPUMapMode_Read,0,sizeof(expected),mc);
+        BufferMapAsync(destination,WGPUMapMode_Read,0,result_bytes,mc);
         for(int i=0;i<100 && !mapped;++i) { InstanceProcessEvents(instance);Sleep(10); }
         if(mapped != 1) goto cleanup;
-        output=BufferGetConstMappedRange(destination,0,sizeof(expected));
+        output=BufferGetConstMappedRange(destination,0,result_bytes);
         if(!output) goto cleanup;
         for(unsigned i=0;i<8;++i) if(output[i] != 0) goto cleanup;
         printf("fresh encoder recovery: exact 8 zero words\n");
@@ -475,7 +518,7 @@ cleanup:
     FreeLibrary(library);
     if (result) fprintf(stderr, "FAIL stage=%s\n", stage);
     else if (unsupported) printf("PASS: D3D12 %s rejected at pipeline creation\n", multi_sparse ? "sparse public bindings" : "aggregate array");
-    else printf("PASS: D3D12 %s compute/readback, early release, exact 8-word output, misaligned clear rejected\n",
-                multi ? argv[2] : atomic_signed ? "signed shared atomic index capture" : atomic ? "unsigned shared atomic index capture" : clear_first ? "clear then compute" : clear_after ? "compute then clear" : mismatch ? "foreign automatic layout rejected" : fixed ? "fixed automatic layout" : recover ? "valid pipeline after rejected aggregate" : fixture ? "unchanged fixture shader" : short_binding ? "short runtime binding" : rebind ? "runtime descriptor rebinding" : floating ? "runtime f32" : signed_integer ? "i32" : repeated ? "repeated u32" : reject_dispatch ? "rejected dispatch preserves sentinel" : "u32");
+    else printf("PASS: D3D12 %s compute/readback, early release, exact %zu-word output, misaligned clear rejected\n",
+                multi ? argv[2] : atomic_signed ? "signed shared atomic index capture" : atomic ? "unsigned shared atomic index capture" : clear_first ? "clear then compute" : clear_after ? "compute then clear" : mismatch ? "foreign automatic layout rejected" : fixed ? "fixed automatic layout" : recover ? "valid pipeline after rejected aggregate" : fixture ? "unchanged fixture shader" : short_binding ? "short runtime binding" : rebind ? "runtime descriptor rebinding" : floating ? "runtime f32" : signed_integer ? "i32" : repeated ? "repeated u32" : reject_dispatch ? "rejected dispatch preserves sentinel" : "u32", result_bytes / sizeof(uint32_t));
     return result;
 }

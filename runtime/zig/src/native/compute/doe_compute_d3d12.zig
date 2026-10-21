@@ -140,7 +140,10 @@ pub fn validate(device: *objects.DoeDevice, dispatch: Dispatch) !void {
         // Aliased descriptors require a unified usage scope; reject before any recording.
         for (dispatch.bufs[0..index]) |other| if (other == buffer.mtl) return error.UnsupportedBinding;
         const size = dispatch.buf_sizes[index];
-        if (dispatch.buf_offsets[index] != 0 or size < slot.minimum_size or size > buffer.size or size % 4 != 0 or size / 4 > std.math.maxInt(u32)) return error.UnsupportedBindingRange;
+        const offset = dispatch.buf_offsets[index];
+        if (offset % dc.MIN_STORAGE_BUFFER_OFFSET_ALIGNMENT != 0 or offset > buffer.size or
+            size < slot.minimum_size or size > buffer.size - offset or size % 4 != 0 or
+            size / 4 > std.math.maxInt(u32)) return error.UnsupportedBindingRange;
         const extent = if (slot.runtime_array) size else slot.minimum_size;
         if (@as(u64, dispatch.x) * pipeline.wg_x > extent / 4) return error.UnsupportedDispatchDimensions;
     }
@@ -166,9 +169,9 @@ pub fn record(device: *objects.DoeDevice, list: ?*anyopaque, dispatch: Dispatch,
         retained.appendAssumeCapacity(buffer);
         const elements: u32 = @intCast(dispatch.buf_sizes[index] / 4);
         if (slot.read_only) {
-            bridge.d3d12_bridge_device_create_srv_buffer(device.mtl_device, heap, @intCast(index), buffer, elements, 4);
+            bridge.d3d12_bridge_device_create_srv_buffer_range(device.mtl_device, heap, @intCast(index), buffer, dispatch.buf_offsets[index] / 4, elements, 4);
         } else {
-            bridge.d3d12_bridge_device_create_uav_buffer(device.mtl_device, heap, @intCast(index), buffer, elements, 4);
+            bridge.d3d12_bridge_device_create_uav_buffer_range(device.mtl_device, heap, @intCast(index), buffer, dispatch.buf_offsets[index] / 4, elements, 4);
         }
     }
     bridge.d3d12_bridge_command_list_set_compute_root_signature(list, pipeline.d3d12_root_signature);
