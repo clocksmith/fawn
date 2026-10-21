@@ -192,10 +192,15 @@ pub export fn doeNativeComputePassSetPipeline(pass_raw: ?*anyopaque, pip_raw: ?*
 }
 
 pub export fn doeNativeComputePassSetBindGroup(pass_raw: ?*anyopaque, index: u32, bg_raw: ?*anyopaque, dyn_count: usize, dyn_offsets: ?[*]const u32) callconv(.c) void {
-    _ = dyn_count;
     _ = dyn_offsets;
     const pass = cast(DoeComputePass, pass_raw) orelse return;
     if (!recording.requirePass(pass.enc, @intFromPtr(pass))) return;
+    // D3D12 admits only layouts without dynamic bindings. A supplied offset
+    // count cannot match that layout; reject before changing the recorded view.
+    if (pass.enc.dev.backend == .d3d12 and dyn_count != 0) {
+        recording.fail(pass.enc, error.InvalidArgument);
+        return;
+    }
     if (index < MAX_COMPUTE_BIND_GROUPS) setPassBindGroup(pass, @intCast(index), cast(DoeBindGroup, bg_raw));
 }
 

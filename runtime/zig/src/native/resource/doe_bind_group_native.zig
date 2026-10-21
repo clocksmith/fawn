@@ -94,6 +94,7 @@ fn classify_layout_entry(entry: abi_pipeline.WGPUBindGroupLayoutEntry) DoeBindGr
     if (buffer_binding_type_active(entry.buffer.type)) {
         out.resource_kind = RESOURCE_KIND_BUFFER;
         out.buffer_binding_type = entry.buffer.type;
+        out.buffer_has_dynamic_offset = entry.buffer.hasDynamicOffset != 0;
         return out;
     }
     if (texture_sample_type_active(entry.texture.sampleType)) {
@@ -629,11 +630,13 @@ fn layout_entry_for_kind_test() abi_pipeline.WGPUBindGroupLayoutEntry {
 test "bind group layout classification follows active binding sentinel" {
     var buffer_entry = layout_entry_for_kind_test();
     buffer_entry.buffer.type = abi_binding.WGPUBufferBindingType_Storage;
+    buffer_entry.buffer.hasDynamicOffset = 1;
     buffer_entry.texture.viewDimension = abi_texture.WGPUTextureViewDimension_2D;
     buffer_entry.storageTexture.format = abi_texture.WGPUTextureFormat_RGBA8Unorm;
     const classified_buffer = classify_layout_entry(buffer_entry);
     try std.testing.expectEqual(RESOURCE_KIND_BUFFER, classified_buffer.resource_kind);
     try std.testing.expectEqual(abi_binding.WGPUBufferBindingType_Storage, classified_buffer.buffer_binding_type);
+    try std.testing.expect(classified_buffer.buffer_has_dynamic_offset);
 
     var texture_entry = layout_entry_for_kind_test();
     texture_entry.texture.sampleType = abi_binding.WGPUTextureSampleType_Float;

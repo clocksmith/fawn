@@ -3532,7 +3532,7 @@
       },
       "src/native/compute/doe_compute_ext_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "d702a908d2107894d9bc9b5f69dd8a7d1210d37fe081afab823c76aad33bb0b0",
+        "moduleSha256": "ef0b42a232817cee33af5c3f1165d4fcb439c72422b4ef35769fca023e8bbff4",
         "reason": "Keep: the encoder owns pass identity and recording lifetime; native adapters validate operations against that single state.",
         "reviewer": "codex-pass-lifecycle/2026-09-06"
       },
@@ -3670,7 +3670,7 @@
       },
       "src/native/resource/doe_bind_group_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "a8b227328a935a03f4bf8ae838e5d1940b3a00c65028695aa0b0f5258afefe41",
+        "moduleSha256": "0ddada1c62529f7949f401cf7f9621cf78c2482a4d7273952ef51224f6e9b917",
         "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission.",
         "reviewer": "codex"
       },
@@ -3790,7 +3790,7 @@
       },
       "src/native/support/doe_native_shared_types.zig": {
         "decision": "Keep",
-        "moduleSha256": "70de870106c78878dbc2988267a5bfb1de980831c2eca30dff12f8f39cfc6ee4",
+        "moduleSha256": "1d0a4b7cac13ab9463ec7d6eba36455eed5cb99ad193295e5b1f7819f0a52b97",
         "reason": "Keep: reachable native implementation shared by 28 production consumers with no conflicting ownership signal.",
         "reviewer": "codex-runtime-correction/2026-08-16"
       },
@@ -4444,7 +4444,7 @@
       },
       "src/native/compute/doe_compute_d3d12.zig": {
         "decision": "Keep",
-        "moduleSha256": "66647825dfb4a6b5fe6e53dabd905571ad19768f728eb8a17af3b1c315d0992a",
+        "moduleSha256": "a8c89d835531ea7a633c7b5c026bc99df439ffc997c147c1a031c175461ad48a",
         "reason": "Keep: bounded D3D12 integration derives automatic single-storage-binding layouts only after existing analyzed-IR admission, using authoritative shader buffer reflection and existing native layout constructors/releases. Per-pipeline distinct layout identity and pipeline-owned retention reuse GetBindGroupLayout and dispatch validation. Explicit layout, descriptors, shader compiler and queue ownership remain unchanged.",
         "reviewer": "codex-d3d12-auto-layout/2026-10-19"
       },

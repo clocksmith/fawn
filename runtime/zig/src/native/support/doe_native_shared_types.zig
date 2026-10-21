@@ -42,6 +42,7 @@ pub const DoeBindGroupLayoutEntry = struct {
     binding: u32 = 0,
     resource_kind: u32 = 0,
     buffer_binding_type: u32 = abi_binding.WGPUBufferBindingType_Undefined,
+    buffer_has_dynamic_offset: bool = false,
     texture_sample_type: u32 = abi_binding.WGPUTextureSampleType_Undefined,
     texture_view_dimension: u32 = abi_texture.WGPUTextureViewDimension_Undefined,
     texture_multisampled: bool = false,

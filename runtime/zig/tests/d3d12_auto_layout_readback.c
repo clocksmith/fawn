@@ -40,10 +40,12 @@ static void scope_ready(WGPUPopErrorScopeStatus status, WGPUErrorType type,
 int main(int argc, char **argv) {
     if (argc != 2 && argc != 3) return 2;
     const int multi = argc == 3 && strncmp(argv[2], "multi", 5) == 0;
+    const int dynamic_layout = multi && strcmp(argv[2], "multi-dynamic-layout") == 0;
+    const int dynamic_offsets = multi && strcmp(argv[2], "multi-dynamic-offsets") == 0;
     const int multi_recover = multi && strcmp(argv[2], "multi-recover") == 0;
     const int multi_sparse = multi && strcmp(argv[2], "multi-sparse") == 0;
     const int multi_offset = multi && strcmp(argv[2], "multi-offset") == 0;
-    const int multi_explicit = multi_recover || (multi && strcmp(argv[2], "multi-explicit") == 0);
+    const int multi_explicit = dynamic_layout || multi_recover || (multi && strcmp(argv[2], "multi-explicit") == 0);
     const int multi_write = multi && strcmp(argv[2], "multi-write") == 0;
     const int multi_short = multi && strcmp(argv[2], "multi-short") == 0;
     const int multi_rebind = multi && strcmp(argv[2], "multi-rebind") == 0;
@@ -64,7 +66,7 @@ int main(int argc, char **argv) {
     const int signed_integer = atomic_signed || (argc == 3 && strcmp(argv[2], "int") == 0);
     const int unsupported = multi_sparse || (argc == 3 && strcmp(argv[2], "unsupported") == 0);
     const int fixture = argc == 3 && strcmp(argv[2], "fixture") == 0;
-    const int recover = multi_recover || (argc == 3 && strcmp(argv[2], "recover") == 0);
+    const int recover = dynamic_layout || multi_recover || (argc == 3 && strcmp(argv[2], "recover") == 0);
     HMODULE library = LoadLibraryA(argv[1]);
     if (!library) { fprintf(stderr, "LoadLibrary error=%lu\n", GetLastError()); return 2; }
     LOAD(CreateInstance); LOAD(InstanceRequestAdapter); LOAD(InstanceProcessEvents);
@@ -154,7 +156,7 @@ int main(int argc, char **argv) {
         for (unsigned j=1; j<binding_count; ++j)
             for (unsigned i=0; i<8; ++i) input_storage[j][i]=input_words[(i+j)%8] + j*101u;
         memcpy(expected,input_words,sizeof(expected));
-        if (!multi_alias && !multi_offset) for (unsigned pass_index=0; pass_index<(multi_write || multi_rebind ? 2u : 1u); ++pass_index) {
+        if (!multi_alias && !multi_offset && !dynamic_offsets) for (unsigned pass_index=0; pass_index<(multi_write || multi_rebind ? 2u : 1u); ++pass_index) {
             const unsigned lanes=multi_rebind && pass_index == 1 ? 4u : elements;
             for (unsigned i=0; i<lanes; ++i) {
                 expected[i]=expected[i]*3u + 8u;
@@ -251,6 +253,7 @@ int main(int argc, char **argv) {
             entries[i].binding=j; entries[i].visibility=WGPUShaderStage_Compute;
             entries[i].buffer.type=j ? WGPUBufferBindingType_ReadOnlyStorage : WGPUBufferBindingType_Storage;
             entries[i].buffer.minBindingSize=4;
+            if(dynamic_layout && j==1) entries[i].buffer.hasDynamicOffset=WGPU_TRUE;
             if(multi_recover && j==0) entries[i].buffer.type=WGPUBufferBindingType_ReadOnlyStorage;
         }
         WGPUBindGroupLayoutDescriptor desc=WGPU_BIND_GROUP_LAYOUT_DESCRIPTOR_INIT;
@@ -279,7 +282,7 @@ int main(int argc, char **argv) {
         shader=DeviceCreateShaderModule(device,&sd);
         if (!shader) goto cleanup;
         cp.compute.module=shader;
-        if(multi_recover) cp.layout=NULL;
+        if(multi_recover || dynamic_layout) cp.layout=NULL;
         pipeline=DeviceCreateComputePipeline(device,&cp);
     }
     if (unsupported) { if (!pipeline) result=0; goto cleanup; }
@@ -325,7 +328,7 @@ int main(int argc, char **argv) {
         if (!short_group) goto cleanup;
     }
     stage = "recorded compute";
-    if (reject_dispatch) {
+    if (reject_dispatch || dynamic_offsets) {
         encoder=DeviceCreateCommandEncoder(device,NULL);
         if (!encoder) goto cleanup;
         CommandEncoderCopyBufferToBuffer(encoder,source,0,destination,0,32);
@@ -343,7 +346,9 @@ int main(int argc, char **argv) {
     pass=CommandEncoderBeginComputePass(encoder,NULL);
     if (!pass) goto cleanup;
     ComputePassEncoderSetPipeline(pass,pipeline);
-    ComputePassEncoderSetBindGroup(pass,0,group,0,NULL);
+    const uint32_t dynamic_offset=16;
+    if(dynamic_offsets) DevicePushErrorScope(device,WGPUErrorFilter_Validation);
+    ComputePassEncoderSetBindGroup(pass,0,group,dynamic_offsets ? 1 : 0,dynamic_offsets ? &dynamic_offset : NULL);
     ComputePassEncoderDispatchWorkgroups(pass,atomic ? 1 : multi_offset ? 4 : reject_dispatch && !mismatch && !multi_alias ? elements+1 : elements,1,1);
     if (repeated) ComputePassEncoderDispatchWorkgroups(pass,elements,1,1);
     if (rebind || multi_rebind) {
@@ -365,6 +370,16 @@ int main(int argc, char **argv) {
     stage = "submit/map";
     if (reject_dispatch) DevicePushErrorScope(device,WGPUErrorFilter_Internal);
     QueueSubmit(queue, 1, &commands);
+    int dynamic_rejected=0;
+    if(dynamic_offsets) {
+        WGPUPopErrorScopeCallbackInfo scope=WGPU_POP_ERROR_SCOPE_CALLBACK_INFO_INIT;
+        WGPUErrorType wanted=WGPUErrorType_Validation;
+        scope.mode=WGPUCallbackMode_AllowSpontaneous;scope.callback=scope_ready;
+        scope.userdata1=&dynamic_rejected;scope.userdata2=&wanted;
+        DevicePopErrorScope(device,scope);
+        for(int i=0;i<100 && !dynamic_rejected;++i) { InstanceProcessEvents(instance);Sleep(10); }
+        printf("dynamic offset validation captured=%d\n",dynamic_rejected);
+    }
     if (reject_dispatch) {
         int rejected_dispatch=0;
         WGPUPopErrorScopeCallbackInfo scope = WGPU_POP_ERROR_SCOPE_CALLBACK_INFO_INIT;
@@ -395,6 +410,7 @@ int main(int argc, char **argv) {
         }
         printf("word[%zu]: expected=0x%08x actual=0x%08x\n", i, expected[i], output[i]);
     }
+    if(dynamic_offsets && dynamic_rejected != 1) goto cleanup;
     BufferUnmap(destination); mapped = 0;
     stage = "invalid clear rejection";
     int rejected = 0;
@@ -417,6 +433,25 @@ int main(int argc, char **argv) {
     if (mapped != 1) goto cleanup;
     output = BufferGetConstMappedRange(destination, 0, sizeof(expected));
     if (!output || memcmp(output, expected, sizeof(expected)) != 0) goto cleanup;
+    if(dynamic_offsets) {
+        stage="fresh encoder after dynamic-offset rejection";
+        BufferUnmap(destination);mapped=0;
+        CommandBufferRelease(commands);commands=NULL;
+        CommandEncoderRelease(encoder);encoder=NULL;
+        encoder=DeviceCreateCommandEncoder(device,NULL);
+        if(!encoder) goto cleanup;
+        CommandEncoderClearBuffer(encoder,destination,0,sizeof(expected));
+        commands=CommandEncoderFinish(encoder,NULL);
+        if(!commands) goto cleanup;
+        QueueSubmit(queue,1,&commands);
+        BufferMapAsync(destination,WGPUMapMode_Read,0,sizeof(expected),mc);
+        for(int i=0;i<100 && !mapped;++i) { InstanceProcessEvents(instance);Sleep(10); }
+        if(mapped != 1) goto cleanup;
+        output=BufferGetConstMappedRange(destination,0,sizeof(expected));
+        if(!output) goto cleanup;
+        for(unsigned i=0;i<8;++i) if(output[i] != 0) goto cleanup;
+        printf("fresh encoder recovery: exact 8 zero words\n");
+    }
     result = 0;
 cleanup:
     if(pass) ComputePassEncoderRelease(pass);
