@@ -2212,9 +2212,9 @@
       },
       "src/compiler/wgsl/emit/hlsl/emit_hlsl.zig": {
         "decision": "Keep",
-        "moduleSha256": "799cc3a27ee084419977b398da446176d4a087aa059c4cce2b8e48e43074d20e",
-        "reason": "Keep: HLSL statement emission preserves loop initializer scope while retaining existing shader semantics and target-specific lowering ownership.",
-        "reviewer": "codex-d3d12-matrix-scope/2026-10-21"
+        "moduleSha256": "c9255c0bfd4977641fa08874be30a62b94b5b7b35558e807c8badaa1312ad692",
+        "reason": "Keep: target-specific HLSL statement emission preserves lexical initializer scope and nearest-loop continuing semantics, including nested loops and clip-distance lowering.",
+        "reviewer": "codex-hlsl-continue/2026-10-21"
       },
       "src/compiler/wgsl/emit/hlsl/emit_hlsl_builtins.zig": {
         "decision": "Keep",
@@ -2230,9 +2230,9 @@
       },
       "src/compiler/wgsl/emit/hlsl/emit_hlsl_stage.zig": {
         "decision": "Keep",
-        "moduleSha256": "8820f301f8316954ce6b558da4cffb49d0de87ef74b0d96416de20ebb4d81f3f",
-        "reason": "Keep: HLSL statement emission preserves loop initializer scope while retaining existing shader semantics and target-specific lowering ownership.",
-        "reviewer": "codex-d3d12-matrix-scope/2026-10-21"
+        "moduleSha256": "b4b0f9eb362a838b598dca899c4045caf4a89b800a1036563980dc8b3cf2cf6e",
+        "reason": "Keep: target-specific HLSL statement emission preserves lexical initializer scope and nearest-loop continuing semantics, including nested loops and clip-distance lowering.",
+        "reviewer": "codex-hlsl-continue/2026-10-21"
       },
       "src/compiler/wgsl/emit/hlsl/emit_hlsl_texture.zig": {
         "decision": "Keep",

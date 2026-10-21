@@ -280,3 +280,24 @@ test "hlsl control flow: consecutive for initializers retain independent scopes"
     try testing.expectEqual(@as(usize, 2), std.mem.count(u8, hlsl, "{\n        uint inner_row = 0"));
     try testing.expect(!contains(hlsl, "\n    uint inner_row = 0"));
 }
+
+test "hlsl control flow: continue executes for increment without leaking into nested while" {
+    const source =
+        \\@group(0) @binding(0) var<storage, read_write> output: array<u32, 1>;
+        \\@compute @workgroup_size(1) fn main() {
+        \\  var total = 0u;
+        \\  for (var i = 0u; i < 4u; i++) {
+        \\    var j = 0u;
+        \\    while (j < 2u) { j++; if (j == 1u) { continue; } total += 10u; }
+        \\    if (i == 1u) { i++; continue; }
+        \\    total += i;
+        \\  }
+        \\  output[0] = total;
+        \\}
+    ;
+    var out: [MAX_HLSL_OUTPUT]u8 = undefined;
+    const len = try translateToHlsl(allocator, source, &out);
+    // One explicit increment, one continuing before outer continue, one at the tail.
+    // The nested while must not emit the outer increment on its continue edge.
+    try testing.expectEqual(@as(usize, 3), std.mem.count(u8, out[0..len], "i += 1;"));
+}
