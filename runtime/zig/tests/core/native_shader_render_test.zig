@@ -1547,7 +1547,7 @@ test "Metal selected adapter identity stays bound to the retained device" {
     const instance = instance_device.doeNativeCreateInstance(null) orelse return error.InstanceUnavailable;
     defer instance_device.doeNativeInstanceRelease(instance);
     var adapter_raw: ?*anyopaque = null;
-    _ = instance_device.doeNativeRequestAdapterFlat(instance, null, 3, Reply.ready, &adapter_raw, null);
+    _ = instance_device.doeNativeRequestAdapterFlat(instance, null, 3, Reply.ready, @ptrCast(&adapter_raw), null);
     const adapter = helpers.cast(objects.DoeAdapter, adapter_raw) orelse return error.AdapterUnavailable;
     defer instance_device.doeNativeAdapterRelease(adapter_raw);
     try std.testing.expectEqual(.metal, adapter.backend);
