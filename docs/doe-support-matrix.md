@@ -37,7 +37,7 @@ carry the changing state.
 | Linux x64 / AMD Vulkan | Narrow Node/Bun and Electron main-process evidence | Narrow native evidence | Separate diagnostic lane | Read claim index per row |
 | Linux x64 / AMD Strix Halo, RADV (initial qualification target) | Unqualified on the frozen tuple | Unqualified on the frozen tuple | Not promoted | Engineering target only; see below |
 | Linux / Intel Tiger Lake Vulkan | Diagnostic host evidence | Diagnostic host evidence | Not promoted | Do not generalize |
-| Windows / D3D12 | Not promoted | Scaffolded | Not promoted | Fresh Windows evidence required |
+| Windows / D3D12 | Not promoted | Bounded native correctness diagnostics | Not promoted | [Recorded copy/clear/scalar-compute boundary](../runtime/zig/README.md#windows-buffer-clear-parity-boundary); complete tuple unqualified |
 | Other tuples | Unsupported unless explicitly listed | Unsupported unless explicitly listed | Unsupported | Fail with typed cause |
 
 The table intentionally contains no benchmark percentages or mutable pass

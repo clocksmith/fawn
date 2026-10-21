@@ -29,7 +29,8 @@ static void map_ready(WGPUMapAsyncStatus status, WGPUStringView message,
 static void scope_ready(WGPUPopErrorScopeStatus status, WGPUErrorType type,
                         WGPUStringView message, void *result, void *unused) {
     (void)message; (void)unused;
-    *(int *)result = status == WGPUPopErrorScopeStatus_Success && type == WGPUErrorType_Internal ? 1 : -1;
+    const WGPUErrorType wanted = unused ? *(WGPUErrorType *)unused : WGPUErrorType_Internal;
+    *(int *)result = status == WGPUPopErrorScopeStatus_Success && type == wanted ? 1 : -1;
 }
 
 #define LOAD(Name) \
@@ -38,6 +39,8 @@ static void scope_ready(WGPUPopErrorScopeStatus status, WGPUErrorType type,
 
 int main(int argc, char **argv) {
     if (argc != 2 && argc != 3) return 2;
+    const int clear_first = argc == 3 && strcmp(argv[2], "clear") == 0;
+    const int clear_after = argc == 3 && strcmp(argv[2], "clear-after") == 0;
     const int mismatch = argc == 3 && strcmp(argv[2], "mismatch") == 0;
     const int fixed = argc == 3 && strcmp(argv[2], "fixed") == 0;
     const int short_binding = argc == 3 && strcmp(argv[2], "short") == 0;
@@ -130,6 +133,7 @@ int main(int argc, char **argv) {
     if (short_binding) for(unsigned i=4;i<8;++i) expected[i]=input_words[i];
     if (rebind) for(unsigned i=0;i<4;++i) expected[i]=expected[i]*3u+4u;
     if (fixture) for(unsigned i=0;i<8;++i) expected[i]=input_words[i]+1u;
+    if (clear_first || clear_after) for(unsigned i=0;i<8;++i) expected[i]=clear_first ? elements : 0;
     stage = "buffers";
     WGPUBufferDescriptor bd = WGPU_BUFFER_DESCRIPTOR_INIT;
     bd.size = sizeof(expected); bd.usage = WGPUBufferUsage_CopySrc; bd.mappedAtCreation = WGPU_TRUE;
@@ -228,6 +232,7 @@ int main(int argc, char **argv) {
     encoder=DeviceCreateCommandEncoder(device,NULL);
     if (!encoder) goto cleanup;
     CommandEncoderCopyBufferToBuffer(encoder,source,0,intermediate,0,32);
+    if (clear_first) CommandEncoderClearBuffer(encoder,intermediate,0,32);
     pass=CommandEncoderBeginComputePass(encoder,NULL);
     if (!pass) goto cleanup;
     ComputePassEncoderSetPipeline(pass,pipeline);
@@ -240,6 +245,7 @@ int main(int argc, char **argv) {
     }
     ComputePassEncoderEnd(pass);
     ComputePassEncoderRelease(pass); pass=NULL;
+    if (clear_after) CommandEncoderClearBuffer(encoder,intermediate,0,32);
     CommandEncoderCopyBufferToBuffer(encoder,intermediate,0,destination,0,32);
     commands = CommandEncoderFinish(encoder, NULL);
     if (!commands) goto cleanup;
@@ -282,17 +288,19 @@ int main(int argc, char **argv) {
         printf("word[%zu]: expected=0x%08x actual=0x%08x\n", i, expected[i], output[i]);
     }
     BufferUnmap(destination); mapped = 0;
-    stage = "unsupported command rejection";
+    stage = "invalid clear rejection";
     int rejected = 0;
-    DevicePushErrorScope(device, WGPUErrorFilter_Internal);
+    DevicePushErrorScope(device, WGPUErrorFilter_Validation);
     encoder = DeviceCreateCommandEncoder(device, NULL);
     if (!encoder) goto cleanup;
-    CommandEncoderClearBuffer(encoder, destination, 0, sizeof(expected));
+    CommandEncoderClearBuffer(encoder, destination, 1, 4);
     commands = CommandEncoderFinish(encoder, NULL);
     if (!commands) goto cleanup;
     QueueSubmit(queue, 1, &commands);
     WGPUPopErrorScopeCallbackInfo sc = WGPU_POP_ERROR_SCOPE_CALLBACK_INFO_INIT;
     sc.mode = WGPUCallbackMode_AllowSpontaneous; sc.callback = scope_ready; sc.userdata1 = &rejected;
+    WGPUErrorType clear_error_type = WGPUErrorType_Validation;
+    sc.userdata2 = &clear_error_type;
     DevicePopErrorScope(device, sc);
     for (int i = 0; i < 100 && !rejected; ++i) { InstanceProcessEvents(instance); Sleep(10); }
     if (rejected != 1) goto cleanup;
@@ -323,7 +331,7 @@ cleanup:
     FreeLibrary(library);
     if (result) fprintf(stderr, "FAIL stage=%s\n", stage);
     else if (unsupported) printf("PASS: D3D12 aggregate array rejected at pipeline creation\n");
-    else printf("PASS: D3D12 %s compute/readback, early release, exact 8-word output, unsupported clear rejected\n",
-                mismatch ? "foreign automatic layout rejected" : fixed ? "fixed automatic layout" : recover ? "valid pipeline after rejected aggregate" : fixture ? "unchanged fixture shader" : short_binding ? "short runtime binding" : rebind ? "runtime descriptor rebinding" : floating ? "runtime f32" : signed_integer ? "i32" : repeated ? "repeated u32" : reject_dispatch ? "rejected dispatch preserves sentinel" : "u32");
+    else printf("PASS: D3D12 %s compute/readback, early release, exact 8-word output, misaligned clear rejected\n",
+                clear_first ? "clear then compute" : clear_after ? "compute then clear" : mismatch ? "foreign automatic layout rejected" : fixed ? "fixed automatic layout" : recover ? "valid pipeline after rejected aggregate" : fixture ? "unchanged fixture shader" : short_binding ? "short runtime binding" : rebind ? "runtime descriptor rebinding" : floating ? "runtime f32" : signed_integer ? "i32" : repeated ? "repeated u32" : reject_dispatch ? "rejected dispatch preserves sentinel" : "u32");
     return result;
 }

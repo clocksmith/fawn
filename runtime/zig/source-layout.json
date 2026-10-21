@@ -3610,9 +3610,9 @@
       },
       "src/native/queue/doe_queue_submit_d3d12.zig": {
         "decision": "Keep",
-        "moduleSha256": "7b641376ddf4991c619c229c67bb8f722d935160c99021b3b293b1f0aae0d949",
-        "reason": "Keep: Queue preflights every dispatch before execution, permits admitted compute with copies under COPY_DEST boundary, rejects mixed render and unsupported command tags, and retains all GPU objects to terminal retirement.",
-        "reviewer": "codex-public-d3d12-compute/2026-10-19"
+        "moduleSha256": "934a1527624e3fe408ad462173e8e077db43193efdb6bf6e0c480c866c42c17d",
+        "reason": "Keep: D3D12 queue preflights compute and clear ranges, records ordered copies and bounded zero-upload clears, rejects mixed render submissions, and retains GPU objects through terminal retirement.",
+        "reviewer": "codex-d3d12-clear/2026-10-21"
       },
       "src/native/queue/doe_queue_submit_metal.zig": {
         "decision": "Keep",
@@ -3682,9 +3682,9 @@
       },
       "src/native/resource/doe_command_texture_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "1b6d4e3faaeb1131c98b77bd2c37fdd3037c28a51d72ea99264ee05b1d121fe4",
-        "reason": "Keep: typed retained resources share queue-time availability validation and preserve explicit destruction versus caller release.",
-        "reviewer": "codex-submit-availability/2026-09-07"
+        "moduleSha256": "8762297a4ba0ccc66c1822d9b5ae91844d38e39d91f44b79d1d19fa749b3ff8d",
+        "reason": "Keep: shared clear recording retains native objects for Vulkan and D3D12 validation, preserves Metal handles, and keeps D3D12 zero-size operations visible to range and resource admission.",
+        "reviewer": "codex-d3d12-clear/2026-10-21"
       },
       "src/native/resource/doe_external_texture_native.zig": {
         "decision": "Keep",

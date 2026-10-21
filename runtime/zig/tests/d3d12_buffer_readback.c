@@ -28,7 +28,7 @@ static void map_ready(WGPUMapAsyncStatus status, WGPUStringView message,
 static void scope_ready(WGPUPopErrorScopeStatus status, WGPUErrorType type,
                         WGPUStringView message, void *result, void *unused) {
     (void)message; (void)unused;
-    *(int *)result = status == WGPUPopErrorScopeStatus_Success && type == WGPUErrorType_Internal ? 1 : -1;
+    *(int *)result = status == WGPUPopErrorScopeStatus_Success && type == WGPUErrorType_Validation ? 1 : -1;
 }
 
 #define LOAD(Name) \
@@ -135,12 +135,12 @@ int main(int argc, char **argv) {
         printf("word[%zu]: expected=0x%08x actual=0x%08x\n", i, expected[i], output[i]);
     }
     BufferUnmap(destination); mapped = 0;
-    stage = "unsupported command rejection";
+    stage = "invalid clear rejection";
     int rejected = 0;
-    DevicePushErrorScope(device, WGPUErrorFilter_Internal);
+    DevicePushErrorScope(device, WGPUErrorFilter_Validation);
     encoder = DeviceCreateCommandEncoder(device, NULL);
     if (!encoder) goto cleanup;
-    CommandEncoderClearBuffer(encoder, destination, 0, sizeof(expected));
+    CommandEncoderClearBuffer(encoder, destination, 1, 4);
     commands = CommandEncoderFinish(encoder, NULL);
     if (!commands) goto cleanup;
     QueueSubmit(queue, 1, &commands);
@@ -168,7 +168,7 @@ cleanup:
     if (instance) InstanceRelease(instance);
     FreeLibrary(library);
     if (result) fprintf(stderr, "FAIL stage=%s\n", stage);
-    else printf("PASS: D3D12 %s copy/readback, early release, exact 8-word output, unsupported clear rejected\n",
+    else printf("PASS: D3D12 %s copy/readback, early release, exact 8-word output, misaligned clear rejected\n",
                 via_default ? "default-heap offset" : "upload/readback");
     return result;
 }

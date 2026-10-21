@@ -153,7 +153,7 @@ DXC must be available on the invoking process's PATH.
 
 Compiler analysis and HLSL emission are reused. Proof obligations remain attached
 to the pipeline and are validated at recording and submission. The queue permits
-copies around admitted compute, retaining buffers, pipeline, root signature and
+copies and buffer clears around admitted compute, retaining buffers, pipeline, root signature and
 per-dispatch descriptor heaps through completion. Indirect dispatch, other
 binding shapes, overrides, and mixed render/compute/copy
 submissions remain rejected. Pure render submission is a separate path.
@@ -185,6 +185,37 @@ ownership and binding identity within the admitted subset. The original
 `native_recorded_compute.c` still requests Vulkan and includes texture-copy
 operations outside the D3D12 subset; its unchanged shader is not a whole-application
 qualification.
+
+## Windows buffer-clear parity boundary
+
+Recorded `clearBuffer` zeroes aligned ranges on D3D12 default and readback
+buffers with `CopyDst` usage. It preserves command order with copies and admitted
+compute. The implementation uses a bounded immutable zero-upload buffer and
+retains both native resources until submission retirement. Zero-size operations
+still undergo range and resource admission. Invalid ranges reject the entire
+submission before execution; they do not silently truncate or partially clear.
+
+Build `tests/d3d12_clear_readback.c` with the pinned Zig C compiler and
+`-I vendor/webgpu-headers`; run the executable with the DLL path and one of
+`full`, `partial`, `whole`, `zero`, `large`, `readback`, `recover`, `range`,
+`size`, `zero-range`, or `destroyed`. The fixture independently checks all words,
+including unchanged regions, early caller release, validation rejection followed
+by valid reuse, and explicit device teardown. `large` crosses the bounded upload
+chunk boundary. The existing automatic-layout fixture adds `clear` and
+`clear-after` modes for copy/clear/compute/copy ordering with the same WGSL kernel.
+
+| Contract | Vulkan / Metal source evidence | Windows D3D12 acceptance boundary |
+| --- | --- | --- |
+| Ordered buffer clear and copy | [Vulkan queue](src/native/queue/doe_queue_submit_vulkan.zig), [Metal queue](src/native/queue/doe_queue_submit_metal.zig) | Physical range, ordering and exact-readback checks in [clear fixture](tests/d3d12_clear_readback.c) |
+| Invalid submission leaves prior data intact | [Shared admission](src/native/queue/doe_submission_validation.zig), [native fixture](tests/native_recorded_compute.c) | Physical misalignment, out-of-range and destroyed-buffer rejection; valid reuse after range rejection |
+| Recorded scalar-storage compute | [Native compute fixture](tests/native_recorded_compute.c) | Bounded single-storage binding and scalar-array fixtures above; wider binding shapes and indirect dispatch unsupported |
+| Texture transfers and mixed render/compute submission | Backend queue implementations | Unsupported in the Windows recorded compute/copy lane |
+| Callbacks and device lifetime | [Callback contract](../../docs/native-callback-contract.md), [device contract](../../docs/native-device-lifecycle-contract.md) | Mapping, early release, explicit destroy and teardown exercised locally; complete callback/device-loss parity unverified |
+| Application performance and browser ownership | Separate governed workloads and provider acceptance | Unverified; these correctness tests supply no speed, CPU-memory or browser win |
+
+The comparison column identifies existing contracts and implementations, not a
+fresh Vulkan or Metal hardware run. BEE cannot physically qualify Metal. The
+Windows tests do not establish full WebGPU conformance or cross-backend parity.
 
 ## Native callback delivery
 
