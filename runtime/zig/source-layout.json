@@ -2326,9 +2326,9 @@
       },
       "src/compiler/wgsl/emit/spirv/emit_spirv_fn.zig": {
         "decision": "Keep",
-        "moduleSha256": "b14a79f337481fc16b34e3c5e0453162a0a0efbb621fda3042f818b7474ca99e",
-        "reviewer": "codex-native-doppler-compatibility/2026-10-11",
-        "reason": "Keep: SPIR-V control flow owns switch merge reachability. Break target identity and incoming edges remain in the function state; unreachable merges terminate without discarding explicit break paths."
+        "moduleSha256": "e7bf508b940faed2c62709d821145e1ba0bd556e13e1460c64f5569ba8d6a1e8",
+        "reviewer": "codex-bee-doe/2026-10-21",
+        "reason": "Keep: SPIR-V function emission reuses captured pointer SSA IDs and their declared address space when referencing pointer locals. Ordinary Function locals and control-flow ownership remain unchanged; no new representation or pass."
       },
       "src/compiler/wgsl/emit/spirv/emit_spirv_fn_helpers.zig": {
         "decision": "Keep",
