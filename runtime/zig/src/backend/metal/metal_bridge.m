@@ -3027,6 +3027,12 @@ uint64_t metal_bridge_device_registry_id(MetalHandle device_h) {
     return (uint64_t)dev.registryID;
 }
 
+uint32_t metal_bridge_device_has_unified_memory(MetalHandle device_h) {
+    if (device_h == NULL) return 0;
+    id<MTLDevice> dev = (__bridge id<MTLDevice>)device_h;
+    return dev.hasUnifiedMemory ? 1 : 0;
+}
+
 uint32_t metal_bridge_device_is_low_power(MetalHandle device_h) {
     if (device_h == NULL) return 0;
     id<MTLDevice> dev = (__bridge id<MTLDevice>)device_h;

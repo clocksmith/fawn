@@ -164,11 +164,7 @@ pub fn fill_adapter_info_struct(adapter_raw: abi_core.WGPUAdapter, out: *p1cap.A
         .vulkan => static_string_view("vulkan"),
         .d3d12 => static_string_view("d3d12"),
     };
-    out.device = switch (adapter.backend) {
-        .metal => static_string_view("Doe Metal Adapter"),
-        .vulkan => slice_string_view(adapter.device_name[0..adapter.device_name_len]),
-        .d3d12 => slice_string_view(adapter.device_name[0..adapter.device_name_len]),
-    };
+    out.device = slice_string_view(adapter.device_name[0..adapter.device_name_len]);
     out.description = out.device;
     out.backendType = backend_type_for(adapter);
     out.adapterType = adapter.adapter_type;

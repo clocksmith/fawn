@@ -51,7 +51,7 @@ pub const DoeAdapterInfo = extern struct {
     // Adapter type: discrete, integrated, cpu, unknown.
     adapter_type: AdapterType = .unknown,
     backend_type: BackendType = .metal,
-    // Stable GPU registry ID from MTLDevice.registryID.
+    // Current IORegistry identity; not a PCI ID or persistent across reboots.
     registry_id: u64 = 0,
     // isLowPower, isRemovable from MTLDevice.
     is_low_power: bool = false,
@@ -99,6 +99,7 @@ extern fn metal_bridge_enumerate_devices(
 // Query device properties (fills the fields below via output parameters).
 extern fn metal_bridge_device_registry_id(device: ?*anyopaque) callconv(.c) u64;
 extern fn metal_bridge_device_is_low_power(device: ?*anyopaque) callconv(.c) u32;
+extern fn metal_bridge_device_has_unified_memory(device: ?*anyopaque) callconv(.c) u32;
 extern fn metal_bridge_device_is_removable(device: ?*anyopaque) callconv(.c) u32;
 // Writes the device name as UTF-8 into `buf` (null-terminated, truncated to `cap`).
 extern fn metal_bridge_device_name(device: ?*anyopaque, buf: [*]u8, cap: usize) callconv(.c) void;
@@ -129,36 +130,15 @@ pub fn enumerate_all(allocator: std.mem.Allocator) !*DoeAdapterList {
     metal_bridge_enumerate_devices(@ptrCast(&raw_devices), MAX_ADAPTERS, &found);
 
     const n = @min(@as(usize, found), MAX_ADAPTERS);
-    for (raw_devices[0..n], 0..) |dev, i| {
-        var info = DoeAdapterInfo{};
-        info.mtl_device = dev;
-        info.registry_id = metal_bridge_device_registry_id(dev);
-        info.is_low_power = metal_bridge_device_is_low_power(dev) != 0;
-        info.is_removable = metal_bridge_device_is_removable(dev) != 0;
-
-        // Fill name.
-        metal_bridge_device_name(dev, &info.name, MAX_DEVICE_NAME_BYTES);
-        info.name_len = @intCast(std.mem.len(@as([*:0]const u8, @ptrCast(&info.name))));
-
-        // Classify adapter type.
-        info.adapter_type = classify_adapter_type(info.is_low_power, info.is_removable);
-
-        // Derive vendor string from device name (best-effort heuristic).
-        fill_vendor_from_name(&info);
-
-        info.backend_type = .metal;
-        items[i] = info;
+    for (raw_devices[0..n]) |dev| {
+        const retained_device = dev orelse continue;
+        var info = adapterInfoForMetalDevice(retained_device);
+        info.mtl_device = retained_device;
+        items[list.count] = info;
         list.count += 1;
     }
 
     return list;
-}
-
-fn classify_adapter_type(is_low_power: bool, is_removable: bool) AdapterType {
-    _ = is_removable;
-    // Metal exposes no explicit "is discrete" flag; low-power implies integrated.
-    if (is_low_power) return .integrated_gpu;
-    return .discrete_gpu;
 }
 
 fn fill_vendor_from_name(info: *DoeAdapterInfo) void {
@@ -310,29 +290,18 @@ pub export fn doeNativeInstanceSelectAdapter(
     return @intCast(select_adapter(list, opts) orelse 0);
 }
 
-// Get adapter info as a DoeAdapterInfo struct for a single DoeAdapter handle.
-// Named *Struct to avoid symbol collision with the string-based doeNativeAdapterGetInfo
-// in doe_adapter_info_native.zig (used by the N-API layer).
-pub export fn doeNativeAdapterGetInfoStruct(
-    adapter_raw: ?*anyopaque,
-    out: ?*DoeAdapterInfo,
-) callconv(.c) u32 {
-    const out_info = out orelse return 0;
-    const dev = device_from_adapter_opaque(adapter_raw) orelse return 0;
-
+// Query the supplied retained Metal device. Native object validation belongs to
+// the caller; enumeration and adapter-bound queries share this one projection.
+pub fn adapterInfoForMetalDevice(dev: *anyopaque) DoeAdapterInfo {
     var info = DoeAdapterInfo{};
-    info.mtl_device = null; // do not expose handle directly
     info.registry_id = metal_bridge_device_registry_id(dev);
     info.is_low_power = metal_bridge_device_is_low_power(dev) != 0;
     info.is_removable = metal_bridge_device_is_removable(dev) != 0;
-    info.adapter_type = classify_adapter_type(info.is_low_power, info.is_removable);
-    info.backend_type = .metal;
+    info.adapter_type = if (metal_bridge_device_has_unified_memory(dev) != 0) .integrated_gpu else .discrete_gpu;
     metal_bridge_device_name(dev, &info.name, MAX_DEVICE_NAME_BYTES);
-    info.name_len = @intCast(std.mem.len(@as([*:0]const u8, @ptrCast(&info.name))));
+    info.name_len = @intCast(std.mem.sliceTo(&info.name, 0).len);
     fill_vendor_from_name(&info);
-
-    out_info.* = info;
-    return 1;
+    return info;
 }
 
 // ============================================================
@@ -424,26 +393,6 @@ extern fn metal_bridge_retain_device(device: ?*anyopaque) callconv(.c) void;
 
 // ============================================================
 // Internal downcast helpers
-
-// DoeAdapter is defined in doe_wgpu_native.zig.  We access the mtl_device field via
-// the known layout (magic at offset 0, mtl_device at offset 4).
-fn device_from_adapter_opaque(raw: ?*anyopaque) ?*anyopaque {
-    const p = raw orelse return null;
-    // The DoeAdapter struct starts with magic (u32) then mtl_device (*anyopaque).
-    const MAGIC_ADAPTER: u32 = 0xD0E1_0002;
-    const magic_ptr: *u32 = @ptrCast(@alignCast(p));
-    if (magic_ptr.* != MAGIC_ADAPTER) return null;
-    // mtl_device is at byte offset 4 (u32 magic, then pointer aligned to 8 on 64-bit).
-    // Layout: magic: u32 (4 bytes) + pad (4 bytes) + mtl_device: *anyopaque (8 bytes)
-    const dev_ptr: **anyopaque = @ptrFromInt(@intFromPtr(p) + @offsetOf(DoeAdapterLayout, "mtl_device"));
-    return dev_ptr.*;
-}
-
-// Matches the layout declared in doe_wgpu_native.zig.
-const DoeAdapterLayout = extern struct {
-    magic: u32,
-    mtl_device: ?*anyopaque,
-};
 
 fn adapter_list_from_opaque(raw: ?*anyopaque) ?*DoeAdapterList {
     const p = raw orelse return null;
