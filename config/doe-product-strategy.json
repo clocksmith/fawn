@@ -216,7 +216,7 @@
     {
       "order": 3,
       "id": "windows-d3d12",
-      "purpose": "Deferred. Existing regression coverage grants no parallel optimization campaign or support without independent physical evidence.",
+      "purpose": "Selected for bounded correctness, quality and matched-performance qualification alongside Vulkan and Metal. Support requires independent physical evidence; synchronized source and compiler checks do not confer qualification.",
       "supportAuthorityPath": "docs/doe-support-matrix.md",
       "inheritsPromotion": false
     }

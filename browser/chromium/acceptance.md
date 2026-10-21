@@ -145,6 +145,48 @@ required evidence and rejects a premature established assessment; it is not a
 physical build, rebase, cost or ownership validator. Until those validators and
 receipts exist, maintainability remains unestablished.
 
+## Upstream tracking and repair
+
+Fawn owns the browser-replacement implementation in this repository's browser
+tree; Doe owns the WebGPU implementation/compiler and its integration seams.
+Private strategy is not a runtime dependency or evidence of implementation.
+Use the existing [upstream intelligence](../../pipeline/upstream_intelligence/README.md)
+for bounded Dawn/Tint and linked Chromium issue intake. It preserves observations
+and review proposals; it is not an autonomous Chromium source repair engine.
+The [pinned patch applicator](scripts/apply-runtime-patches.sh) checks revisions
+and conflicts before applying changes; application alone proves no repair.
+
+Freeze the modern OS/GPU/API envelope from the [support matrix](../../docs/doe-support-matrix.md),
+upstream transition set, workload population and numeric acceptance bounds before
+historical replay or live qualification. A repair candidate must:
+
+1. Bind detected upstream changes and unavailable/deferred coverage to exact
+   revisions, hashes and the configured intake bounds.
+2. Retain a reproducible original failure and independent expected behavior;
+   minimize the reproduction without deleting the failing behavior.
+3. Propose a bounded patch at the existing owner, retaining rejected proposals.
+   No untrusted upstream text, model output or review receipt may mutate runtime
+   policy or the production browser by itself.
+4. Pass unchanged build, output, lifecycle, security and matched Dawn comparison
+   gates for the declared envelope. Deleting failing tests, weakening validation
+   or sandboxing, and silently shrinking support or workloads invalidate repair.
+5. Demonstrate rollback to the pinned prior browser/runtime and retain source,
+   binary, command, failure and qualification receipts for both outcomes.
+
+Use the existing offline contract tests and isolated historical replay commands
+in the intake README before any live repair loop. Required repair measurements
+are detection-to-reproduction and reproduction-to-verified-repair latency,
+accepted repairs / attempted transitions, false successes / claimed successes,
+human intervention count and reason, and patch files/lines/seams. Record failures
+and the full denominator; an intake backlog or successful patch application is
+not a successful repair. Freeze thresholds with the maintainability campaign;
+missing bounds, rollback evidence or any known false success block promotion.
+
+These are acceptance obligations, not a claim of an implemented reliable
+self-healer. Existing intake tests do not validate browser patch synthesis,
+physical rebase qualification or repair metrics. Implement those missing checks
+at their existing owners before describing the loop as reliable.
+
 ## Published-browser obligations
 
 - Produce a downloadable, hash-bound Chromium-family archive.

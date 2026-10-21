@@ -10,6 +10,17 @@ A tuple is promoted only when installation, compatibility, correctness,
 reliability, performance, and evidence gates all pass. Machine-owned artifacts
 carry the changing state.
 
+## Modern-stack qualification envelope
+
+Freeze the supported OS/version, architecture, GPU family, driver/API baseline,
+runtime surface and unchanged workload population before a campaign. Versioned
+host and workload records supply the concrete values; "modern" alone admits
+nothing. Compare Doe and pinned Dawn on the same device and declared boundaries,
+reporting every covered, unsupported, failed and unverified row. Keep numerical
+oracles, lifecycle/error behavior, latency distributions, CPU and memory costs.
+Legacy compatibility is not required outside the declared envelope, but rejection
+must remain explicit. Removing a failing tuple or workload cannot create a win.
+
 ## Surface classes
 
 | Surface | Contract | Current claim boundary |

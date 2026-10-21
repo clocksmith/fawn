@@ -23,6 +23,26 @@ An upstream report therefore cannot silently become a Doe quirk. A separate
 workload, oracle, proof obligation when required, and runtime/config change are
 still needed under `docs/process.md`.
 
+## Browser repair boundary
+
+This package owns intake, retained history and review packets in Doe. Fawn's
+Chromium integration owns browser patches and qualification. The
+[browser repair acceptance](../../browser/chromium/acceptance.md#upstream-tracking-and-repair)
+defines bounded repair, unchanged gates, rollback and reliability measurements.
+Neither private strategy, an approved finding nor this package's scheduled sync
+is a standalone self-healer or permission for production self-modification.
+The nightly workflow is configured automation; its existence does not establish
+current live success, complete Chromium coverage or accepted browser repairs.
+
+For a bounded offline first check, run
+`python3 -m unittest pipeline.upstream_intelligence.test_upstream_intelligence`
+with the existing declared dependencies. Use a fresh `--database` and
+`--output-root` for a selected historical replay corpus. Replay suppresses issue
+fetches, but model enrichment still follows config: use optional enrichment with no provider
+credential in the isolated replay process so review stays deterministic. Preserve input rejections,
+deferred coverage and the original corpus. Missing dependencies are a prerequisite
+failure, never a reason to skip schema checks or report the replay as passed.
+
 ## Source coverage
 
 Gerrit is exhaustively paginated for the configured query. Pagination fails
