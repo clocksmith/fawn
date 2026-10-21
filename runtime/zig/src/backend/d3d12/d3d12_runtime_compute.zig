@@ -253,9 +253,13 @@ fn buildComputePipeline(self: anytype, bytecode: []const u8, shader_hash: u64) !
         const cbv = d3d12_descriptors.DescriptorRangeDesc{ .range_type = D3D12_DESCRIPTOR_RANGE_TYPE_CBV, .num_descriptors = 1, .base_shader_register = dispatch_info.DISPATCH_INFO_REGISTER_SLOT, .register_space = dispatch_info.DISPATCH_INFO_REGISTER_SPACE };
         var ranges: [@import("d3d12_kernel_buffers.zig").MAX_STORAGE_BINDINGS + 1]d3d12_descriptors.DescriptorRangeDesc = undefined;
         const selected = self.kernel_buffers.selected;
-        for (0..selected.count) |index| {
-            ranges[index] = .{ .range_type = if (selected.readonly_mask & (@as(u32, 1) << @intCast(index)) != 0) dc.DESCRIPTOR_RANGE_TYPE_SRV else dc.DESCRIPTOR_RANGE_TYPE_UAV, .num_descriptors = 1, .base_shader_register = @intCast(index), .register_space = 0 };
+        var ordinal: u32 = 0;
+        for (selected.handles, 0..) |handle, index| {
+            if (handle == 0) continue;
+            ranges[ordinal] = .{ .range_type = if (selected.readonly_mask & (@as(u32, 1) << @intCast(index)) != 0) dc.DESCRIPTOR_RANGE_TYPE_SRV else dc.DESCRIPTOR_RANGE_TYPE_UAV, .num_descriptors = 1, .base_shader_register = @intCast(index), .register_space = 0 };
+            ordinal += 1;
         }
+        std.debug.assert(ordinal == selected.count);
         ranges[selected.count] = cbv;
         self.root_signature = bridge.c.d3d12_bridge_device_create_root_signature_with_tables(self.device, &ranges, selected.count + 1, 0) orelse return error.InvalidState;
         self.compute_layout_key = self.kernel_buffers.layoutKey();
