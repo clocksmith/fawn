@@ -283,9 +283,11 @@ the nearest loop's continuing clause, that nested loops do not inherit an outer
 increment, and that `break if` still exits the loop through a switch/continue
 edge. Explicit lexical blocks preserve shadowed and sibling local names, switch
 cases own their local declarations, and loop-body locals remain visible to the
-continuing clause. These checks exercise HLSL lowering on D3D12; other target
-backends need their own physical qualification. Original failed traces remain separate from
-accepted evidence.
+continuing clause. Colliding local names receive stable IR-based HLSL names, so
+a continuing clause emitted at a shadowing `continue` site still references its
+original variables. These checks exercise HLSL lowering on D3D12; other target
+backends need their own physical qualification. Original failed traces remain
+separate from accepted evidence.
 
 This qualifies the exercised native CLI consumer only. A source-matched Windows
 Dawn control, broader workload coverage, matched CPU/memory measurements and

@@ -340,7 +340,10 @@ const WriteCtx = struct {
                 try self.write(param.name);
             },
             .global_ref => |index| try self.write(self.module.globals.items[index].name),
-            .local_ref => |index| try self.write(function.locals.items[index].name),
+            .local_ref => |index| {
+                var name_buffer: [32]u8 = undefined;
+                try self.write(try maps.local_name(self.module, function, index, &name_buffer));
+            },
             .load => |inner| try self.emit_expr(function, inner),
             .call => |call| {
                 try self.write(call.name);
