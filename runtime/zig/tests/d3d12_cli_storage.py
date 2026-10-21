@@ -355,6 +355,33 @@ def main():
     # status/submission recovery separate from the exact-output graphs above.
     run("sparse-rejection-recovery", [write(initial, handle=81), mixed_command, outside, missing, aliased, mixed_command],
         ["ok", "ok", "unsupported", "unsupported", "unsupported", "ok"])
+    private_cases = [
+        ("private-helper-isolation", """var<private> calls: u32;
+fn increment() -> u32 { calls += 1u; return calls; }
+fn nested(calls: u32) -> u32 { return calls + increment(); }
+@group(0) @binding(0) var<storage, read_write> values: array<u32, 8>;
+@compute @workgroup_size(8) fn main(@builtin(local_invocation_index) tid: u32) {
+    let result = nested(40u + tid);
+    values[tid] = result + calls;
+}
+""", [42 + i for i in range(8)]),
+        ("private-aggregate-init", """struct State { value: u32, other: vec2u, }
+var<private> state: State;
+var<private> items: array<u32, 2> = array<u32, 2>(3u, 5u);
+fn advance() -> u32 { state.value += items[0]; items[1] += 1u; return state.value + items[1]; }
+@group(0) @binding(0) var<storage, read_write> values: array<u32, 8>;
+@compute @workgroup_size(8) fn main(@builtin(local_invocation_index) tid: u32) {
+    let first = advance();
+    let second = advance();
+    values[tid] = first * 100u + second + state.other.x;
+}
+""", [913] * 8),
+    ]
+    for label, source, expected in private_cases:
+        path = output / (label + ".wgsl")
+        path.write_text(source, encoding="utf-8")
+        receipt["shaders"][str(path)] = digest(path)
+        run(label, [oracle(dispatch(path), values=expected)], ["ok"], 1)
     print("Physical CLI storage acceptance complete; no paired speed claim.", flush=True)
 
 

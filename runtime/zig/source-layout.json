@@ -2254,7 +2254,7 @@
       },
       "src/compiler/wgsl/emit/msl/emit_msl_ir.zig": {
         "decision": "Keep",
-        "moduleSha256": "63fe141dbf73ba55f570b9b4c0e9dc7c5c04c58de922496f299d7ca8ab4aef6d",
+        "moduleSha256": "23a172b051b5faaba97e38d8057fd67759ef19204830eda508fa915a9dcbad32",
         "reason": "Keep: nearest-loop continuing emission and shared IR local identity preserve control flow across shadowed scopes without changing runtime ownership.",
         "reviewer": "codex-msl-continuing/2026-10-21"
       },
@@ -2266,7 +2266,7 @@
       },
       "src/compiler/wgsl/emit/msl/emit_msl_maps.zig": {
         "decision": "Keep",
-        "moduleSha256": "e7ef42ff75733aa9b8c3d353a7b56d438821657faa78ea2f7034d5fc7ec0980d",
+        "moduleSha256": "54964d85ed592b250e9f78c51c19fff7705d8d39206ee49f8a1c1aa34522f482",
         "reason": "Keep: nearest-loop continuing emission and shared IR local identity preserve control flow across shadowed scopes without changing runtime ownership.",
         "reviewer": "codex-msl-continuing/2026-10-21"
       },
@@ -2278,7 +2278,7 @@
       },
       "src/compiler/wgsl/emit/msl/emit_msl_stage.zig": {
         "decision": "Keep",
-        "moduleSha256": "5802e8673ff487d9fe3c045a15d18c30687756d5ea74b3fbfc9c88734f853a53",
+        "moduleSha256": "7dec5d3d5a256f80621c4b9ee020a48a6bc3c7245792fa3e31cc7c16cb9ec3bb",
         "reason": "Keep: reachable compiler implementation with a distinct named responsibility and no merge, elevation, recomposition, or deletion signal.",
         "reviewer": "codex-dry-recomposition/2026-08-09"
       },
@@ -2422,7 +2422,7 @@
       },
       "src/compiler/wgsl/frontend/sema.zig": {
         "decision": "Keep",
-        "moduleSha256": "4d54213442860057b92b7bb6b0843f550db35a06e9954e0393352782cf3d2d86",
+        "moduleSha256": "c3932ec7b41d6b27cc0ac65cf4f6f133621c19ff58ae5fd363a005339d5c5fda",
         "reason": "Keep: requires syntax and supported extension admission remain frontend-owned and reject malformed or unknown requirements.",
         "reviewer": "codex-packed-integers/2026-10-11"
       },

@@ -6,6 +6,13 @@ pub const unary_op_text = operator_text.unaryOp;
 pub const binary_op_text = operator_text.binaryOp;
 pub const assign_op_text = operator_text.assignOp;
 
+// Reserved generated names keep private captures distinct from shadowing parameters.
+pub fn globalName(module: *const ir.Module, index: u32, buffer: *[32]u8) error{OutputTooLarge}![]const u8 {
+    const global = module.globals.items[index];
+    if (global.class != .var_ or global.addr_space != .private) return global.name;
+    return std.fmt.bufPrint(buffer, "__doe_private_{d}", .{index}) catch error.OutputTooLarge;
+}
+
 pub fn msl_function_name(name: []const u8, stage: ?ir.ShaderStage) []const u8 {
     if (stage) |active_stage| {
         if (std.mem.eql(u8, name, "main")) return switch (active_stage) {

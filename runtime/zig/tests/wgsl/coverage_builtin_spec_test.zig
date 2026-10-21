@@ -178,8 +178,9 @@ test "builtins: unpack4xU8 lowers once to unsigned vector arithmetic across targ
         try std.testing.expect(!contains(text[0..len], "unpack4xU8"));
         try std.testing.expect(contains(text[0..len], ">>"));
         try std.testing.expect(contains(text[0..len], "255"));
-        // One definition and one evaluation, even when the input mutates state.
-        try std.testing.expectEqual(@as(usize, 2), std.mem.count(u8, text[0..len], "next_word("));
+        // Count evaluations in the entry body, excluding the helper declaration/definition.
+        const entry = std.mem.indexOf(u8, text[0..len], "void main") orelse return error.TestExpectedEqual;
+        try std.testing.expectEqual(@as(usize, 1), std.mem.count(u8, text[entry..len], "next_word("));
     }
     var binary: [MAX_SPIRV_OUTPUT]u8 = undefined;
     const len = try translateToSpirv(std.testing.allocator, source, &binary);

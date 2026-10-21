@@ -565,3 +565,29 @@ test "cross-backend: fragment shader with location IO compiles across backends" 
     // HLSL: SV_Target0 for color output
     try std.testing.expect(contains(out.hlsl, "SV_Target0"));
 }
+
+test "cross-backend: private initializer is typed before IR construction" {
+    const source =
+        \\var<private> items: array<u32, 2> = array<u32, 2>(3u, 5u);
+        \\@group(0) @binding(0) var<storage, read_write> output: array<u32, 1>;
+        \\@compute @workgroup_size(1) fn main() { output[0] = items[0] + items[1]; }
+    ;
+    var msl_buf: [MAX_MSL]u8 = undefined;
+    var hlsl_buf: [MAX_HLSL]u8 = undefined;
+    var spirv_buf: [MAX_SPIRV]u8 = undefined;
+    const out = try compile_all_backends(source, &msl_buf, &hlsl_buf, &spirv_buf);
+    try std.testing.expect(out.msl.len > 0 and out.hlsl.len > 0 and out.spirv_len > 0);
+}
+
+test "cross-backend: private initializer type mismatch is rejected" {
+    const source =
+        \\var<private> value: u32 = vec2u(3u, 5u);
+        \\@compute @workgroup_size(1) fn main() {}
+    ;
+    var msl_buf: [MAX_MSL]u8 = undefined;
+    var hlsl_buf: [MAX_HLSL]u8 = undefined;
+    var spirv_buf: [MAX_SPIRV]u8 = undefined;
+    try std.testing.expectError(error.TypeMismatch, translateToMsl(alloc, source, &msl_buf));
+    try std.testing.expectError(error.TypeMismatch, translateToHlsl(alloc, source, &hlsl_buf));
+    try std.testing.expectError(error.TypeMismatch, translateToSpirv(alloc, source, &spirv_buf));
+}

@@ -256,6 +256,7 @@ fn emit_impl_function(self: anytype, function_index: ir.FunctionId) !void {
     }
     try self.write(") {\n");
     self.indent += 4;
+    try self.emitPrivateGlobals();
     try self.emit_stmt(function, function.root_stmt);
     self.indent -= 4;
     try self.write("}\n");
