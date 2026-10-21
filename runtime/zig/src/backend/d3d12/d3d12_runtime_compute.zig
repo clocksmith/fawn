@@ -3,6 +3,7 @@ const builtin = @import("builtin");
 const common_timing = @import("../common/timing.zig");
 const path_utils = @import("../common/path_utils.zig");
 const webgpu = @import("../../contracts/runtime_types.zig");
+const analysis = @import("../../compiler/wgsl/pipeline/analysis.zig");
 const hlsl_translation = @import("../../compiler/wgsl/pipeline/translate_hlsl.zig");
 const dispatch_info = @import("../../contracts/shader_abi/dispatch_info.zig");
 const execution_contract = @import("../../contracts/execution.zig");
@@ -24,6 +25,16 @@ pub const DispatchMetrics = execution_contract.DispatchMetrics;
 
 pub fn loadKernelCso(self: anytype, alloc: std.mem.Allocator, kernel_name: []const u8) ![]u8 {
     if (kernel_name.len == 0) return error.InvalidArgument;
+    if (self.kernel_buffers.active != null) {
+        // Bound storage requires source reflection; opaque precompiled artifacts
+        // cannot establish the admitted scalar stride or dispatch obligations.
+        const source_path = try resolveKernelSourcePath(self, alloc, kernel_name);
+        defer alloc.free(source_path);
+        if (!std.mem.endsWith(u8, source_path, ".wgsl")) return error.UnsupportedFeature;
+        const source = std.fs.cwd().readFileAlloc(alloc, source_path, MAX_KERNEL_SOURCE_BYTES) catch return error.ShaderCompileFailed;
+        defer alloc.free(source);
+        return compileWgslSource(self, alloc, source);
+    }
     const root = self.kernel_root orelse DEFAULT_KERNEL_ROOT;
 
     const dxil_path = try std.fmt.allocPrint(alloc, "{s}/{s}.dxil", .{ root, stripExtension(kernel_name) });
@@ -71,13 +82,17 @@ pub fn loadKernelCso(self: anytype, alloc: std.mem.Allocator, kernel_name: []con
 pub fn setComputeShader(self: anytype, bytecode: []const u8) !void {
     if (bytecode.len == 0) return error.ShaderCompileFailed;
     const hash = std.hash.Wyhash.hash(0, bytecode);
-    if (self.has_compute_pipeline and hash == self.current_shader_hash) return;
+    if (self.has_compute_pipeline and hash == self.current_shader_hash and self.compute_has_storage == (self.kernel_buffers.active != null)) return;
+    _ = try self.flush_queue();
+    if (self.has_root_signature and self.compute_has_storage != (self.kernel_buffers.active != null)) destroyComputeObjects(self);
     try buildComputePipeline(self, bytecode, hash);
 }
 
 pub fn runDispatch(self: anytype, x: u32, y: u32, z: u32, repeat: u32, queue_sync_mode: webgpu.QueueSyncMode, timestamp_mode: webgpu.GpuTimestampMode) !DispatchMetrics {
     if (x == 0 or y == 0 or z == 0) return error.InvalidArgument;
     if (!self.has_compute_pipeline) return error.Unsupported;
+    if (self.kernel_buffers.active != null and queue_sync_mode != .per_command) return error.UnsupportedFeature;
+    try self.kernel_buffers.validateDispatch(x, y, z);
     if (self.device_lost) return error.DeviceLost;
     if (self.fence_value >= std.math.maxInt(u64) - 1) return error.InvalidState;
     const attempted = try timestamps.should_measure(timestamp_mode, queue_sync_mode);
@@ -123,7 +138,9 @@ pub fn runDispatch(self: anytype, x: u32, y: u32, z: u32, repeat: u32, queue_syn
     }
     var i: u32 = 0;
     while (i < run_count) : (i += 1) {
+        self.kernel_buffers.transition(compute_cmd_list, true);
         bridge.c.d3d12_bridge_command_list_dispatch(compute_cmd_list, x, y, z);
+        self.kernel_buffers.transition(compute_cmd_list, false);
     }
     if (measured) try self.timestamp_state.end(compute_cmd_list);
     if (bridge.c.d3d12_bridge_command_list_close_checked(compute_cmd_list) != 0) return error.InvalidState;
@@ -133,9 +150,15 @@ pub fn runDispatch(self: anytype, x: u32, y: u32, z: u32, repeat: u32, queue_syn
     bridge.c.d3d12_bridge_queue_execute_command_list(self.queue, compute_cmd_list);
     submitted = true;
     self.fence_value += 1;
-    bridge.c.d3d12_bridge_queue_signal(self.queue, self.fence, self.fence_value);
+    bridge.check_signal(bridge.c.d3d12_bridge_queue_signal_checked(self.queue, self.fence, self.fence_value)) catch |err| {
+        _ = self.drainForRetirement();
+        return err;
+    };
     if (queue_sync_mode == .per_command) {
-        bridge.c.d3d12_bridge_fence_wait(self.fence, self.fence_value);
+        bridge.check_wait(bridge.c.d3d12_bridge_fence_wait_checked(self.fence, self.fence_value)) catch |err| {
+            _ = self.drainForRetirement();
+            return err;
+        };
         const submit_wait_ns = common_timing.ns_delta(common_timing.now_ns(), submit_start);
         self.noteCompletedFenceWait();
         if (self.device_lost) return error.DeviceLost;
@@ -215,19 +238,27 @@ fn compileHlslSource(self: anytype, alloc: std.mem.Allocator, hlsl_source: []con
 fn compileWgslSource(self: anytype, alloc: std.mem.Allocator, wgsl_source: []const u8) ![]u8 {
     var hlsl_buf = try alloc.alloc(u8, hlsl_translation.MAX_OUTPUT);
     defer alloc.free(hlsl_buf);
-    const hlsl_len = hlsl_translation.translateToHlsl(alloc, wgsl_source, hlsl_buf) catch return error.ShaderCompileFailed;
+    const hlsl_len = if (self.kernel_buffers.active != null) blk: {
+        var diagnostic = analysis.Diagnostic{};
+        var module = (try analysis.analyze(.{ .allocator = alloc, .source = wgsl_source, .robustness = analysis.default_translation_robustness_config(), .diagnostic = &diagnostic })).module;
+        defer module.deinit();
+        try self.kernel_buffers.admitShader(self.allocator, &module);
+        break :blk try hlsl_translation.emitter.emit(&module, hlsl_buf);
+    } else hlsl_translation.translateToHlsl(alloc, wgsl_source, hlsl_buf) catch return error.ShaderCompileFailed;
     return try compileHlslSource(self, alloc, hlsl_buf[0..hlsl_len]);
 }
 
 fn buildComputePipeline(self: anytype, bytecode: []const u8, shader_hash: u64) !void {
     if (!self.has_root_signature) {
-        const range = d3d12_descriptors.DescriptorRangeDesc{
-            .range_type = D3D12_DESCRIPTOR_RANGE_TYPE_CBV,
-            .num_descriptors = 1,
-            .base_shader_register = dispatch_info.DISPATCH_INFO_REGISTER_SLOT,
-            .register_space = dispatch_info.DISPATCH_INFO_REGISTER_SPACE,
+        const cbv = d3d12_descriptors.DescriptorRangeDesc{ .range_type = D3D12_DESCRIPTOR_RANGE_TYPE_CBV, .num_descriptors = 1, .base_shader_register = dispatch_info.DISPATCH_INFO_REGISTER_SLOT, .register_space = dispatch_info.DISPATCH_INFO_REGISTER_SPACE };
+        const ranges = [_]d3d12_descriptors.DescriptorRangeDesc{
+            .{ .range_type = dc.DESCRIPTOR_RANGE_TYPE_UAV, .num_descriptors = 1, .base_shader_register = 0, .register_space = 0 },
+            cbv,
         };
-        self.root_signature = bridge.c.d3d12_bridge_device_create_root_signature_with_tables(self.device, @ptrCast(&range), 1, 0) orelse return error.InvalidState;
+        const has_storage = self.kernel_buffers.active != null;
+        const admitted = if (has_storage) ranges[0..] else ranges[1..];
+        self.root_signature = bridge.c.d3d12_bridge_device_create_root_signature_with_tables(self.device, admitted.ptr, @intCast(admitted.len), 0) orelse return error.InvalidState;
+        self.compute_has_storage = has_storage;
         self.has_root_signature = true;
     }
 
@@ -269,6 +300,11 @@ fn bindDispatchInfo(
     queue_sync_mode: webgpu.QueueSyncMode,
     retained_handles: *std.ArrayListUnmanaged(?*anyopaque),
 ) !void {
+    if (self.kernel_buffers.active != null) {
+        try writeDispatchInfoWords(self.dispatch_info_buffer, x, y, z);
+        self.kernel_buffers.bind(self, cmd_list);
+        return;
+    }
     const binding = if (queue_sync_mode == .per_command)
         try ensureSharedDispatchInfoBinding(self, x, y, z)
     else

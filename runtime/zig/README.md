@@ -233,12 +233,37 @@ The [HLSL regression](tests/core/hlsl_subsystem_test.zig) checks target identity
 and index capture. This does not qualify all atomic operations, pointer shapes,
 storage atomics or arbitrary workgroup programs.
 
-The unchanged [atomic benchmark shader](../../bench/kernels/workgroup_atomic.wgsl)
-compiles through HLSL and DXC, but the native CLI benchmark path has a separate
-binding gap: its [compute root signature](src/backend/d3d12/d3d12_runtime_compute.zig)
-only declares dispatch-info constants. It cannot create this shader's storage
-UAV pipeline. The public-ABI fixture uses the admitted native compute binding
-path; passing it cannot promote the native CLI workload or its output oracle.
+## Windows native CLI storage boundary
+
+The native CLI admits one group 0 / binding 0 read-write scalar storage array
+from WGSL, with entry `main`, workgroup dimensions `(x, 1, 1)`, and per-command
+completion. Its [compute owner](src/backend/d3d12/d3d12_runtime_compute.zig)
+emits the admitted analyzed module and enforces the retained compiler dispatch
+preconditions. Opaque precompiled bound shaders, aggregate elements, multiple
+bindings, nonzero binding offsets and deferred bound dispatch remain unsupported.
+
+The [storage owner](src/backend/d3d12/d3d12_kernel_buffers.zig) preserves buffer
+identity across commands, caps total resident storage at the backend limit,
+and allocates a UAV/dispatch-info CBV pair in the bridge's single resource table.
+Initialization zeroes new handles through checked GPU uploads; reusing a handle
+does not reset its contents. Dependent dispatch transitions, checked queue
+completion and real GPU readback preserve the command-graph output contract.
+Shader preparation and measured submission have separate timing fields; the
+submission counter records actual measured dispatch submissions.
+
+Build `doe-runtime`, put the already-installed DXC on `PATH`, and run
+`python tests/d3d12_cli_storage.py --runtime zig-out/bin/doe-zig-runtime.exe --out <new-evidence-directory>`
+from this directory on Windows. The fixture runs the unchanged
+[atomic workload](../../examples/workgroup_atomic_commands.json) with
+`--validate-output-oracles`; omitting that flag does not check output. It also
+uses independent command-graph hashes to check zero initialization, handle
+rebinding, dependent repeats and pipeline reuse, followed by layout, dispatch
+dimension and fixed-extent rejection/recovery cases. Original failed traces
+remain separate from accepted candidate evidence.
+
+This qualifies the exercised native CLI consumer only. A source-matched Windows
+Dawn control, broader workload coverage, matched CPU/memory measurements and
+the performance gates remain prerequisites for any speed or parity claim.
 
 ## Native callback delivery
 

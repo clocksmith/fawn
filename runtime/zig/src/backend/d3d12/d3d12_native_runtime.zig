@@ -26,6 +26,7 @@ const d3d12_query_set = @import("d3d12_query_set.zig");
 const d3d12_descriptors = @import("d3d12_descriptors.zig");
 const d3d12_device_caps = @import("d3d12_device_caps.zig");
 const compute = @import("d3d12_runtime_compute.zig");
+const kernel_buffers = @import("d3d12_kernel_buffers.zig");
 const upload = @import("d3d12_runtime_upload.zig");
 const render_bundle = @import("../../runtime/render/render_bundle.zig");
 
@@ -87,6 +88,8 @@ pub const NativeD3D12Runtime = struct {
     upload_pool: upload.D3D12Pool = .{},
     default_pool: upload.D3D12Pool = .{},
 
+    kernel_buffers: kernel_buffers.State = .{},
+    compute_has_storage: bool = false,
     root_signature: ?*anyopaque = null,
     compute_pipeline: ?*anyopaque = null,
     compute_allocator: ?*anyopaque = null,
@@ -161,6 +164,7 @@ pub const NativeD3D12Runtime = struct {
         upload.d3d12ReleasePool(&self.default_pool, self.allocator);
         self.streaming_copy_state.deinit();
         compute.destroyComputeObjects(self);
+        self.kernel_buffers.deinit(self.allocator);
         self.timestamp_state.deinit();
         self.query_set_state.deinit(self.allocator);
         self.render_state.deinit();
@@ -220,7 +224,7 @@ pub const NativeD3D12Runtime = struct {
         _ = try upload.flushQueue(self);
     }
 
-    pub fn load_kernel_cso(self: *const NativeD3D12Runtime, alloc: std.mem.Allocator, kernel_name: []const u8) ![]u8 {
+    pub fn load_kernel_cso(self: *NativeD3D12Runtime, alloc: std.mem.Allocator, kernel_name: []const u8) ![]u8 {
         return compute.loadKernelCso(self, alloc, kernel_name);
     }
 

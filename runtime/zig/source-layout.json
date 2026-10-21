@@ -886,9 +886,9 @@
       },
       "src/backend/d3d12/d3d12_native_runtime.zig": {
         "decision": "Keep",
-        "moduleSha256": "2980a8f6c8bcf82bf89b5c198416ec430ef06aaab451b28234fd4faef82f74cf",
-        "reason": "Keep: backend owns COM device retention and LUID-based identity. Borrowed selected devices gain one reference before bootstrap; errdefer and normal teardown release it. Existing default construction remains; no re-selection occurs for adapter-backed device requests.",
-        "reviewer": "codex-windows-identity/2026-10-19"
+        "moduleSha256": "7fd112ab9827e9cf060829d3aa108d130bdf33a3d7634a73c4fe62e41544ae57",
+        "reason": "Keep: device lifetime owns command-handle storage buffers and descriptors through checked queue completion and final retirement.",
+        "reviewer": "codex-d3d12-cli-storage/2026-10-21"
       },
       "src/backend/d3d12/d3d12_query_set.zig": {
         "decision": "Keep",
@@ -898,9 +898,9 @@
       },
       "src/backend/d3d12/d3d12_runtime_compute.zig": {
         "decision": "Keep",
-        "moduleSha256": "65c7457ac6eba7b4a079b2241a9374c4efdabe8c1ca13287e2c7afbb25601194",
-        "reason": "Keep: Existing DXC owner exposes HLSL compilation for native compute integration; close-before-spawn lifetime fix retained. No shader cache, compiler architecture or CLI behavior change.",
-        "reviewer": "codex-public-d3d12-compute/2026-10-19"
+        "moduleSha256": "61b86c1451a98db4170fc7389b99b9f7d2e3721a7cfd845ab38e132b101230f5",
+        "reason": "Keep: existing native compute owner binds dispatch metadata and admitted storage, orders dependent dispatches, and retains resources through checked signal/wait or terminal retirement.",
+        "reviewer": "codex-d3d12-cli-storage/2026-10-21"
       },
       "src/backend/d3d12/d3d12_runtime_upload.zig": {
         "decision": "Keep",
@@ -910,9 +910,9 @@
       },
       "src/backend/d3d12/mod.zig": {
         "decision": "Keep",
-        "moduleSha256": "b32d8f371a2e34871690447f7e6be6ae3a4a0581afedb78ce5310aed9b1e4ed1",
-        "reason": "Keep: reachable backend implementation with a distinct named responsibility and no merge, elevation, recomposition, or deletion signal.",
-        "reviewer": "codex-common-audit/2026-09-19"
+        "moduleSha256": "9f98063d310dbb9cdb416f07c29a3d621bc0361bb6dcf1dab60994df5767cbe7",
+        "reason": "Keep: native command routing validates bounded storage binding and entry-point contracts, preserves preparation timing, and exposes real captured output without claiming benchmark acceptance.",
+        "reviewer": "codex-d3d12-cli-storage/2026-10-21"
       },
       "src/backend/d3d12/resources/d3d12_depth_stencil.zig": {
         "decision": "Keep",
@@ -4447,6 +4447,12 @@
         "moduleSha256": "b884a165f779b42ba3013489fed2a945c5d6c640dcc1e2b7e681ee0aae82a114",
         "reason": "Keep: bounded D3D12 integration derives automatic single-storage-binding layouts only after existing analyzed-IR admission, using authoritative shader buffer reflection and existing native layout constructors/releases. Per-pipeline distinct layout identity and pipeline-owned retention reuse GetBindGroupLayout and dispatch validation. Explicit layout, descriptors, shader compiler and queue ownership remain unchanged.",
         "reviewer": "codex-d3d12-auto-layout/2026-10-19"
+      },
+      "src/backend/d3d12/d3d12_kernel_buffers.zig": {
+        "decision": "Keep",
+        "moduleSha256": "eb0a8a4330b6252541a8a3aa88ba6ded9243fbe33b336238b22b5c3e5fa35e69",
+        "reason": "Keep: cohesive command-handle storage lifecycle owns bounded allocation, exact zero initialization, descriptor identity and checked GPU readback; runtime and command consumers share its validation.",
+        "reviewer": "codex-d3d12-cli-storage/2026-10-21"
       }
     },
     "linePolicy": {
