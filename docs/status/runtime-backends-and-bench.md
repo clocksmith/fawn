@@ -57,8 +57,9 @@ dispatch without explicit output-oracle validation is insufficient. Bounded HLSL
 control-flow checks also retain for-loop increments and the correct continuing
 break target across nested loops and switches. Explicit block and case scopes
 preserve local shadowing while loop-body declarations remain visible to their
-continuing clause. Cross-backend confirmation remains separate from these
-physical D3D12 outputs.
+continuing clause. Stable names for colliding locals prevent a shadowing
+`continue` site from capturing the continuing clause's original variables.
+Cross-backend confirmation remains separate from these physical D3D12 outputs.
 
 A source-matched Windows Dawn control remains absent. The
 [bootstrap](../../bench/tools/bootstrap_dawn.py) needs an explicit compatible

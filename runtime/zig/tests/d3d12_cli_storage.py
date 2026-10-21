@@ -184,6 +184,12 @@ def main():
     ]
     for label, body, expected in block_cases:
         run(label, [oracle(dispatch(shader(label, body)), values=expected)], ["ok"], 1)
+    shadow_cases = [
+        ("continue-shadowed-loop-index", "var trips = 0u; for (var i = 0u; i < 4u; i++) { trips++; if (trips >= 6u) { break; } { var i = 100u; continue; } } values[gid.x] = trips;"),
+        ("continue-shadowed-step", "var i = 0u; var trips = 0u; let step = 1u; loop { trips++; if (trips >= 6u) { break; } { let step = 10u; continue; } continuing { i += step; break if i >= 4u; } } values[gid.x] = trips;"),
+    ]
+    for label, body in shadow_cases:
+        run(label, [oracle(dispatch(shader(label, body)), values=[4]*8)], ["ok"], 1)
     print("Physical CLI storage acceptance complete; no paired speed claim.", flush=True)
 
 

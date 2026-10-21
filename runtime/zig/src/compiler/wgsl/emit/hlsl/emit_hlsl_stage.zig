@@ -260,7 +260,8 @@ fn emit_clip_distance_stmt(self: anytype, function: ir.Function, stmt_id: ir.Stm
             const local = function.locals.items[decl.local];
             try self.write_indent();
             if (decl.is_const) try self.write("const ");
-            try self.emit_typed_name(local.ty, local.name);
+            var name_buffer: [32]u8 = undefined;
+            try self.emit_typed_name(local.ty, try maps.local_name(self.module, function, decl.local, &name_buffer));
             if (decl.initializer) |expr_id| {
                 try self.write(" = ");
                 try self.emit_expr(function, expr_id);

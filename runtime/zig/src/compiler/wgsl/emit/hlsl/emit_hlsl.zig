@@ -458,6 +458,11 @@ const Emitter = struct {
         }
     }
 
+    fn emit_local_name(self: *Emitter, function: ir.Function, index: u32) EmitError!void {
+        var buffer: [32]u8 = undefined;
+        try self.write(try maps.local_name(self.module, function, index, &buffer));
+    }
+
     // Function/control-flow owners already emit braces; explicit child blocks do not.
     fn emit_block_contents(self: *Emitter, function: ir.Function, stmt_id: ir.StmtId) EmitError!void {
         switch (function.stmts.items[stmt_id]) {
@@ -491,7 +496,8 @@ const Emitter = struct {
                 }
                 try self.write_indent();
                 if (decl.is_const) try self.write("const ");
-                try self.emit_typed_name(local.ty, local.name);
+                var name_buffer: [32]u8 = undefined;
+                try self.emit_typed_name(local.ty, try maps.local_name(self.module, function, decl.local, &name_buffer));
                 if (decl.initializer) |expr_id| {
                     try self.write(" = ");
                     try self.emit_expr(function, expr_id);
@@ -743,7 +749,7 @@ const Emitter = struct {
                     const initializer = ir_query.resolveConstLocalInitializer(&function, index) orelse return error.InvalidIr;
                     try self.emit_expr(function, initializer);
                 } else {
-                    try self.write(function.locals.items[index].name);
+                    try self.emit_local_name(function, index);
                 }
             },
             .global_ref => |index| try self.write(self.module.globals.items[index].name),

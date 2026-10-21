@@ -2212,9 +2212,9 @@
       },
       "src/compiler/wgsl/emit/hlsl/emit_hlsl.zig": {
         "decision": "Keep",
-        "moduleSha256": "4be72f1f1d10efc08db79edc575667c1c35db94db5ccf2cb853ffc6129a22adf",
-        "reason": "Keep: HLSL statement lowering preserves explicit lexical blocks separately from function/control-flow-owned scopes and retains nearest-loop continuing semantics.",
-        "reviewer": "codex-hlsl-blocks/2026-10-21"
+        "moduleSha256": "7e327e5958ef01b84c0cd59b6812746fbdfd9bde3e485ea8e459bb45f106674a",
+        "reason": "Keep: HLSL emission preserves IR local identity across shadowing scopes and inlined continuing clauses, including stage and texture consumers.",
+        "reviewer": "codex-hlsl-local-identity/2026-10-21"
       },
       "src/compiler/wgsl/emit/hlsl/emit_hlsl_builtins.zig": {
         "decision": "Keep",
@@ -2224,21 +2224,21 @@
       },
       "src/compiler/wgsl/emit/hlsl/emit_hlsl_maps.zig": {
         "decision": "Keep",
-        "moduleSha256": "e416be1540e4ac887a14f95abdf74d638d9d8c5a6d5754d75507e7d8432dde81",
-        "reason": "Keep: ABI feature identity and native enumeration stay at existing capability boundaries; target-specific builtin names stay with HLSL maps.",
-        "reviewer": "codex-packed-integers/2026-10-11"
+        "moduleSha256": "034a14f3ef8b810a4171efd355de542200bffadea4e2b5bb5345fc24c25413de",
+        "reason": "Keep: HLSL emission preserves IR local identity across shadowing scopes and inlined continuing clauses, including stage and texture consumers.",
+        "reviewer": "codex-hlsl-local-identity/2026-10-21"
       },
       "src/compiler/wgsl/emit/hlsl/emit_hlsl_stage.zig": {
         "decision": "Keep",
-        "moduleSha256": "1a0569b4e20dfce4c6b3dee9734184d0637f31c3367c7ab683f04fbacefff253",
-        "reason": "Keep: HLSL statement lowering preserves explicit lexical blocks separately from function/control-flow-owned scopes and retains nearest-loop continuing semantics.",
-        "reviewer": "codex-hlsl-blocks/2026-10-21"
+        "moduleSha256": "31e60f8d127a2ff0d73d8f69384a87249def1c06950c944688753d874284e668",
+        "reason": "Keep: HLSL emission preserves IR local identity across shadowing scopes and inlined continuing clauses, including stage and texture consumers.",
+        "reviewer": "codex-hlsl-local-identity/2026-10-21"
       },
       "src/compiler/wgsl/emit/hlsl/emit_hlsl_texture.zig": {
         "decision": "Keep",
-        "moduleSha256": "56f526735d201515285570154936ddd16c413fc327237a93f75556f9ede87d2c",
-        "reason": "Keep: reachable compiler implementation shared by 3 production consumers with no conflicting ownership signal.",
-        "reviewer": "codex-dry-recomposition/2026-08-09"
+        "moduleSha256": "3e5a245086756e89c2c5c46034397e2d1a926bf584cdd43056bc823758e232aa",
+        "reason": "Keep: HLSL emission preserves IR local identity across shadowing scopes and inlined continuing clauses, including stage and texture consumers.",
+        "reviewer": "codex-hlsl-local-identity/2026-10-21"
       },
       "src/compiler/wgsl/emit/msl/emit_msl.zig": {
         "decision": "Keep",

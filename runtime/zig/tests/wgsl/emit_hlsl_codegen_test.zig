@@ -277,8 +277,9 @@ test "hlsl control flow: consecutive for initializers retain independent scopes"
     var out: [MAX_HLSL_OUTPUT]u8 = undefined;
     const len = try translateToHlsl(allocator, source, &out);
     const hlsl = out[0..len];
-    try testing.expectEqual(@as(usize, 2), std.mem.count(u8, hlsl, "{\n        uint inner_row = 0"));
-    try testing.expect(!contains(hlsl, "\n    uint inner_row = 0"));
+    try testing.expect(contains(hlsl, "{\n        uint __doe_local_0 = 0"));
+    try testing.expect(contains(hlsl, "{\n        uint __doe_local_1 = 0"));
+    try testing.expect(!contains(hlsl, "\n    uint __doe_local_"));
 }
 
 test "hlsl control flow: continue executes for increment without leaking into nested while" {
@@ -315,6 +316,25 @@ test "hlsl control flow: explicit local shadow block survives emission" {
     ;
     var out: [MAX_HLSL_OUTPUT]u8 = undefined;
     const len = try translateToHlsl(allocator, source, &out);
-    try testing.expect(contains(out[0..len], "{\n        uint value ="));
-    try testing.expectEqual(@as(usize, 1), std.mem.count(u8, out[0..len], "\n    uint value ="));
+    try testing.expect(contains(out[0..len], "{\n        uint __doe_local_2 ="));
+    try testing.expectEqual(@as(usize, 1), std.mem.count(u8, out[0..len], "\n    uint __doe_local_0 ="));
+}
+
+test "hlsl control flow: continuing keeps local identity through shadowing" {
+    const source =
+        \\@group(0) @binding(0) var<storage, read_write> output: array<u32, 8>;
+        \\@compute @workgroup_size(8) fn main(@builtin(global_invocation_id) gid: vec3u) {
+        \\  var trips = 0u;
+        \\  for (var i = 0u; i < 4u; i++) {
+        \\    trips++;
+        \\    if (trips >= 6u) { break; }
+        \\    { var i = 100u; continue; }
+        \\  }
+        \\  output[gid.x] = trips;
+        \\}
+    ;
+    var out: [MAX_HLSL_OUTPUT]u8 = undefined;
+    const len = try translateToHlsl(allocator, source, &out);
+    try testing.expectEqual(@as(usize, 2), std.mem.count(u8, out[0..len], "__doe_local_1 += 1;"));
+    try testing.expect(!contains(out[0..len], "__doe_local_2 += 1;"));
 }
