@@ -29,7 +29,8 @@ static void map_ready(WGPUMapAsyncStatus status, WGPUStringView message,
 static void scope_ready(WGPUPopErrorScopeStatus status, WGPUErrorType type,
                         WGPUStringView message, void *result, void *unused) {
     (void)message; (void)unused;
-    *(int *)result = status == WGPUPopErrorScopeStatus_Success && type == WGPUErrorType_Internal ? 1 : -1;
+    const WGPUErrorType wanted = unused ? *(WGPUErrorType *)unused : WGPUErrorType_Internal;
+    *(int *)result = status == WGPUPopErrorScopeStatus_Success && type == wanted ? 1 : -1;
 }
 
 #define LOAD(Name) \
@@ -273,17 +274,19 @@ int main(int argc, char **argv) {
         printf("word[%zu]: expected=0x%08x actual=0x%08x\n", i, expected[i], output[i]);
     }
     BufferUnmap(destination); mapped = 0;
-    stage = "unsupported command rejection";
+    stage = "invalid clear rejection";
     int rejected = 0;
-    DevicePushErrorScope(device, WGPUErrorFilter_Internal);
+    DevicePushErrorScope(device, WGPUErrorFilter_Validation);
     encoder = DeviceCreateCommandEncoder(device, NULL);
     if (!encoder) goto cleanup;
-    CommandEncoderClearBuffer(encoder, destination, 0, sizeof(expected));
+    CommandEncoderClearBuffer(encoder, destination, 1, 4);
     commands = CommandEncoderFinish(encoder, NULL);
     if (!commands) goto cleanup;
     QueueSubmit(queue, 1, &commands);
     WGPUPopErrorScopeCallbackInfo sc = WGPU_POP_ERROR_SCOPE_CALLBACK_INFO_INIT;
     sc.mode = WGPUCallbackMode_AllowSpontaneous; sc.callback = scope_ready; sc.userdata1 = &rejected;
+    WGPUErrorType clear_error_type = WGPUErrorType_Validation;
+    sc.userdata2 = &clear_error_type;
     DevicePopErrorScope(device, sc);
     for (int i = 0; i < 100 && !rejected; ++i) { InstanceProcessEvents(instance); Sleep(10); }
     if (rejected != 1) goto cleanup;
@@ -314,7 +317,7 @@ cleanup:
     FreeLibrary(library);
     if (result) fprintf(stderr, "FAIL stage=%s\n", stage);
     else if (unsupported) printf("PASS: D3D12 aggregate array rejected at pipeline creation\n");
-    else printf("PASS: D3D12 %s compute/readback, early release, exact 8-word output, unsupported clear rejected\n",
+    else printf("PASS: D3D12 %s compute/readback, early release, exact 8-word output, misaligned clear rejected\n",
                 recover ? "valid pipeline after rejected aggregate" : fixture ? "unchanged fixture shader" : short_binding ? "short runtime binding" : rebind ? "runtime descriptor rebinding" : floating ? "runtime f32" : signed_integer ? "i32" : repeated ? "repeated u32" : reject_dispatch ? "rejected dispatch preserves sentinel" : "u32");
     return result;
 }

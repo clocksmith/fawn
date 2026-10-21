@@ -3,12 +3,15 @@
 ## Windows native correctness boundary
 
 The native Windows lane exercises the bounded D3D12 copy and scalar-storage
-compute subset described in the [runtime contract](../../runtime/zig/README.md#windows-d3d12-recorded-compute-subset).
+compute subset, including ordered buffer clears, described in the [runtime contract](../../runtime/zig/README.md#windows-d3d12-recorded-compute-subset).
 The [copy fixture](../../runtime/zig/tests/d3d12_buffer_readback.c),
 [fixed-array fixture](../../runtime/zig/tests/d3d12_compute_readback.c),
-[runtime-array fixture](../../runtime/zig/tests/d3d12_runtime_array_readback.c), and
-[automatic-layout fixture](../../runtime/zig/tests/d3d12_auto_layout_readback.c)
+[runtime-array fixture](../../runtime/zig/tests/d3d12_runtime_array_readback.c),
+[automatic-layout fixture](../../runtime/zig/tests/d3d12_auto_layout_readback.c), and
+[buffer-clear fixture](../../runtime/zig/tests/d3d12_clear_readback.c)
 check independent readback oracles, ordering, ownership and rejected operations.
+The [parity boundary](../../runtime/zig/README.md#windows-buffer-clear-parity-boundary)
+separates exercised contracts from retained unsupported and unverified surfaces.
 This is a local native correctness boundary; it does not qualify the complete
 WebGPU surface, package integration, browser execution or performance.
 
@@ -17,6 +20,35 @@ prerequisites for a paired application comparison. Windows Chromium source,
 build prerequisites and provider-ownership acceptance remain separate blockers
 for the [browser lane](../../browser/chromium/acceptance.md). No Dawn speed win
 or Fawn browser qualification follows from these native fixtures.
+
+## Windows benchmark parity boundary
+
+The [backend catalog](../../bench/workloads/metadata/backend-workload-catalog.json)
+owns generated Windows, Vulkan and Metal workload views. Windows extended rows
+include directional scaffolding; their presence is neither native feature
+acceptance nor a measured comparison. The Windows smoke view shares atomic
+compute and buffer upload with the Vulkan/Metal smoke views, substitutes pipeline
+stress for their render row, and does not establish coverage of either extended
+catalog. The [shared evidence runner](../../bench/runners/run_recomposition_backend_evidence.py)
+selects only the atomic-compute row. Public-ABI correctness fixtures above and
+these native CLI workloads exercise different consumers.
+
+| Gap | Required evidence before comparison |
+| --- | --- |
+| Native executor readiness | [Windows preflight](../../bench/runners/preflight_d3d12_host.py), built Doe CLI and source-matched Dawn control, physical adapter and fallback identity |
+| Atomic compute and pipeline stress | Existing command files and independent output hashes; the bounded public-ABI scalar kernel cannot substitute for workgroup atomics or the multi-binding matrix shader |
+| Upload/readback | Exact output and completion checks; an upload-only command without an output oracle cannot qualify a complete application transfer |
+| Texture, render, indirect dispatch and mapping coverage | Preserve each existing workload contract, admit required features and output checks, then add the Windows catalog mapping through its generator |
+| CPU, memory and performance | Matched BEE adapter/driver, inputs, validation, cache, warmup and timing scopes; collect full operation wall, selected timing, process CPU/RAM and GPU memory with measurement overhead disclosed |
+
+The current smoke configuration disables resource sampling and claimability;
+its receipts alone cannot support CPU/memory or release-speed claims. Freeze
+cold preparation separately from resident operation, retain raw samples and
+failed attempts, and apply the [performance contract](../performance-strategy.md)
+before interpreting any speed ratio. Missing coverage, unsupported features and
+unverified behavior are separate from a measured performance loss. Physical
+Metal confirmation belongs on an authorized Mac; cross-machine raw timings
+cannot establish Windows parity. Browser/Fawn acceptance remains a separate lane.
 
 ## Qwen Metal correctness
 

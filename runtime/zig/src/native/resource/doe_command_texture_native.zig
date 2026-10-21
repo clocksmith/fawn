@@ -32,17 +32,18 @@ pub export fn doeNativeCommandEncoderClearBuffer(
     const enc = cast(DoeCommandEncoder, enc_raw) orelse return;
     if (!recording.requireOpen(enc)) return;
     const buf = cast(DoeBuffer, buffer_raw) orelse return;
-    if (buf.error_object or buf.destroyed) return;
+    if ((buf.error_object or buf.destroyed) and enc.dev.backend != .d3d12) return;
     // Resolve WGPU_WHOLE_SIZE sentinel: if size is u64 max, fill to end of buffer.
     const fill_size: u64 = if (size == std.math.maxInt(u64))
         buf.size -| offset
     else
         size;
-    if (fill_size == 0) return;
+    // D3D12 keeps zero-sized commands for queue-time range and resource validation.
+    if (fill_size == 0 and enc.dev.backend != .d3d12) return;
     if (!recording.reserve(enc, 0, 1)) return;
     references.retainBufferAssumeCapacity(&enc.references, buf);
     if (!recording.append(enc, .{ .clear_buffer = .{
-        .buffer = if (enc.dev.backend == .vulkan) toOpaque(buf) else buf.mtl,
+        .buffer = if (enc.dev.backend == .metal) buf.mtl else toOpaque(buf),
         .offset = offset,
         .size = fill_size,
     } })) return;

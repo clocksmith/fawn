@@ -5,6 +5,9 @@ const native_types = @import("../support/doe_native_object_types.zig");
 const native_helpers = @import("../support/doe_native_object_helpers.zig");
 const native_rt_helpers = @import("../support/doe_native_runtime_helpers.zig");
 const shared = @import("doe_queue_submit_shared.zig");
+const commands = @import("../support/doe_native_command_types.zig");
+const abi = @import("../../core/abi/wgpu_core_base_types.zig");
+const errors = @import("../../runtime/diagnostics/error_scope.zig");
 const compute = @import("../compute/doe_compute_d3d12.zig");
 
 const alloc = native_helpers.alloc;
@@ -23,6 +26,13 @@ pub fn submit_d3d12_commands(q: *DoeQueue, count: usize, cmd_bufs: [*]const ?*an
         const cb = cast(DoeCommandBuffer, raw) orelse return;
         for (cb.cmds.items) |cmd| switch (cmd) {
             .copy_buf => has_copy = true,
+            .clear_buffer => |clear| {
+                _ = validateClear(q.dev, clear) catch |err| {
+                    q.dev.error_scopes.deliver(errors.ERROR_TYPE_VALIDATION, @errorName(err));
+                    return;
+                };
+                has_copy = true;
+            },
             .dispatch => |dispatch| {
                 compute.validate(q.dev, dispatch) catch |err| {
                     shared.deliverInternalError(q.dev, "D3D12 compute admission: {s}", .{@errorName(err)});
@@ -74,6 +84,13 @@ pub fn submit_d3d12_commands(q: *DoeQueue, count: usize, cmd_bufs: [*]const ?*an
                         return;
                     };
                     has_gpu_work = has_gpu_work or dispatch.x != 0;
+                },
+                .clear_buffer => |clear| {
+                    recordClear(q.dev, rt.device, cmd_list, clear, &retained_handles) catch |err| {
+                        shared.deliverInternalError(q.dev, "D3D12 clear recording: {s}", .{@errorName(err)});
+                        return;
+                    };
+                    has_gpu_work = has_gpu_work or clear.size != 0;
                 },
                 .copy_buf => |copy| {
                     const src = cast(native_types.DoeBuffer, copy.src) orelse return;
@@ -137,4 +154,40 @@ pub fn submit_d3d12_commands(q: *DoeQueue, count: usize, cmd_bufs: [*]const ?*an
     owns_cmd_allocator = false;
     owns_cmd_list = false;
     owns_retained_handles = false;
+}
+
+const Clear = @FieldType(commands.RecordedCmd, "clear_buffer");
+// Bound upload memory independently of the requested clear range.
+const CLEAR_UPLOAD_BYTES: usize = 64 * 1024;
+
+fn validateClear(device: *native_types.DoeDevice, clear: Clear) !*native_types.DoeBuffer {
+    const buffer = cast(native_types.DoeBuffer, clear.buffer) orelse return error.InvalidClearBuffer;
+    if (buffer.dev != device or buffer.backend != .d3d12) return error.ClearDeviceMismatch;
+    if (buffer.error_object or buffer.destroyed or buffer.mapped or buffer.map_pending or buffer.mtl == null) return error.ClearBufferUnavailable;
+    if ((buffer.usage & abi.WGPUBufferUsage_CopyDst) == 0) return error.ClearRequiresCopyDst;
+    if (buffer.d3d12_heap_type != 1 and buffer.d3d12_heap_type != 3) return error.UnsupportedClearHeap;
+    if ((clear.offset | clear.size) & 3 != 0 or clear.offset > buffer.size or clear.size > buffer.size - clear.offset) return error.InvalidClearRange;
+    return buffer;
+}
+
+fn recordClear(device: *native_types.DoeDevice, native_device: ?*anyopaque, list: ?*anyopaque, clear: Clear, retained: *std.ArrayListUnmanaged(?*anyopaque)) !void {
+    const buffer = try validateClear(device, clear);
+    if (clear.size == 0) return;
+    const upload_size: usize = @intCast(@min(clear.size, CLEAR_UPLOAD_BYTES));
+    try retained.ensureUnusedCapacity(alloc, 2);
+    const upload = bridge.c.d3d12_bridge_device_create_buffer(native_device, upload_size, 2) orelse return error.ClearUploadAllocationFailed;
+    errdefer bridge.c.d3d12_bridge_release(upload);
+    const mapped = bridge.c.d3d12_bridge_resource_map(upload) orelse return error.ClearUploadMapFailed;
+    @memset(@as([*]u8, @ptrCast(mapped))[0..upload_size], 0);
+    bridge.c.d3d12_bridge_resource_unmap(upload);
+    var written: u64 = 0;
+    while (written < clear.size) {
+        const chunk = @min(clear.size - written, upload_size);
+        if (bridge.c.d3d12_bridge_command_list_copy_buffer_region(list, buffer.mtl, clear.offset + written, upload, 0, chunk) != 0) return error.ClearCopyFailed;
+        written += chunk;
+    }
+    // Both the immutable zero source and destination outlive command recording.
+    bridge.c.d3d12_bridge_retain(buffer.mtl);
+    retained.appendAssumeCapacity(upload);
+    retained.appendAssumeCapacity(buffer.mtl);
 }
