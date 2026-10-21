@@ -281,8 +281,10 @@ reordering, handle reuse, scalar/matrix layout switching, rejected aliases and
 access mismatches. Bounded control-flow cases also check that `continue` executes
 the nearest loop's continuing clause, that nested loops do not inherit an outer
 increment, and that `break if` still exits the loop through a switch/continue
-edge. These checks exercise HLSL lowering on D3D12; other target backends need
-their own physical qualification. Original failed traces remain separate from
+edge. Explicit lexical blocks preserve shadowed and sibling local names, switch
+cases own their local declarations, and loop-body locals remain visible to the
+continuing clause. These checks exercise HLSL lowering on D3D12; other target
+backends need their own physical qualification. Original failed traces remain separate from
 accepted evidence.
 
 This qualifies the exercised native CLI consumer only. A source-matched Windows

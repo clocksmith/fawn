@@ -55,8 +55,10 @@ writable storage together, including layout switching and rejected access/alias
 recovery. Broader catalog coverage remains outside the accepted boundary. Process exit or a successful
 dispatch without explicit output-oracle validation is insufficient. Bounded HLSL
 control-flow checks also retain for-loop increments and the correct continuing
-break target across nested loops and switches; cross-backend confirmation remains
-separate from these physical D3D12 outputs.
+break target across nested loops and switches. Explicit block and case scopes
+preserve local shadowing while loop-body declarations remain visible to their
+continuing clause. Cross-backend confirmation remains separate from these
+physical D3D12 outputs.
 
 A source-matched Windows Dawn control remains absent. The
 [bootstrap](../../bench/tools/bootstrap_dawn.py) needs an explicit compatible

@@ -2,6 +2,8 @@ const ir = @import("../../ir/ir.zig");
 const ir_query = @import("../../ir/ir_query.zig");
 const maps = @import("emit_hlsl_maps.zig");
 
+const EmitError = error{ OutputTooLarge, InvalidIr, UnsupportedBuiltin };
+
 const CLIP_DISTANCE_RESULT_NAME = "_doe_clip_distance";
 
 pub fn emit_stage_function(self: anytype, function_index: ir.FunctionId) !void {
@@ -228,19 +230,31 @@ fn emit_clip_distance_impl_function(self: anytype, function_index: ir.FunctionId
     }
     try self.write(") {\n");
     self.indent += 4;
-    try emit_clip_distance_stmt(self, function, function.root_stmt, CLIP_DISTANCE_RESULT_NAME, return_array.len.?);
+    try emit_clip_distance_block_contents(self, function, function.root_stmt, CLIP_DISTANCE_RESULT_NAME, return_array.len.?);
     self.indent -= 4;
     try self.write("}\n");
 }
 
-fn emit_clip_distance_stmt(self: anytype, function: ir.Function, stmt_id: ir.StmtId, result_name: []const u8, result_len: u32) !void {
+fn emit_clip_distance_block_contents(self: anytype, function: ir.Function, stmt_id: ir.StmtId, result_name: []const u8, result_len: u32) EmitError!void {
+    switch (function.stmts.items[stmt_id]) {
+        .block => |range| {
+            for (function.stmt_children.items[range.start..][0..range.len]) |child| try emit_clip_distance_stmt(self, function, child, result_name, result_len);
+        },
+        else => try emit_clip_distance_stmt(self, function, stmt_id, result_name, result_len),
+    }
+}
+
+fn emit_clip_distance_stmt(self: anytype, function: ir.Function, stmt_id: ir.StmtId, result_name: []const u8, result_len: u32) EmitError!void {
     const stmt = function.stmts.items[stmt_id];
     switch (stmt) {
-        .block => |range| {
-            var i: u32 = 0;
-            while (i < range.len) : (i += 1) {
-                try emit_clip_distance_stmt(self, function, function.stmt_children.items[range.start + i], result_name, result_len);
-            }
+        .block => {
+            try self.write_indent();
+            try self.write("{\n");
+            self.indent += 4;
+            try emit_clip_distance_block_contents(self, function, stmt_id, result_name, result_len);
+            self.indent -= 4;
+            try self.write_indent();
+            try self.write("}\n");
         },
         .local_decl => |decl| {
             const local = function.locals.items[decl.local];
@@ -304,14 +318,14 @@ fn emit_clip_distance_stmt(self: anytype, function: ir.Function, stmt_id: ir.Stm
             try self.emit_expr(function, if_stmt.cond);
             try self.write(") {\n");
             self.indent += 4;
-            try emit_clip_distance_stmt(self, function, if_stmt.then_block, result_name, result_len);
+            try emit_clip_distance_block_contents(self, function, if_stmt.then_block, result_name, result_len);
             self.indent -= 4;
             try self.write_indent();
             try self.write("}");
             if (if_stmt.else_block) |else_block| {
                 try self.write(" else {\n");
                 self.indent += 4;
-                try emit_clip_distance_stmt(self, function, else_block, result_name, result_len);
+                try emit_clip_distance_block_contents(self, function, else_block, result_name, result_len);
                 self.indent -= 4;
                 try self.write_indent();
                 try self.write("}\n");
@@ -357,7 +371,7 @@ fn emit_clip_distance_stmt(self: anytype, function: ir.Function, stmt_id: ir.Stm
             const previous_continuing = self.loop_continuing;
             self.loop_continuing = loop_stmt.continuing;
             defer self.loop_continuing = previous_continuing;
-            try emit_clip_distance_stmt(self, function, loop_stmt.body, result_name, result_len);
+            try emit_clip_distance_block_contents(self, function, loop_stmt.body, result_name, result_len);
             self.loop_continuing = null;
             if (loop_stmt.continuing) |continuing| try emit_clip_distance_stmt(self, function, continuing, result_name, result_len);
             self.indent -= 4;

@@ -301,3 +301,20 @@ test "hlsl control flow: continue executes for increment without leaking into ne
     // The nested while must not emit the outer increment on its continue edge.
     try testing.expectEqual(@as(usize, 3), std.mem.count(u8, out[0..len], "i += 1;"));
 }
+
+test "hlsl control flow: explicit local shadow block survives emission" {
+    const source =
+        \\@group(0) @binding(0) var<storage, read_write> output: array<u32, 8>;
+        \\@compute @workgroup_size(8) fn main(@builtin(global_invocation_id) gid: vec3u) {
+        \\  var value = gid.x + 1u;
+        \\  var total = 0u;
+        \\  { var value = gid.x + 10u; total = value; }
+        \\  total += value;
+        \\  output[gid.x] = total;
+        \\}
+    ;
+    var out: [MAX_HLSL_OUTPUT]u8 = undefined;
+    const len = try translateToHlsl(allocator, source, &out);
+    try testing.expect(contains(out[0..len], "{\n        uint value ="));
+    try testing.expectEqual(@as(usize, 1), std.mem.count(u8, out[0..len], "\n    uint value ="));
+}

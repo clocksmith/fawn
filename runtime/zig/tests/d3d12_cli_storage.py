@@ -176,6 +176,14 @@ def main():
     for label, body, expected in flow_cases:
         source = shader(label, body)
         run(label, [oracle(dispatch(source), values=[expected] * 8)], ["ok"], 1)
+    block_cases = [
+        ("lexical-block-shadow", "var value = gid.x + 1u; var total = 0u; { var value = gid.x + 10u; total = value; } total += value; values[gid.x] = total;", [2*i+11 for i in range(8)]),
+        ("sibling-block-shadow", "var value = gid.x + 1u; var total = 0u; { var value = gid.x + 10u; total += value; } { var value = gid.x + 20u; total += value; } total += value; values[gid.x] = total;", [3*i+31 for i in range(8)]),
+        ("switch-case-locals", "var total = 0u; switch (gid.x % 2u) { case 0u: { let value = gid.x + 10u; total = value; } default: { let value = gid.x + 20u; total = value; } } values[gid.x] = total;", [i+(10 if i%2==0 else 20) for i in range(8)]),
+        ("continuing-body-local", "var total = 0u; var i = 0u; loop { let step = 1u; total += i; continuing { i += step; break if i >= 4u; } } values[gid.x] = total;", [6]*8),
+    ]
+    for label, body, expected in block_cases:
+        run(label, [oracle(dispatch(shader(label, body)), values=expected)], ["ok"], 1)
     print("Physical CLI storage acceptance complete; no paired speed claim.", flush=True)
 
 
