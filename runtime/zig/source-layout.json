@@ -2224,9 +2224,9 @@
       },
       "src/compiler/wgsl/emit/hlsl/emit_hlsl_maps.zig": {
         "decision": "Keep",
-        "moduleSha256": "034a14f3ef8b810a4171efd355de542200bffadea4e2b5bb5345fc24c25413de",
-        "reason": "Keep: HLSL emission preserves IR local identity across shadowing scopes and inlined continuing clauses, including stage and texture consumers.",
-        "reviewer": "codex-hlsl-local-identity/2026-10-21"
+        "moduleSha256": "b247e79ecaeafcff90a5b80fd8b0d057098616040ced45297da355749d9dfa03",
+        "reason": "Keep: nearest-loop continuing emission and shared IR local identity preserve control flow across shadowed scopes without changing runtime ownership.",
+        "reviewer": "codex-msl-continuing/2026-10-21"
       },
       "src/compiler/wgsl/emit/hlsl/emit_hlsl_stage.zig": {
         "decision": "Keep",
@@ -2254,9 +2254,9 @@
       },
       "src/compiler/wgsl/emit/msl/emit_msl_ir.zig": {
         "decision": "Keep",
-        "moduleSha256": "1a8d553707ea052caa8edf5a44df2476e9e41c31d2d9cfa4de2f9ad038ca0ccf",
-        "reason": "Keep: MSL emission owns lexical scopes, typed literals, forward declarations and explicit helper captures. Native execution ownership is unchanged.",
-        "reviewer": "codex-qwen-metal-correctness/2026-10-15"
+        "moduleSha256": "63fe141dbf73ba55f570b9b4c0e9dc7c5c04c58de922496f299d7ca8ab4aef6d",
+        "reason": "Keep: nearest-loop continuing emission and shared IR local identity preserve control flow across shadowed scopes without changing runtime ownership.",
+        "reviewer": "codex-msl-continuing/2026-10-21"
       },
       "src/compiler/wgsl/emit/msl/emit_msl_ir_builtins.zig": {
         "decision": "Keep",
@@ -2266,9 +2266,9 @@
       },
       "src/compiler/wgsl/emit/msl/emit_msl_maps.zig": {
         "decision": "Keep",
-        "moduleSha256": "75461e63d43e9d657c87c620566ea3db1c64a2706748eac86a9d07266aa861bc",
-        "reason": "Keep: reachable compiler implementation shared by 4 production consumers with no conflicting ownership signal.",
-        "reviewer": "codex-dry-recomposition/2026-08-09"
+        "moduleSha256": "e7ef42ff75733aa9b8c3d353a7b56d438821657faa78ea2f7034d5fc7ec0980d",
+        "reason": "Keep: nearest-loop continuing emission and shared IR local identity preserve control flow across shadowed scopes without changing runtime ownership.",
+        "reviewer": "codex-msl-continuing/2026-10-21"
       },
       "src/compiler/wgsl/emit/msl/emit_msl_shared.zig": {
         "decision": "Keep",
@@ -4453,6 +4453,12 @@
         "moduleSha256": "63ecff27adeabeaa3e6bd478297a3f24945a02f58ac8d711e0419afb5ec66f4a",
         "reason": "Keep: native D3D12 sparse group-zero storage slots retain exact descriptor/register identity, shader extent/access validation and rejected-layout recovery.",
         "reviewer": "codex-d3d12-sparse/2026-10-21"
+      },
+      "src/compiler/wgsl/emit/local_names.zig": {
+        "decision": "Keep",
+        "moduleSha256": "ed369e27999476857bc9d9a7aac8fd9d47b8db590258bacf5d8b64e5775a53bf",
+        "reason": "Keep: nearest-loop continuing emission and shared IR local identity preserve control flow across shadowed scopes without changing runtime ownership.",
+        "reviewer": "codex-msl-continuing/2026-10-21"
       }
     },
     "linePolicy": {

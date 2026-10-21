@@ -44,6 +44,9 @@ const Emitter = struct {
     buf: []u8,
     pos: usize = 0,
     indent: usize = 0,
+    loop_continuing: ?ir.StmtId = null,
+    loop_break_flag: ?ir.StmtId = null,
+    continuing_break_flag: ?ir.StmtId = null,
 
     pub fn msl_binding_slot(_: *Emitter, binding: ir.BindingPoint) EmitError!u32 {
         return bindingSlot(binding);
@@ -586,7 +589,8 @@ const Emitter = struct {
                 if (decl.is_const and self.module.types.get(local.ty) != .ref) {
                     try self.write("const ");
                 }
-                try self.emit_named_decl(local.ty, local.name);
+                var name_buffer: [32]u8 = undefined;
+                try self.emit_named_decl(local.ty, try maps.local_name(self.module, function, decl.local, &name_buffer));
                 if (decl.initializer) |expr_id| {
                     try self.write(" = ");
                     try self.emit_expr(function, expr_id);
@@ -653,39 +657,59 @@ const Emitter = struct {
                 }
             },
             .loop_ => |loop_stmt| {
-                const scope_for_init = loop_stmt.init != null and loop_stmt.kind == .for_loop;
-                if (scope_for_init) {
+                // A lowered for initializer belongs to the loop, not the enclosing block.
+                if (loop_stmt.init != null or loop_stmt.continuing != null) {
                     try self.write_indent();
                     try self.write("{\n");
                     self.indent += 4;
                 }
                 if (loop_stmt.init) |init_stmt| try self.emit_stmt(function, init_stmt);
                 try self.write_indent();
-                switch (loop_stmt.kind) {
-                    .while_loop, .for_loop => {
-                        try self.write("while (");
-                        if (loop_stmt.cond) |cond| {
-                            try self.emit_expr(function, cond);
-                        } else {
-                            try self.write("true");
-                        }
-                        try self.write(") {\n");
-                    },
-                    .loop => try self.write("while (true) {\n"),
+                if (loop_stmt.continuing != null) {
+                    try self.write("bool __doe_loop_break_");
+                    try self.write_u32(stmt_id);
+                    try self.write(" = false;\n");
+                    try self.write_indent();
                 }
+                try self.write("while (");
+                if (loop_stmt.continuing != null) {
+                    try self.write("!__doe_loop_break_");
+                    try self.write_u32(stmt_id);
+                    try self.write(" && (");
+                }
+                if (loop_stmt.cond) |cond| {
+                    try self.emit_expr(function, cond);
+                } else {
+                    try self.write("true");
+                }
+                if (loop_stmt.continuing != null) try self.write(")");
+                try self.write(") {\n");
                 self.indent += 4;
+                const previous_loop_break = self.loop_break_flag;
+                const previous_break_target = self.continuing_break_flag;
+                self.loop_break_flag = if (loop_stmt.continuing != null) stmt_id else null;
+                self.continuing_break_flag = null;
+                defer self.loop_break_flag = previous_loop_break;
+                defer self.continuing_break_flag = previous_break_target;
+                const previous_continuing = self.loop_continuing;
+                self.loop_continuing = loop_stmt.continuing;
+                defer self.loop_continuing = previous_continuing;
                 try self.emit_stmt(function, loop_stmt.body);
+                self.loop_continuing = null;
                 if (loop_stmt.continuing) |continuing| try self.emit_stmt(function, continuing);
                 self.indent -= 4;
                 try self.write_indent();
                 try self.write("}\n");
-                if (scope_for_init) {
+                if (loop_stmt.init != null or loop_stmt.continuing != null) {
                     self.indent -= 4;
                     try self.write_indent();
                     try self.write("}\n");
                 }
             },
             .switch_ => |switch_stmt| {
+                const previous_break_target = self.continuing_break_flag;
+                self.continuing_break_flag = null;
+                defer self.continuing_break_flag = previous_break_target;
                 try self.write_indent();
                 try self.write("switch (");
                 try self.emit_expr(function, switch_stmt.expr);
@@ -718,9 +742,29 @@ const Emitter = struct {
             },
             .break_ => {
                 try self.write_indent();
-                try self.write("break;\n");
+                if (self.continuing_break_flag) |target| {
+                    // An inlined continuing break must escape its loop, even inside a switch.
+                    try self.write("__doe_loop_break_");
+                    try self.write_u32(target);
+                    try self.write(" = true;\n");
+                } else try self.write("break;\n");
             },
             .continue_ => {
+                // WGSL continue executes the nearest loop continuing clause first.
+                if (self.loop_continuing) |continuing| {
+                    const previous_break_target = self.continuing_break_flag;
+                    self.continuing_break_flag = self.loop_break_flag;
+                    defer self.continuing_break_flag = previous_break_target;
+                    self.loop_continuing = null;
+                    defer self.loop_continuing = continuing;
+                    try self.write_indent();
+                    try self.write("{\n");
+                    self.indent += 4;
+                    try self.emit_stmt(function, continuing);
+                    self.indent -= 4;
+                    try self.write_indent();
+                    try self.write("}\n");
+                }
                 try self.write_indent();
                 try self.write("continue;\n");
             },
@@ -772,7 +816,10 @@ const Emitter = struct {
             .int_lit => |value| try self.emit_constant(.{ .int = value }, expr.ty),
             .float_lit => |value| try self.write_float(value),
             .param_ref => |index| try self.write(function.params.items[index].name),
-            .local_ref => |index| try self.write(function.locals.items[index].name),
+            .local_ref => |index| {
+                var name_buffer: [32]u8 = undefined;
+                try self.write(try maps.local_name(self.module, function, index, &name_buffer));
+            },
             .global_ref => |index| {
                 if (try self.try_emit_global_const_literal(index)) return;
                 try self.write(self.module.globals.items[index].name);

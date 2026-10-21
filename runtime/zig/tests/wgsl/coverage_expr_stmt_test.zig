@@ -188,8 +188,8 @@ test "statements: repeated for-loop induction vars stay scoped in MSL" {
     const len = try translateToMsl(std.testing.allocator, source, &out);
     try std.testing.expect(len > 0);
     const msl = out[0..len];
-    try std.testing.expect(contains(msl, "{\n        uint i = 0u;"));
-    try std.testing.expect(contains(msl, "    }\n    {\n        uint i = 4u;"));
+    try std.testing.expect(contains(msl, "{\n        uint __doe_local_1 = 0u;"));
+    try std.testing.expect(contains(msl, "    }\n    {\n        uint __doe_local_2 = 4u;"));
 }
 
 test "statements: while loop through MSL" {
@@ -436,4 +436,47 @@ test "const folding: module-scope literal arithmetic through MSL" {
     var out: [MAX_OUTPUT]u8 = undefined;
     const len = try translateToMsl(std.testing.allocator, source, &out);
     try std.testing.expect(len > 0);
+}
+
+test "MSL continuing: nearest loop increment and shadow identity" {
+    const source =
+        \\@group(0) @binding(0) var<storage, read_write> output: array<u32, 8>;
+        \\@compute @workgroup_size(8) fn main(@builtin(global_invocation_id) gid: vec3u) {
+        \\  var trips = 0u;
+        \\  for (var i = 0u; i < 4u; i++) {
+        \\    var j = 0u;
+        \\    while (j < 2u) { j++; if (j == 1u) { continue; } }
+        \\    trips++; if (trips >= 6u) { break; }
+        \\    { var i = 100u; continue; }
+        \\  }
+        \\  output[gid.x] = trips;
+        \\}
+    ;
+    var out: [MAX_OUTPUT]u8 = undefined;
+    const len = try translateToMsl(std.testing.allocator, source, &out);
+    const msl = out[0..len];
+    // Exactly the outer continue edge and tail; never the nested while edge.
+    try std.testing.expectEqual(@as(usize, 2), std.mem.count(u8, msl, "__doe_local_1 += 1;"));
+    try std.testing.expect(!contains(msl, "__doe_local_3 += 1;"));
+}
+
+test "MSL continuing: break-if escapes the loop through a switch continue" {
+    const source =
+        \\@group(0) @binding(0) var<storage, read_write> output: array<u32, 8>;
+        \\@compute @workgroup_size(8) fn main(@builtin(global_invocation_id) gid: vec3u) {
+        \\  var i = 0u; var total = 0u;
+        \\  loop {
+        \\    switch i { case 1u: { i += 2u; continue; } default: {} }
+        \\    total += i;
+        \\    continuing { i++; break if i >= 4u; }
+        \\  }
+        \\  output[gid.x] = total;
+        \\}
+    ;
+    var out: [MAX_OUTPUT]u8 = undefined;
+    const len = try translateToMsl(std.testing.allocator, source, &out);
+    const msl = out[0..len];
+    try std.testing.expect(contains(msl, "while (!__doe_loop_break_"));
+    try std.testing.expectEqual(@as(usize, 1), std.mem.count(u8, msl, " = true;"));
+    try std.testing.expectEqual(@as(usize, 2), std.mem.count(u8, msl, "i += 1;"));
 }
