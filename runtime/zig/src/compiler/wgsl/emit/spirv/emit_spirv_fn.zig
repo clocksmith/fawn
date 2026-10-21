@@ -359,7 +359,11 @@ pub fn FunctionState(comptime EmitterT: type) type {
                     },
                     else => try self.emitter.builder.const_f32_bits(@bitCast(@as(f32, @floatCast(value)))),
                 },
-                .param_ref, .local_ref => return error.InvalidIr,
+                .param_ref => return error.InvalidIr,
+                .local_ref => |index| if (self.emitter.module.types.get(self.function.locals.items[index].ty) == .ref and self.local_value_ids[index] != 0)
+                    self.local_value_ids[index]
+                else
+                    return error.InvalidIr,
                 .address_of => |inner| try self.emit_ref_expr(inner),
                 .deref => return error.InvalidIr,
                 .global_ref => |index| blk: {
@@ -433,7 +437,10 @@ pub fn FunctionState(comptime EmitterT: type) type {
             const root_node = self.function.exprs.items[current];
             const root_id: u32 = switch (root_node.data) {
                 .param_ref => |index| self.param_ptr_ids[index],
-                .local_ref => |index| self.local_ptr_ids[index],
+                .local_ref => |index| if (self.emitter.module.types.get(self.function.locals.items[index].ty) == .ref)
+                    self.local_value_ids[index]
+                else
+                    self.local_ptr_ids[index],
                 .deref => |pointer| try self.emit_value_expr(pointer),
                 .global_ref => |index| blk: {
                     if (self.emitter.global_buffer_wrapped[index]) {
@@ -968,7 +975,10 @@ pub fn FunctionState(comptime EmitterT: type) type {
                     .ref => |ref_ty| emit_spirv_shared.addr_space_to_storage_class(ref_ty.addr_space),
                     else => spirv.StorageClass.Function,
                 },
-                .local_ref => spirv.StorageClass.Function,
+                .local_ref => |index| switch (self.emitter.module.types.get(self.function.locals.items[index].ty)) {
+                    .ref => |ref_ty| emit_spirv_shared.addr_space_to_storage_class(ref_ty.addr_space),
+                    else => spirv.StorageClass.Function,
+                },
                 .deref => |pointer| switch (self.emitter.module.types.get(self.function.exprs.items[pointer].ty)) {
                     .ref => |ref_ty| emit_spirv_shared.addr_space_to_storage_class(ref_ty.addr_space),
                     else => error.InvalidIr,

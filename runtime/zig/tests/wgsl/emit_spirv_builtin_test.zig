@@ -1255,3 +1255,67 @@ test "spirv builtin: subgroup bitwise ops produce valid SPIR-V" {
     try testing.expect(len >= 20);
     try testing.expectEqual(spirv.MAGIC, read_u32_le(&out, 0));
 }
+
+test "spirv builtin: captured atomic pointers preserve target and scope" {
+    inline for (.{ "workgroup", "storage, read_write" }) |space| {
+        inline for (.{ "u32", "i32" }) |element| {
+            const binding = if (comptime std.mem.eql(u8, space, "workgroup")) "" else "@group(0) @binding(0) ";
+            const source = binding ++ "var<" ++ space ++ "> values: array<atomic<" ++ element ++ ">, 4>;" ++
+                "@compute @workgroup_size(1) fn main() {" ++
+                "var index = 1u; let pointer = &values[index]; let saved_pointer = pointer; index = 2u;" ++
+                "atomicStore(saved_pointer, 10); let old = atomicAdd(pointer, 3);" ++
+                "let result = atomicCompareExchangeWeak(saved_pointer, 13, 17); let loaded_value = atomicLoad(pointer); }";
+            var out: [MAX_SPIRV_OUTPUT]u8 = undefined;
+            const len = try translateToSpirv(allocator, source, &out);
+            var offset: usize = 5;
+            var pointer: ?u32 = null;
+            var atomic_count: usize = 0;
+            const expected_scope: u32 = if (std.mem.eql(u8, space, "workgroup")) spirv.Scope.Workgroup else spirv.Scope.Device;
+            const expected_class: u32 = if (std.mem.eql(u8, space, "workgroup")) spirv.StorageClass.Workgroup else spirv.StorageClass.StorageBuffer;
+            while (offset < len / 4) {
+                const inst = read_u32_le(&out, offset * 4);
+                const words = inst >> 16;
+                try testing.expect(words > 0 and offset + words <= len / 4);
+                const op: u16 = @truncate(inst);
+                if (op == spirv.Opcode.AtomicStore or op == spirv.Opcode.AtomicIAdd or
+                    op == spirv.Opcode.AtomicCompareExchange or op == spirv.Opcode.AtomicLoad)
+                {
+                    const pointer_operand: usize = if (op == spirv.Opcode.AtomicStore) 1 else 3;
+                    const target = read_u32_le(&out, (offset + pointer_operand) * 4);
+                    try testing.expect(target != 0);
+                    if (pointer) |saved| try testing.expectEqual(saved, target) else pointer = target;
+                    const scope_id = read_u32_le(&out, (offset + pointer_operand + 1) * 4);
+                    try testing.expectEqual(expected_scope, spirv_constant_u32(out[0..len], scope_id).?);
+                    atomic_count += 1;
+                }
+                offset += words;
+            }
+            try testing.expectEqual(@as(usize, 4), atomic_count);
+            // All four operations use the captured access chain, not the later
+            // index value or a Function variable holding a pointer-to-pointer.
+            var pointer_type: ?u32 = null;
+            offset = 5;
+            while (offset < len / 4) {
+                const inst = read_u32_le(&out, offset * 4);
+                if (@as(u16, @truncate(inst)) == spirv.Opcode.AccessChain and
+                    read_u32_le(&out, (offset + 2) * 4) == pointer.?)
+                    pointer_type = read_u32_le(&out, (offset + 1) * 4);
+                offset += inst >> 16;
+            }
+            try testing.expect(pointer_type != null);
+            var checked_class = false;
+            offset = 5;
+            while (offset < len / 4) {
+                const inst = read_u32_le(&out, offset * 4);
+                if (@as(u16, @truncate(inst)) == spirv.Opcode.TypePointer and
+                    read_u32_le(&out, (offset + 1) * 4) == pointer_type.?)
+                {
+                    try testing.expectEqual(expected_class, read_u32_le(&out, (offset + 2) * 4));
+                    checked_class = true;
+                }
+                offset += inst >> 16;
+            }
+            try testing.expect(checked_class);
+        }
+    }
+}
