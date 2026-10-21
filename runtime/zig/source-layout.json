@@ -910,7 +910,7 @@
       },
       "src/backend/d3d12/mod.zig": {
         "decision": "Keep",
-        "moduleSha256": "9f98063d310dbb9cdb416f07c29a3d621bc0361bb6dcf1dab60994df5767cbe7",
+        "moduleSha256": "4a4c7849df6d6af72a399b4549d201e4104dd7f5daff2bc7b9ca5e287a032079",
         "reason": "Keep: native command routing validates bounded storage binding and entry-point contracts, preserves preparation timing, and exposes real captured output without claiming benchmark acceptance.",
         "reviewer": "codex-d3d12-cli-storage/2026-10-21"
       },
@@ -4450,7 +4450,7 @@
       },
       "src/backend/d3d12/d3d12_kernel_buffers.zig": {
         "decision": "Keep",
-        "moduleSha256": "eb0a8a4330b6252541a8a3aa88ba6ded9243fbe33b336238b22b5c3e5fa35e69",
+        "moduleSha256": "dcc6877b32ea23cbb1ad855f29320791ac48bc3f974576eef048b3c23c5e2dcf",
         "reason": "Keep: cohesive command-handle storage lifecycle owns bounded allocation, exact zero initialization, descriptor identity and checked GPU readback; runtime and command consumers share its validation.",
         "reviewer": "codex-d3d12-cli-storage/2026-10-21"
       }

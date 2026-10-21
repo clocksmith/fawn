@@ -27,7 +27,7 @@ def main():
     runtime = args.runtime.resolve()
     receipt = {"runtimeSha256": digest(runtime), "scope": "bounded D3D12 correctness only", "runs": []}
 
-    def run(label, commands, statuses, oracles=0):
+    def run(label, commands, statuses, oracles=0, submissions=None):
         if isinstance(commands, Path):
             command_file = commands
         else:
@@ -49,13 +49,14 @@ def main():
         trace = json.loads(meta.read_text()) if meta.exists() else {}
         events = [json.loads(line) for line in rows.read_text().splitlines()] if rows.exists() else []
         actual = [event.get("executionStatus") for event in events]
+        expected_submissions = submissions or [1 if status == "ok" else 0 for status in statuses]
         accepted = (result.returncode == 0 and actual == statuses
                     and trace.get("backendId") == "doe_d3d12"
                     and trace.get("fallbackUsed") is False
                     and trace.get("outputOracleMatchedCount") == oracles
                     and trace.get("outputOracleFailedCount") == 0
-                    and all(event.get("executionSubmitCount") == (1 if status == "ok" else 0)
-                            for event, status in zip(events, statuses)))
+                    and all(event.get("executionSubmitCount") == count
+                            for event, count in zip(events, expected_submissions)))
         receipt["runs"].append({"label": label, "command": command,
                                 "commandsSha256": digest(command_file), "exitCode": result.returncode,
                                 "accepted": accepted, "statuses": actual, "trace": trace})
@@ -78,9 +79,10 @@ def main():
                 "bindings": [{"binding": 0, "group": 0, "kind": "buffer", "buffer_type": "storage",
                               "resource_handle": handle, "buffer_size": 32, "visibility": "compute"}]}
 
-    def oracle(command, multiplier):
+    def oracle(command, multiplier=1, values=None):
         result = copy.deepcopy(command)
-        expected = struct.pack("<8I", *(multiplier * (i + 1) for i in range(8)))
+        words = values if values is not None else [multiplier * (i + 1) for i in range(8)]
+        expected = struct.pack(f"<{len(words)}I", *words)
         result["output_oracle"] = {"schema_version": 2, "reference_class": "independent_v1", "kind": "sha256_exact_v1", "scope": "command_graph",
                                    "initialization": "zero_fill_v1", "binding_group": 0, "binding": 0,
                                    "dispatch_count": command["repeat"], "expected_sha256": hashlib.sha256(expected).hexdigest(),
@@ -101,6 +103,25 @@ def main():
     run("rejected-dispatch-recovery", [dispatch(inc), oversized, dispatch(inc)], ["ok", "unsupported", "ok"])
     fixed = shader("fixed-too-large", "values[gid.x] = 1u;", length=", 16")
     run("rejected-fixed-extent-recovery", [dispatch(inc), dispatch(fixed), dispatch(inc)], ["ok", "error", "ok"])
+    def write(words, offset=0, handle=7, size=32):
+        return {"kind": "buffer_write", "handle": handle, "offset": offset, "buffer_size": size, "data": words}
+
+    initial = [5, 11, 13, 19, 23, 29, 31, 37]
+    first = [value + 3 * (i + 1) for i, value in enumerate(initial)]
+    second = first.copy()
+    second[2:4] = [99, 101]
+    second = [value + i + 1 for i, value in enumerate(second)]
+    seeded = [write(initial), oracle(dispatch(inc, repeat=3), values=first),
+              write([99, 101], offset=8), oracle(dispatch(inc), values=second)]
+    run("nonzero-seed-partial-update", seeded, ["ok"] * 4, 2)
+    identity = shader("identity", "values[gid.x] = values[gid.x] + 0u;")
+    large = [(i * 17 + 3) & 0xffffffff for i in range(16386)]
+    check = dispatch(identity)
+    check["bindings"][0]["buffer_size"] = len(large) * 4
+    run("chunked-nonzero-write", [write(large, size=len(large) * 4), oracle(check, values=large)],
+        ["ok", "ok"], 1, submissions=[2, 1])
+    run("write-created-buffer", [write(initial, handle=99)], ["ok"], submissions=[2])
+    run("write-range-recovery", [write(initial), write([99, 100], offset=28), dispatch(inc)], ["ok", "error", "ok"])
     print("Physical CLI storage acceptance complete; no paired speed claim.", flush=True)
 
 
