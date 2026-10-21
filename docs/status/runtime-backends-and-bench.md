@@ -21,6 +21,10 @@ build prerequisites and provider-ownership acceptance remain separate blockers
 for the [browser lane](../../browser/chromium/acceptance.md). No Dawn speed win
 or Fawn browser qualification follows from these native fixtures.
 
+The [indexed workgroup atomic boundary](../../runtime/zig/README.md#windows-indexed-workgroup-atomics)
+adds native signed/unsigned load/store and captured-index correctness. Other
+atomic forms and full compute parity remain unverified.
+
 ## Windows benchmark parity boundary
 
 The [backend catalog](../../bench/workloads/metadata/backend-workload-catalog.json)
@@ -40,6 +44,15 @@ these native CLI workloads exercise different consumers.
 | Upload/readback | Exact output and completion checks; an upload-only command without an output oracle cannot qualify a complete application transfer |
 | Texture, render, indirect dispatch and mapping coverage | Preserve each existing workload contract, admit required features and output checks, then add the Windows catalog mapping through its generator |
 | CPU, memory and performance | Matched BEE adapter/driver, inputs, validation, cache, warmup and timing scopes; collect full operation wall, selected timing, process CPU/RAM and GPU memory with measurement overhead disclosed |
+
+The Doe CLI builds and passes its D3D12 preflight probe with the installed
+toolchain. The unchanged atomic shader now compiles through DXC, but its CLI
+workload remains blocked by missing storage-UAV root-signature/binding support
+in [native runtime compute](../../runtime/zig/src/backend/d3d12/d3d12_runtime_compute.zig).
+Its failed trace has no submission or matched output oracle; process exit alone
+is insufficient. A source-matched Windows Dawn control is also absent. Repair
+the native binding/output path and qualify both providers before paired timing;
+new build-tool or dependency installation requires the user's scoped approval.
 
 The current smoke configuration disables resource sampling and claimability;
 its receipts alone cannot support CPU/memory or release-speed claims. Freeze

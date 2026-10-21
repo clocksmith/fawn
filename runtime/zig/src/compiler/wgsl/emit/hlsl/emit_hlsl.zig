@@ -156,6 +156,7 @@ const Emitter = struct {
     }
 
     fn emit_global_helpers(self: *Emitter) EmitError!void {
+        try self.emitWorkgroupAtomicHelpers();
         for (self.module.globals.items) |global| {
             if ((global.addr_space orelse continue) != .storage) continue;
             if (global.binding == null) continue;
@@ -186,6 +187,78 @@ const Emitter = struct {
             }
         }
         try texture.emit_texture_global_helpers(self.module, self.buf, &self.pos);
+    }
+
+    // HLSL inout parameters copy their argument into function-local storage.
+    // Interlocked operations must instead name the actual groupshared object.
+    fn emitWorkgroupAtomicHelpers(self: *Emitter) EmitError!void {
+        for (self.module.globals.items) |global| {
+            if (global.addr_space != .workgroup) continue;
+            const arr = switch (self.module.types.get(global.ty)) {
+                .array => |value| value,
+                else => continue,
+            };
+            if (self.module.types.get(arr.elem) != .atomic) continue;
+            try self.write("\n");
+            try self.emit_type_only(arr.elem);
+            try self.write(" doe_atomicLoad_");
+            try self.write(global.name);
+            try self.write("(uint index) { ");
+            try self.emit_type_only(arr.elem);
+            try self.write(" result; InterlockedOr(");
+            try self.write(global.name);
+            try self.write("[index], 0, result); return result; }\n");
+            try self.write("void doe_atomicStore_");
+            try self.write(global.name);
+            try self.write("(uint index, ");
+            try self.emit_type_only(arr.elem);
+            try self.write(" next) { ");
+            try self.emit_type_only(arr.elem);
+            try self.write(" ignored; InterlockedExchange(");
+            try self.write(global.name);
+            try self.write("[index], next, ignored); }\n");
+        }
+    }
+
+    fn emitWorkgroupAtomicCall(self: *Emitter, function: ir.Function, call: anytype) EmitError!bool {
+        const is_load = std.mem.eql(u8, call.name, "atomicLoad");
+        const is_store = std.mem.eql(u8, call.name, "atomicStore");
+        if (!is_load and !is_store) return false;
+        if (call.args.len != @as(u32, if (is_load) 1 else 2)) return error.InvalidIr;
+        var target = function.expr_args.items[call.args.start];
+        while (true) switch (function.exprs.items[target].data) {
+            .address_of, .deref, .load => |inner| target = inner,
+            .local_ref => |local| target = ir_query.resolveConstLocalInitializer(&function, local) orelse return false,
+            else => break,
+        };
+        const index = switch (function.exprs.items[target].data) {
+            .index => |value| value,
+            else => return false,
+        };
+        const global_id = switch (function.exprs.items[index.base].data) {
+            .global_ref => |value| value,
+            else => return false,
+        };
+        const global = self.module.globals.items[global_id];
+        if (global.addr_space != .workgroup) return false;
+        const arr = switch (self.module.types.get(global.ty)) {
+            .array => |value| value,
+            else => return false,
+        };
+        if (self.module.types.get(arr.elem) != .atomic) return false;
+        try self.write(if (is_load) "doe_atomicLoad_" else "doe_atomicStore_");
+        try self.write(global.name);
+        try self.write("(");
+        if (self.is_captured_pointer_index(function, target)) {
+            try self.write("doe_pointer_index_");
+            try self.write_u32(target);
+        } else try self.emit_expr(function, index.index);
+        if (is_store) {
+            try self.write(", ");
+            try self.emit_expr(function, function.expr_args.items[call.args.start + 1]);
+        }
+        try self.write(")");
+        return true;
     }
 
     /// Generate arrayLength helpers for runtime-sized array fields inside
@@ -647,6 +720,7 @@ const Emitter = struct {
 
     fn emit_call(self: *Emitter, function: ir.Function, result_ty: ir.TypeId, call: anytype) EmitError!void {
         if (call.kind == .builtin) {
+            if (try self.emitWorkgroupAtomicCall(function, call)) return;
             try builtins.emit_builtin_call(self, function, result_ty, call.name, call.args);
             return;
         }

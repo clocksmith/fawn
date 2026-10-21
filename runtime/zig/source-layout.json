@@ -2212,9 +2212,9 @@
       },
       "src/compiler/wgsl/emit/hlsl/emit_hlsl.zig": {
         "decision": "Keep",
-        "moduleSha256": "8e837b001c7c25cee4317f51503e41fb677358c289ddb4b9914b884f2a433da6",
-        "reason": "Keep: packed integer admission and arithmetic stay compiler-owned; shared typed lowering preserves signedness and single evaluation. Source targets share an exact integer reduction, while Vulkan owns GLSL instruction selection.",
-        "reviewer": "codex-packed-integers/2026-10-11"
+        "moduleSha256": "1b721536dd322d6def9aa58f9c469dbe893a7bac1f040c3fa126c6c14582d32f",
+        "reason": "Keep: existing HLSL target emission owns groupshared identity. Indexed workgroup atomic load/store helpers reference the actual shared array, preserve signedness and captured pointer-index evaluation, and leave other target lowering and runtime scheduling unchanged.",
+        "reviewer": "codex-d3d12-atomic-identity/2026-10-21"
       },
       "src/compiler/wgsl/emit/hlsl/emit_hlsl_builtins.zig": {
         "decision": "Keep",
