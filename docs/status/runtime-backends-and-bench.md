@@ -22,8 +22,11 @@ for the [browser lane](../../browser/chromium/acceptance.md). No Dawn speed win
 or Fawn browser qualification follows from these native fixtures.
 
 The [indexed workgroup atomic boundary](../../runtime/zig/README.md#windows-indexed-workgroup-atomics)
-adds native signed/unsigned load/store and captured-index correctness. Other
-atomic forms and full compute parity remain unverified.
+adds native signed/unsigned load/store and captured-index correctness. The CLI
+fixture additionally checks indexed shared-array arithmetic, bitwise and exchange
+RMW operations with independent old/new outputs and a contention oracle.
+Compare-exchange, storage atomics, wider pointer shapes and full compute parity
+remain unverified; CLI acceptance does not widen the public-ABI fixture claim.
 
 ## Windows benchmark parity boundary
 

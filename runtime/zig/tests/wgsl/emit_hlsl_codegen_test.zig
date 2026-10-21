@@ -355,3 +355,39 @@ test "hlsl control flow: generated loop flag cannot shadow a source local" {
     try testing.expect(contains(hlsl, "bool __doe_loop_break_"));
     try testing.expect(!contains(hlsl, "bool doe_loop_break_"));
 }
+
+test "hlsl indexed workgroup RMW preserves shared identity and captured index" {
+    const source =
+        \\var<workgroup> signed_values: array<atomic<i32>, 8>;
+        \\var<workgroup> unsigned_values: array<atomic<u32>, 8>;
+        \\@compute @workgroup_size(8)
+        \\fn main(@builtin(local_invocation_index) tid: u32) {
+        \\    var index = tid;
+        \\    let pointer = &signed_values[index];
+        \\    index = 0u;
+        \\    let a = atomicAdd(pointer, -3);
+        \\    let b = atomicSub(pointer, 2);
+        \\    let c = atomicMin(pointer, -7);
+        \\    let d = atomicMax(pointer, 5);
+        \\    let e = atomicAnd(&unsigned_values[tid], 15u);
+        \\    let f = atomicOr(&unsigned_values[tid], 16u);
+        \\    let g = atomicXor(&unsigned_values[tid], 3u);
+        \\    let h = atomicExchange(&unsigned_values[tid], 9u);
+        \\}
+    ;
+    var out: [MAX_HLSL_OUTPUT]u8 = undefined;
+    const len = try translateToHlsl(allocator, source, &out);
+    const hlsl = out[0..len];
+    try testing.expect(contains(hlsl, "InterlockedAdd(signed_values[index], next, result)"));
+    try testing.expect(contains(hlsl, "InterlockedAdd(signed_values[index], 0 - next, result)"));
+    try testing.expect(contains(hlsl, "InterlockedMin(signed_values[index], next, result)"));
+    try testing.expect(contains(hlsl, "InterlockedMax(signed_values[index], next, result)"));
+    try testing.expect(contains(hlsl, "InterlockedAnd(unsigned_values[index], next, result)"));
+    try testing.expect(contains(hlsl, "InterlockedOr(unsigned_values[index], next, result)"));
+    try testing.expect(contains(hlsl, "InterlockedXor(unsigned_values[index], next, result)"));
+    try testing.expect(contains(hlsl, "InterlockedExchange(unsigned_values[index], next, result)"));
+    try testing.expect(contains(hlsl, "int __doe_atomicAdd_signed_values(uint index, int next)"));
+    try testing.expect(contains(hlsl, "uint __doe_atomicExchange_unsigned_values(uint index, uint next)"));
+    try testing.expect(contains(hlsl, "__doe_atomicAdd_signed_values(doe_pointer_index_"));
+    try testing.expect(!contains(hlsl, "doe_atomicAdd(signed_values["));
+}
