@@ -144,8 +144,10 @@ pub fn validate(device: *objects.DoeDevice, dispatch: Dispatch) !void {
         if (offset % dc.MIN_STORAGE_BUFFER_OFFSET_ALIGNMENT != 0 or offset > buffer.size or
             size < slot.minimum_size or size > buffer.size - offset or size % 4 != 0 or
             size / 4 > std.math.maxInt(u32)) return error.UnsupportedBindingRange;
-        const extent = if (slot.runtime_array) size else slot.minimum_size;
-        if (@as(u64, dispatch.x) * pipeline.wg_x > extent / 4) return error.UnsupportedDispatchDimensions;
+        // Runtime-array stores use the compiler's bound-view write guards.
+        // Keep fixed-array admission bounded and validate any elided guards'
+        // dispatch obligations below; padding is not permission to bypass proofs.
+        if (!slot.runtime_array and @as(u64, dispatch.x) * pipeline.wg_x > slot.minimum_size / 4) return error.UnsupportedDispatchDimensions;
     }
     try preconditions.validate_bind_groups(pipeline.dispatch_preconditions, &.{}, &.{group}, .{ dispatch.x, dispatch.y, dispatch.z }, .{ pipeline.wg_x, 1, 1 });
 }

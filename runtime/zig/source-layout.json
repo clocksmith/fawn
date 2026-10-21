@@ -4444,7 +4444,7 @@
       },
       "src/native/compute/doe_compute_d3d12.zig": {
         "decision": "Keep",
-        "moduleSha256": "46f2df390b95c4b40c84b2440480a0abc24639b41f0e25742388c844c23f842b",
+        "moduleSha256": "58e9f170cdbdf25d4862d6a2286c820edbd78d1a8395e41d0c120c89f8aa126c",
         "reason": "Keep: bounded D3D12 integration derives automatic single-storage-binding layouts only after existing analyzed-IR admission, using authoritative shader buffer reflection and existing native layout constructors/releases. Per-pipeline distinct layout identity and pipeline-owned retention reuse GetBindGroupLayout and dispatch validation. Explicit layout, descriptors, shader compiler and queue ownership remain unchanged.",
         "reviewer": "codex-d3d12-auto-layout/2026-10-19"
       },
