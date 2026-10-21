@@ -2260,7 +2260,7 @@
       },
       "src/compiler/wgsl/emit/msl/emit_msl_ir_builtins.zig": {
         "decision": "Keep",
-        "moduleSha256": "8b471795851991e1368cf07887b807817c13bfd508eec55433fe48821c2f766d",
+        "moduleSha256": "39d875e5d1d9b9fddccc5fc3999bd04c7329e06cc32ea889f7ac52278d2b7260",
         "reason": "Keep: packed integer admission and arithmetic stay compiler-owned; shared typed lowering preserves signedness and single evaluation. Source targets share an exact integer reduction, while Vulkan owns GLSL instruction selection.",
         "reviewer": "codex-packed-integers/2026-10-11"
       },
@@ -2302,7 +2302,7 @@
       },
       "src/compiler/wgsl/emit/msl/emit_msl_workgroup_zero.zig": {
         "decision": "Keep",
-        "moduleSha256": "83ed32f5e7c3d6552b7b25e84190b715671a244c9c5760f68073d409c49bc683",
+        "moduleSha256": "8ca06f113379a44cb24c4ac2029815e68f485dd5e9e0b71942cee46a896c5989",
         "reason": "Keep: workgroup storage analysis preserves helper-referenced globals instead of removing or changing their address space.",
         "reviewer": "codex-qwen-metal-correctness/2026-10-15"
       },

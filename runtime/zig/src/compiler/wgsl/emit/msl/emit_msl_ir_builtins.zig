@@ -112,35 +112,35 @@ pub fn emit_call(self: anytype, function: ir.Function, result_ty: ir.TypeId, cal
             return;
         }
         if (std.mem.eql(u8, call.name, "atomicAdd")) {
-            try emit_atomic_fetch_explicit(self, function, call, "atomic_fetch_add_explicit");
+            try emit_atomic_fetch_explicit(self, function, result_ty, call, "atomic_fetch_add_explicit");
             return;
         }
         if (std.mem.eql(u8, call.name, "atomicSub")) {
-            try emit_atomic_fetch_explicit(self, function, call, "atomic_fetch_sub_explicit");
+            try emit_atomic_fetch_explicit(self, function, result_ty, call, "atomic_fetch_sub_explicit");
             return;
         }
         if (std.mem.eql(u8, call.name, "atomicMax")) {
-            try emit_atomic_fetch_explicit(self, function, call, "atomic_fetch_max_explicit");
+            try emit_atomic_fetch_explicit(self, function, result_ty, call, "atomic_fetch_max_explicit");
             return;
         }
         if (std.mem.eql(u8, call.name, "atomicMin")) {
-            try emit_atomic_fetch_explicit(self, function, call, "atomic_fetch_min_explicit");
+            try emit_atomic_fetch_explicit(self, function, result_ty, call, "atomic_fetch_min_explicit");
             return;
         }
         if (std.mem.eql(u8, call.name, "atomicAnd")) {
-            try emit_atomic_fetch_explicit(self, function, call, "atomic_fetch_and_explicit");
+            try emit_atomic_fetch_explicit(self, function, result_ty, call, "atomic_fetch_and_explicit");
             return;
         }
         if (std.mem.eql(u8, call.name, "atomicOr")) {
-            try emit_atomic_fetch_explicit(self, function, call, "atomic_fetch_or_explicit");
+            try emit_atomic_fetch_explicit(self, function, result_ty, call, "atomic_fetch_or_explicit");
             return;
         }
         if (std.mem.eql(u8, call.name, "atomicXor")) {
-            try emit_atomic_fetch_explicit(self, function, call, "atomic_fetch_xor_explicit");
+            try emit_atomic_fetch_explicit(self, function, result_ty, call, "atomic_fetch_xor_explicit");
             return;
         }
         if (std.mem.eql(u8, call.name, "atomicExchange")) {
-            try emit_atomic_fetch_explicit(self, function, call, "atomic_exchange_explicit");
+            try emit_atomic_fetch_explicit(self, function, result_ty, call, "atomic_exchange_explicit");
             return;
         }
         if (std.mem.eql(u8, call.name, "atomicCompareExchangeWeak")) {
@@ -440,14 +440,46 @@ fn emit_concrete_numeric_builtin(
     try self.write(")");
 }
 
-fn emit_atomic_fetch_explicit(self: anytype, function: ir.Function, call: @FieldType(ir.Expr, "call"), name: []const u8) EmitError!void {
+fn atomicTargetIsWorkgroup(module: *const ir.Module, function: ir.Function, expr_id: ir.ExprId) bool {
+    var current = expr_id;
+    while (true) {
+        const expr = function.exprs.items[current];
+        switch (module.types.get(expr.ty)) {
+            .ref => |ref| return ref.addr_space == .workgroup,
+            else => {},
+        }
+        switch (expr.data) {
+            .global_ref => |index| return module.globals.items[index].addr_space == .workgroup,
+            .member => |member| current = member.base,
+            .index => |index| current = index.base,
+            .load, .address_of, .deref => |inner| current = inner,
+            else => return false,
+        }
+    }
+}
+
+fn emit_atomic_fetch_explicit(self: anytype, function: ir.Function, result_ty: ir.TypeId, call: @FieldType(ir.Expr, "call"), name: []const u8) EmitError!void {
     if (call.args.len != 2) return error.InvalidIr;
+    const materialize = atomicTargetIsWorkgroup(self.module, function, function.expr_args.items[call.args.start]);
+    // Preserve returned threadgroup atomic values across dependent RMWs. Apple
+    // M3 execution can lose this dependency without a volatile local round trip.
+    // This changes neither atomic ordering nor operand evaluation count.
+    if (materialize) {
+        try self.write("({volatile ");
+        try self.emit_type(result_ty);
+        try self.write(" __doe_atomic_result = ");
+    }
     try self.write(name);
     try self.write("(&(");
     try self.emit_expr(function, function.expr_args.items[call.args.start]);
     try self.write("), ");
     try self.emit_expr(function, function.expr_args.items[call.args.start + 1]);
     try self.write(", memory_order_relaxed)");
+    if (materialize) {
+        try self.write("; static_cast<");
+        try self.emit_type(result_ty);
+        try self.write(">(__doe_atomic_result);})");
+    }
 }
 
 pub fn emit_expr_coerced(self: anytype, function: ir.Function, expr_id: ir.ExprId, target_ty: ir.TypeId) EmitError!void {

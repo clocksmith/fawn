@@ -177,7 +177,9 @@ fn exprStoresOrPassesGlobalRef(
     return switch (expr_node.data) {
         .bool_lit, .int_lit, .float_lit, .param_ref, .local_ref, .global_ref => false,
         .load => |inner| exprContainsEscapingGlobalRef(module, function, inner, global_index),
-        .address_of, .deref => |inner| exprContainsEscapingGlobalRef(module, function, inner, global_index),
+        .address_of => |inner| refRootGlobal(function, inner) == global_index or
+            exprContainsEscapingGlobalRef(module, function, inner, global_index),
+        .deref => |inner| exprContainsEscapingGlobalRef(module, function, inner, global_index),
         .unary => |unary| exprContainsEscapingGlobalRef(module, function, unary.operand, global_index),
         .binary => |binary| exprContainsEscapingGlobalRef(module, function, binary.lhs, global_index) or
             exprContainsEscapingGlobalRef(module, function, binary.rhs, global_index),
@@ -219,7 +221,9 @@ fn exprContainsEscapingGlobalRef(
     return switch (expr_node.data) {
         .bool_lit, .int_lit, .float_lit, .param_ref, .local_ref, .global_ref => false,
         .load => |inner| exprContainsEscapingGlobalRef(module, function, inner, global_index),
-        .address_of, .deref => |inner| exprContainsEscapingGlobalRef(module, function, inner, global_index),
+        .address_of => |inner| refRootGlobal(function, inner) == global_index or
+            exprContainsEscapingGlobalRef(module, function, inner, global_index),
+        .deref => |inner| exprContainsEscapingGlobalRef(module, function, inner, global_index),
         .unary => |unary| exprContainsEscapingGlobalRef(module, function, unary.operand, global_index),
         .binary => |binary| exprContainsEscapingGlobalRef(module, function, binary.lhs, global_index) or
             exprContainsEscapingGlobalRef(module, function, binary.rhs, global_index),
