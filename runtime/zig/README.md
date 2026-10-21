@@ -211,6 +211,11 @@ are released before completion. `multi-alias` and `multi-offset` reject an
 invalid batch without changing the prefilled readback; `multi-sparse` retains
 the sparse public-layout rejection. `multi-recover` rejects a wrong-access
 explicit layout, then executes a valid automatic layout on the same device.
+`multi-dynamic-layout` rejects unsupported dynamic-offset layout declarations and
+then executes a valid automatic layout. `multi-dynamic-offsets` checks that a
+nonzero dynamic-offset count invalidates recording with a validation error and
+preserves the prefilled readback. D3D12 dynamic offsets remain unsupported; they
+must not be silently discarded.
 These are public-ABI correctness checks, not additions to the matched benchmark
 population. The generated backend workload catalog and comparison gates remain
 unchanged; CLI qualification does not transfer to this public path.

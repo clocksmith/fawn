@@ -72,7 +72,7 @@ pub fn createPipeline(device: *objects.DoeDevice, shader: *objects.DoeShaderModu
     for (entries) |item| {
         if (item.binding >= count or seen[item.binding] or item.binding_array_size != 0) return error.UnsupportedLayout;
         const expected = if (storage[item.binding].read_only) binding.WGPUBufferBindingType_ReadOnlyStorage else binding.WGPUBufferBindingType_Storage;
-        if (item.buffer_binding_type != expected) return error.UnsupportedLayout;
+        if (item.buffer_binding_type != expected or item.buffer_has_dynamic_offset) return error.UnsupportedLayout;
         seen[item.binding] = true;
     }
     const text = try alloc.alloc(u8, hlsl.MAX_OUTPUT);
