@@ -792,6 +792,10 @@ uint64_t metal_bridge_device_registry_id(MetalHandle device) {
     (void)device;
     return 0;
 }
+uint32_t metal_bridge_device_has_unified_memory(MetalHandle device) {
+    (void)device;
+    return 0;
+}
 uint32_t metal_bridge_device_is_low_power(MetalHandle device) {
     (void)device;
     return 0;

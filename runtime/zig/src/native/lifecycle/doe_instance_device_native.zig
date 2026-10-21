@@ -302,14 +302,27 @@ fn create_adapter_for_instance(inst: ?*anyopaque) CreateAdapterError!*DoeAdapter
         .metal => {},
     }
 
-    const device = metal_bridge_create_default_device();
-    if (device == null) return error.AdapterUnavailable;
+    const device = metal_bridge_create_default_device() orelse return error.AdapterUnavailable;
     const adapter = make(DoeAdapter) orelse {
         metal_bridge_release(device);
         return error.AdapterAllocationFailed;
     };
     if (retained_instance) |instance_ref| instance_add_ref(instance_ref);
     adapter.* = .{ .instance = retained_instance, .mtl_device = device };
+    // Query only the selected retained device. Metal need not expose PCI IDs.
+    const identity = @import("../../runtime/device/multi_adapter.zig").adapterInfoForMetalDevice(device);
+    adapter.device_name_len = @min(identity.name_len, adapter.device_name.len);
+    @memcpy(adapter.device_name[0..adapter.device_name_len], identity.name[0..adapter.device_name_len]);
+    const WGPU_ADAPTER_TYPE_DISCRETE_GPU: u32 = 1;
+    const WGPU_ADAPTER_TYPE_INTEGRATED_GPU: u32 = 2;
+    const WGPU_ADAPTER_TYPE_CPU: u32 = 3;
+    const WGPU_ADAPTER_TYPE_UNKNOWN: u32 = 4;
+    adapter.adapter_type = switch (identity.adapter_type) {
+        .discrete_gpu => WGPU_ADAPTER_TYPE_DISCRETE_GPU,
+        .integrated_gpu => WGPU_ADAPTER_TYPE_INTEGRATED_GPU,
+        .cpu => WGPU_ADAPTER_TYPE_CPU,
+        .unknown => WGPU_ADAPTER_TYPE_UNKNOWN,
+    };
     return adapter;
 }
 

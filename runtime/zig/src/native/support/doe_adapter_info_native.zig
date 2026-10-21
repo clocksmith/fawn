@@ -3,6 +3,7 @@
 const std = @import("std");
 const native_types = @import("doe_native_object_types.zig");
 const native_helpers = @import("doe_native_object_helpers.zig");
+const multi_adapter = @import("../../runtime/device/multi_adapter.zig");
 const resource_ops = @import("../../backend/dropin_resource_ops.zig");
 const bridge = resource_ops.metal_bridge;
 
@@ -136,4 +137,18 @@ pub export fn doeNativeAdapterGetPciIdentity(
     out_vendor_id.* = adapter.vendor_id;
     out_device_id.* = adapter.device_id;
     out_driver_version.* = adapter.driver_version;
+}
+
+// Preserve the existing ABI while validating the authoritative native object.
+// The result is copied metadata only; no Metal handle or ownership escapes.
+pub export fn doeNativeAdapterGetInfoStruct(
+    adapter_raw: ?*anyopaque,
+    out: ?*multi_adapter.DoeAdapterInfo,
+) callconv(.c) u32 {
+    const info = out orelse return 0;
+    const adapter = cast(DoeAdapter, adapter_raw) orelse return 0;
+    if (adapter.backend != .metal) return 0;
+    const device = adapter.mtl_device orelse return 0;
+    info.* = multi_adapter.adapterInfoForMetalDevice(device);
+    return 1;
 }

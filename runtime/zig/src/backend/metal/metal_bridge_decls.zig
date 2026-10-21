@@ -139,6 +139,7 @@ pub extern fn metal_bridge_enumerate_devices(
     out_count: *u32,
 ) callconv(.c) void;
 pub extern fn metal_bridge_device_is_low_power(device: ?*anyopaque) callconv(.c) u32;
+pub extern fn metal_bridge_device_has_unified_memory(device: ?*anyopaque) callconv(.c) u32;
 pub extern fn metal_bridge_device_is_removable(device: ?*anyopaque) callconv(.c) u32;
 pub extern fn metal_bridge_binary_archive_create(
     device: ?*anyopaque,

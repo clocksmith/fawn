@@ -7,6 +7,25 @@
 
 const std = @import("std");
 
+test "selected adapter identity uses retained names without inventing numeric IDs" {
+    const objects = @import("../../src/native/support/doe_native_object_types.zig");
+    const info_core = @import("../../src/dropin/wgpu_dropin_ext_a_core.zig");
+    const backend = @import("../../src/contracts/backend.zig");
+    const name = "Physical adapter identity sentinel";
+    inline for (.{ backend.NativeBackendKind.metal, .vulkan, .d3d12 }) |kind| {
+        var adapter: objects.DoeAdapter = .{ .backend = kind };
+        @memcpy(adapter.device_name[0..name.len], name);
+        adapter.device_name_len = name.len;
+        var info = info_core.p1cap.initAdapterInfo(null);
+        try std.testing.expectEqual(info_core.abi_core.WGPUStatus_Success, info_core.fill_adapter_info_struct(@ptrCast(&adapter), &info));
+        try std.testing.expectEqualStrings(name, info.device.data[0..info.device.length]);
+        try std.testing.expectEqualStrings(name, info.description.data[0..info.description.length]);
+        // Numeric identity is unavailable unless a backend actually discovers it.
+        try std.testing.expectEqual(@as(u32, 0), info.vendorID);
+        try std.testing.expectEqual(@as(u32, 0), info.deviceID);
+    }
+}
+
 test "D3D12 selected adapter identity survives application adapter release" {
     if (@import("builtin").os.tag != .windows) return error.SkipZigTest;
     const lifecycle = @import("../../src/native/lifecycle/doe_instance_device_native.zig");
@@ -1494,4 +1513,67 @@ fn attachmentRecordingFailures(allocator: std.mem.Allocator) !void {
 
 test "native attachment rejection and recording allocation failures release every retained reference" {
     try std.testing.checkAllAllocationFailures(std.testing.allocator, attachmentRecordingFailures, .{});
+}
+
+test "selected adapter identity rejects invalid and non-Metal native handles" {
+    const objects = @import("../../src/native/support/doe_native_object_types.zig");
+    const info_native = @import("../../src/native/support/doe_adapter_info_native.zig");
+    const multi = @import("../../src/runtime/device/multi_adapter.zig");
+    var output: multi.DoeAdapterInfo = .{ .registry_id = 42 };
+    var invalid: objects.DoeAdapter = .{ .magic = 0 };
+    var absent: objects.DoeAdapter = .{};
+    var foreign: objects.DoeAdapter = .{ .backend = .vulkan, .mtl_device = @ptrCast(&invalid) };
+    try std.testing.expectEqual(@as(u32, 0), info_native.doeNativeAdapterGetInfoStruct(null, &output));
+    try std.testing.expectEqual(@as(u32, 0), info_native.doeNativeAdapterGetInfoStruct(&invalid, &output));
+    try std.testing.expectEqual(@as(u32, 0), info_native.doeNativeAdapterGetInfoStruct(&absent, &output));
+    try std.testing.expectEqual(@as(u32, 0), info_native.doeNativeAdapterGetInfoStruct(&foreign, &output));
+    try std.testing.expectEqual(@as(u32, 0), info_native.doeNativeAdapterGetInfoStruct(&absent, null));
+    try std.testing.expectEqual(@as(u64, 42), output.registry_id);
+}
+
+test "Metal selected adapter identity stays bound to the retained device" {
+    if (@import("builtin").os.tag != .macos) return error.SkipZigTest;
+    const objects = @import("../../src/native/support/doe_native_object_types.zig");
+    const helpers = @import("../../src/native/support/doe_native_object_helpers.zig");
+    const info_native = @import("../../src/native/support/doe_adapter_info_native.zig");
+    const info_core = @import("../../src/dropin/wgpu_dropin_ext_a_core.zig");
+    const multi = @import("../../src/runtime/device/multi_adapter.zig");
+    const bridge = @import("../../src/backend/dropin_resource_ops.zig").metal_bridge;
+    const Reply = struct {
+        fn ready(status: u32, adapter: ?*anyopaque, _: types.WGPUStringView, userdata: ?*anyopaque, _: ?*anyopaque) callconv(.c) void {
+            if (status == 1) @as(*?*anyopaque, @ptrCast(@alignCast(userdata.?))).* = adapter;
+        }
+    };
+    const instance = instance_device.doeNativeCreateInstance(null) orelse return error.InstanceUnavailable;
+    defer instance_device.doeNativeInstanceRelease(instance);
+    var adapter_raw: ?*anyopaque = null;
+    _ = instance_device.doeNativeRequestAdapterFlat(instance, null, 3, Reply.ready, &adapter_raw, null);
+    const adapter = helpers.cast(objects.DoeAdapter, adapter_raw) orelse return error.AdapterUnavailable;
+    defer instance_device.doeNativeAdapterRelease(adapter_raw);
+    try std.testing.expectEqual(.metal, adapter.backend);
+    const selected = adapter.mtl_device orelse return error.AdapterUnavailable;
+    var info: multi.DoeAdapterInfo = .{};
+    try std.testing.expectEqual(@as(u32, 1), info_native.doeNativeAdapterGetInfoStruct(adapter_raw, &info));
+    try std.testing.expect(info.registry_id != 0);
+    try std.testing.expectEqual(bridge.metal_bridge_device_registry_id(selected), info.registry_id);
+    try std.testing.expectEqual(@as(?*anyopaque, null), info.mtl_device);
+    const unified = bridge.metal_bridge_device_has_unified_memory(selected) != 0;
+    try std.testing.expectEqual(if (unified) multi.AdapterType.integrated_gpu else .discrete_gpu, info.adapter_type);
+    try std.testing.expectEqual(bridge.metal_bridge_device_is_low_power(selected) != 0, info.is_low_power);
+    var public = info_core.p1cap.initAdapterInfo(null);
+    try std.testing.expectEqual(info_core.abi_core.WGPUStatus_Success, info_core.fill_adapter_info_struct(@ptrCast(adapter_raw), &public));
+    try std.testing.expectEqualStrings(info.name[0..info.name_len], public.device.data[0..public.device.length]);
+    try std.testing.expectEqual(@as(u32, if (unified) 2 else 1), public.adapterType);
+    try std.testing.expectEqual(@as(u32, 0), public.deviceID);
+    const device_raw = instance_device.doeNativeAdapterCreateDevice(adapter_raw, null) orelse return error.DeviceUnavailable;
+    defer instance_device.doeNativeDeviceRelease(device_raw);
+    const device = helpers.cast(objects.DoeDevice, device_raw).?;
+    try std.testing.expectEqual(selected, device.mtl_device);
+    try std.testing.expectEqual(adapter, device.adapter.?);
+    instance_device.doeNativeAdapterRelease(adapter_raw);
+    adapter_raw = null;
+    var retained: multi.DoeAdapterInfo = .{};
+    try std.testing.expectEqual(@as(u32, 1), info_native.doeNativeAdapterGetInfoStruct(device.adapter, &retained));
+    try std.testing.expectEqual(info.registry_id, retained.registry_id);
+    try std.testing.expectEqualStrings(info.name[0..info.name_len], retained.name[0..retained.name_len]);
 }

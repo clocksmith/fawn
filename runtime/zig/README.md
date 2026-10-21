@@ -87,6 +87,20 @@ contract tests from physical Metal execution.
   success.
 - Synthetic backend state and hidden fallback are forbidden.
 
+## Metal adapter identity
+
+The native adapter owns its selected retained Metal device. Public adapter info
+uses that device's name and unified-memory classification; low-power remains a
+separate selection trait. Unavailable PCI-style vendor and device IDs stay zero.
+They must not be fabricated or used as the sole physical-admission test on Metal.
+
+The existing `doeNativeAdapterGetInfoStruct` export validates the native adapter
+and copies metadata from its selected device, without exporting a Metal handle.
+Its registry ID identifies the current IORegistry device, not a persistent ID
+across reboots. Physical qualification must bind it to independent Metal
+enumeration and preserve the workload's output and lifecycle checks. Metadata
+projection tests alone do not qualify GPU execution.
+
 ## Build tiers
 
 `compute`, `headless`, and `full` tiers expose increasing WebGPU surface area.

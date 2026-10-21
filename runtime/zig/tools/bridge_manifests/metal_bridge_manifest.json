@@ -105,6 +105,7 @@
         "metal_bridge_retain_device",
         "metal_bridge_enumerate_devices",
         "metal_bridge_device_is_low_power",
+        "metal_bridge_device_has_unified_memory",
         "metal_bridge_device_is_removable",
         "metal_bridge_device_max_buffer_length",
         "metal_bridge_binary_archive_create",

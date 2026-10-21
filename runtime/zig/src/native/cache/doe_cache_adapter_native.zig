@@ -29,6 +29,6 @@ pub const doeNativeAdapterListGetInfo = multi_adapter.doeNativeAdapterListGetInf
 pub const doeNativeAdapterListRetainDevice = multi_adapter.doeNativeAdapterListRetainDevice;
 pub const doeNativeAdapterListRelease = multi_adapter.doeNativeAdapterListRelease;
 pub const doeNativeInstanceSelectAdapter = multi_adapter.doeNativeInstanceSelectAdapter;
-pub const doeNativeAdapterGetInfoStruct = multi_adapter.doeNativeAdapterGetInfoStruct;
+pub const doeNativeAdapterGetInfoStruct = @import("../support/doe_adapter_info_native.zig").doeNativeAdapterGetInfoStruct;
 pub const doeNativeDeviceRegisterLostCallback = multi_adapter.doeNativeDeviceRegisterLostCallback;
 pub const doeNativeDeviceNotifyLost = multi_adapter.doeNativeDeviceNotifyLost;

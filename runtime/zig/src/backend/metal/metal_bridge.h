@@ -788,6 +788,7 @@ void metal_bridge_enumerate_devices(
 // Device property queries (cheap; no allocation).
 uint64_t metal_bridge_device_registry_id(MetalHandle device);
 uint32_t metal_bridge_device_is_low_power(MetalHandle device);
+uint32_t metal_bridge_device_has_unified_memory(MetalHandle device);
 uint32_t metal_bridge_device_is_removable(MetalHandle device);
 // Write UTF-8 device name (NUL-terminated, truncated to cap) into buf.
 void     metal_bridge_device_name(MetalHandle device, char* buf, size_t cap);

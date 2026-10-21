@@ -1018,9 +1018,9 @@
       },
       "src/backend/metal/metal_bridge_decls.zig": {
         "decision": "Keep",
-        "moduleSha256": "9c757e3011d8d0d66059f33fe2f2aadb45f8255023be10ab48c339c6a5e7f198",
-        "reason": "Declare the private Metal C boundary; native notification, encoding, resource and copy semantics stay in the backend bridge and typed consumers.",
-        "reviewer": "codex-metal-notification/2026-09-20"
+        "moduleSha256": "21fce900a44abc8cf2467e80187537aad099009b81bb83d9fc0b08215b2b67a0",
+        "reason": "Keep: shared Metal device metadata projection is used by enumeration and the authoritative native adapter owner. Typed native validation replaces a stale mirrored object layout; unified memory determines classification while low-power remains an independent selection trait.",
+        "reviewer": "codex-bee-doe/2026-10-21"
       },
       "src/backend/metal/metal_buffer_pool.zig": {
         "decision": "Keep",
@@ -3226,9 +3226,9 @@
       },
       "src/dropin/wgpu_dropin_ext_a_core.zig": {
         "decision": "Keep",
-        "moduleSha256": "e071af1670dbe4098fc896472934dc46737eb64c71afc39ed3c35a8eea67c74f",
-        "reason": "Keep: ABI capability projection reads adapter-owned identity. D3D12 device name, vendor/device IDs and software CPU classification come from its retained selection; no separate enumeration or fabricated hardware identity is introduced.",
-        "reviewer": "codex-windows-identity/2026-10-19"
+        "moduleSha256": "e7a3835c7537de9e60439520a817446eab436f9d117f8b25ad18c27deb605cfc",
+        "reason": "Keep: selected Metal adapter name is copied through the existing backend lifecycle seam into adapter-owned storage and projected by the shared ABI path. Numeric IDs remain unavailable unless discovered; no new enumeration, allocation or public API.",
+        "reviewer": "codex-bee-doe/2026-10-21"
       },
       "src/dropin/wgpu_dropin_ext_a_exports.zig": {
         "decision": "Keep",
@@ -3502,9 +3502,9 @@
       },
       "src/native/cache/doe_cache_adapter_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "076629dc88fdc08e4a67a8bbdea470d9e3ff044e4653386b9f9de940658a73db",
-        "reason": "Keep: reachable native implementation with a distinct named responsibility and no merge, elevation, recomposition, or deletion signal.",
-        "reviewer": "codex-recomposition-review/2026-08-08"
+        "moduleSha256": "97276cccf4285681f040f96b2651a12eb469b9916e131d9d2d26626428d29178",
+        "reason": "Keep: shared Metal device metadata projection is used by enumeration and the authoritative native adapter owner. Typed native validation replaces a stale mirrored object layout; unified memory determines classification while low-power remains an independent selection trait.",
+        "reviewer": "codex-bee-doe/2026-10-21"
       },
       "src/native/cache/doe_package_metal_pipeline_cache.zig": {
         "decision": "Keep",
@@ -3580,9 +3580,9 @@
       },
       "src/native/lifecycle/doe_instance_device_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "481bd29332d72a0d36b15bf133f1d8411db70d51453356511cecdc52efb287a4",
-        "reason": "Keep: native adapter owns one retained selected D3D12 device and copies identity from that device. Probe failure rejects adapter creation, device creation retains the same selection, and final adapter release drops its reference after device references finish.",
-        "reviewer": "codex-windows-identity/2026-10-19"
+        "moduleSha256": "93482a0c8cc3cd8e148e1e156d3e0fa89962c545329a9ecbc7d714b7bc6947ad",
+        "reason": "Keep: shared Metal device metadata projection is used by enumeration and the authoritative native adapter owner. Typed native validation replaces a stale mirrored object layout; unified memory determines classification while low-power remains an independent selection trait.",
+        "reviewer": "codex-bee-doe/2026-10-21"
       },
       "src/native/mod.zig": {
         "decision": "Keep",
@@ -3736,9 +3736,9 @@
       },
       "src/native/support/doe_adapter_info_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "c4bbce3c74437940c5b8620760fbbfd74a0285adca0e5244c05fb3eca2a2d1de",
-        "reason": "Keep: adapter-info native marshaling and ownership boundary.",
-        "reviewer": "codex-vulkan-adapter-provenance/2026-08-10"
+        "moduleSha256": "2516383a85518e0b1fb0c532b64fe0a2aa8f4753ddcae960ff00ca3b40fce8c1",
+        "reason": "Keep: shared Metal device metadata projection is used by enumeration and the authoritative native adapter owner. Typed native validation replaces a stale mirrored object layout; unified memory determines classification while low-power remains an independent selection trait.",
+        "reviewer": "codex-bee-doe/2026-10-21"
       },
       "src/native/support/doe_device_caps.zig": {
         "decision": "Keep",
@@ -3976,9 +3976,9 @@
       },
       "src/runtime/device/multi_adapter.zig": {
         "decision": "Keep",
-        "moduleSha256": "18830ff68888047c2e08f0cd273db2f5b50ee0e1f77b0d23050f0160fe83fbc5",
-        "reason": "Keep: reachable runtime implementation shared by 2 production consumers with no conflicting ownership signal.",
-        "reviewer": "codex-recomposition-review/2026-08-08"
+        "moduleSha256": "23c314eac5f90f17a1053f78bc2152f345ca6e7d4a2ac92eaf6462f4abc8b589",
+        "reason": "Keep: shared Metal device metadata projection is used by enumeration and the authoritative native adapter owner. Typed native validation replaces a stale mirrored object layout; unified memory determines classification while low-power remains an independent selection trait.",
+        "reviewer": "codex-bee-doe/2026-10-21"
       },
       "src/runtime/diagnostics/error_scope.zig": {
         "decision": "Keep",
