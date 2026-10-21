@@ -1,7 +1,7 @@
 // Windows public ABI compute oracle: runtime arrayLength over a 32-byte allocation, bounded dispatch.
 // zig cc -I vendor/webgpu-headers tests/d3d12_runtime_array_readback.c -o compute.exe
 // With DXC on process PATH: compute.exe <DLL>
-// Optional mode: short|rebind|fixture|float|int|repeat|reject|unsupported|recover
+// Optional mode: short|rebind|fixture|float|int|repeat|overdispatch|reject|unsupported|recover
 #include <windows.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -45,6 +45,7 @@ int main(int argc, char **argv) {
     const int floating = argc == 3 && strcmp(argv[2], "float") == 0;
     const int repeated = argc == 3 && strcmp(argv[2], "repeat") == 0;
     const int reject_dispatch = argc == 3 && strcmp(argv[2], "reject") == 0;
+    const int overdispatch = argc == 3 && strcmp(argv[2], "overdispatch") == 0;
     const int signed_integer = argc == 3 && strcmp(argv[2], "int") == 0;
     const int unsupported = argc == 3 && strcmp(argv[2], "unsupported") == 0;
     const int fixture = argc == 3 && strcmp(argv[2], "fixture") == 0;
@@ -224,7 +225,7 @@ int main(int argc, char **argv) {
     if (!pass) goto cleanup;
     ComputePassEncoderSetPipeline(pass,pipeline);
     ComputePassEncoderSetBindGroup(pass,0,group,0,NULL);
-    ComputePassEncoderDispatchWorkgroups(pass,reject_dispatch ? elements+1 : elements,1,1);
+    ComputePassEncoderDispatchWorkgroups(pass,reject_dispatch ? 65536u : overdispatch ? elements+1 : elements,1,1);
     if (repeated) ComputePassEncoderDispatchWorkgroups(pass,elements,1,1);
     if (rebind) {
         ComputePassEncoderSetBindGroup(pass,0,short_group,0,NULL);

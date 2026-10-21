@@ -39,6 +39,9 @@ static void scope_ready(WGPUPopErrorScopeStatus status, WGPUErrorType type,
 
 int main(int argc, char **argv) {
     if (argc != 2 && argc != 3) return 2;
+    const int guarded_tail = argc == 3 && strcmp(argv[2], "guarded-tail") == 0;
+    const int wide_tail = argc == 3 && strcmp(argv[2], "wide-tail") == 0;
+    const int overdispatch = argc == 3 && (strcmp(argv[2], "overdispatch") == 0 || strcmp(argv[2], "multi-view-tail") == 0);
     const int multi = argc == 3 && strncmp(argv[2], "multi", 5) == 0;
     const int view = multi && strncmp(argv[2], "multi-view", 10) == 0;
     const int view_whole = view && strcmp(argv[2], "multi-view-whole") == 0;
@@ -146,6 +149,8 @@ int main(int argc, char **argv) {
     const size_t storage_bytes = storage_words * sizeof(uint32_t);
     for (unsigned i=0; i<8; ++i) expected[i] = input_words[i] * 3u + elements;
     if (repeated) for (unsigned i=0; i<8; ++i) expected[i] = expected[i] * 3u + elements;
+    if (guarded_tail) for (unsigned i=0; i<8; ++i) expected[i] = input_words[i] + i + 7u;
+    if (wide_tail) for (unsigned i=0; i<8; ++i) expected[i] = i + 1u;
     if (floating) {
         const float values[8] = {-3.5f,-1.0f,0.0f,0.25f,1.0f,2.0f,16.0f,1024.0f};
         float oracle[8];
@@ -243,6 +248,10 @@ int main(int argc, char **argv) {
         "var index=tid; let pointer=&cells[index]; index=0u; "
         "atomicStore(pointer,data[tid]); workgroupBarrier(); "
         "data[tid]=atomicLoad(pointer)+atomicLoad(&cells[(tid+1u)%8u]); }";
+    // Frozen shaders from Vulkan REUSE_SHADER and the package robust-storage
+    // integration test. Native eight-word oracle; not package qualification.
+    if (guarded_tail) wgsl = "@group(0) @binding(0) var<storage, read_write> data: array<u32>;\n@compute @workgroup_size(1) fn main(@builtin(global_invocation_id) id: vec3u) {\n    if (id.x < arrayLength(&data)) { data[id.x] = data[id.x] + id.x + 7u; }\n}\n";
+    if (wide_tail) wgsl = "\n    @group(0) @binding(0) var<storage, read_write> output: array<u32>;\n    @compute @workgroup_size(64)\n    fn main(@builtin(global_invocation_id) id: vec3<u32>) {\n      output[id.x] = id.x + 1u;\n    }\n  ";
     const char *valid_wgsl = wgsl;
     if (unsupported || recover) wgsl = "@group(0) @binding(0) var<storage, read_write> data: array<vec2<u32>,4>; "
         "@compute @workgroup_size(1) fn main(@builtin(global_invocation_id) id: vec3<u32>) { data[id.x] = vec2<u32>(7u,7u); }";
@@ -392,7 +401,7 @@ int main(int argc, char **argv) {
     const uint32_t dynamic_offset=16;
     if(dynamic_offsets) DevicePushErrorScope(device,WGPUErrorFilter_Validation);
     ComputePassEncoderSetBindGroup(pass,0,group,dynamic_offsets ? 1 : 0,dynamic_offsets ? &dynamic_offset : NULL);
-    ComputePassEncoderDispatchWorkgroups(pass,atomic ? 1 : multi_offset ? 4 : reject_dispatch && !mismatch && !multi_alias ? elements+1 : elements,1,1);
+    ComputePassEncoderDispatchWorkgroups(pass,wide_tail ? 1 : guarded_tail || overdispatch ? elements+1 : atomic ? 1 : multi_offset ? 4 : reject_dispatch && !mismatch && !multi_alias ? 65536u : elements,1,1);
     if (repeated) ComputePassEncoderDispatchWorkgroups(pass,elements,1,1);
     if (rebind || multi_rebind || view_rebind) {
         ComputePassEncoderSetBindGroup(pass,0,short_group,0,NULL);
