@@ -159,7 +159,9 @@ The public recorded compute path admits an explicit or automatic pipeline
 layout with one group and one to eight densely numbered storage buffers starting
 at group 0 / binding 0. Each binding is a read-only or read/write fixed-size or
 runtime-sized array of `u32`, `i32`, or `f32`; layout access must match the shader. The WGSL entry
-point is `main` with a one-dimensional workgroup. Dispatch is one-dimensional.
+point is the explicitly selected sole compute entry, with a one-dimensional
+workgroup. Missing entries and modules with multiple stage entries remain
+rejected. Dispatch is one-dimensional.
 Fixed-size arrays require dispatch to fit the declared extent. Runtime-sized
 arrays admit padded dispatch through compiler-emitted bound-view write guards;
 any compiler bounds-elimination obligations still validate before submission.
@@ -232,6 +234,13 @@ outside its bound view. The explicit runtime-array fixture also runs
 `overdispatch`. Runtime-array `reject` modes retain sentinel/recovery checks with
 65,536 workgroups, beyond the admitted 65,535 limit; fixed-array rejection stays
 unchanged. These native tests do not qualify the package or complete simulation.
+`tests/d3d12_named_entry_readback.c` uses the unchanged package `OutputLayer`
+shader, input sizes and values with explicit or automatic layouts. Its `recover`
+mode rejects a missing entry before valid execution; `repeat` checks repeated
+dispatch with early caller release. All ten outputs must meet the independent
+double-precision oracle's existing 1e-6 tolerance. DXC receives the validated
+entry name; named entries use distinct bytecode cache paths while the CLI's
+`main` path is unchanged. This is native coverage, not JavaScript qualification.
 These are public-ABI correctness checks, not additions to the matched benchmark
 population. The generated backend workload catalog and comparison gates remain
 unchanged; CLI qualification does not transfer to this public path.
