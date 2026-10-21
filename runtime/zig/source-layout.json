@@ -952,7 +952,7 @@
       },
       "src/backend/dropin_capabilities.zig": {
         "decision": "Keep",
-        "moduleSha256": "962553f15d24f363a0b1ee45e16fb57a4590c9e7f23cbf7d16cafa2744abe1d7",
+        "moduleSha256": "22066e4ef0a69ae7816291f247faa138f8c35b29b82bacbd22718ee109c43fbd",
         "reason": "Keep: reachable backend implementation shared by 3 production consumers with no conflicting ownership signal.",
         "reviewer": "codex-recomposition-review/2026-08-08"
       },
@@ -1252,13 +1252,13 @@
       },
       "src/backend/vulkan/native_runtime.zig": {
         "decision": "Keep",
-        "moduleSha256": "58e2d4acaf78c20da58dbccad6220db7efae8030731571bd55159435a24fabd1",
+        "moduleSha256": "e4d99a6aea45a36d196586ae6e6ada42aa149ef3c41067ee762439b3cf37f3fd",
         "reviewer": "codex-focused-projection-interchange/2026-10-11",
         "reason": "Keep: per-device runtime borrows the adapter-selected Vulkan instance while retaining its own VkDevice and queue; runtime teardown never destroys the borrowed instance."
       },
       "src/backend/vulkan/vk_adapter_probe.zig": {
         "decision": "Keep",
-        "moduleSha256": "3a3fdddb1f229cca02cdb44a9c91afdb3c9545aab403c7e4ea4929ea4983c2a8",
+        "moduleSha256": "67c9dea1ec506d783365c15faed9e919c6e3d6839e35de9b6d27e8ae1f7db6fd",
         "reason": "Keep: adapter probing owns selected instance, physical device and compact queue metadata through adapter lifetime, with identity-bound capabilities and surface inspection.",
         "reviewer": "codex-vulkan-selection/2026-10-02"
       },
@@ -1294,7 +1294,7 @@
       },
       "src/backend/vulkan/vk_constants.zig": {
         "decision": "Keep",
-        "moduleSha256": "d3bede73edcb5a131fe6274259191959a63a24e3b319902a417e81e8d1ed76c9",
+        "moduleSha256": "ae715db139eabdb5fa8a733c6c28207dc6345c76643160542cab8cef6ec58d56",
         "reason": "Keep: Vulkan capability/device owner. Integer-dot operation availability and signed/unsigned packed acceleration remain distinct; logical-device admission enables the observed feature and extension only when both are available.",
         "reviewer": "codex-focused-projection-interchange/2026-10-11"
       },
@@ -3580,7 +3580,7 @@
       },
       "src/native/lifecycle/doe_instance_device_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "93482a0c8cc3cd8e148e1e156d3e0fa89962c545329a9ecbc7d714b7bc6947ad",
+        "moduleSha256": "c54494b9f10aa51316b8a59a401756ae6ba4dd57b76567aa476090a881dc56ac",
         "reason": "Keep: shared Metal device metadata projection is used by enumeration and the authoritative native adapter owner. Typed native validation replaces a stale mirrored object layout; unified memory determines classification while low-power remains an independent selection trait.",
         "reviewer": "codex-bee-doe/2026-10-21"
       },
@@ -3778,7 +3778,7 @@
       },
       "src/native/support/doe_native_object_types.zig": {
         "decision": "Keep",
-        "moduleSha256": "e6804d4e7bb8ee08f0978c1f553919733d9d080f042965c2058da5b28c2c658e",
+        "moduleSha256": "80bdad5be31766ab80422328c1c3f52035e3c8ce7ec5a10be56c802bb49704b4",
         "reason": "Keep: native command submission consumes each command buffer once, including rejected batches, while shared availability admission prevents partial execution. Object state, validation and backend dispatch retain their existing owners; no new replay API.",
         "reviewer": "codex-bee-doe/2026-10-21"
       },
@@ -3796,7 +3796,7 @@
       },
       "src/native/surface/doe_surface_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "4e92ddbdcb0892d869f2d21d4a90cace6fbfa9e8161ba02af07476db5dfb0388",
+        "moduleSha256": "1196823a71e629c843f678722b0f6d411d4a8c8f22d05d4a93afed69ee18dd83",
         "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission.",
         "reviewer": "codex"
       },

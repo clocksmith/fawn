@@ -39,6 +39,7 @@ pub const DispatchMetrics = vk_metrics.DispatchMetrics;
 pub const AsyncProbeResult = probe_ops.AsyncProbeResult;
 
 pub const AdapterIdentity = struct {
+    device_type: u32,
     vendor_id: u32,
     device_id: u32,
     driver_version: u32,
