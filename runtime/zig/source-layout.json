@@ -3778,7 +3778,7 @@
       },
       "src/native/support/doe_native_object_types.zig": {
         "decision": "Keep",
-        "moduleSha256": "80bdad5be31766ab80422328c1c3f52035e3c8ce7ec5a10be56c802bb49704b4",
+        "moduleSha256": "6eb79164f9ea6b8f75c79814f3c24bc081ed89c503a98ae97f86fa59a962f2e9",
         "reason": "Keep: native command submission consumes each command buffer once, including rejected batches, while shared availability admission prevents partial execution. Object state, validation and backend dispatch retain their existing owners; no new replay API.",
         "reviewer": "codex-bee-doe/2026-10-21"
       },
@@ -4444,7 +4444,7 @@
       },
       "src/native/compute/doe_compute_d3d12.zig": {
         "decision": "Keep",
-        "moduleSha256": "b884a165f779b42ba3013489fed2a945c5d6c640dcc1e2b7e681ee0aae82a114",
+        "moduleSha256": "66647825dfb4a6b5fe6e53dabd905571ad19768f728eb8a17af3b1c315d0992a",
         "reason": "Keep: bounded D3D12 integration derives automatic single-storage-binding layouts only after existing analyzed-IR admission, using authoritative shader buffer reflection and existing native layout constructors/releases. Per-pipeline distinct layout identity and pipeline-owned retention reuse GetBindGroupLayout and dispatch validation. Explicit layout, descriptors, shader compiler and queue ownership remain unchanged.",
         "reviewer": "codex-d3d12-auto-layout/2026-10-19"
       },

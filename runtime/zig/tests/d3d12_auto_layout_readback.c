@@ -1,7 +1,7 @@
 // Windows public ABI compute oracle: runtime arrayLength over a 32-byte allocation, bounded dispatch.
 // zig cc -I vendor/webgpu-headers tests/d3d12_auto_layout_readback.c -o compute.exe
 // With DXC on process PATH: compute.exe <DLL>
-// Optional mode: short|rebind|fixture|float|int|repeat|reject|unsupported|recover
+// Modes are documented in README.md, including dense multi-buffer views and rejection/recovery.
 #include <windows.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -39,6 +39,16 @@ static void scope_ready(WGPUPopErrorScopeStatus status, WGPUErrorType type,
 
 int main(int argc, char **argv) {
     if (argc != 2 && argc != 3) return 2;
+    const int multi = argc == 3 && strncmp(argv[2], "multi", 5) == 0;
+    const int multi_recover = multi && strcmp(argv[2], "multi-recover") == 0;
+    const int multi_sparse = multi && strcmp(argv[2], "multi-sparse") == 0;
+    const int multi_offset = multi && strcmp(argv[2], "multi-offset") == 0;
+    const int multi_explicit = multi_recover || (multi && strcmp(argv[2], "multi-explicit") == 0);
+    const int multi_write = multi && strcmp(argv[2], "multi-write") == 0;
+    const int multi_short = multi && strcmp(argv[2], "multi-short") == 0;
+    const int multi_rebind = multi && strcmp(argv[2], "multi-rebind") == 0;
+    const int multi_alias = multi && strcmp(argv[2], "multi-alias") == 0;
+    const unsigned binding_count = multi ? (strcmp(argv[2], "multi-eight") == 0 ? 8u : 3u) : 1u;
     const int atomic_signed = argc == 3 && strcmp(argv[2], "atomic-signed") == 0;
     const int atomic = atomic_signed || (argc == 3 && strcmp(argv[2], "atomic") == 0);
     const int clear_first = argc == 3 && strcmp(argv[2], "clear") == 0;
@@ -47,14 +57,14 @@ int main(int argc, char **argv) {
     const int fixed = argc == 3 && strcmp(argv[2], "fixed") == 0;
     const int short_binding = argc == 3 && strcmp(argv[2], "short") == 0;
     const int rebind = argc == 3 && strcmp(argv[2], "rebind") == 0;
-    const unsigned elements = short_binding ? 4u : 8u;
+    const unsigned elements = short_binding || multi_short ? 4u : 8u;
     const int floating = argc == 3 && strcmp(argv[2], "float") == 0;
-    const int repeated = argc == 3 && strcmp(argv[2], "repeat") == 0;
-    const int reject_dispatch = mismatch || (argc == 3 && strcmp(argv[2], "reject") == 0);
+    const int repeated = multi_write || (argc == 3 && strcmp(argv[2], "repeat") == 0);
+    const int reject_dispatch = multi_offset || multi_alias || mismatch || (argc == 3 && strcmp(argv[2], "reject") == 0);
     const int signed_integer = atomic_signed || (argc == 3 && strcmp(argv[2], "int") == 0);
-    const int unsupported = argc == 3 && strcmp(argv[2], "unsupported") == 0;
+    const int unsupported = multi_sparse || (argc == 3 && strcmp(argv[2], "unsupported") == 0);
     const int fixture = argc == 3 && strcmp(argv[2], "fixture") == 0;
-    const int recover = argc == 3 && strcmp(argv[2], "recover") == 0;
+    const int recover = multi_recover || (argc == 3 && strcmp(argv[2], "recover") == 0);
     HMODULE library = LoadLibraryA(argv[1]);
     if (!library) { fprintf(stderr, "LoadLibrary error=%lu\n", GetLastError()); return 2; }
     LOAD(CreateInstance); LOAD(InstanceRequestAdapter); LOAD(InstanceProcessEvents);
@@ -85,6 +95,7 @@ int main(int argc, char **argv) {
     WGPUDevice device = NULL;
     WGPUQueue queue = NULL;
     WGPUBuffer source = NULL, destination = NULL, intermediate = NULL;
+    WGPUBuffer inputs[7] = {0};
     WGPUCommandEncoder encoder = NULL;
     WGPUCommandBuffer commands = NULL;
     if (!instance) goto cleanup;
@@ -137,11 +148,29 @@ int main(int argc, char **argv) {
     if (rebind) for(unsigned i=0;i<4;++i) expected[i]=expected[i]*3u+4u;
     if (fixture) for(unsigned i=0;i<8;++i) expected[i]=input_words[i]+1u;
     if (clear_first || clear_after) for(unsigned i=0;i<8;++i) expected[i]=clear_first ? elements : 0;
+    uint32_t input_storage[8][8];
+    memcpy(input_storage[0], input_words, sizeof(input_words));
+    if (multi) {
+        for (unsigned j=1; j<binding_count; ++j)
+            for (unsigned i=0; i<8; ++i) input_storage[j][i]=input_words[(i+j)%8] + j*101u;
+        memcpy(expected,input_words,sizeof(expected));
+        if (!multi_alias && !multi_offset) for (unsigned pass_index=0; pass_index<(multi_write || multi_rebind ? 2u : 1u); ++pass_index) {
+            const unsigned lanes=multi_rebind && pass_index == 1 ? 4u : elements;
+            for (unsigned i=0; i<lanes; ++i) {
+                expected[i]=expected[i]*3u + 8u;
+                for (unsigned j=1; j<binding_count; ++j) {
+                    const unsigned bound=(multi_short || (multi_rebind && pass_index == 1)) && j == binding_count-1 ? 4u : 8u;
+                    expected[i]+=(input_storage[j][i]+(multi_write ? pass_index*j : 0u))*(j+1u)+bound;
+                }
+            }
+        }
+    }
     stage = "buffers";
     WGPUBufferDescriptor bd = WGPU_BUFFER_DESCRIPTOR_INIT;
-    bd.size = sizeof(expected); bd.usage = WGPUBufferUsage_CopySrc; bd.mappedAtCreation = WGPU_TRUE;
+    bd.size = multi ? binding_count*32u : sizeof(expected); bd.usage = WGPUBufferUsage_CopySrc; bd.mappedAtCreation = WGPU_TRUE;
     source = DeviceCreateBuffer(device, &bd);
     bd.usage = WGPUBufferUsage_MapRead | WGPUBufferUsage_CopyDst; bd.mappedAtCreation = WGPU_FALSE;
+    bd.size=sizeof(expected);
     destination = DeviceCreateBuffer(device, &bd);
     if (!source || !destination) goto cleanup;
     {
@@ -149,9 +178,13 @@ int main(int argc, char **argv) {
         intermediate = DeviceCreateBuffer(device, &bd);
         if (!intermediate) goto cleanup;
     }
-    void *input = BufferGetMappedRange(source, 0, sizeof(expected));
+    for(unsigned j=1;j<binding_count;++j) {
+        inputs[j-1]=DeviceCreateBuffer(device,&bd);
+        if(!inputs[j-1]) goto cleanup;
+    }
+    void *input = BufferGetMappedRange(source, 0, multi ? binding_count*32u : sizeof(expected));
     if (!input) goto cleanup;
-    memcpy(input, input_words, sizeof(input_words));
+    memcpy(input, multi ? input_storage[0] : input_words, multi ? binding_count*32u : sizeof(input_words));
     BufferUnmap(source);
     stage = "compute pipeline";
     const char *wgsl = "@group(0) @binding(0) var<storage, read_write> data: array<u32>; "
@@ -188,6 +221,48 @@ int main(int argc, char **argv) {
         "@group(0) @binding(0) var<storage, read_write> values: array<u32>;"
         "@compute @workgroup_size(1) fn main(@builtin(global_invocation_id) id: vec3<u32>) {"
         "values[id.x] = values[id.x] + 1u; }";
+    char multi_wgsl[4096];
+    if(multi) {
+        size_t used=0;
+        // Reverse declaration order and distinct input values expose accidental
+        // declaration-order/register-order mapping rather than only buffer count.
+        for(unsigned j=binding_count-1;j>0;--j)
+            used+=(size_t)snprintf(multi_wgsl+used,sizeof(multi_wgsl)-used,
+                "@group(0) @binding(%u) var<storage,%s> input%u:array<u32>; ",multi_sparse && j==binding_count-1 ? 7u : j,multi_write ? "read_write" : "read",j);
+        used+=(size_t)snprintf(multi_wgsl+used,sizeof(multi_wgsl)-used,
+            "@group(0) @binding(0) var<storage,read_write> data:array<u32>; "
+            "@compute @workgroup_size(1) fn main(@builtin(global_invocation_id) id:vec3<u32>) { "
+            "data[id.x]=data[id.x]*3u+arrayLength(&data)");
+        for(unsigned j=1;j<binding_count;++j)
+            used+=(size_t)snprintf(multi_wgsl+used,sizeof(multi_wgsl)-used,"+input%u[id.x]*%uu+arrayLength(&input%u)",j,j+1,j);
+        used+=(size_t)snprintf(multi_wgsl+used,sizeof(multi_wgsl)-used,";");
+        if(multi_write) for(unsigned j=1;j<binding_count;++j)
+            used+=(size_t)snprintf(multi_wgsl+used,sizeof(multi_wgsl)-used,"input%u[id.x]+=%uu;",j,j);
+        used+=(size_t)snprintf(multi_wgsl+used,sizeof(multi_wgsl)-used,"}");
+        if(used>=sizeof(multi_wgsl)) goto cleanup;
+        wgsl=multi_wgsl; valid_wgsl=multi_wgsl;
+        printf("WGSL: %s\n",wgsl);
+    }
+    if(multi_explicit) {
+        WGPUBindGroupLayoutEntry entries[8];
+        for(unsigned i=0;i<binding_count;++i) {
+            const unsigned j=binding_count-1-i;
+            entries[i]=(WGPUBindGroupLayoutEntry)WGPU_BIND_GROUP_LAYOUT_ENTRY_INIT;
+            entries[i].binding=j; entries[i].visibility=WGPUShaderStage_Compute;
+            entries[i].buffer.type=j ? WGPUBufferBindingType_ReadOnlyStorage : WGPUBufferBindingType_Storage;
+            entries[i].buffer.minBindingSize=4;
+            if(multi_recover && j==0) entries[i].buffer.type=WGPUBufferBindingType_ReadOnlyStorage;
+        }
+        WGPUBindGroupLayoutDescriptor desc=WGPU_BIND_GROUP_LAYOUT_DESCRIPTOR_INIT;
+        desc.entryCount=binding_count;desc.entries=entries;
+        bgl=DeviceCreateBindGroupLayout(device,&desc);
+        if(!bgl) goto cleanup;
+        WGPUPipelineLayoutDescriptor pd=WGPU_PIPELINE_LAYOUT_DESCRIPTOR_INIT;
+        pd.bindGroupLayoutCount=1;pd.bindGroupLayouts=&bgl;
+        layout=DeviceCreatePipelineLayout(device,&pd);
+        BindGroupLayoutRelease(bgl);bgl=NULL;
+        if(!layout) goto cleanup;
+    }
     WGPUShaderSourceWGSL ws = WGPU_SHADER_SOURCE_WGSL_INIT;
     ws.code = (WGPUStringView){wgsl, WGPU_STRLEN};
     WGPUShaderModuleDescriptor sd = WGPU_SHADER_MODULE_DESCRIPTOR_INIT;
@@ -204,6 +279,7 @@ int main(int argc, char **argv) {
         shader=DeviceCreateShaderModule(device,&sd);
         if (!shader) goto cleanup;
         cp.compute.module=shader;
+        if(multi_recover) cp.layout=NULL;
         pipeline=DeviceCreateComputePipeline(device,&cp);
     }
     if (unsupported) { if (!pipeline) result=0; goto cleanup; }
@@ -228,9 +304,22 @@ int main(int argc, char **argv) {
     be.binding=0; be.buffer=intermediate; be.size=elements*4;
     WGPUBindGroupDescriptor gd = WGPU_BIND_GROUP_DESCRIPTOR_INIT;
     gd.layout=bgl; gd.entryCount=1; gd.entries=&be;
+    WGPUBindGroupEntry multi_entries[8];
+    if(multi) {
+        for(unsigned i=0;i<binding_count;++i) {
+            const unsigned j=binding_count-1-i;
+            multi_entries[i]=(WGPUBindGroupEntry)WGPU_BIND_GROUP_ENTRY_INIT;
+            multi_entries[i].binding=j;
+            multi_entries[i].buffer=j && !multi_alias ? inputs[j-1] : intermediate;
+            multi_entries[i].size=(multi_short || multi_offset) && j==binding_count-1 ? 16 : 32;
+            if(multi_offset && j==binding_count-1) multi_entries[i].offset=4;
+        }
+        gd.entryCount=binding_count;gd.entries=multi_entries;
+    }
     group=DeviceCreateBindGroup(device,&gd);
     if (!group) goto cleanup;
-    if (rebind) {
+    if (rebind || multi_rebind) {
+        if(multi_rebind) multi_entries[0].size=16;
         be.size=16;
         short_group=DeviceCreateBindGroup(device,&gd);
         if (!short_group) goto cleanup;
@@ -249,14 +338,15 @@ int main(int argc, char **argv) {
     encoder=DeviceCreateCommandEncoder(device,NULL);
     if (!encoder) goto cleanup;
     CommandEncoderCopyBufferToBuffer(encoder,source,0,intermediate,0,32);
+    for(unsigned j=1;j<binding_count;++j) CommandEncoderCopyBufferToBuffer(encoder,source,j*32u,inputs[j-1],0,32);
     if (clear_first) CommandEncoderClearBuffer(encoder,intermediate,0,32);
     pass=CommandEncoderBeginComputePass(encoder,NULL);
     if (!pass) goto cleanup;
     ComputePassEncoderSetPipeline(pass,pipeline);
     ComputePassEncoderSetBindGroup(pass,0,group,0,NULL);
-    ComputePassEncoderDispatchWorkgroups(pass,atomic ? 1 : reject_dispatch && !mismatch ? elements+1 : elements,1,1);
+    ComputePassEncoderDispatchWorkgroups(pass,atomic ? 1 : multi_offset ? 4 : reject_dispatch && !mismatch && !multi_alias ? elements+1 : elements,1,1);
     if (repeated) ComputePassEncoderDispatchWorkgroups(pass,elements,1,1);
-    if (rebind) {
+    if (rebind || multi_rebind) {
         ComputePassEncoderSetBindGroup(pass,0,short_group,0,NULL);
         ComputePassEncoderDispatchWorkgroups(pass,4,1,1);
     }
@@ -288,6 +378,7 @@ int main(int argc, char **argv) {
     CommandBufferRelease(commands); commands = NULL;
     CommandEncoderRelease(encoder); encoder = NULL;
     BufferRelease(source); source = NULL;
+    for(unsigned j=1;j<binding_count;++j) { BufferRelease(inputs[j-1]);inputs[j-1]=NULL; }
     if (intermediate) { BufferRelease(intermediate); intermediate = NULL; }
     WGPUBufferMapCallbackInfo mc = WGPU_BUFFER_MAP_CALLBACK_INFO_INIT;
     mc.mode = WGPUCallbackMode_AllowSpontaneous; mc.callback = map_ready; mc.userdata1 = &mapped;
@@ -339,6 +430,7 @@ cleanup:
     if (commands) CommandBufferRelease(commands);
     if (encoder) CommandEncoderRelease(encoder);
     if (source) BufferRelease(source);
+    for(unsigned j=1;j<binding_count;++j) if(inputs[j-1]) BufferRelease(inputs[j-1]);
     if (destination) BufferRelease(destination);
     if (intermediate) BufferRelease(intermediate);
     if (queue) QueueRelease(queue);
@@ -347,8 +439,8 @@ cleanup:
     if (instance) InstanceRelease(instance);
     FreeLibrary(library);
     if (result) fprintf(stderr, "FAIL stage=%s\n", stage);
-    else if (unsupported) printf("PASS: D3D12 aggregate array rejected at pipeline creation\n");
+    else if (unsupported) printf("PASS: D3D12 %s rejected at pipeline creation\n", multi_sparse ? "sparse public bindings" : "aggregate array");
     else printf("PASS: D3D12 %s compute/readback, early release, exact 8-word output, misaligned clear rejected\n",
-                atomic_signed ? "signed shared atomic index capture" : atomic ? "unsigned shared atomic index capture" : clear_first ? "clear then compute" : clear_after ? "compute then clear" : mismatch ? "foreign automatic layout rejected" : fixed ? "fixed automatic layout" : recover ? "valid pipeline after rejected aggregate" : fixture ? "unchanged fixture shader" : short_binding ? "short runtime binding" : rebind ? "runtime descriptor rebinding" : floating ? "runtime f32" : signed_integer ? "i32" : repeated ? "repeated u32" : reject_dispatch ? "rejected dispatch preserves sentinel" : "u32");
+                multi ? argv[2] : atomic_signed ? "signed shared atomic index capture" : atomic ? "unsigned shared atomic index capture" : clear_first ? "clear then compute" : clear_after ? "compute then clear" : mismatch ? "foreign automatic layout rejected" : fixed ? "fixed automatic layout" : recover ? "valid pipeline after rejected aggregate" : fixture ? "unchanged fixture shader" : short_binding ? "short runtime binding" : rebind ? "runtime descriptor rebinding" : floating ? "runtime f32" : signed_integer ? "i32" : repeated ? "repeated u32" : reject_dispatch ? "rejected dispatch preserves sentinel" : "u32");
     return result;
 }

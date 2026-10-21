@@ -175,6 +175,13 @@ pub const DoeShaderModule = struct {
     mtl_library_borrowed: bool = false,
 };
 
+pub const D3D12_STORAGE_BINDING_LIMIT = 8;
+pub const D3D12StorageBinding = struct {
+    minimum_size: u64 = 0,
+    runtime_array: bool = false,
+    read_only: bool = false,
+};
+
 pub const DoeComputePipeline = struct {
     pub const TYPE_MAGIC = MAGIC_COMPUTE_PIPE;
     error_object: bool = false,
@@ -183,8 +190,7 @@ pub const DoeComputePipeline = struct {
     ref_count: u32 = 1,
     mtl_pso: ?*anyopaque = null,
     d3d12_root_signature: ?*anyopaque = null,
-    d3d12_min_binding_size: u64 = 0,
-    d3d12_runtime_array: bool = false,
+    d3d12_storage: [D3D12_STORAGE_BINDING_LIMIT]D3D12StorageBinding = @splat(.{}),
     layout: ?*DoePipelineLayout = null,
     shader_module: ?*DoeShaderModule = null,
     binding_count: u32 = 0,

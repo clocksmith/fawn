@@ -156,10 +156,11 @@ for the current recipe disposition and scoped evidence.
 ## Windows D3D12 recorded compute subset
 
 The public recorded compute path admits an explicit or automatic pipeline
-layout with one group, one read/write storage buffer at group 0 / binding 0, and a
-fixed-size or runtime-sized array of `u32`, `i32`, or `f32`. The WGSL entry
+layout with one group and one to eight densely numbered storage buffers starting
+at group 0 / binding 0. Each binding is a read-only or read/write fixed-size or
+runtime-sized array of `u32`, `i32`, or `f32`; layout access must match the shader. The WGSL entry
 point is `main` with a one-dimensional workgroup. Dispatch is one-dimensional
-and must fit the declared array, or the bound view for a runtime-sized array.
+and must fit every declared array, or each bound view for a runtime-sized array.
 The binding offset must be zero. Fixed arrays require the declared size; runtime
 arrays require at least one scalar element. `arrayLength` returns the descriptor's
 element count, including when the binding is shorter than the allocation.
@@ -169,7 +170,8 @@ Compiler analysis and HLSL emission are reused. Proof obligations remain attache
 to the pipeline and are validated at recording and submission. The queue permits
 copies and buffer clears around admitted compute, retaining buffers, pipeline, root signature and
 per-dispatch descriptor heaps through completion. Indirect dispatch, other
-binding shapes, overrides, and mixed render/compute/copy
+binding shapes (including sparse slots, other groups and aliases), overrides,
+and mixed render/compute/copy
 submissions remain rejected. Pure render submission is a separate path.
 
 `tests/d3d12_compute_readback.c` dynamically loads the DLL and checks a CPU
@@ -199,6 +201,19 @@ ownership and binding identity within the admitted subset. The original
 `native_recorded_compute.c` still requests Vulkan and includes texture-copy
 operations outside the D3D12 subset; its unchanged shader is not a whole-application
 qualification.
+
+The same automatic-layout fixture provides `multi`, `multi-explicit`,
+`multi-eight`, `multi-write`, `multi-short` and `multi-rebind` modes. Distinct
+input buffers, reversed declarations/layout entries and independent CPU arithmetic
+check SRV/UAV register mapping, per-binding `arrayLength`, shortened views,
+descriptor replacement and ordering across repeated writes. Caller references
+are released before completion. `multi-alias` and `multi-offset` reject an
+invalid batch without changing the prefilled readback; `multi-sparse` retains
+the sparse public-layout rejection. `multi-recover` rejects a wrong-access
+explicit layout, then executes a valid automatic layout on the same device.
+These are public-ABI correctness checks, not additions to the matched benchmark
+population. The generated backend workload catalog and comparison gates remain
+unchanged; CLI qualification does not transfer to this public path.
 
 ## Native command-buffer consumption
 
@@ -239,7 +254,7 @@ chunk boundary. The existing automatic-layout fixture adds `clear` and
 | --- | --- | --- |
 | Ordered buffer clear and copy | [Vulkan queue](src/native/queue/doe_queue_submit_vulkan.zig), [Metal queue](src/native/queue/doe_queue_submit_metal.zig) | Physical range, ordering and exact-readback checks in [clear fixture](tests/d3d12_clear_readback.c) |
 | Invalid submission leaves prior data intact | [Shared admission](src/native/queue/doe_submission_validation.zig), [native fixture](tests/native_recorded_compute.c) | Physical misalignment, out-of-range and destroyed-buffer rejection; valid reuse after range rejection |
-| Recorded scalar-storage compute | [Native compute fixture](tests/native_recorded_compute.c) | Bounded single-storage binding and scalar-array fixtures above; wider binding shapes and indirect dispatch unsupported |
+| Recorded scalar-storage compute | [Native compute fixture](tests/native_recorded_compute.c) | Dense group-zero scalar-storage fixtures above; other binding shapes and indirect dispatch unsupported |
 | Texture transfers and mixed render/compute submission | Backend queue implementations | Unsupported in the Windows recorded compute/copy lane |
 | Callbacks and device lifetime | [Callback contract](../../docs/native-callback-contract.md), [device contract](../../docs/native-device-lifecycle-contract.md) | Mapping, early release, explicit destroy and teardown exercised locally; complete callback/device-loss parity unverified |
 | Application performance and browser ownership | Separate governed workloads and provider acceptance | Unverified; these correctness tests supply no speed, CPU-memory or browser win |
