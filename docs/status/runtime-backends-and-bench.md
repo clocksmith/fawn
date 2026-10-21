@@ -52,7 +52,10 @@ rebinding, dependent repeats, pipeline reuse, nonzero input, partial and chunked
 buffer writes, and rejection recovery. The unchanged three-binding matrix stress
 workload and independent nonzero identity/dense inputs now exercise read-only and
 writable storage together, including layout switching and rejected access/alias
-recovery. Broader catalog coverage remains outside the accepted boundary. Process exit or a successful
+recovery. Sparse group-0 slots within 0 through 7 retain exact register/table
+identity, mixed access, binding-order independence and dense/sparse layout reuse.
+Invalid slots, missing shader bindings and aliases retain separate status and
+submission recovery checks. Broader catalog coverage remains outside the accepted boundary. Process exit or a successful
 dispatch without explicit output-oracle validation is insufficient. Bounded HLSL
 control-flow checks also retain for-loop increments and the correct continuing
 break target across nested loops and switches. Explicit block and case scopes

@@ -190,6 +190,42 @@ def main():
     ]
     for label, body in shadow_cases:
         run(label, [oracle(dispatch(shader(label, body)), values=[4]*8)], ["ok"], 1)
+    sparse = shader("sparse-slot-three", "values[gid.x] += gid.x + 1u;")
+    sparse.write_text(sparse.read_text().replace("@binding(0)", "@binding(3)"), encoding="utf-8")
+    receipt["shaders"][str(sparse)] = digest(sparse)
+    sparse_command = dispatch(sparse)
+    sparse_command["bindings"][0]["binding"] = 3
+    def sparse_oracle(command, slot, values):
+        result = oracle(command, values=values)
+        result["output_oracle"]["binding"] = slot
+        return result
+    run("sparse-dense-layout-reuse", [sparse_oracle(sparse_command, 3, list(range(1, 9))),
+        oracle(dispatch(inc), 2), sparse_oracle(sparse_command, 3, [3*(i+1) for i in range(8)])], ["ok"]*3, 3)
+    mixed = output / "sparse-mixed.wgsl"
+    mixed.write_text("@group(0) @binding(1) var<storage, read> a: array<u32, 8>;\n"
+                     "@group(0) @binding(7) var<storage, read_write> b: array<u32, 8>;\n"
+                     "@compute @workgroup_size(8) fn main(@builtin(global_invocation_id) gid: vec3u) { b[gid.x] = a[gid.x] + gid.x; }\n", encoding="utf-8")
+    receipt["shaders"][str(mixed)] = digest(mixed)
+    mixed_command = dispatch(mixed, handle=82)
+    mixed_command["bindings"][0]["binding"] = 7
+    read_binding = copy.deepcopy(mixed_command["bindings"][0])
+    read_binding.update(binding=1, resource_handle=81, buffer_type="read_only_storage")
+    mixed_command["bindings"].append(read_binding)
+    expected = [value+i for i, value in enumerate(initial)]
+    mixed_checked = sparse_oracle(mixed_command, 7, expected)
+    reordered = copy.deepcopy(mixed_checked)
+    reordered["bindings"].reverse()
+    run("sparse-mixed-order-reuse", [write(initial, handle=81), mixed_checked, reordered], ["ok"]*3, 2)
+    outside = copy.deepcopy(mixed_command)
+    outside["bindings"][0]["binding"] = 8
+    missing = copy.deepcopy(mixed_command)
+    missing["bindings"][1]["binding"] = 2
+    aliased = copy.deepcopy(mixed_command)
+    aliased["bindings"][0]["resource_handle"] = 81
+    # Oracle replay requires every graph command to succeed. Keep rejected-operation
+    # status/submission recovery separate from the exact-output graphs above.
+    run("sparse-rejection-recovery", [write(initial, handle=81), mixed_command, outside, missing, aliased, mixed_command],
+        ["ok", "ok", "unsupported", "unsupported", "unsupported", "ok"])
     print("Physical CLI storage acceptance complete; no paired speed claim.", flush=True)
 
 

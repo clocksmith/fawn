@@ -757,7 +757,7 @@ test "D3D12 buffer writes reject invalid ranges before native allocation" {
     try std.testing.expectEqual(@as(u64, 0), rt.fence_value);
 }
 
-test "D3D12 storage sets reject holes duplicates and aliases before allocation" {
+test "D3D12 storage sets admit sparse slots and reject duplicates aliases and overflow" {
     const testing = std.testing;
     const values = @import("../../contracts/model/model_binding_value_types.zig");
     var entries = [_]model.KernelBinding{
@@ -772,6 +772,8 @@ test "D3D12 storage sets reject holes duplicates and aliases before allocation" 
     entries[2].binding = 1;
     try testing.expectError(error.UnsupportedFeature, kernel_buffers.validate(&entries));
     entries[2].binding = 3;
+    try testing.expectEqual(@as(usize, 3), (try kernel_buffers.validate(&entries)).?.len);
+    entries[2].binding = kernel_buffers.MAX_STORAGE_BINDINGS;
     try testing.expectError(error.UnsupportedFeature, kernel_buffers.validate(&entries));
     entries[2].binding = 2;
     std.mem.swap(model.KernelBinding, &entries[0], &entries[2]);
@@ -812,6 +814,45 @@ test "D3D12 multiple storage shader admission checks every extent and access" {
     try std.testing.expectError(error.UnsupportedFeature, state.admitShader(allocator, &module));
     try std.testing.expectError(error.InvalidState, state.validateDispatch(1, 1, 1));
     state.selected.readonly_mask = 3;
+    try state.admitShader(allocator, &module);
+    try state.validateDispatch(1, 1, 1);
+}
+
+test "D3D12 sparse storage admission preserves shader slots and pipeline identity" {
+    const analysis = @import("../../compiler/wgsl/pipeline/analysis.zig");
+    const allocator = std.testing.allocator;
+    var state = kernel_buffers.State{};
+    defer state.buffers.deinit(allocator);
+    defer allocator.free(state.obligations);
+    state.active = 1;
+    state.selected.count = 2;
+    state.selected.handles[1] = 1;
+    state.selected.handles[7] = 2;
+    state.selected.readonly_mask = 1 << 1;
+    try state.buffers.put(allocator, 1, .{ .native = null, .size = 32 });
+    try state.buffers.put(allocator, 2, .{ .native = null, .size = 32 });
+    const source =
+        \\@group(0) @binding(1) var<storage, read> a: array<u32, 8>;
+        \\@group(0) @binding(7) var<storage, read_write> b: array<u32, 8>;
+        \\@compute @workgroup_size(8)
+        \\fn main(@builtin(global_invocation_id) gid: vec3u) { b[gid.x] = a[gid.x] + gid.x; }
+    ;
+    var diagnostic = analysis.Diagnostic{};
+    var module = (try analysis.analyze(.{ .allocator = allocator, .source = source, .robustness = analysis.default_translation_robustness_config(), .diagnostic = &diagnostic })).module;
+    defer module.deinit();
+    try state.admitShader(allocator, &module);
+    try state.validateDispatch(1, 1, 1);
+    state.buffers.getPtr(2).?.size = 16;
+    try std.testing.expectError(error.InvalidArgument, state.validateDispatch(1, 1, 1));
+    state.buffers.getPtr(2).?.size = 32;
+    const layout = state.layoutKey();
+    state.selected.handles[7] = 0;
+    state.selected.handles[6] = 2;
+    try std.testing.expect(layout != state.layoutKey());
+    try std.testing.expectError(error.UnsupportedFeature, state.admitShader(allocator, &module));
+    try std.testing.expectError(error.InvalidState, state.validateDispatch(1, 1, 1));
+    state.selected.handles[6] = 0;
+    state.selected.handles[7] = 2;
     try state.admitShader(allocator, &module);
     try state.validateDispatch(1, 1, 1);
 }

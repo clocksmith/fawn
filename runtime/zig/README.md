@@ -235,21 +235,23 @@ storage atomics or arbitrary workgroup programs.
 
 ## Windows native CLI storage boundary
 
-The native CLI admits up to eight consecutive group-0 scalar storage bindings
-from WGSL, with entry `main` and per-command completion. Read-only inputs use
+The native CLI admits group-0 scalar storage bindings in slots 0 through 7,
+including sparse layouts, from WGSL with entry `main` and per-command completion. Read-only inputs use
 SRVs and writable buffers use UAVs; shader access must match the declared layout.
 Workgroup and dispatch dimensions are bounded by D3D12 limits and retained
 per-buffer compiler obligations. Physical qualification exercises the scalar
 path and the unchanged three-binding, two-dimensional matrix workload. Its [compute owner](src/backend/d3d12/d3d12_runtime_compute.zig)
 emits the admitted analyzed module and enforces the retained compiler dispatch
-preconditions. Opaque precompiled bound shaders, aggregate elements, sparse or
-nonzero-group bindings, aliases, nonzero binding offsets and deferred bound
+preconditions. Opaque precompiled bound shaders, aggregate elements, binding
+slots above 7, nonzero groups, aliases, nonzero binding offsets and deferred bound
 dispatch remain unsupported.
 
 The [storage owner](src/backend/d3d12/d3d12_kernel_buffers.zig) preserves buffer
 identity across commands, caps total resident storage at the backend limit,
 and caches ordered SRV/UAV plus dispatch-info CBV tables by exact handle/layout
-identity. Pipeline reuse also checks the complete access/count layout.
+identity. Sparse register numbers map to compact descriptor-table entries in
+ascending binding order. Pipeline reuse checks the occupied slots as well as the
+complete access/count layout.
 Initialization zeroes new handles through checked GPU uploads; reusing a handle
 does not reset its contents. Dependent dispatch transitions, checked queue
 completion and real GPU readback preserve the command-graph output contract.
@@ -287,7 +289,11 @@ continuing clause. Colliding local names receive stable IR-based HLSL names, so
 a continuing clause emitted at a shadowing `continue` site still references its
 original variables. These checks exercise HLSL lowering on D3D12; other target
 backends need their own physical qualification. Original failed traces remain
-separate from accepted evidence.
+separate from accepted evidence. Sparse slot-3 dispatches, mixed read-only slot-1
+and writable slot-7 buffers, JSON binding reordering and dense/sparse layout
+switching retain exact output checks. Out-of-range slots, missing shader bindings
+and aliases have separate status/submission rejection-recovery checks; the strict
+output-oracle replay requires all commands in its graph to succeed.
 
 This qualifies the exercised native CLI consumer only. A source-matched Windows
 Dawn control, broader workload coverage, matched CPU/memory measurements and

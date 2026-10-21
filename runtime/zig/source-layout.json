@@ -898,9 +898,9 @@
       },
       "src/backend/d3d12/d3d12_runtime_compute.zig": {
         "decision": "Keep",
-        "moduleSha256": "ec980d7ad8313cdb25adadf71aab2bb5c70e3baa313aae4cc3f2068071c3ed57",
-        "reason": "Keep: existing native compute owner binds dispatch metadata and admitted storage, orders dependent dispatches, and retains resources through checked signal/wait or terminal retirement.",
-        "reviewer": "codex-d3d12-cli-storage/2026-10-21"
+        "moduleSha256": "d78bbff20b9b29c3faed34ca2c158313ae9ac287c0560e3fe59bb4cefe23c4ac",
+        "reason": "Keep: native D3D12 sparse group-zero storage slots retain exact descriptor/register identity, shader extent/access validation and rejected-layout recovery.",
+        "reviewer": "codex-d3d12-sparse/2026-10-21"
       },
       "src/backend/d3d12/d3d12_runtime_upload.zig": {
         "decision": "Keep",
@@ -910,9 +910,9 @@
       },
       "src/backend/d3d12/mod.zig": {
         "decision": "Keep",
-        "moduleSha256": "fead8d40acd99566bcea9c7df89781863f8ed8c97ca32da8df585bcf227c207d",
-        "reason": "Keep: native command routing validates bounded storage binding and entry-point contracts, preserves preparation timing, and exposes real captured output without claiming benchmark acceptance.",
-        "reviewer": "codex-d3d12-cli-storage/2026-10-21"
+        "moduleSha256": "cb86f22339b87c4671e8a0d54601fd10e4be1f91bf5e41f5053025e456dd05b7",
+        "reason": "Keep: native D3D12 sparse group-zero storage slots retain exact descriptor/register identity, shader extent/access validation and rejected-layout recovery.",
+        "reviewer": "codex-d3d12-sparse/2026-10-21"
       },
       "src/backend/d3d12/resources/d3d12_depth_stencil.zig": {
         "decision": "Keep",
@@ -4450,9 +4450,9 @@
       },
       "src/backend/d3d12/d3d12_kernel_buffers.zig": {
         "decision": "Keep",
-        "moduleSha256": "aee25fb1e0e83895392c80fa75f4740249c41eca18adaf1f2dc5f85b2691fc4a",
-        "reason": "Keep: cohesive command-handle storage lifecycle owns bounded allocation, exact zero initialization, descriptor identity and checked GPU readback; runtime and command consumers share its validation.",
-        "reviewer": "codex-d3d12-cli-storage/2026-10-21"
+        "moduleSha256": "63ecff27adeabeaa3e6bd478297a3f24945a02f58ac8d711e0419afb5ec66f4a",
+        "reason": "Keep: native D3D12 sparse group-zero storage slots retain exact descriptor/register identity, shader extent/access validation and rejected-layout recovery.",
+        "reviewer": "codex-d3d12-sparse/2026-10-21"
       }
     },
     "linePolicy": {

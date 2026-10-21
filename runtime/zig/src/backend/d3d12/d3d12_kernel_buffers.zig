@@ -20,7 +20,7 @@ pub fn validate(bindings: ?[]const model.KernelBinding) !?[]const model.KernelBi
     if (entries.len == 0) return null;
     if (entries.len > MAX_STORAGE_BINDINGS) return error.UnsupportedFeature;
     for (entries, 0..) |entry, index| {
-        if (entry.group != 0 or entry.binding >= entries.len or entry.resource_kind != .buffer or
+        if (entry.group != 0 or entry.binding >= MAX_STORAGE_BINDINGS or entry.resource_kind != .buffer or
             (entry.buffer_type != binding.WGPUBufferBindingType_Storage and entry.buffer_type != binding.WGPUBufferBindingType_ReadOnlyStorage) or entry.buffer_offset != 0)
             return error.UnsupportedFeature;
         if (entry.resource_handle == 0 or entry.buffer_size == 0 or entry.buffer_size > MAX_RESIDENT_BYTES or entry.buffer_size % 4 != 0)
@@ -76,7 +76,11 @@ pub const State = struct {
     }
 
     pub fn layoutKey(self: *const State) u32 {
-        return self.selected.count | (self.selected.readonly_mask << 8);
+        var occupied: u32 = 0;
+        for (self.selected.handles, 0..) |handle, index| {
+            if (handle != 0) occupied |= @as(u32, 1) << @intCast(index);
+        }
+        return self.selected.count | (self.selected.readonly_mask << 8) | (occupied << 16);
     }
 
     fn ensureBuffer(self: *State, rt: anytype, handle: u64, size: u64, initialize: bool) !TransferMetrics {
@@ -117,7 +121,7 @@ pub const State = struct {
         for (self.tables.items) |table| {
             if (std.meta.eql(table.key, key)) {
                 self.selected = key;
-                self.active = key.handles[0];
+                self.active = entries[0].resource_handle;
                 self.table_descriptor = table.descriptor;
                 return metrics;
             }
@@ -130,19 +134,22 @@ pub const State = struct {
         }
         // The bridge combines all resource ranges into one table, ordered by binding.
         const descriptor = rt.descriptor_state.cbv_srv_uav_next;
-        for (0..key.count) |index| {
-            const buffer = self.buffers.get(key.handles[index]).?;
+        var ordinal: u32 = 0;
+        for (key.handles, 0..) |handle, index| {
+            if (handle == 0) continue;
+            const buffer = self.buffers.get(handle).?;
             const actual = if (key.readonly_mask & (@as(u32, 1) << @intCast(index)) != 0)
                 try rt.descriptor_state.allocate_srv_buffer(rt.device, buffer.native, @intCast(buffer.size / 4), 4)
             else
                 try rt.descriptor_state.allocate_uav_buffer(rt.device, buffer.native, @intCast(buffer.size / 4), 4);
-            std.debug.assert(actual == descriptor + index);
+            std.debug.assert(actual == descriptor + ordinal);
+            ordinal += 1;
         }
         const constants = try rt.descriptor_state.allocate_cbv(rt.device, rt.dispatch_info_buffer, dispatch_info.DISPATCH_INFO_BUFFER_BYTES);
         std.debug.assert(constants == descriptor + key.count);
         self.tables.appendAssumeCapacity(.{ .key = key, .descriptor = descriptor });
         self.selected = key;
-        self.active = key.handles[0];
+        self.active = entries[0].resource_handle;
         self.table_descriptor = descriptor;
         return metrics;
     }
@@ -156,7 +163,7 @@ pub const State = struct {
         var seen: u32 = 0;
         for (module.globals.items) |global| {
             const point = global.binding orelse continue;
-            if (point.group != 0 or point.binding >= self.selected.count or global.addr_space != .storage) return error.UnsupportedFeature;
+            if (point.group != 0 or point.binding >= MAX_STORAGE_BINDINGS or self.selected.handles[point.binding] == 0 or global.addr_space != .storage) return error.UnsupportedFeature;
             const bit = @as(u32, 1) << @intCast(point.binding);
             if (seen & bit != 0) return error.UnsupportedFeature;
             seen |= bit;
@@ -190,7 +197,7 @@ pub const State = struct {
         if (workgroup[0] == 0 or workgroup[1] == 0 or workgroup[2] == 0 or workgroup[0] > 1024 or workgroup[1] > 1024 or workgroup[2] > 64 or
             @as(u64, workgroup[0]) * workgroup[1] * workgroup[2] > 1024) return error.UnsupportedFeature;
         for (module.dispatch_preconditions.items) |obligation| {
-            if (obligation.storage_binding.group != 0 or obligation.storage_binding.binding >= self.selected.count or obligation.kind == .uniform_extent) return error.UnsupportedFeature;
+            if (obligation.storage_binding.group != 0 or obligation.storage_binding.binding >= MAX_STORAGE_BINDINGS or self.selected.handles[obligation.storage_binding.binding] == 0 or obligation.kind == .uniform_extent) return error.UnsupportedFeature;
         }
         const obligations = try allocator.dupe(ir.DispatchPrecondition, module.dispatch_preconditions.items);
         allocator.free(self.obligations);
@@ -206,8 +213,9 @@ pub const State = struct {
         if (!self.shader_valid) return error.InvalidState;
         if (x == 0 or x > 65535 or y == 0 or y > 65535 or z == 0 or z > 65535) return error.UnsupportedFeature;
         var extents: [MAX_STORAGE_BINDINGS]u64 = @splat(0);
-        for (0..self.selected.count) |index| {
-            const buffer = self.buffers.get(self.selected.handles[index]) orelse return error.InvalidState;
+        for (self.selected.handles, 0..) |handle, index| {
+            if (handle == 0) continue;
+            const buffer = self.buffers.get(handle) orelse return error.InvalidState;
             if (buffer.size < self.minimum_bytes[index]) return error.InvalidArgument;
             extents[index] = if (self.runtime_array[index]) buffer.size else self.minimum_bytes[index];
             // Preserve the conservative lane bound as well as the compiler's precise obligations.
@@ -227,8 +235,9 @@ pub const State = struct {
     }
 
     pub fn transition(self: *const State, list: ?*anyopaque, before_dispatch: bool) void {
-        for (0..self.selected.count) |index| {
-            const buffer = self.buffers.get(self.selected.handles[index]).?;
+        for (self.selected.handles, 0..) |handle, index| {
+            if (handle == 0) continue;
+            const buffer = self.buffers.get(handle).?;
             const state = if (self.selected.readonly_mask & (@as(u32, 1) << @intCast(index)) != 0) dc.RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE else dc.RESOURCE_STATE_UNORDERED_ACCESS;
             bridge.c.d3d12_bridge_command_list_resource_barrier_transition(list, buffer.native, if (before_dispatch) dc.RESOURCE_STATE_COPY_DEST else state, if (before_dispatch) state else dc.RESOURCE_STATE_COPY_DEST);
         }
