@@ -853,6 +853,18 @@ const Emitter = struct {
             },
             .call => |call| try self.emit_call(function, expr.ty, call),
             .construct => |construct| {
+                if (self.module.types.get(construct.ty) == .vector and construct.args.len == 1) {
+                    const arg = function.expr_args.items[construct.args.start];
+                    if (self.module.types.get(function.exprs.items[arg].ty) == .scalar) {
+                        // A vector cast splats the scalar without repeating its evaluation.
+                        try self.write("((");
+                        try self.emit_type_only(construct.ty);
+                        try self.write(")(");
+                        try self.emit_expr(function, arg);
+                        try self.write("))");
+                        return;
+                    }
+                }
                 try self.emit_type_only(construct.ty);
                 try self.write("(");
                 try self.emit_expr_list(function, construct.args);

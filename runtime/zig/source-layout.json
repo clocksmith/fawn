@@ -2212,7 +2212,7 @@
       },
       "src/compiler/wgsl/emit/hlsl/emit_hlsl.zig": {
         "decision": "Keep",
-        "moduleSha256": "295747d7d79fb781cf5a35ac3c2b78ae1910f75b4b21a648f683eda22a27dcb3",
+        "moduleSha256": "9c308cc0bd5235b8ead03b8d9800986a0cf4542462fa5424cbd0048def972df4",
         "reason": "Keep: bounded shared-array compare exchange reuses semantic result types and preserves target identity, captured indices and both result fields.",
         "reviewer": "codex-indexed-atomic-cas/2026-10-21"
       },
@@ -2224,7 +2224,7 @@
       },
       "src/compiler/wgsl/emit/hlsl/emit_hlsl_maps.zig": {
         "decision": "Keep",
-        "moduleSha256": "b247e79ecaeafcff90a5b80fd8b0d057098616040ced45297da355749d9dfa03",
+        "moduleSha256": "8a8500bf1613b2f2eb0c29e71181e5c47e013fbcc3545ef40f70936cf4846a8a",
         "reason": "Keep: nearest-loop continuing emission and shared IR local identity preserve control flow across shadowed scopes without changing runtime ownership.",
         "reviewer": "codex-msl-continuing/2026-10-21"
       },
