@@ -24,6 +24,24 @@ pub fn emit(module: *const ir.Module, out: []u8) EmitError!usize {
     return emitter.pos;
 }
 
+const WORKGROUP_RMW = [_]struct { name: []const u8, intrinsic: []const u8 }{
+    .{ .name = "atomicAdd", .intrinsic = "InterlockedAdd" },
+    .{ .name = "atomicSub", .intrinsic = "InterlockedAdd" },
+    .{ .name = "atomicMin", .intrinsic = "InterlockedMin" },
+    .{ .name = "atomicMax", .intrinsic = "InterlockedMax" },
+    .{ .name = "atomicAnd", .intrinsic = "InterlockedAnd" },
+    .{ .name = "atomicOr", .intrinsic = "InterlockedOr" },
+    .{ .name = "atomicXor", .intrinsic = "InterlockedXor" },
+    .{ .name = "atomicExchange", .intrinsic = "InterlockedExchange" },
+};
+
+fn isWorkgroupRmw(name: []const u8) bool {
+    for (WORKGROUP_RMW) |operation| {
+        if (std.mem.eql(u8, name, operation.name)) return true;
+    }
+    return false;
+}
+
 const Emitter = struct {
     module: *const ir.Module,
     buf: []u8,
@@ -220,13 +238,33 @@ const Emitter = struct {
             try self.write(" ignored; InterlockedExchange(");
             try self.write(global.name);
             try self.write("[index], next, ignored); }\n");
+            // Preserve the shared object and return the pre-operation value.
+            for (WORKGROUP_RMW) |operation| {
+                try self.emit_type_only(arr.elem);
+                try self.write(" __doe_");
+                try self.write(operation.name);
+                try self.write("_");
+                try self.write(global.name);
+                try self.write("(uint index, ");
+                try self.emit_type_only(arr.elem);
+                try self.write(" next) { ");
+                try self.emit_type_only(arr.elem);
+                try self.write(" result; ");
+                try self.write(operation.intrinsic);
+                try self.write("(");
+                try self.write(global.name);
+                try self.write("[index], ");
+                if (std.mem.eql(u8, operation.name, "atomicSub")) try self.write("0 - ");
+                try self.write("next, result); return result; }\n");
+            }
         }
     }
 
     fn emitWorkgroupAtomicCall(self: *Emitter, function: ir.Function, call: anytype) EmitError!bool {
         const is_load = std.mem.eql(u8, call.name, "atomicLoad");
         const is_store = std.mem.eql(u8, call.name, "atomicStore");
-        if (!is_load and !is_store) return false;
+        const is_rmw = isWorkgroupRmw(call.name);
+        if (!is_load and !is_store and !is_rmw) return false;
         if (call.args.len != @as(u32, if (is_load) 1 else 2)) return error.InvalidIr;
         var target = function.expr_args.items[call.args.start];
         while (true) switch (function.exprs.items[target].data) {
@@ -249,14 +287,18 @@ const Emitter = struct {
             else => return false,
         };
         if (self.module.types.get(arr.elem) != .atomic) return false;
-        try self.write(if (is_load) "doe_atomicLoad_" else "doe_atomicStore_");
+        if (is_rmw) {
+            try self.write("__doe_");
+            try self.write(call.name);
+            try self.write("_");
+        } else try self.write(if (is_load) "doe_atomicLoad_" else "doe_atomicStore_");
         try self.write(global.name);
         try self.write("(");
         if (self.is_captured_pointer_index(function, target)) {
             try self.write("doe_pointer_index_");
             try self.write_u32(target);
         } else try self.emit_expr(function, index.index);
-        if (is_store) {
+        if (!is_load) {
             try self.write(", ");
             try self.emit_expr(function, function.expr_args.items[call.args.start + 1]);
         }

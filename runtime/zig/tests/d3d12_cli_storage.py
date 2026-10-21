@@ -90,6 +90,61 @@ def main():
         return result
 
     run("unchanged-atomic", repo / "examples/workgroup_atomic_commands.json", ["ok"], 1)
+    # Fixed arithmetic/bit-pattern oracles check old and updated values independently.
+    # Captured pointers must keep tid even after the source index is changed to zero.
+    rmw_cases = [
+        ("u32", "Add", "4294967280u + tid", "32u", [4294967280 + i for i in range(8)], list(range(16, 24))),
+        ("u32", "Sub", "tid", "3u", list(range(8)), [4294967293, 4294967294, 4294967295, 0, 1, 2, 3, 4]),
+        ("u32", "Min", "2147483648u + tid", "2147483647u", [2147483648 + i for i in range(8)], [2147483647] * 8),
+        ("u32", "Max", "2147483392u + tid", "2147483648u", [2147483392 + i for i in range(8)], [2147483648] * 8),
+        ("u32", "And", "240u + tid", "15u", list(range(240, 248)), list(range(8))),
+        ("u32", "Or", "tid", "240u", list(range(8)), list(range(240, 248))),
+        ("u32", "Xor", "240u + tid", "15u", list(range(240, 248)), list(range(255, 247, -1))),
+        ("u32", "Exchange", "10u + tid", "2147483648u", list(range(10, 18)), [2147483648] * 8),
+        ("i32", "Add", "-8 + i32(tid)", "3", list(range(-8, 0)), list(range(-5, 3))),
+        ("i32", "Sub", "-8 + i32(tid)", "3", list(range(-8, 0)), list(range(-11, -3))),
+        ("i32", "Min", "-8 + i32(tid)", "-4", list(range(-8, 0)), [-8, -7, -6, -5, -4, -4, -4, -4]),
+        ("i32", "Max", "-8 + i32(tid)", "-4", list(range(-8, 0)), [-4, -4, -4, -4, -4, -3, -2, -1]),
+        ("i32", "And", "-16 + i32(tid)", "15", list(range(-16, -8)), list(range(8))),
+        ("i32", "Or", "-16 + i32(tid)", "8", list(range(-16, -8)), list(range(-8, 0))),
+        ("i32", "Xor", "-16 + i32(tid)", "15", list(range(-16, -8)), list(range(-1, -9, -1))),
+        ("i32", "Exchange", "-8 + i32(tid)", "-123", list(range(-8, 0)), [-123] * 8),
+    ]
+    for element, operation, initial, operand, old, updated in rmw_cases:
+        label = "indexed-atomic-" + operation.lower() + "-" + element
+        path = output / (label + ".wgsl")
+        path.write_text(f"var<workgroup> shared_values: array<atomic<{element}>, 8>;\n"
+                        "@group(0) @binding(0) var<storage, read_write> values: array<u32, 16>;\n"
+                        "@compute @workgroup_size(8) fn main(@builtin(local_invocation_index) tid: u32) {\n"
+                        f"  atomicStore(&shared_values[tid], {initial}); workgroupBarrier();\n"
+                        "  var index = tid; let pointer = &shared_values[index]; index = 0u;\n"
+                        f"  let previous = atomic{operation}(pointer, {operand}); workgroupBarrier();\n"
+                        "  values[tid * 2u] = bitcast<u32>(previous);\n"
+                        "  values[tid * 2u + 1u] = bitcast<u32>(atomicLoad(&shared_values[tid]));\n}\n",
+                        encoding="utf-8")
+        receipt.setdefault("shaders", {})[str(path)] = digest(path)
+        command = dispatch(path)
+        command["bindings"][0]["buffer_size"] = 64
+        words = [value & 0xffffffff for pair in zip(old, updated) for value in pair]
+        command = oracle(command, values=words)
+        command["output_oracle"]["reference_id"] = "independent-old-new-" + label + "-v1"
+        run(label, [command], ["ok"], 1)
+    # Shared contention: returned old values must form a permutation of 0..7.
+    # Accumulating their bit masks and sum detects lost updates and wrong returns.
+    contention = output / "indexed-atomic-contention.wgsl"
+    contention.write_text("var<workgroup> shared_values: array<atomic<u32>, 3>;\n"
+                          "@group(0) @binding(0) var<storage, read_write> values: array<u32, 8>;\n"
+                          "@compute @workgroup_size(8) fn main(@builtin(local_invocation_index) tid: u32) {\n"
+                          "  if (tid == 0u) { atomicStore(&shared_values[0], 0u); atomicStore(&shared_values[1], 0u); atomicStore(&shared_values[2], 0u); }\n"
+                          "  workgroupBarrier(); let old = atomicAdd(&shared_values[0], 1u);\n"
+                          "  let mask_before = atomicOr(&shared_values[1], 1u << old);\n"
+                          "  let sum_before = atomicAdd(&shared_values[2], old); workgroupBarrier();\n"
+                          "  values[tid] = atomicLoad(&shared_values[0]) + 256u * atomicLoad(&shared_values[1]) + 65536u * atomicLoad(&shared_values[2]);\n}\n",
+                          encoding="utf-8")
+    receipt.setdefault("shaders", {})[str(contention)] = digest(contention)
+    check = oracle(dispatch(contention), values=[1900296] * 8)  # 8 + 256*255 + 65536*28
+    check["output_oracle"]["reference_id"] = "independent-eight-ticket-count-mask-sum-v1"
+    run("indexed-atomic-contention", [check], ["ok"], 1)
     inc = shader("increment", "values[gid.x] = values[gid.x] + gid.x + 1u;")
     twice = shader("double", "values[gid.x] = values[gid.x] * 2u;")
     # All commands request initialization. Existing handles must retain data.

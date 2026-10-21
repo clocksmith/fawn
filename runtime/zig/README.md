@@ -233,6 +233,16 @@ The [HLSL regression](tests/core/hlsl_subsystem_test.zig) checks target identity
 and index capture. This does not qualify all atomic operations, pointer shapes,
 storage atomics or arbitrary workgroup programs.
 
+The native CLI storage fixture also qualifies indexed shared-array `atomicAdd`,
+`atomicSub`, `atomicMin`, `atomicMax`, `atomicAnd`, `atomicOr`, `atomicXor` and
+`atomicExchange` for signed and unsigned elements. Target-specific helpers name
+the actual `groupshared` array, preserve captured pointer indices and return the
+pre-operation value. Independent old/new bit patterns include unsigned wrap,
+signed comparisons and shared contention with a ticket count/mask/sum oracle.
+This additional evidence belongs to the CLI consumer; it does not expand the
+public-ABI fixture claim. Compare-exchange, other pointer shapes and storage
+atomics remain unqualified.
+
 ## Windows native CLI storage boundary
 
 The native CLI admits group-0 scalar storage bindings in slots 0 through 7,

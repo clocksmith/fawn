@@ -2212,9 +2212,9 @@
       },
       "src/compiler/wgsl/emit/hlsl/emit_hlsl.zig": {
         "decision": "Keep",
-        "moduleSha256": "8add698db331aa7aee3ab7862b74af5f59fded222e5ccc2fe3482d43d58ccafc",
-        "reason": "Keep: reserved generated loop flags preserve source identifier identity and continuing control flow across compute and stage emission.",
-        "reviewer": "codex-hlsl-loop-flag/2026-10-21"
+        "moduleSha256": "66673aa29457b7202d5fa5353ff3715cfee7e1346e3b24d40f947ce3945ec782",
+        "reason": "Keep: shared-array atomic RMW specialization preserves actual target, scalar signedness, captured index and old-value return semantics.",
+        "reviewer": "codex-indexed-atomic-rmw/2026-10-21"
       },
       "src/compiler/wgsl/emit/hlsl/emit_hlsl_builtins.zig": {
         "decision": "Keep",
