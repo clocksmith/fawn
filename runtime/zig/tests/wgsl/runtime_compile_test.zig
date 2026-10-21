@@ -267,7 +267,8 @@ test "compute runtime elides bitmasked workgroup array clamp" {
     try std.testing.expect(std.mem.indexOf(u8, msl, "wg_data[min(") == null);
     try std.testing.expect(std.mem.indexOf(u8, msl, "wg_data[idx]") != null);
     try std.testing.expect(std.mem.indexOf(u8, msl, "inout_data[min(") == null);
-    try std.testing.expect(std.mem.indexOf(u8, msl, "inout_data[i]") != null);
+    // The two loop indices share a source name; identity-preserving lowering renames them.
+    try std.testing.expect(std.mem.indexOf(u8, msl, "wg_data[__doe_local_1] = inout_data[__doe_local_1];") != null);
     try std.testing.expect(std.mem.indexOf(u8, msl, "inout_data[uint(0)]") != null or
         std.mem.indexOf(u8, msl, "inout_data[0]") != null);
 }

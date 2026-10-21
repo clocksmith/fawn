@@ -660,3 +660,52 @@ test "msl: f16 maps to half" {
     defer free_msl(msl);
     try expectHas(msl, "half");
 }
+
+test "msl: private state belongs to each invocation and survives helper shadowing" {
+    const msl = try compile_msl(
+        \\var<private> calls: u32;
+        \\fn increment() -> u32 { calls += 1u; return calls; }
+        \\fn nested(calls: u32) -> u32 { return calls + increment(); }
+        \\@group(0) @binding(0) var<storage, read_write> output: array<u32>;
+        \\@compute @workgroup_size(8) fn main(@builtin(local_invocation_index) tid: u32) {
+        \\  output[tid] = nested(40u) + calls;
+        \\}
+    );
+    defer free_msl(msl);
+    try std.testing.expect(!has(msl, "\nthread uint calls;"));
+    try expectHas(msl, "thread uint& __doe_private_0");
+    try expectHas(msl, "    uint __doe_private_0 = {};");
+    try expectHas(msl, "nested(uint calls, thread uint& __doe_private_0");
+    try expectHas(msl, "increment(__doe_private_0, output, _doe_sizes)");
+}
+
+test "msl: private aggregate initialization and capture remain per entry point" {
+    const msl = try compile_msl(
+        \\struct State { value: u32, other: vec2u, }
+        \\var<private> state: State;
+        \\var<private> items: array<u32, 2> = array<u32, 2>(3u, 5u);
+        \\fn advance() -> u32 { state.value += items[0]; items[1] += 1u; return state.value + items[1]; }
+        \\@group(0) @binding(0) var<storage, read_write> output: array<u32>;
+        \\@compute @workgroup_size(1) fn first() { output[0] = advance(); }
+        \\@compute @workgroup_size(1) fn second() { output[0] = advance(); }
+    );
+    defer free_msl(msl);
+    try expectHas(msl, "thread State& __doe_private_0");
+    try expectHas(msl, "thread uint (&__doe_private_1)[2]");
+    try std.testing.expectEqual(@as(usize, 2), std.mem.count(u8, msl, "    State __doe_private_0 = {};"));
+    try std.testing.expectEqual(@as(usize, 2), std.mem.count(u8, msl, "    uint __doe_private_1[2] = "));
+    try expectHas(msl, "3u, 5u");
+}
+
+test "msl: private state is initialized in vertex and fragment entry implementations" {
+    const msl = try compile_msl(
+        \\var<private> value: f32 = 0.5;
+        \\fn read_value() -> f32 { return value; }
+        \\@vertex fn vert() -> @builtin(position) vec4f { return vec4f(read_value(), 0.0, 0.0, 1.0); }
+        \\@fragment fn frag() -> @location(0) vec4f { return vec4f(read_value()); }
+    );
+    defer free_msl(msl);
+    try std.testing.expect(!has(msl, "\nthread float value"));
+    try std.testing.expectEqual(@as(usize, 2), std.mem.count(u8, msl, "    float __doe_private_0 = "));
+    try expectHas(msl, "read_value(thread float& __doe_private_0)");
+}

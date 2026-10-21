@@ -288,6 +288,11 @@ const Analyzer = struct {
                 const extra = self.module.tree.extra_data.items;
                 const base = node.data.rhs;
                 global_info.ty = try self.resolve_type_node(node.data.lhs);
+                const init_node = extra[base + 3];
+                if (init_node != NULL_NODE) {
+                    const init_ty = try self.analyze_expr(init_node, null);
+                    if (!self.type_compatible(global_info.ty, init_ty)) return error.TypeMismatch;
+                }
                 if (extra[base + 1] != 0) global_info.addr_space = try parse_address_space(self.module.tree.tokenSlice(extra[base + 1]));
                 if (extra[base + 2] != 0) global_info.access = try parse_access(self.module.tree.tokenSlice(extra[base + 2]));
                 global_info.binding = try sema_attrs.parse_binding(self, extra[base + 4], extra[base + 5]);

@@ -155,20 +155,7 @@ const Emitter = struct {
         for (self.module.globals.items) |global| {
             if (global.binding != null) continue;
             switch (global.class) {
-                .var_ => {
-                    const addr_space = global.addr_space orelse continue;
-                    switch (addr_space) {
-                        .workgroup => continue,
-                        .private => try self.write("\nthread "),
-                        else => continue,
-                    }
-                    try self.emit_named_decl(global.ty, global.name);
-                    if (global.initializer) |constant| {
-                        try self.write(" = ");
-                        try self.emit_constant(constant, global.ty);
-                    }
-                    try self.write(";\n");
-                },
+                .var_ => continue,
                 .const_, .override_ => {
                     try self.write("\nconstant ");
                     try self.emit_named_decl(global.ty, global.name);
@@ -180,6 +167,24 @@ const Emitter = struct {
                 },
                 else => {},
             }
+        }
+    }
+
+    // WGSL private storage is zero-initialized separately for each invocation.
+    // MSL thread storage must live inside the entry function, with helper references.
+    pub fn emitPrivateGlobals(self: *Emitter) EmitError!void {
+        for (self.module.globals.items, 0..) |global, index| {
+            if (global.class != .var_ or global.addr_space != .private) continue;
+            var name_buffer: [32]u8 = undefined;
+            try self.write_indent();
+            try self.emit_named_decl(global.ty, try maps.globalName(self.module, @intCast(index), &name_buffer));
+            try self.write(" = ");
+            if (global.initializer) |constant| {
+                try self.emit_constant(constant, global.ty);
+            } else {
+                try self.write("{}");
+            }
+            try self.write(";\n");
         }
     }
 
@@ -292,6 +297,7 @@ const Emitter = struct {
         try self.write(") {\n");
         self.indent += 4;
         if (stage != null and stage.? == .compute) {
+            try self.emitPrivateGlobals();
             try self.emit_function_scoped_workgroup_globals(function);
         }
         try self.emit_runtime_array_length_locals(function);
@@ -325,15 +331,18 @@ const Emitter = struct {
     fn emit_helper_capture_params(self: *Emitter, need_comma: *bool) EmitError!void {
         for (self.module.globals.items, 0..) |global, index| {
             const captured_workgroup = workgroup_zero.helperUsesWorkgroupGlobal(self.module, @intCast(index));
-            if (global.binding == null and !captured_workgroup) continue;
+            const captured_private = global.class == .var_ and global.addr_space == .private;
+            if (global.binding == null and !captured_workgroup and !captured_private) continue;
+            var name_buffer: [32]u8 = undefined;
+            const name = try maps.globalName(self.module, @intCast(index), &name_buffer);
             if (need_comma.*) try self.write(", ");
-            if (captured_workgroup) {
-                try self.write("threadgroup ");
+            if (captured_workgroup or captured_private) {
+                try self.write(if (captured_private) "thread " else "threadgroup ");
                 switch (self.module.types.get(global.ty)) {
                     .array => |array| {
                         try self.emit_type(array.elem);
                         try self.write(" (&");
-                        try self.write(global.name);
+                        try self.write(name);
                         try self.write(")[");
                         try self.write_u32(array.len orelse return error.InvalidIr);
                         try self.write("]");
@@ -341,7 +350,7 @@ const Emitter = struct {
                     else => {
                         try self.emit_type(global.ty);
                         try self.write("& ");
-                        try self.write(global.name);
+                        try self.write(name);
                     },
                 }
             } else {
@@ -360,9 +369,12 @@ const Emitter = struct {
 
     pub fn emit_helper_capture_args(self: *Emitter, need_comma: *bool) EmitError!void {
         for (self.module.globals.items, 0..) |global, index| {
-            if (global.binding == null and !workgroup_zero.helperUsesWorkgroupGlobal(self.module, @intCast(index))) continue;
+            const captured_private = global.class == .var_ and global.addr_space == .private;
+            if (global.binding == null and !captured_private and !workgroup_zero.helperUsesWorkgroupGlobal(self.module, @intCast(index))) continue;
+            var name_buffer: [32]u8 = undefined;
+            const name = try maps.globalName(self.module, @intCast(index), &name_buffer);
             if (need_comma.*) try self.write(", ");
-            try self.write(global.name);
+            try self.write(name);
             need_comma.* = true;
         }
         if (self.module_needs_sizes_param()) {
@@ -822,7 +834,8 @@ const Emitter = struct {
             },
             .global_ref => |index| {
                 if (try self.try_emit_global_const_literal(index)) return;
-                try self.write(self.module.globals.items[index].name);
+                var name_buffer: [32]u8 = undefined;
+                try self.write(try maps.globalName(self.module, index, &name_buffer));
             },
             .load => |inner| {
                 if (try self.try_emit_unwritten_workgroup_zero(function, inner, expr.ty)) return;
