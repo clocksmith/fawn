@@ -39,6 +39,8 @@ static void scope_ready(WGPUPopErrorScopeStatus status, WGPUErrorType type,
 
 int main(int argc, char **argv) {
     if (argc != 2 && argc != 3) return 2;
+    const int atomic_signed = argc == 3 && strcmp(argv[2], "atomic-signed") == 0;
+    const int atomic = atomic_signed || (argc == 3 && strcmp(argv[2], "atomic") == 0);
     const int clear_first = argc == 3 && strcmp(argv[2], "clear") == 0;
     const int clear_after = argc == 3 && strcmp(argv[2], "clear-after") == 0;
     const int mismatch = argc == 3 && strcmp(argv[2], "mismatch") == 0;
@@ -49,7 +51,7 @@ int main(int argc, char **argv) {
     const int floating = argc == 3 && strcmp(argv[2], "float") == 0;
     const int repeated = argc == 3 && strcmp(argv[2], "repeat") == 0;
     const int reject_dispatch = mismatch || (argc == 3 && strcmp(argv[2], "reject") == 0);
-    const int signed_integer = argc == 3 && strcmp(argv[2], "int") == 0;
+    const int signed_integer = atomic_signed || (argc == 3 && strcmp(argv[2], "int") == 0);
     const int unsupported = argc == 3 && strcmp(argv[2], "unsupported") == 0;
     const int fixture = argc == 3 && strcmp(argv[2], "fixture") == 0;
     const int recover = argc == 3 && strcmp(argv[2], "recover") == 0;
@@ -130,6 +132,7 @@ int main(int argc, char **argv) {
         for (unsigned i=0; i<8; ++i) oracle[i] = values[i]*3+8;
         memcpy(input_words,values,sizeof(values)); memcpy(expected,oracle,sizeof(oracle));
     }
+    if (atomic) for(unsigned i=0;i<8;++i) expected[i]=input_words[i]+input_words[(i+1)%8];
     if (short_binding) for(unsigned i=4;i<8;++i) expected[i]=input_words[i];
     if (rebind) for(unsigned i=0;i<4;++i) expected[i]=expected[i]*3u+4u;
     if (fixture) for(unsigned i=0;i<8;++i) expected[i]=input_words[i]+1u;
@@ -162,6 +165,20 @@ int main(int argc, char **argv) {
         "data[id.x] = data[id.x] * 3 + i32(arrayLength(&data)); }";
     if (fixed) wgsl = "@group(0) @binding(0) var<storage, read_write> data: array<u32,8>; "
         "@compute @workgroup_size(1) fn main(@builtin(global_invocation_id) id: vec3<u32>) { data[id.x] = data[id.x] * 3u + 8u; }";
+    if (atomic) wgsl =
+        "var<workgroup> cells: array<atomic<u32>,8>; "
+        "@group(0) @binding(0) var<storage,read_write> data: array<u32>; "
+        "@compute @workgroup_size(8) fn main(@builtin(local_invocation_index) tid:u32) { "
+        "var index=tid; let pointer=&cells[index]; index=0u; "
+        "atomicStore(pointer,data[tid]); workgroupBarrier(); "
+        "data[tid]=atomicLoad(pointer)+atomicLoad(&cells[(tid+1u)%8u]); }";
+    if (atomic_signed) wgsl =
+        "var<workgroup> cells: array<atomic<i32>,8>; "
+        "@group(0) @binding(0) var<storage,read_write> data: array<i32>; "
+        "@compute @workgroup_size(8) fn main(@builtin(local_invocation_index) tid:u32) { "
+        "var index=tid; let pointer=&cells[index]; index=0u; "
+        "atomicStore(pointer,data[tid]); workgroupBarrier(); "
+        "data[tid]=atomicLoad(pointer)+atomicLoad(&cells[(tid+1u)%8u]); }";
     const char *valid_wgsl = wgsl;
     if (unsupported || recover) wgsl = "@group(0) @binding(0) var<storage, read_write> data: array<vec2<u32>,4>; "
         "@compute @workgroup_size(1) fn main(@builtin(global_invocation_id) id: vec3<u32>) { data[id.x] = vec2<u32>(7u,7u); }";
@@ -237,7 +254,7 @@ int main(int argc, char **argv) {
     if (!pass) goto cleanup;
     ComputePassEncoderSetPipeline(pass,pipeline);
     ComputePassEncoderSetBindGroup(pass,0,group,0,NULL);
-    ComputePassEncoderDispatchWorkgroups(pass,reject_dispatch && !mismatch ? elements+1 : elements,1,1);
+    ComputePassEncoderDispatchWorkgroups(pass,atomic ? 1 : reject_dispatch && !mismatch ? elements+1 : elements,1,1);
     if (repeated) ComputePassEncoderDispatchWorkgroups(pass,elements,1,1);
     if (rebind) {
         ComputePassEncoderSetBindGroup(pass,0,short_group,0,NULL);
@@ -332,6 +349,6 @@ cleanup:
     if (result) fprintf(stderr, "FAIL stage=%s\n", stage);
     else if (unsupported) printf("PASS: D3D12 aggregate array rejected at pipeline creation\n");
     else printf("PASS: D3D12 %s compute/readback, early release, exact 8-word output, misaligned clear rejected\n",
-                clear_first ? "clear then compute" : clear_after ? "compute then clear" : mismatch ? "foreign automatic layout rejected" : fixed ? "fixed automatic layout" : recover ? "valid pipeline after rejected aggregate" : fixture ? "unchanged fixture shader" : short_binding ? "short runtime binding" : rebind ? "runtime descriptor rebinding" : floating ? "runtime f32" : signed_integer ? "i32" : repeated ? "repeated u32" : reject_dispatch ? "rejected dispatch preserves sentinel" : "u32");
+                atomic_signed ? "signed shared atomic index capture" : atomic ? "unsigned shared atomic index capture" : clear_first ? "clear then compute" : clear_after ? "compute then clear" : mismatch ? "foreign automatic layout rejected" : fixed ? "fixed automatic layout" : recover ? "valid pipeline after rejected aggregate" : fixture ? "unchanged fixture shader" : short_binding ? "short runtime binding" : rebind ? "runtime descriptor rebinding" : floating ? "runtime f32" : signed_integer ? "i32" : repeated ? "repeated u32" : reject_dispatch ? "rejected dispatch preserves sentinel" : "u32");
     return result;
 }

@@ -217,6 +217,29 @@ The comparison column identifies existing contracts and implementations, not a
 fresh Vulkan or Metal hardware run. BEE cannot physically qualify Metal. The
 Windows tests do not establish full WebGPU conformance or cross-backend parity.
 
+## Windows indexed workgroup atomics
+
+The HLSL emitter keeps indexed workgroup `atomicLoad` and `atomicStore`
+operations attached to the actual `groupshared` array. Passing an atomic target
+as an HLSL `inout` scalar loses that identity and is rejected by DXC. Helpers
+specialized to the declared array preserve signedness and evaluate each index
+once, including indices captured when a local pointer is created.
+
+The [automatic-layout fixture](tests/d3d12_auto_layout_readback.c) adds `atomic`
+and `atomic-signed` modes. They check signed/unsigned shared-array load/store,
+barrier visibility, captured-pointer indexing after index mutation, exact
+neighbor-sum output, early caller release and the retained invalid-clear guard.
+The [HLSL regression](tests/core/hlsl_subsystem_test.zig) checks target identity
+and index capture. This does not qualify all atomic operations, pointer shapes,
+storage atomics or arbitrary workgroup programs.
+
+The unchanged [atomic benchmark shader](../../bench/kernels/workgroup_atomic.wgsl)
+compiles through HLSL and DXC, but the native CLI benchmark path has a separate
+binding gap: its [compute root signature](src/backend/d3d12/d3d12_runtime_compute.zig)
+only declares dispatch-info constants. It cannot create this shader's storage
+UAV pipeline. The public-ABI fixture uses the admitted native compute binding
+path; passing it cannot promote the native CLI workload or its output oracle.
+
 ## Native callback delivery
 
 The [bounded callback contract](../../docs/native-callback-contract.md) specifies

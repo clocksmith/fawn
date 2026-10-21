@@ -745,3 +745,32 @@ test "hlsl interpolation: flat and linear modifiers" {
     try testing.expect(contains(hlsl, "nointerpolation"));
     try testing.expect(contains(hlsl, "noperspective"));
 }
+
+test "hlsl workgroup atomic identity keeps array targets global and pointer indices captured" {
+    const source =
+        \\var<workgroup> signed_values: array<atomic<i32>, 8>;
+        \\var<workgroup> unsigned_values: array<atomic<u32>, 8>;
+        \\@compute @workgroup_size(8)
+        \\fn main(@builtin(local_invocation_index) tid: u32) {
+        \\    var index = tid;
+        \\    let pointer = &signed_values[index];
+        \\    index = 0u;
+        \\    atomicStore(pointer, -7);
+        \\    atomicStore(&unsigned_values[tid], 9u);
+        \\    workgroupBarrier();
+        \\    let a = atomicLoad(pointer);
+        \\    let b = atomicLoad(&unsigned_values[tid]);
+        \\}
+    ;
+    var out: [MAX_HLSL]u8 = undefined;
+    const len = try translateToHlsl(allocator, source, &out);
+    const hlsl = out[0..len];
+    try testing.expect(contains(hlsl, "InterlockedOr(signed_values[index], 0, result)"));
+    try testing.expect(contains(hlsl, "InterlockedExchange(unsigned_values[index], next, ignored)"));
+    try testing.expect(contains(hlsl, "int doe_atomicLoad_signed_values(uint index)"));
+    try testing.expect(contains(hlsl, "uint doe_atomicLoad_unsigned_values(uint index)"));
+    try testing.expect(contains(hlsl, "doe_atomicStore_signed_values(doe_pointer_index_"));
+    try testing.expect(contains(hlsl, "doe_atomicLoad_signed_values(doe_pointer_index_"));
+    try testing.expect(!contains(hlsl, "doe_atomicLoad(unsigned_values["));
+    try testing.expect(!contains(hlsl, "doe_atomicStore(signed_values["));
+}
