@@ -53,7 +53,10 @@ buffer writes, and rejection recovery. The unchanged three-binding matrix stress
 workload and independent nonzero identity/dense inputs now exercise read-only and
 writable storage together, including layout switching and rejected access/alias
 recovery. Broader catalog coverage remains outside the accepted boundary. Process exit or a successful
-dispatch without explicit output-oracle validation is insufficient.
+dispatch without explicit output-oracle validation is insufficient. Bounded HLSL
+control-flow checks also retain for-loop increments and the correct continuing
+break target across nested loops and switches; cross-backend confirmation remains
+separate from these physical D3D12 outputs.
 
 A source-matched Windows Dawn control remains absent. The
 [bootstrap](../../bench/tools/bootstrap_dawn.py) needs an explicit compatible

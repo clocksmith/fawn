@@ -278,7 +278,12 @@ submission counts. The unchanged matrix command retains its shader, workgroup,
 warmup and repeat count. Additional identity and dense seeded matrices check the
 full output against independently computed exact f32 bytes, including input
 reordering, handle reuse, scalar/matrix layout switching, rejected aliases and
-access mismatches. Original failed traces remain separate from accepted evidence.
+access mismatches. Bounded control-flow cases also check that `continue` executes
+the nearest loop's continuing clause, that nested loops do not inherit an outer
+increment, and that `break if` still exits the loop through a switch/continue
+edge. These checks exercise HLSL lowering on D3D12; other target backends need
+their own physical qualification. Original failed traces remain separate from
+accepted evidence.
 
 This qualifies the exercised native CLI consumer only. A source-matched Windows
 Dawn control, broader workload coverage, matched CPU/memory measurements and

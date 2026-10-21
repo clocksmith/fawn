@@ -166,6 +166,16 @@ def main():
     access["bindings"][0]["buffer_type"] = "storage"
     run("matrix-rejected-alias-access-recovery", [matrix, alias, access, matrix],
         ["ok", "unsupported", "unsupported", "ok"])
+    flow_cases = [
+        ("for-continue", "var total = 0u; for (var i = 0u; i < 4u; i++) { if (i == 1u) { i++; continue; } total += i; } values[gid.x] = total;", 3),
+        ("nested-while-continue", "var total = 0u; for (var i = 0u; i < 4u; i++) { var j = 0u; while (j < 2u) { j++; if (j == 1u) { continue; } total += 10u; } if (i == 1u) { i++; continue; } total += i; } values[gid.x] = total;", 33),
+        ("switch-for-continue", "var total = 0u; for (var i = 0u; i < 4u; i++) { switch i { case 1u: { i++; continue; } default: {} } total += i; } values[gid.x] = total;", 3),
+        ("loop-continuing-break", "var total = 0u; var i = 0u; loop { if (i == 1u) { i++; continue; } total += i; continuing { i++; break if i >= 4u; } } values[gid.x] = total;", 3),
+    ]
+    flow_cases.append(("switch-continuing-break", "var total = 0u; var i = 0u; loop { switch i { case 1u: { i += 2u; continue; } default: {} } total += i; continuing { i++; break if i >= 4u; } } values[gid.x] = total;", 0))
+    for label, body, expected in flow_cases:
+        source = shader(label, body)
+        run(label, [oracle(dispatch(source), values=[expected] * 8)], ["ok"], 1)
     print("Physical CLI storage acceptance complete; no paired speed claim.", flush=True)
 
 

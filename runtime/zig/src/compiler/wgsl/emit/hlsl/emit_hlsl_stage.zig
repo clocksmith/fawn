@@ -321,33 +321,58 @@ fn emit_clip_distance_stmt(self: anytype, function: ir.Function, stmt_id: ir.Stm
         },
         .loop_ => |loop_stmt| {
             // A lowered for initializer belongs to the loop, not the enclosing block.
-            if (loop_stmt.init != null) {
+            if (loop_stmt.init != null or loop_stmt.continuing != null) {
                 try self.write_indent();
                 try self.write("{\n");
                 self.indent += 4;
             }
             if (loop_stmt.init) |init_stmt| try emit_clip_distance_stmt(self, function, init_stmt, result_name, result_len);
             try self.write_indent();
+            if (loop_stmt.continuing != null) {
+                try self.write("bool doe_loop_break_");
+                try self.write_u32(stmt_id);
+                try self.write(" = false;\n");
+                try self.write_indent();
+            }
             try self.write("while (");
+            if (loop_stmt.continuing != null) {
+                try self.write("!doe_loop_break_");
+                try self.write_u32(stmt_id);
+                try self.write(" && (");
+            }
             if (loop_stmt.cond) |cond| {
                 try self.emit_expr(function, cond);
             } else {
                 try self.write("true");
             }
+            if (loop_stmt.continuing != null) try self.write(")");
             try self.write(") {\n");
             self.indent += 4;
+            const previous_loop_break = self.loop_break_flag;
+            const previous_break_target = self.continuing_break_flag;
+            self.loop_break_flag = if (loop_stmt.continuing != null) stmt_id else null;
+            self.continuing_break_flag = null;
+            defer self.loop_break_flag = previous_loop_break;
+            defer self.continuing_break_flag = previous_break_target;
+            const previous_continuing = self.loop_continuing;
+            self.loop_continuing = loop_stmt.continuing;
+            defer self.loop_continuing = previous_continuing;
             try emit_clip_distance_stmt(self, function, loop_stmt.body, result_name, result_len);
+            self.loop_continuing = null;
             if (loop_stmt.continuing) |continuing| try emit_clip_distance_stmt(self, function, continuing, result_name, result_len);
             self.indent -= 4;
             try self.write_indent();
             try self.write("}\n");
-            if (loop_stmt.init != null) {
+            if (loop_stmt.init != null or loop_stmt.continuing != null) {
                 self.indent -= 4;
                 try self.write_indent();
                 try self.write("}\n");
             }
         },
         .switch_ => |switch_stmt| {
+            const previous_break_target = self.continuing_break_flag;
+            self.continuing_break_flag = null;
+            defer self.continuing_break_flag = previous_break_target;
             try self.write_indent();
             try self.write("switch (");
             try self.emit_expr(function, switch_stmt.expr);
@@ -380,9 +405,29 @@ fn emit_clip_distance_stmt(self: anytype, function: ir.Function, stmt_id: ir.Stm
         },
         .break_ => {
             try self.write_indent();
-            try self.write("break;\n");
+            if (self.continuing_break_flag) |target| {
+                // An inlined continuing break must escape its loop, even inside a switch.
+                try self.write("doe_loop_break_");
+                try self.write_u32(target);
+                try self.write(" = true;\n");
+            } else try self.write("break;\n");
         },
         .continue_ => {
+            // WGSL continue executes the nearest loop continuing clause first.
+            if (self.loop_continuing) |continuing| {
+                const previous_break_target = self.continuing_break_flag;
+                self.continuing_break_flag = self.loop_break_flag;
+                defer self.continuing_break_flag = previous_break_target;
+                self.loop_continuing = null;
+                defer self.loop_continuing = continuing;
+                try self.write_indent();
+                try self.write("{\n");
+                self.indent += 4;
+                try emit_clip_distance_stmt(self, function, continuing, result_name, result_len);
+                self.indent -= 4;
+                try self.write_indent();
+                try self.write("}\n");
+            }
             try self.write_indent();
             try self.write("continue;\n");
         },
