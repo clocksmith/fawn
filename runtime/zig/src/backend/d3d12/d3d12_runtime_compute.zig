@@ -403,10 +403,20 @@ pub fn stripExtension(name: []const u8) []const u8 {
 }
 
 pub fn compileHlslToBytecode(alloc: std.mem.Allocator, hlsl_source: []const u8) ![]u8 {
+    return compileHlslEntryToBytecode(alloc, hlsl_source, DXC_ENTRYPOINT);
+}
+
+/// The native caller supplies the entry selected from analyzed WGSL. Keep the
+/// CLI's main entry and cache paths unchanged; other entries own distinct blobs.
+pub fn compileHlslEntryToBytecode(alloc: std.mem.Allocator, hlsl_source: []const u8, entrypoint: []const u8) ![]u8 {
+    if (entrypoint.len == 0) return error.InvalidArgument;
     std.fs.cwd().makePath(GENERATED_SHADER_DIR) catch return error.ShaderCompileFailed;
 
     const source_hash = std.hash.Wyhash.hash(0, hlsl_source);
-    const stem = try std.fmt.allocPrint(alloc, "{s}/d3d12_{x}", .{ GENERATED_SHADER_DIR, source_hash });
+    const stem = if (std.mem.eql(u8, entrypoint, DXC_ENTRYPOINT))
+        try std.fmt.allocPrint(alloc, "{s}/d3d12_{x}", .{ GENERATED_SHADER_DIR, source_hash })
+    else
+        try std.fmt.allocPrint(alloc, "{s}/d3d12_{x}_entry_{x}", .{ GENERATED_SHADER_DIR, source_hash, std.hash.Wyhash.hash(0, entrypoint) });
     defer alloc.free(stem);
     const hlsl_path = try std.fmt.allocPrint(alloc, "{s}.generated.hlsl", .{stem});
     defer alloc.free(hlsl_path);
@@ -421,7 +431,7 @@ pub fn compileHlslToBytecode(alloc: std.mem.Allocator, hlsl_source: []const u8) 
         }
         // DXC's Windows reader does not share write access. End our writer's
         // lifetime before starting the compiler, including on write failure.
-        try runDxc(alloc, hlsl_path, cso_path, DXC_ENTRYPOINT);
+        try runDxc(alloc, hlsl_path, cso_path, entrypoint);
     }
 
     return std.fs.cwd().readFileAlloc(alloc, cso_path, MAX_KERNEL_SOURCE_BYTES) catch return error.ShaderCompileFailed;

@@ -898,7 +898,7 @@
       },
       "src/backend/d3d12/d3d12_runtime_compute.zig": {
         "decision": "Keep",
-        "moduleSha256": "d78bbff20b9b29c3faed34ca2c158313ae9ac287c0560e3fe59bb4cefe23c4ac",
+        "moduleSha256": "131f0cc4ba3263f3b5a57f57a0de48adab212bff48cd7acad3eae2f9dcd07478",
         "reason": "Keep: native D3D12 sparse group-zero storage slots retain exact descriptor/register identity, shader extent/access validation and rejected-layout recovery.",
         "reviewer": "codex-d3d12-sparse/2026-10-21"
       },
@@ -4444,7 +4444,7 @@
       },
       "src/native/compute/doe_compute_d3d12.zig": {
         "decision": "Keep",
-        "moduleSha256": "58e9f170cdbdf25d4862d6a2286c820edbd78d1a8395e41d0c120c89f8aa126c",
+        "moduleSha256": "439c7e38c71bd4dd4e8de18566eef5cc96a55770aa948845e509320a0a6501ed",
         "reason": "Keep: bounded D3D12 integration derives automatic single-storage-binding layouts only after existing analyzed-IR admission, using authoritative shader buffer reflection and existing native layout constructors/releases. Per-pipeline distinct layout identity and pipeline-owned retention reuse GetBindGroupLayout and dispatch validation. Explicit layout, descriptors, shader compiler and queue ownership remain unchanged.",
         "reviewer": "codex-d3d12-auto-layout/2026-10-19"
       },

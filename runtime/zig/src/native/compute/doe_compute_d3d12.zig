@@ -1,5 +1,5 @@
 //! Bounded public D3D12 compute admission and recorded-command integration.
-//! Dense group(0) scalar storage arrays with explicit or automatic layouts, entry main.
+//! Dense group(0) scalar storage arrays with explicit or automatic layouts and one compute entry.
 const std = @import("std");
 const objects = @import("../support/doe_native_object_types.zig");
 const helpers = @import("../support/doe_native_object_helpers.zig");
@@ -22,7 +22,7 @@ const StorageBinding = objects.D3D12StorageBinding;
 const MAX_STORAGE_BINDINGS = objects.D3D12_STORAGE_BINDING_LIMIT;
 
 pub fn createPipeline(device: *objects.DoeDevice, shader: *objects.DoeShaderModule, layout: ?*objects.DoePipelineLayout, entry: []const u8, diagnostic: *ShaderDiagnostic) !*objects.DoeComputePipeline {
-    if (!std.mem.eql(u8, entry, "main")) return error.UnsupportedEntryPoint;
+    if (entry.len == 0) return error.UnsupportedEntryPoint;
     const source = shader.wgsl_source orelse return error.UnsupportedShaderFormat;
     var module = (try analysis.analyze(.{ .allocator = alloc, .source = source, .robustness = analysis.default_translation_robustness_config(), .diagnostic = &diagnostic.compiler })).module;
     defer module.deinit();
@@ -79,7 +79,7 @@ pub fn createPipeline(device: *objects.DoeDevice, shader: *objects.DoeShaderModu
     defer alloc.free(text);
     // Emit the same analyzed module whose proof obligations we retain below.
     const length = try hlsl.emitter.emit(&module, text);
-    const bytecode = try resources.d3d12_compute.compileHlslToBytecode(alloc, text[0..length]);
+    const bytecode = try resources.d3d12_compute.compileHlslEntryToBytecode(alloc, text[0..length], entry);
     defer alloc.free(bytecode);
     var ranges: [MAX_STORAGE_BINDINGS]bridge.D3D12DescriptorRangeDesc = undefined;
     for (storage[0..count], 0..) |slot, index| ranges[index] = .{
