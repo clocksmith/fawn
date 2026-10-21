@@ -131,6 +131,7 @@ pub fn query_identity(physical_device: c.VkPhysicalDevice) native_runtime.Adapte
     c.vkGetPhysicalDeviceProperties2(physical_device, &properties2);
     const properties = properties2.properties;
     return .{
+        .device_type = properties.deviceType,
         .vendor_id = properties.vendorID,
         .device_id = properties.deviceID,
         .driver_version = properties.driverVersion,
@@ -147,7 +148,8 @@ pub fn identity_matches(
     expected: native_runtime.AdapterIdentity,
     actual: native_runtime.AdapterIdentity,
 ) bool {
-    return expected.vendor_id == actual.vendor_id and
+    return expected.device_type == actual.device_type and
+        expected.vendor_id == actual.vendor_id and
         expected.device_id == actual.device_id and
         expected.driver_version == actual.driver_version and
         std.mem.eql(
@@ -158,13 +160,15 @@ pub fn identity_matches(
 }
 
 pub fn identity_matches_fields(
+    device_type: u32,
     vendor_id: u32,
     device_id: u32,
     driver_version: u32,
     device_name: []const u8,
     actual: native_runtime.AdapterIdentity,
 ) bool {
-    return vendor_id == actual.vendor_id and
+    return device_type == actual.device_type and
+        vendor_id == actual.vendor_id and
         device_id == actual.device_id and
         driver_version == actual.driver_version and
         std.mem.eql(
@@ -178,6 +182,7 @@ test "adapter capability binding requires the selected physical-device identity"
     var name = [_]u8{0} ** backend_contract.ADAPTER_DEVICE_NAME_BYTES;
     @memcpy(name[0..6], "Radeon");
     const actual = native_runtime.AdapterIdentity{
+        .device_type = c.VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU,
         .vendor_id = 0x1002,
         .device_id = 0x744c,
         .driver_version = 7,
@@ -185,13 +190,26 @@ test "adapter capability binding requires the selected physical-device identity"
         .device_name_len = 6,
     };
     try std.testing.expect(identity_matches_fields(
+        c.VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU,
         0x1002,
         0x744c,
         7,
         "Radeon",
         actual,
     ));
+    var changed_type = actual;
+    changed_type.device_type = c.VK_PHYSICAL_DEVICE_TYPE_CPU;
+    try std.testing.expect(!identity_matches(actual, changed_type));
     try std.testing.expect(!identity_matches_fields(
+        c.VK_PHYSICAL_DEVICE_TYPE_CPU,
+        actual.vendor_id,
+        actual.device_id,
+        actual.driver_version,
+        "Radeon",
+        actual,
+    ));
+    try std.testing.expect(!identity_matches_fields(
+        c.VK_PHYSICAL_DEVICE_TYPE_CPU,
         0x10005,
         0x0000,
         1,

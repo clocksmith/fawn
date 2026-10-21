@@ -533,6 +533,7 @@ fn queryCanvasCapabilities(surf: *DoeSurface, adapter: *native_types.DoeAdapter)
     else
         return error.SurfaceUnavailable;
     return vk_surf.probeSurfaceCapabilities(alloc, adapter.vulkan_queue_family_policy, .{
+        .device_type = adapter.vulkan_device_type,
         .vendor_id = adapter.vendor_id,
         .device_id = adapter.device_id,
         .driver_version = adapter.driver_version,

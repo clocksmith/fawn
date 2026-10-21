@@ -287,6 +287,8 @@ fn create_adapter_for_instance(inst: ?*anyopaque) CreateAdapterError!*DoeAdapter
                     .instance = retained_instance,
                     .vulkan_queue_family_policy = selected_policy.queue_family_policy,
                     .vulkan_selection = @ptrCast(adapter_probe.selection.?),
+                    .vulkan_device_type = identity.device_type,
+                    .adapter_type = backend_capabilities.vulkanAdapterType(identity.device_type),
                     .vendor_id = identity.vendor_id,
                     .device_id = identity.device_id,
                     .driver_version = identity.driver_version,
@@ -386,6 +388,7 @@ fn create_device_object(
             };
             const runtime_identity = vk_adapter_probe.query_identity(rt.physical_device);
             if (!vk_adapter_probe.identity_matches_fields(
+                adapter.vulkan_device_type,
                 adapter.vendor_id,
                 adapter.device_id,
                 adapter.driver_version,

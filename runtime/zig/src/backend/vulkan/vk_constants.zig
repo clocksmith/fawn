@@ -39,6 +39,11 @@ pub const VkFramebuffer = vk.VkFramebuffer;
 pub const VkSemaphore = vk.VkSemaphore;
 pub const VkSampler = vk.VkSampler;
 pub const VK_NULL_U64 = vk.VK_NULL_U64;
+pub const VK_PHYSICAL_DEVICE_TYPE_OTHER: u32 = 0;
+pub const VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU: u32 = 1;
+pub const VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU: u32 = 2;
+pub const VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU: u32 = 3;
+pub const VK_PHYSICAL_DEVICE_TYPE_CPU: u32 = 4;
 pub const VkAllocationCallbacks = vk.VkAllocationCallbacks;
 
 pub const VkApplicationInfo = structs.VkApplicationInfo;
