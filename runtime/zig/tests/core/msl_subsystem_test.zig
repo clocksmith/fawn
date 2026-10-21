@@ -709,3 +709,44 @@ test "msl: private state is initialized in vertex and fragment entry implementat
     try std.testing.expectEqual(@as(usize, 2), std.mem.count(u8, msl, "    float __doe_private_0 = "));
     try expectHas(msl, "read_value(thread float& __doe_private_0)");
 }
+
+test "msl: materialize workgroup atomic results without changing device atomics" {
+    const msl = try compile_msl(
+        \\var<workgroup> counters: array<atomic<u32>, 3>;
+        \\var<workgroup> signed_counter: atomic<i32>;
+        \\@group(0) @binding(0) var<storage, read_write> device_counter: atomic<u32>;
+        \\@compute @workgroup_size(8)
+        \\fn main() {
+        \\    let ticket = atomicAdd(&counters[0], 1u);
+        \\    let sum = atomicAdd(&counters[1], ticket);
+        \\    let nested = atomicOr(&counters[2], atomicSub(&counters[0], 1u));
+        \\    let signed_old = atomicExchange(&signed_counter, -1);
+        \\    let device_old = atomicAdd(&device_counter, 1u);
+        \\}
+    );
+    defer free_msl(msl);
+    try expectHas(msl, "volatile uint __doe_atomic_result = atomic_fetch_add_explicit(&(counters[0]), 1u, memory_order_relaxed)");
+    try expectHas(msl, "volatile uint __doe_atomic_result = atomic_fetch_add_explicit(&(counters[1]), ticket, memory_order_relaxed)");
+    try expectHas(msl, "volatile int __doe_atomic_result = atomic_exchange_explicit(&(signed_counter), (-1), memory_order_relaxed)");
+    try expectHas(msl, "const uint device_old = atomic_fetch_add_explicit(&(device_counter), 1u, memory_order_relaxed);");
+    try std.testing.expectEqual(@as(usize, 4), std.mem.count(u8, msl, "; static_cast<uint>(__doe_atomic_result);})"));
+    try std.testing.expectEqual(@as(usize, 1), std.mem.count(u8, msl, "; static_cast<int>(__doe_atomic_result);})"));
+    try std.testing.expectEqual(@as(usize, 1), std.mem.count(u8, msl, "atomic_fetch_sub_explicit"));
+}
+
+test "msl: materialize workgroup atomic pointer helper results" {
+    const msl = try compile_msl(
+        \\var<workgroup> counter: atomic<u32>;
+        \\@group(0) @binding(0) var<storage, read_write> output: u32;
+        \\fn increment(p: ptr<workgroup, atomic<u32>>) -> u32 {
+        \\    return atomicAdd(p, 1u);
+        \\}
+        \\@compute @workgroup_size(8)
+        \\fn main() { output = increment(&counter); }
+    );
+    defer free_msl(msl);
+    try expectHas(msl, "threadgroup atomic_uint counter;");
+    try expectHas(msl, "volatile uint __doe_atomic_result = atomic_fetch_add_explicit");
+    try std.testing.expectEqual(@as(usize, 1), std.mem.count(u8, msl, "atomic_fetch_add_explicit"));
+    try std.testing.expectEqual(@as(usize, 1), std.mem.count(u8, msl, "; static_cast<uint>(__doe_atomic_result);})"));
+}
