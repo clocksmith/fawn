@@ -122,6 +122,50 @@ def main():
         ["ok", "ok"], 1, submissions=[2, 1])
     run("write-created-buffer", [write(initial, handle=99)], ["ok"], submissions=[2])
     run("write-range-recovery", [write(initial), write([99, 100], offset=28), dispatch(inc)], ["ok", "error", "ok"])
+    # The canonical matrix command and WGSL are unchanged, including 50 repeats.
+    matrix_file = repo / "examples/shader_compile_stress_commands.json"
+    matrix = json.loads(matrix_file.read_text())[0]
+    receipt.setdefault("shaders", {})[str(repo / "bench/kernels" / matrix["kernel"])] = digest(repo / "bench/kernels" / matrix["kernel"])
+    run("unchanged-matrix", matrix_file, ["ok"], 1)
+    identity_words = [0x3f800000 if row == col else 0 for row in range(512) for col in range(512)]
+    # Distinct rows and columns expose transposed inputs or stale binding tables.
+    pattern = [float((row * 3 + col * 7) % 31 + 1) for row in range(512) for col in range(512)]
+    pattern_bytes = struct.pack(f"<{len(pattern)}f", *pattern)
+    pattern_words = list(struct.unpack(f"<{len(pattern)}I", pattern_bytes))
+    expected_hash = hashlib.sha256(pattern_bytes).hexdigest()
+    seeded_matrix = copy.deepcopy(matrix)
+    seeded_matrix["output_oracle"].update(schema_version=2, reference_class="independent_v1",
+                                         scope="command_graph", expected_sha256=expected_hash,
+                                         reference_id="independent-identity-times-row-column-pattern-f32-512-v1")
+    seed = [write(identity_words, handle=7201, size=1048576), write(pattern_words, handle=7202, size=1048576)]
+    # Also switch root layouts away and back while preserving seeded resources.
+    run("seeded-matrix-layout-reuse", seed + [seeded_matrix, oracle(dispatch(inc)), seeded_matrix],
+        ["ok"] * 5, 3, submissions=[16, 16, 1, 1, 1])
+    swapped = copy.deepcopy(seeded_matrix)
+    swapped["bindings"][0]["resource_handle"] = 7202
+    swapped["bindings"][1]["resource_handle"] = 7201
+    swapped["output_oracle"]["reference_id"] = "independent-row-column-pattern-times-identity-f32-512-v1"
+    # Reordered JSON entries must still resolve to shader binding numbers.
+    swapped["bindings"].reverse()
+    run("matrix-handle-rebind", seed + [seeded_matrix, swapped, seeded_matrix],
+        ["ok"] * 5, 3, submissions=[16, 16, 1, 1, 1])
+    dense_a = [float(row % 7 + 1) for row in range(512) for col in range(512)]
+    dense_b = [float(col % 5 + 1) for row in range(512) for col in range(512)]
+    dense_result = [float(512 * (row % 7 + 1) * (col % 5 + 1)) for row in range(512) for col in range(512)]
+    def float_words(values):
+        return list(struct.unpack(f"<{len(values)}I", struct.pack(f"<{len(values)}f", *values)))
+    dense = copy.deepcopy(seeded_matrix)
+    dense["output_oracle"]["expected_sha256"] = hashlib.sha256(struct.pack(f"<{len(dense_result)}f", *dense_result)).hexdigest()
+    dense["output_oracle"]["reference_id"] = "independent-512-term-integer-exact-dense-product-v1"
+    run("dense-matrix-accumulation", [write(float_words(dense_a), handle=7201, size=1048576),
+        write(float_words(dense_b), handle=7202, size=1048576), dense],
+        ["ok"] * 3, 1, submissions=[16, 16, 1])
+    alias = copy.deepcopy(matrix)
+    alias["bindings"][2]["resource_handle"] = 7201
+    access = copy.deepcopy(matrix)
+    access["bindings"][0]["buffer_type"] = "storage"
+    run("matrix-rejected-alias-access-recovery", [matrix, alias, access, matrix],
+        ["ok", "unsupported", "unsupported", "ok"])
     print("Physical CLI storage acceptance complete; no paired speed claim.", flush=True)
 
 

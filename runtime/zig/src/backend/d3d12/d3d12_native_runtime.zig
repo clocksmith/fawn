@@ -89,7 +89,7 @@ pub const NativeD3D12Runtime = struct {
     default_pool: upload.D3D12Pool = .{},
 
     kernel_buffers: kernel_buffers.State = .{},
-    compute_has_storage: bool = false,
+    compute_layout_key: u32 = 0,
     root_signature: ?*anyopaque = null,
     compute_pipeline: ?*anyopaque = null,
     compute_allocator: ?*anyopaque = null,
