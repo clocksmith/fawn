@@ -1521,6 +1521,12 @@ void d3d12_bridge_device_create_cbv(D3D12Handle device_h, D3D12Handle heap_h, ui
 
 void d3d12_bridge_device_create_srv_buffer(D3D12Handle device_h, D3D12Handle heap_h, uint32_t index,
                                             D3D12Handle buffer_h, uint32_t num_elements, uint32_t stride) {
+    d3d12_bridge_device_create_srv_buffer_range(device_h, heap_h, index, buffer_h, 0, num_elements, stride);
+}
+
+void d3d12_bridge_device_create_srv_buffer_range(D3D12Handle device_h, D3D12Handle heap_h, uint32_t index,
+                                      D3D12Handle buffer_h, uint64_t first_element,
+                                      uint32_t num_elements, uint32_t stride) {
     ID3D12Device* device = (ID3D12Device*)device_h;
     ID3D12DescriptorHeap* heap = (ID3D12DescriptorHeap*)heap_h;
     ID3D12Resource* buffer = (ID3D12Resource*)buffer_h;
@@ -1535,6 +1541,7 @@ void d3d12_bridge_device_create_srv_buffer(D3D12Handle device_h, D3D12Handle hea
     srv_desc.Format                     = DXGI_FORMAT_UNKNOWN;
     srv_desc.ViewDimension              = D3D12_SRV_DIMENSION_BUFFER;
     srv_desc.Shader4ComponentMapping    = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+    srv_desc.Buffer.FirstElement = first_element;
     srv_desc.Buffer.NumElements         = num_elements;
     srv_desc.Buffer.StructureByteStride = stride;
 
@@ -1543,6 +1550,12 @@ void d3d12_bridge_device_create_srv_buffer(D3D12Handle device_h, D3D12Handle hea
 
 void d3d12_bridge_device_create_uav_buffer(D3D12Handle device_h, D3D12Handle heap_h, uint32_t index,
                                             D3D12Handle buffer_h, uint32_t num_elements, uint32_t stride) {
+    d3d12_bridge_device_create_uav_buffer_range(device_h, heap_h, index, buffer_h, 0, num_elements, stride);
+}
+
+void d3d12_bridge_device_create_uav_buffer_range(D3D12Handle device_h, D3D12Handle heap_h, uint32_t index,
+                                      D3D12Handle buffer_h, uint64_t first_element,
+                                      uint32_t num_elements, uint32_t stride) {
     ID3D12Device* device = (ID3D12Device*)device_h;
     ID3D12DescriptorHeap* heap = (ID3D12DescriptorHeap*)heap_h;
     ID3D12Resource* buffer = (ID3D12Resource*)buffer_h;
@@ -1556,6 +1569,7 @@ void d3d12_bridge_device_create_uav_buffer(D3D12Handle device_h, D3D12Handle hea
     memset(&uav_desc, 0, sizeof(uav_desc));
     uav_desc.Format                      = DXGI_FORMAT_UNKNOWN;
     uav_desc.ViewDimension               = D3D12_UAV_DIMENSION_BUFFER;
+    uav_desc.Buffer.FirstElement = first_element;
     uav_desc.Buffer.NumElements          = num_elements;
     uav_desc.Buffer.StructureByteStride  = stride;
 

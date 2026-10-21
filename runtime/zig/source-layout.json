@@ -862,7 +862,7 @@
       },
       "src/backend/d3d12/d3d12_constants.zig": {
         "decision": "Keep",
-        "moduleSha256": "bade31dce73e99c7a6268c995ba389fa5b2a713afc73e15ead67703fa9d949d9",
+        "moduleSha256": "959207e918fb6a7c516260ecb8af38f26681a1b9b128cf860ae3b21cb2d78b1e",
         "reason": "Keep: reachable backend implementation shared by 12 production consumers with no conflicting ownership signal.",
         "reviewer": "codex-recomposition-review/2026-08-08"
       },
@@ -874,7 +874,7 @@
       },
       "src/backend/d3d12/d3d12_device_caps.zig": {
         "decision": "Keep",
-        "moduleSha256": "f3f050a38b41062db1974bff78a884fe3c37f50037410343042ee590b6f216ca",
+        "moduleSha256": "06c60d849ae95e11b3f142fad3f04f4ac81f432950d6b65ccc4ec16b22f3ea6c",
         "reason": "Keep: reachable backend implementation with private behavior tests and no merge, elevation, recomposition, or deletion signal.",
         "reviewer": "codex-recomposition-review/2026-08-08"
       },
@@ -4444,7 +4444,7 @@
       },
       "src/native/compute/doe_compute_d3d12.zig": {
         "decision": "Keep",
-        "moduleSha256": "a8c89d835531ea7a633c7b5c026bc99df439ffc997c147c1a031c175461ad48a",
+        "moduleSha256": "46f2df390b95c4b40c84b2440480a0abc24639b41f0e25742388c844c23f842b",
         "reason": "Keep: bounded D3D12 integration derives automatic single-storage-binding layouts only after existing analyzed-IR admission, using authoritative shader buffer reflection and existing native layout constructors/releases. Per-pipeline distinct layout identity and pipeline-owned retention reuse GetBindGroupLayout and dispatch validation. Explicit layout, descriptors, shader compiler and queue ownership remain unchanged.",
         "reviewer": "codex-d3d12-auto-layout/2026-10-19"
       },

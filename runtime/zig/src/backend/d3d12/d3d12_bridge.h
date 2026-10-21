@@ -275,8 +275,18 @@ void d3d12_bridge_device_create_cbv(D3D12Handle device, D3D12Handle heap, uint32
                                      D3D12Handle buffer, uint64_t offset, uint32_t size);
 void d3d12_bridge_device_create_srv_buffer(D3D12Handle device, D3D12Handle heap, uint32_t index,
                                             D3D12Handle buffer, uint32_t num_elements, uint32_t stride);
+/* Borrowed handles; caller validates element range/stride and retains resources.
+ * The legacy entry point above selects first_element = 0. */
+void d3d12_bridge_device_create_srv_buffer_range(D3D12Handle device, D3D12Handle heap, uint32_t index,
+                                      D3D12Handle buffer, uint64_t first_element,
+                                      uint32_t num_elements, uint32_t stride);
 void d3d12_bridge_device_create_uav_buffer(D3D12Handle device, D3D12Handle heap, uint32_t index,
                                             D3D12Handle buffer, uint32_t num_elements, uint32_t stride);
+/* Borrowed handles; caller validates element range/stride and retains resources.
+ * The legacy entry point above selects first_element = 0. */
+void d3d12_bridge_device_create_uav_buffer_range(D3D12Handle device, D3D12Handle heap, uint32_t index,
+                                      D3D12Handle buffer, uint64_t first_element,
+                                      uint32_t num_elements, uint32_t stride);
 void d3d12_bridge_device_create_srv_texture(D3D12Handle device, D3D12Handle heap, uint32_t index,
                                              D3D12Handle texture, uint32_t format);
 void d3d12_bridge_device_create_srv_texture_2d(D3D12Handle device, D3D12Handle resource,
