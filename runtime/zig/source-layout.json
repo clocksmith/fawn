@@ -3622,9 +3622,9 @@
       },
       "src/native/queue/doe_queue_submit_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "021c262a934a85546d75126b3833591805f001005ee313000f92c5bd8e8972f2",
-        "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission.",
-        "reviewer": "codex"
+        "moduleSha256": "f2e11d29e176dac3cbf73e52899d2e65f903750b8d7fe968e8289dd3490f6952",
+        "reason": "Keep: native command submission consumes each command buffer once, including rejected batches, while shared availability admission prevents partial execution. Object state, validation and backend dispatch retain their existing owners; no new replay API.",
+        "reviewer": "codex-bee-doe/2026-10-21"
       },
       "src/native/queue/doe_queue_submit_shared.zig": {
         "decision": "Keep",
@@ -3778,9 +3778,9 @@
       },
       "src/native/support/doe_native_object_types.zig": {
         "decision": "Keep",
-        "moduleSha256": "488be3285c936a5b35d96a1ee79394ed6e73ea022bceac02cdb6c13d5292e5d0",
-        "reason": "Keep: native pipeline stores whether its scalar-array extent is static or supplied by the bound descriptor; minimum binding bytes retain their validation meaning. Existing root/PSO, shader and layout ownership is preserved.",
-        "reviewer": "codex-d3d12-runtime-array/2026-10-19"
+        "moduleSha256": "e6804d4e7bb8ee08f0978c1f553919733d9d080f042965c2058da5b28c2c658e",
+        "reason": "Keep: native command submission consumes each command buffer once, including rejected batches, while shared availability admission prevents partial execution. Object state, validation and backend dispatch retain their existing owners; no new replay API.",
+        "reviewer": "codex-bee-doe/2026-10-21"
       },
       "src/native/support/doe_native_runtime_helpers.zig": {
         "decision": "Keep",
@@ -4342,9 +4342,9 @@
       },
       "src/native/queue/doe_submission_validation.zig": {
         "decision": "Keep",
-        "moduleSha256": "0fd3f59ab13d33c0355fa263b00365fe4ff5e686b2e29a4400d26add5d45c4cd",
-        "reason": "Keep: typed retained resources share queue-time availability validation and preserve explicit destruction versus caller release.",
-        "reviewer": "codex-submit-availability/2026-09-07"
+        "moduleSha256": "cbdda99abaa6e083081e5521e3d9c75c105584f79fd3776f88008d526388c9f9",
+        "reason": "Keep: native command submission consumes each command buffer once, including rejected batches, while shared availability admission prevents partial execution. Object state, validation and backend dispatch retain their existing owners; no new replay API.",
+        "reviewer": "codex-bee-doe/2026-10-21"
       },
       "src/contracts/texture_copy.zig": {
         "decision": "Keep",

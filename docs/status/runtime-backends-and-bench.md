@@ -10,6 +10,10 @@ The [copy fixture](../../runtime/zig/tests/d3d12_buffer_readback.c),
 [automatic-layout fixture](../../runtime/zig/tests/d3d12_auto_layout_readback.c), and
 [buffer-clear fixture](../../runtime/zig/tests/d3d12_clear_readback.c)
 check independent readback oracles, ordering, ownership and rejected operations.
+The [command-consumption fixture](../../runtime/zig/tests/d3d12_command_consumption.c)
+checks duplicate/reused command-buffer rejection, unchanged readback and queue
+recovery with a fresh command buffer. Shared native admission consumes failed
+batches too; physical qualification of this lifecycle fix is D3D12-specific.
 The [parity boundary](../../runtime/zig/README.md#windows-buffer-clear-parity-boundary)
 separates exercised contracts from retained unsupported and unverified surfaces.
 This is a local native correctness boundary; it does not qualify the complete

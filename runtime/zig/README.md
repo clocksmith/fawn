@@ -186,6 +186,23 @@ ownership and binding identity within the admitted subset. The original
 operations outside the D3D12 subset; its unchanged shader is not a whole-application
 qualification.
 
+## Native command-buffer consumption
+
+The native C submission entry point consumes each command buffer once, including
+every supplied buffer when the batch is rejected. Duplicate or previously
+submitted buffers fail validation before any commands execute. Retained resource
+ownership is unchanged; a fresh command buffer can submit after rejection.
+Reusable compute programs remain a separate explicit API.
+
+`tests/d3d12_command_consumption.c` checks duplicate and repeated submission on
+physical D3D12 with exact unchanged readback and fresh-command recovery. Build it
+with the pinned Zig C compiler and `-I vendor/webgpu-headers`, then pass the full
+DLL path and `duplicate` or `reuse`. Shared admission unit tests additionally
+check failed batches, foreign-device buffers and mapped retained resources.
+These tests do not establish physical Vulkan/Metal lifecycle or concurrency
+qualification. The [WebGPU consumption rule](https://github.com/gpuweb/gpuweb/pull/4608)
+also applies to rejected submissions.
+
 ## Windows buffer-clear parity boundary
 
 Recorded `clearBuffer` zeroes aligned ranges on D3D12 default and readback

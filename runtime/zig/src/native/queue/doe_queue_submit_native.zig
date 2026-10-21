@@ -40,21 +40,11 @@ pub export fn doeNativeQueueSubmit(
     cmd_bufs: [*]const ?*anyopaque,
 ) callconv(.c) void {
     const q = cast(DoeQueue, q_raw) orelse return;
+    availability.consumeCommandBuffers(q.dev, cmd_bufs[0..count]) catch |err| {
+        q.dev.error_scopes.deliver(@import("../../runtime/diagnostics/error_scope.zig").ERROR_TYPE_VALIDATION, availability.message(err));
+        return;
+    };
     if (!q.dev.requireAlive()) return;
-    for (cmd_bufs[0..count]) |raw| {
-        const buffer = cast(native_types.DoeCommandBuffer, raw) orelse {
-            q.dev.error_scopes.deliver(@import("../../runtime/diagnostics/error_scope.zig").ERROR_TYPE_VALIDATION, "queue submission requires valid command buffers");
-            return;
-        };
-        if (buffer.error_object or buffer.dev != q.dev) {
-            q.dev.error_scopes.deliver(@import("../../runtime/diagnostics/error_scope.zig").ERROR_TYPE_VALIDATION, "queue submission rejected failed recording or a different device");
-            return;
-        }
-        availability.validate(buffer.references.items) catch |err| {
-            q.dev.error_scopes.deliver(@import("../../runtime/diagnostics/error_scope.zig").ERROR_TYPE_VALIDATION, availability.message(err));
-            return;
-        };
-    }
     if (q.dev.backend == .vulkan) {
         vulkan_submit.submit_vulkan_commands(q, count, cmd_bufs);
         return;

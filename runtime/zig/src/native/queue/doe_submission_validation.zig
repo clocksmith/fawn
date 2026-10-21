@@ -8,6 +8,8 @@ const bundles = @import("../../runtime/render/render_bundle.zig");
 
 pub const ValidationError = error{
     InvalidReference,
+    CommandBufferUnavailable,
+    CommandBufferDeviceMismatch,
     BufferUnavailable,
     BufferMapped,
     TextureUnavailable,
@@ -19,6 +21,8 @@ pub const ValidationError = error{
 
 pub fn message(err: ValidationError) []const u8 {
     return switch (err) {
+        error.CommandBufferUnavailable => "queue submission requires valid command buffers that have not been submitted",
+        error.CommandBufferDeviceMismatch => "queue submission requires command buffers from the queue device",
         error.InvalidReference => "queue submission requires a valid retained resource",
         error.BufferUnavailable => "queue submission uses an invalid or destroyed buffer",
         error.BufferMapped => "queue submission requires buffers to be unmapped",
@@ -28,6 +32,32 @@ pub fn message(err: ValidationError) []const u8 {
         error.InvalidBundle => "queue submission uses an invalid render bundle",
         error.PipelineUnavailable => "queue submission uses a pipeline from a lost device",
     };
+}
+
+// Submission consumes every supplied command buffer, including on rejection.
+// Mark while validating to detect duplicates without allocation or quadratic
+// searches; do not return early and leave a later buffer reusable after failure.
+pub fn consumeCommandBuffers(device: *objects.DoeDevice, raw_buffers: []const ?*anyopaque) ValidationError!void {
+    var failure: ?ValidationError = null;
+    for (raw_buffers) |raw| {
+        const buffer = object(objects.DoeCommandBuffer, raw) catch |err| {
+            failure = failure orelse err;
+            continue;
+        };
+        const already_submitted = @atomicRmw(bool, &buffer.submitted, .Xchg, true, .acq_rel);
+        if (already_submitted or buffer.error_object) {
+            failure = failure orelse error.CommandBufferUnavailable;
+            continue;
+        }
+        if (buffer.dev != device) {
+            failure = failure orelse error.CommandBufferDeviceMismatch;
+            continue;
+        }
+        validate(buffer.references.items) catch |err| {
+            failure = failure orelse err;
+        };
+    }
+    if (failure) |err| return err;
 }
 
 pub fn validate(references: []const leases.ResourceLease) ValidationError!void {
@@ -159,4 +189,42 @@ test "lost pipeline objects cannot enter command submission" {
     const render_references = [_]leases.ResourceLease{testReference(.render_pipeline, &render)};
     try std.testing.expectError(error.PipelineUnavailable, validate(&compute_references));
     try std.testing.expectError(error.PipelineUnavailable, validate(&render_references));
+}
+
+test "submission consumes command buffers exactly once and rejects duplicates atomically" {
+    var device: objects.DoeDevice = .{};
+    var first: objects.DoeCommandBuffer = .{ .allocator = std.testing.allocator, .dev = &device };
+    var second: objects.DoeCommandBuffer = .{ .allocator = std.testing.allocator, .dev = &device };
+    try consumeCommandBuffers(&device, &.{&first});
+    try std.testing.expectError(error.CommandBufferUnavailable, consumeCommandBuffers(&device, &.{&first}));
+    try std.testing.expectError(error.CommandBufferUnavailable, consumeCommandBuffers(&device, &.{ &second, &second }));
+    try std.testing.expect(first.submitted and second.submitted);
+    try std.testing.expectEqual(@as(u32, 1), first.ref_count);
+    try std.testing.expectEqual(@as(u32, 1), second.ref_count);
+}
+
+test "submission consumes all valid handles even when earlier batch entries fail" {
+    var device: objects.DoeDevice = .{};
+    var other: objects.DoeDevice = .{};
+    var first: objects.DoeCommandBuffer = .{ .allocator = std.testing.allocator, .dev = &device };
+    var last: objects.DoeCommandBuffer = .{ .allocator = std.testing.allocator, .dev = &device };
+    try std.testing.expectError(error.InvalidReference, consumeCommandBuffers(&device, &.{ null, &first, &last }));
+    try std.testing.expect(first.submitted and last.submitted);
+    var foreign: objects.DoeCommandBuffer = .{ .allocator = std.testing.allocator, .dev = &other };
+    var fresh: objects.DoeCommandBuffer = .{ .allocator = std.testing.allocator, .dev = &device };
+    try std.testing.expectError(error.CommandBufferDeviceMismatch, consumeCommandBuffers(&device, &.{ &foreign, &fresh }));
+    try std.testing.expect(foreign.submitted and fresh.submitted);
+    var recovery: objects.DoeCommandBuffer = .{ .allocator = std.testing.allocator, .dev = &device };
+    try consumeCommandBuffers(&device, &.{&recovery});
+}
+
+test "submission consumes command buffers rejected for unavailable retained resources" {
+    var device: objects.DoeDevice = .{};
+    var buffer: objects.DoeBuffer = .{ .mapped = true };
+    var refs = [_]leases.ResourceLease{testReference(.buffer, &buffer)};
+    var commands: objects.DoeCommandBuffer = .{ .allocator = std.testing.allocator, .dev = &device, .references = .{ .items = &refs, .capacity = refs.len } };
+    try std.testing.expectError(error.BufferMapped, consumeCommandBuffers(&device, &.{&commands}));
+    buffer.mapped = false;
+    try std.testing.expectError(error.CommandBufferUnavailable, consumeCommandBuffers(&device, &.{&commands}));
+    try std.testing.expectEqual(@as(u32, 1), buffer.ref_count);
 }
