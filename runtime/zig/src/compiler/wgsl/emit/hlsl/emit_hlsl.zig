@@ -210,6 +210,28 @@ const Emitter = struct {
         try texture.emit_texture_global_helpers(self.module, self.buf, &self.pos);
     }
 
+    fn compareExchangeResultType(self: *const Emitter, value_ty: ir.TypeId) ?ir.TypeId {
+        // Use the semantic result type of an actual builtin call, not a second
+        // emitter-owned struct name or representation.
+        for (self.module.functions.items) |function| {
+            for (function.exprs.items) |expression| {
+                const call = switch (expression.data) {
+                    .call => |value| value,
+                    else => continue,
+                };
+                if (call.kind != .builtin or !std.mem.eql(u8, call.name, "atomicCompareExchangeWeak")) continue;
+                const result = switch (self.module.types.get(expression.ty)) {
+                    .struct_ => |id| self.module.structs.items[id],
+                    else => continue,
+                };
+                if (result.fields.items.len == 2 and result.fields.items[0].ty == value_ty and
+                    std.mem.eql(u8, result.fields.items[0].name, "old_value") and
+                    std.mem.eql(u8, result.fields.items[1].name, "exchanged")) return expression.ty;
+            }
+        }
+        return null;
+    }
+
     // HLSL inout parameters copy their argument into function-local storage.
     // Interlocked operations must instead name the actual groupshared object.
     fn emitWorkgroupAtomicHelpers(self: *Emitter) EmitError!void {
@@ -238,6 +260,22 @@ const Emitter = struct {
             try self.write(" ignored; InterlockedExchange(");
             try self.write(global.name);
             try self.write("[index], next, ignored); }\n");
+            if (self.compareExchangeResultType(self.module.types.get(arr.elem).atomic)) |result_ty| {
+                try self.emit_type_only(result_ty);
+                try self.write(" __doe_atomicCompareExchangeWeak_");
+                try self.write(global.name);
+                try self.write("(uint index, ");
+                try self.emit_type_only(arr.elem);
+                try self.write(" expected, ");
+                try self.emit_type_only(arr.elem);
+                try self.write(" desired) { ");
+                try self.emit_type_only(result_ty);
+                try self.write(" result; InterlockedCompareExchange(");
+                try self.write(global.name);
+                try self.write("[index], expected, desired, result.old_value); ");
+                // D3D12's strong primitive is a valid implementation of weak CAS.
+                try self.write("result.exchanged = result.old_value == expected; return result; }\n");
+            }
             // Preserve the shared object and return the pre-operation value.
             for (WORKGROUP_RMW) |operation| {
                 try self.emit_type_only(arr.elem);
@@ -264,8 +302,9 @@ const Emitter = struct {
         const is_load = std.mem.eql(u8, call.name, "atomicLoad");
         const is_store = std.mem.eql(u8, call.name, "atomicStore");
         const is_rmw = isWorkgroupRmw(call.name);
-        if (!is_load and !is_store and !is_rmw) return false;
-        if (call.args.len != @as(u32, if (is_load) 1 else 2)) return error.InvalidIr;
+        const is_compare = std.mem.eql(u8, call.name, "atomicCompareExchangeWeak");
+        if (!is_load and !is_store and !is_rmw and !is_compare) return false;
+        if (call.args.len != @as(u32, if (is_load) 1 else if (is_compare) 3 else 2)) return error.InvalidIr;
         var target = function.expr_args.items[call.args.start];
         while (true) switch (function.exprs.items[target].data) {
             .address_of, .deref, .load => |inner| target = inner,
@@ -287,7 +326,7 @@ const Emitter = struct {
             else => return false,
         };
         if (self.module.types.get(arr.elem) != .atomic) return false;
-        if (is_rmw) {
+        if (is_rmw or is_compare) {
             try self.write("__doe_");
             try self.write(call.name);
             try self.write("_");
@@ -298,9 +337,9 @@ const Emitter = struct {
             try self.write("doe_pointer_index_");
             try self.write_u32(target);
         } else try self.emit_expr(function, index.index);
-        if (!is_load) {
+        for (1..call.args.len) |argument| {
             try self.write(", ");
-            try self.emit_expr(function, function.expr_args.items[call.args.start + 1]);
+            try self.emit_expr(function, function.expr_args.items[call.args.start + argument]);
         }
         try self.write(")");
         return true;

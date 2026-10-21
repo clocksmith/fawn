@@ -240,8 +240,14 @@ the actual `groupshared` array, preserve captured pointer indices and return the
 pre-operation value. Independent old/new bit patterns include unsigned wrap,
 signed comparisons and shared contention with a ticket count/mask/sum oracle.
 This additional evidence belongs to the CLI consumer; it does not expand the
-public-ABI fixture claim. Compare-exchange, other pointer shapes and storage
-atomics remain unqualified.
+public-ABI fixture claim. Indexed shared-array `atomicCompareExchangeWeak` also
+uses the semantic result struct and D3D12's strong `InterlockedCompareExchange`
+primitive, which is permitted for weak CAS. Tests exercise signed/unsigned
+old-value and success fields, mismatch and same-value replacement, captured
+indices, operand evaluation once, neighbor visibility and one contended winner.
+The no-spurious-failure oracle is specific to this strong target primitive;
+it does not impose a stronger contract on other backends' weak primitives.
+Other pointer shapes and storage atomics remain unqualified.
 
 ## Windows native CLI storage boundary
 

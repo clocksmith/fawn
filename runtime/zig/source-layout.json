@@ -2212,9 +2212,9 @@
       },
       "src/compiler/wgsl/emit/hlsl/emit_hlsl.zig": {
         "decision": "Keep",
-        "moduleSha256": "66673aa29457b7202d5fa5353ff3715cfee7e1346e3b24d40f947ce3945ec782",
-        "reason": "Keep: shared-array atomic RMW specialization preserves actual target, scalar signedness, captured index and old-value return semantics.",
-        "reviewer": "codex-indexed-atomic-rmw/2026-10-21"
+        "moduleSha256": "295747d7d79fb781cf5a35ac3c2b78ae1910f75b4b21a648f683eda22a27dcb3",
+        "reason": "Keep: bounded shared-array compare exchange reuses semantic result types and preserves target identity, captured indices and both result fields.",
+        "reviewer": "codex-indexed-atomic-cas/2026-10-21"
       },
       "src/compiler/wgsl/emit/hlsl/emit_hlsl_builtins.zig": {
         "decision": "Keep",

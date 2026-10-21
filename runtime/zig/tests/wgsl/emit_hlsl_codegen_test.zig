@@ -391,3 +391,30 @@ test "hlsl indexed workgroup RMW preserves shared identity and captured index" {
     try testing.expect(contains(hlsl, "__doe_atomicAdd_signed_values(doe_pointer_index_"));
     try testing.expect(!contains(hlsl, "doe_atomicAdd(signed_values["));
 }
+
+test "hlsl indexed compare exchange preserves semantic result types and pointer indices" {
+    const source =
+        \\var<workgroup> signed_values: array<atomic<i32>, 8>;
+        \\var<workgroup> unsigned_values: array<atomic<u32>, 8>;
+        \\@group(0) @binding(0) var<storage, read_write> output: array<u32, 8>;
+        \\@compute @workgroup_size(8)
+        \\fn main(@builtin(local_invocation_index) tid: u32) {
+        \\    var index = tid;
+        \\    let pointer = &signed_values[index];
+        \\    index = 0u;
+        \\    let a = atomicCompareExchangeWeak(pointer, -3, -7);
+        \\    let b = atomicCompareExchangeWeak(&unsigned_values[tid], 3u, 7u);
+        \\    output[tid] = select(bitcast<u32>(a.old_value), b.old_value, a.exchanged && b.exchanged);
+        \\}
+    ;
+    var out: [MAX_HLSL_OUTPUT]u8 = undefined;
+    const len = try translateToHlsl(allocator, source, &out);
+    const hlsl = out[0..len];
+    try testing.expect(contains(hlsl, "__doe_atomic_compare_exchange_result_i32 __doe_atomicCompareExchangeWeak_signed_values(uint index, int expected, int desired)"));
+    try testing.expect(contains(hlsl, "__doe_atomic_compare_exchange_result_u32 __doe_atomicCompareExchangeWeak_unsigned_values(uint index, uint expected, uint desired)"));
+    try testing.expect(contains(hlsl, "InterlockedCompareExchange(signed_values[index], expected, desired, result.old_value)"));
+    try testing.expect(contains(hlsl, "result.exchanged = result.old_value == expected"));
+    try testing.expect(contains(hlsl, "__doe_atomicCompareExchangeWeak_signed_values(doe_pointer_index_"));
+    try testing.expect(contains(hlsl, "a.old_value"));
+    try testing.expect(contains(hlsl, "a.exchanged"));
+}
