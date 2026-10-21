@@ -1,5 +1,6 @@
 //! Command-handle storage for the bounded native D3D12 kernel lane.
 const std = @import("std");
+const timing = @import("../common/timing.zig");
 const model = @import("../../contracts/model/model_compute_types.zig");
 const binding = @import("../../contracts/model/model_binding_value_types.zig");
 const dc = @import("d3d12_constants.zig");
@@ -29,6 +30,8 @@ pub fn validateRange(capacity: u64, offset: u64, size: u64) !void {
     if (offset > capacity or size > capacity - offset) return error.InvalidArgument;
 }
 
+pub const TransferMetrics = struct { encode_ns: u64 = 0, submit_wait_ns: u64 = 0, submit_count: u32 = 0 };
+
 const Buffer = struct { native: ?*anyopaque, size: u64, descriptor: u32 };
 
 pub const State = struct {
@@ -49,23 +52,23 @@ pub const State = struct {
         self.* = .{};
     }
 
-    pub fn prepare(self: *State, rt: anytype, bindings: ?[]const model.KernelBinding, initialize: bool) !void {
+    pub fn prepare(self: *State, rt: anytype, bindings: ?[]const model.KernelBinding, initialize: bool) !TransferMetrics {
         self.shader_valid = false;
         const entry = (try validate(bindings)) orelse {
             self.active = null;
-            return;
+            return .{};
         };
         if (rt.device_lost) return error.DeviceLost;
         if (self.buffers.get(entry.resource_handle)) |existing| {
             if (existing.size != entry.buffer_size) return error.InvalidArgument;
             self.active = entry.resource_handle;
-            return;
+            return .{};
         }
         if (entry.buffer_size > MAX_RESIDENT_BYTES - self.resident_bytes) return error.UnsupportedFeature;
         try self.buffers.ensureUnusedCapacity(rt.allocator, 1);
         const resource = bridge.c.d3d12_bridge_device_create_storage_buffer(rt.device, @intCast(entry.buffer_size)) orelse return error.OutOfMemory;
         errdefer bridge.c.d3d12_bridge_release(resource);
-        if (initialize) try zeroBuffer(rt, resource, entry.buffer_size);
+        const initialization = if (initialize) try zeroBuffer(rt, resource, entry.buffer_size) else TransferMetrics{};
         try rt.descriptor_state.ensure_heaps(rt.device);
         if (rt.descriptor_state.cbv_srv_uav_capacity - rt.descriptor_state.cbv_srv_uav_next < 2) return error.UnsupportedFeature;
         if (rt.dispatch_info_buffer == null) {
@@ -79,6 +82,7 @@ pub const State = struct {
         self.buffers.putAssumeCapacity(entry.resource_handle, .{ .native = resource, .size = entry.buffer_size, .descriptor = descriptor });
         self.resident_bytes += entry.buffer_size;
         self.active = entry.resource_handle;
+        return initialization;
     }
 
     // Admit the same analyzed module that is emitted, retaining every bounds obligation.
@@ -152,6 +156,39 @@ pub const State = struct {
         bridge.c.d3d12_bridge_command_list_resource_barrier_transition(list, buffer.native, if (before_dispatch) dc.RESOURCE_STATE_COPY_DEST else dc.RESOURCE_STATE_UNORDERED_ACCESS, if (before_dispatch) dc.RESOURCE_STATE_UNORDERED_ACCESS else dc.RESOURCE_STATE_COPY_DEST);
     }
 
+    pub fn write(self: *State, rt: anytype, handle: u64, offset: u64, declared_size: u64, data: []const u8) !TransferMetrics {
+        if (handle == 0 or data.len == 0 or offset % 4 != 0 or data.len % 4 != 0) return error.InvalidArgument;
+        const end = std.math.add(u64, offset, data.len) catch return error.InvalidArgument;
+        const required = @max(declared_size, end);
+        if (required > MAX_RESIDENT_BYTES or required % 4 != 0) return error.InvalidArgument;
+        var metrics = TransferMetrics{};
+        if (self.buffers.get(handle)) |existing| {
+            if (required > existing.size) return error.InvalidArgument;
+        } else {
+            const entry = model.KernelBinding{ .binding = 0, .resource_kind = .buffer, .resource_handle = handle, .buffer_type = binding.WGPUBufferBindingType_Storage, .buffer_size = required };
+            metrics = try self.prepare(rt, &.{entry}, true);
+        }
+        if (rt.device_lost) return error.DeviceLost;
+        const buffer = self.buffers.get(handle).?;
+        try validateRange(buffer.size, offset, data.len);
+        const chunk = @min(data.len, ZERO_CHUNK_BYTES);
+        const upload = bridge.c.d3d12_bridge_device_create_buffer(rt.device, chunk, dc.HEAP_TYPE_UPLOAD) orelse return error.OutOfMemory;
+        defer bridge.c.d3d12_bridge_release(upload);
+        var copied: usize = 0;
+        while (copied < data.len) {
+            const count = @min(data.len - copied, chunk);
+            const mapped = bridge.c.d3d12_bridge_resource_map(upload) orelse return error.InvalidState;
+            @memcpy(@as([*]u8, @ptrCast(mapped))[0..count], data[copied..][0..count]);
+            bridge.c.d3d12_bridge_resource_unmap(upload);
+            const transfer = try copyAndWait(rt, buffer.native, offset + copied, upload, 0, count);
+            metrics.encode_ns +|= transfer.encode_ns;
+            metrics.submit_wait_ns +|= transfer.submit_wait_ns;
+            metrics.submit_count += transfer.submit_count;
+            copied += count;
+        }
+        return metrics;
+    }
+
     pub fn capture(self: *State, rt: anytype, allocator: std.mem.Allocator, handle: u64, offset: u64, size: u64) ![]u8 {
         const buffer = self.buffers.get(handle) orelse return error.InvalidArgument;
         try validateRange(buffer.size, offset, size);
@@ -161,7 +198,7 @@ pub const State = struct {
         errdefer allocator.free(output);
         const readback = bridge.c.d3d12_bridge_device_create_buffer(rt.device, @intCast(size), dc.HEAP_TYPE_READBACK) orelse return error.OutOfMemory;
         defer bridge.c.d3d12_bridge_release(readback);
-        try copyAndWait(rt, readback, 0, buffer.native, offset, size);
+        _ = try copyAndWait(rt, readback, 0, buffer.native, offset, size);
         const mapped = bridge.c.d3d12_bridge_resource_map(readback) orelse return error.InvalidState;
         defer bridge.c.d3d12_bridge_resource_unmap(readback);
         @memcpy(output, @as([*]const u8, @ptrCast(mapped))[0..output.len]);
@@ -169,25 +206,31 @@ pub const State = struct {
     }
 };
 
-fn zeroBuffer(rt: anytype, resource: ?*anyopaque, size: u64) !void {
+fn zeroBuffer(rt: anytype, resource: ?*anyopaque, size: u64) !TransferMetrics {
     const chunk: usize = @intCast(@min(size, ZERO_CHUNK_BYTES));
     const upload = bridge.c.d3d12_bridge_device_create_buffer(rt.device, chunk, dc.HEAP_TYPE_UPLOAD) orelse return error.OutOfMemory;
     defer bridge.c.d3d12_bridge_release(upload);
     const mapped = bridge.c.d3d12_bridge_resource_map(upload) orelse return error.InvalidState;
     @memset(@as([*]u8, @ptrCast(mapped))[0..chunk], 0);
     bridge.c.d3d12_bridge_resource_unmap(upload);
+    var metrics = TransferMetrics{};
     var offset: u64 = 0;
     while (offset < size) {
         const count = @min(size - offset, chunk);
-        try copyAndWait(rt, resource, offset, upload, 0, count);
+        const transfer = try copyAndWait(rt, resource, offset, upload, 0, count);
+        metrics.encode_ns +|= transfer.encode_ns;
+        metrics.submit_wait_ns +|= transfer.submit_wait_ns;
+        metrics.submit_count += transfer.submit_count;
         offset += count;
     }
+    return metrics;
 }
 
-fn copyAndWait(rt: anytype, destination: ?*anyopaque, destination_offset: u64, source: ?*anyopaque, source_offset: u64, size: u64) !void {
+fn copyAndWait(rt: anytype, destination: ?*anyopaque, destination_offset: u64, source: ?*anyopaque, source_offset: u64, size: u64) !TransferMetrics {
     if (rt.device_lost) return error.DeviceLost;
     if (rt.fence_value >= std.math.maxInt(u64) - 1) return error.InvalidState;
     _ = try rt.flush_queue();
+    const encode_start = timing.now_ns();
     const allocator = bridge.c.d3d12_bridge_device_create_command_allocator(rt.device) orelse return error.OutOfMemory;
     defer bridge.c.d3d12_bridge_release(allocator);
     const list = bridge.c.d3d12_bridge_device_create_command_list(rt.device, allocator) orelse return error.OutOfMemory;
@@ -199,10 +242,14 @@ fn copyAndWait(rt: anytype, destination: ?*anyopaque, destination_offset: u64, s
     };
     if (bridge.c.d3d12_bridge_command_list_copy_buffer_region(list, destination, destination_offset, source, source_offset, size) != 0) return error.InvalidArgument;
     if (bridge.c.d3d12_bridge_command_list_close_checked(list) != 0) return error.InvalidState;
+    const encode_ns = timing.ns_delta(timing.now_ns(), encode_start);
+    const submit_start = timing.now_ns();
     bridge.c.d3d12_bridge_queue_execute_command_list(rt.queue, list);
     submitted = true;
     rt.fence_value += 1;
     try bridge.check_signal(bridge.c.d3d12_bridge_queue_signal_checked(rt.queue, rt.fence, rt.fence_value));
     try bridge.check_wait(bridge.c.d3d12_bridge_fence_wait_checked(rt.fence, rt.fence_value));
     rt.noteCompletedFenceWait();
+    if (rt.device_lost) return error.DeviceLost;
+    return .{ .encode_ns = encode_ns, .submit_wait_ns = timing.ns_delta(timing.now_ns(), submit_start), .submit_count = 1 };
 }

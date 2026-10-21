@@ -251,6 +251,14 @@ completion and real GPU readback preserve the command-graph output contract.
 Shader preparation and measured submission have separate timing fields; the
 submission counter records actual measured dispatch submissions.
 
+`buffer_write` admits aligned, nonempty input and partial updates to these
+command handles. New handles are zeroed before publication; existing buffers
+cannot grow. Checked staged copies wait before reusing the upload allocation,
+including writes crossing the staging chunk boundary. Initialization and payload
+copies contribute their actual encode, completion and submission metrics; CPU
+preparation remains separate. Deferred writes, unaligned byte ranges and resizing
+remain unsupported.
+
 Build `doe-runtime`, put the already-installed DXC on `PATH`, and run
 `python tests/d3d12_cli_storage.py --runtime zig-out/bin/doe-zig-runtime.exe --out <new-evidence-directory>`
 from this directory on Windows. The fixture runs the unchanged
@@ -258,8 +266,11 @@ from this directory on Windows. The fixture runs the unchanged
 `--validate-output-oracles`; omitting that flag does not check output. It also
 uses independent command-graph hashes to check zero initialization, handle
 rebinding, dependent repeats and pipeline reuse, followed by layout, dispatch
-dimension and fixed-extent rejection/recovery cases. Original failed traces
-remain separate from accepted candidate evidence.
+dimension and fixed-extent rejection/recovery cases. Nonzero seeds, partial
+updates and chunked writes use independent CPU-derived full-buffer hashes;
+write-created buffers and rejected-range recovery also check execution and
+submission counts. Original failed traces remain separate from accepted
+candidate evidence.
 
 This qualifies the exercised native CLI consumer only. A source-matched Windows
 Dawn control, broader workload coverage, matched CPU/memory measurements and

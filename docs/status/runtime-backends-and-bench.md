@@ -48,14 +48,19 @@ these native CLI workloads exercise different consumers.
 The [bounded native CLI storage path](../../runtime/zig/README.md#windows-native-cli-storage-boundary)
 executes the unchanged atomic workload with its independent exact-output oracle.
 The [CLI fixture](../../runtime/zig/tests/d3d12_cli_storage.py) also checks handle
-rebinding, dependent repeats, pipeline reuse and rejection recovery. This admits
-one scalar storage binding; multi-binding pipeline stress and the broader
+rebinding, dependent repeats, pipeline reuse, nonzero input, partial and chunked
+buffer writes, and rejection recovery. This admits one scalar storage binding; multi-binding pipeline stress and the broader
 catalog remain outside the accepted boundary. Process exit or a successful
 dispatch without explicit output-oracle validation is insufficient.
 
-A source-matched Windows Dawn control remains absent. Qualify that provider
-under matched conditions before paired timing; new build-tool or dependency
-installation requires the user's scoped approval. Native correctness does not
+A source-matched Windows Dawn control remains absent. The
+[bootstrap](../../bench/tools/bootstrap_dawn.py) needs an explicit compatible
+revision and both `dawn_perf_tests` and `webgpu_dawn_shared` targets on Windows:
+the performance binary alone does not provide the delegated runtime DLL.
+The [comparison lane](../../bench/native-compare/compare.config.local.d3d12.smoke.json)
+must also establish actual Dawn provider ownership without fallback. Qualify
+that provider under matched conditions before paired timing; new build-tool or
+dependency installation requires the user's scoped approval. Native correctness does not
 establish a measured performance win or complete backend parity.
 
 The current smoke configuration disables resource sampling and claimability;

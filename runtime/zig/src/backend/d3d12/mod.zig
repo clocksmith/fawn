@@ -118,6 +118,7 @@ fn native_capability_set() capabilities.CapabilitySet {
     var set = capabilities.CapabilitySet{};
     set.declare_all(&.{
         .buffer_upload,
+        .buffer_write,
         .barrier_sync,
         .kernel_dispatch,
         .compute_dispatch,
@@ -238,7 +239,7 @@ fn execute_kernel_dispatch(self: *ZigD3D12Backend, setup_ns: u64, kd: model.Kern
     if (kd.bindings != null and kd.bindings.?.len != 0 and self.queue_sync_mode != .per_command) return error.UnsupportedFeature;
     const prepare_start = common_timing.now_ns();
     const runtime = try ensure_runtime_bootstrapped(self);
-    try runtime.kernel_buffers.prepare(runtime, kd.bindings, kd.initialize_buffers_on_create);
+    _ = try runtime.kernel_buffers.prepare(runtime, kd.bindings, kd.initialize_buffers_on_create);
     const bytecode = try runtime.load_kernel_cso(self.allocator, kd.kernel);
     defer self.allocator.free(bytecode);
     try runtime.set_compute_shader(bytecode);
@@ -435,7 +436,11 @@ fn execute_native_command(
 
     var result = switch (command) {
         .upload => |upload| try execute_upload(self, setup_ns, upload),
-        .buffer_write => return error.UnsupportedFeature,
+        .buffer_write => |bw| blk: {
+            var result = try execute_buffer_write_bytes(self, bw.handle, bw.offset, bw.buffer_size, std.mem.sliceAsBytes(bw.data));
+            result.setup_ns +|= setup_ns;
+            break :blk result;
+        },
         .barrier => try execute_barrier(self, setup_ns),
         .kernel_dispatch => try execute_kernel_dispatch(
             self,
@@ -532,12 +537,21 @@ fn execute_dispatch(context: compute_contract.ComputeContext, request: compute_c
 }
 
 fn execute_buffer_write_bytes(ctx: *anyopaque, handle: u64, offset: u64, buffer_size: u64, data: []const u8) anyerror!webgpu.NativeExecutionResult {
-    _ = ctx;
-    _ = handle;
-    _ = offset;
-    _ = buffer_size;
-    _ = data;
-    return error.UnsupportedFeature;
+    const self = cast(ctx);
+    self.telemetry.last_submit_count = 0;
+    if (self.queue_sync_mode != .per_command) return error.UnsupportedFeature;
+    const start = common_timing.now_ns();
+    const rt = try ensure_runtime_bootstrapped(self);
+    const metrics = try rt.kernel_buffers.write(rt, handle, offset, buffer_size, data);
+    self.telemetry.last_submit_count = metrics.submit_count;
+    return .{
+        .status = .ok,
+        .status_message = "buffer uploaded via checked staged copies",
+        .setup_ns = common_timing.ns_delta(common_timing.now_ns(), start) -| metrics.encode_ns -| metrics.submit_wait_ns,
+        .encode_ns = metrics.encode_ns,
+        .submit_wait_ns = metrics.submit_wait_ns,
+        .dispatch_count = 0,
+    };
 }
 
 fn set_upload_behavior(ctx: *anyopaque, mode: webgpu.UploadBufferUsageMode, submit_every: u32) void {
@@ -596,7 +610,7 @@ fn prewarm_kernel_dispatch(
     if (kernel.len == 0) return;
     const rt = try ensure_runtime_bootstrapped(self);
     if (entry_point) |entry| if (!std.mem.eql(u8, entry, "main")) return error.UnsupportedFeature;
-    try rt.kernel_buffers.prepare(rt, bindings, initialize_buffers_on_create);
+    _ = try rt.kernel_buffers.prepare(rt, bindings, initialize_buffers_on_create);
     const bytecode = try rt.load_kernel_cso(self.allocator, kernel);
     defer self.allocator.free(bytecode);
     try rt.set_compute_shader(bytecode);
@@ -724,4 +738,19 @@ test "D3D12 bound shader admission retains proof bounds and rejects incompatible
     try std.testing.expectError(error.InvalidState, state.validateDispatch(1, 1, 1));
     try state.admitShader(allocator, &module);
     try state.validateDispatch(1, 1, 1);
+}
+
+test "D3D12 buffer writes reject invalid ranges before native allocation" {
+    const allocator = std.testing.allocator;
+    var rt = native_runtime.NativeD3D12Runtime{ .allocator = allocator };
+    defer rt.kernel_buffers.buffers.deinit(allocator);
+    try rt.kernel_buffers.buffers.put(allocator, 7, .{ .native = null, .size = 32, .descriptor = 0 });
+    const bytes = [_]u8{ 1, 2, 3, 4 };
+    try std.testing.expectError(error.InvalidArgument, rt.kernel_buffers.write(&rt, 0, 0, 32, &bytes));
+    try std.testing.expectError(error.InvalidArgument, rt.kernel_buffers.write(&rt, 7, 1, 32, &bytes));
+    try std.testing.expectError(error.InvalidArgument, rt.kernel_buffers.write(&rt, 7, 0, 32, &.{}));
+    try std.testing.expectError(error.InvalidArgument, rt.kernel_buffers.write(&rt, 7, 32, 32, &bytes));
+    try std.testing.expectError(error.InvalidArgument, rt.kernel_buffers.write(&rt, 7, 0, 64, &bytes));
+    try std.testing.expectError(error.InvalidArgument, rt.kernel_buffers.write(&rt, 7, std.math.maxInt(u64) - 3, 32, &bytes));
+    try std.testing.expectEqual(@as(u64, 0), rt.fence_value);
 }
