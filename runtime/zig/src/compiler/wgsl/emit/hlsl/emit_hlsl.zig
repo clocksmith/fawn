@@ -430,7 +430,7 @@ const Emitter = struct {
             try self.write(dispatch_contract.DISPATCH_INFO_FIELD_NAME);
             try self.write(";\n");
         }
-        try self.emit_stmt(function, function.root_stmt);
+        try self.emit_block_contents(function, function.root_stmt);
         self.indent -= 4;
         try self.write("}\n");
     }
@@ -458,14 +458,27 @@ const Emitter = struct {
         }
     }
 
+    // Function/control-flow owners already emit braces; explicit child blocks do not.
+    fn emit_block_contents(self: *Emitter, function: ir.Function, stmt_id: ir.StmtId) EmitError!void {
+        switch (function.stmts.items[stmt_id]) {
+            .block => |range| {
+                for (function.stmt_children.items[range.start..][0..range.len]) |child| try self.emit_stmt(function, child);
+            },
+            else => try self.emit_stmt(function, stmt_id),
+        }
+    }
+
     pub fn emit_stmt(self: *Emitter, function: ir.Function, stmt_id: ir.StmtId) EmitError!void {
         const stmt = function.stmts.items[stmt_id];
         switch (stmt) {
-            .block => |range| {
-                var i: u32 = 0;
-                while (i < range.len) : (i += 1) {
-                    try self.emit_stmt(function, function.stmt_children.items[range.start + i]);
-                }
+            .block => {
+                try self.write_indent();
+                try self.write("{\n");
+                self.indent += 4;
+                try self.emit_block_contents(function, stmt_id);
+                self.indent -= 4;
+                try self.write_indent();
+                try self.write("}\n");
             },
             .local_decl => |decl| {
                 const local = function.locals.items[decl.local];
@@ -529,14 +542,14 @@ const Emitter = struct {
                 try self.emit_expr(function, if_stmt.cond);
                 try self.write(") {\n");
                 self.indent += 4;
-                try self.emit_stmt(function, if_stmt.then_block);
+                try self.emit_block_contents(function, if_stmt.then_block);
                 self.indent -= 4;
                 try self.write_indent();
                 try self.write("}");
                 if (if_stmt.else_block) |else_block| {
                     try self.write(" else {\n");
                     self.indent += 4;
-                    try self.emit_stmt(function, else_block);
+                    try self.emit_block_contents(function, else_block);
                     self.indent -= 4;
                     try self.write_indent();
                     try self.write("}\n");
@@ -582,7 +595,7 @@ const Emitter = struct {
                 const previous_continuing = self.loop_continuing;
                 self.loop_continuing = loop_stmt.continuing;
                 defer self.loop_continuing = previous_continuing;
-                try self.emit_stmt(function, loop_stmt.body);
+                try self.emit_block_contents(function, loop_stmt.body);
                 self.loop_continuing = null;
                 if (loop_stmt.continuing) |continuing| try self.emit_stmt(function, continuing);
                 self.indent -= 4;

@@ -2212,9 +2212,9 @@
       },
       "src/compiler/wgsl/emit/hlsl/emit_hlsl.zig": {
         "decision": "Keep",
-        "moduleSha256": "c9255c0bfd4977641fa08874be30a62b94b5b7b35558e807c8badaa1312ad692",
-        "reason": "Keep: target-specific HLSL statement emission preserves lexical initializer scope and nearest-loop continuing semantics, including nested loops and clip-distance lowering.",
-        "reviewer": "codex-hlsl-continue/2026-10-21"
+        "moduleSha256": "4be72f1f1d10efc08db79edc575667c1c35db94db5ccf2cb853ffc6129a22adf",
+        "reason": "Keep: HLSL statement lowering preserves explicit lexical blocks separately from function/control-flow-owned scopes and retains nearest-loop continuing semantics.",
+        "reviewer": "codex-hlsl-blocks/2026-10-21"
       },
       "src/compiler/wgsl/emit/hlsl/emit_hlsl_builtins.zig": {
         "decision": "Keep",
@@ -2230,9 +2230,9 @@
       },
       "src/compiler/wgsl/emit/hlsl/emit_hlsl_stage.zig": {
         "decision": "Keep",
-        "moduleSha256": "b4b0f9eb362a838b598dca899c4045caf4a89b800a1036563980dc8b3cf2cf6e",
-        "reason": "Keep: target-specific HLSL statement emission preserves lexical initializer scope and nearest-loop continuing semantics, including nested loops and clip-distance lowering.",
-        "reviewer": "codex-hlsl-continue/2026-10-21"
+        "moduleSha256": "1a0569b4e20dfce4c6b3dee9734184d0637f31c3367c7ab683f04fbacefff253",
+        "reason": "Keep: HLSL statement lowering preserves explicit lexical blocks separately from function/control-flow-owned scopes and retains nearest-loop continuing semantics.",
+        "reviewer": "codex-hlsl-blocks/2026-10-21"
       },
       "src/compiler/wgsl/emit/hlsl/emit_hlsl_texture.zig": {
         "decision": "Keep",
