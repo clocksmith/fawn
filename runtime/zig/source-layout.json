@@ -772,7 +772,7 @@
       },
       "src/backend/common/path_utils.zig": {
         "decision": "Keep",
-        "moduleSha256": "529b73ab8e126505e9e60a8b5ce4d16d2be827f4459f8ccd384ac0f3ad7bd259",
+        "moduleSha256": "d7efdbefd09d5a5af6bbfe4f36fa271a57092047440ebb23041d95ee9c99d726",
         "reason": "Keep: shared filesystem candidate admission preserves access failures separately from absence.",
         "reviewer": "codex-common-audit/2026-09-19"
       },

@@ -61,7 +61,8 @@ pub fn run_contract_path(command: model.Command, queue_sync_mode: webgpu.QueueSy
         return unsupportedResult(command, "d3d12-native-tests-require-windows", error.UnsupportedFeature);
     }
 
-    const backend = d3d12_mod.ZigD3D12Backend.init(std.testing.allocator, test_profile(), null) catch |err| {
+    // Canonical Zig tests run from runtime/zig; use the retained shader directory.
+    const backend = d3d12_mod.ZigD3D12Backend.init(std.testing.allocator, test_profile(), "../../bench/kernels") catch |err| {
         return unsupportedResult(command, common_errors.error_code(err), err);
     };
     var iface = provider_harness.ProviderHarness.init(
