@@ -131,29 +131,107 @@ pub fn submit_d3d12_commands(q: *DoeQueue, count: usize, cmd_bufs: [*]const ?*an
     }
 
     if (!has_gpu_work) return;
+    if (!executeTracked(q, rt, cmd_allocator, cmd_list, &retained_handles)) return;
+    owns_cmd_allocator = false;
+    owns_cmd_list = false;
+    owns_retained_handles = false;
+}
 
+/// Close, execute and fence one recorded list; on success the runtime owns the
+/// allocator, list and retained handles until the fence retires them.
+fn executeTracked(q: *DoeQueue, rt: anytype, cmd_allocator: ?*anyopaque, cmd_list: ?*anyopaque, retained: *std.ArrayListUnmanaged(?*anyopaque)) bool {
     if (bridge.c.d3d12_bridge_command_list_close_checked(cmd_list) != 0) {
         shared.deliverInternalError(q.dev, "doe_queue_submit: d3d12 command close failed", .{});
-        return;
+        return false;
     }
     if (rt.fence_value == std.math.maxInt(u64)) {
         shared.deliverInternalError(q.dev, "D3D12 submission fence exhausted", .{});
-        return;
+        return false;
     }
     bridge.c.d3d12_bridge_queue_execute_command_list(rt.queue, cmd_list);
     rt.fence_value += 1;
     bridge.check_signal(bridge.c.d3d12_bridge_queue_signal_checked(rt.queue, rt.fence, rt.fence_value)) catch |err| {
         _ = rt.drainForRetirement();
         shared.deliverInternalError(q.dev, "D3D12 submission signal: {s}", .{@errorName(err)});
-        return;
+        return false;
     };
-    rt.trackDropinSubmission(cmd_allocator, cmd_list, &retained_handles) catch |err| {
+    rt.trackDropinSubmission(cmd_allocator, cmd_list, retained) catch |err| {
         shared.deliverInternalError(q.dev, "doe_queue_submit: d3d12 retirement: {s}", .{@errorName(err)});
+        return false;
+    };
+    return true;
+}
+
+/// wgpuQueueWriteBuffer on D3D12: stage the bytes in an upload heap and copy
+/// them on the queue, so the write follows earlier submissions and precedes
+/// later ones. CPU-visible destinations are never written while GPU work may
+/// still read them.
+pub fn writeBuffer(q: *DoeQueue, buffer: *native_types.DoeBuffer, offset: u64, data: []const u8) void {
+    if (buffer.dev != q.dev or buffer.backend != .d3d12) {
+        q.dev.error_scopes.deliver(errors.ERROR_TYPE_VALIDATION, "wgpuQueueWriteBuffer buffer belongs to another device");
+        return;
+    }
+    if (buffer.mapped or buffer.map_pending or buffer.mtl == null) {
+        q.dev.error_scopes.deliver(errors.ERROR_TYPE_VALIDATION, "wgpuQueueWriteBuffer requires an unmapped buffer");
+        return;
+    }
+    if ((buffer.usage & abi.WGPUBufferUsage_CopyDst) == 0) {
+        q.dev.error_scopes.deliver(errors.ERROR_TYPE_VALIDATION, "wgpuQueueWriteBuffer requires COPY_DST usage");
+        return;
+    }
+    // COPY_DST buffers live in default or readback heaps; upload heaps cannot be copy destinations.
+    if (buffer.d3d12_heap_type != 1 and buffer.d3d12_heap_type != 3) {
+        shared.deliverInternalError(q.dev, "D3D12 write destination heap {d} is unsupported", .{buffer.d3d12_heap_type});
+        return;
+    }
+    if (data.len == 0) return;
+    const rt = native_rt_helpers.device_d3d12_runtime(q.dev) orelse return;
+    rt.flush_before_dropin_submit_if_needed() catch |err| {
+        shared.deliverInternalError(q.dev, "doe_queue_write_buffer: d3d12 pre-submit flush: {s}", .{@errorName(err)});
         return;
     };
+
+    var retained: std.ArrayListUnmanaged(?*anyopaque) = .{};
+    var owns_retained = true;
+    defer if (owns_retained) {
+        for (retained.items) |maybe_handle| {
+            if (maybe_handle) |handle| bridge.c.d3d12_bridge_release(handle);
+        }
+        retained.deinit(alloc);
+    };
+    retained.ensureUnusedCapacity(alloc, 2) catch {
+        shared.deliverInternalError(q.dev, "doe_queue_write_buffer: d3d12 retention allocation failed", .{});
+        return;
+    };
+    const upload = bridge.c.d3d12_bridge_device_create_buffer(rt.device, data.len, 2) orelse {
+        shared.deliverInternalError(q.dev, "doe_queue_write_buffer: d3d12 upload allocation failed", .{});
+        return;
+    };
+    retained.appendAssumeCapacity(upload);
+    const mapped = bridge.c.d3d12_bridge_resource_map(upload) orelse {
+        shared.deliverInternalError(q.dev, "doe_queue_write_buffer: d3d12 upload map failed", .{});
+        return;
+    };
+    @memcpy(@as([*]u8, @ptrCast(mapped))[0..data.len], data);
+    bridge.c.d3d12_bridge_resource_unmap(upload);
+
+    const cmd_allocator = bridge.c.d3d12_bridge_device_create_command_allocator(rt.device) orelse return;
+    var owns_cmd_allocator = true;
+    defer if (owns_cmd_allocator) bridge.c.d3d12_bridge_release(cmd_allocator);
+    const cmd_list = bridge.c.d3d12_bridge_device_create_command_list(rt.device, cmd_allocator) orelse return;
+    var owns_cmd_list = true;
+    defer if (owns_cmd_list) bridge.c.d3d12_bridge_release(cmd_list);
+
+    if (bridge.c.d3d12_bridge_command_list_copy_buffer_region(cmd_list, buffer.mtl, offset, upload, 0, data.len) != 0) {
+        shared.deliverInternalError(q.dev, "D3D12 write copy rejected invalid buffers, ranges or heap types", .{});
+        return;
+    }
+    bridge.c.d3d12_bridge_retain(buffer.mtl);
+    retained.appendAssumeCapacity(buffer.mtl);
+    if (!executeTracked(q, rt, cmd_allocator, cmd_list, &retained)) return;
     owns_cmd_allocator = false;
     owns_cmd_list = false;
-    owns_retained_handles = false;
+    owns_retained = false;
 }
 
 const Clear = @FieldType(commands.RecordedCmd, "clear_buffer");

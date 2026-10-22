@@ -238,6 +238,8 @@ pub const DoeBindGroupLayout = struct {
     entries: ?[]shared.DoeBindGroupLayoutEntry = null,
     inline_entries: [4]shared.DoeBindGroupLayoutEntry = undefined,
     entries_inline: bool = false,
+    /// Created for one pipeline's automatic layout; WebGPU makes it exclusive to that pipeline.
+    automatic: bool = false,
 };
 
 pub const DoePipelineLayout = struct {

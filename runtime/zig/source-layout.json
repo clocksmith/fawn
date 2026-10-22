@@ -3538,9 +3538,9 @@
       },
       "src/native/compute/doe_compute_fast.zig": {
         "decision": "Keep",
-        "moduleSha256": "368479d80096bc2e12b9d5beca0ca458632aa896f3d67c529be3018de3991586",
-        "reason": "Keep: existing recording entrypoints consume shared native copy admission; ownership regressions use valid device and usage declarations.",
-        "reviewer": "codex-copy-admission/2026-09-07"
+        "moduleSha256": "6cb4c0a1a46cb52e5c8d4ad3946d5d4179d9e0d8434132ed2bcd683720611ac1",
+        "reason": "Keep: existing recording entrypoints consume shared native copy admission; ownership regressions use valid device and usage declarations. Fused dispatch-flush entrypoints no longer drop D3D12 work: they build the same validated recorded command buffer and submit it through the D3D12 queue owner.",
+        "reviewer": "claude-d3d12-package/2026-10-22"
       },
       "src/native/compute/doe_compute_fast_vulkan.zig": {
         "decision": "Keep",
@@ -3592,9 +3592,9 @@
       },
       "src/native/queue/doe_queue_copy_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "ad4310e5277593240178b3fcd84aa518f151f04abe67e3ec8a2e41b740f4d334",
-        "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission.",
-        "reviewer": "codex"
+        "moduleSha256": "3ae5ffdb6971717422e202495cafffd1f0e577ebca7c391ccf1b6869c127ef4f",
+        "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission. Validated D3D12 queue writes route to the D3D12 queue owner instead of the Metal staging path.",
+        "reviewer": "claude-d3d12-package/2026-10-22"
       },
       "src/native/queue/doe_queue_flush_breakdown.zig": {
         "decision": "Keep",
@@ -3610,9 +3610,9 @@
       },
       "src/native/queue/doe_queue_submit_d3d12.zig": {
         "decision": "Keep",
-        "moduleSha256": "934a1527624e3fe408ad462173e8e077db43193efdb6bf6e0c480c866c42c17d",
-        "reason": "Keep: D3D12 queue preflights compute and clear ranges, records ordered copies and bounded zero-upload clears, rejects mixed render submissions, and retains GPU objects through terminal retirement.",
-        "reviewer": "codex-d3d12-clear/2026-10-21"
+        "moduleSha256": "855137a86dd3e3730a658b6de5e00043b57f23eb352a63d92c827ffc22de3d7b",
+        "reason": "Keep: D3D12 queue preflights compute and clear ranges, records ordered copies and bounded zero-upload clears, stages queue writes through upload-heap copies ordered on the queue, rejects mixed render submissions, and retains GPU objects through terminal retirement via one shared execute-and-track step.",
+        "reviewer": "claude-d3d12-package/2026-10-22"
       },
       "src/native/queue/doe_queue_submit_metal.zig": {
         "decision": "Keep",
@@ -3778,9 +3778,9 @@
       },
       "src/native/support/doe_native_object_types.zig": {
         "decision": "Keep",
-        "moduleSha256": "6eb79164f9ea6b8f75c79814f3c24bc081ed89c503a98ae97f86fa59a962f2e9",
-        "reason": "Keep: native command submission consumes each command buffer once, including rejected batches, while shared availability admission prevents partial execution. Object state, validation and backend dispatch retain their existing owners; no new replay API.",
-        "reviewer": "codex-bee-doe/2026-10-21"
+        "moduleSha256": "05c562c213593d4f2ac7c2ab63afdf13e1e47102ff15c2bf0a10d3b3e3c75698",
+        "reason": "Keep: native command submission consumes each command buffer once, including rejected batches, while shared availability admission prevents partial execution. Bind group layouts record whether they are a pipeline's automatic layout so backends can keep that layout exclusive. Object state, validation and backend dispatch retain their existing owners; no new replay API.",
+        "reviewer": "claude-d3d12-package/2026-10-22"
       },
       "src/native/support/doe_native_runtime_helpers.zig": {
         "decision": "Keep",
@@ -4444,9 +4444,9 @@
       },
       "src/native/compute/doe_compute_d3d12.zig": {
         "decision": "Keep",
-        "moduleSha256": "439c7e38c71bd4dd4e8de18566eef5cc96a55770aa948845e509320a0a6501ed",
-        "reason": "Keep: bounded D3D12 integration derives automatic single-storage-binding layouts only after existing analyzed-IR admission, using authoritative shader buffer reflection and existing native layout constructors/releases. Per-pipeline distinct layout identity and pipeline-owned retention reuse GetBindGroupLayout and dispatch validation. Explicit layout, descriptors, shader compiler and queue ownership remain unchanged.",
-        "reviewer": "codex-d3d12-auto-layout/2026-10-19"
+        "moduleSha256": "151fb9c16407919217af8e367d45458a0ece96075043472d166d02c102577f75",
+        "reason": "Keep: bounded D3D12 integration derives automatic single-storage-binding layouts only after existing analyzed-IR admission, using authoritative shader buffer reflection and existing native layout constructors/releases. Automatic layouts are marked and stay exclusive to their pipeline; dispatch validation admits explicit layouts whose entries match the pipeline layout, treating the package's type-erased flat buffer entries as unspecified. Descriptors still derive from pipeline storage slots; shader compiler and queue ownership remain unchanged.",
+        "reviewer": "claude-d3d12-package/2026-10-22"
       },
       "src/backend/d3d12/d3d12_kernel_buffers.zig": {
         "decision": "Keep",

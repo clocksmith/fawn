@@ -19,7 +19,12 @@ separates exercised contracts from retained unsupported and unverified surfaces.
 This is a local native correctness boundary; it does not qualify the complete
 WebGPU surface, package integration, browser execution or performance.
 
-A source-matched Windows Dawn control and usable package bindings remain
+The `doe-gpu` Node addon builds on Windows with the pinned Zig C compiler and
+runs ordinary buffer upload, compute and readback through this subset. Package
+integration on D3D12 is not qualified: texture, timestamp, render, aggregate
+storage-type, wider binding-shape and multi-entry paths, and Windows provider
+identification, still fail the package integration suite. A
+source-matched Windows Dawn control and qualified package bindings remain
 prerequisites for a paired application comparison. Windows Chromium source,
 build prerequisites and provider-ownership acceptance remain separate blockers
 for the [browser lane](../../browser/chromium/acceptance.md). No Dawn speed win
