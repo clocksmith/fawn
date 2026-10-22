@@ -13,6 +13,7 @@ const texture_sampler = @import("../resource/doe_texture_sampler_native.zig");
 const error_scope = @import("../../runtime/diagnostics/error_scope.zig");
 const shared = @import("doe_queue_submit_shared.zig");
 const queue_flush_breakdown = @import("doe_queue_flush_breakdown.zig");
+const d3d12_submit = @import("doe_queue_submit_d3d12.zig");
 
 const has_vulkan = (builtin.os.tag == .linux);
 const vk_resources = if (has_vulkan) resource_ops.vk_resources else struct {};
@@ -153,6 +154,10 @@ fn writeBufferValidated(q: *DoeQueue, buf: *DoeBuffer, offset: u64, data: [*]con
     if (write_end > buf.size) {
         q.dev.error_scopes.deliver(error_scope.ERROR_TYPE_VALIDATION, "wgpuQueueWriteBuffer range exceeds buffer size");
         return false;
+    }
+    if (q.dev.backend == .d3d12) {
+        d3d12_submit.writeBuffer(q, buf, offset, data[0..size]);
+        return true;
     }
     if (q.dev.backend == .vulkan) {
         if (comptime has_vulkan) {

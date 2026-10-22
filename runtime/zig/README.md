@@ -175,7 +175,12 @@ DXC must be available on the invoking process's PATH.
 Compiler analysis and HLSL emission are reused. Proof obligations remain attached
 to the pipeline and are validated at recording and submission. The queue permits
 copies and buffer clears around admitted compute, retaining buffers, pipeline, root signature and
-per-dispatch descriptor heaps through completion. Indirect dispatch, other
+per-dispatch descriptor heaps through completion. Queue writes stage through an
+upload heap and copy on the queue, so they follow earlier submissions and precede
+later ones. Doe's fused dispatch-flush entry points build the same recorded
+commands and submit through this path. A bind group may use the pipeline's
+automatic layout or an explicit layout with matching entries; another pipeline's
+automatic layout remains rejected. Indirect dispatch, other
 binding shapes (including sparse slots, other groups and aliases), overrides,
 and mixed render/compute/copy
 submissions remain rejected. Pure render submission is a separate path.
@@ -185,8 +190,11 @@ numerical oracle, early caller release, repeated dispatch ordering, and rejectio
 without modifying a prefilled readback buffer. Build it with the pinned Zig C
 compiler and `-I vendor/webgpu-headers`, then pass the DLL path and optionally
 `float`, `int`, `repeat`, `reject`, or `unsupported`. The last mode checks pipeline
-rejection for an aggregate array. `tests/d3d12_buffer_readback.c` retains copy-only
-coverage. These focused tests do not qualify full WebGPU/D3D12 support or speed.
+rejection for an aggregate array. `tests/d3d12_buffer_readback.c` retains copy
+coverage; `write` writes through the queue into a readback buffer, and
+`write-default` checks that a write after submission into a default-heap source
+does not reach the submitted copy. These focused tests do not qualify full
+WebGPU/D3D12 support or speed.
 
 `tests/d3d12_runtime_array_readback.c` adds bound-length numerical oracles. Its
 `short` mode checks a 16-byte view over a 32-byte allocation, preserving the tail;

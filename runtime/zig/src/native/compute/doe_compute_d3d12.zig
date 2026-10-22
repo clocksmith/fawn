@@ -118,8 +118,32 @@ fn createAutomaticLayout(device: *objects.DoeDevice, shader: *objects.DoeShaderM
     descriptor.entries = @ptrCast(&entries);
     const group = layouts.doeNativeDeviceCreateBindGroupLayout(helpers.toOpaque(device), &descriptor) orelse return error.AutomaticLayoutCreationFailed;
     defer layouts.doeNativeBindGroupLayoutRelease(group);
+    (helpers.cast(objects.DoeBindGroupLayout, group) orelse unreachable).automatic = true;
     const raw = layouts.doeNativeDeviceCreatePipelineLayoutOne(helpers.toOpaque(device), group, 0) orelse return error.AutomaticLayoutCreationFailed;
     return helpers.cast(objects.DoePipelineLayout, raw) orelse unreachable;
+}
+
+/// Descriptors come from the pipeline's storage slots, so a group made from an
+/// equivalent explicit layout binds the same table. Another pipeline's
+/// automatic layout stays exclusive to that pipeline. The package recreates
+/// automatic layouts explicitly from reflection, and its flat buffer-layout
+/// path records only binding numbers: an undefined buffer type is unspecified.
+fn sameBindings(actual: ?*objects.DoeBindGroupLayout, expected: ?*objects.DoeBindGroupLayout) bool {
+    const have = actual orelse return false;
+    const want = expected orelse return false;
+    if (have == want) return true;
+    if (have.automatic) return false;
+    const have_entries = have.entries orelse return false;
+    const want_entries = want.entries orelse return false;
+    if (have_entries.len != want_entries.len) return false;
+    for (want_entries) |entry| {
+        var match = for (have_entries) |candidate| {
+            if (candidate.binding == entry.binding) break candidate;
+        } else return false;
+        if (match.buffer_binding_type == binding.WGPUBufferBindingType_Undefined) match.buffer_binding_type = entry.buffer_binding_type;
+        if (!std.meta.eql(match, entry)) return false;
+    }
+    return true;
 }
 
 pub fn validate(device: *objects.DoeDevice, dispatch: Dispatch) !void {
@@ -130,7 +154,7 @@ pub fn validate(device: *objects.DoeDevice, dispatch: Dispatch) !void {
     const layout = pipeline.layout orelse return error.InvalidPipeline;
     const group = helpers.cast(objects.DoeBindGroup, dispatch.bind_groups[0]) orelse return error.MissingBinding;
     const count = pipeline.binding_count;
-    if (count == 0 or count > MAX_STORAGE_BINDINGS or group.layout != layout.bind_group_layouts[0] or group.count != count or dispatch.buf_count != count) return error.UnsupportedBinding;
+    if (count == 0 or count > MAX_STORAGE_BINDINGS or !sameBindings(group.layout, layout.bind_group_layouts[0]) or group.count != count or dispatch.buf_count != count) return error.UnsupportedBinding;
     for (dispatch.bind_groups[1..]) |other| if (other != null) return error.UnsupportedBinding;
     if (dispatch.x > 65535 or dispatch.y != 1 or dispatch.z != 1) return error.UnsupportedDispatchDimensions;
     for (pipeline.d3d12_storage[0..count], 0..) |slot, index| {

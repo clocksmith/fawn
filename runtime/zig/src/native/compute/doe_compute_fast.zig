@@ -512,6 +512,33 @@ pub export fn doeNativeCreateComputeDispatchBatchCopyCommandBuffer(
     return toOpaque(builder.finish() catch |err| return constructionFailure(dev, err));
 }
 
+/// D3D12 has no fused encoder: build the command buffer the deferred path would
+/// record, with the same validation, and submit it through the queue.
+fn submitRecordedDispatchCopy(
+    q: *native_types.DoeQueue,
+    dispatch_count: usize,
+    pipe_ptrs: [*]?*anyopaque,
+    bg_ptrs: [*]?*anyopaque,
+    bg_counts: [*]const u32,
+    dispatch_dims: [*]const u32,
+    copy_src: ?*anyopaque,
+    copy_src_off: u64,
+    copy_dst: ?*anyopaque,
+    copy_dst_off: u64,
+    copy_size: u64,
+    breakdown: ?[*]u64,
+) void {
+    const replay_started_ns = monotonicNowNs();
+    // Construction failures are already delivered to the device's error scopes.
+    const command = doeNativeCreateComputeDispatchBatchCopyCommandBuffer(toOpaque(q.dev), dispatch_count, pipe_ptrs, bg_ptrs, bg_counts, dispatch_dims, copy_src, copy_src_off, copy_dst, copy_dst_off, copy_size) orelse return;
+    defer native_exports.doeNativeCommandBufferRelease(command);
+    addDirectDispatchFlushField(breakdown, DIRECT_DISPATCH_FLUSH_COMMAND_REPLAY_INDEX, monotonicNowNs() - replay_started_ns);
+    const submit_started_ns = monotonicNowNs();
+    const command_buffers = [_]?*anyopaque{command};
+    queue_submit.doeNativeQueueSubmit(toOpaque(q), command_buffers.len, &command_buffers);
+    addDirectDispatchFlushField(breakdown, DIRECT_DISPATCH_FLUSH_QUEUE_SUBMIT_INDEX, monotonicNowNs() - submit_started_ns);
+}
+
 /// Single-call compute dispatch + optional same-submit copy + event signal + commit.
 /// When the follow-on copy is a CPU-visible shared-buffer readback, we schedule it as
 /// a deferred CPU memcpy after GPU completion to preserve macOS correctness while
@@ -534,7 +561,7 @@ pub fn computeDispatchFlushDirect(
     resetDirectDispatchFlushBreakdown(breakdown);
     const q = native_helpers.cast(native_types.DoeQueue, q_raw) orelse return;
     const pipe = native_helpers.cast(native_types.DoeComputePipeline, pipe_raw) orelse return;
-    if (q.dev.backend == .vulkan) {
+    if (q.dev.backend == .vulkan or q.dev.backend == .d3d12) {
         var pipe_ptrs = [_]?*anyopaque{toOpaque(pipe)};
         var bg_counts = [_]u32{@min(bg_count, MAX_COMPUTE_BIND_GROUPS)};
         var dispatch_dims = [_]u32{ dx, dy, dz };
@@ -820,7 +847,11 @@ fn computeDispatchBatchCopyFlushDirect(
         );
         return;
     }
-    if (q.dev.backend != .metal) return;
+    if (q.dev.backend == .d3d12) {
+        if (dispatch_count == 0) return;
+        submitRecordedDispatchCopy(q, dispatch_count, pipe_ptrs, bg_ptrs, bg_counts, dispatch_dims, copy_src, copy_src_off, copy_dst, copy_dst_off, copy_size, breakdown);
+        return;
+    }
     if (dispatch_count == 0) return;
 
     const before_submit_flush_started_ns = monotonicNowNs();

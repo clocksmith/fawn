@@ -1,6 +1,9 @@
 // Windows-only bounded public ABI check. One 32-byte copy, no shader or DXC.
 // zig cc -I vendor/webgpu-headers tests/d3d12_buffer_readback.c -o readback.exe
-// readback.exe <absolute path to webgpu_doe_full.dll>
+// readback.exe <absolute path to webgpu_doe_full.dll> [default|write|write-default]
+// write: queue write straight into a mappable readback buffer.
+// write-default: queue write into a default-heap buffer, copy it out, then
+// overwrite the source after submission; the submitted copy must not observe it.
 #include <windows.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -37,7 +40,9 @@ static void scope_ready(WGPUPopErrorScopeStatus status, WGPUErrorType type,
 
 int main(int argc, char **argv) {
     if (argc != 2 && argc != 3) return 2;
-    const int via_default = argc == 3 && strcmp(argv[2], "default") == 0;
+    const int write_readback = argc == 3 && strcmp(argv[2], "write") == 0;
+    const int write_default = argc == 3 && strcmp(argv[2], "write-default") == 0;
+    const int via_default = write_default || (argc == 3 && strcmp(argv[2], "default") == 0);
     HMODULE library = LoadLibraryA(argv[1]);
     if (!library) { fprintf(stderr, "LoadLibrary error=%lu\n", GetLastError()); return 2; }
     LOAD(CreateInstance); LOAD(InstanceRequestAdapter); LOAD(InstanceProcessEvents);
@@ -48,6 +53,7 @@ int main(int argc, char **argv) {
     LOAD(BufferGetConstMappedRange); LOAD(CommandBufferRelease); LOAD(CommandEncoderRelease);
     LOAD(BufferRelease); LOAD(QueueRelease); LOAD(DeviceRelease); LOAD(AdapterRelease); LOAD(InstanceRelease);
     LOAD(CommandEncoderClearBuffer); LOAD(DevicePushErrorScope); LOAD(DevicePopErrorScope);
+    LOAD(QueueWriteBuffer);
     int result = 1, mapped = 0;
     const char *stage = "instance";
     WGPUInstance instance = CreateInstance(NULL);
@@ -102,21 +108,31 @@ int main(int argc, char **argv) {
     if (!input) goto cleanup;
     memcpy(input, expected, sizeof(expected));
     BufferUnmap(source);
-    stage = "recorded copy";
-    encoder = DeviceCreateCommandEncoder(device, NULL);
-    if (!encoder) goto cleanup;
-    if (via_default) {
-        CommandEncoderCopyBufferToBuffer(encoder, source, 0, intermediate, 16, sizeof(expected));
-        CommandEncoderCopyBufferToBuffer(encoder, intermediate, 16, destination, 0, sizeof(expected));
-    } else CommandEncoderCopyBufferToBuffer(encoder, source, 0, destination, 0, sizeof(expected));
-    commands = CommandEncoderFinish(encoder, NULL);
-    if (!commands) goto cleanup;
+    if (write_readback) {
+        stage = "queue write";
+        QueueWriteBuffer(queue, destination, 0, expected, sizeof(expected));
+    } else {
+        stage = "recorded copy";
+        if (write_default) QueueWriteBuffer(queue, intermediate, 16, expected, sizeof(expected));
+        encoder = DeviceCreateCommandEncoder(device, NULL);
+        if (!encoder) goto cleanup;
+        if (via_default) {
+            if (!write_default) CommandEncoderCopyBufferToBuffer(encoder, source, 0, intermediate, 16, sizeof(expected));
+            CommandEncoderCopyBufferToBuffer(encoder, intermediate, 16, destination, 0, sizeof(expected));
+        } else CommandEncoderCopyBufferToBuffer(encoder, source, 0, destination, 0, sizeof(expected));
+        commands = CommandEncoderFinish(encoder, NULL);
+        if (!commands) goto cleanup;
+        QueueSubmit(queue, 1, &commands);
+        if (write_default) {
+            const uint32_t later[8] = {0};
+            QueueWriteBuffer(queue, intermediate, 16, later, sizeof(later));
+        }
+        // Submission owns the native resources until completion; application and
+        // recorded-command references may be released before mapping the result.
+        CommandBufferRelease(commands); commands = NULL;
+        CommandEncoderRelease(encoder); encoder = NULL;
+    }
     stage = "submit/map";
-    QueueSubmit(queue, 1, &commands);
-    // Submission owns the native resources until completion; application and
-    // recorded-command references may be released before mapping the result.
-    CommandBufferRelease(commands); commands = NULL;
-    CommandEncoderRelease(encoder); encoder = NULL;
     BufferRelease(source); source = NULL;
     if (intermediate) { BufferRelease(intermediate); intermediate = NULL; }
     WGPUBufferMapCallbackInfo mc = WGPU_BUFFER_MAP_CALLBACK_INFO_INIT;
@@ -169,6 +185,7 @@ cleanup:
     FreeLibrary(library);
     if (result) fprintf(stderr, "FAIL stage=%s\n", stage);
     else printf("PASS: D3D12 %s copy/readback, early release, exact 8-word output, misaligned clear rejected\n",
+                write_readback ? "queue-write readback" : write_default ? "ordered queue-write default-heap" :
                 via_default ? "default-heap offset" : "upload/readback");
     return result;
 }
