@@ -15,19 +15,19 @@ const LAYOUTS = [
     ['nextInChain', 'label', 'colorAttachmentCount', 'colorAttachments', 'depthStencilAttachment', 'occlusionQuerySet', 'timestampWrites']],
 ];
 
-function checkNativeAbiLayouts({ compiler, includeDir, bridgeHeader, upstreamHeader }) {
+function checkNativeAbiLayouts({ compiler, prefixArgs = [], includeDir, bridgeHeader, upstreamHeader }) {
   const directory = mkdtempSync(join(tmpdir(), 'doe-native-abi-'));
   try {
     const observed = [bridgeHeader, upstreamHeader].map((header, side) => {
-      const output = join(directory, `layout-${side}`);
+      const output = join(directory, `layout-${side}${process.platform === 'win32' ? '.exe' : ''}`);
       const rows = LAYOUTS.map((layout) => {
         const name = layout[side];
         const values = [`sizeof(${name})`, ...layout[2].map((field) => `offsetof(${name}, ${field})`)];
         return `printf("${values.map(() => '%zu').join(' ')}\\n", ${values.join(', ')});`;
       });
       const source = `#include <stdio.h>\n#include <stddef.h>\n#include ${JSON.stringify(header)}\nint main(void) { ${rows.join('\n')} return 0; }\n`;
-      execFileSync(compiler, ['-std=c11', `-I${includeDir}`, '-x', 'c', '-', '-o', output], { input: source, stdio: ['pipe', 'pipe', 'pipe'] });
-      return execFileSync(output, { encoding: 'utf8' }).trim().split('\n');
+      execFileSync(compiler, [...prefixArgs, '-std=c11', `-I${includeDir}`, '-x', 'c', '-', '-o', output], { input: source, stdio: ['pipe', 'pipe', 'pipe'] });
+      return execFileSync(output, { encoding: 'utf8' }).trim().split(/\r?\n/);
     });
     for (const [index, layout] of LAYOUTS.entries()) {
       if (observed[0][index] !== observed[1][index]) {
