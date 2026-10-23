@@ -12,7 +12,7 @@ semantics, callback queues, shader meaning or GPU execution. Defaults stay uncha
 ## Scope
 Instances/devices, buffers, compute pipelines, bindings, commands, submission,
 readback, device loss, labels, compilation/pipeline callbacks; initialized color
-textures/views/samplers and copies, depth/stencil texel copies and textureLoad sampling, cube arrays when enabled, srgb/unorm view formats, point lists with maintenance5, single-sample attachment discard; requested GPU-normalized timestamps; reflected
+textures/views/samplers and copies, depth/stencil texel copies and textureLoad sampling, cube arrays when enabled, srgb/unorm view formats, point lists with maintenance5, single-sample attachment discard, multisampled texture reads; requested GPU-normalized timestamps; reflected
 vertex/fragment or vertex-only pipelines, color/depth/stencil/MSAA passes, resolve,
 direct/guarded-indirect nonindexed and indexed draws, bundles, occlusion and canonical debug-group validation;
 Linux Vulkan surfaces (Wayland/XCB/Xlib) with compatibleSurface-enabled WSI and presentation.

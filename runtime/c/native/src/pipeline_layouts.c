@@ -39,7 +39,9 @@ static bool resource_entry(const doe_shader_view *view, uint32_t index, WGPUShad
             WGPUSamplerBindingType_Comparison : WGPUSamplerBindingType_Filtering;
         return true;
     }
-    if (handle->flags & DOE_COMPILER_HANDLE_MULTISAMPLED) return false;
+    /* texture_multisampled_2d<f32> defaults to 'unfilterable-float' (multisampled
+     * float is invalid); depth multisampled stays 'depth'. */
+    out->multisampled = (handle->flags & DOE_COMPILER_HANDLE_MULTISAMPLED) != 0;
     switch (handle->view_dimension) {
     case DOE_COMPILER_VIEW_1D: out->view_dimension = WGPUTextureViewDimension_1D; break;
     case DOE_COMPILER_VIEW_2D: out->view_dimension = WGPUTextureViewDimension_2D; break;
@@ -57,7 +59,8 @@ static bool resource_entry(const doe_shader_view *view, uint32_t index, WGPUShad
         out->kind = DOE_BIND_TEXTURE;
         switch (handle->sample_scalar) {
         case DOE_COMPILER_LEAF_F32:
-            out->sample_type = sampled ? WGPUTextureSampleType_Float : WGPUTextureSampleType_UnfilterableFloat;
+            out->sample_type = sampled && !out->multisampled ? WGPUTextureSampleType_Float :
+                WGPUTextureSampleType_UnfilterableFloat;
             break;
         case DOE_COMPILER_LEAF_I32: out->sample_type = WGPUTextureSampleType_Sint; break;
         case DOE_COMPILER_LEAF_U32: out->sample_type = WGPUTextureSampleType_Uint; break;

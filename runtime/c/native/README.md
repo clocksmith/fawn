@@ -132,6 +132,11 @@ Apple SDK compilation, Darwin execution and physical qualification remain unrun.
   alpha-to-coverage. A vertex-only depth pipeline needs neither a fabricated
   fragment shader nor a color target. Discarded multisample color is initialized
   by the existing backend aspect owner before a later Load.
+- Multisampled textures may add TextureBinding to RenderAttachment. The compiler's
+  texture_multisampled_2d textureLoad(coord, sampleIndex) bounds-checks the index
+  against OpImageQuerySamples (out of range loads zero); automatic layouts reflect
+  `multisampled` with 'unfilterable-float' for f32 and 'depth' for depth, and the
+  resource owner rejects multisampled 'float' layouts and single-sample views.
 - Color storeOp Discard is admitted for single-sample attachments too: Vulkan
   STORE_OP_DONT_CARE and the backend's per-aspect owner marks the subresource
   undefined. Later Load passes, buffer/texture copies and sampled or storage
@@ -408,7 +413,7 @@ unsupported devices reject that pipeline. Blend constants must be finite f32.
 Texture format reinterpretation beyond srgb/unorm viewFormats pairs (RGBA8,
 BGRA8; resource-validated, then a mutable Vulkan image with a format list), srgb
 viewFormats together with StorageBinding, depth storage, depth comparison sampling (compiler), multisampled
-sampling/copies/storage, and cube arrays without device imageCubeArray are rejected.
+copies/storage, and cube arrays without device imageCubeArray are rejected.
 The baseline admits 23 named Vulkan
 color formats, subject to actual device usage/format capabilities. Device
 descriptors may request TimestampQuery when the actual adapter supports the
@@ -465,6 +470,7 @@ PASS public depth/stencil copies: rendered depth32float .25/.75 via DepthOnly/Al
 PASS public indexed draws: uint16/uint32 indices, firstIndex, signed base vertex, instance selection, offset index ranges, pass/bundle replay, uint16/uint32 strip primitive restart, 9 GPU-produced drawIndexedIndirect records with exact-end/out-of-range/wrapping/zero/firstInstance/instance-overrun guards, unchanged arguments, 13 typed validation controls and early releases; exact 192 pixels (CPU Vulkan only)
 PASS public ABI9 atomics: storage accumulation, signed OOB suppression, compare-exchange result identity, fresh workgroup initialization across two groups and two dispatches, early releases (CPU Vulkan only)
 PASS public debug markers: typed procedures, independent nested balance, parent lock, underflow, malformed strings and finished/unbalanced command/pass/bundle rejection (CPU Vulkan only)
+PASS public multisampled reads: 4x rgba8unorm stored with sample masks 0x5/0xE and alpha-to-coverage 0/1, every sample of 8 texels read via texture_multisampled_2d textureLoad under the automatic unfilterable-float multisampled layout, textureNumSamples, out-of-range sample zero, float-layout/storage/single-sample-binding controls, early releases; exact 64 samples (CPU Vulkan only)
 PASS public attachment discard: single-sample color discard then direct copy, Load pass and compute textureLoad all read GPU zeros, Store control keeps green, discarded depth32float copies as 0.0, early releases; exact 40 texels and 32 loaded components (CPU Vulkan only)
 PASS public point lists: enabled maintenance5 default point size, 9 one-pixel points at exact centers from a direct draw, a render bundle and an indexed draw with an unselected decoy, stripIndexFormat control, early releases; exact 32 pixels (CPU Vulkan only)
 PASS public MSAA: actual 4x color/depth, exact resolve pixels, mask0/zero-and-full alpha coverage, empty resolve, same-batch discard-zero and depth-only empty/query/bundle passes (CPU Vulkan only)
@@ -598,7 +604,7 @@ Do not run this on Miles or Suby while their possible disassembly/cooling hold
 remains. Every adapter-using client selects its adapter through
 `tests/adapter_class.h`: software (CPU fallback adapter) by default, or a
 nonfallback GPU adapter with `DOE_C_TEST_ADAPTER=physical`. Each PASS line names
-the class and device it ran on. `make check-physical` runs the same 27 clients on
+the class and device it ran on. `make check-physical` runs the same 33 clients on
 the system ICDs (`VK_ICD_FILENAMES` unset):
 
 ```
@@ -623,7 +629,10 @@ depth/stencil copies were added (with the WGSL language-feature and texture-bind
 view clients) all 22 (including `depth-copies`) passed; with depth sampling all 23
 (including `depth-sampling`) passed; with cube arrays all 24 (including
 `cube-array`) passed; with srgb view formats, multiple color attachments and anisotropy all 27
-(including `view-formats`, `mrt` and `anisotropy`) passed. That is
+(including `view-formats`, `mrt` and `anisotropy`) passed; with compute programs,
+vertex formats, storage textures, point lists, attachment discard and multisampled
+reads all 33 (including `storage-textures`, `point-list`, `color-discard` and
+`msaa-sampling`) passed. That is
 developer evidence for these exact clients on that
 adapter/driver: the oracles are the clients' own expected values, not frozen
 independent workloads, and it is not Vulkan backend qualification, a performance
