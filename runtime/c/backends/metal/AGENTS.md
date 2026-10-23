@@ -22,7 +22,9 @@ speculative until completion, like transfers. Combined depth/stencil aspects use
 independent bits in the same subresource owner; resolve targets are separately
 leased and published. Never overwrite one aspect while updating another.
 Visibility offsets form one contiguous run per pass and share buffer completion
-access rules. Reset/aggregation and public query-set policy remain upstream.
+access rules. Timestamp samples share that completion owner too: distinguish stage
+and blit capabilities, never resolve unwritten samples, and preserve native error
+values instead of fabricating time or assuming Mach clock units. Reset/aggregation and public query-set policy remain upstream.
 
 Portable call-ledger tests are not a Metal emulator, SDK check or physical run.
 Do not install Apple SDKs or silently substitute Vulkan/software execution.

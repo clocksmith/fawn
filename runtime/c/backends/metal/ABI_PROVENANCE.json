@@ -57,6 +57,10 @@
     {
       "path": "runtime/zig/src/native/resource/doe_query_native.zig",
       "sha256": "69b16838b7ba73554ee46bb8656bd2bae58171d160b154886dbe36fc9c6ed37d"
+    },
+    {
+      "path": "runtime/zig/src/backend/metal/metal_dispatch_runtime.zig",
+      "sha256": "b6a4a18ff231ada1fbec755045c9628b449e154926251a20621a5b1563d00e64"
     }
   ],
   "primary_references": [
@@ -179,6 +183,22 @@
     {
       "subject": "Stencil resolve, counting queries and family-dependent limits",
       "url": "https://developer.apple.com/metal/feature-sets/"
+    },
+    {
+      "subject": "Timestamp-only set identity and exact uint64 result layout",
+      "url": "https://raw.githubusercontent.com/apple/metal-cpp/main/Metal/MTLCounters.hpp"
+    },
+    {
+      "subject": "Compute stage sample attachments",
+      "url": "https://developer.apple.com/documentation/metal/mtlcomputepassdescriptor/samplebufferattachments"
+    },
+    {
+      "subject": "Native GPU resolve and CounterErrorValue",
+      "url": "https://developer.apple.com/documentation/metal/mtlblitcommandencoder/resolvecounters(_:range:destinationbuffer:destinationoffset:)"
+    },
+    {
+      "subject": "Counter sampling and GPU-to-CPU time-domain calibration",
+      "url": "https://developer.apple.com/videos/play/tech-talks/10001/"
     }
   ],
   "abi_facts": [
@@ -201,7 +221,10 @@
     "Combined Depth24Stencil8=255, Depth32Stencil8=260; X32Stencil8=261 and X24Stencil8=262 are view-only in this owner.",
     "Depth resolve sample0/min/max=0/1/2; stencil resolve sample0/depth-resolved-sample=0/1; native filter setters take NSUInteger.",
     "Depth resolve/store-and-resolve/counting visibility conservatively require Apple3 or Mac2; stencil resolve requires Apple5 or Mac2; multisample arrays require Apple7 or Mac2.",
-    "Visibility mode/offset setter arguments are NSUInteger; each uint64 result occupies eight aligned bytes, each offset used in one contiguous run per pass."
+    "Visibility mode/offset setter arguments are NSUInteger; each uint64 result occupies eight aligned bytes, each offset used in one contiguous run per pass.",
+    "Counter sampling points stage=0 and blit=4 are independently queried; native BOOL return and barrier parameters use the platform BOOL ABI.",
+    "MTLCommonCounterSetTimestamp and MTLCommonCounterTimestamp are exported NSString pointer constants. Timestamp results are exactly one uint64 record.",
+    "Compute sample attachment start/end indices and native resolve offset/range fields are NSUInteger. Resolve may produce CounterErrorValue even if command completion succeeds."
   ],
   "not_verified": [
     "Apple SDK declaration compatibility",
@@ -220,6 +243,9 @@
     "Whole-pass preflight and one completion owner retain every attachment/view and pipeline before native encoding; per-aspect initialization uses the same completion owner and paired combined attachments are explicit.",
     "Source-store and resolve-target aspect availability are independent; shader coverage never establishes initialization.",
     "Visibility encoding follows the primary Metal method contract; the retained Metal public query-set path admits only timestamps, so this extension does not claim retained frontend query integration.",
-    "Combined depth/stencil transfer byte layout is not guessed; stencil view formats and combined allocations cannot enter staging transfer paths."
+    "Combined depth/stencil transfer byte layout is not guessed; stencil view formats and combined allocations cannot enter staging transfer paths.",
+    "Timestamp set discovery requires the exact timestamp-only set, not any set containing a named timestamp counter.",
+    "GPU resolve uses the existing buffer/command lifetime owner; no deferred CPU memcpy or Mach-timebase normalization is silently substituted.",
+    "Unsupported blit sampling is an explicit failure, not the retained void bridge silent return. True GPU-generated indirect admission remains unfinished; no host-only surrogate public API was introduced."
   ]
 }

@@ -333,7 +333,7 @@ static void encoding_controls(void) {
     resources.buffers[3] = (doe_mtl_native_binding){&fixture.source_buffer, 12, 28};
     resources.buffers[7] = (doe_mtl_native_binding){&fixture.destination_buffer, 4, 16};
     assert(doe_mtl_objc_dispatch(&fixture.runtime, command, &fixture.pipeline,
-        &resources, 30, (doe_mtl_dimensions){2, 5, 7}, (doe_mtl_dimensions){8, 4, 2}, 3, NULL) == DOE_MTL_OK);
+        &resources, 30, (doe_mtl_dimensions){2, 5, 7}, (doe_mtl_dimensions){8, 4, 2}, 3, NULL, NULL) == DOE_MTL_OK);
     assert(fixture.pipeline_sets == 1 && fixture.buffer_sets == 31 && fixture.dispatches == 3);
     assert(fixture.bound[3].buffer == &fixture.source_buffer && fixture.bound[3].offset == 12);
     assert(fixture.bound[7].buffer == &fixture.destination_buffer && fixture.bound[7].offset == 4);
@@ -346,7 +346,7 @@ static void encoding_controls(void) {
     fixture.fail_encoder = true;
     assert(doe_mtl_objc_dispatch(&fixture.runtime, command, &fixture.pipeline,
         &resources, UINT32_MAX, (doe_mtl_dimensions){1, 1, 1},
-        (doe_mtl_dimensions){1, 1, 1}, 1, NULL) == DOE_MTL_NATIVE_FAILURE);
+        (doe_mtl_dimensions){1, 1, 1}, 1, NULL, NULL) == DOE_MTL_NATIVE_FAILURE);
     assert(fixture.ends == 3 && fixture.dispatches == 3 && fixture.pools == fixture.drains);
     doe_mtl_objc_release(&fixture.runtime, command);
     assert(fixture.command.references == 0);

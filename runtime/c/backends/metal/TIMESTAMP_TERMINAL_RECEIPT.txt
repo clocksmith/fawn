@@ -1,0 +1,70 @@
+Metal timestamp owner developer controls, 2026-10-23 UTC
+Qualification: portable typed/fault controls only; no Apple SDK, Metal device,
+shader/timestamp execution, full native query parity or performance claim.
+
+First attempt (exit2):
+$ make -C runtime/c/backends/metal BUILD=/tmp/doe-c-metal-query-first all check
+src/objc_queries.c: In function ‘timestamp_set’:
+src/objc_queries.c:50:63: error: ‘doe_mtl_objc_graphics’ has no member named ‘object_at’
+   50 |         void *set = r->graphics.index_object(sets, r->graphics.object_at, i);
+      |                                                               ^
+src/objc_queries.c:58:65: error: ‘doe_mtl_objc_graphics’ has no member named ‘object_at’
+   58 |         counter = r->graphics.index_object(counters, r->graphics.object_at, 0);
+      |                                                                 ^
+src/objc_queries.c: In function ‘doe_mtl_objc_timed_compute’:
+src/objc_queries.c:159:89: error: ‘doe_mtl_objc_graphics’ has no member named ‘object_at’
+  159 |     attachment = attachments != NULL ? r->graphics.index_object(attachments, r->graphics.object_at, 0) : NULL;
+      |                                                                                         ^
+make: *** [Makefile:26: /tmp/doe-c-metal-query-first/objc_queries.o] Error 1
+make: Leaving directory '/workspace/shared/doe-c-migration-20261023/runtime/c/backends/metal'
+
+Exact fix: corrected private graphics selector member object_at to index in
+three timestamp adapter calls. TIMESTAMP_FIRST_INPUTS.sha256 records that failed
+source set; it is not the final seal. No native runtime/GPU executed.
+
+Final strict checks (exit0):
+$ make -C runtime/c/backends/metal BUILD=/tmp/doe-c-metal-query-final all check probe abi-compile
+Metal typed timestamp controls: exact counter-set identity, descriptors, stage indices, blit sample/resolve and failures passed; no SDK/GPU
+Metal timestamp controls: 5 availability/lifetime/fault groups passed; no timestamp values simulated
+Metal visibility controls: 3 admission/lifetime/error groups passed; no GPU query results generated
+Metal multisample controls: 6 ownership/aspect/resolve groups passed; no sample or pixel execution
+Metal typed render encoder controls: attachments, full per-stage state, indexed/instanced args and failure cleanup passed; no SDK/GPU
+Metal typed render pipeline controls: exact stage/descriptor/depth/stencil fields and eight failure paths passed; no SDK/GPU
+Metal render ownership controls: 8 groups passed; no shader/raster/GPU execution
+Metal developer controls: 10 scenario groups passed; mocked calls, no GPU execution
+Metal typed-call controls: pipeline cleanup, exact dispatch/copy/fill and completion passed; no SDK/GPU
+Metal image ownership controls: 9 groups passed; mocked native calls, no pixel/GPU execution
+Metal typed image controls: descriptors, views, samplers, 2D/3D transfers and mixed dispatch passed; no SDK/GPU
+Metal probe: unsupported (Metal requires 64-bit macOS); no device or execution claimed
+Nine ABI source branches compiled, including timestamp BOOL/NSRange arm64 source
+branch. Host GCC is not an Apple compiler or SDK ABI verifier.
+
+Sanitizers (exit0):
+$ ASAN_OPTIONS=detect_leaks=0 make -C runtime/c/backends/metal BUILD=/tmp/doe-c-metal-query-final sanitize
+Metal typed timestamp controls: exact counter-set identity, descriptors, stage indices, blit sample/resolve and failures passed; no SDK/GPU
+Metal timestamp controls: 5 availability/lifetime/fault groups passed; no timestamp values simulated
+Metal visibility controls: 3 admission/lifetime/error groups passed; no GPU query results generated
+Metal multisample controls: 6 ownership/aspect/resolve groups passed; no sample or pixel execution
+Metal typed render encoder controls: attachments, full per-stage state, indexed/instanced args and failure cleanup passed; no SDK/GPU
+Metal typed render pipeline controls: exact stage/descriptor/depth/stencil fields and eight failure paths passed; no SDK/GPU
+Metal render ownership controls: 8 groups passed; no shader/raster/GPU execution
+Metal developer controls: 10 scenario groups passed; mocked calls, no GPU execution
+Metal typed-call controls: pipeline cleanup, exact dispatch/copy/fill and completion passed; no SDK/GPU
+Metal image ownership controls: 9 groups passed; mocked native calls, no pixel/GPU execution
+Metal typed image controls: descriptors, views, samplers, 2D/3D transfers and mixed dispatch passed; no SDK/GPU
+ASan/UBSan enabled; LeakSanitizer disabled for the already-recorded ptrace limitation.
+
+Additional terminal checks (all exit0):
+$ for f in commands compute_commands timestamps objc_commands objc_queries objc_runtime; do
+    cc -Iruntime/c/backends/metal/include -std=c11 -O0 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wshadow -fanalyzer -c runtime/c/backends/metal/src/$f.c -o /tmp/doe-c-metal-query-final/analyzer/$f.o
+done
+$ printf '#include "runtime/c/backends/metal/include/doe_metal_query.h"\n#include "runtime/c/backends/metal/include/doe_metal_render.h"\n' | c++ -I. -std=c++17 -Wall -Wextra -Werror -x c++ - -fsyntax-only
+$ python3 runtime/c/tools/check_source_size.py
+C size check: 532 files, 0 failures; limit999 (at observation)
+$ git diff --check -- runtime/c/backends/metal
+No output.
+
+Independent resource-owner source review found no lost pending/error lease.
+It explicitly retained the public-integration gaps: unwritten-query zero fill,
+same-recording later-pass slot reuse, native timestamp calibration/normalization.
+This review is developer reasoning, not an independent qualification test.

@@ -20,6 +20,7 @@ typedef bool doe_objc_bool;
 typedef signed char doe_objc_bool;
 #endif
 #include "objc_render_types.h"
+#include "objc_query_types.h"
 typedef doe_objc_bool (*doe_objc_responds_call)(void *, void *, void *);
 typedef void *(*doe_objc_object_call)(void *, void *);
 typedef void (*doe_objc_void_call)(void *, void *);
@@ -57,6 +58,7 @@ typedef void (*doe_objc_copy_image_call)(void *, void *, void *, size_t, size_t,
 
 typedef struct doe_mtl_objc {
     doe_mtl_objc_graphics graphics;
+    doe_mtl_objc_queries queries;
     void *objc_library;
     void *foundation_library;
     void *metal_library;
@@ -165,7 +167,7 @@ doe_mtl_status doe_mtl_objc_fill(void *userdata, void *command, void *buffer,
 doe_mtl_status doe_mtl_objc_dispatch(void *userdata, void *command, void *pipeline,
     const doe_mtl_native_resources *resources, uint32_t sizes_slot,
     doe_mtl_dimensions groups, doe_mtl_dimensions workgroup, uint32_t repeat,
-    doe_mtl_error *error);
+    const doe_mtl_native_timestamps *timestamps, doe_mtl_error *error);
 bool doe_mtl_objc_load_image_selectors(doe_mtl_objc *runtime);
 void doe_mtl_objc_image_caps(doe_mtl_objc *runtime, void *device, doe_mtl_caps *caps);
 doe_mtl_status doe_mtl_objc_texture(void *userdata, void *device,
@@ -191,6 +193,17 @@ void doe_mtl_objc_render_encode_draw(doe_mtl_objc *runtime, void *encoder,
     const doe_mtl_native_render_pass *pass, const doe_mtl_native_render_draw *draw);
 void *doe_mtl_objc_depth_state(doe_mtl_objc *runtime, void *device,
     const doe_mtl_depth_stencil *desc);
+void doe_mtl_objc_load_queries(doe_mtl_objc *runtime, doe_objc_message message);
+void doe_mtl_objc_query_caps(doe_mtl_objc *runtime, void *device, doe_mtl_caps *caps);
+doe_mtl_status doe_mtl_objc_timestamps(void *userdata, void *device,
+    uint32_t count, void **out, doe_mtl_error *error);
+doe_mtl_status doe_mtl_objc_timestamp(void *userdata, void *command,
+    void *timestamps, uint32_t index, doe_mtl_error *error);
+doe_mtl_status doe_mtl_objc_resolve_timestamps(void *userdata, void *command,
+    void *timestamps, uint32_t first, uint32_t count, void *destination,
+    size_t offset, doe_mtl_error *error);
+void *doe_mtl_objc_timed_compute(doe_mtl_objc *runtime, void *command,
+    const doe_mtl_native_timestamps *timestamps);
 void doe_mtl_objc_commit(void *userdata, void *command);
 size_t doe_mtl_objc_observe(void *userdata, void *command, bool wait, int64_t *code);
 #endif

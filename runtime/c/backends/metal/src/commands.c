@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: MIT */
 #include "render_internal.h"
+#include "query_internal.h"
 
 doe_mtl_status doe_mtl_recording(doe_mtl_commands *commands, doe_mtl_error *error) {
     if (commands == NULL)
@@ -109,25 +110,6 @@ doe_mtl_status doe_mtl_use_buffer(doe_mtl_commands *commands,
     return DOE_MTL_OK;
 }
 
-static doe_mtl_status use_pipeline(doe_mtl_commands *commands,
-    doe_mtl_pipeline *pipeline) {
-    doe_mtl_pipeline_use *use;
-    doe_mtl_status status;
-    for (use = commands->pipelines; use != NULL; use = use->next)
-        if (use->pipeline == pipeline) return DOE_MTL_OK;
-    use = calloc(1, sizeof(*use));
-    if (use == NULL) return DOE_MTL_OUT_OF_MEMORY;
-    status = doe_mtl_pipeline_retain(pipeline);
-    if (status != DOE_MTL_OK) {
-        free(use);
-        return status;
-    }
-    use->pipeline = pipeline;
-    use->next = commands->pipelines;
-    commands->pipelines = use;
-    return DOE_MTL_OK;
-}
-
 doe_mtl_status doe_mtl_commands_copy(doe_mtl_commands *commands,
     doe_mtl_buffer *source, uint64_t source_offset, doe_mtl_buffer *destination,
     uint64_t destination_offset, uint64_t size, doe_mtl_error *error) {
@@ -213,55 +195,6 @@ doe_mtl_status doe_mtl_buffer_bindings_preflight(doe_mtl_commands *commands,
     return DOE_MTL_OK;
 }
 
-doe_mtl_status doe_mtl_commands_dispatch_resources(doe_mtl_commands *commands,
-    doe_mtl_pipeline *pipeline, const doe_mtl_buffer_binding *bindings, size_t count,
-    const doe_mtl_texture_binding *textures, size_t texture_count,
-    const doe_mtl_sampler_binding *samplers, size_t sampler_count,
-    doe_mtl_dimensions groups, uint32_t repeat, doe_mtl_error *error) {
-    doe_mtl_status status = doe_mtl_recording(commands, error);
-    doe_mtl_native_resources resources = {0};
-    doe_mtl_error detail = {0};
-    doe_mtl_native *native;
-    size_t i;
-    if (status != DOE_MTL_OK) return status;
-    if (pipeline == NULL || count > DOE_MTL_BUFFER_SLOTS || (count != 0 && bindings == NULL))
-        return doe_mtl_poison(commands, DOE_MTL_INVALID_ARGUMENT, "dispatch arguments", error);
-    if (pipeline->context != commands->context)
-        return doe_mtl_poison(commands, DOE_MTL_DEVICE_MISMATCH, "dispatch pipeline", error);
-    status = doe_mtl_buffer_bindings_preflight(commands, bindings, count, pipeline->sizes_slot, resources.buffers);
-    if (status == DOE_MTL_OK)
-        status = doe_mtl_image_bindings_preflight(commands, textures, texture_count,
-            samplers, sampler_count, &resources);
-    if (status != DOE_MTL_OK) return doe_mtl_poison(commands, status, "dispatch binding", error);
-    if (groups.x == 0 || groups.y == 0 || groups.z == 0 || repeat == 0)
-        return doe_mtl_fail(DOE_MTL_OK, "empty dispatch", error);
-    /* Metal forms grid extents in NSUInteger. Preserve checked arithmetic on
-     * every supported host, even though the macOS driver requires 64-bit ABI. */
-    if (groups.x > SIZE_MAX / pipeline->workgroup.x ||
-        groups.y > SIZE_MAX / pipeline->workgroup.y ||
-        groups.z > SIZE_MAX / pipeline->workgroup.z)
-        return doe_mtl_poison(commands, DOE_MTL_RANGE, "dispatch grid", error);
-    status = use_pipeline(commands, pipeline);
-    for (i = 0; status == DOE_MTL_OK && i < count; ++i) {
-        doe_mtl_buffer_use *use;
-        status = doe_mtl_use_buffer(commands, bindings[i].buffer, &use);
-    }
-    if (status == DOE_MTL_OK)
-        status = doe_mtl_image_bindings_retain(commands, textures, texture_count, samplers, sampler_count);
-    if (status != DOE_MTL_OK) return doe_mtl_poison(commands, status, "dispatch lease", error);
-    native = &commands->context->native;
-    status = native->dispatch(native->userdata, commands->native, pipeline->native,
-        &resources, pipeline->sizes_slot, groups, pipeline->workgroup, repeat, &detail);
-    return doe_mtl_native_record_result(commands, status, &detail, error);
-}
-
-doe_mtl_status doe_mtl_commands_dispatch(doe_mtl_commands *commands,
-    doe_mtl_pipeline *pipeline, const doe_mtl_buffer_binding *bindings,
-    size_t count, doe_mtl_dimensions groups, uint32_t repeat, doe_mtl_error *error) {
-    return doe_mtl_commands_dispatch_resources(commands, pipeline, bindings, count,
-        NULL, 0, NULL, 0, groups, repeat, error);
-}
-
 doe_mtl_status doe_mtl_commands_dispatch_indirect(doe_mtl_commands *commands,
     doe_mtl_error *error) {
     doe_mtl_status status = doe_mtl_recording(commands, error);
@@ -270,6 +203,7 @@ doe_mtl_status doe_mtl_commands_dispatch_indirect(doe_mtl_commands *commands,
 }
 
 static void retire_uses(doe_mtl_commands *commands, bool completed, bool success) {
+    doe_mtl_timestamps_retire(commands, completed, success);
     doe_mtl_render_retire(commands);
     doe_mtl_images_retire(commands, completed, success);
     while (commands->buffers != NULL) {

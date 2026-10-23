@@ -6,7 +6,7 @@
 #include <string.h>
 
 enum { MOCK_KIND_DEVICE, MOCK_KIND_QUEUE, MOCK_KIND_BUFFER, MOCK_KIND_PIPELINE,
-    MOCK_KIND_COMMAND, MOCK_KIND_TEXTURE, MOCK_KIND_VIEW, MOCK_KIND_SAMPLER, MOCK_KIND_RENDER_PIPELINE, MOCK_KIND_DEPTH_STATE };
+    MOCK_KIND_COMMAND, MOCK_KIND_TEXTURE, MOCK_KIND_VIEW, MOCK_KIND_SAMPLER, MOCK_KIND_RENDER_PIPELINE, MOCK_KIND_DEPTH_STATE, MOCK_KIND_TIMESTAMPS };
 struct mock_object {
     unsigned kind;
     size_t length;
@@ -75,6 +75,8 @@ static doe_mtl_status device_create(void *userdata, void **out,
     result.multisample_array = true;
     result.max_visibility_offset = 65528;
     result.counting_visibility = true;
+    result.timestamp_stage = true;
+    result.timestamp_blit = true;
     strcpy(result.device_name, "test call ledger, not a GPU");
     *out = object_create(mock, MOCK_KIND_DEVICE);
     *caps = result;
@@ -169,11 +171,12 @@ static doe_mtl_status fill_buffer(void *userdata, void *command, void *buffer,
 static doe_mtl_status dispatch(void *userdata, void *command, void *pipeline,
     const doe_mtl_native_resources *resources, uint32_t sizes_slot,
     doe_mtl_dimensions groups, doe_mtl_dimensions workgroup, uint32_t repeat,
-    doe_mtl_error *error) {
+    const doe_mtl_native_timestamps *timestamps, doe_mtl_error *error) {
     mock_native *mock = userdata;
     assert(command != NULL && pipeline != NULL && resources != NULL);
     if (mock->fail == MOCK_DISPATCH) return failure(error);
     mock->dispatches++;
+    if (timestamps != NULL) mock->timestamp_pair = *timestamps;
     memcpy(mock->bindings, resources->buffers, sizeof(mock->bindings));
     mock->resources = *resources;
     mock->sizes_slot = sizes_slot;
@@ -270,6 +273,37 @@ static doe_mtl_status render(void *userdata, void *command,
     return doe_mtl_fail(DOE_MTL_OK, "mock render", error);
 }
 
+static doe_mtl_status timestamps_create(void *userdata, void *device, uint32_t count,
+    void **out, doe_mtl_error *error) {
+    mock_native *mock = userdata;
+    assert(device != NULL && count != 0);
+    if (mock->fail == MOCK_TIMESTAMPS) return failure(error);
+    *out = object_create(mock, MOCK_KIND_TIMESTAMPS);
+    return doe_mtl_fail(DOE_MTL_OK, "mock timestamps", error);
+}
+static doe_mtl_status timestamp(void *userdata, void *command, void *buffer,
+    uint32_t index, doe_mtl_error *error) {
+    mock_native *mock = userdata;
+    assert(command != NULL && buffer != NULL);
+    if (mock->fail == MOCK_TIMESTAMP) return failure(error);
+    mock->timestamps++;
+    mock->timestamp_pair = (doe_mtl_native_timestamps){buffer, index, index};
+    return doe_mtl_fail(DOE_MTL_OK, "mock timestamp", error);
+}
+static doe_mtl_status resolve_timestamps(void *userdata, void *command, void *buffer,
+    uint32_t first, uint32_t count, void *destination, size_t offset, doe_mtl_error *error) {
+    mock_native *mock = userdata;
+    assert(command != NULL && buffer != NULL && destination != NULL);
+    if (mock->fail == MOCK_RESOLVE_TIMESTAMPS) return failure(error);
+    mock->resolves++;
+    mock->last_source = buffer;
+    mock->last_source_offset = first;
+    mock->last_length = count;
+    mock->last_destination = destination;
+    mock->last_destination_offset = offset;
+    return doe_mtl_fail(DOE_MTL_OK, "mock timestamp resolve", error);
+}
+
 static void commit(void *userdata, void *handle) {
     mock_native *mock = userdata;
     mock_object *command = handle;
@@ -312,6 +346,9 @@ doe_mtl_native mock_driver(mock_native *mock) {
     native.copy_texture = copy_image;
     native.render_pipeline = render_pipeline_create;
     native.render = render;
+    native.timestamps = timestamps_create;
+    native.timestamp = timestamp;
+    native.resolve_timestamps = resolve_timestamps;
     native.commit = commit;
     native.observe = observe;
     return native;

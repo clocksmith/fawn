@@ -54,6 +54,7 @@ typedef struct doe_mtl_caps {
     bool depth_resolve, stencil_resolve, store_and_resolve, multisample_array;
     uint32_t max_visibility_offset;
     bool counting_visibility;
+    bool timestamp_stage, timestamp_blit;
 } doe_mtl_caps;
 
 doe_mtl_status doe_mtl_context_create(doe_mtl_context **out, doe_mtl_error *error);
