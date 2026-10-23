@@ -8,7 +8,7 @@ SOURCES = src/context.c src/resources.c src/commands.c src/compute_commands.c sr
           src/objc_pipeline.c src/objc_commands.c src/texture_formats.c src/textures.c \
           src/samplers.c src/texture_ownership.c src/texture_initialization.c src/texture_transfer.c \
           src/objc_images.c src/objc_image_transfer.c src/render_pipeline.c \
-          src/render_attachments.c src/render_draws.c src/render_commands.c src/render_visibility.c \
+          src/render_attachments.c src/render_initialization.c src/render_draws.c src/render_commands.c src/render_visibility.c \
           src/objc_render_loader.c src/objc_render_pipeline.c src/objc_depth_state.c \
           src/objc_render_commands.c src/objc_render_draws.c
 OBJECTS = $(SOURCES:src/%.c=$(BUILD)/%.o)
@@ -18,7 +18,7 @@ LDLIBS =
 else
 LDLIBS = -ldl
 endif
-.PHONY: all check probe sanitize clean abi-compile sdk-abi native-check
+.PHONY: all check probe sanitize clean abi-compile sdk-abi native-check native-graphics-check
 all: $(BUILD)/libdoe_metal.a
 $(BUILD):
 	mkdir -p $@
@@ -35,6 +35,11 @@ $(BUILD)/native_compute: tests/native_compute.c $(BUILD)/libdoe_metal.a
 native-check: $(BUILD)/native_compute
 	@test "$(UNAME_S)" = Darwin || { echo 'native-check requires an authorized macOS device'; exit 1; }
 	DOE_MTL_ALLOW_HARDWARE=1 python3 -c 'import subprocess; subprocess.run(["$(BUILD)/native_compute", "--run"], check=True, timeout=20)'
+$(BUILD)/native_graphics: tests/native_graphics.c $(BUILD)/libdoe_metal.a
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(STRICT) $< $(BUILD)/libdoe_metal.a $(LDLIBS) -o $@
+native-graphics-check: $(BUILD)/native_graphics
+	@test "$(UNAME_S)" = Darwin || { echo 'native-graphics-check requires an authorized macOS device'; exit 1; }
+	DOE_MTL_ALLOW_HARDWARE=1 python3 -c 'import subprocess; subprocess.run(["$(BUILD)/native_graphics", "--run"], check=True, timeout=20)'
 $(BUILD)/test_device_limits: tests/test_device_limits.c $(BUILD)/libdoe_metal.a
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(STRICT) $< $(BUILD)/libdoe_metal.a $(LDLIBS) -o $@
 $(BUILD)/test_objc_calls: tests/test_objc_calls.c $(BUILD)/libdoe_metal.a
@@ -45,6 +50,8 @@ $(BUILD)/test_objc_images: tests/test_objc_images.c $(BUILD)/libdoe_metal.a
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(STRICT) $< $(BUILD)/libdoe_metal.a $(LDLIBS) -o $@
 $(BUILD)/test_render: tests/test_render.c tests/mock_native.c tests/mock_native.h $(BUILD)/libdoe_metal.a
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(STRICT) tests/test_render.c tests/mock_native.c $(BUILD)/libdoe_metal.a $(LDLIBS) -o $@
+$(BUILD)/test_initialization: tests/test_initialization.c tests/mock_native.c tests/mock_native.h $(BUILD)/libdoe_metal.a
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(STRICT) tests/test_initialization.c tests/mock_native.c $(BUILD)/libdoe_metal.a $(LDLIBS) -o $@
 $(BUILD)/test_objc_render_pipeline: tests/test_objc_render_pipeline.c $(BUILD)/libdoe_metal.a
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(STRICT) $< $(BUILD)/libdoe_metal.a $(LDLIBS) -o $@
 $(BUILD)/test_objc_render_commands: tests/test_objc_render_commands.c $(BUILD)/libdoe_metal.a
@@ -57,7 +64,8 @@ $(BUILD)/test_timestamps: tests/test_timestamps.c tests/mock_native.c tests/mock
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(STRICT) tests/test_timestamps.c tests/mock_native.c $(BUILD)/libdoe_metal.a $(LDLIBS) -o $@
 $(BUILD)/test_objc_queries: tests/test_objc_queries.c $(BUILD)/libdoe_metal.a
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(STRICT) $< $(BUILD)/libdoe_metal.a $(LDLIBS) -o $@
-check: $(BUILD)/test_device_limits $(BUILD)/test_objc_queries $(BUILD)/test_timestamps $(BUILD)/test_visibility $(BUILD)/test_multisample $(BUILD)/test_objc_render_commands $(BUILD)/test_objc_render_pipeline $(BUILD)/test_render $(BUILD)/test_lifetime $(BUILD)/test_objc_calls $(BUILD)/test_images $(BUILD)/test_objc_images
+check: $(BUILD)/test_initialization $(BUILD)/test_device_limits $(BUILD)/test_objc_queries $(BUILD)/test_timestamps $(BUILD)/test_visibility $(BUILD)/test_multisample $(BUILD)/test_objc_render_commands $(BUILD)/test_objc_render_pipeline $(BUILD)/test_render $(BUILD)/test_lifetime $(BUILD)/test_objc_calls $(BUILD)/test_images $(BUILD)/test_objc_images
+	$(BUILD)/test_initialization
 	$(BUILD)/test_device_limits
 	$(BUILD)/test_objc_queries
 	$(BUILD)/test_timestamps

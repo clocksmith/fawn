@@ -30,6 +30,7 @@ bool doe_mtl_objc_load_render(doe_mtl_objc *r, doe_objc_message message) {
     g->colors = r->selector("colorAttachments");
     g->index = r->selector("objectAtIndexedSubscript:");
     g->set_raster_samples = r->selector("setRasterSampleCount:");
+    g->set_alpha_to_coverage = r->selector("setAlphaToCoverageEnabled:");
     g->set_vertex_descriptor = r->selector("setVertexDescriptor:");
     g->set_depth_format = r->selector("setDepthAttachmentPixelFormat:");
     g->set_stencil_format = r->selector("setStencilAttachmentPixelFormat:");
@@ -98,7 +99,8 @@ bool doe_mtl_objc_load_render(doe_mtl_objc *r, doe_objc_message message) {
         g->depth_class != NULL && g->stencil_class != NULL && g->new_pipeline != NULL &&
         g->new_depth != NULL && g->new_encoder != NULL && g->index != NULL &&
         g->set_vertex_function != NULL && g->set_fragment_function != NULL && g->colors != NULL &&
-        g->set_raster_samples != NULL && g->set_vertex_descriptor != NULL && g->set_depth_format != NULL &&
+        g->set_raster_samples != NULL && g->set_alpha_to_coverage != NULL &&
+        g->set_vertex_descriptor != NULL && g->set_depth_format != NULL &&
         g->set_stencil_format != NULL && g->set_blend != NULL && g->set_write_mask != NULL &&
         g->set_color_op != NULL && g->set_color_source != NULL && g->set_color_destination != NULL &&
         g->set_alpha_op != NULL && g->set_alpha_source != NULL && g->set_alpha_destination != NULL &&

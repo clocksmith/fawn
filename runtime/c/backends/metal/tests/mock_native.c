@@ -200,7 +200,8 @@ static doe_mtl_status view_create(void *userdata, void *texture,
     const doe_mtl_texture_view_desc *desc, void **out, doe_mtl_error *error) {
     mock_native *mock = userdata;
     assert(texture != NULL);
-    if (mock->fail == MOCK_VIEW) return failure(error);
+    ++mock->views;
+    if (mock->fail == MOCK_VIEW || mock->views == mock->fail_view_at) return failure(error);
     mock->view_desc = *desc;
     *out = object_create(mock, MOCK_KIND_VIEW);
     return doe_mtl_fail(DOE_MTL_OK, "mock view", error);

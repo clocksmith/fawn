@@ -153,7 +153,8 @@ static doe_mtl_render_pipeline_desc descriptor(const doe_mtl_vertex_layout *layo
     desc.colors[0] = (doe_mtl_color_target){DOE_MTL_RGBA8_UNORM, 0, false, {0, 1, 0}, {0, 1, 0}};
     desc.colors[1] = (doe_mtl_color_target){DOE_MTL_RGBA16_FLOAT, 9, true, {2, 4, 5}, {1, 11, 12}};
     desc.layouts = layout; desc.layout_count = 1; desc.attributes = attribute; desc.attribute_count = 1;
-    desc.sample_count = 4; desc.depth_stencil.depth_format = DOE_MTL_DEPTH32_FLOAT;
+    desc.sample_count = 4; desc.alpha_to_coverage = true;
+    desc.depth_stencil.depth_format = DOE_MTL_DEPTH32_FLOAT;
     desc.depth_stencil.stencil_format = DOE_MTL_STENCIL8;
     desc.depth_stencil.depth_compare = 3; desc.depth_stencil.depth_write = true;
     desc.depth_stencil.front = (doe_mtl_stencil_face){7, 5, 3, 2};
@@ -172,6 +173,7 @@ static void construction(void) {
     assert(doe_mtl_objc_render_pipeline(&f.runtime, &f.device, &desc, &out, &depth, NULL) == DOE_MTL_OK);
     assert(f.libraries == 2 && f.functions == 2 && f.strings == 4);
     assert(property("MTLRenderPipelineDescriptor", 0, "setRasterSampleCount:") == 4);
+    assert(property("MTLRenderPipelineDescriptor", 0, "setAlphaToCoverageEnabled:") == 1);
     assert(property("colorAttachments", 0, "setWriteMask:") == 0);
     assert(property("colorAttachments", 1, "setWriteMask:") == 9);
     assert(property("colorAttachments", 1, "setSourceRGBBlendFactor:") == 4);

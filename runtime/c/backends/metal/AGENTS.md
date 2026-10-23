@@ -23,6 +23,12 @@ leases before creating the native encoder. Attachment clear/load/store state is
 speculative until completion, like transfers. Combined depth/stencil aspects use
 independent bits in the same subresource owner; resolve targets are separately
 leased and published. Never overwrite one aspect while updating another.
+Use the canonical attachment initializer to clear missing aspects only; prepare
+and preflight the whole selected mip/layer range before opening clear encoders.
+Already initialized aspects must LOAD/STORE, and abandonment/unknown completion
+must not publish the speculative bits. Logical empty viewport/scissor still encode
+the draw so vertex effects and visibility ordering survive. Never use a scissor,
+source rewrite or skipped draw to imitate unsupported partial sample masks.
 Visibility offsets form one contiguous run per pass and share buffer completion
 access rules. Timestamp samples share that completion owner too: distinguish stage
 and blit capabilities, never resolve unwritten samples, and preserve native error
@@ -34,5 +40,7 @@ it compiles the actual arm64/x86_64 SDK targets. Keep `native-check` outside ord
 `check`; run it only for an authorized healthy Mac, with its 20-second process
 timeout and five-second completion deadline. Retain first failures and scope.
 Do not install Apple SDKs or silently substitute Vulkan/software execution.
+`native-graphics-check` has the same explicit authorization, healthy-host,
+20-second process and five-second completion bounds as `native-check`.
 Keep the first failing receipt when recording a constrained rerun. No production
 selection or public support claim follows from this directory's host controls.

@@ -1,0 +1,50 @@
+Graphics prerequisites developer terminal evidence (2026-10-23)
+Scope: actual private plain-C Metal backend; no public WGSL, surface/presentation,
+fractional alpha coverage, performance or production qualification.
+
+Pre-run pmset -g therm:
+Note: No thermal warning level has been recorded
+Note: No performance warning level has been recorded
+Note: No CPU power status has been recorded
+
+First host-control failure (retained, no device execution):
+The new raw-ObjC fixture omitted its existing required high-slot texture/sampler
+bindings; the production change was not the cause. Corrected fixture only.
+/tmp/doe-c-metal-graphics-20261023/test_multisample
+Metal multisample controls: 6 ownership/aspect/resolve groups passed; no sample or pixel execution
+/tmp/doe-c-metal-graphics-20261023/test_objc_render_commands
+Assertion failed: (active->vertex_textures[127] == &active->texture && active->fragment_samplers[15] == &active->sampler), function draw, file test_objc_render_commands.c, line 155.
+make: *** [check] Abort trap: 6
+
+Corrected full host controls + actual arm64/x86_64 Apple SDK source checks:
+PASS Metal attachment initialization: selected ranges, missing aspects, discard preservation, preflight, speculative/unknown/failure ownership
+Metal device limits: typed properties and failure atomicity pass; no SDK/device run
+Metal typed timestamp controls: exact counter-set identity, descriptors, stage indices, blit sample/resolve and failures passed; no SDK/GPU
+Metal timestamp controls: 5 availability/lifetime/fault groups passed; no timestamp values simulated
+Metal visibility controls: 3 admission/lifetime/error groups passed; no GPU query results generated
+Metal multisample controls: 6 ownership/aspect/resolve groups passed; no sample or pixel execution
+Metal typed render encoder controls: attachments, full per-stage state, indexed/instanced args and failure cleanup passed; no SDK/GPU
+Metal typed render pipeline controls: exact stage/descriptor/depth/stencil fields and eight failure paths passed; no SDK/GPU
+Metal render ownership controls: 9 groups passed; no shader/raster/GPU execution
+Metal developer controls: 10 scenario groups passed; mocked calls, no GPU execution
+Metal typed-call controls: pipeline cleanup, exact dispatch/copy/fill and completion passed; no SDK/GPU
+Metal image ownership controls: 9 groups passed; mocked native calls, no pixel/GPU execution
+Metal typed image controls: descriptors, views, samplers, 2D/3D transfers and mixed dispatch passed; no SDK/GPU
+xcrun --sdk macosx clang -Iinclude -std=c11 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wshadow -fblocks -target arm64-apple-macos13 -fsyntax-only src/context.c src/resources.c src/commands.c src/compute_commands.c src/timestamps.c src/objc_queries.c src/objc_runtime.c src/objc_pipeline.c src/objc_commands.c src/texture_formats.c src/textures.c src/samplers.c src/texture_ownership.c src/texture_initialization.c src/texture_transfer.c src/objc_images.c src/objc_image_transfer.c src/render_pipeline.c src/render_attachments.c src/render_initialization.c src/render_draws.c src/render_commands.c src/render_visibility.c src/objc_render_loader.c src/objc_render_pipeline.c src/objc_depth_state.c src/objc_render_commands.c src/objc_render_draws.c tests/sdk_abi.m
+xcrun --sdk macosx clang -Iinclude -std=c11 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wshadow -fblocks -target x86_64-apple-macos13 -fsyntax-only src/context.c src/resources.c src/commands.c src/compute_commands.c src/timestamps.c src/objc_queries.c src/objc_runtime.c src/objc_pipeline.c src/objc_commands.c src/texture_formats.c src/textures.c src/samplers.c src/texture_ownership.c src/texture_initialization.c src/texture_transfer.c src/objc_images.c src/objc_image_transfer.c src/render_pipeline.c src/render_attachments.c src/render_initialization.c src/render_draws.c src/render_commands.c src/render_visibility.c src/objc_render_loader.c src/objc_render_pipeline.c src/objc_depth_state.c src/objc_render_commands.c src/objc_render_draws.c tests/sdk_abi.m
+
+Affected UBSan-only host controls (halt_on_error=1, each process <=10s):
+PASS Metal attachment initialization: selected ranges, missing aspects, discard preservation, preflight, speculative/unknown/failure ownership
+Metal render ownership controls: 9 groups passed; no shader/raster/GPU execution
+Metal typed render pipeline controls: exact stage/descriptor/depth/stencil fields and eight failure paths passed; no SDK/GPU
+Metal typed render encoder controls: attachments, full per-stage state, indexed/instanced args and failure cleanup passed; no SDK/GPU
+
+First bounded actual Apple M3 graphics run (exit0):
+DOE_MTL_ALLOW_HARDWARE=1 python3 -c 'import subprocess; subprocess.run(["/tmp/doe-c-metal-graphics-20261023/native_graphics", "--run"], check=True, timeout=20)'
+Metal graphics device: Apple M3; 8x8 4x-MSAA zero-init, alpha coverage, two empty raster draws, resolve/readback
+PASS bounded native Metal graphics: zero-init/no-op preserve, 4x-MSAA alpha coverage/resolve, empty viewport/scissor still execute vertices, early leases, actual pixels
+
+Native process timeout20s, command completion deadline5s. Native MSL only.
+Alpha-to-coverage enabled with opaque alpha1; partial/fractional coverage unqualified.
+Three vertex counters each3 prove all three draws executed their vertex effects.
+Asymmetric resolved red/zero pixels and pending BUSY read preserve real ownership.
