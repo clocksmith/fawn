@@ -10,3 +10,6 @@ The focused check is `make -C runtime/c/resources check`; outputs belong in `/tm
 Render attachment begin/end packets must bracket every query event, including
 empty scopes. Never infer pass closure from the last draw. Map completion pointers
 start at the admitted span; const/read admission must not become writable storage.
+Bundle replay clears logical bindings even for zero bundles; do not copy retained
+Vulkan's internal save/restore into public state. Keep each bundle self-contained
+and reuse pass draw admission and packets rather than another renderer.

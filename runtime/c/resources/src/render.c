@@ -69,7 +69,7 @@ static doe_resource_status validate_targets(void *device,
     return DOE_RESOURCE_OK;
 }
 
-static void retain_packet(const doe_resource_render_packet *packet)
+void resource_render_packet_retain(const doe_resource_render_packet *packet)
 {
     doe_resource_view_retain(packet->targets.color);
     doe_resource_view_retain(packet->targets.depth_stencil);
@@ -81,7 +81,7 @@ static void retain_packet(const doe_resource_render_packet *packet)
     doe_resource_buffer_retain(packet->indirect);
 }
 
-static void release_packet(const doe_resource_render_packet *packet)
+void resource_render_packet_release(const doe_resource_render_packet *packet)
 {
     doe_resource_view_release(packet->targets.color);
     doe_resource_view_release(packet->targets.depth_stencil);
@@ -177,7 +177,7 @@ doe_resource_status doe_resource_encoder_begin_render_with_timestamps(doe_resour
     pass->state.state.viewport[5] = 1;
     pass->state.state.scissor[2] = extent[0];
     pass->state.state.scissor[3] = extent[1];
-    retain_packet(&pass->state);
+    resource_render_packet_retain(&pass->state);
     doe_resource_encoder_retain(encoder);
     resource_init(&pass->base, &encoder->base.config, (doe_resource_native){0});
     encoder->active_pass = pass;
@@ -203,7 +203,7 @@ doe_resource_status doe_resource_encoder_begin_render_with_timestamps(doe_resour
     return DOE_RESOURCE_OK;
 }
 
-static doe_resource_status active(doe_resource_render_pass *pass)
+doe_resource_status resource_render_pass_active(doe_resource_render_pass *pass)
 {
     if (!pass) return DOE_RESOURCE_INVALID_ARGUMENT;
     if (pass->encoder->status != DOE_RESOURCE_OK) return pass->encoder->status;
@@ -226,7 +226,7 @@ void doe_resource_render_pass_release(doe_resource_render_pass *pass)
         if (encoder->active_pass == pass) encoder->active_pass = NULL;
     }
     doe_resource_query_set_release(pass->timestamps.set);
-    release_packet(&pass->state);
+    resource_render_packet_release(&pass->state);
     resource_finalize(&pass->base, sizeof(*pass), _Alignof(doe_resource_render_pass));
     doe_resource_encoder_release(encoder);
 }
@@ -234,82 +234,37 @@ void doe_resource_render_pass_release(doe_resource_render_pass *pass)
 doe_resource_status doe_resource_render_pass_set_pipeline(doe_resource_render_pass *pass,
     doe_resource_render_pipeline *pipeline)
 {
-    doe_resource_status status = active(pass);
+    doe_resource_status status = resource_render_pass_active(pass);
     if (status != DOE_RESOURCE_OK) return status;
-    if (!pipeline) return resource_encoder_fail(pass->encoder, DOE_RESOURCE_INVALID_ARGUMENT);
-    if (pipeline->base.config.device.identity != pass->base.config.device.identity)
-        return resource_encoder_fail(pass->encoder, DOE_RESOURCE_DEVICE_MISMATCH);
-    doe_resource_render_pipeline_retain(pipeline);
-    doe_resource_render_pipeline_release(pass->state.pipeline);
-    pass->state.pipeline = pipeline;
-    return DOE_RESOURCE_OK;
+    status = resource_render_set_pipeline(pass->base.config.device.identity, &pass->state, pipeline);
+    return resource_encoder_fail(pass->encoder, status);
 }
 
 doe_resource_status doe_resource_render_pass_set_group(doe_resource_render_pass *pass,
     uint32_t index, const doe_resource_dispatch_group *group)
 {
-    doe_resource_status status = active(pass);
+    doe_resource_status status = resource_render_pass_active(pass);
     if (status != DOE_RESOURCE_OK) return status;
-    if (index >= DOE_RESOURCE_MAX_GROUPS) return resource_encoder_fail(pass->encoder, DOE_RESOURCE_RANGE);
-    if (!group || (!group->group && !group->dynamic_offset_count)) {
-        doe_resource_bind_group_release(pass->state.groups[index]);
-        pass->state.groups[index] = NULL;
-        pass->state.offsets.counts[index] = 0;
-        return DOE_RESOURCE_OK;
-    }
-    doe_resource_binding resolved[DOE_RESOURCE_MAX_BINDINGS];
-    status = doe_resource_bind_group_resolve(group->group, group->dynamic_offsets, group->dynamic_offset_count,
-        resolved, DOE_RESOURCE_MAX_BINDINGS);
-    if (status != DOE_RESOURCE_OK) return resource_encoder_fail(pass->encoder, status);
-    if (group->group->base.config.device.identity != pass->base.config.device.identity)
-        return resource_encoder_fail(pass->encoder, DOE_RESOURCE_DEVICE_MISMATCH);
-    doe_resource_bind_group_retain(group->group);
-    doe_resource_bind_group_release(pass->state.groups[index]);
-    pass->state.groups[index] = group->group;
-    pass->state.offsets.counts[index] = group->dynamic_offset_count;
-    if (group->dynamic_offset_count) memcpy(pass->state.offsets.values[index], group->dynamic_offsets,
-        group->dynamic_offset_count * sizeof(uint32_t));
-    return DOE_RESOURCE_OK;
-}
-
-static doe_resource_status set_buffer(doe_resource_render_pass *pass,
-    doe_resource_vertex_binding *binding, doe_resource_buffer *buffer,
-    uint64_t offset, uint64_t size, uint64_t usage, uint64_t alignment)
-{
-    if (!resource_buffer_available(buffer)) return resource_encoder_fail(pass->encoder, DOE_RESOURCE_UNAVAILABLE);
-    if (buffer->base.config.device.identity != pass->base.config.device.identity)
-        return resource_encoder_fail(pass->encoder, DOE_RESOURCE_DEVICE_MISMATCH);
-    if (!(buffer->desc.usage & usage)) return resource_encoder_fail(pass->encoder, DOE_RESOURCE_USAGE);
-    if (offset % alignment) return resource_encoder_fail(pass->encoder, DOE_RESOURCE_ALIGNMENT);
-    uint64_t resolved;
-    doe_resource_status status = resource_range(buffer->desc.size, offset, size, &resolved);
-    if (status != DOE_RESOURCE_OK) return resource_encoder_fail(pass->encoder, status);
-    doe_resource_buffer_retain(buffer);
-    doe_resource_buffer_release(binding->buffer);
-    *binding = (doe_resource_vertex_binding){buffer, offset, resolved};
-    return DOE_RESOURCE_OK;
+    status = resource_render_set_group(pass->base.config.device.identity, &pass->state, index, group);
+    return resource_encoder_fail(pass->encoder, status);
 }
 
 doe_resource_status doe_resource_render_pass_set_vertex(doe_resource_render_pass *pass,
     uint32_t slot, doe_resource_buffer *buffer, uint64_t offset, uint64_t size)
 {
-    doe_resource_status status = active(pass);
+    doe_resource_status status = resource_render_pass_active(pass);
     if (status != DOE_RESOURCE_OK) return status;
-    if (slot >= DOE_RESOURCE_MAX_VERTEX_BUFFERS) return resource_encoder_fail(pass->encoder, DOE_RESOURCE_RANGE);
-    return set_buffer(pass, &pass->state.vertices[slot], buffer, offset, size, WGPUBufferUsage_Vertex, 4);
+    status = resource_render_set_vertex(pass->base.config.device.identity, &pass->state, slot, buffer, offset, size);
+    return resource_encoder_fail(pass->encoder, status);
 }
 
 doe_resource_status doe_resource_render_pass_set_index(doe_resource_render_pass *pass,
     doe_resource_buffer *buffer, WGPUIndexFormat format, uint64_t offset, uint64_t size)
 {
-    doe_resource_status status = active(pass);
+    doe_resource_status status = resource_render_pass_active(pass);
     if (status != DOE_RESOURCE_OK) return status;
-    if (format != WGPUIndexFormat_Uint16 && format != WGPUIndexFormat_Uint32)
-        return resource_encoder_fail(pass->encoder, DOE_RESOURCE_LAYOUT);
-    status = set_buffer(pass, &pass->state.index, buffer, offset, size, WGPUBufferUsage_Index,
-        format == WGPUIndexFormat_Uint16 ? 2 : 4);
-    if (status == DOE_RESOURCE_OK) pass->state.index_format = format;
-    return status;
+    status = resource_render_set_index(pass->base.config.device.identity, &pass->state, buffer, format, offset, size);
+    return resource_encoder_fail(pass->encoder, status);
 }
 
 const doe_resource_render_state *doe_resource_render_pass_state(const doe_resource_render_pass *pass)
@@ -320,7 +275,7 @@ const doe_resource_render_state *doe_resource_render_pass_state(const doe_resour
 doe_resource_status doe_resource_render_pass_set_state(doe_resource_render_pass *pass,
     const doe_resource_render_state *state)
 {
-    doe_resource_status status = active(pass);
+    doe_resource_status status = resource_render_pass_active(pass);
     if (status != DOE_RESOURCE_OK) return status;
     if (!state) return resource_encoder_fail(pass->encoder, DOE_RESOURCE_INVALID_ARGUMENT);
     for (size_t i = 0; i < 6; i++) if (!isfinite(state->viewport[i])) return resource_encoder_fail(pass->encoder, DOE_RESOURCE_RANGE);
@@ -338,68 +293,48 @@ doe_resource_status doe_resource_render_pass_set_state(doe_resource_render_pass 
     return DOE_RESOURCE_OK;
 }
 
-static doe_resource_status validate_vertex(const doe_resource_vertex_binding *binding,
-    const doe_resource_vertex_layout *layout, uint32_t first, uint32_t count, bool indexed)
-{
-    if (!resource_buffer_available(binding->buffer)) return DOE_RESOURCE_UNAVAILABLE;
-    if (binding->buffer->mapped || binding->buffer->map_pending) return DOE_RESOURCE_STATE;
-    if (!count) return DOE_RESOURCE_OK;
-    uint64_t last = (uint64_t)first + count - 1;
-    if (indexed && layout->step_mode == WGPUVertexStepMode_Vertex) last = 0;
-    if (layout->stride && last > (UINT64_MAX - layout->last_attribute_end) / layout->stride)
-        return DOE_RESOURCE_OVERFLOW;
-    uint64_t required = last * layout->stride + layout->last_attribute_end;
-    return required <= binding->size ? DOE_RESOURCE_OK : DOE_RESOURCE_RANGE;
-}
-
 static doe_resource_status validate_packet(const doe_resource_render_packet *packet, void *device)
 {
     uint32_t extent[2];
     doe_resource_status status = validate_targets(device, &packet->targets, extent);
     if (status != DOE_RESOURCE_OK || packet->boundary_only) return status;
-    if (packet->indirect) {
-        status = resource_indirect_validate(device, packet->indirect, packet->indirect_offset, packet->indexed ? 20 : 16);
-        if (status != DOE_RESOURCE_OK) return status;
-        if (packet->indirect->mapped || packet->indirect->map_pending) return DOE_RESOURCE_STATE;
-    }
-    const doe_resource_render_pipeline *pipeline = packet->pipeline;
-    if (!pipeline || !resource_alive(&pipeline->base)) return DOE_RESOURCE_UNAVAILABLE;
-    if (pipeline->base.config.device.identity != device) return DOE_RESOURCE_DEVICE_MISMATCH;
-    if (pipeline->desc.color_format != packet->targets.color->desc.format ||
-        pipeline->desc.depth_stencil_format != (packet->targets.depth_stencil ? packet->targets.depth_stencil->desc.format : 0) ||
-        pipeline->desc.samples != packet->targets.color->texture->desc.samples ||
-        (packet->targets.depth_read_only && pipeline->desc.depth_write) ||
-        (packet->targets.stencil_read_only && pipeline->desc.stencil_write)) return DOE_RESOURCE_LAYOUT;
-    for (size_t i = 0; i < pipeline->layout->count; i++) {
-        if (!packet->groups[i] || !doe_resource_layout_compatible(pipeline->layout->groups[i], packet->groups[i]->layout))
-            return DOE_RESOURCE_LAYOUT;
-        doe_resource_binding resolved[DOE_RESOURCE_MAX_BINDINGS];
-        status = doe_resource_bind_group_resolve(packet->groups[i], packet->offsets.values[i],
-            packet->offsets.counts[i], resolved, DOE_RESOURCE_MAX_BINDINGS);
-        if (status != DOE_RESOURCE_OK) return status;
-    }
-    for (size_t i = 0; i < pipeline->desc.vertex_count; i++) {
-        const doe_resource_vertex_layout *layout = &pipeline->desc.vertices[i];
-        bool instance = layout->step_mode == WGPUVertexStepMode_Instance;
-        status = validate_vertex(&packet->vertices[i], layout, instance ? packet->first_instance : packet->first,
-            instance ? packet->instances : packet->count, packet->indexed && !instance);
-        if (status != DOE_RESOURCE_OK) return status;
-    }
-    if (packet->indexed) {
-        if (!resource_buffer_available(packet->index.buffer)) return DOE_RESOURCE_UNAVAILABLE;
-        if (packet->index.buffer->mapped || packet->index.buffer->map_pending) return DOE_RESOURCE_STATE;
-        uint32_t bytes = packet->index_format == WGPUIndexFormat_Uint16 ? 2 : 4;
-        uint64_t end = ((uint64_t)packet->first + packet->count) * bytes;
-        if (end > packet->index.size) return DOE_RESOURCE_RANGE;
-    }
-    return DOE_RESOURCE_OK;
+    doe_resource_render_bundle_desc signature = {
+        packet->targets.color->desc.format,
+        packet->targets.depth_stencil ? packet->targets.depth_stencil->desc.format : 0,
+        packet->targets.color->texture->desc.samples,
+        packet->targets.depth_read_only, packet->targets.stencil_read_only
+    };
+    return resource_render_draw_validate(packet, device, &signature);
 }
 
+static doe_resource_status append_packet(doe_resource_render_pass *pass,
+    doe_resource_render_packet packet)
+{
+    doe_resource_status status = validate_packet(&packet, pass->base.config.device.identity);
+    if (status != DOE_RESOURCE_OK) return resource_encoder_fail(pass->encoder, status);
+    doe_resource_render_record *record = resource_allocate(&pass->base.config,
+        sizeof(*record), _Alignof(doe_resource_render_record));
+    if (!record) return resource_encoder_fail(pass->encoder, DOE_RESOURCE_OUT_OF_MEMORY);
+    status = resource_encoder_reserve(pass->encoder);
+    if (status != DOE_RESOURCE_OK) {
+        resource_free(&pass->base.config, record, sizeof(*record), _Alignof(doe_resource_render_record));
+        return status;
+    }
+    record->packet = packet;
+    resource_render_packet_retain(&record->packet);
+    resource_init(&record->base, &pass->base.config, (doe_resource_native){0});
+    doe_resource_command command = {.kind = DOE_COMMAND_RENDER};
+    command.value.render = record;
+    pass->encoder->commands[pass->encoder->count++] = command;
+    pass->last_record = record;
+    if (!packet.boundary_only) pass->draw_count++;
+    return DOE_RESOURCE_OK;
+}
 static doe_resource_status record_draw(doe_resource_render_pass *pass, bool boundary_only,
     bool indexed, uint32_t count, uint32_t instances, uint32_t first,
     int32_t base_vertex, uint32_t first_instance, doe_resource_buffer *arguments, uint64_t indirect_offset)
 {
-    doe_resource_status status = active(pass);
+    doe_resource_status status = resource_render_pass_active(pass);
     if (status != DOE_RESOURCE_OK) return status;
     if (!boundary_only && pass->draw_count >= pass->state.targets.max_draw_count)
         return resource_encoder_fail(pass->encoder, DOE_RESOURCE_RANGE);
@@ -415,25 +350,22 @@ static doe_resource_status record_draw(doe_resource_render_pass *pass, bool boun
     packet.first_instance = first_instance;
     packet.indirect = arguments;
     packet.indirect_offset = indirect_offset;
-    status = validate_packet(&packet, pass->base.config.device.identity);
-    if (status != DOE_RESOURCE_OK) return resource_encoder_fail(pass->encoder, status);
-    doe_resource_render_record *record = resource_allocate(&pass->base.config,
-        sizeof(*record), _Alignof(doe_resource_render_record));
-    if (!record) return resource_encoder_fail(pass->encoder, DOE_RESOURCE_OUT_OF_MEMORY);
-    status = resource_encoder_reserve(pass->encoder);
-    if (status != DOE_RESOURCE_OK) {
-        resource_free(&pass->base.config, record, sizeof(*record), _Alignof(doe_resource_render_record));
-        return status;
-    }
-    record->packet = packet;
-    retain_packet(&record->packet);
-    resource_init(&record->base, &pass->base.config, (doe_resource_native){0});
-    doe_resource_command command = {.kind = DOE_COMMAND_RENDER};
-    command.value.render = record;
-    pass->encoder->commands[pass->encoder->count++] = command;
-    pass->last_record = record;
-    if (!boundary_only) pass->draw_count++;
-    return DOE_RESOURCE_OK;
+    return append_packet(pass, packet);
+}
+
+doe_resource_status resource_render_replay_packet(doe_resource_render_pass *pass,
+    const doe_resource_render_packet *draw)
+{
+    doe_resource_status status = resource_render_pass_active(pass);
+    if (status != DOE_RESOURCE_OK) return status;
+    if (pass->draw_count >= pass->state.targets.max_draw_count)
+        return resource_encoder_fail(pass->encoder, DOE_RESOURCE_RANGE);
+    doe_resource_render_packet packet = *draw;
+    packet.targets = pass->state.targets;
+    packet.state = pass->state.state;
+    packet.occlusion_active = pass->state.occlusion_active;
+    packet.occlusion_index = pass->state.occlusion_index;
+    return append_packet(pass, packet);
 }
 
 doe_resource_status doe_resource_render_pass_draw(doe_resource_render_pass *pass,
@@ -452,7 +384,7 @@ doe_resource_status doe_resource_render_pass_draw_indexed(doe_resource_render_pa
 doe_resource_status doe_resource_render_pass_draw_indirect(doe_resource_render_pass *pass,
     doe_resource_buffer *arguments, uint64_t offset, bool indexed)
 {
-    doe_resource_status status = active(pass);
+    doe_resource_status status = resource_render_pass_active(pass);
     if (status != DOE_RESOURCE_OK) return status;
     if (!arguments) return resource_encoder_fail(pass->encoder, DOE_RESOURCE_INVALID_ARGUMENT);
     return record_draw(pass, false, indexed, 0, 0, 0, 0, 0, arguments, offset);
@@ -460,7 +392,7 @@ doe_resource_status doe_resource_render_pass_draw_indirect(doe_resource_render_p
 
 doe_resource_status doe_resource_render_pass_begin_occlusion(doe_resource_render_pass *pass, uint32_t index)
 {
-    doe_resource_status status = active(pass);
+    doe_resource_status status = resource_render_pass_active(pass);
     if (status != DOE_RESOURCE_OK) return status;
     doe_resource_query_set *set = pass->state.targets.occlusion_queries;
     if (!resource_query_available(set)) return resource_encoder_fail(pass->encoder, DOE_RESOURCE_UNAVAILABLE);
@@ -480,7 +412,7 @@ doe_resource_status doe_resource_render_pass_begin_occlusion(doe_resource_render
 
 doe_resource_status doe_resource_render_pass_end_occlusion(doe_resource_render_pass *pass)
 {
-    doe_resource_status status = active(pass);
+    doe_resource_status status = resource_render_pass_active(pass);
     if (status != DOE_RESOURCE_OK) return status;
     if (!pass->state.occlusion_active) return resource_encoder_fail(pass->encoder, DOE_RESOURCE_STATE);
     status = resource_encoder_reserve(pass->encoder);
@@ -496,7 +428,7 @@ doe_resource_status doe_resource_render_pass_end_occlusion(doe_resource_render_p
 
 doe_resource_status doe_resource_render_pass_end(doe_resource_render_pass *pass)
 {
-    doe_resource_status status = active(pass);
+    doe_resource_status status = resource_render_pass_active(pass);
     if (status != DOE_RESOURCE_OK) return status;
     if (pass->state.occlusion_active) return resource_encoder_fail(pass->encoder, DOE_RESOURCE_STATE);
     /* End follows all query events, including a zero-draw query scope. Closing
@@ -519,7 +451,7 @@ doe_resource_status doe_resource_render_pass_end(doe_resource_render_pass *pass)
 void resource_render_record_release(doe_resource_render_record *record)
 {
     if (!record || !resource_last_reference(&record->base)) return;
-    release_packet(&record->packet);
+    resource_render_packet_release(&record->packet);
     resource_finalize(&record->base, sizeof(*record), _Alignof(doe_resource_render_record));
 }
 
