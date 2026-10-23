@@ -39,7 +39,8 @@ WGPUBindGroupLayout wgpuDeviceCreateBindGroupLayout(WGPUDevice handle,
                 WGPUTextureSampleType_Float : entry->texture.sampleType;
             converted.view_dimension = entry->texture.viewDimension;
             converted.multisampled = entry->texture.multisampled != 0;
-            if (converted.multisampled || (converted.view_dimension == WGPUTextureViewDimension_CubeArray &&
+            /* Multisampled layouts follow the resource owner's float/dimension rules. */
+            if ((converted.view_dimension == WGPUTextureViewDimension_CubeArray &&
                 (device->backend.kind != WGPUBackendType_Vulkan || !device->backend.value.vulkan.caps.image_cube_array)))
                 valid = false;
         } else {

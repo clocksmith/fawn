@@ -95,9 +95,13 @@ static doe_vk_status validate_texture(doe_vk_context *context,
         return DOE_VK_INVALID_ARGUMENT;
     uint32_t samples = doe_vk_samples(desc->sample_count);
     if (samples > 64 || (samples & (samples - 1)) != 0) return DOE_VK_INVALID_ARGUMENT;
+    /* Multisample images: one 2D attachment, optionally also sampled (shader
+     * textureLoad per sample); never copies or storage. The native image-format
+     * query below checks the exact sampled+attachment sample support. */
+    const uint32_t attachment = desc->usage & ~(uint32_t)DOE_VK_TEXTURE_SAMPLED;
     if (samples != 1 && (desc->dimension != DOE_VK_TEXTURE_2D || desc->mip_levels != 1 ||
         desc->depth_or_layers != 1 || desc->cube_compatible ||
-        (desc->usage != DOE_VK_TEXTURE_COLOR_ATTACHMENT && desc->usage != DOE_VK_TEXTURE_DEPTH_STENCIL_ATTACHMENT)))
+        (attachment != DOE_VK_TEXTURE_COLOR_ATTACHMENT && attachment != DOE_VK_TEXTURE_DEPTH_STENCIL_ATTACHMENT)))
         return DOE_VK_UNSUPPORTED;
     *bytes = texel_bytes(desc->format);
     if (*bytes == 0) return DOE_VK_UNSUPPORTED;

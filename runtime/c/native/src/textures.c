@@ -90,8 +90,8 @@ WGPUTexture wgpuDeviceCreateTexture(WGPUDevice handle, const WGPUTextureDescript
         if (!(desc.usage & WGPUTextureUsage_TextureBinding)) native.cube_compatible = false;
     }
     if (desc.samples > 1) {
-        if (desc.usage != WGPUTextureUsage_RenderAttachment) {
-            native_error(device, WGPUErrorType_Validation, "multisample textures currently support attachment usage only");
+        if ((desc.usage & ~(WGPUTextureUsage)WGPUTextureUsage_TextureBinding) != WGPUTextureUsage_RenderAttachment) {
+            native_error(device, WGPUErrorType_Validation, "multisample textures support attachment and texture-binding usage only");
             return NULL;
         }
         native.usage = depth_stencil ? DOE_VK_TEXTURE_DEPTH_STENCIL_ATTACHMENT : DOE_VK_TEXTURE_COLOR_ATTACHMENT;
