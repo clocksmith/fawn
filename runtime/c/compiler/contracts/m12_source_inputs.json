@@ -1,0 +1,317 @@
+{
+  "acceptedBaseline": "f01effdf070edf2f25cf0f2016c995df1e4d3bab",
+  "acceptedTree": "edd985a9105432bfcad6c3dbe387cfc0e1f66fee",
+  "compilerFiles": [
+    {
+      "bytes": 11261,
+      "matchesAcceptedGitBlob": true,
+      "matchesWorkingTree": true,
+      "path": "runtime/c/compiler/Makefile",
+      "sha256": "08ef4f70c8a51bce6ff196ba3c6921ad0a15566b719f3aff657a989eef63ffbd"
+    },
+    {
+      "bytes": 2464,
+      "matchesAcceptedGitBlob": true,
+      "matchesWorkingTree": true,
+      "path": "runtime/c/compiler/include/doe_compiler.h",
+      "sha256": "5bf4f5e5a4e4624c094320ad9ec97119278bc7f6f06b0e47c01e444d42c6dc5b"
+    },
+    {
+      "bytes": 3848,
+      "matchesAcceptedGitBlob": true,
+      "matchesWorkingTree": true,
+      "path": "runtime/c/compiler/include/doe_compiler_job.h",
+      "sha256": "6160e631973ffcd9777553520d329b6d6048315f2a90b1283989077e9f51237f"
+    },
+    {
+      "bytes": 5417,
+      "matchesAcceptedGitBlob": true,
+      "matchesWorkingTree": true,
+      "path": "runtime/c/compiler/include/doe_compiler_typed.h",
+      "sha256": "c7decbdb8da093a3485ded84901bf97f88eea8db6237dfd4089c730aa08e6216"
+    },
+    {
+      "bytes": 3752,
+      "matchesAcceptedGitBlob": true,
+      "matchesWorkingTree": true,
+      "path": "runtime/c/compiler/include/doe_compiler_v2.h",
+      "sha256": "b0a60c2f05b70dba0786365dadd81b993accbd93f7f68f0e3accf86a815ae891"
+    },
+    {
+      "bytes": 11400,
+      "matchesAcceptedGitBlob": true,
+      "matchesWorkingTree": true,
+      "path": "runtime/c/compiler/src/cli.c",
+      "sha256": "7b50651f239ae7c93c47991813678669ff7ad118cb9639a82b4e3d5e40636a6f"
+    },
+    {
+      "bytes": 5038,
+      "matchesAcceptedGitBlob": true,
+      "matchesWorkingTree": true,
+      "path": "runtime/c/compiler/src/cli_json.c",
+      "sha256": "79b35778c0f974c17da970fc8b98af75adac40d174ad3423a79d3847cd217d34"
+    },
+    {
+      "bytes": 489,
+      "matchesAcceptedGitBlob": true,
+      "matchesWorkingTree": true,
+      "path": "runtime/c/compiler/src/cli_json.h",
+      "sha256": "7d76808edeb7acd26524f0316659784018577019b98677d10dddb2ff99754305"
+    },
+    {
+      "bytes": 15135,
+      "matchesAcceptedGitBlob": true,
+      "matchesWorkingTree": true,
+      "path": "runtime/c/compiler/src/compile.c",
+      "sha256": "0c0ccf8df4681794f62792e014a9c7ff7ed47f11f7146c8dc4026b9adbdde1d6"
+    },
+    {
+      "bytes": 5942,
+      "matchesAcceptedGitBlob": true,
+      "matchesWorkingTree": true,
+      "path": "runtime/c/compiler/src/constants.c",
+      "sha256": "b8431560c29221a2ce5d87166306b321e257095b6c0c7488ca7f858654b54a97"
+    },
+    {
+      "bytes": 315,
+      "matchesAcceptedGitBlob": true,
+      "matchesWorkingTree": true,
+      "path": "runtime/c/compiler/src/exports.map",
+      "sha256": "a9025f34c30ba7251802facbaa8bf3660890558dc8ecc8f3fee884de75f9d816"
+    },
+    {
+      "bytes": 13981,
+      "matchesAcceptedGitBlob": true,
+      "matchesWorkingTree": true,
+      "path": "runtime/c/compiler/src/internal.h",
+      "sha256": "745b6c4243b47048639e3351caa63d1abbccf2730e1924b0e368a8d66b2b6c52"
+    },
+    {
+      "bytes": 5996,
+      "matchesAcceptedGitBlob": true,
+      "matchesWorkingTree": true,
+      "path": "runtime/c/compiler/src/lex.c",
+      "sha256": "078b86d235ba65a6710e896a0616b87939788a32b9aaa4b24cf7cedc9b6d435c"
+    },
+    {
+      "bytes": 38409,
+      "matchesAcceptedGitBlob": true,
+      "matchesWorkingTree": true,
+      "path": "runtime/c/compiler/src/numeric.c",
+      "sha256": "390cf61b3f13f56b48c8ed6af4aea676b1ae116388ec7f0ad9439f985d91a614"
+    },
+    {
+      "bytes": 2210,
+      "matchesAcceptedGitBlob": true,
+      "matchesWorkingTree": true,
+      "path": "runtime/c/compiler/src/numeric.h",
+      "sha256": "3ba4d3c7caff37d08d5a5adc4e2c98c8cdf2d7f9b2bc2db8c5db174c987fd0fd"
+    },
+    {
+      "bytes": 43787,
+      "matchesAcceptedGitBlob": true,
+      "matchesWorkingTree": true,
+      "path": "runtime/c/compiler/src/parse.c",
+      "sha256": "bd81c729237b9fb71bdc4f35fc871337f4cf69d60d5b9127f72a28a7c97a5f6a"
+    },
+    {
+      "bytes": 12667,
+      "matchesAcceptedGitBlob": true,
+      "matchesWorkingTree": true,
+      "path": "runtime/c/compiler/src/reflection.c",
+      "sha256": "581645d97a2f1cd8d67e98fa3ca9e7c250a5566faccd4beaf123a63dce4959c1"
+    },
+    {
+      "bytes": 3273,
+      "matchesAcceptedGitBlob": true,
+      "matchesWorkingTree": true,
+      "path": "runtime/c/compiler/src/sema.h",
+      "sha256": "c9047329360597548a1b0c96623cd6f5724dc9631025139bdcf94e2ed337a7e2"
+    },
+    {
+      "bytes": 19219,
+      "matchesAcceptedGitBlob": true,
+      "matchesWorkingTree": true,
+      "path": "runtime/c/compiler/src/sema_call.c",
+      "sha256": "9733027515619684821b5fde1039ced029acb1f3a35f38aedbc07f05df2dee62"
+    },
+    {
+      "bytes": 32400,
+      "matchesAcceptedGitBlob": true,
+      "matchesWorkingTree": true,
+      "path": "runtime/c/compiler/src/sema_declarations.c",
+      "sha256": "e0a2e90bac329e6672f9a918b8eb40f76daa395eee03ebe47294070ac6c6849e"
+    },
+    {
+      "bytes": 30361,
+      "matchesAcceptedGitBlob": true,
+      "matchesWorkingTree": true,
+      "path": "runtime/c/compiler/src/sema_expression.c",
+      "sha256": "a5057ea1dbe0aea69f68691eec6ce6cd4c047b1a954c560c6d6b48f48317f30c"
+    },
+    {
+      "bytes": 74099,
+      "matchesAcceptedGitBlob": true,
+      "matchesWorkingTree": true,
+      "path": "runtime/c/compiler/src/spirv.c",
+      "sha256": "2a9d4577f30580e3195cb717a6d069e4e6a3279ebf204aea9482e87ad256b100"
+    },
+    {
+      "bytes": 443,
+      "matchesAcceptedGitBlob": true,
+      "matchesWorkingTree": true,
+      "path": "runtime/c/compiler/src/spirv_decl.h",
+      "sha256": "5a2024c97baf98a3f0171a0ae6a898cdf5439882e29dc417642fd82ac71ccd69"
+    },
+    {
+      "bytes": 11224,
+      "matchesAcceptedGitBlob": true,
+      "matchesWorkingTree": true,
+      "path": "runtime/c/compiler/src/storage.c",
+      "sha256": "daa0f39d16ea5d7e14d1294f7cd6f851f6e766dbc0f44e387919e280ac8aea06"
+    },
+    {
+      "bytes": 9555,
+      "matchesAcceptedGitBlob": true,
+      "matchesWorkingTree": true,
+      "path": "runtime/c/compiler/src/types.c",
+      "sha256": "8c6d7a8c9ac369bdcbf69f7b9950acee13e35951f7efb3201388378d8e499397"
+    },
+    {
+      "bytes": 21823,
+      "matchesAcceptedGitBlob": true,
+      "matchesWorkingTree": true,
+      "path": "runtime/c/compiler/src/uniformity.c",
+      "sha256": "dd40e8b927bb1dd346a711c23ae34f5006fed0d0a20dee88f27008f601b47380"
+    },
+    {
+      "bytes": 21030,
+      "matchesAcceptedGitBlob": true,
+      "matchesWorkingTree": true,
+      "path": "runtime/c/compiler/src/validate.c",
+      "sha256": "c19254a2c0808b3e7ac1888e74c5b86e809ada88b9477988d3eda229417f5b6a"
+    },
+    {
+      "bytes": 7424,
+      "matchesAcceptedGitBlob": true,
+      "matchesWorkingTree": true,
+      "path": "runtime/c/compiler/tests/test_m11_api.c",
+      "sha256": "4dcbe5095b0e8d2266cae4079327042d312348095542ec0f2a3942095860e2f1"
+    },
+    {
+      "bytes": 3530,
+      "matchesAcceptedGitBlob": true,
+      "matchesWorkingTree": true,
+      "path": "runtime/c/compiler/tests/test_m11_private.c",
+      "sha256": "fb6f2f92c46d9fc1bf6e35372e0e2be617ce8b2857280e5ccf59562b37e990ce"
+    },
+    {
+      "bytes": 11164,
+      "matchesAcceptedGitBlob": true,
+      "matchesWorkingTree": true,
+      "path": "runtime/c/compiler/tests/test_m11_workgroups.py",
+      "sha256": "06e3d004c8cfd76d481932f974e7653bc0a378bda074608bbd333e4f70ce7d65"
+    }
+  ],
+  "compilerSourceManifestSha256": "b124146a5044e288dcd7fbd153a7f75f3ecfc2e4451666b2f4e1b7771073b9af",
+  "compilerSourceMatchCount": 30,
+  "compilerSourceMismatches": [],
+  "independentExecutableCaseSeal": "pending; required before implementation",
+  "kind": "M12 reviewed design source rebind, not implementation acceptance",
+  "m12ImplementationStarted": false,
+  "originalDraftPreserved": true,
+  "originalSource30Unchanged": true,
+  "ownerDependencies": [
+    {
+      "bytes": 4708,
+      "path": "AGENTS.md",
+      "sha256": "123614ec5e93ab5c4c7b174111d11fdc5c67fb4be368f542a414ebcd355ad39d"
+    },
+    {
+      "bytes": 16795,
+      "path": "GOALS.md",
+      "sha256": "e0c7956ff1ef165011d9e7aace8e7cb4933a53937c318e07cc308b485e6ba00c"
+    },
+    {
+      "bytes": 7096,
+      "path": "INTENT.md",
+      "sha256": "818112ce166ea8b6d3c788782ae4847ea4e08cdab73f7ac1f30855bcfd92759d"
+    },
+    {
+      "bytes": 1962,
+      "path": "CATSCAN.md",
+      "sha256": "d02b6c32a3d9e8f4fa07d84479ab0b378556adb62e85319c289e700f6ea4846a"
+    },
+    {
+      "bytes": 1440,
+      "path": "runtime/CATSCAN.md",
+      "sha256": "a2979d9d8f3d21ae837afc14ed13dcfae3e30008f216d5ef2a2f1d8c8da0b8a4"
+    },
+    {
+      "bytes": 1688,
+      "path": "runtime/c/CATSCAN.md",
+      "sha256": "53144dc8dd85f67bffefb30386dacc5a293344989ed04c3f229bbea153e232d8"
+    },
+    {
+      "bytes": 1815,
+      "path": "runtime/c/compiler/CATSCAN.md",
+      "sha256": "05599fd8eeba90b60af4b343435ce54f68049a7477279456ef540c836e63f3d4"
+    },
+    {
+      "bytes": 8345,
+      "path": "runtime/c/compiler/README.md",
+      "sha256": "d7415ffba159b9a74b83680c7fc670a408fb797a579f1662f550f91b7048f687"
+    },
+    {
+      "bytes": 10093,
+      "path": "runtime/c/compiler/STYLE.md",
+      "sha256": "b49f7adc311d45dc7f80e5527002d5b3e205a84a92f172e9ed619046fc3293c6"
+    },
+    {
+      "bytes": 18554,
+      "path": "runtime/c/compiler/MILESTONE_11.md",
+      "sha256": "b20c239f336f11b9c108e463f2ea8b63b2c999ca2302a3b1c49d97487831e336"
+    },
+    {
+      "bytes": 20037,
+      "path": "runtime/c/compiler/MILESTONE_11_LEDGER.md",
+      "sha256": "309e23fb67704caf3377af016c9200854abc1b44b87b6a81751d6701c2c3d1b8"
+    },
+    {
+      "bytes": 5103,
+      "path": "runtime/c/compiler/MILESTONE_11_RESULTS.md",
+      "sha256": "8d9291b25cd75e578995947b1159b87aa60adb01b36dd70e3f13af02cc645cc8"
+    },
+    {
+      "bytes": 1949,
+      "path": "runtime/c/compiler/CONTRACT_11.sha256",
+      "sha256": "9f5013276a311c610cade91062426b9ab6d7f993293c7fcd22ff183902c81f75"
+    },
+    {
+      "bytes": 61603,
+      "path": "docs/process.md",
+      "sha256": "ba771080a938577cebcdf1c58583cbfe6640b2c83797882c90beba0106290463"
+    },
+    {
+      "bytes": 3138,
+      "path": "docs/component-charters.md",
+      "sha256": "29d8ae03e114866decbb223499a5332223eb1c48051bce9c0d01f58357b909f3"
+    },
+    {
+      "bytes": 23110,
+      "path": "docs/c-migration/MIGRATION.md",
+      "sha256": "c378b55682b51ae54622b6bba1e02a425dec884c4e4354a1fb6db42f0a8eb969"
+    },
+    {
+      "bytes": 34813,
+      "path": "docs/architecture.md",
+      "sha256": "b4b176465d59b596db4cfb60056a580d661dc796a5c19dd7427bfbb0c6de441e"
+    }
+  ],
+  "priorDraftArtifactManifestSha256": "e27518bd01dbf5e64d52419dcd209530f14146cf9a3d3f068283616c6d24bd36",
+  "recordedAt": "2026-10-23T13:41:04.051010+00:00",
+  "schemaVersion": 1,
+  "skillStatus": "software-engineering skill became available and was read during installation preparation; initial draft read was unavailable",
+  "witnessManifestSha256": "556433ecf8c1e50c2e578fce3db0dfb03987e9ece259b9e35f3519714375f874",
+  "witnessMatchCount": 10
+}
