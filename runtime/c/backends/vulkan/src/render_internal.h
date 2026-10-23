@@ -26,8 +26,13 @@ doe_vk_status doe_vk_render_viewport(const doe_vk_context *context, const doe_vk
     uint32_t width, uint32_t height, VkViewport *out);
 doe_vk_status doe_vk_render_vertex_limits(doe_vk_commands *commands, doe_vk_pipeline *pipeline,
     const doe_vk_buffer_binding *vertices, size_t count, uint32_t out_limits[2]);
+/* Exact native index capacity in elements, clamped to UINT32_MAX because native
+ * firstIndex/indexCount are uint32 and the guard compares without wrapping. */
+doe_vk_status doe_vk_render_index_limit(doe_vk_commands *commands,
+    const doe_vk_render_indices *indices, uint32_t *out_limit);
 doe_vk_status doe_vk_draw_indirect_validate(doe_vk_commands *commands,
-    const doe_vk_render_indirect *indirect);
+    const doe_vk_render_indirect *indirect, bool indexed);
+/* limits[0] is the vertex capacity, or the index capacity when indexed. */
 doe_vk_status doe_vk_draw_indirect_prepare(doe_vk_commands *commands,
-    const doe_vk_render_indirect *indirect, const uint32_t limits[2], VkBuffer *out);
+    const doe_vk_render_indirect *indirect, const uint32_t limits[2], bool indexed, VkBuffer *out);
 #endif
