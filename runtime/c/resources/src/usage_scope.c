@@ -14,12 +14,9 @@ static bool overlaps(uint64_t a, uint64_t count_a, uint64_t b, uint64_t count_b)
 
 unsigned resource_view_aspects(const doe_resource_view *view)
 {
-    if (!resource_format_depth(view->desc.format)) return 1;
-    unsigned aspects = 0;
-    if (view->desc.aspect != WGPUTextureAspect_StencilOnly &&
-        resource_format_aspect(view->desc.format, WGPUTextureAspect_DepthOnly)) aspects |= 2;
-    if (view->desc.aspect != WGPUTextureAspect_DepthOnly &&
-        resource_format_aspect(view->desc.format, WGPUTextureAspect_StencilOnly)) aspects |= 4;
+    unsigned aspects = resource_format_aspects(view->texture->desc.format);
+    if (view->desc.aspect == WGPUTextureAspect_DepthOnly) aspects &= 2;
+    if (view->desc.aspect == WGPUTextureAspect_StencilOnly) aspects &= 4;
     return aspects;
 }
 

@@ -141,6 +141,10 @@ typedef struct doe_resource_texture_limits {
  * Unknown formats/invalid aspects fail without changing out. */
 doe_resource_status doe_resource_format_sample_type(WGPUTextureFormat format,
     WGPUTextureAspect aspect, WGPUTextureSampleType *out);
+/* Resolves a present aspect to its effective view format. All preserves format;
+ * combined depth/stencil resolves to its depth-only format or Stencil8. */
+doe_resource_status doe_resource_format_aspect_format(WGPUTextureFormat format,
+    WGPUTextureAspect aspect, WGPUTextureFormat *out);
 
 /* Named color channels, including compressed formats, not renderability.
  * Depth/stencil and unknown formats reject with out unchanged. */
@@ -165,8 +169,11 @@ typedef struct doe_resource_view_desc {
     WGPUTextureAspect aspect;
     WGPUTextureUsage usage;
 } doe_resource_view_desc;
-/* Zero/UINT32_MAX counts select remaining mips/layers; other zero enum/usage
- * values select texture defaults. A view retains its texture. */
+/* Zero/UINT32_MAX counts select defaults: remaining mips; one layer for 1D,
+ * 2D and 3D views, six for Cube, remaining for array views. Other zero enum/usage
+ * values select defaults, including the effective aspect format. The native ABI
+ * adapter must reject explicit public zero counts before compact conversion.
+ * A view retains its texture. */
 doe_resource_status doe_resource_view_validate(const doe_resource_texture *texture,
     const doe_resource_view_desc *desc, doe_resource_view_desc *resolved);
 doe_resource_status doe_resource_view_create(doe_resource_texture *texture,

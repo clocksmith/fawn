@@ -154,7 +154,7 @@ responsibilities. Unsupported consumer command kinds must reject before submit.
 
 `make -C runtime/c/resources check` builds GCC C11/Werror into `/tmp`: 13 base and
 8 extended, 6 bundle, 8 binding-feature, 7 dispatch-usage, 10 render-usage,
-1 query-admission, 3 draw-admission, 4 attachment-admission and 4 resolve-admission host suites cover transactional failure/untouched outputs, first error,
+1 query-admission, 3 draw-admission, 4 attachment-admission, 4 resolve-admission and 3 view-default host suites cover transactional failure/untouched outputs, first error,
 label cleanup, atomic references, stale/read-only maps, copies/aliases, dynamic
 snapshots, pass abandonment/unbinding, shader/query/external/render leases and
 unresolved submission lifetime. Host native tokens test finalization, not GPU work.
@@ -271,3 +271,18 @@ preserve existing ownership contracts. Backend format/resolve capabilities remai
 separate admission. The current bounded software consumer explicitly rejects resolve
 until it consumes the actual backend full-pass API; these new tests do not execute
 multisample rendering. `DEVELOPER_RECEIPT_RESOLVE_ADMISSION.json` binds this increment.
+
+Texture-view defaults are dimension- and aspect-specific, not uniformly the rest
+of the parent texture. Explicit 2D views default to one layer, Cube to six, and
+array views to the remaining layers. Combined depth/stencil aspect views expose
+the effective Depth24Plus/Depth32Float or Stencil8 format through the same checked
+format owner used by binding sample classification. Usage identity still comes
+from the retained parent texture and selected aspect. Render attachments must
+select all actual parent aspects, which permits DepthOnly on depth-only parents
+and StencilOnly on Stencil8, but not partial views of combined parents. The compact
+resource API still accepts zero or UINT32_MAX as default counts; the pinned public
+ABI adapter must distinguish invalid explicit zero from its UINT32_MAX sentinel.
+These correct retained omissions against the
+[view default rules](https://gpuweb.github.io/gpuweb/#resolving-gputextureviewdescriptor-defaults).
+`DEVELOPER_RECEIPT_VIEW_DEFAULTS.json` preserves first failures and source-bound
+host checks. Native aspect/reinterpretation support remains separately explicit.

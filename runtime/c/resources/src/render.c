@@ -15,7 +15,8 @@ static doe_resource_status validate_attachment(void *device, const doe_resource_
     if (!(view->desc.usage & WGPUTextureUsage_RenderAttachment)) return DOE_RESOURCE_USAGE;
     if (view->desc.dimension != WGPUTextureViewDimension_2D) return DOE_RESOURCE_UNSUPPORTED;
     if (view->desc.mip_count != 1 || view->desc.layer_count != 1 ||
-        view->desc.aspect != WGPUTextureAspect_All || view->desc.base_mip >= 32)
+        resource_view_aspects(view) != resource_format_aspects(view->texture->desc.format) ||
+        view->desc.base_mip >= 32)
         return DOE_RESOURCE_LAYOUT;
     if (resource_format_depth(view->desc.format) != depth) return DOE_RESOURCE_LAYOUT;
     extent[0] = view->texture->desc.width >> view->desc.base_mip;
