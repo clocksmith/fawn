@@ -266,6 +266,7 @@ napi_value native_direct_queue_write_texture(napi_env env, napi_callback_info in
     napi_valuetype dst_origin_type;
     napi_typeof(env, dst_origin, &dst_origin_type);
     if (dst_origin_type == napi_object) get_origin_3d(env, dst_origin, &dst_x, &dst_y, &dst_z);
+    uint32_t dst_aspect = texture_aspect_from_value(env, get_prop(env, argv[0], "aspect"));
     /* Extract pixel data pointer and byte length */
     void* data = NULL;
     size_t data_len = 0;
@@ -309,7 +310,7 @@ napi_value native_direct_queue_write_texture(napi_env env, napi_callback_info in
     napi_typeof(env, argv[3], &size_type);
     if (size_type == napi_object) get_extent_3d(env, argv[3], &width, &height, &depth_or_layers);
     if (!doe_queue_write_texture_native(queue, texture, data, data_len, bytes_per_row, rows_per_image,
-            dst_x, dst_y, dst_z, dst_mip, width, height, depth_or_layers))
+            dst_x, dst_y, dst_z, dst_mip, width, height, depth_or_layers, dst_aspect))
         NAPI_THROW(env, "queueWriteTexture: no implementation available in loaded library");
     napi_value undefined_value;
     napi_get_undefined(env, &undefined_value);

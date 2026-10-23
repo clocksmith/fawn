@@ -7,8 +7,8 @@ import { readdir, readFile } from 'node:fs/promises';
 const ADDON = new URL('../../../../runtime/bridge/webgpu-addon/', import.meta.url);
 const MAX_LINES = 999;
 const CAPPED = new Map([
-  ['doe_napi_queue.c', 2003],
-  ['doe_napi_internal.h', 1041],
+  ['doe_napi_queue.c', 1933],
+  ['doe_napi_internal.h', 1022],
 ]);
 
 const files = (await readdir(ADDON)).filter((name) => /\.(c|h)$/.test(name)).sort();
