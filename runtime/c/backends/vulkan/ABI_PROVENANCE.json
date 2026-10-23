@@ -259,5 +259,12 @@
         ]
       ]
     }
+  },
+  "retained_functions": {
+    "vkCmdDrawIndirect": {
+      "source": "vk_functions.zig:97",
+      "signature": "void(VkCommandBuffer,VkBuffer,VkDeviceSize,u32,u32)",
+      "usage": "One guarded nonindexed draw per call, stride16; drawIndirectFirstInstance remains disabled."
+    }
   }
 }

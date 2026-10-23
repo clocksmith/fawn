@@ -5,7 +5,7 @@ OUT ?= /tmp/doe-c-vulkan
 REPO ?= ../../../..
 CFLAGS ?= -O2 -g
 STRICT = -std=c11 -Wall -Wextra -Werror -Wpedantic
-SOURCES = src/loader.c src/device_features.c src/resources.c src/pipeline.c src/descriptors.c src/commands.c src/textures.c src/image_formats.c src/texture_commands.c src/render_pipeline.c src/render_commands.c src/render_attachments.c src/render_initialization.c src/queries.c src/timestamp.c src/indirect.c
+SOURCES = src/loader.c src/device_features.c src/resources.c src/pipeline.c src/descriptors.c src/commands.c src/textures.c src/image_formats.c src/texture_commands.c src/render_pipeline.c src/render_commands.c src/render_attachments.c src/render_initialization.c src/queries.c src/timestamp.c src/indirect.c src/draw_indirect.c src/render_vertices.c
 OBJECTS = $(patsubst src/%.c,$(OUT)/%.o,$(SOURCES))
 HEADERS = $(wildcard src/*.h include/*.h) $(REPO)/runtime/c/common/include/doe_copy_footprint.h
 .PHONY: all check abi native native-descriptors native-storage native-render native-queries native-texture probe sanitize clean
@@ -16,6 +16,8 @@ $(OUT)/%.o: src/%.c $(HEADERS) | $(OUT)
 	$(CC) $(STRICT) $(CFLAGS) -c $< -o $@
 $(OUT)/libdoe_vk.a: $(OBJECTS)
 	$(AR) rcs $@ $^
+$(OUT)/draw_indirect_contract: tests/draw_indirect_contract.c $(SOURCES) $(HEADERS) | $(OUT)
+	$(CC) $(STRICT) $(CFLAGS) $(SOURCES) $< -ldl -o $@
 $(OUT)/indirect_contract: tests/indirect_contract.c $(SOURCES) $(HEADERS) | $(OUT)
 	$(CC) $(STRICT) $(CFLAGS) $(SOURCES) $< -ldl -o $@
 $(OUT)/indirect_lifetime: tests/indirect_lifetime.c $(SOURCES) $(HEADERS) | $(OUT)
@@ -68,7 +70,8 @@ $(OUT)/descriptor_contract: tests/descriptor_contract.c $(SOURCES) $(HEADERS) | 
 	$(CC) $(STRICT) $(CFLAGS) $(SOURCES) $< -ldl -o $@
 $(OUT)/texture_contract: tests/texture_contract.c $(SOURCES) $(HEADERS) | $(OUT)
 	$(CC) $(STRICT) $(CFLAGS) $(SOURCES) $< -ldl -o $@
-check: abi $(OUT)/indirect_contract $(OUT)/indirect_lifetime $(OUT)/depth_pipeline_contract $(OUT)/image_format_contract $(OUT)/depth_contract $(OUT)/feature_contract $(OUT)/pass_contract $(OUT)/timestamp_lifetime $(OUT)/timestamp_contract $(OUT)/ownership $(OUT)/texture_contract $(OUT)/descriptor_contract $(OUT)/loader_contract $(OUT)/render_contract $(OUT)/query_contract
+check: abi $(OUT)/draw_indirect_contract $(OUT)/indirect_contract $(OUT)/indirect_lifetime $(OUT)/depth_pipeline_contract $(OUT)/image_format_contract $(OUT)/depth_contract $(OUT)/feature_contract $(OUT)/pass_contract $(OUT)/timestamp_lifetime $(OUT)/timestamp_contract $(OUT)/ownership $(OUT)/texture_contract $(OUT)/descriptor_contract $(OUT)/loader_contract $(OUT)/render_contract $(OUT)/query_contract
+	$(OUT)/draw_indirect_contract
 	$(OUT)/indirect_contract
 	$(OUT)/indirect_lifetime
 	$(OUT)/depth_pipeline_contract

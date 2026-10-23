@@ -23,4 +23,10 @@ bool doe_vk_render_stencil_writes(const doe_vk_render_pipeline_desc *desc);
 void doe_vk_render_release(doe_vk_commands *commands);
 doe_vk_status doe_vk_render_viewport(const doe_vk_context *context, const doe_vk_render_draw *draw,
     uint32_t width, uint32_t height, VkViewport *out);
+doe_vk_status doe_vk_render_vertex_limits(doe_vk_commands *commands, doe_vk_pipeline *pipeline,
+    const doe_vk_buffer_binding *vertices, size_t count, uint32_t out_limits[2]);
+doe_vk_status doe_vk_draw_indirect_validate(doe_vk_commands *commands,
+    const doe_vk_render_indirect *indirect);
+doe_vk_status doe_vk_draw_indirect_prepare(doe_vk_commands *commands,
+    const doe_vk_render_indirect *indirect, const uint32_t limits[2], VkBuffer *out);
 #endif

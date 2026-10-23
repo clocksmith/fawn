@@ -32,35 +32,14 @@ doe_vk_status doe_vk_render_viewport(const doe_vk_context *context, const doe_vk
     return DOE_VK_OK;
 }
 
-static doe_vk_status validate_draw(doe_vk_commands *commands, doe_vk_pipeline *pipeline,
-    const doe_vk_buffer_binding *vertices, size_t vertex_count, const doe_vk_render_draw *draw) {
-    if (vertex_count != pipeline->vertex_count || (vertex_count != 0 && vertices == NULL))
-        return DOE_VK_INVALID_ARGUMENT;
-    if ((uint64_t)draw->first_vertex + draw->vertex_count > UINT32_MAX ||
-        (uint64_t)draw->first_instance + draw->instance_count > UINT32_MAX) return DOE_VK_INVALID_ARGUMENT;
-    for (size_t i = 0; i < vertex_count; ++i) {
-        const doe_vk_buffer_binding *binding = &vertices[i];
-        if (binding->buffer == NULL && pipeline->vertex_attribute_end[i] == 0 &&
-            binding->offset == 0 && binding->size == 0) continue;
-        if (binding->buffer == NULL || binding->buffer->context != commands->context ||
-            !(binding->buffer->usage & DOE_VK_BUFFER_VERTEX) || binding->offset % 4 != 0 ||
-            !doe_vk_range(binding->buffer->size, binding->offset, binding->size)) return DOE_VK_INVALID_ARGUMENT;
-        if (binding->buffer->content_status != DOE_VK_OK) return binding->buffer->content_status;
-        if (draw->vertex_count == 0 || draw->instance_count == 0 || pipeline->vertex_attribute_end[i] == 0) continue;
-        uint64_t last = pipeline->vertices[i].per_instance ?
-            (uint64_t)draw->first_instance + draw->instance_count - 1 : (uint64_t)draw->first_vertex + draw->vertex_count - 1;
-        uint64_t offset = last * pipeline->vertices[i].stride;
-        if (!doe_vk_range(binding->size, offset, pipeline->vertex_attribute_end[i])) return DOE_VK_INVALID_ARGUMENT;
-    }
-    return DOE_VK_OK;
-}
-
 typedef struct prepared_draw {
     doe_vk_dispatch_use *bindings;
     VkViewport viewport;
     VkRect2D scissor;
     VkBuffer buffers[DOE_VK_MAX_VERTEX_BUFFERS];
     VkDeviceSize offsets[DOE_VK_MAX_VERTEX_BUFFERS];
+    uint32_t vertex_limits[2];
+    VkBuffer indirect;
 } prepared_draw;
 
 static doe_vk_status validate_pass_draw(doe_vk_commands *commands, const doe_vk_render_pass_desc *desc,
@@ -81,8 +60,22 @@ static doe_vk_status validate_pass_draw(doe_vk_commands *commands, const doe_vk_
     }
     doe_vk_status status = doe_vk_render_viewport(commands->context, &draw->draw, width, height, &prepared->viewport);
     if (status != DOE_VK_OK) return status;
-    status = validate_draw(commands, pipeline, draw->vertices, draw->vertex_buffer_count, &draw->draw);
+    status = doe_vk_render_vertex_limits(commands, pipeline, draw->vertices,
+        draw->vertex_buffer_count, prepared->vertex_limits);
     if (status != DOE_VK_OK) return status;
+    if (draw->indirect != NULL) {
+        status = doe_vk_draw_indirect_validate(commands, draw->indirect);
+        if (status != DOE_VK_OK) return status;
+    } else {
+        const doe_vk_render_draw *counts = &draw->draw;
+        uint64_t vertex_end = (uint64_t)counts->first_vertex + counts->vertex_count;
+        uint64_t instance_end = (uint64_t)counts->first_instance + counts->instance_count;
+        if (vertex_end > UINT32_MAX || instance_end > UINT32_MAX)
+            return DOE_VK_INVALID_ARGUMENT;
+        if (counts->vertex_count != 0 && counts->instance_count != 0 &&
+            (vertex_end > prepared->vertex_limits[0] || instance_end > prepared->vertex_limits[1]))
+            return DOE_VK_INVALID_ARGUMENT;
+    }
     for (size_t i = 0; i < draw->binding_count; ++i) {
         if ((draw->bindings[i].kind == DOE_VK_BINDING_SAMPLED_TEXTURE ||
             draw->bindings[i].kind == DOE_VK_BINDING_STORAGE_TEXTURE) &&
@@ -135,7 +128,9 @@ static void record_draw(doe_vk_commands *commands, const doe_vk_render_pass_draw
         context->vk.vkCmdBindVertexBuffers(commands->command, first, slot - first,
             prepared->buffers + first, prepared->offsets + first);
     }
-    context->vk.vkCmdDraw(commands->command, draw->draw.vertex_count, draw->draw.instance_count,
+    if (prepared->indirect != 0)
+        context->vk.vkCmdDrawIndirect(commands->command, prepared->indirect, 0, 1, 16);
+    else context->vk.vkCmdDraw(commands->command, draw->draw.vertex_count, draw->draw.instance_count,
         draw->draw.first_vertex, draw->draw.first_instance);
 }
 
@@ -197,6 +192,14 @@ doe_vk_status doe_vk_commands_render_pass_full(doe_vk_commands *commands,
             if (status == DOE_VK_OK) status = doe_vk_commands_reset_queries(commands,
                 occlusion, ops[i].value.query_index, 1);
         }
+        if (status != DOE_VK_OK) goto failed;
+    }
+    /* All target bindings are admitted before guards. Copies observe preceding
+     * producer commands, and every draw has a different retained scratch record. */
+    for (size_t i = 0; i < count; ++i) {
+        if (ops[i].kind != DOE_VK_RENDER_DRAW || ops[i].value.draw.indirect == NULL) continue;
+        status = doe_vk_draw_indirect_prepare(commands, ops[i].value.draw.indirect,
+            prepared[i].vertex_limits, &prepared[i].indirect);
         if (status != DOE_VK_OK) goto failed;
     }
     doe_vk_render_use *use = NULL;

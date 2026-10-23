@@ -82,6 +82,13 @@ def main():
             '    (void)query;',
             '}'
         ])
+    if "vkCmdDrawIndirect" in manifest.get("retained_functions", {}):
+        lines.extend([
+            'void doe_vk_abi_draw_indirect_signature(doe_vk_functions *functions) {',
+            '    void (*draw)(VkCommandBuffer, VkBuffer, VkDeviceSize, uint32_t, uint32_t) = functions->vkCmdDrawIndirect;',
+            '    (void)draw;',
+            '}'
+        ])
     assertions = 0
     for name, value in manifest.get("official_constants", {}).get("values", {}).items():
         lines.append(f'_Static_assert({name} == {value}, "{name} official constant");')

@@ -7,6 +7,7 @@ extern "C" {
 
 enum { DOE_VK_INDIRECT_SOURCE_CAPACITY = 512 };
 typedef struct doe_vk_dispatch_validator doe_vk_dispatch_validator;
+typedef struct doe_vk_draw_validator doe_vk_draw_validator;
 typedef struct doe_vk_dispatch_validator_desc {
     /* Compiler-validated SPIR-V from exactly the generated source for these
      * limits, entry main and workgroup size1. Compiler admission remains upstream. */
@@ -40,6 +41,18 @@ doe_vk_status doe_vk_commands_dispatch_indirect(doe_vk_commands *commands,
     doe_vk_dispatch_validator *validator, doe_vk_pipeline *pipeline,
     const doe_vk_binding_resource *bindings, size_t binding_count,
     doe_vk_buffer *arguments, uint64_t offset);
+/* Nonindexed graphics guard. The exact source reads four native draw words and
+ * two host-produced vertex/instance capacity words from one32-byte storage
+ * binding. Never substitute caller-selected capacities or another shader.
+ * This validator owns only its pipeline; each recorded draw allocates distinct
+ * scratch on the existing command owner. No indirect-first-instance feature. */
+enum { DOE_VK_DRAW_INDIRECT_SOURCE_CAPACITY = 1024 };
+doe_vk_status doe_vk_draw_validator_source(char *out, size_t capacity, size_t *out_length);
+doe_vk_status doe_vk_draw_validator_validate(const doe_vk_caps *caps);
+doe_vk_status doe_vk_draw_validator_create(doe_vk_context *context,
+    const uint32_t *spirv, size_t word_count, doe_vk_draw_validator **out, doe_vk_error *error);
+doe_vk_status doe_vk_draw_validator_retain(doe_vk_draw_validator *validator);
+void doe_vk_draw_validator_release(doe_vk_draw_validator *validator);
 #ifdef __cplusplus
 }
 #endif
