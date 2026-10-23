@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: MIT
  * Copyright (c) 2026 Doe contributors */
 #include "private.h"
+#include "../ir_view.h"
 #include <errno.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -57,14 +58,9 @@ bool doe_metal_binding_slot(uint32_t group, uint32_t binding, uint32_t *slot) {
     return true;
 }
 TypeId metal_value_type(MetalEmitter *e, uint32_t id) {
-    const CompilerWorkspace *c = e->module;
-    if (id > c->limits.instructions) {
-        const uint32_t formal = id - c->limits.instructions - 1u;
-        if (formal < c->formal_count) return c->formals[formal].type.resolved.type;
-    } else if (id != 0u && id <= c->instruction_count && c->instructions[id - 1u].result == id) {
-        return c->instructions[id - 1u].type;
-    }
-    metal_error(e, "Metal operand has no typed value identity");
+    TypeId type;
+    if (target_value_type(e->module, id, &type)) return type;
+    metal_error(e, "operand has no typed value identity");
     return IR_VOID;
 }
 void metal_value(MetalEmitter *e, uint32_t id) {

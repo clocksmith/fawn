@@ -1,0 +1,100 @@
+{
+  "status": "focused developer controls, not target compiler or hardware qualification",
+  "compiler_commit": "fa61e2c11e23499ff22962bb64086df29a1e2840",
+  "source_sha256": {
+    "runtime/c/compiler/targets/hlsl/Makefile": "db1c90659afee9d3139b053f7f47c5aafe628589fa83b56d5430fa97c5b946d2",
+    "runtime/c/compiler/targets/hlsl/access.c": "08dff2f1bf720e6353df4e3fd61f90fe728df59cb9e4d9107acabdf4e298c51e",
+    "runtime/c/compiler/targets/hlsl/control.c": "86fdbbd33f329ca2e9dfb4b3d586f4b1b377efdc9801764a2d3b26fb7a36c7f8",
+    "runtime/c/compiler/targets/hlsl/graphics.c": "32d670c8566a2eb95df42ed5cd520008e0547dd2dd7f4d0e1401ee780d18f02e",
+    "runtime/c/compiler/targets/hlsl/hlsl.h": "05a1731c996df3e36ff34d677cff8ec8ce1667841fd022ac10e4cc8261ee8f4b",
+    "runtime/c/compiler/targets/hlsl/image.c": "7da91071bb23d5f528ce9182ad4b0a76fb6752c904e3651239f7aae50c34d277",
+    "runtime/c/compiler/targets/hlsl/image_types.c": "3d05bae9af4b9ad01df127f95d751dc4b49ca576e6c3bdd1e0c13486f1c48649",
+    "runtime/c/compiler/targets/hlsl/numeric.c": "6abbb2c496ee08919d5d45d4bdb50bc36f1188bad8bec48d8a55a0a6ca773384",
+    "runtime/c/compiler/targets/hlsl/private.h": "afb7cb93af2260a1f9f56d4bfef172d5cb0566d696b1133adb63dcefbe8ab760",
+    "runtime/c/compiler/targets/hlsl/resources.c": "5b5bff7e9cdd0a8a4b175ec511fc1d1b229f09019fcb862c137974b4e58f6ff3",
+    "runtime/c/compiler/targets/hlsl/stage.c": "ac428334d86ba5507c6f95bca29c93fb5482d78dda68a9ba1073e5bde4dbdd03",
+    "runtime/c/compiler/targets/hlsl/tests/host_control.py": "8c84be079ee170240b9e3988186ecd369ecb41b18d26667204565f7f0d5b9691",
+    "runtime/c/compiler/targets/hlsl/tests/test_graphics.c": "9dd9925e3305c04ccf948296b289333e648a34c8dcca15fa10dac0224cb715c1",
+    "runtime/c/compiler/targets/hlsl/tests/test_hlsl.c": "818caefd04b58721e914376843d389f3e29f675a2b0e95514ac87a687a5df946",
+    "runtime/c/compiler/targets/hlsl/tests/test_images.c": "407b7bd62b71086310fc7e0e4ad34b1a591472861e966bf16ac6224ce9ee5313",
+    "runtime/c/compiler/targets/hlsl/tests/test_support.h": "9ecc7caef7f5a6265be58192193cb04f9376a9659c110a084b3ffc0bc2c26d69",
+    "runtime/c/compiler/targets/hlsl/text.c": "9f82dd159e56466d99f4c34b4eb94845b52accc0c8c8198f3f172b64c2335c50",
+    "runtime/c/compiler/targets/hlsl/types.c": "1d53408b9acdf12fec46e343ae9bc7b4b1b4d619b92dfcf123acbe9acaf406fc",
+    "runtime/c/compiler/targets/ir_view.h": "8ea72c04ede913cf8b070b7f49ce7cdb208cfbc8efc0fb67cea301893d2286f2",
+    "runtime/c/compiler/targets/metal/Makefile": "24bf090d45d2076c18371de6bc4d5aa8d90db1193c583e2e115a979fa6dd7a2e",
+    "runtime/c/compiler/targets/metal/access.c": "facc419d1b269642bb49968337d04e5448b6c9ea9d55430f4323bcc56d9b71c7",
+    "runtime/c/compiler/targets/metal/control.c": "f53bf43d711376a48aaab565bdbdfe6670f6f8bd305389efdb6fc8d552e155a4",
+    "runtime/c/compiler/targets/metal/handles.c": "dfa1e51e35dea98cf19f8327959c9bc8bd73214cbc7f99d053a43d2622b07912",
+    "runtime/c/compiler/targets/metal/image.c": "f5178d6a4de3bc3352bfe822cb2ed1670e3615607670f59795205bc54700eb77",
+    "runtime/c/compiler/targets/metal/metal.h": "0c70b018c82ea6627e0068b2d5ff39a4e96e79d3045a800e306e9cd7d2d8dda3",
+    "runtime/c/compiler/targets/metal/numeric.c": "57995dd2e7afbe9168f243e8c3c6343730051c5f1f8c318dc21ccbccb99d7937",
+    "runtime/c/compiler/targets/metal/private.h": "54e3febf029a7131187854fc56df3cbd6f049dba2270c2ba8520fec2d3d8da72",
+    "runtime/c/compiler/targets/metal/stage.c": "c916e2a59aa91d8171fe218e4298161209defa0b8c5626281b4190012a9c13cc",
+    "runtime/c/compiler/targets/metal/tests/fixture.h": "e5f17ded68a16ab2a80c553089f58fb92d645ef93d7fd8042343797b4c7f0017",
+    "runtime/c/compiler/targets/metal/tests/host/check_array_length.cpp": "fc3700cae7303d72cfa9f35da85e9e99dc2153a3d7075cbf6904e731d0b021fc",
+    "runtime/c/compiler/targets/metal/tests/host/check_images.cpp": "08351f1461e51fd318bfe00d96c1fe9edbed824e565faead571befb573c58977",
+    "runtime/c/compiler/targets/metal/tests/host/check_layout.cpp": "5e1df0b98f52aac05b68927b9f237ce29b604125b208c8b59aa7ee89b9a01f35",
+    "runtime/c/compiler/targets/metal/tests/host/check_scalar.cpp": "c0ac92c6c5fada67e51ff591db658cea37f28044cbbeefea5f4b301d40c48622",
+    "runtime/c/compiler/targets/metal/tests/host/image_control.h": "1b4432b40a68fc7fe24bc2779ef9ac25b2b578c46e67130dda7e6d2999f52d00",
+    "runtime/c/compiler/targets/metal/tests/host/metal_stdlib": "e64d9361f3e186fc2507347ec1cda2842af41fc209492a06604676a32dfc996e",
+    "runtime/c/compiler/targets/metal/tests/host/vector_control.h": "9758db29a1d847a524760945ffac6b0da16e27733a7d25b721c7f7095f9f77c8",
+    "runtime/c/compiler/targets/metal/tests/test_images.c": "b78ed4e5c1d1d4a7c0d7af759ded4e806314c94ace24f6baffb7508605843915",
+    "runtime/c/compiler/targets/metal/tests/test_metal.c": "3dfe5fe86e0202818253cfaef8c3af9df76ad0034fec2d9f5142f5bbe480fd43",
+    "runtime/c/compiler/targets/metal/text.c": "09564401f9883f9bbf7f88a650f387ed01952ea90f022065e19b95b061787a5f",
+    "runtime/c/compiler/targets/metal/types.c": "f86e450598821f723eef27de7b62bf8c08210a2d6e71db4c73f94cb401e3a5f1",
+    "runtime/c/compiler/targets/tests/array_length_source.h": "6ef6a21f83d29b485220232b7d1fc53390ddca90eef87546320db8d443cba16e",
+    "runtime/c/compiler/targets/tests/test_ir_view.c": "5feb85ec806b40ca9e7ba12f9fd8a60ca076955dd6f29bf570b514cf80f15929"
+  },
+  "commands": [
+    "make -C runtime/c/compiler/targets/hlsl check host-control library OUT=/tmp/doe-hlsl-array",
+    "make -C runtime/c/compiler/targets/metal check host-control image-host-control library OUT=/tmp/doe-metal-array",
+    "gcc -std=c11 -O2 -Wall -Wextra -Wpedantic -Werror -fsanitize=address,undefined runtime/c/compiler/targets/tests/test_ir_view.c -o /tmp/doe-target-ir-view",
+    "ASAN_OPTIONS=detect_leaks=0:halt_on_error=1 /tmp/doe-target-ir-view"
+  ],
+  "checks": [
+    "Strict GCC14.2 C11 both targets and archives",
+    "Six HLSL emitted-operation C++ controls with UBSan",
+    "Metal scalar, aggregate, seven-image-operation and runtime-array metadata controls; array metadata with UBSan",
+    "Shared malformed value/formal/access-path/tail metadata controls, normal and ASan/UBSan",
+    "Short/partial/prefixed vector-element views and sentinel outputs; HLSL invalid word-view stride and large-count refusal"
+  ],
+  "first_failures": [
+    {
+      "kind": "host control shim compile",
+      "detail": "New vector-element layout fixture exposed missing uint4 in the C++ shim; added the ordinary array representation, preserving source and expected output. No target or WGSL workaround.",
+      "log": "doe-hlsl-fa61e2c1.log"
+    },
+    {
+      "kind": "size checker invocation",
+      "detail": "Passing a directory is not supported; reran the existing complete-tree checker:436 files,0 violations. No code change."
+    }
+  ],
+  "limits": [
+    "No DXC/DXIL/D3D12 or Apple Metal SDK/native target qualification",
+    "Host shims erase target resource/address semantics and are not GPU simulators",
+    "Unused memory helper trimming remains a separately tracked open review finding",
+    "Pinned fa61 core, not concurrent matrix-author bytes"
+  ],
+  "logs": {
+    "doe-hlsl-fa61e2c1.log": {
+      "sha256": "3e3f25bfb44288662354e716f4fb170245fdf558fa53cc6a6a6f5ecc1c16eff9",
+      "compressed_file": "doe-hlsl-fa61e2c1.log.gz"
+    },
+    "doe-hlsl-fa61e2c1-r2.log": {
+      "sha256": "b5a0edd6f57bd4d69b4b1cb95e54b4d419b154bae1826e2f5d5181d805a520fb",
+      "compressed_file": "doe-hlsl-fa61e2c1-r2.log.gz"
+    },
+    "doe-metal-fa61e2c1.log": {
+      "sha256": "c36eb7eb9e8f217870548a50c61c2c4d307e49eecd61b57fff4dbaf6f3e1e318",
+      "compressed_file": "doe-metal-fa61e2c1.log.gz"
+    },
+    "doe-hlsl-fa61-ir-check.log": {
+      "sha256": "ad13b3679c187df8528c4fdf8b6f009d9ce072bee7cee65d9c35188801bf6ee1",
+      "compressed_file": "doe-hlsl-fa61-ir-check.log.gz"
+    },
+    "doe-metal-fa61-ir-check.log": {
+      "sha256": "446be613a164efcc487a5fe836b983449829252c8037442bdb976a1e94bd25c5",
+      "compressed_file": "doe-metal-fa61-ir-check.log.gz"
+    }
+  }
+}

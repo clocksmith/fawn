@@ -220,6 +220,7 @@ void metal_expression(MetalEmitter *e, const IrInstruction *ir) {
             break;
         }
         case IR_LOCAL_LOAD: metal_format(e, "l%u", ir->operands.scalar.binding); break;
+        case IR_ARRAY_LENGTH: metal_array_length(e, ir); break;
         case IR_INPUT:
             if (ir->operands.scalar.binding >= e->module->entry_input_count) {
                 metal_error(e, "Metal builtin input identity is invalid");

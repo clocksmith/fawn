@@ -34,6 +34,7 @@ uint32_t hlsl_image_components(HlslEmitter *, const TypeRecord *);
 void hlsl_numeric_helpers(HlslEmitter *);
 void hlsl_expression(HlslEmitter *, const IrInstruction *);
 void hlsl_composite(HlslEmitter *, const IrInstruction *);
+void hlsl_array_length(HlslEmitter *, const IrInstruction *);
 void hlsl_access(HlslEmitter *, const IrInstruction *);
 void hlsl_functions(HlslEmitter *);
 void hlsl_entry_name(HlslEmitter *, NameSpan);

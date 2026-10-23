@@ -29,3 +29,7 @@ borrowed-module/output contract; this directory does not select a public target.
   space7, and conflicts reject rather than silently changing the native ABI.
 - Run `make check host-control library`. These establish native C compilation and
   bounded developer controls, not DXC, DXIL, D3D12 or physical GPU acceptance.
+
+Shared read-only value IDs, ordered access-path traversal and runtime-tail metadata
+live in `../ir_view.h`. Keep target syntax/address policy outside that leaf;
+`../tests/test_ir_view.c` exercises malformed identities independently of emitters.

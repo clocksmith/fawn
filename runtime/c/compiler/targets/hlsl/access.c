@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: MIT
  * Copyright (c) 2026 Doe contributors */
 #include "private.h"
+#include "../ir_view.h"
 #include <inttypes.h>
 
 typedef struct {
@@ -8,20 +9,11 @@ typedef struct {
     uint32_t count;
 } HlslPath;
 static bool collect_path(HlslEmitter *e, uint32_t path, HlslPath *out) {
-    while (path != NO_ID && !e->failed) {
-        if (path >= e->module->access_count || out->count == DOE_HLSL_MAX_DEPTH) {
-            hlsl_error(e, "Hlsl access path exceeds its identity or traversal bounds");
-            return false;
-        }
-        out->steps[out->count++] = path;
-        const uint32_t parent = e->module->accesses[path].parent;
-        if (parent != NO_ID && parent >= path) {
-            hlsl_error(e, "Hlsl access path is cyclic or unordered");
-            return false;
-        }
-        path = parent;
-    }
-    return !e->failed;
+    if (e->failed) return false;
+    const char *error = target_access_path(e->module, path, out->steps,
+        DOE_HLSL_MAX_DEPTH, &out->count);
+    if (error != NULL) hlsl_error(e, error);
+    return error == NULL;
 }
 static const TypeRecord *path_input(HlslEmitter *e, const AccessStep *step) {
     if (step->input_type < 7u || step->input_type - 7u >= e->module->type_count) {
@@ -187,4 +179,15 @@ void hlsl_access(HlslEmitter *e, const IrInstruction *ir) {
     hlsl_line(e, "}");
     --e->indent;
     hlsl_line(e, "}");
+}
+
+void hlsl_array_length(HlslEmitter *e, const IrInstruction *ir) {
+    const uint32_t index = ir->operands.scalar.binding;
+    const ResourceRecord *r = target_runtime_array(e->module, index);
+    if (r == NULL || ir->type != IR_U32 || r->tail_offset > UINT32_MAX || r->tail_stride > UINT32_MAX) {
+        hlsl_error(e, "HLSL arrayLength requires a bounded storage runtime array");
+        return;
+    }
+    hlsl_format(e, "(doe_r%u_bytes() >= %" PRIu64 "u ? (doe_r%u_bytes() - %" PRIu64
+        "u) / %" PRIu64 "u : 0u)", index, r->tail_offset, index, r->tail_offset, r->tail_stride);
 }

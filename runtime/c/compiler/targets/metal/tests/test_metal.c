@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: MIT
  * Copyright (c) 2026 Doe contributors */
 #include "fixture.h"
+#include "../../tests/array_length_source.h"
 
 static void test_residual(void) {
     const char *source = "struct Params { count:u32, }"
@@ -190,7 +191,20 @@ static void test_unimplemented_subgroups(void) {
         release(f);
     }
 }
+static void test_array_length(const char *path) {
+    Fixture *f = prepare(array_length_source);
+    char *text = emit(f, 0u);
+    if (path != NULL) {
+        FILE *file = fopen(path, "wb");
+        assert(file != NULL);
+        assert(fwrite(text, 1u, strlen(text), file) == strlen(text));
+        assert(fclose(file) == 0);
+    }
+    free(text);
+    release(f);
+}
 int main(int argc, char **argv) {
+    test_array_length(argc > 3 ? argv[3] : NULL);
     uint32_t slot = NO_ID;
     assert(doe_metal_binding_slot(1u, 13u, &slot) && slot == 29u);
     assert(!doe_metal_binding_slot(1u, 14u, &slot));

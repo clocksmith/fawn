@@ -162,3 +162,8 @@ proof that a target compiler accepts the source.
 No historical evidence or tests were removed. The private Metal adapter's
 measurement/control patterns informed this target; HLSL resource and entry
 contracts remain separate rather than creating a universal emitter framework.
+
+`arrayLength` uses the shared resolved storage-tail offset/stride and the bound
+view's size metadata. It does not inspect element contents or infer a short view
+from a separate allocation size. The emitted-operation fixture covers a prefixed
+vector-element runtime tail, short views, partial elements and size-table identity.

@@ -128,3 +128,8 @@ records source hashes, commands, first failures and scope.
 Existing independent tests and historical accepted receipts remain untouched.
 The shared compiler build/API is not switched to this owner. Parent integration
 owns any shared dispatch or public ABI changes.
+
+`arrayLength` uses the shared resolved storage-tail offset/stride and the bound
+view's size metadata. It does not inspect element contents or infer a short view
+from a separate allocation size. The emitted-operation fixture covers a prefixed
+vector-element runtime tail, short views, partial elements and size-table identity.
