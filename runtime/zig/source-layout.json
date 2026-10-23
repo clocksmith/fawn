@@ -519,7 +519,8 @@
       "ffi-boundary": {
         "globs": [
           "src/**/*bridge*.zig",
-          "src/**/*ffi*.zig"
+          "src/**/*ffi*.zig",
+          "src/native/support/doe_future_c_adapter.zig"
         ]
       },
       "generated": {
@@ -3238,9 +3239,9 @@
       },
       "src/dropin/wgpu_dropin_ext_a_pipeline.zig": {
         "decision": "Keep",
-        "moduleSha256": "657524f2117dab8261291b6077f95527de17c3461c2a811f88e97f1b82464758",
-        "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission.",
-        "reviewer": "codex"
+        "moduleSha256": "94a84216b0e21bb01580b5ca1e6dc7a5ca36de184e8290ecef9e040446f97847",
+        "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission. The frozen experimental future-owner facade selects one identity domain; retained default behavior is unchanged.",
+        "reviewer": "codex-c-futures-integration/2026-10-23"
       },
       "src/dropin/wgpu_dropin_ext_b.zig": {
         "decision": "Keep",
@@ -3580,9 +3581,9 @@
       },
       "src/native/lifecycle/doe_instance_device_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "c54494b9f10aa51316b8a59a401756ae6ba4dd57b76567aa476090a881dc56ac",
-        "reason": "Keep: shared Metal device metadata projection is used by enumeration and the authoritative native adapter owner. Typed native validation replaces a stale mirrored object layout; unified memory determines classification while low-power remains an independent selection trait.",
-        "reviewer": "codex-bee-doe/2026-10-21"
+        "moduleSha256": "06bef98aeb2be295bed8ad35d9748428961f927ff0a076566e8ed17664d6a7d5",
+        "reason": "Keep: shared Metal device metadata projection is used by enumeration and the authoritative native adapter owner. Typed native validation replaces a stale mirrored object layout; unified memory determines classification while low-power remains an independent selection trait. Experimental C futures selection preserves this owner and its default retained behavior; real instance creation/destruction initializes and retires selected storage only.",
+        "reviewer": "codex-c-futures-integration/2026-10-23"
       },
       "src/native/mod.zig": {
         "decision": "Keep",
@@ -3604,9 +3605,9 @@
       },
       "src/native/queue/doe_queue_lifecycle.zig": {
         "decision": "Keep",
-        "moduleSha256": "0cbd94d0f7194cd8168b71bb8a52f314c40b34ea74e6052673c4b7c2af109508",
-        "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission.",
-        "reviewer": "codex"
+        "moduleSha256": "b00f90d34ca86230d5e2cdfdb14ffc6c33f775469e82b5e763edfeb0b35e8e9e",
+        "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission. The frozen experimental future-owner facade selects one identity domain; retained default behavior is unchanged.",
+        "reviewer": "codex-c-futures-integration/2026-10-23"
       },
       "src/native/queue/doe_queue_submit_d3d12.zig": {
         "decision": "Keep",
@@ -3778,9 +3779,9 @@
       },
       "src/native/support/doe_native_object_types.zig": {
         "decision": "Keep",
-        "moduleSha256": "05c562c213593d4f2ac7c2ab63afdf13e1e47102ff15c2bf0a10d3b3e3c75698",
-        "reason": "Keep: native command submission consumes each command buffer once, including rejected batches, while shared availability admission prevents partial execution. Bind group layouts record whether they are a pipeline's automatic layout so backends can keep that layout exclusive. Object state, validation and backend dispatch retain their existing owners; no new replay API.",
-        "reviewer": "claude-d3d12-package/2026-10-22"
+        "moduleSha256": "ea7cc1a43510aae0a20a4870f7305b7ccfd5aa7713413eafad980b1874219cb7",
+        "reason": "Keep: native command submission consumes each command buffer once, including rejected batches, while shared availability admission prevents partial execution. Bind group layouts record whether they are a pipeline's automatic layout so backends can keep that layout exclusive. Object state, validation and backend dispatch retain their existing owners; no new replay API. The frozen experimental future-owner facade selects one identity domain; retained default behavior is unchanged.",
+        "reviewer": "codex-c-futures-integration/2026-10-23"
       },
       "src/native/support/doe_native_runtime_helpers.zig": {
         "decision": "Keep",
@@ -4420,15 +4421,15 @@
       },
       "src/native/support/doe_callback_delivery.zig": {
         "decision": "Keep",
-        "moduleSha256": "9d8c865e9139a9cdd56aca06e070b85e2497d3cf0ceee877fab7fb3d2382d31e",
-        "reason": "Keep: Instance completion identities and callback delivery; callback mode controls delivery, resource leases survive foreign callbacks, and native GPU synchronization remains with its backend owner.",
-        "reviewer": "codex-vulkan-callbacks/2026-10-08"
+        "moduleSha256": "df2a9c3c22885de9f8567dbee0192e293d85d3fe9312920ee9bd94966d3eefe3",
+        "reason": "Keep: Instance completion identities and callback delivery; callback mode controls delivery, resource leases survive foreign callbacks, and native GPU synchronization remains with its backend owner. The frozen experimental future-owner facade selects one identity domain; retained default behavior is unchanged.",
+        "reviewer": "codex-c-futures-integration/2026-10-23"
       },
       "src/native/support/doe_device_loss.zig": {
         "decision": "Keep",
-        "moduleSha256": "04044b38f47e68a86b6c6070dc9de9a2be04e8cf08174335a675e7e7e60f9c13",
-        "reason": "Keep: owns one descriptor loss obligation, instance future, weak device identity and scoped callback lease; independent of platform cleanup.",
-        "reviewer": "codex"
+        "moduleSha256": "640404efcc1fdaf3eb11bde96e14a2e4662f920892ac0cccdce7f250f910bb70",
+        "reason": "Keep: owns one descriptor loss obligation, instance future, weak device identity and scoped callback lease; independent of platform cleanup. The frozen experimental future-owner facade selects one identity domain; retained default behavior is unchanged.",
+        "reviewer": "codex-c-futures-integration/2026-10-23"
       },
       "src/compiler/wgsl/ir/ir_packed_integer.zig": {
         "decision": "Keep",
@@ -4459,6 +4460,18 @@
         "moduleSha256": "ed369e27999476857bc9d9a7aac8fd9d47b8db590258bacf5d8b64e5775a53bf",
         "reason": "Keep: nearest-loop continuing emission and shared IR local identity preserve control flow across shadowed scopes without changing runtime ownership.",
         "reviewer": "codex-msl-continuing/2026-10-21"
+      },
+      "src/native/support/doe_future_owner.zig": {
+        "decision": "Keep",
+        "moduleSha256": "0ebbb84a867fd05559dcf2c995b005183fca79a892db5aac008200594065e180",
+        "reason": "Keep: single default-off build selection facade and instance init/deinit delegation for the five retained native consumers; no independent queue or identity policy.",
+        "reviewer": "codex-c-futures-integration/2026-10-23"
+      },
+      "src/native/support/doe_future_c_adapter.zig": {
+        "decision": "Keep",
+        "moduleSha256": "8771427fe0881525226d9d04cf7079c4a804d1699469fb43fdb8c56e0d5b1a67",
+        "reason": "Keep: narrow private native C FFI boundary owns typed storage adaptation, checked wait copies and full-call instance leases; C remains sole selected queue/identity authority.",
+        "reviewer": "codex-c-futures-integration/2026-10-23"
       }
     },
     "linePolicy": {

@@ -97,8 +97,23 @@ The first [CPU runtime owner](../../runtime/c/futures/RESULTS.md) is independent
 accepted as an isolated C library for future IDs and completion queues. It retains
 issuance-boundary selection, callback reentry, actual condition waits and explicit
 retirement, with tested cleanup failures and native C/C++ consumption. Payload
-allocation, instance/device leases, production runtime consumers and GPU completion
-remain unqualified. This does not change the zero production-replacement count.
+allocation, instance/device ownership and GPU completion remain separate owners.
+This does not change the zero production-default replacement count.
+
+The [default-off native integration](../../runtime/c/futures/integration/RESULTS.md)
+now exercises this C queue through actual retained instance/callback consumers,
+including independently source-built shared-library consumption, last-caller
+release, reentry, worker publication and fault cleanup. It is a mixed-language
+CPU owner adoption, not a production switch or backend qualification. C-only
+sanitizer coverage does not cover retained Zig reference counts or allocators.
+
+New Zig source is explicitly transitional, not omitted from the migration goal:
+`runtime/zig/src/native/support/doe_future_owner.zig` selects the retained/C owner,
+and `doe_future_c_adapter.zig` adapts real typed storage, leases and wait records.
+Both production-use additions must eventually have an exercised C-caller route
+or approved removal before the full Zig-free gate closes. The new
+`test_suite_c_futures.zig` and `tests/c_futures_integration_test.zig` are test
+infrastructure additions. None alters the immutable 809-file baseline inventory.
 
 ## Existing authority, not a parallel policy
 

@@ -1311,6 +1311,15 @@
           "kind": "characterization"
         }
       ]
+    },
+    "c-futures-integration": {
+      "output": "test_suite_c_futures.zig",
+      "entries": [
+        {
+          "path": "tests/c_futures_integration_test.zig",
+          "kind": "integration"
+        }
+      ]
     }
   },
   "supportFiles": [

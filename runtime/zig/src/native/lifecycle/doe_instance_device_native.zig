@@ -505,6 +505,10 @@ pub export fn doeNativeCreateInstance(desc: ?*anyopaque) callconv(.c) ?*anyopaqu
     _ = desc;
     const inst = make(DoeInstance) orelse return null;
     inst.* = .{};
+    @import("../support/doe_future_owner.zig").initialize(&inst.pending_completions, toOpaque(inst), doeNativeInstanceAddRef, doeNativeInstanceRelease) catch {
+        alloc.destroy(inst);
+        return null;
+    };
     return toOpaque(inst);
 }
 
@@ -528,6 +532,7 @@ pub export fn doeNativeInstanceRelease(raw: ?*anyopaque) callconv(.c) void {
             return;
         }
         if (!native_helpers.object_should_destroy(inst)) return;
+        @import("../support/doe_future_owner.zig").deinitialize(&inst.pending_completions);
         native_helpers.label_store.remove(raw);
         alloc.destroy(inst);
     }

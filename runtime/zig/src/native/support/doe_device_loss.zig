@@ -3,7 +3,7 @@ const std = @import("std");
 const abi = @import("../../core/abi/wgpu_callback_descriptor_types.zig");
 const base = @import("../../core/abi/wgpu_core_base_types.zig");
 const leases = @import("../../contracts/resource_lease.zig");
-const futures = @import("doe_future_ids.zig");
+const futures = @import("doe_future_owner.zig");
 
 pub const References = struct {
     retain_device: *const fn (?*anyopaque) callconv(.c) void,
