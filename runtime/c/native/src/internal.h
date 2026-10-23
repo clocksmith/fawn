@@ -154,9 +154,11 @@ doe_resource_status native_resolve_resources(const native_pipeline *pipeline,
     const doe_resource_dispatch_offsets *offsets, doe_resource_binding *out);
 bool native_stage_load(native_device *device, WGPUShaderModule module, WGPUStringView name,
     uint32_t stage, native_stage *out);
-doe_vk_status native_resolve_bindings(const native_pipeline *pipeline, doe_resource_pipeline_layout *layout,
-    doe_resource_bind_group *const *groups, const doe_resource_dispatch_offsets *offsets,
-    doe_vk_binding_resource *bindings);
+/* Non-NULL commands also zero-initialize each bound texture's undefined
+ * subresources (after an attachment Discard) before the binding is recorded. */
+doe_vk_status native_resolve_bindings(doe_vk_commands *commands, const native_pipeline *pipeline,
+    doe_resource_pipeline_layout *layout, doe_resource_bind_group *const *groups,
+    const doe_resource_dispatch_offsets *offsets, doe_vk_binding_resource *bindings);
 doe_vk_status native_record_render(doe_vk_commands *commands,
     const doe_resource_command *records, size_t count, size_t *consumed);
 WGPURenderPipeline native_create_render_pipeline(native_device *device,

@@ -253,6 +253,12 @@ doe_vk_status doe_vk_commands_render_pass_full(doe_vk_commands *commands,
  * Raw full-pass LOAD stays strict. Failure poisons commands; leases retain work. */
 doe_vk_status doe_vk_commands_initialize_attachment(doe_vk_commands *commands,
     doe_vk_texture_view *view);
+/* Whole-image form of the same owner for non-pass consumers (copies, sampled or
+ * storage bindings): clears every undefined aspect of an attachment-capable 2D
+ * image, e.g. after a color or depth/stencil Discard. Other images are complete
+ * from creation, so this is a no-op for them and for initialized subresources. */
+doe_vk_status doe_vk_commands_initialize_texture(doe_vk_commands *commands,
+    doe_vk_texture *texture);
 /* General typed pass span. Occlusion events require the one supplied occlusion
  * pool. Nesting, unclosed events and duplicate indices within a pass reject
  * before native begin. Written slots are reset before begin, then native query

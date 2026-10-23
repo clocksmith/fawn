@@ -409,6 +409,11 @@ D24S8 fixture as unsupported; the retained failure was followed by explicitly
 selecting D32S8, not a hidden backend fallback. `depth_contract` checks native
 aspect/load/store records, discard, preflight errors, leases and rollback.
 
+`doe_vk_commands_initialize_texture` is the whole-image form of the same owner for
+non-pass consumers (copies, sampled/storage bindings): it clears undefined aspects
+of an attachment-capable 2D image through temporary single-subresource views and
+is a no-op for initialized subresources and for images without attachment usage,
+which are complete from creation. `tests/depth_contract.c` checks it.
 `doe_vk_commands_initialize_attachment` owns zero initialization through actual
 empty native passes, not CPU availability mirrors. It examines the existing
 speculative aspect masks, clears only undefined aspects of the selected 2D

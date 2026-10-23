@@ -132,6 +132,12 @@ Apple SDK compilation, Darwin execution and physical qualification remain unrun.
   alpha-to-coverage. A vertex-only depth pipeline needs neither a fabricated
   fragment shader nor a color target. Discarded multisample color is initialized
   by the existing backend aspect owner before a later Load.
+- Color storeOp Discard is admitted for single-sample attachments too: Vulkan
+  STORE_OP_DONT_CARE and the backend's per-aspect owner marks the subresource
+  undefined. Later Load passes, buffer/texture copies and sampled or storage
+  bindings first run `doe_vk_commands_initialize_texture`, the whole-image form of
+  the same attachment initializer, so they read GPU zero clears (this also covers
+  copies/bindings after a depth or stencil Discard). No CPU contents are written.
 - Indirect Vulkan commands consume GPU-produced argument bytes through backend-
   generated WGSL guards compiled by the existing C shader owner. Dispatch guards
   use the admitted device dimension limits; draw guards use exact bound vertex/
@@ -394,7 +400,7 @@ admits up to eight sparse color slots and/or depth/stencil, sample counts 1 and 
 triangle/line lists or strips and every pinned WebGPU vertex format (8/16/32-bit
 integer and normalized, float16/32, unorm10-10-10-2, unorm8x4-bgra) with offsets
 aligned to min(4, format size).
-PointList without device maintenance5, single-sample color Discard, dual-source blending,
+PointList without device maintenance5, dual-source blending,
 vertex-stage storage writes (fragment writes need enabled fragmentStoresAndAtomics)
 and fragment FragDepth/SampleIndex/SampleMask
 remain explicitly rejected. WGSL discard requires actual enabled demote support;
@@ -459,6 +465,7 @@ PASS public depth/stencil copies: rendered depth32float .25/.75 via DepthOnly/Al
 PASS public indexed draws: uint16/uint32 indices, firstIndex, signed base vertex, instance selection, offset index ranges, pass/bundle replay, uint16/uint32 strip primitive restart, 9 GPU-produced drawIndexedIndirect records with exact-end/out-of-range/wrapping/zero/firstInstance/instance-overrun guards, unchanged arguments, 13 typed validation controls and early releases; exact 192 pixels (CPU Vulkan only)
 PASS public ABI9 atomics: storage accumulation, signed OOB suppression, compare-exchange result identity, fresh workgroup initialization across two groups and two dispatches, early releases (CPU Vulkan only)
 PASS public debug markers: typed procedures, independent nested balance, parent lock, underflow, malformed strings and finished/unbalanced command/pass/bundle rejection (CPU Vulkan only)
+PASS public attachment discard: single-sample color discard then direct copy, Load pass and compute textureLoad all read GPU zeros, Store control keeps green, discarded depth32float copies as 0.0, early releases; exact 40 texels and 32 loaded components (CPU Vulkan only)
 PASS public point lists: enabled maintenance5 default point size, 9 one-pixel points at exact centers from a direct draw, a render bundle and an indexed draw with an unselected decoy, stripIndexFormat control, early releases; exact 32 pixels (CPU Vulkan only)
 PASS public MSAA: actual 4x color/depth, exact resolve pixels, mask0/zero-and-full alpha coverage, empty resolve, same-batch discard-zero and depth-only empty/query/bundle passes (CPU Vulkan only)
 PASS public depth/stencil: zero publication, genuine vertex-only depth draw, depth ordering/read-only bundles, selected array/mip aspects, dynamic stencil, culled writes, same-batch discard/reinitialize preserving the other aspect, early releases and admission negatives (CPU Vulkan only)
