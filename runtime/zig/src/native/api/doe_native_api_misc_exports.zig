@@ -29,7 +29,7 @@ pub const doeNativeAdapterGetPciIdentity = adapter_info.doeNativeAdapterGetPciId
 
 pub const doeNativeShaderModuleGetCompilationInfo = shader_compilation_info.doeNativeShaderModuleGetCompilationInfo;
 
-pub const label_store = @import("../support/doe_label_store.zig");
+pub const label_store = @import("../support/doe_label_owner.zig");
 pub const doeNativeObjectSetLabel = label_store.doeNativeObjectSetLabel;
 pub const doeNativeObjectGetLabel = label_store.doeNativeObjectGetLabel;
 pub const doeNativeObjectRemoveLabel = label_store.doeNativeObjectRemoveLabel;

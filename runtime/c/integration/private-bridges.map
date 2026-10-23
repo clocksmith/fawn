@@ -1,0 +1,13 @@
+/* Exact build-bound bridges; do not hide the independently usable C APIs. */
+{
+    local:
+        doe_futures_zig_queue_layout;
+        doe_futures_zig_completion_layout;
+        doe_futures_zig_queue_init;
+        doe_futures_zig_completion_init;
+        doe_error_scopes_zig_stack_layout;
+        doe_error_scopes_zig_entry_layout;
+        doe_error_scopes_zig_result_layout;
+        doe_error_scopes_zig_string_layout;
+        doe_error_scopes_zig_init;
+};

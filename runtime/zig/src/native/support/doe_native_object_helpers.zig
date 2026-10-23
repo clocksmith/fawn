@@ -8,7 +8,7 @@ const leases = @import("../../contracts/resource_lease.zig");
 var gpa = std.heap.GeneralPurposeAllocator(.{}){};
 
 pub const alloc = gpa.allocator();
-pub const label_store = @import("doe_label_store.zig");
+pub const label_store = @import("doe_label_owner.zig");
 
 pub fn make(comptime T: type) ?*T {
     return create(T, alloc) catch null;

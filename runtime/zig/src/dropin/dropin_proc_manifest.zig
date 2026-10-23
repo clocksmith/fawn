@@ -181,14 +181,32 @@ fn assertUniqueEntryGroups(comptime groups: anytype) void {
     }
 }
 
+const NATIVE_OWNER: dropin_symbol_ownership.SymbolOwner = .shared;
+
+const ACTIVE_PROC_GROUPS = switch (TIER) {
+    .compute => .{CORE_PROC_ENTRIES},
+    .headless => .{ CORE_PROC_ENTRIES, HEADLESS_PROC_ENTRIES },
+    .full => .{ CORE_PROC_ENTRIES, HEADLESS_PROC_ENTRIES, FULL_PROC_ENTRIES },
+};
+
+// Identity-only projection. Typed procedure resolution stays with this manifest.
+pub const ACTIVE_IDENTITIES = blk: {
+    var count: usize = 0;
+    for (ACTIVE_PROC_GROUPS) |group| count += group.len;
+    var identities: [count]dropin_symbol_ownership.SymbolOwnership = undefined;
+    var index: usize = 0;
+    for (ACTIVE_PROC_GROUPS) |group| {
+        for (group) |entry| {
+            identities[index] = .{ .symbol = entry.symbol, .owner = NATIVE_OWNER };
+            index += 1;
+        }
+    }
+    break :blk identities;
+};
+
 comptime {
     @setEvalBranchQuota(100_000);
-    const active_groups = switch (TIER) {
-        .compute => .{CORE_PROC_ENTRIES},
-        .headless => .{ CORE_PROC_ENTRIES, HEADLESS_PROC_ENTRIES },
-        .full => .{ CORE_PROC_ENTRIES, HEADLESS_PROC_ENTRIES, FULL_PROC_ENTRIES },
-    };
-    assertUniqueEntryGroups(active_groups);
+    assertUniqueEntryGroups(ACTIVE_PROC_GROUPS);
 }
 
 pub fn resolveDoeNativeProc(comptime FnType: type, comptime symbol_name: [:0]const u8) ?FnType {
@@ -209,12 +227,12 @@ pub fn resolveDoeNativeProc(comptime FnType: type, comptime symbol_name: [:0]con
 }
 
 pub fn manifestOwnerForSymbol(symbol_name: []const u8) ?dropin_symbol_ownership.SymbolOwner {
-    if (hasSymbolInEntries(symbol_name, CORE_PROC_ENTRIES)) return .shared;
+    if (hasSymbolInEntries(symbol_name, CORE_PROC_ENTRIES)) return NATIVE_OWNER;
     if (comptime TIER != .compute) {
-        if (hasSymbolInEntries(symbol_name, HEADLESS_PROC_ENTRIES)) return .shared;
+        if (hasSymbolInEntries(symbol_name, HEADLESS_PROC_ENTRIES)) return NATIVE_OWNER;
     }
     if (comptime TIER == .full) {
-        if (hasSymbolInEntries(symbol_name, FULL_PROC_ENTRIES)) return .shared;
+        if (hasSymbolInEntries(symbol_name, FULL_PROC_ENTRIES)) return NATIVE_OWNER;
     }
     return null;
 }

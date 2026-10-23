@@ -163,8 +163,11 @@ fn routeAndRecordForName(
     route: dropin_router.RouteDecision,
     resolved: bool,
 ) void {
-    const diagnostics_owner = dropin_proc_manifest.manifestOwnerForSymbol(symbol_name) orelse
-        dropin_runtime_config.symbolOwnerForName(symbol_name);
+    const diagnostics_owner = if (comptime build_options.experimental_c_dropin_policy)
+        dropin_runtime_config.symbolOwnerForName(symbol_name)
+    else
+        dropin_proc_manifest.manifestOwnerForSymbol(symbol_name) orelse
+            dropin_runtime_config.symbolOwnerForName(symbol_name);
     dropin_diagnostics.record(
         symbol_name,
         dropin_symbol_ownership.symbol_owner_name(diagnostics_owner),

@@ -1338,6 +1338,33 @@
           "kind": "integration"
         }
       ]
+    },
+    "c-dropin-policy": {
+      "output": "test_suite_c_dropin_policy.zig",
+      "entries": [
+        {
+          "path": "tests/c_dropin_policy_integration_test.zig",
+          "kind": "integration"
+        }
+      ]
+    },
+    "c-labels": {
+      "output": "test_suite_c_labels.zig",
+      "entries": [
+        {
+          "path": "tests/c_labels_integration_test.zig",
+          "kind": "integration"
+        }
+      ]
+    },
+    "c-error-scopes": {
+      "output": "test_suite_c_error_scopes.zig",
+      "entries": [
+        {
+          "path": "tests/c_error_scopes_integration_test.zig",
+          "kind": "integration"
+        }
+      ]
     }
   },
   "supportFiles": [
@@ -1435,6 +1462,14 @@
       "kind": "domain-fixture",
       "consumers": [
         "tests/wgsl/translation_facade_test.zig"
+      ]
+    },
+    {
+      "path": "tests/support/c_error_scopes_fixture.zig",
+      "kind": "domain-fixture",
+      "consumers": [
+        "tests/c_error_scopes_integration_test.zig",
+        "test_c_error_scopes_library.zig"
       ]
     }
   ]
