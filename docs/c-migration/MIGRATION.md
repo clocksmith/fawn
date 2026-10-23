@@ -81,6 +81,13 @@ through the unchanged consumer, target validation and instruction execution;
 function state/control flow and the complete compiler dependency chain. It does
 not declare an accepted production replacement.
 
+The first [CPU runtime owner](../../runtime/c/futures/RESULTS.md) is independently
+accepted as an isolated C library for future IDs and completion queues. It retains
+issuance-boundary selection, callback reentry, actual condition waits and explicit
+retirement, with tested cleanup failures and native C/C++ consumption. Payload
+allocation, instance/device leases, production runtime consumers and GPU completion
+remain unqualified. This does not change the zero production-replacement count.
+
 ## Existing authority, not a parallel policy
 
 Owner paths and layer labels come from
