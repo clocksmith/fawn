@@ -4526,7 +4526,7 @@ export function providerInfo() {
         loaded: !!DOE_LIB_PATH,
         loadError: !DOE_LIB_PATH ? "libwebgpu_doe not found" : "",
         defaultCreateArgs: [],
-        doeNative: flavor === "doe-dropin",
+        doeNative: flavor === "doe-dropin" || flavor === "doe-c",
         libraryFlavor: flavor,
         doeLibraryPath: DOE_LIB_PATH ?? "",
         buildMetadataSource: DOE_BUILD_METADATA.source,
