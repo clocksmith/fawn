@@ -306,13 +306,32 @@ void ensure_compilation_message_fields(napi_env env, napi_value msg) {
     }
 }
 
-/* Standard compilation info, mirrored from the pinned webgpu.h. */
+/* Compilation info as webgpu.h lays it out; only this file reads it. */
+/* Compilation message types (WebGPU spec) */
+typedef enum {
+    WGPU_COMPILATION_MESSAGE_TYPE_ERROR   = 1,
+    WGPU_COMPILATION_MESSAGE_TYPE_WARNING = 2,
+    WGPU_COMPILATION_MESSAGE_TYPE_INFO    = 3,
+} WGPUCompilationMessageType;
+
 typedef struct {
-    void* next_in_chain; WGPUStringView message; uint32_t type;
-    uint64_t line_num, line_pos, offset, length;
-} StandardCompilationMessage;
-typedef struct { void* next_in_chain; size_t count; const StandardCompilationMessage* messages; } StandardCompilationInfo;
-typedef void (*StandardCompilationCallback)(uint32_t status, const StandardCompilationInfo* info,
+    void* nextInChain;
+    WGPUStringView message;
+    WGPUCompilationMessageType type;
+    uint64_t lineNum;
+    uint64_t linePos;
+    uint64_t offset;
+    uint64_t length;
+} WGPUCompilationMessage;
+
+typedef struct {
+    void* nextInChain;
+    size_t messageCount;
+    const WGPUCompilationMessage* messages;
+} WGPUCompilationInfo;
+
+/* Standard compilation info callback (webgpu.h). */
+typedef void (*StandardCompilationCallback)(uint32_t status, const WGPUCompilationInfo* info,
     void* userdata1, void* userdata2);
 typedef struct {
     void* next_in_chain; uint32_t mode; StandardCompilationCallback callback;
@@ -333,18 +352,18 @@ typedef struct {
     } messages[COMPILATION_CAPTURE_MESSAGES];
 } CompilationCapture;
 
-static void compilation_reply(uint32_t status, const StandardCompilationInfo* info,
+static void compilation_reply(uint32_t status, const WGPUCompilationInfo* info,
     void* userdata1, void* userdata2) {
     (void)userdata2;
     CompilationCapture* capture = (CompilationCapture*)userdata1;
     capture->status = status;
-    size_t count = info ? info->count : 0;
+    size_t count = info ? info->messageCount : 0;
     capture->count = count < COMPILATION_CAPTURE_MESSAGES ? count : COMPILATION_CAPTURE_MESSAGES;
     for (size_t i = 0; i < capture->count; i++) {
-        const StandardCompilationMessage* message = &info->messages[i];
+        const WGPUCompilationMessage* message = &info->messages[i];
         capture->messages[i].type = message->type;
-        capture->messages[i].line_num = message->line_num;
-        capture->messages[i].line_pos = message->line_pos;
+        capture->messages[i].line_num = message->lineNum;
+        capture->messages[i].line_pos = message->linePos;
         capture->messages[i].offset = message->offset;
         capture->messages[i].length = message->length;
         copy_string_view_message(message->message, capture->messages[i].text,

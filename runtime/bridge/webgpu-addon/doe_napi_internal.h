@@ -224,26 +224,6 @@ typedef struct { void* nextInChain; WGPUStringView label; uint32_t type; uint32_
 
 typedef struct { uint32_t group; uint32_t binding; uint32_t kind; uint32_t addr_space; uint32_t access; } DoeShaderBindingInfo;
 
-/* Compilation message types (WebGPU spec) */
-typedef enum {
-    WGPU_COMPILATION_MESSAGE_TYPE_ERROR   = 1,
-    WGPU_COMPILATION_MESSAGE_TYPE_WARNING = 2,
-    WGPU_COMPILATION_MESSAGE_TYPE_INFO    = 3,
-} WGPUCompilationMessageType;
-
-typedef struct {
-    const char* message;
-    WGPUCompilationMessageType type;
-    uint64_t lineNum;
-    uint64_t linePos;
-    uint64_t offset;
-    uint64_t length;
-} WGPUCompilationMessage;
-
-typedef struct {
-    size_t messageCount;
-    const WGPUCompilationMessage* messages;
-} WGPUCompilationInfo;
 typedef struct {
     const WGPUChainedStruct* nextInChain;
     WGPUQuerySet querySet;
@@ -273,7 +253,8 @@ typedef struct {
     uint32_t baseMipLevel; uint32_t mipLevelCount; uint32_t baseArrayLayer; uint32_t arrayLayerCount;
     uint32_t aspect; uint64_t usage;
 } WGPUTextureViewDescriptor;
-typedef struct { WGPUChainedStruct chain; uint32_t r, g, b, a; } WGPUTextureComponentSwizzleDescriptor;
+typedef struct { uint32_t r, g, b, a; } WGPUTextureComponentSwizzle;
+typedef struct { WGPUChainedStruct chain; WGPUTextureComponentSwizzle swizzle; } WGPUTextureComponentSwizzleDescriptor;
 
 typedef struct {
     void* nextInChain; WGPUStringView label;
