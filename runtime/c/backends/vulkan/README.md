@@ -86,12 +86,24 @@ transfer barriers. Both fixtures are pinned; neither is C texture compiler evide
 
 ## Offscreen graphics
 
-`include/doe_vk_render.h` records a clear-only packet and direct instanced draw
-packets into the existing command owner. Each draw loads/stores the single color
-attachment, preserving the resource owner's first-pass clear and subsequent draw
-ordering. Exact views, compatible render passes/framebuffers, descriptors and
-vertex buffers remain retained until native retirement. A clear initializes only
-the selected full 2D mip/layer; a draw cannot read uninitialized target contents.
+`include/doe_vk_render.h` consumes a borrowed immutable span of direct instanced
+raster draws as one actual single-color native render pass. The optional clear
+executes once at begin; otherwise begin loads initialized contents. End always
+stores. An empty span still executes the real load/clear/store pass. The old
+clear-only and single-draw conveniences delegate to this same recorder.
+
+Whole-span structural validation precedes resource preparation. All descriptor
+admission, allocations, retained leases, barriers and image transitions finish
+before native begin. The in-pass loop only binds prepared state and issues draws;
+it never inserts an invalid global barrier inside a render pass. A later invalid
+draw or descriptor therefore cannot leave a native pass open. Any failure poisons
+the command owner, which must be discarded instead of partially submitted.
+
+Exact views, one compatible render pass/framebuffer, descriptors and vertex
+buffers remain retained by the existing command lifetime until retirement. A
+clear initializes only the selected full 2D mip/layer; LOAD cannot read undefined
+contents. Resource pass/bundle packets retain their canonical ordering upstream;
+this borrowed span is not another resource recorder or reference-count owner.
 
 Pipeline state admits sample1, one color target, eight vertex layouts/sixteen
 32-bit scalar/vector attributes, native blend/cull/topology controls and dynamic

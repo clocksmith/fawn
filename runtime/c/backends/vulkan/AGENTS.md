@@ -9,8 +9,10 @@ modify installed ICD configuration for tests; use process-local selection.
 Keep buffer-only and mixed image/sampler dispatches on the same descriptor owner.
 Shader type/format/capability admission stays with the compiler/native consumer.
 Graphics packets must consume the existing resource render/bundle ordering. A
-clear-only begin initializes the selected subresource; later draws load it. Never
-invent attachments, drop unsupported packets or publish speculative layouts.
+pass span clears/loads once, records all admitted draws, then stores once, even
+when empty. Complete admission, leases and barriers before native begin; old
+clear/draw conveniences must use that same recorder. Never invent attachments,
+drop unsupported packets or publish speculative layouts.
 
 Keep viewport convention explicit: retained raw Vulkan defaults remain unchanged;
 unmodified WebGPU Position uses one negative-height viewport transform, never a

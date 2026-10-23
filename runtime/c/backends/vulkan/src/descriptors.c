@@ -105,8 +105,8 @@ static doe_vk_status descriptor_pool(doe_vk_commands *commands,
         &allocate, sets), "vkAllocateDescriptorSets", NULL);
 }
 
-doe_vk_status doe_vk_bind_resources(doe_vk_commands *commands,
-    doe_vk_pipeline *pipeline, const doe_vk_binding_resource *bindings, size_t count) {
+doe_vk_status doe_vk_prepare_resources(doe_vk_commands *commands,
+    doe_vk_pipeline *pipeline, const doe_vk_binding_resource *bindings, size_t count, doe_vk_dispatch_use **out) {
     doe_vk_status status = validate_resources(commands, pipeline, bindings, count);
     if (status != DOE_VK_OK) return doe_vk_poison(commands, status);
     doe_vk_dispatch_use *use = calloc(1, sizeof(*use));
@@ -119,8 +119,7 @@ doe_vk_status doe_vk_bind_resources(doe_vk_commands *commands,
     use->pipeline = pipeline;
     use->next = commands->dispatches;
     commands->dispatches = use;
-    VkDescriptorSet sets[DOE_VK_MAX_GROUPS] = {0};
-    status = descriptor_pool(commands, pipeline, use, sets);
+    status = descriptor_pool(commands, pipeline, use, use->sets);
     if (status != DOE_VK_OK) return doe_vk_poison(commands, status);
     VkDescriptorBufferInfo buffers[DOE_VK_MAX_BINDINGS];
     VkDescriptorImageInfo images[DOE_VK_MAX_BINDINGS];
@@ -129,7 +128,7 @@ doe_vk_status doe_vk_bind_resources(doe_vk_commands *commands,
         const doe_vk_binding_resource *binding = &bindings[i];
         writes[i] = (VkWriteDescriptorSet){
             .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-            .dstSet = sets[pipeline->bindings[i].group],
+            .dstSet = use->sets[pipeline->bindings[i].group],
             .dstBinding = pipeline->bindings[i].binding,
             .descriptorCount = 1,
             .descriptorType = doe_vk_descriptor_type(binding->kind)
@@ -165,10 +164,25 @@ doe_vk_status doe_vk_bind_resources(doe_vk_commands *commands,
         if (status != DOE_VK_OK) return doe_vk_poison(commands, status);
         doe_vk_texture_transition(commands, texture_use, VK_IMAGE_LAYOUT_GENERAL);
     }
+    *out = use;
+    return DOE_VK_OK;
+}
+
+void doe_vk_bind_prepared_resources(doe_vk_commands *commands, const doe_vk_dispatch_use *use) {
+    const doe_vk_pipeline *pipeline = use->pipeline;
+    doe_vk_context *context = commands->context;
     int32_t bind_point = pipeline->graphics ? VK_PIPELINE_BIND_POINT_GRAPHICS : VK_PIPELINE_BIND_POINT_COMPUTE;
     context->vk.vkCmdBindPipeline(commands->command, bind_point, pipeline->pipeline);
     if (pipeline->group_count != 0) context->vk.vkCmdBindDescriptorSets(commands->command,
-        bind_point, pipeline->layout, 0, pipeline->group_count, sets, 0, NULL);
+        bind_point, pipeline->layout, 0, pipeline->group_count, use->sets, 0, NULL);
+}
+
+doe_vk_status doe_vk_bind_resources(doe_vk_commands *commands,
+    doe_vk_pipeline *pipeline, const doe_vk_binding_resource *bindings, size_t count) {
+    doe_vk_dispatch_use *use = NULL;
+    doe_vk_status status = doe_vk_prepare_resources(commands, pipeline, bindings, count, &use);
+    if (status != DOE_VK_OK) return status;
+    doe_vk_bind_prepared_resources(commands, use);
     return DOE_VK_OK;
 }
 

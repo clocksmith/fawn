@@ -41,6 +41,8 @@ $(OUT)/timestamp_contract: tests/timestamp_contract.c $(SOURCES) $(HEADERS) | $(
 	$(CC) $(STRICT) $(CFLAGS) $(SOURCES) $< -ldl -o $@
 $(OUT)/query_contract: tests/query_contract.c $(SOURCES) $(HEADERS) | $(OUT)
 	$(CC) $(STRICT) $(CFLAGS) $(SOURCES) $< -ldl -o $@
+$(OUT)/pass_contract: tests/pass_contract.c $(SOURCES) $(HEADERS) | $(OUT)
+	$(CC) $(STRICT) $(CFLAGS) $(SOURCES) $< -ldl -o $@
 $(OUT)/render_contract: tests/render_contract.c $(SOURCES) $(HEADERS) | $(OUT)
 	$(CC) $(STRICT) $(CFLAGS) $(SOURCES) $< -ldl -o $@
 $(OUT)/loader_contract: tests/loader_contract.c $(SOURCES) $(HEADERS) | $(OUT)
@@ -49,10 +51,11 @@ $(OUT)/descriptor_contract: tests/descriptor_contract.c $(SOURCES) $(HEADERS) | 
 	$(CC) $(STRICT) $(CFLAGS) $(SOURCES) $< -ldl -o $@
 $(OUT)/texture_contract: tests/texture_contract.c $(SOURCES) $(HEADERS) | $(OUT)
 	$(CC) $(STRICT) $(CFLAGS) $(SOURCES) $< -ldl -o $@
-check: abi $(OUT)/timestamp_lifetime $(OUT)/timestamp_contract $(OUT)/ownership $(OUT)/texture_contract $(OUT)/descriptor_contract $(OUT)/loader_contract $(OUT)/render_contract $(OUT)/query_contract
+check: abi $(OUT)/pass_contract $(OUT)/timestamp_lifetime $(OUT)/timestamp_contract $(OUT)/ownership $(OUT)/texture_contract $(OUT)/descriptor_contract $(OUT)/loader_contract $(OUT)/render_contract $(OUT)/query_contract
 	$(OUT)/ownership
 	$(OUT)/loader_contract
 	$(OUT)/render_contract
+	$(OUT)/pass_contract
 	$(OUT)/query_contract
 	$(OUT)/timestamp_contract
 	$(OUT)/timestamp_lifetime
@@ -78,6 +81,8 @@ native-descriptors: $(OUT)/native_descriptors
 native-texture: $(OUT)/native_texture
 	$(OUT)/native_texture $(NATIVE_ARGS)
 sanitize: | $(OUT)
+	$(CC) $(STRICT) -O1 -g -fsanitize=address,undefined $(SOURCES) tests/pass_contract.c -ldl -o $(OUT)/pass_contract-sanitize
+	ASAN_OPTIONS=detect_leaks=0 $(OUT)/pass_contract-sanitize
 	$(CC) $(STRICT) -O1 -g -fsanitize=address,undefined $(SOURCES) tests/timestamp_lifetime.c -ldl -o $(OUT)/timestamp_lifetime-sanitize
 	ASAN_OPTIONS=detect_leaks=0 $(OUT)/timestamp_lifetime-sanitize
 	$(CC) $(STRICT) -O1 -g -fsanitize=address,undefined $(SOURCES) tests/timestamp_contract.c -ldl -o $(OUT)/timestamp_contract-sanitize
@@ -95,7 +100,7 @@ sanitize: | $(OUT)
 	$(CC) $(STRICT) -O1 -g -fsanitize=address,undefined $(SOURCES) tests/descriptor_contract.c -ldl -o $(OUT)/descriptor_contract-sanitize
 	ASAN_OPTIONS=detect_leaks=0 $(OUT)/descriptor_contract-sanitize
 clean:
-	rm -f $(OBJECTS) $(OUT)/libdoe_vk.a $(OUT)/ownership $(OUT)/native_compute $(OUT)/probe $(OUT)/native_texture $(OUT)/native_descriptors $(OUT)/native_storage $(OUT)/native_render $(OUT)/texture_contract $(OUT)/descriptor_contract $(OUT)/descriptor_contract-sanitize $(OUT)/texture_contract-sanitize $(OUT)/ownership-sanitize $(OUT)/header-cxx.o $(OUT)/loader_contract $(OUT)/loader_contract-sanitize $(OUT)/render_contract $(OUT)/render_contract-sanitize $(OUT)/query_contract $(OUT)/query_contract-sanitize $(OUT)/native_queries $(OUT)/timestamp_contract $(OUT)/timestamp_contract-sanitize $(OUT)/timestamp_lifetime $(OUT)/timestamp_lifetime-sanitize $(OUT)/native_timestamp
+	rm -f $(OBJECTS) $(OUT)/libdoe_vk.a $(OUT)/ownership $(OUT)/native_compute $(OUT)/probe $(OUT)/native_texture $(OUT)/native_descriptors $(OUT)/native_storage $(OUT)/native_render $(OUT)/texture_contract $(OUT)/descriptor_contract $(OUT)/descriptor_contract-sanitize $(OUT)/texture_contract-sanitize $(OUT)/ownership-sanitize $(OUT)/header-cxx.o $(OUT)/loader_contract $(OUT)/loader_contract-sanitize $(OUT)/render_contract $(OUT)/render_contract-sanitize $(OUT)/query_contract $(OUT)/query_contract-sanitize $(OUT)/native_queries $(OUT)/timestamp_contract $(OUT)/timestamp_contract-sanitize $(OUT)/timestamp_lifetime $(OUT)/timestamp_lifetime-sanitize $(OUT)/native_timestamp $(OUT)/pass_contract $(OUT)/pass_contract-sanitize
 
 # Compiler/shader dependencies belong only to this optional integration test.
 SHADER_ROOT ?= $(REPO)/runtime/c/shader
