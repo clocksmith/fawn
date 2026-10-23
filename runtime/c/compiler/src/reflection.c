@@ -61,12 +61,15 @@ bool reflect_prepare(Source *s, CompilerWorkspace *c, DoeCompilerTypedOutputCoun
     counts->name_bytes = (size_t)names;
     return true;
 }
-bool reflect_matrix_admit(Source *s) {
+bool reflect_version_admit(Source *s, uint32_t version) {
     const CompilerWorkspace *c = s->compiler;
     for (uint32_t i = 0u; i < c->type_count; ++i)
-        if (c->types[i].kind == TYPE_MATRIX && c->reflection_map[i + 7u] != NO_ID)
+        if (version < DOE_COMPILER_MATRIX_ABI_VERSION && c->types[i].kind == TYPE_MATRIX && c->reflection_map[i + 7u] != NO_ID)
             return source_error(s, DOE_COMPILER_UNSUPPORTED, c->types[i].name.offset,
                 "matrix reflection requires explicit ABI8");
+        else if (version < DOE_COMPILER_ATOMIC_ABI_VERSION && c->types[i].kind == TYPE_ATOMIC && c->reflection_map[i + 7u] != NO_ID)
+            return source_error(s, DOE_COMPILER_UNSUPPORTED, c->types[i].name.offset,
+                "atomic reflection requires explicit ABI9");
     return true;
 }
 static DoeCompilerNameV4 publish_name(const Source *s, NameSpan name, char *names, uint32_t *cursor) {
@@ -106,6 +109,9 @@ static void publish_tables(const Source *s, const CompilerWorkspace *c, const Do
             if (t->kind == TYPE_VECTOR) {
                 out->kind = DOE_COMPILER_TYPE_VECTOR;
                 out->vector_width = t->count;
+            }
+            else if (t->kind == TYPE_ATOMIC) {
+                out->kind = DOE_COMPILER_TYPE_ATOMIC;
             }
             else if (t->kind == TYPE_MATRIX) {
                 out->kind = DOE_COMPILER_TYPE_MATRIX;

@@ -31,6 +31,9 @@ enum {
     OP_FORD_GREATER_EQUAL = 190,
     OP_SHIFT_RIGHT_LOGICAL = 194, OP_SHIFT_RIGHT_ARITHMETIC = 195, OP_SHIFT_LEFT = 196,
     OP_BIT_OR = 197, OP_BIT_XOR = 198, OP_BIT_AND = 199, OP_NOT = 200, OP_CONTROL_BARRIER = 224,
+    OP_ATOMIC_LOAD = 227, OP_ATOMIC_STORE = 228, OP_ATOMIC_EXCHANGE = 229, OP_ATOMIC_COMPARE_EXCHANGE = 230,
+    OP_ATOMIC_ADD = 234, OP_ATOMIC_SUBTRACT = 235, OP_ATOMIC_SMIN = 236, OP_ATOMIC_UMIN = 237,
+    OP_ATOMIC_SMAX = 238, OP_ATOMIC_UMAX = 239, OP_ATOMIC_AND = 240, OP_ATOMIC_OR = 241, OP_ATOMIC_XOR = 242,
     OP_PHI = 245, OP_LOOP_MERGE = 246, OP_SELECTION_MERGE = 247, OP_LABEL = 248,
     OP_BRANCH = 249, OP_BRANCH_CONDITIONAL = 250, OP_RETURN = 253, OP_RETURN_VALUE = 254, OP_UNREACHABLE = 255, OP_DEMOTE_TO_HELPER_INVOCATION = 5380
 };
@@ -65,6 +68,7 @@ bool spirv_uniform_declaration(Emitter *, const TargetDeclaration *);
 bool spirv_uniform_access_plan(Emitter *, const IrInstruction *);
 bool spirv_uniform_raw(const Emitter *, const ResourceRecord *);
 bool spirv_uniform_load(Emitter *, const IrInstruction *, uint32_t);
+bool spirv_atomic_operation(Emitter *, const IrInstruction *, uint32_t, uint32_t);
 bool spirv_matrix_construct(Emitter *, const IrInstruction *);
 bool spirv_matrix_arithmetic(Emitter *, const IrInstruction *);
 bool spirv_matrix_member(Emitter *, uint32_t, uint32_t, TypeId);

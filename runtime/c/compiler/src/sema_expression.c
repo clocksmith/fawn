@@ -106,7 +106,7 @@ static bool identity_value(Source *s,NameSpan name,const LocalScope *scope,Value
                 return sema_emit(s, emit, (IrInstruction){.opcode = IR_HANDLE, .type = type,
                     .source_offset = name.offset, .operands.scalar.binding = identity.index}, &out->value);
             }
-            if (!type_constructible(c,type)) return source_error(s,DOE_COMPILER_SEMANTIC_ERROR,name.offset,"runtime-sized resource is not a value");
+            if (!type_constructible(c,type)) return source_error(s,DOE_COMPILER_SEMANTIC_ERROR,name.offset,"runtime-sized resource or other non-constructible type is not a value");
             out->runtime=true; out->constant.type=type;
             return sema_emit(s,emit,(IrInstruction){.opcode=IR_ACCESS_LOAD,.type=type,.source_offset=name.offset,
                 .operands.access={.root=identity.index,.path=NO_ID,.category=identity.kind==IDENTITY_RESOURCE?ROOT_RESOURCE:ROOT_WORKGROUP}},&out->value);
@@ -150,7 +150,7 @@ static bool root_reference(Source *s,NameSpan name,const LocalScope *scope,bool 
 }
 bool sema_reference_load(Source *s, ValueReference ref, uint32_t offset, bool emit, ExpressionValue *out) {
     CompilerWorkspace *c = s->compiler;
-    if (!type_constructible(c, ref.type)) return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, offset, "runtime-sized reference cannot be loaded by value");
+    if (!type_constructible(c, ref.type)) return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, offset, "non-constructible reference cannot be loaded by value");
     *out = (ExpressionValue){
         .runtime = true, .constant.type = ref.type, .value = {.type = ref.type, .source_offset = offset}
     };
@@ -234,7 +234,13 @@ static bool postfix_value(Source *s, const Expression *node, const LocalScope *s
         const NameSpan member = node->value.member.member;
         if (input<7u) return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, member.offset, "scalar value has no member");
         const TypeRecord *type = &c->types[input-7u];
-        if (type->kind == TYPE_STRUCT) {
+        if (type->kind == TYPE_ATOMIC_RESULT) {
+            if (source_span_is(s, member, "old_value")) index = 0u;
+            else if (source_span_is(s, member, "exchanged")) index = 1u;
+            else return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, member.offset, "unknown atomic compare-exchange result member");
+            output = type_child(c, input, index);
+        }
+        else if (type->kind == TYPE_STRUCT) {
             for (;index<type->count;++index) if (source_spans_equal(s, member, c->members[type->element+index].name)) break;
             if (index == type->count) return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, member.offset, "unknown struct member");
             output = c->members[type->element+index].type;
@@ -335,6 +341,26 @@ bool sema_assignment_reference(Source *s, const Assignment *a, const LocalScope 
     const SourceReferenceKind kind=out->category==ROOT_RESOURCE?SOURCE_RESOURCE:
         out->category==ROOT_WORKGROUP?SOURCE_WORKGROUP:SOURCE_NONE;
     return source_reference_record(s,slot,kind,kind==SOURCE_NONE?0u:out->root,a->root.offset);
+}
+bool sema_address_reference(Source *s, uint32_t id, const LocalScope *scope,
+                             bool evaluate, bool emit, ValueReference *out) {
+    CompilerWorkspace *c = s->compiler;
+    const Expression *address = &c->expressions[id];
+    if (address->kind != EXPRESSION_ADDRESS)
+        return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, address->source_offset, "builtin requires an address expression");
+    const Expression *path = &c->expressions[address->left];
+    ExpressionValue ignored;
+    bool reference = false;
+    if (path->kind == EXPRESSION_NAME) {
+        if (!root_reference(s, path->value.name, scope, emit, out, &ignored, &reference,
+                            &c->expression_references[address->left])) return false;
+    } else if (path->kind == EXPRESSION_MEMBER || path->kind == EXPRESSION_LOAD) {
+        if (!postfix_value(s, path, scope, evaluate, emit, out, &ignored, &reference,
+                           &c->expression_references[address->left])) return false;
+    } else return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, path->source_offset, "address requires a variable access path");
+    if (!reference || out->category == ROOT_VALUE || out->category == ROOT_INPUT)
+        return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, path->source_offset, "address does not identify an addressable variable");
+    return true;
 }
 static IrOpcode binary_opcode(ExpressionKind op) {
     switch (op) {

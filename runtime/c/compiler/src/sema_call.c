@@ -211,6 +211,156 @@ static bool aggregate_call(Source *s, const Expression *node, const LocalScope *
     if (!runtime) return true;
     return sema_emit(s, emit, (IrInstruction){.opcode = IR_COMPOSITE, .type = target, .source_offset = node->source_offset, .operands.composite = {first, node->right, kind == TYPE_VECTOR?(splat?2u:1u):matrix_scalars?3u:0u, 0u}}, &out->value);
 }
+static inline bool sema_builtin_value(Source *source, const Expression *node, const LocalScope *scope,
+                        const NumericBuiltin *builtin, bool evaluate, bool emit,
+                        ExpressionValue *out) {
+    CompilerWorkspace *compiler = source->compiler;
+    ExpressionValue arguments[3];
+    uint32_t link = node->left, width = 0u;
+    bool runtime = builtin_subgroup(builtin), known = evaluate;
+    TypeId leaf = IR_VOID;
+    for (uint32_t i = 0u; i < builtin->arity; ++i) {
+        if (!sema_expression(source, compiler->arguments[link].expression, scope,
+                             evaluate, emit, &arguments[i])) return false;
+        const TypeId type = arguments[i].constant.type;
+        if (builtin->family == BUILTIN_MATRIX) {
+            if (!sema_matrix_result(source, builtin->kind, type, node->source_offset, &leaf)) return false;
+            runtime = arguments[0].runtime;
+            known = known && arguments[0].known;
+            break;
+        }
+        const TypeId argument_leaf = type_leaf(compiler, type);
+        const uint32_t argument_width = type_vector_width(compiler, type);
+        if (argument_leaf == IR_VOID || argument_leaf == IR_BOOL ||
+            (i != 0u && argument_width != width))
+            return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, node->source_offset,
+                                "numeric builtin arguments require matching scalar or vector shapes");
+        if (i == 0u) {
+            leaf = argument_leaf;
+            width = argument_width;
+        } else if (!sema_common_type(source, leaf, argument_leaf, node->source_offset, &leaf)) return false;
+        runtime = runtime || arguments[i].runtime;
+        known = known && arguments[i].known;
+        link = compiler->arguments[link].next;
+    }
+    TypeId operand_type = leaf;
+    if (builtin->family != BUILTIN_MATRIX) {
+        if (builtin_floating(builtin) && leaf == IR_ABSTRACT_INT) leaf = IR_ABSTRACT_FLOAT;
+        if (!builtin_shape(builtin, width) ||
+            (builtin->family == BUILTIN_SUBGROUP_INTEGER && leaf != IR_I32 && leaf != IR_U32 && leaf != IR_ABSTRACT_INT) ||
+            (builtin_floating(builtin) && leaf != IR_F32 && leaf != IR_ABSTRACT_FLOAT))
+            return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, node->source_offset,
+                                "no matching numeric builtin overload");
+        if (runtime && !sema_default_type(source, leaf, node->source_offset, &leaf)) return false;
+        operand_type = leaf;
+        if (width != 1u && !type_intern(source, TYPE_VECTOR, leaf, width, &operand_type)) return false;
+        for (uint32_t i = 0u; i < builtin->arity; ++i)
+            if (!sema_materialize(source, &arguments[i], operand_type)) return false;
+
+        if (builtin->kind == BUILTIN_CLAMP && !arguments[1].runtime && !arguments[2].runtime) {
+            /* A skipped constant bound still has mandatory creation-time meaning.
+             * Force only unknown const expressions, never an effectful runtime input. */
+            link = compiler->arguments[node->left].next;
+            for (uint32_t i = 1u; i < 3u; ++i) {
+                if (!arguments[i].known &&
+                    (!sema_expression(source, compiler->arguments[link].expression, scope,
+                                      true, false, &arguments[i]) ||
+                     !sema_materialize(source, &arguments[i], operand_type))) return false;
+                link = compiler->arguments[link].next;
+            }
+            if (!builtin_clamp_bounds(source, node->source_offset,
+                                      &arguments[1].constant, &arguments[2].constant)) return false;
+        }
+
+    }
+    const TypeId result_type = builtin->family == BUILTIN_MATRIX || builtin_scalar_result(builtin) ? leaf : operand_type;
+    *out = (ExpressionValue){
+        .runtime = runtime, .known = known && !runtime, .constant.type = result_type,
+        .value = {.type = result_type, .source_offset = node->source_offset}
+    };
+    return sema_builtin_finish(source, node, builtin, arguments, emit, out);
+}
+
+static inline bool sema_image_call(Source *s, const Expression *node, const LocalScope *scope, bool evaluate, bool emit,
+                     ImageOperation operation, ExpressionValue *out) {
+    CompilerWorkspace *c = s->compiler;
+    if (c->current_function == NO_ID || node->value.call.type.offset != NO_ID || node->right == 0u)
+        return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, node->source_offset, "texture builtin has invalid stage or result context");
+    uint32_t link = node->left, first = 0u;
+    if (emit) {
+        if (node->right > c->limits.operands - c->operand_count)
+            return source_pool_error(s, DOE_COMPILER_POOL_IR_OPERANDS, (size_t)c->operand_count + node->right,
+                node->source_offset, "texture operand capacity exceeded");
+        first = c->operand_count;
+        c->operand_count += node->right;
+    }
+    TypeId texture = IR_VOID, result = IR_VOID;
+    for (uint32_t index = 0u; index < node->right; ++index) {
+        if (!sema_expression(s, c->arguments[link].expression, scope, evaluate, emit, out)) return false;
+        if (index == 0u) {
+            texture = out->constant.type;
+            if (!type_handle(c, texture) || c->types[texture - 7u].kind != TYPE_TEXTURE)
+                return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, node->source_offset, "texture builtin requires a texture handle");
+            result = sema_image_result(s, node, &c->types[texture - 7u], operation);
+            if (result == NO_ID) return false;
+        } else if (!sema_image_argument(s, &c->types[texture - 7u], operation, index, out)) return false;
+        if (!sema_ensure_value(s, out, emit)) return false;
+        if (emit) c->typed_operands[first + index] = out->value.id;
+        link = c->arguments[link].next;
+    }
+    if (!sema_image_auxiliaries(s, texture, operation)) return false;
+    const uint32_t varying = operation == IMAGE_LOAD && c->types[texture - 7u].state.image.access == DOE_COMPILER_READ_WRITE ? 256u : 0u;
+    if (!source_reference_record(s, &c->expression_references[(size_t)(node - c->expressions)], SOURCE_IMAGE,
+                                 (uint32_t)operation | varying, node->source_offset)) return false;
+    *out = (ExpressionValue){.runtime = true, .constant.type = result,
+        .value = {.type = result, .source_offset = node->source_offset}};
+    return sema_emit(s, emit, (IrInstruction){.opcode = IR_IMAGE, .type = result,
+        .source_offset = node->source_offset, .operands.composite = {first, node->right, (uint32_t)operation, texture}},
+        result == IR_VOID ? NULL : &out->value);
+}
+
+/* The address is resolved before value arguments. access.value indexes the
+ * checked typed-operand span, excluding the address; compare precedes replacement.
+ * Co-located call evaluators share one bounded recursive stack frame. */
+static inline bool sema_atomic_call(Source *source, const Expression *node, const LocalScope *scope,
+                       bool evaluate, bool emit, IrOpcode operation, ExpressionValue *out) {
+    CompilerWorkspace *c = source->compiler;
+    const uint32_t arity = operation == IR_ATOMIC_LOAD ? 1u : operation == IR_ATOMIC_COMPARE_EXCHANGE ? 3u : 2u;
+    if (node->right != arity || node->value.call.type.offset != NO_ID || c->current_function == NO_ID)
+        return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, node->source_offset,
+            "atomic builtin requires its exact arguments in a runtime function");
+    ValueReference reference;
+    uint32_t link = node->left;
+    if (!sema_address_reference(source, c->arguments[link].expression, scope, evaluate, emit, &reference)) return false;
+    if (!reference.writable || (reference.category != ROOT_RESOURCE && reference.category != ROOT_WORKGROUP) ||
+        reference.type < 7u || c->types[reference.type - 7u].kind != TYPE_ATOMIC)
+        return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, node->source_offset,
+            "atomic builtin requires a writable storage or workgroup atomic address");
+    const TypeId scalar = c->types[reference.type - 7u].element;
+    const uint32_t first = c->operand_count;
+    if (emit) {
+        if (arity - 1u > c->limits.operands - first)
+            return source_pool_error(source, DOE_COMPILER_POOL_IR_OPERANDS, (size_t)first + arity - 1u,
+                node->source_offset, "atomic operand capacity exceeded");
+        c->operand_count += arity - 1u;
+    }
+    for (uint32_t i = 1u; i < arity; ++i) {
+        link = c->arguments[link].next;
+        if (!sema_expression(source, c->arguments[link].expression, scope, evaluate, emit, out) ||
+            !sema_materialize(source, out, scalar) || !sema_ensure_value(source, out, emit)) return false;
+        if (emit) c->typed_operands[first + i - 1u] = out->value.id;
+    }
+    TypeId result = operation == IR_ATOMIC_STORE ? IR_VOID : scalar;
+    if (operation == IR_ATOMIC_COMPARE_EXCHANGE && !type_intern(source, TYPE_ATOMIC_RESULT, scalar, 2u, &result)) return false;
+    if (!source_reference_record(source, &c->expression_references[(size_t)(node - c->expressions)],
+                                  SOURCE_ATOMIC, 0u, node->source_offset)) return false;
+    *out = (ExpressionValue){.runtime = true, .constant.type = result,
+        .value = {.type = result, .source_offset = node->source_offset}};
+    return sema_emit(source, emit, (IrInstruction){.opcode = operation, .type = result,
+        .source_offset = node->source_offset, .operands.access = {reference.root, reference.path, first, reference.category}},
+        result == IR_VOID ? NULL : &out->value);
+}
+
 bool sema_call_value(Source *s, uint32_t id, const LocalScope *scope, bool evaluate, bool emit, bool statement, ExpressionValue *out) {
     CompilerWorkspace *c = s->compiler;
     const Expression *node = &c->expressions[id];
@@ -239,6 +389,12 @@ bool sema_call_value(Source *s, uint32_t id, const LocalScope *scope, bool evalu
         return source_error(s,DOE_COMPILER_UNSUPPORTED,name.offset,"synchronization builtin is outside the workgroup barrier owner");
     if (name.length >= sizeof(((Name *)0)->text))
         return source_error(s, DOE_COMPILER_UNSUPPORTED, name.offset, "identifier length exceeds supported capacity");
+    const uint32_t atomic = nominal == NO_ID ? atomic_builtin_kind(s, name) : NO_ID;
+    if (atomic != NO_ID) {
+        if (!statement && atomic == IR_ATOMIC_STORE)
+            return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, node->source_offset, "atomicStore has no result");
+        return sema_atomic_call(s, node, scope, evaluate, emit, (IrOpcode)atomic, out);
+    }
     const uint32_t image_operation = nominal == NO_ID ? image_builtin_kind(s, name) : NO_ID;
     if (image_operation != NO_ID) {
         if (statement != (image_operation == IMAGE_STORE))

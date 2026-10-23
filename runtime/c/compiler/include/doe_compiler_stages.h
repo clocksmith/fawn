@@ -11,7 +11,13 @@ extern "C" {
 /* Existing stage descriptors also serve explicit ABI8 matrix reflection. */
 #define DOE_COMPILER_MATRIX_ABI_VERSION 8u
 #define DOE_COMPILER_MATRIX_SCHEMA_VERSION 8u
-#define DOE_COMPILER_LATEST_ABI_VERSION 8u
+#define DOE_COMPILER_ATOMIC_ABI_VERSION 9u
+#define DOE_COMPILER_ATOMIC_SCHEMA_VERSION 9u
+#define DOE_COMPILER_LATEST_ABI_VERSION 9u
+#define DOE_COMPILER_TYPE_ATOMIC 7u
+/* Atomic element_type names i32/u32; size and alignment are four bytes.
+ * Atomic-containing types are not constructible. Retained record layouts and
+ * query sizes are unchanged; old selected reflection rejects these graphs. */
 #define DOE_COMPILER_TYPE_MATRIX 6u
 /* For kind MATRIX, element_type names the column-vector type, array_count is
  * the number of columns, vector_width is the number of rows, and stride_bytes

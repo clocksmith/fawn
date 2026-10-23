@@ -80,7 +80,7 @@ static bool closure_reference(Source *s, EntryRecord *entry, SourceReference ref
                     "entry interface contains a sibling input identity");
             entry->source_input_mask|=1u<<c->entry_inputs[ref.index].kind;
             break;
-        case SOURCE_NONE: case SOURCE_FUNCTION: case SOURCE_BARRIER: case SOURCE_SUBGROUP: case SOURCE_IMAGE: case SOURCE_DISCARD: break;
+        case SOURCE_NONE: case SOURCE_FUNCTION: case SOURCE_BARRIER: case SOURCE_SUBGROUP: case SOURCE_IMAGE: case SOURCE_DISCARD: case SOURCE_ATOMIC: break;
     }
     return true;
 }

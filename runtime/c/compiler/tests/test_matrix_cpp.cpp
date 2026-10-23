@@ -7,7 +7,7 @@
 #include <iostream>
 
 int main() {
-    static_assert(DOE_COMPILER_LATEST_ABI_VERSION == DOE_COMPILER_MATRIX_ABI_VERSION);
+    static_assert(DOE_COMPILER_MATRIX_ABI_VERSION == 8u);
     DoeCompilerStageCapacities caps{};
     auto &typed = caps.module.typed;
     typed.source_bytes = 4096;

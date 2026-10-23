@@ -1,0 +1,110 @@
+{
+  "scope": "ABI9 scalar i32/u32 atomics, all 11 operations, shared access-path/OOB semantics and unchanged retained workgroup sources",
+  "source_manifest_sha256": "8cdd3da10aa79f29375131ba2f1089018a2022bdf11814ae551a1fc00ba93fbc",
+  "source_paths": [
+    "runtime/c/compiler/Makefile",
+    "runtime/c/compiler/README.md",
+    "runtime/c/compiler/include/doe_compiler_stages.h",
+    "runtime/c/compiler/src/compile.c",
+    "runtime/c/compiler/src/internal.h",
+    "runtime/c/compiler/src/module.c",
+    "runtime/c/compiler/src/reflection.c",
+    "runtime/c/compiler/src/sema.h",
+    "runtime/c/compiler/src/sema_atomic.c",
+    "runtime/c/compiler/src/sema_builtin.c",
+    "runtime/c/compiler/src/sema_call.c",
+    "runtime/c/compiler/src/sema_declarations.c",
+    "runtime/c/compiler/src/sema_expression.c",
+    "runtime/c/compiler/src/sema_image_call.c",
+    "runtime/c/compiler/src/spirv.c",
+    "runtime/c/compiler/src/spirv_atomic.c",
+    "runtime/c/compiler/src/spirv_internal.h",
+    "runtime/c/compiler/src/spirv_module.c",
+    "runtime/c/compiler/src/types.c",
+    "runtime/c/compiler/src/uniformity.c",
+    "runtime/c/compiler/src/validate.c",
+    "runtime/c/compiler/tests/audit_atomic_stack.py",
+    "runtime/c/compiler/tests/test_atomic_api.c",
+    "runtime/c/compiler/tests/test_atomic_cpp.cpp",
+    "runtime/c/compiler/tests/test_atomics.py",
+    "runtime/c/compiler/tests/test_matrix_cpp.cpp"
+  ],
+  "deleted_paths": [
+    "runtime/c/compiler/src/sema_builtin.c",
+    "runtime/c/compiler/src/sema_image_call.c"
+  ],
+  "library_sha256": "f00731f2172b81e40a84ac36266d291b1ad615a71e1c875ebf5ef2b663e78959",
+  "checks": {
+    "strict_gcc_normal_pic": "pass",
+    "source_spirv_tests": 43,
+    "asan_ubsan_cli_tests": 22,
+    "asan_ubsan_abi9": "pass",
+    "sanitizer_leak_detection": false,
+    "abi9_c": "pass",
+    "abi8_and_abi9_cpp17_shared": "pass",
+    "source_size": "all 51 present compiler core C/header inputs <=999 lines; whole tracker scan flags only two deliberately deleted TUs until staging",
+    "git_diff_check": "pass"
+  },
+  "stack": {
+    "normal": {
+      "frame_count": 271,
+      "all_other_frame_sum": 24792,
+      "maximum_acyclic_library_path_bytes": 2528,
+      "fixed_combined": 191728,
+      "maximum_job_combined": 181040,
+      "semantic_scc_bytes": 1328,
+      "semantic_scc_ceiling": 1536,
+      "semantic_scc_members": [
+        "/workspace/shared/doe-c-migration-20261023/runtime/c/compiler/src/sema_expression.c:postfix_value",
+        "integer_attribute",
+        "sema_address_reference",
+        "sema_call_value",
+        "sema_expression",
+        "sema_type_reference"
+      ]
+    },
+    "pic": {
+      "frame_count": 267,
+      "all_other_frame_sum": 24816,
+      "maximum_acyclic_library_path_bytes": 2512,
+      "fixed_combined": 191712,
+      "maximum_job_combined": 181024,
+      "semantic_scc_bytes": 1328,
+      "semantic_scc_ceiling": 1536,
+      "semantic_scc_members": [
+        "/workspace/shared/doe-c-migration-20261023/runtime/c/compiler/src/sema_expression.c:postfix_value",
+        "integer_attribute",
+        "sema_address_reference",
+        "sema_call_value",
+        "sema_expression",
+        "sema_type_reference"
+      ]
+    }
+  },
+  "workspace": "unchanged 146048-byte fixed workspace; no record or query growth",
+  "first_failures": [
+    {
+      "artifact": "first-failing-complete-stack.json",
+      "finding": "Initial separate call workers produced semantic SCC 1904 > 1536. Consolidated numeric/image/atomic call ownership into sema_call.c; final actual SCC1328; no ceiling raised."
+    },
+    {
+      "artifact": "tests-first.log",
+      "finding": "New fixture used reserved shared identifier; corrected fixture. Improved real nonconstructible value diagnostic."
+    },
+    {
+      "artifact": "api-first.log",
+      "finding": "New fixture expected runtime-tail minimum20; source layout correctly rounds to32 at alignment16, corrected oracle."
+    }
+  ],
+  "semantics": {
+    "scope": "Workgroup2 for workgroup, Device1 for storage with GLSL450 memory model",
+    "ordering": "Relaxed0",
+    "compare_exchange": "Strong OpAtomicCompareExchange realizes WGSL weak result without spurious failure; exchanged is old==comparison",
+    "oob": "Guard before pointer/atomic. Store does nothing; scalar result zero; compare exchange {0,false}."
+  },
+  "pending": [
+    "Actual software Vulkan atomic execution and integrated acceptance.",
+    "Optional atomic_vec2u_min_max, first-class pointers and helper pointer formals remain unsupported.",
+    "No full migration, performance parity, physical GPU, or 50%-size claim."
+  ]
+}

@@ -72,7 +72,7 @@ static bool compile_pipeline(Source *source, CompilerWorkspace *c, uint32_t proj
             c->functions[c->entries[1].function].name.offset,"multiple compute entries cannot use a singular reflection projection"))) &&
         (projection==0u || projection==3u || reflect_legacy_admit(source,c,projection==2u)) &&
         (projection!=3u || reflect_buffers_only(source)) && reflect_prepare(source,c,counts) &&
-        (projection == 0u || reflect_matrix_admit(source));
+        (projection == 0u || reflect_version_admit(source, DOE_COMPILER_TYPED_ABI_VERSION));
     const bool restored = numeric_environment_end(source, &environment);
     return lowered && restored;
 }
@@ -338,8 +338,8 @@ static DoeCompilerStatus compile_module(const DoeCompilerModuleCapacities *capac
         return compiler_return(result->diagnostic.status,saved_errno);
     if (resource_result == NULL && (flags & DOE_COMPILER_MODULE_REFLECTION) != 0u && !reflect_buffers_only(&context))
         return compiler_return(result->diagnostic.status, saved_errno);
-    if (version < DOE_COMPILER_MATRIX_ABI_VERSION && (flags & DOE_COMPILER_MODULE_REFLECTION) != 0u &&
-        !reflect_matrix_admit(&context)) return compiler_return(result->diagnostic.status, saved_errno);
+    if ((flags & DOE_COMPILER_MODULE_REFLECTION) != 0u &&
+        !reflect_version_admit(&context, version)) return compiler_return(result->diagnostic.status, saved_errno);
     const uint64_t stage_names = stage_name_bytes(&context);
     if (stage_names > UINT32_MAX - typed.name_bytes) {
         (void)source_error(&context, DOE_COMPILER_UNSUPPORTED, length, "interface names exceed uint32 metadata format");
@@ -441,7 +441,7 @@ DoeCompilerStatus doe_compiler_stage_requirements(uint32_t version,
     DoeCompilerWorkspaceRequirements *requirements, size_t requirements_size) {
     const int saved_errno = errno;
     if (requirements == NULL) return compiler_return(DOE_COMPILER_INPUT_ERROR, saved_errno);
-    if ((version != DOE_COMPILER_STAGES_ABI_VERSION && version != DOE_COMPILER_MATRIX_ABI_VERSION) || capacities_size != sizeof(*capacities) || requirements_size != sizeof(*requirements))
+    if ((version != DOE_COMPILER_STAGES_ABI_VERSION && version != DOE_COMPILER_MATRIX_ABI_VERSION && version != DOE_COMPILER_ATOMIC_ABI_VERSION) || capacities_size != sizeof(*capacities) || requirements_size != sizeof(*requirements))
         return compiler_return(DOE_COMPILER_ABI_MISMATCH, saved_errno);
     CompilerLimits limits;
     size_t base, bytes;
@@ -457,7 +457,7 @@ DoeCompilerStatus doe_compiler_compile_stages(uint32_t version,
     DoeCompilerStageResult *result, size_t result_size) {
     const int saved_errno = errno;
     if (result == NULL) return compiler_return(DOE_COMPILER_INPUT_ERROR, saved_errno);
-    if ((version != DOE_COMPILER_STAGES_ABI_VERSION && version != DOE_COMPILER_MATRIX_ABI_VERSION) || capacities_size != sizeof(*capacities) ||
+    if ((version != DOE_COMPILER_STAGES_ABI_VERSION && version != DOE_COMPILER_MATRIX_ABI_VERSION && version != DOE_COMPILER_ATOMIC_ABI_VERSION) || capacities_size != sizeof(*capacities) ||
         selection_size != sizeof(*selection) || result_size != sizeof(*result) ||
         (outputs != NULL ? outputs_size != sizeof(*outputs) : outputs_size != 0u))
         return compiler_return(DOE_COMPILER_ABI_MISMATCH, saved_errno);

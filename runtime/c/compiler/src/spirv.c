@@ -363,7 +363,9 @@ static bool access_condition(Emitter *e, const IrInstruction *ir, uint32_t *cond
 static bool emit_pointer_access(Emitter *e, const IrInstruction *ir) {
     CompilerWorkspace *c = e->program;
     const uint32_t root = ir->operands.access.root, category = ir->operands.access.category;
-    const bool store = ir->opcode == IR_ACCESS_STORE;
+    const bool atomic = atomic_opcode(ir->opcode);
+    const bool store = ir->opcode == IR_ACCESS_STORE || ir->opcode == IR_ATOMIC_STORE;
+    const TypeId pointer_type = atomic ? atomic_element(c, ir) : ir->type;
     const ResourceRecord *resource = category == ROOT_RESOURCE ? &c->resources[root] : NULL;
     const uint32_t storage = resource != NULL ? spirv_resource_storage(resource) : category == ROOT_WORKGROUP ? 4u : 7u;
     const bool wrapped = resource != NULL && spirv_wrapped_resource(c, resource);
@@ -392,12 +394,15 @@ static bool emit_pointer_access(Emitter *e, const IrInstruction *ir) {
             pointer = spirv_reserve_ids(e, 1u);
             uint32_t *words = NULL;
             if (!spirv_instruction_space(e, OP_ACCESS_CHAIN, (size_t)c->walk_count + (wrapped ? 1u : 0u) + 3u, &words)) return false;
-            words[0] = spirv_pointer_type(e, ir->type, storage); words[1] = pointer; words[2] = base;
+            words[0] = spirv_pointer_type(e, pointer_type, storage); words[1] = pointer; words[2] = base;
             uint32_t output = 3u;
             if (wrapped) words[output++] = ID_ZERO_U32;
             for (uint32_t i = c->walk_count; i != 0u; --i) words[output++] = c->walk[i - 1u].cursor;
         }
-        if (store) { EMIT(OP_STORE, pointer, e->values[ir->operands.access.value]); }
+        if (atomic) {
+            if (!spirv_atomic_operation(e, ir, pointer, loaded)) return false;
+        }
+        else if (store) { EMIT(OP_STORE, pointer, e->values[ir->operands.access.value]); }
         else { EMIT(OP_LOAD, spirv_target_type(e, ir->type), loaded, pointer); }
     }
     if (condition != 0u) {
@@ -644,6 +649,9 @@ static bool emit_block(Emitter *e, const IrProgram *program, size_t *cursor,
             case IR_IMAGE:
                 if (!spirv_image_operation(e, ir)) return false;
                 break;
+            case IR_ATOMIC_LOAD: case IR_ATOMIC_STORE: case IR_ATOMIC_ADD: case IR_ATOMIC_SUBTRACT:
+            case IR_ATOMIC_MAX: case IR_ATOMIC_MIN: case IR_ATOMIC_AND: case IR_ATOMIC_OR:
+            case IR_ATOMIC_XOR: case IR_ATOMIC_EXCHANGE: case IR_ATOMIC_COMPARE_EXCHANGE:
             case IR_ACCESS_LOAD:
             case IR_ACCESS_STORE:
                 if (!emit_pointer_access(e, ir)) return false;

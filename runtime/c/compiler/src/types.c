@@ -48,7 +48,8 @@ uint32_t type_children(const CompilerWorkspace *c, TypeId id) {
 }
 TypeId type_child(const CompilerWorkspace *c, TypeId id, uint32_t index) {
     const TypeRecord *t = &c->types[id-7u];
-    return t->kind == TYPE_STRUCT?c->members[t->element+index].type:t->element;
+    return t->kind == TYPE_STRUCT?c->members[t->element+index].type:
+        t->kind == TYPE_ATOMIC_RESULT && index == 1u ? IR_BOOL : t->element;
 }
 static bool round_up(Source *s, uint64_t value, uint64_t alignment, uint32_t offset, uint64_t *out) {
     const uint64_t remainder = value%alignment, padding = remainder == 0u?0u:alignment-remainder;
@@ -96,7 +97,17 @@ bool type_intern(Source *s, uint32_t kind, TypeId element, uint32_t count, TypeI
         return source_pool_error(s, DOE_COMPILER_POOL_TYPES, (size_t)c->type_count+1u, s->length, "type capacity exceeded");
     TypeRecord t = {.kind = kind, .element = element, .count = count, .flags = TYPE_RESOLVED, .target = NO_ID, .aux = NO_ID};
     const uint32_t flags = type_flags(c, element);
-    if (!type_constructible(c, element)) return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, s->length, "aggregate element must be constructible");
+    if (!type_constructible(c, element) && (flags & TYPE_ATOMIC_CONTENT) == 0u)
+        return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, s->length, "aggregate element must be constructible or contain atomics");
+    if (kind == TYPE_ATOMIC || kind == TYPE_ATOMIC_RESULT) {
+        if (element != IR_I32 && element != IR_U32)
+            return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, s->length, "atomic element requires i32 or u32");
+        t.flags |= TYPE_FIXED | (kind == TYPE_ATOMIC ? TYPE_HOST | TYPE_ATOMIC_CONTENT : TYPE_CONSTRUCTIBLE);
+        t.state.layout.size = kind == TYPE_ATOMIC ? 4u : 8u;
+        t.state.layout.alignment = 4u;
+        t.count = kind == TYPE_ATOMIC ? 1u : 2u;
+    }
+    else
     if (kind == TYPE_VECTOR) {
         if (element == IR_VOID || element >= 7u || count<2u || count>4u)
             return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, s->length, "vector requires scalar element and width two through four");
@@ -105,7 +116,7 @@ bool type_intern(Source *s, uint32_t kind, TypeId element, uint32_t count, TypeI
         t.state.layout.alignment = count == 2u?8u:16u;
     }
     else {
-        t.flags|=flags&(TYPE_HOST|TYPE_ABSTRACT);
+        t.flags|=flags&(TYPE_HOST|TYPE_ABSTRACT|TYPE_ATOMIC_CONTENT);
         t.state.layout.alignment = type_alignment(c, element);
         if (!round_up(s, type_size(c, element), t.state.layout.alignment, 0u, &t.state.layout.stride)) return false;
         if (kind == TYPE_ARRAY || kind == TYPE_MATRIX) {
@@ -114,7 +125,7 @@ bool type_intern(Source *s, uint32_t kind, TypeId element, uint32_t count, TypeI
             if (count == 0u || t.state.layout.stride>UINT64_MAX/count)
                 return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, 0u, "array count or layout size is invalid");
             t.state.layout.size = t.state.layout.stride*count;
-            t.flags|=TYPE_CONSTRUCTIBLE;
+            t.flags|=flags&TYPE_CONSTRUCTIBLE;
             if ((flags&TYPE_FIXED) != 0u) t.flags|=TYPE_FIXED;
             if ((flags&TYPE_UNIFORM) != 0u && (kind == TYPE_MATRIX ||
                 (t.state.layout.stride%16u == 0u && t.state.layout.stride%required_alignment(c, element) == 0u)))
@@ -157,6 +168,8 @@ bool type_layout_struct(Source *s, TypeId id) {
         end = m->offset+m->size;
         if (alignment<m->alignment) alignment = m->alignment;
         if ((child_flags&TYPE_HOST) == 0u) flags&=~(uint32_t)TYPE_HOST;
+        if ((child_flags&TYPE_CONSTRUCTIBLE) == 0u) flags&=~(uint32_t)TYPE_CONSTRUCTIBLE;
+        flags |= child_flags & TYPE_ATOMIC_CONTENT;
         if ((child_flags&TYPE_UNIFORM) == 0u || m->offset%required_alignment(c, m->type) != 0u) flags&=~(uint32_t)TYPE_UNIFORM;
         if (tail) {
             flags&=~(uint32_t)(TYPE_CONSTRUCTIBLE|TYPE_FIXED|TYPE_UNIFORM);
@@ -182,6 +195,10 @@ bool type_layout_struct(Source *s, TypeId id) {
 bool type_resource_layout(Source *s, ResourceRecord *r) {
     CompilerWorkspace *c = s->compiler;
     const uint32_t flags = type_flags(c, r->type);
+    if ((flags & TYPE_ATOMIC_CONTENT) != 0u &&
+        (r->kind != DOE_COMPILER_STORAGE_BUFFER || r->access != DOE_COMPILER_READ_WRITE))
+        return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, r->name.offset,
+            "atomic resource types require storage read_write access");
     if (type_handle(c, r->type)) {
         if (r->kind != 0u) return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, r->name.offset, "handle requires implicit handle address space");
         const TypeRecord *t = &c->types[r->type - 7u];

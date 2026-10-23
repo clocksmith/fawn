@@ -115,6 +115,7 @@ static bool call_bit(Uniformity *a,uint32_t id,uint32_t cf,uint32_t *out) {
     const SourceReference reference=a->compiler->expression_references[id];
     const uint32_t callee=reference.kind==SOURCE_FUNCTION?reference.index+1u:0u;
     *out=cf;
+    if (reference.kind == SOURCE_ATOMIC) *out |= varying(a);
     if (reference.kind == SOURCE_IMAGE && (reference.index & 256u) != 0u) *out |= varying(a);
     if (reference.kind==SOURCE_BARRIER)
         return a->subgroup || require_uniform(a,cf,e->source_offset);
@@ -185,8 +186,20 @@ static bool expression_bit(Uniformity *a,uint32_t id,uint32_t cf,uint32_t *out) 
             if (!expression_bit(a,e->left,cf,&left) || !expression_bit(a,e->right,cf,&right)) return false;
             left|=right;
             break;
-        /* The admitted address form names a static resource, not its contents. */
         case EXPRESSION_ADDRESS:
+            /* Address identity does not load the root. Index expressions still
+             * execute, including helper calls and their collective effects. */
+            for (uint32_t path = e->left; path != NO_ID;) {
+                if (!charge(a, 1u)) return false;
+                const Expression *part = &a->compiler->expressions[path];
+                if (part->kind == EXPRESSION_NAME) break;
+                if (part->kind == EXPRESSION_LOAD) {
+                    if (!expression_bit(a, part->value.reference.index, cf, &right)) return false;
+                    left |= right;
+                }
+                path = part->left;
+            }
+            break;
         case EXPRESSION_INTEGER: case EXPRESSION_DECIMAL: case EXPRESSION_ABSTRACT_INTEGER:
         case EXPRESSION_BOOLEAN: case EXPRESSION_LITERAL: break;
     }
