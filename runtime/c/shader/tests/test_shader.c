@@ -91,7 +91,7 @@ int main(void)
     a = (allocations){0};
     assert(doe_shader_create(&options,image_source,strlen(image_source),&shader,&error)==DOE_SHADER_OK);
     assert(doe_shader_borrow(shader,&view)==DOE_SHADER_OK);
-    assert(view.module.schema_version==DOE_COMPILER_STAGES_SCHEMA_VERSION);
+    assert(view.module.schema_version==DOE_COMPILER_MATRIX_SCHEMA_VERSION);
     assert(view.handle_count==2 && view.counts.resources==2);
     for (size_t i=0; i<view.handle_count; ++i) {
         const DoeCompilerHandleV6 *handle=&view.handles[i];
@@ -140,6 +140,41 @@ int main(void)
     assert(a.calls==2 && a.live==1);
     doe_shader_release(shader);
     assert(a.live==0);
-    puts("owned shader: buffer/handle/stage metadata, identity, allocation rollback, lifetime PASS");
+    const char *matrix_source =
+        "struct Uniform{m:mat3x2f} @group(0) @binding(0) var<uniform> u:Uniform;"
+        "@group(0) @binding(1) var<storage,read_write> result:array<vec2f>;"
+        "@compute @workgroup_size(1) fn matrix(){result[0]=u.m*vec3f(1.0);}";
+    const char *module_sources[] = {NULL, "// empty module", "fn helper()->u32{return 2u;}", matrix_source};
+    for(size_t source_index=0;source_index<4;source_index++) {
+        const char *text=module_sources[source_index];
+        const size_t length=text?strlen(text):0;
+        shader=sentinel;
+        for(unsigned ordinal=1;ordinal<=2;ordinal++) {
+            a=(allocations){.fail_at=ordinal};
+            assert(doe_shader_create(&options,text,length,&shader,&error)==DOE_SHADER_OUT_OF_MEMORY);
+            assert(shader==sentinel && a.live==0);
+        }
+        a=(allocations){0};
+        assert(doe_shader_create(&options,text,length,&shader,&error)==DOE_SHADER_OK);
+        assert(doe_shader_borrow(shader,&view)==DOE_SHADER_OK);
+        assert(view.module.schema_version==DOE_COMPILER_MATRIX_SCHEMA_VERSION);
+        assert(doe_shader_matches(shader,text,length,options.compiler_identity,17,&options.selection));
+        if(source_index<3) {
+            assert(view.counts.words==0 && view.counts.entries==0);
+        } else {
+            assert(view.counts.words>0 && view.counts.entries==1);
+            bool found=false;
+            for(size_t type=0;type<view.counts.types;type++) {
+                if(view.types[type].kind!=DOE_COMPILER_TYPE_MATRIX) continue;
+                assert(view.types[type].array_count==3 && view.types[type].vector_width==2);
+                assert(view.types[type].stride_bytes==8 && view.types[type].size_bytes==24);
+                found=true;
+            }
+            assert(found && view.resources[0].minimum_binding_size_bytes==24);
+        }
+        doe_shader_release(shader);
+        assert(a.live==0 && a.calls==2);
+    }
+    puts("owned shader: buffer/handle/stage metadata, matrix/library modules, identity, allocation rollback, lifetime PASS");
     return 0;
 }

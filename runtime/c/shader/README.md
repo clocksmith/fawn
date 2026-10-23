@@ -5,7 +5,7 @@ compute path, not independently or physically qualified.
 This is the persistent ownership half of the standalone C compiler boundary:
 one compilation pipeline, copied source/compiler identity, exact immutable target,
 types, resource layouts, sparse texture/sampler descriptors, graphics IO leaves
-and separate entry closures. ABI6 handle and ABI7 interface descriptors are retained
+and separate entry closures. ABI6 handle and ABI8 interface descriptors are retained
 in the same owned allocation,
 not represented as fabricated buffer layouts. Static-library consumers rebuild
 with this internal view header; the versioned compiler ABI1–6 records do not grow. It follows the allocation,
@@ -64,3 +64,10 @@ the compiler leaves source position unchanged. Software opt-in is the same as th
 image target. This is a single-color offscreen developer integration, not full
 render-pipeline validation, public graphics API, interstage device-limit or physical
 qualification. No retained Tint binary is substituted for either stage.
+
+Entryless WGSL modules are valid owned artifacts: NONE selection preserves their
+validated metadata but yields zero words and entries, not a fabricated Vulkan
+shader. Pipeline creation still requires a real selected entry. Matrix records
+use explicit ABI8 column/row/stride metadata; the owner copies it without a
+second layout calculation. Empty/library/matrix controls exercise both acquisition
+failures, exact source identity, retained views and final release.

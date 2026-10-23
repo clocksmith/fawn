@@ -61,6 +61,9 @@ typedef struct doe_shader_view {
  * fabricated compute invocation inputs. This internal static-library view requires callers
  * to rebuild with this header; it is not a frozen independently loaded ABI.
  * A view borrows immutable data while the caller owns a shader reference.
+ * ABI8 matrix reflection reuses the typed records with an explicit matrix kind.
+ * Valid entryless/library modules own zero words and zero entries; they are not
+ * Vulkan shaders and cannot create a pipeline without a selected stage.
  * This owns compiled data, not device pipelines, GPU work or a cache policy.
  * Runtime dispatch/texture preconditions and Metal size metadata are NOT inferred
  * from standalone reflection; that production TranslationInfo seam is unfinished. */
