@@ -33,9 +33,10 @@ WGPURenderPassEncoder wgpuCommandEncoderBeginRenderPass(WGPUCommandEncoder handl
             }
             const doe_resource_texture_desc *parent = doe_resource_texture_description(
                 doe_resource_view_texture((doe_resource_view *)color->view));
-            valid = !color->nextInChain && color->depthSlice == WGPU_DEPTH_SLICE_UNDEFINED &&
-                (color->storeOp == WGPUStoreOp_Store ||
-                 (parent && parent->samples > 1 && color->storeOp == WGPUStoreOp_Discard));
+            /* Discard leaves the subresource undefined in the backend's per-aspect
+             * owner; later loads, copies and bindings see real zero clears. */
+            valid = !color->nextInChain && parent && color->depthSlice == WGPU_DEPTH_SLICE_UNDEFINED &&
+                (color->storeOp == WGPUStoreOp_Store || color->storeOp == WGPUStoreOp_Discard);
             targets.colors[i] = (doe_resource_color_attachment){.view=(doe_resource_view *)color->view,
                 .resolve_target=(doe_resource_view *)color->resolveTarget,.load=color->loadOp,.store=color->storeOp,
                 .clear={color->clearValue.r,color->clearValue.g,color->clearValue.b,color->clearValue.a}};

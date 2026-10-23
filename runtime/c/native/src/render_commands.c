@@ -24,12 +24,12 @@ static bool index_format(WGPUIndexFormat format, doe_vk_index_format *out)
 /* A temporary typed conversion of one immutable resource pass span. There is no
  * new recording state or lease registry: the resource owner already finalized
  * ordering, and one backend call consumes this entire borrowed pass. */
-static doe_vk_status prepare_draw(const doe_resource_render_packet *packet,
+static doe_vk_status prepare_draw(doe_vk_commands *commands, const doe_resource_render_packet *packet,
     doe_vk_render_pass_draw *draw, doe_vk_binding_resource *bindings, doe_vk_buffer_binding *vertices,
     doe_vk_render_indirect *indirect, doe_vk_render_indices *indices)
 {
     native_pipeline *pipeline = doe_resource_render_pipeline_native(packet->pipeline);
-    doe_vk_status status = native_resolve_bindings(pipeline,
+    doe_vk_status status = native_resolve_bindings(commands, pipeline,
         doe_resource_render_pipeline_get_layout(packet->pipeline), packet->groups, &packet->offsets, bindings);
     if (status != DOE_VK_OK) return status;
     for (size_t i = 0; i < pipeline->vertex_count; ++i) {
@@ -163,7 +163,7 @@ doe_vk_status native_record_render(doe_vk_commands *commands,
         else {
             op->kind = DOE_VK_RENDER_DRAW;
             const doe_resource_render_packet *packet = doe_resource_render_record_borrow(records[i].value.render);
-            status = prepare_draw(packet, &op->value.draw, bindings ? bindings + binding_at : NULL,
+            status = prepare_draw(commands, packet, &op->value.draw, bindings ? bindings + binding_at : NULL,
                 vertices ? vertices + vertex_at : NULL, packet->indirect ? &indirect[indirect_at++] : NULL,
                 packet->indexed ? &indices[indexed_at++] : NULL);
             if (status == DOE_VK_OK) {
