@@ -1,0 +1,40 @@
+{
+  "status": "Focused owned-artifact developer checks, no physical qualification",
+  "core_commit": "cc19086f",
+  "compiler_library_sha256": "f694596649289e724e4e0fc5ccde352fffae3dcf752358b36701c1fc0ff4243e",
+  "change": "Use explicit ABI8 projection with unchanged internal view layout; retain matrix metadata and validated entryless modules with zero target words, not fabricated Vulkan modules. No parser/layout owner added.",
+  "command": "make -C runtime/c/shader BUILD=/tmp/doe-shader-library-20261023 COMPILER_LIBRARY=/tmp/doe-library-author-20261023/libdoe_compiler.so test sanitize",
+  "result": "Normal C/C++ consumers and owner ASan/UBSan PASS. Both workspace/artifact allocation faults, cleanup, exact identity and retained views covered for empty/comment/library/matrix sources plus retained buffer/image/graphics tests.",
+  "limitations": [
+    "Sanitizer instruments owned shader source, compiler library separately qualified by its source-bound receipt; no claim this command instruments compiler.",
+    "LeakSanitizer disabled under ptrace; explicit owner allocation counts balance.",
+    "Native public empty-module control is separately pending in the native author lane."
+  ],
+  "source_sha256": {
+    "runtime/c/shader/Makefile": "add5497ee7cd64b33770d58e38fbc074b3cd946dc9a7854c8d7297916a18f948",
+    "runtime/c/shader/include/doe_shader.h": "8dd71d28d87559add084167b46176ba8e407f3b81e60851f74009113b756aba9",
+    "runtime/c/shader/tests/cpp.cpp": "e4ccf651ecb3e960e2f436b7176ff32a0cb5eedc72dcba36798f420ad29c1cb5",
+    "runtime/c/shader/tests/vulkan_images.c": "c0351de9cd0953e66fbc45704353a6a96bb7c8afee6902973931c1d63206fad4",
+    "runtime/c/shader/tests/test_shader.c": "097cd06b8fac706d425b89de564a9446809609552596a2500c39d2645e81688f",
+    "runtime/c/shader/tests/vulkan_graphics.c": "7db6569a16bbd27e769ba76fa3292b328afda0bc55c71c36532e30aad260d760",
+    "runtime/c/shader/src/shader.c": "a57112dd1cd718e55fd18f5f88fd2c527cdeaa4ee7bb249766fe38641ac634cc"
+  },
+  "compiler_header_sha256": {
+    "runtime/c/compiler/include/doe_compiler_typed.h": "c7decbdb8da093a3485ded84901bf97f88eea8db6237dfd4089c730aa08e6216",
+    "runtime/c/compiler/include/doe_compiler_v2.h": "b0a60c2f05b70dba0786365dadd81b993accbd93f7f68f0e3accf86a815ae891",
+    "runtime/c/compiler/include/doe_compiler_stages.h": "884af2b054429a3766b34fd4095e4127471937ba15ed7c37712b06cadb6ae69f",
+    "runtime/c/compiler/include/doe_compiler_features.h": "face7d3315ec8bcd884f354cc08efa566c479b5136a509b7db751399bbbd320c",
+    "runtime/c/compiler/include/doe_compiler_module.h": "01cc2966ce7866ccfde6cca75e6ec6e60921f63c271e31cf94648e8d78907cef",
+    "runtime/c/compiler/include/doe_compiler_job.h": "6160e631973ffcd9777553520d329b6d6048315f2a90b1283989077e9f51237f",
+    "runtime/c/compiler/include/doe_compiler_resources.h": "b16c1f9f1a5129daeb32f83baaac1fb1bea41c1a00c084c5fe9c4d7f6cded2b2",
+    "runtime/c/compiler/include/doe_compiler.h": "5bf4f5e5a4e4624c094320ad9ec97119278bc7f6f06b0e47c01e444d42c6dc5b"
+  },
+  "artifact_sha256": {
+    "/tmp/doe-shader-library-20261023/sanitize": "b214ee79ebb60062567dfc5f1ff94f3664c9559cf6a2918987607f41e08c58d0",
+    "/tmp/doe-shader-library-20261023/cpp": "dbae2eaf81c5d81dd3e65ca9739b80c583c710cbd96858683bb35eec7216df02",
+    "/tmp/doe-shader-library-20261023/test_shader": "f87e594019ec309bdcc58a650dd1bd41935b9f128e97ba6b964618ffac8accca",
+    "/tmp/doe-shader-library-20261023/libdoe_shader.a": "3947022b337e3f6e177af79141ed62f7695f37b22820df5e4125f19963ace514",
+    "/tmp/doe-shader-library-20261023/shader.o": "86532a7f7043c25cb1adaac05cce48de16f9357e5c8e4fbf637509bad11482e6"
+  },
+  "log_sha256": "5a0a1557a7b051cd9b97aa0c5e62c674542ddd8970eadf03a49e882d4e54c1cd"
+}
