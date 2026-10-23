@@ -91,6 +91,9 @@ static void object_path(HlslEmitter *e, const IrInstruction *ir, const HlslPath 
             if (root >= e->module->local_count) hlsl_error(e, "Hlsl local root identity is invalid");
             hlsl_format(e, "l%u", root);
             break;
+        case ROOT_POINTER:
+            hlsl_error(e, "HLSL pointer dereference is not implemented");
+            break;
         case ROOT_VALUE: hlsl_value(e, root); break;
         case ROOT_WORKGROUP:
             if (root >= e->module->workgroup_count) hlsl_error(e, "Hlsl workgroup root identity is invalid");

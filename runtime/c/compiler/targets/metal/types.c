@@ -23,6 +23,10 @@ static void type_name(MetalEmitter *e, TypeId type, unsigned depth) {
     }
     const TypeRecord *t = aggregate(e, type);
     if (t == NULL) return;
+    if (t->kind == TYPE_POINTER) {
+        metal_error(e, "METAL function pointers are not implemented");
+        return;
+    }
     if (t->kind == TYPE_TEXTURE || t->kind == TYPE_SAMPLER) {
         metal_handle_type(e, type);
         return;
