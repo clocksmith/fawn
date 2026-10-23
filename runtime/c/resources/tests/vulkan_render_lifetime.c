@@ -22,9 +22,9 @@ static doe_vk_shader load_shader(const char *path, const char *entry)
  * Unsupported events/state reject before any native pass preparation. */
 static doe_vk_status validate_render_packet(const doe_resource_render_packet *packet)
 {
-    if (!packet || packet->targets.depth_stencil || packet->targets.resolve_target ||
-        packet->targets.color_store != WGPUStoreOp_Store || packet->indexed || packet->indirect ||
-        packet->state.stencil_reference) return DOE_VK_UNSUPPORTED;
+    if (!packet || packet->indexed || packet->indirect ||
+        (packet->targets.color && packet->targets.color_store != WGPUStoreOp_Store &&
+        packet->targets.color_store != WGPUStoreOp_Discard)) return DOE_VK_UNSUPPORTED;
     for (size_t i = 0; i < 4; i++) if (packet->state.blend[i] != 0) return DOE_VK_UNSUPPORTED;
     return DOE_VK_OK;
 }
@@ -53,7 +53,8 @@ static doe_vk_status prepare_draw(const doe_resource_render_packet *packet,
         .bindings = binding, .binding_count = 1, .vertices = vertex, .vertex_buffer_count = 1,
         .draw = {.vertex_count = packet->count, .instance_count = packet->instances,
             .first_vertex = packet->first, .first_instance = packet->first_instance,
-            .viewport_convention = DOE_VK_VIEWPORT_WEBGPU}};
+            .viewport_convention = DOE_VK_VIEWPORT_WEBGPU,
+            .stencil_reference = packet->state.stencil_reference}};
     memcpy(draw->draw.viewport, packet->state.viewport, sizeof(draw->draw.viewport));
     memcpy(draw->draw.scissor, packet->state.scissor, sizeof(draw->draw.scissor));
     return DOE_VK_OK;
@@ -71,10 +72,10 @@ static doe_vk_status render_pass(doe_vk_commands *commands,
         return DOE_VK_UNSUPPORTED;
     doe_vk_clear_color clear = {0};
     const doe_vk_clear_color *clear_pointer = NULL;
-    if (begin->targets.color_load == WGPULoadOp_Clear) {
+    if (begin->targets.color && begin->targets.color_load == WGPULoadOp_Clear) {
         for (size_t i = 0; i < 4; i++) clear.float32[i] = (float)begin->targets.clear_color[i];
         clear_pointer = &clear;
-    } else if (begin->targets.color_load != WGPULoadOp_Load) return DOE_VK_UNSUPPORTED;
+    } else if (begin->targets.color && begin->targets.color_load != WGPULoadOp_Load) return DOE_VK_UNSUPPORTED;
     enum { MAX_CONSUMER_DRAWS = 3, MAX_CONSUMER_OPS = 9 };
     doe_vk_render_pass_op ops[MAX_CONSUMER_OPS];
     doe_vk_binding_resource bindings[MAX_CONSUMER_DRAWS];
@@ -94,14 +95,29 @@ static doe_vk_status render_pass(doe_vk_commands *commands,
         if (record->kind != DOE_COMMAND_RENDER) return DOE_VK_UNSUPPORTED;
         const doe_resource_render_packet *packet = doe_resource_render_record_borrow(record->value.render);
         if (validate_render_packet(packet) != DOE_VK_OK || packet->first_in_pass ||
-            packet->targets.color != begin->targets.color || packet->targets.occlusion_queries != queries)
+            packet->targets.color != begin->targets.color || packet->targets.occlusion_queries != queries ||
+            packet->targets.depth_stencil != begin->targets.depth_stencil ||
+            packet->targets.resolve_target != begin->targets.resolve_target)
             return DOE_VK_UNSUPPORTED;
         if (packet->boundary_only) {
             if (!packet->last_in_pass) return DOE_VK_UNSUPPORTED;
             /* The native owner validates query nesting/reset/availability. This
              * adapter preserves event order and identity, not a second state map. */
-            doe_vk_status status = doe_vk_commands_render_pass_ops(commands,
-                doe_resource_view_native(begin->targets.color), clear_pointer,
+            const doe_resource_render_targets *targets = &begin->targets;
+            doe_vk_render_pass_desc desc = {
+                .color = doe_resource_view_native(targets->color), .clear_color = clear_pointer,
+                .discard_color = targets->color_store == WGPUStoreOp_Discard,
+                .depth_stencil = doe_resource_view_native(targets->depth_stencil),
+                .clear_depth = targets->depth_load == WGPULoadOp_Clear,
+                .clear_stencil = targets->stencil_load == WGPULoadOp_Clear,
+                .discard_depth = targets->depth_store == WGPUStoreOp_Discard,
+                .discard_stencil = targets->stencil_store == WGPUStoreOp_Discard,
+                .depth_read_only = targets->depth_read_only,
+                .stencil_read_only = targets->stencil_read_only,
+                .depth_clear_value = targets->clear_depth,
+                .stencil_clear_value = targets->clear_stencil,
+                .resolve_target = doe_resource_view_native(targets->resolve_target)};
+            doe_vk_status status = doe_vk_commands_render_pass_full(commands, &desc,
                 doe_resource_query_set_native(queries), ops, op_count);
             if (status == DOE_VK_OK) *consumed = i + 1;
             return status;
@@ -129,6 +145,32 @@ static doe_resource_buffer *adopt_buffer(const doe_resource_config *config, life
     assert(doe_resource_buffer_create(config, &desc,
         (doe_resource_native){native, life, release_buffer}, &buffer) == DOE_RESOURCE_OK);
     return buffer;
+}
+
+static doe_resource_view *adopt_attachment(const doe_resource_config *config, lifecycle *life,
+    doe_vk_context *context, const doe_resource_texture_limits *limits,
+    doe_vk_texture_format native_format, WGPUTextureFormat format, bool depth)
+{
+    doe_vk_error error = {0};
+    doe_vk_texture_desc native_desc = {.dimension = DOE_VK_TEXTURE_2D, .format = native_format,
+        .width = 8, .height = 8, .depth_or_layers = 1, .mip_levels = 1, .sample_count = 4,
+        .usage = depth ? DOE_VK_TEXTURE_DEPTH_STENCIL_ATTACHMENT : DOE_VK_TEXTURE_COLOR_ATTACHMENT};
+    doe_vk_texture *native_image;
+    doe_vk_texture_view *native_view;
+    require(doe_vk_texture_create(context, &native_desc, &native_image, &error), "multisample attachment");
+    doe_vk_texture_view_desc native_view_desc = {DOE_VK_VIEW_2D, 0, 1, 0, 1};
+    require(doe_vk_texture_view_create(native_image, &native_view_desc, &native_view, &error), "multisample view");
+    doe_resource_texture_desc desc = {.dimension = WGPUTextureDimension_2D,
+        .format = format, .width = 8, .height = 8, .depth_or_layers = 1,
+        .mip_levels = 1, .samples = 4, .usage = WGPUTextureUsage_RenderAttachment};
+    doe_resource_texture *texture;
+    doe_resource_view *view;
+    assert(doe_resource_texture_create(config, &desc, limits,
+        (doe_resource_native){native_image, life, release_texture}, &texture) == DOE_RESOURCE_OK);
+    assert(doe_resource_view_create(texture, &(doe_resource_view_desc){0},
+        (doe_resource_native){native_view, life, release_view}, &view) == DOE_RESOURCE_OK);
+    doe_resource_texture_release(texture);
+    return view;
 }
 
 int main(int argc, char **argv)
@@ -195,6 +237,10 @@ int main(int argc, char **argv)
     doe_resource_view_desc view_desc = {0};
     assert(doe_resource_view_create(image, &view_desc,
         (doe_resource_native){native_view, &life, release_view}, &view) == DOE_RESOURCE_OK);
+    doe_resource_view *multisample = adopt_attachment(&config, &life, context, &image_limits,
+        DOE_VK_FORMAT_RGBA8_UNORM, WGPUTextureFormat_RGBA8Unorm, false);
+    doe_resource_view *depth_stencil = adopt_attachment(&config, &life, context, &image_limits,
+        DOE_VK_FORMAT_D32_FLOAT_S8_UINT, WGPUTextureFormat_Depth32FloatStencil8, true);
     doe_resource_layout_entry entry = {.kind = DOE_BIND_BUFFER, .visibility = WGPUShaderStage_Vertex,
         .buffer_type = WGPUBufferBindingType_Uniform, .minimum_size = 96};
     doe_resource_layout *layout;
@@ -215,20 +261,26 @@ int main(int argc, char **argv)
     doe_vk_render_pipeline_desc native_pipeline_desc = {.vertex = vertex_shader, .fragment = fragment_shader,
         .color_format = DOE_VK_FORMAT_RGBA8_UNORM, .topology = DOE_VK_TRIANGLES, .color_write_mask = 15,
         .vertex_buffer_count = 1, .attribute_count = 3, .vertex_buffers = &vertex_layout, .attributes = attributes,
-        .binding_count = 1, .bindings = &native_layout};
+        .binding_count = 1, .bindings = &native_layout, .sample_count = 4,
+        .depth_stencil_format = DOE_VK_FORMAT_D32_FLOAT_S8_UINT,
+        .depth_test = true, .depth_write = true, .depth_compare = 1, .stencil_test = true,
+        .stencil_front = {0, 2, 0, 7}, .stencil_back = {0, 2, 0, 7},
+        .stencil_read_mask = 255, .stencil_write_mask = 255};
     doe_vk_pipeline *native_pipeline;
     require(doe_vk_render_pipeline_create(context, &native_pipeline_desc, &native_pipeline, &error), "pipeline");
     free((void *)vertex_shader.words);
     free((void *)fragment_shader.words);
     doe_resource_render_pipeline_desc pipeline_desc = {.color_format = WGPUTextureFormat_RGBA8Unorm,
-        .samples = 1, .vertex_count = 1, .vertices = {{36, 36, WGPUVertexStepMode_Vertex}}};
+        .samples = 4, .vertex_count = 1, .vertices = {{36, 36, WGPUVertexStepMode_Vertex}},
+        .depth_stencil_format = WGPUTextureFormat_Depth32FloatStencil8, .depth_write = true, .stencil_write = true};
     doe_resource_render_pipeline *pipeline;
     assert(doe_resource_render_pipeline_create(&config, pipeline_layout, &pipeline_desc,
         (doe_resource_native){native_pipeline, &life, release_pipeline}, &pipeline) == DOE_RESOURCE_OK);
     doe_resource_pipeline_layout_release(pipeline_layout);
     doe_resource_layout_release(layout);
     doe_resource_bundle_encoder *bundle_encoder;
-    doe_resource_render_bundle_desc bundle_desc = {.color_format = WGPUTextureFormat_RGBA8Unorm, .samples = 1};
+    doe_resource_render_bundle_desc bundle_desc = {.color_format = WGPUTextureFormat_RGBA8Unorm, .samples = 4,
+        .depth_stencil_format = WGPUTextureFormat_Depth32FloatStencil8};
     assert(doe_resource_bundle_encoder_create(&config, &bundle_desc, &bundle_encoder) == DOE_RESOURCE_OK);
     assert(doe_resource_bundle_encoder_set_pipeline(bundle_encoder, pipeline) == DOE_RESOURCE_OK);
     doe_resource_dispatch_group dispatch_group = {group, NULL, 0};
@@ -244,13 +296,18 @@ int main(int argc, char **argv)
     doe_resource_buffer_release(vertices);
     doe_resource_encoder *encoder;
     doe_resource_render_pass *pass;
-    doe_resource_render_targets targets = {.color = view, .color_load = WGPULoadOp_Clear,
-        .color_store = WGPUStoreOp_Store, .clear_color = {0, 0, 1, 1}, .occlusion_queries = queries};
+    doe_resource_render_targets targets = {.color = multisample, .resolve_target = view,
+        .depth_stencil = depth_stencil, .color_load = WGPULoadOp_Clear,
+        .depth_load = WGPULoadOp_Clear, .stencil_load = WGPULoadOp_Clear,
+        .depth_store = WGPUStoreOp_Store, .stencil_store = WGPUStoreOp_Store,
+        .color_store = WGPUStoreOp_Store, .clear_color = {0, 0, 1, 1}, .clear_depth = 1,
+        .occlusion_queries = queries};
     assert(doe_resource_encoder_create(&config, &encoder) == DOE_RESOURCE_OK);
     assert(doe_resource_encoder_begin_render(encoder, &targets, &pass) == DOE_RESOURCE_OK);
     assert(doe_resource_render_pass_begin_occlusion(pass, 0) == DOE_RESOURCE_OK);
     doe_resource_render_state state = *doe_resource_render_pass_state(pass);
     state.scissor[2] = 4;
+    state.stencil_reference = 5;
     assert(doe_resource_render_pass_set_state(pass, &state) == DOE_RESOURCE_OK);
     assert(doe_resource_render_pass_execute_bundles(pass, &bundle, 1) == DOE_RESOURCE_OK);
     state.scissor[0] = 4;
@@ -270,6 +327,10 @@ int main(int argc, char **argv)
     doe_resource_render_pass_release(pass);
     assert(doe_resource_encoder_resolve_queries(encoder, queries, 0, 4, query_result, 256) == DOE_RESOURCE_OK);
     targets.color_load = WGPULoadOp_Load;
+    targets.color_store = WGPUStoreOp_Discard; /* Resolve survives source discard. */
+    targets.depth_load = targets.stencil_load = WGPULoadOp_Undefined;
+    targets.depth_store = targets.stencil_store = WGPUStoreOp_Undefined;
+    targets.depth_read_only = targets.stencil_read_only = true;
     assert(doe_resource_encoder_begin_render(encoder, &targets, &pass) == DOE_RESOURCE_OK);
     /* A later zero-draw pass may reuse index0; native reset must replace its hit. */
     assert(doe_resource_render_pass_begin_occlusion(pass, 0) == DOE_RESOURCE_OK);
@@ -277,6 +338,13 @@ int main(int argc, char **argv)
     assert(doe_resource_render_pass_end(pass) == DOE_RESOURCE_OK);
     doe_resource_render_pass_release(pass);
     assert(doe_resource_encoder_resolve_queries(encoder, queries, 0, 1, query_result, 0) == DOE_RESOURCE_OK);
+    /* No fabricated color target: preserve stencil while discarding depth. */
+    targets = (doe_resource_render_targets){.depth_stencil = depth_stencil,
+        .depth_load = WGPULoadOp_Load, .depth_store = WGPUStoreOp_Discard,
+        .stencil_read_only = true};
+    assert(doe_resource_encoder_begin_render(encoder, &targets, &pass) == DOE_RESOURCE_OK);
+    assert(doe_resource_render_pass_end(pass) == DOE_RESOURCE_OK);
+    doe_resource_render_pass_release(pass);
     doe_resource_texture_copy read = {.bytes_per_row = 32, .rows_per_image = 8,
         .width = 8, .height = 8, .depth_or_layers = 1};
     assert(doe_resource_encoder_copy_texture(encoder, readback, image, &read,
@@ -288,6 +356,8 @@ int main(int argc, char **argv)
     doe_resource_buffer_release(query_result);
     doe_resource_query_set_release(queries);
     doe_resource_view_release(view);
+    doe_resource_view_release(multisample);
+    doe_resource_view_release(depth_stencil);
     doe_resource_texture_release(image);
     assert(!life.native_releases);
     doe_vk_commands *native_commands;
@@ -295,9 +365,9 @@ int main(int argc, char **argv)
     doe_vk_context_release(context); /* All remaining device leases belong to owners. */
     size_t count;
     const doe_resource_command *records = doe_resource_commands_borrow(commands, &count);
-    assert(count == 18);
+    assert(count == 20);
     doe_resource_render_packet unsupported = *doe_resource_render_record_borrow(records[0].value.render);
-    unsupported.targets.color_store = WGPUStoreOp_Discard;
+    unsupported.indexed = true;
     assert(validate_render_packet(&unsupported) == DOE_VK_UNSUPPORTED);
     doe_resource_command unsupported_events[] = {records[0], {.kind = DOE_COMMAND_WRITE_TIMESTAMP}};
     size_t consumed = 99;
@@ -329,7 +399,7 @@ int main(int argc, char **argv)
             i++;
         }
     }
-    assert(native_passes == 2); /* Three draws then a zero-draw query-only load/store pass. */
+    assert(native_passes == 3); /* Draws, query-only resolve/discard, depth-only aspect discard. */
     assert(doe_resource_commands_begin_submit(commands) == DOE_RESOURCE_OK);
     doe_resource_commands_release(commands);
     require(doe_vk_commands_submit(native_commands, &error), "submit");
@@ -342,7 +412,7 @@ int main(int argc, char **argv)
     assert(!life.native_releases);
     require(doe_vk_commands_wait(native_commands, UINT64_C(5000000000), &error), "wait");
     assert(doe_resource_commands_settle(commands, DOE_RESOURCE_OK) == DOE_RESOURCE_OK);
-    assert(life.native_releases == 8 && !life.allocations);
+    assert(life.native_releases == 12 && !life.allocations);
     /* Native command retirement, not resource wrapper lifetime, owns this borrow. */
     require(doe_vk_buffer_read(native_readback, 0, pixels, sizeof(pixels)), "readback after resource finalization");
     for (unsigned y = 0; y < 8; y++) for (unsigned x = 0; x < 8; x++) {
@@ -360,6 +430,6 @@ int main(int argc, char **argv)
         assert(sentinel[i] == 0xa5);
     }
     require(doe_vk_commands_release(native_commands), "retire native owner");
-    puts("PASS resource bundle/query event order, real hit/clipped/empty/unwritten/later-pass reuse, exact 64 pixels and query payload, pending retention and eight terminal native finalizers");
+    puts("PASS resource bundle/query event order, real hit/clipped/empty/unwritten/later-pass reuse, exact 64 pixels and query payload, 4x resolve with D32S8/empty read-only LOAD/source discard and depth-only aspect discard, pending retention and twelve terminal native finalizers");
     return 0;
 }

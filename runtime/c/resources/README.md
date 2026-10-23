@@ -183,19 +183,26 @@ three dynamic scissors inside one real native pass: two visible draws produce
 48 magenta and 16 blue pixels in an 8x8 target, and a clipped draw changes nothing.
 The ordered draw/query span consumes BEGIN/END occlusion events without another
 recorder or availability map. Actual hit, clipped, empty and unwritten results
-resolve as one nonzero and three zeros. A following zero-draw LOAD/STORE pass
-reuses the hit index as an empty query and resolves zero, preserving the image.
+resolve as one nonzero and three zeros. Drawing uses a real 4x RGBA8 attachment
+with 4x D32S8 depth/stencil and a retained single-sample resolve target. A following
+zero-draw pass reuses the hit index as an empty query, loads read-only depth/stencil,
+resolves color before discarding its multisample source, and preserves the image.
+A third actual depth-only pass discards depth while preserving stencil; it has no
+fabricated color attachment and does not claim depth-only drawing.
 All neighboring query-buffer bytes retain their sentinel values. Missing end and
 unsupported interleaved timestamp events reject before native work, preserving
 consumed output. All caller resources and the bundle are released before native
-recording; pending native reads/releases reject, and all eight adopted payloads
+recording; pending native reads/releases reject, and all twelve adopted payloads
 finalize only at terminal resource settlement. Native commands retain exact
 physical objects through later readback and retirement. Shader fixtures are
 retained Tint `particles.wgsl` vertex/fragment SPIR-V, not C graphics compiler
 output; their hashes/provenance are in the backend `SMOKE_IMAGE_FIXTURES.json`.
-The bounded consumer admits three direct draws, one RGBA8 target, one uniform
-binding, one vertex buffer and one occlusion pool. Unsupported depth, stencil,
-MSAA, indexed/indirect, discard and dynamic blend state reject. Occlusion values
+The bounded consumer admits three direct draws, one RGBA8 target with optional
+D32S8 and 4x resolve, one uniform binding, one vertex buffer and one occlusion pool.
+Indexed/indirect and dynamic blend state reject; depth-only drawing is outside
+this consumer. `DEVELOPER_RECEIPT_FULLPASS.json` binds the optimized and fully
+instrumented software runs. Earlier sealed graphics receipts preserve their narrower
+historical subsets. Occlusion values
 establish only zero/nonzero visibility, not precise sample counts. This is
 software execution and ownership evidence, not public native render ABI
 integration, graphics parity or physical GPU qualification.
@@ -272,9 +279,9 @@ survives empty passes, logical binding resets and repeated bundle replay; unused
 sampling setters and empty-bundle usage histories still conflict with the destination.
 Four begin-allocation failures, destroyed-before-submit and pending/failed retirement
 preserve existing ownership contracts. Backend format/resolve capabilities remain
-separate admission. The current bounded software consumer explicitly rejects resolve
-until it consumes the actual backend full-pass API; these new tests do not execute
-multisample rendering. `DEVELOPER_RECEIPT_RESOLVE_ADMISSION.json` binds this increment.
+separate admission. `DEVELOPER_RECEIPT_RESOLVE_ADMISSION.json` binds these host
+checks; the later full-pass consumer above separately establishes actual bounded
+software multisample execution.
 
 Texture-view defaults are dimension- and aspect-specific, not uniformly the rest
 of the parent texture. Explicit 2D views default to one layer, Cube to six, and
