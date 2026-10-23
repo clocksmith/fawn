@@ -4,7 +4,7 @@ This private C11 owner implements real Linux LP64 Vulkan 1.2 discovery, device a
 queue selection, capabilities, host-coherent and device-local buffers, sparse
 multi-group buffer/image/sampler descriptors, SPIR-V compute pipelines, copy/fill and
 direct dispatch recording, asynchronous fence submission, readback and retirement.
-Single-color offscreen rendering shares those allocation and completion owners.
+Offscreen rendering with up to eight indexed color slots shares those allocation and completion owners.
 The texture owner adds uncompressed color images, retained views/samplers and
 mip/layer-aware padded transfers across 1D/2D/3D images.
 It is not wired into the production provider. It is not full Vulkan/WebGPU parity.
@@ -112,7 +112,7 @@ transfer barriers. Both fixtures are pinned; neither is C texture compiler evide
 ## Offscreen graphics
 
 `include/doe_vk_render.h` consumes a borrowed immutable span of direct instanced
-raster draws as one actual single-color native render pass. The optional clear
+raster draws as one actual native render pass. The optional clear
 executes once at begin; otherwise begin loads initialized contents. End always
 stores. An empty span still executes the real load/clear/store pass. The old
 clear-only and single-draw conveniences delegate to this same recorder.
@@ -130,13 +130,30 @@ clear initializes only the selected full 2D mip/layer; LOAD cannot read undefine
 contents. Resource pass/bundle packets retain their canonical ordering upstream;
 this borrowed span is not another resource recorder or reference-count owner.
 
-Pipeline state admits format-supported samples, one color target, eight vertex layouts/sixteen
+Pipeline state admits format-supported samples, indexed color targets, eight vertex layouts/sixteen
 32-bit scalar/vector attributes, native blend/cull/topology controls and dynamic
 viewport/scissor. Blend constants default to pipeline state; explicit per-draw overrides use real
 native dynamic state after whole-span finite-value validation. The full descriptor
 adds one depth/stencil attachment, independent per-aspect load/clear/store/discard,
-read-only admission and dynamic stencil reference. Multiple color targets
-remain unsupported. Indexed and guarded indirect draws are described below.
+read-only admission and dynamic stencil reference. Indexed and guarded indirect draws are described below.
+
+### Indexed color slots and anisotropic samplers
+
+`color_target_count`/`color_targets` and `color_attachment_count`/
+`color_attachments` describe up to eight slots; a zero format or NULL view is an
+unused slot with `VK_ATTACHMENT_UNUSED` references and no operations. The legacy
+single-color fields remain the slot-0 input only and are rejected together with
+slots; one normalizer per descriptor kind owns that rule, and one render-pass
+constructor serves both pipelines and passes so compatibility comes from the same
+code. Attachments are ordered as used colors, depth/stencil, then per-slot resolves.
+Slot counts use the actual `maxColorAttachments`. Differing per-slot blend or
+write-mask state needs `independentBlend`, which is enabled only when offered
+(`caps.independent_blend`); without it differing used slots are UNSUPPORTED and
+unused slots take the shared state. One subresource cannot occupy two slots.
+`samplerAnisotropy` is likewise enabled only when offered; samplers above one need
+all filters linear, reject without the feature, and clamp to the actual maximum.
+`tests/color_targets_contract.c` checks the native packets on the host; real
+execution is the public `runtime/c/native` multiple-attachment client.
 Unsupported resource packets must be rejected, not silently dropped. Graphics
 requires `require_graphics_queue=true` at context creation when the device offers
 separate compute-only queues; default compute queue selection is unchanged.

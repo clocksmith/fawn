@@ -182,6 +182,7 @@ int main(void) {
     doe_vk_context context = {.references = 1};
     context.caps.queue_family = 2;
     context.caps.queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT;
+    context.caps.max_color_attachments = 8;
     context.caps.surface_platforms = DOE_VK_SURFACE_XCB;
     context.vk = (doe_vk_functions){.vkCreateXcbSurfaceKHR = create_xcb, .vkDestroySurfaceKHR = destroy_surface,
         .vkGetPhysicalDeviceSurfaceSupportKHR = support, .vkGetPhysicalDeviceSurfaceCapabilitiesKHR = capabilities,

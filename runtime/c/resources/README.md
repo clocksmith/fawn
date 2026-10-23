@@ -142,13 +142,20 @@ Copy admission shares only checked byte-footprint arithmetic with native Vulkan
 through `../common/include/doe_copy_footprint.h`; format, pitch/default, zero extent,
 alignment, capacity and native granularity policies remain in their actual owners.
 
-Render ownership admits up to one color attachment and optional depth/stencil,
-requiring at least one actual attachment, with multisample resolve destinations.
+Render ownership admits up to eight indexed color slots (a NULL view or Undefined
+format is an unused slot) and optional depth/stencil, requiring at least one actual
+attachment, with a multisample resolve destination per slot. `src/render_targets.c`
+alone owns slot normalization (legacy single-color fields are slot 0 input only and
+are never stored), the requested `max_color_attachments` and
+`max_color_attachment_bytes_per_sample` limits (zero selects the WebGPU baselines 8
+and 32), the WebGPU render-target byte-cost/alignment table and pass/pipeline/bundle
+layout equality ignoring trailing unused slots. One texture subresource cannot occupy
+two slots. `tests/test_color_targets.c` checks sparse layouts, limits, alignment,
+aliasing and legacy/slot mixing on the host.
 The eight-vertex-buffer/four-group envelope covers direct/indexed/indirect records,
 timestamp writes and occlusion scopes.
 The owner itself does not execute graphics/query work. The standalone native
-consumer below exercises a narrower real graphics subset. MRT,
-surface presentation, binding arrays and external-texture color conversion remain
+consumer below exercises a narrower real graphics subset. Surface presentation, binding arrays and external-texture color conversion remain
 unsupported. Actual map/future delivery and native shader execution are consumer
 responsibilities. Unsupported consumer command kinds must reject before submit.
 

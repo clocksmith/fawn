@@ -214,12 +214,14 @@
       "VK_SUBOPTIMAL_KHR": 1000001003,
       "VK_ERROR_OUT_OF_DATE_KHR": -1000001004,
       "VK_ERROR_SURFACE_LOST_KHR": -1000000000,
-      "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ID_PROPERTIES": 1000071004
+      "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ID_PROPERTIES": 1000071004,
+      "VK_ATTACHMENT_UNUSED": 4294967295
     },
     "additional_sources": [
       "https://docs.vulkan.org/refpages/latest/refpages/source/VkQueryType.html",
       "https://docs.vulkan.org/refpages/latest/refpages/source/VkDynamicState.html",
-      "https://docs.vulkan.org/refpages/latest/refpages/source/VkStructureType.html"
+      "https://docs.vulkan.org/refpages/latest/refpages/source/VkStructureType.html",
+      "https://docs.vulkan.org/refpages/latest/refpages/source/VK_ATTACHMENT_UNUSED.html"
     ]
   },
   "official_functions": {

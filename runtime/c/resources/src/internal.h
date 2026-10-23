@@ -182,8 +182,16 @@ doe_resource_status resource_render_replay_packet(doe_resource_render_pass *pass
 void resource_render_clear_bindings(doe_resource_render_packet *state);
 void resource_render_packet_retain(const doe_resource_render_packet *packet);
 void resource_render_packet_release(const doe_resource_render_packet *packet);
-doe_resource_status resource_render_layout_validate(WGPUTextureFormat color,
-    WGPUTextureFormat depth_stencil, uint32_t samples);
+/* Color-target layout rules: src/render_targets.c is their only owner. */
+uint32_t resource_max_color_attachments(const doe_resource_config *config);
+doe_resource_status resource_color_layout_validate(const doe_resource_config *config,
+    const WGPUTextureFormat *formats, uint32_t count, WGPUTextureFormat depth_stencil, uint32_t samples);
+doe_resource_status resource_color_formats_normalize(WGPUTextureFormat legacy, uint32_t count,
+    const WGPUTextureFormat *formats, uint32_t *out_count, WGPUTextureFormat out[DOE_RESOURCE_MAX_COLOR_ATTACHMENTS]);
+doe_resource_status resource_render_targets_normalize(const doe_resource_render_targets *in,
+    doe_resource_render_targets *out);
+bool resource_color_layouts_equal(uint32_t a_count, const WGPUTextureFormat *a,
+    uint32_t b_count, const WGPUTextureFormat *b);
 doe_resource_render_bundle_desc resource_render_targets_layout(const doe_resource_render_targets *targets);
 doe_resource_status resource_render_set_pipeline(void *device, doe_resource_render_packet *state,
     const doe_resource_render_bundle_desc *signature, doe_resource_render_pipeline *pipeline);

@@ -86,7 +86,8 @@ int main(int argc, char **argv) {
     assert(doe_vk_draw_validator_source(source, sizeof(source), NULL) == DOE_VK_INVALID_ARGUMENT);
     doe_vk_caps caps = {.max_workgroup_count = {1, 1, 1}, .max_workgroup_size = {1, 1, 1},
         .max_workgroup_invocations = 1, .max_storage_buffer_range = 32, .max_bind_groups = 1,
-        .max_bindings_per_group = 1, .max_storage_buffers_per_stage = 1, .queue_flags = VK_QUEUE_GRAPHICS_BIT};
+        .max_bindings_per_group = 1, .max_storage_buffers_per_stage = 1, .queue_flags = VK_QUEUE_GRAPHICS_BIT,
+        .max_color_attachments = 8};
     assert(doe_vk_draw_validator_validate(&caps) == DOE_VK_OK);
     caps.max_storage_buffer_range = 31;
     assert(doe_vk_draw_validator_validate(&caps) == DOE_VK_UNSUPPORTED);
@@ -132,7 +133,7 @@ int main(int argc, char **argv) {
         .initialized = &initialized, .desc = {.dimension = DOE_VK_TEXTURE_2D, .format = DOE_VK_FORMAT_RGBA8_UNORM,
             .width = 8, .height = 8, .depth_or_layers = 1, .mip_levels = 1, .usage = DOE_VK_TEXTURE_COLOR_ATTACHMENT}};
     doe_vk_texture_view view = {.texture = &texture, .references = 1, .aspects = 1, .desc = {DOE_VK_VIEW_2D, 0, 1, 0, 1, DOE_VK_ASPECT_ALL}};
-    doe_vk_pipeline target = {.context = &context, .references = 1, .graphics = true, .color_format = DOE_VK_FORMAT_RGBA8_UNORM};
+    doe_vk_pipeline target = {.context = &context, .references = 1, .graphics = true, .color_count = 1, .color_formats = {DOE_VK_FORMAT_RGBA8_UNORM}};
     doe_vk_render_pass_draw draw = {.pipeline = &target, .indirect = &indirect,
         .draw = {.viewport = {0, 0, 8, 8, 0, 1}, .scissor = {0, 0, 8, 8}}};
     const doe_vk_clear_color clear = {.float32 = {0, 0, 0, 1}};

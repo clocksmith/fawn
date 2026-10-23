@@ -258,7 +258,9 @@ static native_device *create_device(native_adapter *adapter, const WGPUDeviceDes
         .allocator = {NULL, NULL, native_allocate, native_deallocate},
         .device = {device, native_device_alive, native_device_retain, native_device_release},
         .labels = device->labels,
-        .max_texture_dimension_2d = device->backend.limits.maxTextureDimension2D
+        .max_texture_dimension_2d = device->backend.limits.maxTextureDimension2D,
+        .max_color_attachments = device->backend.limits.maxColorAttachments,
+        .max_color_attachment_bytes_per_sample = device->backend.limits.maxColorAttachmentBytesPerSample
     };
     if (descriptor) device->uncaptured = descriptor->uncapturedErrorCallbackInfo;
     result = doe_error_scope_set_handler(device->errors, uncaptured_error, device, NULL);

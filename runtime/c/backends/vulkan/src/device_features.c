@@ -27,6 +27,10 @@ doe_vk_status doe_vk_prepare_features(doe_vk_context *context, const doe_vk_opti
     if (features.features.fullDrawIndexUint32) selection.base.fullDrawIndexUint32 = 1;
     /* Optional cube-array views; rejected when the device does not offer them. */
     if (features.features.imageCubeArray) selection.base.imageCubeArray = 1;
+    /* Optional per-target blend and anisotropic filtering; absent features stay
+     * disabled and the corresponding requests reject at admission. */
+    if (features.features.independentBlend) selection.base.independentBlend = 1;
+    if (features.features.samplerAnisotropy) selection.base.samplerAnisotropy = 1;
     if (available && demote.shaderDemoteToHelperInvocation) {
         selection.demote = demote;
         selection.extension = demote_extension;

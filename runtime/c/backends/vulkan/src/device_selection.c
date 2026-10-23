@@ -117,6 +117,7 @@ doe_vk_status doe_vk_choose_device(doe_vk_context *context,
     caps->max_vertex_input_attribute_offset = p->limits.maxVertexInputAttributeOffset;
     caps->max_vertex_output_components = p->limits.maxVertexOutputComponents;
     caps->max_fragment_input_components = p->limits.maxFragmentInputComponents;
+    caps->max_color_attachments = p->limits.maxColorAttachments;
     memcpy(caps->device_name, p->deviceName, sizeof(caps->device_name));
     caps->device_name[sizeof(caps->device_name) - 1] = '\0';
     memcpy(caps->max_workgroup_count, p->limits.maxComputeWorkGroupCount, sizeof(caps->max_workgroup_count));

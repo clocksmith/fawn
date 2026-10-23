@@ -2,38 +2,13 @@
 #include "internal.h"
 #include <string.h>
 
-/* Shared pass-layout admission; backend renderability/features remain explicit. */
-doe_resource_status resource_render_layout_validate(WGPUTextureFormat color,
-    WGPUTextureFormat depth_stencil, uint32_t samples)
-{
-    if (!color && !depth_stencil) return DOE_RESOURCE_LAYOUT;
-    if (color) {
-        uint32_t bytes, width, height;
-        doe_resource_status status = resource_format_block(color, &bytes, &width, &height);
-        if (status != DOE_RESOURCE_OK) return status;
-        if (resource_format_depth(color) || width != 1 || height != 1) return DOE_RESOURCE_LAYOUT;
-    }
-    if (depth_stencil && !resource_format_depth(depth_stencil)) return DOE_RESOURCE_LAYOUT;
-    return samples == 1 || samples == 4 ? DOE_RESOURCE_OK : DOE_RESOURCE_UNSUPPORTED;
-}
-
-/* Targets have already passed attachment admission, so at least one exists. */
-doe_resource_render_bundle_desc resource_render_targets_layout(const doe_resource_render_targets *targets)
-{
-    const doe_resource_view *primary = targets->color ? targets->color : targets->depth_stencil;
-    return (doe_resource_render_bundle_desc){
-        targets->color ? targets->color->desc.format : WGPUTextureFormat_Undefined,
-        targets->depth_stencil ? targets->depth_stencil->desc.format : WGPUTextureFormat_Undefined,
-        primary->texture->desc.samples, targets->depth_read_only, targets->stencil_read_only
-    };
-}
-
 static doe_resource_status validate_pipeline(const doe_resource_render_pipeline *pipeline,
     void *device, const doe_resource_render_bundle_desc *signature)
 {
     if (!pipeline || !resource_alive(&pipeline->base)) return DOE_RESOURCE_UNAVAILABLE;
     if (pipeline->base.config.device.identity != device) return DOE_RESOURCE_DEVICE_MISMATCH;
-    if (pipeline->desc.color_format != signature->color_format ||
+    if (!resource_color_layouts_equal(pipeline->desc.color_count, pipeline->desc.color_formats,
+            signature->color_count, signature->color_formats) ||
         pipeline->desc.depth_stencil_format != signature->depth_stencil_format ||
         pipeline->desc.samples != signature->samples ||
         (signature->depth_read_only && pipeline->desc.depth_write) ||

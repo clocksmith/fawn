@@ -12,9 +12,9 @@ static doe_vk_status lower_pass(doe_vk_commands *commands, doe_vk_draw_validator
 {
     if (!count || records[0].kind != DOE_COMMAND_RENDER) return DOE_VK_UNSUPPORTED;
     const doe_resource_render_packet *begin = doe_resource_render_record_borrow(records[0].value.render);
-    if (!begin->boundary_only || !begin->first_in_pass || begin->last_in_pass || !begin->targets.color ||
-        begin->targets.depth_stencil || begin->targets.resolve_target ||
-        begin->targets.color_load != WGPULoadOp_Clear || begin->targets.color_store != WGPUStoreOp_Store)
+    if (!begin->boundary_only || !begin->first_in_pass || begin->last_in_pass || !begin->targets.colors[0].view ||
+        begin->targets.depth_stencil || begin->targets.colors[0].resolve_target ||
+        begin->targets.colors[0].load != WGPULoadOp_Clear || begin->targets.colors[0].store != WGPUStoreOp_Store)
         return DOE_VK_UNSUPPORTED;
     doe_resource_query_set *queries = begin->targets.occlusion_queries;
     if (!queries || doe_resource_query_set_type(queries) != WGPUQueryType_Occlusion) return DOE_VK_UNSUPPORTED;
@@ -34,15 +34,15 @@ static doe_vk_status lower_pass(doe_vk_commands *commands, doe_vk_draw_validator
         }
         if (record->kind != DOE_COMMAND_RENDER) return DOE_VK_UNSUPPORTED;
         const doe_resource_render_packet *packet = doe_resource_render_record_borrow(record->value.render);
-        if (packet->first_in_pass || packet->targets.color != begin->targets.color ||
-            packet->targets.occlusion_queries != queries || packet->targets.depth_stencil || packet->targets.resolve_target)
+        if (packet->first_in_pass || packet->targets.colors[0].view != begin->targets.colors[0].view ||
+            packet->targets.occlusion_queries != queries || packet->targets.depth_stencil || packet->targets.colors[0].resolve_target)
             return DOE_VK_UNSUPPORTED;
         if (packet->boundary_only) {
             if (!packet->last_in_pass) return DOE_VK_UNSUPPORTED;
             doe_vk_clear_color clear;
             for (size_t component = 0; component < 4; component++)
-                clear.float32[component] = (float)begin->targets.clear_color[component];
-            doe_vk_render_pass_desc desc = {.color = doe_resource_view_native(begin->targets.color), .clear_color = &clear};
+                clear.float32[component] = (float)begin->targets.colors[0].clear[component];
+            doe_vk_render_pass_desc desc = {.color = doe_resource_view_native(begin->targets.colors[0].view), .clear_color = &clear};
             doe_vk_status status = doe_vk_commands_render_pass_full(commands, &desc,
                 doe_resource_query_set_native(queries), ops, op_count);
             if (status == DOE_VK_OK) *consumed = i + 1;

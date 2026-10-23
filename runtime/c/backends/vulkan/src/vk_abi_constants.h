@@ -237,4 +237,7 @@ enum {
     VK_QUERY_RESULT_64_BIT = 0x00000001,
     VK_QUERY_RESULT_WAIT_BIT = 0x00000002,
 };
+/* Official VkAttachmentReference sentinel (~0U); see ABI_PROVENANCE.json. Not an
+ * enum constant because it exceeds int. */
+#define VK_ATTACHMENT_UNUSED (~0U)
 #endif

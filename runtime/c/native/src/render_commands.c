@@ -79,6 +79,37 @@ static bool add_size(size_t *total, size_t count)
     return true;
 }
 
+static bool same_attachments(const doe_resource_render_targets *a, const doe_resource_render_targets *b)
+{
+    if (a->color_count != b->color_count || a->depth_stencil != b->depth_stencil) return false;
+    for (uint32_t i = 0; i < a->color_count; ++i)
+        if (a->colors[i].view != b->colors[i].view || a->colors[i].resolve_target != b->colors[i].resolve_target)
+            return false;
+    return true;
+}
+
+/* Converts every canonical slot; unused slots stay NULL with no operations. */
+static doe_vk_status lower_colors(const doe_resource_render_targets *source, doe_vk_render_pass_desc *pass,
+    native_view *views[DOE_RESOURCE_MAX_COLOR_ATTACHMENTS])
+{
+    pass->color_attachment_count = source->color_count;
+    for (uint32_t i = 0; i < source->color_count; ++i) {
+        const doe_resource_color_attachment *color = &source->colors[i];
+        views[i] = doe_resource_view_native(color->view);
+        if (!views[i]) continue;
+        doe_vk_color_attachment *slot = &pass->color_attachments[i];
+        native_view *resolve = doe_resource_view_native(color->resolve_target);
+        *slot = (doe_vk_color_attachment){.view=views[i]->view,.discard=color->store == WGPUStoreOp_Discard,
+            .resolve_target=resolve ? resolve->view : NULL};
+        if (color->load == WGPULoadOp_Clear) {
+            const doe_resource_view_desc *view = doe_resource_view_description(color->view);
+            if (!view || !native_render_clear(view->format, color->clear, &slot->clear_value)) return DOE_VK_INVALID_ARGUMENT;
+            slot->clear = true;
+        } else if (color->load != WGPULoadOp_Load) return DOE_VK_INVALID_ARGUMENT;
+    }
+    return DOE_VK_OK;
+}
+
 doe_vk_status native_record_render(doe_vk_commands *commands,
     const doe_resource_command *records, size_t count, size_t *consumed)
 {
@@ -94,9 +125,7 @@ doe_vk_status native_record_render(doe_vk_commands *commands,
         }
         if (records[i].kind != DOE_COMMAND_RENDER) return DOE_VK_UNSUPPORTED;
         const doe_resource_render_packet *packet = doe_resource_render_record_borrow(records[i].value.render);
-        if (!packet || packet->first_in_pass || packet->targets.color != begin->targets.color ||
-            packet->targets.depth_stencil != begin->targets.depth_stencil ||
-            packet->targets.resolve_target != begin->targets.resolve_target ||
+        if (!packet || packet->first_in_pass || !same_attachments(&packet->targets, &begin->targets) ||
             packet->targets.occlusion_queries != begin->targets.occlusion_queries) return DOE_VK_INVALID_ARGUMENT;
         if (packet->boundary_only) {
             if (!packet->last_in_pass) return DOE_VK_INVALID_ARGUMENT;
@@ -143,32 +172,26 @@ doe_vk_status native_record_render(doe_vk_commands *commands,
             }
         }
     }
-    doe_vk_clear_color clear;
-    const doe_vk_clear_color *clear_pointer = NULL;
-    if (status == DOE_VK_OK && begin->targets.color && begin->targets.color_load == WGPULoadOp_Clear) {
-        const doe_resource_view_desc *view = doe_resource_view_description(begin->targets.color);
-        if (!view || !native_render_clear(view->format, begin->targets.clear_color, &clear)) status = DOE_VK_INVALID_ARGUMENT;
-        else clear_pointer = &clear;
-    } else if (begin->targets.color && begin->targets.color_load != WGPULoadOp_Load && begin->targets.color_load != WGPULoadOp_Clear)
-        status = DOE_VK_INVALID_ARGUMENT;
+    doe_vk_render_pass_desc pass = {0};
+    native_view *colors[DOE_RESOURCE_MAX_COLOR_ATTACHMENTS] = {0};
+    if (status == DOE_VK_OK) status = lower_colors(&begin->targets, &pass, colors);
     if (status == DOE_VK_OK) {
-        native_view *target = doe_resource_view_native(begin->targets.color);
         native_queries *query = doe_resource_query_set_native(begin->targets.occlusion_queries);
         native_view *depth = doe_resource_view_native(begin->targets.depth_stencil);
         const doe_resource_render_targets *source = &begin->targets;
-        native_view *resolve = doe_resource_view_native(source->resolve_target);
-        doe_vk_render_pass_desc pass = {.color=target ? target->view : NULL,.clear_color=clear_pointer,
-            .resolve_target=resolve ? resolve->view : NULL,.discard_color=source->color_store == WGPUStoreOp_Discard,
-            .depth_stencil=depth ? depth->view : NULL,
-            .clear_depth=source->depth_load == WGPULoadOp_Clear,
-            .clear_stencil=source->stencil_load == WGPULoadOp_Clear,
-            .discard_depth=source->depth_store == WGPUStoreOp_Discard,
-            .discard_stencil=source->stencil_store == WGPUStoreOp_Discard,
-            .depth_read_only=source->depth_read_only,.stencil_read_only=source->stencil_read_only,
-            .depth_clear_value=source->clear_depth,.stencil_clear_value=source->clear_stencil};
+        pass.depth_stencil = depth ? depth->view : NULL;
+        pass.clear_depth = source->depth_load == WGPULoadOp_Clear;
+        pass.clear_stencil = source->stencil_load == WGPULoadOp_Clear;
+        pass.discard_depth = source->depth_store == WGPUStoreOp_Discard;
+        pass.discard_stencil = source->stencil_store == WGPUStoreOp_Discard;
+        pass.depth_read_only = source->depth_read_only;
+        pass.stencil_read_only = source->stencil_read_only;
+        pass.depth_clear_value = source->clear_depth;
+        pass.stencil_clear_value = source->clear_stencil;
         /* Canonical speculative aspect state decides whether a real zero clear
          * is needed after Discard. No native shadow initialization bit exists. */
-        if (target) status = doe_vk_commands_initialize_attachment(commands, target->view);
+        for (uint32_t i = 0; status == DOE_VK_OK && i < source->color_count; ++i)
+            if (colors[i]) status = doe_vk_commands_initialize_attachment(commands, colors[i]->view);
         if (status == DOE_VK_OK && depth) status = doe_vk_commands_initialize_attachment(commands, depth->view);
         if (status == DOE_VK_OK) status = doe_vk_commands_render_pass_full(commands, &pass,
             query ? query->pool : NULL, ops, op_count);

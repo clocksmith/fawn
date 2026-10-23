@@ -7,9 +7,11 @@ WGPURenderPassEncoder wgpuCommandEncoderBeginRenderPass(WGPUCommandEncoder handl
     doe_resource_encoder *encoder = (doe_resource_encoder *)handle;
     native_device *device = doe_resource_encoder_device(encoder);
     if (!device) return NULL;
-    bool valid = descriptor &&
-        descriptor->colorAttachmentCount <= 1 &&
+    /* Slot count beyond the device limit is canonical resource admission. */
+    bool valid = descriptor && descriptor->colorAttachmentCount <= DOE_RESOURCE_MAX_COLOR_ATTACHMENTS &&
         (!descriptor->colorAttachmentCount || descriptor->colorAttachments);
+    doe_resource_status rejected = valid || !descriptor || descriptor->colorAttachmentCount <= DOE_RESOURCE_MAX_COLOR_ATTACHMENTS ?
+        DOE_RESOURCE_UNSUPPORTED : DOE_RESOURCE_RANGE;
     const WGPURenderPassMaxDrawCount *budget = NULL;
     if (valid && descriptor->nextInChain) {
         const WGPUChainedStruct *chain = descriptor->nextInChain;
@@ -21,22 +23,26 @@ WGPURenderPassEncoder wgpuCommandEncoderBeginRenderPass(WGPUCommandEncoder handl
     doe_resource_pass_timestamps timestamps = {0};
     if (valid) {
         targets.occlusion_queries = (doe_resource_query_set *)descriptor->occlusionQuerySet;
-        if (descriptor->colorAttachmentCount) {
-            const WGPURenderPassColorAttachment *color = descriptor->colorAttachments;
+        targets.color_count = (uint32_t)descriptor->colorAttachmentCount;
+        for (uint32_t i = 0; valid && i < targets.color_count; ++i) {
+            const WGPURenderPassColorAttachment *color = &descriptor->colorAttachments[i];
+            if (!color->view) {
+                /* WebGPU null slot: no operations or resolve, as resource admission checks. */
+                valid = !color->nextInChain && !color->resolveTarget;
+                continue;
+            }
             const doe_resource_texture_desc *parent = doe_resource_texture_description(
                 doe_resource_view_texture((doe_resource_view *)color->view));
             valid = !color->nextInChain && color->depthSlice == WGPU_DEPTH_SLICE_UNDEFINED &&
                 (color->storeOp == WGPUStoreOp_Store ||
                  (parent && parent->samples > 1 && color->storeOp == WGPUStoreOp_Discard));
-            targets = (doe_resource_render_targets){.color=(doe_resource_view *)color->view,
-                .resolve_target=(doe_resource_view *)color->resolveTarget,
-                .color_load=color->loadOp,.color_store=color->storeOp,
-                .clear_color={color->clearValue.r,color->clearValue.g,color->clearValue.b,color->clearValue.a},
-                .occlusion_queries=(doe_resource_query_set *)descriptor->occlusionQuerySet};
-            const doe_resource_view_desc *view = doe_resource_view_description(targets.color);
+            targets.colors[i] = (doe_resource_color_attachment){.view=(doe_resource_view *)color->view,
+                .resolve_target=(doe_resource_view *)color->resolveTarget,.load=color->loadOp,.store=color->storeOp,
+                .clear={color->clearValue.r,color->clearValue.g,color->clearValue.b,color->clearValue.a}};
+            const doe_resource_view_desc *view = doe_resource_view_description(targets.colors[i].view);
             doe_vk_clear_color converted;
-            if (color->loadOp == WGPULoadOp_Clear && (!view || !native_render_clear(view->format, targets.clear_color, &converted)))
-                valid = false;
+            if (valid && color->loadOp == WGPULoadOp_Clear &&
+                (!view || !native_render_clear(view->format, targets.colors[i].clear, &converted))) valid = false;
         }
         if (descriptor->depthStencilAttachment) {
             const WGPURenderPassDepthStencilAttachment *depth = descriptor->depthStencilAttachment;
@@ -65,7 +71,7 @@ WGPURenderPassEncoder wgpuCommandEncoderBeginRenderPass(WGPUCommandEncoder handl
     doe_resource_render_pass *pass = NULL;
     native_lock(device);
     doe_resource_status status = valid ? doe_resource_encoder_begin_render_with_timestamps(encoder,
-        &targets, writes ? &timestamps : NULL, &pass) : doe_resource_encoder_invalidate(encoder, DOE_RESOURCE_UNSUPPORTED);
+        &targets, writes ? &timestamps : NULL, &pass) : doe_resource_encoder_invalidate(encoder, rejected);
     native_unlock(device);
     if (status != DOE_RESOURCE_OK) native_error(device, native_resource_error(status), "render pass descriptor invalid or unsupported");
     if (pass) native_label(device, pass, descriptor->label);

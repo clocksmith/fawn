@@ -407,7 +407,7 @@ static void test_nullable_vertex_and_accessors(void)
         unsigned leases = f.device_references;
         assert(doe_resource_render_pipeline_device(pipeline) == &f);
         assert(doe_resource_render_pipeline_get_layout(pipeline) == layout);
-        assert(doe_resource_render_pipeline_description(pipeline)->color_format == WGPUTextureFormat_RGBA8Unorm);
+        assert(doe_resource_render_pipeline_description(pipeline)->color_count == 1 && doe_resource_render_pipeline_description(pipeline)->color_formats[0] == WGPUTextureFormat_RGBA8Unorm && !doe_resource_render_pipeline_description(pipeline)->color_format);
         assert(f.device_references == leases); /* Getters borrow, never add leases. */
         doe_resource_bundle_encoder *builder = bundle_encoder(&f);
         assert(doe_resource_bundle_encoder_device(builder) == &f);
@@ -425,7 +425,7 @@ static void test_nullable_vertex_and_accessors(void)
             doe_resource_render_bundle *bundle;
             assert(doe_resource_bundle_encoder_finish(builder, &bundle) == DOE_RESOURCE_OK);
             assert(doe_resource_render_bundle_device(bundle) == &f);
-            assert(doe_resource_render_bundle_description(bundle)->color_format == WGPUTextureFormat_RGBA8Unorm);
+            assert(doe_resource_render_bundle_description(bundle)->color_count == 1 && doe_resource_render_bundle_description(bundle)->color_formats[0] == WGPUTextureFormat_RGBA8Unorm);
             doe_resource_bundle_encoder_release(builder);
             doe_resource_buffer_release(vertices);
             assert(!vertex_token.releases);

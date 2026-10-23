@@ -107,8 +107,14 @@ WGPUSampler wgpuDeviceCreateSampler(WGPUDevice handle, const WGPUSamplerDescript
     WGPUSamplerDescriptor defaults = WGPU_SAMPLER_DESCRIPTOR_INIT;
     if (!descriptor) descriptor = &defaults;
     WGPUSamplerDescriptor resolved;
-    if (doe_resource_sampler_validate(descriptor, &resolved) != DOE_RESOURCE_OK || resolved.maxAnisotropy != 1) {
-        native_error(device, WGPUErrorType_Validation, "sampler invalid or anisotropy not enabled");
+    if (doe_resource_sampler_validate(descriptor, &resolved) != DOE_RESOURCE_OK) {
+        native_error(device, WGPUErrorType_Validation, "sampler descriptor invalid");
+        return NULL;
+    }
+    /* Anisotropy uses the device's enabled samplerAnisotropy and clamps to its
+     * maximum; a device without the feature rejects instead of silently using 1. */
+    if (resolved.maxAnisotropy > 1 && !device->backend.value.vulkan.caps.sampler_anisotropy) {
+        native_error(device, WGPUErrorType_Validation, "sampler anisotropy unsupported by this device");
         return NULL;
     }
     doe_vk_sampler_desc native = {
@@ -117,7 +123,8 @@ WGPUSampler wgpuDeviceCreateSampler(WGPUDevice handle, const WGPUSamplerDescript
         .mipmap_filter=resolved.mipmapFilter == WGPUMipmapFilterMode_Linear ? DOE_VK_FILTER_LINEAR : DOE_VK_FILTER_NEAREST,
         .address_u=address_mode(resolved.addressModeU), .address_v=address_mode(resolved.addressModeV),
         .address_w=address_mode(resolved.addressModeW), .min_lod=resolved.lodMinClamp, .max_lod=resolved.lodMaxClamp,
-        .compare_enabled=resolved.compare != WGPUCompareFunction_Undefined
+        .compare_enabled=resolved.compare != WGPUCompareFunction_Undefined,
+        .max_anisotropy=resolved.maxAnisotropy
     };
     if (!native_compare_operation(resolved.compare, 0, &native.compare_operation)) {
         native_error(device, WGPUErrorType_Validation, "sampler comparison invalid");

@@ -44,7 +44,8 @@ struct doe_vk_pipeline {
     uint32_t references;
     bool graphics;
     VkRenderPass render_pass;
-    doe_vk_texture_format color_format;
+    uint32_t color_count; /* Slots, including unused zero formats. */
+    doe_vk_texture_format color_formats[DOE_VK_MAX_COLOR_ATTACHMENTS];
     doe_vk_texture_format depth_stencil_format;
     bool depth_write, stencil_write, stencil_test;
     uint32_t sample_count;
