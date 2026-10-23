@@ -25,3 +25,8 @@ or patch CPU readbacks after later commands have already copied them.
 Occlusion events belong inside the same typed pass span and existing query lifetime
 owner. Validate the whole nesting/index sequence before native begin and reset
 written slots outside the pass. Never claim precise counts from flags-zero queries.
+
+Optional device capabilities require explicit selection and successful native
+enablement before reporting support. API version or extension discovery alone
+cannot admit SPIR-V capabilities. Keep separately verified official declarations
+distinct from retained ABI provenance.

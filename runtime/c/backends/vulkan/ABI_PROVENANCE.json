@@ -168,7 +168,8 @@
     "vkCmdResetQueryPool",
     "vkCmdCopyQueryPoolResults",
     "vkCmdBeginQuery",
-    "vkCmdEndQuery"
+    "vkCmdEndQuery",
+    "vkEnumerateDeviceExtensionProperties"
   ],
   "restriction": "Linux LP64 C ABI; no fallback or production promotion",
   "official_constants": {
@@ -185,11 +186,13 @@
       "VK_FORMAT_FEATURE_TRANSFER_DST_BIT": 32768,
       "VK_FORMAT_FEATURE_VERTEX_BUFFER_BIT": 64,
       "VK_QUERY_TYPE_OCCLUSION": 0,
-      "VK_DYNAMIC_STATE_BLEND_CONSTANTS": 4
+      "VK_DYNAMIC_STATE_BLEND_CONSTANTS": 4,
+      "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DEMOTE_TO_HELPER_INVOCATION_FEATURES": 1000276000
     },
     "additional_sources": [
       "https://docs.vulkan.org/refpages/latest/refpages/source/VkQueryType.html",
-      "https://docs.vulkan.org/refpages/latest/refpages/source/VkDynamicState.html"
+      "https://docs.vulkan.org/refpages/latest/refpages/source/VkDynamicState.html",
+      "https://docs.vulkan.org/refpages/latest/refpages/source/VkStructureType.html"
     ]
   },
   "official_functions": {
@@ -198,6 +201,26 @@
       "verified_utc": "2026-10-23",
       "signature": "void(VkCommandBuffer, const float[4])",
       "scope": "Official core1.0 function signature; no new struct ABI or optional feature. Separate from retained function list."
+    }
+  },
+  "official_structs": {
+    "VkPhysicalDeviceShaderDemoteToHelperInvocationFeatures": {
+      "source": "https://docs.vulkan.org/refpages/latest/refpages/source/VkPhysicalDeviceShaderDemoteToHelperInvocationFeatures.html",
+      "verified_utc": "2026-10-23",
+      "fields": [
+        [
+          "sType",
+          "i32"
+        ],
+        [
+          "pNext",
+          "pointer"
+        ],
+        [
+          "shaderDemoteToHelperInvocation",
+          "u32"
+        ]
+      ]
     }
   }
 }

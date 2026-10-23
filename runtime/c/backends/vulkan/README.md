@@ -296,3 +296,14 @@ NULL VkBuffer handle. The real render test leaves slot0 empty and uses slot1.
 This is native no-fetch admission only: the public/resource owner still distinguishes
 an Undefined-step-mode layout hole from an explicit Vertex/Instance slot that
 requires a bound public buffer even when it declares no attributes.
+
+Optional demote feature selection is explicit: set
+`enable_shader_demote_if_supported` before device creation. The default remains
+off. `caps.shader_demote_to_helper_invocation` reports successful enablement,
+not merely API version or advertised availability. An absent extension/feature
+keeps this optional feature disabled; native query/create failures are errors.
+Compiler/native admission must reject SPIR-V capability 5379 unless enabled.
+The private extension feature record is verified separately against the official
+Khronos declaration in `ABI_PROVENANCE.json`, not attributed to retained Zig.
+`make native-features NATIVE_ARGS=--allow-software` with the explicit software ICD
+checks baseline/opt-in device creation only, not shader or physical qualification.

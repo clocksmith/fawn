@@ -1,4 +1,5 @@
 #include "internal.h"
+#include "feature_internal.h"
 #include <dlfcn.h>
 
 /* POSIX supplies object-sized function symbols. Copy only after checking both
@@ -22,6 +23,7 @@ static doe_vk_status load_functions(doe_vk_context *context, doe_vk_error *error
     _Static_assert(sizeof(context->vk.vkGetPhysicalDeviceMemoryProperties) == sizeof(void *), "vkGetPhysicalDeviceMemoryProperties POSIX pointer size");
     _Static_assert(sizeof(context->vk.vkGetPhysicalDeviceProperties2) == sizeof(void *), "vkGetPhysicalDeviceProperties2 POSIX pointer size");
     _Static_assert(sizeof(context->vk.vkGetPhysicalDeviceFeatures2) == sizeof(void *), "vkGetPhysicalDeviceFeatures2 POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkEnumerateDeviceExtensionProperties) == sizeof(void *), "vkEnumerateDeviceExtensionProperties POSIX pointer size");
     _Static_assert(sizeof(context->vk.vkCreateDevice) == sizeof(void *), "vkCreateDevice POSIX pointer size");
     _Static_assert(sizeof(context->vk.vkDestroyDevice) == sizeof(void *), "vkDestroyDevice POSIX pointer size");
     _Static_assert(sizeof(context->vk.vkGetDeviceQueue) == sizeof(void *), "vkGetDeviceQueue POSIX pointer size");
@@ -107,6 +109,7 @@ static doe_vk_status load_functions(doe_vk_context *context, doe_vk_error *error
         { "vkGetPhysicalDeviceMemoryProperties", &context->vk.vkGetPhysicalDeviceMemoryProperties, sizeof(context->vk.vkGetPhysicalDeviceMemoryProperties) },
         { "vkGetPhysicalDeviceProperties2", &context->vk.vkGetPhysicalDeviceProperties2, sizeof(context->vk.vkGetPhysicalDeviceProperties2) },
         { "vkGetPhysicalDeviceFeatures2", &context->vk.vkGetPhysicalDeviceFeatures2, sizeof(context->vk.vkGetPhysicalDeviceFeatures2) },
+        { "vkEnumerateDeviceExtensionProperties", &context->vk.vkEnumerateDeviceExtensionProperties, sizeof(context->vk.vkEnumerateDeviceExtensionProperties) },
         { "vkCreateDevice", &context->vk.vkCreateDevice, sizeof(context->vk.vkCreateDevice) },
         { "vkDestroyDevice", &context->vk.vkDestroyDevice, sizeof(context->vk.vkDestroyDevice) },
         { "vkGetDeviceQueue", &context->vk.vkGetDeviceQueue, sizeof(context->vk.vkGetDeviceQueue) },
@@ -326,13 +329,9 @@ doe_vk_status doe_vk_context_create(const doe_vk_options *options,
     if (status != DOE_VK_OK) goto failed;
     status = choose_queue(context, options, error);
     if (status != DOE_VK_OK) goto failed;
-    VkPhysicalDeviceFeatures2 features = { .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2 };
-    context->vk.vkGetPhysicalDeviceFeatures2(context->physical, &features);
-    if (!features.features.robustBufferAccess) {
-        status = doe_vk_fail(DOE_VK_UNSUPPORTED, "robustBufferAccess required", error);
-        goto failed;
-    }
-    VkPhysicalDeviceFeatures enabled = { .robustBufferAccess = 1 };
+    doe_vk_feature_selection features;
+    status = doe_vk_prepare_features(context, options, &features, error);
+    if (status != DOE_VK_OK) goto failed;
     float priority = 1.0f;
     const VkDeviceQueueCreateInfo queue = {
         .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
@@ -344,7 +343,10 @@ doe_vk_status doe_vk_context_create(const doe_vk_options *options,
         .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
         .queueCreateInfoCount = 1,
         .pQueueCreateInfos = &queue,
-        .pEnabledFeatures = &enabled
+        .pEnabledFeatures = &features.base,
+        .pNext = features.extension != NULL ? &features.demote : NULL,
+        .enabledExtensionCount = features.extension != NULL ? 1 : 0,
+        .ppEnabledExtensionNames = features.extension != NULL ? &features.extension : NULL
     };
     status = doe_vk_result(context, context->vk.vkCreateDevice(context->physical, &device, NULL, &context->device), "vkCreateDevice", error);
     if (status != DOE_VK_OK) goto failed;
@@ -354,6 +356,7 @@ doe_vk_status doe_vk_context_create(const doe_vk_options *options,
         goto failed;
     }
     context->caps.robust_buffer_access = true;
+    context->caps.shader_demote_to_helper_invocation = features.extension != NULL;
     *out = context;
     return doe_vk_fail(DOE_VK_OK, "context ready", error);
 failed:

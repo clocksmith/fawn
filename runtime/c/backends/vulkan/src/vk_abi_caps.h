@@ -211,4 +211,10 @@ struct VkPhysicalDeviceProperties2 {
     VkPhysicalDeviceProperties properties;
 };
 
+/* Official core1.3/EXT declaration, separately bound in ABI_PROVENANCE.json. */
+typedef struct VkPhysicalDeviceShaderDemoteToHelperInvocationFeatures {
+    int32_t sType;
+    void *pNext;
+    uint32_t shaderDemoteToHelperInvocation;
+} VkPhysicalDeviceShaderDemoteToHelperInvocationFeatures;
 #endif
