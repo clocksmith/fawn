@@ -16,6 +16,9 @@ typedef struct capture {
     unsigned lost, pipeline_calls, compilation_calls, uncaptured;
     size_t messages;
     bool expect_device_failure;
+    pthread_mutex_t race_mutex;
+    pthread_cond_t race_condition;
+    bool race_active, race_entered, race_resume;
 } capture;
 static void adapter_reply(WGPURequestAdapterStatus status, WGPUAdapter adapter,
     WGPUStringView message, void *userdata1, void *userdata2)
@@ -44,6 +47,19 @@ static void loss_reply(WGPUDevice const *device, WGPUDeviceLostReason reason,
     ++value->lost;
     value->lost_device = *device;
     value->reason = reason;
+    if (value->race_active) {
+        assert(*device);
+        assert(!pthread_mutex_lock(&value->race_mutex));
+        value->race_entered = true;
+        assert(!pthread_cond_signal(&value->race_condition));
+        while (!value->race_resume)
+            assert(!pthread_cond_wait(&value->race_condition, &value->race_mutex));
+        assert(!pthread_mutex_unlock(&value->race_mutex));
+        assert(atomic_load(&((native_device *)*device)->external_references) == 0);
+        wgpuDeviceAddRef(*device);
+        assert(atomic_load(&((native_device *)*device)->external_references) == 1);
+        value->device = *device;
+    }
     if (*device) assert(wgpuDeviceGetLostFuture(*device).id);
     wgpuInstanceProcessEvents(value->instance);
 }
@@ -108,6 +124,11 @@ static void *release_device_thread(void *argument)
     wgpuDeviceRelease((WGPUDevice)argument);
     return NULL;
 }
+static void *destroy_device_thread(void *argument)
+{
+    wgpuDeviceDestroy((WGPUDevice)argument);
+    return NULL;
+}
 int main(void)
 {
     capture value = {0};
@@ -157,6 +178,29 @@ int main(void)
     for (size_t i=0;i<8;++i) assert(!pthread_join(releases[i],NULL));
     wait_ready(value.instance,lost);
     assert(value.lost==1 && !value.lost_device);
+
+    value.lost = 0;
+    value.race_active = true;
+    assert(!pthread_mutex_init(&value.race_mutex, NULL));
+    assert(!pthread_cond_init(&value.race_condition, NULL));
+    request_device(&value, WGPUCallbackMode_AllowSpontaneous);
+    WGPUDevice borrowed = value.device;
+    pthread_t destroy;
+    assert(!pthread_create(&destroy, NULL, destroy_device_thread, borrowed));
+    assert(!pthread_mutex_lock(&value.race_mutex));
+    while (!value.race_entered)
+        assert(!pthread_cond_wait(&value.race_condition, &value.race_mutex));
+    wgpuDeviceRelease(borrowed);
+    value.race_resume = true;
+    assert(!pthread_cond_signal(&value.race_condition));
+    assert(!pthread_mutex_unlock(&value.race_mutex));
+    assert(!pthread_join(destroy, NULL));
+    assert(value.lost == 1 && value.device == borrowed);
+    assert(!native_device_alive((native_device *)value.device));
+    wgpuDeviceRelease(value.device);
+    value.race_active = false;
+    assert(!pthread_cond_destroy(&value.race_condition));
+    assert(!pthread_mutex_destroy(&value.race_mutex));
 
     value.lost=0;
     request_device(&value,WGPUCallbackMode_WaitAnyOnly);

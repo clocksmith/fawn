@@ -1,0 +1,20 @@
+{
+  "status": "focused developer race correction; no independent/physical qualification",
+  "source_base": "2d2ac5cc",
+  "source_overlay_sha256": {
+    "runtime/c/native/src/device_loss.c": "303d6b95cb5eedee911c85eb2abeecad5b2a3231f7f00e7d2cc8ce8c31a709e5",
+    "runtime/c/native/tests/lifecycle.c": "c34799f2d25f22fe461553cdeee9a26252d898f6878da5398b81321e02a220e4"
+  },
+  "meaning": "A live callback-borrowed device can acquire an external storage reference after another thread drops the last external reference. Destroyed state and weak loss identity never revive. Invalid stale handles remain invalid.",
+  "checks": [
+    "deterministic two-thread zero-to-one external reference acquisition with callback-held internal storage lease",
+    "normal full native compute/lifecycle/89 typed procedures controls",
+    "ASan/UBSan same core+runtime paths; leak detection disabled"
+  ],
+  "instrumented_core_sha256": "1a753fbb5a7475f9dcf0636948ae543d5ee2e068ee5572de9d7b1482478a6ce7",
+  "instrumented_core_provenance": "Same canonical compiler bytes as DEVELOPER_RECEIPT_LIFECYCLE.json, copied into isolated build and not rebuilt. Native source base plus exactly two overlay files.",
+  "logs_sha256": {
+    "normal": "3381260bef8d9d4a88f56a1f285017277de277a370ca437750ba263f05709c4e",
+    "sanitize": "a7dca177b46113a7d83176cda07b3733ee4f5fc45d9411b1657bb3fce804ec60"
+  }
+}

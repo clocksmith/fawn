@@ -2,6 +2,7 @@
  * Device-loss obligation translated from native/support/doe_device_loss.zig.
  * Uses the accepted callback owner; this file never owns a future queue. */
 #include "internal.h"
+#include <limits.h>
 #include <stdlib.h>
 
 struct native_loss {
@@ -104,8 +105,13 @@ void wgpuDeviceAddRef(WGPUDevice handle)
     native_device *device = (native_device *)handle;
     if (!device) return;
     lock_loss(device->loss);
-    native_retain_count(&device->external_references);
+    /* A callback may lend live storage after another thread dropped the last
+     * external reference. Acquiring that borrowed object is legal; its logical
+     * destruction and cleared weak loss identity remain irreversible. */
+    unsigned previous = atomic_load_explicit(&device->external_references, memory_order_relaxed);
+    if (previous == UINT_MAX) abort();
     native_device_retain(device);
+    atomic_store_explicit(&device->external_references, previous + 1, memory_order_relaxed);
     unlock_loss(device->loss);
 }
 void wgpuDeviceRelease(WGPUDevice handle)

@@ -1,7 +1,7 @@
 {
   "status": "focused developer checks; not independent or physical qualification",
   "core_commit": "9239cfec",
-  "vulkan_image_test_base": "e0006713c9b02b3ca0331223f824595db448a233",
+  "vulkan_image_test_base": "2d2ac5cc",
   "checks": [
     "C11 and C++17 owned artifact clients",
     "two allocation failure points, immutable source/identity and sparse texture/sampler metadata",
@@ -25,5 +25,7 @@
   "log_sha256": {
     "doe-shader-abi6-build": "9dd0e3490e0ead04c45a4100852e9a38aa4a2256a53120da290295f6c35d14ec",
     "doe-shader-abi6-images-final": "f24433ebe32ebbbdcd50ed315e41141668fed48abf34a1f4bd9eccd6c85c7a6c"
-  }
+  },
+  "earlier_image_smoke_base": "e0006713c9b02b3ca0331223f824595db448a233",
+  "provenance_clarification": "First image smoke used e0006713; final log includes the coherent offscreen-render backend later committed2d2ac5cc. Image API and oracle are unchanged."
 }
