@@ -4,6 +4,8 @@ This private C11 owner implements real Linux LP64 Vulkan 1.2 discovery, device a
 queue selection, capabilities, host-coherent and device-local buffers, sparse
 multi-group uniform/storage descriptors, SPIR-V compute pipelines, copy/fill and
 direct dispatch recording, asynchronous fence submission, readback and retirement.
+The texture owner adds uncompressed color images, retained views/samplers and
+mip/layer-aware padded transfers across 1D/2D/3D images.
 It is not wired into the production provider. It is not full Vulkan/WebGPU parity.
 
 The retained consumer path is `native/vulkan/vulkan_compute_native.zig` through
@@ -34,17 +36,35 @@ baseline shader features are enabled; unsupported feature use must be rejected b
 the compiler/native admission path before creating a pipeline. This is not a
 complete public validation boundary for untrusted SPIR-V.
 
-GPU-produced indirect counts, images, rendering, surfaces, timestamp queries,
+GPU-produced indirect counts, image shader descriptors, rendering, surfaces, timestamp queries,
 prepared-program caches and tuned hazard elision are not yet migrated here.
 Indirect recording rejects explicitly rather than dispatching unchecked counts.
 The retained production owners remain authoritative for those behaviors.
+
+## Texture transactions
+
+`include/doe_vk_texture.h` uses named native format values, never WebGPU numeric
+casts. Eighteen uncompressed color formats are currently admitted; depth/stencil,
+compressed formats, multisampling, reinterpretation, swizzles and cube-array
+feature enablement remain outside this increment. Native views retain their image.
+A texture is held by one unresolved command owner to avoid stale recorded layouts.
+Layouts and per-mip/layer initialization are speculative until successful native
+completion; discarded/failed recordings cannot publish them. Undefined subresources
+require a full upload before partial updates or reads. Terminal submission failure
+poisons the image instead of guessing a layout or exposing uncertain output.
+
+`make native-texture NATIVE_ARGS=--allow-software` with an explicitly selected
+existing software ICD checks real image/view/sampler creation, two mip levels and
+two array layers, padding/last-byte layout, image copy/readback, initialization
+rejection, competing ownership rejection and early caller release. It is not a
+physical run or a complete texture-feature qualification.
 
 ## ABI provenance and checks
 
 No SDK headers were available. The selected declarations are a narrow translation
 of the existing source hashes in `ABI_PROVENANCE.json`, not invented opaque-sized
 struct storage. `tools/check_abi.py` refuses source drift and independently models
-the pinned extern fields to compile 768 size/offset/alignment assertions over 38
+the pinned extern fields to compile 960 size/offset/alignment assertions over 50
 records. It does not prove the retained declarations against an official SDK.
 `VK_ERROR_UNKNOWN` retains the existing Zig `UnsupportedFeature` classification;
 raw native error codes remain available. No Zig runs or links in the C backend.

@@ -6,7 +6,10 @@
     "vk_structs.zig": "881813e86e21d77a71a58193040eaaf4d5557f04ce95a6d4fbaffe1862443163",
     "vk_capability_structs.zig": "1af41c016be269ec93b56c01e21b2afe0e3bb9528ebf108b0a157b37b285c6b4",
     "vk_constants.zig": "ae715db139eabdb5fa8a733c6c28207dc6345c76643160542cab8cef6ec58d56",
-    "vk_functions.zig": "329f4092d2b6e8fd90a1de254c0077e8490b890d152617e799b014d7b414732a"
+    "vk_functions.zig": "329f4092d2b6e8fd90a1de254c0077e8490b890d152617e799b014d7b414732a",
+    "vk_formats.zig": "ec953998cab8cab6679c26fd0431d91ab0bc9f006e73f6cbf94db6f089f2880d",
+    "vk_samplers.zig": "d69660a49a4d143b1fddbd59a8140c424f598ff37ce020553ea9f5b15c641caf",
+    "vk_feature_caps.zig": "3317a92ff51e84baacc6de5f7fea0063a1ed8e99e8e81493606a170fd8298e41"
   },
   "structs": [
     "VkApplicationInfo",
@@ -46,7 +49,19 @@
     "VkPhysicalDeviceLimits",
     "VkPhysicalDeviceSparseProperties",
     "VkPhysicalDeviceProperties",
-    "VkPhysicalDeviceProperties2"
+    "VkPhysicalDeviceProperties2",
+    "VkImageCreateInfo",
+    "VkComponentMapping",
+    "VkImageSubresourceRange",
+    "VkImageViewCreateInfo",
+    "VkImageSubresourceLayers",
+    "VkOffset3D",
+    "VkBufferImageCopy",
+    "VkImageCopy",
+    "VkImageMemoryBarrier",
+    "VkSamplerCreateInfo",
+    "VkDescriptorImageInfo",
+    "VkFormatProperties"
   ],
   "functions": [
     "vkCreateInstance",
@@ -97,7 +112,19 @@
     "vkDestroyPipelineLayout",
     "vkCreateComputePipelines",
     "vkDestroyPipeline",
-    "vkCmdBindDescriptorSets"
+    "vkCmdBindDescriptorSets",
+    "vkGetPhysicalDeviceFormatProperties",
+    "vkCreateImage",
+    "vkDestroyImage",
+    "vkGetImageMemoryRequirements",
+    "vkBindImageMemory",
+    "vkCreateImageView",
+    "vkDestroyImageView",
+    "vkCreateSampler",
+    "vkDestroySampler",
+    "vkCmdCopyBufferToImage",
+    "vkCmdCopyImageToBuffer",
+    "vkCmdCopyImage"
   ],
   "restriction": "Linux LP64 C ABI; no fallback or production promotion"
 }
