@@ -47,6 +47,7 @@ typedef struct doe_vk_format_caps {
     bool copy_src;
     bool copy_dst;
     bool depth_stencil_attachment;
+    uint32_t attachment_sample_counts; /* Exact 2D attachment-only native sample mask. */
 } doe_vk_format_caps;
 doe_vk_status doe_vk_texture_format_caps(doe_vk_context *context,
     doe_vk_texture_format format, doe_vk_format_caps *out);
@@ -72,9 +73,11 @@ typedef struct doe_vk_texture_desc {
     uint32_t mip_levels;
     uint32_t usage;
     bool cube_compatible;
+    uint32_t sample_count; /* Zero preserves the original sample1 default. */
 } doe_vk_texture_desc;
 /* Depth/stencil currently admits only 2D attachment usage (no copy, sampling or
- * storage). Format capability facts do not override this owner admission.
+ * storage). Multisample images additionally require one mip/layer, no cube flag,
+ * and attachment-only usage. Format facts do not override this owner admission.
  * Images start uninitialized/UNDEFINED. Native WebGPU initialization ownership
  * remains upstream. A texture may be used by only one unresolved command owner;
  * its final layout is published on established successful completion only. */

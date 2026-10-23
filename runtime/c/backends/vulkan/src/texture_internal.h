@@ -32,6 +32,13 @@ typedef struct doe_vk_texture_use {
     uint8_t *initialized;
     struct doe_vk_texture_use *next;
 } doe_vk_texture_use;
+static inline uint32_t doe_vk_samples(uint32_t requested) {
+    return requested != 0 ? requested : 1;
+}
+doe_vk_status doe_vk_image_format_properties(doe_vk_context *context,
+    const doe_vk_texture_desc *desc, VkImageFormatProperties *out);
+doe_vk_status doe_vk_attachment_samples(doe_vk_context *context,
+    doe_vk_texture_format format, uint32_t *out);
 /* Initialization bytes are per-aspect masks (color1, depth2, stencil4). */
 uint32_t doe_vk_format_aspects(doe_vk_texture_format format);
 doe_vk_status doe_vk_use_texture(doe_vk_commands *commands, doe_vk_texture *texture,

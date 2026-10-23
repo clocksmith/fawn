@@ -3,6 +3,14 @@
 #define DOE_VK_ABI_IMAGES_H
 #include "vk_abi_structs.h"
 
+/* Official core1.0 declaration, separate from retained provenance. */
+typedef struct VkImageFormatProperties {
+    VkExtent3D maxExtent;
+    uint32_t maxMipLevels, maxArrayLayers;
+    VkFlags sampleCounts;
+    VkDeviceSize maxResourceSize;
+} VkImageFormatProperties;
+
 typedef struct VkImageCreateInfo {
     VkStructureType sType;
     const void *pNext;

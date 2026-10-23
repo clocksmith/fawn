@@ -33,7 +33,8 @@ static doe_vk_status validate_depth_stencil(doe_vk_context *context,
     doe_vk_format_caps caps;
     doe_vk_status status = doe_vk_texture_format_caps(context, desc->depth_stencil_format, &caps);
     if (status != DOE_VK_OK) return status;
-    return caps.depth_stencil_attachment ? DOE_VK_OK : DOE_VK_UNSUPPORTED;
+    return caps.depth_stencil_attachment && (caps.attachment_sample_counts & doe_vk_samples(desc->sample_count)) ?
+        DOE_VK_OK : DOE_VK_UNSUPPORTED;
 }
 static VkStencilOpState stencil_state(doe_vk_stencil_face face,
     const doe_vk_render_pipeline_desc *desc) {
@@ -59,7 +60,11 @@ static doe_vk_status validate_pipeline(doe_vk_context *context,
     doe_vk_format_caps format;
     doe_vk_status status = doe_vk_texture_format_caps(context, desc->color_format, &format);
     if (status != DOE_VK_OK) return status;
-    if (!format.color_attachment || (desc->blend_enabled && !format.blendable)) return DOE_VK_UNSUPPORTED;
+    uint32_t samples = doe_vk_samples(desc->sample_count);
+    if (samples > 64 || (samples & (samples - 1)) != 0 || (desc->alpha_to_coverage && samples == 1))
+        return DOE_VK_INVALID_ARGUMENT;
+    if (!format.color_attachment || !(format.attachment_sample_counts & samples) ||
+        (desc->blend_enabled && !format.blendable)) return DOE_VK_UNSUPPORTED;
     status = validate_depth_stencil(context, desc);
     if (status != DOE_VK_OK) return status;
     const VkPhysicalDeviceLimits *limits = &context->properties.limits;
@@ -108,6 +113,7 @@ doe_vk_status doe_vk_render_pipeline_create(doe_vk_context *context,
     memcpy(pipeline->blend_constant, desc->blend_constant, sizeof(pipeline->blend_constant));
     pipeline->color_format = desc->color_format;
     pipeline->depth_stencil_format = desc->depth_stencil_format;
+    pipeline->sample_count = doe_vk_samples(desc->sample_count);
     pipeline->depth_write = desc->depth_write;
     pipeline->stencil_test = desc->stencil_test;
     pipeline->stencil_write = doe_vk_render_stencil_writes(desc);
@@ -118,7 +124,9 @@ doe_vk_status doe_vk_render_pipeline_create(doe_vk_context *context,
     status = doe_vk_pipeline_layout_create(pipeline, desc->bindings, desc->binding_count,
         VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, error);
     if (status != DOE_VK_OK) goto failed;
-    status = doe_vk_render_pass_create(context, desc->color_format, desc->depth_stencil_format, NULL, &pipeline->render_pass, error);
+    /* Vulkan single-subpass compatibility ignores resolve attachment references;
+     * this pipeline pass is also compatible with the recorder's resolve pass. */
+    status = doe_vk_render_pass_create(context, desc->color_format, desc->depth_stencil_format, pipeline->sample_count, NULL, &pipeline->render_pass, error);
     if (status != DOE_VK_OK) goto failed;
     status = doe_vk_shader_module(context, &desc->vertex, &vertex, error);
     if (status != DOE_VK_OK) goto failed;
@@ -156,8 +164,10 @@ doe_vk_status doe_vk_render_pipeline_create(doe_vk_context *context,
         .sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO, .polygonMode = VK_POLYGON_MODE_FILL,
         .cullMode = desc->cull_mask, .frontFace = desc->clockwise_front ? 1 : 0, .lineWidth = 1.0f
     };
+    const uint32_t sample_mask[2] = {(uint32_t)desc->sample_mask, (uint32_t)(desc->sample_mask >> 32)};
     const VkPipelineMultisampleStateCreateInfo multisample = {
-        .sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO, .rasterizationSamples = 1
+        .sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO, .rasterizationSamples = pipeline->sample_count,
+        .pSampleMask = desc->override_sample_mask ? sample_mask : NULL, .alphaToCoverageEnable = desc->alpha_to_coverage
     };
     const VkPipelineColorBlendAttachmentState attachment = {
         .blendEnable = desc->blend_enabled, .srcColorBlendFactor = desc->color_source_factor,

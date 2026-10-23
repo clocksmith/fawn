@@ -62,6 +62,9 @@ typedef struct doe_vk_functions {
     void (*vkCmdCopyBufferToImage)(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage, uint32_t dstImageLayout, uint32_t regionCount, const VkBufferImageCopy *pRegions);
     void (*vkCmdCopyImageToBuffer)(VkCommandBuffer commandBuffer, VkImage srcImage, uint32_t srcImageLayout, VkBuffer dstBuffer, uint32_t regionCount, const VkBufferImageCopy *pRegions);
     void (*vkCmdCopyImage)(VkCommandBuffer commandBuffer, VkImage srcImage, uint32_t srcImageLayout, VkImage dstImage, uint32_t dstImageLayout, uint32_t regionCount, const VkImageCopy *pRegions);
+    VkResult (*vkGetPhysicalDeviceImageFormatProperties)(VkPhysicalDevice physicalDevice,
+        uint32_t format, uint32_t type, uint32_t tiling, VkFlags usage, VkFlags flags,
+        VkImageFormatProperties *properties);
     VkResult (*vkCreateImage)(VkDevice device, const VkImageCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator, VkImage *pImage);
     void (*vkDestroyImage)(VkDevice device, VkImage image, const VkAllocationCallbacks *pAllocator);
     void (*vkGetImageMemoryRequirements)(VkDevice device, VkImage image, VkMemoryRequirements *pMemoryRequirements);

@@ -49,7 +49,7 @@ doe_vk_status doe_vk_texture_format_caps(doe_vk_context *context,
     VkFormatProperties properties = {0};
     context->vk.vkGetPhysicalDeviceFormatProperties(context->physical, (uint32_t)format, &properties);
     uint32_t flags = properties.optimalTilingFeatures;
-    const doe_vk_format_caps caps = {
+    doe_vk_format_caps caps = {
         .texel_bytes = bytes,
         .sampled = (flags & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT) != 0,
         .storage = (flags & VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT) != 0,
@@ -60,6 +60,10 @@ doe_vk_status doe_vk_texture_format_caps(doe_vk_context *context,
         .copy_dst = (flags & VK_FORMAT_FEATURE_TRANSFER_DST_BIT) != 0,
         .depth_stencil_attachment = (flags & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) != 0
     };
+    if (caps.color_attachment || caps.depth_stencil_attachment) {
+        doe_vk_status status = doe_vk_attachment_samples(context, format, &caps.attachment_sample_counts);
+        if (status != DOE_VK_OK) return status;
+    }
     *out = caps;
     return DOE_VK_OK;
 }
@@ -70,6 +74,12 @@ static doe_vk_status validate_texture(doe_vk_context *context,
         desc->width == 0 || desc->height == 0 || desc->depth_or_layers == 0 ||
         desc->mip_levels == 0 || desc->usage == 0 || (desc->usage & ~UINT32_C(63)) != 0)
         return DOE_VK_INVALID_ARGUMENT;
+    uint32_t samples = doe_vk_samples(desc->sample_count);
+    if (samples > 64 || (samples & (samples - 1)) != 0) return DOE_VK_INVALID_ARGUMENT;
+    if (samples != 1 && (desc->dimension != DOE_VK_TEXTURE_2D || desc->mip_levels != 1 ||
+        desc->depth_or_layers != 1 || desc->cube_compatible ||
+        (desc->usage != DOE_VK_TEXTURE_COLOR_ATTACHMENT && desc->usage != DOE_VK_TEXTURE_DEPTH_STENCIL_ATTACHMENT)))
+        return DOE_VK_UNSUPPORTED;
     *bytes = texel_bytes(desc->format);
     if (*bytes == 0) return DOE_VK_UNSUPPORTED;
     bool depth_stencil = doe_vk_format_aspects(desc->format) != VK_IMAGE_ASPECT_COLOR_BIT;
@@ -107,6 +117,14 @@ static doe_vk_status validate_texture(doe_vk_context *context,
         ((desc->usage & DOE_VK_TEXTURE_DEPTH_STENCIL_ATTACHMENT) && !caps.depth_stencil_attachment) ||
         ((desc->usage & DOE_VK_TEXTURE_COPY_SRC) && !caps.copy_src) ||
         ((desc->usage & DOE_VK_TEXTURE_COPY_DST) && !caps.copy_dst)) return DOE_VK_UNSUPPORTED;
+    VkImageFormatProperties image;
+    status = doe_vk_image_format_properties(context, desc, &image);
+    if (status != DOE_VK_OK) return status;
+    uint32_t depth = desc->dimension == DOE_VK_TEXTURE_3D ? desc->depth_or_layers : 1;
+    uint32_t layers = desc->dimension == DOE_VK_TEXTURE_3D ? 1 : desc->depth_or_layers;
+    if (desc->width > image.maxExtent.width || desc->height > image.maxExtent.height ||
+        depth > image.maxExtent.depth || layers > image.maxArrayLayers || desc->mip_levels > image.maxMipLevels ||
+        !(image.sampleCounts & samples)) return DOE_VK_UNSUPPORTED;
     return DOE_VK_OK;
 }
 
@@ -127,6 +145,7 @@ doe_vk_status doe_vk_texture_create(doe_vk_context *context,
     texture->context = context;
     texture->references = 1;
     texture->desc = *desc;
+    texture->desc.sample_count = doe_vk_samples(desc->sample_count);
     texture->texel_bytes = bytes;
     uint64_t layers = desc->dimension == DOE_VK_TEXTURE_3D ? 1 : desc->depth_or_layers;
     uint64_t subresources = layers * desc->mip_levels;
@@ -148,7 +167,7 @@ doe_vk_status doe_vk_texture_create(doe_vk_context *context,
         .extent = { desc->width, desc->height, desc->dimension == DOE_VK_TEXTURE_3D ? desc->depth_or_layers : 1 },
         .mipLevels = desc->mip_levels,
         .arrayLayers = desc->dimension == DOE_VK_TEXTURE_3D ? 1 : desc->depth_or_layers,
-        .samples = 1,
+        .samples = texture->desc.sample_count,
         .tiling = VK_IMAGE_TILING_OPTIMAL,
         .usage = desc->usage,
         .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED

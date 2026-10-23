@@ -106,12 +106,12 @@ clear initializes only the selected full 2D mip/layer; LOAD cannot read undefine
 contents. Resource pass/bundle packets retain their canonical ordering upstream;
 this borrowed span is not another resource recorder or reference-count owner.
 
-Pipeline state admits sample1, one color target, eight vertex layouts/sixteen
+Pipeline state admits format-supported samples, one color target, eight vertex layouts/sixteen
 32-bit scalar/vector attributes, native blend/cull/topology controls and dynamic
 viewport/scissor. Blend constants default to pipeline state; explicit per-draw overrides use real
 native dynamic state after whole-span finite-value validation. The full descriptor
 adds one depth/stencil attachment, independent per-aspect load/clear/store/discard,
-read-only admission and dynamic stencil reference. MSAA, multiple color targets
+read-only admission and dynamic stencil reference. Multiple color targets
 and indexed/indirect draws remain unsupported.
 Unsupported resource packets must be rejected, not silently dropped. Graphics
 requires `require_graphics_queue=true` at context creation when the device offers
@@ -337,3 +337,32 @@ The full descriptor also admits an empty/query-only depth/stencil-only pass,
 without manufacturing a color attachment; depth-only draws remain unsupported.
 The native witness verifies depth-zero after discard without losing stencil,
 and exact zero color bytes after discard.
+
+Multisample attachments use the same pass and image lifetime owners, not a second
+resolve recorder. Texture/pipeline `sample_count=0` preserves the sample1 default.
+Format capabilities report the actual 2D attachment-only sample mask, intersected
+with framebuffer aspect limits. Every image also checks its exact format/type/
+usage/flags combination, dimensions, mips, layers and samples through the native
+image-format query before creation. The added core ABI record/signature has
+separate official provenance and layout checks; this is not a driver test.
+
+Multisample images currently require 2D, one mip/layer, no cube flag and exclusively
+color or depth/stencil attachment usage. Copying, sampling and storage remain
+unsupported for them. Pipeline sample masks and alpha-to-coverage use native
+multisample state without enabling sample-rate shading or alpha-to-one. Public
+WebGPU sample-count and shader-output admission remains upstream.
+
+`resolve_target` is an optional same-format/extent single-sample color view.
+The entire pass validates it and retains it before native begin. Native subpass
+resolve occurs before the source store/discard, so discarding the multisample
+source does not invalidate the resolved destination. Initialization remains
+speculative until successful completion; unknown work retains both images and
+all views. An empty LOAD pass can resolve, and the canonical initializer can GPU
+clear undefined multisample attachments after discard. The pipeline's pass has
+no resolve attachment, using Vulkan's explicit single-subpass compatibility rule
+that ignores resolve references: https://docs.vulkan.org/spec/latest/chapters/renderpass.html.
+
+The existing native render witness now exercises 4x RGBA8/D32S8, a sample1 resolve,
+empty LOAD resolve, zero sample mask, alpha-zero coverage, resolve-before-discard
+and zero-after-discard, with five exact 64-pixel oracles and early caller release.
+This is explicit SwiftShader execution only, not physical or compiler qualification.

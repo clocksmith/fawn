@@ -11,9 +11,17 @@ static VkResult create_pass(VkDevice device, const VkRenderPassCreateInfo *info,
     (void)device;
     (void)allocator;
     unsigned depth_index = expected.color != NULL ? 1 : 0;
-    assert(!inside && info->attachmentCount == depth_index + 1);
+    assert(!inside && info->attachmentCount == depth_index + 1 + (expected.resolve_target != NULL ? 1u : 0u));
     const VkAttachmentDescription *depth = info->pAttachments + depth_index;
     assert(depth->format == DOE_VK_FORMAT_D32_FLOAT_S8_UINT);
+    assert(depth->samples == doe_vk_samples(expected.depth_stencil->texture->desc.sample_count));
+    if (expected.resolve_target != NULL) {
+        const VkAttachmentDescription *resolve = info->pAttachments + 2;
+        assert(info->pAttachments[0].samples == 4 && depth->samples == 4);
+        assert(resolve->samples == 1 && resolve->format == DOE_VK_FORMAT_RGBA8_UNORM);
+        assert(resolve->loadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE && resolve->storeOp == VK_ATTACHMENT_STORE_OP_STORE);
+        assert(info->pSubpasses[0].pResolveAttachments->attachment == 2);
+    } else assert(info->pSubpasses[0].pResolveAttachments == NULL);
     assert(depth->loadOp == (expected.clear_depth ? VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_LOAD));
     assert(depth->stencilLoadOp == (expected.clear_stencil ? VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_LOAD));
     assert(depth->storeOp == (expected.discard_depth ? VK_ATTACHMENT_STORE_OP_DONT_CARE : VK_ATTACHMENT_STORE_OP_STORE));
@@ -28,8 +36,11 @@ static VkResult framebuffer(VkDevice device, const VkFramebufferCreateInfo *info
     (void)device;
     (void)allocator;
     assert(!inside);
-    if (expected.color != NULL) assert(info->attachmentCount == 2 && info->pAttachments[0] == 21 && info->pAttachments[1] == 22);
-    else assert(info->attachmentCount == 1 && info->pAttachments[0] == 22);
+    if (expected.color != NULL) {
+        assert(info->attachmentCount == (expected.resolve_target != NULL ? 3u : 2u) &&
+            info->pAttachments[0] == 21 && info->pAttachments[1] == 22);
+        if (expected.resolve_target != NULL) assert(info->pAttachments[2] == 23);
+    } else assert(info->attachmentCount == 1 && info->pAttachments[0] == 22);
     *out = 18;
     return 0;
 }
@@ -53,7 +64,7 @@ static void barrier(VkCommandBuffer command, VkFlags source, VkFlags destination
     if (image_count) {
         const VkImageMemoryBarrier *image = images;
         assert(image_count == 1);
-        assert(image->subresourceRange.aspectMask == (image->image == 11 ? 1u : 6u));
+        assert(image->subresourceRange.aspectMask == (image->image == 12 ? 6u : 1u));
     }
 }
 static void begin(VkCommandBuffer command, const VkRenderPassBeginInfo *info, uint32_t contents) {
@@ -198,7 +209,57 @@ int main(void) {
     assert(doe_vk_commands_release(commands) == DOE_VK_OK);
     depth.desc.format = DOE_VK_FORMAT_D32_FLOAT;
     rejected(&context, &desc, NULL, DOE_VK_INVALID_ARGUMENT); /* No stencil aspect. */
-    assert(begins == 4 && ends == 4 && created == destroyed && context.references == 1);
-    puts("PASS per-aspect native load/clear/store/discard, full depth/stencil transitions, read-only write/clear rejection, extent/NaN/absent-aspect preflight, speculative initialization, canonical depth-only zero with stencil preservation/no-op, culled-face stencil write summary and exact attachment leases");
+    depth.desc.format = DOE_VK_FORMAT_D32_FLOAT_S8_UINT;
+    color.desc.sample_count = depth.desc.sample_count = 4;
+    uint8_t resolve_state = 0;
+    doe_vk_texture resolve = color;
+    resolve.image = 13;
+    resolve.initialized = &resolve_state;
+    resolve.desc.sample_count = 1;
+    doe_vk_texture_view resolve_view = {.texture = &resolve, .references = 1, .view = 23,
+        .desc = {DOE_VK_VIEW_2D, 0, 1, 0, 1}};
+    desc = (doe_vk_render_pass_desc){.color = &color_view, .clear_color = &blue,
+        .discard_color = true, .depth_stencil = &depth_view, .clear_depth = true,
+        .clear_stencil = true, .resolve_target = &resolve_view};
+    resolve.desc.sample_count = 4;
+    rejected(&context, &desc, NULL, DOE_VK_INVALID_ARGUMENT);
+    resolve.desc.sample_count = 1;
+    resolve.desc.format = DOE_VK_FORMAT_BGRA8_UNORM;
+    rejected(&context, &desc, NULL, DOE_VK_INVALID_ARGUMENT);
+    resolve.desc.format = DOE_VK_FORMAT_RGBA8_UNORM;
+    resolve.desc.width = 4;
+    rejected(&context, &desc, NULL, DOE_VK_INVALID_ARGUMENT);
+    resolve.desc.width = 8;
+    depth.desc.sample_count = 1;
+    rejected(&context, &desc, NULL, DOE_VK_INVALID_ARGUMENT);
+    depth.desc.sample_count = 4;
+    color.desc.sample_count = 1;
+    rejected(&context, &desc, NULL, DOE_VK_INVALID_ARGUMENT);
+    color.desc.sample_count = 4;
+    doe_vk_context other = {.references = 1};
+    resolve.context = &other;
+    rejected(&context, &desc, NULL, DOE_VK_INVALID_ARGUMENT);
+    resolve.context = &context;
+    expected = desc;
+    commands = recording(&context);
+    assert(doe_vk_commands_render_pass_full(commands, &desc, NULL, NULL, 0) == DOE_VK_OK);
+    assert(color_state == 1 && depth_state == 6 && resolve_state == 0);
+    assert(color_view.references == 2 && depth_view.references == 2 && resolve_view.references == 2);
+    commands->state = DOE_VK_UNCERTAIN;
+    assert(doe_vk_commands_release(commands) == DOE_VK_BUSY);
+    assert(resolve.references == 2 && resolve.recording_owner == commands);
+    doe_vk_textures_complete(commands, DOE_VK_OK);
+    commands->state = DOE_VK_COMPLETE;
+    assert(color_state == 0 && depth_state == 6 && resolve_state == 1);
+    assert(doe_vk_commands_release(commands) == DOE_VK_OK);
+    assert(color_view.references == 1 && depth_view.references == 1 && resolve_view.references == 1);
+    assert(resolve.references == 1 && resolve.recording_owner == NULL);
+    /* A recorded resolve is not published when the command is abandoned. */
+    resolve_state = 0;
+    commands = recording(&context);
+    assert(doe_vk_commands_render_pass_full(commands, &desc, NULL, NULL, 0) == DOE_VK_OK);
+    assert(doe_vk_commands_release(commands) == DOE_VK_OK && resolve_state == 0);
+    assert(begins == 6 && ends == 6 && created == destroyed && context.references == 1);
+    puts("PASS per-aspect native load/clear/store/discard, full depth/stencil transitions, read-only write/clear rejection, extent/NaN/absent-aspect preflight, speculative initialization, canonical depth-only zero with stencil preservation/no-op, culled-face stencil write summary and exact attachment leases; real MSAA/resolve native records, mismatch rejection, discard-independent resolve availability and uncertain/abandoned ownership");
     return 0;
 }

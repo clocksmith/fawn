@@ -72,6 +72,7 @@ static doe_vk_status validate_pass_draw(doe_vk_commands *commands, const doe_vk_
         draw->binding_count != pipeline->binding_count ||
         (draw->binding_count != 0 && draw->bindings == NULL) ||
         target->texture->desc.format != pipeline->color_format ||
+        doe_vk_samples(target->texture->desc.sample_count) != doe_vk_samples(pipeline->sample_count) ||
         (desc->depth_stencil != NULL ? desc->depth_stencil->texture->desc.format : 0) != pipeline->depth_stencil_format ||
         (desc->depth_read_only && pipeline->depth_write) ||
         (desc->stencil_read_only && pipeline->stencil_write)) return DOE_VK_INVALID_ARGUMENT;
@@ -87,7 +88,8 @@ static doe_vk_status validate_pass_draw(doe_vk_commands *commands, const doe_vk_
         if ((draw->bindings[i].kind == DOE_VK_BINDING_SAMPLED_TEXTURE ||
             draw->bindings[i].kind == DOE_VK_BINDING_STORAGE_TEXTURE) &&
             draw->bindings[i].value.view != NULL && (draw->bindings[i].value.view->texture == target->texture ||
-                (desc->depth_stencil != NULL && draw->bindings[i].value.view->texture == desc->depth_stencil->texture)))
+                (desc->depth_stencil != NULL && draw->bindings[i].value.view->texture == desc->depth_stencil->texture) ||
+                (desc->resolve_target != NULL && draw->bindings[i].value.view->texture == desc->resolve_target->texture)))
             return DOE_VK_UNSUPPORTED;
     }
     prepared->scissor = (VkRect2D){
@@ -271,6 +273,7 @@ void doe_vk_render_release(doe_vk_commands *commands) {
         commands->renders = use->next;
         if (use->framebuffer != 0) context->vk.vkDestroyFramebuffer(context->device, use->framebuffer, NULL);
         if (use->pass != 0) context->vk.vkDestroyRenderPass(context->device, use->pass, NULL);
+        doe_vk_texture_view_release(use->resolve);
         doe_vk_texture_view_release(use->depth_stencil);
         doe_vk_texture_view_release(use->target);
         free(use);

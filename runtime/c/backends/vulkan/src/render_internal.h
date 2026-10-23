@@ -7,11 +7,12 @@ typedef struct doe_vk_render_use {
     VkFramebuffer framebuffer;
     doe_vk_texture_view *target;
     doe_vk_texture_view *depth_stencil;
+    doe_vk_texture_view *resolve;
     struct doe_vk_render_use *next;
 } doe_vk_render_use;
 doe_vk_status doe_vk_render_pass_create(doe_vk_context *context,
     doe_vk_texture_format color, doe_vk_texture_format depth_stencil,
-    const doe_vk_render_pass_desc *desc, VkRenderPass *out, doe_vk_error *error);
+    uint32_t samples, const doe_vk_render_pass_desc *desc, VkRenderPass *out, doe_vk_error *error);
 doe_vk_status doe_vk_render_attachments_validate(doe_vk_commands *commands,
     const doe_vk_render_pass_desc *desc, uint32_t *width, uint32_t *height);
 doe_vk_status doe_vk_render_attachments_prepare(doe_vk_commands *commands,
