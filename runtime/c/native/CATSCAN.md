@@ -13,7 +13,8 @@ semantics, callback queues, shader meaning or GPU execution. Defaults stay uncha
 Instances/devices, buffers, compute pipelines, bindings, commands, submission,
 readback, device loss, labels, compilation/pipeline callbacks; initialized color
 textures/views/samplers and copies; requested GPU-normalized timestamps; reflected
-vertex/fragment pipelines, color/depth/stencil passes, direct draws, bundles and occlusion.
+vertex/fragment or vertex-only pipelines, color/depth/stencil/MSAA passes, resolve,
+direct draws, bundles, occlusion and canonical debug-group validation.
 Unsupported entrypoints stay absent or fail specifically, never fake success.
 
 ## Contracts
@@ -27,7 +28,7 @@ missing dispatch analysis; command and native obligations keep their existing ow
 
 ## Acceptance
 Developer checks do not establish independent, physical or performance qualification.
-- Evidence: [depth](DEVELOPER_RECEIPT_DEPTH.json), [demote/instance](DEVELOPER_RECEIPT_DEMOTE.json), [graphics](DEVELOPER_RECEIPT_GRAPHICS.json),
+- Evidence: [MSAA/debug/atomics](DEVELOPER_RECEIPT_MSAA.json), [depth](DEVELOPER_RECEIPT_DEPTH.json), [demote/instance](DEVELOPER_RECEIPT_DEMOTE.json), [graphics](DEVELOPER_RECEIPT_GRAPHICS.json),
   [timestamps/recovery](DEVELOPER_RECEIPT_TIMESTAMPS.json) and
   [admission](DEVELOPER_RECEIPT_ADMISSION.json).
 

@@ -8,22 +8,30 @@ WGPURenderPassEncoder wgpuCommandEncoderBeginRenderPass(WGPUCommandEncoder handl
     native_device *device = doe_resource_encoder_device(encoder);
     if (!device) return NULL;
     bool valid = descriptor && !descriptor->nextInChain &&
-        descriptor->colorAttachmentCount == 1 && descriptor->colorAttachments;
+        descriptor->colorAttachmentCount <= 1 &&
+        (!descriptor->colorAttachmentCount || descriptor->colorAttachments);
     doe_resource_render_targets targets = {0};
     const WGPUPassTimestampWrites *writes = valid ? descriptor->timestampWrites : NULL;
     doe_resource_pass_timestamps timestamps = {0};
     if (valid) {
-        const WGPURenderPassColorAttachment *color = descriptor->colorAttachments;
-        valid = !color->nextInChain && !color->resolveTarget && color->depthSlice == WGPU_DEPTH_SLICE_UNDEFINED &&
-            color->storeOp == WGPUStoreOp_Store;
-        targets = (doe_resource_render_targets){.color=(doe_resource_view *)color->view,
-            .color_load=color->loadOp,.color_store=color->storeOp,
-            .clear_color={color->clearValue.r,color->clearValue.g,color->clearValue.b,color->clearValue.a},
-            .occlusion_queries=(doe_resource_query_set *)descriptor->occlusionQuerySet};
-        const doe_resource_view_desc *view = doe_resource_view_description(targets.color);
-        doe_vk_clear_color converted;
-        if (color->loadOp == WGPULoadOp_Clear && (!view || !native_render_clear(view->format, targets.clear_color, &converted)))
-            valid = false;
+        targets.occlusion_queries = (doe_resource_query_set *)descriptor->occlusionQuerySet;
+        if (descriptor->colorAttachmentCount) {
+            const WGPURenderPassColorAttachment *color = descriptor->colorAttachments;
+            const doe_resource_texture_desc *parent = doe_resource_texture_description(
+                doe_resource_view_texture((doe_resource_view *)color->view));
+            valid = !color->nextInChain && color->depthSlice == WGPU_DEPTH_SLICE_UNDEFINED &&
+                (color->storeOp == WGPUStoreOp_Store ||
+                 (parent && parent->samples > 1 && color->storeOp == WGPUStoreOp_Discard));
+            targets = (doe_resource_render_targets){.color=(doe_resource_view *)color->view,
+                .resolve_target=(doe_resource_view *)color->resolveTarget,
+                .color_load=color->loadOp,.color_store=color->storeOp,
+                .clear_color={color->clearValue.r,color->clearValue.g,color->clearValue.b,color->clearValue.a},
+                .occlusion_queries=(doe_resource_query_set *)descriptor->occlusionQuerySet};
+            const doe_resource_view_desc *view = doe_resource_view_description(targets.color);
+            doe_vk_clear_color converted;
+            if (color->loadOp == WGPULoadOp_Clear && (!view || !native_render_clear(view->format, targets.clear_color, &converted)))
+                valid = false;
+        }
         if (descriptor->depthStencilAttachment) {
             const WGPURenderPassDepthStencilAttachment *depth = descriptor->depthStencilAttachment;
             if (depth->nextInChain) valid = false;

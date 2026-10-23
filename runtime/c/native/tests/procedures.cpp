@@ -53,6 +53,11 @@ int main()
     limits.nextInChain = &chain;
     limits.timedWaitAnyMaxCount = 17;
     assert(instance_limits(&limits) == WGPUStatus_Error && limits.timedWaitAnyMaxCount == 17);
+    auto push = reinterpret_cast<WGPUProcCommandEncoderPushDebugGroup>(wgpuGetProcAddress({"wgpuCommandEncoderPushDebugGroup", WGPU_STRLEN}));
+    auto pop = reinterpret_cast<WGPUProcRenderPassEncoderPopDebugGroup>(wgpuGetProcAddress({"wgpuRenderPassEncoderPopDebugGroup", WGPU_STRLEN}));
+    assert(push && pop);
+    push(nullptr, {"typed marker", WGPU_STRLEN});
+    pop(nullptr);
     release(instance);
     std::puts("PASS C++ pinned typed procedure calls and unsupported-name rejection");
 }
