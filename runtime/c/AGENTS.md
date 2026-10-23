@@ -15,7 +15,9 @@ Label authored, compiled, exercised, accepted and hardware-qualified separately.
 - Every C/C++/Objective-C source and header is at most 999 physical lines.
   Split meaningful responsibilities; never pack lines or hide generated complexity.
 - A changed public header, enum or status set builds and checks every in-tree
-  consumer in the same commit. New or changed status conversions switch
+  consumer in the same commit, including the software-Vulkan resource lifetime
+  clients (`make -C runtime/c check-vulkan` with a CPU ICD), which no owner `check`
+  runs. New or changed status conversions switch
   exhaustively (no `default:` hiding a new value), so `-Werror=switch` names each
   consumer to update.
 - One rule, representation and lifetime owner. Reuse existing typed operations

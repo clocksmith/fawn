@@ -6,7 +6,7 @@ static doe_vk_texture_region image_region(const doe_resource_image_copy *image,
     const doe_resource_texture_blit *copy)
 {
     return (doe_vk_texture_region){image->mip, {image->origin[0], image->origin[1], image->origin[2]},
-        {copy->width, copy->height, copy->depth_or_layers}};
+        {copy->width, copy->height, copy->depth_or_layers}, DOE_VK_ASPECT_ALL};
 }
 
 int main(int argc, char **argv)
@@ -107,7 +107,7 @@ int main(int argc, char **argv)
             const doe_resource_texture_copy *region = &record->value.texture.copy;
             doe_vk_texture_region native_region = {region->mip,
                 {region->origin[0], region->origin[1], region->origin[2]},
-                {region->width, region->height, region->depth_or_layers}};
+                {region->width, region->height, region->depth_or_layers}, DOE_VK_ASPECT_ALL};
             doe_vk_texture_buffer_layout layout = {region->offset,
                 record->value.texture.region.pitch, record->value.texture.region.image_rows};
             doe_vk_texture *image = doe_resource_texture_native(record->value.texture.texture);

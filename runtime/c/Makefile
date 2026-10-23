@@ -10,7 +10,7 @@ STAGE ?= /tmp/doe-c-package
 # or enum must still build every consumer; owner checks alone cannot see that.
 OWNERS = futures callbacks instance labels error-scopes dropin-policy shader \
 	resources compiler backends/vulkan backends/metal backends/d3d12 native
-.PHONY: package check check-tools check-style check-build check-globals check-js
+.PHONY: package check check-tools check-style check-build check-globals check-js check-vulkan
 package:
 	$(PYTHON) tools/build-native-package.py --ref '$(REVISION)' --build '$(BUILD)' --destination '$(STAGE)' --cc '$(CC)' --cxx '$(CXX)'
 check: check-style check-tools check-globals
@@ -35,3 +35,14 @@ check-js:
 	cd ../../packages/doe-gpu && node scripts/build-addon.js
 	cd ../../packages/doe-gpu && env -u VK_ICD_FILENAMES DOE_WEBGPU_LIB='$(abspath $(STAGE))/lib/libwebgpu_doe_c.so' \
 		node test/integration/test-integration-first-kernel.js
+# Every software-Vulkan resource lifetime client (needs a CPU ICD, e.g.
+# VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json). Shared Vulkan header
+# changes must keep all of them building and passing; owner checks skip them.
+VULKAN_LIFETIMES = vulkan-lifetime vulkan-render-lifetime vulkan-query-lifetime \
+	vulkan-indirect-lifetime vulkan-indirect-render-lifetime
+check-vulkan:
+	$(MAKE) --no-print-directory -C compiler shared SHARED_LIBRARY='$(abspath $(BUILD))/vulkan-compiler/libdoe_compiler.so'
+	@set -e; for target in $(VULKAN_LIFETIMES); do \
+		$(MAKE) --no-print-directory -C resources BUILD='$(abspath $(BUILD))/resources-vulkan' \
+			COMPILER_LIBRARY='$(abspath $(BUILD))/vulkan-compiler/libdoe_compiler.so' $$target; \
+	done
