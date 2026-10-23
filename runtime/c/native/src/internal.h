@@ -180,6 +180,13 @@ typedef struct native_queue_settlement {
     native_failure failure;
 } native_queue_settlement;
 native_queue_settlement native_settle_pending(native_device *device);
+/* Lowers a resource command list into native commands (the one recorder for
+ * queue submission and compute-program recording/replay). */
+native_failure native_record_resource_commands(native_command_handle *native, doe_resource_commands *commands);
+/* Caller holds the device mutex and has begun a replay of commands. Adopts the
+ * native holder and the replay, including on failure. */
+native_failure native_submit_program(native_device *device, native_command_handle native,
+    doe_resource_commands *commands);
 void native_progress_pending(native_device *device);
 /* Prepared before device publication: progress shares the existing pending list
  * and owns one ordinary device lease until all callers and work retire. */

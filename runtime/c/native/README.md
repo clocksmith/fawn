@@ -512,6 +512,33 @@ unfinished parallel ABI6 enum edits; checkpoint testing instead materialized the
 committed ABI5 compiler 54f0fb9f6f7202cb13d37e7440ea9d7e13e99b0f with the recorded
 runtime snapshot. That development drift is not a published checkpoint result.
 
+## Doe compute-program extension
+
+`include/doe_native_programs.h` declares the doe-gpu native program contract the
+retained Zig provider exports, listed separately in `EXTENSION_SYMBOLS.txt` (never
+webgpu.h names, never resolved by `wgpuGetProcAddress`; `tests/audit-exports.py`
+checks both inventories). The contract version is
+`config/compute-program.schema.json` `$defs.nativeContractVersion`, read at build time.
+Vulkan only; other backends reject preparation with a device error.
+
+- `doeNativeComputeProgramPrepare` (gpu-recorded) claims a finished, never-submitted
+  command buffer in the resource owner and records ONE reusable Vulkan command buffer
+  (buffer copies, clears and direct dispatches only), sealed so preparation
+  dispatches nothing and buffers stay writable before the first run.
+- `doeNativeComputeProgramPrepareHostReplay` (native-recorded) claims the same way;
+  every submit lowers the retained commands into a fresh one-shot native recording.
+- `doeNativeComputeProgramSubmit` revalidates live, unmapped, healthy dependencies
+  and submits once through the existing pending owner; mapping between runs is
+  allowed. Unknown completion keeps the replay and the recording alive.
+- Standard `wgpuQueueSubmit` keeps WebGPU single-use semantics and rejects claimed
+  command buffers. Timestamp queries inside a GPU recording are currently rejected
+  (host replay admits them); `doeNativeComputeProgramTimestampNanoseconds` reports
+  period 1 / 64 bits because queries already resolve to GPU nanoseconds.
+
+`tests/compute_programs.c` checks three exact runs per mode with changing inputs and
+mapped readback between runs, single-use rejection, claim-twice, destroyed
+dependency, early public releases and GPU-recording admission.
+
 ## Physical developer runs and holds
 
 Do not run this on Miles or Suby while their possible disassembly/cooling hold

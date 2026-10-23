@@ -33,7 +33,8 @@ def main() -> None:
         exports_file = Path(directory) / "native.exports"
         subprocess.run(["make", "--no-print-directory", "-s", "-C", str(owner),
                         f"BUILD={directory}", "SHARED_PLATFORM=Darwin", str(exports_file)], check=True)
-        expected = {"_" + name for name in (owner / "EXPORTED_SYMBOLS.txt").read_text().splitlines()}
+        expected = {"_" + name for inventory in ("EXPORTED_SYMBOLS.txt", "EXTENSION_SYMBOLS.txt")
+                    for name in (owner / inventory).read_text().splitlines()}
         assert set(exports_file.read_text().splitlines()) == expected
     print("PASS Linux/Darwin native link recipe controls, exact Mach-O export projection and nm normalization; no Apple compilation or execution")
 
