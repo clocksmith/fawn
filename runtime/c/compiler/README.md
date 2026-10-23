@@ -50,10 +50,11 @@ counts and explicitly lifted negative cases. Never broadly relax those assertion
 
 ## Native API and caller ownership
 
-The shared library exports exactly nine symbols: the five retained compile,
+The shared library exports exactly eleven symbols: the five retained compile,
 workspace and job entrypoints, plus `doe_compiler_typed_requirements` and
 `doe_compiler_compile_typed`, plus the two additive
-[ABI5 module operations](include/doe_compiler_module.h). See [ABI4](include/doe_compiler_typed.h), the
+[ABI5 module operations](include/doe_compiler_module.h), and the two additive
+[ABI6 resource operations](include/doe_compiler_resources.h). See [ABI4](include/doe_compiler_typed.h), the
 [frozen numeric semantics](MILESTONE_12.md) and [lowering ledger](MILESTONE_12_LEDGER.md),
 with retained storage ownership.
 
@@ -125,8 +126,13 @@ subgroup/workgroup uniformity analysis. Its actual SPIR-V words and ABI5 metadat
 have focused developer checks; collective execution and device feature admission
 remain pending. `make test-subgroups` runs these checks.
 
+The [resource-family increment](TEXTURES.md) adds typed texture/sampler handles,
+real guarded image loads/stores/queries and explicit-level sampling. ABI6 publishes
+sparse handle metadata without inventing buffer layout for image resources.
+`make test-resources` runs its focused C/C++ and target checks.
+
 Other barriers, atomics, matrices, pointers, aliases,
-overrides, f16, remaining subgroup operations, graphics, textures, wider builtins,
+overrides, f16, remaining subgroup operations, graphics, remaining texture operations, wider builtins,
 other targets and runtime metadata/adoption remain open owners, not implied coverage.
 
 ## CLI and actual consumer
@@ -162,6 +168,9 @@ pool accounting and ceilings; future growth requires an explicit reviewed change
 - lex.c / parse.c: one grammar and original source positions.
 - numeric.c: checked scalar constants/conversions and per-call host environment.
 - builtin.c / sema_builtin.c: shared overload identity, typed snapshots and builtin constants.
+- image.c / sema_image.c / sema_image_call.c: typed handle resources and image overloads.
+- spirv_image.c: checked real image queries, access and sampling.
+- sema_finalize.c: nonrecursive typed numeric/swizzle value finalization.
 - types.c / constants.c: shared typed layout and compact aggregate constants.
 - sema_declarations.c / sema_expression.c / sema_call.c / validate.c: module and
   lexical identity, typed values/references/calls and structured control.

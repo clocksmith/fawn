@@ -51,7 +51,7 @@ bool reflect_prepare(Source *s, CompilerWorkspace *c, DoeCompilerTypedOutputCoun
     for (uint32_t i = 0u;i<c->type_count;++i) if (c->types[i].kind == TYPE_STRUCT && !discover(s, i+7u, &counts->types)) return false;
     for (uint32_t i = 0u;i<c->resource_count;++i) {
         names+=(uint64_t)c->resources[i].name.length+1u;
-        if (!discover(s, c->resources[i].type, &counts->types)) return false;
+        if (!type_handle(c, c->resources[i].type) && !discover(s, c->resources[i].type, &counts->types)) return false;
     }
     if (module) for (uint32_t i=0u;i<c->workgroup_count;++i) {
         names+=(uint64_t)c->workgroups[i].name.length+1u;
@@ -132,7 +132,7 @@ static void publish_tables(const Source *s, const CompilerWorkspace *c, const Do
         out->binding = r->binding;
         out->kind = r->kind;
         out->access = r->access;
-        out->type_index = c->reflection_map[r->type];
+        out->type_index = type_handle(c, r->type) ? DOE_COMPILER_TYPED_NONE : c->reflection_map[r->type];
         out->flags = r->flags;
         out->minimum_binding_size_bytes = r->minimum;
         out->type_alignment_bytes = r->alignment;

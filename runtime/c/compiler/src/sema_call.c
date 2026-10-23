@@ -197,6 +197,12 @@ bool sema_call_value(Source *s, uint32_t id, const LocalScope *scope, bool evalu
         return source_error(s,DOE_COMPILER_UNSUPPORTED,name.offset,"synchronization builtin is outside the workgroup barrier owner");
     if (name.length >= sizeof(((Name *)0)->text))
         return source_error(s, DOE_COMPILER_UNSUPPORTED, name.offset, "identifier length exceeds supported capacity");
+    const uint32_t image_operation = nominal == NO_ID ? image_builtin_kind(s, name) : NO_ID;
+    if (image_operation != NO_ID) {
+        if (statement != (image_operation == IMAGE_STORE))
+            return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, node->source_offset, "texture builtin has invalid result context");
+        return sema_image_call(s, node, scope, evaluate, emit, (ImageOperation)image_operation, out);
+    }
     const NumericBuiltin *builtin = nominal == NO_ID ? builtin_named(s, name) : NULL;
     if (builtin != NULL) {
         if (statement || node->value.call.type.offset != NO_ID || node->right != builtin->arity)

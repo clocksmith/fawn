@@ -83,7 +83,7 @@ static bool emit_conversion(Emitter *e, TypeId from, TypeId to, uint32_t result,
     } else { EMIT(OP_BITCAST, spirv_scalar_type(to), result, input); }
     return true;
 }
-static TypeId semantic_type(const CompilerWorkspace *c, uint32_t id) {
+TypeId spirv_value_type(const CompilerWorkspace *c, uint32_t id) {
     if (id > c->limits.instructions) {
         const uint32_t formal = id - c->limits.instructions - 1u;
         return formal < c->formal_count ? c->formals[formal].type.resolved.type : IR_VOID;
@@ -146,7 +146,7 @@ static bool emit_numeric_builtin(Emitter *e, const IrInstruction *ir) {
     const uint32_t result = e->values[ir->result];
     const uint32_t left = e->values[ir->operands.scalar.left];
     const uint32_t right = builtin->arity > 1u ? e->values[ir->operands.scalar.right] : 0u;
-    const TypeId operand_type = semantic_type(e->program, ir->operands.scalar.left);
+    const TypeId operand_type = spirv_value_type(e->program, ir->operands.scalar.left);
     const TypeId leaf = type_leaf(e->program, operand_type);
     if (builtin_subgroup(builtin)) return spirv_subgroup_builtin(e, ir, builtin, leaf);
     if (builtin->extended_instruction != 0u) {
@@ -258,7 +258,7 @@ static bool emit_composite(Emitter *e, const IrInstruction *ir) {
     } else {
         for (uint32_t i = 0u; i < count; ++i) {
             const uint32_t operand = c->typed_operands[first + i];
-            const TypeId type = semantic_type(c, operand);
+            const TypeId type = spirv_value_type(c, operand);
             const uint32_t n = type_vector_width(c, type);
             if (n > width - used) return spirv_emit_error(e, ir->source_offset, "invalid vector component count");
             for (uint32_t j = 0u; j < n; ++j)
@@ -621,6 +621,12 @@ static bool emit_block(Emitter *e, const IrProgram *program, size_t *cursor,
                 }
                 break;
             }
+            case IR_HANDLE:
+                EMIT(OP_LOAD, spirv_target_type(e, ir->type), result, program->resources[ir->operands.scalar.binding].target);
+                break;
+            case IR_IMAGE:
+                if (!spirv_image_operation(e, ir)) return false;
+                break;
             case IR_ACCESS_LOAD:
             case IR_ACCESS_STORE:
                 if (!emit_pointer_access(e, ir)) return false;

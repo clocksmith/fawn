@@ -8,12 +8,14 @@
 enum {
     OP_NAME = 5, OP_EXT_INST_IMPORT = 11, OP_EXT_INST = 12, OP_MEMORY_MODEL = 14, OP_ENTRY_POINT = 15, OP_EXECUTION_MODE = 16,
     OP_CAPABILITY = 17, OP_TYPE_VOID = 19, OP_TYPE_BOOL = 20, OP_TYPE_INT = 21,
-    OP_TYPE_FLOAT = 22, OP_TYPE_VECTOR = 23, OP_TYPE_ARRAY = 28, OP_TYPE_RUNTIME_ARRAY = 29, OP_TYPE_STRUCT = 30,
+    OP_TYPE_FLOAT = 22, OP_TYPE_VECTOR = 23, OP_TYPE_IMAGE = 25, OP_TYPE_SAMPLER = 26, OP_TYPE_SAMPLED_IMAGE = 27, OP_TYPE_ARRAY = 28, OP_TYPE_RUNTIME_ARRAY = 29, OP_TYPE_STRUCT = 30,
     OP_TYPE_POINTER = 32, OP_TYPE_FUNCTION = 33, OP_CONSTANT_TRUE = 41, OP_CONSTANT_FALSE = 42,
     OP_CONSTANT = 43, OP_CONSTANT_COMPOSITE = 44, OP_CONSTANT_NULL = 46, OP_FUNCTION = 54, OP_FUNCTION_PARAMETER = 55, OP_FUNCTION_CALL = 57,
     OP_FUNCTION_END = 56, OP_VARIABLE = 59, OP_LOAD = 61, OP_STORE = 62,
     OP_ACCESS_CHAIN = 65, OP_ARRAY_LENGTH = 68, OP_DECORATE = 71,
     OP_MEMBER_DECORATE = 72, OP_VECTOR_EXTRACT_DYNAMIC = 77, OP_VECTOR_SHUFFLE = 79,
+    OP_SAMPLED_IMAGE = 86, OP_IMAGE_SAMPLE_EXPLICIT_LOD = 88, OP_IMAGE_FETCH = 95, OP_IMAGE_READ = 98, OP_IMAGE_WRITE = 99,
+    OP_IMAGE_QUERY_SIZE_LOD = 103, OP_IMAGE_QUERY_SIZE = 104, OP_IMAGE_QUERY_LEVELS = 106, OP_IMAGE_QUERY_SAMPLES = 107,
     OP_COMPOSITE_CONSTRUCT = 80, OP_COMPOSITE_EXTRACT = 81, OP_COPY_OBJECT = 83,
     OP_CONVERT_F_TO_U = 109, OP_CONVERT_F_TO_S = 110, OP_CONVERT_S_TO_F = 111, OP_CONVERT_U_TO_F = 112,
     OP_BITCAST = 124, OP_SNEGATE = 126, OP_FNEGATE = 127, OP_IADD = 128, OP_FADD = 129,
@@ -48,7 +50,7 @@ typedef struct {
     EntryRecord *entry;
     uint32_t *values;
     uint32_t local_base, local_start, local_pointers[4][5], math_import;
-    uint32_t barrier_semantics, subgroup_capabilities;
+    uint32_t barrier_semantics, subgroup_capabilities, image_capabilities;
     size_t function_end;
     uint32_t constants_used;
     bool failed;
@@ -69,6 +71,11 @@ uint32_t spirv_resource_storage(const ResourceRecord *r);
 bool spirv_plan_module(Emitter *e);
 bool spirv_hidden_initialization_input(const CompilerWorkspace *c, const EntryRecord *entry);
 bool spirv_module_declarations(Emitter *e);
+TypeId spirv_value_type(const CompilerWorkspace *, uint32_t);
+bool spirv_image_type(Emitter *, const TypeRecord *, uint32_t);
+bool spirv_image_plan(Emitter *, const IrInstruction *);
+bool spirv_image_operation(Emitter *, const IrInstruction *);
+uint32_t spirv_sampled_type(Emitter *, TypeId);
 bool spirv_subgroup_builtin(Emitter *, const IrInstruction *, const NumericBuiltin *, TypeId);
 #define EMIT(opcode, ...) do { \
     const uint32_t arguments[] = { __VA_ARGS__ }; \

@@ -109,7 +109,7 @@ bool type_layout_struct(Source *s, TypeId id) {
     for (uint32_t i = 0u;i<t->count;++i) {
         MemberRecord *m = &c->members[t->element+i];
         const uint32_t child_flags = type_flags(c, m->type);
-        if ((child_flags&TYPE_ABSTRACT) != 0u || m->type == IR_VOID)
+        if ((child_flags&TYPE_ABSTRACT) != 0u || m->type == IR_VOID || type_handle(c, m->type))
             return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, m->name.offset, "struct member type must be concrete");
         const bool tail = m->type >= 7u && c->types[m->type-7u].kind == TYPE_RUNTIME_ARRAY;
         if ((child_flags&TYPE_TAIL) != 0u && (!tail || i+1u != t->count))
@@ -157,6 +157,16 @@ bool type_layout_struct(Source *s, TypeId id) {
 bool type_resource_layout(Source *s, ResourceRecord *r) {
     CompilerWorkspace *c = s->compiler;
     const uint32_t flags = type_flags(c, r->type);
+    if (type_handle(c, r->type)) {
+        if (r->kind != 0u) return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, r->name.offset, "handle requires implicit handle address space");
+        const TypeRecord *t = &c->types[r->type - 7u];
+        r->kind = t->kind == TYPE_SAMPLER ? DOE_COMPILER_SAMPLER :
+            t->state.image.format != 0u ? DOE_COMPILER_STORAGE_TEXTURE : DOE_COMPILER_SAMPLED_TEXTURE;
+        r->access = t->kind == TYPE_SAMPLER ? DOE_COMPILER_READ : t->state.image.access;
+        r->tail_type = NO_ID;
+        return true;
+    }
+    if (r->kind == 0u) return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, r->name.offset, "resource requires an explicit buffer address space or a handle type");
     if ((flags&TYPE_HOST) == 0u) return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, r->name.offset, "resource type is not host-shareable");
     if (r->kind == DOE_COMPILER_UNIFORM_BUFFER && ((flags&TYPE_UNIFORM) == 0u || (flags&TYPE_TAIL) != 0u))
         return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, r->name.offset, "uniform type violates conservative alignment or spacing");

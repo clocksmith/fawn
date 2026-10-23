@@ -99,7 +99,8 @@ static bool name_bit(Uniformity *a,NameSpan name,uint32_t cf,uint32_t *out) {
             *out=uniform_input(a,kind)?cf:varying(a); return true;
         }
         case IDENTITY_RESOURCE:
-            if (a->compiler->resources[identity.index].access==DOE_COMPILER_READ_WRITE) *out=varying(a);
+            if (!type_handle(a->compiler, a->compiler->resources[identity.index].type) &&
+                a->compiler->resources[identity.index].access==DOE_COMPILER_READ_WRITE) *out=varying(a);
             return true;
         case IDENTITY_WORKGROUP: *out=varying(a); return true;
         case IDENTITY_NONE: break;
@@ -113,6 +114,7 @@ static bool call_bit(Uniformity *a,uint32_t id,uint32_t cf,uint32_t *out) {
     const SourceReference reference=a->compiler->expression_references[id];
     const uint32_t callee=reference.kind==SOURCE_FUNCTION?reference.index+1u:0u;
     *out=cf;
+    if (reference.kind == SOURCE_IMAGE && (reference.index & 256u) != 0u) *out |= varying(a);
     if (reference.kind==SOURCE_BARRIER)
         return a->subgroup || require_uniform(a,cf,e->source_offset);
     const NumericBuiltin *collective = reference.kind == SOURCE_SUBGROUP ?

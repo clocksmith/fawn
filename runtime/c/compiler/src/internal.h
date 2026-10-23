@@ -3,7 +3,7 @@
 #ifndef DOE_COMPILER_INTERNAL_H
 #define DOE_COMPILER_INTERNAL_H
 #include "../include/doe_compiler_job.h"
-#include "../include/doe_compiler_module.h"
+#include "../include/doe_compiler_resources.h"
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -100,11 +100,13 @@ typedef struct { NameSpan name; union { TypeRef annotation;
     struct { TypeId type; uint32_t offset; } resolved; } type; } FormalRecord;
 typedef struct { uint32_t expression, next; } ArgumentSyntax;
 typedef struct { NameSpan name; TypeRef element; uint32_t count_expression, flags; } GenericSyntax;
-enum { TYPE_VECTOR = 1u, TYPE_ARRAY, TYPE_RUNTIME_ARRAY, TYPE_STRUCT };
+enum { TYPE_VECTOR = 1u, TYPE_ARRAY, TYPE_RUNTIME_ARRAY, TYPE_STRUCT, TYPE_TEXTURE, TYPE_SAMPLER };
 enum { TYPE_CONSTRUCTIBLE = 1u, TYPE_HOST = 2u, TYPE_FIXED = 4u, TYPE_TAIL = 8u,
     TYPE_RESOLVING = 16u, TYPE_RESOLVED = 32u, TYPE_ABSTRACT = 64u, TYPE_UNIFORM = 128u };
+typedef struct { uint32_t dimension, format, access, flags; } ImageType;
 typedef struct { uint32_t kind, flags, element, count; NameSpan name;
     union { struct { uint64_t size, alignment, stride; } layout;
+        ImageType image;
         struct { uint32_t first_expression, end_expression, scan, parent, member, parent_kind; } dependency; } state;
     uint32_t target, aux; } TypeRecord;
 typedef struct { NameSpan name; TypeRef annotation; uint32_t align_expression, size_expression;
@@ -127,7 +129,7 @@ typedef enum {
     IR_BREAK, IR_CONTINUE, IR_BREAK_IF, IR_NEGATE, IR_COMPLEMENT,
     IR_DIVIDE, IR_REMAINDER, IR_BIT_AND, IR_BIT_OR, IR_BIT_XOR,
     IR_SHIFT_LEFT, IR_SHIFT_RIGHT, IR_CONVERT, IR_BITCAST, IR_CALL, IR_BUILTIN,
-    IR_COMPOSITE, IR_ACCESS_LOAD, IR_ACCESS_STORE, IR_VALUE_ACCESS, IR_SWIZZLE, IR_WORKGROUP_BARRIER
+    IR_COMPOSITE, IR_ACCESS_LOAD, IR_ACCESS_STORE, IR_VALUE_ACCESS, IR_SWIZZLE, IR_WORKGROUP_BARRIER, IR_HANDLE, IR_IMAGE
 } IrOpcode;
 typedef struct { uint32_t id; TypeId type; uint32_t source_offset; } IrValue;
 /* Four words have operation-specific, named meanings. Scalar aliases preserve
@@ -143,6 +145,7 @@ typedef struct {
 typedef struct { TypeId type; uint32_t flags; } IrLocal;
 typedef struct { NameSpan name; uint32_t value; TypeId type; ConstantValue constant_value;
     uint32_t local_id, declaration_offset, flags, level; } LocalBinding;
+typedef enum { IMAGE_LOAD, IMAGE_STORE, IMAGE_DIMENSIONS, IMAGE_LEVELS, IMAGE_LAYERS, IMAGE_SAMPLES, IMAGE_SAMPLE_LEVEL } ImageOperation;
 enum { ROOT_LOCAL, ROOT_RESOURCE, ROOT_VALUE, ROOT_INPUT, ROOT_WORKGROUP };
 typedef struct { uint32_t kind, id; TypeId type; uint32_t storage, first, count; uint64_t payload; } TargetDeclaration;
 typedef struct { uint32_t kind, object, cursor, parent; } WalkItem;
@@ -162,7 +165,7 @@ typedef struct {
     } state;
 } EntryRecord;
 typedef enum { SOURCE_NONE, SOURCE_FUNCTION, SOURCE_BARRIER, SOURCE_RESOURCE,
-    SOURCE_WORKGROUP, SOURCE_INPUT, SOURCE_SUBGROUP } SourceReferenceKind;
+    SOURCE_WORKGROUP, SOURCE_INPUT, SOURCE_SUBGROUP, SOURCE_IMAGE } SourceReferenceKind;
 typedef struct { SourceReferenceKind kind; uint32_t index; } SourceReference;
 typedef struct {
     uint32_t source_bytes, tokens, statements, expressions, physical_expressions, instructions;
@@ -255,6 +258,15 @@ TypeId type_leaf(const CompilerWorkspace *, TypeId);
 uint32_t type_vector_width(const CompilerWorkspace *, TypeId);
 bool type_abstract(const CompilerWorkspace *, TypeId);
 bool type_constructible(const CompilerWorkspace *, TypeId);
+bool type_handle(const CompilerWorkspace *, TypeId);
+bool type_image_named(const Source *, NameSpan);
+bool type_image_intern(Source *, uint32_t, TypeId, ImageType, TypeId *);
+uint32_t image_coordinate_width(uint32_t);
+bool image_arrayed(uint32_t);
+bool image_format(const Source *, NameSpan, uint32_t *, TypeId *);
+size_t reflect_handle_count(const CompilerWorkspace *);
+bool reflect_buffers_only(Source *);
+void reflect_handles(const CompilerWorkspace *, DoeCompilerHandleV6 *);
 bool type_intern(Source *, uint32_t, TypeId, uint32_t, TypeId *);
 uint64_t type_size(const CompilerWorkspace *, TypeId);
 uint64_t type_alignment(const CompilerWorkspace *, TypeId);

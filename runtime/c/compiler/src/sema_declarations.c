@@ -122,6 +122,7 @@ static bool base_type(Source *s, NameSpan name, const LocalScope *scope, TypeId 
         return true;
     }
     if (sema_module_declared(s, name)) return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, name.offset, "type name resolves to a module value");
+    if (type_image_named(s, name)) return sema_image_type(s, (TypeRef){name.offset, NO_ID}, IR_VOID, out);
     if (source_span_is(s, name, "bool")) *out = IR_BOOL;
     else if (source_span_is(s, name, "i32")) *out = IR_I32;
     else if (source_span_is(s, name, "u32")) *out = IR_U32;
@@ -147,24 +148,30 @@ static bool integer_attribute(Source *s, uint32_t expression, const LocalScope *
 bool sema_type_reference(Source *s, TypeRef ref, const LocalScope *scope, TypeId *out) {
     CompilerWorkspace *c = s->compiler;
     const uint32_t base = c->walk_count;
+    TypeId type = IR_VOID;
     while (ref.syntax != NO_ID) {
         if (ref.syntax >= c->generic_count) return source_error(s, DOE_COMPILER_INPUT_ERROR, ref.offset, "invalid type syntax identity");
         const GenericSyntax *g = &c->generic_syntax[ref.syntax];
         if (lexical_value(s, scope, g->name) || sema_module_declared(s, g->name)) return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, g->name.offset, "type generator is shadowed");
         if (source_span_is(s,g->name,"atomic") || source_span_is(s,g->name,"ptr"))
             return source_error(s,DOE_COMPILER_UNSUPPORTED,g->name.offset,"atomic and pointer types are not supported");
+        if (g->name.length >= 16u && memcmp(s->source + g->name.offset, "texture_storage_", 16u) == 0) {
+            if (!sema_image_type(s, ref, IR_VOID, &type)) return false;
+            break;
+        }
         if (c->walk_count == c->limits.traversal) return source_pool_error(s, DOE_COMPILER_POOL_TRAVERSAL, (size_t)c->walk_count+1u, ref.offset, "type resolution traversal capacity exceeded");
         c->walk[c->walk_count++] = (WalkItem){.object = ref.syntax};
         ref = g->element;
     }
     uint32_t width = 0u;
-    TypeId type = IR_VOID;
-    if (!base_type(s, source_name_at(s, ref.offset), scope, &type, &width)) return false;
+    if (type == IR_VOID && !base_type(s, source_name_at(s, ref.offset), scope, &type, &width)) return false;
     if (width != 0u && !type_intern(s, TYPE_VECTOR, type, width, &type)) return false;
     while (c->walk_count>base) {
         const uint32_t index = c->walk[c->walk_count-1u].object;
         const GenericSyntax *g = &c->generic_syntax[index];
-        if (source_span_is(s, g->name, "array")) {
+        if (type_image_named(s, g->name)) {
+            if (!sema_image_type(s, (TypeRef){g->name.offset, index}, type, &type)) return false;
+        } else if (source_span_is(s, g->name, "array")) {
             uint32_t count = 0u;
             if (g->count_expression != NO_ID && (!integer_attribute(s, g->count_expression, scope, true, &count) || count == 0u)) {
                 if (s->diagnostic->status == DOE_COMPILER_OK) (void)source_error(s, DOE_COMPILER_SEMANTIC_ERROR, g->name.offset, "array count must be positive");
@@ -462,7 +469,7 @@ static bool resolve_signatures(Source *s, const LocalScope *scope) {
             FormalRecord *p = &c->formals[index];
             TypeId type;
             if (!sema_valid_name(s, p->name) || !sema_type_reference(s, p->type.annotation, scope, &type)) return false;
-            if (!type_constructible(c, type)) return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, p->name.offset, "formal type is not constructible");
+            if (!type_constructible(c, type) && !type_handle(c, type)) return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, p->name.offset, "formal type is not constructible or a handle");
             const uint32_t offset = p->type.annotation.offset;
             p->type.resolved.type = type;
             p->type.resolved.offset = offset;
