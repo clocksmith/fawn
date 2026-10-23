@@ -5,6 +5,7 @@
  * Copyright (c) 2026 Doe contributors */
 #include "../metal.h"
 #include "../../../src/numeric.h"
+#include "../../../src/stage.h"
 #include <assert.h>
 #include <errno.h>
 #include <stdio.h>
@@ -25,18 +26,22 @@ typedef struct {
     Source source;
     DoeCompilerDiagnostic diagnostic;
 } Fixture;
-static Fixture *prepare(const char *text) {
+static Fixture *prepare_mode(const char *text, bool graphics) {
     Fixture *f = calloc(1u, sizeof(*f));
     assert(f != NULL);
     CompilerLimits limits;
-    size_t bytes = 0u;
-    assert(compiler_module_layout(&capacities, &limits, &bytes));
+    size_t bytes = 0u, base = 0u;
+    const DoeCompilerStageCapacities stage_caps = {.module = capacities,
+        .interface_attributes = 256u, .stage_interfaces = 256u};
+    if (graphics) assert(stage_layout(&stage_caps, &limits, &base, &bytes));
+    else assert(compiler_module_layout(&capacities, &limits, &bytes));
     f->storage = malloc(bytes);
     assert(f->storage != NULL);
     f->module = f->storage;
     compiler_job_bind(f->module, f->storage, &limits);
     f->source = (Source){.source = text, .length = strlen(text), .diagnostic = &f->diagnostic,
         .limits = &f->module->limits, .compiler = f->module};
+    if (graphics) stage_bind(&f->source, f->storage, &stage_caps, base);
     bool okay = lex_source(&f->source, f->module) && parse_tokens(&f->source, f->module);
     if (okay) {
         for (uint32_t i = 0u; i < f->module->expression_count; ++i)
@@ -54,6 +59,8 @@ static Fixture *prepare(const char *text) {
     assert(okay);
     return f;
 }
+static inline Fixture *prepare(const char *text) { return prepare_mode(text, false); }
+static inline Fixture *prepare_graphics(const char *text) { return prepare_mode(text, true); }
 static void release(Fixture *f) {
     free(f->storage);
     free(f);

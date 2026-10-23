@@ -1,0 +1,108 @@
+{
+  "status": "authored and focused developer checked; no Metal SDK/driver/physical qualification",
+  "compiler_commit": "fa61e2c11e23499ff22962bb64086df29a1e2840",
+  "source_sha256": {
+    "runtime/c/compiler/targets/closure.h": "eccf55b9650ff3c324fbc90439e805173944f0d872a1a448c3d480a65ede1f38",
+    "runtime/c/compiler/targets/hlsl/Makefile": "84cb8eadd7aa20b2b6cf6c275e4f76f4e300e0ca56d5c78b2fc2f9721c33031c",
+    "runtime/c/compiler/targets/hlsl/access.c": "08dff2f1bf720e6353df4e3fd61f90fe728df59cb9e4d9107acabdf4e298c51e",
+    "runtime/c/compiler/targets/hlsl/control.c": "86fdbbd33f329ca2e9dfb4b3d586f4b1b377efdc9801764a2d3b26fb7a36c7f8",
+    "runtime/c/compiler/targets/hlsl/graphics.c": "72963fed86a8a172f77f745da7d1f56b8bc9ec7a24f24adfc04ce01a22a02639",
+    "runtime/c/compiler/targets/hlsl/hlsl.h": "05a1731c996df3e36ff34d677cff8ec8ce1667841fd022ac10e4cc8261ee8f4b",
+    "runtime/c/compiler/targets/hlsl/image.c": "7da91071bb23d5f528ce9182ad4b0a76fb6752c904e3651239f7aae50c34d277",
+    "runtime/c/compiler/targets/hlsl/image_types.c": "3d05bae9af4b9ad01df127f95d751dc4b49ca576e6c3bdd1e0c13486f1c48649",
+    "runtime/c/compiler/targets/hlsl/numeric.c": "6abbb2c496ee08919d5d45d4bdb50bc36f1188bad8bec48d8a55a0a6ca773384",
+    "runtime/c/compiler/targets/hlsl/private.h": "afb7cb93af2260a1f9f56d4bfef172d5cb0566d696b1133adb63dcefbe8ab760",
+    "runtime/c/compiler/targets/hlsl/resources.c": "bbf7cecaa28bb4dd4dc620830859b46b5df773a76fc282096009a9681ebef8c1",
+    "runtime/c/compiler/targets/hlsl/stage.c": "11606c3ffc13933444ad726fb5b5fd87e492f395a2046122df63f2f6fdc587af",
+    "runtime/c/compiler/targets/hlsl/tests/host_control.py": "8c84be079ee170240b9e3988186ecd369ecb41b18d26667204565f7f0d5b9691",
+    "runtime/c/compiler/targets/hlsl/tests/test_graphics.c": "e3e8939cb0380104b5db544e2a2353a36ad35cc6283bc9dcfc9094631d7c7fc0",
+    "runtime/c/compiler/targets/hlsl/tests/test_hlsl.c": "3580b45e72a1c5ee78d00ce25428306e3e05485a24e90937ad5c0259bb7347ef",
+    "runtime/c/compiler/targets/hlsl/tests/test_images.c": "407b7bd62b71086310fc7e0e4ad34b1a591472861e966bf16ac6224ce9ee5313",
+    "runtime/c/compiler/targets/hlsl/tests/test_support.h": "9ecc7caef7f5a6265be58192193cb04f9376a9659c110a084b3ffc0bc2c26d69",
+    "runtime/c/compiler/targets/hlsl/text.c": "9f82dd159e56466d99f4c34b4eb94845b52accc0c8c8198f3f172b64c2335c50",
+    "runtime/c/compiler/targets/hlsl/types.c": "1d53408b9acdf12fec46e343ae9bc7b4b1b4d619b92dfcf123acbe9acaf406fc",
+    "runtime/c/compiler/targets/ir_view.h": "8ea72c04ede913cf8b070b7f49ce7cdb208cfbc8efc0fb67cea301893d2286f2",
+    "runtime/c/compiler/targets/metal/Makefile": "364ef66dce96d9f22cc495e0accb4b9c41251b0985a5f063aaae3ebf72aa6b6b",
+    "runtime/c/compiler/targets/metal/access.c": "facc419d1b269642bb49968337d04e5448b6c9ea9d55430f4323bcc56d9b71c7",
+    "runtime/c/compiler/targets/metal/control.c": "d0967658086dc4c7cf9ae04dc09cafeea5eb3bc573b530d5599b4d7e903f43c7",
+    "runtime/c/compiler/targets/metal/graphics.c": "ae4d781b555fec50d2c1c6024c4b7c8a3f378fb6b41f6ac9cff0fe8a0a105313",
+    "runtime/c/compiler/targets/metal/handles.c": "dfa1e51e35dea98cf19f8327959c9bc8bd73214cbc7f99d053a43d2622b07912",
+    "runtime/c/compiler/targets/metal/image.c": "f5178d6a4de3bc3352bfe822cb2ed1670e3615607670f59795205bc54700eb77",
+    "runtime/c/compiler/targets/metal/metal.h": "7c16e1c5c2650d4fa83ad74d74718c4f61921d6c32c809796242989e9d435d9a",
+    "runtime/c/compiler/targets/metal/numeric.c": "e8da0c2be91a8f429bbdcdef0d4901e44d7d3bba143fb8f4cae5a2827b305059",
+    "runtime/c/compiler/targets/metal/private.h": "124b796c1fae38cf73784b4aaf3385357d9d1ddd351f0d540523602a90583ead",
+    "runtime/c/compiler/targets/metal/stage.c": "79d299676dcd6ed435d7f00538f097e5db6103608cbf539852922c787458c969",
+    "runtime/c/compiler/targets/metal/tests/fixture.h": "ed9fb48bfca8639e1eb30b145e7e3ce702eb5b5a7ace55af1a763817e148623c",
+    "runtime/c/compiler/targets/metal/tests/host/check_array_length.cpp": "fc3700cae7303d72cfa9f35da85e9e99dc2153a3d7075cbf6904e731d0b021fc",
+    "runtime/c/compiler/targets/metal/tests/host/check_graphics.cpp": "128b39939b6074fdb2e40f98766aefe500f86229ca90753738cb6b7deb9436cd",
+    "runtime/c/compiler/targets/metal/tests/host/check_images.cpp": "08351f1461e51fd318bfe00d96c1fe9edbed824e565faead571befb573c58977",
+    "runtime/c/compiler/targets/metal/tests/host/check_layout.cpp": "5e1df0b98f52aac05b68927b9f237ce29b604125b208c8b59aa7ee89b9a01f35",
+    "runtime/c/compiler/targets/metal/tests/host/check_scalar.cpp": "c0ac92c6c5fada67e51ff591db658cea37f28044cbbeefea5f4b301d40c48622",
+    "runtime/c/compiler/targets/metal/tests/host/image_control.h": "1b4432b40a68fc7fe24bc2779ef9ac25b2b578c46e67130dda7e6d2999f52d00",
+    "runtime/c/compiler/targets/metal/tests/host/metal_stdlib": "e64d9361f3e186fc2507347ec1cda2842af41fc209492a06604676a32dfc996e",
+    "runtime/c/compiler/targets/metal/tests/host/vector_control.h": "9758db29a1d847a524760945ffac6b0da16e27733a7d25b721c7f7095f9f77c8",
+    "runtime/c/compiler/targets/metal/tests/test_graphics.c": "9c7a5d1d405bd54fcc2d9b44afeb6b0546f21400b752e2d73e89a22d87a522b2",
+    "runtime/c/compiler/targets/metal/tests/test_images.c": "436e715aca6210eb326b7c16e76e7846e7fb4f0b393aec4e450e24a7af296384",
+    "runtime/c/compiler/targets/metal/tests/test_metal.c": "016dc35f2902cbe80a67203aa96ebee0593ca262a582df32e719ea2dd7526b66",
+    "runtime/c/compiler/targets/metal/text.c": "fdbd56c847b1cf3c1cc3763dec6416a2ca8f155c687b8f55e039c6a44f0aaa39",
+    "runtime/c/compiler/targets/metal/types.c": "641f25977d9b0c27d9508ca0d82d24e1874157344a6dbd01ef649251b08448c1",
+    "runtime/c/compiler/targets/stage_view.h": "5dd4a67c1686e17e0fba33f84eddb88082eeab649127eb83c73d5ac639e8cdae",
+    "runtime/c/compiler/targets/tests/array_length_source.h": "6ef6a21f83d29b485220232b7d1fc53390ddca90eef87546320db8d443cba16e",
+    "runtime/c/compiler/targets/tests/closure_source.h": "2714642b96899aaad264460390eb9122101b2b83887c580247c12116068a0ff0",
+    "runtime/c/compiler/targets/tests/stage_source.h": "6337c1600df325ab74f94a2bafb34927581bf5450827b11f27bf46884da0abde",
+    "runtime/c/compiler/targets/tests/test_closure.c": "74c5316e27d92a0fd5c95fe5e52dbb16a653d3b00f42c184e9028390c18bcd89",
+    "runtime/c/compiler/targets/tests/test_ir_view.c": "5feb85ec806b40ca9e7ba12f9fd8a60ca076955dd6f29bf570b514cf80f15929"
+  },
+  "commands": [
+    "make -C runtime/c/compiler/targets/metal check host-control image-host-control graphics-host-control library OUT=/tmp/doe-metal-stages",
+    "make -C runtime/c/compiler/targets/hlsl check host-control library OUT=/tmp/doe-hlsl-stages-shared"
+  ],
+  "checks": [
+    "Strict C11 graphics lowering and all retained source/image/closure controls",
+    "Mixed compute/vertex/fragment module and selected-entry filtering",
+    "Location/interpolation/builtin mapping and flat structure reconstruction",
+    "Invariant and missing-stage-workspace rejection preserve output",
+    "UBSan attribute-erased fragment operation fixture checks formal identities, helper call, branches, wrap and result leaves",
+    "HLSL regression over shared stage span validation and shared WGSL source fixtures"
+  ],
+  "changes": [
+    "One shared typed stage-span validation leaf, no source parsing or new interface representation",
+    "Compute and graphics reuse Metal resource parameter/context publication and function bodies",
+    "Builtins are separate arguments; only location inputs use stage_in",
+    "Invariant rejected until preserve-invariance native build policy is qualified"
+  ],
+  "first_failures": [
+    {
+      "log": "doe-metal-stages-first.log",
+      "detail": "Old malformed-IR test still rejected output atomically but expected obsolete generic graphics-unsupported wording; updated to precise missing typed interface workspace."
+    },
+    {
+      "log": "doe-metal-stages-r2.log",
+      "detail": "Mechanical test-source extraction matched a closing parenthesis inside a WGSL string, producing invalid C; replaced extraction with quote-aware delimiter matching. Production source unchanged by this correction."
+    }
+  ],
+  "reference": {
+    "url": "https://developer.apple.com/metal/Metal-Shading-Language-Specification.pdf",
+    "version": "4.1, 2026-06-04",
+    "pdf_sha256": "41538b30d2f1140a5b2a0c84ce0a9f7b67bf0c707e224cfea0bfe5a44aa26cf5",
+    "sections": [
+      "1.6.4 invariance compiler option",
+      "5.2 graphics arguments and builtins",
+      "5.2.4 stage_in",
+      "interpolation attributes"
+    ]
+  },
+  "logs_sha256": {
+    "doe-metal-stages-first.log": "f5acfa5ab2f78fadbdf2ddfe06478cda36f9fa11394a082e847f05707196f9bf",
+    "doe-metal-stages-r2.log": "70d6c1eb87730cc3f4a0ac0d8864e028dfac27c0116cd052d3081635913adc1d",
+    "doe-metal-stages-r3.log": "c642a3a3b85da56122fdb16fd25301e3799719867fec07ce372ce4ea9d6e5eed",
+    "doe-metal-stages-final.log": "f6ed1a62ba7b81100bcd14633ae265beb4c2ae651e20339431a38675f0fc5b96",
+    "doe-hlsl-stages-shared.log": "0314621aa96d8e15bd2baa8c3cec79e01c21a8401eac138b19d9815cec4ac17c"
+  },
+  "limits": [
+    "No Apple SDK/compiler acceptance or graphics pipeline/device execution",
+    "Host shim erases attributes/address spaces; it is an emitted-operation check only",
+    "No invariant success, pipeline state, depth/viewport or device capability claim",
+    "No production/default selector change"
+  ]
+}

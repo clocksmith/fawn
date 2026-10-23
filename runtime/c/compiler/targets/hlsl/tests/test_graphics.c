@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: MIT
  * Copyright (c) 2026 Doe contributors */
 #include "test_support.h"
+#include "../../tests/stage_source.h"
 #include "../../../src/stage.h"
 #include <assert.h>
 #include <stdio.h>
@@ -8,14 +9,7 @@
 #include <string.h>
 
 static void test_stage_mapping(void) {
-    Fixture *f = prepare_graphics(
-        "struct Output{@builtin(position) p:vec4f,"
-        "@location(3) @interpolate(flat) index:u32,"
-        "@location(0) @interpolate(linear,centroid) color:vec4f}"
-        "@vertex fn vertex(@builtin(vertex_index) v:u32,@builtin(instance_index) i:u32,"
-        "@location(2) p:vec4f)->Output{return Output(p,v+i,vec4f(0.5));}"
-        "@fragment fn fragment(input:Output)->@location(0) vec4f{return input.color;}"
-        "@compute @workgroup_size(1) fn compute(){}");
+    Fixture *f = prepare_graphics(target_graphics_mapping);
     char *text = emit(f, NO_ID);
     has(text, "SV_Position");
     has(text, "SV_VertexID");
@@ -39,22 +33,14 @@ static void test_stage_mapping(void) {
     release(f);
 }
 static void test_fragment_builtins(void) {
-    Fixture *f = prepare_graphics(
-        "struct Input{@builtin(front_facing) face:bool,@builtin(sample_index) index:u32,"
-        "@builtin(sample_mask) mask:u32,@builtin(position) p:vec4f,"
-        "@location(0) @interpolate(perspective,sample) color:vec4f}"
-        "struct Output{@builtin(frag_depth) depth:f32,@builtin(sample_mask) mask:u32,"
-        "@location(0) color:vec4f}"
-        "@fragment fn fragment(input:Input)->Output{"
-        "if(input.face){return Output(input.p.z,input.mask,input.color);}"
-        "return Output(0.5,input.index,vec4f(0.0));}");
+    Fixture *f = prepare_graphics(target_fragment_builtins);
     char *text = emit(f, 0u);
     static const char *const semantics[] = {"SV_IsFrontFace", "SV_SampleIndex", "SV_Coverage",
         "SV_Position", "SV_Depth", "SV_Target0", "linear sample float4"};
     for (size_t i = 0u; i < sizeof(semantics) / sizeof(semantics[0]); ++i) has(text, semantics[i]);
     free(text);
     release(f);
-    f = prepare_graphics("@fragment fn empty(){}");
+    f = prepare_graphics(target_empty_fragment);
     text = emit(f, 0u);
     has(text, "void empty()");
     assert(strstr(text, "struct DoeStage") == NULL);
@@ -62,8 +48,7 @@ static void test_fragment_builtins(void) {
     release(f);
 }
 static void test_invariant_rejection(void) {
-    Fixture *f = prepare_graphics(
-        "@vertex fn vertex()->@builtin(position) @invariant vec4f{return vec4f(0.0);}");
+    Fixture *f = prepare_graphics(target_invariant_vertex);
     DoeHlslResult result;
     char untouched[8] = "intact";
     assert(doe_hlsl_emit(&f->source, f->module, 0u, untouched, sizeof(untouched), &result) ==
@@ -74,14 +59,7 @@ static void test_invariant_rejection(void) {
     release(f);
 }
 static void test_graphics_host_fixture(const char *output_path) {
-    Fixture *f = prepare_graphics(
-        "struct Input{@location(2) @interpolate(flat) left:u32,"
-        "@location(0) @interpolate(flat) right:u32,@builtin(front_facing) face:bool}"
-        "struct Output{@location(1) value:u32,@builtin(sample_mask) mask:u32}"
-        "fn combine(left:u32,right:u32)->u32{return left*100u+right;}"
-        "@fragment fn graphics(input:Input,@builtin(sample_index) sample:u32)->Output{"
-        "let value=combine(input.left,input.right);"
-        "if(input.face){return Output(value,sample);}return Output(value+1u,0u);}");
+    Fixture *f = prepare_graphics(target_graphics_control);
     char *text = emit(f, 0u);
     has(text, "SV_Target1");
     has(text, "SV_SampleIndex");

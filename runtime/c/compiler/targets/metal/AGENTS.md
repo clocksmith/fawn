@@ -27,3 +27,11 @@ read/write modes, including recursive aggregate children. `../closure.h` owns th
 read-only bounded call/dependency queries; do not grow a parallel semantic graph.
 Workgroup zero initialization also requires whole-root store helpers. Keep target
 address spaces and byte-view validation local. All walks charge composed work.
+
+Graphics consumes shared typed leaves and formal/member identities through
+`../stage_view.h`; never replay source annotations. Vertex location inputs use
+attribute buffers, interstage locations use user attributes, fragment outputs use
+color attributes, and builtins are separately typed arguments. Preserve resource
+closure/size tables and call effects. Invariant needs a real compiler policy, not
+an ignored attribute. Test new mappings with the emitted-operation control while
+keeping Apple SDK acceptance explicitly unrun.

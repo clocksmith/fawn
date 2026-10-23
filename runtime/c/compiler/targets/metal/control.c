@@ -171,7 +171,7 @@ void metal_block(MetalEmitter *e, uint32_t *cursor, unsigned depth, uint32_t loo
                     metal_text(e, "break;\n");
                 }
                 break;
-            case IR_ARRAY_LENGTH: case IR_INPUT: case IR_CONSTANT: case IR_ADD: case IR_SUBTRACT: case IR_MULTIPLY:
+            case IR_STAGE_INPUT: case IR_ARRAY_LENGTH: case IR_INPUT: case IR_CONSTANT: case IR_ADD: case IR_SUBTRACT: case IR_MULTIPLY:
             case IR_COMPARE: case IR_NOT: case IR_LOCAL_LOAD: case IR_NEGATE: case IR_COMPLEMENT:
             case IR_DIVIDE: case IR_REMAINDER: case IR_BIT_AND: case IR_BIT_OR: case IR_BIT_XOR:
             case IR_SHIFT_LEFT: case IR_SHIFT_RIGHT: case IR_CONVERT: case IR_BITCAST: case IR_CALL:
@@ -186,8 +186,7 @@ void metal_block(MetalEmitter *e, uint32_t *cursor, unsigned depth, uint32_t loo
                 metal_expression(e, ir);
                 metal_text(e, ";\n");
                 break;
-            case IR_HANDLE: case IR_IMAGE: case IR_STAGE_INPUT:
-            case IR_ROBUST_LOAD: case IR_UNIFORM_LOAD: case IR_ROBUST_STORE: case IR_MAX:
+            case IR_HANDLE: case IR_IMAGE: case IR_ROBUST_LOAD: case IR_UNIFORM_LOAD: case IR_ROBUST_STORE: case IR_MAX:
             case IR_IF: case IR_ELSE: case IR_END_IF: case IR_SHORT_BEGIN: case IR_SHORT_END:
             case IR_LOOP_BEGIN: case IR_LOOP_TEST: case IR_LOOP_CONTINUING: case IR_END_LOOP:
             case IR_ACCESS_LOAD: case IR_ACCESS_STORE: case IR_VALUE_ACCESS:
