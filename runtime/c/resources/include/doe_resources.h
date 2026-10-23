@@ -175,6 +175,8 @@ doe_resource_status doe_resource_sampler_create(const doe_resource_config *confi
 void doe_resource_sampler_retain(doe_resource_sampler *sampler);
 void doe_resource_sampler_release(doe_resource_sampler *sampler);
 void *doe_resource_sampler_native(const doe_resource_sampler *sampler);
+/* Borrowed canonical descriptor; label/chains are not retained. */
+const WGPUSamplerDescriptor *doe_resource_sampler_description(const doe_resource_sampler *sampler);
 
 /* Stable resource-kind codes match contracts/binding.zig. Binding arrays are
  * explicitly unsupported. External textures preserve their own plane owner. */
@@ -232,10 +234,19 @@ typedef struct doe_resource_binding_limits {
     uint64_t uniform_alignment, storage_alignment;
     uint64_t max_uniform_size, max_storage_size;
 } doe_resource_binding_limits;
+typedef struct doe_resource_binding_features {
+    /* Device-enabled WebGPU feature, not merely native format capability. */
+    bool float32_filterable;
+} doe_resource_binding_features;
 
 doe_resource_status doe_resource_bind_group_create(doe_resource_layout *layout,
     const doe_resource_binding *bindings, size_t count,
     const doe_resource_binding_limits *limits, doe_resource_bind_group **out);
+/* NULL features and the basic constructor disable optional binding features. */
+doe_resource_status doe_resource_bind_group_create_with_features(doe_resource_layout *layout,
+    const doe_resource_binding *bindings, size_t count,
+    const doe_resource_binding_limits *limits, const doe_resource_binding_features *features,
+    doe_resource_bind_group **out);
 void doe_resource_bind_group_retain(doe_resource_bind_group *group);
 void doe_resource_bind_group_release(doe_resource_bind_group *group);
 const doe_resource_binding *doe_resource_bind_group_bindings(const doe_resource_bind_group *group,

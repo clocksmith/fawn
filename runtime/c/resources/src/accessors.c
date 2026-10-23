@@ -95,3 +95,8 @@ doe_resource_status doe_resource_buffer_map_span(const doe_resource_buffer *buff
     *size = buffer->map_size;
     return DOE_RESOURCE_OK;
 }
+
+const WGPUSamplerDescriptor *doe_resource_sampler_description(const doe_resource_sampler *sampler)
+{
+    return sampler ? &sampler->desc : NULL;
+}

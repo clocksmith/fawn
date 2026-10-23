@@ -13,3 +13,5 @@ start at the admitted span; const/read admission must not become writable storag
 Bundle replay clears logical bindings even for zero bundles; do not copy retained
 Vulkan's internal save/restore into public state. Keep each bundle self-contained
 and reuse pass draw admission and packets rather than another renderer.
+Float32 filterability is an enabled WebGPU feature, not a driver capability.
+Keep copied binding feature admission in the group owner through submission.
