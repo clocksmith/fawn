@@ -213,7 +213,7 @@ doe_vk_status doe_vk_texture_retain(doe_vk_texture *texture) {
 void doe_vk_texture_release(doe_vk_texture *texture) {
     if (texture == NULL || --texture->references != 0) return;
     doe_vk_context *context = texture->context;
-    if (texture->image != 0) context->vk.vkDestroyImage(context->device, texture->image, NULL);
+    if (texture->image != 0 && !texture->borrowed_image) context->vk.vkDestroyImage(context->device, texture->image, NULL);
     if (texture->memory != 0) context->vk.vkFreeMemory(context->device, texture->memory, NULL);
     free(texture->initialized);
     free(texture);
@@ -224,6 +224,7 @@ static doe_vk_status validate_view(doe_vk_texture *texture, const doe_vk_texture
     if (desc == NULL || desc->dimension < DOE_VK_VIEW_1D || desc->dimension > DOE_VK_VIEW_CUBE_ARRAY ||
         desc->mip_count == 0 || desc->layer_count == 0 ||
         !doe_vk_range(texture->desc.mip_levels, desc->base_mip, desc->mip_count)) return DOE_VK_INVALID_ARGUMENT;
+    if (texture->borrowed_image && !texture->external_alive) return DOE_VK_INVALID_STATE;
     if (texture->content_status != DOE_VK_OK) return texture->content_status;
     if (!(texture->desc.usage & (DOE_VK_TEXTURE_SAMPLED | DOE_VK_TEXTURE_STORAGE | DOE_VK_TEXTURE_COLOR_ATTACHMENT | DOE_VK_TEXTURE_DEPTH_STENCIL_ATTACHMENT)))
         return DOE_VK_INVALID_ARGUMENT;

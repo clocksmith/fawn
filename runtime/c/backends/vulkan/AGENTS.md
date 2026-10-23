@@ -60,3 +60,9 @@ nonzero unsupported firstInstance suppresses the entire draw, not just that fiel
 Viewport physical bounds and logical requested limits are distinct. An empty
 logical viewport still executes vertices and query ordering: normalize only its
 native viewport and use an empty scissor, never skip the draw.
+
+Window-system acquisition/presentation has independent native fence obligations.
+Never retire it from draw completion or queue idle; preserve unknown ownership and
+original errors. Borrow real platform handles, require the complete extension and
+feature chain, and keep stale acquired-image generations unusable. No headless or
+CPU image may stand in for an unsupported native surface.

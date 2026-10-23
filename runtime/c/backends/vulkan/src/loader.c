@@ -1,5 +1,6 @@
 #include "internal.h"
 #include "feature_internal.h"
+#include "surface_internal.h"
 #include <dlfcn.h>
 
 /* POSIX supplies object-sized function symbols. Copy only after checking both
@@ -285,7 +286,7 @@ static doe_vk_status choose_queue(doe_vk_context *context, const doe_vk_options 
     if (count <= capacity) {
         for (uint32_t i = 0; i < count; ++i) {
             if (queues[i].queueCount == 0 || !(queues[i].queueFlags & VK_QUEUE_COMPUTE_BIT)) continue;
-            if (options->require_graphics_queue && !(queues[i].queueFlags & VK_QUEUE_GRAPHICS_BIT)) continue;
+            if ((options->require_graphics_queue || options->surface_platforms != 0) && !(queues[i].queueFlags & VK_QUEUE_GRAPHICS_BIT)) continue;
             if (selected == UINT32_MAX) selected = i;
             if (!(queues[i].queueFlags & VK_QUEUE_GRAPHICS_BIT)) {
                 selected = i;
@@ -319,6 +320,9 @@ doe_vk_status doe_vk_context_create(const doe_vk_options *options,
     }
     status = load_functions(context, error);
     if (status != DOE_VK_OK) goto failed;
+    doe_vk_instance_extensions instance_extensions;
+    status = doe_vk_surface_instance_extensions(context, options->surface_platforms, &instance_extensions, error);
+    if (status != DOE_VK_OK) goto failed;
     const VkApplicationInfo application = {
         .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
         .pApplicationName = (const uint8_t *)"Doe experimental C",
@@ -327,9 +331,13 @@ doe_vk_status doe_vk_context_create(const doe_vk_options *options,
     };
     const VkInstanceCreateInfo instance = {
         .sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
-        .pApplicationInfo = &application
+        .pApplicationInfo = &application,
+        .enabledExtensionCount = instance_extensions.count,
+        .ppEnabledExtensionNames = instance_extensions.count != 0 ? instance_extensions.names : NULL
     };
     status = doe_vk_result(context, context->vk.vkCreateInstance(&instance, NULL, &context->instance), "vkCreateInstance", error);
+    if (status != DOE_VK_OK) goto failed;
+    status = doe_vk_surface_load_functions(context, options->surface_platforms, false, error);
     if (status != DOE_VK_OK) goto failed;
     status = choose_device(context, options, error);
     if (status != DOE_VK_OK) goto failed;
@@ -345,22 +353,38 @@ doe_vk_status doe_vk_context_create(const doe_vk_options *options,
         .queueCount = 1,
         .pQueuePriorities = &priority
     };
+    const uint8_t *device_extensions[3];
+    uint32_t extension_count = 0;
+    void *feature_chain = NULL;
+    if (features.extension != NULL) {
+        device_extensions[extension_count++] = features.extension;
+        feature_chain = &features.demote;
+    }
+    if (features.surface_enabled) {
+        device_extensions[extension_count++] = (const uint8_t *)"VK_KHR_swapchain";
+        device_extensions[extension_count++] = (const uint8_t *)"VK_EXT_swapchain_maintenance1";
+        features.swapchain.pNext = feature_chain;
+        feature_chain = &features.swapchain;
+    }
     const VkDeviceCreateInfo device = {
         .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
         .queueCreateInfoCount = 1,
         .pQueueCreateInfos = &queue,
         .pEnabledFeatures = &features.base,
-        .pNext = features.extension != NULL ? &features.demote : NULL,
-        .enabledExtensionCount = features.extension != NULL ? 1 : 0,
-        .ppEnabledExtensionNames = features.extension != NULL ? &features.extension : NULL
+        .pNext = feature_chain,
+        .enabledExtensionCount = extension_count,
+        .ppEnabledExtensionNames = extension_count != 0 ? device_extensions : NULL
     };
     status = doe_vk_result(context, context->vk.vkCreateDevice(context->physical, &device, NULL, &context->device), "vkCreateDevice", error);
+    if (status != DOE_VK_OK) goto failed;
+    status = doe_vk_surface_load_functions(context, options->surface_platforms, true, error);
     if (status != DOE_VK_OK) goto failed;
     context->vk.vkGetDeviceQueue(context->device, context->caps.queue_family, 0, &context->queue);
     if (context->queue == NULL) {
         status = doe_vk_fail(DOE_VK_NATIVE_FAILURE, "vkGetDeviceQueue", error);
         goto failed;
     }
+    context->caps.surface_platforms = options->surface_platforms;
     context->caps.robust_buffer_access = true;
     context->caps.shader_demote_to_helper_invocation = features.extension != NULL;
     *out = context;

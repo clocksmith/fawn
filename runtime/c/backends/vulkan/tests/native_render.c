@@ -164,8 +164,8 @@ int main(int argc, char **argv) {
     doe_vk_render_draw draw = { .vertex_count = 3, .instance_count = 1,
         .viewport = {0, 0, 8, 8, 0, 1}, .scissor = {0, 0, 4, 8} };
     doe_vk_render_pass_draw pass_draws[2] = {
-        {pipeline, &binding, 1, vertex_binding, 2, draw},
-        {pipeline, &binding, 1, vertex_binding, 2, draw}
+        {pipeline, &binding, 1, vertex_binding, 2, draw, NULL},
+        {pipeline, &binding, 1, vertex_binding, 2, draw, NULL}
     };
     pass_draws[1].draw.scissor[0] = 4;
     pass_draws[1].draw.scissor[3] = 4;

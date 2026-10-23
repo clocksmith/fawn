@@ -90,6 +90,7 @@ struct doe_vk_commands {
     struct doe_vk_render_use *renders;
     struct doe_vk_query_use *queries;
     struct doe_vk_texture_use *textures;
+    struct doe_vk_surface *surface;
 };
 doe_vk_status doe_vk_result(doe_vk_context *context, VkResult result,
     const char *operation, doe_vk_error *error);

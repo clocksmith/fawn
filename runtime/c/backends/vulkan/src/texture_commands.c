@@ -79,6 +79,8 @@ doe_vk_status doe_vk_texture_copy_region(const doe_vk_texture *texture,
 doe_vk_status doe_vk_use_texture(doe_vk_commands *commands, doe_vk_texture *texture,
     doe_vk_texture_use **out) {
     if (texture == NULL || texture->context != commands->context) return DOE_VK_INVALID_ARGUMENT;
+    if (texture->borrowed_image && !texture->external_alive) return DOE_VK_INVALID_STATE;
+    if (texture->external_owner != NULL && texture->external_owner != commands) return DOE_VK_BUSY;
     if (texture->content_status != DOE_VK_OK) return texture->content_status;
     if (texture->recording_owner != NULL && texture->recording_owner != commands) return DOE_VK_BUSY;
     for (doe_vk_texture_use *use = commands->textures; use != NULL; use = use->next) {

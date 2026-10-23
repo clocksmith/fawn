@@ -1,4 +1,5 @@
 #include "internal.h"
+#include "surface_internal.h"
 
 doe_vk_status doe_vk_poison(doe_vk_commands *commands, doe_vk_status status) {
     if (commands != NULL && commands->state == DOE_VK_RECORDING) {
@@ -169,13 +170,17 @@ doe_vk_status doe_vk_commands_submit(doe_vk_commands *commands, doe_vk_error *er
             return doe_vk_fail(status, "resource content from failed submission", error);
         }
     }
+    status = doe_vk_surface_submit_prepare(commands, error);
+    if (status != DOE_VK_OK) return doe_vk_poison(commands, status);
     doe_vk_barrier(commands);
     status = doe_vk_result(context, context->vk.vkEndCommandBuffer(commands->command), "vkEndCommandBuffer", error);
     if (status != DOE_VK_OK) return doe_vk_poison(commands, status);
     const VkSubmitInfo submit = {
         .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
         .commandBufferCount = 1,
-        .pCommandBuffers = &commands->command
+        .pCommandBuffers = &commands->command,
+        .signalSemaphoreCount = commands->surface != NULL ? 1 : 0,
+        .pSignalSemaphores = commands->surface != NULL ? &commands->surface->render_finished : NULL
     };
     commands->state = DOE_VK_SUBMITTED;
     status = doe_vk_result(context, context->vk.vkQueueSubmit(context->queue, 1, &submit, commands->fence), "vkQueueSubmit", error);
@@ -247,6 +252,8 @@ doe_vk_status doe_vk_commands_release(doe_vk_commands *commands) {
         if (!commands->context->lost) return DOE_VK_BUSY;
         complete(commands, DOE_VK_DEVICE_LOST);
     }
+    doe_vk_status surface_status = doe_vk_surface_commands_release(commands);
+    if (surface_status != DOE_VK_OK) return surface_status;
     doe_vk_context *context = commands->context;
     if (commands->pool != 0) context->vk.vkDestroyCommandPool(context->device, commands->pool, NULL);
     if (commands->fence != 0) context->vk.vkDestroyFence(context->device, commands->fence, NULL);

@@ -12,6 +12,8 @@ struct doe_vk_texture {
     uint8_t *initialized;
     doe_vk_status content_status;
     doe_vk_commands *recording_owner;
+    bool borrowed_image, external_alive;
+    doe_vk_commands *external_owner; /* Prepared presentation seals this frame. */
     VkImage image;
     VkDeviceMemory memory;
 };
