@@ -455,12 +455,18 @@ doe_resource_status doe_resource_encoder_dispatch_groups(doe_resource_encoder *e
     doe_resource_pipeline *pipeline, const doe_resource_dispatch_group *groups,
     size_t group_count, uint32_t x, uint32_t y, uint32_t z);
 /* Finish moves command ownership, never copies resource leases. A failure is
- * sticky and cannot publish a partial command buffer. */
+ * sticky and cannot publish a partial command buffer. Finish always ends the
+ * encoder, successful or not (WebGPU "ended" state). */
 doe_resource_status doe_resource_encoder_debug(doe_resource_encoder *encoder,
     doe_resource_debug_operation operation);
 doe_resource_status doe_resource_encoder_finish(doe_resource_encoder *encoder,
     doe_resource_commands **out);
 doe_resource_status doe_resource_encoder_status(const doe_resource_encoder *encoder);
+/* WebGPU "ended" states: a command on an ended encoder or pass is reported at
+ * the call; any other rejection only invalidates the encoder for Finish. End
+ * always closes an open pass, even an invalid one. NULL is not ended. */
+bool doe_resource_encoder_ended(const doe_resource_encoder *encoder);
+bool doe_resource_compute_pass_ended(const doe_resource_compute_pass *pass);
 /* Native descriptor preflight uses this same sticky error state, never a second
  * frontend poison flag. OK/PENDING and out-of-range statuses are not rejection. */
 doe_resource_status doe_resource_encoder_invalidate(doe_resource_encoder *encoder,

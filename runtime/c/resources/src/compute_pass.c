@@ -149,7 +149,25 @@ doe_resource_status doe_resource_compute_pass_dispatch_indirect(doe_resource_com
     return resource_record_dispatch_indirect(pass->encoder, pass->pipeline, groups, count, arguments, offset);
 }
 
+bool doe_resource_compute_pass_ended(const doe_resource_compute_pass *pass)
+{
+    return pass && pass->ended;
+}
+
+static doe_resource_status compute_pass_close(doe_resource_compute_pass *pass);
+/* End closes an open pass even when it or its encoder is invalid. */
 doe_resource_status doe_resource_compute_pass_end(doe_resource_compute_pass *pass)
+{
+    if (!pass) return DOE_RESOURCE_INVALID_ARGUMENT;
+    doe_resource_status status = compute_pass_close(pass);
+    if (!pass->ended) {
+        pass->ended = true;
+        if (pass->encoder->active_pass == pass) pass->encoder->active_pass = NULL;
+    }
+    return status;
+}
+
+static doe_resource_status compute_pass_close(doe_resource_compute_pass *pass)
 {
     doe_resource_status status = active(pass);
     if (status != DOE_RESOURCE_OK) return status;

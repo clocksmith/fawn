@@ -102,11 +102,12 @@ void wgpuCommandEncoderWriteTimestamp(WGPUCommandEncoder handle, WGPUQuerySet se
     native_device *device = doe_resource_encoder_device(encoder);
     if (!device) return;
     native_lock(device);
+    const bool ended = doe_resource_encoder_ended(encoder);
     doe_resource_status status = native_feature_enabled(device, WGPUFeatureName_TimestampQuery) ? doe_resource_encoder_write_timestamp(encoder,
         (doe_resource_query_set *)set, index, DOE_TIMESTAMP_COMMAND) :
         doe_resource_encoder_invalidate(encoder, DOE_RESOURCE_UNSUPPORTED);
     native_unlock(device);
-    if (status != DOE_RESOURCE_OK) native_error(device, native_resource_error(status), "timestamp recording failed");
+    native_encoding_error(device, ended, status, "timestamp recording failed");
 }
 void wgpuCommandEncoderResolveQuerySet(WGPUCommandEncoder handle, WGPUQuerySet set,
     uint32_t first, uint32_t count, WGPUBuffer destination, uint64_t offset)
@@ -115,10 +116,11 @@ void wgpuCommandEncoderResolveQuerySet(WGPUCommandEncoder handle, WGPUQuerySet s
     native_device *device = doe_resource_encoder_device(encoder);
     if (!device) return;
     native_lock(device);
+    const bool ended = doe_resource_encoder_ended(encoder);
     doe_resource_status status = doe_resource_encoder_resolve_queries(encoder,
         (doe_resource_query_set *)set, first, count, (doe_resource_buffer *)destination, offset);
     native_unlock(device);
-    if (status != DOE_RESOURCE_OK) native_error(device, native_resource_error(status), "query resolve recording failed");
+    native_encoding_error(device, ended, status, "query resolve recording failed");
 }
 
 doe_vk_status native_record_query(doe_vk_commands *commands, const doe_resource_command *record)

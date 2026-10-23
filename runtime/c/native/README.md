@@ -144,11 +144,15 @@ Apple SDK compilation, Darwin execution and physical qualification remain unrun.
   subresource; buffer copies need one sample.
 - Texel copy layouts take WGPU_COPY_STRIDE_UNDEFINED as WebGPU's undefined:
   rowsPerImage for a one-image copy, bytesPerRow for a one-row copy
-  (`tests/copy_layouts.c`). A rejected buffer/texture or texture/texture copy
-  invalidates the encoder and its validation error is reported once, at Finish.
-- A rejected BeginRenderPass/BeginComputePass still returns a pass (WebGPU invalid
-  pass): it records nothing, and its commands, End and the encoder's Finish
-  report the rejection.
+  (`tests/copy_layouts.c`).
+- Encoding errors follow WebGPU: a rejected pass descriptor, pass command, copy,
+  clear, query or debug command only invalidates its encoder, and Finish reports
+  exactly one validation error; later valid passes on that encoder add nothing.
+  A rejected BeginRenderPass/BeginComputePass still returns an invalid pass that
+  records nothing. Only a command on an encoder or pass that already ended (End
+  always ends a pass; Finish always ends an encoder) is reported at the call
+  (`native_encoding_error`; `tests/encoder_errors.c` counts uncaptured errors).
+  Render bundle encoders still report their command rejections at the call.
 - Color storeOp Discard is admitted for single-sample attachments too: Vulkan
   STORE_OP_DONT_CARE and the backend's per-aspect owner marks the subresource
   undefined. Later Load passes, buffer/texture copies and sampled or storage
@@ -396,8 +400,9 @@ header requires accepting a `WGPUTextureBindingViewDimension` chain on
 no compatibility-mode view restrictions, so it accepts exactly that one chain node,
 ignores the value, and the getter returns `WGPUTextureViewDimension_Undefined` for
 every texture, as the reference core implementation does. Unknown or repeated chain
-nodes still reject. The provider does not yet advertise `CoreFeaturesAndLimits`;
-that separate claim needs complete core limits and is not made here.
+nodes still reject. Every Vulkan adapter lists `core-features-and-limits`
+(there is no compatibility mode), and every device has it enabled whether or
+not `requiredFeatures` names it.
 
 ## Limits
 
@@ -594,6 +599,7 @@ PASS public draw features: 2 of 2 offered and enabled (indirect-first-instance: 
 PASS public copy layouts: undefined rowsPerImage for one image and undefined bytesPerRow for one row through queue writes, buffer-to-texture and texture-to-buffer copies with exact texels; two-image and two-row undefined-stride and rowsPerImage-0 rejections reported once at Finish (CPU Vulkan only)
 PASS public BC compression: solid BC1/BC1-srgb/BC4 blocks decode to exact texels through queue writes and buffer copies, a 6x6 mip takes its physical 8x8 copy, texture-to-texture and texture-to-buffer copies return exact blocks, a 3D BC1 texture uploaded with rowsPerImage 2 decodes per slice (sliced 3D); without the feature, non-block sizes, attachment/storage usage, 3D without sliced 3D and unaligned copies reject (CPU Vulkan only)
 PASS public component swizzle: (b,a,0,r) and (1,g,r,g) sampled views return the identity view's rgba8unorm components rearranged exactly through textureLoad and nearest textureSampleLevel; identity swizzles need no feature, a non-identity swizzle without the feature, with RenderAttachment or StorageBinding view usage, or with an unknown source rejects (CPU Vulkan only)
+PASS public encoder errors: an invalid render/compute pass descriptor or command, an invalid copy or clear followed by valid passes, each reports exactly one uncaptured validation error at Finish; End/dispatch on ended passes, copies/clears/begin on a finished encoder and a second Finish report at the call; core-features-and-limits listed and accepted (CPU Vulkan only)
 PASS public timestamps: requested feature, zero/max/range/destroy admission, real pass/command writes, exact GPU nanoseconds, same-batch copy, scratch reuse and early query release (CPU Vulkan only)
 PASS typed recovery: native/OOM/pending errors survive submit/write/texture/workdone, unknown leases retained, terminal cleanup and fresh GPU normalizer recovery
 PASS every implemented procedure address matches; every unprovided name returns NULL
@@ -718,7 +724,7 @@ Do not run this on Miles or Suby while their possible disassembly/cooling hold
 remains. Every adapter-using client selects its adapter through
 `tests/adapter_class.h`: software (CPU fallback adapter) by default, or a
 nonfallback GPU adapter with `DOE_C_TEST_ADAPTER=physical`. Each PASS line names
-the class and device it ran on. `make check-physical` runs the same 40 clients on
+the class and device it ran on. `make check-physical` runs the same 41 clients on
 the system ICDs (`VK_ICD_FILENAMES` unset):
 
 ```
@@ -752,7 +758,8 @@ reads all 33 (including `storage-textures`, `point-list`, `color-discard` and
 `copy-layouts`) passed; with limits resolution all 38 (including
 `program-prepare` and `limits`) passed; with BC compression all 39 (including
 `bc-compression`) passed; with component swizzle all 40 (including
-`component-swizzle`) passed. That is
+`component-swizzle`) passed; with the encoding error rule all 41 (including
+`encoder-errors`) passed. That is
 developer evidence for these exact clients on that
 adapter/driver: the oracles are the clients' own expected values, not frozen
 independent workloads, and it is not Vulkan backend qualification, a performance

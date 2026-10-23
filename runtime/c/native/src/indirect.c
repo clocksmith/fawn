@@ -77,12 +77,12 @@ void wgpuComputePassEncoderDispatchWorkgroupsIndirect(WGPUComputePassEncoder han
     native_device *device = doe_resource_compute_pass_device(pass);
     if (!device) return;
     native_lock(device);
+    const bool ended = doe_resource_compute_pass_ended(pass);
     doe_resource_status status = device->backend.kind == WGPUBackendType_Vulkan ?
         doe_resource_compute_pass_dispatch_indirect(pass,(doe_resource_buffer *)arguments,offset) :
         doe_resource_compute_pass_invalidate(pass,DOE_RESOURCE_UNSUPPORTED);
     native_unlock(device);
-    if (status != DOE_RESOURCE_OK) native_error(device,native_resource_error(status),
-        "indirect dispatch admission failed or selected backend unsupported");
+    native_encoding_error(device, ended, status, "indirect dispatch admission failed or selected backend unsupported");
 }
 
 static void pass_indirect(WGPURenderPassEncoder handle, WGPUBuffer arguments, uint64_t offset, bool indexed)
@@ -91,12 +91,12 @@ static void pass_indirect(WGPURenderPassEncoder handle, WGPUBuffer arguments, ui
     native_device *device = doe_resource_render_pass_device(pass);
     if (!device) return;
     native_lock(device);
+    const bool ended = doe_resource_render_pass_ended(pass);
     doe_resource_status status = device->backend.kind == WGPUBackendType_Vulkan ?
         doe_resource_render_pass_draw_indirect(pass,(doe_resource_buffer *)arguments,offset,indexed) :
         doe_resource_render_pass_invalidate(pass,DOE_RESOURCE_UNSUPPORTED);
     native_unlock(device);
-    if (status != DOE_RESOURCE_OK) native_error(device,native_resource_error(status),
-        "indirect draw admission failed or selected backend unsupported");
+    native_encoding_error(device, ended, status, "indirect draw admission failed or selected backend unsupported");
 }
 
 static void bundle_indirect(WGPURenderBundleEncoder handle, WGPUBuffer arguments, uint64_t offset, bool indexed)
