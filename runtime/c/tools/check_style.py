@@ -7,6 +7,9 @@ Each failure names its rule:
   guard    Headers have an #ifndef/#define include guard or #pragma once.
   pragma   No compiler diagnostic suppression pragmas.
   flags    Owner Makefiles that define CFLAGS compile strict C11 with -Werror.
+  adapter  Native public consumers select adapters only through
+           tests/adapter_class.h (no direct forceFallbackAdapter or CPU-type checks);
+           tests/backend_selection.c tests fallback semantics themselves.
 
 Frozen evidence is exempt from license and guard, never from size: files under
 an independent_tests* directory, and files whose exact bytes still match a
@@ -33,6 +36,12 @@ GUARD = re.compile(rb"^\s*#\s*ifndef\s+(\w+)\s*\n\s*#\s*define\s+\1\b", re.MULTI
 PRAGMA_ONCE = re.compile(rb"^\s*#\s*pragma\s+once\b", re.MULTILINE)
 SUPPRESSION = re.compile(rb"#\s*pragma\s+(GCC|clang)\s+diagnostic\s+(ignored|warning)")
 CFLAGS = re.compile(r"^\s*CFLAGS\s*[:+?]?=", re.MULTILINE)
+# Owner-scoped source patterns: (path prefix, pattern, exempt paths, rule, message).
+SCOPED = (
+    ("runtime/c/native/tests/", re.compile(rb"forceFallbackAdapter\s*=|WGPUAdapterType_CPU"),
+     {"runtime/c/native/tests/adapter_class.h", "runtime/c/native/tests/backend_selection.c"},
+     "adapter", "select adapters through tests/adapter_class.h"),
+)
 
 
 def tracked(root: Path) -> list[str]:
@@ -75,6 +84,9 @@ def source_failures(root: Path, path: str, is_frozen: bool) -> list[str]:
     failures = []
     if SUPPRESSION.search(data):
         failures.append(f"pragma: {path}: diagnostic suppression; fix the warning instead")
+    for prefix, pattern, exempt, rule, message in SCOPED:
+        if path.startswith(prefix) and path not in exempt and pattern.search(data):
+            failures.append(f"{rule}: {path}: {message}")
     if is_frozen:
         return failures
     if b"SPDX-License-Identifier:" not in b"\n".join(data.splitlines()[:3]):
