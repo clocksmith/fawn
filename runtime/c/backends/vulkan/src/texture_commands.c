@@ -7,6 +7,7 @@ static uint32_t mip_extent(uint32_t size, uint32_t mip) {
 }
 
 static doe_vk_status region_valid(const doe_vk_texture *texture, doe_vk_texture_region region) {
+    if (doe_vk_samples(texture->desc.sample_count) != 1) return DOE_VK_UNSUPPORTED;
     if (region.mip >= texture->desc.mip_levels || region.mip >= 32 ||
         region.extent[0] == 0 || region.extent[1] == 0 || region.extent[2] == 0)
         return DOE_VK_INVALID_ARGUMENT;

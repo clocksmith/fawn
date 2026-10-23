@@ -108,6 +108,39 @@ int main(int argc, char **argv) {
     require(doe_vk_render_pipeline_create(context, &depth_pipeline_desc, &depth_read, &error), "depth/stencil read pipeline");
     depth_pipeline_desc.depth_compare = 7;
     require(doe_vk_render_pipeline_create(context, &depth_pipeline_desc, &stencil_read, &error), "stencil-only compare pipeline");
+    doe_vk_texture_desc msaa_color_desc = texture_desc;
+    msaa_color_desc.usage = DOE_VK_TEXTURE_COLOR_ATTACHMENT;
+    msaa_color_desc.sample_count = 4;
+    doe_vk_texture_desc msaa_depth_desc = depth_desc;
+    msaa_depth_desc.sample_count = 4;
+    doe_vk_texture *msaa_color = NULL, *msaa_depth = NULL;
+    doe_vk_texture_view *msaa_color_view = NULL, *msaa_depth_view = NULL;
+    require(doe_vk_texture_create(context, &msaa_color_desc, &msaa_color, &error), "4x color");
+    require(doe_vk_texture_create(context, &msaa_depth_desc, &msaa_depth, &error), "4x depth/stencil");
+    require(doe_vk_texture_view_create(msaa_color, &view_desc, &msaa_color_view, &error), "4x color view");
+    require(doe_vk_texture_view_create(msaa_depth, &view_desc, &msaa_depth_view, &error), "4x depth view");
+    doe_vk_render_pipeline_desc msaa_desc = desc;
+    msaa_desc.sample_count = 4;
+    msaa_desc.depth_stencil_format = depth_desc.format;
+    msaa_desc.depth_test = msaa_desc.depth_write = true;
+    msaa_desc.depth_compare = 1;
+    doe_vk_pipeline *msaa_pipeline = NULL, *masked_pipeline = NULL, *alpha_pipeline = NULL;
+    require(doe_vk_render_pipeline_create(context, &msaa_desc, &msaa_pipeline, &error), "4x pipeline");
+    msaa_desc.override_sample_mask = true;
+    msaa_desc.sample_mask = 0;
+    require(doe_vk_render_pipeline_create(context, &msaa_desc, &masked_pipeline, &error), "zero sample mask pipeline");
+    msaa_desc.override_sample_mask = false;
+    msaa_desc.alpha_to_coverage = true;
+    require(doe_vk_render_pipeline_create(context, &msaa_desc, &alpha_pipeline, &error), "alpha-to-coverage pipeline");
+    doe_vk_buffer *msaa_readback = NULL, *alpha_vertices = NULL;
+    require(doe_vk_buffer_create(context, 1280, DOE_VK_BUFFER_COPY_DST,
+        DOE_VK_MEMORY_HOST, &msaa_readback, &error), "4x results");
+    require(doe_vk_buffer_create(context, sizeof(triangle), DOE_VK_BUFFER_VERTEX,
+        DOE_VK_MEMORY_HOST, &alpha_vertices, &error), "zero-alpha vertices");
+    float alpha_triangle[3][9];
+    memcpy(alpha_triangle, triangle, sizeof(triangle));
+    for (unsigned i = 0; i < 3; ++i) alpha_triangle[i][6] = 0;
+    require(doe_vk_buffer_write(alpha_vertices, 0, alpha_triangle, sizeof(alpha_triangle)), "alpha-zero triangle");
     free((void *)vertex.words);
     free((void *)fragment.words);
     doe_vk_commands *commands = NULL;
@@ -222,6 +255,50 @@ int main(int argc, char **argv) {
     require(doe_vk_commands_initialize_attachment(commands, view), "GPU zero discarded color");
     doe_vk_texture_buffer_layout zero_layout = {.offset = 256};
     require(doe_vk_commands_read_texture(commands, texture, region, zero_readback, zero_layout), "zero color pixels");
+    doe_vk_render_pass_desc msaa_pass = {.color = msaa_color_view, .clear_color = &blue,
+        .depth_stencil = msaa_depth_view, .clear_depth = true, .clear_stencil = true,
+        .depth_clear_value = 1, .resolve_target = view};
+    doe_vk_render_pass_op msaa_ops[2] = {
+        {.kind = DOE_VK_RENDER_DRAW, .value.draw = pass_draws[0]},
+        {.kind = DOE_VK_RENDER_DRAW, .value.draw = pass_draws[1]}
+    };
+    msaa_ops[0].value.draw.pipeline = msaa_pipeline;
+    msaa_ops[1].value.draw.pipeline = msaa_pipeline;
+    require(doe_vk_commands_render_pass_full(commands, &msaa_pass, NULL, msaa_ops, 2), "4x draw and resolve");
+    require(doe_vk_commands_read_texture(commands, texture, region, msaa_readback, packed), "4x resolved pixels");
+    msaa_pass.clear_color = NULL;
+    msaa_pass.clear_depth = msaa_pass.clear_stencil = false;
+    require(doe_vk_commands_render_pass_full(commands, &msaa_pass, NULL, NULL, 0), "empty 4x LOAD and resolve");
+    doe_vk_texture_buffer_layout msaa_layout = {.offset = 256};
+    require(doe_vk_commands_read_texture(commands, texture, region, msaa_readback, msaa_layout), "empty resolve pixels");
+    msaa_pass.clear_color = &blue;
+    msaa_pass.clear_depth = msaa_pass.clear_stencil = true;
+    msaa_pass.discard_color = true;
+    msaa_ops[0].value.draw.pipeline = masked_pipeline;
+    msaa_ops[0].value.draw.draw.scissor[2] = 8;
+    require(doe_vk_commands_render_pass_full(commands, &msaa_pass, NULL, msaa_ops, 1), "zero mask resolve before discard");
+    msaa_layout.offset = 512;
+    require(doe_vk_commands_read_texture(commands, texture, region, msaa_readback, msaa_layout), "masked pixels");
+    require(doe_vk_commands_initialize_attachment(commands, msaa_color_view), "4x GPU zero after discard");
+    msaa_pass.clear_color = NULL;
+    require(doe_vk_commands_render_pass_full(commands, &msaa_pass, NULL, NULL, 0), "4x initialized zero resolve");
+    msaa_layout.offset = 768;
+    require(doe_vk_commands_read_texture(commands, texture, region, msaa_readback, msaa_layout), "4x zero pixels");
+    msaa_pass.clear_color = &blue;
+    msaa_ops[0].value.draw.pipeline = alpha_pipeline;
+    const doe_vk_buffer_binding alpha_binding[2] = {{NULL, 0, 0}, {alpha_vertices, 0, sizeof(alpha_triangle)}};
+    msaa_ops[0].value.draw.vertices = alpha_binding;
+    require(doe_vk_commands_render_pass_full(commands, &msaa_pass, NULL, msaa_ops, 1), "zero alpha-to-coverage resolve");
+    msaa_layout.offset = 1024;
+    require(doe_vk_commands_read_texture(commands, texture, region, msaa_readback, msaa_layout), "alpha coverage pixels");
+    doe_vk_buffer_release(alpha_vertices);
+    doe_vk_pipeline_release(msaa_pipeline);
+    doe_vk_pipeline_release(masked_pipeline);
+    doe_vk_pipeline_release(alpha_pipeline);
+    doe_vk_texture_view_release(msaa_color_view);
+    doe_vk_texture_view_release(msaa_depth_view);
+    doe_vk_texture_release(msaa_color);
+    doe_vk_texture_release(msaa_depth);
     doe_vk_pipeline_release(stencil_read);
     doe_vk_pipeline_release(depth_write);
     doe_vk_pipeline_release(depth_read);
@@ -273,6 +350,21 @@ int main(int argc, char **argv) {
     require(doe_vk_buffer_read(zero_readback, 256, pixels, sizeof(pixels)), "zero color readback");
     const uint8_t *zero_bytes = &pixels[0][0][0];
     for (unsigned i = 0; i < sizeof(pixels); ++i) if (zero_bytes[i] != 0) return 1;
+    for (unsigned test = 0; test < 5; ++test) {
+        require(doe_vk_buffer_read(msaa_readback, test * 256, pixels, sizeof(pixels)), "4x oracle");
+        for (unsigned y = 0; y < 8; ++y) for (unsigned x = 0; x < 8; ++x) {
+            uint8_t expected[4] = {0, 0, 255, 255};
+            if (test < 2) {
+                expected[0] = x < 4 ? 255 : 0;
+                expected[2] = x < 4 ? 0 : 255;
+            } else if (test == 3) memset(expected, 0, sizeof(expected));
+            if (memcmp(pixels[y][x], expected, 4) != 0) {
+                fprintf(stderr, "4x oracle%u mismatch at %u,%u: %u,%u,%u,%u\n", test, x, y,
+                    pixels[y][x][0], pixels[y][x][1], pixels[y][x][2], pixels[y][x][3]);
+                return 1;
+            }
+        }
+    }
     uint64_t values[8];
     require(doe_vk_buffer_read(query_output, 0, values, sizeof(values)), "occlusion results");
     if (values[0] == 0) {
@@ -289,9 +381,11 @@ int main(int argc, char **argv) {
     doe_vk_buffer_release(blend_readback);
     doe_vk_buffer_release(depth_readback);
     doe_vk_buffer_release(zero_readback);
+    doe_vk_buffer_release(msaa_readback);
     doe_vk_context_release(context);
     puts("PASS one real offscreen clear/two-draw pass, dynamic scissors, an unused NULL vertex slot, uniform descriptors, exact64-pixel raw and dynamic-blend oracles, real occlusion hit/empty/clipped/unwritten results and later-pass index reuse, early native caller release");
     puts("PASS real D32S8 clear, independent depth LESS/stencil EQUAL tests, dynamic references, empty read-only LOAD, exact64-pixel depth/stencil oracle and early leases");
     puts("PASS standalone depth-only initialization, depth Discard then GPU-zero preserving stencil, color Discard then exact256-byte zero readback");
+    puts("PASS real4x color/depth and single-sample resolve, empty LOAD resolve, mask0 and alpha0 coverage, resolve-before-discard, canonical4x zero and five exact64-pixel oracles with early leases");
     return 0;
 }

@@ -45,6 +45,7 @@ struct doe_vk_pipeline {
     doe_vk_texture_format color_format;
     doe_vk_texture_format depth_stencil_format;
     bool depth_write, stencil_write, stencil_test;
+    uint32_t sample_count;
     float blend_constant[4];
     uint32_t vertex_count;
     doe_vk_vertex_layout vertices[DOE_VK_MAX_VERTEX_BUFFERS];

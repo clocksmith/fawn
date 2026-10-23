@@ -55,12 +55,16 @@ typedef struct doe_vk_render_pipeline_desc {
     uint32_t depth_compare;
     doe_vk_stencil_face stencil_front, stencil_back;
     uint32_t stencil_read_mask, stencil_write_mask;
+    uint32_t sample_count; /* Zero preserves sample1. */
+    bool override_sample_mask;
+    uint64_t sample_mask;
+    bool alpha_to_coverage;
 } doe_vk_render_pipeline_desc;
-/* Single-color, sample1 graphics pipeline. Compiler/native admission validates
+/* Single-color graphics pipeline with format-admitted native sample counts. Compiler/native admission validates
  * shader interfaces/capabilities including disabled vertex/fragment stores.
  * Native blend factors0..14 (no dual source), operations0..4; constant blend
  * factors use the pipeline constant unless an explicit per-draw override is set.
- * Optional sample1 depth/stencil is explicit; MSAA remains unsupported. */
+ * Optional depth/stencil uses the same sample count. Sample shading stays disabled. */
 doe_vk_status doe_vk_render_pipeline_create(doe_vk_context *context,
     const doe_vk_render_pipeline_desc *desc, doe_vk_pipeline **out, doe_vk_error *error);
 
@@ -119,6 +123,7 @@ typedef struct doe_vk_render_pass_desc {
     bool depth_read_only, stencil_read_only;
     float depth_clear_value;
     uint32_t stencil_clear_value;
+    doe_vk_texture_view *resolve_target; /* Optional single-sample color destination. */
 } doe_vk_render_pass_desc;
 /* General attachment owner, one native pass for all ops. Only existing aspects
  * participate. Read-only forbids clear/discard and any draw that may write that
@@ -153,7 +158,7 @@ doe_vk_status doe_vk_commands_render_pass_ops(doe_vk_commands *commands,
  * the call; existing command leases retain each used native resource. On any
  * error discard the poisoned command owner, never submit a partial pass.
  * This consumes immutable resource packets, not a second recording engine.
- * This convenience has no depth/stencil; MSAA/indexed/indirect stay unsupported. */
+ * This convenience has no depth/stencil or resolve; indexed/indirect stay unsupported. */
 doe_vk_status doe_vk_commands_render_pass(doe_vk_commands *commands,
     doe_vk_texture_view *target, const doe_vk_clear_color *clear,
     const doe_vk_render_pass_draw *draws, size_t count);

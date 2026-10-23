@@ -67,6 +67,7 @@ static doe_vk_status load_functions(doe_vk_context *context, doe_vk_error *error
     _Static_assert(sizeof(context->vk.vkDestroyPipeline) == sizeof(void *), "vkDestroyPipeline POSIX pointer size");
     _Static_assert(sizeof(context->vk.vkCmdBindDescriptorSets) == sizeof(void *), "vkCmdBindDescriptorSets POSIX pointer size");
     _Static_assert(sizeof(context->vk.vkGetPhysicalDeviceFormatProperties) == sizeof(void *), "vkGetPhysicalDeviceFormatProperties POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkGetPhysicalDeviceImageFormatProperties) == sizeof(void *), "vkGetPhysicalDeviceImageFormatProperties POSIX pointer size");
     _Static_assert(sizeof(context->vk.vkCreateImage) == sizeof(void *), "vkCreateImage POSIX pointer size");
     _Static_assert(sizeof(context->vk.vkDestroyImage) == sizeof(void *), "vkDestroyImage POSIX pointer size");
     _Static_assert(sizeof(context->vk.vkGetImageMemoryRequirements) == sizeof(void *), "vkGetImageMemoryRequirements POSIX pointer size");
@@ -154,6 +155,7 @@ static doe_vk_status load_functions(doe_vk_context *context, doe_vk_error *error
         { "vkDestroyPipeline", &context->vk.vkDestroyPipeline, sizeof(context->vk.vkDestroyPipeline) },
         { "vkCmdBindDescriptorSets", &context->vk.vkCmdBindDescriptorSets, sizeof(context->vk.vkCmdBindDescriptorSets) },
         { "vkGetPhysicalDeviceFormatProperties", &context->vk.vkGetPhysicalDeviceFormatProperties, sizeof(context->vk.vkGetPhysicalDeviceFormatProperties) },
+        { "vkGetPhysicalDeviceImageFormatProperties", &context->vk.vkGetPhysicalDeviceImageFormatProperties, sizeof(context->vk.vkGetPhysicalDeviceImageFormatProperties) },
         { "vkCreateImage", &context->vk.vkCreateImage, sizeof(context->vk.vkCreateImage) },
         { "vkDestroyImage", &context->vk.vkDestroyImage, sizeof(context->vk.vkDestroyImage) },
         { "vkGetImageMemoryRequirements", &context->vk.vkGetImageMemoryRequirements, sizeof(context->vk.vkGetImageMemoryRequirements) },

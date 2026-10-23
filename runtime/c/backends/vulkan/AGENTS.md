@@ -38,3 +38,7 @@ never treat cleared depth as initialized stencil or publish abandoned clears.
 Public zero-initialization adapters must call the canonical attachment initializer
 before exposing discarded contents. Do not duplicate aspect availability in the
 frontend or manufacture a color target for depth-only initialization.
+
+Multisample resolve belongs to the same complete pass span. Admit actual format/
+usage sample support, retain the resolve view before begin, and preserve its
+successful contents independently of the source store/discard operation.

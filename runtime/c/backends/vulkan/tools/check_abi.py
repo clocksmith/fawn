@@ -75,6 +75,13 @@ def main():
             '    (void)set_blend;',
             '}'
         ])
+    if "vkGetPhysicalDeviceImageFormatProperties" in manifest.get("official_functions", {}):
+        lines.extend([
+            'void doe_vk_abi_image_format_signature(doe_vk_functions *functions) {',
+            '    VkResult (*query)(VkPhysicalDevice, uint32_t, uint32_t, uint32_t, VkFlags, VkFlags, VkImageFormatProperties *) = functions->vkGetPhysicalDeviceImageFormatProperties;',
+            '    (void)query;',
+            '}'
+        ])
     assertions = 0
     for name, value in manifest.get("official_constants", {}).get("values", {}).items():
         lines.append(f'_Static_assert({name} == {value}, "{name} official constant");')
