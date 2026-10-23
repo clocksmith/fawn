@@ -124,6 +124,16 @@ fn infer_texture_sample_type(tex: *DoeTexture) u32 {
     return texture_contract.inferSampleType(tex.format);
 }
 
+/// Float and depth formats also bind as unfilterable-float (WebGPU texture
+/// format capabilities, "compatible sample types").
+fn texture_sample_type_compatible(layout_type: u32, tex: *DoeTexture) bool {
+    const inferred = infer_texture_sample_type(tex);
+    if (layout_type == inferred) return true;
+    return layout_type == abi_binding.WGPUTextureSampleType_UnfilterableFloat and
+        (inferred == abi_binding.WGPUTextureSampleType_Float or
+            inferred == abi_binding.WGPUTextureSampleType_Depth);
+}
+
 fn resolve_view_dimension(view: *DoeTextureView) u32 {
     if (view.dimension != 0) return view.dimension;
     if (view.tex.texture_binding_view_dimension != 0) return view.tex.texture_binding_view_dimension;
@@ -147,7 +157,7 @@ fn texture_view_matches_layout(layout_entry: DoeBindGroupLayoutEntry, view: *Doe
         layout_entry.texture_view_dimension != resolve_view_dimension(view)) return false;
     if (layout_entry.texture_sample_type != 0 and
         layout_entry.texture_sample_type != abi_binding.WGPUTextureSampleType_Undefined and
-        layout_entry.texture_sample_type != infer_texture_sample_type(tex)) return false;
+        !texture_sample_type_compatible(layout_entry.texture_sample_type, tex)) return false;
     if (!texture_aspect_matches(tex, view)) return false;
     return true;
 }

@@ -7,9 +7,9 @@ const device = await requestNativeDeviceOrSkip('storage texture visibility');
 function makeWriter(value) {
   const module = device.createShaderModule({
     code: `
-      @group(0) @binding(0) var target: texture_storage_2d<r32float, write>;
+      @group(0) @binding(0) var destination: texture_storage_2d<r32float, write>;
       @compute @workgroup_size(1)
-      fn main() { textureStore(target, vec2<i32>(0, 0), vec4<f32>(${value}.0)); }
+      fn main() { textureStore(destination, vec2<i32>(0, 0), vec4<f32>(${value}.0)); }
     `,
   });
   const bindGroupLayout = device.createBindGroupLayout({
@@ -39,7 +39,7 @@ const readerBindGroupLayout = device.createBindGroupLayout({
     {
       binding: 0,
       visibility: GPUShaderStage.COMPUTE,
-      texture: { sampleType: 'float', viewDimension: '2d' },
+      texture: { sampleType: 'unfilterable-float', viewDimension: '2d' },
     },
     {
       binding: 1,
