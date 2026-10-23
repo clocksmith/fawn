@@ -231,7 +231,10 @@ doe_resource_status doe_resource_render_pass_execute_bundles(doe_resource_render
             return resource_encoder_fail(pass->encoder, DOE_RESOURCE_DEVICE_MISMATCH);
         if (bundle->desc.color_format != signature.color_format ||
             bundle->desc.depth_stencil_format != signature.depth_stencil_format ||
-            bundle->desc.samples != signature.samples) return resource_encoder_fail(pass->encoder, DOE_RESOURCE_LAYOUT);
+            bundle->desc.samples != signature.samples ||
+            (signature.depth_read_only && !bundle->desc.depth_read_only) ||
+            (signature.stencil_read_only && !bundle->desc.stencil_read_only))
+            return resource_encoder_fail(pass->encoder, DOE_RESOURCE_LAYOUT);
         if (bundle->count > remaining) return resource_encoder_fail(pass->encoder, DOE_RESOURCE_RANGE);
         remaining -= bundle->count;
         for (size_t j = 0; j < bundle->count; j++) {

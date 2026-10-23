@@ -50,6 +50,16 @@ uint32_t doe_resource_query_set_count(const doe_resource_query_set *set)
     return set ? set->count : 0;
 }
 
+WGPUQueryType doe_resource_query_set_type(const doe_resource_query_set *set)
+{
+    return set ? set->type : (WGPUQueryType)0;
+}
+
+void *doe_resource_query_set_device(const doe_resource_query_set *set)
+{
+    return set ? set->base.config.device.identity : NULL;
+}
+
 doe_resource_status resource_pass_timestamps_validate(const void *device,
     const doe_resource_pass_timestamps *timestamps)
 {

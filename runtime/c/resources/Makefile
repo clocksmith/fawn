@@ -44,3 +44,9 @@ $(BUILD)/vulkan_render_lifetime: tests/vulkan_render_lifetime.c $(BUILD)/libdoe_
 	$(CC) $(CPPFLAGS) -I../backends/vulkan/include $(CFLAGS) $(filter-out %.h vulkan-library,$^) $(VK_BUILD)/libdoe_vk.a -ldl -o $@
 vulkan-render-lifetime: $(BUILD)/vulkan_render_lifetime
 	$(BUILD)/vulkan_render_lifetime $(TINT_GRAPHICS)/output.vs_main.spv $(TINT_GRAPHICS)/output.fs_main.spv --allow-software
+
+.PHONY: vulkan-query-lifetime
+$(BUILD)/vulkan_query_lifetime: tests/vulkan_query_lifetime.c $(BUILD)/libdoe_resources.a $(LABEL_SOURCES) tests/vulkan_fixture.h vulkan-library
+	$(CC) $(CPPFLAGS) -I../backends/vulkan/include $(CFLAGS) $(filter-out %.h vulkan-library,$^) $(VK_BUILD)/libdoe_vk.a -ldl -o $@
+vulkan-query-lifetime: $(BUILD)/vulkan_query_lifetime
+	$(BUILD)/vulkan_query_lifetime --allow-software
