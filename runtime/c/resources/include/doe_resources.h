@@ -63,6 +63,10 @@ typedef struct doe_resource_config {
     /* Optional existing label owner, borrowed through final resource release.
      * It must remain open. Labels are set through that owner's existing API. */
     doe_label_store *labels;
+    /* Requested device limit for viewport admission, copied with this config.
+     * Zero selects the WebGPU baseline 8192 for standalone internal callers;
+     * public adapters must supply their actual requested device limit. */
+    uint32_t max_texture_dimension_2d;
 } doe_resource_config;
 
 typedef struct doe_resource_shader doe_resource_shader;

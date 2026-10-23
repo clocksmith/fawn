@@ -374,3 +374,17 @@ recording engine or resource-side GPU count validator was introduced.
 witness and the earlier compute/full-pass consumer regressions. It does not claim
 C graphics compilation, indexed-indirect support, public native draw-indirect
 integration, precise occlusion sample counts or physical qualification.
+
+Viewport admission now uses the creating device's copied requested
+`max_texture_dimension_2d`, not attachment extents. Internal standalone callers
+may leave it zero for the baseline 8192; public adapters must provide their actual
+requested limit. Negative origins, out-of-attachment viewports and zero extents are
+valid within the [WebGPU viewport bounds](https://gpuweb.github.io/gpuweb/#dom-gpurenderpassencoder-setviewport);
+scissors remain attachment-bounded. The upper-edge comparison avoids both integer
+overflow and rounded acceptance of even a subnormal excess. Failed admission does
+not replace raster state, preserves the first encoder error and allocates nothing.
+This intentionally corrects the old C nonnegative-origin rule and missing limits,
+while retained Zig's setter only stores values. `DEVELOPER_RECEIPT_VIEWPORT.json`
+preserves those first failures and host boundary/lifetime controls. Native physical
+limits and empty-raster lowering remain backend responsibilities; host acceptance
+alone does not prove native rendering or physical qualification.
