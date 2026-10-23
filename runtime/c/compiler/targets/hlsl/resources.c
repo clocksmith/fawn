@@ -126,7 +126,7 @@ void hlsl_resources(HlslEmitter *e) {
                 if (!memory_type(c, type)) continue;
                 for (unsigned mode = 0u; mode < (writable ? 2u : 1u); ++mode) {
                     const char *error = NULL;
-                    const bool used = target_access_helper_used(c, e->entry, ROOT_RESOURCE,
+                    const bool used = target_access_helper_used(c, &e->closure, ROOT_RESOURCE,
                         resource, type, mode != 0u, &e->traversal_left, &error);
                     if (error != NULL) { hlsl_error(e, error); return; }
                     if (!used) continue;

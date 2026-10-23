@@ -68,6 +68,12 @@ static void emit_entry(HlslEmitter *e, uint32_t entry) {
     e->entry = entry;
     e->traversal_left = 4096u * ((uint64_t)e->module->type_count +
         e->module->member_count + e->module->instruction_count + 1u);
+    const char *closure_error = NULL;
+    if (!target_closure_build(e->module, entry, &e->closure,
+            &e->traversal_left, &closure_error)) {
+        hlsl_error(e, closure_error);
+        return;
+    }
     hlsl_types(e);
     hlsl_constants(e);
     hlsl_resources(e);
@@ -94,7 +100,7 @@ static void emit_module(HlslEmitter *e) {
     }
 }
 DoeCompilerStatus doe_hlsl_emit(Source *source, const CompilerWorkspace *module,
-                                 uint32_t selected_entry, char *output,
+                                 uint32_t selected_entry, DoeTargetScratch scratch, char *output,
                                  size_t capacity, DoeHlslResult *result) {
     const int saved_errno = errno;
     if (source == NULL || source->diagnostic == NULL || module == NULL || result == NULL) {
@@ -109,7 +115,13 @@ DoeCompilerStatus doe_hlsl_emit(Source *source, const CompilerWorkspace *module,
         errno = saved_errno;
         return DOE_COMPILER_INPUT_ERROR;
     }
-    HlslEmitter measure = {.source = source, .module = module, .selected_entry = selected_entry};
+    TargetClosure closure;
+    if (!target_closure_bind(module, scratch, &closure)) {
+        (void)source_error(source, DOE_COMPILER_INPUT_ERROR, 0u, "invalid target closure scratch span");
+        errno = saved_errno;
+        return DOE_COMPILER_INPUT_ERROR;
+    }
+    HlslEmitter measure = {.source = source, .closure = closure, .module = module, .selected_entry = selected_entry};
     emit_module(&measure);
     if (measure.failed) {
         errno = saved_errno;
@@ -130,7 +142,7 @@ DoeCompilerStatus doe_hlsl_emit(Source *source, const CompilerWorkspace *module,
         return DOE_COMPILER_OUTPUT_TOO_SMALL;
     }
     HlslEmitter writer = {.source = source, .module = module, .output = output,
-        .capacity = capacity, .selected_entry = selected_entry};
+        .capacity = capacity, .selected_entry = selected_entry, .closure = closure};
     emit_module(&writer);
     if (!writer.failed) result->written_bytes = writer.position;
     errno = saved_errno;

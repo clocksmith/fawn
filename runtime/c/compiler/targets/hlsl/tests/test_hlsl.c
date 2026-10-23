@@ -50,18 +50,22 @@ static Fixture *prepare_mode(const char *text, bool graphics) {
     }
     if (!okay) fprintf(stderr, "source failed at %zu: %s\n%s\n", f->diagnostic.offset, f->diagnostic.message, text);
     assert(okay);
+    assert(doe_target_scratch_bytes(f->module, &f->scratch.capacity));
+    f->scratch.data = malloc(f->scratch.capacity);
+    assert(f->scratch.data != NULL);
     return f;
 }
 Fixture *prepare(const char *text) { return prepare_mode(text, false); }
 Fixture *prepare_graphics(const char *text) { return prepare_mode(text, true); }
 void release(Fixture *f) {
+    free(f->scratch.data);
     free(f->storage);
     free(f);
 }
 char *emit(Fixture *f, uint32_t selected) {
     DoeHlslResult measure;
     errno = EDOM;
-    const DoeCompilerStatus status = doe_hlsl_emit(&f->source, f->module, selected, NULL, 0u, &measure);
+    const DoeCompilerStatus status = doe_hlsl_emit(&f->source, f->module, selected, f->scratch, NULL, 0u, &measure);
     if (status != DOE_COMPILER_OK) fprintf(stderr, "Hlsl rejected at %zu: %s\n", f->diagnostic.offset, f->diagnostic.message);
     assert(status == DOE_COMPILER_OK);
     assert(errno == EDOM);
@@ -70,9 +74,9 @@ char *emit(Fixture *f, uint32_t selected) {
     assert(text != NULL);
     memset(text, 0xa5, measure.required_bytes + 1u);
     DoeHlslResult result;
-    assert(doe_hlsl_emit(&f->source, f->module, selected, text, measure.required_bytes - 1u, &result) == DOE_COMPILER_OUTPUT_TOO_SMALL);
+    assert(doe_hlsl_emit(&f->source, f->module, selected, f->scratch, text, measure.required_bytes - 1u, &result) == DOE_COMPILER_OUTPUT_TOO_SMALL);
     assert(result.written_bytes == 0u && (unsigned char)text[0] == 0xa5u);
-    assert(doe_hlsl_emit(&f->source, f->module, selected, text, measure.required_bytes, &result) == DOE_COMPILER_OK);
+    assert(doe_hlsl_emit(&f->source, f->module, selected, f->scratch, text, measure.required_bytes, &result) == DOE_COMPILER_OK);
     assert(result.required_bytes == measure.required_bytes && result.written_bytes == measure.required_bytes);
     assert((unsigned char)text[measure.required_bytes] == 0xa5u);
     text[measure.required_bytes] = '\0';
@@ -81,6 +85,26 @@ char *emit(Fixture *f, uint32_t selected) {
 void has(const char *text, const char *needle) {
     if (strstr(text, needle) == NULL) fprintf(stderr, "missing emission: %s\n", needle);
     assert(strstr(text, needle) != NULL);
+}
+static void test_shared_call_dag(void) {
+    char source[2048];
+    assert(target_dag_source(source, sizeof(source)));
+    Fixture *f = prepare(source);
+    char *text = emit(f, 0u);
+    has(text, "doe_fn24(");
+    assert(strstr(text, "doe_fn25(") == NULL); /* unrelated function */
+    free(text);
+    DoeHlslResult result;
+    unsigned char untouched[16];
+    memset(untouched, 0xa5, sizeof(untouched));
+    DoeTargetScratch short_scratch = f->scratch;
+    --short_scratch.capacity;
+    assert(doe_hlsl_emit(&f->source, f->module, 0u, short_scratch,
+        (char *)untouched, sizeof(untouched), &result) == DOE_COMPILER_INPUT_ERROR);
+    for (size_t i = 0u; i < sizeof(untouched); ++i) assert(untouched[i] == 0xa5u);
+    text = emit(f, 0u); /* failure permits scratch reuse without reset */
+    free(text);
+    release(f);
 }
 static void test_helper_closure(void) {
     Fixture *f = prepare(target_closure_source);
@@ -192,7 +216,7 @@ static void test_entries_and_rejection(void) {
     char untouched[32];
     memset(untouched, 0x5a, sizeof(untouched));
     DoeHlslResult result;
-    assert(doe_hlsl_emit(&f->source, f->module, 1u, untouched, sizeof(untouched), &result) == DOE_COMPILER_UNSUPPORTED);
+    assert(doe_hlsl_emit(&f->source, f->module, 1u, f->scratch, untouched, sizeof(untouched), &result) == DOE_COMPILER_UNSUPPORTED);
     assert(result.required_bytes == 0u && result.written_bytes == 0u && untouched[0] == 0x5a);
     has(f->diagnostic.message, "32-bit byte addressing");
     release(f);
@@ -228,7 +252,7 @@ static void test_control_and_host_fixture(const char *output_path) {
     char untouched[32];
     memset(untouched, 0x5a, sizeof(untouched));
     DoeHlslResult result;
-    assert(doe_hlsl_emit(&f->source, f->module, NO_ID, untouched, sizeof(untouched), &result) == DOE_COMPILER_UNSUPPORTED);
+    assert(doe_hlsl_emit(&f->source, f->module, NO_ID, f->scratch, untouched, sizeof(untouched), &result) == DOE_COMPILER_UNSUPPORTED);
     assert(untouched[0] == 0x5a && result.written_bytes == 0u);
     free(text);
     release(f);
@@ -290,7 +314,7 @@ static void test_target_rejection(void) {
         if (i == 1u) f->module->resources[0].group = 7u;
         char output[32] = "intact";
         DoeHlslResult result;
-        assert(doe_hlsl_emit(&f->source, f->module, 0u, output, sizeof(output), &result) == DOE_COMPILER_UNSUPPORTED);
+        assert(doe_hlsl_emit(&f->source, f->module, 0u, f->scratch, output, sizeof(output), &result) == DOE_COMPILER_UNSUPPORTED);
         assert(strcmp(output, "intact") == 0 && result.required_bytes == 0u);
         release(f);
     }
@@ -310,10 +334,10 @@ static void test_subgroup_inputs(void) {
     f->module->entry_inputs[0].kind = INPUT_NUM_SUBGROUPS;
     DoeHlslResult result;
     char output[8] = "intact";
-    assert(doe_hlsl_emit(&f->source, f->module, 0u, output, sizeof(output), &result) == DOE_COMPILER_UNSUPPORTED);
+    assert(doe_hlsl_emit(&f->source, f->module, 0u, f->scratch, output, sizeof(output), &result) == DOE_COMPILER_UNSUPPORTED);
     assert(strcmp(output, "intact") == 0);
     f->module->entry_inputs[0].kind = INPUT_SUBGROUP_ID;
-    assert(doe_hlsl_emit(&f->source, f->module, 0u, output, sizeof(output), &result) == DOE_COMPILER_UNSUPPORTED);
+    assert(doe_hlsl_emit(&f->source, f->module, 0u, f->scratch, output, sizeof(output), &result) == DOE_COMPILER_UNSUPPORTED);
     release(f);
 }
 static void test_subgroups(void) {
@@ -333,7 +357,7 @@ static void test_subgroups(void) {
     for (size_t i = 0u; i < sizeof(intrinsics) / sizeof(intrinsics[0]); ++i) has(text, intrinsics[i]);
     assert(strstr(text, "subgroupAdd(") == NULL);
     DoeHlslResult result;
-    assert(doe_hlsl_emit(&f->source, f->module, 0u, NULL, 0u, &result) == DOE_COMPILER_OK);
+    assert(doe_hlsl_emit(&f->source, f->module, 0u, f->scratch, NULL, 0u, &result) == DOE_COMPILER_OK);
     assert(result.uses_subgroups);
     for (uint32_t i = 0u; i < f->module->instruction_count; ++i) {
         if (f->module->instructions[i].opcode == IR_BUILTIN) {
@@ -342,7 +366,7 @@ static void test_subgroups(void) {
         }
     }
     char untouched[8] = "intact";
-    assert(doe_hlsl_emit(&f->source, f->module, 0u, untouched, sizeof(untouched), &result) == DOE_COMPILER_UNSUPPORTED);
+    assert(doe_hlsl_emit(&f->source, f->module, 0u, f->scratch, untouched, sizeof(untouched), &result) == DOE_COMPILER_UNSUPPORTED);
     assert(strcmp(untouched, "intact") == 0 && result.written_bytes == 0u);
     free(text);
     release(f);
@@ -355,7 +379,7 @@ static void test_graphics_stage_rejection(void) {
             (stage == 0u ? FUNCTION_VERTEX : FUNCTION_FRAGMENT);
         char untouched[8] = "intact";
         DoeHlslResult result;
-        assert(doe_hlsl_emit(&f->source, f->module, 0u, untouched,
+        assert(doe_hlsl_emit(&f->source, f->module, 0u, f->scratch, untouched,
                             sizeof(untouched), &result) == DOE_COMPILER_UNSUPPORTED);
         assert(result.required_bytes == 0u && result.written_bytes == 0u);
         assert(strcmp(untouched, "intact") == 0);
@@ -383,6 +407,7 @@ int main(int argc, char **argv) {
     test_graphics_stage_rejection();
     test_subgroup_inputs();
     test_subgroups();
+    test_shared_call_dag();
     test_helper_closure();
     test_residual();
     test_layout();

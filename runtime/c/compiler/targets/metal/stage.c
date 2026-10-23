@@ -24,11 +24,7 @@ bool metal_entry_sizes(const CompilerWorkspace *c, const EntryRecord *entry) {
     return false;
 }
 bool metal_function_used(MetalEmitter *e, uint32_t wanted) {
-    const char *error = NULL;
-    const bool used = target_function_reachable(e->module, e->selected_entry, wanted,
-        &e->traversal_left, &error);
-    if (error != NULL) metal_error(e, error);
-    return used;
+    return target_function_used(&e->closure, wanted);
 }
 bool metal_selected_resource(MetalEmitter *e, uint32_t resource) {
     for (uint32_t i = 0u; i < e->module->entry_count; ++i) {

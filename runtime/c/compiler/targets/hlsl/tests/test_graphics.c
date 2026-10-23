@@ -51,7 +51,7 @@ static void test_invariant_rejection(void) {
     Fixture *f = prepare_graphics(target_invariant_vertex);
     DoeHlslResult result;
     char untouched[8] = "intact";
-    assert(doe_hlsl_emit(&f->source, f->module, 0u, untouched, sizeof(untouched), &result) ==
+    assert(doe_hlsl_emit(&f->source, f->module, 0u, f->scratch, untouched, sizeof(untouched), &result) ==
         DOE_COMPILER_UNSUPPORTED);
     assert(result.written_bytes == 0u && result.required_bytes == 0u);
     assert(strcmp(untouched, "intact") == 0);

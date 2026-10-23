@@ -2,10 +2,11 @@
  * Copyright (c) 2026 Doe contributors */
 #ifndef DOE_COMPILER_TARGET_HLSL_H
 #define DOE_COMPILER_TARGET_HLSL_H
-#include "../../src/internal.h"
+#include "../scratch.h"
 
 /* Private, allocation-free adapter over borrowed validated module IR. The source,
- * module, result and output must not overlap or change during the call. Output is
+ * module, scratch, result and output must not overlap or change during the call. Output is
+ * Scratch is caller-owned and sized by doe_target_scratch_bytes. Output is
  * an exact byte span, not NUL terminated. NULL/zero measures; failure leaves output
  * bytes alone. selected_entry chooses one entry. NO_ID produces an entry bundle:
  * compile with DOE_HLSL_ENTRY set to the entry index, not all sections together.
@@ -20,6 +21,6 @@ typedef struct {
     uint32_t entry_count;
     bool needs_dispatch_info, uses_subgroups;
 } DoeHlslResult;
-DoeCompilerStatus doe_hlsl_emit(Source *, const CompilerWorkspace *, uint32_t selected_entry,
+DoeCompilerStatus doe_hlsl_emit(Source *, const CompilerWorkspace *, uint32_t selected_entry, DoeTargetScratch scratch,
                                 char *output, size_t capacity, DoeHlslResult *result);
 #endif

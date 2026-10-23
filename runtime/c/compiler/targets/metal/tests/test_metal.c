@@ -4,6 +4,26 @@
 #include "../../tests/array_length_source.h"
 #include "../../tests/closure_source.h"
 
+static void test_shared_call_dag(void) {
+    char source[2048];
+    assert(target_dag_source(source, sizeof(source)));
+    Fixture *f = prepare(source);
+    char *text = emit(f, 0u);
+    has(text, "doe_fn24(");
+    assert(strstr(text, "doe_fn25(") == NULL); /* unrelated function */
+    free(text);
+    DoeMetalResult result;
+    unsigned char untouched[16];
+    memset(untouched, 0xa5, sizeof(untouched));
+    DoeTargetScratch short_scratch = f->scratch;
+    --short_scratch.capacity;
+    assert(doe_metal_emit(&f->source, f->module, 0u, short_scratch,
+        (char *)untouched, sizeof(untouched), &result) == DOE_COMPILER_INPUT_ERROR);
+    for (size_t i = 0u; i < sizeof(untouched); ++i) assert(untouched[i] == 0xa5u);
+    text = emit(f, 0u); /* failure permits scratch reuse without reset */
+    free(text);
+    release(f);
+}
 static void test_helper_closure(void) {
     Fixture *f = prepare(target_closure_source);
     char *text = emit(f, 0u);
@@ -113,7 +133,7 @@ static void test_entries_and_rejection(void) {
     char untouched[32];
     memset(untouched, 0x5a, sizeof(untouched));
     DoeMetalResult result;
-    assert(doe_metal_emit(&f->source, f->module, 1u, untouched, sizeof(untouched), &result) == DOE_COMPILER_UNSUPPORTED);
+    assert(doe_metal_emit(&f->source, f->module, 1u, f->scratch, untouched, sizeof(untouched), &result) == DOE_COMPILER_UNSUPPORTED);
     assert(result.required_bytes == 0u && result.written_bytes == 0u && untouched[0] == 0x5a);
     has(f->diagnostic.message, "valid sized resource root");
     release(f);
@@ -148,7 +168,7 @@ static void test_control_and_host_fixture(const char *output_path) {
     char untouched[32];
     memset(untouched, 0x5a, sizeof(untouched));
     DoeMetalResult result;
-    assert(doe_metal_emit(&f->source, f->module, NO_ID, untouched, sizeof(untouched), &result) == DOE_COMPILER_UNSUPPORTED);
+    assert(doe_metal_emit(&f->source, f->module, NO_ID, f->scratch, untouched, sizeof(untouched), &result) == DOE_COMPILER_UNSUPPORTED);
     assert(untouched[0] == 0x5a && result.written_bytes == 0u);
     free(text);
     release(f);
@@ -200,7 +220,7 @@ static void test_unimplemented_subgroups(void) {
         char untouched[64];
         memset(untouched, 0x5a, sizeof(untouched));
         DoeMetalResult result;
-        const DoeCompilerStatus status = doe_metal_emit(&f->source, f->module, NO_ID,
+        const DoeCompilerStatus status = doe_metal_emit(&f->source, f->module, NO_ID, f->scratch,
                                                        untouched, sizeof(untouched), &result);
         if (status != DOE_COMPILER_UNSUPPORTED)
             fprintf(stderr, "subgroup rejection %zu returned %d: %s\n", i, (int)status, f->diagnostic.message);
@@ -231,6 +251,7 @@ int main(int argc, char **argv) {
     assert(!doe_metal_binding_slot(0u, 16u, &slot));
     assert(!doe_metal_binding_slot(UINT32_MAX, UINT32_MAX, &slot));
     test_unimplemented_subgroups();
+    test_shared_call_dag();
     test_helper_closure();
     test_residual();
     test_layout();

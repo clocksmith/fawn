@@ -77,6 +77,12 @@ static void emit_module(MetalEmitter *e) {
         e->module->member_count + e->module->instruction_count + e->module->function_count + 1u);
     e->handle_work_left = 4096u * ((uint64_t)e->module->instruction_count +
         e->module->function_count + e->module->resource_count + 1u);
+    const char *closure_error = NULL;
+    if (!target_closure_build(e->module, e->selected_entry, &e->closure,
+            &e->traversal_left, &closure_error)) {
+        metal_error(e, closure_error);
+        return;
+    }
     metal_text(e, "#include <metal_stdlib>\nusing namespace metal;\n");
     metal_types(e);
     metal_memory_helpers(e);
@@ -85,7 +91,7 @@ static void emit_module(MetalEmitter *e) {
     metal_functions(e);
 }
 DoeCompilerStatus doe_metal_emit(Source *source, const CompilerWorkspace *module,
-                                 uint32_t selected_entry, char *output,
+                                 uint32_t selected_entry, DoeTargetScratch scratch, char *output,
                                  size_t capacity, DoeMetalResult *result) {
     const int saved_errno = errno;
     if (source == NULL || source->diagnostic == NULL || module == NULL || result == NULL) {
@@ -100,7 +106,13 @@ DoeCompilerStatus doe_metal_emit(Source *source, const CompilerWorkspace *module
         errno = saved_errno;
         return DOE_COMPILER_INPUT_ERROR;
     }
-    MetalEmitter measure = {.source = source, .module = module, .selected_entry = selected_entry};
+    TargetClosure closure;
+    if (!target_closure_bind(module, scratch, &closure)) {
+        (void)source_error(source, DOE_COMPILER_INPUT_ERROR, 0u, "invalid target closure scratch span");
+        errno = saved_errno;
+        return DOE_COMPILER_INPUT_ERROR;
+    }
+    MetalEmitter measure = {.source = source, .closure = closure, .module = module, .selected_entry = selected_entry};
     emit_module(&measure);
     if (measure.failed) {
         errno = saved_errno;
@@ -120,7 +132,7 @@ DoeCompilerStatus doe_metal_emit(Source *source, const CompilerWorkspace *module
         return DOE_COMPILER_OUTPUT_TOO_SMALL;
     }
     MetalEmitter writer = {.source = source, .module = module, .output = output,
-        .capacity = capacity, .selected_entry = selected_entry};
+        .capacity = capacity, .selected_entry = selected_entry, .closure = closure};
     emit_module(&writer);
     if (!writer.failed) result->written_bytes = writer.position;
     errno = saved_errno;

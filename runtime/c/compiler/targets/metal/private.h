@@ -3,8 +3,10 @@
 #ifndef DOE_METAL_PRIVATE_H
 #define DOE_METAL_PRIVATE_H
 #include "metal.h"
+#include "../closure.h"
 typedef struct {
     Source *source;
+    TargetClosure closure;
     const CompilerWorkspace *module;
     char *output;
     size_t capacity, position;

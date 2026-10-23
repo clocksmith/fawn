@@ -124,6 +124,7 @@ static void subgroup_expression(HlslEmitter *e, const IrInstruction *ir, Numeric
             inclusive = true;
             product = true;
             break;
+        case BUILTIN_TRANSPOSE: case BUILTIN_DETERMINANT:
         case BUILTIN_MIN: case BUILTIN_MAX: case BUILTIN_CLAMP: case BUILTIN_EXP:
         case BUILTIN_TANH: case BUILTIN_SQRT: case BUILTIN_DOT: case BUILTIN_LENGTH:
         case BUILTIN_DISTANCE: case BUILTIN_NORMALIZE: case BUILTIN_CROSS:
@@ -225,6 +226,7 @@ static void builtin_expression(HlslEmitter *e, const IrInstruction *ir) {
         case BUILTIN_DISTANCE: intrinsic = "distance"; break;
         case BUILTIN_NORMALIZE: intrinsic = "normalize"; break;
         case BUILTIN_CROSS: intrinsic = "cross"; break;
+        case BUILTIN_TRANSPOSE: case BUILTIN_DETERMINANT:
         case BUILTIN_MIN: case BUILTIN_MAX: case BUILTIN_CLAMP:
         case BUILTIN_SUBGROUP_ADD: case BUILTIN_SUBGROUP_MIN: case BUILTIN_SUBGROUP_MAX:
         case BUILTIN_SUBGROUP_MUL: case BUILTIN_SUBGROUP_AND: case BUILTIN_SUBGROUP_OR:

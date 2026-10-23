@@ -37,7 +37,7 @@ static void sampled_helpers(void) {
     }
     DoeHlslResult result;
     char untouched[8] = "intact";
-    assert(doe_hlsl_emit(&f->source, f->module, 0u, untouched, sizeof(untouched), &result) == DOE_COMPILER_UNSUPPORTED);
+    assert(doe_hlsl_emit(&f->source, f->module, 0u, f->scratch, untouched, sizeof(untouched), &result) == DOE_COMPILER_UNSUPPORTED);
     assert(strcmp(untouched, "intact") == 0 && result.written_bytes == 0u);
     free(text);
     release(f);
