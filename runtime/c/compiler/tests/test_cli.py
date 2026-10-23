@@ -63,7 +63,8 @@ def float_bits(value: float) -> int:
 
 def execute(instructions: list[Instruction], memory: dict[Descriptor, list[int]],
             invocation: int | tuple[int, int, int],
-            uniforms: dict[Descriptor, bytes] | None = None) -> None:
+            uniforms: dict[Descriptor, bytes] | None = None,
+            inputs: dict[int, int | tuple[int, int, int]] | None = None) -> None:
     """Execute actual instructions, asserting bounds at pointer and load/store use."""
     values: dict[int, int | tuple] = {}
     labels: dict[int, int] = {}
@@ -74,6 +75,8 @@ def execute(instructions: list[Instruction], memory: dict[Descriptor, list[int]]
     members: dict[int, tuple[int, ...]] = {}
     offsets: dict[tuple[int, int], int] = {}
     uniforms = {} if uniforms is None else uniforms
+    inputs = ({28: (invocation, 0, 0) if isinstance(invocation, int) else invocation}
+              if inputs is None else inputs)
     entry = None
     body_start = None
     for pc, (op, args) in enumerate(instructions):
@@ -102,7 +105,7 @@ def execute(instructions: list[Instruction], memory: dict[Descriptor, list[int]]
     assert entry is not None and body_start is not None
     for ident, storage, pointer_type in variables:
         if storage == 1:
-            values[ident] = ("input",)
+            values[ident] = ("input", decorations[ident][11])
         elif storage == 12:
             descriptor = (decorations[ident][34], decorations[ident][33])
             assert descriptor in memory
@@ -128,9 +131,8 @@ def execute(instructions: list[Instruction], memory: dict[Descriptor, list[int]]
             continue
         elif op == 61:
             pointer = values[args[2]]
-            if pointer == ("input",):
-                values[args[1]] = ((invocation, 0, 0) if isinstance(invocation, int)
-                                   else invocation)
+            if pointer[0] == "input":
+                values[args[1]] = inputs[pointer[1]]
             elif pointer[0] == "member":
                 values[args[1]] = struct.unpack_from("<I", uniforms[pointer[1]], pointer[2])[0]
             else:

@@ -1,6 +1,6 @@
 # Experimental standalone C compiler
 
-This is the experimental compiler of the isolated [C migration](../../../docs/c-migration/MIGRATION.md), not a production compiler replacement. The frozen [first milestone](MILESTONE_1.md), [structured neighbor-sum extension](MILESTONE_2.md), [scalar-expression/local extension](MILESTONE_4.md) and [flat uniform/workspace extension](MILESTONE_5.md) own the exact admitted language. The [existing emitter-consumer integration](MILESTONE_3.md) owns optional CLI reflection; the [versioned header](include/doe_compiler.h) owns the unchanged ABI. Production Zig and its consumers are unchanged.
+This is the experimental compiler of the isolated [C migration](../../../docs/c-migration/MIGRATION.md), not a production compiler replacement. The frozen [first milestone](MILESTONE_1.md), [structured neighbor-sum extension](MILESTONE_2.md), [scalar-expression/local extension](MILESTONE_4.md), [flat uniform/workspace extension](MILESTONE_5.md) and [unified scalar/compute-input extension](MILESTONE_6.md) own the exact admitted language. The [existing emitter-consumer integration](MILESTONE_3.md) owns optional CLI reflection; the [versioned header](include/doe_compiler.h) owns the unchanged ABI. Production Zig and its consumers are unchanged.
 
 ## Build and consume
 
@@ -48,19 +48,20 @@ alignment or NULL returns INPUT_ERROR at offset zero without workspace access.
 Other admitted failures preserve words and zero result count/reflection. A
 workspace is reusable after every result, including failure.
 
-Measured on GCC 14.2.0, Linux x86-64, `-O2`: workspace 96,208 bytes, alignment 8;
-Syntax 47,024; token phase 49,184; typed IR 22,880; target scratch 16,392. Syntax
-lives throughout the job. Tokens share a typed union with the combined IR/target
-phase because no token pointer survives parsing. The ABI1 static frame is 96,272
-bytes, down from M4's 105,328, with no heap substitution. The shared core frame is
-80 bytes and the v2 wrapper is 64. Expression/primary parser frames are each 912
-bytes, at most 16 valid expression levels plus one rejecting level; parentheses
-retain a primary frame around recursive expression parsing. Expression lowering
-is 176 bytes per level (at most 16), structured parsing/lowering/emission is
-80/368/160 bytes with four nested if levels plus entry, and validation/emission
-entry frames are 1,552/1,984 bytes. Lowering frames are bounded dynamic frames
-including call arguments. These are individual frames, not combined observed
-stack high-water marks; CLI input/output ownership is separate.
+Measured on GCC 14.2.0, Linux x86-64, `-O2`: workspace 77,760 bytes, alignment 8;
+Syntax 28,576; expression 40; token phase 49,184; typed IR 23,216; target scratch
+16,392. Syntax survives throughout the call. Tokens share a typed union with the
+combined IR/target phase; source-name offsets/lengths, not token pointers, survive
+parsing. ABI1's static frame is 77,824 bytes, without heap substitution. The shared
+core frame is 80 bytes and v2 wrapper 64. The expression parser frame is 160 bytes
+(primary is inlined), with at most 18 accepted levels plus one rejecting call.
+Expression lowering is 272 bytes per level, with an additional 64-byte unsigned
+context helper around nested storage indices. Structured parsing/lowering/emission
+frames are 80/352/160 bytes with four nested if levels plus entry; validation and
+emission entry frames are 1,536/2,016 bytes. CLI caller frame is 107,728 bytes,
+reported separately. These individual bounded/static frame measurements are not
+combined observed stack high-water marks. Current workspace and stack bounds
+protect this increment, not a permanent full-compiler no-allocation design.
 
 ABI1 remains unchanged: 88-byte binding, 784-byte reflection, 216-byte diagnostic,
 1,008-byte result and 4-byte enums. V2 has 80-byte members, 716-byte structs,
@@ -89,14 +90,14 @@ make sanitize-uniform
 build/native_consumer_v2 ../../../bench/kernels/package_vector_scale_add.wgsl
 ```
 
-The new grammar is generic flat one-to-eight u32/f32 members, up to eight declared
-structs and one-to-eight combined storage/uniform resources. Struct/resource
+The grammar includes generic flat one-to-eight u32/f32 members, up to eight
+declared structs and zero-to-eight combined storage/uniform resources. Struct/resource
 order and shared types do not affect identity or resolution. The retained single
 module u32 constant still appears before all struct/resource declarations; this
 increment does not expand its placement. Scalar member loads work in expressions;
-u32 members additionally work as index bases and either condition operand.
-Indices retain only one literal/module-constant +/- offset; nonmember condition
-RHS remains literal/module-constant only. All declared members, including unused
+u32 members additionally work anywhere in storage indices and either unsigned
+comparison operand. All scalar contexts use the same +, -, *, max expression
+grammar, including nested storage loads; indices and comparisons require u32. All declared members, including unused
 padding-like names, have their real typed offsets. V2 reflection includes all
 structs and resources in declaration order, not entrypoint liveness.
 
@@ -109,6 +110,35 @@ host/dispatch failure, never compiler zero-fill. Descriptor-offset alignment,
 usage/ranges/lifetimes and device limits remain runtime preconditions. Storage
 bounds remain independent per-access OOB-load-zero/OOB-store-discard checks;
 logical zero-element oracle buffers are not physical zero-byte binding claims.
+
+## Scalar contexts and compute entry interface
+
+The same bounded scalar tree handles RHS values, immutable lets, all load/store
+indices and both sides of unsigned comparisons. Each nested access has its own
+per-binding guard. An OOB token load returns zero, which can validly select an
+outer buffer element; wrapping index arithmetic happens before that outer guard.
+No invalid flag suppresses valid outer accesses or stores. Loops, helpers, mutable
+locals, casts, new operators and vector-valued expressions remain unsupported.
+
+A single compute entry accepts zero to five unique builtin parameters, in any
+order and with arbitrary legal names. global_invocation_id, local_invocation_id,
+workgroup_id and num_workgroups use vec3u or vec3<u32> and scalar x/y/z reads;
+local_invocation_index uses u32 directly. Parameters can shadow module values,
+but ordinary new lets cannot shadow visible user declarations. Only the exact
+leading `let NAME = GLOBAL_PARAMETER.x;` retains legacy zero-node/statement alias
+accounting; other components, parentheses, annotations and later lets count.
+Empty bodies and zero resources/inputs admit valid no-op compute modules. Every
+declared input is included in the entry interface and no undeclared input is
+invented. Workgroup size accepts one, two or three 1..256 dimensions and an
+optional trailing comma; missing dimensions default to one and product must not
+exceed 256. This compiler bound is not physical device-limit qualification.
+
+The unchanged gather, copy_buffer and four no-op witnesses exercise this owner.
+The no-op filenames do not prove texture or draw execution. `make test-compute`
+executes actual emitted opcodes and explicitly validates Vulkan 1.1 modules;
+`make sanitize-compute` instruments new native API grammar/reuse/guard tests.
+Legal whole-dispatch tests use coherent builtin tuples and race-free writes;
+arbitrary uint32 edge injections are separate synthetic tests, not GPU evidence.
 
 ## Owner map
 
@@ -123,7 +153,7 @@ logical zero-element oracle buffers are not physical zero-byte binding claims.
 - `cli.c`: input/workspace/result ownership, explicit little-endian serialization and no-clobber artifact publication.
 - `cli_json.c`: checked legacy/v2 JSON serialization, separate from file ownership.
 
-The IR carries invocation-x, typed fixed-index uniform loads, robust storage loads/stores, typed constants, scalar addition/subtraction/multiplication/max, unsigned comparisons, structured if/else boundaries and return. Immutable scoped locals retain typed value IDs evaluated once at declaration; they add no host-side interpretation or mutable target state. Its bounded value IDs do not retain source spellings. Index arithmetic wraps modulo 2^32 before the resource-specific guard. Statements execute in source order, and an early return is independent of whether a preceding store was in bounds. Only live arms branch to a merge; a both-arms-return merge has `OpUnreachable`. Untaken arms never form resource pointers or perform resource side effects. Every load branches on its own binding's runtime-array length, forms its element pointer only in the guarded block, and merges the loaded value with a typed zero using `OpPhi`. The store independently checks the destination's own length. No combined minimum-length guard skips valid output elements when an input is short or empty. Separate declarations remain separate descriptor variables, including unused declared resources reflected in declaration order.
+The IR carries semantic compute-input scalar/component reads, typed fixed-index uniform loads, robust storage loads/stores, typed constants, scalar addition/subtraction/multiplication/max, unsigned comparisons, structured if/else boundaries and return. Immutable scoped locals retain typed value IDs evaluated once at declaration; they add no host-side interpretation or mutable target state. Its bounded value IDs do not retain source spellings. Index arithmetic wraps modulo 2^32 before the resource-specific guard. Statements execute in source order, and an early return is independent of whether a preceding store was in bounds. Only live arms branch to a merge; a both-arms-return merge has `OpUnreachable`. Untaken arms never form resource pointers or perform resource side effects. Every load branches on its own binding's runtime-array length, forms its element pointer only in the guarded block, and merges the loaded value with a typed zero using `OpPhi`. The store independently checks the destination's own length. No combined minimum-length guard skips valid output elements when an input is short or empty. Separate declarations remain separate descriptor variables, including unused declared resources reflected in declaration order.
 
 ## Verification boundary
 

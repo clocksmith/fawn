@@ -178,8 +178,7 @@ class TestScalarExpressions(CompilerFixture):
             "if(gid.x==0u){let x=2u;}else{out[0u]=x;}",
             "let max=1u;out[0u]=max(1u,2u);", "let max=gid.x;out[0u]=max(1u,2u);",
             "let u32=1u;let x:u32=2u;", "let lane=gid.x;let lane=2u;",
-            "let u32=gid.x;let x:u32=1u;", "let offset=1u;out[gid.x+offset]=1u;",
-            "let rhs=1u;if(gid.x==rhs){}", "let x:f32=1u;", "let x:u32=1.0;",
+            "let u32=gid.x;let x:u32=1u;", "let x:f32=1u;", "let x:u32=1.0;",
             "return;let x=missing;", "let x=1.0;out[x]=1u;",
         ):
             with self.subTest(body=body):
@@ -223,21 +222,22 @@ class TestScalarExpressions(CompilerFixture):
                 self.assertEqual(memory[(0, 1)], [nearest_binary32(literal)])
 
     def test_exact_expression_and_statement_limits(self) -> None:
-        for depth in (15, 16):
+        for depth in (15, 16, 17, 18):
             body = "out[0u]=" + "(" * depth + "1u" + ")" * depth + ";"
-            if depth == 15:
+            if depth <= 17:
                 self.compile(HEADER + body + "}")
             else:
                 self.reject(body)
-        for terms in (16, 17):
+        for terms in (16, 17, 18, 19):
             body = "out[0u]=" + "+".join(["1u"] * terms) + ";"
-            if terms == 16:
+            if terms <= 18:
                 self.compile(HEADER + body + "}")
             else:
                 self.reject(body)
         expression = balanced_sum(32)
-        self.compile(HEADER + f"let a=1u;out[0u]={expression};}}")  # 64 nodes.
-        self.reject(f"let a=1u;let b=2u;out[0u]={expression};")  # 65 nodes.
+        # Retained old 64/65-node shapes now include an index node; both admit.
+        self.compile(HEADER + f"let a=1u;out[0u]={expression};}}")
+        self.compile(HEADER + f"let a=1u;let b=2u;out[0u]={expression};}}")
         self.compile(HEADER + "let lane=gid.x;" + "out[0u]=1u;" * 16 + "}")
         self.compile(HEADER + "let lane:u32=gid.x;" + "out[0u]=1u;" * 15 + "}")
         self.reject("let lane:u32=gid.x;" + "out[0u]=1u;" * 16)

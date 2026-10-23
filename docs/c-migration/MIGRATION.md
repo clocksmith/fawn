@@ -70,6 +70,17 @@ four unique sources, with 93 explicit rejections. The old API frame decreases to
 96,272 bytes; v2 caller workspace is 96,208 bytes, not eliminated memory. This
 remains standalone compiler coverage, not runtime adoption or production replacement.
 
+The [sixth increment](../../runtime/c/compiler/MILESTONE_6_RESULTS.md) unifies
+scalar expression parsing/lowering across indices and comparisons and admits the
+five compute input builtins, three-dimensional local sizes and no-op entries.
+Its [ledger](corpus-coverage-m6.json) records 11 paths / nine unique sources
+through the unchanged consumer, target validation and instruction execution;
+87 paths still reject. Workspace decreases to 77,760 bytes and ABI1 frame to
+77,824, without changing public headers. The
+[remaining-owner roadmap](COMPILER_ROADMAP.md) prioritizes scalable job storage,
+function state/control flow and the complete compiler dependency chain. It does
+not declare an accepted production replacement.
+
 ## Existing authority, not a parallel policy
 
 Owner paths and layer labels come from

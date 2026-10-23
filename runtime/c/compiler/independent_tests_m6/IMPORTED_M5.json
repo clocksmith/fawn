@@ -1,0 +1,110 @@
+[
+  {
+    "source": "legacy_named_fixtures.py",
+    "sha256": "df6b362a61d04fb1005de9216ca82a1b577260ed1eb07a6895567a4239fda607"
+  },
+  {
+    "source": "test_oracle_m4.py",
+    "sha256": "0d930945272df4f48b480433baa087fff346cc3917c41f2c9807d74efb8ec83c"
+  },
+  {
+    "source": "rational_oracle.py",
+    "sha256": "d74dfcce5376a4920cf51cfc8598f40fcd665466b873fc3287304357d812abaf"
+  },
+  {
+    "source": "fixtures.py",
+    "sha256": "97d2b9ee20934c9f92621be2c714b6bff4d3681a312f19c0216edadebb9b8558"
+  },
+  {
+    "source": "m4_fixtures.py",
+    "sha256": "9e00cd4f40392d2478e432c3853481166b871dd804347c8f7a780c8ec024b875"
+  },
+  {
+    "source": "all_fixtures.py",
+    "sha256": "c89636168779612398525abedfb526fc6c9994b9b426da8698425b4868b02f0c"
+  },
+  {
+    "source": "semantic_checks.py",
+    "sha256": "fc8e574c10a6729546e084cfdaa3e6fd27dd6aae2d034d49559efe9b13234d9f"
+  },
+  {
+    "source": "native_m5.c",
+    "sha256": "23f160eedc6b9651a09ede985188bbbea575e1b127af894204df697d77d951c4"
+  },
+  {
+    "source": "uniform_oracle_m5.py",
+    "sha256": "3a48ec0a75e386bee6cd52a83c13d6679382d671391450da2a840d680fa19f68"
+  },
+  {
+    "source": "semantic_m5.py",
+    "sha256": "a2773acab26d5767ebf3ea6e2e35837c71e90c212ef18e537524716ddd9758b4"
+  },
+  {
+    "source": "semantic_checks_m1.py",
+    "sha256": "b30937b4a5d73d9725cdccb9752e01fb94ba7b1ce88749e9c8fc1933e74fb2d1"
+  },
+  {
+    "source": "legacy_fixtures.py",
+    "sha256": "0ee7763cfe7ee5106008eae4e9f72f86c814502590f46e964c168b5473f6807b"
+  },
+  {
+    "source": "typed_oracle.py",
+    "sha256": "cea802c8e2ecb891eec39333af8b51f612c1b40f31820347828e295e4ba59773"
+  },
+  {
+    "source": "api_m5.py",
+    "sha256": "9aa61a745964518bca548a3a4f4674e5784fd29930f3f2c92f9c909f7bb29ae3"
+  },
+  {
+    "source": "native_layout_m5.cpp",
+    "sha256": "203a62b2c38c6d24b0ff2996926d847f33740c2149458ba96ddea05c3aa366ec"
+  },
+  {
+    "source": "evaluate.py",
+    "sha256": "bce10517cb59dcd905959639cb90f12e187cad54b8e5df2ca9c0e6eef0b90cc0"
+  },
+  {
+    "source": "fixtures_m1.py",
+    "sha256": "aafa54cbad2991cb4515538e13b9f9af1abf7ac62ab6a15f51afc8bf5cbc6fc4"
+  },
+  {
+    "source": "fixtures_m5.py",
+    "sha256": "f209febcd0ecac9b19b7ca5123237f1d954c0f4dccc3d699de87939c4aadfba9"
+  },
+  {
+    "source": "cli_m5.py",
+    "sha256": "f942deabcb18ca650e815b090eafded739f964d8215313bb0b5de93d2bd66791"
+  },
+  {
+    "source": "spirv_oracle_base.py",
+    "sha256": "019247bcc7691669d19fa1997456f9bb7963c9b10fdd21cd1d1a8225cc2975c6"
+  },
+  {
+    "source": "m2_fixtures.py",
+    "sha256": "c59dc1c423ac0900e48956acc9a048b5e2b98cbe96c2781d92b5d5f31dec4cfe"
+  },
+  {
+    "source": "cli_io_wrap_m5.c",
+    "sha256": "90c012a3a39924b74ce3ac4f256dfcd3f0d1f99faac502e471f2727413e1a904"
+  },
+  {
+    "source": "native_stage_m5.py",
+    "sha256": "dd2232cf54cc14d2e84738bf40dbc474ba750f6ff23a9502f180a48114d32c2d"
+  },
+  {
+    "source": "LICENSE",
+    "sha256": "66ccf82f3056418261f3a501d5ad03f156655171980c6d51a25a46495353c4d3"
+  },
+  {
+    "source": "native/retained/sanitizer_m4.c",
+    "sha256": "020e5fd7e7078253b8a4a81a9deef4f978fb9e8481bbce26f93d622b16dfaaed"
+  },
+  {
+    "source": "native/retained/consumer_m4.c",
+    "sha256": "3e06d6471184593434d26b1dfdacf61ba221f82c8becc389262ae6ccc23e1bf4"
+  },
+  {
+    "source": "native/inputs/package_vector_scale_add.wgsl",
+    "sha256": "8f2b3e2bb6955c1f7507936773589195c80e6a119cbd50d975f652d4f834e8c1"
+  }
+]

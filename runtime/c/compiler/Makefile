@@ -41,7 +41,7 @@ build/cpp_consumer: tests/cpp_consumer.cpp include/doe_compiler.h build/libdoe_c
 	$(CXX) $(CXXFLAGS) tests/cpp_consumer.cpp -Lbuild -ldoe_compiler -Wl,-rpath,'$$ORIGIN' -o $@
 build/interposition_consumer: tests/interposition_consumer.c include/doe_compiler.h build/libdoe_compiler.so | build/.ready
 	$(CC) $(CFLAGS) tests/interposition_consumer.c -Lbuild -ldoe_compiler -Wl,-rpath,'$$ORIGIN' -Wl,--export-dynamic -o $@
-test: all test-uniform test-cli-modes build/interposition_consumer build/test_api build/test_boundaries build/test_constants build/test_control_api build/test_expression_api build/native_consumer build/test_layout build/cpp_consumer
+test: all test-compute test-uniform test-cli-modes build/interposition_consumer build/test_api build/test_boundaries build/test_constants build/test_control_api build/test_expression_api build/native_consumer build/test_layout build/cpp_consumer
 	build/test_api
 	build/test_boundaries
 	build/test_constants
@@ -91,3 +91,18 @@ build/native_consumer_v2: tests/native_consumer_v2.c include/doe_compiler_v2.h b
 	$(CC) $(CFLAGS) tests/native_consumer_v2.c -Lbuild -ldoe_compiler -Wl,-rpath,'$$ORIGIN' -o $@
 build/test_layout_v2: tests/test_layout_v2.c include/doe_compiler_v2.h | build/.ready
 	$(CC) $(CFLAGS) tests/test_layout_v2.c -o $@
+
+.PHONY: test-compute
+test-compute: all build/test_compute_api
+	build/test_compute_api
+	cd ../../.. && SPIRV_VAL="$(SPIRV_VAL)" python3 -m unittest runtime.c.compiler.tests.test_compute
+
+build/test_compute_api: $(LIB_SOURCES) tests/test_compute_api.c $(HEADERS) | build/.ready
+	$(CC) $(CFLAGS) -pthread $(LIB_SOURCES) tests/test_compute_api.c -o $@
+.PHONY: sanitize-compute
+sanitize-compute: | build/.ready
+	$(CC) $(CFLAGS) -O1 -g -fno-omit-frame-pointer -fsanitize=address,undefined -pthread $(LIB_SOURCES) tests/test_compute_api.c -o build/test_compute_api_sanitize
+	ASAN_OPTIONS=detect_leaks=0:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1 build/test_compute_api_sanitize
+
+	$(CC) $(CFLAGS) -O1 -g -fno-omit-frame-pointer -fsanitize=address,undefined $(LIB_SOURCES) src/cli.c src/cli_json.c -o build/doe-compiler-c-compute-sanitize
+	cd ../../.. && ASAN_OPTIONS=detect_leaks=0:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1 DOE_COMPILER_CLI="$(CURDIR)/build/doe-compiler-c-compute-sanitize" SPIRV_VAL="$(SPIRV_VAL)" python3 -m unittest runtime.c.compiler.tests.test_compute

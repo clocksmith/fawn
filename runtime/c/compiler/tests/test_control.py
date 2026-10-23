@@ -168,14 +168,13 @@ class TestControlFlow(CompilerFixture):
             execute(bad_unreachable, {(0, 0): [], (0, 1): [77]}, 0)
 
     def test_reject_outside_frozen_expansion(self) -> None:
-        invalid = ["", "{}", "else{}", "return 1u;", "return;missing[0u]=1u;",
-                   "return;out[0u]=MISSING;", "out[gid.y]=1u;", "out[(gid.x)]=1u;",
-                   "out[gid.x+1u+2u]=1u;", "out[gid.x+gid.x]=1u;", "out[0]=1u;",
+        invalid = ["{}", "else{}", "return 1u;", "return;missing[0u]=1u;",
+                   "return;out[0u]=MISSING;", "out[0]=1u;",
                    "out[1.0]=1u;", "out[0u]=src[0u]/1u;", "src[0u]=1u;",
                    "if(gid.x==0u){}else if(gid.x==1u){}", "if gid.x==0u {}",
                    "if(gid.x==0u)out[0u]=1u;", "if(gid.x==0u){var q=gid.x;}",
                    "if(gid.x= =0u){}", "if(gid.x! /*gap*/ =0u){}",
-                   "if(gid.x< =0u){}", "if(gid.x> =0u){}", "if(gid.x==gid.x){}",
+                   "if(gid.x< =0u){}", "if(gid.x> =0u){}",
                    "if(gid.x==0u&&gid.x<1u){}", "if(gid.x==0u){return;}else{src[0u]=1u;}",
                    "return;" * 17, "if(gid.x==0u){" * 5 + "}" * 5]
         for body in invalid:
