@@ -1,0 +1,4 @@
+ecf6212eaab5debbf4bcc89f8c0927dd8f2a816c3f75e1fdb96fc55c8c52563e  runtime/c/futures/CONTRACT.md
+64df7b659fa61de34c3f26a8a8762c70a41d3f35d301a54ffe11877f43ca3404  runtime/c/futures/include/doe_futures.h
+6d09a5cd83c0d3723ad4cff1a1e6ad8f86d158fe6bf25527f679053748603f50  runtime/c/futures/PROVENANCE.md
+be44acc738915f39412cfc4108f8204e31acbe59551fbc92c613d67d9ad59e92  runtime/zig/src/native/support/doe_future_ids.zig
