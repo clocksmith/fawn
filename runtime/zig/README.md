@@ -259,7 +259,14 @@ The native C submission entry point consumes each command buffer once, including
 every supplied buffer when the batch is rejected. Duplicate or previously
 submitted buffers fail validation before any commands execute. Retained resource
 ownership is unchanged; a fresh command buffer can submit after rejection.
-Reusable compute programs remain a separate explicit API.
+Reusable compute programs remain a separate explicit API:
+`doeNativeComputeProgramPrepareHostReplay(queue, commandBuffer)` claims a
+finished, never-submitted command buffer exactly as public submission would, and
+each `doeNativeComputeProgramSubmit` on that handle revalidates its retained
+resources and replays it through the backend submission path on Vulkan, Metal or
+D3D12 without consuming it again (the C provider's host-replay contract,
+`runtime/c/native/include/doe_native_programs.h`). Handles from
+`doeNativeComputeProgramPrepare` stay GPU-recorded Vulkan programs.
 
 `tests/d3d12_command_consumption.c` checks duplicate and repeated submission on
 physical D3D12 with exact unchanged readback and fresh-command recovery. Build it

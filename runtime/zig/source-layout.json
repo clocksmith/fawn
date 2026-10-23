@@ -3626,9 +3626,9 @@
       },
       "src/native/queue/doe_queue_submit_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "f2e11d29e176dac3cbf73e52899d2e65f903750b8d7fe968e8289dd3490f6952",
-        "reason": "Keep: native command submission consumes each command buffer once, including rejected batches, while shared availability admission prevents partial execution. Object state, validation and backend dispatch retain their existing owners; no new replay API.",
-        "reviewer": "codex-bee-doe/2026-10-21"
+        "moduleSha256": "7e1e096152195eaa1e24c179d29a184373928b3bcd6f7518807976636dbb7ecb",
+        "reason": "Keep: native queue submission ABI boundary; public submission consumes command buffers once, and claimed host-replay programs share its revalidation and backend dispatch without consumption.",
+        "reviewer": "doe-c-claude-surface/2026-10-23"
       },
       "src/native/queue/doe_queue_submit_shared.zig": {
         "decision": "Keep",
@@ -4250,9 +4250,9 @@
       },
       "src/native/compute/doe_compute_program_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "08fb99c39eefec2d63c9e0eccd618df1fb7306f5af1ec46f0d9a87bf5c8ba6f5",
-        "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission.",
-        "reviewer": "codex"
+        "moduleSha256": "ce55fc77848665a55d7ccfd916c939d66d750b6e362122076104994cb2545294",
+        "reason": "Keep: native compute-program extension ABI; tagged handles distinguish GPU-recorded programs from host-replay programs that claim one command buffer and replay it every submit.",
+        "reviewer": "doe-c-claude-surface/2026-10-23"
       },
       "src/backend/vulkan/vk_shared_pipeline.zig": {
         "decision": "Keep",

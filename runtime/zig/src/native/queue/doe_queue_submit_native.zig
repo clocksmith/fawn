@@ -15,6 +15,7 @@ const availability = @import("doe_submission_validation.zig");
 comptime {
     _ = &compute_program.doeNativeComputeProgramSupported;
     _ = &compute_program.doeNativeComputeProgramPrepare;
+    _ = &compute_program.doeNativeComputeProgramPrepareHostReplay;
     _ = &compute_program.doeNativeComputeProgramSubmit;
     _ = &compute_program.doeNativeComputeProgramRelease;
 }
@@ -45,6 +46,26 @@ pub export fn doeNativeQueueSubmit(
         return;
     };
     if (!q.dev.requireAlive()) return;
+    submitBackend(q, count, cmd_bufs);
+}
+
+/// Replays a command buffer that a host-replay compute program claimed: the
+/// retained references are revalidated and the commands go through the same
+/// backend submission as doeNativeQueueSubmit, without its single-use
+/// consumption, which the program already performed when it claimed them.
+/// False after delivering a validation error or for a destroyed device.
+pub fn submitClaimed(q: *DoeQueue, commands: *native_types.DoeCommandBuffer) bool {
+    if (!q.dev.requireAlive()) return false;
+    availability.validate(commands.references.items) catch |err| {
+        q.dev.error_scopes.deliver(@import("../../runtime/diagnostics/error_scope.zig").ERROR_TYPE_VALIDATION, availability.message(err));
+        return false;
+    };
+    const one = [_]?*anyopaque{native_helpers.toOpaque(commands)};
+    submitBackend(q, one.len, &one);
+    return true;
+}
+
+fn submitBackend(q: *DoeQueue, count: usize, cmd_bufs: [*]const ?*anyopaque) void {
     if (q.dev.backend == .vulkan) {
         vulkan_submit.submit_vulkan_commands(q, count, cmd_bufs);
         return;
