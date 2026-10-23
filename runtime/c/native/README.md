@@ -98,8 +98,18 @@ Apple SDK compilation, Darwin execution and physical qualification remain unrun.
   colors truncate and range-check before a defined C cast; ignored Load clears
   are not converted. Extra fragment outputs are ignored, while written targets,
   scalar/channel compatibility and source-alpha blending are checked.
-- Depth32Float, Depth24Plus, Stencil8 and Depth24PlusStencil8 support attachment-only
-  usage with actual depth tests/writes, stencil operations and read-only bundles.
+- Depth16Unorm, Depth32Float, Depth24Plus, Stencil8 and Depth24PlusStencil8 support
+  attachment and/or CopySrc/CopyDst usage with actual depth tests/writes, stencil
+  operations and read-only bundles. Texel copies follow the resource owner's
+  per-format/aspect rules: depth32float depth is a copy source only, depth16unorm
+  depth and every stencil aspect are source and destination, and depth24plus
+  depth (including the depth24plus-stencil8 depth aspect) never reaches a buffer.
+  Buffer copies and writeTexture select one aspect, copy the full subresource and
+  use 4-byte offsets (also for writeTexture, stricter than WebGPU's unaligned
+  writeTexture offset); texture-to-texture copies use all aspects. Linear bytes
+  are 4 (depth32), 2 (depth16) and 1 (stencil). Copy-only depth images are zeroed
+  per aspect by real uploads; attachments by real clears. Depth sampling/storage
+  are rejected.
   Plus formats use D32/D32S8 backing, not an implied optional public feature.
   The backend's sole per-aspect initialization owner clears undefined contents;
   depth/stencil Discard followed by Load reinitializes only missing aspects on GPU.
@@ -309,7 +319,7 @@ PointList target lowering, single-sample color Discard, dual-source blending,
 vertex or fragment storage writes and fragment FragDepth/SampleIndex/SampleMask
 remain explicitly rejected. WGSL discard requires actual enabled demote support;
 unsupported devices reject that pipeline. Blend constants must be finite f32.
-Texture format reinterpretation, depth copies/sampling/storage, multisampled
+Texture format reinterpretation, depth sampling/storage, multisampled
 sampling/copies/storage, cube arrays and anisotropic sampling are rejected.
 The baseline admits 18 named Vulkan
 color formats, subject to actual device usage/format capabilities. Device
@@ -360,6 +370,7 @@ is CPU; see the physical developer runs section for the GPU variant. Its ordinar
 result is:
 
 ```
+PASS public depth/stencil copies: rendered depth32float .25/.75 via DepthOnly/All readback and texture copy, depth16unorm rendered 0/65535, writeTexture and buffer upload plus texture copy, stencil8 upload then IncrementClamp, depth24plus-stencil8 stencil Replace and StencilOnly upload, depth24plus texture copy observed by depth test, 11 copy and 2 creation validation controls, early releases; exact 72 depth/stencil texels and 8 color pixels (CPU Vulkan only)
 PASS public indexed draws: uint16/uint32 indices, firstIndex, signed base vertex, instance selection, offset index ranges, pass/bundle replay, uint16/uint32 strip primitive restart, 9 GPU-produced drawIndexedIndirect records with exact-end/out-of-range/wrapping/zero/firstInstance/instance-overrun guards, unchanged arguments, 13 typed validation controls and early releases; exact 192 pixels (CPU Vulkan only)
 PASS public ABI9 atomics: storage accumulation, signed OOB suppression, compare-exchange result identity, fresh workgroup initialization across two groups and two dispatches, early releases (CPU Vulkan only)
 PASS public debug markers: typed procedures, independent nested balance, parent lock, underflow, malformed strings and finished/unbalanced command/pass/bundle rejection (CPU Vulkan only)
@@ -453,7 +464,7 @@ Do not run this on Miles or Suby while their possible disassembly/cooling hold
 remains. Every adapter-using client selects its adapter through
 `tests/adapter_class.h`: software (CPU fallback adapter) by default, or a
 nonfallback GPU adapter with `DOE_C_TEST_ADAPTER=physical`. Each PASS line names
-the class and device it ran on. `make check-physical` runs the same 19 clients on
+the class and device it ran on. `make check-physical` runs the same 22 clients on
 the system ICDs (`VK_ICD_FILENAMES` unset):
 
 ```
@@ -471,7 +482,9 @@ Jupiter); before this change a fallback request failed whenever a GPU enumerated
 On 2026-10-23 all 18 passed on Jupiter: AMD Radeon 8060S Graphics (RADV
 STRIX_HALO, vendor 0x1002 device 0x1586), Mesa 26.0.3-1ubuntu1 RADV, Vulkan 1.4.335,
 Linux 7.0.0-38. After indexed drawing was added, all 19 clients (including
-`indexed-render`) passed again on that same adapter/driver the same day. That is
+`indexed-render`) passed again on that same adapter/driver the same day, and after
+depth/stencil copies were added (with the WGSL language-feature and texture-binding
+view clients) all 22 (including `depth-copies`) passed. That is
 developer evidence for these exact clients on that
 adapter/driver: the oracles are the clients' own expected values, not frozen
 independent workloads, and it is not Vulkan backend qualification, a performance

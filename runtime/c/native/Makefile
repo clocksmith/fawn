@@ -52,6 +52,8 @@ $(BUILD)/indirect-render: tests/indirect_render.c tests/consumer.h tests/adapter
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
 $(BUILD)/indexed-render: tests/indexed_render.c tests/consumer.h tests/adapter_class.h $(NATIVE_LIBRARY)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
+$(BUILD)/depth-copies: tests/depth_copies.c tests/consumer.h tests/adapter_class.h $(NATIVE_LIBRARY)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
 $(BUILD)/indirect-compute: tests/indirect_compute.c tests/consumer.h tests/adapter_class.h $(OBJECTS) $(COMPILER_LIBRARY) | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) tests/indirect_compute.c $(OBJECTS) $(COMPILER_LINK) $(PLATFORM_LIBS) -Wl,--wrap=doe_vk_dispatch_validator_create -o $@
 $(BUILD)/compute: tests/compute.c tests/adapter_class.h $(NATIVE_LIBRARY)
@@ -108,10 +110,11 @@ $(BUILD)/lifecycle: tests/lifecycle.c tests/adapter_class.h $(OBJECTS) $(COMPILE
 $(BUILD)/procedures-cxx: tests/procedures.cpp $(NATIVE_LIBRARY)
 	$(CXX) $(CPPFLAGS) -std=c++17 -Wall -Wextra -Wpedantic -Werror $(SANITIZE) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
 ifeq ($(SHARED_PLATFORM),Linux)
-check: check-provider-pin $(BUILD)/draw-budget $(BUILD)/indirect-render $(BUILD)/indexed-render $(BUILD)/indirect-compute check-build-dependencies check-host-bridge $(BUILD)/atomics $(BUILD)/debug $(BUILD)/msaa $(BUILD)/depth $(BUILD)/demote $(BUILD)/graphics-admission $(BUILD)/empty-shader $(BUILD)/graphics $(BUILD)/compute $(BUILD)/procedures-cxx $(BUILD)/lifecycle $(BUILD)/textures $(BUILD)/admission $(BUILD)/failures $(BUILD)/timestamps $(BUILD)/recovery $(BUILD)/pending-progress $(BUILD)/wgsl-language-features $(BUILD)/texture-binding-view-dimension
+check: check-provider-pin $(BUILD)/draw-budget $(BUILD)/indirect-render $(BUILD)/indexed-render $(BUILD)/depth-copies $(BUILD)/indirect-compute check-build-dependencies check-host-bridge $(BUILD)/atomics $(BUILD)/debug $(BUILD)/msaa $(BUILD)/depth $(BUILD)/demote $(BUILD)/graphics-admission $(BUILD)/empty-shader $(BUILD)/graphics $(BUILD)/compute $(BUILD)/procedures-cxx $(BUILD)/lifecycle $(BUILD)/textures $(BUILD)/admission $(BUILD)/failures $(BUILD)/timestamps $(BUILD)/recovery $(BUILD)/pending-progress $(BUILD)/wgsl-language-features $(BUILD)/texture-binding-view-dimension
 	$(BUILD)/draw-budget
 	$(BUILD)/indirect-render
 	$(BUILD)/indexed-render
+	$(BUILD)/depth-copies
 	$(BUILD)/indirect-compute
 	$(BUILD)/atomics
 	$(BUILD)/debug
@@ -136,7 +139,7 @@ check: check-provider-pin $(BUILD)/draw-budget $(BUILD)/indirect-render $(BUILD)
 # The same public clients on a nonfallback GPU adapter (DOE_C_TEST_ADAPTER=physical).
 # Developer evidence on the printed adapter/driver only, not qualification. Uses the
 # system ICDs: unset VK_ICD_FILENAMES. Never run on a host under a physical hold.
-PHYSICAL_CLIENTS = draw-budget indirect-render indexed-render indirect-compute atomics debug msaa depth \
+PHYSICAL_CLIENTS = draw-budget indirect-render indexed-render depth-copies indirect-compute atomics debug msaa depth \
 	demote graphics-admission empty-shader graphics compute lifecycle textures admission \
 	failures timestamps recovery wgsl-language-features texture-binding-view-dimension
 # Real-window presentation (XCB on a reachable X server, e.g. Xwayland); not part
@@ -183,4 +186,4 @@ check-empty-module: $(BUILD)/empty-shader
 	$(BUILD)/empty-shader
 clean:
 	rm -f $(OBJECTS)
-	rm -f $(BUILD)/native.exports $(BUILD)/native.exports.tmp $(BUILD)/draw-budget $(BUILD)/indirect-render $(BUILD)/indexed-render $(BUILD)/indirect-compute $(BUILD)/backend-selection $(BUILD)/metal-bridge $(BUILD)/atomics $(BUILD)/debug $(BUILD)/msaa $(BUILD)/depth $(BUILD)/demote $(BUILD)/graphics-admission $(BUILD)/graphics $(BUILD)/empty-shader $(NATIVE_LIBRARY) $(BUILD)/libdoe_compiler.$(SHARED_SUFFIX) $(BUILD)/compute $(BUILD)/procedures-cxx $(BUILD)/lifecycle $(BUILD)/textures $(BUILD)/admission $(BUILD)/failures $(BUILD)/timestamps $(BUILD)/recovery $(BUILD)/surface-present $(BUILD)/surface-platforms $(BUILD)/wgsl-language-features $(BUILD)/texture-binding-view-dimension
+	rm -f $(BUILD)/native.exports $(BUILD)/native.exports.tmp $(BUILD)/draw-budget $(BUILD)/indirect-render $(BUILD)/indexed-render $(BUILD)/depth-copies $(BUILD)/indirect-compute $(BUILD)/backend-selection $(BUILD)/metal-bridge $(BUILD)/atomics $(BUILD)/debug $(BUILD)/msaa $(BUILD)/depth $(BUILD)/demote $(BUILD)/graphics-admission $(BUILD)/graphics $(BUILD)/empty-shader $(NATIVE_LIBRARY) $(BUILD)/libdoe_compiler.$(SHARED_SUFFIX) $(BUILD)/compute $(BUILD)/procedures-cxx $(BUILD)/lifecycle $(BUILD)/textures $(BUILD)/admission $(BUILD)/failures $(BUILD)/timestamps $(BUILD)/recovery $(BUILD)/surface-present $(BUILD)/surface-platforms $(BUILD)/wgsl-language-features $(BUILD)/texture-binding-view-dimension
