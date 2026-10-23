@@ -140,6 +140,8 @@ bool numeric_builtin(Source *source, size_t offset, const NumericBuiltin *signat
         case BUILTIN_ASIN:
         case BUILTIN_ACOS:
         case BUILTIN_ATAN:
+        case BUILTIN_ATAN2:
+        case BUILTIN_POW:
         case BUILTIN_SINH:
         case BUILTIN_COSH:
         case BUILTIN_ASINH:
@@ -162,8 +164,10 @@ bool numeric_builtin(Source *source, size_t offset, const NumericBuiltin *signat
     }
     const bool single = type == IR_F32;
     const double input = single ? (double)float_value(arguments[0].bits) : double_value(arguments[0].bits);
+    const double other = signature->arity > 1u ?
+        (single ? (double)float_value(arguments[1].bits) : double_value(arguments[1].bits)) : 0.0;
     double value;
-    if (!numeric_math(source, offset, kind, single, input, &value)) return false;
+    if (!numeric_math(source, offset, kind, single, input, other, &value)) return false;
     /* Each math primitive already evaluated at the selected width. The store
      * preserves that width before another constant operation consumes it. */
     NumericValue answer = {.type = type};

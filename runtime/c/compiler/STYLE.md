@@ -30,6 +30,10 @@ rules. Let snapshots are runtime-stage reads; consts retain their numeric stage.
 
 numeric.c owns locale-free bounded literal parsing, rounding, const arithmetic and
 checked conversions; numeric_math.c owns declared-width component math.
+Multi-argument math uses the same typed signature and ordered operand snapshots;
+preserve argument order (notably `atan2(y,x)`) in constant and target lowering.
+Validate WGSL domains rather than accepting a wider libm domain: a negative
+`pow` base is invalid even when a host integer exponent would produce a finite value.
 Lexer/parser preserve raw literal spans, not floating host values. Const evaluation checks every evaluated intermediate. Skipped short-circuit
 numeric evaluation is distinct from required name/type/dependency validation and
 mandatory divisor/count checks. Runtime operators never call the const evaluator.
@@ -50,12 +54,17 @@ not prove universal physical NaN/subnormal payload preservation.
 
 ## Namespace and caller storage
 
-Module declarations are hoisted and source-order independent. Constant resolution
-is iterative: unresolved ConstantSyntax value storage holds scan/parent links;
-only a fully resolved declaration publishes a numeric payload into that union.
-Scan all initializer references even in unused/skipped expressions. C=E+1 follows
-from one node per new initializer and one exact legacy exemption. No recursive
-stack proportional to module declarations or private heap worklist is allowed.
+Module declarations are hoisted and source-order independent. Constants, aliases
+and struct dependencies share one iterative resolution graph. Unresolved
+ConstantSyntax value storage holds scan/parent links; only a resolved constant
+publishes a numeric payload into that union. `expression==NO_ID` marks an alias:
+its type slot holds the parsed expression end until resolution publishes the
+canonical underlying TypeId. An alias creates neither nominal identity nor a
+second type registry. Validate unused aliases and all initializer references,
+including skipped expressions. Constants and aliases share the existing
+E-capacity+1 declaration pool (aliases need no initializer node); retain the exact
+legacy constant exemption. No recursive stack proportional to module declarations
+or private heap worklist is allowed.
 
 Local scopes save/restore visible record counts. A binding enters scope after its
 initializer; same-scope duplicates reject and nested/module shadowing is ordinary
@@ -107,6 +116,14 @@ constraints validate rather than repack. Minimum extents are distinct from
 storage robustness. Each array access guards its own resource before even forming
 an element pointer; OOB load zero can be a valid outer index. No combined-length
 shortcut suppresses an otherwise valid outer operation.
+
+SPIR-V Workgroup arrays/structs use separate undecorated target declarations,
+including nested members, because baseline Vulkan forbids the explicit buffer
+layout there. Preserve canonical semantic identity and buffer decorations. Whole
+aggregate transfers convert through same-typed leaves under the shared traversal,
+target-descriptor and word budgets; do not reuse a decorated type or change a
+resource's byte layout to avoid the conversion. Zero initialization and robust
+load-zero/store-discard retain their existing control-flow owner.
 
 Expression/control depths remain64/32 for jobs and18/4 fixed. The parser's
 compound ceiling2C+1 bounds malformed continuing syntax too. Re-measure per-function

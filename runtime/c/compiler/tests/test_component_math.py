@@ -3,6 +3,8 @@
 # Copyright (c) 2026 Doe contributors
 """Shared component math: const values, runtime SPIR-V and retained sources."""
 import unittest
+import math
+import struct
 import test_stages
 
 FLOAT_OPS = {'floor': 8, 'round': 2, 'trunc': 3, 'fract': 10, 'sin': 13,
@@ -72,6 +74,45 @@ class ComponentMath(unittest.TestCase):
         code = self.compile(BUFFER+'fn read()->vec4f{data[0]=data[0]+vec4f(1);return data[0];}'+
                             ENTRY+'{data[1]=fract(read());data[2]=abs(read());}')
         self.assertEqual(sum(op == 57 for op,_ in code), 2)
+
+    def test_two_argument_float_shapes_and_constants(self):
+        for name, instruction in [('atan2', 25), ('pow', 26)]:
+            for width in range(1, 5):
+                typ = 'f32' if width == 1 else f'vec{width}f'
+                source = f'@group(0) @binding(0) var<storage,read_write> data:array<{typ}>;'
+                code = self.compile(source + ENTRY + '{data[2]=' + name + '(data[0],data[1]);}')
+                self.assertEqual(sum(op == 12 and a[3] == instruction for op, a in code), 1)
+        self.vector_constant('pow(vec4f(2,4,9,16),vec4f(3,0.5,0.5,-0.5))',
+                             [0x41000000, 0x40000000, 0x40400000, 0x3e800000])
+        self.vector_constant('vec4f(pow(16777217.0,1.0)-16777216.0)', [0x3f800000] * 4)
+        code = self.compile('@fragment fn main()->@location(0) vec4f {'
+                            'return atan2(vec4f(1,1,-1,-1),vec4f(1,-1,-1,1));}')
+        scalars = {a[1]: a[2] for op, a in code if op == 43}
+        vectors = [a[2:] for op, a in code if op == 44 and all(x in scalars for x in a[2:])]
+        actual = [struct.unpack('<f', struct.pack('<I', scalars[x]))[0] for x in vectors[-1]]
+        for value, expected in zip(actual, [math.pi/4, 3*math.pi/4, -3*math.pi/4, -math.pi/4]):
+            self.assertAlmostEqual(value, expected, delta=3e-7)
+        self.assertFalse(any(op == 12 for op, _ in code))
+
+    def test_two_argument_domains_order_and_resolution(self):
+        self.compile('const invalid=pow(-2.0,2.0);' + ENTRY + '{}', 'outside its domain')
+        self.compile(ENTRY + '{let skipped=false && (pow(-2.0,2.0)==4.0);}')
+        for expression in ['pow(0.0,-1.0)', 'pow(1e38f,2.0f)']:
+            self.compile('const invalid=' + expression + ';' + ENTRY + '{}', 'not finite')
+        for expression in ['pow(2i,3i)', 'atan2(1u,2u)', 'pow(2.0)',
+                           'atan2(1.0,2.0,3.0)']:
+            self.compile(ENTRY + '{return;let invalid=' + expression + ';}', 'builtin')
+        self.compile(ENTRY + '{let invalid=pow(vec2f(1),1.0);}', 'matching scalar or vector shapes')
+        code = self.compile(BUFFER + 'fn read()->vec4f{data[0]=data[0]+vec4f(1);return data[0];}' +
+                            ENTRY + '{data[1]=pow(read(),read());data[2]=atan2(read(),read());}')
+        calls = [a[1] for op, a in code if op == 57]
+        arguments = [a[4:6] for op, a in code if op == 12 and a[3] in (25, 26)]
+        self.assertEqual(len(calls), 4)
+        self.assertEqual(arguments, [tuple(calls[:2]), tuple(calls[2:])])
+        code = self.compile('fn pow(a:u32,b:u32)->u32{return a+b;} fn atan2(a:u32,b:u32)->u32{return a-b;}' +
+                            ENTRY + '{let a=pow(1u,2u);let b=atan2(4u,1u);}')
+        self.assertEqual(sum(op == 57 for op, _ in code), 2)
+        self.assertFalse(any(op == 12 and a[3] in (25, 26) for op, a in code))
 
     def test_retained_fluid_sources(self):
         for name in ['stable_fluids_advect_velocity.wgsl','stable_fluids_advect_dye.wgsl']:

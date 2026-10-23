@@ -141,7 +141,8 @@ uint32_t spirv_pointer_type(Emitter *e, TypeId type, uint32_t storage) {
     }
     TargetDeclaration *d = spirv_append_declaration(e, DECL_POINTER, type);
     if (d == NULL) return 0u;
-    d->storage = storage; d->payload = spirv_target_type(e, type);
+    d->storage = storage;
+    d->payload = storage == 4u ? spirv_workgroup_type(e, type) : spirv_target_type(e, type);
     return d->id;
 }
 uint32_t spirv_zero_constant(Emitter *e, TypeId type) {
@@ -153,16 +154,6 @@ uint32_t spirv_zero_constant(Emitter *e, TypeId type) {
     if (d == NULL) return 0u;
     t->aux = d->id;
     return d->id;
-}
-/* Workgroup initialization uses OpConstantNull even for a scalar root. Those
- * scalar nulls are D descriptors, distinct from the fixed ordinary zero IDs. */
-uint32_t spirv_workgroup_zero(Emitter *e, TypeId type) {
-    if (type >= 7u) return spirv_zero_constant(e, type);
-    CompilerWorkspace *c = e->program;
-    for (uint32_t i = 0u; i < c->target_count; ++i)
-        if (c->targets[i].kind == DECL_ZERO && c->targets[i].type == type) return c->targets[i].id;
-    TargetDeclaration *d = spirv_append_declaration(e, DECL_ZERO, type);
-    return d == NULL ? 0u : d->id;
 }
 static bool plan_workgroup_barrier(Emitter *e) {
     (void)use_constant(e, ID_TWO_U32);
@@ -399,6 +390,7 @@ bool spirv_plan_module(Emitter *e) {
     }
     for (uint32_t i = 0u; i < c->workgroup_count; ++i) {
         WorkgroupRoot *root = &c->workgroups[i];
+        if (!spirv_workgroup_plan(e, root->type)) return false;
         if (spirv_pointer_type(e, root->type, 4u) == 0u || spirv_workgroup_zero(e, root->type) == 0u) return false;
         root->target = spirv_reserve_ids(e, 1u);
     }
@@ -450,6 +442,7 @@ bool spirv_plan_module(Emitter *e) {
             if (ir->opcode != IR_VALUE_ACCESS || ir->operands.access.value != NO_ID)
                 if (spirv_pointer_type(e, ir->type, storage) == 0u) return false;
             if (ir->opcode != IR_ACCESS_STORE && spirv_zero_constant(e, ir->type) == 0u) return false;
+            if (category == ROOT_WORKGROUP && spirv_workgroup_zero(e, ir->type) == 0u) return false;
         }
     }
     return !e->failed;
@@ -553,19 +546,26 @@ static bool dynamic_declarations(Emitter *e) {
     for (uint32_t i = 0u; i < planned_count; ++i) {
         const TargetDeclaration *d = &c->targets[i];
         switch (d->kind) {
+            case DECL_WORKGROUP_TYPE:
             case DECL_TYPE: {
                 const TypeRecord *t = &c->types[d->type - 7u];
+                const bool workgroup = d->kind == DECL_WORKGROUP_TYPE;
                 if (t->kind == TYPE_TEXTURE || t->kind == TYPE_SAMPLER) {
                     if (!spirv_image_type(e, t, d->id)) return false;
                 } else if (t->kind == TYPE_VECTOR) { EMIT(OP_TYPE_VECTOR, d->id, spirv_target_type(e, t->element), t->count); }
                 else if (t->kind == TYPE_MATRIX) { EMIT(OP_TYPE_MATRIX, d->id, spirv_target_type(e, t->element), t->count); }
-                else if (t->kind == TYPE_ARRAY) { EMIT(OP_TYPE_ARRAY, d->id, spirv_target_type(e, t->element), d->first); }
+                else if (t->kind == TYPE_ARRAY) {
+                    EMIT(OP_TYPE_ARRAY, d->id, workgroup ? spirv_workgroup_type(e, t->element) : spirv_target_type(e, t->element), d->first);
+                }
                 else if (t->kind == TYPE_RUNTIME_ARRAY) { EMIT(OP_TYPE_RUNTIME_ARRAY, d->id, spirv_target_type(e, t->element)); }
                 else {
                     uint32_t *words = NULL;
                     if (!spirv_instruction_space(e, OP_TYPE_STRUCT, (size_t)t->count + 1u, &words)) return false;
                     words[0] = d->id;
-                    for (uint32_t m = 0u; m < t->count; ++m) words[m + 1u] = spirv_target_type(e, type_child(c, d->type, m));
+                    for (uint32_t m = 0u; m < t->count; ++m) {
+                        const TypeId child = type_child(c, d->type, m);
+                        words[m + 1u] = workgroup ? spirv_workgroup_type(e, child) : spirv_target_type(e, child);
+                    }
                 }
                 break;
             }
@@ -588,6 +588,9 @@ static bool dynamic_declarations(Emitter *e) {
                 break;
             case DECL_ZERO:
                 EMIT(OP_CONSTANT_NULL, spirv_target_type(e, d->type), d->id);
+                break;
+            case DECL_WORKGROUP_ZERO:
+                EMIT(OP_CONSTANT_NULL, spirv_workgroup_type(e, d->type), d->id);
                 break;
             case DECL_COMPOSITE: {
                 const ConstantRecord *k = &c->constants[d->first];

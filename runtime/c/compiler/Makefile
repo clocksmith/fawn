@@ -18,7 +18,7 @@ export PYTHONDONTWRITEBYTECODE := 1
 CFLAGS = -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror
 CXXFLAGS = -std=c++17 -fno-exceptions -fno-rtti -O2 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror
 include targets/metal/sources.mk
-LIB_SOURCES = $(addprefix targets/metal/,$(METAL_SOURCE_NAMES)) src/pipeline.c src/compile_spans.c src/compile_metadata.c src/compile_text.c src/text_metal.c src/sema_matrix.c src/spirv_matrix.c src/spirv_atomic.c src/spirv_uniform.c src/sema_array.c src/sema_atomic.c src/sema_pointer.c src/stage.c src/parse_interface.c src/sema_stage.c src/spirv_stage.c src/sema_finalize.c src/image.c src/sema_image.c src/spirv_image.c src/module.c src/builtin.c src/numeric.c src/numeric_math.c src/numeric_environment.c src/lex.c src/parse.c src/validate.c src/uniformity.c src/types.c src/constants.c src/sema_declarations.c src/sema_expression.c src/sema_call.c src/reflection.c src/spirv.c src/spirv_module.c src/spirv_subgroup.c src/compile.c src/storage.c
+LIB_SOURCES = $(addprefix targets/metal/,$(METAL_SOURCE_NAMES)) src/pipeline.c src/compile_spans.c src/compile_metadata.c src/compile_text.c src/text_metal.c src/sema_matrix.c src/spirv_matrix.c src/spirv_atomic.c src/spirv_uniform.c src/spirv_workgroup.c src/sema_array.c src/sema_atomic.c src/sema_pointer.c src/stage.c src/parse_interface.c src/sema_stage.c src/spirv_stage.c src/sema_finalize.c src/image.c src/sema_image.c src/spirv_image.c src/module.c src/builtin.c src/numeric.c src/numeric_math.c src/numeric_environment.c src/lex.c src/parse.c src/validate.c src/uniformity.c src/types.c src/constants.c src/sema_declarations.c src/sema_expression.c src/sema_call.c src/reflection.c src/spirv.c src/spirv_module.c src/spirv_subgroup.c src/compile.c src/storage.c
 HEADERS = src/numeric_host.h include/doe_compiler_text.h src/compile_internal.h src/text_internal.h $(wildcard targets/metal/*.h targets/*.h) include/doe_compiler_stages.h src/stage.h src/parse_internal.h include/doe_compiler_resources.h include/doe_compiler_features.h include/doe_compiler_module.h src/builtin.h src/spirv_decl.h src/spirv_internal.h include/doe_compiler_typed.h src/sema.h src/numeric.h src/internal.h include/doe_compiler.h include/doe_compiler_v2.h include/doe_compiler_job.h src/cli_json.h
 SPIRV_VAL ?= spirv-val
 CLI_FAULT_FLAGS = -Wl,--wrap=write,--wrap=close,--wrap=link,--wrap=mkstemp,--wrap=malloc,--wrap=free,--wrap=doe_compiler_job_requirements
@@ -279,6 +279,19 @@ test-component-math: all build/test_component_math_api
 	build/test_component_math_api
 	DOE_COMPILER_CLI="$(CURDIR)/build/doe-compiler-c" SPIRV_VAL="$(SPIRV_VAL)" python3 tests/test_component_math.py
 	python3 tests/test_export_symbols.py
+
+.PHONY: test-type-aliases test-workgroup-types
+build/test_alias_workgroup_api: $(LIB_SOURCES) $(HEADERS) tests/test_alias_workgroup_api.c | build/.ready
+	$(CC) $(CFLAGS) $(LIB_SOURCES) tests/test_alias_workgroup_api.c -lm -o $@
+test-type-aliases: build/doe-compiler-c build/test_alias_workgroup_api
+	build/test_alias_workgroup_api
+	DOE_COMPILER_CLI="$(CURDIR)/build/doe-compiler-c" SPIRV_VAL="$(SPIRV_VAL)" python3 tests/test_type_aliases.py
+test-workgroup-types: build/doe-compiler-c
+	DOE_COMPILER_CLI="$(CURDIR)/build/doe-compiler-c" SPIRV_VAL="$(SPIRV_VAL)" python3 tests/test_workgroup_types.py
+.PHONY: sanitize-type-aliases
+sanitize-type-aliases: | build/.ready
+	$(CC) $(CFLAGS) -O1 -g -fno-omit-frame-pointer -fsanitize=address,undefined $(LIB_SOURCES) tests/test_alias_workgroup_api.c -lm -o build/test_alias_workgroup_api_sanitize
+	ASAN_OPTIONS=detect_leaks=0:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1 build/test_alias_workgroup_api_sanitize
 
 ENVIRONMENT_FAULT_FLAGS = -Wl,--wrap=fegetenv,--wrap=fegetround,--wrap=feholdexcept,--wrap=fesetround,--wrap=feclearexcept,--wrap=fetestexcept,--wrap=fesetenv
 build/test_numeric_environment: src/numeric_environment.c tests/test_numeric_environment.c $(HEADERS) | build/.ready

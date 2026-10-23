@@ -1,0 +1,104 @@
+#!/usr/bin/env python3
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Doe contributors
+"""Workgroup target identity and aggregate transfer; no physical GPU claim."""
+from pathlib import Path
+import struct
+import subprocess
+import sys
+import tempfile
+import unittest
+import test_stages
+
+# Read-only reuse of the retained independent word executor. Neither its source,
+# frozen inputs nor acceptance receipts are changed by these developer cases.
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'independent_tests_m11/oracle'))
+from target_m11 import Module
+from workgroup_vm import dispatch
+
+
+def words(code):
+    result = [0x07230203, 0x00010300, 0, 0x3fffff, 0]
+    for op, operands in code:
+        result.extend([((len(operands) + 1) << 16) | op, *operands])
+    return result
+
+
+class WorkgroupTypes(unittest.TestCase):
+    compile = test_stages.Stages.compile
+
+    def test_shared_source_type_has_separate_undecorated_workgroup_graph(self):
+        code = self.compile('''
+            struct Record { tag:u32, values:array<vec2u,2> }
+            alias Rows=array<Record,2>;
+            @group(0) @binding(0) var<storage,read> src:Rows;
+            @group(0) @binding(1) var<storage,read_write> dst:array<Record>;
+            var<workgroup> cache:Rows;
+            @compute @workgroup_size(2) fn main(@builtin(local_invocation_index) lane:u32) {
+                if(lane==0u){cache=src;}
+                workgroupBarrier();
+                let snapshot=cache;
+                let out_of_range=lane+4u;
+                let outside=cache[out_of_range];
+                cache[out_of_range]=src[0];
+                dst[lane]=snapshot[1u-lane];
+                if(lane==0u){dst[2]=outside;}
+            }
+        ''')
+        types = {a[0]: (op, a[1:]) for op, a in code if 19 <= op <= 33}
+        workgroup = [types[a[0]][1][1] for op, a in code if op == 59 and a[2] == 4]
+        decorated = {a[0] for op, a in code if op in (71, 72)}
+        pending, seen = workgroup[:], set()
+        while pending:
+            typ = pending.pop()
+            if typ in seen:
+                continue
+            seen.add(typ)
+            op, a = types[typ]
+            self.assertNotIn(typ, decorated)
+            pending.extend(a if op == 30 else [a[0]] if op in (23, 24, 28) else [])
+        self.assertTrue(any(op == 71 and a[1] == 6 for op, a in code))
+        rows = [11, 0, 1, 2, 3, 4, 22, 0, 5, 6, 7, 8]
+        expected = rows[6:] + rows[:6] + [0] * 6
+        for index in [1, 7, 13]:
+            expected[index] = 0xdeadbeef
+
+        def run(instructions):
+            buffers = {(0, 0): bytearray(struct.pack('<12I', *rows)),
+                       (0, 1): bytearray(struct.pack('<18I', *([0xdeadbeef] * 18)))}
+            dispatch(Module(words(instructions)), buffers, schedule='reverse', pure_quantum=1)
+            return list(struct.unpack('<18I', buffers[(0, 1)]))
+
+        self.assertEqual(run(code), expected)
+        mutated = code[:]
+        for i, (op, a) in enumerate(mutated):
+            if op == 81 and len(a) == 5 and a[3:] == (0, 0):
+                mutated[i] = op, (*a[:3], 1, 0)
+                break
+        else:
+            self.fail('no source aggregate tag extraction to mutate')
+        with tempfile.TemporaryDirectory(prefix='doe-workgroup-mutation-') as directory:
+            target = Path(directory) / 'wrong-tag.spv'
+            target.write_bytes(struct.pack('<' + 'I' * len(words(mutated)), *words(mutated)))
+            valid = subprocess.run([str(test_stages.VALIDATOR), '--target-env', 'vulkan1.1', str(target)],
+                                   capture_output=True, text=True)
+            self.assertEqual(valid.returncode, 0, valid.stderr)
+        self.assertNotEqual(run(mutated), expected)
+
+    def test_matrix_and_nested_struct_transfer(self):
+        self.compile('''
+            struct Tail { value:u32 }
+            struct Data { matrix:array<mat2x2f,2>, tail:Tail }
+            @group(0) @binding(0) var<storage,read_write> data:Data;
+            var<workgroup> cache:Data;
+            @compute @workgroup_size(1) fn main(){cache=data;data=cache;}
+        ''')
+
+    def test_unchanged_tiled_matmul_consumers(self):
+        for path in ['bench/kernels/compilation-corpus/complex_matmul_tiled.wgsl',
+                     'bench/kernels/shader_robustness_matmul_512_f32.wgsl']:
+            self.compile((test_stages.ROOT / path).read_text())
+
+
+if __name__ == '__main__':
+    unittest.main()

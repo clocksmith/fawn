@@ -36,6 +36,7 @@ bool sema_valid_name(Source *,NameSpan);
 bool sema_module_declared(const Source *,NameSpan);
 uint32_t sema_find_function(const Source *,NameSpan);
 uint32_t sema_find_constant(const Source *,NameSpan);
+uint32_t sema_find_type_alias(const Source *,NameSpan);
 uint32_t sema_find_struct(const Source *,NameSpan);
 uint32_t sema_find_formal(const Source *,NameSpan);
 uint32_t sema_find_parameter(const Source *,NameSpan);

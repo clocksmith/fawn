@@ -49,6 +49,18 @@ void test_component_math(const char *path) {
         free(text);
         release(f);
     }
+    for (size_t i = 0u; i < 2u; ++i) {
+        char source[512];
+        const char *name = i == 0u ? "atan2" : "pow";
+        snprintf(source, sizeof(source),
+            "@group(0) @binding(0) var<storage,read_write> data:array<vec4f>;"
+            "@compute @workgroup_size(1) fn main(){data[2]=%s(data[0],data[1]);}", name);
+        Fixture *binary = prepare(source);
+        char *output = emit(binary, 0u);
+        has(output, i == 0u ? "atan2(" : "pow(");
+        free(output);
+        release(binary);
+    }
     Fixture *f = prepare(component_math_source);
     char *text = emit(f, 0u);
     has(text, " - floor(");

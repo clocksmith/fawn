@@ -192,6 +192,8 @@ static void builtin_expression(MetalEmitter *e, const IrInstruction *ir) {
         [BUILTIN_ASIN] = "asin",
         [BUILTIN_ACOS] = "acos",
         [BUILTIN_ATAN] = "atan",
+        [BUILTIN_ATAN2] = "atan2",
+        [BUILTIN_POW] = "pow",
         [BUILTIN_SINH] = "sinh",
         [BUILTIN_COSH] = "cosh",
         [BUILTIN_ASINH] = "asinh",

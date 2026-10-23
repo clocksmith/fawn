@@ -1,8 +1,8 @@
+/* SPDX-License-Identifier: MIT
+ * Copyright (c) 2026 Doe contributors */
 /* Shared developer-only source preparation and atomic publication checks. */
 #ifndef DOE_METAL_TEST_FIXTURE_H
 #define DOE_METAL_TEST_FIXTURE_H
-/* SPDX-License-Identifier: MIT
- * Copyright (c) 2026 Doe contributors */
 #include "../metal.h"
 #include "../../../src/numeric.h"
 #include "../../../src/stage.h"

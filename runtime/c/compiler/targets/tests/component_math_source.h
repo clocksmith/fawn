@@ -5,8 +5,11 @@
 #include <stdint.h>
 
 static const char component_math_source[] =
+    "alias Floating=f32;"
     "@group(0) @binding(0) var<storage,read_write> data:array<u32>;"
     "fn read()->f32{data[31]+=1u;return bitcast<f32>(data[0]);}"
+    "fn exponent()->Floating{data[29]+=1u;return Floating(data[29]+1u);}"
+    "fn axis()->f32{data[30]+=1u;if(data[30]==1u){return 0.0;}return 1.0;}"
     "@compute @workgroup_size(1) fn component_math(){"
     "let x=bitcast<f32>(data[0]);let half=2.5f;let other=3.5f;"
     "let minimum=bitcast<i32>(2147483648u);let zero=-0.0f;let tiny=-0x1p-149f;"
@@ -21,7 +24,11 @@ static const char component_math_source[] =
     "let negative=-3i;let positive=7i;let unsigned_value=4294967295u;"
     "data[17]=bitcast<u32>(sign(negative));data[18]=bitcast<u32>(sign(positive));"
     "data[19]=abs(unsigned_value);data[20]=bitcast<u32>(radians(half-half));"
-    "data[21]=bitcast<u32>(degrees(half-half));}"
+    "data[21]=bitcast<u32>(degrees(half-half));"
+    "data[22]=bitcast<u32>(pow(half+0.5f,other-half+1.0f));"
+    "data[23]=bitcast<u32>(atan2(half-half,half+other));"
+    "data[24]=bitcast<u32>(pow(exponent(),exponent()));"
+    "data[25]=bitcast<u32>(atan2(axis(),axis()));}"
     ;
 /* Exact, independently written exercised values. Transcendentals use only
  * exact elementary inputs here; no universal accuracy claim follows. */
@@ -29,6 +36,7 @@ static const uint32_t component_math_expected[] = {
     0xbe800000u, 0x3f400000u, 0xbf800000u, 0x80000000u, 0x40000000u,
     0x40800000u, 0x80000000u, 0xbf800000u, 0u, 0u, 0x3e800000u,
     0x3f800000u, 0x80000000u, 0x3f800000u, 0x40000000u, 0x40400000u,
-    0x3f000000u, 0xffffffffu, 1u, 0xffffffffu, 0u, 0u
+    0x3f000000u, 0xffffffffu, 1u, 0xffffffffu, 0u, 0u,
+    0x41100000u, 0u, 0x41000000u, 0u
 };
 #endif

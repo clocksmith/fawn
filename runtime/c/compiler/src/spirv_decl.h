@@ -6,6 +6,7 @@
  * the corresponding type, storage class, source span index and scalar payload. */
 typedef enum {
     DECL_TYPE, DECL_POINTER, DECL_WRAPPER, DECL_U32, DECL_ZERO,
-    DECL_LEAF, DECL_COMPOSITE, DECL_SAMPLED_IMAGE, DECL_RAW_VECTOR, DECL_RAW_UNIFORM
+    DECL_LEAF, DECL_COMPOSITE, DECL_SAMPLED_IMAGE, DECL_RAW_VECTOR, DECL_RAW_UNIFORM,
+    DECL_WORKGROUP_TYPE, DECL_WORKGROUP_ZERO
 } SpirvDeclarationKind;
 #endif

@@ -13,6 +13,7 @@ int main() {
     doe_entry0(reinterpret_cast<uchar*>(words), sizes);
     for (unsigned i = 0; i < sizeof(component_math_expected) / sizeof(*component_math_expected); ++i)
         assert(words[i] == component_math_expected[i]);
-    assert(words[31] == 2u && words[32] == 0x12345678u);
+    assert(words[29] == 2u && words[30] == 2u && words[31] == 2u);
+    assert(words[32] == 0x12345678u);
     std::puts("Metal emitted operations: exact rounding, fractional tail, minimum abs and once-only effects passed.");
 }

@@ -371,39 +371,40 @@ bool sema_call_value(Source *s, uint32_t id, const LocalScope *scope, bool evalu
         return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, name.offset, "call target resolves to a lexical value");
     const uint32_t function = sema_find_function(s, name);
     if (function != NO_ID) return user_call(s, id, scope, function, evaluate, emit, statement, out);
-    const TypeId nominal = sema_find_struct(s, name);
-    if (nominal == NO_ID && sema_module_declared(s, name)) return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, name.offset, "call target resolves to a module value");
-    if (nominal == NO_ID && source_span_is(s, name, "arrayLength")) {
+    const bool declared_type = sema_find_type_alias(s, name) != NO_ID ||
+                               sema_find_struct(s, name) != NO_ID;
+    if (!declared_type && sema_module_declared(s, name)) return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, name.offset, "call target resolves to a module value");
+    if (!declared_type && source_span_is(s, name, "arrayLength")) {
         if (statement || node->right != 1u || node->value.call.type.offset != NO_ID)
             return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, name.offset,
                 "arrayLength requires one runtime array pointer and a used result");
         return sema_array_length(s, id, scope, emit, out);
     }
-    if (nominal==NO_ID && source_span_is(s,name,"workgroupBarrier")) {
+    if (!declared_type && source_span_is(s,name,"workgroupBarrier")) {
         if (!statement || node->right!=0u || node->value.call.type.offset!=NO_ID || c->current_function==NO_ID)
             return source_error(s,DOE_COMPILER_SEMANTIC_ERROR,name.offset,"workgroupBarrier requires no arguments and no result");
         if (!source_reference_record(s,&c->expression_references[id],SOURCE_BARRIER,0u,node->source_offset)) return false;
         *out=(ExpressionValue){.runtime=true,.constant.type=IR_VOID,.value={.type=IR_VOID,.source_offset=name.offset}};
         return sema_emit(s,emit,(IrInstruction){.opcode=IR_WORKGROUP_BARRIER,.source_offset=name.offset},NULL);
     }
-    if (nominal==NO_ID && (source_span_is(s,name,"storageBarrier") || source_span_is(s,name,"workgroupUniformLoad") ||
+    if (!declared_type && (source_span_is(s,name,"storageBarrier") || source_span_is(s,name,"workgroupUniformLoad") ||
         source_span_is(s,name,"textureBarrier")))
         return source_error(s,DOE_COMPILER_UNSUPPORTED,name.offset,"synchronization builtin is outside the workgroup barrier owner");
     if (name.length >= sizeof(((Name *)0)->text))
         return source_error(s, DOE_COMPILER_UNSUPPORTED, name.offset, "identifier length exceeds supported capacity");
-    const uint32_t atomic = nominal == NO_ID ? atomic_builtin_kind(s, name) : NO_ID;
+    const uint32_t atomic = !declared_type ? atomic_builtin_kind(s, name) : NO_ID;
     if (atomic != NO_ID) {
         if (!statement && atomic == IR_ATOMIC_STORE)
             return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, node->source_offset, "atomicStore has no result");
         return sema_atomic_call(s, node, scope, evaluate, emit, (IrOpcode)atomic, out);
     }
-    const uint32_t image_operation = nominal == NO_ID ? image_builtin_kind(s, name) : NO_ID;
+    const uint32_t image_operation = !declared_type ? image_builtin_kind(s, name) : NO_ID;
     if (image_operation != NO_ID) {
         if (statement != (image_operation == IMAGE_STORE))
             return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, node->source_offset, "texture builtin has invalid result context");
         return sema_image_call(s, node, scope, evaluate, emit, (ImageOperation)image_operation, out);
     }
-    const NumericBuiltin *builtin = nominal == NO_ID ? builtin_named(s, name) : NULL;
+    const NumericBuiltin *builtin = !declared_type ? builtin_named(s, name) : NULL;
     if (builtin != NULL) {
         if (statement || node->value.call.type.offset != NO_ID || node->right != builtin->arity)
             return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, node->source_offset,
@@ -418,13 +419,13 @@ bool sema_call_value(Source *s, uint32_t id, const LocalScope *scope, bool evalu
         return sema_builtin_value(s, node, scope, builtin, evaluate, emit, out);
     }
     if (statement) return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, name.offset, "constructor result cannot be discarded");
-    const bool bitcast = nominal == NO_ID && source_span_is(s, name, "bitcast");
+    const bool bitcast = !declared_type && source_span_is(s, name, "bitcast");
     TypeId target = IR_VOID;
     uint32_t inferred = 0u;
-    if (nominal != NO_ID) {
+    if (declared_type) {
         if (node->value.call.type.offset != NO_ID)
             return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, name.offset,
-                                "nominal constructor cannot have type arguments");
+                                "named type constructor cannot have type arguments");
         if (!sema_type_reference(s, (TypeRef){name.offset, NO_ID}, scope, &target)) return false;
     }
     else if (bitcast) {
