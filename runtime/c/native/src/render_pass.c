@@ -74,8 +74,15 @@ WGPURenderPassEncoder wgpuCommandEncoderBeginRenderPass(WGPUCommandEncoder handl
     doe_resource_status status = valid ? doe_resource_encoder_begin_render_with_timestamps(encoder,
         &targets, writes ? &timestamps : NULL, &pass) : doe_resource_encoder_invalidate(encoder, rejected);
     native_unlock(device);
-    if (status != DOE_RESOURCE_OK) native_error(device, native_resource_error(status), "render pass descriptor invalid or unsupported");
-    if (pass) native_label(device, pass, descriptor->label);
+    /* A rejected begin still returns a pass (WebGPU invalid pass): it records
+     * nothing and its commands, End and the encoder's Finish report the error. */
+    if (status != DOE_RESOURCE_OK) {
+        native_lock(device);
+        pass = doe_resource_render_pass_rejected(encoder);
+        native_unlock(device);
+        native_error(device, native_resource_error(status), "render pass descriptor invalid or unsupported");
+    }
+    if (pass && descriptor) native_label(device, pass, descriptor->label);
     return (WGPURenderPassEncoder)pass;
 }
 void wgpuRenderPassEncoderAddRef(WGPURenderPassEncoder pass) { doe_resource_render_pass_retain((doe_resource_render_pass *)pass); }

@@ -90,11 +90,15 @@ WGPUTexture wgpuDeviceCreateTexture(WGPUDevice handle, const WGPUTextureDescript
         if (!(desc.usage & WGPUTextureUsage_TextureBinding)) native.cube_compatible = false;
     }
     if (desc.samples > 1) {
-        if ((desc.usage & ~(WGPUTextureUsage)WGPUTextureUsage_TextureBinding) != WGPUTextureUsage_RenderAttachment) {
-            native_error(device, WGPUErrorType_Validation, "multisample textures support attachment and texture-binding usage only");
+        /* Resource validation requires RenderAttachment and rejects storage;
+         * copy usage serves equal-count whole-subresource texture copies. */
+        const WGPUTextureUsage extra = WGPUTextureUsage_TextureBinding | WGPUTextureUsage_CopySrc | WGPUTextureUsage_CopyDst;
+        if ((desc.usage & ~extra) != WGPUTextureUsage_RenderAttachment) {
+            native_error(device, WGPUErrorType_Validation, "multisample textures need attachment usage and no storage");
             return NULL;
         }
         native.usage = depth_stencil ? DOE_VK_TEXTURE_DEPTH_STENCIL_ATTACHMENT : DOE_VK_TEXTURE_COLOR_ATTACHMENT;
+        if (desc.usage & WGPUTextureUsage_CopyDst) native.usage |= DOE_VK_TEXTURE_COPY_DST;
         native.cube_compatible = false;
     }
     if (desc.usage & WGPUTextureUsage_CopySrc) native.usage |= DOE_VK_TEXTURE_COPY_SRC;

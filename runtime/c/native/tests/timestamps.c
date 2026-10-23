@@ -69,7 +69,11 @@ static void invalid_ranges(state *s)
     writes.querySet = set;
     writes.beginningOfPassWriteIndex = writes.endOfPassWriteIndex = 0;
     WGPUComputePassDescriptor pass_desc = {.timestampWrites=&writes};
-    assert(!wgpuCommandEncoderBeginComputePass(encoder,&pass_desc));
+    WGPUComputePassEncoder rejected = wgpuCommandEncoderBeginComputePass(encoder,&pass_desc);
+    assert(rejected); /* WebGPU invalid pass; the error also surfaces at Finish. */
+    wgpuComputePassEncoderDispatchWorkgroups(rejected,1,1,1);
+    wgpuComputePassEncoderEnd(rejected);
+    wgpuComputePassEncoderRelease(rejected);
     assert(!wgpuCommandEncoderFinish(encoder,NULL));
     wgpuCommandEncoderRelease(encoder);
     expect_validation(s);

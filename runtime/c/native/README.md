@@ -138,6 +138,16 @@ Apple SDK compilation, Darwin execution and physical qualification remain unrun.
   against OpImageQuerySamples (out of range loads zero); automatic layouts reflect
   `multisampled` with 'unfilterable-float' for f32 and 'depth' for depth, and the
   resource owner rejects multisampled 'float' layouts and single-sample views.
+  A multisampled binding never pairs with a sampler, so it stays outside the
+  whole-pipeline unfilterable/filtering check. CopySrc/CopyDst are admitted on
+  multisampled textures: texture copies need equal sample counts and the whole
+  subresource; buffer copies need one sample.
+- Texel copy layouts take WGPU_COPY_STRIDE_UNDEFINED as WebGPU's undefined:
+  rowsPerImage for a one-image copy, bytesPerRow for a one-row copy
+  (`tests/copy_layouts.c`).
+- A rejected BeginRenderPass/BeginComputePass still returns a pass (WebGPU invalid
+  pass): it records nothing, and its commands, End and the encoder's Finish
+  report the rejection.
 - Color storeOp Discard is admitted for single-sample attachments too: Vulkan
   STORE_OP_DONT_CARE and the backend's per-aspect owner marks the subresource
   undefined. Later Load passes, buffer/texture copies and sampled or storage
@@ -449,7 +459,7 @@ unsupported devices reject that pipeline. Blend constants must be finite f32.
 Texture format reinterpretation beyond srgb/unorm viewFormats pairs (RGBA8,
 BGRA8; resource-validated, then a mutable Vulkan image with a format list), srgb
 viewFormats together with StorageBinding, depth storage, depth comparison sampling (compiler), multisampled
-copies/storage, and cube arrays without device imageCubeArray are rejected.
+buffer copies/storage, and cube arrays without device imageCubeArray are rejected.
 The baseline admits 23 named Vulkan
 color formats, subject to actual device usage/format capabilities. Device
 descriptors may request the optional features `src/features.c` reports for the
@@ -506,7 +516,7 @@ PASS public depth/stencil copies: rendered depth32float .25/.75 via DepthOnly/Al
 PASS public indexed draws: uint16/uint32 indices, firstIndex, signed base vertex, instance selection, offset index ranges, pass/bundle replay, uint16/uint32 strip primitive restart, 9 GPU-produced drawIndexedIndirect records with exact-end/out-of-range/wrapping/zero/firstInstance/instance-overrun guards, unchanged arguments, 13 typed validation controls and early releases; exact 192 pixels (CPU Vulkan only)
 PASS public ABI9 atomics: storage accumulation, signed OOB suppression, compare-exchange result identity, fresh workgroup initialization across two groups and two dispatches, early releases (CPU Vulkan only)
 PASS public debug markers: typed procedures, independent nested balance, parent lock, underflow, malformed strings and finished/unbalanced command/pass/bundle rejection (CPU Vulkan only)
-PASS public multisampled reads: 4x rgba8unorm stored with sample masks 0x5/0xE and alpha-to-coverage 0/1, every sample of 8 texels read via texture_multisampled_2d textureLoad under the automatic unfilterable-float multisampled layout, textureNumSamples, out-of-range sample zero, float-layout/storage/single-sample-binding controls, early releases; exact 64 samples (CPU Vulkan only)
+PASS public multisampled reads: 4x rgba8unorm stored with sample masks 0x5/0xE and alpha-to-coverage 0/1, every sample of 8 texels read via texture_multisampled_2d textureLoad under the automatic unfilterable-float multisampled layout, textureNumSamples, out-of-range sample zero, a whole 4x texture copy read back per sample, a multisampled read beside a filtering-sampler linear sample in one pipeline, float-layout/storage/single-sample-binding and 4x buffer/count-mismatch/partial copy controls, early releases; exact 96 samples (CPU Vulkan only)
 PASS public attachment discard: single-sample color discard then direct copy, Load pass and compute textureLoad all read GPU zeros, Store control keeps green, discarded depth32float copies as 0.0, early releases; exact 40 texels and 32 loaded components (CPU Vulkan only)
 PASS public point lists: enabled maintenance5 default point size, 9 one-pixel points at exact centers from a direct draw, a render bundle and an indexed draw with an unselected decoy, stripIndexFormat control, early releases; exact 32 pixels (CPU Vulkan only)
 PASS public MSAA: actual 4x color/depth, exact resolve pixels, mask0/zero-and-full alpha coverage, empty resolve, same-batch discard-zero and depth-only empty/query/bundle passes (CPU Vulkan only)
@@ -524,6 +534,7 @@ PASS public admission: sparse/trailing/null layout holes, null unbind, ignored d
 PASS public error types: resource allocation, automatic-layout allocation, compute/render backend OOM/native/validation failures, failed requested-feature device and successful recovery
 PASS public format features: 3 of 3 offered and enabled (float32-filterable linear r32float/rgba32float midpoints exact, float32-blendable additive r32float 1000007.0, depth32float-stencil8 depth 0.25/stencil 7 per aspect); without them depth32float-stencil8 texture/pipeline/bundle, r32float blending and 'float' r32float binding reject, an unoffered feature fails the request (CPU Vulkan only)
 PASS public draw features: 2 of 2 offered and enabled (indirect-first-instance: GPU firstInstance 2/1 reaches instance attributes and instance_index exactly for indirect, indexed indirect and bundle draws, an instance-buffer overrun stays a no-op; depth-clip-control: unclippedDepth draws z 1.5/-0.5 clamped to depth 1.0/0.0 where the clipped control draws nothing); without them nonzero indirect firstInstance is a no-op while direct firstInstance draws, and unclippedDepth rejects (CPU Vulkan only)
+PASS public copy layouts: undefined rowsPerImage for one image and undefined bytesPerRow for one row through queue writes, buffer-to-texture and texture-to-buffer copies with exact texels, two-image and two-row undefined-stride rejections (CPU Vulkan only)
 PASS public timestamps: requested feature, zero/max/range/destroy admission, real pass/command writes, exact GPU nanoseconds, same-batch copy, scratch reuse and early query release (CPU Vulkan only)
 PASS typed recovery: native/OOM/pending errors survive submit/write/texture/workdone, unknown leases retained, terminal cleanup and fresh GPU normalizer recovery
 PASS every implemented procedure address matches; every unprovided name returns NULL
@@ -642,7 +653,7 @@ Do not run this on Miles or Suby while their possible disassembly/cooling hold
 remains. Every adapter-using client selects its adapter through
 `tests/adapter_class.h`: software (CPU fallback adapter) by default, or a
 nonfallback GPU adapter with `DOE_C_TEST_ADAPTER=physical`. Each PASS line names
-the class and device it ran on. `make check-physical` runs the same 35 clients on
+the class and device it ran on. `make check-physical` runs the same 36 clients on
 the system ICDs (`VK_ICD_FILENAMES` unset):
 
 ```
@@ -672,7 +683,8 @@ vertex formats, storage textures, point lists, attachment discard and multisampl
 reads all 33 (including `storage-textures`, `point-list`, `color-discard` and
 `msaa-sampling`) passed; with optional format features all 34 (including
 `format-features`) passed; with optional draw features all 35 (including
-`draw-features`) passed. That is
+`draw-features`) passed; with undefined copy strides all 36 (including
+`copy-layouts`) passed. That is
 developer evidence for these exact clients on that
 adapter/driver: the oracles are the clients' own expected values, not frozen
 independent workloads, and it is not Vulkan backend qualification, a performance

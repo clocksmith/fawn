@@ -44,6 +44,8 @@ WGPUComputePassEncoder wgpuCommandEncoderBeginComputePass(WGPUCommandEncoder han
         (writes && (writes->nextInChain || !native_feature_enabled(device, WGPUFeatureName_TimestampQuery))) ?
         doe_resource_encoder_invalidate(encoder, DOE_RESOURCE_UNSUPPORTED) :
         doe_resource_encoder_begin_compute_with_timestamps(encoder, writes ? &timestamps : NULL, &pass);
+    /* A rejected begin still returns a pass (WebGPU invalid pass). */
+    if (status != DOE_RESOURCE_OK) pass = doe_resource_compute_pass_rejected(encoder);
     native_unlock(device);
     if (status != DOE_RESOURCE_OK) native_error(device, native_resource_error(status), "compute pass begin failed");
     if (pass && descriptor) native_label(device, pass, descriptor->label);

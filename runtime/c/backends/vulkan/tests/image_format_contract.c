@@ -11,7 +11,8 @@ static unsigned mutable_queries;
 static void format_properties(VkPhysicalDevice device, uint32_t format, VkFormatProperties *out) {
     (void)device;
     *out = (VkFormatProperties){.optimalTilingFeatures =
-        format == DOE_VK_FORMAT_RGBA8_UNORM ? VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT | VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT :
+        format == DOE_VK_FORMAT_RGBA8_UNORM ? VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT | VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT |
+            VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT :
         VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT};
 }
 static VkResult image_properties(VkPhysicalDevice device, uint32_t format, uint32_t type,
@@ -20,8 +21,9 @@ static VkResult image_properties(VkPhysicalDevice device, uint32_t format, uint3
     /* Attachment sample-mask queries stay flagless; the image query carries the flags. */
     assert(type == DOE_VK_TEXTURE_2D && tiling == VK_IMAGE_TILING_OPTIMAL && (flags == 0 || flags == expected_flags));
     if (flags == VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT) ++mutable_queries;
-    /* Attachment usage, optionally with SAMPLED for multisampled shader reads. */
-    assert((usage & ~(VkFlags)DOE_VK_TEXTURE_SAMPLED) == (format == DOE_VK_FORMAT_RGBA8_UNORM ?
+    /* Attachment usage, optionally with SAMPLED (multisampled shader reads) and
+     * transfer (multisampled image-to-image copies). */
+    assert((usage & ~(VkFlags)(DOE_VK_TEXTURE_SAMPLED | DOE_VK_TEXTURE_COPY_SRC | DOE_VK_TEXTURE_COPY_DST)) == (format == DOE_VK_FORMAT_RGBA8_UNORM ?
         DOE_VK_TEXTURE_COLOR_ATTACHMENT : DOE_VK_TEXTURE_DEPTH_STENCIL_ATTACHMENT));
     ++queries;
     *out = (VkImageFormatProperties){.maxExtent = {64, 64, 1}, .maxMipLevels = 7,
@@ -80,7 +82,7 @@ int main(void) {
     desc.sample_count = 8;
     rejected(&context, &desc, DOE_VK_UNSUPPORTED);
     desc.sample_count = 4;
-    desc.usage |= DOE_VK_TEXTURE_COPY_SRC;
+    desc.usage |= DOE_VK_TEXTURE_STORAGE;
     rejected(&context, &desc, DOE_VK_UNSUPPORTED);
     desc.usage = DOE_VK_TEXTURE_COLOR_ATTACHMENT;
     desc.depth_or_layers = 2;
@@ -96,17 +98,20 @@ int main(void) {
     doe_vk_texture *sentinel = (doe_vk_texture *)&context, *out = sentinel;
     assert(doe_vk_texture_create(&context, &desc, &out, NULL) == DOE_VK_OUT_OF_MEMORY);
     assert(out == sentinel && creations == 1 && context.references == 1);
-    /* Sampled multisample images reach native creation; storage/copy do not. */
+    /* Sampled and copyable multisample images reach native creation; storage does not. */
     desc.usage |= DOE_VK_TEXTURE_SAMPLED;
     assert(doe_vk_texture_create(&context, &desc, &out, NULL) == DOE_VK_OUT_OF_MEMORY);
     assert(out == sentinel && creations == 2);
+    desc.usage |= DOE_VK_TEXTURE_COPY_SRC | DOE_VK_TEXTURE_COPY_DST;
+    assert(doe_vk_texture_create(&context, &desc, &out, NULL) == DOE_VK_OUT_OF_MEMORY);
+    assert(out == sentinel && creations == 3);
     desc.usage |= DOE_VK_TEXTURE_STORAGE;
     rejected(&context, &desc, DOE_VK_UNSUPPORTED);
     desc.usage = DOE_VK_TEXTURE_COLOR_ATTACHMENT;
     desc.sample_count = 0;
     expected_samples = 1;
     assert(doe_vk_texture_create(&context, &desc, &out, NULL) == DOE_VK_OUT_OF_MEMORY);
-    assert(out == sentinel && creations == 3 && context.references == 1 && queries > 6);
+    assert(out == sentinel && creations == 4 && context.references == 1 && queries > 6);
     /* A listed srgb pair makes the same image mutable with a format list; a list
      * naming only the image format stays immutable. */
     const doe_vk_texture_format pair[2] = {DOE_VK_FORMAT_RGBA8_UNORM, DOE_VK_FORMAT_RGBA8_SRGB};
@@ -116,7 +121,7 @@ int main(void) {
     desc.view_format_count = 2;
     expected_flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
     assert(doe_vk_texture_create(&context, &desc, &out, NULL) == DOE_VK_OUT_OF_MEMORY);
-    assert(out == sentinel && creations == 5 && context.references == 1 && mutable_queries == 1);
+    assert(out == sentinel && creations == 6 && context.references == 1 && mutable_queries == 1);
     expected_flags = 0;
     desc.view_formats = NULL;
     desc.view_format_count = 0;
@@ -127,6 +132,6 @@ int main(void) {
     assert(doe_vk_texture_copy_region(&texture, region, 256,
         (doe_vk_texture_buffer_layout){0}, &copy) == DOE_VK_UNSUPPORTED);
     assert(copy.bufferOffset == 99);
-    puts("PASS exact native image-format query arguments, actual sample masks and aspect intersections, format-specific limits, MSAA restrictions with sampled-attachment admission, mutable srgb format-list packets, allocation rollback, output preservation and copy rejection");
+    puts("PASS exact native image-format query arguments, actual sample masks and aspect intersections, format-specific limits, MSAA restrictions with sampled/copyable-attachment admission, mutable srgb format-list packets, allocation rollback, output preservation and copy rejection");
     return 0;
 }

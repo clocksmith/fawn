@@ -200,7 +200,10 @@ bool native_pipeline_bindings(native_pipeline *payload, const native_stage *stag
             const doe_resource_layout_entry *actual = NULL;
             for (size_t j = 0; j < count; ++j) if (entries[j].binding == resource->binding) actual = &entries[j];
             if (!actual || !compatible(actual, &required)) return false;
-            if (actual->kind == DOE_BIND_TEXTURE && actual->sample_type == WGPUTextureSampleType_UnfilterableFloat) unfilterable = true;
+            /* A multisampled texture never pairs with a sampler (textureLoad only),
+             * so only single-sample unfilterable textures enter the pair check. */
+            if (actual->kind == DOE_BIND_TEXTURE && !actual->multisampled &&
+                actual->sample_type == WGPUTextureSampleType_UnfilterableFloat) unfilterable = true;
             if (actual->kind == DOE_BIND_SAMPLER && actual->sampler_type == WGPUSamplerBindingType_Filtering) filtering = true;
             size_t at = 0;
             while (at < payload->binding_count && (payload->bindings[at].group != resource->group ||

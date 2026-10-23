@@ -446,8 +446,9 @@ separate official provenance and layout checks; this is not a driver test.
 
 Multisample images currently require 2D, one mip/layer, no cube flag and one color
 or depth/stencil attachment usage, optionally plus SAMPLED for per-sample shader
-reads (the native image-format query checks that exact combination). Copying and
-storage remain unsupported for them. Pipeline sample masks and alpha-to-coverage use native
+reads and COPY_SRC/COPY_DST (the native image-format query checks that exact
+combination). They copy only image-to-image between equal sample counts and of
+the whole subresource; buffer copies and storage remain unsupported for them. Pipeline sample masks and alpha-to-coverage use native
 multisample state without enabling sample-rate shading or alpha-to-one. Public
 WebGPU sample-count and shader-output admission remains upstream.
 
