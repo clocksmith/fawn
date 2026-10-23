@@ -13,6 +13,7 @@ typedef struct doe_vk_functions {
     void (*vkDestroyInstance)(VkInstance instance, const VkAllocationCallbacks *pAllocator);
     VkResult (*vkEnumeratePhysicalDevices)(VkInstance instance, uint32_t *pPhysicalDeviceCount, VkPhysicalDevice *pPhysicalDevices);
     void (*vkGetPhysicalDeviceQueueFamilyProperties)(VkPhysicalDevice physicalDevice, uint32_t *pQueueFamilyPropertyCount, VkQueueFamilyProperties *pQueueFamilyProperties);
+    VkResult (*vkEnumerateDeviceExtensionProperties)(VkPhysicalDevice physicalDevice, const uint8_t *pLayerName, uint32_t *pPropertyCount, VkExtensionProperties *pProperties);
     VkResult (*vkCreateDevice)(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator, VkDevice *pDevice);
     void (*vkDestroyDevice)(VkDevice device, const VkAllocationCallbacks *pAllocator);
     void (*vkGetDeviceQueue)(VkDevice device, uint32_t queueFamilyIndex, uint32_t queueIndex, VkQueue *pQueue);

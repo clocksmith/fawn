@@ -40,6 +40,7 @@ typedef struct doe_vk_options {
     uint32_t adapter_ordinal; /* Exact enumeration ordinal, no silent fallback. */
     bool allow_cpu_adapter; /* False by default; software is never GPU evidence. */
     bool require_graphics_queue; /* Select a compute+graphics family or reject. */
+    bool enable_shader_demote_if_supported; /* Explicit opt-in; unavailable remains disabled. */
 } doe_vk_options;
 
 typedef struct doe_vk_caps {
@@ -81,6 +82,7 @@ typedef struct doe_vk_caps {
     uint32_t max_vertex_input_attribute_offset;
     uint32_t max_vertex_output_components;
     uint32_t max_fragment_input_components;
+    bool shader_demote_to_helper_invocation; /* Enabled, not merely advertised. */
 } doe_vk_caps;
 
 /* One owned reference on success. Objects retain their creating context. */
