@@ -45,12 +45,18 @@ Do not reformat frozen milestones to meet a metric. See
 ## Readability and decisive checks
 
 Use ordinary four-space indentation, owner brace/naming conventions and one
-nontrivial state change per line. Split cohesive responsibilities, not arbitrary
-line quotas. Keep explanatory comments, diagnostics and provenance. No minification,
+nontrivial state change per line. Every C source/header has at most **999 physical lines**, enforced by
+`python3 runtime/c/tools/check_source_size.py`. Split cohesive responsibilities,
+not arbitrary chunks; keep explanatory comments, diagnostics and provenance. No minification,
 line packing, hidden mutable globals, public test-mutation hooks or code-golf macros.
 Existing bounded serialization macros do not justify a new framework.
 
-Choose the real consumer and smallest decisive check before editing. Test meaningful
+Implement coherent subsystems in parallel; review and run focused checks as code
+changes. Exhaustive integrated qualification follows implementation, before any
+qualified cutover. Do not create a new planning/report cycle for each small port.
+Remove superseded live helpers and guidance recoverably in Git, preserving tests
+and historical sealed evidence. Choose the real consumer and smallest decisive
+check before editing. Test meaningful
 wrong-but-well-typed cases: reversed conditions, wrong resource/field identity,
 reordered effects, early publication and premature cleanup. Inject failures at real
 boundaries, not a second implementation as oracle. Developer controls remain
