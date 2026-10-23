@@ -54,12 +54,17 @@ static doe_dx_status outcome(mock_failure point, doe_dx_error *error) {
 
 doe_dx_status doe_dx_native_open(const doe_dx_options *options,
     doe_dx_native_context **out, doe_dx_caps *caps, doe_dx_error *error) {
+    mock.opens++;
+    mock.open_options = *options;
     doe_dx_status status = outcome(MOCK_OPEN, error);
     if (status != DOE_DX_OK) return status;
     doe_dx_native_context *context = calloc(1, sizeof(*context));
     assert(context);
     *caps = (doe_dx_caps){0};
-    caps->adapter_ordinal = options->adapter_ordinal;
+    caps->adapter_ordinal = options->adapter_selection == DOE_DX_SELECT_WARP ?
+        DOE_DX_NO_ADAPTER_ORDINAL : options->adapter_ordinal;
+    caps->adapter_selection = options->adapter_selection;
+    caps->software_adapter = options->adapter_selection == DOE_DX_SELECT_WARP;
     strcpy(caps->name, "host call-control, not an adapter");
     *out = context;
     mock.contexts++;
