@@ -1,0 +1,67 @@
+{
+  "accepted_source": "fbd5f079edc8f397eae16adc4240f5b2598e318b",
+  "review_seal_sha256": "5ce9c5b9a285cef700d7933f37721aa6957f029e523e81fa6793c7878260a40b",
+  "changes": "Title/status/header navigation only; explicit reviewed semantic deltas unchanged. Original planning package preserved. Independent case seal remains pending.",
+  "files": [
+    {
+      "source": "CONTRACT.md",
+      "source_sha256": "3d148b69c3b2dd69fab87c58dbfead41977aaf752697ba084bf8eb3f62264b5f",
+      "installed": "CONTRACT.md",
+      "sha256": "20515d8042863f03bdd8c61dbaeed2f1c05546dd6f3b24974832472f3286ebff"
+    },
+    {
+      "source": "SCOPE.md",
+      "source_sha256": "c7b6adca48c85b29a46eea83fbf1bc5d4a703e79f63d0ba161014bef8cc8f492",
+      "installed": "SCOPE.md",
+      "sha256": "c7c6c837bd539dc87bb19c3f355606c89fca7b891454a37156211da73734ab65"
+    },
+    {
+      "source": "ACCEPTANCE.md",
+      "source_sha256": "695fe9310eae6c4fece5a39c186ea5f09d77a53068e31c531d58295d47239385",
+      "installed": "ACCEPTANCE.md",
+      "sha256": "695fe9310eae6c4fece5a39c186ea5f09d77a53068e31c531d58295d47239385"
+    },
+    {
+      "source": "FILE_MAP.md",
+      "source_sha256": "34bf2bbb5f7b534c5c98fbf228dde69e958b5af3cf636d3bf9e507e0e0437756",
+      "installed": "FILE_MAP.md",
+      "sha256": "34bf2bbb5f7b534c5c98fbf228dde69e958b5af3cf636d3bf9e507e0e0437756"
+    },
+    {
+      "source": "SOURCE_INPUTS.json",
+      "source_sha256": "25fdfa7e52dff9454322d1e34c42fdf4092ee921796da3cdf287363d16590976",
+      "installed": "SOURCE_INPUTS.json",
+      "sha256": "25fdfa7e52dff9454322d1e34c42fdf4092ee921796da3cdf287363d16590976"
+    },
+    {
+      "source": "SOURCE_INPUTS.sha256",
+      "source_sha256": "b91a807095ed435babda4836b88a37b610bd0f8e44bcc01eb8995dd66d0a0b87",
+      "installed": "SOURCE_INPUTS.sha256",
+      "sha256": "b91a807095ed435babda4836b88a37b610bd0f8e44bcc01eb8995dd66d0a0b87"
+    },
+    {
+      "source": "SOURCE_REBIND.json",
+      "source_sha256": "2db2b0a8f6ff6c85c5647afd79acf4be14b7cf61a121b94dcfc7840a6abda342",
+      "installed": "SOURCE_REBIND.json",
+      "sha256": "2db2b0a8f6ff6c85c5647afd79acf4be14b7cf61a121b94dcfc7840a6abda342"
+    },
+    {
+      "source": "SOURCE_TRACE.md",
+      "source_sha256": "dcf49d423cc8ad1e890439a62fb3c9cf275d983b71d7494120e6a8e16892ca05",
+      "installed": "SOURCE_TRACE.md",
+      "sha256": "dcf49d423cc8ad1e890439a62fb3c9cf275d983b71d7494120e6a8e16892ca05"
+    },
+    {
+      "source": "FREEZE_READY.md",
+      "source_sha256": "cea7250d73318b2e35e68a47f08fea4f7811cc24a6d4146b9d3a0d531aa0f564",
+      "installed": "FREEZE_READY.md",
+      "sha256": "cea7250d73318b2e35e68a47f08fea4f7811cc24a6d4146b9d3a0d531aa0f564"
+    },
+    {
+      "source": "doe_dropin_policy.h",
+      "source_sha256": "7091c2d6e4f9926c7a052b754c6b9ee82c4d8a74451128d8dd5ca6c1b92a4ea8",
+      "installed": "include/doe_dropin_policy.h",
+      "sha256": "7091c2d6e4f9926c7a052b754c6b9ee82c4d8a74451128d8dd5ca6c1b92a4ea8"
+    }
+  ]
+}
