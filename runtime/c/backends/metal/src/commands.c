@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: MIT */
-#include "internal.h"
+#include "texture_internal.h"
 
 doe_mtl_status doe_mtl_recording(doe_mtl_commands *commands, doe_mtl_error *error) {
     if (commands == NULL)
@@ -26,7 +26,7 @@ doe_mtl_status doe_mtl_poison(doe_mtl_commands *commands, doe_mtl_status status,
     return doe_mtl_fail(status, operation, error);
 }
 
-static doe_mtl_status native_record_result(doe_mtl_commands *commands,
+doe_mtl_status doe_mtl_native_record_result(doe_mtl_commands *commands,
     doe_mtl_status status, const doe_mtl_error *detail, doe_mtl_error *error) {
     if (status != DOE_MTL_OK) {
         commands->state = DOE_MTL_POISONED;
@@ -63,7 +63,7 @@ doe_mtl_status doe_mtl_commands_create(doe_mtl_context *context,
     return doe_mtl_fail(DOE_MTL_OK, "command create", error);
 }
 
-static doe_mtl_status buffer_preflight(const doe_mtl_commands *commands,
+doe_mtl_status doe_mtl_buffer_preflight(const doe_mtl_commands *commands,
     const doe_mtl_buffer *buffer, bool readable) {
     if (buffer == NULL) return DOE_MTL_INVALID_ARGUMENT;
     if (buffer->context != commands->context) return DOE_MTL_DEVICE_MISMATCH;
@@ -136,8 +136,8 @@ doe_mtl_status doe_mtl_commands_copy(doe_mtl_commands *commands,
     doe_mtl_error detail = {0};
     doe_mtl_native *native;
     if (status != DOE_MTL_OK) return status;
-    status = buffer_preflight(commands, source, size != 0);
-    if (status == DOE_MTL_OK) status = buffer_preflight(commands, destination, false);
+    status = doe_mtl_buffer_preflight(commands, source, size != 0);
+    if (status == DOE_MTL_OK) status = doe_mtl_buffer_preflight(commands, destination, false);
     if (status != DOE_MTL_OK) return doe_mtl_poison(commands, status, "copy buffer", error);
     if (!doe_mtl_range(source->size, source_offset, size) ||
         !doe_mtl_range(destination->size, destination_offset, size))
@@ -158,7 +158,7 @@ doe_mtl_status doe_mtl_commands_copy(doe_mtl_commands *commands,
         (size_t)size, &detail);
     if (status == DOE_MTL_OK && destination_offset == 0 && size == destination->size)
         destination_use->initialized = true;
-    return native_record_result(commands, status, &detail, error);
+    return doe_mtl_native_record_result(commands, status, &detail, error);
 }
 
 doe_mtl_status doe_mtl_commands_fill(doe_mtl_commands *commands,
@@ -169,7 +169,7 @@ doe_mtl_status doe_mtl_commands_fill(doe_mtl_commands *commands,
     doe_mtl_native *native;
     doe_mtl_error detail = {0};
     if (status != DOE_MTL_OK) return status;
-    status = buffer_preflight(commands, destination, false);
+    status = doe_mtl_buffer_preflight(commands, destination, false);
     if (status != DOE_MTL_OK) return doe_mtl_poison(commands, status, "fill buffer", error);
     if (!doe_mtl_range(destination->size, offset, size))
         return doe_mtl_poison(commands, DOE_MTL_RANGE, "fill range", error);
@@ -183,7 +183,7 @@ doe_mtl_status doe_mtl_commands_fill(doe_mtl_commands *commands,
         (size_t)offset, (size_t)size, value, &detail);
     if (status == DOE_MTL_OK && offset == 0 && size == destination->size)
         use->initialized = true;
-    return native_record_result(commands, status, &detail, error);
+    return doe_mtl_native_record_result(commands, status, &detail, error);
 }
 
 static doe_mtl_status binding_preflight(doe_mtl_commands *commands,
@@ -196,7 +196,7 @@ static doe_mtl_status binding_preflight(doe_mtl_commands *commands,
         if (binding->slot >= DOE_MTL_BUFFER_SLOTS || binding->slot == pipeline->sizes_slot)
             return DOE_MTL_RANGE;
         if (flat[binding->slot].buffer != NULL) return DOE_MTL_INVALID_ARGUMENT;
-        status = buffer_preflight(commands, binding->buffer, true);
+        status = doe_mtl_buffer_preflight(commands, binding->buffer, true);
         if (status != DOE_MTL_OK) return status;
         if (binding->size == 0 ||
             !doe_mtl_range(binding->buffer->size, binding->offset, binding->size))
@@ -212,11 +212,13 @@ static doe_mtl_status binding_preflight(doe_mtl_commands *commands,
     return DOE_MTL_OK;
 }
 
-doe_mtl_status doe_mtl_commands_dispatch(doe_mtl_commands *commands,
-    doe_mtl_pipeline *pipeline, const doe_mtl_buffer_binding *bindings,
-    size_t count, doe_mtl_dimensions groups, uint32_t repeat, doe_mtl_error *error) {
+doe_mtl_status doe_mtl_commands_dispatch_resources(doe_mtl_commands *commands,
+    doe_mtl_pipeline *pipeline, const doe_mtl_buffer_binding *bindings, size_t count,
+    const doe_mtl_texture_binding *textures, size_t texture_count,
+    const doe_mtl_sampler_binding *samplers, size_t sampler_count,
+    doe_mtl_dimensions groups, uint32_t repeat, doe_mtl_error *error) {
     doe_mtl_status status = doe_mtl_recording(commands, error);
-    doe_mtl_native_binding flat[DOE_MTL_BUFFER_SLOTS] = {{0}};
+    doe_mtl_native_resources resources = {0};
     doe_mtl_error detail = {0};
     doe_mtl_native *native;
     size_t i;
@@ -225,7 +227,10 @@ doe_mtl_status doe_mtl_commands_dispatch(doe_mtl_commands *commands,
         return doe_mtl_poison(commands, DOE_MTL_INVALID_ARGUMENT, "dispatch arguments", error);
     if (pipeline->context != commands->context)
         return doe_mtl_poison(commands, DOE_MTL_DEVICE_MISMATCH, "dispatch pipeline", error);
-    status = binding_preflight(commands, pipeline, bindings, count, flat);
+    status = binding_preflight(commands, pipeline, bindings, count, resources.buffers);
+    if (status == DOE_MTL_OK)
+        status = doe_mtl_image_bindings_preflight(commands, textures, texture_count,
+            samplers, sampler_count, &resources);
     if (status != DOE_MTL_OK) return doe_mtl_poison(commands, status, "dispatch binding", error);
     if (groups.x == 0 || groups.y == 0 || groups.z == 0 || repeat == 0)
         return doe_mtl_fail(DOE_MTL_OK, "empty dispatch", error);
@@ -240,11 +245,20 @@ doe_mtl_status doe_mtl_commands_dispatch(doe_mtl_commands *commands,
         doe_mtl_buffer_use *use;
         status = doe_mtl_use_buffer(commands, bindings[i].buffer, &use);
     }
+    if (status == DOE_MTL_OK)
+        status = doe_mtl_image_bindings_retain(commands, textures, texture_count, samplers, sampler_count);
     if (status != DOE_MTL_OK) return doe_mtl_poison(commands, status, "dispatch lease", error);
     native = &commands->context->native;
     status = native->dispatch(native->userdata, commands->native, pipeline->native,
-        flat, pipeline->sizes_slot, groups, pipeline->workgroup, repeat, &detail);
-    return native_record_result(commands, status, &detail, error);
+        &resources, pipeline->sizes_slot, groups, pipeline->workgroup, repeat, &detail);
+    return doe_mtl_native_record_result(commands, status, &detail, error);
+}
+
+doe_mtl_status doe_mtl_commands_dispatch(doe_mtl_commands *commands,
+    doe_mtl_pipeline *pipeline, const doe_mtl_buffer_binding *bindings,
+    size_t count, doe_mtl_dimensions groups, uint32_t repeat, doe_mtl_error *error) {
+    return doe_mtl_commands_dispatch_resources(commands, pipeline, bindings, count,
+        NULL, 0, NULL, 0, groups, repeat, error);
 }
 
 doe_mtl_status doe_mtl_commands_dispatch_indirect(doe_mtl_commands *commands,
@@ -255,6 +269,7 @@ doe_mtl_status doe_mtl_commands_dispatch_indirect(doe_mtl_commands *commands,
 }
 
 static void retire_uses(doe_mtl_commands *commands, bool completed, bool success) {
+    doe_mtl_images_retire(commands, completed, success);
     while (commands->buffers != NULL) {
         doe_mtl_buffer_use *use = commands->buffers;
         commands->buffers = use->next;

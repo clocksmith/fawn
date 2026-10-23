@@ -6,7 +6,7 @@
 #include <string.h>
 
 enum { MOCK_KIND_DEVICE, MOCK_KIND_QUEUE, MOCK_KIND_BUFFER, MOCK_KIND_PIPELINE,
-    MOCK_KIND_COMMAND };
+    MOCK_KIND_COMMAND, MOCK_KIND_TEXTURE, MOCK_KIND_VIEW, MOCK_KIND_SAMPLER };
 struct mock_object {
     unsigned kind;
     size_t length;
@@ -61,6 +61,11 @@ static doe_mtl_status device_create(void *userdata, void **out,
     result.max_threads_per_dimension[0] = 1024;
     result.max_threads_per_dimension[1] = 1024;
     result.max_threads_per_dimension[2] = 64;
+    result.max_texture_1d = 16384;
+    result.max_texture_2d = 16384;
+    result.max_texture_3d = 2048;
+    result.max_texture_layers = 2048;
+    result.bc_texture_compression = true;
     strcpy(result.device_name, "test call ledger, not a GPU");
     *out = object_create(mock, MOCK_KIND_DEVICE);
     *caps = result;
@@ -153,19 +158,77 @@ static doe_mtl_status fill_buffer(void *userdata, void *command, void *buffer,
 }
 
 static doe_mtl_status dispatch(void *userdata, void *command, void *pipeline,
-    const doe_mtl_native_binding *bindings, uint32_t sizes_slot,
+    const doe_mtl_native_resources *resources, uint32_t sizes_slot,
     doe_mtl_dimensions groups, doe_mtl_dimensions workgroup, uint32_t repeat,
     doe_mtl_error *error) {
     mock_native *mock = userdata;
-    assert(command != NULL && pipeline != NULL && bindings != NULL);
+    assert(command != NULL && pipeline != NULL && resources != NULL);
     if (mock->fail == MOCK_DISPATCH) return failure(error);
     mock->dispatches++;
-    memcpy(mock->bindings, bindings, sizeof(mock->bindings));
+    memcpy(mock->bindings, resources->buffers, sizeof(mock->bindings));
+    mock->resources = *resources;
     mock->sizes_slot = sizes_slot;
     mock->groups = groups;
     mock->workgroup = workgroup;
     mock->repeat = repeat;
     return doe_mtl_fail(DOE_MTL_OK, "mock dispatch", error);
+}
+
+static doe_mtl_status texture_create(void *userdata, void *device,
+    const doe_mtl_texture_desc *desc, void **out, doe_mtl_error *error) {
+    mock_native *mock = userdata;
+    assert(device != NULL);
+    if (mock->fail == MOCK_TEXTURE) return failure(error);
+    mock->texture_desc = *desc;
+    *out = object_create(mock, MOCK_KIND_TEXTURE);
+    return doe_mtl_fail(DOE_MTL_OK, "mock texture", error);
+}
+static doe_mtl_status view_create(void *userdata, void *texture,
+    const doe_mtl_texture_view_desc *desc, void **out, doe_mtl_error *error) {
+    mock_native *mock = userdata;
+    assert(texture != NULL);
+    if (mock->fail == MOCK_VIEW) return failure(error);
+    mock->view_desc = *desc;
+    *out = object_create(mock, MOCK_KIND_VIEW);
+    return doe_mtl_fail(DOE_MTL_OK, "mock view", error);
+}
+static doe_mtl_status sampler_create(void *userdata, void *device,
+    const doe_mtl_sampler_desc *desc, void **out, doe_mtl_error *error) {
+    mock_native *mock = userdata;
+    assert(device != NULL);
+    if (mock->fail == MOCK_SAMPLER) return failure(error);
+    mock->sampler_desc = *desc;
+    *out = object_create(mock, MOCK_KIND_SAMPLER);
+    return doe_mtl_fail(DOE_MTL_OK, "mock sampler", error);
+}
+static doe_mtl_status upload_image(void *userdata, void *command, void *buffer,
+    void *texture, const doe_mtl_native_texture_copy *copy, doe_mtl_error *error) {
+    mock_native *mock = userdata;
+    assert(command != NULL && buffer != NULL && texture != NULL);
+    if (mock->fail == MOCK_UPLOAD_IMAGE) return failure(error);
+    mock->uploads++;
+    mock->image_to = *copy;
+    return doe_mtl_fail(DOE_MTL_OK, "mock image upload", error);
+}
+static doe_mtl_status read_image(void *userdata, void *command, void *texture,
+    void *buffer, const doe_mtl_native_texture_copy *copy, doe_mtl_error *error) {
+    mock_native *mock = userdata;
+    assert(command != NULL && buffer != NULL && texture != NULL);
+    if (mock->fail == MOCK_READ_IMAGE) return failure(error);
+    mock->reads++;
+    mock->image_from = *copy;
+    return doe_mtl_fail(DOE_MTL_OK, "mock image read", error);
+}
+static doe_mtl_status copy_image(void *userdata, void *command, void *source,
+    const doe_mtl_native_texture_copy *from, void *destination,
+    const doe_mtl_native_texture_copy *to, doe_mtl_error *error) {
+    mock_native *mock = userdata;
+    assert(command != NULL && source != NULL && destination != NULL);
+    if (mock->fail == MOCK_COPY_IMAGE) return failure(error);
+    mock->image_copies++;
+    mock->image_from = *from;
+    mock->image_to = *to;
+    return doe_mtl_fail(DOE_MTL_OK, "mock image copy", error);
 }
 
 static void commit(void *userdata, void *handle) {
@@ -202,6 +265,12 @@ doe_mtl_native mock_driver(mock_native *mock) {
     native.copy = copy_buffer;
     native.fill = fill_buffer;
     native.dispatch = dispatch;
+    native.texture = texture_create;
+    native.view = view_create;
+    native.sampler = sampler_create;
+    native.upload_texture = upload_image;
+    native.read_texture = read_image;
+    native.copy_texture = copy_image;
     native.commit = commit;
     native.observe = observe;
     return native;

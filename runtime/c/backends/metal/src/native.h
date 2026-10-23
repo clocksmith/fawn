@@ -2,6 +2,7 @@
 #ifndef DOE_MTL_NATIVE_H
 #define DOE_MTL_NATIVE_H
 #include "../include/doe_metal.h"
+#include "../include/doe_metal_texture.h"
 
 /* Private actual-platform call boundary. Tests substitute these calls only;
  * the production constructor has no injectable/public fake-runtime option.
@@ -12,6 +13,18 @@ typedef struct doe_mtl_native_binding {
     size_t offset;
     uint32_t size;
 } doe_mtl_native_binding;
+
+typedef struct doe_mtl_native_resources {
+    doe_mtl_native_binding buffers[DOE_MTL_BUFFER_SLOTS];
+    void *textures[DOE_MTL_TEXTURE_SLOTS];
+    void *samplers[DOE_MTL_SAMPLER_SLOTS];
+    uint32_t texture_count, sampler_count; /* Highest occupied slot plus one. */
+} doe_mtl_native_resources;
+typedef struct doe_mtl_native_texture_copy {
+    size_t buffer_offset, bytes_per_row, bytes_per_image;
+    doe_mtl_texture_region region;
+    bool volume;
+} doe_mtl_native_texture_copy;
 
 typedef struct doe_mtl_native {
     void *userdata;
@@ -35,9 +48,22 @@ typedef struct doe_mtl_native {
     doe_mtl_status (*fill)(void *userdata, void *command, void *buffer,
         size_t offset, size_t length, uint8_t value, doe_mtl_error *error);
     doe_mtl_status (*dispatch)(void *userdata, void *command, void *pipeline,
-        const doe_mtl_native_binding *bindings, uint32_t sizes_slot,
+        const doe_mtl_native_resources *resources, uint32_t sizes_slot,
         doe_mtl_dimensions groups, doe_mtl_dimensions workgroup,
         uint32_t repeat, doe_mtl_error *error);
+    doe_mtl_status (*texture)(void *userdata, void *device,
+        const doe_mtl_texture_desc *desc, void **out, doe_mtl_error *error);
+    doe_mtl_status (*view)(void *userdata, void *texture,
+        const doe_mtl_texture_view_desc *desc, void **out, doe_mtl_error *error);
+    doe_mtl_status (*sampler)(void *userdata, void *device,
+        const doe_mtl_sampler_desc *desc, void **out, doe_mtl_error *error);
+    doe_mtl_status (*upload_texture)(void *userdata, void *command, void *buffer,
+        void *texture, const doe_mtl_native_texture_copy *copy, doe_mtl_error *error);
+    doe_mtl_status (*read_texture)(void *userdata, void *command, void *texture,
+        void *buffer, const doe_mtl_native_texture_copy *copy, doe_mtl_error *error);
+    doe_mtl_status (*copy_texture)(void *userdata, void *command, void *source,
+        const doe_mtl_native_texture_copy *source_copy, void *destination,
+        const doe_mtl_native_texture_copy *destination_copy, doe_mtl_error *error);
     void (*commit)(void *userdata, void *command);
     /* Returns native MTLCommandBufferStatus, retaining exact NSError.code. */
     size_t (*observe)(void *userdata, void *command, bool wait, int64_t *code);

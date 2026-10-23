@@ -50,7 +50,14 @@ struct doe_mtl_commands {
     doe_mtl_error failure;
     doe_mtl_buffer_use *buffers;
     doe_mtl_pipeline_use *pipelines;
+    struct doe_mtl_texture_use *textures;
+    struct doe_mtl_view_use *views;
+    struct doe_mtl_sampler_use *samplers;
 };
+doe_mtl_status doe_mtl_native_record_result(doe_mtl_commands *commands,
+    doe_mtl_status status, const doe_mtl_error *detail, doe_mtl_error *error);
+doe_mtl_status doe_mtl_buffer_preflight(const doe_mtl_commands *commands,
+    const doe_mtl_buffer *buffer, bool readable);
 bool doe_mtl_range(size_t allocation, uint64_t offset, uint64_t size);
 doe_mtl_status doe_mtl_recording(doe_mtl_commands *commands, doe_mtl_error *error);
 doe_mtl_status doe_mtl_poison(doe_mtl_commands *commands, doe_mtl_status status,

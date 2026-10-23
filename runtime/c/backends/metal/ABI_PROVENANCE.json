@@ -33,6 +33,10 @@
     {
       "path": "runtime/c/resources/include/doe_resources.h",
       "sha256": "7824710101f9f03943a449583b5fa6ef482568d6ec2679286fbb9d7ecd1f2c2c"
+    },
+    {
+      "path": "runtime/zig/src/backend/metal/metal_texture_resources.zig",
+      "sha256": "e45e6cbb81471ba785fa07f3a6961a81c52b748d2e7cdce5758159c171fb64db"
     }
   ],
   "primary_references": [
@@ -71,6 +75,38 @@
     {
       "subject": "Workgroup versus thread dimensions",
       "url": "https://developer.apple.com/documentation/metal/mtlcomputecommandencoder/1443138-dispatchthreadgroups"
+    },
+    {
+      "subject": "Native pixel format numeric values",
+      "url": "https://raw.githubusercontent.com/apple/metal-cpp/main/Metal/MTLPixelFormat.hpp"
+    },
+    {
+      "subject": "Texture type, usage, range and four-byte swizzle ABI",
+      "url": "https://raw.githubusercontent.com/apple/metal-cpp/main/Metal/MTLTexture.hpp"
+    },
+    {
+      "subject": "Sampler descriptor types and native enum values",
+      "url": "https://raw.githubusercontent.com/apple/metal-cpp/main/Metal/MTLSampler.hpp"
+    },
+    {
+      "subject": "GPUFamily NSInteger constants and runtime BC query",
+      "url": "https://raw.githubusercontent.com/apple/metal-cpp/main/Metal/MTLDevice.hpp"
+    },
+    {
+      "subject": "Family-dependent conservative image limits and format feature admission",
+      "url": "https://developer.apple.com/metal/capabilities/"
+    },
+    {
+      "subject": "2D image stride zero, pixel/block alignment, native copy argument order",
+      "url": "https://developer.apple.com/documentation/metal/mtlblitcommandencoder/copy%28from%3Asourceoffset%3Asourcebytesperrow%3Asourcebytesperimage%3Asourcesize%3Ato%3Adestinationslice%3Adestinationlevel%3Adestinationorigin%3Aoptions%3A%29?language=objc"
+    },
+    {
+      "subject": "Readback source slice, mip, origin and destination buffer layout",
+      "url": "https://developer.apple.com/documentation/metal/mtlblitcommandencoder/copy%28from%3Asourceslice%3Asourcelevel%3Asourceorigin%3Asourcesize%3Ato%3Adestinationoffset%3Adestinationbytesperrow%3Adestinationbytesperimage%3Aoptions%3A%29"
+    },
+    {
+      "subject": "Compatible texture view types and cube face ranges",
+      "url": "https://developer.apple.com/documentation/metal/mtltexture/newtextureviewwithpixelformat%3Atexturetype%3Alevels%3Aslices%3A?changes=_3"
     }
   ],
   "abi_facts": [
@@ -78,12 +114,23 @@
     "Exact method signatures, including structures by value, are selected before dispatch.",
     "MTLResourceStorageModeShared=0 and Private=2<<4.",
     "Native command states 0/1 unknown, 2/3 pending, 4 completed, 5 error.",
-    "Create/new native objects own +1; autoreleased command buffers retained before pool drain."
+    "Create/new native objects own +1; autoreleased command buffers retained before pool drain.",
+    "MTLOrigin uses three NSUInteger coordinates. MTLTextureSwizzleChannels is four uint8 channels, size4 alignment1.",
+    "Texture type numbers 0/1/2/3/5/6/7; native shader read/write/render/view usage bits 1/2/4/16.",
+    "Sampler min/mag filter0/1, mipfilter1/2, address0/2/3, compare0..7; LOD setters take float.",
+    "Per-slice array buffer transfers use native bytesPerImage0 and origin.z0; volume transfers use slice0 and nonzero origin.z/depth as requested.",
+    "GPUFamily uses NSInteger; Mac2=2002, Apple2=1002, Apple3=1003. Exposed dimension limits are conservative published family bounds, not a hardware qualification."
   ],
   "not_verified": [
     "Apple SDK declaration compatibility",
     "Apple compiler/linker consumption",
     "Physical Metal shader output",
     "Full retained Metal consumer parity"
+  ],
+  "deliberate_retained_differences": [
+    "Images use private storage and staging transfers rather than the retained bridge shared-storage assumption; no CPU texture mapping is offered.",
+    "Explicit view counts/native enums replace retained WebGPU fallback/default conversions; public translation remains upstream.",
+    "2D native bytesPerImage is zero per the current Apple method contract, while the buffer image stride still advances each array layer.",
+    "One resource/command owner publishes per-subresource initialization only on native success; no second public lifetime policy."
   ]
 }

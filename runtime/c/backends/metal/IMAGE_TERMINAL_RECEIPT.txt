@@ -1,0 +1,23 @@
+Metal image lane: hosted Linux GCC developer controls only, 2026-10-23 UTC.
+Not Apple SDK, Objective-C dispatcher execution, pixel output or physical qualification.
+Historical first LeakSanitizer failure remains unchanged in TERMINAL_RECEIPT.txt.
+
+$ make -C runtime/c/backends/metal BUILD=/tmp/doe-c-metal-images-final all check probe abi-compile
+Metal developer controls: 10 scenario groups passed; mocked calls, no GPU execution
+Metal typed-call controls: pipeline cleanup, exact dispatch/copy/fill and completion passed; no SDK/GPU
+Metal image ownership controls: 9 groups passed; mocked native calls, no pixel/GPU execution
+Metal typed image controls: descriptors, views, samplers, 2D/3D transfers and mixed dispatch passed; no SDK/GPU
+Metal probe: unsupported (Metal requires 64-bit macOS); no device or execution claimed
+exit=0
+
+$ ASAN_OPTIONS=detect_leaks=0 make -C runtime/c/backends/metal BUILD=/tmp/doe-c-metal-images-final sanitize
+Metal developer controls: 10 scenario groups passed; mocked calls, no GPU execution
+Metal typed-call controls: pipeline cleanup, exact dispatch/copy/fill and completion passed; no SDK/GPU
+Metal image ownership controls: 9 groups passed; mocked native calls, no pixel/GPU execution
+Metal typed image controls: descriptors, views, samplers, 2D/3D transfers and mixed dispatch passed; no SDK/GPU
+exit=0
+
+GCC -fanalyzer strict compilation: context, resources, commands, textures, samplers, texture_formats, texture_ownership, texture_transfer: exit=0
+C++17 strict header syntax consumption (doe_metal_texture.h includes doe_metal.h): exit=0
+git diff --check -- runtime/c/backends/metal: exit=0
+python3 runtime/c/tools/check_source_size.py: C size check: 460 files, 0 failures; limit 999 (shared tree at observation).
