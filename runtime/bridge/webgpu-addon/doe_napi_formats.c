@@ -3,18 +3,28 @@
  * and other WebGPU enum string↔uint32 converters.
  */
 #include <node_api.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
 #include "../../zig/vendor/webgpu-headers/webgpu.h"
 
 /* Texture / primitive format converters */
 
-uint32_t texture_format_from_string(napi_env env, napi_value val) {
-    napi_valuetype vt; napi_typeof(env, val, &vt);
-    if (vt == napi_number) { uint32_t out = 0; napi_get_value_uint32(env, val, &out); return out; }
-    if (vt != napi_string) return 0x00000016; /* rgba8unorm */
-    char buf[32] = {0}; size_t len = 0;
-    napi_get_value_string_utf8(env, val, buf, sizeof(buf), &len);
+/* Names map to the pinned webgpu.h values. The Zig runtime numbers the eight
+ * RGBA16 and RGBA32 formats in an older order; translate at its boundary. */
+bool g_zig_texture_format_order = false;
+
+static uint32_t provider_texture_format(uint32_t standard) {
+    if (!g_zig_texture_format_order || standard < 0x24 || standard > 0x2B) return standard;
+    return standard <= 0x25 ? standard + 6 : standard - 2; /* unorm/snorm moved last */
+}
+
+static uint32_t standard_texture_format(uint32_t provider) {
+    if (!g_zig_texture_format_order || provider < 0x24 || provider > 0x2B) return provider;
+    return provider >= 0x2A ? provider - 6 : provider + 2;
+}
+
+static uint32_t texture_format_from_name(const char* buf) {
     if (strcmp(buf, "r8unorm") == 0)           return 0x00000001;
     if (strcmp(buf, "r8snorm") == 0)           return 0x00000002;
     if (strcmp(buf, "r8uint") == 0)            return 0x00000003;
@@ -50,14 +60,14 @@ uint32_t texture_format_from_string(napi_env env, napi_value val) {
     if (strcmp(buf, "rg32float") == 0)         return 0x00000021;
     if (strcmp(buf, "rg32uint") == 0)          return 0x00000022;
     if (strcmp(buf, "rg32sint") == 0)          return 0x00000023;
-    if (strcmp(buf, "rgba16uint") == 0)        return 0x00000024;
-    if (strcmp(buf, "rgba16sint") == 0)        return 0x00000025;
-    if (strcmp(buf, "rgba16float") == 0)       return 0x00000026;
-    if (strcmp(buf, "rgba32float") == 0)       return 0x00000027;
-    if (strcmp(buf, "rgba32uint") == 0)        return 0x00000028;
-    if (strcmp(buf, "rgba32sint") == 0)        return 0x00000029;
-    if (strcmp(buf, "rgba16unorm") == 0)      return 0x0000002A;
-    if (strcmp(buf, "rgba16snorm") == 0)      return 0x0000002B;
+    if (strcmp(buf, "rgba16uint") == 0)        return 0x00000026;
+    if (strcmp(buf, "rgba16sint") == 0)        return 0x00000027;
+    if (strcmp(buf, "rgba16float") == 0)       return 0x00000028;
+    if (strcmp(buf, "rgba32float") == 0)       return 0x00000029;
+    if (strcmp(buf, "rgba32uint") == 0)        return 0x0000002A;
+    if (strcmp(buf, "rgba32sint") == 0)        return 0x0000002B;
+    if (strcmp(buf, "rgba16unorm") == 0)       return 0x00000024;
+    if (strcmp(buf, "rgba16snorm") == 0)       return 0x00000025;
     if (strcmp(buf, "stencil8") == 0)          return 0x0000002C;
     if (strcmp(buf, "depth16unorm") == 0)      return 0x0000002D;
     if (strcmp(buf, "depth24plus") == 0)       return 0x0000002E;
@@ -122,8 +132,18 @@ uint32_t texture_format_from_string(napi_env env, napi_value val) {
     return 0x00000016;
 }
 
+/* Numbers pass through unchanged as provider values. */
+uint32_t texture_format_from_string(napi_env env, napi_value val) {
+    napi_valuetype vt; napi_typeof(env, val, &vt);
+    if (vt == napi_number) { uint32_t out = 0; napi_get_value_uint32(env, val, &out); return out; }
+    if (vt != napi_string) return 0x00000016; /* rgba8unorm */
+    char buf[32] = {0}; size_t len = 0;
+    napi_get_value_string_utf8(env, val, buf, sizeof(buf), &len);
+    return provider_texture_format(texture_format_from_name(buf));
+}
+
 const char* texture_format_u32_to_string(uint32_t fmt) {
-    switch (fmt) {
+    switch (standard_texture_format(fmt)) {
         case 0x00000001: return "r8unorm";      case 0x00000002: return "r8snorm";
         case 0x00000003: return "r8uint";       case 0x00000004: return "r8sint";
         case 0x00000005: return "r16unorm";     case 0x00000006: return "r16snorm";
@@ -141,11 +161,11 @@ const char* texture_format_u32_to_string(uint32_t fmt) {
         case 0x0000001D: return "rgb10a2uint";  case 0x0000001E: return "rgb10a2unorm";
         case 0x0000001F: return "rg11b10ufloat"; case 0x00000020: return "rgb9e5ufloat";
         case 0x00000021: return "rg32float";    case 0x00000022: return "rg32uint";
-        case 0x00000023: return "rg32sint";     case 0x00000024: return "rgba16uint";
-        case 0x00000025: return "rgba16sint";   case 0x00000026: return "rgba16float";
-        case 0x00000027: return "rgba32float";  case 0x00000028: return "rgba32uint";
-        case 0x00000029: return "rgba32sint";
-        case 0x0000002A: return "rgba16unorm";  case 0x0000002B: return "rgba16snorm";
+        case 0x00000023: return "rg32sint";     case 0x00000024: return "rgba16unorm";
+        case 0x00000025: return "rgba16snorm";  case 0x00000026: return "rgba16uint";
+        case 0x00000027: return "rgba16sint";   case 0x00000028: return "rgba16float";
+        case 0x00000029: return "rgba32float";  case 0x0000002A: return "rgba32uint";
+        case 0x0000002B: return "rgba32sint";
         case 0x0000002C: return "stencil8";
         case 0x0000002D: return "depth16unorm"; case 0x0000002E: return "depth24plus";
         case 0x0000002F: return "depth24plus-stencil8";

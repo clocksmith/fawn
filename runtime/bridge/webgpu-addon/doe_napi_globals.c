@@ -276,6 +276,8 @@ napi_value doe_load_library(napi_env env, napi_callback_info info) {
     }
     // Keep this handle for the process lifetime: objects and native workers may outlive an env.
     g_lib = candidate;
+    /* Only Zig runtime libraries carry the drop-in build info export. */
+    g_zig_texture_format_order = LIB_SYM(g_lib, "doeWgpuDropinBuildInfoSchemaVersion") != NULL;
 
     LOAD_SYM(wgpuCreateInstance);
     LOAD_SYM(wgpuInstanceRelease);
