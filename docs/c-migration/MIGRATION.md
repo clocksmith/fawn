@@ -129,6 +129,23 @@ remains pending. `d7455c73` adds actual software fragment demotion pixel checks
 with explicit enabled Vulkan capability, not derivative/helper parity. All
 physical hardware qualification remains pending.
 
+The subsequent source checkpoint adds161/202 native exports (`a5528296`),
+including real enabled/disabled fragment-demotion consumers;41 remain absent.
+Scalar atomic ABI9 (`342fcf1b`) shares typed address paths and robust access;
+`a82b3edd` executes all11 operations, signed/unsigned storage and workgroup
+cases, plus the unchanged256-lane workgroup-atomic fixture through software
+Vulkan. The initial composed semantic-frame failure was repaired by consolidating
+call handling and deleting two superseded units, not raising the ceiling.
+Metal matrix text lowering (`e0b9e9b9`) has exact finite emitted-operation host
+controls and rejects unsupported atomic instructions explicitly; Apple compilation
+and device execution remain unrun. Metal MSAA/aspect ownership (`db455842`) has
+typed native-call controls only. Vulkan depth/stencil initialization and discarded
+attachment zeroing have actual software readback (`a61d944a`); culled-face stencil
+admission is corrected separately (`7a7206af`). Shared debug recording stacks
+(`be355fdb`) reuse existing encoder/pass/bundle state and pass72 host suites with
+sanitizers, without a duplicate command queue. These receipts bind their exact
+inputs; no single receipt qualifies every subsequently composed revision.
+
 ## Accepted experimental coverage
 
 The [first compiler increment](../../runtime/c/compiler/MILESTONE_1_RESULTS.md)
