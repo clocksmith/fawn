@@ -56,7 +56,7 @@ doe_mtl_status doe_mtl_objc_fill(void *userdata, void *command, void *buffer,
 doe_mtl_status doe_mtl_objc_dispatch(void *userdata, void *command, void *pipeline,
     const doe_mtl_native_resources *resources, uint32_t sizes_slot,
     doe_mtl_dimensions groups, doe_mtl_dimensions workgroup, uint32_t repeat,
-    doe_mtl_error *error) {
+    const doe_mtl_native_timestamps *timestamps, doe_mtl_error *error) {
     doe_mtl_objc *runtime = userdata;
     void *pool = doe_mtl_objc_pool(runtime);
     void *encoder;
@@ -65,10 +65,12 @@ doe_mtl_status doe_mtl_objc_dispatch(void *userdata, void *command, void *pipeli
     const doe_mtl_size grid = {groups.x, groups.y, groups.z};
     const doe_mtl_size group = {workgroup.x, workgroup.y, workgroup.z};
     if (pool == NULL) return doe_mtl_fail(DOE_MTL_NATIVE_FAILURE, "autorelease pool", error);
-    encoder = doe_mtl_objc_object(runtime, command, runtime->compute_encoder);
+    encoder = timestamps != NULL ? doe_mtl_objc_timed_compute(runtime, command, timestamps) :
+        doe_mtl_objc_object(runtime, command, runtime->compute_encoder);
     if (encoder == NULL) {
         doe_mtl_objc_drain(runtime, pool);
-        return doe_mtl_fail(DOE_MTL_NATIVE_FAILURE, "computeCommandEncoder", error);
+        return doe_mtl_fail(DOE_MTL_NATIVE_FAILURE, timestamps != NULL ?
+            "computeCommandEncoderWithDescriptor:" : "computeCommandEncoder", error);
     }
     runtime->set_object_call(encoder, runtime->set_pipeline, pipeline);
     for (i = 0; i < DOE_MTL_BUFFER_SLOTS; ++i) {

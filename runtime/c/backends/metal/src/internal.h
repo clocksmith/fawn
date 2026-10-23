@@ -54,6 +54,7 @@ struct doe_mtl_commands {
     struct doe_mtl_view_use *views;
     struct doe_mtl_sampler_use *samplers;
     struct doe_mtl_render_pipeline_use *render_pipelines;
+    struct doe_mtl_timestamp_use *timestamps;
 };
 doe_mtl_status doe_mtl_native_record_result(doe_mtl_commands *commands,
     doe_mtl_status status, const doe_mtl_error *detail, doe_mtl_error *error);

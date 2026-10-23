@@ -1,0 +1,171 @@
+{
+  "schema": "doe-c-metal-timestamp-developer-evidence-v1",
+  "consumer": "C migration lead review of actual Metal timestamp owner and native-composition prerequisites",
+  "created_utc": "2026-10-23T20:04:07.619121+00:00",
+  "base_metal_commit": "db455842",
+  "repository_head_at_observation": "e8bfd7f884b83c46cff6426e9e1304b1bffa1bbb",
+  "qualification": "developer controls only; default off; not full migration, Apple SDK validation or physical support",
+  "source_manifest": {
+    "path": "runtime/c/backends/metal/TIMESTAMP_SOURCE_INPUTS.sha256",
+    "sha256": "25c2f289d9d9fc1c421c6f2fc792192bb5722bd97939702bee52220025841e4e",
+    "input_count": 59
+  },
+  "terminal_receipt": {
+    "path": "runtime/c/backends/metal/TIMESTAMP_TERMINAL_RECEIPT.txt",
+    "sha256": "7461a92d051bdac88fdf9da434e70336a47ee8a193f9d00bf9264869f3e63963"
+  },
+  "first_failed_compile_manifest": {
+    "path": "runtime/c/backends/metal/TIMESTAMP_FIRST_INPUTS.sha256",
+    "sha256": "d78696507f9a96c0547dbcc91baf0ef486b6c487dbb973eba3cc5722317a8ba5",
+    "scope": "Historical first failed compile inputs; not current source verification target"
+  },
+  "compiler": "cc (Debian 14.2.0-19) 14.2.0",
+  "checks": [
+    {
+      "command": "make -C runtime/c/backends/metal BUILD=/tmp/doe-c-metal-query-final all check probe abi-compile",
+      "outcome": "pass",
+      "scope": "11 owned control executables, Linux explicit unsupported probe, nine typed source branches; no SDK/device"
+    },
+    {
+      "command": "ASAN_OPTIONS=detect_leaks=0 make -C runtime/c/backends/metal BUILD=/tmp/doe-c-metal-query-final sanitize",
+      "outcome": "pass",
+      "scope": "all 11 controls, leak scanning disabled"
+    },
+    {
+      "command": "cc ... -fanalyzer -c commands/compute_commands/timestamps/objc_commands/objc_queries/objc_runtime.c",
+      "outcome": "pass",
+      "scope": "six changed production translation units"
+    },
+    {
+      "command": "c++ ... -fsyntax-only public-private owner headers",
+      "outcome": "pass"
+    },
+    {
+      "command": "python3 runtime/c/tools/check_source_size.py",
+      "outcome": "pass",
+      "scope": "532 files, zero failures at observation"
+    },
+    {
+      "command": "git diff --check -- runtime/c/backends/metal",
+      "outcome": "pass"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "/tmp/doe-c-metal-query-final/libdoe_metal.a",
+      "sha256": "ffa2a46c156bfff1b3e3f918ca5c0fce2e5f397a931ef9d50fd66ca7e3ce6132"
+    },
+    {
+      "path": "/tmp/doe-c-metal-query-final/probe",
+      "sha256": "49cdada2a51d672b2922e57c907dd2818fa18e8901b7cf6c223bbe251ebf6720"
+    },
+    {
+      "path": "/tmp/doe-c-metal-query-final/test_images",
+      "sha256": "a9a4c36410254eec35a88c708fc41e25c3f6acee41ab93669197d26a7453081d"
+    },
+    {
+      "path": "/tmp/doe-c-metal-query-final/test_lifetime",
+      "sha256": "d2edc14bdd50d730fbfa2f82aab3b5db9a3749b5186fa7fe70339cf58c5842ed"
+    },
+    {
+      "path": "/tmp/doe-c-metal-query-final/test_multisample",
+      "sha256": "bc20bcd6d2e1a53ac62ec0068580a668a76868253108a6a11b44a3fd0c9152d2"
+    },
+    {
+      "path": "/tmp/doe-c-metal-query-final/test_objc_calls",
+      "sha256": "c9e61c8ce15bf9c50ffb362d6544c11824f5e7d991d9903c22406b40790fc70b"
+    },
+    {
+      "path": "/tmp/doe-c-metal-query-final/test_objc_images",
+      "sha256": "a80da7c2cdc528c9906abc4cf2aba257fb073e04cbae36a13389baf1fb7ab02f"
+    },
+    {
+      "path": "/tmp/doe-c-metal-query-final/test_objc_queries",
+      "sha256": "f246adeb699edeab3336eb91d046328867dbf78d031510ef07b6026021855773"
+    },
+    {
+      "path": "/tmp/doe-c-metal-query-final/test_objc_render_commands",
+      "sha256": "ccbc156a90ea62a0f86c9e0ecddd9f4b49b8cf634fc25beed4e8bca1dadadd63"
+    },
+    {
+      "path": "/tmp/doe-c-metal-query-final/test_objc_render_pipeline",
+      "sha256": "976c811ad511420768e88a26c8b83c9f1899183d32bd4c31b5357e188dc02ffa"
+    },
+    {
+      "path": "/tmp/doe-c-metal-query-final/test_render",
+      "sha256": "4e06b75be96f671b89abeb975d11657c9389013174cc2db0fa60eca72046f346"
+    },
+    {
+      "path": "/tmp/doe-c-metal-query-final/test_timestamps",
+      "sha256": "c2d570a4769b0afb17d99fe64893d009fe271286500d4071a68afc5278eca80c"
+    },
+    {
+      "path": "/tmp/doe-c-metal-query-final/test_visibility",
+      "sha256": "68cf41848c5b7c1444459ff6c12fedb490f3c35210bce10dd8a9daee3a371b19"
+    },
+    {
+      "path": "/tmp/doe-c-metal-query-final/sanitize/test_images",
+      "sha256": "e344f8bd3849b1ba2478078ff9ab5546351c79a030bba56207803e7accc79cdf"
+    },
+    {
+      "path": "/tmp/doe-c-metal-query-final/sanitize/test_lifetime",
+      "sha256": "e3961da820620f6131d2695f603e456afdcdf696721a6756953ead2ccf7eda7b"
+    },
+    {
+      "path": "/tmp/doe-c-metal-query-final/sanitize/test_multisample",
+      "sha256": "36ee18e5958adabf7b1213844affe30f4f6cf5244abc6017e2f1ea08b35c9fff"
+    },
+    {
+      "path": "/tmp/doe-c-metal-query-final/sanitize/test_objc_calls",
+      "sha256": "9effe9d8585e69539aa1a11d5e929333198d39fa228923e4c9262599df7589d9"
+    },
+    {
+      "path": "/tmp/doe-c-metal-query-final/sanitize/test_objc_images",
+      "sha256": "8d01bee45f3cce18868aae2b96c2942e87c769d0b4b4862f21d412f2ff1098fb"
+    },
+    {
+      "path": "/tmp/doe-c-metal-query-final/sanitize/test_objc_queries",
+      "sha256": "f33858a880f3734b667b7cb5ba99f1f924703f352f676fdd9c634d7c1f789a2c"
+    },
+    {
+      "path": "/tmp/doe-c-metal-query-final/sanitize/test_objc_render_commands",
+      "sha256": "9359018233092bdd935766988c4f1e4894b2fad5ae264f9145f8432cc02f230f"
+    },
+    {
+      "path": "/tmp/doe-c-metal-query-final/sanitize/test_objc_render_pipeline",
+      "sha256": "a5c6928ad796afef1b795d75349af32a363528472b57b6eb4ecce8b9e9759b76"
+    },
+    {
+      "path": "/tmp/doe-c-metal-query-final/sanitize/test_render",
+      "sha256": "2b04c46c6c0165d8e018954174018fca84f2032939b85228170038536ab7912c"
+    },
+    {
+      "path": "/tmp/doe-c-metal-query-final/sanitize/test_timestamps",
+      "sha256": "d1b338256f06e4fb7e9f04f0d2283b425a7a467a7ef9d0a9122b8606caa99e73"
+    },
+    {
+      "path": "/tmp/doe-c-metal-query-final/sanitize/test_visibility",
+      "sha256": "b2dcabcc22cc364cb6162a8e0ea18ca9c55f07408a3eb7e2475af368f778e66c"
+    }
+  ],
+  "measurements": {
+    "c_header_files": 53,
+    "physical_lines": 8184,
+    "production_c_header_files": 39,
+    "production_physical_lines": 4608,
+    "maximum_physical_lines": 429,
+    "maximum_file": "runtime/c/backends/metal/tests/test_lifetime.c",
+    "unchanged_historical_evidence_files": 13,
+    "retained_delivery_burden": "not measured",
+    "performance": "not measured"
+  },
+  "limits": [
+    "No Apple SDK/compiler/linker or physical Metal device available",
+    "Raw native timestamp records may contain UINT64_MAX CounterErrorValue; successful command completion is not counter-value validity",
+    "Public query normalization/calibration and unwritten-query zero-fill are not implemented here",
+    "Same-index reuse across passes of one recording is conservatively rejected",
+    "True GPU-generated indirect count/index validation preparation missing upstream; no surrogate API introduced",
+    "C native frontend still Vulkan-only; exact Metal context/payload/shader-stage/build/queue prerequisites documented in README"
+  ],
+  "cleanup": "Moved compute dispatch/lease implementation into one typed compute_commands.c module; legacy wrappers delegate, no duplicate dispatch/binding/completion policy; temporary no-adopter host-indirect mode removed before seal."
+}

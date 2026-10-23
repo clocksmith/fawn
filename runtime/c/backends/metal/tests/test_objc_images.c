@@ -272,7 +272,7 @@ static void image_dispatch(void) {
     resources.textures[7] = &f.view; resources.texture_count = 8;
     resources.samplers[3] = &f.sampler; resources.sampler_count = 4;
     assert(doe_mtl_objc_dispatch(&f.runtime, &f.command, &f.pipeline, &resources, UINT32_MAX,
-        (doe_mtl_dimensions){3, 2, 1}, (doe_mtl_dimensions){8, 1, 1}, 2, NULL) == DOE_MTL_OK);
+        (doe_mtl_dimensions){3, 2, 1}, (doe_mtl_dimensions){8, 1, 1}, 2, NULL, NULL) == DOE_MTL_OK);
     assert(f.texture_sets == 8 && f.sampler_sets == 4 && f.buffer_sets == 31 && f.dispatches == 2);
     assert(f.textures[7] == &f.view && f.textures[6] == NULL && f.samplers[3] == &f.sampler);
     assert(f.ends == 1 && f.pools == f.drains);

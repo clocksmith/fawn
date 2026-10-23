@@ -111,6 +111,7 @@ static doe_mtl_status create_device(void *userdata, void **out, doe_mtl_caps *ca
         return doe_mtl_fail(DOE_MTL_UNSUPPORTED, "Metal device limits", error);
     }
     doe_mtl_objc_image_caps(runtime, device, &result);
+    doe_mtl_objc_query_caps(runtime, device, &result);
     *out = device;
     *caps = result;
     doe_mtl_objc_drain(runtime, pool);
@@ -279,6 +280,7 @@ static doe_mtl_status open_apple_runtime(doe_mtl_native *out, doe_mtl_error *err
     runtime->copy_image_call = (doe_objc_copy_image_call)message;
     if (!load_selectors(runtime) || !doe_mtl_objc_load_image_selectors(runtime) ||
         !doe_mtl_objc_load_render(runtime, message)) goto unavailable;
+    doe_mtl_objc_load_queries(runtime, message);
     native.userdata = runtime;
     native.close = close_runtime;
     native.release = doe_mtl_objc_release;
@@ -299,6 +301,9 @@ static doe_mtl_status open_apple_runtime(doe_mtl_native *out, doe_mtl_error *err
     native.copy_texture = doe_mtl_objc_copy_image;
     native.render_pipeline = doe_mtl_objc_render_pipeline;
     native.render = doe_mtl_objc_render;
+    native.timestamps = doe_mtl_objc_timestamps;
+    native.timestamp = doe_mtl_objc_timestamp;
+    native.resolve_timestamps = doe_mtl_objc_resolve_timestamps;
     native.commit = doe_mtl_objc_commit;
     native.observe = doe_mtl_objc_observe;
     *out = native;

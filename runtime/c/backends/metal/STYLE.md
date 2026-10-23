@@ -30,6 +30,10 @@ Metal-specific boundary rules:
 - Query visibility modes/offsets must form non-reentrant contiguous runs. Do not
   repeatedly reset a native offset between draws in the same run. Require
   initialized result storage, retain it normally, and never synthesize a count.
+- Timestamp availability is a speculative per-sample command snapshot. An index
+  is written at most once per recording and may be rewritten only after its prior
+  owner settles. A native error poisons the sample buffer; no second completion
+  path publishes it. Resolving records does not certify non-error counter values.
 - Keep device/public validation separate. This API accepts already validated MSL
   and explicit compiler slot/workgroup facts, not source-derived heuristics.
 - Tests may replace the private native call table or exact typed message calls;

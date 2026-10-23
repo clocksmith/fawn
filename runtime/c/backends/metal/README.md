@@ -9,7 +9,7 @@ No SDKs or dependencies were installed for this implementation.
 ## Implemented boundary
 
 `include/doe_metal.h`, `include/doe_metal_texture.h` and
-`include/doe_metal_render.h` expose a backend-private ABI for the shared
+`include/doe_metal_render.h` and `include/doe_metal_query.h` expose a backend-private ABI for the shared
 native/resource owner to adopt, not a replacement WebGPU API or reference authority:
 
 - Owned default device, queue, shared/private buffers and compute pipelines.
@@ -37,6 +37,10 @@ native/resource owner to adopt, not a replacement WebGPU API or reference author
 - Native boolean/counting visibility query configurations write to an explicitly
   retained buffer; contiguous query runs, offsets and capability limits are
   validated without another query-set or result-aggregation authority.
+- Native timestamp-only counter-set discovery and owned sample buffers, explicit
+  blit-boundary sampling, compute-stage begin/end pairs and GPU resolves into
+  ordinary buffers. Actual runtime sampling capabilities gate each path. A timed
+  empty dispatch still creates a real encoder, never manufactured timestamps.
 - One-shot submit, nonblocking poll, explicitly blocking native wait, terminal
   error and unknown-result handling, and deterministic owned cleanup.
 
@@ -57,7 +61,7 @@ must not be released, mutated or submitted independently. A shared resource
 wrapper may adopt the backend pointer and finalize it using its matching release
 function. The wrapper continues to own public destroy/map/usage policy.
 
-A buffer or texture has one unresolved recording owner. Competing commands and host reads or
+A buffer, texture or timestamp sample buffer has one unresolved recording owner. Competing commands and host reads or
 writes return BUSY until that recording is discarded or terminally observed.
 Unsubmitted native recordings are discarded before their resource leases. A
 recording failure poisons the entire recording, so earlier encoded operations
@@ -129,9 +133,61 @@ command, observe again, and release it after terminal status. A blocking wait
 returning nonterminal status remains unknown. No timeout/cancel success is
 invented; shared async/future owners may build operational deadlines over poll.
 
+Timestamp indices share the same speculative/completion owner. Resolve requires
+all selected samples to have been encoded or previously completed; no unwritten
+sample becomes zero. Each index can be written once per recording and reused
+only after the prior recording settles. GPU failure poisons the sample buffer;
+replacement is required. This conservative rule also rejects same-index reuse in
+later passes of one recording; the public resource API can admit that reuse, so
+full query composition must prepare distinct native slots or establish a native
+reuse contract. Likewise, public unwritten-query zero-fill is not performed here.
+The explicit capacity4096 is an owner allocation bound,
+not a discovered hardware maximum; native creation can reject smaller requests.
+The timestamp-only counter set is checked by its exported native name and exact
+single-counter layout. Resolve produces native uint64 CounterResultTimestamp
+records; UINT64_MAX denotes Metal CounterErrorValue. No CPU values, nanosecond
+normalization, Mach-timebase assumptions or successful timing claims are invented.
+Counter-value validity and public query availability remain upstream obligations.
+
+## Concrete native composition prerequisites
+
+The existing C native frontend is Vulkan-only, not implicitly connected to this
+owner. The affected existing seams, reviewed with that owner, are:
+
+- `native/src/internal.h`, device creation and `lifecycle.c`: add an explicitly
+  selected backend/context variant at the existing native device identity.
+  Resource payloads adopt Metal objects and finalize them via their matching
+  release functions. Do not add another public resource identity or reference count.
+- `shader/include/doe_shader.h` and `native/src/stages.c`: the borrowed shader view
+  currently has SPIR-V words and typed reflection, not an owned MSL artifact or
+  production TranslationInfo. The shader/compiler owner must provide exact MSL
+  bytes, emitted symbols, stage/workgroup facts and flattened resource/size slots.
+  WGSL names and raw reflected binding numbers are not substitutes.
+- Native resource/command translation must map explicit Metal enums, format
+  admission and stage slots, group a complete render pass before encoding, and
+  retain the existing resource snapshots. Queue/future handling polls this command
+  owner; unknown completion cannot release payloads or publish map/query results.
+- Native `Makefile` currently composes Vulkan only and uses ELF shared-library,
+  version-script and link flags. Metal source/header composition and Darwin dylib
+  flags need an explicit build selection. This owner's `Makefile` remains its
+  source-list authority. No Apple SDK/toolchain/device is available here to
+  qualify a Darwin consumer. No native/shared files were changed in this slice.
+
+True GPU-generated indirect commands remain a separate missing preparation
+closure. Retained `metal_dispatch_runtime.zig` has a host-authored benchmark path
+that flushes, uploads three uint32 dimensions, then dispatches indirectly; this
+is not the native WebGPU GPU-produced argument path. Retained
+`doe_queue_submit_metal.zig` forwards arbitrary indirect buffers, while both its
+checked bridge and C `resources/src/objects.c` validate only record alignment,
+byte range and ownership, not generated counts or index-dependent fetch bounds.
+Coherent public admission needs shared/native submission preparation that orders
+argument validation/sanitization after producers and before consumption using
+actual dispatch/vertex/index limits, plus command-owned scratch lifetime. No
+host-only surrogate API or unchecked native indirect success was added here.
+
 ## Scope still outside this increment
 
-ETC/ASTC images, surfaces, timestamp counters,
+ETC/ASTC images, surfaces, render-stage counter attachment mapping,
 external textures, shared-event notifications, async callbacks, library/binary
 caches, indirect-count validation, streamed encoder reuse, prepared-program
 caches and full native/WebGPU consumer wiring remain in their retained owners.
@@ -178,10 +234,12 @@ passes AddressSanitizer and UndefinedBehaviorSanitizer with leak scanning disabl
 Owned native allocations/releases are still checked by the call ledger. Run leak
 scanning in a supported environment before qualification.
 
-`MULTISAMPLE_SOURCE_INPUTS.sha256` binds the current sources/tests/build/documents
-exercised by `DEVELOPER_RECEIPT_MULTISAMPLE.json`. Verify with
-`sha256sum -c runtime/c/backends/metal/MULTISAMPLE_SOURCE_INPUTS.sha256` from the repository
-root. Graphics evidence (`RENDER_SOURCE_INPUTS.sha256`, `DEVELOPER_RECEIPT_RENDER.json`,
+`TIMESTAMP_SOURCE_INPUTS.sha256` binds the current sources/tests/build/documents
+exercised by `DEVELOPER_RECEIPT_TIMESTAMPS.json`. Verify with
+`sha256sum -c runtime/c/backends/metal/TIMESTAMP_SOURCE_INPUTS.sha256` from the repository
+root. Multisample evidence (`MULTISAMPLE_SOURCE_INPUTS.sha256`,
+`DEVELOPER_RECEIPT_MULTISAMPLE.json`, `MULTISAMPLE_TERMINAL_RECEIPT.txt`) remains
+unchanged historical evidence for `db455842`. Graphics evidence (`RENDER_SOURCE_INPUTS.sha256`, `DEVELOPER_RECEIPT_RENDER.json`,
 `RENDER_TERMINAL_RECEIPT.txt`) is unchanged historical evidence for commit `74a329c5`.
 Image evidence (`IMAGE_SOURCE_INPUTS.sha256`, `DEVELOPER_RECEIPT_IMAGES.json`,
 `IMAGE_TERMINAL_RECEIPT.txt`) is preserved unchanged and binds commit `f6cd88b1`,
@@ -191,6 +249,8 @@ commit `33bf0b04`, not to the changed image-capable sources. Receipt consumer: t
 not physical support or performance promotion. No source-reduction or speedup
 claim is made; complete retained delivery burden is not measured here.
 
-The multisample terminal receipt preserves exact failed-control diagnostics;
+The timestamp terminal receipt preserves its first compile failure and successful
+rerun; `TIMESTAMP_FIRST_INPUTS.sha256` binds those failed-attempt inputs, not current
+sources. The multisample terminal receipt preserves its exact failed controls;
 `MULTISAMPLE_FIRST_INPUTS.sha256` records the initial failed compile inputs, not
 the final source set. Later fixture failures and their fixes are also retained.
