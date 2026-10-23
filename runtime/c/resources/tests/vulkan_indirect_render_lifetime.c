@@ -283,7 +283,7 @@ int main(int argc, char **argv)
     require(doe_vk_commands_resolve_queries(native_commands, doe_resource_query_set_native(records[27].value.resolve.set),
         0, DRAW_COUNT, doe_resource_buffer_native(records[27].value.resolve.destination), 256), "actual occlusion resolve");
     require(doe_vk_commands_read_texture(native_commands, doe_resource_texture_native(records[28].value.texture.texture),
-        (doe_vk_texture_region){0, {0, 0, 0}, {8, 8, 1}}, doe_resource_buffer_native(records[28].value.texture.buffer),
+        (doe_vk_texture_region){0, {0, 0, 0}, {8, 8, 1}, DOE_VK_ASPECT_ALL}, doe_resource_buffer_native(records[28].value.texture.buffer),
         (doe_vk_texture_buffer_layout){0, 32, 8}), "actual pixels");
     doe_vk_draw_validator_release(validator);
     assert(doe_resource_commands_begin_submit(commands) == DOE_RESOURCE_OK);
