@@ -42,8 +42,8 @@ exported; unknown and unimplemented names return NULL from `wgpuGetProcAddress`.
   completion obligations. Buffer mapping stages real coherent native contents;
   writable maps write back on unmap. No CPU compute emulation is used.
 - Public textures/views/samplers alias the same resource owner. Images are fully
-  zero-initialized at every mip/layer through actual native uploads before public
-  publication, including images without public CopyDst usage. Private native
+  zero-initialized at every mip/layer through actual native uploads or attachment
+  clears before publication, including images without public CopyDst usage. Private native
   initialization commands use the same pending-submission owner and an explicit
   submission device lease. Packed queue writes and 256-byte-aligned public command
   copies retain their distinct canonical validation. Native views/samplers remain
@@ -71,6 +71,13 @@ exported; unknown and unimplemented names return NULL from `wgpuGetProcAddress`.
   colors truncate and range-check before a defined C cast; ignored Load clears
   are not converted. Extra fragment outputs are ignored, while written targets,
   scalar/channel compatibility and source-alpha blending are checked.
+- Depth32Float, Depth24Plus, Stencil8 and Depth24PlusStencil8 support attachment-only
+  usage with actual depth tests/writes, stencil operations and read-only bundles.
+  Plus formats use D32/D32S8 backing, not an implied optional public feature.
+  The backend's sole per-aspect initialization owner clears undefined contents;
+  depth/stencil Discard followed by Load reinitializes only missing aspects on GPU.
+  Initialized companion aspects survive. Partial combined-aspect views remain
+  unsupported; same-format standalone DepthOnly/StencilOnly views are admitted.
 - Device serialization covers mutable resources and Vulkan state. Internal
   recursive acquisition permits resource-finalizer cleanup using the same lock.
   Foreign callbacks run only after unlocking, with required full-call leases.
@@ -79,13 +86,15 @@ exported; unknown and unimplemented names return NULL from `wgpuGetProcAddress`.
 
 Surfaces, indexed/indirect draws and indirect dispatch remain absent. Graphics
 currently admits one stored color attachment, sample count 1, direct triangle/line
-lists or strips and 32-bit float/signed/unsigned vertex attributes. Depth/stencil,
-MSAA, PointList target lowering, Discard stores, dual-source blending, vertex or
+lists or strips and 32-bit float/signed/unsigned vertex attributes. MSAA,
+PointList target lowering, color Discard stores, dual-source blending, vertex or
 fragment storage writes are explicitly rejected. WGSL discard requires actual
 enabled demote-to-helper support; unsupported devices reject that pipeline.
 Blend constants must be representable as finite f32 for this backend path.
-Texture format reinterpretation, depth/multisampled images, cube arrays
-and anisotropic sampling are rejected. The baseline admits 18 named Vulkan
+Texture format reinterpretation, depth copies/sampling/storage, multisampled images,
+cube arrays and anisotropic sampling are rejected. Public depth-only passes and
+depth-only draws are not yet composed; the private initializer uses real empty
+depth-only backend passes, never fabricated color attachments. The baseline admits 18 named Vulkan
 color formats, subject to actual device usage/format capabilities. Device
 descriptors may request TimestampQuery when the actual adapter supports the
 canonical GPU nanosecond normalizer. Other required features and required limits
@@ -113,6 +122,8 @@ callback mode, not a claimed background compiler. No blanket success stubs or
 fallback provider resolution exist. The public advertised limits
 cover the implemented compute/image/graphics path only and do not claim the WebGPU
 Core feature level is complete; adapter/device creation remains experimental.
+Backend selection, Metal/D3D12 public composition, package adoption and surfaces
+remain unfinished. Private backend checks do not qualify those public integrations.
 
 ## Reproduce from a coherent checkout
 
@@ -130,6 +141,7 @@ The checked-in test requires a fallback CPU adapter and verifies the returned
 adapter type is CPU. Its ordinary result is:
 
 ```
+PASS public depth/stencil: zero publication, depth ordering/read-only bundles, selected array/mip aspects, dynamic stencil, culled writes, same-batch discard/reinitialize preserving the other aspect, early releases and admission negatives (CPU Vulkan only)
 PASS public discard: actual enabled feature, helper continuation, asymmetric pixel suppression, exact extension/capability gating and early releases (CPU Vulkan only)
 PASS public graphics admission: stage/output identity, async modes/reentry, explicit empty vertex slot, zero-count range and bundle state reset
 PASS valid empty WGSL has no compilation diagnostics; missing pipeline entry rejects
@@ -138,7 +150,7 @@ Explicit software-only WebGPU C path: SwiftShader Device (Subzero); not physical
 PASS public ABI: compute/readback, OOB guards, dynamic offsets, cross-device rejection, one-shot submit, early releases, callback reentry and map cancellation
 PASS C++ pinned typed procedure calls and unsupported-name rejection
 PASS device loss modes/future/last-external-release/failed-creation, owned labels, async pipeline and real compilation diagnostics
-PASS public textures: actual zero mips, packed upload, linear sampling, image OOB guards, storage readback, early releases and filter/pair/copy negatives (CPU Vulkan only)
+PASS public textures: actual zero mips, packed upload, linear sampling, image OOB guards, storage readback, early releases, exact view defaults and filter/pair/copy negatives (CPU Vulkan only)
 PASS public admission: sparse/trailing/null layout holes, null unbind, ignored destroyed resources, dynamic writable ranges, whole-buffer read/write conflicts and texture subresource aliases (CPU Vulkan only)
 PASS public error types: resource allocation, automatic-layout allocation, compute/render backend OOM/native/validation failures, failed requested-feature device and successful recovery
 PASS public timestamps: requested feature, zero/max/range/destroy admission, real pass/command writes, exact GPU nanoseconds, same-batch copy, scratch reuse and early query release (CPU Vulkan only)
@@ -220,3 +232,8 @@ independent hardware consumer must request a nonfallback adapter, verify actual
 adapter/driver and ICD identity, and capture its own source-bound results. Do not
 relabel the software-only fixture as hardware qualification or infer parity from
 these developer checks.
+
+The depth receipt binds an isolated ABI8 compiler/shader composition with exact
+resource-view and Vulkan-initialization/cull overlays. Later shared ABI9/atomic,
+optional-color, debug-marker and MSAA source is not implicitly exercised by that
+receipt; each composition needs its own focused checks. Physical runs stay held.

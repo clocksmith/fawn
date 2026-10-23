@@ -23,7 +23,7 @@ static doe_vk_status prepare_draw(const doe_resource_render_packet *packet,
         .vertices=vertices,.vertex_buffer_count=pipeline->vertex_count,
         .draw={.vertex_count=packet->count,.instance_count=packet->instances,.first_vertex=packet->first,
             .first_instance=packet->first_instance,.viewport_convention=DOE_VK_VIEWPORT_WEBGPU,
-            .override_blend_constant=true}};
+            .override_blend_constant=true,.stencil_reference=packet->state.stencil_reference}};
     memcpy(draw->draw.viewport, packet->state.viewport, sizeof(draw->draw.viewport));
     memcpy(draw->draw.scissor, packet->state.scissor, sizeof(draw->draw.scissor));
     doe_vk_clear_color blend;
@@ -45,7 +45,7 @@ doe_vk_status native_record_render(doe_vk_commands *commands,
     if (!count || records[0].kind != DOE_COMMAND_RENDER) return DOE_VK_INVALID_ARGUMENT;
     const doe_resource_render_packet *begin = doe_resource_render_record_borrow(records[0].value.render);
     if (!begin || !begin->boundary_only || !begin->first_in_pass || begin->last_in_pass ||
-        begin->targets.depth_stencil || begin->targets.color_store != WGPUStoreOp_Store) return DOE_VK_UNSUPPORTED;
+        begin->targets.resolve_target || begin->targets.color_store != WGPUStoreOp_Store) return DOE_VK_UNSUPPORTED;
     size_t end = 0, binding_count = 0, vertex_count = 0;
     for (size_t i = 1; i < count; ++i) {
         if (records[i].kind == DOE_COMMAND_BEGIN_OCCLUSION || records[i].kind == DOE_COMMAND_END_OCCLUSION) {
@@ -55,6 +55,7 @@ doe_vk_status native_record_render(doe_vk_commands *commands,
         if (records[i].kind != DOE_COMMAND_RENDER) return DOE_VK_UNSUPPORTED;
         const doe_resource_render_packet *packet = doe_resource_render_record_borrow(records[i].value.render);
         if (!packet || packet->first_in_pass || packet->targets.color != begin->targets.color ||
+            packet->targets.depth_stencil != begin->targets.depth_stencil ||
             packet->targets.occlusion_queries != begin->targets.occlusion_queries) return DOE_VK_INVALID_ARGUMENT;
         if (packet->boundary_only) {
             if (!packet->last_in_pass) return DOE_VK_INVALID_ARGUMENT;
@@ -103,7 +104,20 @@ doe_vk_status native_record_render(doe_vk_commands *commands,
     if (status == DOE_VK_OK) {
         native_view *target = doe_resource_view_native(begin->targets.color);
         native_queries *query = doe_resource_query_set_native(begin->targets.occlusion_queries);
-        status = doe_vk_commands_render_pass_ops(commands, target->view, clear_pointer,
+        native_view *depth = doe_resource_view_native(begin->targets.depth_stencil);
+        const doe_resource_render_targets *source = &begin->targets;
+        doe_vk_render_pass_desc pass = {.color=target->view,.clear_color=clear_pointer,
+            .depth_stencil=depth ? depth->view : NULL,
+            .clear_depth=source->depth_load == WGPULoadOp_Clear,
+            .clear_stencil=source->stencil_load == WGPULoadOp_Clear,
+            .discard_depth=source->depth_store == WGPUStoreOp_Discard,
+            .discard_stencil=source->stencil_store == WGPUStoreOp_Discard,
+            .depth_read_only=source->depth_read_only,.stencil_read_only=source->stencil_read_only,
+            .depth_clear_value=source->clear_depth,.stencil_clear_value=source->clear_stencil};
+        /* Canonical speculative aspect state decides whether a real zero clear
+         * is needed after Discard. No native shadow initialization bit exists. */
+        if (depth) status = doe_vk_commands_initialize_attachment(commands, depth->view);
+        if (status == DOE_VK_OK) status = doe_vk_commands_render_pass_full(commands, &pass,
             query ? query->pool : NULL, ops, op_count);
     }
     free(vertices);

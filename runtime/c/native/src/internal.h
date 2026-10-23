@@ -154,6 +154,10 @@ native_queue_settlement native_settle_pending(native_device *device);
 /* Caller holds device mutex. Always adopts commands, including failed/unknown
  * completion. A private initialization submission has its own device lease. */
 doe_vk_status native_submit_commands(native_device *device, doe_vk_commands *commands);
+doe_vk_status native_initialize_texture(native_device *device, doe_vk_texture *texture,
+    const doe_vk_texture_desc *desc, uint32_t texel_bytes);
+bool native_compare_operation(WGPUCompareFunction value, uint32_t fallback, uint32_t *out);
+bool native_depth_format(WGPUTextureFormat format, doe_vk_texture_format *out);
 bool native_texture_format(WGPUTextureFormat format, doe_vk_texture_format *out);
 bool native_storage_format(uint32_t format, WGPUTextureFormat *out);
 doe_resource_status native_automatic_layout(native_device *device,

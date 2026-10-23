@@ -12,39 +12,6 @@ static void release_texture(void *userdata, void *handle)
     free(payload);
 }
 
-/* Real eager initialization, using the same native queue obligation owner as
- * public submissions. Never publish allocator contents or infer completion. */
-static doe_vk_status initialize_texture(native_device *device, doe_vk_texture *texture,
-    const doe_vk_texture_desc *desc, uint32_t texel_bytes)
-{
-    uint64_t size = desc->width;
-    if (size > SIZE_MAX / desc->height) return DOE_VK_OUT_OF_MEMORY;
-    size *= desc->height;
-    if (size > SIZE_MAX / desc->depth_or_layers) return DOE_VK_OUT_OF_MEMORY;
-    size *= desc->depth_or_layers;
-    if (size > SIZE_MAX / texel_bytes) return DOE_VK_OUT_OF_MEMORY;
-    size *= texel_bytes;
-    doe_vk_buffer *zero = NULL;
-    doe_vk_commands *commands = NULL;
-    doe_vk_error error = {0};
-    doe_vk_status status = doe_vk_buffer_create(device->context, size,
-        DOE_VK_BUFFER_COPY_SRC, DOE_VK_MEMORY_HOST, &zero, &error);
-    if (status == DOE_VK_OK) status = doe_vk_commands_create(device->context, &commands, &error);
-    for (uint32_t mip = 0; status == DOE_VK_OK && mip < desc->mip_levels; ++mip) {
-        uint32_t width = desc->width >> mip;
-        uint32_t height = desc->height >> mip;
-        uint32_t depth = desc->dimension == DOE_VK_TEXTURE_3D ? desc->depth_or_layers >> mip : desc->depth_or_layers;
-        doe_vk_texture_region region = {.mip=mip,
-            .extent={width ? width : 1, height ? height : 1, depth ? depth : 1}};
-        status = doe_vk_commands_upload_texture(commands, zero,
-            (doe_vk_texture_buffer_layout){0}, texture, region);
-    }
-    if (status == DOE_VK_OK) status = native_submit_commands(device, commands);
-    else if (doe_vk_commands_release(commands) != DOE_VK_OK) abort();
-    doe_vk_buffer_release(zero);
-    return status;
-}
-
 WGPUTexture wgpuDeviceCreateTexture(WGPUDevice handle, const WGPUTextureDescriptor *descriptor)
 {
     native_device *device = (native_device *)handle;
@@ -87,10 +54,19 @@ WGPUTexture wgpuDeviceCreateTexture(WGPUDevice handle, const WGPUTextureDescript
     }
     native.cube_compatible = desc.dimension == WGPUTextureDimension_2D &&
         desc.width == desc.height && desc.depth_or_layers >= 6;
+    bool depth_stencil = native_depth_format(desc.format, &native.format);
+    if (depth_stencil) {
+        if (desc.usage != WGPUTextureUsage_RenderAttachment) {
+            native_error(device, WGPUErrorType_Validation, "depth/stencil currently supports attachment usage only");
+            return NULL;
+        }
+        native.usage = DOE_VK_TEXTURE_DEPTH_STENCIL_ATTACHMENT;
+        native.cube_compatible = false; /* Native depth supports array attachments, not cube sampling. */
+    }
     if (desc.usage & WGPUTextureUsage_CopySrc) native.usage |= DOE_VK_TEXTURE_COPY_SRC;
     if (desc.usage & WGPUTextureUsage_TextureBinding) native.usage |= DOE_VK_TEXTURE_SAMPLED;
     if (desc.usage & WGPUTextureUsage_StorageBinding) native.usage |= DOE_VK_TEXTURE_STORAGE;
-    if (desc.usage & WGPUTextureUsage_RenderAttachment) native.usage |= DOE_VK_TEXTURE_COLOR_ATTACHMENT;
+    if (!depth_stencil && (desc.usage & WGPUTextureUsage_RenderAttachment)) native.usage |= DOE_VK_TEXTURE_COLOR_ATTACHMENT;
     native_texture *payload = calloc(1, sizeof(*payload));
     if (!payload) {
         native_error(device, WGPUErrorType_OutOfMemory, "texture payload allocation failed");
@@ -105,7 +81,7 @@ WGPUTexture wgpuDeviceCreateTexture(WGPUDevice handle, const WGPUTextureDescript
     if (status == DOE_VK_OK) status = native_settle_pending(device).status;
     if (status == DOE_VK_OK) status = doe_vk_texture_format_caps(device->context, native.format, &caps);
     if (status == DOE_VK_OK) status = doe_vk_texture_create(device->context, &native, &payload->texture, &error);
-    if (status == DOE_VK_OK) status = initialize_texture(device, payload->texture, &native, caps.texel_bytes);
+    if (status == DOE_VK_OK) status = native_initialize_texture(device, payload->texture, &native, caps.texel_bytes);
     doe_resource_status adopted = DOE_RESOURCE_INVALID_ARGUMENT;
     if (status == DOE_VK_OK)
         adopted = doe_resource_texture_create(&device->resources, &desc, &limits,

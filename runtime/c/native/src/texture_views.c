@@ -31,8 +31,10 @@ WGPUTextureView wgpuTextureCreateView(WGPUTexture handle, const WGPUTextureViewD
         doe_resource_view_validate(texture, &desc, &resolved);
     doe_vk_texture_view_desc native = {0};
     if (status == DOE_RESOURCE_OK) {
-        if (resolved.format != doe_resource_texture_description(texture)->format ||
-            resolved.aspect != WGPUTextureAspect_All) status = DOE_RESOURCE_UNSUPPORTED;
+        /* Same-format standalone DepthOnly/StencilOnly covers every actual
+         * aspect. Combined partial views normalize to a different format and
+         * remain unsupported by the backend's all-aspect view constructor. */
+        if (resolved.format != doe_resource_texture_description(texture)->format) status = DOE_RESOURCE_UNSUPPORTED;
         native.base_mip = resolved.base_mip;
         native.mip_count = resolved.mip_count;
         native.base_layer = resolved.base_layer;
@@ -90,19 +92,6 @@ static doe_vk_address address_mode(WGPUAddressMode mode)
     default: return DOE_VK_ADDRESS_CLAMP; /* Normalized preflight admitted Clamp. */
     }
 }
-static uint32_t compare_operation(WGPUCompareFunction operation)
-{
-    switch (operation) {
-    case WGPUCompareFunction_Less: return 1;
-    case WGPUCompareFunction_Equal: return 2;
-    case WGPUCompareFunction_LessEqual: return 3;
-    case WGPUCompareFunction_Greater: return 4;
-    case WGPUCompareFunction_NotEqual: return 5;
-    case WGPUCompareFunction_GreaterEqual: return 6;
-    case WGPUCompareFunction_Always: return 7;
-    default: return 0; /* Undefined/disabled or Never, already preflighted. */
-    }
-}
 WGPUSampler wgpuDeviceCreateSampler(WGPUDevice handle, const WGPUSamplerDescriptor *descriptor)
 {
     native_device *device = (native_device *)handle;
@@ -120,9 +109,12 @@ WGPUSampler wgpuDeviceCreateSampler(WGPUDevice handle, const WGPUSamplerDescript
         .mipmap_filter=resolved.mipmapFilter == WGPUMipmapFilterMode_Linear ? DOE_VK_FILTER_LINEAR : DOE_VK_FILTER_NEAREST,
         .address_u=address_mode(resolved.addressModeU), .address_v=address_mode(resolved.addressModeV),
         .address_w=address_mode(resolved.addressModeW), .min_lod=resolved.lodMinClamp, .max_lod=resolved.lodMaxClamp,
-        .compare_enabled=resolved.compare != WGPUCompareFunction_Undefined,
-        .compare_operation=compare_operation(resolved.compare)
+        .compare_enabled=resolved.compare != WGPUCompareFunction_Undefined
     };
+    if (!native_compare_operation(resolved.compare, 0, &native.compare_operation)) {
+        native_error(device, WGPUErrorType_Validation, "sampler comparison invalid");
+        return NULL;
+    }
     native_sampler *payload = calloc(1, sizeof(*payload));
     if (!payload) { native_error(device, WGPUErrorType_OutOfMemory, "sampler allocation failed"); return NULL; }
     payload->device = device;

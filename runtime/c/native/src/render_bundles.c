@@ -7,9 +7,12 @@ WGPURenderBundleEncoder wgpuDeviceCreateRenderBundleEncoder(WGPUDevice handle,
     native_device *device = (native_device *)handle;
     if (!device) return NULL;
     bool valid = descriptor && !descriptor->nextInChain && descriptor->colorFormatCount == 1 &&
-        descriptor->colorFormats && descriptor->depthStencilFormat == WGPUTextureFormat_Undefined && descriptor->sampleCount == 1;
+        descriptor->colorFormats && descriptor->sampleCount == 1;
+    doe_vk_texture_format depth;
+    if (valid && descriptor->depthStencilFormat != WGPUTextureFormat_Undefined &&
+        !native_depth_format(descriptor->depthStencilFormat, &depth)) valid = false;
     doe_resource_render_bundle_desc converted = {0};
-    if (valid) converted = (doe_resource_render_bundle_desc){.color_format=descriptor->colorFormats[0],
+    if (valid) converted = (doe_resource_render_bundle_desc){.color_format=descriptor->colorFormats[0],.depth_stencil_format=descriptor->depthStencilFormat,
         .samples=descriptor->sampleCount,.depth_read_only=descriptor->depthReadOnly,.stencil_read_only=descriptor->stencilReadOnly};
     doe_resource_bundle_encoder *encoder = NULL;
     native_lock(device);
