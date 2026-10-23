@@ -43,6 +43,7 @@ typedef void (*doe_objc_dimensions_stret_call)(doe_mtl_size *, void *, void *);
 typedef void (*doe_objc_set_size_call)(void *, void *, size_t);
 typedef void (*doe_objc_set_float_call)(void *, void *, float);
 typedef doe_objc_bool (*doe_objc_bool_call)(void *, void *);
+typedef doe_objc_bool (*doe_objc_samples_call)(void *, void *, size_t);
 typedef doe_objc_bool (*doe_objc_family_call)(void *, void *, intptr_t);
 typedef void *(*doe_objc_view_call)(void *, void *, size_t, size_t,
     doe_mtl_range_abi, doe_mtl_range_abi, doe_mtl_swizzle_abi);
@@ -87,6 +88,7 @@ typedef struct doe_mtl_objc {
     doe_objc_set_float_call set_float_call;
     doe_objc_bool_call bool_call;
     doe_objc_family_call family_call;
+    doe_objc_samples_call samples_call;
     doe_objc_view_call view_call;
     doe_objc_bind_image_call bind_image_call;
     doe_objc_upload_image_call upload_image_call;
@@ -100,7 +102,7 @@ typedef struct doe_mtl_objc {
     void *set_address_u, *set_address_v, *set_address_w;
     void *set_min_lod, *set_max_lod, *set_compare, *set_anisotropy;
     void *upload_image, *read_image, *copy_image, *set_texture, *set_sampler;
-    void *supports_family, *supports_bc;
+    void *supports_family, *supports_bc, *supports_samples, *supports_depth24;
     void *pool_class;
     void *string_class;
     void *responds;

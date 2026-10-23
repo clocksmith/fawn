@@ -20,7 +20,7 @@ native/resource owner to adopt, not a replacement WebGPU API or reference author
   uint32 lengths. Missing slots are explicitly cleared. No guessed workgroups.
 - Direct/repeated threadgroup dispatch, buffer-region copy and byte-pattern fill.
   Every native operation uses the real Metal encoder and ends it before the next.
-- Private sample1 1D/2D/array/cube/3D images, explicit mip/layer views and swizzles,
+- Private 1D/2D/array/cube/3D and device-admitted 2D multisample images, explicit mip/layer views and swizzles,
   retained samplers, staging-buffer upload/readback and texture-region copies.
   43 uncompressed color layouts and 14 BC layouts are admitted; BC requires the
   native capability property. Layout facts are not format-feature qualification.
@@ -31,7 +31,12 @@ native/resource owner to adopt, not a replacement WebGPU API or reference author
 - Whole render passes with color/depth/stencil attachments, native load/clear/store,
   indexed/nonindexed and instanced direct draws, viewport/scissor, cull/winding,
   blend constants, depth bias and stencil reference. Clear-only passes are real
-  native encodes. Pure Depth16/Depth32 and separate Stencil8 images are admitted.
+  native encodes. Pure and combined depth/stencil formats, sample-count-matched
+  pipelines, native resolve/store-resolve and depth/stencil resolve filters are
+  admitted with runtime capability gates. X24/X32 stencil views are view-only.
+- Native boolean/counting visibility query configurations write to an explicitly
+  retained buffer; contiguous query runs, offsets and capability limits are
+  validated without another query-set or result-aggregation authority.
 - One-shot submit, nonblocking poll, explicitly blocking native wait, terminal
   error and unknown-result handling, and deterministic owned cleanup.
 
@@ -90,11 +95,28 @@ absent high slots. Pipeline construction shares the existing exact-span MSL
 function builder; render and compute share buffer/image binding checks.
 
 Attachment LOAD requires initialized contents. CLEAR plus STORE establishes the
-whole selected mip/layer; STORE after LOAD preserves initialization. Either load
-or store DISCARD leaves contents uninitialized, regardless of presumed raster
-coverage. Combined depth/stencil formats and aliased depth/stencil subresources
-are rejected because the bitmap is per subresource, not per aspect. Depth/stencil
-images currently support render/sample use, not storage or staging transfers.
+whole selected aspect of a mip/layer; STORE after LOAD preserves that aspect.
+Each subresource carries separate color/depth/stencil bits, including speculative
+recording copies. Source STORE and destination RESOLVE publish independently.
+DISCARD never proves complete raster coverage. Combined source/resolve attachments
+require both aspects of the same subresource explicitly represented, so no
+implicit preservation of an omitted aspect is assumed. Equivalent combined views
+use one native attachment identity while every wrapper keeps its ordinary lease.
+Combined-format sampling checks depth availability; X24/X32 views check stencil.
+Depth/stencil and multisample images do not admit storage or staging transfers.
+
+Sample counts are queried with supportsTextureSampleCount. Published GPU-family
+facts conservatively gate arrays, combined store/resolve, separate depth/stencil,
+depth resolve, stencil resolve and counting visibility. Depth24Stencil8 uses its
+native property gate and is never assumed on Apple silicon. These gates are not
+per-format hardware qualification; native/frontend format admission still applies.
+
+Visibility output uses initialized ordinary buffer storage and stays BUSY until
+completion. Each offset is 8-byte aligned and belongs to one contiguous run of
+draws in a pass. Consecutive draws share one native visibility configuration;
+disjoint reuse or changing mode at the same offset fails before native encoding.
+The shared query owner remains responsible for reset, logical aggregation and
+public query-set policy. This backend never manufactures a visibility value.
 
 Vertex attribute layouts and direct/instance fetch ranges are checked. Indexed
 buffer byte ranges and alignment are checked, but index-value-dependent vertex
@@ -109,7 +131,7 @@ invented; shared async/future owners may build operational deadlines over poll.
 
 ## Scope still outside this increment
 
-Combined depth/stencil, multisampling/resolve, ETC/ASTC images, surfaces, timestamps,
+ETC/ASTC images, surfaces, timestamp counters,
 external textures, shared-event notifications, async callbacks, library/binary
 caches, indirect-count validation, streamed encoder reuse, prepared-program
 caches and full native/WebGPU consumer wiring remain in their retained owners.
@@ -156,13 +178,19 @@ passes AddressSanitizer and UndefinedBehaviorSanitizer with leak scanning disabl
 Owned native allocations/releases are still checked by the call ledger. Run leak
 scanning in a supported environment before qualification.
 
-`RENDER_SOURCE_INPUTS.sha256` binds the current sources/tests/build/documents
-exercised by `DEVELOPER_RECEIPT_RENDER.json`. Verify with
-`sha256sum -c runtime/c/backends/metal/RENDER_SOURCE_INPUTS.sha256` from the repository
-root. Image evidence (`IMAGE_SOURCE_INPUTS.sha256`, `DEVELOPER_RECEIPT_IMAGES.json`,
+`MULTISAMPLE_SOURCE_INPUTS.sha256` binds the current sources/tests/build/documents
+exercised by `DEVELOPER_RECEIPT_MULTISAMPLE.json`. Verify with
+`sha256sum -c runtime/c/backends/metal/MULTISAMPLE_SOURCE_INPUTS.sha256` from the repository
+root. Graphics evidence (`RENDER_SOURCE_INPUTS.sha256`, `DEVELOPER_RECEIPT_RENDER.json`,
+`RENDER_TERMINAL_RECEIPT.txt`) is unchanged historical evidence for commit `74a329c5`.
+Image evidence (`IMAGE_SOURCE_INPUTS.sha256`, `DEVELOPER_RECEIPT_IMAGES.json`,
 `IMAGE_TERMINAL_RECEIPT.txt`) is preserved unchanged and binds commit `f6cd88b1`,
 not the changed graphics-capable sources. The earlier `SOURCE_INPUTS.sha256`, `DEVELOPER_RECEIPT.json` and
 `TERMINAL_RECEIPT.txt` are preserved historical compute-slice evidence, bound to
 commit `33bf0b04`, not to the changed image-capable sources. Receipt consumer: the C migration lead's integration decision,
 not physical support or performance promotion. No source-reduction or speedup
 claim is made; complete retained delivery burden is not measured here.
+
+The multisample terminal receipt preserves exact failed-control diagnostics;
+`MULTISAMPLE_FIRST_INPUTS.sha256` records the initial failed compile inputs, not
+the final source set. Later fixture failures and their fixes are also retained.

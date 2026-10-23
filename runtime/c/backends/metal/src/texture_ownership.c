@@ -23,7 +23,7 @@ doe_mtl_status doe_mtl_use_texture(doe_mtl_commands *commands,
     }
     use = calloc(1, sizeof(*use));
     if (use == NULL) return DOE_MTL_OUT_OF_MEMORY;
-    use->initialized = malloc(texture->subresource_count * sizeof(bool));
+    use->initialized = malloc(texture->subresource_count * sizeof(uint8_t));
     if (use->initialized == NULL) {
         free(use);
         return DOE_MTL_OUT_OF_MEMORY;
@@ -34,52 +34,13 @@ doe_mtl_status doe_mtl_use_texture(doe_mtl_commands *commands,
         free(use);
         return status;
     }
-    memcpy(use->initialized, texture->initialized, texture->subresource_count * sizeof(bool));
+    memcpy(use->initialized, texture->initialized, texture->subresource_count * sizeof(uint8_t));
     use->texture = texture;
     use->next = commands->textures;
     commands->textures = use;
     texture->owner = commands;
     *out = use;
     return DOE_MTL_OK;
-}
-
-static const bool *initialization(const doe_mtl_commands *commands, const doe_mtl_texture *texture) {
-    const doe_mtl_texture_use *use;
-    for (use = commands->textures; use != NULL; use = use->next)
-        if (use->texture == texture) return use->initialized;
-    return texture->initialized;
-}
-
-bool doe_mtl_texture_region_initialized(const doe_mtl_commands *commands,
-    const doe_mtl_texture *texture, doe_mtl_texture_region region) {
-    const bool *initialized = initialization(commands, texture);
-    const uint32_t layers = doe_mtl_texture_layers(&texture->desc);
-    const uint32_t first = texture->desc.type == DOE_MTL_TEXTURE_3D ? 0 : region.z;
-    const uint32_t count = texture->desc.type == DOE_MTL_TEXTURE_3D ? 1 : region.depth_or_layers;
-    uint32_t layer;
-    for (layer = first; layer < first + count; ++layer)
-        if (!initialized[(size_t)region.mip * layers + layer]) return false;
-    return true;
-}
-
-void doe_mtl_texture_region_initialize(doe_mtl_texture_use *use, doe_mtl_texture_region region) {
-    const doe_mtl_texture *texture = use->texture;
-    const uint32_t layers = doe_mtl_texture_layers(&texture->desc);
-    const uint32_t first = texture->desc.type == DOE_MTL_TEXTURE_3D ? 0 : region.z;
-    const uint32_t count = texture->desc.type == DOE_MTL_TEXTURE_3D ? 1 : region.depth_or_layers;
-    uint32_t layer;
-    for (layer = first; layer < first + count; ++layer)
-        use->initialized[(size_t)region.mip * layers + layer] = true;
-}
-
-static bool view_initialized(const doe_mtl_commands *commands, const doe_mtl_texture_view *view) {
-    const bool *initialized = initialization(commands, view->texture);
-    const uint32_t layers = doe_mtl_texture_layers(&view->texture->desc);
-    uint32_t mip, layer;
-    for (mip = view->desc.base_mip; mip < view->desc.base_mip + view->desc.mip_count; ++mip)
-        for (layer = view->desc.base_layer; layer < view->desc.base_layer + view->desc.layer_count; ++layer)
-            if (!initialized[(size_t)mip * layers + layer]) return false;
-    return true;
 }
 
 doe_mtl_status doe_mtl_image_bindings_preflight(doe_mtl_commands *commands,
@@ -104,7 +65,11 @@ doe_mtl_status doe_mtl_image_bindings_preflight(doe_mtl_commands *commands,
             status = doe_mtl_texture_format_info(binding->view->desc.format, &format);
             if (status != DOE_MTL_OK || format.srgb || format.compressed || format.depth || format.stencil) return DOE_MTL_UNSUPPORTED;
         }
-        if (!view_initialized(commands, binding->view)) return DOE_MTL_UNINITIALIZED;
+        /* Combined-format shader views expose depth; X24/X32 views expose stencil. */
+        if (!doe_mtl_texture_aspect_initialized(commands, binding->view,
+            (doe_mtl_format_aspects(binding->view->desc.format) & DOE_MTL_ASPECT_DEPTH) != 0 ?
+                DOE_MTL_ASPECT_DEPTH : doe_mtl_format_aspects(binding->view->desc.format)))
+            return DOE_MTL_UNINITIALIZED;
         native->textures[binding->slot] = binding->view->native;
         if (binding->slot >= native->texture_count) native->texture_count = binding->slot + 1;
     }
@@ -173,7 +138,7 @@ void doe_mtl_images_retire(doe_mtl_commands *commands, bool completed, bool succ
         commands->textures = use->next;
         if (completed) {
             if (success) memcpy(use->texture->initialized, use->initialized,
-                use->texture->subresource_count * sizeof(bool));
+                use->texture->subresource_count * sizeof(uint8_t));
             else use->texture->poisoned = true;
         }
         use->texture->owner = NULL;

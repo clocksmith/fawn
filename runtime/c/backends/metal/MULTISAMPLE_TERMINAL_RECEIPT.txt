@@ -1,0 +1,84 @@
+Metal multisample/aspect/visibility lane: hosted Linux GCC developer controls, 2026-10-23 UTC.
+No Apple SDK/runtime, shader/raster output or physical qualification.
+Old compute/image/graphics evidence remains byte-identical to its committed milestones.
+Initial compile source identities: MULTISAMPLE_FIRST_INPUTS.sha256.
+Subsequent failed fixture attempts have exact diagnostics below but no per-attempt source seals.
+
+$ make -C runtime/c/backends/metal BUILD=/tmp/doe-c-metal-msaa all check
+tests/test_objc_render_commands.c: In function ‘pass_new’:
+tests/test_objc_render_commands.c:170:5: error: missing initializer for field ‘resolve’ of ‘doe_mtl_native_render_attachment’ [-Werror=missing-field-initializers]
+  170 |     pass.colors[0] = (doe_mtl_native_render_attachment){&f->texture, DOE_MTL_CLEAR, DOE_MTL_STORE, {1, 0.5, 0.25, 0}, 0, 0};
+      |     ^~~~
+In file included from tests/../src/objc_abi.h:4,
+                 from tests/test_objc_render_commands.c:3:
+tests/../src/native.h:37:11: note: ‘resolve’ declared here
+   37 |     void *resolve;
+      |           ^~~~~~~
+tests/test_objc_render_commands.c:171:5: error: missing initializer for field ‘resolve’ of ‘doe_mtl_native_render_attachment’ [-Werror=missing-field-initializers]
+  171 |     pass.depth = (doe_mtl_native_render_attachment){&f->texture, DOE_MTL_CLEAR, DOE_MTL_STORE_DISCARD, {0, 0, 0, 0}, 0.75, 0};
+      |     ^~~~
+tests/../src/native.h:37:11: note: ‘resolve’ declared here
+   37 |     void *resolve;
+      |           ^~~~~~~
+tests/test_objc_render_commands.c:172:5: error: missing initializer for field ‘resolve’ of ‘doe_mtl_native_render_attachment’ [-Werror=missing-field-initializers]
+  172 |     pass.stencil = (doe_mtl_native_render_attachment){&f->texture, DOE_MTL_CLEAR, DOE_MTL_STORE, {0, 0, 0, 0}, 0, 254};
+      |     ^~~~
+tests/../src/native.h:37:11: note: ‘resolve’ declared here
+   37 |     void *resolve;
+      |           ^~~~~~~
+cc1: all warnings being treated as errors
+make: *** [Makefile:44: /tmp/doe-c-metal-msaa/test_objc_render_commands] Error 1
+make: Leaving directory '/workspace/shared/doe-c-migration-20261023/runtime/c/backends/metal'
+Observed outcome: failed; correction: New resolve fields needed explicit fixture initializers.
+
+$ make -C runtime/c/backends/metal BUILD=/tmp/doe-c-metal-msaa check
+tests/test_multisample.c: In function ‘context_new’:
+tests/test_multisample.c:11:5: error: implicit declaration of function ‘mock_initialize’ [-Wimplicit-function-declaration]
+   11 |     mock_initialize(mock, &native);
+      |     ^~~~~~~~~~~~~~~
+In file included from tests/test_multisample.c:5:
+tests/test_multisample.c:12:12: error: implicit declaration of function ‘doe_mtl_context_from_native’; did you mean ‘doe_mtl_texture_native’? [-Wimplicit-function-declaration]
+   12 |     assert(doe_mtl_context_from_native(&native, &context, NULL) == DOE_MTL_OK);
+      |            ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+make: *** [Makefile:46: /tmp/doe-c-metal-msaa/test_multisample] Error 1
+make: Leaving directory '/workspace/shared/doe-c-migration-20261023/runtime/c/backends/metal'
+Observed outcome: failed; correction: New test helper used incorrect existing constructor names; corrected to mock_driver/context_open.
+
+$ make -C runtime/c/backends/metal BUILD=/tmp/doe-c-metal-msaa check
+test_objc_render_commands: tests/test_objc_render_commands.c:155: draw: Assertion `active->vertex_textures[127] == &active->texture && active->fragment_samplers[15] == &active->sampler' failed.
+make: *** [Makefile:49: check] Aborted
+make: Leaving directory '/workspace/shared/doe-c-migration-20261023/runtime/c/backends/metal'
+Observed outcome: failed; correction: New visibility fixture lacked the explicit bindings required by its existing draw callback; supplied them.
+
+$ make -C runtime/c/backends/metal BUILD=/tmp/doe-c-metal-msaa-final all check probe abi-compile
+Metal visibility controls: 3 admission/lifetime/error groups passed; no GPU query results generated
+Metal multisample controls: 6 ownership/aspect/resolve groups passed; no sample or pixel execution
+Metal typed render encoder controls: attachments, full per-stage state, indexed/instanced args and failure cleanup passed; no SDK/GPU
+Metal typed render pipeline controls: exact stage/descriptor/depth/stencil fields and eight failure paths passed; no SDK/GPU
+Metal render ownership controls: 8 groups passed; no shader/raster/GPU execution
+Metal developer controls: 10 scenario groups passed; mocked calls, no GPU execution
+Metal typed-call controls: pipeline cleanup, exact dispatch/copy/fill and completion passed; no SDK/GPU
+Metal image ownership controls: 9 groups passed; mocked native calls, no pixel/GPU execution
+Metal typed image controls: descriptors, views, samplers, 2D/3D transfers and mixed dispatch passed; no SDK/GPU
+Metal probe: unsupported (Metal requires 64-bit macOS); no device or execution claimed
+exit=0
+
+$ ASAN_OPTIONS=detect_leaks=0 make -C runtime/c/backends/metal BUILD=/tmp/doe-c-metal-msaa-final sanitize
+Metal visibility controls: 3 admission/lifetime/error groups passed; no GPU query results generated
+Metal multisample controls: 6 ownership/aspect/resolve groups passed; no sample or pixel execution
+Metal typed render encoder controls: attachments, full per-stage state, indexed/instanced args and failure cleanup passed; no SDK/GPU
+Metal typed render pipeline controls: exact stage/descriptor/depth/stencil fields and eight failure paths passed; no SDK/GPU
+Metal render ownership controls: 8 groups passed; no shader/raster/GPU execution
+Metal developer controls: 10 scenario groups passed; mocked calls, no GPU execution
+Metal typed-call controls: pipeline cleanup, exact dispatch/copy/fill and completion passed; no SDK/GPU
+Metal image ownership controls: 9 groups passed; mocked native calls, no pixel/GPU execution
+Metal typed image controls: descriptors, views, samplers, 2D/3D transfers and mixed dispatch passed; no SDK/GPU
+exit=0
+
+GCC -fanalyzer strict compile: textures, texture_formats, texture_initialization,
+texture_ownership, render_attachments, render_pipeline, render_draws, render_visibility,
+render_commands, objc_images, objc_render_commands: exit=0
+C++17 strict render/compute/image header syntax consumption: exit=0
+git diff --check -- runtime/c/backends/metal: exit=0
+C size check: 511 files, 0 failures; limit999 at observation.
+LeakSanitizer scanning remained disabled for the unchanged historical hosted ptrace restriction.

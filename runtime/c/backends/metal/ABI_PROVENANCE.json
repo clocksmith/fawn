@@ -53,6 +53,10 @@
     {
       "path": "runtime/zig/src/native/render/doe_render_pass_controls_native.zig",
       "sha256": "72090a2a8cfc74f48a16d2b6ba56fc28c063f25eecdf7e06677580c300769243"
+    },
+    {
+      "path": "runtime/zig/src/native/resource/doe_query_native.zig",
+      "sha256": "69b16838b7ba73554ee46bb8656bd2bae58171d160b154886dbe36fc9c6ed37d"
     }
   ],
   "primary_references": [
@@ -143,6 +147,38 @@
     {
       "subject": "Depth/stencil compare, operation and uint32 mask setters",
       "url": "https://raw.githubusercontent.com/apple/metal-cpp/main/Metal/MTLDepthStencil.hpp"
+    },
+    {
+      "subject": "Device sample count query",
+      "url": "https://raw.githubusercontent.com/apple/metal-cpp/main/Metal/MTLDevice.hpp"
+    },
+    {
+      "subject": "Depth24Stencil8 native property and Apple silicon exclusion",
+      "url": "https://developer.apple.com/documentation/metal/mtldevice/isdepth24stencil8pixelformatsupported?language=objc"
+    },
+    {
+      "subject": "Resolve target requirement and native store semantics",
+      "url": "https://developer.apple.com/library/archive/documentation/3DDrawing/Conceptual/MTLBestPracticesGuide/LoadandStoreActions.html"
+    },
+    {
+      "subject": "Combined-format stencil views",
+      "url": "https://developer.apple.com/documentation/metal/mtltexture/maketextureview%28pixelformat%3A%29"
+    },
+    {
+      "subject": "Combined depth/stencil has no portable raw byte allocation layout",
+      "url": "https://developer.apple.com/documentation/metal/mtlpixelformat/mtlpixelformatdepth32float_stencil8?changes=latest__3"
+    },
+    {
+      "subject": "Visibility result buffer uses uint64 values",
+      "url": "https://developer.apple.com/documentation/metal/mtlrenderpassdescriptor/visibilityresultbuffer?changes=lat_3__3&language=objc"
+    },
+    {
+      "subject": "Visibility offset alignment and one contiguous run per pass",
+      "url": "https://developer.apple.com/documentation/metal/mtlrendercommandencoder/setvisibilityresultmode%28_%3Aoffset%3A%29?changes=__3&language=objc"
+    },
+    {
+      "subject": "Stencil resolve, counting queries and family-dependent limits",
+      "url": "https://developer.apple.com/metal/feature-sets/"
     }
   ],
   "abi_facts": [
@@ -157,10 +193,15 @@
     "Per-slice array buffer transfers use native bytesPerImage0 and origin.z0; volume transfers use slice0 and nonzero origin.z/depth as requested.",
     "GPUFamily uses NSInteger; Mac2=2002, Apple2=1002, Apple3=1003. Exposed dimension limits are conservative published family bounds, not a hardware qualification.",
     "Render write-mask bits R=8,G=4,B=2,A=1; blend operations0..4 and admitted factors0..14.",
-    "Load actions discard/load/clear=0/1/2; admitted store discard/store=0/1. Multisample/resolve not admitted.",
+    "Load actions discard/load/clear=0/1/2; store discard/store/resolve/store-and-resolve=0/1/2/3.",
     "ClearColor is four doubles; viewport is six doubles; scissor is four NSUInteger fields passed by value.",
     "Stencil clear/reference/readMask/writeMask setters take uint32; depth clear takes double; depth-write uses native BOOL.",
-    "Indexed draw baseVertex is signed NSInteger; other primitive/count/offset/base-instance fields are NSUInteger."
+    "Indexed draw baseVertex is signed NSInteger; other primitive/count/offset/base-instance fields are NSUInteger.",
+    "Native texture types 2DMultisample=4 and 2DMultisampleArray=8; sampleCount is NSUInteger and is queried before creation.",
+    "Combined Depth24Stencil8=255, Depth32Stencil8=260; X32Stencil8=261 and X24Stencil8=262 are view-only in this owner.",
+    "Depth resolve sample0/min/max=0/1/2; stencil resolve sample0/depth-resolved-sample=0/1; native filter setters take NSUInteger.",
+    "Depth resolve/store-and-resolve/counting visibility conservatively require Apple3 or Mac2; stencil resolve requires Apple5 or Mac2; multisample arrays require Apple7 or Mac2.",
+    "Visibility mode/offset setter arguments are NSUInteger; each uint64 result occupies eight aligned bytes, each offset used in one contiguous run per pass."
   ],
   "not_verified": [
     "Apple SDK declaration compatibility",
@@ -176,6 +217,9 @@
     "Explicit vertex/fragment source spans and resolved symbols replace retained fallback shader/name behavior; no shader synthesis.",
     "A zero native color write mask stays zero, rather than retained fallback-to-all behavior.",
     "Per-stage sparse binding snapshots clear absent slots between draws; no blanket aliasing of vertex and fragment bindings.",
-    "Whole-pass preflight and one completion owner retain every attachment/view and pipeline before native encoding; combined depth/stencil stays rejected until aspect-qualified initialization exists."
+    "Whole-pass preflight and one completion owner retain every attachment/view and pipeline before native encoding; per-aspect initialization uses the same completion owner and paired combined attachments are explicit.",
+    "Source-store and resolve-target aspect availability are independent; shader coverage never establishes initialization.",
+    "Visibility encoding follows the primary Metal method contract; the retained Metal public query-set path admits only timestamps, so this extension does not claim retained frontend query integration.",
+    "Combined depth/stencil transfer byte layout is not guessed; stencil view formats and combined allocations cannot enter staging transfer paths."
   ]
 }

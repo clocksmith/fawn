@@ -13,7 +13,10 @@ typedef struct fixture {
     unsigned buffer_sets[2], texture_sets[2], sampler_sets[2], bytes_sets[2];
     bool no_descriptor, no_encoder, no_attachment;
     size_t load[10], store[10], level[10], slice[10];
-    void *attachment_texture[10];
+    void *attachment_texture[10], *resolve_texture[10], *visibility_buffer;
+    size_t resolve_level[10], resolve_slice[10], resolve_filter[10];
+    size_t visibility_modes[8], visibility_offsets[8];
+    unsigned visibility_sets;
     doe_mtl_clear_color clear;
     double clear_depth;
     uint32_t clear_stencil, stencil_reference;
@@ -57,7 +60,14 @@ static void *indexed(void *object, void *sel, size_t index) {
     return active->no_attachment ? NULL : &active->attachments[index];
 }
 static void set_object(void *object, void *sel, void *value) {
-    if (named(sel, "setTexture:")) {
+    if (named(sel, "setVisibilityResultBuffer:")) {
+        assert(object == &active->descriptor);
+        active->visibility_buffer = value;
+    } else if (named(sel, "setResolveTexture:")) {
+        token *t = object;
+        assert(t->index < 10);
+        active->resolve_texture[t->index] = value;
+    } else if (named(sel, "setTexture:")) {
         token *t = object;
         assert(t->index < 10); active->attachment_texture[t->index] = value;
     } else {
@@ -76,6 +86,10 @@ static void set_size(void *object, void *sel, size_t value) {
         if (named(sel, "setLoadAction:")) active->load[t->index] = value;
         else if (named(sel, "setStoreAction:")) active->store[t->index] = value;
         else if (named(sel, "setLevel:")) active->level[t->index] = value;
+        else if (named(sel, "setResolveLevel:")) active->resolve_level[t->index] = value;
+        else if (named(sel, "setResolveSlice:")) active->resolve_slice[t->index] = value;
+        else if (named(sel, "setDepthResolveFilter:") || named(sel, "setStencilResolveFilter:"))
+            active->resolve_filter[t->index] = value;
         else { assert(named(sel, "setSlice:")); active->slice[t->index] = value; }
     }
 }
@@ -148,6 +162,12 @@ static void draw_indexed(void *object, void *sel, size_t topology, size_t count,
     active->instances = instances; active->base_vertex = base_vertex; active->first_instance = first_instance; active->indexed_draws++;
     assert(active->vertex_textures[127] == NULL && active->fragment_samplers[15] == NULL);
 }
+static void visibility(void *object, void *sel, size_t mode, size_t offset) {
+    unsigned i = active->visibility_sets++;
+    assert(object == &active->encoder && named(sel, "setVisibilityResultMode:offset:") && i < 8);
+    active->visibility_modes[i] = mode;
+    active->visibility_offsets[i] = offset;
+}
 static void initialize(fixture *f) {
     doe_mtl_objc *r;
     unsigned i;
@@ -162,14 +182,14 @@ static void initialize(fixture *f) {
     r->bind_bytes_call = bind_bytes; r->bind_image_call = bind_image;
     r->graphics.index_object = indexed; r->graphics.clear_color = clear; r->graphics.set_double = set_double;
     r->graphics.set_u32 = set_u32; r->graphics.viewport = viewport; r->graphics.scissor = scissor;
-    r->graphics.blend_color = blend; r->graphics.depth_bias = bias; r->graphics.draw = draw; r->graphics.draw_indexed = draw_indexed;
+    r->graphics.blend_color = blend; r->graphics.depth_bias = bias; r->graphics.draw = draw; r->graphics.draw_indexed = draw_indexed; r->graphics.visibility = visibility;
 }
 static doe_mtl_native_render_pass pass_new(fixture *f) {
     doe_mtl_native_render_pass pass = {0};
     pass.width = 64; pass.height = 32; pass.color_count = 2;
-    pass.colors[0] = (doe_mtl_native_render_attachment){&f->texture, DOE_MTL_CLEAR, DOE_MTL_STORE, {1, 0.5, 0.25, 0}, 0, 0};
-    pass.depth = (doe_mtl_native_render_attachment){&f->texture, DOE_MTL_CLEAR, DOE_MTL_STORE_DISCARD, {0, 0, 0, 0}, 0.75, 0};
-    pass.stencil = (doe_mtl_native_render_attachment){&f->texture, DOE_MTL_CLEAR, DOE_MTL_STORE, {0, 0, 0, 0}, 0, 254};
+    pass.colors[0] = (doe_mtl_native_render_attachment){&f->texture, DOE_MTL_CLEAR, DOE_MTL_STORE, {1, 0.5, 0.25, 0}, 0, 0, NULL, 0};
+    pass.depth = (doe_mtl_native_render_attachment){&f->texture, DOE_MTL_CLEAR, DOE_MTL_STORE_DISCARD, {0, 0, 0, 0}, 0.75, 0, NULL, 0};
+    pass.stencil = (doe_mtl_native_render_attachment){&f->texture, DOE_MTL_CLEAR, DOE_MTL_STORE, {0, 0, 0, 0}, 0, 254, NULL, 0};
     return pass;
 }
 static void encoding(void) {
@@ -212,7 +232,49 @@ static void clear_and_failure(void) {
         assert(f.releases == (failure == 1 ? 0u : 1u));
     }
 }
+static void resolves_and_visibility(void) {
+    fixture f;
+    doe_mtl_native_render_pass pass;
+    doe_mtl_native_render_draw draws[4] = {0};
+    unsigned i;
+    initialize(&f);
+    pass = pass_new(&f);
+    pass.samples = 4;
+    pass.colors[0].resolve = &f.buffer;
+    pass.colors[0].store = DOE_MTL_STORE_RESOLVE;
+    pass.depth.resolve = &f.buffer;
+    pass.depth.store = DOE_MTL_RESOLVE;
+    pass.depth.resolve_filter = 2;
+    pass.stencil.resolve = &f.buffer;
+    pass.stencil.store = DOE_MTL_STORE_RESOLVE;
+    pass.stencil.resolve_filter = 1;
+    pass.visibility_buffer = &f.index_buffer;
+    for (i = 0; i < 4; ++i) {
+        draws[i].pipeline = &f.pipeline;
+        draws[i].vertex_sizes_slot = UINT32_MAX;
+        draws[i].fragment_sizes_slot = UINT32_MAX;
+        draws[i].vertex.textures[127] = &f.texture;
+        draws[i].fragment.samplers[15] = &f.sampler;
+        draws[i].values.count = 3;
+        draws[i].values.instance_count = 1;
+    }
+    draws[0].values.visibility_mode = 2;
+    draws[0].values.visibility_offset = 24;
+    draws[1].values = draws[0].values;
+    draws[3].values.visibility_mode = 1;
+    draws[3].values.visibility_offset = 48;
+    assert(doe_mtl_objc_render(&f.runtime, &f.command, &pass, draws, 4, NULL) == DOE_MTL_OK);
+    assert(f.resolve_texture[0] == &f.buffer && f.resolve_texture[8] == &f.buffer && f.resolve_texture[9] == &f.buffer);
+    assert(f.resolve_level[8] == 0 && f.resolve_slice[9] == 0 && f.resolve_filter[8] == 2 && f.resolve_filter[9] == 1);
+    assert(f.store[0] == 3 && f.store[8] == 2 && f.store[9] == 3);
+    assert(f.visibility_buffer == &f.index_buffer && f.visibility_sets == 3);
+    assert(f.visibility_modes[0] == 2 && f.visibility_offsets[0] == 24);
+    assert(f.visibility_modes[1] == 0 && f.visibility_offsets[1] == 0);
+    assert(f.visibility_modes[2] == 1 && f.visibility_offsets[2] == 48);
+    assert(f.draws == 4 && f.ends == 1 && f.pools == f.drains);
+}
 int main(void) {
+    resolves_and_visibility();
     encoding(); clear_and_failure();
     puts("Metal typed render encoder controls: attachments, full per-stage state, indexed/instanced args and failure cleanup passed; no SDK/GPU");
     return 0;

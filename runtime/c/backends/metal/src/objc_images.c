@@ -34,6 +34,8 @@ bool doe_mtl_objc_load_image_selectors(doe_mtl_objc *r) {
     r->set_sampler = r->selector("setSamplerState:atIndex:");
     r->supports_family = r->selector("supportsFamily:");
     r->supports_bc = r->selector("supportsBCTextureCompression");
+    r->supports_samples = r->selector("supportsTextureSampleCount:");
+    r->supports_depth24 = r->selector("isDepth24Stencil8PixelFormatSupported");
     return r->texture_class != NULL && r->sampler_class != NULL &&
         r->new_texture != NULL && r->new_view != NULL && r->new_sampler != NULL &&
         r->set_type != NULL && r->set_format != NULL && r->set_width != NULL &&
@@ -44,13 +46,29 @@ bool doe_mtl_objc_load_image_selectors(doe_mtl_objc *r) {
         r->set_address_w != NULL && r->set_min_lod != NULL && r->set_max_lod != NULL &&
         r->set_compare != NULL && r->set_anisotropy != NULL && r->upload_image != NULL &&
         r->read_image != NULL && r->copy_image != NULL && r->set_texture != NULL &&
-        r->set_sampler != NULL && r->supports_family != NULL && r->supports_bc != NULL;
+        r->set_sampler != NULL && r->supports_family != NULL && r->supports_bc != NULL &&
+        r->supports_samples != NULL && r->supports_depth24 != NULL;
 }
 
 void doe_mtl_objc_image_caps(doe_mtl_objc *r, void *device, doe_mtl_caps *caps) {
+    uint32_t bit;
+    if (r->responds_call(device, r->responds, r->supports_samples))
+        for (bit = 0; bit < 5; ++bit)
+            if (r->samples_call(device, r->supports_samples, (size_t)1 << bit)) caps->sample_count_mask |= 1u << bit;
+    if (r->responds_call(device, r->responds, r->supports_depth24))
+        caps->depth24_stencil8 = r->bool_call(device, r->supports_depth24) != 0;
     /* Conservative published family limits. Unrecognized older devices keep
      * buffer compute, but have no admitted image dimensions rather than guesses. */
     if (r->responds_call(device, r->responds, r->supports_family)) {
+        caps->separate_depth_stencil = r->family_call(device, r->supports_family, 1002) != 0;
+        caps->depth_resolve = r->family_call(device, r->supports_family, 1003) ||
+            r->family_call(device, r->supports_family, 2002);
+        caps->stencil_resolve = r->family_call(device, r->supports_family, 1005) ||
+            r->family_call(device, r->supports_family, 2002);
+        caps->store_and_resolve = caps->depth_resolve;
+        caps->counting_visibility = caps->depth_resolve;
+        caps->multisample_array = r->family_call(device, r->supports_family, 1007) ||
+            r->family_call(device, r->supports_family, 2002);
         if (r->family_call(device, r->supports_family, 2002) ||
             r->family_call(device, r->supports_family, 1003)) {
             caps->max_texture_1d = 16384;
@@ -62,6 +80,7 @@ void doe_mtl_objc_image_caps(doe_mtl_objc *r, void *device, doe_mtl_caps *caps) 
         if (caps->max_texture_2d != 0) {
             caps->max_texture_3d = 2048;
             caps->max_texture_layers = 2048;
+            caps->max_visibility_offset = caps->multisample_array ? 262136 : 65528;
         }
     }
     if (r->responds_call(device, r->responds, r->supports_bc))
@@ -81,7 +100,8 @@ doe_mtl_status doe_mtl_objc_texture(void *userdata, void *device,
     }
     if (desc->type == DOE_MTL_TEXTURE_3D) depth = desc->depth_or_layers;
     else if (desc->type == DOE_MTL_TEXTURE_CUBE_ARRAY) layers = desc->depth_or_layers / 6;
-    else if (desc->type == DOE_MTL_TEXTURE_1D_ARRAY || desc->type == DOE_MTL_TEXTURE_2D_ARRAY)
+    else if (desc->type == DOE_MTL_TEXTURE_1D_ARRAY || desc->type == DOE_MTL_TEXTURE_2D_ARRAY ||
+             desc->type == DOE_MTL_TEXTURE_2D_MS_ARRAY)
         layers = desc->depth_or_layers;
     if (desc->usage & (DOE_MTL_TEXTURE_SAMPLED | DOE_MTL_TEXTURE_STORAGE)) usage |= 1;
     if (desc->usage & DOE_MTL_TEXTURE_STORAGE) usage |= 2;
@@ -94,7 +114,7 @@ doe_mtl_status doe_mtl_objc_texture(void *userdata, void *device,
     r->set_size_call(descriptor, r->set_depth, depth);
     r->set_size_call(descriptor, r->set_layers, layers);
     r->set_size_call(descriptor, r->set_mips, desc->mip_levels);
-    r->set_size_call(descriptor, r->set_samples, 1);
+    r->set_size_call(descriptor, r->set_samples, desc->sample_count);
     r->set_size_call(descriptor, r->set_storage, 2); /* MTLStorageModePrivate */
     r->set_size_call(descriptor, r->set_usage, usage);
     texture = r->named_call(device, r->new_texture, descriptor);

@@ -1,0 +1,201 @@
+{
+  "schema": "doe-c-metal-multisample-developer-evidence-v1",
+  "consumer": "C migration lead review of multisample/resolve, combined aspects and visibility encoding",
+  "created_utc": "2026-10-23T19:48:36.424015+00:00",
+  "base_metal_commit": "74a329c5",
+  "repository_head_at_observation": "9fd2157302c17ccec47d3cbc7b4610b5a8db5044",
+  "qualification": "developer controls only; default off; not accepted as full migration, SDK validation or physical support",
+  "source_manifest": {
+    "path": "runtime/c/backends/metal/MULTISAMPLE_SOURCE_INPUTS.sha256",
+    "sha256": "656ba191d0e0641a595efc52cef37f1f895183c6aee186493182a6d87b179aac",
+    "input_count": 51
+  },
+  "terminal_receipt": {
+    "path": "runtime/c/backends/metal/MULTISAMPLE_TERMINAL_RECEIPT.txt",
+    "sha256": "761f06ac86cfeaaa5dec347077f4e0f6f42a3f426286fda37d1b1a7a8686861f"
+  },
+  "initial_failed_compile_manifest": {
+    "path": "runtime/c/backends/metal/MULTISAMPLE_FIRST_INPUTS.sha256",
+    "sha256": "178697f4b26daa410b0f813cdcb5f25496665deca6a71eacc3c6c8bdb6856ec4",
+    "scope": "Historical failed-attempt identities, not the final source set; later fixture failures lack per-attempt source seals"
+  },
+  "compiler": "cc (Debian 14.2.0-19) 14.2.0",
+  "checks": [
+    {
+      "command": "make -C runtime/c/backends/metal BUILD=/tmp/doe-c-metal-msaa-final all check probe abi-compile",
+      "outcome": "pass",
+      "scope": "strict C11; nine control executables; 6 multisample and 3 visibility groups plus existing controls; typed sample count/resolve/filter/query transitions; unsupported Linux probe; source branch compilation only"
+    },
+    {
+      "command": "ASAN_OPTIONS=detect_leaks=0 make -C runtime/c/backends/metal BUILD=/tmp/doe-c-metal-msaa-final sanitize",
+      "outcome": "pass",
+      "scope": "all nine controls under ASan/UBSan; leak scanning disabled"
+    },
+    {
+      "command": "cc ... -fanalyzer -c textures/texture_formats/texture_initialization/texture_ownership/render_attachments/render_pipeline/render_draws/render_visibility/render_commands/objc_images/objc_render_commands.c",
+      "outcome": "pass",
+      "scope": "eleven changed owner translation units"
+    },
+    {
+      "command": "c++ -I. -std=c++17 -Wall -Wextra -Werror -x c++ - -fsyntax-only",
+      "outcome": "pass",
+      "scope": "private render/texture/compute headers"
+    },
+    {
+      "command": "git diff --check -- runtime/c/backends/metal",
+      "outcome": "pass"
+    },
+    {
+      "command": "python3 runtime/c/tools/check_source_size.py",
+      "outcome": "pass",
+      "scope": "511 files, zero failures at observation; C/header limit999"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "/tmp/doe-c-metal-msaa-final/libdoe_metal.a",
+      "sha256": "272b383a17e08fabe1745947c2bf840db94bb2087167322ce8ccb67e29e1e870"
+    },
+    {
+      "path": "/tmp/doe-c-metal-msaa-final/test_lifetime",
+      "sha256": "00772c7f7acdbd40f219dfd8122292d8cd2fa86064be7e359dd6e0b5fecd8a77"
+    },
+    {
+      "path": "/tmp/doe-c-metal-msaa-final/test_objc_calls",
+      "sha256": "8d66023145710e2383de32fea3add1fa60ce90a75eb56779610d9446a0b9f194"
+    },
+    {
+      "path": "/tmp/doe-c-metal-msaa-final/test_images",
+      "sha256": "50d34f4282840daf63428f1db9b1621a89a8dcc161578b9a22d9621b8c6a6b47"
+    },
+    {
+      "path": "/tmp/doe-c-metal-msaa-final/test_objc_images",
+      "sha256": "09b49eddc8e403d848ef3eb1b199dd70b9db50ec71c29b27ef037a56206bdc3f"
+    },
+    {
+      "path": "/tmp/doe-c-metal-msaa-final/test_render",
+      "sha256": "fb53ae6835dad868ab7d5d7fe77efd65b000a937cb9994c3d8854bac4ebb31d7"
+    },
+    {
+      "path": "/tmp/doe-c-metal-msaa-final/test_objc_render_pipeline",
+      "sha256": "9b58a4b45baf3d1c2a4ef835886b65cbd8e8d76e9897dab41fb4a73d9f2d7152"
+    },
+    {
+      "path": "/tmp/doe-c-metal-msaa-final/test_objc_render_commands",
+      "sha256": "383f3fd46844f286b0db836493c275599972336bbe2b5fdfff97a3314b847b3b"
+    },
+    {
+      "path": "/tmp/doe-c-metal-msaa-final/test_multisample",
+      "sha256": "5d53da3751ab32a1d6dc73330f1610d49c93a2e009d58e1e1ae6db7a71438f51"
+    },
+    {
+      "path": "/tmp/doe-c-metal-msaa-final/test_visibility",
+      "sha256": "cf28ab9396c1155298ddac74587aced5064114b84f255c64eb85e907ea05d126"
+    },
+    {
+      "path": "/tmp/doe-c-metal-msaa-final/probe",
+      "sha256": "794d1548072542c332515d985d8308d7ce926f0426dd0159c3054f54169146c3"
+    },
+    {
+      "path": "/tmp/doe-c-metal-msaa-final/sanitize/test_lifetime",
+      "sha256": "64d8b4ac3c89928331fba9197dfbdcdaf74c22a8ffa79e1c5218f18d398bb5b6"
+    },
+    {
+      "path": "/tmp/doe-c-metal-msaa-final/sanitize/test_objc_calls",
+      "sha256": "b4fe1847669044dc4c862d5ea04ef1d6c1ea49466fa56d323529a88d032adaad"
+    },
+    {
+      "path": "/tmp/doe-c-metal-msaa-final/sanitize/test_images",
+      "sha256": "ac55d4c7b884a47a741fabd56a792a083a691785e57777ba6d9e3c51b083d2fc"
+    },
+    {
+      "path": "/tmp/doe-c-metal-msaa-final/sanitize/test_objc_images",
+      "sha256": "01e8f70ba3333c46cae6f9f71d71db87e6863300e022af8f1d9e1ae926f0d8fb"
+    },
+    {
+      "path": "/tmp/doe-c-metal-msaa-final/sanitize/test_render",
+      "sha256": "c2eac35b30d8d5d51277936ac97b4e3c9cd53a369f3c36bded9ae2b9406dbeaa"
+    },
+    {
+      "path": "/tmp/doe-c-metal-msaa-final/sanitize/test_objc_render_pipeline",
+      "sha256": "d0afdd8f1afb4197f05fc3fd29a1f27b9efb25cd64cca673be95f2b14eebc890"
+    },
+    {
+      "path": "/tmp/doe-c-metal-msaa-final/sanitize/test_objc_render_commands",
+      "sha256": "33171a34a6af184bb2b621d27e5dbbc5afb531ec479e356081a7117f2e24410a"
+    },
+    {
+      "path": "/tmp/doe-c-metal-msaa-final/sanitize/test_multisample",
+      "sha256": "324153126d8663bc4f61483504c3b284cf1ad9b17ae5113a1dff4bba282cb9bd"
+    },
+    {
+      "path": "/tmp/doe-c-metal-msaa-final/sanitize/test_visibility",
+      "sha256": "369a40488c45656fc34735a38dec65b471efc685bc77e011e6945809688b70e5"
+    }
+  ],
+  "measurements": {
+    "c_header_files": 45,
+    "c_header_physical_lines": 7172,
+    "production_c_header_files": 33,
+    "production_c_header_physical_lines": 4082,
+    "maximum_file_physical_lines": 429,
+    "complete_retained_delivery_reduction_measured": false,
+    "performance_measured": false
+  },
+  "implemented": [
+    "Device sample-count query and private 2D multisample/array descriptors; sample-matched pipelines",
+    "Native resolve and store-resolve attachments, per-aspect depth/stencil filters and runtime family gates",
+    "Combined Depth24/Depth32 stencil allocations and X24/X32 view-only stencil sampling",
+    "One aspect-qualified initialization owner for source-store and resolve-target availability, rollback and terminal failure",
+    "Native boolean/counting visibility results in ordinary leased buffers; contiguous offset runs, alignment/bounds/capability checks"
+  ],
+  "not_run": [
+    "Apple compiler/SDK ABI validation",
+    "Apple Objective-C runtime or GPU execution",
+    "Physical resolve/aspect/query results",
+    "LeakSanitizer in a supported runtime",
+    "Full retained-consumer/native integration qualification"
+  ],
+  "remaining_surfaces": [
+    "Timestamp counters and indirect GPU-count admission/encoding",
+    "Surfaces, shared events, external images, ETC/ASTC",
+    "Depth/stencil and multisample staging transfers; partial-aspect combined render/resolve passes",
+    "Caches/streaming reuse and full frontend/provider wiring"
+  ],
+  "historical_evidence": [
+    {
+      "commit": "33bf0b04",
+      "files": [
+        "SOURCE_INPUTS.sha256",
+        "DEVELOPER_RECEIPT.json",
+        "TERMINAL_RECEIPT.txt"
+      ],
+      "unchanged": true
+    },
+    {
+      "commit": "f6cd88b1",
+      "files": [
+        "IMAGE_SOURCE_INPUTS.sha256",
+        "DEVELOPER_RECEIPT_IMAGES.json",
+        "IMAGE_TERMINAL_RECEIPT.txt"
+      ],
+      "unchanged": true
+    },
+    {
+      "commit": "74a329c5",
+      "files": [
+        "RENDER_SOURCE_INPUTS.sha256",
+        "DEVELOPER_RECEIPT_RENDER.json",
+        "RENDER_TERMINAL_RECEIPT.txt"
+      ],
+      "unchanged": true
+    }
+  ],
+  "independent_review": "Shared resource-owner read-only review found per-aspect source/resolve publication and lease retention coherent; this is not SDK/device acceptance.",
+  "boundary_effects": [
+    "Only runtime/c/backends/metal edited",
+    "No new public query-set/reference/completion authority",
+    "No SDK/tool installation, physical tests, source deletion or provider-default change",
+    "No synthesized shader, pixel, visibility or timestamp results"
+  ]
+}

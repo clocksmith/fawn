@@ -25,7 +25,7 @@ static bool face_valid(doe_mtl_stencil_face face) {
 static bool blend_valid(doe_mtl_blend_component blend) {
     return blend.operation <= 4 && blend.source <= 14 && blend.destination <= 14;
 }
-static doe_mtl_status pipeline_validate(const doe_mtl_render_pipeline_desc *desc) {
+static doe_mtl_status pipeline_validate(const doe_mtl_context *context, const doe_mtl_render_pipeline_desc *desc) {
     size_t i, j;
     bool occupied = false;
     const doe_mtl_depth_stencil *depth;
@@ -33,7 +33,7 @@ static doe_mtl_status pipeline_validate(const doe_mtl_render_pipeline_desc *desc
         desc->layout_count > DOE_MTL_BUFFER_SLOTS || desc->attribute_count > DOE_MTL_VERTEX_ATTRIBUTES ||
         (desc->layout_count != 0 && desc->layouts == NULL) ||
         (desc->attribute_count != 0 && desc->attributes == NULL)) return DOE_MTL_INVALID_ARGUMENT;
-    if (desc->sample_count != 1) return DOE_MTL_UNSUPPORTED;
+    if (!doe_mtl_samples_supported(&context->caps, desc->sample_count)) return DOE_MTL_UNSUPPORTED;
     if (desc->fragment.msl != NULL && !stage_valid(desc->fragment)) return DOE_MTL_INVALID_ARGUMENT;
     if (desc->fragment.msl == NULL && (desc->fragment.msl_length != 0 || desc->fragment.entrypoint != NULL))
         return DOE_MTL_INVALID_ARGUMENT;
@@ -49,9 +49,15 @@ static doe_mtl_status pipeline_validate(const doe_mtl_render_pipeline_desc *desc
     }
     if (occupied && !stage_valid(desc->fragment)) return DOE_MTL_INVALID_ARGUMENT;
     depth = &desc->depth_stencil;
-    if ((depth->depth_format != 0 && depth->depth_format != DOE_MTL_DEPTH16_UNORM &&
-         depth->depth_format != DOE_MTL_DEPTH32_FLOAT) ||
-        (depth->stencil_format != 0 && depth->stencil_format != DOE_MTL_STENCIL8)) return DOE_MTL_UNSUPPORTED;
+    if (depth->depth_format != 0 &&
+        (doe_mtl_format_aspects(depth->depth_format) & DOE_MTL_ASPECT_DEPTH) == 0) return DOE_MTL_UNSUPPORTED;
+    if (depth->stencil_format != 0 && (depth->stencil_format == DOE_MTL_X24_STENCIL8 ||
+        depth->stencil_format == DOE_MTL_X32_STENCIL8 ||
+        (doe_mtl_format_aspects(depth->stencil_format) & DOE_MTL_ASPECT_STENCIL) == 0)) return DOE_MTL_UNSUPPORTED;
+    if ((depth->depth_format == DOE_MTL_DEPTH24_STENCIL8 || depth->stencil_format == DOE_MTL_DEPTH24_STENCIL8) &&
+        !context->caps.depth24_stencil8) return DOE_MTL_UNSUPPORTED;
+    if (!context->caps.separate_depth_stencil && depth->stencil_format != 0 &&
+        depth->depth_format != depth->stencil_format) return DOE_MTL_UNSUPPORTED;
     if (!occupied && depth->depth_format == 0 && depth->stencil_format == 0) return DOE_MTL_INVALID_ARGUMENT;
     if (depth->depth_compare > 7 || !face_valid(depth->front) || !face_valid(depth->back))
         return DOE_MTL_INVALID_ARGUMENT;
@@ -84,7 +90,7 @@ doe_mtl_status doe_mtl_render_pipeline_create(doe_mtl_context *context,
     doe_mtl_render_pipeline *pipeline;
     doe_mtl_status status;
     if (context == NULL || out == NULL) return doe_mtl_fail(DOE_MTL_INVALID_ARGUMENT, "render pipeline create", error);
-    status = pipeline_validate(desc);
+    status = pipeline_validate(context, desc);
     if (status != DOE_MTL_OK) return doe_mtl_fail(status, "render pipeline descriptor", error);
     if (context->native.render_pipeline == NULL) return doe_mtl_fail(DOE_MTL_UNSUPPORTED, "render pipeline native boundary", error);
     pipeline = calloc(1, sizeof(*pipeline));

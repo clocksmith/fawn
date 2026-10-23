@@ -14,9 +14,24 @@ static doe_mtl_status texture_validate(const doe_mtl_context *context,
         return DOE_MTL_INVALID_ARGUMENT;
     status = doe_mtl_texture_format_info(desc->format, format);
     if (status != DOE_MTL_OK) return status;
+    if (!doe_mtl_samples_supported(&context->caps, desc->sample_count)) return DOE_MTL_UNSUPPORTED;
+    if (desc->format == DOE_MTL_X24_STENCIL8 || desc->format == DOE_MTL_X32_STENCIL8)
+        return DOE_MTL_UNSUPPORTED;
+    if (desc->format == DOE_MTL_DEPTH24_STENCIL8 && !context->caps.depth24_stencil8)
+        return DOE_MTL_UNSUPPORTED;
+    if (desc->format == DOE_MTL_STENCIL8 && !context->caps.separate_depth_stencil)
+        return DOE_MTL_UNSUPPORTED;
+    if (desc->sample_count > 1) {
+        if ((desc->type != DOE_MTL_TEXTURE_2D_MS && desc->type != DOE_MTL_TEXTURE_2D_MS_ARRAY) ||
+            desc->mip_levels != 1 || format->compressed ||
+            (desc->usage & (DOE_MTL_TEXTURE_COPY_SRC | DOE_MTL_TEXTURE_COPY_DST | DOE_MTL_TEXTURE_STORAGE)) != 0)
+            return DOE_MTL_UNSUPPORTED;
+    } else if (desc->type == DOE_MTL_TEXTURE_2D_MS || desc->type == DOE_MTL_TEXTURE_2D_MS_ARRAY)
+        return DOE_MTL_INVALID_ARGUMENT;
     if ((format->depth || format->stencil) &&
         ((desc->usage & (DOE_MTL_TEXTURE_STORAGE | DOE_MTL_TEXTURE_COPY_SRC | DOE_MTL_TEXTURE_COPY_DST)) != 0 ||
-         (desc->type != DOE_MTL_TEXTURE_2D && desc->type != DOE_MTL_TEXTURE_2D_ARRAY)))
+         (desc->type != DOE_MTL_TEXTURE_2D && desc->type != DOE_MTL_TEXTURE_2D_ARRAY &&
+          desc->type != DOE_MTL_TEXTURE_2D_MS && desc->type != DOE_MTL_TEXTURE_2D_MS_ARRAY)))
         return DOE_MTL_UNSUPPORTED;
     if (format->compressed && (!context->caps.bc_texture_compression ||
         (desc->usage & (DOE_MTL_TEXTURE_STORAGE | DOE_MTL_TEXTURE_RENDER_TARGET)) != 0))
@@ -30,6 +45,7 @@ static doe_mtl_status texture_validate(const doe_mtl_context *context,
         if (desc->height != 1 || format->compressed) return DOE_MTL_UNSUPPORTED;
         max_dimension = context->caps.max_texture_1d;
         break;
+    case DOE_MTL_TEXTURE_2D_MS:
     case DOE_MTL_TEXTURE_2D:
         if (desc->depth_or_layers != 1) return DOE_MTL_RANGE;
         max_dimension = context->caps.max_texture_2d;
@@ -39,6 +55,10 @@ static doe_mtl_status texture_validate(const doe_mtl_context *context,
         /* fall through */
     case DOE_MTL_TEXTURE_CUBE_ARRAY:
         if (desc->width != desc->height || desc->depth_or_layers % 6 != 0) return DOE_MTL_RANGE;
+        /* fall through */
+    case DOE_MTL_TEXTURE_2D_MS_ARRAY:
+        if (desc->type == DOE_MTL_TEXTURE_2D_MS_ARRAY && !context->caps.multisample_array)
+            return DOE_MTL_UNSUPPORTED;
         /* fall through */
     case DOE_MTL_TEXTURE_2D_ARRAY:
         max_dimension = context->caps.max_texture_2d;
@@ -83,7 +103,7 @@ doe_mtl_status doe_mtl_texture_create(doe_mtl_context *context,
     texture = calloc(1, sizeof(*texture));
     if (texture == NULL) return doe_mtl_fail(DOE_MTL_OUT_OF_MEMORY, "texture allocation", error);
     texture->subresource_count = (size_t)layers * desc->mip_levels;
-    texture->initialized = calloc(texture->subresource_count, sizeof(bool));
+    texture->initialized = calloc(texture->subresource_count, sizeof(uint8_t));
     if (texture->initialized == NULL) {
         free(texture);
         return doe_mtl_fail(DOE_MTL_OUT_OF_MEMORY, "texture initialization state", error);
@@ -146,6 +166,13 @@ static doe_mtl_status view_validate(const doe_mtl_texture *texture,
         return DOE_MTL_INVALID_ARGUMENT;
     if (!doe_mtl_format_compatible(parent->format, desc->format) ||
         (parent->format != desc->format && !parent->allow_format_views)) return DOE_MTL_UNSUPPORTED;
+    if (parent->sample_count > 1) {
+        if ((desc->type != DOE_MTL_TEXTURE_2D_MS && desc->type != DOE_MTL_TEXTURE_2D_MS_ARRAY) ||
+            (desc->type == DOE_MTL_TEXTURE_2D_MS && desc->layer_count != 1) ||
+            (desc->type == DOE_MTL_TEXTURE_2D_MS_ARRAY && !texture->context->caps.multisample_array))
+            return DOE_MTL_UNSUPPORTED;
+        return DOE_MTL_OK;
+    }
     if (parent->type == DOE_MTL_TEXTURE_3D) return desc->type == DOE_MTL_TEXTURE_3D ? DOE_MTL_OK : DOE_MTL_UNSUPPORTED;
     compatible_type = is_one_dimensional(parent->type) ? desc->type == parent->type :
         (desc->type == DOE_MTL_TEXTURE_2D || desc->type == DOE_MTL_TEXTURE_2D_ARRAY ||

@@ -49,6 +49,11 @@ typedef struct doe_mtl_caps {
     char device_name[256];
     uint32_t max_texture_1d, max_texture_2d, max_texture_3d, max_texture_layers;
     bool bc_texture_compression;
+    uint32_t sample_count_mask; /* Bit log2(count), native queried counts 1..16. */
+    bool depth24_stencil8, separate_depth_stencil;
+    bool depth_resolve, stencil_resolve, store_and_resolve, multisample_array;
+    uint32_t max_visibility_offset;
+    bool counting_visibility;
 } doe_mtl_caps;
 
 doe_mtl_status doe_mtl_context_create(doe_mtl_context **out, doe_mtl_error *error);

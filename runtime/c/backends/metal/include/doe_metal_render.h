@@ -36,8 +36,8 @@ typedef struct doe_mtl_stencil_face {
     uint32_t compare, fail, depth_fail, pass; /* Native compare/operation enums 0..7. */
 } doe_mtl_stencil_face;
 typedef struct doe_mtl_depth_stencil {
-    doe_mtl_format depth_format; /* Zero, Depth16Unorm or Depth32Float. */
-    doe_mtl_format stencil_format; /* Zero or Stencil8. Combined formats unsupported. */
+    doe_mtl_format depth_format; /* Zero, pure depth or combined depth/stencil. */
+    doe_mtl_format stencil_format; /* Zero, Stencil8 or combined depth/stencil. */
     uint32_t depth_compare;
     bool depth_write;
     doe_mtl_stencil_face front, back;
@@ -52,7 +52,7 @@ typedef struct doe_mtl_render_pipeline_desc {
     const doe_mtl_vertex_attribute *attributes;
     size_t attribute_count;
     doe_mtl_depth_stencil depth_stencil;
-    uint32_t sample_count; /* This owner currently admits exactly 1. */
+    uint32_t sample_count; /* Explicit device-admitted sample count. */
 } doe_mtl_render_pipeline_desc;
 doe_mtl_status doe_mtl_render_pipeline_create(doe_mtl_context *context,
     const doe_mtl_render_pipeline_desc *desc, doe_mtl_render_pipeline **out, doe_mtl_error *error);
@@ -61,7 +61,9 @@ void doe_mtl_render_pipeline_release(doe_mtl_render_pipeline *pipeline);
 void *doe_mtl_render_pipeline_native(const doe_mtl_render_pipeline *pipeline);
 
 typedef enum doe_mtl_load_action { DOE_MTL_LOAD_DISCARD, DOE_MTL_LOAD, DOE_MTL_CLEAR } doe_mtl_load_action;
-typedef enum doe_mtl_store_action { DOE_MTL_STORE_DISCARD, DOE_MTL_STORE } doe_mtl_store_action;
+typedef enum doe_mtl_store_action {
+    DOE_MTL_STORE_DISCARD, DOE_MTL_STORE, DOE_MTL_RESOLVE, DOE_MTL_STORE_RESOLVE
+} doe_mtl_store_action;
 typedef struct doe_mtl_clear_color { double red, green, blue, alpha; } doe_mtl_clear_color;
 typedef struct doe_mtl_render_attachment {
     doe_mtl_texture_view *view; /* Exactly one mip and one 2D/array/cube layer. */
@@ -70,11 +72,14 @@ typedef struct doe_mtl_render_attachment {
     doe_mtl_clear_color clear_color;
     double clear_depth;
     uint32_t clear_stencil;
+    doe_mtl_texture_view *resolve_view; /* Required only for resolve store actions. */
+    uint32_t resolve_filter; /* Depth sample0/min/max=0/1/2; stencil sample0/depth=0/1. */
 } doe_mtl_render_attachment;
 typedef struct doe_mtl_render_pass_desc {
     doe_mtl_render_attachment colors[DOE_MTL_COLOR_ATTACHMENTS];
     uint32_t color_count;
     doe_mtl_render_attachment depth, stencil;
+    doe_mtl_buffer *visibility_buffer; /* Optional initialized result storage; uint64 results. */
 } doe_mtl_render_pass_desc;
 typedef struct doe_mtl_render_bindings {
     const doe_mtl_buffer_binding *buffers;
@@ -102,12 +107,17 @@ typedef struct doe_mtl_render_draw {
     float blend_constant[4];
     float depth_bias, depth_slope, depth_clamp;
     uint32_t stencil_reference;
+    uint32_t visibility_mode; /* Native disabled=0, boolean=1, counting=2. */
+    uint64_t visibility_offset; /* 8-byte aligned; each offset occupies one contiguous run. */
 } doe_mtl_render_draw;
 /* Encodes one whole pass, including clear-only passes. All inputs are borrowed
  * only for this call; resources/pipelines are leased before native encoding and
  * remain under the ordinary command completion owner. No open encoder escapes.
  * Loads require initialized contents; discard never establishes initialized
  * output. Clears initialize whole attachment subresources only when stored.
+ * Visibility result reset/aggregation and query-set policy remain upstream;
+ * the result buffer shares ordinary pending/error access restrictions. No CPU
+ * visibility value is synthesized, including for empty draw ranges.
  * Indexed vertex-fetch bounds and shader interface/access compatibility must be
  * admitted upstream; this boundary validates the index-buffer byte range but
  * does not read GPU index bytes or synthesize an index-range proof. */

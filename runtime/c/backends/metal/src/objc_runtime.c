@@ -271,6 +271,7 @@ static doe_mtl_status open_apple_runtime(doe_mtl_native *out, doe_mtl_error *err
     runtime->set_float_call = (doe_objc_set_float_call)message;
     runtime->bool_call = (doe_objc_bool_call)message;
     runtime->family_call = (doe_objc_family_call)message;
+    runtime->samples_call = (doe_objc_samples_call)message;
     runtime->view_call = (doe_objc_view_call)message;
     runtime->bind_image_call = (doe_objc_bind_image_call)message;
     runtime->upload_image_call = (doe_objc_upload_image_call)message;

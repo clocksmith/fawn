@@ -22,7 +22,7 @@ static doe_mtl_buffer *buffer_new(doe_mtl_context *context) {
 }
 static doe_mtl_texture_view *view_new(doe_mtl_context *context, doe_mtl_format format) {
     doe_mtl_texture_desc desc = {DOE_MTL_TEXTURE_2D, format, 16, 8, 1, 1,
-        DOE_MTL_TEXTURE_RENDER_TARGET | DOE_MTL_TEXTURE_SAMPLED, false};
+        DOE_MTL_TEXTURE_RENDER_TARGET | DOE_MTL_TEXTURE_SAMPLED, false, 1};
     doe_mtl_texture_view_desc vd = {DOE_MTL_TEXTURE_2D, format, 0, 1, 0, 1,
         DOE_MTL_SWIZZLE_RED, DOE_MTL_SWIZZLE_GREEN, DOE_MTL_SWIZZLE_BLUE, DOE_MTL_SWIZZLE_ALPHA};
     doe_mtl_texture *texture = NULL;
@@ -92,7 +92,7 @@ static void constructors(void) {
     assert(pipeline->layouts[0].stride == 16 && pipeline->attributes[0].offset == 0);
     assert(pipeline->desc.vertex.msl == NULL && pipeline->desc.fragment.entrypoint == NULL);
     doe_mtl_render_pipeline_release(pipeline);
-    desc = pipeline_desc(); desc.sample_count = 4;
+    desc = pipeline_desc(); desc.sample_count = 3;
     assert(doe_mtl_render_pipeline_create(context, &desc, &pipeline, NULL) == DOE_MTL_UNSUPPORTED);
     desc = pipeline_desc(); desc.fragment.msl = NULL;
     assert(doe_mtl_render_pipeline_create(context, &desc, &pipeline, NULL) == DOE_MTL_INVALID_ARGUMENT);

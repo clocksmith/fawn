@@ -18,8 +18,11 @@ codes and original operation names must survive failed encoding and completion.
 
 Render passes are whole-call snapshots: validate every draw, then acquire all
 leases before creating the native encoder. Attachment clear/load/store state is
-speculative until completion, like transfers. Combined depth/stencil formats
-remain unsupported until aspect-qualified initialization has one owner.
+speculative until completion, like transfers. Combined depth/stencil aspects use
+independent bits in the same subresource owner; resolve targets are separately
+leased and published. Never overwrite one aspect while updating another.
+Visibility offsets form one contiguous run per pass and share buffer completion
+access rules. Reset/aggregation and public query-set policy remain upstream.
 
 Portable call-ledger tests are not a Metal emulator, SDK check or physical run.
 Do not install Apple SDKs or silently substitute Vulkan/software execution.

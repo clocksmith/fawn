@@ -10,7 +10,7 @@ struct doe_mtl_texture {
     doe_mtl_texture_desc desc;
     doe_mtl_format_info format;
     size_t subresource_count;
-    bool *initialized;
+    uint8_t *initialized;
     bool poisoned;
     doe_mtl_commands *owner;
 };
@@ -27,7 +27,7 @@ struct doe_mtl_sampler {
 };
 typedef struct doe_mtl_texture_use {
     doe_mtl_texture *texture;
-    bool *initialized;
+    uint8_t *initialized;
     struct doe_mtl_texture_use *next;
 } doe_mtl_texture_use;
 typedef struct doe_mtl_view_use {
@@ -39,6 +39,13 @@ typedef struct doe_mtl_sampler_use {
     struct doe_mtl_sampler_use *next;
 } doe_mtl_sampler_use;
 
+enum { DOE_MTL_ASPECT_COLOR = 1, DOE_MTL_ASPECT_DEPTH = 2, DOE_MTL_ASPECT_STENCIL = 4 };
+uint8_t doe_mtl_format_aspects(doe_mtl_format format);
+bool doe_mtl_samples_supported(const doe_mtl_caps *caps, uint32_t samples);
+bool doe_mtl_texture_aspect_initialized(const doe_mtl_commands *commands,
+    const doe_mtl_texture_view *view, uint8_t aspects);
+void doe_mtl_texture_aspect_publish(doe_mtl_commands *commands,
+    const doe_mtl_texture_view *view, uint8_t aspects, bool initialized);
 bool doe_mtl_format_compatible(doe_mtl_format a, doe_mtl_format b);
 uint32_t doe_mtl_mip_extent(uint32_t dimension, uint32_t mip);
 uint32_t doe_mtl_texture_layers(const doe_mtl_texture_desc *desc);

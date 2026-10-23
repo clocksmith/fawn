@@ -34,11 +34,14 @@ typedef struct doe_mtl_native_render_attachment {
     doe_mtl_clear_color color;
     double depth;
     uint32_t stencil;
+    void *resolve;
+    uint32_t resolve_filter;
 } doe_mtl_native_render_attachment;
 typedef struct doe_mtl_native_render_pass {
     doe_mtl_native_render_attachment colors[DOE_MTL_COLOR_ATTACHMENTS];
-    uint32_t color_count, width, height;
+    uint32_t color_count, width, height, samples;
     doe_mtl_native_render_attachment depth, stencil;
+    void *visibility_buffer;
 } doe_mtl_native_render_pass;
 typedef struct doe_mtl_native_render_draw {
     void *pipeline, *depth_stencil;

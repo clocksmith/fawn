@@ -24,7 +24,7 @@ static doe_mtl_commands *commands_new(doe_mtl_context *context) {
 static doe_mtl_texture_desc image_desc(void) {
     const doe_mtl_texture_desc desc = {DOE_MTL_TEXTURE_2D_ARRAY, DOE_MTL_RGBA8_UNORM,
         4, 2, 2, 2, DOE_MTL_TEXTURE_COPY_SRC | DOE_MTL_TEXTURE_COPY_DST |
-        DOE_MTL_TEXTURE_SAMPLED | DOE_MTL_TEXTURE_STORAGE, true};
+        DOE_MTL_TEXTURE_SAMPLED | DOE_MTL_TEXTURE_STORAGE, true, 1};
     return desc;
 }
 static doe_mtl_texture *image_new(doe_mtl_context *context, doe_mtl_texture_desc desc) {

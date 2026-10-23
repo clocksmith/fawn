@@ -86,11 +86,17 @@ static doe_objc_bool responds(void *object, void *sel, void *query) {
 }
 static doe_objc_bool family(void *object, void *sel, intptr_t v) {
     assert(object == &active->device && named(sel, "supportsFamily:"));
-    return (doe_objc_bool)(v == active->family);
+    return (doe_objc_bool)(v == active->family ||
+        (v >= 1002 && v <= 1010 && active->family >= v && active->family <= 1010));
 }
 static doe_objc_bool boolean(void *object, void *sel) {
-    assert(object == &active->device && named(sel, "supportsBCTextureCompression"));
+    assert(object == &active->device && (named(sel, "supportsBCTextureCompression") ||
+        named(sel, "isDepth24Stencil8PixelFormatSupported")));
     return 1;
+}
+static doe_objc_bool samples(void *object, void *sel, size_t count) {
+    assert(object == &active->device && named(sel, "supportsTextureSampleCount:"));
+    return (doe_objc_bool)(count == 1 || count == 4);
 }
 static void *view_call(void *object, void *sel, size_t format, size_t type,
     doe_mtl_range_abi mips, doe_mtl_range_abi layers, doe_mtl_swizzle_abi swizzle) {
@@ -159,7 +165,7 @@ static void initialize(fixture *f) {
     r->set_buffer = selector("setBuffer:offset:atIndex:"); r->dispatch = selector("dispatchThreadgroups:threadsPerThreadgroup:");
     r->object_call = object_call; r->void_call = void_call; r->set_size_call = set_size;
     r->set_float_call = set_float; r->named_call = named_call; r->view_call = view_call;
-    r->responds_call = responds; r->family_call = family; r->bool_call = boolean;
+    r->responds_call = responds; r->family_call = family; r->bool_call = boolean; r->samples_call = samples;
     r->upload_image_call = upload; r->read_image_call = read_image; r->copy_image_call = copy_image;
     r->set_object_call = set_object; r->bind_buffer_call = bind_buffer;
     r->bind_image_call = bind_image; r->dispatch_call = dispatch;
@@ -168,7 +174,7 @@ static void initialize(fixture *f) {
 static void descriptors(void) {
     fixture f;
     doe_mtl_texture_desc desc = {DOE_MTL_TEXTURE_CUBE_ARRAY, DOE_MTL_RGBA8_UNORM, 16, 16, 12, 3,
-        DOE_MTL_TEXTURE_SAMPLED | DOE_MTL_TEXTURE_STORAGE | DOE_MTL_TEXTURE_RENDER_TARGET, true};
+        DOE_MTL_TEXTURE_SAMPLED | DOE_MTL_TEXTURE_STORAGE | DOE_MTL_TEXTURE_RENDER_TARGET, true, 1};
     doe_mtl_sampler_desc sd = {DOE_MTL_FILTER_LINEAR, DOE_MTL_FILTER_NEAREST, DOE_MTL_FILTER_LINEAR,
         DOE_MTL_ADDRESS_CLAMP, DOE_MTL_ADDRESS_REPEAT, DOE_MTL_ADDRESS_MIRROR, 0.5f, 6.25f, 3, 1};
     void *out = NULL;
@@ -179,7 +185,15 @@ static void descriptors(void) {
     assert(value(&f, "setStorageMode:") == 2 && value(&f, "setSampleCount:") == 1);
     assert(value(&f, "setMipmapLevelCount:") == 3 && value(&f, "setWidth:") == 16);
     assert(f.releases == 1 && f.pools == f.drains);
+    initialize(&f);
+    desc.type = DOE_MTL_TEXTURE_2D_MS_ARRAY;
+    desc.sample_count = 4;
+    desc.mip_levels = 1;
+    assert(doe_mtl_objc_texture(&f.runtime, &f.device, &desc, &out, NULL) == DOE_MTL_OK);
+    assert(value(&f, "setTextureType:") == 8 && value(&f, "setSampleCount:") == 4);
+    assert(value(&f, "setArrayLength:") == 12 && value(&f, "setMipmapLevelCount:") == 1);
     initialize(&f); desc.type = DOE_MTL_TEXTURE_3D;
+    desc.sample_count = 1;
     assert(doe_mtl_objc_texture(&f.runtime, &f.device, &desc, &out, NULL) == DOE_MTL_OK);
     assert(value(&f, "setArrayLength:") == 1 && value(&f, "setDepth:") == 12);
     initialize(&f);
@@ -210,9 +224,18 @@ static void views_and_caps(void) {
     assert(doe_mtl_objc_view(&f.runtime, &f.texture, &vd, &out, NULL) == DOE_MTL_UNSUPPORTED && out == &f.buffer);
     f.family = 2002; doe_mtl_objc_image_caps(&f.runtime, &f.device, &caps);
     assert(caps.max_texture_2d == 16384 && caps.max_texture_3d == 2048 && caps.bc_texture_compression);
+    assert(caps.sample_count_mask == 5 && caps.depth24_stencil8 && caps.multisample_array && caps.store_and_resolve);
+    assert(!caps.separate_depth_stencil);
     memset(&caps, 0, sizeof(caps)); f.family = 1002;
     doe_mtl_objc_image_caps(&f.runtime, &f.device, &caps);
     assert(caps.max_texture_2d == 8192 && caps.max_texture_layers == 2048);
+    memset(&caps, 0, sizeof(caps)); f.family = 1003;
+    doe_mtl_objc_image_caps(&f.runtime, &f.device, &caps);
+    assert(caps.separate_depth_stencil && caps.depth_resolve && !caps.stencil_resolve);
+    assert(caps.counting_visibility && caps.max_visibility_offset == 65528 && !caps.multisample_array);
+    memset(&caps, 0, sizeof(caps)); f.family = 1005;
+    doe_mtl_objc_image_caps(&f.runtime, &f.device, &caps);
+    assert(caps.stencil_resolve);
     memset(&caps, 0, sizeof(caps)); f.no_family = true;
     doe_mtl_objc_image_caps(&f.runtime, &f.device, &caps);
     assert(caps.max_texture_2d == 0 && !caps.bc_texture_compression);
