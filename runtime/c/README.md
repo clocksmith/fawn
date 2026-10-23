@@ -35,3 +35,10 @@ existing destination. Copies are hash-checked before completion. This is develop
 staging, not a system installer, npm/Node addon, Fawn/browser integration, Windows
 or macOS distribution, GPU execution or full release qualification. Do not replace
 an existing application provider automatically with this artifact.
+
+The later `DEVELOPER_RECEIPT_PACKAGE_METAL.json` repeats the actual canonical
+Linux source build and relocated typed C++ consumption at source2514afd7, after
+composing the explicit Metal source/metadata path and guarded Vulkan indirect
+backend. This tests merged linking/packaging, not GPU execution. Darwin source
+wait support does not by itself qualify a macOS package: numeric host controls,
+Mach-O linking and Apple SDK/device runs remain separate gates.
