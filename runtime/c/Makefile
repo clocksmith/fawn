@@ -4,7 +4,10 @@ PYTHON ?= python3
 CC = gcc
 CXX = g++
 REVISION ?= HEAD
-BUILD ?= /tmp/doe-c-package-build
+# One default build tree per checkout: owner verifiers record exact compile
+# commands (absolute paths), so clones on one host must not share objects.
+CHECKOUT_ID := $(shell printf '%s' '$(abspath ../..)' | cksum | cut -d' ' -f1)
+BUILD ?= /tmp/doe-c-package-build-$(CHECKOUT_ID)
 STAGE ?= /tmp/doe-c-package
 # Every owner with a library build, in dependency order. A changed public header
 # or enum must still build every consumer; owner checks alone cannot see that.
