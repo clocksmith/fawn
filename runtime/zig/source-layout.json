@@ -3674,9 +3674,9 @@
       },
       "src/native/resource/doe_bind_group_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "0ddada1c62529f7949f401cf7f9621cf78c2482a4d7273952ef51224f6e9b917",
-        "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission.",
-        "reviewer": "codex"
+        "moduleSha256": "ed0b3a6da0b5a2a91c7ee55d7d4e6a3d72fa05760c8e259c1648f75dd7b1ad47",
+        "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission; float and depth formats also bind as unfilterable-float.",
+        "reviewer": "doe-c-claude/2026-10-23"
       },
       "src/native/resource/doe_buffer_ops_native.zig": {
         "decision": "Keep",
