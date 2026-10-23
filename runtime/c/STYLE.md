@@ -86,6 +86,9 @@ fails on each of these; fix the source rather than adding an exemption:
 - **pragma**: no `#pragma GCC|clang diagnostic ignored|warning`; fix the warning.
 - **flags**: an owner Makefile that defines `CFLAGS` compiles with
   `-std=c11 -Wall -Wextra -Wpedantic -Werror`.
+- **adapter**: native public consumers under `runtime/c/native/tests/` select
+  adapters only through `tests/adapter_class.h`; no direct `forceFallbackAdapter`
+  assignment or CPU adapter-type check (`backend_selection.c` tests fallback itself).
 
 `make -C runtime/c check` also runs `tools/check_globals.py` over every built owner:
 each writable process-global object (`.data`/`.bss`, not relocated constants) must be
