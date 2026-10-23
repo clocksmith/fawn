@@ -38,10 +38,14 @@ int main(int argc, char **argv) {
     doe_vk_caps caps;
     require(doe_vk_context_caps(context, &caps), "caps");
     printf("Render adapter: %s software=%u; retained Tint graphics, not C graphics compiler or hardware qualification\n", caps.device_name, caps.software_adapter);
-    doe_vk_buffer *uniform = NULL, *vertices = NULL, *readback = NULL;
+    if (caps.max_vertex_input_bindings < 2 || caps.max_vertex_input_attributes < 3 ||
+        caps.max_vertex_input_binding_stride < 36 || caps.max_vertex_input_attribute_offset < 28 ||
+        caps.max_vertex_output_components == 0 || caps.max_fragment_input_components == 0) return 1;
+    doe_vk_buffer *uniform = NULL, *vertices = NULL, *readback = NULL, *blend_readback = NULL;
     require(doe_vk_buffer_create(context, 256, DOE_VK_BUFFER_UNIFORM, DOE_VK_MEMORY_HOST, &uniform, &error), "uniform");
     require(doe_vk_buffer_create(context, 108, DOE_VK_BUFFER_VERTEX, DOE_VK_MEMORY_HOST, &vertices, &error), "vertices");
     require(doe_vk_buffer_create(context, 256, DOE_VK_BUFFER_COPY_DST, DOE_VK_MEMORY_HOST, &readback, &error), "readback");
+    require(doe_vk_buffer_create(context, 256, DOE_VK_BUFFER_COPY_DST, DOE_VK_MEMORY_HOST, &blend_readback, &error), "blend readback");
     /* Identity MVP, zero camera-right/up, zero quad coordinates: the retained
      * particle vertex shader directly uses position; fragment emits input color. */
     float parameters[24] = {0};
@@ -61,14 +65,15 @@ int main(int argc, char **argv) {
     require(doe_vk_texture_create(context, &texture_desc, &texture, &error), "target");
     const doe_vk_texture_view_desc view_desc = {DOE_VK_VIEW_2D, 0, 1, 0, 1};
     require(doe_vk_texture_view_create(texture, &view_desc, &view, &error), "target view");
-    const doe_vk_vertex_layout vertex_layout = {36, false};
+    const doe_vk_vertex_layout vertex_layout[2] = {{0, false}, {36, false}};
     const doe_vk_vertex_attribute attributes[3] = {
-        {0, 0, 0, DOE_VK_VERTEX_FLOAT32X3}, {1, 0, 12, DOE_VK_VERTEX_FLOAT32X4}, {2, 0, 28, DOE_VK_VERTEX_FLOAT32X2}
+        {0, 1, 0, DOE_VK_VERTEX_FLOAT32X3}, {1, 1, 12, DOE_VK_VERTEX_FLOAT32X4}, {2, 1, 28, DOE_VK_VERTEX_FLOAT32X2}
     };
     const doe_vk_binding_layout layout = {0, 0, DOE_VK_BINDING_UNIFORM};
-    const doe_vk_render_pipeline_desc desc = { .vertex = vertex, .fragment = fragment,
+    const doe_vk_render_pipeline_desc desc = { .blend_enabled = true,
+        .blend_constant = {1, 0, 1, 1}, .color_source_factor = 10, .alpha_source_factor = 1, .vertex = vertex, .fragment = fragment,
         .color_format = DOE_VK_FORMAT_RGBA8_UNORM, .topology = DOE_VK_TRIANGLES, .color_write_mask = 15,
-        .vertex_buffer_count = 1, .attribute_count = 3, .vertex_buffers = &vertex_layout, .attributes = attributes,
+        .vertex_buffer_count = 2, .attribute_count = 3, .vertex_buffers = vertex_layout, .attributes = attributes,
         .binding_count = 1, .bindings = &layout };
     doe_vk_pipeline *pipeline = NULL;
     require(doe_vk_render_pipeline_create(context, &desc, &pipeline, &error), "graphics pipeline");
@@ -78,12 +83,12 @@ int main(int argc, char **argv) {
     require(doe_vk_commands_create(context, &commands, &error), "commands");
     const doe_vk_clear_color blue = {.float32 = {0, 0, 1, 1}};
     const doe_vk_binding_resource binding = { .kind = DOE_VK_BINDING_UNIFORM, .value.buffer = {uniform, 0, 96} };
-    const doe_vk_buffer_binding vertex_binding = {vertices, 0, sizeof(triangle)};
+    const doe_vk_buffer_binding vertex_binding[2] = {{NULL, 0, 0}, {vertices, 0, sizeof(triangle)}};
     doe_vk_render_draw draw = { .vertex_count = 3, .instance_count = 1,
         .viewport = {0, 0, 8, 8, 0, 1}, .scissor = {0, 0, 4, 8} };
     doe_vk_render_pass_draw pass_draws[2] = {
-        {pipeline, &binding, 1, &vertex_binding, 1, draw},
-        {pipeline, &binding, 1, &vertex_binding, 1, draw}
+        {pipeline, &binding, 1, vertex_binding, 2, draw},
+        {pipeline, &binding, 1, vertex_binding, 2, draw}
     };
     pass_draws[1].draw.scissor[0] = 4;
     pass_draws[1].draw.scissor[3] = 4;
@@ -119,6 +124,15 @@ int main(int argc, char **argv) {
     const doe_vk_texture_region region = {.extent = {8, 8, 1}};
     const doe_vk_texture_buffer_layout packed = {0};
     require(doe_vk_commands_read_texture(commands, texture, region, readback, packed), "render readback");
+    pass_draws[0].draw.override_blend_constant = true;
+    pass_draws[0].draw.blend_constant[0] = 1;
+    pass_draws[0].draw.blend_constant[3] = 1;
+    pass_draws[1].draw.override_blend_constant = true;
+    pass_draws[1].draw.blend_constant[2] = 1;
+    pass_draws[1].draw.blend_constant[3] = 1;
+    pass_draws[1].draw.scissor[3] = 8;
+    require(doe_vk_commands_render_pass(commands, view, NULL, pass_draws, 2), "two dynamic blend constants");
+    require(doe_vk_commands_read_texture(commands, texture, region, blend_readback, packed), "blend pixels");
     doe_vk_buffer_release(uniform);
     doe_vk_buffer_release(vertices);
     doe_vk_texture_view_release(view);
@@ -137,6 +151,14 @@ int main(int argc, char **argv) {
             return 1;
         }
     }
+    require(doe_vk_buffer_read(blend_readback, 0, pixels, sizeof(pixels)), "dynamic blend readback");
+    for (unsigned y = 0; y < 8; ++y) for (unsigned x = 0; x < 8; ++x) {
+        const uint8_t expected[4] = {x < 4 ? 255 : 0, 0, x < 4 ? 0 : 255, 255};
+        if (memcmp(pixels[y][x], expected, 4) != 0) {
+            fprintf(stderr, "dynamic blend mismatch at %u,%u\n", x, y);
+            return 1;
+        }
+    }
     uint64_t values[8];
     require(doe_vk_buffer_read(query_output, 0, values, sizeof(values)), "occlusion results");
     if (values[0] == 0) {
@@ -150,7 +172,8 @@ int main(int argc, char **argv) {
     require(doe_vk_commands_release(commands), "retire");
     doe_vk_buffer_release(query_output);
     doe_vk_buffer_release(readback);
+    doe_vk_buffer_release(blend_readback);
     doe_vk_context_release(context);
-    puts("PASS one real offscreen clear/two-draw pass, dynamic scissors, uniform descriptors, exact64-pixel oracle, real occlusion hit/empty/clipped/unwritten results and later-pass index reuse, early native caller release");
+    puts("PASS one real offscreen clear/two-draw pass, dynamic scissors, an unused NULL vertex slot, uniform descriptors, exact64-pixel raw and dynamic-blend oracles, real occlusion hit/empty/clipped/unwritten results and later-pass index reuse, early native caller release");
     return 0;
 }

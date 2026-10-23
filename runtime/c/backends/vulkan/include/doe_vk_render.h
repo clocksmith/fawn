@@ -50,7 +50,7 @@ typedef struct doe_vk_render_pipeline_desc {
 /* Single-color, sample1 graphics pipeline. Compiler/native admission validates
  * shader interfaces/capabilities including disabled vertex/fragment stores.
  * Native blend factors0..14 (no dual source), operations0..4; constant blend
- * factors use the immutable pipeline constant. Depth/stencil/MSAA are not admitted here. */
+ * factors use the pipeline constant unless an explicit per-draw override is set. Depth/stencil/MSAA are not admitted here. */
 doe_vk_status doe_vk_render_pipeline_create(doe_vk_context *context,
     const doe_vk_render_pipeline_desc *desc, doe_vk_pipeline **out, doe_vk_error *error);
 
@@ -72,11 +72,16 @@ typedef struct doe_vk_render_draw {
      * Scissor and fragment framebuffer coordinates stay top-left. Pipeline
      * clockwise_front remains the explicit native framebuffer winding choice. */
     doe_vk_viewport_convention viewport_convention;
+    /* False preserves the pipeline constant for existing callers. True uses
+     * this finite RGBA value as real dynamic state before this draw. */
+    bool override_blend_constant;
+    float blend_constant[4];
 } doe_vk_render_draw;
 typedef struct doe_vk_render_pass_draw {
     doe_vk_pipeline *pipeline;
     const doe_vk_binding_resource *bindings;
     size_t binding_count;
+    /* Zero NULL entries are allowed only for slots without attributes. */
     const doe_vk_buffer_binding *vertices;
     size_t vertex_buffer_count;
     doe_vk_render_draw draw;

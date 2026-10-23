@@ -75,6 +75,12 @@ typedef struct doe_vk_caps {
     uint32_t max_texture_dimension_3d;
     uint32_t max_texture_array_layers;
     float timestamp_period_ns;
+    uint32_t max_vertex_input_bindings;
+    uint32_t max_vertex_input_attributes;
+    uint32_t max_vertex_input_binding_stride;
+    uint32_t max_vertex_input_attribute_offset;
+    uint32_t max_vertex_output_components;
+    uint32_t max_fragment_input_components;
 } doe_vk_caps;
 
 /* One owned reference on success. Objects retain their creating context. */

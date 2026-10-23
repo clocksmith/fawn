@@ -107,8 +107,9 @@ this borrowed span is not another resource recorder or reference-count owner.
 
 Pipeline state admits sample1, one color target, eight vertex layouts/sixteen
 32-bit scalar/vector attributes, native blend/cull/topology controls and dynamic
-viewport/scissor. Blend constants are immutable pipeline state. Depth/stencil,
-MSAA, multiple attachments, indexed/indirect draws, dynamic blend constants,
+viewport/scissor. Blend constants default to pipeline state; explicit per-draw overrides use real
+native dynamic state after whole-span finite-value validation. Depth/stencil,
+MSAA, multiple attachments, indexed/indirect draws,
 and discard-store semantics are not implemented by this interface.
 Unsupported resource packets must be rejected, not silently dropped. Graphics
 requires `require_graphics_queue=true` at context creation when the device offers
@@ -165,7 +166,7 @@ No SDK headers were available. The selected declarations are a narrow translatio
 of the existing source hashes in `ABI_PROVENANCE.json`, not invented opaque-sized
 struct storage. `tools/check_abi.py` refuses source drift and independently models
 the pinned extern fields to compile 1344 size/offset/alignment assertions over 76
-records, including retained unions, plus nine format/query constant assertions verified against the linked Khronos
+records, including retained unions, plus ten format/query/dynamic-state constant assertions verified against the linked Khronos
 references. No SDK or other dependency was downloaded. It does not prove the retained declarations against an official SDK.
 `VK_ERROR_UNKNOWN` retains the existing Zig `UnsupportedFeature` classification;
 raw native error codes remain available. No Zig runs or links in the C backend.
@@ -268,3 +269,30 @@ vector products and determinant. Prefix/suffix sentinels and early caller releas
 remain checked. The optional compiler link belongs only to this test executable,
 not the native backend archive. Use an explicit existing software selector for
 software evidence; this is neither physical nor complete matrix qualification.
+
+### Graphics limits and dynamic blend constants
+
+Capabilities expose actual driver vertex binding/attribute counts, stride/offset
+limits and vertex-output/fragment-input component limits. Public admission still
+intersects those facts with this owner's eight-layout/sixteen-attribute bounds;
+reporting a native limit does not enable an optional shader feature.
+
+`doe_vk_render_draw.override_blend_constant` selects its finite RGBA snapshot.
+Otherwise the immutable pipeline default remains authoritative for older callers.
+The one recorder sets the selected value before every draw, including transitions
+between overridden and default state. No new command/state lifetime owner exists.
+This core1.0 command needs no optional device feature. Its exact two-argument
+signature and dynamic-state enum come from the linked official Khronos references
+in ABI_PROVENANCE.json, separately from the retained Zig declaration list. The
+ABI checker also compiles an ordinary compatible function-pointer assignment.
+No SDK was downloaded; struct-layout evidence remains the pinned retained model.
+The native render check preserves its older pixel/occlusion oracles and adds a
+second exact64-pixel left-red/right-blue result using distinct per-draw constants.
+
+A zero NULL vertex binding is admitted only for a pipeline slot without any
+attributes. Populated slots retain checked ranges and command leases. Native
+binds cover contiguous populated runs at their original indices, never passing a
+NULL VkBuffer handle. The real render test leaves slot0 empty and uses slot1.
+This is native no-fetch admission only: the public/resource owner still distinguishes
+an Undefined-step-mode layout hole from an explicit Vertex/Instance slot that
+requires a bound public buffer even when it declares no attributes.

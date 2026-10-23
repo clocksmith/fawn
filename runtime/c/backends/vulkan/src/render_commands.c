@@ -124,6 +124,8 @@ static doe_vk_status validate_draw(doe_vk_commands *commands, doe_vk_pipeline *p
         (uint64_t)draw->first_instance + draw->instance_count > UINT32_MAX) return DOE_VK_INVALID_ARGUMENT;
     for (size_t i = 0; i < vertex_count; ++i) {
         const doe_vk_buffer_binding *binding = &vertices[i];
+        if (binding->buffer == NULL && pipeline->vertex_attribute_end[i] == 0 &&
+            binding->offset == 0 && binding->size == 0) continue;
         if (binding->buffer == NULL || binding->buffer->context != commands->context ||
             !(binding->buffer->usage & DOE_VK_BUFFER_VERTEX) || binding->offset % 4 != 0 ||
             !doe_vk_range(binding->buffer->size, binding->offset, binding->size)) return DOE_VK_INVALID_ARGUMENT;
@@ -152,6 +154,10 @@ static doe_vk_status validate_pass_draw(doe_vk_commands *commands, doe_vk_textur
         draw->binding_count != pipeline->binding_count ||
         (draw->binding_count != 0 && draw->bindings == NULL) ||
         target->texture->desc.format != pipeline->color_format) return DOE_VK_INVALID_ARGUMENT;
+    if (draw->draw.override_blend_constant) {
+        for (unsigned i = 0; i < 4; ++i)
+            if (!isfinite(draw->draw.blend_constant[i])) return DOE_VK_INVALID_ARGUMENT;
+    }
     doe_vk_status status = doe_vk_render_viewport(commands->context, &draw->draw, width, height, &prepared->viewport);
     if (status != DOE_VK_OK) return status;
     status = validate_draw(commands, pipeline, draw->vertices, draw->vertex_buffer_count, &draw->draw);
@@ -175,6 +181,7 @@ static doe_vk_status prepare_draw(doe_vk_commands *commands, const doe_vk_render
         draw->binding_count, &prepared->bindings);
     if (status != DOE_VK_OK) return status;
     for (size_t i = 0; i < draw->vertex_buffer_count; ++i) {
+        if (draw->vertices[i].buffer == NULL) continue;
         status = doe_vk_use_buffer(commands, draw->vertices[i].buffer);
         if (status != DOE_VK_OK) return status;
         prepared->buffers[i] = draw->vertices[i].buffer->buffer;
@@ -187,10 +194,22 @@ static void record_draw(doe_vk_commands *commands, const doe_vk_render_pass_draw
     const prepared_draw *prepared) {
     doe_vk_context *context = commands->context;
     doe_vk_bind_prepared_resources(commands, prepared->bindings);
+    const float *blend = draw->draw.override_blend_constant ?
+        draw->draw.blend_constant : draw->pipeline->blend_constant;
+    context->vk.vkCmdSetBlendConstants(commands->command, blend);
     context->vk.vkCmdSetViewport(commands->command, 0, 1, &prepared->viewport);
     context->vk.vkCmdSetScissor(commands->command, 0, 1, &prepared->scissor);
-    if (draw->vertex_buffer_count != 0) context->vk.vkCmdBindVertexBuffers(commands->command, 0,
-        (uint32_t)draw->vertex_buffer_count, prepared->buffers, prepared->offsets);
+    uint32_t slot = 0;
+    while (slot < draw->vertex_buffer_count) {
+        if (prepared->buffers[slot] == 0) {
+            ++slot;
+            continue;
+        }
+        uint32_t first = slot++;
+        while (slot < draw->vertex_buffer_count && prepared->buffers[slot] != 0) ++slot;
+        context->vk.vkCmdBindVertexBuffers(commands->command, first, slot - first,
+            prepared->buffers + first, prepared->offsets + first);
+    }
     context->vk.vkCmdDraw(commands->command, draw->draw.vertex_count, draw->draw.instance_count,
         draw->draw.first_vertex, draw->draw.first_instance);
 }

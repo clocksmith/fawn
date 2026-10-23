@@ -88,6 +88,7 @@ static doe_vk_status load_functions(doe_vk_context *context, doe_vk_error *error
     _Static_assert(sizeof(context->vk.vkCmdBindVertexBuffers) == sizeof(void *), "vkCmdBindVertexBuffers POSIX pointer size");
     _Static_assert(sizeof(context->vk.vkCmdBeginQuery) == sizeof(void *), "vkCmdBeginQuery POSIX pointer size");
     _Static_assert(sizeof(context->vk.vkCmdEndQuery) == sizeof(void *), "vkCmdEndQuery POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkCmdSetBlendConstants) == sizeof(void *), "vkCmdSetBlendConstants POSIX pointer size");
     _Static_assert(sizeof(context->vk.vkCmdDraw) == sizeof(void *), "vkCmdDraw POSIX pointer size");
     _Static_assert(sizeof(context->vk.vkCreateQueryPool) == sizeof(void *), "vkCreateQueryPool POSIX pointer size");
     _Static_assert(sizeof(context->vk.vkDestroyQueryPool) == sizeof(void *), "vkDestroyQueryPool POSIX pointer size");
@@ -172,6 +173,7 @@ static doe_vk_status load_functions(doe_vk_context *context, doe_vk_error *error
         { "vkCmdBindVertexBuffers", &context->vk.vkCmdBindVertexBuffers, sizeof(context->vk.vkCmdBindVertexBuffers) },
         { "vkCmdBeginQuery", &context->vk.vkCmdBeginQuery, sizeof(context->vk.vkCmdBeginQuery) },
         { "vkCmdEndQuery", &context->vk.vkCmdEndQuery, sizeof(context->vk.vkCmdEndQuery) },
+        { "vkCmdSetBlendConstants", &context->vk.vkCmdSetBlendConstants, sizeof(context->vk.vkCmdSetBlendConstants) },
         { "vkCmdDraw", &context->vk.vkCmdDraw, sizeof(context->vk.vkCmdDraw) },
         { "vkCreateQueryPool", &context->vk.vkCreateQueryPool, sizeof(context->vk.vkCreateQueryPool) },
         { "vkDestroyQueryPool", &context->vk.vkDestroyQueryPool, sizeof(context->vk.vkDestroyQueryPool) },
@@ -239,6 +241,12 @@ static doe_vk_status choose_device(doe_vk_context *context,
     caps->max_texture_dimension_2d = p->limits.maxImageDimension2D;
     caps->max_texture_dimension_3d = p->limits.maxImageDimension3D;
     caps->max_texture_array_layers = p->limits.maxImageArrayLayers;
+    caps->max_vertex_input_bindings = p->limits.maxVertexInputBindings;
+    caps->max_vertex_input_attributes = p->limits.maxVertexInputAttributes;
+    caps->max_vertex_input_binding_stride = p->limits.maxVertexInputBindingStride;
+    caps->max_vertex_input_attribute_offset = p->limits.maxVertexInputAttributeOffset;
+    caps->max_vertex_output_components = p->limits.maxVertexOutputComponents;
+    caps->max_fragment_input_components = p->limits.maxFragmentInputComponents;
     memcpy(caps->device_name, p->deviceName, sizeof(caps->device_name));
     caps->device_name[sizeof(caps->device_name) - 1] = '\0';
     memcpy(caps->max_workgroup_count, p->limits.maxComputeWorkGroupCount, sizeof(caps->max_workgroup_count));

@@ -174,7 +174,7 @@
   "official_constants": {
     "source": "https://docs.vulkan.org/refpages/latest/refpages/source/VkFormatFeatureFlagBits.html",
     "verified_utc": "2026-10-23",
-    "scope": "Listed core format bits and occlusion query type. Struct/function declarations remain pinned retained source, not an installed SDK.",
+    "scope": "Listed format/query/dynamic-state constants. Struct declarations and listed retained functions remain pinned source; separately identified official functions have explicit reference signatures.",
     "values": {
       "VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT": 1,
       "VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT": 2,
@@ -184,10 +184,20 @@
       "VK_FORMAT_FEATURE_TRANSFER_SRC_BIT": 16384,
       "VK_FORMAT_FEATURE_TRANSFER_DST_BIT": 32768,
       "VK_FORMAT_FEATURE_VERTEX_BUFFER_BIT": 64,
-      "VK_QUERY_TYPE_OCCLUSION": 0
+      "VK_QUERY_TYPE_OCCLUSION": 0,
+      "VK_DYNAMIC_STATE_BLEND_CONSTANTS": 4
     },
     "additional_sources": [
-      "https://docs.vulkan.org/refpages/latest/refpages/source/VkQueryType.html"
+      "https://docs.vulkan.org/refpages/latest/refpages/source/VkQueryType.html",
+      "https://docs.vulkan.org/refpages/latest/refpages/source/VkDynamicState.html"
     ]
+  },
+  "official_functions": {
+    "vkCmdSetBlendConstants": {
+      "source": "https://docs.vulkan.org/refpages/latest/refpages/source/vkCmdSetBlendConstants.html",
+      "verified_utc": "2026-10-23",
+      "signature": "void(VkCommandBuffer, const float[4])",
+      "scope": "Official core1.0 function signature; no new struct ABI or optional feature. Separate from retained function list."
+    }
   }
 }

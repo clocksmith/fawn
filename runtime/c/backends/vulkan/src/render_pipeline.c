@@ -62,6 +62,7 @@ doe_vk_status doe_vk_render_pipeline_create(doe_vk_context *context,
     pipeline->context = context;
     pipeline->references = 1;
     pipeline->graphics = true;
+    memcpy(pipeline->blend_constant, desc->blend_constant, sizeof(pipeline->blend_constant));
     pipeline->color_format = desc->color_format;
     pipeline->vertex_count = (uint32_t)desc->vertex_buffer_count;
     if (pipeline->vertex_count != 0) memcpy(pipeline->vertices, desc->vertex_buffers,
@@ -121,9 +122,9 @@ doe_vk_status doe_vk_render_pipeline_create(doe_vk_context *context,
         .sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO, .attachmentCount = 1, .pAttachments = &attachment
     };
     memcpy(blend.blendConstants, desc->blend_constant, sizeof(blend.blendConstants));
-    const uint32_t states[2] = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
+    const uint32_t states[3] = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR, VK_DYNAMIC_STATE_BLEND_CONSTANTS};
     const VkPipelineDynamicStateCreateInfo dynamic = {
-        .sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO, .dynamicStateCount = 2, .pDynamicStates = states
+        .sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO, .dynamicStateCount = 3, .pDynamicStates = states
     };
     const VkGraphicsPipelineCreateInfo create = {
         .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO, .stageCount = 2, .pStages = stages,
