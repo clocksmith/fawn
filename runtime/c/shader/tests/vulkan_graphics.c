@@ -100,7 +100,7 @@ int main(int argc, char **argv)
     doe_vk_texture *target = NULL;
     doe_vk_texture_view *view = NULL;
     require(doe_vk_texture_create(context, &target_desc, &target, &error), "target");
-    const doe_vk_texture_view_desc view_desc = {DOE_VK_VIEW_2D,0,1,0,1, DOE_VK_ASPECT_ALL, 0};
+    const doe_vk_texture_view_desc view_desc = {DOE_VK_VIEW_2D,0,1,0,1, DOE_VK_ASPECT_ALL, 0, {0}};
     require(doe_vk_texture_view_create(target, &view_desc, &view, &error), "view");
     const doe_vk_vertex_layout vertex_layout = {sizeof(positions[0]),false};
     const doe_vk_vertex_attribute attribute = {0,0,0,DOE_VK_VERTEX_FLOAT32X2};

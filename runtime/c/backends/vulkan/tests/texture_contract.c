@@ -2,6 +2,7 @@
 #include "../src/texture_internal.h"
 #include <assert.h>
 #include <stdio.h>
+#include <string.h>
 
 static void transfer_only_format(VkPhysicalDevice device, uint32_t format, VkFormatProperties *out) {
     (void)device;
@@ -130,7 +131,7 @@ static void cube_array_admission(void) {
     doe_vk_texture texture = { .context = &context, .references = 1,
         .desc = { .dimension = DOE_VK_TEXTURE_2D, .format = DOE_VK_FORMAT_RGBA8_UNORM, .width = 2, .height = 2,
             .depth_or_layers = 12, .mip_levels = 1, .usage = DOE_VK_TEXTURE_SAMPLED, .cube_compatible = true } };
-    doe_vk_texture_view_desc desc = { DOE_VK_VIEW_CUBE_ARRAY, 0, 1, 0, 12, DOE_VK_ASPECT_ALL, 0 };
+    doe_vk_texture_view_desc desc = { DOE_VK_VIEW_CUBE_ARRAY, 0, 1, 0, 12, DOE_VK_ASPECT_ALL, 0, {0} };
     doe_vk_texture_view *view = (doe_vk_texture_view *)&context;
     assert(doe_vk_texture_view_create(&texture, &desc, &view, NULL) == DOE_VK_UNSUPPORTED);
     assert(view == (doe_vk_texture_view *)&context && texture.references == 1);
@@ -186,10 +187,12 @@ static void sampler_anisotropy(void) {
 }
 
 static uint32_t created_view_format;
+static VkComponentMapping created_components;
 static VkResult create_view(VkDevice device, const VkImageViewCreateInfo *info,
     const VkAllocationCallbacks *allocator, VkImageView *out) {
     (void)device; (void)allocator;
     created_view_format = info->format;
+    created_components = info->components;
     *out = 77;
     return 0;
 }
@@ -222,7 +225,7 @@ static void view_format_admission(void) {
     doe_vk_texture image = { .context = &context, .references = 1, .subresource_count = 1, .initialized = &initialized,
         .desc = { .dimension = DOE_VK_TEXTURE_2D, .format = DOE_VK_FORMAT_RGBA8_UNORM, .width = 4, .height = 4,
             .depth_or_layers = 1, .mip_levels = 1, .usage = DOE_VK_TEXTURE_SAMPLED } };
-    doe_vk_texture_view_desc view_desc = { DOE_VK_VIEW_2D, 0, 1, 0, 1, DOE_VK_ASPECT_ALL, DOE_VK_FORMAT_RGBA8_SRGB };
+    doe_vk_texture_view_desc view_desc = { DOE_VK_VIEW_2D, 0, 1, 0, 1, DOE_VK_ASPECT_ALL, DOE_VK_FORMAT_RGBA8_SRGB, {0} };
     doe_vk_texture_view *view = (doe_vk_texture_view *)&context;
     assert(doe_vk_texture_view_create(&image, &view_desc, &view, NULL) == DOE_VK_INVALID_ARGUMENT); /* immutable */
     image.view_formats[0] = DOE_VK_FORMAT_RGBA8_UNORM;
@@ -238,8 +241,20 @@ static void view_format_admission(void) {
     view_desc.format = 0;
     assert(doe_vk_texture_view_create(&image, &view_desc, &view, NULL) == DOE_VK_OK);
     assert(created_view_format == DOE_VK_FORMAT_RGBA8_UNORM && view->format == DOE_VK_FORMAT_RGBA8_UNORM);
+    assert(created_components.r == 0 && created_components.g == 0 && created_components.b == 0 &&
+        created_components.a == 0 && !doe_vk_texture_view_swizzled(view));
     doe_vk_texture_view_release(view);
-    assert(image.references == 1);
+    /* Swizzles reach VkComponentMapping exactly; out-of-range sources reject. */
+    const doe_vk_swizzle swizzle[4] = {DOE_VK_SWIZZLE_B, DOE_VK_SWIZZLE_ONE, DOE_VK_SWIZZLE_ZERO, DOE_VK_SWIZZLE_R};
+    memcpy(view_desc.swizzle, swizzle, sizeof(swizzle));
+    assert(doe_vk_texture_view_create(&image, &view_desc, &view, NULL) == DOE_VK_OK);
+    assert(created_components.r == 5 && created_components.g == 2 && created_components.b == 1 &&
+        created_components.a == 3 && doe_vk_texture_view_swizzled(view));
+    doe_vk_texture_view_release(view);
+    view_desc.swizzle[3] = (doe_vk_swizzle)7;
+    view = (doe_vk_texture_view *)&context;
+    assert(doe_vk_texture_view_create(&image, &view_desc, &view, NULL) == DOE_VK_INVALID_ARGUMENT);
+    assert(view == (doe_vk_texture_view *)&context && image.references == 1);
 }
 
 int main(void) {
@@ -250,6 +265,6 @@ int main(void) {
     bounds_and_pitch();
     queue_transfer_granularity();
     layout_and_initialization_transaction();
-    puts("PASS texture last-byte/mip/layer/overflow checks, srgb/unorm view-format pair/creation/view admission with exact native view formats, cube-array feature/compatibility/whole-cube view admission, speculative layout/initialization rollback, concurrent owner exclusion and failed output; sampler anisotropy feature gate, linear-filter rule and device-maximum clamp");
+    puts("PASS texture last-byte/mip/layer/overflow checks, srgb/unorm view-format pair/creation/view admission with exact native view formats, exact view component swizzles, cube-array feature/compatibility/whole-cube view admission, speculative layout/initialization rollback, concurrent owner exclusion and failed output; sampler anisotropy feature gate, linear-filter rule and device-maximum clamp");
     return 0;
 }
