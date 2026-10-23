@@ -70,8 +70,12 @@ int main(int argc, char **argv) {
     assert(length == strlen(source) && strstr(source, "first_instance != 0u") != NULL);
     assert(strstr(source, "count > count_limit - first") != NULL);
     assert(strstr(source, "first > count_limit") != NULL && strstr(source, "record[3] = 0u;") != NULL);
-    /* Mode word 7 selects the indexed layout: firstInstance word4, limits words5..6. */
-    assert(strstr(source, "let indexed = record[7] != 0u;") != NULL);
+    /* Mode word 7 bit 1 selects the indexed layout (firstInstance word4, limits
+     * words5..6); bit 2 admits nonzero firstInstance, bounded with the count. */
+    assert(strstr(source, "let indexed = (record[7] & 1u) != 0u;") != NULL);
+    assert(strstr(source, "let first_allowed = (record[7] & 2u) != 0u;") != NULL);
+    assert(strstr(source, "(first_instance != 0u && !first_allowed)") != NULL);
+    assert(strstr(source, "instance_count > instance_limit - first_instance") != NULL);
     assert(strstr(source, "first_instance = record[4];") != NULL && strstr(source, "count_limit = record[5];") != NULL);
     assert(strstr(source, "instance_limit = record[6];") != NULL && strstr(source, "record[4] = 0u;") != NULL);
     if (argc == 2) {
@@ -105,7 +109,7 @@ int main(int argc, char **argv) {
     assert(doe_vk_draw_validator_retain(&validator) == DOE_VK_OUT_OF_MEMORY);
     doe_vk_buffer arguments = {.context = &context, .references = 1, .size = 20,
         .usage = DOE_VK_BUFFER_INDIRECT | DOE_VK_BUFFER_COPY_SRC};
-    doe_vk_render_indirect indirect = {&validator, &arguments, 4};
+    doe_vk_render_indirect indirect = {&validator, &arguments, 4, false};
     doe_vk_commands *commands = recording(&context);
     assert(doe_vk_draw_indirect_validate(commands, &indirect, false) == DOE_VK_OK);
     /* Indexed arguments are 20 bytes: offset4 overruns the same 20-byte buffer. */
@@ -123,6 +127,13 @@ int main(int argc, char **argv) {
     arguments.content_status = DOE_VK_NATIVE_FAILURE;
     assert(doe_vk_draw_indirect_validate(commands, &indirect, false) == DOE_VK_NATIVE_FAILURE);
     arguments.content_status = DOE_VK_OK;
+    /* Admitting nonzero firstInstance needs enabled drawIndirectFirstInstance. */
+    indirect.first_instance = true;
+    assert(doe_vk_draw_indirect_validate(commands, &indirect, false) == DOE_VK_UNSUPPORTED);
+    context.caps.draw_indirect_first_instance = true;
+    assert(doe_vk_draw_indirect_validate(commands, &indirect, false) == DOE_VK_OK);
+    context.caps.draw_indirect_first_instance = false;
+    indirect.first_instance = false;
     context.vk.vkCreateBuffer = fail_buffer;
     context.vk.vkCmdPipelineBarrier = barrier;
     context.properties.limits.maxFramebufferWidth = context.properties.limits.maxFramebufferHeight = 8;

@@ -44,12 +44,15 @@ doe_vk_status doe_vk_commands_dispatch_indirect(doe_vk_commands *commands,
     doe_vk_buffer *arguments, uint64_t offset);
 /* Graphics draw guard for both native indirect layouts in one32-byte storage
  * binding. Nonindexed: four copied draw words, then host-produced vertex and
- * instance capacities, zero, and mode0. Indexed: five copied drawIndexed words,
- * then host-produced index and instance capacities and mode1. Out-of-range,
- * wrapping, zero-count and nonzero-firstInstance draws become native no-ops.
+ * instance capacities, zero, and the mode word. Indexed: five copied drawIndexed
+ * words, then host-produced index and instance capacities and the mode word.
+ * Mode bit 1 is indexed; bit 2 admits nonzero firstInstance (enabled
+ * drawIndirectFirstInstance only). Out-of-range, wrapping, zero-count and
+ * unadmitted nonzero-firstInstance draws become native no-ops; admitted ones
+ * guard firstInstance+instanceCount against the instance capacity.
  * Never substitute caller-selected capacities or another shader.
  * This validator owns only its pipeline; each recorded draw allocates distinct
- * scratch on the existing command owner. No indirect-first-instance feature. */
+ * scratch on the existing command owner. */
 enum { DOE_VK_DRAW_INDIRECT_SOURCE_CAPACITY = 1024 };
 doe_vk_status doe_vk_draw_validator_source(char *out, size_t capacity, size_t *out_length);
 doe_vk_status doe_vk_draw_validator_validate(const doe_vk_caps *caps);

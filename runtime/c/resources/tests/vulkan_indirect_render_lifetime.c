@@ -68,7 +68,7 @@ static doe_vk_status lower_pass(doe_vk_commands *commands, doe_vk_draw_validator
         for (size_t slot = 1; slot < 3; slot++) vertices[draw_count][slot] = (doe_vk_buffer_binding){
             doe_resource_buffer_native(packet->vertices[slot].buffer), packet->vertices[slot].offset, packet->vertices[slot].size};
         indirect[draw_count] = (doe_vk_render_indirect){validator,
-            doe_resource_buffer_native(packet->indirect), packet->indirect_offset};
+            doe_resource_buffer_native(packet->indirect), packet->indirect_offset, false};
         doe_vk_render_pass_draw *draw = &ops[op_count].value.draw;
         *draw = (doe_vk_render_pass_draw){.pipeline = doe_resource_render_pipeline_native(packet->pipeline),
             .bindings = &bindings[draw_count], .binding_count = 1, .vertices = vertices[draw_count],

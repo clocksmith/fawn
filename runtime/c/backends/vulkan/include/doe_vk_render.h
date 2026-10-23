@@ -115,6 +115,9 @@ typedef struct doe_vk_render_pipeline_desc {
      * states need caps.independent_blend (enabled when the device offers it). */
     uint32_t color_target_count;
     doe_vk_color_target color_targets[DOE_VK_MAX_COLOR_ATTACHMENTS];
+    /* Native depthClampEnable: no depth clipping, depth clamped to the viewport
+     * depth range. Requires caps.depth_clamp; otherwise UNSUPPORTED. */
+    bool unclipped_depth;
 } doe_vk_render_pipeline_desc;
 /* Graphics pipeline with zero or more indexed color targets and format-admitted
  * native sample counts. Compiler/native admission validates
@@ -158,6 +161,10 @@ typedef struct doe_vk_render_indirect {
     doe_vk_draw_validator *validator;
     doe_vk_buffer *arguments;
     uint64_t offset;
+    /* True admits a nonzero firstInstance, guarded together with instance_count
+     * against the instance capacity; requires caps.draw_indirect_first_instance.
+     * False keeps nonzero-firstInstance draws as native no-ops. */
+    bool first_instance;
 } doe_vk_render_indirect;
 /* Native VkIndexType values from pinned vk_constants.zig; never WebGPU enum casts. */
 typedef enum doe_vk_index_format {
@@ -189,7 +196,7 @@ typedef struct doe_vk_render_pass_draw {
      * copied GPU arguments are guarded against these exact vertex bindings.
      * Arguments require native INDIRECT|COPY_SRC, aligned offset and16 bytes
      * (20 bytes for indexed draws).
-     * Nonzero firstInstance becomes no-op: that optional feature is disabled.
+     * Nonzero firstInstance becomes no-op unless indirect->first_instance.
      * Each draw owns distinct scratch through retirement; no in-pass compute. */
     const doe_vk_render_indirect *indirect;
     /* NULL is nonindexed. Otherwise draw.vertex_count/first_vertex must be zero;
