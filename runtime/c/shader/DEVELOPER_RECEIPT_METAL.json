@@ -1,0 +1,48 @@
+{
+  "status": "Focused developer host checks pass; no Apple SDK, driver or physical qualification",
+  "checked_at_utc": "2026-10-23T20:34:37.804096+00:00",
+  "compiler_source_commit": "3e0bdb3214f179a83b7dcd2e4165ae77bfc0a8a9",
+  "compiler_library_sha256": "abfb987d3f1bce3224422a75dba486aebe9488b38e73787d11becc7dd67cbfdb",
+  "command": [
+    "make",
+    "-C",
+    "runtime/c/shader",
+    "test",
+    "sanitize",
+    "BUILD=/tmp/doe-shader-metal-author-20261023/final",
+    "COMPILER_LIBRARY=/tmp/doe-text-author-20261023/canonical/libdoe_compiler.so"
+  ],
+  "exit_code": 0,
+  "source_unchanged_during_checks": true,
+  "checks": [
+    "Retained SPIR-V source/type/resource/graphics/atomic ownership controls",
+    "Explicit Metal selected entry, sparse slots, per-entry size metadata and whole-module reflection",
+    "Three allocation-failure ordinals, output atomicity, copied source, immutable retained views",
+    "Target-aware identity, invalid target, entryless text, unsupported target operations without fallback",
+    "C++17 consumer and shader-owner ASan/UBSan"
+  ],
+  "limitations": [
+    "Compiler library is optimized; shader owner and test are instrumented. Compiler core has separate source-bound sanitizer checks.",
+    "LeakSanitizer disabled in ptrace environment; explicit allocation counters check owned cleanup.",
+    "No Metal SDK or device execution. Full TranslationInfo preconditions and production cache semantics remain unfinished."
+  ],
+  "terminal_log_sha256": "0209d78fcacd8ddcbd6b819fbf83761dcbdfa59ddbbd3e0582e24fab0dfe263a",
+  "sha256": {
+    "runtime/c/compiler/include/doe_compiler.h": "5bf4f5e5a4e4624c094320ad9ec97119278bc7f6f06b0e47c01e444d42c6dc5b",
+    "runtime/c/compiler/include/doe_compiler_features.h": "face7d3315ec8bcd884f354cc08efa566c479b5136a509b7db751399bbbd320c",
+    "runtime/c/compiler/include/doe_compiler_job.h": "6160e631973ffcd9777553520d329b6d6048315f2a90b1283989077e9f51237f",
+    "runtime/c/compiler/include/doe_compiler_module.h": "01cc2966ce7866ccfde6cca75e6ec6e60921f63c271e31cf94648e8d78907cef",
+    "runtime/c/compiler/include/doe_compiler_resources.h": "b16c1f9f1a5129daeb32f83baaac1fb1bea41c1a00c084c5fe9c4d7f6cded2b2",
+    "runtime/c/compiler/include/doe_compiler_stages.h": "805e94e55267837897ad1b9885d328ac8acf0cc7bfc92b9e5dfe97737439f668",
+    "runtime/c/compiler/include/doe_compiler_text.h": "159c2edb21326fe17b7e7dcfe523b4cb765fe34bb44e95b6932f884a1f6a24e1",
+    "runtime/c/compiler/include/doe_compiler_typed.h": "c7decbdb8da093a3485ded84901bf97f88eea8db6237dfd4089c730aa08e6216",
+    "runtime/c/compiler/include/doe_compiler_v2.h": "b0a60c2f05b70dba0786365dadd81b993accbd93f7f68f0e3accf86a815ae891",
+    "runtime/c/shader/Makefile": "add5497ee7cd64b33770d58e38fbc074b3cd946dc9a7854c8d7297916a18f948",
+    "runtime/c/shader/README.md": "579a2bff46cc8120b299d5aa3c26950fa6049e3dae54e64197e5b8641f11d673",
+    "runtime/c/shader/include/doe_shader.h": "3f536d3ce8379d20798883d345cc433e1bdf68bdd416467a945dd05ccc8b19d0",
+    "runtime/c/shader/src/shader.c": "d500908c7dda9d83999b3caec73f94861dc8d44efeb5d01c23f690ec87c0f58f",
+    "runtime/c/shader/tests/test_shader.c": "2383cbfc10f160059e0b17b7f72692d7c2092e76739aea36931eaf838eb84f7a",
+    "runtime/c/shader/tests/vulkan_graphics.c": "80140afe0dd3fa4f099ea10c7dfd74e9dff06b662f1cec6f8d677a365694a017",
+    "runtime/c/shader/tests/vulkan_images.c": "c0351de9cd0953e66fbc45704353a6a96bb7c8afee6902973931c1d63206fad4"
+  }
+}
