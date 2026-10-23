@@ -63,21 +63,27 @@ Developer checks below are not physical qualification or full feature closure.
    retirement checks. Follow-up review found stage-visibility false positives;
    `97fb777c` now filters aliases by shared stage while preserving independent
    whole-render history. Zero/disjoint/shared-stage buffer and texture controls
-   pass in49 host suites and sanitizers; independent recheck remains pending.
+   pass in49 host suites and sanitizers. Independent Suby source recheck at
+   `60f0ab17` closes the visibility finding; public graphics is separately pending.
    Public graphics integration remains in progress.
 2. **Empty auto-layout holes:** resource/native owners, `45f8264d` and `c87e494f`.
    One required-group predicate normalizes ignored groups/offsets; explicit null
    unbind works. Native admission tests execute sparse group 2 and ignored holes.
    Follow-up explicit-null layout slots and valid trailing layout queries now use
    one lazy canonical empty-layout owner (`97fb777c`, `05444824`), including
-   untouched-output OOM/retry and all valid device indices. Independent recheck pending.
+   untouched-output OOM/retry and all valid device indices. Independent recheck
+   found auto-created empty slots retained pipeline exclusivity. `f7a5383b`
+   normalizes these before ownership claims; the reproduced auto-hole getter
+   reused through explicit layouts now passes alongside NULL in56 host suites
+   and sanitizers. That final fix awaits independent recheck.
 3. **Typed failure propagation:** native owner, `c87e494f`. Layout allocation
    results are handled; one ABI status conversion preserves OOM versus internal
    execution failure versus validation. Real allocation/backend fault tests are
    recorded in `native/DEVELOPER_RECEIPT_ADMISSION.json`. Follow-up review found
    pending-work recovery still collapsed status. `05444824` separates terminal
    state from typed status; real submit/write/texture/work-done fault controls
-   preserve Internal/OOM/Pending and unknown leases. Independent recheck pending.
+   preserve Internal/OOM/Pending and unknown leases. Independent Suby source
+   recheck at `60f0ab17` closes this finding; receipts remain exact-snapshot scoped.
 4. **Duplicate target semantics:** text-target owner. Shared read-only value IDs,
    ordered access paths and runtime-tail identity now replace duplicate helpers in
    `compiler/targets/ir_view.h`. Malformed-IR sanitizer controls and both targets
