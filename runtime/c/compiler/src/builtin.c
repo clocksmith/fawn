@@ -3,6 +3,8 @@
 #include "sema.h"
 
 static const NumericBuiltin numeric_builtins[] = {
+    {"transpose", BUILTIN_TRANSPOSE, 1u, BUILTIN_MATRIX, 0u},
+    {"determinant", BUILTIN_DETERMINANT, 1u, BUILTIN_MATRIX, 33u},
     {"min", BUILTIN_MIN, 2u, BUILTIN_COMPONENT_NUMERIC, 0u},
     {"max", BUILTIN_MAX, 2u, BUILTIN_COMPONENT_NUMERIC, 0u},
     {"clamp", BUILTIN_CLAMP, 3u, BUILTIN_COMPONENT_NUMERIC, 0u},
@@ -181,6 +183,8 @@ static bool geometric_vector(Source *source, uint32_t offset, const NumericBuilt
 
 bool builtin_constant(Source *source, uint32_t offset, const NumericBuiltin *builtin,
                       const ConstantValue *arguments, TypeId result_type, ConstantValue *out) {
+    if (builtin->family == BUILTIN_MATRIX)
+        return matrix_constant(source, offset, builtin->kind, arguments[0], result_type, out);
     if (builtin->family == BUILTIN_COMPONENT_NUMERIC || builtin->family == BUILTIN_COMPONENT_FLOAT)
         return component_constant(source, offset, builtin, arguments, result_type, out);
     if (builtin->family == BUILTIN_FLOAT_VECTOR || builtin->family == BUILTIN_FLOAT_CROSS)

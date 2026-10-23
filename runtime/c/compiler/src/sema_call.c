@@ -81,12 +81,27 @@ static bool user_call(Source *s, uint32_t id, const LocalScope *scope, uint32_t 
  * committed overload's operands exactly once in source order. */
 static bool aggregate_call(Source *s, const Expression *node, const LocalScope *scope, TypeId target, uint32_t inferred, bool evaluate, bool emit, ExpressionValue *out) {
     CompilerWorkspace *c = s->compiler;
-    uint32_t kind = inferred == 1u?TYPE_VECTOR:inferred == 2u?TYPE_ARRAY:c->types[target-7u].kind;
-    uint32_t n = inferred == 1u?(uint32_t)(s->source[node->value.call.callee.offset+3u]-'0'):inferred == 2u?node->right:c->types[target-7u].count;
+    uint32_t kind = inferred == 1u?TYPE_VECTOR:inferred == 2u?TYPE_ARRAY:inferred == 3u?TYPE_MATRIX:c->types[target-7u].kind;
+    uint32_t n = (inferred == 1u || inferred == 3u)?(uint32_t)(s->source[node->value.call.callee.offset+3u]-'0'):inferred == 2u?node->right:c->types[target-7u].count;
+    const uint32_t rows = kind == TYPE_MATRIX ? (inferred == 3u ?
+        (uint32_t)(s->source[node->value.call.callee.offset + 5u] - '0') :
+        type_vector_width(c, c->types[target - 7u].element)) : 0u;
+    if (kind == TYPE_MATRIX && node->right == 1u) {
+        ExpressionValue a;
+        if (!sema_expression(s, c->arguments[node->left].expression, scope, evaluate, emit, &a)) return false;
+        if (!type_matrix(c, a.constant.type) || c->types[a.constant.type - 7u].count != n ||
+            type_vector_width(c, c->types[a.constant.type - 7u].element) != rows)
+            return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, node->source_offset, "matrix conversion requires identical dimensions");
+        if (inferred == 3u) target = a.constant.type;
+        if (!sema_materialize(s, &a, target)) return false;
+        *out = a;
+        return true;
+    }
     if (kind == TYPE_RUNTIME_ARRAY || (inferred == 2u && n == 0u) || (target != IR_VOID && !type_constructible(c, target)))
         return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, node->source_offset, "constructor requires a fixed constructible type");
     if (node->right == 0u) {
         if (inferred == 1u && !type_intern(s, TYPE_VECTOR, IR_ABSTRACT_INT, n, &target)) return false;
+        if (inferred == 3u && !type_matrix_intern(s, IR_ABSTRACT_FLOAT, n, rows, &target)) return false;
         *out = (ExpressionValue){
             .known = evaluate, .constant.type = target, .value = {.type = target, .source_offset = node->source_offset}
         };
@@ -99,7 +114,16 @@ static bool aggregate_call(Source *s, const Expression *node, const LocalScope *
         ExpressionValue a;
         if (!sema_expression(s, c->arguments[link].expression, scope, false, false, &a)) return false;
         runtime = runtime || a.runtime;
-        if (kind == TYPE_VECTOR) {
+        if (kind == TYPE_MATRIX) {
+            const uint32_t width = type_vector_width(c, a.constant.type);
+            const TypeId leaf = type_leaf(c, a.constant.type);
+            if ((node->right != n && node->right != n * rows) || width != (node->right == n ? rows : 1u) ||
+                (leaf != IR_F32 && leaf != IR_ABSTRACT_FLOAT && leaf != IR_ABSTRACT_INT))
+                return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, node->source_offset, "matrix constructor requires whole floating-point columns or scalar elements");
+            if (i == 0u) common = leaf;
+            else if (!sema_common_type(s, common, leaf, node->source_offset, &common)) return false;
+        }
+        else if (kind == TYPE_VECTOR) {
             if (a.constant.type >= 7u && c->types[a.constant.type-7u].kind != TYPE_VECTOR)
                 return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, node->source_offset, "vector pieces must be scalar or vector");
             const uint32_t part = type_vector_width(c, a.constant.type);
@@ -130,11 +154,14 @@ static bool aggregate_call(Source *s, const Expression *node, const LocalScope *
         return convert_value(s, &a, target, node->source_offset, false, evaluate, emit, out);
     }
     const bool splat = kind == TYPE_VECTOR && node->right == 1u && lanes == 1u;
-    if ((kind == TYPE_VECTOR && !splat && lanes != n) || (kind != TYPE_VECTOR && node->right != n))
+    if ((kind == TYPE_VECTOR && !splat && lanes != n) || (kind != TYPE_VECTOR && kind != TYPE_MATRIX && node->right != n))
         return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, node->source_offset, "aggregate constructor component count mismatch");
     if (inferred != 0u) {
+        if (kind == TYPE_MATRIX && common == IR_ABSTRACT_INT) common = IR_ABSTRACT_FLOAT;
         if (runtime && type_abstract(c, common) && !sema_default_type(s, common, node->source_offset, &common)) return false;
-        if (!type_intern(s, kind, common, n, &target)) return false;
+        if (kind == TYPE_MATRIX) {
+            if (!type_matrix_intern(s, common, n, rows, &target)) return false;
+        } else if (!type_intern(s, kind, common, n, &target)) return false;
     }
     *out = (ExpressionValue){
         .runtime = runtime, .known = evaluate && !runtime, .constant.type = target, .value = {.type = target, .source_offset = node->source_offset}
@@ -143,11 +170,13 @@ static bool aggregate_call(Source *s, const Expression *node, const LocalScope *
     if (runtime && emit && !reserve_operands(s, node->right, node->source_offset, &first)) return false;
     if (!runtime && evaluate && !constant_reserve(s, target, splat?CONSTANT_REPEAT:CONSTANT_COMPOSITE, n, &out->constant, &first)) return false;
     link = node->left;
-    uint32_t lane_index = 0u;
+    uint32_t lane_index = 0u, column_first = 0u;
+    const bool matrix_scalars = kind == TYPE_MATRIX && node->right != n;
     for (uint32_t i = 0u;i<node->right;++i) {
         ExpressionValue a;
         TypeId expected = type_child(c, target, i);
         if (!sema_expression(s, c->arguments[link].expression, scope, evaluate, emit && runtime, &a)) return false;
+        if (matrix_scalars) expected = type_leaf(c, c->types[target - 7u].element);
         if (kind == TYPE_VECTOR) {
             expected = type_leaf(c, target);
             const uint32_t part = type_vector_width(c, a.constant.type);
@@ -160,7 +189,12 @@ static bool aggregate_call(Source *s, const Expression *node, const LocalScope *
         }
         else if (evaluate) {
             if (!a.known) return source_error(s, DOE_COMPILER_INPUT_ERROR, node->source_offset, "constant constructor lost its value");
-            if (kind != TYPE_VECTOR || splat) c->constant_edges[first+i] = a.constant;
+            if (matrix_scalars) {
+                if (i % rows == 0u && !constant_reserve(s, c->types[target - 7u].element,
+                    CONSTANT_COMPOSITE, rows, &c->constant_edges[first + i / rows], &column_first)) return false;
+                c->constant_edges[column_first + i % rows] = a.constant;
+            }
+            else if (kind != TYPE_VECTOR || splat) c->constant_edges[first+i] = a.constant;
             else {
                 const uint32_t part = type_vector_width(c, a.constant.type);
                 for (uint32_t j = 0u;j<part;++j) {
@@ -173,7 +207,7 @@ static bool aggregate_call(Source *s, const Expression *node, const LocalScope *
         link = c->arguments[link].next;
     }
     if (!runtime) return true;
-    return sema_emit(s, emit, (IrInstruction){.opcode = IR_COMPOSITE, .type = target, .source_offset = node->source_offset, .operands.composite = {first, node->right, kind == TYPE_VECTOR?(splat?2u:1u):0u, 0u}}, &out->value);
+    return sema_emit(s, emit, (IrInstruction){.opcode = IR_COMPOSITE, .type = target, .source_offset = node->source_offset, .operands.composite = {first, node->right, kind == TYPE_VECTOR?(splat?2u:1u):matrix_scalars?3u:0u, 0u}}, &out->value);
 }
 bool sema_call_value(Source *s, uint32_t id, const LocalScope *scope, bool evaluate, bool emit, bool statement, ExpressionValue *out) {
     CompilerWorkspace *c = s->compiler;
@@ -242,7 +276,11 @@ bool sema_call_value(Source *s, uint32_t id, const LocalScope *scope, bool evalu
     }
     else if (source_span_is(s, name, "array")) inferred = 2u;
     else if (name.length == 4u && memcmp(s->source+name.offset, "vec", 3u) == 0 && s->source[name.offset+3u] >= '2' && s->source[name.offset+3u] <= '4') inferred = 1u;
-    else if (!sema_type_reference(s, (TypeRef){name.offset, NO_ID}, scope, &target)) return false;
+    else {
+        uint32_t columns, rows;
+        if (name.length == 6u && type_matrix_name(s, name, &columns, &rows)) inferred = 3u;
+        else if (!sema_type_reference(s, (TypeRef){name.offset, NO_ID}, scope, &target)) return false;
+    }
     if (!bitcast && (inferred != 0u || target >= 7u)) return aggregate_call(s, node, scope, target, inferred, evaluate, emit, out);
     if (node->right>1u) return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, name.offset, "scalar constructor accepts zero or one argument");
     if (node->right == 0u) {

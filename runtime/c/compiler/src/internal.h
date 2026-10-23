@@ -58,7 +58,8 @@ typedef enum {
     BUILTIN_SUBGROUP_ADD, BUILTIN_SUBGROUP_MIN, BUILTIN_SUBGROUP_MAX, BUILTIN_SUBGROUP_MUL,
     BUILTIN_SUBGROUP_AND, BUILTIN_SUBGROUP_OR, BUILTIN_SUBGROUP_XOR,
     BUILTIN_SUBGROUP_EXCLUSIVE_ADD, BUILTIN_SUBGROUP_INCLUSIVE_ADD,
-    BUILTIN_SUBGROUP_EXCLUSIVE_MUL, BUILTIN_SUBGROUP_INCLUSIVE_MUL
+    BUILTIN_SUBGROUP_EXCLUSIVE_MUL, BUILTIN_SUBGROUP_INCLUSIVE_MUL,
+    BUILTIN_TRANSPOSE, BUILTIN_DETERMINANT
 } NumericBuiltinKind;
 typedef struct { uint64_t bits; IrType type; } NumericValue;
 typedef struct { TypeId type; uint32_t flags; uint64_t bits; } ConstantValue;
@@ -100,7 +101,7 @@ typedef struct { NameSpan name; union { TypeRef annotation;
     struct { TypeId type; uint32_t offset; } resolved; } type; } FormalRecord;
 typedef struct { uint32_t expression, next; } ArgumentSyntax;
 typedef struct { NameSpan name; TypeRef element; uint32_t count_expression, flags; } GenericSyntax;
-enum { TYPE_VECTOR = 1u, TYPE_ARRAY, TYPE_RUNTIME_ARRAY, TYPE_STRUCT, TYPE_TEXTURE, TYPE_SAMPLER };
+enum { TYPE_VECTOR = 1u, TYPE_ARRAY, TYPE_RUNTIME_ARRAY, TYPE_STRUCT, TYPE_TEXTURE, TYPE_SAMPLER, TYPE_MATRIX };
 enum { TYPE_CONSTRUCTIBLE = 1u, TYPE_HOST = 2u, TYPE_FIXED = 4u, TYPE_TAIL = 8u,
     TYPE_RESOLVING = 16u, TYPE_RESOLVED = 32u, TYPE_ABSTRACT = 64u, TYPE_UNIFORM = 128u };
 typedef struct { uint32_t dimension, format, access, flags; } ImageType;
@@ -249,12 +250,16 @@ bool emit_spirv(Source *, CompilerWorkspace *);
 bool reflect_prepare(Source *, CompilerWorkspace *, DoeCompilerTypedOutputCounts *);
 void reflect_module(const Source *, const CompilerWorkspace *, const DoeCompilerModuleOutputs *, uint32_t, DoeCompilerModuleV5 *);
 void reflect_typed(const Source *, const CompilerWorkspace *, const DoeCompilerTypedOutputs *, DoeCompilerModuleV4 *);
+bool reflect_matrix_admit(Source *);
 bool reflect_legacy_admit(Source *, const CompilerWorkspace *, bool);
 void reflect_program(const Source *, const CompilerWorkspace *, DoeCompilerReflection *);
 void reflect_program_v2(const Source *, const CompilerWorkspace *, DoeCompilerReflectionV2 *);
 NameSpan source_name_at(const Source *, uint32_t);
 bool source_spans_equal(const Source *, NameSpan, NameSpan);
 bool source_span_is(const Source *, NameSpan, const char *);
+bool type_matrix(const CompilerWorkspace *, TypeId);
+bool type_matrix_name(const Source *, NameSpan, uint32_t *, uint32_t *);
+bool type_matrix_intern(Source *, TypeId, uint32_t, uint32_t, TypeId *);
 TypeId type_leaf(const CompilerWorkspace *, TypeId);
 uint32_t type_vector_width(const CompilerWorkspace *, TypeId);
 bool type_abstract(const CompilerWorkspace *, TypeId);

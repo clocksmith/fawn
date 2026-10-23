@@ -58,8 +58,30 @@ static bool round_up(Source *s, uint64_t value, uint64_t alignment, uint32_t off
 }
 static uint64_t required_alignment(const CompilerWorkspace *c, TypeId id) {
     uint64_t a = type_alignment(c, id);
-    if (id >= 7u && c->types[id-7u].kind != TYPE_VECTOR && a<16u) a = 16u;
+    if (id >= 7u && c->types[id-7u].kind != TYPE_VECTOR && c->types[id-7u].kind != TYPE_MATRIX && a<16u) a = 16u;
     return a;
+}
+static bool type_matrix_intern_valid(const CompilerWorkspace *c, TypeId column, uint32_t count) {
+    if (column < 7u || count < 2u || count > 4u) return false;
+    const TypeRecord *vector = &c->types[column - 7u];
+    return vector->kind == TYPE_VECTOR && (vector->element == IR_F32 || vector->element == IR_ABSTRACT_FLOAT);
+}
+bool type_matrix(const CompilerWorkspace *c, TypeId type) {
+    return type >= 7u && c->types[type - 7u].kind == TYPE_MATRIX;
+}
+bool type_matrix_name(const Source *s, NameSpan name, uint32_t *columns, uint32_t *rows) {
+    if (name.length != 6u && name.length != 7u) return false;
+    const char *text = s->source + name.offset;
+    if (memcmp(text, "mat", 3u) != 0 || text[3] < '2' || text[3] > '4' ||
+        text[4] != 'x' || text[5] < '2' || text[5] > '4') return false;
+    *columns = (uint32_t)(text[3] - '0');
+    *rows = (uint32_t)(text[5] - '0');
+    return true;
+}
+bool type_matrix_intern(Source *s, TypeId scalar, uint32_t columns, uint32_t rows, TypeId *out) {
+    TypeId column;
+    return type_intern(s, TYPE_VECTOR, scalar, rows, &column) &&
+        type_intern(s, TYPE_MATRIX, column, columns, out);
 }
 bool type_intern(Source *s, uint32_t kind, TypeId element, uint32_t count, TypeId *out) {
     CompilerWorkspace *c = s->compiler;
@@ -86,13 +108,16 @@ bool type_intern(Source *s, uint32_t kind, TypeId element, uint32_t count, TypeI
         t.flags|=flags&(TYPE_HOST|TYPE_ABSTRACT);
         t.state.layout.alignment = type_alignment(c, element);
         if (!round_up(s, type_size(c, element), t.state.layout.alignment, 0u, &t.state.layout.stride)) return false;
-        if (kind == TYPE_ARRAY) {
+        if (kind == TYPE_ARRAY || kind == TYPE_MATRIX) {
+            if (kind == TYPE_MATRIX && (!type_matrix_intern_valid(c, element, count)))
+                return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, 0u, "matrix requires two through four floating-point columns and rows");
             if (count == 0u || t.state.layout.stride>UINT64_MAX/count)
                 return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, 0u, "array count or layout size is invalid");
             t.state.layout.size = t.state.layout.stride*count;
             t.flags|=TYPE_CONSTRUCTIBLE;
             if ((flags&TYPE_FIXED) != 0u) t.flags|=TYPE_FIXED;
-            if ((flags&TYPE_UNIFORM) != 0u && t.state.layout.stride%16u == 0u && t.state.layout.stride%required_alignment(c, element) == 0u)
+            if ((flags&TYPE_UNIFORM) != 0u && (kind == TYPE_MATRIX ||
+                (t.state.layout.stride%16u == 0u && t.state.layout.stride%required_alignment(c, element) == 0u)))
                 t.flags|=TYPE_UNIFORM;
         }
         else t.flags|=TYPE_TAIL;

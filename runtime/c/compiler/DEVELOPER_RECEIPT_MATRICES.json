@@ -1,0 +1,83 @@
+{
+  "schema": 1,
+  "scope": "ABI8 f32 matrix family; additive existing stage front door, no new exports or record layout",
+  "owned_manifest_sha256": "c930c93b7d0ae0873ae205c16a59d43bdf792de38650473457d267b39330c26a",
+  "checks": {
+    "strict_gcc_normal_pic": "pass",
+    "focused_source_spirv_tests": 31,
+    "c_abi8_and_abi7_regression": "pass",
+    "cpp17_shared_library_consumer": "pass",
+    "asan_ubsan_final_held_source": "pass; leaks disabled",
+    "source_size_999": "460 files, 0 failures",
+    "exports": 13,
+    "dynamic_dependencies": [
+      "libm.so.6",
+      "libc.so.6"
+    ],
+    "fixed_workspace_bytes": 146048
+  },
+  "stack": {
+    "normal": {
+      "complete_frames": 268,
+      "semantic_scc_bytes": 1536,
+      "semantic_scc_ceiling": 1536,
+      "acyclic_library_path": 2528,
+      "fixed_composed_bound": 191728,
+      "maximum_job_composed_bound": 181040,
+      "historical_unrelated_frame_sum": 24768
+    },
+    "pic": {
+      "complete_frames": 264,
+      "semantic_scc_bytes": 1536,
+      "semantic_scc_ceiling": 1536,
+      "acyclic_library_path": 2512,
+      "fixed_composed_bound": 191712,
+      "maximum_job_composed_bound": 181024,
+      "historical_unrelated_frame_sum": 24776
+    }
+  },
+  "held_artifacts": {
+    "libdoe_compiler.so": "3d1fd28882076cd7c511073127d4b6ab43e09c2b53dd7efa2a8f58c203c8028e",
+    "doe-compiler-c": "0f14b9a4c36d0439bb2998e583e398640cf0632add3a2c1210bec2d3038c200d",
+    "uniform-tail.wgsl": "2800e2eb314eea562f8893deffdddb96862e0c00acb570aaa2d57e7d4c0531ee",
+    "uniform-tail.spv": "ea49fb1b8390a75af6dc3e58784807d44bbee0617ecc4156d35c5aa39a7fc6d8",
+    "uniform-tail-oracle.json": "0bfdd3488dcd9c49eef0753f0584e3fc2daccb0e90a0e222815358752e0cc59d"
+  },
+  "first_failures": [
+    "wrong determinant extended instruction34 corrected to33",
+    "uniform two-row stride8 rejected by baseline Vulkan; exact-byte physical representation implemented",
+    "complete semantic SCC1552 corrected to1536 without ceiling changes",
+    "developer test corrections: reserved get, constant OOB fixture, uniform nested struct spacing, diagnostic wording, word-pool status; first logs retained",
+    "one regression invocation omitted plural module test filename; corrected31 tests pass",
+    "workspace measurement first two ctypes calls mismatched ABI signature/version; corrected ABI2 measurement passes"
+  ],
+  "limits": [
+    "full integrated and physical qualification pending",
+    "full-feature50percent source reduction not claimed",
+    "f16 and remaining language families still open",
+    "unchanged splat-render.wgsl still rejects discard line199; first diagnostic preserved",
+    "software Vulkan consumer success is separately owned and source-bound by backend author"
+  ],
+  "source_sha256": "c930c93b7d0ae0873ae205c16a59d43bdf792de38650473457d267b39330c26a",
+  "tested_source_sha256": "cdeb1322d5d92383725a38b8bb4574406d68a002dbf2962548670aba70e6a0ce",
+  "formatting_only_map": {
+    "tested_manifest_sha256": "cdeb1322d5d92383725a38b8bb4574406d68a002dbf2962548670aba70e6a0ce",
+    "current_manifest_sha256": "c930c93b7d0ae0873ae205c16a59d43bdf792de38650473457d267b39330c26a",
+    "path": "runtime/c/compiler/src/sema_builtin.c",
+    "tested_file_sha256": "fc9417f2ccd0becba738045948d6069e38867ef21775867ac34f47af6ad809b8",
+    "current_file_sha256": "a322485bf9b96e0659fc5abcf19b96e52e3f0a9ae865d60bd2a64dafa3772657",
+    "changes": [
+      {
+        "line": 50,
+        "before_hex": "202020200a",
+        "after_hex": "0a"
+      },
+      {
+        "line": 65,
+        "before_hex": "202020200a",
+        "after_hex": "0a"
+      }
+    ],
+    "equivalence": "Only two whitespace-only blank lines lose their four spaces. All other bytes identical; no tokens or semantics changed. Original tested manifest/archive remain unchanged."
+  }
+}
