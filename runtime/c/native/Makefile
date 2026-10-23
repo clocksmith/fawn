@@ -28,14 +28,17 @@ $(BUILD)/libwebgpu_doe_c.so: $(SOURCES) $(HEADERS) $(COMPILER_LIBRARY) | $(BUILD
 	$(CC) $(CPPFLAGS) $(CFLAGS) -fvisibility=hidden -shared -Wl,-z,defs -Wl,-Bsymbolic-functions $(SOURCES) $(COMPILER_LINK) -ldl -o $@
 $(BUILD)/compute: tests/compute.c $(BUILD)/libwebgpu_doe_c.so
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
+$(BUILD)/textures: tests/textures.c $(BUILD)/libwebgpu_doe_c.so
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
 $(BUILD)/lifecycle: tests/lifecycle.c $(SOURCES) $(HEADERS) $(COMPILER_LIBRARY) | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) tests/lifecycle.c $(SOURCES) $(COMPILER_LINK) -ldl -o $@
 $(BUILD)/procedures-cxx: tests/procedures.cpp $(BUILD)/libwebgpu_doe_c.so
 	$(CXX) $(CPPFLAGS) -std=c++17 -Wall -Wextra -Wpedantic -Werror $(SANITIZE) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
-check: $(BUILD)/compute $(BUILD)/procedures-cxx $(BUILD)/lifecycle
+check: $(BUILD)/compute $(BUILD)/procedures-cxx $(BUILD)/lifecycle $(BUILD)/textures
 	$(BUILD)/compute
 	$(BUILD)/procedures-cxx
 	$(BUILD)/lifecycle
+	$(BUILD)/textures
 	python3 tests/audit-exports.py $(BUILD)/libwebgpu_doe_c.so $(if $(SANITIZE),,--runtime)
 clean:
-	rm -f $(BUILD)/libwebgpu_doe_c.so $(BUILD)/libdoe_compiler.so $(BUILD)/compute $(BUILD)/procedures-cxx $(BUILD)/lifecycle
+	rm -f $(BUILD)/libwebgpu_doe_c.so $(BUILD)/libdoe_compiler.so $(BUILD)/compute $(BUILD)/procedures-cxx $(BUILD)/lifecycle $(BUILD)/textures

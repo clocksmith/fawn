@@ -7,6 +7,7 @@
 #include "doe_resources.h"
 #include "doe_shader.h"
 #include "doe_vk.h"
+#include "doe_vk_bindings.h"
 #include "doe_error_scopes.h"
 #include <pthread.h>
 #include <stdatomic.h>
@@ -53,6 +54,19 @@ typedef struct native_shader {
     doe_shader_error error;
 } native_shader;
 
+typedef struct native_texture {
+    native_device *device;
+    doe_vk_texture *texture;
+} native_texture;
+typedef struct native_view {
+    native_device *device;
+    doe_vk_texture_view *view;
+} native_view;
+typedef struct native_sampler {
+    native_device *device;
+    doe_vk_sampler *sampler;
+} native_sampler;
+
 typedef struct native_pipeline_error {
     WGPUErrorType type;
     const char *message;
@@ -95,4 +109,13 @@ WGPUComputePipeline native_create_compute_pipeline(native_device *device,
 /* Caller holds device mutex. Attempts terminal recovery; unknown work stays
  * linked and retains its backend and resource submissions, never freed. */
 bool native_settle_pending(native_device *device);
+/* Caller holds device mutex. Always adopts commands, including failed/unknown
+ * completion. A private initialization submission has its own device lease. */
+doe_vk_status native_submit_commands(native_device *device, doe_vk_commands *commands);
+bool native_texture_format(WGPUTextureFormat format, doe_vk_texture_format *out);
+bool native_storage_format(uint32_t format, WGPUTextureFormat *out);
+doe_resource_pipeline_layout *native_automatic_layout(native_device *device,
+    const doe_shader_view *view, const DoeCompilerEntryV5 *entry);
+bool native_pipeline_bindings(native_pipeline *payload, const doe_shader_view *view,
+    const DoeCompilerEntryV5 *entry, doe_resource_pipeline_layout *layout);
 #endif

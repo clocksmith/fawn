@@ -26,70 +26,8 @@ static const DoeCompilerEntryV5 *select_entry(const doe_shader_view *view, WGPUS
     return NULL;
 }
 
-static bool resource_entry(const DoeCompilerResourceV4 *resource, doe_resource_layout_entry *out)
-{
-    if (resource->group >= DOE_RESOURCE_MAX_GROUPS || resource->binding >= DOE_RESOURCE_MAX_BINDINGS) return false;
-    WGPUBufferBindingType type;
-    if (resource->kind == DOE_COMPILER_UNIFORM_BUFFER) type = WGPUBufferBindingType_Uniform;
-    else if (resource->kind == DOE_COMPILER_STORAGE_BUFFER)
-        type = resource->access == DOE_COMPILER_READ ? WGPUBufferBindingType_ReadOnlyStorage : WGPUBufferBindingType_Storage;
-    else return false;
-    *out = (doe_resource_layout_entry){.binding=resource->binding, .visibility=WGPUShaderStage_Compute,
-        .kind=DOE_BIND_BUFFER, .buffer_type=type, .minimum_size=resource->minimum_binding_size_bytes};
-    return true;
-}
-
-static doe_resource_pipeline_layout *automatic_layout(native_device *device,
-    const doe_shader_view *view, const DoeCompilerEntryV5 *entry)
-{
-    doe_resource_layout_entry entries[DOE_RESOURCE_MAX_GROUPS][DOE_RESOURCE_MAX_BINDINGS];
-    size_t counts[DOE_RESOURCE_MAX_GROUPS] = {0};
-    size_t group_count = 0;
-    for (uint32_t i = 0; i < entry->resource_reference_count; ++i) {
-        uint32_t index = view->entry_references[entry->first_resource_reference + i];
-        const DoeCompilerResourceV4 *resource = &view->resources[index];
-        doe_resource_layout_entry converted;
-        if (!resource_entry(resource, &converted) || counts[resource->group] == DOE_RESOURCE_MAX_BINDINGS) return NULL;
-        entries[resource->group][counts[resource->group]++] = converted;
-        if (group_count <= resource->group) group_count = resource->group + 1;
-    }
-    doe_resource_layout *groups[DOE_RESOURCE_MAX_GROUPS] = {0};
-    doe_resource_pipeline_layout *layout = NULL;
-    for (size_t i = 0; i < group_count; ++i)
-        if (doe_resource_layout_create(&device->resources, entries[i], counts[i], true, &groups[i]) != DOE_RESOURCE_OK)
-            goto finished;
-    (void)doe_resource_pipeline_layout_create(&device->resources, groups, group_count, 0, &layout);
-finished:
-    for (size_t i = 0; i < group_count; ++i) doe_resource_layout_release(groups[i]);
-    return layout;
-}
-
-static bool pipeline_bindings(native_pipeline *payload, const doe_shader_view *view,
-    const DoeCompilerEntryV5 *entry, doe_resource_pipeline_layout *layout)
-{
-    for (uint32_t i = 0; i < entry->resource_reference_count; ++i) {
-        uint32_t index = view->entry_references[entry->first_resource_reference + i];
-        const DoeCompilerResourceV4 *resource = &view->resources[index];
-        doe_resource_layout_entry required;
-        if (!resource_entry(resource, &required)) return false;
-        doe_resource_layout *group = doe_resource_pipeline_layout_group(layout, resource->group);
-        size_t count = 0;
-        const doe_resource_layout_entry *entries = doe_resource_layout_entries(group, &count);
-        const doe_resource_layout_entry *actual = NULL;
-        for (size_t j = 0; j < count; ++j) if (entries[j].binding == resource->binding) actual = &entries[j];
-        if (!actual || actual->kind != DOE_BIND_BUFFER || !(actual->visibility & WGPUShaderStage_Compute) ||
-            actual->buffer_type != required.buffer_type ||
-            (actual->minimum_size && actual->minimum_size < required.minimum_size)) return false;
-        size_t at = payload->binding_count++;
-        payload->bindings[at] = (doe_vk_binding_layout){resource->group, resource->binding,
-            resource->kind == DOE_COMPILER_UNIFORM_BUFFER ? DOE_VK_BINDING_UNIFORM : DOE_VK_BINDING_STORAGE};
-        payload->minimum_sizes[at] = resource->minimum_binding_size_bytes;
-    }
-    return true;
-}
-
 /* Target capability admission, not source parsing or shader validation. The
- * compiler owns valid words; this backend enables only baseline Shader/Matrix. */
+ * compiler owns valid words; this backend enables baseline Shader/Matrix, 1D images and ImageQuery. */
 static bool native_shader_capabilities(const doe_shader_view *view)
 {
     if (view->counts.words < 5 || view->words[1] > UINT32_C(0x00010300)) return false;
@@ -97,7 +35,12 @@ static bool native_shader_capabilities(const doe_shader_view *view)
         uint32_t length = view->words[at] >> 16;
         uint32_t opcode = view->words[at] & 65535u;
         if (!length || length > view->counts.words - at) return false;
-        if (opcode == 17 && (length != 2 || view->words[at + 1] > 1)) return false;
+        if (opcode == 17) {
+            if (length != 2) return false;
+            uint32_t capability = view->words[at + 1];
+            if (capability != 0 && capability != 1 && capability != 43 &&
+                capability != 44 && capability != 50) return false;
+        }
         if (opcode == 10) return false;
         at += length;
     }
@@ -135,7 +78,7 @@ WGPUComputePipeline native_create_compute_pipeline(native_device *device,
     /* The C compiler emits guarded storage accesses, including OpArrayLength
      * for runtime tails (compiler/src/spirv.c access_condition). This baseline
      * Vulkan context also requires robustBufferAccess. No TranslationInfo
-     * metadata is fabricated; texture/subgroup paths remain unprovided. */
+     * metadata is fabricated; texture bounds use the compiler image guards; subgroup paths remain unprovided. */
     if (!entry || entry->stage != DOE_COMPILER_STAGE_COMPUTE || entry->workgroup_storage_bytes > device->caps.max_workgroup_storage_size) {
         pipeline_failure(error, WGPUErrorType_Validation,
             "selected entry missing or workgroup storage exceeds native limit");
@@ -156,12 +99,12 @@ WGPUComputePipeline native_create_compute_pipeline(native_device *device,
     native_lock(device);
     doe_resource_pipeline_layout *layout = (doe_resource_pipeline_layout *)descriptor->layout;
     bool automatic = !layout;
-    if (automatic) layout = automatic_layout(device, &view, entry);
+    if (automatic) layout = native_automatic_layout(device, &view, entry);
     doe_resource_pipeline *pipeline = NULL;
     doe_vk_status backend_status = DOE_VK_INVALID_ARGUMENT;
     doe_resource_status resource_status = DOE_RESOURCE_INVALID_ARGUMENT;
     if (layout && doe_resource_pipeline_layout_device(layout) == device &&
-        native_device_alive(device) && pipeline_bindings(payload, &view, entry, layout)) {
+        native_device_alive(device) && native_pipeline_bindings(payload, &view, entry, layout)) {
         char name[64];
         memcpy(name, view.names + entry->name.offset, entry->name.length);
         name[entry->name.length] = 0;
@@ -181,7 +124,7 @@ WGPUComputePipeline native_create_compute_pipeline(native_device *device,
             type = WGPUErrorType_OutOfMemory;
         else if (backend_status == DOE_VK_DEVICE_LOST || backend_status == DOE_VK_NATIVE_FAILURE)
             type = WGPUErrorType_Internal;
-        pipeline_failure(error, type, "compute pipeline creation or layout validation failed");
+        pipeline_failure(error, type, "compute pipeline/layout failed or precise unfilterable texture/sampler pairing analysis unsupported");
     }
     if (pipeline) {
         size_t label_size;
