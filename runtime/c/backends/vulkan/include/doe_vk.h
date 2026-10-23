@@ -90,6 +90,9 @@ typedef struct doe_vk_caps {
     uint32_t max_fragment_input_components;
     bool shader_demote_to_helper_invocation; /* Enabled, not merely advertised. */
     uint32_t surface_platforms; /* Enabled with swapchain-maintenance1, not discovery only. */
+    /* Enabled fullDrawIndexUint32, not merely advertised. Without it, uint32
+     * index draws reject because larger index values exceed the native limit. */
+    bool full_draw_index_uint32;
 } doe_vk_caps;
 
 /* One owned reference on success. Objects retain their creating context. */
@@ -105,6 +108,7 @@ enum {
     DOE_VK_BUFFER_COPY_SRC = 1,
     DOE_VK_BUFFER_COPY_DST = 2,
     DOE_VK_BUFFER_UNIFORM = 16,
+    DOE_VK_BUFFER_INDEX = 64,
     DOE_VK_BUFFER_STORAGE = 32,
     DOE_VK_BUFFER_VERTEX = 128,
     DOE_VK_BUFFER_INDIRECT = 256

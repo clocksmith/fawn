@@ -369,7 +369,40 @@
     "vkCmdDrawIndirect": {
       "source": "vk_functions.zig:97",
       "signature": "void(VkCommandBuffer,VkBuffer,VkDeviceSize,u32,u32)",
-      "usage": "One guarded nonindexed draw per call, stride16; drawIndirectFirstInstance remains disabled."
+      "usage": "One guarded nonindexed draw per call, stride16; drawIndirectFirstInstance remains disabled.",
+      "result": "void",
+      "parameters": "VkCommandBuffer, VkBuffer, VkDeviceSize, uint32_t, uint32_t"
+    },
+    "vkCmdBindIndexBuffer": {
+      "source": "vk_functions.zig:94",
+      "signature": "void(VkCommandBuffer,VkBuffer,VkDeviceSize,u32)",
+      "result": "void",
+      "parameters": "VkCommandBuffer, VkBuffer, VkDeviceSize, uint32_t",
+      "usage": "Binds the exact public index buffer offset per draw; the native call carries no size, so the bound range is enforced by direct admission and the GPU guard."
+    },
+    "vkCmdDrawIndexed": {
+      "source": "vk_functions.zig:96",
+      "signature": "void(VkCommandBuffer,u32,u32,u32,i32,u32)",
+      "result": "void",
+      "parameters": "VkCommandBuffer, uint32_t, uint32_t, uint32_t, int32_t, uint32_t",
+      "usage": "Direct indexed draw after exact firstIndex+indexCount range admission; signed base vertex."
+    },
+    "vkCmdDrawIndexedIndirect": {
+      "source": "vk_functions.zig:98",
+      "signature": "void(VkCommandBuffer,VkBuffer,VkDeviceSize,u32,u32)",
+      "result": "void",
+      "parameters": "VkCommandBuffer, VkBuffer, VkDeviceSize, uint32_t, uint32_t",
+      "usage": "One guarded indexed draw per call from distinct scratch, stride20; drawIndirectFirstInstance remains disabled."
+    }
+  },
+  "retained_constants": {
+    "VK_INDEX_TYPE_UINT16": {
+      "source": "vk_constants.zig:537",
+      "value": 0
+    },
+    "VK_INDEX_TYPE_UINT32": {
+      "source": "vk_constants.zig:538",
+      "value": 1
     }
   },
   "surface_policy": {

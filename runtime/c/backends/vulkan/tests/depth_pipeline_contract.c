@@ -5,6 +5,7 @@
 
 static unsigned expected_stages, modules, destroyed_modules, live_layouts, live_passes, live_pipelines;
 static VkResult pipeline_result;
+static VkBool32 expected_restart;
 static void format_properties(VkPhysicalDevice physical, uint32_t format, VkFormatProperties *out) {
     (void)physical;
     assert(format == DOE_VK_FORMAT_D32_FLOAT);
@@ -71,6 +72,8 @@ static VkResult create_pipeline(VkDevice device, VkPipelineCache cache, uint32_t
     (void)allocator;
     assert(cache == 0 && count == 1 && info->stageCount == expected_stages);
     assert(info->pStages[0].stage == VK_SHADER_STAGE_VERTEX_BIT);
+    /* WebGPU strips restart at the all-ones index; lists never enable restart. */
+    assert(info->pInputAssemblyState->primitiveRestartEnable == expected_restart);
     if (expected_stages == 2) assert(info->pStages[1].stage == VK_SHADER_STAGE_FRAGMENT_BIT);
     const VkPipelineColorBlendStateCreateInfo *blend = info->pColorBlendState;
     assert(blend->attachmentCount == 0 && blend->pAttachments == NULL);
@@ -142,11 +145,21 @@ int main(void) {
     }
     expected_stages = 1;
     desc.fragment = (doe_vk_shader){0};
+    const doe_vk_topology topologies[] = {DOE_VK_LINES, DOE_VK_LINE_STRIP, DOE_VK_TRIANGLE_STRIP};
+    for (size_t i = 0; i < sizeof(topologies) / sizeof(topologies[0]); ++i) {
+        desc.topology = topologies[i];
+        expected_restart = topologies[i] != DOE_VK_LINES;
+        doe_vk_pipeline *pipeline = NULL;
+        assert(doe_vk_render_pipeline_create(&context, &desc, &pipeline, NULL) == DOE_VK_OK);
+        doe_vk_pipeline_release(pipeline);
+    }
+    desc.topology = DOE_VK_TRIANGLES;
+    expected_restart = 0;
     pipeline_result = -1;
     doe_vk_pipeline *sentinel = (doe_vk_pipeline *)&context, *out = sentinel;
     assert(doe_vk_render_pipeline_create(&context, &desc, &out, NULL) == DOE_VK_OUT_OF_MEMORY);
     assert(out == sentinel && modules == destroyed_modules && context.references == 1);
     assert(live_pipelines == 0 && live_passes == 0 && live_layouts == 0);
-    puts("PASS genuine depth-only native pipeline packets, optional fragment stage, no color state/attachment, malformed or contradictory admission, output preservation and native failure cleanup");
+    puts("PASS genuine depth-only native pipeline packets, optional fragment stage, strip-only primitive restart, no color state/attachment, malformed or contradictory admission, output preservation and native failure cleanup");
     return 0;
 }

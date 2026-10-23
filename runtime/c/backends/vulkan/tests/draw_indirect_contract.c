@@ -68,8 +68,12 @@ int main(int argc, char **argv) {
     size_t length = SIZE_MAX;
     assert(doe_vk_draw_validator_source(source, sizeof(source), &length) == DOE_VK_OK);
     assert(length == strlen(source) && strstr(source, "first_instance != 0u") != NULL);
-    assert(strstr(source, "vertex_count > vertex_limit - first_vertex") != NULL);
-    assert(strstr(source, "record[3] = 0u;") != NULL);
+    assert(strstr(source, "count > count_limit - first") != NULL);
+    assert(strstr(source, "first > count_limit") != NULL && strstr(source, "record[3] = 0u;") != NULL);
+    /* Mode word 7 selects the indexed layout: firstInstance word4, limits words5..6. */
+    assert(strstr(source, "let indexed = record[7] != 0u;") != NULL);
+    assert(strstr(source, "first_instance = record[4];") != NULL && strstr(source, "count_limit = record[5];") != NULL);
+    assert(strstr(source, "instance_limit = record[6];") != NULL && strstr(source, "record[4] = 0u;") != NULL);
     if (argc == 2) {
         FILE *file = fopen(argv[1], "wb");
         assert(file != NULL && fwrite(source, 1, length, file) == length && fclose(file) == 0);
@@ -102,15 +106,21 @@ int main(int argc, char **argv) {
         .usage = DOE_VK_BUFFER_INDIRECT | DOE_VK_BUFFER_COPY_SRC};
     doe_vk_render_indirect indirect = {&validator, &arguments, 4};
     doe_vk_commands *commands = recording(&context);
-    assert(doe_vk_draw_indirect_validate(commands, &indirect) == DOE_VK_OK);
+    assert(doe_vk_draw_indirect_validate(commands, &indirect, false) == DOE_VK_OK);
+    /* Indexed arguments are 20 bytes: offset4 overruns the same 20-byte buffer. */
+    assert(doe_vk_draw_indirect_validate(commands, &indirect, true) == DOE_VK_INVALID_ARGUMENT);
+    indirect.offset = 0;
+    assert(doe_vk_draw_indirect_validate(commands, &indirect, true) == DOE_VK_OK);
+    indirect.offset = 2;
+    assert(doe_vk_draw_indirect_validate(commands, &indirect, true) == DOE_VK_INVALID_ARGUMENT);
     indirect.offset = 8;
-    assert(doe_vk_draw_indirect_validate(commands, &indirect) == DOE_VK_INVALID_ARGUMENT);
+    assert(doe_vk_draw_indirect_validate(commands, &indirect, false) == DOE_VK_INVALID_ARGUMENT);
     indirect.offset = 4;
     arguments.usage = DOE_VK_BUFFER_INDIRECT;
-    assert(doe_vk_draw_indirect_validate(commands, &indirect) == DOE_VK_INVALID_ARGUMENT);
+    assert(doe_vk_draw_indirect_validate(commands, &indirect, false) == DOE_VK_INVALID_ARGUMENT);
     arguments.usage |= DOE_VK_BUFFER_COPY_SRC;
     arguments.content_status = DOE_VK_NATIVE_FAILURE;
-    assert(doe_vk_draw_indirect_validate(commands, &indirect) == DOE_VK_NATIVE_FAILURE);
+    assert(doe_vk_draw_indirect_validate(commands, &indirect, false) == DOE_VK_NATIVE_FAILURE);
     arguments.content_status = DOE_VK_OK;
     context.vk.vkCreateBuffer = fail_buffer;
     context.vk.vkCmdPipelineBarrier = barrier;
@@ -130,6 +140,6 @@ int main(int argc, char **argv) {
     assert(allocations == 1 && barriers == 1 && commands->renders == NULL && commands->buffers == NULL);
     assert(arguments.references == 1 && guard.references == 1 && target.references == 2);
     assert(doe_vk_commands_release(commands) == DOE_VK_OK && context.references == 1 && target.references == 1);
-    puts("PASS draw guard source/capacity/feature admission, exact vertex-instance last-byte/stride0/hole bounds, invalid argument preflight, output preservation and scratch OOM before native pass with exact leases");
+    puts("PASS draw guard nonindexed/indexed source layouts, 16/20-byte argument admission, capacity/feature admission, exact vertex-instance last-byte/stride0/hole bounds, invalid argument preflight, output preservation and scratch OOM before native pass with exact leases");
     return 0;
 }

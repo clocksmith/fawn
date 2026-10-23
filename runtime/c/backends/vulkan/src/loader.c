@@ -97,6 +97,9 @@ static doe_vk_status load_functions(doe_vk_context *context, doe_vk_error *error
     _Static_assert(sizeof(context->vk.vkCmdSetBlendConstants) == sizeof(void *), "vkCmdSetBlendConstants POSIX pointer size");
     _Static_assert(sizeof(context->vk.vkCmdDraw) == sizeof(void *), "vkCmdDraw POSIX pointer size");
     _Static_assert(sizeof(context->vk.vkCmdDrawIndirect) == sizeof(void *), "vkCmdDrawIndirect POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkCmdBindIndexBuffer) == sizeof(void *), "vkCmdBindIndexBuffer POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkCmdDrawIndexed) == sizeof(void *), "vkCmdDrawIndexed POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkCmdDrawIndexedIndirect) == sizeof(void *), "vkCmdDrawIndexedIndirect POSIX pointer size");
     _Static_assert(sizeof(context->vk.vkCreateQueryPool) == sizeof(void *), "vkCreateQueryPool POSIX pointer size");
     _Static_assert(sizeof(context->vk.vkDestroyQueryPool) == sizeof(void *), "vkDestroyQueryPool POSIX pointer size");
     _Static_assert(sizeof(context->vk.vkCmdWriteTimestamp) == sizeof(void *), "vkCmdWriteTimestamp POSIX pointer size");
@@ -186,6 +189,9 @@ static doe_vk_status load_functions(doe_vk_context *context, doe_vk_error *error
         { "vkCmdSetBlendConstants", &context->vk.vkCmdSetBlendConstants, sizeof(context->vk.vkCmdSetBlendConstants) },
         { "vkCmdDraw", &context->vk.vkCmdDraw, sizeof(context->vk.vkCmdDraw) },
         { "vkCmdDrawIndirect", &context->vk.vkCmdDrawIndirect, sizeof(context->vk.vkCmdDrawIndirect) },
+        { "vkCmdBindIndexBuffer", &context->vk.vkCmdBindIndexBuffer, sizeof(context->vk.vkCmdBindIndexBuffer) },
+        { "vkCmdDrawIndexed", &context->vk.vkCmdDrawIndexed, sizeof(context->vk.vkCmdDrawIndexed) },
+        { "vkCmdDrawIndexedIndirect", &context->vk.vkCmdDrawIndexedIndirect, sizeof(context->vk.vkCmdDrawIndexedIndirect) },
         { "vkCreateQueryPool", &context->vk.vkCreateQueryPool, sizeof(context->vk.vkCreateQueryPool) },
         { "vkDestroyQueryPool", &context->vk.vkDestroyQueryPool, sizeof(context->vk.vkDestroyQueryPool) },
         { "vkCmdWriteTimestamp", &context->vk.vkCmdWriteTimestamp, sizeof(context->vk.vkCmdWriteTimestamp) },
@@ -388,6 +394,7 @@ doe_vk_status doe_vk_context_create(const doe_vk_options *options,
     context->caps.surface_platforms = options->surface_platforms;
     context->caps.robust_buffer_access = true;
     context->caps.shader_demote_to_helper_invocation = features.extension != NULL;
+    context->caps.full_draw_index_uint32 = features.base.fullDrawIndexUint32 != 0;
     *out = context;
     return doe_vk_fail(DOE_VK_OK, "context ready", error);
 failed:
