@@ -170,8 +170,13 @@ doe_vk_status doe_vk_render_pipeline_create(doe_vk_context *context,
         .vertexBindingDescriptionCount = pipeline->vertex_count, .pVertexBindingDescriptions = bindings,
         .vertexAttributeDescriptionCount = (uint32_t)desc->attribute_count, .pVertexAttributeDescriptions = attributes
     };
+    /* WebGPU strip topologies always restart at the all-ones index for indexed
+     * draws; native restart only affects indexed draws. Lists never restart,
+     * so no optional list-restart feature is needed. */
+    const bool strip = desc->topology == DOE_VK_LINE_STRIP || desc->topology == DOE_VK_TRIANGLE_STRIP;
     const VkPipelineInputAssemblyStateCreateInfo assembly = {
-        .sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO, .topology = (uint32_t)desc->topology
+        .sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO, .topology = (uint32_t)desc->topology,
+        .primitiveRestartEnable = strip ? 1 : 0
     };
     const VkPipelineViewportStateCreateInfo viewport = {
         .sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO, .viewportCount = 1, .scissorCount = 1

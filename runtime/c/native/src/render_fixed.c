@@ -38,8 +38,9 @@ static bool blend(const WGPUBlendComponent *source, uint32_t *operation, uint32_
 
 bool native_render_fixed(const WGPURenderPipelineDescriptor *source, doe_vk_render_pipeline_desc *target)
 {
+    /* stripIndexFormat admission (strip-only, Uint16/Uint32) belongs to the
+     * resource pipeline owner; native strips always enable primitive restart. */
     if (source->primitive.nextInChain || source->primitive.unclippedDepth ||
-        source->primitive.stripIndexFormat != WGPUIndexFormat_Undefined ||
         source->multisample.nextInChain || (source->multisample.count != 1 && source->multisample.count != 4) ||
         (source->multisample.alphaToCoverageEnabled && source->multisample.count == 1)) return false;
     target->sample_count = source->multisample.count;

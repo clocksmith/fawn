@@ -23,6 +23,8 @@ doe_vk_status doe_vk_prepare_features(doe_vk_context *context, const doe_vk_opti
     if (!features.features.robustBufferAccess)
         return doe_vk_fail(DOE_VK_UNSUPPORTED, "robustBufferAccess required", error);
     doe_vk_feature_selection selection = {.base = {.robustBufferAccess = 1}};
+    /* Optional full uint32 index range; uint32 index draws reject without it. */
+    if (features.features.fullDrawIndexUint32) selection.base.fullDrawIndexUint32 = 1;
     if (available && demote.shaderDemoteToHelperInvocation) {
         selection.demote = demote;
         selection.extension = demote_extension;

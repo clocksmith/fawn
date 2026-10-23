@@ -226,7 +226,7 @@ napi_value doe_buffer_map_read_copy_unmap(napi_env env, napi_callback_info info)
             QueueWorkDoneResult qresult = {0};
             WGPUQueueWorkDoneCallbackInfo cb_info = {
                 .nextInChain = NULL,
-                .mode = WGPU_CALLBACK_MODE_WAIT_ANY_ONLY,
+                .mode = WGPU_CALLBACK_MODE_ALLOW_PROCESS_EVENTS,
                 .callback = queue_work_done_callback,
                 .userdata1 = &qresult,
                 .userdata2 = NULL,

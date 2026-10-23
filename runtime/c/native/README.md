@@ -118,6 +118,18 @@ Apple SDK compilation, Darwin execution and physical qualification remain unrun.
   recording engine is used. Failed terminal work discards private helpers; unknown
   completion retains them. Product-sensitive workgroup_index/global_invocation_index
   builtins remain compiler-rejected until reflected guard support exists.
+- Indexed Vulkan draws (SetIndexBuffer, DrawIndexed, DrawIndexedIndirect on passes
+  and bundles) use the resource owner's existing index state and packets: named
+  Uint16/Uint32 format, format-size offset alignment, Index usage, exact bound
+  range, strip/stripIndexFormat equality and direct firstIndex+indexCount range
+  are validation errors there. Native lowering passes the exact bound range to the
+  backend. Strip pipelines enable primitive restart (all-ones index); lists never
+  do. Indexed indirect uses the same backend guard owner and distinct scratch: a
+  GPU-read firstIndex+indexCount beyond the bound range, a wrapping sum, zero
+  counts, instance-step overrun or nonzero firstInstance becomes a native no-op.
+  Uint32 indices require the enabled native fullDrawIndexUint32 feature. Index
+  values are never read on the host; vertex-step fetches through arbitrary GPU
+  indices rely on enabled robustBufferAccess. Metal indexed drawing is absent.
 - Viewports use the canonical requested-device bounds, including negative origins,
   outside-attachment viewports and zero extents. Scissors remain attachment-bound;
   zero viewport extent preserves native draw/query ordering with an empty scissor.
@@ -149,8 +161,9 @@ Apple SDK compilation, Darwin execution and physical qualification remain unrun.
 
 ## Intentionally unprovided or rejected
 
-Surfaces and indexed draws remain absent. Vulkan indirect dispatch and nonindexed
-indirect pass/bundle draws use real GPU guards. Graphics
+Surfaces remain absent. Vulkan indirect dispatch and nonindexed/indexed indirect
+pass/bundle draws use real GPU guards; Metal graphics, indirect and indexed draws remain uncomposed.
+Graphics
 admits one color attachment and/or depth/stencil, sample counts 1 and 4, direct
 triangle/line lists or strips and 32-bit float/signed/unsigned vertex attributes.
 PointList target lowering, single-sample color Discard, dual-source blending,
@@ -208,6 +221,7 @@ is CPU; see the physical developer runs section for the GPU variant. Its ordinar
 result is:
 
 ```
+PASS public indexed draws: uint16/uint32 indices, firstIndex, signed base vertex, instance selection, offset index ranges, pass/bundle replay, uint16/uint32 strip primitive restart, 9 GPU-produced drawIndexedIndirect records with exact-end/out-of-range/wrapping/zero/firstInstance/instance-overrun guards, unchanged arguments, 13 typed validation controls and early releases; exact 192 pixels (CPU Vulkan only)
 PASS public ABI9 atomics: storage accumulation, signed OOB suppression, compare-exchange result identity, fresh workgroup initialization across two groups and two dispatches, early releases (CPU Vulkan only)
 PASS public debug markers: typed procedures, independent nested balance, parent lock, underflow, malformed strings and finished/unbalanced command/pass/bundle rejection (CPU Vulkan only)
 PASS public MSAA: actual 4x color/depth, exact resolve pixels, mask0/zero-and-full alpha coverage, empty resolve, same-batch discard-zero and depth-only empty/query/bundle passes (CPU Vulkan only)
@@ -226,7 +240,7 @@ PASS public error types: resource allocation, automatic-layout allocation, compu
 PASS public timestamps: requested feature, zero/max/range/destroy admission, real pass/command writes, exact GPU nanoseconds, same-batch copy, scratch reuse and early query release (CPU Vulkan only)
 PASS typed recovery: native/OOM/pending errors survive submit/write/texture/workdone, unknown leases retained, terminal cleanup and fresh GPU normalizer recovery
 PASS every implemented procedure address matches; every unprovided name returns NULL
-PASS exact exports: 173 implemented, 29 pinned unprovided, no private exports
+PASS exact exports: 182 implemented, 20 pinned unprovided, no private exports
 ```
 
 A compute shader with two declared entries selects `transform`, runs 72
@@ -300,7 +314,7 @@ Do not run this on Miles or Suby while their possible disassembly/cooling hold
 remains. Every adapter-using client selects its adapter through
 `tests/adapter_class.h`: software (CPU fallback adapter) by default, or a
 nonfallback GPU adapter with `DOE_C_TEST_ADAPTER=physical`. Each PASS line names
-the class and device it ran on. `make check-physical` runs the same 18 clients on
+the class and device it ran on. `make check-physical` runs the same 19 clients on
 the system ICDs (`VK_ICD_FILENAMES` unset):
 
 ```
@@ -309,7 +323,9 @@ make -C runtime/c/native BUILD=/tmp/doe-c-native check-physical
 
 On 2026-10-23 all 18 passed on Jupiter: AMD Radeon 8060S Graphics (RADV
 STRIX_HALO, vendor 0x1002 device 0x1586), Mesa 26.0.3-1ubuntu1 RADV, Vulkan 1.4.335,
-Linux 7.0.0-38. That is developer evidence for these exact clients on that
+Linux 7.0.0-38. After indexed drawing was added, all 19 clients (including
+`indexed-render`) passed again on that same adapter/driver the same day. That is
+developer evidence for these exact clients on that
 adapter/driver: the oracles are the clients' own expected values, not frozen
 independent workloads, and it is not Vulkan backend qualification, a performance
 result, or evidence for any other adapter, Metal or D3D12. Qualification still

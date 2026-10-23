@@ -77,7 +77,8 @@ doe_vk_status doe_vk_memory_type(const VkPhysicalDeviceMemoryProperties *propert
 doe_vk_status doe_vk_buffer_create(doe_vk_context *context, uint64_t size,
     uint32_t usage, doe_vk_memory_kind kind, doe_vk_buffer **out, doe_vk_error *error) {
     const uint32_t allowed = DOE_VK_BUFFER_COPY_SRC | DOE_VK_BUFFER_COPY_DST |
-        DOE_VK_BUFFER_UNIFORM | DOE_VK_BUFFER_STORAGE | DOE_VK_BUFFER_INDIRECT | DOE_VK_BUFFER_VERTEX;
+        DOE_VK_BUFFER_UNIFORM | DOE_VK_BUFFER_STORAGE | DOE_VK_BUFFER_INDIRECT | DOE_VK_BUFFER_VERTEX |
+        DOE_VK_BUFFER_INDEX;
     if (context == NULL || out == NULL || size == 0 || size > SIZE_MAX ||
         usage == 0 || (usage & ~allowed) != 0 ||
         (kind != DOE_VK_MEMORY_HOST && kind != DOE_VK_MEMORY_DEVICE))

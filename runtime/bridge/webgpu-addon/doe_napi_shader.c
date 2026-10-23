@@ -390,7 +390,9 @@ napi_value doe_shader_module_get_bindings(napi_env env, napi_callback_info info)
     NAPI_ASSERT_ARGC(env, info, 1);
     WGPUShaderModule shader_module = unwrap_ptr(env, _args[0]);
     if (!shader_module) NAPI_THROW(env, "shaderModuleGetBindings: null shader module");
-    if (!pfn_doeNativeShaderModuleGetBindings) NAPI_THROW(env, "shaderModuleGetBindings: native binding metadata not available");
+    /* A provider without Doe reflection returns undefined; JS then uses the
+     * pipeline's own auto layout through the standard GetBindGroupLayout. */
+    if (!pfn_doeNativeShaderModuleGetBindings) return NULL;
 
     DoeShaderBindingInfo bindings[DOE_SHADER_BINDING_CAPACITY];
     size_t count = pfn_doeNativeShaderModuleGetBindings(
@@ -403,9 +405,7 @@ napi_value doe_shader_module_get_bindings_for_entry_point(napi_env env, napi_cal
     NAPI_ASSERT_ARGC(env, info, 2);
     WGPUShaderModule shader_module = unwrap_ptr(env, _args[0]);
     if (!shader_module) NAPI_THROW(env, "shaderModuleGetBindingsForEntryPoint: null shader module");
-    if (!pfn_doeNativeShaderModuleGetBindingsForEntryPoint) {
-        NAPI_THROW(env, "shaderModuleGetBindingsForEntryPoint: native entry-point binding metadata not available");
-    }
+    if (!pfn_doeNativeShaderModuleGetBindingsForEntryPoint) return NULL; /* See GetBindings. */
     size_t entry_len = 0;
     napi_get_value_string_utf8(env, _args[1], NULL, 0, &entry_len);
     char* entry_point = (char*)malloc(entry_len + 1);

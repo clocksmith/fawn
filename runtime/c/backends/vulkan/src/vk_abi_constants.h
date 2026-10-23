@@ -225,6 +225,11 @@ enum {
     VK_SUBPASS_CONTENTS_INLINE = 0,
     VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS = 1,
 };
+/* Retained vk_constants.zig index types; see ABI_PROVENANCE.json. */
+enum {
+    VK_INDEX_TYPE_UINT16 = 0,
+    VK_INDEX_TYPE_UINT32 = 1
+};
 enum {
     VK_QUERY_TYPE_OCCLUSION = 0,
     VK_QUERY_TYPE_TIMESTAMP = 2,

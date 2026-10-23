@@ -112,9 +112,9 @@ napi_value native_direct_command_encoder_clear_buffer(napi_env env, napi_callbac
         napi_get_value_int64(env, argv[2], &v);
         if (v > 0) size = (uint64_t)v;
     }
-    if (pfn_doeNativeCommandEncoderClearBuffer) {
-        pfn_doeNativeCommandEncoderClearBuffer(encoder, buffer, offset, size);
-    }
+    if (pfn_doeNativeCommandEncoderClearBuffer) pfn_doeNativeCommandEncoderClearBuffer(encoder, buffer, offset, size);
+    else if (pfn_wgpuCommandEncoderClearBuffer) pfn_wgpuCommandEncoderClearBuffer(encoder, buffer, offset, size);
+    else NAPI_THROW(env, "clearBuffer: no implementation available in loaded library");
     napi_value undefined_value;
     napi_get_undefined(env, &undefined_value);
     return undefined_value;

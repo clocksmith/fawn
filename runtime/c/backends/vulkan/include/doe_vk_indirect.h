@@ -42,9 +42,12 @@ doe_vk_status doe_vk_commands_dispatch_indirect(doe_vk_commands *commands,
     doe_vk_dispatch_validator *validator, doe_vk_pipeline *pipeline,
     const doe_vk_binding_resource *bindings, size_t binding_count,
     doe_vk_buffer *arguments, uint64_t offset);
-/* Nonindexed graphics guard. The exact source reads four native draw words and
- * two host-produced vertex/instance capacity words from one32-byte storage
- * binding. Never substitute caller-selected capacities or another shader.
+/* Graphics draw guard for both native indirect layouts in one32-byte storage
+ * binding. Nonindexed: four copied draw words, then host-produced vertex and
+ * instance capacities, zero, and mode0. Indexed: five copied drawIndexed words,
+ * then host-produced index and instance capacities and mode1. Out-of-range,
+ * wrapping, zero-count and nonzero-firstInstance draws become native no-ops.
+ * Never substitute caller-selected capacities or another shader.
  * This validator owns only its pipeline; each recorded draw allocates distinct
  * scratch on the existing command owner. No indirect-first-instance feature. */
 enum { DOE_VK_DRAW_INDIRECT_SOURCE_CAPACITY = 1024 };

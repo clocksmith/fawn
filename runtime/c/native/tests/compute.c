@@ -282,7 +282,9 @@ int main(void)
     wgpuBindGroupLayoutRelease(layout);
 
     assert(wgpuGetProcAddress((WGPUStringView){"wgpuQueueSubmit", WGPU_STRLEN}));
-    assert(!wgpuGetProcAddress((WGPUStringView){"wgpuRenderPassEncoderDrawIndexed", WGPU_STRLEN}));
+    assert(wgpuGetProcAddress((WGPUStringView){"wgpuRenderPassEncoderDrawIndexed", WGPU_STRLEN}) ==
+        (WGPUProc)wgpuRenderPassEncoderDrawIndexed);
+    assert(!wgpuGetProcAddress((WGPUStringView){"wgpuRenderPassEncoderSetImmediates", WGPU_STRLEN}));
     assert(!wgpuGetProcAddress((WGPUStringView){"doe_vk_context_create", WGPU_STRLEN}));
     wgpuBufferRelease(readback);
     wgpuQueueRelease(queue);

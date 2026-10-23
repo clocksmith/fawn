@@ -653,14 +653,22 @@ napi_value doe_texture_view_release(napi_env env, napi_callback_info info) {
 napi_value doe_device_create_query_set(napi_env env, napi_callback_info info) {
     NAPI_ASSERT_ARGC(env, info, 3);
     CHECK_LIB_LOADED(env);
-    if (!pfn_doeNativeDeviceCreateQuerySet) NAPI_THROW(env, "doeNativeDeviceCreateQuerySet not available");
+    if (!pfn_doeNativeDeviceCreateQuerySet && !pfn_wgpuDeviceCreateQuerySet)
+        NAPI_THROW(env, "createQuerySet not available in loaded library");
     WGPUDevice device = unwrap_ptr(env, _args[0]);
     if (!device) NAPI_THROW(env, "Invalid device");
     uint32_t query_type = 0;
     napi_get_value_uint32(env, _args[1], &query_type);
     uint32_t count = 0;
     napi_get_value_uint32(env, _args[2], &count);
-    WGPUQuerySet qs = pfn_doeNativeDeviceCreateQuerySet(device, query_type, count);
+    WGPUQuerySet qs;
+    if (pfn_doeNativeDeviceCreateQuerySet) {
+        qs = pfn_doeNativeDeviceCreateQuerySet(device, query_type, count);
+    } else {
+        /* Doe type codes equal WGPUQueryType_Occlusion (1) and _Timestamp (2). */
+        const WGPUQuerySetDescriptor desc = {NULL, {NULL, 0}, query_type, count};
+        qs = pfn_wgpuDeviceCreateQuerySet(device, &desc);
+    }
     if (!qs) NAPI_THROW(env, "timestamp query sets are not supported on this backend/device");
     return wrap_ptr(env, qs);
 }
@@ -668,19 +676,22 @@ napi_value doe_device_create_query_set(napi_env env, napi_callback_info info) {
 napi_value doe_command_encoder_write_timestamp(napi_env env, napi_callback_info info) {
     NAPI_ASSERT_ARGC(env, info, 3);
     CHECK_LIB_LOADED(env);
-    if (!pfn_doeNativeCommandEncoderWriteTimestamp) NAPI_THROW(env, "doeNativeCommandEncoderWriteTimestamp not available");
+    if (!pfn_doeNativeCommandEncoderWriteTimestamp && !pfn_wgpuCommandEncoderWriteTimestamp)
+        NAPI_THROW(env, "writeTimestamp not available in loaded library");
     WGPUCommandEncoder enc = unwrap_ptr(env, _args[0]);
     WGPUQuerySet qs = unwrap_ptr(env, _args[1]);
     uint32_t query_index = 0;
     napi_get_value_uint32(env, _args[2], &query_index);
-    pfn_doeNativeCommandEncoderWriteTimestamp(enc, qs, query_index);
+    if (pfn_doeNativeCommandEncoderWriteTimestamp) pfn_doeNativeCommandEncoderWriteTimestamp(enc, qs, query_index);
+    else pfn_wgpuCommandEncoderWriteTimestamp(enc, qs, query_index);
     return NULL;
 }
 
 napi_value doe_command_encoder_resolve_query_set(napi_env env, napi_callback_info info) {
     NAPI_ASSERT_ARGC(env, info, 6);
     CHECK_LIB_LOADED(env);
-    if (!pfn_doeNativeCommandEncoderResolveQuerySet) NAPI_THROW(env, "doeNativeCommandEncoderResolveQuerySet not available");
+    if (!pfn_doeNativeCommandEncoderResolveQuerySet && !pfn_wgpuCommandEncoderResolveQuerySet)
+        NAPI_THROW(env, "resolveQuerySet not available in loaded library");
     WGPUCommandEncoder enc = unwrap_ptr(env, _args[0]);
     WGPUQuerySet qs = unwrap_ptr(env, _args[1]);
     uint32_t first_query = 0;
@@ -690,18 +701,26 @@ napi_value doe_command_encoder_resolve_query_set(napi_env env, napi_callback_inf
     WGPUBuffer dst = unwrap_ptr(env, _args[4]);
     int64_t dst_offset = 0;
     napi_get_value_int64(env, _args[5], &dst_offset);
-    pfn_doeNativeCommandEncoderResolveQuerySet(enc, qs, first_query, query_count, dst, (uint64_t)dst_offset);
+    if (pfn_doeNativeCommandEncoderResolveQuerySet)
+        pfn_doeNativeCommandEncoderResolveQuerySet(enc, qs, first_query, query_count, dst, (uint64_t)dst_offset);
+    else pfn_wgpuCommandEncoderResolveQuerySet(enc, qs, first_query, query_count, dst, (uint64_t)dst_offset);
     return NULL;
 }
 
 napi_value doe_query_set_destroy(napi_env env, napi_callback_info info) {
     NAPI_ASSERT_ARGC(env, info, 1);
-    if (!pfn_doeNativeQuerySetDestroy || !pfn_doeNativeQuerySetRelease)
+    const bool doe_lifecycle = pfn_doeNativeQuerySetDestroy && pfn_doeNativeQuerySetRelease;
+    if (!doe_lifecycle && !(pfn_wgpuQuerySetDestroy && pfn_wgpuQuerySetRelease))
         NAPI_THROW(env, "querySet.destroy: native query lifecycle unavailable; rebuild the native library");
     WGPUQuerySet qs = unwrap_ptr(env, _args[0]);
     if (qs) {
-        pfn_doeNativeQuerySetDestroy(qs);
-        pfn_doeNativeQuerySetRelease(qs);
+        if (doe_lifecycle) {
+            pfn_doeNativeQuerySetDestroy(qs);
+            pfn_doeNativeQuerySetRelease(qs);
+        } else {
+            pfn_wgpuQuerySetDestroy(qs);
+            pfn_wgpuQuerySetRelease(qs);
+        }
     }
     return NULL;
 }

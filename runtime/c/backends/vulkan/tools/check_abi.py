@@ -82,13 +82,24 @@ def main():
             '    (void)query;',
             '}'
         ])
-    if "vkCmdDrawIndirect" in manifest.get("retained_functions", {}):
+    retained_lines = {}
+    for name, signature in manifest.get("retained_functions", {}).items():
+        file, line = signature["source"].split(":")
+        text = retained_lines.setdefault(file, (source / file).read_text().splitlines())
+        if f"fn {name}(" not in text[int(line) - 1]:
+            raise SystemExit(f"retained function source mismatch: {name} at {signature['source']}")
         lines.extend([
-            'void doe_vk_abi_draw_indirect_signature(doe_vk_functions *functions) {',
-            '    void (*draw)(VkCommandBuffer, VkBuffer, VkDeviceSize, uint32_t, uint32_t) = functions->vkCmdDrawIndirect;',
-            '    (void)draw;',
+            f'void doe_vk_abi_retained_{name}(doe_vk_functions *functions) {{',
+            f'    {signature["result"]} (*checked)({signature["parameters"]}) = functions->{name};',
+            '    (void)checked;',
             '}'
         ])
+    for name, constant in manifest.get("retained_constants", {}).items():
+        file, line = constant["source"].split(":")
+        text = retained_lines.setdefault(file, (source / file).read_text().splitlines())
+        if not re.fullmatch(rf"pub const {name}: u32 = {constant['value']};", text[int(line) - 1].strip()):
+            raise SystemExit(f"retained constant source mismatch: {name} at {constant['source']}")
+        lines.append(f'_Static_assert({name} == {constant["value"]}, "{name} retained constant");')
     for signature in manifest.get("surface_functions", []):
         name = signature["name"]
         lines.extend([

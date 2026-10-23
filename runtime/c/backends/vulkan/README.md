@@ -112,7 +112,7 @@ viewport/scissor. Blend constants default to pipeline state; explicit per-draw o
 native dynamic state after whole-span finite-value validation. The full descriptor
 adds one depth/stencil attachment, independent per-aspect load/clear/store/discard,
 read-only admission and dynamic stencil reference. Multiple color targets
-and indexed draws remain unsupported. Guarded nonindexed indirect draws are described below.
+remain unsupported. Indexed and guarded indirect draws are described below.
 Unsupported resource packets must be rejected, not silently dropped. Graphics
 requires `require_graphics_queue=true` at context creation when the device offers
 separate compute-only queues; default compute queue selection is unchanged.
@@ -417,10 +417,52 @@ over-capacity, wrapping, zero-count and nonzero-firstInstance draws; it never
 changes original arguments. No optional indirect-first-instance feature is enabled.
 Stride-zero and attribute-free native holes retain their existing semantics.
 Only guarded native drawIndirect(count1,stride16) executes inside the pass; guards
-and barriers stay outside. Indexed drawing remains unsupported; Linux presentation
-is described below.
+and barriers stay outside. Linux presentation is described below.
 Host boundary/geometry checks are not shader execution proof. The API preserves
 resource-owned pass usage history and failure/uncertain retirement obligations.
+
+### Indexed drawing
+
+A draw snapshot may carry a borrowed `doe_vk_render_indices`: native INDEX buffer,
+exact bound offset/size, named Uint16/Uint32 format (native VkIndexType values from
+the retained `vk_constants.zig`) and direct index count, first index and signed
+base vertex. `draw.vertex_count/first_vertex` must then be zero. The same full-pass
+recorder admits the format-aligned offset, Index usage, bound range, context and
+content status before any resource preparation, leases the index buffer on the
+existing command owner, and records `vkCmdBindIndexBuffer` then `vkCmdDrawIndexed`
+inside the one native pass. Direct draws reject firstIndex+indexCount beyond the
+bound element capacity. The native bind has no size, so this range check and the
+guard below are what enforce the public bound range.
+
+Indexed draw-indirect uses the same validator and source as nonindexed draws. The
+source selects the layout from mode word 7: nonindexed scratch is 16 copied bytes,
+vertex/instance capacities, zero and mode0; indexed scratch is 20 copied
+drawIndexed bytes, index/instance capacities and mode1. The GPU guard suppresses
+firstIndex+indexCount beyond the bound index range (compared without forming the
+sum), zero counts, instance-step overrun and nonzero firstInstance by zeroing the
+copied record; it never changes the caller's arguments. Only guarded
+`vkCmdDrawIndexedIndirect(count1,stride20)` executes inside the pass. Index values
+are never read on the host or guarded: vertex-step fetches through arbitrary GPU
+indices rely on the required robustBufferAccess, so they stay within the native
+buffer but not necessarily within the public vertex binding size.
+
+Strip pipelines set `primitiveRestartEnable`, so the all-ones value of the bound
+index type restarts the strip; list pipelines never restart and need no optional
+list-restart feature. Restart has no effect on nonindexed draws. Uint32 indices
+require `caps.full_draw_index_uint32`: context creation enables the native
+fullDrawIndexUint32 feature when the device offers it and reports successful
+enablement; otherwise Uint32 index draws return UNSUPPORTED instead of exceeding
+`maxDrawIndexedIndexValue`. The three native commands are the retained
+`vk_functions.zig` declarations; `tools/check_abi.py` verifies each pinned source
+line and compiles their signatures plus the two retained index-type constants.
+
+`tests/indexed_contract.c` is a host packet test: exact element capacities, the
+feature gate, alignment/usage/range/enum/identity/poison controls, first+count
+overflow and boundary, ordered bind-then-draw with a negative base vertex, zero
+counts, preflight rollback and the command-owned index lease. Pipeline restart
+packets are checked in `depth_pipeline_contract.c`. Neither is GPU execution; the
+public native client in `runtime/c/native/tests/indexed_render.c` executes indexed
+pixels on an explicitly selected Vulkan adapter.
 
 Viewport admission uses actual device dimensions and bounds, independently of
 attachment extent; scissor remains attachment-bound. Negative origins are valid.

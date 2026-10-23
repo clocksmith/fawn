@@ -48,6 +48,8 @@ typedef struct prepared_draw {
     VkBuffer buffers[DOE_VK_MAX_VERTEX_BUFFERS];
     VkDeviceSize offsets[DOE_VK_MAX_VERTEX_BUFFERS];
     uint32_t vertex_limits[2];
+    uint32_t index_limit;
+    VkBuffer index_buffer;
     VkBuffer indirect;
 } prepared_draw;
 
@@ -72,9 +74,24 @@ static doe_vk_status validate_pass_draw(doe_vk_commands *commands, const doe_vk_
     status = doe_vk_render_vertex_limits(commands, pipeline, draw->vertices,
         draw->vertex_buffer_count, prepared->vertex_limits);
     if (status != DOE_VK_OK) return status;
-    if (draw->indirect != NULL) {
-        status = doe_vk_draw_indirect_validate(commands, draw->indirect);
+    const doe_vk_render_indices *indices = draw->indices;
+    if (indices != NULL) {
+        if (draw->draw.vertex_count != 0 || draw->draw.first_vertex != 0) return DOE_VK_INVALID_ARGUMENT;
+        status = doe_vk_render_index_limit(commands, indices, &prepared->index_limit);
         if (status != DOE_VK_OK) return status;
+    }
+    if (draw->indirect != NULL) {
+        status = doe_vk_draw_indirect_validate(commands, draw->indirect, indices != NULL);
+        if (status != DOE_VK_OK) return status;
+    } else if (indices != NULL) {
+        /* Exact bound index range. Vertex-step capacity is not inferred from
+         * GPU index values; robustBufferAccess owns those fetches. */
+        const doe_vk_render_draw *counts = &draw->draw;
+        uint64_t index_end = (uint64_t)indices->first_index + indices->index_count;
+        uint64_t instance_end = (uint64_t)counts->first_instance + counts->instance_count;
+        if (index_end > prepared->index_limit || instance_end > UINT32_MAX) return DOE_VK_INVALID_ARGUMENT;
+        if (indices->index_count != 0 && counts->instance_count != 0 && instance_end > prepared->vertex_limits[1])
+            return DOE_VK_INVALID_ARGUMENT;
     } else {
         const doe_vk_render_draw *counts = &draw->draw;
         uint64_t vertex_end = (uint64_t)counts->first_vertex + counts->vertex_count;
@@ -114,6 +131,11 @@ static doe_vk_status prepare_draw(doe_vk_commands *commands, const doe_vk_render
         prepared->buffers[i] = draw->vertices[i].buffer->buffer;
         prepared->offsets[i] = draw->vertices[i].offset;
     }
+    if (draw->indices != NULL) {
+        status = doe_vk_use_buffer(commands, draw->indices->buffer);
+        if (status != DOE_VK_OK) return status;
+        prepared->index_buffer = draw->indices->buffer->buffer;
+    }
     return DOE_VK_OK;
 }
 
@@ -139,8 +161,17 @@ static void record_draw(doe_vk_commands *commands, const doe_vk_render_pass_draw
         context->vk.vkCmdBindVertexBuffers(commands->command, first, slot - first,
             prepared->buffers + first, prepared->offsets + first);
     }
-    if (prepared->indirect != 0)
+    const doe_vk_render_indices *indices = draw->indices;
+    if (indices != NULL)
+        context->vk.vkCmdBindIndexBuffer(commands->command, prepared->index_buffer, indices->offset,
+            (uint32_t)indices->format);
+    if (prepared->indirect != 0 && indices != NULL)
+        context->vk.vkCmdDrawIndexedIndirect(commands->command, prepared->indirect, 0, 1, 20);
+    else if (prepared->indirect != 0)
         context->vk.vkCmdDrawIndirect(commands->command, prepared->indirect, 0, 1, 16);
+    else if (indices != NULL)
+        context->vk.vkCmdDrawIndexed(commands->command, indices->index_count, draw->draw.instance_count,
+            indices->first_index, indices->base_vertex, draw->draw.first_instance);
     else context->vk.vkCmdDraw(commands->command, draw->draw.vertex_count, draw->draw.instance_count,
         draw->draw.first_vertex, draw->draw.first_instance);
 }
@@ -209,8 +240,11 @@ doe_vk_status doe_vk_commands_render_pass_full(doe_vk_commands *commands,
      * producer commands, and every draw has a different retained scratch record. */
     for (size_t i = 0; i < count; ++i) {
         if (ops[i].kind != DOE_VK_RENDER_DRAW || ops[i].value.draw.indirect == NULL) continue;
+        const bool indexed = ops[i].value.draw.indices != NULL;
+        const uint32_t limits[2] = {indexed ? prepared[i].index_limit : prepared[i].vertex_limits[0],
+            prepared[i].vertex_limits[1]};
         status = doe_vk_draw_indirect_prepare(commands, ops[i].value.draw.indirect,
-            prepared[i].vertex_limits, &prepared[i].indirect);
+            limits, indexed, &prepared[i].indirect);
         if (status != DOE_VK_OK) goto failed;
     }
     doe_vk_render_use *use = NULL;

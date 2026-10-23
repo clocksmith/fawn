@@ -103,6 +103,24 @@ typedef struct doe_vk_render_indirect {
     doe_vk_buffer *arguments;
     uint64_t offset;
 } doe_vk_render_indirect;
+/* Native VkIndexType values from pinned vk_constants.zig; never WebGPU enum casts. */
+typedef enum doe_vk_index_format {
+    DOE_VK_INDEX_UINT16 = 0,
+    DOE_VK_INDEX_UINT32 = 1
+} doe_vk_index_format;
+/* Borrowed for the call. The buffer needs native INDEX usage; offset is aligned
+ * to the format size and [offset, offset+size) is the exact bound index range.
+ * Native binding has no size, so this range is enforced by direct admission and
+ * by the GPU guard for indirect draws. Direct counts are ignored with indirect.
+ * UINT32 requires caps.full_draw_index_uint32. Vertex-step fetches by GPU index
+ * values rely on enabled robustBufferAccess, not on host index inspection. */
+typedef struct doe_vk_render_indices {
+    doe_vk_buffer *buffer;
+    uint64_t offset, size;
+    doe_vk_index_format format;
+    uint32_t index_count, first_index;
+    int32_t base_vertex;
+} doe_vk_render_indices;
 typedef struct doe_vk_render_pass_draw {
     doe_vk_pipeline *pipeline;
     const doe_vk_binding_resource *bindings;
@@ -113,10 +131,15 @@ typedef struct doe_vk_render_pass_draw {
     doe_vk_render_draw draw;
     /* NULL uses direct counts. Otherwise count/first fields are ignored and
      * copied GPU arguments are guarded against these exact vertex bindings.
-     * Arguments require native INDIRECT|COPY_SRC, aligned offset and16 bytes.
+     * Arguments require native INDIRECT|COPY_SRC, aligned offset and16 bytes
+     * (20 bytes for indexed draws).
      * Nonzero firstInstance becomes no-op: that optional feature is disabled.
      * Each draw owns distinct scratch through retirement; no in-pass compute. */
     const doe_vk_render_indirect *indirect;
+    /* NULL is nonindexed. Otherwise draw.vertex_count/first_vertex must be zero;
+     * instance_count/first_instance keep their meaning. Indirect indexed draws
+     * copy 20 argument bytes and guard firstIndex+indexCount against this range. */
+    const doe_vk_render_indices *indices;
 } doe_vk_render_pass_draw;
 typedef enum doe_vk_render_operation {
     DOE_VK_RENDER_DRAW,
@@ -175,7 +198,8 @@ doe_vk_status doe_vk_commands_render_pass_ops(doe_vk_commands *commands,
  * the call; existing command leases retain each used native resource. On any
  * error discard the poisoned command owner, never submit a partial pass.
  * This consumes immutable resource packets, not a second recording engine.
- * This convenience has no depth/stencil or resolve; indexed/indirect stay unsupported. */
+ * This convenience has no depth/stencil or resolve. Indexed and indirect draws
+ * use the same draw records through every pass entry point. */
 doe_vk_status doe_vk_commands_render_pass(doe_vk_commands *commands,
     doe_vk_texture_view *target, const doe_vk_clear_color *clear,
     const doe_vk_render_pass_draw *draws, size_t count);
