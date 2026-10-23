@@ -610,6 +610,9 @@ DECL_PFN(void, doeNativeQuerySetDestroy, (WGPUQuerySet));
 DECL_PFN(void, doeNativeQuerySetRelease, (WGPUQuerySet));
 /* Standard query procedures for providers without the Doe query entries. */
 DECL_PFN(void, wgpuCommandEncoderClearBuffer, (WGPUCommandEncoder, WGPUBuffer, uint64_t, uint64_t));
+DECL_PFN(void, wgpuRenderBundleEncoderPushDebugGroup, (void*, WGPUStringView));
+DECL_PFN(void, wgpuRenderBundleEncoderPopDebugGroup, (void*));
+DECL_PFN(void, wgpuRenderBundleEncoderInsertDebugMarker, (void*, WGPUStringView));
 /* Standard render pass state for providers without the Doe entries. */
 DECL_PFN(void, wgpuRenderPassEncoderSetViewport, (WGPURenderPassEncoder, float, float, float, float, float, float));
 DECL_PFN(void, wgpuRenderPassEncoderSetScissorRect, (WGPURenderPassEncoder, uint32_t, uint32_t, uint32_t, uint32_t));

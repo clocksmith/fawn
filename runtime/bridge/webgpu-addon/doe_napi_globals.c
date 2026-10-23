@@ -162,6 +162,9 @@ PFN_wgpuRenderPassEncoderPushDebugGroup pfn_wgpuRenderPassEncoderPushDebugGroup 
 PFN_wgpuRenderPassEncoderPopDebugGroup pfn_wgpuRenderPassEncoderPopDebugGroup = NULL;
 PFN_wgpuRenderPassEncoderInsertDebugMarker pfn_wgpuRenderPassEncoderInsertDebugMarker = NULL;
 PFN_wgpuCommandEncoderClearBuffer pfn_wgpuCommandEncoderClearBuffer = NULL;
+PFN_wgpuRenderBundleEncoderPushDebugGroup pfn_wgpuRenderBundleEncoderPushDebugGroup = NULL;
+PFN_wgpuRenderBundleEncoderPopDebugGroup pfn_wgpuRenderBundleEncoderPopDebugGroup = NULL;
+PFN_wgpuRenderBundleEncoderInsertDebugMarker pfn_wgpuRenderBundleEncoderInsertDebugMarker = NULL;
 PFN_wgpuDeviceCreateQuerySet pfn_wgpuDeviceCreateQuerySet = NULL;
 PFN_wgpuCommandEncoderWriteTimestamp pfn_wgpuCommandEncoderWriteTimestamp = NULL;
 PFN_wgpuCommandEncoderResolveQuerySet pfn_wgpuCommandEncoderResolveQuerySet = NULL;
@@ -494,6 +497,24 @@ napi_value doe_load_library(napi_env env, napi_callback_info info) {
     pfn_wgpuRenderPassEncoderDrawIndirect = (FnWgpuRenderPassEncoderDrawIndirect)LIB_SYM(g_lib, "wgpuRenderPassEncoderDrawIndirect");
     pfn_wgpuRenderPassEncoderDrawIndexedIndirect = (FnWgpuRenderPassEncoderDrawIndexedIndirect)LIB_SYM(g_lib, "wgpuRenderPassEncoderDrawIndexedIndirect");
     pfn_doeNativeRenderPassExecuteBundles = (FnDoeNativeRenderPassExecuteBundles)LIB_SYM(g_lib, "doeNativeRenderPassExecuteBundles");
+    /* Providers without the Doe bundle entries: bind the standard procedures.
+     * Their C signatures, WGPURenderBundleEncoderDescriptor layout and
+     * WGPUIndexFormat values are identical. Debug markers take WGPUStringView
+     * and are resolved separately below. */
+    if (!pfn_doeNativeDeviceCreateRenderBundleEncoder) pfn_doeNativeDeviceCreateRenderBundleEncoder = (FnDeviceCreateRenderBundleEncoder)LIB_SYM(g_lib, "wgpuDeviceCreateRenderBundleEncoder");
+    if (!pfn_doeNativeRenderBundleEncoderRelease) pfn_doeNativeRenderBundleEncoderRelease = (FnRenderBundleEncoderRelease)LIB_SYM(g_lib, "wgpuRenderBundleEncoderRelease");
+    if (!pfn_doeNativeRenderBundleEncoderSetPipeline) pfn_doeNativeRenderBundleEncoderSetPipeline = (FnRenderBundleEncoderSetPipeline)LIB_SYM(g_lib, "wgpuRenderBundleEncoderSetPipeline");
+    if (!pfn_doeNativeRenderBundleEncoderSetBindGroup) pfn_doeNativeRenderBundleEncoderSetBindGroup = (FnRenderBundleEncoderSetBindGroup)LIB_SYM(g_lib, "wgpuRenderBundleEncoderSetBindGroup");
+    if (!pfn_doeNativeRenderBundleEncoderSetVertexBuffer) pfn_doeNativeRenderBundleEncoderSetVertexBuffer = (FnRenderBundleEncoderSetVertexBuffer)LIB_SYM(g_lib, "wgpuRenderBundleEncoderSetVertexBuffer");
+    if (!pfn_doeNativeRenderBundleEncoderSetIndexBuffer) pfn_doeNativeRenderBundleEncoderSetIndexBuffer = (FnRenderBundleEncoderSetIndexBuffer)LIB_SYM(g_lib, "wgpuRenderBundleEncoderSetIndexBuffer");
+    if (!pfn_doeNativeRenderBundleEncoderDraw) pfn_doeNativeRenderBundleEncoderDraw = (FnRenderBundleEncoderDraw)LIB_SYM(g_lib, "wgpuRenderBundleEncoderDraw");
+    if (!pfn_doeNativeRenderBundleEncoderDrawIndexed) pfn_doeNativeRenderBundleEncoderDrawIndexed = (FnRenderBundleEncoderDrawIndexed)LIB_SYM(g_lib, "wgpuRenderBundleEncoderDrawIndexed");
+    if (!pfn_doeNativeRenderBundleEncoderFinish) pfn_doeNativeRenderBundleEncoderFinish = (FnRenderBundleEncoderFinish)LIB_SYM(g_lib, "wgpuRenderBundleEncoderFinish");
+    if (!pfn_doeNativeRenderBundleRelease) pfn_doeNativeRenderBundleRelease = (FnRenderBundleRelease)LIB_SYM(g_lib, "wgpuRenderBundleRelease");
+    if (!pfn_doeNativeRenderPassExecuteBundles) pfn_doeNativeRenderPassExecuteBundles = (FnDoeNativeRenderPassExecuteBundles)LIB_SYM(g_lib, "wgpuRenderPassEncoderExecuteBundles");
+    LOAD_SYM(wgpuRenderBundleEncoderPushDebugGroup);
+    LOAD_SYM(wgpuRenderBundleEncoderPopDebugGroup);
+    LOAD_SYM(wgpuRenderBundleEncoderInsertDebugMarker);
     pfn_wgpuRenderBundleEncoderDrawIndirect = (FnWgpuRenderBundleEncoderDrawIndirect)LIB_SYM(g_lib, "wgpuRenderBundleEncoderDrawIndirect");
     pfn_wgpuRenderBundleEncoderDrawIndexedIndirect = (FnWgpuRenderBundleEncoderDrawIndexedIndirect)LIB_SYM(g_lib, "wgpuRenderBundleEncoderDrawIndexedIndirect");
 
