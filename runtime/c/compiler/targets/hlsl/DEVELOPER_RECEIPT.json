@@ -1,0 +1,35 @@
+{
+  "status": "authored and focused developer-tested; no DXC/DXIL/D3D12 or physical qualification",
+  "compiler_commit": "54f0fb9f6f7202cb13d37e7440ea9d7e13e99b0f",
+  "source_manifest_sha256": "be074ade9eeb503284cf549614799accd0504a726bce7a551125de69b59d3f18",
+  "checks": [
+    "GCC 14.2 check host-control library passed",
+    "three emitted-operation C++/UBSan host controls passed",
+    "ASan+UBSan passed with leak detection disabled"
+  ],
+  "limitations": [
+    "LeakSanitizer unavailable under ptrace",
+    "Current uncommitted ABI6 compiler is not part of this checkpoint",
+    "Host controls do not validate HLSL syntax, driver behavior or collective execution"
+  ],
+  "first_findings": [
+    "Unsigned remainder divisor normalized before modulo to avoid eager invalid operation; regression included",
+    "Incomplete concurrent image IR failed exhaustive compiler checks; stable committed core used instead of weakening warnings"
+  ],
+  "sha256": {
+    "AGENTS.md": "bf9c9256903f7f6a1598632dedd96bcb3f43853daef4f03aab36a7757b934bc0",
+    "Makefile": "cdc0dc8a712003063f56fbac38ce11ccce321b1f490998a9832440f60f82c203",
+    "README.md": "12524f96a6f767db4228cd31f433136e9504c387db7af1c1da48187b64be2890",
+    "access.c": "8877caa3623ec239944753a7a21032e69f31c2df3079fade2f128d7f81841ba5",
+    "control.c": "9120f5eee45d4dd46f3d2d8a641b79e4afba919505985bf31830899824e33319",
+    "hlsl.h": "3ef7bf1074e463572efa06ccc96fccaf7c4222b91b268ee1349ea058270e3a5c",
+    "numeric.c": "b6c14158806bedb301c133894d0a63f508ec20f7991ce8aed0cc6480de49f2ea",
+    "private.h": "d830570087a613e37a3aafb685bca160196823a332b62d41eb9f48d52ff69e58",
+    "resources.c": "001c26d5ef90d124c1ac8bb6a837215dc1fbc7374cab3ca74a040a85840cd84b",
+    "stage.c": "9676c926864f204daa88ea2f31d049a9a258af6aaa527a309a578fabe940f8d7",
+    "tests/host_control.py": "26619f95a4c0d8e45d6f7bb6567b14749472c0613d4b4f43b0b244845f38a1c3",
+    "tests/test_hlsl.c": "44229f311e5a7a2ab573a83c75bbf3ba4edaf126eaf0f11f55c9ea58c222c52f",
+    "text.c": "4913f3cc46cb98022057e3deb80b22aaef3a6bd38898a0095bcb6b00987fd590",
+    "types.c": "31bc045eee7fc281ea7a73edf3be3a0aafaee4bbb50dcf4b74f784c12b598c96"
+  }
+}

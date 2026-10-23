@@ -1,0 +1,118 @@
+# Experimental C HLSL target
+
+Status: authored and strict-GCC compiled; developer source-emission checks and
+executed scalar/aggregate C++ controls pass. **Not DXC validated, DXIL validated,
+Windows/D3D12 consumed, hardware qualified, or the complete compiler migration.**
+No DXC download, toolchain installation, production default, public ABI, native
+resource owner or existing independent acceptance package changed.
+
+## Boundary and implementation
+
+`doe_hlsl_emit` borrows a fully validated shared C module, without allocation,
+semantic mutation or retained pointers. The same parser, typed constants,
+layout/closure analysis and instruction IDs feed existing SPIR-V and private MSL.
+A measurement pass completes before byte publication. Output is a length-delimited
+span; a NULL/zero span measures, and insufficient output leaves bytes untouched.
+Result records expose required/written bytes, entry count, dispatch metadata and
+actual emitted subgroup usage. Source/IR/result/output must not overlap or mutate
+while the call runs. Error status/offset remain explicit; errno is preserved.
+
+Implemented over current C IR:
+
+- Concrete bool/i32/u32/f32 scalars, vectors, nested fixed arrays, structures,
+  constants, immutable argument values, helper calls and multiple compute entries.
+- Source-order instruction snapshots, explicit short circuits and structured
+  continuing/break/continue, signed modulo arithmetic, safe division/remainder,
+  masked shifts and sanitized float-to-integer conversions. Floating result
+  temporaries use `precise`; this does not promise physical NaN/subnormal behavior.
+- Explicit numeric builtin maps, including vector numerics and eleven subgroup
+  arithmetic/scan operations lowered to real Shader Model 6.0 wave operations.
+  Inclusive scans combine the exclusive result with the already evaluated input;
+  integer signed sum/product operations use unsigned bit-preserving arithmetic.
+- Resource buffers use StructuredBuffer<uint> / RWStructuredBuffer<uint> views
+  with **four-byte descriptor stride**, read-only t registers and writable u
+  registers. Group maps directly to register space; binding maps to register.
+  Dynamic dimensions come from that bound view, not the underlying allocation.
+- Uniforms use uint4 arrays in b registers. Shared WGSL byte offsets, explicit
+  align/size padding, vec3's three words and nested strides determine fieldwise
+  loads/stores. HLSL aggregate layout does not determine external buffer layout.
+- Independent signed/fixed/runtime index guards, zero reads, discarded writes,
+  checked view extents and no resource padding writes. Layout addressing is
+  bounded to 32-bit bytes; invalid descriptor stride/overflow dimensions zero the
+  view. Uniform buffers are bounded to the 64 KiB target limit.
+- Compute invocation inputs and the retained num_workgroups metadata contract;
+  groupshared roots initialize once on lane zero, then synchronize. User
+  workgroup barriers emit GroupMemoryBarrierWithGroupSync, not a device fence.
+
+A selected entry emits only its static resource/workgroup closure and reachable
+function bodies. Original source entry names are retained. Names in the private generated
+namespace (doe_*, Doe*, rN, wN and rN_data) reject explicitly rather than emitting
+colliding declarations. Passing NO_ID emits
+an isolated bundle: the consuming compiler must define DOE_HLSL_ENTRY to exactly
+one valid entry index. This avoids capturing another entry's resource or rejecting
+legal reused bindings across entries. It is not a single simultaneously compiled
+multi-entry module. Reflection remains shared-core-owned.
+
+Emission is limited to 1 MiB, nesting to 96 and graph traversal work to
+4096 * (types + members + instructions + 1) visits per entry. These are explicit
+private target format/work bounds, not expanded source capacities. No VLA or heap.
+
+## Retained path and real consumer obligations
+
+Implementation traced these retained owners:
+
+- `runtime/zig/src/compiler/wgsl/emit/hlsl/emit_hlsl.zig`, `_maps.zig`,
+  `_builtins.zig`, `_stage.zig` and `_texture.zig` own retained HLSL translation.
+- `runtime/zig/src/compiler/wgsl/pipeline/translate_hlsl.zig` analyzes WGSL,
+  applies overrides, emits HLSL and attributes target diagnostics.
+- `runtime/zig/src/compiler/wgsl/emit/dxil/` and
+  `runtime/zig/src/compiler/wgsl/pipeline/translate_dxil.zig` are the separate
+  retained direct-DXIL path. This target emits HLSL text, not DXIL containers.
+- `runtime/zig/src/native/compute/doe_compute_d3d12.zig` owns the actual bounded
+  native pipeline/dispatch consumer. Its existing admission is dense group0
+  scalar storage arrays, one compute entry and one-dimensional dispatch. It
+  creates stride-four SRV/UAV views, retains native resources and validates ranges.
+  Broader HLSL authoring here does not broaden that native admission.
+- `runtime/zig/src/backend/d3d12/d3d12_runtime_compute.zig` uses cs_6_0;
+  `runtime/zig/src/contracts/shader_abi/dispatch_info.zig` owns num_workgroups at
+  b0, space7: uint3 plus uint padding, in a 256-byte-aligned native CBV allocation.
+  A conflicting uniform binding rejects. The native public compute path does not
+  thereby gain uniform or dispatch-metadata support; integration remains separate.
+
+Consumers must compile the chosen entry, honor its reflected resource layout,
+create the declared word views/CBVs, bind dispatch metadata when reported, and
+validate workgroup shape. Wave support requires actual D3D12 device capability.
+
+## Unfinished surface
+
+Vertex/fragment interfaces, textures/samplers, matrices, f16, atomics,
+pointer parameters, overrides and remaining retained builtin families are not
+present in this C IR owner and remain explicitly rejected by shared admission.
+Subgroup size and invocation inputs use WaveGetLaneCount/WaveGetLaneIndex;
+num_subgroups and subgroup_id explicitly reject because this owner does not
+assume a portable mapping from local invocation order to HLSL wave membership. Unknown/obsolete IR operations and
+unknown numeric builtin identities fail before output. A coherent compute subset
+is not retained HLSL/DXIL parity or completion of the larger C migration.
+
+## Focused checks
+
+From this directory: `make check host-control library`.
+
+Outputs default to `/tmp/doe-hlsl-target`; override OUT as needed. `check` compiles
+against the live shared C core and exercises real WGSL sources, per-entry reuse,
+explicit layouts, vectors, waves, workgroup initialization, control, output sizing
+and unsupported-identity mutation controls. `library` produces a private archive
+whose shared compiler helper dependencies remain core-owned.
+
+`host-control` mechanically removes stage/resource annotations from three generated
+scalar/aggregate fixtures, binds word arrays, compiles their emitted C++ operations
+with GCC/UBSan and checks continuing, effects, call argument order, nested independent OOB reads, discarded-store RHS
+effects, integer wrapping, bounds, view
+sizes, field offsets and padding preservation. It neither interprets WGSL nor
+models waves, thread scheduling, HLSL address spaces, a GPU driver or descriptor
+lifetime. It is a developer control, not an independent acceptance oracle and not
+proof that a target compiler accepts the source.
+
+No historical evidence or tests were removed. The private Metal adapter's
+measurement/control patterns informed this target; HLSL resource and entry
+contracts remain separate rather than creating a universal emitter framework.
