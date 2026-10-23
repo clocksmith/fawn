@@ -1,0 +1,10 @@
+{
+  "provenance": "Explicit environment assignments in the sealed resume_native_sanitizers.py, inherited unchanged by its actual runtime invocations.",
+  "ASAN_OPTIONS": "detect_leaks=0:halt_on_error=1",
+  "UBSAN_OPTIONS": "halt_on_error=1",
+  "TSAN_OPTIONS": "halt_on_error=1",
+  "DOE_BACKEND": "metal",
+  "ASan_runtime_only_LD_PRELOAD": "/usr/lib/x86_64-linux-gnu/libasan.so.8.0.0",
+  "TSan_LD_PRELOAD": null,
+  "leak_sanitizer": false
+}

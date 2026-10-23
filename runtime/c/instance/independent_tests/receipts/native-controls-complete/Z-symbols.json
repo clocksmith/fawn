@@ -1,0 +1,26 @@
+{
+  "original_bytes": 41702,
+  "original_receipt_sha256": "a0ba37119c799b12ab6923b4955fa60299a7164d5c05516f001876ffa9ca7546",
+  "receipt": {
+    "argv": [
+      "nm",
+      "-D",
+      "--defined-only",
+      "/tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/Z-install/lib/libwebgpu_doe.so"
+    ],
+    "cwd": "/tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/source/runtime/zig",
+    "elapsed_seconds": 0.002690927009098232,
+    "environment": {
+      "DOE_BACKEND": "metal",
+      "LD_LIBRARY_PATH": "/workspace/shared/doe-language-experiment-20261023/phase1/system-link-prefix/lib"
+    },
+    "returncode": 0,
+    "stderr": "",
+    "stdout": {
+      "excerpt": "00000000000d7ab0 T d3d12_bridge_buffer_get_size\n00000000000d7b80 T d3d12_bridge_command_allocator_reset\n00000000000d7fa0 T d3d12_bridge_command_list_begin_query\n00000000000d7ae0 T d3d12_bridge_command_list_close\n00000000000d7af0 T d3d12_bridge_command_list_close_checked\n00000000000d7ad0 T d3d12_bridge_command_list_copy_buffer\n00000000000d7ac0 T d3d12_bridge_command_list_copy_buffer_region\n00000000000d7bf0 T d3d12_bridge_command_list_copy_texture_region\n00000000000d7c00 T d3d12_bridge_command_list_copy_texture_region_subresource\n00000000000d7b70 T d3d12_bridge_command_list_dispatch\n00000000000d7d30 T d3d12_bridge_command_list_draw_indexed_instanced\n00000000000d7d20 T d3d12_bridge_command_list_draw_instanced\n00000000000d7db0 T d3d12_bridge_command_list_end_query\n00000000000d7d90 T d3d12_bridge_command_list_execute_indirect\n00000000000d7d50 T d3d12_bridge_command_list_ia_set_index_buffer\n00000000000d7cf0 T d3d12_bridge_command_list_ia_set_primitive_topology\n00000000000d7d40 T d3d12_bridge_command_list_ia_set_vertex_buffers\n00000000000d7b90 T d3d12_bridge_command_list_reset\n00000000000d7dc0 T d3d12_bridge_command_list_resolve_query_data\n00000000000d7c20 T d3d12_bridge_command_list_resolve_subresource\n00000000000d7c10 T d3d12_bridge_command_list_resource_barrier_transition\n00000000000d7d00 T d3d12_bridge_command_list_set_blend_factor\n00000000000d7f60 T d3d12_bridge_command_list_set_compute_root_descriptor_table\n00000000000d7b50 T d3d12_bridge_command_list_set_compute_root_signature\n00000000000d7f30 T d3d12_bridge_command_list_set_descriptor_heaps\n00000000000d7f70 T d3d12_bridge_",
+      "omission": "Long output or sandbox-parent process description retained only in original detailed evidence.",
+      "original_sha256": "807924b694335f157d32ca94c54d81ce1ed8251cb90dbefa6ee09d0f81cdc6ea",
+      "original_utf8_bytes": 40428
+    }
+  }
+}

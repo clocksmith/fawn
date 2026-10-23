@@ -1,0 +1,17 @@
+{
+  "original_bytes": 607,
+  "original_receipt_sha256": "2d45e27cfd731f2d71a364be5214651d28d69fa48b82a04f82b1360cf060ba6e",
+  "receipt": {
+    "argv": [
+      "/tmp/doe-instance-evaluator-0eyngbi0/baseline-consumer-gcc",
+      "/tmp/doe-callback-final-5k2_7osz/install/lib/libwebgpu_doe.so",
+      "F"
+    ],
+    "dso_sha256": "3277a65ce5c440f46557966c390fe9e70f035d6202cfd73db59b13493d2f972b",
+    "elapsed_seconds": 0.002056491037365049,
+    "returncode": -6,
+    "source_kind": "accepted historical baseline, not current candidate source build",
+    "stderr": "baseline-consumer-gcc: /workspace/shared/doe-c-migration-evidence-20261023/instance1/evaluator/tests/native_consumer.c:58: proc: Assertion `raw == dlsym(library, target)' failed.\n",
+    "stdout": ""
+  }
+}

@@ -306,6 +306,11 @@ pub fn recordVulkanDispatch(
 }
 
 pub fn recordNativeObjectCreate(comptime T: type, object: *T) void {
+    recordOpaqueNativeObjectCreate(@typeName(T), object, @sizeOf(T));
+}
+
+/// Explicit allocation extent for the selected opaque owner, observed before init.
+pub fn recordOpaqueNativeObjectCreate(comptime logical_type: []const u8, object: *anyopaque, allocation_size: usize) void {
     if (!enabled()) return;
     var row_buffer: [512]u8 = undefined;
 
@@ -315,7 +320,7 @@ pub fn recordNativeObjectCreate(comptime T: type, object: *T) void {
     const row = std.fmt.bufPrint(
         &row_buffer,
         "{{\"schemaVersion\":1,\"traceKind\":\"{s}\",\"event\":\"native_object_created\",\"processId\":{},\"sequence\":{},\"objectType\":\"{s}\",\"objectSize\":{},\"objectAddress\":{}}}\n",
-        .{ TRACE_KIND, processId(), nextSequence(), @typeName(T), @sizeOf(T), @intFromPtr(object) },
+        .{ TRACE_KIND, processId(), nextSequence(), logical_type, allocation_size, @intFromPtr(object) },
     ) catch return;
     _ = appendLocked(path, row);
 }

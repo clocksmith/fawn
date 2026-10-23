@@ -18,7 +18,7 @@ Own native instance allocation, identity, references, completion queue lifetime 
 ## Contracts
 
 - Inputs: [ownership and ABI contract](CONTRACT.md), [retained seam](integration/CONTRACT.md), [accepted futures](../futures/CONTRACT.md) and [accepted callbacks](../callbacks/RESULTS.md).
-- Outputs: [opaque C boundary](include/doe_instance.h), explicit borrowed views and matched final cleanup.
+- Outputs: [opaque C boundary](include/doe_instance.h), [GCC owner](Makefile), explicit borrowed views and matched final cleanup.
 
 ## Invariants
 
@@ -32,7 +32,7 @@ Own native instance allocation, identity, references, completion queue lifetime 
 ## Acceptance
 
 - Independent native/C/C++ lifecycle, fault, concurrency and reversible-build checks satisfy the [requirements](EVALUATION.md).
-- Evidence: [migration gates](../../../docs/c-migration/MIGRATION.md).
+- Evidence: [bounded accepted results](RESULTS.md), [independent report](independent_tests/FINAL_REPORT.md), and [migration gates](../../../docs/c-migration/MIGRATION.md).
 
 ## Non-goals
 

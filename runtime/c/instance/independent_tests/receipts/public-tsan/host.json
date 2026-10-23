@@ -1,0 +1,18 @@
+{
+  "original_bytes": 345,
+  "original_receipt_sha256": "b282d252faba86c92e82c7b1c8a08b185895990cccd2bc30fb801e7306900994",
+  "receipt": {
+    "argv": [
+      "uname",
+      "-a"
+    ],
+    "asan_options": null,
+    "child_peak_rss_kib": 11648,
+    "cwd": "/workspace/scratch/e1ac86fc0556",
+    "elapsed_seconds": 0.001133810030296445,
+    "instrumentation": "tsan",
+    "returncode": 0,
+    "stderr": "",
+    "stdout": "Linux c8fc34b90a80 6.18.55 #1 SMP Wed Oct 14 19:45:18 UTC 2026 x86_64 GNU/Linux\n"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "original_bytes": 462,
+  "original_receipt_sha256": "76f4d63cdb607a7f040c93a78dde8c8225c8f56a978b158cc5f21459b08010d6",
+  "receipt": {
+    "argv": [
+      "/tmp/doe-instance-evaluator-0eyngbi0/instance-asan/public"
+    ],
+    "asan_options": "detect_leaks=0",
+    "child_peak_rss_kib": 41948,
+    "cwd": "/workspace/scratch/e1ac86fc0556",
+    "elapsed_seconds": 0.017477012996096164,
+    "instrumentation": "asan",
+    "returncode": 0,
+    "stderr": "",
+    "stdout": "PASS independent public instance cases C01-C05/C09-C14/C16-C18 (named partial coverage; separate faults/native complete remaining obligations)\n"
+  }
+}

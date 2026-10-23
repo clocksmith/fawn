@@ -1,0 +1,106 @@
+{
+  "original_bytes": 5749,
+  "original_receipt_sha256": "f41b07467f63d73e90d0b6285af2de2c7b69a901a5c21f8911523c7c3f50403b",
+  "receipt": {
+    "before": {
+      "meminfo": "MemTotal:       10206484 kB\nMemFree:         1220956 kB\nMemAvailable:    1248936 kB\nBuffers:            3224 kB\nCached:          2986424 kB\nSwapCached:            0 kB\nActive:          2382348 kB\nInactive:        5596836 kB\nActive(anon):    2376324 kB\nInactive(anon):  5582388 kB\nActive(file):       6024 kB\nInactive(file):    14448 kB\nUnevictable:       29924 kB\nMlocked:               0 kB\nSwapTotal:             0 kB\nSwapFree:              0 kB\nDirty:               120 kB\nWriteback:             0 kB\nAnonPages:       5019532 kB\nMapped:           364380 kB\nShmem:           2939260 kB\nKReclaimable:     324488 kB\nSlab:             486216 kB\nSReclaimable:     324488 kB\nSUnreclaim:       161728 kB\nKernelStack:       25392 kB\nPageTables:       109692 kB\nSecPageTables:         0 kB\nNFS_Unstable:          0 kB\nBounce:                0 kB\nWritebackTmp:          0 kB\nCommitLimit:     5103240 kB\nCommitted_AS:   19063892 kB\nVmallocTotal:   34359738367 kB\nVmallocUsed:       27288 kB\nVmallocChunk:          0 kB\nPercpu:             4608 kB\nAnonHugePages:    147456 kB\nShmemHugePages:        0 kB\nShmemPmdMapped:        0 kB\nFileHugePages:         0 kB\nFilePmdMapped:         0 kB\nBalloon:               0 kB\nHugePages_Total:       0\nHugePages_Free:        0\nHugePages_Rsvd:        0\nHugePages_Surp:        0\nHugepagesize:       2048 kB\nHugetlb:               0 kB\nDirectMap4k:      612352 kB\nDirectMap2M:    11581440 kB\nDirectMap1G:    14680064 kB\n",
+      "tmp_free_bytes": 2254344192
+    },
+    "inventory": [
+      {
+        "allocated_bytes_sum_lstat": 84770816,
+        "entries": 649,
+        "internal_symlinks": 0,
+        "logical_regular_file_bytes": 88445780,
+        "ordinary_directory": true,
+        "path": "/tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/Z-cache",
+        "symlink": false
+      },
+      {
+        "allocated_bytes_sum_lstat": 45465600,
+        "entries": 857,
+        "internal_symlinks": 0,
+        "logical_regular_file_bytes": 43519048,
+        "ordinary_directory": true,
+        "path": "/tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/Z-global-cache",
+        "symlink": false
+      },
+      {
+        "allocated_bytes_sum_lstat": 85102592,
+        "entries": 654,
+        "internal_symlinks": 0,
+        "logical_regular_file_bytes": 88769762,
+        "ordinary_directory": true,
+        "path": "/tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/F-cache",
+        "symlink": false
+      },
+      {
+        "allocated_bytes_sum_lstat": 45465600,
+        "entries": 857,
+        "internal_symlinks": 0,
+        "logical_regular_file_bytes": 43519048,
+        "ordinary_directory": true,
+        "path": "/tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/F-global-cache",
+        "symlink": false
+      },
+      {
+        "allocated_bytes_sum_lstat": 85307392,
+        "entries": 661,
+        "internal_symlinks": 0,
+        "logical_regular_file_bytes": 88958718,
+        "ordinary_directory": true,
+        "path": "/tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/FC-cache",
+        "symlink": false
+      },
+      {
+        "allocated_bytes_sum_lstat": 45465600,
+        "entries": 857,
+        "internal_symlinks": 0,
+        "logical_regular_file_bytes": 43519052,
+        "ordinary_directory": true,
+        "path": "/tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/FC-global-cache",
+        "symlink": false
+      }
+    ],
+    "preserved": {
+      "/tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/F-install/lib/libwebgpu_doe.so": {
+        "sha256": "15754ee84fab9031a5087501baedc8321a3b029364644c70bca6554a119d4339",
+        "size_bytes": 12918064
+      },
+      "/tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/FC-install/lib/libwebgpu_doe.so": {
+        "sha256": "6b629814e74c5eed24434d8c3e9f670fd2f1bea20e2724d0d587c8f988882133",
+        "size_bytes": 12919328
+      },
+      "/tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/Z-install/lib/libwebgpu_doe.so": {
+        "sha256": "c3c89ad1416bc19f1c6561a48e810710b091a21f234d8acf0a3aa6c659b4e3e8",
+        "size_bytes": 12905416
+      },
+      "/workspace/shared/doe-c-migration-evidence-20261023/instance1/evaluator/native-controls-complete/F-artifact.json": {
+        "sha256": "a83686752302c568b49ec2000c4b894763b42e7b78ddf8babb234d5ba3183bec",
+        "size_bytes": 368
+      },
+      "/workspace/shared/doe-c-migration-evidence-20261023/instance1/evaluator/native-controls-complete/F-options-646f1636b5a6.zig": {
+        "sha256": "646f1636b5a63e55bc6a28444e7f573af7f05e6ae1de6325b1b85a1c65645723",
+        "size_bytes": 39929
+      },
+      "/workspace/shared/doe-c-migration-evidence-20261023/instance1/evaluator/native-controls-complete/FC-artifact.json": {
+        "sha256": "23bcef0a88544a9c21bd404fa643cf4e7b83f12ab18d38d0d1df812c80b1bc18",
+        "size_bytes": 370
+      },
+      "/workspace/shared/doe-c-migration-evidence-20261023/instance1/evaluator/native-controls-complete/FC-options-b4526efb7980.zig": {
+        "sha256": "b4526efb79801514d053deb4233a1178e6c247789dc0f4bcd41bd7434676410b",
+        "size_bytes": 39928
+      },
+      "/workspace/shared/doe-c-migration-evidence-20261023/instance1/evaluator/native-controls-complete/Z-artifact.json": {
+        "sha256": "984ce3406beaee4ec49982251104f7f43a1db5167e46a1b1820ebb1d716ae7dd",
+        "size_bytes": 368
+      },
+      "/workspace/shared/doe-c-migration-evidence-20261023/instance1/evaluator/native-controls-complete/Z-options-5126fa2b0415.zig": {
+        "sha256": "5126fa2b0415f37a11eca7d3ecf4f3548439eff78aad27ed39bceb1714a6d37b",
+        "size_bytes": 39930
+      }
+    },
+    "scope": "Six explicitly approved, completed generated Z/F/FC caches only. Later regressions lose incremental reuse. No wait-cause claim.",
+    "timestamp": "2026-10-23T11:02:56Z"
+  }
+}

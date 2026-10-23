@@ -1,0 +1,19 @@
+{
+  "original_bytes": 585,
+  "original_receipt_sha256": "bb4e2ae916622f3f61db82c474234466afb3fd5d7e5533c543fb32c4fd946068",
+  "receipt": {
+    "argv": [
+      "/tmp/doe-instance-evaluator-0eyngbi0/native-prebuilt/original-features",
+      "/tmp/doe-instance-author-20261023-final/FC/lib/libwebgpu_doe.so"
+    ],
+    "elapsed_seconds": 0.0015750500024296343,
+    "environment": {
+      "DOE_BACKEND": "metal",
+      "LD_LIBRARY_PATH": "/workspace/shared/doe-language-experiment-20261023/phase1/system-link-prefix/lib"
+    },
+    "returncode": 0,
+    "scope": "Independent consumption of AUTHOR PREBUILT normal final-source artifact",
+    "stderr": "",
+    "stdout": "PASS: both name lengths resolve to Doe; capability answers match enumeration\n"
+  }
+}

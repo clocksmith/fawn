@@ -1,0 +1,18 @@
+{
+  "original_bytes": 395,
+  "original_receipt_sha256": "168a15c706704c3d94d6bd5499a5fd4ed88c251fcba06edb0b2961dd64cdbc0c",
+  "receipt": {
+    "argv": [
+      "/tmp/doe-instance-evaluator-0eyngbi0/instance-normal/faults",
+      "pending"
+    ],
+    "asan_options": null,
+    "child_peak_rss_kib": 46800,
+    "cwd": "/workspace/scratch/e1ac86fc0556",
+    "elapsed_seconds": 0.0010294640087522566,
+    "instrumentation": "normal",
+    "returncode": -6,
+    "stderr": "C instance queue deinit failed closed: status 8\n",
+    "stdout": "ALLOCATE\nOBSERVE\n"
+  }
+}

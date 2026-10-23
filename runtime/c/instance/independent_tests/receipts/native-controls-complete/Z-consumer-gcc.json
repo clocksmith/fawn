@@ -1,0 +1,21 @@
+{
+  "original_bytes": 794,
+  "original_receipt_sha256": "4ade9c0c80387a44c30c375956ed2d3531af174884270817a710c4977600e919",
+  "receipt": {
+    "argv": [
+      "/tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/consumer-gcc",
+      "/tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/Z-install/lib/libwebgpu_doe.so",
+      "Z"
+    ],
+    "cwd": "/tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/source/runtime/zig",
+    "elapsed_seconds": 0.0038256070110946894,
+    "environment": {
+      "DOE_BACKEND": "metal",
+      "DOE_PROGRAM_IDENTITY_TRACE_PATH": "/tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/Z-gcc-trace.jsonl",
+      "LD_LIBRARY_PATH": "/workspace/shared/doe-language-experiment-20261023/phase1/system-link-prefix/lib"
+    },
+    "returncode": 0,
+    "stderr": "",
+    "stdout": "PASS independent direct/proc instance modes/capabilities/reentry/actual unconfigured surface; no GPU qualification\n"
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "original_bytes": 160,
+  "original_receipt_sha256": "655850c6ae8136f6868184e0d37b3a589ae5af79923384ebe7b413ccfb081316",
+  "receipt": {
+    "path": "/tmp/doe-instance-author-20261023-final/FC/lib/libwebgpu_doe.so",
+    "sha256": "2d07c258882f29af2a34f39210fbca82de75be95a9ccb83c931a0f18667ca3dc"
+  }
+}

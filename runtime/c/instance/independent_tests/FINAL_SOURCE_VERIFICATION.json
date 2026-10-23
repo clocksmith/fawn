@@ -1,0 +1,23 @@
+{
+  "bound_inputs": 1719,
+  "source_seal": "51347ba22f88c12724af95a6d87d821615b86782855ca8b4fa1e892cbe584669",
+  "complete_manifest_sha256": "f1d5323d7b73c96ad4f2d4ff43f0b55c7c01445f2383ad1d883bc2c580e2db7f",
+  "copies": [
+    {
+      "root": "/tmp/doe-instance-evaluator-0eyngbi0/native-source",
+      "verified": 1719,
+      "mismatches": []
+    },
+    {
+      "root": "/tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/source",
+      "verified": 1719,
+      "mismatches": []
+    },
+    {
+      "root": "/tmp/doe-instance-evaluator-0eyngbi0/native-fci-retry1/source",
+      "verified": 1719,
+      "mismatches": []
+    }
+  ],
+  "moving_tree_differences": []
+}

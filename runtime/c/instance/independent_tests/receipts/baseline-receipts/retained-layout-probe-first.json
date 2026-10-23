@@ -1,0 +1,39 @@
+{
+  "original_bytes": 46162,
+  "original_receipt_sha256": "3b89d4ee47dc52b5a86d3515a3602fdc215260e55a3be5fec1fc5a0d71020965",
+  "receipt": {
+    "argv": [
+      "/workspace/shared/doe-language-experiment-20261023/phase1/deps/zig-x86_64-linux-0.15.2/zig",
+      "run",
+      "--dep",
+      "build_options",
+      "-Mroot=/tmp/doe-instance-evaluator-0eyngbi0/accepted-source/runtime/zig/independent_layout.zig",
+      "-Mbuild_options=/tmp/doe-instance-evaluator-0eyngbi0/accepted-source/runtime/zig/options.zig",
+      "-I",
+      "/tmp/doe-instance-evaluator-0eyngbi0/accepted-source/runtime/c/futures/include",
+      "-I",
+      "/tmp/doe-instance-evaluator-0eyngbi0/accepted-source/runtime/c/futures/integration",
+      "-I",
+      "/tmp/doe-instance-evaluator-0eyngbi0/accepted-source/runtime/c/callbacks/include",
+      "-I",
+      "/tmp/doe-instance-evaluator-0eyngbi0/accepted-source/runtime/zig/vendor/webgpu-headers",
+      "-I",
+      "/tmp/doe-instance-evaluator-0eyngbi0/accepted-source/runtime/zig/src/backend/d3d12",
+      "-I",
+      "/tmp/doe-instance-evaluator-0eyngbi0/accepted-source/runtime/zig/src/backend/metal",
+      "-lc",
+      "--cache-dir",
+      "/tmp/doe-instance-evaluator-0eyngbi0/layout-cache",
+      "--global-cache-dir",
+      "/tmp/doe-instance-evaluator-0eyngbi0/abi-global"
+    ],
+    "returncode": 1,
+    "stderr": {
+      "excerpt": "error: undefined symbol: vkCreateXcbSurfaceKHR\n    note: referenced by independent_layout.o:src.backend.vulkan.vulkan_surface.create_xcb_surface\nerror: undefined symbol: vkCreateWaylandSurfaceKHR\n    note: referenced by independent_layout.o:src.backend.vulkan.vulkan_surface.create_wayland_surface\nerror: undefined symbol: vkCreateXlibSurfaceKHR\n    note: referenced by independent_layout.o:src.backend.vulkan.vulkan_surface.create_xlib_surface\nerror: undefined symbol: doe_future_queue_deinit\n    note: referenced by independent_layout.o:src.native.support.doe_future_c_adapter.PendingCompletions.deinit\nerror: undefined symbol: vkGetPhysicalDeviceSurfaceCapabilitiesKHR\n    note: referenced by independent_layout.o:src.backend.vulkan.vulkan_surface.query_surface_capabilities\nerror: undefined symbol: vkGetPhysicalDeviceSurfaceFormatsKHR\n    note: referenced by independent_layout.o:src.backend.vulkan.vulkan_surface.query_surface_capabilities\n    note: referenced by independent_layout.o:src.backend.vulkan.vulkan_surface.query_surface_capabilities\nerror: undefined symbol: vkGetPhysicalDeviceSurfacePresentModesKHR\n    note: referenced by independent_layout.o:src.backend.vulkan.vulkan_surface.query_surface_capabilities\n    note: referenced by independent_layout.o:src.backend.vulkan.vulkan_surface.query_surface_capabilities\nerror: undefined symbol: vkDestroySwapchainKHR\n    note: referenced by independent_layout.o:src.backend.vulkan.vulkan_surface.destroy_swapchain\nerror: undefined symbol: vkCreateSwapchainKHR\n    note: referenced by independent_layout.o:src.backend.vulkan.vulkan_surface.",
+      "omission": "Long output or sandbox-parent process description retained only in original detailed evidence.",
+      "original_sha256": "747dd20aaa130b6fe2da9196e7995875bf4745d33be0f8de6f5beaa7de857483",
+      "original_utf8_bytes": 44363
+    },
+    "stdout": ""
+  }
+}

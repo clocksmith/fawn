@@ -1,0 +1,33 @@
+{
+  "original_bytes": 1323,
+  "original_receipt_sha256": "d09cd7c6243087b147f4eef60ccb6d6509e03e41a6ec3cde4e18b61dd53c8c13",
+  "receipt": {
+    "argv": [
+      "/workspace/shared/doe-language-experiment-20261023/phase1/deps/zig-x86_64-linux-0.15.2/zig",
+      "fmt",
+      "--check",
+      "runtime/zig/build.zig",
+      "runtime/zig/src/dropin/wgpu_dropin_ext_a_exports.zig",
+      "runtime/zig/src/dropin/wgpu_dropin_ext_a_pipeline.zig",
+      "runtime/zig/src/dropin/wgpu_dropin_ext_b.zig",
+      "runtime/zig/src/native/diagnostics/doe_program_identity_trace.zig",
+      "runtime/zig/src/native/lifecycle/doe_instance_device_native.zig",
+      "runtime/zig/src/native/resource/doe_external_texture_native.zig",
+      "runtime/zig/src/native/support/doe_callback_c_adapter.zig",
+      "runtime/zig/src/native/support/doe_device_loss.zig",
+      "runtime/zig/src/native/support/doe_future_c_adapter.zig",
+      "runtime/zig/src/native/support/doe_future_owner.zig",
+      "runtime/zig/src/native/support/doe_instance_c_adapter.zig",
+      "runtime/zig/src/native/support/doe_native_object_helpers.zig",
+      "runtime/zig/src/native/support/doe_native_object_types.zig",
+      "runtime/zig/src/native/surface/doe_surface_native.zig",
+      "runtime/zig/test_suite_c_instance.zig",
+      "runtime/zig/tests/c_instance_integration_test.zig"
+    ],
+    "cwd": "/tmp/doe-instance-evaluator-0eyngbi0/native-source",
+    "elapsed_seconds": 0.01262369001051411,
+    "returncode": 0,
+    "stderr": "",
+    "stdout": ""
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "original_bytes": 1064,
+  "original_receipt_sha256": "2794e2d9574dc2b0ff22ec6ce3efdf82c06c7d95fc9ee7b58b2596ae19564798",
+  "receipt": {
+    "actual_exports": [
+      "doe_future_begin_delivery",
+      "doe_future_completion_deinit",
+      "doe_future_completion_init",
+      "doe_future_completion_requirements",
+      "doe_future_finish",
+      "doe_future_legacy_id",
+      "doe_future_mark_ready",
+      "doe_future_new_id",
+      "doe_future_process_events",
+      "doe_future_queue_deinit",
+      "doe_future_queue_init",
+      "doe_future_queue_requirements",
+      "doe_future_register",
+      "doe_future_wait_any"
+    ],
+    "archive_sha256": "ad80fd3b0aefde2e0b10238a80c372ad1e22c36b3ffad0ce7aa442810ab1ec9d",
+    "expected_exports": [
+      "doe_future_begin_delivery",
+      "doe_future_completion_deinit",
+      "doe_future_completion_init",
+      "doe_future_completion_requirements",
+      "doe_future_finish",
+      "doe_future_legacy_id",
+      "doe_future_mark_ready",
+      "doe_future_new_id",
+      "doe_future_process_events",
+      "doe_future_queue_deinit",
+      "doe_future_queue_init",
+      "doe_future_queue_requirements",
+      "doe_future_register",
+      "doe_future_wait_any"
+    ],
+    "forbidden_undefined": [],
+    "passed": true
+  }
+}

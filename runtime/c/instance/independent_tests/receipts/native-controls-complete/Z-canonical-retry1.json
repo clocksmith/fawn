@@ -1,0 +1,29 @@
+{
+  "original_bytes": 3770,
+  "original_receipt_sha256": "47e6b752cd4f4c7d0bb038b6fab0fef58291dd513bce4b6fb2d2eabb9f516be2",
+  "receipt": {
+    "DOE_BACKEND": "metal",
+    "argv": [
+      "/workspace/shared/doe-language-experiment-20261023/phase1/deps/zig-x86_64-linux-0.15.2/zig",
+      "build",
+      "dropin",
+      "-j1",
+      "-Doptimize=ReleaseFast",
+      "--search-prefix",
+      "/workspace/shared/doe-language-experiment-20261023/phase1/system-link-prefix",
+      "--cache-dir",
+      "/tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/Z-cache",
+      "--global-cache-dir",
+      "/tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/Z-global-cache",
+      "--prefix",
+      "/tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/Z-install"
+    ],
+    "child_peak_rss_kib": 577344,
+    "cwd": "/tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/source/runtime/zig",
+    "elapsed_seconds": 192.2876691520214,
+    "phase": "unchanged serialized canonical retry after unexpected compiler child termination",
+    "returncode": 1,
+    "stderr": "dropin\n+- install webgpu_doe\n   +- compile lib webgpu_doe ReleaseFast native failure\nerror: the following command terminated unexpectedly:\n/workspace/shared/doe-language-experiment-20261023/phase1/deps/zig-x86_64-linux-0.15.2/zig build-lib /tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/source/runtime/zig/src/backend/d3d12/d3d12_bridge_stubs.c -lvulkan /tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/source/runtime/zig/src/backend/metal/metal_bridge_stubs.c -OReleaseFast -I /tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/source/runtime/zig/src/backend/d3d12 -I /tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/source/runtime/zig/src/backend/metal --dep build_options --dep doe -Mroot=/tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/source/runtime/zig/src/dropin/root.zig -Mbuild_options=/tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/Z-cache/c/abf21e4c3a589850acf29e9fc1f28533/options.zig -OReleaseFast -I /tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/source/runtime/zig/src/backend/d3d12 -I /tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/source/runtime/zig/src/backend/metal -I /tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/source/runtime/zig/vendor/webgpu-headers --dep build_options -Mdoe=/tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/source/runtime/zig/src/mod.zig -lc --cache-dir /tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/Z-cache --global-cache-dir /tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/Z-global-cache --name webgpu_doe -dynamic -L /workspace/shared/doe-language-experiment-20261023/phase1/system-link-prefix/lib --zig-lib-dir /workspace/shared/doe-language-experiment-20261023/phase1/deps/zig-x86_64-linux-0.15.2/lib/ --listen=-\n\nBuild Summary: 3/6 steps succeeded; 1 failed\ndropin transitive failure\n+- install webgpu_doe transitive failure\n   +- compile lib webgpu_doe ReleaseFast native failure\n\nerror: the following build command failed with exit code 1:\n/tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/Z-cache/o/58c4c51800fa086037cd972028a13fef/build /workspace/shared/doe-language-experiment-20261023/phase1/deps/zig-x86_64-linux-0.15.2/zig /workspace/shared/doe-language-experiment-20261023/phase1/deps/zig-x86_64-linux-0.15.2/lib /tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/source/runtime/zig /tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/Z-cache /tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/Z-global-cache --seed 0x57f45acb -Zcb4d50306174113c dropin -j1 -Doptimize=ReleaseFast --search-prefix /workspace/shared/doe-language-experiment-20261023/phase1/system-link-prefix --prefix /tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/Z-install\n",
+    "stdout": ""
+  }
+}

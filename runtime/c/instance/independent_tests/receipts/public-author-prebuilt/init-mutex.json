@@ -1,0 +1,18 @@
+{
+  "original_bytes": 483,
+  "original_receipt_sha256": "e4c5365e97f0cf8ec8cd4d9ad35158eed858bbe746dd665b6f4018cd7d3603fe",
+  "receipt": {
+    "argv": [
+      "/tmp/doe-instance-evaluator-0eyngbi0/instance-author-prebuilt/faults",
+      "init-mutex"
+    ],
+    "asan_options": null,
+    "child_peak_rss_kib": 46796,
+    "cwd": "/workspace/scratch/e1ac86fc0556",
+    "elapsed_seconds": 0.0015765849966555834,
+    "instrumentation": "normal",
+    "returncode": 0,
+    "stderr": "",
+    "stdout": "ALLOCATE\nOBSERVE\nFREE\nALLOCATE\nOBSERVE\nALLOCATE\nFREE\nLABEL\nFREE\nPASS ordinary setup rollback and stateless subsequent create/wait/free\n"
+  }
+}

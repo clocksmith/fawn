@@ -1,0 +1,18 @@
+{
+  "original_bytes": 407,
+  "original_receipt_sha256": "7ea66ca8611bf1d07f04457b7bfc0fb2d00a65741c3305344229389d77d6102c",
+  "receipt": {
+    "argv": [
+      "/tmp/doe-instance-evaluator-0eyngbi0/instance-normal/faults",
+      "init-cleanup"
+    ],
+    "asan_options": null,
+    "child_peak_rss_kib": 46800,
+    "cwd": "/workspace/scratch/e1ac86fc0556",
+    "elapsed_seconds": 0.0007732849917374551,
+    "instrumentation": "normal",
+    "returncode": -6,
+    "stderr": "C instance queue init cleanup failed closed: status 13\n",
+    "stdout": "ALLOCATE\nOBSERVE\n"
+  }
+}

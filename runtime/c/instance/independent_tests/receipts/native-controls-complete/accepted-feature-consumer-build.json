@@ -1,0 +1,24 @@
+{
+  "original_bytes": 636,
+  "original_receipt_sha256": "85c9c75492688c89332f7aeadc05e6e23bd576d6ff183cbae8e880231824c01d",
+  "receipt": {
+    "DOE_BACKEND": "metal",
+    "argv": [
+      "gcc",
+      "-std=c11",
+      "-O2",
+      "-I",
+      "/tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/source/runtime/zig/vendor/webgpu-headers",
+      "/tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/source/runtime/zig/tests/instance_feature_lookup.c",
+      "-ldl",
+      "-o",
+      "/tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/accepted-feature-lookup"
+    ],
+    "child_peak_rss_kib": 52240,
+    "cwd": "/tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete",
+    "elapsed_seconds": 0.07183831703150645,
+    "returncode": 0,
+    "stderr": "",
+    "stdout": ""
+  }
+}

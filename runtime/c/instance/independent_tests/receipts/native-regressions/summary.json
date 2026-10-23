@@ -1,0 +1,16 @@
+{
+  "original_bytes": 256,
+  "original_receipt_sha256": "690baaee58062bdb55650d7e3efe9f50a5d4ec3031f7134fffd54b130ec74878",
+  "receipt": {
+    "commands_in_repair_continuation": 2,
+    "default_named_tests": 24,
+    "owner_source_unchanged": true,
+    "passed": true,
+    "selected_expectations": {
+      "FCI_adapted_and_extra": 23,
+      "FC_callbacks": 5,
+      "FC_futures": 11,
+      "F_futures": 11
+    }
+  }
+}

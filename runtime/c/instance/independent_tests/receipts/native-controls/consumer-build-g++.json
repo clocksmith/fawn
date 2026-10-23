@@ -1,0 +1,34 @@
+{
+  "original_bytes": 731,
+  "original_receipt_sha256": "f36659e68ee3239d9f071f383e55f0f0eb2e3bfcaa7710309636b8e91822ba74",
+  "receipt": {
+    "DOE_BACKEND": "metal",
+    "argv": [
+      "g++",
+      "-x",
+      "c++",
+      "-fno-exceptions",
+      "-fno-rtti",
+      "-std=c++17",
+      "-O2",
+      "-g",
+      "-Wall",
+      "-Wextra",
+      "-Wpedantic",
+      "-Werror",
+      "-pthread",
+      "-I",
+      "/tmp/doe-instance-evaluator-0eyngbi0/native-controls/source/runtime/zig/vendor/webgpu-headers",
+      "/workspace/shared/doe-c-migration-evidence-20261023/instance1/evaluator/tests/native_consumer.c",
+      "-ldl",
+      "-o",
+      "/tmp/doe-instance-evaluator-0eyngbi0/native-controls/consumer-g++"
+    ],
+    "child_peak_rss_kib": 52244,
+    "cwd": "/tmp/doe-instance-evaluator-0eyngbi0/native-controls",
+    "elapsed_seconds": 0.32156547298654914,
+    "returncode": 0,
+    "stderr": "",
+    "stdout": ""
+  }
+}

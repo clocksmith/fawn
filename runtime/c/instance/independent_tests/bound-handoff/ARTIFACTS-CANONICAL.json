@@ -1,0 +1,168 @@
+{
+  "scope": "All four final-source normal canonical ReleaseFast headless DSOs; actual CPU unavailable-adapter/unconfigured-surface/proc/capability consumers passed. Other developer checks are separate and do not change these identities.",
+  "source_seal_sha256": "51347ba22f88c12724af95a6d87d821615b86782855ca8b4fa1e892cbe584669",
+  "providers": [
+    {
+      "selection": "Z",
+      "path": "/tmp/doe-instance-author-20261023-final/Z/lib/libwebgpu_doe.so",
+      "sha256": "27c6774d57ea14a19215caf3204008ef0fb7194d9737ad9875dfcac8f06aa990",
+      "bytes": 12903976,
+      "build_argv": [
+        "/workspace/shared/doe-language-experiment-20261023/phase1/deps/zig-x86_64-linux-0.15.2/zig",
+        "build",
+        "dropin",
+        "-Doptimize=ReleaseFast",
+        "--search-prefix",
+        "/workspace/shared/doe-language-experiment-20261023/phase1/system-link-prefix",
+        "--cache-dir",
+        "/tmp/doe-instance-author-20261023-release/Z-cache",
+        "--global-cache-dir",
+        "/tmp/doe-instance-author-20261023-release/global",
+        "--prefix",
+        "/tmp/doe-instance-author-20261023-final/Z",
+        "-j1",
+        "--summary",
+        "all"
+      ],
+      "build_cwd": "/workspace/shared/doe-c-migration-20261023/runtime/zig",
+      "build_env": {
+        "DOE_BACKEND": "metal"
+      },
+      "build_log": "/workspace/shared/doe-c-migration-evidence-20261023/instance1/author/Z-tracefix-retry1-build.log",
+      "consumer_log": "/workspace/shared/doe-c-migration-evidence-20261023/instance1/author/Z-tracefix-retry1-consumer.log",
+      "consumer_argv": [
+        "/tmp/doe-instance-author-20261023-release/consumer/native_consumer",
+        "/tmp/doe-instance-author-20261023-final/Z/lib/libwebgpu_doe.so"
+      ],
+      "consumer_env": {
+        "LD_LIBRARY_PATH": "/workspace/shared/doe-language-experiment-20261023/phase1/system-link-prefix/lib",
+        "DOE_PROGRAM_IDENTITY_TRACE_PATH": "/workspace/shared/doe-c-migration-evidence-20261023/instance1/author/Z-final-object-trace.jsonl"
+      },
+      "feature_oracle_log": "/workspace/shared/doe-c-migration-evidence-20261023/instance1/author/Z-final-feature-oracle.log"
+    },
+    {
+      "selection": "F",
+      "path": "/tmp/doe-instance-author-20261023-final/F/lib/libwebgpu_doe.so",
+      "sha256": "9821edf46b155f0e0bdfe66813c9f278cd7c785e7e542bb9b2e8773882a94d78",
+      "bytes": 12916600,
+      "build_argv": [
+        "/workspace/shared/doe-language-experiment-20261023/phase1/deps/zig-x86_64-linux-0.15.2/zig",
+        "build",
+        "dropin",
+        "test-c-futures-integration",
+        "-Doptimize=ReleaseFast",
+        "-Dexperimental-c-futures-archive=/tmp/doe-instance-author-20261023-release/futures/libdoe_futures_zig.a",
+        "--search-prefix",
+        "/workspace/shared/doe-language-experiment-20261023/phase1/system-link-prefix",
+        "--cache-dir",
+        "/tmp/doe-instance-author-20261023-release/F-cache",
+        "--global-cache-dir",
+        "/tmp/doe-instance-author-20261023-release/global",
+        "--prefix",
+        "/tmp/doe-instance-author-20261023-final/F",
+        "-j1",
+        "--summary",
+        "all"
+      ],
+      "build_cwd": "/workspace/shared/doe-c-migration-20261023/runtime/zig",
+      "build_env": {
+        "DOE_BACKEND": "metal"
+      },
+      "build_log": "/workspace/shared/doe-c-migration-evidence-20261023/instance1/author/F-tracefix-retry1-build.log",
+      "consumer_log": "/workspace/shared/doe-c-migration-evidence-20261023/instance1/author/F-tracefix-retry1-consumer.log",
+      "consumer_argv": [
+        "/tmp/doe-instance-author-20261023-release/consumer/native_consumer",
+        "/tmp/doe-instance-author-20261023-final/F/lib/libwebgpu_doe.so"
+      ],
+      "consumer_env": {
+        "LD_LIBRARY_PATH": "/workspace/shared/doe-language-experiment-20261023/phase1/system-link-prefix/lib",
+        "DOE_PROGRAM_IDENTITY_TRACE_PATH": "/workspace/shared/doe-c-migration-evidence-20261023/instance1/author/F-final-object-trace.jsonl"
+      },
+      "feature_oracle_log": "/workspace/shared/doe-c-migration-evidence-20261023/instance1/author/F-final-feature-oracle.log"
+    },
+    {
+      "selection": "FC",
+      "path": "/tmp/doe-instance-author-20261023-final/FC/lib/libwebgpu_doe.so",
+      "sha256": "2d07c258882f29af2a34f39210fbca82de75be95a9ccb83c931a0f18667ca3dc",
+      "bytes": 12918104,
+      "build_argv": [
+        "/workspace/shared/doe-language-experiment-20261023/phase1/deps/zig-x86_64-linux-0.15.2/zig",
+        "build",
+        "dropin",
+        "test-c-futures-integration",
+        "test-c-callbacks-integration",
+        "-Doptimize=ReleaseFast",
+        "-Dexperimental-c-futures-archive=/tmp/doe-instance-author-20261023-release/futures/libdoe_futures_zig.a",
+        "-Dexperimental-c-callbacks-archive=/tmp/doe-instance-author-20261023-release/callbacks/libdoe_callbacks.a",
+        "--search-prefix",
+        "/workspace/shared/doe-language-experiment-20261023/phase1/system-link-prefix",
+        "--cache-dir",
+        "/tmp/doe-instance-author-20261023-release/FC-cache",
+        "--global-cache-dir",
+        "/tmp/doe-instance-author-20261023-release/global",
+        "--prefix",
+        "/tmp/doe-instance-author-20261023-final/FC",
+        "-j1",
+        "--summary",
+        "all"
+      ],
+      "build_cwd": "/workspace/shared/doe-c-migration-20261023/runtime/zig",
+      "build_env": {
+        "DOE_BACKEND": "metal"
+      },
+      "build_log": "/workspace/shared/doe-c-migration-evidence-20261023/instance1/author/FC-tracefix-retry1-build.log",
+      "consumer_log": "/workspace/shared/doe-c-migration-evidence-20261023/instance1/author/FC-tracefix-retry1-consumer.log",
+      "consumer_argv": [
+        "/tmp/doe-instance-author-20261023-release/consumer/native_consumer",
+        "/tmp/doe-instance-author-20261023-final/FC/lib/libwebgpu_doe.so"
+      ],
+      "consumer_env": {
+        "LD_LIBRARY_PATH": "/workspace/shared/doe-language-experiment-20261023/phase1/system-link-prefix/lib",
+        "DOE_PROGRAM_IDENTITY_TRACE_PATH": "/workspace/shared/doe-c-migration-evidence-20261023/instance1/author/FC-final-object-trace.jsonl"
+      },
+      "feature_oracle_log": "/workspace/shared/doe-c-migration-evidence-20261023/instance1/author/FC-final-feature-oracle.log"
+    },
+    {
+      "selection": "FCI",
+      "path": "/tmp/doe-instance-author-20261023-final/FCI/lib/libwebgpu_doe.so",
+      "sha256": "1d062e570dd009bf0a202d6fded2379daf9c9e07e7a1ca796fb2da0e6bb8ea39",
+      "bytes": 12923216,
+      "build_argv": [
+        "/workspace/shared/doe-language-experiment-20261023/phase1/deps/zig-x86_64-linux-0.15.2/zig",
+        "build",
+        "dropin",
+        "test-c-instance-integration",
+        "-Doptimize=ReleaseFast",
+        "-Dexperimental-c-futures-archive=/tmp/doe-instance-author-20261023-release/futures/libdoe_futures_zig.a",
+        "-Dexperimental-c-callbacks-archive=/tmp/doe-instance-author-20261023-release/callbacks/libdoe_callbacks.a",
+        "-Dexperimental-c-instance-archive=/tmp/doe-instance-author-20261023-release/instance/libdoe_instance.a",
+        "--search-prefix",
+        "/workspace/shared/doe-language-experiment-20261023/phase1/system-link-prefix",
+        "--cache-dir",
+        "/tmp/doe-instance-author-20261023-release/FCI-cache",
+        "--global-cache-dir",
+        "/tmp/doe-instance-author-20261023-release/global",
+        "--prefix",
+        "/tmp/doe-instance-author-20261023-final/FCI",
+        "-j1",
+        "--summary",
+        "all"
+      ],
+      "build_cwd": "/workspace/shared/doe-c-migration-20261023/runtime/zig",
+      "build_env": {
+        "DOE_BACKEND": "metal"
+      },
+      "build_log": "/workspace/shared/doe-c-migration-evidence-20261023/instance1/author/FCI-tracefix-retry1-build.log",
+      "consumer_log": "/workspace/shared/doe-c-migration-evidence-20261023/instance1/author/FCI-tracefix-retry1-consumer.log",
+      "consumer_argv": [
+        "/tmp/doe-instance-author-20261023-release/consumer/native_consumer",
+        "/tmp/doe-instance-author-20261023-final/FCI/lib/libwebgpu_doe.so"
+      ],
+      "consumer_env": {
+        "LD_LIBRARY_PATH": "/workspace/shared/doe-language-experiment-20261023/phase1/system-link-prefix/lib",
+        "DOE_PROGRAM_IDENTITY_TRACE_PATH": "/workspace/shared/doe-c-migration-evidence-20261023/instance1/author/FCI-final-object-trace.jsonl"
+      },
+      "feature_oracle_log": "/workspace/shared/doe-c-migration-evidence-20261023/instance1/author/FCI-final-feature-oracle.log"
+    }
+  ]
+}

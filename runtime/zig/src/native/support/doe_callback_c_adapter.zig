@@ -65,7 +65,7 @@ pub fn publish(
     var local = context;
     var owner: c.doe_callback_owner = undefined;
     if (instance) |value| {
-        const pending = &value.pending_completions;
+        const pending = @import("doe_native_object_helpers.zig").instance_pending(value);
         const lease = pending.lease orelse @panic("C callbacks missing native instance lease");
         owner = .{
             .queue = @ptrCast(pending.borrowedQueue()),

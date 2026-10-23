@@ -1,0 +1,22 @@
+{
+  "original_bytes": 572,
+  "original_receipt_sha256": "279ac40a67f2d05a4ba94349089ebfcf4ac0a9f93dc073dfd4b3faa7d6b81e5b",
+  "receipt": {
+    "argv": [
+      "ar",
+      "rcs",
+      "/tmp/doe-instance-evaluator-0eyngbi0/instance-tsan/libdoe_instance.a",
+      "/tmp/doe-instance-evaluator-0eyngbi0/instance-tsan/instance-capabilities.o",
+      "/tmp/doe-instance-evaluator-0eyngbi0/instance-tsan/instance-instance.o",
+      "/tmp/doe-instance-evaluator-0eyngbi0/instance-tsan/instance-wait.o"
+    ],
+    "asan_options": null,
+    "child_peak_rss_kib": 22120,
+    "cwd": "/workspace/scratch/e1ac86fc0556",
+    "elapsed_seconds": 0.002227618999313563,
+    "instrumentation": "tsan",
+    "returncode": 0,
+    "stderr": "",
+    "stdout": ""
+  }
+}

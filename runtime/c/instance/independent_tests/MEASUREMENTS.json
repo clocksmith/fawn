@@ -1,0 +1,105 @@
+{
+  "source_extent_metrics": [
+    {
+      "path": "runtime/c/instance/src/instance.c",
+      "lines": 157,
+      "bytes": 6176,
+      "sha256": "c4318fe26ae9ad096eee3181698473b5760750eaa069cc0ccb8f326b93fe6e71"
+    },
+    {
+      "path": "runtime/c/instance/src/wait.c",
+      "lines": 47,
+      "bytes": 1888,
+      "sha256": "00feb581e9be18c703fffdf728779d805f7d70d2d5077f09f0d7c08ed2b4351e"
+    },
+    {
+      "path": "runtime/c/instance/src/capabilities.c",
+      "lines": 24,
+      "bytes": 585,
+      "sha256": "8865ec739371f2a9f73195b6a6d6d41c15ff8d3364583f68c2f025d1114cc5e2"
+    },
+    {
+      "path": "runtime/c/instance/src/internal.h",
+      "lines": 27,
+      "bytes": 704,
+      "sha256": "6a79d30e29eb6c3ebe3d15b589c66bda5a11feb64023c29b73d62ea2d30cf655"
+    },
+    {
+      "path": "runtime/zig/src/native/support/doe_instance_c_adapter.zig",
+      "lines": 94,
+      "bytes": 4442,
+      "sha256": "056cb14ec1ddf900f70b0416b4a5e3f7969ddc1dee0e5918bcefd4e7cd83edc1"
+    }
+  ],
+  "source_built_controls": [
+    {
+      "lane": "Z",
+      "artifact": {
+        "library": "/tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/Z-install/lib/libwebgpu_doe.so",
+        "sha256": "c3c89ad1416bc19f1c6561a48e810710b091a21f234d8acf0a3aa6c659b4e3e8",
+        "size_bytes": 12905416,
+        "options": [
+          "/workspace/shared/doe-c-migration-evidence-20261023/instance1/evaluator/native-controls-complete/Z-options-5126fa2b0415.zig"
+        ]
+      },
+      "successful_canonical_seconds": 58.765730109997094,
+      "incremental_seconds": 0.08398928103270009
+    },
+    {
+      "lane": "F",
+      "artifact": {
+        "library": "/tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/F-install/lib/libwebgpu_doe.so",
+        "sha256": "15754ee84fab9031a5087501baedc8321a3b029364644c70bca6554a119d4339",
+        "size_bytes": 12918064,
+        "options": [
+          "/workspace/shared/doe-c-migration-evidence-20261023/instance1/evaluator/native-controls-complete/F-options-646f1636b5a6.zig"
+        ]
+      },
+      "successful_canonical_seconds": 66.31075263797538,
+      "incremental_seconds": 0.08166049100691453
+    },
+    {
+      "lane": "FC",
+      "artifact": {
+        "library": "/tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/FC-install/lib/libwebgpu_doe.so",
+        "sha256": "6b629814e74c5eed24434d8c3e9f670fd2f1bea20e2724d0d587c8f988882133",
+        "size_bytes": 12919328,
+        "options": [
+          "/workspace/shared/doe-c-migration-evidence-20261023/instance1/evaluator/native-controls-complete/FC-options-b4526efb7980.zig"
+        ]
+      },
+      "successful_canonical_seconds": 66.36785598000279,
+      "incremental_seconds": 0.09947077702963725
+    },
+    {
+      "lane": "FCI",
+      "artifact": {
+        "library": "/tmp/doe-instance-evaluator-0eyngbi0/native-fci-retry1/install/lib/libwebgpu_doe.so",
+        "sha256": "9a8b934fe04a82fde659310aec7e5323d486c16cff1ad775936f134831a56ef7",
+        "size_bytes": 12923984,
+        "options": [
+          "/workspace/shared/doe-c-migration-evidence-20261023/instance1/evaluator/native-fci-retry1/FCI-options-e4a0eb0697ce.zig"
+        ]
+      },
+      "successful_canonical_seconds": 417.0565577990492,
+      "incremental_seconds": 0.10510079399682581
+    }
+  ],
+  "observed_native_instance_allocation_bytes": {
+    "Z": 40,
+    "F": 176,
+    "FC": 176,
+    "FCI": 264
+  },
+  "normal_C_independent_lifetimes": 257,
+  "public_label_lifetimes_each_provider_each_provenance": 64,
+  "peak_RSS_caution": "Sampled RSS is not exact peak. Per-command compiler summaries and original resource receipts retain measured scope.",
+  "cost_caution": "Observed task costs, not controlled performance benchmarks. Retries/reclaims and cache reuse are disclosed.",
+  "unmeasured": [
+    "exact discovery and active authoring duration",
+    "steady-state native allocation latency",
+    "maintainability gain",
+    "performance deltas",
+    "full runtime/physical/adoption qualification"
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "original_bytes": 377,
+  "original_receipt_sha256": "6a97069ade8c7dd3795d377bccb787398b4f15d0b9efaeb2c72893f37b610ee7",
+  "receipt": {
+    "argv": [
+      "/tmp/doe-instance-evaluator-0eyngbi0/instance-tsan/cpp"
+    ],
+    "asan_options": null,
+    "child_peak_rss_kib": 46464,
+    "cwd": "/workspace/scratch/e1ac86fc0556",
+    "elapsed_seconds": 0.012226829014252871,
+    "instrumentation": "tsan",
+    "returncode": 0,
+    "stderr": "",
+    "stdout": "PASS independent C++17 opaque instance ABI calls and stateless allocator\n"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "original_bytes": 546,
+  "original_receipt_sha256": "7613dbce2c0c7146fb4bb0249da7cee471aa5701d3b931121380ed9d71316847",
+  "receipt": {
+    "argv": [
+      "python3",
+      "/tmp/doe-instance-evaluator-0eyngbi0/structural-extra/bench/gates/catscan_gate.py",
+      "--root",
+      "/workspace/shared/doe-c-migration-20261023",
+      "--json"
+    ],
+    "returncode": 0,
+    "source": "Supplemental structural tool/charter snapshot; root existence checks use shared repo, not executed native input.",
+    "stderr": "",
+    "stdout": "{\n  \"failures\": [],\n  \"ok\": true,\n  \"summary\": {\n    \"charterCount\": 29,\n    \"indexPath\": \"docs/component-index.md\",\n    \"maxWords\": 250\n  }\n}\n"
+  }
+}

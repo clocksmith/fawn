@@ -1,0 +1,21 @@
+{
+  "original_bytes": 775,
+  "original_receipt_sha256": "2c8a1946cba1cb185a9af441bc34eadf243ca578c8cdd56a9c093bb0ccc40b7e",
+  "receipt": {
+    "argv": [
+      "/tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/consumer-g++",
+      "/tmp/doe-instance-evaluator-0eyngbi0/native-fci-retry1/install/lib/libwebgpu_doe.so",
+      "FCI"
+    ],
+    "cwd": "/tmp/doe-instance-evaluator-0eyngbi0/native-fci-retry1/source/runtime/zig",
+    "elapsed_seconds": 0.0030738720088265836,
+    "environment": {
+      "DOE_BACKEND": "metal",
+      "DOE_PROGRAM_IDENTITY_TRACE_PATH": "/tmp/doe-instance-evaluator-0eyngbi0/native-fci-retry1/FCI-g++-trace.jsonl",
+      "LD_LIBRARY_PATH": "/workspace/shared/doe-language-experiment-20261023/phase1/system-link-prefix/lib"
+    },
+    "returncode": 0,
+    "stderr": "",
+    "stdout": "PASS independent direct/proc instance modes/capabilities/reentry/actual unconfigured surface; no GPU qualification\n"
+  }
+}

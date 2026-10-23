@@ -1,0 +1,19 @@
+{
+  "original_bytes": 679,
+  "original_receipt_sha256": "2d0a0b7c907ca01e4fb9ca2266fde6acce64042b58401f2121de0a57bd248ca3",
+  "receipt": {
+    "argv": [
+      "ldd",
+      "/tmp/doe-instance-author-20261023-final/FCI/lib/libwebgpu_doe.so"
+    ],
+    "elapsed_seconds": 0.00737229100195691,
+    "environment": {
+      "DOE_BACKEND": "metal",
+      "LD_LIBRARY_PATH": "/workspace/shared/doe-language-experiment-20261023/phase1/system-link-prefix/lib"
+    },
+    "returncode": 0,
+    "scope": "Independent consumption of AUTHOR PREBUILT normal final-source artifact",
+    "stderr": "",
+    "stdout": "\tlinux-vdso.so.1 (0x00007f1f17185000)\n\tlibvulkan.so.1 => /lib/x86_64-linux-gnu/libvulkan.so.1 (0x00007f1f16e54000)\n\tlibc.so.6 => /lib/x86_64-linux-gnu/libc.so.6 (0x00007f1f16c60000)\n\t/lib64/ld-linux-x86-64.so.2 (0x00007f1f17187000)\n"
+  }
+}

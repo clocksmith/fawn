@@ -1,0 +1,42 @@
+{
+  "original_bytes": 1945,
+  "original_receipt_sha256": "c8fc6b419dbcf054a1ff79dd7621e99be71ba737bb33bd5bec4f9534789a6566",
+  "receipt": {
+    "argv": [
+      "/workspace/shared/doe-language-experiment-20261023/phase1/deps/zig-x86_64-linux-0.15.2/zig",
+      "build",
+      "dropin",
+      "-j1",
+      "-Doptimize=ReleaseFast",
+      "-Dexperimental-c-futures-archive=/tmp/doe-instance-evaluator-0eyngbi0/accepted-futures/libdoe_futures_zig.a",
+      "-Dexperimental-c-callbacks-archive=/tmp/doe-instance-evaluator-0eyngbi0/callbacks-developer/libdoe_callbacks.a",
+      "-Dexperimental-c-instance-archive=/tmp/doe-instance-evaluator-0eyngbi0/instance-normal/libdoe_instance.a",
+      "--search-prefix",
+      "/workspace/shared/doe-language-experiment-20261023/phase1/system-link-prefix",
+      "--cache-dir",
+      "/tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/FCI-cache",
+      "--global-cache-dir",
+      "/tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/FCI-global-cache",
+      "--prefix",
+      "/tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/FCI-install"
+    ],
+    "closure_seal": "f1d5323d7b73c96ad4f2d4ff43f0b55c7c01445f2383ad1d883bc2c580e2db7f",
+    "cwd": "/tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/source/runtime/zig",
+    "elapsed_seconds_exact": null,
+    "environment": {
+      "DOE_BACKEND": "metal",
+      "LD_LIBRARY_PATH": "/workspace/shared/doe-language-experiment-20261023/phase1/system-link-prefix/lib"
+    },
+    "execution_session_id": 26422,
+    "installed_library_exists": false,
+    "later_session_poll": "Unknown process id 26422",
+    "native_child_returncode": null,
+    "native_driver_returncode": null,
+    "original_wrapper": "tests/continue_native_controls.py",
+    "outcome": "Python subprocess.TimeoutExpired at 900-second limit",
+    "outer_exec_returncode": 1,
+    "process_evidence_limitation": "Original wrapper did not capture its children; later exec uses a different PID namespace and cannot certify former descendant state.",
+    "source_seal": "51347ba22f88c12724af95a6d87d821615b86782855ca8b4fa1e892cbe584669",
+    "timeout_seconds": 900
+  }
+}

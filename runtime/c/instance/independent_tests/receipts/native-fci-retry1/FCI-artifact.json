@@ -1,0 +1,12 @@
+{
+  "original_bytes": 354,
+  "original_receipt_sha256": "3570ae2e8cfe7a34b5941d8e5c97e3991a33305a5f9e76a4213b3a5c7228a8d6",
+  "receipt": {
+    "library": "/tmp/doe-instance-evaluator-0eyngbi0/native-fci-retry1/install/lib/libwebgpu_doe.so",
+    "options": [
+      "/workspace/shared/doe-c-migration-evidence-20261023/instance1/evaluator/native-fci-retry1/FCI-options-e4a0eb0697ce.zig"
+    ],
+    "sha256": "9a8b934fe04a82fde659310aec7e5323d486c16cff1ad775936f134831a56ef7",
+    "size_bytes": 12923984
+  }
+}

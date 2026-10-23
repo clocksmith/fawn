@@ -28,6 +28,12 @@ const texture_native = @import("../resource/doe_texture_sampler_native.zig");
 const device_native = @import("../lifecycle/doe_instance_device_native.zig");
 
 const alloc = native_helpers.alloc;
+// Test-only host surface allocation binding; keep it stable through destruction.
+pub var test_surface_allocator: ?std.mem.Allocator = null;
+
+fn surface_allocator() std.mem.Allocator {
+    return if (builtin.is_test) test_surface_allocator orelse alloc else alloc;
+}
 const make = native_helpers.make;
 const cast = native_helpers.cast;
 const toOpaque = native_helpers.toOpaque;
@@ -249,7 +255,7 @@ pub export fn doeNativeInstanceCreateSurface(
 ) callconv(.c) ?*anyopaque {
     if (comptime !has_vulkan) return null;
 
-    const surf = make(DoeSurface) orelse return null;
+    const surf = native_helpers.create(DoeSurface, surface_allocator()) catch return null;
     const handle: u64 = @intFromPtr(surf);
     surf.* = .{
         .backend = .vulkan,
@@ -260,7 +266,7 @@ pub export fn doeNativeInstanceCreateSurface(
 
     if (dev_raw != null and !bind_surface_runtime(surf, dev_raw)) {
         release_surface_instance(surf);
-        alloc.destroy(surf);
+        surface_allocator().destroy(surf);
         return null;
     }
     return toOpaque(surf);
@@ -497,7 +503,7 @@ pub export fn doeNativeSurfaceRelease(surf_raw: ?*anyopaque) callconv(.c) void {
     }
     if (surf.device_ref) |dev| device_native.doeNativeDeviceReleaseInternal(toOpaque(dev));
     release_surface_instance(surf);
-    alloc.destroy(surf);
+    surface_allocator().destroy(surf);
 }
 
 // ============================================================

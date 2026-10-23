@@ -1,0 +1,21 @@
+{
+  "original_bytes": 738,
+  "original_receipt_sha256": "0c9954b3aec5523dbea970ac0cd53cfe0986c2b16a9ea6b75d76cb11aacbb7e3",
+  "receipt": {
+    "argv": [
+      "/tmp/doe-instance-evaluator-0eyngbi0/native-prebuilt/gcc",
+      "/tmp/doe-instance-author-20261023-final/FCI/lib/libwebgpu_doe.so",
+      "FCI"
+    ],
+    "elapsed_seconds": 0.003566266968846321,
+    "environment": {
+      "DOE_BACKEND": "metal",
+      "DOE_PROGRAM_IDENTITY_TRACE_PATH": "/tmp/doe-instance-evaluator-0eyngbi0/native-prebuilt/FCI-gcc-tracefix.jsonl",
+      "LD_LIBRARY_PATH": "/workspace/shared/doe-language-experiment-20261023/phase1/system-link-prefix/lib"
+    },
+    "returncode": 0,
+    "scope": "Independent consumption of AUTHOR PREBUILT normal final-source artifact",
+    "stderr": "",
+    "stdout": "PASS independent direct/proc instance modes/capabilities/reentry/actual unconfigured surface; no GPU qualification\n"
+  }
+}

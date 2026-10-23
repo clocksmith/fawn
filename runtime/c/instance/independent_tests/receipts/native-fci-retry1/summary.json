@@ -1,0 +1,13 @@
+{
+  "original_bytes": 335,
+  "original_receipt_sha256": "01e99ae5257460406623a9f27a05b4f1c96b1b940db061c8d6a4b00ed0e18d65",
+  "receipt": {
+    "FCI_first_build": "900-second timeout preserved; distinct supervised fresh retry required",
+    "commands_in_continuation": 7,
+    "normal_independent_GCC_archives": true,
+    "only_native_cpu_scope": true,
+    "passed": true,
+    "source_copy": "/tmp/doe-instance-evaluator-0eyngbi0/native-fci-retry1/source",
+    "verified_sources": 1719
+  }
+}

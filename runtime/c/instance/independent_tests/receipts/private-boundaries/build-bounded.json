@@ -1,0 +1,38 @@
+{
+  "original_bytes": 1255,
+  "original_receipt_sha256": "b04d9e976d50d119595ed25de6558d94935bbdcc73fcaff8ca5d4b01d1311b13",
+  "receipt": {
+    "argv": [
+      "gcc",
+      "-std=c11",
+      "-O2",
+      "-g",
+      "-Wall",
+      "-Wextra",
+      "-Wpedantic",
+      "-Werror",
+      "-pthread",
+      "-I",
+      "/tmp/doe-instance-evaluator-0eyngbi0/gcc-core-source/runtime/c/instance/src",
+      "-I",
+      "/tmp/doe-instance-evaluator-0eyngbi0/gcc-core-source/runtime/c/instance/include",
+      "-I",
+      "/tmp/doe-instance-evaluator-0eyngbi0/gcc-core-source/runtime/c/futures/include",
+      "-I",
+      "/tmp/doe-instance-evaluator-0eyngbi0/gcc-core-source/runtime/zig/vendor/webgpu-headers",
+      "-DDOE_INSTANCE_TESTING",
+      "-DDOE_INSTANCE_TEST_REFERENCE_LIMIT=3",
+      "/workspace/shared/doe-c-migration-evidence-20261023/instance1/evaluator/tests/instance_private_boundaries.c",
+      "/tmp/doe-instance-evaluator-0eyngbi0/gcc-core-source/runtime/c/instance/src/capabilities.c",
+      "/tmp/doe-instance-evaluator-0eyngbi0/gcc-core-source/runtime/c/instance/src/instance.c",
+      "/tmp/doe-instance-evaluator-0eyngbi0/gcc-core-source/runtime/c/instance/src/wait.c",
+      "/tmp/doe-instance-evaluator-0eyngbi0/instance-normal/libdoe_futures.a",
+      "-o",
+      "/tmp/doe-instance-evaluator-0eyngbi0/instance-private/bounded"
+    ],
+    "elapsed_seconds": 0.25990911200642586,
+    "returncode": 0,
+    "stderr": "",
+    "stdout": ""
+  }
+}

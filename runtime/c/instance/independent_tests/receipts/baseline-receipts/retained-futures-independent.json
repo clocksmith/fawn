@@ -1,0 +1,21 @@
+{
+  "original_bytes": 2508,
+  "original_receipt_sha256": "f44caa92359fccdd07ad98995d64c639a962e3f3884a2cbfa2c0dcd327132187",
+  "receipt": {
+    "argv": [
+      "python3",
+      "/workspace/shared/doe-c-migration-20261023/runtime/c/futures/independent_tests/run.py",
+      "--source-root",
+      "/workspace/shared/doe-c-migration-20261023/runtime/c/futures",
+      "--mode",
+      "full",
+      "--output",
+      "/tmp/doe-instance-evaluator-0eyngbi0/futures-independent"
+    ],
+    "cwd": "/workspace/shared/doe-c-migration-20261023",
+    "elapsed_seconds": 3.9404264540062286,
+    "returncode": 0,
+    "stderr": "",
+    "stdout": "PASS toolchain-gcc exit=0\nPASS toolchain-gpp exit=0\nPASS platform exit=0\nPASS optimized-compile-futures exit=0\nPASS optimized-compile-storage exit=0\nPASS optimized-archive exit=0\nPASS archive-nm-defined-only exit=0\nPASS archive-nm-undefined-only exit=0\nPASS optimized-functional-build exit=0\nPASS optimized-functional-run exit=0\nPASS optimized-concurrency-build exit=0\nPASS optimized-concurrency-run exit=0\nPASS optimized-init_faults-build exit=0\nPASS optimized-init_faults-run exit=0\nPASS optimized-wait_faults-build exit=0\nPASS optimized-wait_faults-run exit=0\nPASS optimized-selection_reuse-build exit=0\nPASS optimized-selection_reuse-run exit=0\nPASS optimized-consumer_c-build exit=0\nPASS optimized-consumer_c-run exit=0\nPASS optimized-c-layout exit=0\nPASS optimized-cpp-build exit=0\nPASS optimized-cpp-run exit=0\nPASS tiny-limits-compile-futures exit=0\nPASS tiny-limits-compile-storage exit=0\nPASS tiny-limits-archive exit=0\nPASS tiny-limits-exhaustion-build exit=0\nPASS tiny-limits-exhaustion-run exit=0\nPASS ungated-limit-override-rejected exit=1\nPASS asan-ubsan-probe-build exit=0\nPASS asan-ubsan-probe-run exit=0\nPASS asan-ubsan-compile-futures exit=0\nPASS asan-ubsan-compile-storage exit=0\nPASS asan-ubsan-archive exit=0\nPASS asan-ubsan-functional-build exit=0\nPASS asan-ubsan-functional-run exit=0\nPASS asan-ubsan-concurrency-build exit=0\nPASS asan-ubsan-concurrency-run exit=0\nPASS asan-ubsan-init_faults-build exit=0\nPASS asan-ubsan-init_faults-run exit=0\nPASS asan-ubsan-wait_faults-build exit=0\nPASS asan-ubsan-wait_faults-run exit=0\nPASS asan-ubsan-selection_reuse-build exit=0\nPASS asan-ubsan-selection_reuse-run exit=0\nPASS tsan-probe-build exit=0\nPASS tsan-probe-run exit=0\nPASS tsan-compile-futures exit=0\nPASS tsan-compile-storage exit=0\nPASS tsan-archive exit=0\nPASS tsan-concurrency-build exit=0\nPASS tsan-concurrency-run exit=0\nPASS tsan-selection_reuse-build exit=0\nPASS tsan-selection_reuse-run exit=0\n{\n  \"failures\": [],\n  \"unsupported_runtime\": []\n}\n"
+  }
+}

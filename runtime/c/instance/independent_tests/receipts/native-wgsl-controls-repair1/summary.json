@@ -1,0 +1,13 @@
+{
+  "original_bytes": 168,
+  "original_receipt_sha256": "7e981bfddee5e6fb68874ef1d563875ad21ea8b221ad0c9b87ba431af5281fb0",
+  "receipt": {
+    "commands": 18,
+    "direct_values_and_proc_availability_match_Z": true,
+    "distinct_provenance": [
+      "source-built",
+      "author-prebuilt"
+    ],
+    "passed": true
+  }
+}

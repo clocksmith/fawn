@@ -1,0 +1,19 @@
+{
+  "original_bytes": 623,
+  "original_receipt_sha256": "dbefacaf3336f17bc36d21016d69112c93ba77061d1fbccfd6ed5ba4a834554f",
+  "receipt": {
+    "argv": [
+      "/tmp/doe-instance-evaluator-0eyngbi0/native-prebuilt/labels",
+      "/tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/FC-install/lib/libwebgpu_doe.so"
+    ],
+    "cwd": "/tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/source/runtime/zig",
+    "elapsed_seconds": 0.003848793974611908,
+    "environment": {
+      "DOE_BACKEND": "metal",
+      "LD_LIBRARY_PATH": "/workspace/shared/doe-language-experiment-20261023/phase1/system-link-prefix/lib"
+    },
+    "returncode": 0,
+    "stderr": "",
+    "stdout": "PASS native copied labels survive caller/surface ownership and disappear at final release\n"
+  }
+}

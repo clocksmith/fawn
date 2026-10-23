@@ -128,7 +128,7 @@ pub var g_render_inflight = singleflight.Registry(RenderPipelineAsyncRequest).in
 
 pub fn next_async_future_id(device_raw: types.WGPUDevice) u64 {
     if (native.cast(native.DoeDevice, device_raw)) |device| {
-        if (device.adapter) |adapter| if (adapter.instance) |instance| return instance.pending_completions.newFuture();
+        if (device.adapter) |adapter| if (adapter.instance) |instance| return @import("../native/support/doe_native_object_helpers.zig").instance_pending(instance).newFuture();
     }
     return future_ids.legacyFuture();
 }
@@ -647,7 +647,7 @@ pub fn register_pipeline_future(comptime Request: type, device_raw: types.WGPUDe
     const instance = adapter.instance orelse return;
     native.object_add_ref(native.DoeInstance, native.toOpaque(instance));
     req.instance_ref = instance;
-    instance.pending_completions.register(&req.future_completion, id);
+    @import("../native/support/doe_native_object_helpers.zig").instance_pending(instance).register(&req.future_completion, id);
 }
 
 test "async render cleanup releases shader leases before owned fragment storage" {

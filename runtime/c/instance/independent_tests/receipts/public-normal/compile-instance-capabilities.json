@@ -1,0 +1,36 @@
+{
+  "original_bytes": 878,
+  "original_receipt_sha256": "9874ec9f3b3893c82f71df8e6d05d6ddede07a7e933c6c7690004d347f475b96",
+  "receipt": {
+    "argv": [
+      "gcc",
+      "-std=c11",
+      "-O2",
+      "-g",
+      "-fPIC",
+      "-Wall",
+      "-Wextra",
+      "-Wpedantic",
+      "-Werror",
+      "-pthread",
+      "-I",
+      "/tmp/doe-instance-evaluator-0eyngbi0/gcc-core-source/runtime/c/instance/include",
+      "-I",
+      "/tmp/doe-instance-evaluator-0eyngbi0/gcc-core-source/runtime/c/futures/include",
+      "-I",
+      "/tmp/doe-instance-evaluator-0eyngbi0/gcc-core-source/runtime/zig/vendor/webgpu-headers",
+      "-c",
+      "/tmp/doe-instance-evaluator-0eyngbi0/gcc-core-source/runtime/c/instance/src/capabilities.c",
+      "-o",
+      "/tmp/doe-instance-evaluator-0eyngbi0/instance-normal/instance-capabilities.o"
+    ],
+    "asan_options": null,
+    "child_peak_rss_kib": 17224,
+    "cwd": "/workspace/scratch/e1ac86fc0556",
+    "elapsed_seconds": 0.0372059210203588,
+    "instrumentation": "normal",
+    "returncode": 0,
+    "stderr": "",
+    "stdout": ""
+  }
+}

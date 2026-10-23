@@ -1,0 +1,26 @@
+{
+  "original_bytes": 6058,
+  "original_receipt_sha256": "8d0a3ece6bcdf5cffdfc543a23a6e4fc6e06c8491dcec4775e286e11b7164f81",
+  "receipt": {
+    "caches": {
+      "FCI-cache": {
+        "files": 643,
+        "newest_mtime": 1792751740.2747269
+      },
+      "FCI-global-cache": {
+        "files": 845,
+        "newest_mtime": 1792751737.176088
+      }
+    },
+    "installed_library_exists": false,
+    "namespace": "pid:[4026532883]",
+    "pid1_namespace": "pid:[4026532883]",
+    "processes": {
+      "excerpt": null,
+      "omission": "Long output or sandbox-parent process description retained only in original detailed evidence.",
+      "original_sha256": "45a94b0633ef85cd66cb223b2e630c9d90f871c5cbe8bb31398b41e51bb9985a",
+      "original_utf8_bytes": 5270
+    },
+    "timestamp": "2026-10-23T10:54:09Z"
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "original_bytes": 1675,
+  "original_receipt_sha256": "81e6e5073d0a3b98bc08bce53ec8cdc99b0d4100596605936132a19c57d6cf4d",
+  "receipt": [
+    {
+      "du_kib": "49516\t/tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/F-cache",
+      "path": "/tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/F-cache",
+      "test_outputs": [
+        {
+          "path": "/tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/F-cache/o/137df51a1ec1d8a5e93cc3c7676aa1af/test",
+          "sha256": "9e8f8d9273b8f3aeaf9ca6d435977b5d0fe6d44144d3634322862d82542b9526",
+          "size_bytes": 3630552
+        }
+      ]
+    },
+    {
+      "du_kib": "44444\t/tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/F-global-cache",
+      "path": "/tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/F-global-cache",
+      "test_outputs": []
+    },
+    {
+      "du_kib": "59472\t/tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/FC-cache",
+      "path": "/tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/FC-cache",
+      "test_outputs": [
+        {
+          "path": "/tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/FC-cache/o/7449007455336e76dde9ee28744ba5f4/test",
+          "sha256": "41e73b78054df2dc874af6b6470686e94d1c27a2f99e014676077dc20aca3e9d",
+          "size_bytes": 3638504
+        },
+        {
+          "path": "/tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/FC-cache/o/6ed2994091ae75c1d1c1db7fa7edbfe3/test",
+          "sha256": "7af558b36895dc40ba55631965b8675df9d4937fd65d4cb23f9ec3dd4a2f57ff",
+          "size_bytes": 3700056
+        }
+      ]
+    },
+    {
+      "du_kib": "44444\t/tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/FC-global-cache",
+      "path": "/tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/FC-global-cache",
+      "test_outputs": []
+    }
+  ]
+}

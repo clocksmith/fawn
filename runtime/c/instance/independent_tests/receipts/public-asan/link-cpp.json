@@ -1,0 +1,42 @@
+{
+  "original_bytes": 1153,
+  "original_receipt_sha256": "a26845741e3444b51b9ccb68744bb29099b7d039f0f29d5c3842c8a7b35ac492",
+  "receipt": {
+    "argv": [
+      "g++",
+      "-std=c++17",
+      "-fno-exceptions",
+      "-fno-rtti",
+      "-O1",
+      "-g",
+      "-fPIC",
+      "-Wall",
+      "-Wextra",
+      "-Wpedantic",
+      "-Werror",
+      "-pthread",
+      "-fno-omit-frame-pointer",
+      "-fno-sanitize-recover=all",
+      "-fsanitize=address,undefined",
+      "-I",
+      "/tmp/doe-instance-evaluator-0eyngbi0/gcc-core-source/runtime/c/instance/include",
+      "-I",
+      "/tmp/doe-instance-evaluator-0eyngbi0/gcc-core-source/runtime/c/futures/include",
+      "-I",
+      "/tmp/doe-instance-evaluator-0eyngbi0/gcc-core-source/runtime/zig/vendor/webgpu-headers",
+      "/workspace/shared/doe-c-migration-evidence-20261023/instance1/evaluator/tests/instance_cpp.cpp",
+      "/tmp/doe-instance-evaluator-0eyngbi0/instance-asan/libdoe_instance.a",
+      "/tmp/doe-instance-evaluator-0eyngbi0/instance-asan/libdoe_futures.a",
+      "-o",
+      "/tmp/doe-instance-evaluator-0eyngbi0/instance-asan/cpp"
+    ],
+    "asan_options": "detect_leaks=0",
+    "child_peak_rss_kib": 48264,
+    "cwd": "/workspace/scratch/e1ac86fc0556",
+    "elapsed_seconds": 0.2332610849989578,
+    "instrumentation": "asan",
+    "returncode": 0,
+    "stderr": "",
+    "stdout": ""
+  }
+}

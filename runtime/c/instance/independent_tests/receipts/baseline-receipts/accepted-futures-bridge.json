@@ -1,0 +1,16 @@
+{
+  "original_bytes": 333,
+  "original_receipt_sha256": "d79a3d828738fc2394c4b1c66a753cef77f649cb8bdbc7022df45b56953b1a2d",
+  "receipt": {
+    "argv": [
+      "sh",
+      "/workspace/shared/doe-c-migration-20261023/runtime/c/futures/integration/build_archive.sh",
+      "/tmp/doe-instance-evaluator-0eyngbi0/accepted-futures"
+    ],
+    "cwd": "/workspace/shared/doe-c-migration-20261023",
+    "elapsed_seconds": 0.216652752016671,
+    "returncode": 0,
+    "stderr": "",
+    "stdout": ""
+  }
+}

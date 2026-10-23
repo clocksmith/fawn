@@ -1,0 +1,161 @@
+{
+  "needed_by": "runtime/zig/build.zig loadProofProvenance/hashLeanSourceTreeAlloc",
+  "missing_inputs": [
+    {
+      "path": "pipeline/lean/Doe/Core/BindGroupSlot.lean",
+      "sha256": "cfd61d84d234eabe03c4a19ebe7022ba14d9b344845b05ed7237bc61cc2875e2",
+      "bytes": 2591,
+      "equals_accepted_predecessor": true
+    },
+    {
+      "path": "pipeline/lean/Doe/Core/Bridge.lean",
+      "sha256": "f1cc97d7e7c8525cf64fd5864dab15414a756dba207fefdc2842b26462bb8141",
+      "bytes": 4934,
+      "equals_accepted_predecessor": true
+    },
+    {
+      "path": "pipeline/lean/Doe/Core/BufferDispatchPrecondition.lean",
+      "sha256": "f68e13e7ec63cc847845d00c0a978de33caacd7135e069c9df7f653ddcb7c7bd",
+      "bytes": 4526,
+      "equals_accepted_predecessor": true
+    },
+    {
+      "path": "pipeline/lean/Doe/Core/BufferLifecycle.lean",
+      "sha256": "4801c857bd074caa93506a1a0fc5bec10ec08fcabd7e5c7e003bed70b0c60ade",
+      "bytes": 4330,
+      "equals_accepted_predecessor": true
+    },
+    {
+      "path": "pipeline/lean/Doe/Core/DeterminismPolicy.lean",
+      "sha256": "34229df78a25e3108b314b886ae526662cf7bccb82745fcde57163592fbdb2a0",
+      "bytes": 5621,
+      "equals_accepted_predecessor": true
+    },
+    {
+      "path": "pipeline/lean/Doe/Core/Dispatch.lean",
+      "sha256": "93f724d847337423c02c977c2a3dbb82512fd5f89ed903b7fd02da9558ae0d33",
+      "bytes": 2315,
+      "equals_accepted_predecessor": true
+    },
+    {
+      "path": "pipeline/lean/Doe/Core/IrBuilderSoundness.lean",
+      "sha256": "6c1d0d051a3208c760ed9632a7d553e87d2dee4428fd8e4be700fb334b3d5875",
+      "bytes": 18272,
+      "equals_accepted_predecessor": true
+    },
+    {
+      "path": "pipeline/lean/Doe/Core/IrOptRewrite.lean",
+      "sha256": "8cc9b71878d58e7a0fe44b729cdf3f1b2acf6d2147eaf1bf72880dd4a395d8af",
+      "bytes": 3293,
+      "equals_accepted_predecessor": true
+    },
+    {
+      "path": "pipeline/lean/Doe/Core/IrSemanticContract.lean",
+      "sha256": "e01d4506b3cacaa0bfbc9f37bfc1284d3cd9046f4d678523733d50d1bbf94025",
+      "bytes": 19815,
+      "equals_accepted_predecessor": true
+    },
+    {
+      "path": "pipeline/lean/Doe/Core/IrTypePreserved.lean",
+      "sha256": "67cc7b260b70b318ad8c8614b05b3d743c4cc61963ba8d2caefa1cdbd60fa863",
+      "bytes": 9143,
+      "equals_accepted_predecessor": true
+    },
+    {
+      "path": "pipeline/lean/Doe/Core/IrValidatorRedundancy.lean",
+      "sha256": "8d5a8c9befbac665833c96e281bc387f972d295fdd9d95c2cec2b7859ecec23e",
+      "bytes": 14387,
+      "equals_accepted_predecessor": true
+    },
+    {
+      "path": "pipeline/lean/Doe/Core/Model.lean",
+      "sha256": "5fbbebcc575e2164b79bdbbc441e3fe7e7520ff7667bfb58b3a8d049d44ae6a4",
+      "bytes": 4720,
+      "equals_accepted_predecessor": true
+    },
+    {
+      "path": "pipeline/lean/Doe/Core/MslAddressSpace.lean",
+      "sha256": "b064c79303ed682a40bd8441b96e001585f27aaa8488744e1be27610387c6f47",
+      "bytes": 5966,
+      "equals_accepted_predecessor": true
+    },
+    {
+      "path": "pipeline/lean/Doe/Core/NumericStabilityPolicy.lean",
+      "sha256": "7b6f11358895f6dbcfa37a24c38110a9125e9b98dcb19533ae5f987fdd222052",
+      "bytes": 3586,
+      "equals_accepted_predecessor": true
+    },
+    {
+      "path": "pipeline/lean/Doe/Core/RenderPassStateMachine.lean",
+      "sha256": "73491e7c53137e0edc9df9a921709efad9ecf2072c4a5f2e8ae153c26a0991ba",
+      "bytes": 5922,
+      "equals_accepted_predecessor": true
+    },
+    {
+      "path": "pipeline/lean/Doe/Core/Runtime.lean",
+      "sha256": "a0642058607480247e2fb5d91476f44ad9109014431907744ad8a520c7cf5600",
+      "bytes": 9952,
+      "equals_accepted_predecessor": true
+    },
+    {
+      "path": "pipeline/lean/Doe/Extract.lean",
+      "sha256": "be23888c64ea12e4c483817025ad9bf68344e59e14e9067b25ce8d83fb6ea791",
+      "bytes": 48260,
+      "equals_accepted_predecessor": true
+    },
+    {
+      "path": "pipeline/lean/Doe/Full/Comparability.lean",
+      "sha256": "a3d04e9311dc34cc861b560ad5494df7a74171398341dfdf5fbbd0700aaf9cb6",
+      "bytes": 2955,
+      "equals_accepted_predecessor": true
+    },
+    {
+      "path": "pipeline/lean/Doe/Full/ComparabilityFixtures.lean",
+      "sha256": "efcb026997f57a57b6b36b6a8fb649dcf956a7d6aa222e43d573493203d9196c",
+      "bytes": 19434,
+      "equals_accepted_predecessor": true
+    },
+    {
+      "path": "pipeline/lean/Doe/Full/WorkloadGeometry.lean",
+      "sha256": "39fb992b42afb1211eb933fc74eaa86c978e6cd5d9352dc256dd990da9707bf5",
+      "bytes": 2433,
+      "equals_accepted_predecessor": true
+    },
+    {
+      "path": "pipeline/lean/Doe/Generated/ComparabilityContract.lean",
+      "sha256": "f6c1a02662c29896f4b9edc6b884ca059bc344da909cfe8122292188c8b37650",
+      "bytes": 14390,
+      "equals_accepted_predecessor": true
+    },
+    {
+      "path": "pipeline/lean/Doe/Model.lean",
+      "sha256": "31e1ad7074d093e5089cb7dbf63fe67a79e59c49b0df234db8465eb4506cb819",
+      "bytes": 935,
+      "equals_accepted_predecessor": true
+    },
+    {
+      "path": "pipeline/lean/Doe/Shader/BoundsElisionMatcher.lean",
+      "sha256": "9e609c8864e82a2e06a216bcf6e91d9751cd43a0383fa959af0b9bb22fb0b0fd",
+      "bytes": 32490,
+      "equals_accepted_predecessor": true
+    },
+    {
+      "path": "pipeline/lean/Doe/Shader/ComputeBounds.lean",
+      "sha256": "9acdf8a310d6d17e8f38734f55a9f61a08db8aeda65a7bb3b3eaf8cf571dbbff",
+      "bytes": 25291,
+      "equals_accepted_predecessor": true
+    },
+    {
+      "path": "pipeline/lean/Doe/Shader/Tactics.lean",
+      "sha256": "ce714749b85daac72356a9fb2ac41d7e5c8444bf16a954d93483cc81e7b5dbe6",
+      "bytes": 570,
+      "equals_accepted_predecessor": true
+    },
+    {
+      "path": "pipeline/lean/Doe/Shader/TextureSampleBounds.lean",
+      "sha256": "80e4d2e92a52c556c065bd9996501f560ed1fcaadac28c3e7a22721de981592c",
+      "bytes": 20085,
+      "equals_accepted_predecessor": true
+    }
+  ]
+}

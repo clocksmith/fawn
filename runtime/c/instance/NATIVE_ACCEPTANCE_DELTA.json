@@ -1,0 +1,21 @@
+{
+  "original_manifest": "independent_tests/NATIVE_COMPLETE_INPUTS.sha256",
+  "original_manifest_sha256": "f1d5323d7b73c96ad4f2d4ff43f0b55c7c01445f2383ad1d883bc2c580e2db7f",
+  "dependency_count": 1719,
+  "changes": [
+    {
+      "path": "runtime/c/instance/CATSCAN.md",
+      "original_sha256": "9ca729ad61a10fed6572cc00db4fd8ef1c43a1c87630f1cbc59ab2000b4cb8f9",
+      "accepted_sha256": "b44bf1e6e9b481ae18cdbbcc24cdd4162360f8b3c3e75f5dcc51975cd9920590",
+      "kind": "acceptance navigation only"
+    },
+    {
+      "path": "runtime/c/instance/README.md",
+      "original_sha256": "3509b030b8a75bf60f11180c95dc0649c0a7e66be61e4429d72c155767a4f8d1",
+      "accepted_sha256": "3902cdb22cca9af8df4e76a633f4f4f8637a0ef2b4bd6792f7100c6e8753120c",
+      "kind": "acceptance navigation only"
+    }
+  ],
+  "native_rebuild_after_navigation_only_change": false,
+  "implementation_inputs_unchanged": true
+}

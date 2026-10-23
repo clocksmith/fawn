@@ -1,0 +1,13 @@
+{
+  "original_bytes": 204,
+  "original_receipt_sha256": "dc00c2f97743847ff55539b9771ab125b9119bdfeeff14f4a9d39890823f3854",
+  "receipt": {
+    "argv": [
+      "/tmp/doe-instance-evaluator-0eyngbi0/instance-status",
+      "process-error"
+    ],
+    "returncode": -6,
+    "stderr": "C instance process events failed closed: status 10\n",
+    "stdout": ""
+  }
+}

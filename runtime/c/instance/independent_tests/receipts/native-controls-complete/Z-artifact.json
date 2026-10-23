@@ -1,0 +1,12 @@
+{
+  "original_bytes": 368,
+  "original_receipt_sha256": "984ce3406beaee4ec49982251104f7f43a1db5167e46a1b1820ebb1d716ae7dd",
+  "receipt": {
+    "library": "/tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/Z-install/lib/libwebgpu_doe.so",
+    "options": [
+      "/workspace/shared/doe-c-migration-evidence-20261023/instance1/evaluator/native-controls-complete/Z-options-5126fa2b0415.zig"
+    ],
+    "sha256": "c3c89ad1416bc19f1c6561a48e810710b091a21f234d8acf0a3aa6c659b4e3e8",
+    "size_bytes": 12905416
+  }
+}

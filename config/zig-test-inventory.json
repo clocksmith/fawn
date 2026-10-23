@@ -1329,6 +1329,15 @@
           "kind": "integration"
         }
       ]
+    },
+    "c-instance": {
+      "output": "test_suite_c_instance.zig",
+      "entries": [
+        {
+          "path": "tests/c_instance_integration_test.zig",
+          "kind": "integration"
+        }
+      ]
     }
   },
   "supportFiles": [

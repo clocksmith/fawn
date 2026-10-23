@@ -1,0 +1,45 @@
+{
+  "original_bytes": 1915,
+  "original_receipt_sha256": "6ac6d479b8da597a6de6f67f10fd854e9859eaa7a8fffc030caf039fa91ed6d7",
+  "receipt": {
+    "after_cleanup": [],
+    "argv": [
+      "/workspace/shared/doe-language-experiment-20261023/phase1/deps/zig-x86_64-linux-0.15.2/zig",
+      "build",
+      "dropin-compute",
+      "dropin-full",
+      "-j1",
+      "-Doptimize=ReleaseFast",
+      "-Dexperimental-c-futures-archive=/tmp/doe-instance-evaluator-0eyngbi0/accepted-futures/libdoe_futures_zig.a",
+      "-Dexperimental-c-callbacks-archive=/tmp/doe-instance-evaluator-0eyngbi0/callbacks-developer/libdoe_callbacks.a",
+      "-Dexperimental-c-instance-archive=/tmp/doe-instance-evaluator-0eyngbi0/instance-normal/libdoe_instance.a",
+      "--search-prefix",
+      "/workspace/shared/doe-language-experiment-20261023/phase1/system-link-prefix",
+      "--cache-dir",
+      "/tmp/doe-instance-evaluator-0eyngbi0/native-fci-retry1/cache",
+      "--global-cache-dir",
+      "/tmp/doe-instance-evaluator-0eyngbi0/native-fci-retry1/global-cache",
+      "--prefix",
+      "/tmp/doe-instance-evaluator-0eyngbi0/native-fci-retry1/install",
+      "--summary",
+      "all"
+    ],
+    "before_cleanup": [],
+    "cleanup_signals": [],
+    "cwd": "/tmp/doe-instance-evaluator-0eyngbi0/native-fci-retry1/source/runtime/zig",
+    "elapsed_seconds": 134.3598703389871,
+    "environment": {
+      "DOE_BACKEND": "metal",
+      "LD_LIBRARY_PATH": "/workspace/shared/doe-language-experiment-20261023/phase1/system-link-prefix/lib"
+    },
+    "no_live_process_group_members": true,
+    "pid_namespace": "pid:[4026532881]",
+    "process_group": 33,
+    "returncode": 0,
+    "stderr": "\nBuild Summary: 8/8 steps succeeded\ndropin-compute success\n+- install webgpu_doe_compute success\n   +- compile lib webgpu_doe_compute ReleaseFast native success 1m MaxRSS:748M\n      +- options success\ndropin-full success\n+- install webgpu_doe_full success\n   +- compile lib webgpu_doe_full ReleaseFast native success 1m MaxRSS:730M\n      +- options success\n\n",
+    "stdout": "",
+    "timed_out": false,
+    "timeout_seconds": 900,
+    "wait_error": null
+  }
+}

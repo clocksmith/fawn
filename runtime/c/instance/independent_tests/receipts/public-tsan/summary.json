@@ -1,0 +1,13 @@
+{
+  "original_bytes": 227,
+  "original_receipt_sha256": "14e2dea102b5c518eaccf7954413297b705dd2a4c201950b748c26052bb894e6",
+  "receipt": {
+    "commands": 18,
+    "mode": "tsan",
+    "no_zig_instrumentation": true,
+    "output_root": "/tmp/doe-instance-evaluator-0eyngbi0/instance-tsan",
+    "passed": true,
+    "source_built_futures": true,
+    "source_built_instance": true
+  }
+}

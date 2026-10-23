@@ -1,0 +1,7 @@
+{
+  "time_utc": "2026-10-23T09:55:29.910583+00:00",
+  "source_copy": "/tmp/doe-instance-evaluator-0eyngbi0/gcc-core-source",
+  "source_seal": "70dc3a31e083b213fdecd27b3f81511e973fb2c341bd6c33edae7c7daa9d9472",
+  "fixture_seal": "86bdaa0e6f7717f90d29e8bc08b2a5cd447eeb8a1d2abb2e58f6fcf19ad41ac1",
+  "native_source_uninspected": true
+}

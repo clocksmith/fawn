@@ -1,0 +1,27 @@
+{
+  "original_bytes": 2026,
+  "original_receipt_sha256": "4a27333f11cd0312742e3410e28704e7f559fc1fb74bd33b2bf686dae5f1df2c",
+  "receipt": {
+    "after_cleanup": [],
+    "argv": [
+      "/tmp/doe-instance-evaluator-0eyngbi0/native-sanitizers/asan/independent-instance",
+      "--seed=0x3b161b60"
+    ],
+    "before_cleanup": [],
+    "cleanup_signals": [],
+    "cwd": "/tmp/doe-instance-evaluator-0eyngbi0/native-independent",
+    "elapsed_seconds": 0.2524748540017754,
+    "environment": {
+      "DOE_BACKEND": "metal"
+    },
+    "no_live_process_group_members": true,
+    "pid_namespace": "pid:[4026532881]",
+    "process_group": 8,
+    "returncode": 0,
+    "stderr": "1/12 independent_instance.test.independent instance: copied local view late dispatch and joined final publisher...OK\n2/12 independent_instance.test.independent instance: direct copied view wait and pump keep final call alive...OK\n3/12 independent_instance.test.independent instance: never initialized and ownerless completion cleanup...OK\n4/12 independent_instance.test.independent instance: actual callbacks preserve inline transfer modes and final native entry...OK\n5/12 independent_instance.test.independent instance: actual task submission fallback and pool shutdown...OK\n6/12 independent_instance.test.independent instance: allocation and native wait failure preserve instance identity flags...OK\n7/12 independent_instance.test.independent instance: real self wait differs from joined foreign thread...OK\n8/12 independent_instance.test.independent instance: actual null-device loss event owns final callback lifetime...OK\n9/12 independent_instance.test.independent instance: real unconfigured surface is sole remaining instance lease...OK\n10/12 independent_instance.test.independent instance: invalid process events drains actual legacy global obligation...OK\n11/12 independent_instance.test.independent instance: actual surface allocation failure happens before retain...OK\n12/12 independent_instance.test.independent instance: test allocator remains matched through actual surface destruction...OK\nAll 12 tests passed.\n",
+    "stdout": "",
+    "timed_out": false,
+    "timeout_seconds": 900,
+    "wait_error": null
+  }
+}

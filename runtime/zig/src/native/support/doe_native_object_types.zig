@@ -36,7 +36,7 @@ pub const INVALID_COMPUTE_PASS_STATE_GENERATION: u64 = 0;
 pub const INITIAL_COMPUTE_PASS_STATE_GENERATION: u64 = 1;
 pub const UNUSED_PASS_TIMESTAMP_WRITE_INDEX: u32 = std.math.maxInt(u32);
 
-pub const DoeInstance = struct {
+pub const DoeInstance = if (@import("build_options").experimental_c_instance) @import("doe_instance_c_adapter.zig").Instance else struct {
     pub const TYPE_MAGIC = MAGIC_INSTANCE;
     magic: u32 = TYPE_MAGIC,
     ref_count: u32 = 1,

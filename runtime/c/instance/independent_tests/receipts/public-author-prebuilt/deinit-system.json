@@ -1,0 +1,18 @@
+{
+  "original_bytes": 410,
+  "original_receipt_sha256": "f617312ab6305d20ed852c32cc4ca4fdc21f00a8a63183a43b7292910b4dc17d",
+  "receipt": {
+    "argv": [
+      "/tmp/doe-instance-evaluator-0eyngbi0/instance-author-prebuilt/faults",
+      "deinit-system"
+    ],
+    "asan_options": null,
+    "child_peak_rss_kib": 46796,
+    "cwd": "/workspace/scratch/e1ac86fc0556",
+    "elapsed_seconds": 0.000801564019639045,
+    "instrumentation": "normal",
+    "returncode": -6,
+    "stderr": "C instance queue deinit failed closed: status 10\n",
+    "stdout": "ALLOCATE\nOBSERVE\n"
+  }
+}

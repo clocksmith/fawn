@@ -1,0 +1,19 @@
+{
+  "original_bytes": 374,
+  "original_receipt_sha256": "41b4864f275b8b7ea7c141b18b9f0222b8cc9a1288961b5673001e03309f7d15",
+  "receipt": {
+    "argv": [
+      "ar",
+      "t",
+      "/tmp/doe-instance-evaluator-0eyngbi0/instance-tsan/libdoe_futures.a"
+    ],
+    "asan_options": null,
+    "child_peak_rss_kib": 22120,
+    "cwd": "/workspace/scratch/e1ac86fc0556",
+    "elapsed_seconds": 0.0012961789616383612,
+    "instrumentation": "tsan",
+    "returncode": 0,
+    "stderr": "",
+    "stdout": "futures-futures.o\nfutures-storage.o\n"
+  }
+}

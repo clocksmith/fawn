@@ -1,0 +1,33 @@
+{
+  "original_bytes": 1248,
+  "original_receipt_sha256": "4bff518217c6fca194211b075eb559c6c71c79e63737eef9fcdf441f5d91e35b",
+  "receipt": {
+    "argv": [
+      "/workspace/shared/doe-language-experiment-20261023/phase1/deps/zig-x86_64-linux-0.15.2/zig",
+      "build",
+      "dropin",
+      "-j1",
+      "-Doptimize=ReleaseFast",
+      "-Dexperimental-c-futures-archive=/tmp/doe-instance-evaluator-0eyngbi0/accepted-futures/libdoe_futures_zig.a",
+      "-Dexperimental-c-callbacks-archive=/tmp/doe-instance-evaluator-0eyngbi0/callbacks-developer/libdoe_callbacks.a",
+      "-Dexperimental-c-instance-archive=/tmp/doe-instance-evaluator-0eyngbi0/instance-normal/libdoe_instance.a",
+      "--search-prefix",
+      "/workspace/shared/doe-language-experiment-20261023/phase1/system-link-prefix",
+      "--cache-dir",
+      "/tmp/doe-instance-evaluator-0eyngbi0/native-fci-retry1/cache",
+      "--global-cache-dir",
+      "/tmp/doe-instance-evaluator-0eyngbi0/native-fci-retry1/global-cache",
+      "--prefix",
+      "/tmp/doe-instance-evaluator-0eyngbi0/native-fci-retry1/install"
+    ],
+    "cwd": "/tmp/doe-instance-evaluator-0eyngbi0/native-fci-retry1/source/runtime/zig",
+    "elapsed_seconds": 0.10510079399682581,
+    "environment": {
+      "DOE_BACKEND": "metal",
+      "LD_LIBRARY_PATH": "/workspace/shared/doe-language-experiment-20261023/phase1/system-link-prefix/lib"
+    },
+    "returncode": 0,
+    "stderr": "",
+    "stdout": ""
+  }
+}

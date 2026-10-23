@@ -1,0 +1,16 @@
+{
+  "original_bytes": 502,
+  "original_receipt_sha256": "d2895c2f0466ccde62c599ceb95078e4668305cd17d32b356854d86b93ec87fd",
+  "receipt": {
+    "argv": [
+      "/tmp/doe-instance-evaluator-0eyngbi0/baseline-consumer-v4-g++",
+      "/tmp/doe-callback-final-5k2_7osz/install/lib/libwebgpu_doe.so",
+      "F"
+    ],
+    "dso_sha256": "3277a65ce5c440f46557966c390fe9e70f035d6202cfd73db59b13493d2f972b",
+    "returncode": 0,
+    "source_kind": "accepted historical baseline, not current candidate source build",
+    "stderr": "",
+    "stdout": "PASS independent direct/proc instance modes/capabilities/reentry/actual unconfigured surface; no GPU qualification\n"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "original_bytes": 368,
+  "original_receipt_sha256": "a83686752302c568b49ec2000c4b894763b42e7b78ddf8babb234d5ba3183bec",
+  "receipt": {
+    "library": "/tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/F-install/lib/libwebgpu_doe.so",
+    "options": [
+      "/workspace/shared/doe-c-migration-evidence-20261023/instance1/evaluator/native-controls-complete/F-options-646f1636b5a6.zig"
+    ],
+    "sha256": "15754ee84fab9031a5087501baedc8321a3b029364644c70bca6554a119d4339",
+    "size_bytes": 12918064
+  }
+}

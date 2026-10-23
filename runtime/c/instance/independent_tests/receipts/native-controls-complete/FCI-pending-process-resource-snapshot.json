@@ -1,0 +1,47 @@
+{
+  "original_bytes": 9132,
+  "original_receipt_sha256": "6b66b407886380851fec56100d8231169da67ab679cf2e4e2317834addef6991",
+  "receipt": {
+    "/proc/meminfo": "MemTotal:       10206484 kB\nMemFree:         1678144 kB\nMemAvailable:    1748496 kB\nBuffers:            8924 kB\nCached:          2935092 kB\nSwapCached:            0 kB\nActive:          2324960 kB\nInactive:        5069240 kB\nActive(anon):    2292724 kB\nInactive(anon):  4994172 kB\nActive(file):      32236 kB\nInactive(file):    75068 kB\nUnevictable:       29924 kB\nMlocked:               0 kB\nSwapTotal:             0 kB\nSwapFree:              0 kB\nDirty:                32 kB\nWriteback:             0 kB\nAnonPages:       4480080 kB\nMapped:           365544 kB\nShmem:           2806752 kB\nKReclaimable:     322400 kB\nSlab:             477012 kB\nSReclaimable:     322400 kB\nSUnreclaim:       154612 kB\nKernelStack:       25260 kB\nPageTables:       108444 kB\nSecPageTables:         0 kB\nNFS_Unstable:          0 kB\nBounce:                0 kB\nWritebackTmp:          0 kB\nCommitLimit:     5103240 kB\nCommitted_AS:   18909872 kB\nVmallocTotal:   34359738367 kB\nVmallocUsed:       27252 kB\nVmallocChunk:          0 kB\nPercpu:             4608 kB\nAnonHugePages:    147456 kB\nShmemHugePages:        0 kB\nShmemPmdMapped:        0 kB\nFileHugePages:         0 kB\nFilePmdMapped:         0 kB\nBalloon:               0 kB\nHugePages_Total:       0\nHugePages_Free:        0\nHugePages_Rsvd:        0\nHugePages_Surp:        0\nHugepagesize:       2048 kB\nHugetlb:               0 kB\nDirectMap4k:      612352 kB\nDirectMap2M:    11581440 kB\nDirectMap1G:    14680064 kB\n",
+    "/proc/self/cgroup": "0::/\n",
+    "/sys/fs/cgroup/cpu.max": {
+      "unavailable": "[Errno 2] No such file or directory: '/sys/fs/cgroup/cpu.max'"
+    },
+    "/sys/fs/cgroup/memory.current": {
+      "unavailable": "[Errno 2] No such file or directory: '/sys/fs/cgroup/memory.current'"
+    },
+    "/sys/fs/cgroup/memory.events": {
+      "unavailable": "[Errno 2] No such file or directory: '/sys/fs/cgroup/memory.events'"
+    },
+    "/sys/fs/cgroup/memory.max": {
+      "unavailable": "[Errno 2] No such file or directory: '/sys/fs/cgroup/memory.max'"
+    },
+    "artifact": {
+      "bytes": null,
+      "exists": false,
+      "path": "/tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/FCI-install/lib/libwebgpu_doe.so"
+    },
+    "processes": {
+      "argv": [
+        "ps",
+        "-eo",
+        "pid,ppid,stat,etime,time,pcpu,pmem,rss,wchan:32,args"
+      ],
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "    PID    PPID STAT     ELAPSED     TIME %CPU %MEM   RSS WCHAN                            COMMAND\n      1       0 Ss         00:00 00:00:00  0.0  0.1 14544 do_wait                          codex-linux-sandbox --sandbox-policy-cwd /workspace/scratch/e1ac86fc0556 --command-cwd /workspace/scratch/e1ac86fc0556 --permission-profile {\"type\":\"managed\",\"file_system\":{\"type\":\"restricted\",\"entries\":[{\"path\":{\"type\":\"special\",\"value\":{\"kind\":\"root\"}},\"access\":\"read\"},{\"path\":{\"type\":\"path\",\"path\":\"/workspace/scratch/e1ac86fc0556\"},\"access\":\"write\"},{\"path\":{\"type\":\"path\",\"path\":\"/workspace/shared\"},\"access\":\"write\"},{\"path\":{\"type\":\"special\",\"value\":{\"kind\":\"slash_tmp\"}},\"access\":\"write\"},{\"path\":{\"type\":\"special\",\"value\":{\"kind\":\"tmpdir\"}},\"access\":\"write\"},{\"path\":{\"type\":\"path\",\"path\":\"/workspace/scratch/e1ac86fc0556/.git\"},\"access\":\"read\",\"missing_path_behavior\":\"skip\"},{\"path\":{\"type\":\"path\",\"path\":\"/workspace/shared/.git\"},\"access\":\"read\",\"missing_path_behavior\":\"skip\"},{\"path\":{\"type\":\"path\",\"path\":\"/workspace/scratch/e1ac86fc0556/.agents\"},\"access\":\"read\",\"missing_path_behavior\":\"skip\"},{\"path\":{\"type\":\"path\",\"path\":\"/workspace/shared/.agents\"},\"access\":\"read\",\"missing_path_behavior\":\"skip\"},{\"path\":{\"type\":\"path\",\"path\":\"/workspace/scratch/e1ac86fc0556/.codex\"},\"access\":\"read\",\"missing_path_behavior\":\"skip\"},{\"path\":{\"type\":\"path\",\"path\":\"/workspace/shared/.codex\"},\"access\":\"read\",\"missing_path_behavior\":\"skip\"},{\"path\":{\"type\":\"path\",\"path\":\"/workspace/scratch/e1ac86fc0556/.aws\"},\"access\":\"read\",\"missing_path_behavior\":\"skip\"},{\"path\":{\"type\":\"path\",\"path\":\"/workspace/shared/.aws\"},\"access\":\"read\",\"missing_path_behavior\":\"skip\"},{\"path\":{\"type\":\"path\",\"path\":\"/home/agent/.codex/sessions\"},\"access\":\"deny\"}]},\"network\":\"restricted\"} --apply-seccomp-then-exec --managed-network {\"loopbackPorts\":[33063,33607],\"allowLocalBinding\":true,\"allowUnixSockets\":[],\"dangerouslyAllowAllUnixSockets\":false} --proxy-route-spec {\"routes\":[{\"env_key\":\"ALL_PROXY\",\"control_fd\":4},{\"env_key\":\"BUNDLE_HTTPS_PROXY\",\"control_fd\":5},{\"env_key\":\"BUNDLE_HTTP_PROXY\",\"control_fd\":5},{\"env_key\":\"DOCKER_HTTPS_PROXY\",\"control_fd\":5},{\"env_key\":\"DOCKER_HTTP_PROXY\",\"control_fd\":5},{\"env_key\":\"FTP_PROXY\",\"control_fd\":4},{\"env_key\":\"HTTPS_PROXY\",\"control_fd\":5},{\"env_key\":\"HTTP_PROXY\",\"control_fd\":5},{\"env_key\":\"NPM_CONFIG_HTTPS_PROXY\",\"control_fd\":5},{\"env_key\":\"NPM_CONFIG_HTTP_PROXY\",\"control_fd\":5},{\"env_key\":\"NPM_CONFIG_PROXY\",\"control_fd\":5},{\"env_key\":\"PIP_PROXY\",\"control_fd\":5},{\"env_key\":\"WSS_PROXY\",\"control_fd\":5},{\"env_key\":\"WS_PROXY\",\"control_fd\":5},{\"env_key\":\"YARN_HTTPS_PROXY\",\"control_fd\":5},{\"env_key\":\"YARN_HTTP_PROXY\",\"control_fd\":5},{\"env_key\":\"all_proxy\",\"control_fd\":4},{\"env_key\":\"ftp_proxy\",\"control_fd\":4},{\"env_key\":\"http_proxy\",\"control_fd\":5},{\"env_key\":\"https_proxy\",\"control_fd\":5},{\"env_key\":\"npm_config_http_proxy\",\"control_fd\":5},{\"env_key\":\"npm_config_https_proxy\",\"control_fd\":5},{\"env_key\":\"npm_config_proxy\",\"control_fd\":5},{\"env_key\":\"ws_proxy\",\"control_fd\":5},{\"env_key\":\"wss_proxy\",\"control_fd\":5}]} -- /bin/bash -lc python3 - <<'PY' from pathlib import Path import subprocess,json,datetime p=Path('/workspace/shared/doe-c-migration-evidence-20261023/instance1/evaluator/native-controls-complete');rows={} for name,argv in [('processes',['ps','-eo','pid,ppid,stat,etime,time,pcpu,pmem,rss,wchan:32,args']),('space',['df','-h','/tmp','/workspace'])]:  r=subprocess.run(argv,capture_output=True,text=True);text=r.stdout  if name=='processes':text='\\n'.join(line for line in text.splitlines() if any(s in line for s in ['PID','zig','continue_native_controls','native-controls-complete','exec-session']))  rows[name]={'argv':argv,'returncode':r.returncode,'stdout':text,'stderr':r.stderr} for name in ['/proc/self/cgroup','/proc/meminfo','/sys/fs/cgroup/memory.current','/sys/fs/cgroup/memory.events','/sys/fs/cgroup/memory.max','/sys/fs/cgroup/cpu.max']:  try:rows[name]=Path(name).read_text()  except OSError as ex:rows[name]={'unavailable':str(ex)} artifact=Path('/tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/FCI-install/lib/libwebgpu_doe.so');rows['artifact']={'path':str(artifact),'exists':artifact.exists(),'bytes':artifact.stat().st_size if artifact.exists() else None};rows['utc']=datetime.datetime.now(datetime.timezone.utc).isoformat();(p/'FCI-pending-process-resource-snapshot.json').write_text(json.dumps(rows,indent=2)+'\\n');print(rows['processes']['stdout']);print(rows['artifact']) PY\n      2       1 S          00:00 00:00:00  0.0  0.0  1968 do_wait                          /bin/bash -lc python3 - <<'PY' from pathlib import Path import subprocess,json,datetime p=Path('/workspace/shared/doe-c-migration-evidence-20261023/instance1/evaluator/native-controls-complete');rows={} for name,argv in [('processes',['ps','-eo','pid,ppid,stat,etime,time,pcpu,pmem,rss,wchan:32,args']),('space',['df','-h','/tmp','/workspace'])]:  r=subprocess.run(argv,capture_output=True,text=True);text=r.stdout  if name=='processes':text='\\n'.join(line for line in text.splitlines() if any(s in line for s in ['PID','zig','continue_native_controls','native-controls-complete','exec-session']))  rows[name]={'argv':argv,'returncode':r.returncode,'stdout':text,'stderr':r.stderr} for name in ['/proc/self/cgroup','/proc/meminfo','/sys/fs/cgroup/memory.current','/sys/fs/cgroup/memory.events','/sys/fs/cgroup/memory.max','/sys/fs/cgroup/cpu.max']:  try:rows[name]=Path(name).read_text()  except OSError as ex:rows[name]={'unavailable':str(ex)} artifact=Path('/tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/FCI-install/lib/libwebgpu_doe.so');rows['artifact']={'path':str(artifact),'exists':artifact.exists(),'bytes':artifact.stat().st_size if artifact.exists() else None};rows['utc']=datetime.datetime.now(datetime.timezone.utc).isoformat();(p/'FCI-pending-process-resource-snapshot.json').write_text(json.dumps(rows,indent=2)+'\\n');print(rows['processes']['stdout']);print(rows['artifact']) PY"
+    },
+    "space": {
+      "argv": [
+        "df",
+        "-h",
+        "/tmp",
+        "/workspace"
+      ],
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "Filesystem      Size  Used Avail Use% Mounted on\ntmpfs           4.9G  2.7G  2.3G  55% /tmp\noverlay          32G   30G   40M 100% /workspace\n"
+    },
+    "utc": "2026-10-23T10:50:31.258783+00:00"
+  }
+}

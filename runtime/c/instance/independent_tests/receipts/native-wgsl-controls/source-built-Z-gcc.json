@@ -1,0 +1,14 @@
+{
+  "original_bytes": 453,
+  "original_receipt_sha256": "1bbcc4803240b62d506d6768a38acd2d651c26c8a9d0347d0bfcc9e0dda71c28",
+  "receipt": {
+    "argv": [
+      "/tmp/doe-instance-evaluator-0eyngbi0/native-wgsl-controls/gcc",
+      "/tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/Z-install/lib/libwebgpu_doe.so"
+    ],
+    "elapsed_seconds": 0.0018887980259023607,
+    "returncode": -6,
+    "stderr": "gcc: /workspace/shared/doe-c-migration-evidence-20261023/instance1/evaluator/tests/native_wgsl_control.c:40: main: Assertion `proc && sizeof(proc) == sizes[i]' failed.\n",
+    "stdout": ""
+  }
+}

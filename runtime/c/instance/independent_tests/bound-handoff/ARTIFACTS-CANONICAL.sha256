@@ -1,0 +1,10 @@
+27c6774d57ea14a19215caf3204008ef0fb7194d9737ad9875dfcac8f06aa990  /tmp/doe-instance-author-20261023-final/Z/lib/libwebgpu_doe.so
+9821edf46b155f0e0bdfe66813c9f278cd7c785e7e542bb9b2e8773882a94d78  /tmp/doe-instance-author-20261023-final/F/lib/libwebgpu_doe.so
+2d07c258882f29af2a34f39210fbca82de75be95a9ccb83c931a0f18667ca3dc  /tmp/doe-instance-author-20261023-final/FC/lib/libwebgpu_doe.so
+1d062e570dd009bf0a202d6fded2379daf9c9e07e7a1ca796fb2da0e6bb8ea39  /tmp/doe-instance-author-20261023-final/FCI/lib/libwebgpu_doe.so
+d0103dd5cb166addabadecedcb862ce28369023cd12db1bd4052f166c25f8fab  /tmp/doe-instance-author-20261023-release/instance/libdoe_instance.a
+416d184de7bab34de89165d17c5f4af511f204fbde58f25b108f80deb019d7fd  /tmp/doe-instance-author-20261023-release/callbacks/libdoe_callbacks.a
+72d4d1501b114756d70b014372444a0f2309e4eb9ba3afc7c33114ddf0107f99  /tmp/doe-instance-author-20261023-release/futures/libdoe_futures_zig.a
+1b3292536f138f7787714cdccb1b57e500bd28fa1d817b47e3e7535244a6ae11  /tmp/doe-instance-author-20261023-release/consumer/native_consumer
+1697c0e6a846456a4b78abb8530d615b28f5e911c90d58a8db62d219b6d3798d  /tmp/doe-instance-author-20261023-normal/c-unit/instance_feature_lookup
+23ee1ca308e98654dd0cb1211087cbc62fa8b36f5c000fd5bad502cb79edfdbd  /tmp/doe-instance-author-20261023-final/label-regression

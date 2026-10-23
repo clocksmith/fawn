@@ -1,0 +1,19 @@
+{
+  "original_bytes": 3489,
+  "original_receipt_sha256": "6a2d632353dffe30be316ba558dd67fdebc6a793b92aa971afc21562c1238589",
+  "receipt": {
+    "argv": [
+      "make",
+      "-C",
+      "/workspace/shared/doe-c-migration-20261023/runtime/c/futures",
+      "BUILD=/tmp/doe-instance-evaluator-0eyngbi0/futures-developer",
+      "CFLAGS=-O2 -g -fPIC",
+      "check"
+    ],
+    "cwd": "/workspace/shared/doe-c-migration-20261023",
+    "elapsed_seconds": 0.877683533995878,
+    "returncode": 0,
+    "stderr": "",
+    "stdout": "make: Entering directory '/workspace/shared/doe-c-migration-20261023/runtime/c/futures'\nmkdir -p /tmp/doe-instance-evaluator-0eyngbi0/futures-developer\ngcc -Iinclude -O2 -g -fPIC -c src/storage.c -o /tmp/doe-instance-evaluator-0eyngbi0/futures-developer/storage.o\ngcc -Iinclude -O2 -g -fPIC -c src/futures.c -o /tmp/doe-instance-evaluator-0eyngbi0/futures-developer/futures.o\nar rcs /tmp/doe-instance-evaluator-0eyngbi0/futures-developer/libdoe_futures.a /tmp/doe-instance-evaluator-0eyngbi0/futures-developer/storage.o /tmp/doe-instance-evaluator-0eyngbi0/futures-developer/futures.o\ngcc -Iinclude -O2 -g -fPIC tests/test_api.c /tmp/doe-instance-evaluator-0eyngbi0/futures-developer/libdoe_futures.a -pthread -o /tmp/doe-instance-evaluator-0eyngbi0/futures-developer/test_api\ng++ -Iinclude -O2 -g -std=c++17 -Wall -Wextra -Wpedantic -Werror -fno-exceptions -fno-rtti -pthread tests/test_cpp.cpp /tmp/doe-instance-evaluator-0eyngbi0/futures-developer/libdoe_futures.a -pthread -o /tmp/doe-instance-evaluator-0eyngbi0/futures-developer/test_cpp\ngcc -Iinclude -O2 -g -fPIC tests/test_faults.c /tmp/doe-instance-evaluator-0eyngbi0/futures-developer/libdoe_futures.a -pthread -Wl,--wrap=pthread_mutex_init -Wl,--wrap=pthread_condattr_init -Wl,--wrap=pthread_condattr_setclock -Wl,--wrap=pthread_cond_init -Wl,--wrap=pthread_condattr_destroy -Wl,--wrap=pthread_cond_destroy -Wl,--wrap=pthread_mutex_destroy -o /tmp/doe-instance-evaluator-0eyngbi0/futures-developer/test_faults\ngcc -Iinclude -O2 -g -fPIC -DDOE_FUTURES_TESTING \\\n  -DDOE_FUTURES_TEST_INSTANCE_LIMIT=2 -DDOE_FUTURES_TEST_SEQUENCE_LIMIT=2 \\\n  -DDOE_FUTURES_TEST_LEGACY_LIMIT=0x8000000000000001ULL \\\n  tests/test_exhaustion.c src/storage.c src/futures.c -pthread -o /tmp/doe-instance-evaluator-0eyngbi0/futures-developer/test_exhaustion\n/tmp/doe-instance-evaluator-0eyngbi0/futures-developer/test_faults\nDeveloper setup/cleanup fault injection passed.\n/tmp/doe-instance-evaluator-0eyngbi0/futures-developer/test_exhaustion\nDeveloper build-only namespace exhaustion passed.\ngcc -Iinclude -O2 -g -fPIC tests/test_time.c /tmp/doe-instance-evaluator-0eyngbi0/futures-developer/libdoe_futures.a -pthread -Wl,--wrap=clock_gettime -Wl,--wrap=pthread_cond_timedwait -o /tmp/doe-instance-evaluator-0eyngbi0/futures-developer/test_time\n/tmp/doe-instance-evaluator-0eyngbi0/futures-developer/test_time\nDeveloper monotonic deadline, overflow and timeout-race tests passed.\ngcc -Iinclude -O2 -g -fPIC tests/test_concurrency.c /tmp/doe-instance-evaluator-0eyngbi0/futures-developer/libdoe_futures.a -pthread -Wl,--wrap=pthread_cond_wait -o /tmp/doe-instance-evaluator-0eyngbi0/futures-developer/test_concurrency\n/tmp/doe-instance-evaluator-0eyngbi0/futures-developer/test_concurrency\nDeveloper real-condition infinite wait and concurrent pumps passed.\n/tmp/doe-instance-evaluator-0eyngbi0/futures-developer/test_api\nDeveloper futures API tests passed (storage, IDs, modes, ordering, reentry, lifetime).\n/tmp/doe-instance-evaluator-0eyngbi0/futures-developer/test_cpp\nmake: Leaving directory '/workspace/shared/doe-c-migration-20261023/runtime/c/futures'\n"
+  }
+}

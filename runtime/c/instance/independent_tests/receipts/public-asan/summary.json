@@ -1,0 +1,13 @@
+{
+  "original_bytes": 227,
+  "original_receipt_sha256": "3ff6d15bf61c96a2265f8284a2399c903a8ac46cc074a93f73b177350dd05192",
+  "receipt": {
+    "commands": 18,
+    "mode": "asan",
+    "no_zig_instrumentation": true,
+    "output_root": "/tmp/doe-instance-evaluator-0eyngbi0/instance-asan",
+    "passed": true,
+    "source_built_futures": true,
+    "source_built_instance": true
+  }
+}

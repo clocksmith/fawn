@@ -1,0 +1,20 @@
+{
+  "original_bytes": 1224,
+  "original_receipt_sha256": "61fa030541f059b2dffeb4d2533e8dd88d1895ea652b7620aa1db0d883a5c005",
+  "receipt": {
+    "argv": [
+      "nm",
+      "-g",
+      "--defined-only",
+      "/tmp/doe-instance-author-20261023-release/futures/libdoe_futures_zig.a"
+    ],
+    "asan_options": null,
+    "child_peak_rss_kib": 11648,
+    "cwd": "/workspace/scratch/e1ac86fc0556",
+    "elapsed_seconds": 0.001983209978789091,
+    "instrumentation": "normal",
+    "returncode": 0,
+    "stderr": "",
+    "stdout": "\nstorage.o:\n0000000000000310 T doe_future_completion_deinit\n00000000000001f0 T doe_future_completion_init\n00000000000000b0 T doe_future_completion_requirements\n0000000000000270 T doe_future_queue_deinit\n00000000000000e0 T doe_future_queue_init\n0000000000000080 T doe_future_queue_requirements\n\nfutures.o:\n0000000000000320 T doe_future_begin_delivery\n0000000000000530 T doe_future_finish\n0000000000000070 T doe_future_legacy_id\n00000000000003e0 T doe_future_mark_ready\n00000000000000c0 T doe_future_new_id\n0000000000000620 T doe_future_process_events\n00000000000001d0 T doe_future_register\n0000000000000720 T doe_future_wait_any\n\nbridge.o:\n00000000000000d0 T doe_futures_zig_completion_init\n0000000000000050 T doe_futures_zig_completion_layout\n00000000000000a0 T doe_futures_zig_queue_init\n0000000000000000 T doe_futures_zig_queue_layout\n"
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "original_bytes": 2912,
+  "original_receipt_sha256": "c33ca17b8cfb3e454ed98ad46a048b8e7f12f6be94e268c5528c31d1a508f3b2",
+  "receipt": {
+    "after_cleanup": [],
+    "argv": [
+      "/workspace/shared/doe-language-experiment-20261023/phase1/deps/zig-x86_64-linux-0.15.2/zig",
+      "build",
+      "test-c-callbacks-integration",
+      "-j1",
+      "-Doptimize=ReleaseFast",
+      "-Dexperimental-c-instance-archive=/tmp/doe-instance-evaluator-0eyngbi0/instance-normal/libdoe_instance.a",
+      "-Dexperimental-c-callbacks-archive=/tmp/doe-instance-evaluator-0eyngbi0/callbacks-developer/libdoe_callbacks.a",
+      "-Dexperimental-c-futures-archive=/tmp/doe-instance-evaluator-0eyngbi0/accepted-futures/libdoe_futures_zig.a",
+      "--search-prefix",
+      "/workspace/shared/doe-language-experiment-20261023/phase1/system-link-prefix",
+      "--cache-dir",
+      "/tmp/doe-instance-evaluator-0eyngbi0/native-fci-retry1/cache",
+      "--global-cache-dir",
+      "/tmp/doe-instance-evaluator-0eyngbi0/native-fci-retry1/global-cache",
+      "--prefix",
+      "/tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/rejected-install"
+    ],
+    "before_cleanup": [],
+    "cleanup_signals": [],
+    "cwd": "/tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/source/runtime/zig",
+    "elapsed_seconds": 0.2520731069962494,
+    "environment": {
+      "DOE_BACKEND": "metal"
+    },
+    "no_live_process_group_members": true,
+    "pid_namespace": "pid:[4026532881]",
+    "process_group": 42,
+    "returncode": 1,
+    "stderr": "test-c-callbacks-integration\n+- fail failure\nerror: test-c-callbacks-integration requires explicit callback and future GCC archives with retained instance; use test-c-instance-integration for opaque instances\n\nBuild Summary: 0/2 steps succeeded; 1 failed\ntest-c-callbacks-integration transitive failure\n+- fail failure\n\nerror: the following build command failed with exit code 1:\n/tmp/doe-instance-evaluator-0eyngbi0/native-fci-retry1/cache/o/58c4c51800fa086037cd972028a13fef/build /workspace/shared/doe-language-experiment-20261023/phase1/deps/zig-x86_64-linux-0.15.2/zig /workspace/shared/doe-language-experiment-20261023/phase1/deps/zig-x86_64-linux-0.15.2/lib /tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/source/runtime/zig /tmp/doe-instance-evaluator-0eyngbi0/native-fci-retry1/cache /tmp/doe-instance-evaluator-0eyngbi0/native-fci-retry1/global-cache --seed 0x2476ea93 -Z52134cc6af809249 test-c-callbacks-integration -j1 -Doptimize=ReleaseFast -Dexperimental-c-instance-archive=/tmp/doe-instance-evaluator-0eyngbi0/instance-normal/libdoe_instance.a -Dexperimental-c-callbacks-archive=/tmp/doe-instance-evaluator-0eyngbi0/callbacks-developer/libdoe_callbacks.a -Dexperimental-c-futures-archive=/tmp/doe-instance-evaluator-0eyngbi0/accepted-futures/libdoe_futures_zig.a --search-prefix /workspace/shared/doe-language-experiment-20261023/phase1/system-link-prefix --prefix /tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/rejected-install\n",
+    "stdout": "",
+    "timed_out": false,
+    "timeout_seconds": 120,
+    "wait_error": null
+  }
+}

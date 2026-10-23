@@ -1,0 +1,14 @@
+{
+  "original_bytes": 253,
+  "original_receipt_sha256": "ff905da64e44f8c1d313c6deed2a18e5b81098a482b7562898aa1b969a3d9094",
+  "receipt": {
+    "argv": [
+      "/tmp/doe-instance-evaluator-0eyngbi0/instance-private/normal",
+      "release-zero"
+    ],
+    "elapsed_seconds": 0.0009885850013233721,
+    "returncode": -6,
+    "stderr": "C instance release count failed closed: status 0\n",
+    "stdout": ""
+  }
+}

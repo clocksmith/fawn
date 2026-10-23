@@ -1,0 +1,29 @@
+{
+  "original_bytes": 691,
+  "original_receipt_sha256": "ca27c6b014c0ade9f1027cd65876106caa56bdf2f986e515124641d14687bd91",
+  "receipt": {
+    "argv": [
+      "gcc",
+      "-std=c11",
+      "-O2",
+      "-g",
+      "-Wall",
+      "-Wextra",
+      "-Wpedantic",
+      "-Werror",
+      "-pthread",
+      "-I",
+      "/workspace/shared/doe-c-migration-20261023/runtime/zig/vendor/webgpu-headers",
+      "/workspace/shared/doe-c-migration-evidence-20261023/instance1/evaluator/tests/native_consumer.c",
+      "-ldl",
+      "-o",
+      "/tmp/doe-instance-evaluator-0eyngbi0/baseline-consumer-gcc"
+    ],
+    "dso_sha256": "3277a65ce5c440f46557966c390fe9e70f035d6202cfd73db59b13493d2f972b",
+    "elapsed_seconds": 0.21964070602552965,
+    "returncode": 0,
+    "source_kind": "accepted historical baseline, not current candidate source build",
+    "stderr": "",
+    "stdout": ""
+  }
+}
