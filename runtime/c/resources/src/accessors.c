@@ -105,3 +105,20 @@ bool doe_resource_pipeline_layout_group_required(const doe_resource_pipeline_lay
 {
     return layout && index < layout->count && layout->groups[index]->count != 0;
 }
+
+void *doe_resource_render_pipeline_device(const doe_resource_render_pipeline *pipeline)
+{
+    return pipeline ? pipeline->base.config.device.identity : NULL;
+}
+doe_resource_pipeline_layout *doe_resource_render_pipeline_get_layout(const doe_resource_render_pipeline *pipeline)
+{
+    return pipeline ? pipeline->layout : NULL;
+}
+const doe_resource_render_pipeline_desc *doe_resource_render_pipeline_description(const doe_resource_render_pipeline *pipeline)
+{
+    return pipeline ? &pipeline->desc : NULL;
+}
+void *doe_resource_render_pass_device(const doe_resource_render_pass *pass)
+{
+    return pass ? pass->base.config.device.identity : NULL;
+}

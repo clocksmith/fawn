@@ -22,3 +22,6 @@ Render-pass scopes include every setter and executed bundle, even overwritten,
 unused or empty ones. Transfer retained scope storage to immutable end records;
 logical unbind/reset must not erase usage. Query descriptor count is 0..4096;
 zero-count logical identities need no native pool but cannot write or resolve.
+Nullable vertex unbind validates its zero buffer range without deleting historical
+scope uses. Occlusion indices are single-write per pass, not per command buffer;
+keep this logical admission separate from backend query reset/availability.

@@ -64,6 +64,15 @@ doe_resource_status resource_render_set_vertex(const doe_resource_config *config
     uint32_t slot, doe_resource_buffer *buffer, uint64_t offset, uint64_t size)
 {
     if (slot >= DOE_RESOURCE_MAX_VERTEX_BUFFERS) return DOE_RESOURCE_RANGE;
+    if (!buffer) {
+        if (offset % 4) return DOE_RESOURCE_ALIGNMENT;
+        uint64_t resolved;
+        doe_resource_status status = resource_range(0, offset, size, &resolved);
+        if (status != DOE_RESOURCE_OK) return status;
+        doe_resource_buffer_release(state->vertices[slot].buffer);
+        state->vertices[slot] = (doe_resource_vertex_binding){0};
+        return DOE_RESOURCE_OK;
+    }
     return set_buffer(config, scope, &state->vertices[slot], buffer, offset, size, WGPUBufferUsage_Vertex, 4);
 }
 
