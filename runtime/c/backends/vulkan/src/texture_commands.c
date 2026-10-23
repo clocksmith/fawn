@@ -122,7 +122,7 @@ void doe_vk_texture_transition(doe_vk_commands *commands, doe_vk_texture_use *us
         .srcQueueFamilyIndex = UINT32_MAX,
         .dstQueueFamilyIndex = UINT32_MAX,
         .image = texture->image,
-        .subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, texture->desc.mip_levels,
+        .subresourceRange = { doe_vk_format_aspects(texture->desc.format), 0, texture->desc.mip_levels,
             0, texture->desc.dimension == DOE_VK_TEXTURE_3D ? 1 : texture->desc.depth_or_layers }
     };
     commands->context->vk.vkCmdPipelineBarrier(commands->command,

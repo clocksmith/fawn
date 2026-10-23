@@ -28,7 +28,11 @@ typedef enum doe_vk_texture_format {
     DOE_VK_FORMAT_RG32_FLOAT = 103,
     DOE_VK_FORMAT_RGBA32_UINT = 107,
     DOE_VK_FORMAT_RGBA32_SINT = 108,
-    DOE_VK_FORMAT_RGBA32_FLOAT = 109
+    DOE_VK_FORMAT_RGBA32_FLOAT = 109,
+    DOE_VK_FORMAT_D32_FLOAT = 126,
+    DOE_VK_FORMAT_S8_UINT = 127,
+    DOE_VK_FORMAT_D24_UNORM_S8_UINT = 129,
+    DOE_VK_FORMAT_D32_FLOAT_S8_UINT = 130
 } doe_vk_texture_format;
 /* Optimal-tiling facts for admitted formats, not shader-feature enablement or
  * a claim that every dimension/usage/extent combination is supported. Failure
@@ -42,6 +46,7 @@ typedef struct doe_vk_format_caps {
     bool filterable;
     bool copy_src;
     bool copy_dst;
+    bool depth_stencil_attachment;
 } doe_vk_format_caps;
 doe_vk_status doe_vk_texture_format_caps(doe_vk_context *context,
     doe_vk_texture_format format, doe_vk_format_caps *out);
@@ -55,7 +60,8 @@ enum {
     DOE_VK_TEXTURE_COPY_DST = 2,
     DOE_VK_TEXTURE_SAMPLED = 4,
     DOE_VK_TEXTURE_STORAGE = 8,
-    DOE_VK_TEXTURE_COLOR_ATTACHMENT = 16
+    DOE_VK_TEXTURE_COLOR_ATTACHMENT = 16,
+    DOE_VK_TEXTURE_DEPTH_STENCIL_ATTACHMENT = 32
 };
 typedef struct doe_vk_texture_desc {
     doe_vk_texture_dimension dimension;
@@ -67,7 +73,9 @@ typedef struct doe_vk_texture_desc {
     uint32_t usage;
     bool cube_compatible;
 } doe_vk_texture_desc;
-/* Images start uninitialized/UNDEFINED. Native WebGPU initialization ownership
+/* Depth/stencil currently admits only 2D attachment usage (no copy, sampling or
+ * storage). Format capability facts do not override this owner admission.
+ * Images start uninitialized/UNDEFINED. Native WebGPU initialization ownership
  * remains upstream. A texture may be used by only one unresolved command owner;
  * its final layout is published on established successful completion only. */
 doe_vk_status doe_vk_texture_create(doe_vk_context *context,

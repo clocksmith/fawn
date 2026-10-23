@@ -82,6 +82,7 @@ typedef struct doe_vk_functions {
     void (*vkCmdSetScissor)(VkCommandBuffer commandBuffer, uint32_t firstScissor, uint32_t scissorCount, const VkRect2D *pScissors);
     void (*vkCmdBindVertexBuffers)(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount, const VkBuffer *pBuffers, const VkDeviceSize *pOffsets);
     /* Core1.0 signature verified against Khronos; see ABI_PROVENANCE.json. */
+    void (*vkCmdSetStencilReference)(VkCommandBuffer commandBuffer, uint32_t faceMask, uint32_t reference);
     void (*vkCmdSetBlendConstants)(VkCommandBuffer commandBuffer, const float blendConstants[4]);
     void (*vkCmdDraw)(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance);
     VkResult (*vkCreateQueryPool)(VkDevice device, const VkQueryPoolCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator, VkQueryPool *pQueryPool);

@@ -9,7 +9,8 @@
     "vk_functions.zig": "329f4092d2b6e8fd90a1de254c0077e8490b890d152617e799b014d7b414732a",
     "vk_formats.zig": "ec953998cab8cab6679c26fd0431d91ab0bc9f006e73f6cbf94db6f089f2880d",
     "vk_samplers.zig": "d69660a49a4d143b1fddbd59a8140c424f598ff37ce020553ea9f5b15c641caf",
-    "vk_feature_caps.zig": "3317a92ff51e84baacc6de5f7fea0063a1ed8e99e8e81493606a170fd8298e41"
+    "vk_feature_caps.zig": "3317a92ff51e84baacc6de5f7fea0063a1ed8e99e8e81493606a170fd8298e41",
+    "vk_render_pipeline.zig": "5cd563db312049e78ba04f7832ea5df74edf9b14e27dbe525020aa7eae7026eb"
   },
   "structs": [
     "VkApplicationInfo",
@@ -87,7 +88,9 @@
     "VkPipelineColorBlendStateCreateInfo",
     "VkPipelineDynamicStateCreateInfo",
     "VkGraphicsPipelineCreateInfo",
-    "VkQueryPoolCreateInfo"
+    "VkQueryPoolCreateInfo",
+    "VkStencilOpState",
+    "VkPipelineDepthStencilStateCreateInfo"
   ],
   "functions": [
     "vkCreateInstance",
@@ -169,7 +172,8 @@
     "vkCmdCopyQueryPoolResults",
     "vkCmdBeginQuery",
     "vkCmdEndQuery",
-    "vkEnumerateDeviceExtensionProperties"
+    "vkEnumerateDeviceExtensionProperties",
+    "vkCmdSetStencilReference"
   ],
   "restriction": "Linux LP64 C ABI; no fallback or production promotion",
   "official_constants": {
@@ -187,7 +191,8 @@
       "VK_FORMAT_FEATURE_VERTEX_BUFFER_BIT": 64,
       "VK_QUERY_TYPE_OCCLUSION": 0,
       "VK_DYNAMIC_STATE_BLEND_CONSTANTS": 4,
-      "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DEMOTE_TO_HELPER_INVOCATION_FEATURES": 1000276000
+      "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DEMOTE_TO_HELPER_INVOCATION_FEATURES": 1000276000,
+      "VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT": 512
     },
     "additional_sources": [
       "https://docs.vulkan.org/refpages/latest/refpages/source/VkQueryType.html",

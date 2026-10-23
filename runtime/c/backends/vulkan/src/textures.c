@@ -1,11 +1,25 @@
 #include "texture_internal.h"
 #include <math.h>
 
+uint32_t doe_vk_format_aspects(doe_vk_texture_format format) {
+    switch (format) {
+        case DOE_VK_FORMAT_D32_FLOAT: return VK_IMAGE_ASPECT_DEPTH_BIT;
+        case DOE_VK_FORMAT_S8_UINT: return VK_IMAGE_ASPECT_STENCIL_BIT;
+        case DOE_VK_FORMAT_D24_UNORM_S8_UINT:
+        case DOE_VK_FORMAT_D32_FLOAT_S8_UINT:
+            return VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+        default: return VK_IMAGE_ASPECT_COLOR_BIT;
+    }
+}
+
 static uint32_t texel_bytes(doe_vk_texture_format format) {
     switch (format) {
+        case DOE_VK_FORMAT_S8_UINT:
         case DOE_VK_FORMAT_R8_UNORM: return 1;
         case DOE_VK_FORMAT_RG8_UNORM:
         case DOE_VK_FORMAT_R16_FLOAT: return 2;
+        case DOE_VK_FORMAT_D32_FLOAT:
+        case DOE_VK_FORMAT_D24_UNORM_S8_UINT:
         case DOE_VK_FORMAT_RGBA8_UNORM:
         case DOE_VK_FORMAT_RGBA8_SRGB:
         case DOE_VK_FORMAT_BGRA8_UNORM:
@@ -14,6 +28,7 @@ static uint32_t texel_bytes(doe_vk_texture_format format) {
         case DOE_VK_FORMAT_R32_UINT:
         case DOE_VK_FORMAT_R32_SINT:
         case DOE_VK_FORMAT_R32_FLOAT: return 4;
+        case DOE_VK_FORMAT_D32_FLOAT_S8_UINT:
         case DOE_VK_FORMAT_RGBA16_FLOAT:
         case DOE_VK_FORMAT_RG32_UINT:
         case DOE_VK_FORMAT_RG32_SINT:
@@ -42,7 +57,8 @@ doe_vk_status doe_vk_texture_format_caps(doe_vk_context *context,
         .blendable = (flags & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT) != 0,
         .filterable = (flags & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT) != 0,
         .copy_src = (flags & VK_FORMAT_FEATURE_TRANSFER_SRC_BIT) != 0,
-        .copy_dst = (flags & VK_FORMAT_FEATURE_TRANSFER_DST_BIT) != 0
+        .copy_dst = (flags & VK_FORMAT_FEATURE_TRANSFER_DST_BIT) != 0,
+        .depth_stencil_attachment = (flags & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) != 0
     };
     *out = caps;
     return DOE_VK_OK;
@@ -52,10 +68,16 @@ static doe_vk_status validate_texture(doe_vk_context *context,
     const doe_vk_texture_desc *desc, uint32_t *bytes) {
     if (desc == NULL || desc->dimension < DOE_VK_TEXTURE_1D || desc->dimension > DOE_VK_TEXTURE_3D ||
         desc->width == 0 || desc->height == 0 || desc->depth_or_layers == 0 ||
-        desc->mip_levels == 0 || desc->usage == 0 || (desc->usage & ~UINT32_C(31)) != 0)
+        desc->mip_levels == 0 || desc->usage == 0 || (desc->usage & ~UINT32_C(63)) != 0)
         return DOE_VK_INVALID_ARGUMENT;
     *bytes = texel_bytes(desc->format);
     if (*bytes == 0) return DOE_VK_UNSUPPORTED;
+    bool depth_stencil = doe_vk_format_aspects(desc->format) != VK_IMAGE_ASPECT_COLOR_BIT;
+    if (depth_stencil && (desc->dimension != DOE_VK_TEXTURE_2D ||
+        desc->usage != DOE_VK_TEXTURE_DEPTH_STENCIL_ATTACHMENT || desc->cube_compatible))
+        return DOE_VK_UNSUPPORTED;
+    if (!depth_stencil && (desc->usage & DOE_VK_TEXTURE_DEPTH_STENCIL_ATTACHMENT))
+        return DOE_VK_INVALID_ARGUMENT;
     const VkPhysicalDeviceLimits *limits = &context->properties.limits;
     uint32_t max_dimension = limits->maxImageDimension2D;
     uint32_t largest = desc->width > desc->height ? desc->width : desc->height;
@@ -82,6 +104,7 @@ static doe_vk_status validate_texture(doe_vk_context *context,
     if (((desc->usage & DOE_VK_TEXTURE_SAMPLED) && !caps.sampled) ||
         ((desc->usage & DOE_VK_TEXTURE_STORAGE) && !caps.storage) ||
         ((desc->usage & DOE_VK_TEXTURE_COLOR_ATTACHMENT) && !caps.color_attachment) ||
+        ((desc->usage & DOE_VK_TEXTURE_DEPTH_STENCIL_ATTACHMENT) && !caps.depth_stencil_attachment) ||
         ((desc->usage & DOE_VK_TEXTURE_COPY_SRC) && !caps.copy_src) ||
         ((desc->usage & DOE_VK_TEXTURE_COPY_DST) && !caps.copy_dst)) return DOE_VK_UNSUPPORTED;
     return DOE_VK_OK;
@@ -183,7 +206,7 @@ static doe_vk_status validate_view(doe_vk_texture *texture, const doe_vk_texture
         desc->mip_count == 0 || desc->layer_count == 0 ||
         !doe_vk_range(texture->desc.mip_levels, desc->base_mip, desc->mip_count)) return DOE_VK_INVALID_ARGUMENT;
     if (texture->content_status != DOE_VK_OK) return texture->content_status;
-    if (!(texture->desc.usage & (DOE_VK_TEXTURE_SAMPLED | DOE_VK_TEXTURE_STORAGE | DOE_VK_TEXTURE_COLOR_ATTACHMENT)))
+    if (!(texture->desc.usage & (DOE_VK_TEXTURE_SAMPLED | DOE_VK_TEXTURE_STORAGE | DOE_VK_TEXTURE_COLOR_ATTACHMENT | DOE_VK_TEXTURE_DEPTH_STENCIL_ATTACHMENT)))
         return DOE_VK_INVALID_ARGUMENT;
     uint32_t layers = texture->desc.dimension == DOE_VK_TEXTURE_3D ? 1 : texture->desc.depth_or_layers;
     if (!doe_vk_range(layers, desc->base_layer, desc->layer_count)) return DOE_VK_INVALID_ARGUMENT;
@@ -223,7 +246,7 @@ doe_vk_status doe_vk_texture_view_create(doe_vk_texture *texture,
         .image = texture->image,
         .viewType = (uint32_t)desc->dimension,
         .format = (uint32_t)texture->desc.format,
-        .subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, desc->base_mip, desc->mip_count, desc->base_layer, desc->layer_count }
+        .subresourceRange = { doe_vk_format_aspects(texture->desc.format), desc->base_mip, desc->mip_count, desc->base_layer, desc->layer_count }
     };
     doe_vk_context *context = texture->context;
     status = doe_vk_result(context, context->vk.vkCreateImageView(context->device, &info, NULL, &view->view), "vkCreateImageView", error);

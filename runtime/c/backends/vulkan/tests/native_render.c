@@ -77,6 +77,33 @@ int main(int argc, char **argv) {
         .binding_count = 1, .bindings = &layout };
     doe_vk_pipeline *pipeline = NULL;
     require(doe_vk_render_pipeline_create(context, &desc, &pipeline, &error), "graphics pipeline");
+    doe_vk_texture_desc depth_desc = texture_desc;
+    depth_desc.format = DOE_VK_FORMAT_D32_FLOAT_S8_UINT;
+    depth_desc.usage = DOE_VK_TEXTURE_DEPTH_STENCIL_ATTACHMENT;
+    doe_vk_texture *depth_texture = NULL;
+    doe_vk_texture_view *depth_view = NULL;
+    doe_vk_buffer *depth_readback = NULL;
+    require(doe_vk_texture_create(context, &depth_desc, &depth_texture, &error), "depth/stencil target");
+    require(doe_vk_texture_view_create(depth_texture, &view_desc, &depth_view, &error), "depth/stencil view");
+    require(doe_vk_buffer_create(context, 256, DOE_VK_BUFFER_COPY_DST,
+        DOE_VK_MEMORY_HOST, &depth_readback, &error), "depth pixels");
+    doe_vk_render_pipeline_desc depth_pipeline_desc = desc;
+    depth_pipeline_desc.depth_stencil_format = depth_desc.format;
+    depth_pipeline_desc.depth_test = true;
+    depth_pipeline_desc.depth_write = true;
+    depth_pipeline_desc.depth_compare = 1;
+    depth_pipeline_desc.stencil_test = true;
+    depth_pipeline_desc.stencil_read_mask = 255;
+    depth_pipeline_desc.stencil_write_mask = 255;
+    depth_pipeline_desc.stencil_front = (doe_vk_stencil_face){0, 2, 0, 7};
+    depth_pipeline_desc.stencil_back = depth_pipeline_desc.stencil_front;
+    doe_vk_pipeline *depth_write = NULL, *depth_read = NULL;
+    require(doe_vk_render_pipeline_create(context, &depth_pipeline_desc, &depth_write, &error), "depth/stencil write pipeline");
+    depth_pipeline_desc.depth_write = false;
+    depth_pipeline_desc.stencil_write_mask = 0;
+    depth_pipeline_desc.stencil_front = (doe_vk_stencil_face){0, 0, 0, 2};
+    depth_pipeline_desc.stencil_back = depth_pipeline_desc.stencil_front;
+    require(doe_vk_render_pipeline_create(context, &depth_pipeline_desc, &depth_read, &error), "depth/stencil read pipeline");
     free((void *)vertex.words);
     free((void *)fragment.words);
     doe_vk_commands *commands = NULL;
@@ -133,6 +160,52 @@ int main(int argc, char **argv) {
     pass_draws[1].draw.scissor[3] = 8;
     require(doe_vk_commands_render_pass(commands, view, NULL, pass_draws, 2), "two dynamic blend constants");
     require(doe_vk_commands_read_texture(commands, texture, region, blend_readback, packed), "blend pixels");
+    doe_vk_render_pass_desc depth_pass = {.color = view, .clear_color = &blue,
+        .depth_stencil = depth_view, .clear_depth = true, .clear_stencil = true,
+        .depth_clear_value = 1, .stencil_clear_value = 0};
+    doe_vk_render_pass_op depth_ops[4] = {0};
+    for (unsigned i = 0; i < 4; ++i) {
+        depth_ops[i].kind = DOE_VK_RENDER_DRAW;
+        depth_ops[i].value.draw = pass_draws[0];
+        depth_ops[i].value.draw.pipeline = depth_write;
+        depth_ops[i].value.draw.draw.scissor[2] = 8;
+        depth_ops[i].value.draw.draw.blend_constant[0] = 1;
+        depth_ops[i].value.draw.draw.blend_constant[2] = 0;
+    }
+    depth_ops[0].value.draw.draw.viewport[4] = 0.75f;
+    depth_ops[0].value.draw.draw.stencil_reference = 5;
+    depth_ops[1].value.draw.draw.viewport[4] = 0.25f;
+    depth_ops[1].value.draw.draw.scissor[2] = 4;
+    depth_ops[1].value.draw.draw.blend_constant[0] = 0;
+    depth_ops[1].value.draw.draw.blend_constant[2] = 1;
+    depth_ops[1].value.draw.draw.stencil_reference = 9;
+    depth_ops[2].value.draw.draw.viewport[4] = 0.9f;
+    depth_ops[2].value.draw.draw.blend_constant[2] = 1;
+    depth_ops[2].value.draw.draw.stencil_reference = 11;
+    require(doe_vk_commands_render_pass_full(commands, &depth_pass, NULL, depth_ops, 3), "depth LESS and stencil replace");
+    depth_pass.clear_color = NULL;
+    depth_pass.clear_depth = depth_pass.clear_stencil = false;
+    depth_pass.depth_read_only = depth_pass.stencil_read_only = true;
+    require(doe_vk_commands_render_pass_full(commands, &depth_pass, NULL, NULL, 0), "empty read-only depth/stencil LOAD");
+    for (unsigned i = 0; i < 4; ++i) depth_ops[i].value.draw.pipeline = depth_read;
+    depth_ops[0].value.draw.draw.scissor[2] = 4;
+    depth_ops[0].value.draw.draw.viewport[4] = 0.1f;
+    depth_ops[0].value.draw.draw.stencil_reference = 9;
+    depth_ops[1].value.draw.draw.scissor[0] = 4;
+    depth_ops[1].value.draw.draw.viewport[4] = 0.5f;
+    depth_ops[1].value.draw.draw.stencil_reference = 5;
+    depth_ops[2].value.draw.draw.scissor[2] = 4;
+    depth_ops[2].value.draw.draw.viewport[4] = 0.5f;
+    depth_ops[2].value.draw.draw.stencil_reference = 9;
+    depth_ops[3].value.draw.draw.viewport[4] = 0.1f;
+    depth_ops[3].value.draw.draw.stencil_reference = 7;
+    depth_ops[3].value.draw.draw.blend_constant[2] = 1;
+    require(doe_vk_commands_render_pass_full(commands, &depth_pass, NULL, depth_ops, 4), "loaded depth and stencil failures preserve pixels");
+    require(doe_vk_commands_read_texture(commands, texture, region, depth_readback, packed), "depth/stencil pixels");
+    doe_vk_pipeline_release(depth_write);
+    doe_vk_pipeline_release(depth_read);
+    doe_vk_texture_view_release(depth_view);
+    doe_vk_texture_release(depth_texture);
     doe_vk_buffer_release(uniform);
     doe_vk_buffer_release(vertices);
     doe_vk_texture_view_release(view);
@@ -159,6 +232,15 @@ int main(int argc, char **argv) {
             return 1;
         }
     }
+    require(doe_vk_buffer_read(depth_readback, 0, pixels, sizeof(pixels)), "depth/stencil readback");
+    for (unsigned y = 0; y < 8; ++y) for (unsigned x = 0; x < 8; ++x) {
+        const uint8_t expected[4] = {x < 4 ? 255 : 0, 0, x < 4 ? 0 : 255, 255};
+        if (memcmp(pixels[y][x], expected, 4) != 0) {
+            fprintf(stderr, "depth/stencil mismatch at %u,%u: %u,%u,%u,%u\n", x, y,
+                pixels[y][x][0], pixels[y][x][1], pixels[y][x][2], pixels[y][x][3]);
+            return 1;
+        }
+    }
     uint64_t values[8];
     require(doe_vk_buffer_read(query_output, 0, values, sizeof(values)), "occlusion results");
     if (values[0] == 0) {
@@ -173,7 +255,9 @@ int main(int argc, char **argv) {
     doe_vk_buffer_release(query_output);
     doe_vk_buffer_release(readback);
     doe_vk_buffer_release(blend_readback);
+    doe_vk_buffer_release(depth_readback);
     doe_vk_context_release(context);
     puts("PASS one real offscreen clear/two-draw pass, dynamic scissors, an unused NULL vertex slot, uniform descriptors, exact64-pixel raw and dynamic-blend oracles, real occlusion hit/empty/clipped/unwritten results and later-pass index reuse, early native caller release");
+    puts("PASS real D32S8 clear, independent depth LESS/stencil EQUAL tests, dynamic references, empty read-only LOAD, exact64-pixel depth/stencil oracle and early leases");
     return 0;
 }

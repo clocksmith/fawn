@@ -1,6 +1,40 @@
 #include "render_internal.h"
 #include <math.h>
 
+static bool stencil_face_valid(doe_vk_stencil_face face) {
+    return face.fail_operation <= 7 && face.pass_operation <= 7 &&
+        face.depth_fail_operation <= 7 && face.compare_operation <= 7;
+}
+static bool stencil_face_writes(doe_vk_stencil_face face) {
+    return face.fail_operation != 0 || face.pass_operation != 0 || face.depth_fail_operation != 0;
+}
+static doe_vk_status validate_depth_stencil(doe_vk_context *context,
+    const doe_vk_render_pipeline_desc *desc) {
+    if (desc->depth_stencil_format == 0) {
+        return desc->depth_test || desc->depth_write || desc->stencil_test ?
+            DOE_VK_INVALID_ARGUMENT : DOE_VK_OK;
+    }
+    uint32_t aspects = doe_vk_format_aspects(desc->depth_stencil_format);
+    if (aspects == VK_IMAGE_ASPECT_COLOR_BIT) return DOE_VK_INVALID_ARGUMENT;
+    if ((desc->depth_test || desc->depth_write) && !(aspects & VK_IMAGE_ASPECT_DEPTH_BIT))
+        return DOE_VK_INVALID_ARGUMENT;
+    if (desc->depth_write && !desc->depth_test) return DOE_VK_INVALID_ARGUMENT;
+    if (desc->depth_test && desc->depth_compare > 7) return DOE_VK_INVALID_ARGUMENT;
+    if (desc->stencil_test && (!(aspects & VK_IMAGE_ASPECT_STENCIL_BIT) ||
+        !stencil_face_valid(desc->stencil_front) || !stencil_face_valid(desc->stencil_back)))
+        return DOE_VK_INVALID_ARGUMENT;
+    doe_vk_format_caps caps;
+    doe_vk_status status = doe_vk_texture_format_caps(context, desc->depth_stencil_format, &caps);
+    if (status != DOE_VK_OK) return status;
+    return caps.depth_stencil_attachment ? DOE_VK_OK : DOE_VK_UNSUPPORTED;
+}
+static VkStencilOpState stencil_state(doe_vk_stencil_face face,
+    const doe_vk_render_pipeline_desc *desc) {
+    return (VkStencilOpState){.failOp = face.fail_operation, .passOp = face.pass_operation,
+        .depthFailOp = face.depth_fail_operation, .compareOp = face.compare_operation,
+        .compareMask = desc->stencil_read_mask, .writeMask = desc->stencil_write_mask};
+}
+
 static doe_vk_status validate_pipeline(doe_vk_context *context,
     const doe_vk_render_pipeline_desc *desc) {
     if (desc == NULL || !doe_vk_shader_valid(&desc->vertex) || !doe_vk_shader_valid(&desc->fragment) ||
@@ -19,6 +53,8 @@ static doe_vk_status validate_pipeline(doe_vk_context *context,
     doe_vk_status status = doe_vk_texture_format_caps(context, desc->color_format, &format);
     if (status != DOE_VK_OK) return status;
     if (!format.color_attachment || (desc->blend_enabled && !format.blendable)) return DOE_VK_UNSUPPORTED;
+    status = validate_depth_stencil(context, desc);
+    if (status != DOE_VK_OK) return status;
     const VkPhysicalDeviceLimits *limits = &context->properties.limits;
     if (desc->vertex_buffer_count > limits->maxVertexInputBindings ||
         desc->attribute_count > limits->maxVertexInputAttributes) return DOE_VK_UNSUPPORTED;
@@ -64,6 +100,11 @@ doe_vk_status doe_vk_render_pipeline_create(doe_vk_context *context,
     pipeline->graphics = true;
     memcpy(pipeline->blend_constant, desc->blend_constant, sizeof(pipeline->blend_constant));
     pipeline->color_format = desc->color_format;
+    pipeline->depth_stencil_format = desc->depth_stencil_format;
+    pipeline->depth_write = desc->depth_write;
+    pipeline->stencil_test = desc->stencil_test;
+    pipeline->stencil_write = desc->stencil_test && desc->stencil_write_mask != 0 &&
+        (stencil_face_writes(desc->stencil_front) || stencil_face_writes(desc->stencil_back));
     pipeline->vertex_count = (uint32_t)desc->vertex_buffer_count;
     if (pipeline->vertex_count != 0) memcpy(pipeline->vertices, desc->vertex_buffers,
         pipeline->vertex_count * sizeof(*desc->vertex_buffers));
@@ -71,7 +112,7 @@ doe_vk_status doe_vk_render_pipeline_create(doe_vk_context *context,
     status = doe_vk_pipeline_layout_create(pipeline, desc->bindings, desc->binding_count,
         VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, error);
     if (status != DOE_VK_OK) goto failed;
-    status = doe_vk_render_pass_create(context, desc->color_format, false, &pipeline->render_pass, error);
+    status = doe_vk_render_pass_create(context, desc->color_format, desc->depth_stencil_format, NULL, &pipeline->render_pass, error);
     if (status != DOE_VK_OK) goto failed;
     status = doe_vk_shader_module(context, &desc->vertex, &vertex, error);
     if (status != DOE_VK_OK) goto failed;
@@ -122,14 +163,22 @@ doe_vk_status doe_vk_render_pipeline_create(doe_vk_context *context,
         .sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO, .attachmentCount = 1, .pAttachments = &attachment
     };
     memcpy(blend.blendConstants, desc->blend_constant, sizeof(blend.blendConstants));
-    const uint32_t states[3] = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR, VK_DYNAMIC_STATE_BLEND_CONSTANTS};
+    const VkPipelineDepthStencilStateCreateInfo depth_stencil = {
+        .sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
+        .depthTestEnable = desc->depth_test, .depthWriteEnable = desc->depth_write,
+        .depthCompareOp = desc->depth_compare, .stencilTestEnable = desc->stencil_test,
+        .front = stencil_state(desc->stencil_front, desc), .back = stencil_state(desc->stencil_back, desc)
+    };
+    const uint32_t states[4] = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR,
+        VK_DYNAMIC_STATE_BLEND_CONSTANTS, VK_DYNAMIC_STATE_STENCIL_REFERENCE};
     const VkPipelineDynamicStateCreateInfo dynamic = {
-        .sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO, .dynamicStateCount = 3, .pDynamicStates = states
+        .sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO, .dynamicStateCount = desc->stencil_test ? 4 : 3, .pDynamicStates = states
     };
     const VkGraphicsPipelineCreateInfo create = {
         .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO, .stageCount = 2, .pStages = stages,
         .pVertexInputState = &vertex_input, .pInputAssemblyState = &assembly, .pViewportState = &viewport,
         .pRasterizationState = &rasterization, .pMultisampleState = &multisample, .pColorBlendState = &blend,
+        .pDepthStencilState = desc->depth_stencil_format != 0 ? &depth_stencil : NULL,
         .pDynamicState = &dynamic, .layout = pipeline->layout, .renderPass = pipeline->render_pass,
         .basePipelineIndex = -1
     };

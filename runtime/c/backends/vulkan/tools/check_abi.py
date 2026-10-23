@@ -39,8 +39,8 @@ def main():
             types[name] = types[definition]
     selected = set(manifest["structs"])
     fields = {}
-    for file in ("vk_structs.zig", "vk_capability_structs.zig"):
-        for name, kind, body in re.findall(r"pub const (Vk\w+) = extern (struct|union) \{(.*?)\n\};", (source / file).read_text(), re.S):
+    for file in ("vk_structs.zig", "vk_capability_structs.zig", "vk_render_pipeline.zig"):
+        for name, kind, body in re.findall(r"(?:pub )?const (Vk\w+) = extern (struct|union) \{(.*?)\n\};", (source / file).read_text(), re.S):
             if name not in selected:
                 continue
             members = []
