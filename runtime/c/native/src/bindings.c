@@ -92,6 +92,10 @@ void wgpuPipelineLayoutRelease(WGPUPipelineLayout layout) { doe_resource_pipelin
 static bool group_filterability(native_device *device, doe_resource_layout *layout,
     doe_resource_bind_group *group)
 {
+    /* The resource owner has checked canonical format/feature filterability.
+     * Vulkan additionally requires the selected device's native format caps. */
+    if (device->backend.kind == WGPUBackendType_Metal) return true;
+    if (device->backend.kind != WGPUBackendType_Vulkan) return false;
     size_t entry_count = 0, binding_count = 0;
     const doe_resource_layout_entry *entries = doe_resource_layout_entries(layout, &entry_count);
     const doe_resource_binding *bindings = doe_resource_bind_group_bindings(group, &binding_count);

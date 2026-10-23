@@ -353,3 +353,23 @@ test-atomic-vulkan: require-software-vulkan $(CONSUMER_BUILD)/test_atomic_vulkan
 test-pointer-vulkan: require-software-vulkan $(CONSUMER_BUILD)/test_pointer_vulkan tests/pointer_operations.wgsl
 	VK_ICD_FILENAMES="$(abspath $(SOFTWARE_VULKAN_ICD))" $(CONSUMER_BUILD)/test_pointer_vulkan "$(abspath tests/pointer_operations.wgsl)" --allow-software
 test-cpu-vulkan: test-atomic-vulkan test-pointer-vulkan
+
+# Explicit standard uniform layout remains compiler-only; native reporting is separate.
+.PHONY: test-uniform-standard test-uniform-standard-vulkan
+$(CONSUMER_BUILD)/test_uniform_standard: tests/test_uniform_standard.c tests/uniform_standard_fixture.h tests/hlsl_fixture.h $(HEADERS) $(SHARED_LIBRARY)
+	mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) $< $(CONSUMER_COMPILER_LINK) -lm -o $@
+test-uniform-standard: $(CONSUMER_BUILD)/test_uniform_standard
+	$(CONSUMER_BUILD)/test_uniform_standard
+$(CONSUMER_BUILD)/test_uniform_standard_vulkan: tests/test_uniform_standard_vulkan.c tests/uniform_standard_fixture.h tests/hlsl_fixture.h $(HEADERS) $(SHARED_LIBRARY) $(VULKAN_BUILD)/libdoe_vk.a $(VULKAN_CONSUMER_DEPS)
+	mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) -I../backends/vulkan/include $< $(VULKAN_BUILD)/libdoe_vk.a $(CONSUMER_COMPILER_LINK) -ldl -lm -o $@
+# Supply artifacts emitted by test_uniform_standard; never replace retained evidence.
+test-uniform-standard-vulkan: require-software-vulkan $(CONSUMER_BUILD)/test_uniform_standard_vulkan
+	VK_ICD_FILENAMES="$(abspath $(SOFTWARE_VULKAN_ICD))" $(CONSUMER_BUILD)/test_uniform_standard_vulkan "$(UNIFORM_STANDARD_ARTIFACTS)"
+.PHONY: test-uniform-standard-host
+test-uniform-standard-host: tests/test_uniform_standard_host.cpp
+	mkdir -p $(CONSUMER_BUILD)
+	@test -n "$(UNIFORM_STANDARD_ARTIFACTS)" || { echo "Set UNIFORM_STANDARD_ARTIFACTS to newly emitted controls" >&2; exit 1; }
+	$(CXX) -std=c++17 -O2 -fsanitize=undefined -Wno-attributes -Itargets/metal/tests/host -I"$(UNIFORM_STANDARD_ARTIFACTS)" $< -o $(CONSUMER_BUILD)/test_uniform_standard_host
+	$(CONSUMER_BUILD)/test_uniform_standard_host

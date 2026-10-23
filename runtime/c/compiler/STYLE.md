@@ -112,7 +112,13 @@ the required structural back edge. Observation step limits are not source limits
 Resource/member identity is a typed declaration index, not spelling. Typed ABI4
 resources and legacy scalar projections are explicit separate output capabilities.
 One checked natural-layout result feeds validation, reflection and emission; uniform
-constraints validate rather than repack. Minimum extents are distinct from
+constraints validate rather than repack. Standard-uniform layout is explicit
+caller-selected language support in flags-bearing APIs; `requires` checks that
+support and never enables it. Keep conservative TYPE_UNIFORM classification for
+baseline physical lowering, preserve the default, and publish the selected profile.
+Compact uniforms use the existing exact-byte raw uniform owner, including tail-only
+blocks below 16 bytes; never infer a Vulkan feature requirement or emit zero arrays.
+Minimum extents are distinct from
 storage robustness. Each array access guards its own resource before even forming
 an element pointer; OOB load zero can be a valid outer index. No combined-length
 shortcut suppresses an otherwise valid outer operation.

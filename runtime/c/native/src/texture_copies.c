@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: MIT */
-#include "internal.h"
+#include "metal_frontend.h"
 
 static doe_resource_texture_copy texture_copy(const WGPUTexelCopyTextureInfo *texture,
     const WGPUTexelCopyBufferLayout *layout, const WGPUExtent3D *size)
@@ -67,6 +67,10 @@ void wgpuQueueWriteTexture(WGPUQueue handle, const WGPUTexelCopyTextureInfo *des
     if (!device) return;
     if (!destination || !layout || !size || (!data && data_size)) {
         native_error(device, WGPUErrorType_Validation, "invalid queue texture write arguments");
+        return;
+    }
+    if (device->backend.kind == WGPUBackendType_Metal) {
+        native_metal_write_texture(device, destination, data, data_size, layout, size);
         return;
     }
     native_device_retain(device);

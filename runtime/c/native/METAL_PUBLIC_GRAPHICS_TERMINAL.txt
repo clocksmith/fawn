@@ -1,0 +1,4 @@
+Thermal preflight: no thermal warning or performance warning recorded. Host Mac15,12.
+Selected adapter backend Metal, type 4: Apple M3
+PASS public WGSL triangle, early release, discard initialization and packed uploads (native Metal device: Apple M3; subtype unclassified; developer run, not qualification)
+First actual run exit 0; elapsed 0.188701s; child timeout5s.

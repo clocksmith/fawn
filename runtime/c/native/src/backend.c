@@ -17,6 +17,14 @@ static void metal_limits(const doe_mtl_caps *caps, WGPULimits *out)
         .maxBindGroups=4,.maxBindingsPerBindGroup=128,
         .maxDynamicUniformBuffersPerPipelineLayout=30,.maxDynamicStorageBuffersPerPipelineLayout=30,
         .maxUniformBuffersPerShaderStage=30,.maxStorageBuffersPerShaderStage=30,
+        .maxSampledTexturesPerShaderStage=16,.maxSamplersPerShaderStage=16,
+        .maxStorageTexturesPerShaderStage=8,
+        .maxTextureDimension1D=caps->max_texture_1d,.maxTextureDimension2D=caps->max_texture_2d,
+        .maxTextureDimension3D=caps->max_texture_3d,.maxTextureArrayLayers=caps->max_texture_layers,
+        /* Conservative frontend graphics envelope; native creation still owns
+         * real format/sample/pipeline support. These are not queried maxima. */
+        .maxVertexBuffers=8,.maxVertexAttributes=16,.maxVertexBufferArrayStride=2048,
+        .maxInterStageShaderVariables=15,.maxColorAttachments=8,.maxColorAttachmentBytesPerSample=32,
         .maxUniformBufferBindingSize=binding_size < 65536 ? binding_size : 65536,
         .maxStorageBufferBindingSize=binding_size,
         .minUniformBufferOffsetAlignment=256,.minStorageBufferOffsetAlignment=256,

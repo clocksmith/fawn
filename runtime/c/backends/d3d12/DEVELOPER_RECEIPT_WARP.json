@@ -1,0 +1,305 @@
+{
+  "status": "Actual Windows SDK compile/link and explicit CPU WARP direct compute/readback/cleanup passed.",
+  "recorded_utc": "2026-10-23T23:38:53.157110+00:00",
+  "component": "Private C D3D12 backend explicit CPU WARP developer control",
+  "intent": "Preserved private backend ownership and explicit adapter selection; exercised direct compute through the Windows software driver.",
+  "source_commit": "159b58a18e5466d409209debce807b4aa24f14d9",
+  "source_binding": "Each input is read from its Git blob at source_commit, not from a later working tree. This receipt and its documentation are added after the run.",
+  "source_inputs": {
+    ".github/workflows/c-d3d12-sdk-build.yml": {
+      "git_blob": "8e0363ee7eddebc81ab9552bba7aaf26a241f3d1",
+      "sha256": "34c664c0f821f2d9ca8f37fc4abcda21648ab39dd6d4b1c3a36b1328ab0c6553"
+    },
+    "runtime/c/backends/d3d12/build_windows.cmd": {
+      "git_blob": "9646962930f9c03e6b6b2a715d59bc2e1e5910d6",
+      "sha256": "1443483ca83b5410e4b4dc5c513920f0c938474695e31ac8040d77b678d63d8f"
+    },
+    "runtime/c/backends/d3d12/include/doe_d3d12.h": {
+      "git_blob": "8acb97bbb9d2ce295daf6a4562181d520e970689",
+      "sha256": "83a9d6d0c2fe53666c67fd4eb6bc23a13b652669bda573517a67eb86b91dde24"
+    },
+    "runtime/c/backends/d3d12/include/doe_d3d12_graphics.h": {
+      "git_blob": "60ea7a1a71159be8f7b89adfd58680a95901a859",
+      "sha256": "79072a43c9838627260635c9eab0373665816fd0817ab5f87f6afdb4b02da1dc"
+    },
+    "runtime/c/backends/d3d12/include/doe_d3d12_mesh.h": {
+      "git_blob": "5b5fd24684f2696366bce1860a388d7b3b2225a5",
+      "sha256": "18df45010bcf06936ca499ef6bcfddd05681ecfe2833ed1db2b0776f96facc1c"
+    },
+    "runtime/c/backends/d3d12/include/doe_d3d12_texture.h": {
+      "git_blob": "9f6bca4d892e20334f0f02811daa06fcd0397528",
+      "sha256": "9b8a6044521aedbf8e8b01f2a715ce22976dc5f5dafe8347fe91f03ab82100cc"
+    },
+    "runtime/c/backends/d3d12/run_warp.cmd": {
+      "git_blob": "31037f97c39f6a755784994b685b8582bb5339d7",
+      "sha256": "b44a561baf9a9de3050c5fdeaac1e895fccb18407be79428324d4d13b5f82fa6"
+    },
+    "runtime/c/backends/d3d12/src/bindings.c": {
+      "git_blob": "7d2bc0d585ceacc3baf25d9dff2a487121d4c5b1",
+      "sha256": "b7db0f61f422462704ccfd082bbb0bbd337e52619605f2b2b2c460670608c15e"
+    },
+    "runtime/c/backends/d3d12/src/commands.c": {
+      "git_blob": "b7b3fa4e1a8abcb6729ebf841bbba9f4d2ae66cf",
+      "sha256": "3bd8d3fa1658b50892be179a96e41d42e5d394024ab5b5939e888dd84c460b4f"
+    },
+    "runtime/c/backends/d3d12/src/compute.c": {
+      "git_blob": "e9eb3105887c06c55402a3ac64bb2717e5a58d74",
+      "sha256": "fb76d479e86baa49cdd92d0867d0c62c9f9f3f786e16f25ae8139d59a43e8226"
+    },
+    "runtime/c/backends/d3d12/src/context.c": {
+      "git_blob": "2b4cf946cc4d2e967a56789998dd5d9d6c760c12",
+      "sha256": "97f4573db05cc47b97bdecb0b70095b414c3967c0a3ee24c1333685ecd4ed460"
+    },
+    "runtime/c/backends/d3d12/src/geometry.c": {
+      "git_blob": "749a455710818933f96016588aa7672c31a5fd58",
+      "sha256": "f98c9919fd3d105e6b0488ada5dcbfcbf4843a0c93b5a8c0eeec0780b3e15f34"
+    },
+    "runtime/c/backends/d3d12/src/graphics.c": {
+      "git_blob": "6e79d21b739d9fa7853e5fa13dd875c547268b09",
+      "sha256": "6d4c388f2c62d8484a64f72a2f7d646c0dc4930fd1dd2ec3685a740d756e66b4"
+    },
+    "runtime/c/backends/d3d12/src/internal.h": {
+      "git_blob": "f7590453354e7e278058cb7cc90b151c1b257de6",
+      "sha256": "f361591397fe509010f242f916df3cb31e24a9d3977469db78f1eb050dce7890"
+    },
+    "runtime/c/backends/d3d12/src/native.h": {
+      "git_blob": "2dfd968d9e58ec9d29a0a19cd71cd5bf235e0728",
+      "sha256": "603500f39d54c6d33a4b6e92625ccd5247760452b9ee9176ffd2b0a4caa73af3"
+    },
+    "runtime/c/backends/d3d12/src/pipeline.c": {
+      "git_blob": "058209125c88a3e05b879bde6401810f13076cb8",
+      "sha256": "d9aad032951e71d747bb43b5af3f0dd7024a32049a2c516e26064d000ee291a0"
+    },
+    "runtime/c/backends/d3d12/src/resources.c": {
+      "git_blob": "700b6863fff3ae07110d419b9090911686708daf",
+      "sha256": "54aa712bd6e3a7ed2e51aa6e6fd40cd2b3be02e82c0c7dc40547356c3603a57f"
+    },
+    "runtime/c/backends/d3d12/src/texture_transfer.c": {
+      "git_blob": "4dc5c4e56b46a36df07f772b12dbea2244721679",
+      "sha256": "ebe2ab455a9df17c10b6ed8ce75cf9f45e2257cb866be35e6d4efe5db5f82571"
+    },
+    "runtime/c/backends/d3d12/src/textures.c": {
+      "git_blob": "ce6dc8af1005b59f27a7f96e89c736f57dbb05dd",
+      "sha256": "48e7d373e38ccaf812294bd0a7437d9adfbbcf83120821c0ef8995950290ce31"
+    },
+    "runtime/c/backends/d3d12/src/timestamps.c": {
+      "git_blob": "8a07b4314bbcd16e016c5531c200abe8a1d32881",
+      "sha256": "f0cc313f692a913351c24b298f0e4e634bdb4f90a9d67f8190bc949204aa3d4a"
+    },
+    "runtime/c/backends/d3d12/src/vertex_layout.c": {
+      "git_blob": "a801a9dabd39ca916ea5e98f3189ae3b1ecba06a",
+      "sha256": "57fa5dda96188f4bfa587ed2c118faa4e99f3a4c9f6350594daf27ffe8ae6873"
+    },
+    "runtime/c/backends/d3d12/src/windows_bindings.c": {
+      "git_blob": "d9699c804f04b79f637eb20440c80094bd974917",
+      "sha256": "f29edf1a2e5bb91b0a1d5b292a5f166e1bab8ba86833e213afc05ec553fc5cc0"
+    },
+    "runtime/c/backends/d3d12/src/windows_commands.c": {
+      "git_blob": "7fef5a022e1b61603b73e4a337e730793fd2cc9b",
+      "sha256": "cde862ec77a1a5896c374bfd9c3f0d6ccef3fa570c1dfc71ed30040833189879"
+    },
+    "runtime/c/backends/d3d12/src/windows_context.c": {
+      "git_blob": "7f1fbf0dad5622a41cd46b8bd0548e9b3a579feb",
+      "sha256": "90000dda582aeda14a7272e87dc7c8ebecbab59238fb1e66f7bd6bdb4cf3715d"
+    },
+    "runtime/c/backends/d3d12/src/windows_geometry.c": {
+      "git_blob": "d76b14abdcc7384629838ee0705923f418670217",
+      "sha256": "12fbe4ca1ceea8c3450574de581dd447d3dae17db698a3972aa69105441c96fd"
+    },
+    "runtime/c/backends/d3d12/src/windows_graphics.c": {
+      "git_blob": "53d7a2e4abae2527bd72c23ab4306f4302b8ea18",
+      "sha256": "e824f9b87f5f1338cfc26e05a3795794b0838c8c1e547a5cfa2588c537eb1550"
+    },
+    "runtime/c/backends/d3d12/src/windows_internal.h": {
+      "git_blob": "06d0284348285f2e889ff4bd6e11975af0b7c563",
+      "sha256": "121c5f3df254ca2d78e62aa92023108e41bb61a9af511e8f9c6bd18b179b7964"
+    },
+    "runtime/c/backends/d3d12/src/windows_pipeline.c": {
+      "git_blob": "2de14c510b25aa68a1f8e763dffab49d9de29608",
+      "sha256": "8e4997d987ccb115223864bf769e741c96e5a0a0886098938d3a0b6694da9563"
+    },
+    "runtime/c/backends/d3d12/src/windows_resources.c": {
+      "git_blob": "86938ff36694e028a4b43eaedc4b44f94a37aae6",
+      "sha256": "d46a1bdbd4e41936b5dae1b212fdb2b08e13b29ff4876ef9a1b54d9825e7f32a"
+    },
+    "runtime/c/backends/d3d12/src/windows_textures.c": {
+      "git_blob": "4d87856ab695f6fbb53f3a4fecc3eada308b5b57",
+      "sha256": "73881fd62add4d65db9872b806f86098964a7e749eeaf1e13932e7cff87bde5a"
+    },
+    "runtime/c/backends/d3d12/src/windows_timestamps.c": {
+      "git_blob": "7ede7bbec092c24d1649449914be122b7e616c3a",
+      "sha256": "29cc653f7cd4cf0b650428d0993e9eb85149585da892f721e74a82a2f29cec9e"
+    },
+    "runtime/c/backends/d3d12/tests/native_compute.c": {
+      "git_blob": "8f1d55149d4132e0ce7ae22a36e6916e3266482c",
+      "sha256": "e0fd613f3779199fc8509e34d025a2e0d8469601a50087e8444aeb12a9a86047"
+    },
+    "runtime/c/backends/d3d12/tests/native_compute.hlsl": {
+      "git_blob": "19af01adc0fe330af7a520dba894980b9932fa92",
+      "sha256": "f6f56a57852fbc37c044301b4ed698df3d586ebbccd6ace4c26eb38584b360fa"
+    },
+    "runtime/c/backends/d3d12/tests/native_fixture.h": {
+      "git_blob": "24ba3d2802b77482800f58e269b9b1d73dbc8811",
+      "sha256": "6c7df7b3365deec943baa4c3c87d6b249b7bee5cf457c49a3a2e375a68b2a962"
+    },
+    "runtime/c/backends/d3d12/tests/native_graphics.c": {
+      "git_blob": "1ba2c9db64598221f9352c2f0873a7f9ebcb6b1b",
+      "sha256": "d790a7e8f1f69350c29017505b33da8b682c7ffc8d4780216665c5978a087df4"
+    },
+    "runtime/c/backends/d3d12/tests/native_mesh.c": {
+      "git_blob": "c50f1ed8d486f63011eb497d66dade0a2de008e6",
+      "sha256": "a767feea4c162cf9c346f6cc0f58457dbd4d720e27f12906d60f407ac7a577c2"
+    },
+    "runtime/c/backends/d3d12/tests/native_texture.c": {
+      "git_blob": "85f42ffb65ed5a9c2a70785a00175a498be62f86",
+      "sha256": "da36bde40f728eecb3894a1e89f30430b3c9016f9edcda48f8b19ec43e59d75a"
+    },
+    "runtime/c/common/include/doe_copy_footprint.h": {
+      "git_blob": "4ddf2c48aba5bd7634e85cd008620df42b9d82af",
+      "sha256": "461535e48bc3d5248928416513b0978baadcc865db33826cb6244f5d9e3fde4b"
+    }
+  },
+  "workflow": {
+    "path": ".github/workflows/c-d3d12-sdk-build.yml",
+    "run": "https://github.com/doerun/doe/actions/runs/40040368403",
+    "job_id": 120709769580,
+    "inputs": {
+      "exact_revision": "159b58a18e5466d409209debce807b4aa24f14d9",
+      "run_warp": true
+    },
+    "runner_label": "windows-latest",
+    "artifact_id": 12539012010,
+    "artifact_zip_sha256": "efe1cc15a9783bc3d31aa2e3ea102a5deb639d0a3802e138858d523b08c22c14",
+    "source_checkout": "Exact revision verified clean before build, after build and after successful WARP control.",
+    "deadline": "120-second outer child-process deadline with process-tree termination; existing client completion poll is bounded to 30000 milliseconds."
+  },
+  "toolchain": {
+    "os": "Microsoft Windows 10.0.26100",
+    "architecture": "x64",
+    "windows_sdk": "10.0.26100.0",
+    "vc_tools": "14.51.36231",
+    "visual_studio": "18.11.12315.225",
+    "fxc": {
+      "path": "C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.26100.0\\x64\\fxc.exe",
+      "file_version": "10.0.26100.9457 (WinBuild.160101.0800)",
+      "sha256": "3c1d8f3aa0d1c970732f14d61d3a4b5dfa8ca4b7c81d567643f39f6cef412010"
+    },
+    "driver_version": "Not separately retained; observed adapter identity is below."
+  },
+  "commands": {
+    "working_directory": "runtime/c/backends/d3d12",
+    "build": "VsDevCmd.bat -arch=x64; build_windows.cmd",
+    "compiler_flags": "MSVC /std:c11 /W4 /WX, actual d3d12.lib dxgi.lib dxguid.lib",
+    "control": "VsDevCmd.bat -arch=x64; run_warp.cmd with OUT=<evidence>/build and WARP_EVIDENCE=<evidence>/warp",
+    "shader": "\"%WindowsSdkVerBinPath%x64\\fxc.exe\" /nologo /Ges /WX /T cs_5_1 /E main /Fo \"%WARP_EVIDENCE%\\shader.dxbc\" tests\\native_compute.hlsl",
+    "execute": "\"%OUT%\\native_compute.exe\" \"%WARP_EVIDENCE%\\shader.dxbc\" --warp",
+    "exit_code": 0
+  },
+  "observed_adapter": {
+    "name": "Microsoft Basic Render Driver",
+    "vendor_id": 5140,
+    "device_id": 140,
+    "luid_high": 0,
+    "luid_low": 27234,
+    "software_adapter": true,
+    "adapter_selection": 1,
+    "adapter_selection_name": "DOE_DX_SELECT_WARP",
+    "adapter_ordinal": 4294967295,
+    "ordinal_meaning": "DOE_DX_NO_ADAPTER_ORDINAL; selected by EnumWarpAdapter, not ordinal enumeration."
+  },
+  "oracle": {
+    "shader_path": "runtime/c/backends/d3d12/tests/native_compute.hlsl",
+    "consumer_path": "runtime/c/backends/d3d12/tests/native_compute.c",
+    "fixture_support_path": "runtime/c/backends/d3d12/tests/native_fixture.h",
+    "word_count": 16,
+    "input": "input[index] = index * 97u + 3u for index 0..15",
+    "expected": "(input[index] ^ 0x13579bdfu) + 7u, checked as exact uint32_t words",
+    "expected_words": [
+      324508643,
+      324508610,
+      324508449,
+      324508416,
+      324508255,
+      324508222,
+      324508061,
+      324508028,
+      324507867,
+      324507834,
+      324507673,
+      324509688,
+      324509527,
+      324509494,
+      324509333,
+      324509300
+    ],
+    "dispatch": "One group, shader numthreads(16,1,1); structured SRV t0 and UAV u0.",
+    "comparison": "The native client compared every readback word before reporting success; raw output words are not retained separately.",
+    "lifetime": "Caller upload/input/output/pipeline references released before submission; caller command released before completion polling. Retained readback released before context destruction, whose DOE_DX_OK result is required for success."
+  },
+  "checks": [
+    "Actual Windows SDK compiles all private backend translation units and links all four native clients under strict C11 warnings; only native_compute.exe is executed.",
+    "Exact installed SDK FXC compiles the source-bound HLSL to DXBC under /Ges /WX; no alternative compiler, adapter retry or shader interpreter.",
+    "Actual EnumWarpAdapter software identity is observed and checked by the native client; explicit selection and no-ordinal marker both match.",
+    "All 16 direct-compute output words match the host arithmetic oracle after actual upload/dispatch/copy/readback.",
+    "Early caller releases do not invalidate submission; native completion is observed and context destruction returns success.",
+    "Downloaded artifact ZIP SHA256 and all 30 build plus 9 WARP member hashes independently verified locally. Retained process exit0, empty stderr and success logs checked."
+  ],
+  "artifact_members_sha256": {
+    "build/bindings.obj": "863fae7705ee7d9cbef523755261feab4f675c2a57c82a59dec4d861848bf94d",
+    "build/commands.obj": "eb00740e8d1cce4e27a22ca87a7d78774e36691f7c5df46767a1dfeca16e3860",
+    "build/compute.obj": "fef246d870b96e2c14c65965e2ddd0031d935f437659d12fae4a42b9f0b4385d",
+    "build/context.obj": "ce916aa60dc8ed8966377616a60bc5e13faa9dd35e115925c478b32b5959f6e0",
+    "build/doe_d3d12.lib": "3731210d4e5ef35db9566c81d723d3422a399387b8869c528b8cadadae15d08b",
+    "build/geometry.obj": "310528b4d57ddf1e95e75c7786b18e29867e920840ef6d1ac76e89f97fa10283",
+    "build/graphics.obj": "583df750d9fc1833f6e793317c3290e707c21fa82adf64d72f695841e8672057",
+    "build/native_compute.exe": "adbe19e6d5d73b7d19022244eebae04634a9139cd9ae2554e71017bd2932e6e9",
+    "build/native_compute.obj": "15668f64ce7ffc16b16b241121c62b9ffb7a38d8a7d28f28be5b20467a612122",
+    "build/native_graphics.exe": "9fae07d23160dba4dcc2477342b8c0ee75e0a71ceab0276d1a0bab04d37c2a40",
+    "build/native_graphics.obj": "3ee1817c1c2bd86b3789dbb7f5cbf5a2c7211f549a8b951fcc262d67f25f4aa9",
+    "build/native_mesh.exe": "c98c1cb2d6c5e287e5d0d21e1327c56593069e42b44d45ef7969beb9b044529f",
+    "build/native_mesh.obj": "0572f74584e30e080d432da2e3593be9f4db77edfb43c4e92eae18a31e9f8c0c",
+    "build/native_texture.exe": "5c96c52ffde054e64b51b3801837bbbd857345be3ad7a010dc32423f81e6a9c2",
+    "build/native_texture.obj": "89929d5a85f345b895ad43a6e2f6321a579c942eb51947dd5b67ed37ae7ec2d7",
+    "build/pipeline.obj": "25419563a31e0d2a95840de071f32f3cc4f60c9041e689d88b539bef1ca451f5",
+    "build/resources.obj": "df0d6c7796afda60051b5a2ff6b9073c1f62b1acfd948c4112a69352919e730a",
+    "build/texture_transfer.obj": "310e92af026f2d5e9562fa70840a334b4526e2a0fd517909cdfc97a9f7ab5b2d",
+    "build/textures.obj": "6b49137fd5fe00d8a9c965a0665277ffef5fb53cba1d5bba184a329b568a901a",
+    "build/timestamps.obj": "5e541dc1f644582caa7e5eaa4c3fc4f0afe4de31951e40583b1a4de957577b9e",
+    "build/vertex_layout.obj": "6f149cd9a7be0c32197e7b9d02a310a05883e446bca98321a02672cbe4369f17",
+    "build/windows_bindings.obj": "0141d4c9763c971f182281f4034d6bd6b41c909c0baa212a07f50c838d6991fb",
+    "build/windows_commands.obj": "9dec9e69bada622a143632c0a0e53c97550ffe1632d0905ba728afce25aea52f",
+    "build/windows_context.obj": "6c3f2b41cdb6b063218c27eed0d4a3d7f0b4c59aad7ede564ba2093179ed9115",
+    "build/windows_geometry.obj": "7ea77f616d30d1fa549c776fd52787e7d616affeaaa9456598526e097ec81353",
+    "build/windows_graphics.obj": "9512b8670c69d57383e4e734491258ba512f6f5d1d48f8ae42d6e6a65623ca85",
+    "build/windows_pipeline.obj": "741d547ceaa08c22ef2e25b10cf249870503ba0378efbb3e4007f944fe87cf7f",
+    "build/windows_resources.obj": "322a8bd2ed746190b42971288ea3df670652a2e7ac6d174cce331486cf682d1c",
+    "build/windows_textures.obj": "4c632873620e0e124ab1e1f524f23a888c29c85698670a9f343283d17e20d096",
+    "build/windows_timestamps.obj": "ac90db0639c26132fc3ae4430442a0e83d430428182a8073246659bd55d6e5e1",
+    "warp/compute.log": "ab71a04ef727d7606d6aeac24c15fc75539911e7c975827637393c48e557c745",
+    "warp/exit-code.txt": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354",
+    "warp/fxc-path.txt": "e43a75043f74264d7cb751a6e48fded2f866260148c555857fa747b62ccdbfb1",
+    "warp/fxc.json": "0866ffdcdc2511bae094d29a19cdabcb9db36b92d8a86ac4f46afcbe5e8ae38a",
+    "warp/run.cmd": "37daf50483b661c016bfaa7f9e446dc05f79d9dbb47d01300ccf1000f40a0826",
+    "warp/shader-build.log": "7cf2aebcdc197c57a806740ee4a9aa4caf5628a2f6d202e2d75af63024cc4451",
+    "warp/shader.dxbc": "a7b30b1ea6ff7627ed1da6b6cf772be2a9089a2897fb5c1cf08e599f1573839c",
+    "warp/stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "warp/stdout.txt": "49d699f832e28f55eb9fa7f9f4fe4d8cd1bc073235e6ac1d4ad3b7ee9d9a2787"
+  },
+  "diagnostics_sha256": {
+    "commit.txt": "bd73171040406895eece4bb492c18791afd17022a3bb29d1305e3ac48f66cfd2",
+    "host.txt": "44c8e8d11f917c928b9c8cff5d51da5c6d40f939f7fb0ba6735e6b77da74a167",
+    "visual-studio.json": "909cc5cea1af03d21d1cf735b673f969561301bced0c2df94ec929a756255d4f",
+    "command.txt": "1f1c08f4145a28c50f7a1506e7070955e39e7cedbddd049239a11ca5ea6cfc10",
+    "build.log": "aa893fee66d22dbd867b10902aca65ce2c6cc331a50046a06c8cb4007eb06b77",
+    "artifacts.json": "cb5db869ea17b85a6282ca6f453edac275866d279be0178d7d6b04e0e8412c0d",
+    "warp-artifacts.json": "55a2f1ae10a25f22127384f4a2c26b200ef2132b533375534c028a4385de35b8",
+    "SCOPE.txt": "c742ded05f3a71422d69a51ffc3b1fe949e0ab357f0ac900752f244ee0395990"
+  },
+  "scope_limits": [
+    "One source-bound developer control on the hosted CPU WARP adapter, not physical GPU, independent release qualification or performance evidence.",
+    "Only the direct structured-buffer compute fixture executes. Indirect, uniform, texture, graphics, depth, timestamps and other native fixtures are not driver-exercised by this run.",
+    "The fixture consumes hand-authored HLSL compiled by FXC. Public WGSL/HLSL compiler integration, public native D3D12 WebGPU frontend, browser and package support are not established.",
+    "No debug-layer validation or separate driver-version capture is recorded; success is bounded output/ownership evidence, not a leak audit.",
+    "Historical Windows SDK receipt remains unchanged and qualifies only its own source. Production remains retained Zig. This run performs no work on Miles or Suby; their device authorization and hardware status are separate."
+  ]
+}

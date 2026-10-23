@@ -218,10 +218,11 @@ bool type_resource_layout(Source *s, ResourceRecord *r) {
     }
     if (r->kind == 0u) return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, r->name.offset, "resource requires an explicit buffer address space or a handle type");
     if ((flags&TYPE_HOST) == 0u) return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, r->name.offset, "resource type is not host-shareable");
-    if (r->kind == DOE_COMPILER_UNIFORM_BUFFER && ((flags&TYPE_UNIFORM) == 0u || (flags&TYPE_TAIL) != 0u))
+    const bool standard = (c->module_flags & MODULE_STANDARD_UNIFORM) != 0u;
+    if (r->kind == DOE_COMPILER_UNIFORM_BUFFER && ((!standard && (flags&TYPE_UNIFORM) == 0u) || (flags&TYPE_TAIL) != 0u))
         return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, r->name.offset, "uniform type violates conservative alignment or spacing");
     r->alignment = type_alignment(c, r->type);
-    r->required_alignment = r->kind == DOE_COMPILER_UNIFORM_BUFFER?required_alignment(c, r->type):r->alignment;
+    r->required_alignment = r->kind == DOE_COMPILER_UNIFORM_BUFFER && !standard ? required_alignment(c, r->type) : r->alignment;
     r->minimum = type_size(c, r->type);
     r->tail_type = NO_ID;
     if ((flags&TYPE_TAIL) != 0u) {

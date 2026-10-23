@@ -3,6 +3,7 @@
 #define DOE_NATIVE_INTERNAL_H
 #include "webgpu.h"
 #include "backend.h"
+#include "doe_metal_render.h"
 #include "doe_instance.h"
 #include "doe_callbacks.h"
 #include "doe_resources.h"
@@ -69,15 +70,15 @@ typedef struct native_shader {
 
 typedef struct native_texture {
     native_device *device;
-    doe_vk_texture *texture;
+    union { doe_vk_texture *texture; doe_mtl_texture *metal; };
 } native_texture;
 typedef struct native_view {
     native_device *device;
-    doe_vk_texture_view *view;
+    union { doe_vk_texture_view *view; doe_mtl_texture_view *metal; };
 } native_view;
 typedef struct native_sampler {
     native_device *device;
-    doe_vk_sampler *sampler;
+    union { doe_vk_sampler *sampler; doe_mtl_sampler *metal; };
 } native_sampler;
 
 typedef struct native_queries {
@@ -105,7 +106,8 @@ typedef struct native_binding {
 
 typedef struct native_pipeline {
     native_device *device;
-    union { doe_vk_pipeline *vulkan; doe_mtl_pipeline *metal; } handle;
+    union { doe_vk_pipeline *vulkan; doe_mtl_pipeline *metal; doe_mtl_render_pipeline *metal_render; } handle;
+    struct native_metal_graphics *metal_graphics;
     size_t binding_count;
     size_t vertex_count;
     uint32_t metal_slots[DOE_RESOURCE_MAX_GROUPS * DOE_RESOURCE_MAX_BINDINGS];
@@ -202,6 +204,9 @@ void native_pending_progress_destroy(native_device *device);
 /* Caller holds device mutex. Always adopts commands, including failed/unknown
  * completion. A private initialization submission has its own device lease. */
 native_failure native_submit_commands(native_device *device, doe_vk_commands *commands);
+/* Caller holds the device mutex and one ordinary device lease. Always adopts
+ * the tagged command object, including allocation failure/unknown completion. */
+native_failure native_submit_backend_commands(native_device *device, native_command_handle commands);
 native_failure native_initialize_texture(native_device *device, doe_vk_texture *texture,
     const doe_vk_texture_desc *desc, const doe_vk_format_caps *caps);
 /* Resource finalizer for a native_texture payload: releases its backend texture

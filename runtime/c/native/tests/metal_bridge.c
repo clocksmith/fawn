@@ -4,6 +4,7 @@
 #include "../src/internal.h"
 #include "../../backends/metal/tests/mock_native.h"
 #include "consumer.h"
+#include "metal_graphics_cases.h"
 #include "doe_native_programs.h"
 
 static mock_native mocks[8];
@@ -13,6 +14,18 @@ static unsigned context_count;
 static unsigned physical_identity[2];
 static bool changed_default, hold;
 static doe_mtl_status buffer_failure = DOE_MTL_OK;
+static unsigned vulkan_format_queries;
+
+/* A Metal composition must never cross the Vulkan native-format boundary. */
+doe_vk_status __wrap_doe_vk_texture_format_caps(doe_vk_context *context,
+    doe_vk_texture_format format, doe_vk_format_caps *out)
+{
+    (void)context;
+    (void)format;
+    (void)out;
+    ++vulkan_format_queries;
+    return DOE_VK_NATIVE_FAILURE;
+}
 
 doe_mtl_status __real_doe_mtl_commands_wait(doe_mtl_commands *, doe_mtl_error *);
 doe_mtl_status __real_doe_mtl_commands_create(doe_mtl_context *, doe_mtl_commands **, doe_mtl_error *);
@@ -320,9 +333,8 @@ static void public_error_detail(state *s)
     wgpuInstanceProcessEvents(s->instance);
     assert(pipeline.calls == 3);
 
-    /* Metal render composition is unsupported here. Its existing validation
-     * error must still reach the scope when async callback admission rejects. */
-    exact_message render = {"render descriptor, stage interface or capability unsupported", 0};
+    /* Invalid render construction still delivers validation when callback admission rejects. */
+    exact_message render = {"Metal render descriptor, reflection or feature unsupported", 0};
     WGPURenderPipelineDescriptor render_descriptor = {0};
     WGPUCreateRenderPipelineAsyncCallbackInfo render_callback = {.mode = (WGPUCallbackMode)UINT32_MAX};
     WGPUPopErrorScopeCallbackInfo render_scope = {.mode = WGPUCallbackMode_AllowSpontaneous,
@@ -463,6 +475,141 @@ static void host_replay_program(state *s)
     assert(mocks[2].live == baseline && !s->errors);
 }
 
+
+static void sampled_float_admission(state *s)
+{
+    unsigned baseline = mocks[2].live;
+    assert(!wgpuDeviceHasFeature(s->device, WGPUFeatureName_Float32Filterable));
+    const WGPUTextureFormat formats[2] = {WGPUTextureFormat_RGBA8Unorm, WGPUTextureFormat_R32Float};
+    WGPUTexture images[2];
+    WGPUTextureView views[2];
+    for (size_t i = 0; i < 2; ++i) {
+        images[i] = texture(s, formats[i], WGPUTextureUsage_TextureBinding, 1);
+        views[i] = wgpuTextureCreateView(images[i], NULL);
+        assert(views[i]);
+    }
+    WGPUBindGroupLayoutEntry entry = {.binding=3, .visibility=WGPUShaderStage_Fragment,
+        .texture={.sampleType=WGPUTextureSampleType_Float, .viewDimension=WGPUTextureViewDimension_2D}};
+    WGPUBindGroupLayoutDescriptor layout_descriptor = {.entryCount=1, .entries=&entry};
+    WGPUBindGroupLayout layout = wgpuDeviceCreateBindGroupLayout(s->device, &layout_descriptor);
+    assert(layout);
+    WGPUBindGroupEntry binding = {.binding=3, .textureView=views[0]};
+    WGPUBindGroupDescriptor descriptor = {.layout=layout, .entryCount=1, .entries=&binding};
+    WGPUBindGroup group = wgpuDeviceCreateBindGroup(s->device, &descriptor);
+    assert(group && vulkan_format_queries == 0);
+    const doe_resource_binding *admitted = NULL;
+    size_t count = 0;
+    admitted = doe_resource_bind_group_bindings((doe_resource_bind_group *)group, &count);
+    assert(count == 1 && admitted[0].kind == DOE_BIND_TEXTURE &&
+        admitted[0].resource.view == (doe_resource_view *)views[0]);
+    wgpuBindGroupRelease(group);
+    binding.textureView = views[1];
+    wgpuDevicePushErrorScope(s->device, WGPUErrorFilter_Validation);
+    assert(!wgpuDeviceCreateBindGroup(s->device, &descriptor));
+    pop(s, WGPUErrorType_Validation);
+    assert(vulkan_format_queries == 0);
+    /* Rejecting Float does not ban an ordinary unfilterable R32 view. */
+    wgpuBindGroupLayoutRelease(layout);
+    entry.texture.sampleType = WGPUTextureSampleType_UnfilterableFloat;
+    layout = wgpuDeviceCreateBindGroupLayout(s->device, &layout_descriptor);
+    assert(layout);
+    descriptor.layout = layout;
+    group = wgpuDeviceCreateBindGroup(s->device, &descriptor);
+    assert(group && vulkan_format_queries == 0);
+    wgpuBindGroupRelease(group);
+    wgpuBindGroupLayoutRelease(layout);
+    for (size_t i = 0; i < 2; ++i) {
+        wgpuTextureViewRelease(views[i]);
+        wgpuTextureRelease(images[i]);
+    }
+    assert(mocks[2].live == baseline && !s->errors);
+}
+
+static void reject_metal_fragment_stores(state *s)
+{
+    const char *code =
+        "@group(0) @binding(0) var<storage,read_write> data:array<u32>;"
+        "@vertex fn vertex()->@builtin(position) vec4f{return vec4f(0.0,0.0,0.0,1.0);}"
+        "@fragment fn fragment()->@location(0) vec4f{data[0]=7u;return vec4f(1.0);}";
+    WGPUShaderSourceWGSL source = WGPU_SHADER_SOURCE_WGSL_INIT;
+    source.code = (WGPUStringView){code,WGPU_STRLEN};
+    WGPUShaderModuleDescriptor shader_descriptor = {.nextInChain=&source.chain};
+    WGPUShaderModule module = wgpuDeviceCreateShaderModule(s->device, &shader_descriptor);
+    assert(module);
+    WGPUColorTargetState color = {.format=WGPUTextureFormat_RGBA8Unorm, .writeMask=WGPUColorWriteMask_All};
+    WGPUFragmentState fragment = {.module=module, .targetCount=1, .targets=&color};
+    WGPURenderPipelineDescriptor descriptor = WGPU_RENDER_PIPELINE_DESCRIPTOR_INIT;
+    descriptor.vertex.module = module;
+    descriptor.fragment = &fragment;
+    native_device *device = (native_device *)s->device;
+    /* Poison only the inactive union representation's trailing storage: no
+     * Metal member changes, and no inactive semantic arm is read. A missing
+     * backend tag gate would mistake this byte for Vulkan feature support. */
+    size_t offset = offsetof(native_backend, value.vulkan.caps.fragment_stores_and_atomics) -
+        offsetof(native_backend, value);
+    assert(offset >= sizeof(device->backend.value.metal) && offset < sizeof(device->backend.value));
+    native_lock(device);
+    unsigned char *representation = (unsigned char *)&device->backend.value;
+    unsigned char original = representation[offset];
+    representation[offset] = 1;
+    native_unlock(device);
+    unsigned created = mocks[2].created;
+    wgpuDevicePushErrorScope(s->device, WGPUErrorFilter_Validation);
+    assert(!wgpuDeviceCreateRenderPipeline(s->device, &descriptor));
+    native_lock(device);
+    representation[offset] = original;
+    native_unlock(device);
+    pop(s, WGPUErrorType_Validation);
+    assert(mocks[2].created == created);
+    wgpuShaderModuleRelease(module);
+}
+
+static void graphics_ledger(state *s)
+{
+    (void)metal_graphics_pixels; /* Pixel oracle is exercised only on native hardware. */
+    native_device *device = (native_device *)s->device;
+    unsigned baseline = mocks[2].live;
+    mocks[2].fail = MOCK_RENDER;
+    exact_message expected = {"Metal: injected native failure (native=-71): owned fault boundary", 0};
+    WGPUPopErrorScopeCallbackInfo scope = {.mode=WGPUCallbackMode_AllowProcessEvents,
+        .callback=exact_scope, .userdata1=&expected};
+    wgpuDevicePushErrorScope(s->device, WGPUErrorFilter_Internal);
+    assert(!metal_image(s));
+    mocks[2].fail = MOCK_NONE;
+    assert(wgpuDevicePopErrorScope(s->device, scope).id);
+    overwrite_stack();
+    wgpuInstanceProcessEvents(s->instance);
+    assert(expected.calls == 1 && mocks[2].live == baseline);
+    /* Initialization unknown cannot publish a public texture. Its private
+     * allocation stays alive until the ordinary pending owner proves terminal. */
+    native_lock(device);
+    hold = true;
+    native_unlock(device);
+    wgpuDevicePushErrorScope(s->device, WGPUErrorFilter_Internal);
+    assert(!metal_image(s));
+    pop(s, WGPUErrorType_Internal);
+    native_lock(device);
+    assert(device->pending && mocks[2].live > baseline);
+    hold = false;
+    native_queue_settlement settlement = native_settle_pending(device);
+    assert(settlement.complete && !device->pending && mocks[2].live == baseline);
+    native_unlock(device);
+    WGPURenderPipeline pipeline = metal_triangle_pipeline(s);
+    WGPUTexture image = metal_image(s);
+    WGPUTextureView view = wgpuTextureCreateView(image, NULL);
+    assert(pipeline && image && view);
+    unsigned renders = mocks[2].renders;
+    WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(s->device, NULL);
+    metal_triangle_record(s, pipeline, view, encoder, WGPUStoreOp_Store);
+    wgpuRenderPipelineRelease(pipeline);
+    wgpuTextureViewRelease(view);
+    wgpuTextureRelease(image);
+    submit(s, encoder);
+    assert(mocks[2].renders == renders + 1 && mocks[2].render_draw_count == 1);
+    assert(mocks[2].render_draws[0].values.count == 3);
+    assert(mocks[2].live == baseline && !s->errors);
+}
+
 int main(void)
 {
     state s = {0};
@@ -548,6 +695,9 @@ int main(void)
     assert(wgpuQueueOnSubmittedWorkDone(s.queue,completion).id && completed == 1 && !device->pending);
     assert(mocks[2].copies == 1 && mocks[2].fills == 2);
     host_replay_program(&s);
+    sampled_float_admission(&s);
+    reject_metal_fragment_stores(&s);
+    graphics_ledger(&s);
     public_error_detail(&s);
     consumer_finish(&s);
     for (unsigned i = 0; i < context_count; ++i) mock_assert_closed(&mocks[i]);

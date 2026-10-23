@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: MIT */
 #include "render_internal.h"
+#include "metal_frontend.h"
 #include <stdlib.h>
 
 static bool vertices(const WGPUVertexState *source, doe_vk_render_pipeline_desc *native,
@@ -45,6 +46,8 @@ static bool vertices(const WGPUVertexState *source, doe_vk_render_pipeline_desc 
 WGPURenderPipeline native_create_render_pipeline(native_device *device,
     const WGPURenderPipelineDescriptor *descriptor, native_pipeline_error *error)
 {
+    if (device && device->backend.kind == WGPUBackendType_Metal)
+        return native_metal_create_render_pipeline(device, descriptor, error);
     *error = (native_pipeline_error){WGPUErrorType_Validation, "render descriptor, stage interface or capability unsupported"};
     if (!device || device->backend.kind != WGPUBackendType_Vulkan || !descriptor || descriptor->nextInChain || descriptor->vertex.nextInChain ||
         descriptor->vertex.constantCount) return NULL;
@@ -75,10 +78,12 @@ WGPURenderPipeline native_create_render_pipeline(native_device *device,
     for (uint32_t i = 0; i < resource.color_count; ++i) resource.color_formats[i] = fragment->targets[i].format;
     doe_vk_vertex_layout layouts[DOE_VK_MAX_VERTEX_BUFFERS];
     doe_vk_vertex_attribute attributes[DOE_VK_MAX_VERTEX_ATTRIBUTES];
+    native_graphics_limits interface_limits = {device->backend.value.vulkan.caps.max_vertex_output_components,
+        device->backend.value.vulkan.caps.max_fragment_input_components};
     if (!native_render_fixed(device->features, descriptor, &native) ||
         !native_render_depth(device->features, descriptor->depthStencil, &native, &resource) ||
         !vertices(&descriptor->vertex, &native, &resource, &device->backend.value.vulkan.caps, layouts, attributes) ||
-        !native_render_interfaces(stages, stage_count, &descriptor->vertex, fragment, descriptor->multisample.alphaToCoverageEnabled, &device->backend.value.vulkan.caps)) return NULL;
+        !native_render_interfaces(stages, stage_count, &descriptor->vertex, fragment, descriptor->multisample.alphaToCoverageEnabled, &interface_limits)) return NULL;
     native_pipeline *payload = calloc(1, sizeof(*payload));
     if (!payload) { *error = (native_pipeline_error){WGPUErrorType_OutOfMemory,"render pipeline payload allocation failed"}; return NULL; }
     payload->device = device;

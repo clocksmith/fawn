@@ -6,43 +6,37 @@ Parent: [C migration](../CATSCAN.md)
 Expose genuine pinned WebGPU C entrypoints over existing C owners.
 
 ## Authority
-Own typed ABI conversion, adapter/device leases and orchestration, not resource
-semantics, callback queues, shader meaning or GPU execution. Defaults stay unchanged.
+Own ABI conversion, adapter/device leases and orchestration, not resource semantics,
+callback queues, shader meaning, GPU execution or production defaults.
 
 ## Scope
-Instances/devices, buffers, compute pipelines, bindings, commands, submission,
-readback, device loss, labels, compilation/pipeline callbacks; initialized color
-textures/views/samplers and copies, depth/stencil texel copies and textureLoad sampling, cube arrays when enabled, srgb/unorm view formats, point lists with maintenance5, single-sample attachment discard, multisampled texture reads; requested GPU-normalized timestamps and optional device features reported only from actual Vulkan support; reflected
-vertex/fragment or vertex-only pipelines, color/depth/stencil/MSAA passes, resolve,
-direct/guarded-indirect nonindexed and indexed draws, bundles, occlusion and canonical debug-group validation;
-Linux Vulkan surfaces (Wayland/XCB/Xlib) with compatibleSurface-enabled WSI and presentation.
-Unsupported entrypoints stay absent or fail specifically, never fake success.
+Public objects, compute, graphics, copies and Linux Vulkan presentation.
+[Current coverage](README.md) distinguishes Vulkan and Metal. Missing Metal
+guards, transfers and presentation remain explicit rejections, never fake success.
 
 ## Contracts
-Pinned `runtime/zig/vendor/webgpu-headers/webgpu.h` and C instance/futures/callbacks,
-error-scope, resource, shader and Vulkan/Metal owner contracts apply.
+Pinned `runtime/zig/vendor/webgpu-headers/webgpu.h` and instance, callback,
+error-scope, resource, shader and backend contracts apply.
 
 ## Invariants
-One tagged device/pending owner selects Vulkan or Metal without fallback.
-No Zig fallback, synthetic completion or device migration. Unknown completion
-retains ownership and a surviving progress obligation. Surface-only acquisition
-and discard uncertainty use a typed reserved record on that same pending list;
-presentation commands poll the backend frame fence before release. Cleanup-only
-surface records do not redefine command WorkDone readiness. Surface/device
-cleanup preserves surface-before-device lock ordering and consumes no undelivered
-terminal error. The provider image remains
-resident until process exit, independently of terminal GPU/resource cleanup.
-Foreign callbacks run outside locks. Reflection does not replace
-missing dispatch analysis; command and native obligations keep their existing owners.
+One tagged device/pending owner selects the backend without fallback or migration.
+Read only the selected payload. Reflection never substitutes for dispatch analysis.
+Unknown work retains resource leases and progress. Surface acquisition/discard
+uncertainty uses reserved records on the same pending list; presentation requires
+its own frame fence. Cleanup-only records do not redefine command WorkDone.
+Surface cleanup preserves surface-before-device lock order and undelivered errors.
+Provider code remains resident independently of resource cleanup. Foreign callbacks
+run outside locks. Existing command/resource owners retain their obligations.
 
 ## Acceptance
-Developer checks do not establish independent, physical or performance qualification.
-- Evidence: [budget/platform](DEVELOPER_RECEIPT_BUDGET_PLATFORM.json), [indirect/viewport](DEVELOPER_RECEIPT_INDIRECT.json), [backend bridge](DEVELOPER_RECEIPT_BACKENDS.json), [MSAA/debug/atomics](DEVELOPER_RECEIPT_MSAA.json), [depth](DEVELOPER_RECEIPT_DEPTH.json), [demote/instance](DEVELOPER_RECEIPT_DEMOTE.json), [graphics](DEVELOPER_RECEIPT_GRAPHICS.json),
-  [timestamps/recovery](DEVELOPER_RECEIPT_TIMESTAMPS.json) and
-  [admission](DEVELOPER_RECEIPT_ADMISSION.json).
+[Owner checks](Makefile) exercise public behavior, rejection, first errors,
+rollback and terminal cleanup.
+- Evidence: [Source-bound records](README.md) distinguish
+host controls, native execution and unqualified paths. Developer results never
+establish independent, physical-matrix or performance qualification.
 
 ## Non-goals
-Parallel resource engine, fake backend, complete graphics or default cutover.
+Parallel resource engines, synthetic completion, complete graphics or default cutover.
 
 ## Freedom
-Implementation may change within these owner boundaries.
+Internal algorithms may vary within these boundaries.

@@ -32,7 +32,7 @@ static native_failure publish_frame(native_surface *surface, doe_vk_texture *fra
         free(payload);
         return native_failure_status(native_from_vulkan(status));
     }
-    payload->texture = (native_texture){device, frame};
+    payload->texture = (native_texture){.device=device,.texture=frame};
     payload->surface = surface;
     native_retain_count(&surface->leases);
     const doe_vk_caps *caps = &device->backend.value.vulkan.caps;

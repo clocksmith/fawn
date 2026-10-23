@@ -46,7 +46,7 @@ bool compiler_module_spans(Source *s, uint32_t flags, const DoeCompilerModuleOut
     const bool measure=(flags&DOE_COMPILER_MODULE_MEASURE)!=0u;
     const bool words=(flags&DOE_COMPILER_MODULE_WORDS)!=0u;
     const bool reflection=(flags&DOE_COMPILER_MODULE_REFLECTION)!=0u;
-    if (flags==0u || flags==DOE_COMPILER_MODULE_MEASURE || (flags&~7u)!=0u || measure!=(o==NULL))
+    if ((flags & 3u) == 0u || (flags & ~(7u | DOE_COMPILER_UNIFORM_BUFFER_STANDARD_LAYOUT)) != 0u || measure!=(o==NULL))
         return source_error(s,DOE_COMPILER_INPUT_ERROR,0u,"invalid module output flags or measure descriptor");
     if (measure) return true;
     if (!compiler_valid_span(o->words,o->word_capacity,sizeof(*o->words),_Alignof(uint32_t),words) ||

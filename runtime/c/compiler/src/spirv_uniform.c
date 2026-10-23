@@ -2,8 +2,8 @@
  * Copyright (c) 2026 Doe contributors */
 #include "spirv_internal.h"
 
-/* WGSL two-row matrix columns have stride 8. Vulkan's baseline uniform layout
- * cannot represent that as OpTypeMatrix. Affected resources retain their exact
+/* Compact standard uniforms and two-row matrix columns have natural strides
+ * that Vulkan's baseline uniform layout cannot represent directly. Affected resources retain their exact
  * source byte extent in a physical uvec4 prefix plus a scalar/vector tail. Loads
  * address individual u32 lanes, never padding or a wider out-of-range vector.
  * Logical types, reflection, storage/workgroup resources and source IR stay intact. */
@@ -41,6 +41,7 @@ static bool contains_narrow(Emitter *e, TypeId type, bool *found) {
 }
 static uint32_t raw_vector(Emitter *e, uint32_t width) {
     if (width == 1u) return ID_U32;
+    if (width == 3u) return ID_VEC3; /* Canonical mandatory uvec3 declaration. */
     CompilerWorkspace *c = e->program;
     for (uint32_t i = 0u; i < c->type_count; ++i)
         if (c->types[i].kind == TYPE_VECTOR && c->types[i].element == IR_U32 && c->types[i].count == width)
@@ -55,7 +56,9 @@ static uint32_t raw_vector(Emitter *e, uint32_t width) {
 bool spirv_uniform_plan(Emitter *e, ResourceRecord *r, bool *raw) {
     *raw = false;
     if (r->kind != DOE_COMPILER_UNIFORM_BUFFER) return true;
-    if (!contains_narrow(e, r->type, raw) || !*raw) return !e->failed;
+    *raw = (type_flags(e->program, r->type) & TYPE_UNIFORM) == 0u;
+    if (!*raw && !contains_narrow(e, r->type, raw)) return false;
+    if (!*raw) return true;
     if (r->minimum > UINT32_MAX)
         return source_error(e->source, DOE_COMPILER_UNSUPPORTED, r->source_offset,
             "physical uniform byte offsets exceed the u32 target format");
@@ -64,8 +67,9 @@ bool spirv_uniform_plan(Emitter *e, ResourceRecord *r, bool *raw) {
     if (existing != NULL) structure = existing->id;
     else {
         const uint32_t bytes = (uint32_t)r->minimum, tail = (bytes % 16u) / 4u;
-        const uint32_t vector = raw_vector(e, 4u), tail_type = tail == 0u ? 0u : raw_vector(e, tail);
-        const uint32_t count = spirv_unsigned_constant(e, bytes / 16u);
+        const uint32_t vector = bytes < 16u ? 0u : raw_vector(e, 4u);
+        const uint32_t tail_type = tail == 0u ? 0u : raw_vector(e, tail);
+        const uint32_t count = bytes < 16u ? 0u : spirv_unsigned_constant(e, bytes / 16u);
         TargetDeclaration *d = spirv_append_declaration(e, DECL_RAW_UNIFORM, r->type);
         if (d == NULL) return false;
         structure = d->id;
@@ -92,14 +96,17 @@ bool spirv_uniform_plan(Emitter *e, ResourceRecord *r, bool *raw) {
 }
 bool spirv_uniform_annotations(Emitter *e, const TargetDeclaration *d) {
     EMIT(OP_DECORATE, d->id, 2u);
-    EMIT(OP_DECORATE, d->id + 1u, 6u, 16u);
+    if (d->payload >= 16u) { EMIT(OP_DECORATE, d->id + 1u, 6u, 16u); }
     EMIT(OP_MEMBER_DECORATE, d->id, 0u, 35u, 0u);
-    if (d->storage != 0u) { EMIT(OP_MEMBER_DECORATE, d->id, 1u, 35u, (uint32_t)d->payload / 16u * 16u); }
+    if (d->payload >= 16u && d->storage != 0u) {
+        EMIT(OP_MEMBER_DECORATE, d->id, 1u, 35u, (uint32_t)d->payload / 16u * 16u);
+    }
     return true;
 }
 bool spirv_uniform_declaration(Emitter *e, const TargetDeclaration *d) {
     if (d->kind == DECL_RAW_VECTOR) { EMIT(OP_TYPE_VECTOR, d->id, ID_U32, d->count); }
     else {
+        if (d->payload < 16u) { EMIT(OP_TYPE_STRUCT, d->id, d->storage); return true; }
         EMIT(OP_TYPE_ARRAY, d->id + 1u, d->first, d->count);
         if (d->storage == 0u) { EMIT(OP_TYPE_STRUCT, d->id, d->id + 1u); }
         else { EMIT(OP_TYPE_STRUCT, d->id, d->id + 1u, d->storage); }
@@ -163,6 +170,18 @@ bool spirv_uniform_access_plan(Emitter *e, const IrInstruction *ir) {
     return !e->failed;
 }
 static bool raw_lane(Emitter *e, const ResourceRecord *r, uint32_t offset, uint32_t *out) {
+    if (r->minimum < 16u) {
+        const uint32_t pointer = spirv_reserve_ids(e, 1u), value = spirv_reserve_ids(e, 1u);
+        if (r->minimum == 4u) { EMIT(OP_ACCESS_CHAIN, spirv_pointer_type(e, IR_U32, 2u), pointer, r->target, ID_ZERO_U32); }
+        else {
+            const uint32_t lane = spirv_reserve_ids(e, 1u);
+            EMIT(OP_SHIFT_RIGHT_LOGICAL, ID_U32, lane, offset, spirv_unsigned_constant(e, 2u));
+            EMIT(OP_ACCESS_CHAIN, spirv_pointer_type(e, IR_U32, 2u), pointer, r->target, ID_ZERO_U32, lane);
+        }
+        EMIT(OP_LOAD, ID_U32, value, pointer);
+        *out = value;
+        return true;
+    }
     const uint32_t block = spirv_reserve_ids(e, 1u), lane = spirv_reserve_ids(e, 1u);
     EMIT(OP_UDIV, ID_U32, block, offset, spirv_unsigned_constant(e, 16u));
     /* Convert byte offset to word offset before selecting its vec4 lane. */

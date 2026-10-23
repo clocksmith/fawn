@@ -3,44 +3,40 @@
 Parent: [Experimental C migration](../../CATSCAN.md)
 
 ## Target
-
-Execute admitted Metal compute, graphics, buffer and image operations through a plain C native owner while preserving resource and completion obligations.
+Execute admitted Metal operations through plain C while preserving resource
+and completion obligations.
 
 ## Authority
-
-- Owns experimental Metal loading, native device/queue/buffer/texture/view/sampler/pipeline lifetimes, compute/render pipelines, resolves, visibility/timestamp encoding, copies, submission and retirement.
-- Does not own WGSL meaning, public WebGPU validation, provider selection or qualification.
+Own native loading, device/queue/resource/pipeline lifetimes, compute/render,
+resolves, visibility/timestamps, transfers, submission and retirement. Exclude WGSL
+meaning, public validation, provider selection and qualification.
 
 ## Scope
-
-- Includes this directory's private backend ABI, native adapter and focused tests.
+Private backend ABI, native adapter and focused tests in this directory.
 
 ## Contracts
-
-- Input: validated MSL and explicit compiler workgroup/slot facts through [the compute boundary](include/doe_metal.h) and explicit stage/render facts through [the graphics boundary](include/doe_metal_render.h).
-- Output: actual native statuses and completion-backed shared-buffer access.
-- Lifecycle: [system invariants](../../../../INTENT.md).
+Validated MSL and explicit compiler workgroup/slot facts enter the
+[compute boundary](include/doe_metal.h); stage/render facts enter the
+[graphics boundary](include/doe_metal_render.h). Outputs are native statuses and
+completion-backed shared-buffer access under [system invariants](../../../../INTENT.md).
 
 ## Invariants
-
-- Pending/unknown completion retains all resource obligations; errors never authorize successful readback.
-- No interpreter, hidden backend substitution, Zig delegation or production selection change.
-- Host call controls, SDK validation and physical qualification remain separate.
-- Native handles are borrowed, and caller serialization is explicit.
+Pending/unknown work retains every resource obligation; failed work never authorizes
+successful readback. No interpreter, backend substitution, Zig delegation or
+production-selection change. Host controls, SDK checks and physical qualification
+remain distinct. Native handles are borrowed; caller serialization is explicit.
 
 ## Acceptance
-
-- [Focused checks](Makefile) exercise native-call arguments, rollback, ownership and completion controls.
-- Evidence: [current source-bound timestamp developer receipt](DEVELOPER_RECEIPT_TIMESTAMPS.json) records only exercised host scope.
-- [Graphics prerequisites developer receipt](DEVELOPER_RECEIPT_GRAPHICS_PREREQUISITES.json)
-  binds canonical attachment initialization, empty raster-state controls and the
-  bounded Apple offscreen scope; it is not public frontend/presentation qualification.
-- Apple SDK verification, native device execution and complete retained-consumer parity remain separate gates.
+[Focused checks](Makefile) exercise native arguments, rollback, ownership and
+completion.
+- Evidence: [Timestamp records](DEVELOPER_RECEIPT_TIMESTAMPS.json) binds host scope;
+[graphics prerequisites](DEVELOPER_RECEIPT_GRAPHICS_PREREQUISITES.json) bind canonical
+initialization, empty raster controls and bounded Apple execution, without
+qualifying public presentation. SDK verification, native execution and complete
+retained-consumer parity retain separate gates.
 
 ## Non-goals
-
-- Owning WebGPU policy, adding a public lifetime authority or promoting compilation to hardware qualification.
+WebGPU policy, another lifetime authority or compilation promoted to hardware qualification.
 
 ## Freedom
-
-Any implementation is permitted if it preserves these boundaries and passes the acceptance evidence.
+Internal algorithms may vary within these boundaries.

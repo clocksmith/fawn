@@ -70,7 +70,7 @@ static bool text_spans(Source *s, uint32_t target, uint32_t flags, const TextOut
     const bool measure = (flags & DOE_COMPILER_TEXT_MEASURE) != 0u;
     const bool code = (flags & DOE_COMPILER_TEXT_CODE) != 0u;
     const bool reflection = (flags & DOE_COMPILER_TEXT_REFLECTION) != 0u;
-    if (flags == 0u || flags == DOE_COMPILER_TEXT_MEASURE || (flags & ~7u) != 0u ||
+    if ((flags & 3u) == 0u || (flags & ~(7u | DOE_COMPILER_UNIFORM_BUFFER_STANDARD_LAYOUT)) != 0u ||
         measure != (outputs == NULL))
         return source_error(s, DOE_COMPILER_INPUT_ERROR, 0u, "invalid text output flags or measure descriptor");
     if (measure) return true;
@@ -179,6 +179,7 @@ static DoeCompilerStatus compile_text(uint32_t target,
         return finish(module->diagnostic.status, saved_errno);
     CompilerWorkspace *c = workspace;
     compiler_job_bind(c, workspace, &limits);
+    c->module_flags = (flags & DOE_COMPILER_UNIFORM_BUFFER_STANDARD_LAYOUT) != 0u ? MODULE_STANDARD_UNIFORM : 0u;
     stage_bind(&context, workspace, &capacities->stages, layout.stage_base);
     NumericEnvironment environment;
     CompilerMetadata metadata;
