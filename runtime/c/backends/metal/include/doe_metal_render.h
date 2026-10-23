@@ -53,6 +53,9 @@ typedef struct doe_mtl_render_pipeline_desc {
     size_t attribute_count;
     doe_mtl_depth_stencil depth_stencil;
     uint32_t sample_count; /* Explicit device-admitted sample count. */
+    bool alpha_to_coverage; /* Native pipeline state; requires MSAA + color/fragment. */
+    bool override_sample_mask;
+    uint32_t sample_mask; /* Only all-active-samples masks are admitted here. */
 } doe_mtl_render_pipeline_desc;
 doe_mtl_status doe_mtl_render_pipeline_create(doe_mtl_context *context,
     const doe_mtl_render_pipeline_desc *desc, doe_mtl_render_pipeline **out, doe_mtl_error *error);
@@ -124,6 +127,13 @@ typedef struct doe_mtl_render_draw {
 doe_mtl_status doe_mtl_commands_render(doe_mtl_commands *commands,
     const doe_mtl_render_pass_desc *pass, const doe_mtl_render_draw *draws,
     size_t draw_count, doe_mtl_error *error);
+/* Clear only uninitialized aspects in the selected 2D/array/cube/MS mip/layer
+ * range, using the same speculative command state as rendering and transfers.
+ * Initialized aspects are loaded/stored unchanged. All views/preflight complete
+ * before the first clear encoder; failure poisons this recording. Unknown work
+ * retains its leases and only successful completion publishes initialization. */
+doe_mtl_status doe_mtl_commands_initialize_attachment(doe_mtl_commands *commands,
+    doe_mtl_texture_view *view, doe_mtl_error *error);
 #ifdef __cplusplus
 }
 #endif

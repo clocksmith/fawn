@@ -109,11 +109,26 @@ use one native attachment identity while every wrapper keeps its ordinary lease.
 Combined-format sampling checks depth availability; X24/X32 views check stencil.
 Depth/stencil and multisample images do not admit storage or staging transfers.
 
+`doe_mtl_commands_initialize_attachment` initializes a selected 2D/array/cube/MS
+view range through real clear-only passes. It prepares every selected mip/layer
+view before encoding, clears missing aspects to zero, and LOAD/STOREs initialized
+companions. Repeating it on an initialized recording is a no-op. It consults the
+same speculative bits as ordinary rendering, so Discard, abandonment, unknown
+completion and terminal failure keep their existing ownership/publication rules.
+
 Sample counts are queried with supportsTextureSampleCount. Published GPU-family
 facts conservatively gate arrays, combined store/resolve, separate depth/stencil,
 depth resolve, stencil resolve and counting visibility. Depth24Stencil8 uses its
 native property gate and is never assumed on Apple silicon. These gates are not
 per-format hardware qualification; native/frontend format admission still applies.
+
+Logical empty viewports/scissors remain real draws: native raster state uses an
+empty [scissor](https://developer.apple.com/documentation/metal/mtlrendercommandencoder/setscissorrect(_:))
+while vertex effects and visibility ordering survive. Alpha-to-coverage uses the
+native pipeline descriptor's typed BOOL property. An optional sample mask is
+admitted only when all active samples remain enabled; partial masks return
+UNSUPPORTED before allocation/native calls. This layer does not rewrite MSL to
+manufacture a shader sample-mask output or substitute a scissor for coverage.
 
 Visibility output uses initialized ordinary buffer storage and stays BUSY until
 completion. Each offset is 8-byte aligned and belongs to one contiguous run of
@@ -244,6 +259,23 @@ controls pass with UBSan. The combined ASan/UBSan binaries compile but the first
 executable hangs in AddressSanitizer initialization before `main`; its captured
 stack and termination are retained rather than called a pass. Earlier Linux
 sanitizer receipts remain scoped to their recorded inputs and platform.
+
+`make native-graphics-check` is another explicitly authorized, healthy-host-only
+operation, also excluded from `all`/`check`, with the same 20-second process and
+five-second completion bounds. Its 8x8 offscreen native-MSL consumer initializes
+a four-sample attachment, draws/resolves a red triangle, and proves empty viewport
+and scissor draws still perform vertex storage effects without changing pixels.
+It releases caller pipeline/view/texture/context references before submission.
+Alpha-to-coverage is enabled with opaque alpha1; fractional coverage behavior,
+public WGSL/graphics composition, presentation and broader hardware qualification
+are not established by this smoke.
+
+The [graphics prerequisites receipt](DEVELOPER_RECEIPT_GRAPHICS_PREREQUISITES.json)
+binds the actual Apple M3 run, all13 current host controls and both real SDK ABI
+targets. Its initializer controls cover selected mip/layer ranges, partial-aspect
+Discard preservation, a failed second view preparation before any encoder,
+abandonment, unknown completion and terminal poisoning. The retained terminal
+artifact distinguishes its first fixture assertion from the corrected host pass.
 
 Artifacts default to `/tmp/doe-c-metal`. `check` runs the owned native-call fault
 and lifetime controls plus typed message-call controls. It does not interpret or

@@ -1,0 +1,345 @@
+{
+  "kind": "developer-correctness-evidence",
+  "component": "C Metal graphics prerequisites",
+  "recorded_date": "2026-10-23",
+  "recorded_worktree_head": "567286b72fedd3c957d3f7cf2e2bbe4fea64023e",
+  "binding": "Exact path SHA256 closure, including uncommitted owner overlay; not a whole-repository qualification",
+  "consumer": "Metal migration prerequisite decision: canonical initializer, logical empty raster and native coverage-state admission",
+  "changes": [
+    "Existing speculative per-subresource aspect owner clears missing aspects and preserves initialized companions",
+    "Preflight all selected views before clear encoders; no second availability owner",
+    "Logical empty viewport/scissor still execute nonempty draws with native empty scissor",
+    "Typed BOOL alpha-to-coverage pipeline selector; only full-active optional sample masks admitted"
+  ],
+  "checks": [
+    {
+      "command": "make -C runtime/c/backends/metal BUILD=/tmp/doe-c-metal-graphics-20261023 check sdk-abi",
+      "result": "PASS after corrected raw ObjC fixture",
+      "host_executables": 13,
+      "sdk_targets": [
+        "arm64-apple-macos13",
+        "x86_64-apple-macos13"
+      ],
+      "initial_build_command": "make -C runtime/c/backends/metal BUILD=/tmp/doe-c-metal-graphics-20261023 all check sdk-abi (first host fixture assertion retained)"
+    },
+    {
+      "command": "UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1 affected instrumented host controls",
+      "result": "PASS",
+      "controls": [
+        "test_initialization",
+        "test_render",
+        "test_objc_render_pipeline",
+        "test_objc_render_commands"
+      ],
+      "outer_timeout_seconds_each": 10
+    },
+    {
+      "command": "make -C runtime/c/backends/metal BUILD=/tmp/doe-c-metal-graphics-20261023 native-graphics-check",
+      "result": "PASS first actual device run",
+      "outer_timeout_seconds": 20,
+      "completion_deadline_seconds": 5,
+      "native_shader": "MSL",
+      "work": "8x8 four-sample color initialization, opaque-alpha1 coverage state, direct triangle, empty viewport/scissor vertex atomics, resolve and shared readback",
+      "early_release": [
+        "pipeline",
+        "view",
+        "texture",
+        "context"
+      ]
+    }
+  ],
+  "host": {
+    "device": "Apple M3",
+    "macos": "26.6.2",
+    "compiler": "Apple clang17.0.0 clang-1700.3.19.1",
+    "sdk": "26.0",
+    "preflight_thermal": [
+      "Note: No thermal warning level has been recorded",
+      "Note: No performance warning level has been recorded",
+      "Note: No CPU power status has been recorded"
+    ]
+  },
+  "first_failure": {
+    "kind": "host fixture assertion",
+    "artifact": "runtime/c/backends/metal/APPLE_GRAPHICS_PREREQUISITES_TERMINAL.txt",
+    "detail": "Existing high-slot bind expectation was absent from new raw-call fixture; corrected fixture, retained first failure. No device failure occurred."
+  },
+  "limits": [
+    "Partial native sample masks reject; no MSL rewrite or scissor substitute",
+    "Opaque alpha1 only in actual device smoke; fractional alpha coverage unqualified",
+    "Private backend MSL only; public WGSL/graphics composition, surfaces, indirect/index fetch proof and broader hardware qualification remain separate",
+    "No ASan claim for these inputs; UBSan-only checks are explicitly named"
+  ],
+  "source_inputs": [
+    {
+      "path": "runtime/c/backends/metal/include/doe_metal.h",
+      "sha256": "f85b6988ca71b4f2ae99400a195087e11ec4241d84d4c2d65d84c2da6edd398a"
+    },
+    {
+      "path": "runtime/c/backends/metal/include/doe_metal_query.h",
+      "sha256": "8ab79825e9d54c268f66964a5e9657e7fc04c19bc076ccb9831504161254af73"
+    },
+    {
+      "path": "runtime/c/backends/metal/include/doe_metal_render.h",
+      "sha256": "79eea69d50694128c022541d59e752857420a2f197edfd06f285862e64d0e5fa"
+    },
+    {
+      "path": "runtime/c/backends/metal/include/doe_metal_texture.h",
+      "sha256": "fa230a70ca603e47c5b9b7df4b8e1cc98e473dcb7dda22630dfaacab23a9aec9"
+    },
+    {
+      "path": "runtime/c/backends/metal/src/commands.c",
+      "sha256": "fa1a886e15daac615aafee05acebb5e9f50618bff6ff86b863d82a7d5b8f9705"
+    },
+    {
+      "path": "runtime/c/backends/metal/src/compute_commands.c",
+      "sha256": "b42fd8ee1b87dfe972fb3c40207a0476ac400f87e9705e951c50a2ba20d7dd35"
+    },
+    {
+      "path": "runtime/c/backends/metal/src/context.c",
+      "sha256": "581591411d8d605eecd108f25fc6d9e8bc7009c757fe346238dbddd1aa13f2ee"
+    },
+    {
+      "path": "runtime/c/backends/metal/src/internal.h",
+      "sha256": "d0f30f117da3b11d4aadaae8b164c3d48b87dd8ff3225160f0c1c480e5903024"
+    },
+    {
+      "path": "runtime/c/backends/metal/src/native.h",
+      "sha256": "dc5a608f182a9ae811c6d01a4eeaff7375f41cd24fd49cb814af1f04e070f78a"
+    },
+    {
+      "path": "runtime/c/backends/metal/src/objc_abi.h",
+      "sha256": "68aac7d858821457a360585b9810f7f1e9544bd1d8376917a056b6c4eadf1817"
+    },
+    {
+      "path": "runtime/c/backends/metal/src/objc_commands.c",
+      "sha256": "fbe38635c617480e1b9a1ecaa20f814f83e3aa1d1b5492fbd74b3043dc65c247"
+    },
+    {
+      "path": "runtime/c/backends/metal/src/objc_depth_state.c",
+      "sha256": "ac4f92dd2823fc3332bec64e45ef50e8155017b8ce8d0253b730885ed5ddc9a8"
+    },
+    {
+      "path": "runtime/c/backends/metal/src/objc_image_transfer.c",
+      "sha256": "bf81a534efc90c2bf51f1fca8dfd29c65c8eb3f896bb2d0d894737dc8684b15b"
+    },
+    {
+      "path": "runtime/c/backends/metal/src/objc_images.c",
+      "sha256": "f36933c318229c2d749867a5870d7484018e196c714cc274c52713c204aa64b9"
+    },
+    {
+      "path": "runtime/c/backends/metal/src/objc_pipeline.c",
+      "sha256": "5cf384883928cf6d9d67415fc1f64f5decdef404974f356f19f83644da9ecfcb"
+    },
+    {
+      "path": "runtime/c/backends/metal/src/objc_queries.c",
+      "sha256": "3430fa96b9ce2233ca3cf1d8be3b1e752e43c1bd8abf9d6a3101c296e1e096c2"
+    },
+    {
+      "path": "runtime/c/backends/metal/src/objc_query_types.h",
+      "sha256": "1803ad2f08d38de9d44037a5822017d7010aa40e998dd2771cea79b75eaa0177"
+    },
+    {
+      "path": "runtime/c/backends/metal/src/objc_render_commands.c",
+      "sha256": "f40d6fc1eacc18c95a72cc1a556a811c5509acc664d0d5cae9744709b70b6269"
+    },
+    {
+      "path": "runtime/c/backends/metal/src/objc_render_draws.c",
+      "sha256": "c41011b74e22b01af10cd8680def83945a171154336200d5f5bd1ae5b484cebe"
+    },
+    {
+      "path": "runtime/c/backends/metal/src/objc_render_loader.c",
+      "sha256": "a161746466b4cf7a613528a9a88b67a7f8bb5068d8328b2bd3d50f43516ab3ac"
+    },
+    {
+      "path": "runtime/c/backends/metal/src/objc_render_pipeline.c",
+      "sha256": "3033b59ac1d2a70d8ffb4ac71631c9efd7419b1b7e7a74b7a1b8229a23ac9529"
+    },
+    {
+      "path": "runtime/c/backends/metal/src/objc_render_types.h",
+      "sha256": "898252c5810bb52c92c3c33fd561fda1ca9b64accfd0cc1d47fed169abe1c086"
+    },
+    {
+      "path": "runtime/c/backends/metal/src/objc_runtime.c",
+      "sha256": "eac6a3f678965c94aa68a5875ab05adedf837d3b7665701abec88d870bdcb69a"
+    },
+    {
+      "path": "runtime/c/backends/metal/src/query_internal.h",
+      "sha256": "36d5bccf24283895b005139056f0d8656a0bebc41e110a639e9e286e688eff28"
+    },
+    {
+      "path": "runtime/c/backends/metal/src/render_attachments.c",
+      "sha256": "903339710d6a9f8a97c48c85d5a2e2e01de6ab1c7a068618616abc90c4f507a4"
+    },
+    {
+      "path": "runtime/c/backends/metal/src/render_commands.c",
+      "sha256": "61e0ae650be2fd79413c70fb17432288c9d97c5b03af35557f0d389b2c186ea8"
+    },
+    {
+      "path": "runtime/c/backends/metal/src/render_draws.c",
+      "sha256": "80d4da3cc66c839813e9be72ea5965795eacb54f46b6b10f88c1be5067edb223"
+    },
+    {
+      "path": "runtime/c/backends/metal/src/render_initialization.c",
+      "sha256": "760801a5ce6cbc7bca6d6dbb9e7f88ecf84af27719d5e3af757699c5f24c9197"
+    },
+    {
+      "path": "runtime/c/backends/metal/src/render_internal.h",
+      "sha256": "95eedcdfd5acc742778d5ca6b5dca054075a1a4891a6db7874d143ebb2d210cd"
+    },
+    {
+      "path": "runtime/c/backends/metal/src/render_pipeline.c",
+      "sha256": "90233db635ddeb306afa4cc7e2caa4742e4893c6b5a92422c431ffb7542a57cf"
+    },
+    {
+      "path": "runtime/c/backends/metal/src/render_visibility.c",
+      "sha256": "1f8e36b7fdb41b36be1962e16a9d32831e6163d00b4d0b3c91a6e08392fdf7f3"
+    },
+    {
+      "path": "runtime/c/backends/metal/src/resources.c",
+      "sha256": "8436e6fc7f37c3342b08373385cc497c1738e1c15c461addbada7bfce6105f10"
+    },
+    {
+      "path": "runtime/c/backends/metal/src/samplers.c",
+      "sha256": "c505d00952fd1b7ad1459b4474dc1700f6ac0b15caad7f8eec162cee214fb623"
+    },
+    {
+      "path": "runtime/c/backends/metal/src/texture_formats.c",
+      "sha256": "3ac23dd5cf5328f64c0f16b27df35f51d3b6596a40aa0b308a8342a1e230993b"
+    },
+    {
+      "path": "runtime/c/backends/metal/src/texture_initialization.c",
+      "sha256": "0573112f73c92443f78bce2262a80273e5a77d0a1ca36c67fa542b7a3994b0dc"
+    },
+    {
+      "path": "runtime/c/backends/metal/src/texture_internal.h",
+      "sha256": "568641b350dd4d9a1bb73930facb177b07d721359a084c5c2c9f85308d41de25"
+    },
+    {
+      "path": "runtime/c/backends/metal/src/texture_ownership.c",
+      "sha256": "2dd7aeb6965612b468e345c281c764cd6eee89b8342983c790bddf0388329e9e"
+    },
+    {
+      "path": "runtime/c/backends/metal/src/texture_transfer.c",
+      "sha256": "8701e5f641dcd329cbe0353e401eb34115648da3943b3b9ad76089fd175810d0"
+    },
+    {
+      "path": "runtime/c/backends/metal/src/textures.c",
+      "sha256": "6e0cefa0c713c5371882d54746c47cca6d4d3aac571f0b355285316667111b52"
+    },
+    {
+      "path": "runtime/c/backends/metal/src/timestamps.c",
+      "sha256": "3a92b5a698d02d330fc9034ec35f0e3cb7024e45487b169b8b41b2a04ff2f880"
+    },
+    {
+      "path": "runtime/c/backends/metal/tests/mock_native.c",
+      "sha256": "adf74c177b1e03723a5fce5fe8f6a4e0e311b53efc3e66b943d27dc04ebefea8"
+    },
+    {
+      "path": "runtime/c/backends/metal/tests/mock_native.h",
+      "sha256": "2faa19906bf31ead1644f6769c3682a41c1c28e8989983e5a6346d2c681aa071"
+    },
+    {
+      "path": "runtime/c/backends/metal/tests/native_compute.c",
+      "sha256": "694c1eca9495ddff94be5a92538444d0dc7d6e1bfd5531ca6f100ce9fdcb50bc"
+    },
+    {
+      "path": "runtime/c/backends/metal/tests/native_graphics.c",
+      "sha256": "606d9a3ceb40a1a366d58f08c35f82d99c43a404f757f08a71a5e418de20dd74"
+    },
+    {
+      "path": "runtime/c/backends/metal/tests/probe.c",
+      "sha256": "1a48afa3b4a5e37369e0bb222f57dab0a7294a206c42a84aeafe5157101f548f"
+    },
+    {
+      "path": "runtime/c/backends/metal/tests/sdk_abi.m",
+      "sha256": "1bb11763923f6e1f3892ebb2d13efa4cfed79764ad6403934bc03633a49024ed"
+    },
+    {
+      "path": "runtime/c/backends/metal/tests/test_device_limits.c",
+      "sha256": "2c96fd330bf8f56165b296157e6c9467b0e8d8badbd049932d92da0b355c0b57"
+    },
+    {
+      "path": "runtime/c/backends/metal/tests/test_images.c",
+      "sha256": "311bd07da95494202ca7dcc859a469de7ed8bbccdafcb667317169936f59cb7a"
+    },
+    {
+      "path": "runtime/c/backends/metal/tests/test_initialization.c",
+      "sha256": "3d4a2cd377261adc49aa7040cf5eb21e917b9e8cae3f43f0b517f4801d67bc2b"
+    },
+    {
+      "path": "runtime/c/backends/metal/tests/test_lifetime.c",
+      "sha256": "8b7cdc9121182ecdc7116ee90c8105362e1d545e0bff868137d37869a47fc53d"
+    },
+    {
+      "path": "runtime/c/backends/metal/tests/test_multisample.c",
+      "sha256": "f04d0ce32fbea55c096312e89c242652e0c948d14d97c0359d77b9d2e2c64520"
+    },
+    {
+      "path": "runtime/c/backends/metal/tests/test_objc_calls.c",
+      "sha256": "343cb48f5f5ef304738138f25ef898c8422d307099a7addefd37d38aef1f1900"
+    },
+    {
+      "path": "runtime/c/backends/metal/tests/test_objc_images.c",
+      "sha256": "a7e46c72f67576a98b3bfaf671fb1bf8cb60c66359787ca83f2cfb9d418f8d4f"
+    },
+    {
+      "path": "runtime/c/backends/metal/tests/test_objc_queries.c",
+      "sha256": "1daca4c76cd86fdf2904bbf165c5f0d29cebccf6ac6345485efa006535a33045"
+    },
+    {
+      "path": "runtime/c/backends/metal/tests/test_objc_render_commands.c",
+      "sha256": "aa5ab65bfa762717a957d5cb80ecf5b4698f58985b5e3e1b49c68a36c9ded121"
+    },
+    {
+      "path": "runtime/c/backends/metal/tests/test_objc_render_pipeline.c",
+      "sha256": "bee4784ad67be05aca6c915be960df5dd95dd4c2632ee91f1f2b892f2c1ca6da"
+    },
+    {
+      "path": "runtime/c/backends/metal/tests/test_render.c",
+      "sha256": "161679531448516e16eefa71be9dd44cd8a252369c5867a0e9f16556ccf12a5a"
+    },
+    {
+      "path": "runtime/c/backends/metal/tests/test_timestamps.c",
+      "sha256": "4bdcda599df2e4eb38f0c5b67d57a33760ab52035503a7021d33b1b52722ca8f"
+    },
+    {
+      "path": "runtime/c/backends/metal/tests/test_visibility.c",
+      "sha256": "7f3e3da3643dea5239da96a3aeea32bfa0065c19a943a4bf6d2f881b19f4d5bd"
+    },
+    {
+      "path": "runtime/c/backends/metal/Makefile",
+      "sha256": "0304a8dd31c93048b863b07327f03221b1bbfc5c83bf6aa198304b215d02dfeb"
+    },
+    {
+      "path": "runtime/c/backends/metal/AGENTS.md",
+      "sha256": "9c3ab1e676fd1a6be3f2ba324e275a3e79d0012a238fbcd14bc32110d224d83f"
+    },
+    {
+      "path": "runtime/c/backends/metal/STYLE.md",
+      "sha256": "93d360ac88c6ba60d929a49089f10c0abc9d36c707d7e45a01c8bcd43865f7f8"
+    },
+    {
+      "path": "runtime/c/backends/metal/CATSCAN.md",
+      "sha256": "586984a0ec5a8d0963e7905be23d85e36a2abe59fa424c5335cd257f88be0445"
+    },
+    {
+      "path": "runtime/c/backends/metal/README.md",
+      "sha256": "169c269689b857908071d641e50d157257f48a8132d40e6b49ecd80bf987ea2d"
+    }
+  ],
+  "terminal": {
+    "path": "runtime/c/backends/metal/APPLE_GRAPHICS_PREREQUISITES_TERMINAL.txt",
+    "sha256": "b97f54d160673c53f24bfc07817e17f249ed567819ee1c90af9eeb3395f3a86f"
+  },
+  "artifacts": [
+    {
+      "path": "/tmp/doe-c-metal-graphics-20261023/libdoe_metal.a",
+      "sha256": "7456451df1aec052e43641520f0bc7bb94e045e7fd9c5f5980964b282d2ff24e"
+    },
+    {
+      "path": "/tmp/doe-c-metal-graphics-20261023/native_graphics",
+      "sha256": "edbb9e6617a706fa8f612228fc811e9d9a360948081bb866f36d7f5ed38e8ece"
+    }
+  ]
+}

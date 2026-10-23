@@ -23,6 +23,14 @@ Metal-specific boundary rules:
   changes the target aspect independently of source preservation. Combined
   attachments require both aspects explicitly represented in the pass. Discard
   native recordings before their leases.
+- Attachment initialization reads those same speculative bits, preflights all
+  selected subresources, then records real zero clears for missing aspects and
+  LOAD/STORE for initialized companions. It never adds a frontend availability
+  flag or publishes state before terminal success.
+- Empty logical viewport/scissor lowers to safe native raster state with an empty
+  scissor while the original nonempty draw still executes. Alpha-to-coverage uses
+  the typed BOOL pipeline selector. This owner has no fixed-function partial
+  sample-mask operation; such masks reject before native mutation.
 - Validate a complete render pass before native mutation; bind explicit per-stage
   snapshots and clear absent native slots between draws. No open encoder escapes
   the call. Reuse the compute buffer/image checks and shared MSL function builder

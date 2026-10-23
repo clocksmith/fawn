@@ -58,12 +58,11 @@ static doe_mtl_status dynamic_state(const doe_mtl_render_draw *draw, const doe_m
     for (i = 0; i < 4; ++i) if (!isfinite(draw->blend_constant[i])) return DOE_MTL_INVALID_ARGUMENT;
     if (draw->viewport_enabled && (!isfinite(viewport->x) || !isfinite(viewport->y) ||
         !isfinite(viewport->width) || !isfinite(viewport->height) || !isfinite(viewport->min_depth) || !isfinite(viewport->max_depth) ||
-        viewport->width <= 0 || viewport->height <= 0 || viewport->x < 0 || viewport->y < 0 ||
+        viewport->width < 0 || viewport->height < 0 || viewport->x < 0 || viewport->y < 0 ||
         viewport->x > pass->width || viewport->width > (double)pass->width - viewport->x ||
         viewport->y > pass->height || viewport->height > (double)pass->height - viewport->y ||
         viewport->min_depth < 0 || viewport->max_depth > 1 || viewport->min_depth > viewport->max_depth)) return DOE_MTL_RANGE;
-    if (draw->scissor_enabled && (scissor->width == 0 || scissor->height == 0 ||
-        scissor->x > pass->width || scissor->width > pass->width - scissor->x ||
+    if (draw->scissor_enabled && (scissor->x > pass->width || scissor->width > pass->width - scissor->x ||
         scissor->y > pass->height || scissor->height > pass->height - scissor->y)) return DOE_MTL_RANGE;
     return DOE_MTL_OK;
 }

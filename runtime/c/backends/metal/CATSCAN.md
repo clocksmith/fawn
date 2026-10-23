@@ -32,6 +32,9 @@ Execute admitted Metal compute, graphics, buffer and image operations through a 
 
 - [Focused checks](Makefile) exercise native-call arguments, rollback, ownership and completion controls.
 - Evidence: [current source-bound timestamp developer receipt](DEVELOPER_RECEIPT_TIMESTAMPS.json) records only exercised host scope.
+- [Graphics prerequisites developer receipt](DEVELOPER_RECEIPT_GRAPHICS_PREREQUISITES.json)
+  binds canonical attachment initialization, empty raster-state controls and the
+  bounded Apple offscreen scope; it is not public frontend/presentation qualification.
 - Apple SDK verification, native device execution and complete retained-consumer parity remain separate gates.
 
 ## Non-goals

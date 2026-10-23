@@ -40,6 +40,7 @@ typedef struct mock_native {
     doe_mtl_sampler_desc sampler_desc;
     doe_mtl_native_texture_copy image_from, image_to;
     unsigned uploads, reads, image_copies;
+    unsigned views, fail_view_at;
     doe_mtl_render_pipeline_desc render_pipeline_desc;
     doe_mtl_native_render_pass render_pass;
     doe_mtl_native_render_draw render_draws[2];

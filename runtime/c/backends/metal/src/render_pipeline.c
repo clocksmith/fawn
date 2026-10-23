@@ -34,6 +34,11 @@ static doe_mtl_status pipeline_validate(const doe_mtl_context *context, const do
         (desc->layout_count != 0 && desc->layouts == NULL) ||
         (desc->attribute_count != 0 && desc->attributes == NULL)) return DOE_MTL_INVALID_ARGUMENT;
     if (!doe_mtl_samples_supported(&context->caps, desc->sample_count)) return DOE_MTL_UNSUPPORTED;
+    /* Metal has no fixed-function sample-mask setter. Never rewrite arbitrary
+     * MSL or substitute a scissor for fragment/coverage semantics. */
+    uint32_t active_samples = (UINT32_C(1) << desc->sample_count) - 1;
+    if (desc->override_sample_mask && (desc->sample_mask & active_samples) != active_samples)
+        return DOE_MTL_UNSUPPORTED;
     if (desc->fragment.msl != NULL && !stage_valid(desc->fragment)) return DOE_MTL_INVALID_ARGUMENT;
     if (desc->fragment.msl == NULL && (desc->fragment.msl_length != 0 || desc->fragment.entrypoint != NULL))
         return DOE_MTL_INVALID_ARGUMENT;
@@ -48,6 +53,8 @@ static doe_mtl_status pipeline_validate(const doe_mtl_context *context, const do
             return DOE_MTL_INVALID_ARGUMENT;
     }
     if (occupied && !stage_valid(desc->fragment)) return DOE_MTL_INVALID_ARGUMENT;
+    if (desc->alpha_to_coverage && (desc->sample_count == 1 || !occupied || !stage_valid(desc->fragment)))
+        return DOE_MTL_INVALID_ARGUMENT;
     depth = &desc->depth_stencil;
     if (depth->depth_format != 0 &&
         (doe_mtl_format_aspects(depth->depth_format) & DOE_MTL_ASPECT_DEPTH) == 0) return DOE_MTL_UNSUPPORTED;

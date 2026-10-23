@@ -33,6 +33,7 @@ typedef struct doe_mtl_objc_graphics {
     void *new_pipeline, *new_depth, *new_encoder;
     void *set_vertex_function, *set_fragment_function, *colors, *index;
     void *set_raster_samples, *set_vertex_descriptor, *set_depth_format, *set_stencil_format;
+    void *set_alpha_to_coverage;
     void *set_blend, *set_write_mask, *set_color_op, *set_color_source, *set_color_destination;
     void *set_alpha_op, *set_alpha_source, *set_alpha_destination;
     void *layouts, *attributes, *set_stride, *set_step, *set_rate, *set_attribute_format, *set_offset, *set_buffer_index;

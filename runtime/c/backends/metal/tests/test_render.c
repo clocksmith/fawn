@@ -288,10 +288,51 @@ static void index_and_attachment_ranges(void) {
     doe_mtl_render_pipeline_release(pipeline); doe_mtl_buffer_release(buffer);
     doe_mtl_texture_view_release(view); doe_mtl_context_release(context); mock_assert_closed(&mock);
 }
+static void coverage_and_empty_raster(void) {
+    mock_native mock;
+    doe_mtl_context *context = context_new(&mock);
+    doe_mtl_render_pipeline_desc desc = pipeline_desc();
+    doe_mtl_render_pipeline *pipeline = (void *)&mock;
+    desc.sample_count = 4;
+    desc.alpha_to_coverage = true;
+    desc.override_sample_mask = true;
+    desc.sample_mask = 15;
+    pipeline = pipeline_new(context, desc);
+    assert(mock.render_pipeline_desc.alpha_to_coverage && mock.render_pipeline_desc.sample_mask == 15);
+    doe_mtl_render_pipeline_release(pipeline);
+    unsigned created = mock.created;
+    pipeline = (void *)&mock;
+    desc.sample_mask = 5;
+    assert(doe_mtl_render_pipeline_create(context, &desc, &pipeline, NULL) == DOE_MTL_UNSUPPORTED);
+    assert(pipeline == (void *)&mock && mock.created == created);
+    desc.sample_mask = UINT32_MAX;
+    desc.sample_count = 1;
+    assert(doe_mtl_render_pipeline_create(context, &desc, &pipeline, NULL) == DOE_MTL_INVALID_ARGUMENT);
+    assert(pipeline == (void *)&mock && mock.created == created);
+    desc.alpha_to_coverage = false;
+    pipeline = pipeline_new(context, desc);
+    doe_mtl_texture_view *view = view_new(context, DOE_MTL_RGBA8_UNORM);
+    doe_mtl_render_pass_desc pass = pass_new(view);
+    doe_mtl_render_draw draws[2] = {draw_new(pipeline), draw_new(pipeline)};
+    draws[0].viewport_enabled = true;
+    draws[0].viewport = (doe_mtl_viewport){16, 0, 0, 8, 0, 1};
+    draws[1].scissor_enabled = true;
+    draws[1].scissor = (doe_mtl_scissor){0, 8, 16, 0};
+    doe_mtl_commands *commands = commands_new(context);
+    assert(doe_mtl_commands_render(commands, &pass, draws, 2, NULL) == DOE_MTL_OK);
+    assert(mock.render_draw_count == 2 && mock.render_draws[0].values.viewport.width == 0);
+    assert(mock.render_draws[1].values.scissor.height == 0);
+    assert(doe_mtl_commands_release(commands) == DOE_MTL_OK);
+    doe_mtl_texture_view_release(view);
+    doe_mtl_render_pipeline_release(pipeline);
+    doe_mtl_context_release(context);
+    mock_assert_closed(&mock);
+}
 int main(void) {
+    coverage_and_empty_raster();
     constructors(); clear_load_store(); mixed_draw_lifetime(); depth_stencil();
     preflight_atomicity(); fetch_bounds_and_faults();
     aliases_devices_and_leases(); index_and_attachment_ranges();
-    puts("Metal render ownership controls: 8 groups passed; no shader/raster/GPU execution");
+    puts("Metal render ownership controls: 9 groups passed; no shader/raster/GPU execution");
     return 0;
 }

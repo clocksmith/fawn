@@ -63,7 +63,8 @@ SAME_ENUM(DOE_MTL_SWIZZLE_ALPHA, MTLTextureSwizzleAlpha);
  * SDK declaration produces a compile diagnostic rather than an untyped cast. */
 void doe_mtl_sdk_calls(id<MTLComputeCommandEncoder> compute,
     id<MTLRenderCommandEncoder> render, id<MTLBlitCommandEncoder> blit,
-    id<MTLBuffer> buffer, id<MTLCounterSampleBuffer> counters) {
+    id<MTLBuffer> buffer, id<MTLCounterSampleBuffer> counters, MTLRenderPipelineDescriptor *pipeline) {
+    [pipeline setAlphaToCoverageEnabled:(BOOL)YES];
     [compute dispatchThreadgroups:(MTLSize){1, 1, 1} threadsPerThreadgroup:(MTLSize){1, 1, 1}];
     [render setViewport:(MTLViewport){0, 0, 1, 1, 0, 1}];
     [render setScissorRect:(MTLScissorRect){0, 0, 1, 1}];

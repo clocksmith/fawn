@@ -273,7 +273,27 @@ static void resolves_and_visibility(void) {
     assert(f.visibility_modes[2] == 1 && f.visibility_offsets[2] == 48);
     assert(f.draws == 4 && f.ends == 1 && f.pools == f.drains);
 }
+static void empty_raster_state(void) {
+    for (unsigned mode = 0; mode < 3; ++mode) {
+        fixture f;
+        doe_mtl_native_render_draw draw = {0};
+        initialize(&f);
+        doe_mtl_native_render_pass pass = pass_new(&f);
+        draw.pipeline = &f.pipeline;
+        draw.vertex_sizes_slot = draw.fragment_sizes_slot = UINT32_MAX;
+        draw.vertex.textures[127] = &f.texture;
+        draw.fragment.samplers[15] = &f.sampler;
+        draw.values = (doe_mtl_render_draw){.count = 3, .instance_count = 1,
+            .viewport_enabled = mode != 2, .viewport = {0, 0, mode == 0 ? 0 : 8, 0, 0, 1},
+            .scissor_enabled = true, .scissor = {3, 4, mode == 2 ? 0u : 8u, 9}};
+        assert(doe_mtl_objc_render(&f.runtime, &f.command, &pass, &draw, 1, NULL) == DOE_MTL_OK);
+        assert(f.draws == 1 && f.scissor.width == 0 && f.scissor.height == 0);
+        assert(f.viewport.width > 0 && f.viewport.height > 0);
+        assert(f.ends == 1 && f.pools == f.drains);
+    }
+}
 int main(void) {
+    empty_raster_state();
     resolves_and_visibility();
     encoding(); clear_and_failure();
     puts("Metal typed render encoder controls: attachments, full per-stage state, indexed/instanced args and failure cleanup passed; no SDK/GPU");

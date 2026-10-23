@@ -76,6 +76,7 @@ doe_mtl_status doe_mtl_objc_render_pipeline(void *userdata, void *device,
     r->set_object_call(descriptor, g->set_vertex_function, vertex);
     r->set_object_call(descriptor, g->set_fragment_function, fragment);
     r->set_size_call(descriptor, g->set_raster_samples, desc->sample_count);
+    g->set_bool(descriptor, g->set_alpha_to_coverage, (doe_objc_bool)desc->alpha_to_coverage);
     r->set_size_call(descriptor, g->set_depth_format, (size_t)desc->depth_stencil.depth_format);
     r->set_size_call(descriptor, g->set_stencil_format, (size_t)desc->depth_stencil.stencil_format);
     if (!colors(r, descriptor, desc)) goto descriptor_failure;

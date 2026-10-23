@@ -30,6 +30,12 @@ void doe_mtl_objc_render_encode_draw(doe_mtl_objc *r, void *encoder,
     if (v->count == 0 || v->instance_count == 0) return;
     if (v->viewport_enabled) viewport = v->viewport;
     if (v->scissor_enabled) scissor = (doe_mtl_scissor_abi){v->scissor.x, v->scissor.y, v->scissor.width, v->scissor.height};
+    /* Logical empty raster state still runs vertices/visibility ordering. Use a
+     * nondegenerate native viewport and an empty scissor; never elide the draw. */
+    if (viewport.width == 0 || viewport.height == 0) {
+        viewport = (doe_mtl_viewport){0, 0, 1, 1, viewport.min_depth, viewport.max_depth};
+        scissor = (doe_mtl_scissor_abi){0};
+    } else if (scissor.width == 0 || scissor.height == 0) scissor = (doe_mtl_scissor_abi){0};
     r->set_object_call(encoder, g->set_pipeline, draw->pipeline);
     r->set_object_call(encoder, g->set_depth_state, draw->depth_stencil);
     stage_bindings(r, encoder, &draw->vertex, draw->vertex_sizes_slot, true);
