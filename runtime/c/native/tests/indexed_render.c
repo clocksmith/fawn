@@ -306,7 +306,9 @@ static void rejected_bundle(state *s, const fixture *f, bool indirect)
     wgpuRenderBundleEncoderSetIndexBuffer(encoder,f->indices16,WGPUIndexFormat_Uint16,0,24);
     if (indirect) wgpuRenderBundleEncoderDrawIndexedIndirect(encoder,f->shifts,0);
     else wgpuRenderBundleEncoderDrawIndexed(encoder,3,1,10,0,1);
-    assert(!wgpuRenderBundleEncoderFinish(encoder,NULL));
+    WGPURenderBundle invalid_bundle = wgpuRenderBundleEncoderFinish(encoder,NULL);
+    assert(invalid_bundle); /* WebGPU invalid bundle */
+    wgpuRenderBundleRelease(invalid_bundle);
     expect_validation(s);
     wgpuRenderBundleEncoderRelease(encoder);
 }
