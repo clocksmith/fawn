@@ -4,6 +4,7 @@
 #define DOE_RESOURCE_VULKAN_FIXTURE_H
 #include "doe_resources_extended.h"
 #include "doe_vk_texture.h"
+#include "doe_vk_queries.h"
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -54,5 +55,10 @@ static inline void release_pipeline(void *state, void *pipeline)
 {
     ((lifecycle *)state)->native_releases++;
     doe_vk_pipeline_release(pipeline);
+}
+static inline void release_queries(void *state, void *pool)
+{
+    ((lifecycle *)state)->native_releases++;
+    doe_vk_query_pool_release(pool);
 }
 #endif

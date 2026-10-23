@@ -4,12 +4,6 @@
 #include "doe_vk_queries.h"
 #include <math.h>
 
-static void release_queries(void *state, void *pool)
-{
-    ((lifecycle *)state)->native_releases++;
-    doe_vk_query_pool_release(pool);
-}
-
 int main(int argc, char **argv)
 {
     if (argc != 2 || strcmp(argv[1], "--allow-software")) return 2;

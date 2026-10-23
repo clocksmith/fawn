@@ -29,3 +29,6 @@ Shader binding alias checks compare shared stage visibility; whole render usage
 history does not. NULL/empty pipeline-layout slots share required-group admission;
 materialize absent/trailing getter layouts only through the canonical owner with
 status and untouched-output failure semantics, never a frontend cache.
+Keep occlusion event order and exact pool identity in native pass spans. Native
+reset/availability remains the backend's responsibility; no synthetic results or
+second query-state map. Software zero/nonzero evidence is not precise samples.
