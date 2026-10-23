@@ -712,6 +712,7 @@ extern FnDevicePushErrorScope pfn_doeNativeDevicePushErrorScope;
 extern FnDevicePopErrorScope pfn_doeNativeDevicePopErrorScope;
 extern FnDevicePushErrorScope pfn_wgpuDevicePushErrorScope;
 extern FnDevicePopErrorScope pfn_wgpuDevicePopErrorScope;
+extern void* g_wgpuShaderModuleGetCompilationInfo;
 extern FnDeviceSetUncapturedErrorCallback pfn_doeNativeDeviceSetUncapturedErrorCallback;
 extern FnDeviceRegisterLostCallback pfn_doeNativeDeviceRegisterLostCallback;
 extern FnRenderPipelineGetBindGroupLayout pfn_doeNativeRenderPipelineGetBindGroupLayout;
@@ -967,6 +968,7 @@ const char* doe_binding_access_name(uint32_t access);
 
 /* Compilation message helpers (doe_napi_shader.c) */
 void ensure_compilation_message_fields(napi_env env, napi_value msg);
+napi_value shader_compilation_messages(napi_env env, void* shader_module);
 
 /* Device label stubs */
 napi_value doe_device_get_label(napi_env env, napi_callback_info info);

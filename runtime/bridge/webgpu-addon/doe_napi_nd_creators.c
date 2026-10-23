@@ -223,36 +223,8 @@ static napi_value native_direct_shader_module_get_compilation_info(napi_env env,
     void* module_raw = cache ? cache->native
                              : native_direct_unwrap_external_prop(env, this_arg, DOE_DIRECT_NATIVE);
 
-    const char* json_str = "[]";
-    if (pfn_doeNativeShaderModuleGetCompilationInfo) {
-        const char* native_json = pfn_doeNativeShaderModuleGetCompilationInfo(module_raw);
-        if (native_json) json_str = native_json;
-    }
-
-    /* Parse via JS JSON.parse — the Zig layer emits strict JSON. */
-    napi_value global, json_obj, json_parse_fn, json_str_val, parse_args[1], parsed;
-    napi_get_global(env, &global);
-    napi_get_named_property(env, global, "JSON", &json_obj);
-    napi_get_named_property(env, json_obj, "parse", &json_parse_fn);
-    napi_create_string_utf8(env, json_str, NAPI_AUTO_LENGTH, &json_str_val);
-    parse_args[0] = json_str_val;
-
-    napi_value messages;
-    napi_status parse_status = napi_call_function(env, json_obj, json_parse_fn, 1, parse_args, &parsed);
-    if (parse_status != napi_ok) {
-        napi_create_array_with_length(env, 0, &messages);
-    } else {
-        messages = parsed;
-    }
-
-    /* Ensure each message has all 5 required fields */
-    uint32_t msg_count = 0;
-    napi_get_array_length(env, messages, &msg_count);
-    for (uint32_t i = 0; i < msg_count; i++) {
-        napi_value msg_obj;
-        napi_get_element(env, messages, i, &msg_obj);
-        ensure_compilation_message_fields(env, msg_obj);
-    }
+    napi_value messages = shader_compilation_messages(env, module_raw);
+    if (!messages) return NULL;
 
     napi_value compilation_info;
     napi_create_object(env, &compilation_info);

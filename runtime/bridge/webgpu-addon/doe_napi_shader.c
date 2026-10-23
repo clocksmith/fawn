@@ -1,4 +1,5 @@
 #include "doe_napi_internal.h"
+#include <stdatomic.h>
 
 #define DOE_STACK_WGSL_SOURCE_BYTES 16384
 
@@ -305,11 +306,101 @@ void ensure_compilation_message_fields(napi_env env, napi_value msg) {
     }
 }
 
-napi_value doe_shader_module_get_compilation_info(napi_env env, napi_callback_info info) {
-    NAPI_ASSERT_ARGC(env, info, 1);
-    CHECK_LIB_LOADED(env);
-    void* shader_module = unwrap_ptr(env, _args[0]);
+/* Standard compilation info, mirrored from the pinned webgpu.h. */
+typedef struct {
+    void* next_in_chain; WGPUStringView message; uint32_t type;
+    uint64_t line_num, line_pos, offset, length;
+} StandardCompilationMessage;
+typedef struct { void* next_in_chain; size_t count; const StandardCompilationMessage* messages; } StandardCompilationInfo;
+typedef void (*StandardCompilationCallback)(uint32_t status, const StandardCompilationInfo* info,
+    void* userdata1, void* userdata2);
+typedef struct {
+    void* next_in_chain; uint32_t mode; StandardCompilationCallback callback;
+    void* userdata1; void* userdata2;
+} StandardCompilationCallbackInfo;
+typedef WGPUFuture (*StandardGetCompilationInfo)(void* shader_module, StandardCompilationCallbackInfo info);
 
+enum { COMPILATION_CAPTURE_MESSAGES = 8 };
+/* Same atomic handoff as scoped validation: a late provider frees the capture. */
+typedef struct {
+    _Atomic uint32_t state; /* 0 waiting, 1 delivered, 2 abandoned by the caller */
+    uint32_t status;
+    size_t count;
+    struct {
+        uint32_t type;
+        uint64_t line_num, line_pos, offset, length;
+        char text[DOE_ERROR_BUF_CAP];
+    } messages[COMPILATION_CAPTURE_MESSAGES];
+} CompilationCapture;
+
+static void compilation_reply(uint32_t status, const StandardCompilationInfo* info,
+    void* userdata1, void* userdata2) {
+    (void)userdata2;
+    CompilationCapture* capture = (CompilationCapture*)userdata1;
+    capture->status = status;
+    size_t count = info ? info->count : 0;
+    capture->count = count < COMPILATION_CAPTURE_MESSAGES ? count : COMPILATION_CAPTURE_MESSAGES;
+    for (size_t i = 0; i < capture->count; i++) {
+        const StandardCompilationMessage* message = &info->messages[i];
+        capture->messages[i].type = message->type;
+        capture->messages[i].line_num = message->line_num;
+        capture->messages[i].line_pos = message->line_pos;
+        capture->messages[i].offset = message->offset;
+        capture->messages[i].length = message->length;
+        copy_string_view_message(message->message, capture->messages[i].text,
+            sizeof(capture->messages[i].text));
+    }
+    uint32_t expected = 0;
+    if (!atomic_compare_exchange_strong(&capture->state, &expected, 1u)) free(capture);
+}
+
+static napi_value standard_compilation_messages(napi_env env, void* shader_module) {
+    CompilationCapture* capture = (CompilationCapture*)calloc(1, sizeof(*capture));
+    if (!capture) NAPI_THROW(env, "getCompilationInfo: out of memory");
+    StandardGetCompilationInfo get;
+    void* symbol = g_wgpuShaderModuleGetCompilationInfo;
+    memcpy(&get, &symbol, sizeof(get));
+    WGPUFuture future = get(shader_module, (StandardCompilationCallbackInfo){
+        NULL, WGPU_CALLBACK_MODE_ALLOW_SPONTANEOUS, compilation_reply, capture, NULL});
+    uint32_t expected = 0;
+    if (!future.id || atomic_compare_exchange_strong(&capture->state, &expected, 2u)) {
+        if (!future.id) free(capture); /* Rejected: no callback will run. */
+        NAPI_THROW(env, "getCompilationInfo: provider did not deliver compilation info");
+    }
+    if (capture->status != 0x00000001u /* WGPUCompilationInfoRequestStatus_Success */) {
+        free(capture);
+        NAPI_THROW(env, "getCompilationInfo: provider request failed");
+    }
+    static const char* const kinds[] = {"error", "error", "warning", "info"};
+    napi_value messages;
+    napi_create_array_with_length(env, capture->count, &messages);
+    for (size_t i = 0; i < capture->count; i++) {
+        napi_value message, value;
+        napi_create_object(env, &message);
+        napi_create_string_utf8(env, capture->messages[i].text, NAPI_AUTO_LENGTH, &value);
+        napi_set_named_property(env, message, "message", value);
+        uint32_t type = capture->messages[i].type;
+        napi_create_string_utf8(env, kinds[type <= 3 ? type : 0], NAPI_AUTO_LENGTH, &value);
+        napi_set_named_property(env, message, "type", value);
+        napi_create_double(env, (double)capture->messages[i].line_num, &value);
+        napi_set_named_property(env, message, "lineNum", value);
+        napi_create_double(env, (double)capture->messages[i].line_pos, &value);
+        napi_set_named_property(env, message, "linePos", value);
+        napi_create_double(env, (double)capture->messages[i].offset, &value);
+        napi_set_named_property(env, message, "offset", value);
+        napi_create_double(env, (double)capture->messages[i].length, &value);
+        napi_set_named_property(env, message, "length", value);
+        napi_set_element(env, messages, (uint32_t)i, message);
+    }
+    free(capture);
+    return messages;
+}
+
+/* Doe JSON when the provider has it, otherwise the standard procedure; a
+ * provider with neither reports no messages. NULL means an exception is pending. */
+napi_value shader_compilation_messages(napi_env env, void* shader_module) {
+    if (!pfn_doeNativeShaderModuleGetCompilationInfo && g_wgpuShaderModuleGetCompilationInfo)
+        return standard_compilation_messages(env, shader_module);
     const char* json_str = "[]";
     if (pfn_doeNativeShaderModuleGetCompilationInfo) {
         const char* native_json = pfn_doeNativeShaderModuleGetCompilationInfo(shader_module);
@@ -339,6 +430,16 @@ napi_value doe_shader_module_get_compilation_info(napi_env env, napi_callback_in
         napi_get_element(env, messages, i, &msg_obj);
         ensure_compilation_message_fields(env, msg_obj);
     }
+    return messages;
+}
+
+napi_value doe_shader_module_get_compilation_info(napi_env env, napi_callback_info info) {
+    NAPI_ASSERT_ARGC(env, info, 1);
+    CHECK_LIB_LOADED(env);
+    void* shader_module = unwrap_ptr(env, _args[0]);
+
+    napi_value messages = shader_compilation_messages(env, shader_module);
+    if (!messages) return NULL;
 
     napi_value compilation_info;
     napi_create_object(env, &compilation_info);
