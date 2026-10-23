@@ -52,3 +52,6 @@ or omit a destination merely because a backend adapter cannot yet consume it.
 View layer defaults depend on resolved dimension, and view format defaults on
 selected parent aspect. Binding usage remains the parent subresource identity;
 renderability requires all actual parent aspects, not the literal All enum.
+Debug nesting belongs to each existing recording owner. Keep parent/child stacks
+independent, preserve sticky errors and require balance at end/finish. Optional
+diagnostic labels must not introduce another string store or resource command queue.

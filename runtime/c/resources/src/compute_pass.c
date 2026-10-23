@@ -140,6 +140,7 @@ doe_resource_status doe_resource_compute_pass_end(doe_resource_compute_pass *pas
 {
     doe_resource_status status = active(pass);
     if (status != DOE_RESOURCE_OK) return status;
+    if (pass->debug_depth) return resource_encoder_fail(pass->encoder, DOE_RESOURCE_STATE);
     if (pass->timestamps.set && pass->timestamps.end_index != UINT32_MAX) {
         status = resource_record_timestamp(pass->encoder, pass->timestamps.set,
             pass->timestamps.end_index, DOE_TIMESTAMP_PASS_END);
@@ -150,4 +151,12 @@ doe_resource_status doe_resource_compute_pass_end(doe_resource_compute_pass *pas
     pass->ended = true;
     pass->encoder->active_pass = NULL;
     return DOE_RESOURCE_OK;
+}
+
+doe_resource_status doe_resource_compute_pass_debug(doe_resource_compute_pass *pass,
+    doe_resource_debug_operation operation)
+{
+    doe_resource_status status = active(pass);
+    if (status != DOE_RESOURCE_OK) return status;
+    return resource_encoder_fail(pass->encoder, resource_debug_apply(&pass->debug_depth, operation));
 }

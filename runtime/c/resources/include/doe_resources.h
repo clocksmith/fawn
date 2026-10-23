@@ -32,6 +32,14 @@ typedef enum doe_resource_status {
     DOE_RESOURCE_EXECUTION_FAILED
 } doe_resource_status;
 
+/* Logical debug balance belongs to each recording owner. Labels are optional
+ * diagnostics handled at the ABI/backend boundary, not retained GPU resources. */
+typedef enum doe_resource_debug_operation {
+    DOE_RESOURCE_DEBUG_PUSH,
+    DOE_RESOURCE_DEBUG_POP,
+    DOE_RESOURCE_DEBUG_MARKER
+} doe_resource_debug_operation;
+
 /* Copying either lease does not retain it. Constructors acquire the device
  * lease once. Native ownership transfers ONLY on success; otherwise the caller
  * still owns it. Callbacks return normally, may not resurrect finalizing objects,
@@ -415,6 +423,8 @@ doe_resource_status doe_resource_encoder_dispatch_groups(doe_resource_encoder *e
     size_t group_count, uint32_t x, uint32_t y, uint32_t z);
 /* Finish moves command ownership, never copies resource leases. A failure is
  * sticky and cannot publish a partial command buffer. */
+doe_resource_status doe_resource_encoder_debug(doe_resource_encoder *encoder,
+    doe_resource_debug_operation operation);
 doe_resource_status doe_resource_encoder_finish(doe_resource_encoder *encoder,
     doe_resource_commands **out);
 doe_resource_status doe_resource_encoder_status(const doe_resource_encoder *encoder);
@@ -481,6 +491,8 @@ doe_resource_status doe_resource_compute_pass_dispatch_indirect(doe_resource_com
 doe_resource_status doe_resource_encoder_dispatch_indirect(doe_resource_encoder *encoder,
     doe_resource_pipeline *pipeline, const doe_resource_dispatch_group *groups,
     size_t group_count, doe_resource_buffer *arguments, uint64_t offset);
+doe_resource_status doe_resource_compute_pass_debug(doe_resource_compute_pass *pass,
+    doe_resource_debug_operation operation);
 doe_resource_status doe_resource_compute_pass_end(doe_resource_compute_pass *pass);
 
 #ifdef __cplusplus
