@@ -85,18 +85,21 @@ int main(void)
     assert(!memcmp(bytes,packed + SIZE,SIZE * 4));
     wgpuBufferUnmap(row_out);
 
-    /* Undefined rowsPerImage with two images, and undefined bytesPerRow with two
-     * rows, reject. */
+    /* Undefined rowsPerImage with two images, undefined bytesPerRow with two rows
+     * and an explicit rowsPerImage 0 below the copy height reject: one
+     * validation error, reported at Finish and not at the copy call. */
     WGPUTexture layered = image(&s,2);
     WGPUBuffer large = buffer(&s,PITCH * SIZE * 2,WGPUBufferUsage_CopyDst);
-    for (uint32_t which = 0; which < 2; ++which) {
+    for (uint32_t which = 0; which < 3; ++which) {
         WGPUCommandEncoder rejected = wgpuDeviceCreateCommandEncoder(s.device,NULL);
-        wgpuDevicePushErrorScope(s.device,WGPUErrorFilter_Validation);
-        WGPUTexelCopyTextureInfo from = {.texture=which ? uploaded : layered,.aspect=WGPUTextureAspect_All};
-        WGPUTexelCopyBufferInfo to = {.buffer=large,.layout={.bytesPerRow=which ? WGPU_COPY_STRIDE_UNDEFINED : PITCH,
-            .rowsPerImage=WGPU_COPY_STRIDE_UNDEFINED}};
-        WGPUExtent3D size = {SIZE,which ? 2 : SIZE,which ? 1 : 2};
+        WGPUTexelCopyTextureInfo from = {.texture=which == 0 ? layered : uploaded,.aspect=WGPUTextureAspect_All};
+        WGPUTexelCopyBufferInfo to = {.buffer=large,.layout={.bytesPerRow=which == 1 ? WGPU_COPY_STRIDE_UNDEFINED : PITCH,
+            .rowsPerImage=which == 2 ? 0 : WGPU_COPY_STRIDE_UNDEFINED}};
+        WGPUExtent3D size = {SIZE,which == 1 ? 2 : SIZE,which == 0 ? 2 : 1};
+        unsigned before = s.errors;
         wgpuCommandEncoderCopyTextureToBuffer(rejected,&from,&to,&size);
+        assert(s.errors == before); /* nothing reported at the encoding call */
+        wgpuDevicePushErrorScope(s.device,WGPUErrorFilter_Validation);
         assert(!wgpuCommandEncoderFinish(rejected,NULL));
         expect_validation(&s);
         wgpuCommandEncoderRelease(rejected);
@@ -110,7 +113,7 @@ int main(void)
     wgpuTextureRelease(written);
     consumer_finish(&s);
     printf("PASS public copy layouts: undefined rowsPerImage for one image and undefined bytesPerRow for one row "
-        "through queue writes, buffer-to-texture and texture-to-buffer copies with exact texels, two-image and "
-        "two-row undefined-stride rejections %s\n", adapter_class_scope());
+        "through queue writes, buffer-to-texture and texture-to-buffer copies with exact texels; two-image and "
+        "two-row undefined-stride and rowsPerImage-0 rejections reported once at Finish %s\n", adapter_class_scope());
     return 0;
 }

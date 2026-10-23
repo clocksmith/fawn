@@ -141,7 +141,8 @@ WGPUCommandBuffer wgpuCommandEncoderFinish(WGPUCommandEncoder handle, const WGPU
         doe_resource_encoder_invalidate(encoder, DOE_RESOURCE_UNSUPPORTED) :
         doe_resource_encoder_finish(encoder, &commands);
     native_unlock(device);
-    if (status != DOE_RESOURCE_OK) native_error(device, native_resource_error(status), "command encoder finish failed");
+    if (status != DOE_RESOURCE_OK)
+        native_error(device, native_resource_error(status), "command encoder invalid: an encoded command or the finish was rejected");
     if (commands && descriptor) native_label(device, commands, descriptor->label);
     return (WGPUCommandBuffer)commands;
 }

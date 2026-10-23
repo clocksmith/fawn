@@ -7,6 +7,8 @@ import {
   assertIntegerInRange,
   assertLiveResource,
   destroyResource,
+  normalizeOrigin3D,
+  normalizeExtent3D,
 } from './resource-lifecycle.js';
 
 const UINT32_RANGE = Object.freeze({ min: 0, max: UINT32_MAX });
@@ -34,14 +36,14 @@ function normalizeImmediateDataInput(data, dataOffset = 0, size, path) {
 }
 
 function normalizeCopySize(copySize, path) {
-  if (Array.isArray(copySize)) {
-    return {
-      width: copySize[0],
-      height: copySize[1] ?? 1,
-      depthOrArrayLayers: copySize[2] ?? 1,
-    };
-  }
-  return assertObject(copySize, path, 'copySize');
+  return normalizeExtent3D(copySize, path, 'copySize');
+}
+
+// Omitted strides stay undefined (WGPU_COPY_STRIDE_UNDEFINED at the addon); an
+// explicit 0 is a real stride the spec validates against the copy height.
+function assertOptionalStride(value, path, label) {
+  if (value !== undefined) assertIntegerInRange(value, path, label, UINT32_RANGE);
+  return value;
 }
 
 function createEncoderClasses(backend) {
@@ -572,13 +574,12 @@ function createEncoderClasses(backend) {
     }
 
     copyBufferToTexture(source, destination, copySize) {
-      this._assertOpen('GPUCommandEncoder.copyBufferToTexture');
+      const path = 'GPUCommandEncoder.copyBufferToTexture';
+      this._assertOpen(path);
       const sourceObject = assertObject(source, 'GPUCommandEncoder.copyBufferToTexture', 'source');
       const destinationObject = assertObject(destination, 'GPUCommandEncoder.copyBufferToTexture', 'destination');
       const sizeObject = normalizeCopySize(copySize, 'GPUCommandEncoder.copyBufferToTexture');
       assertIntegerInRange(sourceObject.offset ?? 0, 'GPUCommandEncoder.copyBufferToTexture', 'source.offset', NON_NEGATIVE_RANGE);
-      assertIntegerInRange(sourceObject.bytesPerRow ?? 0, 'GPUCommandEncoder.copyBufferToTexture', 'source.bytesPerRow', NON_NEGATIVE_RANGE);
-      assertIntegerInRange(sourceObject.rowsPerImage ?? 0, 'GPUCommandEncoder.copyBufferToTexture', 'source.rowsPerImage', NON_NEGATIVE_RANGE);
       assertIntegerInRange(sizeObject.width, 'GPUCommandEncoder.copyBufferToTexture', 'copySize.width', POSITIVE_UINT32_RANGE);
       assertIntegerInRange(sizeObject.height, 'GPUCommandEncoder.copyBufferToTexture', 'copySize.height', POSITIVE_UINT32_RANGE);
       if (sizeObject.depthOrArrayLayers !== undefined) {
@@ -589,17 +590,13 @@ function createEncoderClasses(backend) {
         {
           buffer: assertLiveResource(sourceObject.buffer, 'GPUCommandEncoder.copyBufferToTexture', 'GPUBuffer'),
           offset: sourceObject.offset ?? 0,
-          bytesPerRow: sourceObject.bytesPerRow ?? 0,
-          rowsPerImage: sourceObject.rowsPerImage ?? 0,
+          bytesPerRow: assertOptionalStride(sourceObject.bytesPerRow, path, 'source.bytesPerRow'),
+          rowsPerImage: assertOptionalStride(sourceObject.rowsPerImage, path, 'source.rowsPerImage'),
         },
         {
           texture: assertLiveResource(destinationObject.texture, 'GPUCommandEncoder.copyBufferToTexture', 'GPUTexture'),
           mipLevel: destinationObject.mipLevel ?? 0,
-          origin: {
-            x: destinationObject.origin?.x ?? 0,
-            y: destinationObject.origin?.y ?? 0,
-            z: destinationObject.origin?.z ?? 0,
-          },
+          origin: normalizeOrigin3D(destinationObject.origin, path, 'destination.origin'),
           aspect: destinationObject.aspect,
         },
         {
@@ -611,16 +608,12 @@ function createEncoderClasses(backend) {
     }
 
     copyTextureToBuffer(source, destination, copySize) {
-      this._assertOpen('GPUCommandEncoder.copyTextureToBuffer');
+      const path = 'GPUCommandEncoder.copyTextureToBuffer';
+      this._assertOpen(path);
       const sourceObject = assertObject(source, 'GPUCommandEncoder.copyTextureToBuffer', 'source');
       const destinationObject = assertObject(destination, 'GPUCommandEncoder.copyTextureToBuffer', 'destination');
       const sizeObject = normalizeCopySize(copySize, 'GPUCommandEncoder.copyTextureToBuffer');
-      if (sourceObject.origin !== undefined) {
-        assertObject(sourceObject.origin, 'GPUCommandEncoder.copyTextureToBuffer', 'source.origin');
-      }
       assertIntegerInRange(destinationObject.offset ?? 0, 'GPUCommandEncoder.copyTextureToBuffer', 'destination.offset', NON_NEGATIVE_RANGE);
-      assertIntegerInRange(destinationObject.bytesPerRow ?? 0, 'GPUCommandEncoder.copyTextureToBuffer', 'destination.bytesPerRow', NON_NEGATIVE_RANGE);
-      assertIntegerInRange(destinationObject.rowsPerImage ?? 0, 'GPUCommandEncoder.copyTextureToBuffer', 'destination.rowsPerImage', NON_NEGATIVE_RANGE);
       assertIntegerInRange(sizeObject.width, 'GPUCommandEncoder.copyTextureToBuffer', 'copySize.width', POSITIVE_UINT32_RANGE);
       assertIntegerInRange(sizeObject.height, 'GPUCommandEncoder.copyTextureToBuffer', 'copySize.height', POSITIVE_UINT32_RANGE);
       if (sizeObject.depthOrArrayLayers !== undefined) {
@@ -631,18 +624,14 @@ function createEncoderClasses(backend) {
         {
           texture: assertLiveResource(sourceObject.texture, 'GPUCommandEncoder.copyTextureToBuffer', 'GPUTexture'),
           mipLevel: sourceObject.mipLevel ?? 0,
-          origin: {
-            x: sourceObject.origin?.x ?? 0,
-            y: sourceObject.origin?.y ?? 0,
-            z: sourceObject.origin?.z ?? 0,
-          },
+          origin: normalizeOrigin3D(sourceObject.origin, path, 'source.origin'),
           aspect: sourceObject.aspect,
         },
         {
           buffer: assertLiveResource(destinationObject.buffer, 'GPUCommandEncoder.copyTextureToBuffer', 'GPUBuffer'),
           offset: destinationObject.offset ?? 0,
-          bytesPerRow: destinationObject.bytesPerRow ?? 0,
-          rowsPerImage: destinationObject.rowsPerImage ?? 0,
+          bytesPerRow: assertOptionalStride(destinationObject.bytesPerRow, path, 'destination.bytesPerRow'),
+          rowsPerImage: assertOptionalStride(destinationObject.rowsPerImage, path, 'destination.rowsPerImage'),
         },
         {
           width: sizeObject.width,
@@ -653,7 +642,8 @@ function createEncoderClasses(backend) {
     }
 
     copyTextureToTexture(source, destination, copySize) {
-      this._assertOpen('GPUCommandEncoder.copyTextureToTexture');
+      const path = 'GPUCommandEncoder.copyTextureToTexture';
+      this._assertOpen(path);
       const sourceObject = assertObject(source, 'GPUCommandEncoder.copyTextureToTexture', 'source');
       const destinationObject = assertObject(destination, 'GPUCommandEncoder.copyTextureToTexture', 'destination');
       const sizeObject = normalizeCopySize(copySize, 'GPUCommandEncoder.copyTextureToTexture');
@@ -662,21 +652,13 @@ function createEncoderClasses(backend) {
         {
           texture: assertLiveResource(sourceObject.texture, 'GPUCommandEncoder.copyTextureToTexture', 'GPUTexture'),
           mipLevel: sourceObject.mipLevel ?? 0,
-          origin: {
-            x: sourceObject.origin?.x ?? 0,
-            y: sourceObject.origin?.y ?? 0,
-            z: sourceObject.origin?.z ?? 0,
-          },
+          origin: normalizeOrigin3D(sourceObject.origin, path, 'source.origin'),
           aspect: sourceObject.aspect,
         },
         {
           texture: assertLiveResource(destinationObject.texture, 'GPUCommandEncoder.copyTextureToTexture', 'GPUTexture'),
           mipLevel: destinationObject.mipLevel ?? 0,
-          origin: {
-            x: destinationObject.origin?.x ?? 0,
-            y: destinationObject.origin?.y ?? 0,
-            z: destinationObject.origin?.z ?? 0,
-          },
+          origin: normalizeOrigin3D(destinationObject.origin, path, 'destination.origin'),
           aspect: destinationObject.aspect,
         },
         {
