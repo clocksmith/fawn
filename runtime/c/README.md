@@ -81,3 +81,9 @@ C, the Doe binding-reflection extension, compiler coverage, depth copies, or are
 packaging-harness artifacts (a packed tarball's own prebuilt addon, and a permission
 sandbox that denies an out-of-package library path). This is not npm packaging, a
 published prebuild, or release evidence.
+
+[Apple public compute evidence](DEVELOPER_RECEIPT_NODE_METAL.json) records the
+unchanged Node first-kernel example through staged C source `00bbd786d` and real
+Metal dispatch/readback: 16 checks, zero failures or skips. The selected C artifact
+does not borrow Zig prebuild proof metadata. This one compute case does not
+qualify later native source, graphics, presentation, performance or production use.

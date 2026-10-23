@@ -123,6 +123,14 @@ it does not measure internal scratch or peak GPU memory.
 
 ## Provider sessions and evaluation
 
+`providerInfo()` reports the selected library path and flavor separately from
+build metadata. Node and Bun read legacy drop-in build/proof sidecars only for
+the selected drop-in library, using its adjacent or workspace metadata (or an
+explicit `DOE_BUILD_METADATA` sidecar). An external override never inherits the
+package's prebuild metadata. C and delegated libraries currently have no matching
+sidecar contract, so their build/proof fields remain unknown even when package
+metadata is available.
+
 Use the strict provider-v1 API when the application owns provider selection and
 global installation:
 
