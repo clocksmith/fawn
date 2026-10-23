@@ -38,9 +38,9 @@ selection described below; unsupported feature use must be rejected by
 the compiler/native admission path before creating a pipeline. This is not a
 complete public validation boundary for untrusted SPIR-V.
 
-GPU-produced indirect counts, surfaces,
+Surfaces,
 prepared-program caches and tuned hazard elision are not yet migrated here.
-Indirect recording rejects explicitly rather than dispatching unchecked counts.
+Indirect compute uses the explicit GPU validator below; unchecked forwarding is not exposed.
 The retained production owners remain authoritative for those behaviors.
 
 ## Texture transactions
@@ -382,3 +382,27 @@ native witness observes a vertex-only depth write using subsequent failing far
 and passing near color draws, with an exact 64-pixel blue/magenta oracle and early
 pipeline release. Host controls inspect native stage/attachment records and
 allocation failure cleanup; they are not shader execution evidence.
+
+GPU-produced indirect compute counts use `include/doe_vk_indirect.h`. The validator
+owns one private 12-byte device-local storage/indirect scratch buffer and an actual
+compiler-produced guard pipeline. Generate WGSL for the selected nonzero per-axis
+limits, compile it through the existing compiler owner, and construct the validator
+with those same limits. Admission requires limits no greater than the actual device;
+public requested-limit policy stays upstream. The old unused always-unsupported
+raw entry was replaced with this typed validator/mixed-binding boundary.
+
+Every indirect call records exact argument copy, one GPU guard invocation, and
+native indirect dispatch from scratch. Any over-limit axis zeros all three counts;
+zero dimensions remain no-ops. The same buffer/descriptor/command owners supply
+visibility, exact leases and poisoning. Original arguments are not modified by
+the guard; there is no CPU readback or argument surrogate. Native argument buffers
+need INDIRECT|COPY_SRC, while public usage still records only what was requested.
+Commands retain the private scratch and both pipelines independently, including
+after caller validator release. Replace a validator whose scratch was poisoned by
+a terminal failed submission; unknown work must remain retained and settled.
+
+This axis-only guard does not admit product-sensitive workgroup-index or global-
+invocation-index builtins. The current compiler rejects both; adding them requires
+reflected usage and actual product guards, not assuming per-axis limits suffice.
+The retained Vulkan indirect native command/synchronization path is preserved,
+with the new guard preventing unchecked GPU-generated counts from reaching it.

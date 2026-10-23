@@ -165,9 +165,6 @@ doe_vk_status doe_vk_commands_fill(doe_vk_commands *commands,
 doe_vk_status doe_vk_commands_dispatch(doe_vk_commands *commands,
     doe_vk_pipeline *pipeline, const doe_vk_buffer_binding *bindings,
     size_t binding_count, uint32_t x, uint32_t y, uint32_t z);
-doe_vk_status doe_vk_commands_dispatch_indirect(doe_vk_commands *commands,
-    doe_vk_pipeline *pipeline, const doe_vk_buffer_binding *bindings,
-    size_t binding_count, doe_vk_buffer *arguments, uint64_t offset);
 doe_vk_status doe_vk_commands_submit(doe_vk_commands *commands, doe_vk_error *error);
 doe_vk_status doe_vk_commands_wait(doe_vk_commands *commands,
     uint64_t timeout_ns, doe_vk_error *error);
