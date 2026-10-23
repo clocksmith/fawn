@@ -53,7 +53,10 @@ Apple SDK compilation, Darwin execution and physical qualification remain unrun.
   ImageQuery explicitly. The native context opts into demote when actually available;
   its exact SPIR-V extension/capability is admitted only when successfully enabled,
   never from an API-version guess. Other capabilities/extensions reject before pipeline
-  creation. Extended storage formats and cube arrays remain disabled. Workgroup
+  creation. SampledCubeArray (45) is admitted only when the device enabled
+  imageCubeArray; CubeArray views and automatic/explicit sampled layouts follow
+  the same gate, so devices without it reject cube arrays visibly rather than
+  claiming core cube-array support. Extended storage formats remain disabled. Workgroup
   storage and dimensions use real backend limits.
 - Compiler `src/spirv.c` owns guarded loads/stores: runtime array bounds use
   `OpArrayLength`, signed indices have a nonnegative check, invalid loads return
@@ -329,7 +332,7 @@ vertex or fragment storage writes and fragment FragDepth/SampleIndex/SampleMask
 remain explicitly rejected. WGSL discard requires actual enabled demote support;
 unsupported devices reject that pipeline. Blend constants must be finite f32.
 Texture format reinterpretation, depth storage, depth comparison sampling (compiler), multisampled
-sampling/copies/storage, cube arrays and anisotropic sampling are rejected.
+sampling/copies/storage, cube arrays without device imageCubeArray and anisotropic sampling are rejected.
 The baseline admits 18 named Vulkan
 color formats, subject to actual device usage/format capabilities. Device
 descriptors may request TimestampQuery when the actual adapter supports the
@@ -379,6 +382,7 @@ is CPU; see the physical developer runs section for the GPU variant. Its ordinar
 result is:
 
 ```
+PASS public cube arrays: enabled imageCubeArray, two uniformly filled cubes sampled along all six face axes per array index via texture_cube_array/textureSampleLevel, textureNumLayers, automatic CubeArray layout, partial/cube-dimension view and storage-layout controls, early releases; exact 12 face values and 1 layer count (CPU Vulkan only)
 PASS public depth/stencil sampling: rendered depth32float and depth24plus-stencil8 DepthOnly maps via texture_depth_2d (automatic depth layout) and texture_2d<f32> (explicit unfilterable-float), StencilOnly as texture_2d<u32>, two-layer texture_depth_2d_array, texture_depth_cube dimensions, comparison-sampler binding admission, 7 view/binding/creation controls, early releases; exact 48 depth values, 8 stencil values and 2 dimensions (no comparison sampling: compiler lacks the builtins) (CPU Vulkan only)
 PASS public depth/stencil copies: rendered depth32float .25/.75 via DepthOnly/All readback and texture copy, depth16unorm rendered 0/65535, writeTexture and buffer upload plus texture copy, stencil8 upload then IncrementClamp, depth24plus-stencil8 stencil Replace and StencilOnly upload, depth24plus texture copy observed by depth test, 11 copy and 1 creation validation controls, early releases; exact 72 depth/stencil texels and 8 color pixels (CPU Vulkan only)
 PASS public indexed draws: uint16/uint32 indices, firstIndex, signed base vertex, instance selection, offset index ranges, pass/bundle replay, uint16/uint32 strip primitive restart, 9 GPU-produced drawIndexedIndirect records with exact-end/out-of-range/wrapping/zero/firstInstance/instance-overrun guards, unchanged arguments, 13 typed validation controls and early releases; exact 192 pixels (CPU Vulkan only)
@@ -478,7 +482,7 @@ Do not run this on Miles or Suby while their possible disassembly/cooling hold
 remains. Every adapter-using client selects its adapter through
 `tests/adapter_class.h`: software (CPU fallback adapter) by default, or a
 nonfallback GPU adapter with `DOE_C_TEST_ADAPTER=physical`. Each PASS line names
-the class and device it ran on. `make check-physical` runs the same 23 clients on
+the class and device it ran on. `make check-physical` runs the same 24 clients on
 the system ICDs (`VK_ICD_FILENAMES` unset):
 
 ```
@@ -501,7 +505,8 @@ Linux 7.0.0-38. After indexed drawing was added, all 19 clients (including
 `indexed-render`) passed again on that same adapter/driver the same day, and after
 depth/stencil copies were added (with the WGSL language-feature and texture-binding
 view clients) all 22 (including `depth-copies`) passed; with depth sampling all 23
-(including `depth-sampling`) passed. That is
+(including `depth-sampling`) passed; with cube arrays all 24 (including
+`cube-array`) passed. That is
 developer evidence for these exact clients on that
 adapter/driver: the oracles are the clients' own expected values, not frozen
 independent workloads, and it is not Vulkan backend qualification, a performance

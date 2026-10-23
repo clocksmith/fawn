@@ -123,11 +123,32 @@ static void layout_and_initialization_transaction(void) {
     assert(texture.references == 1 && texture.recording_owner == NULL);
 }
 
+/* Cube-array views need the enabled imageCubeArray capability, a cube-compatible
+ * image and whole cubes. Rejection precedes any native view creation. */
+static void cube_array_admission(void) {
+    doe_vk_context context = { .references = 1 };
+    doe_vk_texture texture = { .context = &context, .references = 1,
+        .desc = { .dimension = DOE_VK_TEXTURE_2D, .format = DOE_VK_FORMAT_RGBA8_UNORM, .width = 2, .height = 2,
+            .depth_or_layers = 12, .mip_levels = 1, .usage = DOE_VK_TEXTURE_SAMPLED, .cube_compatible = true } };
+    doe_vk_texture_view_desc desc = { DOE_VK_VIEW_CUBE_ARRAY, 0, 1, 0, 12, DOE_VK_ASPECT_ALL };
+    doe_vk_texture_view *view = (doe_vk_texture_view *)&context;
+    assert(doe_vk_texture_view_create(&texture, &desc, &view, NULL) == DOE_VK_UNSUPPORTED);
+    assert(view == (doe_vk_texture_view *)&context && texture.references == 1);
+    context.caps.image_cube_array = true;
+    desc.layer_count = 8;
+    assert(doe_vk_texture_view_create(&texture, &desc, &view, NULL) == DOE_VK_INVALID_ARGUMENT);
+    desc.layer_count = 12;
+    texture.desc.cube_compatible = false;
+    assert(doe_vk_texture_view_create(&texture, &desc, &view, NULL) == DOE_VK_INVALID_ARGUMENT);
+    assert(view == (doe_vk_texture_view *)&context && texture.references == 1 && context.references == 1);
+}
+
 int main(void) {
     format_admission();
+    cube_array_admission();
     bounds_and_pitch();
     queue_transfer_granularity();
     layout_and_initialization_transaction();
-    puts("PASS texture last-byte/mip/layer/overflow checks, speculative layout/initialization rollback, concurrent owner exclusion and failed output");
+    puts("PASS texture last-byte/mip/layer/overflow checks, cube-array feature/compatibility/whole-cube view admission, speculative layout/initialization rollback, concurrent owner exclusion and failed output");
     return 0;
 }

@@ -322,6 +322,7 @@ doe_vk_status doe_vk_context_create(const doe_vk_options *options,
     context->caps.robust_buffer_access = true;
     context->caps.shader_demote_to_helper_invocation = features.extension != NULL;
     context->caps.full_draw_index_uint32 = features.base.fullDrawIndexUint32 != 0;
+    context->caps.image_cube_array = features.base.imageCubeArray != 0;
     *out = context;
     return doe_vk_fail(DOE_VK_OK, "context ready", error);
 failed:

@@ -255,7 +255,10 @@ static doe_vk_status validate_view(doe_vk_texture *texture, const doe_vk_texture
         if (desc->dimension != DOE_VK_VIEW_3D) return DOE_VK_INVALID_ARGUMENT;
     } else if (desc->dimension != DOE_VK_VIEW_2D && desc->dimension != DOE_VK_VIEW_2D_ARRAY &&
         desc->dimension != DOE_VK_VIEW_CUBE && desc->dimension != DOE_VK_VIEW_CUBE_ARRAY) return DOE_VK_INVALID_ARGUMENT;
-    if (desc->dimension == DOE_VK_VIEW_CUBE_ARRAY) return DOE_VK_UNSUPPORTED;
+    if (desc->dimension == DOE_VK_VIEW_CUBE_ARRAY) {
+        if (!texture->context->caps.image_cube_array) return DOE_VK_UNSUPPORTED;
+        if (!texture->desc.cube_compatible || desc->layer_count % 6 != 0) return DOE_VK_INVALID_ARGUMENT;
+    }
     if (desc->dimension == DOE_VK_VIEW_CUBE && (!texture->desc.cube_compatible || desc->layer_count != 6))
         return DOE_VK_INVALID_ARGUMENT;
     if ((desc->dimension == DOE_VK_VIEW_1D || desc->dimension == DOE_VK_VIEW_2D || desc->dimension == DOE_VK_VIEW_3D) && desc->layer_count != 1)

@@ -48,6 +48,7 @@ WGPUTextureView wgpuTextureCreateView(WGPUTexture handle, const WGPUTextureViewD
         case WGPUTextureViewDimension_2DArray: native.dimension = DOE_VK_VIEW_2D_ARRAY; break;
         case WGPUTextureViewDimension_3D: native.dimension = DOE_VK_VIEW_3D; break;
         case WGPUTextureViewDimension_Cube: native.dimension = DOE_VK_VIEW_CUBE; break;
+        case WGPUTextureViewDimension_CubeArray: native.dimension = DOE_VK_VIEW_CUBE_ARRAY; break;
         default: status = DOE_RESOURCE_UNSUPPORTED; break;
         }
     }
