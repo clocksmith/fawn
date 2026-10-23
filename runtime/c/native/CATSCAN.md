@@ -3,42 +3,36 @@
 Parent: [C migration](../CATSCAN.md)
 
 ## Target
-Expose genuine pinned WebGPU C entrypoints over the C owners.
+Expose genuine pinned WebGPU C entrypoints over existing C owners.
 
 ## Authority
-Own typed public ABI conversion, adapter/device leases and integration orchestration.
-Resource semantics, callback queues, shader meaning and GPU execution remain in
-their existing C owners. This is not the production/default runtime.
+Own typed ABI conversion, adapter/device leases and orchestration, not resource
+semantics, callback queues, shader meaning or GPU execution. Defaults stay unchanged.
 
 ## Scope
-Instance, adapter, device, buffer, compute shader/pipeline, buffer bindings, command
-recording, native Vulkan submission and readback; device-loss futures, labels,
-compilation diagnostics and compute-pipeline callbacks; initialized color textures,
-views/samplers, buffer/image copies and ABI8 image compute bindings; requested
-timestamp queries with genuine in-command GPU nanosecond normalization; reflected
-vertex/fragment pipelines, single-color passes, direct draws, render bundles and
-ordered occlusion queries. Unsupported
-entrypoints are absent
-or return their API-specific failure. No replacement-completeness claim is implied.
+Instances/devices, buffers, compute pipelines, bindings, commands, submission,
+readback, device loss, labels, compilation/pipeline callbacks; initialized color
+textures/views/samplers and copies; requested GPU-normalized timestamps; reflected
+vertex/fragment pipelines, single-color passes, direct draws, bundles and occlusion.
+Unsupported entrypoints stay absent or fail specifically, never fake success.
 
 ## Contracts
-The pinned `runtime/zig/vendor/webgpu-headers/webgpu.h`, accepted instance/futures/
-callbacks/error scopes, and authored resource/shader/Vulkan C contracts apply.
+Pinned `runtime/zig/vendor/webgpu-headers/webgpu.h` and C instance/futures/callbacks,
+error-scope, resource, shader and Vulkan owner contracts apply.
 
 ## Invariants
-No Zig linking or fallback. No synthetic completion. Unknown completion retains
-ownership. Native objects never migrate devices. Callback reentry is outside locks.
-Shader reflection is not a substitute for missing production dispatch analysis.
+No Zig fallback, synthetic completion or device migration. Unknown completion
+retains ownership. Foreign callbacks run outside locks. Reflection does not replace
+missing dispatch analysis; command and native obligations keep their existing owners.
 
 ## Acceptance
-Focused developer build and software-only compute/image/graphics checks are separate from later
-independent integrated qualification and blocked physical GPU runs.
-- Evidence: [developer graphics checks](DEVELOPER_RECEIPT_GRAPHICS.json),
-  [developer timestamp/recovery checks](DEVELOPER_RECEIPT_TIMESTAMPS.json)
-  and preceding [admission checks](DEVELOPER_RECEIPT_ADMISSION.json).
+Developer checks do not establish independent, physical or performance qualification.
+- Evidence: [graphics](DEVELOPER_RECEIPT_GRAPHICS.json),
+  [timestamps/recovery](DEVELOPER_RECEIPT_TIMESTAMPS.json) and
+  [admission](DEVELOPER_RECEIPT_ADMISSION.json).
 
 ## Non-goals
-A parallel resource engine, fake backend, full graphics support or default cutover.
+Parallel resource engine, fake backend, complete graphics or default cutover.
 
 ## Freedom
-Implementation may change while preserving these boundaries and owner semantics.
+Implementation may change within these owner boundaries.
