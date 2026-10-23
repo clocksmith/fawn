@@ -2,6 +2,41 @@
  * Actual public C image compute on an explicit CPU Vulkan adapter only. */
 #include "consumer.h"
 
+static void view_defaults(state *s)
+{
+    WGPUTextureDescriptor descriptor = WGPU_TEXTURE_DESCRIPTOR_INIT;
+    descriptor.format = WGPUTextureFormat_RGBA8Unorm;
+    descriptor.size = (WGPUExtent3D){2,2,12};
+    descriptor.mipLevelCount = 2;
+    descriptor.usage = WGPUTextureUsage_TextureBinding;
+    WGPUTexture image = wgpuDeviceCreateTexture(s->device,&descriptor);
+    assert(image);
+    WGPUTextureViewDescriptor view = WGPU_TEXTURE_VIEW_DESCRIPTOR_INIT;
+    view.mipLevelCount = 0;
+    wgpuDevicePushErrorScope(s->device,WGPUErrorFilter_Validation);
+    assert(!wgpuTextureCreateView(image,&view));
+    expect_validation(s);
+    view = WGPU_TEXTURE_VIEW_DESCRIPTOR_INIT;
+    view.arrayLayerCount = 0;
+    wgpuDevicePushErrorScope(s->device,WGPUErrorFilter_Validation);
+    assert(!wgpuTextureCreateView(image,&view));
+    expect_validation(s);
+    view = WGPU_TEXTURE_VIEW_DESCRIPTOR_INIT;
+    view.dimension = WGPUTextureViewDimension_2D;
+    WGPUTextureView one_layer = wgpuTextureCreateView(image,&view);
+    assert(one_layer); /* Explicit 2D defaults to one layer, not all twelve. */
+    wgpuTextureViewRelease(one_layer);
+    view.dimension = WGPUTextureViewDimension_Cube;
+    WGPUTextureView six_layers = wgpuTextureCreateView(image,&view);
+    assert(six_layers); /* Cube defaults to six, not all twelve. */
+    wgpuTextureViewRelease(six_layers);
+    view.dimension = WGPUTextureViewDimension_2DArray;
+    WGPUTextureView remaining = wgpuTextureCreateView(image,&view);
+    assert(remaining);
+    wgpuTextureViewRelease(remaining);
+    wgpuTextureRelease(image);
+}
+
 int main(void)
 {
     state s = {0};
@@ -157,9 +192,11 @@ int main(void)
     wgpuTextureRelease(image);
     wgpuBufferRelease(readback);
     assert(!s.errors && s.validation_errors == 4);
+    view_defaults(&s);
+    assert(!s.errors && s.validation_errors == 6);
     wgpuQueueRelease(s.queue);
     wgpuDeviceRelease(s.device);
     wgpuAdapterRelease(s.adapter);
     wgpuInstanceRelease(s.instance);
-    puts("PASS public textures: actual zero mips, packed upload, linear sampling, image OOB guards, storage readback, early releases and filter/pair/copy negatives (CPU Vulkan only)");
+    puts("PASS public textures: actual zero mips, packed upload, linear sampling, image OOB guards, storage readback, early releases, exact view defaults and filter/pair/copy negatives (CPU Vulkan only)");
 }
