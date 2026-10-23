@@ -414,6 +414,14 @@ the system ICDs (`VK_ICD_FILENAMES` unset):
 make -C runtime/c/native BUILD=/tmp/doe-c-native check-physical
 ```
 
+Adapter requests select the first Vulkan device of the requested class (the CPU
+device only for `forceFallbackAdapter`), never ordinal 0 filtered afterwards, and
+device creation reopens exactly the adapter's hardware by
+`VkPhysicalDeviceIDProperties.deviceUUID`; a reordered or missing device fails
+rather than substituting. With both the RADV and lavapipe ICDs listed, in either
+order, `check` and the physical clients select the intended adapter (2026-10-23,
+Jupiter); before this change a fallback request failed whenever a GPU enumerated first.
+
 On 2026-10-23 all 18 passed on Jupiter: AMD Radeon 8060S Graphics (RADV
 STRIX_HALO, vendor 0x1002 device 0x1586), Mesa 26.0.3-1ubuntu1 RADV, Vulkan 1.4.335,
 Linux 7.0.0-38. After indexed drawing was added, all 19 clients (including

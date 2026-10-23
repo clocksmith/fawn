@@ -213,7 +213,8 @@
       "VK_STRUCTURE_TYPE_RELEASE_SWAPCHAIN_IMAGES_INFO_EXT": 1000275005,
       "VK_SUBOPTIMAL_KHR": 1000001003,
       "VK_ERROR_OUT_OF_DATE_KHR": -1000001004,
-      "VK_ERROR_SURFACE_LOST_KHR": -1000000000
+      "VK_ERROR_SURFACE_LOST_KHR": -1000000000,
+      "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ID_PROPERTIES": 1000071004
     },
     "additional_sources": [
       "https://docs.vulkan.org/refpages/latest/refpages/source/VkQueryType.html",
@@ -363,6 +364,41 @@
         ]
       ],
       "retained_equivalent": null
+    },
+    "VkPhysicalDeviceIDProperties": {
+      "source": "https://raw.githubusercontent.com/KhronosGroup/Vulkan-Headers/v1.3.290/include/vulkan/vulkan_core.h",
+      "verified_utc": "2026-10-23",
+      "fields": [
+        [
+          "sType",
+          "i32"
+        ],
+        [
+          "pNext",
+          "pointer"
+        ],
+        [
+          "deviceUUID",
+          "[16]u8"
+        ],
+        [
+          "driverUUID",
+          "[16]u8"
+        ],
+        [
+          "deviceLUID",
+          "[8]u8"
+        ],
+        [
+          "deviceNodeMask",
+          "u32"
+        ],
+        [
+          "deviceLUIDValid",
+          "u32"
+        ]
+      ],
+      "note": "Core 1.1 physical-device identity; chained on vkGetPhysicalDeviceProperties2 to keep adapter and device contexts on the same hardware."
     }
   },
   "retained_functions": {

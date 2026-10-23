@@ -11,6 +11,15 @@
 
 doe_vk_status doe_vk_load_symbol(void *library, const char *name,
     void *destination, size_t destination_size, doe_vk_error *error);
+/* One enumerated physical device as selection sees it. */
+typedef struct doe_vk_device_candidate {
+    bool software;
+    uint8_t uuid[DOE_VK_UUID_SIZE];
+} doe_vk_device_candidate;
+/* Pure selection over enumerated candidates per options->selection. Writes
+ * out_index only on success; UNSUPPORTED when no candidate qualifies. */
+doe_vk_status doe_vk_select_device(const doe_vk_device_candidate *candidates, uint32_t count,
+    const doe_vk_options *options, uint32_t *out_index);
 
 enum { DOE_VK_MAX_GROUPS = 4, DOE_VK_MAX_BINDINGS = 128 };
 struct doe_vk_context {
