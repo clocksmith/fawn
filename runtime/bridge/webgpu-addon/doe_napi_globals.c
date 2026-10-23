@@ -205,6 +205,7 @@ FnDevicePushErrorScope pfn_doeNativeDevicePushErrorScope = NULL;
 FnDevicePopErrorScope pfn_doeNativeDevicePopErrorScope = NULL;
 FnDevicePushErrorScope pfn_wgpuDevicePushErrorScope = NULL;
 FnDevicePopErrorScope pfn_wgpuDevicePopErrorScope = NULL;
+void* g_wgpuShaderModuleGetCompilationInfo = NULL; /* Standard procedure; typed at its call. */
 FnDeviceSetUncapturedErrorCallback pfn_doeNativeDeviceSetUncapturedErrorCallback = NULL;
 FnDeviceRegisterLostCallback pfn_doeNativeDeviceRegisterLostCallback = NULL;
 FnRenderPipelineGetBindGroupLayout pfn_doeNativeRenderPipelineGetBindGroupLayout = NULL;
@@ -448,6 +449,7 @@ napi_value doe_load_library(napi_env env, napi_callback_info info) {
     pfn_doeNativeAdapterFreeInfo = (FnAdapterFreeInfo)LIB_SYM(g_lib, "doeNativeAdapterFreeInfo");
     pfn_doeNativeAdapterGetPciIdentity = (FnAdapterGetPciIdentity)LIB_SYM(g_lib, "doeNativeAdapterGetPciIdentity");
     pfn_doeNativeShaderModuleGetCompilationInfo = (FnShaderModuleGetCompilationInfo)LIB_SYM(g_lib, "doeNativeShaderModuleGetCompilationInfo");
+    g_wgpuShaderModuleGetCompilationInfo = LIB_SYM(g_lib, "wgpuShaderModuleGetCompilationInfo");
     pfn_doeNativeDevicePushErrorScope = (FnDevicePushErrorScope)LIB_SYM(g_lib, "doeNativeDevicePushErrorScope");
     pfn_doeNativeDevicePopErrorScope = (FnDevicePopErrorScope)LIB_SYM(g_lib, "doeNativeDevicePopErrorScope");
     pfn_wgpuDevicePushErrorScope = (FnDevicePushErrorScope)LIB_SYM(g_lib, "wgpuDevicePushErrorScope");
