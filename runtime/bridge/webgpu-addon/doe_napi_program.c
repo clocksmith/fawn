@@ -48,6 +48,30 @@ napi_value doe_compute_program_prepare(napi_env env, napi_callback_info info) {
     return wrap_ptr(env, program);
 }
 
+/* Host replay of a claimed native recording. Providers whose standard queue
+ * submission already replays recorded commands (the Zig provider) omit the
+ * symbol; JS then keeps resubmitting through queueSubmitOne. */
+napi_value doe_compute_program_host_replay_supported(napi_env env, napi_callback_info info) {
+    (void)info;
+    CHECK_LIB_LOADED(env);
+    napi_value result;
+    napi_get_boolean(env, LIB_SYM(g_lib, "doeNativeComputeProgramPrepareHostReplay") != NULL, &result);
+    return result;
+}
+
+napi_value doe_compute_program_prepare_host_replay(napi_env env, napi_callback_info info) {
+    NAPI_ASSERT_ARGC(env, info, 2);
+    CHECK_LIB_LOADED(env);
+    void* (*prepare)(void*, void*) = (void* (*)(void*, void*))LIB_SYM(g_lib, "doeNativeComputeProgramPrepareHostReplay");
+    if (!prepare) NAPI_THROW(env, "DOE_PROGRAM_UNSUPPORTED: provider has no host replay entry");
+    void* queue = unwrap_ptr(env, _args[0]);
+    void* commands = unwrap_ptr(env, _args[1]);
+    if (!queue || !commands) NAPI_THROW(env, "DOE_PROGRAM_INVALID: expected live queue and command recording");
+    void* program = prepare(queue, commands);
+    if (!program) NAPI_THROW(env, "DOE_PROGRAM_GPU: native host replay preparation failed");
+    return wrap_ptr(env, program);
+}
+
 napi_value doe_compute_program_submit(napi_env env, napi_callback_info info) {
     NAPI_ASSERT_ARGC(env, info, 1);
     CHECK_LIB_LOADED(env);
