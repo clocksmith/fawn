@@ -62,8 +62,11 @@ def main():
                 members.append((member, value))
             types[name] = type(name, (ctypes.Structure,), {"_fields_": members})
             fields[name] = members
-    lines = ['#include "vk_abi_functions.h"']
+    lines = ['#include "vk_abi_functions.h"', '#include "vk_abi_constants.h"']
     assertions = 0
+    for name, value in manifest.get("official_constants", {}).get("values", {}).items():
+        lines.append(f'_Static_assert({name} == {value}, "{name} official constant");')
+        assertions += 1
     for name, members in fields.items():
         native = types[name]
         lines.append(f'_Static_assert(sizeof({name}) == {ctypes.sizeof(native)}, "{name} size");')

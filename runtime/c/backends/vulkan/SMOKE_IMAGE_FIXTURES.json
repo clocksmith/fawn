@@ -1,8 +1,11 @@
 {
   "purpose": "Existing retained Tint fixture exercises real Vulkan consumption, not the C texture compiler or hardware qualification.",
   "fixtures": {
-    "examples/tint-compiler-evidence.benchmark-corpus.spirv.sample.artifacts/particles.wgsl/tint/output.import_level.spv": "d9ee2119347f00da2b6019a7dbdf7925c2438f2e85ff631100cf6068b642e246"
+    "examples/tint-compiler-evidence.benchmark-corpus.spirv.sample.artifacts/particles.wgsl/tint/output.import_level.spv": "d9ee2119347f00da2b6019a7dbdf7925c2438f2e85ff631100cf6068b642e246",
+    "examples/tint-compiler-evidence.benchmark-corpus.spirv.sample.artifacts/particles.wgsl/tint/output.export_level.spv": "7ed11adf38b21368a988aa9d24f2bc517fb8b816521e4f263fac6085c8e49575"
   },
   "entrypoint": "import_level",
-  "oracle": "64 output floats equal uploaded alpha i * 0.25f; unused sampler checks descriptor lifetime only."
+  "oracle": "64 output floats equal uploaded alpha i * 0.25f; unused sampler checks descriptor lifetime only.",
+  "storage_entrypoint": "export_level",
+  "storage_oracle": "Input128x2 weights, each2x2=(1,0,0,0):64means=.25f,256RGBA8 bytes255. Explicit formatRGBA8, capabilitiesShader1/ImageQuery50."
 }

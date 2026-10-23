@@ -126,5 +126,19 @@
     "vkCmdCopyImageToBuffer",
     "vkCmdCopyImage"
   ],
-  "restriction": "Linux LP64 C ABI; no fallback or production promotion"
+  "restriction": "Linux LP64 C ABI; no fallback or production promotion",
+  "official_constants": {
+    "source": "https://docs.vulkan.org/refpages/latest/refpages/source/VkFormatFeatureFlagBits.html",
+    "verified_utc": "2026-10-23",
+    "scope": "Only listed core format bit values. All struct/function declarations still come from pinned retained source, not an installed SDK.",
+    "values": {
+      "VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT": 1,
+      "VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT": 2,
+      "VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT": 128,
+      "VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT": 256,
+      "VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT": 4096,
+      "VK_FORMAT_FEATURE_TRANSFER_SRC_BIT": 16384,
+      "VK_FORMAT_FEATURE_TRANSFER_DST_BIT": 32768
+    }
+  }
 }
