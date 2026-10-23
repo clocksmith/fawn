@@ -1,20 +1,31 @@
 /* SPDX-License-Identifier: MIT */
 #include "draw_indirect_internal.h"
 
+/* Words 0..3 (nonindexed) or 0..4 (indexed) are copied GPU arguments. The host
+ * writes capacities and the mode word before the copy. Comparisons never form
+ * first+count, so wrapping sums suppress the draw instead of passing. */
 static const char draw_source[] =
     "@group(0) @binding(0) var<storage, read_write> record: array<u32>;\n"
     "@compute @workgroup_size(1) fn main() {\n"
-    "    let vertex_count = record[0];\n"
+    "    let count = record[0];\n"
     "    let instance_count = record[1];\n"
-    "    let first_vertex = record[2];\n"
-    "    let first_instance = record[3];\n"
-    "    let vertex_limit = record[4];\n"
-    "    let instance_limit = record[5];\n"
-    "    if (vertex_count == 0u || instance_count == 0u || first_instance != 0u ||\n"
-    "        first_vertex > vertex_limit || vertex_count > vertex_limit - first_vertex ||\n"
+    "    let first = record[2];\n"
+    "    let indexed = record[7] != 0u;\n"
+    "    var first_instance = record[3];\n"
+    "    var count_limit = record[4];\n"
+    "    var instance_limit = record[5];\n"
+    "    if (indexed) {\n"
+    "        first_instance = record[4];\n"
+    "        count_limit = record[5];\n"
+    "        instance_limit = record[6];\n"
+    "    }\n"
+    "    if (count == 0u || instance_count == 0u || first_instance != 0u ||\n"
+    "        first > count_limit || count > count_limit - first ||\n"
     "        instance_count > instance_limit) {\n"
     "        record[0] = 0u;\n        record[1] = 0u;\n"
-    "        record[2] = 0u;\n        record[3] = 0u;\n    }\n}\n";
+    "        record[2] = 0u;\n        record[3] = 0u;\n"
+    "        if (indexed) {\n            record[4] = 0u;\n        }\n"
+    "    }\n}\n";
 
 _Static_assert(sizeof(draw_source) <= DOE_VK_DRAW_INDIRECT_SOURCE_CAPACITY, "draw source capacity");
 
@@ -66,26 +77,31 @@ void doe_vk_draw_validator_release(doe_vk_draw_validator *validator) {
 }
 
 doe_vk_status doe_vk_draw_indirect_validate(doe_vk_commands *commands,
-    const doe_vk_render_indirect *indirect) {
+    const doe_vk_render_indirect *indirect, bool indexed) {
     if (indirect == NULL || indirect->validator == NULL ||
         indirect->validator->pipeline->context != commands->context || indirect->arguments == NULL ||
         indirect->arguments->context != commands->context || indirect->offset % 4 != 0 ||
         !(indirect->arguments->usage & DOE_VK_BUFFER_INDIRECT) ||
         !(indirect->arguments->usage & DOE_VK_BUFFER_COPY_SRC) ||
-        !doe_vk_range(indirect->arguments->size, indirect->offset, 16)) return DOE_VK_INVALID_ARGUMENT;
+        !doe_vk_range(indirect->arguments->size, indirect->offset, indexed ? 20 : 16))
+        return DOE_VK_INVALID_ARGUMENT;
     return indirect->arguments->content_status;
 }
 
 doe_vk_status doe_vk_draw_indirect_prepare(doe_vk_commands *commands,
-    const doe_vk_render_indirect *indirect, const uint32_t limits[2], VkBuffer *out) {
+    const doe_vk_render_indirect *indirect, const uint32_t limits[2], bool indexed, VkBuffer *out) {
     doe_vk_buffer *scratch = NULL;
     doe_vk_status status = doe_vk_buffer_create(commands->context, 32,
         DOE_VK_BUFFER_STORAGE | DOE_VK_BUFFER_COPY_DST | DOE_VK_BUFFER_INDIRECT,
         DOE_VK_MEMORY_HOST, &scratch, NULL);
     if (status != DOE_VK_OK) return status;
-    status = doe_vk_buffer_write(scratch, 16, limits, 2 * sizeof(uint32_t));
+    /* Nonindexed: words4..7 = vertex/instance capacities, 0, mode0. Indexed:
+     * words5..7 = index/instance capacities, mode1. The copy never overlaps. */
+    const uint64_t copied = indexed ? 20 : 16;
+    const uint32_t tail[4] = {limits[0], limits[1], indexed ? 1u : 0u, 0};
+    status = doe_vk_buffer_write(scratch, copied, tail, (size_t)(32 - copied));
     if (status == DOE_VK_OK)
-        status = doe_vk_commands_copy(commands, indirect->arguments, indirect->offset, scratch, 0, 16);
+        status = doe_vk_commands_copy(commands, indirect->arguments, indirect->offset, scratch, 0, copied);
     const doe_vk_buffer_binding binding = {scratch, 0, 32};
     if (status == DOE_VK_OK)
         status = doe_vk_commands_dispatch(commands, indirect->validator->pipeline, &binding, 1, 1, 1, 1);

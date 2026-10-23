@@ -218,6 +218,7 @@ typedef struct {
 
 typedef struct { void* nextInChain; WGPUStringView label; WGPUBindGroupLayout layout; size_t entryCount; const WGPUBindGroupEntry* entries; } WGPUBindGroupDescriptor;
 typedef struct { void* nextInChain; WGPUStringView label; size_t bindGroupLayoutCount; const WGPUBindGroupLayout* bindGroupLayouts; uint32_t immediateSize; } WGPUPipelineLayoutDescriptor;
+typedef struct { void* nextInChain; WGPUStringView label; uint32_t type; uint32_t count; } WGPUQuerySetDescriptor;
 
 typedef struct { uint32_t group; uint32_t binding; uint32_t kind; uint32_t addr_space; uint32_t access; } DoeShaderBindingInfo;
 
@@ -518,6 +519,7 @@ DECL_PFN(WGPUComputePassEncoder, wgpuCommandEncoderBeginComputePass, (WGPUComman
 DECL_PFN(void, wgpuCommandEncoderCopyBufferToBuffer, (WGPUCommandEncoder, WGPUBuffer, uint64_t, WGPUBuffer, uint64_t, uint64_t));
 DECL_PFN(void, wgpuCommandEncoderCopyBufferToTexture, (WGPUCommandEncoder, const WGPUTexelCopyBufferInfo*, const WGPUTexelCopyTextureInfo*, const WGPUExtent3D*));
 DECL_PFN(void, wgpuCommandEncoderCopyTextureToBuffer, (WGPUCommandEncoder, const WGPUTexelCopyTextureInfo*, const WGPUTexelCopyBufferInfo*, const WGPUExtent3D*));
+DECL_PFN(void, wgpuQueueWriteTexture, (WGPUQueue, const WGPUTexelCopyTextureInfo*, const void*, size_t, const WGPUTexelCopyBufferLayout*, const WGPUExtent3D*));
 DECL_PFN(void, doeNativeCommandEncoderCopyBufferToTexture, (WGPUCommandEncoder, WGPUBuffer, uint64_t, uint32_t, uint32_t, WGPUTexture, uint32_t, uint32_t, uint32_t, uint32_t));
 DECL_PFN(void, doeNativeCommandEncoderCopyTextureToBuffer, (WGPUCommandEncoder, WGPUTexture, uint32_t, WGPUBuffer, uint64_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t));
 DECL_PFN(WGPUCommandBuffer, wgpuCommandEncoderFinish, (WGPUCommandEncoder, const WGPUCommandBufferDescriptor*));
@@ -551,6 +553,7 @@ DECL_PFN(WGPUSampler, wgpuDeviceCreateSampler, (WGPUDevice, const WGPUSamplerDes
 DECL_PFN(void, wgpuSamplerRelease, (WGPUSampler));
 DECL_PFN(WGPURenderPipeline, wgpuDeviceCreateRenderPipeline, (WGPUDevice, const void*));
 DECL_PFN(void, wgpuRenderPipelineRelease, (WGPURenderPipeline));
+DECL_PFN(WGPUBindGroupLayout, wgpuRenderPipelineGetBindGroupLayout, (WGPURenderPipeline, uint32_t));
 DECL_PFN(WGPURenderPassEncoder, wgpuCommandEncoderBeginRenderPass, (WGPUCommandEncoder, const WGPURenderPassDescriptor*));
 DECL_PFN(void, wgpuRenderPassEncoderSetPipeline, (WGPURenderPassEncoder, WGPURenderPipeline));
 DECL_PFN(void, wgpuRenderPassEncoderSetBindGroup, (WGPURenderPassEncoder, uint32_t, WGPUBindGroup, size_t, const uint32_t*));
@@ -605,6 +608,21 @@ DECL_PFN(void, doeNativeCommandEncoderWriteTimestamp, (WGPUCommandEncoder, WGPUQ
 DECL_PFN(void, doeNativeCommandEncoderResolveQuerySet, (WGPUCommandEncoder, WGPUQuerySet, uint32_t, uint32_t, WGPUBuffer, uint64_t));
 DECL_PFN(void, doeNativeQuerySetDestroy, (WGPUQuerySet));
 DECL_PFN(void, doeNativeQuerySetRelease, (WGPUQuerySet));
+/* Standard query procedures for providers without the Doe query entries. */
+DECL_PFN(void, wgpuCommandEncoderClearBuffer, (WGPUCommandEncoder, WGPUBuffer, uint64_t, uint64_t));
+/* Standard render pass state for providers without the Doe entries. */
+DECL_PFN(void, wgpuRenderPassEncoderSetViewport, (WGPURenderPassEncoder, float, float, float, float, float, float));
+DECL_PFN(void, wgpuRenderPassEncoderSetScissorRect, (WGPURenderPassEncoder, uint32_t, uint32_t, uint32_t, uint32_t));
+DECL_PFN(void, wgpuRenderPassEncoderSetBlendConstant, (WGPURenderPassEncoder, const WGPUColor*));
+DECL_PFN(void, wgpuRenderPassEncoderSetStencilReference, (WGPURenderPassEncoder, uint32_t));
+DECL_PFN(void, wgpuRenderPassEncoderPushDebugGroup, (WGPURenderPassEncoder, WGPUStringView));
+DECL_PFN(void, wgpuRenderPassEncoderPopDebugGroup, (WGPURenderPassEncoder));
+DECL_PFN(void, wgpuRenderPassEncoderInsertDebugMarker, (WGPURenderPassEncoder, WGPUStringView));
+DECL_PFN(WGPUQuerySet, wgpuDeviceCreateQuerySet, (WGPUDevice, const WGPUQuerySetDescriptor*));
+DECL_PFN(void, wgpuCommandEncoderWriteTimestamp, (WGPUCommandEncoder, WGPUQuerySet, uint32_t));
+DECL_PFN(void, wgpuCommandEncoderResolveQuerySet, (WGPUCommandEncoder, WGPUQuerySet, uint32_t, uint32_t, WGPUBuffer, uint64_t));
+DECL_PFN(void, wgpuQuerySetDestroy, (WGPUQuerySet));
+DECL_PFN(void, wgpuQuerySetRelease, (WGPUQuerySet));
 DECL_PFN(WGPUFuture, doeNativeBufferMapAsync, (WGPUBuffer, uint64_t, size_t, size_t, WGPUBufferMapCallbackInfo));
 DECL_PFN(uint32_t, doeBufferMapReadCopyUnmapFlat, (WGPUQueue, WGPUBuffer, uint64_t, size_t, size_t, uint32_t, void*, uint64_t*));
 
@@ -697,6 +715,11 @@ extern FnCommandEncoderClearBuffer pfn_doeNativeCommandEncoderClearBuffer;
 extern FnCommandEncoderCopyTextureToTexture pfn_doeNativeCommandEncoderCopyTextureToTexture;
 extern FnWgpuCommandEncoderCopyTextureToTexture pfn_wgpuCommandEncoderCopyTextureToTexture;
 extern FnQueueWriteTexture pfn_doeNativeQueueWriteTexture;
+/* Doe fast path when present, otherwise standard wgpuQueueWriteTexture.
+ * Returns false only when the provider has neither; never a silent no-op. */
+bool doe_queue_write_texture_native(void* queue, void* texture, const void* data, size_t data_len,
+    uint32_t bytes_per_row, uint32_t rows_per_image, uint32_t x, uint32_t y, uint32_t z,
+    uint32_t mip, uint32_t width, uint32_t height, uint32_t depth_or_layers);
 extern FnDeviceCreateRenderBundleEncoder pfn_doeNativeDeviceCreateRenderBundleEncoder;
 extern FnRenderBundleEncoderRelease pfn_doeNativeRenderBundleEncoderRelease;
 extern FnRenderBundleEncoderSetPipeline pfn_doeNativeRenderBundleEncoderSetPipeline;

@@ -120,6 +120,17 @@ void wgpuRenderPassEncoderSetVertexBuffer(WGPURenderPassEncoder handle, uint32_t
     native_unlock(device);
     if (status != DOE_RESOURCE_OK) native_error(device, native_resource_error(status), "render vertex binding failed");
 }
+void wgpuRenderPassEncoderSetIndexBuffer(WGPURenderPassEncoder handle, WGPUBuffer buffer,
+    WGPUIndexFormat format, uint64_t offset, uint64_t size)
+{
+    doe_resource_render_pass *pass = (doe_resource_render_pass *)handle;
+    native_device *device = doe_resource_render_pass_device(pass);
+    if (!device) return;
+    native_lock(device);
+    doe_resource_status status = doe_resource_render_pass_set_index(pass,(doe_resource_buffer *)buffer,format,offset,size);
+    native_unlock(device);
+    if (status != DOE_RESOURCE_OK) native_error(device, native_resource_error(status), "render index binding failed");
+}
 void wgpuRenderPassEncoderSetViewport(WGPURenderPassEncoder handle, float x, float y, float width,
     float height, float minimum, float maximum)
 {
@@ -193,6 +204,17 @@ void wgpuRenderPassEncoderDraw(WGPURenderPassEncoder handle, uint32_t count,
     doe_resource_status status = doe_resource_render_pass_draw(pass,count,instances,first,first_instance);
     native_unlock(device);
     if (status != DOE_RESOURCE_OK) native_error(device, native_resource_error(status), "render draw failed");
+}
+void wgpuRenderPassEncoderDrawIndexed(WGPURenderPassEncoder handle, uint32_t count,
+    uint32_t instances, uint32_t first_index, int32_t base_vertex, uint32_t first_instance)
+{
+    doe_resource_render_pass *pass = (doe_resource_render_pass *)handle;
+    native_device *device = doe_resource_render_pass_device(pass);
+    if (!device) return;
+    native_lock(device);
+    doe_resource_status status = doe_resource_render_pass_draw_indexed(pass,count,instances,first_index,base_vertex,first_instance);
+    native_unlock(device);
+    if (status != DOE_RESOURCE_OK) native_error(device, native_resource_error(status), "render indexed draw failed");
 }
 void wgpuRenderPassEncoderBeginOcclusionQuery(WGPURenderPassEncoder handle, uint32_t index)
 {

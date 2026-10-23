@@ -151,6 +151,107 @@ static void test_draw_boundaries(void)
     }
 }
 
+/* SetIndexBuffer admission: named format, format-size offset alignment, Index
+ * usage, exact range (whole-size resolves to the remainder) and the 20-byte
+ * indexed-indirect record against the 16-byte nonindexed one. Each control
+ * poisons only its own pass or bundle encoder. */
+typedef struct index_case {
+    WGPUIndexFormat format;
+    uint64_t usage, offset, size;
+    doe_resource_status expected;
+} index_case;
+
+static void test_index_binding(void)
+{
+    const index_case cases[] = {
+        {WGPUIndexFormat_Uint16, WGPUBufferUsage_Index, 2, 62, DOE_RESOURCE_OK},
+        {WGPUIndexFormat_Uint32, WGPUBufferUsage_Index, 8, UINT64_MAX, DOE_RESOURCE_OK},
+        {WGPUIndexFormat_Uint16, WGPUBufferUsage_Index, 64, 0, DOE_RESOURCE_OK},
+        {WGPUIndexFormat_Undefined, WGPUBufferUsage_Index, 0, 64, DOE_RESOURCE_LAYOUT},
+        {(WGPUIndexFormat)3, WGPUBufferUsage_Index, 0, 64, DOE_RESOURCE_LAYOUT},
+        {WGPUIndexFormat_Uint16, WGPUBufferUsage_Index, 1, 8, DOE_RESOURCE_ALIGNMENT},
+        {WGPUIndexFormat_Uint32, WGPUBufferUsage_Index, 2, 8, DOE_RESOURCE_ALIGNMENT},
+        {WGPUIndexFormat_Uint16, WGPUBufferUsage_Vertex, 0, 64, DOE_RESOURCE_USAGE},
+        {WGPUIndexFormat_Uint16, WGPUBufferUsage_Index, 8, 64, DOE_RESOURCE_RANGE},
+        {WGPUIndexFormat_Uint16, WGPUBufferUsage_Index, 66, UINT64_MAX, DOE_RESOURCE_RANGE},
+    };
+    for (size_t i = 0; i < sizeof(cases) / sizeof(cases[0]); i++) {
+        for (unsigned bundled = 0; bundled < 2; bundled++) {
+            fixture f = fresh();
+            doe_resource_config c = config(&f);
+            native_token index_token = {0};
+            doe_resource_buffer *indices = buffer(&f, &index_token, 64, cases[i].usage);
+            doe_resource_status status;
+            if (bundled) {
+                doe_resource_render_bundle_desc signature = {.color_format = WGPUTextureFormat_RGBA8Unorm, .samples = 1};
+                doe_resource_bundle_encoder *builder;
+                assert(doe_resource_bundle_encoder_create(&c, &signature, &builder) == DOE_RESOURCE_OK);
+                status = doe_resource_bundle_encoder_set_index(builder, indices, cases[i].format,
+                    cases[i].offset, cases[i].size);
+                doe_resource_render_bundle *bundle = NULL;
+                assert(doe_resource_bundle_encoder_finish(builder, &bundle) == status);
+                doe_resource_bundle_encoder_release(builder);
+                doe_resource_render_bundle_release(bundle);
+            } else {
+                native_token attachment_tokens[2] = {{0}};
+                doe_resource_view *view = attachment(&f, attachment_tokens);
+                doe_resource_render_targets targets = {.color = view, .color_load = WGPULoadOp_Clear,
+                    .color_store = WGPUStoreOp_Store};
+                doe_resource_encoder *encoder;
+                doe_resource_render_pass *pass;
+                assert(doe_resource_encoder_create(&c, &encoder) == DOE_RESOURCE_OK);
+                assert(doe_resource_encoder_begin_render(encoder, &targets, &pass) == DOE_RESOURCE_OK);
+                status = doe_resource_render_pass_set_index(pass, indices, cases[i].format,
+                    cases[i].offset, cases[i].size);
+                /* A rejected setter invalidates the pass; an admitted one leaves it open. */
+                assert(doe_resource_render_pass_end(pass) == status);
+                doe_resource_render_pass_release(pass);
+                doe_resource_encoder_release(encoder);
+                doe_resource_view_release(view);
+            }
+            assert(status == cases[i].expected);
+            doe_resource_buffer_release(indices);
+            assert(index_token.releases == 1);
+            empty(&f);
+        }
+    }
+    /* Indexed indirect reads 20 bytes: offset4 of a 20-byte buffer fits 16, not 20. */
+    for (unsigned indexed = 0; indexed < 2; indexed++) {
+        fixture f = fresh();
+        doe_resource_config c = config(&f);
+        native_token pipeline_token = {0}, index_token = {0}, indirect_token = {0};
+        doe_resource_pipeline_layout *layout;
+        assert(doe_resource_pipeline_layout_create(&c, NULL, 0, 0, &layout) == DOE_RESOURCE_OK);
+        doe_resource_render_pipeline_desc desc = {.color_format = WGPUTextureFormat_RGBA8Unorm, .samples = 1};
+        doe_resource_render_pipeline *pipeline;
+        assert(doe_resource_render_pipeline_create(&c, layout, &desc, native(&f, &pipeline_token), &pipeline) == DOE_RESOURCE_OK);
+        doe_resource_pipeline_layout_release(layout);
+        doe_resource_buffer *indices = buffer(&f, &index_token, 64, WGPUBufferUsage_Index);
+        doe_resource_buffer *arguments = buffer(&f, &indirect_token, 20, WGPUBufferUsage_Indirect);
+        native_token attachment_tokens[2] = {{0}};
+        doe_resource_view *view = attachment(&f, attachment_tokens);
+        doe_resource_render_targets targets = {.color = view, .color_load = WGPULoadOp_Clear,
+            .color_store = WGPUStoreOp_Store};
+        doe_resource_encoder *encoder;
+        doe_resource_render_pass *pass;
+        assert(doe_resource_encoder_create(&c, &encoder) == DOE_RESOURCE_OK);
+        assert(doe_resource_encoder_begin_render(encoder, &targets, &pass) == DOE_RESOURCE_OK);
+        assert(doe_resource_render_pass_set_pipeline(pass, pipeline) == DOE_RESOURCE_OK);
+        assert(doe_resource_render_pass_set_index(pass, indices, WGPUIndexFormat_Uint16, 0, 64) == DOE_RESOURCE_OK);
+        assert(doe_resource_render_pass_draw_indirect(pass, arguments, 0, indexed) == DOE_RESOURCE_OK);
+        assert(doe_resource_render_pass_draw_indirect(pass, arguments, 4, indexed) ==
+            (indexed ? DOE_RESOURCE_RANGE : DOE_RESOURCE_OK));
+        doe_resource_render_pass_release(pass);
+        doe_resource_encoder_release(encoder);
+        doe_resource_render_pipeline_release(pipeline);
+        doe_resource_buffer_release(indices);
+        doe_resource_buffer_release(arguments);
+        doe_resource_view_release(view);
+        assert(index_token.releases == 1 && indirect_token.releases == 1 && pipeline_token.releases == 1);
+        empty(&f);
+    }
+}
+
 static void test_pipeline_topology(void)
 {
     fixture f = fresh();
@@ -220,6 +321,7 @@ int main(void)
     test_draw_boundaries();
     test_pipeline_topology();
     test_frontend_rejection();
-    puts("draw admission owner: 3 host suites passed; no GPU execution claimed");
+    test_index_binding();
+    puts("draw admission owner: 4 host suites passed; no GPU execution claimed");
     return 0;
 }

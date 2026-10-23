@@ -56,6 +56,9 @@ Indirect graphics guards observe preceding producers and run before the same
 render pass, never inside it or hoisted across producers. Use distinct scratch
 for every draw, exact bound fetch capacities and overflow-safe comparisons. A
 nonzero unsupported firstInstance suppresses the entire draw, not just that field.
+Indexed variants share that guard owner and mode word; the native index bind has
+no size, so the bound index range is enforced only by direct admission and the
+GPU guard. Never read index values on the host.
 
 Viewport physical bounds and logical requested limits are distinct. An empty
 logical viewport still executes vertices and query ordering: normalize only its
