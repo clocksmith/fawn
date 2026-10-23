@@ -59,7 +59,7 @@ static void test_bundle_replay_lifetimes(void)
     assert(doe_resource_texture_create(&c, &desc, &limits, native(&f, &image_token), &texture) == DOE_RESOURCE_OK);
     assert(doe_resource_view_create(texture, &view_desc, native(&f, &view_token), &view) == DOE_RESOURCE_OK);
     doe_resource_render_targets targets = {.color = view, .color_load = WGPULoadOp_Clear,
-        .color_store = WGPUStoreOp_Store, .max_draw_count = 5};
+        .color_store = WGPUStoreOp_Store, .max_draw_count = 5, .has_max_draw_count = true};
     doe_resource_encoder *encoder;
     doe_resource_render_pass *pass;
     assert(doe_resource_encoder_create(&c, &encoder) == DOE_RESOURCE_OK);

@@ -211,7 +211,8 @@ doe_resource_status doe_resource_encoder_begin_render_with_timestamps(doe_resour
     memset(pass, 0, sizeof(*pass));
     pass->encoder = encoder;
     pass->state.targets = *targets;
-    if (!pass->state.targets.max_draw_count) pass->state.targets.max_draw_count = UINT64_C(50000000);
+    if (!targets->has_max_draw_count) pass->state.targets.max_draw_count = UINT64_C(50000000);
+    pass->state.targets.has_max_draw_count = true;
     pass->state.state.viewport[2] = (float)extent[0];
     pass->state.state.viewport[3] = (float)extent[1];
     pass->state.state.viewport[5] = 1;

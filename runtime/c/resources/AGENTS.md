@@ -68,3 +68,6 @@ Viewport limits belong to the copied requested device configuration, not attachm
 bounds. Keep physical-native admission separate, preserve valid negative/zero
 viewports and reject exact upper-edge excess without rounded-sum acceptance.
 Scissors alone remain bounded to the actual pass attachment extent.
+Draw-budget presence is explicit: normalize omission once at pass creation and
+retain exact zero. Every draw command counts, even a no-op; preflight complete
+bundle lists against the same remaining budget before emitting partial records.

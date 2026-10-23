@@ -94,6 +94,9 @@ typedef struct doe_resource_render_targets {
     /* Optional single-sample destination. Packets and whole-pass usage retain
      * it; the backend resolves once at the pass end, including empty passes. */
     doe_resource_view *resolve_target;
+    /* False omits max_draw_count and ignores its value. True uses the exact
+     * uint64 budget, including zero. Begin stores a normalized present value. */
+    bool has_max_draw_count;
 } doe_resource_render_targets;
 typedef struct doe_resource_render_state {
     float viewport[6]; /* x, y, width, height, minimum depth, maximum depth */
