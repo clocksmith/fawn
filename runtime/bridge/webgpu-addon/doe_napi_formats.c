@@ -11,16 +11,17 @@
 /* Texture / primitive format converters */
 
 /* Names map to the pinned webgpu.h values. The Zig runtime numbers the eight
- * RGBA16 and RGBA32 formats in an older order; translate at its boundary. */
-bool g_zig_texture_format_order = false;
+ * RGBA16 and RGBA32 formats in an older order and stencil operations from
+ * zero; translate at its boundary. */
+bool g_zig_enum_order = false;
 
 static uint32_t provider_texture_format(uint32_t standard) {
-    if (!g_zig_texture_format_order || standard < 0x24 || standard > 0x2B) return standard;
+    if (!g_zig_enum_order || standard < 0x24 || standard > 0x2B) return standard;
     return standard <= 0x25 ? standard + 6 : standard - 2; /* unorm/snorm moved last */
 }
 
 static uint32_t standard_texture_format(uint32_t provider) {
-    if (!g_zig_texture_format_order || provider < 0x24 || provider > 0x2B) return provider;
+    if (!g_zig_enum_order || provider < 0x24 || provider > 0x2B) return provider;
     return provider >= 0x2A ? provider - 6 : provider + 2;
 }
 
@@ -214,7 +215,8 @@ uint32_t filter_mode_from_string(napi_env env, napi_value val) {
     if (vt != napi_string) return 0; /* nearest */
     char buf[16] = {0}; size_t len = 0;
     napi_get_value_string_utf8(env, val, buf, sizeof(buf), &len);
-    if (strcmp(buf, "linear") == 0) return 1;
+    if (strcmp(buf, "nearest") == 0) return WGPUFilterMode_Nearest;
+    if (strcmp(buf, "linear") == 0) return WGPUFilterMode_Linear; /* Same values as WGPUMipmapFilterMode. */
     return 0;
 }
 

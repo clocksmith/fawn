@@ -11,14 +11,12 @@ static uint32_t stencil_operation_from_string(napi_env env, napi_value val) {
     if (vt == napi_number) { uint32_t out = 0; napi_get_value_uint32(env, val, &out); return out; }
     char buf[24] = {0}; size_t len = 0;
     napi_get_value_string_utf8(env, val, buf, sizeof(buf), &len);
-    if (strcmp(buf, "keep") == 0)            return 0;
-    if (strcmp(buf, "zero") == 0)            return 1;
-    if (strcmp(buf, "replace") == 0)         return 2;
-    if (strcmp(buf, "invert") == 0)          return 3;
-    if (strcmp(buf, "increment-clamp") == 0) return 4;
-    if (strcmp(buf, "decrement-clamp") == 0) return 5;
-    if (strcmp(buf, "increment-wrap") == 0)  return 6;
-    if (strcmp(buf, "decrement-wrap") == 0)  return 7;
+    static const char* const names[] = {"keep", "zero", "replace", "invert", "increment-clamp",
+        "decrement-clamp", "increment-wrap", "decrement-wrap"};
+    for (uint32_t i = 0; i < sizeof(names) / sizeof(names[0]); i++) {
+        /* WGPUStencilOperation_Keep is 1; the Zig runtime counts from Keep = 0. */
+        if (strcmp(buf, names[i]) == 0) return g_zig_enum_order ? i : i + 1;
+    }
     napi_throw_error(env, "DOE_ERROR", "Unsupported stencil operation"); return 0;
 }
 
