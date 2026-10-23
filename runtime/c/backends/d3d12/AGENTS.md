@@ -4,6 +4,10 @@
   validation and shader meaning remain outside this backend-private ABI.
 - Use Windows SDK C declarations in `windows_*.c`; do not construct replacement
   COM vtables, spoof `_WIN32`, or call host controls an SDK/driver check.
+- Exact ordinal selection stays the zero default. WARP requires its explicit
+  selector and software opt-in, uses EnumWarpAdapter, and verifies the actual
+  DXGI software flag. Never retry another adapter after selection failure.
+  Hosted WARP execution is CPU software evidence, never physical GPU evidence.
 - The serialized context is the sole submitted-command retirement owner.
   Execute first publishes that ownership; failed signal/wait leaves every
   obligation intact. Only observed completion or terminal device loss settles it.

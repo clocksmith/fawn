@@ -16,6 +16,11 @@ doe_dx_status doe_dx_context_create(const doe_dx_options *options,
     if (!out) return doe_dx_fail(DOE_DX_INVALID_ARGUMENT, 0, "context.create", error);
     doe_dx_options defaults = {0};
     if (!options) options = &defaults;
+    if ((options->adapter_selection != DOE_DX_SELECT_ORDINAL &&
+            options->adapter_selection != DOE_DX_SELECT_WARP) ||
+        (options->adapter_selection == DOE_DX_SELECT_WARP &&
+            (!options->allow_software_adapter || options->adapter_ordinal != 0)))
+        return doe_dx_fail(DOE_DX_INVALID_ARGUMENT, 0, "context.adapter_selection", error);
     doe_dx_context *context = calloc(1, sizeof(*context));
     if (!context) return doe_dx_fail(DOE_DX_OUT_OF_MEMORY, 0, "context.allocate", error);
     doe_dx_status status = doe_dx_native_open(options, &context->native, &context->caps, error);
