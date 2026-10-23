@@ -55,8 +55,13 @@ whole-runtime sanitizer, release or complete language-migration claim is made.
 
 The exact [independent report](independent_tests/REPORT.md),
 [portable commands](independent_tests/REPRODUCE.md), first-failure explanations and
-sealed test sources are retained here. For this accepted source tree, supply
+sealed test sources are retained here. The acceptance reproduction and
+`SOURCE_INPUTS_CURRENT.sha256` bind commit
+`3582e86472db945cc441eedb3796ec7f1b13d179`, not arbitrary later HEADs. On that
+accepted tree, supply
 `--source-manifest runtime/c/callbacks/SOURCE_INPUTS_CURRENT.sha256` to the native
-runner instead of the historical candidate manifest. Only the three acceptance
-documents differ; [provenance](PROVENANCE.md#acceptance) records that distinction.
-Use absolute paths for runner arguments and fresh output directories.
+runner instead of the historical candidate manifest; [provenance](PROVENANCE.md#acceptance)
+records the acceptance-document distinction. Use absolute runner paths and
+fresh output directories. The current standalone incremental-link regression
+is [tests/test_build_dependencies.py](tests/test_build_dependencies.py);
+it does not refresh the historical native acceptance.
