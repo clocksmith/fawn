@@ -15,6 +15,11 @@ typedef struct {
 
 bool numeric_environment_begin(Source *source, NumericEnvironment *environment);
 bool numeric_environment_end(Source *source, NumericEnvironment *environment);
+const ScalarBuiltin *scalar_builtin_named(const char *name);
+/* All arguments have the selected overload type and have been materialized.
+ * The signature registry owns arity; callers provide its complete argument span. */
+bool numeric_builtin(Source *source, size_t offset, ScalarBuiltinKind kind,
+                     const NumericValue *arguments, NumericValue *result);
 bool numeric_parse_literal(Source *source, NameSpan literal, NumericValue *result);
 bool numeric_materialize(Source *source, size_t offset, NumericValue input,
                          IrType target, NumericValue *result);

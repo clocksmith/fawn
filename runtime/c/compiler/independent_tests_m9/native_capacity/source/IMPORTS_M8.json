@@ -1,0 +1,13 @@
+{
+  "accepted": "4e03682849db8101cc8ed35a8243433c305852d5",
+  "files": {
+    "runtime/c/compiler/independent_tests_m8/native_host/host_support_m8.h": "d5c00b36b357e82767fb6ab9d684aa3be57c489f6a285c51340329f8dce192e9",
+    "runtime/c/compiler/independent_tests_m8/native_host/host_environment_m8.c": "a86f318ae64c46ce39a3dca31a0ea0985c3d1bc17badd9b7561620836c31cb72",
+    "runtime/c/compiler/independent_tests_m8/native_host/fenv_faults_m8.c": "2eccc88968cd7020643bd888b82c53387f3b8e3acf91a84bab895459e67a9f4f",
+    "runtime/c/compiler/independent_tests_m8/native_host/native_m8.cpp": "7a85a3d4d5ddb7b4ba668d359fd9df58045a628c20b9b3519ac9ba847f50d99d",
+    "runtime/c/compiler/independent_tests_m8/native_host/cli_fenv_wrap_m8.c": "f6d1b2209fcc91b7f92a338802f4664a3142b7ec0ec49f4f07843f06bc4f8232",
+    "runtime/c/compiler/independent_tests_m8/native_host/run_native_m8.py": "ef238aa1b09c60d4d8b12d5b6ae28f2c5236bf79498d3d0487ebfb28d3d2c62c",
+    "runtime/c/compiler/independent_tests_m8/native_host/run_cli_numeric_m8.py": "1ada51c425ca967ab83726faa1c9ace2a6f7dc444fed006d522eaeaeafc79cbd",
+    "runtime/c/compiler/independent_tests_m8/native_host/private_layout_m8.c": "c75ce99f53681f01eb51dadf066e6cd864b82b261cebf9c5c6a5eee53ec8b512"
+  }
+}

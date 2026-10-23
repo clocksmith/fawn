@@ -5,11 +5,11 @@
 
 /* SPIR-V 1.3 numeric enums, from Khronos specification definitions. */
 enum {
-    OP_NAME = 5, OP_MEMORY_MODEL = 14, OP_ENTRY_POINT = 15, OP_EXECUTION_MODE = 16,
+    OP_NAME = 5, OP_EXT_INST_IMPORT = 11, OP_EXT_INST = 12, OP_MEMORY_MODEL = 14, OP_ENTRY_POINT = 15, OP_EXECUTION_MODE = 16,
     OP_CAPABILITY = 17, OP_TYPE_VOID = 19, OP_TYPE_BOOL = 20, OP_TYPE_INT = 21,
     OP_TYPE_FLOAT = 22, OP_TYPE_VECTOR = 23, OP_TYPE_RUNTIME_ARRAY = 29, OP_TYPE_STRUCT = 30,
     OP_TYPE_POINTER = 32, OP_TYPE_FUNCTION = 33, OP_CONSTANT_TRUE = 41, OP_CONSTANT_FALSE = 42,
-    OP_CONSTANT = 43, OP_FUNCTION = 54,
+    OP_CONSTANT = 43, OP_FUNCTION = 54, OP_FUNCTION_PARAMETER = 55, OP_FUNCTION_CALL = 57,
     OP_FUNCTION_END = 56, OP_VARIABLE = 59, OP_LOAD = 61, OP_STORE = 62,
     OP_ACCESS_CHAIN = 65, OP_ARRAY_LENGTH = 68, OP_DECORATE = 71,
     OP_MEMBER_DECORATE = 72, OP_COMPOSITE_EXTRACT = 81,
@@ -25,7 +25,7 @@ enum {
     OP_FORD_GREATER_EQUAL = 190,
     OP_SHIFT_RIGHT_LOGICAL = 194, OP_SHIFT_RIGHT_ARITHMETIC = 195, OP_SHIFT_LEFT = 196,
     OP_BIT_OR = 197, OP_BIT_XOR = 198, OP_BIT_AND = 199, OP_NOT = 200, OP_PHI = 245, OP_LOOP_MERGE = 246, OP_SELECTION_MERGE = 247, OP_LABEL = 248,
-    OP_BRANCH = 249, OP_BRANCH_CONDITIONAL = 250, OP_RETURN = 253, OP_UNREACHABLE = 255
+    OP_BRANCH = 249, OP_BRANCH_CONDITIONAL = 250, OP_RETURN = 253, OP_RETURN_VALUE = 254, OP_UNREACHABLE = 255
 };
 enum {
     ID_VOID = 1, ID_BOOL, ID_U32, ID_F32, ID_VEC3,
@@ -43,7 +43,8 @@ typedef struct {
     uint32_t buffers[DOE_COMPILER_MAX_BINDINGS];
     uint32_t inputs[MAX_ENTRY_PARAMETERS];
     uint32_t *values;
-    uint32_t local_base, local_pointers[4];
+    uint32_t local_base, local_start, local_pointers[4], math_import;
+    size_t function_end;
     bool failed;
     uint32_t uniform_types[DOE_COMPILER_MAX_STRUCTS];
     uint32_t uniform_pointers[DOE_COMPILER_MAX_STRUCTS];
@@ -62,20 +63,29 @@ static uint32_t reserve_ids(Emitter *e, uint32_t count) {
     return first;
 }
 static uint32_t scalar_type(IrType type) {
-    return type == IR_BOOL ? ID_BOOL : type == IR_F32 ? ID_F32 : type == IR_I32 ? ID_I32 : ID_U32;
+    return type == IR_VOID ? ID_VOID : type == IR_BOOL ? ID_BOOL : type == IR_F32 ? ID_F32 : type == IR_I32 ? ID_I32 : ID_U32;
 }
 static uint32_t element_pointer(IrType type) {
     return type == IR_F32 ? ID_PTR_ELEMENT_F32 : ID_PTR_ELEMENT_U32;
 }
-static bool instruction(Emitter *e, uint32_t opcode, const uint32_t *arguments, size_t count) {
+static bool instruction_space(Emitter *e, uint32_t opcode, size_t count, uint32_t **arguments) {
     Spirv *s = e->output;
     if (e->failed) return false;
+    if (count >= UINT16_MAX)
+        return source_error(e->source, DOE_COMPILER_UNSUPPORTED, e->source->length,
+                            "SPIR-V instruction word-count format capacity exceeded");
     if (count + 1u > s->capacity - s->count)
         return source_error(e->source, DOE_COMPILER_OUTPUT_TOO_SMALL, e->source->length,
                             "internal SPIR-V word budget exceeded");
     s->words[s->count++] = ((uint32_t)(count + 1u) << 16u) | opcode;
-    if (count != 0u) memcpy(s->words + s->count, arguments, count * sizeof(*arguments));
+    *arguments = s->words + s->count;
     s->count += count;
+    return true;
+}
+static bool instruction(Emitter *e, uint32_t opcode, const uint32_t *arguments, size_t count) {
+    uint32_t *words;
+    if (!instruction_space(e, opcode, count, &words)) return false;
+    if (count != 0u) memcpy(words, arguments, count * sizeof(*arguments));
     return true;
 }
 static size_t string_words(const char *name, uint32_t *words) {
@@ -107,6 +117,32 @@ static uint32_t builtin_decoration(InputKind kind) {
     }
     return 0u;
 }
+static bool same_signature(const IrProgram *program, const FunctionRecord *a, const FunctionRecord *b) {
+    if (a->result_type != b->result_type || a->formal_count != b->formal_count) return false;
+    for (uint32_t i = 0u; i < a->formal_count; ++i)
+        if (program->formals[a->formal_start + i].type.resolved.type !=
+            program->formals[b->formal_start + i].type.resolved.type) return false;
+    return true;
+}
+static bool reserve_functions(Emitter *e, const IrProgram *program) {
+    for (size_t f = 0u; f < program->function_count; ++f) {
+        FunctionRecord *function = &program->functions[f];
+        function->state.target.function = f == program->entry_function ? ID_ENTRY : reserve_ids(e, 1u);
+        function->state.target.label = reserve_ids(e, 1u);
+        function->state.target.signature = 0u;
+        if (function->result_type == IR_VOID && function->formal_count == 0u) {
+            function->state.target.signature = ID_FN_TYPE;
+        } else {
+            for (size_t previous = 0u; previous < f; ++previous)
+                if (same_signature(program, function, &program->functions[previous])) {
+                    function->state.target.signature = program->functions[previous].state.target.signature;
+                    break;
+                }
+            if (function->state.target.signature == 0u) function->state.target.signature = reserve_ids(e, 1u);
+        }
+    }
+    return !e->failed;
+}
 static bool module_declarations(Emitter *e, const IrProgram *program) {
     for (size_t i = 0; i < program->binding_count; ++i) e->buffers[i] = reserve_ids(e, 1u);
     for (size_t i = 0; i < program->parameter_count; ++i) e->inputs[i] = reserve_ids(e, 1u);
@@ -121,6 +157,15 @@ static bool module_declarations(Emitter *e, const IrProgram *program) {
             e->member_indices[i] = reserve_ids(e, 1u);
     }
     EMIT(OP_CAPABILITY, 1u); /* Shader */
+    for (size_t i = 0u; i < program->instruction_count; ++i)
+        if (program->instructions[i].opcode == IR_BUILTIN && program->instructions[i].literal >= BUILTIN_EXP) {
+            e->math_import = reserve_ids(e, 1u); break;
+        }
+    if (e->math_import != 0u) {
+        uint32_t imported[5] = { e->math_import };
+        const size_t count = string_words("GLSL.std.450", imported + 1u);
+        if (!instruction(e, OP_EXT_INST_IMPORT, imported, count + 1u)) return false;
+    }
     EMIT(OP_MEMORY_MODEL, 0u, 1u); /* Logical, GLSL450 */
     /* Model, function, NUL-terminated maximum name, and all declared inputs. */
     uint32_t entry_arguments[2u + (DOE_COMPILER_MAX_NAME_BYTES + 4u) / 4u +
@@ -159,6 +204,10 @@ static bool module_declarations(Emitter *e, const IrProgram *program) {
     EMIT(OP_TYPE_VOID, ID_VOID);
     EMIT(OP_TYPE_BOOL, ID_BOOL);
     bool signed_type = false, guards = false;
+    for (size_t f = 0u; f < program->function_count; ++f)
+        signed_type = signed_type || program->functions[f].result_type == IR_I32;
+    for (size_t p = 0u; p < program->formal_count; ++p)
+        signed_type = signed_type || program->formals[p].type.resolved.type == IR_I32;
     for (size_t i = 0; i < program->instruction_count; ++i) {
         const IrInstruction *ir = &program->instructions[i];
         signed_type = signed_type || ir->type == IR_I32 || ir->comparison_type == IR_I32;
@@ -198,6 +247,19 @@ static bool module_declarations(Emitter *e, const IrProgram *program) {
         }
     }
     EMIT(OP_TYPE_FUNCTION, ID_FN_TYPE, ID_VOID);
+    for (size_t f = 0u; f < program->function_count; ++f) {
+        const FunctionRecord *function = &program->functions[f];
+        const uint32_t signature = function->state.target.signature;
+        bool emitted = signature == ID_FN_TYPE;
+        for (size_t previous = 0u; previous < f && !emitted; ++previous)
+            emitted = program->functions[previous].state.target.signature == signature;
+        if (emitted) continue;
+        uint32_t *words;
+        if (!instruction_space(e, OP_TYPE_FUNCTION, (size_t)function->formal_count + 2u, &words)) return false;
+        words[0] = signature; words[1] = scalar_type((IrType)function->result_type);
+        for (uint32_t p = 0u; p < function->formal_count; ++p)
+            words[p + 2u] = scalar_type((IrType)program->formals[function->formal_start + p].type.resolved.type);
+    }
     EMIT(OP_CONSTANT, ID_U32, ID_ZERO_U32, 0u);
     EMIT(OP_CONSTANT, ID_F32, ID_ZERO_F32, 0u);
     if (signed_type || guards) { EMIT(OP_CONSTANT, ID_I32, ID_ZERO_I32, 0u); }
@@ -361,6 +423,41 @@ static bool emit_conversion(Emitter *e, const IrInstruction *ir) {
     } else { EMIT(OP_BITCAST, scalar_type(to), result, input); }
     return true;
 }
+static bool emit_scalar_builtin(Emitter *e, const IrInstruction *ir) {
+    const uint32_t result = e->values[ir->result], left = e->values[ir->left];
+    const ScalarBuiltinKind kind = (ScalarBuiltinKind)ir->literal;
+    if (kind == BUILTIN_EXP || kind == BUILTIN_TANH || kind == BUILTIN_SQRT) {
+        const uint32_t opcode = kind == BUILTIN_EXP ? 27u : kind == BUILTIN_TANH ? 21u : 31u;
+        EMIT(OP_EXT_INST, ID_F32, result, e->math_import, opcode, left);
+        return true;
+    }
+    const uint32_t right = e->values[ir->right], condition = reserve_ids(e, 1u);
+    const bool minimum = kind == BUILTIN_MIN;
+    EMIT(comparison_opcode(minimum ? COMPARE_LESS : COMPARE_GREATER, ir->type),
+         ID_BOOL, condition, left, right);
+    const uint32_t intermediate = kind == BUILTIN_CLAMP ? reserve_ids(e, 1u) : result;
+    EMIT(OP_SELECT, scalar_type(ir->type), intermediate, condition, left, right);
+    if (kind == BUILTIN_CLAMP) {
+        /* WGSL defines reversed runtime bounds. GLSL Clamp produces poison;
+         * ordered min(max(value, low), high) instead preserves WGSL behavior. */
+        const uint32_t upper = e->values[ir->binding], below = reserve_ids(e, 1u);
+        EMIT(comparison_opcode(COMPARE_LESS, ir->type), ID_BOOL, below, intermediate, upper);
+        EMIT(OP_SELECT, scalar_type(ir->type), result, below, intermediate, upper);
+    }
+    return true;
+}
+static bool emit_call(Emitter *e, const IrProgram *program, const IrInstruction *ir) {
+    if (ir->binding >= program->function_count || ir->left > program->argument_count ||
+        ir->right > program->argument_count - ir->left)
+        return source_error(e->source, DOE_COMPILER_INPUT_ERROR, ir->source_offset, "invalid typed call range");
+    uint32_t *words;
+    if (!instruction_space(e, OP_FUNCTION_CALL, (size_t)ir->right + 3u, &words)) return false;
+    words[0] = scalar_type(ir->type);
+    words[1] = ir->result == 0u ? reserve_ids(e, 1u) : e->values[ir->result];
+    words[2] = program->functions[ir->binding].state.target.function;
+    for (uint32_t i = 0u; i < ir->right; ++i) words[3u + i] = e->values[program->arguments[ir->left + i]];
+    return !e->failed;
+}
 typedef struct EmitLoop EmitLoop;
 struct EmitLoop {
     EmitLoop *parent;
@@ -499,7 +596,7 @@ static bool emit_loop(Emitter *e, const IrProgram *program, size_t *cursor,
 }
 static bool emit_block(Emitter *e, const IrProgram *program, size_t *cursor,
                        unsigned depth, EmitLoop *loop, bool *live) {
-    while (*cursor < program->instruction_count) {
+    while (*cursor < e->function_end) {
         const IrInstruction *ir = &program->instructions[*cursor];
         if (ir->opcode == IR_ELSE || ir->opcode == IR_END_IF || ir->opcode == IR_SHORT_END ||
             ir->opcode == IR_LOOP_TEST || ir->opcode == IR_LOOP_CONTINUING || ir->opcode == IR_END_LOOP) return true;
@@ -586,6 +683,12 @@ static bool emit_block(Emitter *e, const IrProgram *program, size_t *cursor,
                      e->values[ir->result], e->values[ir->left], masked);
                 break;
             }
+            case IR_CALL:
+                if (!emit_call(e, program, ir)) return false;
+                break;
+            case IR_BUILTIN:
+                if (!emit_scalar_builtin(e, ir)) return false;
+                break;
             case IR_MAX: {
                 const uint32_t condition = reserve_ids(e, 1u);
                 EMIT(ir->type == IR_F32 ? OP_FORD_GREATER_THAN : ir->type == IR_I32 ? OP_SGREATER_THAN : OP_UGREATER_THAN,
@@ -602,10 +705,10 @@ static bool emit_block(Emitter *e, const IrProgram *program, size_t *cursor,
                 EMIT(OP_LOGICAL_NOT, ID_BOOL, e->values[ir->result], e->values[ir->left]);
                 break;
             case IR_LOCAL_LOAD:
-                EMIT(OP_LOAD, scalar_type(ir->type), e->values[ir->result], e->local_base + ir->binding);
+                EMIT(OP_LOAD, scalar_type(ir->type), e->values[ir->result], e->local_base + (ir->binding - e->local_start));
                 break;
             case IR_LOCAL_STORE:
-                EMIT(OP_STORE, e->local_base + ir->binding, e->values[ir->right]);
+                EMIT(OP_STORE, e->local_base + (ir->binding - e->local_start), e->values[ir->right]);
                 break;
             case IR_BREAK:
             case IR_CONTINUE:
@@ -622,7 +725,9 @@ static bool emit_block(Emitter *e, const IrProgram *program, size_t *cursor,
                 *live = false;
                 break;
             case IR_RETURN:
-                if (!instruction(e, OP_RETURN, NULL, 0u)) return false;
+                if (ir->type == IR_VOID) {
+                    if (!instruction(e, OP_RETURN, NULL, 0u)) return false;
+                } else { EMIT(OP_RETURN_VALUE, e->values[ir->left]); }
                 *live = false;
                 break;
             case IR_CONSTANT:
@@ -642,21 +747,34 @@ static bool emit_block(Emitter *e, const IrProgram *program, size_t *cursor,
     }
     return true;
 }
-static bool function_body(Emitter *e, const IrProgram *program) {
-    EMIT(OP_FUNCTION, ID_VOID, ID_ENTRY, 0u, ID_FN_TYPE);
-    e->current_label = reserve_ids(e, 1u);
-    EMIT(OP_LABEL, e->current_label);
-    e->local_base = reserve_ids(e, (uint32_t)program->local_count);
-    for (size_t i = 0u; i < program->local_count; ++i) {
-        EMIT(OP_VARIABLE, e->local_pointers[program->locals[i].type], e->local_base + (uint32_t)i, 7u);
+static bool function_body(Emitter *e, const IrProgram *program, const FunctionRecord *function) {
+    EMIT(OP_FUNCTION, scalar_type((IrType)function->result_type), function->state.target.function,
+         0u, function->state.target.signature);
+    for (uint32_t p = 0u; p < function->formal_count; ++p) {
+        const uint32_t index = function->formal_start + p;
+        const uint32_t identity = (uint32_t)e->source->limits->instructions + 1u + index;
+        e->values[identity] = reserve_ids(e, 1u);
+        EMIT(OP_FUNCTION_PARAMETER, scalar_type((IrType)program->formals[index].type.resolved.type), e->values[identity]);
     }
-    size_t cursor = 0u;
+    e->current_label = function->state.target.label;
+    e->function_end = function->instruction_end;
+    EMIT(OP_LABEL, e->current_label);
+    e->local_base = reserve_ids(e, function->local_count);
+    e->local_start = function->local_start;
+    for (uint32_t i = 0u; i < function->local_count; ++i) {
+        EMIT(OP_VARIABLE, e->local_pointers[program->locals[function->local_start + i].type], e->local_base + i, 7u);
+    }
+    size_t cursor = function->instruction_start;
     bool live = true;
     if (!emit_block(e, program, &cursor, 0u, NULL, &live)) return false;
-    if (cursor != program->instruction_count)
+    if (cursor != function->instruction_end)
         return source_error(e->source, DOE_COMPILER_INPUT_ERROR, e->source->length,
                             "unexpected top-level structured IR boundary");
-    if (live && !instruction(e, OP_RETURN, NULL, 0u)) return false;
+    if (live) {
+        if (function->result_type != IR_VOID)
+            return source_error(e->source, DOE_COMPILER_INPUT_ERROR, e->source->length, "missing typed function return");
+        if (!instruction(e, OP_RETURN, NULL, 0u)) return false;
+    }
     return instruction(e, OP_FUNCTION_END, NULL, 0u);
 }
 #undef EMIT
@@ -673,7 +791,9 @@ bool emit_spirv(Source *source, const IrProgram *program, Spirv *spirv, uint32_t
     spirv->words[4] = 0u;
     spirv->count = 5u;
     Emitter emitter = { .source = source, .output = spirv, .next_id = FIRST_DYNAMIC_ID, .values = values };
-    if (!module_declarations(&emitter, program) || !function_body(&emitter, program)) return false;
+    if (!reserve_functions(&emitter, program) || !module_declarations(&emitter, program)) return false;
+    for (size_t f = 0u; f < program->function_count; ++f)
+        if (!function_body(&emitter, program, &program->functions[f])) return false;
     spirv->words[3] = emitter.next_id;
     return true;
 }

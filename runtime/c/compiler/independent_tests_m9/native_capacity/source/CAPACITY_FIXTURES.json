@@ -1,0 +1,658 @@
+[
+  {
+    "budget": "",
+    "capacities": {
+      "control_depth": 32,
+      "expression_depth": 64,
+      "expressions": 0,
+      "source_bytes": 39,
+      "statements": 0,
+      "tokens": 13,
+      "words": 65536
+    },
+    "name": "empty_helpers_0",
+    "source_bytes": 39,
+    "source_sha256": "2ace5d16625d3cc41ade86b8e2bc1b6302d81f2d4826f89dccc02725c5c981c2",
+    "status": 0
+  },
+  {
+    "budget": "token",
+    "capacities": {
+      "control_depth": 32,
+      "expression_depth": 64,
+      "expressions": 0,
+      "source_bytes": 39,
+      "statements": 0,
+      "tokens": 12,
+      "words": 65536
+    },
+    "name": "empty_helpers_0_token_short",
+    "source_bytes": 39,
+    "source_sha256": "2ace5d16625d3cc41ade86b8e2bc1b6302d81f2d4826f89dccc02725c5c981c2",
+    "status": 1
+  },
+  {
+    "budget": "",
+    "capacities": {
+      "control_depth": 32,
+      "expression_depth": 64,
+      "expressions": 0,
+      "source_bytes": 48,
+      "statements": 0,
+      "tokens": 19,
+      "words": 65536
+    },
+    "name": "empty_helpers_1",
+    "source_bytes": 48,
+    "source_sha256": "65aad65a8ab0e37081d8cbbb7132b3d8c7e5d61f8ee3fb19a1bbe07aab18ae15",
+    "status": 0
+  },
+  {
+    "budget": "token",
+    "capacities": {
+      "control_depth": 32,
+      "expression_depth": 64,
+      "expressions": 0,
+      "source_bytes": 48,
+      "statements": 0,
+      "tokens": 18,
+      "words": 65536
+    },
+    "name": "empty_helpers_1_token_short",
+    "source_bytes": 48,
+    "source_sha256": "65aad65a8ab0e37081d8cbbb7132b3d8c7e5d61f8ee3fb19a1bbe07aab18ae15",
+    "status": 1
+  },
+  {
+    "budget": "",
+    "capacities": {
+      "control_depth": 32,
+      "expression_depth": 64,
+      "expressions": 0,
+      "source_bytes": 199,
+      "statements": 0,
+      "tokens": 115,
+      "words": 65536
+    },
+    "name": "empty_helpers_17",
+    "source_bytes": 199,
+    "source_sha256": "473f15444a6fcb2574b8026ed233aace2a116ff7c1807d697ea8b20c1f5b9b5b",
+    "status": 0
+  },
+  {
+    "budget": "token",
+    "capacities": {
+      "control_depth": 32,
+      "expression_depth": 64,
+      "expressions": 0,
+      "source_bytes": 199,
+      "statements": 0,
+      "tokens": 114,
+      "words": 65536
+    },
+    "name": "empty_helpers_17_token_short",
+    "source_bytes": 199,
+    "source_sha256": "473f15444a6fcb2574b8026ed233aace2a116ff7c1807d697ea8b20c1f5b9b5b",
+    "status": 1
+  },
+  {
+    "budget": "",
+    "capacities": {
+      "control_depth": 32,
+      "expression_depth": 64,
+      "expressions": 0,
+      "source_bytes": 1326,
+      "statements": 0,
+      "tokens": 775,
+      "words": 65536
+    },
+    "name": "empty_helpers_127",
+    "source_bytes": 1326,
+    "source_sha256": "491a09f7a79ad619f3f3a31bc3962f4705d38bc746d140f7ceaba1da2b18c82b",
+    "status": 0
+  },
+  {
+    "budget": "token",
+    "capacities": {
+      "control_depth": 32,
+      "expression_depth": 64,
+      "expressions": 0,
+      "source_bytes": 1326,
+      "statements": 0,
+      "tokens": 774,
+      "words": 65536
+    },
+    "name": "empty_helpers_127_token_short",
+    "source_bytes": 1326,
+    "source_sha256": "491a09f7a79ad619f3f3a31bc3962f4705d38bc746d140f7ceaba1da2b18c82b",
+    "status": 1
+  },
+  {
+    "budget": "",
+    "capacities": {
+      "control_depth": 32,
+      "expression_depth": 64,
+      "expressions": 0,
+      "source_bytes": 3680,
+      "statements": 0,
+      "tokens": 2059,
+      "words": 65536
+    },
+    "name": "empty_helpers_341",
+    "source_bytes": 3680,
+    "source_sha256": "b95fe88d95672f873a6fa144f2a5adeb9f23642699c2afa6360cc9ce9cc36991",
+    "status": 0
+  },
+  {
+    "budget": "token",
+    "capacities": {
+      "control_depth": 32,
+      "expression_depth": 64,
+      "expressions": 0,
+      "source_bytes": 3680,
+      "statements": 0,
+      "tokens": 2058,
+      "words": 65536
+    },
+    "name": "empty_helpers_341_token_short",
+    "source_bytes": 3680,
+    "source_sha256": "b95fe88d95672f873a6fa144f2a5adeb9f23642699c2afa6360cc9ce9cc36991",
+    "status": 1
+  },
+  {
+    "budget": "",
+    "capacities": {
+      "control_depth": 32,
+      "expression_depth": 64,
+      "expressions": 0,
+      "source_bytes": 53,
+      "statements": 0,
+      "tokens": 22,
+      "words": 65536
+    },
+    "name": "zero_es_formals_1",
+    "source_bytes": 53,
+    "source_sha256": "b77daa05eebb163f6c23f93f60fac769229688519ef529ae02c2131530e672e7",
+    "status": 0
+  },
+  {
+    "budget": "token",
+    "capacities": {
+      "control_depth": 32,
+      "expression_depth": 64,
+      "expressions": 0,
+      "source_bytes": 53,
+      "statements": 0,
+      "tokens": 21,
+      "words": 65536
+    },
+    "name": "zero_es_formals_1_token_short",
+    "source_bytes": 53,
+    "source_sha256": "b77daa05eebb163f6c23f93f60fac769229688519ef529ae02c2131530e672e7",
+    "status": 1
+  },
+  {
+    "budget": "",
+    "capacities": {
+      "control_depth": 32,
+      "expression_depth": 64,
+      "expressions": 0,
+      "source_bytes": 172,
+      "statements": 0,
+      "tokens": 86,
+      "words": 65536
+    },
+    "name": "zero_es_formals_17",
+    "source_bytes": 172,
+    "source_sha256": "554052a8d6dce7d5285fe168b6f3b530cd1765c4a3e91719ac7defce090d56c8",
+    "status": 0
+  },
+  {
+    "budget": "token",
+    "capacities": {
+      "control_depth": 32,
+      "expression_depth": 64,
+      "expressions": 0,
+      "source_bytes": 172,
+      "statements": 0,
+      "tokens": 85,
+      "words": 65536
+    },
+    "name": "zero_es_formals_17_token_short",
+    "source_bytes": 172,
+    "source_sha256": "554052a8d6dce7d5285fe168b6f3b530cd1765c4a3e91719ac7defce090d56c8",
+    "status": 1
+  },
+  {
+    "budget": "",
+    "capacities": {
+      "control_depth": 32,
+      "expression_depth": 64,
+      "expressions": 0,
+      "source_bytes": 1088,
+      "statements": 0,
+      "tokens": 530,
+      "words": 65536
+    },
+    "name": "zero_es_formals_128",
+    "source_bytes": 1088,
+    "source_sha256": "7a7e4bd41ed91645f4d6208e9b8f0579d796ad64f045090ee3815d5800f23da6",
+    "status": 0
+  },
+  {
+    "budget": "token",
+    "capacities": {
+      "control_depth": 32,
+      "expression_depth": 64,
+      "expressions": 0,
+      "source_bytes": 1088,
+      "statements": 0,
+      "tokens": 529,
+      "words": 65536
+    },
+    "name": "zero_es_formals_128_token_short",
+    "source_bytes": 1088,
+    "source_sha256": "7a7e4bd41ed91645f4d6208e9b8f0579d796ad64f045090ee3815d5800f23da6",
+    "status": 1
+  },
+  {
+    "budget": "",
+    "capacities": {
+      "control_depth": 32,
+      "expression_depth": 64,
+      "expressions": 0,
+      "source_bytes": 4544,
+      "statements": 0,
+      "tokens": 2066,
+      "words": 65536
+    },
+    "name": "zero_es_formals_512",
+    "source_bytes": 4544,
+    "source_sha256": "070d3c44057ad05180f6a51b53f6a31af397dc04c122b941d39a3f1947b99dcb",
+    "status": 0
+  },
+  {
+    "budget": "token",
+    "capacities": {
+      "control_depth": 32,
+      "expression_depth": 64,
+      "expressions": 0,
+      "source_bytes": 4544,
+      "statements": 0,
+      "tokens": 2065,
+      "words": 65536
+    },
+    "name": "zero_es_formals_512_token_short",
+    "source_bytes": 4544,
+    "source_sha256": "070d3c44057ad05180f6a51b53f6a31af397dc04c122b941d39a3f1947b99dcb",
+    "status": 1
+  },
+  {
+    "budget": "",
+    "capacities": {
+      "control_depth": 32,
+      "expression_depth": 64,
+      "expressions": 0,
+      "source_bytes": 19416,
+      "statements": 0,
+      "tokens": 8210,
+      "words": 65536
+    },
+    "name": "zero_es_formals_2048",
+    "source_bytes": 19416,
+    "source_sha256": "af66334b50ca8ff8c694273b621f75417974cab3eb3def3f39c8cf9effdebe17",
+    "status": 0
+  },
+  {
+    "budget": "token",
+    "capacities": {
+      "control_depth": 32,
+      "expression_depth": 64,
+      "expressions": 0,
+      "source_bytes": 19416,
+      "statements": 0,
+      "tokens": 8209,
+      "words": 65536
+    },
+    "name": "zero_es_formals_2048_token_short",
+    "source_bytes": 19416,
+    "source_sha256": "af66334b50ca8ff8c694273b621f75417974cab3eb3def3f39c8cf9effdebe17",
+    "status": 1
+  },
+  {
+    "budget": "",
+    "capacities": {
+      "control_depth": 32,
+      "expression_depth": 64,
+      "expressions": 0,
+      "source_bytes": 39,
+      "statements": 0,
+      "tokens": 0,
+      "words": 65536
+    },
+    "name": "zero_function_records",
+    "source_bytes": 39,
+    "source_sha256": "2ace5d16625d3cc41ade86b8e2bc1b6302d81f2d4826f89dccc02725c5c981c2",
+    "status": 1
+  },
+  {
+    "budget": "",
+    "capacities": {
+      "control_depth": 32,
+      "expression_depth": 64,
+      "expressions": 0,
+      "source_bytes": 2,
+      "statements": 0,
+      "tokens": 32,
+      "words": 65536
+    },
+    "name": "malformed_prefix_2",
+    "source_bytes": 2,
+    "source_sha256": "0f1e18bb4143dc4be22e61ea4deb0491c2bf7018c6504ad631038aed5ca4a0ca",
+    "status": 2
+  },
+  {
+    "budget": "",
+    "capacities": {
+      "control_depth": 32,
+      "expression_depth": 64,
+      "expressions": 0,
+      "source_bytes": 5,
+      "statements": 0,
+      "tokens": 32,
+      "words": 65536
+    },
+    "name": "malformed_prefix_5",
+    "source_bytes": 5,
+    "source_sha256": "ae8b60f0fa38f7b33c1b41339af1af89a230ca8b65b8b0204b2b82be86594f28",
+    "status": 2
+  },
+  {
+    "budget": "",
+    "capacities": {
+      "control_depth": 32,
+      "expression_depth": 64,
+      "expressions": 0,
+      "source_bytes": 7,
+      "statements": 0,
+      "tokens": 32,
+      "words": 65536
+    },
+    "name": "malformed_prefix_7",
+    "source_bytes": 7,
+    "source_sha256": "2521fcafb427b227b1eea6c2f74e1148db05938c27d6a47ae3f538298bf741b8",
+    "status": 2
+  },
+  {
+    "budget": "",
+    "capacities": {
+      "control_depth": 32,
+      "expression_depth": 64,
+      "expressions": 0,
+      "source_bytes": 10,
+      "statements": 0,
+      "tokens": 32,
+      "words": 65536
+    },
+    "name": "malformed_prefix_10",
+    "source_bytes": 10,
+    "source_sha256": "0d83aa59992ee139b477ef662f09e1c1bd6f81ec89572cdadda85dcb9e3b7d07",
+    "status": 2
+  },
+  {
+    "budget": "",
+    "capacities": {
+      "control_depth": 32,
+      "expression_depth": 64,
+      "expressions": 1,
+      "source_bytes": 51,
+      "statements": 1,
+      "tokens": 23,
+      "words": 65536
+    },
+    "name": "zero_call",
+    "source_bytes": 51,
+    "source_sha256": "4158fd4141cbddba8cc018e84e25b686395fab5c7a48ae3980fe7e87a18afdb3",
+    "status": 0
+  },
+  {
+    "budget": "expression",
+    "capacities": {
+      "control_depth": 32,
+      "expression_depth": 64,
+      "expressions": 0,
+      "source_bytes": 51,
+      "statements": 1,
+      "tokens": 23,
+      "words": 65536
+    },
+    "name": "zero_call_short_e",
+    "source_bytes": 51,
+    "source_sha256": "4158fd4141cbddba8cc018e84e25b686395fab5c7a48ae3980fe7e87a18afdb3",
+    "status": 1
+  },
+  {
+    "budget": "statement",
+    "capacities": {
+      "control_depth": 32,
+      "expression_depth": 64,
+      "expressions": 1,
+      "source_bytes": 51,
+      "statements": 0,
+      "tokens": 23,
+      "words": 65536
+    },
+    "name": "zero_call_short_s",
+    "source_bytes": 51,
+    "source_sha256": "4158fd4141cbddba8cc018e84e25b686395fab5c7a48ae3980fe7e87a18afdb3",
+    "status": 1
+  },
+  {
+    "budget": "",
+    "capacities": {
+      "control_depth": 32,
+      "expression_depth": 64,
+      "expressions": 4,
+      "source_bytes": 81,
+      "statements": 2,
+      "tokens": 38,
+      "words": 65536
+    },
+    "name": "simple_args",
+    "source_bytes": 81,
+    "source_sha256": "c169b017ddfdf6ec6c39f6d09b3eafcbcaf214a1533574b9ae6bb89733b0a14c",
+    "status": 0
+  },
+  {
+    "budget": "expression",
+    "capacities": {
+      "control_depth": 32,
+      "expression_depth": 64,
+      "expressions": 3,
+      "source_bytes": 81,
+      "statements": 2,
+      "tokens": 38,
+      "words": 65536
+    },
+    "name": "simple_args_short_e",
+    "source_bytes": 81,
+    "source_sha256": "c169b017ddfdf6ec6c39f6d09b3eafcbcaf214a1533574b9ae6bb89733b0a14c",
+    "status": 1
+  },
+  {
+    "budget": "",
+    "capacities": {
+      "control_depth": 32,
+      "expression_depth": 64,
+      "expressions": 7,
+      "source_bytes": 114,
+      "statements": 3,
+      "tokens": 58,
+      "words": 65536
+    },
+    "name": "nested_args",
+    "source_bytes": 114,
+    "source_sha256": "358a982a922d35aff412ee8f4481f02acfbafc464036ae12ba8df909c8aa194e",
+    "status": 0
+  },
+  {
+    "budget": "",
+    "capacities": {
+      "control_depth": 32,
+      "expression_depth": 64,
+      "expressions": 4,
+      "source_bytes": 88,
+      "statements": 3,
+      "tokens": 40,
+      "words": 65536
+    },
+    "name": "dead_args",
+    "source_bytes": 88,
+    "source_sha256": "3f74db6c1953bb5bd035ac29d89e98334e8ae09ec4105db2cc67c34bf052229c",
+    "status": 0
+  },
+  {
+    "budget": "",
+    "capacities": {
+      "control_depth": 32,
+      "expression_depth": 64,
+      "expressions": 5,
+      "source_bytes": 89,
+      "statements": 2,
+      "tokens": 37,
+      "words": 65536
+    },
+    "name": "skipped_args",
+    "source_bytes": 89,
+    "source_sha256": "bfb495f9ca8d3a745cbdb83f48250ce81c8a345a487545ae1cf0dc5c4d22e97e",
+    "status": 0
+  },
+  {
+    "budget": "",
+    "capacities": {
+      "control_depth": 32,
+      "expression_depth": 64,
+      "expressions": 16,
+      "source_bytes": 195,
+      "statements": 4,
+      "tokens": 78,
+      "words": 65536
+    },
+    "name": "physical_alias_before_entry",
+    "source_bytes": 195,
+    "source_sha256": "951b9b81283e5126dc42cc127217547b63e49ff752a76cab0f7249089c4ad00d",
+    "status": 0
+  },
+  {
+    "budget": "",
+    "capacities": {
+      "control_depth": 32,
+      "expression_depth": 64,
+      "expressions": 256,
+      "source_bytes": 966,
+      "statements": 128,
+      "tokens": 662,
+      "words": 65536
+    },
+    "name": "repeated_tight_args",
+    "source_bytes": 966,
+    "source_sha256": "8b704a848f24f163c11f17b7004dd806a1415ad7a6596d05fe131c7672c0b4e5",
+    "status": 0
+  },
+  {
+    "budget": "expression",
+    "capacities": {
+      "control_depth": 32,
+      "expression_depth": 64,
+      "expressions": 255,
+      "source_bytes": 966,
+      "statements": 128,
+      "tokens": 662,
+      "words": 65536
+    },
+    "name": "repeated_tight_args_short_e",
+    "source_bytes": 966,
+    "source_sha256": "8b704a848f24f163c11f17b7004dd806a1415ad7a6596d05fe131c7672c0b4e5",
+    "status": 1
+  },
+  {
+    "budget": "",
+    "capacities": {
+      "control_depth": 32,
+      "expression_depth": 64,
+      "expressions": 6,
+      "source_bytes": 99,
+      "statements": 3,
+      "tokens": 42,
+      "words": 65536
+    },
+    "name": "nested_skipped_dead",
+    "source_bytes": 99,
+    "source_sha256": "898bd189a5132958761d40a4f18752155fe54f7f7c9e8cb0cb192115fc487cde",
+    "status": 0
+  },
+  {
+    "budget": "",
+    "capacities": {
+      "control_depth": 32,
+      "expression_depth": 64,
+      "expressions": 0,
+      "source_bytes": 709788,
+      "statements": 0,
+      "tokens": 262146,
+      "words": 1048576
+    },
+    "name": "type_65532",
+    "source_bytes": 709788,
+    "source_sha256": "4a92df9f9f1c5fd4478a010567c7d30e948a9fbb7da18a35f87c8d55b680817e",
+    "status": 0
+  },
+  {
+    "budget": "SPIR-V",
+    "capacities": {
+      "control_depth": 32,
+      "expression_depth": 64,
+      "expressions": 0,
+      "source_bytes": 709799,
+      "statements": 0,
+      "tokens": 262150,
+      "words": 1048576
+    },
+    "name": "type_65533",
+    "source_bytes": 709799,
+    "source_sha256": "8da5198aaf8f6dc92581a807521c868c47be007d508e0f2ba1ced78899c96d11",
+    "status": 3
+  },
+  {
+    "budget": "",
+    "capacities": {
+      "control_depth": 32,
+      "expression_depth": 64,
+      "expressions": 65532,
+      "source_bytes": 906373,
+      "statements": 1,
+      "tokens": 393207,
+      "words": 1048576
+    },
+    "name": "call_65531",
+    "source_bytes": 906373,
+    "source_sha256": "46d9add110f12670b25dbbbc457e09cc50bf04f41f65d959a42c7cb8b7bf9a86",
+    "status": 0
+  },
+  {
+    "budget": "SPIR-V",
+    "capacities": {
+      "control_depth": 32,
+      "expression_depth": 64,
+      "expressions": 65533,
+      "source_bytes": 906387,
+      "statements": 1,
+      "tokens": 393213,
+      "words": 1048576
+    },
+    "name": "call_65532",
+    "source_bytes": 906387,
+    "source_sha256": "54dc1b74ac6adf1d2184235dc41c2956f054fa35c424439a6135d3c0cb6d49f1",
+    "status": 3
+  }
+]

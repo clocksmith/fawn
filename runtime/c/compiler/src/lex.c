@@ -69,7 +69,8 @@ bool lex_source(Source *source, TokenList *tokens) {
         } else {
             const unsigned char next = cursor + 1u < source->length ?
                 (unsigned char)source->source[cursor + 1u] : 0u;
-            if ((c == '<' || c == '>') && next == c) {
+            if (c == '-' && next == '>') { token.kind = TOKEN_ARROW; token.length = 2u;
+            } else if ((c == '<' || c == '>') && next == c) {
                 token.kind = c == '<' ? TOKEN_SHIFT_LEFT : TOKEN_SHIFT_RIGHT;
                 token.length = 2u;
                 if (cursor + 2u < source->length && source->source[cursor + 2u] == '=') {
