@@ -194,6 +194,14 @@ The independent compiler and runtime retain these outcomes:
   no private provider preference.
 - Adoption: supporting-feature value, receipts, internal benchmarks, and sibling
   integrations do not establish independent adoption or retained use.
+- Selected experimental migration (2026-10-23): the owner has authorized an
+  incremental full Doe-to-C campaign on an isolated local branch. Develop the
+  independently usable compiler first, then native/backend owners under the
+  [migration gates](docs/c-migration/MIGRATION.md). This selection supersedes the
+  earlier comparison-only limit for that isolated campaign, not production
+  provider selection or qualification. Preserve production Zig, historical
+  evidence, source licenses and every semantic/lifetime/adopter gate. A partial
+  C compiler or cloud-only pass does not complete the migration.
 - New experiments: bound [implementation-language comparisons](docs/architecture.md#language-evaluation-by-layer--proposed-investigation)
   to one compiler pass through parsing, IR, and emission, and one asynchronous
   native device/resource lifecycle. Compare retained Zig with disciplined C++
