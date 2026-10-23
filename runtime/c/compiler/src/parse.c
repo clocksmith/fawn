@@ -253,6 +253,36 @@ static bool expression_node(Parser *p, Syntax *s, const Expression *node, bool c
     return true;
 }
 static bool expression(Parser *p, Syntax *s, unsigned minimum, unsigned nesting, uint32_t *id);
+/* Recognize only name<single_type>(...), without reserving syntax or changing
+ * tokens. Each candidate examines at most three tokens per allowed type depth
+ * plus one over-depth level, so the existing parser can diagnose that boundary.
+ * Commas, value operators and comparison delimiters return to ordinary parsing.
+ * No recursive lookahead or speculative type/constant graph is constructed. */
+static bool single_type_call(const Parser *p, size_t cursor) {
+    if (cursor >= p->tokens->token_count || p->tokens->tokens[cursor].kind != '<') return false;
+    const size_t maximum_depth = (size_t)p->source->limits->type_depth + 1u;
+    const size_t maximum_tokens = 3u * maximum_depth + 2u;
+    size_t depth = 1u;
+    bool need_name = true;
+    for (size_t examined = 0u; examined < maximum_tokens && ++cursor < p->tokens->token_count; ++examined) {
+        const unsigned kind = p->tokens->tokens[cursor].kind;
+        if (need_name) {
+            if (kind != TOKEN_WORD) return false;
+            need_name = false;
+        } else if (kind == '<') {
+            if (++depth > maximum_depth) return false;
+            need_name = true;
+        } else if (kind == '>' || kind == TOKEN_SHIFT_RIGHT) {
+            const size_t closed = kind == '>' ? 1u : 2u;
+            if (closed > depth) return false;
+            depth -= closed;
+            if (depth == 0u)
+                return cursor + 1u < p->tokens->token_count && p->tokens->tokens[cursor + 1u].kind == '(';
+        } else return false;
+    }
+    return false;
+}
+
 static bool primary(Parser *p,Syntax *s,unsigned nesting,uint32_t *id) {
     if (nesting>=p->source->limits->expression_depth || p->active_expression>p->source->limits->expression_depth)
         return source_pool_error(p->source,DOE_COMPILER_POOL_EXPRESSION_DEPTH,(size_t)p->active_expression+1u,peek(p)->offset,"expression depth capacity exceeded");
@@ -283,7 +313,7 @@ static bool primary(Parser *p,Syntax *s,unsigned nesting,uint32_t *id) {
         TypeRef annotation={NO_ID,NO_ID};
         const bool generator=source_span_is(p->source,name,"array") || source_span_is(p->source,name,"vec2") ||
             source_span_is(p->source,name,"vec3") || source_span_is(p->source,name,"vec4");
-        if (peek(p)->kind=='<' && (generator || source_span_is(p->source,name,"bitcast"))) {
+        if (peek(p)->kind=='<' && (generator || source_span_is(p->source,name,"bitcast") || single_type_call(p, p->cursor))) {
             if (source_span_is(p->source,name,"bitcast")) {
                 ++p->cursor;if (!type_reference(p,s,&annotation) || !template_close(p)) return false;
             } else if (!generic_reference(p,s,name,&annotation)) return false;
@@ -503,7 +533,8 @@ static bool simple_statement(Parser *p, Syntax *s, bool declaration, unsigned te
         if (!local_declaration(p, s, &st->value.local, terminator)) return false;
     } else if (peek(p)->kind == TOKEN_WORD && p->cursor + 1u < p->tokens->token_count &&
                (p->tokens->tokens[p->cursor + 1u].kind == '(' ||
-                (spelled(p, peek(p), "bitcast") && p->tokens->tokens[p->cursor + 1u].kind == '<'))) {
+                (spelled(p, peek(p), "bitcast") && p->tokens->tokens[p->cursor + 1u].kind == '<') ||
+                single_type_call(p, p->cursor + 1u))) {
         st->kind = STATEMENT_CALL;
         if (!primary(p, s, 0u, &st->value.condition)) return false;
         if (s->expressions[st->value.condition].kind != EXPRESSION_CALL)

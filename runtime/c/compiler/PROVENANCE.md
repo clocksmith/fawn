@@ -97,3 +97,14 @@ translated implementation. The MIT source notices remain. Independent evaluator
 sources, numerical oracles, original seals and precisely named historical adapters
 are preserved under independent_tests_m9; no third-party implementation is copied.
 See MILESTONE_9_RESULTS.md for acceptance and explicit limits.
+
+## Typed numeric builtin owner
+
+M12 extends the independently written C typed pipeline with shared overload
+identity, once-evaluated argument snapshots and bounded constant/runtime lowering.
+No Tint or Gamma implementation is copied. Dated WGSL, official CTS and Tint
+source inform explicitly recorded semantics and the unresolved AbstractInt dot
+interpretation, not a universal conformance claim. The source-only independent
+inputs retain original seals and exact historical corrections. See
+[M12 results](MILESTONE_12_RESULTS.md) for candidate-1 failure, candidate-2 acceptance
+and all limits; the original MIT source provenance remains unchanged.

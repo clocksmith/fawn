@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: MIT
  * Copyright (c) 2026 Doe contributors */
-#include "internal.h"
+#include "builtin.h"
 #include "spirv_decl.h"
 #include <string.h>
 
@@ -19,7 +19,7 @@ enum {
     OP_BITCAST = 124, OP_SNEGATE = 126, OP_FNEGATE = 127, OP_IADD = 128, OP_FADD = 129,
     OP_ISUB = 130, OP_FSUB = 131, OP_IMUL = 132, OP_FMUL = 133,
     OP_UDIV = 134, OP_SDIV = 135, OP_FDIV = 136, OP_UMOD = 137, OP_SREM = 138, OP_FREM = 140,
-    OP_IS_NAN = 156, OP_LOGICAL_OR = 166, OP_LOGICAL_AND = 167,
+    OP_DOT = 148, OP_IS_NAN = 156, OP_LOGICAL_OR = 166, OP_LOGICAL_AND = 167,
     OP_LOGICAL_EQUAL = 164, OP_LOGICAL_NOT_EQUAL = 165, OP_LOGICAL_NOT = 168, OP_SELECT = 169, OP_IEQUAL = 170, OP_INOT_EQUAL = 171,
     OP_UGREATER_THAN = 172, OP_SGREATER_THAN = 173, OP_UGREATER_EQUAL = 174, OP_SGREATER_EQUAL = 175,
     OP_ULESS_THAN = 176, OP_SLESS_THAN = 177, OP_ULESS_EQUAL = 178, OP_SLESS_EQUAL = 179, OP_FORD_EQUAL = 180, OP_FUNORD_NOT_EQUAL = 183,
@@ -429,9 +429,12 @@ static bool plan_module(Emitter *e) {
             } else e->values[ir->result] = reserve_ids(e, 1u);
         } else if (ir->opcode == IR_WORKGROUP_BARRIER) {
             if (!plan_workgroup_barrier(e)) return false;
-        } else if (ir->opcode == IR_BUILTIN && ir->operands.scalar.literal >= BUILTIN_EXP && e->math_import == 0u)
-            e->math_import = reserve_ids(e, 1u);
-        else if (ir->opcode == IR_ACCESS_LOAD || ir->opcode == IR_ACCESS_STORE || ir->opcode == IR_VALUE_ACCESS) {
+        } else if (ir->opcode == IR_BUILTIN) {
+            const NumericBuiltin *builtin = builtin_kind((NumericBuiltinKind)ir->operands.scalar.literal);
+            if (builtin == NULL) return emit_error(e, ir->source_offset, "invalid numeric builtin identity");
+            if (builtin->extended_instruction != 0u && e->math_import == 0u)
+                e->math_import = reserve_ids(e, 1u);
+        } else if (ir->opcode == IR_ACCESS_LOAD || ir->opcode == IR_ACCESS_STORE || ir->opcode == IR_VALUE_ACCESS) {
             const uint32_t category = ir->operands.access.category;
             const uint32_t storage = category == ROOT_RESOURCE ? resource_storage(&c->resources[ir->operands.access.root]) :
                 category == ROOT_WORKGROUP ? 4u : 7u;
@@ -702,29 +705,6 @@ static bool emit_conversion(Emitter *e, TypeId from, TypeId to, uint32_t result,
     } else { EMIT(OP_BITCAST, scalar_type(to), result, input); }
     return true;
 }
-static bool emit_scalar_builtin(Emitter *e, const IrInstruction *ir) {
-    const uint32_t result = e->values[ir->result], left = e->values[ir->operands.scalar.left];
-    const ScalarBuiltinKind kind = (ScalarBuiltinKind)ir->operands.scalar.literal;
-    if (kind == BUILTIN_EXP || kind == BUILTIN_TANH || kind == BUILTIN_SQRT) {
-        const uint32_t opcode = kind == BUILTIN_EXP ? 27u : kind == BUILTIN_TANH ? 21u : 31u;
-        EMIT(OP_EXT_INST, ID_F32, result, e->math_import, opcode, left);
-        return true;
-    }
-    const uint32_t right = e->values[ir->operands.scalar.right], condition = reserve_ids(e, 1u);
-    const bool minimum = kind == BUILTIN_MIN;
-    EMIT(comparison_opcode(minimum ? COMPARE_LESS : COMPARE_GREATER, ir->type),
-         ID_BOOL, condition, left, right);
-    const uint32_t intermediate = kind == BUILTIN_CLAMP ? reserve_ids(e, 1u) : result;
-    EMIT(OP_SELECT, scalar_type(ir->type), intermediate, condition, left, right);
-    if (kind == BUILTIN_CLAMP) {
-        /* WGSL defines reversed runtime bounds. GLSL Clamp produces poison;
-         * ordered min(max(value, low), high) instead preserves WGSL behavior. */
-        const uint32_t upper = e->values[ir->operands.scalar.binding], below = reserve_ids(e, 1u);
-        EMIT(comparison_opcode(COMPARE_LESS, ir->type), ID_BOOL, below, intermediate, upper);
-        EMIT(OP_SELECT, scalar_type(ir->type), result, below, intermediate, upper);
-    }
-    return true;
-}
 static TypeId semantic_type(const CompilerWorkspace *c, uint32_t id) {
     if (id > c->limits.instructions) {
         const uint32_t formal = id - c->limits.instructions - 1u;
@@ -732,11 +712,8 @@ static TypeId semantic_type(const CompilerWorkspace *c, uint32_t id) {
     }
     return id != 0u && id <= c->instruction_count ? c->instructions[id - 1u].type : IR_VOID;
 }
-static uint32_t vector_width(const CompilerWorkspace *c, TypeId type) {
-    return type >= 7u && c->types[type - 7u].kind == TYPE_VECTOR ? c->types[type - 7u].count : 1u;
-}
 static bool extract_lane(Emitter *e, TypeId type, uint32_t input, uint32_t lane, uint32_t *result) {
-    if (vector_width(e->program, type) == 1u) { *result = input; return true; }
+    if (type_vector_width(e->program, type) == 1u) { *result = input; return true; }
     *result = reserve_ids(e, 1u);
     EMIT(OP_COMPOSITE_EXTRACT, scalar_type(type_leaf(e->program, type)), *result, input, lane);
     return true;
@@ -748,6 +725,84 @@ static bool vector_construct(Emitter *e, TypeId type, uint32_t result, const uin
     for (uint32_t i = 0u; i < width; ++i) words[i + 2u] = lanes[i];
     return true;
 }
+static bool emit_component_builtin(Emitter *e, NumericBuiltinKind kind, TypeId leaf,
+                                   uint32_t result, uint32_t left, uint32_t right, uint32_t upper) {
+    const uint32_t condition = reserve_ids(e, 1u);
+    EMIT(comparison_opcode(kind == BUILTIN_MIN ? COMPARE_LESS : COMPARE_GREATER, leaf),
+         ID_BOOL, condition, left, right);
+    const uint32_t intermediate = kind == BUILTIN_CLAMP ? reserve_ids(e, 1u) : result;
+    EMIT(OP_SELECT, scalar_type(leaf), intermediate, condition, left, right);
+    if (kind == BUILTIN_CLAMP) {
+        /* Clamp with reversed runtime bounds is not GLSL Clamp: avoid poison
+         * by emitting the specified min(max(value, lower), upper) composition. */
+        const uint32_t below = reserve_ids(e, 1u);
+        EMIT(comparison_opcode(COMPARE_LESS, leaf), ID_BOOL, below, intermediate, upper);
+        EMIT(OP_SELECT, scalar_type(leaf), result, below, intermediate, upper);
+    }
+    return true;
+}
+
+static bool emit_integer_dot(Emitter *e, TypeId operand_type, uint32_t result,
+                             uint32_t left, uint32_t right) {
+    const uint32_t width = type_vector_width(e->program, operand_type);
+    const uint32_t products = reserve_ids(e, 1u);
+    const uint32_t leaf = scalar_type(type_leaf(e->program, operand_type));
+    EMIT(OP_IMUL, target_type(e, operand_type), products, left, right);
+    uint32_t partial = 0u;
+    for (uint32_t i = 0u; i < width; ++i) {
+        uint32_t lane;
+        if (!extract_lane(e, operand_type, products, i, &lane)) return false;
+        if (i == 0u) partial = lane;
+        else {
+            const uint32_t sum = i + 1u == width ? result : reserve_ids(e, 1u);
+            EMIT(OP_IADD, leaf, sum, partial, lane);
+            partial = sum;
+        }
+    }
+    return true;
+}
+
+static bool emit_numeric_builtin(Emitter *e, const IrInstruction *ir) {
+    const NumericBuiltin *builtin = builtin_kind((NumericBuiltinKind)ir->operands.scalar.literal);
+    if (builtin == NULL) return emit_error(e, ir->source_offset, "invalid numeric builtin identity");
+    const uint32_t result = e->values[ir->result];
+    const uint32_t left = e->values[ir->operands.scalar.left];
+    const uint32_t right = builtin->arity > 1u ? e->values[ir->operands.scalar.right] : 0u;
+    const TypeId operand_type = semantic_type(e->program, ir->operands.scalar.left);
+    const TypeId leaf = type_leaf(e->program, operand_type);
+    if (builtin->extended_instruction != 0u) {
+        if (builtin->arity == 1u) {
+            EMIT(OP_EXT_INST, target_type(e, ir->type), result, e->math_import,
+                 builtin->extended_instruction, left);
+        } else {
+            EMIT(OP_EXT_INST, target_type(e, ir->type), result, e->math_import,
+                 builtin->extended_instruction, left, right);
+        }
+        return true;
+    }
+    if (builtin->kind == BUILTIN_DOT) {
+        if (leaf == IR_F32) {
+            EMIT(OP_DOT, target_type(e, ir->type), result, left, right);
+            return true;
+        }
+        return emit_integer_dot(e, operand_type, result, left, right);
+    }
+    const uint32_t upper = builtin->arity > 2u ? e->values[ir->operands.scalar.binding] : 0u;
+    const uint32_t width = type_vector_width(e->program, operand_type);
+    if (width == 1u)
+        return emit_component_builtin(e, builtin->kind, leaf, result, left, right, upper);
+    uint32_t lanes[4];
+    for (uint32_t i = 0u; i < width; ++i) {
+        uint32_t a, b, c = 0u;
+        if (!extract_lane(e, operand_type, left, i, &a) ||
+            !extract_lane(e, operand_type, right, i, &b)) return false;
+        if (builtin->kind == BUILTIN_CLAMP && !extract_lane(e, operand_type, upper, i, &c)) return false;
+        lanes[i] = reserve_ids(e, 1u);
+        if (!emit_component_builtin(e, builtin->kind, leaf, lanes[i], a, b, c)) return false;
+    }
+    return vector_construct(e, ir->type, result, lanes, width);
+}
+
 static bool emit_shift(Emitter *e, TypeId type, IrOpcode opcode, uint32_t result, uint32_t left, uint32_t right) {
     const uint32_t masked = reserve_ids(e, 1u);
     EMIT(OP_BIT_AND, ID_U32, masked, right, ID_SHIFT_MASK);
@@ -760,7 +815,7 @@ static bool emit_safe_operation(Emitter *e, const IrInstruction *ir) {
     const uint32_t left = e->values[ir->operands.scalar.left];
     const uint32_t right = e->values[ir->operands.scalar.right];
     const TypeId leaf = type_leaf(e->program, ir->type);
-    const uint32_t width = vector_width(e->program, ir->type);
+    const uint32_t width = type_vector_width(e->program, ir->type);
     if (width == 1u) {
         if (ir->opcode == IR_CONVERT) return emit_conversion(e, ir->operands.scalar.binding, ir->type, result, left);
         if (ir->opcode == IR_SHIFT_LEFT || ir->opcode == IR_SHIFT_RIGHT)
@@ -790,10 +845,10 @@ static bool emit_arithmetic(Emitter *e, const IrInstruction *ir) {
     const uint32_t opcode = ir->opcode == IR_SUBTRACT ? (floating ? OP_FSUB : OP_ISUB) :
         ir->opcode == IR_MULTIPLY ? (floating ? OP_FMUL : OP_IMUL) : floating ? OP_FADD : OP_IADD;
     uint32_t left = e->values[ir->operands.scalar.left], right = e->values[ir->operands.scalar.right];
-    const uint32_t width = vector_width(e->program, ir->type);
+    const uint32_t width = type_vector_width(e->program, ir->type);
     if (width > 1u) {
-        const bool scalar_left = vector_width(e->program, ir->operands.scalar.binding) == 1u;
-        const bool scalar_right = vector_width(e->program, ir->operands.scalar.literal) == 1u;
+        const bool scalar_left = type_vector_width(e->program, ir->operands.scalar.binding) == 1u;
+        const bool scalar_right = type_vector_width(e->program, ir->operands.scalar.literal) == 1u;
         if (scalar_left || scalar_right) {
             const uint32_t scalar = scalar_left ? left : right, splat = reserve_ids(e, 1u);
             const uint32_t lanes[4] = {scalar, scalar, scalar, scalar};
@@ -816,7 +871,7 @@ static bool emit_composite(Emitter *e, const IrInstruction *ir) {
         for (uint32_t i = 0u; i < count; ++i) words[i + 2u] = e->values[c->typed_operands[first + i]];
         return true;
     }
-    const uint32_t width = vector_width(c, ir->type);
+    const uint32_t width = type_vector_width(c, ir->type);
     uint32_t lanes[4] = {0}, used = 0u;
     if (ir->operands.composite.kind == 2u) {
         if (count != 1u) return emit_error(e, ir->source_offset, "invalid vector splat operand count");
@@ -825,7 +880,7 @@ static bool emit_composite(Emitter *e, const IrInstruction *ir) {
         for (uint32_t i = 0u; i < count; ++i) {
             const uint32_t operand = c->typed_operands[first + i];
             const TypeId type = semantic_type(c, operand);
-            const uint32_t n = vector_width(c, type);
+            const uint32_t n = type_vector_width(c, type);
             if (n > width - used) return emit_error(e, ir->source_offset, "invalid vector component count");
             for (uint32_t j = 0u; j < n; ++j)
                 if (!extract_lane(e, type, e->values[operand], j, &lanes[used++])) return false;
@@ -1231,7 +1286,7 @@ static bool emit_block(Emitter *e, const IrProgram *program, size_t *cursor,
                 if (!emit_call(e, program, ir)) return false;
                 break;
             case IR_BUILTIN:
-                if (!emit_scalar_builtin(e, ir)) return false;
+                if (!emit_numeric_builtin(e, ir)) return false;
                 break;
             case IR_WORKGROUP_BARRIER:
                 if (!emit_workgroup_barrier(e)) return false;

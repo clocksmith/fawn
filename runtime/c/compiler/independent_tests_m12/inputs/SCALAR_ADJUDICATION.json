@@ -1,0 +1,102 @@
+{
+  "qualification": "Minimal scalar adjudication independent of dot; original M12 fixture failures preserved. Tests run after candidate observation.",
+  "rows": [
+    {
+      "diagnostic": "abstract integer conversion is out of range",
+      "library": "/tmp/doe-m11-independent-native-build2/libdoe-m11.so",
+      "library_sha256": "5d301e813223c9602f7c7ad57634b0ad53a68ba8b752066fbfdce1e9f29b2553",
+      "source": "@compute @workgroup_size(1) fn main(){let x=f32(2147483649);}",
+      "source_identity": "f01effdf070edf2f25cf0f2016c995df1e4d3bab",
+      "source_sha256": "ed6f9ab1555ad8118ef7d6a35dcb048f98ef92bd7d10a6ed5b72348526d7e319",
+      "status": 4
+    },
+    {
+      "diagnostic": "",
+      "library": "/tmp/doe-m11-independent-native-build2/libdoe-m11.so",
+      "library_sha256": "5d301e813223c9602f7c7ad57634b0ad53a68ba8b752066fbfdce1e9f29b2553",
+      "source": "@compute @workgroup_size(1) fn main(){let x=f32(2147483649.0);}",
+      "source_identity": "f01effdf070edf2f25cf0f2016c995df1e4d3bab",
+      "source_sha256": "859de73a73ed71732892610617d4b7896d7aca658140d75d3269d1eb2736989d",
+      "status": 0
+    },
+    {
+      "diagnostic": "",
+      "library": "/tmp/doe-m11-independent-native-build2/libdoe-m11.so",
+      "library_sha256": "5d301e813223c9602f7c7ad57634b0ad53a68ba8b752066fbfdce1e9f29b2553",
+      "source": "@compute @workgroup_size(1) fn main(){let x=f32(2147483649 + 0.0);}",
+      "source_identity": "f01effdf070edf2f25cf0f2016c995df1e4d3bab",
+      "source_sha256": "0c9982700a9c3c0f7f5a3dbd4a0d69bcf1083def1ab381389c33e27d0fe4f15d",
+      "status": 0
+    },
+    {
+      "diagnostic": "",
+      "library": "/tmp/doe-m11-independent-native-build2/libdoe-m11.so",
+      "library_sha256": "5d301e813223c9602f7c7ad57634b0ad53a68ba8b752066fbfdce1e9f29b2553",
+      "source": "@compute @workgroup_size(1) fn main(){let x=f32(2147483647);}",
+      "source_identity": "f01effdf070edf2f25cf0f2016c995df1e4d3bab",
+      "source_sha256": "79a035e0806274d87d66a3496bbbf30accea78868b11301c5ff9432ac1aec8a1",
+      "status": 0
+    },
+    {
+      "diagnostic": "evaluated constant floating-point value is not finite",
+      "library": "/tmp/doe-m11-independent-native-build2/libdoe-m11.so",
+      "library_sha256": "5d301e813223c9602f7c7ad57634b0ad53a68ba8b752066fbfdce1e9f29b2553",
+      "source": "@compute @workgroup_size(1) fn main(){let x=bitcast<f32>(0x7fc12345u);}",
+      "source_identity": "f01effdf070edf2f25cf0f2016c995df1e4d3bab",
+      "source_sha256": "22d0a7900555956ca0559df95844760d8105f00d170e7b9361f1b865a9343cdb",
+      "status": 4
+    },
+    {
+      "diagnostic": "abstract integer conversion is out of range",
+      "library": "/tmp/doe-m12-independent-native-build1-20261023/libdoe-m11.so",
+      "library_sha256": "828864adcbba9f8dcd6b81a121106807e028871363c55ad84a59f78c29a755df",
+      "source": "@compute @workgroup_size(1) fn main(){let x=f32(2147483649);}",
+      "source_identity": "M12 candidate1 manifest0c01ff844b4ad98ef88439bf5d0cdf4ac9ad8cd6f22143de52fdf77aa9381a7a",
+      "source_sha256": "ed6f9ab1555ad8118ef7d6a35dcb048f98ef92bd7d10a6ed5b72348526d7e319",
+      "status": 4
+    },
+    {
+      "diagnostic": "",
+      "library": "/tmp/doe-m12-independent-native-build1-20261023/libdoe-m11.so",
+      "library_sha256": "828864adcbba9f8dcd6b81a121106807e028871363c55ad84a59f78c29a755df",
+      "source": "@compute @workgroup_size(1) fn main(){let x=f32(2147483649.0);}",
+      "source_identity": "M12 candidate1 manifest0c01ff844b4ad98ef88439bf5d0cdf4ac9ad8cd6f22143de52fdf77aa9381a7a",
+      "source_sha256": "859de73a73ed71732892610617d4b7896d7aca658140d75d3269d1eb2736989d",
+      "status": 0
+    },
+    {
+      "diagnostic": "",
+      "library": "/tmp/doe-m12-independent-native-build1-20261023/libdoe-m11.so",
+      "library_sha256": "828864adcbba9f8dcd6b81a121106807e028871363c55ad84a59f78c29a755df",
+      "source": "@compute @workgroup_size(1) fn main(){let x=f32(2147483649 + 0.0);}",
+      "source_identity": "M12 candidate1 manifest0c01ff844b4ad98ef88439bf5d0cdf4ac9ad8cd6f22143de52fdf77aa9381a7a",
+      "source_sha256": "0c9982700a9c3c0f7f5a3dbd4a0d69bcf1083def1ab381389c33e27d0fe4f15d",
+      "status": 0
+    },
+    {
+      "diagnostic": "",
+      "library": "/tmp/doe-m12-independent-native-build1-20261023/libdoe-m11.so",
+      "library_sha256": "828864adcbba9f8dcd6b81a121106807e028871363c55ad84a59f78c29a755df",
+      "source": "@compute @workgroup_size(1) fn main(){let x=f32(2147483647);}",
+      "source_identity": "M12 candidate1 manifest0c01ff844b4ad98ef88439bf5d0cdf4ac9ad8cd6f22143de52fdf77aa9381a7a",
+      "source_sha256": "79a035e0806274d87d66a3496bbbf30accea78868b11301c5ff9432ac1aec8a1",
+      "status": 0
+    },
+    {
+      "diagnostic": "evaluated constant floating-point value is not finite",
+      "library": "/tmp/doe-m12-independent-native-build1-20261023/libdoe-m11.so",
+      "library_sha256": "828864adcbba9f8dcd6b81a121106807e028871363c55ad84a59f78c29a755df",
+      "source": "@compute @workgroup_size(1) fn main(){let x=bitcast<f32>(0x7fc12345u);}",
+      "source_identity": "M12 candidate1 manifest0c01ff844b4ad98ef88439bf5d0cdf4ac9ad8cd6f22143de52fdf77aa9381a7a",
+      "source_sha256": "22d0a7900555956ca0559df95844760d8105f00d170e7b9361f1b865a9343cdb",
+      "status": 4
+    }
+  ],
+  "sections": [
+    "6.1.2 Conversion Rank",
+    "6.1.3 Overload Resolution",
+    "17.1.2.4 f32",
+    "15.7.2 Differences from IEEE-754"
+  ],
+  "specification": "https://www.w3.org/TR/2026/CRD-WGSL-20261021/"
+}

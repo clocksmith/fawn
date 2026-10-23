@@ -1,0 +1,304 @@
+{
+  "accepted_M11_ordinary_array_controls": [
+    {
+      "modes": [
+        {
+          "flags": 1,
+          "minimum": 2,
+          "pool": 19,
+          "status": 1
+        },
+        {
+          "flags": 2,
+          "minimum": 2,
+          "pool": 19,
+          "status": 1
+        },
+        {
+          "flags": 3,
+          "minimum": 2,
+          "pool": 19,
+          "status": 1
+        },
+        {
+          "flags": 5,
+          "minimum": 2,
+          "pool": 19,
+          "status": 1
+        },
+        {
+          "flags": 6,
+          "minimum": 2,
+          "pool": 19,
+          "status": 1
+        },
+        {
+          "flags": 7,
+          "minimum": 2,
+          "pool": 19,
+          "status": 1
+        }
+      ],
+      "source": "@compute @workgroup_size(1) fn main(){var value:array<array<f32,1>,1>;}",
+      "source_sha256": "2ebf0e3444e47b1935fb06dc0e338ae5d6b2101c14c5f3881e4439738943e2e9",
+      "type_depth": 1
+    },
+    {
+      "modes": [
+        {
+          "flags": 1,
+          "minimum": 4,
+          "pool": 19,
+          "status": 1
+        },
+        {
+          "flags": 2,
+          "minimum": 4,
+          "pool": 19,
+          "status": 1
+        },
+        {
+          "flags": 3,
+          "minimum": 4,
+          "pool": 19,
+          "status": 1
+        },
+        {
+          "flags": 5,
+          "minimum": 4,
+          "pool": 19,
+          "status": 1
+        },
+        {
+          "flags": 6,
+          "minimum": 4,
+          "pool": 19,
+          "status": 1
+        },
+        {
+          "flags": 7,
+          "minimum": 4,
+          "pool": 19,
+          "status": 1
+        }
+      ],
+      "source": "@compute @workgroup_size(1) fn main(){var value:array<array<array<array<f32,1>,1>,1>,1>;}",
+      "source_sha256": "c4007ca27f86debf2e4514c74086450218ff78c2e60d8810f0c6f429067d89ba",
+      "type_depth": 3
+    },
+    {
+      "modes": [
+        {
+          "flags": 1,
+          "minimum": 8,
+          "pool": 19,
+          "status": 1
+        },
+        {
+          "flags": 2,
+          "minimum": 8,
+          "pool": 19,
+          "status": 1
+        },
+        {
+          "flags": 3,
+          "minimum": 8,
+          "pool": 19,
+          "status": 1
+        },
+        {
+          "flags": 5,
+          "minimum": 8,
+          "pool": 19,
+          "status": 1
+        },
+        {
+          "flags": 6,
+          "minimum": 8,
+          "pool": 19,
+          "status": 1
+        },
+        {
+          "flags": 7,
+          "minimum": 8,
+          "pool": 19,
+          "status": 1
+        }
+      ],
+      "source": "@compute @workgroup_size(1) fn main(){var value:array<array<array<array<array<array<array<array<f32,1>,1>,1>,1>,1>,1>,1>,1>;}",
+      "source_sha256": "67ea7e7d0c115b75c992c45d7a7f95c29825957cb1730cc79a3963e2ce8d977b",
+      "type_depth": 7
+    },
+    {
+      "modes": [
+        {
+          "flags": 1,
+          "minimum": 16,
+          "pool": 19,
+          "status": 1
+        },
+        {
+          "flags": 2,
+          "minimum": 16,
+          "pool": 19,
+          "status": 1
+        },
+        {
+          "flags": 3,
+          "minimum": 16,
+          "pool": 19,
+          "status": 1
+        },
+        {
+          "flags": 5,
+          "minimum": 16,
+          "pool": 19,
+          "status": 1
+        },
+        {
+          "flags": 6,
+          "minimum": 16,
+          "pool": 19,
+          "status": 1
+        },
+        {
+          "flags": 7,
+          "minimum": 16,
+          "pool": 19,
+          "status": 1
+        }
+      ],
+      "source": "@compute @workgroup_size(1) fn main(){var value:array<array<array<array<array<array<array<array<array<array<array<array<array<array<array<array<f32,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>;}",
+      "source_sha256": "a99e2c97bd3b9980f2bb384ca0b238ad60ae265274ed9c57be171d3318a61327",
+      "type_depth": 15
+    },
+    {
+      "modes": [
+        {
+          "flags": 1,
+          "minimum": 32,
+          "pool": 19,
+          "status": 1
+        },
+        {
+          "flags": 2,
+          "minimum": 32,
+          "pool": 19,
+          "status": 1
+        },
+        {
+          "flags": 3,
+          "minimum": 32,
+          "pool": 19,
+          "status": 1
+        },
+        {
+          "flags": 5,
+          "minimum": 32,
+          "pool": 19,
+          "status": 1
+        },
+        {
+          "flags": 6,
+          "minimum": 32,
+          "pool": 19,
+          "status": 1
+        },
+        {
+          "flags": 7,
+          "minimum": 32,
+          "pool": 19,
+          "status": 1
+        }
+      ],
+      "source": "@compute @workgroup_size(1) fn main(){var value:array<array<array<array<array<array<array<array<array<array<array<array<array<array<array<array<array<array<array<array<array<array<array<array<array<array<array<array<array<array<array<array<f32,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>;}",
+      "source_sha256": "b4ca892e889af4b9255cd5ae2572434d33f382803ff324793e20bb2ce3707397",
+      "type_depth": 31
+    },
+    {
+      "modes": [
+        {
+          "flags": 1,
+          "minimum": 64,
+          "pool": 19,
+          "status": 1
+        },
+        {
+          "flags": 2,
+          "minimum": 64,
+          "pool": 19,
+          "status": 1
+        },
+        {
+          "flags": 3,
+          "minimum": 64,
+          "pool": 19,
+          "status": 1
+        },
+        {
+          "flags": 5,
+          "minimum": 64,
+          "pool": 19,
+          "status": 1
+        },
+        {
+          "flags": 6,
+          "minimum": 64,
+          "pool": 19,
+          "status": 1
+        },
+        {
+          "flags": 7,
+          "minimum": 64,
+          "pool": 19,
+          "status": 1
+        }
+      ],
+      "source": "@compute @workgroup_size(1) fn main(){var value:array<array<array<array<array<array<array<array<array<array<array<array<array<array<array<array<array<array<array<array<array<array<array<array<array<array<array<array<array<array<array<array<array<array<array<array<array<array<array<array<array<array<array<array<array<array<array<array<array<array<array<array<array<array<array<array<array<array<array<array<array<array<array<array<f32,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>,1>;}",
+      "source_sha256": "bb96f78fd40e95f1e511947d4513ed646ae3789663ac39e010782628add3ae50",
+      "type_depth": 63
+    }
+  ],
+  "changes": [
+    {
+      "id": "type_depth_2_one_short",
+      "new_status": 1,
+      "old_status": 3,
+      "source_sha256": "379504c47c34b16e991a9556a98372b9a67b8b03e8a41e452703076e482fb543"
+    },
+    {
+      "id": "type_depth_4_one_short",
+      "new_status": 1,
+      "old_status": 3,
+      "source_sha256": "a8ea782b95d5efd22ab74f660f74aaac49de5796fce8be8b0dcca3c3040cc732"
+    },
+    {
+      "id": "type_depth_8_one_short",
+      "new_status": 1,
+      "old_status": 3,
+      "source_sha256": "5974dde6b42b671a53f138373ee23abf03752599575e17f817662314be14ca53"
+    },
+    {
+      "id": "type_depth_16_one_short",
+      "new_status": 1,
+      "old_status": 3,
+      "source_sha256": "40c7b525b958986d071b9f05e487389bb3593e6060f3d533cc0b443192789925"
+    },
+    {
+      "id": "type_depth_32_one_short",
+      "new_status": 1,
+      "old_status": 3,
+      "source_sha256": "6930ccf7fca07bfa4e755b1183f54b6ba8ddeb06034e01698ce522a1a91960c3"
+    },
+    {
+      "id": "type_depth_64_one_short",
+      "new_status": 1,
+      "old_status": 3,
+      "source_sha256": "8f500d55c7a8b0e5a32e2f0a3dba6655442d35bfd40188392257fb42dce101ff"
+    }
+  ],
+  "new_runner_sha256": "13ee0c9969fabb869e22ed2754eac37a2d255b11cd930871755ab061ea0282cb",
+  "original_results_sha256": "e5ae8eed98a2d2f8ab3842171570b15a7e422e2f6eda47bdfaa378459ef4986c",
+  "original_seal_sha256": "cafeabc74219eb8722e637b73e0912c284c3cabc911babf1091df2d2c7cae7ad",
+  "qualification": "Post-observation additive parser harness status-code correction, not compiler defect. Typed explicit-pool exhaustion is INPUT_ERROR1, not legacy UNSUPPORTED3. Original6 first failures preserved. All six exact source hashes retain pool19 and required minimumN assertions; no semantic negative relaxed."
+}

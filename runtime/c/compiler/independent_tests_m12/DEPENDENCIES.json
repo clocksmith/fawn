@@ -1,0 +1,20 @@
+{
+  "accepted_M11_commit": "f01effdf070edf2f25cf0f2016c995df1e4d3bab",
+  "network_or_install_required": false,
+  "no_binary_artifacts": true,
+  "no_copied_historical_corpus": true,
+  "original_dependency_map": "inputs/MODEL_IMPORTS.json",
+  "repository_relocation_prefix": "/workspace/shared/doe-c-migration-20261023",
+  "source_bound_repository_paths": [
+    "runtime/c/compiler/independent_tests_m11",
+    "runtime/c/compiler/independent_tests_m10",
+    "bench/gates/spirv_val_gate.py"
+  ],
+  "tools": [
+    "Python3 standard library",
+    "GCC/G++14.2 qualified Linux x86-64",
+    "binutils",
+    "pthread/libm",
+    "existing spirv-val --target-env vulkan1.1"
+  ]
+}

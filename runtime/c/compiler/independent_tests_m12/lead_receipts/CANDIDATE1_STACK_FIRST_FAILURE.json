@@ -1,0 +1,12 @@
+{
+  "artifact_name_note": "Retained m11 filenames are M12 source-bound outputs, not an M11-source qualification.",
+  "command": [
+    "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+    "/tmp/doe-m12-native-candidate1-audit-20261023/audit_layout_stack_m12.py"
+  ],
+  "label": "complete-stack-layout-path-audit",
+  "returncode": 1,
+  "seconds": 0.06592180603183806,
+  "source_manifest_sha256": "0c01ff844b4ad98ef88439bf5d0cdf4ac9ad8cd6f22143de52fdf77aa9381a7a",
+  "stage": "audit"
+}

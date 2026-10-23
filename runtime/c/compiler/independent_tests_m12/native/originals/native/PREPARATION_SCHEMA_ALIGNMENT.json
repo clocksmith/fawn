@@ -1,0 +1,6 @@
+{
+  "change": "Parent target consumer schema alignment only, abi labels and targets wrapper. No source-case, expected status, oracle, native assertion or historical expectation change. Before candidate handoff/read/build/execution.",
+  "current_preparation_seal": "14a2699a3d5948163ceda592fa8733099b9a6aa826762165784d2db42ab997bc",
+  "previous_preparation_seal": "382bda334f59efd1d22dc880984a2482557a37f5043da8f478359d5ee088ea0e",
+  "utc": "2026-10-23T14:15:04.362370+00:00"
+}

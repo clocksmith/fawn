@@ -60,14 +60,20 @@ witness. The same corpus now has 52 emitted/validated paths, 43 independently
 executed paths, nine validation-only emissions and 46 explicit rejections. This
 does not qualify physical execution or runtime workgroup metadata/adoption.
 
-The next selected owner is the legal admitted-type overload family for existing
-min/max/clamp/exp/tanh/sqrt and dot/length/distance/normalize/cross. Fifteen current
-first errors name dot and two name vector clamp; hidden floor and other
-dependencies mean these are not 17 promised admissions. Freeze shape/stage
-resolution, constant semantics, numeric accuracy, target budgets and independent
-oracles before implementation. Keep any ambiguous specification interpretation
-explicit and separate from nonambiguous behavior. Matrices, pointers, aliases,
-multiple entries, atomics and extensions remain subsequent reusable owners.
+The [accepted M12 owner](../../runtime/c/compiler/MILESTONE_12_RESULTS.md) covers
+the admitted overload family for min/max/clamp/exp/tanh/sqrt and
+dot/length/distance/normalize/cross. The same corpus has 67 emitted/validated
+paths, 48 execution-qualified paths, 19 validation-only emissions and 31 explicit
+rejections. This does not settle the disclosed AbstractInt dot interpretation
+upstream or qualify physical numeric behavior.
+
+The next selected reusable owner is compute-module entry identity and metadata:
+whole-module target emission, explicit named entry selection, per-entry resource
+and workgroup closure, collision validation and caller-owned reflection. Trace the
+actual retained create-module-before-select-entry consumers; do not make a CLI-only
+selected shader or silently publish first-entry metadata. Its contract and storage
+ledger must be reviewed before implementation. Matrices, pointers, aliases,
+atomics, extensions and runtime adoption remain subsequent owners.
 
 ## Remaining dependency map
 

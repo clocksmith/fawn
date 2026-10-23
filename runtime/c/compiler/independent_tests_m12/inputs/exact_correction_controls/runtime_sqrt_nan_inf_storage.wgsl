@@ -1,0 +1,1 @@
+@group(0) @binding(0) var<storage,read> input:array<u32>;@group(0) @binding(1) var<storage,read_write> output:array<u32>;@compute @workgroup_size(1) fn main(){let result=sqrt(bitcast<vec2f>(vec2u(input[0],input[1])));output[0]=bitcast<u32>(result.x);output[1]=bitcast<u32>(result.y);}

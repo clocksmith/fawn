@@ -45,5 +45,7 @@ bool sema_reference_load(Source *,ValueReference,uint32_t,bool,ExpressionValue *
 bool sema_assignment_reference(Source *,const Assignment *,const LocalScope *,ValueReference *);
 bool sema_binary(Source *,ExpressionKind,Comparison,ExpressionValue *,ExpressionValue *,uint32_t,bool,bool,ExpressionValue *);
 bool sema_call_statement(Source *,uint32_t,const LocalScope *);
+/* The call dispatcher validates builtin arity, type arguments and result use. */
+bool sema_builtin_value(Source *,const Expression *,const LocalScope *,const NumericBuiltin *,bool,bool,ExpressionValue *);
 bool sema_call_value(Source *,uint32_t,const LocalScope *,bool,bool,bool,ExpressionValue *);
 #endif

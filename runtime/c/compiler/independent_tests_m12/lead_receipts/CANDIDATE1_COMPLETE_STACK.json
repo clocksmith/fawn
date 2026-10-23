@@ -1,0 +1,1002 @@
+{
+  "ci_sha256": {
+    "builtin.ci": "e92cd947059224eb87deae7cc53b2d240cdcf438a37e5711d6fb8ea9cac3d5fe",
+    "compile.ci": "74496ee69e2734badda7ec000cdd3ba8f82387d4d08948794db86d3b395bb8e3",
+    "constants.ci": "5c8ecc2bce78ef629375cd98eb19fd1a33eff21a466e1e81dee2e9924638f930",
+    "lex.ci": "93287545d8acd2f10c4ea8fc49069803e573604bb787615019b4d13afcdc8a16",
+    "numeric.ci": "66808cd075ad2cbe6868aa030d553b2cf96c5c6f81a3259066c5c52fac41901c",
+    "parse.ci": "dcd5bdcf794094fc15cfce572b7e0b1362795f8a6a8070a6ca0ddc1d695768c5",
+    "reflection.ci": "1537d9a810705b9554b6b15362dd970f480a7d0faefee4cda990c4a35b00ae4d",
+    "sema_builtin.ci": "fc9428784c96baf911a8da086b951b2c8e24aa2ab0709df9a5e302d523f21006",
+    "sema_call.ci": "e52d46c028fa93f67426b0192a84f579443a95ff7efed405d06244dc5a801d9e",
+    "sema_declarations.ci": "bcaadba81ecc89c7450ac9d0d1c014cd4d882fabc6e4c93e2eded16125f3fb27",
+    "sema_expression.ci": "3c829069998d01c43d4c6ef4cede9b49bd226ba9499a90535b922f61e6ae0731",
+    "spirv.ci": "eddfc250427f22c6babcb0d7312e73abe30b3c8d6c7f4ed5989dd3039045260e",
+    "storage.ci": "52e9de444992587c444166cca3e1b946de7d14602659339c6e989d997c1d8b95",
+    "types.ci": "f2a2a42bb7b22bf1c5a0f637ebc6ec6bba9de82948003de1b92c6d1249ca8df8",
+    "uniformity.ci": "dd27daff5df1eeb5f2bd140fffbe724a3602537c97caa02f558d2f2223262f4a",
+    "validate.ci": "7517932fd67dd8cb53c83067dbffd277ad6c469c5e9117a7baa4cb30c9439269"
+  },
+  "compiler": "gcc (Debian 14.2.0-19) 14.2.0",
+  "fixed_combined": 205832,
+  "fixed_phase_bound": 43008,
+  "frame_count": 159,
+  "frame_qualifiers": {
+    "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/builtin.c:length_constant": {
+      "bytes": 144,
+      "kind": "dynamic,bounded",
+      "unit": "builtin.ci"
+    },
+    "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/sema_call.c:convert_value": {
+      "bytes": 240,
+      "kind": "dynamic,bounded",
+      "unit": "sema_call.ci"
+    },
+    "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/sema_expression.c:identity_value.isra.0": {
+      "bytes": 144,
+      "kind": "dynamic,bounded",
+      "unit": "sema_expression.ci"
+    },
+    "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/sema_expression.c:postfix_value": {
+      "bytes": 320,
+      "kind": "dynamic,bounded",
+      "unit": "sema_expression.ci"
+    },
+    "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/spirv.c:emit_block": {
+      "bytes": 288,
+      "kind": "dynamic,bounded",
+      "unit": "spirv.ci"
+    },
+    "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/validate.c:lower_block": {
+      "bytes": 464,
+      "kind": "dynamic,bounded",
+      "unit": "validate.ci"
+    },
+    "builtin_clamp_bounds": {
+      "bytes": 176,
+      "kind": "dynamic,bounded",
+      "unit": "builtin.ci"
+    },
+    "builtin_constant": {
+      "bytes": 368,
+      "kind": "dynamic,bounded",
+      "unit": "builtin.ci"
+    },
+    "compiler_job_layout": {
+      "bytes": 240,
+      "kind": "dynamic,bounded",
+      "unit": "storage.ci"
+    },
+    "compiler_typed_layout": {
+      "bytes": 320,
+      "kind": "dynamic,bounded",
+      "unit": "storage.ci"
+    },
+    "constant_materialize": {
+      "bytes": 160,
+      "kind": "dynamic,bounded",
+      "unit": "constants.ci"
+    },
+    "sema_assignment_reference": {
+      "bytes": 176,
+      "kind": "dynamic,bounded",
+      "unit": "sema_expression.ci"
+    },
+    "sema_binary": {
+      "bytes": 256,
+      "kind": "dynamic,bounded",
+      "unit": "sema_expression.ci"
+    },
+    "sema_builtin_value": {
+      "bytes": 416,
+      "kind": "dynamic,bounded",
+      "unit": "sema_builtin.ci"
+    },
+    "sema_call_statement": {
+      "bytes": 80,
+      "kind": "dynamic,bounded",
+      "unit": "sema_expression.ci"
+    },
+    "sema_call_value": {
+      "bytes": 384,
+      "kind": "dynamic,bounded",
+      "unit": "sema_call.ci"
+    },
+    "sema_ensure_value": {
+      "bytes": 96,
+      "kind": "dynamic,bounded",
+      "unit": "sema_expression.ci"
+    },
+    "sema_expression": {
+      "bytes": 288,
+      "kind": "dynamic,bounded",
+      "unit": "sema_expression.ci"
+    },
+    "sema_reference_load": {
+      "bytes": 160,
+      "kind": "dynamic,bounded",
+      "unit": "sema_expression.ci"
+    },
+    "validate_syntax": {
+      "bytes": 192,
+      "kind": "dynamic,bounded",
+      "unit": "validate.ci"
+    }
+  },
+  "frames": {
+    "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/builtin.c:length_constant": {
+      "bytes": 144,
+      "kind": "dynamic,bounded",
+      "unit": "builtin.ci"
+    },
+    "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/compile.c:compile_pipeline": {
+      "bytes": 96,
+      "kind": "static",
+      "unit": "compile.ci"
+    },
+    "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/compile.c:old_output": {
+      "bytes": 96,
+      "kind": "static",
+      "unit": "compile.ci"
+    },
+    "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/constants.c:convert_node": {
+      "bytes": 96,
+      "kind": "static",
+      "unit": "constants.ci"
+    },
+    "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/numeric.c:big_shift": {
+      "bytes": 24,
+      "kind": "static",
+      "unit": "numeric.ci"
+    },
+    "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/numeric.c:numeric_less.isra.0": {
+      "bytes": 8,
+      "kind": "static",
+      "unit": "numeric.ci"
+    },
+    "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/parse.c:attribute_value": {
+      "bytes": 40,
+      "kind": "static",
+      "unit": "parse.ci"
+    },
+    "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/parse.c:block": {
+      "bytes": 32,
+      "kind": "static",
+      "unit": "parse.ci"
+    },
+    "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/parse.c:expression": {
+      "bytes": 144,
+      "kind": "static",
+      "unit": "parse.ci"
+    },
+    "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/parse.c:expression_node.isra.0": {
+      "bytes": 8,
+      "kind": "static",
+      "unit": "parse.ci"
+    },
+    "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/parse.c:generic_reference.constprop.0": {
+      "bytes": 64,
+      "kind": "static",
+      "unit": "parse.ci"
+    },
+    "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/parse.c:local_declaration": {
+      "bytes": 48,
+      "kind": "static",
+      "unit": "parse.ci"
+    },
+    "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/parse.c:name_span": {
+      "bytes": 8,
+      "kind": "static",
+      "unit": "parse.ci"
+    },
+    "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/parse.c:primary": {
+      "bytes": 192,
+      "kind": "static",
+      "unit": "parse.ci"
+    },
+    "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/parse.c:punctuation": {
+      "bytes": 8,
+      "kind": "static",
+      "unit": "parse.ci"
+    },
+    "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/parse.c:reject": {
+      "bytes": 288,
+      "kind": "static",
+      "unit": "parse.ci"
+    },
+    "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/parse.c:simple_statement": {
+      "bytes": 128,
+      "kind": "static",
+      "unit": "parse.ci"
+    },
+    "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/parse.c:single_type_call.isra.0": {
+      "bytes": 24,
+      "kind": "static",
+      "unit": "parse.ci"
+    },
+    "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/parse.c:statement": {
+      "bytes": 128,
+      "kind": "static",
+      "unit": "parse.ci"
+    },
+    "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/parse.c:statement_slot": {
+      "bytes": 8,
+      "kind": "static",
+      "unit": "parse.ci"
+    },
+    "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/parse.c:template_close": {
+      "bytes": 8,
+      "kind": "static",
+      "unit": "parse.ci"
+    },
+    "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/parse.c:type_reference": {
+      "bytes": 48,
+      "kind": "static",
+      "unit": "parse.ci"
+    },
+    "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/parse.c:unary_form.part.0.isra.0": {
+      "bytes": 8,
+      "kind": "static",
+      "unit": "parse.ci"
+    },
+    "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/parse.c:word": {
+      "bytes": 48,
+      "kind": "static",
+      "unit": "parse.ci"
+    },
+    "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/reflection.c:discover": {
+      "bytes": 32,
+      "kind": "static",
+      "unit": "reflection.ci"
+    },
+    "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/reflection.c:flat_struct": {
+      "bytes": 8,
+      "kind": "static",
+      "unit": "reflection.ci"
+    },
+    "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/sema_call.c:convert_value": {
+      "bytes": 240,
+      "kind": "dynamic,bounded",
+      "unit": "sema_call.ci"
+    },
+    "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/sema_declarations.c:formal_order.isra.0": {
+      "bytes": 32,
+      "kind": "static",
+      "unit": "sema_declarations.ci"
+    },
+    "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/sema_declarations.c:integer_attribute": {
+      "bytes": 96,
+      "kind": "static",
+      "unit": "sema_declarations.ci"
+    },
+    "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/sema_declarations.c:lexical_value": {
+      "bytes": 32,
+      "kind": "static",
+      "unit": "sema_declarations.ci"
+    },
+    "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/sema_declarations.c:module_name": {
+      "bytes": 8,
+      "kind": "static",
+      "unit": "sema_declarations.ci"
+    },
+    "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/sema_declarations.c:sift_formals": {
+      "bytes": 128,
+      "kind": "static",
+      "unit": "sema_declarations.ci"
+    },
+    "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/sema_expression.c:identity_value.isra.0": {
+      "bytes": 144,
+      "kind": "dynamic,bounded",
+      "unit": "sema_expression.ci"
+    },
+    "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/sema_expression.c:postfix_value": {
+      "bytes": 320,
+      "kind": "dynamic,bounded",
+      "unit": "sema_expression.ci"
+    },
+    "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/sema_expression.c:root_reference": {
+      "bytes": 96,
+      "kind": "static",
+      "unit": "sema_expression.ci"
+    },
+    "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/sema_expression.c:swizzle": {
+      "bytes": 96,
+      "kind": "static",
+      "unit": "sema_expression.ci"
+    },
+    "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/spirv.c:access_condition": {
+      "bytes": 192,
+      "kind": "static",
+      "unit": "spirv.ci"
+    },
+    "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/spirv.c:access_walk": {
+      "bytes": 32,
+      "kind": "static",
+      "unit": "spirv.ci"
+    },
+    "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/spirv.c:append_declaration": {
+      "bytes": 48,
+      "kind": "static",
+      "unit": "spirv.ci"
+    },
+    "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/spirv.c:comparison_opcode": {
+      "bytes": 8,
+      "kind": "static",
+      "unit": "spirv.ci"
+    },
+    "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/spirv.c:debug_name": {
+      "bytes": 128,
+      "kind": "static",
+      "unit": "spirv.ci"
+    },
+    "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/spirv.c:emit_block": {
+      "bytes": 288,
+      "kind": "dynamic,bounded",
+      "unit": "spirv.ci"
+    },
+    "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/spirv.c:emit_component_builtin": {
+      "bytes": 160,
+      "kind": "static",
+      "unit": "spirv.ci"
+    },
+    "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/spirv.c:emit_conversion": {
+      "bytes": 176,
+      "kind": "static",
+      "unit": "spirv.ci"
+    },
+    "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/spirv.c:emit_division": {
+      "bytes": 240,
+      "kind": "static",
+      "unit": "spirv.ci"
+    },
+    "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/spirv.c:emit_pointer_access": {
+      "bytes": 160,
+      "kind": "static",
+      "unit": "spirv.ci"
+    },
+    "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/spirv.c:emit_shift": {
+      "bytes": 96,
+      "kind": "static",
+      "unit": "spirv.ci"
+    },
+    "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/spirv.c:extract_lane": {
+      "bytes": 80,
+      "kind": "static",
+      "unit": "spirv.ci"
+    },
+    "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/spirv.c:instruction": {
+      "bytes": 48,
+      "kind": "static",
+      "unit": "spirv.ci"
+    },
+    "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/spirv.c:instruction_space.constprop.0": {
+      "bytes": 8,
+      "kind": "static",
+      "unit": "spirv.ci"
+    },
+    "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/spirv.c:leaf_constant.isra.0": {
+      "bytes": 16,
+      "kind": "static",
+      "unit": "spirv.ci"
+    },
+    "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/spirv.c:pointer_type": {
+      "bytes": 32,
+      "kind": "static",
+      "unit": "spirv.ci"
+    },
+    "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/spirv.c:primitive_declarations": {
+      "bytes": 112,
+      "kind": "static",
+      "unit": "spirv.ci"
+    },
+    "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/spirv.c:push_walk": {
+      "bytes": 8,
+      "kind": "static",
+      "unit": "spirv.ci"
+    },
+    "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/spirv.c:reserve_ids": {
+      "bytes": 16,
+      "kind": "static",
+      "unit": "spirv.ci"
+    },
+    "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/spirv.c:semantic_type": {
+      "bytes": 8,
+      "kind": "static",
+      "unit": "spirv.ci"
+    },
+    "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/spirv.c:span_words": {
+      "bytes": 48,
+      "kind": "static",
+      "unit": "spirv.ci"
+    },
+    "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/spirv.c:unsigned_constant": {
+      "bytes": 16,
+      "kind": "static",
+      "unit": "spirv.ci"
+    },
+    "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/spirv.c:vector_construct": {
+      "bytes": 80,
+      "kind": "static",
+      "unit": "spirv.ci"
+    },
+    "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/spirv.c:workgroup_zero": {
+      "bytes": 16,
+      "kind": "static",
+      "unit": "spirv.ci"
+    },
+    "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/spirv.c:zero_constant": {
+      "bytes": 32,
+      "kind": "static",
+      "unit": "spirv.ci"
+    },
+    "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/storage.c:finish_layout": {
+      "bytes": 256,
+      "kind": "static",
+      "unit": "storage.ci"
+    },
+    "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/storage.c:reserve_array": {
+      "bytes": 8,
+      "kind": "static",
+      "unit": "storage.ci"
+    },
+    "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/storage.c:workspace_layout": {
+      "bytes": 136,
+      "kind": "static",
+      "unit": "storage.ci"
+    },
+    "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/uniformity.c:block_bits": {
+      "bytes": 208,
+      "kind": "static",
+      "unit": "uniformity.ci"
+    },
+    "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/uniformity.c:enter_frame": {
+      "bytes": 32,
+      "kind": "static",
+      "unit": "uniformity.ci"
+    },
+    "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/uniformity.c:expression_bit": {
+      "bytes": 128,
+      "kind": "static",
+      "unit": "uniformity.ci"
+    },
+    "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/uniformity.c:loop_exit": {
+      "bytes": 80,
+      "kind": "static",
+      "unit": "uniformity.ci"
+    },
+    "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/uniformity.c:name_bit": {
+      "bytes": 96,
+      "kind": "static",
+      "unit": "uniformity.ci"
+    },
+    "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/validate.c:lower_block": {
+      "bytes": 464,
+      "kind": "dynamic,bounded",
+      "unit": "validate.ci"
+    },
+    "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/validate.c:lower_boolean.isra.0": {
+      "bytes": 80,
+      "kind": "static",
+      "unit": "validate.ci"
+    },
+    "builtin_clamp_bounds": {
+      "bytes": 176,
+      "kind": "dynamic,bounded",
+      "unit": "builtin.ci"
+    },
+    "builtin_constant": {
+      "bytes": 368,
+      "kind": "dynamic,bounded",
+      "unit": "builtin.ci"
+    },
+    "builtin_floating": {
+      "bytes": 8,
+      "kind": "static",
+      "unit": "builtin.ci"
+    },
+    "builtin_kind": {
+      "bytes": 8,
+      "kind": "static",
+      "unit": "builtin.ci"
+    },
+    "builtin_named": {
+      "bytes": 48,
+      "kind": "static",
+      "unit": "builtin.ci"
+    },
+    "builtin_scalar_result": {
+      "bytes": 8,
+      "kind": "static",
+      "unit": "builtin.ci"
+    },
+    "builtin_shape": {
+      "bytes": 8,
+      "kind": "static",
+      "unit": "builtin.ci"
+    },
+    "compiler_job_bind": {
+      "bytes": 256,
+      "kind": "static",
+      "unit": "storage.ci"
+    },
+    "compiler_job_layout": {
+      "bytes": 240,
+      "kind": "dynamic,bounded",
+      "unit": "storage.ci"
+    },
+    "compiler_legacy_bind": {
+      "bytes": 112,
+      "kind": "static",
+      "unit": "storage.ci"
+    },
+    "compiler_typed_layout": {
+      "bytes": 320,
+      "kind": "dynamic,bounded",
+      "unit": "storage.ci"
+    },
+    "constant_composite": {
+      "bytes": 64,
+      "kind": "static",
+      "unit": "constants.ci"
+    },
+    "constant_materialize": {
+      "bytes": 160,
+      "kind": "dynamic,bounded",
+      "unit": "constants.ci"
+    },
+    "constant_project": {
+      "bytes": 64,
+      "kind": "static",
+      "unit": "constants.ci"
+    },
+    "constant_reserve": {
+      "bytes": 8,
+      "kind": "static",
+      "unit": "constants.ci"
+    },
+    "constant_zero": {
+      "bytes": 32,
+      "kind": "static",
+      "unit": "constants.ci"
+    },
+    "doe_compiler_compile": {
+      "bytes": 146400,
+      "kind": "static",
+      "unit": "compile.ci"
+    },
+    "doe_compiler_compile_job": {
+      "bytes": 256,
+      "kind": "static",
+      "unit": "compile.ci"
+    },
+    "doe_compiler_compile_typed": {
+      "bytes": 320,
+      "kind": "static",
+      "unit": "compile.ci"
+    },
+    "doe_compiler_compile_v2": {
+      "bytes": 144,
+      "kind": "static",
+      "unit": "compile.ci"
+    },
+    "doe_compiler_job_requirements": {
+      "bytes": 160,
+      "kind": "static",
+      "unit": "compile.ci"
+    },
+    "doe_compiler_typed_requirements": {
+      "bytes": 160,
+      "kind": "static",
+      "unit": "compile.ci"
+    },
+    "doe_compiler_workspace_requirements": {
+      "bytes": 16,
+      "kind": "static",
+      "unit": "compile.ci"
+    },
+    "emit_spirv": {
+      "bytes": 496,
+      "kind": "static",
+      "unit": "spirv.ci"
+    },
+    "lex_source": {
+      "bytes": 96,
+      "kind": "static",
+      "unit": "lex.ci"
+    },
+    "numeric_binary": {
+      "bytes": 96,
+      "kind": "static",
+      "unit": "numeric.ci"
+    },
+    "numeric_bitcast": {
+      "bytes": 8,
+      "kind": "static",
+      "unit": "numeric.ci"
+    },
+    "numeric_builtin": {
+      "bytes": 64,
+      "kind": "static",
+      "unit": "numeric.ci"
+    },
+    "numeric_convert": {
+      "bytes": 8,
+      "kind": "static",
+      "unit": "numeric.ci"
+    },
+    "numeric_dot_accumulate": {
+      "bytes": 16,
+      "kind": "static",
+      "unit": "numeric.ci"
+    },
+    "numeric_dot_finish": {
+      "bytes": 32,
+      "kind": "static",
+      "unit": "numeric.ci"
+    },
+    "numeric_environment_begin": {
+      "bytes": 80,
+      "kind": "static",
+      "unit": "numeric.ci"
+    },
+    "numeric_environment_end": {
+      "bytes": 48,
+      "kind": "static",
+      "unit": "numeric.ci"
+    },
+    "numeric_materialize": {
+      "bytes": 8,
+      "kind": "static",
+      "unit": "numeric.ci"
+    },
+    "numeric_parse_literal": {
+      "bytes": 1344,
+      "kind": "static",
+      "unit": "numeric.ci"
+    },
+    "numeric_unary": {
+      "bytes": 8,
+      "kind": "static",
+      "unit": "numeric.ci"
+    },
+    "parse_tokens": {
+      "bytes": 192,
+      "kind": "static",
+      "unit": "parse.ci"
+    },
+    "reflect_legacy_admit": {
+      "bytes": 240,
+      "kind": "static",
+      "unit": "reflection.ci"
+    },
+    "reflect_prepare": {
+      "bytes": 64,
+      "kind": "static",
+      "unit": "reflection.ci"
+    },
+    "reflect_program": {
+      "bytes": 64,
+      "kind": "static",
+      "unit": "reflection.ci"
+    },
+    "reflect_program_v2": {
+      "bytes": 96,
+      "kind": "static",
+      "unit": "reflection.ci"
+    },
+    "reflect_typed": {
+      "bytes": 112,
+      "kind": "static",
+      "unit": "reflection.ci"
+    },
+    "sema_alias_visible": {
+      "bytes": 8,
+      "kind": "static",
+      "unit": "sema_declarations.ci"
+    },
+    "sema_append": {
+      "bytes": 8,
+      "kind": "static",
+      "unit": "sema_expression.ci"
+    },
+    "sema_assignment_reference": {
+      "bytes": 176,
+      "kind": "dynamic,bounded",
+      "unit": "sema_expression.ci"
+    },
+    "sema_binary": {
+      "bytes": 256,
+      "kind": "dynamic,bounded",
+      "unit": "sema_expression.ci"
+    },
+    "sema_builtin_value": {
+      "bytes": 416,
+      "kind": "dynamic,bounded",
+      "unit": "sema_builtin.ci"
+    },
+    "sema_call_statement": {
+      "bytes": 80,
+      "kind": "dynamic,bounded",
+      "unit": "sema_expression.ci"
+    },
+    "sema_call_value": {
+      "bytes": 384,
+      "kind": "dynamic,bounded",
+      "unit": "sema_call.ci"
+    },
+    "sema_common_type": {
+      "bytes": 64,
+      "kind": "static",
+      "unit": "sema_declarations.ci"
+    },
+    "sema_default_type": {
+      "bytes": 64,
+      "kind": "static",
+      "unit": "sema_declarations.ci"
+    },
+    "sema_emit": {
+      "bytes": 8,
+      "kind": "static",
+      "unit": "sema_expression.ci"
+    },
+    "sema_ensure_value": {
+      "bytes": 96,
+      "kind": "dynamic,bounded",
+      "unit": "sema_expression.ci"
+    },
+    "sema_expression": {
+      "bytes": 288,
+      "kind": "dynamic,bounded",
+      "unit": "sema_expression.ci"
+    },
+    "sema_find_constant": {
+      "bytes": 48,
+      "kind": "static",
+      "unit": "sema_declarations.ci"
+    },
+    "sema_find_formal": {
+      "bytes": 48,
+      "kind": "static",
+      "unit": "sema_declarations.ci"
+    },
+    "sema_find_function": {
+      "bytes": 48,
+      "kind": "static",
+      "unit": "sema_declarations.ci"
+    },
+    "sema_find_local": {
+      "bytes": 48,
+      "kind": "static",
+      "unit": "sema_declarations.ci"
+    },
+    "sema_find_parameter": {
+      "bytes": 48,
+      "kind": "static",
+      "unit": "sema_declarations.ci"
+    },
+    "sema_find_struct": {
+      "bytes": 48,
+      "kind": "static",
+      "unit": "sema_declarations.ci"
+    },
+    "sema_local_use": {
+      "bytes": 8,
+      "kind": "static",
+      "unit": "sema_declarations.ci"
+    },
+    "sema_materialize": {
+      "bytes": 48,
+      "kind": "static",
+      "unit": "sema_expression.ci"
+    },
+    "sema_module_declared": {
+      "bytes": 48,
+      "kind": "static",
+      "unit": "sema_declarations.ci"
+    },
+    "sema_reference_load": {
+      "bytes": 160,
+      "kind": "dynamic,bounded",
+      "unit": "sema_expression.ci"
+    },
+    "sema_resolve_declarations": {
+      "bytes": 208,
+      "kind": "static",
+      "unit": "sema_declarations.ci"
+    },
+    "sema_type_reference": {
+      "bytes": 112,
+      "kind": "static",
+      "unit": "sema_declarations.ci"
+    },
+    "sema_valid_name": {
+      "bytes": 64,
+      "kind": "static",
+      "unit": "sema_declarations.ci"
+    },
+    "sema_value_identity": {
+      "bytes": 96,
+      "kind": "static",
+      "unit": "sema_declarations.ci"
+    },
+    "source_error": {
+      "bytes": 32,
+      "kind": "static",
+      "unit": "compile.ci"
+    },
+    "source_name_at": {
+      "bytes": 8,
+      "kind": "static",
+      "unit": "types.ci"
+    },
+    "source_pool_error": {
+      "bytes": 8,
+      "kind": "static",
+      "unit": "compile.ci"
+    },
+    "source_span_is": {
+      "bytes": 48,
+      "kind": "static",
+      "unit": "types.ci"
+    },
+    "source_spans_equal": {
+      "bytes": 16,
+      "kind": "static",
+      "unit": "types.ci"
+    },
+    "type_abstract": {
+      "bytes": 16,
+      "kind": "static",
+      "unit": "types.ci"
+    },
+    "type_alignment": {
+      "bytes": 8,
+      "kind": "static",
+      "unit": "types.ci"
+    },
+    "type_child": {
+      "bytes": 8,
+      "kind": "static",
+      "unit": "types.ci"
+    },
+    "type_children": {
+      "bytes": 8,
+      "kind": "static",
+      "unit": "types.ci"
+    },
+    "type_constructible": {
+      "bytes": 16,
+      "kind": "static",
+      "unit": "types.ci"
+    },
+    "type_flags": {
+      "bytes": 8,
+      "kind": "static",
+      "unit": "types.ci"
+    },
+    "type_intern": {
+      "bytes": 160,
+      "kind": "static",
+      "unit": "types.ci"
+    },
+    "type_layout_struct": {
+      "bytes": 128,
+      "kind": "static",
+      "unit": "types.ci"
+    },
+    "type_leaf": {
+      "bytes": 8,
+      "kind": "static",
+      "unit": "types.ci"
+    },
+    "type_resource_layout": {
+      "bytes": 48,
+      "kind": "static",
+      "unit": "types.ci"
+    },
+    "type_size": {
+      "bytes": 8,
+      "kind": "static",
+      "unit": "types.ci"
+    },
+    "type_vector_width": {
+      "bytes": 8,
+      "kind": "static",
+      "unit": "types.ci"
+    },
+    "uniformity_analyze": {
+      "bytes": 336,
+      "kind": "static",
+      "unit": "uniformity.ci"
+    },
+    "uniformity_charge": {
+      "bytes": 8,
+      "kind": "static",
+      "unit": "uniformity.ci"
+    },
+    "validate_syntax": {
+      "bytes": 192,
+      "kind": "dynamic,bounded",
+      "unit": "validate.ci"
+    }
+  },
+  "job_combined": 194600,
+  "job_phase_bound": 178176,
+  "maximum_nonwrapper": [
+    1344,
+    "numeric_parse_literal"
+  ],
+  "sccs": [
+    {
+      "bytes": 160,
+      "members": [
+        "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/parse.c:block",
+        "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/parse.c:statement"
+      ]
+    },
+    {
+      "bytes": 448,
+      "members": [
+        "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/parse.c:expression",
+        "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/parse.c:generic_reference.constprop.0",
+        "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/parse.c:primary",
+        "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/parse.c:type_reference"
+      ]
+    },
+    {
+      "bytes": 288,
+      "members": [
+        "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/spirv.c:emit_block"
+      ]
+    },
+    {
+      "bytes": 208,
+      "members": [
+        "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/uniformity.c:block_bits"
+      ]
+    },
+    {
+      "bytes": 128,
+      "members": [
+        "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/uniformity.c:expression_bit"
+      ]
+    },
+    {
+      "bytes": 464,
+      "members": [
+        "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/validate.c:lower_block"
+      ]
+    },
+    {
+      "bytes": 1616,
+      "members": [
+        "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/sema_declarations.c:integer_attribute",
+        "/tmp/doe-m12-independent-candidate1-20261023/runtime/c/compiler/src/sema_expression.c:postfix_value",
+        "sema_builtin_value",
+        "sema_call_value",
+        "sema_expression",
+        "sema_type_reference"
+      ]
+    }
+  ],
+  "su_sha256": {
+    "builtin.su": "7ad1e154a8789a4dfab7312ddf44363b94f2898f135fc5280f1b8d078ed1c29e",
+    "compile.su": "f21ea1b022f568f0523a7b5781fc362c6925393b144b56c85427bb5c519e8634",
+    "constants.su": "77f7d9b638eef027f29fdac3a87b314506fc8c852e1c21e92dd61e1a28fe1cf9",
+    "lex.su": "d06b8284b82915cfd3a59069ef60568796e940d8ce7c64e197b8bf8eee895013",
+    "numeric.su": "6e2bbaeb92284f295fa20ea923d4448aacba6b2a3ce903538959972ed26dc450",
+    "parse.su": "a664dd4004bf75b213d7f0a745d58e8e0a94fc9651f53cd4c39e7f03a409948a",
+    "reflection.su": "a3b7e4aa04eb89cf6eaff2b347e40f814df4f00b0155651241f8ba144a64703e",
+    "sema_builtin.su": "48fea9ba11d1be7fac8e586c5dfcfced582f86743ef899528df943f0ca9f7f42",
+    "sema_call.su": "fa5a75a623de38bd1ba01f790a93a399541629ee16680a7066bdc3e8dc79952f",
+    "sema_declarations.su": "37e32013970a32fbc596351942ddece5b6f4dba740d75a29b0eba676e50b94f1",
+    "sema_expression.su": "cc940926053dc4a910aeee1549cdd83a8bd2c6603449d45d03fb531175b70921",
+    "spirv.su": "cae3c0917e4e864311bad44f710f5db86a520619fc714ec36eac2bafa6547c54",
+    "storage.su": "ae7c784a62276398a543de7de0b3720cb283c31be564848813c6d7d7b8bb10c0",
+    "types.su": "9f35e38cc6f4cee8a6be8c4479e2d517fe8eee54c1ed645512334bf01118abcc",
+    "uniformity.su": "be74051f47ddb52445ea9dfba6d16cb8955ffb9e51ab84f8a464fa275d6e4dd9",
+    "validate.su": "4f8ba1157cd9d83ddedbe7845e82168cc4838c4f2ea33afc4eb1e56ed26986ae"
+  },
+  "sum_all_other_frames": 16424,
+  "wrapper": 146400
+}

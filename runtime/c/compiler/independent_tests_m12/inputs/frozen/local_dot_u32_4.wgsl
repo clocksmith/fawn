@@ -1,0 +1,5 @@
+@group(0) @binding(1) var<storage,read_write> output:array<u32>;
+@compute @workgroup_size(1) fn main(){
+const result=dot(vec4<u32>(4294967295u,65536u,2147483648u,11u),vec4<u32>(4294967295u,65536u,3u,23u));
+output[0u]=result;
+}

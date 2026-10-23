@@ -1,0 +1,95 @@
+{
+  "acceptance": "BLOCKED_STACK_BUDGETS",
+  "blocking_compiler_defects": {
+    "nonwrapper_frames": {
+      "actual": 16424,
+      "limit": 16384
+    },
+    "semantic_recursive_SCC": {
+      "actual": 1616,
+      "limit": 1536
+    }
+  },
+  "candidate_library_sha256": "828864adcbba9f8dcd6b81a121106807e028871363c55ad84a59f78c29a755df",
+  "candidate_manifest_sha256": "0c01ff844b4ad98ef88439bf5d0cdf4ac9ad8cd6f22143de52fdf77aa9381a7a",
+  "historical_semantics": {
+    "M10": 576,
+    "M11": 120,
+    "M11_carried_forward_execution": 24,
+    "M11_new_execution": 0
+  },
+  "native": {
+    "ABI_targets_validated_executed": 448,
+    "numeric_corrected_commands": 200,
+    "retained_commands": 74,
+    "sanitizer": "deferred; no candidate1 sanitizer claim"
+  },
+  "numeric_supplement": {
+    "effective_newly_executed": 28,
+    "effective_reject": 1,
+    "effective_validation_only": 2,
+    "exact_evaluator_correction": "latitude_sqrt_nonfinite status0->4, const nonfinite source, no source edit",
+    "original_cases": 31,
+    "original_failures": 1,
+    "original_passed": 30
+  },
+  "post_observation_additive_audits": {
+    "lowering_ledger": 69,
+    "parser": 38,
+    "preserved_harness_repairs": [
+      "compare-polarity opcode class",
+      "typed one-short capacity status1 rather than legacy3"
+    ]
+  },
+  "post_observation_valid_controls": {
+    "cases": 4,
+    "newly_executed": 3,
+    "validation_only": 1
+  },
+  "qualification": [
+    "N1 exact-final AbstractInt interpretation is selected with disclosed Tint disagreement and CTS gap",
+    "No physical GPU, TSan, nonfinite finite-accuracy, performance or complete migration claim",
+    "Every initial failure is preserved; only exact source-bound evaluator errors corrected",
+    "Candidate2 must fresh rebuild/audit/semantic/native/sanitizer recheck; exact target identity required for any carried-forward dispatch"
+  ],
+  "result_hashes": {
+    "candidate1-exact-corrections/results.json": "a1a8a6445c38cbe9b45a4c59397b021d7503ca6087f998b959c0bb0ac6a1b956",
+    "candidate1-full/results.json": "6612031966fc2682466a95c3be5427ad2d148c75851259fce4582c9e6773325f",
+    "candidate1-historical576/results.json": "289cdf4b082d493ba12b1549fb563fc799347cd3a3cb9487ac55c7d2b05dc240",
+    "candidate1-lowering-ledger-v2/results.json": "a80a1b5bd18015537489ad19c990c2c75fb238cc78d7fdbf8daf22aea25ab3dc",
+    "candidate1-lowering-ledger/results.json": "456e583ecf85ca5dea9d544dd722ff8e50bba2e01d762438132388ccf07363d4",
+    "candidate1-native-target-consumption/results.json": "4497cfb181a88fcaae52ae68caf2612649509a8f512446a1385db08adac8867d",
+    "candidate1-numeric-supplement/results.json": "b892b7ffaefa74b04badd429fa46059ae4f5e75ce4b9873e8406b1c55435ee5f",
+    "candidate1-parse-probe-v2/results.json": "ad8d94c8ba92b0ac50b3ed42a789dcf03b4ad2c9c129450170dfe0fd6d8f7c5c",
+    "candidate1-parse-probe/results.json": "e5ae8eed98a2d2f8ab3842171570b15a7e422e2f6eda47bdfaa378459ef4986c",
+    "candidate1-retained120/results.json": "6a46eaad386d80a1f988ae832c1a8a6599f3d99794230317a950c645deab7b9e",
+    "candidate1-same98/results.json": "889f60e925c8fc66471a400f6a119c5fc4a9c442dcdd7d1c0b85ba88a35d2c20",
+    "candidate1-witnesses/results.json": "dbb4c9cb4b2c641a930657b0283fa3fb4b49b34ae8b5bba88730b61a01791cce"
+  },
+  "same98": {
+    "carried_forward_executed": 43,
+    "emitted": 67,
+    "execution_qualified": 48,
+    "newly_executed": 5,
+    "paths": 98,
+    "rejected": 31,
+    "validated": 67,
+    "validation_only": 19
+  },
+  "semantic_primary": {
+    "effective_reject": 374,
+    "effective_success": 557,
+    "exact_evaluator_correction": "ai_explicit_f32_conversion status0->4, no source edit",
+    "newly_executed": 546,
+    "original_cases": 931,
+    "original_failures": 1,
+    "original_passed": 930,
+    "validation_only": 11
+  },
+  "whole_witnesses": {
+    "dispatches": 40,
+    "full_source": true,
+    "sources": 5,
+    "steps": 22247472
+  }
+}

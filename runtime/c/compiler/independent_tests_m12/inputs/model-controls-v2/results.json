@@ -1,0 +1,494 @@
+{
+  "candidate_used": false,
+  "controls": [
+    {
+      "actual": [
+        1107296256,
+        2779096485,
+        2779096485,
+        2779096485,
+        2779096485,
+        2779096485,
+        2779096485,
+        2779096485
+      ],
+      "detection": "base correct",
+      "execution": {
+        "barriers_per_group": {
+          "(0, 0, 0)": 0
+        },
+        "caller_supplied_reusable_shared_storage": false,
+        "events": 5,
+        "groups": 1,
+        "invocations": 1,
+        "memory_accesses": 1,
+        "poison": 165,
+        "pure_instruction_quantum": 1,
+        "schedule": "round_robin",
+        "steps": 6
+      },
+      "id": "dot_base",
+      "target_sha256": "785d2bd2a1b1891040488325039d3f177e50af84659ac2be49270276b65fb2e0",
+      "validator_output": "",
+      "validator_status": 0
+    },
+    {
+      "detection": "shape-reducing numeric result must be scalar f32",
+      "id": "dot_wrong_return",
+      "target_sha256": "12eb3ddadc3c853aa56df2bf604c2d448ccadd1e22503d87ef6ead7816301a75",
+      "validator_output": "error: line 38: Expected float scalar type as Result Type: Dot\n  %29 = OpDot %v2float %24 %28\n\n",
+      "validator_status": 1
+    },
+    {
+      "detection": "ID duplicate or bound",
+      "id": "dot_id_undercount",
+      "target_sha256": "0bf3d73f11d8803ccc3bc295494981e90fdf55124cc061108ee6d59a535b5878",
+      "validator_output": "error: line 40: Result <id> '31' must be less than the ID bound '31'.\n  %31 = OpAccessChain %_ptr_StorageBuffer_uint %15 %uint_0 %uint_0\n\n",
+      "validator_status": 1
+    },
+    {
+      "actual": [
+        1107296256,
+        2779096485,
+        2779096485,
+        2779096485,
+        2779096485,
+        2779096485,
+        2779096485,
+        2779096485
+      ],
+      "detection": "validator rejection",
+      "execution": {
+        "barriers_per_group": {
+          "(0, 0, 0)": 0
+        },
+        "caller_supplied_reusable_shared_storage": false,
+        "events": 5,
+        "groups": 1,
+        "invocations": 1,
+        "memory_accesses": 1,
+        "poison": 165,
+        "pure_instruction_quantum": 1,
+        "schedule": "round_robin",
+        "steps": 6
+      },
+      "id": "dot_word_undercount",
+      "target_sha256": "a7bfba0e28c3394ed6fc70e568e6f95de40833f0e48af8c8ce47701b6fd311cc",
+      "validator_output": "error: line 0: Missing OpFunctionEnd at end of module.\n",
+      "validator_status": 1
+    },
+    {
+      "actual": [
+        1084227584,
+        2779096485,
+        2779096485,
+        2779096485,
+        2779096485,
+        2779096485,
+        2779096485,
+        2779096485
+      ],
+      "detection": "base correct",
+      "execution": {
+        "barriers_per_group": {
+          "(0, 0, 0)": 0
+        },
+        "caller_supplied_reusable_shared_storage": false,
+        "events": 5,
+        "groups": 1,
+        "invocations": 1,
+        "memory_accesses": 1,
+        "poison": 165,
+        "pure_instruction_quantum": 1,
+        "schedule": "round_robin",
+        "steps": 6
+      },
+      "id": "length_base",
+      "target_sha256": "a85896c1031a2afd0a7e0c0f7fbd3781e7e4db16f3710864e38d312f796323b8",
+      "validator_output": "",
+      "validator_status": 0
+    },
+    {
+      "detection": "shape-reducing numeric result must be scalar f32",
+      "id": "length_wrong_return",
+      "target_sha256": "258125b60f4e5a39e126cb1309fbdd0a0363d1f3261846ffd872ebe4f92a4b89",
+      "validator_output": "error: line 33: GLSL.std.450 Length: expected Result Type to be a float scalar type\n  %24 = OpExtInst %v2float %8 Length %23\n\n",
+      "validator_status": 1
+    },
+    {
+      "detection": "ID duplicate or bound",
+      "id": "length_id_undercount",
+      "target_sha256": "bf8fa301e21688a0ac736535d34bf6cde244c37709a49bd90631175e5fad20d7",
+      "validator_output": "error: line 35: Result <id> '26' must be less than the ID bound '26'.\n  %26 = OpAccessChain %_ptr_StorageBuffer_uint %15 %uint_0 %uint_0\n\n",
+      "validator_status": 1
+    },
+    {
+      "actual": [
+        1084227584,
+        2779096485,
+        2779096485,
+        2779096485,
+        2779096485,
+        2779096485,
+        2779096485,
+        2779096485
+      ],
+      "detection": "validator rejection",
+      "execution": {
+        "barriers_per_group": {
+          "(0, 0, 0)": 0
+        },
+        "caller_supplied_reusable_shared_storage": false,
+        "events": 5,
+        "groups": 1,
+        "invocations": 1,
+        "memory_accesses": 1,
+        "poison": 165,
+        "pure_instruction_quantum": 1,
+        "schedule": "round_robin",
+        "steps": 6
+      },
+      "id": "length_word_undercount",
+      "target_sha256": "84ce6227d6df10af34950b00f3eca0ebb6abe65aadde699e0eb83b03f476b024",
+      "validator_output": "error: line 0: Missing OpFunctionEnd at end of module.\n",
+      "validator_status": 1
+    },
+    {
+      "actual": [
+        1084227584,
+        2779096485,
+        2779096485,
+        2779096485,
+        2779096485,
+        2779096485,
+        2779096485,
+        2779096485
+      ],
+      "detection": "base correct",
+      "execution": {
+        "barriers_per_group": {
+          "(0, 0, 0)": 0
+        },
+        "caller_supplied_reusable_shared_storage": false,
+        "events": 5,
+        "groups": 1,
+        "invocations": 1,
+        "memory_accesses": 1,
+        "poison": 165,
+        "pure_instruction_quantum": 1,
+        "schedule": "round_robin",
+        "steps": 6
+      },
+      "id": "distance_base",
+      "target_sha256": "1539553a52d44cbce6454dcc70a6b5dace28f25859c53878809e4849d5dad5b2",
+      "validator_output": "",
+      "validator_status": 0
+    },
+    {
+      "detection": "shape-reducing numeric result must be scalar f32",
+      "id": "distance_wrong_return",
+      "target_sha256": "b4c8c4c062ce0fb97fa65f1ef63bb8025e5c31a205e843a7dfed6a668551c2b6",
+      "validator_output": "error: line 36: GLSL.std.450 Distance: expected Result Type to be a float scalar type\n  %27 = OpExtInst %v2float %8 Distance %23 %26\n\n",
+      "validator_status": 1
+    },
+    {
+      "detection": "ID duplicate or bound",
+      "id": "distance_id_undercount",
+      "target_sha256": "7bb9890f548b403772a685c3ff3da6181bb89a311db9f16e7ca2e69bf91e6aa4",
+      "validator_output": "error: line 38: Result <id> '29' must be less than the ID bound '29'.\n  %29 = OpAccessChain %_ptr_StorageBuffer_uint %15 %uint_0 %uint_0\n\n",
+      "validator_status": 1
+    },
+    {
+      "actual": [
+        1084227584,
+        2779096485,
+        2779096485,
+        2779096485,
+        2779096485,
+        2779096485,
+        2779096485,
+        2779096485
+      ],
+      "detection": "validator rejection",
+      "execution": {
+        "barriers_per_group": {
+          "(0, 0, 0)": 0
+        },
+        "caller_supplied_reusable_shared_storage": false,
+        "events": 5,
+        "groups": 1,
+        "invocations": 1,
+        "memory_accesses": 1,
+        "poison": 165,
+        "pure_instruction_quantum": 1,
+        "schedule": "round_robin",
+        "steps": 6
+      },
+      "id": "distance_word_undercount",
+      "target_sha256": "c48553f23da74c153dab361cff5dbad27b3611f5de51e247c00fa63227c83bb8",
+      "validator_output": "error: line 0: Missing OpFunctionEnd at end of module.\n",
+      "validator_status": 1
+    },
+    {
+      "actual": [
+        3225419776,
+        1086324736,
+        3225419776,
+        2779096485,
+        2779096485,
+        2779096485,
+        2779096485,
+        2779096485
+      ],
+      "detection": "base correct",
+      "execution": {
+        "barriers_per_group": {
+          "(0, 0, 0)": 0
+        },
+        "caller_supplied_reusable_shared_storage": false,
+        "events": 14,
+        "groups": 1,
+        "invocations": 1,
+        "memory_accesses": 3,
+        "poison": 165,
+        "pure_instruction_quantum": 1,
+        "schedule": "round_robin",
+        "steps": 15
+      },
+      "id": "cross_base",
+      "target_sha256": "1b4f95a26801f1f0ab6d4b79fd685fd76353efa79c8029ba1e95f7b6cde071d7",
+      "validator_output": "",
+      "validator_status": 0
+    },
+    {
+      "detection": "numeric vector result has scalar TypeId",
+      "id": "cross_wrong_return",
+      "target_sha256": "5f77b3d2f3d216936d1791a6b7b8cef8ec2e64059fa25d2d462f596b4f5ee64f",
+      "validator_output": "error: line 38: GLSL.std.450 Cross: expected Result Type to be a float vector type\n  %29 = OpExtInst %float %8 Cross %24 %28\n\n",
+      "validator_status": 1
+    },
+    {
+      "detection": "ID duplicate or bound",
+      "id": "cross_id_undercount",
+      "target_sha256": "0e580e0d8fc865ee032f38ec16fed5d4759cf32bfe6095a741bfb07806f8c83a",
+      "validator_output": "error: line 49: Result <id> '38' must be less than the ID bound '38'.\n  %38 = OpAccessChain %_ptr_StorageBuffer_uint %15 %uint_0 %uint_2\n\n",
+      "validator_status": 1
+    },
+    {
+      "actual": [
+        3225419776,
+        1086324736,
+        3225419776,
+        2779096485,
+        2779096485,
+        2779096485,
+        2779096485,
+        2779096485
+      ],
+      "detection": "validator rejection",
+      "execution": {
+        "barriers_per_group": {
+          "(0, 0, 0)": 0
+        },
+        "caller_supplied_reusable_shared_storage": false,
+        "events": 14,
+        "groups": 1,
+        "invocations": 1,
+        "memory_accesses": 3,
+        "poison": 165,
+        "pure_instruction_quantum": 1,
+        "schedule": "round_robin",
+        "steps": 15
+      },
+      "id": "cross_word_undercount",
+      "target_sha256": "b4fc67f5ebbedc8ae849cdb554655e90fb12dfdfd81575c68100ead6a005e39c",
+      "validator_output": "error: line 0: Missing OpFunctionEnd at end of module.\n",
+      "validator_status": 1
+    },
+    {
+      "actual": [
+        1077936128,
+        3233808384,
+        1077936128,
+        2779096485,
+        2779096485,
+        2779096485,
+        2779096485,
+        2779096485
+      ],
+      "detection": "exact output mismatch",
+      "execution": {
+        "barriers_per_group": {
+          "(0, 0, 0)": 0
+        },
+        "caller_supplied_reusable_shared_storage": false,
+        "events": 14,
+        "groups": 1,
+        "invocations": 1,
+        "memory_accesses": 3,
+        "poison": 165,
+        "pure_instruction_quantum": 1,
+        "schedule": "round_robin",
+        "steps": 15
+      },
+      "id": "cross_swap_cross",
+      "target_sha256": "8627b10282dfe074db36507d5d46081d316cd234e3c5311f8f2db3c21ecc9cec",
+      "validator_output": "",
+      "validator_status": 0
+    },
+    {
+      "actual": [
+        1065353216,
+        1073741824,
+        1077936128,
+        1082130432,
+        2779096485,
+        2779096485,
+        2779096485,
+        2779096485
+      ],
+      "detection": "base correct",
+      "execution": {
+        "barriers_per_group": {
+          "(0, 0, 0)": 0
+        },
+        "caller_supplied_reusable_shared_storage": false,
+        "events": 18,
+        "groups": 1,
+        "invocations": 1,
+        "memory_accesses": 4,
+        "poison": 165,
+        "pure_instruction_quantum": 1,
+        "schedule": "round_robin",
+        "steps": 19
+      },
+      "id": "sqrt_base",
+      "target_sha256": "287d8f9ab5bc46ad221a64bb68b4cd1973c8e82ef272d179e86bf861f3e183df",
+      "validator_output": "",
+      "validator_status": 0
+    },
+    {
+      "detection": "numeric vector result has scalar TypeId",
+      "id": "sqrt_wrong_return",
+      "target_sha256": "590b145bdfdf5dc96ffeedd22ecb4684698962ab5f44ae06edcc2c2b0c73d627",
+      "validator_output": "error: line 35: GLSL.std.450 Sqrt: expected types of all operands to be equal to Result Type\n  %26 = OpExtInst %float %8 Sqrt %25\n\n",
+      "validator_status": 1
+    },
+    {
+      "detection": "ID duplicate or bound",
+      "id": "sqrt_id_undercount",
+      "target_sha256": "831262b985e4a359f05e67e97d60621cb6498805c7f6710cde50f99da80a36ae",
+      "validator_output": "error: line 50: Result <id> '38' must be less than the ID bound '38'.\n  %38 = OpAccessChain %_ptr_StorageBuffer_uint %15 %uint_0 %uint_3\n\n",
+      "validator_status": 1
+    },
+    {
+      "actual": [
+        1065353216,
+        1073741824,
+        1077936128,
+        1082130432,
+        2779096485,
+        2779096485,
+        2779096485,
+        2779096485
+      ],
+      "detection": "validator rejection",
+      "execution": {
+        "barriers_per_group": {
+          "(0, 0, 0)": 0
+        },
+        "caller_supplied_reusable_shared_storage": false,
+        "events": 18,
+        "groups": 1,
+        "invocations": 1,
+        "memory_accesses": 4,
+        "poison": 165,
+        "pure_instruction_quantum": 1,
+        "schedule": "round_robin",
+        "steps": 19
+      },
+      "id": "sqrt_word_undercount",
+      "target_sha256": "7abebdfe91663b2189e735cf2d765a7b5ccbc8f7e6218963a3256d04a4b4f069",
+      "validator_output": "error: line 0: Missing OpFunctionEnd at end of module.\n",
+      "validator_status": 1
+    },
+    {
+      "actual": [
+        0,
+        0,
+        3212836864,
+        2779096485,
+        2779096485,
+        2779096485,
+        2779096485,
+        2779096485
+      ],
+      "detection": "base correct",
+      "execution": {
+        "barriers_per_group": {
+          "(0, 0, 0)": 0
+        },
+        "caller_supplied_reusable_shared_storage": false,
+        "events": 14,
+        "groups": 1,
+        "invocations": 1,
+        "memory_accesses": 3,
+        "poison": 165,
+        "pure_instruction_quantum": 1,
+        "schedule": "round_robin",
+        "steps": 15
+      },
+      "id": "normalize_base",
+      "target_sha256": "0d8656a45b62a94ff2c64545761493af22c7cd4d4d50c8ccd0abc1abf0519067",
+      "validator_output": "",
+      "validator_status": 0
+    },
+    {
+      "detection": "numeric vector result has scalar TypeId",
+      "id": "normalize_wrong_return",
+      "target_sha256": "96df5de13187b75fbf57cb40fe7ead0eb7f8fc88d6d5282556525662dfbeaa1b",
+      "validator_output": "error: line 34: GLSL.std.450 Normalize: expected types of all operands to be equal to Result Type\n  %25 = OpExtInst %float %8 Normalize %24\n\n",
+      "validator_status": 1
+    },
+    {
+      "detection": "ID duplicate or bound",
+      "id": "normalize_id_undercount",
+      "target_sha256": "d76f877b0cc02fbcea7cb8913d67255c0a6aec406557a50766b49ba007611ff7",
+      "validator_output": "error: line 45: Result <id> '34' must be less than the ID bound '34'.\n  %34 = OpAccessChain %_ptr_StorageBuffer_uint %15 %uint_0 %uint_2\n\n",
+      "validator_status": 1
+    },
+    {
+      "actual": [
+        0,
+        0,
+        3212836864,
+        2779096485,
+        2779096485,
+        2779096485,
+        2779096485,
+        2779096485
+      ],
+      "detection": "validator rejection",
+      "execution": {
+        "barriers_per_group": {
+          "(0, 0, 0)": 0
+        },
+        "caller_supplied_reusable_shared_storage": false,
+        "events": 14,
+        "groups": 1,
+        "invocations": 1,
+        "memory_accesses": 3,
+        "poison": 165,
+        "pure_instruction_quantum": 1,
+        "schedule": "round_robin",
+        "steps": 15
+      },
+      "id": "normalize_word_undercount",
+      "target_sha256": "319d6d4cbc4fab67c6cb2b9f26061ca8c03cbcd21dbb018a8d099fb66786429f",
+      "validator_output": "error: line 0: Missing OpFunctionEnd at end of module.\n",
+      "validator_status": 1
+    }
+  ],
+  "passed": true,
+  "validator_sha256": "f386e67676bc134802b6bfec6d96fff0f9437d0f60e4c97ee0afa59ab4f1c4ea"
+}

@@ -1,0 +1,9 @@
+{
+  "phase": "Candidate2 recheck front doors prepared before candidate2 handoff; no numerical expectations changed",
+  "policy": "Fresh validation every source. Exact target identity can carry full original output/schedule/poison proof. Changed targets execute complete presealed schedules, no smaller witnesses.",
+  "prior_candidate_manifest_sha256": "0c01ff844b4ad98ef88439bf5d0cdf4ac9ad8cd6f22143de52fdf77aa9381a7a",
+  "prior_dispatches": 40,
+  "prior_sources": 5,
+  "prior_witness_results": "/tmp/doe-m12-independent-20261023/candidate1-witnesses/results.json",
+  "prior_witness_results_sha256": "dbb4c9cb4b2c641a930657b0283fa3fb4b49b34ae8b5bba88730b61a01791cce"
+}

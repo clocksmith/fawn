@@ -39,9 +39,6 @@ bool sema_materialize(Source *s, ExpressionValue *v, TypeId type) {
 static bool is_integer(TypeId t) {
     return t == IR_U32 || t == IR_I32 || t == IR_ABSTRACT_INT;
 }
-static uint32_t width(const CompilerWorkspace *c, TypeId t) {
-    return t >= 7u && c->types[t-7u].kind == TYPE_VECTOR?c->types[t-7u].count:1u;
-}
 static bool shaped_type(Source *s, TypeId leaf, uint32_t n, TypeId *out) {
     if (n == 1u) {
         *out = leaf;
@@ -350,7 +347,7 @@ static IrOpcode binary_opcode(ExpressionKind op) {
 static bool binary_types(Source *s, ExpressionKind op, Comparison cmp, ExpressionValue *a, ExpressionValue *b, uint32_t offset, TypeId *result) {
     CompilerWorkspace *c = s->compiler;
     TypeId la = type_leaf(c, a->constant.type), lb = type_leaf(c, b->constant.type), leaf;
-    const uint32_t wa = width(c, a->constant.type), wb = width(c, b->constant.type), n = wa>wb?wa:wb;
+    const uint32_t wa = type_vector_width(c, a->constant.type), wb = type_vector_width(c, b->constant.type), n = wa>wb?wa:wb;
     const bool arithmetic = op == EXPRESSION_ADD || op == EXPRESSION_SUBTRACT || op == EXPRESSION_MULTIPLY || op == EXPRESSION_DIVIDE || op == EXPRESSION_REMAINDER;
     const bool shift = op == EXPRESSION_SHIFT_LEFT || op == EXPRESSION_SHIFT_RIGHT;
     if (la == IR_VOID || lb == IR_VOID || (wa != wb && (!arithmetic || (wa != 1u && wb != 1u))))
@@ -375,7 +372,7 @@ bool sema_binary(Source *s, ExpressionKind op, Comparison cmp, ExpressionValue *
     TypeId type;
     if (!binary_types(s, op, cmp, a, b, offset, &type)) return false;
     const TypeId leaf = type_leaf(s->compiler, a->constant.type);
-    const uint32_t n = width(s->compiler, type), wa = width(s->compiler, a->constant.type), wb = width(s->compiler, b->constant.type);
+    const uint32_t n = type_vector_width(s->compiler, type), wa = type_vector_width(s->compiler, a->constant.type), wb = type_vector_width(s->compiler, b->constant.type);
     const bool shift = op == EXPRESSION_SHIFT_LEFT || op == EXPRESSION_SHIFT_RIGHT;
     if (!b->runtime && b->known && (shift || ((op == EXPRESSION_DIVIDE || op == EXPRESSION_REMAINDER) && is_integer(leaf)))) {
         for (uint32_t i = 0u;i<wb;++i) {
@@ -441,7 +438,7 @@ bool sema_expression(Source *s, uint32_t id, const LocalScope *scope, bool evalu
         };
         if (!a.runtime) {
             if (!out->known) return true;
-            const uint32_t n = width(c, a.constant.type);
+            const uint32_t n = type_vector_width(c, a.constant.type);
             ConstantValue values[4];
             for (uint32_t i = 0u;i<n;++i) {
                 NumericValue x, r;

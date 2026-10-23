@@ -1,0 +1,182 @@
+{
+  "full": {
+    "complete_receipt_sha256": "6612031966fc2682466a95c3be5427ad2d148c75851259fce4582c9e6773325f",
+    "original_failed_rows": [
+      {
+        "error": "AssertionError(('measure', 4, 'abstract integer conversion is out of range', 0))",
+        "id": "ai_explicit_f32_conversion",
+        "passed": false
+      }
+    ]
+  },
+  "lowering-ledger": {
+    "complete_receipt_sha256": "456e583ecf85ca5dea9d544dd722ff8e50bba2e01d762438132388ccf07363d4",
+    "original_failed_rows": [
+      {
+        "error": "AssertionError(('opcode ledger', {'173': 1, '169': 1}, {'169': 1, '177': 1}))",
+        "id": "max_i32_1",
+        "passed": false
+      },
+      {
+        "error": "AssertionError(('opcode ledger', {'81': 4, '173': 2, '169': 2, '80': 1}, {'169': 2, '177': 2, '80': 1, '81': 4}))",
+        "id": "max_i32_2",
+        "passed": false
+      },
+      {
+        "error": "AssertionError(('opcode ledger', {'81': 6, '173': 3, '169': 3, '80': 1}, {'169': 3, '177': 3, '80': 1, '81': 6}))",
+        "id": "max_i32_3",
+        "passed": false
+      },
+      {
+        "error": "AssertionError(('opcode ledger', {'81': 8, '173': 4, '169': 4, '80': 1}, {'169': 4, '177': 4, '80': 1, '81': 8}))",
+        "id": "max_i32_4",
+        "passed": false
+      },
+      {
+        "error": "AssertionError(('opcode ledger', {'172': 1, '169': 1}, {'169': 1, '176': 1}))",
+        "id": "max_u32_1",
+        "passed": false
+      },
+      {
+        "error": "AssertionError(('opcode ledger', {'81': 4, '172': 2, '169': 2, '80': 1}, {'169': 2, '176': 2, '80': 1, '81': 4}))",
+        "id": "max_u32_2",
+        "passed": false
+      },
+      {
+        "error": "AssertionError(('opcode ledger', {'81': 6, '172': 3, '169': 3, '80': 1}, {'169': 3, '176': 3, '80': 1, '81': 6}))",
+        "id": "max_u32_3",
+        "passed": false
+      },
+      {
+        "error": "AssertionError(('opcode ledger', {'81': 8, '172': 4, '169': 4, '80': 1}, {'169': 4, '176': 4, '80': 1, '81': 8}))",
+        "id": "max_u32_4",
+        "passed": false
+      },
+      {
+        "error": "AssertionError(('opcode ledger', {'186': 1, '169': 1}, {'169': 1, '184': 1}))",
+        "id": "max_f32_1",
+        "passed": false
+      },
+      {
+        "error": "AssertionError(('opcode ledger', {'81': 4, '186': 2, '169': 2, '80': 1}, {'169': 2, '184': 2, '80': 1, '81': 4}))",
+        "id": "max_f32_2",
+        "passed": false
+      },
+      {
+        "error": "AssertionError(('opcode ledger', {'81': 6, '186': 3, '169': 3, '80': 1}, {'169': 3, '184': 3, '80': 1, '81': 6}))",
+        "id": "max_f32_3",
+        "passed": false
+      },
+      {
+        "error": "AssertionError(('opcode ledger', {'81': 8, '186': 4, '169': 4, '80': 1}, {'169': 4, '184': 4, '80': 1, '81': 8}))",
+        "id": "max_f32_4",
+        "passed": false
+      },
+      {
+        "error": "AssertionError(('opcode ledger', {'173': 1, '169': 2, '177': 1}, {'169': 2, '177': 2}))",
+        "id": "clamp_i32_1",
+        "passed": false
+      },
+      {
+        "error": "AssertionError(('opcode ledger', {'81': 6, '173': 2, '169': 4, '177': 2, '80': 1}, {'169': 4, '177': 4, '80': 1, '81': 6}))",
+        "id": "clamp_i32_2",
+        "passed": false
+      },
+      {
+        "error": "AssertionError(('opcode ledger', {'81': 9, '173': 3, '169': 6, '177': 3, '80': 1}, {'169': 6, '177': 6, '80': 1, '81': 9}))",
+        "id": "clamp_i32_3",
+        "passed": false
+      },
+      {
+        "error": "AssertionError(('opcode ledger', {'81': 12, '173': 4, '169': 8, '177': 4, '80': 1}, {'169': 8, '177': 8, '80': 1, '81': 12}))",
+        "id": "clamp_i32_4",
+        "passed": false
+      },
+      {
+        "error": "AssertionError(('opcode ledger', {'172': 1, '169': 2, '176': 1}, {'169': 2, '176': 2}))",
+        "id": "clamp_u32_1",
+        "passed": false
+      },
+      {
+        "error": "AssertionError(('opcode ledger', {'81': 6, '172': 2, '169': 4, '176': 2, '80': 1}, {'169': 4, '176': 4, '80': 1, '81': 6}))",
+        "id": "clamp_u32_2",
+        "passed": false
+      },
+      {
+        "error": "AssertionError(('opcode ledger', {'81': 9, '172': 3, '169': 6, '176': 3, '80': 1}, {'169': 6, '176': 6, '80': 1, '81': 9}))",
+        "id": "clamp_u32_3",
+        "passed": false
+      },
+      {
+        "error": "AssertionError(('opcode ledger', {'81': 12, '172': 4, '169': 8, '176': 4, '80': 1}, {'169': 8, '176': 8, '80': 1, '81': 12}))",
+        "id": "clamp_u32_4",
+        "passed": false
+      },
+      {
+        "error": "AssertionError(('opcode ledger', {'186': 1, '169': 2, '184': 1}, {'169': 2, '184': 2}))",
+        "id": "clamp_f32_1",
+        "passed": false
+      },
+      {
+        "error": "AssertionError(('opcode ledger', {'81': 6, '186': 2, '169': 4, '184': 2, '80': 1}, {'169': 4, '184': 4, '80': 1, '81': 6}))",
+        "id": "clamp_f32_2",
+        "passed": false
+      },
+      {
+        "error": "AssertionError(('opcode ledger', {'81': 9, '186': 3, '169': 6, '184': 3, '80': 1}, {'169': 6, '184': 6, '80': 1, '81': 9}))",
+        "id": "clamp_f32_3",
+        "passed": false
+      },
+      {
+        "error": "AssertionError(('opcode ledger', {'81': 12, '186': 4, '169': 8, '184': 4, '80': 1}, {'169': 8, '184': 8, '80': 1, '81': 12}))",
+        "id": "clamp_f32_4",
+        "passed": false
+      }
+    ]
+  },
+  "numeric-supplement": {
+    "complete_receipt_sha256": "b892b7ffaefa74b04badd429fa46059ae4f5e75ce4b9873e8406b1c55435ee5f",
+    "original_failed_rows": [
+      {
+        "error": "AssertionError(('measure', 4, 'evaluated constant floating-point value is not finite', 0))",
+        "id": "latitude_sqrt_nonfinite",
+        "passed": false
+      }
+    ]
+  },
+  "parse-probe": {
+    "complete_receipt_sha256": "e5ae8eed98a2d2f8ab3842171570b15a7e422e2f6eda47bdfaa378459ef4986c",
+    "original_failed_rows": [
+      {
+        "error": "AssertionError(('status', [{'flags': 1, 'status': 1, 'diagnostic': 'type syntax depth capacity exceeded', 'offset': 53}]))",
+        "id": "type_depth_2_one_short",
+        "passed": false
+      },
+      {
+        "error": "AssertionError(('status', [{'flags': 1, 'status': 1, 'diagnostic': 'type syntax depth capacity exceeded', 'offset': 65}]))",
+        "id": "type_depth_4_one_short",
+        "passed": false
+      },
+      {
+        "error": "AssertionError(('status', [{'flags': 1, 'status': 1, 'diagnostic': 'type syntax depth capacity exceeded', 'offset': 89}]))",
+        "id": "type_depth_8_one_short",
+        "passed": false
+      },
+      {
+        "error": "AssertionError(('status', [{'flags': 1, 'status': 1, 'diagnostic': 'type syntax depth capacity exceeded', 'offset': 137}]))",
+        "id": "type_depth_16_one_short",
+        "passed": false
+      },
+      {
+        "error": "AssertionError(('status', [{'flags': 1, 'status': 1, 'diagnostic': 'type syntax depth capacity exceeded', 'offset': 233}]))",
+        "id": "type_depth_32_one_short",
+        "passed": false
+      },
+      {
+        "error": "AssertionError(('status', [{'flags': 1, 'status': 1, 'diagnostic': 'type syntax depth capacity exceeded', 'offset': 425}]))",
+        "id": "type_depth_64_one_short",
+        "passed": false
+      }
+    ]
+  }
+}

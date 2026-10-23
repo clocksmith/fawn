@@ -2,7 +2,7 @@
  * Copyright (c) 2026 Doe contributors */
 #ifndef DOE_COMPILER_NUMERIC_H
 #define DOE_COMPILER_NUMERIC_H
-#include "internal.h"
+#include "builtin.h"
 #include <fenv.h>
 
 /* A pipeline owns this automatic record. No helper changes process-global state.
@@ -15,11 +15,15 @@ typedef struct {
 
 bool numeric_environment_begin(Source *source, NumericEnvironment *environment);
 bool numeric_environment_end(Source *source, NumericEnvironment *environment);
-const ScalarBuiltin *scalar_builtin_named(const char *name);
 /* All arguments have the selected overload type and have been materialized.
  * The signature registry owns arity; callers provide its complete argument span. */
-bool numeric_builtin(Source *source, size_t offset, ScalarBuiltinKind kind,
+bool numeric_builtin(Source *source, size_t offset, const NumericBuiltin *signature,
                      const NumericValue *arguments, NumericValue *result);
+/* Two signed-magnitude sums cover four signed64 products, including 2^128.
+ * The caller initializes to zero and adds at most four admitted AI lane pairs. */
+typedef struct { uint32_t positive[5], negative[5]; } NumericDotAccumulator;
+bool numeric_dot_accumulate(Source *, size_t, NumericDotAccumulator *, NumericValue, NumericValue);
+bool numeric_dot_finish(Source *, size_t, const NumericDotAccumulator *, NumericValue *);
 bool numeric_parse_literal(Source *source, NameSpan literal, NumericValue *result);
 bool numeric_materialize(Source *source, size_t offset, NumericValue input,
                          IrType target, NumericValue *result);

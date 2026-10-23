@@ -1,0 +1,7 @@
+{
+  "/workspace/shared/doe-c-migration-20261023/runtime/c/compiler/independent_tests_m11/oracle/abi_m10.py": "db6e376c1a9bfa3cf89fa4872e7d0c0b5e068cf31ad1beea7acc8fd9f6f397f1",
+  "/workspace/shared/doe-c-migration-20261023/runtime/c/compiler/independent_tests_m11/oracle/exact_numeric_m8.py": "f719a368c7bae47f29421c786d91239aeff1395b4e79e2805dc63f7ba526a4c4",
+  "/workspace/shared/doe-c-migration-20261023/runtime/c/compiler/independent_tests_m11/oracle/interval_math_m9.py": "e60b9b237994ded7cec3ca362492f671f7f9d901a8172d1726da8d910d7ff977",
+  "/workspace/shared/doe-c-migration-20261023/runtime/c/compiler/independent_tests_m11/oracle/target_m11.py": "9448eff0de0118cde3121b283902b295f72ace124a0ee5aeda934dd40e6d6082",
+  "/workspace/shared/doe-c-migration-20261023/runtime/c/compiler/independent_tests_m11/oracle/workgroup_vm.py": "0158d2c01e5a4403da34aeb0e40a76ee6cd33b8abdbb978f1320b87f2647fe4a"
+}

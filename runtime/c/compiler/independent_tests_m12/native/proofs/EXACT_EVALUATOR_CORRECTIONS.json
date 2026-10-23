@@ -1,0 +1,84 @@
+{
+  "additional_cases": [
+    {
+      "expected_options": [
+        [
+          1325400064
+        ]
+      ],
+      "expected_status": 0,
+      "id": "wider_dot_f32_via_explicit_u32",
+      "output_words": 8,
+      "source": "exact_correction_controls/wider_dot_f32_via_explicit_u32.wgsl",
+      "source_sha256": "cd939a108ed6a913ff90b9b52e95913f779a45348134aa2e5024c6d85a31fefc"
+    },
+    {
+      "expected_options": [
+        [
+          1325400064
+        ]
+      ],
+      "expected_status": 0,
+      "id": "wider_dot_f32_via_af",
+      "output_words": 8,
+      "source": "exact_correction_controls/wider_dot_f32_via_af.wgsl",
+      "source_sha256": "5a40769c4cddf5e168a668544f501f859acee5aadf149fc44a5fd493dd2cae95"
+    },
+    {
+      "expected_options": [
+        [
+          1325400064
+        ]
+      ],
+      "expected_status": 0,
+      "id": "wider_dot_f32_context",
+      "output_words": 8,
+      "source": "exact_correction_controls/wider_dot_f32_context.wgsl",
+      "source_sha256": "39285308fd12949b959223d1da520ed1269ecacb275fd79ae08cf752a185e690"
+    },
+    {
+      "expected_status": 0,
+      "id": "runtime_sqrt_nan_inf_storage",
+      "input_words": [
+        2143363909,
+        2139095040
+      ],
+      "output_words": 8,
+      "qualification": "validation-only; nonfinite runtime values have no finite accuracy claim",
+      "source": "exact_correction_controls/runtime_sqrt_nan_inf_storage.wgsl",
+      "source_sha256": "42c09049fb4cf3824f0e0925af8f1bb404321dafa96984993a8d153d8d636233"
+    }
+  ],
+  "candidate_manifest_sha256": "0c01ff844b4ad98ef88439bf5d0cdf4ac9ad8cd6f22143de52fdf77aa9381a7a",
+  "corrections": [
+    {
+      "corrected_expected_status": 4,
+      "id": "ai_explicit_f32_conversion",
+      "original_expected_status": 0,
+      "reason": "The scalar conversion constructor accepts concrete scalar input. AI to i32 has lower rank than AI to u32 or f32; materialization of 2147483649 to i32 fails before conversion. The accepted M11 scalar control has identical status4.",
+      "source": "frozen/ai_explicit_f32_conversion.wgsl",
+      "source_sha256": "02266cfd91fcae1e15977229f544c06506d29a6d7e7e929322787ebe03acc243"
+    },
+    {
+      "corrected_expected_status": 4,
+      "id": "latitude_sqrt_nonfinite",
+      "original_expected_status": 0,
+      "reason": "The literal bitcast calls are const expressions and create nonfinite f32 values before a runtime let binding. WGSL requires creation error; accepted M11 rejects the same scalar bitcast.",
+      "source": "supplement_numeric/latitude_sqrt_nonfinite.wgsl",
+      "source_sha256": "1a08fb9c4239e895e3045b8a2410c37f0d9f024148e4b82f058db16599bf170c"
+    }
+  ],
+  "normative_sources": [
+    "https://www.w3.org/TR/2026/CRD-WGSL-20261021/#conversion-rank",
+    "https://www.w3.org/TR/2026/CRD-WGSL-20261021/#scalar-conversion-builtin",
+    "https://www.w3.org/TR/2026/CRD-WGSL-20261021/#floating-point-evaluation"
+  ],
+  "original_numeric_seal": "44ecf8687893830473029c3186d95af4d7d43c9ac9080f3a2033376ca6fbb1bc",
+  "original_primary_seal": "98a6656e0b3bf2bb2a6e74bb5977afabdab2ac2ac07c664468a8026dea43b281",
+  "original_results": {
+    "candidate1-full/results.json": "6612031966fc2682466a95c3be5427ad2d148c75851259fce4582c9e6773325f",
+    "candidate1-numeric-supplement/results.json": "b892b7ffaefa74b04badd429fa46059ae4f5e75ce4b9873e8406b1c55435ee5f"
+  },
+  "phase": "After initial candidate observation; exact evaluator repairs only",
+  "restriction": "No original source, expectation manifest, seal or first result edited. No original negative relaxed. New positive controls are separate and not retroactively pre-candidate."
+}

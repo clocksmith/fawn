@@ -1,0 +1,33 @@
+{
+  "candidate_observed": false,
+  "cases": [
+    {
+      "exact_source": "@group(0) @binding(0) var<storage,read_write> out:array<u32>;@compute @workgroup_size(1) fn main(){let a=min(vec2u(1u),vec2u(2u));}",
+      "expected_effect": "All12 bytes of declared output storage remain unchanged; unused pure result does not authorize writes. Full family value semantics are covered by the independent931 case seal.",
+      "name": "vector_math",
+      "new_status": 0,
+      "old_status": 3,
+      "reason": "This exact formerly unadmitted vector min or dot signature is now in the frozen M12 family, not a broad negative-class rewrite.",
+      "source_sha256": "0e0179ba2004a244aeaf8bac19c7f3a1ddd3f22135fa9457e0e532f1f54a59a1"
+    },
+    {
+      "exact_source": "@group(0) @binding(0) var<storage,read_write> out:array<u32>;@compute @workgroup_size(1) fn main(){let a=dot(vec2f(),vec2f());}",
+      "expected_effect": "All12 bytes of declared output storage remain unchanged; unused pure result does not authorize writes. Full family value semantics are covered by the independent931 case seal.",
+      "name": "vector_dot",
+      "new_status": 0,
+      "old_status": 3,
+      "reason": "This exact formerly unadmitted vector min or dot signature is now in the frozen M12 family, not a broad negative-class rewrite.",
+      "source_sha256": "8b9099ce48ce681141c0767fd7373f4bc435809699e9de61d7c2cfd74e58ef0a"
+    }
+  ],
+  "created_at": "2026-10-23T14:19:46.715830+00:00",
+  "preserved_counts": {
+    "new_M12_lifts": 2,
+    "total": 576,
+    "unchanged_prior_M11_expectations": 574
+  },
+  "prior_M11_exact_mappings": [
+    "workgroup PARSE_ERROR2 to admitted0",
+    "private PARSE_ERROR2 to UNSUPPORTED3"
+  ]
+}

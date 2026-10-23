@@ -1,0 +1,10 @@
+{
+  "runtime/c/compiler/contracts/m12_witnesses.json": "556433ecf8c1e50c2e578fce3db0dfb03987e9ece259b9e35f3519714375f874",
+  "runtime/c/compiler/independent_tests_m10/CONCRETE_SOURCE.sha256": "fac2e3ce9f8869257d21d6c31b4ad79758c18c03426115e85013f03ba96aacb5",
+  "runtime/c/compiler/independent_tests_m10/OBLIGATIONS_M10.sha256": "ec46133dd3926cf8cb3630a2d82052c698ff2512ee16e845d75a55b5e0dca93a",
+  "runtime/c/compiler/independent_tests_m10/historical/PINNED_SOURCE.json": "f13da76d32acb4b7f3e42368673038e0462635b432c273ebf6282adfb459fdc6",
+  "runtime/c/compiler/independent_tests_m11/CASE_SEAL.sha256": "9a03dd3f38641834f59a70e6f09a1524a5271daeb1886651ff7575b7a0a2d664",
+  "runtime/c/compiler/independent_tests_m11/IMPORT.sha256": "630b20ce0a87655e3347c2e7472c07ab99fb3696dad04f9e70762cf13888d324",
+  "runtime/c/compiler/independent_tests_m11/PRE_CANDIDATE_COMPLETE_V2.sha256": "4d5ac2a45fbaba470387b50626149fd69ee2568eece1a24b803d90b6b25610a6",
+  "runtime/c/compiler/independent_tests_m11/native/SOURCE_SEAL.sha256": "867d54cb1819aaebeebcc137a85d3e96dc33eaafd6d2b6c3e2a74b2579f7bc63"
+}

@@ -1,0 +1,1 @@
+@group(0) @binding(1) var<storage,read_write> output:array<u32>;const result=exp(vec2(-2.0,-1.0));@compute @workgroup_size(1) fn main(){if((result.x>=0x1.152aaa3bf81cap-3 && result.x<=0x1.152aaa3bf81cdp-3) && (result.y>=0x1.78b56362cef36p-2 && result.y<=0x1.78b56362cef39p-2)){output[0]=1u;}else{output[0]=2u;}}

@@ -1,0 +1,16 @@
+{
+  "artifact_name_note": "Retained m11 filenames are M12 source-bound outputs, not an M11-source qualification.",
+  "command": [
+    "/tmp/doe-m12-independent-native-build1-20261023/m12-archive/numeric_m12",
+    "/tmp/doe-m12-independent-20261023/frozen/ai_explicit_f32_conversion.wgsl",
+    "0",
+    "0",
+    "",
+    "/tmp/doe-m12-native-candidate1-numeric-20261023/targets/archive/ai_explicit_f32_conversion"
+  ],
+  "label": "archive-numeric-ai_explicit_f32_conversion",
+  "returncode": 1,
+  "seconds": 0.0038464749814011157,
+  "source_manifest_sha256": "0c01ff844b4ad98ef88439bf5d0cdf4ac9ad8cd6f22143de52fdf77aa9381a7a",
+  "stage": "numeric"
+}

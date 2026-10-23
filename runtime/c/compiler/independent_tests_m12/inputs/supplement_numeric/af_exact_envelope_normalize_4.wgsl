@@ -1,0 +1,1 @@
+@group(0) @binding(1) var<storage,read_write> output:array<u32>;const result=normalize(vec4(1.0,2.0,3.0,7.0));@compute @workgroup_size(1) fn main(){if(result.x==0x1.02061446ffa99p-3 && result.y==0x1.02061446ffa99p-2 && result.z==0x1.83091e6a7f7e6p-2 && result.w==0x1.c38aa37c3f68dp-1){output[0]=1u;}else{output[0]=2u;}}
