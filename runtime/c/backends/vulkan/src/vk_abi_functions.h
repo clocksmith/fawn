@@ -81,5 +81,10 @@ typedef struct doe_vk_functions {
     void (*vkCmdSetScissor)(VkCommandBuffer commandBuffer, uint32_t firstScissor, uint32_t scissorCount, const VkRect2D *pScissors);
     void (*vkCmdBindVertexBuffers)(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount, const VkBuffer *pBuffers, const VkDeviceSize *pOffsets);
     void (*vkCmdDraw)(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance);
+    VkResult (*vkCreateQueryPool)(VkDevice device, const VkQueryPoolCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator, VkQueryPool *pQueryPool);
+    void (*vkDestroyQueryPool)(VkDevice device, VkQueryPool queryPool, const VkAllocationCallbacks *pAllocator);
+    void (*vkCmdWriteTimestamp)(VkCommandBuffer commandBuffer, VkFlags pipelineStage, VkQueryPool queryPool, uint32_t query);
+    void (*vkCmdResetQueryPool)(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount);
+    void (*vkCmdCopyQueryPoolResults)(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount, VkBuffer dstBuffer, VkDeviceSize dstOffset, VkDeviceSize stride, VkFlags flags);
 } doe_vk_functions;
 #endif

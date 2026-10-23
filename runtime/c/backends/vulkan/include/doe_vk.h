@@ -74,6 +74,7 @@ typedef struct doe_vk_caps {
     uint32_t max_texture_dimension_2d;
     uint32_t max_texture_dimension_3d;
     uint32_t max_texture_array_layers;
+    float timestamp_period_ns;
 } doe_vk_caps;
 
 /* One owned reference on success. Objects retain their creating context. */

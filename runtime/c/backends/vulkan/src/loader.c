@@ -87,6 +87,11 @@ static doe_vk_status load_functions(doe_vk_context *context, doe_vk_error *error
     _Static_assert(sizeof(context->vk.vkCmdSetScissor) == sizeof(void *), "vkCmdSetScissor POSIX pointer size");
     _Static_assert(sizeof(context->vk.vkCmdBindVertexBuffers) == sizeof(void *), "vkCmdBindVertexBuffers POSIX pointer size");
     _Static_assert(sizeof(context->vk.vkCmdDraw) == sizeof(void *), "vkCmdDraw POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkCreateQueryPool) == sizeof(void *), "vkCreateQueryPool POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkDestroyQueryPool) == sizeof(void *), "vkDestroyQueryPool POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkCmdWriteTimestamp) == sizeof(void *), "vkCmdWriteTimestamp POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkCmdResetQueryPool) == sizeof(void *), "vkCmdResetQueryPool POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkCmdCopyQueryPoolResults) == sizeof(void *), "vkCmdCopyQueryPoolResults POSIX pointer size");
     const struct {
         const char *name;
         void *destination;
@@ -164,6 +169,11 @@ static doe_vk_status load_functions(doe_vk_context *context, doe_vk_error *error
         { "vkCmdSetScissor", &context->vk.vkCmdSetScissor, sizeof(context->vk.vkCmdSetScissor) },
         { "vkCmdBindVertexBuffers", &context->vk.vkCmdBindVertexBuffers, sizeof(context->vk.vkCmdBindVertexBuffers) },
         { "vkCmdDraw", &context->vk.vkCmdDraw, sizeof(context->vk.vkCmdDraw) },
+        { "vkCreateQueryPool", &context->vk.vkCreateQueryPool, sizeof(context->vk.vkCreateQueryPool) },
+        { "vkDestroyQueryPool", &context->vk.vkDestroyQueryPool, sizeof(context->vk.vkDestroyQueryPool) },
+        { "vkCmdWriteTimestamp", &context->vk.vkCmdWriteTimestamp, sizeof(context->vk.vkCmdWriteTimestamp) },
+        { "vkCmdResetQueryPool", &context->vk.vkCmdResetQueryPool, sizeof(context->vk.vkCmdResetQueryPool) },
+        { "vkCmdCopyQueryPoolResults", &context->vk.vkCmdCopyQueryPoolResults, sizeof(context->vk.vkCmdCopyQueryPoolResults) },
     };
     for (size_t i = 0; i < sizeof(symbols) / sizeof(symbols[0]); ++i) {
         doe_vk_status status = doe_vk_load_symbol(context->library, symbols[i].name,
@@ -211,6 +221,7 @@ static doe_vk_status choose_device(doe_vk_context *context,
     caps->device_type = p->deviceType;
     caps->adapter_ordinal = options->adapter_ordinal;
     caps->software_adapter = p->deviceType == 4;
+    caps->timestamp_period_ns = p->limits.timestampPeriod;
     caps->max_workgroup_storage_size = p->limits.maxComputeSharedMemorySize;
     caps->max_bind_groups = p->limits.maxBoundDescriptorSets < DOE_VK_MAX_GROUPS ?
         p->limits.maxBoundDescriptorSets : DOE_VK_MAX_GROUPS;
