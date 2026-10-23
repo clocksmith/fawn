@@ -11,7 +11,7 @@ const gpu_timeline = @import("../../runtime/queue/gpu_timeline.zig");
 const shared = @import("doe_native_shared_types.zig");
 const backend_contract = @import("../../contracts/backend.zig");
 const command_types = @import("doe_native_command_types.zig");
-const future_ids = @import("doe_future_ids.zig");
+const future_ids = @import("doe_future_owner.zig");
 
 const MAGIC_INSTANCE: u32 = 0xD0E1_0001;
 const MAGIC_ADAPTER: u32 = 0xD0E1_0002;

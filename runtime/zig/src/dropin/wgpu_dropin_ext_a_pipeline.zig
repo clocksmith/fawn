@@ -6,7 +6,7 @@ const p0 = core.p0;
 const async_procs = core.async_procs;
 const native = core.native;
 const singleflight = core.singleflight;
-const future_ids = @import("../native/support/doe_future_ids.zig");
+const future_ids = @import("../native/support/doe_future_owner.zig");
 
 pub const SnapshotError = error{ OutOfMemory, InvalidDescriptor, UnsupportedDescriptor };
 

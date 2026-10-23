@@ -478,9 +478,24 @@ fn addDropinAbiOptions(options: *std.Build.Step.Options, allocator: std.mem.Allo
     }
 }
 
+fn configureCFuturesModule(module: *std.Build.Module, b: *std.Build, archive: []const u8) void {
+    module.addIncludePath(b.path("../c/futures/include"));
+    module.addIncludePath(b.path("../c/futures/integration"));
+    module.addObjectFile(.{ .cwd_relative = archive });
+    module.linkSystemLibrary("pthread", .{});
+    module.link_libc = true;
+}
+
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
+    const c_futures_archive = b.option([]const u8, "experimental-c-futures-archive", "Explicit external GCC-built PIC C futures archive (default: retained Zig)");
+    if (c_futures_archive) |archive| {
+        if (!target.query.isNative() or target.result.os.tag != .linux or target.result.cpu.arch != .x86_64)
+            @panic("experimental C futures requires native Linux x86-64");
+        if (!std.fs.path.isAbsolute(archive) or !fileExists(archive))
+            @panic("experimental C futures requires an existing absolute external GCC archive; no fallback");
+    }
 
     const browser_wasm = b.addExecutable(.{
         .name = "doe-wgsl",
@@ -501,8 +516,10 @@ pub fn build(b: *std.Build) void {
     browser_wasm.rdynamic = true;
     browser_wasm.max_memory = 64 * 1024 * 1024;
     const wasm_install = b.addInstallArtifact(browser_wasm, .{});
-    b.step("browser-wasm", "Build the bounded browser WGSL compiler (no native GPU access)")
-        .dependOn(&wasm_install.step);
+    const browser_wasm_step = b.step("browser-wasm", "Build the bounded browser WGSL compiler (no native GPU access)");
+    if (c_futures_archive != null) {
+        browser_wasm_step.dependOn(&b.addFail("experimental C futures is not supported by the non-native browser-wasm artifact").step);
+    } else browser_wasm_step.dependOn(&wasm_install.step);
     const browser_tests = b.addTest(.{
         .root_module = b.createModule(.{
             .root_source_file = b.path("test_suite_browser_wgsl.zig"),
@@ -561,6 +578,7 @@ pub fn build(b: *std.Build) void {
 
     const lean_verified = b.option(bool, "lean-verified", "Embed Lean proof artifact and validate at comptime") orelse false;
     const build_options = b.addOptions();
+    build_options.addOption(bool, "experimental_c_futures", c_futures_archive != null);
     build_options.addOption(backend_policy.PolicyTable, "backend_runtime_policy", runtime_policy_table);
     addComputeProgramContract(build_options, b.allocator);
     addNativeCommandStoragePolicy(build_options, b.allocator);
@@ -1359,6 +1377,7 @@ pub fn build(b: *std.Build) void {
     // The default `dropin` step uses the --tier option (default: headless).
     // These named steps override tier for convenience.
     const compute_build_options = b.addOptions();
+    compute_build_options.addOption(bool, "experimental_c_futures", c_futures_archive != null);
     compute_build_options.addOption(backend_policy.PolicyTable, "backend_runtime_policy", runtime_policy_table);
     addComputeProgramContract(compute_build_options, b.allocator);
     addNativeCommandStoragePolicy(compute_build_options, b.allocator);
@@ -1407,6 +1426,7 @@ pub fn build(b: *std.Build) void {
 
     // Full Dawn drop-in variant (tier=full).
     const full_build_options = b.addOptions();
+    full_build_options.addOption(bool, "experimental_c_futures", c_futures_archive != null);
     full_build_options.addOption(backend_policy.PolicyTable, "backend_runtime_policy", runtime_policy_table);
     addComputeProgramContract(full_build_options, b.allocator);
     addNativeCommandStoragePolicy(full_build_options, b.allocator);
@@ -1743,4 +1763,40 @@ pub fn build(b: *std.Build) void {
     const runtime_compile_report_run_step = b.step("runtime-compile-report-run", "Build and run the WGSL runtime compile structural report CLI");
     runtime_compile_report_run_step.dependOn(&install_runtime_compile_report.step);
     runtime_compile_report_run_step.dependOn(&run_runtime_compile_report.step);
+
+    const c_futures_test_step = b.step("test-c-futures-integration", "Run only selected C futures native integration cases");
+    if (c_futures_archive) |archive| {
+        // Retained generic suites contain original-owner fixtures. Selecting them
+        // would mix providers or use uninitialized selected stack instances.
+        // They remain unchanged and runnable only with the default provider.
+        for ([_]*std.Build.Step{ test_step, device_test_step, core_test_step, full_test_step, d3d12_test_step }) |step| {
+            step.dependencies.clearRetainingCapacity();
+            step.dependOn(&b.addFail("retained generic native suites require the default provider; use test-c-futures-integration for selected C").step);
+        }
+        const integration_module = b.createModule(.{
+            .root_source_file = b.path("test_suite_c_futures.zig"),
+            .target = target,
+            .optimize = optimize,
+            .imports = &.{.{ .name = "build_options", .module = build_options_module }},
+        });
+        addSourceModuleIncludePaths(integration_module, b);
+        configureCFuturesModule(integration_module, b, archive);
+        const integration_tests = b.addTest(.{ .root_module = integration_module, .filters = &.{"C futures integration:"} });
+        configureNativeGraphics(integration_tests, b, target);
+        c_futures_test_step.dependOn(&b.addRunArtifact(integration_tests).step);
+        for ([_]*std.Build.Module{ doe_module, compute_doe_module, full_doe_module }) |module|
+            configureCFuturesModule(module, b, archive);
+        for ([_]*std.Build.Step.Compile{
+            dropin_lib,                   exe,                            metal_staged_write_bench,       metal_compute_bench,            module_runner,
+            emit_msl_exe,                 emit_ir_digest_exe,             emit_csl_exe,                   emit_tsir_attention_canary_exe, emit_hlsl_exe,
+            emit_dxil_exe,                emit_spirv_exe,                 webgpu_plan_executor,           doe_plan_executor,              csl_sim_runner,
+            csl_bundle_emitter,           csl_host_plan_tool,             tsir_bootstrap_manifest_inputs, core_dropin_lib,                full_dropin_lib,
+            test_exec,                    device_test_exec,               core_test_exec,                 full_test_exec,                 d3d12_test_exec,
+            wgsl_test_exec,               metal_staged_write_bench_tests, metal_compute_bench_tests,      shader_bench_exe,               shader_bench_tests,
+            host_hotpath_bench_exe,       host_hotpath_bench_tests,       compilation_bench_exe,          compilation_bench_tests,        runtime_compile_report_exe,
+            runtime_compile_report_tests,
+        }) |artifact| configureCFuturesModule(artifact.root_module, b, archive);
+    } else {
+        c_futures_test_step.dependOn(&b.addFail("test-c-futures-integration requires -Dexperimental-c-futures-archive=/absolute/GCC/archive.a").step);
+    }
 }
