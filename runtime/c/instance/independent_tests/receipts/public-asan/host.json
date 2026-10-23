@@ -1,0 +1,18 @@
+{
+  "original_bytes": 357,
+  "original_receipt_sha256": "1fa3f71f83e7ebb7e7b242c191ca2c5d9ef2120a49d6b37a8622b2fee903ae1e",
+  "receipt": {
+    "argv": [
+      "uname",
+      "-a"
+    ],
+    "asan_options": "detect_leaks=0",
+    "child_peak_rss_kib": 11648,
+    "cwd": "/workspace/scratch/e1ac86fc0556",
+    "elapsed_seconds": 0.002152377972379327,
+    "instrumentation": "asan",
+    "returncode": 0,
+    "stderr": "",
+    "stdout": "Linux c8fc34b90a80 6.18.55 #1 SMP Wed Oct 14 19:45:18 UTC 2026 x86_64 GNU/Linux\n"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "original_bytes": 404,
+  "original_receipt_sha256": "ecd9ed652a0d292786de23396bf6d3ccc03096c9148df244bd2b7ced18ac50c5",
+  "receipt": {
+    "instrumented_objects": [
+      "instance.c",
+      "wait.c",
+      "capabilities.c",
+      "callbacks.c",
+      "storage.c",
+      "futures.c",
+      "doe_futures_zig_bridge.c"
+    ],
+    "leak_sanitizer": false,
+    "modes": [
+      "ASan+UBSan",
+      "TSan"
+    ],
+    "not_instrumented": [
+      "retained Zig consumers/fixtures",
+      "Metal/D3D12 C stubs",
+      "system libraries"
+    ],
+    "passed": true,
+    "tests_each": 12
+  }
+}

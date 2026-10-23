@@ -1,0 +1,18 @@
+{
+  "original_bytes": 412,
+  "original_receipt_sha256": "5fec5be201b24928c3585a6bdd20c5bc3cebc114641a4d0e2325da656acebd59",
+  "receipt": {
+    "argv": [
+      "/tmp/doe-instance-evaluator-0eyngbi0/instance-author-prebuilt/faults",
+      "undo-floor"
+    ],
+    "asan_options": null,
+    "child_peak_rss_kib": 46796,
+    "cwd": "/workspace/scratch/e1ac86fc0556",
+    "elapsed_seconds": 0.0009168200194835663,
+    "instrumentation": "normal",
+    "returncode": -6,
+    "stderr": "C instance undo retain count failed closed: status 1\n",
+    "stdout": "ALLOCATE\nOBSERVE\n"
+  }
+}

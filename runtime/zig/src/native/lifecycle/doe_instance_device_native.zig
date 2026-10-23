@@ -20,6 +20,7 @@ const device_caps = @import("../support/doe_device_caps.zig");
 const command_storage = @import("../command/doe_command_storage.zig");
 const build_options = @import("build_options");
 const device_loss = @import("../support/doe_device_loss.zig");
+const instance_adapter = if (build_options.experimental_c_instance) @import("../support/doe_instance_c_adapter.zig") else struct {};
 const resource_leases = @import("../../contracts/resource_lease.zig");
 const callback_delivery = @import("../support/doe_callback_owner.zig");
 
@@ -481,7 +482,7 @@ fn create_device_for_adapter(adapter: *DoeAdapter, adapter_raw: ?*anyopaque, des
         .userdata2 = descriptor.deviceLostCallbackInfo.userdata2,
     } else std.mem.zeroes(abi_callback.WGPUDeviceLostCallbackInfo);
     const instance = adapter.instance;
-    const event = device_loss.Event.create(alloc, if (instance) |owner| &owner.pending_completions else null, toOpaque(instance), info, .{
+    const event = device_loss.Event.create(alloc, if (instance) |owner| native_helpers.instance_pending(owner) else null, toOpaque(instance), info, .{
         .retain_device = doeNativeDeviceRetainInternal,
         .release_device = doeNativeDeviceReleaseInternal,
         .retain_instance = doeNativeInstanceAddRef,
@@ -501,9 +502,47 @@ fn create_device_for_adapter(adapter: *DoeAdapter, adapter_raw: ?*anyopaque, des
 // Instance
 // ============================================================
 
+// The logical source owner is stable even when Zig names a conditional struct
+// with an anonymous compiler suffix. Physical extent is always supplied explicitly.
+fn observeInstanceAllocation(instance: *DoeInstance, size: usize) void {
+    @import("../diagnostics/doe_program_identity_trace.zig").recordOpaqueNativeObjectCreate(
+        "native.support.doe_native_object_types.DoeInstance",
+        @ptrCast(instance),
+        size,
+    );
+}
+
+fn instanceAllocated(_: ?*anyopaque, instance: ?*DoeInstance, size: usize, _: usize) callconv(.c) void {
+    if (builtin.is_test) instance_adapter.test_allocated_count += 1;
+    observeInstanceAllocation(instance.?, size);
+}
+
+fn instanceExternalCount(_: ?*anyopaque, instance: ?*DoeInstance) callconv(.c) u32 {
+    return @import("../resource/doe_external_texture_native.zig").instance_external_texture_count(toOpaque(instance));
+}
+
+fn instanceRemoveLabel(_: ?*anyopaque, instance: ?*DoeInstance) callconv(.c) void {
+    native_helpers.label_store.remove(toOpaque(instance));
+    if (builtin.is_test) instance_adapter.test_finalized_count += 1;
+}
+
 pub export fn doeNativeCreateInstance(desc: ?*anyopaque) callconv(.c) ?*anyopaque {
     _ = desc;
-    const inst = make(DoeInstance) orelse return null;
+    if (comptime build_options.experimental_c_instance) {
+        const object_allocator = if (builtin.is_test) instance_adapter.test_object_allocator orelse alloc else alloc;
+        const wait_allocator = if (builtin.is_test) instance_adapter.test_wait_allocator orelse std.heap.page_allocator else std.heap.page_allocator;
+        return toOpaque(instance_adapter.create(.{
+            .abi_version = instance_adapter.c.DOE_INSTANCE_ABI_VERSION,
+            .object_allocator = instance_adapter.allocatorBinding(object_allocator),
+            .wait_allocator = instance_adapter.allocatorBinding(wait_allocator),
+            .hook_userdata = null,
+            .allocated = instanceAllocated,
+            .external_texture_count = instanceExternalCount,
+            .remove_label = instanceRemoveLabel,
+        }));
+    }
+    const inst = alloc.create(DoeInstance) catch return null;
+    observeInstanceAllocation(inst, @sizeOf(DoeInstance));
     inst.* = .{};
     @import("../support/doe_future_owner.zig").initialize(&inst.pending_completions, toOpaque(inst), doeNativeInstanceAddRef, doeNativeInstanceRelease) catch {
         alloc.destroy(inst);
@@ -519,6 +558,7 @@ pub export fn doeNativeInstanceAddRef(raw: ?*anyopaque) callconv(.c) void {
 
 pub export fn doeNativeInstanceRelease(raw: ?*anyopaque) callconv(.c) void {
     if (cast(DoeInstance, raw)) |inst| {
+        if (comptime build_options.experimental_c_instance) return instance_adapter.release(inst);
         // Guard: prevent destruction while external textures still reference this
         // Instance. The Chromium wire client may release its Instance handle before
         // external textures are freed; the external-texture backref path will call
@@ -541,6 +581,7 @@ pub export fn doeNativeInstanceRelease(raw: ?*anyopaque) callconv(.c) void {
 pub export fn doeNativeInstanceWaitAny(inst: ?*anyopaque, count: usize, infos: [*]abi_callback.WGPUFutureWaitInfo, timeout_ns: u64) callconv(.c) u32 {
     if (count == 0) return WGPU_WAIT_STATUS_SUCCESS;
     const instance = cast(DoeInstance, inst) orelse return WGPU_WAIT_STATUS_ERROR;
+    if (comptime build_options.experimental_c_instance) return instance_adapter.waitAny(instance, count, infos, timeout_ns);
     instance_add_ref(instance);
     defer doeNativeInstanceRelease(toOpaque(instance));
     const completed = instance.pending_completions.waitAny(infos[0..count], timeout_ns) catch
@@ -553,6 +594,7 @@ pub export fn doeNativeInstanceProcessEvents(raw: ?*anyopaque) callconv(.c) void
         @import("../queue/doe_queue_lifecycle.zig").drain_global_work_done();
         return;
     };
+    if (comptime build_options.experimental_c_instance) return instance_adapter.processEvents(instance);
     instance_add_ref(instance);
     defer doeNativeInstanceRelease(toOpaque(instance));
     instance.pending_completions.processEvents();

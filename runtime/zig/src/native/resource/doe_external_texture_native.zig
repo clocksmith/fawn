@@ -222,8 +222,7 @@ fn createFromNativeImport(
 
     const ext = std.heap.c_allocator.create(DoeExternalTexture) catch {
         if (instance_ref) |inst| {
-            const last_reference = native_helpers.object_should_destroy(inst);
-            std.debug.assert(!last_reference);
+            native_helpers.instance_undo_retain(inst);
         }
         // Release the imported MTLTexture handles on allocation failure.
         external_texture_ops.releasePlanes(imported);
@@ -257,8 +256,7 @@ fn createFromTextureViews(
 
     const ext = std.heap.c_allocator.create(DoeExternalTexture) catch {
         if (instance_ref) |inst| {
-            const last_reference = native_helpers.object_should_destroy(inst);
-            std.debug.assert(!last_reference);
+            native_helpers.instance_undo_retain(inst);
         }
         native_exports.doeNativeTextureViewRelease(native_helpers.toOpaque(plane0_view));
         if (plane1_view) |view| native_exports.doeNativeTextureViewRelease(native_helpers.toOpaque(view));

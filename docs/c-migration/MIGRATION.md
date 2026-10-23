@@ -156,12 +156,18 @@ Default selection remains Zig. The new `doe_callback_owner.zig` facade and
 obligations; `test_suite_c_callbacks.zig` and `tests/c_callbacks_integration_test.zig`
 are transitional test infrastructure. No baseline inventory entry is erased.
 
-The next [native-instance ownership contract](../../runtime/c/instance/CONTRACT.md)
-is frozen, not implemented or accepted. It moves the actual allocation, sole
-atomic count and accepted queue lifetime into C, with a non-owning copied
-queue/lease view and reversible retained-consumer selection. Independent cases
-and implementation evidence must close before any acceptance claim. Successful
-device/backend execution and physical GPU qualification remain separate gates.
+The [native-instance owner](../../runtime/c/instance/RESULTS.md) now passes
+independent Linux x86-64 ReleaseFast CPU/host acceptance. One C allocation owns
+the sole atomic count and accepted queue; copied queue/lease views remain
+non-owning. Actual retained consumers exercise last-reference callbacks,
+reentry, failure cleanup and unconfigured surface retention through reversible
+four-provider builds. Debug, GPU/device success, imported textures, configured
+presentation, package/browser adoption and LeakSanitizer remain unqualified.
+Native sanitizers cover seven C units, not retained Zig/system code. Default
+selection remains Zig; `doe_instance_c_adapter.zig` and the selected test root
+remain explicit transitional migration obligations, not erased baseline paths.
+See the [build and reproduction instructions](../../runtime/c/instance/README.md)
+and [independent evidence](../../runtime/c/instance/independent_tests/FINAL_REPORT.md).
 
 ## Existing authority, not a parallel policy
 

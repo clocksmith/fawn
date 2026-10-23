@@ -1,0 +1,41 @@
+{
+  "original_bytes": 2772,
+  "original_receipt_sha256": "3385a78f15b132e05d008d7bdb8900c86be4f1d105f811342a48afe81ba86880",
+  "receipt": {
+    "after_cleanup": [],
+    "argv": [
+      "/workspace/shared/doe-language-experiment-20261023/phase1/deps/zig-x86_64-linux-0.15.2/zig",
+      "build",
+      "browser-wasm",
+      "-j1",
+      "-Doptimize=ReleaseFast",
+      "-Dexperimental-c-instance-archive=/tmp/doe-instance-evaluator-0eyngbi0/instance-normal/libdoe_instance.a",
+      "-Dexperimental-c-callbacks-archive=/tmp/doe-instance-evaluator-0eyngbi0/callbacks-developer/libdoe_callbacks.a",
+      "-Dexperimental-c-futures-archive=/tmp/doe-instance-evaluator-0eyngbi0/accepted-futures/libdoe_futures_zig.a",
+      "--search-prefix",
+      "/workspace/shared/doe-language-experiment-20261023/phase1/system-link-prefix",
+      "--cache-dir",
+      "/tmp/doe-instance-evaluator-0eyngbi0/native-fci-retry1/cache",
+      "--global-cache-dir",
+      "/tmp/doe-instance-evaluator-0eyngbi0/native-fci-retry1/global-cache",
+      "--prefix",
+      "/tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/rejected-install"
+    ],
+    "before_cleanup": [],
+    "cleanup_signals": [],
+    "cwd": "/tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/source/runtime/zig",
+    "elapsed_seconds": 0.25275637296726927,
+    "environment": {
+      "DOE_BACKEND": "metal"
+    },
+    "no_live_process_group_members": true,
+    "pid_namespace": "pid:[4026532881]",
+    "process_group": 30,
+    "returncode": 1,
+    "stderr": "browser-wasm\n+- fail failure\nerror: experimental C futures is not supported by the non-native browser-wasm artifact\n\nBuild Summary: 0/2 steps succeeded; 1 failed\nbrowser-wasm transitive failure\n+- fail failure\n\nerror: the following build command failed with exit code 1:\n/tmp/doe-instance-evaluator-0eyngbi0/native-fci-retry1/cache/o/58c4c51800fa086037cd972028a13fef/build /workspace/shared/doe-language-experiment-20261023/phase1/deps/zig-x86_64-linux-0.15.2/zig /workspace/shared/doe-language-experiment-20261023/phase1/deps/zig-x86_64-linux-0.15.2/lib /tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/source/runtime/zig /tmp/doe-instance-evaluator-0eyngbi0/native-fci-retry1/cache /tmp/doe-instance-evaluator-0eyngbi0/native-fci-retry1/global-cache --seed 0x1e5815df -Z136de839f682c32b browser-wasm -j1 -Doptimize=ReleaseFast -Dexperimental-c-instance-archive=/tmp/doe-instance-evaluator-0eyngbi0/instance-normal/libdoe_instance.a -Dexperimental-c-callbacks-archive=/tmp/doe-instance-evaluator-0eyngbi0/callbacks-developer/libdoe_callbacks.a -Dexperimental-c-futures-archive=/tmp/doe-instance-evaluator-0eyngbi0/accepted-futures/libdoe_futures_zig.a --search-prefix /workspace/shared/doe-language-experiment-20261023/phase1/system-link-prefix --prefix /tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/rejected-install\n",
+    "stdout": "",
+    "timed_out": false,
+    "timeout_seconds": 120,
+    "wait_error": null
+  }
+}

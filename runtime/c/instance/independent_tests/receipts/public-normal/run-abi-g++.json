@@ -1,0 +1,17 @@
+{
+  "original_bytes": 2419,
+  "original_receipt_sha256": "6ef9d096f2992ff8c630cc53c8597455c897f89cea133fad599f501cebea2151",
+  "receipt": {
+    "argv": [
+      "/tmp/doe-instance-evaluator-0eyngbi0/instance-normal/abi-g++"
+    ],
+    "asan_options": null,
+    "child_peak_rss_kib": 46800,
+    "cwd": "/workspace/scratch/e1ac86fc0556",
+    "elapsed_seconds": 0.001234067021869123,
+    "instrumentation": "normal",
+    "returncode": 0,
+    "stderr": "",
+    "stdout": "type doe_instance_status 4 4\ntype doe_instance_allocator 32 8\ntype doe_instance_config 104 8\ntype doe_instance_queue_lease 32 8\ntype doe_instance_allocate 8 8\ntype doe_instance_deallocate 8 8\ntype doe_instance_allocated 8 8\ntype doe_instance_external_count 8 8\ntype doe_instance_remove_label 8 8\ntype doe_instance_lease_hook 8 8\ntype doe_future_storage_requirements 16 8\ntype doe_future_wait_info 16 8\ntype WGPUFuture 8 8\ntype WGPUFutureWaitInfo 16 8\ntype WGPUSupportedInstanceFeatures 16 8\ntype WGPUInstanceLimits 16 8\ntype WGPUBool 4 4\ntype WGPUWaitStatus 4 4\ntype WGPUInstanceFeatureName 4 4\nfield doe_instance_allocator.state 0 8\nfield doe_instance_allocator.vtable 8 8\nfield doe_instance_allocator.allocate 16 8\nfield doe_instance_allocator.deallocate 24 8\nfield doe_instance_config.abi_version 0 4\nfield doe_instance_config.object_allocator 8 32\nfield doe_instance_config.wait_allocator 40 32\nfield doe_instance_config.hook_userdata 72 8\nfield doe_instance_config.allocated 80 8\nfield doe_instance_config.external_texture_count 88 8\nfield doe_instance_config.remove_label 96 8\nfield doe_instance_queue_lease.queue 0 8\nfield doe_instance_queue_lease.userdata 8 8\nfield doe_instance_queue_lease.retain 16 8\nfield doe_instance_queue_lease.release 24 8\nfield doe_future_storage_requirements.size 0 8\nfield doe_future_storage_requirements.alignment 8 8\nfield doe_future_wait_info.id 0 8\nfield doe_future_wait_info.completed 8 4\nfield WGPUFuture.id 0 8\nfield WGPUFutureWaitInfo.future 0 8\nfield WGPUFutureWaitInfo.completed 8 4\nfield WGPUSupportedInstanceFeatures.featureCount 0 8\nfield WGPUSupportedInstanceFeatures.features 8 8\nfield WGPUInstanceLimits.nextInChain 0 8\nfield WGPUInstanceLimits.timedWaitAnyMaxCount 8 8\nenum DOE_INSTANCE_ABI_VERSION 1\nenum DOE_INSTANCE_OK 0\nenum DOE_INSTANCE_INVALID_ARGUMENT 1\nenum DOE_INSTANCE_UNSUPPORTED_VERSION 2\nenum DOE_INSTANCE_OUT_OF_MEMORY 3\nenum DOE_INSTANCE_LAYOUT_OVERFLOW 4\nenum DOE_INSTANCE_QUEUE_INITIALIZATION 5\nenum WGPUWaitStatus_Success 1\nenum WGPUWaitStatus_TimedOut 2\nenum WGPUWaitStatus_Error 3\n"
+  }
+}

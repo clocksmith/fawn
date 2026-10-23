@@ -317,7 +317,7 @@ pub export fn wgpuSupportedFeaturesFreeMembers(a0: p1cap.SupportedFeatures) call
 }
 
 pub export fn wgpuSupportedInstanceFeaturesFreeMembers(a0: p1cap.SupportedInstanceFeatures) callconv(.c) void {
-    _ = a0;
+    if (comptime @import("build_options").experimental_c_instance) return @import("../native/support/doe_instance_c_adapter.zig").freeFeatures(a0);
 }
 
 pub export fn wgpuSupportedWGSLLanguageFeaturesFreeMembers(a0: p1cap.SupportedWGSLLanguageFeatures) callconv(.c) void {

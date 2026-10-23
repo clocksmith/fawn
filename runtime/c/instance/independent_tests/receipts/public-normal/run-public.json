@@ -1,0 +1,17 @@
+{
+  "original_bytes": 454,
+  "original_receipt_sha256": "ff43e302fa69dda9c62e93f05c04734e0bedd1b98ec533dca7bca8d29591f244",
+  "receipt": {
+    "argv": [
+      "/tmp/doe-instance-evaluator-0eyngbi0/instance-normal/public"
+    ],
+    "asan_options": null,
+    "child_peak_rss_kib": 35692,
+    "cwd": "/workspace/scratch/e1ac86fc0556",
+    "elapsed_seconds": 0.009299050958361477,
+    "instrumentation": "normal",
+    "returncode": 0,
+    "stderr": "",
+    "stdout": "PASS independent public instance cases C01-C05/C09-C14/C16-C18 (named partial coverage; separate faults/native complete remaining obligations)\n"
+  }
+}

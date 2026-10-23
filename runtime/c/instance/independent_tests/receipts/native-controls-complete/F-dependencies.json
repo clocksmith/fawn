@@ -1,0 +1,19 @@
+{
+  "original_bytes": 716,
+  "original_receipt_sha256": "744aab8bc826cfd589692bd4da67db782a8aab453cf2964a4ff1a0888de32c4e",
+  "receipt": {
+    "argv": [
+      "ldd",
+      "/tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/F-install/lib/libwebgpu_doe.so"
+    ],
+    "cwd": "/tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/source/runtime/zig",
+    "elapsed_seconds": 0.0064719070214778185,
+    "environment": {
+      "DOE_BACKEND": "metal",
+      "LD_LIBRARY_PATH": "/workspace/shared/doe-language-experiment-20261023/phase1/system-link-prefix/lib"
+    },
+    "returncode": 0,
+    "stderr": "",
+    "stdout": "\tlinux-vdso.so.1 (0x00007f0788c61000)\n\tlibvulkan.so.1 => /lib/x86_64-linux-gnu/libvulkan.so.1 (0x00007f0788930000)\n\tlibc.so.6 => /lib/x86_64-linux-gnu/libc.so.6 (0x00007f078873c000)\n\t/lib64/ld-linux-x86-64.so.2 (0x00007f0788c63000)\n"
+  }
+}

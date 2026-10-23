@@ -1,0 +1,8 @@
+{
+  "original_bytes": 189,
+  "original_receipt_sha256": "6657c3b4755046176cea56aaa03ab8c5a82a99803c4ab6d2d525b63468a467c3",
+  "receipt": {
+    "path": "/tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/F-install/lib/libwebgpu_doe.so",
+    "sha256": "15754ee84fab9031a5087501baedc8321a3b029364644c70bca6554a119d4339"
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "original_bytes": 3764,
+  "original_receipt_sha256": "3bca153b351579d4327f1aace5166703846de41b371797a031120479c8689f15",
+  "receipt": {
+    "after_cleanup": [],
+    "argv": [
+      "/workspace/shared/doe-language-experiment-20261023/phase1/deps/zig-x86_64-linux-0.15.2/zig",
+      "build",
+      "dropin",
+      "-j1",
+      "-Doptimize=ReleaseFast",
+      "-Dexperimental-c-instance-archive=/tmp/doe-instance-evaluator-0eyngbi0/instance-normal/libdoe_instance.a",
+      "-Dexperimental-c-callbacks-archive=/tmp/independent-callback-intentionally-absent.a",
+      "-Dexperimental-c-futures-archive=/tmp/doe-instance-evaluator-0eyngbi0/accepted-futures/libdoe_futures_zig.a",
+      "--search-prefix",
+      "/workspace/shared/doe-language-experiment-20261023/phase1/system-link-prefix",
+      "--cache-dir",
+      "/tmp/doe-instance-evaluator-0eyngbi0/native-fci-retry1/cache",
+      "--global-cache-dir",
+      "/tmp/doe-instance-evaluator-0eyngbi0/native-fci-retry1/global-cache",
+      "--prefix",
+      "/tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/rejected-install"
+    ],
+    "before_cleanup": [],
+    "cleanup_signals": [],
+    "cwd": "/tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/source/runtime/zig",
+    "elapsed_seconds": 0.5032446770346723,
+    "environment": {
+      "DOE_BACKEND": "metal"
+    },
+    "no_live_process_group_members": true,
+    "pid_namespace": "pid:[4026532881]",
+    "process_group": 21,
+    "returncode": 1,
+    "stderr": "thread 23 panic: experimental C callbacks requires an existing absolute external GCC archive; no fallback\n/tmp/doe-instance-evaluator-0eyngbi0/native-fci-retry1/source/runtime/zig/build.zig:513:13: 0x12121f5 in build (build.zig)\n            @panic(\"experimental C callbacks requires an existing absolute external GCC archive; no fallback\");\n            ^\n/workspace/shared/doe-language-experiment-20261023/phase1/deps/zig-x86_64-linux-0.15.2/lib/std/Build.zig:2214:33: 0x11de0da in runBuild__anon_23549 (std.zig)\n        .void => build_zig.build(b),\n                                ^\n/workspace/shared/doe-language-experiment-20261023/phase1/deps/zig-x86_64-linux-0.15.2/lib/compiler/build_runner.zig:366:29: 0x11c3ff1 in main (build_runner.zig)\n        try builder.runBuild(root);\n                            ^\n/workspace/shared/doe-language-experiment-20261023/phase1/deps/zig-x86_64-linux-0.15.2/lib/std/start.zig:627:37: 0x11cac69 in posixCallMainAndExit (std.zig)\n            const result = root.main() catch |err| {\n                                    ^\n/workspace/shared/doe-language-experiment-20261023/phase1/deps/zig-x86_64-linux-0.15.2/lib/std/start.zig:232:5: 0x11a9351 in _start (std.zig)\n    asm volatile (switch (native_arch) {\n    ^\n???:?:?: 0x0 in ??? (???)\nerror: the following build command crashed:\n/tmp/doe-instance-evaluator-0eyngbi0/native-fci-retry1/cache/o/58c4c51800fa086037cd972028a13fef/build /workspace/shared/doe-language-experiment-20261023/phase1/deps/zig-x86_64-linux-0.15.2/zig /workspace/shared/doe-language-experiment-20261023/phase1/deps/zig-x86_64-linux-0.15.2/lib /tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/source/runtime/zig /tmp/doe-instance-evaluator-0eyngbi0/native-fci-retry1/cache /tmp/doe-instance-evaluator-0eyngbi0/native-fci-retry1/global-cache --seed 0xf3090c0c -Z11ea82af25421c86 dropin -j1 -Doptimize=ReleaseFast -Dexperimental-c-instance-archive=/tmp/doe-instance-evaluator-0eyngbi0/instance-normal/libdoe_instance.a -Dexperimental-c-callbacks-archive=/tmp/independent-callback-intentionally-absent.a -Dexperimental-c-futures-archive=/tmp/doe-instance-evaluator-0eyngbi0/accepted-futures/libdoe_futures_zig.a --search-prefix /workspace/shared/doe-language-experiment-20261023/phase1/system-link-prefix --prefix /tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/rejected-install\n",
+    "stdout": "",
+    "timed_out": false,
+    "timeout_seconds": 120,
+    "wait_error": null
+  }
+}

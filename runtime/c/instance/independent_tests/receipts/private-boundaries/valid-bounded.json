@@ -1,0 +1,14 @@
+{
+  "original_bytes": 237,
+  "original_receipt_sha256": "eaf0d15ccd29758900c512ff0c65b5336a90015e55898fb826f0db6c25f4da31",
+  "receipt": {
+    "argv": [
+      "/tmp/doe-instance-evaluator-0eyngbi0/instance-private/bounded",
+      "valid"
+    ],
+    "elapsed_seconds": 0.0012644140515476465,
+    "returncode": 0,
+    "stderr": "",
+    "stdout": "LABEL\nFREE\nPASS bounded count control\n"
+  }
+}

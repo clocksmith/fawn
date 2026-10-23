@@ -1,0 +1,18 @@
+{
+  "original_bytes": 402,
+  "original_receipt_sha256": "a02a299d3315f36dbc54780aaa22a9d9bfa8d082d1753386ccf73ceb06012ab8",
+  "receipt": {
+    "argv": [
+      "/tmp/doe-instance-evaluator-0eyngbi0/instance-normal/faults",
+      "deinit-unlock"
+    ],
+    "asan_options": null,
+    "child_peak_rss_kib": 46800,
+    "cwd": "/workspace/scratch/e1ac86fc0556",
+    "elapsed_seconds": 0.0009931810200214386,
+    "instrumentation": "normal",
+    "returncode": -6,
+    "stderr": "C instance queue deinit failed closed: status 13\n",
+    "stdout": "ALLOCATE\nOBSERVE\n"
+  }
+}

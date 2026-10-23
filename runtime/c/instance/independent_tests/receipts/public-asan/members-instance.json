@@ -1,0 +1,19 @@
+{
+  "original_bytes": 412,
+  "original_receipt_sha256": "ddb492ed37aa9c7ef6ff40a89c74eeb78ac1349ffdf0f474cf90624267d8f234",
+  "receipt": {
+    "argv": [
+      "ar",
+      "t",
+      "/tmp/doe-instance-evaluator-0eyngbi0/instance-asan/libdoe_instance.a"
+    ],
+    "asan_options": "detect_leaks=0",
+    "child_peak_rss_kib": 24504,
+    "cwd": "/workspace/scratch/e1ac86fc0556",
+    "elapsed_seconds": 0.0015303569962270558,
+    "instrumentation": "asan",
+    "returncode": 0,
+    "stderr": "",
+    "stdout": "instance-capabilities.o\ninstance-instance.o\ninstance-wait.o\n"
+  }
+}

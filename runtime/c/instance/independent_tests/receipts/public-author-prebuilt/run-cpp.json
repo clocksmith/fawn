@@ -1,0 +1,17 @@
+{
+  "original_bytes": 391,
+  "original_receipt_sha256": "c50a11bef6beeea6193263b55b6fe4d9eec5c64487d814c33c64f06b82b41686",
+  "receipt": {
+    "argv": [
+      "/tmp/doe-instance-evaluator-0eyngbi0/instance-author-prebuilt/cpp"
+    ],
+    "asan_options": null,
+    "child_peak_rss_kib": 46796,
+    "cwd": "/workspace/scratch/e1ac86fc0556",
+    "elapsed_seconds": 0.0011717960005626082,
+    "instrumentation": "normal",
+    "returncode": 0,
+    "stderr": "",
+    "stdout": "PASS independent C++17 opaque instance ABI calls and stateless allocator\n"
+  }
+}

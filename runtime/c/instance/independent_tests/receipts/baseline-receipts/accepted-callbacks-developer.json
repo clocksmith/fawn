@@ -1,0 +1,19 @@
+{
+  "original_bytes": 2052,
+  "original_receipt_sha256": "fed7166001956176ddde17ff0912d5372db8b874f5f32076d558b7577d2489e6",
+  "receipt": {
+    "argv": [
+      "make",
+      "-C",
+      "/workspace/shared/doe-c-migration-20261023/runtime/c/callbacks",
+      "BUILD=/tmp/doe-instance-evaluator-0eyngbi0/callbacks-developer",
+      "FUTURES_ARCHIVE=/tmp/doe-instance-evaluator-0eyngbi0/accepted-futures/libdoe_futures_zig.a",
+      "check"
+    ],
+    "cwd": "/workspace/shared/doe-c-migration-20261023",
+    "elapsed_seconds": 0.25849258404923603,
+    "returncode": 0,
+    "stderr": "",
+    "stdout": "make: Entering directory '/workspace/shared/doe-c-migration-20261023/runtime/c/callbacks'\nmkdir -p /tmp/doe-instance-evaluator-0eyngbi0/callbacks-developer\ngcc -Iinclude -I../futures/include -std=c11 -O2 -g -fPIC -Wall -Wextra -Wpedantic -Werror -pthread -c src/callbacks.c -o /tmp/doe-instance-evaluator-0eyngbi0/callbacks-developer/callbacks.o\nar rcs /tmp/doe-instance-evaluator-0eyngbi0/callbacks-developer/libdoe_callbacks.a /tmp/doe-instance-evaluator-0eyngbi0/callbacks-developer/callbacks.o\ngcc -Iinclude -I../futures/include -std=c11 -O2 -g -fPIC -Wall -Wextra -Wpedantic -Werror -pthread tests/test_api.c /tmp/doe-instance-evaluator-0eyngbi0/callbacks-developer/libdoe_callbacks.a /tmp/doe-instance-evaluator-0eyngbi0/accepted-futures/libdoe_futures_zig.a  -pthread -o /tmp/doe-instance-evaluator-0eyngbi0/callbacks-developer/test_api\ng++ -Iinclude -I../futures/include -std=c++17 -O2 -g -Wall -Wextra -Wpedantic -Werror -fno-exceptions -fno-rtti -pthread tests/test_cpp.cpp /tmp/doe-instance-evaluator-0eyngbi0/callbacks-developer/libdoe_callbacks.a /tmp/doe-instance-evaluator-0eyngbi0/accepted-futures/libdoe_futures_zig.a  -pthread -o /tmp/doe-instance-evaluator-0eyngbi0/callbacks-developer/test_cpp\n/tmp/doe-instance-evaluator-0eyngbi0/callbacks-developer/test_api\nC callback payload API: validation, transfer, alignment, inline copy, modes, last-owner and worker passed\n/tmp/doe-instance-evaluator-0eyngbi0/callbacks-developer/test_cpp\nrestricted C++ public callback header/static archive passed\nmake: Leaving directory '/workspace/shared/doe-c-migration-20261023/runtime/c/callbacks'\n"
+  }
+}

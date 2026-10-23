@@ -1,0 +1,27 @@
+{
+  "original_bytes": 1965,
+  "original_receipt_sha256": "fc71da410504e28ed0425836bc29b20310489bdd7d6160b016fc443255acff7d",
+  "receipt": {
+    "argv": [
+      "/workspace/shared/doe-language-experiment-20261023/phase1/deps/zig-x86_64-linux-0.15.2/zig",
+      "build",
+      "test-c-instance-integration",
+      "-j1",
+      "-Doptimize=ReleaseFast",
+      "--search-prefix",
+      "/workspace/shared/doe-language-experiment-20261023/phase1/system-link-prefix",
+      "--cache-dir",
+      "/tmp/doe-instance-evaluator-0eyngbi0/native-fci-retry1/cache",
+      "--global-cache-dir",
+      "/tmp/doe-instance-evaluator-0eyngbi0/native-fci-retry1/global-cache",
+      "--prefix",
+      "/tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/rejected-install"
+    ],
+    "cwd": "/tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/source/runtime/zig",
+    "elapsed_seconds": 0.25323375000152737,
+    "required_diagnostic": "requires explicit instance, callback and future GCC archives",
+    "returncode": 1,
+    "stderr": "test-c-instance-integration\n+- fail failure\nerror: test-c-instance-integration requires explicit instance, callback and future GCC archives\n\nBuild Summary: 0/2 steps succeeded; 1 failed\ntest-c-instance-integration transitive failure\n+- fail failure\n\nerror: the following build command failed with exit code 1:\n/tmp/doe-instance-evaluator-0eyngbi0/native-fci-retry1/cache/o/58c4c51800fa086037cd972028a13fef/build /workspace/shared/doe-language-experiment-20261023/phase1/deps/zig-x86_64-linux-0.15.2/zig /workspace/shared/doe-language-experiment-20261023/phase1/deps/zig-x86_64-linux-0.15.2/lib /tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/source/runtime/zig /tmp/doe-instance-evaluator-0eyngbi0/native-fci-retry1/cache /tmp/doe-instance-evaluator-0eyngbi0/native-fci-retry1/global-cache --seed 0x7d1e939f -Z93e499bfb9a9bc72 test-c-instance-integration -j1 -Doptimize=ReleaseFast --search-prefix /workspace/shared/doe-language-experiment-20261023/phase1/system-link-prefix --prefix /tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/rejected-install\n",
+    "stdout": ""
+  }
+}

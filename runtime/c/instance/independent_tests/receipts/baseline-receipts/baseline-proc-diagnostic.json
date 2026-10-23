@@ -1,0 +1,15 @@
+{
+  "original_bytes": 558,
+  "original_receipt_sha256": "a7fddc1ef2e3753131b05b5be292ea8ff6f062c1fbfd11ec4512bc0402dd5d1b",
+  "receipt": {
+    "argv": [
+      "/tmp/doe-instance-evaluator-0eyngbi0/baseline-proc-diagnostic",
+      "/tmp/doe-callback-final-5k2_7osz/install/lib/libwebgpu_doe.so",
+      "F"
+    ],
+    "modified_test": "diagnostic print only; original assertion preserved",
+    "returncode": -6,
+    "stderr": "proc mismatch: wgpuCreateInstance target doeNativeCreateInstance resolved 0x7f093bf0d8a0 exported 0x7f093bf3cd10\nbaseline-proc-diagnostic: /tmp/doe-instance-evaluator-0eyngbi0/native_consumer_diagnostic.c:58: proc: Assertion `raw == dlsym(library,target)' failed.\n",
+    "stdout": ""
+  }
+}

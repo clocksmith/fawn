@@ -1,0 +1,52 @@
+{
+  "main_compute_full_option_fields": [
+    "experimental_c_futures",
+    "experimental_c_callbacks",
+    "experimental_c_instance"
+  ],
+  "module_roots": [
+    "doe_module",
+    "compute_doe_module",
+    "full_doe_module"
+  ],
+  "configured_artifact_roots": [
+    "dropin_lib",
+    "exe",
+    "metal_staged_write_bench",
+    "metal_compute_bench",
+    "module_runner",
+    "emit_msl_exe",
+    "emit_ir_digest_exe",
+    "emit_csl_exe",
+    "emit_tsir_attention_canary_exe",
+    "emit_hlsl_exe",
+    "emit_dxil_exe",
+    "emit_spirv_exe",
+    "webgpu_plan_executor",
+    "doe_plan_executor",
+    "csl_sim_runner",
+    "csl_bundle_emitter",
+    "csl_host_plan_tool",
+    "tsir_bootstrap_manifest_inputs",
+    "core_dropin_lib",
+    "full_dropin_lib",
+    "test_exec",
+    "device_test_exec",
+    "core_test_exec",
+    "full_test_exec",
+    "d3d12_test_exec",
+    "wgsl_test_exec",
+    "metal_staged_write_bench_tests",
+    "metal_compute_bench_tests",
+    "shader_bench_exe",
+    "shader_bench_tests",
+    "host_hotpath_bench_exe",
+    "host_hotpath_bench_tests",
+    "compilation_bench_exe",
+    "compilation_bench_tests",
+    "runtime_compile_report_exe",
+    "runtime_compile_report_tests"
+  ],
+  "distinct_roots": 36,
+  "semantics": "Every listed artifact invokes configureCOwnersModule with the same exact selected archive tuple. This is source audit, not blanket build or execution."
+}

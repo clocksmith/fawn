@@ -1,0 +1,23 @@
+{
+  "original_bytes": 1754,
+  "original_receipt_sha256": "6b5ad88ec56aa94c7f39f5aa52bf61b05cbcfe1f32a5c27374b774c2015ae965",
+  "receipt": {
+    "argv": [
+      "/workspace/shared/doe-language-experiment-20261023/phase1/deps/zig-x86_64-linux-0.15.2/zig",
+      "build-obj",
+      "--dep",
+      "build_options",
+      "-Mroot=/tmp/doe-instance-evaluator-0eyngbi0/accepted-source/runtime/zig/independent_layout_v2.zig",
+      "-Mbuild_options=/tmp/doe-instance-evaluator-0eyngbi0/accepted-source/runtime/zig/options.zig",
+      "-lc",
+      "--cache-dir",
+      "/tmp/doe-instance-evaluator-0eyngbi0/layout-cache",
+      "--global-cache-dir",
+      "/tmp/doe-instance-evaluator-0eyngbi0/abi-global"
+    ],
+    "expected": "compile-log diagnostic, not runtime execution",
+    "returncode": 1,
+    "stderr": "/tmp/doe-instance-evaluator-0eyngbi0/accepted-source/runtime/zig/src/core/abi/generated/webgpu_upstream.zig:5:15: error: C import failed\npub const c = @cImport({\n              ^~~~~~~~\nreferenced by:\n    WGPUAdapter: /tmp/doe-instance-evaluator-0eyngbi0/accepted-source/runtime/zig/src/core/abi/generated/webgpu_upstream.zig:9:25\n    comptime: /tmp/doe-instance-evaluator-0eyngbi0/accepted-source/runtime/zig/src/core/abi/generated/webgpu_upstream.zig:953:9\n    15 reference(s) hidden; use '-freference-trace=17' to see all references\n/tmp/doe-instance-evaluator-0eyngbi0/layout-cache/o/fab4338637a9465c684be28d265ceaa0/cimport.h:1:10: error: 'webgpu.h' file not found\n#include <webgpu.h>\n         ^\n/tmp/doe-instance-evaluator-0eyngbi0/accepted-source/runtime/zig/src/native/support/doe_future_c_adapter.zig:5:15: error: C import failed\npub const c = @cImport({\n              ^~~~~~~~\n/tmp/doe-instance-evaluator-0eyngbi0/layout-cache/o/0db3715264529a81df4878f41c6d1681/cimport.h:1:10: error: 'doe_futures_zig_bridge.h' file not found\n#include <doe_futures_zig_bridge.h>\n         ^\n",
+    "stdout": ""
+  }
+}

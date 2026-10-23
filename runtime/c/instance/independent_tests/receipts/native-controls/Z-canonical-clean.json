@@ -1,0 +1,28 @@
+{
+  "original_bytes": 4284,
+  "original_receipt_sha256": "37ce1d2eaa72d688aee1bfea0386bcde5788c7947a7af89d53e7d36e4e5459a0",
+  "receipt": {
+    "DOE_BACKEND": "metal",
+    "argv": [
+      "/workspace/shared/doe-language-experiment-20261023/phase1/deps/zig-x86_64-linux-0.15.2/zig",
+      "build",
+      "dropin",
+      "-j1",
+      "-Doptimize=ReleaseFast",
+      "--search-prefix",
+      "/workspace/shared/doe-language-experiment-20261023/phase1/system-link-prefix",
+      "--cache-dir",
+      "/tmp/doe-instance-evaluator-0eyngbi0/native-controls/Z-cache",
+      "--global-cache-dir",
+      "/tmp/doe-instance-evaluator-0eyngbi0/native-controls/Z-global-cache",
+      "--prefix",
+      "/tmp/doe-instance-evaluator-0eyngbi0/native-controls/Z-install"
+    ],
+    "child_peak_rss_kib": 335912,
+    "cwd": "/tmp/doe-instance-evaluator-0eyngbi0/native-controls/source/runtime/zig",
+    "elapsed_seconds": 6.099737751996145,
+    "returncode": 1,
+    "stderr": "thread 24 panic: failed to open required build input ../../pipeline/lean/Doe/Extract.lean: FileNotFound\n/workspace/shared/doe-language-experiment-20261023/phase1/deps/zig-x86_64-linux-0.15.2/lib/std/posix.zig:1861:23: 0x11115a7 in openatZ (std.zig)\n            .NOENT => return error.FileNotFound,\n                      ^\n/workspace/shared/doe-language-experiment-20261023/phase1/deps/zig-x86_64-linux-0.15.2/lib/std/fs/Dir.zig:904:16: 0x10f73e2 in openFileZ (std.zig)\n    const fd = try posix.openatZ(self.fd, sub_path, os_flags, 0);\n               ^\n/workspace/shared/doe-language-experiment-20261023/phase1/deps/zig-x86_64-linux-0.15.2/lib/std/fs/Dir.zig:851:5: 0x10bafe5 in openFile (std.zig)\n    return self.openFileZ(&path_c, flags);\n    ^\n/tmp/doe-instance-evaluator-0eyngbi0/native-controls/source/runtime/zig/build.zig:136:24: 0x128cabd in readFileAlloc (build.zig)\n        std.debug.panic(\"failed to open required build input {s}: {s}\", .{ path, @errorName(err) });\n                       ^\n/tmp/doe-instance-evaluator-0eyngbi0/native-controls/source/runtime/zig/build.zig:143:35: 0x1308624 in hashFileAlloc (build.zig)\n    const contents = readFileAlloc(allocator, path, max_bytes);\n                                  ^\n/tmp/doe-instance-evaluator-0eyngbi0/native-controls/source/runtime/zig/build.zig:243:48: 0x128b05c in loadProofProvenance (build.zig)\n        .extract_program_sha256 = hashFileAlloc(allocator, \"../../pipeline/lean/Doe/Extract.lean\", 64 * 1024),\n                                               ^\n/tmp/doe-instance-evaluator-0eyngbi0/native-controls/source/runtime/zig/build.zig:583:49: 0x1215d31 in build (build.zig)\n    const proof_provenance = loadProofProvenance(b.allocator);\n                                                ^\n/workspace/shared/doe-language-experiment-20261023/phase1/deps/zig-x86_64-linux-0.15.2/lib/std/Build.zig:2214:33: 0x11de0da in runBuild__anon_23549 (std.zig)\n        .void => build_zig.build(b),\n                                ^\n/workspace/shared/doe-language-experiment-20261023/phase1/deps/zig-x86_64-linux-0.15.2/lib/compiler/build_runner.zig:366:29: 0x11c3ff1 in main (build_runner.zig)\n        try builder.runBuild(root);\n                            ^\n/workspace/shared/doe-language-experiment-20261023/phase1/deps/zig-x86_64-linux-0.15.2/lib/std/start.zig:627:37: 0x11cac69 in posixCallMainAndExit (std.zig)\n            const result = root.main() catch |err| {\n                                    ^\n/workspace/shared/doe-language-experiment-20261023/phase1/deps/zig-x86_64-linux-0.15.2/lib/std/start.zig:232:5: 0x11a9351 in _start (std.zig)\n    asm volatile (switch (native_arch) {\n    ^\n???:?:?: 0x0 in ??? (???)\nerror: the following build command crashed:\n/tmp/doe-instance-evaluator-0eyngbi0/native-controls/Z-cache/o/58c4c51800fa086037cd972028a13fef/build /workspace/shared/doe-language-experiment-20261023/phase1/deps/zig-x86_64-linux-0.15.2/zig /workspace/shared/doe-language-experiment-20261023/phase1/deps/zig-x86_64-linux-0.15.2/lib /tmp/doe-instance-evaluator-0eyngbi0/native-controls/source/runtime/zig /tmp/doe-instance-evaluator-0eyngbi0/native-controls/Z-cache /tmp/doe-instance-evaluator-0eyngbi0/native-controls/Z-global-cache --seed 0x381abeca -Z12d850fd38b839ed dropin -j1 -Doptimize=ReleaseFast --search-prefix /workspace/shared/doe-language-experiment-20261023/phase1/system-link-prefix --prefix /tmp/doe-instance-evaluator-0eyngbi0/native-controls/Z-install\n",
+    "stdout": ""
+  }
+}

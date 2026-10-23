@@ -23,6 +23,7 @@ Inputs:
 
 Outputs:
 - Native libraries, tools, backend artifacts, and typed runtime diagnostics.
+- The explicit default-off [C instance seam](../c/instance/CONTRACT.md) keeps its count and queue ownership in C; retained consumers remain native.
 
 ## Invariants
 

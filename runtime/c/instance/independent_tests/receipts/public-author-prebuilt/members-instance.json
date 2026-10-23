@@ -1,0 +1,19 @@
+{
+  "original_bytes": 375,
+  "original_receipt_sha256": "66ed36ec89eda852186dd227a717de889632c62b45fd9baf7b7c9923ca751ec2",
+  "receipt": {
+    "argv": [
+      "ar",
+      "t",
+      "/tmp/doe-instance-author-20261023-release/instance/libdoe_instance.a"
+    ],
+    "asan_options": null,
+    "child_peak_rss_kib": 11648,
+    "cwd": "/workspace/scratch/e1ac86fc0556",
+    "elapsed_seconds": 0.0014318909961730242,
+    "instrumentation": "normal",
+    "returncode": 0,
+    "stderr": "",
+    "stdout": "instance.o\nwait.o\ncapabilities.o\n"
+  }
+}

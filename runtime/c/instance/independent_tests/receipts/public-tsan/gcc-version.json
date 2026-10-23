@@ -1,0 +1,18 @@
+{
+  "original_bytes": 507,
+  "original_receipt_sha256": "34a02138b3befdac535f6329a70ed8b0eedf346a3bfe8c5c707c485cbcd8c9c0",
+  "receipt": {
+    "argv": [
+      "gcc",
+      "--version"
+    ],
+    "asan_options": null,
+    "child_peak_rss_kib": 11520,
+    "cwd": "/workspace/scratch/e1ac86fc0556",
+    "elapsed_seconds": 0.0014597420231439173,
+    "instrumentation": "tsan",
+    "returncode": 0,
+    "stderr": "",
+    "stdout": "gcc (Debian 14.2.0-19) 14.2.0\nCopyright (C) 2024 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\n"
+  }
+}

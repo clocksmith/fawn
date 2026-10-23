@@ -5,6 +5,11 @@ const owner = if (selected) @import("doe_future_c_adapter.zig") else @import("do
 pub const Completion = owner.Completion;
 pub const PendingCompletions = owner.PendingCompletions;
 pub const legacyFuture = owner.legacyFuture;
+pub const QueueRef = if (selected) owner.QueueView else *PendingCompletions;
+
+pub fn borrow(pending: *PendingCompletions) QueueRef {
+    return if (selected) pending.view() else pending;
+}
 
 pub fn initialize(pending: *PendingCompletions, instance: ?*anyopaque, retain: *const fn (?*anyopaque) callconv(.c) void, release: *const fn (?*anyopaque) callconv(.c) void) !void {
     if (selected) try pending.init(.{ .context = instance, .retain = retain, .release = release });

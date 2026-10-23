@@ -1,0 +1,33 @@
+{
+  "original_bytes": 1321,
+  "original_receipt_sha256": "13cfb28b4aba225ee9c179bf776e5da631a3332243665c68d6703992f14175b7",
+  "receipt": {
+    "argv": [
+      "/workspace/shared/doe-language-experiment-20261023/phase1/deps/zig-x86_64-linux-0.15.2/zig",
+      "build",
+      "test-c-futures-integration",
+      "-j1",
+      "-Doptimize=ReleaseFast",
+      "-Dexperimental-c-futures-archive=/tmp/doe-instance-evaluator-0eyngbi0/accepted-futures/libdoe_futures_zig.a",
+      "--search-prefix",
+      "/workspace/shared/doe-language-experiment-20261023/phase1/system-link-prefix",
+      "--cache-dir",
+      "/tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/F-cache",
+      "--global-cache-dir",
+      "/tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/F-global-cache",
+      "--prefix",
+      "/tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/F-install",
+      "--summary",
+      "all"
+    ],
+    "cwd": "/tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/source/runtime/zig",
+    "elapsed_seconds": 27.776304342027288,
+    "environment": {
+      "DOE_BACKEND": "metal",
+      "LD_LIBRARY_PATH": "/workspace/shared/doe-language-experiment-20261023/phase1/system-link-prefix/lib"
+    },
+    "returncode": 0,
+    "stderr": "\nBuild Summary: 4/4 steps succeeded; 11/11 tests passed\ntest-c-futures-integration success\n+- run test 11 passed 7ms MaxRSS:3M\n   +- compile test ReleaseFast native success 22s MaxRSS:365M\n      +- options success\n\n",
+    "stdout": ""
+  }
+}

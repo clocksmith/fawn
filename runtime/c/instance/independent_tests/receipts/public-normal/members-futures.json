@@ -1,0 +1,19 @@
+{
+  "original_bytes": 378,
+  "original_receipt_sha256": "26ef73693d27ba7c5e33fb70fd1d22d059b7a6511acb3ae24e330e22bc44e523",
+  "receipt": {
+    "argv": [
+      "ar",
+      "t",
+      "/tmp/doe-instance-evaluator-0eyngbi0/instance-normal/libdoe_futures.a"
+    ],
+    "asan_options": null,
+    "child_peak_rss_kib": 22484,
+    "cwd": "/workspace/scratch/e1ac86fc0556",
+    "elapsed_seconds": 0.0015787379816174507,
+    "instrumentation": "normal",
+    "returncode": 0,
+    "stderr": "",
+    "stdout": "futures-futures.o\nfutures-storage.o\n"
+  }
+}

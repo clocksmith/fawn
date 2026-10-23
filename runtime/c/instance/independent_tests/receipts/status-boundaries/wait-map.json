@@ -1,0 +1,13 @@
+{
+  "original_bytes": 306,
+  "original_receipt_sha256": "6afdd6743c1478d57a8d768069bbe8f118e915ba924eb16d9ea83301bec57b03",
+  "receipt": {
+    "argv": [
+      "/tmp/doe-instance-evaluator-0eyngbi0/instance-status",
+      "wait-map"
+    ],
+    "returncode": 0,
+    "stderr": "",
+    "stdout": "FREE\nFREE\nFREE\nFREE\nFREE\nFREE\nFREE\nFREE\nFREE\nFREE\nFREE\nFREE\nFREE\nFREE\nLABEL\nFREE\nPASS all wait status mapping and exact real-queue output copy\n"
+  }
+}

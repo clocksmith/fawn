@@ -318,16 +318,16 @@ pub export fn wgpuExternalTextureAddRef(a0: p2life.WGPUExternalTexture) callconv
 }
 
 pub export fn wgpuGetInstanceFeatures(a0: *p1cap.SupportedInstanceFeatures) callconv(.c) void {
-    a0.* = p1cap.initSupportedInstanceFeatures();
+    a0.* = if (@import("build_options").experimental_c_instance) @import("../native/support/doe_instance_c_adapter.zig").features() else p1cap.initSupportedInstanceFeatures();
 }
 
 pub export fn wgpuGetInstanceLimits(a0: *p1cap.InstanceLimits) callconv(.c) types.WGPUStatus {
-    a0.* = p1cap.initInstanceLimits();
+    a0.* = if (@import("build_options").experimental_c_instance) @import("../native/support/doe_instance_c_adapter.zig").limits() else p1cap.initInstanceLimits();
     return types.WGPUStatus_Success;
 }
 
 pub export fn wgpuHasInstanceFeature(a0: p1cap.WGPUInstanceFeatureName) callconv(.c) types.WGPUBool {
-    _ = a0;
+    if (comptime @import("build_options").experimental_c_instance) return @import("../native/support/doe_instance_c_adapter.zig").hasFeature(a0);
     return types.WGPU_FALSE;
 }
 

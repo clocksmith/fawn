@@ -1,0 +1,15 @@
+{
+  "original_bytes": 237,
+  "original_receipt_sha256": "7a26322d0bf3fbbcf341db5f268a759e2641fc658f928abb74ea9f50167f786f",
+  "receipt": {
+    "argv": [
+      "python3",
+      "runtime/zig/tools/check_source_layout.py"
+    ],
+    "cwd": "/tmp/doe-instance-evaluator-0eyngbi0/native-source",
+    "elapsed_seconds": 1.0542721549863927,
+    "returncode": 0,
+    "stderr": "",
+    "stdout": ""
+  }
+}

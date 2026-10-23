@@ -1,0 +1,14 @@
+{
+  "original_bytes": 589,
+  "original_receipt_sha256": "6287fb6478e184ffc5b32d4db36c98b638efda16d444596e5cca837d513ee09d",
+  "receipt": {
+    "LD_PRELOAD_scope": "Only the actual independently source-built test binary, not compiler/build process.",
+    "existing_source_built_artifact": "/tmp/doe-instance-evaluator-0eyngbi0/native-sanitizers/asan/independent-instance",
+    "leak_sanitizer": false,
+    "retained_zig_instrumented": false,
+    "runtime": "/usr/lib/x86_64-linux-gnu/libasan.so.8.0.0",
+    "runtime_sha256": "f5c57422d80671ced6cffe350f92c8ab9bec23fda9b155658aac630d2bc2a240",
+    "sha256": "d6b9385317e743a7062c4195f53ffae3134324d7126e661c8eeaf680df7cb263",
+    "source_build_receipt": "native-sanitizers-repair1/asan.json"
+  }
+}

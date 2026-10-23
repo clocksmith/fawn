@@ -1,0 +1,9 @@
+{
+  "original_bytes": 90,
+  "original_receipt_sha256": "6e502ca514b73270e1fbed2c3d8ce1451ea09abe557c4b812cf2fef5d687ecc6",
+  "receipt": {
+    "explicit_rejections": 13,
+    "passed": true,
+    "rejected_artifacts_executed": false
+  }
+}

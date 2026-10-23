@@ -1,0 +1,20 @@
+{
+  "original_bytes": 994,
+  "original_receipt_sha256": "374ad6bc3c445de8879cdc5064194efdefcfbaa7355cbd60d2ceedaddbb8ef49",
+  "receipt": {
+    "argv": [
+      "nm",
+      "-g",
+      "--defined-only",
+      "/tmp/doe-instance-evaluator-0eyngbi0/instance-normal/libdoe_instance.a"
+    ],
+    "asan_options": null,
+    "child_peak_rss_kib": 22484,
+    "cwd": "/workspace/scratch/e1ac86fc0556",
+    "elapsed_seconds": 0.0035167689784429967,
+    "instrumentation": "normal",
+    "returncode": 0,
+    "stderr": "",
+    "stdout": "\ninstance-capabilities.o:\n0000000000000000 T doe_instance_features\n0000000000000030 T doe_instance_features_free_members\n0000000000000020 T doe_instance_has_feature\n0000000000000010 T doe_instance_limits\n\ninstance-instance.o:\n0000000000000000 T di_fatal\n0000000000000450 T doe_instance_borrow_queue\n0000000000000030 T doe_instance_create\n00000000000002b0 T doe_instance_from_handle\n0000000000000310 T doe_instance_release\n00000000000002d0 T doe_instance_retain\n0000000000000420 T doe_instance_undo_retain\n\ninstance-wait.o:\n0000000000000150 T doe_instance_process_events\n0000000000000000 T doe_instance_wait_any\n"
+  }
+}

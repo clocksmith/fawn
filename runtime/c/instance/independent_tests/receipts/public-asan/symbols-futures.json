@@ -1,0 +1,20 @@
+{
+  "original_bytes": 1031,
+  "original_receipt_sha256": "69a614da05aa02ef9255a1841ac706b5da3ad2102790c412997c98cfa0ce05a9",
+  "receipt": {
+    "argv": [
+      "nm",
+      "-g",
+      "--defined-only",
+      "/tmp/doe-instance-evaluator-0eyngbi0/instance-asan/libdoe_futures.a"
+    ],
+    "asan_options": "detect_leaks=0",
+    "child_peak_rss_kib": 25136,
+    "cwd": "/workspace/scratch/e1ac86fc0556",
+    "elapsed_seconds": 0.00221324700396508,
+    "instrumentation": "asan",
+    "returncode": 0,
+    "stderr": "",
+    "stdout": "\nfutures-futures.o:\n0000000000000b48 T doe_future_begin_delivery\n000000000000119f T doe_future_finish\n0000000000000261 T doe_future_legacy_id\n0000000000000e02 T doe_future_mark_ready\n00000000000003be T doe_future_new_id\n000000000000153d T doe_future_process_events\n00000000000007ae T doe_future_register\n00000000000018be T doe_future_wait_any\n\nfutures-storage.o:\n0000000000000b79 T doe_future_completion_deinit\n00000000000007b6 T doe_future_completion_init\n0000000000000355 T doe_future_completion_requirements\n0000000000000a25 T doe_future_queue_deinit\n00000000000003e3 T doe_future_queue_init\n00000000000002c7 T doe_future_queue_requirements\n"
+  }
+}

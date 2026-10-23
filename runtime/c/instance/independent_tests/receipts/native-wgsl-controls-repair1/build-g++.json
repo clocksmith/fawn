@@ -1,0 +1,27 @@
+{
+  "original_bytes": 563,
+  "original_receipt_sha256": "ff8ca8d215add9b43bcf3d1aceabf42020c7369eb04482aa63317f96b7f613c8",
+  "receipt": {
+    "argv": [
+      "g++",
+      "-std=c++17",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-pedantic",
+      "-O2",
+      "-fno-exceptions",
+      "-fno-rtti",
+      "-I",
+      "/tmp/doe-instance-evaluator-0eyngbi0/native-source/runtime/zig/vendor/webgpu-headers",
+      "/workspace/shared/doe-c-migration-evidence-20261023/instance1/evaluator/tests/native_wgsl_control_v2.c",
+      "-ldl",
+      "-o",
+      "/tmp/doe-instance-evaluator-0eyngbi0/native-wgsl-controls-repair1/g++"
+    ],
+    "elapsed_seconds": 0.20183716400060803,
+    "returncode": 0,
+    "stderr": "",
+    "stdout": ""
+  }
+}

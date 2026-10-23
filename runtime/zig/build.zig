@@ -478,7 +478,11 @@ fn addDropinAbiOptions(options: *std.Build.Step.Options, allocator: std.mem.Allo
     }
 }
 
-fn configureCFuturesModule(module: *std.Build.Module, b: *std.Build, archive: []const u8, callbacks_archive: ?[]const u8) void {
+fn configureCOwnersModule(module: *std.Build.Module, b: *std.Build, archive: []const u8, callbacks_archive: ?[]const u8, instance_archive: ?[]const u8) void {
+    if (instance_archive) |instance| {
+        module.addIncludePath(b.path("../c/instance/include"));
+        module.addObjectFile(.{ .cwd_relative = instance });
+    }
     if (callbacks_archive) |callbacks| {
         module.addIncludePath(b.path("../c/callbacks/include"));
         module.addObjectFile(.{ .cwd_relative = callbacks });
@@ -495,6 +499,13 @@ pub fn build(b: *std.Build) void {
     const optimize = b.standardOptimizeOption(.{});
     const c_futures_archive = b.option([]const u8, "experimental-c-futures-archive", "Explicit external GCC-built PIC C futures archive (default: retained Zig)");
     const c_callbacks_archive = b.option([]const u8, "experimental-c-callbacks-archive", "Explicit external GCC-built callback archive (requires C futures; default: retained Zig)");
+    const c_instance_archive = b.option([]const u8, "experimental-c-instance-archive", "Explicit external GCC-built instance archive (requires C futures and callbacks; default: retained Zig)");
+    if (c_instance_archive) |archive| {
+        if (c_futures_archive == null or c_callbacks_archive == null)
+            @panic("experimental C instance requires both selected C futures and callbacks archives");
+        if (!std.fs.path.isAbsolute(archive) or !fileExists(archive))
+            @panic("experimental C instance requires an existing absolute external GCC archive; no fallback");
+    }
     if (c_callbacks_archive) |archive| {
         if (c_futures_archive == null)
             @panic("experimental C callbacks requires the selected C futures archive");
@@ -591,6 +602,7 @@ pub fn build(b: *std.Build) void {
     const build_options = b.addOptions();
     build_options.addOption(bool, "experimental_c_futures", c_futures_archive != null);
     build_options.addOption(bool, "experimental_c_callbacks", c_callbacks_archive != null);
+    build_options.addOption(bool, "experimental_c_instance", c_instance_archive != null);
     build_options.addOption(backend_policy.PolicyTable, "backend_runtime_policy", runtime_policy_table);
     addComputeProgramContract(build_options, b.allocator);
     addNativeCommandStoragePolicy(build_options, b.allocator);
@@ -1391,6 +1403,7 @@ pub fn build(b: *std.Build) void {
     const compute_build_options = b.addOptions();
     compute_build_options.addOption(bool, "experimental_c_futures", c_futures_archive != null);
     compute_build_options.addOption(bool, "experimental_c_callbacks", c_callbacks_archive != null);
+    compute_build_options.addOption(bool, "experimental_c_instance", c_instance_archive != null);
     compute_build_options.addOption(backend_policy.PolicyTable, "backend_runtime_policy", runtime_policy_table);
     addComputeProgramContract(compute_build_options, b.allocator);
     addNativeCommandStoragePolicy(compute_build_options, b.allocator);
@@ -1441,6 +1454,7 @@ pub fn build(b: *std.Build) void {
     const full_build_options = b.addOptions();
     full_build_options.addOption(bool, "experimental_c_futures", c_futures_archive != null);
     full_build_options.addOption(bool, "experimental_c_callbacks", c_callbacks_archive != null);
+    full_build_options.addOption(bool, "experimental_c_instance", c_instance_archive != null);
     full_build_options.addOption(backend_policy.PolicyTable, "backend_runtime_policy", runtime_policy_table);
     addComputeProgramContract(full_build_options, b.allocator);
     addNativeCommandStoragePolicy(full_build_options, b.allocator);
@@ -1778,9 +1792,24 @@ pub fn build(b: *std.Build) void {
     runtime_compile_report_run_step.dependOn(&install_runtime_compile_report.step);
     runtime_compile_report_run_step.dependOn(&run_runtime_compile_report.step);
 
+    const c_instance_test_step = b.step("test-c-instance-integration", "Run selected opaque C instance native integration cases");
+    if (c_instance_archive != null) {
+        const instance_module = b.createModule(.{
+            .root_source_file = b.path("test_suite_c_instance.zig"),
+            .target = target,
+            .optimize = optimize,
+            .imports = &.{.{ .name = "build_options", .module = build_options_module }},
+        });
+        addSourceModuleIncludePaths(instance_module, b);
+        configureCOwnersModule(instance_module, b, c_futures_archive.?, c_callbacks_archive, c_instance_archive);
+        const instance_tests = b.addTest(.{ .root_module = instance_module, .filters = &.{"C instance integration:"} });
+        configureNativeGraphics(instance_tests, b, target);
+        c_instance_test_step.dependOn(&b.addRunArtifact(instance_tests).step);
+    } else c_instance_test_step.dependOn(&b.addFail("test-c-instance-integration requires explicit instance, callback and future GCC archives").step);
+
     const c_futures_test_step = b.step("test-c-futures-integration", "Run only selected C futures native integration cases");
     const c_callbacks_test_step = b.step("test-c-callbacks-integration", "Run only selected C callback payload integration cases");
-    if (c_callbacks_archive != null) {
+    if (c_callbacks_archive != null and c_instance_archive == null) {
         const callbacks_module = b.createModule(.{
             .root_source_file = b.path("test_suite_c_callbacks.zig"),
             .target = target,
@@ -1788,12 +1817,12 @@ pub fn build(b: *std.Build) void {
             .imports = &.{.{ .name = "build_options", .module = build_options_module }},
         });
         addSourceModuleIncludePaths(callbacks_module, b);
-        configureCFuturesModule(callbacks_module, b, c_futures_archive.?, c_callbacks_archive);
+        configureCOwnersModule(callbacks_module, b, c_futures_archive.?, c_callbacks_archive, c_instance_archive);
         const callbacks_tests = b.addTest(.{ .root_module = callbacks_module, .filters = &.{"C callbacks integration:"} });
         configureNativeGraphics(callbacks_tests, b, target);
         c_callbacks_test_step.dependOn(&b.addRunArtifact(callbacks_tests).step);
     } else {
-        c_callbacks_test_step.dependOn(&b.addFail("test-c-callbacks-integration requires explicit callback and future GCC archives").step);
+        c_callbacks_test_step.dependOn(&b.addFail("test-c-callbacks-integration requires explicit callback and future GCC archives with retained instance; use test-c-instance-integration for opaque instances").step);
     }
     if (c_futures_archive) |archive| {
         // Retained generic suites contain original-owner fixtures. Selecting them
@@ -1803,19 +1832,21 @@ pub fn build(b: *std.Build) void {
             step.dependencies.clearRetainingCapacity();
             step.dependOn(&b.addFail("retained generic native suites require the default provider; use test-c-futures-integration for selected C").step);
         }
-        const integration_module = b.createModule(.{
-            .root_source_file = b.path("test_suite_c_futures.zig"),
-            .target = target,
-            .optimize = optimize,
-            .imports = &.{.{ .name = "build_options", .module = build_options_module }},
-        });
-        addSourceModuleIncludePaths(integration_module, b);
-        configureCFuturesModule(integration_module, b, archive, c_callbacks_archive);
-        const integration_tests = b.addTest(.{ .root_module = integration_module, .filters = &.{"C futures integration:"} });
-        configureNativeGraphics(integration_tests, b, target);
-        c_futures_test_step.dependOn(&b.addRunArtifact(integration_tests).step);
+        if (c_instance_archive == null) {
+            const integration_module = b.createModule(.{
+                .root_source_file = b.path("test_suite_c_futures.zig"),
+                .target = target,
+                .optimize = optimize,
+                .imports = &.{.{ .name = "build_options", .module = build_options_module }},
+            });
+            addSourceModuleIncludePaths(integration_module, b);
+            configureCOwnersModule(integration_module, b, archive, c_callbacks_archive, c_instance_archive);
+            const integration_tests = b.addTest(.{ .root_module = integration_module, .filters = &.{"C futures integration:"} });
+            configureNativeGraphics(integration_tests, b, target);
+            c_futures_test_step.dependOn(&b.addRunArtifact(integration_tests).step);
+        } else c_futures_test_step.dependOn(&b.addFail("old selected fixtures require retained instance; use test-c-instance-integration").step);
         for ([_]*std.Build.Module{ doe_module, compute_doe_module, full_doe_module }) |module|
-            configureCFuturesModule(module, b, archive, c_callbacks_archive);
+            configureCOwnersModule(module, b, archive, c_callbacks_archive, c_instance_archive);
         for ([_]*std.Build.Step.Compile{
             dropin_lib,                   exe,                            metal_staged_write_bench,       metal_compute_bench,            module_runner,
             emit_msl_exe,                 emit_ir_digest_exe,             emit_csl_exe,                   emit_tsir_attention_canary_exe, emit_hlsl_exe,
@@ -1825,7 +1856,7 @@ pub fn build(b: *std.Build) void {
             wgsl_test_exec,               metal_staged_write_bench_tests, metal_compute_bench_tests,      shader_bench_exe,               shader_bench_tests,
             host_hotpath_bench_exe,       host_hotpath_bench_tests,       compilation_bench_exe,          compilation_bench_tests,        runtime_compile_report_exe,
             runtime_compile_report_tests,
-        }) |artifact| configureCFuturesModule(artifact.root_module, b, archive, c_callbacks_archive);
+        }) |artifact| configureCOwnersModule(artifact.root_module, b, archive, c_callbacks_archive, c_instance_archive);
     } else {
         c_futures_test_step.dependOn(&b.addFail("test-c-futures-integration requires -Dexperimental-c-futures-archive=/absolute/GCC/archive.a").step);
     }

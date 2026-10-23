@@ -1,0 +1,14 @@
+{
+  "original_bytes": 320,
+  "original_receipt_sha256": "01f5eccd44212e30861be17584e5bb412d38034e14d495d83695064952ee34ef",
+  "receipt": [
+    {
+      "path": "runtime/zig/src/native/support/doe_future_ids.zig",
+      "sha256": "be44acc738915f39412cfc4108f8204e31acbe59551fbc92c613d67d9ad59e92"
+    },
+    {
+      "path": "runtime/zig/src/native/support/doe_callback_delivery.zig",
+      "sha256": "df2a9c3c22885de9f8567dbee0192e293d85d3fe9312920ee9bd94966d3eefe3"
+    }
+  ]
+}

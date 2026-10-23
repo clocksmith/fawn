@@ -1,0 +1,26 @@
+{
+  "original_bytes": 698,
+  "original_receipt_sha256": "ef0dad996800d09398ce610729fa689be1d425216d95a97aa5d2059a7b006631",
+  "receipt": {
+    "argv": [
+      "gcc",
+      "-std=c11",
+      "-O2",
+      "-I",
+      "/tmp/doe-instance-evaluator-0eyngbi0/native-source/runtime/zig/vendor/webgpu-headers",
+      "/tmp/doe-instance-evaluator-0eyngbi0/native-source/runtime/zig/tests/instance_feature_lookup.c",
+      "-ldl",
+      "-o",
+      "/tmp/doe-instance-evaluator-0eyngbi0/native-prebuilt/original-features"
+    ],
+    "elapsed_seconds": 0.05626101797679439,
+    "environment": {
+      "DOE_BACKEND": "metal",
+      "LD_LIBRARY_PATH": "/workspace/shared/doe-language-experiment-20261023/phase1/system-link-prefix/lib"
+    },
+    "returncode": 0,
+    "scope": "Independent consumption of AUTHOR PREBUILT normal final-source artifact",
+    "stderr": "",
+    "stdout": ""
+  }
+}

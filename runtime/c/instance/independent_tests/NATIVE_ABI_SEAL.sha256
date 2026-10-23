@@ -1,0 +1,3 @@
+1704cd1088ad86822eed4af38546318c2f2f0a00a9c9611cda850a5acc1593a7  tests/native_abi.zig
+039016ad0fad17e5f9d27fee63a8e25a3fb33cefd37e16fcf47f553ef682f807  tests/instance_extent.c
+cca71e94587061239c4b7bce23e3e82b3efcd4e9a8b37b0e08287684cbb8500f  NATIVE_ABI_SUPPLEMENT.md

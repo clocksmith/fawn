@@ -1,0 +1,20 @@
+{
+  "original_bytes": 988,
+  "original_receipt_sha256": "541aea475d4673415645d89df4e5bc9fde1246171b9a0f8ceec0d12ebc679bdd",
+  "receipt": {
+    "argv": [
+      "nm",
+      "-g",
+      "--defined-only",
+      "/tmp/doe-instance-evaluator-0eyngbi0/instance-tsan/libdoe_instance.a"
+    ],
+    "asan_options": null,
+    "child_peak_rss_kib": 22120,
+    "cwd": "/workspace/scratch/e1ac86fc0556",
+    "elapsed_seconds": 0.00332035799510777,
+    "instrumentation": "tsan",
+    "returncode": 0,
+    "stderr": "",
+    "stdout": "\ninstance-capabilities.o:\n0000000000000000 T doe_instance_features\n000000000000001c T doe_instance_features_free_members\n0000000000000016 T doe_instance_has_feature\n000000000000000b T doe_instance_limits\n\ninstance-instance.o:\n0000000000000000 T di_fatal\n00000000000007d8 T doe_instance_borrow_queue\n000000000000004b T doe_instance_create\n000000000000046b T doe_instance_from_handle\n0000000000000565 T doe_instance_release\n00000000000004af T doe_instance_retain\n000000000000074d T doe_instance_undo_retain\n\ninstance-wait.o:\n00000000000001d2 T doe_instance_process_events\n0000000000000000 T doe_instance_wait_any\n"
+  }
+}

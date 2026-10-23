@@ -1,0 +1,84 @@
+{
+  "original_bytes": 2562,
+  "original_receipt_sha256": "70fb571167a27188da7de0270933d073e30a19cfa3100ce51d9c212f25f6d032",
+  "receipt": {
+    "artifact_seal": "8aaf6e3bd1cf73b7ca8212153ffbef471c2a1f49bf3c3d96a1827e155f9f017f",
+    "commands_after_setup_repair": 20,
+    "passed": true,
+    "source_seal": "51347ba22f88c12724af95a6d87d821615b86782855ca8b4fa1e892cbe584669",
+    "traces": {
+      "F-g++": {
+        "instance_rows": 56,
+        "instance_sizes": [
+          176
+        ],
+        "path": "/tmp/doe-instance-evaluator-0eyngbi0/native-prebuilt/F-g++-tracefix.jsonl",
+        "rows": 76,
+        "sha256": "85fa76db545628779863e20af7977a4cf2822bfc6863c6acd6bef2c743b46e23"
+      },
+      "F-gcc": {
+        "instance_rows": 56,
+        "instance_sizes": [
+          176
+        ],
+        "path": "/tmp/doe-instance-evaluator-0eyngbi0/native-prebuilt/F-gcc-tracefix.jsonl",
+        "rows": 76,
+        "sha256": "720326a84cfeff4cbc37c44ffdb3d2305f29c96d283c5dc628757745faff7a90"
+      },
+      "FC-g++": {
+        "instance_rows": 56,
+        "instance_sizes": [
+          176
+        ],
+        "path": "/tmp/doe-instance-evaluator-0eyngbi0/native-prebuilt/FC-g++-tracefix.jsonl",
+        "rows": 76,
+        "sha256": "a4f2d217d1d7bb10a55d6ee063a1be0e1489eda861a4420ce17ccde2b8041a51"
+      },
+      "FC-gcc": {
+        "instance_rows": 56,
+        "instance_sizes": [
+          176
+        ],
+        "path": "/tmp/doe-instance-evaluator-0eyngbi0/native-prebuilt/FC-gcc-tracefix.jsonl",
+        "rows": 76,
+        "sha256": "def35346838be3a61d16451390ec0939f72e2e2427d24ed6f67fb036b0f76478"
+      },
+      "FCI-g++": {
+        "instance_rows": 56,
+        "instance_sizes": [
+          264
+        ],
+        "path": "/tmp/doe-instance-evaluator-0eyngbi0/native-prebuilt/FCI-g++-tracefix.jsonl",
+        "rows": 76,
+        "sha256": "1afb8ee6ff87234837f025920d6b55d799ceee08a962774732cb03d29881503e"
+      },
+      "FCI-gcc": {
+        "instance_rows": 56,
+        "instance_sizes": [
+          264
+        ],
+        "path": "/tmp/doe-instance-evaluator-0eyngbi0/native-prebuilt/FCI-gcc-tracefix.jsonl",
+        "rows": 76,
+        "sha256": "e1dfb44ebc165f405a884732696021760b30e7c29251f59ffa6b86e843a4a75d"
+      },
+      "Z-g++": {
+        "instance_rows": 56,
+        "instance_sizes": [
+          40
+        ],
+        "path": "/tmp/doe-instance-evaluator-0eyngbi0/native-prebuilt/Z-g++-tracefix.jsonl",
+        "rows": 76,
+        "sha256": "d1e0c6525b2dcbc9d025e7e4fa6e79f6e7e981009ab0ae9b9969a72794eba697"
+      },
+      "Z-gcc": {
+        "instance_rows": 56,
+        "instance_sizes": [
+          40
+        ],
+        "path": "/tmp/doe-instance-evaluator-0eyngbi0/native-prebuilt/Z-gcc-tracefix.jsonl",
+        "rows": 76,
+        "sha256": "cbdea3d0ff436f19ba5077d045bd6c9e580a638eba7acf9b8a4977c62e7d6c3c"
+      }
+    }
+  }
+}

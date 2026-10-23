@@ -1,0 +1,8 @@
+{
+  "original_bytes": 189,
+  "original_receipt_sha256": "061e2fc774b56e44f23134a75e7d8f91acca23be74f7bf9831a32cbd6e7291dd",
+  "receipt": {
+    "path": "/tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/Z-install/lib/libwebgpu_doe.so",
+    "sha256": "c3c89ad1416bc19f1c6561a48e810710b091a21f234d8acf0a3aa6c659b4e3e8"
+  }
+}

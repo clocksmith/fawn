@@ -1,0 +1,34 @@
+{
+  "original_bytes": 961,
+  "original_receipt_sha256": "dab82d93566851fc692a11a736d5ba6915023e5d15593ad35a3d72b7d13bc3c1",
+  "receipt": {
+    "argv": [
+      "gcc",
+      "-std=c11",
+      "-O2",
+      "-g",
+      "-Wall",
+      "-Wextra",
+      "-Wpedantic",
+      "-Werror",
+      "-pthread",
+      "-I",
+      "/tmp/doe-instance-evaluator-0eyngbi0/gcc-core-source/runtime/c/instance/include",
+      "-I",
+      "/tmp/doe-instance-evaluator-0eyngbi0/gcc-core-source/runtime/c/futures/include",
+      "-I",
+      "/tmp/doe-instance-evaluator-0eyngbi0/gcc-core-source/runtime/zig/vendor/webgpu-headers",
+      "/workspace/shared/doe-c-migration-evidence-20261023/instance1/evaluator/tests/instance_status_boundaries.c",
+      "/tmp/doe-instance-evaluator-0eyngbi0/instance-normal/libdoe_instance.a",
+      "/tmp/doe-instance-evaluator-0eyngbi0/instance-normal/libdoe_futures.a",
+      "-Wl,--wrap=doe_future_queue_requirements",
+      "-Wl,--wrap=doe_future_process_events",
+      "-Wl,--wrap=doe_future_wait_any",
+      "-o",
+      "/tmp/doe-instance-evaluator-0eyngbi0/instance-status"
+    ],
+    "returncode": 0,
+    "stderr": "",
+    "stdout": ""
+  }
+}

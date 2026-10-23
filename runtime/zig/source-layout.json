@@ -521,7 +521,8 @@
           "src/**/*bridge*.zig",
           "src/**/*ffi*.zig",
           "src/native/support/doe_future_c_adapter.zig",
-          "src/native/support/doe_callback_c_adapter.zig"
+          "src/native/support/doe_callback_c_adapter.zig",
+          "src/native/support/doe_instance_c_adapter.zig"
         ]
       },
       "generated": {
@@ -3234,21 +3235,21 @@
       },
       "src/dropin/wgpu_dropin_ext_a_exports.zig": {
         "decision": "Keep",
-        "moduleSha256": "c55d7df485257fdd0bd589713b5760392baeea1db12bd51067c2f9450d33e883",
-        "reason": "Keep: reviewed pre-existing delta from 3ce13a4803e3f2b95dba49edf24086abe5a06ca1; unadvertised Dawn format queries reject without output writes or foreign-provider forwarding. Free-members remains with its ABI owner and accepts only implementation-owned outputs; the corrected C fixture checks empty extensions and an actual nonempty feature allocation/release.",
-        "reviewer": "codex-windows-provenance/2026-10-19"
+        "moduleSha256": "c4e559d85d61a2251fbe8d4020dfa5198a1ed42e2552a2b43f46e60bfb8a9cea",
+        "reason": "Keep: frozen C-instance seam preserves this native owner and default behavior; only selected identity/lease routing and required test-only observations change.",
+        "reviewer": "codex-c-instance-author/2026-10-23"
       },
       "src/dropin/wgpu_dropin_ext_a_pipeline.zig": {
         "decision": "Keep",
-        "moduleSha256": "94a84216b0e21bb01580b5ca1e6dc7a5ca36de184e8290ecef9e040446f97847",
-        "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission. The frozen experimental future-owner facade selects one identity domain; retained default behavior is unchanged.",
-        "reviewer": "codex-c-futures-integration/2026-10-23"
+        "moduleSha256": "3efb9351176e6d84404be272f8daccc1bfe7472dd3fc64387b12fae9aeff51da",
+        "reason": "Keep: frozen C-instance seam preserves this native owner and default behavior; only selected identity/lease routing and required test-only observations change.",
+        "reviewer": "codex-c-instance-author/2026-10-23"
       },
       "src/dropin/wgpu_dropin_ext_b.zig": {
         "decision": "Keep",
-        "moduleSha256": "40ef53e4a991861a16b2d4bdf1c4fc80825ab6659d8ca5cd4d3c459da2b45da6",
-        "reason": "Keep: C ABI callback adaptation and asynchronous pipeline snapshots; callback mode controls delivery, resource leases survive foreign callbacks, and native GPU synchronization remains with its backend owner.",
-        "reviewer": "codex-vulkan-callbacks/2026-10-08"
+        "moduleSha256": "99faace33349e70c93ac5bef1f7ca7336c2b386490335de8989c2d31eb712f0f",
+        "reason": "Keep: frozen C-instance seam preserves this native owner and default behavior; only selected identity/lease routing and required test-only observations change.",
+        "reviewer": "codex-c-instance-author/2026-10-23"
       },
       "src/dropin/wgpu_dropin_ext_c.zig": {
         "decision": "Keep",
@@ -3570,9 +3571,9 @@
       },
       "src/native/diagnostics/doe_program_identity_trace.zig": {
         "decision": "Keep",
-        "moduleSha256": "e88987d196af2b8eedbfe6f63c33319e067865b2f716c7eca92a0eb383d77113",
-        "reason": "Keep: preserves existing native ownership; build-selected diagnostics observe actual command storage and export device-scoped metadata after cleanup.",
-        "reviewer": "codex-command-storage-observation/2026-09-12"
+        "moduleSha256": "18e0dfef5a21a0ba5af9181391c5346d46f6aeb38a8700f49ed681d7f82e7ae5",
+        "reason": "Keep: frozen C-instance seam preserves this native owner and default behavior; only selected identity/lease routing and required test-only observations change.",
+        "reviewer": "codex-c-instance-author/2026-10-23"
       },
       "src/native/lifecycle/doe_canvas_event_native.zig": {
         "decision": "Keep",
@@ -3582,9 +3583,9 @@
       },
       "src/native/lifecycle/doe_instance_device_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "81f3f1937c9f4e094385ec5cc7dcc4fcae28d2fdf160b1f688d88ad9eb9b2fb3",
-        "reason": "Keep: shared Metal device metadata projection is used by enumeration and the authoritative native adapter owner. Typed native validation replaces a stale mirrored object layout; unified memory determines classification while low-power remains an independent selection trait. Experimental C futures selection preserves this owner and its default retained behavior; real instance creation/destruction initializes and retires selected storage only.",
-        "reviewer": "codex-c-futures-integration/2026-10-23"
+        "moduleSha256": "2a42b958b19cce4c28b88485baeda0483c354d1b3964399b34f89428418757ad",
+        "reason": "Keep: frozen C-instance seam preserves this native owner and default behavior; only selected identity/lease routing and required test-only observations change.",
+        "reviewer": "codex-c-instance-author/2026-10-23"
       },
       "src/native/mod.zig": {
         "decision": "Keep",
@@ -3690,9 +3691,9 @@
       },
       "src/native/resource/doe_external_texture_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "5226cc204144afd83894b751cc9fd77e47192ed146c716446be44c3a35fde421",
-        "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission.",
-        "reviewer": "codex"
+        "moduleSha256": "6e09052c4f5bb8bbfae3b88f74a0fe3a9a033426f68f1e188e29aacf4055b31c",
+        "reason": "Keep: frozen C-instance seam preserves this native owner and default behavior; only selected identity/lease routing and required test-only observations change.",
+        "reviewer": "codex-c-instance-author/2026-10-23"
       },
       "src/native/resource/doe_query_native.zig": {
         "decision": "Keep",
@@ -3774,15 +3775,15 @@
       },
       "src/native/support/doe_native_object_helpers.zig": {
         "decision": "Keep",
-        "moduleSha256": "c95edc18651caf612cef1c21aa3d8f6ef6b02d1e1d71e1978ea7ad409a9213ae",
-        "reason": "Keep: explicit recording state and owned resources preserve failure and submission ordering at the existing component boundary.",
-        "reviewer": "codex-recording-ownership/2026-09-06"
+        "moduleSha256": "c6b8c87edc910e1603fc35a955983cc091b6337b8ff0cfc333d11eb32142e6ae",
+        "reason": "Keep: frozen C-instance seam preserves this native owner and default behavior; only selected identity/lease routing and required test-only observations change.",
+        "reviewer": "codex-c-instance-author/2026-10-23"
       },
       "src/native/support/doe_native_object_types.zig": {
         "decision": "Keep",
-        "moduleSha256": "ea7cc1a43510aae0a20a4870f7305b7ccfd5aa7713413eafad980b1874219cb7",
-        "reason": "Keep: native command submission consumes each command buffer once, including rejected batches, while shared availability admission prevents partial execution. Bind group layouts record whether they are a pipeline's automatic layout so backends can keep that layout exclusive. Object state, validation and backend dispatch retain their existing owners; no new replay API. The frozen experimental future-owner facade selects one identity domain; retained default behavior is unchanged.",
-        "reviewer": "codex-c-futures-integration/2026-10-23"
+        "moduleSha256": "e1890e6b854b502e5eb967a2a8822980a38c9254aba35cf45c94efda5577561b",
+        "reason": "Keep: frozen C-instance seam preserves this native owner and default behavior; only selected identity/lease routing and required test-only observations change.",
+        "reviewer": "codex-c-instance-author/2026-10-23"
       },
       "src/native/support/doe_native_runtime_helpers.zig": {
         "decision": "Keep",
@@ -3798,9 +3799,9 @@
       },
       "src/native/surface/doe_surface_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "1196823a71e629c843f678722b0f6d411d4a8c8f22d05d4a93afed69ee18dd83",
-        "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission.",
-        "reviewer": "codex"
+        "moduleSha256": "4cb23057c973d00d96b90e27b5ec16b0c62498eb9ef84972902c6dd8158840de",
+        "reason": "Keep: frozen C-instance seam preserves this native owner and default behavior; only selected identity/lease routing and required test-only observations change.",
+        "reviewer": "codex-c-instance-author/2026-10-23"
       },
       "src/native/vulkan/vulkan_compute_bindings.zig": {
         "decision": "Keep",
@@ -4428,9 +4429,9 @@
       },
       "src/native/support/doe_device_loss.zig": {
         "decision": "Keep",
-        "moduleSha256": "640404efcc1fdaf3eb11bde96e14a2e4662f920892ac0cccdce7f250f910bb70",
-        "reason": "Keep: owns one descriptor loss obligation, instance future, weak device identity and scoped callback lease; independent of platform cleanup. The frozen experimental future-owner facade selects one identity domain; retained default behavior is unchanged.",
-        "reviewer": "codex-c-futures-integration/2026-10-23"
+        "moduleSha256": "fd4fe3f817c01c1ea33bfe4036ea8d4de34f6e4d5ac19592f0d618aa384278f4",
+        "reason": "Keep: frozen C-instance seam preserves this native owner and default behavior; only selected identity/lease routing and required test-only observations change.",
+        "reviewer": "codex-c-instance-author/2026-10-23"
       },
       "src/compiler/wgsl/ir/ir_packed_integer.zig": {
         "decision": "Keep",
@@ -4464,15 +4465,15 @@
       },
       "src/native/support/doe_future_owner.zig": {
         "decision": "Keep",
-        "moduleSha256": "0ebbb84a867fd05559dcf2c995b005183fca79a892db5aac008200594065e180",
-        "reason": "Keep: single default-off build selection facade and instance init/deinit delegation for the five retained native consumers; no independent queue or identity policy.",
-        "reviewer": "codex-c-futures-integration/2026-10-23"
+        "moduleSha256": "0bf3301315c16673317128fae609570d87933e91b2c5631a3e423637c76d49e5",
+        "reason": "Keep: default-off identity selection and typed QueueRef/borrow facade; no queue or lifecycle policy.",
+        "reviewer": "codex-c-instance-author/2026-10-23"
       },
       "src/native/support/doe_future_c_adapter.zig": {
         "decision": "Keep",
-        "moduleSha256": "0e574b22f5bbb586ff36b82b77176e71ee4833403194e6dc5190d7d10913b1c8",
-        "reason": "Keep: Existing C future adapter preserves full-call leases and adds only a guarded borrowed queue accessor for the distinct callback owner.",
-        "reviewer": "codex-c-callbacks-integration/2026-10-23"
+        "moduleSha256": "945d1056ef4e7e8a6bccaf4afa4189f2bb594d47d0fa9f63b6b7a690504fe526",
+        "reason": "Keep: typed accepted C queue/completion adaptation and copied non-owning QueueView; existing owned fixtures delegate without a second queue.",
+        "reviewer": "codex-c-instance-author/2026-10-23"
       },
       "src/native/support/doe_callback_owner.zig": {
         "decision": "Keep",
@@ -4482,9 +4483,15 @@
       },
       "src/native/support/doe_callback_c_adapter.zig": {
         "decision": "Keep",
-        "moduleSha256": "edbb58e69017170116646b3b8c726ea7ecd9bba3bff6c6c1453d8cdd447054b4",
-        "reason": "Keep: Typed context and allocator thunks plus actual native queue lease binding; C alone owns payload admission and retirement.",
-        "reviewer": "codex-c-callbacks-integration/2026-10-23"
+        "moduleSha256": "8336824d199f1ac227351da7997aa736446601b644aa3bc6721f9e4786219d28",
+        "reason": "Keep: typed context and allocator thunks snapshot the actual selected instance queue and lease; C owns payload admission and retirement.",
+        "reviewer": "codex-c-instance-author/2026-10-23"
+      },
+      "src/native/support/doe_instance_c_adapter.zig": {
+        "decision": "Keep",
+        "moduleSha256": "056cb14ec1ddf900f70b0416b4a5e3f7969ddc1dee0e5918bcefd4e7cd83edc1",
+        "reason": "Keep: authoritative opaque C header, pinned WebGPU typed adapters and allocator bindings; no object, lifecycle, registry or backend policy imports.",
+        "reviewer": "codex-c-instance-author/2026-10-23"
       }
     },
     "linePolicy": {

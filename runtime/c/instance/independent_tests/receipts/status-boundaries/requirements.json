@@ -1,0 +1,13 @@
+{
+  "original_bytes": 207,
+  "original_receipt_sha256": "de2212a2951b891d297fbf56e387b40ebb54119cbc80a70ef81927dee79a2067",
+  "receipt": {
+    "argv": [
+      "/tmp/doe-instance-evaluator-0eyngbi0/instance-status",
+      "requirements"
+    ],
+    "returncode": -6,
+    "stderr": "C instance queue requirements failed closed: status 10\n",
+    "stdout": ""
+  }
+}

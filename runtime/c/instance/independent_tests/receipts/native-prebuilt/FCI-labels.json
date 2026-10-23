@@ -1,0 +1,14 @@
+{
+  "original_bytes": 326,
+  "original_receipt_sha256": "23904b1e1a0325cf3df1bcbd9c32677c22ca0f39a4e9f8bd29a3ab54990ab96b",
+  "receipt": {
+    "DOE_BACKEND": "metal",
+    "argv": [
+      "/tmp/doe-instance-evaluator-0eyngbi0/native-prebuilt/labels",
+      "/tmp/doe-instance-author-20261023-final/FCI/lib/libwebgpu_doe.so"
+    ],
+    "returncode": 0,
+    "stderr": "",
+    "stdout": "PASS native copied labels survive caller/surface ownership and disappear at final release\n"
+  }
+}

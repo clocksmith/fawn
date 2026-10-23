@@ -1,0 +1,19 @@
+{
+  "original_bytes": 636,
+  "original_receipt_sha256": "8a521ca089490def992bd0bbb01b57b15d2eb84d8a037f6cabbe6018cabca15c",
+  "receipt": {
+    "argv": [
+      "/tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/accepted-feature-lookup",
+      "/tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/F-install/lib/libwebgpu_doe.so"
+    ],
+    "cwd": "/tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/source/runtime/zig",
+    "elapsed_seconds": 0.0017321720370091498,
+    "environment": {
+      "DOE_BACKEND": "metal",
+      "LD_LIBRARY_PATH": "/workspace/shared/doe-language-experiment-20261023/phase1/system-link-prefix/lib"
+    },
+    "returncode": 0,
+    "stderr": "",
+    "stdout": "PASS: both name lengths resolve to Doe; capability answers match enumeration\n"
+  }
+}

@@ -25,7 +25,7 @@ pub const Event = struct {
     reason: ?abi.WGPUDeviceLostReason = null,
     message: []const u8 = "",
 
-    pub fn create(allocator: std.mem.Allocator, owner: ?*futures.PendingCompletions, instance: ?*anyopaque, info: abi.WGPUDeviceLostCallbackInfo, references: References) !*Event {
+    pub fn create(allocator: std.mem.Allocator, owner: ?futures.QueueRef, instance: ?*anyopaque, info: abi.WGPUDeviceLostCallbackInfo, references: References) !*Event {
         if (info.mode != 0 and info.mode != abi.WGPUCallbackMode_WaitAnyOnly and info.mode != abi.WGPUCallbackMode_AllowProcessEvents and info.mode != abi.WGPUCallbackMode_AllowSpontaneous) return error.UnsupportedCallbackMode;
         if (owner == null and info.mode != 0 and info.mode != abi.WGPUCallbackMode_AllowSpontaneous) return error.CallbackInstanceUnavailable;
         const self = try allocator.create(Event);

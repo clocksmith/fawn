@@ -1,0 +1,15 @@
+{
+  "original_bytes": 285,
+  "original_receipt_sha256": "7369413abd3ae8774f0d915a8698bda003c4ee18834234b21490fdff5a71e7fa",
+  "receipt": {
+    "argv": [
+      "sh",
+      "/tmp/doe-instance-evaluator-0eyngbi0/native-source/runtime/c/futures/integration/build_archive.sh",
+      "/tmp/doe-instance-evaluator-0eyngbi0/native-sanitizers/asan/futures",
+      "address,undefined"
+    ],
+    "returncode": 0,
+    "stderr": "",
+    "stdout": ""
+  }
+}

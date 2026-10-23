@@ -1,0 +1,28 @@
+{
+  "original_bytes": 887,
+  "original_receipt_sha256": "5e60a7e65ce8200f1db181ecca27722804dd1aec517167b9d7027163fd96b30d",
+  "receipt": {
+    "argv": [
+      "/workspace/shared/doe-language-experiment-20261023/phase1/deps/zig-x86_64-linux-0.15.2/zig",
+      "build-exe",
+      "/workspace/shared/doe-c-migration-evidence-20261023/instance1/evaluator/tests/abi_probe.zig",
+      "-I",
+      "/workspace/shared/doe-c-migration-evidence-20261023/instance1/freeze-ready/include",
+      "-I",
+      "/workspace/shared/doe-c-migration-20261023/runtime/c/futures/include",
+      "-I",
+      "/workspace/shared/doe-c-migration-20261023/runtime/zig/vendor/webgpu-headers",
+      "-lc",
+      "--cache-dir",
+      "/tmp/doe-instance-evaluator-0eyngbi0/abi-cache",
+      "--global-cache-dir",
+      "/tmp/doe-instance-evaluator-0eyngbi0/abi-global",
+      "-femit-bin=/tmp/doe-instance-evaluator-0eyngbi0/abi-zig"
+    ],
+    "cwd": "/workspace/shared/doe-c-migration-20261023",
+    "elapsed_seconds": 4.086105327005498,
+    "returncode": 0,
+    "stderr": "",
+    "stdout": ""
+  }
+}

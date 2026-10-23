@@ -1,0 +1,14 @@
+{
+  "original_bytes": 435,
+  "original_receipt_sha256": "43e3ca9404c154d7effdfaf771f438c2d43f847520ea1526ebee2930ac549dc9",
+  "receipt": {
+    "argv": [
+      "/tmp/doe-instance-evaluator-0eyngbi0/native-wgsl-controls-repair1/g++",
+      "/tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/F-install/lib/libwebgpu_doe.so"
+    ],
+    "elapsed_seconds": 0.0026117470115423203,
+    "returncode": 0,
+    "stderr": "",
+    "stdout": "[\n{\"availableMask\":7,\"count\":1,\"features\":[2],\"has\":[0,0,1,0,0,0,0,0,0,0,0,0,0,0]},\n{\"availableMask\":0},\n{\"availableMask\":0}\n]\n"
+  }
+}

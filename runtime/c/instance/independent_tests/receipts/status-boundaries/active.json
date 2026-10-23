@@ -1,0 +1,13 @@
+{
+  "original_bytes": 212,
+  "original_receipt_sha256": "e63d6cb9642974bddc4a4f32e0914de39856a71bd3534a378ab51c6f2d307d07",
+  "receipt": {
+    "argv": [
+      "/tmp/doe-instance-evaluator-0eyngbi0/instance-status",
+      "active"
+    ],
+    "returncode": -6,
+    "stderr": "C instance queue deinit failed closed: status 8\n",
+    "stdout": "CALLBACK_RETIRED\n"
+  }
+}

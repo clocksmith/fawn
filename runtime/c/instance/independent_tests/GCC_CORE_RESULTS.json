@@ -1,0 +1,188 @@
+{
+  "archives": [
+    {
+      "bytes": 54372,
+      "mode": "normal",
+      "owner": "instance",
+      "path": "/tmp/doe-instance-evaluator-0eyngbi0/instance-normal/libdoe_instance.a",
+      "sha256": "17e3b7071ff7bfbe21517183484338c9a92a64ce07695f4d893e18f0c1bc7b96"
+    },
+    {
+      "bytes": 63228,
+      "mode": "normal",
+      "owner": "futures",
+      "path": "/tmp/doe-instance-evaluator-0eyngbi0/instance-normal/libdoe_futures.a",
+      "sha256": "21bc26e5e69e4ce97596f5c635b455db852246bd76b34b8723ac9c13f3b4c25c"
+    },
+    {
+      "bytes": 92772,
+      "mode": "asan",
+      "owner": "instance",
+      "path": "/tmp/doe-instance-evaluator-0eyngbi0/instance-asan/libdoe_instance.a",
+      "sha256": "88a5238e8970cb7e7ab902c7a45fd73da2b7f7b2b087239f684cb7332b238431"
+    },
+    {
+      "bytes": 140052,
+      "mode": "asan",
+      "owner": "futures",
+      "path": "/tmp/doe-instance-evaluator-0eyngbi0/instance-asan/libdoe_futures.a",
+      "sha256": "3c89d68a1452eacd98aa77e599888afc5af7e1bca01e18e85e41b599e1940488"
+    },
+    {
+      "bytes": 64788,
+      "mode": "tsan",
+      "owner": "instance",
+      "path": "/tmp/doe-instance-evaluator-0eyngbi0/instance-tsan/libdoe_instance.a",
+      "sha256": "57db4552b87516ab75bf0809e74505eaf50374d47d3063eb04b59426e6aa9173"
+    },
+    {
+      "bytes": 85228,
+      "mode": "tsan",
+      "owner": "futures",
+      "path": "/tmp/doe-instance-evaluator-0eyngbi0/instance-tsan/libdoe_futures.a",
+      "sha256": "b5c74a17f9584ac4225b10858968c09e4e8d5c01de990afed0fefb92c9e19666"
+    }
+  ],
+  "native_qualification": "pending separate handoff; not inspected",
+  "source_seal": "70dc3a31e083b213fdecd27b3f81511e973fb2c341bd6c33edae7c7daa9d9472",
+  "sources_after": [
+    {
+      "author_worktree_matches": true,
+      "copied_matches": true,
+      "path": "runtime/c/instance/include/doe_instance.h"
+    },
+    {
+      "author_worktree_matches": true,
+      "copied_matches": true,
+      "path": "runtime/c/instance/Makefile"
+    },
+    {
+      "author_worktree_matches": true,
+      "copied_matches": true,
+      "path": "runtime/c/instance/integration/build_archive.sh"
+    },
+    {
+      "author_worktree_matches": true,
+      "copied_matches": true,
+      "path": "runtime/c/instance/integration/abi_probe.c"
+    },
+    {
+      "author_worktree_matches": true,
+      "copied_matches": true,
+      "path": "runtime/c/instance/src/capabilities.c"
+    },
+    {
+      "author_worktree_matches": true,
+      "copied_matches": true,
+      "path": "runtime/c/instance/src/instance.c"
+    },
+    {
+      "author_worktree_matches": true,
+      "copied_matches": true,
+      "path": "runtime/c/instance/src/internal.h"
+    },
+    {
+      "author_worktree_matches": true,
+      "copied_matches": true,
+      "path": "runtime/c/instance/src/wait.c"
+    },
+    {
+      "author_worktree_matches": true,
+      "copied_matches": true,
+      "path": "runtime/c/instance/tests/test_api.c"
+    },
+    {
+      "author_worktree_matches": true,
+      "copied_matches": true,
+      "path": "runtime/c/instance/tests/test_concurrency.c"
+    },
+    {
+      "author_worktree_matches": true,
+      "copied_matches": true,
+      "path": "runtime/c/instance/tests/test_cpp.cpp"
+    },
+    {
+      "author_worktree_matches": true,
+      "copied_matches": true,
+      "path": "runtime/c/instance/tests/test_faults.c"
+    },
+    {
+      "author_worktree_matches": true,
+      "copied_matches": true,
+      "path": "runtime/c/futures/include/doe_futures.h"
+    },
+    {
+      "author_worktree_matches": true,
+      "copied_matches": true,
+      "path": "runtime/c/futures/src/internal.h"
+    },
+    {
+      "author_worktree_matches": true,
+      "copied_matches": true,
+      "path": "runtime/c/futures/src/storage.c"
+    },
+    {
+      "author_worktree_matches": true,
+      "copied_matches": true,
+      "path": "runtime/c/futures/src/futures.c"
+    },
+    {
+      "author_worktree_matches": true,
+      "copied_matches": true,
+      "path": "runtime/c/futures/integration/doe_futures_zig_bridge.h"
+    },
+    {
+      "author_worktree_matches": true,
+      "copied_matches": true,
+      "path": "runtime/c/futures/integration/doe_futures_zig_bridge.c"
+    },
+    {
+      "author_worktree_matches": true,
+      "copied_matches": true,
+      "path": "runtime/c/futures/integration/build_archive.sh"
+    },
+    {
+      "author_worktree_matches": true,
+      "copied_matches": true,
+      "path": "runtime/zig/vendor/webgpu-headers/webgpu.h"
+    }
+  ],
+  "summaries": {
+    "asan": {
+      "commands": 18,
+      "mode": "asan",
+      "no_zig_instrumentation": true,
+      "output_root": "/tmp/doe-instance-evaluator-0eyngbi0/instance-asan",
+      "passed": true,
+      "source_built_futures": true,
+      "source_built_instance": true
+    },
+    "author-prebuilt": {
+      "commands": 30,
+      "mode": "normal",
+      "no_zig_instrumentation": true,
+      "output_root": "/tmp/doe-instance-evaluator-0eyngbi0/instance-author-prebuilt",
+      "passed": true,
+      "source_built_futures": false,
+      "source_built_instance": false
+    },
+    "normal": {
+      "commands": 37,
+      "mode": "normal",
+      "no_zig_instrumentation": true,
+      "output_root": "/tmp/doe-instance-evaluator-0eyngbi0/instance-normal",
+      "passed": true,
+      "source_built_futures": true,
+      "source_built_instance": true
+    },
+    "tsan": {
+      "commands": 18,
+      "mode": "tsan",
+      "no_zig_instrumentation": true,
+      "output_root": "/tmp/doe-instance-evaluator-0eyngbi0/instance-tsan",
+      "passed": true,
+      "source_built_futures": true,
+      "source_built_instance": true
+    }
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "original_bytes": 695,
+  "original_receipt_sha256": "cd1e017d5424fdd07cda73e660290669526399b999865d8d9df7b91cd168ff9e",
+  "receipt": {
+    "argv": [
+      "gcc",
+      "-std=c11",
+      "-Wall",
+      "-Wextra",
+      "-Wpedantic",
+      "-Werror",
+      "-I",
+      "/workspace/shared/doe-c-migration-evidence-20261023/instance1/freeze-ready/include",
+      "-I",
+      "/workspace/shared/doe-c-migration-20261023/runtime/c/futures/include",
+      "-I",
+      "/workspace/shared/doe-c-migration-20261023/runtime/zig/vendor/webgpu-headers",
+      "/workspace/shared/doe-c-migration-evidence-20261023/instance1/evaluator/tests/abi_probe.c",
+      "-o",
+      "/tmp/doe-instance-evaluator-0eyngbi0/abi-gcc"
+    ],
+    "cwd": "/workspace/shared/doe-c-migration-20261023",
+    "elapsed_seconds": 0.043950572959147394,
+    "returncode": 0,
+    "stderr": "",
+    "stdout": ""
+  }
+}

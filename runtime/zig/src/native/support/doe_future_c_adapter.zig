@@ -41,7 +41,7 @@ pub fn legacyFuture() u64 {
 pub const Completion = struct {
     storage: c.doe_future_completion = undefined,
     initialized: bool = false,
-    owner: ?*PendingCompletions = null,
+    owner: ?QueueView = null,
     mode: u32 = abi.WGPUCallbackMode_AllowSpontaneous,
     dispatch: ?*const fn (*Completion) void = null,
 
@@ -111,42 +111,74 @@ pub const PendingCompletions = struct {
         return &self.storage;
     }
 
-    /// Borrow the actual initialized queue; the caller supplies its own lease.
+    /// Copying the view borrows; it never acquires a reference.
+    pub fn view(self: *PendingCompletions) QueueView {
+        return .{ .queue_ptr = self.queue(), .lease = self.lease };
+    }
+
     pub fn borrowedQueue(self: *PendingCompletions) *c.doe_future_queue {
-        return self.queue();
+        return self.view().borrowedQueue();
     }
 
     pub fn newFuture(self: *PendingCompletions) u64 {
-        var id: u64 = undefined;
-        requireOk("instance identity", c.doe_future_new_id(self.queue(), &id));
-        return id;
+        return self.view().newFuture();
     }
 
     pub fn register(self: *PendingCompletions, completion: *Completion, id: u64) void {
-        completion.prepare();
-        requireOk("register completion", c.doe_future_register(self.queue(), &completion.storage, id));
-        completion.owner = self;
+        self.view().register(completion, id);
     }
 
     pub fn processEvents(self: *PendingCompletions) void {
-        const queue_ptr = self.queue();
+        self.view().processEvents();
+    }
+
+    pub fn waitAny(self: *PendingCompletions, infos: []abi.WGPUFutureWaitInfo, timeout_ns: u64) !bool {
+        return self.view().waitAny(infos, timeout_ns);
+    }
+};
+
+/// Non-owning value. Its user must already hold the actual queue owner's lease.
+/// Null lease is only for initialized and externally quiesced standalone fixtures.
+pub const QueueView = struct {
+    queue_ptr: *c.doe_future_queue,
+    lease: ?Lease,
+
+    /// Borrow the actual initialized queue; the caller supplies its own lease.
+    pub fn borrowedQueue(self: QueueView) *c.doe_future_queue {
+        return self.queue_ptr;
+    }
+
+    pub fn newFuture(self: QueueView) u64 {
+        var id: u64 = undefined;
+        requireOk("instance identity", c.doe_future_new_id(self.queue_ptr, &id));
+        return id;
+    }
+
+    pub fn register(self: QueueView, completion: *Completion, id: u64) void {
+        completion.prepare();
+        completion.owner = self;
+        requireOk("register completion", c.doe_future_register(self.queue_ptr, &completion.storage, id));
+    }
+
+    pub fn processEvents(self: QueueView) void {
+        const queue_ptr = self.queue_ptr;
         const lease = self.lease;
         acquire(lease);
         defer release(lease);
         requireOk("process events", c.doe_future_process_events(queue_ptr));
     }
 
-    pub fn waitAny(self: *PendingCompletions, infos: []abi.WGPUFutureWaitInfo, timeout_ns: u64) !bool {
+    pub fn waitAny(self: QueueView, infos: []abi.WGPUFutureWaitInfo, timeout_ns: u64) !bool {
         if (infos.len == 0) return true;
+        const lease = self.lease;
+        acquire(lease);
+        defer release(lease);
         _ = try std.math.mul(usize, infos.len, @sizeOf(c.doe_future_wait_info));
         const allocator = if (builtin.is_test) test_wait_allocator orelse std.heap.page_allocator else std.heap.page_allocator;
         const copied = try allocator.alloc(c.doe_future_wait_info, infos.len);
         defer allocator.free(copied);
         for (infos, copied) |info, *copy| copy.* = .{ .id = info.future.id, .completed = info.completed };
-        const queue_ptr = self.queue();
-        const lease = self.lease;
-        acquire(lease);
-        defer release(lease);
+        const queue_ptr = self.queue_ptr;
         const status = c.doe_future_wait_any(queue_ptr, copied.ptr, copied.len, timeout_ns);
         for (infos, copied) |*info, copy| info.completed = copy.completed;
         return switch (status) {

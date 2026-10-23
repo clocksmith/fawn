@@ -1,0 +1,8 @@
+{
+  "original_bytes": 180,
+  "original_receipt_sha256": "89b667bf97367bdfdb831338eb9ad219ffdf4257d0dcc408057ddf4a5bfa9a93",
+  "receipt": {
+    "path": "/tmp/doe-instance-evaluator-0eyngbi0/native-fci-retry1/install/lib/libwebgpu_doe.so",
+    "sha256": "9a8b934fe04a82fde659310aec7e5323d486c16cff1ad775936f134831a56ef7"
+  }
+}

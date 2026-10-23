@@ -1,0 +1,16 @@
+{
+  "original_bytes": 254,
+  "original_receipt_sha256": "138bf7b07545b8c382c636e77b85e920645a13d5939c356b8fcfe7cb841cd8fb",
+  "receipt": {
+    "argv": [
+      "python3",
+      "runtime/zig/tools/generate_test_suites.py",
+      "--check"
+    ],
+    "cwd": "/tmp/doe-instance-evaluator-0eyngbi0/native-source",
+    "elapsed_seconds": 0.04578966199187562,
+    "returncode": 0,
+    "stderr": "",
+    "stdout": ""
+  }
+}

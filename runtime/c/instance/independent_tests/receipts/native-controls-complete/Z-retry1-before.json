@@ -1,0 +1,25 @@
+{
+  "original_bytes": 790,
+  "original_receipt_sha256": "7a9b057fb3cf5679a27969df481e30a814c5d6c691766cd51e8e25947b25791b",
+  "receipt": {
+    "artifact_exists": false,
+    "cgroup": {
+      "cpu.max": {
+        "unavailable": "[Errno 2] No such file or directory: '/sys/fs/cgroup/cpu.max'"
+      },
+      "memory.current": {
+        "unavailable": "[Errno 2] No such file or directory: '/sys/fs/cgroup/memory.current'"
+      },
+      "memory.events": {
+        "unavailable": "[Errno 2] No such file or directory: '/sys/fs/cgroup/memory.events'"
+      },
+      "memory.max": {
+        "unavailable": "[Errno 2] No such file or directory: '/sys/fs/cgroup/memory.max'"
+      },
+      "memory.peak": {
+        "unavailable": "[Errno 2] No such file or directory: '/sys/fs/cgroup/memory.peak'"
+      }
+    },
+    "df": "Filesystem      Size  Used Avail Use% Mounted on\ntmpfs           4.9G  2.3G  2.7G  46% /tmp\noverlay          32G   30G   52M 100% /workspace\n"
+  }
+}

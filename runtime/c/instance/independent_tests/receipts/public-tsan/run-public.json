@@ -1,0 +1,17 @@
+{
+  "original_bytes": 449,
+  "original_receipt_sha256": "d84959ac61ccbfabb69c6f53a6f76941836a6bc97eb3be1c58af70aba111e08f",
+  "receipt": {
+    "argv": [
+      "/tmp/doe-instance-evaluator-0eyngbi0/instance-tsan/public"
+    ],
+    "asan_options": null,
+    "child_peak_rss_kib": 35472,
+    "cwd": "/workspace/scratch/e1ac86fc0556",
+    "elapsed_seconds": 0.09001074795378372,
+    "instrumentation": "tsan",
+    "returncode": 0,
+    "stderr": "",
+    "stdout": "PASS independent public instance cases C01-C05/C09-C14/C16-C18 (named partial coverage; separate faults/native complete remaining obligations)\n"
+  }
+}

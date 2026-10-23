@@ -1,0 +1,13 @@
+{
+  "original_bytes": 213,
+  "original_receipt_sha256": "4f2368c615cb1c91cee4396e8204f2de2882ef5ddbca4c4edcdd924f32b52829",
+  "receipt": {
+    "argv": [
+      "/tmp/doe-instance-evaluator-0eyngbi0/instance-status",
+      "wait-order"
+    ],
+    "returncode": 0,
+    "stderr": "",
+    "stdout": "FREE\nLABEL\nFREE\nPASS wait records C,A,B still dispatch A,B,C\n"
+  }
+}

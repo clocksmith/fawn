@@ -1,0 +1,17 @@
+{
+  "original_bytes": 365,
+  "original_receipt_sha256": "a6bd35a74ae1bb35858701fcb17edd95d6791372877e7caa0e841e5170e182c1",
+  "receipt": {
+    "DOE_BACKEND": "metal",
+    "argv": [
+      "/workspace/shared/doe-language-experiment-20261023/phase1/deps/zig-x86_64-linux-0.15.2/zig",
+      "version"
+    ],
+    "child_peak_rss_kib": 35716,
+    "cwd": "/tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete",
+    "elapsed_seconds": 0.006401556020136923,
+    "returncode": 0,
+    "stderr": "",
+    "stdout": "0.15.2\n"
+  }
+}

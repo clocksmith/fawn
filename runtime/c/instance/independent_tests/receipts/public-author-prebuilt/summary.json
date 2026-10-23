@@ -1,0 +1,13 @@
+{
+  "original_bytes": 242,
+  "original_receipt_sha256": "97c15c89c9322381fe9bc86eeda18f1e88437e4bd641112d690b0b7bb9a83a93",
+  "receipt": {
+    "commands": 30,
+    "mode": "normal",
+    "no_zig_instrumentation": true,
+    "output_root": "/tmp/doe-instance-evaluator-0eyngbi0/instance-author-prebuilt",
+    "passed": true,
+    "source_built_futures": false,
+    "source_built_instance": false
+  }
+}

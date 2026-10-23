@@ -1,0 +1,28 @@
+{
+  "original_bytes": 1181,
+  "original_receipt_sha256": "d950b40eadda1f584aaeda6f7d4c1e7a012a8c23dad68554b9378ce2cf03d45c",
+  "receipt": {
+    "all_36_configured_artifact_roots_executed": false,
+    "artifacts": [
+      {
+        "executed": false,
+        "path": "/tmp/doe-instance-evaluator-0eyngbi0/native-fci-retry1/install/lib/libwebgpu_doe_compute.so",
+        "sha256": "61b3cb922f4a7f6c6a5d5216dbcadeab7b3c08fa983e0c7f253f8043699640ac",
+        "size_bytes": 12920776
+      },
+      {
+        "executed": false,
+        "path": "/tmp/doe-instance-evaluator-0eyngbi0/native-fci-retry1/install/lib/libwebgpu_doe_full.so",
+        "sha256": "5db2e83c2c54ab1db3acb86a305578ec02b97e0ca6b6b1c76294ea070026e218",
+        "size_bytes": 12925584
+      }
+    ],
+    "compile_only": true,
+    "options": [
+      "/workspace/shared/doe-c-migration-evidence-20261023/instance1/evaluator/native-named-roots/options-a48fe9eda4fed714c612efc251c95a7d476bf63d69154a1408e8b3de4552069e.zig",
+      "/workspace/shared/doe-c-migration-evidence-20261023/instance1/evaluator/native-named-roots/options-1ffaf69524966658d967878ec2a3b00f0651b7af3bfce9f54026a58b6fc64583.zig",
+      "/workspace/shared/doe-c-migration-evidence-20261023/instance1/evaluator/native-named-roots/options-e4a0eb0697ce3a58ced11573a4a66ab940e91fe92bc521f208df25574572cbe0.zig"
+    ],
+    "passed": true
+  }
+}

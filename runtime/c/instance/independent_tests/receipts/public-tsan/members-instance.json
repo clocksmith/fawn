@@ -1,0 +1,19 @@
+{
+  "original_bytes": 400,
+  "original_receipt_sha256": "7b7f53965c3dd90b8bf9fa8a01d9f50da54b1c77d168ac82b2c2d7781b80eb01",
+  "receipt": {
+    "argv": [
+      "ar",
+      "t",
+      "/tmp/doe-instance-evaluator-0eyngbi0/instance-tsan/libdoe_instance.a"
+    ],
+    "asan_options": null,
+    "child_peak_rss_kib": 22120,
+    "cwd": "/workspace/scratch/e1ac86fc0556",
+    "elapsed_seconds": 0.0015016649849712849,
+    "instrumentation": "tsan",
+    "returncode": 0,
+    "stderr": "",
+    "stdout": "instance-capabilities.o\ninstance-instance.o\ninstance-wait.o\n"
+  }
+}

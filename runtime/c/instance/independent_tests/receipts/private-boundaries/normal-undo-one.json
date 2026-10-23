@@ -1,0 +1,14 @@
+{
+  "original_bytes": 252,
+  "original_receipt_sha256": "89887938878fb61e7014400b24929f700aea271125c60c5d885266899fe390c7",
+  "receipt": {
+    "argv": [
+      "/tmp/doe-instance-evaluator-0eyngbi0/instance-private/normal",
+      "undo-one"
+    ],
+    "elapsed_seconds": 0.000768008001614362,
+    "returncode": -6,
+    "stderr": "C instance undo retain count failed closed: status 1\n",
+    "stdout": ""
+  }
+}

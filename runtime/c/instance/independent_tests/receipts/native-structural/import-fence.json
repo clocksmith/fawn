@@ -1,0 +1,15 @@
+{
+  "original_bytes": 241,
+  "original_receipt_sha256": "cfb0efad2cd9dec8c862147289049f30aad7bfac89403c7b08efc10b99fc892d",
+  "receipt": {
+    "argv": [
+      "python3",
+      "runtime/zig/tools/check_core_import_fence.py"
+    ],
+    "cwd": "/tmp/doe-instance-evaluator-0eyngbi0/native-source",
+    "elapsed_seconds": 2.1707122739753686,
+    "returncode": 0,
+    "stderr": "",
+    "stdout": ""
+  }
+}

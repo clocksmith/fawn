@@ -1,0 +1,278 @@
+{
+  "case_groups": 32,
+  "cases": {
+    "C01": {
+      "status": "PASS",
+      "receipts": [
+        "public-normal",
+        "public-asan",
+        "public-tsan"
+      ]
+    },
+    "C02": {
+      "status": "PASS",
+      "receipts": [
+        "public-normal",
+        "public-asan",
+        "public-tsan"
+      ]
+    },
+    "C03": {
+      "status": "PASS",
+      "receipts": [
+        "public-normal",
+        "public-asan",
+        "public-tsan"
+      ]
+    },
+    "C04": {
+      "status": "PASS",
+      "receipts": [
+        "public-normal",
+        "public-asan",
+        "public-tsan"
+      ]
+    },
+    "C05": {
+      "status": "PASS",
+      "receipts": [
+        "public-normal",
+        "public-asan",
+        "public-tsan"
+      ]
+    },
+    "C06": {
+      "status": "PASS",
+      "receipts": [
+        "public-normal",
+        "public-asan",
+        "public-tsan",
+        "status-boundaries"
+      ]
+    },
+    "C07": {
+      "status": "PASS",
+      "receipts": [
+        "public-normal",
+        "public-asan",
+        "public-tsan",
+        "status-boundaries"
+      ]
+    },
+    "C08": {
+      "status": "PASS",
+      "receipts": [
+        "private-boundaries"
+      ]
+    },
+    "C09": {
+      "status": "PASS",
+      "receipts": [
+        "public-normal",
+        "public-asan",
+        "public-tsan"
+      ]
+    },
+    "C10": {
+      "status": "PASS",
+      "receipts": [
+        "public-normal",
+        "public-asan",
+        "public-tsan"
+      ]
+    },
+    "C11": {
+      "status": "PASS",
+      "receipts": [
+        "public-normal",
+        "public-asan",
+        "public-tsan"
+      ]
+    },
+    "C12": {
+      "status": "PASS",
+      "receipts": [
+        "public-normal",
+        "public-asan",
+        "public-tsan"
+      ]
+    },
+    "C13": {
+      "status": "PASS",
+      "receipts": [
+        "public-normal",
+        "public-asan",
+        "public-tsan"
+      ]
+    },
+    "C14": {
+      "status": "PASS",
+      "receipts": [
+        "public-normal",
+        "public-asan",
+        "public-tsan"
+      ]
+    },
+    "C15": {
+      "status": "PASS",
+      "receipts": [
+        "public-normal",
+        "public-asan",
+        "public-tsan"
+      ]
+    },
+    "C16": {
+      "status": "PASS",
+      "receipts": [
+        "public-normal",
+        "public-asan",
+        "public-tsan"
+      ]
+    },
+    "C17": {
+      "status": "PASS",
+      "receipts": [
+        "public-normal",
+        "public-asan",
+        "public-tsan"
+      ]
+    },
+    "C18": {
+      "status": "PASS",
+      "receipts": [
+        "public-normal",
+        "public-asan",
+        "public-tsan"
+      ]
+    },
+    "P01": {
+      "status": "PASS in defined/precondition-corrected scope",
+      "receipts": [
+        "native-controls-complete",
+        "native-fci-retry1",
+        "native-prebuilt"
+      ]
+    },
+    "P02": {
+      "status": "PASS in defined/precondition-corrected scope",
+      "receipts": [
+        "native-controls-complete",
+        "native-fci-retry1",
+        "native-prebuilt"
+      ]
+    },
+    "P03": {
+      "status": "PASS in defined/precondition-corrected scope",
+      "receipts": [
+        "native-controls-complete",
+        "native-fci-retry1",
+        "native-prebuilt"
+      ],
+      "notes": "Readable-invalid storage correction and real wrong-kind surface apply under the documented recognizer preconditions; wrong-kind FCI only. Real legacy fallback in native-independent."
+    },
+    "P04": {
+      "status": "PASS in defined/precondition-corrected scope",
+      "receipts": [
+        "native-controls-complete",
+        "native-fci-retry1",
+        "native-prebuilt",
+        "native-independent",
+        "native-regressions"
+      ]
+    },
+    "P05": {
+      "status": "PASS in defined/precondition-corrected scope",
+      "receipts": [
+        "native-controls-complete",
+        "native-fci-retry1",
+        "native-prebuilt"
+      ]
+    },
+    "P06": {
+      "status": "PASS in defined/precondition-corrected scope",
+      "receipts": [
+        "native-controls-complete",
+        "native-fci-retry1",
+        "native-prebuilt",
+        "native-regressions/FCI-retained-record-abi.json",
+        "native-wgsl-controls-repair1"
+      ],
+      "notes": "WGSL direct exports match default; extra WGSL proc routes absent in all controls, not claimed executed."
+    },
+    "N01": {
+      "status": "PASS CPU/host/source scope only",
+      "receipts": [
+        "native-independent",
+        "native-sanitizers-final",
+        "native-regressions"
+      ]
+    },
+    "N02": {
+      "status": "PASS CPU/host/source scope only",
+      "receipts": [
+        "native-independent",
+        "native-sanitizers-final",
+        "native-regressions"
+      ]
+    },
+    "N03": {
+      "status": "PASS CPU/host/source scope only",
+      "receipts": [
+        "native-independent",
+        "native-sanitizers-final",
+        "native-regressions"
+      ]
+    },
+    "N04": {
+      "status": "PASS CPU/host/source scope only",
+      "receipts": [
+        "native-independent",
+        "native-sanitizers-final",
+        "native-regressions"
+      ]
+    },
+    "N05": {
+      "status": "PASS CPU/host/source scope only",
+      "receipts": [
+        "native-independent",
+        "native-sanitizers-final",
+        "native-regressions"
+      ],
+      "notes": "Two real external-texture rollback routes audited/compiled; physical imported texture qualification remains unexecuted."
+    },
+    "B01": {
+      "status": "PASS with preserved packaging/build-lifecycle limits",
+      "receipts": [
+        "native-structural",
+        "native-build-boundaries",
+        "native-named-roots",
+        "FINAL_SOURCE_VERIFICATION.json",
+        "FINAL_IMPLEMENTATION_SNAPSHOT_CHECK.json",
+        "MEASUREMENTS.json"
+      ]
+    },
+    "B02": {
+      "status": "PASS with preserved packaging/build-lifecycle limits",
+      "receipts": [
+        "native-structural",
+        "native-build-boundaries",
+        "native-named-roots",
+        "FINAL_SOURCE_VERIFICATION.json",
+        "FINAL_IMPLEMENTATION_SNAPSHOT_CHECK.json",
+        "MEASUREMENTS.json"
+      ]
+    },
+    "B03": {
+      "status": "PASS with preserved packaging/build-lifecycle limits",
+      "receipts": [
+        "native-structural",
+        "native-build-boundaries",
+        "native-named-roots",
+        "FINAL_SOURCE_VERIFICATION.json",
+        "FINAL_IMPLEMENTATION_SNAPSHOT_CHECK.json",
+        "MEASUREMENTS.json"
+      ]
+    }
+  },
+  "physical_debug_and_adoption": "NOT QUALIFIED"
+}

@@ -1,0 +1,39 @@
+{
+  "original_bytes": 974,
+  "original_receipt_sha256": "59283cde497550ca099881133d1c90981ddd7c46cd60fc2a5751d264dedc95af",
+  "receipt": {
+    "argv": [
+      "gcc",
+      "-std=c11",
+      "-O1",
+      "-g",
+      "-fPIC",
+      "-Wall",
+      "-Wextra",
+      "-Wpedantic",
+      "-Werror",
+      "-pthread",
+      "-fno-omit-frame-pointer",
+      "-fno-sanitize-recover=all",
+      "-fsanitize=address,undefined",
+      "-I",
+      "/tmp/doe-instance-evaluator-0eyngbi0/gcc-core-source/runtime/c/instance/include",
+      "-I",
+      "/tmp/doe-instance-evaluator-0eyngbi0/gcc-core-source/runtime/c/futures/include",
+      "-I",
+      "/tmp/doe-instance-evaluator-0eyngbi0/gcc-core-source/runtime/zig/vendor/webgpu-headers",
+      "-c",
+      "/tmp/doe-instance-evaluator-0eyngbi0/gcc-core-source/runtime/c/futures/src/storage.c",
+      "-o",
+      "/tmp/doe-instance-evaluator-0eyngbi0/instance-asan/futures-storage.o"
+    ],
+    "asan_options": "detect_leaks=0",
+    "child_peak_rss_kib": 25136,
+    "cwd": "/workspace/scratch/e1ac86fc0556",
+    "elapsed_seconds": 0.0866459269891493,
+    "instrumentation": "asan",
+    "returncode": 0,
+    "stderr": "",
+    "stdout": ""
+  }
+}

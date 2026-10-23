@@ -1,0 +1,25 @@
+{
+  "original_bytes": 487,
+  "original_receipt_sha256": "b7a9aa9b1363708f915b482842811cc67053d9d1510527f8e0b3b90091ba3fac",
+  "receipt": {
+    "DOE_BACKEND": "metal",
+    "argv": [
+      "gcc",
+      "-std=c11",
+      "-Wall",
+      "-Wextra",
+      "-Wpedantic",
+      "-Werror",
+      "-O2",
+      "-I",
+      "/tmp/doe-instance-evaluator-0eyngbi0/native-source/runtime/zig/vendor/webgpu-headers",
+      "/workspace/shared/doe-c-migration-evidence-20261023/instance1/evaluator/tests/native_labels.c",
+      "-ldl",
+      "-o",
+      "/tmp/doe-instance-evaluator-0eyngbi0/native-prebuilt/labels"
+    ],
+    "returncode": 0,
+    "stderr": "",
+    "stdout": ""
+  }
+}

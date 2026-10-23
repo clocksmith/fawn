@@ -1,0 +1,41 @@
+{
+  "original_bytes": 1543,
+  "original_receipt_sha256": "b1af90d2e97848770b1665f049793bd40f5f62bf37c1b6930bc4555febb5c1fe",
+  "receipt": {
+    "after_cleanup": [],
+    "argv": [
+      "/workspace/shared/doe-language-experiment-20261023/phase1/deps/zig-x86_64-linux-0.15.2/zig",
+      "build",
+      "test-c-futures-integration",
+      "-j1",
+      "-Doptimize=ReleaseFast",
+      "-Dexperimental-c-futures-archive=/tmp/doe-instance-evaluator-0eyngbi0/accepted-futures/libdoe_futures_zig.a",
+      "--search-prefix",
+      "/workspace/shared/doe-language-experiment-20261023/phase1/system-link-prefix",
+      "--cache-dir",
+      "/tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/F-cache",
+      "--global-cache-dir",
+      "/tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/F-global-cache",
+      "--prefix",
+      "/tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/F-install",
+      "--summary",
+      "all"
+    ],
+    "before_cleanup": [],
+    "cleanup_signals": [],
+    "cwd": "/tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/source/runtime/zig",
+    "elapsed_seconds": 27.775816990993917,
+    "environment": {
+      "DOE_BACKEND": "metal",
+      "LD_LIBRARY_PATH": "/workspace/shared/doe-language-experiment-20261023/phase1/system-link-prefix/lib"
+    },
+    "no_live_process_group_members": true,
+    "pid_namespace": "pid:[4026532881]",
+    "process_group": 5,
+    "returncode": 0,
+    "stderr": "\nBuild Summary: 4/4 steps succeeded; 11/11 tests passed\ntest-c-futures-integration success\n+- run test 11 passed 7ms MaxRSS:3M\n   +- compile test ReleaseFast native success 22s MaxRSS:365M\n      +- options success\n\n",
+    "stdout": "",
+    "timed_out": false,
+    "timeout_seconds": 900
+  }
+}

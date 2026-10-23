@@ -1,0 +1,15 @@
+{
+  "original_bytes": 278,
+  "original_receipt_sha256": "3ab9bd38171f38602667ace48c107f8e2abdc3947b6beaede67f42ba0cc200f1",
+  "receipt": {
+    "argv": [
+      "sh",
+      "/tmp/doe-instance-evaluator-0eyngbi0/native-source/runtime/c/callbacks/integration/build_archive.sh",
+      "/tmp/doe-instance-evaluator-0eyngbi0/native-sanitizers/tsan/callbacks",
+      "thread"
+    ],
+    "returncode": 0,
+    "stderr": "",
+    "stdout": ""
+  }
+}

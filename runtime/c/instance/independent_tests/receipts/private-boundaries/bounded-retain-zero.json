@@ -1,0 +1,14 @@
+{
+  "original_bytes": 252,
+  "original_receipt_sha256": "65d42f32d19eadec689b2c1315b5e4e638ada2638ed75353441ebc193361453d",
+  "receipt": {
+    "argv": [
+      "/tmp/doe-instance-evaluator-0eyngbi0/instance-private/bounded",
+      "retain-zero"
+    ],
+    "elapsed_seconds": 0.0011103549622930586,
+    "returncode": -6,
+    "stderr": "C instance retain count failed closed: status 0\n",
+    "stdout": ""
+  }
+}

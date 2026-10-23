@@ -1,0 +1,43 @@
+{
+  "original_bytes": 1865,
+  "original_receipt_sha256": "240cdd9a212689f4a0c9b6c1343236d785b2f51943b047a90fdef3fa0c908213",
+  "receipt": {
+    "after_cleanup": [],
+    "argv": [
+      "/workspace/shared/doe-language-experiment-20261023/phase1/deps/zig-x86_64-linux-0.15.2/zig",
+      "build",
+      "test-c-futures-integration",
+      "test-c-callbacks-integration",
+      "-j1",
+      "-Doptimize=ReleaseFast",
+      "-Dexperimental-c-futures-archive=/tmp/doe-instance-evaluator-0eyngbi0/accepted-futures/libdoe_futures_zig.a",
+      "-Dexperimental-c-callbacks-archive=/tmp/doe-instance-evaluator-0eyngbi0/callbacks-developer/libdoe_callbacks.a",
+      "--search-prefix",
+      "/workspace/shared/doe-language-experiment-20261023/phase1/system-link-prefix",
+      "--cache-dir",
+      "/tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/FC-cache",
+      "--global-cache-dir",
+      "/tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/FC-global-cache",
+      "--prefix",
+      "/tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/FC-install",
+      "--summary",
+      "all"
+    ],
+    "before_cleanup": [],
+    "cleanup_signals": [],
+    "cwd": "/tmp/doe-instance-evaluator-0eyngbi0/native-controls-complete/source/runtime/zig",
+    "elapsed_seconds": 43.276512896991335,
+    "environment": {
+      "DOE_BACKEND": "metal",
+      "LD_LIBRARY_PATH": "/workspace/shared/doe-language-experiment-20261023/phase1/system-link-prefix/lib"
+    },
+    "no_live_process_group_members": true,
+    "pid_namespace": "pid:[4026532881]",
+    "process_group": 41,
+    "returncode": 0,
+    "stderr": "\nBuild Summary: 7/7 steps succeeded; 16/16 tests passed\ntest-c-futures-integration success\n+- run test 11 passed 7ms MaxRSS:3M\n   +- compile test ReleaseFast native success 17s MaxRSS:329M\n      +- options success\ntest-c-callbacks-integration success\n+- run test 5 passed 5ms MaxRSS:3M\n   +- compile test ReleaseFast native success 21s MaxRSS:366M\n      +- options (reused)\n\n",
+    "stdout": "",
+    "timed_out": false,
+    "timeout_seconds": 900
+  }
+}

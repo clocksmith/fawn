@@ -1,0 +1,35 @@
+{
+  "original_bytes": 2617,
+  "original_receipt_sha256": "06c5800ae668f2720ce5503b9d37343e7c5b9b5266fe759e3ebee8c5af2e4057",
+  "receipt": {
+    "argv": [
+      "/workspace/shared/doe-language-experiment-20261023/phase1/deps/zig-x86_64-linux-0.15.2/zig",
+      "build-obj",
+      "-I",
+      "/tmp/doe-instance-evaluator-0eyngbi0/accepted-source/runtime/zig/vendor/webgpu-headers",
+      "-I",
+      "/tmp/doe-instance-evaluator-0eyngbi0/accepted-source/runtime/c/futures/include",
+      "-I",
+      "/tmp/doe-instance-evaluator-0eyngbi0/accepted-source/runtime/c/futures/integration",
+      "-I",
+      "/tmp/doe-instance-evaluator-0eyngbi0/accepted-source/runtime/c/callbacks/include",
+      "-I",
+      "/tmp/doe-instance-evaluator-0eyngbi0/accepted-source/runtime/zig/src/backend/metal",
+      "-I",
+      "/tmp/doe-instance-evaluator-0eyngbi0/accepted-source/runtime/zig/src/backend/d3d12",
+      "--dep",
+      "build_options",
+      "-Mroot=/tmp/doe-instance-evaluator-0eyngbi0/accepted-source/runtime/zig/independent_layout_v2.zig",
+      "-Mbuild_options=/tmp/doe-instance-evaluator-0eyngbi0/accepted-source/runtime/zig/options.zig",
+      "-lc",
+      "--cache-dir",
+      "/tmp/doe-instance-evaluator-0eyngbi0/layout-cache",
+      "--global-cache-dir",
+      "/tmp/doe-instance-evaluator-0eyngbi0/abi-global"
+    ],
+    "expected": "compile-log diagnostic",
+    "returncode": 1,
+    "stderr": "/tmp/doe-instance-evaluator-0eyngbi0/accepted-source/runtime/zig/independent_layout_v2.zig:3:74: error: found compile log statement\ncomptime { for(.{o.DoeInstance,o.DoeDevice,o.DoeAdapter,s.DoeSurface})|T|@compileLog(@typeName(T),@sizeOf(T),@alignOf(T),@offsetOf(T,\"magic\")); }\n                                                                         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\nreferenced by:\n    root: /workspace/shared/doe-language-experiment-20261023/phase1/deps/zig-x86_64-linux-0.15.2/lib/std/start.zig:3:22\n    comptime: /workspace/shared/doe-language-experiment-20261023/phase1/deps/zig-x86_64-linux-0.15.2/lib/std/start.zig:31:9\n    2 reference(s) hidden; use '-freference-trace=4' to see all references\n\nCompile Log Output:\n@as(*const [54:0]u8, \"src.native.support.doe_native_object_types.DoeInstance\"), @as(comptime_int, 176), @as(comptime_int, 8), @as(comptime_int, 168)\n@as(*const [52:0]u8, \"src.native.support.doe_native_object_types.DoeDevice\"), @as(comptime_int, 42736), @as(comptime_int, 8), @as(comptime_int, 42720)\n@as(*const [53:0]u8, \"src.native.support.doe_native_object_types.DoeAdapter\"), @as(comptime_int, 328), @as(comptime_int, 8), @as(comptime_int, 40)\n@as(*const [48:0]u8, \"src.native.surface.doe_surface_native.DoeSurface\"), @as(comptime_int, 96), @as(comptime_int, 8), @as(comptime_int, 80)\n",
+    "stdout": ""
+  }
+}
