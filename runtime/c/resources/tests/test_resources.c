@@ -64,6 +64,9 @@ static void test_mapping(void)
     token = (native_token){0};
     doe_resource_config c = config(&f);
     doe_resource_buffer_desc desc = {16, WGPUBufferUsage_Storage, true};
+    assert(doe_resource_buffer_validate(&desc) == DOE_RESOURCE_OK);
+    doe_resource_buffer_desc invalid = {15, WGPUBufferUsage_Storage, true};
+    assert(doe_resource_buffer_validate(&invalid) == DOE_RESOURCE_ALIGNMENT);
     assert(doe_resource_buffer_create(&c, &desc, native(&f, &token), &buf) == DOE_RESOURCE_OK);
     assert(doe_resource_buffer_map_complete(buf, 0, true, memory) == DOE_RESOURCE_OK);
     assert(doe_resource_buffer_mapped_range(buf, 8, UINT64_MAX, &range) == DOE_RESOURCE_OK && range == memory + 8);
@@ -147,6 +150,9 @@ static void test_view_lifetime(void)
     assert(doe_resource_texture_description(texture)->view_format_count == 1);
     doe_resource_view_desc view_desc = {.format = WGPUTextureFormat_RGBA8UnormSrgb, .base_mip = 1};
     doe_resource_view *view;
+    doe_resource_view_desc resolved;
+    assert(doe_resource_view_validate(texture, &view_desc, &resolved) == DOE_RESOURCE_OK);
+    assert(resolved.base_mip == 1 && resolved.mip_count == 3);
     assert(doe_resource_view_create(texture, &view_desc, native(&f, &view_token), &view) == DOE_RESOURCE_OK);
     assert(doe_resource_view_description(view)->mip_count == 3);
     doe_resource_texture_release(texture);
@@ -414,10 +420,16 @@ static void test_sampler_and_texture_group(void)
     assert(doe_resource_view_create(texture, &view_desc, native(&f, &view_token), &view) == DOE_RESOURCE_OK);
     WGPUSamplerDescriptor sampler_desc = WGPU_SAMPLER_DESCRIPTOR_INIT;
     doe_resource_sampler *sampler;
+    WGPUSamplerDescriptor normalized = WGPU_SAMPLER_DESCRIPTOR_INIT;
+    normalized.lodMaxClamp = 19;
     sampler_desc.lodMaxClamp = -1;
     assert(doe_resource_sampler_create(&c, &sampler_desc, native(&f, &sampler_token), &sampler) == DOE_RESOURCE_RANGE);
+    assert(doe_resource_sampler_validate(&sampler_desc, &normalized) == DOE_RESOURCE_RANGE);
+    assert(normalized.lodMaxClamp == 19);
     assert(!sampler_token.releases);
     sampler_desc.lodMaxClamp = 32;
+    assert(doe_resource_sampler_validate(&sampler_desc, &normalized) == DOE_RESOURCE_OK);
+    assert(normalized.lodMaxClamp == 32 && normalized.label.data == NULL);
     assert(doe_resource_sampler_create(&c, &sampler_desc, native(&f, &sampler_token), &sampler) == DOE_RESOURCE_OK);
     doe_resource_layout_entry entries[] = {
         {.binding = 0, .visibility = WGPUShaderStage_Compute, .kind = DOE_BIND_TEXTURE,

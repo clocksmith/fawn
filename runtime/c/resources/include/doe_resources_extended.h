@@ -21,6 +21,15 @@ uint32_t doe_resource_query_set_count(const doe_resource_query_set *set);
 typedef enum doe_resource_timestamp_position {
     DOE_TIMESTAMP_COMMAND, DOE_TIMESTAMP_PASS_BEGIN, DOE_TIMESTAMP_PASS_END
 } doe_resource_timestamp_position;
+/* UINT32_MAX omits that write. Feature admission remains with the backend.
+ * The pass retains its end-write pool even if caller references are released. */
+typedef struct doe_resource_pass_timestamps {
+    doe_resource_query_set *set;
+    uint32_t begin_index, end_index;
+} doe_resource_pass_timestamps;
+doe_resource_status doe_resource_encoder_begin_compute_with_timestamps(doe_resource_encoder *encoder,
+    const doe_resource_pass_timestamps *timestamps, doe_resource_compute_pass **out);
+
 doe_resource_status doe_resource_encoder_write_timestamp(doe_resource_encoder *encoder,
     doe_resource_query_set *set, uint32_t index, doe_resource_timestamp_position position);
 doe_resource_status doe_resource_encoder_resolve_queries(doe_resource_encoder *encoder,
@@ -83,6 +92,8 @@ typedef struct doe_resource_render_packet {
     doe_resource_vertex_binding vertices[DOE_RESOURCE_MAX_VERTEX_BUFFERS];
     doe_resource_vertex_binding index;
     WGPUIndexFormat index_format;
+    doe_resource_buffer *indirect;
+    uint64_t indirect_offset;
     doe_resource_render_state state;
     /* Each pass has explicit begin/end boundary-only packets bracketing query
      * events and draw packets. Load/clear only at first, store only at last. */
@@ -99,6 +110,9 @@ void doe_resource_render_pipeline_release(doe_resource_render_pipeline *pipeline
 void *doe_resource_render_pipeline_native(const doe_resource_render_pipeline *pipeline);
 doe_resource_status doe_resource_encoder_begin_render(doe_resource_encoder *encoder,
     const doe_resource_render_targets *targets, doe_resource_render_pass **out);
+doe_resource_status doe_resource_encoder_begin_render_with_timestamps(doe_resource_encoder *encoder,
+    const doe_resource_render_targets *targets, const doe_resource_pass_timestamps *timestamps,
+    doe_resource_render_pass **out);
 /* Pass owns an encoder lease. Releasing an unended pass poisons that encoder. */
 void doe_resource_render_pass_retain(doe_resource_render_pass *pass);
 void doe_resource_render_pass_release(doe_resource_render_pass *pass);
@@ -118,6 +132,10 @@ doe_resource_status doe_resource_render_pass_draw(doe_resource_render_pass *pass
 doe_resource_status doe_resource_render_pass_draw_indexed(doe_resource_render_pass *pass,
     uint32_t index_count, uint32_t instances, uint32_t first_index,
     int32_t base_vertex, uint32_t first_instance);
+/* Indirect records retain arguments; native execution owns data-dependent
+ * bounds, first-instance feature admission and robust vertex/index accesses. */
+doe_resource_status doe_resource_render_pass_draw_indirect(doe_resource_render_pass *pass,
+    doe_resource_buffer *arguments, uint64_t offset, bool indexed);
 doe_resource_status doe_resource_render_pass_begin_occlusion(doe_resource_render_pass *pass, uint32_t index);
 doe_resource_status doe_resource_render_pass_end_occlusion(doe_resource_render_pass *pass);
 doe_resource_status doe_resource_render_pass_end(doe_resource_render_pass *pass);

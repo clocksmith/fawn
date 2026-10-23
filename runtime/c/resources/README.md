@@ -8,6 +8,7 @@ cutover, physical GPU, performance or complete WebGPU parity claim is made here.
 
 `include/doe_resources.h` is the typed internal C seam;
 `include/doe_resources_extended.h` adds query, external-texture and render owners.
+Allocation-free buffer/view/sampler preflight shares constructor admission.
 Native creators pass real storage and its finalizer. Success alone adopts the
 native handle; failure preserves ownership and output. Borrowing acquires no
 lease. Every object retains its creating device through one common object base.
@@ -25,6 +26,7 @@ an alias of device-free compiled data or a second count for one WebGPU object.
 - `queries.c`, `external_textures.c`, `render.c`: real native query-pool ownership,
   retained imported plane views, and attachment/draw/query replay snapshots.
   Render begin/end packets bracket query events, including empty query scopes.
+  Pass timestamps retain delayed end-write pools; indirect records retain arguments.
 
 Uses existing `doe_instance_allocator` and optional `doe_label_store`. No second
 label store, future queue, callback dispatcher or error-scope stack is present.
@@ -59,8 +61,8 @@ admission deliberately fail closed rather than reproducing silent legacy drops.
 These stricter checks are not a claim of complete parity.
 
 Render ownership currently admits the retained one-color/optional-depth-stencil,
-eight-vertex-buffer/four-group envelope, direct/indexed draws and occlusion scopes.
-It does not execute graphics/query work. MRT, resolves, bundles, indirect draw,
+eight-vertex-buffer/four-group envelope, direct/indexed/indirect draws, timestamp writes and occlusion scopes.
+It does not execute graphics/query work. MRT, resolves, bundles,
 surface presentation, binding arrays and external-texture color conversion remain
 unsupported. Actual map/future delivery and native shader execution are consumer
 responsibilities. Unsupported consumer command kinds must reject before submit.
@@ -68,7 +70,7 @@ responsibilities. Unsupported consumer command kinds must reject before submit.
 ## Focused checks and evidence
 
 `make -C runtime/c/resources check` builds GCC C11/Werror into `/tmp`: 13 base and
-7 extended host suites cover transactional failure/untouched outputs, first error,
+8 extended host suites cover transactional failure/untouched outputs, first error,
 label cleanup, atomic references, stale/read-only maps, copies/aliases, dynamic
 snapshots, pass abandonment/unbinding, shader/query/external/render leases and
 unresolved submission lifetime. Host native tokens test finalization, not GPU work.
@@ -96,6 +98,7 @@ ASAN_OPTIONS=detect_leaks=0 make -C runtime/c/resources \
 Address/undefined sanitizer checks pass; LeakSanitizer cannot run under this
 ptrace environment. Exact fixture allocation/native-release counters reach zero,
 not whole-program leak qualification. `DEVELOPER_RECEIPT_EXTENDED.json` binds the
-current focused checks to unchanged source hashes, including consumed backend
-bytes. `DEVELOPER_RECEIPT.json` preserves the earlier smaller historical check.
+software-transfer checkpoint to unchanged source hashes, including consumed backend
+bytes. `DEVELOPER_RECEIPT_PASS_CONTROLS.json` binds the later host-only timed-pass,
+indirect-render and shared-preflight follow-up; it does not extend GPU evidence. `DEVELOPER_RECEIPT.json` preserves the earlier smaller historical check.
 Run the common source-size check; every owned C source/header is below 999 lines.

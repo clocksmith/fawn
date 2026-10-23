@@ -121,13 +121,9 @@ doe_resource_status resource_range(uint64_t total, uint64_t offset,
     return DOE_RESOURCE_OK;
 }
 
-doe_resource_status doe_resource_buffer_create(const doe_resource_config *config,
-    const doe_resource_buffer_desc *desc, doe_resource_native native,
-    doe_resource_buffer **out)
+doe_resource_status doe_resource_buffer_validate(const doe_resource_buffer_desc *desc)
 {
-    if (!out || !desc || !resource_config_valid(config) || !native.handle || !native.release)
-        return DOE_RESOURCE_INVALID_ARGUMENT;
-    if (!config->device.alive(config->device.identity)) return DOE_RESOURCE_UNAVAILABLE;
+    if (!desc) return DOE_RESOURCE_INVALID_ARGUMENT;
     const uint64_t valid_usage = WGPUBufferUsage_MapRead | WGPUBufferUsage_MapWrite |
         WGPUBufferUsage_CopySrc | WGPUBufferUsage_CopyDst | WGPUBufferUsage_Index |
         WGPUBufferUsage_Vertex | WGPUBufferUsage_Uniform | WGPUBufferUsage_Storage |
@@ -141,6 +137,18 @@ doe_resource_status doe_resource_buffer_create(const doe_resource_config *config
         return DOE_RESOURCE_USAGE;
     if (desc->mapped_at_creation && desc->size % 4) return DOE_RESOURCE_ALIGNMENT;
     if (desc->mapped_at_creation && desc->size > SIZE_MAX) return DOE_RESOURCE_OVERFLOW;
+    return DOE_RESOURCE_OK;
+}
+
+doe_resource_status doe_resource_buffer_create(const doe_resource_config *config,
+    const doe_resource_buffer_desc *desc, doe_resource_native native,
+    doe_resource_buffer **out)
+{
+    if (!out || !desc || !resource_config_valid(config) || !native.handle || !native.release)
+        return DOE_RESOURCE_INVALID_ARGUMENT;
+    if (!config->device.alive(config->device.identity)) return DOE_RESOURCE_UNAVAILABLE;
+    doe_resource_status status = doe_resource_buffer_validate(desc);
+    if (status != DOE_RESOURCE_OK) return status;
     doe_resource_buffer *buffer = resource_allocate(config, sizeof(*buffer), _Alignof(doe_resource_buffer));
     if (!buffer) return DOE_RESOURCE_OUT_OF_MEMORY;
     memset(buffer, 0, sizeof(*buffer));
@@ -295,5 +303,16 @@ doe_resource_status doe_resource_buffer_copy_validate(const void *device,
         (size && copy->source_offset < copy->destination_offset + size &&
         copy->destination_offset < copy->source_offset + size))) return DOE_RESOURCE_ALIAS;
     *resolved_size = size;
+    return DOE_RESOURCE_OK;
+}
+
+doe_resource_status resource_indirect_validate(const void *device,
+    const doe_resource_buffer *arguments, uint64_t offset, uint64_t bytes)
+{
+    if (!resource_buffer_available(arguments)) return DOE_RESOURCE_UNAVAILABLE;
+    if (arguments->base.config.device.identity != device) return DOE_RESOURCE_DEVICE_MISMATCH;
+    if (!(arguments->desc.usage & WGPUBufferUsage_Indirect)) return DOE_RESOURCE_USAGE;
+    if (offset % 4) return DOE_RESOURCE_ALIGNMENT;
+    if (offset > arguments->desc.size || bytes > arguments->desc.size - offset) return DOE_RESOURCE_RANGE;
     return DOE_RESOURCE_OK;
 }
