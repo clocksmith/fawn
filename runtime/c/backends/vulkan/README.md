@@ -38,8 +38,7 @@ selection described below; unsupported feature use must be rejected by
 the compiler/native admission path before creating a pipeline. This is not a
 complete public validation boundary for untrusted SPIR-V.
 
-Surfaces,
-prepared-program caches and tuned hazard elision are not yet migrated here.
+Prepared-program caches and tuned hazard elision are not yet migrated here.
 Indirect compute uses the explicit GPU validator below; unchecked forwarding is not exposed.
 The retained production owners remain authoritative for those behaviors.
 
@@ -479,7 +478,7 @@ headless image. Instance surface/platform extensions and the full EXT maintenanc
 dependency chain are required, followed by actual device feature enablement and
 loaded native procedures. `surface_probe` reports discovery only.
 
-Capabilities are bounded (32 formats, 8 present modes/images), with exact requested
+Capabilities are bounded (128 formats, 8 present modes/images), with exact requested
 format, SRGB nonlinear color space, alpha, usage, extent and present-mode admission.
 MAILBOX is native value1 and FIFO_RELAXED value3, correcting reversed constants in
 the retained surface translation. Configure requires an explicitly unconfigured
