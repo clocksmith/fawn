@@ -1,0 +1,3000 @@
+{
+  "candidate_cli_sha256": "82bfb2e932499bb1155ac86e4b8ea53df62b63f0d1c92209fa87cbf268ff73cb",
+  "classification_basis": "Exact observed API diagnostics mapped to unique diagnostic owners; compile.c short-circuit pipeline establishes later phases were not reached. This is source-reviewed attribution, not instrumented phase timing.",
+  "consumer_sha256": "f715496e278e6c2fbdad94f4ce9e2a29b8b67095f933990f2568ec9c6237677b",
+  "counts": {
+    "admitted": 2,
+    "rejected": 96,
+    "sources": 98,
+    "stages": {
+      "backend_qualification": {
+        "not_run_no_physical_backend": 98
+      },
+      "emission": {
+        "not_reached": 96,
+        "passed": 2
+      },
+      "external_vulkan11_validation": {
+        "not_run_no_module": 96,
+        "passed": 2
+      },
+      "independent_instruction_execution": {
+        "not_run_no_module": 96,
+        "passed": 2
+      },
+      "lexing": {
+        "passed": 11,
+        "rejected": 87
+      },
+      "parsing": {
+        "not_reached": 87,
+        "passed": 2,
+        "rejected": 9
+      },
+      "semantic_validation": {
+        "not_reached": 96,
+        "passed": 2
+      }
+    },
+    "unique_admitted_sources": 1,
+    "unique_rejected_sources": 90,
+    "unique_source_hashes": 91
+  },
+  "kind": "post-black-box actual source coverage ledger",
+  "library_sha256": "38281d1e2c2842a925915ad6ab6dea7ddd332f86c381e43561b68b99080f63cc",
+  "notes": [
+    "Unsupported means rejected by this bounded compiler, not invalid WGSL.",
+    "Only first failure is identified; further unsupported features may be hidden behind it.",
+    "The two admitted discovery paths are the same residual content: one unique source, not two semantic families. Neighbor sum is independently tested outside this discovery denominator.",
+    "Six subgroup-declaring sources were skipped; no subgroup support or backend qualification.",
+    "Prebuilt validations are recorded separately and are not source-compiler coverage."
+  ],
+  "phase_mapping_source_hashes": {
+    "compile.c": "82f6c8b0c2a1dd15fccb0a89df4cfd7b611f00f0fe6e99c10083203243c1cfaf",
+    "lex.c": "e140835fca523effc58ef06441327912b70bcd077c519e3c5d90b239c16906d0",
+    "parse.c": "ca817f6dafab27590147d351541e4e9f2fdd9770d8f940436706ad4636f61039"
+  },
+  "records": [
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 25,
+        "line": 32,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 832,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "* u.head_dim;\n    let kv_head_stride = u.head_dim * u.kv_len",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/kernels/compilation-corpus/complex_attention_decode.wgsl:32:25: category=3 offset=832: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/kernels/compilation-corpus/complex_attention_decode.wgsl",
+      "source_bytes": 3176,
+      "source_sha256": "66abbe70b2a2dfef3de111388510c5c2b0a937257f1b4240d85a32d5523337af",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 22,
+        "line": 20,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 601,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "% 8u) * 4u;\n    let nibble = (packed >> shift) & 0xFu;\n    r",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/kernels/compilation-corpus/complex_fused_gemv_dequant.wgsl:20:22: category=3 offset=601: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/kernels/compilation-corpus/complex_fused_gemv_dequant.wgsl",
+      "source_bytes": 1804,
+      "source_sha256": "c2c71685c1663f3995f301551ed983f514e2fb3d5f7d0487daf792b637b71a56",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 39,
+        "line": 6,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 130,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "/ WG_Y;\nconst COL_PER_THREAD: u32 = TILE_SIZE / WG_X;\n\nstruc",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/kernels/compilation-corpus/complex_matmul_tiled.wgsl:6:39: category=3 offset=130: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/kernels/compilation-corpus/complex_matmul_tiled.wgsl",
+      "source_bytes": 3273,
+      "source_sha256": "33d1e963ed359997b7a334ca77da0e94951c38bd620b9fd6264d783bea6c97b9",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 14,
+        "line": 20,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 641,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "/ (1.0 + exp(-clamp(x, -30.0, 30.0)));\n}\n\nfn gelu(x: f32) ->",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/kernels/compilation-corpus/complex_multi_entry.wgsl:20:14: category=3 offset=641: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/kernels/compilation-corpus/complex_multi_entry.wgsl",
+      "source_bytes": 1804,
+      "source_sha256": "19f491a1a1e81a13fa640a361a87401b98d22f351fe4eafdff8b2a144032339a",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 30,
+        "line": 13,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 314,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "* (x + 0.044715 * x * x * x);\n    let inner_clamped = clamp(",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/kernels/compilation-corpus/moderate_gelu.wgsl:13:30: category=3 offset=314: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/kernels/compilation-corpus/moderate_gelu.wgsl",
+      "source_bytes": 625,
+      "source_sha256": "846366f6ede966339046655492a3e6824446f5e13f0115502efa0b113313ae95",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 28,
+        "line": 21,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 577,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "* u.size;\n    let tid = lid.x;\n\n    // compute mean\n    var ",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/kernels/compilation-corpus/moderate_layernorm.wgsl:21:28: category=3 offset=577: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/kernels/compilation-corpus/moderate_layernorm.wgsl",
+      "source_bytes": 2045,
+      "source_sha256": "dcaf21f3dfb8ebd91165bc41ffe2eb0076337543e78e0d60cc2aebca77a87467",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 27,
+        "line": 17,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 562,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "* dims.K + k] * b[k * dims.N + col];\n    }\n    c[row * dims.",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/kernels/compilation-corpus/moderate_matmul_naive.wgsl:17:27: category=3 offset=562: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/kernels/compilation-corpus/moderate_matmul_naive.wgsl",
+      "source_bytes": 640,
+      "source_sha256": "691551e04ff875ec882b45993477ec40f432185921e3b0f7f77aec0e5e2b817b",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 28,
+        "line": 20,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 519,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "* u.size;\n    let tid = lid.x;\n\n    // partial sum of square",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/kernels/compilation-corpus/moderate_rmsnorm.wgsl:20:28: category=3 offset=519: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/kernels/compilation-corpus/moderate_rmsnorm.wgsl",
+      "source_bytes": 1365,
+      "source_sha256": "7a9ba6860ccf30a363f9da36c6fcb46e8b3fcdf8b30b4000f7f0704e72a8f511",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 31,
+        "line": 14,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 390,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "/ 2u;\n    let head_idx = gid.y;\n    let pair_idx = gid.x;\n\n ",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/kernels/compilation-corpus/moderate_rope.wgsl:14:31: category=3 offset=390: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/kernels/compilation-corpus/moderate_rope.wgsl",
+      "source_bytes": 1070,
+      "source_sha256": "3ea8c10372222e8836327bd0403b8a9f6f2648e369bce09b51697d122b3123e6",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 28,
+        "line": 20,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 504,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "* u.size;\n    let tid = lid.x;\n\n    // find max\n    var loca",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/kernels/compilation-corpus/moderate_softmax.wgsl:20:28: category=3 offset=504: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/kernels/compilation-corpus/moderate_softmax.wgsl",
+      "source_bytes": 1918,
+      "source_sha256": "eafa9347d477e95b1a639a5c46bac76de2270740c6b249baff1e3c403fbd0481",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 9,
+        "line": 7,
+        "message": "expected [; unsupported or malformed WGSL subset",
+        "offset": 240,
+        "status": 2,
+        "status_name": "PARSE_ERROR"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/parse.c:13-22",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "parsing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "x = input[idx];\n    output[idx] = max(x, 0.0);\n}\n",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/kernels/compilation-corpus/simple_relu.wgsl:7:9: category=2 offset=240: expected [; unsupported or malformed WGSL subset",
+      "source": "bench/kernels/compilation-corpus/simple_relu.wgsl",
+      "source_bytes": 289,
+      "source_sha256": "a79c6bb744a3c13f734f1e17a2f9f617c05aac7ae3d64f67c9cc98945f459acc",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "passed",
+        "parsing": "rejected",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": true,
+      "diagnostic": {
+        "column": 0,
+        "line": 0,
+        "message": "",
+        "offset": 0,
+        "status": 0,
+        "status_name": "OK"
+      },
+      "diagnostic_owner": null,
+      "emitted_output_sha256": "49e4f4a3015051644884a5c3a7345d3e0914294d5d78040282ef2028a4c6043e",
+      "external_validator_returncode": 0,
+      "first_rejection_stage": null,
+      "independent_cpu_trials": 137,
+      "original_source_at_diagnostic": null,
+      "real_consumer_message": "ok",
+      "source": "bench/kernels/compilation-corpus/simple_residual_add.wgsl",
+      "source_bytes": 315,
+      "source_sha256": "75ba7169ecc1af5f1ee94a94e775c3229fb833e61c0cb16af36a3fc045a31c62",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "passed",
+        "external_vulkan11_validation": "passed",
+        "independent_instruction_execution": "passed",
+        "lexing": "passed",
+        "parsing": "passed",
+        "semantic_validation": "passed"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 29,
+        "line": 5,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 175,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "* 2.0;\n}\n",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/kernels/compilation-corpus/simple_scale_f32.wgsl:5:29: category=3 offset=175: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/kernels/compilation-corpus/simple_scale_f32.wgsl",
+      "source_bytes": 184,
+      "source_sha256": "21f18f6bad8c79bd9246f27b0eb25b714f666b7c8ffbd4f56ae0841589d4cab3",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 21,
+        "line": 8,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 276,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "/ (1.0 + exp(-clamp(x, -30.0, 30.0)));\n}\n",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/kernels/compilation-corpus/simple_silu.wgsl:8:21: category=3 offset=276: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/kernels/compilation-corpus/simple_silu.wgsl",
+      "source_bytes": 317,
+      "source_sha256": "ee4333fda2c7598f43655cd67598f7c34493e01001bec8f4f5167de3ec4094ec",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 24,
+        "line": 29,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 1054,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "* weights_0[idx];\n    let b = src_b[idx] * weights_1[idx];\n ",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/kernels/compilation-corpus/stress_many_bindings.wgsl:29:24: category=3 offset=1054: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/kernels/compilation-corpus/stress_many_bindings.wgsl",
+      "source_bytes": 1354,
+      "source_sha256": "e093a962268bbac3a4e20e20118d5f6ac71324765df1f4a58c191f6743294db6",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 1,
+        "line": 1,
+        "message": "expected at least one storage declaration; unsupported or malformed WGSL subset",
+        "offset": 0,
+        "status": 2,
+        "status_name": "PARSE_ERROR"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/parse.c:13-22",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "parsing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "@compute @workgroup_size(1)\nfn main() {}\n",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/kernels/compilation-corpus/trivial_noop_compute.wgsl:1:1: category=2 offset=0: expected at least one storage declaration; unsupported or malformed WGSL subset",
+      "source": "bench/kernels/compilation-corpus/trivial_noop_compute.wgsl",
+      "source_bytes": 41,
+      "source_sha256": "0e88698096320b7a1e81a4ebe37897aebb71c3e6c9cfd085624e287e3c673073",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "passed",
+        "parsing": "rejected",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 1,
+        "line": 1,
+        "message": "expected at least one storage declaration; unsupported or malformed WGSL subset",
+        "offset": 0,
+        "status": 2,
+        "status_name": "PARSE_ERROR"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/parse.c:13-22",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "parsing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "@vertex\nfn main(@location(0) pos: vec4f) -> @builtin(positio",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/kernels/compilation-corpus/trivial_passthrough_vertex.wgsl:1:1: category=2 offset=0: expected at least one storage declaration; unsupported or malformed WGSL subset",
+      "source": "bench/kernels/compilation-corpus/trivial_passthrough_vertex.wgsl",
+      "source_bytes": 89,
+      "source_sha256": "ed605c9b978c4cbd86db61ebbd8c2241e4d5d65ffa5c0b2e82259a9d8aa479c9",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "passed",
+        "parsing": "rejected",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 27,
+        "line": 16,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 468,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "& kBufferMask;\n    accum = (accum ^ wg_data[idx]) + 123u;\n  ",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/kernels/concurrent_execution_runsingle_u32.wgsl:16:27: category=3 offset=468: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/kernels/concurrent_execution_runsingle_u32.wgsl",
+      "source_bytes": 558,
+      "source_sha256": "57313155741224f77622b55aa9e739ec7698e5cc3079d92584d253334f1d95a6",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 1,
+        "line": 1,
+        "message": "expected at least one storage declaration; unsupported or malformed WGSL subset",
+        "offset": 0,
+        "status": 2,
+        "status_name": "PARSE_ERROR"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/parse.c:13-22",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "parsing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "@compute @workgroup_size(64, 1, 1)\nfn main() {\n}\n",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/kernels/copy_textures_x32.wgsl:1:1: category=2 offset=0: expected at least one storage declaration; unsupported or malformed WGSL subset",
+      "source": "bench/kernels/copy_textures_x32.wgsl",
+      "source_bytes": 49,
+      "source_sha256": "263dbc4ad43346316cfe2c8badad06deb6025b6ebb687e3514b36d26c6883d10",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "passed",
+        "parsing": "rejected",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 1,
+        "line": 1,
+        "message": "expected at least one storage declaration; unsupported or malformed WGSL subset",
+        "offset": 0,
+        "status": 2,
+        "status_name": "PARSE_ERROR"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/parse.c:13-22",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "parsing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "@compute @workgroup_size(1, 1, 1)\nfn main() {}\n",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/kernels/dispatch_noop.wgsl:1:1: category=2 offset=0: expected at least one storage declaration; unsupported or malformed WGSL subset",
+      "source": "bench/kernels/dispatch_noop.wgsl",
+      "source_bytes": 47,
+      "source_sha256": "d51b69e09c71649b2266dc6f0538ee66a84ed7e433baf613ce71ef68320a8db8",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "passed",
+        "parsing": "rejected",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 1,
+        "line": 7,
+        "message": "expected at least one storage declaration; unsupported or malformed WGSL subset",
+        "offset": 373,
+        "status": 2,
+        "status_name": "PARSE_ERROR"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/parse.c:13-22",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "parsing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "@fragment\nfn main(@builtin(position) pos: vec4f) -> @locatio",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/kernels/draw_call_proxy_fragment.wgsl:7:1: category=2 offset=373: expected at least one storage declaration; unsupported or malformed WGSL subset",
+      "source": "bench/kernels/draw_call_proxy_fragment.wgsl",
+      "source_bytes": 488,
+      "source_sha256": "1e5550d45b5c0637c3b38dbdbc307619c1c016dce64d227837221f129d354de8",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "passed",
+        "parsing": "rejected",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 1,
+        "line": 1,
+        "message": "expected at least one storage declaration; unsupported or malformed WGSL subset",
+        "offset": 0,
+        "status": 2,
+        "status_name": "PARSE_ERROR"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/parse.c:13-22",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "parsing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "@compute @workgroup_size(1, 1, 1)\nfn main() {}\n",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/kernels/draw_call_proxy_noop.wgsl:1:1: category=2 offset=0: expected at least one storage declaration; unsupported or malformed WGSL subset",
+      "source": "bench/kernels/draw_call_proxy_noop.wgsl",
+      "source_bytes": 47,
+      "source_sha256": "d51b69e09c71649b2266dc6f0538ee66a84ed7e433baf613ce71ef68320a8db8",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "passed",
+        "parsing": "rejected",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 32,
+        "line": 19,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 846,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "% 3u], 0.0, 1.0);\n}\n",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/kernels/draw_call_proxy_vertex.wgsl:19:32: category=3 offset=846: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/kernels/draw_call_proxy_vertex.wgsl",
+      "source_bytes": 866,
+      "source_sha256": "10ab42b3100f3e50660b2fbbd5ce531799a5ecff567102b81af444d976f9ad69",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 20,
+        "line": 18,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 519,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "* u.cols;\n    let vec_cols = u.cols & ~3u;\n    let lane_widt",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/kernels/matmul_gemv_subgroup.wgsl:18:20: category=3 offset=519: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/kernels/matmul_gemv_subgroup.wgsl",
+      "source_bytes": 2613,
+      "source_sha256": "fe83a9f4ea9ab05d9177ffbc63e5cc034216d02401001d238566fbfe85842288",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 20,
+        "line": 28,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 981,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "* u.cols;\n    let vec_cols = u.cols & ~3u;\n    let lane_widt",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/kernels/matmul_gemv_truesubgroup.wgsl:28:20: category=3 offset=981: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/kernels/matmul_gemv_truesubgroup.wgsl",
+      "source_bytes": 3533,
+      "source_sha256": "1ad1633b02140d3a70edcef3caecc82876c9a60478f99b4593645a4e012f8243",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 18,
+        "line": 15,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 422,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "* kCols;\n  var accum : f32 = 0.0;\n  var col : u32 = 0u;\n  lo",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/kernels/matrix_vector_mul_32768x2048_f32.wgsl:15:18: category=3 offset=422: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/kernels/matrix_vector_mul_32768x2048_f32.wgsl",
+      "source_bytes": 643,
+      "source_sha256": "510a86c405550c075ddffe3a58015eab75bead2b724ca75f9b0db58550f968ed",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 24,
+        "line": 11,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 415,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "/ 4u)) {\n    return;\n  }\n\n  let row0Base = (4u * rowBy4 + 0u",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/kernels/matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl:11:24: category=3 offset=415: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/kernels/matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
+      "source_bytes": 1813,
+      "source_sha256": "18bb9b1b760f44e1b507093ffd0ecaf35a5817030ac5f18e5e548746ec9230bf",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 24,
+        "line": 11,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 415,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "/ 4u)) {\n    return;\n  }\n\n  var sum : vec4<f32> = vec4<f32>(",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/kernels/matrix_vector_mul_32768x2048_f32_swizzle1.wgsl:11:24: category=3 offset=415: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/kernels/matrix_vector_mul_32768x2048_f32_swizzle1.wgsl",
+      "source_bytes": 4050,
+      "source_sha256": "f4457bfebf14d42f57bb49a08c2e867b4b3ca8da51191f8ecfa699a35c2e84c6",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 70,
+        "line": 4,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 163,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "/ kWorkgroupSize;\n\n@group(0) @binding(0) var<storage, read> ",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/kernels/matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1.wgsl:4:70: category=3 offset=163: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/kernels/matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1.wgsl",
+      "source_bytes": 1610,
+      "source_sha256": "080408a41d8d45256a8d84b2d1b39f323ee27318270a3f691c71241cbbbeb0ce",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 26,
+        "line": 11,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 255,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "/ 16777216.0;\nconst WORKGROUP_SIZE: u32 = 64u;\n\nfn scramble_",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/kernels/monte_carlo_paths_fixed_samples.wgsl:11:26: category=3 offset=255: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/kernels/monte_carlo_paths_fixed_samples.wgsl",
+      "source_bytes": 3100,
+      "source_sha256": "fa92ff0ae0a393fd22c539958c1b86e1477966241aa1da774aa6509c57feb0a3",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 37,
+        "line": 20,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 540,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "* 64u + lane;\n\n  var accumulator = vec4<f32>(0.0);\n  if (sou",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/kernels/monte_carlo_reduce_vec4.wgsl:20:37: category=3 offset=540: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/kernels/monte_carlo_reduce_vec4.wgsl",
+      "source_bytes": 1022,
+      "source_sha256": "f4cdc0769f6392160583e17815fe41c494cc89cd6b78f2b6b83a841984241d6d",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 46,
+        "line": 18,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 479,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "^ 0x00ffffffu;\n}\n",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/kernels/package_image_rgba_invert.wgsl:18:46: category=3 offset=479: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/kernels/package_image_rgba_invert.wgsl",
+      "source_bytes": 496,
+      "source_sha256": "687a30bc57f40bc94d60e970fc59a140d550890176a91816e1ca1f17a140337a",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 47,
+        "line": 18,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 468,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "* 1.5) + 0.25;\n}\n",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/kernels/package_vector_scale_add.wgsl:18:47: category=3 offset=468: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/kernels/package_vector_scale_add.wgsl",
+      "source_bytes": 485,
+      "source_sha256": "8f2b3e2bb6955c1f7507936773589195c80e6a119cbd50d975f652d4f834e8c1",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 28,
+        "line": 20,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 519,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "* u.size;\n    let tid = lid.x;\n\n    var partial: f32 = 0.0;\n",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/kernels/rmsnorm.wgsl:20:28: category=3 offset=519: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/kernels/rmsnorm.wgsl",
+      "source_bytes": 2283,
+      "source_sha256": "0c0161d275a82b454a626aaffb47e014b371ebc4b1fd6def806b182e586cb497",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 28,
+        "line": 32,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 974,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "* u.size;\n    let tid = lid.x;\n\n    var partial: f32 = 0.0;\n",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/kernels/rmsnorm_subgroup.wgsl:32:28: category=3 offset=974: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/kernels/rmsnorm_subgroup.wgsl",
+      "source_bytes": 3291,
+      "source_sha256": "166e7469ee1aa8977ac801db7a02038cc7185c0d6b7df6828731cac517126bba",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 21,
+        "line": 11,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 234,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "* 1.6180339 + f32(i)) * 43758.5453);\n    y = y + x;\n    i = ",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/kernels/shader_compile_pipeline_stress.wgsl:11:21: category=3 offset=234: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/kernels/shader_compile_pipeline_stress.wgsl",
+      "source_bytes": 351,
+      "source_sha256": "2ae3a2406171555939779a7290d5fec033ef1809269691362112e245f3434889",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 41,
+        "line": 11,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 261,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "/ K_WORKGROUP_SIZE_Y;\nconst COL_PER_THREAD: u32 = K_TILE_SIZ",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/kernels/shader_robustness_matmul_512_f32.wgsl:11:41: category=3 offset=261: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/kernels/shader_robustness_matmul_512_f32.wgsl",
+      "source_bytes": 4093,
+      "source_sha256": "da30eba0c8fba98daafdcb1fb0959553d084d5af607520b5a2295afa8748c174",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 12,
+        "line": 18,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 462,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "* config.width + x;\n}\n\nfn clamp_xy(coord: vec2<i32>) -> vec2",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/kernels/stable_fluids_advect_dye.wgsl:18:12: category=3 offset=462: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/kernels/stable_fluids_advect_dye.wgsl",
+      "source_bytes": 2042,
+      "source_sha256": "e2c3739f5a1659691c99814a04285041237b8f8f383006f0e9f5cbf6e2e211d2",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 12,
+        "line": 17,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 412,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "* config.width + x;\n}\n\nfn clamp_xy(coord: vec2<i32>) -> vec2",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/kernels/stable_fluids_advect_velocity.wgsl:17:12: category=3 offset=412: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/kernels/stable_fluids_advect_velocity.wgsl",
+      "source_bytes": 2153,
+      "source_sha256": "e2d32e1cce30302986e549ca01e104a9e450abcbebf85de67c1921f3a5943260",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 12,
+        "line": 17,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 383,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "* config.width + x;\n}\n\n@compute @workgroup_size(8, 8, 1)\nfn ",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/kernels/stable_fluids_copy_scalar.wgsl:17:12: category=3 offset=383: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/kernels/stable_fluids_copy_scalar.wgsl",
+      "source_bytes": 634,
+      "source_sha256": "baae679280f42fa8225ed5b0c1017e8d54e51b14d57b9f99cd93b4dc1eb1a406",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 12,
+        "line": 17,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 408,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "* config.width + x;\n}\n\nfn clamp_xy(coord: vec2<i32>) -> vec2",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/kernels/stable_fluids_divergence.wgsl:17:12: category=3 offset=408: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/kernels/stable_fluids_divergence.wgsl",
+      "source_bytes": 1335,
+      "source_sha256": "bc5b50ed5e99f0f877cdb8c483f0b40ac2f54ce42e211a01bca302c20b52bdf1",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 12,
+        "line": 18,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 468,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "* config.width + x;\n}\n\nfn clamp_xy(coord: vec2<i32>) -> vec2",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/kernels/stable_fluids_pressure.wgsl:18:12: category=3 offset=468: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/kernels/stable_fluids_pressure.wgsl",
+      "source_bytes": 1428,
+      "source_sha256": "9813094c4bb5396122eeb4555cbbdb524163c2db0b04a6a3200b4afc6cd13444",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 12,
+        "line": 18,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 478,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "* config.width + x;\n}\n\nfn clamp_xy(coord: vec2<i32>) -> vec2",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/kernels/stable_fluids_project.wgsl:18:12: category=3 offset=478: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/kernels/stable_fluids_project.wgsl",
+      "source_bytes": 1439,
+      "source_sha256": "2c0903b10003c77e53d5df2cf97e651a1bfaf7e81538f5dad57040700e4a0b6e",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 26,
+        "line": 18,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 517,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "/ 16777216.0;\n\nfn cell_index(x: u32, y: u32) -> u32 {\n  retu",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/kernels/stable_fluids_seed.wgsl:18:26: category=3 offset=517: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/kernels/stable_fluids_seed.wgsl",
+      "source_bytes": 1664,
+      "source_sha256": "c55be009b63237271ad5338f58bb600340d70ba9eedd3c5666ee26d6b4bdfef7",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 29,
+        "line": 8,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 276,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "|| gid.y >= kTextureSize) {\n    return;\n  }\n\n  let pixel = t",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/kernels/texture_sample_to_storage_64.wgsl:8:29: category=3 offset=276: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/kernels/texture_sample_to_storage_64.wgsl",
+      "source_bytes": 574,
+      "source_sha256": "fd95deba623ae7b26b4440d892e8fbc60765b76d09bea4dfa5d8dd1dc20d46e4",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 15,
+        "line": 13,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 426,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "&wg[local_id.x], accum + global_id.x);\n  workgroupBarrier();",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/kernels/workgroup_atomic.wgsl:13:15: category=3 offset=426: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/kernels/workgroup_atomic.wgsl",
+      "source_bytes": 666,
+      "source_sha256": "b7edc38f80448d1e50f6a31a72b1bb09f3a87484ac3d61b7e299ba0b577c5998",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 17,
+        "line": 20,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 543,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "&wg[local_id.x], accum + global_id.x + iter);\n    workgroupB",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/kernels/workgroup_atomic_1024x100.wgsl:20:17: category=3 offset=543: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/kernels/workgroup_atomic_1024x100.wgsl",
+      "source_bytes": 873,
+      "source_sha256": "b73fe2e574b280cb361737b14620bada6f5a6482580b31074bbe917731378e91",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 28,
+        "line": 17,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 553,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "& kWorkgroupMask];\n  }\n\n  workgroupBarrier();\n  outVal[globa",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/kernels/workgroup_non_atomic.wgsl:17:28: category=3 offset=553: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/kernels/workgroup_non_atomic.wgsl",
+      "source_bytes": 632,
+      "source_sha256": "b1e3c7cf65d5cec0fe176ed0fa6b6a13aea3c32f6a14ea35e912475dabecfdc6",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 30,
+        "line": 28,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 711,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "& kWorkgroupMask];\n      i = i + 1u;\n    }\n\n    workgroupBar",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/kernels/workgroup_non_atomic_1024x100.wgsl:28:30: category=3 offset=711: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/kernels/workgroup_non_atomic_1024x100.wgsl",
+      "source_bytes": 839,
+      "source_sha256": "3af5cad294dad19c73c36f4813a7ef554715481857a1bb74a17a2afebe731f11",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 51,
+        "line": 3,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 129,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "/ K_WORKGROUP_SIZE;\n\n@group(0) @binding(0) var<storage, read",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/kernels/zero_initialize_workgroup_memory_2048.wgsl:3:51: category=3 offset=129: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/kernels/zero_initialize_workgroup_memory_2048.wgsl",
+      "source_bytes": 520,
+      "source_sha256": "a8c4a18801b189cc5dba3f7141acdda5a79d54eda802ca90a53d5d7ba88da614",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 22,
+        "line": 19,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 570,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "* u.head_dim;\n    let kv_off = head * u.head_dim * u.kv_len ",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/inference-pipeline/kernels/attention-decode.wgsl:19:22: category=3 offset=570: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/inference-pipeline/kernels/attention-decode.wgsl",
+      "source_bytes": 3595,
+      "source_sha256": "d12cda916546e9c518d89bba45e9d0617a60d382c004adb440221840ee76487b",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 28,
+        "line": 31,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 846,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "* u.seq_len * u.head_dim;\n    let q_base = head_offset + q_r",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/inference-pipeline/kernels/attention-prefill.wgsl:31:28: category=3 offset=846: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/inference-pipeline/kernels/attention-prefill.wgsl",
+      "source_bytes": 3111,
+      "source_sha256": "f1715944f604a096aba7b65060218f366f04930a9dec33f80bcc166dc03cd8bb",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 29,
+        "line": 22,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 777,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "|| dim >= u.head_dim) { return; }\n\n    let head_base = head ",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/inference-pipeline/kernels/attention_decode_online_f16kv.wgsl:22:29: category=3 offset=777: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/inference-pipeline/kernels/attention_decode_online_f16kv.wgsl",
+      "source_bytes": 1995,
+      "source_sha256": "0b97b270dfae9e0097e56fb0b7b6f41b228f828c3edb930630649de26a03a990",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 21,
+        "line": 16,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 451,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "* k[base + 0u];\n  acc = acc + q[1u] * k[base + 1u];\n  acc = ",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/inference-pipeline/kernels/attention_slice_forward_f32.wgsl:16:21: category=3 offset=451: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/inference-pipeline/kernels/attention_slice_forward_f32.wgsl",
+      "source_bytes": 2671,
+      "source_sha256": "d75f5ac50bf43b96819bb601dcc74fd4ead19fa7f09203d8a911720b6af06d2d",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 18,
+        "line": 17,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 446,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "* k[0u]) + (q[1u] * k[1u])) + (q[2u] * k[2u])) + (q[3u] * k[",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/inference-pipeline/kernels/attention_slice_forward_v2_f32.wgsl:17:18: category=3 offset=446: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/inference-pipeline/kernels/attention_slice_forward_v2_f32.wgsl",
+      "source_bytes": 3660,
+      "source_sha256": "0018a2938c321e31a4a75bb16230312d0d3e09d2eb98f7d5139adb28fdc9ea0f",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 18,
+        "line": 15,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 427,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "* k[base + 0u] + q[1u] * k[base + 1u];\n  let p1 = q[2u] * k[",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/inference-pipeline/kernels/attention_slice_pairwise_f32.wgsl:15:18: category=3 offset=427: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/inference-pipeline/kernels/attention_slice_pairwise_f32.wgsl",
+      "source_bytes": 2278,
+      "source_sha256": "bd701d040d9fc92c32dc8debc8cc8108423e8d33aa2078095404c5380de7cbdb",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 25,
+        "line": 16,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 436,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "* k[0u] + q[1u] * k[1u]) + (q[2u] * k[2u] + q[3u] * k[3u])) ",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/inference-pipeline/kernels/attention_slice_pairwise_v2_f32.wgsl:16:25: category=3 offset=436: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/inference-pipeline/kernels/attention_slice_pairwise_v2_f32.wgsl",
+      "source_bytes": 3132,
+      "source_sha256": "cb7ee5e57e5c866dc657b8af350c13975812426f3f74634b8244c22725cd986a",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 28,
+        "line": 23,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 643,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "|| head >= u.num_heads || dim >= u.head_dim) { return; }\n\n  ",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/inference-pipeline/kernels/attention_small_f16kv.wgsl:23:28: category=3 offset=643: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/inference-pipeline/kernels/attention_small_f16kv.wgsl",
+      "source_bytes": 1617,
+      "source_sha256": "808f227fd8fa71f29576998a76c7f81e23d27fe8969e705774be7362bd4f6abc",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 18,
+        "line": 5,
+        "message": "expected global_invocation_id; unsupported or malformed WGSL subset",
+        "offset": 173,
+        "status": 2,
+        "status_name": "PARSE_ERROR"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/parse.c:13-22",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "parsing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "workgroup_id) wid: vec3u) {\n  output[wid.x] = input[wid.x];\n",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/inference-pipeline/kernels/copy_buffer.wgsl:5:18: category=2 offset=173: expected global_invocation_id; unsupported or malformed WGSL subset",
+      "source": "bench/inference-pipeline/kernels/copy_buffer.wgsl",
+      "source_bytes": 235,
+      "source_sha256": "5522b855dcf090259e0a6e3e9a529c4799295b49be65ef00b453b4dad76acd52",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "passed",
+        "parsing": "rejected",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 28,
+        "line": 20,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 552,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "* rhs[index];\n  }\n  output[0] = sum;\n}\n",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/inference-pipeline/kernels/dot_product_forward_f32.wgsl:20:28: category=3 offset=552: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/inference-pipeline/kernels/dot_product_forward_f32.wgsl",
+      "source_bytes": 591,
+      "source_sha256": "c177724439e1041b66f302e7e5399b1ac4cc85170c990616539a5fc639a925cc",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 21,
+        "line": 22,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 571,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "* rhs[tid];\n  }\n  partial[tid] = term;\n  workgroupBarrier();",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/inference-pipeline/kernels/dot_product_pairwise_f32.wgsl:22:21: category=3 offset=571: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/inference-pipeline/kernels/dot_product_pairwise_f32.wgsl",
+      "source_bytes": 995,
+      "source_sha256": "b658ba7a54fd2345758d64b855da20b198d4c4e07a4f5e74d8301d664266811d",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 32,
+        "line": 25,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 608,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "* rhs[remaining];\n  }\n  output[0] = sum;\n}\n",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/inference-pipeline/kernels/dot_product_reverse_f32.wgsl:25:32: category=3 offset=608: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/inference-pipeline/kernels/dot_product_reverse_f32.wgsl",
+      "source_bytes": 651,
+      "source_sha256": "95a309042cf65345e32adb33fc685e8f987cc98f174b41fdfb3c5cd68cc12d7a",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 20,
+        "line": 23,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 674,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "* u.embed_dim + dim_idx] = embed_table[token * u.embed_dim +",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/inference-pipeline/kernels/gather.wgsl:23:20: category=3 offset=674: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/inference-pipeline/kernels/gather.wgsl",
+      "source_bytes": 747,
+      "source_sha256": "062496b48017bd03cf9be3535566c71d6f18b3c86e831ff3c533f8125e7e430f",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 30,
+        "line": 5,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 182,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "* (x + 0.044715 * x * x * x);\n    return 0.5 * x * (1.0 + ta",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/inference-pipeline/kernels/gelu.wgsl:5:30: category=3 offset=182: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/inference-pipeline/kernels/gelu.wgsl",
+      "source_bytes": 419,
+      "source_sha256": "62073cfc865c60d67a7e01da58bfaf50348009d58101ce9eba377992c9629bb4",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 30,
+        "line": 6,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 238,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "* (x + 0.044715 * x * x * x);\n    return 0.5 * x * (1.0 + ta",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/inference-pipeline/kernels/gelu_gated.wgsl:6:30: category=3 offset=238: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/inference-pipeline/kernels/gelu_gated.wgsl",
+      "source_bytes": 484,
+      "source_sha256": "3e23a47491b8c22a0d97cb76714335154c2d514049a6d2233b17beb7123cdab2",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 20,
+        "line": 18,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 498,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "* u.cols;\n    let vec_cols = u.cols & ~3u;\n    let lane_widt",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/inference-pipeline/kernels/matmul-gemv.wgsl:18:20: category=3 offset=498: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/inference-pipeline/kernels/matmul-gemv.wgsl",
+      "source_bytes": 1919,
+      "source_sha256": "523638d5e326b2162ea2e467e698d7d25252e771ab56f4b40555d33906ab54bf",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 33,
+        "line": 13,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 454,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "/ 4u;\nconst WG_X: u32 = 8u;\nconst WG_Y: u32 = 8u;\nconst THRE",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/inference-pipeline/kernels/matmul-tiled.wgsl:13:33: category=3 offset=454: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/inference-pipeline/kernels/matmul-tiled.wgsl",
+      "source_bytes": 4486,
+      "source_sha256": "964fcc3c3aed8966fa41f7f76910b6857916a543ec4c516ccafcbe43bf609f5c",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 42,
+        "line": 25,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 780,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "* TILE_K>;\nvar<workgroup> tile_b: array<f32, TILE_N * TILE_K",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/inference-pipeline/kernels/matmul_f16w_f32a_tiled.wgsl:25:42: category=3 offset=780: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/inference-pipeline/kernels/matmul_f16w_f32a_tiled.wgsl",
+      "source_bytes": 5563,
+      "source_sha256": "6498e9a7ee4e487560d9d32f08f41f0e1a8cbf436c81c7c035d75ecaa35220ca",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 31,
+        "line": 24,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 695,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "* 2u;\n    let row1 = row0 + 1u;\n    let lane = local_invocat",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/inference-pipeline/kernels/matmul_gemv_row2.wgsl:24:31: category=3 offset=695: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/inference-pipeline/kernels/matmul_gemv_row2.wgsl",
+      "source_bytes": 2789,
+      "source_sha256": "978c6dc4fd40cb52dfa720da75248d68367f3574d027eb1b7778aac0843841ff",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 31,
+        "line": 25,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 756,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "* 2u;\n    let row1 = row0 + 1u;\n    let lane = local_invocat",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/inference-pipeline/kernels/matmul_gemv_row2_exact.wgsl:25:31: category=3 offset=756: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/inference-pipeline/kernels/matmul_gemv_row2_exact.wgsl",
+      "source_bytes": 2233,
+      "source_sha256": "075acd94ec124da444eeb2c3af94b585e4c6810f85c8e7d044f961240aefdcd8",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 31,
+        "line": 25,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 798,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "* 2u;\n    let row1 = row0 + 1u;\n    if (row0 >= u.rows) { re",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/inference-pipeline/kernels/matmul_gemv_row2_guarded.wgsl:25:31: category=3 offset=798: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/inference-pipeline/kernels/matmul_gemv_row2_guarded.wgsl",
+      "source_bytes": 2742,
+      "source_sha256": "ebd5fe14705ed631c9667fa043d5c8fda26f412851134a93108752592ee1acf3",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 20,
+        "line": 21,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 672,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "* u.cols;\n    let vec_cols = u.cols & ~3u;\n    let lane_widt",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/inference-pipeline/kernels/matmul_gemv_row2_helper_exact.wgsl:21:20: category=3 offset=672: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/inference-pipeline/kernels/matmul_gemv_row2_helper_exact.wgsl",
+      "source_bytes": 2173,
+      "source_sha256": "1efd4c7cbb631665a6428166a4ded6bf0d40dadbd3972f91c8a83cf63d2564d0",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 20,
+        "line": 20,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 623,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "* u.cols;\n    let vec_cols = u.cols & ~3u;\n    let lane_widt",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/inference-pipeline/kernels/matmul_gemv_row2_helper_exact_wg32.wgsl:20:20: category=3 offset=623: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/inference-pipeline/kernels/matmul_gemv_row2_helper_exact_wg32.wgsl",
+      "source_bytes": 2124,
+      "source_sha256": "e0d0c5b9268bb5076a9636cad3022ef53565246f811b7c5474ae3175b710f293",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 22,
+        "line": 21,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 722,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "* u.cols;\n    let base1 = row1 * u.cols;\n    let vec_cols = ",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/inference-pipeline/kernels/matmul_gemv_row2_reuse_helper_exact.wgsl:21:22: category=3 offset=722: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/inference-pipeline/kernels/matmul_gemv_row2_reuse_helper_exact.wgsl",
+      "source_bytes": 2552,
+      "source_sha256": "d00fbd2c429d1b815bcbb8f06fe57f36efa6c9d1aeefc64475a4fd7a4bae638a",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 31,
+        "line": 26,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 777,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "* 4u;\n    let row1 = row0 + 1u;\n    let row2 = row0 + 2u;\n  ",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/inference-pipeline/kernels/matmul_gemv_row4.wgsl:26:31: category=3 offset=777: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/inference-pipeline/kernels/matmul_gemv_row4.wgsl",
+      "source_bytes": 4233,
+      "source_sha256": "dd6916fcbac9a2684ce5f6b32a9aea8e3b3847ad6b162af7ef7c0ee4d9ed8299",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 31,
+        "line": 26,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 826,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "* 4u;\n    let row1 = row0 + 1u;\n    let row2 = row0 + 2u;\n  ",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/inference-pipeline/kernels/matmul_gemv_row4_exact.wgsl:26:31: category=3 offset=826: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/inference-pipeline/kernels/matmul_gemv_row4_exact.wgsl",
+      "source_bytes": 3217,
+      "source_sha256": "655bf6cafae792c2a95d681f8dd98def2cf95ed4d3aa7a6bce1b701a47b7743d",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 20,
+        "line": 18,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 519,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "* u.cols;\n    let vec_cols = u.cols & ~3u;\n    let lane_widt",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/inference-pipeline/kernels/matmul_gemv_subgroup.wgsl:18:20: category=3 offset=519: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/inference-pipeline/kernels/matmul_gemv_subgroup.wgsl",
+      "source_bytes": 2613,
+      "source_sha256": "fe83a9f4ea9ab05d9177ffbc63e5cc034216d02401001d238566fbfe85842288",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 20,
+        "line": 23,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 712,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "* u.cols;\n    let vec_cols = u.cols & ~3u;\n    let lane_widt",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/inference-pipeline/kernels/matmul_gemv_subgroup32.wgsl:23:20: category=3 offset=712: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/inference-pipeline/kernels/matmul_gemv_subgroup32.wgsl",
+      "source_bytes": 2368,
+      "source_sha256": "8b43ae6b3bf6cc1a88a450d9536140eef17c4c818236972075bb8c427c4799bd",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 20,
+        "line": 21,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 571,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "* u.cols;\n    let lane_width = WG_SIZE;\n    let vec_stride =",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/inference-pipeline/kernels/matmul_gemv_subgroup32_vec4only.wgsl:21:20: category=3 offset=571: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/inference-pipeline/kernels/matmul_gemv_subgroup32_vec4only.wgsl",
+      "source_bytes": 2036,
+      "source_sha256": "829bbca5a05688407ef9ce453ee9a51812ec44fd789f958777de29928d67eac7",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 20,
+        "line": 28,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 981,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "* u.cols;\n    let vec_cols = u.cols & ~3u;\n    let lane_widt",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/inference-pipeline/kernels/matmul_gemv_truesubgroup.wgsl:28:20: category=3 offset=981: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/inference-pipeline/kernels/matmul_gemv_truesubgroup.wgsl",
+      "source_bytes": 3533,
+      "source_sha256": "1ad1633b02140d3a70edcef3caecc82876c9a60478f99b4593645a4e012f8243",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 20,
+        "line": 19,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 555,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "* u.cols;\n    let lane_width = 64u;\n    let vec_stride = lan",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/inference-pipeline/kernels/matmul_gemv_vec4only.wgsl:19:20: category=3 offset=555: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/inference-pipeline/kernels/matmul_gemv_vec4only.wgsl",
+      "source_bytes": 1817,
+      "source_sha256": "a0e25a93e7aaa74fde677279c56f0a555f824174b09ffc13c39460c83180440d",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 19,
+        "line": 20,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 469,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "|| wid.x >= params.rows) {\n    return;\n  }\n  let row = wid.x",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/inference-pipeline/kernels/matmul_logits_f16accum_stub.wgsl:20:19: category=3 offset=469: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/inference-pipeline/kernels/matmul_logits_f16accum_stub.wgsl",
+      "source_bytes": 618,
+      "source_sha256": "993850678191f16322d162750f9a8e5f6f0e0e4a09b29fa5b1ae6cb789ebe74a",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 19,
+        "line": 20,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 469,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "|| wid.x >= params.rows) {\n    return;\n  }\n  let row = wid.x",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/inference-pipeline/kernels/matmul_logits_f16accum_wg1.wgsl:20:19: category=3 offset=469: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/inference-pipeline/kernels/matmul_logits_f16accum_wg1.wgsl",
+      "source_bytes": 723,
+      "source_sha256": "0fa75f1b86a7f11f1058c355ca0c906c0a56828cd7f20a243a1360645e2fd78a",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 34,
+        "line": 32,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 759,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "* f16(weights[row * params.cols + col]);\n  }\n  partial[tid] ",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/inference-pipeline/kernels/matmul_logits_f16accum_wg128.wgsl:32:34: category=3 offset=759: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/inference-pipeline/kernels/matmul_logits_f16accum_wg128.wgsl",
+      "source_bytes": 1172,
+      "source_sha256": "177817191c5fb034e6129fa22b274bab9e0a86dcb47bac5dab404284d5d12077",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 34,
+        "line": 32,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 759,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "* f16(weights[row * params.cols + col]);\n  }\n  partial[tid] ",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/inference-pipeline/kernels/matmul_logits_f16accum_wg256.wgsl:32:34: category=3 offset=759: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/inference-pipeline/kernels/matmul_logits_f16accum_wg256.wgsl",
+      "source_bytes": 1172,
+      "source_sha256": "005686d48ddb4d405b08ef0838cc22902347c816eeaa330984bbd31a596652c8",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 34,
+        "line": 32,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 757,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "* f16(weights[row * params.cols + col]);\n  }\n  partial[tid] ",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/inference-pipeline/kernels/matmul_logits_f16accum_wg64.wgsl:32:34: category=3 offset=757: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/inference-pipeline/kernels/matmul_logits_f16accum_wg64.wgsl",
+      "source_bytes": 1170,
+      "source_sha256": "7566c7cabe2bcba8edf149eb308e0882b32305eb15f38731a87b2b552ec27df0",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 19,
+        "line": 20,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 469,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "|| wid.x >= params.rows) {\n    return;\n  }\n  let row = wid.x",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/inference-pipeline/kernels/matmul_logits_forward_f16accum.wgsl:20:19: category=3 offset=469: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/inference-pipeline/kernels/matmul_logits_forward_f16accum.wgsl",
+      "source_bytes": 723,
+      "source_sha256": "0fa75f1b86a7f11f1058c355ca0c906c0a56828cd7f20a243a1360645e2fd78a",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 19,
+        "line": 18,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 456,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "|| wid.x >= params.rows) {\n    return;\n  }\n  let row = wid.x",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/inference-pipeline/kernels/matmul_logits_forward_f32.wgsl:18:19: category=3 offset=456: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/inference-pipeline/kernels/matmul_logits_forward_f32.wgsl",
+      "source_bytes": 694,
+      "source_sha256": "f8d513cd51712d32e8d750733ad25a34d423947ecf3d5b4cba08b2e30b32229f",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 24,
+        "line": 30,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 682,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "* weights[row * params.cols + tid];\n  }\n  partial[tid] = ter",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/inference-pipeline/kernels/matmul_logits_pairwise_f32.wgsl:30:24: category=3 offset=682: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/inference-pipeline/kernels/matmul_logits_pairwise_f32.wgsl",
+      "source_bytes": 1132,
+      "source_sha256": "2d289bebd09a94f023f936f7c55f699ed98018237e92eacded55a415f8f1da7c",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 19,
+        "line": 18,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 456,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "|| wid.x >= params.rows) {\n    return;\n  }\n  let row = wid.x",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/inference-pipeline/kernels/matmul_logits_reverse_f32.wgsl:18:19: category=3 offset=456: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/inference-pipeline/kernels/matmul_logits_reverse_f32.wgsl",
+      "source_bytes": 766,
+      "source_sha256": "272b02d1becb9333409e7cc8afd2a4ca41676b5c9600f01b540d30f7b6664b1d",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 29,
+        "line": 30,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 738,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "* weights[row * params.cols + col];\n  }\n  partial[tid] = acc",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/inference-pipeline/kernels/matmul_logits_tree64_f32.wgsl:30:29: category=3 offset=738: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/inference-pipeline/kernels/matmul_logits_tree64_f32.wgsl",
+      "source_bytes": 1141,
+      "source_sha256": "04f46b1db0e88d3636cf7ab70bba4e8904efd202f7470155af75f71bafdc6630",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": true,
+      "diagnostic": {
+        "column": 0,
+        "line": 0,
+        "message": "",
+        "offset": 0,
+        "status": 0,
+        "status_name": "OK"
+      },
+      "diagnostic_owner": null,
+      "emitted_output_sha256": "49e4f4a3015051644884a5c3a7345d3e0914294d5d78040282ef2028a4c6043e",
+      "external_validator_returncode": 0,
+      "first_rejection_stage": null,
+      "independent_cpu_trials": 137,
+      "original_source_at_diagnostic": null,
+      "real_consumer_message": "ok",
+      "source": "bench/inference-pipeline/kernels/residual.wgsl",
+      "source_bytes": 315,
+      "source_sha256": "75ba7169ecc1af5f1ee94a94e775c3229fb833e61c0cb16af36a3fc045a31c62",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "passed",
+        "external_vulkan11_validation": "passed",
+        "independent_instruction_execution": "passed",
+        "lexing": "passed",
+        "parsing": "passed",
+        "semantic_validation": "passed"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 28,
+        "line": 20,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 519,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "* u.size;\n    let tid = lid.x;\n\n    var partial: f32 = 0.0;\n",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/inference-pipeline/kernels/rmsnorm.wgsl:20:28: category=3 offset=519: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/inference-pipeline/kernels/rmsnorm.wgsl",
+      "source_bytes": 2283,
+      "source_sha256": "0c0161d275a82b454a626aaffb47e014b371ebc4b1fd6def806b182e586cb497",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 26,
+        "line": 15,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 409,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "* u.size;\n\n  var sum_sq: f32 = 0.0;\n  for (var i: u32 = 0u; ",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/inference-pipeline/kernels/rmsnorm_serial_f32.wgsl:15:26: category=3 offset=409: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/inference-pipeline/kernels/rmsnorm_serial_f32.wgsl",
+      "source_bytes": 745,
+      "source_sha256": "b72eedd391482fbeb25aef491f0c39d2dbb047642b417af1a09305c1719cc7ca",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 28,
+        "line": 32,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 974,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "* u.size;\n    let tid = lid.x;\n\n    var partial: f32 = 0.0;\n",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/inference-pipeline/kernels/rmsnorm_subgroup.wgsl:32:28: category=3 offset=974: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/inference-pipeline/kernels/rmsnorm_subgroup.wgsl",
+      "source_bytes": 3291,
+      "source_sha256": "166e7469ee1aa8977ac801db7a02038cc7185c0d6b7df6828731cac517126bba",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 31,
+        "line": 14,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 391,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "/ 2u;\n    let pair_idx = gid.x;\n    let head_idx = gid.y;\n  ",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/inference-pipeline/kernels/rope.wgsl:14:31: category=3 offset=391: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/inference-pipeline/kernels/rope.wgsl",
+      "source_bytes": 1030,
+      "source_sha256": "185032b2848ed1e2cb9c2450c0360b77e557cd4f0cb2ec5f5206c37c32471c0e",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 25,
+        "line": 49,
+        "message": "unsupported character or operator in bounded WGSL grammar",
+        "offset": 1273,
+        "status": 3,
+        "status_name": "UNSUPPORTED"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/lex.c:61-62",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "lexing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "/ 2u;\n    }\n\n    if (tid == 0u) {\n        output_token[0] = ",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/inference-pipeline/kernels/sample.wgsl:49:25: category=3 offset=1273: unsupported character or operator in bounded WGSL grammar",
+      "source": "bench/inference-pipeline/kernels/sample.wgsl",
+      "source_bytes": 2325,
+      "source_sha256": "a8b526119e769b5265686291eac4fc81974fab9b372fb39b348845cb6ba6a7a6",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "rejected",
+        "parsing": "not_reached",
+        "semantic_validation": "not_reached"
+      }
+    },
+    {
+      "admitted": false,
+      "diagnostic": {
+        "column": 18,
+        "line": 4,
+        "message": "expected global_invocation_id; unsupported or malformed WGSL subset",
+        "offset": 113,
+        "status": 2,
+        "status_name": "PARSE_ERROR"
+      },
+      "diagnostic_owner": "runtime/c/compiler/src/parse.c:13-22",
+      "emitted_output_sha256": null,
+      "external_validator_returncode": null,
+      "first_rejection_stage": "parsing",
+      "independent_cpu_trials": 0,
+      "original_source_at_diagnostic": "workgroup_id) wid: vec3u) {\n  if (wid.x == 0u) {\n    output[",
+      "real_consumer_message": "emit failed: /workspace/shared/doe-c-migration-20261023/bench/inference-pipeline/kernels/write_known_logits.wgsl:4:18: category=2 offset=113: expected global_invocation_id; unsupported or malformed WGSL subset",
+      "source": "bench/inference-pipeline/kernels/write_known_logits.wgsl",
+      "source_bytes": 247,
+      "source_sha256": "4a0f3b417e16f4098a6f110c26deaf7258678a0971b5b0a35b32c45cbfd3c5a0",
+      "stages": {
+        "backend_qualification": "not_run_no_physical_backend",
+        "emission": "not_reached",
+        "external_vulkan11_validation": "not_run_no_module",
+        "independent_instruction_execution": "not_run_no_module",
+        "lexing": "passed",
+        "parsing": "rejected",
+        "semantic_validation": "not_reached"
+      }
+    }
+  ],
+  "validator_sha256": "f386e67676bc134802b6bfec6d96fff0f9437d0f60e4c97ee0afa59ab4f1c4ea"
+}
