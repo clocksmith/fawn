@@ -20,7 +20,7 @@ doe_vk_status native_timestamp_initialize(native_device *device)
     if (compiled != DOE_SHADER_OK)
         return compiled == DOE_SHADER_OUT_OF_MEMORY ? DOE_VK_OUT_OF_MEMORY : DOE_VK_NATIVE_FAILURE;
     doe_shader_view view;
-    status = doe_shader_borrow(shader, &view) == DOE_SHADER_OK && native_shader_capabilities(&view) ?
+    status = doe_shader_borrow(shader, &view) == DOE_SHADER_OK && native_shader_capabilities(&view, &device->caps) ?
         DOE_VK_OK : DOE_VK_NATIVE_FAILURE;
     if (status == DOE_VK_OK) {
         doe_vk_timestamp_normalizer_desc descriptor = {.spirv=view.words, .word_count=view.counts.words,

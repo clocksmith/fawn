@@ -59,3 +59,24 @@ WGPUBool wgpuDeviceHasFeature(WGPUDevice handle, WGPUFeatureName feature)
     return device && feature == WGPUFeatureName_TimestampQuery && device->timestamp_enabled;
 }
 void wgpuSupportedFeaturesFreeMembers(WGPUSupportedFeatures features) { free((void *)features.features); }
+
+/* These are the accepted instance owner's conservative capability results,
+ * not claims that every operation exercised experimentally is advertised. */
+void wgpuGetInstanceFeatures(WGPUSupportedInstanceFeatures *features)
+{
+    if (features) *features = doe_instance_features();
+}
+WGPUStatus wgpuGetInstanceLimits(WGPUInstanceLimits *limits)
+{
+    if (!limits || limits->nextInChain) return WGPUStatus_Error;
+    *limits = doe_instance_limits();
+    return WGPUStatus_Success;
+}
+WGPUBool wgpuHasInstanceFeature(WGPUInstanceFeatureName feature)
+{
+    return doe_instance_has_feature(feature);
+}
+void wgpuSupportedInstanceFeaturesFreeMembers(WGPUSupportedInstanceFeatures features)
+{
+    doe_instance_features_free_members(features);
+}

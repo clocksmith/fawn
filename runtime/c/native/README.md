@@ -9,7 +9,8 @@ exported; unknown and unimplemented names return NULL from `wgpuGetProcAddress`.
 ## Actual ownership and execution path
 
 - Public instances alias the accepted C instance, including its future queue.
-  Requests, map, queue, loss, compilation-info and async pipeline callbacks use
+  Instance capability exports delegate to its conservative empty-feature/zero-limit
+  contract, not inferred new feature support. Requests, map, queue, loss, compilation-info and async pipeline callbacks use
   accepted C callback payloads and leases. Device-loss obligations outlive device
   storage without retaining a device cycle; last external release clears the weak
   callback handle before destruction. Explicit destruction completes loss once.
@@ -22,7 +23,9 @@ exported; unknown and unimplemented names return NULL from `wgpuGetProcAddress`.
   reflection and its static resource closure. Layout checks include reflected
   minimum binding sizes, access kind, stage, resource/device identity and native
   limits. The capability scanner admits Shader/Matrix, baseline 1D images and
-  ImageQuery explicitly; other capabilities/extensions reject before pipeline
+  ImageQuery explicitly. The native context opts into demote when actually available;
+  its exact SPIR-V extension/capability is admitted only when successfully enabled,
+  never from an API-version guess. Other capabilities/extensions reject before pipeline
   creation. Extended storage formats and cube arrays remain disabled. Workgroup
   storage and dimensions use real backend limits.
 - Compiler `src/spirv.c` owns guarded loads/stores: runtime array bounds use
@@ -78,7 +81,8 @@ Surfaces, indexed/indirect draws and indirect dispatch remain absent. Graphics
 currently admits one stored color attachment, sample count 1, direct triangle/line
 lists or strips and 32-bit float/signed/unsigned vertex attributes. Depth/stencil,
 MSAA, PointList target lowering, Discard stores, dual-source blending, vertex or
-fragment storage writes and demote/discard capability are explicitly rejected.
+fragment storage writes are explicitly rejected. WGSL discard requires actual
+enabled demote-to-helper support; unsupported devices reject that pipeline.
 Blend constants must be representable as finite f32 for this backend path.
 Texture format reinterpretation, depth/multisampled images, cube arrays
 and anisotropic sampling are rejected. The baseline admits 18 named Vulkan
@@ -126,6 +130,7 @@ The checked-in test requires a fallback CPU adapter and verifies the returned
 adapter type is CPU. Its ordinary result is:
 
 ```
+PASS public discard: actual enabled feature, helper continuation, asymmetric pixel suppression, exact extension/capability gating and early releases (CPU Vulkan only)
 PASS public graphics admission: stage/output identity, async modes/reentry, explicit empty vertex slot, zero-count range and bundle state reset
 PASS valid empty WGSL has no compilation diagnostics; missing pipeline entry rejects
 PASS public C graphics: genuine WGSL stage IO, sparse shared uniform, empty vertex slot, default fetched components, dynamic blend/scissor/culling, bundle replay, one native pass, integer clears, empty LOAD, real occlusion and early releases (CPU Vulkan only)
@@ -139,7 +144,7 @@ PASS public error types: resource allocation, automatic-layout allocation, compu
 PASS public timestamps: requested feature, zero/max/range/destroy admission, real pass/command writes, exact GPU nanoseconds, same-batch copy, scratch reuse and early query release (CPU Vulkan only)
 PASS typed recovery: native/OOM/pending errors survive submit/write/texture/workdone, unknown leases retained, terminal cleanup and fresh GPU normalizer recovery
 PASS every implemented procedure address matches; every unprovided name returns NULL
-PASS exact exports: 157 implemented, 45 pinned unprovided, no private exports
+PASS exact exports: 161 implemented, 41 pinned unprovided, no private exports
 ```
 
 A compute shader with two declared entries selects `transform`, runs 72
@@ -199,7 +204,8 @@ subsequent ABI7 timestamp/recovery/trailing-layout composition to committed
 b4e39b0 plus its exact resource overlay, with fully instrumented compiler and
 runtime controls and its then-failing empty-module control. The later ABI8 graphics
 composition is bound separately in `DEVELOPER_RECEIPT_GRAPHICS.json`, not inferred
-from those earlier checks. `DEVELOPER_RECEIPT_LIFECYCLE.json` binds the preceding lifecycle work. The earlier
+from those earlier checks. `DEVELOPER_RECEIPT_DEMOTE.json` then binds actual enabled
+discard plus accepted-owner instance capability exports to committed11937bf9. `DEVELOPER_RECEIPT_LIFECYCLE.json` binds the preceding lifecycle work. The earlier
 `DEVELOPER_RECEIPT.json` and source manifest remain the historical first compute
 checkpoint, not evidence for changed bytes. An initial live-worktree build caught
 unfinished parallel ABI6 enum edits; checkpoint testing instead materialized the

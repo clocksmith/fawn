@@ -8,7 +8,7 @@ bool native_stage_load(native_device *device, WGPUShaderModule module, WGPUStrin
     if (!module || doe_resource_shader_device((doe_resource_shader *)module) != device) return false;
     native_shader *payload = doe_resource_shader_native((doe_resource_shader *)module);
     if (!payload->compiled || doe_shader_borrow(payload->compiled, &out->view) != DOE_SHADER_OK ||
-        !native_shader_capabilities(&out->view)) return false;
+        !native_shader_capabilities(&out->view, &device->caps)) return false;
     size_t length;
     if (!native_string_size(name, &length) || length > 63 ||
         (name.data && (!length || memchr(name.data, 0, length)))) return false;

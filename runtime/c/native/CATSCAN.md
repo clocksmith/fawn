@@ -27,7 +27,7 @@ missing dispatch analysis; command and native obligations keep their existing ow
 
 ## Acceptance
 Developer checks do not establish independent, physical or performance qualification.
-- Evidence: [graphics](DEVELOPER_RECEIPT_GRAPHICS.json),
+- Evidence: [demote/instance](DEVELOPER_RECEIPT_DEMOTE.json), [graphics](DEVELOPER_RECEIPT_GRAPHICS.json),
   [timestamps/recovery](DEVELOPER_RECEIPT_TIMESTAMPS.json) and
   [admission](DEVELOPER_RECEIPT_ADMISSION.json).
 

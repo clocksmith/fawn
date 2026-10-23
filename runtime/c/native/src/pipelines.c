@@ -13,11 +13,24 @@ void native_pipeline_release(void *userdata, void *handle)
     free(payload);
 }
 
-/* Target capability admission, not source parsing or shader validation. The
- * compiler owns valid words; this backend enables baseline Shader/Matrix, 1D images and ImageQuery. */
-bool native_shader_capabilities(const doe_shader_view *view)
+/* SPIR-V strings use little-endian packed bytes independent of host byte order.
+ * Require exact length and zero padding, not a prefix or an arbitrary extension. */
+static bool extension_name(const uint32_t *words, size_t count, const char *name)
 {
-    if (view->counts.words < 5 || view->words[1] > UINT32_C(0x00010300)) return false;
+    size_t size = strlen(name) + 1;
+    if (count != (size + 3) / 4) return false;
+    for (size_t i = 0; i < count * 4; ++i) {
+        unsigned expected = i < size ? (unsigned char)name[i] : 0;
+        if (((words[i / 4] >> ((i % 4) * 8)) & 255u) != expected) return false;
+    }
+    return true;
+}
+
+/* Target capability admission, not source validation. The compiler owns valid
+ * words. Demote is admitted only after actual extension/feature enablement. */
+bool native_shader_capabilities(const doe_shader_view *view, const doe_vk_caps *caps)
+{
+    if (!view || !caps || view->counts.words < 5 || view->words[1] > UINT32_C(0x00010300)) return false;
     for (size_t at = 5; at < view->counts.words;) {
         uint32_t length = view->words[at] >> 16;
         uint32_t opcode = view->words[at] & 65535u;
@@ -25,10 +38,11 @@ bool native_shader_capabilities(const doe_shader_view *view)
         if (opcode == 17) {
             if (length != 2) return false;
             uint32_t capability = view->words[at + 1];
-            if (capability != 0 && capability != 1 && capability != 43 &&
-                capability != 44 && capability != 50) return false;
+            if (capability != 0 && capability != 1 && capability != 43 && capability != 44 && capability != 50 &&
+                !(capability == 5379 && caps->shader_demote_to_helper_invocation)) return false;
         }
-        if (opcode == 10) return false;
+        if (opcode == 10 && (!caps->shader_demote_to_helper_invocation ||
+            !extension_name(view->words + at + 1, length - 1, "SPV_EXT_demote_to_helper_invocation"))) return false;
         at += length;
     }
     return true;
