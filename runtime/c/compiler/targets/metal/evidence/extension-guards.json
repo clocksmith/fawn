@@ -1,0 +1,17 @@
+{
+  "status": "focused developer checks passed; no Metal SDK or GPU qualification",
+  "compiler_commit": "54f0fb9f",
+  "command": "make -C runtime/c/compiler/targets/metal check host-control OUT=/tmp/doe-metal-subgroup-guard",
+  "checks": [
+    "11 collective builtins reject with untouched output",
+    "4 used subgroup inputs reject with untouched output",
+    "retained emission and scalar/aggregate executed host controls pass"
+  ],
+  "first_failure": "Initial test expected rejection for an unused subgroup parameter. Its target interface is omitted, so emission legitimately measured successfully. Changed the fixture to actually use the input; no compiler semantics or target limits were weakened. Original logs retained.",
+  "sha256": {
+    "README.md": "3d0428331c200565bf547fae1b49769e90a15d0ab838ee42d46eb4d29d4a136f",
+    "numeric.c": "452a8077d29e8783ed7611b3a86fa7df32c682a1759378da983af8a76ec14c58",
+    "stage.c": "d9b6d93313d8cdc96e04f2b6b228ec556ddc84f5f37475b1785e00154ba7dbe8",
+    "tests/test_metal.c": "cecd1c3b8eadde5201c367ff2d5dc24643078e877b7639d02beb2380a12db676"
+  }
+}

@@ -55,9 +55,11 @@ the runtime must dispatch that shape. No native queue/resource behavior changed.
 ## Explicit unfinished surface
 
 The current C IR has no vertex/fragment stage interface, texture/sampler, matrix,
-f16, atomic, pointer-parameter or subgroup instructions. Their retained Zig MSL
-owners are not translated yet. Source is rejected by shared admission instead of
-being accepted with fake target output. New/obsolete IR opcodes, malformed target
+f16, atomic or pointer-parameter instructions. Their retained Zig MSL
+owners are not translated yet. Shared subgroup admission now exists, but this
+Metal owner explicitly rejects all eleven collective arithmetic operations and
+four used subgroup inputs until their target rules are implemented. Other missing
+features reject at shared admission, never with fake target output. New/obsolete IR opcodes, malformed target
 identities, unrepresentable slots, over-budget workgroups and unsupported value
 types reject explicitly. This is a coherent compute-target implementation over
 the current C IR, not a claim of retained Metal owner completeness.

@@ -229,12 +229,51 @@ static void test_aggregate_host_fixture(const char *output_path) {
     free(text);
     release(f);
 }
+static void test_unimplemented_subgroups(void) {
+    static const char *const operations[] = {
+        "subgroupAdd", "subgroupMin", "subgroupMax", "subgroupMul", "subgroupAnd",
+        "subgroupOr", "subgroupXor", "subgroupExclusiveAdd", "subgroupInclusiveAdd",
+        "subgroupExclusiveMul", "subgroupInclusiveMul"
+    };
+    static const char *const inputs[] = {
+        "subgroup_size", "subgroup_invocation_id", "num_subgroups", "subgroup_id"
+    };
+    for (size_t i = 0u; i < 15u; ++i) {
+        char source[512];
+        int length;
+        if (i < 11u) {
+            length = snprintf(source, sizeof(source),
+                "enable subgroups; @compute @workgroup_size(4) fn main(){let value=%s(1u);}",
+                operations[i]);
+        } else {
+            length = snprintf(source, sizeof(source),
+                "enable subgroups; @group(0) @binding(0) var<storage,read_write> out:array<u32>;"
+                "@compute @workgroup_size(4) fn main(@builtin(%s) value:u32){out[0]=value;}",
+                inputs[i - 11u]);
+        }
+        assert(length > 0 && (size_t)length < sizeof(source));
+        Fixture *f = prepare(source);
+        char untouched[64];
+        memset(untouched, 0x5a, sizeof(untouched));
+        DoeMetalResult result;
+        const DoeCompilerStatus status = doe_metal_emit(&f->source, f->module, NO_ID,
+                                                       untouched, sizeof(untouched), &result);
+        if (status != DOE_COMPILER_UNSUPPORTED)
+            fprintf(stderr, "subgroup rejection %zu returned %d: %s\n", i, (int)status, f->diagnostic.message);
+        assert(status == DOE_COMPILER_UNSUPPORTED);
+        assert(result.required_bytes == 0u && result.written_bytes == 0u);
+        for (size_t j = 0u; j < sizeof(untouched); ++j) assert(untouched[j] == 0x5a);
+        has(f->diagnostic.message, "no implemented lowering");
+        release(f);
+    }
+}
 int main(int argc, char **argv) {
     uint32_t slot = NO_ID;
     assert(doe_metal_binding_slot(1u, 13u, &slot) && slot == 29u);
     assert(!doe_metal_binding_slot(1u, 14u, &slot));
     assert(!doe_metal_binding_slot(0u, 16u, &slot));
     assert(!doe_metal_binding_slot(UINT32_MAX, UINT32_MAX, &slot));
+    test_unimplemented_subgroups();
     test_residual();
     test_layout();
     test_workgroup();

@@ -124,6 +124,11 @@ static bool entry_admit(MetalEmitter *e, const EntryRecord *entry) {
         return false;
     }
     e->offset = c->functions[entry->function].name.offset;
+    const uint32_t supported_inputs = (1u << (INPUT_LOCAL_INDEX + 1u)) - 1u;
+    if ((entry->source_input_mask & ~supported_inputs) != 0u) {
+        metal_error(e, "Metal builtin input has no implemented lowering");
+        return false;
+    }
     uint64_t invocations = 1u;
     for (unsigned i = 0u; i < 3u; ++i) {
         const uint32_t dimension = entry->state.resolved.workgroup_size[i];

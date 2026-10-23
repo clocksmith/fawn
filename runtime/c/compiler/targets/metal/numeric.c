@@ -110,6 +110,17 @@ static void builtin_expression(MetalEmitter *e, const IrInstruction *ir) {
         metal_error(e, "Metal builtin identity has no registered semantics");
         return;
     }
+    /* A source builtin registry is not a target support table. New shared
+     * operations must never become unchecked MSL names by default. */
+    const NumericBuiltinKind kind = builtin->kind;
+    const bool supported = kind == BUILTIN_MIN || kind == BUILTIN_MAX || kind == BUILTIN_CLAMP ||
+        kind == BUILTIN_EXP || kind == BUILTIN_TANH || kind == BUILTIN_SQRT ||
+        kind == BUILTIN_DOT || kind == BUILTIN_LENGTH || kind == BUILTIN_DISTANCE ||
+        kind == BUILTIN_NORMALIZE || kind == BUILTIN_CROSS;
+    if (!supported) {
+        metal_error(e, "Metal builtin has no implemented lowering");
+        return;
+    }
     const TypeId operand_type = metal_value_type(e, ir->operands.scalar.left);
     const TypeId leaf = type_leaf(e->module, operand_type);
     if (builtin->kind == BUILTIN_DOT && leaf != IR_F32) {
@@ -212,6 +223,10 @@ void metal_expression(MetalEmitter *e, const IrInstruction *ir) {
         case IR_INPUT:
             if (ir->operands.scalar.binding >= e->module->entry_input_count) {
                 metal_error(e, "Metal builtin input identity is invalid");
+                break;
+            }
+            if ((unsigned)e->module->entry_inputs[ir->operands.scalar.binding].kind > INPUT_LOCAL_INDEX) {
+                metal_error(e, "Metal builtin input has no implemented lowering");
                 break;
             }
             metal_format(e, "ctx.input%u", (unsigned)e->module->entry_inputs[ir->operands.scalar.binding].kind);
