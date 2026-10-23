@@ -18,6 +18,14 @@ static doe_vk_status record_dispatch(doe_vk_commands *commands, const doe_resour
         doe_resource_pipeline_get_layout(record->value.dispatch.pipeline), record->value.dispatch.groups,
         record->value.dispatch.dynamic_offsets, bindings);
     if (status != DOE_VK_OK) return status;
+    if (record->kind == DOE_COMMAND_DISPATCH_INDIRECT) {
+        status = native_dispatch_guard_initialize(pipeline->device);
+        if (status != DOE_VK_OK) return status;
+        native_buffer *arguments = doe_resource_buffer_native(record->value.dispatch.indirect);
+        return doe_vk_commands_dispatch_indirect(commands,pipeline->device->dispatch_validator,
+            pipeline->handle.vulkan,bindings,pipeline->binding_count,arguments->handle.vulkan,
+            record->value.dispatch.indirect_offset);
+    }
     return doe_vk_commands_dispatch_resources(commands, pipeline->handle.vulkan, bindings, pipeline->binding_count,
         record->value.dispatch.x, record->value.dispatch.y, record->value.dispatch.z);
 }
@@ -85,6 +93,7 @@ static doe_vk_status record_vulkan_commands(doe_vk_commands *native, doe_resourc
             status = native_record_query(native, record);
             break;
         case DOE_COMMAND_DISPATCH:
+        case DOE_COMMAND_DISPATCH_INDIRECT:
             status = record_dispatch(native, record);
             break;
         default:
@@ -159,10 +168,11 @@ native_queue_settlement native_settle_pending(native_device *device)
         *cursor = pending->next;
         if (status != NATIVE_OK) {
             device->queue_failed = true;
-            /* Proven terminal failure may poison the shared normalization scratch.
-             * A later timestamp resolve reconstructs it, never reuses failed data. */
+            /* Proven terminal failure may poison private helper scratch. Later
+             * operations reconstruct helpers, never reuse failed storage. */
             doe_vk_timestamp_normalizer_release(device->timestamp_normalizer);
             device->timestamp_normalizer = NULL;
+            native_indirect_guards_release(device);
         }
         settle_resources(pending, status == NATIVE_OK);
     }

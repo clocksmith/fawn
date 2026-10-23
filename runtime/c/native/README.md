@@ -108,6 +108,18 @@ remain separate from the Linux host composition checked here.
   alpha-to-coverage. A vertex-only depth pipeline needs neither a fabricated
   fragment shader nor a color target. Discarded multisample color is initialized
   by the existing backend aspect owner before a later Load.
+- Indirect Vulkan commands consume GPU-produced argument bytes through backend-
+  generated WGSL guards compiled by the existing C shader owner. Dispatch guards
+  use the admitted device dimension limits; draw guards use exact bound vertex/
+  instance spans and suppress nonzero firstInstance while its feature is disabled.
+  Draws retain distinct scratch until retirement. Public Indirect usage gains only
+  internal native CopySrc, not new public usage. No CPU argument readback or second
+  recording engine is used. Failed terminal work discards private helpers; unknown
+  completion retains them. Product-sensitive workgroup_index/global_invocation_index
+  builtins remain compiler-rejected until reflected guard support exists.
+- Viewports use the canonical requested-device bounds, including negative origins,
+  outside-attachment viewports and zero extents. Scissors remain attachment-bound;
+  zero viewport extent preserves native draw/query ordering with an empty scissor.
 - Debug push/pop/insert validate canonical encoder/pass/bundle state and balance.
   Label bytes are optional diagnostics, not a second recorder or balance counter.
   ABI9 storage/workgroup atomics use compiler-owned robust access and initialization;
@@ -118,7 +130,8 @@ remain separate from the Linux host composition checked here.
 
 ## Intentionally unprovided or rejected
 
-Surfaces, indexed/indirect draws and indirect dispatch remain absent. Graphics
+Surfaces and indexed draws remain absent. Vulkan indirect dispatch and nonindexed
+indirect pass/bundle draws use real GPU guards. Graphics
 admits one color attachment and/or depth/stencil, sample counts 1 and 4, direct
 triangle/line lists or strips and 32-bit float/signed/unsigned vertex attributes.
 PointList target lowering, single-sample color Discard, dual-source blending,
@@ -296,3 +309,13 @@ first copy assertion incorrectly expected the mock ledger to execute GPU command
 the corrected control checks exact native calls and known initial readback bytes,
 without adding production emulation. All real image/graphics execution in this
 receipt is explicitly SwiftShader Vulkan, not Metal.
+
+`DEVELOPER_RECEIPT_INDIRECT.json` binds the later public GPU-guarded indirect and
+viewport composition independently. GPU producers generate valid, overlimit and
+zero dispatch arguments and invalid vertex/instance draw spans. Public controls
+check exact invocation counts, unchanged original argument words without public
+CopySrc, eight indirect draw query outcomes, four viewport query outcomes, exact
+64 pixels, bundle replay, stride-zero instances, early caller releases and typed
+helper acquisition failures. Recovery checks keep helpers while completion is
+unknown, then discard and recreate them after proven terminal failure. These are
+software Vulkan results; Metal indirect and indexed rendering remain unsupported.

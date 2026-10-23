@@ -12,6 +12,7 @@
 #include "doe_vk_bindings.h"
 #include "doe_vk_timestamp.h"
 #include "doe_vk_render.h"
+#include "doe_vk_indirect.h"
 #include "doe_error_scopes.h"
 #include <pthread.h>
 #include <stdatomic.h>
@@ -42,6 +43,8 @@ typedef struct native_device {
     bool queue_failed;
     bool timestamp_enabled;
     doe_vk_timestamp_normalizer *timestamp_normalizer;
+    doe_vk_dispatch_validator *dispatch_validator;
+    doe_vk_draw_validator *draw_validator;
     native_pending *pending;
 } native_device;
 
@@ -157,6 +160,9 @@ bool native_shader_capabilities(const doe_shader_view *view, const doe_vk_caps *
 bool native_timestamp_supported(const doe_vk_caps *caps);
 uint32_t native_timestamp_workgroup(const doe_vk_caps *caps);
 doe_vk_status native_timestamp_initialize(native_device *device);
+doe_vk_status native_dispatch_guard_initialize(native_device *device);
+doe_vk_status native_draw_guard_initialize(native_device *device);
+void native_indirect_guards_release(native_device *device);
 bool native_requested_features(const native_backend *backend, const WGPUDeviceDescriptor *descriptor, bool *timestamps);
 doe_vk_status native_record_query(doe_vk_commands *commands, const doe_resource_command *record);
 WGPUComputePipeline native_create_compute_pipeline(native_device *device,

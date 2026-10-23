@@ -58,6 +58,13 @@ int main()
     assert(push && pop);
     push(nullptr, {"typed marker", WGPU_STRLEN});
     pop(nullptr);
+    auto indirect_compute = reinterpret_cast<WGPUProcComputePassEncoderDispatchWorkgroupsIndirect>(wgpuGetProcAddress({"wgpuComputePassEncoderDispatchWorkgroupsIndirect", WGPU_STRLEN}));
+    auto indirect_draw = reinterpret_cast<WGPUProcRenderPassEncoderDrawIndirect>(wgpuGetProcAddress({"wgpuRenderPassEncoderDrawIndirect", WGPU_STRLEN}));
+    auto indirect_bundle = reinterpret_cast<WGPUProcRenderBundleEncoderDrawIndirect>(wgpuGetProcAddress({"wgpuRenderBundleEncoderDrawIndirect", WGPU_STRLEN}));
+    assert(indirect_compute && indirect_draw && indirect_bundle);
+    indirect_compute(nullptr, nullptr, 0);
+    indirect_draw(nullptr, nullptr, 0);
+    indirect_bundle(nullptr, nullptr, 0);
     release(instance);
     std::puts("PASS C++ pinned typed procedure calls and unsupported-name rejection");
 }

@@ -71,6 +71,8 @@ int main(void)
     s.queue = wgpuDeviceGetQueue(s.device);
     native_device *device = (native_device *)s.device;
     assert(device->timestamp_normalizer);
+    assert(native_dispatch_guard_initialize(device) == DOE_VK_OK);
+    assert(native_draw_guard_initialize(device) == DOE_VK_OK);
     WGPUBuffer target = buffer(&s,8,WGPUBufferUsage_CopyDst|WGPUBufferUsage_MapRead);
     WGPUBuffer retained = buffer(&s,8,WGPUBufferUsage_CopyDst);
     WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(s.device,NULL);
@@ -112,13 +114,14 @@ int main(void)
     wgpuDevicePushErrorScope(s.device,WGPUErrorFilter_Internal);
     wgpuQueueWriteBuffer(s.queue,target,0,&value,sizeof(value));
     pop(&s,WGPUErrorType_Internal);
-    assert(device->pending && device->timestamp_normalizer);
+    assert(device->pending && device->timestamp_normalizer && device->dispatch_validator && device->draw_validator);
     injected = DOE_VK_NATIVE_FAILURE;
     hold = false;
     wgpuDevicePushErrorScope(s.device,WGPUErrorFilter_Internal);
     wgpuQueueWriteBuffer(s.queue,target,0,&value,sizeof(value));
     pop(&s,WGPUErrorType_Internal);
-    assert(!device->pending && !device->timestamp_normalizer && !obscured);
+    assert(!device->pending && !device->timestamp_normalizer && !device->dispatch_validator &&
+        !device->draw_validator && !obscured);
     const uint64_t *observed = map(&s,target,8);
     assert(*observed == 0); /* Failed writes were never performed. */
     wgpuBufferUnmap(target);
@@ -134,6 +137,8 @@ int main(void)
     wgpuCommandEncoderResolveQuerySet(encoder,set,0,1,resolved,0);
     submit(&s,encoder);
     assert(device->timestamp_normalizer && !device->pending && !s.errors);
+    assert(native_dispatch_guard_initialize(device) == DOE_VK_OK);
+    assert(native_draw_guard_initialize(device) == DOE_VK_OK);
     wgpuQuerySetRelease(set);
     wgpuBufferRelease(resolved);
     wgpuBufferRelease(target);
@@ -141,5 +146,5 @@ int main(void)
     wgpuDeviceRelease(s.device);
     wgpuAdapterRelease(s.adapter);
     wgpuInstanceRelease(s.instance);
-    puts("PASS typed recovery: native/OOM/pending errors survive submit/write/texture/workdone, unknown leases retained, terminal cleanup and fresh GPU normalizer recovery");
+    puts("PASS typed recovery: native/OOM/pending errors survive submit/write/texture/workdone, unknown leases retained, terminal cleanup and fresh GPU normalizer/indirect guard recovery");
 }
