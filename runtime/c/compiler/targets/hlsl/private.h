@@ -14,6 +14,7 @@ typedef struct {
     uint32_t selected_entry, entry, function_end, offset;
     unsigned indent;
     bool failed, needs_dispatch, uses_subgroups;
+    DoeHlslMetadata metadata;
 } HlslEmitter;
 void hlsl_text(HlslEmitter *, const char *);
 void hlsl_format(HlslEmitter *, const char *, ...);
@@ -28,6 +29,7 @@ void hlsl_constant(HlslEmitter *, TypeId, uint64_t, bool);
 void hlsl_types(HlslEmitter *);
 void hlsl_constants(HlslEmitter *);
 void hlsl_resources(HlslEmitter *);
+void hlsl_register(HlslEmitter *, uint32_t resource, uint32_t kind, uint32_t stride);
 void hlsl_handle_type(HlslEmitter *, TypeId);
 void hlsl_image_resource(HlslEmitter *, uint32_t);
 void hlsl_image(HlslEmitter *, const IrInstruction *);

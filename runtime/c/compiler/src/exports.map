@@ -12,5 +12,7 @@
     doe_compiler_compile_stages;
     doe_compiler_text_requirements;
     doe_compiler_compile_text;
+    doe_compiler_hlsl_requirements;
+    doe_compiler_compile_hlsl;
   local: *;
 };

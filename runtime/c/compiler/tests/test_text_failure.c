@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: MIT
  * Real final FP-restore fault after private target serialization, no library hook. */
-#include "../include/doe_compiler_text.h"
+#include "../include/doe_compiler_hlsl.h"
 #include <assert.h>
 #include <errno.h>
 #include <fenv.h>
@@ -51,8 +51,29 @@ int main(void) {
         source, sizeof(source) - 1u, &selection, sizeof(selection), DOE_COMPILER_TEXT_CODE,
         &outputs, sizeof(outputs), &result, sizeof(result)) == DOE_COMPILER_OK);
     assert(result.published_text_bytes != 0u && errno == EDOM && fegetround() == FE_UPWARD);
+    const DoeCompilerHlslOutputs hlsl = {.stages=outputs.stages,
+        .text=text,.text_capacity=sizeof(text),
+        .binding_record_size=sizeof(DoeCompilerHlslBindingV11),
+        .entry_record_size=sizeof(DoeCompilerHlslEntryV11)};
+    assert(doe_compiler_hlsl_requirements(11u, &caps, sizeof(caps), &requirements, sizeof(requirements)) == DOE_COMPILER_OK);
+    free(workspace);
+    workspace = malloc(requirements.size_bytes);
+    assert(workspace != NULL);
+    memset(text, 0x5a, sizeof(text));
+    fail_restore = true;
+    assert(doe_compiler_compile_hlsl(11u, &caps, sizeof(caps), workspace, requirements.size_bytes,
+        source, sizeof(source)-1u, &selection, sizeof(selection), DOE_COMPILER_TEXT_CODE,
+        &hlsl, sizeof(hlsl), &result, sizeof(result)) == DOE_COMPILER_INPUT_ERROR);
+    assert(!fail_restore && errno == EDOM && fegetround() == FE_UPWARD);
+    assert(result.required_text_bytes && !result.published_text_bytes && !result.target);
+    assert(strstr(result.stages.resources.module.diagnostic.message, "restoration failed") != NULL);
+    for (size_t i = 0; i < sizeof(text); ++i) assert(text[i] == 0x5a);
+    assert(doe_compiler_compile_hlsl(11u, &caps, sizeof(caps), workspace, requirements.size_bytes,
+        source, sizeof(source)-1u, &selection, sizeof(selection), DOE_COMPILER_TEXT_CODE,
+        &hlsl, sizeof(hlsl), &result, sizeof(result)) == DOE_COMPILER_OK);
+    assert(result.published_text_bytes && errno == EDOM && fegetround() == FE_UPWARD);
     assert(fesetround(FE_TONEAREST) == 0);
     free(workspace);
-    puts("ABI10 final FP-restore failure preserves every caller byte after real MSL serialization; reuse passed");
+    puts("ABI10/11 final FP-restore failure preserves every caller byte after real MSL/HLSL serialization; reuse passed");
     return 0;
 }

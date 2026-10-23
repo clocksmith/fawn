@@ -47,10 +47,15 @@ static bool reserve(size_t *cursor, size_t count, size_t width, size_t alignment
     return true;
 }
 
-static bool layout(DoeCompilerModuleOutputCounts n, size_t handles, size_t interfaces, size_t source, size_t identity,
+static bool layout(doe_shader_target target, DoeCompilerModuleOutputCounts n, size_t handles, size_t interfaces, size_t source, size_t identity,
     size_t text, size_t bindings, size_t entries, size_t *bytes, size_t offsets[15])
 {
     *bytes = sizeof(doe_shader);
+    const bool hlsl = target == DOE_SHADER_HLSL;
+    const size_t binding_size = hlsl ? sizeof(DoeCompilerHlslBindingV11) : sizeof(DoeCompilerTextBindingV10);
+    const size_t entry_size = hlsl ? sizeof(DoeCompilerHlslEntryV11) : sizeof(DoeCompilerTextEntryV10);
+    const size_t binding_alignment = hlsl ? alignof(DoeCompilerHlslBindingV11) : alignof(DoeCompilerTextBindingV10);
+    const size_t entry_alignment = hlsl ? alignof(DoeCompilerHlslEntryV11) : alignof(DoeCompilerTextEntryV10);
     return reserve(bytes, source, 1, 1, &offsets[0]) &&
         reserve(bytes, identity, 1, 1, &offsets[1]) &&
         reserve(bytes, n.words, sizeof(uint32_t), alignof(uint32_t), &offsets[2]) &&
@@ -65,10 +70,8 @@ static bool layout(DoeCompilerModuleOutputCounts n, size_t handles, size_t inter
         reserve(bytes, interfaces, sizeof(DoeCompilerStageInterfaceV7),
             alignof(DoeCompilerStageInterfaceV7), &offsets[11]) &&
         reserve(bytes, text, 1, 1, &offsets[12]) &&
-        reserve(bytes, bindings, sizeof(DoeCompilerTextBindingV10),
-            alignof(DoeCompilerTextBindingV10), &offsets[13]) &&
-        reserve(bytes, entries, sizeof(DoeCompilerTextEntryV10),
-            alignof(DoeCompilerTextEntryV10), &offsets[14]);
+        reserve(bytes, bindings, binding_size, binding_alignment, &offsets[13]) &&
+        reserve(bytes, entries, entry_size, entry_alignment, &offsets[14]);
 }
 
 static void assign_outputs(doe_shader *shader, const size_t offsets[15],
@@ -100,27 +103,52 @@ static void assign_outputs(doe_shader *shader, const size_t offsets[15],
     shader->outputs.interface_record_size = sizeof(DoeCompilerStageInterfaceV7);
 }
 
+static DoeCompilerStatus text_requirements(doe_shader_target target,
+    const DoeCompilerTextCapacities *capacities, DoeCompilerWorkspaceRequirements *requirements)
+{
+    if (target == DOE_SHADER_HLSL)
+        return doe_compiler_hlsl_requirements(DOE_COMPILER_HLSL_ABI_VERSION,
+            capacities, sizeof(*capacities), requirements, sizeof(*requirements));
+    return doe_compiler_text_requirements(DOE_COMPILER_TEXT_ABI_VERSION, DOE_COMPILER_TARGET_METAL,
+        capacities, sizeof(*capacities), requirements, sizeof(*requirements));
+}
+
+static DoeCompilerStatus compile_text(doe_shader_target target,
+    const DoeCompilerTextCapacities *capacities, void *workspace, size_t workspace_size,
+    const char *source, size_t source_size, const DoeCompilerEntrySelectionV5 *selection,
+    uint32_t flags, const DoeCompilerTextOutputs *metal, const DoeCompilerHlslOutputs *hlsl,
+    DoeCompilerTextResult *result)
+{
+    if (target == DOE_SHADER_HLSL)
+        return doe_compiler_compile_hlsl(DOE_COMPILER_HLSL_ABI_VERSION,
+            capacities, sizeof(*capacities), workspace, workspace_size, source, source_size,
+            selection, sizeof(*selection), flags, hlsl, hlsl ? sizeof(*hlsl) : 0,
+            result, sizeof(*result));
+    return doe_compiler_compile_text(DOE_COMPILER_TEXT_ABI_VERSION, DOE_COMPILER_TARGET_METAL,
+        capacities, sizeof(*capacities), workspace, workspace_size, source, source_size,
+        selection, sizeof(*selection), flags, metal, metal ? sizeof(*metal) : 0,
+        result, sizeof(*result));
+}
+
 doe_shader_status doe_shader_create(const doe_shader_options *options,
     const char *source, size_t source_size, doe_shader **out, doe_shader_error *error)
 {
     if (!options || !out || (!source && source_size) ||
         !options->allocator.allocate || !options->allocator.deallocate ||
         !options->compiler_identity || !options->compiler_identity_size ||
-        (options->target != DOE_SHADER_SPIRV && options->target != DOE_SHADER_METAL))
+        (options->target != DOE_SHADER_SPIRV && options->target != DOE_SHADER_METAL && options->target != DOE_SHADER_HLSL))
         return fail(error, DOE_SHADER_INVALID_ARGUMENT, DOE_COMPILER_INPUT_ERROR, NULL);
     doe_shader_options saved = *options;
     if (saved.selection.name_length > 63 ||
         (!saved.selection.name && saved.selection.name_length))
         return fail(error, DOE_SHADER_INVALID_ARGUMENT, DOE_COMPILER_INPUT_ERROR, NULL);
-    const bool metal = saved.target == DOE_SHADER_METAL;
+    const bool textual = saved.target == DOE_SHADER_METAL || saved.target == DOE_SHADER_HLSL;
     const DoeCompilerStageCapacities capacities = {.module = saved.capacities,
         .interface_attributes = saved.interface_attributes, .stage_interfaces = saved.stage_interfaces};
     DoeCompilerTextCapacities text_capacities = {.stages = capacities};
     DoeCompilerTextResult text_result = {0};
     DoeCompilerWorkspaceRequirements requirements;
-    DoeCompilerStatus status = metal ? doe_compiler_text_requirements(
-        DOE_COMPILER_TEXT_ABI_VERSION, DOE_COMPILER_TARGET_METAL,
-        &text_capacities, sizeof(text_capacities), &requirements, sizeof(requirements)) :
+    DoeCompilerStatus status = textual ? text_requirements(saved.target, &text_capacities, &requirements) :
         doe_compiler_stage_requirements(DOE_COMPILER_ATOMIC_ABI_VERSION,
         &capacities, sizeof(capacities), &requirements, sizeof(requirements));
     if (status != DOE_COMPILER_OK)
@@ -129,13 +157,10 @@ doe_shader_status doe_shader_create(const doe_shader_options *options,
         requirements.size_bytes, requirements.alignment_bytes);
     if (!workspace) return fail(error, DOE_SHADER_OUT_OF_MEMORY, DOE_COMPILER_OK, NULL);
     DoeCompilerStageResult result = {0};
-    if (metal) {
-        status = doe_compiler_compile_text(DOE_COMPILER_TEXT_ABI_VERSION,
-            DOE_COMPILER_TARGET_METAL, &text_capacities, sizeof(text_capacities),
-            workspace, requirements.size_bytes, source, source_size,
-            &saved.selection, sizeof(saved.selection), DOE_COMPILER_TEXT_CODE |
-            DOE_COMPILER_TEXT_REFLECTION | DOE_COMPILER_TEXT_MEASURE,
-            NULL, 0, &text_result, sizeof(text_result));
+    if (textual) {
+        status = compile_text(saved.target, &text_capacities, workspace, requirements.size_bytes,
+            source, source_size, &saved.selection, DOE_COMPILER_TEXT_CODE |
+            DOE_COMPILER_TEXT_REFLECTION | DOE_COMPILER_TEXT_MEASURE, NULL, NULL, &text_result);
         result = text_result.stages;
     } else {
         status = doe_compiler_compile_stages(DOE_COMPILER_ATOMIC_ABI_VERSION,
@@ -147,14 +172,12 @@ doe_shader_status doe_shader_create(const doe_shader_options *options,
     doe_shader *shader = NULL;
     doe_shader_status outcome = DOE_SHADER_COMPILE_FAILED;
     if (status != DOE_COMPILER_OK) goto finished;
-    if (metal) {
+    if (textual) {
         saved.allocator.deallocate(saved.allocator.userdata, workspace,
             requirements.size_bytes, requirements.alignment_bytes);
         workspace = NULL;
         text_capacities.text_bytes = text_result.required_text_bytes;
-        status = doe_compiler_text_requirements(DOE_COMPILER_TEXT_ABI_VERSION,
-            DOE_COMPILER_TARGET_METAL, &text_capacities, sizeof(text_capacities),
-            &requirements, sizeof(requirements));
+        status = text_requirements(saved.target, &text_capacities, &requirements);
         if (status != DOE_COMPILER_OK) goto finished;
         workspace = saved.allocator.allocate(saved.allocator.userdata,
             requirements.size_bytes, requirements.alignment_bytes);
@@ -164,7 +187,7 @@ doe_shader_status doe_shader_create(const doe_shader_options *options,
         }
     }
     size_t bytes, offsets[15];
-    if (!result.resources.module.required_is_exact || !layout(result.resources.module.required, result.resources.required_handles, result.required_interfaces, source_size,
+    if (!result.resources.module.required_is_exact || !layout(saved.target, result.resources.module.required, result.resources.required_handles, result.required_interfaces, source_size,
             saved.compiler_identity_size, text_result.required_text_bytes,
             text_result.required_bindings, text_result.required_entries, &bytes, offsets)) {
         outcome = DOE_SHADER_OVERFLOW;
@@ -189,12 +212,25 @@ doe_shader_status doe_shader_create(const doe_shader_options *options,
     if (source_size) memcpy(shader->source, source, source_size);
     memcpy(shader->identity, saved.compiler_identity, saved.compiler_identity_size);
     DoeCompilerTextOutputs text_outputs = {0};
-    if (metal) {
+    DoeCompilerHlslOutputs hlsl_outputs = {0};
+    char *target_text = NULL;
+    if (textual) {
         shader->outputs.resources.module.words = NULL;
         unsigned char *base = (unsigned char *)shader;
-        text_outputs = (DoeCompilerTextOutputs) {
+        target_text = text_result.required_text_bytes ? (char *)(base + offsets[12]) : NULL;
+        if (saved.target == DOE_SHADER_HLSL) hlsl_outputs = (DoeCompilerHlslOutputs) {
+            .stages = shader->outputs, .text = target_text,
+            .text_capacity = text_result.required_text_bytes,
+            .bindings = text_result.required_bindings ? (DoeCompilerHlslBindingV11 *)(base + offsets[13]) : NULL,
+            .binding_capacity = text_result.required_bindings,
+            .binding_record_size = sizeof(DoeCompilerHlslBindingV11),
+            .entries = text_result.required_entries ? (DoeCompilerHlslEntryV11 *)(base + offsets[14]) : NULL,
+            .entry_capacity = text_result.required_entries,
+            .entry_record_size = sizeof(DoeCompilerHlslEntryV11)
+        };
+        else text_outputs = (DoeCompilerTextOutputs) {
             .stages = shader->outputs,
-            .text = text_result.required_text_bytes ? (char *)(base + offsets[12]) : NULL,
+            .text = target_text,
             .text_capacity = text_result.required_text_bytes,
             .bindings = text_result.required_bindings ? (DoeCompilerTextBindingV10 *)(base + offsets[13]) : NULL,
             .binding_capacity = text_result.required_bindings,
@@ -203,12 +239,9 @@ doe_shader_status doe_shader_create(const doe_shader_options *options,
             .entry_capacity = text_result.required_entries,
             .entry_record_size = sizeof(DoeCompilerTextEntryV10)
         };
-        status = doe_compiler_compile_text(DOE_COMPILER_TEXT_ABI_VERSION,
-            DOE_COMPILER_TARGET_METAL, &text_capacities, sizeof(text_capacities),
-            workspace, requirements.size_bytes, shader->source, source_size,
-            &saved.selection, sizeof(saved.selection),
-            DOE_COMPILER_TEXT_CODE | DOE_COMPILER_TEXT_REFLECTION,
-            &text_outputs, sizeof(text_outputs), &text_result, sizeof(text_result));
+        status = compile_text(saved.target, &text_capacities, workspace, requirements.size_bytes,
+            shader->source, source_size, &saved.selection, DOE_COMPILER_TEXT_CODE |
+            DOE_COMPILER_TEXT_REFLECTION, &text_outputs, &hlsl_outputs, &text_result);
         result = text_result.stages;
     } else {
         status = doe_compiler_compile_stages(DOE_COMPILER_ATOMIC_ABI_VERSION,
@@ -220,11 +253,15 @@ doe_shader_status doe_shader_create(const doe_shader_options *options,
     if (status == DOE_COMPILER_OK) {
         shader->view = (doe_shader_view) {
             .target = saved.target, .target_language_version = text_result.language_version,
-            .text = text_outputs.text, .text_size = text_result.published_text_bytes,
+            .text = target_text, .text_size = text_result.published_text_bytes,
             .target_bindings = text_outputs.bindings,
-            .target_binding_count = text_result.published_bindings,
+            .target_binding_count = saved.target == DOE_SHADER_METAL ? text_result.published_bindings : 0,
             .target_entries = text_outputs.entries,
-            .target_entry_count = text_result.published_entries,
+            .target_entry_count = saved.target == DOE_SHADER_METAL ? text_result.published_entries : 0,
+            .hlsl_bindings = hlsl_outputs.bindings,
+            .hlsl_binding_count = saved.target == DOE_SHADER_HLSL ? text_result.published_bindings : 0,
+            .hlsl_entries = hlsl_outputs.entries,
+            .hlsl_entry_count = saved.target == DOE_SHADER_HLSL ? text_result.published_entries : 0,
             .module = result.resources.module.module, .counts = result.resources.module.published,
             .words = shader->outputs.resources.module.words, .types = shader->outputs.resources.module.types,
             .members = shader->outputs.resources.module.members, .resources = shader->outputs.resources.module.resources,

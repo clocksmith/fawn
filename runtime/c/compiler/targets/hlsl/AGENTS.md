@@ -3,6 +3,10 @@
 Keep this private adapter on the shared C typed IR. Do not duplicate admission,
 constant semantics, module closure ownership or the parser. `hlsl.h` owns the
 borrowed-module/output contract; this directory does not select a public target.
+The additive public ABI11 facade in `../../include/doe_compiler_hlsl.h` calls this
+same serializer. Keep its private metadata staging attached to actual register
+declarations and entry emission; do not recreate register/feature policy in the
+facade or a runtime consumer. Existing ABI10 Metal records never become HLSL records.
 
 - Resource identity is the resolved declaration index. A selected entry emits
   only its static resource/workgroup closure and reachable function bodies.

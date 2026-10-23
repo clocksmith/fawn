@@ -86,6 +86,8 @@ void hlsl_image_resource(HlslEmitter *e, uint32_t index) {
         return;
     }
     hlsl_handle_type(e, r->type);
-    hlsl_format(e, " r%u : register(%c%u, space%u);\n", index,
-                sampler ? 's' : storage ? 'u' : 't', r->binding, r->group);
+    hlsl_format(e, " r%u : ", index);
+    hlsl_register(e, index, sampler ? DOE_COMPILER_HLSL_REGISTER_SAMPLER :
+        storage ? DOE_COMPILER_HLSL_REGISTER_UAV : DOE_COMPILER_HLSL_REGISTER_SRV, 0u);
+    hlsl_text(e, ";\n");
 }

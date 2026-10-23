@@ -1,10 +1,55 @@
 # Experimental C HLSL target
 
-Status: authored and strict-GCC compiled; developer source-emission checks and
-executed scalar/aggregate/image-guard/stage-mapping C++ controls pass. **Not DXC validated, DXIL validated,
-Windows/D3D12 consumed, hardware qualified, or the complete compiler migration.**
-No DXC download, toolchain installation, production default, public ABI, native
-resource owner or existing independent acceptance package changed.
+Status: authored and strict-compiled; developer source-emission checks and
+executed scalar/aggregate/image-guard/stage-mapping C++ controls pass. Five public
+ABI11 controls also pass actual DXC compilation and register/wave metadata
+comparison; see [the source-bound receipt](../../DEVELOPER_RECEIPT_HLSL_ABI11.json).
+This is not complete HLSL/DXIL semantic acceptance, Windows/D3D12 consumption,
+hardware qualification or the complete compiler migration. DXC is an explicitly
+selected external test tool; no system installation, production default, native
+resource owner or independent acceptance package changed. The additive public ABI11
+facade is described below; ABI1-10 layouts and behavior remain unchanged.
+
+## Public typed consumption
+
+[`doe_compiler_hlsl.h`](../../include/doe_compiler_hlsl.h) adds two exported
+functions: `doe_compiler_hlsl_requirements` and `doe_compiler_compile_hlsl`.
+They share the existing text API's capacities, flags, result, source pipeline,
+measure/staging and atomic publication owner. The result target is HLSL and
+language version is 600 (Shader Model 6.0). Text remains exact, unterminated bytes.
+
+Typed binding records carry the source resource index, CBV/SRV/UAV/sampler
+namespace, shader register, register space and descriptor stride. Entry records
+carry the actual DXC entry name, original entry index (also the bundle selector),
+per-entry wave requirement and any dispatch-CBV register/space/byte span. Unused
+dispatch records use NONE/NONE/zero. These records are captured by the same target
+declaration and entry emitters that produce HLSL, not reconstructed from source
+or independently assigned by a frontend. Whole-module schema9 reflection and
+entry-reference membership remain unchanged; target records describe the emitted
+union only. Entryless NONE owns zero text and target records.
+
+Run `make -C runtime/c/compiler test-hlsl-text` from the repository root. On
+Darwin, select a dylib with `SHARED_LIBRARY=/tmp/output/libdoe_compiler.dylib`;
+`TEXT_TEST_BUILD` chooses the consumer output directory. Ordinary typed C/C++
+consumers exercise emitted register identity, selected/all-entry metadata, wave
+and dispatch requirements, exact sizing, output-selection rules, final ownership
+and failure publication. The existing private target checks remain separate and
+unchanged. Neither consumer compilation nor emitted-operation controls qualify
+DXC, DXIL or physical execution by themselves.
+
+For an actual DXC check, give the public C consumer one fresh existing output
+directory as its sole argument. It writes selected-entry and entry-bundle HLSL
+with the actual public binding/entry records. Then run:
+
+```sh
+python3 runtime/c/compiler/tests/test_hlsl_dxc.py --dxc /path/to/dxc \
+  --fixtures /path/to/public-consumer-output --output /fresh/dxc-results
+```
+
+This optional check compiles five compute entries/selections, preserving the
+first failure. It compares DXC's actual register tables and wave requirements
+with the public metadata, hashes inputs/outputs and refuses an existing result
+directory. It never downloads tools, changes a checkout or executes GPU code.
 
 ## Boundary and implementation
 

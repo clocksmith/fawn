@@ -1,0 +1,68 @@
+/* SPDX-License-Identifier: MIT
+ * Copyright (c) 2026 Doe contributors */
+#ifndef DOE_COMPILER_HLSL_H
+#define DOE_COMPILER_HLSL_H
+#include "doe_compiler_text.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
+#define DOE_COMPILER_HLSL_ABI_VERSION 11u
+#define DOE_COMPILER_TARGET_HLSL 2u
+#define DOE_COMPILER_HLSL_REGISTER_CBV 1u
+#define DOE_COMPILER_HLSL_REGISTER_SRV 2u
+#define DOE_COMPILER_HLSL_REGISTER_UAV 3u
+#define DOE_COMPILER_HLSL_REGISTER_SAMPLER 4u
+#define DOE_COMPILER_HLSL_ENTRY_WAVES 1u
+
+/* Sparse, source-resource ordered union of emitted entries. register_kind is a
+ * separate namespace, not a resource-kind enum. Structured buffers require
+ * stride four; all other descriptors use zero. The declared WGSL byte layout
+ * remains in the shared resource/type reflection; CBV padding is runtime-owned. */
+typedef struct {
+    uint32_t resource_index, register_kind, shader_register, register_space, stride;
+} DoeCompilerHlslBindingV11;
+/* One emitted entry in source order. entry_index is also DOE_HLSL_ENTRY's value
+ * when compiling a NONE-selection bundle; NAME/AUTO output needs no define.
+ * name is the actual DXC entry. dispatch_register/space are NONE and bytes zero
+ * when unused; otherwise they identify a uint3 group-count CBV plus uint padding.
+ * flags declare native requirements, currently wave intrinsics. They are not
+ * claims of device support. Resource membership uses shared entry_references. */
+typedef struct {
+    uint32_t entry_index, stage, flags;
+    uint32_t dispatch_register, dispatch_space, dispatch_bytes;
+    char name[64];
+} DoeCompilerHlslEntryV11;
+typedef struct {
+    DoeCompilerStageOutputs stages;
+    char *text;
+    size_t text_capacity;
+    DoeCompilerHlslBindingV11 *bindings;
+    size_t binding_capacity, binding_record_size;
+    DoeCompilerHlslEntryV11 *entries;
+    size_t entry_capacity, entry_record_size;
+} DoeCompilerHlslOutputs;
+
+/* Additive typed text facade: ABI1-10 signatures/layouts/behavior are unchanged.
+ * Capacities, flags, result and failure-publication rules are the text API's.
+ * target is HLSL and language_version is 600 (Shader Model 6.0). Allocation-free,
+ * one whole-module typed pipeline; no source replay, DXC invocation or fallback.
+ * All selected entry closures are validated/emitted, even in reflection/measure.
+ * NONE emits separately guarded entries, not one simultaneously compiled module.
+ * Entryless NONE succeeds with no text/target records. Text is not terminated.
+ * Outputs/records have exact sizes, are aligned/live/pairwise disjoint and remain
+ * untouched on failure; result also remains untouched on ABI mismatch. Staging
+ * metadata and text belong to the queried workspace. errno/FP state is restored.
+ * Host consumption does not qualify DXC, DXIL, Windows SDK or GPU execution. */
+DoeCompilerStatus doe_compiler_hlsl_requirements(
+    uint32_t abi_version, const DoeCompilerTextCapacities *, size_t capacities_size,
+    DoeCompilerWorkspaceRequirements *, size_t requirements_size);
+DoeCompilerStatus doe_compiler_compile_hlsl(
+    uint32_t abi_version, const DoeCompilerTextCapacities *, size_t capacities_size,
+    void *workspace, size_t workspace_size, const char *source, size_t source_length,
+    const DoeCompilerEntrySelectionV5 *, size_t selection_size, uint32_t flags,
+    const DoeCompilerHlslOutputs *, size_t outputs_size,
+    DoeCompilerTextResult *, size_t result_size);
+#ifdef __cplusplus
+}
+#endif
+#endif

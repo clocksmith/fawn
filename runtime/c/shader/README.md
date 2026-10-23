@@ -98,3 +98,13 @@ artifact untouched, and retained views remain valid after source/option lifetime
 ends. NONE-selected entryless modules own empty text rather than fake shaders.
 Focused C/C++ and owner ASan/UBSan controls cover these paths and target rejection;
 no Apple SDK or physical execution is claimed by those host checks.
+
+Explicit `DOE_SHADER_HLSL` selects the additive public ABI11 text facade. One
+owned artifact retains exact HLSL bytes, whole-module reflection and separate
+typed `hlsl_bindings`/`hlsl_entries` spans. These contain compiler-owned register
+namespaces/spaces, descriptor stride, exact entry names, bundle selectors and
+per-entry wave/dispatch-CBV requirements. Metal slot/size spans stay empty for
+HLSL, and HLSL spans stay empty for the other targets. The same measured text
+allocation path, three acquisition failures, target-aware identity comparison and
+retained-view lifetime apply. No native frontend re-parses HLSL or WGSL; no DXC,
+Windows SDK, GPU execution or D3D12 public integration is established here.

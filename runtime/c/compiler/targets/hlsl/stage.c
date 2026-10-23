@@ -221,8 +221,9 @@ void hlsl_functions(HlslEmitter *e) {
     const EntryRecord *entry = &c->entries[e->entry];
     if ((entry->source_input_mask & (1u << INPUT_NUM_WORKGROUPS)) != 0u) {
         e->needs_dispatch = true;
-        hlsl_text(e, "cbuffer DoeDispatchInfo : register(b0, space7) {\n"
-            "    uint3 doe_num_workgroups;\n    uint _doe_num_workgroups_pad;\n};\n");
+        hlsl_format(e, "cbuffer DoeDispatchInfo : register(b%u, space%u) {\n"
+            "    uint3 doe_num_workgroups;\n    uint _doe_num_workgroups_pad;\n};\n",
+            DOE_HLSL_DISPATCH_SLOT, DOE_HLSL_DISPATCH_SPACE);
     }
     hlsl_text(e, "struct DoeContext {\n");
     for (unsigned i = 0u; i <= INPUT_SUBGROUP_INVOCATION; ++i)
