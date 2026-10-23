@@ -110,7 +110,7 @@ doe_shader_status doe_shader_create(const doe_shader_options *options,
         .interface_attributes = saved.interface_attributes, .stage_interfaces = saved.stage_interfaces};
     DoeCompilerWorkspaceRequirements requirements;
     DoeCompilerStatus status = doe_compiler_stage_requirements(
-        DOE_COMPILER_MATRIX_ABI_VERSION, &capacities, sizeof(capacities),
+        DOE_COMPILER_ATOMIC_ABI_VERSION, &capacities, sizeof(capacities),
         &requirements, sizeof(requirements));
     if (status != DOE_COMPILER_OK)
         return fail(error, DOE_SHADER_COMPILE_FAILED, status, NULL);
@@ -118,7 +118,7 @@ doe_shader_status doe_shader_create(const doe_shader_options *options,
         requirements.size_bytes, requirements.alignment_bytes);
     if (!workspace) return fail(error, DOE_SHADER_OUT_OF_MEMORY, DOE_COMPILER_OK, NULL);
     DoeCompilerStageResult result = {0};
-    status = doe_compiler_compile_stages(DOE_COMPILER_MATRIX_ABI_VERSION,
+    status = doe_compiler_compile_stages(DOE_COMPILER_ATOMIC_ABI_VERSION,
         &capacities, sizeof(capacities), workspace, requirements.size_bytes,
         source, source_size, &saved.selection, sizeof(saved.selection),
         DOE_COMPILER_MODULE_WORDS | DOE_COMPILER_MODULE_REFLECTION | DOE_COMPILER_MODULE_MEASURE,
@@ -150,7 +150,7 @@ doe_shader_status doe_shader_create(const doe_shader_options *options,
     assign_outputs(shader, offsets, result.resources.module.required, result.resources.required_handles, result.required_interfaces);
     if (source_size) memcpy(shader->source, source, source_size);
     memcpy(shader->identity, saved.compiler_identity, saved.compiler_identity_size);
-    status = doe_compiler_compile_stages(DOE_COMPILER_MATRIX_ABI_VERSION,
+    status = doe_compiler_compile_stages(DOE_COMPILER_ATOMIC_ABI_VERSION,
         &capacities, sizeof(capacities), workspace, requirements.size_bytes,
         shader->source, source_size, &saved.selection, sizeof(saved.selection),
         DOE_COMPILER_MODULE_WORDS | DOE_COMPILER_MODULE_REFLECTION,

@@ -1,0 +1,34 @@
+{
+  "status": "Focused owned-artifact developer checks, no physical qualification",
+  "core_commit": "342fcf1b",
+  "compiler_library_sha256": "f00731f2172b81e40a84ac36266d291b1ad615a71e1c875ebf5ef2b663e78959",
+  "change": "Select explicit ABI9 without private view growth; retain atomic element identity and non-constructibility from one compiler reflection owner. No layout reconstruction.",
+  "command": "make -C runtime/c/shader BUILD=/tmp/doe-shader-atomic-20261023 COMPILER_LIBRARY=/tmp/doe-atomic-author-20261023/libdoe_compiler.so test sanitize",
+  "result": "C/C++ and owner ASan/UBSan PASS; both acquisition faults, atomic metadata, retained views and old buffer/image/graphics/matrix/library cases. Core instrumentation remains separately source-bound, not implied by owner sanitizer. Leak scan disabled.",
+  "first_failures": [
+    "Test used nonexistent leaf_scalar field; corrected to public scalar_kind.",
+    "Test incorrectly expected scalar_kind on atomic record; frozen ABI9 element_type points to scalar record. Corrected test to follow that reference. No compiler behavior relaxed."
+  ],
+  "source_sha256": {
+    "runtime/c/shader/Makefile": "add5497ee7cd64b33770d58e38fbc074b3cd946dc9a7854c8d7297916a18f948",
+    "runtime/c/shader/include/doe_shader.h": "8dd71d28d87559add084167b46176ba8e407f3b81e60851f74009113b756aba9",
+    "runtime/c/shader/tests/cpp.cpp": "e4ccf651ecb3e960e2f436b7176ff32a0cb5eedc72dcba36798f420ad29c1cb5",
+    "runtime/c/shader/tests/vulkan_images.c": "c0351de9cd0953e66fbc45704353a6a96bb7c8afee6902973931c1d63206fad4",
+    "runtime/c/shader/tests/test_shader.c": "d2006c982177ac888be132e69e49dc3f35557ec62fa521775ff74f6f473b74b1",
+    "runtime/c/shader/tests/vulkan_graphics.c": "80140afe0dd3fa4f099ea10c7dfd74e9dff06b662f1cec6f8d677a365694a017",
+    "runtime/c/shader/src/shader.c": "1d241a59320562d531942bde9ecad586bfbbffcd735d1d17219476730a5ada37",
+    "runtime/c/compiler/include/doe_compiler_typed.h": "c7decbdb8da093a3485ded84901bf97f88eea8db6237dfd4089c730aa08e6216",
+    "runtime/c/compiler/include/doe_compiler_v2.h": "b0a60c2f05b70dba0786365dadd81b993accbd93f7f68f0e3accf86a815ae891",
+    "runtime/c/compiler/include/doe_compiler_stages.h": "805e94e55267837897ad1b9885d328ac8acf0cc7bfc92b9e5dfe97737439f668",
+    "runtime/c/compiler/include/doe_compiler_features.h": "face7d3315ec8bcd884f354cc08efa566c479b5136a509b7db751399bbbd320c",
+    "runtime/c/compiler/include/doe_compiler_module.h": "01cc2966ce7866ccfde6cca75e6ec6e60921f63c271e31cf94648e8d78907cef",
+    "runtime/c/compiler/include/doe_compiler_job.h": "6160e631973ffcd9777553520d329b6d6048315f2a90b1283989077e9f51237f",
+    "runtime/c/compiler/include/doe_compiler_resources.h": "b16c1f9f1a5129daeb32f83baaac1fb1bea41c1a00c084c5fe9c4d7f6cded2b2",
+    "runtime/c/compiler/include/doe_compiler.h": "5bf4f5e5a4e4624c094320ad9ec97119278bc7f6f06b0e47c01e444d42c6dc5b"
+  },
+  "logs_sha256": {
+    "doe-shader-atomic-second-failure.log": "f228308d865570f855d7180bde43e8d4ffac1acf886615b204f39980423487da",
+    "doe-shader-atomic-20261023.log": "ab76a51d6d23c820596b16a87c08fd5e3a56ae04a017a954254eb3d8348fbddb",
+    "doe-shader-atomic-first-failure.log": "9c3f440328768df2e0b1a18666e63fe503dc82e616f558a6e2e79ee1975ff14c"
+  }
+}
