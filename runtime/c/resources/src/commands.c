@@ -316,6 +316,7 @@ doe_resource_status doe_resource_encoder_finish(doe_resource_encoder *encoder,
     if (!out) return DOE_RESOURCE_INVALID_ARGUMENT;
     doe_resource_status status = resource_encoder_open(encoder);
     if (status != DOE_RESOURCE_OK) return status;
+    if (encoder->debug_depth) return resource_encoder_fail(encoder, DOE_RESOURCE_STATE);
     doe_resource_commands *commands = resource_allocate(&encoder->base.config,
         sizeof(*commands), _Alignof(doe_resource_commands));
     if (!commands) return resource_encoder_fail(encoder, DOE_RESOURCE_OUT_OF_MEMORY);
@@ -439,4 +440,31 @@ doe_resource_status doe_resource_commands_settle(doe_resource_commands *commands
             memory_order_acq_rel, memory_order_acquire)) return DOE_RESOURCE_STATE;
     doe_resource_commands_release(commands);
     return terminal_status;
+}
+
+/* One arithmetic policy; active/finished/locked admission stays with each owner. */
+doe_resource_status resource_debug_apply(size_t *depth, doe_resource_debug_operation operation)
+{
+    switch (operation) {
+    case DOE_RESOURCE_DEBUG_PUSH:
+        if (*depth == SIZE_MAX) return DOE_RESOURCE_OVERFLOW;
+        (*depth)++;
+        return DOE_RESOURCE_OK;
+    case DOE_RESOURCE_DEBUG_POP:
+        if (!*depth) return DOE_RESOURCE_STATE;
+        (*depth)--;
+        return DOE_RESOURCE_OK;
+    case DOE_RESOURCE_DEBUG_MARKER:
+        return DOE_RESOURCE_OK;
+    default:
+        return DOE_RESOURCE_INVALID_ARGUMENT;
+    }
+}
+
+doe_resource_status doe_resource_encoder_debug(doe_resource_encoder *encoder,
+    doe_resource_debug_operation operation)
+{
+    doe_resource_status status = resource_encoder_open(encoder);
+    if (status != DOE_RESOURCE_OK) return status;
+    return resource_encoder_fail(encoder, resource_debug_apply(&encoder->debug_depth, operation));
 }

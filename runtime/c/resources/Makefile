@@ -37,7 +37,9 @@ $(BUILD)/test_resolve_admission: tests/test_resolve_admission.c $(BUILD)/libdoe_
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(filter-out %.h,$^) -o $@
 $(BUILD)/test_view_defaults: tests/test_view_defaults.c $(BUILD)/libdoe_resources.a $(LABEL_SOURCES) tests/fixture.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(filter-out %.h,$^) -o $@
-check: $(BUILD)/test_view_defaults $(BUILD)/test_resolve_admission $(BUILD)/test_attachment_admission $(BUILD)/test_draw_admission $(BUILD)/test_query_admission $(BUILD)/test_render_usage $(BUILD)/test_usage_scope $(BUILD)/test_resources $(BUILD)/test_extended $(BUILD)/test_bundles $(BUILD)/test_binding_features
+$(BUILD)/test_debug_groups: tests/test_debug_groups.c $(BUILD)/libdoe_resources.a $(LABEL_SOURCES) tests/fixture.h src/internal.h
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(filter-out %.h,$^) -o $@
+check: $(BUILD)/test_debug_groups $(BUILD)/test_view_defaults $(BUILD)/test_resolve_admission $(BUILD)/test_attachment_admission $(BUILD)/test_draw_admission $(BUILD)/test_query_admission $(BUILD)/test_render_usage $(BUILD)/test_usage_scope $(BUILD)/test_resources $(BUILD)/test_extended $(BUILD)/test_bundles $(BUILD)/test_binding_features
 	$(BUILD)/test_resources
 	$(BUILD)/test_extended
 	$(BUILD)/test_bundles
@@ -49,6 +51,7 @@ check: $(BUILD)/test_view_defaults $(BUILD)/test_resolve_admission $(BUILD)/test
 	$(BUILD)/test_attachment_admission
 	$(BUILD)/test_resolve_admission
 	$(BUILD)/test_view_defaults
+	$(BUILD)/test_debug_groups
 
 VK_BUILD ?= /tmp/doe-c-resources-vulkan
 .PHONY: vulkan-lifetime vulkan-library

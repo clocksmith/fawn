@@ -9,7 +9,7 @@ struct doe_resource_bundle_encoder {
     doe_resource_render_bundle_desc desc;
     doe_resource_status status;
     bool finished;
-    size_t operations, count, capacity;
+    size_t operations, count, capacity, debug_depth;
     doe_resource_render_packet state;
     doe_resource_render_packet *draws;
     resource_usage_scope scope;
@@ -187,6 +187,7 @@ doe_resource_status doe_resource_bundle_encoder_finish(doe_resource_bundle_encod
     if (!out) return DOE_RESOURCE_INVALID_ARGUMENT;
     doe_resource_status status = open_encoder(encoder);
     if (status != DOE_RESOURCE_OK) return status;
+    if (encoder->debug_depth) return fail(encoder, DOE_RESOURCE_STATE);
     doe_resource_render_bundle *bundle = resource_allocate(&encoder->base.config,
         sizeof(*bundle), _Alignof(doe_resource_render_bundle));
     if (!bundle) return fail(encoder, DOE_RESOURCE_OUT_OF_MEMORY);
@@ -294,4 +295,12 @@ doe_resource_status doe_resource_bundle_encoder_invalidate(doe_resource_bundle_e
     doe_resource_status status = open_encoder(encoder);
     if (status != DOE_RESOURCE_OK) return status;
     return fail(encoder, rejection);
+}
+
+doe_resource_status doe_resource_bundle_encoder_debug(doe_resource_bundle_encoder *encoder,
+    doe_resource_debug_operation operation)
+{
+    doe_resource_status status = open_encoder(encoder);
+    if (status != DOE_RESOURCE_OK) return status;
+    return fail(encoder, resource_debug_apply(&encoder->debug_depth, operation));
 }

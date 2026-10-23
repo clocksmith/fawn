@@ -481,7 +481,8 @@ doe_resource_status doe_resource_render_pass_end(doe_resource_render_pass *pass)
 {
     doe_resource_status status = resource_render_pass_active(pass);
     if (status != DOE_RESOURCE_OK) return status;
-    if (pass->state.occlusion_active) return resource_encoder_fail(pass->encoder, DOE_RESOURCE_STATE);
+    if (pass->state.occlusion_active || pass->debug_depth)
+        return resource_encoder_fail(pass->encoder, DOE_RESOURCE_STATE);
     /* End follows all query events, including a zero-draw query scope. Closing
      * at the last draw would place an EndQuery event outside its render pass. */
     status = record_draw(pass, true, false, 0, 0, 0, 0, 0, NULL, 0);
@@ -528,4 +529,12 @@ doe_resource_status doe_resource_render_pass_invalidate(doe_resource_render_pass
     doe_resource_status status = resource_render_pass_active(pass);
     if (status != DOE_RESOURCE_OK) return status;
     return doe_resource_encoder_invalidate(pass->encoder, rejection);
+}
+
+doe_resource_status doe_resource_render_pass_debug(doe_resource_render_pass *pass,
+    doe_resource_debug_operation operation)
+{
+    doe_resource_status status = resource_render_pass_active(pass);
+    if (status != DOE_RESOURCE_OK) return status;
+    return resource_encoder_fail(pass->encoder, resource_debug_apply(&pass->debug_depth, operation));
 }

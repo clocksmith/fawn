@@ -286,3 +286,16 @@ These correct retained omissions against the
 [view default rules](https://gpuweb.github.io/gpuweb/#resolving-gputextureviewdescriptor-defaults).
 `DEVELOPER_RECEIPT_VIEW_DEFAULTS.json` preserves first failures and source-bound
 host checks. Native aspect/reinterpretation support remains separately explicit.
+
+Debug commands now validate the same encoder, compute-pass, render-pass and bundle
+owners rather than succeeding unconditionally. Each has independent checked nesting;
+pop underflow, overflow, inactive/locked use and unbalanced end/finish preserve the
+canonical sticky error. Parent groups can span a pass, but child groups cannot pop
+parent state. Empty bundle execution clears bindings, not the pass debug stack.
+Markers and nesting add no resource leases, allocations or synthetic GPU records;
+optional diagnostic names remain with the existing label/native diagnostic boundary,
+not a second string store. This intentionally repairs retained no-op debug validation
+against the [debug command contract](https://gpuweb.github.io/gpuweb/#debug-markers).
+Five focused suites cover all four owners, balance/error isolation, untouched failing
+arithmetic and attachment retirement. `DEVELOPER_RECEIPT_DEBUG_GROUPS.json` binds these
+host checks; capture-tool labels and frontend exports are separately owned.

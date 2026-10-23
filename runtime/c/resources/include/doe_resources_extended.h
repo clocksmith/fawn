@@ -171,6 +171,8 @@ doe_resource_status doe_resource_render_pass_draw_indirect(doe_resource_render_p
     doe_resource_buffer *arguments, uint64_t offset, bool indexed);
 doe_resource_status doe_resource_render_pass_begin_occlusion(doe_resource_render_pass *pass, uint32_t index);
 doe_resource_status doe_resource_render_pass_end_occlusion(doe_resource_render_pass *pass);
+doe_resource_status doe_resource_render_pass_debug(doe_resource_render_pass *pass,
+    doe_resource_debug_operation operation);
 doe_resource_status doe_resource_render_pass_end(doe_resource_render_pass *pass);
 const doe_resource_render_packet *doe_resource_render_record_borrow(const doe_resource_render_record *record);
 
@@ -203,6 +205,8 @@ doe_resource_status doe_resource_bundle_encoder_draw(doe_resource_bundle_encoder
     int32_t base_vertex, uint32_t first_instance);
 doe_resource_status doe_resource_bundle_encoder_draw_indirect(doe_resource_bundle_encoder *encoder,
     doe_resource_buffer *arguments, uint64_t offset, bool indexed);
+doe_resource_status doe_resource_bundle_encoder_debug(doe_resource_bundle_encoder *encoder,
+    doe_resource_debug_operation operation);
 doe_resource_status doe_resource_bundle_encoder_finish(doe_resource_bundle_encoder *encoder,
     doe_resource_render_bundle **out);
 void *doe_resource_render_bundle_device(const doe_resource_render_bundle *bundle);
