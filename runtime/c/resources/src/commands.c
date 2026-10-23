@@ -288,14 +288,9 @@ doe_resource_status resource_record_dispatch_indirect(doe_resource_encoder *enco
     doe_resource_pipeline *pipeline, const doe_resource_dispatch_group *groups,
     size_t group_count, doe_resource_buffer *arguments, uint64_t offset)
 {
-    if (!resource_buffer_available(arguments)) return resource_encoder_fail(encoder, DOE_RESOURCE_UNAVAILABLE);
-    if (arguments->base.config.device.identity != encoder->base.config.device.identity)
-        return resource_encoder_fail(encoder, DOE_RESOURCE_DEVICE_MISMATCH);
-    if (!(arguments->desc.usage & WGPUBufferUsage_Indirect)) return resource_encoder_fail(encoder, DOE_RESOURCE_USAGE);
-    if (offset % 4) return resource_encoder_fail(encoder, DOE_RESOURCE_ALIGNMENT);
-    if (offset > arguments->desc.size || 12 > arguments->desc.size - offset)
-        return resource_encoder_fail(encoder, DOE_RESOURCE_RANGE);
-    doe_resource_status status = resource_record_dispatch(encoder, pipeline, groups, group_count, 0, 0, 0);
+    doe_resource_status status = resource_indirect_validate(encoder->base.config.device.identity, arguments, offset, 12);
+    if (status != DOE_RESOURCE_OK) return resource_encoder_fail(encoder, status);
+    status = resource_record_dispatch(encoder, pipeline, groups, group_count, 0, 0, 0);
     if (status != DOE_RESOURCE_OK) return status;
     doe_resource_command *command = &encoder->commands[encoder->count - 1];
     command->kind = DOE_COMMAND_DISPATCH_INDIRECT;

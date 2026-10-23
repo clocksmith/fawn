@@ -92,6 +92,9 @@ typedef struct doe_resource_buffer_desc {
     bool mapped_at_creation;
 } doe_resource_buffer_desc;
 
+/* Allocation-free preflight for native creators; output descriptors below are
+ * normalized transactionally and remain unchanged on failure. */
+doe_resource_status doe_resource_buffer_validate(const doe_resource_buffer_desc *desc);
 doe_resource_status doe_resource_buffer_create(const doe_resource_config *config,
     const doe_resource_buffer_desc *desc, doe_resource_native native,
     doe_resource_buffer **out);
@@ -153,6 +156,8 @@ typedef struct doe_resource_view_desc {
 } doe_resource_view_desc;
 /* Zero/UINT32_MAX counts select remaining mips/layers; other zero enum/usage
  * values select texture defaults. A view retains its texture. */
+doe_resource_status doe_resource_view_validate(const doe_resource_texture *texture,
+    const doe_resource_view_desc *desc, doe_resource_view_desc *resolved);
 doe_resource_status doe_resource_view_create(doe_resource_texture *texture,
     const doe_resource_view_desc *desc, doe_resource_native native,
     doe_resource_view **out);
@@ -162,6 +167,8 @@ const doe_resource_view_desc *doe_resource_view_description(const doe_resource_v
 void *doe_resource_view_native(const doe_resource_view *view);
 doe_resource_texture *doe_resource_view_texture(const doe_resource_view *view);
 
+doe_resource_status doe_resource_sampler_validate(const WGPUSamplerDescriptor *desc,
+    WGPUSamplerDescriptor *resolved);
 doe_resource_status doe_resource_sampler_create(const doe_resource_config *config,
     const WGPUSamplerDescriptor *desc, doe_resource_native native,
     doe_resource_sampler **out);

@@ -122,9 +122,11 @@ static doe_resource_status resolve_count(uint32_t total, uint32_t base,
     return DOE_RESOURCE_OK;
 }
 
-static doe_resource_status resolve_view(const doe_resource_texture *texture,
+doe_resource_status doe_resource_view_validate(const doe_resource_texture *texture,
     const doe_resource_view_desc *input, doe_resource_view_desc *out)
 {
+    if (!texture || !input || !out) return DOE_RESOURCE_INVALID_ARGUMENT;
+    if (!resource_texture_available(texture)) return DOE_RESOURCE_UNAVAILABLE;
     const doe_resource_texture_desc *tex = &texture->desc;
     doe_resource_view_desc view = *input;
     if (!view.format) view.format = tex->format;
@@ -176,9 +178,8 @@ doe_resource_status doe_resource_view_create(doe_resource_texture *texture,
     const doe_resource_view_desc *desc, doe_resource_native native, doe_resource_view **out)
 {
     if (!texture || !desc || !out || !native.handle || !native.release) return DOE_RESOURCE_INVALID_ARGUMENT;
-    if (!resource_texture_available(texture)) return DOE_RESOURCE_UNAVAILABLE;
     doe_resource_view_desc resolved;
-    doe_resource_status status = resolve_view(texture, desc, &resolved);
+    doe_resource_status status = doe_resource_view_validate(texture, desc, &resolved);
     if (status != DOE_RESOURCE_OK) return status;
     doe_resource_view *view = resource_allocate(&texture->base.config, sizeof(*view), _Alignof(doe_resource_view));
     if (!view) return DOE_RESOURCE_OUT_OF_MEMORY;
@@ -218,12 +219,10 @@ doe_resource_texture *doe_resource_view_texture(const doe_resource_view *view)
     return view ? view->texture : NULL;
 }
 
-doe_resource_status doe_resource_sampler_create(const doe_resource_config *config,
-    const WGPUSamplerDescriptor *desc, doe_resource_native native, doe_resource_sampler **out)
+doe_resource_status doe_resource_sampler_validate(const WGPUSamplerDescriptor *desc,
+    WGPUSamplerDescriptor *out)
 {
-    if (!resource_config_valid(config) || !desc || !out || !native.handle || !native.release)
-        return DOE_RESOURCE_INVALID_ARGUMENT;
-    if (!config->device.alive(config->device.identity)) return DOE_RESOURCE_UNAVAILABLE;
+    if (!desc || !out) return DOE_RESOURCE_INVALID_ARGUMENT;
     if (desc->nextInChain) return DOE_RESOURCE_UNSUPPORTED;
     WGPUSamplerDescriptor resolved = *desc;
     resolved.label = (WGPUStringView){NULL, 0};
@@ -246,6 +245,19 @@ doe_resource_status doe_resource_sampler_create(const doe_resource_config *confi
     if (resolved.maxAnisotropy > 1 && (resolved.minFilter != WGPUFilterMode_Linear ||
         resolved.magFilter != WGPUFilterMode_Linear || resolved.mipmapFilter != WGPUMipmapFilterMode_Linear))
         return DOE_RESOURCE_LAYOUT;
+    *out = resolved;
+    return DOE_RESOURCE_OK;
+}
+
+doe_resource_status doe_resource_sampler_create(const doe_resource_config *config,
+    const WGPUSamplerDescriptor *desc, doe_resource_native native, doe_resource_sampler **out)
+{
+    if (!resource_config_valid(config) || !desc || !out || !native.handle || !native.release)
+        return DOE_RESOURCE_INVALID_ARGUMENT;
+    if (!config->device.alive(config->device.identity)) return DOE_RESOURCE_UNAVAILABLE;
+    WGPUSamplerDescriptor resolved;
+    doe_resource_status status = doe_resource_sampler_validate(desc, &resolved);
+    if (status != DOE_RESOURCE_OK) return status;
     doe_resource_sampler *sampler = resource_allocate(config, sizeof(*sampler), _Alignof(doe_resource_sampler));
     if (!sampler) return DOE_RESOURCE_OUT_OF_MEMORY;
     sampler->desc = resolved;

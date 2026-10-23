@@ -79,6 +79,7 @@ struct doe_resource_compute_pass {
     doe_resource_pipeline *pipeline;
     doe_resource_bind_group *groups[DOE_RESOURCE_MAX_GROUPS];
     doe_resource_dispatch_offsets offsets;
+    doe_resource_pass_timestamps timestamps;
     bool ended;
 };
 
@@ -110,18 +111,25 @@ struct doe_resource_render_pass {
     doe_resource_render_packet state;
     doe_resource_render_record *last_record;
     uint64_t draw_count;
+    doe_resource_pass_timestamps timestamps;
     bool ended;
 };
 
 doe_resource_status resource_record_dispatch(doe_resource_encoder *encoder,
     doe_resource_pipeline *pipeline, const doe_resource_dispatch_group *groups,
     size_t group_count, uint32_t x, uint32_t y, uint32_t z);
+doe_resource_status resource_indirect_validate(const void *device,
+    const doe_resource_buffer *arguments, uint64_t offset, uint64_t bytes);
 doe_resource_status resource_record_dispatch_indirect(doe_resource_encoder *encoder,
     doe_resource_pipeline *pipeline, const doe_resource_dispatch_group *groups,
     size_t group_count, doe_resource_buffer *arguments, uint64_t offset);
 doe_resource_status resource_encoder_fail(doe_resource_encoder *encoder, doe_resource_status status);
 doe_resource_status resource_encoder_open(doe_resource_encoder *encoder);
 doe_resource_status resource_encoder_reserve(doe_resource_encoder *encoder);
+doe_resource_status resource_pass_timestamps_validate(const void *device,
+    const doe_resource_pass_timestamps *timestamps);
+doe_resource_status resource_record_timestamp(doe_resource_encoder *encoder,
+    doe_resource_query_set *set, uint32_t index, doe_resource_timestamp_position position);
 bool resource_query_available(const doe_resource_query_set *set);
 bool resource_external_available(const doe_resource_external_texture *texture);
 void resource_render_record_release(doe_resource_render_record *record);

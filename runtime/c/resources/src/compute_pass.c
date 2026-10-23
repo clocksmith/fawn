@@ -15,9 +15,17 @@ static doe_resource_status active(doe_resource_compute_pass *pass)
 doe_resource_status doe_resource_encoder_begin_compute(doe_resource_encoder *encoder,
     doe_resource_compute_pass **out)
 {
+    return doe_resource_encoder_begin_compute_with_timestamps(encoder, NULL, out);
+}
+
+doe_resource_status doe_resource_encoder_begin_compute_with_timestamps(doe_resource_encoder *encoder,
+    const doe_resource_pass_timestamps *timestamps, doe_resource_compute_pass **out)
+{
     if (!out) return DOE_RESOURCE_INVALID_ARGUMENT;
     doe_resource_status status = resource_encoder_open(encoder);
     if (status != DOE_RESOURCE_OK) return status;
+    status = resource_pass_timestamps_validate(encoder->base.config.device.identity, timestamps);
+    if (status != DOE_RESOURCE_OK) return resource_encoder_fail(encoder, status);
     doe_resource_compute_pass *pass = resource_allocate(&encoder->base.config,
         sizeof(*pass), _Alignof(doe_resource_compute_pass));
     if (!pass) return resource_encoder_fail(encoder, DOE_RESOURCE_OUT_OF_MEMORY);
@@ -26,6 +34,17 @@ doe_resource_status doe_resource_encoder_begin_compute(doe_resource_encoder *enc
     doe_resource_encoder_retain(encoder);
     resource_init(&pass->base, &encoder->base.config, (doe_resource_native){0});
     encoder->active_pass = pass;
+    if (timestamps) {
+        pass->timestamps = *timestamps;
+        doe_resource_query_set_retain(timestamps->set);
+        if (timestamps->begin_index != UINT32_MAX) {
+            status = resource_record_timestamp(encoder, timestamps->set, timestamps->begin_index, DOE_TIMESTAMP_PASS_BEGIN);
+            if (status != DOE_RESOURCE_OK) {
+                doe_resource_compute_pass_release(pass);
+                return status;
+            }
+        }
+    }
     *out = pass;
     return DOE_RESOURCE_OK;
 }
@@ -43,6 +62,7 @@ void doe_resource_compute_pass_release(doe_resource_compute_pass *pass)
         resource_encoder_fail(encoder, DOE_RESOURCE_STATE);
         if (encoder->active_pass == pass) encoder->active_pass = NULL;
     }
+    doe_resource_query_set_release(pass->timestamps.set);
     doe_resource_pipeline_release(pass->pipeline);
     for (size_t i = 0; i < DOE_RESOURCE_MAX_GROUPS; i++) doe_resource_bind_group_release(pass->groups[i]);
     resource_finalize(&pass->base, sizeof(*pass), _Alignof(doe_resource_compute_pass));
@@ -120,6 +140,13 @@ doe_resource_status doe_resource_compute_pass_end(doe_resource_compute_pass *pas
 {
     doe_resource_status status = active(pass);
     if (status != DOE_RESOURCE_OK) return status;
+    if (pass->timestamps.set && pass->timestamps.end_index != UINT32_MAX) {
+        status = resource_record_timestamp(pass->encoder, pass->timestamps.set,
+            pass->timestamps.end_index, DOE_TIMESTAMP_PASS_END);
+        if (status != DOE_RESOURCE_OK) return status;
+    }
+    doe_resource_query_set_release(pass->timestamps.set);
+    pass->timestamps.set = NULL;
     pass->ended = true;
     pass->encoder->active_pass = NULL;
     return DOE_RESOURCE_OK;

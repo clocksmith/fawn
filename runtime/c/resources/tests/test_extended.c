@@ -139,7 +139,7 @@ static void test_render_recording(void)
     fixture f = fresh();
     doe_resource_config c = config(&f);
     native_token texture_token = {0}, view_token = {0}, pipeline_token = {0};
-    native_token vertex_token = {0}, index_token = {0}, query_token = {0};
+    native_token vertex_token = {0}, index_token = {0}, query_token = {0}, indirect_token = {0};
     doe_resource_texture_desc desc = texture_desc();
     desc.usage = WGPUTextureUsage_RenderAttachment;
     doe_resource_texture_limits limits = texture_limits();
@@ -159,7 +159,7 @@ static void test_render_recording(void)
     doe_resource_buffer *vertices = buffer(&f, &vertex_token, 64, WGPUBufferUsage_Vertex);
     doe_resource_buffer *indices = buffer(&f, &index_token, 6, WGPUBufferUsage_Index);
     doe_resource_render_targets targets = {.color = view, .color_load = WGPULoadOp_Clear,
-        .color_store = WGPUStoreOp_Store, .occlusion_queries = query, .max_draw_count = 2};
+        .color_store = WGPUStoreOp_Store, .occlusion_queries = query, .max_draw_count = 4};
     doe_resource_encoder *encoder;
     doe_resource_render_pass *pass;
     assert(doe_resource_encoder_create(&c, &encoder) == DOE_RESOURCE_OK);
@@ -174,6 +174,11 @@ static void test_render_recording(void)
     assert(doe_resource_render_pass_set_state(pass, &state) == DOE_RESOURCE_OK);
     assert(doe_resource_render_pass_set_index(pass, indices, WGPUIndexFormat_Uint16, 0, 6) == DOE_RESOURCE_OK);
     assert(doe_resource_render_pass_draw_indexed(pass, 3, 1, 0, 0, 0) == DOE_RESOURCE_OK);
+    doe_resource_buffer *arguments = buffer(&f, &indirect_token, 20, WGPUBufferUsage_Indirect);
+    assert(doe_resource_render_pass_draw_indirect(pass, arguments, 0, false) == DOE_RESOURCE_OK);
+    assert(doe_resource_render_pass_draw_indirect(pass, arguments, 0, true) == DOE_RESOURCE_OK);
+    doe_resource_buffer_release(arguments);
+    assert(!indirect_token.releases);
     assert(doe_resource_render_pass_end(pass) == DOE_RESOURCE_OK);
     doe_resource_render_pass_release(pass);
     doe_resource_commands *commands;
@@ -181,14 +186,18 @@ static void test_render_recording(void)
     doe_resource_encoder_release(encoder);
     size_t count;
     const doe_resource_command *records = doe_resource_commands_borrow(commands, &count);
-    assert(count == 6 && records[0].kind == DOE_COMMAND_RENDER);
+    assert(count == 8 && records[0].kind == DOE_COMMAND_RENDER);
     assert(records[1].kind == DOE_COMMAND_BEGIN_OCCLUSION && records[3].kind == DOE_COMMAND_END_OCCLUSION);
     const doe_resource_render_packet *begin = doe_resource_render_record_borrow(records[0].value.render);
     const doe_resource_render_packet *first = doe_resource_render_record_borrow(records[2].value.render);
     const doe_resource_render_packet *last = doe_resource_render_record_borrow(records[4].value.render);
     assert(begin->first_in_pass && begin->boundary_only && !begin->last_in_pass);
     assert(!first->first_in_pass && !first->last_in_pass && first->occlusion_active && first->occlusion_index == 2);
-    const doe_resource_render_packet *end = doe_resource_render_record_borrow(records[5].value.render);
+    const doe_resource_render_packet *indirect = doe_resource_render_record_borrow(records[5].value.render);
+    assert(indirect->indirect == arguments && !indirect->indexed);
+    indirect = doe_resource_render_record_borrow(records[6].value.render);
+    assert(indirect->indirect == arguments && indirect->indexed);
+    const doe_resource_render_packet *end = doe_resource_render_record_borrow(records[7].value.render);
     assert(!last->first_in_pass && !last->last_in_pass && last->indexed && !last->occlusion_active);
     assert(end->last_in_pass && end->boundary_only && !end->first_in_pass);
     assert(first->state.blend[0] == 0 && last->state.blend[0] == 0.5);
@@ -204,7 +213,7 @@ static void test_render_recording(void)
     doe_resource_commands_release(commands);
     assert(doe_resource_commands_settle(commands, DOE_RESOURCE_OK) == DOE_RESOURCE_OK);
     assert(texture_token.releases == 1 && view_token.releases == 1 && pipeline_token.releases == 1);
-    assert(vertex_token.releases == 1 && index_token.releases == 1 && query_token.releases == 1);
+    assert(vertex_token.releases == 1 && index_token.releases == 1 && query_token.releases == 1 && indirect_token.releases == 1);
     empty(&f);
 }
 
@@ -229,19 +238,29 @@ static void test_clear_and_abandoned_pass(void)
     doe_resource_render_pass_release(pass);
     assert(doe_resource_encoder_status(encoder) == DOE_RESOURCE_STATE);
     doe_resource_encoder_release(encoder);
+    native_token timestamp_token = {0};
+    doe_resource_query_set *timestamps;
+    assert(doe_resource_query_set_create(&c, WGPUQueryType_Timestamp, 2,
+        native(&f, &timestamp_token), &timestamps) == DOE_RESOURCE_OK);
+    doe_resource_pass_timestamps writes = {timestamps, 0, 1};
     assert(doe_resource_encoder_create(&c, &encoder) == DOE_RESOURCE_OK);
-    assert(doe_resource_encoder_begin_render(encoder, &targets, &pass) == DOE_RESOURCE_OK);
+    assert(doe_resource_encoder_begin_render_with_timestamps(encoder, &targets, &writes, &pass) == DOE_RESOURCE_OK);
+    doe_resource_query_set_release(timestamps);
     assert(doe_resource_render_pass_end(pass) == DOE_RESOURCE_OK);
     doe_resource_render_pass_release(pass);
     doe_resource_commands *commands;
     assert(doe_resource_encoder_finish(encoder, &commands) == DOE_RESOURCE_OK);
     size_t count;
     const doe_resource_command *record = doe_resource_commands_borrow(commands, &count);
-    const doe_resource_render_packet *packet = doe_resource_render_record_borrow(record[0].value.render);
-    assert(count == 2 && packet->boundary_only && packet->first_in_pass && !packet->last_in_pass);
-    packet = doe_resource_render_record_borrow(record[1].value.render);
+    const doe_resource_render_packet *packet = doe_resource_render_record_borrow(record[1].value.render);
+    assert(count == 4 && packet->boundary_only && packet->first_in_pass && !packet->last_in_pass);
+    packet = doe_resource_render_record_borrow(record[2].value.render);
     assert(packet->boundary_only && !packet->first_in_pass && packet->last_in_pass);
+    assert(record[0].kind == DOE_COMMAND_WRITE_TIMESTAMP && record[3].kind == DOE_COMMAND_WRITE_TIMESTAMP);
+    assert(record[0].value.timestamp.position == DOE_TIMESTAMP_PASS_BEGIN && record[3].value.timestamp.position == DOE_TIMESTAMP_PASS_END);
+    assert(!timestamp_token.releases);
     doe_resource_commands_release(commands);
+    assert(timestamp_token.releases == 1);
     doe_resource_encoder_release(encoder);
     doe_resource_view_release(view);
     doe_resource_texture_release(texture);
@@ -332,8 +351,52 @@ static void test_pass_rejection_and_unbind(void)
     empty(&f);
 }
 
+static void test_pass_timestamps(void)
+{
+    fixture f = fresh();
+    doe_resource_config c = config(&f);
+    native_token token = {0};
+    doe_resource_query_set *query;
+    assert(doe_resource_query_set_create(&c, WGPUQueryType_Timestamp, 4, native(&f, &token), &query) == DOE_RESOURCE_OK);
+    doe_resource_pass_timestamps timestamps = {query, 1, 3};
+    doe_resource_encoder *encoder;
+    doe_resource_compute_pass *pass;
+    assert(doe_resource_encoder_create(&c, &encoder) == DOE_RESOURCE_OK);
+    assert(doe_resource_encoder_begin_compute_with_timestamps(encoder, &timestamps, &pass) == DOE_RESOURCE_OK);
+    doe_resource_query_set_release(query);
+    assert(doe_resource_compute_pass_end(pass) == DOE_RESOURCE_OK);
+    doe_resource_compute_pass_release(pass);
+    doe_resource_commands *commands;
+    assert(doe_resource_encoder_finish(encoder, &commands) == DOE_RESOURCE_OK);
+    doe_resource_encoder_release(encoder);
+    size_t count;
+    const doe_resource_command *records = doe_resource_commands_borrow(commands, &count);
+    assert(count == 2 && records[0].kind == DOE_COMMAND_WRITE_TIMESTAMP && records[1].kind == DOE_COMMAND_WRITE_TIMESTAMP);
+    assert(records[0].value.timestamp.position == DOE_TIMESTAMP_PASS_BEGIN && records[0].value.timestamp.index == 1);
+    assert(records[1].value.timestamp.position == DOE_TIMESTAMP_PASS_END && records[1].value.timestamp.index == 3);
+    assert(!token.releases);
+    doe_resource_commands_release(commands);
+    assert(token.releases == 1);
+    empty(&f);
+
+    token = (native_token){0};
+    assert(doe_resource_query_set_create(&c, WGPUQueryType_Timestamp, 4, native(&f, &token), &query) == DOE_RESOURCE_OK);
+    timestamps = (doe_resource_pass_timestamps){query, UINT32_MAX, 2};
+    assert(doe_resource_encoder_create(&c, &encoder) == DOE_RESOURCE_OK);
+    assert(doe_resource_encoder_begin_compute_with_timestamps(encoder, &timestamps, &pass) == DOE_RESOURCE_OK);
+    doe_resource_query_set_destroy(query);
+    doe_resource_query_set_release(query);
+    assert(!token.releases);
+    assert(doe_resource_compute_pass_end(pass) == DOE_RESOURCE_UNAVAILABLE);
+    doe_resource_encoder_release(encoder);
+    doe_resource_compute_pass_release(pass);
+    assert(token.releases == 1);
+    empty(&f);
+}
+
 int main(void)
 {
+    test_pass_timestamps();
     test_pass_rejection_and_unbind();
     test_texture_blit();
     test_shader_and_compute_pass();
@@ -341,6 +404,6 @@ int main(void)
     test_external_texture();
     test_render_recording();
     test_clear_and_abandoned_pass();
-    puts("extended resource owner: 7 host suites passed; no render/query GPU execution claimed");
+    puts("extended resource owner: 8 host suites passed; no render/query GPU execution claimed");
     return 0;
 }

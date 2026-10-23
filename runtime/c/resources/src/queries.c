@@ -50,11 +50,32 @@ uint32_t doe_resource_query_set_count(const doe_resource_query_set *set)
     return set ? set->count : 0;
 }
 
+doe_resource_status resource_pass_timestamps_validate(const void *device,
+    const doe_resource_pass_timestamps *timestamps)
+{
+    if (!timestamps) return DOE_RESOURCE_OK;
+    if (!resource_query_available(timestamps->set)) return DOE_RESOURCE_UNAVAILABLE;
+    if (timestamps->set->base.config.device.identity != device) return DOE_RESOURCE_DEVICE_MISMATCH;
+    if (timestamps->set->type != WGPUQueryType_Timestamp) return DOE_RESOURCE_LAYOUT;
+    if ((timestamps->begin_index != UINT32_MAX && timestamps->begin_index >= timestamps->set->count) ||
+        (timestamps->end_index != UINT32_MAX && timestamps->end_index >= timestamps->set->count))
+        return DOE_RESOURCE_RANGE;
+    if (timestamps->begin_index != UINT32_MAX && timestamps->begin_index == timestamps->end_index)
+        return DOE_RESOURCE_LAYOUT;
+    return DOE_RESOURCE_OK;
+}
+
 doe_resource_status doe_resource_encoder_write_timestamp(doe_resource_encoder *encoder,
     doe_resource_query_set *set, uint32_t index, doe_resource_timestamp_position position)
 {
     doe_resource_status status = resource_encoder_open(encoder);
     if (status != DOE_RESOURCE_OK) return status;
+    return resource_record_timestamp(encoder, set, index, position);
+}
+
+doe_resource_status resource_record_timestamp(doe_resource_encoder *encoder,
+    doe_resource_query_set *set, uint32_t index, doe_resource_timestamp_position position)
+{
     if (!resource_query_available(set)) return resource_encoder_fail(encoder, DOE_RESOURCE_UNAVAILABLE);
     if (set->base.config.device.identity != encoder->base.config.device.identity)
         return resource_encoder_fail(encoder, DOE_RESOURCE_DEVICE_MISMATCH);
@@ -62,7 +83,7 @@ doe_resource_status doe_resource_encoder_write_timestamp(doe_resource_encoder *e
         (position != DOE_TIMESTAMP_COMMAND && position != DOE_TIMESTAMP_PASS_BEGIN && position != DOE_TIMESTAMP_PASS_END))
         return resource_encoder_fail(encoder, DOE_RESOURCE_LAYOUT);
     if (index >= set->count) return resource_encoder_fail(encoder, DOE_RESOURCE_RANGE);
-    status = resource_encoder_reserve(encoder);
+    doe_resource_status status = resource_encoder_reserve(encoder);
     if (status != DOE_RESOURCE_OK) return status;
     doe_resource_command command = {.kind = DOE_COMMAND_WRITE_TIMESTAMP};
     command.value.timestamp.set = set;
