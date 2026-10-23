@@ -139,13 +139,17 @@ doe_resource_status doe_resource_view_validate(const doe_resource_texture *textu
     if (!resource_texture_available(texture)) return DOE_RESOURCE_UNAVAILABLE;
     const doe_resource_texture_desc *tex = &texture->desc;
     doe_resource_view_desc view = *input;
-    if (!view.format) view.format = tex->format;
-    bool format_allowed = view.format == tex->format;
-    for (size_t i = 0; i < tex->view_format_count; i++)
-        if (tex->view_formats[i] == view.format) format_allowed = true;
-    if (!format_allowed) return DOE_RESOURCE_LAYOUT;
     if (!view.aspect) view.aspect = WGPUTextureAspect_All;
-    if (!resource_format_aspect(view.format, view.aspect)) return DOE_RESOURCE_ASPECT;
+    if (!resource_format_aspect(tex->format, view.aspect)) return DOE_RESOURCE_ASPECT;
+    WGPUTextureFormat aspect_format;
+    doe_resource_status status = doe_resource_format_aspect_format(tex->format, view.aspect, &aspect_format);
+    if (status != DOE_RESOURCE_OK) return status;
+    if (!view.format) view.format = aspect_format;
+    bool format_allowed = view.format == aspect_format;
+    if (view.aspect == WGPUTextureAspect_All)
+        for (size_t i = 0; i < tex->view_format_count; i++)
+            if (tex->view_formats[i] == view.format) format_allowed = true;
+    if (!format_allowed) return DOE_RESOURCE_LAYOUT;
     if (!view.usage) view.usage = tex->usage;
     if (view.usage & ~tex->usage) return DOE_RESOURCE_USAGE;
     if ((tex->usage & WGPUTextureUsage_TransientAttachment) && view.usage != tex->usage)
@@ -155,9 +159,15 @@ doe_resource_status doe_resource_view_validate(const doe_resource_texture *textu
         else if (tex->dimension == WGPUTextureDimension_3D) view.dimension = WGPUTextureViewDimension_3D;
         else view.dimension = tex->depth_or_layers > 1 ? WGPUTextureViewDimension_2DArray : WGPUTextureViewDimension_2D;
     }
-    doe_resource_status status = resolve_count(tex->mip_levels, view.base_mip, view.mip_count, &view.mip_count);
+    status = resolve_count(tex->mip_levels, view.base_mip, view.mip_count, &view.mip_count);
     if (status != DOE_RESOURCE_OK) return status;
     uint32_t layers = tex->dimension == WGPUTextureDimension_3D ? 1 : tex->depth_or_layers;
+    if (!view.layer_count || view.layer_count == UINT32_MAX) {
+        if (view.dimension == WGPUTextureViewDimension_1D ||
+            view.dimension == WGPUTextureViewDimension_2D ||
+            view.dimension == WGPUTextureViewDimension_3D) view.layer_count = 1;
+        else if (view.dimension == WGPUTextureViewDimension_Cube) view.layer_count = 6;
+    }
     status = resolve_count(layers, view.base_layer, view.layer_count, &view.layer_count);
     if (status != DOE_RESOURCE_OK) return status;
     switch (view.dimension) {

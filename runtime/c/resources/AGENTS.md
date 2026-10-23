@@ -49,3 +49,6 @@ keep them canonical without pretending host retention proves native memoryless u
 Resolve destinations are retained attachment writes in the same pass scope,
 including empty passes and bundle replay. Never resolve each draw independently
 or omit a destination merely because a backend adapter cannot yet consume it.
+View layer defaults depend on resolved dimension, and view format defaults on
+selected parent aspect. Binding usage remains the parent subresource identity;
+renderability requires all actual parent aspects, not the literal All enum.

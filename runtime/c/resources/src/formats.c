@@ -167,6 +167,15 @@ bool resource_format_aspect(WGPUTextureFormat format, WGPUTextureAspect aspect)
     return false;
 }
 
+unsigned resource_format_aspects(WGPUTextureFormat format)
+{
+    if (!resource_format_depth(format)) return 1;
+    unsigned aspects = 0;
+    if (resource_format_aspect(format, WGPUTextureAspect_DepthOnly)) aspects |= 2;
+    if (resource_format_aspect(format, WGPUTextureAspect_StencilOnly)) aspects |= 4;
+    return aspects;
+}
+
 static WGPUTextureSampleType format_sample_type(WGPUTextureFormat format)
 {
     switch (format) {
@@ -207,15 +216,32 @@ static WGPUTextureSampleType format_sample_type(WGPUTextureFormat format)
     }
 }
 
-doe_resource_status doe_resource_format_sample_type(WGPUTextureFormat format,
-    WGPUTextureAspect aspect, WGPUTextureSampleType *out)
+doe_resource_status doe_resource_format_aspect_format(WGPUTextureFormat format,
+    WGPUTextureAspect aspect, WGPUTextureFormat *out)
 {
     if (!out) return DOE_RESOURCE_INVALID_ARGUMENT;
     uint32_t bytes, width, height;
     doe_resource_status status = resource_format_block(format, &bytes, &width, &height);
     if (status != DOE_RESOURCE_OK) return status;
     if (!resource_format_aspect(format, aspect)) return DOE_RESOURCE_LAYOUT;
-    *out = aspect == WGPUTextureAspect_StencilOnly ? WGPUTextureSampleType_Uint : format_sample_type(format);
+    WGPUTextureFormat resolved = format;
+    if (aspect == WGPUTextureAspect_StencilOnly) resolved = WGPUTextureFormat_Stencil8;
+    else if (aspect == WGPUTextureAspect_DepthOnly) {
+        if (format == WGPUTextureFormat_Depth24PlusStencil8) resolved = WGPUTextureFormat_Depth24Plus;
+        if (format == WGPUTextureFormat_Depth32FloatStencil8) resolved = WGPUTextureFormat_Depth32Float;
+    }
+    *out = resolved;
+    return DOE_RESOURCE_OK;
+}
+
+doe_resource_status doe_resource_format_sample_type(WGPUTextureFormat format,
+    WGPUTextureAspect aspect, WGPUTextureSampleType *out)
+{
+    if (!out) return DOE_RESOURCE_INVALID_ARGUMENT;
+    WGPUTextureFormat resolved;
+    doe_resource_status status = doe_resource_format_aspect_format(format, aspect, &resolved);
+    if (status != DOE_RESOURCE_OK) return status;
+    *out = format_sample_type(resolved);
     return DOE_RESOURCE_OK;
 }
 
