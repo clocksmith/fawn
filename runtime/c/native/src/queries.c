@@ -7,12 +7,12 @@
 doe_vk_status native_timestamp_initialize(native_device *device)
 {
     if (device->timestamp_normalizer) return DOE_VK_OK;
-    if (!device->timestamp_enabled || !native_timestamp_supported(&device->caps)) return DOE_VK_UNSUPPORTED;
-    uint32_t workgroup = native_timestamp_workgroup(&device->caps);
+    if (!device->timestamp_enabled || !native_timestamp_supported(&device->backend.value.vulkan.caps)) return DOE_VK_UNSUPPORTED;
+    uint32_t workgroup = native_timestamp_workgroup(&device->backend.value.vulkan.caps);
     char source[DOE_VK_TIMESTAMP_SOURCE_CAPACITY];
     size_t size = 0;
-    doe_vk_status status = doe_vk_timestamp_shader_source(device->caps.timestamp_period_ns,
-        device->caps.timestamp_valid_bits, workgroup, source, sizeof(source), &size);
+    doe_vk_status status = doe_vk_timestamp_shader_source(device->backend.value.vulkan.caps.timestamp_period_ns,
+        device->backend.value.vulkan.caps.timestamp_valid_bits, workgroup, source, sizeof(source), &size);
     if (status != DOE_VK_OK) return status;
     doe_shader *shader = NULL;
     doe_shader_error error = {0};
@@ -20,13 +20,13 @@ doe_vk_status native_timestamp_initialize(native_device *device)
     if (compiled != DOE_SHADER_OK)
         return compiled == DOE_SHADER_OUT_OF_MEMORY ? DOE_VK_OUT_OF_MEMORY : DOE_VK_NATIVE_FAILURE;
     doe_shader_view view;
-    status = doe_shader_borrow(shader, &view) == DOE_SHADER_OK && native_shader_capabilities(&view, &device->caps) ?
+    status = doe_shader_borrow(shader, &view) == DOE_SHADER_OK && native_shader_capabilities(&view, &device->backend.value.vulkan.caps) ?
         DOE_VK_OK : DOE_VK_NATIVE_FAILURE;
     if (status == DOE_VK_OK) {
         doe_vk_timestamp_normalizer_desc descriptor = {.spirv=view.words, .word_count=view.counts.words,
             .workgroup_size=workgroup, .capacity=DOE_RESOURCE_MAX_QUERIES,
-            .period_ns=device->caps.timestamp_period_ns, .valid_bits=device->caps.timestamp_valid_bits};
-        status = doe_vk_timestamp_normalizer_create(device->context, &descriptor,
+            .period_ns=device->backend.value.vulkan.caps.timestamp_period_ns, .valid_bits=device->backend.value.vulkan.caps.timestamp_valid_bits};
+        status = doe_vk_timestamp_normalizer_create(device->backend.value.vulkan.context, &descriptor,
             &device->timestamp_normalizer, NULL);
     }
     doe_shader_release(shader);
@@ -46,6 +46,10 @@ WGPUQuerySet wgpuDeviceCreateQuerySet(WGPUDevice handle, const WGPUQuerySetDescr
 {
     native_device *device = (native_device *)handle;
     if (!device) return NULL;
+    if (device->backend.kind != WGPUBackendType_Vulkan) {
+        native_error(device, WGPUErrorType_Validation, "operation not yet composed for selected backend");
+        return NULL;
+    }
     doe_resource_status status = descriptor && !descriptor->nextInChain &&
         (descriptor->type == WGPUQueryType_Occlusion ||
             (descriptor->type == WGPUQueryType_Timestamp && device->timestamp_enabled)) ?
@@ -62,8 +66,8 @@ WGPUQuerySet wgpuDeviceCreateQuerySet(WGPUDevice handle, const WGPUQuerySetDescr
     doe_vk_status backend = native_device_status(device);
     if (backend == DOE_VK_OK && descriptor->count)
         backend = descriptor->type == WGPUQueryType_Occlusion ?
-            doe_vk_occlusion_pool_create(device->context, descriptor->count, &payload->pool, NULL) :
-            doe_vk_query_pool_create(device->context, descriptor->count, &payload->pool, NULL);
+            doe_vk_occlusion_pool_create(device->backend.value.vulkan.context, descriptor->count, &payload->pool, NULL) :
+            doe_vk_query_pool_create(device->backend.value.vulkan.context, descriptor->count, &payload->pool, NULL);
     if (backend == DOE_VK_OK)
         status = doe_resource_query_set_create(&device->resources, descriptor->type, descriptor->count,
             (doe_resource_native){payload, NULL, release_queries}, &set);
@@ -131,10 +135,10 @@ doe_vk_status native_record_query(doe_vk_commands *commands, const doe_resource_
     native_buffer *destination = doe_resource_buffer_native(record->value.resolve.destination);
     if (doe_resource_query_set_type(record->value.resolve.set) == WGPUQueryType_Occlusion)
         return doe_vk_commands_resolve_queries(commands, payload->pool, record->value.resolve.first,
-            record->value.resolve.count, destination->buffer, record->value.resolve.offset);
+            record->value.resolve.count, destination->handle.vulkan, record->value.resolve.offset);
     doe_vk_status status = native_timestamp_initialize(payload->device);
     if (status != DOE_VK_OK) return status;
     return doe_vk_commands_resolve_queries_ns(commands, payload->pool,
         record->value.resolve.first, record->value.resolve.count,
-        payload->device->timestamp_normalizer, destination->buffer, record->value.resolve.offset);
+        payload->device->timestamp_normalizer, destination->handle.vulkan, record->value.resolve.offset);
 }

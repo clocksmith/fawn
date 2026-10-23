@@ -37,6 +37,7 @@ void wgpuAdapterRelease(WGPUAdapter handle)
     native_adapter *adapter = (native_adapter *)handle;
     if (!adapter || !native_release_count(&adapter->references)) return;
     doe_instance *instance = adapter->instance;
+    native_backend_close(&adapter->backend);
     free(adapter);
     doe_instance_release(instance);
 }
@@ -70,38 +71,40 @@ WGPUFuture wgpuInstanceRequestAdapter(WGPUInstance handle,
     doe_instance_retain(instance);
     adapter_delivery delivery = {
         .callback = callback, .status = WGPURequestAdapterStatus_Unavailable,
-        .message = "C Vulkan adapter unavailable"
+        .message = "requested C backend unavailable"
     };
-    bool valid = !options || (!options->nextInChain && !options->compatibleSurface &&
-        (!options->backendType || options->backendType == WGPUBackendType_Vulkan));
+    bool valid = !options || (!options->nextInChain && !options->compatibleSurface);
+    WGPUBackendType kind = options ? options->backendType : WGPUBackendType_Undefined;
+    if (kind == WGPUBackendType_Undefined) {
+#if defined(__APPLE__)
+        kind = WGPUBackendType_Metal;
+#else
+        kind = WGPUBackendType_Vulkan;
+#endif
+    }
     if (valid) {
-        doe_vk_options native_options = {.allow_cpu_adapter = options && options->forceFallbackAdapter,
-            .require_graphics_queue = true, .enable_shader_demote_if_supported = true};
-        doe_vk_context *context = NULL;
-        doe_vk_error error = {0};
-        doe_vk_status status = doe_vk_context_create(&native_options, &context, &error);
-        if (status == DOE_VK_OK) {
-            doe_vk_caps caps;
-            status = doe_vk_context_caps(context, &caps);
-            if (status == DOE_VK_OK && (!options || !options->forceFallbackAdapter || caps.software_adapter)) {
-                native_adapter *adapter = calloc(1, sizeof(*adapter));
-                if (adapter) {
-                    atomic_init(&adapter->references, 1);
-                    adapter->instance = instance;
-                    doe_instance_retain(instance);
-                    adapter->caps = caps;
-                    adapter->options = native_options;
-                    delivery.adapter = adapter;
-                    delivery.status = WGPURequestAdapterStatus_Success;
-                    delivery.message = "";
-                } else {
-                    delivery.status = WGPURequestAdapterStatus_Error;
-                    delivery.message = "adapter allocation failed";
-                }
+        native_backend backend = {0};
+        native_result status = native_backend_open(kind, options && options->forceFallbackAdapter, &backend);
+        if (status == NATIVE_OK) {
+            native_adapter *adapter = calloc(1, sizeof(*adapter));
+            if (adapter) {
+                atomic_init(&adapter->references, 1);
+                adapter->instance = instance;
+                doe_instance_retain(instance);
+                adapter->backend = backend;
+                delivery.adapter = adapter;
+                delivery.status = WGPURequestAdapterStatus_Success;
+                delivery.message = "";
+            } else {
+                native_backend_close(&backend);
+                delivery.status = WGPURequestAdapterStatus_Error;
+                delivery.message = "adapter allocation failed";
             }
-            doe_vk_context_release(context);
-        } else if (error.operation) delivery.message = error.operation;
-    } else delivery.message = "requested adapter extension, surface or backend is unsupported";
+        } else if (status != NATIVE_UNAVAILABLE && status != NATIVE_UNSUPPORTED) {
+            delivery.status = WGPURequestAdapterStatus_Error;
+            delivery.message = "requested backend initialization failed";
+        }
+    } else delivery.message = "requested adapter extension or surface is unsupported";
     WGPUFuture future = native_callback(instance, callback.mode, &delivery,
         sizeof(delivery), _Alignof(adapter_delivery), copy_adapter, deliver_adapter);
     if (!future.id) wgpuAdapterRelease((WGPUAdapter)delivery.adapter);
@@ -129,14 +132,19 @@ void native_device_retain(void *identity)
 
 bool native_device_alive(void *identity)
 {
-    native_device *device = identity;
-    return native_device_status(device) == DOE_VK_OK;
+    return native_device_result(identity) == NATIVE_OK;
+}
+
+native_result native_device_result(native_device *device)
+{
+    if (!device || device->destroyed) return NATIVE_INVALID_STATE;
+    return native_backend_status(&device->backend);
 }
 
 doe_vk_status native_device_status(native_device *device)
 {
-    if (!device || device->destroyed) return DOE_VK_INVALID_STATE;
-    return doe_vk_context_alive(device->context) ? DOE_VK_OK : DOE_VK_DEVICE_LOST;
+    if (!device || device->backend.kind != WGPUBackendType_Vulkan) return DOE_VK_UNSUPPORTED;
+    return native_to_vulkan(native_device_result(device));
 }
 
 void native_device_release(void *identity)
@@ -152,7 +160,7 @@ void native_device_release(void *identity)
     native_loss_bind(device->loss, NULL);
     native_loss_release(device->loss);
     doe_vk_timestamp_normalizer_release(device->timestamp_normalizer);
-    doe_vk_context_release(device->context);
+    native_backend_close(&device->backend);
     doe_instance *instance = device->instance;
     if (pthread_mutex_destroy(&device->mutex)) abort();
     free(device);
@@ -162,7 +170,7 @@ void native_device_release(void *identity)
 static native_device *create_device(native_adapter *adapter, const WGPUDeviceDescriptor *descriptor, native_loss *loss)
 {
     bool timestamps = false;
-    if (!native_requested_features(&adapter->caps, descriptor, &timestamps)) return NULL;
+    if (!native_requested_features(&adapter->backend, descriptor, &timestamps)) return NULL;
     if (descriptor && (descriptor->nextInChain ||
         descriptor->requiredLimits || descriptor->defaultQueue.nextInChain ||
         descriptor->deviceLostCallbackInfo.nextInChain ||
@@ -200,16 +208,10 @@ static native_device *create_device(native_adapter *adapter, const WGPUDeviceDes
                 (const unsigned char *)descriptor->defaultQueue.label.data, queue_size) != DOE_LABEL_OK)
             goto failed_errors;
     }
-    doe_vk_error error = {0};
-    if (doe_vk_context_create(&adapter->options, &device->context, &error) != DOE_VK_OK)
-        goto failed_errors;
-    if (doe_vk_context_caps(device->context, &device->caps) != DOE_VK_OK) {
-        doe_vk_context_release(device->context);
-        goto failed_errors;
-    }
+    if (native_backend_device(&adapter->backend, &device->backend) != NATIVE_OK) goto failed_errors;
     device->timestamp_enabled = timestamps;
     if (timestamps && native_timestamp_initialize(device) != DOE_VK_OK) {
-        doe_vk_context_release(device->context);
+        native_backend_close(&device->backend);
         goto failed_errors;
     }
     atomic_init(&device->references, 1);
@@ -305,17 +307,17 @@ void wgpuQueueAddRef(WGPUQueue queue) { native_device_retain((native_device *)qu
 void wgpuQueueRelease(WGPUQueue queue) { native_device_release((native_device *)queue); }
 WGPUStatus wgpuAdapterGetInfo(WGPUAdapter adapter, WGPUAdapterInfo *out)
 {
-    return adapter ? native_adapter_info(&((native_adapter *)adapter)->caps, out) : WGPUStatus_Error;
+    return adapter ? native_backend_info(&((native_adapter *)adapter)->backend, out) : WGPUStatus_Error;
 }
 WGPUStatus wgpuDeviceGetAdapterInfo(WGPUDevice device, WGPUAdapterInfo *out)
 {
-    return device ? native_adapter_info(&((native_device *)device)->caps, out) : WGPUStatus_Error;
+    return device ? native_backend_info(&((native_device *)device)->backend, out) : WGPUStatus_Error;
 }
 WGPUStatus wgpuAdapterGetLimits(WGPUAdapter adapter, WGPULimits *out)
 {
-    return adapter ? native_limits(&((native_adapter *)adapter)->caps, out) : WGPUStatus_Error;
+    return adapter ? native_limits(&((native_adapter *)adapter)->backend, out) : WGPUStatus_Error;
 }
 WGPUStatus wgpuDeviceGetLimits(WGPUDevice device, WGPULimits *out)
 {
-    return device ? native_limits(&((native_device *)device)->caps, out) : WGPUStatus_Error;
+    return device ? native_limits(&((native_device *)device)->backend, out) : WGPUStatus_Error;
 }

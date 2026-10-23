@@ -98,31 +98,13 @@ void native_error(native_device *device, WGPUErrorType type, const char *message
     if (!device) return;
     native_device_retain(device);
     native_lock(device);
-    bool lost = !doe_vk_context_alive(device->context);
+    bool lost = native_backend_status(&device->backend) == NATIVE_DEVICE_LOST;
     native_unlock(device);
-    if (lost) native_loss_complete(device->loss, WGPUDeviceLostReason_Unknown, "Vulkan device lost");
+    if (lost) native_loss_complete(device->loss, WGPUDeviceLostReason_Unknown, "native device lost");
     doe_error_scope_result result = doe_error_scope_deliver(device->errors,
         (uint32_t)type, (const unsigned char *)message, strlen(message));
     if (result.status != DOE_ERROR_SCOPE_OK) abort();
     native_device_release(device);
-}
-
-WGPUStatus native_adapter_info(const doe_vk_caps *caps, WGPUAdapterInfo *out)
-{
-    if (!out || out->nextInChain) return WGPUStatus_Error;
-    size_t size = strlen(caps->device_name);
-    char *name = malloc(size + 1);
-    if (!name) return WGPUStatus_Error;
-    memcpy(name, caps->device_name, size + 1);
-    WGPUAdapterType type = WGPUAdapterType_Unknown;
-    if (caps->software_adapter) type = WGPUAdapterType_CPU;
-    else if (caps->device_type == 1) type = WGPUAdapterType_IntegratedGPU;
-    else if (caps->device_type == 2) type = WGPUAdapterType_DiscreteGPU;
-    *out = (WGPUAdapterInfo){
-        .device = {name, size}, .backendType = WGPUBackendType_Vulkan,
-        .adapterType = type, .vendorID = caps->vendor_id, .deviceID = caps->device_id
-    };
-    return WGPUStatus_Success;
 }
 
 void wgpuAdapterInfoFreeMembers(WGPUAdapterInfo info)
@@ -130,7 +112,7 @@ void wgpuAdapterInfoFreeMembers(WGPUAdapterInfo info)
     free((void *)info.device.data);
 }
 
-WGPUStatus native_limits(const doe_vk_caps *caps, WGPULimits *out)
+WGPUStatus native_vulkan_limits(const doe_vk_caps *caps, WGPULimits *out)
 {
     if (!out || out->nextInChain) return WGPUStatus_Error;
     uint32_t dispatch = caps->max_workgroup_count[0];
@@ -171,5 +153,12 @@ WGPUStatus native_limits(const doe_vk_caps *caps, WGPULimits *out)
         .maxComputeWorkgroupSizeZ = caps->max_workgroup_size[2],
         .maxComputeWorkgroupsPerDimension = dispatch
     };
+    return WGPUStatus_Success;
+}
+
+WGPUStatus native_limits(const native_backend *backend, WGPULimits *out)
+{
+    if (!out || out->nextInChain) return WGPUStatus_Error;
+    *out = backend->limits;
     return WGPUStatus_Success;
 }

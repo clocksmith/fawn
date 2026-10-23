@@ -7,8 +7,14 @@ bool native_stage_load(native_device *device, WGPUShaderModule module, WGPUStrin
 {
     if (!module || doe_resource_shader_device((doe_resource_shader *)module) != device) return false;
     native_shader *payload = doe_resource_shader_native((doe_resource_shader *)module);
-    if (!payload->compiled || doe_shader_borrow(payload->compiled, &out->view) != DOE_SHADER_OK ||
-        !native_shader_capabilities(&out->view, &device->caps)) return false;
+    if (!payload->compiled || doe_shader_borrow(payload->compiled, &out->view) != DOE_SHADER_OK) return false;
+    if (device->backend.kind == WGPUBackendType_Vulkan) {
+        if (out->view.target != DOE_SHADER_SPIRV ||
+            !native_shader_capabilities(&out->view,&device->backend.value.vulkan.caps)) return false;
+    } else if (device->backend.kind == WGPUBackendType_Metal) {
+        if (out->view.target != DOE_SHADER_METAL || out->view.counts.words ||
+            out->view.words || out->view.target_language_version != 300) return false;
+    } else return false;
     size_t length;
     if (!native_string_size(name, &length) || length > 63 ||
         (name.data && (!length || memchr(name.data, 0, length)))) return false;

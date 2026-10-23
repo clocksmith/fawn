@@ -13,7 +13,7 @@ doe_vk_status native_initialize_texture(native_device *device, doe_vk_texture *t
         doe_vk_texture_view_desc span = {.dimension=DOE_VK_VIEW_2D_ARRAY,
             .mip_count=desc->mip_levels,.layer_count=desc->depth_or_layers};
         doe_vk_status status = doe_vk_texture_view_create(texture, &span, &view, NULL);
-        if (status == DOE_VK_OK) status = doe_vk_commands_create(device->context, &commands, NULL);
+        if (status == DOE_VK_OK) status = doe_vk_commands_create(device->backend.value.vulkan.context, &commands, NULL);
         if (status == DOE_VK_OK) status = doe_vk_commands_initialize_attachment(commands, view);
         if (status == DOE_VK_OK) status = native_submit_commands(device, commands);
         else if (doe_vk_commands_release(commands) != DOE_VK_OK) abort();
@@ -30,9 +30,9 @@ doe_vk_status native_initialize_texture(native_device *device, doe_vk_texture *t
     doe_vk_buffer *zero = NULL;
     doe_vk_commands *commands = NULL;
     doe_vk_error error = {0};
-    doe_vk_status status = doe_vk_buffer_create(device->context, size,
+    doe_vk_status status = doe_vk_buffer_create(device->backend.value.vulkan.context, size,
         DOE_VK_BUFFER_COPY_SRC, DOE_VK_MEMORY_HOST, &zero, &error);
-    if (status == DOE_VK_OK) status = doe_vk_commands_create(device->context, &commands, &error);
+    if (status == DOE_VK_OK) status = doe_vk_commands_create(device->backend.value.vulkan.context, &commands, &error);
     for (uint32_t mip = 0; status == DOE_VK_OK && mip < desc->mip_levels; ++mip) {
         uint32_t width = desc->width >> mip;
         uint32_t height = desc->height >> mip;
@@ -47,4 +47,3 @@ doe_vk_status native_initialize_texture(native_device *device, doe_vk_texture *t
     doe_vk_buffer_release(zero);
     return status;
 }
-

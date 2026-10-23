@@ -15,12 +15,12 @@ doe_vk_status __wrap_doe_vk_context_create(const doe_vk_options *options, doe_vk
 
 static void capability_controls(native_device *device, WGPUShaderModule module)
 {
-    assert(device->caps.shader_demote_to_helper_invocation);
+    assert(device->backend.value.vulkan.caps.shader_demote_to_helper_invocation);
     native_shader *payload = doe_resource_shader_native((doe_resource_shader *)module);
     doe_shader_view view;
     assert(doe_shader_borrow(payload->compiled,&view) == DOE_SHADER_OK);
-    assert(native_shader_capabilities(&view,&device->caps));
-    doe_vk_caps disabled = device->caps;
+    assert(native_shader_capabilities(&view,&device->backend.value.vulkan.caps));
+    doe_vk_caps disabled = device->backend.value.vulkan.caps;
     disabled.api_version = UINT32_MAX; /* Version is never an enabling proof. */
     disabled.shader_demote_to_helper_invocation = false;
     assert(!native_shader_capabilities(&view,&disabled));
@@ -35,21 +35,21 @@ static void capability_controls(native_device *device, WGPUShaderModule module)
         if (opcode == 10) {
             ++extensions;
             words[at+1] ^= 1;
-            assert(!native_shader_capabilities(&view,&device->caps));
+            assert(!native_shader_capabilities(&view,&device->backend.value.vulkan.caps));
             words[at+1] ^= 1;
             words[at+length-1] |= UINT32_C(0xff000000); /* Nonzero string padding. */
-            assert(!native_shader_capabilities(&view,&device->caps));
+            assert(!native_shader_capabilities(&view,&device->backend.value.vulkan.caps));
             words[at+length-1] &= UINT32_C(0x00ffffff);
         }
         if (opcode == 17 && words[at+1] == 5379) {
             ++capabilities;
             words[at+1] = 2;
-            assert(!native_shader_capabilities(&view,&device->caps));
+            assert(!native_shader_capabilities(&view,&device->backend.value.vulkan.caps));
             words[at+1] = 5379;
         }
         at += length;
     }
-    assert(extensions == 1 && capabilities == 1 && native_shader_capabilities(&view,&device->caps));
+    assert(extensions == 1 && capabilities == 1 && native_shader_capabilities(&view,&device->backend.value.vulkan.caps));
     free(words);
 }
 int main(void)
@@ -95,7 +95,7 @@ int main(void)
     disable_feature = true;
     assert(wgpuAdapterRequestDevice(s.adapter,NULL,disabled_reply).id && disabled.device);
     disable_feature = false;
-    assert(!((native_device *)disabled.device)->caps.shader_demote_to_helper_invocation);
+    assert(!((native_device *)disabled.device)->backend.value.vulkan.caps.shader_demote_to_helper_invocation);
     WGPUShaderModule disabled_module = wgpuDeviceCreateShaderModule(disabled.device,&shader_desc);
     assert(disabled_module);
     WGPURenderPipelineDescriptor rejected = pipeline_desc;

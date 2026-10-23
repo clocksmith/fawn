@@ -2,6 +2,7 @@
 #ifndef DOE_NATIVE_INTERNAL_H
 #define DOE_NATIVE_INTERNAL_H
 #include "webgpu.h"
+#include "backend.h"
 #include "doe_instance.h"
 #include "doe_callbacks.h"
 #include "doe_resources.h"
@@ -19,8 +20,7 @@
 typedef struct native_adapter {
     atomic_uint references;
     doe_instance *instance;
-    doe_vk_options options;
-    doe_vk_caps caps;
+    native_backend backend;
 } native_adapter;
 
 typedef struct native_pending native_pending;
@@ -31,8 +31,7 @@ typedef struct native_device {
     native_loss *loss;
     pthread_mutex_t mutex;
     doe_instance *instance;
-    doe_vk_context *context;
-    doe_vk_caps caps;
+    native_backend backend;
     doe_resource_config resources;
     doe_label_store *labels;
     unsigned char queue_label_key;
@@ -50,7 +49,7 @@ typedef struct native_device {
  * alone releases them after all public/recorded/submission references settle. */
 typedef struct native_buffer {
     native_device *device; /* Borrowed through the resource's device lease. */
-    doe_vk_buffer *buffer;
+    native_buffer_handle handle;
     unsigned char *mapping;
 } native_buffer;
 
@@ -89,12 +88,19 @@ typedef struct native_stage {
     char name[64];
 } native_stage;
 
+typedef struct native_binding {
+    uint32_t group, binding;
+    doe_resource_binding_kind kind;
+    WGPUBufferBindingType buffer_type;
+} native_binding;
+
 typedef struct native_pipeline {
     native_device *device;
-    doe_vk_pipeline *pipeline;
+    union { doe_vk_pipeline *vulkan; doe_mtl_pipeline *metal; } handle;
     size_t binding_count;
     size_t vertex_count;
-    doe_vk_binding_layout bindings[DOE_RESOURCE_MAX_GROUPS * DOE_RESOURCE_MAX_BINDINGS];
+    uint32_t metal_slots[DOE_RESOURCE_MAX_GROUPS * DOE_RESOURCE_MAX_BINDINGS];
+    native_binding bindings[DOE_RESOURCE_MAX_GROUPS * DOE_RESOURCE_MAX_BINDINGS];
     uint64_t minimum_sizes[DOE_RESOURCE_MAX_GROUPS * DOE_RESOURCE_MAX_BINDINGS];
 } native_pipeline;
 
@@ -122,10 +128,21 @@ bool native_string_size(WGPUStringView view, size_t *size);
 WGPUFuture native_callback(doe_instance *instance, WGPUCallbackMode mode,
     void *context, size_t size, size_t alignment,
     doe_callback_copy_context copy, doe_callback_deliver_context deliver);
-WGPUStatus native_adapter_info(const doe_vk_caps *caps, WGPUAdapterInfo *out);
-WGPUStatus native_limits(const doe_vk_caps *caps, WGPULimits *out);
+
+WGPUStatus native_limits(const native_backend *backend, WGPULimits *out);
 void native_buffer_release(void *userdata, void *handle);
+native_result native_buffer_read(native_buffer *buffer, uint64_t offset, void *bytes, size_t size);
+native_result native_buffer_write(native_buffer *buffer, uint64_t offset, const void *bytes, size_t size);
+native_result native_buffer_create(native_buffer *buffer, uint64_t size, uint32_t usage);
+void native_buffer_close(native_buffer *buffer);
+native_result native_device_result(native_device *device);
 void native_pipeline_release(void *userdata, void *handle);
+native_result native_metal_pipeline_create(native_pipeline *pipeline, const native_stage *stage);
+native_result native_metal_dispatch(doe_mtl_commands *commands, const doe_resource_command *record);
+bool native_vulkan_binding_layout(const native_pipeline *pipeline, doe_vk_binding_layout *out);
+doe_resource_status native_resolve_resources(const native_pipeline *pipeline,
+    doe_resource_pipeline_layout *layout, doe_resource_bind_group *const *groups,
+    const doe_resource_dispatch_offsets *offsets, doe_resource_binding *out);
 bool native_stage_load(native_device *device, WGPUShaderModule module, WGPUStringView name,
     uint32_t stage, native_stage *out);
 doe_vk_status native_resolve_bindings(const native_pipeline *pipeline, doe_resource_pipeline_layout *layout,
@@ -140,7 +157,7 @@ bool native_shader_capabilities(const doe_shader_view *view, const doe_vk_caps *
 bool native_timestamp_supported(const doe_vk_caps *caps);
 uint32_t native_timestamp_workgroup(const doe_vk_caps *caps);
 doe_vk_status native_timestamp_initialize(native_device *device);
-bool native_requested_features(const doe_vk_caps *caps, const WGPUDeviceDescriptor *descriptor, bool *timestamps);
+bool native_requested_features(const native_backend *backend, const WGPUDeviceDescriptor *descriptor, bool *timestamps);
 doe_vk_status native_record_query(doe_vk_commands *commands, const doe_resource_command *record);
 WGPUComputePipeline native_create_compute_pipeline(native_device *device,
     const WGPUComputePipelineDescriptor *descriptor, native_pipeline_error *error);
@@ -148,7 +165,7 @@ WGPUComputePipeline native_create_compute_pipeline(native_device *device,
  * linked and retains its backend and resource submissions, never freed. */
 typedef struct native_queue_settlement {
     bool complete;
-    doe_vk_status status;
+    native_result status;
 } native_queue_settlement;
 native_queue_settlement native_settle_pending(native_device *device);
 /* Caller holds device mutex. Always adopts commands, including failed/unknown

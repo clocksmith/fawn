@@ -100,7 +100,7 @@ static bool group_filterability(native_device *device, doe_resource_layout *layo
             doe_vk_texture_format format;
             doe_vk_format_caps caps;
             if (!native_texture_format(view->format, &format) ||
-                doe_vk_texture_format_caps(device->context, format, &caps) != DOE_VK_OK || !caps.filterable)
+                doe_vk_texture_format_caps(device->backend.value.vulkan.context, format, &caps) != DOE_VK_OK || !caps.filterable)
                 return false;
         }
     }
@@ -138,10 +138,10 @@ WGPUBindGroup wgpuDeviceCreateBindGroup(WGPUDevice handle, const WGPUBindGroupDe
         }
     }
     doe_resource_binding_limits limits = {
-        .uniform_alignment = device->caps.uniform_offset_alignment,
-        .storage_alignment = device->caps.storage_offset_alignment,
-        .max_uniform_size = device->caps.max_uniform_buffer_range,
-        .max_storage_size = device->caps.max_storage_buffer_range
+        .uniform_alignment = device->backend.limits.minUniformBufferOffsetAlignment,
+        .storage_alignment = device->backend.limits.minStorageBufferOffsetAlignment,
+        .max_uniform_size = device->backend.limits.maxUniformBufferBindingSize,
+        .max_storage_size = device->backend.limits.maxStorageBufferBindingSize
     };
     doe_resource_bind_group *group = NULL;
     native_lock(device);

@@ -15,10 +15,10 @@ static doe_vk_status prepare_draw(const doe_resource_render_packet *packet,
     if (status != DOE_VK_OK) return status;
     for (size_t i = 0; i < pipeline->vertex_count; ++i) {
         native_buffer *buffer = doe_resource_buffer_native(packet->vertices[i].buffer);
-        vertices[i] = (doe_vk_buffer_binding){buffer ? buffer->buffer : NULL,
+        vertices[i] = (doe_vk_buffer_binding){buffer ? buffer->handle.vulkan : NULL,
             packet->vertices[i].offset,packet->vertices[i].size};
     }
-    *draw = (doe_vk_render_pass_draw){.pipeline=pipeline->pipeline,
+    *draw = (doe_vk_render_pass_draw){.pipeline=pipeline->handle.vulkan,
         .bindings=bindings,.binding_count=pipeline->binding_count,
         .vertices=vertices,.vertex_buffer_count=pipeline->vertex_count,
         .draw={.vertex_count=packet->count,.instance_count=packet->instances,.first_vertex=packet->first,
