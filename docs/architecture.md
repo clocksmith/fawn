@@ -273,77 +273,40 @@ interpreter is not required for architectural symmetry.
 
 ### Implementation language and native boundary
 
-The selected production compiler and runtime core remain in Zig, with a stable
-C ABI for native integration. The owner-authorized isolated C migration is
-tracked by [explicit owner and qualification gates](c-migration/MIGRATION.md);
-it incrementally develops complete replacement owners without selecting them
-for production or changing historical language-assessment findings. Small C++ adapters may bind upstream Chromium, Dawn, Skia, or ONNX
-interfaces when that integration requires them; small C shims may provide
-loaders and procedure tables. An adapter translates host contracts and resource
-ownership. It does not become a second compiler, backend policy owner, or
+C is the selected migration direction. The [recorded decision](../README.md#selected-direction-a-better-doe-in-c)
+separates dependency removal, engineering quality and product benefit. This is not
+an ongoing language contest, a universal language ranking, or a claim of parity.
+The production compiler/runtime default remains retained Zig behind its native C
+ABI. [Owner and qualification gates](c-migration/MIGRATION.md) govern incremental
+replacement, real consumer integration and eventual production promotion.
+
+Use one semantic owner with small typed operations, consistent representations,
+explicit ownership and failure contracts, and independently tested composition.
+[Common C style](../runtime/c/STYLE.md) applies to new C work; the
+[retained Zig style](../runtime/zig/STYLE.md#restricted-implementation-style) still
+applies to retained code. Structural checks, boundary validation and independent
+semantic/lifetime evidence remain necessary. Neither C nor agents make those
+obligations disappear.
+
+Small C++ adapters may bind upstream Chromium, Dawn, Skia or ONNX interfaces when
+required; C shims may provide loaders and procedure tables. An adapter translates
+host contracts and resource ownership, not a second compiler, backend policy or
 runtime state machine. JavaScript package contracts remain separately owned.
-
-The aim is explicit systems code whose organization and external compatibility
-survive a change of implementation language. Zig is useful where its types,
-error unions, cleanup constructs, and compile-time checks make that architecture
-easier to enforce; the language choice alone proves neither safety nor speed.
-The [implementation subset](../runtime/zig/STYLE.md#restricted-implementation-style)
-and [native adapter rules](../runtime/zig/STYLE.md#native-adapter-subset) constrain
-owned code. Reconsider the core language only from representative
-[maintenance and runtime evidence](process.md#language-and-cleanup-evaluation),
-preserving the same contracts; theoretical simplicity does not justify a rewrite.
-
-#### Language evaluation by layer — proposed investigation
+Count adapters, generators, serialization, schemas and necessary dependencies in
+the [complete delivery cost](c-migration/QUALITY_TARGET.md), not just C bodies.
 
 The [implementation-language assessment](implementation-language-assessment.md)
-separates capabilities, project evidence, and engineering judgments. It does not
-establish a universally best language or authorize a rewrite. Retain the Zig
-core while comparing disciplined C++ and Rust as native challengers; C remains
-eligible for the bounded lifecycle and small adapters. Chromium integration keeps
-its narrow native boundary. Supported upstream Rust integration is an option to
-evaluate, not an acceptance commitment.
+and [prior comparison proposal](https://github.com/doerun/doe/blob/665475907494d2095a760596218b4c2d363cb436/docs/architecture.md#language-evaluation-by-layer--proposed-investigation)
+retain their historical meaning. Their comparison-only/Zig-first selection does
+not govern this campaign. Existing measurements and failed trials are not rewritten.
+Future per-owner decisions concern qualification, maintenance cost and actual
+engineering/product gains under [evaluation law](process.md#language-and-cleanup-evaluation),
+not reopening C selection by default. Unfamiliar changes, debugging, build cost,
+source/installed size and real consumer friction need representative evidence.
 
-Python and JavaScript/TypeScript remain credible compiler, preparation, and
-orchestration candidates, beyond thin wrappers. Python is useful for browser
-orchestration, evidence analysis, and experimental tooling; it is not selected
-for the native execution core. Dart, Java, and Kotlin remain eligible for offline
-work without selecting a ten-language campaign. This assessment is separate from
-[Python browser scripting incubation](python-browser-scripting-incubation.md).
-
-If separately selected, bound implementation comparisons to two cases:
-
-1. **One compiler pass**, exercised through parsing, intermediate representation,
-   and emission. Compare native candidates under the same semantic contract,
-   independent oracle, and invalid-input diagnostics. A high-level reference or
-   preparation implementation uses this same case, not a new compiler project.
-2. **One asynchronous device/resource lifecycle**, covering creation, submission,
-   callbacks/futures, cancellation, device loss, settlement, and cleanup. Use the
-   same backend, shaders, inputs, dispatches, and completion requirements. Tiny
-   repeated dispatches and large batches are workload sizes within that case.
-   Host ownership mechanisms must not substitute for established GPU completion.
-
-Measure agent implementation and verified-change time, clean/incremental builds,
-debugging effort, code clarity, failure handling, integration friction, binary
-size, memory, and runtime under the existing
-[language evaluation rules](process.md#language-and-cleanup-evaluation). Separate
-cold startup, preparation, warm host overhead, transfers, and completed GPU work.
-A submission-only timer cannot establish application latency. Use representative
-maintainable implementations; neither intentionally complicated C++ nor an
-unsafe stripped-down lifecycle is a valid comparison.
-
-Within those same cases, test the preparation/execution hypothesis: Python or
-TypeScript produces a validated, versioned plan; the native core validates and
-loads it, then owns device objects and latency-sensitive execution. This extends
-[reusable compute programs](reusable-compute-programs.md), not their authority or
-existing manifest contract. Preserve shader/compiler/device identity, invalidation,
-resource lifetimes, and completion. Changing invocation state still requires
-validation. Count serialization, schemas, bindings, duplicated decisions, deployment,
-and debugging across all layers before claiming reduced complexity.
-
-Allow the outcome to differ by responsibility. Migration requires a measured
-benefit large enough to repay migration risk while preserving the same contracts.
-No comparative result is established here; the current
-[proof sequence](../GOALS.md#technical-proof-sequence) remains the priority.
+The [product proof sequence](../GOALS.md#technical-proof-sequence), backend-specific
+qualification and browser adoption gates remain unchanged. A native compiler or
+CPU lifecycle check cannot establish GPU suitability or browser replacement.
 
 ### Reuse and completion obligations
 
@@ -367,12 +330,12 @@ it never authorizes successful outputs or valid execution claims.
 
 ### Enforcement and observation obligations
 
-Use Zig compile-time checks, exhaustive decisions, and type inspection to reject
-missing command decisions, incomplete adapters, and unsupported snapshot shapes.
+Use structural checks, exhaustive decisions and checked boundaries to reject
+missing command decisions, incomplete adapters and unsupported snapshot shapes.
 Generate immutable build choices from authoritative definitions, resolve hardware
 facts per device, and validate changing resources per invocation. Application
 WGSL received later still needs compilation. Follow
-[the Zig style guide](../runtime/zig/STYLE.md) for explicit allocators, checked
+[the applicable owner style](../runtime/c/STYLE.md) for explicit allocators, checked
 arithmetic, acquisition rollback, cache bounds, and backend-private ownership.
 Structural checks do not prove ownership or semantic correctness; specialization
 needs runtime, binary-size, and build-cost evidence.
@@ -501,7 +464,8 @@ Doe is designed around explicit runtime behavior:
 - backend selection is policy/config driven
 - strict lanes do not silently fallback
 - unsupported capabilities fail with typed, actionable errors
-- hot-path behavior stays in Zig unless it can be hoisted out by proof/config
+- hot-path behavior stays in its qualified native owner unless proof/config can
+  safely remove the runtime work
 
 Current native backend identities are:
 
@@ -517,11 +481,11 @@ Doe supports two broad modes:
 1. Ahead-of-time verified execution
    Selected invariants are proven offline and used to remove runtime work.
 2. Runtime-checked execution
-   Zig keeps the necessary dynamic checks for untrusted inputs.
+   The selected implementation keeps necessary dynamic checks for untrusted inputs.
 
 The design rule is:
 
-1. implement deterministic behavior in Zig first
+1. implement deterministic behavior in the selected native owner
 2. measure it
 3. move conditions into proof/config only when that lets Doe delete runtime
    branches safely

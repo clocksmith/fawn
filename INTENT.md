@@ -69,8 +69,9 @@ transition, invalidation, and acceptance details.
   config/schema. Production policy changes cannot rely on undocumented manual
   toggles. Runtime-visible field changes include schemas and migration notes;
   process/gate documentation and status tracking change with the contract.
-- Zig compile-time checks establish structural completeness, not behavioral or
-  lifetime correctness. Explicit allocators, checked arithmetic, initialization,
+- Structural checks, including retained Zig compile-time checks and C boundary
+  checks, establish only their declared properties, not behavioral or lifetime
+  correctness. Explicit allocators, checked arithmetic, initialization,
   acquisition rollback, bounded caches, and backend-private state require
   independent behavioral and lifetime tests.
 - Runtime behavior placeholders and synthetic backend timing/capability state
@@ -79,9 +80,10 @@ transition, invalidation, and acceptance details.
   `runtime/zig/tools/check_core_import_fence.py`.
 - Only benchmark/gate bootstrap thresholds may be placeholders, explicitly
   flagged in config and tracked in gate policy and the relevant live status shard.
-- Production latency-critical behavior remains deterministic Zig first. The explicitly
-  selected isolated C migration must preserve the same invariants and cannot
-  replace production before its declared qualification gates pass. A runtime condition may
+- Latency-critical behavior remains deterministic under its selected native owner.
+  C is the migration direction; retained Zig remains the production default until
+  the declared qualification gates pass. Both must preserve these invariants.
+  A runtime condition may
   be removed only when current proof/config discharges its actual preconditions;
   otherwise retain and measure the guard. Elimination never moves hot-path
   execution into a runtime Lean interpreter. Verification modes and source-bound
