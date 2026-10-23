@@ -169,46 +169,68 @@ bool numeric_builtin(Source *source, size_t offset, const NumericBuiltin *signat
                 return numeric_error(source, offset, "constant clamp lower bound exceeds upper bound");
             *result = numeric_minimum(numeric_maximum(arguments[0], arguments[1]), arguments[2]);
             return true;
+        case BUILTIN_ABS:
+            *result = arguments[0];
+            if (floating_type(type))
+                result->bits &= type == IR_F32 ? UINT64_C(0x7fffffff) : UINT64_C(0x7fffffffffffffff);
+            else if (type != IR_U32 && signed_value(*result) < 0)
+                result->bits = (UINT64_C(0) - result->bits) & integer_mask(type);
+            return true;
+        case BUILTIN_SIGN:
+            if (type == IR_U32) return numeric_error(source, offset, "sign has no unsigned overload");
+            if (integer_type(type)) {
+                const int64_t input = signed_value(arguments[0]);
+                *result = (NumericValue){input < 0 ? integer_mask(type) : input > 0 ? 1u : 0u, type};
+                return true;
+            }
+            break;
         case BUILTIN_EXP:
         case BUILTIN_TANH:
         case BUILTIN_SQRT:
         case BUILTIN_CEIL:
+        case BUILTIN_FLOOR:
+        case BUILTIN_ROUND:
+        case BUILTIN_TRUNC:
+        case BUILTIN_FRACT:
+        case BUILTIN_SIN:
+        case BUILTIN_COS:
+        case BUILTIN_TAN:
+        case BUILTIN_ASIN:
+        case BUILTIN_ACOS:
+        case BUILTIN_ATAN:
+        case BUILTIN_SINH:
+        case BUILTIN_COSH:
+        case BUILTIN_ASINH:
+        case BUILTIN_ACOSH:
+        case BUILTIN_ATANH:
+        case BUILTIN_LOG:
+        case BUILTIN_LOG2:
+        case BUILTIN_EXP2:
+        case BUILTIN_INVERSE_SQRT:
+        case BUILTIN_DEGREES:
+        case BUILTIN_RADIANS:
             break;
-        case BUILTIN_DOT:
-        case BUILTIN_LENGTH:
-        case BUILTIN_TRANSPOSE: case BUILTIN_DETERMINANT:
-        case BUILTIN_DISTANCE:
-        case BUILTIN_NORMALIZE:
-        case BUILTIN_CROSS:
+        case BUILTIN_DOT: case BUILTIN_LENGTH: case BUILTIN_TRANSPOSE: case BUILTIN_DETERMINANT:
+        case BUILTIN_DISTANCE: case BUILTIN_NORMALIZE: case BUILTIN_CROSS:
         case BUILTIN_SUBGROUP_ADD: case BUILTIN_SUBGROUP_MIN: case BUILTIN_SUBGROUP_MAX:
         case BUILTIN_SUBGROUP_MUL: case BUILTIN_SUBGROUP_AND: case BUILTIN_SUBGROUP_OR:
         case BUILTIN_SUBGROUP_XOR: case BUILTIN_SUBGROUP_EXCLUSIVE_ADD: case BUILTIN_SUBGROUP_INCLUSIVE_ADD:
         case BUILTIN_SUBGROUP_EXCLUSIVE_MUL: case BUILTIN_SUBGROUP_INCLUSIVE_MUL:
             return numeric_error(source, offset, "non-component builtin reached scalar primitive");
     }
-    NumericValue answer = { .bits = 0u, .type = type };
-    /* The volatile store forces the declared width before subsequent constant
-     * operations. Finite underflow is valid even when libm reports ERANGE. */
-    if (type == IR_F32) {
-        const float input = float_value(arguments[0].bits);
-        if (kind == BUILTIN_SQRT && input < 0.0f)
-            return numeric_error(source, offset, "constant sqrt operand is negative");
-        volatile float value;
-        if (kind == BUILTIN_EXP) value = expf(input);
-        else if (kind == BUILTIN_TANH) value = tanhf(input);
-        else if (kind == BUILTIN_CEIL) value = ceilf(input);
-        else value = sqrtf(input);
-        answer.bits = float_bits(value);
+    const bool single = type == IR_F32;
+    const double input = single ? (double)float_value(arguments[0].bits) : double_value(arguments[0].bits);
+    double value;
+    if (!numeric_math(source, offset, kind, single, input, &value)) return false;
+    /* Each math primitive already evaluated at the selected width. The store
+     * preserves that width before another constant operation consumes it. */
+    NumericValue answer = {.type = type};
+    if (single) {
+        volatile float rounded = (float)value;
+        answer.bits = float_bits(rounded);
     } else {
-        const double input = double_value(arguments[0].bits);
-        if (kind == BUILTIN_SQRT && input < 0.0)
-            return numeric_error(source, offset, "constant sqrt operand is negative");
-        volatile double value;
-        if (kind == BUILTIN_EXP) value = exp(input);
-        else if (kind == BUILTIN_TANH) value = tanh(input);
-        else if (kind == BUILTIN_CEIL) value = ceil(input);
-        else value = sqrt(input);
-        answer.bits = double_bits(value);
+        volatile double rounded = value;
+        answer.bits = double_bits(rounded);
     }
     return checked_float(source, offset, answer, result);
 }

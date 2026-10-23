@@ -422,6 +422,7 @@ static void test_pointer_rejection(void) {
     }
 }
 int main(int argc, char **argv) {
+    test_component_math(argc > 8 ? argv[8] : NULL);
     test_pointer_rejection();
     test_matrices(argc > 7 ? argv[7] : NULL);
     test_array_length(argc > 6 ? argv[6] : NULL);

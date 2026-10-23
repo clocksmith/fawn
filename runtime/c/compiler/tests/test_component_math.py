@@ -1,0 +1,83 @@
+#!/usr/bin/env python3
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Doe contributors
+"""Shared component math: const values, runtime SPIR-V and retained sources."""
+import unittest
+import test_stages
+
+FLOAT_OPS = {'floor': 8, 'round': 2, 'trunc': 3, 'fract': 10, 'sin': 13,
+             'cos': 14, 'tan': 15, 'asin': 16, 'acos': 17, 'atan': 18,
+             'sinh': 19, 'cosh': 20, 'asinh': 22, 'acosh': 23, 'atanh': 24,
+             'log': 28, 'log2': 30, 'exp2': 29, 'inverseSqrt': 32,
+             'degrees': 12, 'radians': 11}
+ENTRY = '@compute @workgroup_size(1) fn main()'
+BUFFER = '@group(0) @binding(0) var<storage,read_write> data:array<vec4f>;'
+
+
+class ComponentMath(unittest.TestCase):
+    compile = test_stages.Stages.compile
+
+    def vector_constant(self, expression, expected):
+        code = self.compile('@fragment fn main()->@location(0) vec4f {return '+expression+';}')
+        scalars = {a[1]: a[2] for op, a in code if op == 43}
+        vectors = [tuple(scalars.get(x) for x in a[2:]) for op, a in code if op == 44]
+        self.assertIn(tuple(expected), vectors)
+        self.assertFalse(any(op == 12 for op, _ in code))
+
+    def test_exact_const_rounding_sign_and_integer_minimum(self):
+        self.vector_constant('round(vec4f(0.5,1.5,2.5,-1.5))', [0,0x40000000,0x40000000,0xc0000000])
+        self.vector_constant('abs(vec4f(-0.0,-1.0,2.0,-3.0))', [0,0x3f800000,0x40000000,0x40400000])
+        self.vector_constant('sign(vec4f(-0.0,-1.0,2.0,0.0))', [0,0xbf800000,0x3f800000,0])
+        self.vector_constant('fract(vec4f(-0.25,0.25,-1.0,-0x1p-149f))',
+                             [0x3f400000,0x3e800000,0,0x3f800000])
+        self.vector_constant('vec4f(f32(abs(bitcast<i32>(2147483648u))),f32(sign(abs(-9223372036854775807-1))),f32(sign(-9)),f32(abs(9u)))',
+                             [0xcf000000,0xbf800000,0xbf800000,0x41100000])
+        self.vector_constant('vec4f(floor(-1.25),trunc(-1.25),exp2(3),inverseSqrt(4))',
+                             [0xc0000000,0xbf800000,0x41000000,0x3f000000])
+        self.vector_constant('vec4f(log(1),log2(8),cos(0),sin(0))', [0,0x40400000,0x3f800000,0])
+        # AbstractFloat must not be prematurely narrowed before cancellation.
+        self.vector_constant('vec4f(floor(16777217.25)-16777216.0)', [0x3f800000]*4)
+
+    def test_all_float_shapes_and_stage_split(self):
+        for name, instruction in FLOAT_OPS.items():
+            for width in range(1,5):
+                typ = 'f32' if width == 1 else f'vec{width}f'
+                source = f'@group(0) @binding(0) var<storage,read_write> data:array<{typ}>;'
+                code = self.compile(source+ENTRY+'{let x=data[0];data[1]='+name+'(x);}')
+                self.assertEqual(sum(op == 12 and a[3] == instruction for op,a in code), 1)
+            value = '1.0' if name in ('acosh','log','log2','inverseSqrt') else '0.0'
+            code = self.compile(ENTRY+'{const result='+name+'('+value+');let value=result;}')
+            self.assertFalse(any(op == 12 for op,_ in code))
+        for name,leaf,instruction in [('abs','f32',4),('abs','i32',5),('sign','f32',6),('sign','i32',7)]:
+            code = self.compile(f'@group(0) @binding(0) var<storage,read_write> data:array<vec4<{leaf}>>;'+
+                                ENTRY+'{data[1]='+name+'(data[0]);}')
+            self.assertTrue(any(op == 12 and a[3] == instruction for op,a in code))
+        code = self.compile('@group(0) @binding(0) var<storage,read_write> data:array<u32>;'+ENTRY+'{data[1]=abs(data[0]);}')
+        self.assertFalse(any(op == 11 for op,_ in code))
+
+    def test_domains_skipping_dead_source_and_overload_rejection(self):
+        for expression in ['asin(2.0)','acos(-2.0)','acosh(0.5)','atanh(2.0)','log(-1.0)',
+                           'log2(0.0)','inverseSqrt(-1.0)']:
+            self.compile('const bad='+expression+';'+ENTRY+'{}', 'outside its domain')
+            self.compile(ENTRY+'{let skipped=false && ('+expression+'==0.0);}')
+        for expression in ['atanh(1.0)','inverseSqrt(0.0)','exp2(1024.0)','cosh(1000.0)']:
+            self.compile('const bad='+expression+';'+ENTRY+'{}', 'not finite')
+        for expression in ['sign(1u)','abs(true)','sin(1i)','floor(vec2u(1))','log(mat2x2f())']:
+            self.compile(ENTRY+'{return;let invalid='+expression+';}', 'builtin')
+        self.compile(ENTRY+'{let skipped=false && (sin(missing)==0.0);}', 'name does not resolve')
+        self.compile(ENTRY+'{sin(0.0);}', 'used result')
+        self.compile('fn sin(x:u32)->u32{return x+1u;}'+ENTRY+'{let x=sin(4u);}')
+
+    def test_single_effectful_argument(self):
+        code = self.compile(BUFFER+'fn read()->vec4f{data[0]=data[0]+vec4f(1);return data[0];}'+
+                            ENTRY+'{data[1]=fract(read());data[2]=abs(read());}')
+        self.assertEqual(sum(op == 57 for op,_ in code), 2)
+
+    def test_retained_fluid_sources(self):
+        for name in ['stable_fluids_advect_velocity.wgsl','stable_fluids_advect_dye.wgsl']:
+            code = self.compile((test_stages.ROOT/'bench/kernels'/name).read_text())
+            self.assertTrue(any(op == 12 and a[3] == 8 for op,a in code))
+
+
+if __name__ == '__main__':
+    unittest.main()

@@ -149,13 +149,18 @@ static bool emit_numeric_builtin(Emitter *e, const IrInstruction *ir) {
     const TypeId operand_type = spirv_value_type(e->program, ir->operands.scalar.left);
     const TypeId leaf = type_leaf(e->program, operand_type);
     if (builtin_subgroup(builtin)) return spirv_subgroup_builtin(e, ir, builtin, leaf);
-    if (builtin->extended_instruction != 0u) {
+    if (builtin->kind == BUILTIN_ABS && leaf == IR_U32) {
+        EMIT(OP_COPY_OBJECT, spirv_target_type(e, ir->type), result, left);
+        return true;
+    }
+    const uint32_t extended = builtin_extended_instruction(builtin, leaf);
+    if (extended != 0u) {
         if (builtin->arity == 1u) {
             EMIT(OP_EXT_INST, spirv_target_type(e, ir->type), result, e->math_import,
-                 builtin->extended_instruction, left);
+                 extended, left);
         } else {
             EMIT(OP_EXT_INST, spirv_target_type(e, ir->type), result, e->math_import,
-                 builtin->extended_instruction, left, right);
+                 extended, left, right);
         }
         return true;
     }

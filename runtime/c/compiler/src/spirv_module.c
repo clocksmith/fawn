@@ -440,7 +440,7 @@ bool spirv_plan_module(Emitter *e) {
                 e->subgroup_capabilities |= 1u;
                 (void)use_constant(e, ID_THREE_U32);
             }
-            if (builtin->extended_instruction != 0u && e->math_import == 0u)
+            if (builtin_extended_instruction(builtin, type_leaf(c, ir->type)) != 0u && e->math_import == 0u)
                 e->math_import = spirv_reserve_ids(e, 1u);
         } else if (ir->opcode == IR_ACCESS_LOAD || ir->opcode == IR_ACCESS_STORE || ir->opcode == IR_VALUE_ACCESS) {
             if (!spirv_uniform_access_plan(e, ir)) return false;

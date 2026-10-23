@@ -23,6 +23,11 @@ def main():
     audit.FAMILIES['semantic_expression'] = (
         ceiling, members | {'sema_image_call', 'sema_atomic_call', 'sema_address_reference'})
     audit.EXTERNAL.add('vsnprintf')
+    # Actual libm leaves from the declared-width component-math owner. As with
+    # inherited exp/sqrt/tanh, their foreign implementation frames are excluded.
+    for name in ('acos', 'acosh', 'asin', 'asinh', 'atan', 'atanh', 'cos', 'cosh',
+                 'exp2', 'floor', 'log', 'log2', 'nearbyint', 'sin', 'sinh', 'tan', 'trunc'):
+        audit.EXTERNAL.update((name, name + 'f'))
     audit.FAMILIES.update({
         'metal_control': (384, {'metal_block', 'selection', 'short_circuit', 'loop_body'}),
         'metal_constant': (256, {'metal_constant'}),

@@ -22,6 +22,7 @@ typedef struct {
 
 const NumericBuiltin *builtin_named(const Source *, NameSpan);
 const NumericBuiltin *builtin_kind(NumericBuiltinKind);
+uint32_t builtin_extended_instruction(const NumericBuiltin *, TypeId leaf);
 bool builtin_floating(const NumericBuiltin *);
 bool builtin_subgroup(const NumericBuiltin *);
 bool builtin_subgroup_uniform(const NumericBuiltin *);
