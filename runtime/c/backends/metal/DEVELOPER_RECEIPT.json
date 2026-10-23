@@ -1,0 +1,112 @@
+{
+  "schema": "doe-c-metal-developer-evidence-v1",
+  "consumer": "C migration lead integration review of experimental native Metal compute closure",
+  "created_utc": "2026-10-23T18:45:35.769001+00:00",
+  "base_repository_head": "7772ce75cbe4570dd6df7237108764901f2f6f92",
+  "qualification": "developer controls only; default off; not accepted as full migration or physical support",
+  "source_manifest": {
+    "path": "runtime/c/backends/metal/SOURCE_INPUTS.sha256",
+    "sha256": "01865d1a12210cfd2f20b7725b784727d60ac15a01c60ab0720a83daaad94423"
+  },
+  "compiler": "cc (Debian 14.2.0-19) 14.2.0",
+  "checks": [
+    {
+      "command": "make -C runtime/c/backends/metal BUILD=/tmp/doe-c-metal-final all check abi-compile probe",
+      "outcome": "pass",
+      "scope": "C11 strict build, 10 lifetime/fault groups, 3 typed method-call groups, source-branch compilation and explicit unsupported-host probe"
+    },
+    {
+      "command": "ASAN_OPTIONS=detect_leaks=0 make -C runtime/c/backends/metal BUILD=/tmp/doe-c-metal-final sanitize",
+      "outcome": "pass",
+      "scope": "AddressSanitizer and UndefinedBehaviorSanitizer; leak scanning disabled due to recorded ptrace restriction"
+    },
+    {
+      "command": "c++ -I. -std=c++17 -Wall -Wextra -Werror -x c++ - -fsyntax-only",
+      "outcome": "pass",
+      "scope": "Public private-backend header consumption only"
+    },
+    {
+      "command": "python3 runtime/c/tools/check_source_size.py",
+      "outcome": "pass",
+      "scope": "433 C/header files at observation, zero over 999 lines"
+    },
+    {
+      "command": "git diff --check",
+      "outcome": "pass",
+      "scope": "tracked repository whitespace at observation; lane files also inspected"
+    },
+    {
+      "command": "cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wshadow -fanalyzer -c context.c/resources.c/commands.c",
+      "outcome": "pass",
+      "scope": "GCC analyzer on the lifetime/resource/command owners"
+    }
+  ],
+  "first_failure": {
+    "command": "make -C runtime/c/backends/metal sanitize",
+    "outcome": "blocked",
+    "reason": "LeakSanitizer refuses hosted ptrace runtime",
+    "retained_at": "runtime/c/backends/metal/TERMINAL_RECEIPT.txt",
+    "intermediate_source_seal_available": false
+  },
+  "artifacts": [
+    {
+      "path": "/tmp/doe-c-metal-final/libdoe_metal.a",
+      "sha256": "65229a2b78192cbdb7407506532cc3df6d1cc801e90206a871aa08fe13486a51"
+    },
+    {
+      "path": "/tmp/doe-c-metal-final/test_lifetime",
+      "sha256": "42d2fc7dea4f4e7805892ac1636fe5bfd4af92d8dace6275a9a90b18a072c1d6"
+    },
+    {
+      "path": "/tmp/doe-c-metal-final/test_objc_calls",
+      "sha256": "5f23624d868662afd14452695c0e8a2c05d88713a3cc9b3c8d990edf6d3d8137"
+    },
+    {
+      "path": "/tmp/doe-c-metal-final/probe",
+      "sha256": "b234fe5b44a13fad391a6ea606d0bda3b38f2ae9975cf3720f5078c2e248cf35"
+    },
+    {
+      "path": "/tmp/doe-c-metal-final/sanitize/test_lifetime",
+      "sha256": "b5757870ea02fee0139a522414831044899db72c615f2b6778845965294ef988"
+    },
+    {
+      "path": "/tmp/doe-c-metal-final/sanitize/test_objc_calls",
+      "sha256": "e19e20932e84f748f89211b3b3d23e8de8c1751855c2243816b7e3da3e8d0624"
+    }
+  ],
+  "measurements": {
+    "c_header_files": 15,
+    "c_header_physical_lines": 2583,
+    "production_c_header_files": 10,
+    "production_c_header_physical_lines": 1482,
+    "maximum_file_physical_lines": 429,
+    "complete_retained_delivery_reduction_measured": false,
+    "performance_measured": false
+  },
+  "not_run": [
+    "Apple compiler/SDK ABI validation",
+    "Apple Objective-C runtime consumption",
+    "Physical Metal compute/readback",
+    "Full retained Metal consumer/native integration qualification",
+    "LeakSanitizer in a supported runtime"
+  ],
+  "boundary_effects": [
+    "New experimental backend-private API only",
+    "No production default/provider change",
+    "No Zig source deletion or linking",
+    "Shared resource/native/public object authorities unchanged"
+  ],
+  "remaining_surfaces": [
+    "Textures/samplers",
+    "Graphics/surfaces",
+    "Timestamps and shared events",
+    "External textures",
+    "Indirect-count validation",
+    "Pipeline/library caches and streaming reuse",
+    "Full native/frontend wiring"
+  ],
+  "charter_check": {
+    "metal_charter": "passes local gate requirements after correcting Evidence label",
+    "global_gate": "blocked by native/CATSCAN.md Evidence label and stale shared component index at observation; delegated to integration lead"
+  }
+}
