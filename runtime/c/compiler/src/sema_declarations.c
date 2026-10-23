@@ -138,7 +138,14 @@ static bool base_type(Source *s, NameSpan name, const LocalScope *scope, TypeId 
         *width = (uint32_t)(s->source[name.offset+3u]-'0');
         *out = suffix == 'u'?IR_U32:suffix == 'i'?IR_I32:IR_F32;
     }
-    else return source_error(s, DOE_COMPILER_UNSUPPORTED, name.offset, "unsupported type name");
+    else {
+        uint32_t columns, rows;
+        if (!type_matrix_name(s, name, &columns, &rows) || name.length != 7u)
+            return source_error(s, DOE_COMPILER_UNSUPPORTED, name.offset, "unsupported type name");
+        if (s->source[name.offset + 6u] != 'f')
+            return source_error(s, DOE_COMPILER_UNSUPPORTED, name.offset, "unsupported matrix element type");
+        return type_matrix_intern(s, IR_F32, columns, rows, out);
+    }
     return true;
 }
 bool integer_attribute(Source *s, uint32_t expression, const LocalScope *scope, bool count, uint32_t *out) {
@@ -192,8 +199,10 @@ bool sema_type_reference(Source *s, TypeRef ref, const LocalScope *scope, TypeId
                 if (g->count_expression != NO_ID || type != IR_F32)
                     return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, g->name.offset,
                                         "matrix annotation requires one floating-point scalar type");
-                return source_error(s, DOE_COMPILER_UNSUPPORTED, g->name.offset,
-                                    "matrix types are not supported");
+                if (!type_matrix_intern(s, type, (uint32_t)(name[3] - '0'),
+                                         (uint32_t)(name[5] - '0'), &type)) return false;
+                --c->walk_count;
+                continue;
             }
             if (g->name.length != 4u || memcmp(name, "vec", 3u) != 0 || name[3]<'2' || name[3]>'4')
                 return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, g->name.offset,

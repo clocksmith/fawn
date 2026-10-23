@@ -8,6 +8,16 @@ extern "C" {
 #endif
 #define DOE_COMPILER_STAGES_ABI_VERSION 7u
 #define DOE_COMPILER_STAGES_SCHEMA_VERSION 7u
+/* Existing stage descriptors also serve explicit ABI8 matrix reflection. */
+#define DOE_COMPILER_MATRIX_ABI_VERSION 8u
+#define DOE_COMPILER_MATRIX_SCHEMA_VERSION 8u
+#define DOE_COMPILER_LATEST_ABI_VERSION 8u
+#define DOE_COMPILER_TYPE_MATRIX 6u
+/* For kind MATRIX, element_type names the column-vector type, array_count is
+ * the number of columns, vector_width is the number of rows, and stride_bytes
+ * is the natural column stride. All retained record layouts are unchanged.
+ * Version7 selected reflection rejects matrix-reachable output type graphs;
+ * binary-only compilation does not inherit that projection restriction. */
 #define DOE_COMPILER_STAGE_VERTEX 2u
 #define DOE_COMPILER_STAGE_FRAGMENT 3u
 #define DOE_COMPILER_POOL_INTERFACE_ATTRIBUTES 23u

@@ -67,7 +67,8 @@ static bool compile_pipeline(Source *source, CompilerWorkspace *c, uint32_t proj
         (projection==0u || (c->entry_count==1u || source_error(source,DOE_COMPILER_UNSUPPORTED,
             c->functions[c->entries[1].function].name.offset,"multiple compute entries cannot use a singular reflection projection"))) &&
         (projection==0u || projection==3u || reflect_legacy_admit(source,c,projection==2u)) &&
-        (projection!=3u || reflect_buffers_only(source)) && reflect_prepare(source,c,counts);
+        (projection!=3u || reflect_buffers_only(source)) && reflect_prepare(source,c,counts) &&
+        (projection == 0u || reflect_matrix_admit(source));
     const bool restored = numeric_environment_end(source, &environment);
     return lowered && restored;
 }
@@ -293,7 +294,7 @@ static DoeCompilerStatus compile_module(const DoeCompilerModuleCapacities *capac
     const DoeCompilerEntrySelectionV5 *selection, uint32_t flags, const DoeCompilerModuleOutputs *outputs,
     DoeCompilerModuleResult *result, const DoeCompilerResourceOutputs *resource_outputs,
     DoeCompilerResourceResult *resource_result, const DoeCompilerStageCapacities *stage_capacities,
-    const DoeCompilerStageOutputs *stage_outputs, DoeCompilerStageResult *stage_result) {
+    const DoeCompilerStageOutputs *stage_outputs, DoeCompilerStageResult *stage_result, uint32_t version) {
     const int saved_errno=errno;
     memset(result,0,sizeof(*result));
     Source context={.source=source,.length=length,.diagnostic=&result->diagnostic,
@@ -333,6 +334,8 @@ static DoeCompilerStatus compile_module(const DoeCompilerModuleCapacities *capac
         return compiler_return(result->diagnostic.status,saved_errno);
     if (resource_result == NULL && (flags & DOE_COMPILER_MODULE_REFLECTION) != 0u && !reflect_buffers_only(&context))
         return compiler_return(result->diagnostic.status, saved_errno);
+    if (version < DOE_COMPILER_MATRIX_ABI_VERSION && (flags & DOE_COMPILER_MODULE_REFLECTION) != 0u &&
+        !reflect_matrix_admit(&context)) return compiler_return(result->diagnostic.status, saved_errno);
     const uint64_t stage_names = stage_name_bytes(&context);
     if (stage_names > UINT32_MAX - typed.name_bytes) {
         (void)source_error(&context, DOE_COMPILER_UNSUPPORTED, length, "interface names exceed uint32 metadata format");
@@ -374,7 +377,7 @@ static DoeCompilerStatus compile_module(const DoeCompilerModuleCapacities *capac
     }
     if (stage_result != NULL && (flags & DOE_COMPILER_MODULE_REFLECTION) != 0u) {
         stage_reflect(&context, stage_outputs->interfaces, outputs->names, (uint32_t)(typed.name_bytes - stage_names));
-        result->module.schema_version = DOE_COMPILER_STAGES_SCHEMA_VERSION;
+        result->module.schema_version = version;
         stage_result->published_interfaces = interfaces;
     }
     result->published=counts;
@@ -394,7 +397,7 @@ DoeCompilerStatus doe_compiler_compile_module(uint32_t version,
         return compiler_return(DOE_COMPILER_ABI_MISMATCH,saved_errno);
     if (!module_records(outputs)) return compiler_return(DOE_COMPILER_ABI_MISMATCH,saved_errno);
     return compiler_return(compile_module(capacities, workspace, workspace_size, source, length,
-        selection, flags, outputs, result, NULL, NULL, NULL, NULL, NULL), saved_errno);
+        selection, flags, outputs, result, NULL, NULL, NULL, NULL, NULL, version), saved_errno);
 }
 
 DoeCompilerStatus doe_compiler_resource_requirements(uint32_t version,
@@ -426,7 +429,7 @@ DoeCompilerStatus doe_compiler_compile_resources(uint32_t version,
         return compiler_return(DOE_COMPILER_ABI_MISMATCH, saved_errno);
     memset(result, 0, sizeof(*result));
     return compiler_return(compile_module(capacities, workspace, workspace_size, source, length,
-        selection, flags, outputs != NULL ? &outputs->module : NULL, &result->module, outputs, result, NULL, NULL, NULL), saved_errno);
+        selection, flags, outputs != NULL ? &outputs->module : NULL, &result->module, outputs, result, NULL, NULL, NULL, version), saved_errno);
 }
 
 DoeCompilerStatus doe_compiler_stage_requirements(uint32_t version,
@@ -434,7 +437,7 @@ DoeCompilerStatus doe_compiler_stage_requirements(uint32_t version,
     DoeCompilerWorkspaceRequirements *requirements, size_t requirements_size) {
     const int saved_errno = errno;
     if (requirements == NULL) return compiler_return(DOE_COMPILER_INPUT_ERROR, saved_errno);
-    if (version != DOE_COMPILER_STAGES_ABI_VERSION || capacities_size != sizeof(*capacities) || requirements_size != sizeof(*requirements))
+    if ((version != DOE_COMPILER_STAGES_ABI_VERSION && version != DOE_COMPILER_MATRIX_ABI_VERSION) || capacities_size != sizeof(*capacities) || requirements_size != sizeof(*requirements))
         return compiler_return(DOE_COMPILER_ABI_MISMATCH, saved_errno);
     CompilerLimits limits;
     size_t base, bytes;
@@ -450,7 +453,7 @@ DoeCompilerStatus doe_compiler_compile_stages(uint32_t version,
     DoeCompilerStageResult *result, size_t result_size) {
     const int saved_errno = errno;
     if (result == NULL) return compiler_return(DOE_COMPILER_INPUT_ERROR, saved_errno);
-    if (version != DOE_COMPILER_STAGES_ABI_VERSION || capacities_size != sizeof(*capacities) ||
+    if ((version != DOE_COMPILER_STAGES_ABI_VERSION && version != DOE_COMPILER_MATRIX_ABI_VERSION) || capacities_size != sizeof(*capacities) ||
         selection_size != sizeof(*selection) || result_size != sizeof(*result) ||
         (outputs != NULL ? outputs_size != sizeof(*outputs) : outputs_size != 0u))
         return compiler_return(DOE_COMPILER_ABI_MISMATCH, saved_errno);
@@ -466,5 +469,5 @@ DoeCompilerStatus doe_compiler_compile_stages(uint32_t version,
     return compiler_return(compile_module(capacities != NULL ? &capacities->module : NULL,
         workspace, workspace_size, source, length, selection, flags,
         outputs != NULL ? &outputs->resources.module : NULL, &result->resources.module,
-        outputs != NULL ? &outputs->resources : NULL, &result->resources, capacities, outputs, result), saved_errno);
+        outputs != NULL ? &outputs->resources : NULL, &result->resources, capacities, outputs, result, version), saved_errno);
 }

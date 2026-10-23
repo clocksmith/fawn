@@ -149,7 +149,33 @@ reuse, and the unchanged retained timestamp-normalization kernel with specializa
 constants. Software Vulkan execution is a separate runtime receipt, not physical
 GPU qualification. Rules follow WGSL CRD2026-10-21 section17.4.1.
 
-Other barriers, atomics, matrices, general pointers, aliases,
+The ABI8 matrix extension uses the existing stage front door and unchanged
+reflection records. Pass `DOE_COMPILER_MATRIX_ABI_VERSION` (8) explicitly;
+`DOE_COMPILER_LATEST_ABI_VERSION` exposes the current capability. Matrix reflection
+kind6 names a column-vector element type, column count, row width and natural
+column stride. Older selected reflection rejects only matrix-reachable output
+graphs; binary-only compilation and non-reflected local matrices share the same
+pipeline. No new exports, private records or workspace query growth are required.
+
+All nine f32 matrix shapes support typed/inferred constructors, zero/copy values,
+column indexing, aggregate storage, helper parameters/results, addition/subtraction,
+scalar/vector/matrix multiplication, transpose and square determinant. AbstractFloat
+constant matrices retain the compact constant DAG and checked numeric owner.
+Uniform two-row matrices retain their natural 8-byte column stride in reflection.
+Their affected SPIR-V uniform resources use an exact-byte uvec4 prefix and optional
+scalar/vector tail, with guarded scalar-lane reads and logical reconstruction. This
+physical target view neither repacks source bytes nor requires an unenabled Vulkan
+uniform-layout feature. Its traversal/constants/words use the ordinary V/D/W pools;
+each additional target ID is charged to a serialized defining instruction within W.
+Physical uniform byte-offset arithmetic currently has an explicit u32 format limit.
+The other matrix layouts retain ordinary SPIR-V matrix types and column decorations.
+`make test-matrices` exercises source semantics, actual Vulkan1.1 word validation,
+exact constant results, ABI8 graph publication, old projection failure and reuse.
+Software/physical execution and complete retained-source coverage remain separate.
+Rules follow [WGSL CRD2026-10-21](https://www.w3.org/TR/2026/CRD-WGSL-20261021/),
+sections8.8 and17.1.2, and the Khronos GLSL.std.450 determinant definition.
+
+Other barriers, atomics, general pointers, aliases,
 overrides, f16, remaining subgroup operations, remaining texture operations, wider builtins,
 other targets and runtime metadata/adoption remain open owners, not implied coverage.
 
@@ -190,6 +216,8 @@ pool accounting and ceilings; future growth requires an explicit reviewed change
 - spirv_image.c: checked real image queries, access and sampling.
 - sema_finalize.c: nonrecursive typed numeric/swizzle value finalization.
 - sema_array.c: direct runtime-array address and length validation.
+- sema_matrix.c / spirv_matrix.c: matrix overloads, constants and target operations.
+- spirv_uniform.c: exact-byte physical views for baseline uniform matrix layout.
 - types.c / constants.c: shared typed layout and compact aggregate constants.
 - sema_declarations.c / sema_expression.c / sema_call.c / validate.c: module and
   lexical identity, typed values/references/calls and structured control.

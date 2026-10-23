@@ -255,8 +255,8 @@ static bool postfix_value(Source *s, const Expression *node, const LocalScope *s
         else return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, member.offset, "array value has no named member");
     }
     else {
-        if (input<7u || (c->types[input-7u].kind != TYPE_ARRAY && c->types[input-7u].kind != TYPE_RUNTIME_ARRAY && c->types[input-7u].kind != TYPE_VECTOR))
-            return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, node->source_offset, "index requires vector or array");
+        if (input<7u || (c->types[input-7u].kind != TYPE_ARRAY && c->types[input-7u].kind != TYPE_RUNTIME_ARRAY && c->types[input-7u].kind != TYPE_VECTOR && c->types[input-7u].kind != TYPE_MATRIX))
+            return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, node->source_offset, "index requires vector, matrix or array");
         ExpressionValue ix;
         if (!sema_expression(s, node->value.reference.index, scope, evaluate, emit, &ix) || (ix.constant.type == IR_ABSTRACT_INT && !sema_materialize(s, &ix, IR_I32))) return false;
         if (ix.constant.type != IR_I32 && ix.constant.type != IR_U32) return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, ix.value.source_offset, "index requires i32 or u32");
@@ -383,6 +383,8 @@ static bool binary_types(Source *s, ExpressionKind op, Comparison cmp, Expressio
     return shaped_type(s, op == EXPRESSION_COMPARE?IR_BOOL:leaf, n, result);
 }
 bool sema_binary(Source *s, ExpressionKind op, Comparison cmp, ExpressionValue *a, ExpressionValue *b, uint32_t offset, bool evaluate, bool emit, ExpressionValue *out) {
+    if (type_matrix(s->compiler, a->constant.type) || type_matrix(s->compiler, b->constant.type))
+        return sema_matrix_binary(s, op, a, b, offset, evaluate, emit, out);
     TypeId type;
     if (!binary_types(s, op, cmp, a, b, offset, &type)) return false;
     const TypeId leaf = type_leaf(s->compiler, a->constant.type);

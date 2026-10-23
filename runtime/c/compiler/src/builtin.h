@@ -7,7 +7,7 @@
 typedef enum {
     BUILTIN_COMPONENT_NUMERIC, BUILTIN_COMPONENT_FLOAT, BUILTIN_NUMERIC_REDUCTION,
     BUILTIN_FLOAT_REDUCTION, BUILTIN_FLOAT_VECTOR, BUILTIN_FLOAT_CROSS,
-    BUILTIN_SUBGROUP_NUMERIC, BUILTIN_SUBGROUP_INTEGER
+    BUILTIN_SUBGROUP_NUMERIC, BUILTIN_SUBGROUP_INTEGER, BUILTIN_MATRIX
 } BuiltinFamily;
 
 /* This read-only signature owns shape, stage-independent arity and target
@@ -27,6 +27,7 @@ bool builtin_subgroup(const NumericBuiltin *);
 bool builtin_subgroup_uniform(const NumericBuiltin *);
 bool builtin_scalar_result(const NumericBuiltin *);
 bool builtin_shape(const NumericBuiltin *, uint32_t);
+bool matrix_constant(Source *, uint32_t, NumericBuiltinKind, ConstantValue, TypeId, ConstantValue *);
 bool builtin_constant(Source *, uint32_t, const NumericBuiltin *,
                       const ConstantValue *, TypeId, ConstantValue *);
 /* Bound values are borrowed only for this validation call; neither is mutated. */

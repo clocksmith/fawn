@@ -29,6 +29,7 @@ bool spirv_subgroup_builtin(Emitter *e, const IrInstruction *ir,
         case BUILTIN_SUBGROUP_XOR: opcode = 361u; break;
         case BUILTIN_MIN: case BUILTIN_MAX: case BUILTIN_CLAMP: case BUILTIN_EXP:
         case BUILTIN_TANH: case BUILTIN_SQRT: case BUILTIN_DOT: case BUILTIN_LENGTH:
+        case BUILTIN_TRANSPOSE: case BUILTIN_DETERMINANT:
         case BUILTIN_DISTANCE: case BUILTIN_NORMALIZE: case BUILTIN_CROSS:
             return spirv_emit_error(e, ir->source_offset, "non-subgroup builtin reached collective lowering");
     }

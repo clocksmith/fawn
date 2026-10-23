@@ -159,6 +159,10 @@ static bool emit_numeric_builtin(Emitter *e, const IrInstruction *ir) {
         }
         return true;
     }
+    if (builtin->kind == BUILTIN_TRANSPOSE) {
+        EMIT(OP_TRANSPOSE, spirv_target_type(e, ir->type), result, left);
+        return true;
+    }
     if (builtin->kind == BUILTIN_DOT) {
         if (leaf == IR_F32) {
             EMIT(OP_DOT, spirv_target_type(e, ir->type), result, left, right);
@@ -220,6 +224,8 @@ static bool emit_safe_operation(Emitter *e, const IrInstruction *ir) {
     return vector_construct(e, ir->type, result, lanes, width);
 }
 static bool emit_arithmetic(Emitter *e, const IrInstruction *ir) {
+    if (type_matrix(e->program, ir->operands.scalar.binding) || type_matrix(e->program, ir->operands.scalar.literal))
+        return spirv_matrix_arithmetic(e, ir);
     const bool floating = type_leaf(e->program, ir->type) == IR_F32;
     const uint32_t opcode = ir->opcode == IR_SUBTRACT ? (floating ? OP_FSUB : OP_ISUB) :
         ir->opcode == IR_MULTIPLY ? (floating ? OP_FMUL : OP_IMUL) : floating ? OP_FADD : OP_IADD;
@@ -243,6 +249,7 @@ static bool emit_composite(Emitter *e, const IrInstruction *ir) {
     const uint32_t first = ir->operands.composite.first, count = ir->operands.composite.count;
     if (first > c->operand_count || count > c->operand_count - first)
         return spirv_emit_error(e, ir->source_offset, "invalid typed constructor range");
+    if (ir->operands.composite.kind == 3u) return spirv_matrix_construct(e, ir);
     if (ir->operands.composite.kind == 0u) {
         uint32_t *words = NULL;
         if (!spirv_instruction_space(e, OP_COMPOSITE_CONSTRUCT, (size_t)count + 2u, &words)) return false;
@@ -374,24 +381,29 @@ static bool emit_pointer_access(Emitter *e, const IrInstruction *ir) {
         EMIT(OP_SELECTION_MERGE, merge, 0u);
         EMIT(OP_BRANCH_CONDITIONAL, condition, body, merge);
         EMIT(OP_LABEL, body);
-    }
-    uint32_t pointer = base;
-    if (c->walk_count != 0u || wrapped) {
-        pointer = spirv_reserve_ids(e, 1u);
-        uint32_t *words = NULL;
-        if (!spirv_instruction_space(e, OP_ACCESS_CHAIN, (size_t)c->walk_count + (wrapped ? 1u : 0u) + 3u, &words)) return false;
-        words[0] = spirv_pointer_type(e, ir->type, storage); words[1] = pointer; words[2] = base;
-        uint32_t output = 3u;
-        if (wrapped) words[output++] = ID_ZERO_U32;
-        for (uint32_t i = c->walk_count; i != 0u; --i) words[output++] = c->walk[i - 1u].cursor;
+        e->current_label = body;
     }
     const uint32_t loaded = store ? 0u : condition == 0u ? e->values[ir->result] : spirv_reserve_ids(e, 1u);
-    if (store) { EMIT(OP_STORE, pointer, e->values[ir->operands.access.value]); }
-    else { EMIT(OP_LOAD, spirv_target_type(e, ir->type), loaded, pointer); }
+    if (resource != NULL && spirv_uniform_raw(e, resource)) {
+        if (store || !spirv_uniform_load(e, ir, loaded)) return false;
+    } else {
+        uint32_t pointer = base;
+        if (c->walk_count != 0u || wrapped) {
+            pointer = spirv_reserve_ids(e, 1u);
+            uint32_t *words = NULL;
+            if (!spirv_instruction_space(e, OP_ACCESS_CHAIN, (size_t)c->walk_count + (wrapped ? 1u : 0u) + 3u, &words)) return false;
+            words[0] = spirv_pointer_type(e, ir->type, storage); words[1] = pointer; words[2] = base;
+            uint32_t output = 3u;
+            if (wrapped) words[output++] = ID_ZERO_U32;
+            for (uint32_t i = c->walk_count; i != 0u; --i) words[output++] = c->walk[i - 1u].cursor;
+        }
+        if (store) { EMIT(OP_STORE, pointer, e->values[ir->operands.access.value]); }
+        else { EMIT(OP_LOAD, spirv_target_type(e, ir->type), loaded, pointer); }
+    }
     if (condition != 0u) {
         EMIT(OP_BRANCH, merge);
         EMIT(OP_LABEL, merge);
-        if (!store) { EMIT(OP_PHI, spirv_target_type(e, ir->type), e->values[ir->result], loaded, body, spirv_zero_constant(e, ir->type), predecessor); }
+        if (!store) { EMIT(OP_PHI, spirv_target_type(e, ir->type), e->values[ir->result], loaded, e->current_label, spirv_zero_constant(e, ir->type), predecessor); }
         e->current_label = merge;
     }
     c->walk_count = 0u;
@@ -829,10 +841,13 @@ bool emit_spirv(Source *source, CompilerWorkspace *program) {
     if (program->limits.words < 5u)
         return source_pool_error(source, DOE_COMPILER_POOL_WORDS, 5u, source->length,
                                  "SPIR-V staging capacity is smaller than the header");
+    /* Physical uniform reconstruction is output-sensitive: each additional ID
+     * requires a serialized defining instruction, so W charges its complete
+     * contribution without a hidden aggregate-size pool or guessed IR ratio. */
     const uint64_t ceiling = 256u + (uint64_t)program->limits.targets + 64u * (uint64_t)program->limits.instructions +
         3u * (uint64_t)(program->limits.tokens / 6u) + program->limits.tokens / 4u +
         (uint64_t)program->limits.statements + 1u + 11u * (uint64_t)program->limits.accesses + program->limits.resources +
-        program->limits.tokens / 8u + (uint64_t)program->limits.entry_inputs + 5u*(uint64_t)program->limits.entries + 8u + spirv_stage_id_budget(source);
+        program->limits.tokens / 8u + (uint64_t)program->limits.entry_inputs + 5u*(uint64_t)program->limits.entries + 8u + spirv_stage_id_budget(source) + program->limits.words;
     const uint32_t bound = ceiling < UINT32_MAX ? (uint32_t)ceiling : UINT32_MAX - 1u;
     const size_t values = (size_t)program->limits.instructions + program->limits.tokens / 4u + 1u;
     memset(program->values, 0, values * sizeof(*program->values));

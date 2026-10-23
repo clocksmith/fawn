@@ -175,6 +175,7 @@ bool numeric_builtin(Source *source, size_t offset, const NumericBuiltin *signat
             break;
         case BUILTIN_DOT:
         case BUILTIN_LENGTH:
+        case BUILTIN_TRANSPOSE: case BUILTIN_DETERMINANT:
         case BUILTIN_DISTANCE:
         case BUILTIN_NORMALIZE:
         case BUILTIN_CROSS:

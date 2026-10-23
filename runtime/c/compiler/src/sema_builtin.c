@@ -14,6 +14,12 @@ bool sema_builtin_value(Source *source, const Expression *node, const LocalScope
         if (!sema_expression(source, compiler->arguments[link].expression, scope,
                              evaluate, emit, &arguments[i])) return false;
         const TypeId type = arguments[i].constant.type;
+        if (builtin->family == BUILTIN_MATRIX) {
+            if (!sema_matrix_result(source, builtin->kind, type, node->source_offset, &leaf)) return false;
+            runtime = arguments[0].runtime;
+            known = known && arguments[0].known;
+            break;
+        }
         const TypeId argument_leaf = type_leaf(compiler, type);
         const uint32_t argument_width = type_vector_width(compiler, type);
         if (argument_leaf == IR_VOID || argument_leaf == IR_BOOL ||
@@ -28,34 +34,37 @@ bool sema_builtin_value(Source *source, const Expression *node, const LocalScope
         known = known && arguments[i].known;
         link = compiler->arguments[link].next;
     }
-    if (builtin_floating(builtin) && leaf == IR_ABSTRACT_INT) leaf = IR_ABSTRACT_FLOAT;
-    if (!builtin_shape(builtin, width) ||
-        (builtin->family == BUILTIN_SUBGROUP_INTEGER && leaf != IR_I32 && leaf != IR_U32 && leaf != IR_ABSTRACT_INT) ||
-        (builtin_floating(builtin) && leaf != IR_F32 && leaf != IR_ABSTRACT_FLOAT))
-        return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, node->source_offset,
-                            "no matching numeric builtin overload");
-    if (runtime && !sema_default_type(source, leaf, node->source_offset, &leaf)) return false;
     TypeId operand_type = leaf;
-    if (width != 1u && !type_intern(source, TYPE_VECTOR, leaf, width, &operand_type)) return false;
-    for (uint32_t i = 0u; i < builtin->arity; ++i)
-        if (!sema_materialize(source, &arguments[i], operand_type)) return false;
+    if (builtin->family != BUILTIN_MATRIX) {
+        if (builtin_floating(builtin) && leaf == IR_ABSTRACT_INT) leaf = IR_ABSTRACT_FLOAT;
+        if (!builtin_shape(builtin, width) ||
+            (builtin->family == BUILTIN_SUBGROUP_INTEGER && leaf != IR_I32 && leaf != IR_U32 && leaf != IR_ABSTRACT_INT) ||
+            (builtin_floating(builtin) && leaf != IR_F32 && leaf != IR_ABSTRACT_FLOAT))
+            return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, node->source_offset,
+                                "no matching numeric builtin overload");
+        if (runtime && !sema_default_type(source, leaf, node->source_offset, &leaf)) return false;
+        operand_type = leaf;
+        if (width != 1u && !type_intern(source, TYPE_VECTOR, leaf, width, &operand_type)) return false;
+        for (uint32_t i = 0u; i < builtin->arity; ++i)
+            if (!sema_materialize(source, &arguments[i], operand_type)) return false;
 
-    if (builtin->kind == BUILTIN_CLAMP && !arguments[1].runtime && !arguments[2].runtime) {
-        /* A skipped constant bound still has mandatory creation-time meaning.
-         * Force only unknown const expressions, never an effectful runtime input. */
-        link = compiler->arguments[node->left].next;
-        for (uint32_t i = 1u; i < 3u; ++i) {
-            if (!arguments[i].known &&
-                (!sema_expression(source, compiler->arguments[link].expression, scope,
-                                  true, false, &arguments[i]) ||
-                 !sema_materialize(source, &arguments[i], operand_type))) return false;
-            link = compiler->arguments[link].next;
+        if (builtin->kind == BUILTIN_CLAMP && !arguments[1].runtime && !arguments[2].runtime) {
+            /* A skipped constant bound still has mandatory creation-time meaning.
+             * Force only unknown const expressions, never an effectful runtime input. */
+            link = compiler->arguments[node->left].next;
+            for (uint32_t i = 1u; i < 3u; ++i) {
+                if (!arguments[i].known &&
+                    (!sema_expression(source, compiler->arguments[link].expression, scope,
+                                      true, false, &arguments[i]) ||
+                     !sema_materialize(source, &arguments[i], operand_type))) return false;
+                link = compiler->arguments[link].next;
+            }
+            if (!builtin_clamp_bounds(source, node->source_offset,
+                                      &arguments[1].constant, &arguments[2].constant)) return false;
         }
-        if (!builtin_clamp_bounds(source, node->source_offset,
-                                  &arguments[1].constant, &arguments[2].constant)) return false;
-    }
 
-    const TypeId result_type = builtin_scalar_result(builtin) ? leaf : operand_type;
+    }
+    const TypeId result_type = builtin->family == BUILTIN_MATRIX || builtin_scalar_result(builtin) ? leaf : operand_type;
     *out = (ExpressionValue){
         .runtime = runtime, .known = known && !runtime, .constant.type = result_type,
         .value = {.type = result_type, .source_offset = node->source_offset}

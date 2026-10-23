@@ -9,7 +9,7 @@
 enum {
     OP_NAME = 5, OP_EXT_INST_IMPORT = 11, OP_EXT_INST = 12, OP_MEMORY_MODEL = 14, OP_ENTRY_POINT = 15, OP_EXECUTION_MODE = 16,
     OP_CAPABILITY = 17, OP_TYPE_VOID = 19, OP_TYPE_BOOL = 20, OP_TYPE_INT = 21,
-    OP_TYPE_FLOAT = 22, OP_TYPE_VECTOR = 23, OP_TYPE_IMAGE = 25, OP_TYPE_SAMPLER = 26, OP_TYPE_SAMPLED_IMAGE = 27, OP_TYPE_ARRAY = 28, OP_TYPE_RUNTIME_ARRAY = 29, OP_TYPE_STRUCT = 30,
+    OP_TYPE_FLOAT = 22, OP_TYPE_VECTOR = 23, OP_TYPE_MATRIX = 24, OP_TYPE_IMAGE = 25, OP_TYPE_SAMPLER = 26, OP_TYPE_SAMPLED_IMAGE = 27, OP_TYPE_ARRAY = 28, OP_TYPE_RUNTIME_ARRAY = 29, OP_TYPE_STRUCT = 30,
     OP_TYPE_POINTER = 32, OP_TYPE_FUNCTION = 33, OP_CONSTANT_TRUE = 41, OP_CONSTANT_FALSE = 42,
     OP_CONSTANT = 43, OP_CONSTANT_COMPOSITE = 44, OP_CONSTANT_NULL = 46, OP_FUNCTION = 54, OP_FUNCTION_PARAMETER = 55, OP_FUNCTION_CALL = 57,
     OP_FUNCTION_END = 56, OP_VARIABLE = 59, OP_LOAD = 61, OP_STORE = 62,
@@ -17,12 +17,13 @@ enum {
     OP_MEMBER_DECORATE = 72, OP_VECTOR_EXTRACT_DYNAMIC = 77, OP_VECTOR_SHUFFLE = 79,
     OP_SAMPLED_IMAGE = 86, OP_IMAGE_SAMPLE_EXPLICIT_LOD = 88, OP_IMAGE_FETCH = 95, OP_IMAGE_READ = 98, OP_IMAGE_WRITE = 99,
     OP_IMAGE_QUERY_SIZE_LOD = 103, OP_IMAGE_QUERY_SIZE = 104, OP_IMAGE_QUERY_LEVELS = 106, OP_IMAGE_QUERY_SAMPLES = 107,
-    OP_COMPOSITE_CONSTRUCT = 80, OP_COMPOSITE_EXTRACT = 81, OP_COPY_OBJECT = 83,
+    OP_COMPOSITE_CONSTRUCT = 80, OP_COMPOSITE_EXTRACT = 81, OP_COMPOSITE_INSERT = 82, OP_COPY_OBJECT = 83, OP_TRANSPOSE = 84,
     OP_CONVERT_F_TO_U = 109, OP_CONVERT_F_TO_S = 110, OP_CONVERT_S_TO_F = 111, OP_CONVERT_U_TO_F = 112,
     OP_BITCAST = 124, OP_SNEGATE = 126, OP_FNEGATE = 127, OP_IADD = 128, OP_FADD = 129,
     OP_ISUB = 130, OP_FSUB = 131, OP_IMUL = 132, OP_FMUL = 133,
     OP_UDIV = 134, OP_SDIV = 135, OP_FDIV = 136, OP_UMOD = 137, OP_SREM = 138, OP_FREM = 140,
-    OP_DOT = 148, OP_IS_NAN = 156, OP_LOGICAL_OR = 166, OP_LOGICAL_AND = 167,
+    OP_MATRIX_TIMES_SCALAR = 143, OP_VECTOR_TIMES_MATRIX = 144, OP_MATRIX_TIMES_VECTOR = 145,
+    OP_MATRIX_TIMES_MATRIX = 146, OP_DOT = 148, OP_IS_NAN = 156, OP_LOGICAL_OR = 166, OP_LOGICAL_AND = 167,
     OP_LOGICAL_EQUAL = 164, OP_LOGICAL_NOT_EQUAL = 165, OP_LOGICAL_NOT = 168, OP_SELECT = 169, OP_IEQUAL = 170, OP_INOT_EQUAL = 171,
     OP_UGREATER_THAN = 172, OP_SGREATER_THAN = 173, OP_UGREATER_EQUAL = 174, OP_SGREATER_EQUAL = 175,
     OP_ULESS_THAN = 176, OP_SLESS_THAN = 177, OP_ULESS_EQUAL = 178, OP_SLESS_EQUAL = 179, OP_FORD_EQUAL = 180, OP_FUNORD_NOT_EQUAL = 183,
@@ -57,6 +58,16 @@ typedef struct {
     uint32_t constants_used;
     bool failed;
 } Emitter;
+TargetDeclaration *spirv_append_declaration(Emitter *, uint32_t, TypeId);
+bool spirv_uniform_plan(Emitter *, ResourceRecord *, bool *);
+bool spirv_uniform_annotations(Emitter *, const TargetDeclaration *);
+bool spirv_uniform_declaration(Emitter *, const TargetDeclaration *);
+bool spirv_uniform_access_plan(Emitter *, const IrInstruction *);
+bool spirv_uniform_raw(const Emitter *, const ResourceRecord *);
+bool spirv_uniform_load(Emitter *, const IrInstruction *, uint32_t);
+bool spirv_matrix_construct(Emitter *, const IrInstruction *);
+bool spirv_matrix_arithmetic(Emitter *, const IrInstruction *);
+bool spirv_matrix_member(Emitter *, uint32_t, uint32_t, TypeId);
 bool spirv_runtime_length(Emitter *, uint32_t, uint32_t);
 bool spirv_emit_error(Emitter *e, uint32_t offset, const char *message);
 uint32_t spirv_reserve_ids(Emitter *e, uint32_t count);

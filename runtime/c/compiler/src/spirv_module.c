@@ -83,7 +83,7 @@ static bool debug_name(Emitter *e, uint32_t id, NameSpan name) {
     const size_t count = span_words(e->source, name, arguments + 1u);
     return spirv_instruction(e, OP_NAME, arguments, count + 1u);
 }
-static TargetDeclaration *append_declaration(Emitter *e, uint32_t kind, TypeId type) {
+TargetDeclaration *spirv_append_declaration(Emitter *e, uint32_t kind, TypeId type) {
     CompilerWorkspace *c = e->program;
     if (c->target_count == c->limits.targets) {
         e->failed = true;
@@ -122,7 +122,7 @@ uint32_t spirv_unsigned_constant(Emitter *e, uint32_t value) {
     CompilerWorkspace *c = e->program;
     for (uint32_t i = 0u; i < c->target_count; ++i)
         if (c->targets[i].kind == DECL_U32 && c->targets[i].payload == value) return c->targets[i].id;
-    TargetDeclaration *d = append_declaration(e, DECL_U32, IR_U32);
+    TargetDeclaration *d = spirv_append_declaration(e, DECL_U32, IR_U32);
     if (d == NULL) return 0u;
     d->payload = value;
     return d->id;
@@ -138,7 +138,7 @@ uint32_t spirv_pointer_type(Emitter *e, TypeId type, uint32_t storage) {
         const TargetDeclaration *d = &c->targets[i];
         if (d->kind == DECL_POINTER && d->type == type && d->storage == storage) return d->id;
     }
-    TargetDeclaration *d = append_declaration(e, DECL_POINTER, type);
+    TargetDeclaration *d = spirv_append_declaration(e, DECL_POINTER, type);
     if (d == NULL) return 0u;
     d->storage = storage; d->payload = spirv_target_type(e, type);
     return d->id;
@@ -148,7 +148,7 @@ uint32_t spirv_zero_constant(Emitter *e, TypeId type) {
         type == IR_U32 ? ID_ZERO_U32 : type == IR_F32 ? ID_ZERO_F32 : 0u);
     TypeRecord *t = &e->program->types[type - 7u];
     if (t->aux != 0u) return t->aux;
-    TargetDeclaration *d = append_declaration(e, DECL_ZERO, type);
+    TargetDeclaration *d = spirv_append_declaration(e, DECL_ZERO, type);
     if (d == NULL) return 0u;
     t->aux = d->id;
     return d->id;
@@ -160,7 +160,7 @@ uint32_t spirv_workgroup_zero(Emitter *e, TypeId type) {
     CompilerWorkspace *c = e->program;
     for (uint32_t i = 0u; i < c->target_count; ++i)
         if (c->targets[i].kind == DECL_ZERO && c->targets[i].type == type) return c->targets[i].id;
-    TargetDeclaration *d = append_declaration(e, DECL_ZERO, type);
+    TargetDeclaration *d = spirv_append_declaration(e, DECL_ZERO, type);
     return d == NULL ? 0u : d->id;
 }
 static bool plan_workgroup_barrier(Emitter *e) {
@@ -218,7 +218,7 @@ static bool plan_type(Emitter *e, TypeId type) {
         if (t->kind == TYPE_VECTOR && t->element == IR_U32 && t->count == 3u) t->target = ID_VEC3;
         else {
             const uint32_t length = t->kind == TYPE_ARRAY ? spirv_unsigned_constant(e, t->count) : 0u;
-            TargetDeclaration *d = append_declaration(e, DECL_TYPE, w->object);
+            TargetDeclaration *d = spirv_append_declaration(e, DECL_TYPE, w->object);
             if (d == NULL) return false;
             d->first = length; t->target = d->id;
         }
@@ -235,7 +235,7 @@ static uint32_t leaf_constant(Emitter *e, ConstantValue value) {
         const TargetDeclaration *d = &c->targets[i];
         if (d->kind == DECL_LEAF && d->type == value.type && d->payload == value.bits) return d->id;
     }
-    TargetDeclaration *d = append_declaration(e, DECL_LEAF, value.type);
+    TargetDeclaration *d = spirv_append_declaration(e, DECL_LEAF, value.type);
     if (d == NULL) return 0u;
     d->payload = value.bits;
     return d->id;
@@ -272,7 +272,7 @@ static bool plan_constant(Emitter *e, uint32_t object) {
         }
         if (k->kind == CONSTANT_ZERO) k->target = spirv_zero_constant(e, k->type);
         else {
-            TargetDeclaration *d = append_declaration(e, DECL_COMPOSITE, k->type);
+            TargetDeclaration *d = spirv_append_declaration(e, DECL_COMPOSITE, k->type);
             if (d == NULL) return false;
             d->first = w->object; k->target = d->id;
         }
@@ -283,7 +283,7 @@ static bool plan_constant(Emitter *e, uint32_t object) {
 uint32_t spirv_sampled_type(Emitter *e, TypeId type) {
     TypeRecord *t = &e->program->types[type - 7u];
     if (t->aux != 0u) return t->aux;
-    TargetDeclaration *d = append_declaration(e, DECL_SAMPLED_IMAGE, type);
+    TargetDeclaration *d = spirv_append_declaration(e, DECL_SAMPLED_IMAGE, type);
     if (d == NULL) return 0u;
     t->aux = d->id;
     return d->id;
@@ -379,12 +379,15 @@ bool spirv_plan_module(Emitter *e) {
     }
     for (uint32_t i = 0u; i < c->resource_count; ++i) {
         ResourceRecord *r = &c->resources[i];
+        bool raw;
+        if (!spirv_uniform_plan(e, r, &raw)) return false;
+        if (raw) { r->target = spirv_reserve_ids(e, 1u); continue; }
         if (spirv_wrapped_resource(c, r)) {
             (void)use_constant(e, ID_ZERO_U32);
-            TargetDeclaration *wrapper = append_declaration(e, DECL_WRAPPER, r->type);
+            TargetDeclaration *wrapper = spirv_append_declaration(e, DECL_WRAPPER, r->type);
             if (wrapper == NULL) return false;
             const uint32_t wrapper_id = wrapper->id;
-            TargetDeclaration *pointer = append_declaration(e, DECL_POINTER, NO_ID);
+            TargetDeclaration *pointer = spirv_append_declaration(e, DECL_POINTER, NO_ID);
             if (pointer == NULL) return false;
             pointer->storage = spirv_resource_storage(r); pointer->payload = wrapper_id;
             r->reserved = pointer->id;
@@ -429,6 +432,7 @@ bool spirv_plan_module(Emitter *e) {
             if (builtin->extended_instruction != 0u && e->math_import == 0u)
                 e->math_import = spirv_reserve_ids(e, 1u);
         } else if (ir->opcode == IR_ACCESS_LOAD || ir->opcode == IR_ACCESS_STORE || ir->opcode == IR_VALUE_ACCESS) {
+            if (!spirv_uniform_access_plan(e, ir)) return false;
             const uint32_t category = ir->operands.access.category;
             const uint32_t storage = category == ROOT_RESOURCE ? spirv_resource_storage(&c->resources[ir->operands.access.root]) :
                 category == ROOT_WORKGROUP ? 4u : 7u;
@@ -463,17 +467,22 @@ static bool annotations(Emitter *e) {
     CompilerWorkspace *c = e->program;
     for (uint32_t i = 0u; i < c->target_count; ++i) {
         const TargetDeclaration *d = &c->targets[i];
-        if (d->kind == DECL_WRAPPER) {
+        if (d->kind == DECL_RAW_UNIFORM) {
+            if (!spirv_uniform_annotations(e, d)) return false;
+        } else if (d->kind == DECL_WRAPPER) {
             EMIT(OP_DECORATE, d->id, 2u);
             EMIT(OP_MEMBER_DECORATE, d->id, 0u, 35u, 0u);
+            if (!spirv_matrix_member(e, d->id, 0u, d->type)) return false;
         } else if (d->kind == DECL_TYPE) {
             const TypeRecord *t = &c->types[d->type - 7u];
             if (t->kind == TYPE_ARRAY || t->kind == TYPE_RUNTIME_ARRAY) {
                 EMIT(OP_DECORATE, d->id, 6u, (uint32_t)t->state.layout.stride);
             } else if (t->kind == TYPE_STRUCT) {
                 if ((t->flags & TYPE_TAIL) != 0u) { EMIT(OP_DECORATE, d->id, 2u); }
-                for (uint32_t m = 0u; m < t->count; ++m)
+                for (uint32_t m = 0u; m < t->count; ++m) {
                     EMIT(OP_MEMBER_DECORATE, d->id, m, 35u, (uint32_t)c->members[t->element + m].offset);
+                    if (!spirv_matrix_member(e, d->id, m, c->members[t->element + m].type)) return false;
+                }
             }
         }
     }
@@ -538,6 +547,7 @@ static bool dynamic_declarations(Emitter *e) {
                 if (t->kind == TYPE_TEXTURE || t->kind == TYPE_SAMPLER) {
                     if (!spirv_image_type(e, t, d->id)) return false;
                 } else if (t->kind == TYPE_VECTOR) { EMIT(OP_TYPE_VECTOR, d->id, spirv_target_type(e, t->element), t->count); }
+                else if (t->kind == TYPE_MATRIX) { EMIT(OP_TYPE_MATRIX, d->id, spirv_target_type(e, t->element), t->count); }
                 else if (t->kind == TYPE_ARRAY) { EMIT(OP_TYPE_ARRAY, d->id, spirv_target_type(e, t->element), d->first); }
                 else if (t->kind == TYPE_RUNTIME_ARRAY) { EMIT(OP_TYPE_RUNTIME_ARRAY, d->id, spirv_target_type(e, t->element)); }
                 else {
@@ -548,6 +558,10 @@ static bool dynamic_declarations(Emitter *e) {
                 }
                 break;
             }
+            case DECL_RAW_UNIFORM:
+            case DECL_RAW_VECTOR:
+                if (!spirv_uniform_declaration(e, d)) return false;
+                break;
             case DECL_SAMPLED_IMAGE:
                 EMIT(OP_TYPE_SAMPLED_IMAGE, d->id, spirv_target_type(e, d->type));
                 break;

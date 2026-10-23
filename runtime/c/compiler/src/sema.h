@@ -46,6 +46,8 @@ bool sema_append(Source *,IrInstruction,IrValue *);
 bool sema_emit(Source *,bool,IrInstruction,IrValue *);
 bool sema_reference_load(Source *,ValueReference,uint32_t,bool,ExpressionValue *);
 bool sema_assignment_reference(Source *,const Assignment *,const LocalScope *,ValueReference *,SourceReference *);
+bool sema_matrix_result(Source *, NumericBuiltinKind, TypeId, uint32_t, TypeId *);
+bool sema_matrix_binary(Source *, ExpressionKind, ExpressionValue *, ExpressionValue *, uint32_t, bool, bool, ExpressionValue *);
 bool sema_binary(Source *,ExpressionKind,Comparison,ExpressionValue *,ExpressionValue *,uint32_t,bool,bool,ExpressionValue *);
 bool sema_call_statement(Source *,uint32_t,const LocalScope *);
 /* The call dispatcher validates builtin arity, type arguments and result use. */

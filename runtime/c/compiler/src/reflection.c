@@ -61,6 +61,14 @@ bool reflect_prepare(Source *s, CompilerWorkspace *c, DoeCompilerTypedOutputCoun
     counts->name_bytes = (size_t)names;
     return true;
 }
+bool reflect_matrix_admit(Source *s) {
+    const CompilerWorkspace *c = s->compiler;
+    for (uint32_t i = 0u; i < c->type_count; ++i)
+        if (c->types[i].kind == TYPE_MATRIX && c->reflection_map[i + 7u] != NO_ID)
+            return source_error(s, DOE_COMPILER_UNSUPPORTED, c->types[i].name.offset,
+                "matrix reflection requires explicit ABI8");
+    return true;
+}
 static DoeCompilerNameV4 publish_name(const Source *s, NameSpan name, char *names, uint32_t *cursor) {
     if (name.length == 0u) return (DoeCompilerNameV4){0u, 0u};
     const DoeCompilerNameV4 result = {*cursor, name.length};
@@ -98,6 +106,12 @@ static void publish_tables(const Source *s, const CompilerWorkspace *c, const Do
             if (t->kind == TYPE_VECTOR) {
                 out->kind = DOE_COMPILER_TYPE_VECTOR;
                 out->vector_width = t->count;
+            }
+            else if (t->kind == TYPE_MATRIX) {
+                out->kind = DOE_COMPILER_TYPE_MATRIX;
+                out->array_count = t->count;
+                out->vector_width = type_vector_width(c, t->element);
+                out->stride_bytes = t->state.layout.stride;
             }
             else {
                 out->kind = t->kind == TYPE_ARRAY?DOE_COMPILER_TYPE_ARRAY:DOE_COMPILER_TYPE_RUNTIME_ARRAY;
