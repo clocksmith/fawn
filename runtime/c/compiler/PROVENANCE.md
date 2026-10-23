@@ -35,3 +35,18 @@ Copied developer-test inputs from `doe-language-experiment-20261023/phase2/c/tes
 - CLI and developer regression tests are adapted from seed copies. Newly added tests remain developer tests; independent acceptance evidence belongs to a separate evaluator.
 
 The original source baseline and contract hashes are recorded in [MILESTONE_1.md](MILESTONE_1.md) and [CONTRACT.sha256](CONTRACT.sha256). No original source, historical evidence or production provider selection is changed by this increment.
+
+## Structured neighbor-sum extension
+
+Milestone 2 extends the accepted native C owners rather than translating retained
+Zig implementation. The original seed and accepted first-milestone source remain
+available in history. The unchanged real neighbor-sum shader is input, not an
+implementation template. The parser adds bounded statement ranges and index
+atoms; validation adds typed values and control markers; SPIR-V emission adds
+unsigned comparisons/subtraction and termination-aware structured selections.
+
+The version-1 public header and both frozen contracts are unchanged. Developer
+instruction tests grow separately from the independent evaluator. No production
+Zig owner, source fixture or prior experimental source is modified. This extension
+adds source admission only: no physical GPU, runtime adopter, performance or
+completed migration claim follows from it.

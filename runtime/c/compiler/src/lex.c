@@ -50,8 +50,14 @@ bool lex_source(Source *source, TokenList *tokens) {
                 ++cursor;
             }
             token.length = cursor - token.offset;
+        } else if (cursor + 1u < source->length && source->source[cursor + 1u] == '=' &&
+                   (c == '=' || c == '!' || c == '<' || c == '>')) {
+            token.kind = c == '=' ? TOKEN_EQUAL : c == '!' ? TOKEN_NOT_EQUAL :
+                         c == '<' ? TOKEN_LESS_EQUAL : TOKEN_GREATER_EQUAL;
+            token.length = 2u;
+            cursor += 2u;
         } else {
-            if (strchr("@()<>:,;{}[].=+", (int)c) == NULL)
+            if (strchr("@()<>:,;{}[].=+-", (int)c) == NULL)
                 return source_error(source, DOE_COMPILER_UNSUPPORTED, cursor,
                                     "unsupported character or operator in bounded WGSL grammar");
             ++cursor;

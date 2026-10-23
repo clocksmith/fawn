@@ -122,28 +122,105 @@ static bool storage_declaration(Parser *p, StorageSyntax *s) {
     ++p->cursor;
     return punctuation(p, '>', ">") && punctuation(p, ';', ";");
 }
-static bool reference_suffix(Parser *p, Reference *reference) {
-    if (!punctuation(p, '[', "[") || !name(p, &reference->index.name)) return false;
-    if (peek(p)->kind == '.') {
-        ++p->cursor;
-        reference->index.member_x = true;
-        if (!word(p, "x")) return false;
+static bool atom(Parser *p, bool member, Atom *out) {
+    if (peek(p)->kind == TOKEN_NUMBER) {
+        out->kind = ATOM_LITERAL;
+        return integer(p, true, &out->value.literal);
     }
-    return punctuation(p, ']', "]");
+    out->kind = ATOM_NAME;
+    if (!name(p, &out->value.name)) return false;
+    if (member && peek(p)->kind == '.') {
+        ++p->cursor;
+        out->kind = ATOM_MEMBER_X;
+        return word(p, "x");
+    }
+    return true;
+}
+static bool index_expression(Parser *p, Index *out) {
+    if (!atom(p, true, &out->base)) return false;
+    if (peek(p)->kind == '+' || peek(p)->kind == '-') {
+        out->operation = peek(p)->kind == '+' ? INDEX_ADD : INDEX_SUBTRACT;
+        ++p->cursor;
+        return atom(p, false, &out->offset);
+    }
+    out->operation = INDEX_BASE;
+    return true;
+}
+static bool reference_suffix(Parser *p, Reference *reference) {
+    return punctuation(p, '[', "[") && index_expression(p, &reference->index) &&
+           punctuation(p, ']', "]");
 }
 static bool operand(Parser *p, Operand *out) {
     if (peek(p)->kind == TOKEN_NUMBER) {
         out->kind = OPERAND_LITERAL;
-        return integer(p, true, &out->literal);
+        return integer(p, true, &out->value.literal);
     }
-    if (!name(p, &out->name)) return false;
+    Name identifier;
+    if (!name(p, &identifier)) return false;
     if (peek(p)->kind == '[') {
         out->kind = OPERAND_LOAD;
-        out->reference.storage = out->name;
-        return reference_suffix(p, &out->reference);
+        out->value.reference.storage = identifier;
+        return reference_suffix(p, &out->value.reference);
     }
     out->kind = OPERAND_NAME;
+    out->value.name = identifier;
     return true;
+}
+static bool condition(Parser *p, Condition *out) {
+    if (!punctuation(p, '(', "(") || !index_expression(p, &out->left)) return false;
+    switch (peek(p)->kind) {
+        case TOKEN_EQUAL: out->comparison = COMPARE_EQUAL; break;
+        case TOKEN_NOT_EQUAL: out->comparison = COMPARE_NOT_EQUAL; break;
+        case '<': out->comparison = COMPARE_LESS; break;
+        case TOKEN_LESS_EQUAL: out->comparison = COMPARE_LESS_EQUAL; break;
+        case '>': out->comparison = COMPARE_GREATER; break;
+        case TOKEN_GREATER_EQUAL: out->comparison = COMPARE_GREATER_EQUAL; break;
+        default: return reject(p, "unsigned comparison operator");
+    }
+    ++p->cursor;
+    return atom(p, false, &out->right) && punctuation(p, ')', ")");
+}
+static bool block(Parser *p, Syntax *s, unsigned depth) {
+    while (peek(p)->kind != '}') {
+        if (peek(p)->kind == TOKEN_END) return reject(p, "statement or }");
+        if (s->statement_count == MAX_STATEMENTS)
+            return source_error(p->source, DOE_COMPILER_INPUT_ERROR, peek(p)->offset,
+                                "function exceeds 16 statements");
+        Statement *statement = &s->statements[s->statement_count++];
+        statement->source_offset = peek(p)->offset;
+        if (spelled(p, peek(p), "if")) {
+            if (depth == MAX_IF_DEPTH)
+                return source_error(p->source, DOE_COMPILER_INPUT_ERROR, peek(p)->offset,
+                                    "if nesting exceeds four levels");
+            ++p->cursor;
+            statement->kind = STATEMENT_IF;
+            if (!condition(p, &statement->value.condition) || !punctuation(p, '{', "{") ||
+                !block(p, s, depth + 1u)) return false;
+            statement->else_start = s->statement_count;
+            if (spelled(p, peek(p), "else")) {
+                ++p->cursor;
+                if (!punctuation(p, '{', "{") || !block(p, s, depth + 1u)) return false;
+            }
+            statement->end = s->statement_count;
+        } else if (spelled(p, peek(p), "return")) {
+            ++p->cursor;
+            statement->kind = STATEMENT_RETURN;
+            if (!punctuation(p, ';', ";")) return false;
+        } else {
+            statement->kind = STATEMENT_ASSIGN;
+            Assignment *assignment = &statement->value.assignment;
+            if (!name(p, &assignment->target.storage) ||
+                !reference_suffix(p, &assignment->target) || !punctuation(p, '=', "=") ||
+                !operand(p, &assignment->operands[0])) return false;
+            if (peek(p)->kind == '+') {
+                ++p->cursor;
+                assignment->addition = true;
+                if (!operand(p, &assignment->operands[1])) return false;
+            }
+            if (!punctuation(p, ';', ";")) return false;
+        }
+    }
+    return punctuation(p, '}', "}");
 }
 static bool starts_storage(const Parser *p) {
     if (peek(p)->kind != '@' || p->cursor + 1u >= p->tokens->count) return false;
@@ -185,10 +262,8 @@ bool parse_tokens(Source *source, const TokenList *tokens, Syntax *syntax) {
             !name(&p, &syntax->alias_source) || !punctuation(&p, '.', ".") ||
             !word(&p, "x") || !punctuation(&p, ';', ";")) return false;
     }
-    if (!name(&p, &syntax->target.storage) || !reference_suffix(&p, &syntax->target) ||
-        !punctuation(&p, '=', "=") || !operand(&p, &syntax->operands[0]) ||
-        !punctuation(&p, '+', "+") || !operand(&p, &syntax->operands[1]) ||
-        !punctuation(&p, ';', ";") || !punctuation(&p, '}', "}")) return false;
+    if (!block(&p, syntax, 0u)) return false;
+    if (syntax->statement_count == 0u) return reject(&p, "at least one statement");
     if (peek(&p)->kind != TOKEN_END)
         return source_error(source, DOE_COMPILER_UNSUPPORTED, peek(&p)->offset,
                             "trailing declarations, statements or tokens are outside the subset");

@@ -108,57 +108,164 @@ static bool resolve_reference(Source *source, const Syntax *s, const Reference *
     if (index == s->storage_count)
         return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, name->offset,
                             "storage reference does not resolve to a declared buffer");
-    const Index *subscript = &reference->index;
-    if (subscript->member_x) {
-        if (!same_name(&subscript->name, &s->invocation))
-            return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, subscript->name.offset,
-                                "member index must be the invocation parameter's x component");
-    } else if (!s->has_alias || !same_name(&subscript->name, &s->alias)) {
-        return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, subscript->name.offset,
-                            "bare index must resolve to the declared invocation-x alias");
-    }
     *binding_index = (uint32_t)index;
     return true;
 }
+static IrType value_type(DoeCompilerScalar scalar) {
+    return scalar == DOE_COMPILER_F32 ? IR_F32 : IR_U32;
+}
+static bool append(Source *source, IrProgram *program, IrInstruction instruction,
+                   IrValue *value) {
+    if (program->instruction_count == MAX_IR_INSTRUCTIONS)
+        return source_error(source, DOE_COMPILER_INPUT_ERROR, instruction.source_offset,
+                            "internal typed instruction capacity exceeded");
+    if (value != NULL) {
+        instruction.result = (uint32_t)program->instruction_count + 1u;
+        *value = (IrValue){ .id = instruction.result, .type = instruction.type,
+                            .source_offset = instruction.source_offset };
+    }
+    program->instructions[program->instruction_count++] = instruction;
+    return true;
+}
+static bool literal_value(Source *source, IrProgram *program, uint32_t literal,
+                          size_t offset, IrValue *value) {
+    return append(source, program, (IrInstruction){ .opcode = IR_CONSTANT,
+        .type = IR_U32, .literal = literal, .source_offset = offset }, value);
+}
+static bool constant_value(Source *source, const Syntax *s, const Name *name,
+                           IrProgram *program, IrValue *value) {
+    if (same_name(name, &s->invocation) || (s->has_alias && same_name(name, &s->alias)))
+        return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, name->offset,
+                            "operand resolves to a local declaration, not the module constant");
+    if (!s->has_constant || !same_name(name, &s->constant_name))
+        return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, name->offset,
+                            "operand name must resolve to the declared u32 constant");
+    return literal_value(source, program, s->constant_value.value, name->offset, value);
+}
+static bool lower_atom(Source *source, const Syntax *s, const Atom *atom,
+                       bool allow_invocation, IrProgram *program, IrValue *value) {
+    switch (atom->kind) {
+        case ATOM_LITERAL:
+            return literal_value(source, program, atom->value.literal.value,
+                                 atom->value.literal.offset, value);
+        case ATOM_MEMBER_X:
+            if (!allow_invocation || !same_name(&atom->value.name, &s->invocation))
+                return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, atom->value.name.offset,
+                                    "member index must be the invocation parameter's x component");
+            *value = (IrValue){ .id = 1u, .type = IR_U32, .source_offset = atom->value.name.offset };
+            return true;
+        case ATOM_NAME:
+            if (allow_invocation && s->has_alias && same_name(&atom->value.name, &s->alias)) {
+                *value = (IrValue){ .id = 1u, .type = IR_U32, .source_offset = atom->value.name.offset };
+                return true;
+            }
+            return constant_value(source, s, &atom->value.name, program, value);
+    }
+    return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, source->length, "invalid parsed atom kind");
+}
+static bool lower_index(Source *source, const Syntax *s, const Index *index,
+                        IrProgram *program, IrValue *value) {
+    IrValue base, offset;
+    if (!lower_atom(source, s, &index->base, true, program, &base)) return false;
+    switch (index->operation) {
+        case INDEX_BASE: *value = base; return true;
+        case INDEX_ADD:
+        case INDEX_SUBTRACT:
+            if (!lower_atom(source, s, &index->offset, false, program, &offset)) return false;
+            return append(source, program, (IrInstruction){
+                .opcode = index->operation == INDEX_ADD ? IR_ADD : IR_SUBTRACT,
+                .type = IR_U32, .left = base.id, .right = offset.id,
+                .source_offset = base.source_offset }, value);
+    }
+    return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, source->length, "invalid parsed index operation");
+}
 static bool lower_operand(Source *source, const Syntax *s, const Operand *operand,
-                          uint32_t value, IrInstruction *instruction) {
-    *instruction = (IrInstruction){ .result = value, .scalar = DOE_COMPILER_U32 };
+                          IrProgram *program, IrValue *value) {
     switch (operand->kind) {
-        case OPERAND_LOAD:
-            if (!resolve_reference(source, s, &operand->reference, &instruction->binding)) return false;
-            instruction->opcode = IR_ROBUST_LOAD;
-            instruction->scalar = s->storage[instruction->binding].scalar;
-            instruction->left = 1u;
-            instruction->source_offset = operand->reference.storage.offset;
-            return true;
+        case OPERAND_LOAD: {
+            const Reference *reference = &operand->value.reference;
+            uint32_t binding;
+            IrValue index;
+            if (!resolve_reference(source, s, reference, &binding) ||
+                !lower_index(source, s, &reference->index, program, &index)) return false;
+            return append(source, program, (IrInstruction){ .opcode = IR_ROBUST_LOAD,
+                .type = value_type(s->storage[binding].scalar), .binding = binding,
+                .left = index.id, .source_offset = reference->storage.offset }, value);
+        }
         case OPERAND_LITERAL:
-            instruction->opcode = IR_CONSTANT;
-            instruction->literal = operand->literal.value;
-            instruction->source_offset = operand->literal.offset;
-            return true;
+            return literal_value(source, program, operand->value.literal.value,
+                                 operand->value.literal.offset, value);
         case OPERAND_NAME:
-            if (same_name(&operand->name, &s->invocation) ||
-                (s->has_alias && same_name(&operand->name, &s->alias)))
-                return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, operand->name.offset,
-                                    "operand resolves to a local declaration, not the module constant");
-            if (!s->has_constant || !same_name(&operand->name, &s->constant_name))
-                return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, operand->name.offset,
-                                    "operand name must resolve to the declared u32 constant");
-            instruction->opcode = IR_CONSTANT;
-            instruction->literal = s->constant_value.value;
-            instruction->source_offset = operand->name.offset;
-            return true;
+            return constant_value(source, s, &operand->value.name, program, value);
     }
     return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, source->length, "invalid parsed operand kind");
+}
+static bool lower_assignment(Source *source, const Syntax *s, const Assignment *assignment,
+                             IrProgram *program) {
+    uint32_t binding;
+    if (!resolve_reference(source, s, &assignment->target, &binding)) return false;
+    if (s->storage[binding].access != DOE_COMPILER_READ_WRITE)
+        return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, assignment->target.storage.offset,
+                            "assignment target requires read_write storage access");
+    const IrType type = value_type(s->storage[binding].scalar);
+    IrValue index, operands[2], result;
+    if (!lower_index(source, s, &assignment->target.index, program, &index)) return false;
+    const size_t count = assignment->addition ? 2u : 1u;
+    for (size_t i = 0; i < count; ++i) {
+        if (!lower_operand(source, s, &assignment->operands[i], program, &operands[i])) return false;
+        if (operands[i].type != type)
+            return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, operands[i].source_offset,
+                                "assignment operands and destination must have the same scalar type");
+    }
+    result = operands[0];
+    if (assignment->addition && !append(source, program, (IrInstruction){ .opcode = IR_ADD,
+        .type = type, .left = operands[0].id, .right = operands[1].id,
+        .source_offset = assignment->target.storage.offset }, &result)) return false;
+    return append(source, program, (IrInstruction){ .opcode = IR_ROBUST_STORE,
+        .type = type, .left = index.id, .right = result.id, .binding = binding,
+        .source_offset = assignment->target.storage.offset }, NULL);
+}
+static bool lower_block(Source *source, const Syntax *s, size_t start, size_t end,
+                        IrProgram *program) {
+    for (size_t i = start; i < end;) {
+        const Statement *statement = &s->statements[i];
+        switch (statement->kind) {
+            case STATEMENT_ASSIGN:
+                if (!lower_assignment(source, s, &statement->value.assignment, program)) return false;
+                ++i;
+                break;
+            case STATEMENT_RETURN:
+                if (!append(source, program, (IrInstruction){ .opcode = IR_RETURN,
+                    .source_offset = statement->source_offset }, NULL)) return false;
+                ++i;
+                break;
+            case STATEMENT_IF: {
+                const Condition *condition = &statement->value.condition;
+                IrValue left, right, test = {0};
+                if (!lower_index(source, s, &condition->left, program, &left) ||
+                    !lower_atom(source, s, &condition->right, false, program, &right) ||
+                    !append(source, program, (IrInstruction){ .opcode = IR_COMPARE,
+                        .type = IR_BOOL, .comparison = condition->comparison,
+                        .left = left.id, .right = right.id,
+                        .source_offset = statement->source_offset }, &test) ||
+                    !append(source, program, (IrInstruction){ .opcode = IR_IF,
+                        .left = test.id, .source_offset = statement->source_offset }, NULL) ||
+                    !lower_block(source, s, i + 1u, statement->else_start, program) ||
+                    !append(source, program, (IrInstruction){ .opcode = IR_ELSE,
+                        .source_offset = statement->source_offset }, NULL) ||
+                    !lower_block(source, s, statement->else_start, statement->end, program) ||
+                    !append(source, program, (IrInstruction){ .opcode = IR_END_IF,
+                        .source_offset = statement->source_offset }, NULL)) return false;
+                i = statement->end;
+                break;
+            }
+        }
+    }
+    return true;
 }
 
 bool validate_syntax(Source *source, const Syntax *s, IrProgram *program) {
     if (!validate_declarations(source, s)) return false;
-    uint32_t target;
-    if (!resolve_reference(source, s, &s->target, &target)) return false;
-    if (s->storage[target].access != DOE_COMPILER_READ_WRITE)
-        return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, s->target.storage.offset,
-                            "assignment target requires read_write storage access");
     memset(program, 0, sizeof(*program));
     program->entry = s->entry;
     program->invocation = s->invocation;
@@ -172,27 +279,11 @@ bool validate_syntax(Source *source, const Syntax *s, IrProgram *program) {
     program->local_size[0] = s->local_size.value;
     program->local_size[1] = 1u;
     program->local_size[2] = 1u;
-    program->instruction_count = 5u;
-    program->instructions[0] = (IrInstruction){ .opcode = IR_INVOCATION_X,
-        .scalar = DOE_COMPILER_U32, .result = 1u, .source_offset = s->invocation.offset };
-    if (!lower_operand(source, s, &s->operands[0], 2u, &program->instructions[1]) ||
-        !lower_operand(source, s, &s->operands[1], 3u, &program->instructions[2])) return false;
-    if (program->instructions[1].opcode != IR_ROBUST_LOAD &&
-        program->instructions[2].opcode != IR_ROBUST_LOAD)
-        return source_error(source, DOE_COMPILER_UNSUPPORTED, s->target.storage.offset,
-                            "addition requires at least one storage load");
-    const DoeCompilerScalar scalar = s->storage[target].scalar;
-    for (size_t i = 1u; i <= 2u; ++i) {
-        if (program->instructions[i].scalar != scalar)
-            return source_error(source, DOE_COMPILER_SEMANTIC_ERROR,
-                                program->instructions[i].source_offset,
-                                "addition operands and destination must have the same scalar type");
-    }
-    program->instructions[3] = (IrInstruction){ .opcode = IR_ADD, .scalar = scalar,
-        .result = 4u, .left = 2u, .right = 3u, .source_offset = s->target.storage.offset };
-    program->instructions[4] = (IrInstruction){ .opcode = IR_ROBUST_STORE, .scalar = scalar,
-        .left = 1u, .right = 4u, .binding = target, .source_offset = s->target.storage.offset };
-    return true;
+    IrValue invocation;
+    if (!append(source, program, (IrInstruction){ .opcode = IR_INVOCATION_X,
+        .type = IR_U32, .source_offset = s->invocation.offset }, &invocation)) return false;
+    /* Unreachable statements are lowered too: no dead-code validation bypass. */
+    return lower_block(source, s, 0u, s->statement_count, program);
 }
 
 void reflect_program(const IrProgram *program, DoeCompilerReflection *reflection) {
