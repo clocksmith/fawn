@@ -1,0 +1,23 @@
+/* SPDX-License-Identifier: MIT
+ * Copyright (c) 2026 Doe contributors */
+#ifndef DOE_COMPILER_TARGET_METAL_H
+#define DOE_COMPILER_TARGET_METAL_H
+#include "../../src/internal.h"
+
+/* Private target adapter, not a public ABI. Borrow a fully validated module
+ * until return. No IR mutation, allocation, retained pointers or Zig dependency.
+ * selected_entry is NO_ID for all entries or an entry index. Output is an exact
+ * byte span (not NUL terminated). NULL/zero measures. Failure leaves bytes alone.
+ * Source, IR and result must not overlap output or change during the call. */
+enum { DOE_METAL_SIZES_SLOT = 30, DOE_METAL_BINDINGS_PER_GROUP = 16,
+       DOE_METAL_MAX_OUTPUT = 1024 * 1024, DOE_METAL_MAX_DEPTH = 96 };
+typedef struct {
+    size_t required_bytes, written_bytes;
+    uint32_t entry_count;
+    bool needs_sizes_buffer;
+} DoeMetalResult;
+DoeCompilerStatus doe_metal_emit(Source *source, const CompilerWorkspace *module,
+                                 uint32_t selected_entry, char *output,
+                                 size_t capacity, DoeMetalResult *result);
+bool doe_metal_binding_slot(uint32_t group, uint32_t binding, uint32_t *slot);
+#endif
