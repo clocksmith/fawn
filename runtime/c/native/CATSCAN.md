@@ -25,7 +25,12 @@ error-scope, resource, shader and Vulkan/Metal owner contracts apply.
 ## Invariants
 One tagged device/pending owner selects Vulkan or Metal without fallback.
 No Zig fallback, synthetic completion or device migration. Unknown completion
-retains ownership and a surviving progress obligation. The provider image remains
+retains ownership and a surviving progress obligation. Surface-only acquisition
+and discard uncertainty use a typed reserved record on that same pending list;
+presentation commands poll the backend frame fence before release. Cleanup-only
+surface records do not redefine command WorkDone readiness. Surface/device
+cleanup preserves surface-before-device lock ordering and consumes no undelivered
+terminal error. The provider image remains
 resident until process exit, independently of terminal GPU/resource cleanup.
 Foreign callbacks run outside locks. Reflection does not replace
 missing dispatch analysis; command and native obligations keep their existing owners.

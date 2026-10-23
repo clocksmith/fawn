@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: MIT */
-#include "internal.h"
+#include "surface.h"
 #include "provider_pin.h"
 #include <errno.h>
 #include <stdlib.h>
@@ -26,6 +26,25 @@ static void *pending_progress(void *identity)
             return NULL;
         }
         native_progress_pending(device);
+        native_surface *surface = native_surface_retirement_peek(device);
+        if (surface) {
+            /* A temporary existing surface lease permits lock-order reversal.
+             * The record stays linked until surface->mutex is held, so a public
+             * reconfigure can complete it synchronously instead of racing an
+             * already-transferred cleanup. Neither path owns a copied record. */
+            native_unlock(device);
+            if (pthread_mutex_lock(&surface->mutex)) abort();
+            native_lock(device);
+            native_pending *retired = surface->retirement ?
+                native_surface_retirement_take(device, surface->retirement) : NULL;
+            if (retired) native_surface_retirement_finish_locked(retired);
+            native_unlock(device);
+            if (pthread_mutex_unlock(&surface->mutex)) abort();
+            native_surface_retirement_release(retired);
+            native_surface_release_lease(surface);
+            native_lock(device);
+            continue;
+        }
         if (device->pending) {
             struct timespec deadline;
             if (timespec_get(&deadline, TIME_UTC) != TIME_UTC) {

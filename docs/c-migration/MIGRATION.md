@@ -136,10 +136,21 @@ source-level gaps, separate from the seven corrections above:
   controls and real Linux/macOS loader controls pass. Exact inputs and limits:
   [pending progress receipt](../../runtime/c/native/DEVELOPER_RECEIPT_PROGRESS.json).
 These corrections are developer evidence, not physical recovery qualification.
-A later review of incoming public surfaces (`e517f23b4`) found a separate WSI
-release-all retirement leak and acquisition-retry ordering gap. Presentation
-fences have independent completion obligations; this newer path is not closed by
-command-only progress tests. Its integration and decisive controls remain open.
+A later review of public surfaces (`e517f23b4`) found a separate WSI release-all
+retirement leak and acquisition-retry ordering gap. These are corrected with
+reserved typed surface records on the same pending owner, canonical presentation/
+acquisition retirement and surface-before-device cleanup. Cleanup-only readiness
+is separate from command WorkDone. CPU lavapipe fence-gated release-all,
+held-view, discard-failure, retry, pixel/readback and sanitizer controls are in the
+[surface progress receipt](../../runtime/c/native/DEVELOPER_RECEIPT_SURFACE_PROGRESS.json).
+This does not establish physical presentation qualification.
+
+The additive [ABI11 HLSL facade](../../runtime/c/compiler/DEVELOPER_RECEIPT_HLSL_ABI11.json)
+now carries compiler-owned entry/register metadata through the shader owner;
+actual DXC outputs agree with its typed bindings. Existing ABI1–10 remain intact.
+The [Windows SDK build](../../runtime/c/backends/d3d12/DEVELOPER_RECEIPT_WINDOWS_SDK.json)
+compiles the private backend and links its clients. Native Windows host portability,
+public D3D12 composition and physical execution remain distinct unfinished gates.
 
 Guides: the common C style retains one parser/semantic/layout owner with multiple
 explicit target adapters. Vulkan's owner guide now states serialized operations

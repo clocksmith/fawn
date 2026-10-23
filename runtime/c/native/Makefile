@@ -22,6 +22,9 @@ COMPILER_RUNPATH ?= $(abspath $(dir $(COMPILER_LIBRARY)))
 COMPILER_LINK = -L$(abspath $(dir $(COMPILER_LIBRARY))) $(COMPILER_NAME_LINK) '-Wl,-rpath,$(COMPILER_RUNPATH)'
 .PHONY: all check check-build-dependencies check-empty-module clean
 all: $(NATIVE_LIBRARY)
+.PHONY: native-library-name
+native-library-name:
+	@printf '%s\n' '$(notdir $(NATIVE_LIBRARY))'
 $(BUILD):
 	mkdir -p $@
 .PHONY: compiler-shared
@@ -156,6 +159,12 @@ $(BUILD)/surface-present: tests/surface_present.c $(SURFACE_TEST_HEADERS) $(NATI
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -lxcb -o $@
 $(BUILD)/surface-platforms: tests/surface_platforms.c $(SURFACE_TEST_HEADERS) $(NATIVE_LIBRARY)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -lX11 -lwayland-client -o $@
+$(BUILD)/surface-progress: tests/surface_progress.c $(SURFACE_TEST_HEADERS) $(OBJECTS) $(COMPILER_LIBRARY) | $(BUILD)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< $(OBJECTS) $(COMPILER_LINK) $(PLATFORM_LIBS) \
+	  -Wl,--wrap=doe_vk_commands_release -Wl,--wrap=native_backend_close -Wl,--wrap=free -lxcb -o $@
+.PHONY: check-surface-progress
+check-surface-progress: $(BUILD)/surface-progress
+	$(BUILD)/surface-progress
 .PHONY: check-present
 check-present: $(BUILD)/surface-present $(BUILD)/surface-platforms
 	$(BUILD)/surface-present
@@ -169,7 +178,7 @@ else
 check:
 	@echo "The SwiftShader/fault-injection suite requires Linux; use check-portable for host ABI checks." >&2
 	@exit 2
-GNU_ONLY_TESTS = metal-bridge demote failures recovery indirect-compute pending-progress vulkan-identity
+GNU_ONLY_TESTS = metal-bridge demote failures recovery indirect-compute pending-progress vulkan-identity surface-progress
 $(addprefix $(BUILD)/,$(GNU_ONLY_TESTS)): | unavailable-gnu-tests
 .PHONY: unavailable-gnu-tests
 unavailable-gnu-tests:
@@ -194,4 +203,4 @@ check-empty-module: $(BUILD)/empty-shader
 	$(BUILD)/empty-shader
 clean:
 	rm -f $(OBJECTS)
-	rm -f $(BUILD)/native.exports $(BUILD)/native.exports.tmp $(BUILD)/draw-budget $(BUILD)/indirect-render $(BUILD)/indexed-render $(BUILD)/indirect-compute $(BUILD)/backend-selection $(BUILD)/metal-bridge $(BUILD)/atomics $(BUILD)/debug $(BUILD)/msaa $(BUILD)/depth $(BUILD)/demote $(BUILD)/graphics-admission $(BUILD)/graphics $(BUILD)/empty-shader $(NATIVE_LIBRARY) $(BUILD)/libdoe_compiler.$(SHARED_SUFFIX) $(BUILD)/compute $(BUILD)/procedures-cxx $(BUILD)/lifecycle $(BUILD)/textures $(BUILD)/admission $(BUILD)/failures $(BUILD)/timestamps $(BUILD)/recovery $(BUILD)/pending-progress $(BUILD)/vulkan-identity $(BUILD)/provider-pin $(BUILD)/provider-pin-fixture.$(SHARED_SUFFIX) $(BUILD)/backend-failure $(BUILD)/depth-copies $(BUILD)/surface-present $(BUILD)/surface-platforms $(BUILD)/wgsl-language-features $(BUILD)/texture-binding-view-dimension
+	rm -f $(BUILD)/native.exports $(BUILD)/native.exports.tmp $(BUILD)/draw-budget $(BUILD)/indirect-render $(BUILD)/indexed-render $(BUILD)/indirect-compute $(BUILD)/backend-selection $(BUILD)/metal-bridge $(BUILD)/atomics $(BUILD)/debug $(BUILD)/msaa $(BUILD)/depth $(BUILD)/demote $(BUILD)/graphics-admission $(BUILD)/graphics $(BUILD)/empty-shader $(NATIVE_LIBRARY) $(BUILD)/libdoe_compiler.$(SHARED_SUFFIX) $(BUILD)/compute $(BUILD)/procedures-cxx $(BUILD)/lifecycle $(BUILD)/textures $(BUILD)/admission $(BUILD)/failures $(BUILD)/timestamps $(BUILD)/recovery $(BUILD)/pending-progress $(BUILD)/vulkan-identity $(BUILD)/provider-pin $(BUILD)/provider-pin-fixture.$(SHARED_SUFFIX) $(BUILD)/backend-failure $(BUILD)/depth-copies $(BUILD)/surface-present $(BUILD)/surface-platforms $(BUILD)/surface-progress $(BUILD)/wgsl-language-features $(BUILD)/texture-binding-view-dimension

@@ -79,6 +79,16 @@ add platforms implicitly or substitute an offscreen image. Present attaches the
 frame to a private command object on the existing pending owner and retires it by
 the backend presentation fence, never by command completion or queue idle. Take
 the surface mutex before any device mutex, and report errors after both unlock.
+Reserve a typed surface-retirement record before publishing configuration. Arm it
+on the same pending list before dropping the last public/frame lease when acquire,
+discard, present or caller-held frame state remains unresolved. A command fence
+never substitutes for the presentation fence. Worker cleanup keeps the record
+linked while dropping the device mutex to acquire the surface mutex; use an
+ordinary surface lease for that handoff. Transfer each completed record once and
+drop configuration/pending leases outside both locks. Unconfigure has no public
+error delivery and therefore must use nonconsuming progress. Cleanup-only surface
+records do not delay command WorkDone or create queue errors; genuine unknown
+command records still require proven terminal completion.
 
 Public consumer tests select adapters only through tests/adapter_class.h
 (adapter_class_options, adapter_class_require) and end PASS lines with

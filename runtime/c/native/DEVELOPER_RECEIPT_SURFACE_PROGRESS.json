@@ -1,0 +1,43 @@
+{
+  "status": "Developer WSI progress and composition checks passed on explicitly selected CPU lavapipe.",
+  "timestamp_utc": "2026-10-23T22:42:58.782893+00:00",
+  "component": "Native pending command/surface retirement",
+  "intent": "Preserved independent command/presentation completion and one pending owner.",
+  "source_binding": {
+    "base_commit": "567286b72fedd3c957d3f7cf2e2bbe4fea64023e",
+    "native_overlays_sha256": {
+      "runtime/c/native/AGENTS.md": "3c8a1ac847ce0211f73b5377c595edd08adb030127c2144a3407024a0f93502a",
+      "runtime/c/native/CATSCAN.md": "f3ff62d91141e5596bacade0b6238086d30464f7051ef9101bf953f64df29717",
+      "runtime/c/native/Makefile": "06d16f816aad0cbd1ed2b8e98cc7a42d3db4dbf824ca1023f8e8bb2953074566",
+      "runtime/c/native/src/pending_progress.c": "296d10b349e5b47a001402e75c40cf3e389443c983bcaf2bc0cf60ba3d32e198",
+      "runtime/c/native/src/queue.c": "e356ef8e16076b1f8239fa4fe14133fc0e770c57834a656a8e5255f04c61ee14",
+      "runtime/c/native/src/surface.h": "ce0bb10b51e67b35091cb17f295a0668805ccaf684f522968ac7a05a0c46c9af",
+      "runtime/c/native/src/surface_present.c": "8688a677083b1cc66cf824da85d558a8508c23d337b14d3115980f6aad304c8f",
+      "runtime/c/native/src/surfaces.c": "1f23405b9f78b5b70fc2be1babfaf8590cf6990117998e0a2eac6feef3f9eea5",
+      "runtime/c/native/tests/surface_progress.c": "4b1da56fd5d12ab57c2e7674f226631ec73d2bdeb64236c5d75bb81702cd3a8e"
+    },
+    "composition_manifest": "Whole captured source includes simultaneous Metal graphics/private-header and compiler/shader HLSL changes; all required owner/native consumers were rebuilt."
+  },
+  "checks": [
+    "Full composed public native CPU suite passes exact196/202 export audit.",
+    "Required make -C runtime/c check:718 sources/zero style failures,24 tool controls,13 owner builds,226 artifacts/11 explicitly owned mutable globals.",
+    "Composed surface-progress and surface-present run on actual Xwayland:0 using process-local lvp ICD and DOE_C_TEST_ADAPTER=software. Eight frames have actual verified pixel/readback output.",
+    "Focused GCC ASan+UBSan surface-progress, pending-progress, recovery and lifecycle pass; final WorkDone followup surface-progress/recovery pass on exact author snapshot. Leak detection disabled.",
+    "Darwin strict native artifact build and native-library-name path discovery pass."
+  ],
+  "cases": [
+    "Gate actual presentation-fence observation while command completion succeeds; release all public handles; lift gate without a new public call; observe exactly-once command,frontend,swapchain,surface and backend-close cleanup.",
+    "Gate acquisition without any command/published frame; release all handles; lift gate and retire/discard that existing acquisition without reacquiring.",
+    "Fail vkReleaseSwapchainImagesEXT with typed OOM, retain reserved retirement ownership and retry to exact cleanup.",
+    "Held frame view delays resource destruction; cleanup-only surface work does not block a successful command WorkDone future or emit NoError as an error.",
+    "Acquisition retry waits prior presentation before requiring command settlement; unconfigure preserves undelivered queue error.",
+    "Worker temporarily retains ordinary surface lease across device unlock, reacquires surface-before-device, transfers one ready existing record, then drops finalizing leases outside both locks."
+  ],
+  "review_correction": "Initial cleanup-only variant set complete=false with NATIVE_OK, allowing WorkDone to report NoError as an error and block on caller-owned view cleanup. Root review identified it; typed independent readiness and two public WorkDone controls now pass.",
+  "scope_limits": [
+    "All executed Vulkan work uses CPU lavapipe on Jupiter, not a physical GPU.",
+    "The Xwayland/auth-file path is environment setup only; credential contents are never retained. Platform window/connection remain alive until terminal cleanup.",
+    "Unknown native completion stays retained indefinitely if the driver never establishes terminal state; no synthetic completion or physical liveness guarantee.",
+    "No production-default switch, full API/shader parity, performance claim or independent frozen qualification."
+  ]
+}

@@ -111,7 +111,6 @@ void wgpuSurfaceGetCurrentTexture(WGPUSurface handle, WGPUSurfaceTexture *out)
     native_device_retain(device);
     native_lock(device);
     native_failure failure = native_failure_status(native_device_result(device));
-    if (failure.status == NATIVE_OK) failure = native_settle_pending(device).failure;
     /* Finish a presentation whose retirement previously timed out; never start
      * or discard an acquisition here (a timed-out acquire is waited by acquire). */
     doe_vk_error detail = {0};
