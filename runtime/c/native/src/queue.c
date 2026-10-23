@@ -2,14 +2,6 @@
 #include "surface.h"
 #include <stdlib.h>
 
-struct native_pending {
-    native_pending *next;
-    native_device *device;
-    native_command_handle native;
-    doe_resource_commands **resources;
-    size_t count;
-};
-
 static doe_vk_status record_dispatch(doe_vk_commands *commands, const doe_resource_command *record)
 {
     native_pipeline *pipeline = doe_resource_pipeline_native(record->value.dispatch.pipeline);
@@ -169,15 +161,30 @@ static native_queue_settlement settle_pending(native_device *device, bool backgr
     native_pending **cursor = &device->pending;
     while (*cursor) {
         native_pending *pending = *cursor;
+        if (pending->kind == NATIVE_PENDING_SURFACE) {
+            /* This also covers an acquisition/discard with no command object.
+             * Zero timeout polls existing native fences; it never starts a frame. */
+            if (!pending->ready)
+                pending->ready = doe_vk_surface_retire(pending->frame, 0, NULL) == DOE_VK_OK;
+            /* Cleanup-only WSI/frame leases do not describe unfinished queue
+             * commands. Keep polling them, without delaying WorkDone or creating
+             * a command error. Actual command records below retain their proof. */
+            cursor = &pending->next;
+            continue;
+        }
         native_failure failure = background ? native_command_poll(&pending->native) :
             native_command_recover(&pending->native);
+        /* A terminal render fence does not retire presentation. Poll the same
+         * backend frame before release, including discard after enqueue failure. */
+        if (pending->frame) (void)doe_vk_surface_retire_frame(pending->frame, 0, NULL);
         native_result released = native_command_release(&pending->native);
         if (result.failure.status == NATIVE_OK && failure.status != NATIVE_OK) result.failure = failure;
         if (released == NATIVE_BUSY) {
             device->queue_failed = true;
             result.complete = false;
             if (result.failure.status == NATIVE_OK) result.failure = native_failure_status(NATIVE_PENDING);
-            return result;
+            cursor = &pending->next;
+            continue;
         }
         if (released != NATIVE_OK) abort();
         *cursor = pending->next;
@@ -210,6 +217,44 @@ void native_progress_pending(native_device *device)
     /* Preserve the first terminal failure until a public operation observes it.
      * Background retirement cannot silently turn its next write into success. */
     (void)settle_pending(device, true);
+}
+
+void native_surface_retirement_arm(native_surface *surface)
+{
+    native_pending *pending = surface->retirement;
+    if (pending->armed) return;
+    pending->armed = true;
+    native_retain_count(&surface->leases);
+    native_device_retain(pending->device);
+    pending->next = pending->device->pending;
+    pending->device->pending = pending;
+    native_pending_progress_wake(pending->device);
+}
+
+native_surface *native_surface_retirement_peek(native_device *device)
+{
+    for (native_pending *pending = device->pending; pending; pending = pending->next) {
+        if (pending->kind == NATIVE_PENDING_SURFACE && pending->ready) {
+            native_retain_count(&pending->surface->leases);
+            return pending->surface;
+        }
+    }
+    return NULL;
+}
+
+native_pending *native_surface_retirement_take(native_device *device, native_pending *only)
+{
+    native_pending **cursor = &device->pending;
+    while (*cursor) {
+        native_pending *pending = *cursor;
+        if (pending->kind == NATIVE_PENDING_SURFACE && pending->ready && (!only || only == pending)) {
+            *cursor = pending->next;
+            pending->next = NULL;
+            return pending;
+        }
+        cursor = &pending->next;
+    }
+    return NULL;
 }
 
 static native_failure submit_pending(native_device *device, native_pending *pending)
@@ -251,6 +296,7 @@ native_presentation native_submit_present(native_device *device, doe_vk_commands
     pending->device = device;
     native_device_retain(device);
     pending->native = (native_command_handle){.kind=WGPUBackendType_Vulkan,.value.vulkan=commands};
+    pending->frame = surface;
     pending->next = device->pending;
     device->pending = pending;
     native_pending_progress_wake(device);

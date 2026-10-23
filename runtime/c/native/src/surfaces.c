@@ -96,48 +96,62 @@ void native_surface_drop_current(native_surface *surface)
     doe_resource_texture_release(current);
 }
 
-void native_surface_unconfigure_locked(native_surface *surface)
+void native_surface_retirement_finish_locked(native_pending *pending)
+{
+    native_surface *surface = pending->surface;
+    if (!pending->ready || surface->retirement != pending || surface->vulkan != pending->frame) abort();
+    if (doe_vk_surface_release(pending->frame) != DOE_VK_OK) abort();
+    surface->vulkan = NULL;
+    surface->device = NULL;
+    surface->retirement = NULL;
+}
+
+void native_surface_retirement_release(native_pending *pending)
+{
+    if (!pending) return;
+    native_device *device = pending->device;
+    native_surface *surface = pending->surface;
+    bool armed = pending->armed;
+    free(pending);
+    if (armed) native_surface_release_lease(surface);
+    /* Both mutexes have dropped: either release may join the progress worker. */
+    native_device_release(device); /* Configuration lease. */
+    if (armed) native_device_release(device); /* Pending obligation lease. */
+}
+
+native_pending *native_surface_unconfigure_locked(native_surface *surface)
 {
     surface->configured = false;
     native_device *device = surface->device;
-    if (!surface->vulkan) return;
-    bool released = false;
+    if (!surface->vulkan) return NULL;
+    native_pending *pending = surface->retirement;
     native_lock(device);
     native_surface_drop_current(surface);
-    /* Retires only the existing frame (present fence or maintenance1 discard);
-     * failure keeps its obligations. Then release present commands it unblocked. */
+    /* Retire only existing work. Unconfigure has no error delivery, so preserve
+     * the first cached terminal failure for the next public observer. */
     (void)doe_vk_surface_retire_frame(surface->vulkan, NATIVE_SURFACE_TIMEOUT_NS, NULL);
-    (void)native_settle_pending(device);
-    /* BUSY keeps the swapchain while caller frame texture/view leases remain. */
-    if (doe_vk_surface_release(surface->vulkan) == DOE_VK_OK) {
-        surface->vulkan = NULL;
-        surface->device = NULL;
-        released = true;
+    native_progress_pending(device);
+    native_pending *ready = NULL;
+    if (pending->armed) {
+        ready = native_surface_retirement_take(device, pending);
+    } else if (doe_vk_surface_retire(surface->vulkan, 0, NULL) == DOE_VK_OK) {
+        pending->ready = true;
+        ready = pending;
+    } else {
+        /* Arm before the caller can drop its last public/frame lease. No
+         * allocation is needed after acquisition has become uncertain. */
+        native_surface_retirement_arm(surface);
     }
+    if (ready) native_surface_retirement_finish_locked(ready);
     native_unlock(device);
-    if (released) native_device_release(device);
+    return ready;
 }
 
 static void surface_teardown(native_surface *surface)
 {
-    if (surface->vulkan) {
-        native_device *device = surface->device;
-        native_lock(device);
-        /* No native_settle_pending here: teardown may run from a resource
-         * finalizer inside settlement. Unresolved work keeps the native surface. */
-        (void)doe_vk_surface_retire_frame(surface->vulkan, NATIVE_SURFACE_TIMEOUT_NS, NULL);
-        doe_vk_status status = doe_vk_surface_release(surface->vulkan);
-        native_unlock(device);
-        /* Unknown presentation retains surface, device and borrowed platform
-         * obligations rather than freeing state the native queue may use. */
-        if (status != DOE_VK_OK) return;
-        /* Lease guarantee: public teardown runs with no owner lock held. When a
-         * frame payload finalizer runs this inside settlement under the device
-         * mutex, the finalizing resource still holds its own device lease
-         * (released after its native payload), so this drop cannot finalize the
-         * device or join its progress worker. */
-        native_device_release(device);
-    }
+    /* Any unresolved native state owns an armed pending lease. Reaching zero
+     * therefore proves configuration retirement already completed. */
+    if (surface->vulkan || surface->device || surface->retirement) abort();
     if (doe_label_store_destroy(surface->labels) != DOE_LABEL_OK) abort();
     if (pthread_mutex_destroy(&surface->mutex)) abort();
     doe_instance *instance = surface->instance;
@@ -160,8 +174,9 @@ void wgpuSurfaceRelease(WGPUSurface handle)
     native_surface *surface = (native_surface *)handle;
     if (!surface || !native_release_count(&surface->references)) return;
     if (pthread_mutex_lock(&surface->mutex)) abort();
-    native_surface_unconfigure_locked(surface);
+    native_pending *retired = native_surface_unconfigure_locked(surface);
     if (pthread_mutex_unlock(&surface->mutex)) abort();
+    native_surface_retirement_release(retired);
     native_surface_release_lease(surface);
 }
 
@@ -321,7 +336,7 @@ void wgpuSurfaceConfigure(WGPUSurface handle, const WGPUSurfaceConfiguration *co
     WGPUErrorType type = WGPUErrorType_Validation;
     const char *message = NULL;
     if (pthread_mutex_lock(&surface->mutex)) abort();
-    native_surface_unconfigure_locked(surface);
+    native_pending *retired = native_surface_unconfigure_locked(surface);
     if (config->nextInChain) message = "surface configuration extension unsupported";
     else if (device->backend.kind != WGPUBackendType_Vulkan) message = "surfaces are composed for Vulkan only";
     else if (!(device->backend.value.vulkan.caps.surface_platforms & surface->source.platform))
@@ -345,14 +360,22 @@ void wgpuSurfaceConfigure(WGPUSurface handle, const WGPUSurfaceConfiguration *co
         status = doe_vk_surface_capabilities(native, &caps, &detail);
         failure = native_failure_vulkan(status, &detail);
     }
+    native_pending *reservation = NULL;
     doe_vk_surface_config converted;
     if (status == DOE_VK_OK && (message = convert_configuration(config, &caps, &converted)))
         status = DOE_VK_INVALID_ARGUMENT;
+    if (status == DOE_VK_OK) {
+        reservation = calloc(1, sizeof(*reservation));
+        if (!reservation) status = DOE_VK_OUT_OF_MEMORY;
+    }
     if (status == DOE_VK_OK) {
         status = doe_vk_surface_configure(native, &converted, &detail);
         failure = native_failure_vulkan(status, &detail);
     }
     if (status == DOE_VK_OK) {
+        *reservation = (native_pending){.kind=NATIVE_PENDING_SURFACE,.device=device,
+            .frame=native,.surface=surface};
+        surface->retirement = reservation;
         surface->vulkan = native;
         surface->device = device; /* Adopts the reference taken above. */
         surface->configured = true;
@@ -361,9 +384,13 @@ void wgpuSurfaceConfigure(WGPUSurface handle, const WGPUSurfaceConfiguration *co
         surface->width = config->width;
         surface->height = config->height;
         surface->presented = NATIVE_OK;
-    } else if (native && doe_vk_surface_release(native) != DOE_VK_OK) abort(); /* Unconfigured. */
+    } else {
+        free(reservation);
+        if (native && doe_vk_surface_release(native) != DOE_VK_OK) abort(); /* Unconfigured. */
+    }
     native_unlock(device);
     if (pthread_mutex_unlock(&surface->mutex)) abort();
+    native_surface_retirement_release(retired);
     if (status == DOE_VK_OK) return;
     if (!message) {
         type = native_backend_error(status);
@@ -382,6 +409,7 @@ void wgpuSurfaceUnconfigure(WGPUSurface handle)
     native_surface *surface = (native_surface *)handle;
     if (!surface) return;
     if (pthread_mutex_lock(&surface->mutex)) abort();
-    native_surface_unconfigure_locked(surface);
+    native_pending *retired = native_surface_unconfigure_locked(surface);
     if (pthread_mutex_unlock(&surface->mutex)) abort();
+    native_surface_retirement_release(retired);
 }

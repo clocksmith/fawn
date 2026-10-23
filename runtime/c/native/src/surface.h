@@ -13,7 +13,7 @@
 
 typedef struct native_surface {
     atomic_uint references; /* Public handles. Zero triggers public teardown once. */
-    atomic_uint leases; /* One for all public handles plus one per live frame payload. */
+    atomic_uint leases; /* Public group, frame payloads and pending retirement/progress. */
     pthread_mutex_t mutex; /* Public state; always taken before any device mutex. */
     doe_instance *instance;
     doe_vk_surface_desc source; /* Borrowed platform handles; caller keeps them alive. */
@@ -22,6 +22,7 @@ typedef struct native_surface {
      * public configuration until caller frame/view leases drop (deferred retire). */
     native_device *device; /* Internal reference while `vulkan` exists. */
     doe_vk_surface *vulkan;
+    native_pending *retirement; /* Reserved before configuration publication. */
     /* Public configuration. */
     bool configured;
     WGPUTextureFormat format;
@@ -52,15 +53,40 @@ typedef struct native_presentation {
  * adopts commands; unknown completion stays retained on the pending list. */
 native_presentation native_submit_present(native_device *device, doe_vk_commands *commands,
     doe_vk_surface *surface);
+/* A closed variant of the existing pending owner, not another queue. Surface
+ * retirement reserves storage before any acquisition can become uncertain. */
+typedef enum native_pending_kind {
+    NATIVE_PENDING_COMMANDS,
+    NATIVE_PENDING_SURFACE
+} native_pending_kind;
+struct native_pending {
+    native_pending *next;
+    native_device *device;
+    native_command_handle native;
+    doe_resource_commands **resources;
+    size_t count;
+    native_pending_kind kind;
+    doe_vk_surface *frame; /* Present commands borrow their backend surface lease. */
+    native_surface *surface;
+    bool armed, ready;
+};
+/* All list operations require the device mutex. Arm also requires surface mutex;
+ * a ready record is transferred, never copied, to the caller for final cleanup. */
+void native_surface_retirement_arm(native_surface *surface);
+native_surface *native_surface_retirement_peek(native_device *device);
+native_pending *native_surface_retirement_take(native_device *device, native_pending *only);
+void native_surface_retirement_finish_locked(native_pending *pending);
+/* Drop the transferred configuration/retirement leases after both locks drop. */
+void native_surface_retirement_release(native_pending *pending);
 /* Exact DOE_VK_SURFACE_* bit of a live public surface; 0 for NULL. */
 uint32_t native_surface_platform(WGPUSurface surface);
 /* Creates and releases a probe surface on an adapter context built with this
  * surface's platform: proves the selected queue can present to the window. */
 native_result native_surface_compatible(WGPUSurface surface, const native_backend *adapter);
 void native_surface_release_lease(native_surface *surface);
-/* Caller holds surface->mutex. Drops the public frame and retires/unconfigures
- * the native swapchain when no caller frame/view leases remain. */
-void native_surface_unconfigure_locked(native_surface *surface);
+/* Caller holds surface->mutex. Returns any completed configuration obligation;
+ * release it only after both mutexes drop. Unknown work is armed before return. */
+native_pending *native_surface_unconfigure_locked(native_surface *surface);
 /* Caller holds surface->mutex and the device mutex. Destroys and releases the
  * current public frame texture (the frame itself is retired separately). */
 void native_surface_drop_current(native_surface *surface);
