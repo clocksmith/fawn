@@ -84,9 +84,8 @@ the runtime must dispatch that shape. No native queue/resource behavior changed.
 
 ## Explicit unfinished surface
 
-General vertex/fragment stage interfaces are being authored in the shared core;
-this Metal owner explicitly rejects their function flags, including constant
-stage functions without stage-input instructions. Matrix, f16, atomic and
+Vertex/fragment wrappers use the shared typed stage view and have focused emitted-
+operation controls, not SDK validation. Matrix, f16, atomic, discard and
 pointer-parameter target owners remain unfinished. Shared subgroup admission
 exists, but this Metal owner still explicitly rejects all eleven collective
 arithmetic operations and four used subgroup inputs. Other missing features

@@ -124,7 +124,7 @@ static void subgroup_expression(HlslEmitter *e, const IrInstruction *ir, Numeric
             inclusive = true;
             product = true;
             break;
-        case BUILTIN_TRANSPOSE: case BUILTIN_DETERMINANT:
+        case BUILTIN_CEIL: case BUILTIN_TRANSPOSE: case BUILTIN_DETERMINANT:
         case BUILTIN_MIN: case BUILTIN_MAX: case BUILTIN_CLAMP: case BUILTIN_EXP:
         case BUILTIN_TANH: case BUILTIN_SQRT: case BUILTIN_DOT: case BUILTIN_LENGTH:
         case BUILTIN_DISTANCE: case BUILTIN_NORMALIZE: case BUILTIN_CROSS:
@@ -218,6 +218,7 @@ static void builtin_expression(HlslEmitter *e, const IrInstruction *ir) {
     }
     const char *intrinsic = NULL;
     switch (builtin->kind) {
+        case BUILTIN_CEIL: intrinsic = "ceil"; break;
         case BUILTIN_EXP: intrinsic = "exp"; break;
         case BUILTIN_TANH: intrinsic = "tanh"; break;
         case BUILTIN_SQRT: intrinsic = "sqrt"; break;
@@ -320,6 +321,7 @@ void hlsl_expression(HlslEmitter *e, const IrInstruction *ir) {
             break;
         }
         case IR_ROBUST_LOAD: case IR_UNIFORM_LOAD: case IR_MAX: case IR_ROBUST_STORE:
+        case IR_DISCARD:
         case IR_IF: case IR_ELSE: case IR_END_IF: case IR_RETURN: case IR_SHORT_BEGIN:
         case IR_SHORT_END: case IR_LOCAL_STORE: case IR_LOOP_BEGIN: case IR_LOOP_TEST:
         case IR_LOOP_CONTINUING: case IR_END_LOOP: case IR_BREAK: case IR_CONTINUE:

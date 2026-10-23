@@ -34,6 +34,13 @@ static void shared_dags(void) {
     assert(!target_function_used(&closure, 26u));
     assert(!target_memory_dependency(&c, &closure, 31u, IR_F32, &work, &error) && error == NULL);
     assert(work >= 600u && target_function_used(&closure, 0u));
+    assert(target_type_order_begin(&closure, &work, &error));
+    unsigned type_depth;
+    assert(target_type_depth(&c, &closure, 31u, &type_depth, &work, &error));
+    assert(type_depth == 25u && work >= 400u);
+    const uint64_t before_cached = work;
+    assert(target_type_depth(&c, &closure, 31u, &type_depth, &work, &error));
+    assert(work == before_cached && target_function_used(&closure, 0u));
     /* Retained function closure survives a separate completed-type walk. */
     ir[0].operands.scalar.binding = 25u;
     error = NULL;

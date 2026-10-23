@@ -113,7 +113,7 @@ static void builtin_expression(MetalEmitter *e, const IrInstruction *ir) {
     /* A source builtin registry is not a target support table. New shared
      * operations must never become unchecked MSL names by default. */
     const NumericBuiltinKind kind = builtin->kind;
-    const bool supported = kind == BUILTIN_MIN || kind == BUILTIN_MAX || kind == BUILTIN_CLAMP ||
+    const bool supported = kind == BUILTIN_CEIL || kind == BUILTIN_MIN || kind == BUILTIN_MAX || kind == BUILTIN_CLAMP ||
         kind == BUILTIN_EXP || kind == BUILTIN_TANH || kind == BUILTIN_SQRT ||
         kind == BUILTIN_DOT || kind == BUILTIN_LENGTH || kind == BUILTIN_DISTANCE ||
         kind == BUILTIN_NORMALIZE || kind == BUILTIN_CROSS;
@@ -278,6 +278,7 @@ void metal_expression(MetalEmitter *e, const IrInstruction *ir) {
         }
         case IR_HANDLE: case IR_IMAGE:
         case IR_ROBUST_LOAD: case IR_UNIFORM_LOAD: case IR_MAX: case IR_ROBUST_STORE:
+        case IR_DISCARD:
         case IR_IF: case IR_ELSE: case IR_END_IF: case IR_RETURN: case IR_SHORT_BEGIN:
         case IR_SHORT_END: case IR_LOCAL_STORE: case IR_LOOP_BEGIN: case IR_LOOP_TEST:
         case IR_LOOP_CONTINUING: case IR_END_LOOP: case IR_BREAK: case IR_CONTINUE:
