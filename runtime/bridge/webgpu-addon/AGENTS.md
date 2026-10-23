@@ -29,10 +29,13 @@ apply to this C code; this file adds the addon's own invariants.
 - Leave an omitted optional value omitted. That means `Undefined` for operations
   and aspects, and `WGPU_COPY_STRIDE_UNDEFINED` for strides. Do not default it
   to a value the spec forbids for that format or copy.
-- A local struct mirror (`Standard*`, the `WGPU*` typedefs in
-  `doe_napi_internal.h`) must match the header layout field for field.
-- `packages/doe-gpu/scripts/native-abi-layout.js` checks the mirrored pass
-  descriptors against the header.
+- A `WGPU*` typedef in `doe_napi_internal.h` that shares a webgpu.h struct name
+  must list the header's members in order. Extensions travel in the chain, as in
+  the header, never in members appended to a standard struct. The only appended
+  members are those listed in `TRAILING_EXTRAS`, each with its Doe consumer.
+- `packages/doe-gpu/scripts/native-abi-layout.js` enforces this on every addon
+  build. It checks member lists, `sizeof` and every offset. Mirrors private to
+  one `.c` file sit outside the check and must match by hand.
 
 ## Checks
 

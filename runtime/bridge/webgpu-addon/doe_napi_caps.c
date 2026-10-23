@@ -628,7 +628,7 @@ napi_value doe_texture_create_view(napi_env env, napi_callback_info info) {
             }
             swizzle = (WGPUTextureComponentSwizzleDescriptor){
                 {NULL, 0x0000000Cu /* WGPUSType_TextureComponentSwizzleDescriptor */},
-                values[0], values[1], values[2], values[3]};
+                {values[0], values[1], values[2], values[3]}};
             view_desc.nextInChain = &swizzle.chain;
         }
         view_desc_ptr = &view_desc;

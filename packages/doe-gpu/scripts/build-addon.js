@@ -109,7 +109,7 @@ function compilerCommand(includeDir) {
 function main() {
   const includeDir = resolveNodeIncludeDir();
   const { compiler, prefixArgs, args } = compilerCommand(includeDir);
-  checkNativeAbiLayouts({
+  const checkedLayouts = checkNativeAbiLayouts({
     compiler, prefixArgs, includeDir,
     bridgeHeader: resolve(BRIDGE_ROOT, 'doe_napi_internal.h'),
     upstreamHeader: resolve(WORKSPACE_ROOT, 'runtime/zig/vendor/webgpu-headers/webgpu.h'),
@@ -119,7 +119,7 @@ function main() {
     cwd: PACKAGE_ROOT,
     stdio: 'inherit',
   });
-  console.log(`doe-gpu: built native addon at ${OUTPUT_PATH}`);
+  console.log(`doe-gpu: built native addon at ${OUTPUT_PATH} (${checkedLayouts} struct layouts match webgpu.h)`);
 }
 
 main();
