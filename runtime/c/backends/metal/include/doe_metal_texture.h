@@ -35,10 +35,12 @@ typedef enum doe_mtl_format {
     DOE_MTL_BC5_RG_UNORM = 142, DOE_MTL_BC5_RG_SNORM = 143,
     DOE_MTL_BC6H_RGB_FLOAT = 150, DOE_MTL_BC6H_RGB_UFLOAT = 151,
     DOE_MTL_BC7_RGBA = 152, DOE_MTL_BC7_RGBA_SRGB = 153,
-    DOE_MTL_DEPTH16_UNORM = 250, DOE_MTL_DEPTH32_FLOAT = 252, DOE_MTL_STENCIL8 = 253
+    DOE_MTL_DEPTH16_UNORM = 250, DOE_MTL_DEPTH32_FLOAT = 252, DOE_MTL_STENCIL8 = 253,
+    DOE_MTL_DEPTH24_STENCIL8 = 255, DOE_MTL_DEPTH32_STENCIL8 = 260,
+    DOE_MTL_X32_STENCIL8 = 261, DOE_MTL_X24_STENCIL8 = 262
 } doe_mtl_format;
 typedef struct doe_mtl_format_info {
-    uint32_t block_width, block_height, block_bytes;
+    uint32_t block_width, block_height, block_bytes; /* Zero bytes: no admitted transfer layout. */
     bool compressed, srgb, depth, stencil;
 } doe_mtl_format_info;
 /* Format layout facts, not hardware format-capability qualification. */
@@ -47,7 +49,7 @@ typedef enum doe_mtl_texture_type {
     DOE_MTL_TEXTURE_1D = 0, DOE_MTL_TEXTURE_1D_ARRAY = 1,
     DOE_MTL_TEXTURE_2D = 2, DOE_MTL_TEXTURE_2D_ARRAY = 3,
     DOE_MTL_TEXTURE_CUBE = 5, DOE_MTL_TEXTURE_CUBE_ARRAY = 6,
-    DOE_MTL_TEXTURE_3D = 7
+    DOE_MTL_TEXTURE_3D = 7, DOE_MTL_TEXTURE_2D_MS = 4, DOE_MTL_TEXTURE_2D_MS_ARRAY = 8
 } doe_mtl_texture_type;
 enum { DOE_MTL_TEXTURE_COPY_SRC = 1, DOE_MTL_TEXTURE_COPY_DST = 2,
     DOE_MTL_TEXTURE_SAMPLED = 4, DOE_MTL_TEXTURE_STORAGE = 8,
@@ -58,9 +60,10 @@ typedef struct doe_mtl_texture_desc {
     uint32_t width, height, depth_or_layers, mip_levels;
     uint32_t usage;
     bool allow_format_views;
+    uint32_t sample_count; /* Explicit 1, or a device-admitted multisample count. */
 } doe_mtl_texture_desc;
 /* The common context serialization and borrowed-handle rules also apply here.
- * Private sample1 allocations, initially uninitialized. Cube layer counts are
+ * Private allocations, initially uninitialized. Multisample images have one mip. Cube layer counts are
  * face counts (6 per cube). Use staging-buffer transfers, including on Apple
  * unified memory; never pretend a private texture has CPU-mapped storage. */
 doe_mtl_status doe_mtl_texture_create(doe_mtl_context *context,
@@ -81,7 +84,8 @@ typedef struct doe_mtl_texture_view_desc {
     doe_mtl_swizzle red, green, blue, alpha;
 } doe_mtl_texture_view_desc;
 /* Explicit counts; a view retains its parent allocation. Reinterpretation is
- * limited to same-format and admitted linear/sRGB pairs, with creation opt-in. */
+ * limited to same-format, admitted linear/sRGB and combined-to-stencil pairs,
+ * with creation opt-in. X24/X32 stencil formats are view-only, not allocations. */
 doe_mtl_status doe_mtl_texture_view_create(doe_mtl_texture *texture,
     const doe_mtl_texture_view_desc *desc, doe_mtl_texture_view **out, doe_mtl_error *error);
 doe_mtl_status doe_mtl_texture_view_retain(doe_mtl_texture_view *view);

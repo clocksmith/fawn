@@ -66,6 +66,15 @@ static doe_mtl_status device_create(void *userdata, void **out,
     result.max_texture_3d = 2048;
     result.max_texture_layers = 2048;
     result.bc_texture_compression = true;
+    result.sample_count_mask = 31;
+    result.depth24_stencil8 = true;
+    result.separate_depth_stencil = true;
+    result.depth_resolve = true;
+    result.stencil_resolve = true;
+    result.store_and_resolve = true;
+    result.multisample_array = true;
+    result.max_visibility_offset = 65528;
+    result.counting_visibility = true;
     strcpy(result.device_name, "test call ledger, not a GPU");
     *out = object_create(mock, MOCK_KIND_DEVICE);
     *caps = result;

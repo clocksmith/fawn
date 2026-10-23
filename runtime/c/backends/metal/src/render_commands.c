@@ -67,6 +67,7 @@ doe_mtl_status doe_mtl_commands_render(doe_mtl_commands *commands,
     /* Validate the complete pass before the first native encoder mutation. */
     for (i = 0; i < draw_count && status == DOE_MTL_OK; ++i)
         status = doe_mtl_render_draw_preflight(commands, pass, &native_pass, &draws[i], &native_draws[i]);
+    if (status == DOE_MTL_OK) status = doe_mtl_render_visibility_preflight(commands, pass, draws, draw_count);
     if (status == DOE_MTL_OK) status = doe_mtl_render_pass_retain(commands, pass);
     for (i = 0; i < draw_count && status == DOE_MTL_OK; ++i)
         status = doe_mtl_render_draw_retain(commands, &draws[i]);

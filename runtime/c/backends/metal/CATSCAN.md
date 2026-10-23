@@ -8,7 +8,7 @@ Execute admitted Metal compute, graphics, buffer and image operations through a 
 
 ## Authority
 
-- Owns experimental Metal loading, native device/queue/buffer/texture/view/sampler/pipeline lifetimes, compute/render pipelines, pass encoding, copies, submission and retirement.
+- Owns experimental Metal loading, native device/queue/buffer/texture/view/sampler/pipeline lifetimes, compute/render pipelines, resolves, visibility encoding, copies, submission and retirement.
 - Does not own WGSL meaning, public WebGPU validation, provider selection or qualification.
 
 ## Scope
@@ -31,7 +31,7 @@ Execute admitted Metal compute, graphics, buffer and image operations through a 
 ## Acceptance
 
 - [Focused checks](Makefile) exercise native-call arguments, rollback, ownership and completion controls.
-- Evidence: [current source-bound graphics developer receipt](DEVELOPER_RECEIPT_RENDER.json) records only exercised host scope.
+- Evidence: [current source-bound multisample developer receipt](DEVELOPER_RECEIPT_MULTISAMPLE.json) records only exercised host scope.
 - Apple SDK verification, native device execution and complete retained-consumer parity remain separate gates.
 
 ## Non-goals

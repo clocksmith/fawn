@@ -5,6 +5,13 @@ doe_mtl_status doe_mtl_texture_format_info(doe_mtl_format format, doe_mtl_format
     doe_mtl_format_info info = {1, 1, 0, false, false, false, false};
     if (out == NULL) return DOE_MTL_INVALID_ARGUMENT;
     switch (format) {
+    case DOE_MTL_DEPTH24_STENCIL8: case DOE_MTL_DEPTH32_STENCIL8:
+        info.depth = true;
+        info.stencil = true;
+        break;
+    case DOE_MTL_X24_STENCIL8: case DOE_MTL_X32_STENCIL8:
+        info.stencil = true;
+        break;
     case DOE_MTL_DEPTH16_UNORM:
         info.block_bytes = 2;
         info.depth = true;
@@ -71,6 +78,8 @@ doe_mtl_status doe_mtl_texture_format_info(doe_mtl_format format, doe_mtl_format
 
 bool doe_mtl_format_compatible(doe_mtl_format a, doe_mtl_format b) {
     if (a == b) return true;
+    if ((a == DOE_MTL_DEPTH24_STENCIL8 && b == DOE_MTL_X24_STENCIL8) ||
+        (a == DOE_MTL_DEPTH32_STENCIL8 && b == DOE_MTL_X32_STENCIL8)) return true;
     if (a > b) {
         doe_mtl_format temporary = a;
         a = b;
@@ -91,4 +100,18 @@ uint32_t doe_mtl_mip_extent(uint32_t dimension, uint32_t mip) {
 
 uint32_t doe_mtl_texture_layers(const doe_mtl_texture_desc *desc) {
     return desc->type == DOE_MTL_TEXTURE_3D ? 1 : desc->depth_or_layers;
+}
+
+uint8_t doe_mtl_format_aspects(doe_mtl_format format) {
+    doe_mtl_format_info info;
+    if (doe_mtl_texture_format_info(format, &info) != DOE_MTL_OK) return 0;
+    if (info.depth || info.stencil)
+        return (uint8_t)((info.depth ? DOE_MTL_ASPECT_DEPTH : 0) | (info.stencil ? DOE_MTL_ASPECT_STENCIL : 0));
+    return DOE_MTL_ASPECT_COLOR;
+}
+bool doe_mtl_samples_supported(const doe_mtl_caps *caps, uint32_t samples) {
+    uint32_t bit = 0;
+    if (samples == 0 || samples > 16 || (samples & (samples - 1)) != 0) return false;
+    while ((1u << bit) < samples) ++bit;
+    return (caps->sample_count_mask & (1u << bit)) != 0;
 }

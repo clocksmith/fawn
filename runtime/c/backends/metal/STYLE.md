@@ -15,16 +15,21 @@ Metal-specific boundary rules:
   encoding call and must end before the pool drains. Temporary library/function,
   NSString, texture-descriptor and sampler-descriptor references stay local.
 - Speculative initialization belongs to the recording's resource-use entry:
-  one bit per buffer, or one per texture mip/layer (one full volume for 3D).
+  one bit per buffer, or color/depth/stencil bits per texture mip/layer (one full
+  volume for 3D).
   Only successful native completion may publish it. Error/unknown must not become
   initialized or readable output. Render STORE preserves only loaded or cleared
-  subresources; DISCARD never proves complete shader coverage. Reject combined
-  depth/stencil aliases while initialization is not aspect-qualified. Discard
+  aspects; DISCARD never proves complete shader coverage. Resolve publication
+  changes the target aspect independently of source preservation. Combined
+  attachments require both aspects explicitly represented in the pass. Discard
   native recordings before their leases.
 - Validate a complete render pass before native mutation; bind explicit per-stage
   snapshots and clear absent native slots between draws. No open encoder escapes
   the call. Reuse the compute buffer/image checks and shared MSL function builder
   where semantics agree rather than creating another binding or source policy.
+- Query visibility modes/offsets must form non-reentrant contiguous runs. Do not
+  repeatedly reset a native offset between draws in the same run. Require
+  initialized result storage, retain it normally, and never synthesize a count.
 - Keep device/public validation separate. This API accepts already validated MSL
   and explicit compiler slot/workgroup facts, not source-derived heuristics.
 - Tests may replace the private native call table or exact typed message calls;

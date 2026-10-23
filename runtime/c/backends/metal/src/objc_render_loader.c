@@ -13,12 +13,15 @@ bool doe_mtl_objc_load_render(doe_mtl_objc *r, doe_objc_message message) {
     g->blend_color = (doe_objc_blend_color_call)message;
     g->depth_bias = (doe_objc_depth_bias_call)message;
     g->draw = (doe_objc_draw_call)message;
+    g->visibility = (doe_objc_visibility_call)message;
     g->draw_indexed = (doe_objc_draw_indexed_call)message;
     g->pipeline_class = r->get_class("MTLRenderPipelineDescriptor");
     g->vertex_class = r->get_class("MTLVertexDescriptor");
     g->pass_class = r->get_class("MTLRenderPassDescriptor");
     g->depth_class = r->get_class("MTLDepthStencilDescriptor");
     g->stencil_class = r->get_class("MTLStencilDescriptor");
+    g->set_visibility_buffer = r->selector("setVisibilityResultBuffer:");
+    g->set_visibility = r->selector("setVisibilityResultMode:offset:");
     g->new_pipeline = r->selector("newRenderPipelineStateWithDescriptor:error:");
     g->new_depth = r->selector("newDepthStencilStateWithDescriptor:");
     g->new_encoder = r->selector("renderCommandEncoderWithDescriptor:");
@@ -63,6 +66,11 @@ bool doe_mtl_objc_load_render(doe_mtl_objc *r, doe_objc_message message) {
     g->set_store = r->selector("setStoreAction:");
     g->set_level = r->selector("setLevel:");
     g->set_slice = r->selector("setSlice:");
+    g->set_resolve = r->selector("setResolveTexture:");
+    g->set_resolve_level = r->selector("setResolveLevel:");
+    g->set_resolve_slice = r->selector("setResolveSlice:");
+    g->set_depth_resolve = r->selector("setDepthResolveFilter:");
+    g->set_stencil_resolve = r->selector("setStencilResolveFilter:");
     g->set_clear_color = r->selector("setClearColor:");
     g->set_clear_depth = r->selector("setClearDepth:");
     g->set_clear_stencil = r->selector("setClearStencil:");
@@ -85,7 +93,8 @@ bool doe_mtl_objc_load_render(doe_mtl_objc *r, doe_objc_message message) {
     g->set_stencil_reference = r->selector("setStencilReferenceValue:");
     g->draw_primitives = r->selector("drawPrimitives:vertexStart:vertexCount:instanceCount:baseInstance:");
     g->draw_indexed_primitives = r->selector("drawIndexedPrimitives:indexCount:indexType:indexBuffer:indexBufferOffset:instanceCount:baseVertex:baseInstance:");
-    return g->pipeline_class != NULL && g->vertex_class != NULL && g->pass_class != NULL &&
+    return g->set_visibility_buffer != NULL && g->set_visibility != NULL && g->set_resolve != NULL && g->set_resolve_level != NULL && g->set_resolve_slice != NULL &&
+        g->set_depth_resolve != NULL && g->set_stencil_resolve != NULL && g->pipeline_class != NULL && g->vertex_class != NULL && g->pass_class != NULL &&
         g->depth_class != NULL && g->stencil_class != NULL && g->new_pipeline != NULL &&
         g->new_depth != NULL && g->new_encoder != NULL && g->index != NULL &&
         g->set_vertex_function != NULL && g->set_fragment_function != NULL && g->colors != NULL &&

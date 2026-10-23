@@ -6,9 +6,9 @@ CFLAGS ?= -O2 -g
 STRICT = -std=c11 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wshadow
 SOURCES = src/context.c src/resources.c src/commands.c src/objc_runtime.c \
           src/objc_pipeline.c src/objc_commands.c src/texture_formats.c src/textures.c \
-          src/samplers.c src/texture_ownership.c src/texture_transfer.c \
+          src/samplers.c src/texture_ownership.c src/texture_initialization.c src/texture_transfer.c \
           src/objc_images.c src/objc_image_transfer.c src/render_pipeline.c \
-          src/render_attachments.c src/render_draws.c src/render_commands.c \
+          src/render_attachments.c src/render_draws.c src/render_commands.c src/render_visibility.c \
           src/objc_render_loader.c src/objc_render_pipeline.c src/objc_depth_state.c \
           src/objc_render_commands.c src/objc_render_draws.c
 OBJECTS = $(SOURCES:src/%.c=$(BUILD)/%.o)
@@ -42,7 +42,13 @@ $(BUILD)/test_objc_render_pipeline: tests/test_objc_render_pipeline.c $(BUILD)/l
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(STRICT) $< $(BUILD)/libdoe_metal.a $(LDLIBS) -o $@
 $(BUILD)/test_objc_render_commands: tests/test_objc_render_commands.c $(BUILD)/libdoe_metal.a
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(STRICT) $< $(BUILD)/libdoe_metal.a $(LDLIBS) -o $@
-check: $(BUILD)/test_objc_render_commands $(BUILD)/test_objc_render_pipeline $(BUILD)/test_render $(BUILD)/test_lifetime $(BUILD)/test_objc_calls $(BUILD)/test_images $(BUILD)/test_objc_images
+$(BUILD)/test_multisample: tests/test_multisample.c tests/mock_native.c tests/mock_native.h $(BUILD)/libdoe_metal.a
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(STRICT) tests/test_multisample.c tests/mock_native.c $(BUILD)/libdoe_metal.a $(LDLIBS) -o $@
+$(BUILD)/test_visibility: tests/test_visibility.c tests/mock_native.c tests/mock_native.h $(BUILD)/libdoe_metal.a
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(STRICT) tests/test_visibility.c tests/mock_native.c $(BUILD)/libdoe_metal.a $(LDLIBS) -o $@
+check: $(BUILD)/test_visibility $(BUILD)/test_multisample $(BUILD)/test_objc_render_commands $(BUILD)/test_objc_render_pipeline $(BUILD)/test_render $(BUILD)/test_lifetime $(BUILD)/test_objc_calls $(BUILD)/test_images $(BUILD)/test_objc_images
+	$(BUILD)/test_visibility
+	$(BUILD)/test_multisample
 	$(BUILD)/test_objc_render_commands
 	$(BUILD)/test_objc_render_pipeline
 	$(BUILD)/test_render

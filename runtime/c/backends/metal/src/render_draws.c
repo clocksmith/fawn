@@ -5,9 +5,12 @@
 static bool attachment_alias(const doe_mtl_render_pass_desc *pass, const doe_mtl_texture *texture) {
     uint32_t i;
     for (i = 0; i < pass->color_count; ++i)
-        if (pass->colors[i].view != NULL && pass->colors[i].view->texture == texture) return true;
+        if ((pass->colors[i].view != NULL && pass->colors[i].view->texture == texture) ||
+            (pass->colors[i].resolve_view != NULL && pass->colors[i].resolve_view->texture == texture)) return true;
     return (pass->depth.view != NULL && pass->depth.view->texture == texture) ||
-        (pass->stencil.view != NULL && pass->stencil.view->texture == texture);
+        (pass->stencil.view != NULL && pass->stencil.view->texture == texture) ||
+        (pass->depth.resolve_view != NULL && pass->depth.resolve_view->texture == texture) ||
+        (pass->stencil.resolve_view != NULL && pass->stencil.resolve_view->texture == texture);
 }
 static doe_mtl_status bindings_check(doe_mtl_commands *commands, const doe_mtl_render_pass_desc *pass,
     const doe_mtl_render_bindings *bindings, uint32_t sizes_slot, doe_mtl_native_resources *native) {
@@ -73,7 +76,7 @@ doe_mtl_status doe_mtl_render_draw_preflight(doe_mtl_commands *commands,
     if (draw->pipeline == NULL) return DOE_MTL_INVALID_ARGUMENT;
     if (draw->pipeline->context != commands->context) return DOE_MTL_DEVICE_MISMATCH;
     pipeline = &draw->pipeline->desc;
-    if (pipeline->color_count != pass->color_count ||
+    if (pipeline->sample_count != native_pass->samples || pipeline->color_count != pass->color_count ||
         pipeline->depth_stencil.depth_format != (pass->depth.view != NULL ? pass->depth.view->desc.format : 0) ||
         pipeline->depth_stencil.stencil_format != (pass->stencil.view != NULL ? pass->stencil.view->desc.format : 0))
         return DOE_MTL_INVALID_ARGUMENT;
