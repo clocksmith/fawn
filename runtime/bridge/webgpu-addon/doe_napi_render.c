@@ -744,7 +744,7 @@ napi_value doe_create_render_bundle_encoder(napi_env env, napi_callback_info inf
     }
     if (argc < 6) NAPI_THROW(env, "createRenderBundleEncoder requires device, formats, depth format, sample count, and read-only flags");
     CHECK_LIB_LOADED(env);
-    if (!pfn_doeNativeDeviceCreateRenderBundleEncoder) NAPI_THROW(env, "doeNativeDeviceCreateRenderBundleEncoder not available");
+    if (!pfn_doeNativeDeviceCreateRenderBundleEncoder) NAPI_THROW(env, "createRenderBundleEncoder not available");
     void* device = unwrap_ptr(env, argv[0]);
     if (!device) NAPI_THROW(env, "createRenderBundleEncoder: invalid device");
     uint32_t fmt_count = 0; bool is_array = false;
@@ -793,7 +793,8 @@ napi_value doe_render_bundle_encoder_set_pipeline(napi_env env, napi_callback_in
     NAPI_ASSERT_ARGC(env, info, 2);
     void* enc = unwrap_ptr(env, _args[0]); void* pipeline = unwrap_ptr(env, _args[1]);
     if (!enc || !pipeline) return NULL;
-    if (pfn_doeNativeRenderBundleEncoderSetPipeline) pfn_doeNativeRenderBundleEncoderSetPipeline(enc, pipeline);
+    if (!pfn_doeNativeRenderBundleEncoderSetPipeline) NAPI_THROW(env, "renderBundleEncoderSetPipeline not available");
+    pfn_doeNativeRenderBundleEncoderSetPipeline(enc, pipeline);
     return NULL;
 }
 
@@ -802,7 +803,8 @@ napi_value doe_render_bundle_encoder_set_bind_group(napi_env env, napi_callback_
     void* enc = unwrap_ptr(env, _args[0]); if (!enc) return NULL;
     uint32_t index = 0; napi_get_value_uint32(env, _args[1], &index);
     void* bg = unwrap_ptr(env, _args[2]); if (!bg) return NULL;
-    if (pfn_doeNativeRenderBundleEncoderSetBindGroup) pfn_doeNativeRenderBundleEncoderSetBindGroup(enc, index, bg, 0, NULL);
+    if (!pfn_doeNativeRenderBundleEncoderSetBindGroup) NAPI_THROW(env, "renderBundleEncoderSetBindGroup not available");
+    pfn_doeNativeRenderBundleEncoderSetBindGroup(enc, index, bg, 0, NULL);
     return NULL;
 }
 
@@ -825,8 +827,8 @@ napi_value doe_render_bundle_encoder_set_vertex_buffer(napi_env env, napi_callba
     void* buf = unwrap_ptr(env, _args[2]); if (!buf) return NULL;
     int64_t offset = 0; napi_get_value_int64(env, _args[3], &offset);
     int64_t size   = 0; napi_get_value_int64(env, _args[4], &size);
-    if (pfn_doeNativeRenderBundleEncoderSetVertexBuffer)
-        pfn_doeNativeRenderBundleEncoderSetVertexBuffer(enc, slot, buf, (uint64_t)offset, (uint64_t)size);
+    if (!pfn_doeNativeRenderBundleEncoderSetVertexBuffer) NAPI_THROW(env, "renderBundleEncoderSetVertexBuffer not available");
+    pfn_doeNativeRenderBundleEncoderSetVertexBuffer(enc, slot, buf, (uint64_t)offset, (uint64_t)size);
     return NULL;
 }
 
@@ -837,8 +839,8 @@ napi_value doe_render_bundle_encoder_set_index_buffer(napi_env env, napi_callbac
     uint32_t format = index_format_from_value(env, _args[2]);
     int64_t offset = 0; napi_get_value_int64(env, _args[3], &offset);
     int64_t size   = 0; napi_get_value_int64(env, _args[4], &size);
-    if (pfn_doeNativeRenderBundleEncoderSetIndexBuffer)
-        pfn_doeNativeRenderBundleEncoderSetIndexBuffer(enc, buf, format, (uint64_t)offset, (uint64_t)size);
+    if (!pfn_doeNativeRenderBundleEncoderSetIndexBuffer) NAPI_THROW(env, "renderBundleEncoderSetIndexBuffer not available");
+    pfn_doeNativeRenderBundleEncoderSetIndexBuffer(enc, buf, format, (uint64_t)offset, (uint64_t)size);
     return NULL;
 }
 
@@ -848,8 +850,8 @@ napi_value doe_render_bundle_encoder_draw(napi_env env, napi_callback_info info)
     uint32_t vertex_count = 0, instance_count = 1, first_vertex = 0, first_instance = 0;
     napi_get_value_uint32(env, _args[1], &vertex_count); napi_get_value_uint32(env, _args[2], &instance_count);
     napi_get_value_uint32(env, _args[3], &first_vertex); napi_get_value_uint32(env, _args[4], &first_instance);
-    if (pfn_doeNativeRenderBundleEncoderDraw)
-        pfn_doeNativeRenderBundleEncoderDraw(enc, vertex_count, instance_count, first_vertex, first_instance);
+    if (!pfn_doeNativeRenderBundleEncoderDraw) NAPI_THROW(env, "renderBundleEncoderDraw not available");
+    pfn_doeNativeRenderBundleEncoderDraw(enc, vertex_count, instance_count, first_vertex, first_instance);
     return NULL;
 }
 
@@ -862,44 +864,57 @@ napi_value doe_render_bundle_encoder_draw_indexed(napi_env env, napi_callback_in
     napi_valuetype bv_type; napi_typeof(env, _args[4], &bv_type);
     if (bv_type == napi_number) { int64_t bv = 0; napi_get_value_int64(env, _args[4], &bv); base_vertex = (int32_t)bv; }
     napi_get_value_uint32(env, _args[5], &first_instance);
-    if (pfn_doeNativeRenderBundleEncoderDrawIndexed)
-        pfn_doeNativeRenderBundleEncoderDrawIndexed(enc, index_count, instance_count, first_index, base_vertex, first_instance);
+    if (!pfn_doeNativeRenderBundleEncoderDrawIndexed) NAPI_THROW(env, "renderBundleEncoderDrawIndexed not available");
+    pfn_doeNativeRenderBundleEncoderDrawIndexed(enc, index_count, instance_count, first_index, base_vertex, first_instance);
     return NULL;
 }
 
 napi_value doe_render_bundle_encoder_push_debug_group(napi_env env, napi_callback_info info) {
     NAPI_ASSERT_ARGC(env, info, 2);
-    void* enc = unwrap_ptr(env, _args[0]); if (!enc || !pfn_doeNativeRenderBundleEncoderPushDebugGroup) return NULL;
+    void* enc = unwrap_ptr(env, _args[0]);
+    if (!enc) NAPI_THROW(env, "renderBundleEncoderPushDebugGroup: invalid encoder");
+    if (!pfn_doeNativeRenderBundleEncoderPushDebugGroup && !pfn_wgpuRenderBundleEncoderPushDebugGroup)
+        NAPI_THROW(env, "renderBundleEncoderPushDebugGroup not available");
     size_t label_len = 0;
     napi_get_value_string_utf8(env, _args[1], NULL, 0, &label_len);
-    char* label = (char*)malloc(label_len + 1); if (!label) return NULL;
+    char* label = (char*)malloc(label_len + 1);
+    if (!label) NAPI_THROW(env, "renderBundleEncoderPushDebugGroup: out of memory");
     napi_get_value_string_utf8(env, _args[1], label, label_len + 1, &label_len);
-    pfn_doeNativeRenderBundleEncoderPushDebugGroup(enc, label, label_len);
+    if (pfn_doeNativeRenderBundleEncoderPushDebugGroup) pfn_doeNativeRenderBundleEncoderPushDebugGroup(enc, label, label_len);
+    else pfn_wgpuRenderBundleEncoderPushDebugGroup(enc, (WGPUStringView){label, label_len});
     free(label); return NULL;
 }
 
 napi_value doe_render_bundle_encoder_pop_debug_group(napi_env env, napi_callback_info info) {
     NAPI_ASSERT_ARGC(env, info, 1);
-    void* enc = unwrap_ptr(env, _args[0]); if (!enc || !pfn_doeNativeRenderBundleEncoderPopDebugGroup) return NULL;
-    pfn_doeNativeRenderBundleEncoderPopDebugGroup(enc);
+    void* enc = unwrap_ptr(env, _args[0]);
+    if (!enc) NAPI_THROW(env, "renderBundleEncoderPopDebugGroup: invalid encoder");
+    if (pfn_doeNativeRenderBundleEncoderPopDebugGroup) pfn_doeNativeRenderBundleEncoderPopDebugGroup(enc);
+    else if (pfn_wgpuRenderBundleEncoderPopDebugGroup) pfn_wgpuRenderBundleEncoderPopDebugGroup(enc);
+    else NAPI_THROW(env, "renderBundleEncoderPopDebugGroup not available");
     return NULL;
 }
 
 napi_value doe_render_bundle_encoder_insert_debug_marker(napi_env env, napi_callback_info info) {
     NAPI_ASSERT_ARGC(env, info, 2);
-    void* enc = unwrap_ptr(env, _args[0]); if (!enc || !pfn_doeNativeRenderBundleEncoderInsertDebugMarker) return NULL;
+    void* enc = unwrap_ptr(env, _args[0]);
+    if (!enc) NAPI_THROW(env, "renderBundleEncoderInsertDebugMarker: invalid encoder");
+    if (!pfn_doeNativeRenderBundleEncoderInsertDebugMarker && !pfn_wgpuRenderBundleEncoderInsertDebugMarker)
+        NAPI_THROW(env, "renderBundleEncoderInsertDebugMarker not available");
     size_t label_len = 0;
     napi_get_value_string_utf8(env, _args[1], NULL, 0, &label_len);
-    char* label = (char*)malloc(label_len + 1); if (!label) return NULL;
+    char* label = (char*)malloc(label_len + 1);
+    if (!label) NAPI_THROW(env, "renderBundleEncoderInsertDebugMarker: out of memory");
     napi_get_value_string_utf8(env, _args[1], label, label_len + 1, &label_len);
-    pfn_doeNativeRenderBundleEncoderInsertDebugMarker(enc, label, label_len);
+    if (pfn_doeNativeRenderBundleEncoderInsertDebugMarker) pfn_doeNativeRenderBundleEncoderInsertDebugMarker(enc, label, label_len);
+    else pfn_wgpuRenderBundleEncoderInsertDebugMarker(enc, (WGPUStringView){label, label_len});
     free(label); return NULL;
 }
 
 napi_value doe_render_bundle_encoder_finish(napi_env env, napi_callback_info info) {
     NAPI_ASSERT_ARGC(env, info, 1);
     CHECK_LIB_LOADED(env);
-    if (!pfn_doeNativeRenderBundleEncoderFinish) NAPI_THROW(env, "doeNativeRenderBundleEncoderFinish not available");
+    if (!pfn_doeNativeRenderBundleEncoderFinish) NAPI_THROW(env, "renderBundleEncoderFinish not available");
     void* enc = unwrap_ptr(env, _args[0]);
     if (!enc) NAPI_THROW(env, "renderBundleEncoderFinish: invalid encoder");
     void* bundle = pfn_doeNativeRenderBundleEncoderFinish(enc, NULL);
@@ -911,6 +926,7 @@ napi_value doe_render_bundle_encoder_release(napi_env env, napi_callback_info in
     NAPI_ASSERT_ARGC(env, info, 1);
     void* enc = unwrap_ptr(env, _args[0]);
     if (enc && pfn_doeNativeRenderBundleEncoderRelease) pfn_doeNativeRenderBundleEncoderRelease(enc);
+    else if (enc) NAPI_THROW(env, "renderBundleEncoderRelease not available");
     return NULL;
 }
 
@@ -918,5 +934,6 @@ napi_value doe_render_bundle_release(napi_env env, napi_callback_info info) {
     NAPI_ASSERT_ARGC(env, info, 1);
     void* bundle = unwrap_ptr(env, _args[0]);
     if (bundle && pfn_doeNativeRenderBundleRelease) pfn_doeNativeRenderBundleRelease(bundle);
+    else if (bundle) NAPI_THROW(env, "renderBundleRelease not available");
     return NULL;
 }
