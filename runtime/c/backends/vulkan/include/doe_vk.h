@@ -41,12 +41,24 @@ typedef struct doe_vk_error {
 
 enum { DOE_VK_SURFACE_WAYLAND = 1, DOE_VK_SURFACE_XCB = 2, DOE_VK_SURFACE_XLIB = 4 };
 
+enum { DOE_VK_UUID_SIZE = 16 };
+/* How context creation picks a physical device. None falls back to another. */
+typedef enum doe_vk_adapter_selection {
+    DOE_VK_SELECT_ORDINAL = 0, /* Exactly adapter_ordinal (default). */
+    DOE_VK_SELECT_CLASS,       /* First enumerated CPU device when allow_cpu_adapter,
+                                * otherwise the first non-CPU device. */
+    DOE_VK_SELECT_IDENTITY     /* The device whose deviceUUID equals device_uuid;
+                                * changed enumeration never substitutes hardware. */
+} doe_vk_adapter_selection;
+
 typedef struct doe_vk_options {
     uint32_t adapter_ordinal; /* Exact enumeration ordinal, no silent fallback. */
     bool allow_cpu_adapter; /* False by default; software is never GPU evidence. */
     bool require_graphics_queue; /* Select a compute+graphics family or reject. */
     bool enable_shader_demote_if_supported; /* Explicit opt-in; unavailable remains disabled. */
     uint32_t surface_platforms; /* Zero disables WSI; exact required platform bits. */
+    doe_vk_adapter_selection selection;
+    uint8_t device_uuid[DOE_VK_UUID_SIZE]; /* Required identity for SELECT_IDENTITY. */
 } doe_vk_options;
 
 typedef struct doe_vk_caps {
@@ -55,7 +67,8 @@ typedef struct doe_vk_caps {
     uint32_t vendor_id;
     uint32_t device_id;
     uint32_t device_type;
-    uint32_t adapter_ordinal;
+    uint32_t adapter_ordinal; /* Actual enumeration index of the selected device. */
+    uint8_t device_uuid[DOE_VK_UUID_SIZE]; /* VkPhysicalDeviceIDProperties.deviceUUID. */
     uint32_t queue_family;
     uint32_t queue_flags;
     uint32_t timestamp_valid_bits;

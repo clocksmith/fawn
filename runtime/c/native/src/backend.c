@@ -33,9 +33,11 @@ native_result native_backend_open(WGPUBackendType kind, bool fallback, uint32_t 
     native_backend result = {.kind=kind};
     native_result status;
     if (kind == WGPUBackendType_Vulkan) {
+        /* First device of the requested class (CPU only for fallback), never
+         * enumeration ordinal 0 filtered afterwards. */
         result.value.vulkan.options = (doe_vk_options){.allow_cpu_adapter=fallback,
             .require_graphics_queue=true,.enable_shader_demote_if_supported=true,
-            .surface_platforms=surface_platforms};
+            .surface_platforms=surface_platforms,.selection=DOE_VK_SELECT_CLASS};
         status = native_from_vulkan(doe_vk_context_create(&result.value.vulkan.options,
             &result.value.vulkan.context, NULL));
         if (status == NATIVE_OK)
@@ -63,7 +65,12 @@ native_result native_backend_device(const native_backend *adapter, native_backen
     native_backend result = {.kind=adapter->kind};
     native_result status;
     if (adapter->kind == WGPUBackendType_Vulkan) {
+        /* The device context must open the adapter's own hardware: select by its
+         * deviceUUID, so reordered or replaced devices fail instead of substituting. */
         result.value.vulkan.options = adapter->value.vulkan.options;
+        result.value.vulkan.options.selection = DOE_VK_SELECT_IDENTITY;
+        memcpy(result.value.vulkan.options.device_uuid, adapter->value.vulkan.caps.device_uuid,
+            sizeof(result.value.vulkan.options.device_uuid));
         status = native_from_vulkan(doe_vk_context_create(&result.value.vulkan.options,
             &result.value.vulkan.context, NULL));
         if (status == NATIVE_OK)

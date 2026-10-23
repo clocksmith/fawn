@@ -212,6 +212,17 @@ struct VkPhysicalDeviceProperties2 {
     VkPhysicalDeviceProperties properties;
 };
 
+/* Official core 1.1 declaration, separately bound in ABI_PROVENANCE.json. */
+typedef struct VkPhysicalDeviceIDProperties {
+    int32_t sType;
+    void *pNext;
+    uint8_t deviceUUID[16];
+    uint8_t driverUUID[16];
+    uint8_t deviceLUID[8];
+    uint32_t deviceNodeMask;
+    uint32_t deviceLUIDValid;
+} VkPhysicalDeviceIDProperties;
+
 /* Official core1.3/EXT declaration, separately bound in ABI_PROVENANCE.json. */
 typedef struct VkPhysicalDeviceShaderDemoteToHelperInvocationFeatures {
     int32_t sType;

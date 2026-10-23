@@ -206,30 +206,77 @@ static doe_vk_status load_functions(doe_vk_context *context, doe_vk_error *error
     return DOE_VK_OK;
 }
 
+doe_vk_status doe_vk_select_device(const doe_vk_device_candidate *candidates, uint32_t count,
+    const doe_vk_options *options, uint32_t *out_index) {
+    if (candidates == NULL || options == NULL || out_index == NULL) return DOE_VK_INVALID_ARGUMENT;
+    for (uint32_t i = 0; i < count; ++i) {
+        bool selected;
+        switch (options->selection) {
+        case DOE_VK_SELECT_ORDINAL: selected = i == options->adapter_ordinal; break;
+        case DOE_VK_SELECT_CLASS: selected = candidates[i].software == options->allow_cpu_adapter; break;
+        case DOE_VK_SELECT_IDENTITY:
+            selected = memcmp(candidates[i].uuid, options->device_uuid, DOE_VK_UUID_SIZE) == 0;
+            break;
+        default: return DOE_VK_INVALID_ARGUMENT;
+        }
+        if (selected) {
+            *out_index = i;
+            return DOE_VK_OK;
+        }
+    }
+    return DOE_VK_UNSUPPORTED;
+}
+
+static void device_properties(doe_vk_context *context, VkPhysicalDevice device,
+                              VkPhysicalDeviceProperties2 *out, VkPhysicalDeviceIDProperties *identity) {
+    *identity = (VkPhysicalDeviceIDProperties){ .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ID_PROPERTIES };
+    *out = (VkPhysicalDeviceProperties2){ .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2, .pNext = identity };
+    context->vk.vkGetPhysicalDeviceProperties2(device, out);
+}
+
 static doe_vk_status choose_device(doe_vk_context *context,
                                    const doe_vk_options *options,
                                    doe_vk_error *error) {
     uint32_t count = 0;
-    VkPhysicalDevice *devices = NULL;
     VkResult result = context->vk.vkEnumeratePhysicalDevices(context->instance, &count, NULL);
     if (result != 0) return doe_vk_result(context, result, "vkEnumeratePhysicalDevices", error);
-    if (count == 0 || options->adapter_ordinal >= count)
-        return doe_vk_fail(DOE_VK_UNSUPPORTED, "adapter ordinal unavailable", error);
-    if ((uint64_t)count * sizeof(*devices) > SIZE_MAX)
+    if (count == 0) return doe_vk_fail(DOE_VK_UNSUPPORTED, "no Vulkan physical devices", error);
+    if ((uint64_t)count * (sizeof(VkPhysicalDevice) + sizeof(doe_vk_device_candidate)) > SIZE_MAX)
         return doe_vk_fail(DOE_VK_OUT_OF_MEMORY, "physical device list", error);
-    devices = calloc(count, sizeof(*devices));
-    if (devices == NULL) return doe_vk_fail(DOE_VK_OUT_OF_MEMORY, "physical device list", error);
+    VkPhysicalDevice *devices = calloc(count, sizeof(*devices));
+    doe_vk_device_candidate *candidates = calloc(count, sizeof(*candidates));
+    if (devices == NULL || candidates == NULL) {
+        free(devices);
+        free(candidates);
+        return doe_vk_fail(DOE_VK_OUT_OF_MEMORY, "physical device list", error);
+    }
     uint32_t capacity = count;
     result = context->vk.vkEnumeratePhysicalDevices(context->instance, &count, devices);
-    if (result == 0 && count <= capacity && options->adapter_ordinal < count)
-        context->physical = devices[options->adapter_ordinal];
+    /* VK_INCOMPLETE (5) means the device set grew between the two calls. */
+    doe_vk_status status = result == 0 && count <= capacity ? DOE_VK_OK : DOE_VK_UNSUPPORTED;
+    for (uint32_t i = 0; status == DOE_VK_OK && i < count; ++i) {
+        VkPhysicalDeviceProperties2 properties;
+        VkPhysicalDeviceIDProperties identity;
+        device_properties(context, devices[i], &properties, &identity);
+        candidates[i].software = properties.properties.deviceType == 4;
+        memcpy(candidates[i].uuid, identity.deviceUUID, DOE_VK_UUID_SIZE);
+    }
+    uint32_t index = 0;
+    if (status == DOE_VK_OK) status = doe_vk_select_device(candidates, count, options, &index);
+    if (status == DOE_VK_OK) context->physical = devices[index];
     free(devices);
-    if (result != 0) return doe_vk_result(context, result, "vkEnumeratePhysicalDevices", error);
-    if (context->physical == NULL)
-        return doe_vk_fail(DOE_VK_UNSUPPORTED, "adapter enumeration changed", error);
+    free(candidates);
+    if (result != 0 && result != 5) return doe_vk_result(context, result, "vkEnumeratePhysicalDevices", error);
+    if (status != DOE_VK_OK) {
+        const char *operation = options->selection == DOE_VK_SELECT_IDENTITY ? "adapter identity not enumerated" :
+            options->selection == DOE_VK_SELECT_CLASS ? "no adapter of the requested class" :
+            "adapter ordinal unavailable or enumeration changed";
+        return doe_vk_fail(status, operation, error);
+    }
 
-    VkPhysicalDeviceProperties2 properties = { .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2 };
-    context->vk.vkGetPhysicalDeviceProperties2(context->physical, &properties);
+    VkPhysicalDeviceProperties2 properties;
+    VkPhysicalDeviceIDProperties identity;
+    device_properties(context, context->physical, &properties, &identity);
     context->properties = properties.properties;
     if (properties.properties.apiVersion < VK_API_VERSION_1_2)
         return doe_vk_fail(DOE_VK_UNSUPPORTED, "Vulkan 1.2 device required", error);
@@ -242,7 +289,8 @@ static doe_vk_status choose_device(doe_vk_context *context,
     caps->vendor_id = p->vendorID;
     caps->device_id = p->deviceID;
     caps->device_type = p->deviceType;
-    caps->adapter_ordinal = options->adapter_ordinal;
+    caps->adapter_ordinal = index;
+    memcpy(caps->device_uuid, identity.deviceUUID, sizeof(caps->device_uuid));
     caps->software_adapter = p->deviceType == 4;
     caps->timestamp_period_ns = p->limits.timestampPeriod;
     caps->max_workgroup_storage_size = p->limits.maxComputeSharedMemorySize;

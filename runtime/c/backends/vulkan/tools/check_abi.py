@@ -62,9 +62,13 @@ def main():
                 members.append((member, value))
             types[name] = type(name, (ctypes.Structure if kind == "struct" else ctypes.Union,), {"_fields_": members})
             fields[name] = members
+    def official_member(spelling):
+        if spelling == "pointer":
+            return ctypes.c_void_p
+        array = re.fullmatch(r"\[(\d+)\](\w+)", spelling)
+        return types[array[2]] * int(array[1]) if array else types[spelling]
     for name, declaration in manifest.get("official_structs", {}).items():
-        members = [(member, ctypes.c_void_p if spelling == "pointer" else types[spelling])
-                   for member, spelling in declaration["fields"]]
+        members = [(member, official_member(spelling)) for member, spelling in declaration["fields"]]
         types[name] = type(name, (ctypes.Structure,), {"_fields_": members})
         fields[name] = members
     lines = ['#include "vk_abi_functions.h"', '#include "vk_abi_constants.h"']
