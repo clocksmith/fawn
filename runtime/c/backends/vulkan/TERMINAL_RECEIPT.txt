@@ -1,0 +1,13 @@
+2026-10-23 UTC, experimental C Vulkan core, source commit basis 7b709f49.
+Strict GCC C11 static build: PASS.
+C++17 consumer header compile: PASS.
+Pinned Linux LP64 ABI: 38 records, 768 assertions PASS.
+Host native-boundary rollback/ownership/bounds/timeout/device loss/uncertain completion: PASS.
+ASan+UBSan same host tests: PASS with ASAN_OPTIONS=detect_leaks=0.
+LSan unmodified run: blocked by ptrace environment, not leak-qualified.
+Default native driver discovery: VK_ERROR_INCOMPATIBLE_DRIVER, correctly no execution.
+Explicit existing Chromium SwiftShader ICD: real C compiler WGSL/SPIR-V -> two dependent compute dispatches -> fill/copy/readback, 64 exact CPU oracle values PASS.
+Early caller buffer/pipeline release and pending command/read refusal: PASS.
+No physical GPU, native WebGPU consumer integration or full backend parity qualification.
+Latest handoff smoke rebuilt the current sibling C compiler in /tmp and passed with process-local SwiftShader, 5s fence/60s process timeout.
+Read-as-you-go failure-output bug fixed with failing-old/passing-new regression; see REVIEW_RECEIPT.txt.
