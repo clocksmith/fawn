@@ -1,0 +1,21 @@
+{
+  "status": "Focused build dependency correction; no runtime behavior or new platform qualification claim.",
+  "timestamp_utc": "2026-10-23T20:46:00Z",
+  "base_commit": "2514afd75074f5ee83d1eb189905a6e7321ebae1",
+  "result": "A real native/backend.o object is first up-to-date; make -W then forces an actual recompile for instance/futures/labels/error-scopes private internal.h and pinned webgpu.h without changing their bytes. Original Makefile reproduction failed at instance/src/internal.h; factored OWNER_DIRS source/header dependencies pass all five.",
+  "recipe": "python3 runtime/c/native/tests/build_dependencies.py",
+  "source_sha256": {
+    "runtime/c/native/Makefile": "d00fcf4369a48684fbe4c497ca0d1fa6fad2cec817ee443f4a6cfb0354015458",
+    "runtime/c/native/tests/build_dependencies.py": "18b81b583158a68a825ff28ee9296409a4d5c37f3b1fa3a9f71979ffdafefcfd",
+    "runtime/c/native/src/backend.c": "4e328ceb931e81284fb6b2f966ed2a71cefb318622d00b653ab885b049a66429",
+    "runtime/c/native/src/backend.h": "4eea26834d8f80d53bf8502060c99a478d0a4ef644a368c85576e349c5c929e4",
+    "runtime/zig/vendor/webgpu-headers/webgpu.h": "7691d76ceb67056f89e97b9ff0b62163eacf19a8e0e09a8fa7dbb32069b7978c",
+    "runtime/c/backends/vulkan/include/doe_vk.h": "e72e342f508a38e718532993b8766c0d5a2a1fff603d71ac7d1cb80049c873c1",
+    "runtime/c/backends/metal/include/doe_metal.h": "f85b6988ca71b4f2ae99400a195087e11ec4241d84d4c2d65d84c2da6edd398a"
+  },
+  "logs_sha256": {
+    "/tmp/doe-native-private-header-first-failure.log": "13f66141d9b626fc649c9d520cc867f0b16f8b81a0d24f1d61f951baf2c898ff",
+    "/tmp/doe-native-private-header-fixed.log": "0e0e5a0b3f3e37596401226074a76da18b2742fe449b184cb83b4c1bf6e99f38"
+  },
+  "scope": "Linux GCC/make control. No complete native rebuild or GPU run needed for this dependency-only check; the prior clean-source bridge qualification remains unchanged. Canonical compiler owns its private dependencies separately."
+}
