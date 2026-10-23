@@ -83,6 +83,13 @@ fails on each of these; fix the source rather than adding an exemption:
 - **flags**: an owner Makefile that defines `CFLAGS` compiles with
   `-std=c11 -Wall -Wextra -Wpedantic -Werror`.
 
+`make -C runtime/c check` also runs `tools/check_globals.py` over every built owner:
+each writable process-global object (`.data`/`.bss`, not relocated constants) must be
+listed in `tools/mutable_globals.txt` with its owner source and why it is
+process-lifetime state, and every listed entry must still exist. Prefer state owned
+by an instance, device or caller-supplied storage; a new line there is reviewed like
+the state itself.
+
 Frozen evidence is exempt from license and guard only: `independent_tests*` trees and
 files whose bytes still match a committed `*.sha256` seal. Editing a sealed file makes
 it live source, subject to every rule. `make -C runtime/c check-build` builds every
