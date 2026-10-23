@@ -13,6 +13,7 @@ doe_dx_status doe_dx_hresult(HRESULT result, const char *operation, doe_dx_error
 
 void doe_dx_native_close(doe_dx_native_context *context) {
     if (!context) return;
+    if (context->dispatch_signature) ID3D12CommandSignature_Release(context->dispatch_signature);
     if (context->fence) ID3D12Fence_Release(context->fence);
     if (context->queue) ID3D12CommandQueue_Release(context->queue);
     if (context->device) ID3D12Device_Release(context->device);

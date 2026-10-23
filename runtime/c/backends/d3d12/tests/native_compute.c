@@ -6,16 +6,26 @@
  * Build does not run this fixture or claim physical qualification. */
 
 int main(int argc, char **argv) {
-    if (argc != 2) {
-        fprintf(stderr, "usage: native_compute.exe native_compute.dxil\n");
+    if (argc != 2 && argc != 3) {
+        fprintf(stderr, "usage: native_compute.exe shader.dxil [native_indirect.dxil | --uniform]\n");
         return 2;
     }
+    bool uniform_mode = argc == 3 && strcmp(argv[2], "--uniform") == 0;
+    bool indirect_mode = argc == 3 && !uniform_mode;
     size_t length = 0;
     unsigned char *bytecode = read_bytecode(argv[1], &length);
     if (!bytecode) return 2;
+    size_t producer_length = 0;
+    unsigned char *producer_bytecode = indirect_mode ? read_bytecode(argv[2], &producer_length) : NULL;
+    if (indirect_mode && !producer_bytecode) {
+        free(bytecode);
+        return 2;
+    }
     doe_dx_context *context = NULL;
     doe_dx_buffer *upload = NULL, *input = NULL, *output = NULL, *readback = NULL;
-    doe_dx_pipeline *pipeline = NULL;
+    doe_dx_buffer *arguments = NULL, *argument_readback = NULL;
+    doe_dx_buffer *uniform_upload = NULL, *uniform = NULL;
+    doe_dx_pipeline *pipeline = NULL, *producer = NULL;
     doe_dx_commands *commands = NULL;
     doe_dx_error error = {0};
     doe_dx_status status = doe_dx_context_create(NULL, &context, &error);
@@ -41,22 +51,66 @@ int main(int argc, char **argv) {
     if (status != DOE_DX_OK) goto failed;
     status = doe_dx_buffer_create(context, sizeof(inputs), DOE_DX_READBACK, &readback, &error);
     if (status != DOE_DX_OK) goto failed;
+    if (indirect_mode) {
+        status = doe_dx_buffer_create(context, sizeof(inputs), DOE_DX_DEFAULT, &arguments, &error);
+        if (status != DOE_DX_OK) goto failed;
+        status = doe_dx_buffer_create(context, sizeof(inputs), DOE_DX_READBACK, &argument_readback, &error);
+        if (status != DOE_DX_OK) goto failed;
+    }
     status = doe_dx_buffer_write(upload, 0, inputs, sizeof(inputs), &error);
     if (status != DOE_DX_OK) goto failed;
-    doe_dx_binding_layout layout[2] = {{0, 0, 4, DOE_DX_READ_ONLY}, {0, 0, 4, DOE_DX_READ_WRITE}};
-    doe_dx_pipeline_desc description = {bytecode, length, layout, 2};
+    if (uniform_mode) {
+        uint32_t parameters[64] = {0x13579bdfu, 7u};
+        status = doe_dx_buffer_create(context, sizeof(parameters), DOE_DX_UPLOAD, &uniform_upload, &error);
+        if (status != DOE_DX_OK) goto failed;
+        status = doe_dx_buffer_create(context, sizeof(parameters), DOE_DX_DEFAULT, &uniform, &error);
+        if (status != DOE_DX_OK) goto failed;
+        status = doe_dx_buffer_write(uniform_upload, 0, parameters, sizeof(parameters), &error);
+        if (status != DOE_DX_OK) goto failed;
+    }
+    doe_dx_binding_layout layout[3] = {
+        {0, 0, 4, DOE_DX_READ_ONLY, DOE_DX_STRUCTURED},
+        {0, 0, 4, DOE_DX_READ_WRITE, DOE_DX_STRUCTURED},
+        {0, 0, 0, DOE_DX_READ_ONLY, DOE_DX_UNIFORM}
+    };
+    size_t binding_count = uniform_mode ? 3u : 2u;
+    doe_dx_pipeline_desc description = {bytecode, length, layout, binding_count};
     status = doe_dx_pipeline_create(context, &description, &pipeline, &error);
     if (status != DOE_DX_OK) goto failed;
     free(bytecode);
     bytecode = NULL;
+    if (indirect_mode) {
+        doe_dx_binding_layout producer_layout = {0, 0, 4, DOE_DX_READ_WRITE, DOE_DX_STRUCTURED};
+        doe_dx_pipeline_desc producer_description = {producer_bytecode, producer_length, &producer_layout, 1};
+        status = doe_dx_pipeline_create(context, &producer_description, &producer, &error);
+        if (status != DOE_DX_OK) goto failed;
+        free(producer_bytecode);
+        producer_bytecode = NULL;
+    }
     status = doe_dx_commands_create(context, &commands, &error);
     if (status != DOE_DX_OK) goto failed;
     status = doe_dx_commands_copy(commands, upload, 0, input, 0, sizeof(inputs), &error);
     if (status != DOE_DX_OK) goto failed;
     status = doe_dx_commands_copy(commands, upload, 0, output, 0, sizeof(inputs), &error);
     if (status != DOE_DX_OK) goto failed;
-    doe_dx_buffer_binding bindings[2] = {{input, 0, sizeof(inputs)}, {output, 0, sizeof(inputs)}};
-    status = doe_dx_commands_dispatch(commands, pipeline, bindings, 2, 1, 1, 1, &error);
+    doe_dx_buffer_binding bindings[3] = {{input, 0, sizeof(inputs)}, {output, 0, sizeof(inputs)}, {uniform, 0, 256}};
+    if (uniform_mode) {
+        status = doe_dx_commands_copy(commands, uniform_upload, 0, uniform, 0, 256, &error);
+        if (status != DOE_DX_OK) goto failed;
+    }
+    if (indirect_mode) {
+        status = doe_dx_commands_copy(commands, upload, 0, arguments, 0, sizeof(inputs), &error);
+        if (status != DOE_DX_OK) goto failed;
+        doe_dx_buffer_binding producer_binding = {arguments, 0, sizeof(inputs)};
+        status = doe_dx_commands_dispatch(commands, producer, &producer_binding, 1, 1, 1, 1, &error);
+        if (status != DOE_DX_OK) goto failed;
+        doe_dx_compute_resources resources = {bindings, 2, NULL, 0};
+        status = doe_dx_commands_dispatch_indirect(commands, pipeline, &resources, arguments, 16, &error);
+        if (status != DOE_DX_OK) goto failed;
+        status = doe_dx_commands_copy(commands, arguments, 0, argument_readback, 0, sizeof(inputs), &error);
+    } else {
+        status = doe_dx_commands_dispatch(commands, pipeline, bindings, binding_count, 1, 1, 1, &error);
+    }
     if (status != DOE_DX_OK) goto failed;
     status = doe_dx_commands_copy(commands, output, 0, readback, 0, sizeof(inputs), &error);
     if (status != DOE_DX_OK) goto failed;
@@ -69,6 +123,14 @@ int main(int argc, char **argv) {
     output = NULL;
     doe_dx_pipeline_release(pipeline);
     pipeline = NULL;
+    doe_dx_pipeline_release(producer);
+    producer = NULL;
+    doe_dx_buffer_release(arguments);
+    arguments = NULL;
+    doe_dx_buffer_release(uniform_upload);
+    uniform_upload = NULL;
+    doe_dx_buffer_release(uniform);
+    uniform = NULL;
     status = doe_dx_commands_submit(commands, &error);
     submitted = status == DOE_DX_OK || status == DOE_DX_COMPLETION_UNKNOWN;
     if (!submitted) goto failed;
@@ -85,19 +147,40 @@ int main(int argc, char **argv) {
             goto cleanup;
         }
     }
-    puts("native D3D12 readback and early caller release passed");
+    if (indirect_mode) {
+        uint32_t actual_arguments[16];
+        status = doe_dx_buffer_read(argument_readback, 0, actual_arguments, sizeof(actual_arguments), &error);
+        if (status != DOE_DX_OK) goto failed;
+        for (size_t index = 0; index < 16; index++) {
+            uint32_t expected = index >= 4 && index <= 6 ? 1u : inputs[index];
+            if (actual_arguments[index] != expected) {
+                fprintf(stderr, "argument mismatch[%zu]: expected=%u actual=%u\n",
+                    index, expected, actual_arguments[index]);
+                goto cleanup;
+            }
+        }
+    }
+    if (indirect_mode) puts("native D3D12 GPU-generated indirect arguments and early caller release passed");
+    else if (uniform_mode) puts("native D3D12 uniform binding readback and early caller release passed");
+    else puts("native D3D12 readback and early caller release passed");
     result = 0;
     goto cleanup;
 failed:
     report("native compute", status, &error);
 cleanup:
     free(bytecode);
+    free(producer_bytecode);
     doe_dx_commands_release(commands);
     doe_dx_pipeline_release(pipeline);
+    doe_dx_pipeline_release(producer);
     doe_dx_buffer_release(upload);
     doe_dx_buffer_release(input);
     doe_dx_buffer_release(output);
     doe_dx_buffer_release(readback);
+    doe_dx_buffer_release(arguments);
+    doe_dx_buffer_release(argument_readback);
+    doe_dx_buffer_release(uniform_upload);
+    doe_dx_buffer_release(uniform);
     if (context) {
         doe_dx_status closed = doe_dx_context_destroy(context);
         if (closed != DOE_DX_OK) {

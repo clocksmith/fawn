@@ -34,11 +34,19 @@ doe_dx_status doe_dx_prepare_resources(doe_dx_commands *commands, doe_dx_pipelin
             return doe_dx_fail(DOE_DX_UNSUPPORTED, 0, "commands.bindings.heap", error);
         if (!binding->size || !doe_dx_range(buffer->size, binding->offset, binding->size))
             return doe_dx_fail(DOE_DX_RANGE, 0, "commands.bindings.range", error);
-        uint32_t stride = pipeline->bindings[index].stride;
-        if (binding->offset % stride || binding->size % stride)
-            return doe_dx_fail(DOE_DX_ALIGNMENT, 0, "commands.bindings.stride", error);
-        if (binding->size / stride > UINT32_MAX)
-            return doe_dx_fail(DOE_DX_RANGE, 0, "commands.bindings.elements", error);
+        const doe_dx_binding_layout *layout = &pipeline->bindings[index];
+        if (doe_dx_buffer_descriptor_kind(layout) == DOE_DX_DESCRIPTOR_CBV) {
+            if ((binding->offset | binding->size) & 255u)
+                return doe_dx_fail(DOE_DX_ALIGNMENT, 0, "commands.bindings.uniform_alignment", error);
+            if (binding->size > 65536)
+                return doe_dx_fail(DOE_DX_RANGE, 0, "commands.bindings.uniform_size", error);
+        } else {
+            uint32_t stride = layout->stride;
+            if (binding->offset % stride || binding->size % stride)
+                return doe_dx_fail(DOE_DX_ALIGNMENT, 0, "commands.bindings.stride", error);
+            if (binding->size / stride > UINT32_MAX)
+                return doe_dx_fail(DOE_DX_RANGE, 0, "commands.bindings.elements", error);
+        }
         for (size_t prior = 0; prior < index; prior++)
             if (bindings[prior].buffer == buffer)
                 return doe_dx_fail(DOE_DX_UNSUPPORTED, 0, "commands.bindings.alias", error);

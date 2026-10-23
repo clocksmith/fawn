@@ -18,7 +18,7 @@ LDLIBS =
 else
 LDLIBS = -ldl
 endif
-.PHONY: all check probe sanitize clean abi-compile
+.PHONY: all check probe sanitize clean abi-compile sdk-abi native-check
 all: $(BUILD)/libdoe_metal.a
 $(BUILD):
 	mkdir -p $@
@@ -30,6 +30,11 @@ $(BUILD)/test_lifetime: tests/test_lifetime.c tests/mock_native.c tests/mock_nat
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(STRICT) tests/test_lifetime.c tests/mock_native.c $(BUILD)/libdoe_metal.a $(LDLIBS) -o $@
 $(BUILD)/probe: tests/probe.c $(BUILD)/libdoe_metal.a
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(STRICT) $< $(BUILD)/libdoe_metal.a $(LDLIBS) -o $@
+$(BUILD)/native_compute: tests/native_compute.c $(BUILD)/libdoe_metal.a
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(STRICT) $< $(BUILD)/libdoe_metal.a $(LDLIBS) -o $@
+native-check: $(BUILD)/native_compute
+	@test "$(UNAME_S)" = Darwin || { echo 'native-check requires an authorized macOS device'; exit 1; }
+	DOE_MTL_ALLOW_HARDWARE=1 python3 -c 'import subprocess; subprocess.run(["$(BUILD)/native_compute", "--run"], check=True, timeout=20)'
 $(BUILD)/test_device_limits: tests/test_device_limits.c $(BUILD)/libdoe_metal.a
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(STRICT) $< $(BUILD)/libdoe_metal.a $(LDLIBS) -o $@
 $(BUILD)/test_objc_calls: tests/test_objc_calls.c $(BUILD)/libdoe_metal.a
@@ -82,3 +87,8 @@ abi-compile: | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(STRICT) -D__arm64__ -c src/objc_queries.c -o $(BUILD)/objc_queries_arm64_branch_compile.o
 clean:
 	rm -rf $(BUILD)
+# Real SDK/type compilation for both supported macOS ABIs; no target binary runs.
+sdk-abi: | $(BUILD)
+	@test "$(UNAME_S)" = Darwin || { echo 'sdk-abi requires an installed Apple SDK'; exit 1; }
+	xcrun --sdk macosx clang $(CPPFLAGS) $(STRICT) -fblocks -target arm64-apple-macos13 -fsyntax-only $(SOURCES) tests/sdk_abi.m
+	xcrun --sdk macosx clang $(CPPFLAGS) $(STRICT) -fblocks -target x86_64-apple-macos13 -fsyntax-only $(SOURCES) tests/sdk_abi.m

@@ -60,9 +60,33 @@ void doe_dx_native_copy(doe_dx_native_commands *commands, doe_dx_native_buffer *
             D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_COPY_DEST);
 }
 
-doe_dx_status doe_dx_native_dispatch(doe_dx_native_commands *commands,
+static doe_dx_status prepare_dispatch_signature(doe_dx_native_context *context,
+    doe_dx_error *error) {
+    if (context->dispatch_signature) return DOE_DX_OK;
+    _Static_assert(sizeof(D3D12_DISPATCH_ARGUMENTS) == 3u * sizeof(uint32_t),
+        "Native indirect dispatch arguments must match the typed record");
+    D3D12_INDIRECT_ARGUMENT_DESC argument = {0};
+    argument.Type = D3D12_INDIRECT_ARGUMENT_TYPE_DISPATCH;
+    D3D12_COMMAND_SIGNATURE_DESC description = {0};
+    description.ByteStride = (UINT)sizeof(D3D12_DISPATCH_ARGUMENTS);
+    description.NumArgumentDescs = 1;
+    description.pArgumentDescs = &argument;
+    ID3D12CommandSignature *signature = NULL;
+    HRESULT result = ID3D12Device_CreateCommandSignature(context->device, &description,
+        NULL, &IID_ID3D12CommandSignature, (void **)&signature);
+    if (FAILED(result)) return doe_dx_hresult(result, "ID3D12Device.CreateCommandSignature", error);
+    context->dispatch_signature = signature;
+    return DOE_DX_OK;
+}
+
+static doe_dx_status record_dispatch(doe_dx_native_commands *commands,
     doe_dx_native_pipeline *pipeline, const doe_dx_native_resources *resources,
-    uint32_t x, uint32_t y, uint32_t z, doe_dx_error *error) {
+    doe_dx_native_buffer *arguments, uint64_t offset, uint32_t x, uint32_t y,
+    uint32_t z, doe_dx_error *error) {
+    if (arguments) {
+        doe_dx_status status = prepare_dispatch_signature(commands->context, error);
+        if (status != DOE_DX_OK) return status;
+    }
     doe_dx_descriptor_use *use = NULL;
     if (resources->buffer_count + resources->texture_count) {
         doe_dx_status status = doe_dx_prepare_descriptors(commands, pipeline, resources, &use, error);
@@ -80,9 +104,30 @@ doe_dx_status doe_dx_native_dispatch(doe_dx_native_commands *commands,
         ID3D12GraphicsCommandList_SetComputeRootDescriptorTable(list, 0, handle);
     }
     doe_dx_transition_resources(commands, pipeline, resources, false, false);
-    ID3D12GraphicsCommandList_Dispatch(list, x, y, z);
+    if (arguments) {
+        doe_dx_transition(list, arguments->resource,
+            D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT);
+        ID3D12GraphicsCommandList_ExecuteIndirect(list, commands->context->dispatch_signature,
+            1, arguments->resource, offset, NULL, 0);
+        doe_dx_transition(list, arguments->resource,
+            D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT, D3D12_RESOURCE_STATE_COPY_DEST);
+    } else {
+        ID3D12GraphicsCommandList_Dispatch(list, x, y, z);
+    }
     doe_dx_transition_resources(commands, pipeline, resources, false, true);
     return doe_dx_fail(DOE_DX_OK, 0, "native.dispatch", error);
+}
+
+doe_dx_status doe_dx_native_dispatch(doe_dx_native_commands *commands,
+    doe_dx_native_pipeline *pipeline, const doe_dx_native_resources *resources,
+    uint32_t x, uint32_t y, uint32_t z, doe_dx_error *error) {
+    return record_dispatch(commands, pipeline, resources, NULL, 0, x, y, z, error);
+}
+
+doe_dx_status doe_dx_native_dispatch_indirect(doe_dx_native_commands *commands,
+    doe_dx_native_pipeline *pipeline, const doe_dx_native_resources *resources,
+    doe_dx_native_buffer *arguments, uint64_t offset, doe_dx_error *error) {
+    return record_dispatch(commands, pipeline, resources, arguments, offset, 0, 0, 0, error);
 }
 
 doe_dx_status doe_dx_native_finish(doe_dx_native_commands *commands, doe_dx_error *error) {

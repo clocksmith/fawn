@@ -100,11 +100,11 @@ void doe_mtl_objc_commit(void *userdata, void *command) {
     doe_mtl_objc_drain(runtime, pool);
 }
 
-size_t doe_mtl_objc_observe(void *userdata, void *command, bool wait, int64_t *code) {
+size_t doe_mtl_objc_observe(void *userdata, void *command, bool wait, doe_mtl_error *error) {
     doe_mtl_objc *runtime = userdata;
     void *pool = doe_mtl_objc_pool(runtime);
     size_t status;
-    *code = 0;
+    doe_mtl_fail(DOE_MTL_OK, "command completion", error);
     if (pool == NULL) return SIZE_MAX;
     status = doe_mtl_objc_size(runtime, command, runtime->status);
     /* Matches retained wait_result: never wait an uncommitted buffer. */
@@ -114,8 +114,8 @@ size_t doe_mtl_objc_observe(void *userdata, void *command, bool wait, int64_t *c
     }
     if (status == 5) {
         void *native_error = doe_mtl_objc_object(runtime, command, runtime->error);
-        if (native_error != NULL)
-            *code = runtime->integer_call(native_error, runtime->code);
+        (void)doe_mtl_objc_error(runtime, native_error, "MTLCommandBuffer.error", error);
+        if (error != NULL) error->status = DOE_MTL_EXECUTION_FAILED;
     }
     doe_mtl_objc_drain(runtime, pool);
     return status;

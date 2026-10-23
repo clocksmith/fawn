@@ -159,7 +159,7 @@ static void cancellation_and_unpadded_readback(void) {
 static void binding_layout_rejections(void) {
     doe_dx_context *context = open_context();
     unsigned char bytecode = 1;
-    doe_dx_binding_layout buffer_layout = {0, 0, 4, DOE_DX_READ_ONLY};
+    doe_dx_binding_layout buffer_layout = {0, 0, 4, DOE_DX_READ_ONLY, DOE_DX_STRUCTURED};
     doe_dx_texture_binding_layout texture_layout = {0, 0, DOE_DX_R32_UINT, DOE_DX_READ_ONLY};
     doe_dx_resource_pipeline_desc desc = {{&bytecode, 1, &buffer_layout, 1}, &texture_layout, 1, NULL, 0};
     doe_dx_pipeline *pipeline = NULL;
@@ -300,7 +300,7 @@ static void mixed_binding_snapshot(void) {
     assert(doe_dx_commands_copy(work, upload, 0, storage, 0, 4, NULL) == DOE_DX_OK);
     assert(doe_dx_commands_upload_texture(work, upload, (doe_dx_texture_layout){0}, texture, NULL) == DOE_DX_OK);
     unsigned char bytecode = 1;
-    doe_dx_binding_layout buffer_layout = {2, 3, 4, DOE_DX_READ_ONLY};
+    doe_dx_binding_layout buffer_layout = {2, 3, 4, DOE_DX_READ_ONLY, DOE_DX_STRUCTURED};
     doe_dx_texture_binding_layout texture_layout = {2, 3, DOE_DX_R32_UINT, DOE_DX_READ_WRITE};
     doe_dx_resource_pipeline_desc desc = {{&bytecode, 1, &buffer_layout, 1}, &texture_layout, 1, NULL, 0};
     doe_dx_pipeline *pipeline = NULL;

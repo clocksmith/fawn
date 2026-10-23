@@ -1,0 +1,128 @@
+{
+  "status": "Focused Apple SDK and one native Metal compute/copy/readback developer check pass; complete frontend/backend qualification remains pending",
+  "consumer": "Metal backend migration decision in this owner README, not a production support or performance claim",
+  "checked_at_utc": "2026-10-23T21:38:29.649950+00:00",
+  "observed_base": "fe7284affe95ac21a00719a69014b209419a31ea",
+  "source_identity": "Exact Metal worktree inputs below; source overlay is not promoted by the base Git identity",
+  "host": {
+    "os": "26.6.2",
+    "architecture": "arm64",
+    "physical_device": "Apple M3",
+    "thermal_observation": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+    "compiler": "Apple clang version 17.0.0 (clang-1700.3.19.1)",
+    "sdk": "26.0"
+  },
+  "checks": [
+    {
+      "kind": "ordinary host controls",
+      "command": "make -C runtime/c/backends/metal BUILD=/tmp/doe-c-metal-mars-owner-20261023 check",
+      "result": "12 executables pass"
+    },
+    {
+      "kind": "actual SDK source/ABI checks",
+      "command": "make -C runtime/c/backends/metal BUILD=/tmp/doe-c-metal-mars-owner-20261023 sdk-abi",
+      "result": "All canonical backend C sources and independent SDK layout/enum controls compile for arm64-apple-macos13 and x86_64-apple-macos13 with the installed SDK"
+    },
+    {
+      "kind": "bounded native device execution",
+      "command": "make -C runtime/c/backends/metal BUILD=/tmp/doe-c-metal-mars-owner-20261023 native-check",
+      "exit_code": 0,
+      "process_timeout_seconds": 20,
+      "completion_deadline_seconds": 5,
+      "result": "One real 64-invocation MSL kernel; private fill/copy, exact shared readback, BUSY precompletion output and early caller-release lifetime pass"
+    },
+    {
+      "kind": "UBSan-only affected controls",
+      "result": "test_lifetime and test_objc_calls pass with halt_on_error=1; 10-second process deadlines"
+    },
+    {
+      "kind": "ASan+UBSan",
+      "result": "Build succeeds; test_device_limits hangs before main in ASan shadow/malloc initialization; sampled and terminated. No pass claimed"
+    }
+  ],
+  "regression": {
+    "before": "A native terminal code survived but NSError diagnostic text was lost",
+    "after": "The native observer copies bounded operation/code/text before the autorelease pool drains; the existing command first-failure snapshot survives retirement and later native message/code changes",
+    "controls": [
+      "terminal first-error byte preservation",
+      "long NSError description is bounded and terminated",
+      "successful later native raw observation clears prior error detail"
+    ]
+  },
+  "source_unchanged_during_native_check": true,
+  "terminal_receipt": {
+    "path": "runtime/c/backends/metal/APPLE_NATIVE_TERMINAL_RECEIPT.txt",
+    "sha256": "807234e914e9377566e188dd1cb1f5ab9e32099bb8853c46f3a12ccc2e02a54c"
+  },
+  "limitations": [
+    "No public WebGPU frontend/package/WGSL-to-MSL integration run is implied.",
+    "No graphics, presentation, timestamps or indirect execution was run on hardware.",
+    "No full ASan pass, release qualification, cross-device support or performance improvement is established.",
+    "Production defaults remain retained Zig; no device/server settings changed."
+  ],
+  "sha256": {
+    "runtime/c/backends/metal/AGENTS.md": "7a4e9ec46ebc71a9201fe60873ea877509d8a7dd4ac1b280e43951c057064a0e",
+    "runtime/c/backends/metal/Makefile": "1e982fa2e51946348ca21c3492eebdba42c2d6ced7a91d8ab98a3b63b48d0685",
+    "runtime/c/backends/metal/STYLE.md": "265c96eaf0bf5d03af201f1f398db62d2fd115d41e930ac072eb1c807e2f5c2a",
+    "runtime/c/backends/metal/include/doe_metal.h": "f85b6988ca71b4f2ae99400a195087e11ec4241d84d4c2d65d84c2da6edd398a",
+    "runtime/c/backends/metal/include/doe_metal_query.h": "8ab79825e9d54c268f66964a5e9657e7fc04c19bc076ccb9831504161254af73",
+    "runtime/c/backends/metal/include/doe_metal_render.h": "ea01ce4b0269c87a2c3df43732ca627daff64d09c39cc2303c8637149bb838a3",
+    "runtime/c/backends/metal/include/doe_metal_texture.h": "fa230a70ca603e47c5b9b7df4b8e1cc98e473dcb7dda22630dfaacab23a9aec9",
+    "runtime/c/backends/metal/src/commands.c": "fa1a886e15daac615aafee05acebb5e9f50618bff6ff86b863d82a7d5b8f9705",
+    "runtime/c/backends/metal/src/compute_commands.c": "b42fd8ee1b87dfe972fb3c40207a0476ac400f87e9705e951c50a2ba20d7dd35",
+    "runtime/c/backends/metal/src/context.c": "581591411d8d605eecd108f25fc6d9e8bc7009c757fe346238dbddd1aa13f2ee",
+    "runtime/c/backends/metal/src/internal.h": "d0f30f117da3b11d4aadaae8b164c3d48b87dd8ff3225160f0c1c480e5903024",
+    "runtime/c/backends/metal/src/native.h": "dc5a608f182a9ae811c6d01a4eeaff7375f41cd24fd49cb814af1f04e070f78a",
+    "runtime/c/backends/metal/src/objc_abi.h": "68aac7d858821457a360585b9810f7f1e9544bd1d8376917a056b6c4eadf1817",
+    "runtime/c/backends/metal/src/objc_commands.c": "fbe38635c617480e1b9a1ecaa20f814f83e3aa1d1b5492fbd74b3043dc65c247",
+    "runtime/c/backends/metal/src/objc_depth_state.c": "ac4f92dd2823fc3332bec64e45ef50e8155017b8ce8d0253b730885ed5ddc9a8",
+    "runtime/c/backends/metal/src/objc_image_transfer.c": "bf81a534efc90c2bf51f1fca8dfd29c65c8eb3f896bb2d0d894737dc8684b15b",
+    "runtime/c/backends/metal/src/objc_images.c": "f36933c318229c2d749867a5870d7484018e196c714cc274c52713c204aa64b9",
+    "runtime/c/backends/metal/src/objc_pipeline.c": "5cf384883928cf6d9d67415fc1f64f5decdef404974f356f19f83644da9ecfcb",
+    "runtime/c/backends/metal/src/objc_queries.c": "3430fa96b9ce2233ca3cf1d8be3b1e752e43c1bd8abf9d6a3101c296e1e096c2",
+    "runtime/c/backends/metal/src/objc_query_types.h": "1803ad2f08d38de9d44037a5822017d7010aa40e998dd2771cea79b75eaa0177",
+    "runtime/c/backends/metal/src/objc_render_commands.c": "f40d6fc1eacc18c95a72cc1a556a811c5509acc664d0d5cae9744709b70b6269",
+    "runtime/c/backends/metal/src/objc_render_draws.c": "fc1230b9dff4f96a0894e4e1d9b8757e1bd88af28a6f070ebd8513987762b2d0",
+    "runtime/c/backends/metal/src/objc_render_loader.c": "2e1fa62c2e3806239bdfac6d68492cc90cc86a2d14fe281232093d8abd177079",
+    "runtime/c/backends/metal/src/objc_render_pipeline.c": "4fbe92d66eb141db166b042ea035c3fc395b5589d8e75b3b9307656ffb0e3f4b",
+    "runtime/c/backends/metal/src/objc_render_types.h": "472ff2d9b6c254157866ee44f1b56918cacd22512d4edc9af2050768d4af2995",
+    "runtime/c/backends/metal/src/objc_runtime.c": "eac6a3f678965c94aa68a5875ab05adedf837d3b7665701abec88d870bdcb69a",
+    "runtime/c/backends/metal/src/query_internal.h": "36d5bccf24283895b005139056f0d8656a0bebc41e110a639e9e286e688eff28",
+    "runtime/c/backends/metal/src/render_attachments.c": "903339710d6a9f8a97c48c85d5a2e2e01de6ab1c7a068618616abc90c4f507a4",
+    "runtime/c/backends/metal/src/render_commands.c": "61e0ae650be2fd79413c70fb17432288c9d97c5b03af35557f0d389b2c186ea8",
+    "runtime/c/backends/metal/src/render_draws.c": "85789acc31ed6c6a53a9089dc468a4e36a30865c17bcda4e2bda8d3b6ad68194",
+    "runtime/c/backends/metal/src/render_internal.h": "95eedcdfd5acc742778d5ca6b5dca054075a1a4891a6db7874d143ebb2d210cd",
+    "runtime/c/backends/metal/src/render_pipeline.c": "7cbe693dfc105ead468e839e5902c124658bde960b889f5c1211881443b591d7",
+    "runtime/c/backends/metal/src/render_visibility.c": "1f8e36b7fdb41b36be1962e16a9d32831e6163d00b4d0b3c91a6e08392fdf7f3",
+    "runtime/c/backends/metal/src/resources.c": "8436e6fc7f37c3342b08373385cc497c1738e1c15c461addbada7bfce6105f10",
+    "runtime/c/backends/metal/src/samplers.c": "c505d00952fd1b7ad1459b4474dc1700f6ac0b15caad7f8eec162cee214fb623",
+    "runtime/c/backends/metal/src/texture_formats.c": "3ac23dd5cf5328f64c0f16b27df35f51d3b6596a40aa0b308a8342a1e230993b",
+    "runtime/c/backends/metal/src/texture_initialization.c": "0573112f73c92443f78bce2262a80273e5a77d0a1ca36c67fa542b7a3994b0dc",
+    "runtime/c/backends/metal/src/texture_internal.h": "568641b350dd4d9a1bb73930facb177b07d721359a084c5c2c9f85308d41de25",
+    "runtime/c/backends/metal/src/texture_ownership.c": "2dd7aeb6965612b468e345c281c764cd6eee89b8342983c790bddf0388329e9e",
+    "runtime/c/backends/metal/src/texture_transfer.c": "8701e5f641dcd329cbe0353e401eb34115648da3943b3b9ad76089fd175810d0",
+    "runtime/c/backends/metal/src/textures.c": "6e0cefa0c713c5371882d54746c47cca6d4d3aac571f0b355285316667111b52",
+    "runtime/c/backends/metal/src/timestamps.c": "3a92b5a698d02d330fc9034ec35f0e3cb7024e45487b169b8b41b2a04ff2f880",
+    "runtime/c/backends/metal/tests/mock_native.c": "97d296c1faa7f1531084be0da1a8b033c17715cf1b3dbf6682ea47b0291dedc3",
+    "runtime/c/backends/metal/tests/mock_native.h": "433ebe81e15ca0683d760bb615df8a62bf642a01dbafbb14267f5a5dc373b94f",
+    "runtime/c/backends/metal/tests/native_compute.c": "694c1eca9495ddff94be5a92538444d0dc7d6e1bfd5531ca6f100ce9fdcb50bc",
+    "runtime/c/backends/metal/tests/probe.c": "1a48afa3b4a5e37369e0bb222f57dab0a7294a206c42a84aeafe5157101f548f",
+    "runtime/c/backends/metal/tests/sdk_abi.m": "7002ea90130520e3f966980816c5b4899cb2bb38e8e927bd2122563426fce71a",
+    "runtime/c/backends/metal/tests/test_device_limits.c": "2c96fd330bf8f56165b296157e6c9467b0e8d8badbd049932d92da0b355c0b57",
+    "runtime/c/backends/metal/tests/test_images.c": "311bd07da95494202ca7dcc859a469de7ed8bbccdafcb667317169936f59cb7a",
+    "runtime/c/backends/metal/tests/test_lifetime.c": "8b7cdc9121182ecdc7116ee90c8105362e1d545e0bff868137d37869a47fc53d",
+    "runtime/c/backends/metal/tests/test_multisample.c": "f04d0ce32fbea55c096312e89c242652e0c948d14d97c0359d77b9d2e2c64520",
+    "runtime/c/backends/metal/tests/test_objc_calls.c": "343cb48f5f5ef304738138f25ef898c8422d307099a7addefd37d38aef1f1900",
+    "runtime/c/backends/metal/tests/test_objc_images.c": "a7e46c72f67576a98b3bfaf671fb1bf8cb60c66359787ca83f2cfb9d418f8d4f",
+    "runtime/c/backends/metal/tests/test_objc_queries.c": "1daca4c76cd86fdf2904bbf165c5f0d29cebccf6ac6345485efa006535a33045",
+    "runtime/c/backends/metal/tests/test_objc_render_commands.c": "9f75c14f72ea46bf2a97de7f54d7ac8a2c33183a250113e7df2ee318fcf63cc8",
+    "runtime/c/backends/metal/tests/test_objc_render_pipeline.c": "c9b902d77f44945fba1c0ef96f09c099eeaf7351b4785571a219ec46bd47df5c",
+    "runtime/c/backends/metal/tests/test_render.c": "1c2471e5573bc1c679affde16a2001112e31d7c1bcc22eb142ac73f6f5a76346",
+    "runtime/c/backends/metal/tests/test_timestamps.c": "4bdcda599df2e4eb38f0c5b67d57a33760ab52035503a7021d33b1b52722ca8f",
+    "runtime/c/backends/metal/tests/test_visibility.c": "7f3e3da3643dea5239da96a3aeea32bfa0065c19a943a4bf6d2f881b19f4d5bd"
+  },
+  "artifacts_sha256": {
+    "/tmp/doe-c-metal-mars-owner-20261023/libdoe_metal.a": "0306c15a68f642db505a74a65a8340d48043fba2343a02909806ab54898cf6ef",
+    "/tmp/doe-c-metal-mars-owner-20261023/native_compute": "5a0c348f0061e29ab7f0561c9da8905a6a8f085d01dc9231467965ab460aef31"
+  }
+}

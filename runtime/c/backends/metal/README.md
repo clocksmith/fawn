@@ -132,6 +132,9 @@ command release returns BUSY without consuming the handle. Callers must keep the
 command, observe again, and release it after terminal status. A blocking wait
 returning nonterminal status remains unknown. No timeout/cancel success is
 invented; shared async/future owners may build operational deadlines over poll.
+The first terminal NSError operation, code and diagnostic text are copied into
+that same command failure record before the native pool drains and leases retire.
+Subsequent observations preserve the record even if the native error changes.
 
 Timestamp indices share the same speculative/completion owner. Resolve requires
 all selected samples to have been encoded or previously completed; no unwritten
@@ -151,27 +154,24 @@ Counter-value validity and public query availability remain upstream obligations
 
 ## Concrete native composition prerequisites
 
-The existing C native frontend is Vulkan-only, not implicitly connected to this
-owner. The affected existing seams, reviewed with that owner, are:
+The [C native frontend](../../native/README.md) now has explicit tagged
+Vulkan/Metal compute selection, compiler-owned MSL stage artifacts and a Darwin
+link recipe. Those sources and their focused host controls do not implicitly
+qualify this backend or the public frontend on an Apple device. Integration still
+must preserve these seams:
 
-- `native/src/internal.h`, device creation and `lifecycle.c`: add an explicitly
-  selected backend/context variant at the existing native device identity.
-  Resource payloads adopt Metal objects and finalize them via their matching
-  release functions. Do not add another public resource identity or reference count.
-- `shader/include/doe_shader.h` and `native/src/stages.c`: the borrowed shader view
-  currently has SPIR-V words and typed reflection, not an owned MSL artifact or
-  production TranslationInfo. The shader/compiler owner must provide exact MSL
-  bytes, emitted symbols, stage/workgroup facts and flattened resource/size slots.
-  WGSL names and raw reflected binding numbers are not substitutes.
+- The existing native device/resource identities adopt Metal objects and use
+  their matching release functions. Do not add another reference authority.
+- Shader artifacts supply exact MSL bytes, emitted symbols, stage/workgroup facts
+  and flattened resource/size slots. Raw WGSL names and binding numbers are not
+  substitutes, and MSL compilation alone does not prove the WGSL lowering.
 - Native resource/command translation must map explicit Metal enums, format
   admission and stage slots, group a complete render pass before encoding, and
   retain the existing resource snapshots. Queue/future handling polls this command
   owner; unknown completion cannot release payloads or publish map/query results.
-- Native `Makefile` currently composes Vulkan only and uses ELF shared-library,
-  version-script and link flags. Metal source/header composition and Darwin dylib
-  flags need an explicit build selection. This owner's `Makefile` remains its
-  source-list authority. No Apple SDK/toolchain/device is available here to
-  qualify a Darwin consumer. No native/shared files were changed in this slice.
+- This owner's `Makefile` remains its source-list authority. Darwin public
+  packaging, full frontend execution and graphics/query/presentation wiring
+  have their own native/shared acceptance; backend-only readback is not that proof.
 
 True GPU-generated indirect commands remain a separate missing preparation
 closure. Retained `metal_dispatch_runtime.zig` has a host-authored benchmark path
@@ -210,8 +210,11 @@ structure storage or C++ runtime is involved.
 The host compiles both source branches and tests exact typed call arguments,
 including sparse identities, offsets, size-table bytes, dimensions and native
 error codes. Those checks do not validate against Apple SDK declarations or
-exercise Apple's Objective-C dispatcher or rasterizer. Apple compilation, SDK ABI comparison
-and real device compute/readback remain required before native acceptance.
+exercise Apple's Objective-C dispatcher or rasterizer. `sdk-abi` separately
+compares native layouts, scalar method ABI and selected enum identities against
+the installed SDK, compiling every backend source for actual arm64 and x86_64
+macOS targets. The explicit native smoke separately exercises the real dispatcher
+and device. Neither substitutes for complete native consumer or graphics parity.
 
 ## Focused checks
 
@@ -221,6 +224,26 @@ From this directory:
 make all check abi-compile probe
 make sanitize
 ```
+
+On an Apple SDK host, `make sdk-abi` is compile-only and creates no device.
+`make native-check` is an explicit physical operation, excluded from `check` and
+`all`; it requires an authorized healthy Mac. Its child process is limited to
+20 seconds and polls completion for at most five seconds. The test records a
+private-buffer fill/copy, one 64-invocation MSL compute dispatch, shared readback,
+exact expected values and release of caller references before submission. On
+unknown completion it does not explicitly destroy outstanding owners. This is a
+bounded backend correctness smoke, not WGSL compiler/public WebGPU integration,
+graphics/presentation, performance qualification or a production-default change.
+
+The [Apple developer receipt](DEVELOPER_RECEIPT_APPLE_COMPUTE.json) binds the
+2026-10-23 Apple clang/macOS SDK source checks and one real Apple M3 backend
+compute/readback run. It also records the reproduced completion-detail defect,
+its first-error preservation controls and the actual sanitizer boundary. All
+12 ordinary host executables pass, and the two affected completion/lifetime
+controls pass with UBSan. The combined ASan/UBSan binaries compile but the first
+executable hangs in AddressSanitizer initialization before `main`; its captured
+stack and termination are retained rather than called a pass. Earlier Linux
+sanitizer receipts remain scoped to their recorded inputs and platform.
 
 Artifacts default to `/tmp/doe-c-metal`. `check` runs the owned native-call fault
 and lifetime controls plus typed message-call controls. It does not interpret or

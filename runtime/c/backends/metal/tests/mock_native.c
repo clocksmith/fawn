@@ -313,13 +313,19 @@ static void commit(void *userdata, void *handle) {
     command->status = mock->unknown_commit ? 0 : 2;
 }
 
-static size_t observe(void *userdata, void *handle, bool wait, int64_t *code) {
+static size_t observe(void *userdata, void *handle, bool wait, doe_mtl_error *error) {
     mock_native *mock = userdata;
     mock_object *command = handle;
     assert(command->kind == MOCK_KIND_COMMAND);
     mock->polls++;
     if (wait) mock->waits++;
-    *code = command->code;
+    doe_mtl_fail(DOE_MTL_OK, "command completion", error);
+    if (command->status == 5 && error != NULL) {
+        doe_mtl_fail(DOE_MTL_EXECUTION_FAILED, "MTLCommandBuffer.error", error);
+        error->native_code = command->code;
+        memcpy(error->message, mock->completion_message, sizeof(error->message));
+        error->message[sizeof(error->message) - 1] = '\0';
+    }
     return command->status;
 }
 

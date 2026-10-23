@@ -108,8 +108,9 @@ typedef struct doe_mtl_native {
     doe_mtl_status (*resolve_timestamps)(void *userdata, void *command, void *timestamps,
         uint32_t first, uint32_t count, void *destination, size_t offset, doe_mtl_error *error);
     void (*commit)(void *userdata, void *command);
-    /* Returns native MTLCommandBufferStatus, retaining exact NSError.code. */
-    size_t (*observe)(void *userdata, void *command, bool wait, int64_t *code);
+    /* Returns native MTLCommandBufferStatus. Terminal NSError operation/code/text
+     * are copied before its autorelease pool drains; no borrowed string escapes. */
+    size_t (*observe)(void *userdata, void *command, bool wait, doe_mtl_error *error);
 } doe_mtl_native;
 
 doe_mtl_status doe_mtl_native_open(doe_mtl_native *out, doe_mtl_error *error);

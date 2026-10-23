@@ -239,7 +239,7 @@ static doe_mtl_status observe(doe_mtl_commands *commands, bool wait,
     doe_mtl_error *error) {
     doe_mtl_native *native;
     size_t status;
-    int64_t code = 0;
+    doe_mtl_error native_error = {0};
     if (commands == NULL)
         return doe_mtl_fail(DOE_MTL_INVALID_ARGUMENT, "command completion", error);
     if (commands->state == DOE_MTL_COMPLETE)
@@ -251,7 +251,7 @@ static doe_mtl_status observe(doe_mtl_commands *commands, bool wait,
     if (commands->state != DOE_MTL_SUBMITTED)
         return doe_mtl_fail(DOE_MTL_INVALID_STATE, "unsubmitted completion", error);
     native = &commands->context->native;
-    status = native->observe(native->userdata, commands->native, wait, &code);
+    status = native->observe(native->userdata, commands->native, wait, &native_error);
     if (status == 4) {
         commands->state = DOE_MTL_COMPLETE;
         retire_uses(commands, true, true);
@@ -259,8 +259,9 @@ static doe_mtl_status observe(doe_mtl_commands *commands, bool wait,
     }
     if (status == 5) {
         commands->state = DOE_MTL_FAILED;
-        doe_mtl_fail(DOE_MTL_EXECUTION_FAILED, "command completion", &commands->failure);
-        commands->failure.native_code = code;
+        commands->failure = native_error;
+        commands->failure.status = DOE_MTL_EXECUTION_FAILED;
+        if (commands->failure.operation == NULL) commands->failure.operation = "command completion";
         retire_uses(commands, true, false);
         if (error != NULL) *error = commands->failure;
         return DOE_MTL_EXECUTION_FAILED;

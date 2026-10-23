@@ -1,0 +1,110 @@
+{
+  "schema": "doe.c.d3d12.developer-check.v1",
+  "scope": "Private D3D12 indirect dispatch and explicit uniform CBV composition; no public frontend, SDK, DXC or physical GPU qualification.",
+  "baseRevision": "fe7284affe95ac21a00719a69014b209419a31ea",
+  "sourceIdentity": "Exact local owner overlay hashes below; before/after checked equal around developer checks. Root integrates the source into main.",
+  "sourceInputs": {
+    "runtime/c/backends/d3d12/Makefile": "369fe013daddfb3b6f546a4b07bd40e6cc8c32ed61cf8a64ea398445b0b34014",
+    "runtime/c/backends/d3d12/build_windows.cmd": "1443483ca83b5410e4b4dc5c513920f0c938474695e31ac8040d77b678d63d8f",
+    "runtime/c/backends/d3d12/include/doe_d3d12.h": "a703557fdec5342cd62ba417ef0685e74bd2b209e1f324683f5ac3f7c84c4195",
+    "runtime/c/backends/d3d12/include/doe_d3d12_graphics.h": "79072a43c9838627260635c9eab0373665816fd0817ab5f87f6afdb4b02da1dc",
+    "runtime/c/backends/d3d12/include/doe_d3d12_mesh.h": "18df45010bcf06936ca499ef6bcfddd05681ecfe2833ed1db2b0776f96facc1c",
+    "runtime/c/backends/d3d12/include/doe_d3d12_texture.h": "9b8a6044521aedbf8e8b01f2a715ce22976dc5f5dafe8347fe91f03ab82100cc",
+    "runtime/c/backends/d3d12/src/bindings.c": "b7db0f61f422462704ccfd082bbb0bbd337e52619605f2b2b2c460670608c15e",
+    "runtime/c/backends/d3d12/src/commands.c": "3bd8d3fa1658b50892be179a96e41d42e5d394024ab5b5939e888dd84c460b4f",
+    "runtime/c/backends/d3d12/src/compute.c": "fb76d479e86baa49cdd92d0867d0c62c9f9f3f786e16f25ae8139d59a43e8226",
+    "runtime/c/backends/d3d12/src/context.c": "14f1c6ce3ee6c01b045ac0fea2dc373c50eb47937bc22eff2dbe2fec65db8bda",
+    "runtime/c/backends/d3d12/src/geometry.c": "f98c9919fd3d105e6b0488ada5dcbfcbf4843a0c93b5a8c0eeec0780b3e15f34",
+    "runtime/c/backends/d3d12/src/graphics.c": "6d4c388f2c62d8484a64f72a2f7d646c0dc4930fd1dd2ec3685a740d756e66b4",
+    "runtime/c/backends/d3d12/src/internal.h": "f361591397fe509010f242f916df3cb31e24a9d3977469db78f1eb050dce7890",
+    "runtime/c/backends/d3d12/src/native.h": "603500f39d54c6d33a4b6e92625ccd5247760452b9ee9176ffd2b0a4caa73af3",
+    "runtime/c/backends/d3d12/src/pipeline.c": "d9aad032951e71d747bb43b5af3f0dd7024a32049a2c516e26064d000ee291a0",
+    "runtime/c/backends/d3d12/src/resources.c": "54aa712bd6e3a7ed2e51aa6e6fd40cd2b3be02e82c0c7dc40547356c3603a57f",
+    "runtime/c/backends/d3d12/src/texture_transfer.c": "ebe2ab455a9df17c10b6ed8ce75cf9f45e2257cb866be35e6d4efe5db5f82571",
+    "runtime/c/backends/d3d12/src/textures.c": "48e7d373e38ccaf812294bd0a7437d9adfbbcf83120821c0ef8995950290ce31",
+    "runtime/c/backends/d3d12/src/timestamps.c": "f0cc313f692a913351c24b298f0e4e634bdb4f90a9d67f8190bc949204aa3d4a",
+    "runtime/c/backends/d3d12/src/vertex_layout.c": "57fa5dda96188f4bfa587ed2c118faa4e99f3a4c9f6350594daf27ffe8ae6873",
+    "runtime/c/backends/d3d12/src/windows_bindings.c": "f29edf1a2e5bb91b0a1d5b292a5f166e1bab8ba86833e213afc05ec553fc5cc0",
+    "runtime/c/backends/d3d12/src/windows_commands.c": "cde862ec77a1a5896c374bfd9c3f0d6ccef3fa570c1dfc71ed30040833189879",
+    "runtime/c/backends/d3d12/src/windows_context.c": "8ba2ebb1eccec798473f837020218c1a00b0b2d767285b3ff166111807f910f5",
+    "runtime/c/backends/d3d12/src/windows_geometry.c": "12fbe4ca1ceea8c3450574de581dd447d3dae17db698a3972aa69105441c96fd",
+    "runtime/c/backends/d3d12/src/windows_graphics.c": "e824f9b87f5f1338cfc26e05a3795794b0838c8c1e547a5cfa2588c537eb1550",
+    "runtime/c/backends/d3d12/src/windows_internal.h": "421742a1558c82d22de52a6131fbf03055ef47dfd0b8aa7ac3ebdca7de60ab7c",
+    "runtime/c/backends/d3d12/src/windows_pipeline.c": "8e4997d987ccb115223864bf769e741c96e5a0a0886098938d3a0b6694da9563",
+    "runtime/c/backends/d3d12/src/windows_resources.c": "d46a1bdbd4e41936b5dae1b212fdb2b08e13b29ff4876ef9a1b54d9825e7f32a",
+    "runtime/c/backends/d3d12/src/windows_textures.c": "73881fd62add4d65db9872b806f86098964a7e749eeaf1e13932e7cff87bde5a",
+    "runtime/c/backends/d3d12/src/windows_timestamps.c": "29cc653f7cd4cf0b650428d0993e9eb85149585da892f721e74a82a2f29cec9e",
+    "runtime/c/backends/d3d12/tests/mock_native.c": "2c2160ce2d5a42ffe14c2a67ed166f224158dc884033f8788bdde466ad2ddc01",
+    "runtime/c/backends/d3d12/tests/mock_native.h": "04c3356a8799720480d51c2246baa622f451f8b012d10e94d684cb1461e31918",
+    "runtime/c/backends/d3d12/tests/native_compute.c": "c0cf5b0015a3185a67591f669de448f9e3a1d3fa6e7eb3a9954810a164ceff01",
+    "runtime/c/backends/d3d12/tests/native_compute.hlsl": "f6f56a57852fbc37c044301b4ed698df3d586ebbccd6ace4c26eb38584b360fa",
+    "runtime/c/backends/d3d12/tests/native_fixture.h": "6c7df7b3365deec943baa4c3c87d6b249b7bee5cf457c49a3a2e375a68b2a962",
+    "runtime/c/backends/d3d12/tests/native_graphics.c": "d790a7e8f1f69350c29017505b33da8b682c7ffc8d4780216665c5978a087df4",
+    "runtime/c/backends/d3d12/tests/native_graphics.hlsl": "9b732e7c7b55cba1f97c69784048d54d4032ad9f5f9b9b8a77e4e78e03f34fc9",
+    "runtime/c/backends/d3d12/tests/native_indirect.hlsl": "b1e16a93f80409da41702107c341bc114d5f7627c4273d956362cd7733985b81",
+    "runtime/c/backends/d3d12/tests/native_mesh.c": "a767feea4c162cf9c346f6cc0f58457dbd4d720e27f12906d60f407ac7a577c2",
+    "runtime/c/backends/d3d12/tests/native_mesh.hlsl": "95b62c22fee401834a428ccd53d76d0995ee98970d70a6d066a95abefb24a435",
+    "runtime/c/backends/d3d12/tests/native_texture.c": "da36bde40f728eecb3894a1e89f30430b3c9016f9edcda48f8b19ec43e59d75a",
+    "runtime/c/backends/d3d12/tests/native_texture.hlsl": "8eadd300727c6a1addc4edd61b201021d2d01ae9cc84210f88ce3db2ad484911",
+    "runtime/c/backends/d3d12/tests/native_uniform.hlsl": "9bc45ab3f73d6b8ff1f49086a8baf354c6d8e16f7f82b5c3ddb2fd307418681c",
+    "runtime/c/backends/d3d12/tests/test_graphics.c": "4a29489dca611ab427da6615d3a6307e717f867352ce90c1ff2cecd46a37459a",
+    "runtime/c/backends/d3d12/tests/test_indirect.c": "ab5877cb05f0f4011ee8dd567e764ab8479db519d4aed6502f15fa0c1ead6025",
+    "runtime/c/backends/d3d12/tests/test_mesh.c": "691d6d0bd3b4701de7003276486dc2a901039244ca1156bec714826d687def94",
+    "runtime/c/backends/d3d12/tests/test_owner.c": "7a172e9d73e296e2ff6faca9cfe8ed289e3af63df79646ef0199c3a213ec5e7b",
+    "runtime/c/backends/d3d12/tests/test_textures.c": "c5a7e249d8299edad198be4a2621474466cd53369cdd2ee8df2eff0358252e06",
+    "runtime/c/backends/d3d12/tests/test_uniform.c": "699c48a3a1105faf2f51959d60c22488411bd82f65ba6c5d8f79a8729a205bd5"
+  },
+  "compiler": "Apple clang version 17.0.0 (clang-1700.3.19.1)",
+  "normal": {
+    "command": "make -C runtime/c/backends/d3d12 BUILD=/tmp/doe-c-d3d12-uniform check",
+    "exitCode": 0,
+    "groups": [
+      "D3D12 C host owner: 13 groups passed (no SDK or GPU execution)",
+      "D3D12 C texture owner: 9 groups passed (no SDK or GPU execution)",
+      "D3D12 C graphics/timestamps: 9 groups passed (no SDK or GPU execution)",
+      "D3D12 C mesh/depth: 10 groups passed (no SDK or GPU execution)",
+      "D3D12 C indirect dispatch: 3 groups passed (no SDK or GPU execution)",
+      "D3D12 C uniform bindings: 3 groups passed (no SDK or GPU execution)"
+    ]
+  },
+  "ubsan": {
+    "command": "make -C runtime/c/backends/d3d12 BUILD=/tmp/doe-c-d3d12-uniform-ubsan CFLAGS='-O1 -g -fsanitize=undefined -fno-omit-frame-pointer' check",
+    "exitCode": 0,
+    "groups": [
+      "D3D12 C host owner: 13 groups passed (no SDK or GPU execution)",
+      "D3D12 C texture owner: 9 groups passed (no SDK or GPU execution)",
+      "D3D12 C graphics/timestamps: 9 groups passed (no SDK or GPU execution)",
+      "D3D12 C mesh/depth: 10 groups passed (no SDK or GPU execution)",
+      "D3D12 C indirect dispatch: 3 groups passed (no SDK or GPU execution)",
+      "D3D12 C uniform bindings: 3 groups passed (no SDK or GPU execution)"
+    ]
+  },
+  "otherChecks": [
+    "Strict C11 portable syntax for all four native C fixtures; actual Windows SDK unavailable through tested SSH PATH/conventional locations.",
+    "C++17 private-header and indirect procedure declaration syntax.",
+    "D3D12 scoped mechanical C style check, source-size check and git diff --check."
+  ],
+  "asan": {
+    "status": "blocked before main",
+    "command": "ASAN_OPTIONS=detect_leaks=0 make -C runtime/c/backends/d3d12 BUILD=/tmp/doe-c-d3d12-indirect sanitize",
+    "observation": "First host test stalled in Apple ASan initialization; /usr/bin/sample showed recursive allocator/shadow initialization and StaticSpinMutex before any test frame. The owned process was terminated, not reported passing.",
+    "retainedLocalSample": "/tmp/doe-d3d12-asan-sample.txt"
+  },
+  "nativeFixtures": {
+    "status": "authored and portable C-syntax checked, not SDK/DXC compiled or driver executed",
+    "indirect": "Optional native_indirect.dxil writes arguments on GPU at byte offset 16; checks 16 target outputs and all original/produced argument words after early caller release.",
+    "uniform": "Optional --uniform mode consumes native_uniform.dxil with a 256-byte b0 view and checks the same exact 16 outputs after early caller release."
+  },
+  "open": [
+    "Windows SDK and DXC compilation; native driver/debug-layer/physical execution.",
+    "Public native/frontend D3D12 selection and robustness integration.",
+    "Full inherited graphics/texture/presentation/query support and qualification remain outside this increment."
+  ],
+  "windowsToolchainObservation": {
+    "scope": "Read-only SSH queries on Miles; no source checkout or service changes.",
+    "clOnSshPath": false,
+    "conventionalVisualStudioAndKitsIncludePaths": "not found",
+    "kitsRoot10RegistryValues": "not found in HKLM SOFTWARE Microsoft Windows Kits Installed Roots or WOW6432Node counterpart",
+    "result": "SDK compilation unrun; no SDK/tool install was attempted."
+  }
+}

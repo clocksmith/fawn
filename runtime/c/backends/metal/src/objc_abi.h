@@ -207,5 +207,5 @@ doe_mtl_status doe_mtl_objc_resolve_timestamps(void *userdata, void *command,
 void *doe_mtl_objc_timed_compute(doe_mtl_objc *runtime, void *command,
     const doe_mtl_native_timestamps *timestamps);
 void doe_mtl_objc_commit(void *userdata, void *command);
-size_t doe_mtl_objc_observe(void *userdata, void *command, bool wait, int64_t *code);
+size_t doe_mtl_objc_observe(void *userdata, void *command, bool wait, doe_mtl_error *error);
 #endif

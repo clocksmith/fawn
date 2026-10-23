@@ -22,7 +22,7 @@ static doe_dx_commands *commands(doe_dx_context *owner) {
 
 static doe_dx_pipeline *pipeline(doe_dx_context *owner) {
     const unsigned char bytecode[] = {1}; /* Never treated as real shader code. */
-    doe_dx_binding_layout layout = {2, 3, 4, DOE_DX_READ_WRITE};
+    doe_dx_binding_layout layout = {2, 3, 4, DOE_DX_READ_WRITE, DOE_DX_STRUCTURED};
     doe_dx_pipeline_desc description = {bytecode, sizeof(bytecode), &layout, 1};
     doe_dx_pipeline *result = NULL;
     assert(doe_dx_pipeline_create(owner, &description, &result, NULL) == DOE_DX_OK);
@@ -301,7 +301,7 @@ static void descriptor_identity_and_aliasing(void) {
     doe_dx_buffer *upload = buffer(owner, DOE_DX_UPLOAD);
     doe_dx_buffer *storage = buffer(owner, DOE_DX_DEFAULT);
     const unsigned char bytecode = 1;
-    doe_dx_binding_layout layout[2] = {{0, 0, 4, DOE_DX_READ_ONLY}, {0, 0, 4, DOE_DX_READ_ONLY}};
+    doe_dx_binding_layout layout[2] = {{0, 0, 4, DOE_DX_READ_ONLY, DOE_DX_STRUCTURED}, {0, 0, 4, DOE_DX_READ_ONLY, DOE_DX_STRUCTURED}};
     doe_dx_pipeline_desc description = {&bytecode, 1, layout, 2};
     doe_dx_pipeline *shader = NULL;
     assert(doe_dx_pipeline_create(owner, &description, &shader, NULL) == DOE_DX_INVALID_ARGUMENT);

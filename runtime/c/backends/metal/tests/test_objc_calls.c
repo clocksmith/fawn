@@ -29,6 +29,7 @@ struct call_fixture {
     unsigned buffer_sets, bytes_sets, dispatches, copies, fills, commits, waits;
     size_t native_status, wait_status;
     int64_t error_code;
+    char diagnostic[512];
     bool fail_pool, fail_encoder, fail_library, fail_function, fail_pipeline;
     doe_mtl_native_binding bound[DOE_MTL_BUFFER_SLOTS];
     uint32_t sizes[DOE_MTL_BUFFER_SLOTS];
@@ -124,7 +125,8 @@ static intptr_t integer_call(void *receiver, void *selector) {
 static const char *string_call(void *receiver, void *selector) {
     call_fixture *fixture = owner(receiver);
     assert(receiver == &fixture->description && selector == fixture->runtime.utf8);
-    return "diagnostic preserved before draining autorelease pool";
+    return fixture->diagnostic[0] != '\0' ? fixture->diagnostic :
+        "diagnostic preserved before draining autorelease pool";
 }
 
 static void *string_init_call(void *receiver, void *selector,
@@ -354,24 +356,33 @@ static void encoding_controls(void) {
 
 static void completion_controls(void) {
     call_fixture fixture;
-    int64_t code = 123;
+    doe_mtl_error error = {0};
     fixture_init(&fixture);
-    assert(doe_mtl_objc_observe(&fixture.runtime, &fixture.command, true, &code) == 0);
-    assert(code == 0 && fixture.waits == 0);
+    assert(doe_mtl_objc_observe(&fixture.runtime, &fixture.command, true, &error) == 0);
+    assert(error.native_code == 0 && fixture.waits == 0);
     doe_mtl_objc_commit(&fixture.runtime, &fixture.command);
     assert(fixture.commits == 1 && fixture.native_status == 2);
-    assert(doe_mtl_objc_observe(&fixture.runtime, &fixture.command, false, &code) == 2);
+    assert(doe_mtl_objc_observe(&fixture.runtime, &fixture.command, false, &error) == 2);
     assert(fixture.waits == 0);
     fixture.wait_status = 5;
     fixture.error_code = -54321;
-    assert(doe_mtl_objc_observe(&fixture.runtime, &fixture.command, true, &code) == 5);
-    assert(fixture.waits == 1 && code == -54321);
+    assert(doe_mtl_objc_observe(&fixture.runtime, &fixture.command, true, &error) == 5);
+    assert(fixture.waits == 1 && error.native_code == -54321);
+    assert(error.status == DOE_MTL_EXECUTION_FAILED);
+    assert(strcmp(error.operation, "MTLCommandBuffer.error") == 0);
+    assert(strcmp(error.message, "diagnostic preserved before draining autorelease pool") == 0);
+    memset(fixture.diagnostic, 'x', sizeof(fixture.diagnostic) - 1);
+    fixture.diagnostic[sizeof(fixture.diagnostic) - 1] = '\0';
+    assert(doe_mtl_objc_observe(&fixture.runtime, &fixture.command, false, &error) == 5);
+    assert(strlen(error.message) == sizeof(error.message) - 1);
+    for (size_t i = 0; i < sizeof(error.message) - 1; ++i) assert(error.message[i] == 'x');
     fixture.native_status = 3;
     fixture.wait_status = 4;
-    assert(doe_mtl_objc_observe(&fixture.runtime, &fixture.command, true, &code) == 4);
-    assert(fixture.waits == 2 && code == 0 && fixture.pools == fixture.drains);
+    assert(doe_mtl_objc_observe(&fixture.runtime, &fixture.command, true, &error) == 4);
+    assert(fixture.waits == 2 && error.native_code == 0 && fixture.pools == fixture.drains);
+    assert(error.message[0] == '\0');
     fixture.fail_pool = true;
-    assert(doe_mtl_objc_observe(&fixture.runtime, &fixture.command, true, &code) == SIZE_MAX);
+    assert(doe_mtl_objc_observe(&fixture.runtime, &fixture.command, true, &error) == SIZE_MAX);
     assert(fixture.waits == 2);
 }
 
