@@ -29,7 +29,7 @@ missing dispatch analysis; command and native obligations keep their existing ow
 
 ## Acceptance
 Developer checks do not establish independent, physical or performance qualification.
-- Evidence: [indirect/viewport](DEVELOPER_RECEIPT_INDIRECT.json), [backend bridge](DEVELOPER_RECEIPT_BACKENDS.json), [MSAA/debug/atomics](DEVELOPER_RECEIPT_MSAA.json), [depth](DEVELOPER_RECEIPT_DEPTH.json), [demote/instance](DEVELOPER_RECEIPT_DEMOTE.json), [graphics](DEVELOPER_RECEIPT_GRAPHICS.json),
+- Evidence: [budget/platform](DEVELOPER_RECEIPT_BUDGET_PLATFORM.json), [indirect/viewport](DEVELOPER_RECEIPT_INDIRECT.json), [backend bridge](DEVELOPER_RECEIPT_BACKENDS.json), [MSAA/debug/atomics](DEVELOPER_RECEIPT_MSAA.json), [depth](DEVELOPER_RECEIPT_DEPTH.json), [demote/instance](DEVELOPER_RECEIPT_DEMOTE.json), [graphics](DEVELOPER_RECEIPT_GRAPHICS.json),
   [timestamps/recovery](DEVELOPER_RECEIPT_TIMESTAMPS.json) and
   [admission](DEVELOPER_RECEIPT_ADMISSION.json).
 

@@ -29,8 +29,9 @@ restrictions, not queried hardware claims. Actual buffer/threadgroup-memory and
 per-axis limits further constrain admission; the backend checks the real
 per-pipeline total-thread limit. Metal images, graphics, timestamps and indirect
 commands remain uncomposed. Native Metal execution failures are not guessed to
-mean device loss. Darwin library/link/test portability and physical qualification
-remain separate from the Linux host composition checked here.
+mean device loss. Darwin recipes now select dylib, @rpath install identity, and an exact Mach-O
+export list. Host dry-run/parser controls and actual Linux linking are checked;
+Apple SDK compilation, Darwin execution and physical qualification remain unrun.
 
 ## Actual ownership and execution path
 
@@ -319,3 +320,26 @@ CopySrc, eight indirect draw query outcomes, four viewport query outcomes, exact
 helper acquisition failures. Recovery checks keep helpers while completion is
 unknown, then discard and recreate them after proven terminal failure. These are
 software Vulkan results; Metal indirect and indexed rendering remain unsupported.
+
+The public RenderPassMaxDrawCount chain converts its exact uint64 value into the
+canonical resource budget. Explicit zero is not the omitted default; direct and
+indirect no-op draws consume one, empty bundles consume none, and aggregate bundle
+admission occurs before partial replay. Unknown or duplicate chain nodes invalidate
+the existing encoder. `tests/draw_budget.c` checks those boundaries and real clears.
+
+`make -C runtime/c/native check-platform` checks both link recipes and the exact
+Mach-O symbol projection without claiming Apple compilation. On a supported Apple
+build environment, `SHARED_PLATFORM=Darwin all` selects the dylib recipe;
+`check-portable` runs host ABI/procedure checks. The full SwiftShader and GNU
+linker-fault suite remains explicitly Linux-only, not silently replaced by a
+narrower Darwin check. The compiler owns its corresponding canonical shared recipe
+and numeric portability. See Apple's [run-path library documentation](https://developer.apple.com/library/archive/documentation/DeveloperTools/Conceptual/DynamicLibraries/100-Articles/RunpathDependentLibraries.html)
+and [nm definition](https://github.com/apple-oss-distributions/cctools/blob/main/man/nm.1)
+for the install identity and symbol-audit boundary.
+
+`DEVELOPER_RECEIPT_BUDGET_PLATFORM.json` binds the exact three software clients
+(normal and fully instrumented runtime/compiler), Linux host ABI/link checks and
+Darwin recipe-only controls. It pins resource budget ownership to committed
+28dbe11d and preserves the earlier compiler closure, excluding subsequent mutable
+WSI, numeric and setter-admission changes. Presentation remains unprovided in
+this checkpoint.
