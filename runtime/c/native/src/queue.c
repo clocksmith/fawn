@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: MIT */
-#include "internal.h"
+#include "surface.h"
 #include <stdlib.h>
 
 struct native_pending {
@@ -63,6 +63,11 @@ static doe_vk_status record_vulkan_commands(doe_vk_commands *native, doe_resourc
             doe_vk_texture_region region = {.mip=copy->mip,
                 .origin={copy->origin[0], copy->origin[1], copy->origin[2]},
                 .extent={copy->width, copy->height, copy->depth_or_layers}};
+            /* The resource region carries the admitted single aspect. */
+            if (!native_texture_aspect(record->value.texture.region.aspect, &region.aspect)) {
+                status = DOE_VK_INVALID_ARGUMENT;
+                break;
+            }
             status = record->value.texture.direction == DOE_RESOURCE_BUFFER_TO_TEXTURE ?
                 doe_vk_commands_upload_texture(native, buffer->handle.vulkan, layout, texture->texture, region) :
                 doe_vk_commands_read_texture(native, texture->texture, region, buffer->handle.vulkan, layout);
@@ -79,6 +84,12 @@ static doe_vk_status record_vulkan_commands(doe_vk_commands *native, doe_resourc
             doe_vk_texture_region to = {.mip=copy->destination.mip,
                 .origin={copy->destination.origin[0],copy->destination.origin[1],copy->destination.origin[2]},
                 .extent={copy->width,copy->height,copy->depth_or_layers}};
+            /* Admitted texture copies use every aspect of both endpoints. */
+            if (!native_texture_aspect(copy->source.aspect, &from.aspect) ||
+                !native_texture_aspect(copy->destination.aspect, &to.aspect)) {
+                status = DOE_VK_INVALID_ARGUMENT;
+                break;
+            }
             status = doe_vk_commands_copy_texture(native, source->texture, from, destination->texture, to);
             break;
         }
@@ -147,6 +158,8 @@ static void settle_resources(native_pending *pending, bool success)
     free(pending->resources);
     native_device *device = pending->device;
     free(pending);
+    /* The foreground call or progress worker still owns a device lease while
+     * this recursive drop returns to its enclosing device-mutex scope. */
     native_device_release(device);
 }
 
@@ -222,6 +235,44 @@ native_failure native_submit_commands(native_device *device, doe_vk_commands *co
     native_device_retain(device);
     pending->native = (native_command_handle){.kind=WGPUBackendType_Vulkan,.value.vulkan=commands};
     return submit_pending(device, pending);
+}
+
+native_presentation native_submit_present(native_device *device, doe_vk_commands *commands,
+    doe_vk_surface *surface)
+{
+    native_presentation result = {.presentation = {.status = NATIVE_INVALID_STATE}};
+    native_pending *pending = calloc(1, sizeof(*pending));
+    if (!pending) {
+        /* Unsubmitted commands detach their present lease on release. */
+        if (doe_vk_commands_release(commands) != DOE_VK_OK) abort();
+        result.submission = native_failure_status(NATIVE_OUT_OF_MEMORY);
+        return result;
+    }
+    pending->device = device;
+    native_device_retain(device);
+    pending->native = (native_command_handle){.kind=WGPUBackendType_Vulkan,.value.vulkan=commands};
+    pending->next = device->pending;
+    device->pending = pending;
+    native_pending_progress_wake(device);
+    native_failure failure = native_command_submit(&pending->native);
+    if (failure.status == NATIVE_OK) {
+        bool suboptimal = false;
+        doe_vk_error detail = {0};
+        /* Waits the submit's render-finished semaphore on the same queue. */
+        doe_vk_status status = doe_vk_surface_present(surface, commands, &suboptimal, &detail);
+        result.presentation = native_failure_vulkan(status, &detail);
+        failure = native_command_wait(&pending->native);
+    }
+    if (failure.status != NATIVE_OK) device->queue_failed = true;
+    /* The presentation fence (or maintenance1 discard when present was never
+     * enqueued) retires the frame; command completion never does. Settlement
+     * must follow it: commands stay BUSY while their frame is unretired. */
+    doe_vk_error detail = {0};
+    doe_vk_status retired = doe_vk_surface_retire_frame(surface, NATIVE_SURFACE_TIMEOUT_NS, &detail);
+    if (result.presentation.status == NATIVE_OK) result.presentation = native_failure_vulkan(retired, &detail);
+    native_queue_settlement settled = native_settle_pending(device);
+    result.submission = failure.status == NATIVE_OK ? settled.failure : failure;
+    return result;
 }
 
 void wgpuQueueSubmit(WGPUQueue handle, size_t count, const WGPUCommandBuffer *handles)

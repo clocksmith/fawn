@@ -7,6 +7,7 @@
 bool native_depth_format(WGPUTextureFormat format, doe_vk_texture_format *out)
 {
     switch (format) {
+    case WGPUTextureFormat_Depth16Unorm: *out = DOE_VK_FORMAT_D16_UNORM; return true;
     case WGPUTextureFormat_Depth24Plus:
     case WGPUTextureFormat_Depth32Float: *out = DOE_VK_FORMAT_D32_FLOAT; return true;
     case WGPUTextureFormat_Stencil8: *out = DOE_VK_FORMAT_S8_UINT; return true;
@@ -74,4 +75,16 @@ bool native_compare_operation(WGPUCompareFunction value, uint32_t fallback, uint
     case WGPUCompareFunction_Always: *out = 7; return true;
     default: return false;
     }
+}
+
+bool native_texture_aspect(WGPUTextureAspect aspect, doe_vk_texture_aspect *out)
+{
+    switch (aspect) {
+    case WGPUTextureAspect_All: *out = DOE_VK_ASPECT_ALL; return true;
+    case WGPUTextureAspect_DepthOnly: *out = DOE_VK_ASPECT_DEPTH; return true;
+    case WGPUTextureAspect_StencilOnly: *out = DOE_VK_ASPECT_STENCIL; return true;
+    case WGPUTextureAspect_Undefined:
+    case WGPUTextureAspect_Force32: return false;
+    }
+    return false;
 }

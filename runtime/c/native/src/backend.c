@@ -27,14 +27,18 @@ static void metal_limits(const doe_mtl_caps *caps, WGPULimits *out)
         .maxComputeWorkgroupsPerDimension=65535};
 }
 
-native_result native_backend_open(WGPUBackendType kind, bool fallback, native_backend *out)
+native_result native_backend_open(WGPUBackendType kind, bool fallback, uint32_t surface_platforms,
+    native_backend *out)
 {
     native_backend result = {.kind=kind};
     native_result status;
     if (kind == WGPUBackendType_Vulkan) {
+        /* First device of the requested class (CPU only for fallback), never
+         * enumeration ordinal 0 filtered afterwards. */
         result.value.vulkan.options = (doe_vk_options){.allow_cpu_adapter=fallback,
             .require_graphics_queue=true,.enable_shader_demote_if_supported=true,
-            .adapter_selection=fallback ? DOE_VK_SELECT_SOFTWARE : DOE_VK_SELECT_ORDINAL};
+            .surface_platforms=surface_platforms,
+            .adapter_selection=fallback ? DOE_VK_SELECT_SOFTWARE : DOE_VK_SELECT_HARDWARE};
         status = native_from_vulkan(doe_vk_context_create(&result.value.vulkan.options,
             &result.value.vulkan.context, NULL));
         if (status == NATIVE_OK)
@@ -46,6 +50,7 @@ native_result native_backend_open(WGPUBackendType kind, bool fallback, native_ba
                 &result.limits) != WGPUStatus_Success) status = NATIVE_FAILURE;
     } else if (kind == WGPUBackendType_Metal) {
         if (fallback) return NATIVE_UNAVAILABLE; /* No CPU adapter is advertised. */
+        if (surface_platforms) return NATIVE_UNSUPPORTED; /* Metal layer surfaces are not composed. */
         status = native_from_metal(doe_mtl_context_create(&result.value.metal.context, NULL));
         if (status == NATIVE_OK)
             status = native_from_metal(doe_mtl_context_caps(result.value.metal.context, &result.value.metal.caps));
@@ -61,6 +66,8 @@ native_result native_backend_device(const native_backend *adapter, native_backen
     native_backend result = {.kind=adapter->kind};
     native_result status;
     if (adapter->kind == WGPUBackendType_Vulkan) {
+        /* The device context must open the adapter's own hardware: select by its
+         * device/driver UUID pair, so reordered or replaced devices cannot substitute. */
         result.value.vulkan.options = adapter->value.vulkan.options;
         result.value.vulkan.options.adapter_selection = DOE_VK_SELECT_IDENTITY;
         result.value.vulkan.options.required_identity = adapter->value.vulkan.caps.identity;

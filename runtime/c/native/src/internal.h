@@ -20,6 +20,7 @@
 
 typedef struct native_adapter {
     atomic_uint references;
+    pthread_mutex_t mutex; /* Serializes surface queries on the adapter's own context. */
     doe_instance *instance;
     native_backend backend;
 } native_adapter;
@@ -189,10 +190,16 @@ void native_pending_progress_destroy(native_device *device);
  * completion. A private initialization submission has its own device lease. */
 native_failure native_submit_commands(native_device *device, doe_vk_commands *commands);
 native_failure native_initialize_texture(native_device *device, doe_vk_texture *texture,
-    const doe_vk_texture_desc *desc, uint32_t texel_bytes);
+    const doe_vk_texture_desc *desc, const doe_vk_format_caps *caps);
+/* Resource finalizer for a native_texture payload: releases its backend texture
+ * under the device mutex, then frees the payload. */
+void native_texture_release(void *userdata, void *handle);
 bool native_compare_operation(WGPUCompareFunction value, uint32_t fallback, uint32_t *out);
 bool native_depth_format(WGPUTextureFormat format, doe_vk_texture_format *out);
 bool native_texture_format(WGPUTextureFormat format, doe_vk_texture_format *out);
+/* Resource-normalized copy aspect to native aspect bits; Undefined is rejected
+ * because the resource owner always resolves a concrete aspect first. */
+bool native_texture_aspect(WGPUTextureAspect aspect, doe_vk_texture_aspect *out);
 bool native_storage_format(uint32_t format, WGPUTextureFormat *out);
 doe_resource_status native_automatic_layout(native_device *device,
     const native_stage *stages, size_t stage_count, doe_resource_pipeline_layout **out);

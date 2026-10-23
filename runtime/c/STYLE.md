@@ -41,6 +41,11 @@ Do not reformat frozen milestones to meet a metric. See
   and never read potentially freed state afterward. Preserve atomic/publication
   rules; one owner finalizes. Timeout/cancellation is not completion, and uncertain
   completion never authorizes resource reuse or destruction.
+- Drop a reference that may be the last one, or join/wait on another owner's
+  thread, only with no owner lock held. A finalizer that must release a lease
+  while its caller holds a (recursive) owner lock may do so only when that caller
+  still holds another lease on the same object, so the drop cannot finalize or join.
+  State which lease guarantees this at the call site.
 
 ## Readability and decisive checks
 
@@ -62,7 +67,11 @@ reordered effects, early publication and premature cleanup. Inject failures at r
 boundaries, not a second implementation as oracle. Developer controls remain
 separate from frozen independent acceptance. Compilation, sanitizers, target
 validation, native consumption and physical execution prove different things.
-Bind source/build/test identities, refuse drift and retain first failures. Later
+Bind source/build/test identities, refuse drift and retain first failures.
+Every execution claim names where it ran: CPU fallback adapter, or the physical
+adapter, driver and host. Print that from the selected adapter at run time rather
+than a fixed label, and keep developer runs on one device distinct from
+qualification. Later
 refactors need separate checks; earlier receipts never qualify changed bytes.
 
 ## Mechanically enforced rules
@@ -77,6 +86,16 @@ fails on each of these; fix the source rather than adding an exemption:
 - **pragma**: no `#pragma GCC|clang diagnostic ignored|warning`; fix the warning.
 - **flags**: an owner Makefile that defines `CFLAGS` compiles with
   `-std=c11 -Wall -Wextra -Wpedantic -Werror`.
+- **adapter**: native public consumers under `runtime/c/native/tests/` select
+  adapters only through `tests/adapter_class.h`; no direct `forceFallbackAdapter`
+  assignment or CPU adapter-type check (`backend_selection.c` tests fallback itself).
+
+`make -C runtime/c check` also runs `tools/check_globals.py` over every built owner:
+each writable process-global object (`.data`/`.bss`, not relocated constants) must be
+listed in `tools/mutable_globals.txt` with its owner source and why it is
+process-lifetime state, and every listed entry must still exist. Prefer state owned
+by an instance, device or caller-supplied storage; a new line there is reviewed like
+the state itself.
 
 Frozen evidence is exempt from license and guard only: `independent_tests*` trees and
 files whose bytes still match a committed `*.sha256` seal. Editing a sealed file makes

@@ -2,7 +2,7 @@
 #include "internal.h"
 #include <stdlib.h>
 
-static void release_texture(void *userdata, void *handle)
+void native_texture_release(void *userdata, void *handle)
 {
     (void)userdata;
     native_texture *payload = handle;
@@ -22,7 +22,13 @@ WGPUTexture wgpuDeviceCreateTexture(WGPUDevice handle, const WGPUTextureDescript
     }
     const WGPUTextureUsage supported = WGPUTextureUsage_CopySrc | WGPUTextureUsage_CopyDst |
         WGPUTextureUsage_TextureBinding | WGPUTextureUsage_StorageBinding | WGPUTextureUsage_RenderAttachment;
-    if (!descriptor || descriptor->nextInChain ||
+    /* The header requires accepting WGPUTextureBindingViewDimension. This provider
+     * has no compatibility-mode view restrictions (flexible views, as in core
+     * mode), so its contents are ignored exactly like on a core device. Other
+     * or repeated chain nodes remain unsupported. */
+    const WGPUChainedStruct *chain = descriptor ? descriptor->nextInChain : NULL;
+    bool chain_supported = !chain || (chain->sType == WGPUSType_TextureBindingViewDimension && !chain->next);
+    if (!descriptor || !chain_supported ||
         descriptor->usage & ~supported || (descriptor->viewFormatCount && !descriptor->viewFormats)) {
         native_error(device, WGPUErrorType_Validation, "texture descriptor unsupported");
         return NULL;
@@ -60,11 +66,17 @@ WGPUTexture wgpuDeviceCreateTexture(WGPUDevice handle, const WGPUTextureDescript
         desc.width == desc.height && desc.depth_or_layers >= 6;
     bool depth_stencil = native_depth_format(desc.format, &native.format);
     if (depth_stencil) {
-        if (desc.usage != WGPUTextureUsage_RenderAttachment) {
-            native_error(device, WGPUErrorType_Validation, "depth/stencil currently supports attachment usage only");
+        /* Attachment and copy usage are admitted; per-format/aspect copy direction
+         * belongs to the resource copy owner. Depth sampling/storage stay absent. */
+        if (desc.usage & (WGPUTextureUsage_TextureBinding | WGPUTextureUsage_StorageBinding)) {
+            native_error(device, WGPUErrorType_Validation, "depth/stencil sampling and storage are unsupported");
             return NULL;
         }
-        native.usage = DOE_VK_TEXTURE_DEPTH_STENCIL_ATTACHMENT;
+        /* Attachments zero-initialize through real clears; copy-only images need
+         * internal transfer-destination usage for their zero uploads instead. */
+        native.usage = (desc.usage & WGPUTextureUsage_RenderAttachment) ?
+            DOE_VK_TEXTURE_DEPTH_STENCIL_ATTACHMENT : DOE_VK_TEXTURE_COPY_DST;
+        if (desc.usage & WGPUTextureUsage_CopyDst) native.usage |= DOE_VK_TEXTURE_COPY_DST;
         native.cube_compatible = false; /* Native depth supports array attachments, not cube sampling. */
     }
     if (desc.samples > 1) {
@@ -101,20 +113,22 @@ WGPUTexture wgpuDeviceCreateTexture(WGPUDevice handle, const WGPUTextureDescript
         failure = native_failure_vulkan(status, &error);
     }
     if (status == DOE_VK_OK) {
-        failure = native_initialize_texture(device, payload->texture, &native, caps.texel_bytes);
+        failure = native_initialize_texture(device, payload->texture, &native, &caps);
         status = native_to_vulkan(failure.status);
     }
+
     doe_resource_status adopted = DOE_RESOURCE_INVALID_ARGUMENT;
     if (status == DOE_VK_OK)
         adopted = doe_resource_texture_create(&device->resources, &desc, &limits,
-            (doe_resource_native){payload, NULL, release_texture}, &texture);
+            (doe_resource_native){payload, NULL, native_texture_release}, &texture);
     native_unlock(device);
     if (!texture) {
-        release_texture(NULL, payload);
+        native_texture_release(NULL, payload);
         char message[NATIVE_FAILURE_MESSAGE_CAPACITY];
         if (failure.status == NATIVE_OK) failure = native_failure_status(NATIVE_FAILURE);
         native_failure_format(&failure, "texture creation or proven zero initialization failed", message);
         native_error(device, status != DOE_VK_OK ? native_backend_error(status) : native_resource_error(adopted), message);
+
     } else native_label(device, texture, descriptor->label);
     return (WGPUTexture)texture;
 }
@@ -173,4 +187,12 @@ WGPUTextureUsage wgpuTextureGetUsage(WGPUTexture texture)
 {
     const doe_resource_texture_desc *desc = doe_resource_texture_description((doe_resource_texture *)texture);
     return desc ? desc->usage : WGPUTextureUsage_None;
+}
+/* Core-mode semantics: the compatibility textureBindingViewDimension is not
+ * retained when texture views are flexible, so every texture reports Undefined
+ * (matching the reference core implementation), never a guessed default. */
+WGPUTextureViewDimension wgpuTextureGetTextureBindingViewDimension(WGPUTexture texture)
+{
+    (void)texture;
+    return WGPUTextureViewDimension_Undefined;
 }

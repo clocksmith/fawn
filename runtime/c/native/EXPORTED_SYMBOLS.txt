@@ -91,6 +91,9 @@ wgpuGetInstanceLimits
 wgpuGetProcAddress
 wgpuHasInstanceFeature
 wgpuInstanceAddRef
+wgpuInstanceCreateSurface
+wgpuInstanceGetWGSLLanguageFeatures
+wgpuInstanceHasWGSLLanguageFeature
 wgpuInstanceProcessEvents
 wgpuInstanceRelease
 wgpuInstanceRequestAdapter
@@ -164,6 +167,16 @@ wgpuShaderModuleRelease
 wgpuShaderModuleSetLabel
 wgpuSupportedFeaturesFreeMembers
 wgpuSupportedInstanceFeaturesFreeMembers
+wgpuSupportedWGSLLanguageFeaturesFreeMembers
+wgpuSurfaceAddRef
+wgpuSurfaceCapabilitiesFreeMembers
+wgpuSurfaceConfigure
+wgpuSurfaceGetCapabilities
+wgpuSurfaceGetCurrentTexture
+wgpuSurfacePresent
+wgpuSurfaceRelease
+wgpuSurfaceSetLabel
+wgpuSurfaceUnconfigure
 wgpuTextureAddRef
 wgpuTextureCreateView
 wgpuTextureDestroy
@@ -173,6 +186,7 @@ wgpuTextureGetFormat
 wgpuTextureGetHeight
 wgpuTextureGetMipLevelCount
 wgpuTextureGetSampleCount
+wgpuTextureGetTextureBindingViewDimension
 wgpuTextureGetUsage
 wgpuTextureGetWidth
 wgpuTextureRelease

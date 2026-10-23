@@ -46,7 +46,10 @@ native_result native_from_metal(doe_mtl_status status);
 /* Used only by still Vulkan-specific lowering, never a Metal capability claim. */
 doe_vk_status native_to_vulkan(native_result status);
 WGPUErrorType native_result_error(native_result status);
-native_result native_backend_open(WGPUBackendType kind, bool fallback, native_backend *out);
+/* surface_platforms: exact DOE_VK_SURFACE_* bits from a compatibleSurface, else 0.
+ * Vulkan requires their complete WSI chain or fails; Metal rejects any bit. */
+native_result native_backend_open(WGPUBackendType kind, bool fallback, uint32_t surface_platforms,
+    native_backend *out);
 native_result native_backend_device(const native_backend *adapter, native_backend *out);
 void native_backend_close(native_backend *backend);
 native_result native_backend_status(const native_backend *backend);

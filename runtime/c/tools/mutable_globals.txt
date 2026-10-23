@@ -1,0 +1,15 @@
+# Writable process-global objects that are deliberate process-lifetime owners.
+# Format: <symbol> <owner source> <reason>. check_globals.py fails on any writable
+# .data/.bss object not listed here and on entries no built artifact defines.
+# Adding a line needs the same review as the state it permits.
+bound_descriptor runtime/c/dropin-policy/src/policy.c lazily bound drop-in policy descriptor, published once by atomic store
+cold_lock runtime/c/dropin-policy/src/policy.c serializes cold policy binding; never held across loader or callback calls
+behavior_publication runtime/c/dropin-policy/src/policy.c acquire/release publication flag for the bound behavior
+ownership_publication runtime/c/dropin-policy/src/policy.c acquire/release publication flag for symbol ownership
+published_behavior runtime/c/dropin-policy/src/policy.c behavior value guarded by behavior_publication
+next_instance runtime/c/futures/src/futures.c process-wide monotonic instance identity counter (atomic)
+next_legacy runtime/c/futures/src/futures.c process-wide monotonic legacy future identity counter (atomic)
+native_store runtime/c/labels/src/native.c process label store used by the native provider build
+provider_once runtime/c/native/src/provider_pin.c pthread_once guard for the provider image pin
+provider_image runtime/c/native/src/provider_pin.c process-lifetime dlopen reference keeping worker code mapped
+provider_permanent runtime/c/native/src/provider_pin.c records that the provider is the main image and needs no pin

@@ -4,6 +4,7 @@
 static bool valid_selection(const doe_vk_options *options, doe_vk_error *error) {
     switch (options->adapter_selection) {
         case DOE_VK_SELECT_ORDINAL:
+        case DOE_VK_SELECT_HARDWARE:
         case DOE_VK_SELECT_IDENTITY: return true;
         case DOE_VK_SELECT_SOFTWARE:
             if (options->allow_cpu_adapter) return true;
@@ -20,6 +21,7 @@ static bool matches(const doe_vk_options *options, uint32_t ordinal,
     switch (options->adapter_selection) {
         case DOE_VK_SELECT_ORDINAL: return ordinal == options->adapter_ordinal;
         case DOE_VK_SELECT_SOFTWARE: return properties->deviceType == 4u;
+        case DOE_VK_SELECT_HARDWARE: return properties->deviceType != 4u;
         case DOE_VK_SELECT_IDENTITY:
             return memcmp(identity, &options->required_identity, sizeof(*identity)) == 0;
     }

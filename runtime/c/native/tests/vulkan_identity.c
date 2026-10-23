@@ -26,6 +26,7 @@ doe_vk_status __wrap_doe_vk_context_create(const doe_vk_options *options,
         free(value);
         return status;
     }
+    value->caps.surface_platforms = options->surface_platforms;
     if (wrong_identity) ++value->caps.identity.driver_uuid[0];
     if (wrong_class) value->caps.software_adapter = !value->caps.software_adapter;
     *out = value;
@@ -57,14 +58,20 @@ int main(int argc, char **argv)
 {
     assert(argc == 1 || (argc == 2 && strcmp(argv[1], "--software-context") == 0));
     native_backend adapter, device;
-    assert(native_backend_open(WGPUBackendType_Vulkan, false, &adapter) == NATIVE_OK);
-    assert(adapter.value.vulkan.options.adapter_selection == DOE_VK_SELECT_ORDINAL);
+    order[0] = 2; /* Nonfallback skips a CPU at ordinal zero. */
+    order[1] = 0;
+    order[2] = 1;
+    assert(native_backend_open(WGPUBackendType_Vulkan, false, DOE_VK_SURFACE_XCB, &adapter) == NATIVE_OK);
+    assert(adapter.value.vulkan.options.adapter_selection == DOE_VK_SELECT_HARDWARE);
+    assert(adapter.value.vulkan.options.surface_platforms == DOE_VK_SURFACE_XCB);
     doe_vk_adapter_identity selected = adapter.value.vulkan.caps.identity;
     generation = 1;
     order[0] = 1;
     order[1] = 0;
+    order[2] = 2;
     assert(native_backend_device(&adapter, &device) == NATIVE_OK);
     assert(device.value.vulkan.options.adapter_selection == DOE_VK_SELECT_IDENTITY);
+    assert(device.value.vulkan.options.surface_platforms == DOE_VK_SURFACE_XCB);
     assert(device.value.vulkan.caps.adapter_ordinal == 1);
     assert(memcmp(&device.value.vulkan.caps.identity, &selected, sizeof(selected)) == 0);
     native_backend_close(&device);
@@ -83,7 +90,7 @@ int main(int argc, char **argv)
     order[0] = 0;
     order[1] = 1;
     order[2] = 2;
-    assert(native_backend_open(WGPUBackendType_Vulkan, true, &adapter) == NATIVE_OK);
+    assert(native_backend_open(WGPUBackendType_Vulkan, true, 0, &adapter) == NATIVE_OK);
     assert(adapter.value.vulkan.options.adapter_selection == DOE_VK_SELECT_SOFTWARE);
     assert(adapter.value.vulkan.caps.software_adapter && adapter.value.vulkan.caps.adapter_ordinal == 2);
     order[0] = 2;
@@ -102,22 +109,25 @@ int main(int argc, char **argv)
     native_backend unavailable, saved;
     memset(&unavailable, 0xa5, sizeof(unavailable));
     memcpy(&saved, &unavailable, sizeof(saved));
-    assert(native_backend_open(WGPUBackendType_Vulkan, true, &unavailable) == NATIVE_UNSUPPORTED);
+    assert(native_backend_open(WGPUBackendType_Vulkan, true, 0, &unavailable) == NATIVE_UNSUPPORTED);
     assert(memcmp(&unavailable, &saved, sizeof(unavailable)) == 0);
     native_backend_close(&adapter);
     assert(live_contexts == 0);
     puts("PASS native Vulkan identity bridge: changed order/handles, explicit CPU fallback, missing identity and mismatch rollback");
     if (argc == 2) {
         actual_contexts = true;
-        assert(native_backend_open(WGPUBackendType_Vulkan, true, &adapter) == NATIVE_OK);
+        assert(native_backend_open(WGPUBackendType_Vulkan, true, 0, &adapter) == NATIVE_OK);
         assert(adapter.value.vulkan.caps.software_adapter);
         assert(native_backend_device(&adapter, &device) == NATIVE_OK);
         assert(device.value.vulkan.caps.software_adapter);
         assert(memcmp(&device.value.vulkan.caps.identity, &adapter.value.vulkan.caps.identity,
             sizeof(adapter.value.vulkan.caps.identity)) == 0);
+        printf("PASS actual Vulkan context identity chain and adapter-to-device creation: %s; vendor=%u device=%u driver=%u software=%u; no dispatch or physical qualification\n",
+            device.value.vulkan.caps.device_name, device.value.vulkan.caps.vendor_id,
+            device.value.vulkan.caps.device_id, device.value.vulkan.caps.driver_version,
+            device.value.vulkan.caps.software_adapter ? 1u : 0u);
         native_backend_close(&device);
         native_backend_close(&adapter);
-        puts("PASS actual CPU Vulkan context identity chain and adapter-to-device creation; no dispatch or physical qualification");
     }
     return 0;
 }

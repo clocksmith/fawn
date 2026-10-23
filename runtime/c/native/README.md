@@ -98,8 +98,18 @@ Apple SDK compilation, Darwin execution and physical qualification remain unrun.
   colors truncate and range-check before a defined C cast; ignored Load clears
   are not converted. Extra fragment outputs are ignored, while written targets,
   scalar/channel compatibility and source-alpha blending are checked.
-- Depth32Float, Depth24Plus, Stencil8 and Depth24PlusStencil8 support attachment-only
-  usage with actual depth tests/writes, stencil operations and read-only bundles.
+- Depth16Unorm, Depth32Float, Depth24Plus, Stencil8 and Depth24PlusStencil8 support
+  attachment and/or CopySrc/CopyDst usage with actual depth tests/writes, stencil
+  operations and read-only bundles. Texel copies follow the resource owner's
+  per-format/aspect rules: depth32float depth is a copy source only, depth16unorm
+  depth and every stencil aspect are source and destination, and depth24plus
+  depth (including the depth24plus-stencil8 depth aspect) never reaches a buffer.
+  Buffer copies and writeTexture select one aspect, copy the full subresource and
+  use 4-byte offsets (also for writeTexture, stricter than WebGPU's unaligned
+  writeTexture offset); texture-to-texture copies use all aspects. Linear bytes
+  are 4 (depth32), 2 (depth16) and 1 (stencil). Copy-only depth images are zeroed
+  per aspect by real uploads; attachments by real clears. Depth sampling/storage
+  are rejected.
   Plus formats use D32/D32S8 backing, not an implied optional public feature.
   The backend's sole per-aspect initialization owner clears undefined contents;
   depth/stencil Discard followed by Load reinitializes only missing aspects on GPU.
@@ -159,9 +169,148 @@ Apple SDK compilation, Darwin execution and physical qualification remain unrun.
   no premature resource destruction, failed worker startup and synchronous idle
   release. Neither control establishes physical failure recovery or driver liveness.
 
+## Surfaces and presentation (Vulkan, Linux)
+
+`src/surfaces.c` and `src/surface_present.c` implement `wgpuInstanceCreateSurface`,
+surface AddRef/Release/SetLabel, GetCapabilities/CapabilitiesFreeMembers,
+Configure/Unconfigure, GetCurrentTexture and Present over the Vulkan surface
+owner (`backends/vulkan/include/doe_vk_surface.h`). Design decisions:
+
+- Sources: exactly one chained `WGPUSurfaceSourceWaylandSurface`,
+  `WGPUSurfaceSourceXCBWindow` or `WGPUSurfaceSourceXlibWindow` with non-null
+  handles; any other chain, a second chain node or a non-Linux build returns NULL.
+  Platform handles are borrowed and must outlive the surface and its frames. The
+  instance-level surface stores only those handles and its label (own label store);
+  it does not change the accepted C instance.
+- WSI enablement is explicit: `compatibleSurface` in `wgpuInstanceRequestAdapter`
+  opens the adapter's Vulkan context with exactly that surface's platform bit and
+  the backend's complete WSI/maintenance1 chain, then creates and releases a probe
+  native surface to prove the selected queue can present to that window. Missing
+  support is `Unavailable`, never a fallback adapter or headless image. Devices
+  inherit the adapter's options, so their contexts carry the same WSI chain.
+  `GetCapabilities` returns `WGPUStatus_Error` for an adapter not opened with that
+  platform; `Configure` with such a device is a Validation error. Metal adapters
+  reject any compatibleSurface.
+- The native `doe_vk_surface` is created at Configure on the configured device's
+  own context (adapter contexts only host short-lived capability probes, serialized
+  by an adapter mutex). Configure first unconfigures any previous configuration.
+- Capabilities advertise RenderAttachment|CopySrc|CopyDst (the exercised subset),
+  the SRGB-nonlinear BGRA8/RGBA8 (sRGB or unorm) formats the surface reports, the
+  native present modes (Fifo always required) and alpha modes with Inherit first,
+  so Auto aliases the first element and prefers Inherit as the pinned header says.
+  Usage always adds internal native COLOR_ATTACHMENT for frame initialization.
+  View-format reinterpretation and other usages reject explicitly.
+- GetCurrentTexture acquires through the backend's fence-bounded acquisition
+  (`NATIVE_SURFACE_TIMEOUT_NS`, 1 s per native wait). Before publication the frame is
+  zero-initialized by the canonical attachment initializer in a private submission
+  on the existing pending owner, exactly like other published textures. The public
+  texture aliases the resource owner with a `native_surface_frame` payload whose
+  first member is the ordinary `native_texture`; the payload holds one surface lease.
+  A second call before Present returns the same frame with a new reference.
+  Status mapping: OK -> SuccessOptimal/SuccessSuboptimal, TIMEOUT -> Timeout (the
+  backend retains the pending acquisition and the next call waits that same one),
+  SURFACE_OUTDATED -> Outdated, SURFACE_LOST -> Lost (both sticky until
+  reconfiguration, also when observed at present), DEVICE_LOST -> Error (loss is
+  reported by the loss owner), BUSY (previous frame texture/views still held) ->
+  Error plus a Validation error, everything else -> Error plus its typed error.
+  Unconfigured surfaces return Error with a NULL texture.
+- Present creates one private command object, attaches the frame with the
+  backend's `doe_vk_surface_prepare_present`, and submits it through the same
+  `native_pending` owner (`native_submit_present` in `src/queue.c`): submit, enqueue
+  `vkQueuePresentKHR` waiting the render-finished semaphore, wait the command fence,
+  retire the frame through its presentation fence (or a maintenance1 discard when
+  present was never enqueued), then settle. Presentation never retires from command
+  completion or queue idle. This is one extra command buffer per frame carrying the
+  zero-if-undefined and PRESENT_SRC transition, not a second submission engine;
+  the caller's render work keeps its ordinary synchronous QueueSubmit path. The
+  public frame is destroyed after Present, so later recording rejects it.
+- One frame is in flight. Callers must release the previous frame's texture and
+  views before the next GetCurrentTexture or Configure (the backend refuses
+  acquisition while old leases exist). Unconfigure and final surface release defer
+  native swapchain retirement until those leases drop; the frame payload's surface
+  lease keeps the native owner alive. A presentation-fence wait that times out keeps
+  the present commands on the pending list: queue settlement then reports uncertain
+  completion (as for any unresolved work) until a later surface call retires the
+  frame. Unknown presentation completion at final
+  teardown retains the native surface, device and platform obligations rather than
+  freeing them. Foreign error callbacks run only after the surface and device
+  mutexes are released; the surface mutex is always taken before a device mutex.
+
+`make -C runtime/c/native BUILD=... check-present` builds `tests/surface_present.c`
+(XCB) and `tests/surface_platforms.c` (Xlib and a role-less Wayland `wl_surface`).
+They are not part of headless `check`; each exits 77 (skip, never a pass) when no
+display is reachable. Both use `tests/adapter_class.h`. Developer runs on Jupiter
+(GNOME Wayland, Xwayland `DISPLAY=:0`, `WAYLAND_DISPLAY=wayland-0`):
+
+```
+DISPLAY=:0 XAUTHORITY=/run/user/1000/.mutter-Xwaylandauth.* WAYLAND_DISPLAY=wayland-0 \
+  VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json \
+  make -C runtime/c/native BUILD=/tmp/doe-c-native check-present
+PASS public surface presentation: XCB window 80x40 after resize (SuccessSuboptimal), compatibleSurface adapter, capabilities, 8 verified frames with zero-init/asymmetric pixels/same-submission readback before present, stale-frame and lease rejection, reconfigure, deferred unconfigure, early releases and configure/acquire/present negatives; 1 retried Timeout statuses (CPU Vulkan only)
+PASS public surface sources: Xlib window presented; Wayland role-less wl_surface presented to the compositor (not displayed); compatibleSurface adapter, capabilities, configure, exact pixels read back in the presenting submission; 0 retried Timeout statuses (CPU Vulkan only)
+```
+
+The same binaries with `DOE_C_TEST_ADAPTER=physical` and `VK_ICD_FILENAMES` unset
+passed on Radeon 8060S Graphics (RADV STRIX_HALO, 0x1002:0x1586); that is developer
+evidence on that adapter/driver only, not qualification. A sanitizer build
+(`SANITIZE='-O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer'`, leak
+detection enabled) passed both on lavapipe. Pixels are verified by readback of the
+presented image in the presenting submission; what the compositor displayed was not
+observed. The Wayland surface has no xdg-shell role and is never shown. The single
+Timeout is the FIFO swapchain throttled by Xwayland while it is not repainting the
+window; the retry completes the retained acquisition. Resize produced
+SuccessSuboptimal on both drivers; explicit reconfiguration then rendered at the new
+size. Outdated/Lost mapping is host-tested by the backend owner, not observed here.
+
+## WGSL language features and texture binding view dimension
+
+`src/features.c` owns the reported WGSL language features
+(`wgpuInstanceGetWGSLLanguageFeatures`, `wgpuInstanceHasWGSLLanguageFeature`,
+`wgpuSupportedWGSLLanguageFeaturesFreeMembers`) as one fixed switch beside the
+instance capability exports; the accepted instance owner is unchanged. A feature
+is reported only when `tests/wgsl_language_features.c` shows its probe compiles
+through the public shader-module path and creates a real Vulkan compute pipeline
+both without and with `requires <name>;`. Every probe also has a control shader of
+the same shape without the feature that must create a pipeline, so a rejection is
+attributable to the feature. Each unreported probe must be rejected at the module
+or pipeline boundary, so the table cannot silently drift from the compiler. The
+current table reports none; observed on lavapipe and Radeon 8060S/RADV:
+
+| Feature | Without `requires` | With `requires` | First diagnostic |
+| --- | --- | --- | --- |
+| readonly_and_readwrite_storage_textures | pipeline created | module rejected | unsupported enable or language extension |
+| packed_4x8_integer_dot_product | module rejected | module rejected | unsupported type name |
+| unrestricted_pointer_parameters | module rejected | module rejected | only function-address pointer types are currently admitted |
+| pointer_composite_access | module rejected | module rejected | array value has no named member |
+| uniform_buffer_standard_layout | module rejected | module rejected | uniform type violates conservative alignment or spacing |
+| subgroup_id | pipeline rejected | module rejected | compute shader entry/capability admission failed |
+| texture_and_sampler_let | module rejected | module rejected | local variable type must be concrete and constructible |
+| subgroup_uniformity | pipeline rejected | pipeline rejected | compute shader entry/capability admission failed |
+| texture_formats_tier1 | module rejected | module rejected | unsupported storage texture format |
+| linear_indexing | module rejected | module rejected | unsupported compute input builtin |
+| immediate_address_space | module rejected | module rejected | unsupported module variable address space |
+| buffer_view | module rejected | module rejected | expected ASCII WGSL identifier |
+
+The compiler's `requires` directive admits only `subgroup_uniformity`, and no device
+here admits `enable subgroups`, so the subgroup features cannot create pipelines.
+Read-only/read-write storage textures already compile and create pipelines; that
+feature becomes reportable once the compiler admits its `requires` directive (and an
+executed read/write image check is added). The `buffer_view` probe uses the
+proposal's `buffer<N>`/`bufferView` spelling; it is rejected at parsing.
+An empty list owns no storage (`features` is NULL); NULL instance or output is safe.
+
+`wgpuTextureGetTextureBindingViewDimension` follows core-mode semantics. The pinned
+header requires accepting a `WGPUTextureBindingViewDimension` chain on
+`WGPUTextureDescriptor` and ignores its contents on core devices. This provider has
+no compatibility-mode view restrictions, so it accepts exactly that one chain node,
+ignores the value, and the getter returns `WGPUTextureViewDimension_Undefined` for
+every texture, as the reference core implementation does. Unknown or repeated chain
+nodes still reject. The provider does not yet advertise `CoreFeaturesAndLimits`;
+that separate claim needs complete core limits and is not made here.
+
 ## Intentionally unprovided or rejected
 
-Surfaces remain absent. Vulkan indirect dispatch and nonindexed/indexed indirect
+Vulkan indirect dispatch and nonindexed/indexed indirect
 pass/bundle draws use real GPU guards; Metal graphics, indirect and indexed draws remain uncomposed.
 Graphics
 admits one color attachment and/or depth/stencil, sample counts 1 and 4, direct
@@ -170,7 +319,7 @@ PointList target lowering, single-sample color Discard, dual-source blending,
 vertex or fragment storage writes and fragment FragDepth/SampleIndex/SampleMask
 remain explicitly rejected. WGSL discard requires actual enabled demote support;
 unsupported devices reject that pipeline. Blend constants must be finite f32.
-Texture format reinterpretation, depth copies/sampling/storage, multisampled
+Texture format reinterpretation, depth sampling/storage, multisampled
 sampling/copies/storage, cube arrays and anisotropic sampling are rejected.
 The baseline admits 18 named Vulkan
 color formats, subject to actual device usage/format capabilities. Device
@@ -200,8 +349,8 @@ callback mode, not a claimed background compiler. No blanket success stubs or
 fallback provider resolution exist. The public advertised limits
 cover the implemented compute/image/graphics path only and do not claim the WebGPU
 Core feature level is complete; adapter/device creation remains experimental.
-Metal image/graphics/timestamp composition, D3D12 admission, package adoption
-and surfaces remain unfinished. Private backend checks do not qualify those public
+Metal image/graphics/timestamp composition, Metal/Windows/Android surfaces, D3D12
+admission and package adoption remain unfinished. Private backend checks do not qualify those public
 integrations; the Metal compute bridge remains host-tested only.
 
 ## Reproduce from a coherent checkout
@@ -221,6 +370,7 @@ is CPU; see the physical developer runs section for the GPU variant. Its ordinar
 result is:
 
 ```
+PASS public depth/stencil copies: rendered depth32float .25/.75 via DepthOnly/All readback and texture copy, depth16unorm rendered 0/65535, writeTexture and buffer upload plus texture copy, stencil8 upload then IncrementClamp, depth24plus-stencil8 stencil Replace and StencilOnly upload, depth24plus texture copy observed by depth test, 11 copy and 2 creation validation controls, early releases; exact 72 depth/stencil texels and 8 color pixels (CPU Vulkan only)
 PASS public indexed draws: uint16/uint32 indices, firstIndex, signed base vertex, instance selection, offset index ranges, pass/bundle replay, uint16/uint32 strip primitive restart, 9 GPU-produced drawIndexedIndirect records with exact-end/out-of-range/wrapping/zero/firstInstance/instance-overrun guards, unchanged arguments, 13 typed validation controls and early releases; exact 192 pixels (CPU Vulkan only)
 PASS public ABI9 atomics: storage accumulation, signed OOB suppression, compare-exchange result identity, fresh workgroup initialization across two groups and two dispatches, early releases (CPU Vulkan only)
 PASS public debug markers: typed procedures, independent nested balance, parent lock, underflow, malformed strings and finished/unbalanced command/pass/bundle rejection (CPU Vulkan only)
@@ -240,7 +390,7 @@ PASS public error types: resource allocation, automatic-layout allocation, compu
 PASS public timestamps: requested feature, zero/max/range/destroy admission, real pass/command writes, exact GPU nanoseconds, same-batch copy, scratch reuse and early query release (CPU Vulkan only)
 PASS typed recovery: native/OOM/pending errors survive submit/write/texture/workdone, unknown leases retained, terminal cleanup and fresh GPU normalizer recovery
 PASS every implemented procedure address matches; every unprovided name returns NULL
-PASS exact exports: 182 implemented, 20 pinned unprovided, no private exports
+PASS exact exports: 192 implemented, 10 pinned unprovided, no private exports
 ```
 
 A compute shader with two declared entries selects `transform`, runs 72
@@ -314,17 +464,29 @@ Do not run this on Miles or Suby while their possible disassembly/cooling hold
 remains. Every adapter-using client selects its adapter through
 `tests/adapter_class.h`: software (CPU fallback adapter) by default, or a
 nonfallback GPU adapter with `DOE_C_TEST_ADAPTER=physical`. Each PASS line names
-the class and device it ran on. `make check-physical` runs the same 19 clients on
+the class and device it ran on. `make check-physical` runs the same 22 clients on
 the system ICDs (`VK_ICD_FILENAMES` unset):
 
 ```
 make -C runtime/c/native BUILD=/tmp/doe-c-native check-physical
 ```
 
+Adapter requests select the first Vulkan device of the requested class (the CPU
+device only for `forceFallbackAdapter`), never ordinal 0 filtered afterwards, and
+device creation reopens exactly the adapter's hardware by
+the `VkPhysicalDeviceIDProperties` deviceUUID/driverUUID pair. Reordered
+enumeration preserves that same identity; missing, ambiguous or changed-driver
+identity fails without substitution. The earlier deviceUUID-only source at
+`a0dbcb970` was exercised on Jupiter with both RADV and lavapipe ICDs in either
+order: requested classes were selected correctly. The stronger UUID-pair controls
+and their execution scope are recorded in the identity/error receipt.
+
 On 2026-10-23 all 18 passed on Jupiter: AMD Radeon 8060S Graphics (RADV
 STRIX_HALO, vendor 0x1002 device 0x1586), Mesa 26.0.3-1ubuntu1 RADV, Vulkan 1.4.335,
 Linux 7.0.0-38. After indexed drawing was added, all 19 clients (including
-`indexed-render`) passed again on that same adapter/driver the same day. That is
+`indexed-render`) passed again on that same adapter/driver the same day, and after
+depth/stencil copies were added (with the WGSL language-feature and texture-binding
+view clients) all 22 (including `depth-copies`) passed. That is
 developer evidence for these exact clients on that
 adapter/driver: the oracles are the clients' own expected values, not frozen
 independent workloads, and it is not Vulkan backend qualification, a performance
