@@ -191,11 +191,62 @@ static void test_texture_scope(void)
     }
 }
 
+static void test_empty_layout_holes(void)
+{
+    fixture f = fresh();
+    doe_resource_config c = config(&f);
+    doe_resource_layout *layouts[3];
+    assert(doe_resource_layout_create(&c, NULL, 0, true, &layouts[0]) == DOE_RESOURCE_OK);
+    assert(doe_resource_layout_create(&c, NULL, 0, true, &layouts[1]) == DOE_RESOURCE_OK);
+    doe_resource_layout_entry entry = {.kind = DOE_BIND_BUFFER, .visibility = WGPUShaderStage_Compute,
+        .buffer_type = WGPUBufferBindingType_Storage, .dynamic_offset = true};
+    assert(doe_resource_layout_create(&c, &entry, 1, false, &layouts[2]) == DOE_RESOURCE_OK);
+    native_token token = {0}, pipeline_token = {0};
+    doe_resource_buffer *storage = buffer(&f, &token, 256, WGPUBufferUsage_Storage);
+    doe_resource_binding binding = {.kind = DOE_BIND_BUFFER, .resource.buffer = {storage, 0, 64}};
+    doe_resource_binding_limits limits = {16, 16, 256, 256};
+    doe_resource_bind_group *group;
+    assert(doe_resource_bind_group_create(layouts[2], &binding, 1, &limits, &group) == DOE_RESOURCE_OK);
+    doe_resource_pipeline_layout *layout;
+    assert(doe_resource_pipeline_layout_create(&c, layouts, 3, 0, &layout) == DOE_RESOURCE_OK);
+    assert(!doe_resource_pipeline_layout_group_required(layout, 0));
+    assert(!doe_resource_pipeline_layout_group_required(layout, 1));
+    assert(doe_resource_pipeline_layout_group_required(layout, 2));
+    assert(!doe_resource_pipeline_layout_group_required(layout, 3));
+    doe_resource_pipeline *pipeline;
+    uint32_t workgroup[] = {1, 1, 1}, offset = 64;
+    assert(doe_resource_pipeline_create(&c, layout, native(&f, &pipeline_token), workgroup, &pipeline) == DOE_RESOURCE_OK);
+    /* Empty slots ignore stale bindings/offset storage, never copy it. */
+    doe_resource_dispatch_group groups[3] = {{NULL, NULL, SIZE_MAX}, {group, NULL, SIZE_MAX}, {group, &offset, 1}};
+    doe_resource_encoder *encoder;
+    doe_resource_commands *commands;
+    assert(doe_resource_encoder_create(&c, &encoder) == DOE_RESOURCE_OK);
+    assert(doe_resource_encoder_dispatch_groups(encoder, pipeline, groups, 3, 1, 1, 1) == DOE_RESOURCE_OK);
+    assert(doe_resource_encoder_finish(encoder, &commands) == DOE_RESOURCE_OK);
+    size_t count;
+    const doe_resource_command *records = doe_resource_commands_borrow(commands, &count);
+    assert(count == 1 && !records[0].value.dispatch.groups[0] && !records[0].value.dispatch.groups[1]);
+    assert(records[0].value.dispatch.dynamic_offsets->counts[0] == 0 &&
+        records[0].value.dispatch.dynamic_offsets->counts[1] == 0);
+    assert(doe_resource_commands_begin_submit(commands) == DOE_RESOURCE_OK);
+    assert(doe_resource_commands_settle(commands, DOE_RESOURCE_OK) == DOE_RESOURCE_OK);
+    doe_resource_commands_release(commands);
+    doe_resource_encoder_release(encoder);
+    doe_resource_pipeline_release(pipeline);
+    doe_resource_pipeline_layout_release(layout);
+    doe_resource_bind_group_release(group);
+    for (size_t i = 0; i < 3; i++) doe_resource_layout_release(layouts[i]);
+    doe_resource_buffer_release(storage);
+    assert(token.releases == 1 && pipeline_token.releases == 1);
+    empty(&f);
+}
+
 int main(void)
 {
     test_buffer_scope();
     test_cross_group_scope();
     test_texture_scope();
-    puts("dispatch usage owner: 3 host suites passed; no GPU execution claimed");
+    test_empty_layout_holes();
+    puts("dispatch usage owner: 4 host suites passed; no GPU execution claimed");
     return 0;
 }

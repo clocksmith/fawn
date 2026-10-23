@@ -100,3 +100,8 @@ const WGPUSamplerDescriptor *doe_resource_sampler_description(const doe_resource
 {
     return sampler ? &sampler->desc : NULL;
 }
+
+bool doe_resource_pipeline_layout_group_required(const doe_resource_pipeline_layout *layout, size_t index)
+{
+    return layout && index < layout->count && layout->groups[index]->count != 0;
+}

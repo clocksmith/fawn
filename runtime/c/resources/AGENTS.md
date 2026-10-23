@@ -15,6 +15,10 @@ Vulkan's internal save/restore into public state. Keep each bundle self-containe
 and reuse pass draw admission and packets rather than another renderer.
 Float32 filterability is an enabled WebGPU feature, not a driver capability.
 Keep copied binding feature admission in the group owner through submission.
-Dispatch scope validation owns cross-binding aliases: buffer usage is whole-object,
+Shared dispatch/draw scope validation owns cross-binding aliases: buffer usage is whole-object,
 while writable storage aliases additionally use resolved byte ranges. Never replace
 this with backend handle equality or frontend-only pair checks.
+Render-pass scopes include every setter and executed bundle, even overwritten,
+unused or empty ones. Transfer retained scope storage to immutable end records;
+logical unbind/reset must not erase usage. Query descriptor count is 0..4096;
+zero-count logical identities need no native pool but cannot write or resolve.

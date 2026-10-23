@@ -25,9 +25,11 @@ an alias of device-free compiled data or a second count for one WebGPU object.
   for Float bindings; default admission is UnfilterableFloat regardless of driver
   capability. Features are copied for later resolve/submit revalidation. Normalized
   sampler descriptors are borrowed from the existing owner, not reconstructed.
-- `usage_scope.c`: bounded allocation-free complete dispatch usage admission,
+- `usage_scope.c`: shared allocation-free dispatch/draw usage semantics,
   with effective dynamic ranges, whole-buffer read/write compatibility, texture
   mip/layer/aspect conflicts, external-plane reads and indirect input usage.
+- `render_usage.c`: persistent whole-pass/bundle usage identities, including unused
+  and overwritten setters, moved into immutable records through retirement.
 - `commands.c`, `compute_pass.c`: sticky encoder admission, pass locking, transfer,
   direct/indirect compute snapshots and single-use submission self-leases.
 - `queries.c`, `external_textures.c`, `render.c`, `render_state.c`: real native query-pool ownership,
@@ -84,9 +86,29 @@ read/write incompatibility is whole-buffer, even for disjoint ranges. Multiple
 writable-storage bindings may share one buffer only at disjoint effective ranges;
 readonly overlaps are permitted. Texture conflicts use mip/layer/aspect identity.
 All groups and indirect input are admitted before offset allocation or command
-publication. This closes the previous per-binding-only admission gap. Render-pass
-whole-scope aggregation across state setters/draws/bundles is not implemented by
-this dispatch owner and must not be inferred from these checks.
+publication. Empty pipeline-layout slots require no group and normalize to null
+compute snapshots with zero offsets; ignored stale bindings are not submitted.
+
+Render scopes reuse these conflict rules across attachments, every group/vertex/
+index setter (including overwritten or unused state), indirect input and bundle
+replay, even empty bundles. Read-only depth/stencil aspects are admitted separately.
+Repeated storage usage across draws is permitted; overlapping writable bindings
+within one draw are not. Successful setters retain exact resource identities;
+unbind and bundle state reset cannot remove historical uses. The finished scope
+moves to the final pass record and remains alive through pending submission.
+Destroyed, mapped and expired unused resources are checked before native submit.
+No second native recorder, resource registry or completion engine is introduced.
+
+Query descriptors use one allocation-free preflight for named type and count
+0..4096, following current [WebGPU query creation](https://gpuweb.github.io/gpuweb/#dom-gpudevice-createqueryset)
+rather than retained native's nonzero-only, unbounded count. A zero-query identity
+retains its device but needs no native pool. Every write/resolve still requires an
+index strictly below count; zero-count resolve at the end is invalid. Device
+feature enablement and timestamp-unit normalization remain consumer obligations.
+
+Copy admission shares only checked byte-footprint arithmetic with native Vulkan
+through `../common/include/doe_copy_footprint.h`; format, pitch/default, zero extent,
+alignment, capacity and native granularity policies remain in their actual owners.
 
 Render ownership currently admits the retained one-color/optional-depth-stencil,
 eight-vertex-buffer/four-group envelope, direct/indexed/indirect draws, timestamp writes and occlusion scopes.
@@ -99,7 +121,7 @@ responsibilities. Unsupported consumer command kinds must reject before submit.
 ## Focused checks and evidence
 
 `make -C runtime/c/resources check` builds GCC C11/Werror into `/tmp`: 13 base and
-8 extended, 6 bundle, 6 binding-feature and 3 dispatch-usage host suites cover transactional failure/untouched outputs, first error,
+8 extended, 6 bundle, 6 binding-feature, 4 dispatch-usage, 7 render-usage and 1 query-admission host suites cover transactional failure/untouched outputs, first error,
 label cleanup, atomic references, stale/read-only maps, copies/aliases, dynamic
 snapshots, pass abandonment/unbinding, shader/query/external/render leases and
 unresolved submission lifetime. Host native tokens test finalization, not GPU work.
@@ -159,5 +181,7 @@ indirect-render and shared-preflight follow-up; it does not extend GPU evidence.
 real software bundle/render and transfer consumers, including backend and shader bytes.
 `DEVELOPER_RECEIPT_QUERIES.json` binds the subsequent raw-timestamp consumer and
 empty-bundle read-only correction; it does not claim nanosecond normalization.
-`DEVELOPER_RECEIPT_USAGE.json` binds subsequent host dispatch-scope admission. `DEVELOPER_RECEIPT.json` preserves the earlier smaller historical check.
+`DEVELOPER_RECEIPT_USAGE.json` binds historical dispatch-only scope admission.
+`DEVELOPER_RECEIPT_SCOPES.json` binds the subsequent shared arithmetic, empty-layout,
+whole-render-scope and query-descriptor checks. `DEVELOPER_RECEIPT.json` preserves the earlier smaller historical check.
 Run the common source-size check; every owned C source/header is below 999 lines.

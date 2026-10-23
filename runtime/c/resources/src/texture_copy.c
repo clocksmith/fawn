@@ -1,20 +1,7 @@
 /* SPDX-License-Identifier: MIT */
 #include "internal.h"
 #include <limits.h>
-
-static bool multiply(uint64_t a, uint64_t b, uint64_t *out)
-{
-    if (b && a > UINT64_MAX / b) return false;
-    *out = a * b;
-    return true;
-}
-
-static bool add(uint64_t a, uint64_t b, uint64_t *out)
-{
-    if (a > UINT64_MAX - b) return false;
-    *out = a + b;
-    return true;
-}
+#include "../../common/include/doe_copy_footprint.h"
 
 static uint64_t ceil_blocks(uint32_t value, uint32_t block)
 {
@@ -107,17 +94,9 @@ doe_resource_status doe_resource_texture_copy_validate(uint64_t buffer_size,
     uint64_t pitch = pitch_missing ? row_bytes : copy->bytes_per_row;
     uint64_t image_rows = image_missing ? rows : copy->rows_per_image;
     if (pitch < row_bytes || pitch % bytes || image_rows < rows) return DOE_RESOURCE_LAYOUT;
-    uint64_t required = 0;
-    if (copy->depth_or_layers) {
-        uint64_t image_stride;
-        if (!multiply(pitch, image_rows, &image_stride) ||
-            !multiply(image_stride, copy->depth_or_layers - 1, &required)) return DOE_RESOURCE_RANGE;
-        if (rows) {
-            uint64_t last_rows;
-            if (!multiply(pitch, rows - 1, &last_rows) || !add(required, last_rows, &required) ||
-                !add(required, row_bytes, &required)) return DOE_RESOURCE_RANGE;
-        }
-    }
+    uint64_t required;
+    if (!doe_copy_footprint(row_bytes, rows, image_rows, pitch, copy->depth_or_layers, &required))
+        return DOE_RESOURCE_RANGE;
     if (copy->offset > buffer_size || required > buffer_size - copy->offset) return DOE_RESOURCE_RANGE;
     uint64_t row_length = pitch / bytes * block_width;
     uint64_t image_height = image_rows * block_height;

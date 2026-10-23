@@ -181,6 +181,12 @@ doe_resource_status doe_resource_encoder_begin_render_with_timestamps(doe_resour
     doe_resource_encoder_retain(encoder);
     resource_init(&pass->base, &encoder->base.config, (doe_resource_native){0});
     encoder->active_pass = pass;
+    status = resource_scope_targets(&pass->base.config, &pass->scope, targets);
+    if (status != DOE_RESOURCE_OK) {
+        resource_encoder_fail(encoder, status);
+        doe_resource_render_pass_release(pass);
+        return status;
+    }
     if (timestamps) {
         pass->timestamps = *timestamps;
         doe_resource_query_set_retain(timestamps->set);
@@ -227,6 +233,7 @@ void doe_resource_render_pass_release(doe_resource_render_pass *pass)
     }
     doe_resource_query_set_release(pass->timestamps.set);
     resource_render_packet_release(&pass->state);
+    resource_scope_release(&pass->base.config, &pass->scope);
     resource_finalize(&pass->base, sizeof(*pass), _Alignof(doe_resource_render_pass));
     doe_resource_encoder_release(encoder);
 }
@@ -245,7 +252,7 @@ doe_resource_status doe_resource_render_pass_set_group(doe_resource_render_pass 
 {
     doe_resource_status status = resource_render_pass_active(pass);
     if (status != DOE_RESOURCE_OK) return status;
-    status = resource_render_set_group(pass->base.config.device.identity, &pass->state, index, group);
+    status = resource_render_set_group(&pass->base.config, &pass->scope, &pass->state, index, group);
     return resource_encoder_fail(pass->encoder, status);
 }
 
@@ -254,7 +261,7 @@ doe_resource_status doe_resource_render_pass_set_vertex(doe_resource_render_pass
 {
     doe_resource_status status = resource_render_pass_active(pass);
     if (status != DOE_RESOURCE_OK) return status;
-    status = resource_render_set_vertex(pass->base.config.device.identity, &pass->state, slot, buffer, offset, size);
+    status = resource_render_set_vertex(&pass->base.config, &pass->scope, &pass->state, slot, buffer, offset, size);
     return resource_encoder_fail(pass->encoder, status);
 }
 
@@ -263,7 +270,7 @@ doe_resource_status doe_resource_render_pass_set_index(doe_resource_render_pass 
 {
     doe_resource_status status = resource_render_pass_active(pass);
     if (status != DOE_RESOURCE_OK) return status;
-    status = resource_render_set_index(pass->base.config.device.identity, &pass->state, buffer, format, offset, size);
+    status = resource_render_set_index(&pass->base.config, &pass->scope, &pass->state, buffer, format, offset, size);
     return resource_encoder_fail(pass->encoder, status);
 }
 
@@ -312,6 +319,10 @@ static doe_resource_status append_packet(doe_resource_render_pass *pass,
 {
     doe_resource_status status = validate_packet(&packet, pass->base.config.device.identity);
     if (status != DOE_RESOURCE_OK) return resource_encoder_fail(pass->encoder, status);
+    if (packet.indirect) {
+        status = resource_scope_input(&pass->base.config, &pass->scope, packet.indirect);
+        if (status != DOE_RESOURCE_OK) return resource_encoder_fail(pass->encoder, status);
+    }
     doe_resource_render_record *record = resource_allocate(&pass->base.config,
         sizeof(*record), _Alignof(doe_resource_render_record));
     if (!record) return resource_encoder_fail(pass->encoder, DOE_RESOURCE_OUT_OF_MEMORY);
@@ -320,6 +331,7 @@ static doe_resource_status append_packet(doe_resource_render_pass *pass,
         resource_free(&pass->base.config, record, sizeof(*record), _Alignof(doe_resource_render_record));
         return status;
     }
+    record->scope = (resource_usage_scope){0};
     record->packet = packet;
     resource_render_packet_retain(&record->packet);
     resource_init(&record->base, &pass->base.config, (doe_resource_native){0});
@@ -443,6 +455,8 @@ doe_resource_status doe_resource_render_pass_end(doe_resource_render_pass *pass)
     }
     doe_resource_query_set_release(pass->timestamps.set);
     pass->timestamps.set = NULL;
+    pass->last_record->scope = pass->scope;
+    pass->scope = (resource_usage_scope){0};
     pass->ended = true;
     pass->encoder->active_pass = NULL;
     return DOE_RESOURCE_OK;
@@ -452,12 +466,15 @@ void resource_render_record_release(doe_resource_render_record *record)
 {
     if (!record || !resource_last_reference(&record->base)) return;
     resource_render_packet_release(&record->packet);
+    resource_scope_release(&record->base.config, &record->scope);
     resource_finalize(&record->base, sizeof(*record), _Alignof(doe_resource_render_record));
 }
 
 doe_resource_status resource_render_record_validate(const doe_resource_render_record *record)
 {
-    return record ? validate_packet(&record->packet, record->base.config.device.identity) : DOE_RESOURCE_INVALID_ARGUMENT;
+    if (!record) return DOE_RESOURCE_INVALID_ARGUMENT;
+    doe_resource_status status = resource_scope_validate(&record->scope);
+    return status == DOE_RESOURCE_OK ? validate_packet(&record->packet, record->base.config.device.identity) : status;
 }
 
 const doe_resource_render_packet *doe_resource_render_record_borrow(const doe_resource_render_record *record)

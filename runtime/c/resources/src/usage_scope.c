@@ -1,113 +1,116 @@
 /* SPDX-License-Identifier: MIT
- * A dispatch is one WebGPU usage scope. Buffer usage identity is the whole
- * object; writable-binding alias checks additionally use effective byte ranges.
- * Texture identity is object + overlapping mip/layer/aspect subresources. */
+ * Shared WebGPU usage semantics. Buffers are whole usage identities; writable
+ * binding aliases additionally compare effective byte ranges within one draw
+ * or dispatch. Render scopes merge usages across all their state setters. */
 #include "internal.h"
 
-typedef struct dispatch_use {
-    doe_resource_buffer *buffer;
-    doe_resource_view *view;
-    uint64_t offset, size;
-    bool writable;
-} dispatch_use;
+enum { MAX_SHADER_USES = DOE_RESOURCE_MAX_GROUPS * RESOURCE_GROUP_USES + 1 };
 
-enum { MAX_DISPATCH_USES = DOE_RESOURCE_MAX_GROUPS * DOE_RESOURCE_MAX_BINDINGS * 2 + 1 };
-
-static bool overlaps(uint64_t start_a, uint64_t size_a, uint64_t start_b, uint64_t size_b)
+static bool overlaps(uint64_t a, uint64_t count_a, uint64_t b, uint64_t count_b)
 {
-    /* Resolved ranges are admitted already; subtraction avoids unchecked sums. */
-    if (!size_a || !size_b) return false;
-    return start_a <= start_b ? start_b - start_a < size_a : start_a - start_b < size_b;
+    if (!count_a || !count_b) return false;
+    return a <= b ? b - a < count_a : a - b < count_b;
 }
 
-static bool views_overlap(const doe_resource_view *a, const doe_resource_view *b)
+unsigned resource_view_aspects(const doe_resource_view *view)
 {
-    if (a->texture != b->texture) return false;
-    if (a->desc.aspect != WGPUTextureAspect_All && b->desc.aspect != WGPUTextureAspect_All &&
-        a->desc.aspect != b->desc.aspect) return false;
-    return overlaps(a->desc.base_mip, a->desc.mip_count, b->desc.base_mip, b->desc.mip_count) &&
-        overlaps(a->desc.base_layer, a->desc.layer_count, b->desc.base_layer, b->desc.layer_count);
+    if (!resource_format_depth(view->desc.format)) return 1;
+    unsigned aspects = 0;
+    if (view->desc.aspect != WGPUTextureAspect_StencilOnly &&
+        resource_format_aspect(view->desc.format, WGPUTextureAspect_DepthOnly)) aspects |= 2;
+    if (view->desc.aspect != WGPUTextureAspect_DepthOnly &&
+        resource_format_aspect(view->desc.format, WGPUTextureAspect_StencilOnly)) aspects |= 4;
+    return aspects;
 }
 
-static doe_resource_status add_use(dispatch_use *uses, size_t *count, dispatch_use next)
+doe_resource_status resource_use_conflict(const resource_use *a, const resource_use *b, bool binding_aliases)
 {
-    if (*count == MAX_DISPATCH_USES) return DOE_RESOURCE_OVERFLOW;
-    for (size_t i = 0; i < *count; i++) {
-        const dispatch_use *previous = &uses[i];
-        if (!next.writable && !previous->writable) continue;
-        if (next.buffer) {
-            if (next.buffer != previous->buffer) continue;
-            /* Read + storage-write is incompatible for the WHOLE buffer,
-             * even if their binding ranges are disjoint. */
-            if (next.writable != previous->writable) return DOE_RESOURCE_USAGE;
-            /* Multiple storage-write usages are permitted, but a single
-             * dispatch cannot bind overlapping writable ranges. */
-            if (overlaps(next.offset, next.size, previous->offset, previous->size))
-                return DOE_RESOURCE_ALIAS;
-        } else if (previous->view && views_overlap(next.view, previous->view)) {
-            return next.writable == previous->writable ? DOE_RESOURCE_ALIAS : DOE_RESOURCE_USAGE;
-        }
+    if (a->usage == RESOURCE_READ && b->usage == RESOURCE_READ) return DOE_RESOURCE_OK;
+    if (a->buffer) {
+        if (a->buffer != b->buffer) return DOE_RESOURCE_OK;
+        if (a->usage != b->usage) return DOE_RESOURCE_USAGE;
+        if (binding_aliases && overlaps(a->offset, a->size, b->offset, b->size)) return DOE_RESOURCE_ALIAS;
+    } else if (b->view && a->view->texture == b->view->texture && (a->aspects & b->aspects) &&
+        overlaps(a->view->desc.base_mip, a->view->desc.mip_count, b->view->desc.base_mip, b->view->desc.mip_count) &&
+        overlaps(a->view->desc.base_layer, a->view->desc.layer_count, b->view->desc.base_layer, b->view->desc.layer_count)) {
+        if (a->usage != b->usage) return DOE_RESOURCE_USAGE;
+        if (binding_aliases) return DOE_RESOURCE_ALIAS;
     }
-    uses[(*count)++] = next;
     return DOE_RESOURCE_OK;
 }
 
-static doe_resource_status add_binding(dispatch_use *uses, size_t *count,
-    const doe_resource_layout_entry *entry, const doe_resource_binding *binding)
+doe_resource_status resource_group_uses(const doe_resource_dispatch_group *input,
+    resource_use uses[RESOURCE_GROUP_USES], size_t *count)
 {
-    dispatch_use use = {0};
-    switch (binding->kind) {
-    case DOE_BIND_BUFFER:
-        use.buffer = binding->resource.buffer.buffer;
-        use.offset = binding->resource.buffer.offset;
-        use.size = binding->resource.buffer.size;
-        use.writable = entry->buffer_type == WGPUBufferBindingType_Storage;
-        return add_use(uses, count, use);
-    case DOE_BIND_TEXTURE:
-    case DOE_BIND_STORAGE_TEXTURE:
-        use.view = binding->resource.view;
-        use.writable = binding->kind == DOE_BIND_STORAGE_TEXTURE &&
-            entry->storage_access != WGPUStorageTextureAccess_ReadOnly;
-        return add_use(uses, count, use);
-    case DOE_BIND_EXTERNAL_TEXTURE: {
-        const doe_resource_external_texture *external = binding->resource.external_texture;
-        for (size_t i = 0; i < external->plane_count; i++) {
-            use.view = external->planes[i];
-            doe_resource_status status = add_use(uses, count, use);
-            if (status != DOE_RESOURCE_OK) return status;
+    if (!input || !count) return DOE_RESOURCE_INVALID_ARGUMENT;
+    doe_resource_binding resolved[DOE_RESOURCE_MAX_BINDINGS];
+    doe_resource_status status = doe_resource_bind_group_resolve(input->group,
+        input->dynamic_offsets, input->dynamic_offset_count, resolved, DOE_RESOURCE_MAX_BINDINGS);
+    if (status != DOE_RESOURCE_OK) return status;
+    const doe_resource_bind_group *group = input->group;
+    size_t n = 0;
+    for (size_t i = 0; i < group->count; i++) {
+        const doe_resource_binding *binding = &resolved[i];
+        const doe_resource_layout_entry *entry = &group->layout->entries[i];
+        resource_use use = {0};
+        switch (binding->kind) {
+        case DOE_BIND_BUFFER:
+            use.buffer = binding->resource.buffer.buffer;
+            use.offset = binding->resource.buffer.offset;
+            use.size = binding->resource.buffer.size;
+            use.usage = entry->buffer_type == WGPUBufferBindingType_Storage ? RESOURCE_STORAGE : RESOURCE_READ;
+            break;
+        case DOE_BIND_TEXTURE:
+        case DOE_BIND_STORAGE_TEXTURE:
+            use.view = binding->resource.view;
+            use.aspects = resource_view_aspects(use.view);
+            use.usage = binding->kind == DOE_BIND_STORAGE_TEXTURE && entry->storage_access != WGPUStorageTextureAccess_ReadOnly ?
+                RESOURCE_STORAGE : RESOURCE_READ;
+            break;
+        case DOE_BIND_EXTERNAL_TEXTURE:
+            use.external = binding->resource.external_texture;
+            for (size_t plane = 0; plane < use.external->plane_count; plane++) {
+                use.view = use.external->planes[plane];
+                use.aspects = resource_view_aspects(use.view);
+                uses[n++] = use;
+            }
+            continue;
+        case DOE_BIND_SAMPLER:
+            continue;
+        default:
+            return DOE_RESOURCE_UNSUPPORTED;
         }
-        return DOE_RESOURCE_OK;
+        uses[n++] = use;
     }
-    case DOE_BIND_SAMPLER:
-        return DOE_RESOURCE_OK;
-    }
-    return DOE_RESOURCE_UNSUPPORTED;
+    *count = n;
+    return DOE_RESOURCE_OK;
 }
 
-doe_resource_status resource_dispatch_bindings_validate(const doe_resource_pipeline_layout *layout,
+doe_resource_status resource_shader_bindings_validate(const doe_resource_pipeline_layout *layout,
     const doe_resource_dispatch_group *groups, size_t group_count,
     doe_resource_buffer *indirect, bool *has_dynamic_offsets)
 {
     if (!layout || !has_dynamic_offsets || (group_count && !groups)) return DOE_RESOURCE_INVALID_ARGUMENT;
     if (group_count != layout->count || group_count > DOE_RESOURCE_MAX_GROUPS) return DOE_RESOURCE_LAYOUT;
-    dispatch_use uses[MAX_DISPATCH_USES];
-    size_t use_count = 0;
+    resource_use uses[MAX_SHADER_USES];
+    size_t count = 0;
     bool dynamic = false;
-    if (indirect) {
-        doe_resource_status status = add_use(uses, &use_count,
-            (dispatch_use){.buffer = indirect, .size = indirect->desc.size});
-        if (status != DOE_RESOURCE_OK) return status;
-    }
+    if (indirect) uses[count++] = (resource_use){.buffer = indirect, .size = indirect->desc.size};
     for (size_t i = 0; i < group_count; i++) {
-        const doe_resource_bind_group *group = groups[i].group;
-        if (!group || !doe_resource_layout_compatible(layout->groups[i], group->layout)) return DOE_RESOURCE_LAYOUT;
-        doe_resource_binding resolved[DOE_RESOURCE_MAX_BINDINGS];
-        doe_resource_status status = doe_resource_bind_group_resolve(group, groups[i].dynamic_offsets,
-            groups[i].dynamic_offset_count, resolved, DOE_RESOURCE_MAX_BINDINGS);
+        if (!doe_resource_pipeline_layout_group_required(layout, i)) continue;
+        if (!groups[i].group || !doe_resource_layout_compatible(layout->groups[i], groups[i].group->layout))
+            return DOE_RESOURCE_LAYOUT;
+        resource_use group_uses[RESOURCE_GROUP_USES];
+        size_t group_use_count;
+        doe_resource_status status = resource_group_uses(&groups[i], group_uses, &group_use_count);
         if (status != DOE_RESOURCE_OK) return status;
-        for (size_t j = 0; j < group->count; j++) {
-            status = add_binding(uses, &use_count, &group->layout->entries[j], &resolved[j]);
-            if (status != DOE_RESOURCE_OK) return status;
+        for (size_t j = 0; j < group_use_count; j++) {
+            for (size_t k = 0; k < count; k++) {
+                status = resource_use_conflict(&uses[k], &group_uses[j], true);
+                if (status != DOE_RESOURCE_OK) return status;
+            }
+            if (count == MAX_SHADER_USES) return DOE_RESOURCE_OVERFLOW;
+            uses[count++] = group_uses[j];
         }
         if (groups[i].dynamic_offset_count) dynamic = true;
     }

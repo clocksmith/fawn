@@ -6,14 +6,21 @@ bool resource_query_available(const doe_resource_query_set *set)
     return set && !set->destroyed && resource_alive(&set->base);
 }
 
+doe_resource_status doe_resource_query_set_validate(WGPUQueryType type, uint32_t count)
+{
+    if (type != WGPUQueryType_Timestamp && type != WGPUQueryType_Occlusion) return DOE_RESOURCE_UNSUPPORTED;
+    return count <= DOE_RESOURCE_MAX_QUERIES ? DOE_RESOURCE_OK : DOE_RESOURCE_RANGE;
+}
+
 doe_resource_status doe_resource_query_set_create(const doe_resource_config *config,
     WGPUQueryType type, uint32_t count, doe_resource_native native, doe_resource_query_set **out)
 {
-    if (!resource_config_valid(config) || !out || !native.handle || !native.release)
+    if (!resource_config_valid(config) || !out ||
+        ((native.handle == NULL) != (native.release == NULL)) || (count && !native.handle))
         return DOE_RESOURCE_INVALID_ARGUMENT;
     if (!config->device.alive(config->device.identity)) return DOE_RESOURCE_UNAVAILABLE;
-    if (type != WGPUQueryType_Timestamp && type != WGPUQueryType_Occlusion) return DOE_RESOURCE_UNSUPPORTED;
-    if (!count) return DOE_RESOURCE_RANGE;
+    doe_resource_status status = doe_resource_query_set_validate(type, count);
+    if (status != DOE_RESOURCE_OK) return status;
     doe_resource_query_set *set = resource_allocate(config, sizeof(*set), _Alignof(doe_resource_query_set));
     if (!set) return DOE_RESOURCE_OUT_OF_MEMORY;
     set->type = type;
@@ -117,7 +124,7 @@ doe_resource_status doe_resource_encoder_resolve_queries(doe_resource_encoder *e
         return resource_encoder_fail(encoder, DOE_RESOURCE_DEVICE_MISMATCH);
     if (!(destination->desc.usage & WGPUBufferUsage_QueryResolve))
         return resource_encoder_fail(encoder, DOE_RESOURCE_USAGE);
-    if (first > set->count || count > set->count - first)
+    if (first >= set->count || count > set->count - first)
         return resource_encoder_fail(encoder, DOE_RESOURCE_RANGE);
     if (offset % 256) return resource_encoder_fail(encoder, DOE_RESOURCE_ALIGNMENT);
     uint64_t bytes;
