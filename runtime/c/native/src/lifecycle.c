@@ -75,7 +75,8 @@ WGPUFuture wgpuInstanceRequestAdapter(WGPUInstance handle,
     bool valid = !options || (!options->nextInChain && !options->compatibleSurface &&
         (!options->backendType || options->backendType == WGPUBackendType_Vulkan));
     if (valid) {
-        doe_vk_options native_options = {.allow_cpu_adapter = options && options->forceFallbackAdapter};
+        doe_vk_options native_options = {.allow_cpu_adapter = options && options->forceFallbackAdapter,
+            .require_graphics_queue = true};
         doe_vk_context *context = NULL;
         doe_vk_error error = {0};
         doe_vk_status status = doe_vk_context_create(&native_options, &context, &error);

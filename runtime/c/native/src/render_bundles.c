@@ -1,0 +1,125 @@
+/* SPDX-License-Identifier: MIT */
+#include "internal.h"
+
+WGPURenderBundleEncoder wgpuDeviceCreateRenderBundleEncoder(WGPUDevice handle,
+    const WGPURenderBundleEncoderDescriptor *descriptor)
+{
+    native_device *device = (native_device *)handle;
+    if (!device) return NULL;
+    bool valid = descriptor && !descriptor->nextInChain && descriptor->colorFormatCount == 1 &&
+        descriptor->colorFormats && descriptor->depthStencilFormat == WGPUTextureFormat_Undefined && descriptor->sampleCount == 1;
+    doe_resource_render_bundle_desc converted = {0};
+    if (valid) converted = (doe_resource_render_bundle_desc){.color_format=descriptor->colorFormats[0],
+        .samples=descriptor->sampleCount,.depth_read_only=descriptor->depthReadOnly,.stencil_read_only=descriptor->stencilReadOnly};
+    doe_resource_bundle_encoder *encoder = NULL;
+    native_lock(device);
+    doe_resource_status status = valid ? doe_resource_bundle_encoder_create(&device->resources,&converted,&encoder) :
+        DOE_RESOURCE_UNSUPPORTED;
+    native_unlock(device);
+    if (status != DOE_RESOURCE_OK) native_error(device, native_resource_error(status), "render bundle descriptor unsupported or invalid");
+    if (encoder) native_label(device, encoder, descriptor->label);
+    return (WGPURenderBundleEncoder)encoder;
+}
+void wgpuRenderBundleEncoderAddRef(WGPURenderBundleEncoder encoder) { doe_resource_bundle_encoder_retain((doe_resource_bundle_encoder *)encoder); }
+void wgpuRenderBundleEncoderRelease(WGPURenderBundleEncoder handle)
+{
+    doe_resource_bundle_encoder *encoder = (doe_resource_bundle_encoder *)handle;
+    native_device *device = doe_resource_bundle_encoder_device(encoder);
+    if (!device) return;
+    native_device_retain(device);
+    native_lock(device);
+    doe_resource_bundle_encoder_release(encoder);
+    native_unlock(device);
+    native_device_release(device);
+}
+void wgpuRenderBundleEncoderSetLabel(WGPURenderBundleEncoder encoder, WGPUStringView label)
+{
+    native_label(doe_resource_bundle_encoder_device((doe_resource_bundle_encoder *)encoder), encoder, label);
+}
+void wgpuRenderBundleEncoderSetPipeline(WGPURenderBundleEncoder handle, WGPURenderPipeline pipeline)
+{
+    doe_resource_bundle_encoder *encoder = (doe_resource_bundle_encoder *)handle;
+    native_device *device = doe_resource_bundle_encoder_device(encoder);
+    if (!device) return;
+    native_lock(device);
+    doe_resource_status status = doe_resource_bundle_encoder_set_pipeline(encoder,(doe_resource_render_pipeline *)pipeline);
+    native_unlock(device);
+    if (status != DOE_RESOURCE_OK) native_error(device, native_resource_error(status), "bundle pipeline binding failed");
+}
+void wgpuRenderBundleEncoderSetBindGroup(WGPURenderBundleEncoder handle, uint32_t index,
+    WGPUBindGroup group, size_t count, const uint32_t *offsets)
+{
+    doe_resource_bundle_encoder *encoder = (doe_resource_bundle_encoder *)handle;
+    native_device *device = doe_resource_bundle_encoder_device(encoder);
+    if (!device) return;
+    doe_resource_dispatch_group binding = {(doe_resource_bind_group *)group,offsets,count};
+    native_lock(device);
+    doe_resource_status status = doe_resource_bundle_encoder_set_group(encoder,index,&binding);
+    native_unlock(device);
+    if (status != DOE_RESOURCE_OK) native_error(device, native_resource_error(status), "bundle group binding failed");
+}
+void wgpuRenderBundleEncoderSetVertexBuffer(WGPURenderBundleEncoder handle, uint32_t slot,
+    WGPUBuffer buffer, uint64_t offset, uint64_t size)
+{
+    doe_resource_bundle_encoder *encoder = (doe_resource_bundle_encoder *)handle;
+    native_device *device = doe_resource_bundle_encoder_device(encoder);
+    if (!device) return;
+    native_lock(device);
+    doe_resource_status status = doe_resource_bundle_encoder_set_vertex(encoder,slot,(doe_resource_buffer *)buffer,offset,size);
+    native_unlock(device);
+    if (status != DOE_RESOURCE_OK) native_error(device, native_resource_error(status), "bundle vertex binding failed");
+}
+void wgpuRenderBundleEncoderDraw(WGPURenderBundleEncoder handle, uint32_t count,
+    uint32_t instances, uint32_t first, uint32_t first_instance)
+{
+    doe_resource_bundle_encoder *encoder = (doe_resource_bundle_encoder *)handle;
+    native_device *device = doe_resource_bundle_encoder_device(encoder);
+    if (!device) return;
+    native_lock(device);
+    doe_resource_status status = doe_resource_bundle_encoder_draw(encoder,false,count,instances,first,0,first_instance);
+    native_unlock(device);
+    if (status != DOE_RESOURCE_OK) native_error(device, native_resource_error(status), "bundle draw failed");
+}
+WGPURenderBundle wgpuRenderBundleEncoderFinish(WGPURenderBundleEncoder handle, const WGPURenderBundleDescriptor *descriptor)
+{
+    doe_resource_bundle_encoder *encoder = (doe_resource_bundle_encoder *)handle;
+    native_device *device = doe_resource_bundle_encoder_device(encoder);
+    if (!device) return NULL;
+    doe_resource_render_bundle *bundle = NULL;
+    native_lock(device);
+    doe_resource_status status = descriptor && descriptor->nextInChain ?
+        doe_resource_bundle_encoder_invalidate(encoder,DOE_RESOURCE_UNSUPPORTED) :
+        doe_resource_bundle_encoder_finish(encoder,&bundle);
+    native_unlock(device);
+    if (status != DOE_RESOURCE_OK) native_error(device, native_resource_error(status), "bundle finish failed");
+    if (bundle && descriptor) native_label(device, bundle, descriptor->label);
+    return (WGPURenderBundle)bundle;
+}
+void wgpuRenderBundleAddRef(WGPURenderBundle bundle) { doe_resource_render_bundle_retain((doe_resource_render_bundle *)bundle); }
+void wgpuRenderBundleRelease(WGPURenderBundle bundle) { doe_resource_render_bundle_release((doe_resource_render_bundle *)bundle); }
+void wgpuRenderBundleSetLabel(WGPURenderBundle bundle, WGPUStringView label)
+{
+    native_label(doe_resource_render_bundle_device((doe_resource_render_bundle *)bundle), bundle, label);
+}
+void wgpuRenderPassEncoderExecuteBundles(WGPURenderPassEncoder handle, size_t count, const WGPURenderBundle *bundles)
+{
+    doe_resource_render_pass *pass = (doe_resource_render_pass *)handle;
+    native_device *device = doe_resource_render_pass_device(pass);
+    if (!device) return;
+    /* Opaque public handles alias the exact resource object type. Copy typed
+     * pointers instead of type-punning pointer arrays across the public ABI. */
+    doe_resource_render_bundle **converted = NULL;
+    doe_resource_status status = DOE_RESOURCE_OK;
+    if (count && (!bundles || count > SIZE_MAX / sizeof(*converted))) status = DOE_RESOURCE_INVALID_ARGUMENT;
+    if (status == DOE_RESOURCE_OK && count) {
+        converted = native_allocate(NULL,NULL,count*sizeof(*converted),_Alignof(doe_resource_render_bundle *));
+        if (!converted) status = DOE_RESOURCE_OUT_OF_MEMORY;
+        else for (size_t i = 0; i < count; ++i) converted[i] = (doe_resource_render_bundle *)bundles[i];
+    }
+    native_lock(device);
+    if (status == DOE_RESOURCE_OK) status = doe_resource_render_pass_execute_bundles(pass,converted,count);
+    else status = doe_resource_render_pass_invalidate(pass,status);
+    native_unlock(device);
+    if (converted) native_deallocate(NULL,NULL,converted,count*sizeof(*converted),_Alignof(doe_resource_render_bundle *));
+    if (status != DOE_RESOURCE_OK) native_error(device, native_resource_error(status), "bundle execution recording failed");
+}

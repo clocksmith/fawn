@@ -13,7 +13,7 @@ int main()
     auto release = reinterpret_cast<WGPUProcInstanceRelease>(wgpuGetProcAddress({"wgpuInstanceRelease", WGPU_STRLEN}));
     assert(wait && release);
     assert(wait(instance, 0, nullptr, 0) == WGPUWaitStatus_Success);
-    assert(!wgpuGetProcAddress({"wgpuDeviceCreateRenderPipeline", WGPU_STRLEN}));
+    assert(!wgpuGetProcAddress({"wgpuDeviceCreateRenderPipeline-extra", WGPU_STRLEN}));
     assert(!wgpuGetProcAddress({"wgpuCreateInstance-extra", WGPU_STRLEN}));
     auto lost = reinterpret_cast<WGPUProcDeviceGetLostFuture>(wgpuGetProcAddress({"wgpuDeviceGetLostFuture", WGPU_STRLEN}));
     auto compilation = reinterpret_cast<WGPUProcShaderModuleGetCompilationInfo>(wgpuGetProcAddress({"wgpuShaderModuleGetCompilationInfo", WGPU_STRLEN}));
@@ -28,6 +28,13 @@ int main()
     auto query_release = reinterpret_cast<WGPUProcQuerySetRelease>(wgpuGetProcAddress({"wgpuQuerySetRelease", WGPU_STRLEN}));
     assert(query_count && query_release && query_count(nullptr) == 0);
     query_release(nullptr);
+    auto render = reinterpret_cast<WGPUProcDeviceCreateRenderPipeline>(wgpuGetProcAddress({"wgpuDeviceCreateRenderPipeline", WGPU_STRLEN}));
+    auto async_render = reinterpret_cast<WGPUProcDeviceCreateRenderPipelineAsync>(wgpuGetProcAddress({"wgpuDeviceCreateRenderPipelineAsync", WGPU_STRLEN}));
+    auto begin = reinterpret_cast<WGPUProcCommandEncoderBeginRenderPass>(wgpuGetProcAddress({"wgpuCommandEncoderBeginRenderPass", WGPU_STRLEN}));
+    auto bundle = reinterpret_cast<WGPUProcRenderBundleEncoderFinish>(wgpuGetProcAddress({"wgpuRenderBundleEncoderFinish", WGPU_STRLEN}));
+    assert(render && async_render && begin && bundle);
+    assert(!render(nullptr, nullptr) && !async_render(nullptr, nullptr, {}).id);
+    assert(!begin(nullptr, nullptr) && !bundle(nullptr, nullptr));
     release(instance);
     std::puts("PASS C++ pinned typed procedure calls and unsupported-name rejection");
 }

@@ -3,7 +3,7 @@
 Parent: [C migration](../CATSCAN.md)
 
 ## Target
-Expose genuine pinned WebGPU C compute entrypoints over the C owners.
+Expose genuine pinned WebGPU C entrypoints over the C owners.
 
 ## Authority
 Own typed public ABI conversion, adapter/device leases and integration orchestration.
@@ -14,8 +14,10 @@ their existing C owners. This is not the production/default runtime.
 Instance, adapter, device, buffer, compute shader/pipeline, buffer bindings, command
 recording, native Vulkan submission and readback; device-loss futures, labels,
 compilation diagnostics and compute-pipeline callbacks; initialized color textures,
-views/samplers, buffer/image copies and ABI7 image compute bindings; requested
-timestamp queries with genuine in-command GPU nanosecond normalization. Unsupported
+views/samplers, buffer/image copies and ABI8 image compute bindings; requested
+timestamp queries with genuine in-command GPU nanosecond normalization; reflected
+vertex/fragment pipelines, single-color passes, direct draws, render bundles and
+ordered occlusion queries. Unsupported
 entrypoints are absent
 or return their API-specific failure. No replacement-completeness claim is implied.
 
@@ -29,9 +31,10 @@ ownership. Native objects never migrate devices. Callback reentry is outside loc
 Shader reflection is not a substitute for missing production dispatch analysis.
 
 ## Acceptance
-Focused developer build and software-only compute checks are separate from later
+Focused developer build and software-only compute/image/graphics checks are separate from later
 independent integrated qualification and blocked physical GPU runs.
-- Evidence: [developer timestamp/recovery checks](DEVELOPER_RECEIPT_TIMESTAMPS.json)
+- Evidence: [developer graphics checks](DEVELOPER_RECEIPT_GRAPHICS.json),
+  [developer timestamp/recovery checks](DEVELOPER_RECEIPT_TIMESTAMPS.json)
   and preceding [admission checks](DEVELOPER_RECEIPT_ADMISSION.json).
 
 ## Non-goals

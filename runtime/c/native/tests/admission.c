@@ -102,6 +102,25 @@ static void nullable_layouts(state *s)
     wgpuComputePipelineRelease(compute);
     wgpuShaderModuleRelease(shader);
     wgpuPipelineLayoutRelease(layout);
+    WGPUComputePipeline sparse = pipeline(s,
+        "@group(2) @binding(0) var<storage,read_write> data:array<u32>;"
+        "@compute @workgroup_size(1) fn main(){data[0]=1u;}");
+    WGPUBindGroupLayout automatic_hole = wgpuComputePipelineGetBindGroupLayout(sparse,0);
+    assert(automatic_hole);
+    slots[0] = automatic_hole;
+    layout = wgpuDeviceCreatePipelineLayout(s->device,&description);
+    shader = wgpuDeviceCreateShaderModule(s->device,&shader_desc);
+    pipeline_desc.layout = layout;
+    pipeline_desc.compute.module = shader;
+    for (unsigned i = 0; i < 2; ++i) {
+        compute = wgpuDeviceCreateComputePipeline(s->device,&pipeline_desc);
+        assert(compute); /* Automatic empty identity must not claim exclusivity. */
+        wgpuComputePipelineRelease(compute);
+    }
+    wgpuShaderModuleRelease(shader);
+    wgpuPipelineLayoutRelease(layout);
+    wgpuBindGroupLayoutRelease(automatic_hole);
+    wgpuComputePipelineRelease(sparse);
 }
 
 static void dynamic_aliases(state *s)

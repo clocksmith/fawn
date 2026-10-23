@@ -22,6 +22,14 @@ doe_vk_status __wrap_doe_vk_pipeline_create(doe_vk_context *context, const uint3
     if (injected_pipeline_status != DOE_VK_OK) return injected_pipeline_status;
     return __real_doe_vk_pipeline_create(context,words,count,entry,bindings,binding_count,out,error);
 }
+doe_vk_status __real_doe_vk_render_pipeline_create(doe_vk_context *,
+    const doe_vk_render_pipeline_desc *, doe_vk_pipeline **, doe_vk_error *);
+doe_vk_status __wrap_doe_vk_render_pipeline_create(doe_vk_context *context,
+    const doe_vk_render_pipeline_desc *descriptor, doe_vk_pipeline **out, doe_vk_error *error)
+{
+    if (injected_pipeline_status != DOE_VK_OK) return injected_pipeline_status;
+    return __real_doe_vk_render_pipeline_create(context,descriptor,out,error);
+}
 static bool fail_normalizer;
 doe_vk_status __real_doe_vk_timestamp_normalizer_create(doe_vk_context *,
     const doe_vk_timestamp_normalizer_desc *, doe_vk_timestamp_normalizer **, doe_vk_error *);
@@ -57,6 +65,49 @@ static void pop_type(state *s, WGPUErrorType expected)
     WGPUPopErrorScopeCallbackInfo callback = {.mode=WGPUCallbackMode_AllowSpontaneous,
         .callback=expect_type,.userdata1=&expected};
     assert(wgpuDevicePopErrorScope(s->device,callback).id && expected == WGPUErrorType_NoError);
+}
+static void render_failures(state *s)
+{
+    WGPUShaderSourceWGSL source = WGPU_SHADER_SOURCE_WGSL_INIT;
+    source.code = (WGPUStringView){
+        "@vertex fn v()->@builtin(position) vec4f{return vec4f(0.0,0.0,0.0,1.0);}"
+        "@fragment fn f()->@location(0) vec4f{return vec4f(1.0);}",WGPU_STRLEN};
+    WGPUShaderModuleDescriptor shader_desc = {.nextInChain=&source.chain};
+    WGPUShaderModule shader = wgpuDeviceCreateShaderModule(s->device,&shader_desc);
+    assert(shader);
+    WGPUColorTargetState color = {.format=WGPUTextureFormat_RGBA8Unorm,.writeMask=WGPUColorWriteMask_All};
+    WGPUFragmentState fragment = {.module=shader,.targetCount=1,.targets=&color};
+    WGPURenderPipelineDescriptor descriptor = WGPU_RENDER_PIPELINE_DESCRIPTOR_INIT;
+    descriptor.vertex.module = shader;
+    descriptor.fragment = &fragment;
+    native_device *device = (native_device *)s->device;
+    const doe_vk_status failures[] = {DOE_VK_OUT_OF_MEMORY,DOE_VK_NATIVE_FAILURE,DOE_VK_INVALID_ARGUMENT};
+    const WGPUErrorType types[] = {WGPUErrorType_OutOfMemory,WGPUErrorType_Internal,WGPUErrorType_Validation};
+    const WGPUErrorFilter filters[] = {WGPUErrorFilter_OutOfMemory,WGPUErrorFilter_Internal,WGPUErrorFilter_Validation};
+    for (size_t i = 0; i < 3; ++i) {
+        unsigned references = atomic_load(&device->references);
+        injected_pipeline_status = failures[i];
+        wgpuDevicePushErrorScope(s->device,filters[i]);
+        assert(!wgpuDeviceCreateRenderPipeline(s->device,&descriptor));
+        pop_type(s,types[i]);
+        assert(atomic_load(&device->references) == references);
+        injected_pipeline_status = DOE_VK_OK;
+    }
+    doe_instance_allocator saved = device->resources.allocator;
+    device->resources.allocator.allocate = fail_allocate;
+    for (unsigned prefix = 0; prefix < 2; ++prefix) {
+        allocations_before_failure = prefix;
+        unsigned references = atomic_load(&device->references);
+        wgpuDevicePushErrorScope(s->device,WGPUErrorFilter_OutOfMemory);
+        assert(!wgpuDeviceCreateRenderPipeline(s->device,&descriptor));
+        pop_type(s,WGPUErrorType_OutOfMemory);
+        assert(atomic_load(&device->references) == references);
+    }
+    device->resources.allocator = saved;
+    WGPURenderPipeline pipeline = wgpuDeviceCreateRenderPipeline(s->device,&descriptor);
+    assert(pipeline);
+    wgpuRenderPipelineRelease(pipeline);
+    wgpuShaderModuleRelease(shader);
 }
 int main(void)
 {
@@ -157,8 +208,9 @@ int main(void)
     wgpuComputePipelineRelease(compute);
     device->resources.allocator = saved;
     wgpuShaderModuleRelease(shader);
+    render_failures(&s);
     wgpuDeviceRelease(s.device);
     wgpuAdapterRelease(s.adapter);
     wgpuInstanceRelease(s.instance);
-    puts("PASS public error types: resource allocation, automatic-layout allocation, backend OOM/native/validation failures, failed requested-feature device and successful recovery");
+    puts("PASS public error types: resource allocation, automatic-layout allocation, compute/render backend OOM/native/validation failures, failed requested-feature device and successful recovery");
 }

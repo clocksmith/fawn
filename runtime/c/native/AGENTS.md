@@ -1,4 +1,4 @@
-# Public C native compute frontend
+# Public C native frontend
 
 This owner converts the pinned public WebGPU ABI and orchestrates existing owners.
 Do not create a second resource reference count, command store, callback queue,
@@ -24,3 +24,9 @@ calibration and in-command GPU nanosecond conversion; compile its generated WGSL
 before publishing an enabled feature. Never replace this with CPU postprocessing
 or raw tick success. Distinguish terminal failure from unknown completion while
 preserving typed error status and all pending leases.
+
+Graphics consumes compiler-owned stage/resource/interface reflection and canonical
+resource-owned pass/bundle snapshots. Preserve the whole pass when lowering to the
+backend, including empty LOAD/CLEAR and ordered occlusion events. Empty vertex
+slots differ from explicit Vertex/Instance slots without attributes. Do not invent
+buffers or drop historical usage; use the resource owner's required-slot rules.

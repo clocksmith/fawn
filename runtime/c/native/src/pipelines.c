@@ -13,19 +13,6 @@ void native_pipeline_release(void *userdata, void *handle)
     free(payload);
 }
 
-static const DoeCompilerEntryV5 *select_entry(const doe_shader_view *view, WGPUStringView name)
-{
-    size_t size;
-    if (!native_string_size(name, &size)) return NULL;
-    if (!name.data) return view->counts.entries == 1 ? &view->entries[0] : NULL;
-    if (!size || size > 63 || memchr(name.data, 0, size)) return NULL;
-    for (size_t i = 0; i < view->counts.entries; ++i) {
-        const DoeCompilerEntryV5 *entry = &view->entries[i];
-        if (entry->name.length == size && !memcmp(view->names + entry->name.offset, name.data, size)) return entry;
-    }
-    return NULL;
-}
-
 /* Target capability admission, not source parsing or shader validation. The
  * compiler owns valid words; this backend enables baseline Shader/Matrix, 1D images and ImageQuery. */
 bool native_shader_capabilities(const doe_shader_view *view)
@@ -62,19 +49,14 @@ WGPUComputePipeline native_create_compute_pipeline(native_device *device,
         pipeline_failure(error, WGPUErrorType_Validation, "compute descriptor unsupported or shader device mismatch");
         return NULL;
     }
-    native_shader *shader_payload = doe_resource_shader_native((doe_resource_shader *)descriptor->compute.module);
-    doe_shader *shader = shader_payload->compiled;
-    if (!shader) {
-        pipeline_failure(error, WGPUErrorType_Validation, "shader module contains a compilation error");
+    native_stage stage;
+    if (!native_stage_load(device, descriptor->compute.module, descriptor->compute.entryPoint,
+            DOE_COMPILER_STAGE_COMPUTE, &stage)) {
+        pipeline_failure(error, WGPUErrorType_Validation, "compute shader entry/capability admission failed");
         return NULL;
     }
-    doe_shader_view view;
-    if (doe_shader_borrow(shader, &view) != DOE_SHADER_OK) return NULL;
-    if (!native_shader_capabilities(&view)) {
-        pipeline_failure(error, WGPUErrorType_Validation, "shader requires capabilities not enabled by the C Vulkan device");
-        return NULL;
-    }
-    const DoeCompilerEntryV5 *entry = select_entry(&view, descriptor->compute.entryPoint);
+    const doe_shader_view *view = &stage.view;
+    const DoeCompilerEntryV5 *entry = stage.entry;
     /* The C compiler emits guarded storage accesses, including OpArrayLength
      * for runtime tails (compiler/src/spirv.c access_condition). This baseline
      * Vulkan context also requires robustBufferAccess. No TranslationInfo
@@ -100,18 +82,18 @@ WGPUComputePipeline native_create_compute_pipeline(native_device *device,
     doe_resource_pipeline_layout *layout = (doe_resource_pipeline_layout *)descriptor->layout;
     bool automatic = !layout;
     doe_resource_status resource_status = automatic ?
-        native_automatic_layout(device, &view, entry, &layout) : DOE_RESOURCE_OK;
+        native_automatic_layout(device, &stage, 1, &layout) : DOE_RESOURCE_OK;
     doe_resource_pipeline *pipeline = NULL;
     doe_vk_status backend_status = native_device_status(device);
     if (resource_status == DOE_RESOURCE_OK && (!layout || doe_resource_pipeline_layout_device(layout) != device ||
-        !native_device_alive(device) || !native_pipeline_bindings(payload, &view, entry, layout)))
+        !native_device_alive(device) || !native_pipeline_bindings(payload, &stage, 1, layout)))
         resource_status = DOE_RESOURCE_LAYOUT;
     if (resource_status == DOE_RESOURCE_OK && backend_status == DOE_VK_OK) {
         char name[64];
-        memcpy(name, view.names + entry->name.offset, entry->name.length);
+        memcpy(name, view->names + entry->name.offset, entry->name.length);
         name[entry->name.length] = 0;
         doe_vk_error error = {0};
-        backend_status = doe_vk_pipeline_create(device->context, view.words, view.counts.words,
+        backend_status = doe_vk_pipeline_create(device->context, view->words, view->counts.words,
             name, payload->bindings, payload->binding_count, &payload->pipeline, &error);
         if (backend_status == DOE_VK_OK)
             resource_status = doe_resource_pipeline_create(&device->resources, layout,

@@ -18,7 +18,7 @@ WGPUBindGroupLayout wgpuDeviceCreateBindGroupLayout(WGPUDevice handle,
             (entry->storageTexture.access != WGPUStorageTextureAccess_BindingNotUsed);
         if (entry->nextInChain || entry->bindingArraySize || entry->buffer.nextInChain ||
             entry->sampler.nextInChain || entry->texture.nextInChain || entry->storageTexture.nextInChain ||
-            kinds != 1 || entry->visibility & ~WGPUShaderStage_Compute) {
+            kinds != 1 || entry->visibility & ~(WGPUShaderStage_Compute | WGPUShaderStage_Vertex | WGPUShaderStage_Fragment)) {
             valid = false;
             break;
         }

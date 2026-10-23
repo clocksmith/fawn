@@ -285,7 +285,7 @@ int main(void)
     wgpuBindGroupLayoutRelease(layout);
 
     assert(wgpuGetProcAddress((WGPUStringView){"wgpuQueueSubmit", WGPU_STRLEN}));
-    assert(!wgpuGetProcAddress((WGPUStringView){"wgpuDeviceCreateRenderPipeline", WGPU_STRLEN}));
+    assert(!wgpuGetProcAddress((WGPUStringView){"wgpuRenderPassEncoderDrawIndexed", WGPU_STRLEN}));
     assert(!wgpuGetProcAddress((WGPUStringView){"doe_vk_context_create", WGPU_STRLEN}));
     wgpuBufferRelease(readback);
     wgpuQueueRelease(queue);
