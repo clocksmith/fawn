@@ -4,6 +4,7 @@
 
 struct native_pending {
     native_pending *next;
+    native_device *device;
     doe_vk_commands *native;
     doe_resource_commands **resources;
     size_t count;
@@ -22,20 +23,34 @@ static doe_vk_status record_dispatch(doe_vk_commands *commands, const doe_resour
                 offsets ? offsets->counts[i] : 0, resolved[i], DOE_RESOURCE_MAX_BINDINGS) != DOE_RESOURCE_OK)
             return DOE_VK_INVALID_ARGUMENT;
     }
-    doe_vk_buffer_binding bindings[DOE_RESOURCE_MAX_GROUPS * DOE_RESOURCE_MAX_BINDINGS];
+    doe_vk_binding_resource bindings[DOE_RESOURCE_MAX_GROUPS * DOE_RESOURCE_MAX_BINDINGS];
     for (size_t i = 0; i < pipeline->binding_count; ++i) {
         doe_vk_binding_layout layout = pipeline->bindings[i];
         if (layout.group >= record->value.dispatch.group_count) return DOE_VK_INVALID_ARGUMENT;
         const doe_resource_binding *binding = NULL;
         for (size_t j = 0; j < counts[layout.group]; ++j)
             if (resolved[layout.group][j].binding == layout.binding) binding = &resolved[layout.group][j];
-        if (!binding || binding->kind != DOE_BIND_BUFFER ||
-            binding->resource.buffer.size < pipeline->minimum_sizes[i]) return DOE_VK_INVALID_ARGUMENT;
-        native_buffer *buffer = doe_resource_buffer_native(binding->resource.buffer.buffer);
-        bindings[i] = (doe_vk_buffer_binding){buffer->buffer, binding->resource.buffer.offset,
-            binding->resource.buffer.size};
+        if (!binding) return DOE_VK_INVALID_ARGUMENT;
+        bindings[i].kind = layout.kind;
+        if (layout.kind == DOE_VK_BINDING_UNIFORM || layout.kind == DOE_VK_BINDING_STORAGE) {
+            if (binding->kind != DOE_BIND_BUFFER || binding->resource.buffer.size < pipeline->minimum_sizes[i])
+                return DOE_VK_INVALID_ARGUMENT;
+            native_buffer *buffer = doe_resource_buffer_native(binding->resource.buffer.buffer);
+            bindings[i].value.buffer = (doe_vk_buffer_binding){buffer->buffer,
+                binding->resource.buffer.offset, binding->resource.buffer.size};
+        } else if (layout.kind == DOE_VK_BINDING_SAMPLER) {
+            if (binding->kind != DOE_BIND_SAMPLER) return DOE_VK_INVALID_ARGUMENT;
+            native_sampler *sampler = doe_resource_sampler_native(binding->resource.sampler);
+            bindings[i].value.sampler = sampler->sampler;
+        } else {
+            doe_resource_binding_kind expected = layout.kind == DOE_VK_BINDING_SAMPLED_TEXTURE ?
+                DOE_BIND_TEXTURE : DOE_BIND_STORAGE_TEXTURE;
+            if (binding->kind != expected) return DOE_VK_INVALID_ARGUMENT;
+            native_view *view = doe_resource_view_native(binding->resource.view);
+            bindings[i].value.view = view->view;
+        }
     }
-    return doe_vk_commands_dispatch(commands, pipeline->pipeline, bindings, pipeline->binding_count,
+    return doe_vk_commands_dispatch_resources(commands, pipeline->pipeline, bindings, pipeline->binding_count,
         record->value.dispatch.x, record->value.dispatch.y, record->value.dispatch.z);
 }
 
@@ -62,6 +77,35 @@ static doe_vk_status record_commands(doe_vk_commands *native, doe_resource_comma
                 record->value.clear.size, 0);
             break;
         }
+        case DOE_COMMAND_BUFFER_TEXTURE: {
+            const doe_resource_texture_copy *copy = &record->value.texture.copy;
+            if (!copy->width || !copy->height || !copy->depth_or_layers) continue;
+            native_buffer *buffer = doe_resource_buffer_native(record->value.texture.buffer);
+            native_texture *texture = doe_resource_texture_native(record->value.texture.texture);
+            doe_vk_texture_buffer_layout layout = {copy->offset, record->value.texture.region.pitch,
+                record->value.texture.region.image_rows};
+            doe_vk_texture_region region = {.mip=copy->mip,
+                .origin={copy->origin[0], copy->origin[1], copy->origin[2]},
+                .extent={copy->width, copy->height, copy->depth_or_layers}};
+            status = record->value.texture.direction == DOE_RESOURCE_BUFFER_TO_TEXTURE ?
+                doe_vk_commands_upload_texture(native, buffer->buffer, layout, texture->texture, region) :
+                doe_vk_commands_read_texture(native, texture->texture, region, buffer->buffer, layout);
+            break;
+        }
+        case DOE_COMMAND_COPY_TEXTURE: {
+            const doe_resource_texture_blit *copy = &record->value.blit;
+            if (!copy->width || !copy->height || !copy->depth_or_layers) continue;
+            native_texture *source = doe_resource_texture_native(copy->source.texture);
+            native_texture *destination = doe_resource_texture_native(copy->destination.texture);
+            doe_vk_texture_region from = {.mip=copy->source.mip,
+                .origin={copy->source.origin[0],copy->source.origin[1],copy->source.origin[2]},
+                .extent={copy->width,copy->height,copy->depth_or_layers}};
+            doe_vk_texture_region to = {.mip=copy->destination.mip,
+                .origin={copy->destination.origin[0],copy->destination.origin[1],copy->destination.origin[2]},
+                .extent={copy->width,copy->height,copy->depth_or_layers}};
+            status = doe_vk_commands_copy_texture(native, source->texture, from, destination->texture, to);
+            break;
+        }
         case DOE_COMMAND_DISPATCH:
             status = record_dispatch(native, record);
             break;
@@ -81,7 +125,9 @@ static void settle_resources(native_pending *pending, bool success)
         if (status != DOE_RESOURCE_OK && status != DOE_RESOURCE_EXECUTION_FAILED) abort();
     }
     free(pending->resources);
+    native_device *device = pending->device;
     free(pending);
+    native_device_release(device);
 }
 
 bool native_settle_pending(native_device *device)
@@ -104,6 +150,31 @@ bool native_settle_pending(native_device *device)
     return true;
 }
 
+static doe_vk_status submit_pending(native_device *device, native_pending *pending)
+{
+    pending->next = device->pending;
+    device->pending = pending;
+    doe_vk_error error = {0};
+    doe_vk_status status = doe_vk_commands_submit(pending->native, &error);
+    if (status == DOE_VK_OK) status = doe_vk_commands_wait(pending->native, UINT64_MAX, &error);
+    if (status != DOE_VK_OK) device->queue_failed = true;
+    (void)native_settle_pending(device);
+    return status;
+}
+
+doe_vk_status native_submit_commands(native_device *device, doe_vk_commands *commands)
+{
+    native_pending *pending = calloc(1, sizeof(*pending));
+    if (!pending) {
+        if (doe_vk_commands_release(commands) != DOE_VK_OK) abort();
+        return DOE_VK_OUT_OF_MEMORY;
+    }
+    pending->device = device;
+    native_device_retain(device);
+    pending->native = commands;
+    return submit_pending(device, pending);
+}
+
 void wgpuQueueSubmit(WGPUQueue handle, size_t count, const WGPUCommandBuffer *handles)
 {
     native_device *device = (native_device *)handle;
@@ -120,6 +191,8 @@ void wgpuQueueSubmit(WGPUQueue handle, size_t count, const WGPUCommandBuffer *ha
         native_error(device, WGPUErrorType_OutOfMemory, "submission ownership allocation failed");
         return;
     }
+    pending->device = device;
+    native_device_retain(device);
     native_lock(device);
     doe_vk_status status = native_device_alive(device) && native_settle_pending(device) ? DOE_VK_OK : DOE_VK_INVALID_STATE;
     for (size_t i = 0; status == DOE_VK_OK && i < count; ++i) {
@@ -138,14 +211,9 @@ void wgpuQueueSubmit(WGPUQueue handle, size_t count, const WGPUCommandBuffer *ha
         else ++pending->count;
     }
     if (status == DOE_VK_OK) {
-        pending->next = device->pending;
-        device->pending = pending;
-        status = doe_vk_commands_submit(pending->native, &error);
-        if (status == DOE_VK_OK) status = doe_vk_commands_wait(pending->native, UINT64_MAX, &error);
-        if (status != DOE_VK_OK) device->queue_failed = true;
         /* recover preserves original submission failure; successful release is
          * the backend's proof of terminal or never-dispatched ownership. */
-        (void)native_settle_pending(device);
+        status = submit_pending(device, pending);
     } else {
         if (doe_vk_commands_release(pending->native) != DOE_VK_OK) abort();
         settle_resources(pending, false);

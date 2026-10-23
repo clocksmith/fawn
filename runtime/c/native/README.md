@@ -1,4 +1,4 @@
-# Experimental C public WebGPU compute frontend
+# Experimental C public WebGPU native frontend
 
 Status: authored, strict-compiled and developer-exercised through the pinned
 public `webgpu.h`. Not independently qualified, a complete WebGPU replacement,
@@ -21,19 +21,30 @@ exported; unknown and unimplemented names return NULL from `wgpuGetProcAddress`.
 - Shader creation calls the C compiler. Entry selection uses the actual entry
   reflection and its static resource closure. Layout checks include reflected
   minimum binding sizes, access kind, stage, resource/device identity and native
-  limits. SPIR-V capabilities beyond baseline Shader/Matrix and extensions are
-  rejected before backend pipeline creation. Workgroup storage and dimensions
-  use real backend limits.
+  limits. The capability scanner admits Shader/Matrix, baseline 1D images and
+  ImageQuery explicitly; other capabilities/extensions reject before pipeline
+  creation. Extended storage formats and cube arrays remain disabled. Workgroup
+  storage and dimensions use real backend limits.
 - Compiler `src/spirv.c` owns guarded loads/stores: runtime array bounds use
   `OpArrayLength`, signed indices have a nonnegative check, invalid loads return
   zero and invalid stores do not execute. The Vulkan context also requires and
   enables robustBufferAccess. The frontend does not recreate source analysis or
-  fabricate retained TranslationInfo extent/texture metadata.
+  fabricate retained TranslationInfo extent/texture metadata. ABI6 owns guarded
+  integer image coordinates/layers/mips/samples, with zero loads and discarded
+  stores outside bounds. Native admission maps semantic format names, never
+  retained model enum numbers.
 - Resource commands retain their dependencies, seal on finish, validate map and
   destroyed state before single-use submit, and hold submission references until
   settlement. Vulkan commands separately own the actual native recording and
   completion obligations. Buffer mapping stages real coherent native contents;
   writable maps write back on unmap. No CPU compute emulation is used.
+- Public textures/views/samplers alias the same resource owner. Images are fully
+  zero-initialized at every mip/layer through actual native uploads before public
+  publication, including images without public CopyDst usage. Private native
+  initialization commands use the same pending-submission owner and an explicit
+  submission device lease. Packed queue writes and 256-byte-aligned public command
+  copies retain their distinct canonical validation. Native views/samplers remain
+  alive through the recorded resource and backend obligations.
 - QueueSubmit currently performs a synchronous native wait/recovery. This is not
   a completed asynchronous producer lane or a latency/parity claim. Uncertain
   completion retains both native and resource obligations; later queue/map calls
@@ -46,18 +57,29 @@ exported; unknown and unimplemented names return NULL from `wgpuGetProcAddress`.
 
 ## Intentionally unprovided or rejected
 
-Graphics, surfaces, public textures/samplers, query/timestamp entrypoints and
-indirect dispatch remain absent. Device descriptors requesting required features
-or required limits are rejected rather than silently accepted. Buffer-only binding layouts are admitted; extensions, binding arrays,
+Graphics, surfaces, query/timestamp entrypoints and indirect dispatch remain
+absent. Texture format reinterpretation, depth/multisampled images, cube arrays
+and anisotropic sampling are rejected. The baseline admits 18 named Vulkan
+color formats, subject to actual device usage/format capabilities. Device
+descriptors requesting required features or required limits reject rather than
+silently succeeding. Buffer, sampled/storage image and sampler layouts are
+admitted; extensions, binding arrays,
 immediates, specialization constants and nonbaseline shader capabilities reject.
+ABI6 lacks exact texture/sampler pair-use reflection through helper parameters.
+Selected layouts combining UnfilterableFloat with Filtering samplers therefore
+reject explicitly; this is an unsupported analysis case, not full admission parity.
+The image receipt's dependency checkpoint predates canonical cross-binding usage
+scope validation. That identified admission gap is being corrected in the resource
+owner and requires a separate integrated native check; these image results do not
+qualify conflicting writable aliases.
 Descriptor labels and SetLabel use the existing label owner, including exact
 length-delimited bytes and resource-finalizer cleanup. Failed WGSL modules retain
 real compiler diagnostics for GetCompilationInfo. Compute pipeline construction
 is synchronous; the async API delivers its actual result through the requested
 callback mode, not a claimed background compiler. No blanket success stubs or
 fallback provider resolution exist. The public advertised limits
-are deliberately compute-only and do not claim the WebGPU Core feature level is
-complete; adapter/device creation here is an experimental compute consumer path.
+cover the implemented compute/image path only and do not claim the WebGPU Core
+feature level is complete; adapter/device creation here is an experimental compute consumer path.
 
 ## Reproduce from a coherent checkout
 
@@ -79,8 +101,9 @@ Explicit software-only WebGPU C path: SwiftShader Device (Subzero); not physical
 PASS public ABI: compute/readback, OOB guards, dynamic offsets, cross-device rejection, one-shot submit, early releases, callback reentry and map cancellation
 PASS C++ pinned typed procedure calls and unsupported-name rejection
 PASS device loss modes/future/last-external-release/failed-creation, owned labels, async pipeline and real compilation diagnostics
+PASS public textures: actual zero mips, packed upload, linear sampling, image OOB guards, storage readback, early releases and filter/pair/copy negatives (CPU Vulkan only)
 PASS every implemented procedure address matches; every unprovided name returns NULL
-PASS exact exports: 89 implemented, 113 pinned unprovided, no private exports
+PASS exact exports: 114 implemented, 88 pinned unprovided, no private exports
 ```
 
 A compute shader with two declared entries selects `transform`, runs 72
@@ -92,7 +115,12 @@ early caller releases and explicit recursive event pumping. C and C++ invoke
 real returned procedures through the pinned typed function pointers. Lifecycle
 checks cover all three loss modes, eight concurrent last-reference releases,
 failed device creation, nested event pumping, label copying/removal, deferred
-shader-release-safe diagnostics and success/failure async pipeline delivery.
+shader-release-safe diagnostics and success/failure async pipeline delivery. A
+borrowed callback handle can acquire a new external reference after concurrent
+last external release, without restoring destroyed state or weak loss identity.
+Image checks execute filtering and storage instructions, robust OOB handling,
+zeroed mips, packed uploads, readback and early releases; negatives cover float32
+filterability, unresolved sampler pairing, destroyed views and copy-row alignment.
 
 ```
 ASAN_OPTIONS=detect_leaks=0:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1 \
@@ -103,8 +131,11 @@ make -C runtime/c/native BUILD=/tmp/doe-c-native-asan \
 
 That build instruments both C compiler and native runtime owners. LeakSanitizer
 is separately unavailable in this execution environment under ptrace; disabling
-leak detection does not claim leak qualification. `DEVELOPER_RECEIPT_LIFECYCLE.json`
-binds the later ABI6 compute/lifecycle source and artifacts. The earlier
+leak detection does not claim leak qualification. `DEVELOPER_RECEIPT_IMAGES.json`
+binds the image increment to immutable committed dependency8a3fd4c1 plus listed
+native bytes, including a fresh canonical compiler build. An earlier live image
+sanitizer build overlapped unfinished ABI7 compiler edits and is not source-bound
+evidence. `DEVELOPER_RECEIPT_LIFECYCLE.json` binds the preceding lifecycle work. The earlier
 `DEVELOPER_RECEIPT.json` and source manifest remain the historical first compute
 checkpoint, not evidence for changed bytes. An initial live-worktree build caught
 unfinished parallel ABI6 enum edits; checkpoint testing instead materialized the

@@ -13,7 +13,8 @@ their existing C owners. This is not the production/default runtime.
 ## Scope
 Instance, adapter, device, buffer, compute shader/pipeline, buffer bindings, command
 recording, native Vulkan submission and readback; device-loss futures, labels,
-compilation diagnostics and compute-pipeline callbacks. Unsupported entrypoints are absent
+compilation diagnostics and compute-pipeline callbacks; initialized color textures,
+views/samplers, buffer/image copies and ABI6 image compute bindings. Unsupported entrypoints are absent
 or return their API-specific failure. No replacement-completeness claim is implied.
 
 ## Contracts
