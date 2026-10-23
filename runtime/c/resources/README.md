@@ -142,10 +142,12 @@ Copy admission shares only checked byte-footprint arithmetic with native Vulkan
 through `../common/include/doe_copy_footprint.h`; format, pitch/default, zero extent,
 alignment, capacity and native granularity policies remain in their actual owners.
 
-Render ownership currently admits the retained one-color/optional-depth-stencil,
-eight-vertex-buffer/four-group envelope, direct/indexed/indirect draws, timestamp writes and occlusion scopes.
+Render ownership admits up to one color attachment and optional depth/stencil,
+requiring at least one actual attachment, with multisample resolve destinations.
+The eight-vertex-buffer/four-group envelope covers direct/indexed/indirect records,
+timestamp writes and occlusion scopes.
 The owner itself does not execute graphics/query work. The standalone native
-consumer below exercises a narrower real graphics subset. MRT, resolves,
+consumer below exercises a narrower real graphics subset. MRT,
 surface presentation, binding arrays and external-texture color conversion remain
 unsupported. Actual map/future delivery and native shader execution are consumer
 responsibilities. Unsupported consumer command kinds must reject before submit.
@@ -154,7 +156,9 @@ responsibilities. Unsupported consumer command kinds must reject before submit.
 
 `make -C runtime/c/resources check` builds GCC C11/Werror into `/tmp`: 13 base and
 8 extended, 6 bundle, 8 binding-feature, 7 dispatch-usage, 10 render-usage,
-1 query-admission, 3 draw-admission, 4 attachment-admission, 4 resolve-admission and 3 view-default host suites cover transactional failure/untouched outputs, first error,
+1 query-admission, 3 draw-admission, 4 attachment-admission, 4 resolve-admission,
+3 view-default, 5 debug-group and 3 depth-only host suites cover transactional
+failure/untouched outputs, first error,
 label cleanup, atomic references, stale/read-only maps, copies/aliases, dynamic
 snapshots, pass abandonment/unbinding, shader/query/external/render leases and
 unresolved submission lifetime. Host native tokens test finalization, not GPU work.
@@ -299,3 +303,16 @@ against the [debug command contract](https://gpuweb.github.io/gpuweb/#debug-mark
 Five focused suites cover all four owners, balance/error isolation, untouched failing
 arithmetic and attachment retirement. `DEVELOPER_RECEIPT_DEBUG_GROUPS.json` binds these
 host checks; capture-tool labels and frontend exports are separately owned.
+
+Depth/stencil-only passes, pipelines and bundles now share the same canonical
+attachment-layout admission, with no fabricated color resource. Pass extents and
+sample identity come from the actual retained attachment, absent color values are
+ignored, and resolve without a color source rejects. Eighteen depth/stencil-format,
+sample and read-only cases exercise empty boundaries and retirement. Bundle replay,
+layout/read-only mismatches, four begin-allocation failures and destroyed-before-submit
+controls reuse the existing packet/scope owners. Both attachment formats absent still
+reject before allocation or native adoption. These follow the
+[pass attachment requirement](https://gpuweb.github.io/gpuweb/#dom-gpurenderpassdescriptor)
+and [bundle layout requirement](https://gpuweb.github.io/gpuweb/#dom-gpurenderbundleencoderdescriptor).
+`DEVELOPER_RECEIPT_DEPTH_ONLY.json` preserves first failures and host evidence;
+actual depth-only drawing remains a separate backend/consumer admission.

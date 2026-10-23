@@ -40,20 +40,27 @@ static bool valid_operations(bool present, bool read_only, bool transient,
 static doe_resource_status validate_targets(void *device,
     const doe_resource_render_targets *targets, uint32_t extent[2])
 {
-    doe_resource_status status = validate_attachment(device, targets->color, false, extent);
-    if (status != DOE_RESOURCE_OK) return status;
-    bool transient = (targets->color->desc.usage & WGPUTextureUsage_TransientAttachment) != 0;
-    if (!valid_operations(true, false, transient, targets->color_load, targets->color_store))
-        return DOE_RESOURCE_LAYOUT;
-    if (targets->color_load == WGPULoadOp_Clear)
-        for (size_t i = 0; i < 4; i++) if (!isfinite(targets->clear_color[i])) return DOE_RESOURCE_RANGE;
+    if (!targets->color && !targets->depth_stencil) return DOE_RESOURCE_LAYOUT;
+    doe_resource_status status;
+    bool transient;
+    if (targets->color) {
+        status = validate_attachment(device, targets->color, false, extent);
+        if (status != DOE_RESOURCE_OK) return status;
+        transient = (targets->color->desc.usage & WGPUTextureUsage_TransientAttachment) != 0;
+        if (!valid_operations(true, false, transient, targets->color_load, targets->color_store))
+            return DOE_RESOURCE_LAYOUT;
+        if (targets->color_load == WGPULoadOp_Clear)
+            for (size_t i = 0; i < 4; i++) if (!isfinite(targets->clear_color[i])) return DOE_RESOURCE_RANGE;
+    }
     if (targets->depth_stencil) {
         uint32_t depth_extent[2];
         status = validate_attachment(device, targets->depth_stencil, true, depth_extent);
         if (status != DOE_RESOURCE_OK) return status;
-        if (extent[0] != depth_extent[0] || extent[1] != depth_extent[1] ||
-            targets->color->texture->desc.samples != targets->depth_stencil->texture->desc.samples)
+        if (targets->color && (extent[0] != depth_extent[0] || extent[1] != depth_extent[1] ||
+            targets->color->texture->desc.samples != targets->depth_stencil->texture->desc.samples))
             return DOE_RESOURCE_LAYOUT;
+        extent[0] = depth_extent[0];
+        extent[1] = depth_extent[1];
         WGPUTextureFormat format = targets->depth_stencil->desc.format;
         bool depth = resource_format_aspect(format, WGPUTextureAspect_DepthOnly);
         bool stencil = resource_format_aspect(format, WGPUTextureAspect_StencilOnly);
@@ -67,6 +74,7 @@ static doe_resource_status validate_targets(void *device,
             return DOE_RESOURCE_RANGE;
     }
     if (targets->resolve_target) {
+        if (!targets->color) return DOE_RESOURCE_LAYOUT;
         uint32_t resolve_extent[2];
         status = validate_attachment(device, targets->resolve_target, false, resolve_extent);
         if (status != DOE_RESOURCE_OK) return status;
@@ -120,12 +128,9 @@ doe_resource_status doe_resource_render_pipeline_create(const doe_resource_confi
         return DOE_RESOURCE_INVALID_ARGUMENT;
     if (!config->device.alive(config->device.identity)) return DOE_RESOURCE_UNAVAILABLE;
     if (layout->base.config.device.identity != config->device.identity) return DOE_RESOURCE_DEVICE_MISMATCH;
-    uint32_t bytes, width, height;
-    doe_resource_status status = resource_format_block(desc->color_format, &bytes, &width, &height);
+    doe_resource_status status = resource_render_layout_validate(desc->color_format,
+        desc->depth_stencil_format, desc->samples);
     if (status != DOE_RESOURCE_OK) return status;
-    if (resource_format_depth(desc->color_format) || width != 1 || height != 1 ||
-        (desc->depth_stencil_format && !resource_format_depth(desc->depth_stencil_format))) return DOE_RESOURCE_LAYOUT;
-    if (desc->samples != 1 && desc->samples != 4) return DOE_RESOURCE_UNSUPPORTED;
     if (desc->vertex_count > DOE_RESOURCE_MAX_VERTEX_BUFFERS) return DOE_RESOURCE_UNSUPPORTED;
     doe_resource_render_pipeline_desc normalized = *desc;
     if (!normalized.topology) normalized.topology = WGPUPrimitiveTopology_TriangleList;
@@ -340,12 +345,7 @@ static doe_resource_status validate_packet(const doe_resource_render_packet *pac
     uint32_t extent[2];
     doe_resource_status status = validate_targets(device, &packet->targets, extent);
     if (status != DOE_RESOURCE_OK || packet->boundary_only) return status;
-    doe_resource_render_bundle_desc signature = {
-        packet->targets.color->desc.format,
-        packet->targets.depth_stencil ? packet->targets.depth_stencil->desc.format : 0,
-        packet->targets.color->texture->desc.samples,
-        packet->targets.depth_read_only, packet->targets.stencil_read_only
-    };
+    doe_resource_render_bundle_desc signature = resource_render_targets_layout(&packet->targets);
     return resource_render_draw_validate(packet, device, &signature);
 }
 

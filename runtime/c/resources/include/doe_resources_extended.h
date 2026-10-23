@@ -56,8 +56,8 @@ doe_resource_status doe_resource_external_texture_refresh(doe_resource_external_
 doe_resource_view *doe_resource_external_texture_plane(const doe_resource_external_texture *texture,
     size_t plane);
 
-/* Retained native-render envelope: one 2D color attachment, optional depth/stencil,
- * eight vertex buffers and four groups. Unsupported topologies fail visibly. */
+/* One optional 2D color attachment and optional depth/stencil, at least one
+ * required. Eight vertex buffers and four groups. Native support is separate. */
 enum { DOE_RESOURCE_MAX_VERTEX_BUFFERS = 8 };
 /* Undefined step mode plus last_attribute_end0 denotes a NULL slot, distinct
  * from an explicit Vertex/Instance slot with no attributes. Nonempty Undefined
