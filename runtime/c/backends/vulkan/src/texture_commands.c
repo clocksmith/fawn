@@ -34,6 +34,28 @@ static doe_vk_status region_valid(const doe_vk_texture *texture, doe_vk_texture_
     return DOE_VK_OK;
 }
 
+doe_vk_status doe_vk_texture_transfer_region(const doe_vk_context *context,
+    const doe_vk_texture *texture, doe_vk_texture_region region) {
+    doe_vk_status status = region_valid(texture, region);
+    if (status != DOE_VK_OK) return status;
+    const uint32_t granularity[3] = { context->transfer_granularity.width,
+        context->transfer_granularity.height, context->transfer_granularity.depth };
+    const uint32_t sizes[3] = { mip_extent(texture->desc.width, region.mip),
+        mip_extent(texture->desc.height, region.mip),
+        texture->desc.dimension == DOE_VK_TEXTURE_3D ?
+            mip_extent(texture->desc.depth_or_layers, region.mip) : 1 };
+    for (uint32_t axis = 0; axis < 3; ++axis) {
+        uint32_t origin = axis == 2 && texture->desc.dimension != DOE_VK_TEXTURE_3D ? 0 : region.origin[axis];
+        uint32_t extent = axis == 2 && texture->desc.dimension != DOE_VK_TEXTURE_3D ? 1 : region.extent[axis];
+        if (granularity[axis] == 0) {
+            if (origin != 0 || extent != sizes[axis]) return DOE_VK_UNSUPPORTED;
+        } else if (origin % granularity[axis] != 0 ||
+            (extent % granularity[axis] != 0 && extent != sizes[axis] - origin))
+            return DOE_VK_UNSUPPORTED;
+    }
+    return DOE_VK_OK;
+}
+
 doe_vk_status doe_vk_texture_copy_region(const doe_vk_texture *texture,
     doe_vk_texture_region region, uint64_t buffer_size,
     doe_vk_texture_buffer_layout layout, VkBufferImageCopy *out) {
@@ -161,6 +183,8 @@ static doe_vk_status buffer_texture_copy(doe_vk_commands *commands,
         !(buffer->usage & (upload ? DOE_VK_BUFFER_COPY_SRC : DOE_VK_BUFFER_COPY_DST)) ||
         !(texture->desc.usage & (upload ? DOE_VK_TEXTURE_COPY_DST : DOE_VK_TEXTURE_COPY_SRC)))
         return doe_vk_poison(commands, DOE_VK_INVALID_ARGUMENT);
+    status = doe_vk_texture_transfer_region(commands->context, texture, region);
+    if (status != DOE_VK_OK) return doe_vk_poison(commands, status);
     VkBufferImageCopy copy;
     status = doe_vk_texture_copy_region(texture, region, buffer->size, layout, &copy);
     if (status != DOE_VK_OK) return doe_vk_poison(commands, status);
@@ -203,8 +227,8 @@ doe_vk_status doe_vk_commands_copy_texture(doe_vk_commands *commands,
         source->desc.format != destination->desc.format || source->desc.dimension != destination->desc.dimension ||
         memcmp(source_region.extent, destination_region.extent, sizeof(source_region.extent)) != 0)
         return doe_vk_poison(commands, DOE_VK_INVALID_ARGUMENT);
-    status = region_valid(source, source_region);
-    if (status == DOE_VK_OK) status = region_valid(destination, destination_region);
+    status = doe_vk_texture_transfer_region(commands->context, source, source_region);
+    if (status == DOE_VK_OK) status = doe_vk_texture_transfer_region(commands->context, destination, destination_region);
     if (status != DOE_VK_OK) return doe_vk_poison(commands, status);
     doe_vk_texture_use *source_use = NULL;
     doe_vk_texture_use *destination_use = NULL;

@@ -288,6 +288,19 @@ static doe_vk_status choose_device(doe_vk_context *context,
     caps->device_type = p->deviceType;
     caps->adapter_ordinal = options->adapter_ordinal;
     caps->software_adapter = p->deviceType == 4;
+    caps->max_workgroup_storage_size = p->limits.maxComputeSharedMemorySize;
+    caps->max_bind_groups = p->limits.maxBoundDescriptorSets < DOE_VK_MAX_GROUPS ?
+        p->limits.maxBoundDescriptorSets : DOE_VK_MAX_GROUPS;
+    caps->max_bindings_per_group = DOE_VK_MAX_BINDINGS;
+    caps->max_storage_buffers_per_stage = p->limits.maxPerStageDescriptorStorageBuffers;
+    caps->max_uniform_buffers_per_stage = p->limits.maxPerStageDescriptorUniformBuffers;
+    caps->max_sampled_textures_per_stage = p->limits.maxPerStageDescriptorSampledImages;
+    caps->max_storage_textures_per_stage = p->limits.maxPerStageDescriptorStorageImages;
+    caps->max_samplers_per_stage = p->limits.maxPerStageDescriptorSamplers;
+    caps->max_texture_dimension_1d = p->limits.maxImageDimension1D;
+    caps->max_texture_dimension_2d = p->limits.maxImageDimension2D;
+    caps->max_texture_dimension_3d = p->limits.maxImageDimension3D;
+    caps->max_texture_array_layers = p->limits.maxImageArrayLayers;
     memcpy(caps->device_name, p->deviceName, sizeof(caps->device_name));
     caps->device_name[sizeof(caps->device_name) - 1] = '\0';
     memcpy(caps->max_workgroup_count, p->limits.maxComputeWorkGroupCount, sizeof(caps->max_workgroup_count));
@@ -325,6 +338,7 @@ static doe_vk_status choose_queue(doe_vk_context *context, doe_vk_error *error) 
         }
     }
     if (selected != UINT32_MAX) {
+        context->transfer_granularity = queues[selected].minImageTransferGranularity;
         context->caps.queue_family = selected;
         context->caps.queue_flags = queues[selected].queueFlags;
         context->caps.timestamp_valid_bits = queues[selected].timestampValidBits;

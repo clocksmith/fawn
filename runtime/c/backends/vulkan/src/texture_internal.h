@@ -38,6 +38,8 @@ void doe_vk_texture_transition(doe_vk_commands *commands, doe_vk_texture_use *us
     uint32_t layout);
 void doe_vk_textures_complete(doe_vk_commands *commands, doe_vk_status status);
 void doe_vk_textures_release(doe_vk_commands *commands);
+doe_vk_status doe_vk_texture_transfer_region(const doe_vk_context *context,
+    const doe_vk_texture *texture, doe_vk_texture_region region);
 doe_vk_status doe_vk_texture_copy_region(const doe_vk_texture *texture,
     doe_vk_texture_region region, uint64_t buffer_size,
     doe_vk_texture_buffer_layout layout, VkBufferImageCopy *out);
