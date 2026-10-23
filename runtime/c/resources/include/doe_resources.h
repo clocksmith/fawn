@@ -224,7 +224,8 @@ bool doe_resource_layout_compatible(const doe_resource_layout *a, const doe_reso
 const doe_resource_layout_entry *doe_resource_layout_entries(const doe_resource_layout *layout,
     size_t *count);
 
-/* Explicit NULL/empty slots are permitted and never require bound groups. */
+/* Explicit NULL/empty slots normalize to NULL and never require bound groups.
+ * Zero-entry automatic layouts do not acquire pipeline exclusivity. */
 doe_resource_status doe_resource_pipeline_layout_create(const doe_resource_config *config,
     doe_resource_layout *const *groups, size_t count, uint32_t immediate_size,
     doe_resource_pipeline_layout **out);

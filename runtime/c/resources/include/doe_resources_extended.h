@@ -59,6 +59,9 @@ doe_resource_view *doe_resource_external_texture_plane(const doe_resource_extern
 /* Retained native-render envelope: one 2D color attachment, optional depth/stencil,
  * eight vertex buffers and four groups. Unsupported topologies fail visibly. */
 enum { DOE_RESOURCE_MAX_VERTEX_BUFFERS = 8 };
+/* Undefined step mode plus last_attribute_end0 denotes a NULL slot, distinct
+ * from an explicit Vertex/Instance slot with no attributes. Nonempty Undefined
+ * defaults to Vertex. Pipeline construction normalizes actual holes to zero. */
 typedef struct doe_resource_vertex_layout {
     uint64_t stride, last_attribute_end;
     WGPUVertexStepMode step_mode;
@@ -69,6 +72,8 @@ typedef struct doe_resource_render_pipeline_desc {
     bool depth_write, stencil_write;
     size_t vertex_count;
     doe_resource_vertex_layout vertices[DOE_RESOURCE_MAX_VERTEX_BUFFERS];
+    WGPUPrimitiveTopology topology; /* Undefined defaults to TriangleList. */
+    WGPUIndexFormat strip_index_format; /* Only meaningful for strip topologies. */
 } doe_resource_render_pipeline_desc;
 typedef struct doe_resource_render_bundle_desc {
     WGPUTextureFormat color_format, depth_stencil_format;
@@ -125,12 +130,18 @@ void *doe_resource_render_pipeline_native(const doe_resource_render_pipeline *pi
 void *doe_resource_render_pipeline_device(const doe_resource_render_pipeline *pipeline);
 doe_resource_pipeline_layout *doe_resource_render_pipeline_get_layout(const doe_resource_render_pipeline *pipeline);
 const doe_resource_render_pipeline_desc *doe_resource_render_pipeline_description(const doe_resource_render_pipeline *pipeline);
+/* Canonical NULL-hole predicate; explicit empty layouts still require a buffer. */
+bool doe_resource_render_pipeline_vertex_required(const doe_resource_render_pipeline *pipeline, size_t slot);
 void *doe_resource_render_pass_device(const doe_resource_render_pass *pass);
 doe_resource_status doe_resource_encoder_begin_render(doe_resource_encoder *encoder,
     const doe_resource_render_targets *targets, doe_resource_render_pass **out);
 doe_resource_status doe_resource_encoder_begin_render_with_timestamps(doe_resource_encoder *encoder,
     const doe_resource_render_targets *targets, const doe_resource_pass_timestamps *timestamps,
     doe_resource_render_pass **out);
+/* Frontend preflight rejection poisons the canonical active recording owner;
+ * non-rejection statuses are invalid arguments and do not mutate state. */
+doe_resource_status doe_resource_render_pass_invalidate(doe_resource_render_pass *pass,
+    doe_resource_status rejection);
 /* Pass owns an encoder lease. Releasing an unended pass poisons that encoder. */
 void doe_resource_render_pass_retain(doe_resource_render_pass *pass);
 void doe_resource_render_pass_release(doe_resource_render_pass *pass);
@@ -167,6 +178,8 @@ const doe_resource_render_packet *doe_resource_render_record_borrow(const doe_re
  * viewport/scissor/blend/stencil and attachment/query state remain unchanged. */
 typedef struct doe_resource_bundle_encoder doe_resource_bundle_encoder;
 typedef struct doe_resource_render_bundle doe_resource_render_bundle;
+doe_resource_status doe_resource_bundle_encoder_invalidate(doe_resource_bundle_encoder *encoder,
+    doe_resource_status rejection);
 doe_resource_status doe_resource_bundle_encoder_create(const doe_resource_config *config,
     const doe_resource_render_bundle_desc *desc, doe_resource_bundle_encoder **out);
 /* Borrowed getters, NULL for a NULL handle. */

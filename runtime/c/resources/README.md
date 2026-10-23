@@ -94,7 +94,10 @@ stages without weakening unconditional whole-scope usage compatibility. Texture 
 All groups and indirect input are admitted before offset allocation or command
 publication. Empty pipeline-layout slots require no group and normalize to null
 compute snapshots with zero offsets; ignored stale bindings are not submitted.
-Explicit NULL slots follow the same required-group predicate. The status-returning
+Explicit NULL slots follow the same required-group predicate. Constructor-time
+normalization discards every zero-entry layout before retention/exclusivity;
+automatic empty holes can be retrieved and reused in explicit layouts without
+claiming a pipeline, while nonempty automatic layouts remain exclusive. The status-returning
 pipeline-layout getter lazily owns one empty layout for absent/trailing indices
 below MAX_GROUPS, avoiding eager allocation and frontend caches. Failure leaves
 output and cached identity untouched; OOM can be retried under caller serialization.
@@ -118,6 +121,16 @@ Color/depth clear values are admitted only when the corresponding load operation
 is Clear; Load and depth-read-only paths ignore them, including nonfinite values.
 Native clear conversion still validates its actual scalar representation.
 
+Vertex layout normalization preserves the pinned C ABI distinction: Undefined
+step mode plus no attributes is a NULL hole, whereas explicit Vertex/Instance
+with no attributes still requires a buffer. The canonical required-slot getter
+serves native lowering. Direct ranges use first+count even when count is zero;
+indexed per-vertex and indirect ranges are not guessed from unknown GPU indices.
+The actual backend must enforce its robust access guarantees. Named primitive
+and strip-index identities are retained in the pipeline and checked by the shared
+pass/bundle/submit draw validator. Frontend preflight failures use explicit pass
+and bundle invalidation entrypoints, preserving the canonical first error.
+
 Query descriptors use one allocation-free preflight for named type and count
 0..4096, following current [WebGPU query creation](https://gpuweb.github.io/gpuweb/#dom-gpudevice-createqueryset)
 rather than retained native's nonzero-only, unbounded count. A zero-query identity
@@ -140,7 +153,8 @@ responsibilities. Unsupported consumer command kinds must reject before submit.
 ## Focused checks and evidence
 
 `make -C runtime/c/resources check` builds GCC C11/Werror into `/tmp`: 13 base and
-8 extended, 6 bundle, 8 binding-feature, 6 dispatch-usage, 10 render-usage and 1 query-admission host suites cover transactional failure/untouched outputs, first error,
+8 extended, 6 bundle, 8 binding-feature, 7 dispatch-usage, 10 render-usage,
+1 query-admission and 3 draw-admission host suites cover transactional failure/untouched outputs, first error,
 label cleanup, atomic references, stale/read-only maps, copies/aliases, dynamic
 snapshots, pass abandonment/unbinding, shader/query/external/render leases and
 unresolved submission lifetime. Host native tokens test finalization, not GPU work.
@@ -224,5 +238,7 @@ span, mixed results, later-pass reuse and exact resource/native retirement.
 `DEVELOPER_RECEIPT_FORMAT_CLASS.json` binds the shared checked format/aspect
 classification, channel counts, unchanged-output/feature-independence controls
 and the first ignored-clear reproduction with its correction.
+`DEVELOPER_RECEIPT_DRAW_ADMISSION.json` binds canonical vertex/index admission,
+frontend rejection, automatic-empty reuse and their preserved first reproductions.
 `DEVELOPER_RECEIPT.json` preserves the earlier smaller historical check.
 Run the common source-size check; every owned C source/header is below 999 lines.

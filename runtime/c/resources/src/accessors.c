@@ -139,3 +139,9 @@ doe_resource_status doe_resource_pipeline_layout_get_group(doe_resource_pipeline
     *out = group;
     return DOE_RESOURCE_OK;
 }
+
+bool doe_resource_render_pipeline_vertex_required(const doe_resource_render_pipeline *pipeline, size_t slot)
+{
+    return pipeline && slot < pipeline->desc.vertex_count &&
+        pipeline->desc.vertices[slot].step_mode != WGPUVertexStepMode_Undefined;
+}

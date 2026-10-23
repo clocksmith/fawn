@@ -301,7 +301,7 @@ static void test_nullable_layout_slots(void)
     assert(!doe_resource_pipeline_layout_group_required(layout, 1));
     doe_resource_layout *out = (void *)(uintptr_t)1;
     size_t allocations = f.allocations;
-    assert(doe_resource_pipeline_layout_get_group(layout, 1, &out) == DOE_RESOURCE_OK && out == explicit_empty);
+    assert(!doe_resource_pipeline_layout_group(layout, 1));
     assert(f.allocations == allocations);
     f.fail_at = f.allocations;
     out = (void *)(uintptr_t)1;
@@ -315,7 +315,8 @@ static void test_nullable_layout_slots(void)
     assert(doe_resource_layout_entries(out, &entries) && entries == 0);
     allocations = f.allocations;
     assert(doe_resource_pipeline_layout_get_group(layout, 0, &out) == DOE_RESOURCE_OK && out == materialized);
-    assert(f.allocations == allocations);
+    assert(doe_resource_pipeline_layout_get_group(layout, 1, &out) == DOE_RESOURCE_OK && out == materialized);
+    assert(materialized != explicit_empty && f.allocations == allocations);
     assert(doe_resource_pipeline_layout_group(layout, 2) == materialized);
     out = (void *)(uintptr_t)1;
     assert(doe_resource_pipeline_layout_get_group(layout, DOE_RESOURCE_MAX_GROUPS, &out) == DOE_RESOURCE_RANGE);
@@ -351,6 +352,53 @@ static void test_nullable_layout_slots(void)
     empty(&f);
 }
 
+static void test_automatic_empty_reuse(void)
+{
+    fixture f = fresh();
+    doe_resource_config c = config(&f);
+    doe_resource_layout *groups[3];
+    doe_resource_layout_entry entry = {.kind = DOE_BIND_BUFFER, .buffer_type = WGPUBufferBindingType_Uniform};
+    assert(doe_resource_layout_create(&c, NULL, 0, true, &groups[0]) == DOE_RESOURCE_OK);
+    assert(doe_resource_layout_create(&c, NULL, 0, true, &groups[1]) == DOE_RESOURCE_OK);
+    assert(doe_resource_layout_create(&c, &entry, 1, true, &groups[2]) == DOE_RESOURCE_OK);
+    doe_resource_pipeline_layout *automatic;
+    assert(doe_resource_pipeline_layout_create(&c, groups, 3, 0, &automatic) == DOE_RESOURCE_OK);
+    assert(!doe_resource_pipeline_layout_group(automatic, 0));
+    assert(!doe_resource_pipeline_layout_group(automatic, 1));
+    native_token first_token = {0};
+    uint32_t workgroup[] = {1, 1, 1};
+    doe_resource_pipeline *first;
+    assert(doe_resource_pipeline_create(&c, automatic, native(&f, &first_token), workgroup, &first) == DOE_RESOURCE_OK);
+    doe_resource_layout *hole;
+    assert(doe_resource_pipeline_layout_get_group(automatic, 0, &hole) == DOE_RESOURCE_OK);
+    for (unsigned scenario = 0; scenario < 4; scenario++) {
+        doe_resource_layout *slot = scenario == 0 ? NULL : scenario == 1 ? hole : scenario == 2 ? groups[0] : groups[2];
+        doe_resource_pipeline_layout *explicit;
+        assert(doe_resource_pipeline_layout_create(&c, &slot, 1, 0, &explicit) == DOE_RESOURCE_OK);
+        for (unsigned repeat = 0; repeat < 2; repeat++) {
+            native_token token = {0}, render_token = {0};
+            doe_resource_pipeline *pipeline = (void *)(uintptr_t)1;
+            doe_resource_status expected = scenario == 3 ? DOE_RESOURCE_LAYOUT : DOE_RESOURCE_OK;
+            assert(doe_resource_pipeline_create(&c, explicit, native(&f, &token), workgroup, &pipeline) == expected);
+            doe_resource_render_pipeline_desc desc = {.color_format = WGPUTextureFormat_RGBA8Unorm, .samples = 1};
+            doe_resource_render_pipeline *render = (void *)(uintptr_t)1;
+            assert(doe_resource_render_pipeline_create(&c, explicit, &desc, native(&f, &render_token), &render) == expected);
+            if (expected == DOE_RESOURCE_OK) {
+                doe_resource_pipeline_release(pipeline);
+                doe_resource_render_pipeline_release(render);
+                assert(token.releases == 1 && render_token.releases == 1);
+            } else assert(pipeline == (void *)(uintptr_t)1 && render == (void *)(uintptr_t)1 &&
+                !token.releases && !render_token.releases);
+        }
+        doe_resource_pipeline_layout_release(explicit);
+    }
+    doe_resource_pipeline_release(first);
+    doe_resource_pipeline_layout_release(automatic);
+    for (size_t i = 0; i < 3; i++) doe_resource_layout_release(groups[i]);
+    assert(first_token.releases == 1);
+    empty(&f);
+}
+
 int main(void)
 {
     test_buffer_scope();
@@ -359,6 +407,7 @@ int main(void)
     test_empty_layout_holes();
     test_binding_visibility();
     test_nullable_layout_slots();
-    puts("dispatch usage owner: 6 host suites passed; no GPU execution claimed");
+    test_automatic_empty_reuse();
+    puts("dispatch usage owner: 7 host suites passed; no GPU execution claimed");
     return 0;
 }

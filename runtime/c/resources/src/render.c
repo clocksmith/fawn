@@ -110,20 +110,36 @@ doe_resource_status doe_resource_render_pipeline_create(const doe_resource_confi
         (desc->depth_stencil_format && !resource_format_depth(desc->depth_stencil_format))) return DOE_RESOURCE_LAYOUT;
     if (desc->samples != 1 && desc->samples != 4) return DOE_RESOURCE_UNSUPPORTED;
     if (desc->vertex_count > DOE_RESOURCE_MAX_VERTEX_BUFFERS) return DOE_RESOURCE_UNSUPPORTED;
-    for (size_t i = 0; i < desc->vertex_count; i++) {
-        const doe_resource_vertex_layout *vertex = &desc->vertices[i];
+    doe_resource_render_pipeline_desc normalized = *desc;
+    if (!normalized.topology) normalized.topology = WGPUPrimitiveTopology_TriangleList;
+    if (normalized.topology < WGPUPrimitiveTopology_PointList ||
+        normalized.topology > WGPUPrimitiveTopology_TriangleStrip) return DOE_RESOURCE_LAYOUT;
+    bool strip = normalized.topology == WGPUPrimitiveTopology_LineStrip ||
+        normalized.topology == WGPUPrimitiveTopology_TriangleStrip;
+    if (normalized.strip_index_format != WGPUIndexFormat_Undefined &&
+        (!strip || (normalized.strip_index_format != WGPUIndexFormat_Uint16 &&
+        normalized.strip_index_format != WGPUIndexFormat_Uint32))) return DOE_RESOURCE_LAYOUT;
+    for (size_t i = 0; i < normalized.vertex_count; i++) {
+        doe_resource_vertex_layout *vertex = &normalized.vertices[i];
+        if (!vertex->step_mode) {
+            if (!vertex->last_attribute_end) {
+                *vertex = (doe_resource_vertex_layout){0};
+                continue;
+            }
+            vertex->step_mode = WGPUVertexStepMode_Vertex;
+        }
         if (vertex->stride % 4 || (vertex->step_mode != WGPUVertexStepMode_Vertex &&
             vertex->step_mode != WGPUVertexStepMode_Instance)) return DOE_RESOURCE_LAYOUT;
         if (vertex->stride && vertex->last_attribute_end > vertex->stride) return DOE_RESOURCE_RANGE;
     }
     for (size_t i = 0; i < layout->count; i++)
-        if (layout->groups[i] && layout->groups[i]->automatic && layout->groups[i]->automatic_claimed) return DOE_RESOURCE_LAYOUT;
+        if (doe_resource_pipeline_layout_group_required(layout, i) && layout->groups[i]->automatic && layout->groups[i]->automatic_claimed) return DOE_RESOURCE_LAYOUT;
     doe_resource_render_pipeline *pipeline = resource_allocate(config, sizeof(*pipeline), _Alignof(doe_resource_render_pipeline));
     if (!pipeline) return DOE_RESOURCE_OUT_OF_MEMORY;
     pipeline->layout = layout;
-    pipeline->desc = *desc;
+    pipeline->desc = normalized;
     for (size_t i = 0; i < layout->count; i++)
-        if (layout->groups[i] && layout->groups[i]->automatic) layout->groups[i]->automatic_claimed = true;
+        if (doe_resource_pipeline_layout_group_required(layout, i) && layout->groups[i]->automatic) layout->groups[i]->automatic_claimed = true;
     doe_resource_pipeline_layout_retain(layout);
     resource_init(&pipeline->base, config, native);
     *out = pipeline;
@@ -486,4 +502,13 @@ doe_resource_status resource_render_record_validate(const doe_resource_render_re
 const doe_resource_render_packet *doe_resource_render_record_borrow(const doe_resource_render_record *record)
 {
     return record ? &record->packet : NULL;
+}
+
+doe_resource_status doe_resource_render_pass_invalidate(doe_resource_render_pass *pass,
+    doe_resource_status rejection)
+{
+    if (!resource_status_is_rejection(rejection)) return DOE_RESOURCE_INVALID_ARGUMENT;
+    doe_resource_status status = resource_render_pass_active(pass);
+    if (status != DOE_RESOURCE_OK) return status;
+    return doe_resource_encoder_invalidate(pass->encoder, rejection);
 }
