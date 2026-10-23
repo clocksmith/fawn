@@ -46,13 +46,13 @@ static bool shaped_type(Source *s, TypeId leaf, uint32_t n, TypeId *out) {
     }
     return type_intern(s, TYPE_VECTOR, leaf, n, out);
 }
-static bool lane(Source *s, ConstantValue value, uint32_t index, NumericValue *out) {
+bool sema_constant_lane(Source *s, ConstantValue value, uint32_t index, NumericValue *out) {
     ConstantValue v = value;
     if (value.type >= 7u && !constant_project(s, value, index, &v)) return false;
     *out = (NumericValue){v.bits, (IrType)v.type};
     return true;
 }
-static bool finish_lanes(Source *s, TypeId type, ConstantValue lanes[4], uint32_t count, ConstantValue *out) {
+bool sema_finish_lanes(Source *s, TypeId type, ConstantValue lanes[4], uint32_t count, ConstantValue *out) {
     if (count == 1u) {
         *out = lanes[0];
         return true;
@@ -96,6 +96,11 @@ static bool identity_value(Source *s,NameSpan name,const LocalScope *scope,Value
         case IDENTITY_RESOURCE:
         case IDENTITY_WORKGROUP: {
             const TypeId type=identity.kind==IDENTITY_RESOURCE?c->resources[identity.index].type:c->workgroups[identity.index].type;
+            if (identity.kind == IDENTITY_RESOURCE && type_handle(c, type)) {
+                out->runtime = true; out->constant.type = type;
+                return sema_emit(s, emit, (IrInstruction){.opcode = IR_HANDLE, .type = type,
+                    .source_offset = name.offset, .operands.scalar.binding = identity.index}, &out->value);
+            }
             if (!type_constructible(c,type)) return source_error(s,DOE_COMPILER_SEMANTIC_ERROR,name.offset,"runtime-sized resource is not a value");
             out->runtime=true; out->constant.type=type;
             return sema_emit(s,emit,(IrInstruction){.opcode=IR_ACCESS_LOAD,.type=type,.source_offset=name.offset,
@@ -132,7 +137,7 @@ static bool root_reference(Source *s,NameSpan name,const LocalScope *scope,bool 
         }
     } else if (identity.kind==IDENTITY_RESOURCE) {
         const ResourceRecord *r=&c->resources[identity.index];
-        *ref=(ValueReference){identity.index,NO_ID,ROOT_RESOURCE,r->type,r->access==DOE_COMPILER_READ_WRITE}; *reference=true; return true;
+        *ref=(ValueReference){identity.index,NO_ID,ROOT_RESOURCE,r->type,r->access==DOE_COMPILER_READ_WRITE && !type_handle(c, r->type)}; *reference=true; return true;
     } else if (identity.kind==IDENTITY_WORKGROUP) {
         *ref=(ValueReference){identity.index,NO_ID,ROOT_WORKGROUP,c->workgroups[identity.index].type,true}; *reference=true; return true;
     }
@@ -239,17 +244,7 @@ static bool postfix_value(Source *s, const Expression *node, const LocalScope *s
                 if (!type_intern(s, TYPE_VECTOR, output, member.length, &output)) return false;
                 if (is_ref && !sema_reference_load(s, r, node->source_offset, emit, &base)) return false;
                 *reference = false;
-                *out = (ExpressionValue){
-                    .runtime = base.runtime, .known = evaluate && base.known, .constant.type = output, .value = {.type = output, .source_offset = node->source_offset}
-                };
-                if (!base.runtime) {
-                    if (!out->known) return true;
-                    ConstantValue lanes[4];
-                    for (uint32_t i = 0u;i<member.length;++i) if (!constant_project(s, base.constant, (mask>>(2u*i))&3u, &lanes[i])) return false;
-                    return constant_composite(s, output, lanes, member.length, false, &out->constant);
-                }
-                if (!sema_ensure_value(s, &base, emit)) return false;
-                return sema_emit(s, emit, (IrInstruction){.opcode = IR_SWIZZLE, .type = output, .source_offset = node->source_offset, .operands.scalar = {base.value.id, member.length, input, mask}}, &out->value);
+                return sema_swizzle_value(s, node, &base, output, mask, evaluate, emit, out);
             }
         }
         else return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, member.offset, "array value has no named member");
@@ -391,7 +386,7 @@ bool sema_binary(Source *s, ExpressionKind op, Comparison cmp, ExpressionValue *
     if (!b->runtime && b->known && (shift || ((op == EXPRESSION_DIVIDE || op == EXPRESSION_REMAINDER) && is_integer(leaf)))) {
         for (uint32_t i = 0u;i<wb;++i) {
             NumericValue rhs;
-            if (!lane(s, b->constant, i, &rhs)) return false;
+            if (!sema_constant_lane(s, b->constant, i, &rhs)) return false;
             if ((!shift && rhs.bits == 0u) || (shift && leaf != IR_ABSTRACT_INT && rhs.bits >= 32u))
                 return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, offset, shift?"concrete shift count const expression must be below 32":"integer divisor is a zero const expression");
         }
@@ -404,10 +399,10 @@ bool sema_binary(Source *s, ExpressionKind op, Comparison cmp, ExpressionValue *
         ConstantValue values[4];
         for (uint32_t i = 0u;i<n;++i) {
             NumericValue x, y, r;
-            if (!lane(s, a->constant, wa == 1u?0u:i, &x) || !lane(s, b->constant, wb == 1u?0u:i, &y) || !numeric_binary(s, offset, op, cmp, x, y, &r)) return false;
+            if (!sema_constant_lane(s, a->constant, wa == 1u?0u:i, &x) || !sema_constant_lane(s, b->constant, wb == 1u?0u:i, &y) || !numeric_binary(s, offset, op, cmp, x, y, &r)) return false;
             values[i] = (ConstantValue){.type = (TypeId)r.type, .bits = r.bits};
         }
-        return finish_lanes(s, type, values, n, &out->constant);
+        return sema_finish_lanes(s, type, values, n, &out->constant);
     }
     out->known = false;
     if (!sema_ensure_value(s, a, emit) || !sema_ensure_value(s, b, emit)) return false;
@@ -443,27 +438,7 @@ bool sema_expression(Source *s, uint32_t id, const LocalScope *scope, bool evalu
     ExpressionValue a, b;
     if (!sema_expression(s, e->left, scope, evaluate, emit, &a)) return false;
     const bool unary = e->kind == EXPRESSION_NOT || e->kind == EXPRESSION_NEGATE || e->kind == EXPRESSION_COMPLEMENT;
-    if (unary) {
-        const TypeId leaf = type_leaf(c, a.constant.type);
-        if (leaf == IR_VOID || (e->kind == EXPRESSION_NOT && leaf != IR_BOOL) || (e->kind == EXPRESSION_COMPLEMENT && !is_integer(leaf)) || (e->kind == EXPRESSION_NEGATE && (leaf == IR_BOOL || leaf == IR_U32)))
-            return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, e->source_offset, "unary operator is not defined for this type");
-        *out = (ExpressionValue){
-            .runtime = a.runtime, .known = evaluate && a.known, .constant.type = a.constant.type, .value = {.type = a.constant.type, .source_offset = e->source_offset}
-        };
-        if (!a.runtime) {
-            if (!out->known) return true;
-            const uint32_t n = type_vector_width(c, a.constant.type);
-            ConstantValue values[4];
-            for (uint32_t i = 0u;i<n;++i) {
-                NumericValue x, r;
-                if (!lane(s, a.constant, i, &x) || !numeric_unary(s, e->source_offset, e->kind, x, &r)) return false;
-                values[i] = (ConstantValue){.type = (TypeId)r.type, .bits = r.bits};
-            }
-            return finish_lanes(s, a.constant.type, values, n, &out->constant);
-        }
-        if (!sema_ensure_value(s, &a, emit)) return false;
-        return sema_emit(s, emit, (IrInstruction){.opcode = e->kind == EXPRESSION_NOT?IR_NOT:e->kind == EXPRESSION_NEGATE?IR_NEGATE:IR_COMPLEMENT, .type = a.constant.type, .source_offset = e->source_offset, .operands.scalar.left = a.value.id}, &out->value);
-    }
+    if (unary) return sema_unary_value(s, e, &a, evaluate, emit, out);
     const bool logical = e->kind == EXPRESSION_AND || e->kind == EXPRESSION_OR;
     bool skip = false;
     if (logical) {

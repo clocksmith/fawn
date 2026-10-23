@@ -47,5 +47,16 @@ bool sema_binary(Source *,ExpressionKind,Comparison,ExpressionValue *,Expression
 bool sema_call_statement(Source *,uint32_t,const LocalScope *);
 /* The call dispatcher validates builtin arity, type arguments and result use. */
 bool sema_builtin_value(Source *,const Expression *,const LocalScope *,const NumericBuiltin *,bool,bool,ExpressionValue *);
+bool sema_constant_lane(Source *, ConstantValue, uint32_t, NumericValue *);
+bool sema_finish_lanes(Source *, TypeId, ConstantValue[4], uint32_t, ConstantValue *);
+bool sema_swizzle_value(Source *, const Expression *, ExpressionValue *, TypeId, uint32_t, bool, bool, ExpressionValue *);
+bool sema_unary_value(Source *, const Expression *, ExpressionValue *, bool, bool, ExpressionValue *);
+bool sema_builtin_finish(Source *, const Expression *, const NumericBuiltin *, ExpressionValue *, bool, ExpressionValue *);
+TypeId sema_image_result(Source *, const Expression *, const TypeRecord *, ImageOperation);
+bool sema_image_argument(Source *, const TypeRecord *, ImageOperation, uint32_t, ExpressionValue *);
+bool sema_image_auxiliaries(Source *, TypeId, ImageOperation);
+bool sema_image_type(Source *, TypeRef, TypeId, TypeId *);
+uint32_t image_builtin_kind(const Source *, NameSpan);
+bool sema_image_call(Source *, const Expression *, const LocalScope *, bool, bool, ImageOperation, ExpressionValue *);
 bool sema_call_value(Source *,uint32_t,const LocalScope *,bool,bool,bool,ExpressionValue *);
 #endif

@@ -202,7 +202,11 @@ static bool struct_declaration(Parser *p,Syntax *s) {
 }
 static bool resource_declaration(Parser *p,Syntax *s,ResourceRecord *r) {
     *r=(ResourceRecord){.source_offset=peek(p)->offset,.tail_type=NO_ID};
-    if (!resource_attributes(p,s,r) || !word(p,"var") || !punctuation(p,'<',"<storage, access> or <uniform>")) return false;
+    if (!resource_attributes(p,s,r) || !word(p,"var")) return false;
+    if (peek(p)->kind != '<')
+        return name_span(p,&r->name) && punctuation(p,':',":") &&
+            type_reference(p,s,&r->annotation) && punctuation(p,';',";");
+    ++p->cursor;
     if (spelled(p,peek(p),"uniform")) {r->kind=DOE_COMPILER_UNIFORM_BUFFER;r->access=DOE_COMPILER_READ;++p->cursor;}
     else {
         r->kind=DOE_COMPILER_STORAGE_BUFFER;

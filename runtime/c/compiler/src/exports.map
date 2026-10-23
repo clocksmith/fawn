@@ -6,5 +6,7 @@
     doe_compiler_compile_typed;
     doe_compiler_module_requirements;
     doe_compiler_compile_module;
+    doe_compiler_resource_requirements;
+    doe_compiler_compile_resources;
     local: *;
 };

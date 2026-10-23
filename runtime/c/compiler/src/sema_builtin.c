@@ -60,33 +60,5 @@ bool sema_builtin_value(Source *source, const Expression *node, const LocalScope
         .runtime = runtime, .known = known && !runtime, .constant.type = result_type,
         .value = {.type = result_type, .source_offset = node->source_offset}
     };
-    if (!runtime) {
-        if (!out->known) return true;
-        const ConstantValue values[3] = {
-            arguments[0].constant,
-            builtin->arity > 1u ? arguments[1].constant : (ConstantValue){0},
-            builtin->arity > 2u ? arguments[2].constant : (ConstantValue){0}
-        };
-        return builtin_constant(source, node->source_offset, builtin, values, result_type, &out->constant);
-    }
-
-    uint32_t first = 0u;
-    if (emit) {
-        if (builtin->arity > compiler->limits.operands - compiler->operand_count)
-            return source_pool_error(source, DOE_COMPILER_POOL_IR_OPERANDS,
-                (size_t)compiler->operand_count + builtin->arity, node->source_offset,
-                "typed operand capacity exceeded");
-        first = compiler->operand_count;
-        compiler->operand_count += builtin->arity;
-    }
-    for (uint32_t i = 0u; i < builtin->arity; ++i) {
-        if (!sema_ensure_value(source, &arguments[i], emit)) return false;
-        if (emit) compiler->typed_operands[first + i] = arguments[i].value.id;
-    }
-    return sema_emit(source, emit, (IrInstruction){
-        .opcode = IR_BUILTIN, .type = result_type, .source_offset = node->source_offset,
-        .operands.scalar = {arguments[0].value.id,
-            builtin->arity > 1u ? arguments[1].value.id : 0u,
-            builtin->arity > 2u ? arguments[2].value.id : 0u, (uint32_t)builtin->kind}
-    }, &out->value);
+    return sema_builtin_finish(source, node, builtin, arguments, emit, out);
 }

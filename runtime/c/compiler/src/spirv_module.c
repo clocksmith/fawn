@@ -163,12 +163,25 @@ static bool plan_type(Emitter *e, TypeId type) {
     CompilerWorkspace *c = e->program;
     if (type < 7u) return spirv_scalar_type(type) != 0u;
     if (c->types[type - 7u].target != 0u) return true;
+    if (type_handle(c, type)) {
+        const TypeRecord *current = &c->types[type - 7u];
+        for (uint32_t i = 0u; i < type - 7u; ++i) {
+            const TypeRecord *prior = &c->types[i];
+            if (prior->kind != current->kind || prior->target == 0u) continue;
+            if (current->kind == TYPE_SAMPLER || (prior->element == current->element &&
+                prior->state.image.dimension == current->state.image.dimension &&
+                prior->state.image.format == current->state.image.format && prior->state.image.flags == current->state.image.flags)) {
+                c->types[type - 7u].target = prior->target;
+                return true;
+            }
+        }
+    }
     if (!spirv_push_walk(e, WALK_TYPE, type)) return false;
     c->types[type - 7u].target = NO_ID;
     while (c->walk_count != 0u) {
         WalkItem *w = &c->walk[c->walk_count - 1u];
         TypeRecord *t = &c->types[w->object - 7u];
-        const uint32_t children = t->kind == TYPE_STRUCT ? t->count : 1u;
+        const uint32_t children = type_handle(c, w->object) ? 0u : t->kind == TYPE_STRUCT ? t->count : 1u;
         if (w->cursor < children) {
             const TypeId child = type_child(c, w->object, w->cursor++);
             if (child < 7u) {
@@ -258,12 +271,20 @@ static bool plan_constant(Emitter *e, uint32_t object) {
     }
     return !e->failed;
 }
+uint32_t spirv_sampled_type(Emitter *e, TypeId type) {
+    TypeRecord *t = &e->program->types[type - 7u];
+    if (t->aux != 0u) return t->aux;
+    TargetDeclaration *d = append_declaration(e, DECL_SAMPLED_IMAGE, type);
+    if (d == NULL) return 0u;
+    t->aux = d->id;
+    return d->id;
+}
 bool spirv_wrapped_resource(const CompilerWorkspace *c, const ResourceRecord *r) {
-    return !(r->type >= 7u && c->types[r->type - 7u].kind == TYPE_STRUCT &&
+    return !type_handle(c, r->type) && !(r->type >= 7u && c->types[r->type - 7u].kind == TYPE_STRUCT &&
              (c->types[r->type - 7u].flags & TYPE_TAIL) != 0u);
 }
 uint32_t spirv_resource_storage(const ResourceRecord *r) {
-    return r->kind == DOE_COMPILER_UNIFORM_BUFFER ? 2u : 12u;
+    return r->kind >= DOE_COMPILER_SAMPLED_TEXTURE ? 0u : r->kind == DOE_COMPILER_UNIFORM_BUFFER ? 2u : 12u;
 }
 static bool same_signature(const IrProgram *program, const FunctionRecord *a, const FunctionRecord *b) {
     if (a->result_type != b->result_type || a->formal_count != b->formal_count) return false;
@@ -303,8 +324,15 @@ bool spirv_plan_module(Emitter *e) {
     CompilerWorkspace *c = e->program;
     for (uint32_t i = 0u; i < c->type_count; ++i) { c->types[i].target = 0u; c->types[i].aux = 0u; }
     for (uint32_t i = 0u; i < c->constant_count; ++i) c->constants[i].target = 0u;
-    for (uint32_t i = 0u; i < c->type_count; ++i)
+    for (uint32_t i = 0u; i < c->type_count; ++i) {
         if (!type_abstract(c, i + 7u) && !plan_type(e, i + 7u)) return false;
+        const TypeRecord *t = &c->types[i];
+        if (t->kind != TYPE_TEXTURE) continue;
+        const ImageType image = t->state.image;
+        if (image.dimension == DOE_COMPILER_VIEW_1D) e->image_capabilities |= image.format != 0u ? 4u : 2u;
+        if (image.dimension == DOE_COMPILER_VIEW_CUBE_ARRAY) e->image_capabilities |= 8u;
+        if (image.format == 6u || image.format == 25u || image.format == 35u) e->image_capabilities |= 16u;
+    }
     for (uint32_t f = 0u; f < c->function_count; ++f) {
         FunctionRecord *function = &c->functions[f];
         function->state.target.function = spirv_reserve_ids(e, 1u);
@@ -375,6 +403,8 @@ bool spirv_plan_module(Emitter *e) {
                 if (!plan_constant(e, ir->operands.scalar.binding)) return false;
                 e->values[ir->result] = c->constants[ir->operands.scalar.binding].target;
             } else e->values[ir->result] = spirv_reserve_ids(e, 1u);
+        } else if (ir->opcode == IR_IMAGE) {
+            if (!spirv_image_plan(e, ir)) return false;
         } else if (ir->opcode == IR_WORKGROUP_BARRIER) {
             if (!plan_workgroup_barrier(e)) return false;
         } else if (ir->opcode == IR_BUILTIN) {
@@ -439,7 +469,8 @@ static bool annotations(Emitter *e) {
         const ResourceRecord *r = &c->resources[i];
         EMIT(OP_DECORATE, r->target, 34u, r->group);
         EMIT(OP_DECORATE, r->target, 33u, r->binding);
-        if (r->access == DOE_COMPILER_READ) { EMIT(OP_DECORATE, r->target, 24u); }
+        if (r->access == DOE_COMPILER_READ && (r->kind == DOE_COMPILER_STORAGE_BUFFER || r->kind == DOE_COMPILER_STORAGE_TEXTURE)) { EMIT(OP_DECORATE, r->target, 24u); }
+        if (r->access == DOE_COMPILER_WRITE) { EMIT(OP_DECORATE, r->target, 25u); }
     }
     for (uint32_t i=0u;i<c->entry_input_count;++i)
         EMIT(OP_DECORATE,c->entry_inputs[i].target,11u,builtin_decoration(c->entry_inputs[i].kind));
@@ -492,7 +523,9 @@ static bool dynamic_declarations(Emitter *e) {
         switch (d->kind) {
             case DECL_TYPE: {
                 const TypeRecord *t = &c->types[d->type - 7u];
-                if (t->kind == TYPE_VECTOR) { EMIT(OP_TYPE_VECTOR, d->id, spirv_target_type(e, t->element), t->count); }
+                if (t->kind == TYPE_TEXTURE || t->kind == TYPE_SAMPLER) {
+                    if (!spirv_image_type(e, t, d->id)) return false;
+                } else if (t->kind == TYPE_VECTOR) { EMIT(OP_TYPE_VECTOR, d->id, spirv_target_type(e, t->element), t->count); }
                 else if (t->kind == TYPE_ARRAY) { EMIT(OP_TYPE_ARRAY, d->id, spirv_target_type(e, t->element), d->first); }
                 else if (t->kind == TYPE_RUNTIME_ARRAY) { EMIT(OP_TYPE_RUNTIME_ARRAY, d->id, spirv_target_type(e, t->element)); }
                 else {
@@ -503,6 +536,9 @@ static bool dynamic_declarations(Emitter *e) {
                 }
                 break;
             }
+            case DECL_SAMPLED_IMAGE:
+                EMIT(OP_TYPE_SAMPLED_IMAGE, d->id, spirv_target_type(e, d->type));
+                break;
             case DECL_POINTER:
                 EMIT(OP_TYPE_POINTER, d->id, d->storage, (uint32_t)d->payload);
                 break;
@@ -536,6 +572,11 @@ static bool dynamic_declarations(Emitter *e) {
 bool spirv_module_declarations(Emitter *e) {
     CompilerWorkspace *c = e->program;
     EMIT(OP_CAPABILITY, 1u);
+    if ((e->image_capabilities & 1u) != 0u) { EMIT(OP_CAPABILITY, 50u); }
+    if ((e->image_capabilities & 2u) != 0u) { EMIT(OP_CAPABILITY, 43u); }
+    if ((e->image_capabilities & 4u) != 0u) { EMIT(OP_CAPABILITY, 44u); }
+    if ((e->image_capabilities & 8u) != 0u) { EMIT(OP_CAPABILITY, 45u); }
+    if ((e->image_capabilities & 16u) != 0u) { EMIT(OP_CAPABILITY, 49u); }
     if (e->subgroup_capabilities != 0u) {
         EMIT(OP_CAPABILITY, 61u); /* GroupNonUniform, SPIR-V 1.3. */
         if ((e->subgroup_capabilities & 1u) != 0u) { EMIT(OP_CAPABILITY, 63u); }
