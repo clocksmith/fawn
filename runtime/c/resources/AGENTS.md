@@ -64,3 +64,7 @@ never CPU-inspect or forward unchecked counts. Hidden native copy capability mus
 not alter public usage, and new product-sensitive builtins require guard coordination.
 Mapping attachment consumes its generation even when an empty borrowed mapping
 has no pointer. Never use pointer nullness as proof that completion is unconsumed.
+Viewport limits belong to the copied requested device configuration, not attachment
+bounds. Keep physical-native admission separate, preserve valid negative/zero
+viewports and reject exact upper-edge excess without rounded-sum acceptance.
+Scissors alone remain bounded to the actual pass attachment extent.

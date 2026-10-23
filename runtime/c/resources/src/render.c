@@ -327,7 +327,22 @@ doe_resource_status doe_resource_render_pass_set_state(doe_resource_render_pass 
     if (!state) return resource_encoder_fail(pass->encoder, DOE_RESOURCE_INVALID_ARGUMENT);
     for (size_t i = 0; i < 6; i++) if (!isfinite(state->viewport[i])) return resource_encoder_fail(pass->encoder, DOE_RESOURCE_RANGE);
     for (size_t i = 0; i < 4; i++) if (!isfinite(state->blend[i])) return resource_encoder_fail(pass->encoder, DOE_RESOURCE_RANGE);
-    for (size_t i = 0; i < 4; i++) if (state->viewport[i] < 0) return resource_encoder_fail(pass->encoder, DOE_RESOURCE_RANGE);
+    uint32_t max_dimension = pass->base.config.max_texture_dimension_2d;
+    if (!max_dimension) max_dimension = 8192;
+    /* Float inputs widen exactly, and the uint32 limit product fits double. */
+    double limit = max_dimension;
+    double range = 2.0 * limit;
+    for (size_t axis = 0; axis < 2; axis++) {
+        double origin = state->viewport[axis], size = state->viewport[axis + 2];
+        double edge = range - 1;
+        double larger = origin > size ? origin : size;
+        double smaller = origin > size ? size : origin;
+        /* A possible crossing has larger > edge/2, making edge-larger exact.
+         * Do not let even a subnormal excess vanish in a rounded edge sum. */
+        if (size < 0 || size > limit || origin < -range || larger > edge ||
+            (larger > edge * 0.5 && smaller > edge - larger))
+            return resource_encoder_fail(pass->encoder, DOE_RESOURCE_RANGE);
+    }
     if (state->viewport[4] < 0 || state->viewport[5] > 1 || state->viewport[4] > state->viewport[5])
         return resource_encoder_fail(pass->encoder, DOE_RESOURCE_RANGE);
     uint32_t extent[2];
