@@ -1,0 +1,48 @@
+{
+  "status": "developer_exercised_not_independently_accepted",
+  "timestamp_utc": "2026-10-23T17:25:18.337011+00:00",
+  "compiler_commit": "54f0fb9f6f7202cb13d37e7440ea9d7e13e99b0f",
+  "software_adapter": "SwiftShader Device (Subzero)",
+  "physical_runs": "none; Miles and Suby on hold",
+  "checks": {
+    "strict_c11_build": true,
+    "public_c_compute": true,
+    "typed_c_and_cpp_procedure_calls": true,
+    "asan_ubsan_compiler_and_runtime": true,
+    "leak_sanitizer": "unavailable under ptrace; first leak-enabled run failed in LeakSanitizer, later ASan/UBSan run disables leak checks",
+    "exported_public_count": 75,
+    "pinned_public_count": 202,
+    "all_export_proc_addresses_match": true,
+    "all_unprovided_proc_names_null": true,
+    "private_owner_exports": false
+  },
+  "earlier_development_drift": "Clean build against unfinished live compiler ABI6 edits failed for unhandled IR_HANDLE/IR_IMAGE enum cases. No flags weakened. Committed ABI5 closure then compiled and passed.",
+  "scope_limits": [
+    "synchronous QueueSubmit, not finished asynchronous producer lane",
+    "compute-only, not full WebGPU feature-level support",
+    "unimplemented public entrypoints absent, not success stubs",
+    "unknown completion retains ownership; unattended recovery unfinished",
+    "descriptor labels not retained",
+    "no independent qualification, performance or physical GPU claim"
+  ],
+  "source_manifest_sha256": "6231a3418efbf93fb12386a0fe3164a7d6ba6d4ca24e2f2616f74bb9893ad391",
+  "artifacts_sha256": {
+    "/tmp/doe-native-checkpoint-build/libwebgpu_doe_c.so": "d98084e6874a5d3d8778d272583e828abf2494cea87460cea0661ad2f9d062ce",
+    "/tmp/doe-native-checkpoint-build/libdoe_compiler.so": "5b5e2f189e347d2e59abca25a6f6a8594f7a940c3b8358bc0bbe7b37bea28698",
+    "/tmp/doe-native-checkpoint-build/compute": "a2405f9b167a7bbad4475122752666da2aeabaab313a891161481e96bb76a191",
+    "/tmp/doe-native-checkpoint-build/procedures-cxx": "f7c5b0539983e33c63e8f778ad7d2c8879a7977ea969fc479fb7380f2181e250",
+    "/tmp/doe-native-checkpoint-sanitize/libwebgpu_doe_c.so": "67338370aab14447e55bd4a59764af5f7d44321f27131ff8db972ab75b2f2c50",
+    "/tmp/doe-native-checkpoint-sanitize/libdoe_compiler.so": "fec2a2d46783f0a59975d406358cff91aa24f7ed99411c5f6902eb0014979f6e"
+  },
+  "logs_sha256": {
+    "/tmp/doe-native-checkpoint-build.log": "314f9ee7b6ca926059de343efeac1d3635baaaba8a9376cd532d843a6d7624df",
+    "/tmp/doe-native-checkpoint-smoke.log": "18f8c39ce9e1d8fa71fb0b2b1c87c9653e33be663d78af56c32637d214520107",
+    "/tmp/doe-native-checkpoint-sanitize-build.log": "ca4e54a9b64ec0a240558ca2a18685b9c1d0f5bbbb6e18a1ab43f331f82b5526",
+    "/tmp/doe-native-checkpoint-sanitize.log": "18f8c39ce9e1d8fa71fb0b2b1c87c9653e33be663d78af56c32637d214520107",
+    "/tmp/doe-native-sanitize.log": "9b21557dfc1c247caeb2fe8ba6d93ec8a9f58e13f0de7cff789b7919b38ae6c6"
+  },
+  "tools": {
+    "gcc": "gcc (Debian 14.2.0-19) 14.2.0",
+    "g++": "g++ (Debian 14.2.0-19) 14.2.0"
+  }
+}
