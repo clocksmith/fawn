@@ -77,15 +77,17 @@ int main(int argc, char **argv) {
     doe_vk_commands *commands = NULL;
     require(doe_vk_commands_create(context, &commands, &error), "commands");
     const doe_vk_clear_color blue = {.float32 = {0, 0, 1, 1}};
-    require(doe_vk_commands_clear_color(commands, view, blue), "clear-only begin");
     const doe_vk_binding_resource binding = { .kind = DOE_VK_BINDING_UNIFORM, .value.buffer = {uniform, 0, 96} };
     const doe_vk_buffer_binding vertex_binding = {vertices, 0, sizeof(triangle)};
     doe_vk_render_draw draw = { .vertex_count = 3, .instance_count = 1,
         .viewport = {0, 0, 8, 8, 0, 1}, .scissor = {0, 0, 4, 8} };
-    require(doe_vk_commands_draw(commands, pipeline, view, &binding, 1, &vertex_binding, 1, &draw), "first preserving draw");
-    draw.scissor[0] = 4;
-    draw.scissor[3] = 4;
-    require(doe_vk_commands_draw(commands, pipeline, view, &binding, 1, &vertex_binding, 1, &draw), "second preserving draw");
+    doe_vk_render_pass_draw pass_draws[2] = {
+        {pipeline, &binding, 1, &vertex_binding, 1, draw},
+        {pipeline, &binding, 1, &vertex_binding, 1, draw}
+    };
+    pass_draws[1].draw.scissor[0] = 4;
+    pass_draws[1].draw.scissor[3] = 4;
+    require(doe_vk_commands_render_pass(commands, view, &blue, pass_draws, 2), "one clear/two-draw pass");
     const doe_vk_texture_region region = {.extent = {8, 8, 1}};
     const doe_vk_texture_buffer_layout packed = {0};
     require(doe_vk_commands_read_texture(commands, texture, region, readback, packed), "render readback");
@@ -109,6 +111,6 @@ int main(int argc, char **argv) {
     require(doe_vk_commands_release(commands), "retire");
     doe_vk_buffer_release(readback);
     doe_vk_context_release(context);
-    puts("PASS real offscreen clear +two preserving vertex-buffer draws, dynamic scissors, uniform descriptors, exact64-pixel oracle and early native caller release");
+    puts("PASS one real offscreen clear/two-draw pass, dynamic scissors, uniform descriptors, exact64-pixel oracle and early native caller release");
     return 0;
 }

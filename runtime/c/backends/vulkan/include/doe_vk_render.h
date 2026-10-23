@@ -72,11 +72,28 @@ typedef struct doe_vk_render_draw {
      * clockwise_front remains the explicit native framebuffer winding choice. */
     doe_vk_viewport_convention viewport_convention;
 } doe_vk_render_draw;
-/* Each operation records one real native pass, retaining its framebuffer/pass,
- * view, pipeline and resources. A clear-only begin packet initializes one full
- * 2D view subresource; every subsequent draw loads/preserves it. This maps to
- * existing resource packets, not a second public pass recorder. Native images
- * are always stored here; discard, depth/MSAA/indexed/indirect remain separate. */
+typedef struct doe_vk_render_pass_draw {
+    doe_vk_pipeline *pipeline;
+    const doe_vk_binding_resource *bindings;
+    size_t binding_count;
+    const doe_vk_buffer_binding *vertices;
+    size_t vertex_buffer_count;
+    doe_vk_render_draw draw;
+} doe_vk_render_pass_draw;
+/* One real single-color native pass for the entire borrowed draw span. NULL
+ * clear means LOAD of initialized contents; non-NULL clears once at begin.
+ * All structural draw checks precede resource preparation; all descriptor/image
+ * admission, barriers and image transitions finish before native begin. No caller data survives
+ * the call; existing command leases retain each used native resource. On any
+ * error discard the poisoned command owner, never submit a partial pass.
+ * This consumes immutable resource packets, not a second recording engine.
+ * Depth/stencil/MSAA/indexed/indirect/occlusion remain unsupported here. */
+doe_vk_status doe_vk_commands_render_pass(doe_vk_commands *commands,
+    doe_vk_texture_view *target, const doe_vk_clear_color *clear,
+    const doe_vk_render_pass_draw *draws, size_t count);
+/* Convenience operations delegate to the same pass owner. A clear-only begin
+ * initializes one full 2D view subresource; a later single draw LOADs it.
+ * Native images are always stored; discard is not admitted by this owner. */
 doe_vk_status doe_vk_commands_clear_color(doe_vk_commands *commands,
     doe_vk_texture_view *target, doe_vk_clear_color clear);
 doe_vk_status doe_vk_commands_draw(doe_vk_commands *commands,

@@ -60,6 +60,7 @@ typedef struct doe_vk_buffer_use {
 typedef struct doe_vk_dispatch_use {
     doe_vk_pipeline *pipeline;
     VkDescriptorPool pool;
+    VkDescriptorSet sets[DOE_VK_MAX_GROUPS];
     struct doe_vk_texture_view *views[DOE_VK_MAX_BINDINGS];
     struct doe_vk_sampler *samplers[DOE_VK_MAX_BINDINGS];
     struct doe_vk_dispatch_use *next;
@@ -104,6 +105,9 @@ doe_vk_status doe_vk_shader_module(doe_vk_context *context, const doe_vk_shader 
     VkShaderModule *out, doe_vk_error *error);
 doe_vk_status doe_vk_pipeline_layout_create(doe_vk_pipeline *pipeline,
     const doe_vk_binding_layout *layout, size_t count, uint32_t stages, doe_vk_error *error);
+doe_vk_status doe_vk_prepare_resources(doe_vk_commands *commands, doe_vk_pipeline *pipeline,
+    const doe_vk_binding_resource *bindings, size_t count, doe_vk_dispatch_use **out);
+void doe_vk_bind_prepared_resources(doe_vk_commands *commands, const doe_vk_dispatch_use *use);
 doe_vk_status doe_vk_bind_resources(doe_vk_commands *commands, doe_vk_pipeline *pipeline,
     const doe_vk_binding_resource *bindings, size_t count);
 void doe_vk_render_release(doe_vk_commands *commands);
