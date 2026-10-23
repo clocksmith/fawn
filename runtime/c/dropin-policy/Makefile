@@ -4,7 +4,8 @@
 
 ROOT := $(abspath ../../..)
 OWNER := $(ROOT)/runtime/c/dropin-policy
-BUILD ?= /tmp/doe-dropin-policy
+include $(dir $(lastword $(MAKEFILE_LIST)))../build-root.mk
+BUILD ?= $(DOE_C_TMP)/dropin-policy
 BUILD := $(abspath $(BUILD))
 ifeq ($(origin CC),default)
 CC := gcc

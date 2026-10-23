@@ -1,6 +1,7 @@
 CC = gcc
 AR = ar
-BUILD ?= /tmp/doe-c-resources
+include $(dir $(lastword $(MAKEFILE_LIST)))../build-root.mk
+BUILD ?= $(DOE_C_TMP)/resources
 CPPFLAGS += -Iinclude -I../instance/include -I../futures/include -I../labels/include -I../../zig/vendor/webgpu-headers
 CFLAGS ?= -O2 -g
 CFLAGS += -std=c11 -Wall -Wextra -Wpedantic -Werror -pthread
@@ -80,7 +81,7 @@ check: $(BUILD)/test_binding_limits $(BUILD)/test_program_reservation $(BUILD)/t
 	$(BUILD)/test_pipeline_admission
 	$(BUILD)/test_binding_limits
 
-VK_BUILD ?= /tmp/doe-c-resources-vulkan
+VK_BUILD ?= $(DOE_C_TMP)/resources-vulkan
 .PHONY: vulkan-lifetime vulkan-library
 vulkan-library:
 	$(MAKE) -C ../backends/vulkan OUT=$(VK_BUILD) all
@@ -105,7 +106,7 @@ vulkan-query-lifetime: $(BUILD)/vulkan_query_lifetime
 # Optional actual compiler consumer. Require a deliberate, source-bound producer;
 # never silently link the compiler directory's possibly stale build artifact.
 SHADER_ROOT ?= ../shader
-SHADER_BUILD ?= /tmp/doe-c-resources-indirect-shader
+SHADER_BUILD ?= $(DOE_C_TMP)/resources-indirect-shader
 COMPILER_LIBRARY ?=
 .PHONY: vulkan-indirect-lifetime shader-library compiler-library
 shader-library:

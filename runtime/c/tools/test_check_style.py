@@ -84,6 +84,12 @@ class StyleTests(unittest.TestCase):
         self.assertEqual(self.rules({"o/Makefile": b"CFLAGS += -std=c11 -Wall\n"}), ["flags"])
         self.assertEqual(self.rules({"o/Makefile": b"package:\n\ttrue\n"}), [])
 
+    def test_tmp_defaults(self):
+        self.assertEqual(self.rules({"o/Makefile": b"BUILD ?= /tmp/doe-c-o\n"}), ["tmp"])
+        self.assertEqual(self.rules({"o/sources.mk": b"OUT ?= /tmp/x\n"}), ["tmp"])
+        self.assertEqual(self.rules({"o/Makefile": b"BUILD ?= $(DOE_C_TMP)/o\n"}), [])
+        self.assertEqual(self.rules({"o/Makefile": b"BUILD := $(abspath $(BUILD))\n"}), [])
+
 
 if __name__ == "__main__":
     unittest.main()

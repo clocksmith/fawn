@@ -277,7 +277,7 @@ Discard preservation, a failed second view preparation before any encoder,
 abandonment, unknown completion and terminal poisoning. The retained terminal
 artifact distinguishes its first fixture assertion from the corrected host pass.
 
-Artifacts default to `/tmp/doe-c-metal`. `check` runs the owned native-call fault
+Artifacts default to `$(DOE_C_TMP)/metal`, a per-checkout root from [build-root.mk](../../build-root.mk). `check` runs the owned native-call fault
 and lifetime controls plus typed message-call controls. It does not interpret or
 execute a shader. On Linux the real public constructor's probe must reject Metal.
 `abi-compile` is syntax/type compilation of source branches, not cross-compilation

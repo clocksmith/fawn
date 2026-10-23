@@ -1,5 +1,6 @@
 CC = gcc
-BUILD ?= /tmp/doe-c-common
+include $(dir $(lastword $(MAKEFILE_LIST)))../build-root.mk
+BUILD ?= $(DOE_C_TMP)/common
 CPPFLAGS += -Iinclude
 CFLAGS ?= -O2 -g
 CFLAGS += -std=c11 -Wall -Wextra -Wpedantic -Werror

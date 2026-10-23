@@ -106,7 +106,7 @@ From this directory:
 `make library` creates a reusable private target archive; its shared compiler
 helper dependencies remain owned by the existing C core.
 
-All build/generated outputs go to `/tmp/doe-metal-target` by default; override
+All build/generated outputs go to `$(DOE_C_TMP)/metal-target` (per-checkout root, [build-root.mk](../../../build-root.mk)) by default; override
 OUT when needed. The first target links ordinary GCC C against the same shared
 parser/sema and checks real residual-style sources, explicit layout, vectors/math,
 workgroups, multiple entries, output sizing, deterministic publication, and

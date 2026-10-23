@@ -3,7 +3,8 @@
 .DELETE_ON_ERROR:
 ROOT := $(abspath ../../..)
 OWNER := $(ROOT)/runtime/c/labels
-BUILD ?= /tmp/doe-labels-author-20261023/build
+include $(dir $(lastword $(MAKEFILE_LIST)))../build-root.mk
+BUILD ?= $(DOE_C_TMP)/labels
 BUILD := $(abspath $(BUILD))
 ifeq ($(origin CC),default)
 CC := gcc

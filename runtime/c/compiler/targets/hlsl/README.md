@@ -185,7 +185,7 @@ copied as a generic mapping. No target-only builtin spellings are accepted.
 
 From this directory: `make check host-control library`.
 
-Outputs default to `/tmp/doe-hlsl-target`; override OUT as needed. `check` compiles
+Outputs default to `$(DOE_C_TMP)/hlsl-target` (per-checkout root, [build-root.mk](../../../build-root.mk)); override OUT as needed. `check` compiles
 against the live shared C core and exercises real WGSL sources, per-entry reuse,
 explicit layouts, vectors, waves, workgroup initialization, control, output sizing
 and unsupported-identity mutation controls. `library` produces a private archive

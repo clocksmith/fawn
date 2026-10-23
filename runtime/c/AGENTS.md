@@ -12,6 +12,9 @@ Label authored, compiled, exercised, accepted and hardware-qualified separately.
   (`tools/check_style.py`), tool tests, a build of every owner and the
   owned-mutable-globals check (`tools/check_globals.py`). Each owner's own
   `check` remains its behavioral gate; this one catches cross-owner breakage.
+- Owner Makefiles default every scratch tree under `$(DOE_C_TMP)` from
+  [build-root.mk](build-root.mk), one root per checkout. Clones on one host
+  never share objects. The style check's `tmp` rule rejects fixed `/tmp` defaults.
 - Every C/C++/Objective-C source and header is at most 999 physical lines.
   Split meaningful responsibilities; never pack lines or hide generated complexity.
 - A changed public header, enum or status set builds and checks every in-tree
