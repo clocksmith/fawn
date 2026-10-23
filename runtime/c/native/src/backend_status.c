@@ -15,6 +15,8 @@ native_result native_from_vulkan(doe_vk_status status)
     case DOE_VK_DEVICE_LOST: return NATIVE_DEVICE_LOST;
     case DOE_VK_BUSY: return NATIVE_BUSY;
     case DOE_VK_INVALID_STATE: return NATIVE_INVALID_STATE;
+    case DOE_VK_SURFACE_OUTDATED: return NATIVE_SURFACE_OUTDATED;
+    case DOE_VK_SURFACE_LOST: return NATIVE_SURFACE_LOST;
     }
     return NATIVE_FAILURE;
 }
@@ -56,6 +58,8 @@ doe_vk_status native_to_vulkan(native_result status)
     case NATIVE_DEVICE_LOST: return DOE_VK_DEVICE_LOST;
     case NATIVE_BUSY: return DOE_VK_BUSY;
     case NATIVE_INVALID_STATE: return DOE_VK_INVALID_STATE;
+    case NATIVE_SURFACE_OUTDATED: return DOE_VK_SURFACE_OUTDATED;
+    case NATIVE_SURFACE_LOST: return DOE_VK_SURFACE_LOST;
     }
     return DOE_VK_NATIVE_FAILURE;
 }
@@ -69,6 +73,14 @@ WGPUErrorType native_result_error(native_result status)
     case NATIVE_UNSUPPORTED:
     case NATIVE_BUSY:
     case NATIVE_INVALID_STATE: return WGPUErrorType_Validation;
-    default: return WGPUErrorType_Internal;
+    case NATIVE_PENDING:
+    case NATIVE_UNKNOWN:
+    case NATIVE_TIMEOUT:
+    case NATIVE_UNAVAILABLE:
+    case NATIVE_FAILURE:
+    case NATIVE_DEVICE_LOST:
+    case NATIVE_SURFACE_OUTDATED:
+    case NATIVE_SURFACE_LOST: return WGPUErrorType_Internal;
     }
+    return WGPUErrorType_Internal;
 }
