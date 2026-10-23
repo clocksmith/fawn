@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "kind": "Exact reviewed M13 owner installation; no implementation acceptance",
+  "accepted_M12_commit": "e8c1b2ecb1f94bf0a8cf871835fed9038a0bc572",
+  "accepted_M12_tree": "624939bef7c91b3dc8623f3995d6b98fb393d0e6",
+  "review_status": "Parent confirmed independent review of the exact seven-input design with no substantive blocker on 2026-10-23.",
+  "original_planning_seal_sha256": "33be0eaa5d2f0e538f01b0a2d9069aa758183ab58fd7ec0326dfcfbecb83ee21",
+  "reviewed_originals": {
+    "DRAFT.md": "a6314f58ec91ad58c0a4043da33f565bbf80f9581532e46e4f9ab9f76638c46d",
+    "LEDGER.md": "a2205857f1cabb6f00fc9eb8b869f950c0d277c28722c69374c53c462ba96510",
+    "EVALUATION.md": "e8cecea755d008a0331f69d02560c9d4a65fb585636a1666fad119229a8f1fda",
+    "doe_compiler_module.h": "47b8b52d78c45aa4097622185611b385834cdde56e765cf07ff16c285ab1b183",
+    "SOURCE_BINDINGS.json": "e1814fcac29f983b79781eeeb4eefb06560bb961dbadad9c6347c310195bcc62",
+    "layout_probe.c": "3240fde956ea332e28810364b66607b5a5dd8636d810a5d9689845dedd16b286",
+    "layout_probe.txt": "ea19f550e836c8c9914ec1af25e2132fc05f96056185064f9ddd0c41715c8c8e"
+  },
+  "installation_changes": [
+    "Status/title and installed-path navigation in the contract, ledger and evaluation only; all semantic, capacity, ABI, stack and witness requirements preserved.",
+    "Header comment navigation only; all declarations unchanged. Probe include-path navigation only; all record definitions and calculations unchanged. Probe output retained verbatim, not rerun.",
+    "Bind accepted M12 commit/tree and full accepted source manifest. All 76 original dependency bytes match the accepted commit and current checkout; no dependency byte changes.",
+    "Retain original seven-input planning seal verbatim and original input digests here. No copy of historical reports or probe executable."
+  ],
+  "implementation_started": false,
+  "independent_case_seal": "Pending; required before implementation. Contract review is not an executable case seal.",
+  "builds_or_tests_during_installation": "None; identity/content checks only.",
+  "files": {
+    "MILESTONE_13.md": "80c0e01ce9139641dde59a48f658a669efbaac21270c96227769f13718573fe2",
+    "MILESTONE_13_EVALUATION.md": "817f728c069c72e7475a4e2dd01a9bf2c80bb8321a687f74c45396d65a720507",
+    "MILESTONE_13_LEDGER.md": "be7309e061c6b28c91c2fd15e83f775fbbf6ad20e3d0439fc6f854a71ad09ed5",
+    "contracts/m13_accepted_m12_source.sha256": "73b51c7355912608f71f3f19c44b7f57f17ef3f8b05be9fbf05bccd5331aaaf4",
+    "contracts/m13_layout_probe.c": "8f2d5d579fbcf4fc4803a2f4991c4808e595a4c4c14a5f126bec7f80a1706251",
+    "contracts/m13_layout_probe.txt": "ea19f550e836c8c9914ec1af25e2132fc05f96056185064f9ddd0c41715c8c8e",
+    "contracts/m13_planning.sha256": "33be0eaa5d2f0e538f01b0a2d9069aa758183ab58fd7ec0326dfcfbecb83ee21",
+    "contracts/m13_source_inputs.json": "331e1b0eccff278a2b6ae1aa13fcb565e709a94bf0a7dca066de3bffc63d78ea",
+    "include/doe_compiler_module.h": "01cc2966ce7866ccfde6cca75e6ec6e60921f63c271e31cf94648e8d78907cef"
+  }
+}
