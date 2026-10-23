@@ -15,7 +15,7 @@ $(BUILD)/%.o: src/%.c src/internal.h include/doe_resources.h include/doe_resourc
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 $(BUILD)/libdoe_resources.a: $(OBJECTS)
 	$(AR) rcs $@ $^
-$(BUILD)/test_resources: tests/test_resources.c $(BUILD)/libdoe_resources.a $(LABEL_SOURCES) tests/fixture.h
+$(BUILD)/test_resources: tests/test_resources.c $(BUILD)/libdoe_resources.a $(LABEL_SOURCES) tests/fixture.h src/internal.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(filter-out %.h,$^) -o $@
 $(BUILD)/test_extended: tests/test_extended.c $(BUILD)/libdoe_resources.a $(LABEL_SOURCES) tests/fixture.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(filter-out %.h,$^) -o $@

@@ -223,11 +223,13 @@ doe_resource_status doe_resource_buffer_map_complete(doe_resource_buffer *buffer
 {
     if (!buffer) return DOE_RESOURCE_INVALID_ARGUMENT;
     if (!resource_buffer_available(buffer)) return DOE_RESOURCE_UNAVAILABLE;
-    bool creation = buffer->mapped && !buffer->map_pending && !buffer->mapped_bytes &&
+    bool creation = buffer->mapped && !buffer->map_pending &&
         buffer->desc.mapped_at_creation && buffer->generation == 0 && generation == 0;
     if ((!buffer->map_pending && !creation) || generation != buffer->generation)
         return DOE_RESOURCE_STATE;
     if (success && !mapped_bytes && buffer->map_size) return DOE_RESOURCE_INVALID_ARGUMENT;
+    /* Consume the initial token even for a valid empty mapping with no pointer. */
+    if (creation) buffer->generation++;
     buffer->map_pending = false;
     buffer->mapped = success;
     if (!success) buffer->map_mode = WGPUMapMode_None;

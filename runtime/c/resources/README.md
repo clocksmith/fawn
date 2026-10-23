@@ -349,3 +349,12 @@ API. This bounded software consumer is not a public indirect ABI or physical-GPU
 qualification. Product-sensitive workgroup/global-invocation-index builtins remain
 compiler-unsupported in this producer; later admission requires coordinated guard
 rules. Indexed/indirect rendering is outside this execution witness.
+
+Initial mapped-at-creation attachment now consumes the existing generation token,
+including a zero-byte mapping whose borrowed pointer is NULL. Pointer nullness is
+not an ownership state. Duplicate/stale successful or failed completions reject;
+invalid nonempty NULL completion leaves the token available for a valid retry.
+Empty end-of-buffer mappings and the last UINT64_MAX token preserve checked range,
+untouched-output and retirement contracts. `DEVELOPER_RECEIPT_MAP_TOKEN.json`
+preserves the first failure. This was a private resource-owner contract bug;
+current public native zero-size backing is non-NULL, so public exposure is not claimed.

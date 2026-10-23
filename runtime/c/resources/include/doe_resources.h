@@ -119,7 +119,8 @@ void *doe_resource_buffer_native(const doe_resource_buffer *buffer);
  * require Write mode; const ranges admit Read or Write.
  * Unmap/destroy invalidates pending generations. The backend owns map/unmap and
  * establishes GPU completion before success. For mapped-at-creation attach the
- * initial borrowed mapping once with map_complete(generation=0, success=true). */
+ * initial borrowed mapping once with map_complete(generation=0, success=true).
+ * Completion consumes token zero even when an empty mapping has a NULL pointer. */
 doe_resource_status doe_resource_buffer_map_begin(doe_resource_buffer *buffer,
     WGPUMapMode mode, uint64_t offset, uint64_t size, uint64_t *generation);
 doe_resource_status doe_resource_buffer_map_complete(doe_resource_buffer *buffer,
