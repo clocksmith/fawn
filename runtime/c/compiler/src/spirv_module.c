@@ -217,6 +217,7 @@ static bool plan_type(Emitter *e, TypeId type) {
                                 "SPIR-V ArrayStride format capacity exceeded");
         }
         if (t->kind == TYPE_ATOMIC) t->target = spirv_scalar_type(t->element);
+        else if (t->kind == TYPE_POINTER) t->target = spirv_pointer_type(e, t->element, 7u);
         else if (t->kind == TYPE_VECTOR && t->element == IR_U32 && t->count == 3u) t->target = ID_VEC3;
         else {
             const uint32_t length = t->kind == TYPE_ARRAY ? spirv_unsigned_constant(e, t->count) : 0u;

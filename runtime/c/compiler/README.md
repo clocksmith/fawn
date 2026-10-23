@@ -288,3 +288,47 @@ historical evidence and the full compiler migration gates.
 
 The final full-feature50% source-reduction goal includes the complete delivery
 burden. No such reduction or complete compiler migration is claimed by M13.
+
+## Function-address pointer increment
+
+The shared grammar/typed pipeline admits `ptr<function,T>` parameters and ordinary
+address/dereference expressions, including immutable pointer aliases and forwarded
+helper arguments. Pointees must be concrete constructible types. Pointer values
+cannot escape through returns, mutable variables, structs, arrays or resources;
+vector components are not addressable. Baseline arguments retain their root's
+whole memory view. Private module variables and the `unrestricted_pointer_parameters`
+and `pointer_composite_access` extensions remain unsupported, not inferred from
+SPIR-V acceptance. The unchanged `monte_carlo_paths_fixed_samples.wgsl` is a source
+admission witness, not a performance or physical-execution claim.
+
+`TYPE_POINTER` and `IR_ADDRESS` are private typed identities, with no new public ABI,
+reflection kind, record growth or queried workspace increase. A local address keeps
+its root and access path, including once-evaluated dynamic indices; pointer formals
+refer to the actual caller's Function variable. Subobject addresses are not converted
+into target pointers until an ordinary guarded read/write, preserving per-access
+OOB zero/discard behavior. Whole-root helper arguments use ordinary Function
+pointers without either VariablePointers capability or a copy-in/copy-out substitute.
+
+Source-static alias analysis propagates pointer parameter reads/writes across the
+complete call graph, including skipped/dead calls. Read-only alias arguments are
+legal; a repeated root with any written corresponding parameter rejects. One byte
+per formal borrows the already charged analysis union after successful semantic
+Walk completion, before closure/uniformity phases reset it. The checked work budget
+is 67,108,864 operations; no unbounded hidden matrix/worklist is allocated.
+
+A function whose transitive closure combines first-class pointer operations and a
+collective currently rejects explicitly: pointer write-through uniformity requires
+additional dependency summaries beyond the current return-value analysis. This
+increment does not misclassify a uniform pointer identity as uniform pointee data.
+Independent sibling entries without that interaction remain usable. `test_pointers.py`
+checks source-static alias/lifetime rules, guards and actual emitted scalar helper
+execution; `test_pointer_api.c` checks ABI7-9 projection/failure/reuse behavior.
+
+`test_pointer_vulkan.c` consumes `tests/pointer_operations.wgsl` through the real
+ABI9 library and an explicitly supplied C Vulkan backend. The same build recipe
+as `tests/test_atomic_vulkan.c` applies, with the pointer C filename; run the result
+as `EXECUTABLE tests/pointer_operations.wgsl --allow-software` under an explicit
+software ICD. Its five invocations compare 55 integer words, including actual
+aggregate caller mutations, immutable index snapshots and OOB behavior. It requires
+a software adapter and checks sentinels and pending lifetimes; no native runtime
+parser, reflected execution or physical qualification is substituted.

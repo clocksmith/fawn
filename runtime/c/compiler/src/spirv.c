@@ -371,7 +371,7 @@ static bool emit_pointer_access(Emitter *e, const IrInstruction *ir) {
     const bool wrapped = resource != NULL && spirv_wrapped_resource(c, resource);
     const uint32_t local = category == ROOT_VALUE ? ir->operands.access.value : root;
     const uint32_t base = resource != NULL ? resource->target : category == ROOT_WORKGROUP ? c->workgroups[root].target :
-        e->local_base + (local - e->local_start);
+        category == ROOT_POINTER ? e->values[c->limits.instructions + 1u + root] : e->local_base + (local - e->local_start);
     if (category == ROOT_VALUE) { EMIT(OP_STORE, base, e->values[root]); }
     if (!access_walk(e, ir->operands.access.path)) return false;
     uint32_t condition;
@@ -621,6 +621,15 @@ static bool emit_block(Emitter *e, const IrProgram *program, size_t *cursor,
         if (ir->result != 0u && ir->opcode != IR_CONSTANT) e->values[ir->result] = spirv_reserve_ids(e, 1u);
         const uint32_t result = e->values[ir->result];
         switch (ir->opcode) {
+            case IR_ADDRESS:
+                /* A local subobject address is a typed path descriptor. Its
+                 * bounds are tested only when dereferenced; baseline calls
+                 * accept whole-root pointers, never these subobject values. */
+                e->values[ir->result] = ir->operands.access.path != NO_ID ? 0u :
+                    ir->operands.access.category == ROOT_POINTER ?
+                    e->values[program->limits.instructions + 1u + ir->operands.access.root] :
+                    e->local_base + ir->operands.access.root - e->local_start;
+                break;
             case IR_ARRAY_LENGTH:
                 if (!spirv_runtime_length(e, ir->operands.scalar.binding, result)) return false;
                 break;

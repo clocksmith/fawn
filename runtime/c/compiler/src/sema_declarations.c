@@ -165,8 +165,6 @@ bool sema_type_reference(Source *s, TypeRef ref, const LocalScope *scope, TypeId
         if (ref.syntax >= c->generic_count) return source_error(s, DOE_COMPILER_INPUT_ERROR, ref.offset, "invalid type syntax identity");
         const GenericSyntax *g = &c->generic_syntax[ref.syntax];
         if (lexical_value(s, scope, g->name) || sema_module_declared(s, g->name)) return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, g->name.offset, "type generator is shadowed");
-        if (source_span_is(s,g->name,"ptr"))
-            return source_error(s,DOE_COMPILER_UNSUPPORTED,g->name.offset,"first-class pointer types are not supported");
         if (g->name.length >= 16u && memcmp(s->source + g->name.offset, "texture_storage_", 16u) == 0) {
             if (!sema_image_type(s, ref, IR_VOID, &type)) return false;
             break;
@@ -183,6 +181,8 @@ bool sema_type_reference(Source *s, TypeRef ref, const LocalScope *scope, TypeId
         const GenericSyntax *g = &c->generic_syntax[index];
         if (type_image_named(s, g->name)) {
             if (!sema_image_type(s, (TypeRef){g->name.offset, index}, type, &type)) return false;
+        } else if (source_span_is(s, g->name, "ptr")) {
+            if (!type_intern(s, TYPE_POINTER, type, 1u, &type)) return false;
         } else if (source_span_is(s, g->name, "atomic")) {
             if (g->count_expression != NO_ID || (type != IR_I32 && type != IR_U32))
                 return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, g->name.offset, "atomic requires one i32 or u32 element type");
@@ -490,7 +490,7 @@ static bool resolve_signatures(Source *s, const LocalScope *scope) {
             FormalRecord *p = &c->formals[index];
             TypeId type;
             if (!sema_valid_name(s, p->name) || !sema_type_reference(s, p->type.annotation, scope, &type)) return false;
-            if (!type_constructible(c, type) && !type_handle(c, type)) return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, p->name.offset, "formal type is not constructible or a handle");
+            if (!type_constructible(c, type) && !type_handle(c, type) && !type_pointer(c, type)) return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, p->name.offset, "formal type is not constructible or a handle");
             const uint32_t offset = p->type.annotation.offset;
             p->type.resolved.type = type;
             p->type.resolved.offset = offset;
