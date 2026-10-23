@@ -482,7 +482,10 @@ static bool native_direct_read_u64_prop(napi_env env, napi_value obj, const char
 }
 
 static bool native_direct_parse_required_limits(napi_env env, napi_value limits_value, WGPULimits* limits) {
-    memset(limits, 0, sizeof(*limits));
+    /* Absent members stay WGPU_LIMIT_U32/U64_UNDEFINED (all bits set), never 0:
+     * zero is a real requested value and an invalid alignment. */
+    memset(limits, 0xff, sizeof(*limits));
+    limits->nextInChain = NULL;
     if (limits_value == NULL) return true;
     napi_valuetype vt = napi_undefined;
     if (napi_typeof(env, limits_value, &vt) != napi_ok) {
@@ -669,7 +672,6 @@ static bool native_direct_parse_device_descriptor(
         out_desc->requiredFeatures = out_required_features ? *out_required_features : NULL;
     }
 
-#ifdef _WIN32
     napi_value limits_value;
     if (napi_get_named_property(env, descriptor_value, "requiredLimits", &limits_value) == napi_ok) {
         if (!native_direct_parse_required_limits(env, limits_value, out_required_limits)) {
@@ -677,7 +679,6 @@ static bool native_direct_parse_device_descriptor(
         }
         out_desc->requiredLimits = out_required_limits;
     }
-#endif
 
     napi_value default_queue_value;
     if (napi_get_named_property(env, descriptor_value, "defaultQueue", &default_queue_value) == napi_ok) {
