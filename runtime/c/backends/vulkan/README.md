@@ -77,7 +77,10 @@ sliced 3D). Buffer copies of block formats count block columns and rows
 texels), regions start block-aligned and end on whole blocks or at the
 subresource edge, and a block-rounded WebGPU extent is clamped to that edge.
 `tests/image_format_contract.c` checks the gate, block caps and copy regions.
-Swizzles remain outside this increment. Format reinterpretation is limited to the
+`doe_vk_texture_view_desc.swizzle` names each channel's native VkComponentSwizzle
+source (zero is identity); a swizzled view is sampled-only, so color/depth
+attachments and storage bindings reject it (`tests/texture_contract.c`,
+`tests/render_contract.c`). Format reinterpretation is limited to the
 srgb/unorm pairs RGBA8 and BGRA8: `doe_vk_texture_desc.view_formats` naming the
 pair creates a MUTABLE_FORMAT image chained with `VkImageFormatListCreateInfo`
 (image format first; official Vulkan-Headers v1.3.290 declaration and constants

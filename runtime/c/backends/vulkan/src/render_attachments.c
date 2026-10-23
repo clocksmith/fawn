@@ -96,7 +96,7 @@ static doe_vk_status validate_view(doe_vk_commands *commands, doe_vk_texture_vie
     if (view == NULL || view->texture->context != commands->context ||
         view->desc.dimension != DOE_VK_VIEW_2D || view->desc.mip_count != 1 || view->desc.layer_count != 1 ||
         view->aspects != doe_vk_format_aspects(view->texture->desc.format) ||
-        !(view->texture->desc.usage & usage)) return DOE_VK_INVALID_ARGUMENT;
+        doe_vk_texture_view_swizzled(view) || !(view->texture->desc.usage & usage)) return DOE_VK_INVALID_ARGUMENT;
     const doe_vk_texture *texture = view->texture;
     uint32_t w = texture->desc.width >> view->desc.base_mip;
     uint32_t h = texture->desc.height >> view->desc.base_mip;

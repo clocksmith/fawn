@@ -67,6 +67,8 @@ uint32_t native_adapter_features(const native_backend *backend)
         features |= NATIVE_FEATURE(WGPUFeatureName_RG11B10UfloatRenderable);
     if (caps->draw_indirect_first_instance) features |= NATIVE_FEATURE(WGPUFeatureName_IndirectFirstInstance);
     if (caps->depth_clamp) features |= NATIVE_FEATURE(WGPUFeatureName_DepthClipControl);
+    /* VkComponentMapping on sampled image views is core Vulkan. */
+    features |= NATIVE_FEATURE(WGPUFeatureName_TextureComponentSwizzle);
     /* Enabled textureCompressionBC plus sampled, filterable, copyable formats;
      * sliced 3D additionally needs 3D images of every BC format. */
     if (caps->texture_compression_bc && formats_offer(context, bc, 14, block_sampled)) {

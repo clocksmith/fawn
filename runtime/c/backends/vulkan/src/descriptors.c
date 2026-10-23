@@ -34,7 +34,7 @@ static doe_vk_status validate_view(doe_vk_commands *commands,
     doe_vk_texture *texture = view->texture;
     uint32_t usage = kind == DOE_VK_BINDING_SAMPLED_TEXTURE ? DOE_VK_TEXTURE_SAMPLED : DOE_VK_TEXTURE_STORAGE;
     if (!(texture->desc.usage & usage)) return DOE_VK_INVALID_ARGUMENT;
-    if (kind == DOE_VK_BINDING_STORAGE_TEXTURE && view->desc.mip_count != 1)
+    if (kind == DOE_VK_BINDING_STORAGE_TEXTURE && (view->desc.mip_count != 1 || doe_vk_texture_view_swizzled(view)))
         return DOE_VK_INVALID_ARGUMENT;
     /* A sampled depth/stencil view must select exactly one aspect. */
     if (view->aspects == (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT))

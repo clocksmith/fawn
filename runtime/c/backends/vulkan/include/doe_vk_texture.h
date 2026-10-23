@@ -138,6 +138,16 @@ typedef enum doe_vk_view_dimension {
     DOE_VK_VIEW_2D_ARRAY,
     DOE_VK_VIEW_CUBE_ARRAY
 } doe_vk_view_dimension;
+/* Native VkComponentSwizzle sources of one view channel; IDENTITY keeps it. */
+typedef enum doe_vk_swizzle {
+    DOE_VK_SWIZZLE_IDENTITY = 0,
+    DOE_VK_SWIZZLE_ZERO = 1,
+    DOE_VK_SWIZZLE_ONE = 2,
+    DOE_VK_SWIZZLE_R = 3,
+    DOE_VK_SWIZZLE_G = 4,
+    DOE_VK_SWIZZLE_B = 5,
+    DOE_VK_SWIZZLE_A = 6
+} doe_vk_swizzle;
 typedef struct doe_vk_texture_view_desc {
     doe_vk_view_dimension dimension;
     uint32_t base_mip;
@@ -149,8 +159,13 @@ typedef struct doe_vk_texture_view_desc {
     doe_vk_texture_aspect aspect;
     /* Zero is the image format; otherwise the image's admitted srgb/unorm pair. */
     doe_vk_texture_format format;
+    /* Per-channel (r, g, b, a) source for sampled reads; all IDENTITY (zero) is
+     * required for attachment and storage use of the view. */
+    doe_vk_swizzle swizzle[4];
 } doe_vk_texture_view_desc;
-/* A view retains its parent image. Reinterpretation/swizzle not yet admitted. */
+/* A view retains its parent image. Format reinterpretation is limited to the
+ * srgb/unorm pair; a swizzled view is sampled-only (attachments and storage
+ * bindings reject it). */
 doe_vk_status doe_vk_texture_view_create(doe_vk_texture *texture,
     const doe_vk_texture_view_desc *desc, doe_vk_texture_view **out, doe_vk_error *error);
 doe_vk_status doe_vk_texture_view_retain(doe_vk_texture_view *view);

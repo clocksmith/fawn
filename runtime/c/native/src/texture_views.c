@@ -11,6 +11,39 @@ static void release_view(void *userdata, void *handle)
     native_unlock(payload->device);
     free(payload);
 }
+/* WebGPU per-channel swizzle to native sources (Undefined is the channel's own
+ * component). A non-identity swizzle needs texture-component-swizzle and a view
+ * usage without RenderAttachment or StorageBinding. */
+static bool view_swizzle(const native_device *device, const WGPUChainedStruct *chain, WGPUTextureUsage usage,
+    doe_vk_swizzle out[4])
+{
+    for (uint32_t i = 0; i < 4; ++i) out[i] = DOE_VK_SWIZZLE_IDENTITY;
+    if (!chain) return true;
+    if (chain->sType != WGPUSType_TextureComponentSwizzleDescriptor || chain->next) return false;
+    const WGPUTextureComponentSwizzle *swizzle = &((const WGPUTextureComponentSwizzleDescriptor *)chain)->swizzle;
+    const WGPUComponentSwizzle sources[4] = {swizzle->r, swizzle->g, swizzle->b, swizzle->a};
+    const WGPUComponentSwizzle own[4] = {WGPUComponentSwizzle_R, WGPUComponentSwizzle_G,
+        WGPUComponentSwizzle_B, WGPUComponentSwizzle_A};
+    bool identity = true;
+    for (uint32_t i = 0; i < 4; ++i) {
+        switch (sources[i]) {
+        case WGPUComponentSwizzle_Undefined: out[i] = DOE_VK_SWIZZLE_IDENTITY; break;
+        case WGPUComponentSwizzle_Zero: out[i] = DOE_VK_SWIZZLE_ZERO; break;
+        case WGPUComponentSwizzle_One: out[i] = DOE_VK_SWIZZLE_ONE; break;
+        case WGPUComponentSwizzle_R: out[i] = DOE_VK_SWIZZLE_R; break;
+        case WGPUComponentSwizzle_G: out[i] = DOE_VK_SWIZZLE_G; break;
+        case WGPUComponentSwizzle_B: out[i] = DOE_VK_SWIZZLE_B; break;
+        case WGPUComponentSwizzle_A: out[i] = DOE_VK_SWIZZLE_A; break;
+        case WGPUComponentSwizzle_Force32:
+        default: return false;
+        }
+        if (sources[i] == own[i]) out[i] = DOE_VK_SWIZZLE_IDENTITY;
+        identity &= out[i] == DOE_VK_SWIZZLE_IDENTITY;
+    }
+    return identity || (native_feature_enabled(device, WGPUFeatureName_TextureComponentSwizzle) &&
+        !(usage & (WGPUTextureUsage_RenderAttachment | WGPUTextureUsage_StorageBinding)));
+}
+
 WGPUTextureView wgpuTextureCreateView(WGPUTexture handle, const WGPUTextureViewDescriptor *descriptor)
 {
     doe_resource_texture *texture = (doe_resource_texture *)handle;
@@ -26,10 +59,11 @@ WGPUTextureView wgpuTextureCreateView(WGPUTexture handle, const WGPUTextureViewD
     native_lock(device);
     /* Public zero is an explicit invalid count. Only UINT32_MAX is the pinned
      * default sentinel; compact resource callers also permit zero defaults. */
-    doe_resource_status status = descriptor->nextInChain ? DOE_RESOURCE_UNSUPPORTED :
-        !descriptor->mipLevelCount || !descriptor->arrayLayerCount ? DOE_RESOURCE_RANGE :
+    doe_resource_status status = !descriptor->mipLevelCount || !descriptor->arrayLayerCount ? DOE_RESOURCE_RANGE :
         doe_resource_view_validate(texture, &desc, &resolved);
     doe_vk_texture_view_desc native = {0};
+    if (status == DOE_RESOURCE_OK && !view_swizzle(device, descriptor->nextInChain, resolved.usage, native.swizzle))
+        status = DOE_RESOURCE_UNSUPPORTED;
     if (status == DOE_RESOURCE_OK) {
         /* A DepthOnly/StencilOnly view resolves to its aspect format; the backend
          * view selects that native aspect over the same parent image. */

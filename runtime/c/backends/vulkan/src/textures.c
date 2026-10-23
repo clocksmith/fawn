@@ -347,7 +347,22 @@ static doe_vk_status validate_view(doe_vk_texture *texture, const doe_vk_texture
         return DOE_VK_INVALID_ARGUMENT;
     if ((desc->dimension == DOE_VK_VIEW_1D || desc->dimension == DOE_VK_VIEW_2D || desc->dimension == DOE_VK_VIEW_3D) && desc->layer_count != 1)
         return DOE_VK_INVALID_ARGUMENT;
+    for (uint32_t i = 0; i < 4; ++i)
+        if (desc->swizzle[i] < DOE_VK_SWIZZLE_IDENTITY || desc->swizzle[i] > DOE_VK_SWIZZLE_A) return DOE_VK_INVALID_ARGUMENT;
     return DOE_VK_OK;
+}
+
+_Static_assert((int)DOE_VK_SWIZZLE_IDENTITY == (int)VK_COMPONENT_SWIZZLE_IDENTITY, "swizzle identity");
+_Static_assert((int)DOE_VK_SWIZZLE_ZERO == (int)VK_COMPONENT_SWIZZLE_ZERO, "swizzle zero");
+_Static_assert((int)DOE_VK_SWIZZLE_ONE == (int)VK_COMPONENT_SWIZZLE_ONE, "swizzle one");
+_Static_assert((int)DOE_VK_SWIZZLE_R == (int)VK_COMPONENT_SWIZZLE_R, "swizzle r");
+_Static_assert((int)DOE_VK_SWIZZLE_G == (int)VK_COMPONENT_SWIZZLE_G, "swizzle g");
+_Static_assert((int)DOE_VK_SWIZZLE_B == (int)VK_COMPONENT_SWIZZLE_B, "swizzle b");
+_Static_assert((int)DOE_VK_SWIZZLE_A == (int)VK_COMPONENT_SWIZZLE_A, "swizzle a");
+
+bool doe_vk_texture_view_swizzled(const doe_vk_texture_view *view) {
+    for (uint32_t i = 0; i < 4; ++i) if (view->desc.swizzle[i] != DOE_VK_SWIZZLE_IDENTITY) return true;
+    return false;
 }
 
 doe_vk_status doe_vk_texture_view_create(doe_vk_texture *texture,
@@ -375,6 +390,8 @@ doe_vk_status doe_vk_texture_view_create(doe_vk_texture *texture,
         .image = texture->image,
         .viewType = (uint32_t)desc->dimension,
         .format = (uint32_t)format,
+        .components = { (uint32_t)desc->swizzle[0], (uint32_t)desc->swizzle[1], (uint32_t)desc->swizzle[2],
+            (uint32_t)desc->swizzle[3] },
         .subresourceRange = { aspects, desc->base_mip, desc->mip_count, desc->base_layer, desc->layer_count }
     };
     doe_vk_context *context = texture->context;
