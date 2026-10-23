@@ -44,6 +44,6 @@ int main(void)
     wgpuBufferUnmap(readback);
     wgpuBufferRelease(readback);
     consumer_finish(&s);
-    puts("PASS public ABI9 atomics: storage accumulation, signed OOB suppression, compare-exchange result identity, fresh workgroup initialization across two groups and two dispatches, early releases (CPU Vulkan only)");
+    printf("PASS public ABI9 atomics: storage accumulation, signed OOB suppression, compare-exchange result identity, fresh workgroup initialization across two groups and two dispatches, early releases %s\n", adapter_class_scope());
     return 0;
 }

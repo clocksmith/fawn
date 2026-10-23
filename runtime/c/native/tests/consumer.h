@@ -2,6 +2,7 @@
  * Public-ABI software consumer helpers shared by focused image/admission checks. */
 #ifndef DOE_NATIVE_TEST_CONSUMER_H
 #define DOE_NATIVE_TEST_CONSUMER_H
+#include "adapter_class.h"
 #include "webgpu.h"
 #include <assert.h>
 #include <stdbool.h>
@@ -40,12 +41,10 @@ static inline void consumer_init(state *s)
 {
     s->instance = wgpuCreateInstance(NULL);
     WGPURequestAdapterOptions options = WGPU_REQUEST_ADAPTER_OPTIONS_INIT;
-    options.forceFallbackAdapter = WGPU_TRUE;
+    adapter_class_options(&options);
     WGPURequestAdapterCallbackInfo adapter = {.mode=WGPUCallbackMode_AllowSpontaneous,.callback=adapter_reply,.userdata1=s};
     assert(wgpuInstanceRequestAdapter(s->instance,&options,adapter).id && s->adapter);
-    WGPUAdapterInfo info = WGPU_ADAPTER_INFO_INIT;
-    assert(wgpuAdapterGetInfo(s->adapter,&info) == WGPUStatus_Success && info.adapterType == WGPUAdapterType_CPU);
-    wgpuAdapterInfoFreeMembers(info);
+    adapter_class_require(s->adapter);
     WGPUDeviceDescriptor descriptor = WGPU_DEVICE_DESCRIPTOR_INIT;
     descriptor.uncapturedErrorCallbackInfo = (WGPUUncapturedErrorCallbackInfo){.callback=error_reply,.userdata1=s};
     WGPURequestDeviceCallbackInfo device = {.mode=WGPUCallbackMode_AllowSpontaneous,.callback=device_reply,.userdata1=s};

@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: MIT
  * Public lifecycle calls plus read-only private label-owner inspection. */
 #include "../src/internal.h"
+#include "adapter_class.h"
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
@@ -135,12 +136,10 @@ int main(void)
     value.instance = wgpuCreateInstance(NULL);
     assert(value.instance);
     WGPURequestAdapterOptions options = WGPU_REQUEST_ADAPTER_OPTIONS_INIT;
-    options.forceFallbackAdapter = WGPU_TRUE;
+    adapter_class_options(&options);
     WGPURequestAdapterCallbackInfo adapter = {.mode=WGPUCallbackMode_AllowSpontaneous,.callback=adapter_reply,.userdata1=&value};
     assert(wgpuInstanceRequestAdapter(value.instance, &options, adapter).id && value.adapter);
-    WGPUAdapterInfo info = WGPU_ADAPTER_INFO_INIT;
-    assert(wgpuAdapterGetInfo(value.adapter,&info)==WGPUStatus_Success && info.adapterType==WGPUAdapterType_CPU);
-    wgpuAdapterInfoFreeMembers(info);
+    adapter_class_require(value.adapter);
     const WGPUCallbackMode modes[] = {WGPUCallbackMode_WaitAnyOnly,WGPUCallbackMode_AllowProcessEvents,WGPUCallbackMode_AllowSpontaneous};
     for (size_t i=0;i<3;++i) {
         value.lost=0;
@@ -261,5 +260,5 @@ int main(void)
     assert(value.lost==1 && value.reason==WGPUDeviceLostReason_FailedCreation && !value.lost_device);
     wgpuAdapterRelease(value.adapter);
     wgpuInstanceRelease(value.instance);
-    puts("PASS device loss modes/future/last-external-release/failed-creation, owned labels, async pipeline and real compilation diagnostics");
+    printf("PASS device loss modes/future/last-external-release/failed-creation, owned labels, async pipeline and real compilation diagnostics %s\n", adapter_class_scope());
 }

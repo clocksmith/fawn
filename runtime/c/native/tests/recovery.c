@@ -55,12 +55,10 @@ int main(void)
     state s = {0};
     s.instance = wgpuCreateInstance(NULL);
     WGPURequestAdapterOptions options = WGPU_REQUEST_ADAPTER_OPTIONS_INIT;
-    options.forceFallbackAdapter = WGPU_TRUE;
+    adapter_class_options(&options);
     WGPURequestAdapterCallbackInfo adapter = {.mode=WGPUCallbackMode_AllowSpontaneous,.callback=adapter_reply,.userdata1=&s};
     assert(wgpuInstanceRequestAdapter(s.instance,&options,adapter).id && s.adapter);
-    WGPUAdapterInfo info = WGPU_ADAPTER_INFO_INIT;
-    assert(wgpuAdapterGetInfo(s.adapter,&info) == WGPUStatus_Success && info.adapterType == WGPUAdapterType_CPU);
-    wgpuAdapterInfoFreeMembers(info);
+    adapter_class_require(s.adapter);
     WGPUFeatureName feature = WGPUFeatureName_TimestampQuery;
     WGPUDeviceDescriptor descriptor = WGPU_DEVICE_DESCRIPTOR_INIT;
     descriptor.requiredFeatureCount = 1;
@@ -146,5 +144,5 @@ int main(void)
     wgpuDeviceRelease(s.device);
     wgpuAdapterRelease(s.adapter);
     wgpuInstanceRelease(s.instance);
-    puts("PASS typed recovery: native/OOM/pending errors survive submit/write/texture/workdone, unknown leases retained, terminal cleanup and fresh GPU normalizer/indirect guard recovery");
+    printf("PASS typed recovery: native/OOM/pending errors survive submit/write/texture/workdone, unknown leases retained, terminal cleanup and fresh GPU normalizer/indirect guard recovery %s\n", adapter_class_scope());
 }

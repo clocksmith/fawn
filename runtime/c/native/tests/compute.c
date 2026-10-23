@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: MIT
  * Public pinned-WebGPU C-only software developer smoke, not GPU qualification. */
+#include "adapter_class.h"
 #include "webgpu.h"
 #include <assert.h>
 #include <stdio.h>
@@ -81,19 +82,15 @@ int main(void)
     assert(instance);
     WGPURequestAdapterOptions options = WGPU_REQUEST_ADAPTER_OPTIONS_INIT;
     options.backendType = WGPUBackendType_Vulkan;
-    options.forceFallbackAdapter = WGPU_TRUE;
+    adapter_class_options(&options);
     WGPURequestAdapterCallbackInfo adapter_info = {.mode=WGPUCallbackMode_AllowProcessEvents,
         .callback=adapter_callback, .userdata1=&result};
     WGPUFuture future = wgpuInstanceRequestAdapter(instance, &options, adapter_info);
     assert(future.id && !result.adapters);
     wgpuInstanceProcessEvents(instance);
     assert(result.adapters == 1);
-    WGPUAdapterInfo info = WGPU_ADAPTER_INFO_INIT;
-    assert(wgpuAdapterGetInfo(result.adapter, &info) == WGPUStatus_Success);
-    assert(info.adapterType == WGPUAdapterType_CPU);
-    printf("Explicit software-only WebGPU C path: %.*s; not physical GPU qualification\n",
-        (int)info.device.length, info.device.data);
-    wgpuAdapterInfoFreeMembers(info);
+    adapter_class_require(result.adapter);
+    printf("Explicit WebGPU C path adapter %s\n", adapter_class_scope());
     WGPURequestDeviceCallbackInfo device_info = {.mode=WGPUCallbackMode_WaitAnyOnly,
         .callback=device_callback, .userdata1=&result};
     future = wgpuAdapterRequestDevice(result.adapter, NULL, device_info);
@@ -292,6 +289,6 @@ int main(void)
     wgpuDeviceRelease(device);
     wgpuAdapterRelease(result.adapter);
     wgpuInstanceRelease(instance);
-    puts("PASS public ABI: compute/readback, OOB guards, dynamic offsets, cross-device rejection, one-shot submit, early releases, callback reentry and map cancellation");
+    printf("PASS public ABI: compute/readback, OOB guards, dynamic offsets, cross-device rejection, one-shot submit, early releases, callback reentry and map cancellation %s\n", adapter_class_scope());
     return 0;
 }

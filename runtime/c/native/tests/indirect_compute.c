@@ -135,5 +135,5 @@ int main(void)
     wgpuBufferUnmap(readback);
     wgpuBufferRelease(readback);
     consumer_finish(&s);
-    puts("PASS public indirect compute: same-command GPU-produced valid/overlimit XYZ/zero/valid counts, four actual atomic invocations, unchanged arguments/padding without public CopySrc, typed guard failures/retry and early releases (CPU Vulkan only)");
+    printf("PASS public indirect compute: same-command GPU-produced valid/overlimit XYZ/zero/valid counts, four actual atomic invocations, unchanged arguments/padding without public CopySrc, typed guard failures/retry and early releases %s\n", adapter_class_scope());
 }

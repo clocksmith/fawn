@@ -1,0 +1,54 @@
+/* SPDX-License-Identifier: MIT
+ * One adapter-class selection for every public native consumer. Software (CPU)
+ * is the default; DOE_C_TEST_ADAPTER=physical requests a nonfallback adapter and
+ * requires a GPU adapter type. Physical runs are developer evidence on the
+ * reported adapter/driver only, never backend or hardware qualification. */
+#ifndef DOE_NATIVE_TEST_ADAPTER_CLASS_H
+#define DOE_NATIVE_TEST_ADAPTER_CLASS_H
+#include "webgpu.h"
+#include <assert.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+static inline bool adapter_class_physical(void)
+{
+    const char *value = getenv("DOE_C_TEST_ADAPTER");
+    if (value == NULL || strcmp(value, "software") == 0) return false;
+    if (strcmp(value, "physical") == 0) return true;
+    fprintf(stderr, "DOE_C_TEST_ADAPTER must be software or physical, not %s\n", value);
+    abort();
+}
+
+static inline void adapter_class_options(WGPURequestAdapterOptions *options)
+{
+    options->forceFallbackAdapter = adapter_class_physical() ? WGPU_FALSE : WGPU_TRUE;
+}
+
+/* Run label for PASS lines; set by adapter_class_require from the actual adapter. */
+static char adapter_class_label[160] = "(adapter not selected)";
+
+static inline const char *adapter_class_scope(void)
+{
+    return adapter_class_label;
+}
+
+static inline void adapter_class_require(WGPUAdapter adapter)
+{
+    WGPUAdapterInfo info = WGPU_ADAPTER_INFO_INIT;
+    assert(wgpuAdapterGetInfo(adapter, &info) == WGPUStatus_Success);
+    assert(info.backendType == WGPUBackendType_Vulkan);
+    if (adapter_class_physical()) {
+        assert(info.adapterType == WGPUAdapterType_DiscreteGPU ||
+               info.adapterType == WGPUAdapterType_IntegratedGPU);
+        snprintf(adapter_class_label, sizeof(adapter_class_label),
+                 "(physical Vulkan developer run: %.*s; not qualification)",
+                 (int)info.device.length, info.device.data);
+    } else {
+        assert(info.adapterType == WGPUAdapterType_CPU);
+        snprintf(adapter_class_label, sizeof(adapter_class_label), "(CPU Vulkan only)");
+    }
+    wgpuAdapterInfoFreeMembers(info);
+}
+#endif
