@@ -101,7 +101,9 @@ static bool aggregate_call(Source *s, const Expression *node, const LocalScope *
         return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, node->source_offset, "constructor requires a fixed constructible type");
     if (node->right == 0u) {
         if (inferred == 1u && !type_intern(s, TYPE_VECTOR, IR_ABSTRACT_INT, n, &target)) return false;
-        if (inferred == 3u && !type_matrix_intern(s, IR_ABSTRACT_FLOAT, n, rows, &target)) return false;
+        if (inferred == 3u)
+            return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, node->source_offset,
+                "zero matrix construction requires an explicit concrete type");
         *out = (ExpressionValue){
             .known = evaluate, .constant.type = target, .value = {.type = target, .source_offset = node->source_offset}
         };

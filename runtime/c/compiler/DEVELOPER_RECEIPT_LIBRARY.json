@@ -1,0 +1,62 @@
+{
+  "status": "focused developer checks passed; integrated acceptance pending",
+  "source_manifest_sha256": "7f8d81a7c0dc6a66587957bea016fd526b7f0135dab470401571db0475f9968e",
+  "library_sha256": "f694596649289e724e4e0fc5ccde352fffae3dcf752358b36701c1fc0ff4243e",
+  "source_paths": [
+    "runtime/c/compiler/Makefile",
+    "runtime/c/compiler/README.md",
+    "runtime/c/compiler/include/doe_compiler_stages.h",
+    "runtime/c/compiler/src/compile.c",
+    "runtime/c/compiler/src/parse.c",
+    "runtime/c/compiler/src/sema_call.c",
+    "runtime/c/compiler/tests/test_matrices.py",
+    "runtime/c/compiler/tests/test_library_module.c"
+  ],
+  "checks": [
+    "fresh strict GCC normal/PIC builds",
+    "ABI5-8 empty/library/no synthetic binary/metadata/selection/reuse C tests",
+    "31 Python source/SPIR-V regression tests",
+    "ASan+UBSan library module C tests, leak detection disabled",
+    "full normal/PIC GCC .su/.ci composed graph",
+    "source-size checker: 476 files, zero failures; git diff --check clean"
+  ],
+  "stack": {
+    "normal": {
+      "frame_count": 268,
+      "all_other_frame_sum": 24768,
+      "maximum_acyclic_library_path_bytes": 2528,
+      "fixed_combined": 191728,
+      "maximum_job_combined": 181040,
+      "semantic_scc_bytes": 1536
+    },
+    "pic": {
+      "frame_count": 264,
+      "all_other_frame_sum": 24776,
+      "maximum_acyclic_library_path_bytes": 2512,
+      "fixed_combined": 191712,
+      "maximum_job_combined": 181024,
+      "semantic_scc_bytes": 1536
+    }
+  },
+  "first_failure": {
+    "artifact": "api-first.log",
+    "cause": "new ABI4 regression fixture supplied module-sized workspace rather than ABI4 query result; preflight INPUT_ERROR was correct",
+    "correction": "allocate legacy test workspace from actual ABI4 query; API-second.log passes"
+  },
+  "matrix_correction": "Inferred matCxR() has no zero-argument overload. Explicit concrete matCxRf() remains valid; added dead-syntax negative. Earlier matrix source/receipt retained unchanged.",
+  "semantics": "ABI5-8 NONE allows empty and fully validated entryless libraries, publishes declared metadata, zero entries and zero words. AUTO/NAME still require an entry. Legacy singular APIs remain entry-required. No synthetic SPIR-V/Vulkan artifact.",
+  "pending": [
+    "native empty shader module retention and pipeline selection integration",
+    "exhaustive integrated qualification"
+  ],
+  "source_sha256": {
+    "runtime/c/compiler/Makefile": "a6e52e89cf5356e7c143f60a1c6a0029781f64aaecd6d4b5b93b011d43db8e3f",
+    "runtime/c/compiler/README.md": "e6077771323c76441aff28e8c69005d13fcefccbdec3ed5ea586e09bbb0c4ff1",
+    "runtime/c/compiler/include/doe_compiler_stages.h": "884af2b054429a3766b34fd4095e4127471937ba15ed7c37712b06cadb6ae69f",
+    "runtime/c/compiler/src/compile.c": "c7958022ec398e5fe0100b23eb31b28e724bc08f2f09a5387ecb4fb0b04f9035",
+    "runtime/c/compiler/src/parse.c": "d37071f714455eb5b8d96801e884ebbf3771b7ebfd09734f9f2f58d846643e34",
+    "runtime/c/compiler/src/sema_call.c": "0a8a32803ca28e18502060d4a161ec3368c47ae1a45b254cf5eb9c56b3c9d414",
+    "runtime/c/compiler/tests/test_matrices.py": "2d25c962590850f83c4540dbac76dc877b2731d921d451dd43d78cb7d6449770",
+    "runtime/c/compiler/tests/test_library_module.c": "a425a0f48805b656e4bc08f0e0afd22e9c286c2a27163fa9297d57644514f2ee"
+  }
+}

@@ -209,3 +209,9 @@ test-matrices: build/test_matrix_api build/test_matrix_cpp build/doe-compiler-c
 	build/test_matrix_cpp
 	DOE_COMPILER_CLI="$(CURDIR)/build/doe-compiler-c" SPIRV_VAL="$(SPIRV_VAL)" PYTHONPATH=tests python3 tests/test_matrices.py
 .PHONY: test-matrices
+
+build/test_library_module: $(LIB_SOURCES) tests/test_library_module.c $(HEADERS) | build/.ready
+	$(CC) $(CFLAGS) $(LIB_SOURCES) tests/test_library_module.c -lm -o $@
+test-library-modules: build/test_library_module
+	build/test_library_module
+.PHONY: test-library-modules

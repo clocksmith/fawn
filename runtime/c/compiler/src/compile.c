@@ -45,7 +45,9 @@ bool source_pool_error(Source *source, uint32_t pool, size_t minimum, size_t off
     return source_error(source, pool == DOE_COMPILER_POOL_WORDS?DOE_COMPILER_OUTPUT_TOO_SMALL:DOE_COMPILER_INPUT_ERROR, offset, message);
 }
 /* Resolution, metadata admission, target emission and FP restoration all finish
- * before any bulk output is published. Every adapter uses this pipeline. */
+ * before any bulk output is published. Every adapter uses this pipeline. Valid
+ * entryless modules have metadata but no Vulkan shader binary; entry selection
+ * is a separate consumer operation, not a fabricated entry or Linkage shader. */
 static bool compile_pipeline(Source *source, CompilerWorkspace *c, uint32_t projection, DoeCompilerTypedOutputCounts *counts) {
     source->compiler = c;
     source->limits = &c->limits;
@@ -55,15 +57,17 @@ static bool compile_pipeline(Source *source, CompilerWorkspace *c, uint32_t proj
     }
     if (source->length>c->limits.source_bytes)
         return source_pool_error(source, DOE_COMPILER_POOL_SOURCE, source->length, (c->limits.flags&LIMIT_LEGACY) != 0u?0u:c->limits.source_bytes, "source byte capacity exceeded");
-    if (source->length == 0u) return source_error(source, DOE_COMPILER_INPUT_ERROR, 0u, "source is empty");
-    const char *nul = memchr(source->source, '\0', source->length);
+    if (source->length == 0u && (c->limits.flags & LIMIT_MODULE) == 0u)
+        return source_error(source, DOE_COMPILER_INPUT_ERROR, 0u, "source is empty");
+    const char *nul = source->length == 0u ? NULL : memchr(source->source, '\0', source->length);
     if (nul != NULL) return source_error(source, DOE_COMPILER_INPUT_ERROR, (size_t)(nul-source->source), "embedded NUL byte in source");
     if (!lex_source(source, c) || !parse_tokens(source, c)) return false;
     for (uint32_t i=0u;i<c->expression_count;++i) c->expression_references[i]=(SourceReference){SOURCE_NONE,NO_ID};
     for (uint32_t i=0u;i<c->statement_count;++i) c->statement_references[i]=(SourceReference){SOURCE_NONE,NO_ID};
     NumericEnvironment environment;
     if (!numeric_environment_begin(source, &environment)) return false;
-    const bool lowered = validate_syntax(source, c) && compiler_target_phase(source) && emit_spirv(source, c) &&
+    const bool lowered = validate_syntax(source, c) && compiler_target_phase(source) &&
+        (c->entry_count == 0u || emit_spirv(source, c)) &&
         (projection==0u || (c->entry_count==1u || source_error(source,DOE_COMPILER_UNSUPPORTED,
             c->functions[c->entries[1].function].name.offset,"multiple compute entries cannot use a singular reflection projection"))) &&
         (projection==0u || projection==3u || reflect_legacy_admit(source,c,projection==2u)) &&
