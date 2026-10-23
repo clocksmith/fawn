@@ -97,6 +97,22 @@ struct doe_resource_external_texture {
     bool expired;
 };
 
+typedef enum resource_usage { RESOURCE_READ, RESOURCE_STORAGE, RESOURCE_ATTACHMENT } resource_usage;
+typedef struct resource_use {
+    doe_resource_buffer *buffer;
+    doe_resource_view *view;
+    doe_resource_external_texture *external;
+    uint64_t offset, size;
+    unsigned aspects;
+    resource_usage usage;
+} resource_use;
+typedef struct resource_usage_scope {
+    resource_use *uses;
+    size_t count, capacity;
+} resource_usage_scope;
+enum { RESOURCE_GROUP_USES = DOE_RESOURCE_MAX_BINDINGS * 2 };
+
+
 struct doe_resource_render_pipeline {
     resource_base base;
     doe_resource_pipeline_layout *layout;
@@ -105,20 +121,36 @@ struct doe_resource_render_pipeline {
 struct doe_resource_render_record {
     resource_base base;
     doe_resource_render_packet packet;
+    resource_usage_scope scope;
 };
 struct doe_resource_render_pass {
     resource_base base;
     doe_resource_encoder *encoder;
     doe_resource_render_packet state;
     doe_resource_render_record *last_record;
+    resource_usage_scope scope;
     uint64_t draw_count;
     doe_resource_pass_timestamps timestamps;
     bool ended;
 };
 
-doe_resource_status resource_dispatch_bindings_validate(const doe_resource_pipeline_layout *layout,
+doe_resource_status resource_shader_bindings_validate(const doe_resource_pipeline_layout *layout,
     const doe_resource_dispatch_group *groups, size_t group_count,
     doe_resource_buffer *indirect, bool *has_dynamic_offsets);
+unsigned resource_view_aspects(const doe_resource_view *view);
+doe_resource_status resource_use_conflict(const resource_use *a, const resource_use *b, bool binding_aliases);
+doe_resource_status resource_group_uses(const doe_resource_dispatch_group *group,
+    resource_use uses[RESOURCE_GROUP_USES], size_t *count);
+doe_resource_status resource_scope_add(const doe_resource_config *config, resource_usage_scope *scope,
+    const resource_use *uses, size_t count);
+doe_resource_status resource_scope_group(const doe_resource_config *config, resource_usage_scope *scope,
+    const doe_resource_dispatch_group *group);
+doe_resource_status resource_scope_input(const doe_resource_config *config, resource_usage_scope *scope,
+    doe_resource_buffer *buffer);
+doe_resource_status resource_scope_targets(const doe_resource_config *config, resource_usage_scope *scope,
+    const doe_resource_render_targets *targets);
+doe_resource_status resource_scope_validate(const resource_usage_scope *scope);
+void resource_scope_release(const doe_resource_config *config, resource_usage_scope *scope);
 doe_resource_status resource_record_dispatch(doe_resource_encoder *encoder,
     doe_resource_pipeline *pipeline, const doe_resource_dispatch_group *groups,
     size_t group_count, uint32_t x, uint32_t y, uint32_t z);
@@ -144,11 +176,14 @@ void resource_render_packet_retain(const doe_resource_render_packet *packet);
 void resource_render_packet_release(const doe_resource_render_packet *packet);
 doe_resource_status resource_render_set_pipeline(void *device, doe_resource_render_packet *state,
     doe_resource_render_pipeline *pipeline);
-doe_resource_status resource_render_set_group(void *device, doe_resource_render_packet *state,
+doe_resource_status resource_render_set_group(const doe_resource_config *config,
+    resource_usage_scope *scope, doe_resource_render_packet *state,
     uint32_t index, const doe_resource_dispatch_group *group);
-doe_resource_status resource_render_set_vertex(void *device, doe_resource_render_packet *state,
+doe_resource_status resource_render_set_vertex(const doe_resource_config *config,
+    resource_usage_scope *scope, doe_resource_render_packet *state,
     uint32_t slot, doe_resource_buffer *buffer, uint64_t offset, uint64_t size);
-doe_resource_status resource_render_set_index(void *device, doe_resource_render_packet *state,
+doe_resource_status resource_render_set_index(const doe_resource_config *config,
+    resource_usage_scope *scope, doe_resource_render_packet *state,
     doe_resource_buffer *buffer, WGPUIndexFormat format, uint64_t offset, uint64_t size);
 doe_resource_status resource_render_draw_validate(const doe_resource_render_packet *packet,
     void *device, const doe_resource_render_bundle_desc *signature);

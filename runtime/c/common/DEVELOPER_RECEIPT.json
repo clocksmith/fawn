@@ -1,0 +1,49 @@
+{
+  "status": "authored, focused developer host and software-ICD exercised; unqualified",
+  "checked_at_utc": "2026-10-23T18:42:02.135182+00:00",
+  "source_unchanged_during_checks": true,
+  "checks": [
+    {
+      "command": [
+        "make",
+        "-C",
+        "runtime/c/common",
+        "check"
+      ],
+      "environment": {},
+      "exit_code": 0,
+      "terminal_output": [
+        "copy footprint: 59049 bounded arithmetic equivalence cases",
+        "copy footprint: overflow publication and boundary cases passed"
+      ]
+    },
+    {
+      "command": [
+        "make",
+        "-C",
+        "runtime/c/common",
+        "BUILD=/tmp/doe-c-common-scopes-asan",
+        "CFLAGS=-O1 -g -std=c11 -Wall -Wextra -Wpedantic -Werror -fsanitize=address,undefined -fno-omit-frame-pointer",
+        "check"
+      ],
+      "environment": {
+        "ASAN_OPTIONS": "detect_leaks=0"
+      },
+      "exit_code": 0,
+      "terminal_output": [
+        "copy footprint: 59049 bounded arithmetic equivalence cases",
+        "copy footprint: overflow publication and boundary cases passed"
+      ]
+    }
+  ],
+  "sha256": {
+    "runtime/c/common/Makefile": "d1c4e0d49c743f936e3171472929fa5be43cbd574a5d57f150ce24ecd66999f6",
+    "runtime/c/common/include/doe_copy_footprint.h": "461535e48bc3d5248928416513b0978baadcc865db33826cb6244f5d9e3fde4b",
+    "runtime/c/common/tests/test_copy_footprint.c": "69f3dff25c7305792e5ed31659c329f60bb079f51814f88d1f260a1260f00ef5"
+  },
+  "consumer_receipt": "../resources/DEVELOPER_RECEIPT_SCOPES.json",
+  "limitations": [
+    "Pure arithmetic only: caller-specific format,zero,pitch,alignment,capacity and native granularity policies are not unified.",
+    "No GPU qualification from arithmetic checks."
+  ]
+}

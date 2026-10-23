@@ -242,7 +242,7 @@ static doe_resource_status record_dispatch(doe_resource_encoder *encoder,
     if (pipeline->base.config.device.identity != encoder->base.config.device.identity)
         return resource_encoder_fail(encoder, DOE_RESOURCE_DEVICE_MISMATCH);
     bool dynamic;
-    doe_resource_status status = resource_dispatch_bindings_validate(pipeline->layout, groups,
+    doe_resource_status status = resource_shader_bindings_validate(pipeline->layout, groups,
         group_count, indirect, &dynamic);
     if (status != DOE_RESOURCE_OK) return resource_encoder_fail(encoder, status);
     doe_resource_dispatch_offsets *offsets = NULL;
@@ -251,6 +251,7 @@ static doe_resource_status record_dispatch(doe_resource_encoder *encoder,
         if (!offsets) return resource_encoder_fail(encoder, DOE_RESOURCE_OUT_OF_MEMORY);
         memset(offsets, 0, sizeof(*offsets));
         for (size_t i = 0; i < group_count; i++) {
+            if (!doe_resource_pipeline_layout_group_required(pipeline->layout, i)) continue;
             offsets->counts[i] = groups[i].dynamic_offset_count;
             if (offsets->counts[i]) memcpy(offsets->values[i], groups[i].dynamic_offsets,
                 offsets->counts[i] * sizeof(uint32_t));
@@ -272,8 +273,8 @@ static doe_resource_status record_dispatch(doe_resource_encoder *encoder,
     command.value.dispatch.indirect_offset = indirect_offset;
     doe_resource_buffer_retain(indirect);
     for (size_t i = 0; i < group_count; i++) {
-        command.value.dispatch.groups[i] = groups[i].group;
-        doe_resource_bind_group_retain(groups[i].group);
+        command.value.dispatch.groups[i] = doe_resource_pipeline_layout_group_required(pipeline->layout, i) ? groups[i].group : NULL;
+        doe_resource_bind_group_retain(command.value.dispatch.groups[i]);
     }
     doe_resource_pipeline_retain(pipeline);
     encoder->commands[encoder->count++] = command;
@@ -394,6 +395,7 @@ static doe_resource_status validate_submission(const doe_resource_command *comma
         }
         if (!resource_alive(&command->value.dispatch.pipeline->base)) return DOE_RESOURCE_UNAVAILABLE;
         for (size_t i = 0; i < command->value.dispatch.group_count; i++) {
+            if (!command->value.dispatch.groups[i]) continue;
             status = resource_group_validate(command->value.dispatch.groups[i]);
             if (status != DOE_RESOURCE_OK) return status;
         }

@@ -1,0 +1,241 @@
+{
+  "status": "authored, focused developer host and software-ICD exercised; unqualified",
+  "checked_at_utc": "2026-10-23T18:42:02.135182+00:00",
+  "observed_head": "fa61e2c11e23499ff22962bb64086df29a1e2840",
+  "source_unchanged_during_checks": true,
+  "compiler": "gcc (Debian 14.2.0-19) 14.2.0",
+  "checks": [
+    {
+      "command": [
+        "make",
+        "-C",
+        "runtime/c/common",
+        "check"
+      ],
+      "environment": {},
+      "exit_code": 0,
+      "terminal_output": [
+        "copy footprint: 59049 bounded arithmetic equivalence cases",
+        "copy footprint: overflow publication and boundary cases passed"
+      ]
+    },
+    {
+      "command": [
+        "make",
+        "-C",
+        "runtime/c/resources",
+        "check",
+        "vulkan-render-lifetime",
+        "vulkan-lifetime"
+      ],
+      "environment": {
+        "VK_ICD_FILENAMES": "/usr/lib/chromium/vk_swiftshader_icd.json"
+      },
+      "exit_code": 0,
+      "terminal_output": [
+        "resource owner: 13 host suites passed; no GPU execution claimed",
+        "extended resource owner: 8 host suites passed; no render/query GPU execution claimed",
+        "render bundle owner: 6 host suites passed; no render GPU execution claimed",
+        "binding feature owner: 6 host suites passed; no texture execution claimed",
+        "dispatch usage owner: 4 host suites passed; no GPU execution claimed",
+        "render usage owner: 7 host suites passed; no GPU execution claimed",
+        "query descriptor owner: 1 host suite passed; no GPU execution claimed",
+        "Resource bundle Vulkan consumer: SwiftShader Device (Subzero); retained Tint shaders, not C graphics compiler or physical GPU qualification",
+        "PASS self-contained resource bundle replay twice, exact 64 pixels, early caller release, pending retention and six terminal native finalizers",
+        "Software Vulkan lifetime consumer: SwiftShader Device (Subzero); not physical GPU qualification",
+        "PASS C resource adoption, early caller release, pending retention, real fill/buffer copy/image upload/copy/readback and terminal release"
+      ]
+    },
+    {
+      "command": [
+        "make",
+        "-C",
+        "runtime/c/common",
+        "BUILD=/tmp/doe-c-common-scopes-asan",
+        "CFLAGS=-O1 -g -std=c11 -Wall -Wextra -Wpedantic -Werror -fsanitize=address,undefined -fno-omit-frame-pointer",
+        "check"
+      ],
+      "environment": {
+        "ASAN_OPTIONS": "detect_leaks=0"
+      },
+      "exit_code": 0,
+      "terminal_output": [
+        "copy footprint: 59049 bounded arithmetic equivalence cases",
+        "copy footprint: overflow publication and boundary cases passed"
+      ]
+    },
+    {
+      "command": [
+        "make",
+        "-C",
+        "runtime/c/resources",
+        "BUILD=/tmp/doe-c-resources-scopes-asan",
+        "VK_BUILD=/tmp/doe-c-resources-scopes-vk-asan",
+        "CFLAGS=-O1 -g -std=c11 -Wall -Wextra -Wpedantic -Werror -pthread -fsanitize=address,undefined -fno-omit-frame-pointer",
+        "check",
+        "vulkan-render-lifetime",
+        "vulkan-lifetime"
+      ],
+      "environment": {
+        "VK_ICD_FILENAMES": "/usr/lib/chromium/vk_swiftshader_icd.json",
+        "ASAN_OPTIONS": "detect_leaks=0"
+      },
+      "exit_code": 0,
+      "terminal_output": [
+        "resource owner: 13 host suites passed; no GPU execution claimed",
+        "extended resource owner: 8 host suites passed; no render/query GPU execution claimed",
+        "render bundle owner: 6 host suites passed; no render GPU execution claimed",
+        "binding feature owner: 6 host suites passed; no texture execution claimed",
+        "dispatch usage owner: 4 host suites passed; no GPU execution claimed",
+        "render usage owner: 7 host suites passed; no GPU execution claimed",
+        "query descriptor owner: 1 host suite passed; no GPU execution claimed",
+        "Resource bundle Vulkan consumer: SwiftShader Device (Subzero); retained Tint shaders, not C graphics compiler or physical GPU qualification",
+        "PASS self-contained resource bundle replay twice, exact 64 pixels, early caller release, pending retention and six terminal native finalizers",
+        "Software Vulkan lifetime consumer: SwiftShader Device (Subzero); not physical GPU qualification",
+        "PASS C resource adoption, early caller release, pending retention, real fill/buffer copy/image upload/copy/readback and terminal release"
+      ]
+    },
+    {
+      "command": [
+        "python3",
+        "runtime/c/tools/check_source_size.py"
+      ],
+      "environment": {},
+      "exit_code": 0,
+      "terminal_output": [
+        "C size check: 431 files, 0 failures; limit 999"
+      ]
+    }
+  ],
+  "physical_line_limit": 999,
+  "max_owned_c_header_lines": 519,
+  "first_failures": [
+    {
+      "kind": "new host test assertion",
+      "detail": "Initial terminal-failure test incorrectly supplied UNAVAILABLE to the existing settle contract; corrected to its documented EXECUTION_FAILED terminal enum, no production workaround."
+    }
+  ],
+  "coverage": [
+    "45 host suites:13 base,8 extended,6 bundle,6 binding feature,4 dispatch usage,7 render usage,1 query descriptor.",
+    "Shared checked footprint:59049 independent bounded arithmetic cases; every overflow stage preserves output; zero and maximum boundaries; both resource and native Vulkan consumers adopt same leaf.",
+    "Empty pipeline-layout holes normalize to NULL groups and zero dynamic offsets before recording; dispatch submit skips canonical NULL slots. Native frontend consumption is separately evidenced.",
+    "One shared usage classifier and conflict operation covers dispatch and draw bindings plus persistent whole-render-pass/bundle usage. Overwritten/unused group,vertex,index setters and empty bundles retain identities through pending command retirement.",
+    "Whole-buffer read/write conflicts survive unbind/reset; depth/stencil aspects are separate; successive storage draws/bundles allowed; intra-draw writable overlap rejected; historical storage versus indirect input rejected before allocation.",
+    "Destroyed/mapped unused buffer and expired external identities reject before submit; empty-bundle expired scope rejected at execute; OOM acquisition preserves first error, output and exact cleanup.",
+    "Current WebGPU query preflight admits0..4096 and named query types; count0 owns device identity without a native pool; write/resolve indices must be strictly below count.",
+    "Existing real SwiftShader resource/bundle64-pixel render and image transfer lifetime consumers pass with exact early-release/pending obligations."
+  ],
+  "semantic_references": [
+    "https://gpuweb.github.io/gpuweb/#usage-scopes",
+    "https://gpuweb.github.io/gpuweb/#dom-gpudevice-createqueryset",
+    "https://raw.githubusercontent.com/gpuweb/cts/main/src/webgpu/capability_info.ts"
+  ],
+  "limitations": [
+    "Explicit SwiftShader software adapter only; no physical GPU qualification.",
+    "New render-scope negative admission cases are host-tested; software consumer is the existing limited real graphics signature, not public native render ABI integration.",
+    "Graphics shader artifacts are retained Tint vs_main/fs_main, not C graphics compiler output.",
+    "Query descriptor host correction does not itself execute nanosecond normalization; native public query integration is separately owned.",
+    "LeakSanitizer disabled under ptrace; ASan/UBSan and exact fixture allocation/device/native finalizer counters pass."
+  ],
+  "sha256": {
+    "examples/tint-compiler-evidence.benchmark-corpus.spirv.sample.artifacts/particles.wgsl/tint/output.fs_main.spv": "18ca827fe6b6eb6d08cf4ac3eaa7c3896ac3a8b20bcceef113286bca77ba0fce",
+    "examples/tint-compiler-evidence.benchmark-corpus.spirv.sample.artifacts/particles.wgsl/tint/output.vs_main.spv": "67ce34bc1ab93c646fca282908b71fa1651072060411e1af26a8314cc64ad072",
+    "runtime/c/backends/vulkan/Makefile": "2a76532b51bf93df0573797d9982cfb0bd9f6f6bfd2c61c65a68bfd8abe958f7",
+    "runtime/c/backends/vulkan/SMOKE_IMAGE_FIXTURES.json": "ca27ff39c9bede1bd65dbecddfd67336bfc34cfa1956a7fdb38c2f6d234179f1",
+    "runtime/c/backends/vulkan/include/doe_vk.h": "b70ff6e6b22ec56c8eef2d3a8cf02630c6f44f6c61c04b0d019c6ee02905d67a",
+    "runtime/c/backends/vulkan/include/doe_vk_bindings.h": "4d1beb8e63b2f83261070663e371791f99dc5ecc281af20f75eb7151b536df40",
+    "runtime/c/backends/vulkan/include/doe_vk_queries.h": "e76a08d01f9de5d46166ca3344ce85d9b8ef2789e6b8dc638c61a357b2db8b3b",
+    "runtime/c/backends/vulkan/include/doe_vk_render.h": "8adb0c6cccb9369eb9e2464b0e64b2b7e03071638e6aac3c98049b41fb91d477",
+    "runtime/c/backends/vulkan/include/doe_vk_texture.h": "31cc48466daa62ff288cdea4dd7133ace2de289d61beedaae2ed5b1efab10952",
+    "runtime/c/backends/vulkan/include/doe_vk_timestamp.h": "8d21def98371c43246309cbd0d91f915d26b21d3298c0c842d1ad1b589dd3c3d",
+    "runtime/c/backends/vulkan/src/commands.c": "2751e75918138a9eada32879dd94ac2960ed6fb82d1dfabdacf86d149752db9f",
+    "runtime/c/backends/vulkan/src/descriptors.c": "bc9045017a4efee3549e4cce6ad4066989035dc40620709ced2086117f2ff552",
+    "runtime/c/backends/vulkan/src/internal.h": "8c030f0fe754536d818fdfd4a93c4ab07bb7c67cef43cea53992337e49fdee9d",
+    "runtime/c/backends/vulkan/src/loader.c": "1174fbf47023c974eeeabe6e47903aea36875cffafa767fd46cdfe19739f0db0",
+    "runtime/c/backends/vulkan/src/pipeline.c": "cc18edd28d6556f83e28a12910090086f07c469c0e78bcd372d8163d8dd32109",
+    "runtime/c/backends/vulkan/src/queries.c": "28016710768949aa44eec9128a3fcad7646c6495ca85aa0421dfa2e2d9237386",
+    "runtime/c/backends/vulkan/src/query_internal.h": "534d17afb43ea3b54f8120a053ff7b8e490c4cf2bdf59a8888a5e8ac926c35ca",
+    "runtime/c/backends/vulkan/src/render_commands.c": "13cf655cbdd017edbfe5099619035b70019d796835b67d0de37a656ddad843b2",
+    "runtime/c/backends/vulkan/src/render_internal.h": "2de74a8720a01294fa1f150f64d4fc268a2b21d9bf9788be9a18f9a028da34dd",
+    "runtime/c/backends/vulkan/src/render_pipeline.c": "04bbea0977a47a2e83c8437c97648961d2f782073c91dc1f90c9dbc2074cd202",
+    "runtime/c/backends/vulkan/src/resources.c": "a5c16ff90d0b2c3240faec7afff98d012b5a6092551f325f07844c9d8cc0c7a8",
+    "runtime/c/backends/vulkan/src/texture_commands.c": "544dcab6905cddaea560681e8d68be71856821bf7a1217dc920fcf2008d85c84",
+    "runtime/c/backends/vulkan/src/texture_internal.h": "0d7b82689cab5564007e90dfeb2e50d60ea3e7394118c512576967d9e371ab31",
+    "runtime/c/backends/vulkan/src/textures.c": "026d18b638231ce4a75df0452823178cb4ca0b711d7580847a9d0a56ca37b6b1",
+    "runtime/c/backends/vulkan/src/timestamp.c": "36b00e44393abf9c10f7a14b3282988bab5fd15194e13ecd8e2363c98605a877",
+    "runtime/c/backends/vulkan/src/timestamp_internal.h": "5f62db5f230c9d80d8ac45001b98ddc216a8fe378bb7445140d6d30d89ae7284",
+    "runtime/c/backends/vulkan/src/timestamp_shader.h": "b909e353739d72fc392c142e86ffb822e271fa00d325684cec8bde74b351b804",
+    "runtime/c/backends/vulkan/src/vk_abi_caps.h": "0b059bf50f45d3b3989f480151f67787938ec54a4f52e6067f2cc6e807197a43",
+    "runtime/c/backends/vulkan/src/vk_abi_constants.h": "9f929a809c5c476d3bd0e9ede33f4b9154b97c801c6d308e5906ee8923db232c",
+    "runtime/c/backends/vulkan/src/vk_abi_functions.h": "6f96441699f49861fb9ea561f2493cf77bcb5d9196d27a455e7c05156dcecd2f",
+    "runtime/c/backends/vulkan/src/vk_abi_images.h": "b6d5fc90ff6c74d5f0b54a6a030c0cec743535ee9a5f8e88ea31ae18460da280",
+    "runtime/c/backends/vulkan/src/vk_abi_render.h": "0c30920aff9f42ea8bb949900f5441b3384e10976664c74dd348d0045655b259",
+    "runtime/c/backends/vulkan/src/vk_abi_structs.h": "d66c30f350101858387d96372240e67a0b7d14c3808d1065a1d8418939ee7298",
+    "runtime/c/backends/vulkan/src/vk_abi_types.h": "7cddca8ea667a1e36abf3d0cc1923453764d6cd9184de14a1cbd448ba009a266",
+    "runtime/c/backends/vulkan/tests/descriptor_contract.c": "9417cc16a7d7a8edcb0ac75ec03d0a1e4e36e7a5ff3c9289bd922d83d84dd272",
+    "runtime/c/backends/vulkan/tests/loader_contract.c": "763ddc5dbfe36f6bd498e28b5d20d4383584f8c0b9adf3eb6e3e5e9141dede3b",
+    "runtime/c/backends/vulkan/tests/native_compute.c": "b477302b45d0369b07246eda1b3ed70753c45c0da95fa2cfaa58b61f8f7cff73",
+    "runtime/c/backends/vulkan/tests/native_descriptors.c": "a041dc8d56a00f75efcfe8123a3c97bf5d05e6eb2b7c28f49906ca797ecd2de5",
+    "runtime/c/backends/vulkan/tests/native_queries.c": "c4ad2d0c23f4b61e52e7fd701ebc4d911429a7c15105d31fc294d129e0418f69",
+    "runtime/c/backends/vulkan/tests/native_render.c": "29705b84504aba59c8bd358546a6d04ef91f81138d3f17784a851e4dfe5c5ade",
+    "runtime/c/backends/vulkan/tests/native_storage.c": "4642f9d523b140028ecef45f509cda832007902e312fbc54f031ad75334ae0db",
+    "runtime/c/backends/vulkan/tests/native_texture.c": "26235c9473f3893cc15b6db92a6e94424ef344fd03638391d34b3d777fbed661",
+    "runtime/c/backends/vulkan/tests/native_timestamp.c": "5825f8573b875139a74b2fb42ddc523a4636051edff4f094dbf24458f72057ac",
+    "runtime/c/backends/vulkan/tests/ownership.c": "6ce4961eed9a33471000d2b20a888b66177923d641464166bbb1121ec3f3a7d2",
+    "runtime/c/backends/vulkan/tests/probe.c": "2a4e283c8886bb9a0c25acfd33debd5f7054a61ce76dfbf310eb9aaa56be73ed",
+    "runtime/c/backends/vulkan/tests/query_contract.c": "665aec2abfd9d31711d116f8ad3ead49ed5301f82f0d34614c94007994241a2d",
+    "runtime/c/backends/vulkan/tests/render_contract.c": "7db55ac5c3712dd065c92bef872c358d4bb3ca42ea0030b8f2eaaf75918041a5",
+    "runtime/c/backends/vulkan/tests/texture_contract.c": "498aaf136f61764bdb1f94dc2ab0fcc19912aa0d82bc23f61ecc82b0297eca0f",
+    "runtime/c/backends/vulkan/tests/timestamp_contract.c": "0207a9be4523cc481f4650e24ba6a3c0f496faabbaeddca0fae81839b8a0e4a6",
+    "runtime/c/backends/vulkan/tests/timestamp_lifetime.c": "d6f94d5e677619964c857a16039257fe30453c6e7fc86acd417b8eb973471224",
+    "runtime/c/common/Makefile": "d1c4e0d49c743f936e3171472929fa5be43cbd574a5d57f150ce24ecd66999f6",
+    "runtime/c/common/include/doe_copy_footprint.h": "461535e48bc3d5248928416513b0978baadcc865db33826cb6244f5d9e3fde4b",
+    "runtime/c/common/tests/test_copy_footprint.c": "69f3dff25c7305792e5ed31659c329f60bb079f51814f88d1f260a1260f00ef5",
+    "runtime/c/futures/include/doe_futures.h": "64df7b659fa61de34c3f26a8a8762c70a41d3f35d301a54ffe11877f43ca3404",
+    "runtime/c/instance/include/doe_instance.h": "4356d4991f19d040a2d8a5d8e121d282530d362dcabdc892888148a68af8acfb",
+    "runtime/c/labels/Makefile": "1185bad69795d7b375afe29cbb831621c95fff8d50172b6a4a940757822b68cd",
+    "runtime/c/labels/include/doe_labels.h": "45e6dded64cbf366ddf5f4bcb409cb4bad93914b2af31cc58c82783ad7f12aea",
+    "runtime/c/labels/include/doe_labels_native_private.h": "fe80893339e7264e9672063e0ce89a3e5ce8757ce4e9298fbb3a63d164f4e4cb",
+    "runtime/c/labels/src/internal.h": "a84e6ae87c801faa9935466e89abad1ae5367fb0fc8946d30ebf71e5976c965c",
+    "runtime/c/labels/src/native.c": "e65399cdb50ef030b520388be1ee1f327c0a05e412281578c097d711e3dac2a2",
+    "runtime/c/labels/src/store.c": "2d67603cd1621e555340b4a52ad553377295c17215fed6c19c18bd4000c9595f",
+    "runtime/c/labels/tests/test_faults.c": "76c130d8df6b6fbc155dbb6290a2e744835cc84886341c5113cb0d9eaf79d21d",
+    "runtime/c/labels/tests/test_store.c": "c5615ef160473803b1b56fe37eab7e4425b4e32145c52f4901f02799a5d90135",
+    "runtime/c/resources/Makefile": "46bfe0fffd4316dbbaa29ec023cc5ec95a9448e2fddb44687f9f9f4ec022a6a5",
+    "runtime/c/resources/include/doe_resources.h": "7824710101f9f03943a449583b5fa6ef482568d6ec2679286fbb9d7ecd1f2c2c",
+    "runtime/c/resources/include/doe_resources_extended.h": "a4c8a2dbeaeab4141454905ec45aabfa916bb0c22fe1b89ed801523964f06cc0",
+    "runtime/c/resources/src/accessors.c": "b902b7a4c3574a0a9faff7e791ab7d2b520896483616d025f1e38a2b3631e736",
+    "runtime/c/resources/src/bindings.c": "d0f38bec48d9d2addc6e3ecfbc1909567165dbf7d3b452f06d4c246afcef0bc2",
+    "runtime/c/resources/src/bundles.c": "2c461f735672b4efd325cf931d70a9acd3f67e274934ffbb44cca94232fd786d",
+    "runtime/c/resources/src/commands.c": "5642f563d9009e46280a7b3dfcb652840e91e431743218e3ce79ef1138276069",
+    "runtime/c/resources/src/compute_pass.c": "22f7105f709d592e1350b5b28e2588e4b064ebf8f13ac6acf741f16cec111cb1",
+    "runtime/c/resources/src/external_textures.c": "e7e8e3cd53d5c6d8e235533659a17856125d2e1cedb776cf08d8f7b1478490e7",
+    "runtime/c/resources/src/formats.c": "261c813e2ab1da1adc9e99ddf804a48c8be23ed4302ce9a1cbe0135635f4d6f6",
+    "runtime/c/resources/src/internal.h": "7168b72621b023a504082f31c99cc27f4834765942cf1901c4512adbbf72db18",
+    "runtime/c/resources/src/objects.c": "ee1bab54647cfa1d2dcd8e492ccccf0ae7bd9cf2e57b591b719311cf6c31ab17",
+    "runtime/c/resources/src/queries.c": "6994d6b88c21f27efc96d53380e780649e00f876ba0134311d86e50f30412521",
+    "runtime/c/resources/src/render.c": "2e670fb847abec76c612586cb3aeb4af5d4788eb1238ea46982f48c7f2b3aded",
+    "runtime/c/resources/src/render_state.c": "182b647ae7d34d5cb7e7ea5b50cb8909c1142bd7126e039654d6dad02b66da9d",
+    "runtime/c/resources/src/render_usage.c": "b3dad2d18c539e5b0aaffaae50a09ccf67655a834839ac324e2f04eca61faee5",
+    "runtime/c/resources/src/texture_copy.c": "1afc28cbce7aae56028e590106ddb56b4e5a90acb80c14642302b0e53b2dd7cf",
+    "runtime/c/resources/src/textures.c": "862f38f57e91543370a5006210ad9242494123616ff96083b46194b7c220a713",
+    "runtime/c/resources/src/usage_scope.c": "288e9da9dfee0faf35f653d3466e0b2d23ec862d8df817a35ec5e9a4adc402db",
+    "runtime/c/resources/tests/fixture.h": "2d5bf21b9e67fedd2298b8f443ed7341ba1991191a23ff6bebdaf05643329f98",
+    "runtime/c/resources/tests/test_binding_features.c": "ce0aedfccf0c5abac0b6d4d5c3d2ffa87906f12e63367796e083d7e64743fd97",
+    "runtime/c/resources/tests/test_bundles.c": "8378965b8ad7972dde2d6b50efcdf2c5eedaeb932e44ff6a5ac2dc6ef9834671",
+    "runtime/c/resources/tests/test_extended.c": "1b0a95363a11c7dbce2f70e58ce38a9bfedf8372c1b4dcbaf6087b452b3b1e1a",
+    "runtime/c/resources/tests/test_query_admission.c": "897397269f82058b0d5007fcd6c128b09f8b624bf332165da4029634aeab5a06",
+    "runtime/c/resources/tests/test_render_usage.c": "8312166e59a9d21876067a7ee62bf2054802b7f7beaaedeed5844472a194b1a1",
+    "runtime/c/resources/tests/test_resources.c": "3927cc250ed85bd957ff5a446bec87f3b6ec58d1c87655b14a767a905d5a8569",
+    "runtime/c/resources/tests/test_usage_scope.c": "d655cfbec73555d5ba6040c041c38cacb51f6723c3888f87b48ab85b2749d210",
+    "runtime/c/resources/tests/vulkan_fixture.h": "c00a5a7be4eb2677ffe456d98e6f10f1d168676e1c72a6fccf52582910297c24",
+    "runtime/c/resources/tests/vulkan_lifetime.c": "634fe22783a0d1e0797eed609c75d9adce959d3b16e348306762d93abe408812",
+    "runtime/c/resources/tests/vulkan_query_lifetime.c": "3d13e0653aef0c79cb29edd737edfcdb0032ec33cff539401bf6469a83ae5901",
+    "runtime/c/resources/tests/vulkan_render_lifetime.c": "ae8dc05f3ecf187cca3667bc71a1e1bc64c92fa57f96ecdd0fcb7245a7ef7387",
+    "runtime/zig/vendor/webgpu-headers/webgpu.h": "7691d76ceb67056f89e97b9ff0b62163eacf19a8e0e09a8fa7dbb32069b7978c"
+  },
+  "software_icd_sha256": {
+    "/usr/lib/chromium/vk_swiftshader_icd.json": "c9eef28b6b984fec220ef0abfecc40b502d46946706e47bfe97707027cb818bd",
+    "/usr/lib/chromium/libvk_swiftshader.so": "b4bd480a9acc0dd5a251a3b9082e2f001245fed0dbfdc607970c3ce6b6b2e6f3"
+  }
+}

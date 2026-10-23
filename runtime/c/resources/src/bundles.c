@@ -12,12 +12,14 @@ struct doe_resource_bundle_encoder {
     size_t operations, count, capacity;
     doe_resource_render_packet state;
     doe_resource_render_packet *draws;
+    resource_usage_scope scope;
 };
 struct doe_resource_render_bundle {
     resource_base base;
     doe_resource_render_bundle_desc desc;
     size_t count, capacity;
     doe_resource_render_packet *draws;
+    resource_usage_scope scope;
 };
 
 static doe_resource_status fail(doe_resource_bundle_encoder *encoder, doe_resource_status status)
@@ -80,6 +82,7 @@ void doe_resource_bundle_encoder_release(doe_resource_bundle_encoder *encoder)
 {
     if (!encoder || !resource_last_reference(&encoder->base)) return;
     resource_render_packet_release(&encoder->state);
+    resource_scope_release(&encoder->base.config, &encoder->scope);
     for (size_t i = 0; i < encoder->count; i++) resource_render_packet_release(&encoder->draws[i]);
     resource_free(&encoder->base.config, encoder->draws,
         encoder->capacity * sizeof(*encoder->draws), _Alignof(doe_resource_render_packet));
@@ -100,7 +103,7 @@ doe_resource_status doe_resource_bundle_encoder_set_group(doe_resource_bundle_en
 {
     doe_resource_status status = admit_operation(encoder);
     if (status != DOE_RESOURCE_OK) return status;
-    status = resource_render_set_group(encoder->base.config.device.identity, &encoder->state, index, group);
+    status = resource_render_set_group(&encoder->base.config, &encoder->scope, &encoder->state, index, group);
     return complete_operation(encoder, status);
 }
 
@@ -109,7 +112,7 @@ doe_resource_status doe_resource_bundle_encoder_set_vertex(doe_resource_bundle_e
 {
     doe_resource_status status = admit_operation(encoder);
     if (status != DOE_RESOURCE_OK) return status;
-    status = resource_render_set_vertex(encoder->base.config.device.identity, &encoder->state, slot, buffer, offset, size);
+    status = resource_render_set_vertex(&encoder->base.config, &encoder->scope, &encoder->state, slot, buffer, offset, size);
     return complete_operation(encoder, status);
 }
 
@@ -118,7 +121,7 @@ doe_resource_status doe_resource_bundle_encoder_set_index(doe_resource_bundle_en
 {
     doe_resource_status status = admit_operation(encoder);
     if (status != DOE_RESOURCE_OK) return status;
-    status = resource_render_set_index(encoder->base.config.device.identity, &encoder->state, buffer, format, offset, size);
+    status = resource_render_set_index(&encoder->base.config, &encoder->scope, &encoder->state, buffer, format, offset, size);
     return complete_operation(encoder, status);
 }
 
@@ -127,6 +130,10 @@ static doe_resource_status append_draw(doe_resource_bundle_encoder *encoder,
 {
     doe_resource_status status = resource_render_draw_validate(packet, encoder->base.config.device.identity, &encoder->desc);
     if (status != DOE_RESOURCE_OK) return fail(encoder, status);
+    if (packet->indirect) {
+        status = resource_scope_input(&encoder->base.config, &encoder->scope, packet->indirect);
+        if (status != DOE_RESOURCE_OK) return fail(encoder, status);
+    }
     if (encoder->count == encoder->capacity) {
         size_t capacity = encoder->capacity ? encoder->capacity * 2 : 8;
         if (capacity > MAX_BUNDLE_OPERATIONS) capacity = MAX_BUNDLE_OPERATIONS;
@@ -187,6 +194,8 @@ doe_resource_status doe_resource_bundle_encoder_finish(doe_resource_bundle_encod
     bundle->draws = encoder->draws;
     bundle->count = encoder->count;
     bundle->capacity = encoder->capacity;
+    bundle->scope = encoder->scope;
+    encoder->scope = (resource_usage_scope){0};
     resource_init(&bundle->base, &encoder->base.config, (doe_resource_native){0});
     encoder->draws = NULL;
     encoder->count = encoder->capacity = 0;
@@ -208,6 +217,7 @@ void doe_resource_render_bundle_release(doe_resource_render_bundle *bundle)
     for (size_t i = 0; i < bundle->count; i++) resource_render_packet_release(&bundle->draws[i]);
     resource_free(&bundle->base.config, bundle->draws,
         bundle->capacity * sizeof(*bundle->draws), _Alignof(doe_resource_render_packet));
+    resource_scope_release(&bundle->base.config, &bundle->scope);
     resource_finalize(&bundle->base, sizeof(*bundle), _Alignof(doe_resource_render_bundle));
 }
 
@@ -235,12 +245,18 @@ doe_resource_status doe_resource_render_pass_execute_bundles(doe_resource_render
             (signature.depth_read_only && !bundle->desc.depth_read_only) ||
             (signature.stencil_read_only && !bundle->desc.stencil_read_only))
             return resource_encoder_fail(pass->encoder, DOE_RESOURCE_LAYOUT);
+        status = resource_scope_validate(&bundle->scope);
+        if (status != DOE_RESOURCE_OK) return resource_encoder_fail(pass->encoder, status);
         if (bundle->count > remaining) return resource_encoder_fail(pass->encoder, DOE_RESOURCE_RANGE);
         remaining -= bundle->count;
         for (size_t j = 0; j < bundle->count; j++) {
             status = resource_render_draw_validate(&bundle->draws[j], pass->base.config.device.identity, &signature);
             if (status != DOE_RESOURCE_OK) return resource_encoder_fail(pass->encoder, status);
         }
+    }
+    for (size_t i = 0; i < count; i++) {
+        status = resource_scope_add(&pass->base.config, &pass->scope, bundles[i]->scope.uses, bundles[i]->scope.count);
+        if (status != DOE_RESOURCE_OK) return resource_encoder_fail(pass->encoder, status);
     }
     for (size_t i = 0; i < count; i++) {
         for (size_t j = 0; j < bundles[i]->count; j++) {

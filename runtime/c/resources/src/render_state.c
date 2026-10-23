@@ -14,7 +14,8 @@ doe_resource_status resource_render_set_pipeline(void *device, doe_resource_rend
     return DOE_RESOURCE_OK;
 }
 
-doe_resource_status resource_render_set_group(void *device, doe_resource_render_packet *state,
+doe_resource_status resource_render_set_group(const doe_resource_config *config,
+    resource_usage_scope *scope, doe_resource_render_packet *state,
     uint32_t index, const doe_resource_dispatch_group *group)
 {
     if (index >= DOE_RESOURCE_MAX_GROUPS) return DOE_RESOURCE_RANGE;
@@ -24,12 +25,11 @@ doe_resource_status resource_render_set_group(void *device, doe_resource_render_
         state->offsets.counts[index] = 0;
         return DOE_RESOURCE_OK;
     }
-    doe_resource_binding resolved[DOE_RESOURCE_MAX_BINDINGS];
-    doe_resource_status status = doe_resource_bind_group_resolve(group->group, group->dynamic_offsets, group->dynamic_offset_count,
-        resolved, DOE_RESOURCE_MAX_BINDINGS);
-    if (status != DOE_RESOURCE_OK) return status;
-    if (group->group->base.config.device.identity != device)
+    if (!group->group) return DOE_RESOURCE_INVALID_ARGUMENT;
+    if (group->group->base.config.device.identity != config->device.identity)
         return DOE_RESOURCE_DEVICE_MISMATCH;
+    doe_resource_status status = resource_scope_group(config, scope, group);
+    if (status != DOE_RESOURCE_OK) return status;
     doe_resource_bind_group_retain(group->group);
     doe_resource_bind_group_release(state->groups[index]);
     state->groups[index] = group->group;
@@ -39,17 +39,19 @@ doe_resource_status resource_render_set_group(void *device, doe_resource_render_
     return DOE_RESOURCE_OK;
 }
 
-static doe_resource_status set_buffer(void *device,
+static doe_resource_status set_buffer(const doe_resource_config *config, resource_usage_scope *scope,
     doe_resource_vertex_binding *binding, doe_resource_buffer *buffer,
     uint64_t offset, uint64_t size, uint64_t usage, uint64_t alignment)
 {
     if (!resource_buffer_available(buffer)) return DOE_RESOURCE_UNAVAILABLE;
-    if (buffer->base.config.device.identity != device)
+    if (buffer->base.config.device.identity != config->device.identity)
         return DOE_RESOURCE_DEVICE_MISMATCH;
     if (!(buffer->desc.usage & usage)) return DOE_RESOURCE_USAGE;
     if (offset % alignment) return DOE_RESOURCE_ALIGNMENT;
     uint64_t resolved;
     doe_resource_status status = resource_range(buffer->desc.size, offset, size, &resolved);
+    if (status != DOE_RESOURCE_OK) return status;
+    status = resource_scope_input(config, scope, buffer);
     if (status != DOE_RESOURCE_OK) return status;
     doe_resource_buffer_retain(buffer);
     doe_resource_buffer_release(binding->buffer);
@@ -57,19 +59,21 @@ static doe_resource_status set_buffer(void *device,
     return DOE_RESOURCE_OK;
 }
 
-doe_resource_status resource_render_set_vertex(void *device, doe_resource_render_packet *state,
+doe_resource_status resource_render_set_vertex(const doe_resource_config *config,
+    resource_usage_scope *scope, doe_resource_render_packet *state,
     uint32_t slot, doe_resource_buffer *buffer, uint64_t offset, uint64_t size)
 {
     if (slot >= DOE_RESOURCE_MAX_VERTEX_BUFFERS) return DOE_RESOURCE_RANGE;
-    return set_buffer(device, &state->vertices[slot], buffer, offset, size, WGPUBufferUsage_Vertex, 4);
+    return set_buffer(config, scope, &state->vertices[slot], buffer, offset, size, WGPUBufferUsage_Vertex, 4);
 }
 
-doe_resource_status resource_render_set_index(void *device, doe_resource_render_packet *state,
+doe_resource_status resource_render_set_index(const doe_resource_config *config,
+    resource_usage_scope *scope, doe_resource_render_packet *state,
     doe_resource_buffer *buffer, WGPUIndexFormat format, uint64_t offset, uint64_t size)
 {
     if (format != WGPUIndexFormat_Uint16 && format != WGPUIndexFormat_Uint32)
         return DOE_RESOURCE_LAYOUT;
-    doe_resource_status status = set_buffer(device, &state->index, buffer, offset, size, WGPUBufferUsage_Index,
+    doe_resource_status status = set_buffer(config, scope, &state->index, buffer, offset, size, WGPUBufferUsage_Index,
         format == WGPUIndexFormat_Uint16 ? 2 : 4);
     if (status == DOE_RESOURCE_OK) state->index_format = format;
     return status;
@@ -106,14 +110,13 @@ doe_resource_status resource_render_draw_validate(const doe_resource_render_pack
         pipeline->desc.samples != signature->samples ||
         (signature->depth_read_only && pipeline->desc.depth_write) ||
         (signature->stencil_read_only && pipeline->desc.stencil_write)) return DOE_RESOURCE_LAYOUT;
-    for (size_t i = 0; i < pipeline->layout->count; i++) {
-        if (!packet->groups[i] || !doe_resource_layout_compatible(pipeline->layout->groups[i], packet->groups[i]->layout))
-            return DOE_RESOURCE_LAYOUT;
-        doe_resource_binding resolved[DOE_RESOURCE_MAX_BINDINGS];
-        status = doe_resource_bind_group_resolve(packet->groups[i], packet->offsets.values[i],
-            packet->offsets.counts[i], resolved, DOE_RESOURCE_MAX_BINDINGS);
-        if (status != DOE_RESOURCE_OK) return status;
-    }
+    doe_resource_dispatch_group groups[DOE_RESOURCE_MAX_GROUPS];
+    for (size_t i = 0; i < pipeline->layout->count; i++)
+        groups[i] = (doe_resource_dispatch_group){packet->groups[i], packet->offsets.values[i], packet->offsets.counts[i]};
+    bool has_dynamic;
+    status = resource_shader_bindings_validate(pipeline->layout, groups, pipeline->layout->count,
+        packet->indirect, &has_dynamic);
+    if (status != DOE_RESOURCE_OK) return status;
     for (size_t i = 0; i < pipeline->desc.vertex_count; i++) {
         const doe_resource_vertex_layout *layout = &pipeline->desc.vertices[i];
         bool instance = layout->step_mode == WGPUVertexStepMode_Instance;

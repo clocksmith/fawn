@@ -433,6 +433,8 @@ doe_resource_status doe_resource_buffer_map_span(const doe_resource_buffer *buff
 doe_resource_status doe_resource_buffer_write_validate(const doe_resource_buffer *buffer,
     const void *device, uint64_t offset, uint64_t size);
 size_t doe_resource_pipeline_layout_count(const doe_resource_pipeline_layout *layout);
+/* Empty layout slots never require a bound group; invalid indices return false. */
+bool doe_resource_pipeline_layout_group_required(const doe_resource_pipeline_layout *layout, size_t index);
 doe_resource_layout *doe_resource_pipeline_layout_group(const doe_resource_pipeline_layout *layout,
     size_t index);
 doe_resource_pipeline_layout *doe_resource_pipeline_get_layout(const doe_resource_pipeline *pipeline);

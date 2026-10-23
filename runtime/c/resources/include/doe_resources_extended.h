@@ -9,7 +9,11 @@ extern "C" {
 typedef struct doe_resource_render_pipeline doe_resource_render_pipeline;
 typedef struct doe_resource_render_pass doe_resource_render_pass;
 
-/* Native query pools are created by the backend after feature admission. */
+/* Canonical allocation-free WebGPU descriptor admission. Feature enablement
+ * remains with the device owner. Zero queries need no native pool; nonzero
+ * queries require an adopted native payload. */
+enum { DOE_RESOURCE_MAX_QUERIES = 4096 };
+doe_resource_status doe_resource_query_set_validate(WGPUQueryType type, uint32_t count);
 doe_resource_status doe_resource_query_set_create(const doe_resource_config *config,
     WGPUQueryType type, uint32_t count, doe_resource_native native,
     doe_resource_query_set **out);

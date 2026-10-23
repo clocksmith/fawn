@@ -83,7 +83,7 @@ static void test_query_ownership(void)
 
     query_token = (native_token){0};
     buffer_token = (native_token){0};
-    assert(doe_resource_query_set_create(&c, WGPUQueryType_Timestamp, UINT32_MAX,
+    assert(doe_resource_query_set_create(&c, WGPUQueryType_Timestamp, DOE_RESOURCE_MAX_QUERIES,
         native(&f, &query_token), &set) == DOE_RESOURCE_OK);
     dst = buffer(&f, &buffer_token, 512, WGPUBufferUsage_QueryResolve);
     assert(doe_resource_encoder_create(&c, &encoder) == DOE_RESOURCE_OK);
