@@ -5,7 +5,7 @@ Follow the repository's native adapter rules and the frozen milestone. This loca
 - Use C11, explicit status/boolean results and caller-owned spans. Check lengths and capacities before indexing, casts and publication.
 - Keep lexical, parsed, validated and target representations separate. Emission consumes typed binding identities and operations, never source spelling.
 - Preserve source offsets through semantic lowering. Report the first admitted pipeline failure with a useful bounded message.
-- Keep ownership visible: stack records in the library, file descriptors in the CLI with one cleanup path, no retained caller pointers or mutable globals.
+- Keep ownership visible: stack records in the library, file descriptors in the CLI with one cleanup path, no retained caller pointers or mutable globals. Optional reflection is a nullable path, not a default filename; only a successfully acquired temporary or published artifact is eligible for cleanup.
 - Prefer typed, bounded records over generic containers, callback frameworks or erased `void *` domain values.
 - Use named small helpers for parsing, resolution, validation and emission. The emitter's local serialization macro only supplies an array length and propagates failure; it is not an IR or dispatch framework.
 - Keep test evidence separate from implementation. Test semantics, error/output atomicity and real native consumers, not desired source snippets. Keep first failures when repairing implementation or classifying intentional contract expansion.
