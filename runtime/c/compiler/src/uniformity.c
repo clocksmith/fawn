@@ -210,6 +210,8 @@ static bool expression_bit(Uniformity *a,uint32_t id,uint32_t cf,uint32_t *out) 
 /* LHS syntax is a validated reference path, not a load of its old root. */
 static bool assignment_bit(Uniformity *a,const Assignment *assignment) {
     uint32_t bits=a->cf,part;
+    if (assignment->kind == TARGET_ROOT && source_span_is(a->source, assignment->root, "_"))
+        return expression_bit(a, assignment->expression, a->cf, &part);
     if (assignment->kind==TARGET_INDEX) {
         if (!expression_bit(a,assignment->index,a->cf,&part)) return false;
         bits|=part;

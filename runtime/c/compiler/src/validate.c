@@ -22,6 +22,22 @@ static ExpressionKind update_kind(UpdateKind operation) {
 }
 static bool lower_assignment(Source *source,const Syntax *s,const Assignment *assignment,const LocalScope *scope,IrProgram *program,SourceReference *slot) {
     (void)s;(void)program;ValueReference reference;
+    if (assignment->kind == TARGET_ROOT && source_span_is(source, assignment->root, "_")) {
+        /* A discarded address does not escape or require a target pointer.
+         * Use the same reference resolver: indices execute once, source roots
+         * are recorded, and non-addressable components still reject. */
+        if (s->expressions[assignment->expression].kind == EXPRESSION_ADDRESS)
+            return sema_address_reference(source, assignment->expression, scope, true, true, &reference);
+        ExpressionValue ignored;
+        if (!sema_expression(source, assignment->expression, scope, true, true, &ignored)) return false;
+        const TypeId type = ignored.constant.type;
+        if (!type_constructible(program, type) && !type_pointer(program, type) && !type_handle(program, type))
+            return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, assignment->root.offset,
+                                "phony assignment requires a constructible, pointer or handle value");
+        /* Runtime effects and source references are already owned by the RHS.
+         * Discarding a const value does not require concretization or storage. */
+        return true;
+    }
     if (!sema_assignment_reference(source,assignment,scope,&reference,slot)) return false;
     const uint32_t offset=assignment->root.offset;
     if (!type_constructible(program, reference.type))
