@@ -4,11 +4,11 @@ BUILD ?= /tmp/doe-c-d3d12
 CPPFLAGS += -Iinclude
 CFLAGS ?= -O2 -g
 STRICT = -std=c11 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wshadow
-OWNER = src/context.c src/resources.c src/commands.c src/compute.c src/pipeline.c src/textures.c src/texture_transfer.c
-WINDOWS = src/windows_context.c src/windows_resources.c src/windows_commands.c src/windows_pipeline.c src/windows_bindings.c src/windows_textures.c
+OWNER = src/context.c src/resources.c src/commands.c src/compute.c src/pipeline.c src/textures.c src/texture_transfer.c src/bindings.c src/graphics.c src/timestamps.c
+WINDOWS = src/windows_context.c src/windows_resources.c src/windows_commands.c src/windows_pipeline.c src/windows_bindings.c src/windows_textures.c src/windows_graphics.c src/windows_timestamps.c
 HOST_OBJECTS = $(OWNER:src/%.c=$(BUILD)/host/%.o)
 WINDOWS_OBJECTS = $(OWNER:src/%.c=$(BUILD)/windows/%.o) $(WINDOWS:src/%.c=$(BUILD)/windows/%.o)
-HEADERS = include/doe_d3d12_texture.h ../../common/include/doe_copy_footprint.h include/doe_d3d12.h src/internal.h src/native.h src/windows_internal.h
+HEADERS = include/doe_d3d12_graphics.h include/doe_d3d12_texture.h ../../common/include/doe_copy_footprint.h include/doe_d3d12.h src/internal.h src/native.h src/windows_internal.h
 .PHONY: all check sanitize windows native-fixture
 # On other platforms only the explicitly host-scoped owner tests are available.
 ifeq ($(OS),Windows_NT)
@@ -24,9 +24,12 @@ $(BUILD)/test_owner: tests/test_owner.c tests/mock_native.c tests/mock_native.h 
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(STRICT) tests/test_owner.c tests/mock_native.c $(HOST_OBJECTS) -o $@
 $(BUILD)/test_textures: tests/test_textures.c tests/mock_native.c tests/mock_native.h $(HOST_OBJECTS)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(STRICT) tests/test_textures.c tests/mock_native.c $(HOST_OBJECTS) -o $@
-check: $(BUILD)/test_owner $(BUILD)/test_textures
+$(BUILD)/test_graphics: tests/test_graphics.c tests/mock_native.c tests/mock_native.h $(HOST_OBJECTS)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(STRICT) tests/test_graphics.c tests/mock_native.c $(HOST_OBJECTS) -o $@
+check: $(BUILD)/test_owner $(BUILD)/test_textures $(BUILD)/test_graphics
 	$(BUILD)/test_owner
 	$(BUILD)/test_textures
+	$(BUILD)/test_graphics
 sanitize:
 	$(MAKE) BUILD=$(BUILD)/sanitize CFLAGS='-O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer' check
 $(BUILD)/windows/%.o: src/%.c $(HEADERS) | $(BUILD)/windows
@@ -35,6 +38,6 @@ $(BUILD)/libdoe_d3d12.a: $(WINDOWS_OBJECTS)
 	$(AR) rcs $@ $^
 windows: $(BUILD)/libdoe_d3d12.a
 # Build only. Executing this requires separately authorized Windows/GPU work.
-native-fixture: $(BUILD)/native_compute.exe $(BUILD)/native_texture.exe
+native-fixture: $(BUILD)/native_compute.exe $(BUILD)/native_texture.exe $(BUILD)/native_graphics.exe
 $(BUILD)/native_%.exe: tests/native_%.c tests/native_fixture.h $(BUILD)/libdoe_d3d12.a
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(STRICT) $< $(BUILD)/libdoe_d3d12.a -ld3d12 -ldxgi -ldxguid -o $@

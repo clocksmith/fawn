@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: MIT */
 #ifndef DOE_DX_NATIVE_FIXTURE_H
 #define DOE_DX_NATIVE_FIXTURE_H
-#include "doe_d3d12_texture.h"
+#include "doe_d3d12_graphics.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

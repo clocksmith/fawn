@@ -56,8 +56,9 @@ static doe_dx_status validate_layout(const doe_dx_resource_pipeline_desc *desc) 
     return DOE_DX_OK;
 }
 
-doe_dx_status doe_dx_pipeline_create_resources(doe_dx_context *context,
-    const doe_dx_resource_pipeline_desc *desc, doe_dx_pipeline **out, doe_dx_error *error) {
+static doe_dx_status create_pipeline(doe_dx_context *context,
+    const doe_dx_resource_pipeline_desc *desc, const doe_dx_graphics_pipeline_desc *graphics,
+    doe_dx_pipeline **out, doe_dx_error *error) {
     if (!context || !desc || !out)
         return doe_dx_fail(DOE_DX_INVALID_ARGUMENT, 0, "pipeline.create", error);
     doe_dx_status status = validate_layout(desc);
@@ -66,13 +67,16 @@ doe_dx_status doe_dx_pipeline_create_resources(doe_dx_context *context,
     if (context->lost) return doe_dx_fail(DOE_DX_DEVICE_LOST, 0, "pipeline.create", error);
     doe_dx_pipeline *pipeline = calloc(1, sizeof(*pipeline));
     if (!pipeline) return doe_dx_fail(DOE_DX_OUT_OF_MEMORY, 0, "pipeline.allocate", error);
-    status = doe_dx_native_pipeline_create(context->native, desc, &pipeline->native, error);
+    if (graphics) status = doe_dx_native_graphics_create(context->native, graphics, &pipeline->native, error);
+    else status = doe_dx_native_pipeline_create(context->native, desc, &pipeline->native, error);
     if (status != DOE_DX_OK) {
         free(pipeline);
         return doe_dx_context_result(context, status, error);
     }
     pipeline->context = context;
     pipeline->references = 1;
+    pipeline->graphics = graphics != NULL;
+    if (graphics) pipeline->color_format = graphics->color_format;
     pipeline->binding_count = desc->buffers.binding_count;
     pipeline->texture_count = desc->texture_count;
     if (pipeline->binding_count)
@@ -84,6 +88,20 @@ doe_dx_status doe_dx_pipeline_create_resources(doe_dx_context *context,
     context->objects++;
     *out = pipeline;
     return doe_dx_fail(DOE_DX_OK, 0, "pipeline.create", error);
+}
+
+doe_dx_status doe_dx_pipeline_create_resources(doe_dx_context *context,
+    const doe_dx_resource_pipeline_desc *desc, doe_dx_pipeline **out, doe_dx_error *error) {
+    return create_pipeline(context, desc, NULL, out, error);
+}
+
+doe_dx_status doe_dx_pipeline_create_graphics(doe_dx_context *context,
+    const doe_dx_graphics_pipeline_desc *desc, doe_dx_pipeline **out, doe_dx_error *error) {
+    if (!desc || !desc->vertex_bytecode || !desc->vertex_bytecode_size)
+        return doe_dx_fail(DOE_DX_INVALID_ARGUMENT, 0, "graphics.create", error);
+    if (desc->color_format != DOE_DX_RGBA8_UNORM)
+        return doe_dx_fail(DOE_DX_UNSUPPORTED, 0, "graphics.format", error);
+    return create_pipeline(context, &desc->fragment, desc, out, error);
 }
 
 doe_dx_status doe_dx_pipeline_create(doe_dx_context *context,

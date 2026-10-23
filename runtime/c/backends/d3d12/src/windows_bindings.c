@@ -68,4 +68,23 @@ doe_dx_status doe_dx_prepare_descriptors(doe_dx_native_commands *commands,
     return DOE_DX_OK;
 }
 
+void doe_dx_transition_resources(doe_dx_native_commands *commands, doe_dx_native_pipeline *pipeline,
+    const doe_dx_native_resources *resources, bool graphics, bool restore) {
+    D3D12_RESOURCE_STATES read = D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
+    if (graphics) read |= D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+    for (size_t index = 0; index < resources->buffer_count; index++) {
+        D3D12_RESOURCE_STATES state = pipeline->bindings[index].access == DOE_DX_READ_ONLY ?
+            read : D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+        doe_dx_transition(commands->list, resources->buffers[index].buffer->resource,
+            restore ? state : D3D12_RESOURCE_STATE_COPY_DEST,
+            restore ? D3D12_RESOURCE_STATE_COPY_DEST : state);
+    }
+    for (size_t index = 0; index < resources->texture_count; index++) {
+        D3D12_RESOURCE_STATES state = pipeline->textures[index].access == DOE_DX_READ_ONLY ?
+            read : D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+        doe_dx_transition(commands->list, resources->textures[index]->resource,
+            restore ? state : D3D12_RESOURCE_STATE_COPY_DEST,
+            restore ? D3D12_RESOURCE_STATE_COPY_DEST : state);
+    }
+}
 #endif

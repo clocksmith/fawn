@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: MIT */
 #ifndef DOE_DX_NATIVE_H
 #define DOE_DX_NATIVE_H
-#include "../include/doe_d3d12_texture.h"
+#include "../include/doe_d3d12_graphics.h"
 #if defined(DOE_DX_REQUIRE_WINDOWS) && !defined(_WIN32)
 #error "The native D3D12 build requires a Windows target and actual Windows SDK."
 #endif
@@ -14,6 +14,7 @@ typedef struct doe_dx_native_buffer doe_dx_native_buffer;
 typedef struct doe_dx_native_pipeline doe_dx_native_pipeline;
 typedef struct doe_dx_native_texture doe_dx_native_texture;
 typedef struct doe_dx_native_commands doe_dx_native_commands;
+typedef struct doe_dx_native_timestamps doe_dx_native_timestamps;
 typedef struct doe_dx_native_binding {
     doe_dx_native_buffer *buffer;
     uint64_t offset, size;
@@ -49,6 +50,21 @@ void doe_dx_native_texture_transfer(doe_dx_native_commands *commands,
     const doe_dx_texture_footprint *footprint, bool upload);
 void doe_dx_native_texture_copy(doe_dx_native_commands *commands,
     doe_dx_native_texture *source, doe_dx_native_texture *destination);
+doe_dx_status doe_dx_native_graphics_create(doe_dx_native_context *context,
+    const doe_dx_graphics_pipeline_desc *desc, doe_dx_native_pipeline **out, doe_dx_error *error);
+doe_dx_status doe_dx_native_draw(doe_dx_native_commands *commands,
+    doe_dx_native_pipeline *pipeline, const doe_dx_native_resources *resources,
+    doe_dx_native_texture *color, const doe_dx_draw_desc *draw, doe_dx_error *error);
+doe_dx_status doe_dx_native_timestamps_create(doe_dx_native_context *context, uint32_t count,
+    doe_dx_native_timestamps **out, doe_dx_error *error);
+void doe_dx_native_timestamps_destroy(doe_dx_native_timestamps *timestamps);
+doe_dx_status doe_dx_native_timestamp_frequency(doe_dx_native_context *context,
+    uint64_t *out, doe_dx_error *error);
+void doe_dx_native_timestamp(doe_dx_native_commands *commands,
+    doe_dx_native_timestamps *timestamps, uint32_t index);
+void doe_dx_native_resolve_timestamps(doe_dx_native_commands *commands,
+    doe_dx_native_timestamps *timestamps, uint32_t first, uint32_t count,
+    doe_dx_native_buffer *destination, uint64_t offset);
 void doe_dx_native_pipeline_destroy(doe_dx_native_pipeline *pipeline);
 doe_dx_status doe_dx_native_commands_create(doe_dx_native_context *context,
     doe_dx_native_commands **out, doe_dx_error *error);

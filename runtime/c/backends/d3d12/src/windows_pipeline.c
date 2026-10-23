@@ -18,10 +18,8 @@ void doe_dx_native_pipeline_destroy(doe_dx_native_pipeline *pipeline) {
     free(pipeline);
 }
 
-doe_dx_status doe_dx_native_pipeline_create(doe_dx_native_context *context,
-    const doe_dx_resource_pipeline_desc *desc, doe_dx_native_pipeline **out, doe_dx_error *error) {
-    doe_dx_native_pipeline *pipeline = calloc(1, sizeof(*pipeline));
-    if (!pipeline) return doe_dx_fail(DOE_DX_OUT_OF_MEMORY, 0, "native.pipeline.allocate", error);
+doe_dx_status doe_dx_create_root(doe_dx_native_context *context,
+    const doe_dx_resource_pipeline_desc *desc, doe_dx_native_pipeline *pipeline, doe_dx_error *error) {
     D3D12_DESCRIPTOR_RANGE ranges[DOE_DX_MAX_BINDINGS] = {0};
     for (size_t index = 0; index < desc->buffers.binding_count; index++) {
         const doe_dx_binding_layout *binding = &desc->buffers.bindings[index];
@@ -82,20 +80,32 @@ doe_dx_status doe_dx_native_pipeline_create(doe_dx_native_context *context,
         ID3D10Blob_GetBufferPointer(blob), ID3D10Blob_GetBufferSize(blob),
         &IID_ID3D12RootSignature, (void **)&pipeline->root);
     if (FAILED(result)) goto fail;
-    D3D12_COMPUTE_PIPELINE_STATE_DESC state = {0};
-    state.pRootSignature = pipeline->root;
-    state.CS.pShaderBytecode = desc->buffers.bytecode;
-    state.CS.BytecodeLength = desc->buffers.bytecode_size;
-    operation = "ID3D12Device.CreateComputePipelineState";
-    result = ID3D12Device_CreateComputePipelineState(context->device, &state,
-        &IID_ID3D12PipelineState, (void **)&pipeline->state);
-    if (FAILED(result)) goto fail;
     ID3D10Blob_Release(blob);
-    *out = pipeline;
-    return doe_dx_fail(DOE_DX_OK, 0, "native.pipeline.create", error);
+    return doe_dx_fail(DOE_DX_OK, 0, "native.root.create", error);
 fail:
     if (blob) ID3D10Blob_Release(blob);
-    doe_dx_native_pipeline_destroy(pipeline);
     return doe_dx_hresult(result, operation, error);
+}
+
+doe_dx_status doe_dx_native_pipeline_create(doe_dx_native_context *context,
+    const doe_dx_resource_pipeline_desc *desc, doe_dx_native_pipeline **out, doe_dx_error *error) {
+    doe_dx_native_pipeline *pipeline = calloc(1, sizeof(*pipeline));
+    if (!pipeline) return doe_dx_fail(DOE_DX_OUT_OF_MEMORY, 0, "native.pipeline.allocate", error);
+    doe_dx_status status = doe_dx_create_root(context, desc, pipeline, error);
+    if (status == DOE_DX_OK) {
+        D3D12_COMPUTE_PIPELINE_STATE_DESC state = {0};
+        state.pRootSignature = pipeline->root;
+        state.CS.pShaderBytecode = desc->buffers.bytecode;
+        state.CS.BytecodeLength = desc->buffers.bytecode_size;
+        HRESULT result = ID3D12Device_CreateComputePipelineState(context->device, &state,
+            &IID_ID3D12PipelineState, (void **)&pipeline->state);
+        status = doe_dx_hresult(result, "ID3D12Device.CreateComputePipelineState", error);
+    }
+    if (status != DOE_DX_OK) {
+        doe_dx_native_pipeline_destroy(pipeline);
+        return status;
+    }
+    *out = pipeline;
+    return doe_dx_fail(DOE_DX_OK, 0, "native.pipeline.create", error);
 }
 #endif

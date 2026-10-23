@@ -79,27 +79,9 @@ doe_dx_status doe_dx_native_dispatch(doe_dx_native_commands *commands,
         use->heap->lpVtbl->GetGPUDescriptorHandleForHeapStart(use->heap, &handle);
         ID3D12GraphicsCommandList_SetComputeRootDescriptorTable(list, 0, handle);
     }
-    for (size_t index = 0; index < resources->buffer_count; index++) {
-        D3D12_RESOURCE_STATES state = pipeline->bindings[index].access == DOE_DX_READ_ONLY ?
-            D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE : D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
-        doe_dx_transition(list, resources->buffers[index].buffer->resource, D3D12_RESOURCE_STATE_COPY_DEST, state);
-    }
-    for (size_t index = 0; index < resources->texture_count; index++) {
-        D3D12_RESOURCE_STATES state = pipeline->textures[index].access == DOE_DX_READ_ONLY ?
-            D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE : D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
-        doe_dx_transition(list, resources->textures[index]->resource, D3D12_RESOURCE_STATE_COPY_DEST, state);
-    }
+    doe_dx_transition_resources(commands, pipeline, resources, false, false);
     ID3D12GraphicsCommandList_Dispatch(list, x, y, z);
-    for (size_t index = 0; index < resources->texture_count; index++) {
-        D3D12_RESOURCE_STATES state = pipeline->textures[index].access == DOE_DX_READ_ONLY ?
-            D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE : D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
-        doe_dx_transition(list, resources->textures[index]->resource, state, D3D12_RESOURCE_STATE_COPY_DEST);
-    }
-    for (size_t index = 0; index < resources->buffer_count; index++) {
-        D3D12_RESOURCE_STATES state = pipeline->bindings[index].access == DOE_DX_READ_ONLY ?
-            D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE : D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
-        doe_dx_transition(list, resources->buffers[index].buffer->resource, state, D3D12_RESOURCE_STATE_COPY_DEST);
-    }
+    doe_dx_transition_resources(commands, pipeline, resources, false, true);
     return doe_dx_fail(DOE_DX_OK, 0, "native.dispatch", error);
 }
 

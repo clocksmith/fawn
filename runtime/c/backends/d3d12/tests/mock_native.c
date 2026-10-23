@@ -8,6 +8,7 @@ struct doe_dx_native_context { unsigned tag; };
 struct doe_dx_native_buffer { unsigned recorded; };
 struct doe_dx_native_pipeline { unsigned recorded; };
 struct doe_dx_native_texture { unsigned recorded; };
+struct doe_dx_native_timestamps { unsigned recorded; };
 struct doe_dx_native_commands {
     uint64_t execution;
     doe_dx_native_buffer *buffers[DOE_DX_MAX_COMMAND_RESOURCES];
@@ -16,13 +17,16 @@ struct doe_dx_native_commands {
     size_t pipeline_count;
     doe_dx_native_texture *textures[DOE_DX_MAX_COMMAND_RESOURCES];
     size_t texture_count;
+    doe_dx_native_timestamps *timestamps[DOE_DX_MAX_COMMAND_RESOURCES];
+    size_t timestamp_count;
 };
 mock_state mock;
 
 void mock_reset(void) {
-    assert(!mock.contexts && !mock.buffers && !mock.pipelines && !mock.commands && !mock.textures);
+    assert(!mock.contexts && !mock.buffers && !mock.pipelines && !mock.commands && !mock.textures && !mock.timestamps);
     assert(!mock.allocations);
     memset(&mock, 0, sizeof(mock));
+    mock.frequency = UINT64_C(1000000);
 }
 
 void *doe_dx_test_calloc(size_t count, size_t size) {
@@ -144,6 +148,8 @@ void doe_dx_native_commands_destroy(doe_dx_native_commands *commands) {
         commands->pipelines[index]->recorded--;
     for (size_t index = 0; index < commands->texture_count; index++)
         commands->textures[index]->recorded--;
+    for (size_t index = 0; index < commands->timestamp_count; index++)
+        commands->timestamps[index]->recorded--;
     assert(mock.commands);
     mock.commands--;
     free(commands);
@@ -178,11 +184,8 @@ static void record_texture(doe_dx_native_commands *commands, doe_dx_native_textu
     texture->recorded++;
 }
 
-doe_dx_status doe_dx_native_dispatch(doe_dx_native_commands *commands,
-    doe_dx_native_pipeline *pipeline, const doe_dx_native_resources *resources,
-    uint32_t x, uint32_t y, uint32_t z, doe_dx_error *error) {
-    doe_dx_status status = outcome(MOCK_DISPATCH, error);
-    if (status != DOE_DX_OK) return status;
+static void record_resources(doe_dx_native_commands *commands,
+    doe_dx_native_pipeline *pipeline, const doe_dx_native_resources *resources) {
     bool found = false;
     for (size_t index = 0; index < commands->pipeline_count; index++)
         if (commands->pipelines[index] == pipeline) found = true;
@@ -201,6 +204,14 @@ doe_dx_status doe_dx_native_dispatch(doe_dx_native_commands *commands,
     }
     mock.binding_count = resources->buffer_count;
     mock.texture_count = resources->texture_count;
+}
+
+doe_dx_status doe_dx_native_dispatch(doe_dx_native_commands *commands,
+    doe_dx_native_pipeline *pipeline, const doe_dx_native_resources *resources,
+    uint32_t x, uint32_t y, uint32_t z, doe_dx_error *error) {
+    doe_dx_status status = outcome(MOCK_DISPATCH, error);
+    if (status != DOE_DX_OK) return status;
+    record_resources(commands, pipeline, resources);
     mock.x = x;
     mock.y = y;
     mock.z = z;
@@ -281,4 +292,80 @@ void doe_dx_native_texture_copy(doe_dx_native_commands *commands,
     mock.texture_source = source;
     mock.texture_destination = destination;
     mock.texture_copies++;
+}
+
+doe_dx_status doe_dx_native_graphics_create(doe_dx_native_context *context,
+    const doe_dx_graphics_pipeline_desc *desc, doe_dx_native_pipeline **out, doe_dx_error *error) {
+    assert(desc->vertex_bytecode && desc->vertex_bytecode_size && desc->color_format == DOE_DX_RGBA8_UNORM);
+    doe_dx_status status = outcome(MOCK_GRAPHICS, error);
+    if (status != DOE_DX_OK) return status;
+    return doe_dx_native_pipeline_create(context, &desc->fragment, out, error);
+}
+
+doe_dx_status doe_dx_native_draw(doe_dx_native_commands *commands,
+    doe_dx_native_pipeline *pipeline, const doe_dx_native_resources *resources,
+    doe_dx_native_texture *color, const doe_dx_draw_desc *draw, doe_dx_error *error) {
+    doe_dx_status status = outcome(MOCK_DRAW, error);
+    if (status != DOE_DX_OK) return status;
+    record_resources(commands, pipeline, resources);
+    record_texture(commands, color);
+    mock.draw_color = color;
+    mock.draw = *draw;
+    mock.draws++;
+    return DOE_DX_OK;
+}
+
+doe_dx_status doe_dx_native_timestamps_create(doe_dx_native_context *context, uint32_t count,
+    doe_dx_native_timestamps **out, doe_dx_error *error) {
+    assert(context && count && count <= 64);
+    doe_dx_status status = outcome(MOCK_TIMESTAMPS, error);
+    if (status != DOE_DX_OK) return status;
+    *out = calloc(1, sizeof(**out));
+    assert(*out);
+    mock.timestamps++;
+    return DOE_DX_OK;
+}
+
+void doe_dx_native_timestamps_destroy(doe_dx_native_timestamps *timestamps) {
+    assert(timestamps && !timestamps->recorded && mock.timestamps);
+    mock.timestamps--;
+    free(timestamps);
+}
+
+doe_dx_status doe_dx_native_timestamp_frequency(doe_dx_native_context *context,
+    uint64_t *out, doe_dx_error *error) {
+    assert(context);
+    doe_dx_status status = outcome(MOCK_FREQUENCY, error);
+    if (status != DOE_DX_OK) return status;
+    *out = mock.frequency;
+    return DOE_DX_OK;
+}
+
+static void record_timestamps(doe_dx_native_commands *commands, doe_dx_native_timestamps *timestamps) {
+    for (size_t index = 0; index < commands->timestamp_count; index++)
+        if (commands->timestamps[index] == timestamps) return;
+    assert(commands->timestamp_count < DOE_DX_MAX_COMMAND_RESOURCES);
+    commands->timestamps[commands->timestamp_count++] = timestamps;
+    timestamps->recorded++;
+}
+
+void doe_dx_native_timestamp(doe_dx_native_commands *commands,
+    doe_dx_native_timestamps *timestamps, uint32_t index) {
+    record_timestamps(commands, timestamps);
+    mock.timestamp_heap = timestamps;
+    mock.timestamp_index = index;
+    mock.timestamp_writes++;
+}
+
+void doe_dx_native_resolve_timestamps(doe_dx_native_commands *commands,
+    doe_dx_native_timestamps *timestamps, uint32_t first, uint32_t count,
+    doe_dx_native_buffer *destination, uint64_t offset) {
+    record_timestamps(commands, timestamps);
+    record_buffer(commands, destination);
+    mock.timestamp_heap = timestamps;
+    mock.resolve_first = first;
+    mock.resolve_count = count;
+    mock.resolve_offset = offset;
+    mock.resolve_buffer = destination;
+    mock.timestamp_resolves++;
 }
