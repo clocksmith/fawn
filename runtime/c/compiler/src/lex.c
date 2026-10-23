@@ -41,12 +41,26 @@ bool lex_source(Source *source, TokenList *tokens) {
         if (tokens->count == DOE_COMPILER_MAX_TOKENS)
             return source_error(source, DOE_COMPILER_INPUT_ERROR, cursor, "input exceeds 2048 tokens");
         Token token = { .kind = c, .offset = cursor, .length = 1u };
-        if (is_letter(c) || is_digit(c)) {
-            token.kind = is_letter(c) ? TOKEN_WORD : TOKEN_NUMBER;
+        if (is_letter(c)) {
+            token.kind = TOKEN_WORD;
             ++cursor;
             while (cursor < source->length) {
                 const unsigned char next = (unsigned char)source->source[cursor];
                 if (!is_letter(next) && !is_digit(next)) break;
+                ++cursor;
+            }
+            token.length = cursor - token.offset;
+        } else if (is_digit(c)) {
+            token.kind = TOKEN_NUMBER;
+            ++cursor;
+            while (cursor < source->length) {
+                const unsigned char next = (unsigned char)source->source[cursor];
+                const char previous = source->source[cursor - 1u];
+                if (next == '.') token.kind = TOKEN_DECIMAL;
+                else if (!is_letter(next) && !is_digit(next) &&
+                         !((next == '+' || next == '-') &&
+                           (previous == 'e' || previous == 'E' ||
+                            previous == 'p' || previous == 'P'))) break;
                 ++cursor;
             }
             token.length = cursor - token.offset;
@@ -57,7 +71,7 @@ bool lex_source(Source *source, TokenList *tokens) {
             token.length = 2u;
             cursor += 2u;
         } else {
-            if (strchr("@()<>:,;{}[].=+-", (int)c) == NULL)
+            if (strchr("@()<>:,;{}[].=+-*", (int)c) == NULL)
                 return source_error(source, DOE_COMPILER_UNSUPPORTED, cursor,
                                     "unsupported character or operator in bounded WGSL grammar");
             ++cursor;

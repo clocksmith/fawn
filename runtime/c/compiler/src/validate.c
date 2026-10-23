@@ -142,8 +142,26 @@ static bool constant_value(Source *source, const Syntax *s, const Name *name,
                             "operand name must resolve to the declared u32 constant");
     return literal_value(source, program, s->constant_value.value, name->offset, value);
 }
+typedef struct { Name name; IrValue value; } LocalValue;
+typedef struct { LocalValue values[MAX_STATEMENTS]; size_t count; } LocalScope;
+typedef struct { IrValue value; bool runtime; } ExpressionValue;
+
+static const IrValue *find_local(const LocalScope *scope, const Name *name) {
+    for (size_t i = scope->count; i != 0u; --i)
+        if (same_name(&scope->values[i - 1u].name, name)) return &scope->values[i - 1u].value;
+    return NULL;
+}
+static bool user_declared(const Syntax *s, const LocalScope *scope, const Name *name) {
+    if (same_name(name, &s->entry) || same_name(name, &s->invocation) ||
+        (s->has_alias && same_name(name, &s->alias)) ||
+        (s->has_constant && same_name(name, &s->constant_name)) ||
+        find_local(scope, name) != NULL) return true;
+    for (size_t i = 0u; i < s->storage_count; ++i)
+        if (same_name(name, &s->storage[i].name)) return true;
+    return false;
+}
 static bool lower_atom(Source *source, const Syntax *s, const Atom *atom,
-                       bool allow_invocation, IrProgram *program, IrValue *value) {
+                       bool allow_invocation, const LocalScope *scope, IrProgram *program, IrValue *value) {
     switch (atom->kind) {
         case ATOM_LITERAL:
             return literal_value(source, program, atom->value.literal.value,
@@ -159,19 +177,30 @@ static bool lower_atom(Source *source, const Syntax *s, const Atom *atom,
                 *value = (IrValue){ .id = 1u, .type = IR_U32, .source_offset = atom->value.name.offset };
                 return true;
             }
+            if (allow_invocation) {
+                const IrValue *local = find_local(scope, &atom->value.name);
+                if (local != NULL) {
+                    if (local->type != IR_U32)
+                        return source_error(source, DOE_COMPILER_SEMANTIC_ERROR,
+                                            atom->value.name.offset, "index local must have u32 type");
+                    *value = *local;
+                    value->source_offset = atom->value.name.offset;
+                    return true;
+                }
+            }
             return constant_value(source, s, &atom->value.name, program, value);
     }
     return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, source->length, "invalid parsed atom kind");
 }
 static bool lower_index(Source *source, const Syntax *s, const Index *index,
-                        IrProgram *program, IrValue *value) {
+                        const LocalScope *scope, IrProgram *program, IrValue *value) {
     IrValue base, offset;
-    if (!lower_atom(source, s, &index->base, true, program, &base)) return false;
+    if (!lower_atom(source, s, &index->base, true, scope, program, &base)) return false;
     switch (index->operation) {
         case INDEX_BASE: *value = base; return true;
         case INDEX_ADD:
         case INDEX_SUBTRACT:
-            if (!lower_atom(source, s, &index->offset, false, program, &offset)) return false;
+            if (!lower_atom(source, s, &index->offset, false, scope, program, &offset)) return false;
             return append(source, program, (IrInstruction){
                 .opcode = index->operation == INDEX_ADD ? IR_ADD : IR_SUBTRACT,
                 .type = IR_U32, .left = base.id, .right = offset.id,
@@ -179,59 +208,136 @@ static bool lower_index(Source *source, const Syntax *s, const Index *index,
     }
     return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, source->length, "invalid parsed index operation");
 }
-static bool lower_operand(Source *source, const Syntax *s, const Operand *operand,
-                          IrProgram *program, IrValue *value) {
-    switch (operand->kind) {
-        case OPERAND_LOAD: {
-            const Reference *reference = &operand->value.reference;
+static bool lower_expression(Source *source, const Syntax *s, uint32_t id,
+                             const LocalScope *scope, IrProgram *program,
+                             ExpressionValue *out) {
+    if (id >= s->expression_count)
+        return source_error(source, DOE_COMPILER_INPUT_ERROR, source->length,
+                            "invalid internal expression identity");
+    const Expression *node = &s->expressions[id];
+    out->runtime = false;
+    switch (node->kind) {
+        case EXPRESSION_LOAD: {
+            const Reference *reference = &node->value.reference;
             uint32_t binding;
             IrValue index;
             if (!resolve_reference(source, s, reference, &binding) ||
-                !lower_index(source, s, &reference->index, program, &index)) return false;
+                !lower_index(source, s, &reference->index, scope, program, &index)) return false;
+            out->runtime = true;
             return append(source, program, (IrInstruction){ .opcode = IR_ROBUST_LOAD,
                 .type = value_type(s->storage[binding].scalar), .binding = binding,
-                .left = index.id, .source_offset = reference->storage.offset }, value);
+                .left = index.id, .source_offset = reference->storage.offset }, &out->value);
         }
-        case OPERAND_LITERAL:
-            return literal_value(source, program, operand->value.literal.value,
-                                 operand->value.literal.offset, value);
-        case OPERAND_NAME:
-            return constant_value(source, s, &operand->value.name, program, value);
+        case EXPRESSION_INTEGER:
+            return literal_value(source, program, node->value.integer.value,
+                                 node->source_offset, &out->value);
+        case EXPRESSION_DECIMAL: {
+            uint32_t bits;
+            if (!decimal_binary32(source, &node->value.decimal, &bits)) return false;
+            return append(source, program, (IrInstruction){ .opcode = IR_CONSTANT,
+                .type = IR_F32, .literal = bits, .source_offset = node->source_offset }, &out->value);
+        }
+        case EXPRESSION_MEMBER_X:
+            if (!same_name(&node->value.name, &s->invocation))
+                return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, node->source_offset,
+                                    "member expression must be invocation x");
+            out->runtime = true;
+            out->value = (IrValue){ .id = 1u, .type = IR_U32, .source_offset = node->source_offset };
+            return true;
+        case EXPRESSION_NAME: {
+            const IrValue *local = find_local(scope, &node->value.name);
+            if (local != NULL) {
+                out->value = *local;
+                out->value.source_offset = node->source_offset;
+                out->runtime = true;
+                return true;
+            }
+            if (s->has_alias && same_name(&node->value.name, &s->alias)) {
+                out->runtime = true;
+                out->value = (IrValue){ .id = 1u, .type = IR_U32, .source_offset = node->source_offset };
+                return true;
+            }
+            return constant_value(source, s, &node->value.name, program, &out->value);
+        }
+        case EXPRESSION_MAX:
+            if (user_declared(s, scope, &node->value.name))
+                return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, node->source_offset,
+                                    "max resolves to a user declaration, not the builtin");
+            break;
+        case EXPRESSION_ADD:
+        case EXPRESSION_SUBTRACT:
+        case EXPRESSION_MULTIPLY:
+            break;
     }
-    return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, source->length, "invalid parsed operand kind");
+    ExpressionValue left = {0}, right = {0};
+    if (!lower_expression(source, s, node->left, scope, program, &left) ||
+        !lower_expression(source, s, node->right, scope, program, &right)) return false;
+    if (left.value.type != right.value.type)
+        return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, node->source_offset,
+                            "scalar expression operands must have the same type");
+    if (left.value.type == IR_F32 && !left.runtime && !right.runtime)
+        return source_error(source, DOE_COMPILER_UNSUPPORTED, node->source_offset,
+                            "constant-only f32 arithmetic and max are not supported");
+    out->runtime = left.runtime || right.runtime;
+    const IrOpcode opcode = node->kind == EXPRESSION_ADD ? IR_ADD :
+                            node->kind == EXPRESSION_SUBTRACT ? IR_SUBTRACT :
+                            node->kind == EXPRESSION_MULTIPLY ? IR_MULTIPLY : IR_MAX;
+    return append(source, program, (IrInstruction){ .opcode = opcode,
+        .type = left.value.type, .left = left.value.id, .right = right.value.id,
+        .source_offset = node->source_offset }, &out->value);
 }
 static bool lower_assignment(Source *source, const Syntax *s, const Assignment *assignment,
-                             IrProgram *program) {
+                             const LocalScope *scope, IrProgram *program) {
     uint32_t binding;
     if (!resolve_reference(source, s, &assignment->target, &binding)) return false;
     if (s->storage[binding].access != DOE_COMPILER_READ_WRITE)
         return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, assignment->target.storage.offset,
                             "assignment target requires read_write storage access");
     const IrType type = value_type(s->storage[binding].scalar);
-    IrValue index, operands[2], result;
-    if (!lower_index(source, s, &assignment->target.index, program, &index)) return false;
-    const size_t count = assignment->addition ? 2u : 1u;
-    for (size_t i = 0; i < count; ++i) {
-        if (!lower_operand(source, s, &assignment->operands[i], program, &operands[i])) return false;
-        if (operands[i].type != type)
-            return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, operands[i].source_offset,
-                                "assignment operands and destination must have the same scalar type");
-    }
-    result = operands[0];
-    if (assignment->addition && !append(source, program, (IrInstruction){ .opcode = IR_ADD,
-        .type = type, .left = operands[0].id, .right = operands[1].id,
-        .source_offset = assignment->target.storage.offset }, &result)) return false;
+    IrValue index;
+    ExpressionValue result = {0};
+    if (!lower_index(source, s, &assignment->target.index, scope, program, &index) ||
+        !lower_expression(source, s, assignment->expression, scope, program, &result)) return false;
+    if (result.value.type != type)
+        return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, result.value.source_offset,
+                            "assignment value and destination must have the same scalar type");
     return append(source, program, (IrInstruction){ .opcode = IR_ROBUST_STORE,
-        .type = type, .left = index.id, .right = result.id, .binding = binding,
+        .type = type, .left = index.id, .right = result.value.id, .binding = binding,
         .source_offset = assignment->target.storage.offset }, NULL);
 }
+static bool lower_local(Source *source, const Syntax *s, const LocalSyntax *local,
+                        LocalScope *scope, IrProgram *program) {
+    if (!valid_name(source, &local->name)) return false;
+    if (user_declared(s, scope, &local->name))
+        return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, local->name.offset,
+                            "local declaration duplicates or shadows a visible user declaration");
+    if (local->annotated && user_declared(s, scope, &local->annotation))
+        return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, local->annotation.offset,
+                            "local annotation resolves to a user value, not a type");
+    ExpressionValue result = {0};
+    if (!lower_expression(source, s, local->expression, scope, program, &result)) return false;
+    if (local->annotated && value_type(local->scalar) != result.value.type)
+        return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, local->annotation.offset,
+                            "local annotation and initializer have incompatible scalar types");
+    if (scope->count == MAX_STATEMENTS)
+        return source_error(source, DOE_COMPILER_INPUT_ERROR, local->name.offset,
+                            "internal local capacity exceeded");
+    /* Store the already evaluated value, never an expression to reevaluate. */
+    scope->values[scope->count++] = (LocalValue){ .name = local->name, .value = result.value };
+    return true;
+}
 static bool lower_block(Source *source, const Syntax *s, size_t start, size_t end,
-                        IrProgram *program) {
+                        LocalScope *scope, IrProgram *program) {
+    const size_t outer_count = scope->count;
     for (size_t i = start; i < end;) {
         const Statement *statement = &s->statements[i];
         switch (statement->kind) {
             case STATEMENT_ASSIGN:
-                if (!lower_assignment(source, s, &statement->value.assignment, program)) return false;
+                if (!lower_assignment(source, s, &statement->value.assignment, scope, program)) return false;
+                ++i;
+                break;
+            case STATEMENT_LET:
+                if (!lower_local(source, s, &statement->value.local, scope, program)) return false;
                 ++i;
                 break;
             case STATEMENT_RETURN:
@@ -242,18 +348,18 @@ static bool lower_block(Source *source, const Syntax *s, size_t start, size_t en
             case STATEMENT_IF: {
                 const Condition *condition = &statement->value.condition;
                 IrValue left, right, test = {0};
-                if (!lower_index(source, s, &condition->left, program, &left) ||
-                    !lower_atom(source, s, &condition->right, false, program, &right) ||
+                if (!lower_index(source, s, &condition->left, scope, program, &left) ||
+                    !lower_atom(source, s, &condition->right, false, scope, program, &right) ||
                     !append(source, program, (IrInstruction){ .opcode = IR_COMPARE,
                         .type = IR_BOOL, .comparison = condition->comparison,
                         .left = left.id, .right = right.id,
                         .source_offset = statement->source_offset }, &test) ||
                     !append(source, program, (IrInstruction){ .opcode = IR_IF,
                         .left = test.id, .source_offset = statement->source_offset }, NULL) ||
-                    !lower_block(source, s, i + 1u, statement->else_start, program) ||
+                    !lower_block(source, s, i + 1u, statement->else_start, scope, program) ||
                     !append(source, program, (IrInstruction){ .opcode = IR_ELSE,
                         .source_offset = statement->source_offset }, NULL) ||
-                    !lower_block(source, s, statement->else_start, statement->end, program) ||
+                    !lower_block(source, s, statement->else_start, statement->end, scope, program) ||
                     !append(source, program, (IrInstruction){ .opcode = IR_END_IF,
                         .source_offset = statement->source_offset }, NULL)) return false;
                 i = statement->end;
@@ -261,6 +367,7 @@ static bool lower_block(Source *source, const Syntax *s, size_t start, size_t en
             }
         }
     }
+    scope->count = outer_count;
     return true;
 }
 
@@ -283,7 +390,8 @@ bool validate_syntax(Source *source, const Syntax *s, IrProgram *program) {
     if (!append(source, program, (IrInstruction){ .opcode = IR_INVOCATION_X,
         .type = IR_U32, .source_offset = s->invocation.offset }, &invocation)) return false;
     /* Unreachable statements are lowered too: no dead-code validation bypass. */
-    return lower_block(source, s, 0u, s->statement_count, program);
+    LocalScope scope = {0};
+    return lower_block(source, s, 0u, s->statement_count, &scope, program);
 }
 
 void reflect_program(const IrProgram *program, DoeCompilerReflection *reflection) {

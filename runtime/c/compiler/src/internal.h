@@ -8,14 +8,15 @@
 #include <stdint.h>
 
 typedef enum {
-    TOKEN_END = 256, TOKEN_WORD, TOKEN_NUMBER,
+    TOKEN_END = 256, TOKEN_WORD, TOKEN_NUMBER, TOKEN_DECIMAL,
     TOKEN_EQUAL, TOKEN_NOT_EQUAL, TOKEN_LESS_EQUAL, TOKEN_GREATER_EQUAL
 } TokenKind;
 enum { MAX_STATEMENTS = 16, MAX_IF_DEPTH = 4,
-       /* One invocation value; each assignment needs at most three indices
-        * (three operations each), two loads, an add and a store. An if needs
-        * at most eight operations including its three structural markers. */
-       MAX_IR_INSTRUCTIONS = 1 + MAX_STATEMENTS * 13,
+       MAX_EXPRESSIONS = 64, MAX_EXPRESSION_DEPTH = 16,
+       /* Each expression contributes at most a three-operation index plus a
+        * load. Each statement contributes at most an eight-operation if,
+        * excluding its separately counted child statements/expressions. */
+       MAX_IR_INSTRUCTIONS = 1 + MAX_EXPRESSIONS * 4 + MAX_STATEMENTS * 8,
        MAX_IR_VALUES = MAX_IR_INSTRUCTIONS + 1 };
 typedef struct { unsigned kind; size_t offset, length; } Token;
 typedef struct {
@@ -36,18 +37,32 @@ typedef struct { Atom base, offset; IndexOperation operation; } Index;
 typedef enum { COMPARE_EQUAL, COMPARE_NOT_EQUAL, COMPARE_LESS,
                COMPARE_LESS_EQUAL, COMPARE_GREATER, COMPARE_GREATER_EQUAL } Comparison;
 typedef struct { Name storage; Index index; } Reference;
-typedef enum { OPERAND_LOAD, OPERAND_LITERAL, OPERAND_NAME } OperandKind;
+typedef struct { uint32_t numerator, denominator; size_t offset; } Decimal;
+typedef enum {
+    EXPRESSION_LOAD, EXPRESSION_INTEGER, EXPRESSION_DECIMAL, EXPRESSION_NAME,
+    EXPRESSION_MEMBER_X, EXPRESSION_ADD, EXPRESSION_SUBTRACT,
+    EXPRESSION_MULTIPLY, EXPRESSION_MAX
+} ExpressionKind;
 typedef struct {
-    OperandKind kind;
-    union { Reference reference; Integer literal; Name name; } value;
-} Operand;
-typedef struct { Reference target; Operand operands[2]; bool addition; } Assignment;
+    ExpressionKind kind;
+    size_t source_offset;
+    unsigned depth;
+    uint32_t left, right;
+    union { Reference reference; Integer integer; Decimal decimal; Name name; } value;
+} Expression;
+typedef struct { Reference target; uint32_t expression; } Assignment;
+typedef struct {
+    Name name, annotation;
+    bool annotated;
+    DoeCompilerScalar scalar;
+    uint32_t expression;
+} LocalSyntax;
 typedef struct { Index left; Atom right; Comparison comparison; } Condition;
-typedef enum { STATEMENT_ASSIGN, STATEMENT_RETURN, STATEMENT_IF } StatementKind;
+typedef enum { STATEMENT_ASSIGN, STATEMENT_RETURN, STATEMENT_IF, STATEMENT_LET } StatementKind;
 typedef struct {
     StatementKind kind;
     size_t source_offset;
-    union { Assignment assignment; Condition condition; } value;
+    union { Assignment assignment; Condition condition; LocalSyntax local; } value;
     /* Preorder ranges: then is [self+1, else_start), else is [else_start,end). */
     size_t else_start, end;
 } Statement;
@@ -67,6 +82,8 @@ typedef struct {
     Integer constant_value;
     Statement statements[MAX_STATEMENTS];
     size_t statement_count;
+    Expression expressions[MAX_EXPRESSIONS];
+    size_t expression_count;
 } Syntax;
 
 typedef struct {
@@ -79,6 +96,7 @@ typedef struct {
  * The backend expands each load/store to an independent structured guard. */
 typedef enum {
     IR_INVOCATION_X, IR_ROBUST_LOAD, IR_CONSTANT, IR_ADD, IR_SUBTRACT,
+    IR_MULTIPLY, IR_MAX,
     IR_COMPARE, IR_ROBUST_STORE, IR_IF, IR_ELSE, IR_END_IF, IR_RETURN
 } IrOpcode;
 typedef enum { IR_U32, IR_F32, IR_BOOL } IrType;
@@ -102,6 +120,8 @@ typedef struct { uint32_t words[DOE_COMPILER_MAX_WORDS]; size_t count; } Spirv;
 
 bool source_error(Source *source, DoeCompilerStatus status, size_t offset, const char *message);
 bool lex_source(Source *source, TokenList *tokens);
+bool parse_decimal(Source *source, const Token *token, Decimal *decimal);
+bool decimal_binary32(Source *source, const Decimal *decimal, uint32_t *bits);
 bool parse_tokens(Source *source, const TokenList *tokens, Syntax *syntax);
 bool validate_syntax(Source *source, const Syntax *syntax, IrProgram *program);
 bool emit_spirv(Source *source, const IrProgram *program, Spirv *spirv);

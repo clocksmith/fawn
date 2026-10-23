@@ -28,6 +28,8 @@ SOURCES = [
     REPO / "bench/inference-pipeline/kernels/residual.wgsl",
     REPO / "bench/kernels/compilation-corpus/simple_residual_add.wgsl",
     REPO / "bench/fixtures/wgsl-corpus/webgpu/sample-prefix-sum.wgsl",
+    REPO / "bench/kernels/compilation-corpus/simple_scale_f32.wgsl",
+    REPO / "bench/kernels/compilation-corpus/simple_relu.wgsl",
 ]
 
 

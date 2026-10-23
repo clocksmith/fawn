@@ -12,9 +12,10 @@ enum {
     OP_FUNCTION_END = 56, OP_VARIABLE = 59, OP_LOAD = 61, OP_STORE = 62,
     OP_ACCESS_CHAIN = 65, OP_ARRAY_LENGTH = 68, OP_DECORATE = 71,
     OP_MEMBER_DECORATE = 72, OP_COMPOSITE_EXTRACT = 81, OP_IADD = 128, OP_FADD = 129,
-    OP_ISUB = 130, OP_IEQUAL = 170, OP_INOT_EQUAL = 171,
+    OP_ISUB = 130, OP_FSUB = 131, OP_IMUL = 132, OP_FMUL = 133,
+    OP_SELECT = 169, OP_IEQUAL = 170, OP_INOT_EQUAL = 171,
     OP_UGREATER_THAN = 172, OP_UGREATER_EQUAL = 174,
-    OP_ULESS_THAN = 176, OP_ULESS_EQUAL = 178, OP_PHI = 245, OP_SELECTION_MERGE = 247, OP_LABEL = 248,
+    OP_ULESS_THAN = 176, OP_ULESS_EQUAL = 178, OP_FORD_GREATER_THAN = 186, OP_PHI = 245, OP_SELECTION_MERGE = 247, OP_LABEL = 248,
     OP_BRANCH = 249, OP_BRANCH_CONDITIONAL = 250, OP_RETURN = 253, OP_UNREACHABLE = 255
 };
 enum {
@@ -236,10 +237,21 @@ static bool emit_block(Emitter *e, const IrProgram *program, size_t *cursor,
                 if (!robust_access(e, ir)) return false;
                 break;
             case IR_ADD:
-            case IR_SUBTRACT: {
-                const uint32_t opcode = ir->opcode == IR_SUBTRACT ? OP_ISUB :
-                                        ir->type == IR_F32 ? OP_FADD : OP_IADD;
+            case IR_SUBTRACT:
+            case IR_MULTIPLY: {
+                const bool floating = ir->type == IR_F32;
+                const uint32_t opcode = ir->opcode == IR_SUBTRACT ? (floating ? OP_FSUB : OP_ISUB) :
+                                        ir->opcode == IR_MULTIPLY ? (floating ? OP_FMUL : OP_IMUL) :
+                                        floating ? OP_FADD : OP_IADD;
                 EMIT(opcode, scalar_type(ir->type), e->values[ir->result],
+                     e->values[ir->left], e->values[ir->right]);
+                break;
+            }
+            case IR_MAX: {
+                const uint32_t condition = e->next_id++;
+                EMIT(ir->type == IR_F32 ? OP_FORD_GREATER_THAN : OP_UGREATER_THAN,
+                     ID_BOOL, condition, e->values[ir->left], e->values[ir->right]);
+                EMIT(OP_SELECT, scalar_type(ir->type), e->values[ir->result], condition,
                      e->values[ir->left], e->values[ir->right]);
                 break;
             }

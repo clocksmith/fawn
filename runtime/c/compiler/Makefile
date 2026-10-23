@@ -6,7 +6,7 @@ export TMPDIR := $(CURDIR)/build/tmp
 export PYTHONDONTWRITEBYTECODE := 1
 CFLAGS = -std=c11 -O2 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror
 CXXFLAGS = -std=c++17 -fno-exceptions -fno-rtti -O2 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror
-LIB_SOURCES = src/lex.c src/parse.c src/validate.c src/spirv.c src/compile.c
+LIB_SOURCES = src/numeric.c src/lex.c src/parse.c src/validate.c src/spirv.c src/compile.c
 HEADERS = src/internal.h include/doe_compiler.h
 SPIRV_VAL ?= spirv-val
 CLI_FAULT_FLAGS = -Wl,--wrap=write,--wrap=close,--wrap=link,--wrap=mkstemp
@@ -29,6 +29,8 @@ build/test_boundaries: $(LIB_SOURCES) tests/test_boundaries.c $(HEADERS) | build
 	$(CC) $(CFLAGS) -pthread $(LIB_SOURCES) tests/test_boundaries.c -o $@
 build/test_constants: $(LIB_SOURCES) tests/test_constants.c $(HEADERS) | build/.ready
 	$(CC) $(CFLAGS) $(LIB_SOURCES) tests/test_constants.c -o $@
+build/test_expression_api: $(LIB_SOURCES) tests/test_expression_api.c $(HEADERS) | build/.ready
+	$(CC) $(CFLAGS) -pthread $(LIB_SOURCES) tests/test_expression_api.c -lm -o $@
 build/test_control_api: $(LIB_SOURCES) tests/test_control_api.c $(HEADERS) | build/.ready
 	$(CC) $(CFLAGS) -pthread $(LIB_SOURCES) tests/test_control_api.c -o $@
 build/native_consumer: tests/native_consumer.c include/doe_compiler.h build/libdoe_compiler.so | build/.ready
@@ -39,11 +41,12 @@ build/cpp_consumer: tests/cpp_consumer.cpp include/doe_compiler.h build/libdoe_c
 	$(CXX) $(CXXFLAGS) tests/cpp_consumer.cpp -Lbuild -ldoe_compiler -Wl,-rpath,'$$ORIGIN' -o $@
 build/interposition_consumer: tests/interposition_consumer.c include/doe_compiler.h build/libdoe_compiler.so | build/.ready
 	$(CC) $(CFLAGS) tests/interposition_consumer.c -Lbuild -ldoe_compiler -Wl,-rpath,'$$ORIGIN' -Wl,--export-dynamic -o $@
-test: all test-cli-modes build/interposition_consumer build/test_api build/test_boundaries build/test_constants build/test_control_api build/native_consumer build/test_layout build/cpp_consumer
+test: all test-cli-modes build/interposition_consumer build/test_api build/test_boundaries build/test_constants build/test_control_api build/test_expression_api build/native_consumer build/test_layout build/cpp_consumer
 	build/test_api
 	build/test_boundaries
 	build/test_constants
 	build/test_control_api
+	build/test_expression_api
 	build/test_layout
 	build/cpp_consumer
 	build/interposition_consumer
@@ -51,6 +54,7 @@ test: all test-cli-modes build/interposition_consumer build/test_api build/test_
 	build/native_consumer ../../../bench/inference-pipeline/kernels/residual.wgsl
 	SPIRV_VAL="$(SPIRV_VAL)" python3 tests/test_cli.py
 	SPIRV_VAL="$(SPIRV_VAL)" python3 tests/test_control.py
+	SPIRV_VAL="$(SPIRV_VAL)" python3 tests/test_expressions.py
 sanitize: | build/.ready
 	$(CC) $(CFLAGS) -O1 -g -fno-omit-frame-pointer -fsanitize=address,undefined $(LIB_SOURCES) tests/test_api.c -o build/test_api_sanitize
 	ASAN_OPTIONS=detect_leaks=0:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1 build/test_api_sanitize
@@ -60,6 +64,8 @@ sanitize: | build/.ready
 	ASAN_OPTIONS=detect_leaks=0:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1 build/test_constants_sanitize
 	$(CC) $(CFLAGS) -O1 -g -fno-omit-frame-pointer -fsanitize=address,undefined -pthread $(LIB_SOURCES) tests/test_control_api.c -o build/test_control_api_sanitize
 	ASAN_OPTIONS=detect_leaks=0:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1 build/test_control_api_sanitize
+	$(CC) $(CFLAGS) -O1 -g -fno-omit-frame-pointer -fsanitize=address,undefined -pthread $(LIB_SOURCES) tests/test_expression_api.c -lm -o build/test_expression_api_sanitize
+	ASAN_OPTIONS=detect_leaks=0:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1 build/test_expression_api_sanitize
 sanitize-cli: | build/.ready
 	$(CC) $(CFLAGS) -O1 -g -fno-omit-frame-pointer -fsanitize=address,undefined $(LIB_SOURCES) src/cli.c -o build/doe-compiler-c-sanitize
 	$(CC) $(CFLAGS) -O1 -g -fno-omit-frame-pointer -fsanitize=address,undefined $(LIB_SOURCES) src/cli.c tests/cli_io_faults.c $(CLI_FAULT_FLAGS) -o build/test_cli_faults_sanitize

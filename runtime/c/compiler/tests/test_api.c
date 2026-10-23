@@ -112,13 +112,17 @@ int main(void) {
         "group(4)", "binding(32)", "uniform, read_write", "read", "array<f32>",
         "@fragment", "workgroup_size(0)", "workgroup_size(257)", "workgroup_size(1,1,1)",
         "local_invocation_id", "vec4<u32>", "other[id.x] =", "= other[id.x]", "values[other.x] =",
-        "- 1u", "+ 1", "+ 4294967296u", "+ 01u", "+ 0x1u", "+ 1.0u", "+ -1u", "+ 1U", "+ 1uu",
+        "/ 1u", "+ 1", "+ 4294967296u", "+ 01u", "+ 0x1u", "+ 1.0u", "+ -1u", "+ 1U", "+ 1uu",
         "fn values", "@group(0) @group(0)", "@compute @compute", "1u; } fn extra() {}",
         "values[id.y] =", "fn u32", "fn array"
     };
     assert(sizeof(original) == sizeof(replacement));
     for (size_t i = 0; i < sizeof(original) / sizeof(original[0]); ++i)
         invalid_replacement(original[i], replacement[i]);
+    /* M4 explicitly lifts the old scalar-subtraction rejection. */
+    replaced(source, sizeof(source), "+ 1u", "- 1u");
+    assert(compile_source(source, strlen(source), output, DOE_COMPILER_MAX_WORDS, &result) == DOE_COMPILER_OK);
+    ++checks;
     /* Bounded source does not need a terminator, and owns no result strings. */
     char bounded[sizeof(seed) - 1u];
     memcpy(bounded, seed, sizeof(bounded));
