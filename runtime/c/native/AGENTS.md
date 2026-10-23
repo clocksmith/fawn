@@ -64,6 +64,16 @@ compiler-owned MSL entry/slot/size metadata; do not parse source or substitute a
 SPIR-V artifact. Distinguish chosen frontend limits from queried device and actual
 per-pipeline limits. Host native-call ledgers are not GPU execution evidence.
 
+The advertised host-replay program entrypoint lowers through the same tagged
+backend, resource replay references and pending command owner. Keep reusable GPU
+recordings Vulkan-only; do not impose that restriction on fresh host replay.
+Prepare programs with the resource owner's reversible reservation; publish only
+once all native creation, recording and sealing succeeded. Release unpublished
+native artifacts before aborting the reservation, and finish rollback before
+external error delivery or fallback. A published program remains permanently
+claimed. Early program release drops only its own holders; unresolved replay and
+native commands retain theirs. Cleanup uses typed release, including Undefined no-op.
+
 Indirect conversion uses backend-owned generated guards and private scratch on the
 existing command owner. Never CPU-read caller arguments or invent a second bounds
 engine. Compile the exact guard source, preserve original argument bytes, and

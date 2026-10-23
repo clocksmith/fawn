@@ -6,6 +6,8 @@
 static VkResult query_result;
 static unsigned queries, creations;
 static uint32_t expected_samples;
+static VkFlags expected_flags; /* Query and creation flags of the next image. */
+static unsigned mutable_queries;
 static void format_properties(VkPhysicalDevice device, uint32_t format, VkFormatProperties *out) {
     (void)device;
     *out = (VkFormatProperties){.optimalTilingFeatures =
@@ -15,7 +17,9 @@ static void format_properties(VkPhysicalDevice device, uint32_t format, VkFormat
 static VkResult image_properties(VkPhysicalDevice device, uint32_t format, uint32_t type,
     uint32_t tiling, VkFlags usage, VkFlags flags, VkImageFormatProperties *out) {
     (void)device;
-    assert(type == DOE_VK_TEXTURE_2D && tiling == VK_IMAGE_TILING_OPTIMAL && flags == 0);
+    /* Attachment sample-mask queries stay flagless; the image query carries the flags. */
+    assert(type == DOE_VK_TEXTURE_2D && tiling == VK_IMAGE_TILING_OPTIMAL && (flags == 0 || flags == expected_flags));
+    if (flags == VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT) ++mutable_queries;
     assert(usage == (format == DOE_VK_FORMAT_RGBA8_UNORM ?
         DOE_VK_TEXTURE_COLOR_ATTACHMENT : DOE_VK_TEXTURE_DEPTH_STENCIL_ATTACHMENT));
     ++queries;
@@ -28,7 +32,14 @@ static VkResult create_image(VkDevice device, const VkImageCreateInfo *info,
     (void)device;
     (void)allocator;
     (void)out;
-    assert(info->samples == expected_samples);
+    assert(info->samples == expected_samples && info->flags == expected_flags);
+    if (expected_flags & VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT) {
+        /* Mutable images carry the exact image-first format list. */
+        const VkImageFormatListCreateInfo *list = info->pNext;
+        assert(list != NULL && list->sType == VK_STRUCTURE_TYPE_IMAGE_FORMAT_LIST_CREATE_INFO && list->pNext == NULL);
+        assert(list->viewFormatCount == 2 && list->pViewFormats[0] == DOE_VK_FORMAT_RGBA8_UNORM &&
+            list->pViewFormats[1] == DOE_VK_FORMAT_RGBA8_SRGB);
+    } else assert(info->pNext == NULL);
     ++creations;
     return -1; /* Native allocation failure must preserve the caller output. */
 }
@@ -88,6 +99,19 @@ int main(void) {
     expected_samples = 1;
     assert(doe_vk_texture_create(&context, &desc, &out, NULL) == DOE_VK_OUT_OF_MEMORY);
     assert(out == sentinel && creations == 2 && context.references == 1 && queries > 6);
+    /* A listed srgb pair makes the same image mutable with a format list; a list
+     * naming only the image format stays immutable. */
+    const doe_vk_texture_format pair[2] = {DOE_VK_FORMAT_RGBA8_UNORM, DOE_VK_FORMAT_RGBA8_SRGB};
+    desc.view_formats = pair;
+    desc.view_format_count = 1;
+    assert(doe_vk_texture_create(&context, &desc, &out, NULL) == DOE_VK_OUT_OF_MEMORY);
+    desc.view_format_count = 2;
+    expected_flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
+    assert(doe_vk_texture_create(&context, &desc, &out, NULL) == DOE_VK_OUT_OF_MEMORY);
+    assert(out == sentinel && creations == 4 && context.references == 1 && mutable_queries == 1);
+    expected_flags = 0;
+    desc.view_formats = NULL;
+    desc.view_format_count = 0;
     doe_vk_texture texture = {.desc = desc, .texel_bytes = 4};
     texture.desc.sample_count = 4;
     VkBufferImageCopy copy = {.bufferOffset = 99};
@@ -95,6 +119,6 @@ int main(void) {
     assert(doe_vk_texture_copy_region(&texture, region, 256,
         (doe_vk_texture_buffer_layout){0}, &copy) == DOE_VK_UNSUPPORTED);
     assert(copy.bufferOffset == 99);
-    puts("PASS exact native image-format query arguments, actual sample masks and aspect intersections, format-specific limits, MSAA restrictions, allocation rollback, output preservation and copy rejection");
+    puts("PASS exact native image-format query arguments, actual sample masks and aspect intersections, format-specific limits, MSAA restrictions, mutable srgb format-list packets, allocation rollback, output preservation and copy rejection");
     return 0;
 }

@@ -1,0 +1,110 @@
+{
+  "artifacts": {
+    "/tmp/doe-reservation-ubsan/libdoe_resources.a": "699e849afe4a661415aa364a6003aa376d6060468a91288ec954f2b0e110f58b",
+    "/tmp/doe-reservation-ubsan/test_program_reservation": "cfcc9f9229b76304b0f9a0001e5981a90a391b417cdc45ec88bd157162a767f4",
+    "/tmp/doe-reservation/libdoe_resources.a": "f0a2166fbf1f1da8b4033a58ce238bb3558e71acd6ffdb294a922e560940b46a",
+    "/tmp/doe-reservation/test_program_reservation": "3eb3382f3e45124752cfdfc9d47db05d9ee03b2c4975be9b412bb2d63790c474"
+  },
+  "base_commit": "79a4c99ed295670ecd9343929a79ae3bded6cbba",
+  "boundary_effects": "Adds three functions to the internal resource header; rebuild native/resource consumers. No second submission owner, queue, reference count or native frontend edit. Root owns merged consumer builds and native constructor/fault integration.",
+  "commands": [
+    [
+      "make",
+      "-C",
+      "runtime/c/resources",
+      "check",
+      "BUILD=/tmp/doe-reservation",
+      "CC=clang"
+    ],
+    [
+      "make",
+      "-C",
+      "runtime/c/resources",
+      "check",
+      "BUILD=/tmp/doe-reservation-ubsan",
+      "CC=clang",
+      "CFLAGS=-O1 -g -std=c11 -Wall -Wextra -Wpedantic -Werror -pthread -fsanitize=undefined -fno-omit-frame-pointer"
+    ]
+  ],
+  "component": "C resource command/program reservation",
+  "contract": {
+    "abort_program": "Only RESERVED may return to fresh; drops exactly one preparation reference, even after device loss. Invalid transitions preserve state/counts.",
+    "claim_program": "Existing immediate reserve+publish convenience.",
+    "publish_program": "Allocation-free RESERVED to PROGRAM commit; converts the existing preparation reference without retaining again or revalidating.",
+    "release_program": "Published consumption is permanent; consumes program reference once. An unresolved replay keeps its own reference and may still settle; repeat release/new replay rejects.",
+    "reserve_program": "Validates fresh/live dependencies; claims RESERVED in submission_state; adds exactly one preparation reference."
+  },
+  "intent": "deliberately changed: reversible unpublished preparation in the existing command submission owner; published program consumption stays permanent",
+  "logs": {
+    "/tmp/doe-reservation-check.log": "97c3cba81b199a0db5868b0273ce0566b254175b871f425acb4266320e749bb0",
+    "/tmp/doe-reservation-ubsan.log": "2fa6558d68ee23f8c1ca6d853f927b4e8943434625079779a160e9b1b96e902f"
+  },
+  "qualification": "Host ownership/state/reference and UBSan controls only. No native program constructor integration, backend execution, physical GPU, independent acceptance or production cutover qualification.",
+  "results": {
+    "limits": "commands.c: 583 lines; public header: 543 lines; new test: 215 lines; every touched source below 999",
+    "new_controls": "Actual constructor allocation failure, abort then ordinary submission, reserve/publish and replay, exact references and no transaction allocations, duplicate/invalid transition rejection, program release during pending replay, abort without caller/device, competing reservation and ordinary-submit claims over immutable dependencies",
+    "normal": "PASS all 18 resource owner test executables, including existing program replay tests",
+    "ubsan": "PASS same full resource suite with owner and clients instrumented"
+  },
+  "source_inputs": {
+    "runtime/c/common/include/doe_copy_footprint.h": "461535e48bc3d5248928416513b0978baadcc865db33826cb6244f5d9e3fde4b",
+    "runtime/c/futures/include/doe_futures.h": "64df7b659fa61de34c3f26a8a8762c70a41d3f35d301a54ffe11877f43ca3404",
+    "runtime/c/instance/include/doe_instance.h": "4356d4991f19d040a2d8a5d8e121d282530d362dcabdc892888148a68af8acfb",
+    "runtime/c/labels/include/doe_labels.h": "45e6dded64cbf366ddf5f4bcb409cb4bad93914b2af31cc58c82783ad7f12aea",
+    "runtime/c/labels/include/doe_labels_native_private.h": "fe80893339e7264e9672063e0ce89a3e5ce8757ce4e9298fbb3a63d164f4e4cb",
+    "runtime/c/labels/src/internal.h": "a84e6ae87c801faa9935466e89abad1ae5367fb0fc8946d30ebf71e5976c965c",
+    "runtime/c/labels/src/native.c": "e65399cdb50ef030b520388be1ee1f327c0a05e412281578c097d711e3dac2a2",
+    "runtime/c/labels/src/store.c": "2d67603cd1621e555340b4a52ad553377295c17215fed6c19c18bd4000c9595f",
+    "runtime/c/resources/Makefile": "c4172e3c3d01e302ec1102ae54ae1617b6ea485f6f0638ab20926b849f532a31",
+    "runtime/c/resources/include/doe_resources.h": "0895d28d96977b0494d28bb45b75976d7d3dd0cc1c4e14292f899d025c98ae39",
+    "runtime/c/resources/include/doe_resources_extended.h": "8ce78bb9578055e112b1f9456214a23ce3664592938be0422d8b5e3479274817",
+    "runtime/c/resources/src/accessors.c": "bc9dfee9ec04137d6b8615d46649cd4b9ae266bfb9d7cf539ac79659bd124c1c",
+    "runtime/c/resources/src/bindings.c": "748015cc133b17d7d72078702b682458e9c88fd1d48f609d7f531fea1927de09",
+    "runtime/c/resources/src/bundles.c": "40936265bf7730fd3725faee37faf34aed9e35003558cf741722ef1fb1fe218f",
+    "runtime/c/resources/src/commands.c": "39ec0c9229b9e0fbc43c4e0a6d58efe4504c9ae065d4cc9eb4954938e49c71d7",
+    "runtime/c/resources/src/compute_pass.c": "380c66ce9397f2536cb9916745ac19c0b3815ca8107dca618ae94e16d4a17c51",
+    "runtime/c/resources/src/external_textures.c": "e7e8e3cd53d5c6d8e235533659a17856125d2e1cedb776cf08d8f7b1478490e7",
+    "runtime/c/resources/src/formats.c": "4212373441fad9ba5497db238ee1735d6f305fc1ee1a76e3a0e054cbc3fc94fb",
+    "runtime/c/resources/src/internal.h": "28a3b01e2ce8908e69c60f81b835dcafcec9b89932350a3bd0889b984ac98097",
+    "runtime/c/resources/src/objects.c": "d3127edfd81a77126d669ef07d900bbb0adeba1e7c05137f507b19caea7c6713",
+    "runtime/c/resources/src/queries.c": "6994d6b88c21f27efc96d53380e780649e00f876ba0134311d86e50f30412521",
+    "runtime/c/resources/src/render.c": "c8d9719b35702fe286bc47ee8e9af26b3d91d70f030c0d76ddca8c5db3959fa3",
+    "runtime/c/resources/src/render_state.c": "e9f7c20dd917826e61caf1731a0a7e09ba9794edc31ae4597d21a7f8b8a21118",
+    "runtime/c/resources/src/render_targets.c": "30f460bf49d2b84c7e8b0563883e1141a84625b2284839e8c4ccc4c45e80926f",
+    "runtime/c/resources/src/render_usage.c": "6006343c0a604e8f3752bae1f84040ad5b9a845117c6440717e4e984adcc0ba0",
+    "runtime/c/resources/src/texture_copy.c": "1afc28cbce7aae56028e590106ddb56b4e5a90acb80c14642302b0e53b2dd7cf",
+    "runtime/c/resources/src/textures.c": "35c3ecfa9754890a7b988c7a0eb6ebdc755cd57336130bed467e8bf4d92b0c76",
+    "runtime/c/resources/src/usage_scope.c": "2e7ac7d14400593c40ced08c697475b8e92f6fc98a51352d8785ac96b11301c8",
+    "runtime/c/resources/tests/fixture.h": "2d5bf21b9e67fedd2298b8f443ed7341ba1991191a23ff6bebdaf05643329f98",
+    "runtime/c/resources/tests/test_attachment_admission.c": "616fb492701b1566a062ace3bffca94c640da5888f788dfb86a4370aee19c04d",
+    "runtime/c/resources/tests/test_binding_features.c": "6c3d9d3e919b8f7322ed596182d65708915d9070947f0c75875a5a25443743e4",
+    "runtime/c/resources/tests/test_bundles.c": "82471202aa630be8699a1e9e56accf2f6afc31fc5bbf379fb01a89b235021139",
+    "runtime/c/resources/tests/test_color_targets.c": "3ef6ffcc8f1b0d7c63c2c6d85809fed6b3f28e3f2cd93b4ecfeecea249aea381",
+    "runtime/c/resources/tests/test_debug_groups.c": "5e3bd24099413e59bd0b45136612b281de869fd6e6ef60752bb132010a0e6a62",
+    "runtime/c/resources/tests/test_depth_only.c": "4ea0ca8d0d59784dba417e6677404f0a72dc9ee67c687f3a017d3526fc629d22",
+    "runtime/c/resources/tests/test_draw_admission.c": "b4f482b52b84dd7ea8cbfbde2f7dcbf54f1c0952f245851fe759c1b2baabe988",
+    "runtime/c/resources/tests/test_draw_budget.c": "3c597c51272d8850c7b06a71045574502bbe76b7eaf8d3f248d3de1964b309ce",
+    "runtime/c/resources/tests/test_extended.c": "7435d5fab896f13f697cf7f2554e5dcae0c0852078d9c7573f42c2bd86f8e7cb",
+    "runtime/c/resources/tests/test_pipeline_admission.c": "2f1058ea474610682b6f5e3b76ff9ee14dc0136ddcf77f4d5efbeb38e322da0f",
+    "runtime/c/resources/tests/test_program_reservation.c": "876f0ddc01f6bcc4cebb4752ba4d8dc023b26d363dad67b1895c1eb59f0fa8d8",
+    "runtime/c/resources/tests/test_query_admission.c": "897397269f82058b0d5007fcd6c128b09f8b624bf332165da4029634aeab5a06",
+    "runtime/c/resources/tests/test_render_usage.c": "7f861f5b531dfba331262029b571eaa8d09370bb34d9ac920a0a81abc8106586",
+    "runtime/c/resources/tests/test_resolve_admission.c": "4001ad02b98cf8fb14017b420c5bd02296e7535b76ff20ff2e83b88c20b6041b",
+    "runtime/c/resources/tests/test_resources.c": "104b03b95213aedaff2e0afd63664630ab44e083f61b1082d317b76d2025a1aa",
+    "runtime/c/resources/tests/test_usage_scope.c": "1562372d6e908ad27b9a94e29c21a02e963be3ebe740d66e5b08c04cf62a6dc4",
+    "runtime/c/resources/tests/test_view_defaults.c": "0ac99a9fda0a0dea6b2a72e969cc2b5ea6837b896bc4f4625de7cc8999b0cced",
+    "runtime/c/resources/tests/test_viewport_admission.c": "5675e15acb820ba9659223cd85660df98147e63d0b993d19792b16d1cf377a51",
+    "runtime/c/resources/tests/vulkan_compute_fixture.h": "5725fdb4e36b0a84f0459461a55d7700134f2af36130a2d5b2acc464c0f3df19",
+    "runtime/c/resources/tests/vulkan_fixture.h": "0c50efed1c6628144afa76f8ce8913725276d8ac97ff20cc3875a1f7c51314f7",
+    "runtime/c/resources/tests/vulkan_indirect_lifetime.c": "d330f249517a51f17cdffea2b698467872dc4055a562a7cca3b74f25bb52ae0d",
+    "runtime/c/resources/tests/vulkan_indirect_render_lifetime.c": "878eae6a95b39bd5f4f55c2c335e1136489e83fa26dab933f5142d5d342da3d2",
+    "runtime/c/resources/tests/vulkan_lifetime.c": "608389ab5d7a5270f077a370953d5fbf3f1871dce266420c613e0b9b49c99c58",
+    "runtime/c/resources/tests/vulkan_query_lifetime.c": "02ef54f87e49e3c89f7c991e494559e83b15b70727d615400df9ecd5b50fbd13",
+    "runtime/c/resources/tests/vulkan_render_lifetime.c": "3c9bd5b3e47accb0a9363dc359b4931988463dda46d56b0b43a40fa649b8bc2b",
+    "runtime/zig/vendor/webgpu-headers/webgpu.h": "7691d76ceb67056f89e97b9ff0b62163eacf19a8e0e09a8fa7dbb32069b7978c"
+  },
+  "source_kind": "current uncommitted working-source inputs; developer checks only",
+  "ubsan_environment": {
+    "UBSAN_OPTIONS": "halt_on_error=1"
+  }
+}

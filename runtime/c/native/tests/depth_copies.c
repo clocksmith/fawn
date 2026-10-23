@@ -195,10 +195,10 @@ static void rejected(state *s, const fixture *f, control which)
 }
 static void creation_controls(state *s)
 {
-    /* Depth sampling and storage remain unsupported; they fail visibly. */
-    const WGPUTextureUsage usages[] = {WGPUTextureUsage_TextureBinding | WGPUTextureUsage_CopySrc,
-        WGPUTextureUsage_StorageBinding | WGPUTextureUsage_CopySrc};
-    for (size_t i = 0; i < 2; ++i) {
+    /* Depth storage remains unsupported and fails visibly (sampling is admitted;
+     * see depth_sampling.c). */
+    const WGPUTextureUsage usages[] = {WGPUTextureUsage_StorageBinding | WGPUTextureUsage_CopySrc};
+    for (size_t i = 0; i < sizeof(usages) / sizeof(*usages); ++i) {
         WGPUTextureDescriptor descriptor = WGPU_TEXTURE_DESCRIPTOR_INIT;
         descriptor.format = WGPUTextureFormat_Depth32Float;
         descriptor.usage = usages[i];
@@ -400,6 +400,6 @@ int main(void)
     wgpuBufferRelease(f.source);
     wgpuShaderModuleRelease(f.module);
     consumer_finish(&s);
-    printf("PASS public depth/stencil copies: rendered depth32float .25/.75 via DepthOnly/All readback and texture copy, depth16unorm rendered 0/65535, writeTexture and buffer upload plus texture copy, stencil8 upload then IncrementClamp, depth24plus-stencil8 stencil Replace and StencilOnly upload, depth24plus texture copy observed by depth test, 11 copy and 2 creation validation controls, early releases; exact 72 depth/stencil texels and 8 color pixels %s\n",
+    printf("PASS public depth/stencil copies: rendered depth32float .25/.75 via DepthOnly/All readback and texture copy, depth16unorm rendered 0/65535, writeTexture and buffer upload plus texture copy, stencil8 upload then IncrementClamp, depth24plus-stencil8 stencil Replace and StencilOnly upload, depth24plus texture copy observed by depth test, 11 copy and 1 creation validation controls, early releases; exact 72 depth/stencil texels and 8 color pixels %s\n",
         adapter_class_scope());
 }

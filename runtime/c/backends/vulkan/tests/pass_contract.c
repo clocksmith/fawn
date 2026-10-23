@@ -115,6 +115,7 @@ static doe_vk_commands *recording(doe_vk_context *context) {
 int main(void) {
     doe_vk_context context = {.references = 1};
     context.caps.queue_flags = VK_QUEUE_GRAPHICS_BIT;
+    context.caps.max_color_attachments = 8;
     context.properties.limits.maxFramebufferWidth = 64;
     context.properties.limits.maxFramebufferHeight = 64;
     context.properties.limits.maxViewportDimensions[0] = 64;
@@ -129,9 +130,9 @@ int main(void) {
     doe_vk_texture texture = {.context = &context, .references = 1, .subresource_count = 1,
         .initialized = &initialized, .desc = {.dimension = DOE_VK_TEXTURE_2D, .format = DOE_VK_FORMAT_RGBA8_UNORM,
             .width = 8, .height = 8, .depth_or_layers = 1, .mip_levels = 1, .usage = DOE_VK_TEXTURE_COLOR_ATTACHMENT}};
-    doe_vk_texture_view view = {.texture = &texture, .references = 1, .desc = {DOE_VK_VIEW_2D, 0, 1, 0, 1}};
+    doe_vk_texture_view view = {.texture = &texture, .references = 1, .aspects = 1, .format = DOE_VK_FORMAT_RGBA8_UNORM, .desc = {DOE_VK_VIEW_2D, 0, 1, 0, 1, DOE_VK_ASPECT_ALL, 0}};
     doe_vk_pipeline pipeline = {.context = &context, .references = 1, .graphics = true,
-        .color_format = DOE_VK_FORMAT_RGBA8_UNORM, .pipeline = 9};
+        .color_count = 1, .color_formats = {DOE_VK_FORMAT_RGBA8_UNORM}, .pipeline = 9};
     doe_vk_render_pass_draw items[2] = {{.pipeline = &pipeline, .draw = {.vertex_count = 3,
         .instance_count = 1, .viewport = {0, 0, 8, 8, 0, 1}, .scissor = {0, 0, 4, 8}}}};
     items[1] = items[0];

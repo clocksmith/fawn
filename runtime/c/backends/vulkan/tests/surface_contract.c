@@ -182,6 +182,7 @@ int main(void) {
     doe_vk_context context = {.references = 1};
     context.caps.queue_family = 2;
     context.caps.queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT;
+    context.caps.max_color_attachments = 8;
     context.caps.surface_platforms = DOE_VK_SURFACE_XCB;
     context.vk = (doe_vk_functions){.vkCreateXcbSurfaceKHR = create_xcb, .vkDestroySurfaceKHR = destroy_surface,
         .vkGetPhysicalDeviceSurfaceSupportKHR = support, .vkGetPhysicalDeviceSurfaceCapabilitiesKHR = capabilities,
@@ -256,7 +257,7 @@ int main(void) {
     assert(surface->swapchain == 81);
     assert(!surface->present_pending && !surface->acquired && destroyed_semaphores == before + 1);
     doe_vk_texture_view *view = NULL;
-    const doe_vk_texture_view_desc view_desc = {DOE_VK_VIEW_2D, 0, 1, 0, 1};
+    const doe_vk_texture_view_desc view_desc = {DOE_VK_VIEW_2D, 0, 1, 0, 1, DOE_VK_ASPECT_ALL, 0};
     assert(doe_vk_texture_view_create(texture, &view_desc, &view, &error) == DOE_VK_INVALID_STATE && view == NULL);
     assert(doe_vk_texture_retain(texture) == DOE_VK_OK);
     assert(doe_vk_commands_release(commands) == DOE_VK_OK && surface->references == 1);

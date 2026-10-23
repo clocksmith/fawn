@@ -442,6 +442,119 @@ doe_resource_status doe_resource_commands_settle(doe_resource_commands *commands
     return terminal_status;
 }
 
+/* submission_state is the sole command/program admission owner. Ordinary queue
+ * use is 0 fresh, 1 submitted, 2 settled. Preparation alone may return to fresh;
+ * published programs stay consumed even after their program lease is released. */
+enum {
+    COMMANDS_PROGRAM = 3, COMMANDS_REPLAYING = 4, COMMANDS_RESERVED = 5,
+    COMMANDS_PROGRAM_RELEASED = 6, COMMANDS_REPLAYING_RELEASED = 7
+};
+
+static doe_resource_status validate_all(const doe_resource_commands *commands)
+{
+    for (size_t i = 0; i < commands->count; i++) {
+        doe_resource_status status = validate_submission(&commands->commands[i]);
+        if (status != DOE_RESOURCE_OK) return status;
+    }
+    return DOE_RESOURCE_OK;
+}
+
+static doe_resource_status commands_transition(doe_resource_commands *commands,
+    unsigned from, unsigned to)
+{
+    unsigned expected = from;
+    return atomic_compare_exchange_strong_explicit(&commands->submission_state, &expected, to,
+        memory_order_acq_rel, memory_order_acquire) ? DOE_RESOURCE_OK : DOE_RESOURCE_STATE;
+}
+
+doe_resource_status doe_resource_commands_reserve_program(doe_resource_commands *commands)
+{
+    if (!commands) return DOE_RESOURCE_INVALID_ARGUMENT;
+    if (!resource_alive(&commands->base)) return DOE_RESOURCE_UNAVAILABLE;
+    if (atomic_load_explicit(&commands->submission_state, memory_order_acquire) != 0)
+        return DOE_RESOURCE_STATE;
+    doe_resource_status status = validate_all(commands);
+    if (status != DOE_RESOURCE_OK) return status;
+    status = commands_transition(commands, 0, COMMANDS_RESERVED);
+    if (status == DOE_RESOURCE_OK) doe_resource_commands_retain(commands);
+    return status;
+}
+
+doe_resource_status doe_resource_commands_publish_program(doe_resource_commands *commands)
+{
+    if (!commands) return DOE_RESOURCE_INVALID_ARGUMENT;
+    /* Allocation-free commit converts the reservation lease to a program lease.
+     * Dependency admission remains at reserve and every begin_replay. */
+    return commands_transition(commands, COMMANDS_RESERVED, COMMANDS_PROGRAM);
+}
+
+doe_resource_status doe_resource_commands_abort_program(doe_resource_commands *commands)
+{
+    if (!commands) return DOE_RESOURCE_INVALID_ARGUMENT;
+    doe_resource_status status = commands_transition(commands, COMMANDS_RESERVED, 0);
+    if (status == DOE_RESOURCE_OK) doe_resource_commands_release(commands);
+    return status;
+}
+
+doe_resource_status doe_resource_commands_claim_program(doe_resource_commands *commands)
+{
+    doe_resource_status status = doe_resource_commands_reserve_program(commands);
+    return status == DOE_RESOURCE_OK ? doe_resource_commands_publish_program(commands) : status;
+}
+
+doe_resource_status doe_resource_commands_begin_replay(doe_resource_commands *commands)
+{
+    if (!commands) return DOE_RESOURCE_INVALID_ARGUMENT;
+    if (!resource_alive(&commands->base)) return DOE_RESOURCE_UNAVAILABLE;
+    if (atomic_load_explicit(&commands->submission_state, memory_order_acquire) != COMMANDS_PROGRAM)
+        return DOE_RESOURCE_STATE;
+    doe_resource_status status = validate_all(commands);
+    if (status != DOE_RESOURCE_OK) return status;
+    status = commands_transition(commands, COMMANDS_PROGRAM, COMMANDS_REPLAYING);
+    if (status == DOE_RESOURCE_OK) doe_resource_commands_retain(commands);
+    return status;
+}
+
+doe_resource_status doe_resource_commands_settle_replay(doe_resource_commands *commands,
+    doe_resource_status terminal_status)
+{
+    if (!commands) return DOE_RESOURCE_INVALID_ARGUMENT;
+    unsigned state = atomic_load_explicit(&commands->submission_state, memory_order_acquire);
+    if (terminal_status == DOE_RESOURCE_PENDING)
+        return state == COMMANDS_REPLAYING || state == COMMANDS_REPLAYING_RELEASED ?
+            DOE_RESOURCE_PENDING : DOE_RESOURCE_STATE;
+    if (terminal_status != DOE_RESOURCE_OK && terminal_status != DOE_RESOURCE_EXECUTION_FAILED)
+        return DOE_RESOURCE_INVALID_ARGUMENT;
+    for (;;) {
+        unsigned next;
+        if (state == COMMANDS_REPLAYING) next = COMMANDS_PROGRAM;
+        else if (state == COMMANDS_REPLAYING_RELEASED) next = COMMANDS_PROGRAM_RELEASED;
+        else return DOE_RESOURCE_STATE;
+        if (atomic_compare_exchange_weak_explicit(&commands->submission_state, &state, next,
+                memory_order_acq_rel, memory_order_acquire)) break;
+    }
+    doe_resource_commands_release(commands);
+    return terminal_status;
+}
+
+doe_resource_status doe_resource_commands_release_program(doe_resource_commands *commands)
+{
+    if (!commands) return DOE_RESOURCE_INVALID_ARGUMENT;
+    unsigned state = atomic_load_explicit(&commands->submission_state, memory_order_acquire);
+    for (;;) {
+        unsigned next;
+        if (state == COMMANDS_PROGRAM) next = COMMANDS_PROGRAM_RELEASED;
+        else if (state == COMMANDS_REPLAYING) next = COMMANDS_REPLAYING_RELEASED;
+        else return DOE_RESOURCE_STATE;
+        if (atomic_compare_exchange_weak_explicit(&commands->submission_state, &state, next,
+                memory_order_acq_rel, memory_order_acquire)) break;
+    }
+    /* A published command buffer never returns to ordinary eligibility. The
+     * released state also prevents a second caller from dropping this lease. */
+    doe_resource_commands_release(commands);
+    return DOE_RESOURCE_OK;
+}
+
 /* One arithmetic policy; active/finished/locked admission stays with each owner. */
 doe_resource_status resource_debug_apply(size_t *depth, doe_resource_debug_operation operation)
 {

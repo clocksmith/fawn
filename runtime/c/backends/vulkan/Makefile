@@ -28,6 +28,8 @@ $(OUT)/depth_copy_contract: tests/depth_copy_contract.c $(OUT)/libdoe_vk.a $(HEA
 	$(CC) $(STRICT) $(CFLAGS) $< $(OUT)/libdoe_vk.a -ldl -o $@
 $(OUT)/indexed_contract: tests/indexed_contract.c $(OUT)/libdoe_vk.a $(HEADERS) | $(OUT)
 	$(CC) $(STRICT) $(CFLAGS) $< $(OUT)/libdoe_vk.a -ldl -o $@
+$(OUT)/color_targets_contract: tests/color_targets_contract.c $(OUT)/libdoe_vk.a $(HEADERS) | $(OUT)
+	$(CC) $(STRICT) $(CFLAGS) $< $(OUT)/libdoe_vk.a -ldl -o $@
 $(OUT)/indirect_contract: tests/indirect_contract.c $(OUT)/libdoe_vk.a $(HEADERS) | $(OUT)
 	$(CC) $(STRICT) $(CFLAGS) $< $(OUT)/libdoe_vk.a -ldl -o $@
 $(OUT)/indirect_lifetime: tests/indirect_lifetime.c $(OUT)/libdoe_vk.a $(HEADERS) | $(OUT)
@@ -89,7 +91,8 @@ $(OUT)/descriptor_contract: tests/descriptor_contract.c $(OUT)/libdoe_vk.a $(HEA
 	$(CC) $(STRICT) $(CFLAGS) $< $(OUT)/libdoe_vk.a -ldl -o $@
 $(OUT)/texture_contract: tests/texture_contract.c $(OUT)/libdoe_vk.a $(HEADERS) | $(OUT)
 	$(CC) $(STRICT) $(CFLAGS) $< $(OUT)/libdoe_vk.a -ldl -o $@
-check: check-adapter-identity abi $(OUT)/surface_features $(OUT)/surface_contract $(OUT)/draw_indirect_contract $(OUT)/indexed_contract $(OUT)/depth_copy_contract $(OUT)/indirect_contract $(OUT)/indirect_lifetime $(OUT)/depth_pipeline_contract $(OUT)/image_format_contract $(OUT)/depth_contract $(OUT)/feature_contract $(OUT)/pass_contract $(OUT)/timestamp_lifetime $(OUT)/timestamp_contract $(OUT)/ownership $(OUT)/texture_contract $(OUT)/descriptor_contract $(OUT)/loader_contract $(OUT)/render_contract $(OUT)/query_contract
+check: check-adapter-identity abi $(OUT)/color_targets_contract $(OUT)/surface_features $(OUT)/surface_contract $(OUT)/draw_indirect_contract $(OUT)/indexed_contract $(OUT)/depth_copy_contract $(OUT)/indirect_contract $(OUT)/indirect_lifetime $(OUT)/depth_pipeline_contract $(OUT)/image_format_contract $(OUT)/depth_contract $(OUT)/feature_contract $(OUT)/pass_contract $(OUT)/timestamp_lifetime $(OUT)/timestamp_contract $(OUT)/ownership $(OUT)/texture_contract $(OUT)/descriptor_contract $(OUT)/loader_contract $(OUT)/render_contract $(OUT)/query_contract
+	$(OUT)/color_targets_contract
 	$(OUT)/surface_features
 	$(OUT)/surface_contract
 	$(OUT)/draw_indirect_contract

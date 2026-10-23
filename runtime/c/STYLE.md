@@ -86,6 +86,10 @@ fails on each of these; fix the source rather than adding an exemption:
 - **pragma**: no `#pragma GCC|clang diagnostic ignored|warning`; fix the warning.
 - **flags**: an owner Makefile that defines `CFLAGS` compiles with
   `-std=c11 -Wall -Wextra -Wpedantic -Werror`.
+- **test**: every test source (`tests/*.c`, `*.cpp`, `*.m`) is named by a Makefile,
+  `.mk`, `.py` or `.cmd` build script under `runtime/c`. A client that exists only as
+  README instructions stops compiling unnoticed; give it a target (and run
+  aggregate targets such as `check-vulkan` that owners' `check` does not).
 - **adapter**: native public consumers under `runtime/c/native/tests/` select
   adapters only through `tests/adapter_class.h`; no direct `forceFallbackAdapter`
   assignment or CPU adapter-type check (`backend_selection.c` tests fallback itself).

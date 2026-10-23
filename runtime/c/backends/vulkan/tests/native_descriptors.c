@@ -60,7 +60,7 @@ int main(int argc, char **argv) {
     doe_vk_texture *texture = NULL;
     doe_vk_texture_view *view = NULL;
     require(doe_vk_texture_create(context, &texture_desc, &texture, &error), "sampled image");
-    const doe_vk_texture_view_desc view_desc = { DOE_VK_VIEW_2D, 0, 1, 0, 1 };
+    const doe_vk_texture_view_desc view_desc = { DOE_VK_VIEW_2D, 0, 1, 0, 1, DOE_VK_ASPECT_ALL, 0};
     require(doe_vk_texture_view_create(texture, &view_desc, &view, &error), "sampled view");
     /* Extra unused sampler binding exercises descriptor retention, not sampling semantics. */
     doe_vk_sampler *sampler = NULL;

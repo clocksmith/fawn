@@ -67,6 +67,12 @@ typedef struct doe_resource_config {
      * Zero selects the WebGPU baseline 8192 for standalone internal callers;
      * public adapters must supply their actual requested device limit. */
     uint32_t max_texture_dimension_2d;
+    /* Requested color-attachment limits, copied with this config. Zero selects
+     * the WebGPU baselines 8 and 32 for standalone internal callers; public
+     * adapters supply their actual requested device limits. Counts above
+     * DOE_RESOURCE_MAX_COLOR_ATTACHMENTS are clamped to that storage bound. */
+    uint32_t max_color_attachments;
+    uint32_t max_color_attachment_bytes_per_sample;
 } doe_resource_config;
 
 typedef struct doe_resource_shader doe_resource_shader;
@@ -449,6 +455,33 @@ const doe_resource_command *doe_resource_commands_borrow(const doe_resource_comm
 doe_resource_status doe_resource_commands_begin_submit(doe_resource_commands *commands);
 doe_resource_status doe_resource_commands_settle(doe_resource_commands *commands,
     doe_resource_status terminal_status);
+/* Reusable program ownership for the Doe compute-program extension only; the
+ * standard queue path above stays single-use. reserve_program validates fresh,
+ * live dependencies and adds one exclusive preparation reference. While reserved,
+ * ordinary submit and other program/replay claims reject. publish_program is an
+ * allocation-free commit: it converts that reference to permanent program
+ * ownership without another retain or dependency validation. abort_program alone
+ * returns an unpublished reservation to ordinary eligibility and drops only its
+ * preparation reference, even if the device/dependencies became unavailable.
+ * Failed publish/abort transitions leave state and references unchanged. Callers
+ * serialize the transaction and dependency mutation and finish it exactly once.
+ * claim_program is the reserve+publish convenience. Published claims never
+ * return to ordinary eligibility, including after release_program. begin_replay
+ * revalidates the same live dependencies before each program submission and
+ * holds a submission reference; settle_replay follows known completion or a
+ * confirmed never-dispatched failure. PENDING keeps the replay open and its own
+ * reference; release_program drops only the program reference, so commands
+ * with an unresolved replay stay alive until that replay settles. A second
+ * release or a new replay after program release rejects without dropping a
+ * reference; known settlement still releases the outstanding replay reference. */
+doe_resource_status doe_resource_commands_reserve_program(doe_resource_commands *commands);
+doe_resource_status doe_resource_commands_publish_program(doe_resource_commands *commands);
+doe_resource_status doe_resource_commands_abort_program(doe_resource_commands *commands);
+doe_resource_status doe_resource_commands_claim_program(doe_resource_commands *commands);
+doe_resource_status doe_resource_commands_begin_replay(doe_resource_commands *commands);
+doe_resource_status doe_resource_commands_settle_replay(doe_resource_commands *commands,
+    doe_resource_status terminal_status);
+doe_resource_status doe_resource_commands_release_program(doe_resource_commands *commands);
 
 /* Typed borrowed identity/description access for native ABI adapters. */
 void *doe_resource_buffer_device(const doe_resource_buffer *buffer);

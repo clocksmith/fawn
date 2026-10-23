@@ -2800,6 +2800,11 @@ const fullSurfaceBackend = {
         let gpuProgram = null;
         try {
           if (execution === 'gpu-recorded') gpuProgram = addon.computeProgramPrepare(device.queue._native, commandBuffer._native);
+          // Providers with single-use standard submission replay through the
+          // explicit host-replay extension; others resubmit via queueSubmitOne.
+          else if (addon.computeProgramHostReplaySupported?.()) {
+            gpuProgram = addon.computeProgramPrepareHostReplay(device.queue._native, commandBuffer._native);
+          }
         } catch (error) {
           commandBuffer.destroy();
           throw error;

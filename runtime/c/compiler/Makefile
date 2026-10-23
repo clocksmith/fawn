@@ -243,16 +243,16 @@ test-discard: build/doe-compiler-c
 
 build/test_atomic_api: $(LIB_SOURCES) tests/test_atomic_api.c $(HEADERS) | build/.ready
 	$(CC) $(CFLAGS) $(LIB_SOURCES) tests/test_atomic_api.c -lm -o $@
-test-atomics: build/doe-compiler-c build/test_atomic_api
+test-atomics: build/doe-compiler-c build/test_atomic_api test-atomic-cpp
 	build/test_atomic_api
 	DOE_COMPILER_CLI="$(CURDIR)/build/doe-compiler-c" SPIRV_VAL="$(SPIRV_VAL)" python3 tests/test_atomics.py
 .PHONY: test-atomics
 
 .PHONY: test-pointers
-test-pointers: $(OUT)/doe-compiler-c $(OUT)/test-pointer-api
-	$(OUT)/test-pointer-api
-	DOE_COMPILER_CLI=$(abspath $(OUT)/doe-compiler-c) SPIRV_VAL=$(SPIRV_VAL) python3 -m unittest discover -s tests -p test_pointers.py -v
-$(OUT)/test-pointer-api: tests/test_pointer_api.c $(LIB_SOURCES) | $(OUT)
+test-pointers: build/doe-compiler-c build/test_pointer_api ../../../bench/kernels/monte_carlo_paths_fixed_samples.wgsl
+	build/test_pointer_api
+	DOE_COMPILER_CLI="$(abspath build/doe-compiler-c)" SPIRV_VAL="$(SPIRV_VAL)" python3 -m unittest discover -s tests -p test_pointers.py -v
+build/test_pointer_api: tests/test_pointer_api.c $(LIB_SOURCES) $(HEADERS) | build/.ready
 	$(CC) $(CFLAGS) tests/test_pointer_api.c $(LIB_SOURCES) -lm -o $@
 
 .PHONY: print-library-sources
@@ -260,7 +260,7 @@ print-library-sources:
 	@echo $(LIB_SOURCES)
 
 .PHONY: test-text
-test-text: build/test_text_api build/test_text_failure build/test_text_abi
+test-text: build/test_text_api build/test_text_failure build/test_text_abi test-phony
 	build/test_text_api build/text_control.metal
 	build/test_text_failure
 	build/test_text_abi
@@ -316,3 +316,40 @@ test-numeric-environment: build/test_numeric_environment build/test_numeric_valu
 	build/test_numeric_environment
 	build/test_numeric_values
 	python3 tests/test_numeric_host.py
+
+# Ordinary shared-library consumers, independently runnable on native hosts.
+CONSUMER_BUILD ?= build
+CONSUMER_COMPILER_LINK = $(abspath $(SHARED_LIBRARY)) -Wl,-rpath,$(abspath $(dir $(SHARED_LIBRARY)))
+.PHONY: test-atomic-cpp test-phony test-consumers
+test-consumers: test-atomic-cpp test-phony
+test-atomic-cpp: $(CONSUMER_BUILD)/test_atomic_cpp
+	$(CONSUMER_BUILD)/test_atomic_cpp
+test-phony: $(CONSUMER_BUILD)/test_phony_api
+	$(CONSUMER_BUILD)/test_phony_api
+$(CONSUMER_BUILD)/test_atomic_cpp: tests/test_atomic_cpp.cpp $(HEADERS) $(SHARED_LIBRARY)
+	mkdir -p $(dir $@)
+	$(CXX) $(CXXFLAGS) $(EXTRA_CFLAGS) tests/test_atomic_cpp.cpp $(CONSUMER_COMPILER_LINK) -o $@
+$(CONSUMER_BUILD)/test_phony_api: tests/test_phony_api.c $(HEADERS) $(SHARED_LIBRARY)
+	mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) tests/test_phony_api.c $(CONSUMER_COMPILER_LINK) -lm -o $@
+
+# Runtime controls are opt-in and require a named software ICD. The backend
+# owns compilation of its archive; this owner links only its public boundary.
+VULKAN_BUILD ?= $(abspath $(CONSUMER_BUILD)/vulkan)
+VULKAN_CONSUMER_DEPS = ../backends/vulkan/Makefile $(wildcard ../backends/vulkan/src/*.c ../backends/vulkan/src/*.h ../backends/vulkan/include/*.h) ../common/include/doe_copy_footprint.h
+$(VULKAN_BUILD)/libdoe_vk.a: $(VULKAN_CONSUMER_DEPS)
+	$(MAKE) -C ../backends/vulkan all OUT="$(abspath $(VULKAN_BUILD))" CC="$(CC)"
+$(CONSUMER_BUILD)/test_atomic_vulkan: tests/test_atomic_vulkan.c $(HEADERS) $(SHARED_LIBRARY) $(VULKAN_BUILD)/libdoe_vk.a $(VULKAN_CONSUMER_DEPS)
+	mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) -Iinclude -I../backends/vulkan/include tests/test_atomic_vulkan.c $(VULKAN_BUILD)/libdoe_vk.a $(CONSUMER_COMPILER_LINK) -ldl -o $@
+$(CONSUMER_BUILD)/test_pointer_vulkan: tests/test_pointer_vulkan.c $(HEADERS) $(SHARED_LIBRARY) $(VULKAN_BUILD)/libdoe_vk.a $(VULKAN_CONSUMER_DEPS)
+	mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) -Iinclude -I../backends/vulkan/include tests/test_pointer_vulkan.c $(VULKAN_BUILD)/libdoe_vk.a $(CONSUMER_COMPILER_LINK) -ldl -o $@
+.PHONY: require-software-vulkan test-atomic-vulkan test-pointer-vulkan test-cpu-vulkan
+require-software-vulkan:
+	@if [ ! -f "$(SOFTWARE_VULKAN_ICD)" ]; then echo "Set SOFTWARE_VULKAN_ICD to an existing CPU Vulkan ICD JSON file" >&2; exit 1; fi
+test-atomic-vulkan: require-software-vulkan $(CONSUMER_BUILD)/test_atomic_vulkan tests/atomic_operations.wgsl ../../../bench/kernels/workgroup_atomic.wgsl
+	VK_ICD_FILENAMES="$(abspath $(SOFTWARE_VULKAN_ICD))" $(CONSUMER_BUILD)/test_atomic_vulkan "$(abspath tests/atomic_operations.wgsl)" "$(abspath ../../../bench/kernels/workgroup_atomic.wgsl)" --allow-software
+test-pointer-vulkan: require-software-vulkan $(CONSUMER_BUILD)/test_pointer_vulkan tests/pointer_operations.wgsl
+	VK_ICD_FILENAMES="$(abspath $(SOFTWARE_VULKAN_ICD))" $(CONSUMER_BUILD)/test_pointer_vulkan "$(abspath tests/pointer_operations.wgsl)" --allow-software
+test-cpu-vulkan: test-atomic-vulkan test-pointer-vulkan

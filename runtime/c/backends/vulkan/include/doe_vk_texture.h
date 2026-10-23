@@ -77,11 +77,17 @@ typedef struct doe_vk_texture_desc {
     uint32_t usage;
     bool cube_compatible;
     uint32_t sample_count; /* Zero preserves the original sample1 default. */
+    /* Optional borrowed reinterpretation list: only the image format and its
+     * srgb/unorm pair (RGBA8, BGRA8). A list naming the pair creates a
+     * mutable-format image with VkImageFormatListCreateInfo; storage usage is
+     * then unsupported because the srgb view could not be a storage image. */
+    const doe_vk_texture_format *view_formats;
+    uint32_t view_format_count;
 } doe_vk_texture_desc;
-/* Depth/stencil admits 2D images with attachment and/or copy usage only; sampling
- * and storage are unsupported. Multisample images additionally require one
- * mip/layer, no cube flag, and attachment-only usage. Format facts do not
- * override this owner admission.
+/* Depth/stencil admits 2D images with attachment, copy and/or sampled usage
+ * (cube-compatible only when sampled); storage is unsupported. Multisample
+ * images additionally require one mip/layer, no cube flag, and attachment-only
+ * usage. Format facts do not override this owner admission.
  * Images start uninitialized/UNDEFINED. Native WebGPU initialization ownership
  * remains upstream. A texture may be used by only one unresolved command owner;
  * its final layout is published on established successful completion only. */
@@ -90,6 +96,15 @@ doe_vk_status doe_vk_texture_create(doe_vk_context *context,
 doe_vk_status doe_vk_texture_retain(doe_vk_texture *texture);
 void doe_vk_texture_release(doe_vk_texture *texture);
 
+/* Native aspect bits. ALL selects every aspect of the format: required for color
+ * and for texture-to-texture copies. Buffer copies of a combined depth/stencil
+ * format must select exactly one aspect. Byte layouts per aspect: D16 depth 2,
+ * D32/D32S8 depth 4, stencil 1. D24S8 depth buffer copies are unsupported. */
+typedef enum doe_vk_texture_aspect {
+    DOE_VK_ASPECT_ALL = 0,
+    DOE_VK_ASPECT_DEPTH = 2,
+    DOE_VK_ASPECT_STENCIL = 4
+} doe_vk_texture_aspect;
 typedef enum doe_vk_view_dimension {
     DOE_VK_VIEW_1D,
     DOE_VK_VIEW_2D,
@@ -105,6 +120,11 @@ typedef struct doe_vk_texture_view_desc {
     uint32_t mip_count;
     uint32_t base_layer;
     uint32_t layer_count;
+    /* ALL views every aspect (required for attachments). Sampling a combined
+     * depth/stencil image needs a DEPTH or STENCIL view. */
+    doe_vk_texture_aspect aspect;
+    /* Zero is the image format; otherwise the image's admitted srgb/unorm pair. */
+    doe_vk_texture_format format;
 } doe_vk_texture_view_desc;
 /* A view retains its parent image. Reinterpretation/swizzle not yet admitted. */
 doe_vk_status doe_vk_texture_view_create(doe_vk_texture *texture,
@@ -125,22 +145,16 @@ typedef struct doe_vk_sampler_desc {
     float max_lod;
     bool compare_enabled;
     uint32_t compare_operation; /* Vulkan NEVER=0 through ALWAYS=7. */
+    /* Zero or one disables anisotropy. Larger values require all three filters
+     * linear and enabled caps.sampler_anisotropy (UNSUPPORTED otherwise); the
+     * native value is clamped to caps.max_sampler_anisotropy. */
+    uint32_t max_anisotropy;
 } doe_vk_sampler_desc;
-/* No anisotropy is advertised/enabled by this baseline device owner. */
 doe_vk_status doe_vk_sampler_create(doe_vk_context *context,
     const doe_vk_sampler_desc *desc, doe_vk_sampler **out, doe_vk_error *error);
 doe_vk_status doe_vk_sampler_retain(doe_vk_sampler *sampler);
 void doe_vk_sampler_release(doe_vk_sampler *sampler);
 
-/* Native aspect bits. ALL selects every aspect of the format: required for color
- * and for texture-to-texture copies. Buffer copies of a combined depth/stencil
- * format must select exactly one aspect. Byte layouts per aspect: D16 depth 2,
- * D32/D32S8 depth 4, stencil 1. D24S8 depth buffer copies are unsupported. */
-typedef enum doe_vk_texture_aspect {
-    DOE_VK_ASPECT_ALL = 0,
-    DOE_VK_ASPECT_DEPTH = 2,
-    DOE_VK_ASPECT_STENCIL = 4
-} doe_vk_texture_aspect;
 typedef struct doe_vk_texture_region {
     uint32_t mip;
     uint32_t origin[3];

@@ -4,6 +4,7 @@
 #include "../src/internal.h"
 #include "../../backends/metal/tests/mock_native.h"
 #include "consumer.h"
+#include "doe_native_programs.h"
 
 static mock_native mocks[8];
 static doe_mtl_context *contexts[8];
@@ -393,6 +394,75 @@ static void public_error_detail(state *s)
     assert(terminal.calls == 6); /* Destroy must not consume an unobserved failure. */
 }
 
+static void host_replay_program(state *s)
+{
+    native_device *device = (native_device *)s->device;
+    const unsigned baseline = mocks[2].live;
+    WGPUComputePipeline compute = pipeline(s,
+        "@group(0) @binding(0) var<storage,read_write> data:array<u32>;"
+        "@compute @workgroup_size(1) fn main(){data[0]=data[0]+3u;}");
+    WGPUBuffer data = buffer(s, 16, WGPUBufferUsage_Storage | WGPUBufferUsage_CopyDst);
+    native_buffer *payload = doe_resource_buffer_native((doe_resource_buffer *)data);
+    void *identity = doe_mtl_buffer_native(payload->handle.metal);
+    WGPUBindGroupEntry entry = {.binding = 0, .buffer = data, .size = 16};
+    WGPUBindGroup bindings = group(s, compute, &entry, 1);
+    WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(s->device, NULL);
+    wgpuCommandEncoderClearBuffer(encoder, data, 0, 16);
+    dispatch(encoder, compute, bindings);
+    WGPUCommandBuffer commands = wgpuCommandEncoderFinish(encoder, NULL);
+    wgpuCommandEncoderRelease(encoder);
+    assert(commands);
+    wgpuDevicePushErrorScope(s->device, WGPUErrorFilter_Validation);
+    assert(!doeNativeComputeProgramPrepare(s->queue, commands)); /* GPU recording remains Vulkan-only. */
+    pop(s, WGPUErrorType_Validation);
+    void *program = doeNativeComputeProgramPrepareHostReplay(s->queue, commands);
+    assert(program);
+    wgpuCommandBufferRelease(commands);
+    wgpuBindGroupRelease(bindings);
+    wgpuComputePipelineRelease(compute);
+    wgpuBufferRelease(data); /* The program's resource claim owns the complete packet. */
+    const unsigned live = mocks[2].live, commits = mocks[2].commits;
+    const mock_operation failures[2] = {MOCK_COMMAND, MOCK_FILL};
+    exact_message failure = {"Metal: injected native failure (native=-71): owned fault boundary", 0};
+    WGPUPopErrorScopeCallbackInfo scope = {.mode = WGPUCallbackMode_AllowSpontaneous,
+        .callback = exact_scope, .userdata1 = &failure};
+    for (size_t i = 0; i < 2; ++i) {
+        native_lock(device);
+        mocks[2].fail = failures[i];
+        native_unlock(device);
+        wgpuDevicePushErrorScope(s->device, WGPUErrorFilter_Internal);
+        assert(!doeNativeComputeProgramSubmit(program));
+        assert(wgpuDevicePopErrorScope(s->device, scope).id && failure.calls == i + 1);
+        assert(mocks[2].live == live && mocks[2].commits == commits && !device->pending);
+    }
+    native_lock(device);
+    mocks[2].fail = MOCK_NONE;
+    native_unlock(device);
+    const unsigned dispatches = mocks[2].dispatches, fills = mocks[2].fills;
+    assert(doeNativeComputeProgramSubmit(program) && doeNativeComputeProgramSubmit(program));
+    assert(mocks[2].dispatches == dispatches + 2 && mocks[2].fills == fills + 2);
+    assert(mocks[2].commits == commits + 2 && mocks[2].bindings[0].buffer == identity);
+    assert(mocks[2].bindings[0].size == 16 && !device->pending);
+    native_lock(device);
+    hold = true;
+    native_unlock(device);
+    wgpuDevicePushErrorScope(s->device, WGPUErrorFilter_Internal);
+    assert(!doeNativeComputeProgramSubmit(program));
+    pop(s, WGPUErrorType_Internal);
+    assert(device->pending);
+    const unsigned released = mocks[2].released;
+    doeNativeComputeProgramRelease(program);
+    assert(device->pending && mocks[2].released == released); /* Replay holds its own packets/native command. */
+    native_lock(device);
+    hold = false;
+    native_unlock(device);
+    unsigned completed = 0;
+    WGPUQueueWorkDoneCallbackInfo done_info = {.mode = WGPUCallbackMode_AllowSpontaneous,
+        .callback = done, .userdata1 = &completed};
+    assert(wgpuQueueOnSubmittedWorkDone(s->queue, done_info).id && completed == 1 && !device->pending);
+    assert(mocks[2].live == baseline && !s->errors);
+}
+
 int main(void)
 {
     state s = {0};
@@ -477,6 +547,7 @@ int main(void)
     hold = false;
     assert(wgpuQueueOnSubmittedWorkDone(s.queue,completion).id && completed == 1 && !device->pending);
     assert(mocks[2].copies == 1 && mocks[2].fills == 2);
+    host_replay_program(&s);
     public_error_detail(&s);
     consumer_finish(&s);
     for (unsigned i = 0; i < context_count; ++i) mock_assert_closed(&mocks[i]);

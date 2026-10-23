@@ -126,6 +126,7 @@ int main(void) {
     stencil_write_summary();
     doe_vk_context context = {.references = 1};
     context.caps.queue_flags = VK_QUEUE_GRAPHICS_BIT;
+    context.caps.max_color_attachments = 8;
     context.properties.limits.maxFramebufferWidth = context.properties.limits.maxFramebufferHeight = 64;
     context.properties.limits.maxViewportDimensions[0] = context.properties.limits.maxViewportDimensions[1] = 64;
     context.properties.limits.viewportBoundsRange[1] = 64;
@@ -146,8 +147,8 @@ int main(void) {
     depth.initialized = &depth_state;
     depth.desc.format = DOE_VK_FORMAT_D32_FLOAT_S8_UINT;
     depth.desc.usage = DOE_VK_TEXTURE_DEPTH_STENCIL_ATTACHMENT;
-    doe_vk_texture_view color_view = {.texture = &color, .references = 1, .view = 21, .desc = {DOE_VK_VIEW_2D, 0, 1, 0, 1}};
-    doe_vk_texture_view depth_view = {.texture = &depth, .references = 1, .view = 22, .desc = {DOE_VK_VIEW_2D, 0, 1, 0, 1}};
+    doe_vk_texture_view color_view = {.texture = &color, .references = 1, .aspects = 1, .format = DOE_VK_FORMAT_RGBA8_UNORM, .view = 21, .desc = {DOE_VK_VIEW_2D, 0, 1, 0, 1, DOE_VK_ASPECT_ALL, 0}};
+    doe_vk_texture_view depth_view = {.texture = &depth, .references = 1, .aspects = 6, .format = DOE_VK_FORMAT_D32_FLOAT_S8_UINT, .view = 22, .desc = {DOE_VK_VIEW_2D, 0, 1, 0, 1, DOE_VK_ASPECT_ALL, 0}};
     const doe_vk_clear_color blue = {.float32 = {0, 0, 1, 1}};
     doe_vk_render_pass_desc desc = {.color = &color_view, .clear_color = &blue,
         .depth_stencil = &depth_view, .clear_depth = true, .clear_stencil = true,
@@ -189,7 +190,7 @@ int main(void) {
     desc.clear_depth = false;
     desc.depth_read_only = desc.stencil_read_only = true;
     doe_vk_pipeline pipeline = {.context = &context, .references = 1, .graphics = true,
-        .color_format = color.desc.format, .depth_stencil_format = depth.desc.format, .depth_write = true};
+        .color_count = 1, .color_formats = {color.desc.format}, .depth_stencil_format = depth.desc.format, .depth_write = true};
     doe_vk_render_pass_op op = {.kind = DOE_VK_RENDER_DRAW,
         .value.draw = {.pipeline = &pipeline, .draw = {.vertex_count = 3, .instance_count = 1,
             .viewport = {0, 0, 8, 8, 0, 1}, .scissor = {0, 0, 8, 8}}}};
@@ -214,7 +215,8 @@ int main(void) {
     doe_vk_render_pass_desc depth_only = {.depth_stencil = &depth_view,
         .depth_read_only = true, .stencil_read_only = true};
     rejected(&context, &depth_only, &op, DOE_VK_INVALID_ARGUMENT); /* Color pipeline mismatch. */
-    pipeline.color_format = 0;
+    pipeline.color_count = 0;
+    pipeline.color_formats[0] = 0;
     pipeline.depth_stencil_format = 0;
     rejected(&context, &depth_only, &op, DOE_VK_INVALID_ARGUMENT);
     pipeline.depth_stencil_format = depth.desc.format;
@@ -226,17 +228,17 @@ int main(void) {
     resolve.image = 13;
     resolve.initialized = &resolve_state;
     resolve.desc.sample_count = 1;
-    doe_vk_texture_view resolve_view = {.texture = &resolve, .references = 1, .view = 23,
-        .desc = {DOE_VK_VIEW_2D, 0, 1, 0, 1}};
+    doe_vk_texture_view resolve_view = {.texture = &resolve, .references = 1, .aspects = 1, .format = DOE_VK_FORMAT_RGBA8_UNORM, .view = 23,
+        .desc = {DOE_VK_VIEW_2D, 0, 1, 0, 1, DOE_VK_ASPECT_ALL, 0}};
     desc = (doe_vk_render_pass_desc){.color = &color_view, .clear_color = &blue,
         .discard_color = true, .depth_stencil = &depth_view, .clear_depth = true,
         .clear_stencil = true, .resolve_target = &resolve_view};
     resolve.desc.sample_count = 4;
     rejected(&context, &desc, NULL, DOE_VK_INVALID_ARGUMENT);
     resolve.desc.sample_count = 1;
-    resolve.desc.format = DOE_VK_FORMAT_BGRA8_UNORM;
+    resolve.desc.format = resolve_view.format = DOE_VK_FORMAT_BGRA8_UNORM;
     rejected(&context, &desc, NULL, DOE_VK_INVALID_ARGUMENT);
-    resolve.desc.format = DOE_VK_FORMAT_RGBA8_UNORM;
+    resolve.desc.format = resolve_view.format = DOE_VK_FORMAT_RGBA8_UNORM;
     resolve.desc.width = 4;
     rejected(&context, &desc, NULL, DOE_VK_INVALID_ARGUMENT);
     resolve.desc.width = 8;

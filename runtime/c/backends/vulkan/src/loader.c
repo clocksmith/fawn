@@ -37,6 +37,7 @@ static doe_vk_status load_functions(doe_vk_context *context, doe_vk_error *error
     _Static_assert(sizeof(context->vk.vkDestroyFence) == sizeof(void *), "vkDestroyFence POSIX pointer size");
     _Static_assert(sizeof(context->vk.vkGetFenceStatus) == sizeof(void *), "vkGetFenceStatus POSIX pointer size");
     _Static_assert(sizeof(context->vk.vkWaitForFences) == sizeof(void *), "vkWaitForFences POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkResetFences) == sizeof(void *), "vkResetFences POSIX pointer size");
     _Static_assert(sizeof(context->vk.vkQueueSubmit) == sizeof(void *), "vkQueueSubmit POSIX pointer size");
     _Static_assert(sizeof(context->vk.vkQueueWaitIdle) == sizeof(void *), "vkQueueWaitIdle POSIX pointer size");
     _Static_assert(sizeof(context->vk.vkBeginCommandBuffer) == sizeof(void *), "vkBeginCommandBuffer POSIX pointer size");
@@ -129,6 +130,7 @@ static doe_vk_status load_functions(doe_vk_context *context, doe_vk_error *error
         { "vkDestroyFence", &context->vk.vkDestroyFence, sizeof(context->vk.vkDestroyFence) },
         { "vkGetFenceStatus", &context->vk.vkGetFenceStatus, sizeof(context->vk.vkGetFenceStatus) },
         { "vkWaitForFences", &context->vk.vkWaitForFences, sizeof(context->vk.vkWaitForFences) },
+        { "vkResetFences", &context->vk.vkResetFences, sizeof(context->vk.vkResetFences) },
         { "vkQueueSubmit", &context->vk.vkQueueSubmit, sizeof(context->vk.vkQueueSubmit) },
         { "vkQueueWaitIdle", &context->vk.vkQueueWaitIdle, sizeof(context->vk.vkQueueWaitIdle) },
         { "vkBeginCommandBuffer", &context->vk.vkBeginCommandBuffer, sizeof(context->vk.vkBeginCommandBuffer) },
@@ -322,6 +324,11 @@ doe_vk_status doe_vk_context_create(const doe_vk_options *options,
     context->caps.robust_buffer_access = true;
     context->caps.shader_demote_to_helper_invocation = features.extension != NULL;
     context->caps.full_draw_index_uint32 = features.base.fullDrawIndexUint32 != 0;
+    context->caps.image_cube_array = features.base.imageCubeArray != 0;
+    context->caps.independent_blend = features.base.independentBlend != 0;
+    context->caps.sampler_anisotropy = features.base.samplerAnisotropy != 0;
+    context->caps.max_sampler_anisotropy = context->caps.sampler_anisotropy ?
+        context->properties.limits.maxSamplerAnisotropy : 0.0f;
     *out = context;
     return doe_vk_fail(DOE_VK_OK, "context ready", error);
 failed:

@@ -152,6 +152,20 @@ The [Windows SDK build](../../runtime/c/backends/d3d12/DEVELOPER_RECEIPT_WINDOWS
 compiles the private backend and links its clients. Native Windows host portability,
 public D3D12 composition and physical execution remain distinct unfinished gates.
 
+Reusable compute programs now share the ordinary resource submission owner.
+Unpublished preparation reserves a command buffer, publishes only after native
+recording succeeds, and aborts after releasing failed native artifacts. Failed
+preparation therefore preserves ordinary submission and host-replay fallback;
+published consumption remains permanent, including release during unknown replay.
+The [resource reservation controls](../../runtime/c/resources/DEVELOPER_RECEIPT_PROGRAM_RESERVATION.json)
+and native `program-prepare` client cover rollback, callback reentry and terminal
+cleanup. Metal host replay uses its selected backend rather than requiring Vulkan;
+the [public Node control](../../runtime/c/native/DEVELOPER_RECEIPT_METAL_HOST_REPLAY.json)
+records changed-input execution on one Apple device before the separate transaction
+follow-up. GPU-recorded programs remain Vulkan-only. These developer checks do not
+close full language coverage, public Metal graphics, public D3D12, browser adoption
+or the production cutover gates.
+
 Guides: the common C style retains one parser/semantic/layout owner with multiple
 explicit target adapters. Vulkan's owner guide now states serialized operations
 and callback/lease boundaries; its recursive mutex is retained because finalizers

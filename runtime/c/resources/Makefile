@@ -4,7 +4,7 @@ BUILD ?= /tmp/doe-c-resources
 CPPFLAGS += -Iinclude -I../instance/include -I../futures/include -I../labels/include -I../../zig/vendor/webgpu-headers
 CFLAGS ?= -O2 -g
 CFLAGS += -std=c11 -Wall -Wextra -Wpedantic -Werror -pthread
-SOURCES = src/objects.c src/formats.c src/textures.c src/texture_copy.c src/bindings.c src/usage_scope.c src/commands.c src/queries.c src/external_textures.c src/render.c src/render_state.c src/render_usage.c src/bundles.c src/compute_pass.c src/accessors.c
+SOURCES = src/objects.c src/formats.c src/textures.c src/texture_copy.c src/bindings.c src/usage_scope.c src/commands.c src/queries.c src/external_textures.c src/render.c src/render_targets.c src/render_state.c src/render_usage.c src/bundles.c src/compute_pass.c src/accessors.c
 OBJECTS = $(patsubst src/%.c,$(BUILD)/%.o,$(SOURCES))
 LABEL_SOURCES = $(wildcard ../labels/src/*.c)
 .PHONY: all check
@@ -31,6 +31,8 @@ $(BUILD)/test_query_admission: tests/test_query_admission.c $(BUILD)/libdoe_reso
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(filter-out %.h,$^) -o $@
 $(BUILD)/test_draw_admission: tests/test_draw_admission.c $(BUILD)/libdoe_resources.a $(LABEL_SOURCES) tests/fixture.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(filter-out %.h,$^) -o $@
+$(BUILD)/test_color_targets: tests/test_color_targets.c $(BUILD)/libdoe_resources.a $(LABEL_SOURCES) tests/fixture.h
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(filter-out %.h,$^) -o $@
 $(BUILD)/test_attachment_admission: tests/test_attachment_admission.c $(BUILD)/libdoe_resources.a $(LABEL_SOURCES) tests/fixture.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(filter-out %.h,$^) -o $@
 $(BUILD)/test_resolve_admission: tests/test_resolve_admission.c $(BUILD)/libdoe_resources.a $(LABEL_SOURCES) tests/fixture.h
@@ -47,7 +49,13 @@ $(BUILD)/test_draw_budget: tests/test_draw_budget.c $(BUILD)/libdoe_resources.a 
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(filter-out %.h,$^) -o $@
 $(BUILD)/test_pipeline_admission: tests/test_pipeline_admission.c $(BUILD)/libdoe_resources.a $(LABEL_SOURCES) tests/fixture.h src/internal.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(filter-out %.h,$^) -o $@
-check: $(BUILD)/test_pipeline_admission $(BUILD)/test_draw_budget $(BUILD)/test_viewport_admission $(BUILD)/test_depth_only $(BUILD)/test_debug_groups $(BUILD)/test_view_defaults $(BUILD)/test_resolve_admission $(BUILD)/test_attachment_admission $(BUILD)/test_draw_admission $(BUILD)/test_query_admission $(BUILD)/test_render_usage $(BUILD)/test_usage_scope $(BUILD)/test_resources $(BUILD)/test_extended $(BUILD)/test_bundles $(BUILD)/test_binding_features
+$(BUILD)/test_program_reservation: tests/test_program_reservation.c $(BUILD)/libdoe_resources.a $(LABEL_SOURCES) tests/fixture.h src/internal.h
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(filter-out %.h,$^) -o $@
+.PHONY: check-program-reservation
+check-program-reservation: $(BUILD)/test_program_reservation
+	$(BUILD)/test_program_reservation
+check: $(BUILD)/test_program_reservation $(BUILD)/test_color_targets $(BUILD)/test_pipeline_admission $(BUILD)/test_draw_budget $(BUILD)/test_viewport_admission $(BUILD)/test_depth_only $(BUILD)/test_debug_groups $(BUILD)/test_view_defaults $(BUILD)/test_resolve_admission $(BUILD)/test_attachment_admission $(BUILD)/test_draw_admission $(BUILD)/test_query_admission $(BUILD)/test_render_usage $(BUILD)/test_usage_scope $(BUILD)/test_resources $(BUILD)/test_extended $(BUILD)/test_bundles $(BUILD)/test_binding_features
+	$(BUILD)/test_program_reservation
 	$(BUILD)/test_resources
 	$(BUILD)/test_extended
 	$(BUILD)/test_bundles
@@ -57,6 +65,7 @@ check: $(BUILD)/test_pipeline_admission $(BUILD)/test_draw_budget $(BUILD)/test_
 	$(BUILD)/test_query_admission
 	$(BUILD)/test_draw_admission
 	$(BUILD)/test_attachment_admission
+	$(BUILD)/test_color_targets
 	$(BUILD)/test_resolve_admission
 	$(BUILD)/test_view_defaults
 	$(BUILD)/test_debug_groups

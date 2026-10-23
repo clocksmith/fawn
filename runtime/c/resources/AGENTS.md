@@ -75,3 +75,7 @@ Validate pipeline/signature compatibility at every setter as well as draw/replay
 overwriting an invalid pipeline must not erase failure. Layout-entry stage and
 multisample constraints belong before allocation, while alias history still uses
 its existing visibility and whole-pass rules, not a second frontend validator.
+Program preparation reserves the existing command submission owner transactionally.
+Abort only unpublished reservations after failed preparation; publishing is
+permanent and allocation-free. Program release must consume its lease once,
+preserving any unresolved replay lease and never restoring ordinary eligibility.

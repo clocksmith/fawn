@@ -99,6 +99,7 @@ static void rejected(doe_vk_context *context, const doe_vk_render_pipeline_desc 
 int main(void) {
     doe_vk_context context = {.references = 1};
     context.caps.queue_flags = VK_QUEUE_GRAPHICS_BIT;
+    context.caps.max_color_attachments = 8;
     context.properties.limits.framebufferDepthSampleCounts = 1;
     context.vk.vkGetPhysicalDeviceFormatProperties = format_properties;
     context.vk.vkGetPhysicalDeviceImageFormatProperties = image_properties;
@@ -138,7 +139,7 @@ int main(void) {
         desc.fragment = expected_stages == 2 ? shader : (doe_vk_shader){0};
         doe_vk_pipeline *pipeline = NULL;
         assert(doe_vk_render_pipeline_create(&context, &desc, &pipeline, NULL) == DOE_VK_OK);
-        assert(pipeline->color_format == 0 && pipeline->depth_stencil_format == DOE_VK_FORMAT_D32_FLOAT);
+        assert(pipeline->color_count == 0 && pipeline->depth_stencil_format == DOE_VK_FORMAT_D32_FLOAT);
         assert(context.references == 2 && modules == destroyed_modules);
         doe_vk_pipeline_release(pipeline);
         assert(context.references == 1 && live_pipelines == 0 && live_passes == 0 && live_layouts == 0);

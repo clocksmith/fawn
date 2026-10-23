@@ -17,6 +17,9 @@ static struct {
     int32_t submit_result;
     int32_t fence_result;
     int32_t idle_result;
+    int32_t reset_result;
+    unsigned resets;
+    bool reusable_begin;
     unsigned char bytes[256];
 } mock;
 
@@ -116,7 +119,7 @@ static void destroy_fence(VkDevice device, VkFence fence, const VkAllocationCall
 }
 static VkResult begin(VkCommandBuffer command, const VkCommandBufferBeginInfo *info) {
     assert(command == (VkCommandBuffer)(uintptr_t)22);
-    assert(info->flags == VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+    assert(info->flags == (mock.reusable_begin ? 0u : (unsigned)VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT));
     return step();
 }
 static VkResult end(VkCommandBuffer command) {
@@ -158,6 +161,12 @@ static VkResult fence_status(VkDevice device, VkFence fence) {
     assert(fence == 23);
     return mock.fence_result;
 }
+static VkResult reset_fence(VkDevice device, uint32_t count, const VkFence *fences) {
+    (void)device;
+    assert(count == 1 && fences[0] == 23);
+    ++mock.resets;
+    return mock.reset_result;
+}
 static VkResult idle(VkQueue queue) {
     (void)queue;
     return mock.idle_result;
@@ -190,6 +199,7 @@ static doe_vk_context context(void) {
         .vkQueueSubmit = submit,
         .vkWaitForFences = wait_fence,
         .vkGetFenceStatus = fence_status,
+        .vkResetFences = reset_fence,
         .vkQueueWaitIdle = idle
     };
     return value;
@@ -365,6 +375,104 @@ static void rejection_and_memory(void) {
     assert(ctx.references == 1);
 }
 
+/* Compute-program recording: one native command buffer, many submissions. */
+static void reusable_lifetime(void) {
+    memset(&mock, 0, sizeof(mock));
+    mock.reusable_begin = true;
+    doe_vk_context ctx = context();
+    doe_vk_buffer *buffer = NULL;
+    doe_vk_commands *commands = NULL;
+    uint32_t value = 99;
+    assert(doe_vk_buffer_create(&ctx, 256, DOE_VK_BUFFER_COPY_DST, DOE_VK_MEMORY_HOST, &buffer, NULL) == DOE_VK_OK);
+    assert(doe_vk_commands_create_reusable(&ctx, &commands, NULL) == DOE_VK_OK);
+    assert(doe_vk_commands_fill(commands, buffer, 0, 256, 7) == DOE_VK_OK);
+    doe_vk_buffer_release(buffer); /* The recording keeps the native buffer. */
+    for (unsigned run = 1; run <= 3; ++run) {
+        assert(doe_vk_commands_retain(commands) == DOE_VK_OK); /* Pending holder. */
+        assert(doe_vk_commands_submit(commands, NULL) == DOE_VK_OK);
+        assert(mock.submits == run && mock.resets == run - 1);
+        assert(doe_vk_buffer_write(buffer, 0, &value, sizeof(value)) == DOE_VK_BUSY);
+        assert(doe_vk_commands_submit(commands, NULL) == DOE_VK_INVALID_STATE); /* In flight. */
+        assert(doe_vk_commands_release(commands) == DOE_VK_BUSY);
+        assert(doe_vk_commands_wait(commands, 1, NULL) == DOE_VK_OK);
+        assert(doe_vk_commands_release(commands) == DOE_VK_OK); /* Pending holder done. */
+        /* Between runs the buffer is no longer recorded-in-use: hosts may map it. */
+        assert(doe_vk_buffer_write(buffer, 0, &value, sizeof(value)) == DOE_VK_OK);
+    }
+    assert(doe_vk_commands_fill(commands, buffer, 0, 256, 7) == DOE_VK_INVALID_STATE);
+    assert(doe_vk_commands_seal(commands, NULL) == DOE_VK_INVALID_STATE); /* Already ended. */
+    /* Program drops while the last submission is still in flight: the pending
+     * holder alone owns completion, and its release frees the recording. */
+    assert(doe_vk_commands_retain(commands) == DOE_VK_OK);
+    assert(doe_vk_commands_submit(commands, NULL) == DOE_VK_OK && mock.resets == 3);
+    assert(doe_vk_commands_drop(commands) == DOE_VK_OK);
+    assert(mock.pools_destroyed == 0 && mock.buffers_destroyed == 0);
+    assert(doe_vk_commands_release(commands) == DOE_VK_BUSY);
+    assert(doe_vk_commands_wait(commands, 1, NULL) == DOE_VK_OK);
+    assert(doe_vk_commands_release(commands) == DOE_VK_OK);
+    assert(mock.pools_destroyed == 1 && mock.buffers_destroyed == 1 && ctx.references == 1);
+
+    /* Fence re-arm failure and execution failure are terminal. */
+    memset(&mock, 0, sizeof(mock));
+    mock.reusable_begin = true;
+    ctx = context();
+    assert(doe_vk_buffer_create(&ctx, 256, DOE_VK_BUFFER_COPY_DST, DOE_VK_MEMORY_HOST, &buffer, NULL) == DOE_VK_OK);
+    assert(doe_vk_commands_create_reusable(&ctx, &commands, NULL) == DOE_VK_OK);
+    assert(doe_vk_commands_fill(commands, buffer, 0, 256, 7) == DOE_VK_OK);
+    assert(doe_vk_commands_submit(commands, NULL) == DOE_VK_OK);
+    assert(doe_vk_commands_wait(commands, 1, NULL) == DOE_VK_OK);
+    mock.reset_result = -1;
+    assert(doe_vk_commands_submit(commands, NULL) == DOE_VK_OUT_OF_MEMORY && mock.submits == 1);
+    assert(doe_vk_buffer_write(buffer, 0, &value, sizeof(value)) == DOE_VK_OK); /* Uses dropped. */
+    mock.reset_result = 0;
+    assert(doe_vk_commands_submit(commands, NULL) == DOE_VK_INVALID_STATE && mock.submits == 1);
+    assert(doe_vk_commands_release(commands) == DOE_VK_OK);
+    assert(doe_vk_commands_create_reusable(&ctx, &commands, NULL) == DOE_VK_OK);
+    assert(doe_vk_commands_fill(commands, buffer, 0, 256, 7) == DOE_VK_OK);
+    assert(doe_vk_commands_submit(commands, NULL) == DOE_VK_OK);
+    mock.fence_result = -1; /* A failed wait is not completion: still in flight. */
+    assert(doe_vk_commands_wait(commands, 1, NULL) == DOE_VK_OUT_OF_MEMORY);
+    assert(doe_vk_commands_release(commands) == DOE_VK_BUSY);
+    mock.fence_result = 0;
+    assert(doe_vk_commands_wait(commands, 1, NULL) == DOE_VK_OK); /* READY again. */
+    mock.submit_result = -1; /* Uncertain resubmission recovers to its failure. */
+    assert(doe_vk_commands_submit(commands, NULL) == DOE_VK_OUT_OF_MEMORY && mock.resets == 2);
+    assert(doe_vk_commands_recover(commands, NULL) == DOE_VK_OUT_OF_MEMORY);
+    mock.submit_result = 0;
+    assert(doe_vk_commands_submit(commands, NULL) == DOE_VK_INVALID_STATE && mock.submits == 3);
+    assert(doe_vk_commands_release(commands) == DOE_VK_OK);
+    /* Poisoned content rejects resubmission before any native call. */
+    assert(doe_vk_buffer_write(buffer, 0, &value, sizeof(value)) == DOE_VK_OUT_OF_MEMORY);
+    doe_vk_buffer_release(buffer);
+    assert(ctx.references == 1);
+
+    /* Sealing ends a recording before any submission and frees its buffers for
+     * host writes; the first submission then re-acquires them. */
+    mock.reusable_begin = true;
+    assert(doe_vk_buffer_create(&ctx, 256, DOE_VK_BUFFER_COPY_DST, DOE_VK_MEMORY_HOST, &buffer, NULL) == DOE_VK_OK);
+    assert(doe_vk_commands_create_reusable(&ctx, &commands, NULL) == DOE_VK_OK);
+    assert(doe_vk_commands_fill(commands, buffer, 0, 256, 7) == DOE_VK_OK);
+    assert(doe_vk_buffer_write(buffer, 0, &value, sizeof(value)) == DOE_VK_BUSY);
+    assert(doe_vk_commands_seal(commands, NULL) == DOE_VK_OK);
+    uint32_t initialized[64] = {0};
+    assert(doe_vk_buffer_write(buffer, 0, initialized, sizeof(initialized)) == DOE_VK_OK);
+    unsigned submits = mock.submits;
+    assert(doe_vk_commands_submit(commands, NULL) == DOE_VK_OK && mock.submits == submits + 1);
+    assert(doe_vk_buffer_write(buffer, 0, &value, sizeof(value)) == DOE_VK_BUSY);
+    assert(doe_vk_commands_wait(commands, 1, NULL) == DOE_VK_OK);
+    assert(doe_vk_commands_release(commands) == DOE_VK_OK);
+    doe_vk_buffer_release(buffer);
+    assert(ctx.references == 1);
+
+    /* One-shot commands have exactly one holder and cannot be sealed. */
+    mock.reusable_begin = false;
+    assert(doe_vk_commands_create(&ctx, &commands, NULL) == DOE_VK_OK);
+    assert(doe_vk_commands_retain(commands) == DOE_VK_INVALID_ARGUMENT);
+    assert(doe_vk_commands_seal(commands, NULL) == DOE_VK_INVALID_ARGUMENT);
+    assert(doe_vk_commands_drop(commands) == DOE_VK_OK);
+    assert(ctx.references == 1);
+}
+
 int main(void) {
     acquisition_failures();
     async_lifetime();
@@ -372,6 +480,8 @@ int main(void) {
     rejection_and_memory();
     failed_output_requires_reinitialization();
     first_failure_detail();
+    reusable_lifetime();
     puts("PASS host Vulkan boundary rollback, timeout, uncertain submission, device loss, bounds, poisoning");
+    puts("PASS reusable recording: one native command buffer resubmitted with fence re-arm, buffer uses dropped between runs, pending-holder BUSY vs program drop, terminal reset/execution failure, one-shot retain rejected");
     return 0;
 }

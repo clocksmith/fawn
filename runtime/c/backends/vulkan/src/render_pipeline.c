@@ -49,34 +49,93 @@ static VkStencilOpState stencil_state(doe_vk_stencil_face face,
         .compareMask = desc->stencil_read_mask, .writeMask = desc->stencil_write_mask};
 }
 
+typedef struct color_targets {
+    uint32_t count;
+    bool used;
+    doe_vk_color_target slots[DOE_VK_MAX_COLOR_ATTACHMENTS];
+} color_targets;
+
+/* Legacy single-color fields are slot 0 only; never combined with slots. */
+static doe_vk_status normalize_targets(const doe_vk_render_pipeline_desc *desc, color_targets *out) {
+    color_targets targets = {0};
+    const bool legacy = desc->color_format != 0 || desc->color_write_mask != 0 || desc->blend_enabled;
+    if (desc->color_target_count != 0) {
+        if (legacy || desc->color_target_count > DOE_VK_MAX_COLOR_ATTACHMENTS) return DOE_VK_INVALID_ARGUMENT;
+        targets.count = desc->color_target_count;
+        memcpy(targets.slots, desc->color_targets, targets.count * sizeof(*targets.slots));
+    } else if (desc->color_format != 0) {
+        targets.count = 1;
+        targets.slots[0] = (doe_vk_color_target){desc->color_format, desc->color_write_mask, desc->blend_enabled,
+            desc->color_source_factor, desc->color_destination_factor, desc->color_operation,
+            desc->alpha_source_factor, desc->alpha_destination_factor, desc->alpha_operation};
+    } else if (legacy) return DOE_VK_INVALID_ARGUMENT;
+    for (uint32_t i = 0; i < targets.count; ++i) {
+        const doe_vk_color_target *slot = &targets.slots[i];
+        if (slot->write_mask > 15) return DOE_VK_INVALID_ARGUMENT;
+        if (slot->format == 0) {
+            if (slot->write_mask != 0 || slot->blend_enabled) return DOE_VK_INVALID_ARGUMENT;
+            continue;
+        }
+        targets.used = true;
+        if (slot->blend_enabled && (slot->color_source_factor > 14 || slot->color_destination_factor > 14 ||
+            slot->alpha_source_factor > 14 || slot->alpha_destination_factor > 14 ||
+            slot->color_operation > 4 || slot->alpha_operation > 4)) return DOE_VK_UNSUPPORTED;
+    }
+    *out = targets;
+    return DOE_VK_OK;
+}
+
+static VkPipelineColorBlendAttachmentState blend_state(const doe_vk_color_target *slot) {
+    return (VkPipelineColorBlendAttachmentState){.blendEnable = slot->blend_enabled,
+        .srcColorBlendFactor = slot->color_source_factor, .dstColorBlendFactor = slot->color_destination_factor,
+        .colorBlendOp = slot->color_operation, .srcAlphaBlendFactor = slot->alpha_source_factor,
+        .dstAlphaBlendFactor = slot->alpha_destination_factor, .alphaBlendOp = slot->alpha_operation,
+        .colorWriteMask = slot->write_mask};
+}
+
+/* Without enabled independentBlend every element must be identical: used slots
+ * must already agree, and unused slots take that one state (they write nothing). */
+static doe_vk_status blend_states(const doe_vk_context *context, const color_targets *targets,
+    VkPipelineColorBlendAttachmentState out[DOE_VK_MAX_COLOR_ATTACHMENTS]) {
+    const VkPipelineColorBlendAttachmentState *shared = NULL;
+    for (uint32_t i = 0; i < targets->count; ++i) {
+        out[i] = blend_state(&targets->slots[i]);
+        if (targets->slots[i].format == 0 || context->caps.independent_blend) continue;
+        if (shared != NULL && memcmp(shared, &out[i], sizeof(out[i])) != 0) return DOE_VK_UNSUPPORTED;
+        if (shared == NULL) shared = &out[i];
+    }
+    if (shared != NULL)
+        for (uint32_t i = 0; i < targets->count; ++i) if (targets->slots[i].format == 0) out[i] = *shared;
+    return DOE_VK_OK;
+}
+
 static doe_vk_status validate_pipeline(doe_vk_context *context,
-    const doe_vk_render_pipeline_desc *desc) {
+    const doe_vk_render_pipeline_desc *desc, const color_targets *targets) {
     if (desc == NULL || !doe_vk_shader_valid(&desc->vertex) ||
         (!fragment_absent(desc) && !doe_vk_shader_valid(&desc->fragment)) ||
         desc->topology < DOE_VK_POINTS || desc->topology > DOE_VK_TRIANGLE_STRIP ||
-        desc->cull_mask > 3 || desc->color_write_mask > 15 ||
+        desc->cull_mask > 3 ||
         desc->vertex_buffer_count > DOE_VK_MAX_VERTEX_BUFFERS ||
         desc->attribute_count > DOE_VK_MAX_VERTEX_ATTRIBUTES ||
         (desc->vertex_buffer_count != 0 && desc->vertex_buffers == NULL) ||
         (desc->attribute_count != 0 && desc->attributes == NULL)) return DOE_VK_INVALID_ARGUMENT;
     if (!(context->caps.queue_flags & VK_QUEUE_GRAPHICS_BIT)) return DOE_VK_UNSUPPORTED;
-    if (desc->color_format == 0) {
-        if (desc->depth_stencil_format == 0 || desc->blend_enabled ||
-            desc->color_write_mask != 0 || desc->alpha_to_coverage) return DOE_VK_INVALID_ARGUMENT;
+    if (!targets->used) {
+        if (desc->depth_stencil_format == 0 || desc->alpha_to_coverage) return DOE_VK_INVALID_ARGUMENT;
     } else if (fragment_absent(desc)) return DOE_VK_INVALID_ARGUMENT;
-    if (desc->blend_enabled && (desc->color_source_factor > 14 || desc->color_destination_factor > 14 ||
-        desc->alpha_source_factor > 14 || desc->alpha_destination_factor > 14 ||
-        desc->color_operation > 4 || desc->alpha_operation > 4)) return DOE_VK_UNSUPPORTED;
+    if (targets->count > context->caps.max_color_attachments) return DOE_VK_UNSUPPORTED;
     for (unsigned i = 0; i < 4; ++i) if (!isfinite(desc->blend_constant[i])) return DOE_VK_INVALID_ARGUMENT;
     uint32_t samples = doe_vk_samples(desc->sample_count);
     if (samples > 64 || (samples & (samples - 1)) != 0 || (desc->alpha_to_coverage && samples == 1))
         return DOE_VK_INVALID_ARGUMENT;
-    if (desc->color_format != 0) {
+    for (uint32_t i = 0; i < targets->count; ++i) {
+        const doe_vk_color_target *slot = &targets->slots[i];
+        if (slot->format == 0) continue;
         doe_vk_format_caps format;
-        doe_vk_status status = doe_vk_texture_format_caps(context, desc->color_format, &format);
+        doe_vk_status status = doe_vk_texture_format_caps(context, slot->format, &format);
         if (status != DOE_VK_OK) return status;
         if (!format.color_attachment || !(format.attachment_sample_counts & samples) ||
-            (desc->blend_enabled && !format.blendable)) return DOE_VK_UNSUPPORTED;
+            (slot->blend_enabled && !format.blendable)) return DOE_VK_UNSUPPORTED;
     }
     doe_vk_status status = validate_depth_stencil(context, desc);
     if (status != DOE_VK_OK) return status;
@@ -111,7 +170,11 @@ doe_vk_status doe_vk_render_pipeline_create(doe_vk_context *context,
     const doe_vk_render_pipeline_desc *desc, doe_vk_pipeline **out, doe_vk_error *error) {
     if (context == NULL || out == NULL) return doe_vk_fail(DOE_VK_INVALID_ARGUMENT, "graphics descriptor", error);
     if (context->lost) return doe_vk_fail(DOE_VK_DEVICE_LOST, "graphics context", error);
-    doe_vk_status status = validate_pipeline(context, desc);
+    color_targets targets;
+    doe_vk_status status = desc != NULL ? normalize_targets(desc, &targets) : DOE_VK_INVALID_ARGUMENT;
+    if (status == DOE_VK_OK) status = validate_pipeline(context, desc, &targets);
+    VkPipelineColorBlendAttachmentState attachments[DOE_VK_MAX_COLOR_ATTACHMENTS];
+    if (status == DOE_VK_OK) status = blend_states(context, &targets, attachments);
     if (status != DOE_VK_OK) return doe_vk_fail(status, "graphics admission", error);
     doe_vk_pipeline *pipeline = calloc(1, sizeof(*pipeline));
     if (pipeline == NULL) return doe_vk_fail(DOE_VK_OUT_OF_MEMORY, "graphics owner", error);
@@ -124,7 +187,10 @@ doe_vk_status doe_vk_render_pipeline_create(doe_vk_context *context,
     pipeline->references = 1;
     pipeline->graphics = true;
     memcpy(pipeline->blend_constant, desc->blend_constant, sizeof(pipeline->blend_constant));
-    pipeline->color_format = desc->color_format;
+    pipeline->color_count = targets.count;
+    doe_vk_render_layout layout = {.color_count = targets.count, .depth_stencil = desc->depth_stencil_format,
+        .samples = doe_vk_samples(desc->sample_count)};
+    for (uint32_t i = 0; i < targets.count; ++i) layout.colors[i] = pipeline->color_formats[i] = targets.slots[i].format;
     pipeline->depth_stencil_format = desc->depth_stencil_format;
     pipeline->sample_count = doe_vk_samples(desc->sample_count);
     pipeline->depth_write = desc->depth_write;
@@ -140,7 +206,7 @@ doe_vk_status doe_vk_render_pipeline_create(doe_vk_context *context,
     if (status != DOE_VK_OK) goto failed;
     /* Vulkan single-subpass compatibility ignores resolve attachment references;
      * this pipeline pass is also compatible with the recorder's resolve pass. */
-    status = doe_vk_render_pass_create(context, desc->color_format, desc->depth_stencil_format, pipeline->sample_count, NULL, &pipeline->render_pass, error);
+    status = doe_vk_render_pass_create(context, &layout, NULL, NULL, &pipeline->render_pass, error);
     if (status != DOE_VK_OK) goto failed;
     status = doe_vk_shader_module(context, &desc->vertex, &vertex, error);
     if (status != DOE_VK_OK) goto failed;
@@ -190,15 +256,9 @@ doe_vk_status doe_vk_render_pipeline_create(doe_vk_context *context,
         .sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO, .rasterizationSamples = pipeline->sample_count,
         .pSampleMask = desc->override_sample_mask ? sample_mask : NULL, .alphaToCoverageEnable = desc->alpha_to_coverage
     };
-    const VkPipelineColorBlendAttachmentState attachment = {
-        .blendEnable = desc->blend_enabled, .srcColorBlendFactor = desc->color_source_factor,
-        .dstColorBlendFactor = desc->color_destination_factor, .colorBlendOp = desc->color_operation,
-        .srcAlphaBlendFactor = desc->alpha_source_factor, .dstAlphaBlendFactor = desc->alpha_destination_factor,
-        .alphaBlendOp = desc->alpha_operation, .colorWriteMask = desc->color_write_mask
-    };
     VkPipelineColorBlendStateCreateInfo blend = {
         .sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
-        .attachmentCount = desc->color_format != 0 ? 1 : 0, .pAttachments = desc->color_format != 0 ? &attachment : NULL
+        .attachmentCount = targets.count, .pAttachments = targets.count != 0 ? attachments : NULL
     };
     memcpy(blend.blendConstants, desc->blend_constant, sizeof(blend.blendConstants));
     const VkPipelineDepthStencilStateCreateInfo depth_stencil = {

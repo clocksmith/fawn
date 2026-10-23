@@ -129,8 +129,11 @@ WGPUStatus native_vulkan_limits(const doe_vk_caps *caps, WGPULimits *out)
         .maxVertexAttributes = caps->max_vertex_input_attributes < DOE_VK_MAX_VERTEX_ATTRIBUTES ?
             caps->max_vertex_input_attributes : DOE_VK_MAX_VERTEX_ATTRIBUTES,
         .maxVertexBufferArrayStride = caps->max_vertex_input_binding_stride,
-        .maxColorAttachments = 1,
-        .maxColorAttachmentBytesPerSample = 16,
+        /* Real native slot count bounded by the frontend's eight-slot storage;
+         * the WebGPU baseline byte budget (Vulkan has no per-sample byte limit). */
+        .maxColorAttachments = caps->max_color_attachments < DOE_VK_MAX_COLOR_ATTACHMENTS ?
+            caps->max_color_attachments : DOE_VK_MAX_COLOR_ATTACHMENTS,
+        .maxColorAttachmentBytesPerSample = 32,
         .maxInterStageShaderVariables = (caps->max_vertex_output_components < caps->max_fragment_input_components ?
             caps->max_vertex_output_components : caps->max_fragment_input_components) / 4,
         .maxBindingsPerBindGroup = DOE_RESOURCE_MAX_BINDINGS,

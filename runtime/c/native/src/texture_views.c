@@ -31,10 +31,16 @@ WGPUTextureView wgpuTextureCreateView(WGPUTexture handle, const WGPUTextureViewD
         doe_resource_view_validate(texture, &desc, &resolved);
     doe_vk_texture_view_desc native = {0};
     if (status == DOE_RESOURCE_OK) {
-        /* Same-format standalone DepthOnly/StencilOnly covers every actual
-         * aspect. Combined partial views normalize to a different format and
-         * remain unsupported by the backend's all-aspect view constructor. */
-        if (resolved.format != doe_resource_texture_description(texture)->format) status = DOE_RESOURCE_UNSUPPORTED;
+        /* A DepthOnly/StencilOnly view resolves to its aspect format; the backend
+         * view selects that native aspect over the same parent image. */
+        WGPUTextureFormat aspect_format;
+        if (doe_resource_format_aspect_format(doe_resource_texture_description(texture)->format,
+                resolved.aspect, &aspect_format) != DOE_RESOURCE_OK ||
+            !native_texture_aspect(resolved.aspect, &native.aspect)) status = DOE_RESOURCE_UNSUPPORTED;
+        /* A different full-aspect format is a resource-validated viewFormats
+         * entry; the backend admits it only from the image's srgb/unorm list. */
+        else if (resolved.format != aspect_format && (resolved.aspect != WGPUTextureAspect_All ||
+            !native_texture_format(resolved.format, &native.format))) status = DOE_RESOURCE_UNSUPPORTED;
         native.base_mip = resolved.base_mip;
         native.mip_count = resolved.mip_count;
         native.base_layer = resolved.base_layer;
@@ -45,6 +51,7 @@ WGPUTextureView wgpuTextureCreateView(WGPUTexture handle, const WGPUTextureViewD
         case WGPUTextureViewDimension_2DArray: native.dimension = DOE_VK_VIEW_2D_ARRAY; break;
         case WGPUTextureViewDimension_3D: native.dimension = DOE_VK_VIEW_3D; break;
         case WGPUTextureViewDimension_Cube: native.dimension = DOE_VK_VIEW_CUBE; break;
+        case WGPUTextureViewDimension_CubeArray: native.dimension = DOE_VK_VIEW_CUBE_ARRAY; break;
         default: status = DOE_RESOURCE_UNSUPPORTED; break;
         }
     }
@@ -103,8 +110,14 @@ WGPUSampler wgpuDeviceCreateSampler(WGPUDevice handle, const WGPUSamplerDescript
     WGPUSamplerDescriptor defaults = WGPU_SAMPLER_DESCRIPTOR_INIT;
     if (!descriptor) descriptor = &defaults;
     WGPUSamplerDescriptor resolved;
-    if (doe_resource_sampler_validate(descriptor, &resolved) != DOE_RESOURCE_OK || resolved.maxAnisotropy != 1) {
-        native_error(device, WGPUErrorType_Validation, "sampler invalid or anisotropy not enabled");
+    if (doe_resource_sampler_validate(descriptor, &resolved) != DOE_RESOURCE_OK) {
+        native_error(device, WGPUErrorType_Validation, "sampler descriptor invalid");
+        return NULL;
+    }
+    /* Anisotropy uses the device's enabled samplerAnisotropy and clamps to its
+     * maximum; a device without the feature rejects instead of silently using 1. */
+    if (resolved.maxAnisotropy > 1 && !device->backend.value.vulkan.caps.sampler_anisotropy) {
+        native_error(device, WGPUErrorType_Validation, "sampler anisotropy unsupported by this device");
         return NULL;
     }
     doe_vk_sampler_desc native = {
@@ -113,7 +126,8 @@ WGPUSampler wgpuDeviceCreateSampler(WGPUDevice handle, const WGPUSamplerDescript
         .mipmap_filter=resolved.mipmapFilter == WGPUMipmapFilterMode_Linear ? DOE_VK_FILTER_LINEAR : DOE_VK_FILTER_NEAREST,
         .address_u=address_mode(resolved.addressModeU), .address_v=address_mode(resolved.addressModeV),
         .address_w=address_mode(resolved.addressModeW), .min_lod=resolved.lodMinClamp, .max_lod=resolved.lodMaxClamp,
-        .compare_enabled=resolved.compare != WGPUCompareFunction_Undefined
+        .compare_enabled=resolved.compare != WGPUCompareFunction_Undefined,
+        .max_anisotropy=resolved.maxAnisotropy
     };
     if (!native_compare_operation(resolved.compare, 0, &native.compare_operation)) {
         native_error(device, WGPUErrorType_Validation, "sampler comparison invalid");

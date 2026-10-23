@@ -33,11 +33,19 @@ WGPUTexture wgpuDeviceCreateTexture(WGPUDevice handle, const WGPUTextureDescript
         native_error(device, WGPUErrorType_Validation, "texture descriptor unsupported");
         return NULL;
     }
-    for (size_t i = 0; i < descriptor->viewFormatCount; ++i)
-        if (descriptor->viewFormats[i] != descriptor->format) {
+    /* viewFormats compatibility is the resource owner's rule; the backend owns
+     * the native mutable-format list and admits only srgb/unorm pairs. */
+    doe_vk_texture_format view_formats[2];
+    uint32_t view_format_count = 0;
+    for (size_t i = 0; i < descriptor->viewFormatCount; ++i) {
+        doe_vk_texture_format mapped;
+        if (descriptor->viewFormats[i] == descriptor->format) continue;
+        if (view_format_count == 2 || !native_texture_format(descriptor->viewFormats[i], &mapped)) {
             native_error(device, WGPUErrorType_Validation, "texture format reinterpretation unsupported");
             return NULL;
         }
+        view_formats[view_format_count++] = mapped;
+    }
     doe_resource_texture_desc desc = {
         .dimension=descriptor->dimension ? descriptor->dimension : WGPUTextureDimension_2D,
         .format=descriptor->format, .width=descriptor->size.width, .height=descriptor->size.height,
@@ -50,7 +58,8 @@ WGPUTexture wgpuDeviceCreateTexture(WGPUDevice handle, const WGPUTextureDescript
         device->backend.value.vulkan.caps.max_texture_array_layers};
     doe_vk_texture_desc native = {.width=desc.width, .height=desc.height,
         .depth_or_layers=desc.depth_or_layers, .mip_levels=desc.mip_levels,.sample_count=desc.samples,
-        .usage=DOE_VK_TEXTURE_COPY_DST}; /* Initialization is internal usage only. */
+        .usage=DOE_VK_TEXTURE_COPY_DST, /* Initialization is internal usage only. */
+        .view_formats=view_format_count ? view_formats : NULL,.view_format_count=view_format_count};
     if (doe_resource_texture_validate(&desc, &limits) != DOE_RESOURCE_OK ||
         !native_texture_format(desc.format, &native.format)) {
         native_error(device, WGPUErrorType_Validation, "texture shape or format unsupported");
@@ -66,10 +75,10 @@ WGPUTexture wgpuDeviceCreateTexture(WGPUDevice handle, const WGPUTextureDescript
         desc.width == desc.height && desc.depth_or_layers >= 6;
     bool depth_stencil = native_depth_format(desc.format, &native.format);
     if (depth_stencil) {
-        /* Attachment and copy usage are admitted; per-format/aspect copy direction
-         * belongs to the resource copy owner. Depth sampling/storage stay absent. */
-        if (desc.usage & (WGPUTextureUsage_TextureBinding | WGPUTextureUsage_StorageBinding)) {
-            native_error(device, WGPUErrorType_Validation, "depth/stencil sampling and storage are unsupported");
+        /* Attachment, copy and sampled usage are admitted; per-format/aspect copy
+         * direction and sample types belong to the resource owner. No storage. */
+        if (desc.usage & WGPUTextureUsage_StorageBinding) {
+            native_error(device, WGPUErrorType_Validation, "depth/stencil storage is unsupported");
             return NULL;
         }
         /* Attachments zero-initialize through real clears; copy-only images need
@@ -77,7 +86,8 @@ WGPUTexture wgpuDeviceCreateTexture(WGPUDevice handle, const WGPUTextureDescript
         native.usage = (desc.usage & WGPUTextureUsage_RenderAttachment) ?
             DOE_VK_TEXTURE_DEPTH_STENCIL_ATTACHMENT : DOE_VK_TEXTURE_COPY_DST;
         if (desc.usage & WGPUTextureUsage_CopyDst) native.usage |= DOE_VK_TEXTURE_COPY_DST;
-        native.cube_compatible = false; /* Native depth supports array attachments, not cube sampling. */
+        /* Cube compatibility only serves sampled cube views of depth. */
+        if (!(desc.usage & WGPUTextureUsage_TextureBinding)) native.cube_compatible = false;
     }
     if (desc.samples > 1) {
         if (desc.usage != WGPUTextureUsage_RenderAttachment) {

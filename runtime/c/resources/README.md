@@ -58,6 +58,30 @@ Mutable ranges require Write mode; const ranges accept Read or Write. Native
 callbacks must not resurrect finalizing objects. The optional label owner must
 remain open through final release.
 
+Reusable-program preparation uses the command buffer's existing submission state.
+`reserve_program` validates fresh/live dependencies and acquires one preparation
+reference. While reserved, ordinary submission and competing program/replay claims
+reject. A fallible backend constructor must finish native preparation privately,
+then `publish_program` converts that lease to permanent program ownership without
+allocation or another retain. On failure, `abort_program` restores freshness and
+drops only the unpublished preparation lease. It remains usable for cleanup after
+device loss; ordinary submission still validates the actual dependencies. Callers
+serialize preparation and dependency mutation and finish each reservation once.
+`claim_program` remains the immediate reserve/publish convenience.
+
+Published program release never restores ordinary eligibility. It drops its
+program lease exactly once, while an unresolved replay retains its separate
+submission lease. Pending settlement preserves it; terminal settlement releases
+it. A duplicate release or new replay after program release rejects without
+dropping another reference. `make check-program-reservation` exercises constructor
+allocation failure followed by ordinary fallback, exact reservation/publication/
+replay references, unavailable-device abort and competing claims over immutable
+dependencies. The normal `check` target includes this host control; it executes
+no backend or GPU work.
+The [transaction receipt](DEVELOPER_RECEIPT_PROGRAM_RESERVATION.json) binds the
+exact owner inputs, full resource checks and UBSan checks; native constructor
+integration and backend execution retain their own evidence.
+
 ## Source-led behavior and boundaries
 
 Semantic sources include retained `native/resource/{doe_buffer_ops_native,
@@ -142,13 +166,20 @@ Copy admission shares only checked byte-footprint arithmetic with native Vulkan
 through `../common/include/doe_copy_footprint.h`; format, pitch/default, zero extent,
 alignment, capacity and native granularity policies remain in their actual owners.
 
-Render ownership admits up to one color attachment and optional depth/stencil,
-requiring at least one actual attachment, with multisample resolve destinations.
+Render ownership admits up to eight indexed color slots (a NULL view or Undefined
+format is an unused slot) and optional depth/stencil, requiring at least one actual
+attachment, with a multisample resolve destination per slot. `src/render_targets.c`
+alone owns slot normalization (legacy single-color fields are slot 0 input only and
+are never stored), the requested `max_color_attachments` and
+`max_color_attachment_bytes_per_sample` limits (zero selects the WebGPU baselines 8
+and 32), the WebGPU render-target byte-cost/alignment table and pass/pipeline/bundle
+layout equality ignoring trailing unused slots. One texture subresource cannot occupy
+two slots. `tests/test_color_targets.c` checks sparse layouts, limits, alignment,
+aliasing and legacy/slot mixing on the host.
 The eight-vertex-buffer/four-group envelope covers direct/indexed/indirect records,
 timestamp writes and occlusion scopes.
 The owner itself does not execute graphics/query work. The standalone native
-consumer below exercises a narrower real graphics subset. MRT,
-surface presentation, binding arrays and external-texture color conversion remain
+consumer below exercises a narrower real graphics subset. Surface presentation, binding arrays and external-texture color conversion remain
 unsupported. Actual map/future delivery and native shader execution are consumer
 responsibilities. Unsupported consumer command kinds must reject before submit.
 

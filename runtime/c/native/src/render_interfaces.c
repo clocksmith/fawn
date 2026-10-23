@@ -12,24 +12,41 @@ static const DoeCompilerStageInterfaceV7 *location(const native_stage *stage, ui
     return NULL;
 }
 
-bool native_render_interfaces(const native_stage stages[2], size_t stage_count, const WGPUVertexState *vertex,
-    const WGPUColorTargetState *color, bool alpha_to_coverage, const doe_vk_caps *caps)
+static bool source_alpha(const WGPUBlendState *blend)
 {
-    uint32_t color_scalar = 0, color_components = 0;
-    if (color && (!native_color_scalar(color->format, &color_scalar) ||
-        doe_resource_format_color_components(color->format, &color_components) != DOE_RESOURCE_OK)) return false;
-    const DoeCompilerStageInterfaceV7 *written = stage_count == 2 ? location(&stages[1], DOE_COMPILER_INTERFACE_OUTPUT, 0) : NULL;
-    if (color && color->writeMask && !written) return false;
+    if (!blend) return false;
+    WGPUBlendFactor from = blend->color.srcFactor;
+    WGPUBlendFactor to = blend->color.dstFactor;
+    return from == WGPUBlendFactor_SrcAlpha || from == WGPUBlendFactor_OneMinusSrcAlpha ||
+        from == WGPUBlendFactor_SrcAlphaSaturated || to == WGPUBlendFactor_SrcAlpha ||
+        to == WGPUBlendFactor_OneMinusSrcAlpha || to == WGPUBlendFactor_SrcAlphaSaturated;
+}
+
+/* Each used target with a nonzero write mask needs the fragment output at its
+ * slot index with the format's scalar kind and enough components. */
+static bool target_output(const native_stage *fragment, const WGPUColorTargetState *color, uint32_t slot)
+{
+    if (color->format == WGPUTextureFormat_Undefined) return true;
+    uint32_t scalar = 0, components = 0;
+    if (!native_color_scalar(color->format, &scalar) ||
+        doe_resource_format_color_components(color->format, &components) != DOE_RESOURCE_OK) return false;
+    const DoeCompilerStageInterfaceV7 *written = fragment ? location(fragment, DOE_COMPILER_INTERFACE_OUTPUT, slot) : NULL;
+    if (!written) return !color->writeMask;
+    return written->scalar_kind == scalar && written->lane_count >= components &&
+        (!source_alpha(color->blend) || written->lane_count == 4);
+}
+
+bool native_render_interfaces(const native_stage stages[2], size_t stage_count, const WGPUVertexState *vertex,
+    const WGPUFragmentState *fragment, bool alpha_to_coverage, const doe_vk_caps *caps)
+{
+    const native_stage *fragment_stage = stage_count == 2 ? &stages[1] : NULL;
+    size_t targets = fragment ? fragment->targetCount : 0;
+    for (size_t i = 0; i < targets; ++i)
+        if (!target_output(fragment_stage, &fragment->targets[i], (uint32_t)i)) return false;
+    const DoeCompilerStageInterfaceV7 *written = fragment_stage ?
+        location(fragment_stage, DOE_COMPILER_INTERFACE_OUTPUT, 0) : NULL;
     if (alpha_to_coverage && (!written || written->scalar_kind != DOE_COMPILER_LEAF_F32 ||
         written->lane_count != 4)) return false;
-    bool source_alpha = false;
-    if (color && color->blend) {
-        WGPUBlendFactor from = color->blend->color.srcFactor;
-        WGPUBlendFactor to = color->blend->color.dstFactor;
-        source_alpha = from == WGPUBlendFactor_SrcAlpha || from == WGPUBlendFactor_OneMinusSrcAlpha ||
-            from == WGPUBlendFactor_SrcAlphaSaturated || to == WGPUBlendFactor_SrcAlpha ||
-            to == WGPUBlendFactor_OneMinusSrcAlpha || to == WGPUBlendFactor_SrcAlphaSaturated;
-    }
     /* https://gpuweb.github.io/gpuweb/#abstract-opdef-validating-gpufragmentstate */
     for (size_t s = 0; s < stage_count; ++s) {
         const native_stage *stage = &stages[s];
@@ -58,9 +75,7 @@ bool native_render_interfaces(const native_stage stages[2], size_t stage_count, 
                     }
                 if (!found) return false;
             } else if (s == 1 && item->direction == DOE_COMPILER_INTERFACE_OUTPUT) {
-                if (!color || item->location != 0) continue; /* Untargeted outputs are ignored. */
-                if (item->scalar_kind != color_scalar || item->lane_count < color_components ||
-                    (source_alpha && item->lane_count != 4)) return false;
+                continue; /* Targeted outputs are checked above; untargeted ones are ignored. */
             } else {
                 uint32_t max_components = caps->max_vertex_output_components < caps->max_fragment_input_components ?
                     caps->max_vertex_output_components : caps->max_fragment_input_components;

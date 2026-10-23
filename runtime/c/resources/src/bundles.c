@@ -58,13 +58,17 @@ doe_resource_status doe_resource_bundle_encoder_create(const doe_resource_config
 {
     if (!resource_config_valid(config) || !desc || !out) return DOE_RESOURCE_INVALID_ARGUMENT;
     if (!config->device.alive(config->device.identity)) return DOE_RESOURCE_UNAVAILABLE;
-    doe_resource_status status = resource_render_layout_validate(desc->color_format,
-        desc->depth_stencil_format, desc->samples);
+    doe_resource_render_bundle_desc normalized = *desc;
+    doe_resource_status status = resource_color_formats_normalize(desc->color_format, desc->color_count,
+        desc->color_formats, &normalized.color_count, normalized.color_formats);
+    normalized.color_format = WGPUTextureFormat_Undefined;
+    if (status == DOE_RESOURCE_OK) status = resource_color_layout_validate(config, normalized.color_formats,
+        normalized.color_count, desc->depth_stencil_format, desc->samples);
     if (status != DOE_RESOURCE_OK) return status;
     doe_resource_bundle_encoder *encoder = resource_allocate(config, sizeof(*encoder), _Alignof(doe_resource_bundle_encoder));
     if (!encoder) return DOE_RESOURCE_OUT_OF_MEMORY;
     memset(encoder, 0, sizeof(*encoder));
-    encoder->desc = *desc;
+    encoder->desc = normalized;
     resource_init(&encoder->base, config, (doe_resource_native){0});
     *out = encoder;
     return DOE_RESOURCE_OK;
@@ -232,7 +236,8 @@ doe_resource_status doe_resource_render_pass_execute_bundles(doe_resource_render
         if (!bundle || !resource_alive(&bundle->base)) return resource_encoder_fail(pass->encoder, DOE_RESOURCE_UNAVAILABLE);
         if (bundle->base.config.device.identity != pass->base.config.device.identity)
             return resource_encoder_fail(pass->encoder, DOE_RESOURCE_DEVICE_MISMATCH);
-        if (bundle->desc.color_format != signature.color_format ||
+        if (!resource_color_layouts_equal(bundle->desc.color_count, bundle->desc.color_formats,
+                signature.color_count, signature.color_formats) ||
             bundle->desc.depth_stencil_format != signature.depth_stencil_format ||
             bundle->desc.samples != signature.samples ||
             (signature.depth_read_only && !bundle->desc.depth_read_only) ||

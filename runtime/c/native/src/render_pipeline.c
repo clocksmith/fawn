@@ -49,11 +49,16 @@ WGPURenderPipeline native_create_render_pipeline(native_device *device,
     if (!device || device->backend.kind != WGPUBackendType_Vulkan || !descriptor || descriptor->nextInChain || descriptor->vertex.nextInChain ||
         descriptor->vertex.constantCount) return NULL;
     const WGPUFragmentState *fragment = descriptor->fragment;
-    if (fragment && (fragment->nextInChain || fragment->constantCount || fragment->targetCount > 1 ||
+    if (fragment && (fragment->nextInChain || fragment->constantCount ||
         (fragment->targetCount && !fragment->targets))) return NULL;
-    const WGPUColorTargetState *color = fragment && fragment->targetCount &&
-        fragment->targets[0].format != WGPUTextureFormat_Undefined ? &fragment->targets[0] : NULL;
-    if (!color && !descriptor->depthStencil) return NULL;
+    if (fragment && fragment->targetCount > DOE_RESOURCE_MAX_COLOR_ATTACHMENTS) {
+        *error = (native_pipeline_error){WGPUErrorType_Validation, "render pipeline exceeds the color attachment limit"};
+        return NULL;
+    }
+    bool colored = false;
+    for (size_t i = 0; fragment && i < fragment->targetCount; ++i)
+        colored |= fragment->targets[i].format != WGPUTextureFormat_Undefined;
+    if (!colored && !descriptor->depthStencil) return NULL;
     native_stage stages[2] = {0};
     size_t stage_count = fragment ? 2 : 1;
     if (!native_stage_load(device, descriptor->vertex.module, descriptor->vertex.entryPoint,
@@ -64,14 +69,15 @@ WGPURenderPipeline native_create_render_pipeline(native_device *device,
         .vertex={stages[0].view.words,stages[0].view.counts.words,stages[0].name}
     };
     if (fragment) native.fragment = (doe_vk_shader){stages[1].view.words,stages[1].view.counts.words,stages[1].name};
-    doe_resource_render_pipeline_desc resource = {.color_format=color ? color->format : WGPUTextureFormat_Undefined,
+    doe_resource_render_pipeline_desc resource = {.color_count=fragment ? (uint32_t)fragment->targetCount : 0,
         .samples=descriptor->multisample.count,
         .topology=descriptor->primitive.topology,.strip_index_format=descriptor->primitive.stripIndexFormat};
+    for (uint32_t i = 0; i < resource.color_count; ++i) resource.color_formats[i] = fragment->targets[i].format;
     doe_vk_vertex_layout layouts[DOE_VK_MAX_VERTEX_BUFFERS];
     doe_vk_vertex_attribute attributes[DOE_VK_MAX_VERTEX_ATTRIBUTES];
     if (!native_render_fixed(descriptor, &native) || !native_render_depth(descriptor->depthStencil, &native, &resource) ||
         !vertices(&descriptor->vertex, &native, &resource, &device->backend.value.vulkan.caps, layouts, attributes) ||
-        !native_render_interfaces(stages, stage_count, &descriptor->vertex, color, descriptor->multisample.alphaToCoverageEnabled, &device->backend.value.vulkan.caps)) return NULL;
+        !native_render_interfaces(stages, stage_count, &descriptor->vertex, fragment, descriptor->multisample.alphaToCoverageEnabled, &device->backend.value.vulkan.caps)) return NULL;
     native_pipeline *payload = calloc(1, sizeof(*payload));
     if (!payload) { *error = (native_pipeline_error){WGPUErrorType_OutOfMemory,"render pipeline payload allocation failed"}; return NULL; }
     payload->device = device;

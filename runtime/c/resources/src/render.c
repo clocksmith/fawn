@@ -37,27 +37,67 @@ static bool valid_operations(bool present, bool read_only, bool transient,
         (store == WGPUStoreOp_Store || store == WGPUStoreOp_Discard);
 }
 
-static doe_resource_status validate_targets(void *device,
+/* Targets are already normalized: legacy slot-0 fields are empty. */
+static doe_resource_status validate_targets(const doe_resource_config *config,
     const doe_resource_render_targets *targets, uint32_t extent[2])
 {
-    if (!targets->color && !targets->depth_stencil) return DOE_RESOURCE_LAYOUT;
+    void *device = config->device.identity;
+    if (targets->color || targets->resolve_target) return DOE_RESOURCE_LAYOUT;
+    if (targets->color_count > resource_max_color_attachments(config)) return DOE_RESOURCE_RANGE;
     doe_resource_status status;
-    bool transient;
-    if (targets->color) {
-        status = validate_attachment(device, targets->color, false, extent);
+    bool transient, sized = false;
+    uint32_t samples = 0;
+    WGPUTextureFormat formats[DOE_RESOURCE_MAX_COLOR_ATTACHMENTS] = {0};
+    for (uint32_t i = 0; i < targets->color_count; i++) {
+        const doe_resource_color_attachment *color = &targets->colors[i];
+        if (!color->view) {
+            if (color->resolve_target || color->load || color->store) return DOE_RESOURCE_LAYOUT;
+            continue;
+        }
+        uint32_t color_extent[2];
+        status = validate_attachment(device, color->view, false, color_extent);
         if (status != DOE_RESOURCE_OK) return status;
-        transient = (targets->color->desc.usage & WGPUTextureUsage_TransientAttachment) != 0;
-        if (!valid_operations(true, false, transient, targets->color_load, targets->color_store))
+        if (sized && (extent[0] != color_extent[0] || extent[1] != color_extent[1] ||
+            samples != color->view->texture->desc.samples)) return DOE_RESOURCE_LAYOUT;
+        extent[0] = color_extent[0];
+        extent[1] = color_extent[1];
+        samples = color->view->texture->desc.samples;
+        sized = true;
+        formats[i] = color->view->desc.format;
+        /* One slot per texture subresource; a pass cannot render it twice. */
+        for (uint32_t j = 0; j < i; j++) {
+            const doe_resource_view *other = targets->colors[j].view;
+            if (other && other->texture == color->view->texture && other->desc.base_mip == color->view->desc.base_mip &&
+                other->desc.base_layer == color->view->desc.base_layer) return DOE_RESOURCE_ALIAS;
+        }
+        transient = (color->view->desc.usage & WGPUTextureUsage_TransientAttachment) != 0;
+        if (!valid_operations(true, false, transient, color->load, color->store))
             return DOE_RESOURCE_LAYOUT;
-        if (targets->color_load == WGPULoadOp_Clear)
-            for (size_t i = 0; i < 4; i++) if (!isfinite(targets->clear_color[i])) return DOE_RESOURCE_RANGE;
+        if (color->load == WGPULoadOp_Clear)
+            for (size_t c = 0; c < 4; c++) if (!isfinite(color->clear[c])) return DOE_RESOURCE_RANGE;
+        if (color->resolve_target) {
+            uint32_t resolve_extent[2];
+            status = validate_attachment(device, color->resolve_target, false, resolve_extent);
+            if (status != DOE_RESOURCE_OK) return status;
+            const doe_resource_view *resolve = color->resolve_target;
+            if (color->view->texture->desc.samples <= 1 || resolve->texture->desc.samples != 1 ||
+                color->view->desc.format != resolve->desc.format ||
+                color->view->texture->desc.format != resolve->texture->desc.format ||
+                color_extent[0] != resolve_extent[0] || color_extent[1] != resolve_extent[1]) return DOE_RESOURCE_LAYOUT;
+            if (resolve->desc.usage & WGPUTextureUsage_TransientAttachment) return DOE_RESOURCE_USAGE;
+        }
     }
+    if (!sized && !targets->depth_stencil) return DOE_RESOURCE_LAYOUT;
+    /* Slot count and color bytes per sample; texture creation owns sample counts. */
+    status = resource_color_layout_validate(config, formats, targets->color_count,
+        targets->depth_stencil ? targets->depth_stencil->desc.format : WGPUTextureFormat_Undefined, 1);
+    if (status != DOE_RESOURCE_OK) return status;
     if (targets->depth_stencil) {
         uint32_t depth_extent[2];
         status = validate_attachment(device, targets->depth_stencil, true, depth_extent);
         if (status != DOE_RESOURCE_OK) return status;
-        if (targets->color && (extent[0] != depth_extent[0] || extent[1] != depth_extent[1] ||
-            targets->color->texture->desc.samples != targets->depth_stencil->texture->desc.samples))
+        if (sized && (extent[0] != depth_extent[0] || extent[1] != depth_extent[1] ||
+            samples != targets->depth_stencil->texture->desc.samples))
             return DOE_RESOURCE_LAYOUT;
         extent[0] = depth_extent[0];
         extent[1] = depth_extent[1];
@@ -73,19 +113,6 @@ static doe_resource_status validate_targets(void *device,
             (!isfinite(targets->clear_depth) || targets->clear_depth < 0 || targets->clear_depth > 1))
             return DOE_RESOURCE_RANGE;
     }
-    if (targets->resolve_target) {
-        if (!targets->color) return DOE_RESOURCE_LAYOUT;
-        uint32_t resolve_extent[2];
-        status = validate_attachment(device, targets->resolve_target, false, resolve_extent);
-        if (status != DOE_RESOURCE_OK) return status;
-        const doe_resource_view *color = targets->color;
-        const doe_resource_view *resolve = targets->resolve_target;
-        if (color->texture->desc.samples <= 1 || resolve->texture->desc.samples != 1 ||
-            color->desc.format != resolve->desc.format ||
-            color->texture->desc.format != resolve->texture->desc.format ||
-            extent[0] != resolve_extent[0] || extent[1] != resolve_extent[1]) return DOE_RESOURCE_LAYOUT;
-        if (resolve->desc.usage & WGPUTextureUsage_TransientAttachment) return DOE_RESOURCE_USAGE;
-    }
     if (targets->occlusion_queries) {
         if (!resource_query_available(targets->occlusion_queries)) return DOE_RESOURCE_UNAVAILABLE;
         if (targets->occlusion_queries->base.config.device.identity != device) return DOE_RESOURCE_DEVICE_MISMATCH;
@@ -96,9 +123,11 @@ static doe_resource_status validate_targets(void *device,
 
 void resource_render_packet_retain(const doe_resource_render_packet *packet)
 {
-    doe_resource_view_retain(packet->targets.color);
+    for (uint32_t i = 0; i < packet->targets.color_count; i++) {
+        doe_resource_view_retain(packet->targets.colors[i].view);
+        doe_resource_view_retain(packet->targets.colors[i].resolve_target);
+    }
     doe_resource_view_retain(packet->targets.depth_stencil);
-    doe_resource_view_retain(packet->targets.resolve_target);
     doe_resource_query_set_retain(packet->targets.occlusion_queries);
     doe_resource_render_pipeline_retain(packet->pipeline);
     for (size_t i = 0; i < DOE_RESOURCE_MAX_GROUPS; i++) doe_resource_bind_group_retain(packet->groups[i]);
@@ -109,9 +138,11 @@ void resource_render_packet_retain(const doe_resource_render_packet *packet)
 
 void resource_render_packet_release(const doe_resource_render_packet *packet)
 {
-    doe_resource_view_release(packet->targets.color);
+    for (uint32_t i = 0; i < packet->targets.color_count; i++) {
+        doe_resource_view_release(packet->targets.colors[i].view);
+        doe_resource_view_release(packet->targets.colors[i].resolve_target);
+    }
     doe_resource_view_release(packet->targets.depth_stencil);
-    doe_resource_view_release(packet->targets.resolve_target);
     doe_resource_query_set_release(packet->targets.occlusion_queries);
     doe_resource_render_pipeline_release(packet->pipeline);
     for (size_t i = 0; i < DOE_RESOURCE_MAX_GROUPS; i++) doe_resource_bind_group_release(packet->groups[i]);
@@ -128,11 +159,14 @@ doe_resource_status doe_resource_render_pipeline_create(const doe_resource_confi
         return DOE_RESOURCE_INVALID_ARGUMENT;
     if (!config->device.alive(config->device.identity)) return DOE_RESOURCE_UNAVAILABLE;
     if (layout->base.config.device.identity != config->device.identity) return DOE_RESOURCE_DEVICE_MISMATCH;
-    doe_resource_status status = resource_render_layout_validate(desc->color_format,
-        desc->depth_stencil_format, desc->samples);
+    doe_resource_render_pipeline_desc normalized = *desc;
+    doe_resource_status status = resource_color_formats_normalize(desc->color_format, desc->color_count,
+        desc->color_formats, &normalized.color_count, normalized.color_formats);
+    normalized.color_format = WGPUTextureFormat_Undefined;
+    if (status == DOE_RESOURCE_OK) status = resource_color_layout_validate(config, normalized.color_formats,
+        normalized.color_count, desc->depth_stencil_format, desc->samples);
     if (status != DOE_RESOURCE_OK) return status;
     if (desc->vertex_count > DOE_RESOURCE_MAX_VERTEX_BUFFERS) return DOE_RESOURCE_UNSUPPORTED;
-    doe_resource_render_pipeline_desc normalized = *desc;
     if (!normalized.topology) normalized.topology = WGPUPrimitiveTopology_TriangleList;
     if (normalized.topology < WGPUPrimitiveTopology_PointList ||
         normalized.topology > WGPUPrimitiveTopology_TriangleStrip) return DOE_RESOURCE_LAYOUT;
@@ -202,8 +236,12 @@ doe_resource_status doe_resource_encoder_begin_render_with_timestamps(doe_resour
     status = resource_pass_timestamps_validate(encoder->base.config.device.identity, timestamps);
     if (status != DOE_RESOURCE_OK) return resource_encoder_fail(encoder, status);
     if (!targets) return resource_encoder_fail(encoder, DOE_RESOURCE_INVALID_ARGUMENT);
+    doe_resource_render_targets normalized;
+    status = resource_render_targets_normalize(targets, &normalized);
+    if (status != DOE_RESOURCE_OK) return resource_encoder_fail(encoder, status);
+    targets = &normalized;
     uint32_t extent[2];
-    status = validate_targets(encoder->base.config.device.identity, targets, extent);
+    status = validate_targets(&encoder->base.config, targets, extent);
     if (status != DOE_RESOURCE_OK) return resource_encoder_fail(encoder, status);
     doe_resource_render_pass *pass = resource_allocate(&encoder->base.config,
         sizeof(*pass), _Alignof(doe_resource_render_pass));
@@ -348,7 +386,7 @@ doe_resource_status doe_resource_render_pass_set_state(doe_resource_render_pass 
     if (state->viewport[4] < 0 || state->viewport[5] > 1 || state->viewport[4] > state->viewport[5])
         return resource_encoder_fail(pass->encoder, DOE_RESOURCE_RANGE);
     uint32_t extent[2];
-    status = validate_targets(pass->base.config.device.identity, &pass->state.targets, extent);
+    status = validate_targets(&pass->base.config, &pass->state.targets, extent);
     if (status != DOE_RESOURCE_OK) return resource_encoder_fail(pass->encoder, status);
     if (state->scissor[0] > extent[0] || state->scissor[2] > extent[0] - state->scissor[0] ||
         state->scissor[1] > extent[1] || state->scissor[3] > extent[1] - state->scissor[1])
@@ -357,10 +395,12 @@ doe_resource_status doe_resource_render_pass_set_state(doe_resource_render_pass 
     return DOE_RESOURCE_OK;
 }
 
-static doe_resource_status validate_packet(const doe_resource_render_packet *packet, void *device)
+static doe_resource_status validate_packet(const doe_resource_render_packet *packet,
+    const doe_resource_config *config)
 {
+    void *device = config->device.identity;
     uint32_t extent[2];
-    doe_resource_status status = validate_targets(device, &packet->targets, extent);
+    doe_resource_status status = validate_targets(config, &packet->targets, extent);
     if (status != DOE_RESOURCE_OK || packet->boundary_only) return status;
     doe_resource_render_bundle_desc signature = resource_render_targets_layout(&packet->targets);
     return resource_render_draw_validate(packet, device, &signature);
@@ -369,7 +409,7 @@ static doe_resource_status validate_packet(const doe_resource_render_packet *pac
 static doe_resource_status append_packet(doe_resource_render_pass *pass,
     doe_resource_render_packet packet)
 {
-    doe_resource_status status = validate_packet(&packet, pass->base.config.device.identity);
+    doe_resource_status status = validate_packet(&packet, &pass->base.config);
     if (status != DOE_RESOURCE_OK) return resource_encoder_fail(pass->encoder, status);
     if (packet.indirect) {
         status = resource_scope_input(&pass->base.config, &pass->scope, packet.indirect);
@@ -531,7 +571,7 @@ doe_resource_status resource_render_record_validate(const doe_resource_render_re
 {
     if (!record) return DOE_RESOURCE_INVALID_ARGUMENT;
     doe_resource_status status = resource_scope_validate(&record->scope);
-    return status == DOE_RESOURCE_OK ? validate_packet(&record->packet, record->base.config.device.identity) : status;
+    return status == DOE_RESOURCE_OK ? validate_packet(&record->packet, &record->base.config) : status;
 }
 
 const doe_resource_render_packet *doe_resource_render_record_borrow(const doe_resource_render_record *record)
