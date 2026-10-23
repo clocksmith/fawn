@@ -6,28 +6,31 @@ support claim or an immutable list of shader-specific milestones. The existing
 extend reusable owners; do not recognize filenames or copy source fragments into
 specialized emitters. All production compiler owners remain retained Zig today.
 
-## Next coherent responsibility
+## Accepted function-state prerequisite
 
-The next selected language family is function-local mutable state and structured
-iteration. The unchanged `moderate_matmul_naive.wgsl`,
+The [accepted M7 increment](../../runtime/c/compiler/MILESTONE_7_RESULTS.md)
+owns bounded function-local mutable state and structured iteration. The unchanged `moderate_matmul_naive.wgsl`,
 `dot_product_forward_f32.wgsl` and `dot_product_reverse_f32.wgsl` exercise generic
 initialization, assignment, repeated loads, accumulation, for/loop termination,
-break and post-loop use. They are witnesses, not the admitted grammar. Freeze
-the complete selected statement/control family, lexical scoping, typed values,
-evaluation order, robust accesses and independent instruction execution before
-implementation. Loops must remain loops, not source-specific host computation or
+break and post-loop use. They are witnesses, not the admitted grammar. The
+accepted statement/control family includes lexical scoping, typed values,
+evaluation order, robust accesses and independent instruction execution.
+Loops remain loops, not source-specific host computation or
 compiler unrolling to an assumed uniform value. Execution-step limits belong to
 test harnesses, not silently changed shader semantics.
 
-Scalable job storage is a prerequisite to broadening this owner. The current
+Scalable job storage now has an explicit independently tested owner. The current
 source/token/node/statement limits and fixed public reflection arrays protect
-the seed API; they are not permanent language requirements. Introduce explicit
-per-job capacities or an allocator-owned job with checked growth, failure and
-cleanup before expanding them. Preserve ABI1/v2 layouts and admitted behavior
+the seed API; they are not permanent language requirements. M7 uses explicit
+per-job capacities with checked layout arithmetic, failure and reuse.
+Preserve ABI1/v2 layouts and applicable storage/reflection behavior
 through shared-pipeline compatibility adapters, not a second compiler or hidden
 large stack workspace. Any allocating convenience path needs a distinct,
-documented OOM result and fault tests. The next contract must choose this storage
-boundary rather than increasing private arrays indefinitely.
+documented OOM result and fault tests. Avoid increasing private arrays indefinitely
+or treating historical unsupported cases as permanent grammar promises. General
+numeric/type/module ownership is the next dependency to scope from the remaining
+81 source failures; first lexical failure alone does not describe all missing
+semantics. Physical backend qualification remains independent.
 
 ## Remaining dependency map
 

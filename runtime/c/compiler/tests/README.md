@@ -178,3 +178,29 @@ No old invalid scalar type, scope/access violation, malformed operator, dead-sou
 error or unsupported grammar is reclassified. The historical independent suites
 and verdicts are unchanged; cross-version target byte identity is not required,
 but current ABI/CLI mode equivalence, semantics and metadata remain mandatory.
+
+## M7 job/state/control owner
+
+`make test-job SPIRV_VAL=/path/to/already-installed/spirv-val` runs the native job
+API capacity/atomicity/mutation/reuse/concurrency suite, shared-library C++17 job
+consumer, and emitted-opcode/explicit Vulkan1.1 checks in `test_job.py`.
+`job_machine.py` extends the existing developer opcode oracle with invocation-local
+Function memory, loop metadata, bool constants/operators and ordered/unordered
+float comparisons. Its step limit reports unfinished execution and is not shader
+semantics. Five unchanged real loop witnesses execute with separately packed
+uniforms and storage, including zero/short input observations.
+
+`test_job_api.c` additionally preserves exact ABI1/v2 320/321 scalar-node,
+16/17-statement, exempt-alias, 16 uncharged comparison-wrapper and 18/19-depth
+boundaries. It checks the configured job maximum depth independently of storage,
+source >65536, staged/caller word failure, invalid/short/misaligned workspace,
+version failure, and deterministic parallel workspace reuse. `make sanitize-job`
+instruments this same source; library allocation is absent.
+
+Current developer CLI-v2 suites explicitly lift the historical M6 logical-OR,
+module/nested local-shadowing, 17-statement, 321-node and depth19 rejections under
+M7's job profile. Their exact sources now have positive target/oracle checks,
+not permissive accept-or-reject assertions. Malformed/type-invalid cases remain
+negative. `test_exports.py` names exactly five public ABI functions. CLI fault
+coverage injects every allocation in the new 4/3/5 binary/legacy/v2 ownership
+paths and retains existing publication-race/no-clobber behavior.

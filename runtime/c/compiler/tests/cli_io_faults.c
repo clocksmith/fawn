@@ -2,7 +2,7 @@
  * Copyright (c) 2026 Doe contributors
  * Test-only linker wrappers; never linked into the shipped CLI or library. */
 #define _POSIX_C_SOURCE 200809L
-#include "../include/doe_compiler_v2.h"
+#include "../include/doe_compiler_job.h"
 #include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -72,13 +72,16 @@ void *__real_malloc(size_t size);
 void __real_free(void *pointer);
 void *__wrap_malloc(size_t size);
 void __wrap_free(void *pointer);
-DoeCompilerStatus __real_doe_compiler_workspace_requirements(uint32_t version,
+DoeCompilerStatus __real_doe_compiler_job_requirements(uint32_t version,
+    const DoeCompilerJobCapacities *capacities, size_t capacities_size,
     DoeCompilerWorkspaceRequirements *requirements, size_t size);
-DoeCompilerStatus __wrap_doe_compiler_workspace_requirements(uint32_t version,
+DoeCompilerStatus __wrap_doe_compiler_job_requirements(uint32_t version,
+    const DoeCompilerJobCapacities *capacities, size_t capacities_size,
     DoeCompilerWorkspaceRequirements *requirements, size_t size);
-static void *allocations[3];
+enum { TRACKED_ALLOCATIONS = 5 };
+static void *allocations[TRACKED_ALLOCATIONS];
 static void allocation_cleanup(void) {
-    for (size_t i = 0; i < 3u; ++i) assert(allocations[i] == NULL);
+    for (size_t i = 0; i < TRACKED_ALLOCATIONS; ++i) assert(allocations[i] == NULL);
 }
 void *__wrap_malloc(size_t size) {
     static unsigned calls;
@@ -89,21 +92,22 @@ void *__wrap_malloc(size_t size) {
     void *pointer = __real_malloc(size);
     if (pointer != NULL) {
         size_t slot = 0;
-        while (slot < 3u && allocations[slot] != NULL) ++slot;
-        assert(slot < 3u); allocations[slot] = pointer;
+        while (slot < TRACKED_ALLOCATIONS && allocations[slot] != NULL) ++slot;
+        assert(slot < TRACKED_ALLOCATIONS); allocations[slot] = pointer;
     }
     return pointer;
 }
 void __wrap_free(void *pointer) {
     if (pointer != NULL) {
         size_t slot = 0;
-        while (slot < 3u && allocations[slot] != pointer) ++slot;
-        assert(slot < 3u); allocations[slot] = NULL;
+        while (slot < TRACKED_ALLOCATIONS && allocations[slot] != pointer) ++slot;
+        assert(slot < TRACKED_ALLOCATIONS); allocations[slot] = NULL;
     }
     __real_free(pointer);
 }
-DoeCompilerStatus __wrap_doe_compiler_workspace_requirements(uint32_t version,
+DoeCompilerStatus __wrap_doe_compiler_job_requirements(uint32_t version,
+    const DoeCompilerJobCapacities *capacities, size_t capacities_size,
     DoeCompilerWorkspaceRequirements *requirements, size_t size) {
     if (selected("query", 1u)) return DOE_COMPILER_ABI_MISMATCH;
-    return __real_doe_compiler_workspace_requirements(version, requirements, size);
+    return __real_doe_compiler_job_requirements(version, capacities, capacities_size, requirements, size);
 }

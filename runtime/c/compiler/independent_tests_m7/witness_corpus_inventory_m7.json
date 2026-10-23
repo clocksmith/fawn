@@ -1,0 +1,564 @@
+{
+  "classifications": {
+    "bench/inference-pipeline/kernels/attention-decode.wgsl": {
+      "byte_offset": 389,
+      "capability": "still_excluded",
+      "reason": "workgroup variable",
+      "source_fragment": "var<workgroup>"
+    },
+    "bench/inference-pipeline/kernels/attention-prefill.wgsl": {
+      "byte_offset": 502,
+      "capability": "still_excluded",
+      "reason": "workgroup variable",
+      "source_fragment": "var<workgroup>"
+    },
+    "bench/inference-pipeline/kernels/attention_decode_online_f16kv.wgsl": {
+      "byte_offset": 1984,
+      "capability": "still_excluded",
+      "reason": "division or remainder",
+      "source_fragment": "/"
+    },
+    "bench/inference-pipeline/kernels/attention_slice_forward_f32.wgsl": {
+      "byte_offset": 1871,
+      "capability": "still_excluded",
+      "reason": "division or remainder",
+      "source_fragment": "/"
+    },
+    "bench/inference-pipeline/kernels/attention_slice_forward_v2_f32.wgsl": {
+      "byte_offset": 2860,
+      "capability": "still_excluded",
+      "reason": "division or remainder",
+      "source_fragment": "/"
+    },
+    "bench/inference-pipeline/kernels/attention_slice_pairwise_f32.wgsl": {
+      "byte_offset": 1679,
+      "capability": "still_excluded",
+      "reason": "division or remainder",
+      "source_fragment": "/"
+    },
+    "bench/inference-pipeline/kernels/attention_slice_pairwise_v2_f32.wgsl": {
+      "byte_offset": 2533,
+      "capability": "still_excluded",
+      "reason": "division or remainder",
+      "source_fragment": "/"
+    },
+    "bench/inference-pipeline/kernels/attention_small_f16kv.wgsl": {
+      "byte_offset": 1606,
+      "capability": "still_excluded",
+      "reason": "division or remainder",
+      "source_fragment": "/"
+    },
+    "bench/inference-pipeline/kernels/copy_buffer.wgsl": {
+      "capability": "M6",
+      "reason": "Retained exact M6 compute witness"
+    },
+    "bench/inference-pipeline/kernels/dot_product_forward_f32.wgsl": {
+      "capability": "M7 job and binary/reflection-v2 CLI",
+      "reason": "Frozen M7 unchanged loop/state witness"
+    },
+    "bench/inference-pipeline/kernels/dot_product_pairwise_f32.wgsl": {
+      "byte_offset": 346,
+      "capability": "still_excluded",
+      "reason": "workgroup variable",
+      "source_fragment": "var<workgroup>"
+    },
+    "bench/inference-pipeline/kernels/dot_product_reverse_f32.wgsl": {
+      "capability": "M7 job and binary/reflection-v2 CLI",
+      "reason": "Frozen M7 unchanged loop/state witness"
+    },
+    "bench/inference-pipeline/kernels/gather.wgsl": {
+      "capability": "M6",
+      "reason": "Retained exact M6 compute witness"
+    },
+    "bench/inference-pipeline/kernels/gelu.wgsl": {
+      "byte_offset": 240,
+      "capability": "still_excluded",
+      "reason": "excluded cast or mathematical builtin",
+      "source_fragment": "tanh("
+    },
+    "bench/inference-pipeline/kernels/gelu_gated.wgsl": {
+      "byte_offset": 296,
+      "capability": "still_excluded",
+      "reason": "excluded cast or mathematical builtin",
+      "source_fragment": "tanh("
+    },
+    "bench/inference-pipeline/kernels/matmul-gemv.wgsl": {
+      "byte_offset": 387,
+      "capability": "still_excluded",
+      "reason": "workgroup variable",
+      "source_fragment": "var<workgroup>"
+    },
+    "bench/inference-pipeline/kernels/matmul-tiled.wgsl": {
+      "byte_offset": 847,
+      "capability": "still_excluded",
+      "reason": "workgroup variable",
+      "source_fragment": "var<workgroup>"
+    },
+    "bench/inference-pipeline/kernels/matmul_f16w_f32a_tiled.wgsl": {
+      "byte_offset": 739,
+      "capability": "still_excluded",
+      "reason": "workgroup variable",
+      "source_fragment": "var<workgroup>"
+    },
+    "bench/inference-pipeline/kernels/matmul_gemv_row2.wgsl": {
+      "byte_offset": 430,
+      "capability": "still_excluded",
+      "reason": "workgroup variable",
+      "source_fragment": "var<workgroup>"
+    },
+    "bench/inference-pipeline/kernels/matmul_gemv_row2_exact.wgsl": {
+      "byte_offset": 491,
+      "capability": "still_excluded",
+      "reason": "workgroup variable",
+      "source_fragment": "var<workgroup>"
+    },
+    "bench/inference-pipeline/kernels/matmul_gemv_row2_guarded.wgsl": {
+      "byte_offset": 533,
+      "capability": "still_excluded",
+      "reason": "workgroup variable",
+      "source_fragment": "var<workgroup>"
+    },
+    "bench/inference-pipeline/kernels/matmul_gemv_row2_helper_exact.wgsl": {
+      "byte_offset": 524,
+      "capability": "still_excluded",
+      "reason": "workgroup variable",
+      "source_fragment": "var<workgroup>"
+    },
+    "bench/inference-pipeline/kernels/matmul_gemv_row2_helper_exact_wg32.wgsl": {
+      "byte_offset": 475,
+      "capability": "still_excluded",
+      "reason": "workgroup variable",
+      "source_fragment": "var<workgroup>"
+    },
+    "bench/inference-pipeline/kernels/matmul_gemv_row2_reuse_helper_exact.wgsl": {
+      "byte_offset": 557,
+      "capability": "still_excluded",
+      "reason": "workgroup variable",
+      "source_fragment": "var<workgroup>"
+    },
+    "bench/inference-pipeline/kernels/matmul_gemv_row4.wgsl": {
+      "byte_offset": 430,
+      "capability": "still_excluded",
+      "reason": "workgroup variable",
+      "source_fragment": "var<workgroup>"
+    },
+    "bench/inference-pipeline/kernels/matmul_gemv_row4_exact.wgsl": {
+      "byte_offset": 479,
+      "capability": "still_excluded",
+      "reason": "workgroup variable",
+      "source_fragment": "var<workgroup>"
+    },
+    "bench/inference-pipeline/kernels/matmul_gemv_subgroup.wgsl": {
+      "byte_offset": 408,
+      "capability": "still_excluded",
+      "reason": "workgroup variable",
+      "source_fragment": "var<workgroup>"
+    },
+    "bench/inference-pipeline/kernels/matmul_gemv_subgroup32.wgsl": {
+      "byte_offset": 280,
+      "capability": "still_excluded",
+      "reason": "extension directive",
+      "source_fragment": "enable subgroups"
+    },
+    "bench/inference-pipeline/kernels/matmul_gemv_subgroup32_vec4only.wgsl": {
+      "byte_offset": 139,
+      "capability": "still_excluded",
+      "reason": "extension directive",
+      "source_fragment": "enable subgroups"
+    },
+    "bench/inference-pipeline/kernels/matmul_gemv_truesubgroup.wgsl": {
+      "byte_offset": 456,
+      "capability": "still_excluded",
+      "reason": "extension directive",
+      "source_fragment": "enable subgroups"
+    },
+    "bench/inference-pipeline/kernels/matmul_gemv_vec4only.wgsl": {
+      "byte_offset": 444,
+      "capability": "still_excluded",
+      "reason": "workgroup variable",
+      "source_fragment": "var<workgroup>"
+    },
+    "bench/inference-pipeline/kernels/matmul_logits_f16accum_stub.wgsl": {
+      "byte_offset": 0,
+      "capability": "still_excluded",
+      "reason": "extension directive",
+      "source_fragment": "enable f16"
+    },
+    "bench/inference-pipeline/kernels/matmul_logits_f16accum_wg1.wgsl": {
+      "byte_offset": 0,
+      "capability": "still_excluded",
+      "reason": "extension directive",
+      "source_fragment": "enable f16"
+    },
+    "bench/inference-pipeline/kernels/matmul_logits_f16accum_wg128.wgsl": {
+      "byte_offset": 0,
+      "capability": "still_excluded",
+      "reason": "extension directive",
+      "source_fragment": "enable f16"
+    },
+    "bench/inference-pipeline/kernels/matmul_logits_f16accum_wg256.wgsl": {
+      "byte_offset": 0,
+      "capability": "still_excluded",
+      "reason": "extension directive",
+      "source_fragment": "enable f16"
+    },
+    "bench/inference-pipeline/kernels/matmul_logits_f16accum_wg64.wgsl": {
+      "byte_offset": 0,
+      "capability": "still_excluded",
+      "reason": "extension directive",
+      "source_fragment": "enable f16"
+    },
+    "bench/inference-pipeline/kernels/matmul_logits_forward_f16accum.wgsl": {
+      "byte_offset": 0,
+      "capability": "still_excluded",
+      "reason": "extension directive",
+      "source_fragment": "enable f16"
+    },
+    "bench/inference-pipeline/kernels/matmul_logits_forward_f32.wgsl": {
+      "capability": "M7 job and binary/reflection-v2 CLI",
+      "reason": "Frozen M7 unchanged loop/state witness"
+    },
+    "bench/inference-pipeline/kernels/matmul_logits_pairwise_f32.wgsl": {
+      "byte_offset": 350,
+      "capability": "still_excluded",
+      "reason": "workgroup variable",
+      "source_fragment": "var<workgroup>"
+    },
+    "bench/inference-pipeline/kernels/matmul_logits_reverse_f32.wgsl": {
+      "capability": "M7 job and binary/reflection-v2 CLI",
+      "reason": "Frozen M7 unchanged loop/state witness"
+    },
+    "bench/inference-pipeline/kernels/matmul_logits_tree64_f32.wgsl": {
+      "byte_offset": 351,
+      "capability": "still_excluded",
+      "reason": "workgroup variable",
+      "source_fragment": "var<workgroup>"
+    },
+    "bench/inference-pipeline/kernels/residual.wgsl": {
+      "capability": "M5",
+      "reason": "Retained M5 source admission"
+    },
+    "bench/inference-pipeline/kernels/rmsnorm.wgsl": {
+      "byte_offset": 319,
+      "capability": "still_excluded",
+      "reason": "workgroup variable",
+      "source_fragment": "var<workgroup>"
+    },
+    "bench/inference-pipeline/kernels/rmsnorm_serial_f32.wgsl": {
+      "byte_offset": 580,
+      "capability": "still_excluded",
+      "reason": "division or remainder",
+      "source_fragment": "/"
+    },
+    "bench/inference-pipeline/kernels/rmsnorm_subgroup.wgsl": {
+      "byte_offset": 270,
+      "capability": "still_excluded",
+      "reason": "extension directive",
+      "source_fragment": "enable subgroups"
+    },
+    "bench/inference-pipeline/kernels/rope.wgsl": {
+      "byte_offset": 391,
+      "capability": "still_excluded",
+      "reason": "division or remainder",
+      "source_fragment": "/"
+    },
+    "bench/inference-pipeline/kernels/sample.wgsl": {
+      "byte_offset": 313,
+      "capability": "still_excluded",
+      "reason": "workgroup variable",
+      "source_fragment": "var<workgroup>"
+    },
+    "bench/inference-pipeline/kernels/write_known_logits.wgsl": {
+      "capability": "M7 job and binary/reflection-v2 CLI",
+      "reason": "Else-if plus direct contextual unsuffixed storage index"
+    },
+    "bench/kernels/compilation-corpus/complex_attention_decode.wgsl": {
+      "byte_offset": 389,
+      "capability": "still_excluded",
+      "reason": "workgroup variable",
+      "source_fragment": "var<workgroup>"
+    },
+    "bench/kernels/compilation-corpus/complex_fused_gemv_dequant.wgsl": {
+      "byte_offset": 485,
+      "capability": "still_excluded",
+      "reason": "workgroup variable",
+      "source_fragment": "var<workgroup>"
+    },
+    "bench/kernels/compilation-corpus/complex_matmul_tiled.wgsl": {
+      "byte_offset": 465,
+      "capability": "still_excluded",
+      "reason": "workgroup variable",
+      "source_fragment": "var<workgroup>"
+    },
+    "bench/kernels/compilation-corpus/complex_multi_entry.wgsl": {
+      "byte_offset": 641,
+      "capability": "still_excluded",
+      "reason": "division or remainder",
+      "source_fragment": "/"
+    },
+    "bench/kernels/compilation-corpus/moderate_gelu.wgsl": {
+      "byte_offset": 368,
+      "capability": "still_excluded",
+      "reason": "excluded cast or mathematical builtin",
+      "source_fragment": "clamp("
+    },
+    "bench/kernels/compilation-corpus/moderate_layernorm.wgsl": {
+      "byte_offset": 377,
+      "capability": "still_excluded",
+      "reason": "workgroup variable",
+      "source_fragment": "var<workgroup>"
+    },
+    "bench/kernels/compilation-corpus/moderate_matmul_naive.wgsl": {
+      "capability": "M7 job and binary/reflection-v2 CLI",
+      "reason": "Frozen M7 unchanged loop/state witness"
+    },
+    "bench/kernels/compilation-corpus/moderate_rmsnorm.wgsl": {
+      "byte_offset": 319,
+      "capability": "still_excluded",
+      "reason": "workgroup variable",
+      "source_fragment": "var<workgroup>"
+    },
+    "bench/kernels/compilation-corpus/moderate_rope.wgsl": {
+      "byte_offset": 390,
+      "capability": "still_excluded",
+      "reason": "division or remainder",
+      "source_fragment": "/"
+    },
+    "bench/kernels/compilation-corpus/moderate_softmax.wgsl": {
+      "byte_offset": 260,
+      "capability": "still_excluded",
+      "reason": "workgroup variable",
+      "source_fragment": "var<workgroup>"
+    },
+    "bench/kernels/compilation-corpus/simple_relu.wgsl": {
+      "capability": "M5",
+      "reason": "Retained M5 source admission"
+    },
+    "bench/kernels/compilation-corpus/simple_residual_add.wgsl": {
+      "capability": "M5",
+      "reason": "Retained M5 source admission"
+    },
+    "bench/kernels/compilation-corpus/simple_scale_f32.wgsl": {
+      "capability": "M5",
+      "reason": "Retained M5 source admission"
+    },
+    "bench/kernels/compilation-corpus/simple_silu.wgsl": {
+      "byte_offset": 276,
+      "capability": "still_excluded",
+      "reason": "division or remainder",
+      "source_fragment": "/"
+    },
+    "bench/kernels/compilation-corpus/stress_many_bindings.wgsl": {
+      "byte_offset": 711,
+      "capability": "still_excluded",
+      "count": 11,
+      "reason": "more than eight resources",
+      "source_fragment": "var<storage"
+    },
+    "bench/kernels/compilation-corpus/trivial_noop_compute.wgsl": {
+      "capability": "M6",
+      "reason": "Retained exact M6 compute witness"
+    },
+    "bench/kernels/compilation-corpus/trivial_passthrough_vertex.wgsl": {
+      "byte_offset": 0,
+      "capability": "still_excluded",
+      "reason": "noncompute stage",
+      "source_fragment": "@vertex"
+    },
+    "bench/kernels/concurrent_execution_runsingle_u32.wgsl": {
+      "byte_offset": 163,
+      "capability": "still_excluded",
+      "reason": "workgroup variable",
+      "source_fragment": "var<workgroup>"
+    },
+    "bench/kernels/copy_textures_x32.wgsl": {
+      "capability": "M6",
+      "reason": "Retained exact M6 compute witness"
+    },
+    "bench/kernels/dispatch_noop.wgsl": {
+      "capability": "M6",
+      "reason": "Retained exact M6 compute witness"
+    },
+    "bench/kernels/draw_call_proxy_fragment.wgsl": {
+      "byte_offset": 373,
+      "capability": "still_excluded",
+      "reason": "noncompute stage",
+      "source_fragment": "@fragment"
+    },
+    "bench/kernels/draw_call_proxy_noop.wgsl": {
+      "capability": "M6",
+      "reason": "Retained exact M6 compute witness"
+    },
+    "bench/kernels/draw_call_proxy_vertex.wgsl": {
+      "byte_offset": 710,
+      "capability": "still_excluded",
+      "reason": "vector storage element",
+      "source_fragment": "array<vec2f"
+    },
+    "bench/kernels/matmul_gemv_subgroup.wgsl": {
+      "byte_offset": 408,
+      "capability": "still_excluded",
+      "reason": "workgroup variable",
+      "source_fragment": "var<workgroup>"
+    },
+    "bench/kernels/matmul_gemv_truesubgroup.wgsl": {
+      "byte_offset": 456,
+      "capability": "still_excluded",
+      "reason": "extension directive",
+      "source_fragment": "enable subgroups"
+    },
+    "bench/kernels/matrix_vector_mul_32768x2048_f32.wgsl": {
+      "byte_offset": 28,
+      "capability": "still_excluded",
+      "count": 2,
+      "reason": "multiple module constants",
+      "source_fragment": "const kCols"
+    },
+    "bench/kernels/matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl": {
+      "byte_offset": 115,
+      "capability": "still_excluded",
+      "reason": "vector storage element",
+      "source_fragment": "array<vec4"
+    },
+    "bench/kernels/matrix_vector_mul_32768x2048_f32_swizzle1.wgsl": {
+      "byte_offset": 115,
+      "capability": "still_excluded",
+      "reason": "vector storage element",
+      "source_fragment": "array<vec4"
+    },
+    "bench/kernels/matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1.wgsl": {
+      "byte_offset": 402,
+      "capability": "still_excluded",
+      "reason": "workgroup variable",
+      "source_fragment": "var<workgroup>"
+    },
+    "bench/kernels/monte_carlo_paths_fixed_samples.wgsl": {
+      "byte_offset": 211,
+      "capability": "still_excluded",
+      "reason": "vector storage element",
+      "source_fragment": "array<vec4"
+    },
+    "bench/kernels/monte_carlo_reduce_vec4.wgsl": {
+      "byte_offset": 281,
+      "capability": "still_excluded",
+      "reason": "workgroup variable",
+      "source_fragment": "var<workgroup>"
+    },
+    "bench/kernels/package_image_rgba_invert.wgsl": {
+      "byte_offset": 479,
+      "capability": "still_excluded",
+      "reason": "bitwise operations",
+      "source_fragment": "^"
+    },
+    "bench/kernels/package_vector_scale_add.wgsl": {
+      "capability": "M5",
+      "reason": "Retained M5 source admission"
+    },
+    "bench/kernels/rmsnorm.wgsl": {
+      "byte_offset": 319,
+      "capability": "still_excluded",
+      "reason": "workgroup variable",
+      "source_fragment": "var<workgroup>"
+    },
+    "bench/kernels/rmsnorm_subgroup.wgsl": {
+      "byte_offset": 270,
+      "capability": "still_excluded",
+      "reason": "extension directive",
+      "source_fragment": "enable subgroups"
+    },
+    "bench/kernels/shader_compile_pipeline_stress.wgsl": {
+      "byte_offset": 105,
+      "capability": "still_excluded",
+      "reason": "excluded cast or mathematical builtin",
+      "source_fragment": "f32("
+    },
+    "bench/kernels/shader_robustness_matmul_512_f32.wgsl": {
+      "byte_offset": 624,
+      "capability": "still_excluded",
+      "reason": "workgroup variable",
+      "source_fragment": "var<workgroup>"
+    },
+    "bench/kernels/stable_fluids_advect_dye.wgsl": {
+      "byte_offset": 325,
+      "capability": "still_excluded",
+      "reason": "vector storage element",
+      "source_fragment": "array<vec2"
+    },
+    "bench/kernels/stable_fluids_advect_velocity.wgsl": {
+      "byte_offset": 264,
+      "capability": "still_excluded",
+      "reason": "vector storage element",
+      "source_fragment": "array<vec2"
+    },
+    "bench/kernels/stable_fluids_copy_scalar.wgsl": {
+      "byte_offset": 484,
+      "capability": "still_excluded",
+      "reason": "general vector values",
+      "source_fragment": "vec3<"
+    },
+    "bench/kernels/stable_fluids_divergence.wgsl": {
+      "byte_offset": 264,
+      "capability": "still_excluded",
+      "reason": "vector storage element",
+      "source_fragment": "array<vec2"
+    },
+    "bench/kernels/stable_fluids_pressure.wgsl": {
+      "byte_offset": 550,
+      "capability": "still_excluded",
+      "reason": "excluded cast or mathematical builtin",
+      "source_fragment": "i32("
+    },
+    "bench/kernels/stable_fluids_project.wgsl": {
+      "byte_offset": 264,
+      "capability": "still_excluded",
+      "reason": "vector storage element",
+      "source_fragment": "array<vec2"
+    },
+    "bench/kernels/stable_fluids_seed.wgsl": {
+      "byte_offset": 267,
+      "capability": "still_excluded",
+      "reason": "vector storage element",
+      "source_fragment": "array<vec2"
+    },
+    "bench/kernels/texture_sample_to_storage_64.wgsl": {
+      "byte_offset": 365,
+      "capability": "still_excluded",
+      "reason": "excluded cast or mathematical builtin",
+      "source_fragment": "i32("
+    },
+    "bench/kernels/workgroup_atomic.wgsl": {
+      "byte_offset": 154,
+      "capability": "still_excluded",
+      "reason": "workgroup variable",
+      "source_fragment": "var<workgroup>"
+    },
+    "bench/kernels/workgroup_atomic_1024x100.wgsl": {
+      "byte_offset": 186,
+      "capability": "still_excluded",
+      "reason": "workgroup variable",
+      "source_fragment": "var<workgroup>"
+    },
+    "bench/kernels/workgroup_non_atomic.wgsl": {
+      "byte_offset": 154,
+      "capability": "still_excluded",
+      "reason": "workgroup variable",
+      "source_fragment": "var<workgroup>"
+    },
+    "bench/kernels/workgroup_non_atomic_1024x100.wgsl": {
+      "byte_offset": 186,
+      "capability": "still_excluded",
+      "reason": "workgroup variable",
+      "source_fragment": "var<workgroup>"
+    },
+    "bench/kernels/zero_initialize_workgroup_memory_2048.wgsl": {
+      "byte_offset": 214,
+      "capability": "still_excluded",
+      "reason": "workgroup variable",
+      "source_fragment": "var<workgroup>"
+    }
+  },
+  "expected_admitted": 17,
+  "expected_emission_skipped": 81,
+  "paths": 98,
+  "unique_sources": 91
+}

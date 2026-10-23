@@ -201,7 +201,7 @@ static IrType value_type(DoeCompilerScalar scalar) {
 }
 static bool append(Source *source, IrProgram *program, IrInstruction instruction,
                    IrValue *value) {
-    if (program->instruction_count == MAX_IR_INSTRUCTIONS)
+    if (program->instruction_count == program->instruction_capacity)
         return source_error(source, DOE_COMPILER_INPUT_ERROR, instruction.source_offset,
                             "internal typed instruction capacity exceeded");
     if (value != NULL) {
@@ -227,14 +227,35 @@ static bool constant_value(Source *source, const Syntax *s, const Name *name,
                             "operand name must resolve to the declared u32 constant");
     return literal_value(source, program, s->constant_value.value, name->offset, value);
 }
-typedef struct { Name name; IrValue value; } LocalValue;
-typedef struct { LocalValue values[MAX_STATEMENTS]; size_t count; } LocalScope;
-typedef struct { IrValue value; bool runtime; } ExpressionValue;
+typedef struct LoopScope LoopScope;
+struct LoopScope {
+    LoopScope *parent;
+    size_t body_scope_start, body_scope_end;
+    uint32_t first_continue;
+    bool continuing;
+};
+typedef struct {
+    LocalBinding *values;
+    size_t count, capacity, scope_start, level;
+    LoopScope *loop;
+} LocalScope;
+typedef struct { IrValue value; bool runtime, abstract_integer; uint32_t integer; } ExpressionValue;
+enum { BEHAVIOR_NEXT = 1u, BEHAVIOR_BREAK = 2u, BEHAVIOR_CONTINUE = 4u, BEHAVIOR_RETURN = 8u };
 
-static const IrValue *find_local(const LocalScope *scope, const Name *name) {
+static const LocalBinding *find_local(const LocalScope *scope, const Name *name) {
     for (size_t i = scope->count; i != 0u; --i)
-        if (same_name(&scope->values[i - 1u].name, name)) return &scope->values[i - 1u].value;
+        if (same_name(&scope->values[i - 1u].name, name)) return &scope->values[i - 1u];
     return NULL;
+}
+static bool check_local_use(Source *source, const LocalScope *scope,
+                            const LocalBinding *binding, size_t offset) {
+    const size_t index = (size_t)(binding - scope->values);
+    for (const LoopScope *loop = scope->loop; loop != NULL; loop = loop->parent)
+        if (loop->continuing && index >= loop->body_scope_start && index < loop->body_scope_end &&
+            binding->declaration_offset > loop->first_continue)
+            return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, offset,
+                                "continuing references a declaration bypassed by continue");
+    return true;
 }
 static bool user_declared(const Syntax *s, const LocalScope *scope, const Name *name) {
     if (same_name(name, &s->entry) || find_parameter(s, name) != s->parameter_count ||
@@ -287,18 +308,57 @@ static bool lower_member(Source *source, const Syntax *s, const MemberSyntax *me
         .type = value_type(type->members[field].scalar), .binding = (uint32_t)binding,
         .literal = (uint32_t)field, .source_offset = object->offset }, value);
 }
-static bool lower_expression(Source *source, const Syntax *s, uint32_t id,
-                             const LocalScope *scope, IrProgram *program,
-                             ExpressionValue *out);
+
+static bool local_reference(Source *source, const Syntax *s, const Reference *reference,
+                            const LocalScope *scope, uint32_t *binding) {
+    Name name;
+    if (!span_name(source, reference->storage, &name)) return false;
+    if (find_local(scope, &name) != NULL)
+        return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, name.offset,
+                            "indexed resource is shadowed by a scalar local");
+    return resolve_reference(source, s, reference, binding);
+}
+static bool materialize(Source *source, IrProgram *program, ExpressionValue *value, IrType type) {
+    if (!value->abstract_integer) return true;
+    uint32_t bits = value->integer;
+    if (type == IR_BOOL)
+        return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, value->value.source_offset,
+                            "integer literal cannot materialize as bool");
+    if (type == IR_F32) {
+        const Decimal decimal = { .numerator = bits, .denominator = 1u,
+                                  .offset = value->value.source_offset };
+        if (!decimal_binary32(source, &decimal, &bits)) return false;
+    }
+    value->abstract_integer = false;
+    return append(source, program, (IrInstruction){ .opcode = IR_CONSTANT, .type = type,
+        .literal = bits, .source_offset = value->value.source_offset }, &value->value);
+}
+static bool lower_expression(Source *, const Syntax *, uint32_t, const LocalScope *,
+                             IrProgram *, ExpressionValue *);
 static bool lower_unsigned(Source *source, const Syntax *s, uint32_t id,
                            const LocalScope *scope, IrProgram *program, IrValue *value) {
     ExpressionValue result = {0};
     if (!lower_expression(source, s, id, scope, program, &result)) return false;
+    if (result.abstract_integer && result.integer > INT32_MAX)
+        return source_error(source, DOE_COMPILER_UNSUPPORTED, result.value.source_offset,
+                            "direct abstract index exceeds default i32 range");
+    if (!materialize(source, program, &result, IR_U32)) return false;
     if (result.value.type != IR_U32)
         return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, result.value.source_offset,
-                            "storage indices and comparison operands require u32 type");
+                            "storage index requires an admitted integer type");
     *value = result.value;
     return true;
+}
+static bool compare_integer(uint32_t left, uint32_t right, Comparison comparison) {
+    switch (comparison) {
+        case COMPARE_EQUAL: return left == right;
+        case COMPARE_NOT_EQUAL: return left != right;
+        case COMPARE_LESS: return left < right;
+        case COMPARE_LESS_EQUAL: return left <= right;
+        case COMPARE_GREATER: return left > right;
+        case COMPARE_GREATER_EQUAL: return left >= right;
+    }
+    return false;
 }
 static bool lower_expression(Source *source, const Syntax *s, uint32_t id,
                              const LocalScope *scope, IrProgram *program,
@@ -307,22 +367,29 @@ static bool lower_expression(Source *source, const Syntax *s, uint32_t id,
         return source_error(source, DOE_COMPILER_INPUT_ERROR, source->length,
                             "invalid internal expression identity");
     const Expression *node = &s->expressions[id];
-    out->runtime = false;
+    *out = (ExpressionValue){0};
     switch (node->kind) {
         case EXPRESSION_LOAD: {
             const Reference *reference = &node->value.reference;
             uint32_t binding;
             IrValue index;
-            if (!resolve_reference(source, s, reference, &binding) ||
+            if (!local_reference(source, s, reference, scope, &binding) ||
                 !lower_unsigned(source, s, reference->index, scope, program, &index)) return false;
             out->runtime = true;
             return append(source, program, (IrInstruction){ .opcode = IR_ROBUST_LOAD,
                 .type = value_type(s->resources[binding].scalar), .binding = binding,
                 .left = index.id, .source_offset = reference->storage.offset }, &out->value);
         }
+        case EXPRESSION_ABSTRACT_INTEGER:
+            out->abstract_integer = true;
+            out->integer = node->value.integer;
+            out->value.source_offset = node->source_offset;
+            return true;
         case EXPRESSION_INTEGER:
-            return literal_value(source, program, node->value.integer,
-                                 node->source_offset, &out->value);
+            return literal_value(source, program, node->value.integer, node->source_offset, &out->value);
+        case EXPRESSION_BOOLEAN:
+            return append(source, program, (IrInstruction){ .opcode = IR_CONSTANT, .type = IR_BOOL,
+                .literal = node->value.integer, .source_offset = node->source_offset }, &out->value);
         case EXPRESSION_DECIMAL: {
             uint32_t bits;
             const Decimal decimal = { .numerator = node->value.decimal.numerator,
@@ -337,11 +404,16 @@ static bool lower_expression(Source *source, const Syntax *s, uint32_t id,
         case EXPRESSION_NAME: {
             Name name;
             if (!span_name(source, node->value.name, &name)) return false;
-            const IrValue *local = find_local(scope, &name);
+            const LocalBinding *local = find_local(scope, &name);
             if (local != NULL) {
-                out->value = *local;
-                out->value.source_offset = node->source_offset;
+                if (!check_local_use(source, scope, local, node->source_offset)) return false;
                 out->runtime = true;
+                if (local->mutable)
+                    return append(source, program, (IrInstruction){ .opcode = IR_LOCAL_LOAD,
+                        .type = local->value.type, .binding = local->local_id,
+                        .source_offset = node->source_offset }, &out->value);
+                out->value = local->value;
+                out->value.source_offset = node->source_offset;
                 return true;
             }
             if (s->has_alias && same_name(&name, &s->alias)) {
@@ -370,113 +442,341 @@ static bool lower_expression(Source *source, const Syntax *s, uint32_t id,
         case EXPRESSION_ADD:
         case EXPRESSION_SUBTRACT:
         case EXPRESSION_MULTIPLY:
-            break;
+        case EXPRESSION_COMPARE:
+        case EXPRESSION_NOT:
+        case EXPRESSION_AND:
+        case EXPRESSION_OR: break;
     }
     ExpressionValue left = {0}, right = {0};
-    if (!lower_expression(source, s, node->left, scope, program, &left) ||
-        !lower_expression(source, s, node->right, scope, program, &right)) return false;
+    if (!lower_expression(source, s, node->left, scope, program, &left)) return false;
+    if (node->kind == EXPRESSION_NOT) {
+        if (left.abstract_integer || left.value.type != IR_BOOL)
+            return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, node->source_offset,
+                                "logical not requires bool");
+        out->runtime = left.runtime;
+        return append(source, program, (IrInstruction){ .opcode = IR_NOT, .type = IR_BOOL,
+            .left = left.value.id, .source_offset = node->source_offset }, &out->value);
+    }
+    const bool logical = node->kind == EXPRESSION_AND || node->kind == EXPRESSION_OR;
+    if (logical) {
+        if (left.abstract_integer || left.value.type != IR_BOOL)
+            return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, node->source_offset,
+                                "logical operands require bool");
+        if (!append(source, program, (IrInstruction){ .opcode = IR_SHORT_BEGIN,
+            .left = left.value.id, .literal = node->kind == EXPRESSION_OR,
+            .source_offset = node->source_offset }, NULL)) return false;
+    }
+    if (!lower_expression(source, s, node->right, scope, program, &right)) return false;
+    if (logical) {
+        if (right.abstract_integer || right.value.type != IR_BOOL)
+            return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, node->source_offset,
+                                "logical operands require bool");
+        out->runtime = left.runtime || right.runtime;
+        return append(source, program, (IrInstruction){ .opcode = IR_SHORT_END, .type = IR_BOOL,
+            .left = left.value.id, .right = right.value.id,
+            .source_offset = node->source_offset }, &out->value);
+    }
+    if (left.abstract_integer && right.abstract_integer) {
+        if (node->kind != EXPRESSION_COMPARE)
+            return source_error(source, DOE_COMPILER_UNSUPPORTED, node->source_offset,
+                                "abstract-only arithmetic and max require a future constant evaluator");
+        return append(source, program, (IrInstruction){ .opcode = IR_CONSTANT, .type = IR_BOOL,
+            .literal = compare_integer(left.integer, right.integer, node->value.comparison),
+            .source_offset = node->source_offset }, &out->value);
+    }
+    if (left.abstract_integer && !materialize(source, program, &left, right.value.type)) return false;
+    if (right.abstract_integer && !materialize(source, program, &right, left.value.type)) return false;
     if (left.value.type != right.value.type)
         return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, node->source_offset,
                             "scalar expression operands must have the same type");
+    const bool comparison = node->kind == EXPRESSION_COMPARE;
+    if ((!comparison && left.value.type == IR_BOOL) || (comparison && left.value.type == IR_BOOL &&
+        node->value.comparison != COMPARE_EQUAL && node->value.comparison != COMPARE_NOT_EQUAL))
+        return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, node->source_offset,
+                            "operator is not defined for bool operands");
+    if (comparison && !source->limits->extended && left.value.type != IR_U32)
+        return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, node->source_offset,
+                            "legacy conditions require u32 comparisons");
     if (left.value.type == IR_F32 && !left.runtime && !right.runtime)
         return source_error(source, DOE_COMPILER_UNSUPPORTED, node->source_offset,
-                            "constant-only f32 arithmetic and max are not supported");
+                            "constant-only floating arithmetic, max and comparisons are unsupported");
     out->runtime = left.runtime || right.runtime;
-    const IrOpcode opcode = node->kind == EXPRESSION_ADD ? IR_ADD :
-                            node->kind == EXPRESSION_SUBTRACT ? IR_SUBTRACT :
-                            node->kind == EXPRESSION_MULTIPLY ? IR_MULTIPLY : IR_MAX;
+    const IrOpcode opcode = comparison ? IR_COMPARE : node->kind == EXPRESSION_ADD ? IR_ADD :
+        node->kind == EXPRESSION_SUBTRACT ? IR_SUBTRACT : node->kind == EXPRESSION_MULTIPLY ? IR_MULTIPLY : IR_MAX;
     return append(source, program, (IrInstruction){ .opcode = opcode,
-        .type = left.value.type, .left = left.value.id, .right = right.value.id,
+        .type = comparison ? IR_BOOL : left.value.type, .comparison_type = left.value.type,
+        .comparison = node->value.comparison, .left = left.value.id, .right = right.value.id,
         .source_offset = node->source_offset }, &out->value);
+}
+static bool lower_boolean(Source *source, const Syntax *s, uint32_t id, const LocalScope *scope,
+                          IrProgram *program, IrValue *value) {
+    ExpressionValue result;
+    if (!lower_expression(source, s, id, scope, program, &result)) return false;
+    if (result.abstract_integer || result.value.type != IR_BOOL)
+        return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, result.value.source_offset,
+                            "control condition requires bool");
+    *value = result.value;
+    return true;
 }
 static bool lower_assignment(Source *source, const Syntax *s, const Assignment *assignment,
                              const LocalScope *scope, IrProgram *program) {
-    uint32_t binding;
-    if (!resolve_reference(source, s, &assignment->target, &binding)) return false;
-    if (s->resources[binding].access != DOE_COMPILER_READ_WRITE)
-        return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, assignment->target.storage.offset,
-                            "assignment target requires read_write storage access");
-    const IrType type = value_type(s->resources[binding].scalar);
-    IrValue index;
+    uint32_t binding = 0u;
+    IrType type;
+    IrValue index = {0}, previous = {0};
+    if (assignment->local) {
+        Name name;
+        if (!span_name(source, assignment->target.storage, &name)) return false;
+        const LocalBinding *local = find_local(scope, &name);
+        if (local == NULL || !local->mutable)
+            return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, name.offset,
+                                "assignment target must be a visible mutable local");
+        if (!check_local_use(source, scope, local, name.offset)) return false;
+        binding = local->local_id;
+        type = local->value.type;
+    } else {
+        if (!local_reference(source, s, &assignment->target, scope, &binding)) return false;
+        if (s->resources[binding].access != DOE_COMPILER_READ_WRITE)
+            return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, assignment->target.storage.offset,
+                                "assignment target requires read_write storage access");
+        type = value_type(s->resources[binding].scalar);
+        if (!lower_unsigned(source, s, assignment->target.index, scope, program, &index)) return false;
+    }
+    const size_t offset = assignment->target.storage.offset;
+    const bool increment = assignment->operation == UPDATE_INCREMENT || assignment->operation == UPDATE_DECREMENT;
+    if (assignment->operation != UPDATE_SET) {
+        if (type == IR_BOOL || (increment && type != IR_U32))
+            return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, offset,
+                                "compound update requires numeric type and increment requires u32");
+        if (!append(source, program, (IrInstruction){
+            .opcode = assignment->local ? IR_LOCAL_LOAD : IR_ROBUST_LOAD,
+            .type = type, .binding = binding, .left = index.id, .source_offset = offset }, &previous)) return false;
+    }
     ExpressionValue result = {0};
-    if (!lower_unsigned(source, s, assignment->target.index, scope, program, &index) ||
-        !lower_expression(source, s, assignment->expression, scope, program, &result)) return false;
+    if (increment) {
+        if (!literal_value(source, program, 1u, offset, &result.value)) return false;
+    } else if (!lower_expression(source, s, assignment->expression, scope, program, &result) ||
+               !materialize(source, program, &result, type)) return false;
     if (result.value.type != type)
         return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, result.value.source_offset,
                             "assignment value and destination must have the same scalar type");
-    return append(source, program, (IrInstruction){ .opcode = IR_ROBUST_STORE,
+    if (assignment->operation != UPDATE_SET) {
+        const IrOpcode opcode = assignment->operation == UPDATE_MULTIPLY ? IR_MULTIPLY :
+            (assignment->operation == UPDATE_SUBTRACT || assignment->operation == UPDATE_DECREMENT) ? IR_SUBTRACT : IR_ADD;
+        if (!append(source, program, (IrInstruction){ .opcode = opcode, .type = type,
+            .left = previous.id, .right = result.value.id, .source_offset = offset }, &result.value)) return false;
+    }
+    return append(source, program, (IrInstruction){
+        .opcode = assignment->local ? IR_LOCAL_STORE : IR_ROBUST_STORE,
         .type = type, .left = index.id, .right = result.value.id, .binding = binding,
-        .source_offset = assignment->target.storage.offset }, NULL);
+        .source_offset = offset }, NULL);
 }
 static bool lower_local(Source *source, const Syntax *s, const LocalSyntax *local,
                         LocalScope *scope, IrProgram *program) {
-    if (!valid_name(source, &local->name)) return false;
-    if (user_declared(s, scope, &local->name))
-        return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, local->name.offset,
-                            "local declaration duplicates or shadows a visible user declaration");
-    if (local->annotated && user_declared(s, scope, &local->annotation))
+    Name name, annotation;
+    if (!span_name(source, local->name, &name) || !valid_name(source, &name)) return false;
+    bool duplicate = !source->limits->extended && user_declared(s, scope, &name);
+    for (size_t i = scope->scope_start; i < scope->count; ++i)
+        duplicate = duplicate || same_name(&name, &scope->values[i].name);
+    if (scope->level == 0u && find_parameter(s, &name) != s->parameter_count) duplicate = true;
+    if (duplicate)
+        return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, name.offset,
+                            "local declaration duplicates a binding in its scope");
+    if (local->annotated && (!span_name(source, local->annotation, &annotation) ||
+        user_declared(s, scope, &annotation)))
         return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, local->annotation.offset,
                             "local annotation resolves to a user value, not a type");
     ExpressionValue result = {0};
-    if (!lower_expression(source, s, local->expression, scope, program, &result)) return false;
-    if (local->annotated && value_type(local->scalar) != result.value.type)
-        return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, local->annotation.offset,
-                            "local annotation and initializer have incompatible scalar types");
-    if (scope->count == MAX_STATEMENTS)
-        return source_error(source, DOE_COMPILER_INPUT_ERROR, local->name.offset,
-                            "internal local capacity exceeded");
-    /* Store the already evaluated value, never an expression to reevaluate. */
-    scope->values[scope->count++] = (LocalValue){ .name = local->name, .value = result.value };
+    if (local->initialized) {
+        if (!lower_expression(source, s, local->expression, scope, program, &result)) return false;
+        if (local->annotated && !materialize(source, program, &result, local->type)) return false;
+        if (result.abstract_integer)
+            return source_error(source, DOE_COMPILER_UNSUPPORTED, name.offset,
+                                "inferred abstract integer local defaults to unsupported i32");
+        if (local->annotated && local->type != result.value.type)
+            return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, local->annotation.offset,
+                                "local annotation and initializer have incompatible scalar types");
+    } else if (!append(source, program, (IrInstruction){ .opcode = IR_CONSTANT,
+        .type = local->type, .literal = 0u, .source_offset = name.offset }, &result.value)) return false;
+    if (scope->count == scope->capacity)
+        return source_error(source, DOE_COMPILER_INPUT_ERROR, name.offset, "local scope capacity exceeded");
+    LocalBinding binding = { .name = name, .value = result.value, .mutable = local->mutable,
+                             .declaration_offset = (uint32_t)name.offset };
+    if (local->mutable) {
+        if (program->local_count == program->local_capacity)
+            return source_error(source, DOE_COMPILER_INPUT_ERROR, name.offset, "mutable local capacity exceeded");
+        binding.local_id = (uint32_t)program->local_count;
+        program->locals[program->local_count++] = (IrLocal){ .type = result.value.type, .mutable = true };
+        if (!append(source, program, (IrInstruction){ .opcode = IR_LOCAL_STORE,
+            .type = result.value.type, .binding = binding.local_id, .right = result.value.id,
+            .source_offset = name.offset }, NULL)) return false;
+    }
+    scope->values[scope->count++] = binding;
+    return true;
+}
+static bool lower_block(Source *, const Syntax *, size_t, size_t, LocalScope *, IrProgram *,
+                        LoopScope *, bool, bool, bool, unsigned *);
+static bool marker(Source *source, IrProgram *program, IrOpcode opcode, size_t offset, uint32_t literal) {
+    return append(source, program, (IrInstruction){ .opcode = opcode, .literal = literal,
+                   .source_offset = offset }, NULL);
+}
+static bool inside_continuing(const LoopScope *loop) {
+    for (; loop != NULL; loop = loop->parent) if (loop->continuing) return true;
+    return false;
+}
+static bool lower_loop(Source *source, const Syntax *s, const Statement *st,
+                       LocalScope *scope, IrProgram *program, LoopScope *outer, unsigned *behavior) {
+    const size_t saved_count = scope->count, saved_start = scope->scope_start, saved_level = scope->level;
+    const bool is_for = st->kind == STATEMENT_FOR;
+    if (is_for) {
+        scope->scope_start = scope->count; ++scope->level;
+        if (st->initializer != UINT32_MAX) {
+            unsigned ignored;
+            if (!lower_block(source, s, st->initializer, st->initializer + 1u, scope, program,
+                             outer, true, true, false, &ignored)) return false;
+        }
+    }
+    const size_t begin = program->instruction_count;
+    if (!marker(source, program, IR_LOOP_BEGIN, st->source_offset, 0u)) return false;
+    IrValue test = {0};
+    const bool has_test = st->kind == STATEMENT_WHILE || (is_for && st->value.condition != UINT32_MAX);
+    if (has_test && !lower_boolean(source, s, st->value.condition, scope, program, &test)) return false;
+    if (!append(source, program, (IrInstruction){ .opcode = IR_LOOP_TEST, .left = test.id,
+        .source_offset = st->source_offset }, NULL)) return false;
+    size_t continuing = st->end;
+    for (size_t i = st->body_start; i < st->end; i = s->statements[i].end) {
+        if (s->statements[i].kind == STATEMENT_CONTINUING) {
+            if (st->kind != STATEMENT_LOOP || s->statements[i].end != st->end || continuing != st->end)
+                return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, s->statements[i].source_offset,
+                                    "continuing must be the final direct child of loop");
+            continuing = i;
+        }
+    }
+    LoopScope loop = { .parent = outer, .body_scope_start = scope->count,
+                       .first_continue = UINT32_MAX };
+    const size_t body_start = scope->scope_start, body_level = scope->level;
+    scope->scope_start = scope->count; ++scope->level; scope->loop = &loop;
+    unsigned body, tail = BEHAVIOR_NEXT;
+    if (!lower_block(source, s, st->body_start, continuing, scope, program, &loop,
+                     true, true, false, &body)) return false;
+    loop.body_scope_end = scope->count;
+    if (!marker(source, program, IR_LOOP_CONTINUING, st->source_offset, 0u)) return false;
+    if (is_for) {
+        scope->count = loop.body_scope_start;
+        scope->scope_start = body_start; scope->level = body_level;
+        if (st->update != UINT32_MAX) {
+            unsigned ignored;
+            if (!lower_block(source, s, st->update, st->update + 1u, scope, program, outer,
+                             true, true, false, &ignored)) return false;
+        }
+    } else if (continuing != st->end) {
+        const Statement *part = &s->statements[continuing];
+        loop.continuing = true;
+        if (!lower_block(source, s, part->body_start, part->end, scope, program, &loop,
+                         false, true, true, &tail)) return false;
+    }
+    *behavior = body & BEHAVIOR_RETURN;
+    if ((body & BEHAVIOR_BREAK) != 0u || has_test) *behavior |= BEHAVIOR_NEXT;
+    if ((body & (BEHAVIOR_NEXT | BEHAVIOR_CONTINUE)) != 0u) {
+        *behavior |= tail & BEHAVIOR_RETURN;
+        if ((tail & BEHAVIOR_BREAK) != 0u) *behavior |= BEHAVIOR_NEXT;
+    }
+    if (*behavior == 0u)
+        return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, st->source_offset,
+                            "loop has an empty WGSL behavior set");
+    program->instructions[begin].literal = *behavior;
+    if (!marker(source, program, IR_END_LOOP, st->source_offset, *behavior)) return false;
+    scope->count = saved_count; scope->scope_start = saved_start; scope->level = saved_level; scope->loop = outer;
     return true;
 }
 static bool lower_block(Source *source, const Syntax *s, size_t start, size_t end,
-                        LocalScope *scope, IrProgram *program) {
-    const size_t outer_count = scope->count;
-    for (size_t i = start; i < end;) {
-        const Statement *statement = &s->statements[i];
-        switch (statement->kind) {
+                        LocalScope *scope, IrProgram *program, LoopScope *loop,
+                        bool retain_scope, bool reachable, bool continuing_direct, unsigned *behavior) {
+    const size_t saved_count = scope->count, saved_start = scope->scope_start, saved_level = scope->level;
+    LoopScope *saved_loop = scope->loop;
+    scope->loop = loop;
+    if (!retain_scope) { scope->scope_start = scope->count; ++scope->level; }
+    *behavior = BEHAVIOR_NEXT;
+    for (size_t i = start; i < end; i = s->statements[i].end) {
+        const Statement *st = &s->statements[i];
+        const bool live = reachable && ((*behavior & BEHAVIOR_NEXT) != 0u);
+        unsigned current = BEHAVIOR_NEXT;
+        switch (st->kind) {
             case STATEMENT_ASSIGN:
-                if (!lower_assignment(source, s, &statement->value.assignment, scope, program)) return false;
-                ++i;
+                if (!lower_assignment(source, s, &st->value.assignment, scope, program)) return false;
                 break;
             case STATEMENT_LET:
-                if (!lower_local(source, s, &statement->value.local, scope, program)) return false;
-                ++i;
+            case STATEMENT_VAR:
+                if (!lower_local(source, s, &st->value.local, scope, program)) return false;
                 break;
             case STATEMENT_RETURN:
-                if (!append(source, program, (IrInstruction){ .opcode = IR_RETURN,
-                    .source_offset = statement->source_offset }, NULL)) return false;
-                ++i;
+                if (inside_continuing(loop))
+                    return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, st->source_offset,
+                                        "return is prohibited inside continuing");
+                current = BEHAVIOR_RETURN;
+                if (!marker(source, program, IR_RETURN, st->source_offset, 0u)) return false;
                 break;
-            case STATEMENT_IF: {
-                const Condition *condition = &statement->value.condition;
-                IrValue left, right, test = {0};
-                if (!lower_unsigned(source, s, condition->left, scope, program, &left) ||
-                    !lower_unsigned(source, s, condition->right, scope, program, &right) ||
-                    !append(source, program, (IrInstruction){ .opcode = IR_COMPARE,
-                        .type = IR_BOOL, .comparison = condition->comparison,
-                        .left = left.id, .right = right.id,
-                        .source_offset = statement->source_offset }, &test) ||
-                    !append(source, program, (IrInstruction){ .opcode = IR_IF,
-                        .left = test.id, .source_offset = statement->source_offset }, NULL) ||
-                    !lower_block(source, s, i + 1u, statement->else_start, scope, program) ||
-                    !append(source, program, (IrInstruction){ .opcode = IR_ELSE,
-                        .source_offset = statement->source_offset }, NULL) ||
-                    !lower_block(source, s, statement->else_start, statement->end, scope, program) ||
-                    !append(source, program, (IrInstruction){ .opcode = IR_END_IF,
-                        .source_offset = statement->source_offset }, NULL)) return false;
-                i = statement->end;
+            case STATEMENT_BREAK:
+            case STATEMENT_CONTINUE:
+                if (loop == NULL || loop->continuing)
+                    return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, st->source_offset,
+                                        "break or continue requires a non-continuing nearest loop");
+                current = st->kind == STATEMENT_BREAK ? BEHAVIOR_BREAK : BEHAVIOR_CONTINUE;
+                if (current == BEHAVIOR_CONTINUE && live && st->source_offset < loop->first_continue)
+                    loop->first_continue = st->source_offset;
+                if (!marker(source, program, st->kind == STATEMENT_BREAK ? IR_BREAK : IR_CONTINUE,
+                            st->source_offset, 0u)) return false;
+                break;
+            case STATEMENT_BREAK_IF: {
+                if (!continuing_direct || loop == NULL || !loop->continuing || st->end != end)
+                    return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, st->source_offset,
+                                        "break if must end its direct continuing block");
+                IrValue test;
+                if (!lower_boolean(source, s, st->value.condition, scope, program, &test) ||
+                    !append(source, program, (IrInstruction){ .opcode = IR_BREAK_IF,
+                        .left = test.id, .source_offset = st->source_offset }, NULL)) return false;
+                current = BEHAVIOR_BREAK | BEHAVIOR_NEXT;
                 break;
             }
+            case STATEMENT_IF: {
+                IrValue test;
+                unsigned yes, no;
+                if (!lower_boolean(source, s, st->value.condition, scope, program, &test) ||
+                    !append(source, program, (IrInstruction){ .opcode = IR_IF,
+                        .left = test.id, .source_offset = st->source_offset }, NULL) ||
+                    !lower_block(source, s, st->body_start, st->else_start, scope, program, loop,
+                                 false, live, false, &yes) ||
+                    !marker(source, program, IR_ELSE, st->source_offset, 0u) ||
+                    !lower_block(source, s, st->else_start, st->end, scope, program, loop,
+                                 false, live, false, &no) ||
+                    !marker(source, program, IR_END_IF, st->source_offset, 0u)) return false;
+                current = yes | no;
+                break;
+            }
+            case STATEMENT_BLOCK:
+                if (!lower_block(source, s, st->body_start, st->end, scope, program, loop,
+                                 false, live, false, &current)) return false;
+                break;
+            case STATEMENT_FOR:
+            case STATEMENT_WHILE:
+            case STATEMENT_LOOP:
+                if (!lower_loop(source, s, st, scope, program, loop, &current)) return false;
+                break;
+            case STATEMENT_CONTINUING:
+                return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, st->source_offset,
+                                    "continuing must be the final direct child of loop");
+            case STATEMENT_EMPTY: break;
         }
+        if ((*behavior & BEHAVIOR_NEXT) != 0u) *behavior = (*behavior & ~(unsigned)BEHAVIOR_NEXT) | current;
     }
-    scope->count = outer_count;
+    if (!retain_scope) scope->count = saved_count;
+    scope->scope_start = saved_start; scope->level = saved_level; scope->loop = saved_loop;
     return true;
 }
 
-bool validate_syntax(Source *source, const Syntax *s, IrProgram *program) {
+bool validate_syntax(Source *source, const Syntax *s, IrProgram *program, LocalBinding *bindings) {
     if (!validate_declarations(source, s)) return false;
-    memset(program, 0, sizeof(*program));
+    program->instruction_count = 0u;
+    program->local_count = 0u;
     program->entry = s->entry;
     program->parameter_count = s->parameter_count;
     for (size_t i = 0; i < s->parameter_count; ++i) program->parameters[i] = s->parameters[i];
@@ -519,6 +819,8 @@ bool validate_syntax(Source *source, const Syntax *s, IrProgram *program) {
                          0u, s->alias_source.offset, &alias)) return false;
     }
     /* Unreachable statements are lowered too: no dead-code validation bypass. */
-    LocalScope scope = {0};
-    return lower_block(source, s, 0u, s->statement_count, &scope, program);
+    LocalScope scope = { .values = bindings, .capacity = source->limits->locals };
+    unsigned behavior;
+    return lower_block(source, s, 0u, s->statement_count, &scope, program, NULL,
+                       true, true, false, &behavior);
 }

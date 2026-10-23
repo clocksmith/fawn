@@ -1,6 +1,6 @@
 # Experimental standalone C compiler
 
-This is the experimental compiler of the isolated [C migration](../../../docs/c-migration/MIGRATION.md), not a production compiler replacement. The frozen [first milestone](MILESTONE_1.md), [structured neighbor-sum extension](MILESTONE_2.md), [scalar-expression/local extension](MILESTONE_4.md), [flat uniform/workspace extension](MILESTONE_5.md) and [unified scalar/compute-input extension](MILESTONE_6.md) own the exact admitted language. The [existing emitter-consumer integration](MILESTONE_3.md) owns optional CLI reflection; the [versioned header](include/doe_compiler.h) owns the unchanged ABI. Production Zig and its consumers are unchanged.
+This is the experimental compiler of the isolated [C migration](../../../docs/c-migration/MIGRATION.md), not a production compiler replacement. The frozen [first milestone](MILESTONE_1.md), [structured neighbor-sum extension](MILESTONE_2.md), [scalar-expression/local extension](MILESTONE_4.md), [flat uniform/workspace extension](MILESTONE_5.md), [unified scalar/compute-input extension](MILESTONE_6.md) and [function state/control jobs](MILESTONE_7.md) own the exact admitted language. M7 [amendment 1](MILESTONE_7_AMENDMENT_1.md) and [amendment 2](MILESTONE_7_AMENDMENT_2.md) record empty module-declaration admission without rewriting old receipts. The [existing emitter-consumer integration](MILESTONE_3.md) owns optional CLI reflection; the [versioned header](include/doe_compiler.h) owns the unchanged ABI. Production Zig and its consumers are unchanged.
 
 ## Build and consume
 
@@ -10,6 +10,8 @@ From this directory, using the installed native toolchain:
 make all
 make test SPIRV_VAL=/workspace/shared/doe-language-experiment-20261023/phase2/deps/spirv-tools/usr/bin/spirv-val
 make sanitize
+make test-job SPIRV_VAL=/path/to/already-installed/spirv-val
+make sanitize-job
 make sanitize-cli SPIRV_VAL=/path/to/already-installed/spirv-val
 make build/native_consumer build/cpp_consumer build/test_layout
 build/native_consumer ../../../bench/inference-pipeline/kernels/residual.wgsl
@@ -19,7 +21,7 @@ build/test_layout
 
 `make test` requires an existing SPIR-V validator. `SPIRV_VAL` defaults to `spirv-val` on `PATH`; the example explicitly selects the previously approved local validator used for this increment. On another host, supply the path to its already installed validator. The build does not download or install one.
 
-`build/doe-compiler-c` and `build/libdoe_compiler.so` are built directly from C11 sources with GCC and strict warnings. There is no Zig build, generated Zig artifact, fallback, compiler subprocess, or dependency in the library. The shared library exports only `doe_compiler_compile`, `doe_compiler_compile_v2` and `doe_compiler_workspace_requirements`; the Linux linker script localizes internal cross-file functions against external symbol interposition. The CLI uses POSIX file operations; this increment is exercised on Linux x86-64, not qualified for other host platforms.
+`build/doe-compiler-c` and `build/libdoe_compiler.so` are built directly from C11 sources with GCC and strict warnings. There is no Zig build, generated Zig artifact, fallback, compiler subprocess, or dependency in the library. The shared library exports only `doe_compiler_compile`, `doe_compiler_compile_v2`, `doe_compiler_workspace_requirements`, `doe_compiler_job_requirements` and `doe_compiler_compile_job`; the Linux linker script localizes internal cross-file functions against external symbol interposition. The CLI uses POSIX file operations; this increment is exercised on Linux x86-64, not qualified for other host platforms.
 
 ```sh
 build/doe-compiler-c \
@@ -48,20 +50,26 @@ alignment or NULL returns INPUT_ERROR at offset zero without workspace access.
 Other admitted failures preserve words and zero result count/reflection. A
 workspace is reusable after every result, including failure.
 
-Measured on GCC 14.2.0, Linux x86-64, `-O2`: workspace 77,760 bytes, alignment 8;
-Syntax 28,576; expression 40; token phase 49,184; typed IR 23,216; target scratch
-16,392. Syntax survives throughout the call. Tokens share a typed union with the
-combined IR/target phase; source-name offsets/lengths, not token pointers, survive
-parsing. ABI1's static frame is 77,824 bytes, without heap substitution. The shared
-core frame is 80 bytes and v2 wrapper 64. The expression parser frame is 160 bytes
-(primary is inlined), with at most 18 accepted levels plus one rejecting call.
-Expression lowering is 272 bytes per level, with an additional 64-byte unsigned
-context helper around nested storage indices. Structured parsing/lowering/emission
-frames are 80/352/160 bytes with four nested if levels plus entry; validation and
-emission entry frames are 1,536/2,016 bytes. CLI caller frame is 107,728 bytes,
-reported separately. These individual bounded/static frame measurements are not
-combined observed stack high-water marks. Current workspace and stack bounds
-protect this increment, not a permanent full-compiler no-allocation design.
+Measured on GCC 14.2.0, Linux x86-64, `-O2`: legacy workspace 73,400
+bytes, alignment 8; private job metadata 20,752; Syntax 12,744; token 12;
+statement 56; expression 40; typed instruction 48; scope record 104. The fixed
+adapters retain 16 statements, 320 charged scalar nodes plus 16 uncharged old
+comparison wrappers, 385 instructions and 4,096 words. Their token storage shares
+a typed union with lowering/target scratch. Larger jobs bind separately checked
+caller slices rather than enlarging these fixed arrays.
+
+ABI1's frame is 73,488 bytes; ABI2/job wrappers 80/192; shared pipeline 80.
+All other library frames are at most 672 bytes. GCC reports parser
+statement/block/expression/primary frames 224/32/176/176, lowering block/expression/
+index helper 672/400/80, and emitter block/entry 192/512. At maximal job depths,
+a conservative recursive-path sum is under 41 KiB for parsing, 76 KiB for
+lowering and 20 KiB for emission, excluding caller frames. These use at most
+2*control_depth+1 compound frames, expression_depth+1 rejecting parse levels,
+and control_depth+expression_depth+1 emitter levels; capacities never authorize
+more recursion. They are derived bounds, not measured stack high-water marks.
+The legacy 18/4 path additionally has the ABI1 adapter frame. CLI frame 75,040
+bytes is separate from library qualification; enlarged buffers are caller heap
+allocations. Other compilers/optimization settings require fresh measurements.
 
 ABI1 remains unchanged: 88-byte binding, 784-byte reflection, 216-byte diagnostic,
 1,008-byte result and 4-byte enums. V2 has 80-byte members, 716-byte structs,
@@ -71,10 +79,10 @@ must recheck their layout and stack receipts.
 
 ## Uniform and reflection-v2 use
 
-Binary-only mode uses v2 without allocating, checking or publishing JSON. The
+Binary-only mode uses the configurable job API without allocating, checking or publishing JSON. The
 legacy `--reflection JSON` mode retains exact old JSON bytes and storage-only
 ABI1 admission; even an unused new struct rejects without output. Explicit
-`--reflection-v2 JSON` admits uniforms and returns the separate schema_version 2
+`--reflection-v2 JSON` uses the same loop-capable job profile, admits uniforms and returns the separate schema_version 2
 layout. The two reflection options are mutually exclusive; each must be nonempty
 and appear at most once. All four option tokens are rejected as missing-path
 substitutes. Ordinary storage programs emit identical SPIR-V in all three modes.
@@ -117,16 +125,19 @@ The same bounded scalar tree handles RHS values, immutable lets, all load/store
 indices and both sides of unsigned comparisons. Each nested access has its own
 per-binding guard. An OOB token load returns zero, which can validly select an
 outer buffer element; wrapping index arithmetic happens before that outer guard.
-No invalid flag suppresses valid outer accesses or stores. Loops, helpers, mutable
-locals, casts, new operators and vector-valued expressions remain unsupported.
+No invalid flag suppresses valid outer accesses or stores. ABI1/v2 remain the bounded M6
+capability adapters; the new job path adds mutable locals and structured control
+as described below. Helpers, casts and general vector-valued expressions remain unsupported.
 
 A single compute entry accepts zero to five unique builtin parameters, in any
 order and with arbitrary legal names. global_invocation_id, local_invocation_id,
 workgroup_id and num_workgroups use vec3u or vec3<u32> and scalar x/y/z reads;
 local_invocation_index uses u32 directly. Parameters can shadow module values,
-but ordinary new lets cannot shadow visible user declarations. Only the exact
+but the bounded ABI1/v2 adapters reject ordinary local shadowing. Job scopes allow
+ordinary nested/module shadowing while rejecting same-scope redeclarations. Only the exact
 leading `let NAME = GLOBAL_PARAMETER.x;` retains legacy zero-node/statement alias
-accounting; other components, parentheses, annotations and later lets count.
+accounting in the legacy adapters; the job profile charges every local declaration.
+Other components, parentheses, annotations and later lets always count.
 Empty bodies and zero resources/inputs admit valid no-op compute modules. Every
 declared input is included in the entry interface and no undeclared input is
 invented. Workgroup size accepts one, two or three 1..256 dimensions and an
@@ -140,6 +151,68 @@ executes actual emitted opcodes and explicitly validates Vulkan 1.1 modules;
 Legal whole-dispatch tests use coherent builtin tuples and race-free writes;
 arbitrary uint32 edge injections are separate synthetic tests, not GPU evidence.
 
+## Function state and configurable jobs
+
+Include `include/doe_compiler_job.h`. Set `DoeCompilerJobCapacities`, call
+`doe_compiler_job_requirements(3, &caps, sizeof(caps), &requirements,
+sizeof(requirements))`, allocate that size/alignment, then call
+`doe_compiler_compile_job(3, &caps, sizeof(caps), workspace, size, source, length,
+words, word_capacity, &result_v2, sizeof(result_v2))`. Free caller allocations
+after return. `tests/test_job_api.c` and `tests/cpp_consumer_job.cpp` are complete
+native examples; no library allocator, persistent job handle or destruction API
+exists. Allocation failure is the caller's OOM, not a compiler capacity status.
+
+Source/token/statement/expression and output-word capacities are independent.
+Checked derived instruction storage is 1+4*expressions+8*statements; value-map
+capacity adds one, and local/scope storage is statements+1. Source offsets cap
+source bytes at UINT32_MAX-1. Expression/control depths are separately configured
+within 1..64/1..32. Word exhaustion is OUTPUT_TOO_SMALL; other capacity/layout
+exhaustion is INPUT_ERROR. Every failed compile preserves all caller words and
+clears count/reflection after ABI preflight. No input pointer survives return.
+Fixed reflection bounds remain names63/resources8/structs8/members8/inputs5;
+configurable storage does not claim unrestricted modules or complete WGSL.
+
+The job profile adds u32/f32/bool var/let, source-point zero initialization,
+assignment/compound assignment and u32 increment/decrement; for/while/loop,
+continuing/break-if, break/continue, if/else-if, blocks and bool short circuit.
+Variables use SPIR-V Function storage declared at entry but initialized each time
+the source declaration executes. Lets retain snapshots. For-update/continuing
+runs after a completed body or targeted continue, not break/return. Scope and
+WGSL behavior-set validation include dead source. Short circuit and robust
+accesses use actual post-guard predecessors; loops emit OpLoopMerge and never
+unroll from assumed uniform values. Harness step bounds diagnose unfinished
+execution, not shader termination. See M7 for exact continuing/dominance rules.
+
+Direct unsuffixed integers have AbstractInt identity until context materializes
+them. Inferred unsuffixed integer locals, abstract-only arithmetic/max and
+constant-only floating comparisons/arithmetic/max remain explicitly unsupported.
+Concrete u32 arithmetic wraps at constant and runtime stages. This is not an
+abstract constant evaluator or general signed-scalar implementation.
+
+Binary-only and reflection-v2 CLI use source65536/tokens8192/statements1024/
+expressions4096/words65536 and expression/control depth32/16. Legacy reflection
+still uses ABI1. Source reading retains its bounded buffer; workspace, result,
+words, serialization and optional JSON are checked caller-owned allocations with
+one cleanup path. Exact successful allocation counts are 4/3/5 for binary-only/
+legacy-reflection/v2-reflection. No new CLI flags or JSON schema changes.
+
+```sh
+build/doe-compiler-c --shader-path ../../../bench/inference-pipeline/kernels/dot_product_forward_f32.wgsl \
+  --out build/dot.spv --reflection-v2 build/dot.json
+make test-job SPIRV_VAL=/path/to/already-installed/spirv-val
+build/cpp_consumer_job
+make sanitize-job
+```
+
+Developer job tests execute all five unchanged loop witnesses and independently
+check target validation, Function memory resets, snapshots, lexical scopes,
+continuing/abrupt exits, short-circuit predecessors, robust wrap and capacity
+failures. Current job-CLI expectations explicitly lift old logical/shadowing/
+16-statement/320-node/18-depth negatives; native tests retain the old API bounds.
+Empty module declarations are admitted across APIs by amendment2. ABI stability
+is not a promise to preserve arbitrary old unsupported rejections or bugs.
+Historical source and receipts stay source-bound and unchanged.
+
 ## Owner map
 
 - `lex.c`: ASCII tokenization, bounded tokens, nested comments and original byte positions.
@@ -148,12 +221,13 @@ arbitrary uint32 edge injections are separate synthetic tests, not GPU evidence.
 - `validate.c`: lexical/module scope, resource identity/access/layout, scalar checking and typed value/control-flow IR lowering, including unreachable source.
 - `reflection.c`: deterministic ABI1/v2 projection of validated declaration/layout IR.
 - `internal.h`: private syntax, typed bindings and IR records. These are not public ABI.
+- `storage.c`: checked typed slice layout and bindings, with fixed allocation-free legacy adapters.
 - `spirv.c`: typed declarations and structured SPIR-V lowering from IR only.
 - `compile.c`: versioned ABI admission, diagnostics and one output publication point.
 - `cli.c`: input/workspace/result ownership, explicit little-endian serialization and no-clobber artifact publication.
 - `cli_json.c`: checked legacy/v2 JSON serialization, separate from file ownership.
 
-The IR carries semantic compute-input scalar/component reads, typed fixed-index uniform loads, robust storage loads/stores, typed constants, scalar addition/subtraction/multiplication/max, unsigned comparisons, structured if/else boundaries and return. Immutable scoped locals retain typed value IDs evaluated once at declaration; they add no host-side interpretation or mutable target state. Its bounded value IDs do not retain source spellings. Index arithmetic wraps modulo 2^32 before the resource-specific guard. Statements execute in source order, and an early return is independent of whether a preceding store was in bounds. Only live arms branch to a merge; a both-arms-return merge has `OpUnreachable`. Untaken arms never form resource pointers or perform resource side effects. Every load branches on its own binding's runtime-array length, forms its element pointer only in the guarded block, and merges the loaded value with a typed zero using `OpPhi`. The store independently checks the destination's own length. No combined minimum-length guard skips valid output elements when an input is short or empty. Separate declarations remain separate descriptor variables, including unused declared resources reflected in declaration order.
+The legacy capability uses the following subset of the shared IR. It carries semantic compute-input scalar/component reads, typed fixed-index uniform loads, robust storage loads/stores, typed constants, scalar addition/subtraction/multiplication/max, unsigned comparisons, structured if/else boundaries and return. Immutable scoped locals retain typed value IDs evaluated once at declaration; they add no host-side interpretation or mutable target state. Its bounded value IDs do not retain source spellings. Index arithmetic wraps modulo 2^32 before the resource-specific guard. Statements execute in source order, and an early return is independent of whether a preceding store was in bounds. Only live arms branch to a merge; a both-arms-return merge has `OpUnreachable`. Untaken arms never form resource pointers or perform resource side effects. Every load branches on its own binding's runtime-array length, forms its element pointer only in the guarded block, and merges the loaded value with a typed zero using `OpPhi`. The store independently checks the destination's own length. No combined minimum-length guard skips valid output elements when an input is short or empty. Separate declarations remain separate descriptor variables, including unused declared resources reflected in declaration order.
 
 ## Verification boundary
 

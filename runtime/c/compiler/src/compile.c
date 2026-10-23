@@ -35,8 +35,8 @@ static bool compile_pipeline(Source *context, CompilerWorkspace *workspace,
         context->length = 0u;
         return source_error(context, DOE_COMPILER_INPUT_ERROR, 0u, "NULL source requires zero length");
     }
-    if (length > DOE_COMPILER_MAX_SOURCE_BYTES)
-        return source_error(context, DOE_COMPILER_INPUT_ERROR, 0u, "source exceeds 65536 bytes");
+    if (length > workspace->limits.source_bytes)
+        return source_error(context, DOE_COMPILER_INPUT_ERROR, workspace->limits.extended ? workspace->limits.source_bytes : 0u, "source byte capacity exceeded");
     if (words == NULL && capacity != 0u)
         return source_error(context, DOE_COMPILER_INPUT_ERROR, 0u, "NULL output requires zero capacity");
     if (length == 0u)
@@ -45,17 +45,17 @@ static bool compile_pipeline(Source *context, CompilerWorkspace *workspace,
     if (nul != NULL)
         return source_error(context, DOE_COMPILER_INPUT_ERROR, (size_t)(nul - source),
                             "embedded NUL byte in source");
-    if (!lex_source(context, &workspace->phase.tokens) ||
-        !parse_tokens(context, &workspace->phase.tokens, &workspace->syntax, allow_uniforms)) return false;
+    if (!lex_source(context, &workspace->tokens) ||
+        !parse_tokens(context, &workspace->tokens, &workspace->syntax, allow_uniforms)) return false;
     /* Tokens are dead here. Validation starts the other union member and does
      * not inspect stale token bytes. Syntax owns declaration names and validated source spans for expressions. */
-    IrProgram *program = &workspace->phase.lowered.program;
-    Spirv *output = &workspace->phase.lowered.output;
-    if (!validate_syntax(context, &workspace->syntax, program) ||
-        !emit_spirv(context, program, output)) return false;
+    IrProgram *program = &workspace->program;
+    Spirv *output = &workspace->output;
+    if (!validate_syntax(context, &workspace->syntax, program, workspace->scope) ||
+        !emit_spirv(context, program, output, workspace->target_values)) return false;
     if (capacity < output->count)
         return source_error(context, DOE_COMPILER_OUTPUT_TOO_SMALL, length,
-                            "output word capacity is too small; provide DOE_COMPILER_MAX_WORDS");
+                            "caller output word capacity is too small");
     /* No later operation can fail: this is the only word publication point. */
     memcpy(words, output->words, output->count * sizeof(*words));
     return true;
@@ -70,15 +70,17 @@ DoeCompilerStatus doe_compiler_compile(
         return DOE_COMPILER_ABI_MISMATCH;
     memset(result, 0, sizeof(*result));
     Source context = { .source = source, .length = length, .diagnostic = &result->diagnostic };
-    CompilerWorkspace workspace;
-    if (compile_pipeline(&context, &workspace, false, words, capacity)) {
-        reflect_program(&workspace.phase.lowered.program, &result->reflection);
-        result->word_count = workspace.phase.lowered.output.count;
+    LegacyWorkspace workspace;
+    compiler_legacy_bind(&workspace, false);
+    context.limits = &workspace.job.limits;
+    if (compile_pipeline(&context, &workspace.job, false, words, capacity)) {
+        reflect_program(&workspace.job.program, &result->reflection);
+        result->word_count = workspace.job.output.count;
     }
     return result->diagnostic.status;
 }
 
-_Static_assert(_Alignof(CompilerWorkspace) <= _Alignof(max_align_t),
+_Static_assert(_Alignof(LegacyWorkspace) <= _Alignof(max_align_t),
                "malloc must provide sufficient compiler workspace alignment");
 DoeCompilerStatus doe_compiler_workspace_requirements(
     uint32_t abi_version, DoeCompilerWorkspaceRequirements *requirements,
@@ -86,8 +88,8 @@ DoeCompilerStatus doe_compiler_workspace_requirements(
     if (requirements == NULL) return DOE_COMPILER_INPUT_ERROR;
     if (abi_version != DOE_COMPILER_ABI_VERSION_2 || requirements_size != sizeof(*requirements))
         return DOE_COMPILER_ABI_MISMATCH;
-    requirements->size_bytes = sizeof(CompilerWorkspace);
-    requirements->alignment_bytes = _Alignof(CompilerWorkspace);
+    requirements->size_bytes = sizeof(LegacyWorkspace);
+    requirements->alignment_bytes = _Alignof(LegacyWorkspace);
     return DOE_COMPILER_OK;
 }
 
@@ -101,16 +103,62 @@ DoeCompilerStatus doe_compiler_compile_v2(
         return DOE_COMPILER_ABI_MISMATCH;
     memset(result, 0, sizeof(*result));
     Source context = { .source = source, .length = length, .diagnostic = &result->diagnostic };
-    if (workspace == NULL || workspace_size < sizeof(CompilerWorkspace) ||
-        (uintptr_t)workspace % _Alignof(CompilerWorkspace) != 0u) {
+    if (workspace == NULL || workspace_size < sizeof(LegacyWorkspace) ||
+        (uintptr_t)workspace % _Alignof(LegacyWorkspace) != 0u) {
         (void)source_error(&context, DOE_COMPILER_INPUT_ERROR, 0u,
                            "workspace must satisfy queried size and alignment");
         return result->diagnostic.status;
     }
-    CompilerWorkspace *job = workspace;
+    LegacyWorkspace *storage = workspace;
+    compiler_legacy_bind(storage, true);
+    CompilerWorkspace *job = &storage->job;
+    context.limits = &job->limits;
     if (compile_pipeline(&context, job, true, words, capacity)) {
-        reflect_program_v2(&job->phase.lowered.program, &result->reflection);
-        result->word_count = job->phase.lowered.output.count;
+        reflect_program_v2(&job->program, &result->reflection);
+        result->word_count = job->output.count;
+    }
+    return result->diagnostic.status;
+}
+
+DoeCompilerStatus doe_compiler_job_requirements(
+    uint32_t version, const DoeCompilerJobCapacities *capacities, size_t capacities_size,
+    DoeCompilerWorkspaceRequirements *requirements, size_t requirements_size) {
+    if (requirements == NULL) return DOE_COMPILER_INPUT_ERROR;
+    if (version != DOE_COMPILER_JOB_ABI_VERSION || capacities_size != sizeof(*capacities) ||
+        requirements_size != sizeof(*requirements)) return DOE_COMPILER_ABI_MISMATCH;
+    CompilerLimits limits;
+    size_t bytes;
+    if (!compiler_job_layout(capacities, &limits, &bytes)) return DOE_COMPILER_INPUT_ERROR;
+    requirements->size_bytes = bytes;
+    requirements->alignment_bytes = _Alignof(max_align_t);
+    return DOE_COMPILER_OK;
+}
+DoeCompilerStatus doe_compiler_compile_job(
+    uint32_t version, const DoeCompilerJobCapacities *capacities, size_t capacities_size,
+    void *workspace, size_t workspace_size, const char *source, size_t length,
+    uint32_t *words, size_t capacity, DoeCompilerResultV2 *result, size_t result_size) {
+    if (result == NULL) return DOE_COMPILER_INPUT_ERROR;
+    if (version != DOE_COMPILER_JOB_ABI_VERSION || capacities_size != sizeof(*capacities) ||
+        result_size != sizeof(*result)) return DOE_COMPILER_ABI_MISMATCH;
+    memset(result, 0, sizeof(*result));
+    Source context = { .source = source, .length = length, .diagnostic = &result->diagnostic };
+    CompilerLimits limits;
+    size_t bytes;
+    if (!compiler_job_layout(capacities, &limits, &bytes)) {
+        (void)source_error(&context, DOE_COMPILER_INPUT_ERROR, 0u, "invalid job capacities or layout overflow");
+        return result->diagnostic.status;
+    }
+    if (workspace == NULL || workspace_size < bytes ||
+        (uintptr_t)workspace % _Alignof(max_align_t) != 0u) {
+        (void)source_error(&context, DOE_COMPILER_INPUT_ERROR, 0u, "workspace must satisfy job size and alignment");
+        return result->diagnostic.status;
+    }
+    CompilerWorkspace *job = workspace;
+    compiler_job_bind(job, workspace, &limits);
+    context.limits = &job->limits;
+    if (compile_pipeline(&context, job, true, words, capacity)) {
+        reflect_program_v2(&job->program, &result->reflection);
+        result->word_count = job->output.count;
     }
     return result->diagnostic.status;
 }

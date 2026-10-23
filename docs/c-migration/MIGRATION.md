@@ -81,6 +81,18 @@ through the unchanged consumer, target validation and instruction execution;
 function state/control flow and the complete compiler dependency chain. It does
 not declare an accepted production replacement.
 
+The [seventh increment](../../runtime/c/compiler/MILESTONE_7_RESULTS.md) adds
+configurable caller-owned job storage, mutable scalar state, lexical scopes,
+structured loops and short circuit through the same compiler. All five real
+loop witnesses pass independent emitted-instruction execution. The unchanged
+consumer now admits 17 paths / 15 unique sources, with 81 explicit rejections in
+the [new ledger](corpus-coverage-m7.json). Fixed workspace/frame decrease to
+73,400/73,488 bytes, while the broader CLI job explicitly owns 1,995,208 bytes.
+Neither storage relocation nor expanded corpus coverage qualifies complete
+WGSL, other targets, production callers or hardware. Generic module-semicolon
+admission applies across APIs; experimental old exclusions are not permanent
+language-dialect requirements.
+
 The first [CPU runtime owner](../../runtime/c/futures/RESULTS.md) is independently
 accepted as an isolated C library for future IDs and completion queues. It retains
 issuance-boundary selection, callback reentry, actual condition waits and explicit
