@@ -329,3 +329,23 @@ other recording owners. Non-rejection statuses never mutate state; real rejectio
 preserves first error and inactive/device-loss admission. This closes the typed
 frontend boundary without fake debug operations or frontend counters.
 `DEVELOPER_RECEIPT_COMPUTE_INVALIDATE.json` binds the focused controls.
+
+The optional `vulkan-indirect-lifetime` consumer now compiles a WGSL argument
+producer, backend-generated dimension guard and atomic counter through the existing
+shader artifact owner. GPU-produced records exercise requested limits `{2,3,4}`,
+valid/over-limit X/Y/Z/zero/valid dispatches and private scratch reuse. The exact
+counter is four; original argument records and padding remain unchanged. Resource
+snapshots own caller-released arguments, bindings and pipelines through terminal
+settlement, while native commands independently retain validator scratch/pipelines.
+Public Indirect usage is unchanged: COPY_SRC is an internal backing capability,
+not a new caller requirement. No GPU argument value is inspected on the CPU before
+execution, and no resource-side validator or queue is added.
+
+Set `COMPILER_LIBRARY` explicitly; `SHADER_ROOT` can select a coherent immutable
+artifact-owner snapshot during parallel ABI work, with `SHADER_BUILD` keeping its
+build output separate. `DEVELOPER_RECEIPT_INDIRECT.json` identifies the exact ABI9
+producer and committed artifact-owner sources, not the concurrently authored text
+API. This bounded software consumer is not a public indirect ABI or physical-GPU
+qualification. Product-sensitive workgroup/global-invocation-index builtins remain
+compiler-unsupported in this producer; later admission requires coordinated guard
+rules. Indexed/indirect rendering is outside this execution witness.

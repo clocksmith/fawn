@@ -77,3 +77,18 @@ $(BUILD)/vulkan_query_lifetime: tests/vulkan_query_lifetime.c $(BUILD)/libdoe_re
 	$(CC) $(CPPFLAGS) -I../backends/vulkan/include $(CFLAGS) $(filter-out %.h vulkan-library,$^) $(VK_BUILD)/libdoe_vk.a -ldl -o $@
 vulkan-query-lifetime: $(BUILD)/vulkan_query_lifetime
 	$(BUILD)/vulkan_query_lifetime --allow-software
+
+# Optional actual compiler consumer. Require a deliberate, source-bound producer;
+# never silently link the compiler directory's possibly stale build artifact.
+SHADER_ROOT ?= ../shader
+SHADER_BUILD ?= /tmp/doe-c-resources-indirect-shader
+COMPILER_LIBRARY ?=
+.PHONY: vulkan-indirect-lifetime shader-library compiler-library
+shader-library:
+	$(MAKE) -C $(SHADER_ROOT) BUILD=$(SHADER_BUILD) all
+compiler-library:
+	@test -n "$(COMPILER_LIBRARY)" && test -r "$(COMPILER_LIBRARY)" || { echo 'Set COMPILER_LIBRARY to an explicitly qualified ABI9 producer'; exit 2; }
+$(BUILD)/vulkan_indirect_lifetime: tests/vulkan_indirect_lifetime.c $(BUILD)/libdoe_resources.a $(LABEL_SOURCES) tests/vulkan_fixture.h vulkan-library shader-library compiler-library $(COMPILER_LIBRARY)
+	$(CC) $(CPPFLAGS) -I../backends/vulkan/include -I$(SHADER_ROOT)/include -I$(SHADER_ROOT)/../compiler/include $(CFLAGS) $(filter-out %.h vulkan-library shader-library compiler-library $(COMPILER_LIBRARY),$^) $(VK_BUILD)/libdoe_vk.a $(SHADER_BUILD)/libdoe_shader.a $(COMPILER_LIBRARY) -Wl,-rpath,$(abspath $(dir $(COMPILER_LIBRARY))) -ldl -o $@
+vulkan-indirect-lifetime: $(BUILD)/vulkan_indirect_lifetime
+	$(BUILD)/vulkan_indirect_lifetime tests/indirect_arguments.wgsl tests/indirect_counter.wgsl "$$(sha256sum $(COMPILER_LIBRARY) | cut -d ' ' -f 1)" --allow-software
