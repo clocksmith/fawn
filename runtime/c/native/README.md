@@ -52,20 +52,35 @@ exported; unknown and unimplemented names return NULL from `wgpuGetProcAddress`.
   than reporting success. Releasing all caller handles does not free unresolved
   work; unattended recovery/liveness remains unfinished.
 - TimestampQuery is opt-in at device creation. Generated backend WGSL is compiled
-  by the same ABI7 C compiler before a feature-enabled device is published. Query
+  by the same ABI8 C compiler before a feature-enabled device is published. Query
   sets alias the resource owner; zero-count sets need no native pool. Query resolve
   records raw timestamps, exact calibrated GPU nanosecond conversion and the copy
   into the caller's destination before later commands. There is no production CPU
   postprocessing or raw-tick fallback. A terminal failed submission discards the
   possibly poisoned normalizer; later work creates a fresh one. Unknown completion
   retains its command-owned dependencies and prevents reuse.
+- Genuine ABI8 vertex/fragment entry reflection drives stage-specific selection,
+  shared automatic binding layouts and interface admission. Single-color render
+  passes, direct draws, reusable bundles and occlusion queries lower through one
+  ordered Vulkan pass span. The resource owner retains pass history, bindings,
+  query identity and vertex ranges; native conversion owns no parallel recorder.
+  Dynamic viewport/scissor/blend and culling use real backend state. Integer clear
+  colors truncate and range-check before a defined C cast; ignored Load clears
+  are not converted. Extra fragment outputs are ignored, while written targets,
+  scalar/channel compatibility and source-alpha blending are checked.
 - Device serialization covers mutable resources and Vulkan state. Internal
   recursive acquisition permits resource-finalizer cleanup using the same lock.
   Foreign callbacks run only after unlocking, with required full-call leases.
 
 ## Intentionally unprovided or rejected
 
-Graphics, surfaces, occlusion queries and indirect dispatch remain absent. Texture format reinterpretation, depth/multisampled images, cube arrays
+Surfaces, indexed/indirect draws and indirect dispatch remain absent. Graphics
+currently admits one stored color attachment, sample count 1, direct triangle/line
+lists or strips and 32-bit float/signed/unsigned vertex attributes. Depth/stencil,
+MSAA, PointList target lowering, Discard stores, dual-source blending, vertex or
+fragment storage writes and demote/discard capability are explicitly rejected.
+Blend constants must be representable as finite f32 for this backend path.
+Texture format reinterpretation, depth/multisampled images, cube arrays
 and anisotropic sampling are rejected. The baseline admits 18 named Vulkan
 color formats, subject to actual device usage/format capabilities. Device
 descriptors may request TimestampQuery when the actual adapter supports the
@@ -88,12 +103,12 @@ and native execution errors retain their typed public error
 category rather than being relabeled as validation errors.
 Descriptor labels and SetLabel use the existing label owner, including exact
 length-delimited bytes and resource-finalizer cleanup. Failed WGSL modules retain
-real compiler diagnostics for GetCompilationInfo. Compute pipeline construction
+real compiler diagnostics for GetCompilationInfo. Compute and render pipeline construction
 is synchronous; the async API delivers its actual result through the requested
 callback mode, not a claimed background compiler. No blanket success stubs or
 fallback provider resolution exist. The public advertised limits
-cover the implemented compute/image path only and do not claim the WebGPU Core
-feature level is complete; adapter/device creation here is an experimental compute consumer path.
+cover the implemented compute/image/graphics path only and do not claim the WebGPU
+Core feature level is complete; adapter/device creation remains experimental.
 
 ## Reproduce from a coherent checkout
 
@@ -111,17 +126,20 @@ The checked-in test requires a fallback CPU adapter and verifies the returned
 adapter type is CPU. Its ordinary result is:
 
 ```
+PASS public graphics admission: stage/output identity, async modes/reentry, explicit empty vertex slot, zero-count range and bundle state reset
+PASS valid empty WGSL has no compilation diagnostics; missing pipeline entry rejects
+PASS public C graphics: genuine WGSL stage IO, sparse shared uniform, empty vertex slot, default fetched components, dynamic blend/scissor/culling, bundle replay, one native pass, integer clears, empty LOAD, real occlusion and early releases (CPU Vulkan only)
 Explicit software-only WebGPU C path: SwiftShader Device (Subzero); not physical GPU qualification
 PASS public ABI: compute/readback, OOB guards, dynamic offsets, cross-device rejection, one-shot submit, early releases, callback reentry and map cancellation
 PASS C++ pinned typed procedure calls and unsupported-name rejection
 PASS device loss modes/future/last-external-release/failed-creation, owned labels, async pipeline and real compilation diagnostics
 PASS public textures: actual zero mips, packed upload, linear sampling, image OOB guards, storage readback, early releases and filter/pair/copy negatives (CPU Vulkan only)
 PASS public admission: sparse/trailing/null layout holes, null unbind, ignored destroyed resources, dynamic writable ranges, whole-buffer read/write conflicts and texture subresource aliases (CPU Vulkan only)
-PASS public error types: resource allocation, automatic-layout allocation, backend OOM/native/validation failures, failed requested-feature device and successful recovery
+PASS public error types: resource allocation, automatic-layout allocation, compute/render backend OOM/native/validation failures, failed requested-feature device and successful recovery
 PASS public timestamps: requested feature, zero/max/range/destroy admission, real pass/command writes, exact GPU nanoseconds, same-batch copy, scratch reuse and early query release (CPU Vulkan only)
 PASS typed recovery: native/OOM/pending errors survive submit/write/texture/workdone, unknown leases retained, terminal cleanup and fresh GPU normalizer recovery
 PASS every implemented procedure address matches; every unprovided name returns NULL
-PASS exact exports: 123 implemented, 79 pinned unprovided, no private exports
+PASS exact exports: 157 implemented, 45 pinned unprovided, no private exports
 ```
 
 A compute shader with two declared entries selects `transform`, runs 72
@@ -151,12 +169,15 @@ obscure a real submission's completion at the backend boundary, preserve Interna
 OutOfMemory and Pending results, retain unknown leases, then prove terminal cleanup
 and actual successful reconstruction of the GPU normalizer.
 
-Valid empty WGSL remains a known compiler capability gap in the pinned timestamp
-composition. `make ... check-empty-module` is a minimized, currently failing control
-requiring no diagnostics for an empty module, separate from the supported-path
-`check`. The native frontend does not forge a successful compiler artifact. The
-first normal and sanitizer failure logs remain recorded; downstream pipeline entry
-selection must still reject a zero-entry module after the compiler gap is fixed.
+The preserved empty-WGSL reproduction now passes through the genuine ABI8 compiler:
+zero-entry modules have no diagnostics, while pipeline entry selection still
+rejects them. This control is part of ordinary `check`; historical timestamp
+receipts retain the original failure rather than being rewritten. Graphics checks
+also cover an asymmetric 64-pixel image, back-face culling, shared stage resources,
+vertex default components, bundle state, real nonzero/clipped/empty/unwritten
+occlusion results, typed integer clear boundaries and early caller releases.
+Pipeline negatives exercise stage identity, missing/extra fragment outputs,
+source-alpha channels, unsupported topology and canonical zero-count vertex ranges.
 
 ```
 ASAN_OPTIONS=detect_leaks=0:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1 \
@@ -176,7 +197,9 @@ correction to the recorded resource snapshot and pinned compiler artifacts, not
 to later concurrent graphics source. `DEVELOPER_RECEIPT_TIMESTAMPS.json` binds the
 subsequent ABI7 timestamp/recovery/trailing-layout composition to committed
 b4e39b0 plus its exact resource overlay, with fully instrumented compiler and
-runtime controls and the explicitly failing empty-module control. `DEVELOPER_RECEIPT_LIFECYCLE.json` binds the preceding lifecycle work. The earlier
+runtime controls and its then-failing empty-module control. The later ABI8 graphics
+composition is bound separately in `DEVELOPER_RECEIPT_GRAPHICS.json`, not inferred
+from those earlier checks. `DEVELOPER_RECEIPT_LIFECYCLE.json` binds the preceding lifecycle work. The earlier
 `DEVELOPER_RECEIPT.json` and source manifest remain the historical first compute
 checkpoint, not evidence for changed bytes. An initial live-worktree build caught
 unfinished parallel ABI6 enum edits; checkpoint testing instead materialized the

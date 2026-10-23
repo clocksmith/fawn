@@ -1,7 +1,6 @@
 /* SPDX-License-Identifier: MIT
- * Known compiler gap control: valid empty WGSL must compile without diagnostics.
- * Kept separate from supported-path check until the compiler owner admits
- * zero-entry modules; never fabricate a successful native artifact. */
+ * Genuine empty compiler artifact: module succeeds, pipeline entry selection fails.
+ * Preserves the earlier failing public reproduction without a synthetic binary. */
 #include "consumer.h"
 static void empty_info(WGPUCompilationInfoRequestStatus status, const WGPUCompilationInfo *info,
     void *userdata, void *unused)
@@ -31,9 +30,14 @@ int main(void)
     unsigned callbacks = 0;
     WGPUCompilationInfoCallbackInfo info = {.mode=WGPUCallbackMode_AllowSpontaneous,.callback=empty_info,.userdata1=&callbacks};
     assert(wgpuShaderModuleGetCompilationInfo(shader,info).id && callbacks == 1);
+    WGPUComputePipelineDescriptor pipeline_desc = WGPU_COMPUTE_PIPELINE_DESCRIPTOR_INIT;
+    pipeline_desc.compute.module = shader;
+    wgpuDevicePushErrorScope(s.device,WGPUErrorFilter_Validation);
+    assert(!wgpuDeviceCreateComputePipeline(s.device,&pipeline_desc));
+    expect_validation(&s);
     wgpuShaderModuleRelease(shader);
     wgpuDeviceRelease(s.device);
     wgpuAdapterRelease(s.adapter);
     wgpuInstanceRelease(s.instance);
-    puts("PASS valid empty WGSL has no compilation diagnostics");
+    puts("PASS valid empty WGSL has no compilation diagnostics; missing pipeline entry rejects");
 }

@@ -13,45 +13,11 @@ struct native_pending {
 static doe_vk_status record_dispatch(doe_vk_commands *commands, const doe_resource_command *record)
 {
     native_pipeline *pipeline = doe_resource_pipeline_native(record->value.dispatch.pipeline);
-    doe_resource_binding resolved[DOE_RESOURCE_MAX_GROUPS][DOE_RESOURCE_MAX_BINDINGS];
-    size_t counts[DOE_RESOURCE_MAX_GROUPS] = {0};
-    doe_resource_pipeline_layout *layout_owner = doe_resource_pipeline_get_layout(record->value.dispatch.pipeline);
-    for (size_t i = 0; i < record->value.dispatch.group_count; ++i) {
-        if (!doe_resource_pipeline_layout_group_required(layout_owner, (uint32_t)i)) continue;
-        doe_resource_bind_group *group = record->value.dispatch.groups[i];
-        (void)doe_resource_bind_group_bindings(group, &counts[i]);
-        const doe_resource_dispatch_offsets *offsets = record->value.dispatch.dynamic_offsets;
-        if (doe_resource_bind_group_resolve(group, offsets ? offsets->values[i] : NULL,
-                offsets ? offsets->counts[i] : 0, resolved[i], DOE_RESOURCE_MAX_BINDINGS) != DOE_RESOURCE_OK)
-            return DOE_VK_INVALID_ARGUMENT;
-    }
     doe_vk_binding_resource bindings[DOE_RESOURCE_MAX_GROUPS * DOE_RESOURCE_MAX_BINDINGS];
-    for (size_t i = 0; i < pipeline->binding_count; ++i) {
-        doe_vk_binding_layout layout = pipeline->bindings[i];
-        if (layout.group >= record->value.dispatch.group_count) return DOE_VK_INVALID_ARGUMENT;
-        const doe_resource_binding *binding = NULL;
-        for (size_t j = 0; j < counts[layout.group]; ++j)
-            if (resolved[layout.group][j].binding == layout.binding) binding = &resolved[layout.group][j];
-        if (!binding) return DOE_VK_INVALID_ARGUMENT;
-        bindings[i].kind = layout.kind;
-        if (layout.kind == DOE_VK_BINDING_UNIFORM || layout.kind == DOE_VK_BINDING_STORAGE) {
-            if (binding->kind != DOE_BIND_BUFFER || binding->resource.buffer.size < pipeline->minimum_sizes[i])
-                return DOE_VK_INVALID_ARGUMENT;
-            native_buffer *buffer = doe_resource_buffer_native(binding->resource.buffer.buffer);
-            bindings[i].value.buffer = (doe_vk_buffer_binding){buffer->buffer,
-                binding->resource.buffer.offset, binding->resource.buffer.size};
-        } else if (layout.kind == DOE_VK_BINDING_SAMPLER) {
-            if (binding->kind != DOE_BIND_SAMPLER) return DOE_VK_INVALID_ARGUMENT;
-            native_sampler *sampler = doe_resource_sampler_native(binding->resource.sampler);
-            bindings[i].value.sampler = sampler->sampler;
-        } else {
-            doe_resource_binding_kind expected = layout.kind == DOE_VK_BINDING_SAMPLED_TEXTURE ?
-                DOE_BIND_TEXTURE : DOE_BIND_STORAGE_TEXTURE;
-            if (binding->kind != expected) return DOE_VK_INVALID_ARGUMENT;
-            native_view *view = doe_resource_view_native(binding->resource.view);
-            bindings[i].value.view = view->view;
-        }
-    }
+    doe_vk_status status = native_resolve_bindings(pipeline,
+        doe_resource_pipeline_get_layout(record->value.dispatch.pipeline), record->value.dispatch.groups,
+        record->value.dispatch.dynamic_offsets, bindings);
+    if (status != DOE_VK_OK) return status;
     return doe_vk_commands_dispatch_resources(commands, pipeline->pipeline, bindings, pipeline->binding_count,
         record->value.dispatch.x, record->value.dispatch.y, record->value.dispatch.z);
 }
@@ -106,6 +72,12 @@ static doe_vk_status record_commands(doe_vk_commands *native, doe_resource_comma
                 .origin={copy->destination.origin[0],copy->destination.origin[1],copy->destination.origin[2]},
                 .extent={copy->width,copy->height,copy->depth_or_layers}};
             status = doe_vk_commands_copy_texture(native, source->texture, from, destination->texture, to);
+            break;
+        }
+        case DOE_COMMAND_RENDER: {
+            size_t consumed = 0;
+            status = native_record_render(native, records + i, count - i, &consumed);
+            if (status == DOE_VK_OK) i += consumed - 1;
             break;
         }
         case DOE_COMMAND_WRITE_TIMESTAMP:

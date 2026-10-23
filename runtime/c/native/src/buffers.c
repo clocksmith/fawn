@@ -36,10 +36,12 @@ WGPUBuffer wgpuDeviceCreateBuffer(WGPUDevice handle, const WGPUBufferDescriptor 
     if (descriptor->usage & (WGPUBufferUsage_CopyDst | WGPUBufferUsage_MapRead | WGPUBufferUsage_QueryResolve)) usage |= DOE_VK_BUFFER_COPY_DST;
     if (descriptor->usage & WGPUBufferUsage_Uniform) usage |= DOE_VK_BUFFER_UNIFORM;
     if (descriptor->usage & WGPUBufferUsage_Storage) usage |= DOE_VK_BUFFER_STORAGE;
+    if (descriptor->usage & WGPUBufferUsage_Vertex) usage |= DOE_VK_BUFFER_VERTEX;
     if (descriptor->usage & WGPUBufferUsage_Indirect) usage |= DOE_VK_BUFFER_INDIRECT;
     const WGPUBufferUsage supported = WGPUBufferUsage_MapRead | WGPUBufferUsage_MapWrite |
         WGPUBufferUsage_CopySrc | WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform |
-        WGPUBufferUsage_Storage | WGPUBufferUsage_Indirect | WGPUBufferUsage_QueryResolve;
+        WGPUBufferUsage_Storage | WGPUBufferUsage_Indirect | WGPUBufferUsage_QueryResolve |
+        WGPUBufferUsage_Vertex;
     doe_resource_buffer *buffer = NULL;
     doe_vk_error error = {0};
     native_lock(device);

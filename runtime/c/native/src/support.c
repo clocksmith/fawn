@@ -142,6 +142,15 @@ WGPUStatus native_limits(const doe_vk_caps *caps, WGPULimits *out)
         .maxTextureDimension3D = caps->max_texture_dimension_3d,
         .maxTextureArrayLayers = caps->max_texture_array_layers,
         .maxBindGroups = caps->max_bind_groups,
+        .maxVertexBuffers = caps->max_vertex_input_bindings < DOE_VK_MAX_VERTEX_BUFFERS ?
+            caps->max_vertex_input_bindings : DOE_VK_MAX_VERTEX_BUFFERS,
+        .maxVertexAttributes = caps->max_vertex_input_attributes < DOE_VK_MAX_VERTEX_ATTRIBUTES ?
+            caps->max_vertex_input_attributes : DOE_VK_MAX_VERTEX_ATTRIBUTES,
+        .maxVertexBufferArrayStride = caps->max_vertex_input_binding_stride,
+        .maxColorAttachments = 1,
+        .maxColorAttachmentBytesPerSample = 16,
+        .maxInterStageShaderVariables = (caps->max_vertex_output_components < caps->max_fragment_input_components ?
+            caps->max_vertex_output_components : caps->max_fragment_input_components) / 4,
         .maxBindingsPerBindGroup = DOE_RESOURCE_MAX_BINDINGS,
         .maxDynamicUniformBuffersPerPipelineLayout = DOE_RESOURCE_MAX_BINDINGS,
         .maxDynamicStorageBuffersPerPipelineLayout = DOE_RESOURCE_MAX_BINDINGS,

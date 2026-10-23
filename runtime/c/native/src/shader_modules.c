@@ -22,8 +22,8 @@ static void release_shader(void *userdata, void *handle)
 doe_shader_status native_compile_shader(const char *source, size_t size, doe_shader **out, doe_shader_error *error)
 {
     /* Capacity is explicit and compiler-owned. Exhaustion fails visibly; no
-     * reparsing, fallback compiler, or claimed support beyond the selected ABI7 pools. */
-    static const char identity[] = "experimental-c-native-abi7-no-cache";
+     * reparsing, fallback compiler, or claimed support beyond the selected ABI8 pools. */
+    static const char identity[] = "experimental-c-native-abi8-no-cache";
     doe_shader_options options = {
         .allocator = {NULL, shader_allocate, shader_deallocate},
         .capacities = {

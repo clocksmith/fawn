@@ -47,7 +47,8 @@ WGPUQuerySet wgpuDeviceCreateQuerySet(WGPUDevice handle, const WGPUQuerySetDescr
     native_device *device = (native_device *)handle;
     if (!device) return NULL;
     doe_resource_status status = descriptor && !descriptor->nextInChain &&
-        descriptor->type == WGPUQueryType_Timestamp && device->timestamp_enabled ?
+        (descriptor->type == WGPUQueryType_Occlusion ||
+            (descriptor->type == WGPUQueryType_Timestamp && device->timestamp_enabled)) ?
         doe_resource_query_set_validate(descriptor->type, descriptor->count) : DOE_RESOURCE_UNSUPPORTED;
     if (status != DOE_RESOURCE_OK) {
         native_error(device, native_resource_error(status), "query descriptor invalid or timestamp feature not enabled");
@@ -60,7 +61,9 @@ WGPUQuerySet wgpuDeviceCreateQuerySet(WGPUDevice handle, const WGPUQuerySetDescr
     native_lock(device);
     doe_vk_status backend = native_device_status(device);
     if (backend == DOE_VK_OK && descriptor->count)
-        backend = doe_vk_query_pool_create(device->context, descriptor->count, &payload->pool, NULL);
+        backend = descriptor->type == WGPUQueryType_Occlusion ?
+            doe_vk_occlusion_pool_create(device->context, descriptor->count, &payload->pool, NULL) :
+            doe_vk_query_pool_create(device->context, descriptor->count, &payload->pool, NULL);
     if (backend == DOE_VK_OK)
         status = doe_resource_query_set_create(&device->resources, descriptor->type, descriptor->count,
             (doe_resource_native){payload, NULL, release_queries}, &set);
@@ -108,9 +111,8 @@ void wgpuCommandEncoderResolveQuerySet(WGPUCommandEncoder handle, WGPUQuerySet s
     native_device *device = doe_resource_encoder_device(encoder);
     if (!device) return;
     native_lock(device);
-    doe_resource_status status = device->timestamp_enabled ? doe_resource_encoder_resolve_queries(encoder,
-        (doe_resource_query_set *)set, first, count, (doe_resource_buffer *)destination, offset) :
-        doe_resource_encoder_invalidate(encoder, DOE_RESOURCE_UNSUPPORTED);
+    doe_resource_status status = doe_resource_encoder_resolve_queries(encoder,
+        (doe_resource_query_set *)set, first, count, (doe_resource_buffer *)destination, offset);
     native_unlock(device);
     if (status != DOE_RESOURCE_OK) native_error(device, native_resource_error(status), "query resolve recording failed");
 }
@@ -127,6 +129,9 @@ doe_vk_status native_record_query(doe_vk_commands *commands, const doe_resource_
     }
     native_queries *payload = doe_resource_query_set_native(record->value.resolve.set);
     native_buffer *destination = doe_resource_buffer_native(record->value.resolve.destination);
+    if (doe_resource_query_set_type(record->value.resolve.set) == WGPUQueryType_Occlusion)
+        return doe_vk_commands_resolve_queries(commands, payload->pool, record->value.resolve.first,
+            record->value.resolve.count, destination->buffer, record->value.resolve.offset);
     doe_vk_status status = native_timestamp_initialize(payload->device);
     if (status != DOE_VK_OK) return status;
     return doe_vk_commands_resolve_queries_ns(commands, payload->pool,

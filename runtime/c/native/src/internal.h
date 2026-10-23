@@ -10,6 +10,7 @@
 #include "doe_vk.h"
 #include "doe_vk_bindings.h"
 #include "doe_vk_timestamp.h"
+#include "doe_vk_render.h"
 #include "doe_error_scopes.h"
 #include <pthread.h>
 #include <stdatomic.h>
@@ -81,10 +82,18 @@ typedef struct native_pipeline_error {
     const char *message;
 } native_pipeline_error;
 
+typedef struct native_stage {
+    doe_shader_view view;
+    const DoeCompilerEntryV5 *entry;
+    WGPUShaderStage visibility;
+    char name[64];
+} native_stage;
+
 typedef struct native_pipeline {
     native_device *device;
     doe_vk_pipeline *pipeline;
     size_t binding_count;
+    size_t vertex_count;
     doe_vk_binding_layout bindings[DOE_RESOURCE_MAX_GROUPS * DOE_RESOURCE_MAX_BINDINGS];
     uint64_t minimum_sizes[DOE_RESOURCE_MAX_GROUPS * DOE_RESOURCE_MAX_BINDINGS];
 } native_pipeline;
@@ -117,6 +126,15 @@ WGPUStatus native_adapter_info(const doe_vk_caps *caps, WGPUAdapterInfo *out);
 WGPUStatus native_limits(const doe_vk_caps *caps, WGPULimits *out);
 void native_buffer_release(void *userdata, void *handle);
 void native_pipeline_release(void *userdata, void *handle);
+bool native_stage_load(native_device *device, WGPUShaderModule module, WGPUStringView name,
+    uint32_t stage, native_stage *out);
+doe_vk_status native_resolve_bindings(const native_pipeline *pipeline, doe_resource_pipeline_layout *layout,
+    doe_resource_bind_group *const *groups, const doe_resource_dispatch_offsets *offsets,
+    doe_vk_binding_resource *bindings);
+doe_vk_status native_record_render(doe_vk_commands *commands,
+    const doe_resource_command *records, size_t count, size_t *consumed);
+WGPURenderPipeline native_create_render_pipeline(native_device *device,
+    const WGPURenderPipelineDescriptor *descriptor, native_pipeline_error *error);
 doe_shader_status native_compile_shader(const char *source, size_t size, doe_shader **out, doe_shader_error *error);
 bool native_shader_capabilities(const doe_shader_view *view);
 bool native_timestamp_supported(const doe_vk_caps *caps);
@@ -139,7 +157,7 @@ doe_vk_status native_submit_commands(native_device *device, doe_vk_commands *com
 bool native_texture_format(WGPUTextureFormat format, doe_vk_texture_format *out);
 bool native_storage_format(uint32_t format, WGPUTextureFormat *out);
 doe_resource_status native_automatic_layout(native_device *device,
-    const doe_shader_view *view, const DoeCompilerEntryV5 *entry, doe_resource_pipeline_layout **out);
-bool native_pipeline_bindings(native_pipeline *payload, const doe_shader_view *view,
-    const DoeCompilerEntryV5 *entry, doe_resource_pipeline_layout *layout);
+    const native_stage *stages, size_t stage_count, doe_resource_pipeline_layout **out);
+bool native_pipeline_bindings(native_pipeline *payload, const native_stage *stages,
+    size_t stage_count, doe_resource_pipeline_layout *layout);
 #endif
