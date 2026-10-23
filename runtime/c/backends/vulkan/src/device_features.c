@@ -38,6 +38,8 @@ doe_vk_status doe_vk_prepare_features(doe_vk_context *context, const doe_vk_opti
      * clipping (WebGPU indirect-first-instance and unclippedDepth). */
     if (features.features.drawIndirectFirstInstance) selection.base.drawIndirectFirstInstance = 1;
     if (features.features.depthClamp) selection.base.depthClamp = 1;
+    /* Optional BC block compression (WebGPU texture-compression-bc). */
+    if (features.features.textureCompressionBC) selection.base.textureCompressionBC = 1;
     if (available && demote.shaderDemoteToHelperInvocation) {
         selection.demote = demote;
         selection.extension = demote_extension;

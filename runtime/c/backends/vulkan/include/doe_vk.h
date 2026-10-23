@@ -148,6 +148,8 @@ typedef struct doe_vk_caps {
     /* Enabled depthClamp: pipelines may disable depth clipping (unclipped_depth),
      * clamping depth to the viewport range instead. */
     bool depth_clamp;
+    /* Enabled textureCompressionBC: BC formats report format caps only then. */
+    bool texture_compression_bc;
 } doe_vk_caps;
 
 /* One owned reference on success. Objects retain their creating context. */
