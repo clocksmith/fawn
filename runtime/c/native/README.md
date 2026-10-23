@@ -424,7 +424,11 @@ default keeps its own value. Every frontend check (texture and surface sizes,
 buffer size, binding sizes and alignments, binding slot limits, binding numbers,
 bind group count, vertex buffers/attributes/stride, inter-stage variables,
 workgroup size/storage, dispatch counts) reads the device limits, and
-`wgpuDeviceGetLimits` reports them. `tests/limits.c` prints the default,
+`wgpuDeviceGetLimits` reports them. Internal buffers are not WebGPU buffers:
+queue writeTexture stages only the touched bytes in a buffer bounded by Vulkan
+maxMemoryAllocationSize, never by maxBufferSize (`tests/large_write.c` writes
+past the 256 MiB default and checks that a public buffer of that size still
+fails). `tests/limits.c` prints the default,
 adapter and device columns and checks each resolution rule and default-limit
 rejection. The compiler admits shader binding numbers 0..31 only, so groups with
 higher binding numbers execute while shaders cannot yet reference them.

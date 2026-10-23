@@ -78,7 +78,11 @@ void wgpuQueueWriteTexture(WGPUQueue handle, const WGPUTexelCopyTextureInfo *des
         doe_resource_texture_copy_validate(data_size, doe_resource_texture_description(texture), &copy,
             DOE_RESOURCE_BUFFER_TO_TEXTURE, DOE_RESOURCE_COPY_NATIVE, &region) : DOE_RESOURCE_DEVICE_MISMATCH;
     native_unlock(device);
-    uint64_t bytes = status == DOE_RESOURCE_OK ? copy.offset + region.required_bytes : 0;
+    /* Stage only the touched bytes: the layout offset selects where they start
+     * in `data`, and the staging copy then begins at offset 0. */
+    const uint64_t first = copy.offset;
+    uint64_t bytes = status == DOE_RESOURCE_OK ? region.required_bytes : 0;
+    copy.offset = 0;
     if (status != DOE_RESOURCE_OK || bytes > SIZE_MAX - 3) {
         native_error(device, WGPUErrorType_Validation, "queue texture write range invalid");
         native_device_release(device);
@@ -86,14 +90,17 @@ void wgpuQueueWriteTexture(WGPUQueue handle, const WGPUTexelCopyTextureInfo *des
     }
     WGPUBufferDescriptor descriptor = {.size=(bytes + 3) & ~UINT64_C(3),
         .usage=WGPUBufferUsage_CopySrc | WGPUBufferUsage_CopyDst};
-    WGPUBuffer staging = wgpuDeviceCreateBuffer((WGPUDevice)device, &descriptor);
+    /* WebGPU bounds writeTexture by the texture, not maxBufferSize: internal
+     * staging keeps only the backend's real allocation limit. */
+    WGPUBuffer staging = native_device_create_buffer(device, &descriptor, native_allocation_bound(device));
     doe_resource_encoder *encoder = NULL;
     doe_resource_commands *commands = NULL;
     native_lock(device);
     doe_vk_status written = DOE_VK_OK;
     if (staging) {
         native_buffer *payload = doe_resource_buffer_native((doe_resource_buffer *)staging);
-        written = doe_vk_buffer_write(payload->handle.vulkan, 0, data, (size_t)bytes);
+        written = doe_vk_buffer_write(payload->handle.vulkan, 0, bytes ? (const unsigned char *)data + first : data,
+            (size_t)bytes);
         status = written == DOE_VK_OK ? doe_resource_encoder_create(&device->resources, &encoder) : DOE_RESOURCE_STATE;
         if (status == DOE_RESOURCE_OK)
             status = doe_resource_encoder_copy_texture(encoder, (doe_resource_buffer *)staging,

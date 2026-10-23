@@ -18,8 +18,21 @@ WGPUBuffer wgpuDeviceCreateBuffer(WGPUDevice handle, const WGPUBufferDescriptor 
 {
     native_device *device = (native_device *)handle;
     if (!device) return NULL;
-    if (!descriptor || descriptor->nextInChain || descriptor->size > SIZE_MAX ||
-        descriptor->size > device->backend.limits.maxBufferSize) {
+    return native_device_create_buffer(device, descriptor, device->backend.limits.maxBufferSize);
+}
+
+uint64_t native_allocation_bound(const native_device *device)
+{
+    /* One backend allocation backs one buffer; Metal checks its own length. */
+    if (device->backend.kind == WGPUBackendType_Vulkan && device->backend.value.vulkan.caps.max_memory_allocation_size)
+        return device->backend.value.vulkan.caps.max_memory_allocation_size;
+    return UINT64_MAX;
+}
+
+WGPUBuffer native_device_create_buffer(native_device *device, const WGPUBufferDescriptor *descriptor,
+    uint64_t max_size)
+{
+    if (!descriptor || descriptor->nextInChain || descriptor->size > SIZE_MAX || descriptor->size > max_size) {
         native_error(device, WGPUErrorType_Validation, "buffer descriptor unsupported or exceeds limit");
         return NULL;
     }
