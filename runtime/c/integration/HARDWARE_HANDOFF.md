@@ -1,5 +1,9 @@
 # Linux hybrid hardware-smoke handoff, not qualified
 
+Physical runs on both Miles and Suby are currently on hold pending confirmed
+safe reassembly and cooling. This is a preparatory source handoff, not authority
+to run either machine. Cloud source builds and software checks may continue.
+
 Frozen source identity: 71f774150e118198a4bf202983c6dd4125ac761326e59c9065993aec5d86931a (1,744 path/hash inputs in the retained build receipt).
 All recorded inputs matched the shared working tree at 2026-10-23 16:52 UTC.
 Artifact SHA256: 3750e42ee7876fae959ab306182d9b21b2a3efabc2a6494fa47474dcc7796cc2.

@@ -1,5 +1,9 @@
 # Unqualified Linux Vulkan compute handoff
 
+Physical runs on both Miles and Suby are currently on hold pending confirmed
+safe reassembly and cooling. This is a preparatory source handoff, not authority
+to run either machine. Cloud source builds and software checks may continue.
+
 This is a tiny C-only smoke candidate, not production selection or full parity.
 Hardware execution remains unrun in the cloud. The existing software-ICD result
 is explicitly separate. Run only in the isolated folder authorized by the user.
