@@ -776,6 +776,7 @@ extern FnWgpuRenderBundleEncoderDrawIndirect pfn_wgpuRenderBundleEncoderDrawIndi
 extern FnWgpuRenderBundleEncoderDrawIndexedIndirect pfn_wgpuRenderBundleEncoderDrawIndexedIndirect;
 
 extern void* g_lib;
+extern bool g_zig_texture_format_order;
 
 /* Native-direct property key constants */
 #define DOE_DIRECT_NATIVE "__doe_native"
