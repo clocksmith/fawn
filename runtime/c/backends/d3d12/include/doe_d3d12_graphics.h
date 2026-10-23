@@ -6,9 +6,10 @@
 extern "C" {
 #endif
 
-/* Offscreen triangle-list graphics: procedural vertices (SV_VertexID), no
- * vertex/index attributes, depth, MSAA, blending or culling. One RGBA8_UNORM
- * attachment; full-target viewport/scissor. Shader validation stays upstream.
+/* Base graphics API: procedural vertices (SV_VertexID), no geometry/depth
+ * inputs. See doe_d3d12_mesh.h for the typed vertex/index/depth extension.
+ * One RGBA8/BGRA8 UNORM attachment; full-target viewport/scissor; triangle list,
+ * no MSAA, blending or culling. Shader validation stays upstream.
  * Fragment bytecode and all-stage immutable resource layout live in fragment. */
 typedef struct doe_dx_graphics_pipeline_desc {
     const void *vertex_bytecode;

@@ -19,7 +19,8 @@ void doe_dx_native_pipeline_destroy(doe_dx_native_pipeline *pipeline) {
 }
 
 doe_dx_status doe_dx_create_root(doe_dx_native_context *context,
-    const doe_dx_resource_pipeline_desc *desc, doe_dx_native_pipeline *pipeline, doe_dx_error *error) {
+    const doe_dx_resource_pipeline_desc *desc, doe_dx_native_pipeline *pipeline,
+    bool input_assembler, doe_dx_error *error) {
     D3D12_DESCRIPTOR_RANGE ranges[DOE_DX_MAX_BINDINGS] = {0};
     for (size_t index = 0; index < desc->buffers.binding_count; index++) {
         const doe_dx_binding_layout *binding = &desc->buffers.bindings[index];
@@ -64,6 +65,7 @@ doe_dx_status doe_dx_create_root(doe_dx_native_context *context,
     parameter.DescriptorTable.pDescriptorRanges = ranges;
     parameter.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
     D3D12_ROOT_SIGNATURE_DESC root = {0};
+    if (input_assembler) root.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
     root.NumParameters = binding_count ? 1 : 0;
     root.pParameters = binding_count ? &parameter : NULL;
     root.NumStaticSamplers = (UINT)desc->sampler_count;
@@ -91,7 +93,7 @@ doe_dx_status doe_dx_native_pipeline_create(doe_dx_native_context *context,
     const doe_dx_resource_pipeline_desc *desc, doe_dx_native_pipeline **out, doe_dx_error *error) {
     doe_dx_native_pipeline *pipeline = calloc(1, sizeof(*pipeline));
     if (!pipeline) return doe_dx_fail(DOE_DX_OUT_OF_MEMORY, 0, "native.pipeline.allocate", error);
-    doe_dx_status status = doe_dx_create_root(context, desc, pipeline, error);
+    doe_dx_status status = doe_dx_create_root(context, desc, pipeline, false, error);
     if (status == DOE_DX_OK) {
         D3D12_COMPUTE_PIPELINE_STATE_DESC state = {0};
         state.pRootSignature = pipeline->root;
