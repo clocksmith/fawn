@@ -68,10 +68,11 @@ Developer checks below are not physical qualification or full feature closure.
    results are handled; one ABI status conversion preserves OOM versus internal
    execution failure versus validation. Real allocation/backend fault tests are
    recorded in `native/DEVELOPER_RECEIPT_ADMISSION.json`.
-4. **Duplicate target semantics:** text-target owner, in progress. Shared read-only
-   value identity and access-path validation replace duplicate helpers. Target
-   syntax, address spaces and intrinsics stay distinct; emitted-operation controls
-   must pass before the extraction is checkpointed.
+4. **Duplicate target semantics:** text-target owner. Shared read-only value IDs,
+   ordered access paths and runtime-tail identity now replace duplicate helpers in
+   `compiler/targets/ir_view.h`. Malformed-IR sanitizer controls and both targets
+   pass; `targets/DEVELOPER_RECEIPT_ARRAY_LENGTH.json` binds the checks. Target
+   syntax, address spaces and intrinsics remain separate.
 5. **Excess emitted helper closure:** text-target owner, open. Emit only required
    selected-entry/type/access helpers, instead of every memory type per buffer.
    This is not closed by the identity-helper extraction or line-count claims.

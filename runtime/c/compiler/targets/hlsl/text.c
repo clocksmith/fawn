@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: MIT
  * Copyright (c) 2026 Doe contributors */
 #include "private.h"
+#include "../ir_view.h"
 #include <errno.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -49,14 +50,9 @@ void hlsl_line(HlslEmitter *e, const char *text) {
     hlsl_text(e, "\n");
 }
 TypeId hlsl_value_type(HlslEmitter *e, uint32_t id) {
-    const CompilerWorkspace *c = e->module;
-    if (id > c->limits.instructions) {
-        const uint32_t formal = id - c->limits.instructions - 1u;
-        if (formal < c->formal_count) return c->formals[formal].type.resolved.type;
-    } else if (id != 0u && id <= c->instruction_count && c->instructions[id - 1u].result == id) {
-        return c->instructions[id - 1u].type;
-    }
-    hlsl_error(e, "Hlsl operand has no typed value identity");
+    TypeId type;
+    if (target_value_type(e->module, id, &type)) return type;
+    hlsl_error(e, "operand has no typed value identity");
     return IR_VOID;
 }
 void hlsl_value(HlslEmitter *e, uint32_t id) {

@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: MIT
  * Copyright (c) 2026 Doe contributors */
 #include "private.h"
+#include "../ir_view.h"
 #include <inttypes.h>
 
 typedef struct {
@@ -8,20 +9,11 @@ typedef struct {
     uint32_t count;
 } MetalPath;
 static bool collect_path(MetalEmitter *e, uint32_t path, MetalPath *out) {
-    while (path != NO_ID && !e->failed) {
-        if (path >= e->module->access_count || out->count == DOE_METAL_MAX_DEPTH) {
-            metal_error(e, "Metal access path exceeds its identity or traversal bounds");
-            return false;
-        }
-        out->steps[out->count++] = path;
-        const uint32_t parent = e->module->accesses[path].parent;
-        if (parent != NO_ID && parent >= path) {
-            metal_error(e, "Metal access path is cyclic or unordered");
-            return false;
-        }
-        path = parent;
-    }
-    return !e->failed;
+    if (e->failed) return false;
+    const char *error = target_access_path(e->module, path, out->steps,
+        DOE_METAL_MAX_DEPTH, &out->count);
+    if (error != NULL) metal_error(e, error);
+    return error == NULL;
 }
 static const TypeRecord *path_input(MetalEmitter *e, const AccessStep *step) {
     if (step->input_type < 7u || step->input_type - 7u >= e->module->type_count) {
@@ -178,4 +170,16 @@ void metal_access(MetalEmitter *e, const IrInstruction *ir) {
     }
     --e->indent;
     metal_line(e, "}");
+}
+
+void metal_array_length(MetalEmitter *e, const IrInstruction *ir) {
+    const ResourceRecord *r = target_runtime_array(e->module, ir->operands.scalar.binding);
+    uint32_t slot;
+    if (r == NULL || ir->type != IR_U32 || !metal_resource_slot(e, r, &slot)) {
+        metal_error(e, "Metal arrayLength requires a sized storage runtime array");
+        return;
+    }
+    metal_format(e, "uint(ulong(ctx.sizes[%u]) >= %" PRIu64 "ul ? "
+        "(ulong(ctx.sizes[%u]) - %" PRIu64 "ul) / %" PRIu64 "ul : 0ul)",
+        slot, r->tail_offset, slot, r->tail_offset, r->tail_stride);
 }

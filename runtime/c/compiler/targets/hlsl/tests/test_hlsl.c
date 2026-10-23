@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: MIT
  * Copyright (c) 2026 Doe contributors */
 #include "test_support.h"
+#include "../../tests/array_length_source.h"
 #include "../../../src/numeric.h"
 #include "../../../src/stage.h"
 #include <assert.h>
@@ -342,7 +343,20 @@ static void test_graphics_stage_rejection(void) {
     }
     release(f);
 }
+static void test_array_length(const char *path) {
+    Fixture *f = prepare(array_length_source);
+    char *text = emit(f, 0u);
+    if (path != NULL) {
+        FILE *file = fopen(path, "wb");
+        assert(file != NULL);
+        assert(fwrite(text, 1u, strlen(text), file) == strlen(text));
+        assert(fclose(file) == 0);
+    }
+    free(text);
+    release(f);
+}
 int main(int argc, char **argv) {
+    test_array_length(argc > 6 ? argv[6] : NULL);
     test_graphics(argc > 5 ? argv[5] : NULL);
     test_images(argc > 4 ? argv[4] : NULL);
     test_effects_host_fixture(argc > 3 ? argv[3] : NULL);

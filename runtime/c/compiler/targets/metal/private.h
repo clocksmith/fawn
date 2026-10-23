@@ -27,6 +27,7 @@ void metal_memory_helpers(MetalEmitter *);
 void metal_workgroup_helpers(MetalEmitter *);
 void metal_numeric_helpers(MetalEmitter *);
 void metal_expression(MetalEmitter *, const IrInstruction *);
+void metal_array_length(MetalEmitter *, const IrInstruction *);
 void metal_access(MetalEmitter *, const IrInstruction *);
 void metal_functions(MetalEmitter *);
 void metal_handle_type(MetalEmitter *, TypeId);

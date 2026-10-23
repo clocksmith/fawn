@@ -17,7 +17,7 @@ import sys
 out = pathlib.Path(sys.argv[1])
 subprocess.run([str(out / "test_hlsl"), str(out / "control.hlsl"),
                 str(out / "aggregate.hlsl"), str(out / "effects.hlsl"), str(out / "image_guard.hlsl"),
-                str(out / "graphics.hlsl")], check=True)
+                str(out / "graphics.hlsl"), str(out / "array_length.hlsl")], check=True)
 prelude = r"""
 #include <algorithm>
 #include <array>
@@ -29,6 +29,7 @@ prelude = r"""
 #include <cstring>
 using uint = std::uint32_t;
 using uint3 = std::array<uint, 3>;
+using uint4 = std::array<uint, 4>;
 using std::clamp;
 using std::isnan;
 uint asuint(uint v) { return v; }
@@ -163,8 +164,25 @@ int main() {
     std::puts("HLSL graphics host control: typed interface mapping, formal identity, helper calls and return leaves.");
 }
 """
+array_length = r"""
+int main() {
+    uint output[3] = {0, 0, 0x12345678};
+    r0 = nullptr; r1 = output; r1_count = 2;
+    const uint words[] = {0, 3, 4, 7, 8, 16, 0xffffffffu};
+    const uint expected[] = {0, 0, 0, 0, 1, 3, 0};
+    for (unsigned i = 0; i < 7; ++i) {
+        r0_count = words[i];
+        array_length();
+        assert(output[0] == expected[i] && output[1] == 2 && output[2] == 0x12345678);
+    }
+    r0_count = 16; r0_stride = 8;
+    array_length();
+    assert(output[0] == 0);
+    std::puts("HLSL runtime array length: tail prefix, stride, partial elements and bound-view metadata.");
+}
+"""
 for name, main in (("control", scalar), ("aggregate", aggregate), ("effects", effects),
-                   ("image_guard", image_guard), ("graphics", graphics)):
+                   ("image_guard", image_guard), ("graphics", graphics), ("array_length", array_length)):
     text = (out / (name + ".hlsl")).read_text()
     if name == "image_guard":
         text = re.sub(r"Texture2D<float> (r\d+) : register\([^;]+;", r"ImageTexture \1;", text)
@@ -175,7 +193,7 @@ for name, main in (("control", scalar), ("aggregate", aggregate), ("effects", ef
     text = re.sub(r"(r\d+)\.GetDimensions\(count, stride\);",
                   lambda m: f"count = {m[1]}_count; stride = {m[1]}_stride;", text)
     text = re.sub(r"\[numthreads\([^\n]+\]\n", "", text)
-    text = re.sub(r"\((DoeT\d+|DoeContext|uint3)\)0", r"\1{}", text)
+    text = re.sub(r"\((DoeT\d+|DoeContext|uint3|uint4)\)0", r"\1{}", text)
     text = text.replace("precise ", "")
     if name == "graphics":
         text = re.sub(r" : (?:TEXCOORD|SV_)[A-Za-z0-9_]+", "", text)
