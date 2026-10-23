@@ -1,0 +1,100 @@
+{
+  "status": "focused component-math developer checks pass; complete migration and target/device qualification remain pending",
+  "scope": "23 new shared unary component identities; old ABI records/query formulas/export count unchanged; one registry and typed pipeline",
+  "checks": {
+    "normal_source_methods": 59,
+    "asan_ubsan_source_methods": 59,
+    "actual_retained_sources": [
+      "bench/kernels/stable_fluids_advect_velocity.wgsl",
+      "bench/kernels/stable_fluids_advect_dye.wgsl"
+    ],
+    "target_validation": "actual SPIR-V words pass spirv-val Vulkan1.1; all21 new floating builtin maps across scalar/vec2/vec3/vec4; abs/sign leaf-dependent maps",
+    "api": "four caller rounding modes, flags/MXCSR/errno preserved, byte-identical success and atomic semantic/output-capacity failure; normal and ASan/UBSan; canonical shared repeat",
+    "regression": "retained stage/library/pointer/atomic API clients; standalone numeric literal/arithmetic/conversion/fenv/concurrency test",
+    "text": "strict target builds; Metal and HLSL new source+ASan/UBSan target controls; actual emitted C++ operations under UBSan cover signed minimum, ties-even, fractional rounding to1, side effects exactly once; all8 HLSL host controls pass",
+    "build": "canonical Linux shared target and exact15 exports; Darwin generated-export parser/rejection and both platform dry-run checks only",
+    "complete_input_identity": "BUILD_INPUTS_BEFORE.json == BUILD_INPUTS_AFTER.json across every core/Metal build input/header",
+    "source_size": "C size check: 608 files, 0 failures; limit 999",
+    "diff_check": "owned paths passed"
+  },
+  "charged_increment": {
+    "production_source_and_headers": {
+      "before_lines": 4131,
+      "after_lines": 4430,
+      "before_bytes": 226621,
+      "after_bytes": 242230
+    },
+    "all_owned": {
+      "before_bytes": 310709,
+      "after_bytes": 351327
+    }
+  },
+  "preserved_first_failures": [
+    "build-first.log temporary target helper placeholder fixed",
+    "build-third.log omitted private declaration fixed",
+    "source-first/second.log malformed integer-minimum/conversion fixture and wrong diagnostic spelling corrected to legal expressions, retaining exact intended minimum-value checks",
+    "hlsl-first.log C++ host shim selected integer abs for float; using std::abs fixed the shim, actual HLSL mapping unchanged",
+    "regression-first.log wrong test module spelling; scalar legacy module also selected tracked CLI, so that run is NOT qualification; final harness pins/records exact CLI and correct module",
+    "stress-first.log retained4096-loop source reaches unsupported phony assignment, still open"
+  ],
+  "limitations": [
+    "HLSL asinh/acosh/atanh explicitly unsupported",
+    "No f16 or remaining binary/packing builtin completion implied",
+    "No Metal SDK, DXC, GPU accuracy or physical-device qualification",
+    "Darwin recipe is preparation only: current core still deliberately rejects non-Linux x86-64 GCC14.2; portable FP owner is next",
+    "No ABI growth, production default change, full migration or50percent size-reduction claim"
+  ],
+  "source_commit": "b054a51f5ec877bfc5f20df5f9cc8b305fc6cc10",
+  "input_sha256": {
+    "runtime/c/compiler/Makefile": "b0e76ff04d93c48f247ccb1d898cedf4dc50378bebd5c6e5337ba80ca7c387c4",
+    "runtime/c/compiler/README.md": "d1ac90027ca731cad3f8d06be5ad66e098792cd7e3345eb509455327d7df48a0",
+    "runtime/c/compiler/src/builtin.c": "bc87d98c14230f1b56cc8ba4fee68dacede5d97fc9a5fd0f36e24e8350d1b708",
+    "runtime/c/compiler/src/builtin.h": "24c076922a8b9cc8759fb176ec8bd0da06a74db3ee6516cf1ac4b2d06c3d5c8d",
+    "runtime/c/compiler/src/internal.h": "abb4127dffd62db21b89e86284fbb02183a4b59a8ebfa50c34af2a55e5d9efd9",
+    "runtime/c/compiler/src/numeric.c": "6ce4e6657e3759f38d7935c7bdc0ecb13e84d92d19d8c35617283cc649c59df2",
+    "runtime/c/compiler/src/numeric.h": "dc8af1b701e9a843701fd83941210dc3e5d180655b50d6e599595e079e1341ac",
+    "runtime/c/compiler/src/numeric_math.c": "8fdc088cb7b25f400c1a8e3794a383bc25ab14e13b384bc4e0de6578a990be58",
+    "runtime/c/compiler/src/sema_call.c": "f953b991fa130dfa30be60318ecae9116c7647cdee3f7681682d25a6aa439820",
+    "runtime/c/compiler/src/spirv.c": "e303df2659e299cd67e0eedc45e307292218425e240296f1aa7b740aba9f49b1",
+    "runtime/c/compiler/src/spirv_module.c": "f015f42ea954eb25b93971d506fadc50158a73181d0a7f2147dd5d3f01adb341",
+    "runtime/c/compiler/src/spirv_subgroup.c": "346bc2d1d50dc8200827e6542e125850a5073d37e094a99db98ac0a603d45940",
+    "runtime/c/compiler/targets/hlsl/Makefile": "c60cd8c3eda4277fea79b9bbd33fbc58172bb3dc9d5848c37bcadd7c0ef1d3b6",
+    "runtime/c/compiler/targets/hlsl/numeric.c": "6b84bc2bd5e0b23eb204b7598eee01463715306baf2f27fcd8efa33a55fb20f2",
+    "runtime/c/compiler/targets/hlsl/tests/component_math_main.cpp": "9a3ff612ae3d08fc54461822ed3cd2003cbc205a5747b3bd316062f944f96bc7",
+    "runtime/c/compiler/targets/hlsl/tests/host_control.py": "6e4bd542128a5a9c464b06b457d350a5c172a3e6ffaafd470fa6c4250dc73075",
+    "runtime/c/compiler/targets/hlsl/tests/test_component_math.c": "9fea925426d63176cf97e3b93a202d8045ab266702edf007c38f5daf3243709b",
+    "runtime/c/compiler/targets/hlsl/tests/test_hlsl.c": "6b0897bf28dc1d1b433de6dcf3313fe57ecbb05d329267696dd3d9beb3976ae2",
+    "runtime/c/compiler/targets/hlsl/tests/test_support.h": "ebce378c984ab1ed73cb0727cd369acac33797218f0405eabed54909de2978ee",
+    "runtime/c/compiler/targets/metal/Makefile": "078f57679d79366c7dc06a1341d65c1b044ccf4ad17e5e1ed8fec3c610596158",
+    "runtime/c/compiler/targets/metal/numeric.c": "2183ee2bb373f96ab50d37996bb796797d67a9b8d171ad570e8add926facc696",
+    "runtime/c/compiler/targets/metal/tests/host/check_component_math.cpp": "996635a746aaeb232fe1dfb20f42fa13915f0e0591cb122f70d623647542a513",
+    "runtime/c/compiler/targets/metal/tests/test_component_math.c": "28f0412f7c0543ac773c6f6084c033632e04a30a64939d93a227b7c024ef7326",
+    "runtime/c/compiler/targets/tests/component_math_source.h": "30a86301e51ac0e1bba867ae39867ef8f9fa85ff94076f4907d3e7cbac4e6840",
+    "runtime/c/compiler/tests/audit_text_stack.py": "4187654c8a43c75c3ad035c8c478fa66bfddb9df63bdc4b35b7b0104fadc3570",
+    "runtime/c/compiler/tests/test_component_math.py": "9a0d4cea420239f7ad1331b0974f48ad264b87b1c9ba50e6a95f09c74324c93c",
+    "runtime/c/compiler/tests/test_component_math_api.c": "1ad438fa4016e66d1984f2d56a1e9bc4249ddd811a41b6b6668b80c1cda2a17d",
+    "runtime/c/compiler/tests/test_export_symbols.py": "f517aa03d1c2f33b029851a36d6fe6a24cc20dbf3a4855182fdbe15bd2aec7f1",
+    "runtime/c/compiler/tools/export_symbols.py": "39f1f1fbd375ecac7fe74c7dfb9b2e18c0e25771684422f68472774f38832fde"
+  },
+  "library_sha256": {
+    "library_sha256": "b47594961aabb5b9020943d81f36cfaa8c43f37d201e460ceec34bea524755a4",
+    "canonical_library_sha256": "7048fab87d8c36e6875dac89f5a9a0988d4915127273fccc891a940ac6b90bda"
+  },
+  "stack": {
+    "normal": {
+      "frame_count": 352,
+      "maximum_acyclic_library_path_bytes": 2640,
+      "fixed_combined": 191840,
+      "maximum_job_combined": 181504,
+      "metal_composed_bound": 27632
+    },
+    "pic": {
+      "frame_count": 346,
+      "maximum_acyclic_library_path_bytes": 2640,
+      "fixed_combined": 191840,
+      "maximum_job_combined": 181504,
+      "metal_composed_bound": 29200
+    }
+  },
+  "full_developer_summary_sha256": "75fc2b37f3c4ec95f10ec6a0b5e3148a6f1d3d5905c99e4f25290383e805c573"
+}
