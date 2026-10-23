@@ -51,18 +51,26 @@ exported; unknown and unimplemented names return NULL from `wgpuGetProcAddress`.
   may retry recovery. If still unresolved, work-done publishes no future rather
   than reporting success. Releasing all caller handles does not free unresolved
   work; unattended recovery/liveness remains unfinished.
+- TimestampQuery is opt-in at device creation. Generated backend WGSL is compiled
+  by the same ABI7 C compiler before a feature-enabled device is published. Query
+  sets alias the resource owner; zero-count sets need no native pool. Query resolve
+  records raw timestamps, exact calibrated GPU nanosecond conversion and the copy
+  into the caller's destination before later commands. There is no production CPU
+  postprocessing or raw-tick fallback. A terminal failed submission discards the
+  possibly poisoned normalizer; later work creates a fresh one. Unknown completion
+  retains its command-owned dependencies and prevents reuse.
 - Device serialization covers mutable resources and Vulkan state. Internal
   recursive acquisition permits resource-finalizer cleanup using the same lock.
   Foreign callbacks run only after unlocking, with required full-call leases.
 
 ## Intentionally unprovided or rejected
 
-Graphics, surfaces, query/timestamp entrypoints and indirect dispatch remain
-absent. Texture format reinterpretation, depth/multisampled images, cube arrays
+Graphics, surfaces, occlusion queries and indirect dispatch remain absent. Texture format reinterpretation, depth/multisampled images, cube arrays
 and anisotropic sampling are rejected. The baseline admits 18 named Vulkan
 color formats, subject to actual device usage/format capabilities. Device
-descriptors requesting required features or required limits reject rather than
-silently succeeding. Buffer, sampled/storage image and sampler layouts are
+descriptors may request TimestampQuery when the actual adapter supports the
+canonical GPU nanosecond normalizer. Other required features and required limits
+reject rather than silently succeeding. Buffer, sampled/storage image and sampler layouts are
 admitted; extensions, binding arrays,
 immediates, specialization constants and nonbaseline shader capabilities reject.
 ABI6 lacks exact texture/sampler pair-use reflection through helper parameters.
@@ -73,7 +81,10 @@ admission correction exercises the resource owner's whole-buffer read/write
 conflicts, effective writable ranges and overlapping texture mip/layer identities.
 Empty pipeline-layout slots are normalized by that owner and skipped by native
 conversion, not required or validated as bound groups. Nonempty slots remain
-required. Allocation and native execution errors retain their typed public error
+required. Trailing GetBindGroupLayout indices below the device limit use the
+resource owner's lazy canonical empty layout, with typed, retriable OOM. Native
+recovery returns completion certainty separately from its actual status. Allocation
+and native execution errors retain their typed public error
 category rather than being relabeled as validation errors.
 Descriptor labels and SetLabel use the existing label owner, including exact
 length-delimited bytes and resource-finalizer cleanup. Failed WGSL modules retain
@@ -105,10 +116,12 @@ PASS public ABI: compute/readback, OOB guards, dynamic offsets, cross-device rej
 PASS C++ pinned typed procedure calls and unsupported-name rejection
 PASS device loss modes/future/last-external-release/failed-creation, owned labels, async pipeline and real compilation diagnostics
 PASS public textures: actual zero mips, packed upload, linear sampling, image OOB guards, storage readback, early releases and filter/pair/copy negatives (CPU Vulkan only)
-PASS public admission: sparse auto-layout holes, null unbind, ignored destroyed resources, dynamic writable ranges, whole-buffer read/write conflicts and texture subresource aliases (CPU Vulkan only)
-PASS public error types: resource allocation, automatic-layout allocation, backend OOM/native/validation failures and successful recovery
+PASS public admission: sparse/trailing/null layout holes, null unbind, ignored destroyed resources, dynamic writable ranges, whole-buffer read/write conflicts and texture subresource aliases (CPU Vulkan only)
+PASS public error types: resource allocation, automatic-layout allocation, backend OOM/native/validation failures, failed requested-feature device and successful recovery
+PASS public timestamps: requested feature, zero/max/range/destroy admission, real pass/command writes, exact GPU nanoseconds, same-batch copy, scratch reuse and early query release (CPU Vulkan only)
+PASS typed recovery: native/OOM/pending errors survive submit/write/texture/workdone, unknown leases retained, terminal cleanup and fresh GPU normalizer recovery
 PASS every implemented procedure address matches; every unprovided name returns NULL
-PASS exact exports: 114 implemented, 88 pinned unprovided, no private exports
+PASS exact exports: 123 implemented, 79 pinned unprovided, no private exports
 ```
 
 A compute shader with two declared entries selects `transform`, runs 72
@@ -130,7 +143,20 @@ Admission controls require sparse group2 but not empty holes, execute disjoint
 dynamic writable ranges, reject overlapping writable and whole-buffer readonly
 conflicts, and distinguish overlapping from disjoint image mips. Failure controls
 inject errors at actual resource allocation and Vulkan acquisition boundaries,
-including partial auto-layout unwind with unchanged device lease count.
+including partial auto-layout unwind and lazy trailing-layout OOM/retry with
+unchanged device lease count. Timestamp checks compare actual GPU output with an
+independent integer binary32-period oracle and separately observed raw query ticks,
+including an unwritten zero, adjacent sentinel and same-batch copy. Recovery controls
+obscure a real submission's completion at the backend boundary, preserve Internal,
+OutOfMemory and Pending results, retain unknown leases, then prove terminal cleanup
+and actual successful reconstruction of the GPU normalizer.
+
+Valid empty WGSL remains a known compiler capability gap in the pinned timestamp
+composition. `make ... check-empty-module` is a minimized, currently failing control
+requiring no diagnostics for an empty module, separate from the supported-path
+`check`. The native frontend does not forge a successful compiler artifact. The
+first normal and sanitizer failure logs remain recorded; downstream pipeline entry
+selection must still reject a zero-entry module after the compiler gap is fixed.
 
 ```
 ASAN_OPTIONS=detect_leaks=0:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1 \
@@ -147,7 +173,10 @@ native bytes, including a fresh canonical compiler build. An earlier live image
 sanitizer build overlapped unfinished ABI7 compiler edits and is not source-bound
 evidence. `DEVELOPER_RECEIPT_ADMISSION.json` separately binds the hole/alias/error
 correction to the recorded resource snapshot and pinned compiler artifacts, not
-to later concurrent graphics source. `DEVELOPER_RECEIPT_LIFECYCLE.json` binds the preceding lifecycle work. The earlier
+to later concurrent graphics source. `DEVELOPER_RECEIPT_TIMESTAMPS.json` binds the
+subsequent ABI7 timestamp/recovery/trailing-layout composition to committed
+b4e39b0 plus its exact resource overlay, with fully instrumented compiler and
+runtime controls and the explicitly failing empty-module control. `DEVELOPER_RECEIPT_LIFECYCLE.json` binds the preceding lifecycle work. The earlier
 `DEVELOPER_RECEIPT.json` and source manifest remain the historical first compute
 checkpoint, not evidence for changed bytes. An initial live-worktree build caught
 unfinished parallel ABI6 enum edits; checkpoint testing instead materialized the

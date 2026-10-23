@@ -129,7 +129,13 @@ void native_device_retain(void *identity)
 bool native_device_alive(void *identity)
 {
     native_device *device = identity;
-    return device && !device->destroyed && doe_vk_context_alive(device->context);
+    return native_device_status(device) == DOE_VK_OK;
+}
+
+doe_vk_status native_device_status(native_device *device)
+{
+    if (!device || device->destroyed) return DOE_VK_INVALID_STATE;
+    return doe_vk_context_alive(device->context) ? DOE_VK_OK : DOE_VK_DEVICE_LOST;
 }
 
 void native_device_release(void *identity)
@@ -144,6 +150,7 @@ void native_device_release(void *identity)
     if (doe_label_store_destroy(device->labels) != DOE_LABEL_OK) abort();
     native_loss_bind(device->loss, NULL);
     native_loss_release(device->loss);
+    doe_vk_timestamp_normalizer_release(device->timestamp_normalizer);
     doe_vk_context_release(device->context);
     doe_instance *instance = device->instance;
     if (pthread_mutex_destroy(&device->mutex)) abort();
@@ -153,7 +160,9 @@ void native_device_release(void *identity)
 
 static native_device *create_device(native_adapter *adapter, const WGPUDeviceDescriptor *descriptor, native_loss *loss)
 {
-    if (descriptor && (descriptor->nextInChain || descriptor->requiredFeatureCount ||
+    bool timestamps = false;
+    if (!native_requested_features(&adapter->caps, descriptor, &timestamps)) return NULL;
+    if (descriptor && (descriptor->nextInChain ||
         descriptor->requiredLimits || descriptor->defaultQueue.nextInChain ||
         descriptor->deviceLostCallbackInfo.nextInChain ||
         descriptor->uncapturedErrorCallbackInfo.nextInChain)) return NULL;
@@ -194,6 +203,11 @@ static native_device *create_device(native_adapter *adapter, const WGPUDeviceDes
     if (doe_vk_context_create(&adapter->options, &device->context, &error) != DOE_VK_OK)
         goto failed_errors;
     if (doe_vk_context_caps(device->context, &device->caps) != DOE_VK_OK) {
+        doe_vk_context_release(device->context);
+        goto failed_errors;
+    }
+    device->timestamp_enabled = timestamps;
+    if (timestamps && native_timestamp_initialize(device) != DOE_VK_OK) {
         doe_vk_context_release(device->context);
         goto failed_errors;
     }
@@ -304,26 +318,3 @@ WGPUStatus wgpuDeviceGetLimits(WGPUDevice device, WGPULimits *out)
 {
     return device ? native_limits(&((native_device *)device)->caps, out) : WGPUStatus_Error;
 }
-void wgpuAdapterGetFeatures(WGPUAdapter adapter, WGPUSupportedFeatures *features)
-{
-    (void)adapter;
-    if (features) *features = (WGPUSupportedFeatures){0};
-}
-void wgpuDeviceGetFeatures(WGPUDevice device, WGPUSupportedFeatures *features)
-{
-    (void)device;
-    if (features) *features = (WGPUSupportedFeatures){0};
-}
-WGPUBool wgpuAdapterHasFeature(WGPUAdapter adapter, WGPUFeatureName feature)
-{
-    (void)adapter;
-    (void)feature;
-    return WGPU_FALSE;
-}
-WGPUBool wgpuDeviceHasFeature(WGPUDevice device, WGPUFeatureName feature)
-{
-    (void)device;
-    (void)feature;
-    return WGPU_FALSE;
-}
-void wgpuSupportedFeaturesFreeMembers(WGPUSupportedFeatures features) { (void)features; }

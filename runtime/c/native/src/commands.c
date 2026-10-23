@@ -36,9 +36,14 @@ WGPUComputePassEncoder wgpuCommandEncoderBeginComputePass(WGPUCommandEncoder han
     if (!device) return NULL;
     doe_resource_compute_pass *pass = NULL;
     native_lock(device);
-    doe_resource_status status = descriptor && (descriptor->nextInChain || descriptor->timestampWrites) ?
+    const WGPUPassTimestampWrites *writes = descriptor ? descriptor->timestampWrites : NULL;
+    doe_resource_pass_timestamps timestamps = {0};
+    if (writes) timestamps = (doe_resource_pass_timestamps){(doe_resource_query_set *)writes->querySet,
+        writes->beginningOfPassWriteIndex, writes->endOfPassWriteIndex};
+    doe_resource_status status = (descriptor && descriptor->nextInChain) ||
+        (writes && (writes->nextInChain || !device->timestamp_enabled)) ?
         doe_resource_encoder_invalidate(encoder, DOE_RESOURCE_UNSUPPORTED) :
-        doe_resource_encoder_begin_compute(encoder, &pass);
+        doe_resource_encoder_begin_compute_with_timestamps(encoder, writes ? &timestamps : NULL, &pass);
     native_unlock(device);
     if (status != DOE_RESOURCE_OK) native_error(device, native_resource_error(status), "compute pass begin failed");
     if (pass && descriptor) native_label(device, pass, descriptor->label);

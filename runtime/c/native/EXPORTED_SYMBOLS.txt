@@ -37,7 +37,9 @@ wgpuCommandEncoderCopyTextureToBuffer
 wgpuCommandEncoderCopyTextureToTexture
 wgpuCommandEncoderFinish
 wgpuCommandEncoderRelease
+wgpuCommandEncoderResolveQuerySet
 wgpuCommandEncoderSetLabel
+wgpuCommandEncoderWriteTimestamp
 wgpuComputePassEncoderAddRef
 wgpuComputePassEncoderDispatchWorkgroups
 wgpuComputePassEncoderEnd
@@ -58,6 +60,7 @@ wgpuDeviceCreateCommandEncoder
 wgpuDeviceCreateComputePipeline
 wgpuDeviceCreateComputePipelineAsync
 wgpuDeviceCreatePipelineLayout
+wgpuDeviceCreateQuerySet
 wgpuDeviceCreateSampler
 wgpuDeviceCreateShaderModule
 wgpuDeviceCreateTexture
@@ -81,6 +84,12 @@ wgpuInstanceWaitAny
 wgpuPipelineLayoutAddRef
 wgpuPipelineLayoutRelease
 wgpuPipelineLayoutSetLabel
+wgpuQuerySetAddRef
+wgpuQuerySetDestroy
+wgpuQuerySetGetCount
+wgpuQuerySetGetType
+wgpuQuerySetRelease
+wgpuQuerySetSetLabel
 wgpuQueueAddRef
 wgpuQueueOnSubmittedWorkDone
 wgpuQueueRelease

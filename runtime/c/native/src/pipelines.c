@@ -28,7 +28,7 @@ static const DoeCompilerEntryV5 *select_entry(const doe_shader_view *view, WGPUS
 
 /* Target capability admission, not source parsing or shader validation. The
  * compiler owns valid words; this backend enables baseline Shader/Matrix, 1D images and ImageQuery. */
-static bool native_shader_capabilities(const doe_shader_view *view)
+bool native_shader_capabilities(const doe_shader_view *view)
 {
     if (view->counts.words < 5 || view->words[1] > UINT32_C(0x00010300)) return false;
     for (size_t at = 5; at < view->counts.words;) {
@@ -102,11 +102,11 @@ WGPUComputePipeline native_create_compute_pipeline(native_device *device,
     doe_resource_status resource_status = automatic ?
         native_automatic_layout(device, &view, entry, &layout) : DOE_RESOURCE_OK;
     doe_resource_pipeline *pipeline = NULL;
-    doe_vk_status backend_status = DOE_VK_OK;
+    doe_vk_status backend_status = native_device_status(device);
     if (resource_status == DOE_RESOURCE_OK && (!layout || doe_resource_pipeline_layout_device(layout) != device ||
         !native_device_alive(device) || !native_pipeline_bindings(payload, &view, entry, layout)))
         resource_status = DOE_RESOURCE_LAYOUT;
-    if (resource_status == DOE_RESOURCE_OK) {
+    if (resource_status == DOE_RESOURCE_OK && backend_status == DOE_VK_OK) {
         char name[64];
         memcpy(name, view.names + entry->name.offset, entry->name.length);
         name[entry->name.length] = 0;
@@ -158,9 +158,13 @@ WGPUBindGroupLayout wgpuComputePipelineGetBindGroupLayout(WGPUComputePipeline ha
     native_device *device = doe_resource_pipeline_device(pipeline);
     if (!device) return NULL;
     native_lock(device);
-    doe_resource_layout *layout = doe_resource_pipeline_layout_group(doe_resource_pipeline_get_layout(pipeline), index);
-    doe_resource_layout_retain(layout);
+    doe_resource_layout *layout = NULL;
+    doe_resource_status status = index < device->caps.max_bind_groups ?
+        doe_resource_pipeline_layout_get_group(doe_resource_pipeline_get_layout(pipeline), index, &layout) :
+        DOE_RESOURCE_RANGE;
+    if (status == DOE_RESOURCE_OK) doe_resource_layout_retain(layout);
     native_unlock(device);
-    if (!layout) native_error(device, WGPUErrorType_Validation, "pipeline bind group index out of range");
+    if (status != DOE_RESOURCE_OK) native_error(device, native_resource_error(status),
+        "pipeline bind group layout unavailable or index out of range");
     return (WGPUBindGroupLayout)layout;
 }

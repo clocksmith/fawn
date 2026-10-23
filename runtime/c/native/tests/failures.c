@@ -22,6 +22,22 @@ doe_vk_status __wrap_doe_vk_pipeline_create(doe_vk_context *context, const uint3
     if (injected_pipeline_status != DOE_VK_OK) return injected_pipeline_status;
     return __real_doe_vk_pipeline_create(context,words,count,entry,bindings,binding_count,out,error);
 }
+static bool fail_normalizer;
+doe_vk_status __real_doe_vk_timestamp_normalizer_create(doe_vk_context *,
+    const doe_vk_timestamp_normalizer_desc *, doe_vk_timestamp_normalizer **, doe_vk_error *);
+doe_vk_status __wrap_doe_vk_timestamp_normalizer_create(doe_vk_context *context,
+    const doe_vk_timestamp_normalizer_desc *descriptor, doe_vk_timestamp_normalizer **out, doe_vk_error *error)
+{
+    if (fail_normalizer) return DOE_VK_OUT_OF_MEMORY;
+    return __real_doe_vk_timestamp_normalizer_create(context,descriptor,out,error);
+}
+static void feature_failure(WGPURequestDeviceStatus status, WGPUDevice device,
+    WGPUStringView message, void *userdata, void *unused)
+{
+    (void)message; (void)unused;
+    assert(status == WGPURequestDeviceStatus_Error && !device);
+    ++*(unsigned *)userdata;
+}
 static unsigned allocations_before_failure;
 static void *fail_allocate(void *userdata, const void *vtable, size_t size, size_t alignment)
 {
@@ -57,6 +73,15 @@ int main(void)
     descriptor.uncapturedErrorCallbackInfo = (WGPUUncapturedErrorCallbackInfo){.callback=error_reply,.userdata1=&s};
     WGPURequestDeviceCallbackInfo requested = {.mode=WGPUCallbackMode_AllowSpontaneous,.callback=device_reply,.userdata1=&s};
     assert(wgpuAdapterRequestDevice(s.adapter,&descriptor,requested).id && s.device);
+    WGPUFeatureName timestamp = WGPUFeatureName_TimestampQuery;
+    descriptor.requiredFeatureCount = 1;
+    descriptor.requiredFeatures = &timestamp;
+    unsigned failed_feature_devices = 0;
+    WGPURequestDeviceCallbackInfo failure = {.mode=WGPUCallbackMode_AllowSpontaneous,
+        .callback=feature_failure,.userdata1=&failed_feature_devices};
+    fail_normalizer = true;
+    assert(wgpuAdapterRequestDevice(s.adapter,&descriptor,failure).id && failed_feature_devices == 1);
+    fail_normalizer = false;
     native_device *device = (native_device *)s.device;
     WGPUBufferDescriptor buffer_desc = {.size=16,.usage=WGPUBufferUsage_Storage};
     WGPUShaderSourceWGSL source = WGPU_SHADER_SOURCE_WGSL_INIT;
@@ -115,9 +140,25 @@ int main(void)
     WGPUComputePipeline compute = wgpuDeviceCreateComputePipeline(s.device,&pipeline_desc);
     assert(compute && !s.errors);
     wgpuComputePipelineRelease(compute);
+    device->resources.allocator.allocate = fail_allocate;
+    allocations_before_failure = 1000;
+    compute = wgpuDeviceCreateComputePipeline(s.device,&pipeline_desc);
+    assert(compute);
+    allocations_before_failure = 0;
+    unsigned references = atomic_load(&device->references);
+    wgpuDevicePushErrorScope(s.device,WGPUErrorFilter_OutOfMemory);
+    assert(!wgpuComputePipelineGetBindGroupLayout(compute,3));
+    pop_type(&s,WGPUErrorType_OutOfMemory);
+    assert(atomic_load(&device->references) == references);
+    allocations_before_failure = 1000;
+    WGPUBindGroupLayout trailing = wgpuComputePipelineGetBindGroupLayout(compute,3);
+    assert(trailing);
+    wgpuBindGroupLayoutRelease(trailing);
+    wgpuComputePipelineRelease(compute);
+    device->resources.allocator = saved;
     wgpuShaderModuleRelease(shader);
     wgpuDeviceRelease(s.device);
     wgpuAdapterRelease(s.adapter);
     wgpuInstanceRelease(s.instance);
-    puts("PASS public error types: resource allocation, automatic-layout allocation, backend OOM/native/validation failures and successful recovery");
+    puts("PASS public error types: resource allocation, automatic-layout allocation, backend OOM/native/validation failures, failed requested-feature device and successful recovery");
 }

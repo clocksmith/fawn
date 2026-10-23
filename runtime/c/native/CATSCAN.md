@@ -14,7 +14,9 @@ their existing C owners. This is not the production/default runtime.
 Instance, adapter, device, buffer, compute shader/pipeline, buffer bindings, command
 recording, native Vulkan submission and readback; device-loss futures, labels,
 compilation diagnostics and compute-pipeline callbacks; initialized color textures,
-views/samplers, buffer/image copies and ABI6 image compute bindings. Unsupported entrypoints are absent
+views/samplers, buffer/image copies and ABI7 image compute bindings; requested
+timestamp queries with genuine in-command GPU nanosecond normalization. Unsupported
+entrypoints are absent
 or return their API-specific failure. No replacement-completeness claim is implied.
 
 ## Contracts
@@ -29,7 +31,8 @@ Shader reflection is not a substitute for missing production dispatch analysis.
 ## Acceptance
 Focused developer build and software-only compute checks are separate from later
 independent integrated qualification and blocked physical GPU runs.
-- Evidence: [developer admission checks](DEVELOPER_RECEIPT_ADMISSION.json).
+- Evidence: [developer timestamp/recovery checks](DEVELOPER_RECEIPT_TIMESTAMPS.json)
+  and preceding [admission checks](DEVELOPER_RECEIPT_ADMISSION.json).
 
 ## Non-goals
 A parallel resource engine, fake backend, full graphics support or default cutover.
