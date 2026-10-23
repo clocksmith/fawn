@@ -1,0 +1,25 @@
+{
+  "schema": 1,
+  "original_draft_packet_sha256": "cfe4d1086be6864f3d5b69419d5a9c1528370b98721150aa80046cd896e4f938",
+  "original_source_manifest_sha256": "d0a6583807d8566361d775456b5c1c813d2e107efffbaf077ad6be0266743a5a",
+  "original_source_list_sha256": "1727c52a861af7802e345d27165447b6ee5e93e613e23ff8fbff9ccfad4a0e26",
+  "changed_inputs": [
+    {
+      "path": "docs/c-migration/MIGRATION.md",
+      "prior_sha256": "7e67774a485fcea1d75c8dee5117d4be174ea9fd0024456bfdc4da6d47413aa5",
+      "current_sha256": "f23d3850b7e8ce3599ac43a9b22a3252af56c81343c1c2e5bfb085fadee2aa08",
+      "basis": "Accepted M12 front-door paragraph only; observed working-tree documentation, scoped commit pending."
+    }
+  ],
+  "unchanged_candidate3_producer_observations": [
+    "config/zig-test-inventory.json",
+    "runtime/c/dropin-policy/tools/verify_archive.py",
+    "runtime/zig/build.zig",
+    "runtime/zig/source-layout.json",
+    "runtime/zig/src/dropin/dropin_proc_manifest.zig",
+    "runtime/zig/src/dropin/wgpu_dropin_lib.zig"
+  ],
+  "route_acceptance": "unaccepted; identity observation is not qualification",
+  "contract_delta": "After ordinary argument validation, cleanup rejection precedes set/remove no-ops; get NULL output rejects first and cleanup preserves output. Rejection-only probes are defined; only exclusive destroy retry recovers storage. No lifecycle design expansion.",
+  "installed_files": "Only runtime/c/labels; no implementation, executable tests, shared producer edits, source cleanup repair, build or publication."
+}

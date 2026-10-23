@@ -1,0 +1,5 @@
+proposed ABI5: capacities=160 selection=24 workgroup=32 entry=64 counts=64 outputs=168 module=16 result=376
+planning only: source_reference=8/4 entry_input=20/4 entry=64/8 limits=112 core=480/8; old_core=552 old_fixed=146256
+fixed-singular: persistent=92256 common=20856 token=24588 target=32944 refs=2824 uniform_after_refs=5232 closure_after_refs=296 total=146056 J=1 B=5 C=264
+ABI4-binary-profile: persistent=3701336 common=1008744 token=98316 target=531504 refs=40968 uniform_after_refs=428912 closure_after_refs=1184 total=5241584 J=630 B=1024 C=665280
+ABI5-example-not-CLI-policy: persistent=992856 common=1008744 token=98316 target=531504 refs=40968 uniform_after_refs=428912 closure_after_refs=1184 total=2533104 J=32 B=160 C=2048

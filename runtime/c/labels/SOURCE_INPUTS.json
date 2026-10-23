@@ -1,0 +1,640 @@
+{
+  "schema": 1,
+  "captured_at_utc": "2026-10-23T15:07:44.286365+00:00",
+  "head": "da9b75a09e93248f52749d5aa7dd414f4d8a0016",
+  "branch": "experimental/c-migration-dot-20261023",
+  "purpose": "Frozen label design/source-trace identities only, not complete native compilation closure or acceptance. Route/shared producers remain candidate3-bound and unaccepted. Only the accepted M12 front-door documentation delta is rebound.",
+  "files": [
+    {
+      "path": "AGENTS.md",
+      "sha256": "123614ec5e93ab5c4c7b174111d11fdc5c67fb4be368f542a414ebcd355ad39d",
+      "bytes": 4708,
+      "physical_lines": 75,
+      "head_sha256": "123614ec5e93ab5c4c7b174111d11fdc5c67fb4be368f542a414ebcd355ad39d",
+      "differs_from_head": false,
+      "role": "source-traced input, not a complete native link/build closure",
+      "evidence_status": "retained source/guidance/test input, not new acceptance"
+    },
+    {
+      "path": "CATSCAN.md",
+      "sha256": "d02b6c32a3d9e8f4fa07d84479ab0b378556adb62e85319c289e700f6ea4846a",
+      "bytes": 1962,
+      "physical_lines": 50,
+      "head_sha256": "d02b6c32a3d9e8f4fa07d84479ab0b378556adb62e85319c289e700f6ea4846a",
+      "differs_from_head": false,
+      "role": "source-traced input, not a complete native link/build closure",
+      "evidence_status": "retained source/guidance/test input, not new acceptance"
+    },
+    {
+      "path": "GOALS.md",
+      "sha256": "e0c7956ff1ef165011d9e7aace8e7cb4933a53937c318e07cc308b485e6ba00c",
+      "bytes": 16795,
+      "physical_lines": 253,
+      "head_sha256": "e0c7956ff1ef165011d9e7aace8e7cb4933a53937c318e07cc308b485e6ba00c",
+      "differs_from_head": false,
+      "role": "source-traced input, not a complete native link/build closure",
+      "evidence_status": "retained source/guidance/test input, not new acceptance"
+    },
+    {
+      "path": "INTENT.md",
+      "sha256": "818112ce166ea8b6d3c788782ae4847ea4e08cdab73f7ac1f30855bcfd92759d",
+      "bytes": 7096,
+      "physical_lines": 115,
+      "head_sha256": "818112ce166ea8b6d3c788782ae4847ea4e08cdab73f7ac1f30855bcfd92759d",
+      "differs_from_head": false,
+      "role": "source-traced input, not a complete native link/build closure",
+      "evidence_status": "retained source/guidance/test input, not new acceptance"
+    },
+    {
+      "path": "config/zig-test-inventory.json",
+      "sha256": "340c54c88eaeb6d42d5f62398e111d2ac8f0698e508667d3eda28d9eca6dc7cd",
+      "bytes": 39613,
+      "physical_lines": 1450,
+      "head_sha256": "5513af36edd6e0bfd9c5c888fed70e53a4a2a42868f372e82bb30f74a3a52825",
+      "differs_from_head": true,
+      "role": "source-traced input, not a complete native link/build closure",
+      "evidence_status": "candidate3-bound unaccepted route/shared-producer observation"
+    },
+    {
+      "path": "docs/architecture.md",
+      "sha256": "b4b176465d59b596db4cfb60056a580d661dc796a5c19dd7427bfbb0c6de441e",
+      "bytes": 34813,
+      "physical_lines": 614,
+      "head_sha256": "b4b176465d59b596db4cfb60056a580d661dc796a5c19dd7427bfbb0c6de441e",
+      "differs_from_head": false,
+      "role": "source-traced input, not a complete native link/build closure",
+      "evidence_status": "retained source/guidance/test input, not new acceptance"
+    },
+    {
+      "path": "docs/c-migration/MIGRATION.md",
+      "sha256": "f23d3850b7e8ce3599ac43a9b22a3252af56c81343c1c2e5bfb085fadee2aa08",
+      "bytes": 24248,
+      "physical_lines": 367,
+      "head_sha256": "7e67774a485fcea1d75c8dee5117d4be174ea9fd0024456bfdc4da6d47413aa5",
+      "differs_from_head": true,
+      "role": "source-traced input, not a complete native link/build closure",
+      "evidence_status": "accepted M12 documentation delta, scoped commit pending"
+    },
+    {
+      "path": "docs/c-migration/QUALITY_TARGET.md",
+      "sha256": "3ab93df3f8d7e9166125821551af1558a596ccab6cfd3580d5a64bf0c37d4474",
+      "bytes": 7198,
+      "physical_lines": 104,
+      "head_sha256": "3ab93df3f8d7e9166125821551af1558a596ccab6cfd3580d5a64bf0c37d4474",
+      "differs_from_head": false,
+      "role": "source-traced input, not a complete native link/build closure",
+      "evidence_status": "retained source/guidance/test input, not new acceptance"
+    },
+    {
+      "path": "docs/c-migration/quality-counting-contract.json",
+      "sha256": "9e271dec9f4a135842e757f03522d446aec3c2db51c603109fe1db804b39b82b",
+      "bytes": 5192,
+      "physical_lines": 92,
+      "head_sha256": "9e271dec9f4a135842e757f03522d446aec3c2db51c603109fe1db804b39b82b",
+      "differs_from_head": false,
+      "role": "source-traced input, not a complete native link/build closure",
+      "evidence_status": "retained source/guidance/test input, not new acceptance"
+    },
+    {
+      "path": "docs/component-charters.md",
+      "sha256": "29d8ae03e114866decbb223499a5332223eb1c48051bce9c0d01f58357b909f3",
+      "bytes": 3138,
+      "physical_lines": 102,
+      "head_sha256": "29d8ae03e114866decbb223499a5332223eb1c48051bce9c0d01f58357b909f3",
+      "differs_from_head": false,
+      "role": "source-traced input, not a complete native link/build closure",
+      "evidence_status": "retained source/guidance/test input, not new acceptance"
+    },
+    {
+      "path": "docs/process.md",
+      "sha256": "ba771080a938577cebcdf1c58583cbfe6640b2c83797882c90beba0106290463",
+      "bytes": 61603,
+      "physical_lines": 904,
+      "head_sha256": "ba771080a938577cebcdf1c58583cbfe6640b2c83797882c90beba0106290463",
+      "differs_from_head": false,
+      "role": "source-traced input, not a complete native link/build closure",
+      "evidence_status": "retained source/guidance/test input, not new acceptance"
+    },
+    {
+      "path": "packages/doe-gpu/src/vendor/webgpu/index.js",
+      "sha256": "2e7450fb843ffd809499298c872beb75ce0f7620a8d1e223cdf9a9918f21e78c",
+      "bytes": 114575,
+      "physical_lines": 3229,
+      "head_sha256": "2e7450fb843ffd809499298c872beb75ce0f7620a8d1e223cdf9a9918f21e78c",
+      "differs_from_head": false,
+      "role": "source-traced input, not a complete native link/build closure",
+      "evidence_status": "retained source/guidance/test input, not new acceptance"
+    },
+    {
+      "path": "runtime/CATSCAN.md",
+      "sha256": "a2979d9d8f3d21ae837afc14ed13dcfae3e30008f216d5ef2a2f1d8c8da0b8a4",
+      "bytes": 1440,
+      "physical_lines": 44,
+      "head_sha256": "a2979d9d8f3d21ae837afc14ed13dcfae3e30008f216d5ef2a2f1d8c8da0b8a4",
+      "differs_from_head": false,
+      "role": "source-traced input, not a complete native link/build closure",
+      "evidence_status": "retained source/guidance/test input, not new acceptance"
+    },
+    {
+      "path": "runtime/bridge/webgpu-addon/doe_napi_caps.c",
+      "sha256": "0f45fefc690f42ce676ed6598ee6c8404ede8024076a3bfb70645d0264474b68",
+      "bytes": 33336,
+      "physical_lines": 767,
+      "head_sha256": "0f45fefc690f42ce676ed6598ee6c8404ede8024076a3bfb70645d0264474b68",
+      "differs_from_head": false,
+      "role": "source-traced input, not a complete native link/build closure",
+      "evidence_status": "retained source/guidance/test input, not new acceptance"
+    },
+    {
+      "path": "runtime/bridge/webgpu-addon/doe_napi_globals.c",
+      "sha256": "017563fa19eea5ba7b79a84ca6842e101c2aa800f8bab3a91aae63724083b3a0",
+      "bytes": 36984,
+      "physical_lines": 491,
+      "head_sha256": "017563fa19eea5ba7b79a84ca6842e101c2aa800f8bab3a91aae63724083b3a0",
+      "differs_from_head": false,
+      "role": "source-traced input, not a complete native link/build closure",
+      "evidence_status": "retained source/guidance/test input, not new acceptance"
+    },
+    {
+      "path": "runtime/bridge/webgpu-addon/doe_napi_init.c",
+      "sha256": "09f5f598cfdbb59f984b04590c3aa3f9f26a404cafd6d50db96e2f61dd122eb1",
+      "bytes": 28372,
+      "physical_lines": 373,
+      "head_sha256": "09f5f598cfdbb59f984b04590c3aa3f9f26a404cafd6d50db96e2f61dd122eb1",
+      "differs_from_head": false,
+      "role": "source-traced input, not a complete native link/build closure",
+      "evidence_status": "retained source/guidance/test input, not new acceptance"
+    },
+    {
+      "path": "runtime/bridge/webgpu-addon/doe_napi_instance.c",
+      "sha256": "d4f445e2f31ef2ada2f9113b630171eb98490a399eec06fb43d531781a55d1db",
+      "bytes": 25767,
+      "physical_lines": 538,
+      "head_sha256": "d4f445e2f31ef2ada2f9113b630171eb98490a399eec06fb43d531781a55d1db",
+      "differs_from_head": false,
+      "role": "source-traced input, not a complete native link/build closure",
+      "evidence_status": "retained source/guidance/test input, not new acceptance"
+    },
+    {
+      "path": "runtime/bridge/webgpu-addon/doe_napi_internal.h",
+      "sha256": "0ca6e9407eb0a6e9098e4b16848148dfddd52f596469344d8dad5f544e780fce",
+      "bytes": 60430,
+      "physical_lines": 1000,
+      "head_sha256": "0ca6e9407eb0a6e9098e4b16848148dfddd52f596469344d8dad5f544e780fce",
+      "differs_from_head": false,
+      "role": "source-traced input, not a complete native link/build closure",
+      "evidence_status": "retained source/guidance/test input, not new acceptance"
+    },
+    {
+      "path": "runtime/c/CATSCAN.md",
+      "sha256": "0063934f4ff2eb7511b9e68b5244217aa2eeb14e4aa77f55334753d708d973e2",
+      "bytes": 1900,
+      "physical_lines": 44,
+      "head_sha256": "0063934f4ff2eb7511b9e68b5244217aa2eeb14e4aa77f55334753d708d973e2",
+      "differs_from_head": false,
+      "role": "source-traced input, not a complete native link/build closure",
+      "evidence_status": "retained source/guidance/test input, not new acceptance"
+    },
+    {
+      "path": "runtime/c/STYLE.md",
+      "sha256": "97247a3e3bbde32a163680099fe5feec4d162931ed736cce5a07062bdc533184",
+      "bytes": 5208,
+      "physical_lines": 70,
+      "head_sha256": "97247a3e3bbde32a163680099fe5feec4d162931ed736cce5a07062bdc533184",
+      "differs_from_head": false,
+      "role": "source-traced input, not a complete native link/build closure",
+      "evidence_status": "retained source/guidance/test input, not new acceptance"
+    },
+    {
+      "path": "runtime/c/callbacks/CONTRACT.md",
+      "sha256": "c6a8e8ab04d9c0bab85f7749df2d9bf9e6c176c72e0714a681c3b816f82def7f",
+      "bytes": 16834,
+      "physical_lines": 260,
+      "head_sha256": "c6a8e8ab04d9c0bab85f7749df2d9bf9e6c176c72e0714a681c3b816f82def7f",
+      "differs_from_head": false,
+      "role": "source-traced input, not a complete native link/build closure",
+      "evidence_status": "retained source/guidance/test input, not new acceptance"
+    },
+    {
+      "path": "runtime/c/dropin-policy/tools/verify_archive.py",
+      "sha256": "2ec8c821607973acedbd1d4c5cbd97729bdb3e6dd92e5b32053a8345e6cfb315",
+      "bytes": 16906,
+      "physical_lines": 384,
+      "head_sha256": null,
+      "differs_from_head": true,
+      "role": "source-traced input, not a complete native link/build closure",
+      "evidence_status": "candidate3-bound unaccepted route/shared-producer observation"
+    },
+    {
+      "path": "runtime/c/futures/STYLE.md",
+      "sha256": "3b4297a435249b0e06e5ae7379c191978d807f149796ba85816bba69b95d8212",
+      "bytes": 1440,
+      "physical_lines": 21,
+      "head_sha256": "3b4297a435249b0e06e5ae7379c191978d807f149796ba85816bba69b95d8212",
+      "differs_from_head": false,
+      "role": "source-traced input, not a complete native link/build closure",
+      "evidence_status": "retained source/guidance/test input, not new acceptance"
+    },
+    {
+      "path": "runtime/c/instance/CONTRACT.md",
+      "sha256": "863968e863c130ea304590684a9fc1eea58bd3798ea3e5d8a449b02afd3f1f09",
+      "bytes": 23888,
+      "physical_lines": 351,
+      "head_sha256": "863968e863c130ea304590684a9fc1eea58bd3798ea3e5d8a449b02afd3f1f09",
+      "differs_from_head": false,
+      "role": "source-traced input, not a complete native link/build closure",
+      "evidence_status": "retained source/guidance/test input, not new acceptance"
+    },
+    {
+      "path": "runtime/c/instance/Makefile",
+      "sha256": "37719299c2d9565e2b69523672a563e0bb87fb407cc9cf0b9091a7f02256577f",
+      "bytes": 2216,
+      "physical_lines": 46,
+      "head_sha256": "37719299c2d9565e2b69523672a563e0bb87fb407cc9cf0b9091a7f02256577f",
+      "differs_from_head": false,
+      "role": "source-traced input, not a complete native link/build closure",
+      "evidence_status": "retained source/guidance/test input, not new acceptance"
+    },
+    {
+      "path": "runtime/c/instance/include/doe_instance.h",
+      "sha256": "4356d4991f19d040a2d8a5d8e121d282530d362dcabdc892888148a68af8acfb",
+      "bytes": 6984,
+      "physical_lines": 132,
+      "head_sha256": "4356d4991f19d040a2d8a5d8e121d282530d362dcabdc892888148a68af8acfb",
+      "differs_from_head": false,
+      "role": "source-traced input, not a complete native link/build closure",
+      "evidence_status": "retained source/guidance/test input, not new acceptance"
+    },
+    {
+      "path": "runtime/c/instance/independent_tests/CASES.md",
+      "sha256": "c7977a5212b0fdd23bc59f30ec83550edcf1c8f62f7c7c12ab36b2cf225534ea",
+      "bytes": 18837,
+      "physical_lines": 281,
+      "head_sha256": "c7977a5212b0fdd23bc59f30ec83550edcf1c8f62f7c7c12ab36b2cf225534ea",
+      "differs_from_head": false,
+      "role": "source-traced input, not a complete native link/build closure",
+      "evidence_status": "retained source/guidance/test input, not new acceptance"
+    },
+    {
+      "path": "runtime/c/instance/independent_tests/FINAL_REPORT.md",
+      "sha256": "2421a561f562ac34a2287be11729c41c361a86e898bc5fa1530828dde21e1827",
+      "bytes": 10937,
+      "physical_lines": 130,
+      "head_sha256": "2421a561f562ac34a2287be11729c41c361a86e898bc5fa1530828dde21e1827",
+      "differs_from_head": false,
+      "role": "source-traced input, not a complete native link/build closure",
+      "evidence_status": "retained source/guidance/test input, not new acceptance"
+    },
+    {
+      "path": "runtime/c/instance/independent_tests/tests/native_labels.c",
+      "sha256": "6a7614ba9b585b24cd6c4efcb9b32e752b41fef7b8c1f7a76631cf391b343f4c",
+      "bytes": 2651,
+      "physical_lines": 64,
+      "head_sha256": "6a7614ba9b585b24cd6c4efcb9b32e752b41fef7b8c1f7a76631cf391b343f4c",
+      "differs_from_head": false,
+      "role": "source-traced input, not a complete native link/build closure",
+      "evidence_status": "retained source/guidance/test input, not new acceptance"
+    },
+    {
+      "path": "runtime/c/instance/integration/CONTRACT.md",
+      "sha256": "ae3aa5428853bcc1e7cbf7f011f9c3a84d2d364afd2a8b8ea4f0df7f38f0d258",
+      "bytes": 1824,
+      "physical_lines": 28,
+      "head_sha256": "ae3aa5428853bcc1e7cbf7f011f9c3a84d2d364afd2a8b8ea4f0df7f38f0d258",
+      "differs_from_head": false,
+      "role": "source-traced input, not a complete native link/build closure",
+      "evidence_status": "retained source/guidance/test input, not new acceptance"
+    },
+    {
+      "path": "runtime/c/instance/integration/build_archive.sh",
+      "sha256": "852e8a121665d4b08a5edd5767be39d6ccec54e29146236fc9989bb2e573910f",
+      "bytes": 921,
+      "physical_lines": 19,
+      "head_sha256": "852e8a121665d4b08a5edd5767be39d6ccec54e29146236fc9989bb2e573910f",
+      "differs_from_head": false,
+      "role": "source-traced input, not a complete native link/build closure",
+      "evidence_status": "retained source/guidance/test input, not new acceptance"
+    },
+    {
+      "path": "runtime/c/instance/src/instance.c",
+      "sha256": "c4318fe26ae9ad096eee3181698473b5760750eaa069cc0ccb8f326b93fe6e71",
+      "bytes": 6176,
+      "physical_lines": 157,
+      "head_sha256": "c4318fe26ae9ad096eee3181698473b5760750eaa069cc0ccb8f326b93fe6e71",
+      "differs_from_head": false,
+      "role": "source-traced input, not a complete native link/build closure",
+      "evidence_status": "retained source/guidance/test input, not new acceptance"
+    },
+    {
+      "path": "runtime/zig/CATSCAN.md",
+      "sha256": "1fa55de4f8166bf9367098a5769d13fb74a3805fc46fa9b3487e7c2e98febee5",
+      "bytes": 1898,
+      "physical_lines": 50,
+      "head_sha256": "1fa55de4f8166bf9367098a5769d13fb74a3805fc46fa9b3487e7c2e98febee5",
+      "differs_from_head": false,
+      "role": "source-traced input, not a complete native link/build closure",
+      "evidence_status": "retained source/guidance/test input, not new acceptance"
+    },
+    {
+      "path": "runtime/zig/README.md",
+      "sha256": "998dfe9b1f6b822bedb52aa1442186591e26ec13545c70ce8fb8051598034aea",
+      "bytes": 26603,
+      "physical_lines": 411,
+      "head_sha256": "998dfe9b1f6b822bedb52aa1442186591e26ec13545c70ce8fb8051598034aea",
+      "differs_from_head": false,
+      "role": "source-traced input, not a complete native link/build closure",
+      "evidence_status": "retained source/guidance/test input, not new acceptance"
+    },
+    {
+      "path": "runtime/zig/STYLE.md",
+      "sha256": "6258ac336d6b188deae3fb07488c45487f3626f2a9ea7505e8a768bd4c3929d6",
+      "bytes": 31801,
+      "physical_lines": 541,
+      "head_sha256": "6258ac336d6b188deae3fb07488c45487f3626f2a9ea7505e8a768bd4c3929d6",
+      "differs_from_head": false,
+      "role": "source-traced input, not a complete native link/build closure",
+      "evidence_status": "retained source/guidance/test input, not new acceptance"
+    },
+    {
+      "path": "runtime/zig/build.zig",
+      "sha256": "8f53cd0aa87332358602537b17e0973b81a0dad50ab8e76bb0dc49aa7baffc0d",
+      "bytes": 99046,
+      "physical_lines": 1942,
+      "head_sha256": "6192eb56f912d252109297885b556421c2c8649ce9c657035bd6027d2e616a0c",
+      "differs_from_head": true,
+      "role": "source-traced input, not a complete native link/build closure",
+      "evidence_status": "candidate3-bound unaccepted route/shared-producer observation"
+    },
+    {
+      "path": "runtime/zig/source-layout.json",
+      "sha256": "96aa6faae1bc1c625aa0a8d2832e5ab375a0992df6da800864147152d7387fec",
+      "bytes": 266814,
+      "physical_lines": 4515,
+      "head_sha256": "171cc17a7128516a55594b5ffe983d25ec63cf27e56fa871517fbb7c36702ba9",
+      "differs_from_head": true,
+      "role": "source-traced input, not a complete native link/build closure",
+      "evidence_status": "candidate3-bound unaccepted route/shared-producer observation"
+    },
+    {
+      "path": "runtime/zig/src/dropin/dropin_browser_shared_memory.zig",
+      "sha256": "a148b324104cb518848dd9c5f119f03ae375440edf6e9dd52b1808f70ddccef2",
+      "bytes": 31051,
+      "physical_lines": 806,
+      "head_sha256": "a148b324104cb518848dd9c5f119f03ae375440edf6e9dd52b1808f70ddccef2",
+      "differs_from_head": false,
+      "role": "source-traced input, not a complete native link/build closure",
+      "evidence_status": "retained source/guidance/test input, not new acceptance"
+    },
+    {
+      "path": "runtime/zig/src/dropin/dropin_proc_manifest.zig",
+      "sha256": "6b03f2a65ad0b258682bc733e9cc53e8392aa2c4bd8748d37677755f93209167",
+      "bytes": 15194,
+      "physical_lines": 246,
+      "head_sha256": "049ef2d2799b55079b4570e04eab5c5f3755eef20421b8e79e0185c48de870af",
+      "differs_from_head": true,
+      "role": "source-traced input, not a complete native link/build closure",
+      "evidence_status": "candidate3-bound unaccepted route/shared-producer observation"
+    },
+    {
+      "path": "runtime/zig/src/dropin/wgpu_dropin_ext_b.zig",
+      "sha256": "99faace33349e70c93ac5bef1f7ca7336c2b386490335de8989c2d31eb712f0f",
+      "bytes": 24678,
+      "physical_lines": 510,
+      "head_sha256": "99faace33349e70c93ac5bef1f7ca7336c2b386490335de8989c2d31eb712f0f",
+      "differs_from_head": false,
+      "role": "source-traced input, not a complete native link/build closure",
+      "evidence_status": "retained source/guidance/test input, not new acceptance"
+    },
+    {
+      "path": "runtime/zig/src/dropin/wgpu_dropin_ext_c.zig",
+      "sha256": "1a871459d581650a088f7fe00d916b28e87b5298a5c869f45c19f6439d94b6f9",
+      "bytes": 9998,
+      "physical_lines": 251,
+      "head_sha256": "1a871459d581650a088f7fe00d916b28e87b5298a5c869f45c19f6439d94b6f9",
+      "differs_from_head": false,
+      "role": "source-traced input, not a complete native link/build closure",
+      "evidence_status": "retained source/guidance/test input, not new acceptance"
+    },
+    {
+      "path": "runtime/zig/src/dropin/wgpu_dropin_lib.zig",
+      "sha256": "76a143eff0180e87e4a16d5e6a075ec10e155d9a3b1cfac293d054c89bb9ce41",
+      "bytes": 43119,
+      "physical_lines": 682,
+      "head_sha256": "2280167cbc8cc65059994b2f07578a2db570af6f9ab7452edd2041393d5e3153",
+      "differs_from_head": true,
+      "role": "source-traced input, not a complete native link/build closure",
+      "evidence_status": "candidate3-bound unaccepted route/shared-producer observation"
+    },
+    {
+      "path": "runtime/zig/src/native/api/doe_native_api_misc_exports.zig",
+      "sha256": "862eb2e80a3a4f0df4e133cdfb78f761e66183baa0edef5fa63bd38722807b55",
+      "bytes": 2378,
+      "physical_lines": 35,
+      "head_sha256": "862eb2e80a3a4f0df4e133cdfb78f761e66183baa0edef5fa63bd38722807b55",
+      "differs_from_head": false,
+      "role": "source-traced input, not a complete native link/build closure",
+      "evidence_status": "retained source/guidance/test input, not new acceptance"
+    },
+    {
+      "path": "runtime/zig/src/native/command/doe_encoder_native.zig",
+      "sha256": "2d018f8fbc4ef0b3be560b36d5ed340009c9ebcb62a376a83d75ad9bb1982504",
+      "bytes": 32783,
+      "physical_lines": 599,
+      "head_sha256": "2d018f8fbc4ef0b3be560b36d5ed340009c9ebcb62a376a83d75ad9bb1982504",
+      "differs_from_head": false,
+      "role": "source-traced input, not a complete native link/build closure",
+      "evidence_status": "retained source/guidance/test input, not new acceptance"
+    },
+    {
+      "path": "runtime/zig/src/native/compute/doe_compute_ext_native.zig",
+      "sha256": "ef0b42a232817cee33af5c3f1165d4fcb439c72422b4ef35769fca023e8bbff4",
+      "bytes": 18099,
+      "physical_lines": 421,
+      "head_sha256": "ef0b42a232817cee33af5c3f1165d4fcb439c72422b4ef35769fca023e8bbff4",
+      "differs_from_head": false,
+      "role": "source-traced input, not a complete native link/build closure",
+      "evidence_status": "retained source/guidance/test input, not new acceptance"
+    },
+    {
+      "path": "runtime/zig/src/native/lifecycle/doe_instance_device_native.zig",
+      "sha256": "2a42b958b19cce4c28b88485baeda0483c354d1b3964399b34f89428418757ad",
+      "bytes": 39554,
+      "physical_lines": 877,
+      "head_sha256": "2a42b958b19cce4c28b88485baeda0483c354d1b3964399b34f89428418757ad",
+      "differs_from_head": false,
+      "role": "source-traced input, not a complete native link/build closure",
+      "evidence_status": "retained source/guidance/test input, not new acceptance"
+    },
+    {
+      "path": "runtime/zig/src/native/mod.zig",
+      "sha256": "5bb9695ce4a9701037f3e3ade698ee14acba5137d790b58cafab62060e3d8506",
+      "bytes": 18791,
+      "physical_lines": 261,
+      "head_sha256": "5bb9695ce4a9701037f3e3ade698ee14acba5137d790b58cafab62060e3d8506",
+      "differs_from_head": false,
+      "role": "source-traced input, not a complete native link/build closure",
+      "evidence_status": "retained source/guidance/test input, not new acceptance"
+    },
+    {
+      "path": "runtime/zig/src/native/queue/doe_queue_lifecycle.zig",
+      "sha256": "42e1e9819900181ddbf7b17681e0c4423e0b79f9e00456a6fb3f22a54d404a3a",
+      "bytes": 24329,
+      "physical_lines": 584,
+      "head_sha256": "42e1e9819900181ddbf7b17681e0c4423e0b79f9e00456a6fb3f22a54d404a3a",
+      "differs_from_head": false,
+      "role": "source-traced input, not a complete native link/build closure",
+      "evidence_status": "retained source/guidance/test input, not new acceptance"
+    },
+    {
+      "path": "runtime/zig/src/native/render/doe_bundle_native.zig",
+      "sha256": "db0ffd7729f1cee33275313c8a39a8b2d668f4a52e0fd11adf939eb976f6e462",
+      "bytes": 32860,
+      "physical_lines": 729,
+      "head_sha256": "db0ffd7729f1cee33275313c8a39a8b2d668f4a52e0fd11adf939eb976f6e462",
+      "differs_from_head": false,
+      "role": "source-traced input, not a complete native link/build closure",
+      "evidence_status": "retained source/guidance/test input, not new acceptance"
+    },
+    {
+      "path": "runtime/zig/src/native/render/doe_render_native.zig",
+      "sha256": "9cac7998e281300b84c53dcc0784c3cd27d314a3a9e6b4147a2b670806d84d58",
+      "bytes": 27137,
+      "physical_lines": 595,
+      "head_sha256": "9cac7998e281300b84c53dcc0784c3cd27d314a3a9e6b4147a2b670806d84d58",
+      "differs_from_head": false,
+      "role": "source-traced input, not a complete native link/build closure",
+      "evidence_status": "retained source/guidance/test input, not new acceptance"
+    },
+    {
+      "path": "runtime/zig/src/native/render/doe_render_pipeline_native.zig",
+      "sha256": "f6bd9727be3a30df8d5530cacf99812cbc9833a8c18b5ca39cd7675bbdcb4b95",
+      "bytes": 25373,
+      "physical_lines": 604,
+      "head_sha256": "f6bd9727be3a30df8d5530cacf99812cbc9833a8c18b5ca39cd7675bbdcb4b95",
+      "differs_from_head": false,
+      "role": "source-traced input, not a complete native link/build closure",
+      "evidence_status": "retained source/guidance/test input, not new acceptance"
+    },
+    {
+      "path": "runtime/zig/src/native/resource/doe_bind_group_native.zig",
+      "sha256": "0ddada1c62529f7949f401cf7f9621cf78c2482a4d7273952ef51224f6e9b917",
+      "bytes": 32288,
+      "physical_lines": 685,
+      "head_sha256": "0ddada1c62529f7949f401cf7f9621cf78c2482a4d7273952ef51224f6e9b917",
+      "differs_from_head": false,
+      "role": "source-traced input, not a complete native link/build closure",
+      "evidence_status": "retained source/guidance/test input, not new acceptance"
+    },
+    {
+      "path": "runtime/zig/src/native/resource/doe_buffer_ops_native.zig",
+      "sha256": "0db8129375f3bfce6e37edd81e25cf84fbe5b751a3336898c8b07371373dcbcb",
+      "bytes": 22190,
+      "physical_lines": 469,
+      "head_sha256": "0db8129375f3bfce6e37edd81e25cf84fbe5b751a3336898c8b07371373dcbcb",
+      "differs_from_head": false,
+      "role": "source-traced input, not a complete native link/build closure",
+      "evidence_status": "retained source/guidance/test input, not new acceptance"
+    },
+    {
+      "path": "runtime/zig/src/native/resource/doe_external_texture_native.zig",
+      "sha256": "6e09052c4f5bb8bbfae3b88f74a0fe3a9a033426f68f1e188e29aacf4055b31c",
+      "bytes": 13432,
+      "physical_lines": 329,
+      "head_sha256": "6e09052c4f5bb8bbfae3b88f74a0fe3a9a033426f68f1e188e29aacf4055b31c",
+      "differs_from_head": false,
+      "role": "source-traced input, not a complete native link/build closure",
+      "evidence_status": "retained source/guidance/test input, not new acceptance"
+    },
+    {
+      "path": "runtime/zig/src/native/resource/doe_query_native.zig",
+      "sha256": "69b16838b7ba73554ee46bb8656bd2bae58171d160b154886dbe36fc9c6ed37d",
+      "bytes": 17974,
+      "physical_lines": 430,
+      "head_sha256": "69b16838b7ba73554ee46bb8656bd2bae58171d160b154886dbe36fc9c6ed37d",
+      "differs_from_head": false,
+      "role": "source-traced input, not a complete native link/build closure",
+      "evidence_status": "retained source/guidance/test input, not new acceptance"
+    },
+    {
+      "path": "runtime/zig/src/native/resource/doe_texture_sampler_native.zig",
+      "sha256": "1b87c7bcf7378efcfbe8a1816d56af653f0a8ab4c1e7be245a2018b1a2f419a2",
+      "bytes": 33528,
+      "physical_lines": 831,
+      "head_sha256": "1b87c7bcf7378efcfbe8a1816d56af653f0a8ab4c1e7be245a2018b1a2f419a2",
+      "differs_from_head": false,
+      "role": "source-traced input, not a complete native link/build closure",
+      "evidence_status": "retained source/guidance/test input, not new acceptance"
+    },
+    {
+      "path": "runtime/zig/src/native/shader/doe_shader_native.zig",
+      "sha256": "39bb270af3f79d445ea8fc253a05e8c415a3f734946ffd28f2406b5b18f2d4fe",
+      "bytes": 47993,
+      "physical_lines": 1000,
+      "head_sha256": "39bb270af3f79d445ea8fc253a05e8c415a3f734946ffd28f2406b5b18f2d4fe",
+      "differs_from_head": false,
+      "role": "source-traced input, not a complete native link/build closure",
+      "evidence_status": "retained source/guidance/test input, not new acceptance"
+    },
+    {
+      "path": "runtime/zig/src/native/support/doe_future_owner.zig",
+      "sha256": "0bf3301315c16673317128fae609570d87933e91b2c5631a3e423637c76d49e5",
+      "bytes": 964,
+      "physical_lines": 20,
+      "head_sha256": "0bf3301315c16673317128fae609570d87933e91b2c5631a3e423637c76d49e5",
+      "differs_from_head": false,
+      "role": "source-traced input, not a complete native link/build closure",
+      "evidence_status": "retained source/guidance/test input, not new acceptance"
+    },
+    {
+      "path": "runtime/zig/src/native/support/doe_instance_c_adapter.zig",
+      "sha256": "056cb14ec1ddf900f70b0416b4a5e3f7969ddc1dee0e5918bcefd4e7cd83edc1",
+      "bytes": 4442,
+      "physical_lines": 94,
+      "head_sha256": "056cb14ec1ddf900f70b0416b4a5e3f7969ddc1dee0e5918bcefd4e7cd83edc1",
+      "differs_from_head": false,
+      "role": "source-traced input, not a complete native link/build closure",
+      "evidence_status": "retained source/guidance/test input, not new acceptance"
+    },
+    {
+      "path": "runtime/zig/src/native/support/doe_label_store.zig",
+      "sha256": "242c2172d17015277fdd1ee19c75551bff9ea1760e80f8b5539a78320dce782d",
+      "bytes": 2677,
+      "physical_lines": 71,
+      "head_sha256": "242c2172d17015277fdd1ee19c75551bff9ea1760e80f8b5539a78320dce782d",
+      "differs_from_head": false,
+      "role": "source-traced input, not a complete native link/build closure",
+      "evidence_status": "retained source/guidance/test input, not new acceptance"
+    },
+    {
+      "path": "runtime/zig/src/native/support/doe_native_object_helpers.zig",
+      "sha256": "c6b8c87edc910e1603fc35a955983cc091b6337b8ff0cfc333d11eb32142e6ae",
+      "bytes": 2726,
+      "physical_lines": 64,
+      "head_sha256": "c6b8c87edc910e1603fc35a955983cc091b6337b8ff0cfc333d11eb32142e6ae",
+      "differs_from_head": false,
+      "role": "source-traced input, not a complete native link/build closure",
+      "evidence_status": "retained source/guidance/test input, not new acceptance"
+    },
+    {
+      "path": "runtime/zig/src/native/surface/doe_surface_native.zig",
+      "sha256": "4cb23057c973d00d96b90e27b5ec16b0c62498eb9ef84972902c6dd8158840de",
+      "bytes": 29283,
+      "physical_lines": 682,
+      "head_sha256": "4cb23057c973d00d96b90e27b5ec16b0c62498eb9ef84972902c6dd8158840de",
+      "differs_from_head": false,
+      "role": "source-traced input, not a complete native link/build closure",
+      "evidence_status": "retained source/guidance/test input, not new acceptance"
+    },
+    {
+      "path": "runtime/zig/vendor/webgpu-headers/webgpu.h",
+      "sha256": "7691d76ceb67056f89e97b9ff0b62163eacf19a8e0e09a8fa7dbb32069b7978c",
+      "bytes": 259748,
+      "physical_lines": 6769,
+      "head_sha256": "7691d76ceb67056f89e97b9ff0b62163eacf19a8e0e09a8fa7dbb32069b7978c",
+      "differs_from_head": false,
+      "role": "source-traced input, not a complete native link/build closure",
+      "evidence_status": "retained source/guidance/test input, not new acceptance"
+    }
+  ],
+  "rebound_at_utc": "2026-10-23T15:21:57.219870+00:00"
+}
