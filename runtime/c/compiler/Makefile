@@ -24,6 +24,8 @@ build/test_boundaries: $(LIB_SOURCES) tests/test_boundaries.c $(HEADERS) | build
 	$(CC) $(CFLAGS) -pthread $(LIB_SOURCES) tests/test_boundaries.c -o $@
 build/test_constants: $(LIB_SOURCES) tests/test_constants.c $(HEADERS) | build/.ready
 	$(CC) $(CFLAGS) $(LIB_SOURCES) tests/test_constants.c -o $@
+build/test_control_api: $(LIB_SOURCES) tests/test_control_api.c $(HEADERS) | build/.ready
+	$(CC) $(CFLAGS) -pthread $(LIB_SOURCES) tests/test_control_api.c -o $@
 build/native_consumer: tests/native_consumer.c include/doe_compiler.h build/libdoe_compiler.so | build/.ready
 	$(CC) $(CFLAGS) tests/native_consumer.c -Lbuild -ldoe_compiler -Wl,-rpath,'$$ORIGIN' -o $@
 build/test_layout: tests/test_layout.c include/doe_compiler.h | build/.ready
@@ -32,16 +34,18 @@ build/cpp_consumer: tests/cpp_consumer.cpp include/doe_compiler.h build/libdoe_c
 	$(CXX) $(CXXFLAGS) tests/cpp_consumer.cpp -Lbuild -ldoe_compiler -Wl,-rpath,'$$ORIGIN' -o $@
 build/interposition_consumer: tests/interposition_consumer.c include/doe_compiler.h build/libdoe_compiler.so | build/.ready
 	$(CC) $(CFLAGS) tests/interposition_consumer.c -Lbuild -ldoe_compiler -Wl,-rpath,'$$ORIGIN' -Wl,--export-dynamic -o $@
-test: all build/interposition_consumer build/test_api build/test_boundaries build/test_constants build/native_consumer build/test_layout build/cpp_consumer
+test: all build/interposition_consumer build/test_api build/test_boundaries build/test_constants build/test_control_api build/native_consumer build/test_layout build/cpp_consumer
 	build/test_api
 	build/test_boundaries
 	build/test_constants
+	build/test_control_api
 	build/test_layout
 	build/cpp_consumer
 	build/interposition_consumer
 	python3 tests/test_exports.py
 	build/native_consumer ../../../bench/inference-pipeline/kernels/residual.wgsl
 	SPIRV_VAL="$(SPIRV_VAL)" python3 tests/test_cli.py
+	SPIRV_VAL="$(SPIRV_VAL)" python3 tests/test_control.py
 sanitize: | build/.ready
 	$(CC) $(CFLAGS) -O1 -g -fno-omit-frame-pointer -fsanitize=address,undefined $(LIB_SOURCES) tests/test_api.c -o build/test_api_sanitize
 	ASAN_OPTIONS=detect_leaks=0:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1 build/test_api_sanitize
@@ -49,5 +53,7 @@ sanitize: | build/.ready
 	ASAN_OPTIONS=detect_leaks=0:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1 build/test_boundaries_sanitize
 	$(CC) $(CFLAGS) -O1 -g -fno-omit-frame-pointer -fsanitize=address,undefined $(LIB_SOURCES) tests/test_constants.c -o build/test_constants_sanitize
 	ASAN_OPTIONS=detect_leaks=0:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1 build/test_constants_sanitize
+	$(CC) $(CFLAGS) -O1 -g -fno-omit-frame-pointer -fsanitize=address,undefined -pthread $(LIB_SOURCES) tests/test_control_api.c -o build/test_control_api_sanitize
+	ASAN_OPTIONS=detect_leaks=0:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1 build/test_control_api_sanitize
 clean:
 	rm -rf build

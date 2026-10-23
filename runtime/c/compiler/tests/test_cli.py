@@ -62,7 +62,7 @@ def float_bits(value: float) -> int:
 
 
 def execute(instructions: list[Instruction], memory: dict[Descriptor, list[int]],
-            invocation: int) -> None:
+            invocation: int | tuple[int, int, int]) -> None:
     """Execute actual instructions, asserting bounds at pointer and load/store use."""
     values: dict[int, int | tuple] = {}
     labels: dict[int, int] = {}
@@ -102,7 +102,7 @@ def execute(instructions: list[Instruction], memory: dict[Descriptor, list[int]]
     label = previous = None
     while True:
         steps += 1
-        assert steps < 200
+        assert steps < 4096
         op, args = instructions[pc]
         pc += 1
         if op == 248:
@@ -112,7 +112,8 @@ def execute(instructions: list[Instruction], memory: dict[Descriptor, list[int]]
         elif op == 61:
             pointer = values[args[2]]
             if pointer == ("input",):
-                values[args[1]] = (invocation, 0, 0)
+                values[args[1]] = ((invocation, 0, 0) if isinstance(invocation, int)
+                                   else invocation)
             else:
                 assert pointer[0] == "element"
                 buffer, index = memory[pointer[1]], pointer[2]
@@ -124,8 +125,12 @@ def execute(instructions: list[Instruction], memory: dict[Descriptor, list[int]]
             pointer = values[args[2]]
             assert pointer[0] == "buffer" and args[3] == 0
             values[args[1]] = len(memory[pointer[1]])
-        elif op == 176:
-            values[args[1]] = values[args[2]] < values[args[3]]
+        elif op in (170, 171, 172, 174, 176, 178):
+            left, right = values[args[2]], values[args[3]]
+            comparisons = {170: left == right, 171: left != right,
+                           172: left > right, 174: left >= right,
+                           176: left < right, 178: left <= right}
+            values[args[1]] = comparisons[op]
         elif op == 250:
             previous = label
             pc = labels[args[1] if values[args[0]] else args[2]]
@@ -145,6 +150,8 @@ def execute(instructions: list[Instruction], memory: dict[Descriptor, list[int]]
             values[args[1]] = ("element", pointer[1], index, pointer[2])
         elif op == 128:
             values[args[1]] = (values[args[2]] + values[args[3]]) & 0xFFFFFFFF
+        elif op == 130:
+            values[args[1]] = (values[args[2]] - values[args[3]]) & 0xFFFFFFFF
         elif op == 129:
             values[args[1]] = float_bits(f32(values[args[2]]) + f32(values[args[3]]))
         elif op == 62:
@@ -155,11 +162,13 @@ def execute(instructions: list[Instruction], memory: dict[Descriptor, list[int]]
             buffer[index] = values[args[1]]
         elif op == 253:
             return
+        elif op == 255:
+            raise AssertionError("executed unreachable merge")
         else:
             raise AssertionError(("unexpected instruction", op, args))
 
 
-class TestCompilerCli(unittest.TestCase):
+class CompilerFixture(unittest.TestCase):
     def setUp(self) -> None:
         self.temp = tempfile.TemporaryDirectory(dir=ROOT / "build", prefix="cli-tests-")
         self.folder = Path(self.temp.name)
@@ -183,6 +192,8 @@ class TestCompilerCli(unittest.TestCase):
         self.assertEqual(run.returncode, 0, run.stderr.decode())
         return decode(self.out.read_bytes()), json.loads(self.ref.read_text(encoding="utf-8"))
 
+
+class TestCompilerCli(CompilerFixture):
     def test_retained_seed_addends_and_workgroups(self) -> None:
         for addend in (0, 1, 42, 0xFFFFFFFF):
             for local_size in (1, 64, 256):

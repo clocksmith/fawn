@@ -6,8 +6,9 @@ This is the initial inventory for the explicitly requested, incremental C
 migration on the local experimental branch. It is not a mechanical translation,
 production switchover, new architecture authority, or claim that a rewrite is
 complete. Preserve retained Zig, the original main checkout, and previous
-language-experiment receipts. No commit, push, installation, or external-machine
-operation is part of this inventory task.
+language-experiment receipts. Changes are committed only on the requested local
+experimental branch; no public push, system installation or external-machine
+operation is part of this campaign.
 
 The immutable baseline is commit
 `665475907494d2095a760596218b4c2d363cb436`. The
@@ -29,6 +30,23 @@ All migration stages below remain unqualified. There is no GPU execution or
 physical qualification from this inventory, including no Vulkan, Metal, or D3D12
 physical qualification. Host compilation, sanitizer passes, fixture output,
 bytecode validation, and simulated completion never inherit that qualification.
+
+## Accepted experimental coverage
+
+The [first compiler increment](../../runtime/c/compiler/MILESTONE_1_RESULTS.md)
+is locally accepted at implementation commit `25c41ee`, with the independent
+test hash-path repair at `37d98fe`. It admits the unchanged residual-add source
+and the retained u32 seed through a source-built C API and CLI. Its independent
+suite checks emitted instruction behavior, target validation, native C/C++
+consumption and failure boundaries. This is not adoption by the existing MSL
+benchmark or a source-to-GPU application, and does not change the zero accepted
+production-owner count.
+
+The [second frozen increment](../../runtime/c/compiler/MILESTONE_2.md) adds
+structured control flow and checked per-resource index behavior for the real
+neighbor-sum fixture. Its [accepted results](../../runtime/c/compiler/MILESTONE_2_RESULTS.md) record
+independent instruction/native checks and the increased static stack footprint. These declared coverage increments do not replace the complete
+compiler and consumer requirements below.
 
 ## Existing authority, not a parallel policy
 
