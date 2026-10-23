@@ -1,6 +1,7 @@
 CC ?= cc
 AR ?= ar
-BUILD ?= /tmp/doe-c-d3d12
+include $(dir $(lastword $(MAKEFILE_LIST)))../../build-root.mk
+BUILD ?= $(DOE_C_TMP)/d3d12
 CPPFLAGS += -Iinclude
 CFLAGS ?= -O2 -g
 STRICT = -std=c11 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wshadow

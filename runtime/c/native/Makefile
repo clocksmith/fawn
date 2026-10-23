@@ -1,6 +1,7 @@
 CC = gcc
 CXX = g++
-BUILD ?= /tmp/doe-c-native
+include $(dir $(lastword $(MAKEFILE_LIST)))../build-root.mk
+BUILD ?= $(DOE_C_TMP)/native
 include platform.mk
 NATIVE_LIBRARY ?= $(BUILD)/libwebgpu_doe_c.$(SHARED_SUFFIX)
 COMPILER_LIBRARY ?= $(BUILD)/libdoe_compiler.$(SHARED_SUFFIX)

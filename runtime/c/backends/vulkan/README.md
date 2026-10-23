@@ -248,7 +248,7 @@ make sanitize
 make probe
 ```
 
-Outputs default to `/tmp/doe-c-vulkan`. The sanitizer recipe disables only leak
+Outputs default to `$(DOE_C_TMP)/vulkan`, a per-checkout root from [build-root.mk](../../build-root.mk). The sanitizer recipe disables only leak
 scanning because this hosted environment uses ptrace, which LSan rejects. ASan
 and UBSan remain enabled. Explicit acquisition/release assertions still execute.
 Run leak scanning separately in a supported environment before qualification.

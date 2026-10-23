@@ -1,6 +1,7 @@
 CC ?= cc
 AR ?= ar
-BUILD ?= /tmp/doe-c-metal
+include $(dir $(lastword $(MAKEFILE_LIST)))../../build-root.mk
+BUILD ?= $(DOE_C_TMP)/metal
 CPPFLAGS += -Iinclude
 CFLAGS ?= -O2 -g
 STRICT = -std=c11 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wshadow
