@@ -7,11 +7,11 @@
 typedef enum mock_failure {
     MOCK_NONE, MOCK_OPEN, MOCK_BUFFER, MOCK_PIPELINE, MOCK_COMMANDS,
     MOCK_DISPATCH, MOCK_FINISH, MOCK_SIGNAL, MOCK_COMPLETED, MOCK_WAIT,
-    MOCK_WRITE, MOCK_READ
+    MOCK_WRITE, MOCK_READ, MOCK_TEXTURE
 } mock_failure;
 typedef struct mock_state {
     mock_failure failure;
-    size_t contexts, buffers, pipelines, commands;
+    size_t contexts, buffers, pipelines, commands, textures;
     size_t copies, dispatches, finishes, executes, signals, waits;
     size_t allocations, allocation_attempts, allocation_failure;
     uint64_t completed, last_signal;
@@ -19,7 +19,15 @@ typedef struct mock_state {
     doe_dx_native_buffer *copy_source, *copy_destination;
     uint64_t source_offset, destination_offset, copy_size;
     doe_dx_native_binding bindings[DOE_DX_MAX_BINDINGS];
-    size_t binding_count;
+    size_t binding_count, texture_count, texture_transfers, texture_copies;
+    doe_dx_native_texture *texture_bindings[DOE_DX_MAX_BINDINGS];
+    doe_dx_native_texture *transfer_texture, *texture_source, *texture_destination;
+    doe_dx_native_buffer *transfer_buffer;
+    doe_dx_texture_footprint footprint;
+    bool upload;
+    doe_dx_resource_pipeline_desc pipeline_desc;
+    doe_dx_texture_binding_layout texture_layouts[DOE_DX_MAX_BINDINGS];
+    doe_dx_static_sampler samplers[DOE_DX_MAX_BINDINGS];
     uint32_t x, y, z;
 } mock_state;
 extern mock_state mock;

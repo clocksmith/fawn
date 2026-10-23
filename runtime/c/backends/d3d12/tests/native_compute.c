@@ -1,43 +1,18 @@
 /* SPDX-License-Identifier: MIT */
-#include "doe_d3d12.h"
-#include <stdio.h>
-#include <stdlib.h>
+#include "native_fixture.h"
 
 /* Actual Windows driver consumption only. Bytecode comes from separately
  * compiled native_compute.hlsl; no embedded interpreter or fallback backend.
  * Build does not run this fixture or claim physical qualification. */
-static void report(const char *step, doe_dx_status status, const doe_dx_error *error) {
-    fprintf(stderr, "%s: status=%d native=%ld operation=%s\n", step, (int)status,
-        (long)error->native_code, error->operation ? error->operation : "none");
-}
 
 int main(int argc, char **argv) {
     if (argc != 2) {
         fprintf(stderr, "usage: native_compute.exe native_compute.dxil\n");
         return 2;
     }
-    FILE *file = fopen(argv[1], "rb");
-    if (!file) return 2;
-    if (fseek(file, 0, SEEK_END)) {
-        fclose(file);
-        return 2;
-    }
-    long length = ftell(file);
-    if (length <= 0 || length > 2 * 1024 * 1024 || fseek(file, 0, SEEK_SET)) {
-        fclose(file);
-        return 2;
-    }
-    unsigned char *bytecode = malloc((size_t)length);
-    if (!bytecode) {
-        fclose(file);
-        return 2;
-    }
-    size_t received = fread(bytecode, 1, (size_t)length, file);
-    int close_result = fclose(file);
-    if (received != (size_t)length || close_result) {
-        free(bytecode);
-        return 2;
-    }
+    size_t length = 0;
+    unsigned char *bytecode = read_bytecode(argv[1], &length);
+    if (!bytecode) return 2;
     doe_dx_context *context = NULL;
     doe_dx_buffer *upload = NULL, *input = NULL, *output = NULL, *readback = NULL;
     doe_dx_pipeline *pipeline = NULL;
@@ -69,7 +44,7 @@ int main(int argc, char **argv) {
     status = doe_dx_buffer_write(upload, 0, inputs, sizeof(inputs), &error);
     if (status != DOE_DX_OK) goto failed;
     doe_dx_binding_layout layout[2] = {{0, 0, 4, DOE_DX_READ_ONLY}, {0, 0, 4, DOE_DX_READ_WRITE}};
-    doe_dx_pipeline_desc description = {bytecode, (size_t)length, layout, 2};
+    doe_dx_pipeline_desc description = {bytecode, length, layout, 2};
     status = doe_dx_pipeline_create(context, &description, &pipeline, &error);
     if (status != DOE_DX_OK) goto failed;
     free(bytecode);

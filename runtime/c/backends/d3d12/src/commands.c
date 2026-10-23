@@ -29,6 +29,13 @@ static void release_resources(doe_dx_commands *commands, bool publish) {
         doe_dx_buffer_release(use->buffer);
     }
     commands->buffer_count = 0;
+    for (size_t index = 0; index < commands->texture_count; index++) {
+        doe_dx_texture_use *use = &commands->textures[index];
+        use->texture->owner = NULL;
+        if (publish) use->texture->initialized = use->initialized;
+        doe_dx_texture_release(use->texture);
+    }
+    commands->texture_count = 0;
     for (size_t index = 0; index < commands->pipeline_count; index++)
         doe_dx_pipeline_release(commands->pipelines[index]);
     commands->pipeline_count = 0;
@@ -115,7 +122,7 @@ doe_dx_status doe_dx_commands_copy(doe_dx_commands *commands,
         return doe_dx_fail(DOE_DX_ALIGNMENT, 0, "commands.copy", error);
     size_t added = (doe_dx_find_buffer(commands, source) ? 0u : 1u) +
         (doe_dx_find_buffer(commands, destination) ? 0u : 1u);
-    if (added > DOE_DX_MAX_COMMAND_RESOURCES - commands->buffer_count)
+    if (added > DOE_DX_MAX_COMMAND_RESOURCES - commands->buffer_count - commands->texture_count)
         return doe_dx_fail(DOE_DX_RANGE, 0, "commands.resource_budget", error);
     doe_dx_use_buffer(commands, source);
     doe_dx_use_buffer(commands, destination);
