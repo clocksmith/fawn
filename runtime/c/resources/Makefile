@@ -51,12 +51,14 @@ $(BUILD)/test_draw_budget: tests/test_draw_budget.c $(BUILD)/libdoe_resources.a 
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(filter-out %.h,$^) -o $@
 $(BUILD)/test_pipeline_admission: tests/test_pipeline_admission.c $(BUILD)/libdoe_resources.a $(LABEL_SOURCES) tests/fixture.h src/internal.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(filter-out %.h,$^) -o $@
+$(BUILD)/test_binding_limits: tests/test_binding_limits.c $(BUILD)/libdoe_resources.a $(LABEL_SOURCES) tests/fixture.h
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(filter-out %.h,$^) -o $@
 $(BUILD)/test_program_reservation: tests/test_program_reservation.c $(BUILD)/libdoe_resources.a $(LABEL_SOURCES) tests/fixture.h src/internal.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(filter-out %.h,$^) -o $@
 .PHONY: check-program-reservation
 check-program-reservation: $(BUILD)/test_program_reservation
 	$(BUILD)/test_program_reservation
-check: $(BUILD)/test_program_reservation $(BUILD)/test_storage_formats $(BUILD)/test_color_targets $(BUILD)/test_pipeline_admission $(BUILD)/test_draw_budget $(BUILD)/test_viewport_admission $(BUILD)/test_depth_only $(BUILD)/test_debug_groups $(BUILD)/test_view_defaults $(BUILD)/test_resolve_admission $(BUILD)/test_attachment_admission $(BUILD)/test_draw_admission $(BUILD)/test_query_admission $(BUILD)/test_render_usage $(BUILD)/test_usage_scope $(BUILD)/test_resources $(BUILD)/test_extended $(BUILD)/test_bundles $(BUILD)/test_binding_features
+check: $(BUILD)/test_binding_limits $(BUILD)/test_program_reservation $(BUILD)/test_storage_formats $(BUILD)/test_color_targets $(BUILD)/test_pipeline_admission $(BUILD)/test_draw_budget $(BUILD)/test_viewport_admission $(BUILD)/test_depth_only $(BUILD)/test_debug_groups $(BUILD)/test_view_defaults $(BUILD)/test_resolve_admission $(BUILD)/test_attachment_admission $(BUILD)/test_draw_admission $(BUILD)/test_query_admission $(BUILD)/test_render_usage $(BUILD)/test_usage_scope $(BUILD)/test_resources $(BUILD)/test_extended $(BUILD)/test_bundles $(BUILD)/test_binding_features
 	$(BUILD)/test_program_reservation
 	$(BUILD)/test_resources
 	$(BUILD)/test_extended
@@ -76,6 +78,7 @@ check: $(BUILD)/test_program_reservation $(BUILD)/test_storage_formats $(BUILD)/
 	$(BUILD)/test_viewport_admission
 	$(BUILD)/test_draw_budget
 	$(BUILD)/test_pipeline_admission
+	$(BUILD)/test_binding_limits
 
 VK_BUILD ?= /tmp/doe-c-resources-vulkan
 .PHONY: vulkan-lifetime vulkan-library

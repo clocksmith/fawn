@@ -7,25 +7,24 @@ doe_resource_status native_resolve_resources(const native_pipeline *pipeline,
     doe_resource_pipeline_layout *layout_owner, doe_resource_bind_group *const *groups,
     const doe_resource_dispatch_offsets *offsets, doe_resource_binding *out)
 {
-    doe_resource_binding resolved[DOE_RESOURCE_MAX_GROUPS][DOE_RESOURCE_MAX_BINDINGS];
-    size_t counts[DOE_RESOURCE_MAX_GROUPS] = {0};
     for (size_t i = 0; i < DOE_RESOURCE_MAX_GROUPS; ++i) {
         if (!doe_resource_pipeline_layout_group_required(layout_owner, (uint32_t)i)) continue;
-        (void)doe_resource_bind_group_bindings(groups[i], &counts[i]);
-        doe_resource_status status = doe_resource_bind_group_resolve(groups[i], offsets ? offsets->values[i] : NULL,
-            offsets ? offsets->counts[i] : 0, resolved[i], DOE_RESOURCE_MAX_BINDINGS);
+        doe_resource_status status = doe_resource_bind_group_check(groups[i], offsets ? offsets->values[i] : NULL,
+            offsets ? offsets->counts[i] : 0);
         if (status != DOE_RESOURCE_OK) return status;
     }
     for (size_t i = 0; i < pipeline->binding_count; ++i) {
         native_binding layout = pipeline->bindings[i];
-        if (layout.group >= DOE_RESOURCE_MAX_GROUPS) return DOE_RESOURCE_RANGE;
-        const doe_resource_binding *binding = NULL;
-        for (size_t j = 0; j < counts[layout.group]; ++j)
-            if (resolved[layout.group][j].binding == layout.binding) binding = &resolved[layout.group][j];
-        if (!binding || binding->kind != layout.kind) return DOE_RESOURCE_LAYOUT;
-        if (binding->kind == DOE_BIND_BUFFER && binding->resource.buffer.size < pipeline->minimum_sizes[i])
+        if (layout.group >= DOE_RESOURCE_MAX_GROUPS || !groups[layout.group]) return DOE_RESOURCE_RANGE;
+        doe_resource_binding binding;
+        doe_resource_status status = doe_resource_bind_group_resolve_binding(groups[layout.group],
+            offsets ? offsets->values[layout.group] : NULL, offsets ? offsets->counts[layout.group] : 0,
+            layout.binding, &binding);
+        if (status != DOE_RESOURCE_OK) return status;
+        if (binding.kind != layout.kind) return DOE_RESOURCE_LAYOUT;
+        if (binding.kind == DOE_BIND_BUFFER && binding.resource.buffer.size < pipeline->minimum_sizes[i])
             return DOE_RESOURCE_RANGE;
-        out[i] = *binding;
+        out[i] = binding;
     }
     return DOE_RESOURCE_OK;
 }
@@ -53,10 +52,10 @@ doe_vk_status native_resolve_bindings(doe_vk_commands *commands, const native_pi
     doe_resource_pipeline_layout *layout, doe_resource_bind_group *const *groups,
     const doe_resource_dispatch_offsets *offsets, doe_vk_binding_resource *bindings)
 {
-    doe_resource_binding resolved[DOE_RESOURCE_MAX_GROUPS * DOE_RESOURCE_MAX_BINDINGS];
+    doe_resource_binding resolved[NATIVE_MAX_PIPELINE_BINDINGS];
     doe_resource_status status = native_resolve_resources(pipeline,layout,groups,offsets,resolved);
     if (status != DOE_RESOURCE_OK) return DOE_VK_INVALID_ARGUMENT;
-    doe_vk_binding_layout native_layout[DOE_RESOURCE_MAX_GROUPS * DOE_RESOURCE_MAX_BINDINGS];
+    doe_vk_binding_layout native_layout[NATIVE_MAX_PIPELINE_BINDINGS];
     if (!native_vulkan_binding_layout(pipeline,native_layout)) return DOE_VK_UNSUPPORTED;
     for (size_t i = 0; i < pipeline->binding_count; ++i) {
         const doe_resource_binding *binding = &resolved[i];

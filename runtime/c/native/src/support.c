@@ -112,53 +112,6 @@ void wgpuAdapterInfoFreeMembers(WGPUAdapterInfo info)
     free((void *)info.device.data);
 }
 
-WGPUStatus native_vulkan_limits(const doe_vk_caps *caps, WGPULimits *out)
-{
-    if (!out || out->nextInChain) return WGPUStatus_Error;
-    uint32_t dispatch = caps->max_workgroup_count[0];
-    if (caps->max_workgroup_count[1] < dispatch) dispatch = caps->max_workgroup_count[1];
-    if (caps->max_workgroup_count[2] < dispatch) dispatch = caps->max_workgroup_count[2];
-    *out = (WGPULimits){
-        .maxTextureDimension1D = caps->max_texture_dimension_1d,
-        .maxTextureDimension2D = caps->max_texture_dimension_2d,
-        .maxTextureDimension3D = caps->max_texture_dimension_3d,
-        .maxTextureArrayLayers = caps->max_texture_array_layers,
-        .maxBindGroups = caps->max_bind_groups,
-        .maxVertexBuffers = caps->max_vertex_input_bindings < DOE_VK_MAX_VERTEX_BUFFERS ?
-            caps->max_vertex_input_bindings : DOE_VK_MAX_VERTEX_BUFFERS,
-        .maxVertexAttributes = caps->max_vertex_input_attributes < DOE_VK_MAX_VERTEX_ATTRIBUTES ?
-            caps->max_vertex_input_attributes : DOE_VK_MAX_VERTEX_ATTRIBUTES,
-        .maxVertexBufferArrayStride = caps->max_vertex_input_binding_stride,
-        /* Real native slot count bounded by the frontend's eight-slot storage;
-         * the WebGPU baseline byte budget (Vulkan has no per-sample byte limit). */
-        .maxColorAttachments = caps->max_color_attachments < DOE_VK_MAX_COLOR_ATTACHMENTS ?
-            caps->max_color_attachments : DOE_VK_MAX_COLOR_ATTACHMENTS,
-        .maxColorAttachmentBytesPerSample = 32,
-        .maxInterStageShaderVariables = (caps->max_vertex_output_components < caps->max_fragment_input_components ?
-            caps->max_vertex_output_components : caps->max_fragment_input_components) / 4,
-        .maxBindingsPerBindGroup = DOE_RESOURCE_MAX_BINDINGS,
-        .maxDynamicUniformBuffersPerPipelineLayout = DOE_RESOURCE_MAX_BINDINGS,
-        .maxDynamicStorageBuffersPerPipelineLayout = DOE_RESOURCE_MAX_BINDINGS,
-        .maxStorageBuffersPerShaderStage = caps->max_storage_buffers_per_stage,
-        .maxUniformBuffersPerShaderStage = caps->max_uniform_buffers_per_stage,
-        .maxSampledTexturesPerShaderStage = caps->max_sampled_textures_per_stage,
-        .maxSamplersPerShaderStage = caps->max_samplers_per_stage,
-        .maxStorageTexturesPerShaderStage = caps->max_storage_textures_per_stage,
-        .maxComputeWorkgroupStorageSize = caps->max_workgroup_storage_size,
-        .maxUniformBufferBindingSize = caps->max_uniform_buffer_range,
-        .maxStorageBufferBindingSize = caps->max_storage_buffer_range,
-        .minUniformBufferOffsetAlignment = (uint32_t)caps->uniform_offset_alignment,
-        .minStorageBufferOffsetAlignment = (uint32_t)caps->storage_offset_alignment,
-        .maxBufferSize = caps->max_storage_buffer_range,
-        .maxComputeInvocationsPerWorkgroup = caps->max_workgroup_invocations,
-        .maxComputeWorkgroupSizeX = caps->max_workgroup_size[0],
-        .maxComputeWorkgroupSizeY = caps->max_workgroup_size[1],
-        .maxComputeWorkgroupSizeZ = caps->max_workgroup_size[2],
-        .maxComputeWorkgroupsPerDimension = dispatch
-    };
-    return WGPUStatus_Success;
-}
-
 WGPUStatus native_limits(const native_backend *backend, WGPULimits *out)
 {
     if (!out || out->nextInChain) return WGPUStatus_Error;

@@ -61,11 +61,13 @@ doe_resource_status resource_scope_add(const doe_resource_config *config, resour
 doe_resource_status resource_scope_group(const doe_resource_config *config, resource_usage_scope *scope,
     const doe_resource_dispatch_group *group)
 {
-    resource_use uses[RESOURCE_GROUP_USES];
-    size_t count;
-    doe_resource_status status = resource_group_uses(group, uses, &count);
+    resource_use stack[RESOURCE_STACK_USES], *uses;
+    size_t count, capacity;
+    doe_resource_status status = resource_group_uses(config, group, stack, &uses, &count, &capacity);
     if (status != DOE_RESOURCE_OK) return status;
-    return resource_scope_add(config, scope, uses, count);
+    status = resource_scope_add(config, scope, uses, count);
+    resource_group_uses_free(config, uses, capacity, stack);
+    return status;
 }
 
 doe_resource_status resource_scope_input(const doe_resource_config *config, resource_usage_scope *scope,

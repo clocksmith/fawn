@@ -330,6 +330,10 @@ software evidence; this is neither physical nor complete matrix qualification.
 
 ### Graphics limits and dynamic blend constants
 
+`caps.max_memory_allocation_size` is VkPhysicalDeviceMaintenance3Properties
+maxMemoryAllocationSize (Vulkan 1.1 core), queried after selection; consumers
+bound one-allocation buffers by it.
+
 Capabilities expose actual driver vertex binding/attribute counts, stride/offset
 limits and vertex-output/fragment-input component limits. Public admission still
 intersects those facts with this owner's eight-layout/sixteen-attribute bounds;

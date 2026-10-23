@@ -73,6 +73,15 @@ typedef struct doe_resource_config {
      * DOE_RESOURCE_MAX_COLOR_ATTACHMENTS are clamped to that storage bound. */
     uint32_t max_color_attachments;
     uint32_t max_color_attachment_bytes_per_sample;
+    /* Requested binding-slot limits (WebGPU "exceeds the binding slot limits"):
+     * per-stage counts over a layout's entries, and dynamic-offset buffer counts
+     * per pipeline layout. Zero selects the WebGPU default for that field. */
+    struct {
+        uint32_t max_bind_groups;
+        uint32_t max_dynamic_uniform_buffers, max_dynamic_storage_buffers;
+        uint32_t max_sampled_textures, max_samplers, max_storage_buffers;
+        uint32_t max_storage_textures, max_uniform_buffers;
+    } slot_limits;
 } doe_resource_config;
 
 typedef struct doe_resource_shader doe_resource_shader;
@@ -237,7 +246,10 @@ typedef struct doe_resource_layout_entry {
     WGPUTextureFormat storage_format;
 } doe_resource_layout_entry;
 
-enum { DOE_RESOURCE_MAX_BINDINGS = 32, DOE_RESOURCE_MAX_GROUPS = 4 };
+/* Binding numbers are below MAX_BINDING_NUMBER (WebGPU maxBindingsPerBindGroup)
+ * and stored compactly in ascending binding order, never indexed by number. A
+ * group holds at most MAX_DYNAMIC_OFFSETS dynamic-offset buffers. */
+enum { DOE_RESOURCE_MAX_BINDING_NUMBER = 1000, DOE_RESOURCE_MAX_DYNAMIC_OFFSETS = 32, DOE_RESOURCE_MAX_GROUPS = 4 };
 /* Entries copied and canonicalized by binding, duplicates rejected. Automatic
  * layout identity remains exclusive: compatibility requires pointer equality,
  * and only one pipeline can ever claim an automatic layout. */
@@ -295,6 +307,16 @@ const doe_resource_binding *doe_resource_bind_group_bindings(const doe_resource_
 doe_resource_status doe_resource_bind_group_resolve(const doe_resource_bind_group *group,
     const uint32_t *offsets, size_t offset_count,
     doe_resource_binding *out, size_t capacity);
+/* Whole-group validation of doe_resource_bind_group_resolve without output:
+ * liveness, map state and every dynamic offset's alignment and range. */
+doe_resource_status doe_resource_bind_group_check(const doe_resource_bind_group *group,
+    const uint32_t *offsets, size_t offset_count);
+/* The same validated resolution for one binding number, without materializing
+ * the whole group: that binding's liveness, map state and offset only, so
+ * callers pair it with doe_resource_bind_group_check. The offsets cover the
+ * whole group. Output unchanged on failure. */
+doe_resource_status doe_resource_bind_group_resolve_binding(const doe_resource_bind_group *group,
+    const uint32_t *offsets, size_t offset_count, uint32_t binding, doe_resource_binding *out);
 
 doe_resource_status doe_resource_pipeline_create(const doe_resource_config *config,
     doe_resource_pipeline_layout *layout, doe_resource_native native,
@@ -363,7 +385,7 @@ typedef struct doe_resource_dispatch_group {
 /* Optional immutable command-owned snapshot. Backend borrows it with commands. */
 typedef struct doe_resource_dispatch_offsets {
     size_t counts[DOE_RESOURCE_MAX_GROUPS];
-    uint32_t values[DOE_RESOURCE_MAX_GROUPS][DOE_RESOURCE_MAX_BINDINGS];
+    uint32_t values[DOE_RESOURCE_MAX_GROUPS][DOE_RESOURCE_MAX_DYNAMIC_OFFSETS];
 } doe_resource_dispatch_offsets;
 
 typedef enum doe_resource_command_kind {

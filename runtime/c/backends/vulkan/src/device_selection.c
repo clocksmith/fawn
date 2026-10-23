@@ -87,6 +87,10 @@ doe_vk_status doe_vk_choose_device(doe_vk_context *context,
         return doe_vk_fail(DOE_VK_UNSUPPORTED, "software adapter not allowed", error);
     context->physical = selected;
     context->properties = properties;
+    VkPhysicalDeviceMaintenance3Properties maintenance = {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_3_PROPERTIES};
+    VkPhysicalDeviceProperties2 extended = {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2, .pNext = &maintenance};
+    context->vk.vkGetPhysicalDeviceProperties2(selected, &extended);
+    context->caps.max_memory_allocation_size = maintenance.maxMemoryAllocationSize;
     doe_vk_caps *caps = &context->caps;
     const VkPhysicalDeviceProperties *p = &context->properties;
     caps->api_version = p->apiVersion;

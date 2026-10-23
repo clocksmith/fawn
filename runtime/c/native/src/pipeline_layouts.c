@@ -20,7 +20,7 @@ static bool resource_entry(const doe_shader_view *view, uint32_t index, WGPUShad
     doe_resource_layout_entry *out)
 {
     const DoeCompilerResourceV4 *resource = &view->resources[index];
-    if (resource->group >= DOE_RESOURCE_MAX_GROUPS || resource->binding >= DOE_RESOURCE_MAX_BINDINGS) return false;
+    if (resource->group >= DOE_RESOURCE_MAX_GROUPS || resource->binding >= DOE_RESOURCE_MAX_BINDING_NUMBER) return false;
     *out = (doe_resource_layout_entry){.binding=resource->binding, .visibility=visibility};
     if (resource->kind == DOE_COMPILER_UNIFORM_BUFFER || resource->kind == DOE_COMPILER_STORAGE_BUFFER) {
         out->kind = DOE_BIND_BUFFER;
@@ -93,7 +93,8 @@ static bool merge_entry(doe_resource_layout_entry *actual, const doe_resource_la
 doe_resource_status native_automatic_layout(native_device *device,
     const native_stage *stages, size_t stage_count, doe_resource_pipeline_layout **out)
 {
-    doe_resource_layout_entry entries[DOE_RESOURCE_MAX_GROUPS][DOE_RESOURCE_MAX_BINDINGS];
+    /* One group holds at most every resource the pipeline references. */
+    doe_resource_layout_entry entries[DOE_RESOURCE_MAX_GROUPS][NATIVE_MAX_PIPELINE_BINDINGS];
     size_t counts[DOE_RESOURCE_MAX_GROUPS] = {0};
     size_t group_count = 0;
     const bool sampled = stages_sample(stages, stage_count);
@@ -106,12 +107,14 @@ doe_resource_status native_automatic_layout(native_device *device,
             const DoeCompilerResourceV4 *resource = &view->resources[index];
             doe_resource_layout_entry converted;
             if (!resource_entry(view, index, stage->visibility, sampled, &converted)) return DOE_RESOURCE_UNSUPPORTED;
+            if (resource->binding >= device->backend.limits.maxBindingsPerBindGroup ||
+                resource->group >= device->backend.limits.maxBindGroups) return DOE_RESOURCE_RANGE;
             size_t at = 0;
             while (at < counts[resource->group] && entries[resource->group][at].binding != resource->binding) ++at;
             if (at < counts[resource->group]) {
                 if (!merge_entry(&entries[resource->group][at], &converted)) return DOE_RESOURCE_LAYOUT;
             } else {
-                if (at == DOE_RESOURCE_MAX_BINDINGS) return DOE_RESOURCE_UNSUPPORTED;
+                if (at == NATIVE_MAX_PIPELINE_BINDINGS) return DOE_RESOURCE_UNSUPPORTED;
                 entries[resource->group][at] = converted;
                 ++counts[resource->group];
             }
@@ -209,7 +212,7 @@ bool native_pipeline_bindings(native_pipeline *payload, const native_stage *stag
             while (at < payload->binding_count && (payload->bindings[at].group != resource->group ||
                 payload->bindings[at].binding != resource->binding)) ++at;
             if (at == payload->binding_count) {
-                if (at == DOE_RESOURCE_MAX_GROUPS * DOE_RESOURCE_MAX_BINDINGS) return false;
+                if (at == NATIVE_MAX_PIPELINE_BINDINGS) return false;
                 payload->bindings[at] = (native_binding){resource->group, resource->binding, required.kind, required.buffer_type};
                 ++payload->binding_count;
             } else if (payload->bindings[at].kind != required.kind ||

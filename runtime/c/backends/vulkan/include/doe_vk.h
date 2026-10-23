@@ -126,6 +126,9 @@ typedef struct doe_vk_caps {
     /* Actual native color-attachment count limit (pipelines and passes are also
      * bounded by DOE_VK_MAX_COLOR_ATTACHMENTS). */
     uint32_t max_color_attachments;
+    /* Core1.1 maxMemoryAllocationSize: the largest single allocation, so the
+     * largest buffer this owner can back with one dedicated memory object. */
+    uint64_t max_memory_allocation_size;
     /* Enabled independentBlend, not merely advertised. Without it every color
      * slot of one pipeline must use identical blend and write-mask state. */
     bool independent_blend;

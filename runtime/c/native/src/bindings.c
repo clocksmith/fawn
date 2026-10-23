@@ -1,15 +1,20 @@
 /* SPDX-License-Identifier: MIT */
 #include "internal.h"
+#include <stdlib.h>
 
 WGPUBindGroupLayout wgpuDeviceCreateBindGroupLayout(WGPUDevice handle,
     const WGPUBindGroupLayoutDescriptor *descriptor)
 {
     native_device *device = (native_device *)handle;
     if (!device) return NULL;
-    doe_resource_layout_entry entries[DOE_RESOURCE_MAX_BINDINGS];
+    /* maxBindingsPerBindGroup bounds binding numbers, so distinct entries too. */
     bool valid = descriptor && !descriptor->nextInChain &&
-        descriptor->entryCount <= DOE_RESOURCE_MAX_BINDINGS &&
+        descriptor->entryCount <= device->backend.limits.maxBindingsPerBindGroup &&
         (!descriptor->entryCount || descriptor->entries);
+    doe_resource_layout_entry *entries = valid ? calloc(descriptor->entryCount ? descriptor->entryCount : 1,
+        sizeof(*entries)) : NULL;
+    const bool out_of_memory = valid && !entries;
+    valid = valid && entries;
     if (valid) for (size_t i = 0; i < descriptor->entryCount; ++i) {
         const WGPUBindGroupLayoutEntry *entry = &descriptor->entries[i];
         unsigned kinds = (entry->buffer.type != WGPUBufferBindingType_BindingNotUsed) +
@@ -17,6 +22,7 @@ WGPUBindGroupLayout wgpuDeviceCreateBindGroupLayout(WGPUDevice handle,
             (entry->texture.sampleType != WGPUTextureSampleType_BindingNotUsed) +
             (entry->storageTexture.access != WGPUStorageTextureAccess_BindingNotUsed);
         if (entry->nextInChain || entry->bindingArraySize || entry->buffer.nextInChain ||
+            entry->binding >= device->backend.limits.maxBindingsPerBindGroup ||
             entry->sampler.nextInChain || entry->texture.nextInChain || entry->storageTexture.nextInChain ||
             kinds != 1 || entry->visibility & ~(WGPUShaderStage_Compute | WGPUShaderStage_Vertex | WGPUShaderStage_Fragment)) {
             valid = false;
@@ -56,9 +62,11 @@ WGPUBindGroupLayout wgpuDeviceCreateBindGroupLayout(WGPUDevice handle,
     }
     doe_resource_layout *layout = NULL;
     native_lock(device);
-    doe_resource_status status = valid ? doe_resource_layout_create(&device->resources,
-        entries, descriptor->entryCount, false, &layout) : DOE_RESOURCE_UNSUPPORTED;
+    doe_resource_status status = out_of_memory ? DOE_RESOURCE_OUT_OF_MEMORY : valid ?
+        doe_resource_layout_create(&device->resources, entries, descriptor->entryCount, false, &layout) :
+        DOE_RESOURCE_UNSUPPORTED;
     native_unlock(device);
+    free(entries);
     if (status != DOE_RESOURCE_OK) native_error(device, native_resource_error(status), "bind group layout unsupported or invalid");
     if (layout) native_label(device, layout, descriptor->label);
     return (WGPUBindGroupLayout)layout;
@@ -113,9 +121,13 @@ WGPUBindGroup wgpuDeviceCreateBindGroup(WGPUDevice handle, const WGPUBindGroupDe
 {
     native_device *device = (native_device *)handle;
     if (!device) return NULL;
-    doe_resource_binding bindings[DOE_RESOURCE_MAX_BINDINGS];
     bool valid = descriptor && !descriptor->nextInChain && descriptor->layout &&
-        descriptor->entryCount <= DOE_RESOURCE_MAX_BINDINGS && (!descriptor->entryCount || descriptor->entries);
+        descriptor->entryCount <= device->backend.limits.maxBindingsPerBindGroup &&
+        (!descriptor->entryCount || descriptor->entries);
+    doe_resource_binding *bindings = valid ? calloc(descriptor->entryCount ? descriptor->entryCount : 1,
+        sizeof(*bindings)) : NULL;
+    const bool out_of_memory = valid && !bindings;
+    valid = valid && bindings;
     if (valid) for (size_t i = 0; i < descriptor->entryCount; ++i) {
         const WGPUBindGroupEntry *entry = &descriptor->entries[i];
         unsigned kinds = (entry->buffer != NULL) + (entry->sampler != NULL) + (entry->textureView != NULL);
@@ -153,14 +165,16 @@ WGPUBindGroup wgpuDeviceCreateBindGroup(WGPUDevice handle, const WGPUBindGroupDe
     const doe_resource_binding_features features = {
         .float32_filterable = native_feature_enabled(device, WGPUFeatureName_Float32Filterable)
     };
-    doe_resource_status status = valid ? doe_resource_bind_group_create_with_features((doe_resource_layout *)descriptor->layout,
-        bindings, descriptor->entryCount, &limits, &features, &group) : DOE_RESOURCE_INVALID_ARGUMENT;
+    doe_resource_status status = out_of_memory ? DOE_RESOURCE_OUT_OF_MEMORY : valid ?
+        doe_resource_bind_group_create_with_features((doe_resource_layout *)descriptor->layout, bindings,
+            descriptor->entryCount, &limits, &features, &group) : DOE_RESOURCE_INVALID_ARGUMENT;
     if (group && !group_filterability(device, (doe_resource_layout *)descriptor->layout, group)) {
         doe_resource_bind_group_release(group);
         group = NULL;
         status = DOE_RESOURCE_UNSUPPORTED;
     }
     native_unlock(device);
+    free(bindings);
     if (status != DOE_RESOURCE_OK) native_error(device, native_resource_error(status), "bind group invalid or device mismatch");
     if (group) native_label(device, group, descriptor->label);
     return (WGPUBindGroup)group;

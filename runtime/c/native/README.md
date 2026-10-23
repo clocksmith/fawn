@@ -379,6 +379,29 @@ every texture, as the reference core implementation does. Unknown or repeated ch
 nodes still reject. The provider does not yet advertise `CoreFeaturesAndLimits`;
 that separate claim needs complete core limits and is not made here.
 
+## Limits
+
+`src/limits.c` owns the WebGPU limits. Adapter limits are Vulkan facts
+intersected with what this frontend enforces and executes: per-stage binding
+counts at the WebGPU defaults (pipeline binding storage holds two stages of
+them, `NATIVE_MAX_PIPELINE_BINDINGS`), maxBindingsPerBindGroup 1000 (sparse
+resource-owner storage), 16 dynamic uniform and 16 dynamic storage buffers
+(applied by the resource owner, 32 per group), maxBufferSize from Vulkan
+maxMemoryAllocationSize with binding sizes bounded by it and rounded down to 4,
+the minimum dispatch dimension across axes, and workgroup sizes/invocations at
+the C compiler's 256 bound. A device resolves requestDevice requiredLimits per
+the specification: an undefined member takes the default, a value better than
+the adapter's (or a non-power-of-two alignment) fails creation, and each device
+limit is the better of the required value and the default. An adapter below a
+default keeps its own value. Every frontend check (texture and surface sizes,
+buffer size, binding sizes and alignments, binding slot limits, binding numbers,
+bind group count, vertex buffers/attributes/stride, inter-stage variables,
+workgroup size/storage, dispatch counts) reads the device limits, and
+`wgpuDeviceGetLimits` reports them. `tests/limits.c` prints the default,
+adapter and device columns and checks each resolution rule and default-limit
+rejection. The compiler admits shader binding numbers 0..31 only, so groups with
+higher binding numbers execute while shaders cannot yet reference them.
+
 ## Storage textures
 
 The resource owner's `resource_storage_format` table is the WebGPU core storage
@@ -464,8 +487,9 @@ buffer copies/storage, and cube arrays without device imageCubeArray are rejecte
 The baseline admits 23 named Vulkan
 color formats, subject to actual device usage/format capabilities. Device
 descriptors may request the optional features `src/features.c` reports for the
-actual adapter (see Optional device features). Other required features and required limits
-reject rather than silently succeeding. Buffer, sampled/storage image and sampler layouts are
+actual adapter (see Optional device features). Other required features reject
+rather than silently succeeding; requiredLimits resolve as described under Limits.
+Buffer, sampled/storage image and sampler layouts are
 admitted; extensions, binding arrays,
 immediates, specialization constants and nonbaseline shader capabilities reject.
 ABI6 lacks exact texture/sampler pair-use reflection through helper parameters.
@@ -691,7 +715,8 @@ reads all 33 (including `storage-textures`, `point-list`, `color-discard` and
 `msaa-sampling`) passed; with optional format features all 34 (including
 `format-features`) passed; with optional draw features all 35 (including
 `draw-features`) passed; with undefined copy strides all 36 (including
-`copy-layouts`) passed. That is
+`copy-layouts`) passed; with limits resolution all 38 (including
+`program-prepare` and `limits`) passed. That is
 developer evidence for these exact clients on that
 adapter/driver: the oracles are the clients' own expected values, not frozen
 independent workloads, and it is not Vulkan backend qualification, a performance

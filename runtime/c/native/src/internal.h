@@ -97,6 +97,10 @@ typedef struct native_stage {
     char name[64];
 } native_stage;
 
+/* Distinct resources one pipeline references: at most two stages, each within
+ * the per-stage binding limits native_supported_limits reports (limits.c). */
+enum { NATIVE_MAX_PIPELINE_BINDINGS = 128 };
+
 typedef struct native_binding {
     uint32_t group, binding;
     doe_resource_binding_kind kind;
@@ -108,9 +112,9 @@ typedef struct native_pipeline {
     union { doe_vk_pipeline *vulkan; doe_mtl_pipeline *metal; } handle;
     size_t binding_count;
     size_t vertex_count;
-    uint32_t metal_slots[DOE_RESOURCE_MAX_GROUPS * DOE_RESOURCE_MAX_BINDINGS];
-    native_binding bindings[DOE_RESOURCE_MAX_GROUPS * DOE_RESOURCE_MAX_BINDINGS];
-    uint64_t minimum_sizes[DOE_RESOURCE_MAX_GROUPS * DOE_RESOURCE_MAX_BINDINGS];
+    uint32_t metal_slots[NATIVE_MAX_PIPELINE_BINDINGS];
+    native_binding bindings[NATIVE_MAX_PIPELINE_BINDINGS];
+    uint64_t minimum_sizes[NATIVE_MAX_PIPELINE_BINDINGS];
 } native_pipeline;
 
 void *native_allocate(void *state, const void *vtable, size_t size, size_t alignment);
@@ -139,6 +143,8 @@ WGPUFuture native_callback(doe_instance *instance, WGPUCallbackMode mode,
     doe_callback_copy_context copy, doe_callback_deliver_context deliver);
 
 WGPUStatus native_limits(const native_backend *backend, WGPULimits *out);
+/* requestDevice limit resolution (limits.c); false rejects the request. */
+bool native_resolve_limits(const WGPULimits *supported, const WGPULimits *required, WGPULimits *out);
 void native_buffer_release(void *userdata, void *handle);
 native_result native_buffer_read(native_buffer *buffer, uint64_t offset, void *bytes, size_t size);
 native_result native_buffer_write(native_buffer *buffer, uint64_t offset, const void *bytes, size_t size);

@@ -108,9 +108,9 @@ doe_resource_status doe_resource_compute_pass_set_group(doe_resource_compute_pas
         pass->offsets.counts[index] = 0;
         return DOE_RESOURCE_OK;
     }
-    doe_resource_binding resolved[DOE_RESOURCE_MAX_BINDINGS];
-    status = doe_resource_bind_group_resolve(group->group, group->dynamic_offsets,
-        group->dynamic_offset_count, resolved, DOE_RESOURCE_MAX_BINDINGS);
+    if (group->dynamic_offset_count > DOE_RESOURCE_MAX_DYNAMIC_OFFSETS)
+        return resource_encoder_fail(pass->encoder, DOE_RESOURCE_LAYOUT);
+    status = resource_group_check(group->group, group->dynamic_offsets, group->dynamic_offset_count);
     if (status != DOE_RESOURCE_OK) return resource_encoder_fail(pass->encoder, status);
     if (group->group->base.config.device.identity != pass->base.config.device.identity)
         return resource_encoder_fail(pass->encoder, DOE_RESOURCE_DEVICE_MISMATCH);

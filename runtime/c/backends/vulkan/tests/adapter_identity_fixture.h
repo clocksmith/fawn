@@ -31,6 +31,15 @@ static void properties(VkPhysicalDevice device, VkPhysicalDeviceProperties2 *out
     uint32_t index = 0;
     while (index < 3 && device != handle(index)) ++index;
     assert(index < 3 && out->sType == VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2);
+    VkStructureType chained;
+    memcpy(&chained, out->pNext, sizeof(chained));
+    if (chained == VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_3_PROPERTIES) {
+        /* The selected device's allocation limit is queried separately. */
+        VkPhysicalDeviceMaintenance3Properties *maintenance = out->pNext;
+        assert(!maintenance->pNext);
+        maintenance->maxMemoryAllocationSize = UINT64_C(1) << 30;
+        return;
+    }
     VkPhysicalDeviceIDProperties *ids = out->pNext;
     assert(ids && ids->sType == VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ID_PROPERTIES && !ids->pNext);
     out->properties = (VkPhysicalDeviceProperties){.apiVersion=device_version,
