@@ -112,6 +112,22 @@ Developer checks below are not physical qualification or full feature closure.
 7. **Raw image-format integers:** compiler owner, `fa61e2c1`. Existing named format
    constants replace raw values in `image.c`; unrelated enum domains stay distinct.
 
+Fresh backend/pending-work review of `cbdee872` found three additional open
+source-level gaps, separate from the seven corrections above:
+- **Stable Vulkan device identity:** Vulkan/native owners. Recreating an adapter
+  by enumeration ordinal can select different physical hardware or lose fallback
+  identity. Preserve and verify identity across context creation; changed-order
+  and fallback controls are pending.
+- **Native error detail:** native owner. Wait/recover and Metal pipeline calls
+  discard operation/native-code detail. Carry a small typed first failure through
+  settlement and format once at the public boundary; targeted controls pending.
+- **Unattended pending retirement:** native owner. Unknown work keeps resources
+  safely retained, but after every public handle is released no caller may return
+  to retry it. The existing pending owner needs a surviving progress obligation;
+  release-all, later-terminal and failure controls are pending. Uncertain work
+  must never be freed merely to close this finding.
+These are source-inferred findings, not reproduced failures or closed claims.
+
 Guides: the common C style retains one parser/semantic/layout owner with multiple
 explicit target adapters. Vulkan's owner guide now states serialized operations
 and callback/lease boundaries; its recursive mutex is retained because finalizers
