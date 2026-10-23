@@ -5,7 +5,7 @@ OUT ?= /tmp/doe-c-vulkan
 REPO ?= ../../../..
 CFLAGS ?= -O2 -g
 STRICT = -std=c11 -Wall -Wextra -Werror -Wpedantic
-SOURCES = src/loader.c src/device_features.c src/resources.c src/pipeline.c src/descriptors.c src/commands.c src/textures.c src/texture_commands.c src/render_pipeline.c src/render_commands.c src/render_attachments.c src/queries.c src/timestamp.c
+SOURCES = src/loader.c src/device_features.c src/resources.c src/pipeline.c src/descriptors.c src/commands.c src/textures.c src/texture_commands.c src/render_pipeline.c src/render_commands.c src/render_attachments.c src/render_initialization.c src/queries.c src/timestamp.c
 OBJECTS = $(patsubst src/%.c,$(OUT)/%.o,$(SOURCES))
 HEADERS = $(wildcard src/*.h include/*.h) $(REPO)/runtime/c/common/include/doe_copy_footprint.h
 .PHONY: all check abi native native-descriptors native-storage native-render native-queries native-texture probe sanitize clean

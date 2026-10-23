@@ -325,3 +325,15 @@ fragments and an exact 64-pixel color readback. SwiftShader rejected the first
 D24S8 fixture as unsupported; the retained failure was followed by explicitly
 selecting D32S8, not a hidden backend fallback. `depth_contract` checks native
 aspect/load/store records, discard, preflight errors, leases and rollback.
+
+`doe_vk_commands_initialize_attachment` owns zero initialization through actual
+empty native passes, not CPU availability mirrors. It examines the existing
+speculative aspect masks, clears only undefined aspects of the selected 2D
+image mip/layer span, and preserves valid aspects. Array/cube selections use
+retained single-subresource views. Initialized selections are no-op. Use this
+explicit primitive before public attachment publication and before sampling,
+copying or LOAD of discarded attachments. Raw LOAD still rejects undefined data.
+The full descriptor also admits an empty/query-only depth/stencil-only pass,
+without manufacturing a color attachment; depth-only draws remain unsupported.
+The native witness verifies depth-zero after discard without losing stencil,
+and exact zero color bytes after discard.

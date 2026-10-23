@@ -10,14 +10,15 @@ static VkResult create_pass(VkDevice device, const VkRenderPassCreateInfo *info,
     const VkAllocationCallbacks *allocator, VkRenderPass *out) {
     (void)device;
     (void)allocator;
-    assert(!inside && info->attachmentCount == 2);
-    const VkAttachmentDescription *depth = info->pAttachments + 1;
+    unsigned depth_index = expected.color != NULL ? 1 : 0;
+    assert(!inside && info->attachmentCount == depth_index + 1);
+    const VkAttachmentDescription *depth = info->pAttachments + depth_index;
     assert(depth->format == DOE_VK_FORMAT_D32_FLOAT_S8_UINT);
     assert(depth->loadOp == (expected.clear_depth ? VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_LOAD));
     assert(depth->stencilLoadOp == (expected.clear_stencil ? VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_LOAD));
     assert(depth->storeOp == (expected.discard_depth ? VK_ATTACHMENT_STORE_OP_DONT_CARE : VK_ATTACHMENT_STORE_OP_STORE));
     assert(depth->stencilStoreOp == (expected.discard_stencil ? VK_ATTACHMENT_STORE_OP_DONT_CARE : VK_ATTACHMENT_STORE_OP_STORE));
-    assert(info->pSubpasses[0].pDepthStencilAttachment->attachment == 1);
+    assert(info->pSubpasses[0].pDepthStencilAttachment->attachment == depth_index);
     *out = 17;
     ++created;
     return 0;
@@ -26,7 +27,9 @@ static VkResult framebuffer(VkDevice device, const VkFramebufferCreateInfo *info
     const VkAllocationCallbacks *allocator, VkFramebuffer *out) {
     (void)device;
     (void)allocator;
-    assert(!inside && info->attachmentCount == 2 && info->pAttachments[0] == 21 && info->pAttachments[1] == 22);
+    assert(!inside);
+    if (expected.color != NULL) assert(info->attachmentCount == 2 && info->pAttachments[0] == 21 && info->pAttachments[1] == 22);
+    else assert(info->attachmentCount == 1 && info->pAttachments[0] == 22);
     *out = 18;
     return 0;
 }
@@ -57,9 +60,10 @@ static void begin(VkCommandBuffer command, const VkRenderPassBeginInfo *info, ui
     (void)command;
     assert(!inside && contents == VK_SUBPASS_CONTENTS_INLINE);
     if (expected.clear_depth || expected.clear_stencil) {
-        assert(info->clearValueCount == 2);
-        assert(info->pClearValues[1].depthStencil.depth == expected.depth_clear_value);
-        assert(info->pClearValues[1].depthStencil.stencil == expected.stencil_clear_value);
+        unsigned index = expected.color != NULL ? 1 : 0;
+        assert(info->clearValueCount == index + 1);
+        assert(info->pClearValues[index].depthStencil.depth == expected.depth_clear_value);
+        assert(info->pClearValues[index].depthStencil.stencil == expected.stencil_clear_value);
     }
     inside = true;
     ++begins;
@@ -158,9 +162,20 @@ int main(void) {
     pipeline.depth_write = false;
     pipeline.stencil_write = true;
     rejected(&context, &desc, &op, DOE_VK_INVALID_ARGUMENT);
+    expected = (doe_vk_render_pass_desc){.depth_stencil = &depth_view, .clear_depth = true};
+    commands = recording(&context);
+    assert(doe_vk_commands_initialize_attachment(commands, &depth_view) == DOE_VK_OK);
+    assert(depth_state == 4 && begins == 4); /* Real depth-only clear, preserve stencil. */
+    doe_vk_textures_complete(commands, DOE_VK_OK);
+    assert(depth_state == 6);
+    assert(doe_vk_commands_release(commands) == DOE_VK_OK);
+    commands = recording(&context);
+    assert(doe_vk_commands_initialize_attachment(commands, &depth_view) == DOE_VK_OK);
+    assert(commands->renders == NULL && begins == 4);
+    assert(doe_vk_commands_release(commands) == DOE_VK_OK);
     depth.desc.format = DOE_VK_FORMAT_D32_FLOAT;
     rejected(&context, &desc, NULL, DOE_VK_INVALID_ARGUMENT); /* No stencil aspect. */
-    assert(begins == 3 && ends == 3 && created == destroyed && context.references == 1);
-    puts("PASS per-aspect native load/clear/store/discard, full depth/stencil transitions, read-only write/clear rejection, extent/NaN/absent-aspect preflight, speculative initialization and exact attachment leases");
+    assert(begins == 4 && ends == 4 && created == destroyed && context.references == 1);
+    puts("PASS per-aspect native load/clear/store/discard, full depth/stencil transitions, read-only write/clear rejection, extent/NaN/absent-aspect preflight, speculative initialization, canonical depth-only zero with stencil preservation/no-op and exact attachment leases");
     return 0;
 }
