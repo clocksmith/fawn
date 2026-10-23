@@ -150,21 +150,104 @@ static bool reference_suffix(Parser *p, Reference *reference) {
     return punctuation(p, '[', "[") && index_expression(p, &reference->index) &&
            punctuation(p, ']', "]");
 }
-static bool operand(Parser *p, Operand *out) {
-    if (peek(p)->kind == TOKEN_NUMBER) {
-        out->kind = OPERAND_LITERAL;
-        return integer(p, true, &out->value.literal);
-    }
-    Name identifier;
-    if (!name(p, &identifier)) return false;
-    if (peek(p)->kind == '[') {
-        out->kind = OPERAND_LOAD;
-        out->value.reference.storage = identifier;
-        return reference_suffix(p, &out->value.reference);
-    }
-    out->kind = OPERAND_NAME;
-    out->value.name = identifier;
+static bool expression_node(Parser *p, Syntax *s, Expression expression, uint32_t *id) {
+    if (expression.depth > MAX_EXPRESSION_DEPTH)
+        return source_error(p->source, DOE_COMPILER_INPUT_ERROR, expression.source_offset,
+                            "expression depth exceeds 16 levels");
+    if (s->expression_count == MAX_EXPRESSIONS)
+        return source_error(p->source, DOE_COMPILER_INPUT_ERROR, expression.source_offset,
+                            "function exceeds 64 expression nodes");
+    *id = (uint32_t)s->expression_count;
+    s->expressions[s->expression_count++] = expression;
     return true;
+}
+static bool expression(Parser *p, Syntax *s, unsigned precedence, unsigned nesting,
+                       uint32_t *id);
+static bool primary(Parser *p, Syntax *s, unsigned nesting, uint32_t *id) {
+    if (nesting == MAX_EXPRESSION_DEPTH)
+        return source_error(p->source, DOE_COMPILER_INPUT_ERROR, peek(p)->offset,
+                            "expression depth exceeds 16 levels");
+    Expression node = { .source_offset = peek(p)->offset, .depth = 1u };
+    if (peek(p)->kind == '(') {
+        ++p->cursor;
+        if (!expression(p, s, 0u, nesting + 1u, id) || !punctuation(p, ')', ")")) return false;
+        if (s->expressions[*id].depth == MAX_EXPRESSION_DEPTH)
+            return source_error(p->source, DOE_COMPILER_INPUT_ERROR, node.source_offset,
+                                "expression depth exceeds 16 levels");
+        ++s->expressions[*id].depth;
+        return true;
+    }
+    if (peek(p)->kind == TOKEN_NUMBER) {
+        node.kind = EXPRESSION_INTEGER;
+        if (!integer(p, true, &node.value.integer)) return false;
+    } else if (peek(p)->kind == TOKEN_DECIMAL) {
+        node.kind = EXPRESSION_DECIMAL;
+        if (!parse_decimal(p->source, peek(p), &node.value.decimal)) return false;
+        ++p->cursor;
+    } else {
+        Name identifier;
+        if (!name(p, &identifier)) return false;
+        if (peek(p)->kind == '[') {
+            node.kind = EXPRESSION_LOAD;
+            node.value.reference.storage = identifier;
+            if (!reference_suffix(p, &node.value.reference)) return false;
+        } else if (peek(p)->kind == '.') {
+            ++p->cursor;
+            node.kind = EXPRESSION_MEMBER_X;
+            node.value.name = identifier;
+            if (!word(p, "x")) return false;
+        } else if (peek(p)->kind == '(') {
+            if (strcmp(identifier.text, "max") != 0)
+                return source_error(p->source, DOE_COMPILER_UNSUPPORTED, identifier.offset,
+                                    "only scalar max calls are supported");
+            ++p->cursor;
+            node.kind = EXPRESSION_MAX;
+            node.value.name = identifier;
+            if (!expression(p, s, 0u, nesting + 1u, &node.left) ||
+                !punctuation(p, ',', ",") ||
+                !expression(p, s, 0u, nesting + 1u, &node.right) ||
+                !punctuation(p, ')', ")")) return false;
+            const unsigned left = s->expressions[node.left].depth;
+            const unsigned right = s->expressions[node.right].depth;
+            node.depth = 1u + (left > right ? left : right);
+        } else {
+            node.kind = EXPRESSION_NAME;
+            node.value.name = identifier;
+        }
+    }
+    return expression_node(p, s, node, id);
+}
+static bool expression(Parser *p, Syntax *s, unsigned precedence, unsigned nesting,
+                       uint32_t *id) {
+    if (!primary(p, s, nesting, id)) return false;
+    for (;;) {
+        const unsigned token = peek(p)->kind;
+        const unsigned next = token == '*' ? 2u : token == '+' || token == '-' ? 1u : 0u;
+        if (next == 0u || next <= precedence) return true;
+        Expression node = { .kind = token == '*' ? EXPRESSION_MULTIPLY :
+                                     token == '+' ? EXPRESSION_ADD : EXPRESSION_SUBTRACT,
+                            .source_offset = peek(p)->offset, .left = *id };
+        ++p->cursor;
+        if (!expression(p, s, next, nesting + 1u, &node.right)) return false;
+        const unsigned left = s->expressions[node.left].depth;
+        const unsigned right = s->expressions[node.right].depth;
+        node.depth = 1u + (left > right ? left : right);
+        if (!expression_node(p, s, node, id)) return false;
+    }
+}
+static bool local_declaration(Parser *p, Syntax *s, LocalSyntax *local) {
+    if (!word(p, "let") || !name(p, &local->name)) return false;
+    if (peek(p)->kind == ':') {
+        ++p->cursor;
+        local->annotated = true;
+        if (!name(p, &local->annotation)) return false;
+        if (strcmp(local->annotation.text, "u32") == 0) local->scalar = DOE_COMPILER_U32;
+        else if (strcmp(local->annotation.text, "f32") == 0) local->scalar = DOE_COMPILER_F32;
+        else return source_error(p->source, DOE_COMPILER_UNSUPPORTED, local->annotation.offset,
+                                 "local annotation requires u32 or f32");
+    }
+    return punctuation(p, '=', "=") && expression(p, s, 0u, 0u, &local->expression) &&
+           punctuation(p, ';', ";");
 }
 static bool condition(Parser *p, Condition *out) {
     if (!punctuation(p, '(', "(") || !index_expression(p, &out->left)) return false;
@@ -206,18 +289,16 @@ static bool block(Parser *p, Syntax *s, unsigned depth) {
             ++p->cursor;
             statement->kind = STATEMENT_RETURN;
             if (!punctuation(p, ';', ";")) return false;
+        } else if (spelled(p, peek(p), "let")) {
+            statement->kind = STATEMENT_LET;
+            if (!local_declaration(p, s, &statement->value.local)) return false;
         } else {
             statement->kind = STATEMENT_ASSIGN;
             Assignment *assignment = &statement->value.assignment;
             if (!name(p, &assignment->target.storage) ||
                 !reference_suffix(p, &assignment->target) || !punctuation(p, '=', "=") ||
-                !operand(p, &assignment->operands[0])) return false;
-            if (peek(p)->kind == '+') {
-                ++p->cursor;
-                assignment->addition = true;
-                if (!operand(p, &assignment->operands[1])) return false;
-            }
-            if (!punctuation(p, ';', ";")) return false;
+                !expression(p, s, 0u, 0u, &assignment->expression) ||
+                !punctuation(p, ';', ";")) return false;
         }
     }
     return punctuation(p, '}', "}");
@@ -226,6 +307,17 @@ static bool starts_storage(const Parser *p) {
     if (peek(p)->kind != '@' || p->cursor + 1u >= p->tokens->count) return false;
     const Token *attribute = &p->tokens->tokens[p->cursor + 1u];
     return spelled(p, attribute, "group") || spelled(p, attribute, "binding");
+}
+
+/* Recognize only the retained unannotated leading alias grammar. Other lets
+ * belong to the general expression/statement budgets, without speculative parse. */
+static bool starts_legacy_alias(const Parser *p) {
+    if (p->tokens->count - p->cursor < 7u) return false;
+    const Token *t = p->tokens->tokens + p->cursor;
+    return t[0].kind == TOKEN_WORD && spelled(p, &t[0], "let") &&
+           t[1].kind == TOKEN_WORD && t[2].kind == '=' && t[3].kind == TOKEN_WORD &&
+           t[4].kind == '.' && t[5].kind == TOKEN_WORD && spelled(p, &t[5], "x") &&
+           t[6].kind == ';';
 }
 
 bool parse_tokens(Source *source, const TokenList *tokens, Syntax *syntax) {
@@ -255,7 +347,7 @@ bool parse_tokens(Source *source, const TokenList *tokens, Syntax *syntax) {
     else if (!word(&p, "vec3") || !punctuation(&p, '<', "<u32>") ||
              !word(&p, "u32") || !punctuation(&p, '>', ">")) return false;
     if (!punctuation(&p, ')', ")") || !punctuation(&p, '{', "{")) return false;
-    if (spelled(&p, peek(&p), "let")) {
+    if (starts_legacy_alias(&p)) {
         ++p.cursor;
         syntax->has_alias = true;
         if (!name(&p, &syntax->alias) || !punctuation(&p, '=', "=") ||

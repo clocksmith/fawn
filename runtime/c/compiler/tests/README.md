@@ -36,10 +36,10 @@ empty if and if/else. The implementation run replays all eleven through the
 preserved milestone-1 executable and records its rejecting diagnostics. The
 named constant is also newly valid as an index or index offset/condition operand.
 
-These are intentional grammar changes, not weakened validation. Float literals,
-wrong scalar types, writes to read-only storage, undefined or shadowed names,
+These are intentional grammar changes, not weakened validation. Under current M4, decimal floats and scoped scalar locals are explicitly
+admitted. Wrong scalar types, writes to read-only storage, undefined or shadowed names,
 y/z indices, chained/parenthesized arithmetic, logical conditions, else-if,
-unsupported blocks/locals and invalid unreachable statements still reject.
+unsupported bare blocks/mutable locals and invalid unreachable statements still reject.
 Two-character comparisons must be contiguous tokens; whitespace or comments
 cannot turn separate punctuation into a composite operator.
 
@@ -68,3 +68,43 @@ module from the repository root, without changing Python import paths. The
 validator and optional `DOE_COMPILER_CLI` / `DOE_COMPILER_FAULT_CLI` paths must
 refer to existing host artifacts. These checks do not run the full discovery
 gate or establish source-corpus, runtime, application or GPU qualification.
+
+## Milestone-4 scalar expression coverage
+
+`test_expressions.py` extends the developer instruction oracle with integer and
+float multiplication, float subtraction, ordered float comparison and selection.
+It checks unchanged scale/ReLU sources and renamed/declaration-order/comment
+variants, precedence/grouping/associativity, u32 wrap, float operation rounding,
+local snapshots after writes, branch scope/dominance/returns, robust unequal
+lengths, builtin/type shadow lookup and excluded constant-only f32 subtrees.
+Its independent positive-encoding binary search compares exact rational
+distances for 164 bounded decimals, including ties, neighbors and the smallest
+admitted nonzero decimal. Deliberate new-opcode faults and unknown-opcode
+rejection test the developer oracle, not just the compiler.
+
+`test_expression_api.c` adds source/output guard pages, every short output
+capacity, atomic rejection, all source prefixes, deterministic byte mutations,
+1,024 concurrent expression compiles and four rounding modes. It compares
+outputs under installed C/C.utf8/German/French numeric locales without changing
+those settings in the compiler. Missing test locales are printed explicitly.
+Both ordinary and ASan/UBSan builds run from the Makefile.
+
+Three old developer expectation sites are intentionally lifted by the frozen
+M4 contract, rather than silently skipped:
+
+- `test_api.c` formerly rejected the seed's `values[id.x] - 1u`. It now asserts
+  admission; `test_expressions.py` independently executes subtraction results,
+  including associativity and wrap. Division replaces the unsupported-operator
+  negative, which remains outside M4.
+- `test_control.py` formerly rejected `out[0u]=src[0u]-1u;`. The exact fixture now
+  executes input three to output two in `M4_REJECTION_LIFTS`.
+- It formerly rejected `if(gid.x==0u){let q=gid.x;}`. The exact fixture now
+  executes without changing storage, and a companion fixture uses that local
+  in branch-dependent multiplication. Mutable `var` remains rejected.
+
+Historical independent M1/M2/M3 suites and their earlier verdicts are unchanged.
+Current developer tests additionally cover the exact 64/65 expression-node,
+16/17 expression-depth, 16/17 statement and legacy leading-alias accounting
+boundaries. `test_cli_modes.py` now routes both additional unchanged real sources
+through the same existing consumer and verifies binary/reflection equality and
+explicit Vulkan 1.1 target validation. No full discovery gate or GPU is run.

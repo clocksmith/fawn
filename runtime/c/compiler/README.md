@@ -1,6 +1,6 @@
 # Experimental standalone C compiler
 
-This is the experimental compiler of the isolated [C migration](../../../docs/c-migration/MIGRATION.md), not a production compiler replacement. The frozen [first milestone](MILESTONE_1.md) and [structured neighbor-sum extension](MILESTONE_2.md) own the exact admitted language. The [existing emitter-consumer integration](MILESTONE_3.md) owns optional CLI reflection; the [versioned header](include/doe_compiler.h) owns the unchanged ABI. Production Zig and its consumers are unchanged.
+This is the experimental compiler of the isolated [C migration](../../../docs/c-migration/MIGRATION.md), not a production compiler replacement. The frozen [first milestone](MILESTONE_1.md), [structured neighbor-sum extension](MILESTONE_2.md) and [scalar-expression/local extension](MILESTONE_4.md) own the exact admitted language. The [existing emitter-consumer integration](MILESTONE_3.md) owns optional CLI reflection; the [versioned header](include/doe_compiler.h) owns the unchanged ABI. Production Zig and its consumers are unchanged.
 
 ## Build and consume
 
@@ -36,23 +36,41 @@ The source is compiled unchanged. `--shader-path` and `--out` are required exact
 
 A native caller includes `doe_compiler.h` and supplies ABI version 1, source pointer and byte length, a disjoint word buffer and capacity, and a result pointer and exact byte size. Source need not be NUL-terminated. ABI/size mismatch leaves result and words untouched. Other failures zero result count/reflection and provide an original-source diagnostic while preserving the entire output buffer. A NULL result returns an input error. No input or output pointer is retained.
 
-The library uses bounded stack workspace, no heap allocation, and no mutable global state. These are this milestone's properties, not a mandate that every future compiler owner must avoid heap allocation. GCC 14.2.0 at `-O2` reports an 88,672-byte static frame for `doe_compiler_compile`, excluding its callees and caller buffers (milestone 1: 68,736 bytes; increase: 19,936 bytes). Structured parsing, lowering and emission recurse to at most four if levels; GCC reports 64-, 368- and 160-byte static recursive frames respectively. The exercised Linux x86-64 ABI has 4-byte enums, 88-byte binding records, 784-byte reflection, 216-byte diagnostics and a 1,008-byte result. Tests assert field offsets as well as sizes. Stack budget and native ABI layout require rechecking for a different host.
+The library uses bounded stack workspace, no heap allocation, and no mutable
+global state. These are this milestone's properties, not a mandate that every
+future compiler owner must avoid heap allocation. GCC 14.2.0 at `-O2` reports a
+105,328-byte static frame for `doe_compiler_compile`, excluding callees and caller
+buffers (M3: 88,672 bytes; increase: 16,656 bytes). Expression and primary parser
+frames are each 624 bytes; valid expression depth is at most 16, with one extra
+rejecting level possible. Parentheses retain a primary frame around recursive
+expression parsing. The expression lowerer has a 160-byte frame and traverses
+at most 16 node levels. Structured parser/lowerer/emitter frames are 80/368/160
+bytes, with four nested if levels plus the entry block. Lowering is reported as
+bounded dynamic stack usage by GCC, including call arguments. Validator and
+emitter entry frames add 1,520 and 1,840 bytes respectively. These measurements
+are per-function, not an observed combined high-water mark.
+
+The exercised Linux x86-64 ABI has 4-byte enums, 88-byte binding records,
+784-byte reflection, 216-byte diagnostics and a 1,008-byte result. Tests assert
+field offsets as well as sizes. Stack budgets and ABI layout require rechecking
+for a different host. Full compiler job-storage/allocation policy is still open.
 
 ## Owner map
 
 - `lex.c`: ASCII tokenization, bounded tokens, nested comments and original byte positions.
-- `parse.c`: bounded preorder statement syntax, declarations, names, indices and operands; no source-template recognition.
+- `numeric.c`: bounded exact decimal rational parsing and checked integer RNE materialization.
+- `parse.c`: bounded statements/expression trees, declarations, indices and scalar lets; no source-template recognition.
 - `validate.c`: lexical/module scope, resource identity/access, scalar checking, typed value/control-flow IR lowering and reflection, including unreachable source.
 - `internal.h`: private syntax, typed bindings and IR records. These are not public ABI.
 - `spirv.c`: typed declarations and structured SPIR-V lowering from IR only.
 - `compile.c`: versioned ABI admission, diagnostics and one output publication point.
 - `cli.c`: input ownership, explicit little-endian serialization and no-clobber artifact publication.
 
-The IR carries invocation-x, robust resource loads/stores, typed constants and addition, u32 index subtraction, unsigned comparisons, structured if/else boundaries and return. Its bounded value IDs do not retain source spellings. Index arithmetic wraps modulo 2^32 before the resource-specific guard. Statements execute in source order, and an early return is independent of whether a preceding store was in bounds. Only live arms branch to a merge; a both-arms-return merge has `OpUnreachable`. Untaken arms never form resource pointers or perform resource side effects. Every load branches on its own binding's runtime-array length, forms its element pointer only in the guarded block, and merges the loaded value with a typed zero using `OpPhi`. The store independently checks the destination's own length. No combined minimum-length guard skips valid output elements when an input is short or empty. Separate declarations remain separate descriptor variables, including unused declared resources reflected in declaration order.
+The IR carries invocation-x, robust resource loads/stores, typed constants, scalar addition/subtraction/multiplication/max, unsigned comparisons, structured if/else boundaries and return. Immutable scoped locals retain typed value IDs evaluated once at declaration; they add no host-side interpretation or mutable target state. Its bounded value IDs do not retain source spellings. Index arithmetic wraps modulo 2^32 before the resource-specific guard. Statements execute in source order, and an early return is independent of whether a preceding store was in bounds. Only live arms branch to a merge; a both-arms-return merge has `OpUnreachable`. Untaken arms never form resource pointers or perform resource side effects. Every load branches on its own binding's runtime-array length, forms its element pointer only in the guarded block, and merges the loaded value with a typed zero using `OpPhi`. The store independently checks the destination's own length. No combined minimum-length guard skips valid output elements when an input is short or empty. Separate declarations remain separate descriptor variables, including unused declared resources reflected in declaration order.
 
 ## Verification boundary
 
-Developer tests explicitly classify the milestone-1 grammar rejections now admitted by milestone 2: single load/literal RHS, constant-only addition, literal or constant indices, one u32 index offset, multiple statements, return, and structured if/else. They do not remove old scope/type/access failures. See [developer test coverage](tests/README.md).
+Developer tests explicitly classify the milestone-1 grammar rejections now admitted by milestone 2: single load/literal RHS, constant-only addition, literal or constant indices, one u32 index offset, multiple statements, return, and structured if/else. Milestone 4 additionally lifts scalar subtraction and branch-local scalar-let rejections, with positive emitted-instruction checks. Type/access and still-invalid scope failures remain. See [developer test coverage](tests/README.md).
 
 Developer tests exercise API/version/size boundaries, deterministic independent calls, retained u32 sources and named constants, unchanged residual source fixtures, invalid syntax/scope/access/types/limits, CLI failure preservation, and generated target modules. Sanitizers use `ASAN_OPTIONS=detect_leaks=0`; LeakSanitizer is not available in this execution environment. The CLI itself and injected write/close/link/temporary failures are instrumented by `make sanitize-cli`. Test binaries, temporary files and logs are confined to ignored `build/` through the Makefile; independently invoked checks can use a caller-selected temporary directory.
 
@@ -66,8 +84,8 @@ The unchanged `bench/gates/spirv_val_gate.py:emit_spirv_for_wgsl` invokes a
 selected executable with only `--shader-path INPUT --out OUTPUT`. Optional
 reflection admits this exact protocol without changing the consumer or the
 compiler library. `make test-cli-modes SPIRV_VAL=/path/to/spirv-val` imports
-that function and exercises the two real residual sources and neighbor-sum
-fixture, binary/reflection equality, target validation and file ownership.
+that function and exercises the two real residual sources, neighbor-sum, unchanged scale and ReLU
+fixtures, binary/reflection equality, target validation and file ownership.
 It does not run full discovery.
 
 The full gate labels emitter failures `EMIT-SKIP`, validates unrelated prebuilt
@@ -76,3 +94,5 @@ exit is not all-source compiler acceptance. Its bare validator invocation also
 does not establish the explicit Vulkan 1.1 validation used by the focused tests.
 Keep emitted coverage, prebuilt validation and unsupported sources separate.
 This component integration is not MSL benchmark, runtime or application adoption.
+
+The [fourth increment results](MILESTONE_4_RESULTS.md) and [M4 independent suite](independent_tests_m4/README.md) bind the current expression/local coverage, distinct build artifacts and remaining migration limits.

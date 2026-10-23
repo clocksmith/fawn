@@ -152,8 +152,16 @@ def execute(instructions: list[Instruction], memory: dict[Descriptor, list[int]]
             values[args[1]] = (values[args[2]] + values[args[3]]) & 0xFFFFFFFF
         elif op == 130:
             values[args[1]] = (values[args[2]] - values[args[3]]) & 0xFFFFFFFF
-        elif op == 129:
-            values[args[1]] = float_bits(f32(values[args[2]]) + f32(values[args[3]]))
+        elif op == 132:
+            values[args[1]] = (values[args[2]] * values[args[3]]) & 0xFFFFFFFF
+        elif op in (129, 131, 133):
+            left, right = f32(values[args[2]]), f32(values[args[3]])
+            values[args[1]] = float_bits(left + right if op == 129 else
+                                       left - right if op == 131 else left * right)
+        elif op == 186:
+            values[args[1]] = f32(values[args[2]]) > f32(values[args[3]])
+        elif op == 169:
+            values[args[1]] = values[args[3] if values[args[2]] else args[4]]
         elif op == 62:
             pointer = values[args[0]]
             assert pointer[0] == "element" and pointer[3] not in readonly

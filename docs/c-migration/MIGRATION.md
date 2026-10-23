@@ -55,6 +55,13 @@ explicitly rejected. The [source-bound corpus ledger](corpus-coverage-m3.json)
 separates every reached stage and unrun backend qualification. This is component
 consumption, not runtime adoption.
 
+The [fourth increment](../../runtime/c/compiler/MILESTONE_4_RESULTS.md) adds
+typed scalar expressions and immutable locals, with exact bounded decimal
+materialization. The [updated ledger](corpus-coverage-m4.json) records four
+admitted paths /three unique sources; it does not replace the prior ledger or
+qualify the remaining 94 paths. Workspace growth is measured and bounded, not a
+permanent allocation policy for the complete compiler.
+
 ## Existing authority, not a parallel policy
 
 Owner paths and layer labels come from

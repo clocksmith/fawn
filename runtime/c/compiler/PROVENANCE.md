@@ -65,3 +65,13 @@ before rebuilding. New developer tests exercise both output modes; linker
 wrappers inject local file failures only into dedicated test executables, never
 the shipped CLI or shared library. The source build uses the already installed
 GCC toolchain and validator, with no Zig or new dependency.
+
+## Typed scalar expressions and immutable locals
+
+Milestone 4 adds the separately owned `numeric.c` checked integer-rational
+converter and general parsed expression/local records, rather than recognizing
+scale/ReLU source text or translating a Zig implementation. Original source
+fixtures, public header, CLI and compile/publication owner are unchanged.
+Historical independent suites and their receipts stay immutable; the new M4 suite
+records imported test-source identities and exact intentional grammar lifts.
+See [accepted scope and provenance](MILESTONE_4_RESULTS.md).
