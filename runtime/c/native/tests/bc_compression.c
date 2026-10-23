@@ -242,6 +242,45 @@ static void blocks_edges(state *s)
     read_blocks(s,small,2,0,1,1,written);
     assert(!memcmp(written,gray,8));
 
+    /* writeTexture data needs no block alignment: odd offsets and a bytesPerRow
+     * of 8*w+3 into a two-layer BC1 array with rowsPerImage 3, read back exactly. */
+    WGPUTextureDescriptor layered_desc = WGPU_TEXTURE_DESCRIPTOR_INIT;
+    layered_desc.format = WGPUTextureFormat_BC1RGBAUnorm;
+    layered_desc.usage = sampled_copy;
+    layered_desc.size = (WGPUExtent3D){8,8,2};
+    WGPUTexture layered = wgpuDeviceCreateTexture(s->device,&layered_desc);
+    assert(layered);
+    enum { ODD_OFFSET = 7, ODD_PITCH = 8 * 2 + 3, ODD_ROWS = 3 };
+    uint8_t odd[ODD_OFFSET + ODD_PITCH * ODD_ROWS * 2];
+    for (size_t i = 0; i < sizeof(odd); ++i) odd[i] = (uint8_t)(0xA5 ^ i); /* filler outside the blocks */
+    uint8_t layer_blocks[2][4 * 8];
+    for (size_t layer = 0; layer < 2; ++layer)
+        for (size_t block = 0; block < 4; ++block) {
+            bc1(layer_blocks[layer] + block * 8,layer ? colors[3 - block] : colors[block]);
+            memcpy(odd + ODD_OFFSET + layer * ODD_PITCH * ODD_ROWS + (block / 2) * ODD_PITCH + (block % 2) * 8,
+                layer_blocks[layer] + block * 8,8);
+        }
+    WGPUTexelCopyTextureInfo layered_target = {.texture=layered,.aspect=WGPUTextureAspect_All};
+    wgpuQueueWriteTexture(s->queue,&layered_target,odd,sizeof(odd),
+        &(WGPUTexelCopyBufferLayout){.offset=ODD_OFFSET,.bytesPerRow=ODD_PITCH,.rowsPerImage=ODD_ROWS},
+        &(WGPUExtent3D){8,8,2});
+    for (uint32_t layer = 0; layer < 2; ++layer) {
+        uint8_t back[4 * 8];
+        read_blocks(s,layered,0,layer,2,2,back);
+        assert(!memcmp(back,layer_blocks[layer],sizeof(back)));
+    }
+    /* A single odd-offset row with an odd pitch into one block row. */
+    uint8_t row[3 + 16];
+    memcpy(row + 3,gray,8);
+    memcpy(row + 11,gray,8);
+    WGPUTexelCopyTextureInfo second_row = {.texture=layered,.origin={0,4,1},.aspect=WGPUTextureAspect_All};
+    wgpuQueueWriteTexture(s->queue,&second_row,row,sizeof(row),
+        &(WGPUTexelCopyBufferLayout){.offset=3,.bytesPerRow=17,.rowsPerImage=1},&(WGPUExtent3D){8,4,1});
+    uint8_t back[4 * 8];
+    read_blocks(s,layered,0,1,2,2,back);
+    assert(!memcmp(back,layer_blocks[1],16) && !memcmp(back + 16,gray,8) && !memcmp(back + 24,gray,8));
+    wgpuTextureRelease(layered);
+
     /* srgb view formats on BC: the same bytes decode darker through the srgb view. */
     const WGPUTextureFormat bc7_srgb = WGPUTextureFormat_BC7RGBAUnormSrgb, bc1_srgb = WGPUTextureFormat_BC1RGBAUnormSrgb;
     WGPUTextureDescriptor described = WGPU_TEXTURE_DESCRIPTOR_INIT;
@@ -362,7 +401,8 @@ int main(void)
     printf("PASS public BC compression: solid BC1/BC1-srgb/BC4 blocks decode to exact texels through queue writes "
         "and buffer copies, a 6x6 mip takes its physical 8x8 copy, texture-to-texture and texture-to-buffer "
         "copies return exact blocks, copies whose block reaches only one side's edge (both directions) land "
-        "exactly, writeTexture of whole blocks into a 2x2 mip, bc1/bc7 srgb view formats, a zeroed "
+        "exactly, writeTexture of whole blocks into a 2x2 mip and with odd offsets and bytesPerRow 8*w+3 "
+        "(two layers, rowsPerImage 3), bc1/bc7 srgb view formats, a zeroed "
         "8192x8192x8 BC1 texture%s; without the feature, a partial-block writeTexture, non-block sizes, attachment/storage usage, 3D without "
         "sliced 3D and unaligned copies reject %s\n",
         sliced ? ", a 3D BC1 texture uploaded with rowsPerImage 2 decodes per slice (sliced 3D)" : "", adapter_class_scope());

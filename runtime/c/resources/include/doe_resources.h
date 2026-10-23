@@ -357,6 +357,8 @@ typedef struct doe_resource_copy_region {
     WGPUTextureAspect aspect;
     uint32_t pitch, image_rows, row_length, image_height;
     uint64_t required_bytes;
+    /* Bytes of one copied texel-block row and block rows per copied image. */
+    uint32_t row_bytes, rows;
 } doe_resource_copy_region;
 
 doe_resource_status doe_resource_texture_copy_validate(uint64_t buffer_size,

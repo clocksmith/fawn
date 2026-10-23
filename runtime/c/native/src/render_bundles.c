@@ -27,9 +27,13 @@ WGPURenderBundleEncoder wgpuDeviceCreateRenderBundleEncoder(WGPUDevice handle,
     native_lock(device);
     doe_resource_status status = valid ? doe_resource_bundle_encoder_create(&device->resources,&converted,&encoder) :
         descriptor && descriptor->colorFormatCount > DOE_RESOURCE_MAX_COLOR_ATTACHMENTS ? DOE_RESOURCE_RANGE : DOE_RESOURCE_UNSUPPORTED;
+    /* A rejected descriptor reports here, once, and still returns a WebGPU
+     * invalid encoder: its commands record nothing and its Finish yields an
+     * invalid bundle without a second error. */
+    if (status != DOE_RESOURCE_OK) encoder = doe_resource_bundle_encoder_rejected(&device->resources, status);
     native_unlock(device);
     if (status != DOE_RESOURCE_OK) native_error(device, native_resource_error(status), "render bundle descriptor unsupported or invalid");
-    if (encoder) native_label(device, encoder, descriptor->label);
+    if (encoder && descriptor) native_label(device, encoder, descriptor->label);
     return (WGPURenderBundleEncoder)encoder;
 }
 void wgpuRenderBundleEncoderAddRef(WGPURenderBundleEncoder encoder) { doe_resource_bundle_encoder_retain((doe_resource_bundle_encoder *)encoder); }
@@ -127,6 +131,8 @@ WGPURenderBundle wgpuRenderBundleEncoderFinish(WGPURenderBundleEncoder handle, c
     if (!device) return NULL;
     doe_resource_render_bundle *bundle = NULL;
     native_lock(device);
+    const bool ended = doe_resource_bundle_encoder_ended(encoder);
+    const bool reported = doe_resource_bundle_encoder_created_invalid(encoder);
     if (descriptor && descriptor->nextInChain) (void)doe_resource_bundle_encoder_invalidate(encoder,DOE_RESOURCE_UNSUPPORTED);
     /* Finish always ends the encoder. A failed finish reports its one error and
      * returns a WebGPU invalid bundle; executing that bundle invalidates the
@@ -134,7 +140,8 @@ WGPURenderBundle wgpuRenderBundleEncoderFinish(WGPURenderBundleEncoder handle, c
     doe_resource_status status = doe_resource_bundle_encoder_finish(encoder,&bundle);
     if (status != DOE_RESOURCE_OK) bundle = doe_resource_render_bundle_rejected(encoder);
     native_unlock(device);
-    if (status != DOE_RESOURCE_OK) native_error(device, native_resource_error(status), "render bundle encoder invalid: an encoded command or the finish was rejected");
+    if (status != DOE_RESOURCE_OK && (ended || !reported))
+        native_error(device, native_resource_error(status), "render bundle encoder invalid: an encoded command or the finish was rejected");
     if (bundle && descriptor) native_label(device, bundle, descriptor->label);
     return (WGPURenderBundle)bundle;
 }
