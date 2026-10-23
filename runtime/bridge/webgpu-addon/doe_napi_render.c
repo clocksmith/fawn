@@ -32,6 +32,12 @@ static uint32_t load_op_from_value(napi_env env, napi_value val) {
     napi_throw_error(env, "DOE_ERROR", "Unsupported loadOp"); return 0;
 }
 
+/* Optional depth/stencil ops: absent or undefined is WGPU*Op_Undefined (0), which
+ * WebGPU requires for an aspect the format lacks or that is read-only. */
+static bool op_present(napi_env env, napi_value object, const char* name) {
+    return has_prop(env, object, name) && prop_type(env, object, name) != napi_undefined;
+}
+
 static uint32_t store_op_from_value(napi_env env, napi_value val) {
     napi_valuetype vt; napi_typeof(env, val, &vt);
     if (vt == napi_number) { uint32_t out = 0; napi_get_value_uint32(env, val, &out); return out; }
@@ -367,22 +373,22 @@ napi_value doe_begin_render_pass(napi_env env, napi_callback_info info) {
     if (has_prop(env, _args[1], "depthStencilAttachment") && prop_type(env, _args[1], "depthStencilAttachment") == napi_object) {
         napi_value depth_obj = get_prop(env, _args[1], "depthStencilAttachment");
         depth_att.view = unwrap_ptr(env, get_prop(env, depth_obj, "view"));
-        depth_att.depthLoadOp = has_prop(env, depth_obj, "depthLoadOp")
+        depth_att.depthLoadOp = op_present(env, depth_obj, "depthLoadOp")
             ? load_op_from_value(env, get_prop(env, depth_obj, "depthLoadOp"))
-            : 0x00000001;
-        depth_att.depthStoreOp = has_prop(env, depth_obj, "depthStoreOp")
+            : 0;
+        depth_att.depthStoreOp = op_present(env, depth_obj, "depthStoreOp")
             ? store_op_from_value(env, get_prop(env, depth_obj, "depthStoreOp"))
-            : 0x00000001;
+            : 0;
         depth_att.depthClearValue = has_prop(env, depth_obj, "depthClearValue")
             ? (float)get_double_prop(env, depth_obj, "depthClearValue") : 1.0f;
         depth_att.depthReadOnly = has_prop(env, depth_obj, "depthReadOnly")
             ? (get_bool_prop(env, depth_obj, "depthReadOnly") ? 1 : 0) : 0;
-        depth_att.stencilLoadOp = has_prop(env, depth_obj, "stencilLoadOp")
+        depth_att.stencilLoadOp = op_present(env, depth_obj, "stencilLoadOp")
             ? load_op_from_value(env, get_prop(env, depth_obj, "stencilLoadOp"))
-            : 0x00000001;
-        depth_att.stencilStoreOp = has_prop(env, depth_obj, "stencilStoreOp")
+            : 0;
+        depth_att.stencilStoreOp = op_present(env, depth_obj, "stencilStoreOp")
             ? store_op_from_value(env, get_prop(env, depth_obj, "stencilStoreOp"))
-            : 0x00000001;
+            : 0;
         depth_att.stencilClearValue = has_prop(env, depth_obj, "stencilClearValue")
             ? get_uint32_prop(env, depth_obj, "stencilClearValue") : 0;
         depth_att.stencilReadOnly = has_prop(env, depth_obj, "stencilReadOnly")
