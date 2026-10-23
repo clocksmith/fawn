@@ -38,7 +38,7 @@ baseline shader features are enabled; unsupported feature use must be rejected b
 the compiler/native admission path before creating a pipeline. This is not a
 complete public validation boundary for untrusted SPIR-V.
 
-GPU-produced indirect counts, surfaces, timestamp queries,
+GPU-produced indirect counts, surfaces, occlusion queries,
 prepared-program caches and tuned hazard elision are not yet migrated here.
 Indirect recording rejects explicitly rather than dispatching unchecked counts.
 The retained production owners remain authoritative for those behaviors.
@@ -97,7 +97,7 @@ Pipeline state admits sample1, one color target, eight vertex layouts/sixteen
 32-bit scalar/vector attributes, native blend/cull/topology controls and dynamic
 viewport/scissor. Blend constants are immutable pipeline state. Depth/stencil,
 MSAA, multiple attachments, indexed/indirect draws, dynamic blend constants,
-queries and discard-store semantics are not implemented by this interface.
+occlusion queries and discard-store semantics are not implemented by this interface.
 Unsupported resource packets must be rejected, not silently dropped. Graphics
 requires `require_graphics_queue=true` at context creation when the device offers
 separate compute-only queues; default compute queue selection is unchanged.
@@ -109,12 +109,29 @@ pixels. It releases caller references before submission. The bound older C compi
 rejects graphics entrypoints; this test is real Vulkan graphics, not C graphics
 compiler evidence or physical qualification.
 
+## Timestamp queries
+
+`include/doe_vk_queries.h` owns real timestamp pools with retained native reset,
+TOP/BOTTOM write and packed64-bit resolve commands. Queue timestamp width and
+period are queried, not assumed; public feature admission remains upstream. Each
+entry must be reset before a write. One unresolved command owns each pool; its
+availability state publishes only after successful native completion. Terminal
+failure poisons the pool rather than guessing results. A new pool replaces it.
+
+Resolve splits written runs into native WAIT/64-bit copies and never-written or
+reset runs into native zero fills, avoiding an unissued-query wait. Zero-count
+resolve is a validated no-op. The resource owner retains its WebGPU256-byte offset
+rule while this native primitive requires8-byte alignment. `make native-queries`
+checks real writes/resolves, unwritten zero semantics, fill payload visibility and
+early caller release with a5-second fence deadline. Tick values are not benchmark
+results or physical qualification. Occlusion queries are not implemented yet.
+
 ## ABI provenance and checks
 
 No SDK headers were available. The selected declarations are a narrow translation
 of the existing source hashes in `ABI_PROVENANCE.json`, not invented opaque-sized
 struct storage. `tools/check_abi.py` refuses source drift and independently models
-the pinned extern fields to compile 1330 size/offset/alignment assertions over 75
+the pinned extern fields to compile 1344 size/offset/alignment assertions over 76
 records, including retained unions, plus eight format-bit assertions verified against the linked Khronos
 reference. No SDK or other dependency was downloaded. It does not prove the retained declarations against an official SDK.
 `VK_ERROR_UNKNOWN` retains the existing Zig `UnsupportedFeature` classification;

@@ -17,6 +17,7 @@ typedef struct VkDevice_T *VkDevice;
 typedef struct VkQueue_T *VkQueue;
 typedef struct VkCommandBuffer_T *VkCommandBuffer;
 typedef struct VkAllocationCallbacks_T VkAllocationCallbacks;
+typedef uint64_t VkQueryPool;
 typedef uint64_t VkImage;
 typedef uint64_t VkImageView;
 typedef uint64_t VkSampler;

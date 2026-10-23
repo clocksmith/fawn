@@ -166,6 +166,7 @@ static void complete(doe_vk_commands *commands, doe_vk_status status) {
     commands->state = status == DOE_VK_OK ? DOE_VK_COMPLETE : DOE_VK_FAILED;
     commands->failure = status;
     doe_vk_textures_complete(commands, status);
+    doe_vk_queries_complete(commands, status);
     if (!commands->uses_active) return;
     for (doe_vk_buffer_use *use = commands->buffers; use != NULL; use = use->next) {
         if (status != DOE_VK_OK && use->buffer->content_status == DOE_VK_OK)
@@ -272,6 +273,7 @@ doe_vk_status doe_vk_commands_release(doe_vk_commands *commands) {
         doe_vk_dispatch_release(context, use);
     }
     doe_vk_render_release(commands);
+    doe_vk_queries_release(commands);
     doe_vk_textures_release(commands);
     while (commands->buffers != NULL) {
         doe_vk_buffer_use *use = commands->buffers;

@@ -299,4 +299,12 @@ struct VkExtensionProperties {
     uint32_t specVersion;
 };
 
+typedef struct VkQueryPoolCreateInfo {
+    VkStructureType sType;
+    const void *pNext;
+    VkFlags flags;
+    uint32_t queryType;
+    uint32_t queryCount;
+    VkFlags pipelineStatistics;
+} VkQueryPoolCreateInfo;
 #endif

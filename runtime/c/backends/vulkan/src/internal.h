@@ -83,6 +83,7 @@ struct doe_vk_commands {
     doe_vk_buffer_use *buffers;
     doe_vk_dispatch_use *dispatches;
     struct doe_vk_render_use *renders;
+    struct doe_vk_query_use *queries;
     struct doe_vk_texture_use *textures;
 };
 doe_vk_status doe_vk_result(doe_vk_context *context, VkResult result,
@@ -106,6 +107,8 @@ doe_vk_status doe_vk_pipeline_layout_create(doe_vk_pipeline *pipeline,
 doe_vk_status doe_vk_bind_resources(doe_vk_commands *commands, doe_vk_pipeline *pipeline,
     const doe_vk_binding_resource *bindings, size_t count);
 void doe_vk_render_release(doe_vk_commands *commands);
+void doe_vk_queries_complete(doe_vk_commands *commands, doe_vk_status status);
+void doe_vk_queries_release(doe_vk_commands *commands);
 uint32_t doe_vk_descriptor_type(doe_vk_binding_kind kind);
 void doe_vk_dispatch_release(doe_vk_context *context, doe_vk_dispatch_use *use);
 doe_vk_status doe_vk_bind_dispatch(doe_vk_commands *commands,

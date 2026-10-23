@@ -86,7 +86,8 @@
     "VkPipelineColorBlendAttachmentState",
     "VkPipelineColorBlendStateCreateInfo",
     "VkPipelineDynamicStateCreateInfo",
-    "VkGraphicsPipelineCreateInfo"
+    "VkGraphicsPipelineCreateInfo",
+    "VkQueryPoolCreateInfo"
   ],
   "functions": [
     "vkCreateInstance",
@@ -160,7 +161,12 @@
     "vkCmdSetViewport",
     "vkCmdSetScissor",
     "vkCmdBindVertexBuffers",
-    "vkCmdDraw"
+    "vkCmdDraw",
+    "vkCreateQueryPool",
+    "vkDestroyQueryPool",
+    "vkCmdWriteTimestamp",
+    "vkCmdResetQueryPool",
+    "vkCmdCopyQueryPoolResults"
   ],
   "restriction": "Linux LP64 C ABI; no fallback or production promotion",
   "official_constants": {
