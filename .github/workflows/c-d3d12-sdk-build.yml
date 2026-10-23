@@ -7,6 +7,11 @@ on:
         description: Exact 40-character Doe commit to compile with the Windows SDK
         required: true
         type: string
+      run_warp:
+        description: Also execute the explicit CPU WARP compute/readback control
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -64,6 +69,46 @@ jobs:
           Get-ChildItem $env:OUT -File | Get-FileHash -Algorithm SHA256 |
             Select-Object Path, Hash | ConvertTo-Json | Set-Content "$env:EVIDENCE_ROOT/artifacts.json"
           'Actual Windows SDK compile/link only. Built GPU clients were not executed; this is not D3D12 device qualification.' |
+            Set-Content "$env:EVIDENCE_ROOT/SCOPE.txt"
+      - name: Execute the explicit CPU WARP correctness control
+        if: ${{ inputs.run_warp }}
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $env:OUT = Join-Path $env:EVIDENCE_ROOT 'build'
+          $env:WARP_EVIDENCE = Join-Path $env:EVIDENCE_ROOT 'warp'
+          New-Item -ItemType Directory -Force $env:WARP_EVIDENCE | Out-Null
+          'SDK compile/link passed. Explicit CPU WARP control requested; retained logs determine its outcome. No physical GPU, public native D3D12 frontend, performance or full qualification claim.' |
+            Set-Content "$env:EVIDENCE_ROOT/SCOPE.txt"
+          $owner = Join-Path $env:GITHUB_WORKSPACE 'runtime/c/backends/d3d12'
+          $runner = Join-Path $env:WARP_EVIDENCE 'run.cmd'
+          $command = 'call "' + $env:DEVCMD + '" -arch=x64 >nul && call "' + (Join-Path $owner 'run_warp.cmd') + '"'
+          @('@echo off', $command, 'exit /b %errorlevel%') | Set-Content $runner -Encoding ascii
+          $stdout = Join-Path $env:WARP_EVIDENCE 'stdout.txt'
+          $stderr = Join-Path $env:WARP_EVIDENCE 'stderr.txt'
+          $arguments = '/d /s /c ""' + $runner + '""'
+          $process = Start-Process -FilePath 'cmd.exe' -ArgumentList $arguments -WorkingDirectory $owner -RedirectStandardOutput $stdout -RedirectStandardError $stderr -PassThru
+          if (!$process.WaitForExit(120000)) {
+            & taskkill.exe /PID $process.Id /T /F
+            throw 'WARP child exceeded its 120-second external deadline'
+          }
+          $process.WaitForExit()
+          $process.Refresh()
+          $process.ExitCode | Set-Content "$env:WARP_EVIDENCE/exit-code.txt"
+          Get-Content $stdout
+          Get-Content $stderr
+          if ($process.ExitCode -ne 0) { throw "WARP control failed: $($process.ExitCode)" }
+          $fxc = (Get-Content (Join-Path $env:WARP_EVIDENCE 'fxc-path.txt') -Raw).Trim()
+          if (!(Test-Path $fxc -PathType Leaf)) { throw 'recorded SDK shader compiler is missing' }
+          @{
+            path = $fxc
+            sha256 = (Get-FileHash $fxc -Algorithm SHA256).Hash
+            fileVersion = (Get-Item $fxc).VersionInfo.FileVersion
+          } | ConvertTo-Json | Set-Content "$env:WARP_EVIDENCE/fxc.json"
+          if (git status --short) { throw 'WARP control changed source checkout' }
+          Get-ChildItem $env:WARP_EVIDENCE -File | Get-FileHash -Algorithm SHA256 |
+            Select-Object Path, Hash | ConvertTo-Json | Set-Content "$env:EVIDENCE_ROOT/warp-artifacts.json"
+          'Actual Windows SDK compile/link and explicit CPU WARP compute/readback/cleanup only. No physical GPU, public native D3D12 frontend, performance or full qualification claim.' |
             Set-Content "$env:EVIDENCE_ROOT/SCOPE.txt"
       - name: Retain source-bound build diagnostics
         if: always()

@@ -6,12 +6,14 @@
  * Build does not run this fixture or claim physical qualification. */
 
 int main(int argc, char **argv) {
-    if (argc != 2 && argc != 3) {
-        fprintf(stderr, "usage: native_compute.exe shader.dxil [native_indirect.dxil | --uniform]\n");
+    bool warp = argc > 1 && strcmp(argv[argc - 1], "--warp") == 0;
+    int mode_argc = argc - (warp ? 1 : 0);
+    if (mode_argc != 2 && mode_argc != 3) {
+        fprintf(stderr, "usage: native_compute.exe shader.dxil [native_indirect.dxil | --uniform] [--warp]\n");
         return 2;
     }
-    bool uniform_mode = argc == 3 && strcmp(argv[2], "--uniform") == 0;
-    bool indirect_mode = argc == 3 && !uniform_mode;
+    bool uniform_mode = mode_argc == 3 && strcmp(argv[2], "--uniform") == 0;
+    bool indirect_mode = mode_argc == 3 && !uniform_mode;
     size_t length = 0;
     unsigned char *bytecode = read_bytecode(argv[1], &length);
     if (!bytecode) return 2;
@@ -28,7 +30,9 @@ int main(int argc, char **argv) {
     doe_dx_pipeline *pipeline = NULL, *producer = NULL;
     doe_dx_commands *commands = NULL;
     doe_dx_error error = {0};
-    doe_dx_status status = doe_dx_context_create(NULL, &context, &error);
+    const doe_dx_options options = {.allow_software_adapter=warp,
+        .adapter_selection=warp ? DOE_DX_SELECT_WARP : DOE_DX_SELECT_ORDINAL};
+    doe_dx_status status = doe_dx_context_create(&options, &context, &error);
     int result = 1;
     bool submitted = false;
     if (status != DOE_DX_OK) {
@@ -41,6 +45,12 @@ int main(int argc, char **argv) {
     printf("adapter=%s vendor=%u device=%u LUID=%ld:%lu software=%d\n", caps.name,
         caps.vendor_id, caps.device_id, (long)caps.luid_high, (unsigned long)caps.luid_low,
         caps.software_adapter ? 1 : 0);
+    printf("selection=%d ordinal=%lu\n", (int)caps.adapter_selection, (unsigned long)caps.adapter_ordinal);
+    if (warp && (caps.adapter_selection != DOE_DX_SELECT_WARP || !caps.software_adapter ||
+            caps.adapter_ordinal != DOE_DX_NO_ADAPTER_ORDINAL)) {
+        fputs("WARP selection did not return its explicit software identity\n", stderr);
+        goto cleanup;
+    }
     uint32_t inputs[16], actual[16];
     for (uint32_t index = 0; index < 16; index++) inputs[index] = index * 97u + 3u;
     status = doe_dx_buffer_create(context, sizeof(inputs), DOE_DX_UPLOAD, &upload, &error);
@@ -163,6 +173,7 @@ int main(int argc, char **argv) {
     if (indirect_mode) puts("native D3D12 GPU-generated indirect arguments and early caller release passed");
     else if (uniform_mode) puts("native D3D12 uniform binding readback and early caller release passed");
     else puts("native D3D12 readback and early caller release passed");
+    if (warp) puts("WARP CPU software execution: no physical GPU qualification");
     result = 0;
     goto cleanup;
 failed:
@@ -187,7 +198,7 @@ cleanup:
             fprintf(stderr, "context retained unresolved native work; destruction refused (%d), submitted=%d\n",
                 (int)closed, submitted ? 1 : 0);
             result = 1;
-        }
+        } else if (warp && result == 0) puts("WARP context destruction and complete native cleanup passed");
     }
     return result;
 }

@@ -32,7 +32,10 @@ $(BUILD)/test_indirect: tests/test_indirect.c tests/mock_native.c tests/mock_nat
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(STRICT) tests/test_indirect.c tests/mock_native.c $(HOST_OBJECTS) -o $@
 $(BUILD)/test_uniform: tests/test_uniform.c tests/mock_native.c tests/mock_native.h $(HOST_OBJECTS)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(STRICT) tests/test_uniform.c tests/mock_native.c $(HOST_OBJECTS) -o $@
-check: $(BUILD)/test_owner $(BUILD)/test_textures $(BUILD)/test_graphics $(BUILD)/test_mesh $(BUILD)/test_indirect $(BUILD)/test_uniform
+$(BUILD)/test_adapter_selection: tests/test_adapter_selection.c tests/mock_native.c tests/mock_native.h $(HOST_OBJECTS)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(STRICT) tests/test_adapter_selection.c tests/mock_native.c $(HOST_OBJECTS) -o $@
+check: $(BUILD)/test_adapter_selection $(BUILD)/test_owner $(BUILD)/test_textures $(BUILD)/test_graphics $(BUILD)/test_mesh $(BUILD)/test_indirect $(BUILD)/test_uniform
+	$(BUILD)/test_adapter_selection
 	$(BUILD)/test_owner
 	$(BUILD)/test_textures
 	$(BUILD)/test_graphics

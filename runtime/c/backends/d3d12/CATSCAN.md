@@ -29,6 +29,9 @@ preserving native resource and completion obligations.
 - Caller release and timeout are not completion; destruction refuses unresolved obligations.
 - Host controls do not simulate shaders or qualify SDK ABI or physical execution.
 - Production Zig remains intact, without fallback or default-provider change.
+- WARP CPU execution requires explicit typed selection and observed DXGI
+  software identity. Failed selection never tries another adapter; hosted WARP
+  evidence does not qualify physical hardware or public WebGPU integration.
 
 ## Acceptance
 

@@ -12,6 +12,8 @@ typedef enum mock_failure {
 } mock_failure;
 typedef struct mock_state {
     mock_failure failure;
+    size_t opens;
+    doe_dx_options open_options;
     size_t contexts, buffers, pipelines, commands, textures, timestamps;
     size_t copies, dispatches, finishes, executes, signals, waits;
     size_t allocations, allocation_attempts, allocation_failure;
