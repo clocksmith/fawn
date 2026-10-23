@@ -204,3 +204,31 @@ not permissive accept-or-reject assertions. Malformed/type-invalid cases remain
 negative. `test_exports.py` names exactly five public ABI functions. CLI fault
 coverage injects every allocation in the new 4/3/5 binary/legacy/v2 ownership
 paths and retains existing publication-race/no-clobber behavior.
+
+## ABI9 software Vulkan atomics consumer
+
+`test_atomic_vulkan.c` compiles real WGSL through the ABI9 C library, then uses
+an explicitly supplied C Vulkan backend archive. `atomic_operations.wgsl` checks
+all eleven i32/u32 operations in storage and workgroup address spaces, negative
+and upper-bound OOB accesses, compare-exchange result fields, zero initialization,
+and 344 exact readback words including final cells. Result storage begins with a
+nonzero sentinel. A second dispatch consumes unchanged
+`bench/kernels/workgroup_atomic.wgsl` and compares all 256 words with an independent
+finite integer oracle. Both check readback padding and early release/pending guards.
+
+From the repository root, with existing artifacts only:
+
+```sh
+gcc -std=c11 -O2 -Wall -Wextra -Wpedantic -Werror \
+  -Iruntime/c/backends/vulkan/include -Iruntime/c/compiler/include \
+  runtime/c/compiler/tests/test_atomic_vulkan.c "$VULKAN_ARCHIVE" \
+  "$COMPILER_LIBRARY" -Wl,-rpath,"$(dirname "$COMPILER_LIBRARY")" -ldl \
+  -o /tmp/doe-test-atomic-vulkan
+VK_ICD_FILENAMES="$SOFTWARE_VULKAN_ICD" /tmp/doe-test-atomic-vulkan \
+  runtime/c/compiler/tests/atomic_operations.wgsl \
+  bench/kernels/workgroup_atomic.wgsl --allow-software
+```
+
+The consumer requires a software adapter and deliberately does not run the
+retained 100-iteration variant. This is bounded software execution evidence,
+not physical GPU qualification, WebGPU conformance or performance parity.

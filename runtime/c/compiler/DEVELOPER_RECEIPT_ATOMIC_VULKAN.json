@@ -1,0 +1,42 @@
+{
+  "scope": "Actual ABI9 C WGSL compiler to explicit SwiftShader Vulkan execution; bounded developer consumer",
+  "core_commit": "342fcf1b",
+  "backend_commit": "79cb000a",
+  "source_manifest_sha256": "72e3b31185c00595451c80e48906e8bd5933ac50c756a91cac47d38b8d1edb27",
+  "source_paths": [
+    "runtime/c/compiler/tests/README.md",
+    "runtime/c/compiler/tests/test_atomic_vulkan.c",
+    "runtime/c/compiler/tests/atomic_operations.wgsl"
+  ],
+  "inputs_sha256": {
+    "/tmp/doe-atomic-software-20261023/libdoe_vk.a": "3e794f0cafe9a0c8b118a4cdfdc7f65a2f74fab562bf7755b8b57db7c69e72df",
+    "/tmp/doe-atomic-author-20261023/libdoe_compiler.so": "f00731f2172b81e40a84ac36266d291b1ad615a71e1c875ebf5ef2b663e78959",
+    "/workspace/shared/doe-c-migration-20261023/bench/kernels/workgroup_atomic.wgsl": "b7edc38f80448d1e50f6a31a72b1bb09f3a87484ac3d61b7e299ba0b577c5998",
+    "/tmp/doe-atomic-software-20261023/test_atomic_vulkan": "e30a99bd599a8ebf2f38173bddb714cadd49b1e29a97759dccd419b01bc1fd89",
+    "/usr/lib/chromium/vk_swiftshader_icd.json": "c9eef28b6b984fec220ef0abfecc40b502d46946706e47bfe97707027cb818bd",
+    "/tmp/doe-atomic-software-20261023/backend-include/doe_vk_timestamp.h": "3b921f6bb7cdfd6acc5047b7a4035ccf48cbf1d24fc2a8d09e12172e2402ddde",
+    "/tmp/doe-atomic-software-20261023/backend-include/doe_vk_texture.h": "5deb075ccb499af47adaf9ad2c2438856e8bf24611a1e95054342cbdf7ced5db",
+    "/tmp/doe-atomic-software-20261023/backend-include/doe_vk_render.h": "f372696736a5a474c0ff50049b574056febf6bd0aaf0c6b47ba3a7796001577e",
+    "/tmp/doe-atomic-software-20261023/backend-include/doe_vk_queries.h": "9737e6d2354dcd23f4855e8bd4b9185ca4711025e681ee112ade5259ff5c4cdb",
+    "/tmp/doe-atomic-software-20261023/backend-include/doe_vk_bindings.h": "4d1beb8e63b2f83261070663e371791f99dc5ecc281af20f75eb7151b536df40",
+    "/tmp/doe-atomic-software-20261023/backend-include/doe_vk.h": "d2c2541e9178b832b3da7be54009aafc5db8de065deb6a3653ca8939a058dc85"
+  },
+  "result": "PASS",
+  "checks": {
+    "strict_c11": "pass",
+    "all11_atomic_ops": "344 exact words across signed/unsigned storage/workgroup, negative/upper OOB and success/failure CAS",
+    "retained_source": "unchanged bench/kernels/workgroup_atomic.wgsl, original256-lane single-workgroup, exact256-word independent oracle",
+    "robustness": "all result words prefilled nonzero, readback prefix/suffix untouched",
+    "lifetime": "caller releases source/workspace/target words and pipeline/buffers before completion; busy reads/releases rejected",
+    "adapter": "SwiftShader Device (Subzero), software=true",
+    "core_sanitizers": "separate ABI9 receipt; this consumer itself not sanitizer-instrumented"
+  },
+  "first_failure": {
+    "artifact": "compile-first.log",
+    "finding": "First CLI invocation used positional paths, rejected before compilation; corrected to documented --shader-path/--out."
+  },
+  "pending": [
+    "No physical adapter execution, full WebGPU conformance, full migration or performance claim.",
+    "Original100-iteration variant is source/SPIR-V checked in ABI9 core receipt, not executed or shortened."
+  ]
+}
