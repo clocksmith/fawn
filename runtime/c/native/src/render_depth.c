@@ -31,12 +31,12 @@ static bool writes(doe_vk_stencil_face face)
     return face.fail_operation || face.pass_operation || face.depth_fail_operation;
 }
 
-bool native_render_depth(const WGPUDepthStencilState *source, doe_vk_render_pipeline_desc *target,
+bool native_render_depth(uint32_t features, const WGPUDepthStencilState *source, doe_vk_render_pipeline_desc *target,
     doe_resource_render_pipeline_desc *resource)
 {
     if (!source) return true;
     if (source->nextInChain || source->depthBias || source->depthBiasSlopeScale != 0 || source->depthBiasClamp != 0 ||
-        !native_depth_format(source->format, &target->depth_stencil_format) ||
+        !native_depth_format(features, source->format, &target->depth_stencil_format) ||
         !face(&source->stencilFront, &target->stencil_front) || !face(&source->stencilBack, &target->stencil_back) ||
         !native_compare_operation(source->depthCompare, 7, &target->depth_compare)) return false;
     WGPUTextureFormat aspect;

@@ -36,7 +36,7 @@ static bool blend(const WGPUBlendComponent *source, uint32_t *operation, uint32_
         (*operation < 3 || (*from == 1 && *to == 1));
 }
 
-bool native_render_fixed(const WGPURenderPipelineDescriptor *source, doe_vk_render_pipeline_desc *target)
+bool native_render_fixed(uint32_t features, const WGPURenderPipelineDescriptor *source, doe_vk_render_pipeline_desc *target)
 {
     /* stripIndexFormat admission (strip-only, Uint16/Uint32) belongs to the
      * resource pipeline owner; native strips always enable primitive restart. */
@@ -88,8 +88,13 @@ bool native_render_fixed(const WGPURenderPipelineDescriptor *source, doe_vk_rend
             if (color->blend) return false;
             continue;
         }
-        if (color->writeMask & ~WGPUColorWriteMask_All || !native_texture_format(color->format, &slot->format) ||
-            native_depth_format(color->format, &slot->format)) return false;
+        if (color->writeMask & ~WGPUColorWriteMask_All || !native_texture_format(features, color->format, &slot->format) ||
+            native_depth_format(features, color->format, &slot->format)) return false;
+        /* 32-bit float targets are blendable only with float32-blendable; the
+         * backend separately requires the native blend format feature. */
+        if (color->blend && !(features & NATIVE_FEATURE(WGPUFeatureName_Float32Blendable)) &&
+            (color->format == WGPUTextureFormat_R32Float || color->format == WGPUTextureFormat_RG32Float ||
+            color->format == WGPUTextureFormat_RGBA32Float)) return false;
         slot->write_mask = (uint32_t)color->writeMask;
         slot->blend_enabled = color->blend != NULL;
         if (color->blend && (!blend(&color->blend->color, &slot->color_operation,

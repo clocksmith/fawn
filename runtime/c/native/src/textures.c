@@ -40,7 +40,7 @@ WGPUTexture wgpuDeviceCreateTexture(WGPUDevice handle, const WGPUTextureDescript
     for (size_t i = 0; i < descriptor->viewFormatCount; ++i) {
         doe_vk_texture_format mapped;
         if (descriptor->viewFormats[i] == descriptor->format) continue;
-        if (view_format_count == 2 || !native_texture_format(descriptor->viewFormats[i], &mapped)) {
+        if (view_format_count == 2 || !native_texture_format(device->features, descriptor->viewFormats[i], &mapped)) {
             native_error(device, WGPUErrorType_Validation, "texture format reinterpretation unsupported");
             return NULL;
         }
@@ -61,7 +61,7 @@ WGPUTexture wgpuDeviceCreateTexture(WGPUDevice handle, const WGPUTextureDescript
         .usage=DOE_VK_TEXTURE_COPY_DST, /* Initialization is internal usage only. */
         .view_formats=view_format_count ? view_formats : NULL,.view_format_count=view_format_count};
     if (doe_resource_texture_validate(&desc, &limits) != DOE_RESOURCE_OK ||
-        !native_texture_format(desc.format, &native.format)) {
+        !native_texture_format(device->features, desc.format, &native.format)) {
         native_error(device, WGPUErrorType_Validation, "texture shape or format unsupported");
         return NULL;
     }
@@ -73,7 +73,7 @@ WGPUTexture wgpuDeviceCreateTexture(WGPUDevice handle, const WGPUTextureDescript
     }
     native.cube_compatible = desc.dimension == WGPUTextureDimension_2D &&
         desc.width == desc.height && desc.depth_or_layers >= 6;
-    bool depth_stencil = native_depth_format(desc.format, &native.format);
+    bool depth_stencil = native_depth_format(device->features, desc.format, &native.format);
     if (depth_stencil) {
         /* Attachment, copy and sampled usage are admitted; per-format/aspect copy
          * direction and sample types belong to the resource owner. No storage. */

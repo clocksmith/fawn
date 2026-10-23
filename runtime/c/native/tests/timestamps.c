@@ -152,7 +152,14 @@ int main(void)
     assert(wgpuAdapterHasFeature(s.adapter,WGPUFeatureName_TimestampQuery));
     WGPUSupportedFeatures features = {0};
     wgpuAdapterGetFeatures(s.adapter,&features);
-    assert(features.featureCount == 1 && features.features[0] == WGPUFeatureName_TimestampQuery);
+    /* The adapter list holds timestamp-query among any other offered features,
+     * each agreeing with HasFeature (format_features.c checks the others). */
+    bool listed = false;
+    for (size_t i = 0; i < features.featureCount; ++i) {
+        assert(wgpuAdapterHasFeature(s.adapter,features.features[i]));
+        listed |= features.features[i] == WGPUFeatureName_TimestampQuery;
+    }
+    assert(listed);
     wgpuSupportedFeaturesFreeMembers(features);
     WGPUDeviceDescriptor descriptor = WGPU_DEVICE_DESCRIPTOR_INIT;
     descriptor.uncapturedErrorCallbackInfo = (WGPUUncapturedErrorCallbackInfo){.callback=error_reply,.userdata1=&s};

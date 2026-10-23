@@ -46,7 +46,7 @@ typedef struct native_device {
     WGPUUncapturedErrorCallbackInfo uncaptured;
     bool destroyed;
     bool queue_failed;
-    bool timestamp_enabled;
+    uint32_t features; /* Enabled WebGPU features, NATIVE_FEATURE bits. */
     doe_vk_timestamp_normalizer *timestamp_normalizer;
     doe_vk_dispatch_validator *dispatch_validator;
     doe_vk_draw_validator *draw_validator;
@@ -171,7 +171,11 @@ doe_vk_status native_timestamp_initialize(native_device *device);
 doe_vk_status native_dispatch_guard_initialize(native_device *device);
 doe_vk_status native_draw_guard_initialize(native_device *device);
 void native_indirect_guards_release(native_device *device);
-bool native_requested_features(const native_backend *backend, const WGPUDeviceDescriptor *descriptor, bool *timestamps);
+/* Optional WebGPU features as bits of their pinned WGPUFeatureName values. */
+#define NATIVE_FEATURE(name) (UINT32_C(1) << (uint32_t)(name))
+uint32_t native_adapter_features(const native_backend *backend);
+bool native_requested_features(const native_backend *backend, const WGPUDeviceDescriptor *descriptor, uint32_t *enabled);
+bool native_feature_enabled(const native_device *device, WGPUFeatureName feature);
 doe_vk_status native_record_query(doe_vk_commands *commands, const doe_resource_command *record);
 WGPUComputePipeline native_create_compute_pipeline(native_device *device,
     const WGPUComputePipelineDescriptor *descriptor, native_pipeline_error *error);
@@ -204,8 +208,9 @@ native_failure native_initialize_texture(native_device *device, doe_vk_texture *
  * under the device mutex, then frees the payload. */
 void native_texture_release(void *userdata, void *handle);
 bool native_compare_operation(WGPUCompareFunction value, uint32_t fallback, uint32_t *out);
-bool native_depth_format(WGPUTextureFormat format, doe_vk_texture_format *out);
-bool native_texture_format(WGPUTextureFormat format, doe_vk_texture_format *out);
+/* features: the device's enabled NATIVE_FEATURE bits; feature formats map only when enabled. */
+bool native_depth_format(uint32_t features, WGPUTextureFormat format, doe_vk_texture_format *out);
+bool native_texture_format(uint32_t features, WGPUTextureFormat format, doe_vk_texture_format *out);
 /* Resource-normalized copy aspect to native aspect bits; Undefined is rejected
  * because the resource owner always resolves a concrete aspect first. */
 bool native_texture_aspect(WGPUTextureAspect aspect, doe_vk_texture_aspect *out);
