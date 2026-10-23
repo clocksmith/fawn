@@ -1,0 +1,92 @@
+{
+  "contract_version": 1,
+  "status": "prospective_policy_not_an_implemented_gate_or_achieved_result",
+  "owner": "docs/c-migration/QUALITY_TARGET.md",
+  "effective_after_accepted_source": "f01effdf070edf2f25cf0f2016c995df1e4d3bab",
+  "baseline": {
+    "inventory_path": "docs/c-migration/zig-inventory.json",
+    "inventory_sha256": "9bb2524f32d724a0d74b9a3a76c28c39719aef59bd5cb6b089fa6dc87bbd613d",
+    "source_revision": "665475907494d2095a760596218b4c2d363cb436",
+    "source_tree": "ff1e239161451188a9670e54b0303fb91030d2b4",
+    "inventory_files": 809,
+    "inventory_physical_lines": 222409,
+    "headline_role": "production",
+    "headline_files": 628,
+    "headline_physical_lines": 155898,
+    "production_lexical_test_declarations": 665,
+    "denominator_kind": "handwritten production-file total including inline tests, not pure implementation",
+    "test_span_classification": "unresolved; declarations are not AST counts or measured spans",
+    "mutable": false
+  },
+  "physical_lines": {
+    "algorithm": "len(data.splitlines()) where data is exact Python bytes",
+    "decode": false,
+    "normalize_newlines": false,
+    "count_blank_and_comment_lines": true,
+    "count_final_unterminated_line": true,
+    "empty_file_count": 0,
+    "trailing_newline_adds_phantom_line": false,
+    "identity": "sha256 of exact bytes",
+    "generated_form": "pinned reproducible expanded source; no compressed or packed-behavior substitution"
+  },
+  "charge_scope": {
+    "union": "unique required source paths across all declared production builds and consumers",
+    "include": [
+      "Doe-owned/maintained implementation, headers, ABI adapters/glue, build/packaging logic",
+      "production-generated source plus generators/templates/source inputs",
+      "new or expanded migration-required dependency code, including required transitive source"
+    ],
+    "generated_accounting": "charge maintained generator/input source and required expanded output; retain separate subtotals and provenance",
+    "shared_target_paths": "count once in source union; report target views separately",
+    "distinct_required_duplicate_paths": "count each; installed duplicate copies also retain byte accounting",
+    "dependency_boundary": "identify exact required unchanged and expanded parts with auditable allocation",
+    "unchanged_platform_toolchain_or_third_party": "separate pinned dependency and installed-footprint ledger, not an unreported zero or newly charged whole libc/compiler",
+    "non_source_assets": "report bytes separately; encoded behavior must have inspectable expanded source accounting",
+    "transitional_adapters": "charge while production-required; remove only with consumer/build retirement evidence",
+    "final_no_zig": "no implementation, generation, link or runtime fallback dependency on Zig"
+  },
+  "required_report_views": [
+    "final charged production delivery",
+    "baseline/final audited implementation-only",
+    "tests and tooling with overlaps explicit",
+    "generated and dependency subtotals/provenance",
+    "transitional C + required Zig + adapters",
+    "retained obsolete/reference/historical sources",
+    "installed/package bytes"
+  ],
+  "test_span_audit": {
+    "baseline_inventory_unchanged": true,
+    "required_on_both_sides": true,
+    "artifact": "source-hash-bound reviewed half-open byte intervals, test-only purpose, suite and evidence",
+    "method": "pinned structural/parser method plus human review, not lexical declaration count",
+    "remove_from_implementation": "only physical lines wholly inside audited exclusively test-only spans",
+    "mixed_or_shared_lines": "remain implementation-charged",
+    "blank_comment_indent_delimiter_lines": "follow reviewed enclosing span, never cosmetic subtraction",
+    "reconciliation": "implementation lines plus exclusively test-only excluded lines equals charged physical-file lines",
+    "test_movement": "symmetric span exclusion, preserved defect detection, no automatic implementation win",
+    "unresolved_spans": "block achieved claim"
+  },
+  "claim_conditions_all_required": {
+    "fixed_headline_ceiling_lines": 77949,
+    "headline_condition": "final charged production-delivery physical lines <= 77949",
+    "headline_comparability": "deliberately stricter closure than frozen handwritten denominator; not itself a like-for-like implementation comparison",
+    "normalized_condition": "2 * final implementation-only lines <= baseline implementation-only lines",
+    "normalized_scope": "same declared feature and consumer scope with independently audited full closures and test spans",
+    "no_headline_rebase": true,
+    "full_migration_gates_pass": true,
+    "readability_and_ownership_review_required": true,
+    "no_coverage_correctness_or_qualified_performance_trade": true,
+    "identity_drift_or_missing_input": "refuse claim, retain observed diagnostic result"
+  },
+  "report_identity_required": [
+    "candidate_commit_and_tree",
+    "dirty_file_hashes_if_any",
+    "baseline_inventory_sha256",
+    "counting_contract_sha256",
+    "classification_artifact_sha256",
+    "source_closure_hashes",
+    "dependencies",
+    "toolchain_and_flags",
+    "evidence_hashes"
+  ]
+}

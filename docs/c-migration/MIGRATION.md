@@ -18,13 +18,19 @@ The immutable baseline is commit
 blob at that revision, even when sparse checkout does not materialize the file:
 
 - 809 files, 9,810,557 bytes, 222,409 lines.
-- 628 handwritten implementation files: 155,898 lines.
+- 628 handwritten production-role files: 155,898 lines, including inline tests.
 - 137 handwritten test/suite/support files: 54,605 lines.
 - 9 generated files: 1,804 lines, comprising 7 test suite roots and 2 production
   definitions. Including generated definitions gives 630 production-use paths.
 - 1 build root: 1,746 lines.
 - 34 other files: 8,356 lines, comprising 24 retained historical source/probe
   snapshots and 10 repository-only benchmark/tool sources.
+
+The prospective [quality and 50% size target](QUALITY_TARGET.md) and
+[common C guide](../../runtime/c/STYLE.md) govern new work without rewriting frozen
+receipts. The headline ceiling is 77,949 lines, with a separate mandatory fair
+implementation-only comparison. Inline-test spans and the final delivery closure
+are not yet audited; no achieved reduction or full feature parity is claimed.
 
 **Zero production Zig paths have an accepted C replacement in this baseline.**
 Experimental C code created beside it does not change that acceptance count.
