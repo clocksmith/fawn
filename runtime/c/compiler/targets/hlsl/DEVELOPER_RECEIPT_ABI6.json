@@ -1,0 +1,51 @@
+{
+  "status": "authored and focused developer-tested; no DXC/DXIL/D3D12 or physical qualification",
+  "compiler_commit": "9239cfec8c101296c91c7bb1885eb22864e439f8",
+  "historical_receipt": "DEVELOPER_RECEIPT.json remains the prior 54f0fb9f checkpoint",
+  "source_manifest_sha256": "5f46f2ab3591cb9feaf164f5ba234c465113bbaf2cc8e1a0259c61c586f50c99",
+  "source_manifest_scope": "60 immutable snapshot files: committed shared src/include and source-size checker, plus held target files; receipts excluded",
+  "checks": [
+    "GCC 14.2 strict C11 check host-control library passed against archived committed core",
+    "four emitted-operation C++/UBSan host controls passed",
+    "ASan+UBSan developer source checks passed with ASAN_OPTIONS=detect_leaks=0",
+    "14 C/header files passed 999-line physical limit; largest production file 326 lines",
+    "git diff --check passed; live held target inputs matched the immutable snapshot"
+  ],
+  "implemented_increment": [
+    "Typed sampled/depth/multisampled/storage texture and sampler declarations with declared handle/formal identity",
+    "Seven image operations with independent coordinate/layer/LOD/sample guards and valid-LOD dimension queries",
+    "Storage format channel load expansion/store projection; explicit-LOD array sampling layer clamp",
+    "Per-entry reused texture bindings and source-static skipped-handle argument closure regression"
+  ],
+  "limitations": [
+    "Image guard host control uses asserting query/load stubs and sentinel data, not texture format or sampling emulation",
+    "No DXC installation or execution, DXIL validation, Windows/D3D12 native consumption, GPU execution or performance claim",
+    "Typed UAV format/device admission and actual texture views remain runtime obligations",
+    "LeakSanitizer unavailable under ptrace; leak detection was disabled, not qualified",
+    "Comparison/gradient/gather and general graphics interfaces remain outside this checkpoint"
+  ],
+  "log_sha256": {
+    "doe-hlsl-abi6-checkpoint.log": "0997aa2abb9b992bbf2bcee8419af82210c81c2ff2819250387d9885874e9806",
+    "doe-hlsl-abi6-checkpoint-sanitize.log": "8daef3ad64078c77276975709094becb7bf6c7154545723000e407a9434da8b2"
+  },
+  "sha256": {
+    "AGENTS.md": "2180a2de6198e3948b1c711c39adb275c70154f0da27ed320c185d6c6c1b9158",
+    "Makefile": "94807c04d004ffc1ea8201a119c4903438e63e3ec4086725c913cf816ae30c99",
+    "README.md": "be1187f392172aff079c18220949a2ed0e3f856713b37689f576303f2e624770",
+    "access.c": "8877caa3623ec239944753a7a21032e69f31c2df3079fade2f128d7f81841ba5",
+    "control.c": "b18aae85ceaf406a4eac4936399f7ee386f43a9a3f979c31bfc8d4da4eb6e24d",
+    "hlsl.h": "3ef7bf1074e463572efa06ccc96fccaf7c4222b91b268ee1349ea058270e3a5c",
+    "image.c": "7da91071bb23d5f528ce9182ad4b0a76fb6752c904e3651239f7aae50c34d277",
+    "image_types.c": "3d05bae9af4b9ad01df127f95d751dc4b49ca576e6c3bdd1e0c13486f1c48649",
+    "numeric.c": "66618dbea7156b6ad424d8dd15a0535cc5295dee96d1490bdd40c64beab11a2d",
+    "private.h": "1967c7ecdeacd40784afb0bd56dc5a10a16c630e73235c0db64837eb63c7e3a5",
+    "resources.c": "5b5bff7e9cdd0a8a4b175ec511fc1d1b229f09019fcb862c137974b4e58f6ff3",
+    "stage.c": "d37921ce978bd40a8a5424b7435d95456ed45f50dc1cea800999aa00b416f4ee",
+    "tests/host_control.py": "1794c2f4654c30756ad2012a3eadeea23cbbb0639f9052c1225093ef10eda1aa",
+    "tests/test_hlsl.c": "d4236c43506ac7b9100aaf02f2f414f6ff8f2a05b5a6a0478a8b6f9ca67a5d6b",
+    "tests/test_images.c": "407b7bd62b71086310fc7e0e4ad34b1a591472861e966bf16ac6224ce9ee5313",
+    "tests/test_support.h": "8807c9e83f816986a3fe6f71e747ac9dc87fc7f168d00a85391dd2ceb022af7c",
+    "text.c": "e39b9eab8c640a160f73dc7abe25a552a7820c8d44527dcd45b95174e330a30e",
+    "types.c": "1d53408b9acdf12fec46e343ae9bc7b4b1b4d619b92dfcf123acbe9acaf406fc"
+  }
+}

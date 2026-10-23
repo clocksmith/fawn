@@ -18,6 +18,10 @@ void hlsl_type(HlslEmitter *e, TypeId type) {
     }
     const TypeRecord *t = aggregate(e, type);
     if (t == NULL) return;
+    if (t->kind == TYPE_TEXTURE || t->kind == TYPE_SAMPLER) {
+        hlsl_handle_type(e, type);
+        return;
+    }
     if ((t->flags & TYPE_CONSTRUCTIBLE) == 0u || (t->flags & TYPE_ABSTRACT) != 0u) {
         hlsl_error(e, "HLSL value type must be concrete and constructible");
         return;

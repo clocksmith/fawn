@@ -14,6 +14,11 @@ borrowed-module/output contract; this directory does not select a public target.
 - Guard signed indices and each indexed subobject before forming offsets or
   accesses. Loads initialize zero; invalid stores discard. Preserve IR value
   snapshots, source-order call arguments, short circuits and continuing paths.
+- Texture handles preserve typed declaration/formal identity. Query a valid base
+  mip first, then guard the requested mip before its dimension query and every
+  coordinate/layer/sample before a texel operation. Sampling array layers clamp.
+  Storage image format channels govern load expansion/store projection; typed UAV
+  device capabilities remain runtime obligations, not inferred support.
 - Subgroups use explicit Shader Model 6 wave intrinsics, not workgroup memory or
   host execution. Extend closed builtin/input mappings deliberately; unknown
   operations reject before publication. Dispatch metadata follows retained b0,
