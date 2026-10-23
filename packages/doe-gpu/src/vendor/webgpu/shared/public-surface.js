@@ -71,6 +71,8 @@ function buildProviderInfo({
 function libraryFlavor(libraryPath) {
   if (!libraryPath) return 'missing';
   if (/libwebgpu_doe\.(so|dylib|dll)$/.test(libraryPath)) return 'doe-dropin';
+  // Experimental C provider (runtime/c package); distinct attribution, never the Zig drop-in.
+  if (/libwebgpu_doe_c\.(so|dylib|dll)$/.test(libraryPath)) return 'doe-c';
   if (/lib(webgpu|webgpu_dawn|wgpu_native)\.(so|dylib|dll)/.test(libraryPath)) return 'delegate';
   return 'unknown';
 }

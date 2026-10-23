@@ -3001,7 +3001,7 @@ export function providerInfo() {
     loaded: !!nativeAddon && !!libraryPath,
     loadError: !nativeAddon ? 'native addon not found' : !libraryPath ? 'libwebgpu_doe not found' : '',
     defaultCreateArgs: [],
-    doeNative: flavor === 'doe-dropin',
+    doeNative: flavor === 'doe-dropin' || flavor === 'doe-c',
     libraryFlavor: flavor,
     doeLibraryPath: libraryPath ?? '',
     buildMetadataSource: buildMetadata.source,
