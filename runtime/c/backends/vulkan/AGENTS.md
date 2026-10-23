@@ -34,3 +34,7 @@ distinct from retained ABI provenance.
 Depth/stencil initialization is aspect-specific. Preserve independent load/store,
 read-only and discard semantics on the same pass and texture lifetime owners;
 never treat cleared depth as initialized stencil or publish abandoned clears.
+
+Public zero-initialization adapters must call the canonical attachment initializer
+before exposing discarded contents. Do not duplicate aspect availability in the
+frontend or manufacture a color target for depth-only initialization.

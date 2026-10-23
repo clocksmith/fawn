@@ -110,7 +110,7 @@ typedef struct doe_vk_render_pass_op {
     } value;
 } doe_vk_render_pass_op;
 typedef struct doe_vk_render_pass_desc {
-    doe_vk_texture_view *color;
+    doe_vk_texture_view *color; /* May be NULL for an empty depth/stencil-only pass. */
     const doe_vk_clear_color *clear_color; /* NULL loads initialized color. */
     bool discard_color;
     doe_vk_texture_view *depth_stencil;
@@ -124,10 +124,19 @@ typedef struct doe_vk_render_pass_desc {
  * participate. Read-only forbids clear/discard and any draw that may write that
  * aspect. LOAD requires initialized aspect; STORE preserves it; discard removes
  * it. All borrowed inputs die at return. Failure poisons commands; no partial
- * pass may be submitted. Color plus optional depth/stencil, sample1 only. */
+ * pass may be submitted. Color plus optional depth/stencil, sample1 only.
+ * A depth/stencil-only descriptor admits an empty/query-only pass, not draws. */
 doe_vk_status doe_vk_commands_render_pass_full(doe_vk_commands *commands,
     const doe_vk_render_pass_desc *desc, doe_vk_query_pool *occlusion,
     const doe_vk_render_pass_op *ops, size_t count);
+/* Explicit public-initialization primitive, not CPU shadow availability. Clears
+ * only undefined aspects of every selected mip/layer to zero using this same
+ * native pass owner. Initialized aspects are preserved. Supports 2D image views
+ * (including array/cube selections); no-op when all selected aspects are valid.
+ * Use before exposing new attachments and before public LOAD after discard.
+ * Raw full-pass LOAD stays strict. Failure poisons commands; leases retain work. */
+doe_vk_status doe_vk_commands_initialize_attachment(doe_vk_commands *commands,
+    doe_vk_texture_view *view);
 /* General typed pass span. Occlusion events require the one supplied occlusion
  * pool. Nesting, unclosed events and duplicate indices within a pass reject
  * before native begin. Written slots are reset before begin, then native query

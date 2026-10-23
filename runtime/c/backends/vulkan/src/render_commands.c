@@ -67,6 +67,7 @@ static doe_vk_status validate_pass_draw(doe_vk_commands *commands, const doe_vk_
     const doe_vk_render_pass_draw *draw, uint32_t width, uint32_t height, prepared_draw *prepared) {
     doe_vk_pipeline *pipeline = draw->pipeline;
     doe_vk_texture_view *target = desc->color;
+    if (target == NULL) return DOE_VK_UNSUPPORTED;
     if (pipeline == NULL || !pipeline->graphics || pipeline->context != commands->context ||
         draw->binding_count != pipeline->binding_count ||
         (draw->binding_count != 0 && draw->bindings == NULL) ||
