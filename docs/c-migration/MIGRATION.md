@@ -146,6 +146,29 @@ admission is corrected separately (`7a7206af`). Shared debug recording stacks
 sanitizers, without a duplicate command queue. These receipts bind their exact
 inputs; no single receipt qualifies every subsequently composed revision.
 
+The next coherent source increment includes173/202 actual native exports
+(`cab70b9a`), with29 still absent. Its recorded ABI9 composition passes16 normal
+clients and seven fully instrumented clients for real software4x resolve/masks/
+coverage, vertex-only depth, robust storage/workgroup atomics and canonical debug
+recording. Shared resource attachment signatures and full-pass retirement are
+owned once (`259b0e4f`, `e8bfd7f8`); Vulkan depth-only drawing (`46075ee6`) uses no
+fabricated fragment/color stage. Metal timestamps (`492968b3`) have typed-call/
+lifetime controls, not Apple SDK/device execution. HLSL matrix lowering
+(`74d79300`) represents WGSL columns as native HLSL rows and reverses linear
+product operands, with a same-shaped wrong-order negative control.
+
+Function-pointer lowering (`ded1d273`) has60 focused source/API checks,34 sanitizer
+cases and55 exact actual software output words, preserving stack ceilings and
+existing public layouts. Text targets explicitly reject unsupported pointers
+(`4507da09`); pointer-plus-collective closures remain unsupported until sound
+write-through uniformity summaries exist. The new [C build front door](../../runtime/c/README.md)
+creates a source-bound relocatable Linux developer package and runs a no-device
+C++ consumer, with no Zig or system installation. That package's host check binds
+`cab70b9a`; it does not expand earlier GPU receipt identities. Windows/macOS
+packaging, complete backend selection, presentation, remaining language/resource
+families and physical qualification are still open. D3D12 and Metal integration
+are active implementation lanes, not implicitly qualified by Linux checks.
+
 ## Accepted experimental coverage
 
 The [first compiler increment](../../runtime/c/compiler/MILESTONE_1_RESULTS.md)
