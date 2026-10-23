@@ -1,0 +1,254 @@
+{
+  "artifact_sha256": {
+    "/tmp/doe-atomic-author-20261023/doe-compiler-c": "caeca83fcd072c2f5adaf2990609819bed50bc5727fc87845247802f3c7a08fe",
+    "/tmp/doe-c-vulkan/indirect_contract-sanitize": "b027ac2f491ed63f5f6caa1eb361436d568c57e14619e623305ca4d0b0b33de9",
+    "/tmp/doe-c-vulkan/indirect_lifetime-sanitize": "a63332c0203bbac402bc8d78c49a874e31f0c38e9ce816c9e8ecd37d14a82519",
+    "/tmp/doe-c-vulkan/libdoe_vk.a": "dea9803ff974280d67e8fe22bea0b172636b7a2f3df5d36358e216f8f4a11f42",
+    "/tmp/doe-resource-indirect-check-1.log": "7af03513f4bbcb84e1895711c67f288ad2cededb23bf2fcd364b7aad296cd51a",
+    "/tmp/doe-resource-indirect-check-2.log": "b804d7ecfd5a035a21263eacd0b0db583e7ff318054ba595e50b360503c04f08",
+    "/tmp/doe-vulkan-indirect-final-corrected.log": "386c9e2342103cd6e2bcb968ce062816cb0d35bdfae69ec4dd1a472e73959758",
+    "/tmp/doe-vulkan-indirect-final.spv": "064e6f2c8e6650a46c771426ae304c9527f0e391ce6b453ee59e1aed760664ae",
+    "/tmp/doe-vulkan-indirect-final.wgsl": "20d516cfda234e9393631c517f5b787283183b6e01398bee937d449d21001794",
+    "/tmp/doe-vulkan-indirect-sanitize-corrected.log": "a92585e2b092a2bd8e9f00016983ca61cb8e9163b08a7c938a5791e26f1e8c2e",
+    "/tmp/doe-vulkan-indirect-size-final.log": "b6daac11ea319cda5dc36bba0a41c9e1484352a67d69fd3ec1ae1517004ec0f0",
+    "/tmp/doe-vulkan-indirect-source-final.log": "82e37af662b9d81c903bf1e9e238cf2587e556f404921f8f3035212500d1011d",
+    "/workspace/shared/doe-language-experiment-20261023/phase2/deps/spirv-tools/usr/bin/spirv-val": "f386e67676bc134802b6bfec6d96fff0f9437d0f60e4c97ee0afa59ab4f1c4ea"
+  },
+  "build": "make -C runtime/c/backends/vulkan OUT=/tmp/doe-c-vulkan all check; strict C11 -O2, 15 host suites, C++ public headers,80 ABI records/1418 assertions.",
+  "implementation": "Exact12-byte GPU copy, requested/device-limit guard, barrier, prepared target bind and native indirect dispatch on the existing command/descriptor/retirement owners. Caller validator release cannot release retained scratch or pipelines. Removed superseded always-unsupported raw entrypoint.",
+  "input_drift": [],
+  "input_sha256": {
+    "runtime/c/backends/vulkan/ABI_PROVENANCE.json": "6f2e97bcf100aaf38b652139ab02cacf4945b5007be999963e9ce4374c4f5d28",
+    "runtime/c/backends/vulkan/Makefile": "b2667d14eca1370902724e4731b0188462a8da95451f102e16af5d2393f119fa",
+    "runtime/c/backends/vulkan/SMOKE_IMAGE_FIXTURES.json": "ca27ff39c9bede1bd65dbecddfd67336bfc34cfa1956a7fdb38c2f6d234179f1",
+    "runtime/c/backends/vulkan/TIMESTAMP_PROVENANCE.json": "7e3c1b519e42b26188aa007857c92f95fe83c0fda165c1c83c4236826230c765",
+    "runtime/c/backends/vulkan/include/doe_vk.h": "e72e342f508a38e718532993b8766c0d5a2a1fff603d71ac7d1cb80049c873c1",
+    "runtime/c/backends/vulkan/include/doe_vk_bindings.h": "4d1beb8e63b2f83261070663e371791f99dc5ecc281af20f75eb7151b536df40",
+    "runtime/c/backends/vulkan/include/doe_vk_indirect.h": "5ebee5203197640c2fe445095102a998656b09e54f07dfd1bb50c17214033051",
+    "runtime/c/backends/vulkan/include/doe_vk_queries.h": "9737e6d2354dcd23f4855e8bd4b9185ca4711025e681ee112ade5259ff5c4cdb",
+    "runtime/c/backends/vulkan/include/doe_vk_render.h": "9d77f1c1d57aa4845154663e37e04ca34d178be90cd690afb9d835759b030373",
+    "runtime/c/backends/vulkan/include/doe_vk_texture.h": "f30423ee53975c46ab9631f4648d9679c529971fd08745197a3df7524f91bc5a",
+    "runtime/c/backends/vulkan/include/doe_vk_timestamp.h": "3b921f6bb7cdfd6acc5047b7a4035ccf48cbf1d24fc2a8d09e12172e2402ddde",
+    "runtime/c/backends/vulkan/src/commands.c": "a5aa58f257bf1f9896b49bc301cf46e733be8bba4e1227be68b8b2ecd0686312",
+    "runtime/c/backends/vulkan/src/descriptors.c": "d18cfbcbe86b6fa8153de3b561e0455a10f361c0865bbe63a9b8ab085f17c9f0",
+    "runtime/c/backends/vulkan/src/device_features.c": "76b471d1811f7b2f40b80291f8f5d77428d1433812e5615f73d3386cbd4a3523",
+    "runtime/c/backends/vulkan/src/feature_internal.h": "9c77de22e4752ea4236acead95d227948a5b3414a0487f00b5441356068917c0",
+    "runtime/c/backends/vulkan/src/image_formats.c": "31d79891de93a757763c1ec638055ab91db416b6d7b110f0263a7403b08063dd",
+    "runtime/c/backends/vulkan/src/indirect.c": "5eaff0e60e5dc749c7217c1f6fc2331968a3cd4afac88e8b77f1946bcd1c6633",
+    "runtime/c/backends/vulkan/src/indirect_internal.h": "5535bd1ff7a15771be3a3b145e6ad261a37f3dfe86ec60ae9c703dd87b0d53c4",
+    "runtime/c/backends/vulkan/src/internal.h": "e5c64df9a4c72309ed6ea509913bbaed016561d920ce539e33c21efb8ecb0be7",
+    "runtime/c/backends/vulkan/src/loader.c": "b4d0500b20b2c728a9110606427eb0dbb7a131387b12e21a49fcc82aba935ef7",
+    "runtime/c/backends/vulkan/src/pipeline.c": "cc18edd28d6556f83e28a12910090086f07c469c0e78bcd372d8163d8dd32109",
+    "runtime/c/backends/vulkan/src/queries.c": "f76b5efc701c7c0b90032fc98d9ad73d4ac3eaafe49b8f8e30837919ed27c07d",
+    "runtime/c/backends/vulkan/src/query_internal.h": "9ed57b12487199033f588f163caf551664b83dcd380314468248e1b3d463e05b",
+    "runtime/c/backends/vulkan/src/render_attachments.c": "5dc77f787659a46e16008f9af39b853b886515303773db3ac5f655b0e711eb05",
+    "runtime/c/backends/vulkan/src/render_commands.c": "1156859ba1d740b770717ed346553a6869279f07f81d924a84476a6e0571ff65",
+    "runtime/c/backends/vulkan/src/render_initialization.c": "6adf7ecd1bb1f15cc5f116836c5137aa28bde60e207489193a038b1e7ebe11c7",
+    "runtime/c/backends/vulkan/src/render_internal.h": "8b177372e53a02e7886a4963dc60892ae28835090471896f57b1f532ae40fcfc",
+    "runtime/c/backends/vulkan/src/render_pipeline.c": "5705ed3a61de163606a2619335f20e94dafec49aa3e8afef21209fad75b4e03f",
+    "runtime/c/backends/vulkan/src/resources.c": "a5c16ff90d0b2c3240faec7afff98d012b5a6092551f325f07844c9d8cc0c7a8",
+    "runtime/c/backends/vulkan/src/texture_commands.c": "e2b260fc523a5ec58b2c1d3d5038425fc549514338e8769230dc6bc6c69e36b1",
+    "runtime/c/backends/vulkan/src/texture_internal.h": "5001730a18b97b591678b88f0aa860830415c2d76d5e6224900d537fb0ba44a1",
+    "runtime/c/backends/vulkan/src/textures.c": "efcfc4540531ae1c54ac9fb8e5e9fd2be6df27e596e318a96a6af969bce61518",
+    "runtime/c/backends/vulkan/src/timestamp.c": "1650f5e3a9fb0cc6477b69dd328b0076f938c2af44e9724292396462feb5924f",
+    "runtime/c/backends/vulkan/src/timestamp_internal.h": "5f62db5f230c9d80d8ac45001b98ddc216a8fe378bb7445140d6d30d89ae7284",
+    "runtime/c/backends/vulkan/src/timestamp_shader.h": "b909e353739d72fc392c142e86ffb822e271fa00d325684cec8bde74b351b804",
+    "runtime/c/backends/vulkan/src/vk_abi_caps.h": "2ba14c9e54ae6c7986fce7a3873c34a36a979771c93cdb1ef9bee73233148c6b",
+    "runtime/c/backends/vulkan/src/vk_abi_constants.h": "cec619007aea3a906736f6c1c3521847fb8fb0a1ccbbfc8301f9a06022c69a5c",
+    "runtime/c/backends/vulkan/src/vk_abi_functions.h": "d59fcb617f6e3dbac3aa3ab7f0a4b9ae47cb3d3d575f9303705289fd83c18647",
+    "runtime/c/backends/vulkan/src/vk_abi_images.h": "159446de5319933c1af10d8d3512220905c08a6013f73135b3e5b38eb803cdc9",
+    "runtime/c/backends/vulkan/src/vk_abi_render.h": "0c5879119fe626e8d41259d1670c02f04e63341f022deae322880ba673a9a65c",
+    "runtime/c/backends/vulkan/src/vk_abi_structs.h": "d66c30f350101858387d96372240e67a0b7d14c3808d1065a1d8418939ee7298",
+    "runtime/c/backends/vulkan/src/vk_abi_types.h": "7cddca8ea667a1e36abf3d0cc1923453764d6cd9184de14a1cbd448ba009a266",
+    "runtime/c/backends/vulkan/tests/compute.wgsl": "8883c7b6bddb87036ec685cca4695dbe3e2193174bb51cd7af12283bfb49a890",
+    "runtime/c/backends/vulkan/tests/depth_contract.c": "03238c2052070893eb8426ae7be0646e1773d3e8ad27602f03a51f24410a7415",
+    "runtime/c/backends/vulkan/tests/depth_pipeline_contract.c": "e04cfa4c4787df308da5b715530a7b9c2dc2dcdbc830b969b580e5525ac2564f",
+    "runtime/c/backends/vulkan/tests/descriptor_contract.c": "9417cc16a7d7a8edcb0ac75ec03d0a1e4e36e7a5ff3c9289bd922d83d84dd272",
+    "runtime/c/backends/vulkan/tests/feature_contract.c": "825e369bab1376845fc19d59f899898232066353bbc39fe9c3dd5e1596331522",
+    "runtime/c/backends/vulkan/tests/image_format_contract.c": "a588a911562fcde6a197889060fe756a425ba19011a093c9071ecb6631d71fb0",
+    "runtime/c/backends/vulkan/tests/indirect_contract.c": "950ba1f696aacd4520b4cd005aeee703c2de51a45603d2a222d9784b62ead09c",
+    "runtime/c/backends/vulkan/tests/indirect_lifetime.c": "6d154fa9eee22383bc57649baeb4d8202c54144637ced311cf34ece46fae01df",
+    "runtime/c/backends/vulkan/tests/loader_contract.c": "763ddc5dbfe36f6bd498e28b5d20d4383584f8c0b9adf3eb6e3e5e9141dede3b",
+    "runtime/c/backends/vulkan/tests/matrix_tail.wgsl": "2800e2eb314eea562f8893deffdddb96862e0c00acb570aaa2d57e7d4c0531ee",
+    "runtime/c/backends/vulkan/tests/native_compute.c": "b477302b45d0369b07246eda1b3ed70753c45c0da95fa2cfaa58b61f8f7cff73",
+    "runtime/c/backends/vulkan/tests/native_descriptors.c": "a041dc8d56a00f75efcfe8123a3c97bf5d05e6eb2b7c28f49906ca797ecd2de5",
+    "runtime/c/backends/vulkan/tests/native_features.c": "725c1e75f604410fc510b68c57a7dbea98bc28bd2687c85c5e4f7062ca64afb6",
+    "runtime/c/backends/vulkan/tests/native_matrix.c": "dc0548d2f75887961275a575186c2fa82078506e085154f21ae1194c2ddb143c",
+    "runtime/c/backends/vulkan/tests/native_queries.c": "c4ad2d0c23f4b61e52e7fd701ebc4d911429a7c15105d31fc294d129e0418f69",
+    "runtime/c/backends/vulkan/tests/native_render.c": "e5ba645b239c445eadc32efb677f9a5e0748d348724ae09133998599d1418db1",
+    "runtime/c/backends/vulkan/tests/native_storage.c": "4642f9d523b140028ecef45f509cda832007902e312fbc54f031ad75334ae0db",
+    "runtime/c/backends/vulkan/tests/native_texture.c": "26235c9473f3893cc15b6db92a6e94424ef344fd03638391d34b3d777fbed661",
+    "runtime/c/backends/vulkan/tests/native_timestamp.c": "5825f8573b875139a74b2fb42ddc523a4636051edff4f094dbf24458f72057ac",
+    "runtime/c/backends/vulkan/tests/ownership.c": "6ce4961eed9a33471000d2b20a888b66177923d641464166bbb1121ec3f3a7d2",
+    "runtime/c/backends/vulkan/tests/pass_contract.c": "a039fc608449a970c8755608e1912b5a990296b710dcf158b0538ccac15019f7",
+    "runtime/c/backends/vulkan/tests/probe.c": "2a4e283c8886bb9a0c25acfd33debd5f7054a61ce76dfbf310eb9aaa56be73ed",
+    "runtime/c/backends/vulkan/tests/query_contract.c": "665aec2abfd9d31711d116f8ad3ead49ed5301f82f0d34614c94007994241a2d",
+    "runtime/c/backends/vulkan/tests/render_contract.c": "7db55ac5c3712dd065c92bef872c358d4bb3ca42ea0030b8f2eaaf75918041a5",
+    "runtime/c/backends/vulkan/tests/texture_contract.c": "498aaf136f61764bdb1f94dc2ab0fcc19912aa0d82bc23f61ecc82b0297eca0f",
+    "runtime/c/backends/vulkan/tests/timestamp_contract.c": "13f4906ec329acc78e92b95e0d29f90756d39e63587863b739287a7e2a822535",
+    "runtime/c/backends/vulkan/tests/timestamp_lifetime.c": "d6f94d5e677619964c857a16039257fe30453c6e7fc86acd417b8eb973471224",
+    "runtime/c/backends/vulkan/tools/check_abi.py": "e3eaf9e4fb79f5e2110151a66456f7328acb785f327eb07df862d7c183a816fa",
+    "runtime/c/backends/vulkan/tools/check_timestamp_source.py": "2eacae78ad767930cd9005b68833974e89c86032ee02078574d15242e25d3470",
+    "runtime/c/common/include/doe_copy_footprint.h": "461535e48bc3d5248928416513b0978baadcc865db33826cb6244f5d9e3fde4b"
+  },
+  "limitations": [
+    "No CPU argument substitution or host shader interpreter. Native-boundary host mocks test packets/lifetimes, not GPU values.",
+    "Axis-only guard does not admit newer product-sensitive workgroup/global-invocation-index builtins; current compiler rejects them.",
+    "Indexed/indirect graphics remain unsupported. Failed scratch requires a fresh validator; unknown submissions retain native owners.",
+    "No physical execution or performance parity claim. Software checks use process-local ICD selection only."
+  ],
+  "resolved_findings": [
+    {
+      "finding": "Initial target descriptor admission occurred after argument copy/guard. Sticky poison prevented submission, but incorrect target emitted partial native work. Final code uses existing prepare_resources before copying and binds prepared target after guard; focused test now verifies zero native operations on invalid target bindings.",
+      "original_artifacts": "/tmp/doe-vulkan-indirect-preflight-original",
+      "original_sha256": {
+        "indirect.c": "2fef4da198b939ed5db4511a4218286f9a927d2f7eb79b090032795a414fd493",
+        "indirect_lifetime.c": "14c5360a39dd467084ed35a294eeb10ebfa57fb1cefef38258979482f2d783b6",
+        "input_sha256.json": "d2ce3b2026bbc286b526e7405bfcf826addef619f3ea66aa8d7ee9465cf68ec2"
+      }
+    },
+    {
+      "finding": "Initial spirv-val PATH lookup was absent. Existing pinned explicit executable was used successfully; no installation."
+    }
+  ],
+  "sanitizers": "Focused indirect_contract and indirect_lifetime with every backend source -O1 -g -fsanitize=address,undefined; detect_leaks=0. Resource composition additionally instruments resource/backend/labels/frozen shader owner. External ICD and held compiler DSO remain optimized.",
+  "scope": "Developer typed GPU compute-indirect checks; explicit software ICD only, not independent acceptance or physical qualification.",
+  "software_composition": {
+    "commands": [
+      {
+        "command": [
+          "timeout",
+          "--signal=TERM",
+          "--kill-after=5s",
+          "60s",
+          "make",
+          "-C",
+          "runtime/c/resources",
+          "SHADER_ROOT=/tmp/doe-native-msaa-checkpoint-20261023/runtime/c/shader",
+          "COMPILER_LIBRARY=/tmp/doe-atomic-author-20261023/libdoe_compiler.so",
+          "VK_BUILD=/tmp/doe-c-vulkan",
+          "SHADER_BUILD=/tmp/doe-c-resources-indirect-abi9-shader",
+          "vulkan-indirect-lifetime"
+        ],
+        "environment": {
+          "VK_ICD_FILENAMES": "/usr/lib/chromium/vk_swiftshader_icd.json"
+        },
+        "exit_code": 0,
+        "terminal_output": [
+          "Resource indirect Vulkan consumer: SwiftShader Device (Subzero); C ABI9 shaders, software only",
+          "PASS GPU-produced valid/over-requested-limit XYZ/zero/valid indirect arguments, exact four atomic invocations, unchanged source/padding, canonical usage-conflict rejection, pending guards and five terminal finalizers"
+        ]
+      },
+      {
+        "command": [
+          "timeout",
+          "--signal=TERM",
+          "--kill-after=5s",
+          "60s",
+          "make",
+          "-C",
+          "runtime/c/resources",
+          "SHADER_ROOT=/tmp/doe-native-msaa-checkpoint-20261023/runtime/c/shader",
+          "COMPILER_LIBRARY=/tmp/doe-atomic-author-20261023/libdoe_compiler.so",
+          "BUILD=/tmp/doe-c-resources-indirect-asan",
+          "VK_BUILD=/tmp/doe-c-resources-indirect-vk-asan",
+          "SHADER_BUILD=/tmp/doe-c-resources-indirect-abi9-shader-asan",
+          "CFLAGS=-O1 -g -std=c11 -Wall -Wextra -Wpedantic -Werror -pthread -fsanitize=address,undefined -fno-omit-frame-pointer",
+          "vulkan-indirect-lifetime"
+        ],
+        "environment": {
+          "ASAN_OPTIONS": "detect_leaks=0:halt_on_error=1",
+          "UBSAN_OPTIONS": "halt_on_error=1",
+          "VK_ICD_FILENAMES": "/usr/lib/chromium/vk_swiftshader_icd.json"
+        },
+        "exit_code": 0,
+        "terminal_output": [
+          "Resource indirect Vulkan consumer: SwiftShader Device (Subzero); C ABI9 shaders, software only",
+          "PASS GPU-produced valid/over-requested-limit XYZ/zero/valid indirect arguments, exact four atomic invocations, unchanged source/padding, canonical usage-conflict rejection, pending guards and five terminal finalizers"
+        ]
+      }
+    ],
+    "compiler_producer": {
+      "library": "/tmp/doe-atomic-author-20261023/libdoe_compiler.so",
+      "library_sha256": "f00731f2172b81e40a84ac36266d291b1ad615a71e1c875ebf5ef2b663e78959",
+      "revision": "342fcf1b",
+      "source_manifest": "/workspace/shared/doe-c-migration-evidence-20261023/milestone13/author/atomic1/AUTHOR_SOURCE.sha256",
+      "source_manifest_digest": "8cdd3da10aa79f29375131ba2f1089018a2022bdf11814ae551a1fc00ba93fbc",
+      "source_manifest_file_sha256": "8cdd3da10aa79f29375131ba2f1089018a2022bdf11814ae551a1fc00ba93fbc"
+    },
+    "external_sha256": {
+      "/tmp/doe-atomic-author-20261023/libdoe_compiler.so": "f00731f2172b81e40a84ac36266d291b1ad615a71e1c875ebf5ef2b663e78959",
+      "/usr/lib/chromium/libvk_swiftshader.so": "b4bd480a9acc0dd5a251a3b9082e2f001245fed0dbfdc607970c3ce6b6b2e6f3",
+      "/usr/lib/chromium/vk_swiftshader_icd.json": "c9eef28b6b984fec220ef0abfecc40b502d46946706e47bfe97707027cb818bd",
+      "/workspace/shared/doe-c-migration-evidence-20261023/milestone13/author/atomic1/AUTHOR_SOURCE.sha256": "8cdd3da10aa79f29375131ba2f1089018a2022bdf11814ae551a1fc00ba93fbc"
+    },
+    "frozen_shader_and_headers": {
+      "revision": "cab70b9a",
+      "sha256": {
+        "runtime/c/compiler/include/doe_compiler.h": "5bf4f5e5a4e4624c094320ad9ec97119278bc7f6f06b0e47c01e444d42c6dc5b",
+        "runtime/c/compiler/include/doe_compiler_features.h": "face7d3315ec8bcd884f354cc08efa566c479b5136a509b7db751399bbbd320c",
+        "runtime/c/compiler/include/doe_compiler_job.h": "6160e631973ffcd9777553520d329b6d6048315f2a90b1283989077e9f51237f",
+        "runtime/c/compiler/include/doe_compiler_module.h": "01cc2966ce7866ccfde6cca75e6ec6e60921f63c271e31cf94648e8d78907cef",
+        "runtime/c/compiler/include/doe_compiler_resources.h": "b16c1f9f1a5129daeb32f83baaac1fb1bea41c1a00c084c5fe9c4d7f6cded2b2",
+        "runtime/c/compiler/include/doe_compiler_stages.h": "805e94e55267837897ad1b9885d328ac8acf0cc7bfc92b9e5dfe97737439f668",
+        "runtime/c/compiler/include/doe_compiler_typed.h": "c7decbdb8da093a3485ded84901bf97f88eea8db6237dfd4089c730aa08e6216",
+        "runtime/c/compiler/include/doe_compiler_v2.h": "b0a60c2f05b70dba0786365dadd81b993accbd93f7f68f0e3accf86a815ae891",
+        "runtime/c/shader/Makefile": "add5497ee7cd64b33770d58e38fbc074b3cd946dc9a7854c8d7297916a18f948",
+        "runtime/c/shader/include/doe_shader.h": "8dd71d28d87559add084167b46176ba8e407f3b81e60851f74009113b756aba9",
+        "runtime/c/shader/src/shader.c": "1d241a59320562d531942bde9ecad586bfbbffcd735d1d17219476730a5ada37"
+      },
+      "source_root": "/tmp/doe-native-msaa-checkpoint-20261023",
+      "verified_equal_to_committed_bytes": true
+    },
+    "oracle": "GPU producer writes offset records; requested limits2,3,4 admit2x1x1, rejectX3/Y4/Z5, preserve zero, then admit2x1x1 again. Exactly four atomic invocations; original args/padding unchanged, early release and uncertain completion guards.",
+    "receipt": "runtime/c/resources/DEVELOPER_RECEIPT_INDIRECT.json",
+    "receipt_sha256": "b9915017d3c0b618c21a31fba0a0cbd4ddf6b6fd9c63fd4fd5ae12d7e61ff444"
+  },
+  "source_validation": {
+    "command": "doe-compiler-c --shader-path /tmp/doe-vulkan-indirect-final.wgsl --out /tmp/doe-vulkan-indirect-final.spv",
+    "compiler": "/tmp/doe-atomic-author-20261023/doe-compiler-c",
+    "corrected_source_matches_compiled_source": true,
+    "exit_code": 0,
+    "validation": "/workspace/shared/doe-language-experiment-20261023/phase2/deps/spirv-tools/usr/bin/spirv-val --target-env vulkan1.1 /tmp/doe-vulkan-indirect-final.spv"
+  },
+  "terminal_lines": {
+    "/tmp/doe-resource-indirect-check-1.log": [
+      "Resource indirect Vulkan consumer: SwiftShader Device (Subzero); C ABI9 shaders, software only",
+      "PASS GPU-produced valid/over-requested-limit XYZ/zero/valid indirect arguments, exact four atomic invocations, unchanged source/padding, canonical usage-conflict rejection, pending guards and five terminal finalizers"
+    ],
+    "/tmp/doe-resource-indirect-check-2.log": [
+      "Resource indirect Vulkan consumer: SwiftShader Device (Subzero); C ABI9 shaders, software only",
+      "PASS GPU-produced valid/over-requested-limit XYZ/zero/valid indirect arguments, exact four atomic invocations, unchanged source/padding, canonical usage-conflict rejection, pending guards and five terminal finalizers"
+    ],
+    "/tmp/doe-vulkan-indirect-final-corrected.log": [
+      "PASS retained timestamp policy hashes and verbatim embedded WGSL body",
+      "PASS pinned Linux LP64 ABI: 80 records, 1418 field/size/alignment assertions; not driver qualification",
+      "PASS indirect WGSL source constants, exact capacity/output preservation, device/requested-limit admission, invalid shader construction, lost context and retain overflow",
+      "PASS indirect copy/guard/target-bind/dispatch ordering, exact12-byte scratch, barriers, last-byte and usage/type/late-target rejection before native work, early validator release and uncertain/failed retirement",
+      "PASS genuine depth-only native pipeline packets, optional fragment stage, no color state/attachment, malformed or contradictory admission, output preservation and native failure cleanup",
+      "PASS exact native image-format query arguments, actual sample masks and aspect intersections, format-specific limits, MSAA restrictions, allocation rollback, output preservation and copy rejection",
+      "PASS per-aspect native load/clear/store/discard, full depth/stencil transitions, read-only write/clear rejection, extent/NaN/absent-aspect preflight, speculative initialization, canonical depth-only zero with stencil preservation/no-op, culled-face stencil write summary and exact attachment leases; real MSAA/resolve native records, mismatch rejection, discard-independent resolve availability and uncertain/abandoned ownership",
+      "PASS explicit optional demote selection, absent/false/malformed extension controls, robust-only baseline, failed/incomplete enumeration and unchanged failure outputs",
+      "PASS host Vulkan boundary rollback, timeout, uncertain submission, device loss, bounds, poisoning",
+      "PASS real symbol lookup, typed call, precise missing-symbol diagnostic and unchanged destination on failed/invalid lookup",
+      "PASS explicit raw/WebGPU viewport, version/enum rejection and untouched output, render vertex last-byte, NaN viewport, scissor/count overflow, compute/graphics kind mismatch, graphics-family admission and framebuffer rollback without initialized-output publication",
+      "PASS whole-pass preflight, two draws in one native begin/end, no in-pass barriers, pipeline/default and per-draw blend constants, NaN preflight, empty clear, occlusion type/nesting/duplicate/end rejection, native reset-before-pass and paired query events, exact leases and rollback",
+      "PASS timestamp TOP/BOTTOM, mixed native copy/zero without unissued WAIT, reset/write/resolve state, last-byte/range rejection, exclusive unresolved owner, transactional completion, old-owner release and failed-query poisoning",
+      "PASS binary32 calibration, exact counter masks, subnormal/maximum periods, unchanged failure outputs and normalizer limit rejection",
+      "PASS timestamp native copy/zero/descriptor/dispatch/copy ordering, exact short binding, zero-count no-op, early normalizer release and uncertain/failure lifetime",
+      "PASS texture last-byte/mip/layer/overflow checks, speculative layout/initialization rollback, concurrent owner exclusion and failed output",
+      "PASS typed descriptor mismatch, uninitialized storage view, wrong usage, failed content and oversized dispatch rejection without native publication"
+    ],
+    "/tmp/doe-vulkan-indirect-sanitize-corrected.log": [
+      "PASS indirect WGSL source constants, exact capacity/output preservation, device/requested-limit admission, invalid shader construction, lost context and retain overflow",
+      "PASS indirect copy/guard/target-bind/dispatch ordering, exact12-byte scratch, barriers, last-byte and usage/type/late-target rejection before native work, early validator release and uncertain/failed retirement"
+    ],
+    "/tmp/doe-vulkan-indirect-size-final.log": [
+      "C size check: 63 files, 0 failures; limit 999"
+    ],
+    "/tmp/doe-vulkan-indirect-source-final.log": [
+      "PASS indirect WGSL source constants, exact capacity/output preservation, device/requested-limit admission, invalid shader construction, lost context and retain overflow"
+    ]
+  },
+  "utc": "2026-10-23T20:25:05.748238+00:00"
+}

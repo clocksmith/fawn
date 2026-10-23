@@ -145,23 +145,6 @@ doe_vk_status doe_vk_commands_dispatch(doe_vk_commands *commands,
     return DOE_VK_OK;
 }
 
-doe_vk_status doe_vk_commands_dispatch_indirect(doe_vk_commands *commands,
-    doe_vk_pipeline *pipeline, const doe_vk_buffer_binding *bindings,
-    size_t binding_count, doe_vk_buffer *arguments, uint64_t offset) {
-    doe_vk_status status = doe_vk_recording(commands);
-    if (status != DOE_VK_OK) return status;
-    if (arguments == NULL || arguments->context != commands->context ||
-        !(arguments->usage & DOE_VK_BUFFER_INDIRECT) || (offset & 3) != 0 ||
-        !doe_vk_range(arguments->size, offset, 3 * sizeof(uint32_t)))
-        return doe_vk_poison(commands, DOE_VK_INVALID_ARGUMENT);
-    /* The native WebGPU owner must validate/clamp indirect counts. Vulkan's
-     * robustBufferAccess does not validate dispatch dimensions. */
-    (void)pipeline;
-    (void)bindings;
-    (void)binding_count;
-    return doe_vk_poison(commands, DOE_VK_UNSUPPORTED);
-}
-
 static void complete(doe_vk_commands *commands, doe_vk_status status) {
     commands->state = status == DOE_VK_OK ? DOE_VK_COMPLETE : DOE_VK_FAILED;
     commands->failure = status;
