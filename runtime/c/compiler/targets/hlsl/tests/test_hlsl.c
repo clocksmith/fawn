@@ -2,6 +2,7 @@
  * Copyright (c) 2026 Doe contributors */
 #include "test_support.h"
 #include "../../../src/numeric.h"
+#include "../../../src/stage.h"
 #include <assert.h>
 #include <errno.h>
 #include <stdio.h>
@@ -16,18 +17,22 @@ static const DoeCompilerModuleCapacities capacities = {
         .words = 32768u, .expression_depth = 32u, .control_depth = 16u, .type_syntax_depth = 32u},
     .entries = 8u, .entry_inputs = 32u, .entry_references = 256u
 };
-Fixture *prepare(const char *text) {
+static Fixture *prepare_mode(const char *text, bool graphics) {
     Fixture *f = calloc(1u, sizeof(*f));
     assert(f != NULL);
     CompilerLimits limits;
-    size_t bytes = 0u;
-    assert(compiler_module_layout(&capacities, &limits, &bytes));
+    size_t bytes = 0u, base = 0u;
+    const DoeCompilerStageCapacities stage_caps = {.module = capacities,
+        .interface_attributes = 256u, .stage_interfaces = 256u};
+    if (graphics) assert(stage_layout(&stage_caps, &limits, &base, &bytes));
+    else assert(compiler_module_layout(&capacities, &limits, &bytes));
     f->storage = malloc(bytes);
     assert(f->storage != NULL);
     f->module = f->storage;
     compiler_job_bind(f->module, f->storage, &limits);
     f->source = (Source){.source = text, .length = strlen(text), .diagnostic = &f->diagnostic,
         .limits = &f->module->limits, .compiler = f->module};
+    if (graphics) stage_bind(&f->source, f->storage, &stage_caps, base);
     bool okay = lex_source(&f->source, f->module) && parse_tokens(&f->source, f->module);
     if (okay) {
         for (uint32_t i = 0u; i < f->module->expression_count; ++i)
@@ -45,6 +50,8 @@ Fixture *prepare(const char *text) {
     assert(okay);
     return f;
 }
+Fixture *prepare(const char *text) { return prepare_mode(text, false); }
+Fixture *prepare_graphics(const char *text) { return prepare_mode(text, true); }
 void release(Fixture *f) {
     free(f->storage);
     free(f);
@@ -320,10 +327,27 @@ static void test_subgroups(void) {
     free(text);
     release(f);
 }
+static void test_graphics_stage_rejection(void) {
+    Fixture *f = prepare("@compute @workgroup_size(1) fn main(){}");
+    const uint32_t function = f->module->entries[0].function;
+    for (unsigned stage = 0u; stage < 2u; ++stage) {
+        f->module->functions[function].flags = FUNCTION_ENTRY |
+            (stage == 0u ? FUNCTION_VERTEX : FUNCTION_FRAGMENT);
+        char untouched[8] = "intact";
+        DoeHlslResult result;
+        assert(doe_hlsl_emit(&f->source, f->module, 0u, untouched,
+                            sizeof(untouched), &result) == DOE_COMPILER_UNSUPPORTED);
+        assert(result.required_bytes == 0u && result.written_bytes == 0u);
+        assert(strcmp(untouched, "intact") == 0);
+    }
+    release(f);
+}
 int main(int argc, char **argv) {
+    test_graphics(argc > 5 ? argv[5] : NULL);
     test_images(argc > 4 ? argv[4] : NULL);
     test_effects_host_fixture(argc > 3 ? argv[3] : NULL);
     test_target_rejection();
+    test_graphics_stage_rejection();
     test_subgroup_inputs();
     test_subgroups();
     test_residual();

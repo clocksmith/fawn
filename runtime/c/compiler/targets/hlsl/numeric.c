@@ -279,6 +279,7 @@ void hlsl_expression(HlslEmitter *e, const IrInstruction *ir) {
             break;
         }
         case IR_LOCAL_LOAD: hlsl_format(e, "l%u", ir->operands.scalar.binding); break;
+        case IR_STAGE_INPUT: hlsl_stage_input(e, ir); break;
         case IR_INPUT:
             if (ir->operands.scalar.binding >= e->module->entry_input_count) {
                 hlsl_error(e, "Hlsl builtin input identity is invalid");

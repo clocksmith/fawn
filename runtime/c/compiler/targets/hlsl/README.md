@@ -1,7 +1,7 @@
 # Experimental C HLSL target
 
 Status: authored and strict-GCC compiled; developer source-emission checks and
-executed scalar/aggregate/image-guard C++ controls pass. **Not DXC validated, DXIL validated,
+executed scalar/aggregate/image-guard/stage-mapping C++ controls pass. **Not DXC validated, DXIL validated,
 Windows/D3D12 consumed, hardware qualified, or the complete compiler migration.**
 No DXC download, toolchain installation, production default, public ABI, native
 resource owner or existing independent acceptance package changed.
@@ -20,7 +20,14 @@ while the call runs. Error status/offset remain explicit; errno is preserved.
 Implemented over current C IR:
 
 - Concrete bool/i32/u32/f32 scalars, vectors, nested fixed arrays, structures,
-  constants, immutable argument values, helper calls and multiple compute entries.
+  constants, immutable argument values, helper calls and multiple compute/vertex/fragment entries.
+- ABI7 graphics interface leaves map to explicit HLSL semantics. Flat source
+  structures remain typed values internally; the wrapper composes input formals
+  and extracts returned output leaves. Position, vertex/instance index, front face,
+  fragment depth, sample index/mask and location IO have explicit maps.
+  Interpolation is mapped to linear/noperspective/nointerpolation and centroid/sample
+  modifiers. Invariant output rejects until a DXC compilation policy establishes
+  the required cross-program guarantee; adding `precise` is not treated as proof.
 - Source-order instruction snapshots, explicit short circuits and structured
   continuing/break/continue, signed modulo arithmetic, safe division/remainder,
   masked shifts and sanitized float-to-integer conversions. Floating result
@@ -99,9 +106,16 @@ query signatures and capability boundaries follow Microsoft's
 [GetDimensions reference](https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-to-getdimensions)
 and [typed UAV load requirements](https://learn.microsoft.com/en-us/windows/win32/direct3d11/typed-unordered-access-view-loads).
 
+Stage callers must select the matching vertex/pixel profile and supply matching
+input layouts and linked IO. HLSL uses the original WGSL position values; native
+viewport/raster conventions belong to that backend, not to this serializer.
+Semantic names and modifiers follow Microsoft
+[HLSL semantics](https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-semantics)
+and [structure interpolation](https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-struct).
+
 ## Unfinished surface
 
-Vertex/fragment interfaces, derivative/implicit-LOD texture sampling, gather,
+Derivative/implicit-LOD texture sampling, gather,
 comparison sampling, texture offsets, external textures, matrices, f16, atomics,
 pointer parameters, overrides and remaining retained builtin families are not
 present in this C IR owner and remain explicitly rejected by shared admission.
@@ -109,7 +123,7 @@ Subgroup size and invocation inputs use WaveGetLaneCount/WaveGetLaneIndex;
 num_subgroups and subgroup_id explicitly reject because this owner does not
 assume a portable mapping from local invocation order to HLSL wave membership.
 Unknown/obsolete IR operations and unknown numeric builtin identities fail before
-output. A coherent compute subset
+output. Authored compute/graphics lowering
 is not retained HLSL/DXIL parity or completion of the larger C migration.
 
 The next retained compute texture gaps are `textureSampleCompareLevel` and
@@ -132,14 +146,16 @@ explicit layouts, vectors, waves, workgroup initialization, control, output sizi
 and unsupported-identity mutation controls. `library` produces a private archive
 whose shared compiler helper dependencies remain core-owned.
 
-`host-control` mechanically removes stage/resource annotations from four generated
-scalar/aggregate/image-guard fixtures, binds word arrays, compiles their emitted
+`host-control` mechanically removes stage/resource annotations from five generated
+scalar/aggregate/image-guard/stage fixtures, binds word arrays, compiles their emitted
 C++ operations with GCC/UBSan and checks continuing, effects, call argument order,
 nested independent OOB reads, discarded-store RHS effects, integer wrapping,
 bounds, view sizes, field offsets and padding preservation. The image control uses asserting
 query/load stubs with sentinel data solely to execute the emitted negative/upper
 LOD and coordinate guards; it does not emulate image formats, sampling or a GPU.
-It neither interprets WGSL nor models waves, thread scheduling, HLSL address spaces, a GPU driver or descriptor
+The stage control executes typed formal/field identity, helper-call and return-leaf
+mapping after removing semantic annotations; it does not prove rasterization or
+interpolation. It neither interprets WGSL nor models waves, thread scheduling, HLSL address spaces, a GPU driver or descriptor
 lifetime. It is a developer control, not an independent acceptance oracle and not
 proof that a target compiler accepts the source.
 

@@ -16,7 +16,8 @@ import sys
 
 out = pathlib.Path(sys.argv[1])
 subprocess.run([str(out / "test_hlsl"), str(out / "control.hlsl"),
-                str(out / "aggregate.hlsl"), str(out / "effects.hlsl"), str(out / "image_guard.hlsl")], check=True)
+                str(out / "aggregate.hlsl"), str(out / "effects.hlsl"), str(out / "image_guard.hlsl"),
+                str(out / "graphics.hlsl")], check=True)
 prelude = r"""
 #include <algorithm>
 #include <array>
@@ -142,7 +143,28 @@ int main() {
     std::puts("HLSL image guard host control: negative/upper LOD query protection, independent coordinate checks, zero reads.");
 }
 """
-for name, main in (("control", scalar), ("aggregate", aggregate), ("effects", effects), ("image_guard", image_guard)):
+graphics = r"""
+int main() {
+    DoeStage1 input{};
+    input.field0 = 17;
+    input.field1 = 9;
+    input.field2 = true;
+    input.field3 = 5;
+    DoeStage2 output = graphics(input);
+    assert(output.field4 == 1709 && output.field5 == 5);
+    input.field2 = false;
+    output = graphics(input);
+    assert(output.field4 == 1710 && output.field5 == 0);
+    input.field0 = 0xffffffffu;
+    input.field1 = 31;
+    input.field2 = true;
+    output = graphics(input);
+    assert(output.field4 == (0xffffffffu * 100u + 31u) && output.field5 == 5);
+    std::puts("HLSL graphics host control: typed interface mapping, formal identity, helper calls and return leaves.");
+}
+"""
+for name, main in (("control", scalar), ("aggregate", aggregate), ("effects", effects),
+                   ("image_guard", image_guard), ("graphics", graphics)):
     text = (out / (name + ".hlsl")).read_text()
     if name == "image_guard":
         text = re.sub(r"Texture2D<float> (r\d+) : register\([^;]+;", r"ImageTexture \1;", text)
@@ -155,6 +177,10 @@ for name, main in (("control", scalar), ("aggregate", aggregate), ("effects", ef
     text = re.sub(r"\[numthreads\([^\n]+\]\n", "", text)
     text = re.sub(r"\((DoeT\d+|DoeContext|uint3)\)0", r"\1{}", text)
     text = text.replace("precise ", "")
+    if name == "graphics":
+        text = re.sub(r" : (?:TEXCOORD|SV_)[A-Za-z0-9_]+", "", text)
+        text = re.sub(r"\b(?:nointerpolation|noperspective|linear|centroid|sample) ", "", text)
+        text = re.sub(r"\((DoeStage[12])\)0", r"\1{}", text)
     path = out / (name + "_host.cpp")
     path.write_text(prelude + (image_types if name == "image_guard" else "") + text + main)
     executable = out / (name + "_host")
