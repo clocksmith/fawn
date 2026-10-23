@@ -1,9 +1,13 @@
 const gpu = @import("model_texture_value_types.zig");
 const resource = @import("model_resource_types.zig");
+const texture_copy = @import("../texture_copy.zig");
 
 pub const TextureWriteCommand = struct {
     texture: resource.CopyTextureResource,
     data: []const u8,
+    /// Destination subresource, origin, extent and aspect of a queue write.
+    /// Null writes the whole first layer of `texture.mip_level` at the origin.
+    copy: ?texture_copy.Copy = null,
 };
 
 pub const TextureQueryCommand = struct {

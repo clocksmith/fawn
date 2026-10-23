@@ -992,9 +992,9 @@
       },
       "src/backend/dropin_resource_ops.zig": {
         "decision": "Keep",
-        "moduleSha256": "ff91219d34e44ef4d6ed5f4fbc707063c0d6109627866b51818cff76b596f0ed",
-        "reason": "Keep: Existing resource integration facade reexports D3D12 HLSL compilation owner; no behavior moved into facade.",
-        "reviewer": "codex-public-d3d12-compute/2026-10-19"
+        "moduleSha256": "9f44b26f61604674a03f46521b409ee35326c2c3a2f65acaa013ab0734bc7bf0",
+        "reason": "Keep: resource integration facade; queue texture writes carry destination origin, extent, layers and aspect into the texel copy contract and report its violations as validation errors.",
+        "reviewer": "doe-c-claude-surface/2026-10-23"
       },
       "src/backend/dropin_surface_ops.zig": {
         "decision": "Keep",
@@ -1436,9 +1436,9 @@
       },
       "src/backend/vulkan/vk_texture_commands.zig": {
         "decision": "Keep",
-        "moduleSha256": "bfce179170213fd401740ae903b970c99521b48c0efd8d5cd48e9c1265d9939e",
-        "reason": "Keep: Texture copy recording delegates timeline submission acceptance to the synchronization owner.",
-        "reviewer": "codex-vulkan-submission-audit/2026-09-23"
+        "moduleSha256": "70e7c80f06aacb53c7ae7bce437dc728df54ebfd40cd9a36a0d810bf300e5279",
+        "reason": "Keep: Vulkan texture command capsule; queue writes derive their region from the shared texel copy contract instead of whole-mip, color-only arithmetic.",
+        "reviewer": "doe-c-claude-surface/2026-10-23"
       },
       "src/backend/vulkan/vk_upload.zig": {
         "decision": "Keep",
@@ -2828,9 +2828,9 @@
       },
       "src/contracts/model/model_texture_types.zig": {
         "decision": "Keep",
-        "moduleSha256": "0267eafe3b61d8ba3d595c0dd186f1b8da3a1195136eb86167f8214290881d07",
-        "reason": "Keep: reachable neutral contract owner at src/contracts/model/model_texture_types.zig.",
-        "reviewer": "codex-recomposition-review/2026-08-08"
+        "moduleSha256": "c152264460bba5b5288987662eb0dc1c30f38ff43920b97a1c18657c42c037a9",
+        "reason": "Keep: reachable neutral contract owner; a texture write may name its destination copy region.",
+        "reviewer": "doe-c-claude-surface/2026-10-23"
       },
       "src/contracts/model/model_texture_value_types.zig": {
         "decision": "Keep",
@@ -3254,9 +3254,9 @@
       },
       "src/dropin/wgpu_dropin_ext_c.zig": {
         "decision": "Keep",
-        "moduleSha256": "1a871459d581650a088f7fe00d916b28e87b5298a5c869f45c19f6439d94b6f9",
-        "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission.",
-        "reviewer": "codex"
+        "moduleSha256": "3ed7184afb2ab97762971efab93d8a089c3d17f57956d49ac5d0e2a547eda096",
+        "reason": "Keep: drop-in C ABI bridge; wgpuQueueWriteTexture forwards the destination aspect and data-layout offset.",
+        "reviewer": "doe-c-claude-surface/2026-10-23"
       },
       "src/dropin/wgpu_dropin_lib.zig": {
         "decision": "Keep",
@@ -3686,9 +3686,9 @@
       },
       "src/native/resource/doe_command_texture_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "8762297a4ba0ccc66c1822d9b5ae91844d38e39d91f44b79d1d19fa749b3ff8d",
-        "reason": "Keep: shared clear recording retains native objects for Vulkan and D3D12 validation, preserves Metal handles, and keeps D3D12 zero-size operations visible to range and resource admission.",
-        "reviewer": "codex-d3d12-clear/2026-10-21"
+        "moduleSha256": "48db0848e6c8eb789c502fe77c9a401ad8fb5befe598bb85a789cd219523cf90",
+        "reason": "Keep: native texture command ABI boundary; queue writes forward destination origin, extent and aspect to the backend.",
+        "reviewer": "doe-c-claude-surface/2026-10-23"
       },
       "src/native/resource/doe_external_texture_native.zig": {
         "decision": "Keep",
