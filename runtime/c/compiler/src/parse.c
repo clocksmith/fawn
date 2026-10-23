@@ -226,6 +226,21 @@ static bool struct_declaration(Parser *p,Syntax *s) {
     t->state.dependency.end_expression=s->expression_count;
     return parser_punctuation(p,'}',"}");
 }
+static bool module_alias(Parser *p, Syntax *s) {
+    if (s->constant_decl_count == s->limits.expressions + 1u)
+        return source_pool_error(p->source, DOE_COMPILER_POOL_EXPRESSIONS,
+            (size_t)s->constant_decl_count, parser_peek(p)->offset,
+            "module type alias capacity exceeded");
+    ConstantSyntax *declaration = &s->constant_decls[s->constant_decl_count];
+    *declaration = (ConstantSyntax){.first_expression = s->expression_count,
+                                  .expression = NO_ID};
+    if (!parser_word(p, "alias") || !parser_name_span(p, &declaration->name) ||
+        !parser_punctuation(p, '=', "=") || !type_reference(p, s, &declaration->annotation) ||
+        !parser_punctuation(p, ';', ";")) return false;
+    declaration->type = s->expression_count;
+    ++s->constant_decl_count;
+    return true;
+}
 static bool resource_declaration(Parser *p,Syntax *s,ResourceRecord *r) {
     *r=(ResourceRecord){.source_offset=parser_peek(p)->offset,.tail_type=NO_ID};
     if (!resource_attributes(p,s,r) || !parser_word(p,"var")) return false;
@@ -883,6 +898,7 @@ bool parse_tokens(Source *source,CompilerWorkspace *s) {
             continue;
         }
         if (parser_spelled(&p,parser_peek(&p),"const")) {if (!module_constant(&p,s,first)) return false;}
+        else if (parser_spelled(&p,parser_peek(&p),"alias")) {if (!module_alias(&p,s)) return false;}
         else if (parser_spelled(&p,parser_peek(&p),"struct")) {if (!struct_declaration(&p,s)) return false;}
         else if (parser_spelled(&p,parser_peek(&p),"var")) {if (!workgroup_declaration(&p,s)) return false;}
         else if (starts_storage(&p)) {

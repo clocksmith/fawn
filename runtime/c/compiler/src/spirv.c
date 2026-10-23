@@ -407,7 +407,17 @@ static bool emit_pointer_access(Emitter *e, const IrInstruction *ir) {
         if (atomic) {
             if (!spirv_atomic_operation(e, ir, pointer, loaded)) return false;
         }
-        else if (store) { EMIT(OP_STORE, pointer, e->values[ir->operands.access.value]); }
+        else if (category == ROOT_WORKGROUP &&
+                 spirv_workgroup_type(e, ir->type) != spirv_target_type(e, ir->type)) {
+            const uint32_t converted = spirv_reserve_ids(e, 1u);
+            if (store) {
+                if (!spirv_workgroup_convert(e, ir->type, e->values[ir->operands.access.value], converted, true)) return false;
+                EMIT(OP_STORE, pointer, converted);
+            } else {
+                EMIT(OP_LOAD, spirv_workgroup_type(e, ir->type), converted, pointer);
+                if (!spirv_workgroup_convert(e, ir->type, converted, loaded, false)) return false;
+            }
+        } else if (store) { EMIT(OP_STORE, pointer, e->values[ir->operands.access.value]); }
         else { EMIT(OP_LOAD, spirv_target_type(e, ir->type), loaded, pointer); }
     }
     if (condition != 0u) {

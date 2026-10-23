@@ -65,7 +65,8 @@ typedef enum {
     BUILTIN_TAN, BUILTIN_ASIN, BUILTIN_ACOS, BUILTIN_ATAN,
     BUILTIN_SINH, BUILTIN_COSH, BUILTIN_ASINH, BUILTIN_ACOSH,
     BUILTIN_ATANH, BUILTIN_LOG, BUILTIN_LOG2, BUILTIN_EXP2,
-    BUILTIN_INVERSE_SQRT, BUILTIN_DEGREES, BUILTIN_RADIANS
+    BUILTIN_INVERSE_SQRT, BUILTIN_DEGREES, BUILTIN_RADIANS,
+    BUILTIN_ATAN2, BUILTIN_POW
 } NumericBuiltinKind;
 typedef struct { uint64_t bits; IrType type; } NumericValue;
 typedef struct { TypeId type; uint32_t flags; uint64_t bits; } ConstantValue;
@@ -93,6 +94,9 @@ typedef struct {
     union { uint64_t bits; struct { uint32_t scan, parent; } dependency; } value;
     TypeId type; uint32_t state;
 } ConstantSyntax;
+/* A type alias shares the module declaration pool and iterative dependency
+ * graph. expression==NO_ID identifies it; until resolved, type holds its parsed
+ * expression end, then its canonical underlying TypeId. No alias type is emitted. */
 enum { FUNCTION_ENTRY = 1u, FUNCTION_MUST_USE = 2u, FUNCTION_VERTEX = 4u, FUNCTION_FRAGMENT = 8u,
     FUNCTION_POINTER_USE = 16u, FUNCTION_COLLECTIVE_USE = 32u };
 typedef struct {

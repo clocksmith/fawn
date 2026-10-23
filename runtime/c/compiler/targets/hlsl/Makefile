@@ -8,7 +8,7 @@ TESTS = tests/test_component_math.c tests/test_hlsl.c tests/test_images.c tests/
 CORE = $(filter-out ../../src/cli.c ../../src/cli_json.c ../../src/compile_text.c ../../src/text_metal.c,$(wildcard ../../src/*.c))
 .PHONY: all check style clean
 all: $(OUT)/test_hlsl
-$(OUT)/test_hlsl: $(SOURCES) hlsl.h private.h ../ir_view.h ../closure.h ../scratch.h ../stage_view.h ../tests/array_length_source.h ../tests/closure_source.h ../tests/stage_source.h ../tests/matrix_source.h $(TESTS) tests/test_support.h $(CORE) $(wildcard ../../src/*.h ../../include/*.h)
+$(OUT)/test_hlsl: $(SOURCES) hlsl.h private.h ../ir_view.h ../closure.h ../scratch.h ../stage_view.h ../tests/array_length_source.h ../tests/closure_source.h ../tests/stage_source.h ../tests/matrix_source.h ../tests/component_math_source.h $(TESTS) tests/test_support.h $(CORE) $(wildcard ../../src/*.h ../../include/*.h)
 	mkdir -p $(OUT)
 	$(CC) $(CFLAGS) $(SOURCES) $(CORE) $(TESTS) -lm -o $@
 check: all style $(OUT)/test_ir_view $(OUT)/test_closure

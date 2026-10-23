@@ -394,11 +394,41 @@ uses rounded f32 factors. See [Apple MSL math functions](https://developer.apple
 2026-06-04 section 6.5. HLSL uses its documented [ties-even round](https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-round);
 inverse hyperbolics explicitly reject until a qualified lowering exists.
 Integer absolute-value target operations avoid signed-overflow assumptions.
+The same component owner now admits two-argument `atan2(y,x)` and `pow(x,y)`
+for matching scalar/vector shapes. Constant evaluation preserves AbstractFloat
+versus f32 width, rejects negative pow bases even with integral exponents, and
+retains skipped-expression/type validation. SPIR-V uses the corresponding
+GLSL.std.450 instructions; MSL and HLSL use explicit target mappings. Ordered,
+once-evaluated operand snapshots are checked with effectful arguments whose
+reversal changes the answer. These developer checks do not qualify physical
+transcendental accuracy or a complete target SDK surface.
 Text mappings/host controls do not establish SDK acceptance or physical accuracy.
 `test-component-math`, Metal `component-math-control`, and HLSL `host-control`
 exercise the new owner. Both retained stable-fluids advection shaders compile
 unchanged. At that numeric checkpoint, the retained 4096-iteration compile-stress
 shader hit the separate phony-assignment (`_ = x`) boundary; it was not shortened.
+
+### Transparent type aliases and Workgroup target identity
+
+Module `alias` declarations now resolve through the same hoisted, iterative
+constant/struct dependency graph. Scalar, aggregate, handle and admitted pointer
+aliases preserve the underlying TypeId, constructor behavior and ordinary name
+shadowing. Forward chains, mixed cycles, unused invalid aliases and duplicate
+module names are checked without a new registry, allocation or public ABI.
+Constants and aliases share the existing bounded module-declaration pool.
+
+SPIR-V now plans undecorated Workgroup array/struct target types separately from
+the explicit-layout buffer types. Whole aggregate reads/writes convert through
+same-typed leaves with the existing descriptor/traversal/word budgets; guarded
+out-of-range aggregate accesses retain zero/discard behavior. This repairs both
+unchanged retained tiled-matmul sources without removing buffer strides or adding
+a Vulkan extension requirement. `test-type-aliases` and `test-workgroup-types`
+cover these paths, including a validator-valid wrong-member mutation rejected by
+the retained word executor. Their portable job-API check covers declaration
+exhaustion, atomic failure/reuse and floating-point environment restoration;
+`sanitize-type-aliases` exercises that check with address/undefined sanitizers.
+These are developer source/word checks, not physical
+GPU, numerical or end-to-end migration qualification.
 
 `shared SHARED_PLATFORM=Darwin SHARED_LIBRARY=/tmp/libdoe_compiler.dylib` prepares
 Mach-O linking using an exported-symbol list generated from the same `exports.map`.

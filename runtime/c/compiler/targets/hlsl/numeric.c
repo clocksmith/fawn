@@ -142,6 +142,7 @@ static void subgroup_expression(HlslEmitter *e, const IrInstruction *ir, Numeric
         case BUILTIN_ABS: case BUILTIN_SIGN: case BUILTIN_FLOOR: case BUILTIN_ROUND:
         case BUILTIN_TRUNC: case BUILTIN_FRACT: case BUILTIN_SIN: case BUILTIN_COS:
         case BUILTIN_TAN: case BUILTIN_ASIN: case BUILTIN_ACOS: case BUILTIN_ATAN:
+        case BUILTIN_ATAN2: case BUILTIN_POW:
         case BUILTIN_SINH: case BUILTIN_COSH: case BUILTIN_ASINH: case BUILTIN_ACOSH:
         case BUILTIN_ATANH: case BUILTIN_LOG: case BUILTIN_LOG2: case BUILTIN_EXP2:
         case BUILTIN_INVERSE_SQRT: case BUILTIN_DEGREES: case BUILTIN_RADIANS:
@@ -291,6 +292,8 @@ static void builtin_expression(HlslEmitter *e, const IrInstruction *ir) {
         case BUILTIN_ASIN: intrinsic = "asin"; break;
         case BUILTIN_ACOS: intrinsic = "acos"; break;
         case BUILTIN_ATAN: intrinsic = "atan"; break;
+        case BUILTIN_ATAN2: intrinsic = "atan2"; break;
+        case BUILTIN_POW: intrinsic = "pow"; break;
         case BUILTIN_SINH: intrinsic = "sinh"; break;
         case BUILTIN_COSH: intrinsic = "cosh"; break;
         case BUILTIN_LOG: intrinsic = "log"; break;

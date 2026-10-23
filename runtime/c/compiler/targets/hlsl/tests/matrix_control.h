@@ -1,5 +1,7 @@
 /* SPDX-License-Identifier: MIT
  * HLSL row-major value model for emitted-operation controls only. Not DXC. */
+#ifndef DOE_HLSL_TEST_MATRIX_CONTROL_H
+#define DOE_HLSL_TEST_MATRIX_CONTROL_H
 #include "../../metal/tests/host/vector_control.h"
 template<class T> T host_zero() {
     static_assert(std::is_trivially_copyable_v<T>);
@@ -91,3 +93,4 @@ using float3x4 = host_matrix<3, 4>;
 using float4x2 = host_matrix<4, 2>;
 using float4x3 = host_matrix<4, 3>;
 using float4x4 = host_matrix<4, 4>;
+#endif

@@ -25,7 +25,8 @@ bool numeric_environment_end(Source *source, NumericEnvironment *environment);
 bool numeric_builtin(Source *source, size_t offset, const NumericBuiltin *signature,
                      const NumericValue *arguments, NumericValue *result);
 /* Declared-width scalar libm evaluation; caller owns finite bit packing. */
-bool numeric_math(Source *, size_t, NumericBuiltinKind, bool single, double input, double *result);
+bool numeric_math(Source *, size_t, NumericBuiltinKind, bool single,
+                  double input, double other, double *result);
 /* Two signed-magnitude sums cover four signed64 products, including 2^128.
  * The caller initializes to zero and adds at most four admitted AI lane pairs. */
 typedef struct { uint32_t positive[5], negative[5]; } NumericDotAccumulator;

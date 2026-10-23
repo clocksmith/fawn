@@ -15,7 +15,14 @@ bool sema_valid_name(Source *s, NameSpan name) {
 }
 uint32_t sema_find_constant(const Source *s, NameSpan name) {
     const CompilerWorkspace *c = s->compiler;
-    for (uint32_t i = 0u;i<c->constant_decl_count;++i) if (source_spans_equal(s, name, c->constant_decls[i].name)) return i;
+    for (uint32_t i = 0u;i<c->constant_decl_count;++i)
+        if (c->constant_decls[i].expression != NO_ID && source_spans_equal(s, name, c->constant_decls[i].name)) return i;
+    return NO_ID;
+}
+uint32_t sema_find_type_alias(const Source *s, NameSpan name) {
+    const CompilerWorkspace *c = s->compiler;
+    for (uint32_t i = 0u; i < c->constant_decl_count; ++i)
+        if (c->constant_decls[i].expression == NO_ID && source_spans_equal(s, name, c->constant_decls[i].name)) return i;
     return NO_ID;
 }
 uint32_t sema_find_function(const Source *s, NameSpan name) {
@@ -30,7 +37,7 @@ uint32_t sema_find_struct(const Source *s, NameSpan name) {
     return NO_ID;
 }
 bool sema_module_declared(const Source *s, NameSpan name) {
-    if (sema_find_constant(s, name) != NO_ID || sema_find_function(s, name) != NO_ID || sema_find_struct(s, name) != NO_ID) return true;
+    if (sema_find_constant(s, name) != NO_ID || sema_find_type_alias(s, name) != NO_ID || sema_find_function(s, name) != NO_ID || sema_find_struct(s, name) != NO_ID) return true;
     for (uint32_t i = 0u;i<s->compiler->resource_count;++i) if (source_spans_equal(s, name, s->compiler->resources[i].name)) return true;
     for (uint32_t i = 0u;i<s->compiler->workgroup_count;++i) if (source_spans_equal(s, name, s->compiler->workgroups[i].name)) return true;
     return false;
@@ -94,6 +101,7 @@ bool sema_value_identity(Source *s,const LocalScope *scope,NameSpan name,Uniform
         }
     }
     for (uint32_t i=0u;i<c->constant_decl_count;++i) {
+        if (c->constant_decls[i].expression == NO_ID) continue;
         if (!identity_name(s,name,c->constant_decls[i].name,budget,&same)) return false;
         if (same) {*out=(ValueIdentity){IDENTITY_CONSTANT,i};return true;}
     }
@@ -120,6 +128,14 @@ static bool lexical_value(const Source *s, const LocalScope *scope, NameSpan nam
 static bool base_type(Source *s, NameSpan name, const LocalScope *scope, TypeId *out, uint32_t *width) {
     *width = 0u;
     if (lexical_value(s, scope, name)) return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, name.offset, "type name resolves to a lexical value");
+    const uint32_t alias = sema_find_type_alias(s, name);
+    if (alias != NO_ID) {
+        const ConstantSyntax *declaration = &s->compiler->constant_decls[alias];
+        if ((declaration->state & 3u) != 2u)
+            return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, name.offset, "unresolved or cyclic type alias");
+        *out = declaration->type;
+        return true;
+    }
     const TypeId nominal = sema_find_struct(s, name);
     if (nominal != NO_ID) {
         if ((type_flags(s->compiler, nominal)&TYPE_RESOLVED) == 0u) return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, name.offset, "unresolved or cyclic struct type");
@@ -287,10 +303,18 @@ bool sema_default_type(Source *s, TypeId input, uint32_t offset, TypeId *out) {
 /* Dependency edges come only from parsed type references and expression nodes.
  * Parent/cursor state is embedded in each declaration, so a long mixed chain
  * never consumes C stack or an unlisted worklist. */
-static TypeId ref_nominal(const Source *s, TypeRef ref) {
+static bool type_dependency(const Source *s, TypeRef ref, uint32_t *kind, uint32_t *id) {
     const CompilerWorkspace *c = s->compiler;
     while (ref.syntax != NO_ID) ref = c->generic_syntax[ref.syntax].element;
-    return ref.offset == NO_ID?NO_ID:sema_find_struct(s, source_name_at(s, ref.offset));
+    if (ref.offset == NO_ID) return false;
+    const NameSpan name = source_name_at(s, ref.offset);
+    *id = sema_find_type_alias(s, name);
+    if (*id != NO_ID) { *kind = 0u; return true; }
+    const TypeId nominal = sema_find_struct(s, name);
+    if (nominal == NO_ID) return false;
+    *kind = 1u;
+    *id = nominal - 7u;
+    return true;
 }
 static bool expression_dependency(const Source *s, const Expression *e, uint32_t *kind, uint32_t *id) {
     if (e->kind == EXPRESSION_NAME) {
@@ -299,8 +323,11 @@ static bool expression_dependency(const Source *s, const Expression *e, uint32_t
         return *id != NO_ID;
     }
     if (e->kind == EXPRESSION_CALL) {
+        *id = sema_find_type_alias(s, e->value.call.callee);
+        if (*id != NO_ID) { *kind = 0u; return true; }
         TypeId type = sema_find_struct(s, e->value.call.callee);
-        if (type == NO_ID && e->value.call.type.offset != NO_ID) type = ref_nominal(s, e->value.call.type);
+        if (type == NO_ID && e->value.call.type.offset != NO_ID)
+            return type_dependency(s, e->value.call.type, kind, id);
         if (type != NO_ID) {
             *kind = 1u;
             *id = type-7u;
@@ -341,15 +368,10 @@ static bool next_dependency(Source *s, uint32_t kind, uint32_t id, uint32_t *chi
     if (kind == 0u) {
         ConstantSyntax *d = &c->constant_decls[id];
         scan = &d->value.dependency.scan;
-        end = d->expression+1u;
+        end = d->expression == NO_ID ? d->type : d->expression + 1u;
         if (*scan == NO_ID) {
             *scan = d->first_expression;
-            TypeId type = ref_nominal(s, d->annotation);
-            if (type != NO_ID) {
-                *child_kind = 1u;
-                *child = type-7u;
-                return true;
-            }
+            if (type_dependency(s, d->annotation, child_kind, child)) return true;
         }
     }
     else {
@@ -358,12 +380,7 @@ static bool next_dependency(Source *s, uint32_t kind, uint32_t id, uint32_t *chi
         end = t->state.dependency.end_expression;
         while (t->state.dependency.member<t->count) {
             const MemberRecord *m = &c->members[t->element+t->state.dependency.member++];
-            const TypeId type = ref_nominal(s, m->annotation);
-            if (type != NO_ID) {
-                *child_kind = 1u;
-                *child = type-7u;
-                return true;
-            }
+            if (type_dependency(s, m->annotation, child_kind, child)) return true;
         }
     }
     while (*scan<end) if (expression_dependency(s, &c->expressions[(*scan)++], child_kind, child)) return true;
@@ -373,6 +390,13 @@ static bool finish_declaration(Source *s, uint32_t kind, uint32_t id, LocalScope
     CompilerWorkspace *c = s->compiler;
     if (kind == 0u) {
         ConstantSyntax *d = &c->constant_decls[id];
+        if (d->expression == NO_ID) {
+            TypeId type;
+            if (!sema_type_reference(s, d->annotation, scope, &type)) return false;
+            d->type = type;
+            d->state = 2u;
+            return true;
+        }
         ExpressionValue value;
         if (!sema_expression(s, d->expression, scope, true, false, &value)) return false;
         if (value.runtime || !value.known) return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, d->name.offset, "module const initializer requires a const expression");

@@ -8,15 +8,17 @@
  * their typed IR identities, including when the argument happens to be literal.
  * The enclosing pipeline establishes nearest-even and gradual underflow. */
 bool numeric_math(Source *source, size_t offset, NumericBuiltinKind kind,
-                  bool single, double input, double *result) {
+                  bool single, double input, double other, double *result) {
     if (((kind == BUILTIN_ASIN || kind == BUILTIN_ACOS) && (input < -1.0 || input > 1.0)) ||
         (kind == BUILTIN_ACOSH && input < 1.0) ||
         (kind == BUILTIN_ATANH && (input < -1.0 || input > 1.0)) ||
         ((kind == BUILTIN_LOG || kind == BUILTIN_LOG2) && input <= 0.0) ||
-        ((kind == BUILTIN_SQRT || kind == BUILTIN_INVERSE_SQRT) && input < 0.0))
+        ((kind == BUILTIN_SQRT || kind == BUILTIN_INVERSE_SQRT) && input < 0.0) ||
+        (kind == BUILTIN_POW && input < 0.0))
         return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, offset,
                             "constant numeric builtin operand is outside its domain");
     const float narrow = single ? (float)input : 0.0f;
+    const float narrow_other = single ? (float)other : 0.0f;
     switch (kind) {
         case BUILTIN_EXP: *result = single ? (double)expf(narrow) : exp(input); break;
         case BUILTIN_TANH: *result = single ? (double)tanhf(narrow) : tanh(input); break;
@@ -31,6 +33,12 @@ bool numeric_math(Source *source, size_t offset, NumericBuiltinKind kind,
         case BUILTIN_ASIN: *result = single ? (double)asinf(narrow) : asin(input); break;
         case BUILTIN_ACOS: *result = single ? (double)acosf(narrow) : acos(input); break;
         case BUILTIN_ATAN: *result = single ? (double)atanf(narrow) : atan(input); break;
+        case BUILTIN_ATAN2:
+            *result = single ? (double)atan2f(narrow, narrow_other) : atan2(input, other);
+            break;
+        case BUILTIN_POW:
+            *result = single ? (double)powf(narrow, narrow_other) : pow(input, other);
+            break;
         case BUILTIN_SINH: *result = single ? (double)sinhf(narrow) : sinh(input); break;
         case BUILTIN_COSH: *result = single ? (double)coshf(narrow) : cosh(input); break;
         case BUILTIN_ASINH: *result = single ? (double)asinhf(narrow) : asinh(input); break;
