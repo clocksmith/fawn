@@ -220,6 +220,7 @@ void metal_expression(MetalEmitter *e, const IrInstruction *ir) {
             break;
         }
         case IR_LOCAL_LOAD: metal_format(e, "l%u", ir->operands.scalar.binding); break;
+        case IR_STAGE_INPUT: metal_stage_input(e, ir); break;
         case IR_ARRAY_LENGTH: metal_array_length(e, ir); break;
         case IR_INPUT:
             if (ir->operands.scalar.binding >= e->module->entry_input_count) {
@@ -275,7 +276,7 @@ void metal_expression(MetalEmitter *e, const IrInstruction *ir) {
             metal_text(e, ")");
             break;
         }
-        case IR_HANDLE: case IR_IMAGE: case IR_STAGE_INPUT:
+        case IR_HANDLE: case IR_IMAGE:
         case IR_ROBUST_LOAD: case IR_UNIFORM_LOAD: case IR_MAX: case IR_ROBUST_STORE:
         case IR_IF: case IR_ELSE: case IR_END_IF: case IR_RETURN: case IR_SHORT_BEGIN:
         case IR_SHORT_END: case IR_LOCAL_STORE: case IR_LOOP_BEGIN: case IR_LOOP_TEST:

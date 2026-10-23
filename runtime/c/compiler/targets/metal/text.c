@@ -77,13 +77,6 @@ static void emit_module(MetalEmitter *e) {
         e->module->member_count + e->module->instruction_count + e->module->function_count + 1u);
     e->handle_work_left = 4096u * ((uint64_t)e->module->instruction_count +
         e->module->function_count + e->module->resource_count + 1u);
-    for (uint32_t i = 0u; i < e->module->function_count; ++i) {
-        if (metal_function_used(e, i) && (e->module->functions[i].flags & (FUNCTION_VERTEX | FUNCTION_FRAGMENT)) != 0u) {
-            e->offset = e->module->functions[i].name.offset;
-            metal_error(e, "Metal graphics stages have no implemented lowering");
-            return;
-        }
-    }
     metal_text(e, "#include <metal_stdlib>\nusing namespace metal;\n");
     metal_types(e);
     metal_memory_helpers(e);

@@ -60,6 +60,7 @@ static void context_type(MetalEmitter *e) {
     for (unsigned i = 0u; i <= INPUT_LOCAL_INDEX; ++i) {
         metal_format(e, "    %s input%u;\n", i == INPUT_LOCAL_INDEX ? "uint" : "uint3", i);
     }
+    metal_graphics_context(e);
     metal_text(e, "};\n");
 }
 static void signature(MetalEmitter *e, uint32_t index) {
@@ -110,6 +111,7 @@ static void function_body(MetalEmitter *e, uint32_t index) {
         metal_type(e, ir->type);
         metal_format(e, " v%u{};\n", ir->result);
     }
+    e->current_function = index;
     e->function_end = f->instruction_end;
     uint32_t cursor = f->instruction_start;
     metal_block(e, &cursor, 0u, NO_ID, false);
@@ -117,7 +119,7 @@ static void function_body(MetalEmitter *e, uint32_t index) {
     e->indent = 0u;
     metal_text(e, "}\n");
 }
-static void entry_name(MetalEmitter *e, NameSpan name) {
+void metal_entry_name(MetalEmitter *e, NameSpan name) {
     if (name.length == 0u || name.length > 63u || name.offset > e->source->length ||
         name.length > e->source->length - name.offset) {
         metal_error(e, "Metal entry name span is invalid");
@@ -150,18 +152,20 @@ static bool entry_admit(MetalEmitter *e, const EntryRecord *entry) {
         metal_error(e, "Metal builtin input has no implemented lowering");
         return false;
     }
-    uint64_t invocations = 1u;
-    for (unsigned i = 0u; i < 3u; ++i) {
-        const uint32_t dimension = entry->state.resolved.workgroup_size[i];
-        if (dimension == 0u || dimension > 1024u || invocations > 1024u / dimension) {
-            metal_error(e, "Metal baseline supports at most 1024 workgroup invocations");
+    if ((c->functions[entry->function].flags & (FUNCTION_VERTEX | FUNCTION_FRAGMENT)) == 0u) {
+        uint64_t invocations = 1u;
+        for (unsigned i = 0u; i < 3u; ++i) {
+            const uint32_t dimension = entry->state.resolved.workgroup_size[i];
+            if (dimension == 0u || dimension > 1024u || invocations > 1024u / dimension) {
+                metal_error(e, "Metal baseline supports at most 1024 workgroup invocations");
+                return false;
+            }
+            invocations *= dimension;
+        }
+        if (entry->state.resolved.workgroup_storage_bytes > 16u * 1024u) {
+            metal_error(e, "Metal baseline workgroup storage exceeds 16 KiB");
             return false;
         }
-        invocations *= dimension;
-    }
-    if (entry->state.resolved.workgroup_storage_bytes > 16u * 1024u) {
-        metal_error(e, "Metal baseline workgroup storage exceeds 16 KiB");
-        return false;
     }
     for (uint32_t i = 0u; i < c->resource_count; ++i) {
         if (!metal_entry_resource(c, entry, i)) continue;
@@ -178,31 +182,51 @@ static bool entry_admit(MetalEmitter *e, const EntryRecord *entry) {
     }
     return true;
 }
+void metal_resource_parameters(MetalEmitter *e, const EntryRecord *entry, bool *comma) {
+    const CompilerWorkspace *c = e->module;
+    for (uint32_t i = 0u; i < c->resource_count; ++i) {
+        if (!metal_entry_resource(c, entry, i)) continue;
+        if (*comma) metal_text(e, ", ");
+        metal_resource_parameter(e, i, true);
+        *comma = true;
+    }
+    if (metal_entry_sizes(c, entry)) {
+        e->needs_sizes = true;
+        if (*comma) metal_text(e, ", ");
+        metal_format(e, "constant uint* sizes [[buffer(%u)]]", DOE_METAL_SIZES_SLOT);
+        *comma = true;
+    }
+}
+void metal_resource_context(MetalEmitter *e, const EntryRecord *entry) {
+    const CompilerWorkspace *c = e->module;
+    metal_line(e, "DoeContext ctx{};");
+    for (uint32_t i = 0u; i < c->resource_count; ++i) {
+        if (metal_entry_resource(c, entry, i) && !type_handle(c, c->resources[i].type)) {
+            metal_indent(e);
+            metal_format(e, "ctx.r%u = r%u;\n", i, i);
+        }
+    }
+    if (metal_entry_sizes(c, entry)) metal_line(e, "ctx.sizes = sizes;");
+}
 static void entry_wrapper(MetalEmitter *e, uint32_t index) {
     static const char *const attributes[] = {"thread_position_in_grid", "thread_position_in_threadgroup",
         "threadgroup_position_in_grid", "threadgroups_per_grid", "thread_index_in_threadgroup"};
     const CompilerWorkspace *c = e->module;
     const EntryRecord *entry = &c->entries[index];
     if (!entry_admit(e, entry)) return;
+    if ((c->functions[entry->function].flags & (FUNCTION_VERTEX | FUNCTION_FRAGMENT)) != 0u) {
+        metal_graphics_wrapper(e, index);
+        return;
+    }
     const bool sizes = metal_entry_sizes(c, entry);
     e->needs_sizes = e->needs_sizes || sizes;
     uint32_t input_mask = entry->source_input_mask;
     if (entry->state.resolved.workgroup_count != 0u) input_mask |= 1u << INPUT_LOCAL_INDEX;
     metal_text(e, "[[host_name(\"");
-    entry_name(e, c->functions[entry->function].name);
+    metal_entry_name(e, c->functions[entry->function].name);
     metal_format(e, "\")]] kernel void doe_entry%u(", index);
     bool comma = false;
-    for (uint32_t i = 0u; i < c->resource_count; ++i) {
-        if (!metal_entry_resource(c, entry, i)) continue;
-        if (comma) metal_text(e, ", ");
-        metal_resource_parameter(e, i, true);
-        comma = true;
-    }
-    if (sizes) {
-        if (comma) metal_text(e, ", ");
-        metal_format(e, "constant uint* sizes [[buffer(%u)]]", DOE_METAL_SIZES_SLOT);
-        comma = true;
-    }
+    metal_resource_parameters(e, entry, &comma);
     for (unsigned i = 0u; i <= INPUT_LOCAL_INDEX; ++i) {
         if ((input_mask & (1u << i)) == 0u) continue;
         if (comma) metal_text(e, ", ");
@@ -211,14 +235,7 @@ static void entry_wrapper(MetalEmitter *e, uint32_t index) {
     }
     metal_text(e, ") {\n");
     e->indent = 1u;
-    metal_line(e, "DoeContext ctx{};");
-    for (uint32_t i = 0u; i < c->resource_count; ++i) {
-        if (metal_entry_resource(c, entry, i) && !type_handle(c, c->resources[i].type)) {
-            metal_indent(e);
-            metal_format(e, "ctx.r%u = r%u;\n", i, i);
-        }
-    }
-    if (sizes) metal_line(e, "ctx.sizes = sizes;");
+    metal_resource_context(e, entry);
     for (unsigned i = 0u; i <= INPUT_LOCAL_INDEX; ++i) {
         if ((input_mask & (1u << i)) != 0u) {
             metal_indent(e);

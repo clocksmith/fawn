@@ -142,3 +142,11 @@ omits unrelated function bodies/context resources when one entry is selected.
 These read-only walks have a 96-frame bound and charged work, no allocation or IR
 mutation. Shared malformed-graph tests and multi-entry helper-absence tests run in
 `make check`; source-level unused declarations do not become resource accesses.
+
+Graphics stage adaptation now consumes ABI7 typed vertex/fragment interfaces,
+including flat input structures, location/interpolation, builtins and return
+leaves. It reuses the same resource/context/function owners as compute. Run
+`make graphics-host-control` for the attribute-erased operation test, not MSL
+compiler acceptance. `@invariant` rejects until the native build owns and qualifies
+Apple's `-fpreserve-invariance` requirement (MSL4.1 section1.6.4); an attribute alone
+would be ignored. Graphics pipeline/device/layout qualification remains separate.

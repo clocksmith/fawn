@@ -2,22 +2,12 @@
  * Typed stage IO adapter. Shared stage validation owns WGSL rules; this owner
  * maps the validated leaves to HLSL semantics without replaying source syntax. */
 #include "private.h"
-#include "../../src/stage.h"
+#include "../stage_view.h"
 
 static const StageEntry *stage_entry(HlslEmitter *e) {
-    const StageWorkspace *stages = e->source->stages;
-    if (stages == NULL || e->entry >= e->module->entry_count) {
-        hlsl_error(e, "HLSL graphics entry has no typed interface workspace");
-        return NULL;
-    }
-    const StageEntry *entry = &stages->entries[e->entry];
-    if (entry->formal_first > e->module->formal_count ||
-        entry->formal_count > e->module->formal_count - entry->formal_first ||
-        entry->interface_first > stages->interface_count ||
-        entry->interface_count > stages->interface_count - entry->interface_first) {
-        hlsl_error(e, "HLSL graphics interface range is invalid");
-        return NULL;
-    }
+    const char *error = NULL;
+    const StageEntry *entry = target_stage_entry(e->source, e->module, e->entry, &error);
+    if (error != NULL) hlsl_error(e, error);
     return entry;
 }
 static bool graphics(HlslEmitter *e) {

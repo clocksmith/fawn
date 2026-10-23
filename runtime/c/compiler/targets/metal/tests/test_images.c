@@ -127,7 +127,7 @@ static void test_bindings_and_handles(void) {
     assert(strstr(text, "[[sampler(") == NULL);
     free(text);
     f->module->functions[0].flags |= FUNCTION_VERTEX;
-    fail_untouched(f, "graphics stages");
+    fail_untouched(f, "typed interface workspace");
     release(f);
 }
 static void test_mutations(void) {
