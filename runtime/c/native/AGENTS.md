@@ -18,3 +18,9 @@ Pipeline-layout required slots and usage conflicts belong to the resource owner.
 Skip canonical empty slots rather than inventing a native binding requirement.
 Carry typed resource/backend allocation and execution failures to the public ABI;
 never collapse every failed constructor or submission to Validation.
+
+Query resources own identity/count/recording admission. The Vulkan owner owns
+calibration and in-command GPU nanosecond conversion; compile its generated WGSL
+before publishing an enabled feature. Never replace this with CPU postprocessing
+or raw tick success. Distinguish terminal failure from unknown completion while
+preserving typed error status and all pending leases.

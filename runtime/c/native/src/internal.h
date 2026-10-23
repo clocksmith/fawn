@@ -5,9 +5,11 @@
 #include "doe_instance.h"
 #include "doe_callbacks.h"
 #include "doe_resources.h"
+#include "doe_resources_extended.h"
 #include "doe_shader.h"
 #include "doe_vk.h"
 #include "doe_vk_bindings.h"
+#include "doe_vk_timestamp.h"
 #include "doe_error_scopes.h"
 #include <pthread.h>
 #include <stdatomic.h>
@@ -38,6 +40,8 @@ typedef struct native_device {
     WGPUUncapturedErrorCallbackInfo uncaptured;
     bool destroyed;
     bool queue_failed;
+    bool timestamp_enabled;
+    doe_vk_timestamp_normalizer *timestamp_normalizer;
     native_pending *pending;
 } native_device;
 
@@ -67,6 +71,11 @@ typedef struct native_sampler {
     doe_vk_sampler *sampler;
 } native_sampler;
 
+typedef struct native_queries {
+    native_device *device;
+    doe_vk_query_pool *pool;
+} native_queries;
+
 typedef struct native_pipeline_error {
     WGPUErrorType type;
     const char *message;
@@ -91,6 +100,7 @@ void native_loss_complete(native_loss *loss, WGPUDeviceLostReason reason, const 
 void native_device_retain(void *device);
 void native_device_release(void *device);
 bool native_device_alive(void *device);
+doe_vk_status native_device_status(native_device *device);
 void native_lock(native_device *device);
 void native_unlock(native_device *device);
 void native_error(native_device *device, WGPUErrorType type, const char *message);
@@ -107,11 +117,22 @@ WGPUStatus native_adapter_info(const doe_vk_caps *caps, WGPUAdapterInfo *out);
 WGPUStatus native_limits(const doe_vk_caps *caps, WGPULimits *out);
 void native_buffer_release(void *userdata, void *handle);
 void native_pipeline_release(void *userdata, void *handle);
+doe_shader_status native_compile_shader(const char *source, size_t size, doe_shader **out, doe_shader_error *error);
+bool native_shader_capabilities(const doe_shader_view *view);
+bool native_timestamp_supported(const doe_vk_caps *caps);
+uint32_t native_timestamp_workgroup(const doe_vk_caps *caps);
+doe_vk_status native_timestamp_initialize(native_device *device);
+bool native_requested_features(const doe_vk_caps *caps, const WGPUDeviceDescriptor *descriptor, bool *timestamps);
+doe_vk_status native_record_query(doe_vk_commands *commands, const doe_resource_command *record);
 WGPUComputePipeline native_create_compute_pipeline(native_device *device,
     const WGPUComputePipelineDescriptor *descriptor, native_pipeline_error *error);
 /* Caller holds device mutex. Attempts terminal recovery; unknown work stays
  * linked and retains its backend and resource submissions, never freed. */
-bool native_settle_pending(native_device *device);
+typedef struct native_queue_settlement {
+    bool complete;
+    doe_vk_status status;
+} native_queue_settlement;
+native_queue_settlement native_settle_pending(native_device *device);
 /* Caller holds device mutex. Always adopts commands, including failed/unknown
  * completion. A private initialization submission has its own device lease. */
 doe_vk_status native_submit_commands(native_device *device, doe_vk_commands *commands);

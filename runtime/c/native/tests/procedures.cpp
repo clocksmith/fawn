@@ -24,6 +24,10 @@ int main()
     assert(!compilation(nullptr, {}).id);
     assert(!pipeline(nullptr, nullptr, {}).id);
     label(nullptr, {"not a live object", WGPU_STRLEN});
+    auto query_count = reinterpret_cast<WGPUProcQuerySetGetCount>(wgpuGetProcAddress({"wgpuQuerySetGetCount", WGPU_STRLEN}));
+    auto query_release = reinterpret_cast<WGPUProcQuerySetRelease>(wgpuGetProcAddress({"wgpuQuerySetRelease", WGPU_STRLEN}));
+    assert(query_count && query_release && query_count(nullptr) == 0);
+    query_release(nullptr);
     release(instance);
     std::puts("PASS C++ pinned typed procedure calls and unsupported-name rejection");
 }

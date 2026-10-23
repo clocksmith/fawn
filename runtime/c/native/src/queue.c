@@ -108,6 +108,10 @@ static doe_vk_status record_commands(doe_vk_commands *native, doe_resource_comma
             status = doe_vk_commands_copy_texture(native, source->texture, from, destination->texture, to);
             break;
         }
+        case DOE_COMMAND_WRITE_TIMESTAMP:
+        case DOE_COMMAND_RESOLVE_QUERY:
+            status = native_record_query(native, record);
+            break;
         case DOE_COMMAND_DISPATCH:
             status = record_dispatch(native, record);
             break;
@@ -132,24 +136,34 @@ static void settle_resources(native_pending *pending, bool success)
     native_device_release(device);
 }
 
-bool native_settle_pending(native_device *device)
+native_queue_settlement native_settle_pending(native_device *device)
 {
+    native_queue_settlement result = {true, DOE_VK_OK};
     native_pending **cursor = &device->pending;
     while (*cursor) {
         native_pending *pending = *cursor;
         doe_vk_error error = {0};
         doe_vk_status status = doe_vk_commands_recover(pending->native, &error);
         doe_vk_status released = doe_vk_commands_release(pending->native);
+        if (result.status == DOE_VK_OK && status != DOE_VK_OK) result.status = status;
         if (released == DOE_VK_BUSY) {
             device->queue_failed = true;
-            return false;
+            result.complete = false;
+            if (result.status == DOE_VK_OK) result.status = DOE_VK_PENDING;
+            return result;
         }
         if (released != DOE_VK_OK) abort();
         *cursor = pending->next;
-        if (status != DOE_VK_OK) device->queue_failed = true;
+        if (status != DOE_VK_OK) {
+            device->queue_failed = true;
+            /* Proven terminal failure may poison the shared normalization scratch.
+             * A later timestamp resolve reconstructs it, never reuses failed data. */
+            doe_vk_timestamp_normalizer_release(device->timestamp_normalizer);
+            device->timestamp_normalizer = NULL;
+        }
         settle_resources(pending, status == DOE_VK_OK);
     }
-    return true;
+    return result;
 }
 
 static doe_vk_status submit_pending(native_device *device, native_pending *pending)
@@ -160,8 +174,8 @@ static doe_vk_status submit_pending(native_device *device, native_pending *pendi
     doe_vk_status status = doe_vk_commands_submit(pending->native, &error);
     if (status == DOE_VK_OK) status = doe_vk_commands_wait(pending->native, UINT64_MAX, &error);
     if (status != DOE_VK_OK) device->queue_failed = true;
-    (void)native_settle_pending(device);
-    return status;
+    native_queue_settlement settled = native_settle_pending(device);
+    return status == DOE_VK_OK ? settled.status : status;
 }
 
 doe_vk_status native_submit_commands(native_device *device, doe_vk_commands *commands)
@@ -196,7 +210,8 @@ void wgpuQueueSubmit(WGPUQueue handle, size_t count, const WGPUCommandBuffer *ha
     pending->device = device;
     native_device_retain(device);
     native_lock(device);
-    doe_vk_status status = native_device_alive(device) && native_settle_pending(device) ? DOE_VK_OK : DOE_VK_INVALID_STATE;
+    doe_vk_status status = native_device_status(device);
+    if (status == DOE_VK_OK) status = native_settle_pending(device).status;
     for (size_t i = 0; status == DOE_VK_OK && i < count; ++i) {
         pending->resources[i] = (doe_resource_commands *)handles[i];
         if (doe_resource_commands_device(pending->resources[i]) != device) status = DOE_VK_INVALID_ARGUMENT;
@@ -248,13 +263,13 @@ WGPUFuture wgpuQueueOnSubmittedWorkDone(WGPUQueue handle, WGPUQueueWorkDoneCallb
     if (!device || callback.nextInChain) return (WGPUFuture){0};
     native_device_retain(device);
     native_lock(device);
-    bool complete = native_settle_pending(device);
+    native_queue_settlement settled = native_settle_pending(device);
     queue_delivery delivery = {callback, device->queue_failed ? WGPUQueueWorkDoneStatus_Error : WGPUQueueWorkDoneStatus_Success};
     native_unlock(device);
     WGPUFuture future = {0};
-    if (complete) future = native_callback(device->instance, callback.mode, &delivery,
+    if (settled.complete) future = native_callback(device->instance, callback.mode, &delivery,
         sizeof(delivery), _Alignof(queue_delivery), copy_queue, deliver_queue);
-    else native_error(device, WGPUErrorType_Internal, "queue completion remains unknown; no completion future published");
+    else native_error(device, native_backend_error(settled.status), "queue completion remains unknown; no completion future published");
     native_device_release(device);
     return future;
 }

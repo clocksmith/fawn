@@ -101,8 +101,9 @@ WGPUTexture wgpuDeviceCreateTexture(WGPUDevice handle, const WGPUTextureDescript
     doe_vk_error error = {0};
     doe_vk_format_caps caps;
     native_lock(device);
-    doe_vk_status status = native_device_alive(device) && native_settle_pending(device) ?
-        doe_vk_texture_format_caps(device->context, native.format, &caps) : DOE_VK_INVALID_STATE;
+    doe_vk_status status = native_device_status(device);
+    if (status == DOE_VK_OK) status = native_settle_pending(device).status;
+    if (status == DOE_VK_OK) status = doe_vk_texture_format_caps(device->context, native.format, &caps);
     if (status == DOE_VK_OK) status = doe_vk_texture_create(device->context, &native, &payload->texture, &error);
     if (status == DOE_VK_OK) status = initialize_texture(device, payload->texture, &native, caps.texel_bytes);
     doe_resource_status adopted = DOE_RESOURCE_INVALID_ARGUMENT;

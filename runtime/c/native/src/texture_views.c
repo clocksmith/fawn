@@ -126,8 +126,8 @@ WGPUSampler wgpuDeviceCreateSampler(WGPUDevice handle, const WGPUSamplerDescript
     doe_resource_sampler *sampler = NULL;
     doe_vk_error error = {0};
     native_lock(device);
-    doe_vk_status status = native_device_alive(device) ?
-        doe_vk_sampler_create(device->context, &native, &payload->sampler, &error) : DOE_VK_INVALID_STATE;
+    doe_vk_status status = native_device_status(device);
+    if (status == DOE_VK_OK) status = doe_vk_sampler_create(device->context, &native, &payload->sampler, &error);
     doe_resource_status adopted = DOE_RESOURCE_INVALID_ARGUMENT;
     if (status == DOE_VK_OK)
         adopted = doe_resource_sampler_create(&device->resources, &resolved,

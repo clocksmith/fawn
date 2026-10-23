@@ -9,7 +9,9 @@ static void sparse_groups(state *s)
         "@compute @workgroup_size(1) fn main(){output[0]+=13u;}");
     WGPUBindGroupLayout layout = wgpuComputePipelineGetBindGroupLayout(compute, 2);
     WGPUBindGroupLayout hole = wgpuComputePipelineGetBindGroupLayout(compute, 0);
-    assert(layout && hole);
+    WGPUBindGroupLayout trailing = wgpuComputePipelineGetBindGroupLayout(compute, 3);
+    assert(layout && hole && trailing);
+    wgpuBindGroupLayoutRelease(trailing);
     WGPUBindGroupDescriptor empty = {.layout=hole};
     WGPUBindGroup empty_group = wgpuDeviceCreateBindGroup(s->device, &empty);
     assert(empty_group);
@@ -61,6 +63,45 @@ static void sparse_groups(state *s)
     assert(words[0] == 26 && words[1] == 0);
     wgpuBufferUnmap(readback);
     wgpuBufferRelease(readback);
+}
+
+static void nullable_layouts(state *s)
+{
+    WGPUBindGroupLayout slots[3] = {NULL, NULL, NULL};
+    WGPUPipelineLayoutDescriptor description = {.bindGroupLayoutCount=3,.bindGroupLayouts=slots};
+    WGPUPipelineLayout layout = wgpuDeviceCreatePipelineLayout(s->device,&description);
+    WGPUShaderSourceWGSL source = WGPU_SHADER_SOURCE_WGSL_INIT;
+    source.code = (WGPUStringView){"@compute @workgroup_size(1) fn main(){}",WGPU_STRLEN};
+    WGPUShaderModuleDescriptor shader_desc = {.nextInChain=&source.chain};
+    WGPUShaderModule shader = wgpuDeviceCreateShaderModule(s->device,&shader_desc);
+    WGPUComputePipelineDescriptor pipeline_desc = WGPU_COMPUTE_PIPELINE_DESCRIPTOR_INIT;
+    pipeline_desc.layout = layout;
+    pipeline_desc.compute.module = shader;
+    WGPUComputePipeline compute = wgpuDeviceCreateComputePipeline(s->device,&pipeline_desc);
+    assert(layout && shader && compute);
+    WGPULimits limits = WGPU_LIMITS_INIT;
+    assert(wgpuDeviceGetLimits(s->device,&limits) == WGPUStatus_Success);
+    for (uint32_t i = 0; i < limits.maxBindGroups; ++i) {
+        WGPUBindGroupLayout empty = wgpuComputePipelineGetBindGroupLayout(compute,i);
+        WGPUBindGroupDescriptor group_desc = {.layout=empty};
+        WGPUBindGroup bound = wgpuDeviceCreateBindGroup(s->device,&group_desc);
+        assert(empty && bound);
+        wgpuBindGroupRelease(bound);
+        wgpuBindGroupLayoutRelease(empty);
+    }
+    wgpuDevicePushErrorScope(s->device,WGPUErrorFilter_Validation);
+    assert(!wgpuComputePipelineGetBindGroupLayout(compute,limits.maxBindGroups));
+    expect_validation(s);
+    WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(s->device,NULL);
+    WGPUComputePassEncoder pass = wgpuCommandEncoderBeginComputePass(encoder,NULL);
+    wgpuComputePassEncoderSetPipeline(pass,compute);
+    wgpuComputePassEncoderDispatchWorkgroups(pass,1,1,1);
+    wgpuComputePassEncoderEnd(pass);
+    wgpuComputePassEncoderRelease(pass);
+    submit(s,encoder);
+    wgpuComputePipelineRelease(compute);
+    wgpuShaderModuleRelease(shader);
+    wgpuPipelineLayoutRelease(layout);
 }
 
 static void dynamic_aliases(state *s)
@@ -219,13 +260,14 @@ int main(void)
     assert(wgpuAdapterRequestDevice(s.adapter,&descriptor,requested).id && s.device);
     s.queue = wgpuDeviceGetQueue(s.device);
     sparse_groups(&s);
+    nullable_layouts(&s);
     dynamic_aliases(&s);
     readonly_alias(&s);
     image_aliases(&s);
-    assert(!s.errors && s.validation_errors == 4);
+    assert(!s.errors && s.validation_errors == 5);
     wgpuQueueRelease(s.queue);
     wgpuDeviceRelease(s.device);
     wgpuAdapterRelease(s.adapter);
     wgpuInstanceRelease(s.instance);
-    puts("PASS public admission: sparse auto-layout holes, null unbind, ignored destroyed resources, dynamic writable ranges, whole-buffer read/write conflicts and texture subresource aliases (CPU Vulkan only)");
+    puts("PASS public admission: sparse/trailing/null layout holes, null unbind, ignored destroyed resources, dynamic writable ranges, whole-buffer read/write conflicts and texture subresource aliases (CPU Vulkan only)");
 }

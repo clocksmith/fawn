@@ -33,18 +33,18 @@ WGPUBuffer wgpuDeviceCreateBuffer(WGPUDevice handle, const WGPUBufferDescriptor 
     payload->device = device;
     uint32_t usage = 0;
     if (descriptor->usage & (WGPUBufferUsage_CopySrc | WGPUBufferUsage_MapWrite)) usage |= DOE_VK_BUFFER_COPY_SRC;
-    if (descriptor->usage & (WGPUBufferUsage_CopyDst | WGPUBufferUsage_MapRead)) usage |= DOE_VK_BUFFER_COPY_DST;
+    if (descriptor->usage & (WGPUBufferUsage_CopyDst | WGPUBufferUsage_MapRead | WGPUBufferUsage_QueryResolve)) usage |= DOE_VK_BUFFER_COPY_DST;
     if (descriptor->usage & WGPUBufferUsage_Uniform) usage |= DOE_VK_BUFFER_UNIFORM;
     if (descriptor->usage & WGPUBufferUsage_Storage) usage |= DOE_VK_BUFFER_STORAGE;
     if (descriptor->usage & WGPUBufferUsage_Indirect) usage |= DOE_VK_BUFFER_INDIRECT;
     const WGPUBufferUsage supported = WGPUBufferUsage_MapRead | WGPUBufferUsage_MapWrite |
         WGPUBufferUsage_CopySrc | WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform |
-        WGPUBufferUsage_Storage | WGPUBufferUsage_Indirect;
+        WGPUBufferUsage_Storage | WGPUBufferUsage_Indirect | WGPUBufferUsage_QueryResolve;
     doe_resource_buffer *buffer = NULL;
     doe_vk_error error = {0};
     native_lock(device);
-    doe_vk_status status = DOE_VK_UNSUPPORTED;
-    if (native_device_alive(device) && !(descriptor->usage & ~supported))
+    doe_vk_status status = descriptor->usage & ~supported ? DOE_VK_UNSUPPORTED : native_device_status(device);
+    if (status == DOE_VK_OK)
         status = doe_vk_buffer_create(device->context, descriptor->size ? descriptor->size : 4,
             usage, DOE_VK_MEMORY_HOST, &payload->buffer, &error);
     doe_resource_status created = DOE_RESOURCE_OK;
@@ -238,7 +238,7 @@ WGPUFuture wgpuBufferMapAsync(WGPUBuffer handle, WGPUMapMode mode,
         delivery.size = size == WGPU_WHOLE_MAP_SIZE ? (size_t)(desc->size - offset) : size;
         delivery.bytes = malloc(delivery.size ? delivery.size : 1);
         native_buffer *payload = doe_resource_buffer_native(buffer);
-        if (delivery.bytes && native_settle_pending(device) &&
+        if (delivery.bytes && native_settle_pending(device).status == DOE_VK_OK &&
             doe_vk_buffer_read(payload->buffer, offset, delivery.bytes, delivery.size) == DOE_VK_OK)
             delivery.status = WGPUMapAsyncStatus_Success;
     }
@@ -265,9 +265,12 @@ void wgpuQueueWriteBuffer(WGPUQueue handle, WGPUBuffer buffer_handle,
     native_lock(device);
     doe_resource_status status = doe_resource_buffer_write_validate(buffer, device, offset, size);
     doe_vk_status native_status = DOE_VK_INVALID_ARGUMENT;
-    if (status == DOE_RESOURCE_OK && (bytes || !size) && native_settle_pending(device)) {
-        native_buffer *payload = doe_resource_buffer_native(buffer);
-        native_status = doe_vk_buffer_write(payload->buffer, offset, bytes, size);
+    if (status == DOE_RESOURCE_OK && (bytes || !size)) {
+        native_status = native_settle_pending(device).status;
+        if (native_status == DOE_VK_OK) {
+            native_buffer *payload = doe_resource_buffer_native(buffer);
+            native_status = doe_vk_buffer_write(payload->buffer, offset, bytes, size);
+        }
     }
     native_unlock(device);
     if (status != DOE_RESOURCE_OK || native_status != DOE_VK_OK)
