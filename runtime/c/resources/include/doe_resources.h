@@ -340,8 +340,12 @@ doe_resource_status doe_resource_buffer_copy_validate(const void *device,
 typedef enum doe_resource_copy_direction {
     DOE_RESOURCE_BUFFER_TO_TEXTURE, DOE_RESOURCE_TEXTURE_TO_BUFFER
 } doe_resource_copy_direction;
+/* NATIVE: zero strides mean tight and a partial block may reach the logical
+ * edge (internal uploads). WEBGPU: buffer copies (whole blocks, undefined
+ * stride sentinels, 256-byte bytesPerRow). QUEUE: writeTexture, the WEBGPU
+ * rules without the 256-byte bytesPerRow alignment. */
 typedef enum doe_resource_copy_alignment {
-    DOE_RESOURCE_COPY_NATIVE, DOE_RESOURCE_COPY_WEBGPU
+    DOE_RESOURCE_COPY_NATIVE, DOE_RESOURCE_COPY_WEBGPU, DOE_RESOURCE_COPY_QUEUE
 } doe_resource_copy_alignment;
 typedef struct doe_resource_texture_copy {
     uint64_t offset;

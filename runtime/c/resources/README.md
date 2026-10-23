@@ -19,7 +19,10 @@ an alias of device-free compiled data or a second count for one WebGPU object.
   shader identity, map modes, span and stale-generation admission.
 - `formats.c`, `textures.c`, `texture_copy.c`: named format semantics, immutable
   textures/views/samplers and shared checked block/mip/row/image copy geometry;
-  compressed textures have whole blocks at mip 0.
+  compressed textures have whole blocks at mip 0; view formats may differ only
+  in srgb-ness (RGBA8, BGRA8, BC1, BC2, BC3, BC7). Copy validation modes:
+  WEBGPU (buffer copies), QUEUE (writeTexture: no 256-byte bytesPerRow rule) and
+  NATIVE (internal uploads that may end a partial block at the edge).
   The checked format/aspect sample-class and named channel-count functions serve
   native shader/clear scalar conversion; binding admission uses the same owner, including stencil-only
   combined formats. Baseline class is separate from optional feature promotion,

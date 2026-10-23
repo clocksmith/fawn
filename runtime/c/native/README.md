@@ -349,10 +349,16 @@ z 1.5/-0.5 stored as depth 1.0/0.0 where the clipped control draws nothing. A
 feature the adapter does not offer prints SKIP with its reason. BC formats map
 only with texture-compression-bc, 3D BC textures also need the sliced-3D feature,
 compressed textures have whole blocks at mip 0 (resource owner) and are never
-attachments or storage. `tests/bc_compression.c` decodes solid BC1, BC1-srgb and
+attachments or storage. writeTexture validates with the resource owner's QUEUE
+mode (whole blocks and undefined-stride rules, without the 256-byte bytesPerRow
+alignment); BC1/BC2/BC3/BC7 accept their srgb pair as a view format; zero
+initialization stages mip 0's blocks, not texels. `tests/bc_compression.c` decodes solid BC1, BC1-srgb and
 BC4 blocks to exact texels through queue writes and buffer copies, copies a 6x6
 mip by its physical 8x8 extent, returns exact blocks from texture and buffer
-copies, and decodes a 3D BC1 texture uploaded with rowsPerImage 2 per slice.
+copies, copies a block that reaches only one side's edge in both directions,
+writes whole blocks into a 2x2 mip (a 2x2 write rejects), reads one block through
+unorm and srgb views, zero-initializes an 8192x8192x8 BC1 texture, and decodes a
+3D BC1 texture uploaded with rowsPerImage 2 per slice.
 A WGPUTextureComponentSwizzleDescriptor on a view maps each channel (Undefined is
 the channel's own); a non-identity swizzle needs texture-component-swizzle and a
 view usage without RenderAttachment or StorageBinding. `tests/component_swizzle.c`
@@ -603,7 +609,7 @@ PASS public error types: resource allocation, automatic-layout allocation, compu
 PASS public format features: 4 of 4 offered and enabled (float32-filterable linear r32float/rgba32float midpoints exact, float32-blendable additive r32float 1000007.0, depth32float-stencil8 depth 0.25/stencil 7 per aspect, rg11b10ufloat-renderable blended (1.25,1,2.25) and 4x-resolved (1,.5,.25) packed bits); without them depth32float-stencil8 texture/pipeline/bundle, r32float blending, 'float' r32float binding and rg11b10ufloat attachment/target/bundle reject while rg11b10ufloat still samples exactly, an unoffered feature fails the request (CPU Vulkan only)
 PASS public draw features: 2 of 2 offered and enabled (indirect-first-instance: GPU firstInstance 2/1 reaches instance attributes and instance_index exactly for indirect, indexed indirect and bundle draws, an instance-buffer overrun stays a no-op; depth-clip-control: unclippedDepth draws z 1.5/-0.5 clamped to depth 1.0/0.0 where the clipped control draws nothing); without them nonzero indirect firstInstance is a no-op while direct firstInstance draws, and unclippedDepth rejects (CPU Vulkan only)
 PASS public copy layouts: undefined rowsPerImage for one image and undefined bytesPerRow for one row through queue writes, buffer-to-texture and texture-to-buffer copies with exact texels; two-image and two-row undefined-stride and rowsPerImage-0 rejections reported once at Finish (CPU Vulkan only)
-PASS public BC compression: solid BC1/BC1-srgb/BC4 blocks decode to exact texels through queue writes and buffer copies, a 6x6 mip takes its physical 8x8 copy, texture-to-texture and texture-to-buffer copies return exact blocks, a 3D BC1 texture uploaded with rowsPerImage 2 decodes per slice (sliced 3D); without the feature, non-block sizes, attachment/storage usage, 3D without sliced 3D and unaligned copies reject (CPU Vulkan only)
+PASS public BC compression: solid BC1/BC1-srgb/BC4 blocks decode to exact texels through queue writes and buffer copies, a 6x6 mip takes its physical 8x8 copy, texture-to-texture and texture-to-buffer copies return exact blocks, copies whose block reaches only one side's edge (both directions) land exactly, writeTexture of whole blocks into a 2x2 mip, bc1/bc7 srgb view formats, a zeroed 8192x8192x8 BC1 texture, a 3D BC1 texture uploaded with rowsPerImage 2 decodes per slice (sliced 3D); without the feature, a partial-block writeTexture, non-block sizes, attachment/storage usage, 3D without sliced 3D and unaligned copies reject (CPU Vulkan only)
 PASS public component swizzle: (b,a,0,r) and (1,g,r,g) sampled views return the identity view's rgba8unorm components rearranged exactly through textureLoad and nearest textureSampleLevel; identity swizzles need no feature, a non-identity swizzle without the feature, with RenderAttachment or StorageBinding view usage, or with an unknown source rejects (CPU Vulkan only)
 PASS public encoder errors: an invalid render/compute pass descriptor or command, an invalid copy or clear followed by valid passes, each reports exactly one uncaptured validation error at Finish; End/dispatch on ended passes, copies/clears/begin on a finished encoder and a second Finish report at the call; render bundle encoders: invalid setPipeline/draw give one error at bundle Finish and an invalid bundle, executing it in a valid pass gives one error at the command encoder's Finish, commands and a second Finish after bundle Finish report at the call; core-features-and-limits listed and accepted (CPU Vulkan only)
 PASS public timestamps: requested feature, zero/max/range/destroy admission, real pass/command writes, exact GPU nanoseconds, same-batch copy, scratch reuse and early query release (CPU Vulkan only)
@@ -730,7 +736,7 @@ Do not run this on Miles or Suby while their possible disassembly/cooling hold
 remains. Every adapter-using client selects its adapter through
 `tests/adapter_class.h`: software (CPU fallback adapter) by default, or a
 nonfallback GPU adapter with `DOE_C_TEST_ADAPTER=physical`. Each PASS line names
-the class and device it ran on. `make check-physical` runs the same 41 clients on
+the class and device it ran on. `make check-physical` runs the same 42 clients on
 the system ICDs (`VK_ICD_FILENAMES` unset):
 
 ```
@@ -765,7 +771,7 @@ reads all 33 (including `storage-textures`, `point-list`, `color-discard` and
 `program-prepare` and `limits`) passed; with BC compression all 39 (including
 `bc-compression`) passed; with component swizzle all 40 (including
 `component-swizzle`) passed; with the encoding error rule all 41 (including
-`encoder-errors`) passed. That is
+`encoder-errors`) passed; after the BC review fixes all 42 passed. That is
 developer evidence for these exact clients on that
 adapter/driver: the oracles are the clients' own expected values, not frozen
 independent workloads, and it is not Vulkan backend qualification, a performance

@@ -38,8 +38,8 @@ static doe_resource_status copy_bounds(const doe_resource_texture_desc *texture,
     uint32_t remaining_width = virtual_extent[0] > copy->origin[0] ? virtual_extent[0] - copy->origin[0] : 0;
     uint32_t remaining_height = virtual_extent[1] > copy->origin[1] ? virtual_extent[1] - copy->origin[1] : 0;
     if (copy->origin[0] % block_width || copy->origin[1] % block_height ||
-        (copy->width % block_width && (alignment == DOE_RESOURCE_COPY_WEBGPU || copy->width != remaining_width)) ||
-        (copy->height % block_height && (alignment == DOE_RESOURCE_COPY_WEBGPU || copy->height != remaining_height)))
+        (copy->width % block_width && (alignment != DOE_RESOURCE_COPY_NATIVE || copy->width != remaining_width)) ||
+        (copy->height % block_height && (alignment != DOE_RESOURCE_COPY_NATIVE || copy->height != remaining_height)))
         return DOE_RESOURCE_LAYOUT;
     for (size_t i = 0; i < 3; i++) physical_extent[i] = (uint32_t)extent[i];
     return DOE_RESOURCE_OK;
@@ -52,7 +52,8 @@ doe_resource_status doe_resource_texture_copy_validate(uint64_t buffer_size,
 {
     if (!texture || !copy || !out ||
         (direction != DOE_RESOURCE_BUFFER_TO_TEXTURE && direction != DOE_RESOURCE_TEXTURE_TO_BUFFER) ||
-        (alignment != DOE_RESOURCE_COPY_NATIVE && alignment != DOE_RESOURCE_COPY_WEBGPU))
+        (alignment != DOE_RESOURCE_COPY_NATIVE && alignment != DOE_RESOURCE_COPY_WEBGPU &&
+        alignment != DOE_RESOURCE_COPY_QUEUE))
         return DOE_RESOURCE_INVALID_ARGUMENT;
     uint32_t extent[3];
     doe_resource_status status = copy_bounds(texture, copy, alignment, false, extent);
@@ -88,10 +89,11 @@ doe_resource_status doe_resource_texture_copy_validate(uint64_t buffer_size,
         (alignment == DOE_RESOURCE_COPY_NATIVE && !copy->bytes_per_row);
     bool image_missing = copy->rows_per_image == UINT32_MAX ||
         (alignment == DOE_RESOURCE_COPY_NATIVE && !copy->rows_per_image);
-    if (alignment == DOE_RESOURCE_COPY_WEBGPU) {
+    if (alignment != DOE_RESOURCE_COPY_NATIVE) {
         if (pitch_missing && (rows > 1 || copy->depth_or_layers > 1)) return DOE_RESOURCE_LAYOUT;
         if (image_missing && copy->depth_or_layers > 1) return DOE_RESOURCE_LAYOUT;
-        if (!pitch_missing && copy->bytes_per_row % 256) return DOE_RESOURCE_LAYOUT;
+        if (alignment == DOE_RESOURCE_COPY_WEBGPU && !pitch_missing && copy->bytes_per_row % 256)
+            return DOE_RESOURCE_LAYOUT;
     }
     uint64_t pitch = pitch_missing ? row_bytes : copy->bytes_per_row;
     uint64_t image_rows = image_missing ? rows : copy->rows_per_image;
