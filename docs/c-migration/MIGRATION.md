@@ -39,6 +39,17 @@ physical qualification from this inventory, including no Vulkan, Metal, or D3D12
 physical qualification. Host compilation, sanitizer passes, fixture output,
 bytecode validation, and simulated completion never inherit that qualification.
 
+## Current implementation workflow
+
+The requested workflow is broad, disjoint subsystem implementation in parallel,
+with review and focused compile/behavior checks as code changes. Exhaustive
+integrated qualification follows authoring, not every small port. This changes
+sequencing, not correctness, ownership, physical-backend or promotion gates.
+Authored/unqualified code is not an accepted replacement. Follow
+[the C work guide](../../runtime/c/AGENTS.md), including the enforced 999-line
+source/header ceiling, one semantic owner and recoverable removal of superseded
+live helpers. Historical receipts and behavioral tests remain intact.
+
 ## Accepted experimental coverage
 
 The [first compiler increment](../../runtime/c/compiler/MILESTONE_1_RESULTS.md)
