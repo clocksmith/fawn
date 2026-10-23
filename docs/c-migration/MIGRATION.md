@@ -51,6 +51,45 @@ Authored/unqualified code is not an accepted replacement. Follow
 source/header ceiling, one semantic owner and recoverable removal of superseded
 live helpers. Historical receipts and behavioral tests remain intact.
 
+## Source-review corrections (2026-10-23)
+
+This live ledger tracks the seven findings from the source review of `d7cf74fb`.
+Developer checks below are not physical qualification or full feature closure.
+
+1. **Operation-wide writable aliasing:** resource owner, `a147b360` and
+   `45f8264d`. One usage classifier covers dispatch bindings/dynamic offsets and
+   whole render-pass/bundle history. `resources/DEVELOPER_RECEIPT_SCOPES.json`
+   records conflicting/disjoint ranges, overwritten setters, subresources and
+   retirement checks. Public graphics integration remains in progress.
+2. **Empty auto-layout holes:** resource/native owners, `45f8264d` and `c87e494f`.
+   One required-group predicate normalizes ignored groups/offsets; explicit null
+   unbind works. Native admission tests execute sparse group 2 and ignored holes.
+3. **Typed failure propagation:** native owner, `c87e494f`. Layout allocation
+   results are handled; one ABI status conversion preserves OOM versus internal
+   execution failure versus validation. Real allocation/backend fault tests are
+   recorded in `native/DEVELOPER_RECEIPT_ADMISSION.json`.
+4. **Duplicate target semantics:** text-target owner, in progress. Shared read-only
+   value identity and access-path validation replace duplicate helpers. Target
+   syntax, address spaces and intrinsics stay distinct; emitted-operation controls
+   must pass before the extraction is checkpointed.
+5. **Excess emitted helper closure:** text-target owner, open. Emit only required
+   selected-entry/type/access helpers, instead of every memory type per buffer.
+   This is not closed by the identity-helper extraction or line-count claims.
+6. **Duplicate texture-copy footprint arithmetic:** resource/backend owners,
+   `45f8264d` and `a6901a80`. Both call the small checked arithmetic leaf in
+   `runtime/c/common`; 59,049 bounded independent arithmetic cases plus overflow
+   publication checks pass. Format, pitch defaults and zero-copy rules remain
+   with their respective callers. No generic utility framework was added.
+7. **Raw image-format integers:** compiler owner, `fa61e2c1`. Existing named format
+   constants replace raw values in `image.c`; unrelated enum domains stay distinct.
+
+Guides: the common C style retains one parser/semantic/layout owner with multiple
+explicit target adapters. Vulkan's owner guide now states serialized operations
+and callback/lease boundaries; its recursive mutex is retained because finalizers
+reenter. No arbitrary mutex removal or claimed system-level security change.
+Current native admission evidence uses its exact pinned ABI6/core snapshot;
+combining later compiler/backend increments requires a fresh composition check.
+
 ## Accepted experimental coverage
 
 The [first compiler increment](../../runtime/c/compiler/MILESTONE_1_RESULTS.md)
