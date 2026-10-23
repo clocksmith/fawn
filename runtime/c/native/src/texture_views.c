@@ -24,7 +24,10 @@ WGPUTextureView wgpuTextureCreateView(WGPUTexture handle, const WGPUTextureViewD
         .aspect=descriptor->aspect, .usage=descriptor->usage};
     doe_resource_view_desc resolved;
     native_lock(device);
+    /* Public zero is an explicit invalid count. Only UINT32_MAX is the pinned
+     * default sentinel; compact resource callers also permit zero defaults. */
     doe_resource_status status = descriptor->nextInChain ? DOE_RESOURCE_UNSUPPORTED :
+        !descriptor->mipLevelCount || !descriptor->arrayLayerCount ? DOE_RESOURCE_RANGE :
         doe_resource_view_validate(texture, &desc, &resolved);
     doe_vk_texture_view_desc native = {0};
     if (status == DOE_RESOURCE_OK) {
