@@ -23,6 +23,11 @@ bool native_texture_format(WGPUTextureFormat format, doe_vk_texture_format *out)
     case WGPUTextureFormat_RG8Unorm: *out = DOE_VK_FORMAT_RG8_UNORM; break;
     case WGPUTextureFormat_RGBA8Unorm: *out = DOE_VK_FORMAT_RGBA8_UNORM; break;
     case WGPUTextureFormat_RGBA8UnormSrgb: *out = DOE_VK_FORMAT_RGBA8_SRGB; break;
+    case WGPUTextureFormat_RGBA8Snorm: *out = DOE_VK_FORMAT_RGBA8_SNORM; break;
+    case WGPUTextureFormat_RGBA8Uint: *out = DOE_VK_FORMAT_RGBA8_UINT; break;
+    case WGPUTextureFormat_RGBA8Sint: *out = DOE_VK_FORMAT_RGBA8_SINT; break;
+    case WGPUTextureFormat_RGBA16Uint: *out = DOE_VK_FORMAT_RGBA16_UINT; break;
+    case WGPUTextureFormat_RGBA16Sint: *out = DOE_VK_FORMAT_RGBA16_SINT; break;
     case WGPUTextureFormat_BGRA8Unorm: *out = DOE_VK_FORMAT_BGRA8_UNORM; break;
     case WGPUTextureFormat_BGRA8UnormSrgb: *out = DOE_VK_FORMAT_BGRA8_SRGB; break;
     case WGPUTextureFormat_R16Float: *out = DOE_VK_FORMAT_R16_FLOAT; break;
@@ -49,6 +54,11 @@ bool native_storage_format(uint32_t format, WGPUTextureFormat *out)
     case DOE_COMPILER_FORMAT_RGBA16FLOAT: *out = WGPUTextureFormat_RGBA16Float; break;
     case DOE_COMPILER_FORMAT_R32FLOAT: *out = WGPUTextureFormat_R32Float; break;
     case DOE_COMPILER_FORMAT_RGBA8UNORM: *out = WGPUTextureFormat_RGBA8Unorm; break;
+    case DOE_COMPILER_FORMAT_RGBA8SNORM: *out = WGPUTextureFormat_RGBA8Snorm; break;
+    case DOE_COMPILER_FORMAT_RGBA8SINT: *out = WGPUTextureFormat_RGBA8Sint; break;
+    case DOE_COMPILER_FORMAT_RGBA8UINT: *out = WGPUTextureFormat_RGBA8Uint; break;
+    case DOE_COMPILER_FORMAT_RGBA16SINT: *out = WGPUTextureFormat_RGBA16Sint; break;
+    case DOE_COMPILER_FORMAT_RGBA16UINT: *out = WGPUTextureFormat_RGBA16Uint; break;
     case DOE_COMPILER_FORMAT_RG32FLOAT: *out = WGPUTextureFormat_RG32Float; break;
     case DOE_COMPILER_FORMAT_RGBA32SINT: *out = WGPUTextureFormat_RGBA32Sint; break;
     case DOE_COMPILER_FORMAT_R32SINT: *out = WGPUTextureFormat_R32Sint; break;

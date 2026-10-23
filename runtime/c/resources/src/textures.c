@@ -65,6 +65,9 @@ doe_resource_status doe_resource_texture_validate(const doe_resource_texture_des
         return DOE_RESOURCE_USAGE;
     if (resource_format_depth(desc->format) && desc->dimension != WGPUTextureDimension_2D)
         return DOE_RESOURCE_LAYOUT;
+    bool read_write;
+    if ((desc->usage & WGPUTextureUsage_StorageBinding) && !resource_storage_format(desc->format, &read_write))
+        return DOE_RESOURCE_USAGE;
     for (size_t i = 0; i < desc->view_format_count; i++)
         if (!resource_format_compatible(desc->format, desc->view_formats[i])) return DOE_RESOURCE_LAYOUT;
     return DOE_RESOURCE_OK;

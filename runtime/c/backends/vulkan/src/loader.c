@@ -327,6 +327,8 @@ doe_vk_status doe_vk_context_create(const doe_vk_options *options,
     context->caps.image_cube_array = features.base.imageCubeArray != 0;
     context->caps.independent_blend = features.base.independentBlend != 0;
     context->caps.sampler_anisotropy = features.base.samplerAnisotropy != 0;
+    context->caps.storage_image_extended_formats = features.base.shaderStorageImageExtendedFormats != 0;
+    context->caps.fragment_stores_and_atomics = features.base.fragmentStoresAndAtomics != 0;
     context->caps.max_sampler_anisotropy = context->caps.sampler_anisotropy ?
         context->properties.limits.maxSamplerAnisotropy : 0.0f;
     *out = context;

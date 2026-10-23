@@ -56,7 +56,8 @@ Apple SDK compilation, Darwin execution and physical qualification remain unrun.
   creation. SampledCubeArray (45) is admitted only when the device enabled
   imageCubeArray; CubeArray views and automatic/explicit sampled layouts follow
   the same gate, so devices without it reject cube arrays visibly rather than
-  claiming core cube-array support. Extended storage formats remain disabled. Workgroup
+  claiming core cube-array support. StorageImageExtendedFormats (rg32 storage) is
+  admitted only after the device's shaderStorageImageExtendedFormats is enabled. Workgroup
   storage and dimensions use real backend limits.
 - Compiler `src/spirv.c` owns guarded loads/stores: runtime array bounds use
   `OpArrayLength`, signed indices have a nonnegative check, invalid loads return
@@ -320,6 +321,37 @@ every texture, as the reference core implementation does. Unknown or repeated ch
 nodes still reject. The provider does not yet advertise `CoreFeaturesAndLimits`;
 that separate claim needs complete core limits and is not made here.
 
+## Storage textures
+
+The resource owner's `resource_storage_format` table is the WebGPU core storage
+format set: rgba8unorm/snorm/uint/sint, rgba16uint/sint/float, r32uint/sint/float,
+rg32uint/sint/float and rgba32uint/sint/float. All admit write-only and read-only
+access; read-write is limited to the three r32 formats. Layouts with other formats
+or read-write on other formats are Validation errors, as is StorageBinding usage on
+a non-storage format; storage bindings need StorageBinding usage, one mip and the
+exact format. bgra8unorm storage (bgra8unorm-storage) is not offered: the C compiler
+has no bgra8unorm storage format. The compiler's sixteen storage formats map to
+these names; 1D, 2D, 2D-array and 3D storage views are admitted. Fragment-stage
+writes (write-only/read-write) use the device's enabled fragmentStoresAndAtomics;
+vertex-stage writes stay rejected. Default (automatic) layouts report
+`unfilterable-float` for f32 textures when the pipeline declares no sampler, per
+the WebGPU default-layout rule; with samplers the conservative `float` remains
+because the compiler does not reflect exact texture/sampler pairing.
+
+`tests/storage_textures.c` writes all sixteen formats with textureStore and checks
+every channel of a 4x4 readback exactly; reads r32uint/sint/float through read-only
+storage and increments them in place through read-write storage; writes 1D,
+2D-array and 3D views; stores from a fragment shader at each pixel; and repeats
+write-then-sample across passes in two submissions. Negatives cover StorageBinding
+on rgba8unorm-srgb, read-write rgba8unorm in an explicit layout and in a shader,
+sampling a storage-only texture and storage-binding a sampled-only texture.
+
+The `packages/doe-gpu` storage-texture visibility integration test fails on this
+provider because the test itself violates WebGPU: it names a WGSL variable
+`target` (a reserved word) and binds an r32float view to a `float` (filterable)
+sample-type layout, which needs `float32-filterable`. With `destination` and
+`unfilterable-float`, the same test passes on this provider.
+
 ## Multiple color attachments and sampler anisotropy
 
 The resource owner admits indexed color slots (see its README); native conversion
@@ -363,14 +395,15 @@ triangle/line lists or strips and every pinned WebGPU vertex format (8/16/32-bit
 integer and normalized, float16/32, unorm10-10-10-2, unorm8x4-bgra) with offsets
 aligned to min(4, format size).
 PointList target lowering, single-sample color Discard, dual-source blending,
-vertex or fragment storage writes and fragment FragDepth/SampleIndex/SampleMask
+vertex-stage storage writes (fragment writes need enabled fragmentStoresAndAtomics)
+and fragment FragDepth/SampleIndex/SampleMask
 remain explicitly rejected. WGSL discard requires actual enabled demote support;
 unsupported devices reject that pipeline. Blend constants must be finite f32.
 Texture format reinterpretation beyond srgb/unorm viewFormats pairs (RGBA8,
 BGRA8; resource-validated, then a mutable Vulkan image with a format list), srgb
 viewFormats together with StorageBinding, depth storage, depth comparison sampling (compiler), multisampled
 sampling/copies/storage, and cube arrays without device imageCubeArray are rejected.
-The baseline admits 18 named Vulkan
+The baseline admits 23 named Vulkan
 color formats, subject to actual device usage/format capabilities. Device
 descriptors may request TimestampQuery when the actual adapter supports the
 canonical GPU nanosecond normalizer. Other required features and required limits

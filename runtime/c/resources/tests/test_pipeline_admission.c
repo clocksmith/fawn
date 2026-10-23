@@ -29,7 +29,7 @@ static void test_binding_entry_constraints(void)
                             WGPUStorageTextureAccess_WriteOnly, WGPUStorageTextureAccess_ReadWrite};
                         entries[1].kind = DOE_BIND_STORAGE_TEXTURE;
                         entries[1].storage_access = types[type];
-                        entries[1].storage_format = WGPUTextureFormat_RGBA8Unorm;
+                        entries[1].storage_format = WGPUTextureFormat_R32Float; /* Read-write capable. */
                         rejected = type != 0 && (stages[stage] & WGPUShaderStage_Vertex);
                     } else {
                         const WGPUTextureSampleType types[] = {WGPUTextureSampleType_UnfilterableFloat,

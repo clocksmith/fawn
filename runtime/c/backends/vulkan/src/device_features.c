@@ -31,6 +31,9 @@ doe_vk_status doe_vk_prepare_features(doe_vk_context *context, const doe_vk_opti
      * disabled and the corresponding requests reject at admission. */
     if (features.features.independentBlend) selection.base.independentBlend = 1;
     if (features.features.samplerAnisotropy) selection.base.samplerAnisotropy = 1;
+    /* Optional storage-image formats and fragment stores, enabled only when offered. */
+    if (features.features.shaderStorageImageExtendedFormats) selection.base.shaderStorageImageExtendedFormats = 1;
+    if (features.features.fragmentStoresAndAtomics) selection.base.fragmentStoresAndAtomics = 1;
     if (available && demote.shaderDemoteToHelperInvocation) {
         selection.demote = demote;
         selection.extension = demote_extension;

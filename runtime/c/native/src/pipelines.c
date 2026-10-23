@@ -41,6 +41,7 @@ bool native_shader_capabilities(const doe_shader_view *view, const doe_vk_caps *
             uint32_t capability = view->words[at + 1];
             if (capability != 0 && capability != 1 && capability != 43 && capability != 44 && capability != 50 &&
                 !(capability == 45 && caps->image_cube_array) &&
+                !(capability == 49 && caps->storage_image_extended_formats) &&
                 !(capability == 5379 && caps->shader_demote_to_helper_invocation)) return false;
         }
         if (opcode == 10 && (!caps->shader_demote_to_helper_invocation ||
@@ -72,6 +73,12 @@ WGPUComputePipeline native_create_compute_pipeline(native_device *device,
     if (descriptor->nextInChain || descriptor->compute.nextInChain || descriptor->compute.constantCount) {
         pipeline_failure(error, WGPUErrorType_Validation,
             "compute pipeline chained structs and override constants are unsupported");
+        return NULL;
+    }
+    const native_shader *shader = doe_resource_shader_native((doe_resource_shader *)descriptor->compute.module);
+    if (!shader || !shader->compiled) {
+        pipeline_failure(error, WGPUErrorType_Validation,
+            "compute shader module failed WGSL compilation; see its compilation info");
         return NULL;
     }
     native_stage stage;

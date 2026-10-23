@@ -34,6 +34,9 @@ static uint32_t texel_bytes(doe_vk_texture_format format) {
         case DOE_VK_FORMAT_D32_FLOAT:
         case DOE_VK_FORMAT_D24_UNORM_S8_UINT:
         case DOE_VK_FORMAT_RGBA8_UNORM:
+        case DOE_VK_FORMAT_RGBA8_SNORM:
+        case DOE_VK_FORMAT_RGBA8_UINT:
+        case DOE_VK_FORMAT_RGBA8_SINT:
         case DOE_VK_FORMAT_RGBA8_SRGB:
         case DOE_VK_FORMAT_BGRA8_UNORM:
         case DOE_VK_FORMAT_BGRA8_SRGB:
@@ -42,6 +45,8 @@ static uint32_t texel_bytes(doe_vk_texture_format format) {
         case DOE_VK_FORMAT_R32_SINT:
         case DOE_VK_FORMAT_R32_FLOAT: return 4;
         case DOE_VK_FORMAT_D32_FLOAT_S8_UINT:
+        case DOE_VK_FORMAT_RGBA16_UINT:
+        case DOE_VK_FORMAT_RGBA16_SINT:
         case DOE_VK_FORMAT_RGBA16_FLOAT:
         case DOE_VK_FORMAT_RG32_UINT:
         case DOE_VK_FORMAT_RG32_SINT:

@@ -129,6 +129,12 @@ typedef struct doe_vk_caps {
      * when the feature is absent, so anisotropic samplers then reject. */
     bool sampler_anisotropy;
     float max_sampler_anisotropy;
+    /* Enabled shaderStorageImageExtendedFormats (SPIR-V StorageImageExtendedFormats,
+     * e.g. rg32 storage formats), not merely advertised. */
+    bool storage_image_extended_formats;
+    /* Enabled fragmentStoresAndAtomics: fragment-stage storage writes. Vertex-stage
+     * stores stay disabled. */
+    bool fragment_stores_and_atomics;
 } doe_vk_caps;
 
 /* One owned reference on success. Objects retain their creating context. */
