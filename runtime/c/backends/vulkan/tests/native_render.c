@@ -88,6 +88,34 @@ int main(int argc, char **argv) {
     pass_draws[1].draw.scissor[0] = 4;
     pass_draws[1].draw.scissor[3] = 4;
     require(doe_vk_commands_render_pass(commands, view, &blue, pass_draws, 2), "one clear/two-draw pass");
+    doe_vk_query_pool *queries = NULL;
+    doe_vk_buffer *query_output = NULL;
+    require(doe_vk_occlusion_pool_create(context, 4, &queries, &error), "occlusion pool");
+    require(doe_vk_buffer_create(context, 64, DOE_VK_BUFFER_COPY_DST,
+        DOE_VK_MEMORY_HOST, &query_output, &error), "query output");
+    uint64_t sentinels[8];
+    for (unsigned i = 0; i < 8; ++i) sentinels[i] = UINT64_MAX;
+    require(doe_vk_buffer_write(query_output, 0, sentinels, sizeof(sentinels)), "query sentinels");
+    doe_vk_render_pass_op ops[8] = {
+        {.kind = DOE_VK_RENDER_BEGIN_OCCLUSION, .value.query_index = 0},
+        {.kind = DOE_VK_RENDER_DRAW, .value.draw = pass_draws[0]},
+        {.kind = DOE_VK_RENDER_END_OCCLUSION},
+        {.kind = DOE_VK_RENDER_BEGIN_OCCLUSION, .value.query_index = 1},
+        {.kind = DOE_VK_RENDER_END_OCCLUSION},
+        {.kind = DOE_VK_RENDER_BEGIN_OCCLUSION, .value.query_index = 2},
+        {.kind = DOE_VK_RENDER_DRAW, .value.draw = pass_draws[1]},
+        {.kind = DOE_VK_RENDER_END_OCCLUSION}
+    };
+    ops[6].value.draw.draw.scissor[2] = 0;
+    require(doe_vk_commands_render_pass_ops(commands, view, NULL, queries, ops, 8), "hit/empty/clipped occlusion pass");
+    require(doe_vk_commands_resolve_queries(commands, queries, 0, 4, query_output, 0), "first occlusion resolve");
+    const doe_vk_render_pass_op reused[2] = {
+        {.kind = DOE_VK_RENDER_BEGIN_OCCLUSION, .value.query_index = 0},
+        {.kind = DOE_VK_RENDER_END_OCCLUSION}
+    };
+    require(doe_vk_commands_render_pass_ops(commands, view, NULL, queries, reused, 2), "later pass index reuse");
+    require(doe_vk_commands_resolve_queries(commands, queries, 0, 4, query_output, 32), "reused occlusion resolve");
+    doe_vk_query_pool_release(queries);
     const doe_vk_texture_region region = {.extent = {8, 8, 1}};
     const doe_vk_texture_buffer_layout packed = {0};
     require(doe_vk_commands_read_texture(commands, texture, region, readback, packed), "render readback");
@@ -97,6 +125,7 @@ int main(int argc, char **argv) {
     doe_vk_texture_release(texture);
     doe_vk_pipeline_release(pipeline);
     require(doe_vk_commands_submit(commands, &error), "submit");
+    if (doe_vk_commands_release(commands) != DOE_VK_BUSY) return 1;
     require(doe_vk_commands_wait(commands, UINT64_C(5000000000), &error), "wait");
     uint8_t pixels[8][8][4];
     require(doe_vk_buffer_read(readback, 0, pixels, sizeof(pixels)), "pixels");
@@ -108,9 +137,20 @@ int main(int argc, char **argv) {
             return 1;
         }
     }
+    uint64_t values[8];
+    require(doe_vk_buffer_read(query_output, 0, values, sizeof(values)), "occlusion results");
+    if (values[0] == 0) {
+        fputs("native occlusion hit unexpectedly zero\n", stderr);
+        return 1;
+    }
+    for (unsigned i = 1; i < 8; ++i) if (values[i] != 0) {
+        fprintf(stderr, "native empty/clipped/unwritten/reused slot %u not zero\n", i);
+        return 1;
+    }
     require(doe_vk_commands_release(commands), "retire");
+    doe_vk_buffer_release(query_output);
     doe_vk_buffer_release(readback);
     doe_vk_context_release(context);
-    puts("PASS one real offscreen clear/two-draw pass, dynamic scissors, uniform descriptors, exact64-pixel oracle and early native caller release");
+    puts("PASS one real offscreen clear/two-draw pass, dynamic scissors, uniform descriptors, exact64-pixel oracle, real occlusion hit/empty/clipped/unwritten results and later-pass index reuse, early native caller release");
     return 0;
 }

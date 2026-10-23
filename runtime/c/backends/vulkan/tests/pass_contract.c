@@ -1,4 +1,5 @@
 #include "../src/render_internal.h"
+#include "../src/query_internal.h"
 #include <assert.h>
 #include <stdio.h>
 
@@ -75,6 +76,27 @@ static void draw(VkCommandBuffer command, uint32_t count, uint32_t instances, ui
     assert(inside && count == 3 && instances == 1 && first == 0 && first_instance == 0);
     ++draws;
 }
+static bool query_active;
+static uint32_t query_index;
+static unsigned resets, query_begins, query_ends;
+static void reset_query(VkCommandBuffer command, VkQueryPool pool, uint32_t first, uint32_t count) {
+    (void)command;
+    assert(!inside && pool == 91 && first < 3 && count == 1);
+    ++resets;
+}
+static void begin_query(VkCommandBuffer command, VkQueryPool pool, uint32_t index, VkFlags flags) {
+    (void)command;
+    assert(inside && !query_active && pool == 91 && flags == 0 && index < 3);
+    query_active = true;
+    query_index = index;
+    ++query_begins;
+}
+static void end_query(VkCommandBuffer command, VkQueryPool pool, uint32_t index) {
+    (void)command;
+    assert(inside && query_active && pool == 91 && index == query_index);
+    query_active = false;
+    ++query_ends;
+}
 static doe_vk_commands *recording(doe_vk_context *context) {
     doe_vk_commands *commands = calloc(1, sizeof(*commands));
     assert(commands != NULL && doe_vk_context_retain(context) == DOE_VK_OK);
@@ -93,6 +115,7 @@ int main(void) {
     context.vk = (doe_vk_functions){.vkCmdPipelineBarrier = barrier, .vkCreateRenderPass = create_pass,
         .vkCreateFramebuffer = create_framebuffer, .vkDestroyRenderPass = destroy_pass,
         .vkDestroyFramebuffer = destroy_framebuffer, .vkCmdBeginRenderPass = begin, .vkCmdEndRenderPass = end,
+        .vkCmdResetQueryPool = reset_query, .vkCmdBeginQuery = begin_query, .vkCmdEndQuery = end_query,
         .vkCmdBindPipeline = bind, .vkCmdSetViewport = viewport, .vkCmdSetScissor = scissor, .vkCmdDraw = draw};
     uint8_t initialized = 0;
     doe_vk_texture texture = {.context = &context, .references = 1, .subresource_count = 1,
@@ -141,6 +164,64 @@ int main(void) {
     assert(begins == 2 && ends == 2 && draws == 2);
     assert(doe_vk_commands_release(commands) == DOE_VK_OK);
     assert(destroyed == 2 && context.references == 1);
-    puts("PASS whole-pass preflight, two draws in one native begin/end, no in-pass barriers, empty clear execution, exact leases and discard rollback");
+    uint8_t query_states[3] = {0};
+    doe_vk_query_pool pool = {.context = &context, .references = 1, .count = 3,
+        .kind = DOE_VK_QUERY_OCCLUSION, .states = query_states, .pool = 91};
+    doe_vk_render_pass_op ops[5] = {
+        {.kind = DOE_VK_RENDER_BEGIN_OCCLUSION, .value.query_index = 0},
+        {.kind = DOE_VK_RENDER_DRAW, .value.draw = items[0]},
+        {.kind = DOE_VK_RENDER_END_OCCLUSION},
+        {.kind = DOE_VK_RENDER_BEGIN_OCCLUSION, .value.query_index = 2},
+        {.kind = DOE_VK_RENDER_END_OCCLUSION}
+    };
+    commands = recording(&context);
+    pool.kind = DOE_VK_QUERY_TIMESTAMP;
+    assert(doe_vk_commands_render_pass_ops(commands, &view, &blue, &pool, ops, 5) == DOE_VK_INVALID_ARGUMENT);
+    assert(commands->queries == NULL && begins == 2 && resets == 0);
+    assert(doe_vk_commands_release(commands) == DOE_VK_OK);
+    pool.kind = DOE_VK_QUERY_OCCLUSION;
+    commands = recording(&context);
+    ops[1].kind = DOE_VK_RENDER_BEGIN_OCCLUSION;
+    ops[1].value.query_index = 1;
+    assert(doe_vk_commands_render_pass_ops(commands, &view, &blue, &pool, ops, 5) == DOE_VK_INVALID_ARGUMENT);
+    assert(commands->queries == NULL && begins == 2 && resets == 0);
+    assert(doe_vk_commands_release(commands) == DOE_VK_OK);
+    commands = recording(&context);
+    ops[1].kind = (doe_vk_render_operation)99;
+    assert(doe_vk_commands_render_pass_ops(commands, &view, &blue, &pool, ops, 5) == DOE_VK_INVALID_ARGUMENT);
+    assert(commands->queries == NULL && begins == 2 && resets == 0);
+    assert(doe_vk_commands_release(commands) == DOE_VK_OK);
+    ops[1] = (doe_vk_render_pass_op){.kind = DOE_VK_RENDER_DRAW, .value.draw = items[0]};
+    commands = recording(&context);
+    ops[3].value.query_index = 0;
+    assert(doe_vk_commands_render_pass_ops(commands, &view, &blue, &pool, ops, 5) == DOE_VK_INVALID_ARGUMENT);
+    assert(commands->queries == NULL && begins == 2 && resets == 0);
+    assert(doe_vk_commands_release(commands) == DOE_VK_OK);
+    ops[3].value.query_index = 2;
+    commands = recording(&context);
+    assert(doe_vk_commands_render_pass_ops(commands, &view, &blue, &pool, ops, 4) == DOE_VK_INVALID_ARGUMENT);
+    assert(commands->queries == NULL && begins == 2 && resets == 0);
+    assert(doe_vk_commands_release(commands) == DOE_VK_OK);
+    commands = recording(&context);
+    assert(doe_vk_commands_render_pass_ops(commands, &view, &blue, &pool, ops + 2, 3) == DOE_VK_INVALID_ARGUMENT);
+    assert(commands->queries == NULL && begins == 2 && resets == 0);
+    assert(doe_vk_commands_release(commands) == DOE_VK_OK);
+    commands = recording(&context);
+    ops[1].value.draw.draw.scissor[0] = 9;
+    assert(doe_vk_commands_render_pass_ops(commands, &view, &blue, &pool, ops, 5) == DOE_VK_INVALID_ARGUMENT);
+    assert(commands->queries == NULL && begins == 2 && resets == 0);
+    assert(doe_vk_commands_release(commands) == DOE_VK_OK);
+    ops[1].value.draw = items[0];
+    commands = recording(&context);
+    draws = 0;
+    assert(doe_vk_commands_render_pass_ops(commands, &view, &blue, &pool, ops, 5) == DOE_VK_OK);
+    assert(begins == 3 && ends == 3 && draws == 1 && resets == 2 && query_begins == 2 && query_ends == 2);
+    assert(!query_active && pool.references == 2 && pool.recording_owner == commands);
+    assert(query_states[0] == DOE_VK_QUERY_UNRESET && query_states[2] == DOE_VK_QUERY_UNRESET);
+    assert(commands->queries->states[0] == DOE_VK_QUERY_WRITTEN && commands->queries->states[2] == DOE_VK_QUERY_WRITTEN);
+    assert(doe_vk_commands_write_timestamp(commands, &pool, 1, DOE_VK_TIMESTAMP_BEGIN) == DOE_VK_INVALID_ARGUMENT);
+    assert(doe_vk_commands_release(commands) == DOE_VK_OK);
+    assert(pool.references == 1 && pool.recording_owner == NULL && query_states[0] == DOE_VK_QUERY_UNRESET);
+    puts("PASS whole-pass preflight, two draws in one native begin/end, no in-pass barriers, empty clear, occlusion type/nesting/duplicate/end rejection, native reset-before-pass and paired query events, exact leases and rollback");
     return 0;
 }

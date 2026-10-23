@@ -5,10 +5,15 @@
 extern "C" {
 #endif
 typedef struct doe_vk_query_pool doe_vk_query_pool;
-/* Timestamp-only native owner. Feature admission remains upstream; nonzero
+/* Timestamp native owner. Feature admission remains upstream; nonzero
  * queue timestamp_valid_bits and a finite positive timestamp_period_ns are
  * required. Newly allocated entries must be reset before first write. */
 doe_vk_status doe_vk_query_pool_create(doe_vk_context *context, uint32_t count,
+    doe_vk_query_pool **out, doe_vk_error *error);
+/* Occlusion uses real native zero/nonzero results, without PRECISE or a sample
+ * count guarantee. Requires a graphics-capable selected queue. The pass owner
+ * resets each written index before begin and owns begin/end query ordering. */
+doe_vk_status doe_vk_occlusion_pool_create(doe_vk_context *context, uint32_t count,
     doe_vk_query_pool **out, doe_vk_error *error);
 doe_vk_status doe_vk_query_pool_retain(doe_vk_query_pool *pool);
 void doe_vk_query_pool_release(doe_vk_query_pool *pool);
@@ -21,7 +26,7 @@ typedef enum doe_vk_timestamp_stage { DOE_VK_TIMESTAMP_BEGIN, DOE_VK_TIMESTAMP_E
 /* BEGIN maps TOP_OF_PIPE; END/standalone command maps BOTTOM_OF_PIPE. */
 doe_vk_status doe_vk_commands_write_timestamp(doe_vk_commands *commands,
     doe_vk_query_pool *pool, uint32_t index, doe_vk_timestamp_stage stage);
-/* Copies written entries as packed uint64_t raw ticks with native WAIT/64-bit
+/* Copies written entries as packed uint64_t raw ticks or occlusion results with native WAIT/64-bit
  * flags; reset/never-written entries are filled with zero by native commands,
  * never waited on. Destination needs COPY_DST and an 8-byte-aligned range. Zero
  * count is a validated no-op. Written values are not converted or masked. */

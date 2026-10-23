@@ -1,5 +1,4 @@
-#include "../src/internal.h"
-#include "../include/doe_vk_timestamp.h"
+#include "../src/timestamp_internal.h"
 #include <assert.h>
 #include <float.h>
 #include <math.h>
@@ -76,6 +75,17 @@ int main(void) {
     context.lost = false;
     assert(doe_vk_commands_resolve_queries_ns(&commands, NULL, 0, 0, NULL, NULL, 0) == DOE_VK_INVALID_ARGUMENT);
     assert(commands.state == DOE_VK_POISONED);
+    commands = (doe_vk_commands){.context = &context, .state = DOE_VK_RECORDING};
+    doe_vk_pipeline fake_pipeline = {.context = &context};
+    doe_vk_timestamp_normalizer fake_normalizer = {.pipeline = &fake_pipeline, .capacity = 1};
+    doe_vk_query_pool occlusion = {.context = &context, .kind = DOE_VK_QUERY_OCCLUSION, .count = 1};
+    doe_vk_buffer destination = {.context = &context, .usage = DOE_VK_BUFFER_COPY_DST, .size = 8};
+    assert(doe_vk_commands_resolve_queries_ns(&commands, &occlusion, 0, 0,
+        &fake_normalizer, &destination, 0) == DOE_VK_INVALID_ARGUMENT);
+    assert(commands.state == DOE_VK_POISONED && commands.queries == NULL);
+    doe_vk_query_pool *output = NULL;
+    assert(doe_vk_occlusion_pool_create(&context, 1, &output, NULL) == DOE_VK_UNSUPPORTED);
+    assert(output == NULL && context.references == 1);
     puts("PASS binary32 calibration, exact counter masks, subnormal/maximum periods, unchanged failure outputs and normalizer limit rejection");
     return 0;
 }
