@@ -12,9 +12,9 @@ static doe_vk_status lower_pass(doe_vk_commands *commands, doe_vk_draw_validator
 {
     if (!count || records[0].kind != DOE_COMMAND_RENDER) return DOE_VK_UNSUPPORTED;
     const doe_resource_render_packet *begin = doe_resource_render_record_borrow(records[0].value.render);
-    if (!begin->boundary_only || !begin->first_in_pass || begin->last_in_pass || !begin->targets.color ||
-        begin->targets.depth_stencil || begin->targets.resolve_target ||
-        begin->targets.color_load != WGPULoadOp_Clear || begin->targets.color_store != WGPUStoreOp_Store)
+    if (!begin->boundary_only || !begin->first_in_pass || begin->last_in_pass || !begin->targets.colors[0].view ||
+        begin->targets.depth_stencil || begin->targets.colors[0].resolve_target ||
+        begin->targets.colors[0].load != WGPULoadOp_Clear || begin->targets.colors[0].store != WGPUStoreOp_Store)
         return DOE_VK_UNSUPPORTED;
     doe_resource_query_set *queries = begin->targets.occlusion_queries;
     if (!queries || doe_resource_query_set_type(queries) != WGPUQueryType_Occlusion) return DOE_VK_UNSUPPORTED;
@@ -34,15 +34,15 @@ static doe_vk_status lower_pass(doe_vk_commands *commands, doe_vk_draw_validator
         }
         if (record->kind != DOE_COMMAND_RENDER) return DOE_VK_UNSUPPORTED;
         const doe_resource_render_packet *packet = doe_resource_render_record_borrow(record->value.render);
-        if (packet->first_in_pass || packet->targets.color != begin->targets.color ||
-            packet->targets.occlusion_queries != queries || packet->targets.depth_stencil || packet->targets.resolve_target)
+        if (packet->first_in_pass || packet->targets.colors[0].view != begin->targets.colors[0].view ||
+            packet->targets.occlusion_queries != queries || packet->targets.depth_stencil || packet->targets.colors[0].resolve_target)
             return DOE_VK_UNSUPPORTED;
         if (packet->boundary_only) {
             if (!packet->last_in_pass) return DOE_VK_UNSUPPORTED;
             doe_vk_clear_color clear;
             for (size_t component = 0; component < 4; component++)
-                clear.float32[component] = (float)begin->targets.clear_color[component];
-            doe_vk_render_pass_desc desc = {.color = doe_resource_view_native(begin->targets.color), .clear_color = &clear};
+                clear.float32[component] = (float)begin->targets.colors[0].clear[component];
+            doe_vk_render_pass_desc desc = {.color = doe_resource_view_native(begin->targets.colors[0].view), .clear_color = &clear};
             doe_vk_status status = doe_vk_commands_render_pass_full(commands, &desc,
                 doe_resource_query_set_native(queries), ops, op_count);
             if (status == DOE_VK_OK) *consumed = i + 1;
@@ -185,7 +185,7 @@ int main(int argc, char **argv)
     doe_vk_texture *native_image;
     doe_vk_texture_view *native_view;
     require(doe_vk_texture_create(context, &image_desc, &native_image, NULL), "target");
-    const doe_vk_texture_view_desc view_desc = {DOE_VK_VIEW_2D, 0, 1, 0, 1};
+    const doe_vk_texture_view_desc view_desc = {DOE_VK_VIEW_2D, 0, 1, 0, 1, DOE_VK_ASPECT_ALL, 0};
     require(doe_vk_texture_view_create(native_image, &view_desc, &native_view, NULL), "target view");
     const doe_resource_texture_desc texture_desc = {.dimension = WGPUTextureDimension_2D,
         .format = WGPUTextureFormat_RGBA8Unorm, .width = 8, .height = 8, .depth_or_layers = 1,
@@ -283,7 +283,7 @@ int main(int argc, char **argv)
     require(doe_vk_commands_resolve_queries(native_commands, doe_resource_query_set_native(records[27].value.resolve.set),
         0, DRAW_COUNT, doe_resource_buffer_native(records[27].value.resolve.destination), 256), "actual occlusion resolve");
     require(doe_vk_commands_read_texture(native_commands, doe_resource_texture_native(records[28].value.texture.texture),
-        (doe_vk_texture_region){0, {0, 0, 0}, {8, 8, 1}}, doe_resource_buffer_native(records[28].value.texture.buffer),
+        (doe_vk_texture_region){0, {0, 0, 0}, {8, 8, 1}, DOE_VK_ASPECT_ALL}, doe_resource_buffer_native(records[28].value.texture.buffer),
         (doe_vk_texture_buffer_layout){0, 32, 8}), "actual pixels");
     doe_vk_draw_validator_release(validator);
     assert(doe_resource_commands_begin_submit(commands) == DOE_RESOURCE_OK);

@@ -34,6 +34,7 @@ static doe_vk_commands recording(doe_vk_context *context) {
 int main(void) {
     doe_vk_context context = { .references = 1 };
     context.caps.queue_flags = VK_QUEUE_GRAPHICS_BIT;
+    context.caps.max_color_attachments = 8;
     context.properties.limits.maxFramebufferWidth = 64;
     context.properties.limits.maxFramebufferHeight = 64;
     context.properties.limits.maxViewportDimensions[0] = 64;
@@ -47,9 +48,9 @@ int main(void) {
         .subresource_count = 1, .initialized = &initialized,
         .desc = {.dimension = DOE_VK_TEXTURE_2D, .format = DOE_VK_FORMAT_RGBA8_UNORM,
             .width = 8, .height = 8, .depth_or_layers = 1, .mip_levels = 1, .usage = DOE_VK_TEXTURE_COLOR_ATTACHMENT} };
-    doe_vk_texture_view view = { .texture = &texture, .references = 1, .desc = {DOE_VK_VIEW_2D, 0, 1, 0, 1} };
+    doe_vk_texture_view view = { .texture = &texture, .references = 1, .aspects = 1, .format = DOE_VK_FORMAT_RGBA8_UNORM, .desc = {DOE_VK_VIEW_2D, 0, 1, 0, 1, DOE_VK_ASPECT_ALL, 0} };
     doe_vk_pipeline pipeline = {.context = &context, .references = 1, .graphics = true,
-        .color_format = DOE_VK_FORMAT_RGBA8_UNORM, .vertex_count = 1};
+        .color_count = 1, .color_formats = {DOE_VK_FORMAT_RGBA8_UNORM}, .vertex_count = 1};
     pipeline.vertices[0] = (doe_vk_vertex_layout){16, false};
     pipeline.vertex_attribute_end[0] = 16;
     doe_vk_buffer buffer = {.context = &context, .references = 1, .usage = DOE_VK_BUFFER_VERTEX, .size = 48};

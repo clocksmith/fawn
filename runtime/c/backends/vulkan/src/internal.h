@@ -44,7 +44,8 @@ struct doe_vk_pipeline {
     uint32_t references;
     bool graphics;
     VkRenderPass render_pass;
-    doe_vk_texture_format color_format;
+    uint32_t color_count; /* Slots, including unused zero formats. */
+    doe_vk_texture_format color_formats[DOE_VK_MAX_COLOR_ATTACHMENTS];
     doe_vk_texture_format depth_stencil_format;
     bool depth_write, stencil_write, stencil_test;
     uint32_t sample_count;
@@ -77,11 +78,14 @@ typedef enum doe_vk_command_state {
     DOE_VK_SUBMITTED,
     DOE_VK_UNCERTAIN,
     DOE_VK_COMPLETE,
-    DOE_VK_FAILED
+    DOE_VK_FAILED,
+    DOE_VK_READY /* Reusable recording after proven success; may be submitted again. */
 } doe_vk_command_state;
 struct doe_vk_commands {
     doe_vk_context *context;
     doe_vk_command_state state;
+    bool reusable;
+    uint32_t references; /* Holders: creator plus each pending reusable submission. */
     doe_vk_error failure;
     bool uses_active;
     VkCommandPool pool;

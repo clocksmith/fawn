@@ -47,6 +47,8 @@ typedef struct doe_vk_functions {
     void (*vkDestroyFence)(VkDevice device, VkFence fence, const VkAllocationCallbacks *pAllocator);
     VkResult (*vkGetFenceStatus)(VkDevice device, VkFence fence);
     VkResult (*vkWaitForFences)(VkDevice device, uint32_t fenceCount, const VkFence *pFences, VkBool32 waitAll, uint64_t timeout);
+    /* Retained vk_functions.zig declaration; see ABI_PROVENANCE.json. */
+    VkResult (*vkResetFences)(VkDevice device, uint32_t fenceCount, const VkFence *pFences);
     VkResult (*vkQueueSubmit)(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits, VkFence fence);
     VkResult (*vkQueueWaitIdle)(VkQueue queue);
     VkResult (*vkBeginCommandBuffer)(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo *pBeginInfo);

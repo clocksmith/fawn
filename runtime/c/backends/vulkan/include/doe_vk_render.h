@@ -7,7 +7,7 @@
 extern "C" {
 #endif
 
-enum { DOE_VK_MAX_VERTEX_BUFFERS = 8, DOE_VK_MAX_VERTEX_ATTRIBUTES = 16 };
+enum { DOE_VK_MAX_VERTEX_BUFFERS = 8, DOE_VK_MAX_VERTEX_ATTRIBUTES = 16, DOE_VK_MAX_COLOR_ATTACHMENTS = 8 };
 typedef struct doe_vk_shader {
     const uint32_t *words;
     size_t word_count;
@@ -35,6 +35,15 @@ typedef enum doe_vk_topology {
 typedef struct doe_vk_stencil_face {
     uint32_t fail_operation, pass_operation, depth_fail_operation, compare_operation;
 } doe_vk_stencil_face;
+/* One indexed color target. Zero format is an unused slot whose write mask and
+ * blend must be zero/false. Native blend factors0..14, operations0..4. */
+typedef struct doe_vk_color_target {
+    doe_vk_texture_format format;
+    uint32_t write_mask; /* RGBA low four bits. */
+    bool blend_enabled;
+    uint32_t color_source_factor, color_destination_factor, color_operation;
+    uint32_t alpha_source_factor, alpha_destination_factor, alpha_operation;
+} doe_vk_color_target;
 typedef struct doe_vk_render_pipeline_desc {
     doe_vk_shader vertex, fragment;
     doe_vk_texture_format color_format;
@@ -60,8 +69,15 @@ typedef struct doe_vk_render_pipeline_desc {
     bool override_sample_mask;
     uint64_t sample_mask;
     bool alpha_to_coverage;
+    /* Zero keeps the single legacy color_format/write/blend fields as slot 0.
+     * Nonzero describes every slot here and requires those legacy fields to be
+     * zero/false. At most caps.max_color_attachments slots; differing blend
+     * states need caps.independent_blend (enabled when the device offers it). */
+    uint32_t color_target_count;
+    doe_vk_color_target color_targets[DOE_VK_MAX_COLOR_ATTACHMENTS];
 } doe_vk_render_pipeline_desc;
-/* Zero/one-color graphics pipeline with format-admitted native sample counts. Compiler/native admission validates
+/* Graphics pipeline with zero or more indexed color targets and format-admitted
+ * native sample counts. Compiler/native admission validates
  * shader interfaces/capabilities including disabled vertex/fragment stores.
  * Native blend factors0..14 (no dual source), operations0..4; constant blend
  * factors use the pipeline constant unless an explicit per-draw override is set.
@@ -153,6 +169,16 @@ typedef struct doe_vk_render_pass_op {
         uint32_t query_index; /* BEGIN only; END closes the active index. */
     } value;
 } doe_vk_render_pass_op;
+/* One indexed color attachment. A NULL view is an unused slot: no clear,
+ * discard or resolve. A resolve target is a distinct single-sample view of the
+ * same format/extent and resolves before this slot's store or discard. */
+typedef struct doe_vk_color_attachment {
+    doe_vk_texture_view *view;
+    bool clear; /* False loads initialized contents. */
+    doe_vk_clear_color clear_value;
+    bool discard; /* False stores. */
+    doe_vk_texture_view *resolve_target;
+} doe_vk_color_attachment;
 typedef struct doe_vk_render_pass_desc {
     doe_vk_texture_view *color; /* May be NULL for a depth/stencil-only pass. */
     const doe_vk_clear_color *clear_color; /* NULL loads initialized color. */
@@ -164,6 +190,11 @@ typedef struct doe_vk_render_pass_desc {
     float depth_clear_value;
     uint32_t stencil_clear_value;
     doe_vk_texture_view *resolve_target; /* Optional single-sample color destination. */
+    /* Zero keeps color/clear_color/discard_color/resolve_target as slot 0.
+     * Nonzero describes every slot here and requires those legacy fields to be
+     * NULL/false. Slots must match the drawing pipelines' target formats. */
+    uint32_t color_attachment_count;
+    doe_vk_color_attachment color_attachments[DOE_VK_MAX_COLOR_ATTACHMENTS];
 } doe_vk_render_pass_desc;
 /* General attachment owner, one native pass for all ops. Only existing aspects
  * participate. Read-only forbids clear/discard and any draw that may write that

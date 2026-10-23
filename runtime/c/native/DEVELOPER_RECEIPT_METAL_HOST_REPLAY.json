@@ -1,0 +1,72 @@
+{
+  "kind": "developer-correctness-evidence",
+  "component": "Native Metal HostReplay capability correction",
+  "date": "2026-10-23",
+  "intent": "preserved: advertised native-recorded entrypoint uses selected backend",
+  "binding": "Frozen C snapshot, exact input manifest and dylib SHA256; not a mutable-worktree or whole-product qualification",
+  "source_head": "79a4c99ed295670ecd9343929a79ae3bded6cbba",
+  "source_manifest": {
+    "path": "runtime/c/native/METAL_HOST_REPLAY_SOURCE_INPUTS.json",
+    "sha256": "2e260a084a47e361582f625ac102d628657917cae3ed32ac570c4bc96af57a61",
+    "inputs": 1048
+  },
+  "critical_source": [
+    {
+      "path": "runtime/c/native/src/programs.c",
+      "sha256": "b446d3bd4dc58e20dc7763767339c4daf2511d94491b818aabe02451219ffb8b"
+    },
+    {
+      "path": "runtime/c/native/tests/metal_bridge.c",
+      "sha256": "ce59be68f8d6a0737b94c8cb67ea9f6429240c2c1bd26f47a4d6764551e6cd68"
+    }
+  ],
+  "artifact": {
+    "path": "/tmp/doe-c-metal-host-replay-frozen-build-20261023/libwebgpu_doe_c.dylib",
+    "sha256": "556edc5491cfcc7f35b57289e5de6fd7af9ca016fd0ed3ed21700912bd6d4590"
+  },
+  "public_control": {
+    "path": "/tmp/doe-c-metal-host-replay-smoke-20261023.mjs",
+    "sha256": "7b1d46ea3615b0686d4e6073e129efe07ef1eaf773a3cca21071f6e1d19366b8",
+    "guard_path": "/tmp/doe-c-metal-host-replay-guard-20261023.py",
+    "guard_sha256": "1f9c8c4d443818486238e586ca8736d8f2f10b3c3c97d31a1b17a16be79f0cbb",
+    "node": "22.20.0",
+    "libraryFlavor": "doe-c",
+    "backend": "metal",
+    "execution": "native-recorded",
+    "whole_child_deadline_seconds": 5,
+    "outer_guardian_seconds": 20,
+    "outputs": [
+      [
+        6,
+        10,
+        17,
+        24
+      ],
+      [
+        33,
+        40,
+        53,
+        60
+      ]
+    ],
+    "result": "PASS first actual run"
+  },
+  "host_controls": {
+    "metal_bridge": "Strict syntax passes; GNU runtime controlled by root",
+    "cases": [
+      "Vulkan-only GPU preparation rejects before Metal command claim",
+      "Metal HostReplay prepare and two fresh replay recordings preserve exact bindings/call counts",
+      "Failed command creation and failed native fill retain exact error and release through correct tag",
+      "Public/program release during unknown completion preserves replay/resource/native leases and releases at terminal proof"
+    ]
+  },
+  "limits": [
+    "GPU-recorded remains Vulkan-only",
+    "No constructor failure-rollback qualification; resource transaction follow-up has separate checks",
+    "No Metal graphics, surfaces, performance, generalized physical matrix or default cutover claim"
+  ],
+  "terminal": {
+    "path": "runtime/c/native/METAL_HOST_REPLAY_TERMINAL.txt",
+    "sha256": "7c9baaad2c9459e19d34791538a83ba67933783e211c14edf26a041759b0ed48"
+  }
+}

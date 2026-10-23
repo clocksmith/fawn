@@ -107,7 +107,7 @@ static doe_vk_status record_vulkan_commands(doe_vk_commands *native, doe_resourc
     return DOE_VK_OK;
 }
 
-static native_failure record_commands(native_command_handle *native, doe_resource_commands *commands)
+native_failure native_record_resource_commands(native_command_handle *native, doe_resource_commands *commands)
 {
     if (native->kind == WGPUBackendType_Vulkan)
         return native_failure_status(native_from_vulkan(record_vulkan_commands(native->value.vulkan, commands)));
@@ -143,8 +143,10 @@ static native_failure record_commands(native_command_handle *native, doe_resourc
 static void settle_resources(native_pending *pending, bool success)
 {
     for (size_t i = 0; i < pending->count; ++i) {
-        doe_resource_status status = doe_resource_commands_settle(pending->resources[i],
-            success ? DOE_RESOURCE_OK : DOE_RESOURCE_EXECUTION_FAILED);
+        doe_resource_status terminal = success ? DOE_RESOURCE_OK : DOE_RESOURCE_EXECUTION_FAILED;
+        doe_resource_status status = pending->replay ?
+            doe_resource_commands_settle_replay(pending->resources[i], terminal) :
+            doe_resource_commands_settle(pending->resources[i], terminal);
         if (status != DOE_RESOURCE_OK && status != DOE_RESOURCE_EXECUTION_FAILED) abort();
     }
     free(pending->resources);
@@ -269,6 +271,24 @@ static native_failure submit_pending(native_device *device, native_pending *pend
     return failure.status == NATIVE_OK ? settled.failure : failure;
 }
 
+native_failure native_submit_program(native_device *device, native_command_handle native,
+    doe_resource_commands *commands)
+{
+    native_pending *pending = calloc(1, sizeof(*pending));
+    doe_resource_commands **resources = pending ? calloc(1, sizeof(*resources)) : NULL;
+    if (!resources) {
+        free(pending);
+        if (native_command_release(&native) != NATIVE_OK) abort();
+        if (doe_resource_commands_settle_replay(commands, DOE_RESOURCE_EXECUTION_FAILED) !=
+                DOE_RESOURCE_EXECUTION_FAILED) abort();
+        return native_failure_status(NATIVE_OUT_OF_MEMORY);
+    }
+    resources[0] = commands;
+    *pending = (native_pending){.device=device,.native=native,.resources=resources,.count=1,.replay=true};
+    native_device_retain(device);
+    return submit_pending(device, pending);
+}
+
 native_failure native_submit_commands(native_device *device, doe_vk_commands *commands)
 {
     native_pending *pending = calloc(1, sizeof(*pending));
@@ -352,7 +372,7 @@ void wgpuQueueSubmit(WGPUQueue handle, size_t count, const WGPUCommandBuffer *ha
     doe_resource_status resource_status = DOE_RESOURCE_OK;
     if (failure.status == NATIVE_OK) failure = native_command_create(&device->backend, &pending->native);
     for (size_t i = 0; failure.status == NATIVE_OK && i < count; ++i)
-        failure = record_commands(&pending->native, pending->resources[i]);
+        failure = native_record_resource_commands(&pending->native, pending->resources[i]);
     for (size_t i = 0; failure.status == NATIVE_OK && i < count; ++i) {
         resource_status = doe_resource_commands_begin_submit(pending->resources[i]);
         if (resource_status != DOE_RESOURCE_OK) failure = native_failure_status(NATIVE_INVALID_ARGUMENT);

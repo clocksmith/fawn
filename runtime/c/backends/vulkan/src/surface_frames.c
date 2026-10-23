@@ -129,7 +129,7 @@ doe_vk_status doe_vk_surface_submit_prepare(doe_vk_commands *commands, doe_vk_er
     if (surface->commands != commands || !surface->acquired || !surface->texture->external_alive)
         return doe_vk_fail(DOE_VK_INVALID_STATE, "present frame changed before submit", error);
     doe_vk_texture_view *view = NULL;
-    const doe_vk_texture_view_desc desc = {DOE_VK_VIEW_2D, 0, 1, 0, 1};
+    const doe_vk_texture_view_desc desc = {DOE_VK_VIEW_2D, 0, 1, 0, 1, DOE_VK_ASPECT_ALL, 0};
     doe_vk_status status = doe_vk_texture_view_create(surface->texture, &desc, &view, error);
     if (status != DOE_VK_OK) return status;
     status = doe_vk_commands_initialize_attachment(commands, view);

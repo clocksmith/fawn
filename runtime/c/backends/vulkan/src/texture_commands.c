@@ -53,11 +53,9 @@ doe_vk_status doe_vk_texture_transfer_region(const doe_vk_context *context,
  * rules (for example, no depth32float upload) remain with the resource owner. */
 static doe_vk_status region_aspect(const doe_vk_texture *texture, doe_vk_texture_aspect aspect,
     bool buffer, uint32_t *mask, uint32_t *bytes) {
-    if (aspect != DOE_VK_ASPECT_ALL && aspect != DOE_VK_ASPECT_DEPTH && aspect != DOE_VK_ASPECT_STENCIL)
-        return DOE_VK_INVALID_ARGUMENT;
-    uint32_t aspects = doe_vk_format_aspects(texture->desc.format);
-    uint32_t selected = aspect == DOE_VK_ASPECT_ALL ? aspects : (uint32_t)aspect;
-    if ((selected & ~aspects) != 0) return DOE_VK_INVALID_ARGUMENT;
+    uint32_t selected = 0;
+    doe_vk_status status = doe_vk_texture_aspects(texture, aspect, &selected);
+    if (status != DOE_VK_OK) return status;
     uint32_t size = texture->texel_bytes;
     if (buffer && selected == VK_IMAGE_ASPECT_STENCIL_BIT) size = 1;
     else if (buffer && selected == VK_IMAGE_ASPECT_DEPTH_BIT) {

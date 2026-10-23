@@ -139,7 +139,7 @@ static void check_pass(WGPUTextureFormat format, bool color_transient, bool dept
         const doe_resource_command *records = doe_resource_commands_borrow(commands, &count);
         assert(count == 2);
         const doe_resource_render_packet *first = doe_resource_render_record_borrow(records[0].value.render);
-        assert(first->first_in_pass && first->targets.color == targets.color);
+        assert(first->first_in_pass && first->targets.color_count == 1 && first->targets.colors[0].view == targets.color && !first->targets.color);
         assert(first->targets.depth_stencil == targets.depth_stencil);
     } else {
         assert(!pass && f.allocations == allocations && f.device_references == references);

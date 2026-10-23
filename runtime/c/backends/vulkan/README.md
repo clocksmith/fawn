@@ -4,7 +4,7 @@ This private C11 owner implements real Linux LP64 Vulkan 1.2 discovery, device a
 queue selection, capabilities, host-coherent and device-local buffers, sparse
 multi-group buffer/image/sampler descriptors, SPIR-V compute pipelines, copy/fill and
 direct dispatch recording, asynchronous fence submission, readback and retirement.
-Single-color offscreen rendering shares those allocation and completion owners.
+Offscreen rendering with up to eight indexed color slots shares those allocation and completion owners.
 The texture owner adds uncompressed color images, retained views/samplers and
 mip/layer-aware padded transfers across 1D/2D/3D images.
 It is not wired into the production provider. It is not full Vulkan/WebGPU parity.
@@ -69,8 +69,18 @@ The retained production owners remain authoritative for those behaviors.
 `include/doe_vk_texture.h` uses named native format values, never WebGPU numeric
 casts. Eighteen uncompressed color formats plus four attachment-only depth/stencil formats
 are admitted when native format support exists. Compressed formats, multisampling,
-reinterpretation, swizzles and cube-array
-feature enablement remain outside this increment. Native views retain their image.
+swizzles remain outside this increment. Format reinterpretation is limited to the
+srgb/unorm pairs RGBA8 and BGRA8: `doe_vk_texture_desc.view_formats` naming the
+pair creates a MUTABLE_FORMAT image chained with `VkImageFormatListCreateInfo`
+(image format first; official Vulkan-Headers v1.3.290 declaration and constants
+in ABI_PROVENANCE.json), and `doe_vk_texture_view_desc.format` selects the pair
+for a view. Passes and pipelines compare view formats. Storage usage with an
+srgb pair is UNSUPPORTED because the srgb view could not be a storage image
+without a per-view usage restriction. Context creation
+enables the optional imageCubeArray feature when offered and reports successful
+enablement as `caps.image_cube_array`; cube-array views then require a
+cube-compatible image and whole cubes, and without the feature they return
+UNSUPPORTED (`tests/texture_contract.c`). Native views retain their image.
 A texture is held by one unresolved command owner to avoid stale recorded layouts.
 Layouts and per-mip/layer initialization are speculative until successful native
 completion; discarded/failed recordings cannot publish them. Undefined subresources
@@ -109,7 +119,7 @@ transfer barriers. Both fixtures are pinned; neither is C texture compiler evide
 ## Offscreen graphics
 
 `include/doe_vk_render.h` consumes a borrowed immutable span of direct instanced
-raster draws as one actual single-color native render pass. The optional clear
+raster draws as one actual native render pass. The optional clear
 executes once at begin; otherwise begin loads initialized contents. End always
 stores. An empty span still executes the real load/clear/store pass. The old
 clear-only and single-draw conveniences delegate to this same recorder.
@@ -127,13 +137,30 @@ clear initializes only the selected full 2D mip/layer; LOAD cannot read undefine
 contents. Resource pass/bundle packets retain their canonical ordering upstream;
 this borrowed span is not another resource recorder or reference-count owner.
 
-Pipeline state admits format-supported samples, one color target, eight vertex layouts/sixteen
+Pipeline state admits format-supported samples, indexed color targets, eight vertex layouts/sixteen
 32-bit scalar/vector attributes, native blend/cull/topology controls and dynamic
 viewport/scissor. Blend constants default to pipeline state; explicit per-draw overrides use real
 native dynamic state after whole-span finite-value validation. The full descriptor
 adds one depth/stencil attachment, independent per-aspect load/clear/store/discard,
-read-only admission and dynamic stencil reference. Multiple color targets
-remain unsupported. Indexed and guarded indirect draws are described below.
+read-only admission and dynamic stencil reference. Indexed and guarded indirect draws are described below.
+
+### Indexed color slots and anisotropic samplers
+
+`color_target_count`/`color_targets` and `color_attachment_count`/
+`color_attachments` describe up to eight slots; a zero format or NULL view is an
+unused slot with `VK_ATTACHMENT_UNUSED` references and no operations. The legacy
+single-color fields remain the slot-0 input only and are rejected together with
+slots; one normalizer per descriptor kind owns that rule, and one render-pass
+constructor serves both pipelines and passes so compatibility comes from the same
+code. Attachments are ordered as used colors, depth/stencil, then per-slot resolves.
+Slot counts use the actual `maxColorAttachments`. Differing per-slot blend or
+write-mask state needs `independentBlend`, which is enabled only when offered
+(`caps.independent_blend`); without it differing used slots are UNSUPPORTED and
+unused slots take the shared state. One subresource cannot occupy two slots.
+`samplerAnisotropy` is likewise enabled only when offered; samplers above one need
+all filters linear, reject without the feature, and clamp to the actual maximum.
+`tests/color_targets_contract.c` checks the native packets on the host; real
+execution is the public `runtime/c/native` multiple-attachment client.
 Unsupported resource packets must be rejected, not silently dropped. Graphics
 requires `require_graphics_queue=true` at context creation when the device offers
 separate compute-only queues; default compute queue selection is unchanged.
@@ -337,8 +364,13 @@ per-aspect masks, so discarding depth does not discard stencil and an abandoned
 clear does not publish either. A read-only aspect cannot clear/discard or use a
 pipeline that may write it. LOAD requires prior initialization, including empty
 passes. Views and native framebuffers stay retained through unresolved work.
-Depth/stencil images admit 2D attachment and/or copy usage; sampling and storage
-remain explicitly unsupported. Transfers carry an explicit aspect on
+Depth/stencil images admit 2D attachment, copy and/or sampled usage (cube
+compatibility only when sampled); storage remains unsupported. Views carry an
+explicit aspect (`doe_vk_texture_view_desc.aspect`), resolved by the same owner
+as transfers: a sampled view of a combined format must select DEPTH or STENCIL
+(descriptor admission rejects both), attachment views must cover every aspect,
+and sampled reads require the view's aspects to be initialized. Sampled depth
+uses the existing GENERAL descriptor layout. Transfers carry an explicit aspect on
 `doe_vk_texture_region`: ALL for color and for all-aspect texture-to-texture
 copies, DEPTH or STENCIL for buffer copies, which need exactly one aspect. Linear
 bytes are per aspect (D16 depth 2, D32 and D32S8 depth 4, stencil 1); packed D24

@@ -263,7 +263,9 @@ doe_resource_status doe_resource_sampler_validate(const WGPUSamplerDescriptor *d
         resolved.compare > WGPUCompareFunction_Always) return DOE_RESOURCE_LAYOUT;
     if (!isfinite(resolved.lodMinClamp) || !isfinite(resolved.lodMaxClamp) ||
         resolved.lodMinClamp < 0 || resolved.lodMaxClamp < resolved.lodMinClamp ||
-        !resolved.maxAnisotropy || resolved.maxAnisotropy > 16) return DOE_RESOURCE_RANGE;
+        !resolved.maxAnisotropy) return DOE_RESOURCE_RANGE;
+    /* No upper bound: the used value is clamped to the device maximum.
+     * https://gpuweb.github.io/gpuweb/#dom-gpusamplerdescriptor-maxanisotropy */
     if (resolved.maxAnisotropy > 1 && (resolved.minFilter != WGPUFilterMode_Linear ||
         resolved.magFilter != WGPUFilterMode_Linear || resolved.mipmapFilter != WGPUMipmapFilterMode_Linear))
         return DOE_RESOURCE_LAYOUT;

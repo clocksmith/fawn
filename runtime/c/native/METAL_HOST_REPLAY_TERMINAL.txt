@@ -1,0 +1,19 @@
+C Metal HostReplay developer correctness evidence, 2026-10-23
+Frozen C source build: make -C /tmp/doe-c-metal-host-replay-frozen-20261023/runtime/c/native BUILD=/tmp/doe-c-metal-host-replay-frozen-build-20261023 all
+Result: PASS actual Darwin C/compiler dylib build.
+Pre-run pmset: no thermal/performance warnings recorded.
+Actual public Node consumer: /tmp/doe-c-metal-host-replay-smoke-20261023.mjs
+Explicit library: /tmp/doe-c-metal-host-replay-frozen-build-20261023/libwebgpu_doe_c.dylib
+Guardian: /tmp/doe-c-metal-host-replay-guard-20261023.py
+Bound: entire Node setup/submit/readback child <=5s, guardian <=20s.
+The C public submit remains blocking; this is a whole-child wall-clock bound,
+not a claimed native polling deadline.
+First actual Node run exit0:
+{"scope":"bounded public Node C Metal HostReplay; two four-element runs","libraryFlavor":"doe-c","library":"/tmp/doe-c-metal-host-replay-frozen-build-20261023/libwebgpu_doe_c.dylib","node":"22.20.0","outputs":[[6,10,17,24],[33,40,53,60]]}
+
+Scope: one genuine public Node native-recorded Metal program, two4-element runs
+with changed input and literal output assertions. No host shader/result emulator.
+No reusable Metal GPU recording, graphics/presentation, performance or broad
+platform qualification. Constructor failure transaction rollback remains a
+separate source change/check. GNU Metal public host-ledger source compiled with
+strict syntax here; runtime Linux control belongs to root.

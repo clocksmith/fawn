@@ -68,16 +68,31 @@ bool native_render_fixed(const WGPURenderPipelineDescriptor *source, doe_vk_rend
     case WGPUFrontFace_CW: target->clockwise_front = true; break;
     default: return false;
     }
-    const WGPUColorTargetState *color = source->fragment && source->fragment->targetCount ? source->fragment->targets : NULL;
-    if (!color || color->format == WGPUTextureFormat_Undefined)
-        return !source->multisample.alphaToCoverageEnabled;
-    if (color->nextInChain || color->writeMask & ~WGPUColorWriteMask_All ||
-        !native_texture_format(color->format, &target->color_format)) return false;
-    target->color_write_mask = (uint32_t)color->writeMask;
-    target->blend_enabled = color->blend != NULL;
-    if (!color->blend) return true;
-    return blend(&color->blend->color, &target->color_operation,
-        &target->color_source_factor, &target->color_destination_factor) &&
-        blend(&color->blend->alpha, &target->alpha_operation,
-        &target->alpha_source_factor, &target->alpha_destination_factor);
+    const WGPUFragmentState *fragment = source->fragment;
+    size_t count = fragment ? fragment->targetCount : 0;
+    if (count > DOE_VK_MAX_COLOR_ATTACHMENTS) return false;
+    target->color_target_count = (uint32_t)count;
+    /* Alpha-to-coverage reads target 0's alpha; a missing slot 0 cannot supply it. */
+    if (source->multisample.alphaToCoverageEnabled &&
+        (!count || fragment->targets[0].format == WGPUTextureFormat_Undefined)) return false;
+    for (size_t i = 0; i < count; ++i) {
+        const WGPUColorTargetState *color = &fragment->targets[i];
+        doe_vk_color_target *slot = &target->color_targets[i];
+        *slot = (doe_vk_color_target){0};
+        if (color->nextInChain) return false;
+        if (color->format == WGPUTextureFormat_Undefined) {
+            /* An unused slot carries no blend; its write mask is not consumed. */
+            if (color->blend) return false;
+            continue;
+        }
+        if (color->writeMask & ~WGPUColorWriteMask_All || !native_texture_format(color->format, &slot->format) ||
+            native_depth_format(color->format, &slot->format)) return false;
+        slot->write_mask = (uint32_t)color->writeMask;
+        slot->blend_enabled = color->blend != NULL;
+        if (color->blend && (!blend(&color->blend->color, &slot->color_operation,
+                &slot->color_source_factor, &slot->color_destination_factor) ||
+            !blend(&color->blend->alpha, &slot->alpha_operation,
+                &slot->alpha_source_factor, &slot->alpha_destination_factor))) return false;
+    }
+    return true;
 }

@@ -14,6 +14,16 @@ uint32_t doe_vk_format_aspects(doe_vk_texture_format format) {
     }
 }
 
+doe_vk_status doe_vk_texture_aspects(const doe_vk_texture *texture, doe_vk_texture_aspect aspect, uint32_t *out) {
+    if (aspect != DOE_VK_ASPECT_ALL && aspect != DOE_VK_ASPECT_DEPTH && aspect != DOE_VK_ASPECT_STENCIL)
+        return DOE_VK_INVALID_ARGUMENT;
+    uint32_t aspects = doe_vk_format_aspects(texture->desc.format);
+    uint32_t selected = aspect == DOE_VK_ASPECT_ALL ? aspects : (uint32_t)aspect;
+    if ((selected & ~aspects) != 0) return DOE_VK_INVALID_ARGUMENT;
+    *out = selected;
+    return DOE_VK_OK;
+}
+
 static uint32_t texel_bytes(doe_vk_texture_format format) {
     switch (format) {
         case DOE_VK_FORMAT_S8_UINT:
@@ -86,11 +96,17 @@ static doe_vk_status validate_texture(doe_vk_context *context,
         return DOE_VK_UNSUPPORTED;
     *bytes = texel_bytes(desc->format);
     if (*bytes == 0) return DOE_VK_UNSUPPORTED;
+    if (desc->view_format_count != 0 && desc->view_formats == NULL) return DOE_VK_INVALID_ARGUMENT;
+    for (uint32_t i = 0; i < desc->view_format_count; ++i) {
+        if (desc->view_formats[i] == desc->format) continue;
+        if (desc->view_formats[i] != doe_vk_srgb_pair(desc->format) || doe_vk_srgb_pair(desc->format) == 0 ||
+            (desc->usage & DOE_VK_TEXTURE_STORAGE)) return DOE_VK_UNSUPPORTED;
+    }
     bool depth_stencil = doe_vk_format_aspects(desc->format) != VK_IMAGE_ASPECT_COLOR_BIT;
     const uint32_t depth_usage = DOE_VK_TEXTURE_DEPTH_STENCIL_ATTACHMENT |
-        DOE_VK_TEXTURE_COPY_SRC | DOE_VK_TEXTURE_COPY_DST;
-    if (depth_stencil && (desc->dimension != DOE_VK_TEXTURE_2D ||
-        (desc->usage & ~depth_usage) != 0 || desc->cube_compatible))
+        DOE_VK_TEXTURE_COPY_SRC | DOE_VK_TEXTURE_COPY_DST | DOE_VK_TEXTURE_SAMPLED;
+    if (depth_stencil && (desc->dimension != DOE_VK_TEXTURE_2D || (desc->usage & ~depth_usage) != 0 ||
+        (desc->cube_compatible && !(desc->usage & DOE_VK_TEXTURE_SAMPLED))))
         return DOE_VK_UNSUPPORTED;
     if (!depth_stencil && (desc->usage & DOE_VK_TEXTURE_DEPTH_STENCIL_ATTACHMENT))
         return DOE_VK_INVALID_ARGUMENT;
@@ -153,6 +169,19 @@ doe_vk_status doe_vk_texture_create(doe_vk_context *context,
     texture->desc = *desc;
     texture->desc.sample_count = doe_vk_samples(desc->sample_count);
     texture->texel_bytes = bytes;
+    for (uint32_t i = 0; i < desc->view_format_count; ++i)
+        if (desc->view_formats[i] != desc->format) {
+            texture->view_formats[0] = desc->format;
+            texture->view_formats[1] = desc->view_formats[i];
+            texture->view_format_count = 2;
+        }
+    /* The descriptor's borrowed list does not outlive creation. */
+    texture->desc.view_formats = NULL;
+    texture->desc.view_format_count = 0;
+    const VkImageFormatListCreateInfo format_list = {
+        .sType = VK_STRUCTURE_TYPE_IMAGE_FORMAT_LIST_CREATE_INFO,
+        .viewFormatCount = texture->view_format_count, .pViewFormats = (const uint32_t *)texture->view_formats
+    };
     uint64_t layers = desc->dimension == DOE_VK_TEXTURE_3D ? 1 : desc->depth_or_layers;
     uint64_t subresources = layers * desc->mip_levels;
     if (subresources > SIZE_MAX) {
@@ -167,7 +196,9 @@ doe_vk_status doe_vk_texture_create(doe_vk_context *context,
     }
     const VkImageCreateInfo image = {
         .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-        .flags = desc->cube_compatible ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0,
+        .pNext = texture->view_format_count != 0 ? &format_list : NULL,
+        .flags = (desc->cube_compatible ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0) |
+            (texture->view_format_count != 0 ? VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT : 0),
         .imageType = (uint32_t)desc->dimension,
         .format = (uint32_t)desc->format,
         .extent = { desc->width, desc->height, desc->dimension == DOE_VK_TEXTURE_3D ? desc->depth_or_layers : 1 },
@@ -226,8 +257,14 @@ void doe_vk_texture_release(doe_vk_texture *texture) {
     doe_vk_context_release(context);
 }
 
-static doe_vk_status validate_view(doe_vk_texture *texture, const doe_vk_texture_view_desc *desc) {
-    if (desc == NULL || desc->dimension < DOE_VK_VIEW_1D || desc->dimension > DOE_VK_VIEW_CUBE_ARRAY ||
+static doe_vk_status validate_view(doe_vk_texture *texture, const doe_vk_texture_view_desc *desc,
+    uint32_t *aspects, doe_vk_texture_format *format) {
+    if (desc == NULL) return DOE_VK_INVALID_ARGUMENT;
+    *format = desc->format != 0 ? desc->format : texture->desc.format;
+    if (*format != texture->desc.format &&
+        (texture->view_format_count == 0 || *format != texture->view_formats[1])) return DOE_VK_INVALID_ARGUMENT;
+    if (doe_vk_texture_aspects(texture, desc->aspect, aspects) != DOE_VK_OK ||
+        desc->dimension < DOE_VK_VIEW_1D || desc->dimension > DOE_VK_VIEW_CUBE_ARRAY ||
         desc->mip_count == 0 || desc->layer_count == 0 ||
         !doe_vk_range(texture->desc.mip_levels, desc->base_mip, desc->mip_count)) return DOE_VK_INVALID_ARGUMENT;
     if (texture->borrowed_image && !texture->external_alive) return DOE_VK_INVALID_STATE;
@@ -243,7 +280,10 @@ static doe_vk_status validate_view(doe_vk_texture *texture, const doe_vk_texture
         if (desc->dimension != DOE_VK_VIEW_3D) return DOE_VK_INVALID_ARGUMENT;
     } else if (desc->dimension != DOE_VK_VIEW_2D && desc->dimension != DOE_VK_VIEW_2D_ARRAY &&
         desc->dimension != DOE_VK_VIEW_CUBE && desc->dimension != DOE_VK_VIEW_CUBE_ARRAY) return DOE_VK_INVALID_ARGUMENT;
-    if (desc->dimension == DOE_VK_VIEW_CUBE_ARRAY) return DOE_VK_UNSUPPORTED;
+    if (desc->dimension == DOE_VK_VIEW_CUBE_ARRAY) {
+        if (!texture->context->caps.image_cube_array) return DOE_VK_UNSUPPORTED;
+        if (!texture->desc.cube_compatible || desc->layer_count % 6 != 0) return DOE_VK_INVALID_ARGUMENT;
+    }
     if (desc->dimension == DOE_VK_VIEW_CUBE && (!texture->desc.cube_compatible || desc->layer_count != 6))
         return DOE_VK_INVALID_ARGUMENT;
     if ((desc->dimension == DOE_VK_VIEW_1D || desc->dimension == DOE_VK_VIEW_2D || desc->dimension == DOE_VK_VIEW_3D) && desc->layer_count != 1)
@@ -255,7 +295,9 @@ doe_vk_status doe_vk_texture_view_create(doe_vk_texture *texture,
     const doe_vk_texture_view_desc *desc, doe_vk_texture_view **out, doe_vk_error *error) {
     if (texture == NULL || out == NULL) return doe_vk_fail(DOE_VK_INVALID_ARGUMENT, "texture view descriptor", error);
     if (texture->context->lost) return doe_vk_fail(DOE_VK_DEVICE_LOST, "texture view context", error);
-    doe_vk_status status = validate_view(texture, desc);
+    uint32_t aspects = 0;
+    doe_vk_texture_format format = 0;
+    doe_vk_status status = validate_view(texture, desc, &aspects, &format);
     if (status != DOE_VK_OK) return doe_vk_fail(status, "texture view admission", error);
     doe_vk_texture_view *view = calloc(1, sizeof(*view));
     if (view == NULL) return doe_vk_fail(DOE_VK_OUT_OF_MEMORY, "texture view owner", error);
@@ -267,12 +309,14 @@ doe_vk_status doe_vk_texture_view_create(doe_vk_texture *texture,
     view->texture = texture;
     view->references = 1;
     view->desc = *desc;
+    view->aspects = aspects;
+    view->format = format;
     const VkImageViewCreateInfo info = {
         .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
         .image = texture->image,
         .viewType = (uint32_t)desc->dimension,
-        .format = (uint32_t)texture->desc.format,
-        .subresourceRange = { doe_vk_format_aspects(texture->desc.format), desc->base_mip, desc->mip_count, desc->base_layer, desc->layer_count }
+        .format = (uint32_t)format,
+        .subresourceRange = { aspects, desc->base_mip, desc->mip_count, desc->base_layer, desc->layer_count }
     };
     doe_vk_context *context = texture->context;
     status = doe_vk_result(context, context->vk.vkCreateImageView(context->device, &info, NULL, &view->view), "vkCreateImageView", error);
@@ -310,9 +354,16 @@ doe_vk_status doe_vk_sampler_create(doe_vk_context *context,
         desc->address_v < DOE_VK_ADDRESS_REPEAT || desc->address_v > DOE_VK_ADDRESS_CLAMP ||
         desc->address_w < DOE_VK_ADDRESS_REPEAT || desc->address_w > DOE_VK_ADDRESS_CLAMP ||
         !isfinite(desc->min_lod) || !isfinite(desc->max_lod) || desc->min_lod < 0 ||
-        desc->max_lod < desc->min_lod || desc->compare_operation > 7)
+        desc->max_lod < desc->min_lod || desc->compare_operation > 7 ||
+        (desc->max_anisotropy > 1 && (desc->min_filter != DOE_VK_FILTER_LINEAR ||
+            desc->mag_filter != DOE_VK_FILTER_LINEAR || desc->mipmap_filter != DOE_VK_FILTER_LINEAR)))
         return doe_vk_fail(DOE_VK_INVALID_ARGUMENT, "sampler descriptor", error);
     if (context->lost) return doe_vk_fail(DOE_VK_DEVICE_LOST, "sampler context", error);
+    const bool anisotropic = desc->max_anisotropy > 1;
+    if (anisotropic && !context->caps.sampler_anisotropy)
+        return doe_vk_fail(DOE_VK_UNSUPPORTED, "samplerAnisotropy not enabled", error);
+    float anisotropy = anisotropic ? (float)desc->max_anisotropy : 1.0f;
+    if (anisotropy > context->caps.max_sampler_anisotropy && anisotropic) anisotropy = context->caps.max_sampler_anisotropy;
     doe_vk_sampler *sampler = calloc(1, sizeof(*sampler));
     if (sampler == NULL) return doe_vk_fail(DOE_VK_OUT_OF_MEMORY, "sampler owner", error);
     doe_vk_status status = doe_vk_context_retain(context);
@@ -330,7 +381,8 @@ doe_vk_status doe_vk_sampler_create(doe_vk_context *context,
         .addressModeU = (uint32_t)desc->address_u,
         .addressModeV = (uint32_t)desc->address_v,
         .addressModeW = (uint32_t)desc->address_w,
-        .maxAnisotropy = 1,
+        .anisotropyEnable = anisotropic,
+        .maxAnisotropy = anisotropy,
         .compareEnable = desc->compare_enabled,
         .compareOp = desc->compare_operation,
         .minLod = desc->min_lod,

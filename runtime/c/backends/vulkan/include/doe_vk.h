@@ -115,7 +115,20 @@ typedef struct doe_vk_caps {
     /* Enabled fullDrawIndexUint32, not merely advertised. Without it, uint32
      * index draws reject because larger index values exceed the native limit. */
     bool full_draw_index_uint32;
+    /* Enabled imageCubeArray, not merely advertised. Without it cube-array views
+     * and SampledCubeArray shaders are rejected. */
+    bool image_cube_array;
     doe_vk_adapter_identity identity;
+    /* Actual native color-attachment count limit (pipelines and passes are also
+     * bounded by DOE_VK_MAX_COLOR_ATTACHMENTS). */
+    uint32_t max_color_attachments;
+    /* Enabled independentBlend, not merely advertised. Without it every color
+     * slot of one pipeline must use identical blend and write-mask state. */
+    bool independent_blend;
+    /* Enabled samplerAnisotropy and the native maxSamplerAnisotropy; zero/false
+     * when the feature is absent, so anisotropic samplers then reject. */
+    bool sampler_anisotropy;
+    float max_sampler_anisotropy;
 } doe_vk_caps;
 
 /* One owned reference on success. Objects retain their creating context. */
@@ -207,6 +220,23 @@ doe_vk_status doe_vk_commands_poll(doe_vk_commands *commands, doe_vk_error *erro
  * timeout and may block. The original submission failure remains a failure. */
 doe_vk_status doe_vk_commands_recover(doe_vk_commands *commands, doe_vk_error *error);
 doe_vk_status doe_vk_commands_release(doe_vk_commands *commands);
+/* Reusable recording for the Doe compute-program extension. Created without
+ * one-time-submit; the first submit ends recording. After proven successful
+ * completion the recording is READY and may be submitted again: each submission
+ * re-acquires its buffer uses (so buffers can be mapped between runs), rejects
+ * poisoned buffer contents and re-arms its own fence. Failure stays terminal.
+ * Only copy, fill and direct buffer dispatch are admitted; recordings holding
+ * texture, query, render, indirect-guard or surface state reject at submit.
+ * retain adds a holder (one per pending submission); release keeps the existing
+ * BUSY rule for in-flight work. drop releases a holder that does not own
+ * completion: while another holder remains it never waits or reports BUSY. */
+doe_vk_status doe_vk_commands_create_reusable(doe_vk_context *context,
+    doe_vk_commands **out, doe_vk_error *error);
+/* Ends a reusable recording without submitting it and drops its buffer uses, so
+ * hosts may write or map buffers before the first submission. READY afterwards. */
+doe_vk_status doe_vk_commands_seal(doe_vk_commands *commands, doe_vk_error *error);
+doe_vk_status doe_vk_commands_retain(doe_vk_commands *commands);
+doe_vk_status doe_vk_commands_drop(doe_vk_commands *commands);
 const char *doe_vk_status_name(doe_vk_status status);
 #ifdef __cplusplus
 }

@@ -66,6 +66,7 @@ struct native_pending {
     doe_resource_commands **resources;
     size_t count;
     native_pending_kind kind;
+    bool replay; /* Command variant: settle the resource owner's open replay. */
     doe_vk_surface *frame; /* Present commands borrow their backend surface lease. */
     native_surface *surface;
     bool armed, ready;

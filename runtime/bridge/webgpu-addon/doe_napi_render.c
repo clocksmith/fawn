@@ -287,11 +287,20 @@ napi_value doe_create_render_pipeline(napi_env env, napi_callback_info info) {
 
     desc.fragment = &fragment_state;
 
+    void* scoped = doe_scoped_validation_begin(device);
     WGPURenderPipeline rp = pfn_wgpuDeviceCreateRenderPipeline(device, &desc);
+    char scoped_message[DOE_ERROR_BUF_CAP] = {0};
+    bool scoped_validation = doe_scoped_validation_end(device, scoped, scoped_message, sizeof(scoped_message));
     free_override_constants(vertex_constants, vertex_constant_count);
     free_override_constants(fragment_constants, fragment_constant_count);
     free(blend_state); free(depth_stencil); free(vertex_attributes); free(vertex_buffers);
     free(vertex_entry); free(fragment_entry); free(label_str);
+    if (!rp && scoped_validation) {
+        char full_msg[DOE_ERROR_BUF_CAP + 32];
+        snprintf(full_msg, sizeof(full_msg), "createRenderPipeline: %s", scoped_message);
+        napi_throw_error(env, "DOE_RENDER_PIPELINE_ERROR", full_msg);
+        return NULL;
+    }
     if (!rp) {
         char msg[DOE_ERROR_BUF_CAP];
         char stage[64];

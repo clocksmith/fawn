@@ -9,9 +9,11 @@
  * Unsupported events/state reject before any native pass preparation. */
 static doe_vk_status validate_render_packet(const doe_resource_render_packet *packet)
 {
-    if (!packet || packet->indexed || packet->indirect ||
-        (packet->targets.color && packet->targets.color_store != WGPUStoreOp_Store &&
-        packet->targets.color_store != WGPUStoreOp_Discard)) return DOE_VK_UNSUPPORTED;
+    /* This test adapter lowers only the slot-0 color layout it records. */
+    const doe_resource_color_attachment *color = &packet->targets.colors[0];
+    if (!packet || packet->indexed || packet->indirect || packet->targets.color_count > 1 ||
+        (color->view && color->store != WGPUStoreOp_Store &&
+        color->store != WGPUStoreOp_Discard)) return DOE_VK_UNSUPPORTED;
     for (size_t i = 0; i < 4; i++) if (packet->state.blend[i] != 0) return DOE_VK_UNSUPPORTED;
     return DOE_VK_OK;
 }
@@ -59,10 +61,11 @@ static doe_vk_status render_pass(doe_vk_commands *commands,
         return DOE_VK_UNSUPPORTED;
     doe_vk_clear_color clear = {0};
     const doe_vk_clear_color *clear_pointer = NULL;
-    if (begin->targets.color && begin->targets.color_load == WGPULoadOp_Clear) {
-        for (size_t i = 0; i < 4; i++) clear.float32[i] = (float)begin->targets.clear_color[i];
+    const doe_resource_color_attachment *color = &begin->targets.colors[0];
+    if (color->view && color->load == WGPULoadOp_Clear) {
+        for (size_t i = 0; i < 4; i++) clear.float32[i] = (float)color->clear[i];
         clear_pointer = &clear;
-    } else if (begin->targets.color && begin->targets.color_load != WGPULoadOp_Load) return DOE_VK_UNSUPPORTED;
+    } else if (color->view && color->load != WGPULoadOp_Load) return DOE_VK_UNSUPPORTED;
     enum { MAX_CONSUMER_DRAWS = 3, MAX_CONSUMER_OPS = 9 };
     doe_vk_render_pass_op ops[MAX_CONSUMER_OPS];
     doe_vk_binding_resource bindings[MAX_CONSUMER_DRAWS];
@@ -82,9 +85,9 @@ static doe_vk_status render_pass(doe_vk_commands *commands,
         if (record->kind != DOE_COMMAND_RENDER) return DOE_VK_UNSUPPORTED;
         const doe_resource_render_packet *packet = doe_resource_render_record_borrow(record->value.render);
         if (validate_render_packet(packet) != DOE_VK_OK || packet->first_in_pass ||
-            packet->targets.color != begin->targets.color || packet->targets.occlusion_queries != queries ||
+            packet->targets.colors[0].view != color->view || packet->targets.occlusion_queries != queries ||
             packet->targets.depth_stencil != begin->targets.depth_stencil ||
-            packet->targets.resolve_target != begin->targets.resolve_target)
+            packet->targets.colors[0].resolve_target != color->resolve_target)
             return DOE_VK_UNSUPPORTED;
         if (packet->boundary_only) {
             if (!packet->last_in_pass) return DOE_VK_UNSUPPORTED;
@@ -92,8 +95,8 @@ static doe_vk_status render_pass(doe_vk_commands *commands,
              * adapter preserves event order and identity, not a second state map. */
             const doe_resource_render_targets *targets = &begin->targets;
             doe_vk_render_pass_desc desc = {
-                .color = doe_resource_view_native(targets->color), .clear_color = clear_pointer,
-                .discard_color = targets->color_store == WGPUStoreOp_Discard,
+                .color = doe_resource_view_native(color->view), .clear_color = clear_pointer,
+                .discard_color = color->store == WGPUStoreOp_Discard,
                 .depth_stencil = doe_resource_view_native(targets->depth_stencil),
                 .clear_depth = targets->depth_load == WGPULoadOp_Clear,
                 .clear_stencil = targets->stencil_load == WGPULoadOp_Clear,
@@ -103,7 +106,7 @@ static doe_vk_status render_pass(doe_vk_commands *commands,
                 .stencil_read_only = targets->stencil_read_only,
                 .depth_clear_value = targets->clear_depth,
                 .stencil_clear_value = targets->clear_stencil,
-                .resolve_target = doe_resource_view_native(targets->resolve_target)};
+                .resolve_target = doe_resource_view_native(color->resolve_target)};
             doe_vk_status status = doe_vk_commands_render_pass_full(commands, &desc,
                 doe_resource_query_set_native(queries), ops, op_count);
             if (status == DOE_VK_OK) *consumed = i + 1;
@@ -145,7 +148,7 @@ static doe_resource_view *adopt_attachment(const doe_resource_config *config, li
     doe_vk_texture *native_image;
     doe_vk_texture_view *native_view;
     require(doe_vk_texture_create(context, &native_desc, &native_image, &error), "multisample attachment");
-    doe_vk_texture_view_desc native_view_desc = {DOE_VK_VIEW_2D, 0, 1, 0, 1};
+    doe_vk_texture_view_desc native_view_desc = {DOE_VK_VIEW_2D, 0, 1, 0, 1, DOE_VK_ASPECT_ALL, 0};
     require(doe_vk_texture_view_create(native_image, &native_view_desc, &native_view, &error), "multisample view");
     doe_resource_texture_desc desc = {.dimension = WGPUTextureDimension_2D,
         .format = format, .width = 8, .height = 8, .depth_or_layers = 1,
@@ -210,7 +213,7 @@ int main(int argc, char **argv)
     doe_vk_texture *native_image;
     doe_vk_texture_view *native_view;
     require(doe_vk_texture_create(context, &native_desc, &native_image, &error), "image");
-    doe_vk_texture_view_desc native_view_desc = {DOE_VK_VIEW_2D, 0, 1, 0, 1};
+    doe_vk_texture_view_desc native_view_desc = {DOE_VK_VIEW_2D, 0, 1, 0, 1, DOE_VK_ASPECT_ALL, 0};
     require(doe_vk_texture_view_create(native_image, &native_view_desc, &native_view, &error), "view");
     doe_resource_texture_desc image_desc = {.dimension = WGPUTextureDimension_2D,
         .format = WGPUTextureFormat_RGBA8Unorm, .width = 8, .height = 8, .depth_or_layers = 1,

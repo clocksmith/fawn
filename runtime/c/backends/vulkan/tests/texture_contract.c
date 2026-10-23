@@ -123,11 +123,133 @@ static void layout_and_initialization_transaction(void) {
     assert(texture.references == 1 && texture.recording_owner == NULL);
 }
 
+/* Cube-array views need the enabled imageCubeArray capability, a cube-compatible
+ * image and whole cubes. Rejection precedes any native view creation. */
+static void cube_array_admission(void) {
+    doe_vk_context context = { .references = 1 };
+    doe_vk_texture texture = { .context = &context, .references = 1,
+        .desc = { .dimension = DOE_VK_TEXTURE_2D, .format = DOE_VK_FORMAT_RGBA8_UNORM, .width = 2, .height = 2,
+            .depth_or_layers = 12, .mip_levels = 1, .usage = DOE_VK_TEXTURE_SAMPLED, .cube_compatible = true } };
+    doe_vk_texture_view_desc desc = { DOE_VK_VIEW_CUBE_ARRAY, 0, 1, 0, 12, DOE_VK_ASPECT_ALL, 0 };
+    doe_vk_texture_view *view = (doe_vk_texture_view *)&context;
+    assert(doe_vk_texture_view_create(&texture, &desc, &view, NULL) == DOE_VK_UNSUPPORTED);
+    assert(view == (doe_vk_texture_view *)&context && texture.references == 1);
+    context.caps.image_cube_array = true;
+    desc.layer_count = 8;
+    assert(doe_vk_texture_view_create(&texture, &desc, &view, NULL) == DOE_VK_INVALID_ARGUMENT);
+    desc.layer_count = 12;
+    texture.desc.cube_compatible = false;
+    assert(doe_vk_texture_view_create(&texture, &desc, &view, NULL) == DOE_VK_INVALID_ARGUMENT);
+    assert(view == (doe_vk_texture_view *)&context && texture.references == 1 && context.references == 1);
+}
+
+static VkSamplerCreateInfo created_sampler;
+static unsigned sampler_creates;
+static VkResult create_sampler(VkDevice device, const VkSamplerCreateInfo *info,
+    const VkAllocationCallbacks *allocator, VkSampler *out) {
+    (void)device; (void)allocator;
+    created_sampler = *info;
+    ++sampler_creates;
+    *out = 5;
+    return 0;
+}
+static void destroy_sampler(VkDevice device, VkSampler sampler, const VkAllocationCallbacks *allocator) {
+    (void)device; (void)allocator;
+    assert(sampler == 5);
+}
+
+/* Anisotropy needs linear filters and enabled samplerAnisotropy; the native
+ * value clamps to the device maximum. Rejections make no native call. */
+static void sampler_anisotropy(void) {
+    doe_vk_context context = {.references = 1};
+    context.vk.vkCreateSampler = create_sampler;
+    context.vk.vkDestroySampler = destroy_sampler;
+    doe_vk_sampler_desc desc = {.min_filter = DOE_VK_FILTER_LINEAR, .mag_filter = DOE_VK_FILTER_LINEAR,
+        .mipmap_filter = DOE_VK_FILTER_LINEAR, .max_lod = 1, .max_anisotropy = 8};
+    doe_vk_sampler *sampler = NULL;
+    assert(doe_vk_sampler_create(&context, &desc, &sampler, NULL) == DOE_VK_UNSUPPORTED && !sampler);
+    context.caps.sampler_anisotropy = true;
+    context.caps.max_sampler_anisotropy = 4.0f;
+    desc.mipmap_filter = DOE_VK_FILTER_NEAREST;
+    assert(doe_vk_sampler_create(&context, &desc, &sampler, NULL) == DOE_VK_INVALID_ARGUMENT && !sampler);
+    assert(sampler_creates == 0 && context.references == 1);
+    desc.mipmap_filter = DOE_VK_FILTER_LINEAR;
+    assert(doe_vk_sampler_create(&context, &desc, &sampler, NULL) == DOE_VK_OK && sampler);
+    assert(created_sampler.anisotropyEnable == 1 && created_sampler.maxAnisotropy == 4.0f);
+    doe_vk_sampler_release(sampler);
+    desc.max_anisotropy = 1; /* One disables the feature even when filters are nearest. */
+    desc.min_filter = DOE_VK_FILTER_NEAREST;
+    assert(doe_vk_sampler_create(&context, &desc, &sampler, NULL) == DOE_VK_OK);
+    assert(created_sampler.anisotropyEnable == 0 && created_sampler.maxAnisotropy == 1.0f);
+    doe_vk_sampler_release(sampler);
+    assert(sampler_creates == 2 && context.references == 1);
+}
+
+static uint32_t created_view_format;
+static VkResult create_view(VkDevice device, const VkImageViewCreateInfo *info,
+    const VkAllocationCallbacks *allocator, VkImageView *out) {
+    (void)device; (void)allocator;
+    created_view_format = info->format;
+    *out = 77;
+    return 0;
+}
+static void destroy_view(VkDevice device, VkImageView view, const VkAllocationCallbacks *allocator) {
+    (void)device; (void)allocator;
+    assert(view == 77);
+}
+/* srgb/unorm reinterpretation: pair table, creation admission before native
+ * calls, and the exact native view format of an admitted mutable image. */
+static void view_format_admission(void) {
+    assert(doe_vk_srgb_pair(DOE_VK_FORMAT_RGBA8_UNORM) == DOE_VK_FORMAT_RGBA8_SRGB);
+    assert(doe_vk_srgb_pair(DOE_VK_FORMAT_BGRA8_SRGB) == DOE_VK_FORMAT_BGRA8_UNORM);
+    assert(doe_vk_srgb_pair(DOE_VK_FORMAT_R32_FLOAT) == 0);
+    doe_vk_context context = { .references = 1 };
+    context.vk.vkCreateImageView = create_view;
+    context.vk.vkDestroyImageView = destroy_view;
+    doe_vk_texture_format list[2] = {DOE_VK_FORMAT_RGBA8_UNORM, DOE_VK_FORMAT_RG8_UNORM};
+    doe_vk_texture_desc desc = { .dimension = DOE_VK_TEXTURE_2D, .format = DOE_VK_FORMAT_RGBA8_UNORM,
+        .width = 4, .height = 4, .depth_or_layers = 1, .mip_levels = 1, .usage = DOE_VK_TEXTURE_SAMPLED,
+        .view_formats = list, .view_format_count = 2 };
+    doe_vk_texture *texture = (doe_vk_texture *)&context;
+    assert(doe_vk_texture_create(&context, &desc, &texture, NULL) == DOE_VK_UNSUPPORTED); /* not the pair */
+    list[1] = DOE_VK_FORMAT_RGBA8_SRGB;
+    desc.usage = DOE_VK_TEXTURE_STORAGE;
+    assert(doe_vk_texture_create(&context, &desc, &texture, NULL) == DOE_VK_UNSUPPORTED); /* srgb storage */
+    desc.view_formats = NULL;
+    assert(doe_vk_texture_create(&context, &desc, &texture, NULL) == DOE_VK_INVALID_ARGUMENT);
+    assert(texture == (doe_vk_texture *)&context && context.references == 1);
+    uint8_t initialized = 1;
+    doe_vk_texture image = { .context = &context, .references = 1, .subresource_count = 1, .initialized = &initialized,
+        .desc = { .dimension = DOE_VK_TEXTURE_2D, .format = DOE_VK_FORMAT_RGBA8_UNORM, .width = 4, .height = 4,
+            .depth_or_layers = 1, .mip_levels = 1, .usage = DOE_VK_TEXTURE_SAMPLED } };
+    doe_vk_texture_view_desc view_desc = { DOE_VK_VIEW_2D, 0, 1, 0, 1, DOE_VK_ASPECT_ALL, DOE_VK_FORMAT_RGBA8_SRGB };
+    doe_vk_texture_view *view = (doe_vk_texture_view *)&context;
+    assert(doe_vk_texture_view_create(&image, &view_desc, &view, NULL) == DOE_VK_INVALID_ARGUMENT); /* immutable */
+    image.view_formats[0] = DOE_VK_FORMAT_RGBA8_UNORM;
+    image.view_formats[1] = DOE_VK_FORMAT_RGBA8_SRGB;
+    image.view_format_count = 2;
+    view_desc.format = DOE_VK_FORMAT_BGRA8_SRGB;
+    assert(doe_vk_texture_view_create(&image, &view_desc, &view, NULL) == DOE_VK_INVALID_ARGUMENT); /* unlisted */
+    assert(view == (doe_vk_texture_view *)&context && image.references == 1);
+    view_desc.format = DOE_VK_FORMAT_RGBA8_SRGB;
+    assert(doe_vk_texture_view_create(&image, &view_desc, &view, NULL) == DOE_VK_OK);
+    assert(created_view_format == DOE_VK_FORMAT_RGBA8_SRGB && view->format == DOE_VK_FORMAT_RGBA8_SRGB);
+    doe_vk_texture_view_release(view);
+    view_desc.format = 0;
+    assert(doe_vk_texture_view_create(&image, &view_desc, &view, NULL) == DOE_VK_OK);
+    assert(created_view_format == DOE_VK_FORMAT_RGBA8_UNORM && view->format == DOE_VK_FORMAT_RGBA8_UNORM);
+    doe_vk_texture_view_release(view);
+    assert(image.references == 1);
+}
+
 int main(void) {
     format_admission();
+    view_format_admission();
+    cube_array_admission();
+    sampler_anisotropy();
     bounds_and_pitch();
     queue_transfer_granularity();
     layout_and_initialization_transaction();
-    puts("PASS texture last-byte/mip/layer/overflow checks, speculative layout/initialization rollback, concurrent owner exclusion and failed output");
+    puts("PASS texture last-byte/mip/layer/overflow checks, srgb/unorm view-format pair/creation/view admission with exact native view formats, cube-array feature/compatibility/whole-cube view admission, speculative layout/initialization rollback, concurrent owner exclusion and failed output; sampler anisotropy feature gate, linear-filter rule and device-maximum clamp");
     return 0;
 }

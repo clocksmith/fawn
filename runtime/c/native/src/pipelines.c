@@ -40,6 +40,7 @@ bool native_shader_capabilities(const doe_shader_view *view, const doe_vk_caps *
             if (length != 2) return false;
             uint32_t capability = view->words[at + 1];
             if (capability != 0 && capability != 1 && capability != 43 && capability != 44 && capability != 50 &&
+                !(capability == 45 && caps->image_cube_array) &&
                 !(capability == 5379 && caps->shader_demote_to_helper_invocation)) return false;
         }
         if (opcode == 10 && (!caps->shader_demote_to_helper_invocation ||
@@ -60,10 +61,17 @@ WGPUComputePipeline native_create_compute_pipeline(native_device *device,
     const WGPUComputePipelineDescriptor *descriptor, native_pipeline_error *error)
 {
     if (!device) return NULL;
-    if (!descriptor || descriptor->nextInChain || descriptor->compute.nextInChain ||
-        descriptor->compute.constantCount || !descriptor->compute.module ||
-        doe_resource_shader_device((doe_resource_shader *)descriptor->compute.module) != device) {
-        pipeline_failure(error, WGPUErrorType_Validation, "compute descriptor unsupported or shader device mismatch");
+    if (!descriptor || !descriptor->compute.module) {
+        pipeline_failure(error, WGPUErrorType_Validation, "compute pipeline requires a descriptor and shader module");
+        return NULL;
+    }
+    if (doe_resource_shader_device((doe_resource_shader *)descriptor->compute.module) != device) {
+        pipeline_failure(error, WGPUErrorType_Validation, "compute pipeline requires a shader created by this device");
+        return NULL;
+    }
+    if (descriptor->nextInChain || descriptor->compute.nextInChain || descriptor->compute.constantCount) {
+        pipeline_failure(error, WGPUErrorType_Validation,
+            "compute pipeline chained structs and override constants are unsupported");
         return NULL;
     }
     native_stage stage;

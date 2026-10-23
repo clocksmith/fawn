@@ -30,6 +30,14 @@ typedef struct VkImageCreateInfo {
     uint32_t initialLayout;
 } VkImageCreateInfo;
 
+/* Core 1.2 (VK_KHR_image_format_list); official declaration, ABI_PROVENANCE.json. */
+typedef struct VkImageFormatListCreateInfo {
+    VkStructureType sType;
+    const void *pNext;
+    uint32_t viewFormatCount;
+    const uint32_t *pViewFormats;
+} VkImageFormatListCreateInfo;
+
 typedef struct VkDescriptorImageInfo {
     uint64_t sampler;
     VkImageView imageView;

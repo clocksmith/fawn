@@ -325,10 +325,11 @@ checks source-static alias/lifetime rules, guards and actual emitted scalar help
 execution; `test_pointer_api.c` checks ABI7-9 projection/failure/reuse behavior.
 
 `test_pointer_vulkan.c` consumes `tests/pointer_operations.wgsl` through the real
-ABI9 library and an explicitly supplied C Vulkan backend. The same build recipe
-as `tests/test_atomic_vulkan.c` applies, with the pointer C filename; run the result
-as `EXECUTABLE tests/pointer_operations.wgsl --allow-software` under an explicit
-software ICD. Its five invocations compare 55 integer words, including actual
+ABI9 library and the C Vulkan backend. Run `make test-pointer-vulkan
+SOFTWARE_VULKAN_ICD=/path/to/software-icd.json`; the compiler Makefile delegates
+archive compilation to the Vulkan owner and passes the explicit software opt-in.
+`test-cpu-vulkan` also runs the atomic consumer. The pointer consumer's five
+invocations compare 55 integer words, including actual
 aggregate caller mutations, immutable index snapshots and OOB behavior. It requires
 a software adapter and checks sentinels and pending lifetimes; no native runtime
 parser, reflected execution or physical qualification is substituted.

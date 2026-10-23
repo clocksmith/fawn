@@ -53,7 +53,10 @@ Apple SDK compilation, Darwin execution and physical qualification remain unrun.
   ImageQuery explicitly. The native context opts into demote when actually available;
   its exact SPIR-V extension/capability is admitted only when successfully enabled,
   never from an API-version guess. Other capabilities/extensions reject before pipeline
-  creation. Extended storage formats and cube arrays remain disabled. Workgroup
+  creation. SampledCubeArray (45) is admitted only when the device enabled
+  imageCubeArray; CubeArray views and automatic/explicit sampled layouts follow
+  the same gate, so devices without it reject cube arrays visibly rather than
+  claiming core cube-array support. Extended storage formats remain disabled. Workgroup
   storage and dimensions use real backend limits.
 - Compiler `src/spirv.c` owns guarded loads/stores: runtime array bounds use
   `OpArrayLength`, signed indices have a nonnegative check, invalid loads return
@@ -90,8 +93,8 @@ Apple SDK compilation, Darwin execution and physical qualification remain unrun.
   possibly poisoned normalizer; later work creates a fresh one. Unknown completion
   retains its command-owned dependencies and prevents reuse.
 - Genuine compiler-owned vertex/fragment entry reflection drives stage-specific selection,
-  shared automatic binding layouts and interface admission. Single-color render
-  or depth-only passes, direct draws, reusable bundles and occlusion queries lower through one
+  shared automatic binding layouts and interface admission. Color (up to the
+  device's eight indexed, possibly sparse, slots) or depth-only passes, direct draws, reusable bundles and occlusion queries lower through one
   ordered Vulkan pass span. The resource owner retains pass history, bindings,
   query identity and vertex ranges; native conversion owns no parallel recorder.
   Dynamic viewport/scissor/blend and culling use real backend state. Integer clear
@@ -108,8 +111,17 @@ Apple SDK compilation, Darwin execution and physical qualification remain unrun.
   use 4-byte offsets (also for writeTexture, stricter than WebGPU's unaligned
   writeTexture offset); texture-to-texture copies use all aspects. Linear bytes
   are 4 (depth32), 2 (depth16) and 1 (stencil). Copy-only depth images are zeroed
-  per aspect by real uploads; attachments by real clears. Depth sampling/storage
-  are rejected.
+  per aspect by real uploads; attachments by real clears. Depth storage is
+  rejected. TextureBinding is admitted: texture_depth_2d/_2d_array/_cube reflect
+  the default 'depth' sample type, depth aspects also bind to explicit
+  'unfilterable-float' layouts, StencilOnly views sample as 'uint', and
+  DepthOnly/StencilOnly views of combined formats select one native aspect.
+  An all-aspect view of a combined format cannot be bound as a texture.
+  Sampled depth images may be cube-compatible. Comparison samplers bind only to
+  'comparison' entries. textureLoad and dimension queries execute; WGSL
+  textureSampleCompare/textureSampleCompareLevel and depth textureSampleLevel
+  are absent from the C compiler, so comparison sampling is not yet possible.
+  Depth24Plus readback values come from its D32 backing.
   Plus formats use D32/D32S8 backing, not an implied optional public feature.
   The backend's sole per-aspect initialization owner clears undefined contents;
   depth/stencil Discard followed by Load reinitializes only missing aspects on GPU.
@@ -308,19 +320,54 @@ every texture, as the reference core implementation does. Unknown or repeated ch
 nodes still reject. The provider does not yet advertise `CoreFeaturesAndLimits`;
 that separate claim needs complete core limits and is not made here.
 
+## Multiple color attachments and sampler anisotropy
+
+The resource owner admits indexed color slots (see its README); native conversion
+keeps WebGPU null slots (`view == NULL`, Undefined target format) as unused slots,
+never packing indices. Pipelines carry per-target format, write mask and blend
+state; each used target with a nonzero write mask needs the fragment output at its
+slot index with the format's scalar kind and enough components (four for source-
+alpha blending); alpha-to-coverage needs target 0. Passes carry per-slot load/store/
+clear values and optional resolve targets; bundles carry sparse color formats.
+`maxColorAttachments` reports the device's real count bounded by eight, and
+`maxColorAttachmentBytesPerSample` reports the WebGPU baseline 32 (Vulkan has no
+such per-sample byte limit); both feed resource admission. All slots lower into the
+backend's one native pass span. The C compiler already emits and reflects multiple
+`@location` fragment outputs (struct outputs; spirv-val clean for Vulkan 1.2).
+
+Sampler `maxAnisotropy` has no upper bound at admission; values above one require
+all filters linear, use the device's enabled `samplerAnisotropy`, and clamp to its
+maximum. A device without that feature rejects anisotropic samplers instead of
+silently using one (the spec would also permit clamping to 1). The C compiler only
+admits explicit-LOD `textureSampleLevel` (implicit `textureSample`, gradient and bias
+sampling are rejected), so derivative-driven anisotropic footprints cannot be
+exercised yet; the public check proves admission and a working anisotropic sampler.
+
+`tests/mrt.c` renders a sparse four-slot layout at exactly 32 bytes per sample
+(RGBA8Unorm additive blend, unused slot, RGBA32Uint, RGBA8Unorm with a green/alpha
+write mask) directly and through a sparse-format render bundle, resolves two 4x
+slots with discarded sources, and checks exact half-split pixels in every target.
+Negatives cover slot count, the byte budget, a subresource in two slots, only-unused
+slots, missing/mismatched outputs, blend on an unused slot and a packed pipeline
+against a sparse pass. `tests/anisotropy.c` checks zero/non-linear rejection, an
+above-maximum clamp and a 16x anisotropic explicit-LOD draw whose 1:1 texel-center
+oracle is exact for every filter; it is not a filtering-quality claim.
+
 ## Intentionally unprovided or rejected
 
 Vulkan indirect dispatch and nonindexed/indexed indirect
 pass/bundle draws use real GPU guards; Metal graphics, indirect and indexed draws remain uncomposed.
 Graphics
-admits one color attachment and/or depth/stencil, sample counts 1 and 4, direct
+admits up to eight sparse color slots and/or depth/stencil, sample counts 1 and 4, direct
 triangle/line lists or strips and 32-bit float/signed/unsigned vertex attributes.
 PointList target lowering, single-sample color Discard, dual-source blending,
 vertex or fragment storage writes and fragment FragDepth/SampleIndex/SampleMask
 remain explicitly rejected. WGSL discard requires actual enabled demote support;
 unsupported devices reject that pipeline. Blend constants must be finite f32.
-Texture format reinterpretation, depth sampling/storage, multisampled
-sampling/copies/storage, cube arrays and anisotropic sampling are rejected.
+Texture format reinterpretation beyond srgb/unorm viewFormats pairs (RGBA8,
+BGRA8; resource-validated, then a mutable Vulkan image with a format list), srgb
+viewFormats together with StorageBinding, depth storage, depth comparison sampling (compiler), multisampled
+sampling/copies/storage, and cube arrays without device imageCubeArray are rejected.
 The baseline admits 18 named Vulkan
 color formats, subject to actual device usage/format capabilities. Device
 descriptors may request TimestampQuery when the actual adapter supports the
@@ -370,7 +417,10 @@ is CPU; see the physical developer runs section for the GPU variant. Its ordinar
 result is:
 
 ```
-PASS public depth/stencil copies: rendered depth32float .25/.75 via DepthOnly/All readback and texture copy, depth16unorm rendered 0/65535, writeTexture and buffer upload plus texture copy, stencil8 upload then IncrementClamp, depth24plus-stencil8 stencil Replace and StencilOnly upload, depth24plus texture copy observed by depth test, 11 copy and 2 creation validation controls, early releases; exact 72 depth/stencil texels and 8 color pixels (CPU Vulkan only)
+PASS public view formats: rgba8unorm rendered through its srgb view stores exact sRGB codes 64/128/200/255 (copy and unorm-view textureLoad), rgba8unorm-srgb rendered through its unorm view stores raw bytes, bgra8unorm srgb view keeps byte order, non-pair/unlisted/pipeline-mismatch controls and the srgb-storage limitation, early releases; exact 96 bytes and 4 decoded codes (CPU Vulkan only)
+PASS public cube arrays: enabled imageCubeArray, two uniformly filled cubes sampled along all six face axes per array index via texture_cube_array/textureSampleLevel, textureNumLayers, automatic CubeArray layout, partial/cube-dimension view and storage-layout controls, early releases; exact 12 face values and 1 layer count (CPU Vulkan only)
+PASS public depth/stencil sampling: rendered depth32float and depth24plus-stencil8 DepthOnly maps via texture_depth_2d (automatic depth layout) and texture_2d<f32> (explicit unfilterable-float), StencilOnly as texture_2d<u32>, two-layer texture_depth_2d_array, texture_depth_cube dimensions, comparison-sampler binding admission, 7 view/binding/creation controls, early releases; exact 48 depth values, 8 stencil values and 2 dimensions (no comparison sampling: compiler lacks the builtins) (CPU Vulkan only)
+PASS public depth/stencil copies: rendered depth32float .25/.75 via DepthOnly/All readback and texture copy, depth16unorm rendered 0/65535, writeTexture and buffer upload plus texture copy, stencil8 upload then IncrementClamp, depth24plus-stencil8 stencil Replace and StencilOnly upload, depth24plus texture copy observed by depth test, 11 copy and 1 creation validation controls, early releases; exact 72 depth/stencil texels and 8 color pixels (CPU Vulkan only)
 PASS public indexed draws: uint16/uint32 indices, firstIndex, signed base vertex, instance selection, offset index ranges, pass/bundle replay, uint16/uint32 strip primitive restart, 9 GPU-produced drawIndexedIndirect records with exact-end/out-of-range/wrapping/zero/firstInstance/instance-overrun guards, unchanged arguments, 13 typed validation controls and early releases; exact 192 pixels (CPU Vulkan only)
 PASS public ABI9 atomics: storage accumulation, signed OOB suppression, compare-exchange result identity, fresh workgroup initialization across two groups and two dispatches, early releases (CPU Vulkan only)
 PASS public debug markers: typed procedures, independent nested balance, parent lock, underflow, malformed strings and finished/unbalanced command/pass/bundle rejection (CPU Vulkan only)
@@ -462,13 +512,46 @@ unfinished parallel ABI6 enum edits; checkpoint testing instead materialized the
 committed ABI5 compiler 54f0fb9f6f7202cb13d37e7440ea9d7e13e99b0f with the recorded
 runtime snapshot. That development drift is not a published checkpoint result.
 
+## Doe compute-program extension
+
+`include/doe_native_programs.h` declares the doe-gpu native program contract the
+retained Zig provider exports, listed separately in `EXTENSION_SYMBOLS.txt` (never
+webgpu.h names, never resolved by `wgpuGetProcAddress`; `tests/audit-exports.py`
+checks both inventories). The contract version is
+`config/compute-program.schema.json` `$defs.nativeContractVersion`, read at build time.
+Reusable GPU recordings require Vulkan. Host replay uses the selected backend's
+existing native lowering; Metal compute/buffer packets are composed too.
+
+- `doeNativeComputeProgramPrepare` (gpu-recorded) claims a finished, never-submitted
+  command buffer in the resource owner and records ONE reusable Vulkan command buffer
+  (buffer copies, clears and direct dispatches only), sealed so preparation
+  dispatches nothing and buffers stay writable before the first run.
+- `doeNativeComputeProgramPrepareHostReplay` (native-recorded) claims the same way;
+  every submit lowers the retained commands into a fresh one-shot native recording.
+  Its advertised entrypoint is backend-generic: Vulkan and Metal use their tagged
+  native command owners, without reading another backend's union payload.
+- `doeNativeComputeProgramSubmit` revalidates live, unmapped, healthy dependencies
+  and submits once through the existing pending owner; mapping between runs is
+  allowed. Unknown completion keeps the replay and the recording alive.
+- Standard `wgpuQueueSubmit` keeps WebGPU single-use semantics and rejects claimed
+  command buffers. Timestamp queries inside a GPU recording are currently rejected
+  (host replay admits them); `doeNativeComputeProgramTimestampNanoseconds` reports
+  period 1 / 64 bits because queries already resolve to GPU nanoseconds.
+
+`tests/compute_programs.c` checks three exact runs per mode with changing inputs and
+mapped readback between runs, single-use rejection, claim-twice, destroyed
+dependency, early public releases and GPU-recording admission.
+`tests/metal_bridge.c` checks genuine Metal public preparation/replay through the
+native call ledger, failed constructor/encoding cleanup, and program release while
+completion is unknown. It does not simulate shader results.
+
 ## Physical developer runs and holds
 
 Do not run this on Miles or Suby while their possible disassembly/cooling hold
 remains. Every adapter-using client selects its adapter through
 `tests/adapter_class.h`: software (CPU fallback adapter) by default, or a
 nonfallback GPU adapter with `DOE_C_TEST_ADAPTER=physical`. Each PASS line names
-the class and device it ran on. `make check-physical` runs the same 22 clients on
+the class and device it ran on. `make check-physical` runs the same 27 clients on
 the system ICDs (`VK_ICD_FILENAMES` unset):
 
 ```
@@ -490,7 +573,10 @@ STRIX_HALO, vendor 0x1002 device 0x1586), Mesa 26.0.3-1ubuntu1 RADV, Vulkan 1.4.
 Linux 7.0.0-38. After indexed drawing was added, all 19 clients (including
 `indexed-render`) passed again on that same adapter/driver the same day, and after
 depth/stencil copies were added (with the WGSL language-feature and texture-binding
-view clients) all 22 (including `depth-copies`) passed. That is
+view clients) all 22 (including `depth-copies`) passed; with depth sampling all 23
+(including `depth-sampling`) passed; with cube arrays all 24 (including
+`cube-array`) passed; with srgb view formats, multiple color attachments and anisotropy all 27
+(including `view-formats`, `mrt` and `anisotropy`) passed. That is
 developer evidence for these exact clients on that
 adapter/driver: the oracles are the clients' own expected values, not frozen
 independent workloads, and it is not Vulkan backend qualification, a performance

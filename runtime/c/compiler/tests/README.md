@@ -216,19 +216,24 @@ nonzero sentinel. A second dispatch consumes unchanged
 `bench/kernels/workgroup_atomic.wgsl` and compares all 256 words with an independent
 finite integer oracle. Both check readback padding and early release/pending guards.
 
-From the repository root, with existing artifacts only:
+The compiler Makefile owns both software consumers and asks the Vulkan owner
+to build its archive. From the repository root:
 
 ```sh
-gcc -std=c11 -O2 -Wall -Wextra -Wpedantic -Werror \
-  -Iruntime/c/backends/vulkan/include -Iruntime/c/compiler/include \
-  runtime/c/compiler/tests/test_atomic_vulkan.c "$VULKAN_ARCHIVE" \
-  "$COMPILER_LIBRARY" -Wl,-rpath,"$(dirname "$COMPILER_LIBRARY")" -ldl \
-  -o /tmp/doe-test-atomic-vulkan
-VK_ICD_FILENAMES="$SOFTWARE_VULKAN_ICD" /tmp/doe-test-atomic-vulkan \
-  runtime/c/compiler/tests/atomic_operations.wgsl \
-  bench/kernels/workgroup_atomic.wgsl --allow-software
+make -C runtime/c/compiler test-cpu-vulkan \
+  SOFTWARE_VULKAN_ICD=/path/to/software-icd.json
 ```
 
 The consumer requires a software adapter and deliberately does not run the
 retained 100-iteration variant. This is bounded software execution evidence,
 not physical GPU qualification, WebGPU conformance or performance parity.
+`test-atomic-vulkan` and `test-pointer-vulkan` run either client separately.
+Both require an existing explicitly selected software ICD; neither is part of
+ordinary host checks. `CONSUMER_BUILD`, `VULKAN_BUILD` and `SHARED_LIBRARY`
+select their test outputs, backend build and compiler artifact.
+
+`make test-consumers` runs the ordinary shared-library `test_atomic_cpp.cpp`
+ABI9 measurement and `test_phony_api.c` entry-closure/publication controls without
+Vulkan. `test-atomics` includes the C++ consumer, and `test-text` includes the
+phony-assignment API consumer. Either can run alone with `test-atomic-cpp` or
+`test-phony`, including against an explicitly selected Darwin compiler dylib.
