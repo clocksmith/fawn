@@ -89,8 +89,10 @@ def build_package(repo: Path, revision: str, build: Path, destination: Path,
     source.mkdir()
     archive = build / "source.tar"
     with archive.open("wb") as output:
+        # The compute-program schema supplies the native program contract version.
         subprocess.run(["git", "archive", "--format=tar", commit, "runtime/c",
-                        "runtime/zig/vendor/webgpu-headers", "runtime/zig/vendor/spirv-headers/LICENSE", "LICENSE"],
+                        "runtime/zig/vendor/webgpu-headers", "runtime/zig/vendor/spirv-headers/LICENSE", "LICENSE",
+                        "config/compute-program.schema.json"],
                        cwd=repo, stdout=output, check=True)
     with tarfile.open(archive) as bundle:
         bundle.extractall(source, filter="data")
@@ -117,6 +119,8 @@ def build_package(repo: Path, revision: str, build: Path, destination: Path,
         shutil.copy2(objects / name, candidate / "lib" / name)
     for header in sorted((source / "runtime/c/compiler/include").glob("*.h")):
         shutil.copy2(header, candidate / "include" / header.name)
+    for header in sorted((owner / "include").glob("*.h")):  # Doe extension ABI headers.
+        shutil.copy2(header, candidate / "include" / header.name)
     vendor = source / "runtime/zig/vendor/webgpu-headers"
     shutil.copy2(vendor / "webgpu.h", candidate / "include/webgpu.h")
     shutil.copy2(vendor / "LICENSE", candidate / "licenses/WebGPU-Headers.txt")
@@ -124,6 +128,7 @@ def build_package(repo: Path, revision: str, build: Path, destination: Path,
     shutil.copy2(source / "runtime/zig/vendor/spirv-headers/LICENSE",
                  candidate / "licenses/Khronos-SPIRV-Headers.txt")
     shutil.copy2(owner / "EXPORTED_SYMBOLS.txt", candidate / "EXPORTED_SYMBOLS.txt")
+    shutil.copy2(owner / "EXTENSION_SYMBOLS.txt", candidate / "EXTENSION_SYMBOLS.txt")
     shutil.copy2(owner / "tests/procedures.cpp", candidate / "procedures.cpp")
     consumer_runpath = "@executable_path/../lib" if system == "Darwin" else "$ORIGIN/../lib"
     consumer_command = [cxx, "-std=c++17", "-Wall", "-Wextra", "-Wpedantic", "-Werror",

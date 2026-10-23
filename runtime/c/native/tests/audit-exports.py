@@ -33,13 +33,20 @@ def main() -> None:
     header = owner.parents[1] / "zig/vendor/webgpu-headers/webgpu.h"
     declared = set(re.findall(r"WGPU_EXPORT[^;]*?\b(wgpu\w+)\(", header.read_text()))
     inventory = set((owner / "EXPORTED_SYMBOLS.txt").read_text().splitlines())
+    # Doe extensions are a separate, explicit inventory: never webgpu.h names,
+    # never resolved through wgpuGetProcAddress.
+    extensions = set((owner / "EXTENSION_SYMBOLS.txt").read_text().splitlines())
+    header_text = (owner / "include/doe_native_programs.h").read_text()
+    extension_declared = set(re.findall(r"DOE_NATIVE_EXTENSION[^;]*?\b(doe\w+)\(", header_text))
     procedures = set(re.findall(r'\{"(wgpu\w+)", \(WGPUProc\)\1\}',
                                 (owner / "src/procedures.c").read_text()))
     exported = native_exports(args.library, args.platform)
-    if exported != inventory or procedures != inventory or not inventory <= declared:
-        raise RuntimeError(f"export inventory mismatch: exports={sorted(exported ^ inventory)}, "
+    if (exported != inventory | extensions or procedures != inventory or not inventory <= declared
+            or extensions & declared or extensions != extension_declared):
+        raise RuntimeError(f"export inventory mismatch: exports={sorted(exported ^ (inventory | extensions))}, "
                            f"procedures={sorted(procedures ^ inventory)}, "
-                           f"unpinned={sorted(inventory - declared)}")
+                           f"unpinned={sorted(inventory - declared)}, "
+                           f"extensions={sorted(extensions ^ extension_declared)}")
     if args.runtime:
         class StringView(ctypes.Structure):
             _fields_ = [("data", ctypes.c_char_p), ("length", ctypes.c_size_t)]
@@ -48,14 +55,15 @@ def main() -> None:
         lookup = library.wgpuGetProcAddress
         lookup.argtypes = [StringView]
         lookup.restype = ctypes.c_void_p
-        for name in declared:
+        for name in declared | extensions:
             address = lookup(StringView(name.encode(), len(name)))
             expected = ctypes.cast(getattr(library, name), ctypes.c_void_p).value if name in inventory else None
             if address != expected:
                 raise RuntimeError(f"incorrect procedure address for {name}")
         print("PASS every implemented procedure address matches; every unprovided name returns NULL")
-    print(f"PASS exact exports: {len(exported)} implemented, "
-          f"{len(declared - exported)} pinned unprovided, no private exports")
+    print(f"PASS exact exports: {len(exported & declared)} implemented, "
+          f"{len(declared - exported)} pinned unprovided, {len(extensions)} listed Doe extensions, "
+          "no private exports")
 
 
 if __name__ == "__main__":

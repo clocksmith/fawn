@@ -8,14 +8,21 @@ SANITIZE ?=
 # One owner list drives source, public include and private header dependencies.
 OWNER_DIRS = ../instance ../futures ../callbacks ../resources ../labels \
  ../error-scopes ../shader ../backends/vulkan ../backends/metal
+# The compute-program contract is the package schema's value, never a copied number.
+PROGRAM_SCHEMA ?= ../../../config/compute-program.schema.json
+PROGRAM_CONTRACT := $(shell python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["$$defs"]["nativeContractVersion"]["const"])' $(PROGRAM_SCHEMA) 2>/dev/null)
+ifeq ($(PROGRAM_CONTRACT),)
+$(error cannot read nativeContractVersion from $(PROGRAM_SCHEMA))
+endif
 CPPFLAGS += -D_POSIX_C_SOURCE=200809L -DWGPU_SHARED_LIBRARY -DWGPU_IMPLEMENTATION \
+ -DDOE_COMPUTE_PROGRAM_CONTRACT=$(PROGRAM_CONTRACT)u -Iinclude \
  -I../../zig/vendor/webgpu-headers -I../compiler/include $(addprefix -I,$(addsuffix /include,$(OWNER_DIRS)))
 CFLAGS ?= -O2 -g
 CFLAGS += -std=c11 -Wall -Wextra -Wpedantic -Werror -fPIC -pthread $(SANITIZE)
 SOURCES = $(wildcard src/*.c) $(foreach owner,$(OWNER_DIRS),$(wildcard $(owner)/src/*.c))
 OBJECTS = $(patsubst src/%.c,$(BUILD)/native/%.o,$(filter src/%,$(SOURCES))) \
  $(patsubst ../%.c,$(BUILD)/owners/%.o,$(filter ../%,$(SOURCES)))
-HEADERS = $(wildcard src/*.h ../compiler/include/*.h ../common/include/*.h) \
+HEADERS = $(wildcard src/*.h include/*.h ../compiler/include/*.h ../common/include/*.h) $(PROGRAM_SCHEMA) \
  $(foreach owner,$(OWNER_DIRS),$(wildcard $(owner)/include/*.h $(owner)/src/*.h)) \
  ../../zig/vendor/webgpu-headers/webgpu.h
 COMPILER_RUNPATH ?= $(abspath $(dir $(COMPILER_LIBRARY)))
@@ -37,8 +44,8 @@ $(BUILD)/owners/%.o: ../%.c $(HEADERS) Makefile platform.mk
 	$(CC) $(CPPFLAGS) $(CFLAGS) -fvisibility=hidden -c $< -o $@
 $(NATIVE_LIBRARY): $(OBJECTS) $(COMPILER_LIBRARY) $(NATIVE_EXPORTS) | $(BUILD)
 	$(CC) $(CFLAGS) $(NATIVE_SHARED_FLAGS) $(OBJECTS) $(COMPILER_LINK) $(PLATFORM_LIBS) -o $@
-$(BUILD)/native.exports: EXPORTED_SYMBOLS.txt | $(BUILD)
-	sed 's/^/_/' $< > $@.tmp
+$(BUILD)/native.exports: EXPORTED_SYMBOLS.txt EXTENSION_SYMBOLS.txt | $(BUILD)
+	cat $^ | sed 's/^/_/' > $@.tmp
 	mv $@.tmp $@
 $(BUILD)/backend-selection: tests/backend_selection.c tests/consumer.h tests/adapter_class.h $(NATIVE_LIBRARY)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
@@ -110,6 +117,8 @@ $(BUILD)/pending-progress: tests/pending_progress.c tests/consumer.h tests/adapt
 	$(CC) $(CPPFLAGS) $(CFLAGS) tests/pending_progress.c $(OBJECTS) $(COMPILER_LINK) $(PLATFORM_LIBS) \
 	  -Wl,--wrap=pthread_create -Wl,--wrap=native_backend_close -Wl,--wrap=native_buffer_close \
 	  -Wl,--wrap=doe_vk_commands_submit -Wl,--wrap=doe_vk_commands_poll -Wl,--wrap=doe_vk_commands_recover -Wl,--wrap=doe_vk_commands_release -o $@
+$(BUILD)/compute-programs: tests/compute_programs.c tests/consumer.h tests/adapter_class.h include/doe_native_programs.h $(NATIVE_LIBRARY)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
 $(BUILD)/wgsl-language-features: tests/wgsl_language_features.c tests/consumer.h tests/adapter_class.h $(NATIVE_LIBRARY)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
 $(BUILD)/texture-binding-view-dimension: tests/texture_binding_view_dimension.c tests/consumer.h tests/adapter_class.h $(NATIVE_LIBRARY)
@@ -125,7 +134,7 @@ $(BUILD)/lifecycle: tests/lifecycle.c tests/adapter_class.h $(OBJECTS) $(COMPILE
 $(BUILD)/procedures-cxx: tests/procedures.cpp $(NATIVE_LIBRARY)
 	$(CXX) $(CPPFLAGS) -std=c++17 -Wall -Wextra -Wpedantic -Werror $(SANITIZE) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
 ifeq ($(SHARED_PLATFORM),Linux)
-check: check-provider-pin $(BUILD)/backend-failure $(BUILD)/vulkan-identity $(BUILD)/draw-budget $(BUILD)/indirect-render $(BUILD)/indexed-render $(BUILD)/depth-sampling $(BUILD)/cube-array $(BUILD)/view-formats $(BUILD)/indirect-compute check-build-dependencies check-host-bridge $(BUILD)/atomics $(BUILD)/debug $(BUILD)/msaa $(BUILD)/depth $(BUILD)/demote $(BUILD)/graphics-admission $(BUILD)/empty-shader $(BUILD)/graphics $(BUILD)/compute $(BUILD)/procedures-cxx $(BUILD)/lifecycle $(BUILD)/textures $(BUILD)/admission $(BUILD)/failures $(BUILD)/timestamps $(BUILD)/recovery $(BUILD)/pending-progress $(BUILD)/depth-copies $(BUILD)/wgsl-language-features $(BUILD)/texture-binding-view-dimension $(BUILD)/mrt $(BUILD)/anisotropy
+check: check-provider-pin $(BUILD)/backend-failure $(BUILD)/vulkan-identity $(BUILD)/draw-budget $(BUILD)/indirect-render $(BUILD)/indexed-render $(BUILD)/depth-sampling $(BUILD)/cube-array $(BUILD)/view-formats $(BUILD)/indirect-compute check-build-dependencies check-host-bridge $(BUILD)/atomics $(BUILD)/debug $(BUILD)/msaa $(BUILD)/depth $(BUILD)/demote $(BUILD)/graphics-admission $(BUILD)/empty-shader $(BUILD)/graphics $(BUILD)/compute $(BUILD)/procedures-cxx $(BUILD)/lifecycle $(BUILD)/textures $(BUILD)/admission $(BUILD)/failures $(BUILD)/timestamps $(BUILD)/recovery $(BUILD)/pending-progress $(BUILD)/depth-copies $(BUILD)/wgsl-language-features $(BUILD)/texture-binding-view-dimension $(BUILD)/compute-programs $(BUILD)/mrt $(BUILD)/anisotropy
 	$(BUILD)/draw-budget
 	$(BUILD)/indirect-render
 	$(BUILD)/indexed-render
@@ -154,6 +163,7 @@ check: check-provider-pin $(BUILD)/backend-failure $(BUILD)/vulkan-identity $(BU
 	$(BUILD)/vulkan-identity
 	$(BUILD)/backend-failure
 	$(BUILD)/wgsl-language-features
+	$(BUILD)/compute-programs
 	$(BUILD)/texture-binding-view-dimension
 	$(BUILD)/mrt
 	$(BUILD)/anisotropy
@@ -163,7 +173,7 @@ check: check-provider-pin $(BUILD)/backend-failure $(BUILD)/vulkan-identity $(BU
 # system ICDs: unset VK_ICD_FILENAMES. Never run on a host under a physical hold.
 PHYSICAL_CLIENTS = draw-budget indirect-render indexed-render depth-copies depth-sampling cube-array view-formats indirect-compute atomics debug msaa depth \
 	demote graphics-admission empty-shader graphics compute lifecycle textures admission \
-	failures timestamps recovery wgsl-language-features texture-binding-view-dimension mrt anisotropy
+	failures timestamps recovery wgsl-language-features texture-binding-view-dimension compute-programs mrt anisotropy
 # Real-window presentation (XCB on a reachable X server, e.g. Xwayland); not part
 # of headless `check`. Exit 77 means skipped (no display), never a pass.
 SURFACE_TEST_HEADERS = tests/surface_consumer.h tests/consumer.h tests/adapter_class.h
