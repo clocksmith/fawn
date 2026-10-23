@@ -68,10 +68,13 @@ immediates, specialization constants and nonbaseline shader capabilities reject.
 ABI6 lacks exact texture/sampler pair-use reflection through helper parameters.
 Selected layouts combining UnfilterableFloat with Filtering samplers therefore
 reject explicitly; this is an unsupported analysis case, not full admission parity.
-The image receipt's dependency checkpoint predates canonical cross-binding usage
-scope validation. That identified admission gap is being corrected in the resource
-owner and requires a separate integrated native check; these image results do not
-qualify conflicting writable aliases.
+The image receipt predates canonical cross-binding usage admission. The separate
+admission correction exercises the resource owner's whole-buffer read/write
+conflicts, effective writable ranges and overlapping texture mip/layer identities.
+Empty pipeline-layout slots are normalized by that owner and skipped by native
+conversion, not required or validated as bound groups. Nonempty slots remain
+required. Allocation and native execution errors retain their typed public error
+category rather than being relabeled as validation errors.
 Descriptor labels and SetLabel use the existing label owner, including exact
 length-delimited bytes and resource-finalizer cleanup. Failed WGSL modules retain
 real compiler diagnostics for GetCompilationInfo. Compute pipeline construction
@@ -102,6 +105,8 @@ PASS public ABI: compute/readback, OOB guards, dynamic offsets, cross-device rej
 PASS C++ pinned typed procedure calls and unsupported-name rejection
 PASS device loss modes/future/last-external-release/failed-creation, owned labels, async pipeline and real compilation diagnostics
 PASS public textures: actual zero mips, packed upload, linear sampling, image OOB guards, storage readback, early releases and filter/pair/copy negatives (CPU Vulkan only)
+PASS public admission: sparse auto-layout holes, null unbind, ignored destroyed resources, dynamic writable ranges, whole-buffer read/write conflicts and texture subresource aliases (CPU Vulkan only)
+PASS public error types: resource allocation, automatic-layout allocation, backend OOM/native/validation failures and successful recovery
 PASS every implemented procedure address matches; every unprovided name returns NULL
 PASS exact exports: 114 implemented, 88 pinned unprovided, no private exports
 ```
@@ -121,6 +126,11 @@ last external release, without restoring destroyed state or weak loss identity.
 Image checks execute filtering and storage instructions, robust OOB handling,
 zeroed mips, packed uploads, readback and early releases; negatives cover float32
 filterability, unresolved sampler pairing, destroyed views and copy-row alignment.
+Admission controls require sparse group2 but not empty holes, execute disjoint
+dynamic writable ranges, reject overlapping writable and whole-buffer readonly
+conflicts, and distinguish overlapping from disjoint image mips. Failure controls
+inject errors at actual resource allocation and Vulkan acquisition boundaries,
+including partial auto-layout unwind with unchanged device lease count.
 
 ```
 ASAN_OPTIONS=detect_leaks=0:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1 \
@@ -135,7 +145,9 @@ leak detection does not claim leak qualification. `DEVELOPER_RECEIPT_IMAGES.json
 binds the image increment to immutable committed dependency8a3fd4c1 plus listed
 native bytes, including a fresh canonical compiler build. An earlier live image
 sanitizer build overlapped unfinished ABI7 compiler edits and is not source-bound
-evidence. `DEVELOPER_RECEIPT_LIFECYCLE.json` binds the preceding lifecycle work. The earlier
+evidence. `DEVELOPER_RECEIPT_ADMISSION.json` separately binds the hole/alias/error
+correction to the recorded resource snapshot and pinned compiler artifacts, not
+to later concurrent graphics source. `DEVELOPER_RECEIPT_LIFECYCLE.json` binds the preceding lifecycle work. The earlier
 `DEVELOPER_RECEIPT.json` and source manifest remain the historical first compute
 checkpoint, not evidence for changed bytes. An initial live-worktree build caught
 unfinished parallel ABI6 enum edits; checkpoint testing instead materialized the

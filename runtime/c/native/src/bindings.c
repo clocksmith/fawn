@@ -57,7 +57,7 @@ WGPUBindGroupLayout wgpuDeviceCreateBindGroupLayout(WGPUDevice handle,
     doe_resource_status status = valid ? doe_resource_layout_create(&device->resources,
         entries, descriptor->entryCount, false, &layout) : DOE_RESOURCE_UNSUPPORTED;
     native_unlock(device);
-    if (status != DOE_RESOURCE_OK) native_error(device, WGPUErrorType_Validation, "bind group layout unsupported or invalid");
+    if (status != DOE_RESOURCE_OK) native_error(device, native_resource_error(status), "bind group layout unsupported or invalid");
     if (layout) native_label(device, layout, descriptor->label);
     return (WGPUBindGroupLayout)layout;
 }
@@ -80,7 +80,7 @@ WGPUPipelineLayout wgpuDeviceCreatePipelineLayout(WGPUDevice handle,
     doe_resource_status status = valid ? doe_resource_pipeline_layout_create(&device->resources,
         groups, descriptor->bindGroupLayoutCount, descriptor->immediateSize, &layout) : DOE_RESOURCE_UNSUPPORTED;
     native_unlock(device);
-    if (status != DOE_RESOURCE_OK) native_error(device, WGPUErrorType_Validation, "pipeline layout unsupported or invalid");
+    if (status != DOE_RESOURCE_OK) native_error(device, native_resource_error(status), "pipeline layout unsupported or invalid");
     if (layout) native_label(device, layout, descriptor->label);
     return (WGPUPipelineLayout)layout;
 }
@@ -154,7 +154,7 @@ WGPUBindGroup wgpuDeviceCreateBindGroup(WGPUDevice handle, const WGPUBindGroupDe
         status = DOE_RESOURCE_UNSUPPORTED;
     }
     native_unlock(device);
-    if (status != DOE_RESOURCE_OK) native_error(device, WGPUErrorType_Validation, "bind group invalid or device mismatch");
+    if (status != DOE_RESOURCE_OK) native_error(device, native_resource_error(status), "bind group invalid or device mismatch");
     if (group) native_label(device, group, descriptor->label);
     return (WGPUBindGroup)group;
 }

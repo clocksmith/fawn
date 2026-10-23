@@ -94,6 +94,9 @@ bool native_device_alive(void *device);
 void native_lock(native_device *device);
 void native_unlock(native_device *device);
 void native_error(native_device *device, WGPUErrorType type, const char *message);
+WGPUErrorType native_resource_error(doe_resource_status status);
+WGPUErrorType native_backend_error(doe_vk_status status);
+WGPUErrorType native_label_error(doe_label_status status);
 void native_label(native_device *device, const void *identity, WGPUStringView label);
 WGPUStringView native_string(const char *text);
 bool native_string_size(WGPUStringView view, size_t *size);
@@ -114,8 +117,8 @@ bool native_settle_pending(native_device *device);
 doe_vk_status native_submit_commands(native_device *device, doe_vk_commands *commands);
 bool native_texture_format(WGPUTextureFormat format, doe_vk_texture_format *out);
 bool native_storage_format(uint32_t format, WGPUTextureFormat *out);
-doe_resource_pipeline_layout *native_automatic_layout(native_device *device,
-    const doe_shader_view *view, const DoeCompilerEntryV5 *entry);
+doe_resource_status native_automatic_layout(native_device *device,
+    const doe_shader_view *view, const DoeCompilerEntryV5 *entry, doe_resource_pipeline_layout **out);
 bool native_pipeline_bindings(native_pipeline *payload, const doe_shader_view *view,
     const DoeCompilerEntryV5 *entry, doe_resource_pipeline_layout *layout);
 #endif

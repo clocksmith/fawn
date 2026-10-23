@@ -99,12 +99,14 @@ WGPUComputePipeline native_create_compute_pipeline(native_device *device,
     native_lock(device);
     doe_resource_pipeline_layout *layout = (doe_resource_pipeline_layout *)descriptor->layout;
     bool automatic = !layout;
-    if (automatic) layout = native_automatic_layout(device, &view, entry);
+    doe_resource_status resource_status = automatic ?
+        native_automatic_layout(device, &view, entry, &layout) : DOE_RESOURCE_OK;
     doe_resource_pipeline *pipeline = NULL;
-    doe_vk_status backend_status = DOE_VK_INVALID_ARGUMENT;
-    doe_resource_status resource_status = DOE_RESOURCE_INVALID_ARGUMENT;
-    if (layout && doe_resource_pipeline_layout_device(layout) == device &&
-        native_device_alive(device) && native_pipeline_bindings(payload, &view, entry, layout)) {
+    doe_vk_status backend_status = DOE_VK_OK;
+    if (resource_status == DOE_RESOURCE_OK && (!layout || doe_resource_pipeline_layout_device(layout) != device ||
+        !native_device_alive(device) || !native_pipeline_bindings(payload, &view, entry, layout)))
+        resource_status = DOE_RESOURCE_LAYOUT;
+    if (resource_status == DOE_RESOURCE_OK) {
         char name[64];
         memcpy(name, view.names + entry->name.offset, entry->name.length);
         name[entry->name.length] = 0;
@@ -119,11 +121,8 @@ WGPUComputePipeline native_create_compute_pipeline(native_device *device,
     native_unlock(device);
     if (!pipeline) {
         native_pipeline_release(NULL, payload);
-        WGPUErrorType type = WGPUErrorType_Validation;
-        if (backend_status == DOE_VK_OUT_OF_MEMORY || resource_status == DOE_RESOURCE_OUT_OF_MEMORY)
-            type = WGPUErrorType_OutOfMemory;
-        else if (backend_status == DOE_VK_DEVICE_LOST || backend_status == DOE_VK_NATIVE_FAILURE)
-            type = WGPUErrorType_Internal;
+        WGPUErrorType type = backend_status != DOE_VK_OK ?
+            native_backend_error(backend_status) : native_resource_error(resource_status);
         pipeline_failure(error, type, "compute pipeline/layout failed or precise unfilterable texture/sampler pairing analysis unsupported");
     }
     if (pipeline) {
@@ -135,7 +134,7 @@ WGPUComputePipeline native_create_compute_pipeline(native_device *device,
         if (label_status != DOE_LABEL_OK) {
             doe_resource_pipeline_release(pipeline);
             pipeline = NULL;
-            pipeline_failure(error, WGPUErrorType_OutOfMemory, "pipeline label storage failed");
+            pipeline_failure(error, native_label_error(label_status), "pipeline label storage failed");
         }
     }
     return (WGPUComputePipeline)pipeline;

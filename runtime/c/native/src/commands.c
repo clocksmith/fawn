@@ -11,7 +11,7 @@ WGPUCommandEncoder wgpuDeviceCreateCommandEncoder(WGPUDevice handle,
     doe_resource_status status = descriptor && descriptor->nextInChain ? DOE_RESOURCE_UNSUPPORTED :
         doe_resource_encoder_create(&device->resources, &encoder);
     native_unlock(device);
-    if (status != DOE_RESOURCE_OK) native_error(device, WGPUErrorType_Validation, "command encoder creation failed");
+    if (status != DOE_RESOURCE_OK) native_error(device, native_resource_error(status), "command encoder creation failed");
     if (encoder && descriptor) native_label(device, encoder, descriptor->label);
     return (WGPUCommandEncoder)encoder;
 }
@@ -40,7 +40,7 @@ WGPUComputePassEncoder wgpuCommandEncoderBeginComputePass(WGPUCommandEncoder han
         doe_resource_encoder_invalidate(encoder, DOE_RESOURCE_UNSUPPORTED) :
         doe_resource_encoder_begin_compute(encoder, &pass);
     native_unlock(device);
-    if (status != DOE_RESOURCE_OK) native_error(device, WGPUErrorType_Validation, "compute pass begin failed");
+    if (status != DOE_RESOURCE_OK) native_error(device, native_resource_error(status), "compute pass begin failed");
     if (pass && descriptor) native_label(device, pass, descriptor->label);
     return (WGPUComputePassEncoder)pass;
 }
@@ -64,7 +64,7 @@ void wgpuComputePassEncoderSetPipeline(WGPUComputePassEncoder handle, WGPUComput
     native_lock(device);
     doe_resource_status status = doe_resource_compute_pass_set_pipeline(pass, (doe_resource_pipeline *)pipeline);
     native_unlock(device);
-    if (status != DOE_RESOURCE_OK) native_error(device, WGPUErrorType_Validation, "compute pipeline binding failed");
+    if (status != DOE_RESOURCE_OK) native_error(device, native_resource_error(status), "compute pipeline binding failed");
 }
 void wgpuComputePassEncoderSetBindGroup(WGPUComputePassEncoder handle, uint32_t index,
     WGPUBindGroup group, size_t count, const uint32_t *offsets)
@@ -76,7 +76,7 @@ void wgpuComputePassEncoderSetBindGroup(WGPUComputePassEncoder handle, uint32_t 
     native_lock(device);
     doe_resource_status status = doe_resource_compute_pass_set_group(pass, index, &binding);
     native_unlock(device);
-    if (status != DOE_RESOURCE_OK) native_error(device, WGPUErrorType_Validation, "compute bind group binding failed");
+    if (status != DOE_RESOURCE_OK) native_error(device, native_resource_error(status), "compute bind group binding failed");
 }
 void wgpuComputePassEncoderDispatchWorkgroups(WGPUComputePassEncoder handle, uint32_t x, uint32_t y, uint32_t z)
 {
@@ -88,7 +88,7 @@ void wgpuComputePassEncoderDispatchWorkgroups(WGPUComputePassEncoder handle, uin
      * before any submission. No duplicate dimension classifier is kept here. */
     doe_resource_status status = doe_resource_compute_pass_dispatch(pass, x, y, z);
     native_unlock(device);
-    if (status != DOE_RESOURCE_OK) native_error(device, WGPUErrorType_Validation, "compute dispatch recording failed");
+    if (status != DOE_RESOURCE_OK) native_error(device, native_resource_error(status), "compute dispatch recording failed");
 }
 void wgpuComputePassEncoderEnd(WGPUComputePassEncoder handle)
 {
@@ -98,7 +98,7 @@ void wgpuComputePassEncoderEnd(WGPUComputePassEncoder handle)
     native_lock(device);
     doe_resource_status status = doe_resource_compute_pass_end(pass);
     native_unlock(device);
-    if (status != DOE_RESOURCE_OK) native_error(device, WGPUErrorType_Validation, "compute pass end failed");
+    if (status != DOE_RESOURCE_OK) native_error(device, native_resource_error(status), "compute pass end failed");
 }
 void wgpuCommandEncoderCopyBufferToBuffer(WGPUCommandEncoder handle, WGPUBuffer source,
     uint64_t source_offset, WGPUBuffer destination, uint64_t destination_offset, uint64_t size)
@@ -111,7 +111,7 @@ void wgpuCommandEncoderCopyBufferToBuffer(WGPUCommandEncoder handle, WGPUBuffer 
     native_lock(device);
     doe_resource_status status = doe_resource_encoder_copy_buffer(encoder, &copy, DOE_RESOURCE_DISTINCT_BUFFERS);
     native_unlock(device);
-    if (status != DOE_RESOURCE_OK) native_error(device, WGPUErrorType_Validation, "buffer copy recording failed");
+    if (status != DOE_RESOURCE_OK) native_error(device, native_resource_error(status), "buffer copy recording failed");
 }
 void wgpuCommandEncoderClearBuffer(WGPUCommandEncoder handle, WGPUBuffer buffer, uint64_t offset, uint64_t size)
 {
@@ -121,7 +121,7 @@ void wgpuCommandEncoderClearBuffer(WGPUCommandEncoder handle, WGPUBuffer buffer,
     native_lock(device);
     doe_resource_status status = doe_resource_encoder_clear_buffer(encoder, (doe_resource_buffer *)buffer, offset, size);
     native_unlock(device);
-    if (status != DOE_RESOURCE_OK) native_error(device, WGPUErrorType_Validation, "buffer clear recording failed");
+    if (status != DOE_RESOURCE_OK) native_error(device, native_resource_error(status), "buffer clear recording failed");
 }
 WGPUCommandBuffer wgpuCommandEncoderFinish(WGPUCommandEncoder handle, const WGPUCommandBufferDescriptor *descriptor)
 {
@@ -134,7 +134,7 @@ WGPUCommandBuffer wgpuCommandEncoderFinish(WGPUCommandEncoder handle, const WGPU
         doe_resource_encoder_invalidate(encoder, DOE_RESOURCE_UNSUPPORTED) :
         doe_resource_encoder_finish(encoder, &commands);
     native_unlock(device);
-    if (status != DOE_RESOURCE_OK) native_error(device, WGPUErrorType_Validation, "command encoder finish failed");
+    if (status != DOE_RESOURCE_OK) native_error(device, native_resource_error(status), "command encoder finish failed");
     if (commands && descriptor) native_label(device, commands, descriptor->label);
     return (WGPUCommandBuffer)commands;
 }

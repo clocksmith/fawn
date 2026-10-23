@@ -65,7 +65,7 @@ WGPUShaderModule wgpuDeviceCreateShaderModule(WGPUDevice handle, const WGPUShade
     native_unlock(device);
     if (created != DOE_RESOURCE_OK) {
         release_shader(NULL, payload);
-        native_error(device, WGPUErrorType_Validation, "shader resource creation failed");
+        native_error(device, native_resource_error(created), "shader resource creation failed");
     } else {
         native_label(device, shader, descriptor->label);
         if (status != DOE_SHADER_OK)
