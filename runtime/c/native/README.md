@@ -421,18 +421,29 @@ or read-write on other formats are Validation errors, as is StorageBinding usage
 a non-storage format; storage bindings need StorageBinding usage, one mip and the
 exact format. bgra8unorm storage (bgra8unorm-storage) is not offered: the C compiler
 has no bgra8unorm storage format. The compiler's sixteen storage formats map to
-these names; 1D, 2D, 2D-array and 3D storage views are admitted. Fragment-stage
-writes (write-only/read-write) use the device's enabled fragmentStoresAndAtomics;
-vertex-stage writes stay rejected. Default (automatic) layouts report
-`unfilterable-float` for f32 textures when the pipeline declares no sampler, per
-the WebGPU default-layout rule; with samplers the conservative `float` remains
-because the compiler does not reflect exact texture/sampler pairing.
+these names; 1D, 2D, 2D-array and 3D storage views are admitted. A `read-write`
+layout entry admits a shader declaring `read_write` or `write` access; `write-only`
+and `read-only` entries require the same shader access (validating shader binding).
+Fragment-stage writes (write-only/read-write) use the device's enabled
+fragmentStoresAndAtomics; a Vulkan adapter without that feature is refused at
+requestAdapter (UNAVAILABLE), because WebGPU core admits fragment storage writes
+under the per-stage limits and no limit can report their absence. Vertex-stage
+writes stay rejected.
+
+Spec deviation, not finished: default (automatic) layouts report
+`unfilterable-float` for f32 textures only when the pipeline declares no sampler.
+With any sampler every f32 texture becomes `float`, although the WebGPU
+default-layout rule makes `float` only those statically used with a sampler, so a
+textureLoad-only r32float texture is then rejected at createBindGroup. The fix
+needs per-entry-point texture/sampler pair-use reflection from the compiler.
 
 `tests/storage_textures.c` writes all sixteen formats with textureStore and checks
 every channel of a 4x4 readback exactly; reads r32uint/sint/float through read-only
 storage and increments them in place through read-write storage; writes 1D,
 2D-array and 3D views; stores from a fragment shader at each pixel; and repeats
-write-then-sample across passes in two submissions. Negatives cover StorageBinding
+write-then-sample across passes in two submissions; writes all 16 texels of an
+r32float texture through a write shader bound by an explicit read-write layout and
+reads them back exactly. Negatives cover three layout/shader access mismatches, StorageBinding
 on rgba8unorm-srgb, read-write rgba8unorm in an explicit layout and in a shader,
 sampling a storage-only texture and storage-binding a sampled-only texture.
 

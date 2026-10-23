@@ -470,6 +470,84 @@ static int storage_visibility_and_negatives(state *s)
     return expected_errors;
 }
 
+/* https://gpuweb.github.io/gpuweb/#abstract-opdef-validating-shader-binding: a
+ * "read-write" layout entry admits shader access read_write or write; other
+ * layout accesses require the same shader access. */
+static int layout_access(state *s)
+{
+    WGPUBindGroupLayoutEntry entry = {.binding = 0, .visibility = WGPUShaderStage_Compute,
+        .storageTexture = {.access = WGPUStorageTextureAccess_ReadWrite, .format = WGPUTextureFormat_R32Float,
+            .viewDimension = WGPUTextureViewDimension_2D}};
+    WGPUBindGroupLayoutDescriptor layout_desc = {.entryCount = 1, .entries = &entry};
+    WGPUBindGroupLayout layout = wgpuDeviceCreateBindGroupLayout(s->device, &layout_desc);
+    assert(layout);
+    WGPUPipelineLayout pipeline_layout = wgpuDeviceCreatePipelineLayout(s->device,
+        &(WGPUPipelineLayoutDescriptor){.bindGroupLayoutCount = 1, .bindGroupLayouts = &layout});
+    assert(pipeline_layout);
+    WGPUShaderModule writer = module(s, "@group(0) @binding(0) var data: texture_storage_2d<r32float, write>;"
+        "@compute @workgroup_size(4, 4) fn main(@builtin(global_invocation_id) id: vec3u) {"
+        "  textureStore(data, id.xy, vec4f(f32(id.x + 4u * id.y) + 0.5, 0.0, 0.0, 1.0)); }");
+    WGPUComputePipelineDescriptor pipeline_desc = WGPU_COMPUTE_PIPELINE_DESCRIPTOR_INIT;
+    pipeline_desc.compute.module = writer;
+    pipeline_desc.layout = pipeline_layout;
+    WGPUComputePipeline pipeline = wgpuDeviceCreateComputePipeline(s->device, &pipeline_desc);
+    assert(pipeline);
+    WGPUExtent3D size = {SIZE, SIZE, 1};
+    WGPUTexture texture = image(s, WGPUTextureFormat_R32Float, WGPUTextureDimension_2D, size,
+        WGPUTextureUsage_StorageBinding | WGPUTextureUsage_CopySrc);
+    WGPUTextureView view = wgpuTextureCreateView(texture, NULL);
+    WGPUBindGroupEntry bound = {.binding = 0, .textureView = view};
+    WGPUBindGroup group_object = wgpuDeviceCreateBindGroup(s->device,
+        &(WGPUBindGroupDescriptor){.layout = layout, .entryCount = 1, .entries = &bound});
+    assert(group_object);
+    WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(s->device, NULL);
+    WGPUComputePassEncoder pass = wgpuCommandEncoderBeginComputePass(encoder, NULL);
+    wgpuComputePassEncoderSetPipeline(pass, pipeline);
+    wgpuComputePassEncoderSetBindGroup(pass, 0, group_object, 0, NULL);
+    wgpuComputePassEncoderDispatchWorkgroups(pass, 1, 1, 1);
+    wgpuComputePassEncoderEnd(pass);
+    wgpuComputePassEncoderRelease(pass);
+    submit(s, encoder);
+    float texels[SIZE * SIZE];
+    readback(s, texture, size, (unsigned char *)texels, sizeof(float));
+    for (uint32_t i = 0; i < SIZE * SIZE; ++i) assert(texels[i] == (float)i + 0.5f);
+    wgpuBindGroupRelease(group_object);
+    wgpuComputePipelineRelease(pipeline);
+    wgpuPipelineLayoutRelease(pipeline_layout);
+    wgpuBindGroupLayoutRelease(layout);
+    wgpuShaderModuleRelease(writer);
+    /* Write-only and read-only layouts reject other shader access modes. */
+    int expected_errors = 0;
+    static const struct { WGPUStorageTextureAccess layout; const char *shader; } mismatches[] = {
+        {WGPUStorageTextureAccess_WriteOnly, "read_write"},
+        {WGPUStorageTextureAccess_ReadOnly, "write"},
+        {WGPUStorageTextureAccess_ReadOnly, "read_write"},
+    };
+    for (size_t i = 0; i < sizeof(mismatches) / sizeof(mismatches[0]); ++i) {
+        entry.storageTexture.access = mismatches[i].layout;
+        layout = wgpuDeviceCreateBindGroupLayout(s->device, &layout_desc);
+        pipeline_layout = wgpuDeviceCreatePipelineLayout(s->device,
+            &(WGPUPipelineLayoutDescriptor){.bindGroupLayoutCount = 1, .bindGroupLayouts = &layout});
+        assert(layout && pipeline_layout);
+        char code[256];
+        snprintf(code, sizeof(code), "@group(0) @binding(0) var data: texture_storage_2d<r32float, %s>;"
+            "@compute @workgroup_size(1) fn main() { _ = textureDimensions(data); }", mismatches[i].shader);
+        WGPUShaderModule shader = module(s, code);
+        pipeline_desc.compute.module = shader;
+        pipeline_desc.layout = pipeline_layout;
+        wgpuDevicePushErrorScope(s->device, WGPUErrorFilter_Validation);
+        assert(!wgpuDeviceCreateComputePipeline(s->device, &pipeline_desc));
+        expect_validation(s);
+        ++expected_errors;
+        wgpuShaderModuleRelease(shader);
+        wgpuPipelineLayoutRelease(pipeline_layout);
+        wgpuBindGroupLayoutRelease(layout);
+    }
+    wgpuTextureViewRelease(view);
+    wgpuTextureRelease(texture);
+    return expected_errors;
+}
+
 int main(void)
 {
     state s = {0};
@@ -477,11 +555,13 @@ int main(void)
     every_format(&s);
     access_modes(&s);
     dimensions(&s);
-    int validation = storage_visibility_and_negatives(&s);
+    int validation = layout_access(&s);
+    validation += storage_visibility_and_negatives(&s);
     assert(s.validation_errors == (unsigned)validation);
     consumer_finish(&s);
     printf("PASS public storage textures: all 16 core storage formats written and read back exactly, read-only and "
-        "read-write r32 access, 1D/2D-array/3D, fragment-stage stores, write-then-sample across passes and "
+        "read-write r32 access, a read-write layout admitting a write shader with exact readback and three "
+        "layout/shader access mismatches, 1D/2D-array/3D, fragment-stage stores, write-then-sample across passes and "
         "submissions, and format/access/usage negatives %s\n", adapter_class_scope());
     return 0;
 }
