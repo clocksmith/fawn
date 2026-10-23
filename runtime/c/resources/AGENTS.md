@@ -58,3 +58,7 @@ diagnostic labels must not introduce another string store or resource command qu
 Optional color must not create a synthetic attachment. Derive extents and sample
 identity from the actual retained color or depth/stencil view, and share layout
 admission between pipelines, bundles and pass snapshots. Native draw support is separate.
+GPU indirect counts remain queue-time data. Keep descriptor/usage/lease admission
+here and actual argument sanitization in the backend's existing command owner;
+never CPU-inspect or forward unchecked counts. Hidden native copy capability must
+not alter public usage, and new product-sensitive builtins require guard coordination.
