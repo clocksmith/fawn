@@ -68,3 +68,12 @@ add platforms implicitly or substitute an offscreen image. Present attaches the
 frame to a private command object on the existing pending owner and retires it by
 the backend presentation fence, never by command completion or queue idle. Take
 the surface mutex before any device mutex, and report errors after both unlock.
+
+Public consumer tests select adapters only through tests/adapter_class.h
+(adapter_class_options, adapter_class_require) and end PASS lines with
+adapter_class_scope(), so one binary runs on the CPU fallback adapter by default
+and on a GPU under DOE_C_TEST_ADAPTER=physical. Add every adapter-using client to
+PHYSICAL_CLIENTS; window-system clients belong to check-present and exit 77 (skip,
+never pass) without a display. Never hard-code forceFallbackAdapter or a CPU label.
+Adapter selection is by class, and device contexts reopen the adapter's hardware
+by UUID; never select or recreate by enumeration ordinal.

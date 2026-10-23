@@ -67,7 +67,11 @@ reordered effects, early publication and premature cleanup. Inject failures at r
 boundaries, not a second implementation as oracle. Developer controls remain
 separate from frozen independent acceptance. Compilation, sanitizers, target
 validation, native consumption and physical execution prove different things.
-Bind source/build/test identities, refuse drift and retain first failures. Later
+Bind source/build/test identities, refuse drift and retain first failures.
+Every execution claim names where it ran: CPU fallback adapter, or the physical
+adapter, driver and host. Print that from the selected adapter at run time rather
+than a fixed label, and keep developer runs on one device distinct from
+qualification. Later
 refactors need separate checks; earlier receipts never qualify changed bytes.
 
 ## Mechanically enforced rules
