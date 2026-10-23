@@ -7,7 +7,8 @@
 typedef enum mock_failure {
     MOCK_NONE, MOCK_OPEN, MOCK_BUFFER, MOCK_PIPELINE, MOCK_COMMANDS,
     MOCK_DISPATCH, MOCK_FINISH, MOCK_SIGNAL, MOCK_COMPLETED, MOCK_WAIT,
-    MOCK_WRITE, MOCK_READ, MOCK_TEXTURE, MOCK_GRAPHICS, MOCK_DRAW, MOCK_TIMESTAMPS, MOCK_FREQUENCY
+    MOCK_WRITE, MOCK_READ, MOCK_TEXTURE, MOCK_GRAPHICS, MOCK_DRAW, MOCK_TIMESTAMPS, MOCK_FREQUENCY,
+    MOCK_DISPATCH_INDIRECT
 } mock_failure;
 typedef struct mock_state {
     mock_failure failure;
@@ -41,6 +42,9 @@ typedef struct mock_state {
     uint64_t resolve_offset, frequency;
     doe_dx_native_buffer *resolve_buffer;
     uint32_t x, y, z;
+    size_t indirect_dispatches;
+    doe_dx_native_buffer *indirect_arguments;
+    uint64_t indirect_offset;
 } mock_state;
 extern mock_state mock;
 void mock_reset(void);

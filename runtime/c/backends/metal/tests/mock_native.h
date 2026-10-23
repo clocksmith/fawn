@@ -25,6 +25,7 @@ typedef struct mock_native {
     unsigned releases_by_kind[11];
     size_t pipeline_max_threads;
     bool unknown_commit;
+    char completion_message[256];
     mock_object *last_command;
     void *last_source;
     void *last_destination;

@@ -4,7 +4,9 @@ Parent: [Experimental C migration](../../CATSCAN.md)
 
 ## Target
 
-Execute admitted D3D12 compute, offscreen draws, transfers and timestamp queries through an independently usable C owner, preserving native resource and completion obligations.
+Execute admitted D3D12 direct/indirect compute, uniform/storage resource views,
+offscreen draws, transfers and timestamps through an independently usable C owner,
+preserving native resource and completion obligations.
 
 ## Authority
 
@@ -33,7 +35,8 @@ Execute admitted D3D12 compute, offscreen draws, transfers and timestamp queries
 - [Focused checks](Makefile) exercise rollback, ranges, ordering and lifetime through a private native-call seam.
 - [Native fixtures](tests/native_mesh.c) require Windows SDK compilation and separately authorized driver execution.
 - Complete retained consumer parity and physical qualification remain separate gates.
-- Evidence: [current source-bound receipt](MESH_TERMINAL_RECEIPT.txt); [historical core](TERMINAL_RECEIPT.txt).
+- Evidence: [current developer receipt](DEVELOPER_RECEIPT_INDIRECT_UNIFORM.json);
+  [historical mesh](MESH_TERMINAL_RECEIPT.txt), [historical core](TERMINAL_RECEIPT.txt).
 
 ## Non-goals
 

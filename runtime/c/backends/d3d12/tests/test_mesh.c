@@ -299,7 +299,7 @@ static void composed_budget_and_shader_alias(void) {
     doe_dx_vertex_layout layouts[2];
     doe_dx_vertex_attribute attributes[2];
     doe_dx_mesh_pipeline_desc desc = description(layouts, attributes);
-    doe_dx_binding_layout binding_layout = {0, 0, 12, DOE_DX_READ_ONLY};
+    doe_dx_binding_layout binding_layout = {0, 0, 12, DOE_DX_READ_ONLY, DOE_DX_STRUCTURED};
     desc.graphics.fragment.buffers.bindings = &binding_layout;
     desc.graphics.fragment.buffers.binding_count = 1;
     doe_dx_pipeline *pipeline = NULL;

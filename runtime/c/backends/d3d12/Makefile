@@ -28,11 +28,17 @@ $(BUILD)/test_graphics: tests/test_graphics.c tests/mock_native.c tests/mock_nat
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(STRICT) tests/test_graphics.c tests/mock_native.c $(HOST_OBJECTS) -o $@
 $(BUILD)/test_mesh: tests/test_mesh.c tests/mock_native.c tests/mock_native.h $(HOST_OBJECTS)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(STRICT) tests/test_mesh.c tests/mock_native.c $(HOST_OBJECTS) -o $@
-check: $(BUILD)/test_owner $(BUILD)/test_textures $(BUILD)/test_graphics $(BUILD)/test_mesh
+$(BUILD)/test_indirect: tests/test_indirect.c tests/mock_native.c tests/mock_native.h $(HOST_OBJECTS)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(STRICT) tests/test_indirect.c tests/mock_native.c $(HOST_OBJECTS) -o $@
+$(BUILD)/test_uniform: tests/test_uniform.c tests/mock_native.c tests/mock_native.h $(HOST_OBJECTS)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(STRICT) tests/test_uniform.c tests/mock_native.c $(HOST_OBJECTS) -o $@
+check: $(BUILD)/test_owner $(BUILD)/test_textures $(BUILD)/test_graphics $(BUILD)/test_mesh $(BUILD)/test_indirect $(BUILD)/test_uniform
 	$(BUILD)/test_owner
 	$(BUILD)/test_textures
 	$(BUILD)/test_graphics
 	$(BUILD)/test_mesh
+	$(BUILD)/test_indirect
+	$(BUILD)/test_uniform
 sanitize:
 	$(MAKE) BUILD=$(BUILD)/sanitize CFLAGS='-O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer' check
 $(BUILD)/windows/%.o: src/%.c $(HEADERS) | $(BUILD)/windows

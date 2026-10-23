@@ -34,3 +34,11 @@
 - Vertex location semantics are TEXCOORD, matching the current C HLSL emitter,
   not the retained Zig bridge's ATTR convention. Source agreement alone is not
   DXC compilation, SDK linkage or native-consumer admission.
+- Indirect arguments stay GPU-owned. Validate the record's initialized allocation,
+  range, alignment, aliases and resource budget before native recording. Dispatch
+  dimension proofs belong upstream; never replace them with a CPU read or invented
+  dimensions. The context owns its native command signature through retirement.
+- Uniform CBV, structured SRV and structured UAV namespaces use the portable
+  descriptor-kind owner. Uniform ranges include initialized physical padding,
+  obey native alignment/size limits, and share graphics/compute resource leases.
+  Do not reinterpret b-registers as t-registers or widen a logical binding silently.

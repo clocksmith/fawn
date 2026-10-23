@@ -219,6 +219,19 @@ doe_dx_status doe_dx_native_dispatch(doe_dx_native_commands *commands,
     return DOE_DX_OK;
 }
 
+doe_dx_status doe_dx_native_dispatch_indirect(doe_dx_native_commands *commands,
+    doe_dx_native_pipeline *pipeline, const doe_dx_native_resources *resources,
+    doe_dx_native_buffer *arguments, uint64_t offset, doe_dx_error *error) {
+    doe_dx_status status = outcome(MOCK_DISPATCH_INDIRECT, error);
+    if (status != DOE_DX_OK) return status;
+    record_resources(commands, pipeline, resources);
+    record_buffer(commands, arguments);
+    mock.indirect_arguments = arguments;
+    mock.indirect_offset = offset;
+    mock.indirect_dispatches++;
+    return DOE_DX_OK;
+}
+
 doe_dx_status doe_dx_native_finish(doe_dx_native_commands *commands, doe_dx_error *error) {
     assert(commands && !commands->execution);
     mock.finishes++;

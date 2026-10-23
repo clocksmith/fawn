@@ -15,6 +15,8 @@ text or from pipeline maxima.
 Keep the exact C method signature for each Objective-C selector. Review both
 x86_64 struct-return and arm64 dispatch branches after ABI edits. Native error
 codes and original operation names must survive failed encoding and completion.
+Copy terminal NSError text before its autorelease pool drains into the existing
+command failure record. Later native observations never replace that first record.
 
 Render passes are whole-call snapshots: validate every draw, then acquire all
 leases before creating the native encoder. Attachment clear/load/store state is
@@ -27,6 +29,10 @@ and blit capabilities, never resolve unwritten samples, and preserve native erro
 values instead of fabricating time or assuming Mach clock units. Reset/aggregation and public query-set policy remain upstream.
 
 Portable call-ledger tests are not a Metal emulator, SDK check or physical run.
+On an Apple toolchain, run `make sdk-abi` after native ABI record/signature changes;
+it compiles the actual arm64/x86_64 SDK targets. Keep `native-check` outside ordinary
+`check`; run it only for an authorized healthy Mac, with its 20-second process
+timeout and five-second completion deadline. Retain first failures and scope.
 Do not install Apple SDKs or silently substitute Vulkan/software execution.
 Keep the first failing receipt when recording a constrained rerun. No production
 selection or public support claim follows from this directory's host controls.

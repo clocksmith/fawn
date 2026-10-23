@@ -243,10 +243,16 @@ static void test_terminal_failure(void) {
     assert(doe_mtl_commands_fill(commands, buffer, 0, 64, 0, NULL) == DOE_MTL_OK);
     assert(doe_mtl_commands_submit(commands, NULL) == DOE_MTL_OK);
     mock_result(&mock, 5, -8765);
+    strcpy(mock.completion_message, "Metal terminal detail preserved before retirement");
     assert(doe_mtl_commands_poll(commands, &error) == DOE_MTL_EXECUTION_FAILED);
     assert(error.native_code == -8765);
+    assert(strcmp(error.message, mock.completion_message) == 0);
+    assert(strcmp(error.operation, "MTLCommandBuffer.error") == 0);
+    doe_mtl_error first = error;
+    strcpy(mock.completion_message, "replacement must not overwrite the first error");
+    mock_result(&mock, 5, -111);
     assert(doe_mtl_commands_wait(commands, &error) == DOE_MTL_EXECUTION_FAILED);
-    assert(error.native_code == -8765);
+    assert(memcmp(&error, &first, sizeof(error)) == 0);
     assert(doe_mtl_commands_release(commands) == DOE_MTL_OK);
     assert(doe_mtl_buffer_read(buffer, 0, output, 64) == DOE_MTL_EXECUTION_FAILED);
     assert(output[0] == 0x31);

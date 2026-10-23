@@ -24,8 +24,20 @@ doe_dx_status doe_dx_create_root(doe_dx_native_context *context,
     D3D12_DESCRIPTOR_RANGE ranges[DOE_DX_MAX_BINDINGS] = {0};
     for (size_t index = 0; index < desc->buffers.binding_count; index++) {
         const doe_dx_binding_layout *binding = &desc->buffers.bindings[index];
-        ranges[index].RangeType = binding->access == DOE_DX_READ_ONLY ?
-            D3D12_DESCRIPTOR_RANGE_TYPE_SRV : D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
+        doe_dx_descriptor_kind kind = doe_dx_buffer_descriptor_kind(binding);
+        switch (kind) {
+            case DOE_DX_DESCRIPTOR_CBV:
+                ranges[index].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
+                break;
+            case DOE_DX_DESCRIPTOR_SRV:
+                ranges[index].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+                break;
+            case DOE_DX_DESCRIPTOR_UAV:
+                ranges[index].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
+                break;
+            case DOE_DX_DESCRIPTOR_INVALID:
+                return doe_dx_fail(DOE_DX_INVALID_ARGUMENT, 0, "native.root.binding_kind", error);
+        }
         ranges[index].NumDescriptors = 1;
         ranges[index].BaseShaderRegister = binding->shader_register;
         ranges[index].RegisterSpace = binding->register_space;

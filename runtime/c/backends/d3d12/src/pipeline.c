@@ -1,9 +1,22 @@
 /* SPDX-License-Identifier: MIT */
 #include "internal.h"
 
-static bool same_register(uint32_t reg_a, uint32_t space_a, doe_dx_binding_access access_a,
-    uint32_t reg_b, uint32_t space_b, doe_dx_binding_access access_b) {
-    return reg_a == reg_b && space_a == space_b && access_a == access_b;
+static doe_dx_descriptor_kind texture_kind(doe_dx_binding_access access) {
+    if (access == DOE_DX_READ_ONLY) return DOE_DX_DESCRIPTOR_SRV;
+    if (access == DOE_DX_READ_WRITE) return DOE_DX_DESCRIPTOR_UAV;
+    return DOE_DX_DESCRIPTOR_INVALID;
+}
+
+doe_dx_descriptor_kind doe_dx_buffer_descriptor_kind(const doe_dx_binding_layout *layout) {
+    if (layout->view == DOE_DX_STRUCTURED) return texture_kind(layout->access);
+    if (layout->view == DOE_DX_UNIFORM && layout->access == DOE_DX_READ_ONLY)
+        return DOE_DX_DESCRIPTOR_CBV;
+    return DOE_DX_DESCRIPTOR_INVALID;
+}
+
+static bool same_register(uint32_t reg_a, uint32_t space_a, doe_dx_descriptor_kind kind_a,
+    uint32_t reg_b, uint32_t space_b, doe_dx_descriptor_kind kind_b) {
+    return reg_a == reg_b && space_a == space_b && kind_a == kind_b;
 }
 
 static doe_dx_status validate_layout(const doe_dx_resource_pipeline_desc *desc) {
@@ -17,13 +30,15 @@ static doe_dx_status validate_layout(const doe_dx_resource_pipeline_desc *desc) 
         return DOE_DX_RANGE;
     for (size_t index = 0; index < buffers->binding_count; index++) {
         const doe_dx_binding_layout *binding = &buffers->bindings[index];
-        if (binding->stride < 4 || binding->stride > 2048 || binding->stride % 4 ||
-            (binding->access != DOE_DX_READ_ONLY && binding->access != DOE_DX_READ_WRITE))
+        doe_dx_descriptor_kind kind = doe_dx_buffer_descriptor_kind(binding);
+        if (kind == DOE_DX_DESCRIPTOR_INVALID ||
+            (kind == DOE_DX_DESCRIPTOR_CBV ? binding->stride != 0 :
+                binding->stride < 4 || binding->stride > 2048 || binding->stride % 4))
             return DOE_DX_INVALID_ARGUMENT;
         for (size_t prior = 0; prior < index; prior++) {
             const doe_dx_binding_layout *other = &buffers->bindings[prior];
-            if (same_register(binding->shader_register, binding->register_space, binding->access,
-                other->shader_register, other->register_space, other->access)) return DOE_DX_INVALID_ARGUMENT;
+            if (same_register(binding->shader_register, binding->register_space, kind,
+                other->shader_register, other->register_space, doe_dx_buffer_descriptor_kind(other))) return DOE_DX_INVALID_ARGUMENT;
         }
     }
     for (size_t index = 0; index < desc->texture_count; index++) {
@@ -34,13 +49,13 @@ static doe_dx_status validate_layout(const doe_dx_resource_pipeline_desc *desc) 
             return DOE_DX_INVALID_ARGUMENT;
         for (size_t prior = 0; prior < index; prior++) {
             const doe_dx_texture_binding_layout *other = &desc->textures[prior];
-            if (same_register(binding->shader_register, binding->register_space, binding->access,
-                other->shader_register, other->register_space, other->access)) return DOE_DX_INVALID_ARGUMENT;
+            if (same_register(binding->shader_register, binding->register_space, texture_kind(binding->access),
+                other->shader_register, other->register_space, texture_kind(other->access))) return DOE_DX_INVALID_ARGUMENT;
         }
         for (size_t buffer = 0; buffer < buffers->binding_count; buffer++) {
             const doe_dx_binding_layout *other = &buffers->bindings[buffer];
-            if (same_register(binding->shader_register, binding->register_space, binding->access,
-                other->shader_register, other->register_space, other->access)) return DOE_DX_INVALID_ARGUMENT;
+            if (same_register(binding->shader_register, binding->register_space, texture_kind(binding->access),
+                other->shader_register, other->register_space, doe_dx_buffer_descriptor_kind(other))) return DOE_DX_INVALID_ARGUMENT;
         }
     }
     for (size_t index = 0; index < desc->sampler_count; index++) {

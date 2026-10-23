@@ -16,6 +16,7 @@ struct doe_dx_native_context {
     ID3D12Device *device;
     ID3D12CommandQueue *queue;
     ID3D12Fence *fence;
+    ID3D12CommandSignature *dispatch_signature;
 };
 struct doe_dx_native_buffer {
     ID3D12Resource *resource;

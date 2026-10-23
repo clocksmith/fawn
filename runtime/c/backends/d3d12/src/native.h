@@ -31,6 +31,12 @@ typedef struct doe_dx_native_geometry {
     doe_dx_native_texture *depth;
 } doe_dx_native_geometry;
 
+typedef enum doe_dx_descriptor_kind {
+    DOE_DX_DESCRIPTOR_INVALID, DOE_DX_DESCRIPTOR_SRV, DOE_DX_DESCRIPTOR_UAV, DOE_DX_DESCRIPTOR_CBV
+} doe_dx_descriptor_kind;
+/* One portable classification used by admission and SDK descriptor lowering. */
+doe_dx_descriptor_kind doe_dx_buffer_descriptor_kind(const doe_dx_binding_layout *layout);
+
 doe_dx_status doe_dx_fail(doe_dx_status status, int32_t native_code,
     const char *operation, doe_dx_error *error);
 doe_dx_status doe_dx_native_open(const doe_dx_options *options,
@@ -83,6 +89,9 @@ void doe_dx_native_copy(doe_dx_native_commands *commands, doe_dx_native_buffer *
 doe_dx_status doe_dx_native_dispatch(doe_dx_native_commands *commands,
     doe_dx_native_pipeline *pipeline, const doe_dx_native_resources *resources,
     uint32_t x, uint32_t y, uint32_t z, doe_dx_error *error);
+doe_dx_status doe_dx_native_dispatch_indirect(doe_dx_native_commands *commands,
+    doe_dx_native_pipeline *pipeline, const doe_dx_native_resources *resources,
+    doe_dx_native_buffer *arguments, uint64_t offset, doe_dx_error *error);
 doe_dx_status doe_dx_native_finish(doe_dx_native_commands *commands, doe_dx_error *error);
 void doe_dx_native_execute(doe_dx_native_context *context, doe_dx_native_commands *commands);
 doe_dx_status doe_dx_native_signal(doe_dx_native_context *context, uint64_t value,

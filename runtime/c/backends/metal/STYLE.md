@@ -36,6 +36,10 @@ Metal-specific boundary rules:
   path publishes it. Resolving records does not certify non-error counter values.
 - Keep device/public validation separate. This API accepts already validated MSL
   and explicit compiler slot/workgroup facts, not source-derived heuristics.
+- Terminal error operation, native code and bounded copied message belong to the
+  existing command failure snapshot. Capture the NSError while its pool is live,
+  before retiring native/resource obligations. A later poll or caller error output
+  must not replace the first snapshot or retain an Objective-C string pointer.
 - Tests may replace the private native call table or exact typed message calls;
   no production constructor accepts a simulator. Assert identities and call
   ordering, not invented GPU results. Document SDK and physical gaps separately.

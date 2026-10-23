@@ -25,7 +25,13 @@ doe_dx_status doe_dx_prepare_descriptors(doe_dx_native_commands *commands,
     for (size_t index = 0; index < resources->buffer_count; index++) {
         const doe_dx_binding_layout *layout = &pipeline->bindings[index];
         const doe_dx_native_binding *binding = &resources->buffers[index];
-        if (layout->access == DOE_DX_READ_ONLY) {
+        doe_dx_descriptor_kind kind = doe_dx_buffer_descriptor_kind(layout);
+        if (kind == DOE_DX_DESCRIPTOR_CBV) {
+            D3D12_CONSTANT_BUFFER_VIEW_DESC view = {0};
+            view.BufferLocation = ID3D12Resource_GetGPUVirtualAddress(binding->buffer->resource) + binding->offset;
+            view.SizeInBytes = (UINT)binding->size;
+            ID3D12Device_CreateConstantBufferView(device, &view, handle);
+        } else if (kind == DOE_DX_DESCRIPTOR_SRV) {
             D3D12_SHADER_RESOURCE_VIEW_DESC view = {0};
             view.Format = DXGI_FORMAT_UNKNOWN;
             view.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
@@ -73,8 +79,9 @@ void doe_dx_transition_resources(doe_dx_native_commands *commands, doe_dx_native
     D3D12_RESOURCE_STATES read = D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
     if (graphics) read |= D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
     for (size_t index = 0; index < resources->buffer_count; index++) {
-        D3D12_RESOURCE_STATES state = pipeline->bindings[index].access == DOE_DX_READ_ONLY ?
-            read : D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+        doe_dx_descriptor_kind kind = doe_dx_buffer_descriptor_kind(&pipeline->bindings[index]);
+        D3D12_RESOURCE_STATES state = kind == DOE_DX_DESCRIPTOR_CBV ? D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER :
+            kind == DOE_DX_DESCRIPTOR_SRV ? read : D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
         doe_dx_transition(commands->list, resources->buffers[index].buffer->resource,
             restore ? state : D3D12_RESOURCE_STATE_COPY_DEST,
             restore ? D3D12_RESOURCE_STATE_COPY_DEST : state);

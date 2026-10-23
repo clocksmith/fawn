@@ -95,6 +95,14 @@ typedef struct doe_dx_compute_resources {
 doe_dx_status doe_dx_commands_dispatch_resources(doe_dx_commands *commands,
     doe_dx_pipeline *pipeline, const doe_dx_compute_resources *resources,
     uint32_t x, uint32_t y, uint32_t z, doe_dx_error *error);
+/* One native DISPATCH argument record: three uint32 group dimensions at a
+ * 4-byte-aligned offset in initialized DEFAULT memory. The argument buffer must
+ * not alias any shader binding. Contents stay GPU-owned: the caller/front end
+ * proves dimensions <=65535 and ordering; this backend never reads or clamps
+ * arguments on the CPU. Zero dimensions retain the native no-work meaning. */
+doe_dx_status doe_dx_commands_dispatch_indirect(doe_dx_commands *commands,
+    doe_dx_pipeline *pipeline, const doe_dx_compute_resources *resources,
+    doe_dx_buffer *arguments, uint64_t offset, doe_dx_error *error);
 #ifdef __cplusplus
 }
 #endif

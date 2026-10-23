@@ -87,11 +87,13 @@ doe_dx_status doe_dx_buffer_read(doe_dx_buffer *buffer, uint64_t offset,
 
 enum { DOE_DX_MAX_BINDINGS = 16, DOE_DX_MAX_COMMAND_RESOURCES = 64 };
 typedef enum doe_dx_binding_access { DOE_DX_READ_ONLY, DOE_DX_READ_WRITE } doe_dx_binding_access;
+typedef enum doe_dx_buffer_view { DOE_DX_STRUCTURED, DOE_DX_UNIFORM } doe_dx_buffer_view;
 typedef struct doe_dx_binding_layout {
     uint32_t shader_register;
     uint32_t register_space;
-    uint32_t stride; /* Structured element size: multiple of 4, 4..2048. */
+    uint32_t stride; /* STRUCTURED: multiple of 4, 4..2048. UNIFORM: exactly 0. */
     doe_dx_binding_access access;
+    doe_dx_buffer_view view; /* UNIFORM is read-only and uses HLSL b-registers. */
 } doe_dx_binding_layout;
 typedef struct doe_dx_pipeline_desc {
     const void *bytecode; /* Compiler-validated DXIL/DXBC, copied by native creation. */
@@ -99,7 +101,10 @@ typedef struct doe_dx_pipeline_desc {
     const doe_dx_binding_layout *bindings;
     size_t binding_count;
 } doe_dx_pipeline_desc;
-/* Compiler/native frontend owns shader reflection, binding identity, workgroup
+/* Uniform bindings require 256-byte aligned offsets and nonzero sizes, a size
+ * multiple of 256 up to 65536, and initialized DEFAULT memory including padding.
+ * The frontend owns logical uniform lengths and padding; no implicit widening.
+ * Compiler/native frontend owns shader reflection, binding identity, workgroup
  * limits and bounds-proof obligations. This owner checks native ranges only. */
 doe_dx_status doe_dx_pipeline_create(doe_dx_context *context,
     const doe_dx_pipeline_desc *desc, doe_dx_pipeline **out, doe_dx_error *error);
