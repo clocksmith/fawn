@@ -148,14 +148,17 @@ transfer subset is established by that consumer, not queries or broader graphics
 
 The reusable-bundle consumer uses the same explicit ICD selection and timeout,
 with target `vulkan-render-lifetime`. One self-contained bundle is replayed twice
-under distinct dynamic scissors, producing 48 magenta and 16 blue pixels in an
-8x8 target. All caller resources and the bundle are released before native
+under distinct dynamic scissors within one real native pass, producing 48 magenta
+and 16 blue pixels in an 8x8 target. A following empty LOAD/STORE pass preserves
+the image. A bounded borrowed draw span lowers the existing immutable packets;
+missing end and unsupported interleaved query events reject before native work. All caller resources and the bundle are released before native
 recording; pending native reads/releases reject, and all six adopted payloads
 finalize only at terminal resource settlement. Native commands retain exact
 physical objects through later readback and retirement. Shader fixtures are
 retained Tint `particles.wgsl` vertex/fragment SPIR-V, not C graphics compiler
 output; their hashes/provenance are in the backend `SMOKE_IMAGE_FIXTURES.json`.
-The consumer admits one RGBA8 target, one uniform binding and one vertex buffer;
+The focused consumer admits two direct draws, one RGBA8 target, one uniform
+binding and one vertex buffer;
 unsupported depth/query/indexed/indirect/discard/dynamic blend state rejects.
 This is software execution and ownership evidence, not public native render ABI
 integration, graphics parity or physical GPU qualification.
@@ -192,5 +195,7 @@ empty-bundle read-only correction; it does not claim nanosecond normalization.
 whole-render-scope and query-descriptor checks.
 `DEVELOPER_RECEIPT_RENDER_STATE.json` binds later borrowed graphics accessors,
 nullable vertex unbind and pass-local occlusion admission host checks.
+`DEVELOPER_RECEIPT_NATIVE_PASS.json` binds the later actual single-pass span and
+empty LOAD/STORE consumer; it does not qualify native occlusion execution.
 `DEVELOPER_RECEIPT.json` preserves the earlier smaller historical check.
 Run the common source-size check; every owned C source/header is below 999 lines.

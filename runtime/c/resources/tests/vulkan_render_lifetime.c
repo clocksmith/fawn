@@ -18,26 +18,20 @@ static doe_vk_shader load_shader(const char *path, const char *entry)
 }
 
 /* This consumer deliberately admits only its exercised graphics signature.
- * It consumes immutable packets rather than creating a second pass recorder.
- * Unsupported state is rejected, never silently omitted or CPU emulated. */
-static doe_vk_status render_packet(doe_vk_commands *commands, const doe_resource_render_packet *packet)
+ * A bounded borrowed span lowers into ONE native pass, never a second recorder.
+ * Unsupported events/state reject before any native pass preparation. */
+static doe_vk_status validate_render_packet(const doe_resource_render_packet *packet)
 {
     if (!packet || packet->targets.depth_stencil || packet->targets.occlusion_queries ||
         packet->targets.color_store != WGPUStoreOp_Store || packet->indexed || packet->indirect ||
         packet->occlusion_active || packet->state.stencil_reference) return DOE_VK_UNSUPPORTED;
     for (size_t i = 0; i < 4; i++) if (packet->state.blend[i] != 0) return DOE_VK_UNSUPPORTED;
-    doe_vk_texture_view *target = doe_resource_view_native(packet->targets.color);
-    if (packet->boundary_only) {
-        if (packet->first_in_pass) {
-            if (packet->targets.color_load != WGPULoadOp_Clear) return DOE_VK_UNSUPPORTED;
-            doe_vk_clear_color clear = {0};
-            for (size_t i = 0; i < 4; i++) clear.float32[i] = (float)packet->targets.clear_color[i];
-            return doe_vk_commands_clear_color(commands, target, clear);
-        }
-        /* Native draw packets store unconditionally. Explicit pass end with
-         * Store therefore needs no additional native action; discard rejects. */
-        return packet->last_in_pass ? DOE_VK_OK : DOE_VK_UNSUPPORTED;
-    }
+    return DOE_VK_OK;
+}
+
+static doe_vk_status prepare_draw(const doe_resource_render_packet *packet,
+    doe_vk_render_pass_draw *draw, doe_vk_binding_resource *binding, doe_vk_buffer_binding *vertex)
+{
     if (!packet->groups[0] || !packet->vertices[0].buffer) return DOE_VK_UNSUPPORTED;
     for (size_t i = 1; i < DOE_RESOURCE_MAX_GROUPS; i++)
         if (packet->groups[i]) return DOE_VK_UNSUPPORTED;
@@ -50,17 +44,58 @@ static doe_vk_status render_packet(doe_vk_commands *commands, const doe_resource
     doe_resource_binding resolved;
     if (doe_resource_bind_group_resolve(packet->groups[0], packet->offsets.values[0],
         packet->offsets.counts[0], &resolved, 1) != DOE_RESOURCE_OK) return DOE_VK_INVALID_ARGUMENT;
-    doe_vk_binding_resource binding = {.kind = DOE_VK_BINDING_UNIFORM,
+    *binding = (doe_vk_binding_resource){.kind = DOE_VK_BINDING_UNIFORM,
         .value.buffer = {doe_resource_buffer_native(resolved.resource.buffer.buffer),
             resolved.resource.buffer.offset, resolved.resource.buffer.size}};
-    doe_vk_buffer_binding vertex = {doe_resource_buffer_native(packet->vertices[0].buffer),
+    *vertex = (doe_vk_buffer_binding){doe_resource_buffer_native(packet->vertices[0].buffer),
         packet->vertices[0].offset, packet->vertices[0].size};
-    doe_vk_render_draw draw = {.vertex_count = packet->count, .instance_count = packet->instances,
-        .first_vertex = packet->first, .first_instance = packet->first_instance};
-    memcpy(draw.viewport, packet->state.viewport, sizeof(draw.viewport));
-    memcpy(draw.scissor, packet->state.scissor, sizeof(draw.scissor));
-    return doe_vk_commands_draw(commands, doe_resource_render_pipeline_native(packet->pipeline),
-        target, &binding, 1, &vertex, 1, &draw);
+    *draw = (doe_vk_render_pass_draw){.pipeline = doe_resource_render_pipeline_native(packet->pipeline),
+        .bindings = binding, .binding_count = 1, .vertices = vertex, .vertex_buffer_count = 1,
+        .draw = {.vertex_count = packet->count, .instance_count = packet->instances,
+            .first_vertex = packet->first, .first_instance = packet->first_instance,
+            .viewport_convention = DOE_VK_VIEWPORT_WEBGPU}};
+    memcpy(draw->draw.viewport, packet->state.viewport, sizeof(draw->draw.viewport));
+    memcpy(draw->draw.scissor, packet->state.scissor, sizeof(draw->draw.scissor));
+    return DOE_VK_OK;
+}
+
+static doe_vk_status render_pass(doe_vk_commands *commands,
+    const doe_resource_command *records, size_t count, size_t *consumed)
+{
+    if (!count || records[0].kind != DOE_COMMAND_RENDER) return DOE_VK_UNSUPPORTED;
+    const doe_resource_render_packet *begin = doe_resource_render_record_borrow(records[0].value.render);
+    if (validate_render_packet(begin) != DOE_VK_OK || !begin->boundary_only ||
+        !begin->first_in_pass || begin->last_in_pass) return DOE_VK_UNSUPPORTED;
+    doe_vk_clear_color clear = {0};
+    const doe_vk_clear_color *clear_pointer = NULL;
+    if (begin->targets.color_load == WGPULoadOp_Clear) {
+        for (size_t i = 0; i < 4; i++) clear.float32[i] = (float)begin->targets.clear_color[i];
+        clear_pointer = &clear;
+    } else if (begin->targets.color_load != WGPULoadOp_Load) return DOE_VK_UNSUPPORTED;
+    enum { MAX_CONSUMER_DRAWS = 2 };
+    doe_vk_render_pass_draw draws[MAX_CONSUMER_DRAWS];
+    doe_vk_binding_resource bindings[MAX_CONSUMER_DRAWS];
+    doe_vk_buffer_binding vertices[MAX_CONSUMER_DRAWS];
+    size_t draw_count = 0;
+    for (size_t i = 1; i < count; i++) {
+        /* Actual occlusion native support is not present in this increment. */
+        if (records[i].kind != DOE_COMMAND_RENDER) return DOE_VK_UNSUPPORTED;
+        const doe_resource_render_packet *packet = doe_resource_render_record_borrow(records[i].value.render);
+        if (validate_render_packet(packet) != DOE_VK_OK || packet->first_in_pass ||
+            packet->targets.color != begin->targets.color) return DOE_VK_UNSUPPORTED;
+        if (packet->boundary_only) {
+            if (!packet->last_in_pass) return DOE_VK_UNSUPPORTED;
+            doe_vk_status status = doe_vk_commands_render_pass(commands,
+                doe_resource_view_native(begin->targets.color), clear_pointer, draws, draw_count);
+            if (status == DOE_VK_OK) *consumed = i + 1;
+            return status;
+        }
+        if (packet->last_in_pass || draw_count == MAX_CONSUMER_DRAWS) return DOE_VK_UNSUPPORTED;
+        doe_vk_status status = prepare_draw(packet, &draws[draw_count], &bindings[draw_count], &vertices[draw_count]);
+        if (status != DOE_VK_OK) return status;
+        draw_count++;
+    }
+    return DOE_VK_UNSUPPORTED; /* Missing end must not emit a partial pass. */
 }
 
 static doe_resource_buffer *adopt_buffer(const doe_resource_config *config, lifecycle *life,
@@ -193,6 +228,10 @@ int main(int argc, char **argv)
     doe_resource_render_bundle_release(bundle);
     assert(doe_resource_render_pass_end(pass) == DOE_RESOURCE_OK);
     doe_resource_render_pass_release(pass);
+    targets.color_load = WGPULoadOp_Load;
+    assert(doe_resource_encoder_begin_render(encoder, &targets, &pass) == DOE_RESOURCE_OK);
+    assert(doe_resource_render_pass_end(pass) == DOE_RESOURCE_OK);
+    doe_resource_render_pass_release(pass);
     doe_resource_texture_copy read = {.bytes_per_row = 32, .rows_per_image = 8,
         .width = 8, .height = 8, .depth_or_layers = 1};
     assert(doe_resource_encoder_copy_texture(encoder, readback, image, &read,
@@ -209,16 +248,20 @@ int main(int argc, char **argv)
     doe_vk_context_release(context); /* All remaining device leases belong to owners. */
     size_t count;
     const doe_resource_command *records = doe_resource_commands_borrow(commands, &count);
-    assert(count == 5);
-    for (size_t i = 0; i < count; i++) {
+    assert(count == 7);
+    doe_resource_render_packet unsupported = *doe_resource_render_record_borrow(records[0].value.render);
+    unsupported.targets.color_store = WGPUStoreOp_Discard;
+    assert(validate_render_packet(&unsupported) == DOE_VK_UNSUPPORTED);
+    doe_resource_command unsupported_events[] = {records[0], {.kind = DOE_COMMAND_BEGIN_OCCLUSION}};
+    size_t consumed = 99;
+    assert(render_pass(native_commands, unsupported_events, 2, &consumed) == DOE_VK_UNSUPPORTED && consumed == 99);
+    assert(render_pass(native_commands, records, 3, &consumed) == DOE_VK_UNSUPPORTED && consumed == 99);
+    size_t native_passes = 0;
+    for (size_t i = 0; i < count;) {
         if (records[i].kind == DOE_COMMAND_RENDER) {
-            const doe_resource_render_packet *packet = doe_resource_render_record_borrow(records[i].value.render);
-            if (i == 0) {
-                doe_resource_render_packet unsupported = *packet;
-                unsupported.targets.color_store = WGPUStoreOp_Discard;
-                assert(render_packet(native_commands, &unsupported) == DOE_VK_UNSUPPORTED);
-            }
-            require(render_packet(native_commands, packet), "render owned packet");
+            require(render_pass(native_commands, records + i, count - i, &consumed), "render owned pass span");
+            i += consumed;
+            native_passes++;
         } else {
             assert(records[i].kind == DOE_COMMAND_BUFFER_TEXTURE &&
                 records[i].value.texture.direction == DOE_RESOURCE_TEXTURE_TO_BUFFER);
@@ -230,8 +273,10 @@ int main(int argc, char **argv)
             require(doe_vk_commands_read_texture(native_commands,
                 doe_resource_texture_native(records[i].value.texture.texture), region,
                 doe_resource_buffer_native(records[i].value.texture.buffer), packed), "read owned attachment");
+            i++;
         }
     }
+    assert(native_passes == 2); /* One two-draw pass, one empty load/store pass. */
     assert(doe_resource_commands_begin_submit(commands) == DOE_RESOURCE_OK);
     doe_resource_commands_release(commands);
     require(doe_vk_commands_submit(native_commands, &error), "submit");
@@ -250,6 +295,6 @@ int main(int argc, char **argv)
         assert(!memcmp(pixels[y][x], expected, sizeof(expected)));
     }
     require(doe_vk_commands_release(native_commands), "retire native owner");
-    puts("PASS self-contained resource bundle replay twice, exact 64 pixels, early caller release, pending retention and six terminal native finalizers");
+    puts("PASS resource bundle replay twice in one native pass, empty load/store pass, exact 64 pixels, early release, pending retention and six terminal native finalizers");
     return 0;
 }
