@@ -36,8 +36,9 @@ def build_package(repo: Path, revision: str, build: Path, destination: Path,
                   cc: str, cxx: str) -> dict[str, object]:
     if platform.system() != "Linux":
         raise ValueError("This package route currently supports Linux ELF only")
-    if build.exists() or destination.exists() or destination.is_symlink():
+    if build.exists() or build.is_symlink() or destination.exists() or destination.is_symlink():
         raise FileExistsError("Use fresh build and destination paths; existing work is never replaced")
+    build, destination = build.resolve(), destination.resolve()
     if build == destination or build in destination.parents or destination in build.parents:
         raise ValueError("Build and destination must be disjoint directories")
     commit = captured(["git", "rev-parse", "--verify", revision + "^{commit}"], repo)
@@ -139,8 +140,8 @@ def main() -> None:
     parser.add_argument("--cc", default="gcc")
     parser.add_argument("--cxx", default="g++")
     args = parser.parse_args()
-    result = build_package(args.repo.resolve(), args.ref, args.build.resolve(),
-                           args.destination.resolve(), args.cc, args.cxx)
+    result = build_package(args.repo.resolve(), args.ref, args.build.absolute(),
+                           args.destination.absolute(), args.cc, args.cxx)
     print(f"PASS source-bound relocatable partial C package: {result['source_commit']}")
     print(args.destination / "MANIFEST.json")
 
