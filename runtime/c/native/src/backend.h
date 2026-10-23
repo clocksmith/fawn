@@ -44,6 +44,7 @@ WGPUStatus native_vulkan_limits(const doe_vk_caps *caps, WGPULimits *out);
 native_result native_command_create(const native_backend *backend, native_command_handle *out);
 native_result native_command_submit(native_command_handle *commands);
 native_result native_command_wait(native_command_handle *commands);
+native_result native_command_poll(native_command_handle *commands);
 native_result native_command_recover(native_command_handle *commands);
 native_result native_command_release(native_command_handle *commands);
 #endif

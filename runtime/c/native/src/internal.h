@@ -31,6 +31,10 @@ typedef struct native_device {
     atomic_uint external_references;
     native_loss *loss;
     pthread_mutex_t mutex;
+    pthread_cond_t pending_changed;
+    pthread_t pending_thread;
+    bool pending_progress_ready;
+    bool pending_progress_join;
     doe_instance *instance;
     native_backend backend;
     doe_resource_config resources;
@@ -46,6 +50,7 @@ typedef struct native_device {
     doe_vk_dispatch_validator *dispatch_validator;
     doe_vk_draw_validator *draw_validator;
     native_pending *pending;
+    native_result retired_failure;
 } native_device;
 
 /* Native payloads have no independent reference count. Their resource owner
@@ -174,6 +179,12 @@ typedef struct native_queue_settlement {
     native_result status;
 } native_queue_settlement;
 native_queue_settlement native_settle_pending(native_device *device);
+void native_progress_pending(native_device *device);
+/* Prepared before device publication: progress shares the existing pending list
+ * and owns one ordinary device lease until all callers and work retire. */
+bool native_pending_progress_start(native_device *device);
+void native_pending_progress_wake(native_device *device);
+void native_pending_progress_destroy(native_device *device);
 /* Caller holds device mutex. Always adopts commands, including failed/unknown
  * completion. A private initialization submission has its own device lease. */
 doe_vk_status native_submit_commands(native_device *device, doe_vk_commands *commands);

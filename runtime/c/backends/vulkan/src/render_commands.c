@@ -275,7 +275,8 @@ doe_vk_status doe_vk_commands_draw(doe_vk_commands *commands,
     if (status != DOE_VK_OK) return status;
     if (draw == NULL) return doe_vk_poison(commands, DOE_VK_INVALID_ARGUMENT);
     const doe_vk_render_pass_op op = {.kind = DOE_VK_RENDER_DRAW,
-        .value.draw = {pipeline, bindings, binding_count, vertices, vertex_count, *draw}};
+        .value.draw = {.pipeline = pipeline, .bindings = bindings, .binding_count = binding_count,
+            .vertices = vertices, .vertex_buffer_count = vertex_count, .draw = *draw}};
     return doe_vk_commands_render_pass_ops(commands, target, NULL, NULL, &op, 1);
 }
 

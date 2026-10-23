@@ -150,10 +150,31 @@ doe_vk_status native_device_status(native_device *device)
 void native_device_release(void *identity)
 {
     native_device *device = identity;
-    if (!device || !native_release_count(&device->references)) return;
+    if (!device) return;
+    /* Serialize the last caller's drop with the progress owner's sleep/exit.
+     * Its ordinary device lease prevents finalization while work is unresolved. */
+    native_lock(device);
+    if (device->pending_progress_ready && !device->pending &&
+            atomic_load_explicit(&device->references, memory_order_acquire) == 2 &&
+            !pthread_equal(pthread_self(), device->pending_thread)) {
+        /* No pending native use remains. Keep this caller's lease while joining
+         * so ordinary final release completes before a loader may unload us. */
+        device->pending_progress_join = true;
+        pthread_t thread = device->pending_thread;
+        native_pending_progress_wake(device);
+        native_unlock(device);
+        if (pthread_join(thread, NULL)) abort();
+        native_device_release(device);
+        return;
+    }
+    bool last = native_release_count(&device->references);
+    if (!last) native_pending_progress_wake(device);
+    native_unlock(device);
+    if (!last) return;
     /* Pending resource submissions hold device leases, so finalization cannot
      * race or discard an unresolved backend obligation. */
     if (device->pending) abort();
+    native_pending_progress_destroy(device);
     if (doe_error_scope_deinit(device->errors).status != DOE_ERROR_SCOPE_OK) abort();
     free(device->error_storage);
     if (doe_label_store_destroy(device->labels) != DOE_LABEL_OK) abort();
@@ -229,6 +250,12 @@ static native_device *create_device(native_adapter *adapter, const WGPUDeviceDes
     if (descriptor) device->uncaptured = descriptor->uncapturedErrorCallbackInfo;
     result = doe_error_scope_set_handler(device->errors, uncaptured_error, device, NULL);
     if (result.status != DOE_ERROR_SCOPE_OK) abort();
+    if (!native_pending_progress_start(device)) {
+        doe_vk_timestamp_normalizer_release(device->timestamp_normalizer);
+        native_backend_close(&device->backend);
+        doe_instance_release(device->instance);
+        goto failed_errors;
+    }
     native_loss_bind(loss, device);
     return device;
 failed_errors:

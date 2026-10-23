@@ -112,7 +112,7 @@ Developer checks below are not physical qualification or full feature closure.
 7. **Raw image-format integers:** compiler owner, `fa61e2c1`. Existing named format
    constants replace raw values in `image.c`; unrelated enum domains stay distinct.
 
-Fresh backend/pending-work review of `cbdee872` found three additional open
+Fresh backend/pending-work review of `cbdee872` found three additional
 source-level gaps, separate from the seven corrections above:
 - **Stable Vulkan device identity:** Vulkan/native owners. Recreating an adapter
   by enumeration ordinal can select different physical hardware or lose fallback
@@ -121,12 +121,17 @@ source-level gaps, separate from the seven corrections above:
 - **Native error detail:** native owner. Wait/recover and Metal pipeline calls
   discard operation/native-code detail. Carry a small typed first failure through
   settlement and format once at the public boundary; targeted controls pending.
-- **Unattended pending retirement:** native owner. Unknown work keeps resources
-  safely retained, but after every public handle is released no caller may return
-  to retry it. The existing pending owner needs a surviving progress obligation;
-  release-all, later-terminal and failure controls are pending. Uncertain work
-  must never be freed merely to close this finding.
-These are source-inferred findings, not reproduced failures or closed claims.
+- **Unattended pending retirement:** corrected at source with the existing pending
+  owner and one device progress lease. Nonblocking backend polls retain unknown
+  work and retire terminal success/failure after all public handles disappear.
+  Idle final release joins; worker startup fails before device publication. A
+  bounded once-only loader reference retains provider code until process exit,
+  independently of GPU/resource cleanup, so `dlclose` cannot strand the worker
+  in unmapped instructions. CPU Vulkan release-all/startup/recovery/lifecycle
+  controls and real Linux/macOS loader controls pass. Exact inputs and limits:
+  [pending progress receipt](../../runtime/c/native/DEVELOPER_RECEIPT_PROGRESS.json).
+The first two remain source-inferred findings requiring their targeted controls.
+This correction is developer evidence, not physical recovery qualification.
 
 Guides: the common C style retains one parser/semantic/layout owner with multiple
 explicit target adapters. Vulkan's owner guide now states serialized operations

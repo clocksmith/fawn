@@ -24,7 +24,9 @@ error-scope, resource, shader and Vulkan/Metal owner contracts apply.
 ## Invariants
 One tagged device/pending owner selects Vulkan or Metal without fallback.
 No Zig fallback, synthetic completion or device migration. Unknown completion
-retains ownership. Foreign callbacks run outside locks. Reflection does not replace
+retains ownership and a surviving progress obligation. The provider image remains
+resident until process exit, independently of terminal GPU/resource cleanup.
+Foreign callbacks run outside locks. Reflection does not replace
 missing dispatch analysis; command and native obligations keep their existing owners.
 
 ## Acceptance

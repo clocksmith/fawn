@@ -5,10 +5,11 @@
 #include "../src/internal.h"
 #include "consumer.h"
 
-static bool arm, hold;
-static doe_vk_commands *obscured;
-static doe_vk_status injected = DOE_VK_NATIVE_FAILURE;
+static atomic_bool arm, hold;
+static _Atomic(doe_vk_commands *) obscured;
+static _Atomic(doe_vk_status) injected = DOE_VK_NATIVE_FAILURE;
 doe_vk_status __real_doe_vk_commands_submit(doe_vk_commands *, doe_vk_error *);
+doe_vk_status __real_doe_vk_commands_poll(doe_vk_commands *, doe_vk_error *);
 doe_vk_status __real_doe_vk_commands_recover(doe_vk_commands *, doe_vk_error *);
 doe_vk_status __real_doe_vk_commands_release(doe_vk_commands *);
 doe_vk_status __wrap_doe_vk_commands_submit(doe_vk_commands *commands, doe_vk_error *error)
@@ -19,6 +20,12 @@ doe_vk_status __wrap_doe_vk_commands_submit(doe_vk_commands *commands, doe_vk_er
 doe_vk_status __wrap_doe_vk_commands_recover(doe_vk_commands *commands, doe_vk_error *error)
 {
     doe_vk_status actual = __real_doe_vk_commands_recover(commands,error);
+    if (commands == obscured) { assert(actual == DOE_VK_OK); return injected; }
+    return actual;
+}
+doe_vk_status __wrap_doe_vk_commands_poll(doe_vk_commands *commands, doe_vk_error *error)
+{
+    doe_vk_status actual = __real_doe_vk_commands_poll(commands,error);
     if (commands == obscured) { assert(actual == DOE_VK_OK); return injected; }
     return actual;
 }
