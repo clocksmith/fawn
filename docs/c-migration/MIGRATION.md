@@ -146,6 +146,13 @@ Default selection remains Zig. The new `doe_callback_owner.zig` facade and
 obligations; `test_suite_c_callbacks.zig` and `tests/c_callbacks_integration_test.zig`
 are transitional test infrastructure. No baseline inventory entry is erased.
 
+The next [native-instance ownership contract](../../runtime/c/instance/CONTRACT.md)
+is frozen, not implemented or accepted. It moves the actual allocation, sole
+atomic count and accepted queue lifetime into C, with a non-owning copied
+queue/lease view and reversible retained-consumer selection. Independent cases
+and implementation evidence must close before any acceptance claim. Successful
+device/backend execution and physical GPU qualification remain separate gates.
+
 ## Existing authority, not a parallel policy
 
 Owner paths and layer labels come from

@@ -88,3 +88,10 @@ sanitizer runtimes. Such instrumentation covers C/bridge consumers only, not
 all retained Zig memory or synchronization. LeakSanitizer availability is separate
 from AddressSanitizer. See [implementation provenance](PROVENANCE.md) for this
 candidate's observed results, first failures and boundaries.
+
+## Next opaque-instance seam
+
+The additive [borrowed queue-view amendment](INSTANCE_VIEW_AMENDMENT.md) is frozen
+for the next default-off C instance owner. It requires new regression evidence
+for changed adapters; this owner's historical acceptance is not transferred to
+unimplemented or untested instance paths.
