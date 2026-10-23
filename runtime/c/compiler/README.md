@@ -137,8 +137,20 @@ real guarded image loads/stores/queries and explicit-level sampling. ABI6 publis
 sparse handle metadata without inventing buffer layout for image resources.
 `make test-resources` runs its focused C/C++ and target checks.
 
-Other barriers, atomics, matrices, pointers, aliases,
-overrides, f16, remaining subgroup operations, graphics, remaining texture operations, wider builtins,
+`arrayLength` accepts the address of a storage runtime array or its direct final
+structure member. It uses resolved resource identity and the existing runtime-tail
+layout; SPIR-V shares one `OpArrayLength` owner with robust buffer accesses. Its
+result is uniform runtime metadata, not mutable buffer contents. Skipped/dead
+calls still contribute source-static resource closure and validation. Local pointer
+aliases and pointer formals remain explicitly unsupported; this is not a claim of
+general pointer support. No ABI, workspace record or capacity query changes.
+`make test-array-length` checks actual words, closure, short-output atomicity,
+reuse, and the unchanged retained timestamp-normalization kernel with specialization
+constants. Software Vulkan execution is a separate runtime receipt, not physical
+GPU qualification. Rules follow WGSL CRD2026-10-21 section17.4.1.
+
+Other barriers, atomics, matrices, general pointers, aliases,
+overrides, f16, remaining subgroup operations, remaining texture operations, wider builtins,
 other targets and runtime metadata/adoption remain open owners, not implied coverage.
 
 ## CLI and actual consumer
@@ -177,6 +189,7 @@ pool accounting and ceilings; future growth requires an explicit reviewed change
 - image.c / sema_image.c / sema_image_call.c: typed handle resources and image overloads.
 - spirv_image.c: checked real image queries, access and sampling.
 - sema_finalize.c: nonrecursive typed numeric/swizzle value finalization.
+- sema_array.c: direct runtime-array address and length validation.
 - types.c / constants.c: shared typed layout and compact aggregate constants.
 - sema_declarations.c / sema_expression.c / sema_call.c / validate.c: module and
   lexical identity, typed values/references/calls and structured control.

@@ -61,5 +61,6 @@ bool sema_image_auxiliaries(Source *, TypeId, ImageOperation);
 bool sema_image_type(Source *, TypeRef, TypeId, TypeId *);
 uint32_t image_builtin_kind(const Source *, NameSpan);
 bool sema_image_call(Source *, const Expression *, const LocalScope *, bool, bool, ImageOperation, ExpressionValue *);
+bool sema_array_length(Source *, uint32_t, const LocalScope *, bool, ExpressionValue *);
 bool sema_call_value(Source *,uint32_t,const LocalScope *,bool,bool,bool,ExpressionValue *);
 #endif

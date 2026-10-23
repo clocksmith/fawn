@@ -328,10 +328,8 @@ static bool access_condition(Emitter *e, const IrInstruction *ir, uint32_t *cond
         if (input->kind == TYPE_RUNTIME_ARRAY) {
             if (ir->operands.access.category != ROOT_RESOURCE)
                 return spirv_emit_error(e, a->source_offset, "runtime array access without resource root");
-            const ResourceRecord *r = &c->resources[ir->operands.access.root];
-            const uint32_t member = spirv_wrapped_resource(c, r) ? 0u : c->types[r->type - 7u].count - 1u;
             length = spirv_reserve_ids(e, 1u);
-            EMIT(OP_ARRAY_LENGTH, ID_U32, length, r->target, member);
+            if (!spirv_runtime_length(e, ir->operands.access.root, length)) return false;
         } else length = spirv_unsigned_constant(e, input->count);
         uint32_t index = e->values[a->index], check;
         if (a->kind == ACCESS_INDEX_I32) {
@@ -606,6 +604,9 @@ static bool emit_block(Emitter *e, const IrProgram *program, size_t *cursor,
         if (ir->result != 0u && ir->opcode != IR_CONSTANT) e->values[ir->result] = spirv_reserve_ids(e, 1u);
         const uint32_t result = e->values[ir->result];
         switch (ir->opcode) {
+            case IR_ARRAY_LENGTH:
+                if (!spirv_runtime_length(e, ir->operands.scalar.binding, result)) return false;
+                break;
             case IR_STAGE_INPUT:
                 EMIT(OP_COPY_OBJECT, spirv_target_type(e, ir->type), result,
                     e->values[program->limits.instructions + 1u + ir->operands.scalar.binding]);

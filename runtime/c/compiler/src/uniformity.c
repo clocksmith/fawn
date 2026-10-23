@@ -185,6 +185,8 @@ static bool expression_bit(Uniformity *a,uint32_t id,uint32_t cf,uint32_t *out) 
             if (!expression_bit(a,e->left,cf,&left) || !expression_bit(a,e->right,cf,&right)) return false;
             left|=right;
             break;
+        /* The admitted address form names a static resource, not its contents. */
+        case EXPRESSION_ADDRESS:
         case EXPRESSION_INTEGER: case EXPRESSION_DECIMAL: case EXPRESSION_ABSTRACT_INTEGER:
         case EXPRESSION_BOOLEAN: case EXPRESSION_LITERAL: break;
     }
