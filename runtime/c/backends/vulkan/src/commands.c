@@ -271,6 +271,7 @@ doe_vk_status doe_vk_commands_release(doe_vk_commands *commands) {
         commands->dispatches = use->next;
         doe_vk_dispatch_release(context, use);
     }
+    doe_vk_render_release(commands);
     doe_vk_textures_release(commands);
     while (commands->buffers != NULL) {
         doe_vk_buffer_use *use = commands->buffers;

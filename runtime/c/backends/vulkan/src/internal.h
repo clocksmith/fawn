@@ -1,6 +1,7 @@
 #ifndef DOE_VK_INTERNAL_H
 #define DOE_VK_INTERNAL_H
 #include "../include/doe_vk.h"
+#include "../include/doe_vk_render.h"
 #include "vk_abi_functions.h"
 #include "vk_abi_constants.h"
 #include <stdlib.h>
@@ -39,6 +40,12 @@ struct doe_vk_buffer {
 struct doe_vk_pipeline {
     doe_vk_context *context;
     uint32_t references;
+    bool graphics;
+    VkRenderPass render_pass;
+    doe_vk_texture_format color_format;
+    uint32_t vertex_count;
+    doe_vk_vertex_layout vertices[DOE_VK_MAX_VERTEX_BUFFERS];
+    uint32_t vertex_attribute_end[DOE_VK_MAX_VERTEX_BUFFERS];
     uint32_t binding_count;
     uint32_t group_count;
     doe_vk_binding_layout bindings[DOE_VK_MAX_BINDINGS];
@@ -75,6 +82,7 @@ struct doe_vk_commands {
     VkFence fence;
     doe_vk_buffer_use *buffers;
     doe_vk_dispatch_use *dispatches;
+    struct doe_vk_render_use *renders;
     struct doe_vk_texture_use *textures;
 };
 doe_vk_status doe_vk_result(doe_vk_context *context, VkResult result,
@@ -90,6 +98,14 @@ void doe_vk_barrier(doe_vk_commands *commands);
 doe_vk_status doe_vk_recording(doe_vk_commands *commands);
 void doe_vk_textures_complete(doe_vk_commands *commands, doe_vk_status status);
 void doe_vk_textures_release(doe_vk_commands *commands);
+bool doe_vk_shader_valid(const doe_vk_shader *shader);
+doe_vk_status doe_vk_shader_module(doe_vk_context *context, const doe_vk_shader *shader,
+    VkShaderModule *out, doe_vk_error *error);
+doe_vk_status doe_vk_pipeline_layout_create(doe_vk_pipeline *pipeline,
+    const doe_vk_binding_layout *layout, size_t count, uint32_t stages, doe_vk_error *error);
+doe_vk_status doe_vk_bind_resources(doe_vk_commands *commands, doe_vk_pipeline *pipeline,
+    const doe_vk_binding_resource *bindings, size_t count);
+void doe_vk_render_release(doe_vk_commands *commands);
 uint32_t doe_vk_descriptor_type(doe_vk_binding_kind kind);
 void doe_vk_dispatch_release(doe_vk_context *context, doe_vk_dispatch_use *use);
 doe_vk_status doe_vk_bind_dispatch(doe_vk_commands *commands,

@@ -2,10 +2,17 @@
   "purpose": "Existing retained Tint fixture exercises real Vulkan consumption, not the C texture compiler or hardware qualification.",
   "fixtures": {
     "examples/tint-compiler-evidence.benchmark-corpus.spirv.sample.artifacts/particles.wgsl/tint/output.import_level.spv": "d9ee2119347f00da2b6019a7dbdf7925c2438f2e85ff631100cf6068b642e246",
-    "examples/tint-compiler-evidence.benchmark-corpus.spirv.sample.artifacts/particles.wgsl/tint/output.export_level.spv": "7ed11adf38b21368a988aa9d24f2bc517fb8b816521e4f263fac6085c8e49575"
+    "examples/tint-compiler-evidence.benchmark-corpus.spirv.sample.artifacts/particles.wgsl/tint/output.export_level.spv": "7ed11adf38b21368a988aa9d24f2bc517fb8b816521e4f263fac6085c8e49575",
+    "examples/tint-compiler-evidence.benchmark-corpus.spirv.sample.artifacts/particles.wgsl/tint/output.vs_main.spv": "67ce34bc1ab93c646fca282908b71fa1651072060411e1af26a8314cc64ad072",
+    "examples/tint-compiler-evidence.benchmark-corpus.spirv.sample.artifacts/particles.wgsl/tint/output.fs_main.spv": "18ca827fe6b6eb6d08cf4ac3eaa7c3896ac3a8b20bcceef113286bca77ba0fce"
   },
   "entrypoint": "import_level",
   "oracle": "64 output floats equal uploaded alpha i * 0.25f; unused sampler checks descriptor lifetime only.",
   "storage_entrypoint": "export_level",
-  "storage_oracle": "Input128x2 weights, each2x2=(1,0,0,0):64means=.25f,256RGBA8 bytes255. Explicit formatRGBA8, capabilitiesShader1/ImageQuery50."
+  "storage_oracle": "Input128x2 weights, each2x2=(1,0,0,0):64means=.25f,256RGBA8 bytes255. Explicit formatRGBA8, capabilitiesShader1/ImageQuery50.",
+  "render_entrypoints": [
+    "vs_main",
+    "fs_main"
+  ],
+  "render_oracle": "8x8RGBA8 blue clear, three vertices with identityMVP/zeroquad/magenta color, scissorsleft4x8 thenright4x4:bottomright4x4 staysblue; remaining48pixelsmagenta."
 }

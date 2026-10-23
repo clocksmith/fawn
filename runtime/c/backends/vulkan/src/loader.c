@@ -76,6 +76,17 @@ static doe_vk_status load_functions(doe_vk_context *context, doe_vk_error *error
     _Static_assert(sizeof(context->vk.vkCmdCopyBufferToImage) == sizeof(void *), "vkCmdCopyBufferToImage POSIX pointer size");
     _Static_assert(sizeof(context->vk.vkCmdCopyImageToBuffer) == sizeof(void *), "vkCmdCopyImageToBuffer POSIX pointer size");
     _Static_assert(sizeof(context->vk.vkCmdCopyImage) == sizeof(void *), "vkCmdCopyImage POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkCreateRenderPass) == sizeof(void *), "vkCreateRenderPass POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkDestroyRenderPass) == sizeof(void *), "vkDestroyRenderPass POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkCreateFramebuffer) == sizeof(void *), "vkCreateFramebuffer POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkDestroyFramebuffer) == sizeof(void *), "vkDestroyFramebuffer POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkCreateGraphicsPipelines) == sizeof(void *), "vkCreateGraphicsPipelines POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkCmdBeginRenderPass) == sizeof(void *), "vkCmdBeginRenderPass POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkCmdEndRenderPass) == sizeof(void *), "vkCmdEndRenderPass POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkCmdSetViewport) == sizeof(void *), "vkCmdSetViewport POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkCmdSetScissor) == sizeof(void *), "vkCmdSetScissor POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkCmdBindVertexBuffers) == sizeof(void *), "vkCmdBindVertexBuffers POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkCmdDraw) == sizeof(void *), "vkCmdDraw POSIX pointer size");
     const struct {
         const char *name;
         void *destination;
@@ -142,6 +153,17 @@ static doe_vk_status load_functions(doe_vk_context *context, doe_vk_error *error
         { "vkCmdCopyBufferToImage", &context->vk.vkCmdCopyBufferToImage, sizeof(context->vk.vkCmdCopyBufferToImage) },
         { "vkCmdCopyImageToBuffer", &context->vk.vkCmdCopyImageToBuffer, sizeof(context->vk.vkCmdCopyImageToBuffer) },
         { "vkCmdCopyImage", &context->vk.vkCmdCopyImage, sizeof(context->vk.vkCmdCopyImage) },
+        { "vkCreateRenderPass", &context->vk.vkCreateRenderPass, sizeof(context->vk.vkCreateRenderPass) },
+        { "vkDestroyRenderPass", &context->vk.vkDestroyRenderPass, sizeof(context->vk.vkDestroyRenderPass) },
+        { "vkCreateFramebuffer", &context->vk.vkCreateFramebuffer, sizeof(context->vk.vkCreateFramebuffer) },
+        { "vkDestroyFramebuffer", &context->vk.vkDestroyFramebuffer, sizeof(context->vk.vkDestroyFramebuffer) },
+        { "vkCreateGraphicsPipelines", &context->vk.vkCreateGraphicsPipelines, sizeof(context->vk.vkCreateGraphicsPipelines) },
+        { "vkCmdBeginRenderPass", &context->vk.vkCmdBeginRenderPass, sizeof(context->vk.vkCmdBeginRenderPass) },
+        { "vkCmdEndRenderPass", &context->vk.vkCmdEndRenderPass, sizeof(context->vk.vkCmdEndRenderPass) },
+        { "vkCmdSetViewport", &context->vk.vkCmdSetViewport, sizeof(context->vk.vkCmdSetViewport) },
+        { "vkCmdSetScissor", &context->vk.vkCmdSetScissor, sizeof(context->vk.vkCmdSetScissor) },
+        { "vkCmdBindVertexBuffers", &context->vk.vkCmdBindVertexBuffers, sizeof(context->vk.vkCmdBindVertexBuffers) },
+        { "vkCmdDraw", &context->vk.vkCmdDraw, sizeof(context->vk.vkCmdDraw) },
     };
     for (size_t i = 0; i < sizeof(symbols) / sizeof(symbols[0]); ++i) {
         doe_vk_status status = doe_vk_load_symbol(context->library, symbols[i].name,
@@ -217,7 +239,7 @@ static doe_vk_status choose_device(doe_vk_context *context,
     return DOE_VK_OK;
 }
 
-static doe_vk_status choose_queue(doe_vk_context *context, doe_vk_error *error) {
+static doe_vk_status choose_queue(doe_vk_context *context, const doe_vk_options *options, doe_vk_error *error) {
     uint32_t count = 0;
     context->vk.vkGetPhysicalDeviceQueueFamilyProperties(context->physical, &count, NULL);
     if (count == 0) return doe_vk_fail(DOE_VK_UNSUPPORTED, "no queue families", error);
@@ -231,6 +253,7 @@ static doe_vk_status choose_queue(doe_vk_context *context, doe_vk_error *error) 
     if (count <= capacity) {
         for (uint32_t i = 0; i < count; ++i) {
             if (queues[i].queueCount == 0 || !(queues[i].queueFlags & VK_QUEUE_COMPUTE_BIT)) continue;
+            if (options->require_graphics_queue && !(queues[i].queueFlags & VK_QUEUE_GRAPHICS_BIT)) continue;
             if (selected == UINT32_MAX) selected = i;
             if (!(queues[i].queueFlags & VK_QUEUE_GRAPHICS_BIT)) {
                 selected = i;
@@ -278,7 +301,7 @@ doe_vk_status doe_vk_context_create(const doe_vk_options *options,
     if (status != DOE_VK_OK) goto failed;
     status = choose_device(context, options, error);
     if (status != DOE_VK_OK) goto failed;
-    status = choose_queue(context, error);
+    status = choose_queue(context, options, error);
     if (status != DOE_VK_OK) goto failed;
     VkPhysicalDeviceFeatures2 features = { .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2 };
     context->vk.vkGetPhysicalDeviceFeatures2(context->physical, &features);

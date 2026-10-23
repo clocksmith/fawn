@@ -4,6 +4,7 @@ This private C11 owner implements real Linux LP64 Vulkan 1.2 discovery, device a
 queue selection, capabilities, host-coherent and device-local buffers, sparse
 multi-group buffer/image/sampler descriptors, SPIR-V compute pipelines, copy/fill and
 direct dispatch recording, asynchronous fence submission, readback and retirement.
+Single-color offscreen rendering shares those allocation and completion owners.
 The texture owner adds uncompressed color images, retained views/samplers and
 mip/layer-aware padded transfers across 1D/2D/3D images.
 It is not wired into the production provider. It is not full Vulkan/WebGPU parity.
@@ -37,7 +38,7 @@ baseline shader features are enabled; unsupported feature use must be rejected b
 the compiler/native admission path before creating a pipeline. This is not a
 complete public validation boundary for untrusted SPIR-V.
 
-GPU-produced indirect counts, rendering, surfaces, timestamp queries,
+GPU-produced indirect counts, surfaces, timestamp queries,
 prepared-program caches and tuned hazard elision are not yet migrated here.
 Indirect recording rejects explicitly rather than dispatching unchecked counts.
 The retained production owners remain authoritative for those behaviors.
@@ -83,13 +84,38 @@ checks native descriptor lifetime, not sampling semantics. `make native-storage 
 storage-image shader with 64 exact means and 256 exact RGBA8 bytes after shader-to-
 transfer barriers. Both fixtures are pinned; neither is C texture compiler evidence.
 
+## Offscreen graphics
+
+`include/doe_vk_render.h` records a clear-only packet and direct instanced draw
+packets into the existing command owner. Each draw loads/stores the single color
+attachment, preserving the resource owner's first-pass clear and subsequent draw
+ordering. Exact views, compatible render passes/framebuffers, descriptors and
+vertex buffers remain retained until native retirement. A clear initializes only
+the selected full 2D mip/layer; a draw cannot read uninitialized target contents.
+
+Pipeline state admits sample1, one color target, eight vertex layouts/sixteen
+32-bit scalar/vector attributes, native blend/cull/topology controls and dynamic
+viewport/scissor. Blend constants are immutable pipeline state. Depth/stencil,
+MSAA, multiple attachments, indexed/indirect draws, dynamic blend constants,
+queries and discard-store semantics are not implemented by this interface.
+Unsupported resource packets must be rejected, not silently dropped. Graphics
+requires `require_graphics_queue=true` at context creation when the device offers
+separate compute-only queues; default compute queue selection is unchanged.
+
+`make native-render VERTEX_SPIRV=... FRAGMENT_SPIRV=...` uses the two retained Tint
+fixtures bound in `SMOKE_IMAGE_FIXTURES.json`. Blue clear plus two preserving draws
+with vertex attributes, uniform data and disjoint scissors produces 64 exact RGBA8
+pixels. It releases caller references before submission. The bound older C compiler
+rejects graphics entrypoints; this test is real Vulkan graphics, not C graphics
+compiler evidence or physical qualification.
+
 ## ABI provenance and checks
 
 No SDK headers were available. The selected declarations are a narrow translation
 of the existing source hashes in `ABI_PROVENANCE.json`, not invented opaque-sized
 struct storage. `tools/check_abi.py` refuses source drift and independently models
-the pinned extern fields to compile 960 size/offset/alignment assertions over 50
-records, plus seven format-bit assertions verified against the linked Khronos
+the pinned extern fields to compile 1330 size/offset/alignment assertions over 75
+records, including retained unions, plus eight format-bit assertions verified against the linked Khronos
 reference. No SDK or other dependency was downloaded. It does not prove the retained declarations against an official SDK.
 `VK_ERROR_UNKNOWN` retains the existing Zig `UnsupportedFeature` classification;
 raw native error codes remain available. No Zig runs or links in the C backend.
