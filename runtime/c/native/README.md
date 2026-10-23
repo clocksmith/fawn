@@ -252,6 +252,52 @@ window; the retry completes the retained acquisition. Resize produced
 SuccessSuboptimal on both drivers; explicit reconfiguration then rendered at the new
 size. Outdated/Lost mapping is host-tested by the backend owner, not observed here.
 
+## WGSL language features and texture binding view dimension
+
+`src/features.c` owns the reported WGSL language features
+(`wgpuInstanceGetWGSLLanguageFeatures`, `wgpuInstanceHasWGSLLanguageFeature`,
+`wgpuSupportedWGSLLanguageFeaturesFreeMembers`) as one fixed switch beside the
+instance capability exports; the accepted instance owner is unchanged. A feature
+is reported only when `tests/wgsl_language_features.c` shows its probe compiles
+through the public shader-module path and creates a real Vulkan compute pipeline
+both without and with `requires <name>;`. Every probe also has a control shader of
+the same shape without the feature that must create a pipeline, so a rejection is
+attributable to the feature. Each unreported probe must be rejected at the module
+or pipeline boundary, so the table cannot silently drift from the compiler. The
+current table reports none; observed on lavapipe and Radeon 8060S/RADV:
+
+| Feature | Without `requires` | With `requires` | First diagnostic |
+| --- | --- | --- | --- |
+| readonly_and_readwrite_storage_textures | pipeline created | module rejected | unsupported enable or language extension |
+| packed_4x8_integer_dot_product | module rejected | module rejected | unsupported type name |
+| unrestricted_pointer_parameters | module rejected | module rejected | only function-address pointer types are currently admitted |
+| pointer_composite_access | module rejected | module rejected | array value has no named member |
+| uniform_buffer_standard_layout | module rejected | module rejected | uniform type violates conservative alignment or spacing |
+| subgroup_id | pipeline rejected | module rejected | compute shader entry/capability admission failed |
+| texture_and_sampler_let | module rejected | module rejected | local variable type must be concrete and constructible |
+| subgroup_uniformity | pipeline rejected | pipeline rejected | compute shader entry/capability admission failed |
+| texture_formats_tier1 | module rejected | module rejected | unsupported storage texture format |
+| linear_indexing | module rejected | module rejected | unsupported compute input builtin |
+| immediate_address_space | module rejected | module rejected | unsupported module variable address space |
+| buffer_view | module rejected | module rejected | expected ASCII WGSL identifier |
+
+The compiler's `requires` directive admits only `subgroup_uniformity`, and no device
+here admits `enable subgroups`, so the subgroup features cannot create pipelines.
+Read-only/read-write storage textures already compile and create pipelines; that
+feature becomes reportable once the compiler admits its `requires` directive (and an
+executed read/write image check is added). The `buffer_view` probe uses the
+proposal's `buffer<N>`/`bufferView` spelling; it is rejected at parsing.
+An empty list owns no storage (`features` is NULL); NULL instance or output is safe.
+
+`wgpuTextureGetTextureBindingViewDimension` follows core-mode semantics. The pinned
+header requires accepting a `WGPUTextureBindingViewDimension` chain on
+`WGPUTextureDescriptor` and ignores its contents on core devices. This provider has
+no compatibility-mode view restrictions, so it accepts exactly that one chain node,
+ignores the value, and the getter returns `WGPUTextureViewDimension_Undefined` for
+every texture, as the reference core implementation does. Unknown or repeated chain
+nodes still reject. The provider does not yet advertise `CoreFeaturesAndLimits`;
+that separate claim needs complete core limits and is not made here.
+
 ## Intentionally unprovided or rejected
 
 Vulkan indirect dispatch and nonindexed/indexed indirect

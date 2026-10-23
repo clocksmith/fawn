@@ -80,3 +80,60 @@ void wgpuSupportedInstanceFeaturesFreeMembers(WGPUSupportedInstanceFeatures feat
 {
     doe_instance_features_free_members(features);
 }
+
+/* The one owner of reported WGSL language features. A feature is reported only
+ * when tests/wgsl_language_features.c proves its probe compiles and creates a
+ * real Vulkan pipeline through the public path both with and without
+ * `requires <name>;`. The comments record the observed public-path rejection;
+ * the test fails if any unreported probe becomes fully accepted. */
+static bool wgsl_feature_reported(WGPUWGSLLanguageFeatureName feature)
+{
+    switch (feature) {
+    case WGPUWGSLLanguageFeatureName_ReadonlyAndReadwriteStorageTextures:
+        return false; /* Usage compiles and pipelines; `requires` is rejected. */
+    case WGPUWGSLLanguageFeatureName_Packed4x8IntegerDotProduct: /* Builtins unknown. */
+    case WGPUWGSLLanguageFeatureName_UnrestrictedPointerParameters: /* Function pointers only. */
+    case WGPUWGSLLanguageFeatureName_PointerCompositeAccess: /* No member access through pointers. */
+    case WGPUWGSLLanguageFeatureName_UniformBufferStandardLayout: /* Conservative uniform layout. */
+    case WGPUWGSLLanguageFeatureName_SubgroupId: /* No device admits subgroups. */
+    case WGPUWGSLLanguageFeatureName_TextureAndSamplerLet: /* Handle-typed lets rejected. */
+    case WGPUWGSLLanguageFeatureName_SubgroupUniformity: /* No device admits subgroups. */
+    case WGPUWGSLLanguageFeatureName_TextureFormatsTier1: /* Extended storage formats rejected. */
+    case WGPUWGSLLanguageFeatureName_LinearIndexing: /* Linear index builtins rejected. */
+    case WGPUWGSLLanguageFeatureName_ImmediateAddressSpace: /* Immediates rejected. */
+    case WGPUWGSLLanguageFeatureName_BufferView: /* Untyped buffers rejected. */
+        return false;
+    case WGPUWGSLLanguageFeatureName_Force32:
+        break;
+    }
+    return false;
+}
+
+void wgpuInstanceGetWGSLLanguageFeatures(WGPUInstance instance, WGPUSupportedWGSLLanguageFeatures *features)
+{
+    if (!features) return;
+    *features = (WGPUSupportedWGSLLanguageFeatures){0};
+    if (!instance) return;
+    size_t count = 0;
+    for (uint32_t name = WGPUWGSLLanguageFeatureName_ReadonlyAndReadwriteStorageTextures;
+            name <= WGPUWGSLLanguageFeatureName_BufferView; ++name)
+        count += wgsl_feature_reported((WGPUWGSLLanguageFeatureName)name);
+    if (!count) return; /* Empty list owns no storage; FreeMembers accepts NULL. */
+    WGPUWGSLLanguageFeatureName *names = malloc(count * sizeof(*names));
+    /* This void API has no error channel: allocation failure leaves an empty
+     * owned output, never an invalid pointer or a partial list. */
+    if (!names) return;
+    size_t written = 0;
+    for (uint32_t name = WGPUWGSLLanguageFeatureName_ReadonlyAndReadwriteStorageTextures;
+            name <= WGPUWGSLLanguageFeatureName_BufferView; ++name)
+        if (wgsl_feature_reported((WGPUWGSLLanguageFeatureName)name)) names[written++] = (WGPUWGSLLanguageFeatureName)name;
+    *features = (WGPUSupportedWGSLLanguageFeatures){.featureCount=written,.features=names};
+}
+WGPUBool wgpuInstanceHasWGSLLanguageFeature(WGPUInstance instance, WGPUWGSLLanguageFeatureName feature)
+{
+    return instance && wgsl_feature_reported(feature);
+}
+void wgpuSupportedWGSLLanguageFeaturesFreeMembers(WGPUSupportedWGSLLanguageFeatures features)
+{
+    free((void *)features.features);
+}
