@@ -52,3 +52,8 @@ Indirect conversion uses backend-owned generated guards and private scratch on t
 existing command owner. Never CPU-read caller arguments or invent a second bounds
 engine. Compile the exact guard source, preserve original argument bytes, and
 retain unknown work; discard failed terminal helper storage before reuse.
+
+Descriptor-chain presence is ABI conversion, not a second validation engine.
+Preserve explicit zero draw budgets and delegate accounting to resource packets.
+Platform build recipes must keep one export inventory; never make a missing
+platform suite report the success of a narrower host-only substitute.

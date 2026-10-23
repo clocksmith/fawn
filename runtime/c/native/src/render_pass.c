@@ -7,9 +7,15 @@ WGPURenderPassEncoder wgpuCommandEncoderBeginRenderPass(WGPUCommandEncoder handl
     doe_resource_encoder *encoder = (doe_resource_encoder *)handle;
     native_device *device = doe_resource_encoder_device(encoder);
     if (!device) return NULL;
-    bool valid = descriptor && !descriptor->nextInChain &&
+    bool valid = descriptor &&
         descriptor->colorAttachmentCount <= 1 &&
         (!descriptor->colorAttachmentCount || descriptor->colorAttachments);
+    const WGPURenderPassMaxDrawCount *budget = NULL;
+    if (valid && descriptor->nextInChain) {
+        const WGPUChainedStruct *chain = descriptor->nextInChain;
+        valid = chain->sType == WGPUSType_RenderPassMaxDrawCount && !chain->next;
+        if (valid) budget = (const WGPURenderPassMaxDrawCount *)chain;
+    }
     doe_resource_render_targets targets = {0};
     const WGPUPassTimestampWrites *writes = valid ? descriptor->timestampWrites : NULL;
     doe_resource_pass_timestamps timestamps = {0};
@@ -45,6 +51,10 @@ WGPURenderPassEncoder wgpuCommandEncoderBeginRenderPass(WGPUCommandEncoder handl
             targets.clear_stencil = depth->stencilClearValue;
             targets.stencil_read_only = depth->stencilReadOnly;
             if (!targets.depth_stencil) valid = false;
+        }
+        if (budget) {
+            targets.has_max_draw_count = true;
+            targets.max_draw_count = budget->maxDrawCount;
         }
         if (writes) {
             if (writes->nextInChain || !device->timestamp_enabled) valid = false;

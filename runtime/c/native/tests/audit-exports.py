@@ -7,12 +7,27 @@ import ctypes
 from pathlib import Path
 import re
 import subprocess
+import sys
+
+
+def native_exports(library: Path, platform: str) -> set[str]:
+    # Apple cctools nm(1): -g external, -U defined, -j names only.
+    # https://github.com/apple-oss-distributions/cctools/blob/main/man/nm.1
+    command = ["nm", "-gjU"] if platform == "Darwin" else ["nm", "-D", "--defined-only"]
+    output = subprocess.check_output(command + [str(library)], text=True)
+    symbols = {line.split()[-1] for line in output.splitlines() if line.strip()}
+    if platform == "Darwin":
+        # Remove the one Mach-O C prefix, not arbitrary private symbol names.
+        symbols = {name[1:] if name.startswith("_") else name for name in symbols}
+    return symbols
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("library", type=Path)
     parser.add_argument("--runtime", action="store_true", help="also load the unsanitized library and inspect procedure addresses")
+    parser.add_argument("--platform", choices=("Linux", "Darwin"),
+                        default="Darwin" if sys.platform == "darwin" else "Linux")
     args = parser.parse_args()
     owner = Path(__file__).resolve().parents[1]
     header = owner.parents[1] / "zig/vendor/webgpu-headers/webgpu.h"
@@ -20,8 +35,7 @@ def main() -> None:
     inventory = set((owner / "EXPORTED_SYMBOLS.txt").read_text().splitlines())
     procedures = set(re.findall(r'\{"(wgpu\w+)", \(WGPUProc\)\1\}',
                                 (owner / "src/procedures.c").read_text()))
-    output = subprocess.check_output(["nm", "-D", "--defined-only", str(args.library)], text=True)
-    exported = {line.split()[-1] for line in output.splitlines()}
+    exported = native_exports(args.library, args.platform)
     if exported != inventory or procedures != inventory or not inventory <= declared:
         raise RuntimeError(f"export inventory mismatch: exports={sorted(exported ^ inventory)}, "
                            f"procedures={sorted(procedures ^ inventory)}, "
