@@ -175,6 +175,19 @@ const char* texture_format_u32_to_string(uint32_t fmt) {
     }
 }
 
+/* GPUTextureAspect; absent stays Undefined so the provider applies "all". */
+uint32_t texture_aspect_from_value(napi_env env, napi_value val) {
+    napi_valuetype vt; napi_typeof(env, val, &vt);
+    if (vt == napi_number) { uint32_t out = 0; napi_get_value_uint32(env, val, &out); return out; }
+    if (vt != napi_string) return WGPUTextureAspect_Undefined;
+    char buf[16] = {0}; size_t len = 0;
+    napi_get_value_string_utf8(env, val, buf, sizeof(buf), &len);
+    if (strcmp(buf, "all") == 0) return WGPUTextureAspect_All;
+    if (strcmp(buf, "stencil-only") == 0) return WGPUTextureAspect_StencilOnly;
+    if (strcmp(buf, "depth-only") == 0) return WGPUTextureAspect_DepthOnly;
+    napi_throw_error(env, "DOE_ERROR", "Unsupported texture aspect"); return WGPUTextureAspect_Undefined;
+}
+
 uint32_t primitive_topology_from_string(napi_env env, napi_value val) {
     napi_valuetype vt; napi_typeof(env, val, &vt);
     if (vt == napi_number) { uint32_t out = 0; napi_get_value_uint32(env, val, &out); return out; }

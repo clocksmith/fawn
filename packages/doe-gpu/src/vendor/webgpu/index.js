@@ -2404,6 +2404,7 @@ const fullSurfaceBackend = {
       size.width,
       size.height,
       size.depthOrArrayLayers ?? 1,
+      textureAspectValue(destination.aspect),
     );
   },
   async queueOnSubmittedWorkDone(queue, queueNative) {

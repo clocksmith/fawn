@@ -725,7 +725,7 @@ extern FnQueueWriteTexture pfn_doeNativeQueueWriteTexture;
  * Returns false only when the provider has neither; never a silent no-op. */
 bool doe_queue_write_texture_native(void* queue, void* texture, const void* data, size_t data_len,
     uint32_t bytes_per_row, uint32_t rows_per_image, uint32_t x, uint32_t y, uint32_t z,
-    uint32_t mip, uint32_t width, uint32_t height, uint32_t depth_or_layers);
+    uint32_t mip, uint32_t width, uint32_t height, uint32_t depth_or_layers, uint32_t aspect);
 extern FnDeviceCreateRenderBundleEncoder pfn_doeNativeDeviceCreateRenderBundleEncoder;
 extern FnRenderBundleEncoderRelease pfn_doeNativeRenderBundleEncoderRelease;
 extern FnRenderBundleEncoderSetPipeline pfn_doeNativeRenderBundleEncoderSetPipeline;
@@ -778,7 +778,6 @@ extern FnWgpuRenderBundleEncoderDrawIndirect pfn_wgpuRenderBundleEncoderDrawIndi
 extern FnWgpuRenderBundleEncoderDrawIndexedIndirect pfn_wgpuRenderBundleEncoderDrawIndexedIndirect;
 
 extern void* g_lib;
-extern bool g_zig_enum_order;
 
 /* Native-direct property key constants */
 #define DOE_DIRECT_NATIVE "__doe_native"
@@ -944,25 +943,7 @@ void device_callback(uint32_t status, WGPUDevice device, WGPUStringView message,
 size_t parse_js_override_constants(napi_env env, napi_value constants_obj, WGPUConstantEntry** out_entries);
 void free_override_constants(WGPUConstantEntry* entries, size_t count);
 
-/* Format converters */
-uint32_t texture_format_from_string(napi_env env, napi_value val);
-uint32_t primitive_topology_from_string(napi_env env, napi_value val);
-uint32_t front_face_from_string(napi_env env, napi_value val);
-uint32_t cull_mode_from_string(napi_env env, napi_value val);
-uint32_t buffer_binding_type_from_string(napi_env env, napi_value val);
-uint32_t sampler_binding_type_from_string(napi_env env, napi_value val);
-uint32_t texture_sample_type_from_string(napi_env env, napi_value val);
-uint32_t texture_view_dimension_from_string(napi_env env, napi_value val);
-uint32_t storage_texture_access_from_string(napi_env env, napi_value val);
-uint32_t filter_mode_from_string(napi_env env, napi_value val);
-uint32_t address_mode_from_string(napi_env env, napi_value val);
-uint32_t compare_func_from_value(napi_env env, napi_value val);
-uint32_t vertex_step_mode_from_value(napi_env env, napi_value val);
-uint32_t vertex_format_from_value(napi_env env, napi_value val);
-uint32_t index_format_from_value(napi_env env, napi_value val);
-uint32_t blend_factor_from_string(napi_env env, napi_value val);
-uint32_t blend_operation_from_string(napi_env env, napi_value val);
-const char* texture_format_u32_to_string(uint32_t fmt);
+#include "doe_napi_formats.h" /* Format converters */
 const char* doe_binding_kind_name(uint32_t kind);
 const char* doe_binding_space_name(uint32_t addr_space);
 const char* doe_binding_access_name(uint32_t access);
