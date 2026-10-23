@@ -1,0 +1,1115 @@
+{
+  "candidate_library_sha256": "828864adcbba9f8dcd6b81a121106807e028871363c55ad84a59f78c29a755df",
+  "candidate_observed": true,
+  "cases": [
+    {
+      "dispatches": [
+        {
+          "all_buffer_sha256": {
+            "(0, 0)": "67c7fb3208efba5b2442d7cb7174b3a8aa76378d2d7d1129a6d6130e15f70114",
+            "(0, 1)": "f0ffe2d58385d375d52ce881962ccdfc21537c54ac06cc94d725cd71e40d70db",
+            "(0, 2)": "24e88d880e88c051d4ddba15c557bff4c65a3ea6a83b92d3d14290be5736de16",
+            "(0, 3)": "c2680b314b09802205277690fc5ae4623fdee8e411532aba158333cc83fc5b5c",
+            "(0, 4)": "c2680b314b09802205277690fc5ae4623fdee8e411532aba158333cc83fc5b5c"
+          },
+          "outcome": {
+            "barriers_per_group": {
+              "(0, 0, 0)": 0
+            },
+            "caller_supplied_reusable_shared_storage": true,
+            "events": 75,
+            "groups": 1,
+            "invocations": 64,
+            "memory_accesses": 60,
+            "poison": 165,
+            "pure_instruction_quantum": 64,
+            "schedule": "round_robin",
+            "steps": 3321
+          },
+          "repeat": 0,
+          "schedule": "round_robin",
+          "seconds": 0.008995582000352442
+        },
+        {
+          "all_buffer_sha256": {
+            "(0, 0)": "67c7fb3208efba5b2442d7cb7174b3a8aa76378d2d7d1129a6d6130e15f70114",
+            "(0, 1)": "f0ffe2d58385d375d52ce881962ccdfc21537c54ac06cc94d725cd71e40d70db",
+            "(0, 2)": "24e88d880e88c051d4ddba15c557bff4c65a3ea6a83b92d3d14290be5736de16",
+            "(0, 3)": "c2680b314b09802205277690fc5ae4623fdee8e411532aba158333cc83fc5b5c",
+            "(0, 4)": "c2680b314b09802205277690fc5ae4623fdee8e411532aba158333cc83fc5b5c"
+          },
+          "outcome": {
+            "barriers_per_group": {
+              "(0, 0, 0)": 0
+            },
+            "caller_supplied_reusable_shared_storage": true,
+            "events": 75,
+            "groups": 1,
+            "invocations": 64,
+            "memory_accesses": 60,
+            "poison": 90,
+            "pure_instruction_quantum": 64,
+            "schedule": "round_robin",
+            "steps": 3321
+          },
+          "repeat": 1,
+          "schedule": "round_robin",
+          "seconds": 0.008169481996446848
+        },
+        {
+          "all_buffer_sha256": {
+            "(0, 0)": "67c7fb3208efba5b2442d7cb7174b3a8aa76378d2d7d1129a6d6130e15f70114",
+            "(0, 1)": "f0ffe2d58385d375d52ce881962ccdfc21537c54ac06cc94d725cd71e40d70db",
+            "(0, 2)": "24e88d880e88c051d4ddba15c557bff4c65a3ea6a83b92d3d14290be5736de16",
+            "(0, 3)": "c2680b314b09802205277690fc5ae4623fdee8e411532aba158333cc83fc5b5c",
+            "(0, 4)": "c2680b314b09802205277690fc5ae4623fdee8e411532aba158333cc83fc5b5c"
+          },
+          "outcome": {
+            "barriers_per_group": {
+              "(0, 0, 0)": 0
+            },
+            "caller_supplied_reusable_shared_storage": true,
+            "events": 75,
+            "groups": 1,
+            "invocations": 64,
+            "memory_accesses": 60,
+            "poison": 165,
+            "pure_instruction_quantum": 64,
+            "schedule": "reverse",
+            "steps": 3321
+          },
+          "repeat": 0,
+          "schedule": "reverse",
+          "seconds": 0.008179368043784052
+        },
+        {
+          "all_buffer_sha256": {
+            "(0, 0)": "67c7fb3208efba5b2442d7cb7174b3a8aa76378d2d7d1129a6d6130e15f70114",
+            "(0, 1)": "f0ffe2d58385d375d52ce881962ccdfc21537c54ac06cc94d725cd71e40d70db",
+            "(0, 2)": "24e88d880e88c051d4ddba15c557bff4c65a3ea6a83b92d3d14290be5736de16",
+            "(0, 3)": "c2680b314b09802205277690fc5ae4623fdee8e411532aba158333cc83fc5b5c",
+            "(0, 4)": "c2680b314b09802205277690fc5ae4623fdee8e411532aba158333cc83fc5b5c"
+          },
+          "outcome": {
+            "barriers_per_group": {
+              "(0, 0, 0)": 0
+            },
+            "caller_supplied_reusable_shared_storage": true,
+            "events": 75,
+            "groups": 1,
+            "invocations": 64,
+            "memory_accesses": 60,
+            "poison": 90,
+            "pure_instruction_quantum": 64,
+            "schedule": "reverse",
+            "steps": 3321
+          },
+          "repeat": 1,
+          "schedule": "reverse",
+          "seconds": 0.008107149973511696
+        },
+        {
+          "all_buffer_sha256": {
+            "(0, 0)": "67c7fb3208efba5b2442d7cb7174b3a8aa76378d2d7d1129a6d6130e15f70114",
+            "(0, 1)": "f0ffe2d58385d375d52ce881962ccdfc21537c54ac06cc94d725cd71e40d70db",
+            "(0, 2)": "24e88d880e88c051d4ddba15c557bff4c65a3ea6a83b92d3d14290be5736de16",
+            "(0, 3)": "c2680b314b09802205277690fc5ae4623fdee8e411532aba158333cc83fc5b5c",
+            "(0, 4)": "c2680b314b09802205277690fc5ae4623fdee8e411532aba158333cc83fc5b5c"
+          },
+          "outcome": {
+            "barriers_per_group": {
+              "(0, 0, 0)": 0
+            },
+            "caller_supplied_reusable_shared_storage": true,
+            "events": 75,
+            "groups": 1,
+            "invocations": 64,
+            "memory_accesses": 60,
+            "poison": 165,
+            "pure_instruction_quantum": 64,
+            "schedule": "shuffle_0x11c0ffee",
+            "steps": 3321
+          },
+          "repeat": 0,
+          "schedule": "shuffle_0x11c0ffee",
+          "seconds": 0.008465039019938558
+        },
+        {
+          "all_buffer_sha256": {
+            "(0, 0)": "67c7fb3208efba5b2442d7cb7174b3a8aa76378d2d7d1129a6d6130e15f70114",
+            "(0, 1)": "f0ffe2d58385d375d52ce881962ccdfc21537c54ac06cc94d725cd71e40d70db",
+            "(0, 2)": "24e88d880e88c051d4ddba15c557bff4c65a3ea6a83b92d3d14290be5736de16",
+            "(0, 3)": "c2680b314b09802205277690fc5ae4623fdee8e411532aba158333cc83fc5b5c",
+            "(0, 4)": "c2680b314b09802205277690fc5ae4623fdee8e411532aba158333cc83fc5b5c"
+          },
+          "outcome": {
+            "barriers_per_group": {
+              "(0, 0, 0)": 0
+            },
+            "caller_supplied_reusable_shared_storage": true,
+            "events": 75,
+            "groups": 1,
+            "invocations": 64,
+            "memory_accesses": 60,
+            "poison": 90,
+            "pure_instruction_quantum": 64,
+            "schedule": "shuffle_0x11c0ffee",
+            "steps": 3321
+          },
+          "repeat": 1,
+          "schedule": "shuffle_0x11c0ffee",
+          "seconds": 0.009189469972625375
+        },
+        {
+          "all_buffer_sha256": {
+            "(0, 0)": "67c7fb3208efba5b2442d7cb7174b3a8aa76378d2d7d1129a6d6130e15f70114",
+            "(0, 1)": "f0ffe2d58385d375d52ce881962ccdfc21537c54ac06cc94d725cd71e40d70db",
+            "(0, 2)": "24e88d880e88c051d4ddba15c557bff4c65a3ea6a83b92d3d14290be5736de16",
+            "(0, 3)": "c2680b314b09802205277690fc5ae4623fdee8e411532aba158333cc83fc5b5c",
+            "(0, 4)": "c2680b314b09802205277690fc5ae4623fdee8e411532aba158333cc83fc5b5c"
+          },
+          "outcome": {
+            "barriers_per_group": {
+              "(0, 0, 0)": 0
+            },
+            "caller_supplied_reusable_shared_storage": true,
+            "events": 75,
+            "groups": 1,
+            "invocations": 64,
+            "memory_accesses": 60,
+            "poison": 165,
+            "pure_instruction_quantum": 64,
+            "schedule": "bounded_burst_1_3_7",
+            "steps": 3321
+          },
+          "repeat": 0,
+          "schedule": "bounded_burst_1_3_7",
+          "seconds": 0.009775704005733132
+        },
+        {
+          "all_buffer_sha256": {
+            "(0, 0)": "67c7fb3208efba5b2442d7cb7174b3a8aa76378d2d7d1129a6d6130e15f70114",
+            "(0, 1)": "f0ffe2d58385d375d52ce881962ccdfc21537c54ac06cc94d725cd71e40d70db",
+            "(0, 2)": "24e88d880e88c051d4ddba15c557bff4c65a3ea6a83b92d3d14290be5736de16",
+            "(0, 3)": "c2680b314b09802205277690fc5ae4623fdee8e411532aba158333cc83fc5b5c",
+            "(0, 4)": "c2680b314b09802205277690fc5ae4623fdee8e411532aba158333cc83fc5b5c"
+          },
+          "outcome": {
+            "barriers_per_group": {
+              "(0, 0, 0)": 0
+            },
+            "caller_supplied_reusable_shared_storage": true,
+            "events": 75,
+            "groups": 1,
+            "invocations": 64,
+            "memory_accesses": 60,
+            "poison": 90,
+            "pure_instruction_quantum": 64,
+            "schedule": "bounded_burst_1_3_7",
+            "steps": 3321
+          },
+          "repeat": 1,
+          "schedule": "bounded_burst_1_3_7",
+          "seconds": 0.008891289005987346
+        }
+      ],
+      "ended_at": "2026-10-23T14:36:14.167487+00:00",
+      "executed": true,
+      "id": "stable_fluids_seed",
+      "passed": true,
+      "source": "bench/kernels/stable_fluids_seed.wgsl",
+      "started_at": "2026-10-23T14:36:14.090127+00:00",
+      "target_sha256": "8c50fee866d8851f60a74f14c85dfeea4c281e31cec6879697b0b7c55035450d",
+      "validated": true
+    },
+    {
+      "dispatches": [
+        {
+          "all_buffer_sha256": {
+            "(0, 0)": "1973e1cdca328c99b4fc039a1ed5818021b3fed788ce08103ced81f5332551ca",
+            "(0, 1)": "66538a3d2a69d5b73814846e2b1a58f6cf6eef67cb55ad8e651fda331f7e41cc",
+            "(0, 2)": "3e55c992c22e925fd7763e2a3d4f8f5ab5d771f53d58b9f97c59bea3249f11e1"
+          },
+          "outcome": {
+            "barriers_per_group": {
+              "(0, 0, 0)": 0
+            },
+            "caller_supplied_reusable_shared_storage": true,
+            "events": 163904,
+            "groups": 1,
+            "invocations": 64,
+            "memory_accesses": 163904,
+            "poison": 165,
+            "pure_instruction_quantum": 64,
+            "schedule": "round_robin",
+            "steps": 2468992
+          },
+          "repeat": 0,
+          "schedule": "round_robin",
+          "seconds": 12.812643913028296
+        },
+        {
+          "all_buffer_sha256": {
+            "(0, 0)": "1973e1cdca328c99b4fc039a1ed5818021b3fed788ce08103ced81f5332551ca",
+            "(0, 1)": "66538a3d2a69d5b73814846e2b1a58f6cf6eef67cb55ad8e651fda331f7e41cc",
+            "(0, 2)": "3e55c992c22e925fd7763e2a3d4f8f5ab5d771f53d58b9f97c59bea3249f11e1"
+          },
+          "outcome": {
+            "barriers_per_group": {
+              "(0, 0, 0)": 0
+            },
+            "caller_supplied_reusable_shared_storage": true,
+            "events": 163904,
+            "groups": 1,
+            "invocations": 64,
+            "memory_accesses": 163904,
+            "poison": 90,
+            "pure_instruction_quantum": 64,
+            "schedule": "round_robin",
+            "steps": 2468992
+          },
+          "repeat": 1,
+          "schedule": "round_robin",
+          "seconds": 12.578460594988428
+        },
+        {
+          "all_buffer_sha256": {
+            "(0, 0)": "1973e1cdca328c99b4fc039a1ed5818021b3fed788ce08103ced81f5332551ca",
+            "(0, 1)": "66538a3d2a69d5b73814846e2b1a58f6cf6eef67cb55ad8e651fda331f7e41cc",
+            "(0, 2)": "3e55c992c22e925fd7763e2a3d4f8f5ab5d771f53d58b9f97c59bea3249f11e1"
+          },
+          "outcome": {
+            "barriers_per_group": {
+              "(0, 0, 0)": 0
+            },
+            "caller_supplied_reusable_shared_storage": true,
+            "events": 163904,
+            "groups": 1,
+            "invocations": 64,
+            "memory_accesses": 163904,
+            "poison": 165,
+            "pure_instruction_quantum": 64,
+            "schedule": "reverse",
+            "steps": 2468992
+          },
+          "repeat": 0,
+          "schedule": "reverse",
+          "seconds": 12.176629159017466
+        },
+        {
+          "all_buffer_sha256": {
+            "(0, 0)": "1973e1cdca328c99b4fc039a1ed5818021b3fed788ce08103ced81f5332551ca",
+            "(0, 1)": "66538a3d2a69d5b73814846e2b1a58f6cf6eef67cb55ad8e651fda331f7e41cc",
+            "(0, 2)": "3e55c992c22e925fd7763e2a3d4f8f5ab5d771f53d58b9f97c59bea3249f11e1"
+          },
+          "outcome": {
+            "barriers_per_group": {
+              "(0, 0, 0)": 0
+            },
+            "caller_supplied_reusable_shared_storage": true,
+            "events": 163904,
+            "groups": 1,
+            "invocations": 64,
+            "memory_accesses": 163904,
+            "poison": 90,
+            "pure_instruction_quantum": 64,
+            "schedule": "reverse",
+            "steps": 2468992
+          },
+          "repeat": 1,
+          "schedule": "reverse",
+          "seconds": 12.511688682017848
+        },
+        {
+          "all_buffer_sha256": {
+            "(0, 0)": "1973e1cdca328c99b4fc039a1ed5818021b3fed788ce08103ced81f5332551ca",
+            "(0, 1)": "66538a3d2a69d5b73814846e2b1a58f6cf6eef67cb55ad8e651fda331f7e41cc",
+            "(0, 2)": "3e55c992c22e925fd7763e2a3d4f8f5ab5d771f53d58b9f97c59bea3249f11e1"
+          },
+          "outcome": {
+            "barriers_per_group": {
+              "(0, 0, 0)": 0
+            },
+            "caller_supplied_reusable_shared_storage": true,
+            "events": 163904,
+            "groups": 1,
+            "invocations": 64,
+            "memory_accesses": 163904,
+            "poison": 165,
+            "pure_instruction_quantum": 64,
+            "schedule": "shuffle_0x11c0ffee",
+            "steps": 2468992
+          },
+          "repeat": 0,
+          "schedule": "shuffle_0x11c0ffee",
+          "seconds": 13.243434814969078
+        },
+        {
+          "all_buffer_sha256": {
+            "(0, 0)": "1973e1cdca328c99b4fc039a1ed5818021b3fed788ce08103ced81f5332551ca",
+            "(0, 1)": "66538a3d2a69d5b73814846e2b1a58f6cf6eef67cb55ad8e651fda331f7e41cc",
+            "(0, 2)": "3e55c992c22e925fd7763e2a3d4f8f5ab5d771f53d58b9f97c59bea3249f11e1"
+          },
+          "outcome": {
+            "barriers_per_group": {
+              "(0, 0, 0)": 0
+            },
+            "caller_supplied_reusable_shared_storage": true,
+            "events": 163904,
+            "groups": 1,
+            "invocations": 64,
+            "memory_accesses": 163904,
+            "poison": 90,
+            "pure_instruction_quantum": 64,
+            "schedule": "shuffle_0x11c0ffee",
+            "steps": 2468992
+          },
+          "repeat": 1,
+          "schedule": "shuffle_0x11c0ffee",
+          "seconds": 14.28801137197297
+        },
+        {
+          "all_buffer_sha256": {
+            "(0, 0)": "1973e1cdca328c99b4fc039a1ed5818021b3fed788ce08103ced81f5332551ca",
+            "(0, 1)": "66538a3d2a69d5b73814846e2b1a58f6cf6eef67cb55ad8e651fda331f7e41cc",
+            "(0, 2)": "3e55c992c22e925fd7763e2a3d4f8f5ab5d771f53d58b9f97c59bea3249f11e1"
+          },
+          "outcome": {
+            "barriers_per_group": {
+              "(0, 0, 0)": 0
+            },
+            "caller_supplied_reusable_shared_storage": true,
+            "events": 163904,
+            "groups": 1,
+            "invocations": 64,
+            "memory_accesses": 163904,
+            "poison": 165,
+            "pure_instruction_quantum": 64,
+            "schedule": "bounded_burst_1_3_7",
+            "steps": 2468992
+          },
+          "repeat": 0,
+          "schedule": "bounded_burst_1_3_7",
+          "seconds": 15.201565003022552
+        },
+        {
+          "all_buffer_sha256": {
+            "(0, 0)": "1973e1cdca328c99b4fc039a1ed5818021b3fed788ce08103ced81f5332551ca",
+            "(0, 1)": "66538a3d2a69d5b73814846e2b1a58f6cf6eef67cb55ad8e651fda331f7e41cc",
+            "(0, 2)": "3e55c992c22e925fd7763e2a3d4f8f5ab5d771f53d58b9f97c59bea3249f11e1"
+          },
+          "outcome": {
+            "barriers_per_group": {
+              "(0, 0, 0)": 0
+            },
+            "caller_supplied_reusable_shared_storage": true,
+            "events": 163904,
+            "groups": 1,
+            "invocations": 64,
+            "memory_accesses": 163904,
+            "poison": 90,
+            "pure_instruction_quantum": 64,
+            "schedule": "bounded_burst_1_3_7",
+            "steps": 2468992
+          },
+          "repeat": 1,
+          "schedule": "bounded_burst_1_3_7",
+          "seconds": 14.33302990696393
+        }
+      ],
+      "ended_at": "2026-10-23T14:38:01.337590+00:00",
+      "executed": true,
+      "id": "matrix_naive",
+      "passed": true,
+      "source": "bench/kernels/matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
+      "started_at": "2026-10-23T14:36:14.168042+00:00",
+      "target_sha256": "7d6188f5cd6b494c34b54f32497b32eb1cf3e29ed2a2e62f40f8c4ab1d2716c2",
+      "validated": true
+    },
+    {
+      "dispatches": [
+        {
+          "all_buffer_sha256": {
+            "(0, 0)": "01e0ecaff9e5b13f4267b160087870484c46eefc8188e583b3be91551e74b1e5",
+            "(0, 1)": "66538a3d2a69d5b73814846e2b1a58f6cf6eef67cb55ad8e651fda331f7e41cc",
+            "(0, 2)": "b9e41ab5587fae8069644b169aeffaa77258e5032463b263a356ad6e63977e64"
+          },
+          "outcome": {
+            "barriers_per_group": {
+              "(0, 0, 0)": 8,
+              "(1, 0, 0)": 8
+            },
+            "caller_supplied_reusable_shared_storage": true,
+            "events": 6656,
+            "groups": 2,
+            "invocations": 128,
+            "memory_accesses": 5758,
+            "poison": 165,
+            "pure_instruction_quantum": 64,
+            "schedule": "round_robin",
+            "steps": 129776
+          },
+          "repeat": 0,
+          "schedule": "round_robin",
+          "seconds": 0.4240712290047668
+        },
+        {
+          "all_buffer_sha256": {
+            "(0, 0)": "01e0ecaff9e5b13f4267b160087870484c46eefc8188e583b3be91551e74b1e5",
+            "(0, 1)": "66538a3d2a69d5b73814846e2b1a58f6cf6eef67cb55ad8e651fda331f7e41cc",
+            "(0, 2)": "b9e41ab5587fae8069644b169aeffaa77258e5032463b263a356ad6e63977e64"
+          },
+          "outcome": {
+            "barriers_per_group": {
+              "(0, 0, 0)": 8,
+              "(1, 0, 0)": 8
+            },
+            "caller_supplied_reusable_shared_storage": true,
+            "events": 6656,
+            "groups": 2,
+            "invocations": 128,
+            "memory_accesses": 5758,
+            "poison": 90,
+            "pure_instruction_quantum": 64,
+            "schedule": "round_robin",
+            "steps": 129776
+          },
+          "repeat": 1,
+          "schedule": "round_robin",
+          "seconds": 0.41576093703042716
+        },
+        {
+          "all_buffer_sha256": {
+            "(0, 0)": "01e0ecaff9e5b13f4267b160087870484c46eefc8188e583b3be91551e74b1e5",
+            "(0, 1)": "66538a3d2a69d5b73814846e2b1a58f6cf6eef67cb55ad8e651fda331f7e41cc",
+            "(0, 2)": "b9e41ab5587fae8069644b169aeffaa77258e5032463b263a356ad6e63977e64"
+          },
+          "outcome": {
+            "barriers_per_group": {
+              "(0, 0, 0)": 8,
+              "(1, 0, 0)": 8
+            },
+            "caller_supplied_reusable_shared_storage": true,
+            "events": 6656,
+            "groups": 2,
+            "invocations": 128,
+            "memory_accesses": 5758,
+            "poison": 165,
+            "pure_instruction_quantum": 64,
+            "schedule": "reverse",
+            "steps": 129776
+          },
+          "repeat": 0,
+          "schedule": "reverse",
+          "seconds": 0.42004739597905427
+        },
+        {
+          "all_buffer_sha256": {
+            "(0, 0)": "01e0ecaff9e5b13f4267b160087870484c46eefc8188e583b3be91551e74b1e5",
+            "(0, 1)": "66538a3d2a69d5b73814846e2b1a58f6cf6eef67cb55ad8e651fda331f7e41cc",
+            "(0, 2)": "b9e41ab5587fae8069644b169aeffaa77258e5032463b263a356ad6e63977e64"
+          },
+          "outcome": {
+            "barriers_per_group": {
+              "(0, 0, 0)": 8,
+              "(1, 0, 0)": 8
+            },
+            "caller_supplied_reusable_shared_storage": true,
+            "events": 6656,
+            "groups": 2,
+            "invocations": 128,
+            "memory_accesses": 5758,
+            "poison": 90,
+            "pure_instruction_quantum": 64,
+            "schedule": "reverse",
+            "steps": 129776
+          },
+          "repeat": 1,
+          "schedule": "reverse",
+          "seconds": 0.408752131043002
+        },
+        {
+          "all_buffer_sha256": {
+            "(0, 0)": "01e0ecaff9e5b13f4267b160087870484c46eefc8188e583b3be91551e74b1e5",
+            "(0, 1)": "66538a3d2a69d5b73814846e2b1a58f6cf6eef67cb55ad8e651fda331f7e41cc",
+            "(0, 2)": "b9e41ab5587fae8069644b169aeffaa77258e5032463b263a356ad6e63977e64"
+          },
+          "outcome": {
+            "barriers_per_group": {
+              "(0, 0, 0)": 8,
+              "(1, 0, 0)": 8
+            },
+            "caller_supplied_reusable_shared_storage": true,
+            "events": 6656,
+            "groups": 2,
+            "invocations": 128,
+            "memory_accesses": 5758,
+            "poison": 165,
+            "pure_instruction_quantum": 64,
+            "schedule": "shuffle_0x11c0ffee",
+            "steps": 129776
+          },
+          "repeat": 0,
+          "schedule": "shuffle_0x11c0ffee",
+          "seconds": 0.4397006150102243
+        },
+        {
+          "all_buffer_sha256": {
+            "(0, 0)": "01e0ecaff9e5b13f4267b160087870484c46eefc8188e583b3be91551e74b1e5",
+            "(0, 1)": "66538a3d2a69d5b73814846e2b1a58f6cf6eef67cb55ad8e651fda331f7e41cc",
+            "(0, 2)": "b9e41ab5587fae8069644b169aeffaa77258e5032463b263a356ad6e63977e64"
+          },
+          "outcome": {
+            "barriers_per_group": {
+              "(0, 0, 0)": 8,
+              "(1, 0, 0)": 8
+            },
+            "caller_supplied_reusable_shared_storage": true,
+            "events": 6656,
+            "groups": 2,
+            "invocations": 128,
+            "memory_accesses": 5758,
+            "poison": 90,
+            "pure_instruction_quantum": 64,
+            "schedule": "shuffle_0x11c0ffee",
+            "steps": 129776
+          },
+          "repeat": 1,
+          "schedule": "shuffle_0x11c0ffee",
+          "seconds": 0.4100716239772737
+        },
+        {
+          "all_buffer_sha256": {
+            "(0, 0)": "01e0ecaff9e5b13f4267b160087870484c46eefc8188e583b3be91551e74b1e5",
+            "(0, 1)": "66538a3d2a69d5b73814846e2b1a58f6cf6eef67cb55ad8e651fda331f7e41cc",
+            "(0, 2)": "b9e41ab5587fae8069644b169aeffaa77258e5032463b263a356ad6e63977e64"
+          },
+          "outcome": {
+            "barriers_per_group": {
+              "(0, 0, 0)": 8,
+              "(1, 0, 0)": 8
+            },
+            "caller_supplied_reusable_shared_storage": true,
+            "events": 6656,
+            "groups": 2,
+            "invocations": 128,
+            "memory_accesses": 5758,
+            "poison": 165,
+            "pure_instruction_quantum": 64,
+            "schedule": "bounded_burst_1_3_7",
+            "steps": 129776
+          },
+          "repeat": 0,
+          "schedule": "bounded_burst_1_3_7",
+          "seconds": 0.31702811998547986
+        },
+        {
+          "all_buffer_sha256": {
+            "(0, 0)": "01e0ecaff9e5b13f4267b160087870484c46eefc8188e583b3be91551e74b1e5",
+            "(0, 1)": "66538a3d2a69d5b73814846e2b1a58f6cf6eef67cb55ad8e651fda331f7e41cc",
+            "(0, 2)": "b9e41ab5587fae8069644b169aeffaa77258e5032463b263a356ad6e63977e64"
+          },
+          "outcome": {
+            "barriers_per_group": {
+              "(0, 0, 0)": 8,
+              "(1, 0, 0)": 8
+            },
+            "caller_supplied_reusable_shared_storage": true,
+            "events": 6656,
+            "groups": 2,
+            "invocations": 128,
+            "memory_accesses": 5758,
+            "poison": 90,
+            "pure_instruction_quantum": 64,
+            "schedule": "bounded_burst_1_3_7",
+            "steps": 129776
+          },
+          "repeat": 1,
+          "schedule": "bounded_burst_1_3_7",
+          "seconds": 0.34497481398284435
+        }
+      ],
+      "ended_at": "2026-10-23T14:38:04.528349+00:00",
+      "executed": true,
+      "id": "matrix_shared",
+      "passed": true,
+      "source": "bench/kernels/matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1.wgsl",
+      "started_at": "2026-10-23T14:38:01.338215+00:00",
+      "target_sha256": "d5ad791bf19ecb9c1aed758f242b583164d33a7a7f827460ac6805b60bac4461",
+      "validated": true
+    },
+    {
+      "dispatches": [
+        {
+          "all_buffer_sha256": {
+            "(0, 0)": "6aacba85b3632a3a63d2c832fca5a2388078ce9b87ddf40fc9d6f55c74e32b86",
+            "(0, 1)": "93fac4ddf72a8a6fd72e4a5936fa7627133b433503339ae525a48eae7bf48471",
+            "(0, 2)": "b53cd2d05ee8458acaf8ef6bf47a7f326a2b8f593d719fb272152986d3968ab8",
+            "(0, 3)": "1370de28c6f0df8afa5812cae2fc85dd029aa9fa0d346ddf3d439e258fb952ec"
+          },
+          "outcome": {
+            "barriers_per_group": {
+              "(0, 0, 0)": 8,
+              "(1, 0, 0)": 8,
+              "(2, 0, 0)": 8,
+              "(3, 0, 0)": 1
+            },
+            "caller_supplied_reusable_shared_storage": true,
+            "events": 3947,
+            "groups": 4,
+            "invocations": 256,
+            "memory_accesses": 2599,
+            "poison": 165,
+            "pure_instruction_quantum": 64,
+            "schedule": "round_robin",
+            "steps": 82700
+          },
+          "repeat": 0,
+          "schedule": "round_robin",
+          "seconds": 0.1592506300075911
+        },
+        {
+          "all_buffer_sha256": {
+            "(0, 0)": "6aacba85b3632a3a63d2c832fca5a2388078ce9b87ddf40fc9d6f55c74e32b86",
+            "(0, 1)": "93fac4ddf72a8a6fd72e4a5936fa7627133b433503339ae525a48eae7bf48471",
+            "(0, 2)": "b53cd2d05ee8458acaf8ef6bf47a7f326a2b8f593d719fb272152986d3968ab8",
+            "(0, 3)": "1370de28c6f0df8afa5812cae2fc85dd029aa9fa0d346ddf3d439e258fb952ec"
+          },
+          "outcome": {
+            "barriers_per_group": {
+              "(0, 0, 0)": 8,
+              "(1, 0, 0)": 8,
+              "(2, 0, 0)": 8,
+              "(3, 0, 0)": 1
+            },
+            "caller_supplied_reusable_shared_storage": true,
+            "events": 3947,
+            "groups": 4,
+            "invocations": 256,
+            "memory_accesses": 2599,
+            "poison": 90,
+            "pure_instruction_quantum": 64,
+            "schedule": "round_robin",
+            "steps": 82700
+          },
+          "repeat": 1,
+          "schedule": "round_robin",
+          "seconds": 0.1736417359788902
+        },
+        {
+          "all_buffer_sha256": {
+            "(0, 0)": "6aacba85b3632a3a63d2c832fca5a2388078ce9b87ddf40fc9d6f55c74e32b86",
+            "(0, 1)": "93fac4ddf72a8a6fd72e4a5936fa7627133b433503339ae525a48eae7bf48471",
+            "(0, 2)": "b53cd2d05ee8458acaf8ef6bf47a7f326a2b8f593d719fb272152986d3968ab8",
+            "(0, 3)": "1370de28c6f0df8afa5812cae2fc85dd029aa9fa0d346ddf3d439e258fb952ec"
+          },
+          "outcome": {
+            "barriers_per_group": {
+              "(0, 0, 0)": 8,
+              "(1, 0, 0)": 8,
+              "(2, 0, 0)": 8,
+              "(3, 0, 0)": 1
+            },
+            "caller_supplied_reusable_shared_storage": true,
+            "events": 3947,
+            "groups": 4,
+            "invocations": 256,
+            "memory_accesses": 2599,
+            "poison": 165,
+            "pure_instruction_quantum": 64,
+            "schedule": "reverse",
+            "steps": 82700
+          },
+          "repeat": 0,
+          "schedule": "reverse",
+          "seconds": 0.16970661497907713
+        },
+        {
+          "all_buffer_sha256": {
+            "(0, 0)": "6aacba85b3632a3a63d2c832fca5a2388078ce9b87ddf40fc9d6f55c74e32b86",
+            "(0, 1)": "93fac4ddf72a8a6fd72e4a5936fa7627133b433503339ae525a48eae7bf48471",
+            "(0, 2)": "b53cd2d05ee8458acaf8ef6bf47a7f326a2b8f593d719fb272152986d3968ab8",
+            "(0, 3)": "1370de28c6f0df8afa5812cae2fc85dd029aa9fa0d346ddf3d439e258fb952ec"
+          },
+          "outcome": {
+            "barriers_per_group": {
+              "(0, 0, 0)": 8,
+              "(1, 0, 0)": 8,
+              "(2, 0, 0)": 8,
+              "(3, 0, 0)": 1
+            },
+            "caller_supplied_reusable_shared_storage": true,
+            "events": 3947,
+            "groups": 4,
+            "invocations": 256,
+            "memory_accesses": 2599,
+            "poison": 90,
+            "pure_instruction_quantum": 64,
+            "schedule": "reverse",
+            "steps": 82700
+          },
+          "repeat": 1,
+          "schedule": "reverse",
+          "seconds": 0.1587354310322553
+        },
+        {
+          "all_buffer_sha256": {
+            "(0, 0)": "6aacba85b3632a3a63d2c832fca5a2388078ce9b87ddf40fc9d6f55c74e32b86",
+            "(0, 1)": "93fac4ddf72a8a6fd72e4a5936fa7627133b433503339ae525a48eae7bf48471",
+            "(0, 2)": "b53cd2d05ee8458acaf8ef6bf47a7f326a2b8f593d719fb272152986d3968ab8",
+            "(0, 3)": "1370de28c6f0df8afa5812cae2fc85dd029aa9fa0d346ddf3d439e258fb952ec"
+          },
+          "outcome": {
+            "barriers_per_group": {
+              "(0, 0, 0)": 8,
+              "(1, 0, 0)": 8,
+              "(2, 0, 0)": 8,
+              "(3, 0, 0)": 1
+            },
+            "caller_supplied_reusable_shared_storage": true,
+            "events": 3947,
+            "groups": 4,
+            "invocations": 256,
+            "memory_accesses": 2599,
+            "poison": 165,
+            "pure_instruction_quantum": 64,
+            "schedule": "shuffle_0x11c0ffee",
+            "steps": 82700
+          },
+          "repeat": 0,
+          "schedule": "shuffle_0x11c0ffee",
+          "seconds": 0.13823896198300645
+        },
+        {
+          "all_buffer_sha256": {
+            "(0, 0)": "6aacba85b3632a3a63d2c832fca5a2388078ce9b87ddf40fc9d6f55c74e32b86",
+            "(0, 1)": "93fac4ddf72a8a6fd72e4a5936fa7627133b433503339ae525a48eae7bf48471",
+            "(0, 2)": "b53cd2d05ee8458acaf8ef6bf47a7f326a2b8f593d719fb272152986d3968ab8",
+            "(0, 3)": "1370de28c6f0df8afa5812cae2fc85dd029aa9fa0d346ddf3d439e258fb952ec"
+          },
+          "outcome": {
+            "barriers_per_group": {
+              "(0, 0, 0)": 8,
+              "(1, 0, 0)": 8,
+              "(2, 0, 0)": 8,
+              "(3, 0, 0)": 1
+            },
+            "caller_supplied_reusable_shared_storage": true,
+            "events": 3947,
+            "groups": 4,
+            "invocations": 256,
+            "memory_accesses": 2599,
+            "poison": 90,
+            "pure_instruction_quantum": 64,
+            "schedule": "shuffle_0x11c0ffee",
+            "steps": 82700
+          },
+          "repeat": 1,
+          "schedule": "shuffle_0x11c0ffee",
+          "seconds": 0.15308026899583638
+        },
+        {
+          "all_buffer_sha256": {
+            "(0, 0)": "6aacba85b3632a3a63d2c832fca5a2388078ce9b87ddf40fc9d6f55c74e32b86",
+            "(0, 1)": "93fac4ddf72a8a6fd72e4a5936fa7627133b433503339ae525a48eae7bf48471",
+            "(0, 2)": "b53cd2d05ee8458acaf8ef6bf47a7f326a2b8f593d719fb272152986d3968ab8",
+            "(0, 3)": "1370de28c6f0df8afa5812cae2fc85dd029aa9fa0d346ddf3d439e258fb952ec"
+          },
+          "outcome": {
+            "barriers_per_group": {
+              "(0, 0, 0)": 8,
+              "(1, 0, 0)": 8,
+              "(2, 0, 0)": 8,
+              "(3, 0, 0)": 1
+            },
+            "caller_supplied_reusable_shared_storage": true,
+            "events": 3947,
+            "groups": 4,
+            "invocations": 256,
+            "memory_accesses": 2599,
+            "poison": 165,
+            "pure_instruction_quantum": 64,
+            "schedule": "bounded_burst_1_3_7",
+            "steps": 82700
+          },
+          "repeat": 0,
+          "schedule": "bounded_burst_1_3_7",
+          "seconds": 0.13890176796121523
+        },
+        {
+          "all_buffer_sha256": {
+            "(0, 0)": "6aacba85b3632a3a63d2c832fca5a2388078ce9b87ddf40fc9d6f55c74e32b86",
+            "(0, 1)": "93fac4ddf72a8a6fd72e4a5936fa7627133b433503339ae525a48eae7bf48471",
+            "(0, 2)": "b53cd2d05ee8458acaf8ef6bf47a7f326a2b8f593d719fb272152986d3968ab8",
+            "(0, 3)": "1370de28c6f0df8afa5812cae2fc85dd029aa9fa0d346ddf3d439e258fb952ec"
+          },
+          "outcome": {
+            "barriers_per_group": {
+              "(0, 0, 0)": 8,
+              "(1, 0, 0)": 8,
+              "(2, 0, 0)": 8,
+              "(3, 0, 0)": 1
+            },
+            "caller_supplied_reusable_shared_storage": true,
+            "events": 3947,
+            "groups": 4,
+            "invocations": 256,
+            "memory_accesses": 2599,
+            "poison": 90,
+            "pure_instruction_quantum": 64,
+            "schedule": "bounded_burst_1_3_7",
+            "steps": 82700
+          },
+          "repeat": 1,
+          "schedule": "bounded_burst_1_3_7",
+          "seconds": 0.13871485798154026
+        }
+      ],
+      "ended_at": "2026-10-23T14:38:05.769351+00:00",
+      "executed": true,
+      "id": "matmul_gemv",
+      "passed": true,
+      "source": "bench/inference-pipeline/kernels/matmul-gemv.wgsl",
+      "started_at": "2026-10-23T14:38:04.529146+00:00",
+      "target_sha256": "44b7b848fd90b040da4d54e314c761849fa9797021b4355bb6ecd1aa775c9980",
+      "validated": true
+    },
+    {
+      "dispatches": [
+        {
+          "all_buffer_sha256": {
+            "(0, 0)": "6db89f790899416c5e41a5ad488e8d319deec8b4c17674e67f84ef0de107725c",
+            "(0, 1)": "e4aa6608c2a41b0d78ad713d338b16fc4be853d8ee872a8f804a91b16e31c509",
+            "(0, 2)": "75af885e8e9d92d5d7bafb365cde4fd290d1e95f642b7a822f737e3f2589964f",
+            "(0, 3)": "d892397d71d695c0d11a6342ba972f59aa51cf60ffe0a21399e6e8d9a16ce682",
+            "(0, 4)": "7837c334c2d61d2b990737f12058e35d73cf789052d1131e5e4c77589c9055e5"
+          },
+          "outcome": {
+            "barriers_per_group": {
+              "(0, 0, 0)": 19,
+              "(1, 0, 0)": 19,
+              "(2, 0, 0)": 1
+            },
+            "caller_supplied_reusable_shared_storage": true,
+            "events": 4107,
+            "groups": 3,
+            "invocations": 192,
+            "memory_accesses": 8120,
+            "poison": 165,
+            "pure_instruction_quantum": 64,
+            "schedule": "round_robin",
+            "steps": 96145
+          },
+          "repeat": 0,
+          "schedule": "round_robin",
+          "seconds": 0.165058761020191
+        },
+        {
+          "all_buffer_sha256": {
+            "(0, 0)": "6db89f790899416c5e41a5ad488e8d319deec8b4c17674e67f84ef0de107725c",
+            "(0, 1)": "e4aa6608c2a41b0d78ad713d338b16fc4be853d8ee872a8f804a91b16e31c509",
+            "(0, 2)": "75af885e8e9d92d5d7bafb365cde4fd290d1e95f642b7a822f737e3f2589964f",
+            "(0, 3)": "d892397d71d695c0d11a6342ba972f59aa51cf60ffe0a21399e6e8d9a16ce682",
+            "(0, 4)": "7837c334c2d61d2b990737f12058e35d73cf789052d1131e5e4c77589c9055e5"
+          },
+          "outcome": {
+            "barriers_per_group": {
+              "(0, 0, 0)": 19,
+              "(1, 0, 0)": 19,
+              "(2, 0, 0)": 1
+            },
+            "caller_supplied_reusable_shared_storage": true,
+            "events": 4107,
+            "groups": 3,
+            "invocations": 192,
+            "memory_accesses": 8120,
+            "poison": 90,
+            "pure_instruction_quantum": 64,
+            "schedule": "round_robin",
+            "steps": 96145
+          },
+          "repeat": 1,
+          "schedule": "round_robin",
+          "seconds": 0.15926746797049418
+        },
+        {
+          "all_buffer_sha256": {
+            "(0, 0)": "6db89f790899416c5e41a5ad488e8d319deec8b4c17674e67f84ef0de107725c",
+            "(0, 1)": "e4aa6608c2a41b0d78ad713d338b16fc4be853d8ee872a8f804a91b16e31c509",
+            "(0, 2)": "75af885e8e9d92d5d7bafb365cde4fd290d1e95f642b7a822f737e3f2589964f",
+            "(0, 3)": "d892397d71d695c0d11a6342ba972f59aa51cf60ffe0a21399e6e8d9a16ce682",
+            "(0, 4)": "7837c334c2d61d2b990737f12058e35d73cf789052d1131e5e4c77589c9055e5"
+          },
+          "outcome": {
+            "barriers_per_group": {
+              "(0, 0, 0)": 19,
+              "(1, 0, 0)": 19,
+              "(2, 0, 0)": 1
+            },
+            "caller_supplied_reusable_shared_storage": true,
+            "events": 4107,
+            "groups": 3,
+            "invocations": 192,
+            "memory_accesses": 8120,
+            "poison": 165,
+            "pure_instruction_quantum": 64,
+            "schedule": "reverse",
+            "steps": 96145
+          },
+          "repeat": 0,
+          "schedule": "reverse",
+          "seconds": 0.15670467098243535
+        },
+        {
+          "all_buffer_sha256": {
+            "(0, 0)": "6db89f790899416c5e41a5ad488e8d319deec8b4c17674e67f84ef0de107725c",
+            "(0, 1)": "e4aa6608c2a41b0d78ad713d338b16fc4be853d8ee872a8f804a91b16e31c509",
+            "(0, 2)": "75af885e8e9d92d5d7bafb365cde4fd290d1e95f642b7a822f737e3f2589964f",
+            "(0, 3)": "d892397d71d695c0d11a6342ba972f59aa51cf60ffe0a21399e6e8d9a16ce682",
+            "(0, 4)": "7837c334c2d61d2b990737f12058e35d73cf789052d1131e5e4c77589c9055e5"
+          },
+          "outcome": {
+            "barriers_per_group": {
+              "(0, 0, 0)": 19,
+              "(1, 0, 0)": 19,
+              "(2, 0, 0)": 1
+            },
+            "caller_supplied_reusable_shared_storage": true,
+            "events": 4107,
+            "groups": 3,
+            "invocations": 192,
+            "memory_accesses": 8120,
+            "poison": 90,
+            "pure_instruction_quantum": 64,
+            "schedule": "reverse",
+            "steps": 96145
+          },
+          "repeat": 1,
+          "schedule": "reverse",
+          "seconds": 0.17246811598306522
+        },
+        {
+          "all_buffer_sha256": {
+            "(0, 0)": "6db89f790899416c5e41a5ad488e8d319deec8b4c17674e67f84ef0de107725c",
+            "(0, 1)": "e4aa6608c2a41b0d78ad713d338b16fc4be853d8ee872a8f804a91b16e31c509",
+            "(0, 2)": "75af885e8e9d92d5d7bafb365cde4fd290d1e95f642b7a822f737e3f2589964f",
+            "(0, 3)": "d892397d71d695c0d11a6342ba972f59aa51cf60ffe0a21399e6e8d9a16ce682",
+            "(0, 4)": "7837c334c2d61d2b990737f12058e35d73cf789052d1131e5e4c77589c9055e5"
+          },
+          "outcome": {
+            "barriers_per_group": {
+              "(0, 0, 0)": 19,
+              "(1, 0, 0)": 19,
+              "(2, 0, 0)": 1
+            },
+            "caller_supplied_reusable_shared_storage": true,
+            "events": 4107,
+            "groups": 3,
+            "invocations": 192,
+            "memory_accesses": 8120,
+            "poison": 165,
+            "pure_instruction_quantum": 64,
+            "schedule": "shuffle_0x11c0ffee",
+            "steps": 96145
+          },
+          "repeat": 0,
+          "schedule": "shuffle_0x11c0ffee",
+          "seconds": 0.18011961999582127
+        },
+        {
+          "all_buffer_sha256": {
+            "(0, 0)": "6db89f790899416c5e41a5ad488e8d319deec8b4c17674e67f84ef0de107725c",
+            "(0, 1)": "e4aa6608c2a41b0d78ad713d338b16fc4be853d8ee872a8f804a91b16e31c509",
+            "(0, 2)": "75af885e8e9d92d5d7bafb365cde4fd290d1e95f642b7a822f737e3f2589964f",
+            "(0, 3)": "d892397d71d695c0d11a6342ba972f59aa51cf60ffe0a21399e6e8d9a16ce682",
+            "(0, 4)": "7837c334c2d61d2b990737f12058e35d73cf789052d1131e5e4c77589c9055e5"
+          },
+          "outcome": {
+            "barriers_per_group": {
+              "(0, 0, 0)": 19,
+              "(1, 0, 0)": 19,
+              "(2, 0, 0)": 1
+            },
+            "caller_supplied_reusable_shared_storage": true,
+            "events": 4107,
+            "groups": 3,
+            "invocations": 192,
+            "memory_accesses": 8120,
+            "poison": 90,
+            "pure_instruction_quantum": 64,
+            "schedule": "shuffle_0x11c0ffee",
+            "steps": 96145
+          },
+          "repeat": 1,
+          "schedule": "shuffle_0x11c0ffee",
+          "seconds": 0.18216072098584846
+        },
+        {
+          "all_buffer_sha256": {
+            "(0, 0)": "6db89f790899416c5e41a5ad488e8d319deec8b4c17674e67f84ef0de107725c",
+            "(0, 1)": "e4aa6608c2a41b0d78ad713d338b16fc4be853d8ee872a8f804a91b16e31c509",
+            "(0, 2)": "75af885e8e9d92d5d7bafb365cde4fd290d1e95f642b7a822f737e3f2589964f",
+            "(0, 3)": "d892397d71d695c0d11a6342ba972f59aa51cf60ffe0a21399e6e8d9a16ce682",
+            "(0, 4)": "7837c334c2d61d2b990737f12058e35d73cf789052d1131e5e4c77589c9055e5"
+          },
+          "outcome": {
+            "barriers_per_group": {
+              "(0, 0, 0)": 19,
+              "(1, 0, 0)": 19,
+              "(2, 0, 0)": 1
+            },
+            "caller_supplied_reusable_shared_storage": true,
+            "events": 4107,
+            "groups": 3,
+            "invocations": 192,
+            "memory_accesses": 8120,
+            "poison": 165,
+            "pure_instruction_quantum": 64,
+            "schedule": "bounded_burst_1_3_7",
+            "steps": 96145
+          },
+          "repeat": 0,
+          "schedule": "bounded_burst_1_3_7",
+          "seconds": 0.1669592090183869
+        },
+        {
+          "all_buffer_sha256": {
+            "(0, 0)": "6db89f790899416c5e41a5ad488e8d319deec8b4c17674e67f84ef0de107725c",
+            "(0, 1)": "e4aa6608c2a41b0d78ad713d338b16fc4be853d8ee872a8f804a91b16e31c509",
+            "(0, 2)": "75af885e8e9d92d5d7bafb365cde4fd290d1e95f642b7a822f737e3f2589964f",
+            "(0, 3)": "d892397d71d695c0d11a6342ba972f59aa51cf60ffe0a21399e6e8d9a16ce682",
+            "(0, 4)": "7837c334c2d61d2b990737f12058e35d73cf789052d1131e5e4c77589c9055e5"
+          },
+          "outcome": {
+            "barriers_per_group": {
+              "(0, 0, 0)": 19,
+              "(1, 0, 0)": 19,
+              "(2, 0, 0)": 1
+            },
+            "caller_supplied_reusable_shared_storage": true,
+            "events": 4107,
+            "groups": 3,
+            "invocations": 192,
+            "memory_accesses": 8120,
+            "poison": 90,
+            "pure_instruction_quantum": 64,
+            "schedule": "bounded_burst_1_3_7",
+            "steps": 96145
+          },
+          "repeat": 1,
+          "schedule": "bounded_burst_1_3_7",
+          "seconds": 0.18006556999171153
+        }
+      ],
+      "ended_at": "2026-10-23T14:38:07.144340+00:00",
+      "executed": true,
+      "id": "attention_decode",
+      "passed": true,
+      "source": "bench/inference-pipeline/kernels/attention-decode.wgsl",
+      "started_at": "2026-10-23T14:38:05.770288+00:00",
+      "target_sha256": "779cd7aeb32c740764e97e05507d4edfdd9110c13a74a632178c5a4f5c417297",
+      "validated": true
+    }
+  ],
+  "newly_executed": true
+}

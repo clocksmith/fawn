@@ -1,0 +1,104 @@
+{
+  "gate_order": [
+    "Fresh strict GCC14 C11 source build",
+    "Decisive reversed dynamic vec4 clamp plus unsigned product-overflow dot actual target execution",
+    "All frozen semantic/target cases with all negative output modes",
+    "Isolated exact/one-short pools and actual target ID/word ledgers",
+    "Public ABI consumers, no allocation/export drift, fenv/MXCSR/errno and sanitizer failures",
+    "Source-bound M11/M10/historical regressions with exact per-source new admission mappings",
+    "Unchanged exact98 source recompile, validate, execute and remaining secondary blockers",
+    "Complete stack/path proof, source identity recheck and truthful receipt"
+  ],
+  "historical_policy": "Materialize retained source through existing source-bound prepare_retained.py; do not duplicate corpora or alter original tests/receipts. Name each newly admitted negative individually. Exact98 baseline 52 validated/43 executed/9 validation-only/46 rejected. No assumed +17 admission.",
+  "independent_case_policy": "Exact source bytes and mathematical expectations freeze before implementation. Retain every first failure. Any evaluator correction needs separate old/new evidence, not broad weakened negatives.",
+  "mutations": [
+    "wrong scalar/vector return TypeId",
+    "signed compare for u32",
+    "swapped clamp ordering",
+    "direct poison-prone Clamp",
+    "dropped or swapped dot lane",
+    "missing modulo32",
+    "missing AI final range",
+    "checked AI product contrary to N1",
+    "reversed cross orientation",
+    "duplicate argument effect",
+    "reload prior argument after later effect",
+    "omitted const-bound check",
+    "dropped varying-argument uniformity dependency",
+    "enum-order import omission",
+    "one target ID or word undercount"
+  ],
+  "native_obligations": [
+    "unaligned/disjoint/exact caller spans",
+    "stale/overlap and output canaries",
+    "all output selections still emit",
+    "C11 and C++ consumers",
+    "seven exports/header hashes unchanged",
+    "no library allocation or mutable global",
+    "concurrent distinct workspaces",
+    "strict FP flags and rounding/traps/exceptions/MXCSR/errno restored on every new error exit",
+    "sanitizer source build",
+    "complete individual frames, recursive SCCs and combined call-path bounds"
+  ],
+  "native_targets": [
+    "fixed",
+    "v2",
+    "job",
+    "typed"
+  ],
+  "pools": {
+    "D": {
+      "method": "Hold all other capacities at frozen accepted ABI4 profile. Find smallest successful selected capacity by monotone bounded search <=262144, verify exact success and one-short first-exhausted-pool failure under flags1,2,3,5,6,7. Required outputs and all user buffers remain unpublished/unchanged on failure. This discovers a measurable exact boundary, not expected semantic behavior.",
+      "seed": "runtime_dot_u32_4"
+    },
+    "E": {
+      "method": "Hold all other capacities at frozen accepted ABI4 profile. Find smallest successful selected capacity by monotone bounded search <=262144, verify exact success and one-short first-exhausted-pool failure under flags1,2,3,5,6,7. Required outputs and all user buffers remain unpublished/unchanged on failure. This discovers a measurable exact boundary, not expected semantic behavior.",
+      "seed": "runtime_clamp_f32_4"
+    },
+    "I": {
+      "method": "Hold all other capacities at frozen accepted ABI4 profile. Find smallest successful selected capacity by monotone bounded search <=262144, verify exact success and one-short first-exhausted-pool failure under flags1,2,3,5,6,7. Required outputs and all user buffers remain unpublished/unchanged on failure. This discovers a measurable exact boundary, not expected semantic behavior.",
+      "seed": "effects_clamp"
+    },
+    "K": {
+      "method": "Hold all other capacities at frozen accepted ABI4 profile. Find smallest successful selected capacity by monotone bounded search <=262144, verify exact success and one-short first-exhausted-pool failure under flags1,2,3,5,6,7. Required outputs and all user buffers remain unpublished/unchanged on failure. This discovers a measurable exact boundary, not expected semantic behavior.",
+      "seed": "module_clamp_f32_4"
+    },
+    "L": {
+      "method": "Hold all other capacities at frozen accepted ABI4 profile. Find smallest successful selected capacity by monotone bounded search <=262144, verify exact success and one-short first-exhausted-pool failure under flags1,2,3,5,6,7. Required outputs and all user buffers remain unpublished/unchanged on failure. This discovers a measurable exact boundary, not expected semantic behavior.",
+      "seed": "module_clamp_f32_4"
+    },
+    "O": {
+      "method": "Hold all other capacities at frozen accepted ABI4 profile. Find smallest successful selected capacity by monotone bounded search <=262144, verify exact success and one-short first-exhausted-pool failure under flags1,2,3,5,6,7. Required outputs and all user buffers remain unpublished/unchanged on failure. This discovers a measurable exact boundary, not expected semantic behavior.",
+      "seed": "effects_clamp"
+    },
+    "Q": {
+      "method": "Hold all other capacities at frozen accepted ABI4 profile. Find smallest successful selected capacity by monotone bounded search <=262144, verify exact success and one-short first-exhausted-pool failure under flags1,2,3,5,6,7. Required outputs and all user buffers remain unpublished/unchanged on failure. This discovers a measurable exact boundary, not expected semantic behavior.",
+      "seed": "module_cross_AF_3"
+    },
+    "V": {
+      "method": "Hold all other capacities at frozen accepted ABI4 profile. Find smallest successful selected capacity by monotone bounded search <=262144, verify exact success and one-short first-exhausted-pool failure under flags1,2,3,5,6,7. Required outputs and all user buffers remain unpublished/unchanged on failure. This discovers a measurable exact boundary, not expected semantic behavior.",
+      "seed": "stage_array_cross"
+    },
+    "W": {
+      "method": "Hold all other capacities at frozen accepted ABI4 profile. Find smallest successful selected capacity by monotone bounded search <=262144, verify exact success and one-short first-exhausted-pool failure under flags1,2,3,5,6,7. Required outputs and all user buffers remain unpublished/unchanged on failure. This discovers a measurable exact boundary, not expected semantic behavior.",
+      "seed": "runtime_reversed_clamp_u32_4"
+    }
+  },
+  "preserved_pools": [
+    "T",
+    "S",
+    "R",
+    "X"
+  ],
+  "runtime_accuracy_source": "https://www.w3.org/TR/2026/CRD-WGSL-20261021/#floating-point-accuracy",
+  "scope_limits": [
+    "Independent instruction model, not physical GPU qualification",
+    "No TSan portability claim",
+    "No whole migration or production/default adoption",
+    "No settled universal upstream AI cancellation conformance",
+    "No broad old corpus negative rewrites",
+    "No pool/layout/export increase"
+  ],
+  "target_rows_source": "runtime/c/compiler/MILESTONE_12_LEDGER.md",
+  "unsealed_supplements_policy": "Only additive independently derived cases may be added after this seal; they must be labelled by timing and never substitute for the sealed gate. Native boundary harness integration can be completed while author works without querying candidate behavior."
+}

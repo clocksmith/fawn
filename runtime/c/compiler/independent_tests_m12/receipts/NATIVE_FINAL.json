@@ -1,0 +1,399 @@
+{
+  "artifact_name_note": "m11 names are preserved reusable front-door names only; all current artifacts bind M12 candidate2 source.",
+  "build": {
+    "allocator_imports": [],
+    "artifacts": {
+      "doe-compiler-m11": {
+        "path": "/tmp/doe-m12-independent-native-build2-20261023/doe-compiler-m11",
+        "sha256": "3e51372dea098280fcf4e89cc1d88260270924ea19cfb4ce67be4cbb222c029e"
+      },
+      "libdoe-m11.a": {
+        "path": "/tmp/doe-m12-independent-native-build2-20261023/libdoe-m11.a",
+        "sha256": "e60dfd3488a1c7da872600e5b5140a8c2ea565bd75f0f03f01a2b01234a18d08"
+      },
+      "libdoe-m11.so": {
+        "path": "/tmp/doe-m12-independent-native-build2-20261023/libdoe-m11.so",
+        "sha256": "25893e3ef580220ecae613d35e7c53f033e6ac03d7a2782f0ac3569e3867b02f"
+      }
+    },
+    "build_root": "/tmp/doe-m12-independent-native-build2-20261023",
+    "exports": [
+      "doe_compiler_compile",
+      "doe_compiler_compile_job",
+      "doe_compiler_compile_typed",
+      "doe_compiler_compile_v2",
+      "doe_compiler_job_requirements",
+      "doe_compiler_typed_requirements",
+      "doe_compiler_workspace_requirements"
+    ],
+    "manifest_sha256": "73b51c7355912608f71f3f19c44b7f57f17ef3f8b05be9fbf05bccd5331aaaf4",
+    "owner": "/tmp/doe-m12-independent-candidate2-20261023/runtime/c/compiler",
+    "receipt": "/tmp/doe-m12-independent-native-build2-receipts-20261023/build/BUILD_RESULT.json",
+    "receipt_sha256": "2a00fcf8f30632a49bbfc2416e76f16710b0a559377b932592ee5c3075dbc1dc",
+    "scope": "Fresh strict native source build only; no semantic/GPU/runtime acceptance",
+    "status": "PASS"
+  },
+  "contract_seal_sha256": "f3fef320194d5a81fa67d1cd394bd675c287e25b5ea492260758929bd1f274a4",
+  "correction": {
+    "basis": "Dated WGSL scalar-conversion concrete-input rank and accepted M11 scalar adjudication. Original source/seal/first native failure preserved.",
+    "corrected_typed_and_legacy_status": 4,
+    "only_id": "ai_explicit_f32_conversion",
+    "original_status": 0,
+    "record": "/tmp/doe-m12-native-exact-correction-20261023/CORRECTION.json",
+    "source_seal_sha256": "3f7f38c0b056037e9085adcef51297941c2fa4b3d05ffe309f8fa8b44c6376ce",
+    "source_sha256": "02266cfd91fcae1e15977229f544c06506d29a6d7e7e929322787ebe03acc243"
+  },
+  "frozen_primary_case_seal_sha256": "98a6656e0b3bf2bb2a6e74bb5977afabdab2ac2ac07c664468a8026dea43b281",
+  "milestone": "M12",
+  "native_numeric_scope": {
+    "calls_per_thread": 24,
+    "concurrent_workspaces": 8,
+    "fenv": "raw fenv, rounding, exception flags, trap masks, MXCSR FTZ/DAZ and errno before/after success and error",
+    "host_profiles": 32,
+    "legacy_capability_exception": "Four runtime array<i32> resources remain typed-success, legacy UNSUPPORTED by accepted reflection contract; not source-semantic failures",
+    "output_masks": [
+      1,
+      2,
+      3,
+      5,
+      6,
+      7
+    ],
+    "pool_boundaries": {
+      "D": [
+        {
+          "log": "/tmp/doe-m12-native-candidate2-numeric-corrected-20261023/archive-pool-D.log",
+          "route": "archive",
+          "sha256": "e7c88fd31bed4126dfb75d9bbcc0989f370ddefa9d0f547170d23148f6ec6198",
+          "summary": "PASS POOL D exact=6 one_short=5"
+        },
+        {
+          "log": "/tmp/doe-m12-native-candidate2-numeric-corrected-20261023/shared-pool-D.log",
+          "route": "shared",
+          "sha256": "e7c88fd31bed4126dfb75d9bbcc0989f370ddefa9d0f547170d23148f6ec6198",
+          "summary": "PASS POOL D exact=6 one_short=5"
+        },
+        {
+          "log": "/tmp/doe-m12-native-candidate2-sanitize-corrected-20261023/sanitizer-pool-D.log",
+          "route": "sanitizer",
+          "sha256": "e7c88fd31bed4126dfb75d9bbcc0989f370ddefa9d0f547170d23148f6ec6198",
+          "summary": "PASS POOL D exact=6 one_short=5"
+        }
+      ],
+      "E": [
+        {
+          "log": "/tmp/doe-m12-native-candidate2-numeric-corrected-20261023/archive-pool-E.log",
+          "route": "archive",
+          "sha256": "73d09b45a8973f439218e31db31683843d78da6ad73e068a9b03635efab34f4c",
+          "summary": "PASS POOL E exact=44 one_short=43"
+        },
+        {
+          "log": "/tmp/doe-m12-native-candidate2-numeric-corrected-20261023/shared-pool-E.log",
+          "route": "shared",
+          "sha256": "73d09b45a8973f439218e31db31683843d78da6ad73e068a9b03635efab34f4c",
+          "summary": "PASS POOL E exact=44 one_short=43"
+        },
+        {
+          "log": "/tmp/doe-m12-native-candidate2-sanitize-corrected-20261023/sanitizer-pool-E.log",
+          "route": "sanitizer",
+          "sha256": "73d09b45a8973f439218e31db31683843d78da6ad73e068a9b03635efab34f4c",
+          "summary": "PASS POOL E exact=44 one_short=43"
+        }
+      ],
+      "I": [
+        {
+          "log": "/tmp/doe-m12-native-candidate2-numeric-corrected-20261023/archive-pool-I.log",
+          "route": "archive",
+          "sha256": "353912264e93960d89ece540ff139cc5563b0debc76c7eb76b005a670705907a",
+          "summary": "PASS POOL I exact=64 one_short=63"
+        },
+        {
+          "log": "/tmp/doe-m12-native-candidate2-numeric-corrected-20261023/shared-pool-I.log",
+          "route": "shared",
+          "sha256": "353912264e93960d89ece540ff139cc5563b0debc76c7eb76b005a670705907a",
+          "summary": "PASS POOL I exact=64 one_short=63"
+        },
+        {
+          "log": "/tmp/doe-m12-native-candidate2-sanitize-corrected-20261023/sanitizer-pool-I.log",
+          "route": "sanitizer",
+          "sha256": "353912264e93960d89ece540ff139cc5563b0debc76c7eb76b005a670705907a",
+          "summary": "PASS POOL I exact=64 one_short=63"
+        }
+      ],
+      "K": [
+        {
+          "log": "/tmp/doe-m12-native-candidate2-numeric-corrected-20261023/archive-pool-K.log",
+          "route": "archive",
+          "sha256": "d61a5be864740811a50b7f7d0ae1421befc79a374feb56cc62a367cab35e8df4",
+          "summary": "PASS POOL K exact=4 one_short=3"
+        },
+        {
+          "log": "/tmp/doe-m12-native-candidate2-numeric-corrected-20261023/shared-pool-K.log",
+          "route": "shared",
+          "sha256": "d61a5be864740811a50b7f7d0ae1421befc79a374feb56cc62a367cab35e8df4",
+          "summary": "PASS POOL K exact=4 one_short=3"
+        },
+        {
+          "log": "/tmp/doe-m12-native-candidate2-sanitize-corrected-20261023/sanitizer-pool-K.log",
+          "route": "sanitizer",
+          "sha256": "d61a5be864740811a50b7f7d0ae1421befc79a374feb56cc62a367cab35e8df4",
+          "summary": "PASS POOL K exact=4 one_short=3"
+        }
+      ],
+      "L": [
+        {
+          "log": "/tmp/doe-m12-native-candidate2-numeric-corrected-20261023/archive-pool-L.log",
+          "route": "archive",
+          "sha256": "11ba23e1064de117ebbfa03576f058d7752030bf4013035fa7fb05bd1907e19d",
+          "summary": "PASS POOL L exact=16 one_short=15"
+        },
+        {
+          "log": "/tmp/doe-m12-native-candidate2-numeric-corrected-20261023/shared-pool-L.log",
+          "route": "shared",
+          "sha256": "11ba23e1064de117ebbfa03576f058d7752030bf4013035fa7fb05bd1907e19d",
+          "summary": "PASS POOL L exact=16 one_short=15"
+        },
+        {
+          "log": "/tmp/doe-m12-native-candidate2-sanitize-corrected-20261023/sanitizer-pool-L.log",
+          "route": "sanitizer",
+          "sha256": "11ba23e1064de117ebbfa03576f058d7752030bf4013035fa7fb05bd1907e19d",
+          "summary": "PASS POOL L exact=16 one_short=15"
+        }
+      ],
+      "O": [
+        {
+          "log": "/tmp/doe-m12-native-candidate2-numeric-corrected-20261023/archive-pool-O.log",
+          "route": "archive",
+          "sha256": "c7d2fa7c9640b4d3aa0370dfc130192ad23f8050a58425699c9487b9be3fd551",
+          "summary": "PASS POOL O exact=9 one_short=8"
+        },
+        {
+          "log": "/tmp/doe-m12-native-candidate2-numeric-corrected-20261023/shared-pool-O.log",
+          "route": "shared",
+          "sha256": "c7d2fa7c9640b4d3aa0370dfc130192ad23f8050a58425699c9487b9be3fd551",
+          "summary": "PASS POOL O exact=9 one_short=8"
+        },
+        {
+          "log": "/tmp/doe-m12-native-candidate2-sanitize-corrected-20261023/sanitizer-pool-O.log",
+          "route": "sanitizer",
+          "sha256": "c7d2fa7c9640b4d3aa0370dfc130192ad23f8050a58425699c9487b9be3fd551",
+          "summary": "PASS POOL O exact=9 one_short=8"
+        }
+      ],
+      "Q": [
+        {
+          "log": "/tmp/doe-m12-native-candidate2-numeric-corrected-20261023/archive-pool-Q.log",
+          "route": "archive",
+          "sha256": "e1a0e6984b823958f938a1ad4d51fcf96ad7624940e54afd7757f67de6fafbcf",
+          "summary": "PASS POOL Q exact=2 one_short=1"
+        },
+        {
+          "log": "/tmp/doe-m12-native-candidate2-numeric-corrected-20261023/shared-pool-Q.log",
+          "route": "shared",
+          "sha256": "e1a0e6984b823958f938a1ad4d51fcf96ad7624940e54afd7757f67de6fafbcf",
+          "summary": "PASS POOL Q exact=2 one_short=1"
+        },
+        {
+          "log": "/tmp/doe-m12-native-candidate2-sanitize-corrected-20261023/sanitizer-pool-Q.log",
+          "route": "sanitizer",
+          "sha256": "e1a0e6984b823958f938a1ad4d51fcf96ad7624940e54afd7757f67de6fafbcf",
+          "summary": "PASS POOL Q exact=2 one_short=1"
+        }
+      ],
+      "V": [
+        {
+          "log": "/tmp/doe-m12-native-candidate2-numeric-corrected-20261023/archive-pool-V.log",
+          "route": "archive",
+          "sha256": "a215e63cbeb1ed0131697fd9f5cfd39913525162efc49e9fb410dbfb7c3cadab",
+          "summary": "PASS POOL V exact=2 one_short=1"
+        },
+        {
+          "log": "/tmp/doe-m12-native-candidate2-numeric-corrected-20261023/shared-pool-V.log",
+          "route": "shared",
+          "sha256": "a215e63cbeb1ed0131697fd9f5cfd39913525162efc49e9fb410dbfb7c3cadab",
+          "summary": "PASS POOL V exact=2 one_short=1"
+        },
+        {
+          "log": "/tmp/doe-m12-native-candidate2-sanitize-corrected-20261023/sanitizer-pool-V.log",
+          "route": "sanitizer",
+          "sha256": "a215e63cbeb1ed0131697fd9f5cfd39913525162efc49e9fb410dbfb7c3cadab",
+          "summary": "PASS POOL V exact=2 one_short=1"
+        }
+      ],
+      "W": [
+        {
+          "log": "/tmp/doe-m12-native-candidate2-numeric-corrected-20261023/archive-pool-W.log",
+          "route": "archive",
+          "sha256": "5fe8981095fb6b2c206ab0205ff162752cbd0c5b6ee4620ea3cedaab9132df65",
+          "summary": "PASS POOL W exact=506 one_short=505"
+        },
+        {
+          "log": "/tmp/doe-m12-native-candidate2-numeric-corrected-20261023/shared-pool-W.log",
+          "route": "shared",
+          "sha256": "5fe8981095fb6b2c206ab0205ff162752cbd0c5b6ee4620ea3cedaab9132df65",
+          "summary": "PASS POOL W exact=506 one_short=505"
+        },
+        {
+          "log": "/tmp/doe-m12-native-candidate2-sanitize-corrected-20261023/sanitizer-pool-W.log",
+          "route": "sanitizer",
+          "sha256": "5fe8981095fb6b2c206ab0205ff162752cbd0c5b6ee4620ea3cedaab9132df65",
+          "summary": "PASS POOL W exact=506 one_short=505"
+        }
+      ]
+    },
+    "publication": "unpublished required/count outputs, complete selected output canaries and redzones on failure; exact counts on success",
+    "selected_frozen_cases": 88,
+    "typed_admitted": 59,
+    "typed_semantic_errors": 29
+  },
+  "not_claimed": [
+    "Parent-owned target semantics for 448 native and224 sanitizer target outputs",
+    "Physical GPU behavior",
+    "TSan",
+    "Whole-language or full migration parity",
+    "Generic single-type lookahead depth N/N-1 probe, which parent owns separately"
+  ],
+  "original_native_source_seal_sha256": "8970187ed1b01e490e6cd9c6f81b4c3e4bedcb92a06974b574744d0517417fe1",
+  "owner": "/tmp/doe-m12-independent-candidate2-20261023/runtime/c/compiler",
+  "prior_failure_preserved": "/tmp/doe-m12-native-candidate1-SUMMARY-20261023.json",
+  "sanitized_library": {
+    "path": "/tmp/doe-m12-independent-native-build2-20261023/m12-sanitizer/libdoe-m12-sanitized.so",
+    "sha256": "2844f0fa4cd4a0094db6146b9fd195972bfd481f5eb21e1f47e3d9ea1bab0a4c"
+  },
+  "source_entries": 34,
+  "source_manifest": "/tmp/doe-m12-independent-candidate2-20261023/SOURCE.sha256",
+  "source_manifest_sha256": "73b51c7355912608f71f3f19c44b7f57f17ef3f8b05be9fbf05bccd5331aaaf4",
+  "source_review": "Candidate2 alters only builtin.c/builtin.h/sema.h/sema_builtin.c/sema_call.c from candidate1, with no public-header/layout/limit edits. Full fresh qualification, not author-delta inference.",
+  "stack_ceilings_unchanged": {
+    "fixed_combined": 212992,
+    "job_combined": 196608,
+    "largest_nonwrapper": 8192,
+    "nonwrapper_sum": 16384,
+    "semantic_scc": 1536,
+    "wrapper": 147968
+  },
+  "stack_profiles": {
+    "normal_makefile_nonpic": {
+      "compiler": "gcc (Debian 14.2.0-19) 14.2.0",
+      "fixed_combined": 205776,
+      "frame_count": 162,
+      "job_combined": 194544,
+      "maximum_nonwrapper": [
+        1344,
+        "numeric_parse_literal"
+      ],
+      "raw_stack": {
+        "path": "/tmp/doe-m12-independent-normal-build2-20261023/stack-analysis.json",
+        "sha256": "21985b9db0d8d4f8ef93ef8ef3bafa40cd39701983893f372ac6a703b159799d"
+      },
+      "semantic_scc": 1520,
+      "sum_all_other_frames": 16368,
+      "wrapper": 146400
+    },
+    "strict_pic": {
+      "compiler": "gcc (Debian 14.2.0-19) 14.2.0",
+      "fixed_combined": 205672,
+      "frame_count": 159,
+      "job_combined": 194440,
+      "maximum_nonwrapper": [
+        1344,
+        "numeric_parse_literal"
+      ],
+      "raw_stack": {
+        "path": "/tmp/doe-m12-independent-native-build2-20261023/stack-analysis.json",
+        "sha256": "883fa181dddc70f7206200d23a684834c553335d5fc286d4b86e3fef6adf19c2"
+      },
+      "semantic_scc": 1488,
+      "sum_all_other_frames": 16264,
+      "wrapper": 146400
+    }
+  },
+  "stages": {
+    "audit": {
+      "AUDIT_RELOCATION.json": {
+        "path": "/tmp/doe-m12-native-candidate2-audit-20261023/AUDIT_RELOCATION.json",
+        "sha256": "5246ae7f0965212452cc272929a526a9e009d6a97139bb665f1e17f92ef7c717"
+      },
+      "GLOBAL_STATE.json": {
+        "path": "/tmp/doe-m12-native-candidate2-audit-20261023/GLOBAL_STATE.json",
+        "sha256": "c5b974c5277cc0b060c1331b96f6e997ae29080c4be14a17e9e4d92d00913bff"
+      },
+      "candidate2-LEDGER_STACK.json": {
+        "path": "/tmp/doe-m12-native-candidate2-audit-20261023/candidate2-LEDGER_STACK.json",
+        "sha256": "a30dea3d1ca24c0ea040b8fe95750c781d3163dea000fb8c6a0790e0c8847efe"
+      },
+      "commands": 9,
+      "commands_sha256": "4abc0da83de5d14b0b3223d24ccd030d373802fda60d8a70131d68e3f0ed38b2",
+      "identities_sha256": "743c6c4e480b6f1742f3c994440581c2c5914fbef7bce38c7ecdb1a6a52e4e0e",
+      "receipt": "/tmp/doe-m12-native-candidate2-audit-20261023/RESULT.json",
+      "receipt_sha256": "3b0d8196da75eeac2bbb0ca5eade3e4db751951a08ce63de71c87c76224a18a9",
+      "status": "PASS_SELECTED_NATIVE_STAGE"
+    },
+    "normal_profile": {
+      "AUDIT_RELOCATION.json": {
+        "path": "/tmp/doe-m12-native-candidate2-normal-audit-20261023/AUDIT_RELOCATION.json",
+        "sha256": "124d54a2dc735a5ce96a9aecee29a434bb63e0c238288c9bc1396728fac8b16e"
+      },
+      "candidate2-LEDGER_STACK.json": {
+        "path": "/tmp/doe-m12-native-candidate2-normal-audit-20261023/candidate2-LEDGER_STACK.json",
+        "sha256": "4bf20e98cc06a43870c096265aa674bbec7a7271093353d0f8549226f92637ea"
+      },
+      "commands": 22,
+      "commands_sha256": "e82e1efdfd418ef31211006416e13734622c065d54ccf4d987c66bd4dd4a655c",
+      "identities_sha256": "96b002aa063fc97881ee1d26c4e40da742a5d6699d2411dc0e1bf3cdb5f3f7f2",
+      "receipt": "/tmp/doe-m12-native-candidate2-normal-audit-20261023/RESULT.json",
+      "receipt_sha256": "53687a11ea7d275c97057c8ed2dbe56792ff58d08811d5001ea3e2093611ca2f",
+      "status": "PASS_NORMAL_MAKEFILE_STACK_PROFILE"
+    },
+    "numeric": {
+      "commands": 200,
+      "commands_sha256": "8956e0af19addde5867c9a07b5fcf5c1b58ef99fec7d3a7649408cdcb010c4dc",
+      "identities_sha256": "8bdd34f53b555f2175d1e0dee0cbb51d5f062d42be7390581a59e569ba82560e",
+      "receipt": "/tmp/doe-m12-native-candidate2-numeric-corrected-20261023/RESULT.json",
+      "receipt_sha256": "d68fa848420c6bb38975875fd85cf4b5c5a450e3abb041850d9f03d5297fefa9",
+      "status": "PASS_SELECTED_NATIVE_STAGE",
+      "targets": {
+        "by_abi": {
+          "fixed": 110,
+          "job": 110,
+          "typed": 118,
+          "v2": 110
+        },
+        "count": 448,
+        "independent_semantics": "Parent-owned execution required; emitted-byte invariance is not a semantic oracle",
+        "manifest": "/tmp/doe-m12-native-candidate2-numeric-corrected-20261023/TARGET_MANIFEST.json",
+        "manifest_sha256": "e1a3742f6dd75d2ec81db019356e37d03ac675e12496f67a41f2008ef2614693"
+      }
+    },
+    "retained": {
+      "commands": 74,
+      "commands_sha256": "700d0d2b6237edaf7f69cb0c7586b6296be91803c722289cb36c8ff085909360",
+      "identities_sha256": "743c6c4e480b6f1742f3c994440581c2c5914fbef7bce38c7ecdb1a6a52e4e0e",
+      "receipt": "/tmp/doe-m12-native-candidate2-retained-20261023/RESULT.json",
+      "receipt_sha256": "4493297f8841bf863c68d3c6a12ff0497d37a7071c09449915570efb10c3ab11",
+      "status": "PASS_SELECTED_NATIVE_STAGE"
+    },
+    "sanitize": {
+      "commands": 128,
+      "commands_sha256": "14cda8e0e7b86a1bf4178eb2b15b16bfac90648363f5038e17b5b8b1f72b655b",
+      "identities_sha256": "8bdd34f53b555f2175d1e0dee0cbb51d5f062d42be7390581a59e569ba82560e",
+      "receipt": "/tmp/doe-m12-native-candidate2-sanitize-corrected-20261023/RESULT.json",
+      "receipt_sha256": "b7501184e076109ce91c82b99b91b9a178982dfe35a95fd5f0e8f6ed8737078a",
+      "status": "PASS_SELECTED_NATIVE_STAGE",
+      "targets": {
+        "by_abi": {
+          "fixed": 55,
+          "job": 55,
+          "typed": 59,
+          "v2": 55
+        },
+        "count": 224,
+        "independent_semantics": "Parent-owned execution required; emitted-byte invariance is not a semantic oracle",
+        "manifest": "/tmp/doe-m12-native-candidate2-sanitize-corrected-20261023/TARGET_MANIFEST.json",
+        "manifest_sha256": "fcc8c115d205299e81c745d8d5772713c5a0f609aa294effd1b56aa7a8fc7866"
+      }
+    }
+  },
+  "status": "PASS_ASSIGNED_CANDIDATE2_NATIVE_GATES",
+  "supervision": "No wall deadlines; bounded cases/instruction controls and observable per-profile/per-pool command progress. No unfinished stages or external-stop verdicts."
+}

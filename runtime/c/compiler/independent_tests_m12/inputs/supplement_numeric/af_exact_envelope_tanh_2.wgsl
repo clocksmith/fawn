@@ -1,0 +1,1 @@
+@group(0) @binding(1) var<storage,read_write> output:array<u32>;const result=tanh(vec2(-2.0,-1.0));@compute @workgroup_size(1) fn main(){if((result.x>=-0x1.ed9505e1bc3d5p-1 && result.x<=-0x1.ed9505e1bc3d2p-1) && (result.y>=-0x1.85efab514f396p-1 && result.y<=-0x1.85efab514f393p-1)){output[0]=1u;}else{output[0]=2u;}}

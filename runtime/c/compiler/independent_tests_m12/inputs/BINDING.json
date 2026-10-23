@@ -1,0 +1,24 @@
+{
+  "accepted30_dependency_hashes_verified": true,
+  "accepted_compiler_baseline": "f01effdf070edf2f25cf0f2016c995df1e4d3bab",
+  "candidate_build_loaded": false,
+  "candidate_implementation_started": false,
+  "contract_commit": "da9b75a09e93248f52749d5aa7dd414f4d8a0016",
+  "contract_sha256": "f3fef320194d5a81fa67d1cd394bd675c287e25b5ea492260758929bd1f274a4",
+  "contract_tree": "6802bf888ceb6a4b3091c60e08c9362889892346",
+  "installed_contract_check": [
+    "runtime/c/compiler/MILESTONE_12.md: OK",
+    "runtime/c/compiler/MILESTONE_12_EVALUATION.md: OK",
+    "runtime/c/compiler/MILESTONE_12_LEDGER.md: OK",
+    "runtime/c/compiler/contracts/m12_accepted_m11_source.sha256: OK",
+    "runtime/c/compiler/contracts/m12_installation.json: OK",
+    "runtime/c/compiler/contracts/m12_numeric_interpretation.md: OK",
+    "runtime/c/compiler/contracts/m12_planning_cases.json: OK",
+    "runtime/c/compiler/contracts/m12_source_inputs.json: OK",
+    "runtime/c/compiler/contracts/m12_witnesses.json: OK"
+  ],
+  "oracle_math": "Python arbitrary integers/Fraction and accepted directed Decimal enclosures, no host-libm self-comparison",
+  "preseal_correction": "Generic builtin argument status corrected from an unsealed3 guess to semantic4 by accepted M11 call-owner branch. No candidate observation and no sealed case changed. Original unsealed-v1 sources retained separately.",
+  "selected_AI_policy": "Exact final signed64 dot; preserve Tint disagreement and CTS coverage gap",
+  "time": "2026-10-23T13:58:14.864909+00:00"
+}

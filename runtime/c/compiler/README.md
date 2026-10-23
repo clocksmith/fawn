@@ -1,9 +1,9 @@
 # Experimental standalone C compiler
 
-The [accepted M11 owner](MILESTONE_11_RESULTS.md) extends one shared WGSL compiler
-with typed workgroup storage, zero initialization, workgroup barriers and
-transitive source uniformity. It retains typed aggregates, calls, checked layout
-and caller-owned reflection without changing the four public headers. This is an isolated
+The [accepted M12 owner](MILESTONE_12_RESULTS.md) extends one shared WGSL compiler
+with typed scalar/vector numeric builtin overloads, preserving workgroup storage,
+uniformity, aggregates, calls, checked layout and caller-owned reflection. Four
+public headers remain unchanged. This is an isolated
 [C migration](../../../docs/c-migration/MIGRATION.md), not complete WGSL,
 production replacement, native runtime adoption or physical GPU qualification.
 
@@ -21,11 +21,11 @@ The C11 library and CLI use GCC, strict warnings, `-fno-fast-math`,
 subprocess or fallback. Qualified native ABI: Linux x86-64, GCC/G++ 14.2,
 C11/C++17. Other platforms/toolchains need their own qualification.
 
-The current independent [source-only gate](independent_tests_m11/PORTABLE_USAGE.md)
+The current independent [source-only gate](independent_tests_m12/PORTABLE_USAGE.md)
 provides exact build, semantic, corpus and native commands using an existing
-validator and accepted source history. Its full shared-memory witness is expensive:
-the recorded eight-dispatch case took about 85 minutes. A shorter run must not be
-reported as this acceptance. The retained [M10 instructions](independent_tests_m10/REPRODUCE_FINAL.md)
+validator and accepted source history. Its retained M11 shared-memory witness is expensive:
+the recorded eight-dispatch case took about 85 minutes. M12 carries its exact
+target proof forward; a shorter run is not equivalent acceptance. The retained [M10 instructions](independent_tests_m10/REPRODUCE_FINAL.md)
 remain historical, not a command to apply obsolete expectations to current source.
 
 Use fresh private output paths. The gate verifies exact source before/after and
@@ -41,7 +41,8 @@ counts and explicitly lifted negative cases. Never broadly relax those assertion
 The shared library exports exactly seven symbols: the five retained compile,
 workspace and job entrypoints, plus `doe_compiler_typed_requirements` and
 `doe_compiler_compile_typed`. See [ABI4](include/doe_compiler_typed.h), the
-[frozen semantics](MILESTONE_11.md) and [storage/lowering ledger](MILESTONE_11_LEDGER.md).
+[frozen numeric semantics](MILESTONE_12.md) and [lowering ledger](MILESTONE_12_LEDGER.md),
+with retained storage ownership.
 
 - ABI1, v2 and job retain their layouts and real capacity/projection limits.
   New valid syntax shares the same parser and semantic implementation; old
@@ -90,6 +91,10 @@ tracks validated source dependencies, including constant-skipped RHS syntax,
 calls, control flow and loop exits. Workgroup roots are not descriptor bindings;
 standalone reflection does not supply runtime workgroup metadata.
 
+The admitted overload families now include min/max/clamp/exp/tanh/sqrt and
+dot/length/distance/normalize/cross. Constant and runtime stages remain distinct;
+[AbstractInt dot interpretation](contracts/m12_numeric_interpretation.md) is explicit.
+
 Other barriers, atomics, matrices, pointers, aliases,
 overrides, f16/subgroups, multiple entries, graphics, textures, wider builtins,
 other targets and runtime metadata/adoption remain open owners, not implied coverage.
@@ -105,16 +110,16 @@ They are mutually exclusive. No JSON4 option exists.
 Unknown/duplicate/missing/empty options fail. Existing destinations and symlinks
 are refused. A failed second publication rolls back the first owned publication;
 this is ordinary-failure rollback, not crash-atomic multi-file durability.
-The [same-source ledger](../../../docs/c-migration/corpus-coverage-m11.json)
-separates 52 fresh emitted/validated paths, 43 independently executed paths,
-nine validation-only emissions, 46 explicit rejections and unrelated prebuilt
+The [same-source ledger](../../../docs/c-migration/corpus-coverage-m12.json)
+separates 67 fresh emitted/validated paths, 48 execution-qualified paths,
+19 validation-only emissions, 31 explicit rejections and unrelated prebuilt
 observations. None is physical execution or complete adoption.
 
 ## Storage and owner map
 
 Measured fixed workspace is 146,256 bytes; public alignment queries remain
 authoritative for allocation. Independent conservative library bounds are
-204,608 fixed and 193,376 maximum-depth
+205,776 fixed and 194,544 maximum-depth
 job bytes. These are derived bounds, not observed stack peaks; they exclude
 external libc/libm, OS and sanitizer frames. Caller-controlled capacities do not
 increase bounded expression/control/type recursion. The frozen ledger owns exact
@@ -122,6 +127,7 @@ pool accounting and ceilings; future growth requires an explicit reviewed change
 
 - lex.c / parse.c: one grammar and original source positions.
 - numeric.c: checked scalar constants/conversions and per-call host environment.
+- builtin.c / sema_builtin.c: shared overload identity, typed snapshots and builtin constants.
 - types.c / constants.c: shared typed layout and compact aggregate constants.
 - sema_declarations.c / sema_expression.c / sema_call.c / validate.c: module and
   lexical identity, typed values/references/calls and structured control.

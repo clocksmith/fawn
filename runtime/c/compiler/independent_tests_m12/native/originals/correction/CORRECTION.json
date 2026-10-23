@@ -1,0 +1,24 @@
+{
+  "phase": "After candidate1 observation; exact evaluator repair only",
+  "id": "ai_explicit_f32_conversion",
+  "source": "frozen/ai_explicit_f32_conversion.wgsl",
+  "source_sha256": "02266cfd91fcae1e15977229f544c06506d29a6d7e7e929322787ebe03acc243",
+  "old_status": 0,
+  "new_status": 4,
+  "fields": [
+    "expected_status",
+    "legacy_expected_status"
+  ],
+  "authoritative_correction": "/tmp/doe-m12-independent-20261023/EXACT_EVALUATOR_CORRECTIONS.json",
+  "authoritative_correction_sha256": "65bb9523fe38b202bf9be7a98bf53cad9ebe569da2e5f66fe48af31ebf62fc6a",
+  "scalar_adjudication": "/tmp/doe-m12-independent-20261023/SCALAR_ADJUDICATION.json",
+  "scalar_adjudication_sha256": "5be089709f6708be439a224814dff9b8ae16cd951934bf8f68988df0d3be87fc",
+  "original_runner": "/tmp/doe-m12-native-20261023/run_native_m12.py",
+  "original_runner_sha256": "aa111e6c4b4203ecdb57541f20f104464273329d97721c33985a9c4526e0ce22",
+  "original_native_seal": "/tmp/doe-m12-native-20261023/SOURCE_SEAL.sha256",
+  "original_native_seal_sha256": "8970187ed1b01e490e6cd9c6f81b4c3e4bedcb92a06974b574744d0517417fe1",
+  "original_native_first_failure": "/tmp/doe-m12-native-candidate1-numeric-20261023/FIRST_FAILURE.json",
+  "original_native_first_failure_sha256": "a95f6d9476fcc541545fa8161b0dc039f95ea95e0c15e527f5de9edaf7d7eebb",
+  "reason": "Scalar conversion constructors use concrete input: AI to i32 ranks before AI to u32/f32, so 2147483649 fails i32 materialization. Independently confirmed against accepted M11 scalar control and dated WGSL conversion-rank/scalar-conversion rules.",
+  "restriction": "Only this exact source-hash-bound ID changes from status0 to status4 for typed and legacy. No original source, seal, manifest, harness, first result or other expectation is modified."
+}

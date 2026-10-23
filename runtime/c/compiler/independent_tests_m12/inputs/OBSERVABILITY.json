@@ -1,0 +1,16 @@
+{
+  "base_source_sha256": "d21db536ebfd512d6e7715721240239909be35c8539b60b8a8184719ca4d2fdd",
+  "dispatches_each": 2,
+  "observed_source_sha256": "8a9625e3ddaa118ee6036788434e14f5718a6a9c6ca87aa0ecbc2d8e1c2e493d",
+  "progress_seconds": 20,
+  "pure_quantum": 64,
+  "schedules": [
+    "round_robin",
+    "reverse",
+    "shuffle_0x11c0ffee",
+    "bounded_burst_1_3_7"
+  ],
+  "semantics": "Identical scheduler, order, quantum and yields. Optional callback reads counters and generator locals between existing sweeps; it does not resume or mutate an invocation.",
+  "timeout_policy": "Retain existing 100000000 event bound per dispatch and 500000000 instruction bound per invocation, fail closed as Unfinished. No estimated duration is a timeout. Parent supervises live persisted counters; inspect prolonged lack of counter change rather than claiming progress from process liveness. Task remains active until terminal result or verified blocker.",
+  "wall_clock_timeout": null
+}

@@ -1,0 +1,36 @@
+{
+  "affected_cases": [
+    "max_i32_1",
+    "max_i32_2",
+    "max_i32_3",
+    "max_i32_4",
+    "max_u32_1",
+    "max_u32_2",
+    "max_u32_3",
+    "max_u32_4",
+    "max_f32_1",
+    "max_f32_2",
+    "max_f32_3",
+    "max_f32_4",
+    "clamp_i32_1",
+    "clamp_i32_2",
+    "clamp_i32_3",
+    "clamp_i32_4",
+    "clamp_u32_1",
+    "clamp_u32_2",
+    "clamp_u32_3",
+    "clamp_u32_4",
+    "clamp_f32_1",
+    "clamp_f32_2",
+    "clamp_f32_3",
+    "clamp_f32_4"
+  ],
+  "correction": {
+    "script": "run_lowering_ledger_v2.py",
+    "sha256": "f8adcd905a8e9724389dad62c257c3ce6c10797d163cc492cb129b5d958c756c"
+  },
+  "original_input_seal_sha256": "caf4fefa1641507e2af218bfaa22fe3878310eb4e60b895c90512e2b94781ad1",
+  "original_results_sha256": "456e583ecf85ca5dea9d544dd722ff8e50bba2e01d762438132388ccf07363d4",
+  "phase": "Post-observation additive ledger evaluator correction",
+  "reason": "Frozen target ledger specifies compare/select counts but not comparison polarity. Initial additive harness overconstrained max and clamp to LessThan rather than allowing the equal-size GreaterThan with swapped selection operands. v2 checks the same signed/unsigned/ordered-float comparison classes and exact result IDs/word totals. Primary independently sealed numeric execution checks semantics; no source or original expectation is edited."
+}

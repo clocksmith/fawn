@@ -142,6 +142,16 @@ host-environment, atomicity and sanitizer gates pass within the recorded host
 envelope. Workgroup runtime metadata/adoption, physical execution, broader
 collectives and complete compiler ownership remain unqualified.
 
+The [twelfth increment](../../runtime/c/compiler/MILESTONE_12_RESULTS.md) adds
+complete admitted-type overloads for eleven scalar/vector numeric builtin families.
+Independent semantic, native, sanitizer and full composed-stack gates pass after
+correcting a real candidate-1 stack-budget failure without changing ceilings.
+The [new ledger](corpus-coverage-m12.json) distinguishes 67 emitted/validated paths,
+48 execution-qualified paths, 19 validation-only emissions and 31 rejections.
+Target-byte identity carries forward 43 accepted M11 and five fully executed
+new-source proofs. The AbstractInt dot interpretation and upstream disagreement
+remain explicit. No production-default owner or physical backend is promoted.
+
 The first [CPU runtime owner](../../runtime/c/futures/RESULTS.md) is independently
 accepted as an isolated C library for future IDs and completion queues. It retains
 issuance-boundary selection, callback reentry, actual condition waits and explicit

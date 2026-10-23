@@ -1,0 +1,1 @@
+@group(0) @binding(1) var<storage,read_write> output:array<u32>;const result=dot(vec3(1.0,2.0,3.0),vec3(4.0,5.0,6.0));@compute @workgroup_size(1) fn main(){if(result==0x1.0000000000000p5){output[0]=1u;}else{output[0]=2u;}}

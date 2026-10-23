@@ -1,0 +1,1 @@
+@group(0) @binding(1) var<storage,read_write> output:array<u32>;const result=sqrt(vec2(1.0,2.0));@compute @workgroup_size(1) fn main(){if(result.x==0x1.0000000000000p0 && result.y==0x1.6a09e667f3bcdp0){output[0]=1u;}else{output[0]=2u;}}

@@ -1,0 +1,136 @@
+--- a/runtime/c/compiler/src/builtin.c
++++ b/runtime/c/compiler/src/builtin.c
+@@ -1,7 +1,6 @@
+ /* SPDX-License-Identifier: MIT
+  * Copyright (c) 2026 Doe contributors */
+ #include "sema.h"
+-#include <string.h>
+ 
+ static const NumericBuiltin numeric_builtins[] = {
+     {"min", BUILTIN_MIN, 2u, BUILTIN_COMPONENT_NUMERIC, 0u},
+@@ -17,9 +16,9 @@
+     {"cross", BUILTIN_CROSS, 2u, BUILTIN_FLOAT_CROSS, 68u}
+ };
+ 
+-const NumericBuiltin *builtin_named(const char *name) {
++const NumericBuiltin *builtin_named(const Source *source, NameSpan name) {
+     for (size_t i = 0u; i < sizeof(numeric_builtins) / sizeof(*numeric_builtins); ++i)
+-        if (strcmp(name, numeric_builtins[i].name) == 0) return &numeric_builtins[i];
++        if (source_span_is(source, name, numeric_builtins[i].name)) return &numeric_builtins[i];
+     return NULL;
+ }
+ 
+@@ -53,11 +52,11 @@
+     return true;
+ }
+ 
+-bool builtin_clamp_bounds(Source *source, uint32_t offset, ConstantValue lower, ConstantValue upper) {
+-    const uint32_t width = type_vector_width(source->compiler, lower.type);
++bool builtin_clamp_bounds(Source *source, uint32_t offset, const ConstantValue *lower, const ConstantValue *upper) {
++    const uint32_t width = type_vector_width(source->compiler, lower->type);
+     for (uint32_t i = 0u; i < width; ++i) {
+         NumericValue low, high, comparison;
+-        if (!constant_lane(source, lower, i, &low) || !constant_lane(source, upper, i, &high) ||
++        if (!constant_lane(source, *lower, i, &low) || !constant_lane(source, *upper, i, &high) ||
+             !numeric_binary(source, offset, EXPRESSION_COMPARE, COMPARE_GREATER, low, high, &comparison)) return false;
+         if (comparison.bits != 0u)
+             return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, offset,
+--- a/runtime/c/compiler/src/builtin.h
++++ b/runtime/c/compiler/src/builtin.h
+@@ -19,12 +19,13 @@
+     uint32_t extended_instruction;
+ } NumericBuiltin;
+ 
+-const NumericBuiltin *builtin_named(const char *);
++const NumericBuiltin *builtin_named(const Source *, NameSpan);
+ const NumericBuiltin *builtin_kind(NumericBuiltinKind);
+ bool builtin_floating(const NumericBuiltin *);
+ bool builtin_scalar_result(const NumericBuiltin *);
+ bool builtin_shape(const NumericBuiltin *, uint32_t);
+ bool builtin_constant(Source *, uint32_t, const NumericBuiltin *,
+                       const ConstantValue *, TypeId, ConstantValue *);
+-bool builtin_clamp_bounds(Source *, uint32_t, ConstantValue, ConstantValue);
++/* Bound values are borrowed only for this validation call; neither is mutated. */
++bool builtin_clamp_bounds(Source *, uint32_t, const ConstantValue *, const ConstantValue *);
+ #endif
+--- a/runtime/c/compiler/src/sema.h
++++ b/runtime/c/compiler/src/sema.h
+@@ -45,6 +45,7 @@
+ bool sema_assignment_reference(Source *,const Assignment *,const LocalScope *,ValueReference *);
+ bool sema_binary(Source *,ExpressionKind,Comparison,ExpressionValue *,ExpressionValue *,uint32_t,bool,bool,ExpressionValue *);
+ bool sema_call_statement(Source *,uint32_t,const LocalScope *);
+-bool sema_builtin_value(Source *,const Expression *,const LocalScope *,const NumericBuiltin *,bool,bool,bool,ExpressionValue *);
++/* The call dispatcher validates builtin arity, type arguments and result use. */
++bool sema_builtin_value(Source *,const Expression *,const LocalScope *,const NumericBuiltin *,bool,bool,ExpressionValue *);
+ bool sema_call_value(Source *,uint32_t,const LocalScope *,bool,bool,bool,ExpressionValue *);
+ #endif
+--- a/runtime/c/compiler/src/sema_builtin.c
++++ b/runtime/c/compiler/src/sema_builtin.c
+@@ -4,19 +4,15 @@
+ 
+ bool sema_builtin_value(Source *source, const Expression *node, const LocalScope *scope,
+                         const NumericBuiltin *builtin, bool evaluate, bool emit,
+-                        bool statement, ExpressionValue *out) {
+-    if (statement || node->value.call.type.offset != NO_ID || node->right != builtin->arity)
+-        return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, node->source_offset,
+-                            "numeric builtin requires its exact arguments and a used result");
+-
++                        ExpressionValue *out) {
+     CompilerWorkspace *compiler = source->compiler;
+     ExpressionValue arguments[3];
+-    uint32_t syntax_ids[3], link = node->left, width = 0u;
++    uint32_t link = node->left, width = 0u;
+     bool runtime = false, known = evaluate;
+     TypeId leaf = IR_VOID;
+     for (uint32_t i = 0u; i < builtin->arity; ++i) {
+-        syntax_ids[i] = compiler->arguments[link].expression;
+-        if (!sema_expression(source, syntax_ids[i], scope, evaluate, emit, &arguments[i])) return false;
++        if (!sema_expression(source, compiler->arguments[link].expression, scope,
++                             evaluate, emit, &arguments[i])) return false;
+         const TypeId type = arguments[i].constant.type;
+         const TypeId argument_leaf = type_leaf(compiler, type);
+         const uint32_t argument_width = type_vector_width(compiler, type);
+@@ -46,13 +42,16 @@
+     if (builtin->kind == BUILTIN_CLAMP && !arguments[1].runtime && !arguments[2].runtime) {
+         /* A skipped constant bound still has mandatory creation-time meaning.
+          * Force only unknown const expressions, never an effectful runtime input. */
++        link = compiler->arguments[node->left].next;
+         for (uint32_t i = 1u; i < 3u; ++i) {
+             if (!arguments[i].known &&
+-                (!sema_expression(source, syntax_ids[i], scope, true, false, &arguments[i]) ||
++                (!sema_expression(source, compiler->arguments[link].expression, scope,
++                                  true, false, &arguments[i]) ||
+                  !sema_materialize(source, &arguments[i], operand_type))) return false;
++            link = compiler->arguments[link].next;
+         }
+         if (!builtin_clamp_bounds(source, node->source_offset,
+-                                  arguments[1].constant, arguments[2].constant)) return false;
++                                  &arguments[1].constant, &arguments[2].constant)) return false;
+     }
+ 
+     const TypeId result_type = builtin_scalar_result(builtin) ? leaf : operand_type;
+--- a/runtime/c/compiler/src/sema_call.c
++++ b/runtime/c/compiler/src/sema_call.c
+@@ -195,13 +195,15 @@
+     if (nominal==NO_ID && (source_span_is(s,name,"storageBarrier") || source_span_is(s,name,"workgroupUniformLoad") ||
+         source_span_is(s,name,"textureBarrier")))
+         return source_error(s,DOE_COMPILER_UNSUPPORTED,name.offset,"synchronization builtin is outside the workgroup barrier owner");
+-    Name text;
+-    if (name.length >= sizeof(text.text)) return source_error(s, DOE_COMPILER_UNSUPPORTED, name.offset, "identifier length exceeds supported capacity");
+-    memcpy(text.text, s->source+name.offset, name.length);
+-    text.text[name.length] = '\0';
+-    text.offset = name.offset;
+-    const NumericBuiltin *builtin = nominal == NO_ID?builtin_named(text.text):NULL;
+-    if (builtin != NULL) return sema_builtin_value(s, node, scope, builtin, evaluate, emit, statement, out);
++    if (name.length >= sizeof(((Name *)0)->text))
++        return source_error(s, DOE_COMPILER_UNSUPPORTED, name.offset, "identifier length exceeds supported capacity");
++    const NumericBuiltin *builtin = nominal == NO_ID ? builtin_named(s, name) : NULL;
++    if (builtin != NULL) {
++        if (statement || node->value.call.type.offset != NO_ID || node->right != builtin->arity)
++            return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, node->source_offset,
++                                "numeric builtin requires its exact arguments and a used result");
++        return sema_builtin_value(s, node, scope, builtin, evaluate, emit, out);
++    }
+     if (statement) return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, name.offset, "constructor result cannot be discarded");
+     const bool bitcast = nominal == NO_ID && source_span_is(s, name, "bitcast");
+     TypeId target = IR_VOID;

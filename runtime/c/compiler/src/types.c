@@ -22,6 +22,9 @@ TypeId type_leaf(const CompilerWorkspace *c, TypeId id) {
     const TypeRecord *t = &c->types[id-7u];
     return t->kind == TYPE_VECTOR ? t->element : IR_VOID;
 }
+uint32_t type_vector_width(const CompilerWorkspace *c, TypeId id) {
+    return id >= 7u && c->types[id - 7u].kind == TYPE_VECTOR ? c->types[id - 7u].count : 1u;
+}
 uint32_t type_flags(const CompilerWorkspace *c, TypeId id) {
     if (id >= 7u) return c->types[id-7u].flags;
     if (id == IR_VOID) return TYPE_RESOLVED;

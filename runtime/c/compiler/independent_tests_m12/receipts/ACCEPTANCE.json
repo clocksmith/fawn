@@ -1,0 +1,211 @@
+{
+  "additional_post_observation_audits": {
+    "exact_lowering_ID_word_import_controls": 69,
+    "generic_lookahead_and_type_depth_controls": 38
+  },
+  "candidate_manifest_sha256": "73b51c7355912608f71f3f19c44b7f57f17ef3f8b05be9fbf05bccd5331aaaf4",
+  "contract_seal_sha256": "f3fef320194d5a81fa67d1cd394bd675c287e25b5ea492260758929bd1f274a4",
+  "failures_and_corrections": {
+    "additive_ledger_harness_error": "Initial post-observation probe overconstrained comparison polarity; correction groups only equivalent ordered/signed comparison opcode classes while exact IDs/words and separate semantic execution stay mandatory.",
+    "additive_parser_harness_error": "Six one-short typed-capacity cases used legacy status3 instead of typed status1. AcceptedM11 controls prove correction; pool19/minimumN assertions unchanged.",
+    "candidate1_compiler_defect": "Measured recursiveSCC1616>1536 and nonwrapper sum16424>16384. Narrow candidate2 source fix independently requalified; no ceiling, ABI, pool or flag waiver.",
+    "launch_only_error": "One historical wrapper launch lacked model_m10 import path; original traceback preserved, no compiler invocation occurred.",
+    "primary_exact_evaluator_error": "ai_explicit_f32_conversion must reject status4 due concrete constructor input ranking; acceptedM11 scalar and datedWGSL evidence preserved.",
+    "restrictions": "No broad negative relaxation, no original frozen source/seal/result overwritten.",
+    "supplement_exact_evaluator_error": "latitude_sqrt_nonfinite accidentally const-evaluates nonfinite bitcasts; must reject status4. Separate storage-runtime control is validation-only."
+  },
+  "fresh_build": {
+    "doe-compiler-m11": {
+      "path": "/tmp/doe-m12-independent-native-build2-20261023/doe-compiler-m11",
+      "sha256": "3e51372dea098280fcf4e89cc1d88260270924ea19cfb4ce67be4cbb222c029e"
+    },
+    "libdoe-m11.a": {
+      "path": "/tmp/doe-m12-independent-native-build2-20261023/libdoe-m11.a",
+      "sha256": "e60dfd3488a1c7da872600e5b5140a8c2ea565bd75f0f03f01a2b01234a18d08"
+    },
+    "libdoe-m11.so": {
+      "path": "/tmp/doe-m12-independent-native-build2-20261023/libdoe-m11.so",
+      "sha256": "25893e3ef580220ecae613d35e7c53f033e6ac03d7a2782f0ac3569e3867b02f"
+    }
+  },
+  "historical": {
+    "M10_exact_new_admissions": [
+      "vector_math",
+      "vector_dot"
+    ],
+    "M10_fresh_cases": 576,
+    "M11_carried_forward_execution_targets": 24,
+    "M11_fresh_cases": 120,
+    "M11_new_dispatches": 0
+  },
+  "limitations": [
+    "Qualified Linux x86-64 GCC14.2 native profiles and independent SPIR-V instruction model, not physical GPU/backend numerical qualification",
+    "No TSan or platform portability claim",
+    "N1 exact-final AbstractInt dot is a selected interpretation with disclosed Tint disagreement and CTS gap, not established upstream consensus",
+    "Out-of-domain/nonfinite runtime controls are validation-only, not finite accuracy passes",
+    "No performance, full language/migration, default Zig/production switch or publication claim"
+  ],
+  "native": {
+    "allocator_imports": 0,
+    "concurrent_workspaces": 8,
+    "host_profiles": 32,
+    "normal_audit_commands": 22,
+    "normal_profile_margin_bytes": 16,
+    "numeric_commands": 200,
+    "numeric_native_targets_independently_validated_executed": 448,
+    "public_exports": 7,
+    "public_header_layout_pool_growth": false,
+    "retained_commands": 74,
+    "sanitized_targets_independently_validated_executed": 224,
+    "sanitizer_commands": 128,
+    "strict_audit_commands": 9
+  },
+  "native_final": {
+    "path": "/tmp/doe-m12-native-candidate2-FINAL-20261023/NATIVE_FINAL.json",
+    "sha256": "130e669996dd2f4b568ecdb746ab4772bdf88bebae3466a97e915011f630fd01"
+  },
+  "primary_case_seal_sha256": "98a6656e0b3bf2bb2a6e74bb5977afabdab2ac2ac07c664468a8026dea43b281",
+  "result_receipts": {
+    "exact-corrections": {
+      "path": "/tmp/doe-m12-independent-20261023/candidate2-exact-corrections/results.json",
+      "sha256": "e31e302c24707cd4d8bd7cc1b3a564fdcf7a772b34572d39e1fbc8889a31c291"
+    },
+    "full": {
+      "path": "/tmp/doe-m12-independent-20261023/candidate2-full/results.json",
+      "sha256": "7c8d67c1bc542b71f67e007a97937d3c81c158b94a5eafc42d698f54ebfe0828"
+    },
+    "historical576": {
+      "path": "/tmp/doe-m12-independent-20261023/candidate2-historical576/results.json",
+      "sha256": "8c4ac88be701fcefa7c44b7ab66be891baf45718a96c3c409e41d079735cbd25"
+    },
+    "lowering-ledger-v2": {
+      "path": "/tmp/doe-m12-independent-20261023/candidate2-lowering-ledger-v2/results.json",
+      "sha256": "a80a1b5bd18015537489ad19c990c2c75fb238cc78d7fdbf8daf22aea25ab3dc"
+    },
+    "native-target-consumption": {
+      "path": "/tmp/doe-m12-independent-20261023/candidate2-native-target-consumption/results.json",
+      "sha256": "a7e7174932957a41ca731ae27ae92aa12b834497f5de6ee6b5145638ae06e204"
+    },
+    "numeric-supplement": {
+      "path": "/tmp/doe-m12-independent-20261023/candidate2-numeric-supplement/results.json",
+      "sha256": "ee2afa2e1a5f311d15aaf9eb3f86a01abdd8722154c4b90e81450762f45f358a"
+    },
+    "parse-probe-v2": {
+      "path": "/tmp/doe-m12-independent-20261023/candidate2-parse-probe-v2/results.json",
+      "sha256": "56f52188e4bafe158ee74731961dabb748854bd30fdc7e5816a1ad980c0ac81c"
+    },
+    "retained120": {
+      "path": "/tmp/doe-m12-independent-20261023/candidate2-retained120/results.json",
+      "sha256": "f9015d7e4430efcbfeff3bd82d5156bee376100f64121714f5ce856c890f42b2"
+    },
+    "same98": {
+      "path": "/tmp/doe-m12-independent-20261023/candidate2-same98/results.json",
+      "sha256": "5c5d48d1d58101113890704fde2cb1063f1b2774540d7477e6736c52c7ebbfaa"
+    },
+    "sanitized-target-consumption": {
+      "path": "/tmp/doe-m12-independent-20261023/candidate2-sanitized-target-consumption/results.json",
+      "sha256": "cecc54055f9952bb365337cc036639ff8c3e2c7917f02a0e6db37d792b75a6b1"
+    },
+    "witnesses": {
+      "path": "/tmp/doe-m12-independent-20261023/candidate2-witnesses/results.json",
+      "sha256": "b22a1499df8edf44e58ae1041036d7566d0aa63eb48f59e71a629b66dc60a234"
+    }
+  },
+  "same98": {
+    "carried_forward_executed": 48,
+    "emitted": 67,
+    "execution_qualified": 48,
+    "newly_executed": 0,
+    "paths": 98,
+    "rejected": 31,
+    "validated": 67,
+    "validation_only": 19
+  },
+  "same98_history": {
+    "M11": {
+      "executed": 43,
+      "rejected": 46,
+      "validated": 52,
+      "validation_only": 9
+    },
+    "M12_new_validated_admissions": 15,
+    "new_source_execution_proof": "Five unchanged full sources executed40 complete dispatches on candidate1,22247472 instructions; candidate2 matches every target SHA and carries those exact proofs. Retained43 exact-source targets match acceptedM11."
+  },
+  "scope": "All11 numeric/vector builtin families and frozen acceptance gates. No commits or pushes by evaluator.",
+  "semantic_cases": {
+    "effective_combined": {
+      "newly_executed": 577,
+      "reject": 375,
+      "success": 591,
+      "total": 966,
+      "validation_only": 14
+    },
+    "numeric_supplement": {
+      "effective_reject": 1,
+      "effective_success": 30,
+      "newly_executed": 28,
+      "total": 31,
+      "validation_only": 2
+    },
+    "post_observation_additional_valid_controls": {
+      "newly_executed": 3,
+      "total": 4,
+      "validation_only": 1
+    },
+    "primary": {
+      "effective_reject": 374,
+      "effective_success": 557,
+      "newly_executed": 546,
+      "total": 931,
+      "validation_only": 11
+    },
+    "qualification": "Combined is unique source fixtures in these three manifests only; does not sum repeated ABI/fenv invocations or historical cases. Corrections are exact source-bound, originals preserved."
+  },
+  "source_postcheck": "All34 immutable sources and all9 contract files verified after every acceptance gate. Original10 evaluator seals also verified unchanged.",
+  "stack_ceilings": {
+    "fixed_combined": 212992,
+    "job_combined": 196608,
+    "largest_nonwrapper": 8192,
+    "nonwrapper_sum": 16384,
+    "semantic_scc": 1536,
+    "wrapper": 147968
+  },
+  "stack_profiles": {
+    "normal_makefile_nonpic": {
+      "compiler": "gcc (Debian 14.2.0-19) 14.2.0",
+      "fixed_combined": 205776,
+      "frame_count": 162,
+      "job_combined": 194544,
+      "maximum_nonwrapper": [
+        1344,
+        "numeric_parse_literal"
+      ],
+      "raw_stack": {
+        "path": "/tmp/doe-m12-independent-normal-build2-20261023/stack-analysis.json",
+        "sha256": "21985b9db0d8d4f8ef93ef8ef3bafa40cd39701983893f372ac6a703b159799d"
+      },
+      "semantic_scc": 1520,
+      "sum_all_other_frames": 16368,
+      "wrapper": 146400
+    },
+    "strict_pic": {
+      "compiler": "gcc (Debian 14.2.0-19) 14.2.0",
+      "fixed_combined": 205672,
+      "frame_count": 159,
+      "job_combined": 194440,
+      "maximum_nonwrapper": [
+        1344,
+        "numeric_parse_literal"
+      ],
+      "raw_stack": {
+        "path": "/tmp/doe-m12-independent-native-build2-20261023/stack-analysis.json",
+        "sha256": "883fa181dddc70f7206200d23a684834c553335d5fc286d4b86e3fef6adf19c2"
+      },
+      "semantic_scc": 1488,
+      "sum_all_other_frames": 16264,
+      "wrapper": 146400
+    }
+  },
+  "utc": "2026-10-23T15:06:58.928790+00:00",
+  "verdict": "PASS_QUALIFIED_M12_CANDIDATE2"
+}

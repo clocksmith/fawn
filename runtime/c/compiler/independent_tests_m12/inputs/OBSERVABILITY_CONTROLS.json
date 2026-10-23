@@ -1,0 +1,78 @@
+{
+  "candidate_used": false,
+  "controls": [
+    {
+      "op": 148,
+      "progress_reports": 2,
+      "same_output_and_counters": true,
+      "schedule": "round_robin"
+    },
+    {
+      "op": 148,
+      "progress_reports": 2,
+      "same_output_and_counters": true,
+      "schedule": "reverse"
+    },
+    {
+      "op": 148,
+      "progress_reports": 2,
+      "same_output_and_counters": true,
+      "schedule": "shuffle_0x11c0ffee"
+    },
+    {
+      "op": 148,
+      "progress_reports": 2,
+      "same_output_and_counters": true,
+      "schedule": "bounded_burst_1_3_7"
+    },
+    {
+      "op": 68,
+      "progress_reports": 4,
+      "same_output_and_counters": true,
+      "schedule": "round_robin"
+    },
+    {
+      "op": 68,
+      "progress_reports": 4,
+      "same_output_and_counters": true,
+      "schedule": "reverse"
+    },
+    {
+      "op": 68,
+      "progress_reports": 4,
+      "same_output_and_counters": true,
+      "schedule": "shuffle_0x11c0ffee"
+    },
+    {
+      "op": 68,
+      "progress_reports": 2,
+      "same_output_and_counters": true,
+      "schedule": "bounded_burst_1_3_7"
+    },
+    {
+      "op": 31,
+      "progress_reports": 5,
+      "same_output_and_counters": true,
+      "schedule": "round_robin"
+    },
+    {
+      "op": 31,
+      "progress_reports": 5,
+      "same_output_and_counters": true,
+      "schedule": "reverse"
+    },
+    {
+      "op": 31,
+      "progress_reports": 5,
+      "same_output_and_counters": true,
+      "schedule": "shuffle_0x11c0ffee"
+    },
+    {
+      "op": 31,
+      "progress_reports": 3,
+      "same_output_and_counters": true,
+      "schedule": "bounded_burst_1_3_7"
+    }
+  ],
+  "passed": true
+}

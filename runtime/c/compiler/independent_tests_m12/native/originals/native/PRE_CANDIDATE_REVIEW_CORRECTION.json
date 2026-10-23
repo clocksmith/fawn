@@ -1,0 +1,76 @@
+{
+  "artifact_identity": "Every command/target receipt binds M12 source manifest; retained m11 filenames do not imply M11 qualification.",
+  "candidate_builds": 0,
+  "candidate_executions": 0,
+  "candidate_read": false,
+  "corrections": [
+    {
+      "assertion": "Typed success unchanged; three old adapters must return named projection UNSUPPORTED and publish nothing. No source deletion or broad negative rewrite.",
+      "exact_per_source_mappings": [
+        {
+          "expected_status": 0,
+          "id": "runtime_min_i32_4",
+          "legacy_expected_status": 3,
+          "legacy_projection_name": "input",
+          "source": "frozen/runtime_min_i32_4.wgsl",
+          "source_sha256": "c96c37e24fc1bec4f63b3d0e3ff69e4494d3a9382cf4096dd6d40e16beb08eb7"
+        },
+        {
+          "expected_status": 0,
+          "id": "runtime_max_i32_4",
+          "legacy_expected_status": 3,
+          "legacy_projection_name": "input",
+          "source": "frozen/runtime_max_i32_4.wgsl",
+          "source_sha256": "633d9046fcea55630017892a57211c7adac017d02f9a67f81ae00eb08dd9c9db"
+        },
+        {
+          "expected_status": 0,
+          "id": "runtime_clamp_i32_4",
+          "legacy_expected_status": 3,
+          "legacy_projection_name": "input",
+          "source": "frozen/runtime_clamp_i32_4.wgsl",
+          "source_sha256": "49608f0baecd06f2872a43c14cee22070507cda7d0906e423e93ec25e94032da"
+        },
+        {
+          "expected_status": 0,
+          "id": "runtime_dot_i32_4",
+          "legacy_expected_status": 3,
+          "legacy_projection_name": "input",
+          "source": "frozen/runtime_dot_i32_4.wgsl",
+          "source_sha256": "d5bd3c60d8924ec4331bf05ef5cc8f124321fd448e0262ca78dbb906550a7f1d"
+        }
+      ],
+      "issue": "Scalar i32 resource is not representable by frozen ABI1/v2/job u32/f32-only reflection.",
+      "source_basis": {
+        "commit": "f01effdf070edf2f25cf0f2016c995df1e4d3bab",
+        "function": "old_resource, reflect_legacy_admit",
+        "path": "runtime/c/compiler/src/reflection.c",
+        "sha256": "581645d97a2f1cd8d67e98fa3ca9e7c250a5566faccd4beaf123a63dce4959c1"
+      }
+    },
+    {
+      "assertion": "Diagnostic offset <= source length. Status and atomicity obligations unchanged.",
+      "issue": "Output shortage diagnostics may point to the valid EOF source boundary.",
+      "source_basis": {
+        "branch": "selected caller output capacity is too small uses length",
+        "commit": "f01effdf070edf2f25cf0f2016c995df1e4d3bab",
+        "path": "runtime/c/compiler/src/compile.c",
+        "sha256": "0c0ccf8df4681794f62792e014a9c7ff7ed47f11f7146c8dc4026b9adbdde1d6"
+      }
+    },
+    {
+      "assertion": "No automatic wall timeout. Runner publishes PID/progress/log-byte counters every30s. Original builder source preserved; identity-checked launcher overrides only Receipt timeout to None. External interruption or timeout is INCOMPLETE_GATE, never candidate defect/pass.",
+      "issue": "A rough600-second wall timeout is not a semantic failure criterion.",
+      "self_control": "/tmp/doe-m12-native-supervision-self-control",
+      "self_control_result": "PASS normal command and synthetic124 classified unfinished with no FIRST_FAILURE."
+    }
+  ],
+  "new_seal_sha256": "8970187ed1b01e490e6cd9c6f81b4c3e4bedcb92a06974b574744d0517417fe1",
+  "new_source_files": 9,
+  "old_root": "/tmp/doe-m12-native-20261023/pre_review_v1",
+  "old_seal_sha256": "14a2699a3d5948163ceda592fa8733099b9a6aa826762165784d2db42ab997bc",
+  "primary_case_or_oracle_changes": false,
+  "qualification": "Source-only syntax, selection and supervision control checks; no compiler qualification.",
+  "status": "PRE_CANDIDATE_EVALUATOR_INTEGRATION_CORRECTION",
+  "time": "2026-10-23T14:24:11.043378+00:00"
+}

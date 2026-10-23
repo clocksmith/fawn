@@ -51,8 +51,11 @@ typedef struct {
         struct { NameSpan callee; TypeRef type; } call; } value;
     bool grouped;
 } Expression;
-typedef enum { BUILTIN_MIN, BUILTIN_MAX, BUILTIN_CLAMP, BUILTIN_EXP, BUILTIN_TANH, BUILTIN_SQRT } ScalarBuiltinKind;
-typedef struct { const char *name; ScalarBuiltinKind kind; uint32_t arity; bool floating; } ScalarBuiltin;
+typedef enum {
+    BUILTIN_MIN, BUILTIN_MAX, BUILTIN_CLAMP, BUILTIN_EXP, BUILTIN_TANH,
+    BUILTIN_SQRT, BUILTIN_DOT, BUILTIN_LENGTH, BUILTIN_DISTANCE,
+    BUILTIN_NORMALIZE, BUILTIN_CROSS
+} NumericBuiltinKind;
 typedef struct { uint64_t bits; IrType type; } NumericValue;
 typedef struct { TypeId type; uint32_t flags; uint64_t bits; } ConstantValue;
 enum { CONSTANT_AGGREGATE = 1u };
@@ -210,6 +213,7 @@ NameSpan source_name_at(const Source *, uint32_t);
 bool source_spans_equal(const Source *, NameSpan, NameSpan);
 bool source_span_is(const Source *, NameSpan, const char *);
 TypeId type_leaf(const CompilerWorkspace *, TypeId);
+uint32_t type_vector_width(const CompilerWorkspace *, TypeId);
 bool type_abstract(const CompilerWorkspace *, TypeId);
 bool type_constructible(const CompilerWorkspace *, TypeId);
 bool type_intern(Source *, uint32_t, TypeId, uint32_t, TypeId *);

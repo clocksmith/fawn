@@ -126,31 +126,6 @@ static bool checked_float(Source *source, size_t offset, NumericValue value,
     return true;
 }
 
-/* This is the closed scalar builtin signature registry. Resolution retains its
- * typed identity through constant evaluation and runtime IR lowering. */
-static const ScalarBuiltin scalar_builtins[] = {
-    { "min", BUILTIN_MIN, 2u, false },
-    { "max", BUILTIN_MAX, 2u, false },
-    { "clamp", BUILTIN_CLAMP, 3u, false },
-    { "exp", BUILTIN_EXP, 1u, true },
-    { "tanh", BUILTIN_TANH, 1u, true },
-    { "sqrt", BUILTIN_SQRT, 1u, true },
-};
-
-const ScalarBuiltin *scalar_builtin_named(const char *name) {
-    for (size_t i = 0u; i < sizeof(scalar_builtins) / sizeof(*scalar_builtins); ++i) {
-        if (strcmp(name, scalar_builtins[i].name) == 0) return &scalar_builtins[i];
-    }
-    return NULL;
-}
-
-static const ScalarBuiltin *scalar_builtin_kind(ScalarBuiltinKind kind) {
-    for (size_t i = 0u; i < sizeof(scalar_builtins) / sizeof(*scalar_builtins); ++i) {
-        if (kind == scalar_builtins[i].kind) return &scalar_builtins[i];
-    }
-    return NULL;
-}
-
 /* Inputs have one checked numeric type and finite payloads. Strict comparison
  * selects the right operand on equality, preserving its signed-zero bits. */
 static bool numeric_less(NumericValue left, NumericValue right) {
@@ -168,13 +143,13 @@ static NumericValue numeric_maximum(NumericValue left, NumericValue right) {
     return numeric_less(right, left) ? left : right;
 }
 
-bool numeric_builtin(Source *source, size_t offset, ScalarBuiltinKind kind,
+bool numeric_builtin(Source *source, size_t offset, const NumericBuiltin *signature,
                      const NumericValue *arguments, NumericValue *result) {
-    const ScalarBuiltin *signature = scalar_builtin_kind(kind);
     if (signature == NULL)
         return numeric_error(source, offset, "invalid scalar builtin identity");
+    const NumericBuiltinKind kind = signature->kind;
     const IrType type = arguments[0].type;
-    if (!floating_type(type) && (signature->floating || !integer_type(type)))
+    if (!floating_type(type) && (signature->family == BUILTIN_COMPONENT_FLOAT || !integer_type(type)))
         return numeric_error(source, offset, "scalar builtin operand type is not supported");
     for (uint32_t i = 0u; i < signature->arity; ++i) {
         if (arguments[i].type != type)
@@ -198,6 +173,12 @@ bool numeric_builtin(Source *source, size_t offset, ScalarBuiltinKind kind,
         case BUILTIN_TANH:
         case BUILTIN_SQRT:
             break;
+        case BUILTIN_DOT:
+        case BUILTIN_LENGTH:
+        case BUILTIN_DISTANCE:
+        case BUILTIN_NORMALIZE:
+        case BUILTIN_CROSS:
+            return numeric_error(source, offset, "non-component builtin reached scalar primitive");
     }
     NumericValue answer = { .bits = 0u, .type = type };
     /* The volatile store forces the declared width before subsequent constant
@@ -222,6 +203,65 @@ bool numeric_builtin(Source *source, size_t offset, ScalarBuiltinKind kind,
         answer.bits = double_bits(value);
     }
     return checked_float(source, offset, answer, result);
+}
+
+/* The five-limb sums represent up to four products of signed64 magnitudes.
+ * The largest positive sum is 4 * 2^126 = 2^128, so even unsigned128 is short. */
+bool numeric_dot_accumulate(Source *source, size_t offset, NumericDotAccumulator *sum,
+                            NumericValue left, NumericValue right) {
+    if (left.type != IR_ABSTRACT_INT || right.type != IR_ABSTRACT_INT)
+        return numeric_error(source, offset, "exact dot requires AbstractInt operands");
+    const bool left_negative = (left.bits >> 63u) != 0u;
+    const bool right_negative = (right.bits >> 63u) != 0u;
+    const uint64_t left_magnitude = left_negative ? UINT64_C(0) - left.bits : left.bits;
+    const uint64_t right_magnitude = right_negative ? UINT64_C(0) - right.bits : right.bits;
+    const uint32_t a[2] = {(uint32_t)left_magnitude, (uint32_t)(left_magnitude >> 32u)};
+    const uint32_t b[2] = {(uint32_t)right_magnitude, (uint32_t)(right_magnitude >> 32u)};
+    uint32_t product[4] = {0};
+    for (uint32_t i = 0u; i < 2u; ++i) {
+        uint64_t carry = 0u;
+        for (uint32_t j = 0u; j < 2u; ++j) {
+            /* (2^32-1)^2 + two (2^32-1) terms is exactly 2^64-1. */
+            const uint64_t part = (uint64_t)a[i] * b[j] + product[i + j] + carry;
+            product[i + j] = (uint32_t)part;
+            carry = part >> 32u;
+        }
+        product[i + 2u] = (uint32_t)carry;
+    }
+    uint32_t *destination = left_negative != right_negative ? sum->negative : sum->positive;
+    uint64_t carry = 0u;
+    for (uint32_t i = 0u; i < 5u; ++i) {
+        const uint64_t part = (uint64_t)destination[i] + (i < 4u ? product[i] : 0u) + carry;
+        destination[i] = (uint32_t)part;
+        carry = part >> 32u;
+    }
+    if (carry != 0u) return numeric_error(source, offset, "exact dot accumulator exceeded its four-lane bound");
+    return true;
+}
+
+bool numeric_dot_finish(Source *source, size_t offset, const NumericDotAccumulator *sum, NumericValue *out) {
+    bool negative = false;
+    for (uint32_t i = 5u; i != 0u; --i) {
+        if (sum->positive[i - 1u] != sum->negative[i - 1u]) {
+            negative = sum->positive[i - 1u] < sum->negative[i - 1u];
+            break;
+        }
+    }
+    const uint32_t *larger = negative ? sum->negative : sum->positive;
+    const uint32_t *smaller = negative ? sum->positive : sum->negative;
+    uint32_t magnitude[5];
+    uint64_t borrow = 0u;
+    for (uint32_t i = 0u; i < 5u; ++i) {
+        const uint64_t subtrahend = (uint64_t)smaller[i] + borrow;
+        magnitude[i] = (uint32_t)((uint64_t)larger[i] - subtrahend);
+        borrow = (uint64_t)larger[i] < subtrahend ? 1u : 0u;
+    }
+    const uint64_t value = (uint64_t)magnitude[0] | ((uint64_t)magnitude[1] << 32u);
+    const uint64_t limit = negative ? UINT64_C(0x8000000000000000) : UINT64_C(0x7fffffffffffffff);
+    if (magnitude[2] != 0u || magnitude[3] != 0u || magnitude[4] != 0u || value > limit)
+        return numeric_error(source, offset, "AbstractInt dot final result is outside signed64 range");
+    *out = (NumericValue){negative ? UINT64_C(0) - value : value, IR_ABSTRACT_INT};
+    return true;
 }
 
 /* Literal precision is bounded by WGSL, not source length. The largest retained
@@ -705,8 +745,10 @@ bool numeric_binary(Source *source, size_t offset, ExpressionKind operation,
     if (!finite_value(left) || !finite_value(right))
         return numeric_error(source, offset, "binary operand is a nonfinite evaluated constant");
     if (operation == EXPRESSION_MAX) {
-        const NumericValue arguments[] = { left, right };
-        return numeric_builtin(source, offset, BUILTIN_MAX, arguments, result);
+        if (left.type != right.type || (!integer_type(left.type) && !floating_type(left.type)))
+            return numeric_error(source, offset, "max operands have no common numeric type");
+        *result = numeric_maximum(left, right);
+        return true;
     }
     if (operation == EXPRESSION_SHIFT_LEFT || operation == EXPRESSION_SHIFT_RIGHT)
         return integer_shift(source, offset, operation, left, right, result);

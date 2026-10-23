@@ -6,8 +6,8 @@ export TMPDIR := $(CURDIR)/build/tmp
 export PYTHONDONTWRITEBYTECODE := 1
 CFLAGS = -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror
 CXXFLAGS = -std=c++17 -fno-exceptions -fno-rtti -O2 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror
-LIB_SOURCES = src/numeric.c src/lex.c src/parse.c src/validate.c src/uniformity.c src/types.c src/constants.c src/sema_declarations.c src/sema_expression.c src/sema_call.c src/reflection.c src/spirv.c src/compile.c src/storage.c
-HEADERS = src/spirv_decl.h include/doe_compiler_typed.h src/sema.h src/numeric.h src/internal.h include/doe_compiler.h include/doe_compiler_v2.h include/doe_compiler_job.h src/cli_json.h
+LIB_SOURCES = src/builtin.c src/sema_builtin.c src/numeric.c src/lex.c src/parse.c src/validate.c src/uniformity.c src/types.c src/constants.c src/sema_declarations.c src/sema_expression.c src/sema_call.c src/reflection.c src/spirv.c src/compile.c src/storage.c
+HEADERS = src/builtin.h src/spirv_decl.h include/doe_compiler_typed.h src/sema.h src/numeric.h src/internal.h include/doe_compiler.h include/doe_compiler_v2.h include/doe_compiler_job.h src/cli_json.h
 SPIRV_VAL ?= spirv-val
 CLI_FAULT_FLAGS = -Wl,--wrap=write,--wrap=close,--wrap=link,--wrap=mkstemp,--wrap=malloc,--wrap=free,--wrap=doe_compiler_job_requirements
 .PHONY: all test test-cli-modes test-uniform sanitize sanitize-cli sanitize-uniform clean
@@ -142,3 +142,16 @@ test-functions: all build/test_function_api
 sanitize-functions: | build/.ready
 	$(CC) $(CFLAGS) -O1 -g -fno-omit-frame-pointer -fsanitize=address,undefined $(LIB_SOURCES) src/cli.c src/cli_json.c -lm -o build/doe-compiler-c-functions-sanitize
 	ASAN_OPTIONS=detect_leaks=0:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1 DOE_COMPILER_CLI="$(CURDIR)/build/doe-compiler-c-functions-sanitize" SPIRV_VAL="$(SPIRV_VAL)" python3 tests/test_functions.py
+
+# Current owner-focused developer checks. Historical aggregate targets and
+# independently sealed acceptance remain separate and unchanged.
+.PHONY: test-numeric-builtins
+build/test_m12_numeric: src/numeric.c tests/test_m12_numeric.c $(HEADERS) | build/.ready
+	$(CC) $(CFLAGS) src/numeric.c tests/test_m12_numeric.c -lm -o $@
+test-numeric-builtins: all build/test_m12_numeric build/test_m12_api
+	build/test_m12_numeric
+	build/test_m12_api
+	DOE_COMPILER_CLI="$(CURDIR)/build/doe-compiler-c" SPIRV_VAL="$(SPIRV_VAL)" python3 tests/test_m12_builtins.py
+
+build/test_m12_api: $(LIB_SOURCES) tests/test_m12_api.c $(HEADERS) | build/.ready
+	$(CC) $(CFLAGS) -pthread $(LIB_SOURCES) tests/test_m12_api.c -lm -o $@

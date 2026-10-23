@@ -1,0 +1,1 @@
+@group(0) @binding(1) var<storage,read_write> output:array<u32>;const result=length(vec2(1.0,2.0));@compute @workgroup_size(1) fn main(){if(result==0x1.1e3779b97f4a8p1){output[0]=1u;}else{output[0]=2u;}}

@@ -1,0 +1,129 @@
+{
+  "status": "SOURCE_ONLY_INVENTORY",
+  "listed_files": 23,
+  "files": [
+    {
+      "path": "DEPENDENCIES.json",
+      "bytes": 64261,
+      "sha256": "9e15bdce40fab56b0168325a7f720591fd20853f0d923deea1e8a73c1383af67"
+    },
+    {
+      "path": "README.md",
+      "bytes": 9231,
+      "sha256": "6441062f19231ea2891f4e84ec12d5271439f73ce5ddce8891c1ddd8f35f4218"
+    },
+    {
+      "path": "originals/correction/CORRECTION.json",
+      "bytes": 1779,
+      "sha256": "02c15470677a886e151c2822fe8837570eab46629e1fec59b125cd5060cf5026"
+    },
+    {
+      "path": "originals/correction/SOURCE_SEAL.sha256",
+      "bytes": 176,
+      "sha256": "3f7f38c0b056037e9085adcef51297941c2fa4b3d05ffe309f8fa8b44c6376ce"
+    },
+    {
+      "path": "originals/correction/run_corrected_native_m12.py",
+      "bytes": 2461,
+      "sha256": "32d271915ba078baad56c6e9ab5601ea742eb6b8b3b084fca20b88f661136ba7"
+    },
+    {
+      "path": "originals/native/NATIVE_INPUTS.json",
+      "bytes": 28745,
+      "sha256": "eb27d878fb76abd61f8afe5752efc5a33a2ec392e5fa50f46c11d8f13691da96"
+    },
+    {
+      "path": "originals/native/PREPARATION_SCHEMA_ALIGNMENT.json",
+      "bytes": 477,
+      "sha256": "178de38a91fb5edacb1f12545309b9cc640e972d9b91488a1e89c12ba7b5d38f"
+    },
+    {
+      "path": "originals/native/PRE_CANDIDATE_REVIEW_CORRECTION.json",
+      "bytes": 3773,
+      "sha256": "44883530f81478764dc8877fdea410f30174047583eab840d2d2c85620594d7e"
+    },
+    {
+      "path": "originals/native/README.md",
+      "bytes": 8675,
+      "sha256": "7c8e2deb5138c7b6f96addc2f400df2ef24e311851509ca22f18ba3a3bce8c45"
+    },
+    {
+      "path": "originals/native/SOURCE_SEAL.sha256",
+      "bytes": 754,
+      "sha256": "8970187ed1b01e490e6cd9c6f81b4c3e4bedcb92a06974b574744d0517417fe1"
+    },
+    {
+      "path": "originals/native/audit_binary_m12.py",
+      "bytes": 4065,
+      "sha256": "53bf4622f012512fbfb99b187ff2df1d1eaa84bd7a170ac845c94eb9c49ce556"
+    },
+    {
+      "path": "originals/native/capacity_m12.c",
+      "bytes": 6371,
+      "sha256": "192daaab40fe33bb8de10d552724676babcb207e3a9a2fae55075e1ff8649660"
+    },
+    {
+      "path": "originals/native/environment_m12.h",
+      "bytes": 2260,
+      "sha256": "a30fd38b9860c5b54fa3a7561767ea6649e127b9b12535bfae2031468a0bcf82"
+    },
+    {
+      "path": "originals/native/numeric_m12.c",
+      "bytes": 16358,
+      "sha256": "cb71152c6b36598ba774bda215d7deae61f0e6122b7df43af12bb1b141a577c1"
+    },
+    {
+      "path": "originals/native/prepare_inputs_m12.py",
+      "bytes": 5830,
+      "sha256": "09c3bf27cd8b2475f146399f36b4f10b6f0e0a73a9dea4736e3a8f89244ba7d5"
+    },
+    {
+      "path": "originals/native/run_native_m12.py",
+      "bytes": 24201,
+      "sha256": "aa111e6c4b4203ecdb57541f20f104464273329d97721c33985a9c4526e0ce22"
+    },
+    {
+      "path": "originals/native/supervised_build_m12.py",
+      "bytes": 1378,
+      "sha256": "7e1e989faad73c4d36872b64ebaa4b5d8fad50819a30b22138b63285a59267fb"
+    },
+    {
+      "path": "originals/normal/SOURCE_SEAL.sha256",
+      "bytes": 88,
+      "sha256": "7bcc304263ce17875665ce92ab922a01457203ae5864106eb27b5d6466ad0f60"
+    },
+    {
+      "path": "originals/normal/run_normal_profile.py",
+      "bytes": 5061,
+      "sha256": "d5d38239d7122bc179529ef9944116a50e9a865bc27d521f8abac2166997aaca"
+    },
+    {
+      "path": "proofs/EXACT_EVALUATOR_CORRECTIONS.json",
+      "bytes": 3631,
+      "sha256": "65bb9523fe38b202bf9be7a98bf53cad9ebe569da2e5f66fe48af31ebf62fc6a"
+    },
+    {
+      "path": "proofs/ORIGINAL_NATIVE_FIRST_FAILURE.json",
+      "bytes": 648,
+      "sha256": "a95f6d9476fcc541545fa8161b0dc039f95ea95e0c15e527f5de9edaf7d7eebb"
+    },
+    {
+      "path": "proofs/SCALAR_ADJUDICATION.json",
+      "bytes": 5497,
+      "sha256": "5be089709f6708be439a224814dff9b8ae16cd951934bf8f68988df0d3be87fc"
+    },
+    {
+      "path": "replay_native.py",
+      "bytes": 9138,
+      "sha256": "8007fb7a21127083c46c3981e944fd1571a3a3c342f80dc386e48e1ee29a9a5f"
+    }
+  ],
+  "excluded": [
+    "native binaries",
+    "object/archive/shared libraries",
+    "SPIR-V outputs",
+    "observation archives",
+    "historical corpora"
+  ],
+  "note": "INVENTORY.json and top-level seal are bookkeeping; the seal additionally covers this inventory."
+}

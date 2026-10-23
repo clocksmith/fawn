@@ -10,14 +10,11 @@ static bool reserve_operands(Source *s, uint32_t count, uint32_t offset, uint32_
     c->operand_count+=count;
     return true;
 }
-static uint32_t vector_width(const CompilerWorkspace *c, TypeId t) {
-    return t >= 7u && c->types[t-7u].kind == TYPE_VECTOR?c->types[t-7u].count:1u;
-}
 static bool convert_value(Source *s, ExpressionValue *a, TypeId target, uint32_t offset, bool bitcast, bool evaluate, bool emit, ExpressionValue *out) {
     CompilerWorkspace *c = s->compiler;
-    const uint32_t n = vector_width(c, target);
+    const uint32_t n = type_vector_width(c, target);
     const TypeId leaf = type_leaf(c, target), original = type_leaf(c, a->constant.type);
-    if (vector_width(c, a->constant.type) != n || leaf == IR_VOID || leaf>IR_F32 || original == IR_VOID || (a->constant.type >= 7u && c->types[a->constant.type-7u].kind != TYPE_VECTOR) || (bitcast && (leaf == IR_BOOL || original == IR_BOOL)))
+    if (type_vector_width(c, a->constant.type) != n || leaf == IR_VOID || leaf>IR_F32 || original == IR_VOID || (a->constant.type >= 7u && c->types[a->constant.type-7u].kind != TYPE_VECTOR) || (bitcast && (leaf == IR_BOOL || original == IR_BOOL)))
         return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, offset, "no matching scalar or vector conversion");
     if (type_abstract(c, a->constant.type) && (leaf == IR_F32 || bitcast)) {
         TypeId input = original == IR_ABSTRACT_INT?IR_I32:IR_F32;
@@ -56,53 +53,6 @@ static bool convert_value(Source *s, ExpressionValue *a, TypeId target, uint32_t
         return true;
     }
     return sema_emit(s, emit, (IrInstruction){.opcode = bitcast?IR_BITCAST:IR_CONVERT, .type = target, .source_offset = offset, .operands.scalar = {.left = a->value.id, .binding = a->constant.type}}, &out->value);
-}
-static bool builtin_value(Source *s, const Expression *node, const LocalScope *scope, const ScalarBuiltin *builtin, bool evaluate, bool emit, bool statement, ExpressionValue *out) {
-    if (statement || node->value.call.type.offset != NO_ID || node->right != builtin->arity)
-        return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, node->source_offset, "scalar builtin requires its exact arguments and a used result");
-    ExpressionValue arguments[3];
-    uint32_t syntax_ids[3], link = node->left;
-    bool runtime = false, known = evaluate;
-    TypeId type = IR_VOID;
-    for (uint32_t i = 0u;i<builtin->arity;++i) {
-        syntax_ids[i] = s->compiler->arguments[link].expression;
-        if (!sema_expression(s, syntax_ids[i], scope, evaluate, emit, &arguments[i])) return false;
-        if (arguments[i].constant.type >= 7u) return source_error(s, DOE_COMPILER_UNSUPPORTED, node->source_offset, "math builtin vector overloads are outside this increment");
-        if (i == 0u) type = arguments[i].constant.type;
-        else if (!sema_common_type(s, type, arguments[i].constant.type, node->source_offset, &type)) return false;
-        runtime = runtime || arguments[i].runtime;
-        known = known && arguments[i].known;
-        link = s->compiler->arguments[link].next;
-    }
-    if (builtin->floating && type == IR_ABSTRACT_INT) type = IR_ABSTRACT_FLOAT;
-    if (type == IR_BOOL || type == IR_VOID || (builtin->floating && type != IR_F32 && type != IR_ABSTRACT_FLOAT))
-        return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, node->source_offset, "no matching scalar builtin overload");
-    if (runtime && type_abstract(s->compiler, type)) type = type == IR_ABSTRACT_INT?IR_I32:IR_F32;
-    for (uint32_t i = 0u;i<builtin->arity;++i) if (!sema_materialize(s, &arguments[i], type)) return false;
-    if (builtin->kind == BUILTIN_CLAMP && !arguments[1].runtime && !arguments[2].runtime) {
-        for (uint32_t i = 1u;i<3u;++i) if (!arguments[i].known && (!sema_expression(s, syntax_ids[i], scope, true, false, &arguments[i]) || !sema_materialize(s, &arguments[i], type))) return false;
-        NumericValue comparison;
-        if (!numeric_binary(s, node->source_offset, EXPRESSION_COMPARE, COMPARE_GREATER, (NumericValue){arguments[1].constant.bits, (IrType)type}, (NumericValue){arguments[2].constant.bits, (IrType)type}, &comparison)) return false;
-        if (comparison.bits != 0u) return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, node->source_offset, "clamp constant lower bound exceeds upper bound");
-    }
-    *out = (ExpressionValue){
-        .runtime = runtime, .known = known && !runtime, .constant.type = type, .value = {.type = type, .source_offset = node->source_offset}
-    };
-    if (!runtime) {
-        if (!out->known) return true;
-        NumericValue values[3], result;
-        for (uint32_t i = 0u;i<builtin->arity;++i) values[i] = (NumericValue){arguments[i].constant.bits, (IrType)type};
-        if (!numeric_builtin(s, node->source_offset, builtin->kind, values, &result)) return false;
-        out->constant.bits = result.bits;
-        return true;
-    }
-    uint32_t first = 0u;
-    if (emit && !reserve_operands(s, builtin->arity, node->source_offset, &first)) return false;
-    for (uint32_t i = 0u; i<builtin->arity; ++i) {
-        if (!sema_ensure_value(s, &arguments[i], emit)) return false;
-        if (emit) s->compiler->typed_operands[first+i] = arguments[i].value.id;
-    }
-    return sema_emit(s, emit, (IrInstruction){.opcode = IR_BUILTIN, .type = type, .source_offset = node->source_offset, .operands.scalar = {arguments[0].value.id, builtin->arity>1u?arguments[1].value.id:0u, builtin->arity>2u?arguments[2].value.id:0u, (uint32_t)builtin->kind}}, &out->value);
 }
 static bool user_call(Source *s, uint32_t id, const LocalScope *scope, uint32_t callee, bool evaluate, bool emit, bool statement, ExpressionValue *out) {
     CompilerWorkspace *c = s->compiler;
@@ -152,7 +102,7 @@ static bool aggregate_call(Source *s, const Expression *node, const LocalScope *
         if (kind == TYPE_VECTOR) {
             if (a.constant.type >= 7u && c->types[a.constant.type-7u].kind != TYPE_VECTOR)
                 return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, node->source_offset, "vector pieces must be scalar or vector");
-            const uint32_t part = vector_width(c, a.constant.type);
+            const uint32_t part = type_vector_width(c, a.constant.type);
             if (part>n || lanes>n-part) return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, node->source_offset, "vector constructor lane count mismatch");
             lanes+=part;
             const TypeId leaf = type_leaf(c, a.constant.type);
@@ -200,7 +150,7 @@ static bool aggregate_call(Source *s, const Expression *node, const LocalScope *
         if (!sema_expression(s, c->arguments[link].expression, scope, evaluate, emit && runtime, &a)) return false;
         if (kind == TYPE_VECTOR) {
             expected = type_leaf(c, target);
-            const uint32_t part = vector_width(c, a.constant.type);
+            const uint32_t part = type_vector_width(c, a.constant.type);
             if (part != 1u && !type_intern(s, TYPE_VECTOR, expected, part, &expected)) return false;
         }
         if (!sema_materialize(s, &a, expected)) return false;
@@ -212,7 +162,7 @@ static bool aggregate_call(Source *s, const Expression *node, const LocalScope *
             if (!a.known) return source_error(s, DOE_COMPILER_INPUT_ERROR, node->source_offset, "constant constructor lost its value");
             if (kind != TYPE_VECTOR || splat) c->constant_edges[first+i] = a.constant;
             else {
-                const uint32_t part = vector_width(c, a.constant.type);
+                const uint32_t part = type_vector_width(c, a.constant.type);
                 for (uint32_t j = 0u;j<part;++j) {
                     ConstantValue v = a.constant;
                     if (part != 1u && !constant_project(s, v, j, &v)) return false;
@@ -245,13 +195,15 @@ bool sema_call_value(Source *s, uint32_t id, const LocalScope *scope, bool evalu
     if (nominal==NO_ID && (source_span_is(s,name,"storageBarrier") || source_span_is(s,name,"workgroupUniformLoad") ||
         source_span_is(s,name,"textureBarrier")))
         return source_error(s,DOE_COMPILER_UNSUPPORTED,name.offset,"synchronization builtin is outside the workgroup barrier owner");
-    Name text;
-    if (name.length >= sizeof(text.text)) return source_error(s, DOE_COMPILER_UNSUPPORTED, name.offset, "identifier length exceeds supported capacity");
-    memcpy(text.text, s->source+name.offset, name.length);
-    text.text[name.length] = '\0';
-    text.offset = name.offset;
-    const ScalarBuiltin *builtin = nominal == NO_ID?scalar_builtin_named(text.text):NULL;
-    if (builtin != NULL) return builtin_value(s, node, scope, builtin, evaluate, emit, statement, out);
+    if (name.length >= sizeof(((Name *)0)->text))
+        return source_error(s, DOE_COMPILER_UNSUPPORTED, name.offset, "identifier length exceeds supported capacity");
+    const NumericBuiltin *builtin = nominal == NO_ID ? builtin_named(s, name) : NULL;
+    if (builtin != NULL) {
+        if (statement || node->value.call.type.offset != NO_ID || node->right != builtin->arity)
+            return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, node->source_offset,
+                                "numeric builtin requires its exact arguments and a used result");
+        return sema_builtin_value(s, node, scope, builtin, evaluate, emit, out);
+    }
     if (statement) return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, name.offset, "constructor result cannot be discarded");
     const bool bitcast = nominal == NO_ID && source_span_is(s, name, "bitcast");
     TypeId target = IR_VOID;
