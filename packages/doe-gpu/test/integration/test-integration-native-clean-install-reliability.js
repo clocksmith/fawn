@@ -6,6 +6,13 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+// These tests resolve the library shipped in the installed platform package.
+// A developer DOE_WEBGPU_LIB override would bypass exactly that resolution.
+if (process.env.DOE_WEBGPU_LIB) {
+  console.log('native clean install reliability: skipped (DOE_WEBGPU_LIB overrides installed package resolution)');
+  process.exit(0);
+}
+
 const here = dirname(fileURLToPath(import.meta.url));
 const runnerPath = fileURLToPath(import.meta.url);
 const lifecycleFixturePath = resolve(here, '../fixtures/native-clean-install-lifecycle.mjs');
