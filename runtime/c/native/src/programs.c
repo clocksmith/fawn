@@ -34,7 +34,7 @@ uint32_t doeNativeComputeProgramTimestampNanoseconds(void *handle, double *perio
 {
     const native_device *device = handle;
     if (!device || !period_ns || !valid_bits || device->backend.kind != WGPUBackendType_Vulkan ||
-            !device->timestamp_enabled) return 0;
+            !native_feature_enabled(device, WGPUFeatureName_TimestampQuery)) return 0;
     *period_ns = 1.0;
     *valid_bits = 64;
     return 1;

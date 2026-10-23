@@ -50,7 +50,7 @@ WGPUBindGroupLayout wgpuDeviceCreateBindGroupLayout(WGPUDevice handle,
             converted.storage_format = entry->storageTexture.format;
             converted.view_dimension = entry->storageTexture.viewDimension;
             doe_vk_texture_format format;
-            if (!native_texture_format(converted.storage_format, &format)) valid = false;
+            if (!native_texture_format(device->features, converted.storage_format, &format)) valid = false;
         }
         entries[i] = converted;
     }
@@ -101,7 +101,7 @@ static bool group_filterability(native_device *device, doe_resource_layout *layo
             const doe_resource_view_desc *view = doe_resource_view_description(bindings[j].resource.view);
             doe_vk_texture_format format;
             doe_vk_format_caps caps;
-            if (!native_texture_format(view->format, &format) ||
+            if (!native_texture_format(device->features, view->format, &format) ||
                 doe_vk_texture_format_caps(device->backend.value.vulkan.context, format, &caps) != DOE_VK_OK || !caps.filterable)
                 return false;
         }
@@ -148,8 +148,13 @@ WGPUBindGroup wgpuDeviceCreateBindGroup(WGPUDevice handle, const WGPUBindGroupDe
     doe_resource_bind_group *group = NULL;
     native_lock(device);
     if (valid && doe_resource_layout_device((doe_resource_layout *)descriptor->layout) != device) valid = false;
-    doe_resource_status status = valid ? doe_resource_bind_group_create((doe_resource_layout *)descriptor->layout,
-        bindings, descriptor->entryCount, &limits, &group) : DOE_RESOURCE_INVALID_ARGUMENT;
+    /* float32-filterable promotes 32-bit float views to 'float' sample type; the
+     * native filterability check below still requires linear-filter support. */
+    const doe_resource_binding_features features = {
+        .float32_filterable = native_feature_enabled(device, WGPUFeatureName_Float32Filterable)
+    };
+    doe_resource_status status = valid ? doe_resource_bind_group_create_with_features((doe_resource_layout *)descriptor->layout,
+        bindings, descriptor->entryCount, &limits, &features, &group) : DOE_RESOURCE_INVALID_ARGUMENT;
     if (group && !group_filterability(device, (doe_resource_layout *)descriptor->layout, group)) {
         doe_resource_bind_group_release(group);
         group = NULL;

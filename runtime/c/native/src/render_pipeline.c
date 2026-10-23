@@ -75,7 +75,8 @@ WGPURenderPipeline native_create_render_pipeline(native_device *device,
     for (uint32_t i = 0; i < resource.color_count; ++i) resource.color_formats[i] = fragment->targets[i].format;
     doe_vk_vertex_layout layouts[DOE_VK_MAX_VERTEX_BUFFERS];
     doe_vk_vertex_attribute attributes[DOE_VK_MAX_VERTEX_ATTRIBUTES];
-    if (!native_render_fixed(descriptor, &native) || !native_render_depth(descriptor->depthStencil, &native, &resource) ||
+    if (!native_render_fixed(device->features, descriptor, &native) ||
+        !native_render_depth(device->features, descriptor->depthStencil, &native, &resource) ||
         !vertices(&descriptor->vertex, &native, &resource, &device->backend.value.vulkan.caps, layouts, attributes) ||
         !native_render_interfaces(stages, stage_count, &descriptor->vertex, fragment, descriptor->multisample.alphaToCoverageEnabled, &device->backend.value.vulkan.caps)) return NULL;
     native_pipeline *payload = calloc(1, sizeof(*payload));

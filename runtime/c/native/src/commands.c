@@ -41,7 +41,7 @@ WGPUComputePassEncoder wgpuCommandEncoderBeginComputePass(WGPUCommandEncoder han
     if (writes) timestamps = (doe_resource_pass_timestamps){(doe_resource_query_set *)writes->querySet,
         writes->beginningOfPassWriteIndex, writes->endOfPassWriteIndex};
     doe_resource_status status = (descriptor && descriptor->nextInChain) ||
-        (writes && (writes->nextInChain || !device->timestamp_enabled)) ?
+        (writes && (writes->nextInChain || !native_feature_enabled(device, WGPUFeatureName_TimestampQuery))) ?
         doe_resource_encoder_invalidate(encoder, DOE_RESOURCE_UNSUPPORTED) :
         doe_resource_encoder_begin_compute_with_timestamps(encoder, writes ? &timestamps : NULL, &pass);
     native_unlock(device);

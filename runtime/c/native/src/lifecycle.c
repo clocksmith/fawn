@@ -204,8 +204,8 @@ void native_device_release(void *identity)
 
 static native_device *create_device(native_adapter *adapter, const WGPUDeviceDescriptor *descriptor, native_loss *loss)
 {
-    bool timestamps = false;
-    if (!native_requested_features(&adapter->backend, descriptor, &timestamps)) return NULL;
+    uint32_t features = 0;
+    if (!native_requested_features(&adapter->backend, descriptor, &features)) return NULL;
     if (descriptor && (descriptor->nextInChain ||
         descriptor->requiredLimits || descriptor->defaultQueue.nextInChain ||
         descriptor->deviceLostCallbackInfo.nextInChain ||
@@ -244,8 +244,8 @@ static native_device *create_device(native_adapter *adapter, const WGPUDeviceDes
             goto failed_errors;
     }
     if (native_backend_device(&adapter->backend, &device->backend) != NATIVE_OK) goto failed_errors;
-    device->timestamp_enabled = timestamps;
-    if (timestamps && native_timestamp_initialize(device) != DOE_VK_OK) {
+    device->features = features;
+    if ((features & NATIVE_FEATURE(WGPUFeatureName_TimestampQuery)) && native_timestamp_initialize(device) != DOE_VK_OK) {
         native_backend_close(&device->backend);
         goto failed_errors;
     }

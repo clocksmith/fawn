@@ -64,7 +64,7 @@ WGPURenderPassEncoder wgpuCommandEncoderBeginRenderPass(WGPUCommandEncoder handl
             targets.max_draw_count = budget->maxDrawCount;
         }
         if (writes) {
-            if (writes->nextInChain || !device->timestamp_enabled) valid = false;
+            if (writes->nextInChain || !native_feature_enabled(device, WGPUFeatureName_TimestampQuery)) valid = false;
             timestamps = (doe_resource_pass_timestamps){(doe_resource_query_set *)writes->querySet,
                 writes->beginningOfPassWriteIndex,writes->endOfPassWriteIndex};
         }

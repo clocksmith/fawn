@@ -123,7 +123,8 @@ Apple SDK compilation, Darwin execution and physical qualification remain unrun.
   textureSampleCompare/textureSampleCompareLevel and depth textureSampleLevel
   are absent from the C compiler, so comparison sampling is not yet possible.
   Depth24Plus readback values come from its D32 backing.
-  Plus formats use D32/D32S8 backing, not an implied optional public feature.
+  Plus formats use D32/D32S8 backing, not an implied optional public feature;
+  depth32float-stencil8 maps to D32S8 only on a device that enabled it.
   The backend's sole per-aspect initialization owner clears undefined contents;
   depth/stencil Discard followed by Load reinitializes only missing aspects on GPU.
   Initialized companion aspects survive. Partial combined-aspect views remain
@@ -286,6 +287,29 @@ window; the retry completes the retained acquisition. Resize produced
 SuccessSuboptimal on both drivers; explicit reconfiguration then rendered at the new
 size. Outdated/Lost mapping is host-tested by the backend owner, not observed here.
 
+## Optional device features
+
+`src/features.c` is the one owner of optional WebGPU device features. The adapter
+reports a feature only from what the selected Vulkan device really offers: the
+canonical timestamp normalizer for `timestamp-query`; linear filtering of
+r32/rg32/rgba32 float for `float32-filterable`; blending of those formats for
+`float32-blendable`; D32S8 depth/stencil attachment, sampling and transfer for
+`depth32float-stencil8`. A device request naming an unreported feature fails.
+The device keeps the requested set as `NATIVE_FEATURE` bits and every gated use
+checks that set, never the adapter facts: feature formats map only when enabled
+(textures, views, pipeline targets, bundles and layouts all reject
+depth32float-stencil8 otherwise); blending an r32/rg32/rgba32 float target rejects
+without float32-blendable; and without float32-filterable those views keep the
+'unfilterable-float' sample type, so a 'float' (sampler-using) layout rejects them.
+
+`tests/format_features.c` reads back exact results on a device that enabled every
+offered feature: linear midpoints of r32float/rgba32float values that no 16-bit
+format holds (1000001.0), two additive draws onto a 1000000.0 r32float clear
+(1000007.0) and depth 0.25/stencil 7 per aspect of depth32float-stencil8. On a
+device without them it checks each rejection and that an unoffered feature
+fails the request. A feature the adapter does not offer prints SKIP with its
+reason.
+
 ## WGSL language features and texture binding view dimension
 
 `src/features.c` owns the reported WGSL language features
@@ -416,8 +440,8 @@ viewFormats together with StorageBinding, depth storage, depth comparison sampli
 copies/storage, and cube arrays without device imageCubeArray are rejected.
 The baseline admits 23 named Vulkan
 color formats, subject to actual device usage/format capabilities. Device
-descriptors may request TimestampQuery when the actual adapter supports the
-canonical GPU nanosecond normalizer. Other required features and required limits
+descriptors may request the optional features `src/features.c` reports for the
+actual adapter (see Optional device features). Other required features and required limits
 reject rather than silently succeeding. Buffer, sampled/storage image and sampler layouts are
 admitted; extensions, binding arrays,
 immediates, specialization constants and nonbaseline shader capabilities reject.
@@ -486,6 +510,7 @@ PASS device loss modes/future/last-external-release/failed-creation, owned label
 PASS public textures: actual zero mips, packed upload, linear sampling, image OOB guards, storage readback, early releases, exact view defaults and filter/pair/copy negatives (CPU Vulkan only)
 PASS public admission: sparse/trailing/null layout holes, null unbind, ignored destroyed resources, dynamic writable ranges, whole-buffer read/write conflicts and texture subresource aliases (CPU Vulkan only)
 PASS public error types: resource allocation, automatic-layout allocation, compute/render backend OOM/native/validation failures, failed requested-feature device and successful recovery
+PASS public format features: 3 of 3 offered and enabled (float32-filterable linear r32float/rgba32float midpoints exact, float32-blendable additive r32float 1000007.0, depth32float-stencil8 depth 0.25/stencil 7 per aspect); without them depth32float-stencil8 texture/pipeline/bundle, r32float blending and 'float' r32float binding reject, an unoffered feature fails the request (CPU Vulkan only)
 PASS public timestamps: requested feature, zero/max/range/destroy admission, real pass/command writes, exact GPU nanoseconds, same-batch copy, scratch reuse and early query release (CPU Vulkan only)
 PASS typed recovery: native/OOM/pending errors survive submit/write/texture/workdone, unknown leases retained, terminal cleanup and fresh GPU normalizer recovery
 PASS every implemented procedure address matches; every unprovided name returns NULL
@@ -604,7 +629,7 @@ Do not run this on Miles or Suby while their possible disassembly/cooling hold
 remains. Every adapter-using client selects its adapter through
 `tests/adapter_class.h`: software (CPU fallback adapter) by default, or a
 nonfallback GPU adapter with `DOE_C_TEST_ADAPTER=physical`. Each PASS line names
-the class and device it ran on. `make check-physical` runs the same 33 clients on
+the class and device it ran on. `make check-physical` runs the same 34 clients on
 the system ICDs (`VK_ICD_FILENAMES` unset):
 
 ```
@@ -632,7 +657,8 @@ view clients) all 22 (including `depth-copies`) passed; with depth sampling all 
 (including `view-formats`, `mrt` and `anisotropy`) passed; with compute programs,
 vertex formats, storage textures, point lists, attachment discard and multisampled
 reads all 33 (including `storage-textures`, `point-list`, `color-discard` and
-`msaa-sampling`) passed. That is
+`msaa-sampling`) passed; with optional format features all 34 (including
+`format-features`) passed. That is
 developer evidence for these exact clients on that
 adapter/driver: the oracles are the clients' own expected values, not frozen
 independent workloads, and it is not Vulkan backend qualification, a performance
