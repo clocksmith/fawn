@@ -65,6 +65,18 @@ static doe_resource_status validate_targets(void *device,
             (!isfinite(targets->clear_depth) || targets->clear_depth < 0 || targets->clear_depth > 1))
             return DOE_RESOURCE_RANGE;
     }
+    if (targets->resolve_target) {
+        uint32_t resolve_extent[2];
+        status = validate_attachment(device, targets->resolve_target, false, resolve_extent);
+        if (status != DOE_RESOURCE_OK) return status;
+        const doe_resource_view *color = targets->color;
+        const doe_resource_view *resolve = targets->resolve_target;
+        if (color->texture->desc.samples <= 1 || resolve->texture->desc.samples != 1 ||
+            color->desc.format != resolve->desc.format ||
+            color->texture->desc.format != resolve->texture->desc.format ||
+            extent[0] != resolve_extent[0] || extent[1] != resolve_extent[1]) return DOE_RESOURCE_LAYOUT;
+        if (resolve->desc.usage & WGPUTextureUsage_TransientAttachment) return DOE_RESOURCE_USAGE;
+    }
     if (targets->occlusion_queries) {
         if (!resource_query_available(targets->occlusion_queries)) return DOE_RESOURCE_UNAVAILABLE;
         if (targets->occlusion_queries->base.config.device.identity != device) return DOE_RESOURCE_DEVICE_MISMATCH;
@@ -77,6 +89,7 @@ void resource_render_packet_retain(const doe_resource_render_packet *packet)
 {
     doe_resource_view_retain(packet->targets.color);
     doe_resource_view_retain(packet->targets.depth_stencil);
+    doe_resource_view_retain(packet->targets.resolve_target);
     doe_resource_query_set_retain(packet->targets.occlusion_queries);
     doe_resource_render_pipeline_retain(packet->pipeline);
     for (size_t i = 0; i < DOE_RESOURCE_MAX_GROUPS; i++) doe_resource_bind_group_retain(packet->groups[i]);
@@ -89,6 +102,7 @@ void resource_render_packet_release(const doe_resource_render_packet *packet)
 {
     doe_resource_view_release(packet->targets.color);
     doe_resource_view_release(packet->targets.depth_stencil);
+    doe_resource_view_release(packet->targets.resolve_target);
     doe_resource_query_set_release(packet->targets.occlusion_queries);
     doe_resource_render_pipeline_release(packet->pipeline);
     for (size_t i = 0; i < DOE_RESOURCE_MAX_GROUPS; i++) doe_resource_bind_group_release(packet->groups[i]);

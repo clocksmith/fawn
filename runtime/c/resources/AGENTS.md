@@ -46,3 +46,6 @@ Frontend rejection must poison the existing pass/bundle owner explicitly.
 Absent or read-only attachment aspects require undefined operations. Transient
 constraints span texture creation, view usage and pass Clear/Discard admission;
 keep them canonical without pretending host retention proves native memoryless use.
+Resolve destinations are retained attachment writes in the same pass scope,
+including empty passes and bundle replay. Never resolve each draw independently
+or omit a destination merely because a backend adapter cannot yet consume it.

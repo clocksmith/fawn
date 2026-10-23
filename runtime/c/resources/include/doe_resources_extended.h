@@ -91,6 +91,9 @@ typedef struct doe_resource_render_targets {
     bool depth_read_only, stencil_read_only;
     doe_resource_query_set *occlusion_queries;
     uint64_t max_draw_count;
+    /* Optional single-sample destination. Packets and whole-pass usage retain
+     * it; the backend resolves once at the pass end, including empty passes. */
+    doe_resource_view *resolve_target;
 } doe_resource_render_targets;
 typedef struct doe_resource_render_state {
     float viewport[6]; /* x, y, width, height, minimum depth, maximum depth */

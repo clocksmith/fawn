@@ -22,7 +22,7 @@ static doe_vk_shader load_shader(const char *path, const char *entry)
  * Unsupported events/state reject before any native pass preparation. */
 static doe_vk_status validate_render_packet(const doe_resource_render_packet *packet)
 {
-    if (!packet || packet->targets.depth_stencil ||
+    if (!packet || packet->targets.depth_stencil || packet->targets.resolve_target ||
         packet->targets.color_store != WGPUStoreOp_Store || packet->indexed || packet->indirect ||
         packet->state.stencil_reference) return DOE_VK_UNSUPPORTED;
     for (size_t i = 0; i < 4; i++) if (packet->state.blend[i] != 0) return DOE_VK_UNSUPPORTED;

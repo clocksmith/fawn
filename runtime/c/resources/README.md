@@ -154,7 +154,7 @@ responsibilities. Unsupported consumer command kinds must reject before submit.
 
 `make -C runtime/c/resources check` builds GCC C11/Werror into `/tmp`: 13 base and
 8 extended, 6 bundle, 8 binding-feature, 7 dispatch-usage, 10 render-usage,
-1 query-admission, 3 draw-admission and 4 attachment-admission host suites cover transactional failure/untouched outputs, first error,
+1 query-admission, 3 draw-admission, 4 attachment-admission and 4 resolve-admission host suites cover transactional failure/untouched outputs, first error,
 label cleanup, atomic references, stale/read-only maps, copies/aliases, dynamic
 snapshots, pass abandonment/unbinding, shader/query/external/render leases and
 unresolved submission lifetime. Host native tokens test finalization, not GPU work.
@@ -258,3 +258,16 @@ and backend attachment contents remain separate owners. The retained Vulkan path
 explicitly rejects transient usage; these host checks do not claim otherwise.
 `DEVELOPER_RECEIPT_ATTACHMENT_ADMISSION.json` preserves the four first rejected-input
 reproductions and binds the corrected descriptor/lifetime checks.
+
+Optional multisample resolve destinations now use the same retained pass targets,
+immutable packets and whole-pass usage scope. Structural admission checks exact
+texture/view formats, selected mip extents, source/destination sample counts,
+same device, availability, attachment usage and a non-transient destination.
+Transient multisample sources can resolve into persistent targets. Resolve identity
+survives empty passes, logical binding resets and repeated bundle replay; unused
+sampling setters and empty-bundle usage histories still conflict with the destination.
+Four begin-allocation failures, destroyed-before-submit and pending/failed retirement
+preserve existing ownership contracts. Backend format/resolve capabilities remain
+separate admission. The current bounded software consumer explicitly rejects resolve
+until it consumes the actual backend full-pass API; these new tests do not execute
+multisample rendering. `DEVELOPER_RECEIPT_RESOLVE_ADMISSION.json` binds this increment.
