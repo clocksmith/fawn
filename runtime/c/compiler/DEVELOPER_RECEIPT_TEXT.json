@@ -1,0 +1,313 @@
+{
+  "status": "focused ABI10 developer checks pass; integrated/Metal SDK/device qualification remains pending",
+  "source_sha256": "71028bb93b46ba026fccb84487190b93ca6aea728e90618b3a29f38c13faa9aa",
+  "public_abi": "two additive ABI10 text exports, retained ABI1-9 layouts/workspaces unchanged; whole-module schema9 metadata plus explicit emitted-entry/resource target records",
+  "library_sha256": "d199abd11c1b047b26986efa0fa6a9b2185a2ad8396c4686367ff70cbd2aebf8",
+  "canonical_library_sha256": "abfb987d3f1bce3224422a75dba486aebe9488b38e73787d11becc7dd67cbfdb",
+  "checks": {
+    "strict": "GCC14.2 normal/PIC complete core+Metal; canonical make shared with /tmp output/TMPDIR",
+    "normal_source_tests": 60,
+    "asan_ubsan_source_tests": 34,
+    "public_api": "exact measurement/selection, per-entry sizes, actual host names, sparse slots, whole-module validation/reflection, zero SPIR-V pools, all selected span/capacity products, ABI rejection, explicit target rejection, workspace/text-pool failure and reuse",
+    "sanitizers": "ASan+UBSan full core+Metal API and final FP-restore failure injection pass; leaks disabled",
+    "cxx": "ordinary C++17 linkage/layout and public-API-emitted operation control under UBSan",
+    "retained_api": [
+      "stage ABI7",
+      "library ABI5-8",
+      "pointer ABI7-9",
+      "atomic ABI9"
+    ],
+    "canonical": "public API and C++ tests repeated against canonical shared artifact",
+    "symbols": "exactly15 exports, prior13 plus2text; readelf dynamic dependencies retained",
+    "source_size": "584 C/header paths <=999 physical lines; owned diff-check passed"
+  },
+  "source_commit": "3e0bdb3214f179a83b7dcd2e4165ae77bfc0a8a9",
+  "reproduce": [
+    "make -C runtime/c/compiler shared SHARED_LIBRARY=/tmp/doe-text/libdoe_compiler.so TMPDIR=/tmp/doe-text/tmp",
+    "make -C runtime/c/compiler test-text",
+    "python3 runtime/c/compiler/tests/audit_text_stack.py --help"
+  ],
+  "stack": {
+    "normal": {
+      "frame_count": 350,
+      "all_other_frame_sum": 35080,
+      "wrappers": {
+        "doe_compiler_compile": 146192,
+        "doe_compiler_compile_job": 272,
+        "doe_compiler_compile_module": 144,
+        "doe_compiler_compile_resources": 160,
+        "doe_compiler_compile_stages": 160,
+        "doe_compiler_compile_text": 688,
+        "doe_compiler_compile_typed": 320,
+        "doe_compiler_compile_v2": 144,
+        "doe_compiler_job_requirements": 176,
+        "doe_compiler_module_requirements": 176,
+        "doe_compiler_resource_requirements": 176,
+        "doe_compiler_stage_requirements": 176,
+        "doe_compiler_text_requirements": 224,
+        "doe_compiler_typed_requirements": 176,
+        "doe_compiler_workspace_requirements": 16
+      },
+      "maximum_acyclic_library_path_bytes": 2640,
+      "maximum_path": [
+        {
+          "members": [
+            "doe_compiler_compile_stages"
+          ],
+          "separately_recursive": false
+        },
+        {
+          "members": [
+            "/workspace/shared/doe-c-migration-20261023/runtime/c/compiler/src/compile.c:compile_module"
+          ],
+          "separately_recursive": false
+        },
+        {
+          "members": [
+            "/workspace/shared/doe-c-migration-20261023/runtime/c/compiler/src/compile.c:compile_pipeline"
+          ],
+          "separately_recursive": false
+        },
+        {
+          "members": [
+            "compiler_analyze"
+          ],
+          "separately_recursive": false
+        },
+        {
+          "members": [
+            "validate_syntax"
+          ],
+          "separately_recursive": false
+        },
+        {
+          "members": [
+            "sema_resolve_declarations"
+          ],
+          "separately_recursive": false
+        },
+        {
+          "members": [
+            "sema_stage_interfaces"
+          ],
+          "separately_recursive": false
+        },
+        {
+          "members": [
+            "integer_attribute",
+            "sema_type_reference",
+            "sema_call_value",
+            "sema_expression",
+            "/workspace/shared/doe-c-migration-20261023/runtime/c/compiler/src/sema_expression.c:postfix_value",
+            "sema_address_reference"
+          ],
+          "separately_recursive": true
+        },
+        {
+          "members": [
+            "numeric_parse_literal"
+          ],
+          "separately_recursive": false
+        },
+        {
+          "members": [
+            "source_error"
+          ],
+          "separately_recursive": false
+        }
+      ],
+      "fixed_combined": 191840,
+      "maximum_job_combined": 181504,
+      "verified_gcc_aliases": {},
+      "external_leaves": [
+        "__errno_location",
+        "exp",
+        "expf",
+        "fegetenv",
+        "fegetround",
+        "feholdexcept",
+        "fesetenv",
+        "fesetround",
+        "fmod",
+        "fmodf",
+        "memchr",
+        "memcmp",
+        "memcpy",
+        "memmove",
+        "memset",
+        "sqrt",
+        "sqrtf",
+        "strchr",
+        "strlen",
+        "tanh",
+        "tanhf",
+        "vsnprintf"
+      ],
+      "metal_recursive_visits_per_family": 98,
+      "metal_recursive_phase": 24304,
+      "metal_composed_bound": 27632,
+      "maximum_text_job_combined": 181504
+    },
+    "pic": {
+      "frame_count": 344,
+      "all_other_frame_sum": 35192,
+      "wrappers": {
+        "doe_compiler_compile": 146192,
+        "doe_compiler_compile_job": 272,
+        "doe_compiler_compile_module": 144,
+        "doe_compiler_compile_resources": 160,
+        "doe_compiler_compile_stages": 160,
+        "doe_compiler_compile_text": 688,
+        "doe_compiler_compile_typed": 336,
+        "doe_compiler_compile_v2": 144,
+        "doe_compiler_job_requirements": 176,
+        "doe_compiler_module_requirements": 176,
+        "doe_compiler_resource_requirements": 176,
+        "doe_compiler_stage_requirements": 176,
+        "doe_compiler_text_requirements": 224,
+        "doe_compiler_typed_requirements": 176,
+        "doe_compiler_workspace_requirements": 16
+      },
+      "maximum_acyclic_library_path_bytes": 2640,
+      "maximum_path": [
+        {
+          "members": [
+            "doe_compiler_compile_stages"
+          ],
+          "separately_recursive": false
+        },
+        {
+          "members": [
+            "/workspace/shared/doe-c-migration-20261023/runtime/c/compiler/src/compile.c:compile_module"
+          ],
+          "separately_recursive": false
+        },
+        {
+          "members": [
+            "/workspace/shared/doe-c-migration-20261023/runtime/c/compiler/src/compile.c:compile_pipeline"
+          ],
+          "separately_recursive": false
+        },
+        {
+          "members": [
+            "compiler_analyze"
+          ],
+          "separately_recursive": false
+        },
+        {
+          "members": [
+            "validate_syntax"
+          ],
+          "separately_recursive": false
+        },
+        {
+          "members": [
+            "sema_resolve_declarations"
+          ],
+          "separately_recursive": false
+        },
+        {
+          "members": [
+            "sema_stage_interfaces"
+          ],
+          "separately_recursive": false
+        },
+        {
+          "members": [
+            "sema_expression",
+            "sema_call_value",
+            "sema_address_reference",
+            "/workspace/shared/doe-c-migration-20261023/runtime/c/compiler/src/sema_expression.c:postfix_value",
+            "integer_attribute",
+            "sema_type_reference"
+          ],
+          "separately_recursive": true
+        },
+        {
+          "members": [
+            "numeric_parse_literal"
+          ],
+          "separately_recursive": false
+        },
+        {
+          "members": [
+            "source_error"
+          ],
+          "separately_recursive": false
+        }
+      ],
+      "fixed_combined": 191840,
+      "maximum_job_combined": 181504,
+      "verified_gcc_aliases": {
+        "/workspace/shared/doe-c-migration-20261023/runtime/c/compiler/src/sema_expression.c:sema_expression.localalias": {
+          "canonical": "sema_expression",
+          "address": "0000000000001720",
+          "object": "src_sema_expression.o"
+        },
+        "/workspace/shared/doe-c-migration-20261023/runtime/c/compiler/targets/metal/types.c:metal_constant.localalias": {
+          "canonical": "metal_constant",
+          "address": "0000000000000b60",
+          "object": "targets_metal_types.o"
+        }
+      },
+      "external_leaves": [
+        "__errno_location",
+        "exp",
+        "expf",
+        "fegetenv",
+        "fegetround",
+        "feholdexcept",
+        "fesetenv",
+        "fesetround",
+        "fmod",
+        "fmodf",
+        "memchr",
+        "memcmp",
+        "memcpy",
+        "memmove",
+        "memset",
+        "sqrt",
+        "sqrtf",
+        "strchr",
+        "strlen",
+        "tanh",
+        "tanhf",
+        "vsnprintf"
+      ],
+      "metal_recursive_visits_per_family": 98,
+      "metal_recursive_phase": 25872,
+      "metal_composed_bound": 29200,
+      "maximum_text_job_combined": 181504
+    }
+  },
+  "source_binding": "Full shared-library source is the immutable source_commit tree. The owned manifest below is a diff scope, not the entire linked source closure.",
+  "owned_sha256": {
+    "runtime/c/compiler/CATSCAN.md": "c78ebe5d97552f79d6ecc12b67deaec9a8d1a4c399ba31448eaed051dfafcc1d",
+    "runtime/c/compiler/Makefile": "a8afa523aef550a9d05ff2808e5224efe6c63acddff4da4201ce69dee2150b56",
+    "runtime/c/compiler/README.md": "8d8948151a2343bb1c42867b12e31a9169b5ca03c0038b7100dfd22397bc416e",
+    "runtime/c/compiler/include/doe_compiler_text.h": "159c2edb21326fe17b7e7dcfe523b4cb765fe34bb44e95b6932f884a1f6a24e1",
+    "runtime/c/compiler/src/compile.c": "f0eef1ac27689e632e4a9eefc74b6d7e4b291165c05fcdebc9065f18705c8f17",
+    "runtime/c/compiler/src/compile_internal.h": "2e25eb1ec27a4d1e10505245a7607d41fb1a33424336737628b8d3a8123b1556",
+    "runtime/c/compiler/src/compile_metadata.c": "5b6d0a7f9fd57fba957d6172bb4b334cb0e108ad3821064584794e90751a3b2b",
+    "runtime/c/compiler/src/compile_spans.c": "455dc48e18b26ed165ad85f7a607b85fd89f02b46a5e50f4dfdf55fecc376606",
+    "runtime/c/compiler/src/compile_text.c": "c19e2a66493ede764cf41bc7b5ab4427fa46721980f31a41b411d17a1cb04c38",
+    "runtime/c/compiler/src/exports.map": "e4bfe3e66f1c52411b0aa803e98a55d957f7ec3de3afaa4c4cde691aa213f09e",
+    "runtime/c/compiler/src/pipeline.c": "0557d1ce9e307b8234b6afaf13c0b676855774d3aca687b9fa78173acb71c032",
+    "runtime/c/compiler/src/text_internal.h": "59a0a606e36dcbf1aaabaab13f6bae994f3b42b61be705e8be4f05bb4f2f158d",
+    "runtime/c/compiler/src/text_metal.c": "51be922d3397a5c56066f928947d8460cd91daa734383373c16a259b0800bd9e",
+    "runtime/c/compiler/targets/metal/Makefile": "5b2c1be29dd35b5967307f6fb8a3a74cedf22ed6ebab7165104db09418331b38",
+    "runtime/c/compiler/targets/metal/sources.mk": "b5c27e007cdb658e84288d92a11f315d79b5f93616f0a73bf841b0bd70608704",
+    "runtime/c/compiler/tests/audit_m13_stack.py": "b0061609d385c1bbd600cad6e150563cbb2fcc73a3a4bbcd475f24f3e0eb5439",
+    "runtime/c/compiler/tests/audit_text_stack.py": "b077804ca7465516610bffb38040bb47602c0b2474759037c1b1d35d5bf1126e",
+    "runtime/c/compiler/tests/test_text_abi.cpp": "e7fcdb1c0b3e2b6ad66c5233bb928774878417668932aa871c08192d40930007",
+    "runtime/c/compiler/tests/test_text_api.c": "fca61836012d33a19231dbe54da7f529e46a31c374ee832d9f3388bda13e1bef",
+    "runtime/c/compiler/tests/test_text_failure.c": "be047fe8dd14d10eee3f6b6af1c87e538b2f49ddbb6df8fa416120e360b61a7c",
+    "runtime/c/compiler/tests/test_text_host.cpp": "a2ff95b6d1f83e1e129f81c3d69febd0a76b6b2f462054df3531b5ff799394d8"
+  },
+  "limitations": [
+    "Host emitted-MSL C++ operations do not qualify Apple address spaces, SDK compilation, driver execution or physical devices.",
+    "The canonical and direct artifacts use different build recipes; no binary identity or performance comparison is asserted.",
+    "Separate shader/native consumers retain their own exact composition receipts.",
+    "General Metal pointers/atomics and other explicit unsupported target features remain open."
+  ]
+}
