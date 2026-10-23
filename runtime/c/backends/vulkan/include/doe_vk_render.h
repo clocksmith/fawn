@@ -30,6 +30,10 @@ typedef struct doe_vk_vertex_attribute {
 typedef enum doe_vk_topology {
     DOE_VK_POINTS, DOE_VK_LINES, DOE_VK_LINE_STRIP, DOE_VK_TRIANGLES, DOE_VK_TRIANGLE_STRIP
 } doe_vk_topology;
+/* Native compare operations NEVER0..ALWAYS7 and stencil KEEP0..DECREMENT_WRAP7. */
+typedef struct doe_vk_stencil_face {
+    uint32_t fail_operation, pass_operation, depth_fail_operation, compare_operation;
+} doe_vk_stencil_face;
 typedef struct doe_vk_render_pipeline_desc {
     doe_vk_shader vertex, fragment;
     doe_vk_texture_format color_format;
@@ -46,11 +50,17 @@ typedef struct doe_vk_render_pipeline_desc {
     const doe_vk_vertex_attribute *attributes;
     size_t binding_count;
     const doe_vk_binding_layout *bindings;
+    doe_vk_texture_format depth_stencil_format; /* Zero means absent. */
+    bool depth_test, depth_write, stencil_test;
+    uint32_t depth_compare;
+    doe_vk_stencil_face stencil_front, stencil_back;
+    uint32_t stencil_read_mask, stencil_write_mask;
 } doe_vk_render_pipeline_desc;
 /* Single-color, sample1 graphics pipeline. Compiler/native admission validates
  * shader interfaces/capabilities including disabled vertex/fragment stores.
  * Native blend factors0..14 (no dual source), operations0..4; constant blend
- * factors use the pipeline constant unless an explicit per-draw override is set. Depth/stencil/MSAA are not admitted here. */
+ * factors use the pipeline constant unless an explicit per-draw override is set.
+ * Optional sample1 depth/stencil is explicit; MSAA remains unsupported. */
 doe_vk_status doe_vk_render_pipeline_create(doe_vk_context *context,
     const doe_vk_render_pipeline_desc *desc, doe_vk_pipeline **out, doe_vk_error *error);
 
@@ -76,6 +86,7 @@ typedef struct doe_vk_render_draw {
      * this finite RGBA value as real dynamic state before this draw. */
     bool override_blend_constant;
     float blend_constant[4];
+    uint32_t stencil_reference;
 } doe_vk_render_draw;
 typedef struct doe_vk_render_pass_draw {
     doe_vk_pipeline *pipeline;
@@ -98,6 +109,25 @@ typedef struct doe_vk_render_pass_op {
         uint32_t query_index; /* BEGIN only; END closes the active index. */
     } value;
 } doe_vk_render_pass_op;
+typedef struct doe_vk_render_pass_desc {
+    doe_vk_texture_view *color;
+    const doe_vk_clear_color *clear_color; /* NULL loads initialized color. */
+    bool discard_color;
+    doe_vk_texture_view *depth_stencil;
+    bool clear_depth, clear_stencil; /* False loads that existing aspect. */
+    bool discard_depth, discard_stencil; /* False stores. */
+    bool depth_read_only, stencil_read_only;
+    float depth_clear_value;
+    uint32_t stencil_clear_value;
+} doe_vk_render_pass_desc;
+/* General attachment owner, one native pass for all ops. Only existing aspects
+ * participate. Read-only forbids clear/discard and any draw that may write that
+ * aspect. LOAD requires initialized aspect; STORE preserves it; discard removes
+ * it. All borrowed inputs die at return. Failure poisons commands; no partial
+ * pass may be submitted. Color plus optional depth/stencil, sample1 only. */
+doe_vk_status doe_vk_commands_render_pass_full(doe_vk_commands *commands,
+    const doe_vk_render_pass_desc *desc, doe_vk_query_pool *occlusion,
+    const doe_vk_render_pass_op *ops, size_t count);
 /* General typed pass span. Occlusion events require the one supplied occlusion
  * pool. Nesting, unclosed events and duplicate indices within a pass reject
  * before native begin. Written slots are reset before begin, then native query
@@ -114,13 +144,13 @@ doe_vk_status doe_vk_commands_render_pass_ops(doe_vk_commands *commands,
  * the call; existing command leases retain each used native resource. On any
  * error discard the poisoned command owner, never submit a partial pass.
  * This consumes immutable resource packets, not a second recording engine.
- * Depth/stencil/MSAA/indexed/indirect remain unsupported here. */
+ * This convenience has no depth/stencil; MSAA/indexed/indirect stay unsupported. */
 doe_vk_status doe_vk_commands_render_pass(doe_vk_commands *commands,
     doe_vk_texture_view *target, const doe_vk_clear_color *clear,
     const doe_vk_render_pass_draw *draws, size_t count);
 /* Convenience operations delegate to the same pass owner. A clear-only begin
  * initializes one full 2D view subresource; a later single draw LOADs it.
- * Native images are always stored; discard is not admitted by this owner. */
+ * These conveniences always store; the full descriptor owns explicit discard. */
 doe_vk_status doe_vk_commands_clear_color(doe_vk_commands *commands,
     doe_vk_texture_view *target, doe_vk_clear_color clear);
 doe_vk_status doe_vk_commands_draw(doe_vk_commands *commands,

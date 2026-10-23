@@ -90,6 +90,7 @@ static doe_vk_status load_functions(doe_vk_context *context, doe_vk_error *error
     _Static_assert(sizeof(context->vk.vkCmdBindVertexBuffers) == sizeof(void *), "vkCmdBindVertexBuffers POSIX pointer size");
     _Static_assert(sizeof(context->vk.vkCmdBeginQuery) == sizeof(void *), "vkCmdBeginQuery POSIX pointer size");
     _Static_assert(sizeof(context->vk.vkCmdEndQuery) == sizeof(void *), "vkCmdEndQuery POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkCmdSetStencilReference) == sizeof(void *), "vkCmdSetStencilReference POSIX pointer size");
     _Static_assert(sizeof(context->vk.vkCmdSetBlendConstants) == sizeof(void *), "vkCmdSetBlendConstants POSIX pointer size");
     _Static_assert(sizeof(context->vk.vkCmdDraw) == sizeof(void *), "vkCmdDraw POSIX pointer size");
     _Static_assert(sizeof(context->vk.vkCreateQueryPool) == sizeof(void *), "vkCreateQueryPool POSIX pointer size");
@@ -176,6 +177,7 @@ static doe_vk_status load_functions(doe_vk_context *context, doe_vk_error *error
         { "vkCmdBindVertexBuffers", &context->vk.vkCmdBindVertexBuffers, sizeof(context->vk.vkCmdBindVertexBuffers) },
         { "vkCmdBeginQuery", &context->vk.vkCmdBeginQuery, sizeof(context->vk.vkCmdBeginQuery) },
         { "vkCmdEndQuery", &context->vk.vkCmdEndQuery, sizeof(context->vk.vkCmdEndQuery) },
+        { "vkCmdSetStencilReference", &context->vk.vkCmdSetStencilReference, sizeof(context->vk.vkCmdSetStencilReference) },
         { "vkCmdSetBlendConstants", &context->vk.vkCmdSetBlendConstants, sizeof(context->vk.vkCmdSetBlendConstants) },
         { "vkCmdDraw", &context->vk.vkCmdDraw, sizeof(context->vk.vkCmdDraw) },
         { "vkCreateQueryPool", &context->vk.vkCreateQueryPool, sizeof(context->vk.vkCreateQueryPool) },

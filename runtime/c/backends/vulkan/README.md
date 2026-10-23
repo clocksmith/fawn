@@ -33,8 +33,8 @@ before submission; recorded ownership remains sufficient.
 
 Device-local allocations are not initialized by this backend primitive. The
 native WebGPU owner must record initialization before exposing reads. Host
-allocations are initialized. Robust buffer access is required/enabled. Only core
-baseline shader features are enabled; unsupported feature use must be rejected by
+allocations are initialized. Robust buffer access is required/enabled. Core baseline shader features are enabled, with the explicit optional demote
+selection described below; unsupported feature use must be rejected by
 the compiler/native admission path before creating a pipeline. This is not a
 complete public validation boundary for untrusted SPIR-V.
 
@@ -46,8 +46,9 @@ The retained production owners remain authoritative for those behaviors.
 ## Texture transactions
 
 `include/doe_vk_texture.h` uses named native format values, never WebGPU numeric
-casts. Eighteen uncompressed color formats are currently admitted; depth/stencil,
-compressed formats, multisampling, reinterpretation, swizzles and cube-array
+casts. Eighteen uncompressed color formats plus four attachment-only depth/stencil formats
+are admitted when native format support exists. Compressed formats, multisampling,
+reinterpretation, swizzles and cube-array
 feature enablement remain outside this increment. Native views retain their image.
 A texture is held by one unresolved command owner to avoid stale recorded layouts.
 Layouts and per-mip/layer initialization are speculative until successful native
@@ -108,9 +109,10 @@ this borrowed span is not another resource recorder or reference-count owner.
 Pipeline state admits sample1, one color target, eight vertex layouts/sixteen
 32-bit scalar/vector attributes, native blend/cull/topology controls and dynamic
 viewport/scissor. Blend constants default to pipeline state; explicit per-draw overrides use real
-native dynamic state after whole-span finite-value validation. Depth/stencil,
-MSAA, multiple attachments, indexed/indirect draws,
-and discard-store semantics are not implemented by this interface.
+native dynamic state after whole-span finite-value validation. The full descriptor
+adds one depth/stencil attachment, independent per-aspect load/clear/store/discard,
+read-only admission and dynamic stencil reference. MSAA, multiple color targets
+and indexed/indirect draws remain unsupported.
 Unsupported resource packets must be rejected, not silently dropped. Graphics
 requires `require_graphics_queue=true` at context creation when the device offers
 separate compute-only queues; default compute queue selection is unchanged.
@@ -118,9 +120,8 @@ separate compute-only queues; default compute queue selection is unchanged.
 `make native-render VERTEX_SPIRV=... FRAGMENT_SPIRV=...` uses the two retained Tint
 fixtures bound in `SMOKE_IMAGE_FIXTURES.json`. Blue clear plus two preserving draws
 with vertex attributes, uniform data and disjoint scissors produces 64 exact RGBA8
-pixels. It releases caller references before submission. The bound older C compiler
-rejects graphics entrypoints; this test is real Vulkan graphics, not C graphics
-compiler evidence or physical qualification.
+pixels. It releases caller references before submission. This retained-fixture test is real Vulkan graphics, not C graphics compiler
+evidence or physical qualification; separate source-compiler consumers own that proof.
 
 ## Timestamp queries
 
@@ -307,3 +308,20 @@ The private extension feature record is verified separately against the official
 Khronos declaration in `ABI_PROVENANCE.json`, not attributed to retained Zig.
 `make native-features NATIVE_ARGS=--allow-software` with the explicit software ICD
 checks baseline/opt-in device creation only, not shader or physical qualification.
+
+Depth/stencil uses the same full pass recorder and completion-owned image state.
+`doe_vk_commands_render_pass_full` accepts the explicit attachment descriptor; old
+color-only calls construct that descriptor and delegate. Initialization bytes are
+per-aspect masks, so discarding depth does not discard stencil and an abandoned
+clear does not publish either. A read-only aspect cannot clear/discard or use a
+pipeline that may write it. LOAD requires prior initialization, including empty
+passes. Views and native framebuffers stay retained through unresolved work.
+Depth formats currently admit only 2D attachment usage: depth copying, sampling
+and storage are explicitly unsupported rather than using color-aspect transfers.
+
+The extended native render witness uses D32S8 with near/far depth tests, stencil
+replace/equal, dynamic references, an empty read-only LOAD, independent rejected
+fragments and an exact 64-pixel color readback. SwiftShader rejected the first
+D24S8 fixture as unsupported; the retained failure was followed by explicitly
+selecting D32S8, not a hidden backend fallback. `depth_contract` checks native
+aspect/load/store records, discard, preflight errors, leases and rollback.

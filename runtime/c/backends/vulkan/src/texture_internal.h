@@ -32,6 +32,8 @@ typedef struct doe_vk_texture_use {
     uint8_t *initialized;
     struct doe_vk_texture_use *next;
 } doe_vk_texture_use;
+/* Initialization bytes are per-aspect masks (color1, depth2, stencil4). */
+uint32_t doe_vk_format_aspects(doe_vk_texture_format format);
 doe_vk_status doe_vk_use_texture(doe_vk_commands *commands, doe_vk_texture *texture,
     doe_vk_texture_use **out);
 void doe_vk_texture_transition(doe_vk_commands *commands, doe_vk_texture_use *use,

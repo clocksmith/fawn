@@ -30,3 +30,7 @@ Optional device capabilities require explicit selection and successful native
 enablement before reporting support. API version or extension discovery alone
 cannot admit SPIR-V capabilities. Keep separately verified official declarations
 distinct from retained ABI provenance.
+
+Depth/stencil initialization is aspect-specific. Preserve independent load/store,
+read-only and discard semantics on the same pass and texture lifetime owners;
+never treat cleared depth as initialized stencil or publish abandoned clears.

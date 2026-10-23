@@ -3,6 +3,20 @@
 #define DOE_VK_ABI_RENDER_H
 #include "vk_abi_structs.h"
 
+/* Exact retained vk_render_pipeline.zig declarations. */
+typedef struct VkStencilOpState {
+    uint32_t failOp, passOp, depthFailOp, compareOp;
+    uint32_t compareMask, writeMask, reference;
+} VkStencilOpState;
+typedef struct VkPipelineDepthStencilStateCreateInfo {
+    int32_t sType;
+    const void *pNext;
+    uint32_t flags, depthTestEnable, depthWriteEnable, depthCompareOp;
+    uint32_t depthBoundsTestEnable, stencilTestEnable;
+    VkStencilOpState front, back;
+    float minDepthBounds, maxDepthBounds;
+} VkPipelineDepthStencilStateCreateInfo;
+
 typedef struct VkAttachmentDescription {
     VkFlags flags;
     uint32_t format;
