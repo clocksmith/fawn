@@ -1320,6 +1320,15 @@
           "kind": "integration"
         }
       ]
+    },
+    "c-callbacks-integration": {
+      "output": "test_suite_c_callbacks.zig",
+      "entries": [
+        {
+          "path": "tests/c_callbacks_integration_test.zig",
+          "kind": "integration"
+        }
+      ]
     }
   },
   "supportFiles": [

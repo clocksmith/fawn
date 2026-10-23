@@ -9,7 +9,7 @@ const surface = @import("../full/surface/wgpu_surface_procs.zig");
 const texture = @import("../core/abi/procs/wgpu_texture_procs.zig");
 const render = @import("../full/render/wgpu_render_api.zig");
 const async_procs = @import("../core/abi/procs/wgpu_async_procs.zig");
-const callback_delivery = @import("../native/support/doe_callback_delivery.zig");
+const callback_delivery = @import("../native/support/doe_callback_owner.zig");
 const native = @import("../native/mod.zig");
 
 extern fn wgpuGetProcAddress(name: abi_core.WGPUStringView) callconv(.c) p1cap.WGPUProc;

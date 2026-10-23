@@ -1,7 +1,7 @@
 //! Selected/adapted tests, not an unchanged retained-suite qualification.
 const std = @import("std");
 const adapter = @import("../src/native/support/doe_future_c_adapter.zig");
-const delivery = @import("../src/native/support/doe_callback_delivery.zig");
+const delivery = @import("../src/native/support/doe_callback_owner.zig");
 const objects = @import("../src/native/support/doe_native_object_types.zig");
 const native = @import("../src/native/lifecycle/doe_instance_device_native.zig");
 const abi = @import("../src/core/abi/wgpu_callback_descriptor_types.zig");
@@ -21,12 +21,12 @@ const Reply = struct {
     }
 };
 
-var worker_completion: ?*adapter.Completion = null;
-fn deferPublication(completion: *adapter.Completion) void {
+var worker_completion: ?*delivery.Publication = null;
+fn deferPublication(completion: *delivery.Publication) void {
     worker_completion = completion;
 }
-fn publishWorker(completion: *adapter.Completion) void {
-    completion.markReady();
+fn publishWorker(completion: *delivery.Publication) void {
+    delivery.markReady(completion);
 }
 
 test "C futures integration: actual native creation and typed GCC layout" {
@@ -161,9 +161,9 @@ test "C futures integration: pending timeout and real worker wake" {
     try std.testing.expectEqual(@as(u32, 2), native.doeNativeInstanceWaitAny(raw, 1, &info, 1000));
     try std.testing.expectEqual(@as(u32, 0), count);
     const Worker = struct {
-        fn delayed(completion: *adapter.Completion) void {
+        fn delayed(completion: *delivery.Publication) void {
             std.Thread.sleep(5 * std.time.ns_per_ms);
-            completion.markReady();
+            delivery.markReady(completion);
         }
     };
     const worker = try std.Thread.spawn(.{}, Worker.delayed, .{worker_completion.?});

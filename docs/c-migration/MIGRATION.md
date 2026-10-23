@@ -135,13 +135,16 @@ or approved removal before the full Zig-free gate closes. The new
 `test_suite_c_futures.zig` and `tests/c_futures_integration_test.zig` are test
 infrastructure additions. None alters the immutable 809-file baseline inventory.
 
-The next [callback payload owner](../../runtime/c/callbacks/CONTRACT.md) and its
-[retained-consumer seam](../../runtime/c/callbacks/integration/CONTRACT.md) are
-frozen for implementation, not accepted. They move generic payload allocation,
-publication and retirement while retaining typed API deliverers and the accepted
-C queue. The decisive native consumer is an actual owned RequestAdapter failure
-callback on the existing headless Metal-unavailable path, not device creation or
-GPU completion. Independent obligations and implementation acceptance remain open.
+The [callback payload owner](../../runtime/c/callbacks/RESULTS.md) and its
+[retained-consumer seam](../../runtime/c/callbacks/integration/CONTRACT.md) now pass
+independent CPU/headless acceptance. C owns generic payload allocation,
+publication and retirement; typed API deliverers and the accepted queue retain
+their separate responsibilities. Actual owned RequestAdapter failure callbacks
+exercise the existing Metal-unavailable path, not device creation or GPU completion.
+Default selection remains Zig. The new `doe_callback_owner.zig` facade and
+`doe_callback_c_adapter.zig` typed bridge remain production-use migration
+obligations; `test_suite_c_callbacks.zig` and `tests/c_callbacks_integration_test.zig`
+are transitional test infrastructure. No baseline inventory entry is erased.
 
 ## Existing authority, not a parallel policy
 

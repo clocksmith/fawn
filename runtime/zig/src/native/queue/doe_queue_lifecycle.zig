@@ -13,7 +13,7 @@ const queue_flush_breakdown = @import("doe_queue_flush_breakdown.zig");
 const shared = @import("doe_queue_submit_shared.zig");
 const future_ids = @import("../support/doe_future_owner.zig");
 const task_pool = @import("../../runtime/task_pool.zig");
-const callback_delivery = @import("../support/doe_callback_delivery.zig");
+const callback_delivery = @import("../support/doe_callback_owner.zig");
 const callback_dispatch = @import("../../runtime/callback_dispatch.zig");
 
 const has_vulkan = (builtin.os.tag == .linux);
@@ -347,13 +347,13 @@ const QueueReply = struct {
     }
 };
 
-fn publishMetalWorkDone(completion: *future_ids.Completion) void {
+fn publishMetalWorkDone(completion: *callback_delivery.Publication) void {
     task_pool.submitWithAllocator(alloc, .{ .run = struct {
         fn publish(raw: ?*anyopaque) void {
-            const entry: *future_ids.Completion = @ptrCast(@alignCast(raw.?));
-            entry.markReady();
+            const entry: *callback_delivery.Publication = @ptrCast(@alignCast(raw.?));
+            callback_delivery.markReady(entry);
         }
-    }.publish, .ctx = completion }) catch completion.markReady();
+    }.publish, .ctx = completion }) catch callback_delivery.markReady(completion);
 }
 
 pub fn doeNativeQueueOnSubmittedWorkDone(q_raw: ?*anyopaque, info: abi_callback.WGPUQueueWorkDoneCallbackInfo) abi_core.WGPUFuture {
