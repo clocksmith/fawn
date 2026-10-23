@@ -1,0 +1,76 @@
+{
+  "status": "Focused developer correction only; not independent qualification or physical GPU evidence",
+  "timestamp_utc": "2026-10-23T18:38:00Z",
+  "base_source_receipt": {
+    "path": "runtime/c/native/DEVELOPER_RECEIPT_IMAGES.json",
+    "sha256": "08492eac2f9f68f520b990ef6464f453abb193b945d15e2a35a319d4bb4df72a",
+    "dependency_commit": "8a3fd4c11d427906989d764519c0baa6f65d2d91"
+  },
+  "source_binding": "Apply overlay_source_sha256 to the inherited image source map. All other inputs unchanged. Test tree is immutable during the final runs; original140 source hashes reverified unchanged. New resource snapshot copied before concurrent render-scope edits, not a claim about later shared files.",
+  "source_count": 145,
+  "overlay_source_sha256": {
+    "runtime/c/native/Makefile": "97daef8259fcf327f1e494c6ed1709b577672bc107843ac21447c422a8d968c2",
+    "runtime/c/native/src/bindings.c": "afa56588d71382ac4ffde821e29b23f7ad2e4e835f25a0a005b303f1d673b349",
+    "runtime/c/native/src/buffers.c": "4ebb6220816110ff72105e0e2ff148b559a45bc175948856034f0b08f4913447",
+    "runtime/c/native/src/commands.c": "a8409579a528e27d75b56f4b8ccaebff0264b1223c6c73d523a9f6743845777b",
+    "runtime/c/native/src/internal.h": "5b7692c3e8e149c0b9d206c9d532307399c46898d814be68044527ffa13ecfc8",
+    "runtime/c/native/src/labels.c": "24b29d7db7c17c2fc5f479580d2067c72151ac60f5bbbce71184d5ca846eed8f",
+    "runtime/c/native/src/pipeline_layouts.c": "4c842887b644cdc8d3bf3db16e3c044c43e57ea25032a1cc5e3f47d1e6f70491",
+    "runtime/c/native/src/pipelines.c": "717a7768dce3d618b2b182c82ca1fc592c243e142b81882ff4900a1ba840ff39",
+    "runtime/c/native/src/queue.c": "4533bd29a347d8914acafcd9822da5bd97531dd258a9d6d0a8c80cf7b1fa03b6",
+    "runtime/c/native/src/shader_modules.c": "ebf5355df0cfa3ce9c07098bab8591a0ee588e6fc2e31591190be5e2b25f0952",
+    "runtime/c/native/src/status.c": "d57060f45eb901332d753f90b83082baaff64503cab506bcc2d2c83fdc6326de",
+    "runtime/c/native/src/texture_copies.c": "44f47514feb5478bf75c5197e5557bac7db9d70ac94e9f254ffe6e1de539d16d",
+    "runtime/c/native/src/texture_views.c": "052ca4e0c7d91e578f29c30b97cc84072da206bb394d013a26c6fb51b85fb282",
+    "runtime/c/native/src/textures.c": "a2a1949a90f45399cb7fe4b4367c04a60ac33ca08f617073564ced7a2865d61c",
+    "runtime/c/native/tests/admission.c": "ab03395a4d00849b5f3756a6f9af2523c3201c250342bda9ac532ad2fdb8a7ee",
+    "runtime/c/native/tests/consumer.h": "0a86cb5253181fb4bbd949a002deb08cf6f20443666a393182f81378f4383b28",
+    "runtime/c/native/tests/failures.c": "161dad0a01c0c18eff1d924941b631f093af971cb5fd675d7f4966a7e43671ec",
+    "runtime/c/native/tests/textures.c": "a7719d352670117b70b3cb302cdd626c94adf7d23329aa33fe286aad0dda3fe7",
+    "runtime/c/resources/Makefile": "abf2cbec09f0272f096ad57c808c22a9900ed962112ff84f4fa6dd9aac595912",
+    "runtime/c/resources/include/doe_resources.h": "7824710101f9f03943a449583b5fa6ef482568d6ec2679286fbb9d7ecd1f2c2c",
+    "runtime/c/resources/src/accessors.c": "b902b7a4c3574a0a9faff7e791ab7d2b520896483616d025f1e38a2b3631e736",
+    "runtime/c/resources/src/commands.c": "7d82ad073a1913b81fa3af4a2cdd1dc5056de68603a94c335e2bd161996d8c8d",
+    "runtime/c/resources/src/internal.h": "20cce3253297f9e0fecb26654f357c7db6297740bea7cfeb6c6e8193f4451ca5",
+    "runtime/c/resources/src/render_state.c": "d0adbbb00c3aef9f853984fe9e27a8dd47e66e8118a5bd9eec1a38fa0f0768c9",
+    "runtime/c/resources/src/usage_scope.c": "29770e34ea646a74881c54d07c0f540848a0f88d36c76b6268cd8f3198d54a46"
+  },
+  "checks": [
+    "Canonical normal six-client check and runtime exact114-export/88-absent audit PASS",
+    "Focused admission and actual allocator/native boundary failures PASS with native/resources/compiler ASan+UBSan; compiler is reused previously source-bound instrumented ABI6 artifact",
+    "Sparse auto-layout group2, required nonempty slot, null unbind/rebind, ignored destroyed hole resources",
+    "Disjoint effective dynamic writable ranges execute17/29; overlapping ranges and whole-buffer writable/readonly conflicts reject",
+    "Sampled/storage same-mip texture rejects; disjoint mip control executes and reads zero",
+    "Resource/backend/label errors retain OOM/Internal/Validation; partial auto-layout allocation unwind preserves device reference count"
+  ],
+  "scope_limits": [
+    "CPU SwiftShader ICD explicitly selected; Miles and Suby physical runs remain held",
+    "No asynchronous queue recovery completion or graphics/query feature claim",
+    "ASan leak detection disabled because LeakSanitizer is unavailable under ptrace; no leak qualification",
+    "Compiler ABI7 and later resource render-scope changes intentionally excluded"
+  ],
+  "first_failure": "First new failure client compile used incorrect doe_vk_memory typedef. Corrected to declared doe_vk_memory_kind; original failing log retained. No library behavior failure was hidden.",
+  "recipe": {
+    "normal": "VK_ICD_FILENAMES=/usr/lib/chromium/vk_swiftshader_icd.json make -C /tmp/doe-native-admission-checkpoint-20261023/runtime/c/native BUILD=/tmp/doe-native-admission-build COMPILER_LIBRARY=/tmp/doe-native-image-checkpoint-build/libdoe_compiler.so check",
+    "sanitize": "ASAN_OPTIONS=detect_leaks=0:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1 VK_ICD_FILENAMES=/usr/lib/chromium/vk_swiftshader_icd.json make with BUILD=/tmp/doe-native-admission-asan COMPILER_LIBRARY=/tmp/doe-native-image-checkpoint-asan/libdoe_compiler.so SANITIZE=-fsanitize=address,undefined,-fno-omit-frame-pointer (separate flags), targets admission/failures; execute both"
+  },
+  "artifacts_sha256": {
+    "/tmp/doe-native-admission-build/libwebgpu_doe_c.so": "eaa6af197a8073e4d04f46d1ca15b911d63ec134b3915b6f946b18b21c024420",
+    "/tmp/doe-native-admission-build/compute": "475470adb6af24143f7068d4ace3fa5ac2c29a68d775df56c48b5e642ca71288",
+    "/tmp/doe-native-admission-build/procedures-cxx": "08a7237054818098838b366369ff208fdbe4b21ade3d4e598c9d91a79a3b2a01",
+    "/tmp/doe-native-admission-build/lifecycle": "277a1da921c561550ba9a9ee2077254ddd12418125409ed702cae068ec86d63a",
+    "/tmp/doe-native-admission-build/textures": "347de41122b6f264adf1585e71ed1f8e3288e9a50b23dc5f8cbf2e7c416ae982",
+    "/tmp/doe-native-admission-build/admission": "fa927cd7afca79d85564a2f25269eafe08c63ab8c43cb3cb997fac2160034ce2",
+    "/tmp/doe-native-admission-build/failures": "4b5b048f4a450dfebf552a76ca006cffed42fcdec2b91674389fe3ed643f8966",
+    "/tmp/doe-native-admission-asan/libwebgpu_doe_c.so": "d17b889ce82a8caa527bdd39b50a5a5a6a34775312eb9e0f9f05edf8235ed961",
+    "/tmp/doe-native-admission-asan/admission": "388483538d4dee0654946afb060bf6d871f7ef0b4869dd4cb9ea0c8d2d793f2b",
+    "/tmp/doe-native-admission-asan/failures": "d1ac261935a2cb46e0a3c75679351f85322f6e389e956ed8cf1938777851c333",
+    "/tmp/doe-native-image-checkpoint-build/libdoe_compiler.so": "eadded85a600dd32c7611f73d90992a3842465c4acff7ea97294db693513121f",
+    "/tmp/doe-native-image-checkpoint-asan/libdoe_compiler.so": "ec432e2740bc383a4d794157a87dfa08bcd89f04440da8b6e670754499a2b87f"
+  },
+  "logs_sha256": {
+    "/tmp/doe-native-admission-final-normal.log": "9d1d8e83cdd4aff224081e52259454ec1a0981c00ac6df841305448479fd83a9",
+    "/tmp/doe-native-admission-final-sanitize.log": "2168ef5b2db53c835afa412c339072d83afdbccf6ac0cf6343720812c492f26f",
+    "/tmp/doe-native-admission-normal.log": "c140323dc2967ccb500f8413d9cfb0d0dda8c61f6a24ef876097ba30d97275af"
+  }
+}

@@ -24,7 +24,7 @@ static void record_copy(WGPUCommandEncoder handle, const WGPUTexelCopyBufferInfo
             (doe_resource_texture *)texture->texture, &copy, direction, DOE_RESOURCE_COPY_WEBGPU);
     }
     native_unlock(device);
-    if (status != DOE_RESOURCE_OK) native_error(device, WGPUErrorType_Validation, "buffer/texture copy recording failed");
+    if (status != DOE_RESOURCE_OK) native_error(device, native_resource_error(status), "buffer/texture copy recording failed");
 }
 void wgpuCommandEncoderCopyBufferToTexture(WGPUCommandEncoder encoder,
     const WGPUTexelCopyBufferInfo *source, const WGPUTexelCopyTextureInfo *destination, const WGPUExtent3D *size)
@@ -55,7 +55,7 @@ void wgpuCommandEncoderCopyTextureToTexture(WGPUCommandEncoder handle,
         status = doe_resource_encoder_blit_texture(encoder, &copy, DOE_RESOURCE_COPY_WEBGPU);
     }
     native_unlock(device);
-    if (status != DOE_RESOURCE_OK) native_error(device, WGPUErrorType_Validation, "texture copy recording failed");
+    if (status != DOE_RESOURCE_OK) native_error(device, native_resource_error(status), "texture copy recording failed");
 }
 
 void wgpuQueueWriteTexture(WGPUQueue handle, const WGPUTexelCopyTextureInfo *destination,
@@ -88,9 +88,10 @@ void wgpuQueueWriteTexture(WGPUQueue handle, const WGPUTexelCopyTextureInfo *des
     doe_resource_encoder *encoder = NULL;
     doe_resource_commands *commands = NULL;
     native_lock(device);
+    doe_vk_status written = DOE_VK_OK;
     if (staging) {
         native_buffer *payload = doe_resource_buffer_native((doe_resource_buffer *)staging);
-        doe_vk_status written = doe_vk_buffer_write(payload->buffer, 0, data, (size_t)bytes);
+        written = doe_vk_buffer_write(payload->buffer, 0, data, (size_t)bytes);
         status = written == DOE_VK_OK ? doe_resource_encoder_create(&device->resources, &encoder) : DOE_RESOURCE_STATE;
         if (status == DOE_RESOURCE_OK)
             status = doe_resource_encoder_copy_texture(encoder, (doe_resource_buffer *)staging,
@@ -103,7 +104,8 @@ void wgpuQueueWriteTexture(WGPUQueue handle, const WGPUTexelCopyTextureInfo *des
         WGPUCommandBuffer command = (WGPUCommandBuffer)commands;
         wgpuQueueSubmit(handle, 1, &command);
         doe_resource_commands_release(commands);
-    } else if (staging) native_error(device, WGPUErrorType_Validation, "queue texture write recording failed");
+    } else if (staging) native_error(device, written != DOE_VK_OK ?
+        native_backend_error(written) : native_resource_error(status), "queue texture write recording failed");
     wgpuBufferRelease(staging);
     native_device_release(device);
 }

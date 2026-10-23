@@ -15,7 +15,9 @@ static doe_vk_status record_dispatch(doe_vk_commands *commands, const doe_resour
     native_pipeline *pipeline = doe_resource_pipeline_native(record->value.dispatch.pipeline);
     doe_resource_binding resolved[DOE_RESOURCE_MAX_GROUPS][DOE_RESOURCE_MAX_BINDINGS];
     size_t counts[DOE_RESOURCE_MAX_GROUPS] = {0};
+    doe_resource_pipeline_layout *layout_owner = doe_resource_pipeline_get_layout(record->value.dispatch.pipeline);
     for (size_t i = 0; i < record->value.dispatch.group_count; ++i) {
+        if (!doe_resource_pipeline_layout_group_required(layout_owner, (uint32_t)i)) continue;
         doe_resource_bind_group *group = record->value.dispatch.groups[i];
         (void)doe_resource_bind_group_bindings(group, &counts[i]);
         const doe_resource_dispatch_offsets *offsets = record->value.dispatch.dynamic_offsets;
@@ -202,12 +204,13 @@ void wgpuQueueSubmit(WGPUQueue handle, size_t count, const WGPUCommandBuffer *ha
             if (handles[i] == handles[j]) status = DOE_VK_INVALID_ARGUMENT;
     }
     doe_vk_error error = {0};
+    doe_resource_status resource_status = DOE_RESOURCE_OK;
     if (status == DOE_VK_OK) status = doe_vk_commands_create(device->context, &pending->native, &error);
     for (size_t i = 0; status == DOE_VK_OK && i < count; ++i)
         status = record_commands(pending->native, pending->resources[i]);
     for (size_t i = 0; status == DOE_VK_OK && i < count; ++i) {
-        doe_resource_status admitted = doe_resource_commands_begin_submit(pending->resources[i]);
-        if (admitted != DOE_RESOURCE_OK) status = DOE_VK_INVALID_ARGUMENT;
+        resource_status = doe_resource_commands_begin_submit(pending->resources[i]);
+        if (resource_status != DOE_RESOURCE_OK) status = DOE_VK_INVALID_ARGUMENT;
         else ++pending->count;
     }
     if (status == DOE_VK_OK) {
@@ -219,7 +222,9 @@ void wgpuQueueSubmit(WGPUQueue handle, size_t count, const WGPUCommandBuffer *ha
         settle_resources(pending, false);
     }
     native_unlock(device);
-    if (status != DOE_VK_OK) native_error(device, WGPUErrorType_Validation, "queue submission failed; unresolved work stays retained");
+    if (status != DOE_VK_OK) native_error(device, resource_status != DOE_RESOURCE_OK ?
+        native_resource_error(resource_status) : native_backend_error(status),
+        "queue submission failed; unresolved work stays retained");
 }
 
 typedef struct queue_delivery {

@@ -53,8 +53,8 @@ static bool resource_entry(const doe_shader_view *view, uint32_t index, doe_reso
     return true;
 }
 
-doe_resource_pipeline_layout *native_automatic_layout(native_device *device,
-    const doe_shader_view *view, const DoeCompilerEntryV5 *entry)
+doe_resource_status native_automatic_layout(native_device *device,
+    const doe_shader_view *view, const DoeCompilerEntryV5 *entry, doe_resource_pipeline_layout **out)
 {
     doe_resource_layout_entry entries[DOE_RESOURCE_MAX_GROUPS][DOE_RESOURCE_MAX_BINDINGS];
     size_t counts[DOE_RESOURCE_MAX_GROUPS] = {0};
@@ -63,19 +63,20 @@ doe_resource_pipeline_layout *native_automatic_layout(native_device *device,
         uint32_t index = view->entry_references[entry->first_resource_reference + i];
         const DoeCompilerResourceV4 *resource = &view->resources[index];
         doe_resource_layout_entry converted;
-        if (!resource_entry(view, index, &converted) || counts[resource->group] == DOE_RESOURCE_MAX_BINDINGS) return NULL;
+        if (!resource_entry(view, index, &converted) || counts[resource->group] == DOE_RESOURCE_MAX_BINDINGS) return DOE_RESOURCE_UNSUPPORTED;
         entries[resource->group][counts[resource->group]++] = converted;
         if (group_count <= resource->group) group_count = resource->group + 1;
     }
     doe_resource_layout *groups[DOE_RESOURCE_MAX_GROUPS] = {0};
-    doe_resource_pipeline_layout *layout = NULL;
-    for (size_t i = 0; i < group_count; ++i)
-        if (doe_resource_layout_create(&device->resources, entries[i], counts[i], true, &groups[i]) != DOE_RESOURCE_OK)
-            goto finished;
-    (void)doe_resource_pipeline_layout_create(&device->resources, groups, group_count, 0, &layout);
+    doe_resource_status status = DOE_RESOURCE_OK;
+    for (size_t i = 0; i < group_count; ++i) {
+        status = doe_resource_layout_create(&device->resources, entries[i], counts[i], true, &groups[i]);
+        if (status != DOE_RESOURCE_OK) goto finished;
+    }
+    status = doe_resource_pipeline_layout_create(&device->resources, groups, group_count, 0, out);
 finished:
     for (size_t i = 0; i < group_count; ++i) doe_resource_layout_release(groups[i]);
-    return layout;
+    return status;
 }
 
 static bool compatible(const doe_resource_layout_entry *actual, const doe_resource_layout_entry *required,

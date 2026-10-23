@@ -112,8 +112,7 @@ WGPUTexture wgpuDeviceCreateTexture(WGPUDevice handle, const WGPUTextureDescript
     native_unlock(device);
     if (!texture) {
         release_texture(NULL, payload);
-        native_error(device, status == DOE_VK_OUT_OF_MEMORY || adopted == DOE_RESOURCE_OUT_OF_MEMORY ?
-            WGPUErrorType_OutOfMemory : WGPUErrorType_Validation,
+        native_error(device, status != DOE_VK_OK ? native_backend_error(status) : native_resource_error(adopted),
             "texture creation or proven zero initialization failed");
     } else native_label(device, texture, descriptor->label);
     return (WGPUTexture)texture;

@@ -13,3 +13,8 @@ not a second device owner. Clear it before the last external reference drops;
 callback delivery may retain storage only while snapshotting under its mutex.
 Keep synchronous construction distinct from callback scheduling and from the
 unfinished asynchronous queue recovery lane.
+
+Pipeline-layout required slots and usage conflicts belong to the resource owner.
+Skip canonical empty slots rather than inventing a native binding requirement.
+Carry typed resource/backend allocation and execution failures to the public ABI;
+never collapse every failed constructor or submission to Validation.

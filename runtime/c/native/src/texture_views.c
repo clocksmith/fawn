@@ -45,7 +45,7 @@ WGPUTextureView wgpuTextureCreateView(WGPUTexture handle, const WGPUTextureViewD
     }
     native_view *payload = status == DOE_RESOURCE_OK ? calloc(1, sizeof(*payload)) : NULL;
     doe_resource_view *view = NULL;
-    doe_vk_status backend = DOE_VK_INVALID_ARGUMENT;
+    doe_vk_status backend = DOE_VK_OK;
     if (payload) {
         payload->device = device;
         native_texture *parent = doe_resource_texture_native(texture);
@@ -58,8 +58,8 @@ WGPUTextureView wgpuTextureCreateView(WGPUTexture handle, const WGPUTextureViewD
     native_unlock(device);
     if (!view) {
         if (payload) release_view(NULL, payload);
-        native_error(device, status == DOE_RESOURCE_OUT_OF_MEMORY || backend == DOE_VK_OUT_OF_MEMORY ?
-            WGPUErrorType_OutOfMemory : WGPUErrorType_Validation, "texture view creation failed or unsupported");
+        native_error(device, backend != DOE_VK_OK ? native_backend_error(backend) : native_resource_error(status),
+            "texture view creation failed or unsupported");
     } else native_label(device, view, descriptor->label);
     return (WGPUTextureView)view;
 }
@@ -135,8 +135,8 @@ WGPUSampler wgpuDeviceCreateSampler(WGPUDevice handle, const WGPUSamplerDescript
     native_unlock(device);
     if (!sampler) {
         release_sampler(NULL, payload);
-        native_error(device, status == DOE_VK_OUT_OF_MEMORY || adopted == DOE_RESOURCE_OUT_OF_MEMORY ?
-            WGPUErrorType_OutOfMemory : WGPUErrorType_Validation, "sampler creation failed");
+        native_error(device, status != DOE_VK_OK ? native_backend_error(status) : native_resource_error(adopted),
+            "sampler creation failed");
     } else native_label(device, sampler, descriptor->label);
     return (WGPUSampler)sampler;
 }
