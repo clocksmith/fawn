@@ -17,6 +17,7 @@ struct doe_vk_context {
     VkPhysicalDevice physical;
     VkDevice device;
     VkQueue queue;
+    VkExtent3D transfer_granularity;
     doe_vk_caps caps;
     VkPhysicalDeviceProperties properties;
     VkPhysicalDeviceMemoryProperties memory;

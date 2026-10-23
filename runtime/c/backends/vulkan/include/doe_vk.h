@@ -61,6 +61,18 @@ typedef struct doe_vk_caps {
     uint64_t uniform_offset_alignment;
     bool robust_buffer_access;
     bool software_adapter;
+    uint32_t max_workgroup_storage_size;
+    uint32_t max_bind_groups;
+    uint32_t max_bindings_per_group;
+    uint32_t max_storage_buffers_per_stage;
+    uint32_t max_uniform_buffers_per_stage;
+    uint32_t max_sampled_textures_per_stage;
+    uint32_t max_storage_textures_per_stage;
+    uint32_t max_samplers_per_stage;
+    uint32_t max_texture_dimension_1d;
+    uint32_t max_texture_dimension_2d;
+    uint32_t max_texture_dimension_3d;
+    uint32_t max_texture_array_layers;
 } doe_vk_caps;
 
 /* One owned reference on success. Objects retain their creating context. */

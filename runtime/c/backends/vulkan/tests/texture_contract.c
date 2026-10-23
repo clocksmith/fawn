@@ -35,6 +35,24 @@ static void bounds_and_pitch(void) {
     assert(doe_vk_texture_copy_region(&texture, region, UINT64_MAX, layout, &copy) == DOE_VK_INVALID_ARGUMENT);
 }
 
+static void queue_transfer_granularity(void) {
+    doe_vk_context context = { .transfer_granularity = {4, 4, 1} };
+    doe_vk_texture texture = { .desc = { .dimension = DOE_VK_TEXTURE_2D,
+        .width = 10, .height = 10, .depth_or_layers = 2, .mip_levels = 1 } };
+    doe_vk_texture_region region = { .origin = {4, 4, 1}, .extent = {6, 6, 1} };
+    assert(doe_vk_texture_transfer_region(&context, &texture, region) == DOE_VK_OK);
+    region.origin[0] = 2;
+    assert(doe_vk_texture_transfer_region(&context, &texture, region) == DOE_VK_UNSUPPORTED);
+    region.origin[0] = 4;
+    region.extent[0] = 2;
+    assert(doe_vk_texture_transfer_region(&context, &texture, region) == DOE_VK_UNSUPPORTED);
+    context.transfer_granularity = (VkExtent3D){0};
+    region = (doe_vk_texture_region){ .extent = {10, 10, 2} };
+    assert(doe_vk_texture_transfer_region(&context, &texture, region) == DOE_VK_OK);
+    region.extent[1] = 8;
+    assert(doe_vk_texture_transfer_region(&context, &texture, region) == DOE_VK_UNSUPPORTED);
+}
+
 static void layout_and_initialization_transaction(void) {
     doe_vk_context context = { .references = 1 };
     doe_vk_texture texture = {
@@ -76,6 +94,7 @@ static void layout_and_initialization_transaction(void) {
 
 int main(void) {
     bounds_and_pitch();
+    queue_transfer_granularity();
     layout_and_initialization_transaction();
     puts("PASS texture last-byte/mip/layer/overflow checks, speculative layout/initialization rollback, concurrent owner exclusion and failed output");
     return 0;

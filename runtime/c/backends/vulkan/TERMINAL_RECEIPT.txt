@@ -13,3 +13,4 @@ Latest handoff smoke rebuilt the current sibling C compiler in /tmp and passed w
 Read-as-you-go failure-output bug fixed with failing-old/passing-new regression; see REVIEW_RECEIPT.txt.
 2026-10-23 texture increment: strict C11/static build + C++ headers, 50 pinned ABI records/960 assertions, host texture last-byte/mip/layer/overflow and speculative state contracts PASS. ASan+UBSan host texture/old command suites PASS with existing LSan limitation.
 Actual existing software Vulkan: 4x4 RGBA8, two mip levels/two array layers, padded upload/image-copy/readback, all512 bytes including untouched padding, view/sampler creation, initialization rejection and early caller release PASS. Physical runs paused; no hardware evidence.
+Capability and queue-transfer-granularity extension: focused checks and exact source identities recorded by ../../resources/DEVELOPER_RECEIPT_EXTENDED.json; software-only lifetime consumer, no physical qualification.
