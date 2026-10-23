@@ -327,9 +327,9 @@ napi_value doe_create_bind_group_layout(napi_env env, napi_callback_info info) {
 napi_value doe_create_buffer_bind_group_layout_flat4(napi_env env, napi_callback_info info) {
     NAPI_ASSERT_ARGC(env, info, 6);
     CHECK_LIB_LOADED(env);
-    if (!pfn_doeNativeDeviceCreateBufferBindGroupLayoutFlat4) {
-        NAPI_THROW(env, "createBufferBindGroupLayoutFlat4 unavailable");
-    }
+    /* Optional provider fast path: undefined sends JS to the standard
+     * createBindGroupLayout with the complete entry descriptors. */
+    if (!pfn_doeNativeDeviceCreateBufferBindGroupLayoutFlat4) return NULL;
     WGPUDevice device = unwrap_ptr(env, _args[0]);
     if (!device) NAPI_THROW(env, "Invalid device");
     uint32_t entry_count = 0;
@@ -441,9 +441,8 @@ napi_value doe_create_bind_group(napi_env env, napi_callback_info info) {
 napi_value doe_create_buffer_bind_group_flat4(napi_env env, napi_callback_info info) {
     NAPI_ASSERT_ARGC(env, info, 15);
     CHECK_LIB_LOADED(env);
-    if (!pfn_doeNativeDeviceCreateBufferBindGroupFlat4) {
-        NAPI_THROW(env, "createBufferBindGroupFlat4 unavailable");
-    }
+    /* Optional provider fast path: undefined sends JS to the standard createBindGroup. */
+    if (!pfn_doeNativeDeviceCreateBufferBindGroupFlat4) return NULL;
     WGPUDevice device = unwrap_ptr(env, _args[0]);
     WGPUBindGroupLayout layout = unwrap_ptr(env, _args[1]);
     if (!device || !layout) NAPI_THROW(env, "Invalid device or layout");
@@ -569,19 +568,23 @@ napi_value doe_create_pipeline_layout(napi_env env, napi_callback_info info) {
 napi_value doe_create_pipeline_layout_one(napi_env env, napi_callback_info info) {
     NAPI_ASSERT_ARGC(env, info, 3);
     CHECK_LIB_LOADED(env);
-    if (!pfn_doeNativeDeviceCreatePipelineLayoutOne) {
-        NAPI_THROW(env, "createPipelineLayoutOne unavailable");
-    }
     WGPUDevice device = unwrap_ptr(env, _args[0]);
     WGPUBindGroupLayout layout = unwrap_ptr(env, _args[1]);
     if (!device || !layout) NAPI_THROW(env, "Invalid device or layout");
     uint32_t immediate_size = 0;
     napi_get_value_uint32(env, _args[2], &immediate_size);
-    WGPUPipelineLayout pipeline_layout = pfn_doeNativeDeviceCreatePipelineLayoutOne(
-        device,
-        layout,
-        immediate_size
-    );
+    WGPUPipelineLayout pipeline_layout;
+    if (pfn_doeNativeDeviceCreatePipelineLayoutOne) {
+        pipeline_layout = pfn_doeNativeDeviceCreatePipelineLayoutOne(device, layout, immediate_size);
+    } else {
+        /* Exact standard equivalent for providers without the Doe fast path. */
+        const WGPUPipelineLayoutDescriptor desc = {
+            .bindGroupLayoutCount = 1,
+            .bindGroupLayouts = &layout,
+            .immediateSize = immediate_size,
+        };
+        pipeline_layout = pfn_wgpuDeviceCreatePipelineLayout(device, &desc);
+    }
     if (!pipeline_layout) NAPI_THROW(env, "createPipelineLayoutOne failed");
     return wrap_ptr(env, pipeline_layout);
 }

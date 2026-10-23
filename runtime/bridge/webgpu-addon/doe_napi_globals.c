@@ -65,6 +65,7 @@ PFN_wgpuCommandEncoderBeginComputePass pfn_wgpuCommandEncoderBeginComputePass = 
 PFN_wgpuCommandEncoderCopyBufferToBuffer pfn_wgpuCommandEncoderCopyBufferToBuffer = NULL;
 PFN_wgpuCommandEncoderCopyBufferToTexture pfn_wgpuCommandEncoderCopyBufferToTexture = NULL;
 PFN_wgpuCommandEncoderCopyTextureToBuffer pfn_wgpuCommandEncoderCopyTextureToBuffer = NULL;
+PFN_wgpuQueueWriteTexture pfn_wgpuQueueWriteTexture = NULL;
 PFN_doeNativeCommandEncoderCopyBufferToTexture pfn_doeNativeCommandEncoderCopyBufferToTexture = NULL;
 PFN_doeNativeCommandEncoderCopyTextureToBuffer pfn_doeNativeCommandEncoderCopyTextureToBuffer = NULL;
 PFN_wgpuCommandEncoderFinish pfn_wgpuCommandEncoderFinish = NULL;
@@ -98,6 +99,7 @@ PFN_wgpuDeviceCreateSampler pfn_wgpuDeviceCreateSampler = NULL;
 PFN_wgpuSamplerRelease pfn_wgpuSamplerRelease = NULL;
 PFN_wgpuDeviceCreateRenderPipeline pfn_wgpuDeviceCreateRenderPipeline = NULL;
 PFN_wgpuRenderPipelineRelease pfn_wgpuRenderPipelineRelease = NULL;
+PFN_wgpuRenderPipelineGetBindGroupLayout pfn_wgpuRenderPipelineGetBindGroupLayout = NULL;
 PFN_wgpuCommandEncoderBeginRenderPass pfn_wgpuCommandEncoderBeginRenderPass = NULL;
 PFN_wgpuRenderPassEncoderSetPipeline pfn_wgpuRenderPassEncoderSetPipeline = NULL;
 PFN_wgpuRenderPassEncoderSetBindGroup pfn_wgpuRenderPassEncoderSetBindGroup = NULL;
@@ -152,6 +154,19 @@ PFN_doeNativeCommandEncoderWriteTimestamp pfn_doeNativeCommandEncoderWriteTimest
 PFN_doeNativeCommandEncoderResolveQuerySet pfn_doeNativeCommandEncoderResolveQuerySet = NULL;
 PFN_doeNativeQuerySetDestroy pfn_doeNativeQuerySetDestroy = NULL;
 PFN_doeNativeQuerySetRelease pfn_doeNativeQuerySetRelease = NULL;
+PFN_wgpuRenderPassEncoderSetViewport pfn_wgpuRenderPassEncoderSetViewport = NULL;
+PFN_wgpuRenderPassEncoderSetScissorRect pfn_wgpuRenderPassEncoderSetScissorRect = NULL;
+PFN_wgpuRenderPassEncoderSetBlendConstant pfn_wgpuRenderPassEncoderSetBlendConstant = NULL;
+PFN_wgpuRenderPassEncoderSetStencilReference pfn_wgpuRenderPassEncoderSetStencilReference = NULL;
+PFN_wgpuRenderPassEncoderPushDebugGroup pfn_wgpuRenderPassEncoderPushDebugGroup = NULL;
+PFN_wgpuRenderPassEncoderPopDebugGroup pfn_wgpuRenderPassEncoderPopDebugGroup = NULL;
+PFN_wgpuRenderPassEncoderInsertDebugMarker pfn_wgpuRenderPassEncoderInsertDebugMarker = NULL;
+PFN_wgpuCommandEncoderClearBuffer pfn_wgpuCommandEncoderClearBuffer = NULL;
+PFN_wgpuDeviceCreateQuerySet pfn_wgpuDeviceCreateQuerySet = NULL;
+PFN_wgpuCommandEncoderWriteTimestamp pfn_wgpuCommandEncoderWriteTimestamp = NULL;
+PFN_wgpuCommandEncoderResolveQuerySet pfn_wgpuCommandEncoderResolveQuerySet = NULL;
+PFN_wgpuQuerySetDestroy pfn_wgpuQuerySetDestroy = NULL;
+PFN_wgpuQuerySetRelease pfn_wgpuQuerySetRelease = NULL;
 PFN_doeNativeBufferMapAsync pfn_doeNativeBufferMapAsync = NULL;
 PFN_doeBufferMapReadCopyUnmapFlat pfn_doeBufferMapReadCopyUnmapFlat = NULL;
 
@@ -297,6 +312,7 @@ napi_value doe_load_library(napi_env env, napi_callback_info info) {
     LOAD_SYM(wgpuCommandEncoderCopyBufferToBuffer);
     LOAD_SYM(wgpuCommandEncoderCopyBufferToTexture);
     LOAD_SYM(wgpuCommandEncoderCopyTextureToBuffer);
+    LOAD_SYM(wgpuQueueWriteTexture);
     LOAD_SYM(doeNativeCommandEncoderCopyBufferToTexture);
     LOAD_SYM(doeNativeCommandEncoderCopyTextureToBuffer);
     LOAD_SYM(wgpuCommandEncoderFinish);
@@ -329,6 +345,7 @@ napi_value doe_load_library(napi_env env, napi_callback_info info) {
     LOAD_SYM(wgpuSamplerRelease);
     LOAD_SYM(wgpuDeviceCreateRenderPipeline);
     LOAD_SYM(wgpuRenderPipelineRelease);
+    LOAD_SYM(wgpuRenderPipelineGetBindGroupLayout);
     LOAD_SYM(wgpuCommandEncoderBeginRenderPass);
     LOAD_SYM(wgpuRenderPassEncoderSetPipeline);
     LOAD_SYM(wgpuRenderPassEncoderSetBindGroup);
@@ -394,6 +411,19 @@ napi_value doe_load_library(napi_env env, napi_callback_info info) {
     pfn_doeNativeCommandEncoderResolveQuerySet = (PFN_doeNativeCommandEncoderResolveQuerySet)LIB_SYM(g_lib, "doeNativeCommandEncoderResolveQuerySet");
     pfn_doeNativeQuerySetDestroy = (PFN_doeNativeQuerySetDestroy)LIB_SYM(g_lib, "doeNativeQuerySetDestroy");
     pfn_doeNativeQuerySetRelease = (PFN_doeNativeQuerySetRelease)LIB_SYM(g_lib, "doeNativeQuerySetRelease");
+    LOAD_SYM(wgpuRenderPassEncoderSetViewport);
+    LOAD_SYM(wgpuRenderPassEncoderSetScissorRect);
+    LOAD_SYM(wgpuRenderPassEncoderSetBlendConstant);
+    LOAD_SYM(wgpuRenderPassEncoderSetStencilReference);
+    LOAD_SYM(wgpuRenderPassEncoderPushDebugGroup);
+    LOAD_SYM(wgpuRenderPassEncoderPopDebugGroup);
+    LOAD_SYM(wgpuRenderPassEncoderInsertDebugMarker);
+    LOAD_SYM(wgpuCommandEncoderClearBuffer);
+    LOAD_SYM(wgpuDeviceCreateQuerySet);
+    LOAD_SYM(wgpuCommandEncoderWriteTimestamp);
+    LOAD_SYM(wgpuCommandEncoderResolveQuerySet);
+    LOAD_SYM(wgpuQuerySetDestroy);
+    LOAD_SYM(wgpuQuerySetRelease);
 
     /* Optional symbols for 14-binding expansion — absent until delivered. */
     pfn_doeNativeAdapterGetPreferredCanvasFormat = (FnAdapterGetPreferredCanvasFormat)LIB_SYM(g_lib, "doeNativeAdapterGetPreferredCanvasFormat");

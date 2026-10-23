@@ -307,14 +307,9 @@ napi_value native_direct_queue_write_texture(napi_env env, napi_callback_info in
     napi_valuetype size_type;
     napi_typeof(env, argv[3], &size_type);
     if (size_type == napi_object) get_extent_3d(env, argv[3], &width, &height, &depth_or_layers);
-    if (pfn_doeNativeQueueWriteTexture) {
-        pfn_doeNativeQueueWriteTexture(
-            queue, texture,
-            data, data_len,
-            bytes_per_row, rows_per_image,
-            dst_x, dst_y, dst_z, dst_mip, 0,
-            width, height, depth_or_layers);
-    }
+    if (!doe_queue_write_texture_native(queue, texture, data, data_len, bytes_per_row, rows_per_image,
+            dst_x, dst_y, dst_z, dst_mip, width, height, depth_or_layers))
+        NAPI_THROW(env, "queueWriteTexture: no implementation available in loaded library");
     napi_value undefined_value;
     napi_get_undefined(env, &undefined_value);
     return undefined_value;
@@ -403,7 +398,7 @@ napi_value native_direct_queue_on_submitted_work_done(napi_env env, napi_callbac
             QueueWorkDoneResult result = {0};
             WGPUQueueWorkDoneCallbackInfo cb_info = {
                 .nextInChain = NULL,
-                .mode = WGPU_CALLBACK_MODE_WAIT_ANY_ONLY,
+                .mode = WGPU_CALLBACK_MODE_ALLOW_PROCESS_EVENTS,
                 .callback = queue_work_done_callback,
                 .userdata1 = &result,
                 .userdata2 = NULL,
@@ -480,7 +475,7 @@ napi_value native_direct_buffer_map_async(napi_env env, napi_callback_info info)
             QueueWorkDoneResult result = {0};
             WGPUQueueWorkDoneCallbackInfo cb_info = {
                 .nextInChain = NULL,
-                .mode = WGPU_CALLBACK_MODE_WAIT_ANY_ONLY,
+                .mode = WGPU_CALLBACK_MODE_ALLOW_PROCESS_EVENTS,
                 .callback = queue_work_done_callback,
                 .userdata1 = &result,
                 .userdata2 = NULL,
@@ -676,7 +671,7 @@ napi_value native_direct_buffer_map_read_copy_unmap(napi_env env, napi_callback_
             QueueWorkDoneResult qresult = {0};
             WGPUQueueWorkDoneCallbackInfo cb_info = {
                 .nextInChain = NULL,
-                .mode = WGPU_CALLBACK_MODE_WAIT_ANY_ONLY,
+                .mode = WGPU_CALLBACK_MODE_ALLOW_PROCESS_EVENTS,
                 .callback = queue_work_done_callback,
                 .userdata1 = &qresult,
                 .userdata2 = NULL,

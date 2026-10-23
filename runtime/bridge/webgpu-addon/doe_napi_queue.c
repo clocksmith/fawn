@@ -216,7 +216,7 @@ napi_value doe_command_encoder_clear_buffer(napi_env env, napi_callback_info inf
     napi_get_cb_info(env, info, &argc, argv, NULL, NULL);
     CHECK_LIB_LOADED(env);
     if (argc < 2) NAPI_THROW(env, "commandEncoderClearBuffer requires encoder and buffer");
-    if (!pfn_doeNativeCommandEncoderClearBuffer)
+    if (!pfn_doeNativeCommandEncoderClearBuffer && !pfn_wgpuCommandEncoderClearBuffer)
         NAPI_THROW(env, "commandEncoderClearBuffer: no implementation available in loaded library");
     WGPUCommandEncoder enc = unwrap_ptr(env, argv[0]);
     WGPUBuffer buffer = unwrap_ptr(env, argv[1]);
@@ -238,7 +238,8 @@ napi_value doe_command_encoder_clear_buffer(napi_env env, napi_callback_info inf
             else if (v == 0) size = 0;
         }
     }
-    pfn_doeNativeCommandEncoderClearBuffer(enc, buffer, offset, size);
+    if (pfn_doeNativeCommandEncoderClearBuffer) pfn_doeNativeCommandEncoderClearBuffer(enc, buffer, offset, size);
+    else pfn_wgpuCommandEncoderClearBuffer(enc, buffer, offset, size);
     return NULL;
 }
 
@@ -1925,6 +1926,26 @@ napi_value doe_queue_release(napi_env env, napi_callback_info info) {
     return NULL;
 }
 
+bool doe_queue_write_texture_native(void* queue, void* texture, const void* data, size_t data_len,
+    uint32_t bytes_per_row, uint32_t rows_per_image, uint32_t x, uint32_t y, uint32_t z,
+    uint32_t mip, uint32_t width, uint32_t height, uint32_t depth_or_layers) {
+    if (pfn_doeNativeQueueWriteTexture) {
+        pfn_doeNativeQueueWriteTexture(queue, texture, data, data_len, bytes_per_row, rows_per_image,
+            x, y, z, mip, 0, width, height, depth_or_layers);
+        return true;
+    }
+    if (!pfn_wgpuQueueWriteTexture) return false;
+    WGPUTexelCopyTextureInfo destination; memset(&destination, 0, sizeof(destination));
+    destination.texture = texture;
+    destination.mipLevel = mip;
+    destination.origin = (WGPUOrigin3D){x, y, z};
+    destination.aspect = 1u; /* WGPUTextureAspect_All */
+    const WGPUTexelCopyBufferLayout layout = {0u, bytes_per_row, rows_per_image};
+    const WGPUExtent3D size = {width, height, depth_or_layers};
+    pfn_wgpuQueueWriteTexture(queue, &destination, data, data_len, &layout, &size);
+    return true;
+}
+
 /* queueWriteTexture(queueNative, textureNative, dataBuffer, dataOffset,
  *                  bytesPerRow, rowsPerImage, mipLevel,
  *                  originX, originY, originZ, width, height, depthOrArrayLayers) */
@@ -1967,12 +1988,9 @@ napi_value doe_queue_write_texture(napi_env env, napi_callback_info info) {
         data = ((uint8_t*)data) + data_offset;
         data_len -= data_offset;
     }
-    if (pfn_doeNativeQueueWriteTexture) {
-        pfn_doeNativeQueueWriteTexture(queue, texture, data, data_len,
-            bytes_per_row, rows_per_image,
-            origin_x, origin_y, origin_z, mip_level, 0,
-            width, height, depth_or_layers);
-    }
+    if (!doe_queue_write_texture_native(queue, texture, data, data_len, bytes_per_row, rows_per_image,
+            origin_x, origin_y, origin_z, mip_level, width, height, depth_or_layers))
+        NAPI_THROW(env, "queueWriteTexture: no implementation available in loaded library");
     napi_value undefined_value;
     napi_get_undefined(env, &undefined_value);
     return undefined_value;
