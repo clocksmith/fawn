@@ -1,7 +1,7 @@
 # M10 frozen storage and lowering ledger
 
 Frozen contract ledger. Read with MILESTONE_10.md. The source at
-contracts/m10_contracts/m10_layout_probe.c is a standalone record-layout probe, not candidate
+contracts/m10_layout_probe.c is a standalone record-layout probe, not candidate
 compiler code or a candidate test. Original planning revisions and measurement
 receipts remain unchanged in the isolated milestone10/planning evidence.
 
