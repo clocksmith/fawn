@@ -211,3 +211,10 @@ binds 49 exact owner inputs, unchanged across strict and UBSan-only host checks:
 47 groups cover core, texture, graphics, mesh, indirect and uniform behavior.
 It records the ASan startup block and unrun SDK/DXC/driver boundaries explicitly.
 Earlier evidence never qualifies changed bytes.
+
+[Actual Windows SDK developer build](DEVELOPER_RECEIPT_WINDOWS_SDK.json) at
+`a29e2fec5` compiles the complete private backend and links all four native
+clients with MSVC14.51/SDK10.0.26100 under `/std:c11 /W4 /WX`.
+The first SDK failure was fixed by replacing an unused legacy compiler include
+with the required common SDK types. All30 output hashes verify. No client was
+executed; device, public frontend and physical qualification remain separate.
