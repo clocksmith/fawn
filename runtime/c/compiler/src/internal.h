@@ -3,7 +3,7 @@
 #ifndef DOE_COMPILER_INTERNAL_H
 #define DOE_COMPILER_INTERNAL_H
 #include "../include/doe_compiler_job.h"
-#include "../include/doe_compiler_typed.h"
+#include "../include/doe_compiler_module.h"
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -85,7 +85,8 @@ typedef struct {
 enum { FUNCTION_ENTRY = 1u, FUNCTION_MUST_USE = 2u };
 typedef struct {
     NameSpan name; TypeRef annotation;
-    uint32_t formal_start, formal_count, statement_start, statement_end;
+    union { uint32_t formal_start, entry_index; };
+    uint32_t formal_count, statement_start, statement_end;
     uint32_t expression_start, expression_end, instruction_start, instruction_end;
     uint32_t local_start, local_count, result_type, flags, value_base;
     union { struct { uint32_t scan, parent, color; } graph;
@@ -143,14 +144,29 @@ typedef struct { uint32_t kind, id; TypeId type; uint32_t storage, first, count;
 typedef struct { uint32_t kind, object, cursor, parent; } WalkItem;
 typedef enum { INPUT_GLOBAL_INVOCATION, INPUT_LOCAL_INVOCATION, INPUT_WORKGROUP,
     INPUT_NUM_WORKGROUPS, INPUT_LOCAL_INDEX } InputKind;
-typedef struct { NameSpan name; InputKind kind; uint32_t flags; } EntryParameter;
+typedef struct { NameSpan name; InputKind kind; uint32_t flags, target; } EntryInput;
+typedef struct {
+    uint32_t function, input_first, input_count, source_input_mask;
+    union {
+        Integer dimensions[3];
+        struct {
+            uint32_t workgroup_size[3], resource_first, resource_count;
+            uint32_t workgroup_first, workgroup_count, local_index_target, target_input_mask;
+            uint64_t workgroup_storage_bytes;
+        } resolved;
+    } state;
+} EntryRecord;
+typedef enum { SOURCE_NONE, SOURCE_FUNCTION, SOURCE_BARRIER, SOURCE_RESOURCE,
+    SOURCE_WORKGROUP, SOURCE_INPUT } SourceReferenceKind;
+typedef struct { SourceReferenceKind kind; uint32_t index; } SourceReference;
 typedef struct {
     uint32_t source_bytes, tokens, statements, expressions, physical_expressions, instructions;
     uint32_t types, members, resources, accesses, constants, edges, targets, generic_syntax, traversal;
     size_t words;
     uint32_t operands, expression_depth, control_depth, type_depth, flags;
+    uint32_t entries, entry_inputs, entry_references;
 } CompilerLimits;
-enum { LIMIT_LEGACY = 1u };
+enum { LIMIT_LEGACY = 1u, LIMIT_SINGULAR = 2u, LIMIT_MODULE = 4u };
 typedef struct CompilerWorkspace CompilerWorkspace;
 typedef struct { const char *source; size_t length; DoeCompilerDiagnostic *diagnostic;
     const CompilerLimits *limits; CompilerWorkspace *compiler;
@@ -161,16 +177,18 @@ struct CompilerWorkspace {
     FunctionRecord *functions; FormalRecord *formals; ArgumentSyntax *arguments; GenericSyntax *generic_syntax;
     TypeRecord *types; MemberRecord *members; ResourceRecord *resources; ConstantRecord *constants;
     ConstantValue *constant_edges; AccessStep *accesses; IrLocal *locals;
-    LocalBinding *scope; TargetDeclaration *targets; WalkItem *walk; uint32_t *values, *typed_operands, *words, *callees, *reflection_map;
+    LocalBinding *scope; TargetDeclaration *targets; WalkItem *walk; uint32_t *values, *typed_operands, *words, *reflection_map;
+    SourceReference *expression_references, *statement_references;
+    EntryRecord *entries; EntryInput *entry_inputs; uint32_t *entry_references;
     uint32_t token_count, expression_count, expression_budget_count, statement_count, constant_decl_count;
     uint32_t function_count, formal_count, argument_count, generic_count, type_count, member_count;
     uint32_t resource_count, constant_count, edge_count, access_count, instruction_count, local_count;
-    uint32_t operand_count, target_count, walk_count, entry_function, current_function;
+    uint32_t operand_count, target_count, walk_count, current_function;
+    uint32_t entry_count, entry_input_count, entry_reference_count;
     size_t word_count;
-    NameSpan alias, alias_source; EntryParameter parameters[MAX_ENTRY_PARAMETERS];
-    uint32_t parameter_count; Integer local_size[3];
+    NameSpan alias, alias_source;
     WorkgroupRoot *workgroups; unsigned char *uniformity;
-    uint32_t workgroup_count, uniformity_flags; uint64_t workgroup_storage_bytes;
+    uint32_t workgroup_count, uniformity_flags;
     unsigned char *statement_behaviors;
 };
 typedef CompilerWorkspace Syntax;
@@ -178,33 +196,46 @@ typedef CompilerWorkspace IrProgram;
 typedef struct {
     CompilerWorkspace job;
     Expression expressions[337]; Statement statements[16]; ConstantSyntax constant_decls[321];
-    FunctionRecord functions[341]; FormalRecord formals[512]; ArgumentSyntax arguments[320]; uint32_t callees[337];
+    FunctionRecord functions[341]; FormalRecord formals[512]; ArgumentSyntax arguments[320];
     GenericSyntax generic_syntax[32]; TypeRecord types[32]; MemberRecord members[64]; ResourceRecord resources[8];
     WorkgroupRoot workgroups[256];
     ConstantRecord constants[64]; ConstantValue constant_edges[128]; AccessStep accesses[337];
+    EntryRecord entries[1]; EntryInput entry_inputs[5]; uint32_t entry_references[264];
     union { Token tokens[2049]; struct {
         IrInstruction instructions[385]; IrLocal locals[354]; LocalBinding scope[17];
         uint32_t values[898], typed_operands[320]; unsigned char statement_behaviors[16];
         union { struct { uint32_t reflection_map[39];
             TargetDeclaration targets[464]; WalkItem walk[97]; uint32_t words[4096];
         } target; struct {
-            unsigned char expression_bits[337], current_local[17], formal_summary[512], function_summary[341];
-            uint32_t metadata[30][8]; unsigned char frame_maps[30*6*17];
-        } uniformity; uint64_t alignment; } scratch;
+            SourceReference expression_references[337], statement_references[16];
+            union {
+                struct {
+                    unsigned char expression_bits[337], current_local[17], formal_summary[512], function_summary[341];
+                    uint32_t metadata[30][8]; unsigned char frame_maps[30*6*17];
+                } uniformity;
+                struct { unsigned char marks[264]; uint32_t sorted[8]; } closure;
+                WalkItem semantic_walk[97];
+            } analysis;
+        } references; uint64_t alignment; } scratch;
     } lowered; } phase;
 } LegacyWorkspace;
 
 bool source_error(Source *, DoeCompilerStatus, size_t, const char *);
 bool source_pool_error(Source *, uint32_t, size_t, size_t, const char *);
 bool compiler_job_layout(const DoeCompilerJobCapacities *, CompilerLimits *, size_t *);
+bool compiler_module_layout(const DoeCompilerModuleCapacities *, CompilerLimits *, size_t *);
 bool compiler_typed_layout(const DoeCompilerTypedCapacities *, CompilerLimits *, size_t *);
+bool compiler_target_phase(Source *);
 void compiler_job_bind(CompilerWorkspace *, void *, const CompilerLimits *);
 void compiler_legacy_bind(LegacyWorkspace *, bool);
 bool lex_source(Source *, CompilerWorkspace *);
 bool parse_tokens(Source *, CompilerWorkspace *);
 bool validate_syntax(Source *, CompilerWorkspace *);
+bool module_closures(Source *);
+bool source_reference_record(Source *, SourceReference *, SourceReferenceKind, uint32_t, uint32_t);
 bool emit_spirv(Source *, CompilerWorkspace *);
 bool reflect_prepare(Source *, CompilerWorkspace *, DoeCompilerTypedOutputCounts *);
+void reflect_module(const Source *, const CompilerWorkspace *, const DoeCompilerModuleOutputs *, uint32_t, DoeCompilerModuleV5 *);
 void reflect_typed(const Source *, const CompilerWorkspace *, const DoeCompilerTypedOutputs *, DoeCompilerModuleV4 *);
 bool reflect_legacy_admit(Source *, const CompilerWorkspace *, bool);
 void reflect_program(const Source *, const CompilerWorkspace *, DoeCompilerReflection *);

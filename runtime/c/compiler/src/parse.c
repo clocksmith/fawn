@@ -106,11 +106,11 @@ static bool resource_attributes(Parser *p, Syntax *syntax, ResourceRecord *s) {
 }
 static bool workgroup_dimensions(Parser *p, Syntax *s) {
     if (!punctuation(p, '(', "(")) return false;
-    for (size_t i = 0; i < 3u; ++i) s->local_size[i] = (Integer){ .value = 1u, .expression = UINT32_MAX };
+    for (size_t i = 0; i < 3u; ++i) s->entries[s->entry_count].state.dimensions[i] = (Integer){ .value = 1u, .expression = UINT32_MAX };
     size_t count = 0u;
     do {
         if (count == 3u) return reject(p, "at most three workgroup dimensions");
-        if (!attribute_value(p, s, &s->local_size[count++])) return false;
+        if (!attribute_value(p, s, &s->entries[s->entry_count].state.dimensions[count++])) return false;
         if (peek(p)->kind != ',') break;
         ++p->cursor;
     } while (peek(p)->kind != ')');
@@ -647,16 +647,16 @@ static bool starts_legacy_alias(const Parser *p, const Syntax *s) {
     if (p->tokens->token_count - p->cursor < 7u) return false;
     const Token *t = p->tokens->tokens + p->cursor;
     bool global = false;
-    for (size_t i = 0; i < s->parameter_count; ++i)
-        if (s->parameters[i].kind == INPUT_GLOBAL_INVOCATION &&
-            t[3].length == s->parameters[i].name.length && memcmp(p->source->source+t[3].offset,p->source->source+s->parameters[i].name.offset,t[3].length)==0) global = true;
+    for (size_t i = 0; i < s->entry_input_count; ++i)
+        if (s->entry_inputs[i].kind == INPUT_GLOBAL_INVOCATION &&
+            t[3].length == s->entry_inputs[i].name.length && memcmp(p->source->source+t[3].offset,p->source->source+s->entry_inputs[i].name.offset,t[3].length)==0) global = true;
     return global && t[0].kind == TOKEN_WORD && spelled(p, &t[0], "let") &&
            t[1].kind == TOKEN_WORD && t[2].kind == '=' && t[3].kind == TOKEN_WORD &&
            t[4].kind == '.' && t[5].kind == TOKEN_WORD && spelled(p, &t[5], "x") &&
            t[6].kind == ';';
 }
 
-static bool entry_parameter(Parser *p, EntryParameter *parameter) {
+static bool entry_parameter(Parser *p, EntryInput *parameter) {
     if (!punctuation(p, '@', "@builtin") || !word(p, "builtin") ||
         !punctuation(p, '(', "(")) return false;
     const Token *builtin = peek(p);
@@ -682,10 +682,14 @@ static bool entry_parameter(Parser *p, EntryParameter *parameter) {
 static bool entry_parameters(Parser *p, Syntax *s) {
     if (!punctuation(p, '(', "(")) return false;
     while (peek(p)->kind != ')') {
-        if (s->parameter_count == MAX_ENTRY_PARAMETERS)
-            return source_error(p->source, DOE_COMPILER_INPUT_ERROR, peek(p)->offset,
-                                "entry point exceeds five builtin parameters");
-        if (!entry_parameter(p, &s->parameters[s->parameter_count++])) return false;
+        if (s->entry_input_count == s->limits.entry_inputs)
+            return source_pool_error(p->source, DOE_COMPILER_POOL_ENTRY_INPUTS,
+                (size_t)s->entry_input_count+1u, peek(p)->offset, "entry input capacity exceeded");
+        EntryInput *input=&s->entry_inputs[s->entry_input_count];
+        memset(input,0,sizeof(*input));
+        if (!entry_parameter(p, input)) return false;
+        ++s->entry_input_count;
+        ++s->entries[s->entry_count].input_count;
         if (peek(p)->kind != ',') break;
         ++p->cursor;
     }
@@ -720,7 +724,7 @@ static bool module_constant(Parser *p, Syntax *s, bool first) {
     ++s->constant_decl_count;
     return true;
 }
-static bool function_declaration(Parser *p, Syntax *s, bool *has_entry) {
+static bool function_declaration(Parser *p, Syntax *s) {
     if (s->function_count == s->limits.tokens / 6u)
         return source_pool_error(p->source, DOE_COMPILER_POOL_TOKENS, 6u*((size_t)s->function_count+1u), peek(p)->offset,
                             "function declaration capacity exceeded");
@@ -735,15 +739,27 @@ static bool function_declaration(Parser *p, Syntax *s, bool *has_entry) {
     }
     const bool entry = peek(p)->kind == '@';
     if (entry) {
-        if (*has_entry)
-            return source_error(p->source, DOE_COMPILER_UNSUPPORTED, peek(p)->offset,
-                                "one compute entry is supported");
+        if (s->entry_count == s->limits.entries) {
+            if ((s->limits.flags&LIMIT_SINGULAR)==0u)
+                return source_pool_error(p->source,DOE_COMPILER_POOL_ENTRIES,
+                    (size_t)s->entry_count+1u,peek(p)->offset,"entry capacity exceeded");
+            /* A singular adapter can reject at the second declaration name
+             * without storing or accepting its unrepresentable remainder. */
+            while (peek(p)->kind!=TOKEN_END && !spelled(p,peek(p),"fn")) ++p->cursor;
+            if (!word(p,"fn") || !name_span(p,&function->name)) return false;
+            return source_error(p->source,DOE_COMPILER_UNSUPPORTED,function->name.offset,
+                "multiple compute entries cannot use a singular reflection projection");
+        }
+        EntryRecord *record=&s->entries[s->entry_count];
+        memset(record,0,sizeof(*record));
+        record->function=s->function_count;
+        record->input_first=s->entry_input_count;
         if (!entry_attributes(p, s)) return false;
         function->flags |= FUNCTION_ENTRY;
-        s->entry_function = (uint32_t)s->function_count;
     }
     if (!word(p, "fn") || !name_span(p, &function->name)) return false;
-    function->formal_start = (uint32_t)s->formal_count;
+    if (entry) function->entry_index=s->entry_count;
+    else function->formal_start = (uint32_t)s->formal_count;
     if (entry) {
         if (!entry_parameters(p, s)) return false;
     } else {
@@ -780,13 +796,12 @@ static bool function_declaration(Parser *p, Syntax *s, bool *has_entry) {
     function->statement_end = (uint32_t)s->statement_count;
     function->expression_end = (uint32_t)s->expression_count;
     ++s->function_count;
-    if (entry) *has_entry = true;
+    if (entry) ++s->entry_count;
     return true;
 }
 bool parse_tokens(Source *source,CompilerWorkspace *s) {
     Parser p={.source=source,.tokens=s,.exempt_comparison=NO_ID,.exempt_literal=NO_ID};
-    memset(s->callees,0,(size_t)s->limits.physical_expressions*sizeof(*s->callees));
-    bool has_entry=false,first=true;
+    bool first=true;
     while (peek(&p)->kind!=TOKEN_END) {
         if (peek(&p)->kind==';') {++p.cursor;continue;}
         if (spelled(&p,peek(&p),"const")) {if (!module_constant(&p,s,first)) return false;}
@@ -797,8 +812,8 @@ bool parse_tokens(Source *source,CompilerWorkspace *s) {
                 return source_pool_error(source,DOE_COMPILER_POOL_RESOURCES,(size_t)s->resource_count+1u,peek(&p)->offset,"resource capacity exceeded");
             if (!resource_declaration(&p,s,&s->resources[s->resource_count])) return false;
             ++s->resource_count;
-        } else if (!function_declaration(&p,s,&has_entry)) return false;
+        } else if (!function_declaration(&p,s)) return false;
         first=false;
     }
-    return has_entry || reject(&p,"one compute entry point");
+    return s->entry_count!=0u || reject(&p,"one compute entry point");
 }

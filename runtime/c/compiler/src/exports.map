@@ -4,5 +4,7 @@
     global: doe_compiler_compile; doe_compiler_workspace_requirements; doe_compiler_compile_v2; doe_compiler_job_requirements; doe_compiler_compile_job;
     doe_compiler_typed_requirements;
     doe_compiler_compile_typed;
+    doe_compiler_module_requirements;
+    doe_compiler_compile_module;
     local: *;
 };
