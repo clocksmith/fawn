@@ -1,0 +1,134 @@
+{
+  "status": "focused developer checks, independent target/hardware qualification pending",
+  "compiler_commit": "fa61e2c11e23499ff22962bb64086df29a1e2840",
+  "before_target_commit": "ed9ec34c329a705dd046a03b8ef321ec5a9bdf26",
+  "source_sha256": {
+    "runtime/c/compiler/targets/closure.h": "eccf55b9650ff3c324fbc90439e805173944f0d872a1a448c3d480a65ede1f38",
+    "runtime/c/compiler/targets/hlsl/Makefile": "81d1f5b8510d6e6c277c17f2b4bbae8a2ec379a03671e3184209425ff1c80aba",
+    "runtime/c/compiler/targets/hlsl/access.c": "08dff2f1bf720e6353df4e3fd61f90fe728df59cb9e4d9107acabdf4e298c51e",
+    "runtime/c/compiler/targets/hlsl/control.c": "86fdbbd33f329ca2e9dfb4b3d586f4b1b377efdc9801764a2d3b26fb7a36c7f8",
+    "runtime/c/compiler/targets/hlsl/graphics.c": "32d670c8566a2eb95df42ed5cd520008e0547dd2dd7f4d0e1401ee780d18f02e",
+    "runtime/c/compiler/targets/hlsl/hlsl.h": "05a1731c996df3e36ff34d677cff8ec8ce1667841fd022ac10e4cc8261ee8f4b",
+    "runtime/c/compiler/targets/hlsl/image.c": "7da91071bb23d5f528ce9182ad4b0a76fb6752c904e3651239f7aae50c34d277",
+    "runtime/c/compiler/targets/hlsl/image_types.c": "3d05bae9af4b9ad01df127f95d751dc4b49ca576e6c3bdd1e0c13486f1c48649",
+    "runtime/c/compiler/targets/hlsl/numeric.c": "6abbb2c496ee08919d5d45d4bdb50bc36f1188bad8bec48d8a55a0a6ca773384",
+    "runtime/c/compiler/targets/hlsl/private.h": "afb7cb93af2260a1f9f56d4bfef172d5cb0566d696b1133adb63dcefbe8ab760",
+    "runtime/c/compiler/targets/hlsl/resources.c": "bbf7cecaa28bb4dd4dc620830859b46b5df773a76fc282096009a9681ebef8c1",
+    "runtime/c/compiler/targets/hlsl/stage.c": "11606c3ffc13933444ad726fb5b5fd87e492f395a2046122df63f2f6fdc587af",
+    "runtime/c/compiler/targets/hlsl/tests/host_control.py": "8c84be079ee170240b9e3988186ecd369ecb41b18d26667204565f7f0d5b9691",
+    "runtime/c/compiler/targets/hlsl/tests/test_graphics.c": "9dd9925e3305c04ccf948296b289333e648a34c8dcca15fa10dac0224cb715c1",
+    "runtime/c/compiler/targets/hlsl/tests/test_hlsl.c": "3580b45e72a1c5ee78d00ce25428306e3e05485a24e90937ad5c0259bb7347ef",
+    "runtime/c/compiler/targets/hlsl/tests/test_images.c": "407b7bd62b71086310fc7e0e4ad34b1a591472861e966bf16ac6224ce9ee5313",
+    "runtime/c/compiler/targets/hlsl/tests/test_support.h": "9ecc7caef7f5a6265be58192193cb04f9376a9659c110a084b3ffc0bc2c26d69",
+    "runtime/c/compiler/targets/hlsl/text.c": "9f82dd159e56466d99f4c34b4eb94845b52accc0c8c8198f3f172b64c2335c50",
+    "runtime/c/compiler/targets/hlsl/types.c": "1d53408b9acdf12fec46e343ae9bc7b4b1b4d619b92dfcf123acbe9acaf406fc",
+    "runtime/c/compiler/targets/ir_view.h": "8ea72c04ede913cf8b070b7f49ce7cdb208cfbc8efc0fb67cea301893d2286f2",
+    "runtime/c/compiler/targets/metal/Makefile": "e9e1fe4cb295c7760fc042fdc7f0da8da2bbef7e80908bef6118983abb73a6c5",
+    "runtime/c/compiler/targets/metal/access.c": "facc419d1b269642bb49968337d04e5448b6c9ea9d55430f4323bcc56d9b71c7",
+    "runtime/c/compiler/targets/metal/control.c": "f53bf43d711376a48aaab565bdbdfe6670f6f8bd305389efdb6fc8d552e155a4",
+    "runtime/c/compiler/targets/metal/handles.c": "dfa1e51e35dea98cf19f8327959c9bc8bd73214cbc7f99d053a43d2622b07912",
+    "runtime/c/compiler/targets/metal/image.c": "f5178d6a4de3bc3352bfe822cb2ed1670e3615607670f59795205bc54700eb77",
+    "runtime/c/compiler/targets/metal/metal.h": "0c70b018c82ea6627e0068b2d5ff39a4e96e79d3045a800e306e9cd7d2d8dda3",
+    "runtime/c/compiler/targets/metal/numeric.c": "57995dd2e7afbe9168f243e8c3c6343730051c5f1f8c318dc21ccbccb99d7937",
+    "runtime/c/compiler/targets/metal/private.h": "579b9412efedcbc86f86b52fa8ccd483022688e36fc5c3a4125141b7b372b7da",
+    "runtime/c/compiler/targets/metal/stage.c": "2065172d29681d199e9557859e8b419ad25bd53360539e2ef75714b82b62a848",
+    "runtime/c/compiler/targets/metal/tests/fixture.h": "e5f17ded68a16ab2a80c553089f58fb92d645ef93d7fd8042343797b4c7f0017",
+    "runtime/c/compiler/targets/metal/tests/host/check_array_length.cpp": "fc3700cae7303d72cfa9f35da85e9e99dc2153a3d7075cbf6904e731d0b021fc",
+    "runtime/c/compiler/targets/metal/tests/host/check_images.cpp": "08351f1461e51fd318bfe00d96c1fe9edbed824e565faead571befb573c58977",
+    "runtime/c/compiler/targets/metal/tests/host/check_layout.cpp": "5e1df0b98f52aac05b68927b9f237ce29b604125b208c8b59aa7ee89b9a01f35",
+    "runtime/c/compiler/targets/metal/tests/host/check_scalar.cpp": "c0ac92c6c5fada67e51ff591db658cea37f28044cbbeefea5f4b301d40c48622",
+    "runtime/c/compiler/targets/metal/tests/host/image_control.h": "1b4432b40a68fc7fe24bc2779ef9ac25b2b578c46e67130dda7e6d2999f52d00",
+    "runtime/c/compiler/targets/metal/tests/host/metal_stdlib": "e64d9361f3e186fc2507347ec1cda2842af41fc209492a06604676a32dfc996e",
+    "runtime/c/compiler/targets/metal/tests/host/vector_control.h": "9758db29a1d847a524760945ffac6b0da16e27733a7d25b721c7f7095f9f77c8",
+    "runtime/c/compiler/targets/metal/tests/test_images.c": "b78ed4e5c1d1d4a7c0d7af759ded4e806314c94ace24f6baffb7508605843915",
+    "runtime/c/compiler/targets/metal/tests/test_metal.c": "016dc35f2902cbe80a67203aa96ebee0593ca262a582df32e719ea2dd7526b66",
+    "runtime/c/compiler/targets/metal/text.c": "48df2cec30245ad8a126e0f6ab092e02f1cdd8e39678da8f7e7222d9d1de46ad",
+    "runtime/c/compiler/targets/metal/types.c": "641f25977d9b0c27d9508ca0d82d24e1874157344a6dbd01ef649251b08448c1",
+    "runtime/c/compiler/targets/tests/array_length_source.h": "6ef6a21f83d29b485220232b7d1fc53390ddca90eef87546320db8d443cba16e",
+    "runtime/c/compiler/targets/tests/closure_source.h": "2714642b96899aaad264460390eb9122101b2b83887c580247c12116068a0ff0",
+    "runtime/c/compiler/targets/tests/test_closure.c": "74c5316e27d92a0fd5c95fe5e52dbb16a653d3b00f42c184e9028390c18bcd89",
+    "runtime/c/compiler/targets/tests/test_ir_view.c": "5feb85ec806b40ca9e7ba12f9fd8a60ca076955dd6f29bf570b514cf80f15929"
+  },
+  "commands": [
+    "make -C runtime/c/compiler/targets/hlsl check host-control library OUT=/tmp/doe-hlsl-closure",
+    "make -C runtime/c/compiler/targets/metal check host-control image-host-control library OUT=/tmp/doe-metal-closure",
+    "gcc -std=c11 -O2 -Wall -Wextra -Wpedantic -Werror -fsanitize=address,undefined runtime/c/compiler/targets/tests/test_closure.c -o /tmp/doe-target-closure",
+    "ASAN_OPTIONS=detect_leaks=0:halt_on_error=1 /tmp/doe-target-closure"
+  ],
+  "changes": [
+    "Shared bounded read-only call graph removes duplicate HLSL traversal and permits selected Metal function/context pruning",
+    "Buffer helpers emitted only for selected reachable root/type/read-or-write use, including called aggregate child helpers",
+    "Vector transfers remain leaves; workgroup initialization explicitly retains whole-root store helper closure",
+    "No IR mutation, allocator or generic callback/graph framework; every repeated scan charges work"
+  ],
+  "checks": [
+    "Both strict C11 adapters/archive builds and all existing source/operator controls pass",
+    "Six HLSL emitted-operation UBSan controls and four Metal host groups pass",
+    "Multi-entry positive and absent-helper/function/context assertions pass",
+    "Shared malformed call/type cycles, invalid identity, exhausted-work, root and transfer-mode controls pass under ASan/UBSan"
+  ],
+  "measurements": [
+    {
+      "target": "hlsl",
+      "fixture": "control",
+      "before_bytes": 8782,
+      "after_bytes": 8193,
+      "before_sha256": "eeeb087b9c912e114ac48d77144e7266ee15ff4411258c208641a5693fc38237",
+      "after_sha256": "f5ad5cd80276db4d0cae654f09178288f39ddf47784e8c9fd1248363d4e583f2"
+    },
+    {
+      "target": "hlsl",
+      "fixture": "aggregate",
+      "before_bytes": 7620,
+      "after_bytes": 5419,
+      "before_sha256": "b60597bc4896406e03a4c074dbd8be0d93fdd2190f155fea3b07f4001e49a8b7",
+      "after_sha256": "30ad4251244089089f055327a362f20f63aa19b9c499d39773ecd31c6714e42c"
+    },
+    {
+      "target": "hlsl",
+      "fixture": "array_length",
+      "before_bytes": 4664,
+      "after_bytes": 2588,
+      "before_sha256": "d58498c61738bfd028dc35e3f8a284d7393a407a870a1fb534848a0971fc5607",
+      "after_sha256": "11dead4f8940ae8b97aa227fb59a6d8842a189e0d57b12c11f9df378c2cec706"
+    },
+    {
+      "target": "metal",
+      "fixture": "control",
+      "before_bytes": 7863,
+      "after_bytes": 6902,
+      "before_sha256": "32c9a593425d5b2b0dcec9f0e9cf4f2823c2d45d4f941eb33818646816c30f21",
+      "after_sha256": "4b97427158038f6c1c13ac222b5fc641030d662e19c3970e57200863b1fed235"
+    },
+    {
+      "target": "metal",
+      "fixture": "aggregate",
+      "before_bytes": 5629,
+      "after_bytes": 4318,
+      "before_sha256": "0d13fcddb45bbda51990e01fac0dcc59244c45ad01ff1ea521096832e6c9e902",
+      "after_sha256": "90521a9da369ab93dbba083181ce4c4398ca15c037d9decc2085da633cfe8d5b"
+    },
+    {
+      "target": "metal",
+      "fixture": "array_length",
+      "before_bytes": 3711,
+      "after_bytes": 2197,
+      "before_sha256": "99222c9c029f879abc9f035ce5f4a7902447a7303b8fbebcc0f9a8b74f3aa117",
+      "after_sha256": "da38fc1d4301584a5ec6dc02a54ff6200b2c9547377f85fcb19d2380c356f587"
+    }
+  ],
+  "logs_sha256": {
+    "doe-hlsl-closure.log": "c0e781874629cff38e441c179cd4e717698c2eb448a9ef5c939d9da3fa36f8c8",
+    "doe-hlsl-closure-r2.log": "5e0e58ff46a6b40a350a428700954f01f04abe2e6942ffbeac5f9fa93f54819b",
+    "doe-hlsl-closure-r3.log": "cfa442d84089c4f1b94ac661609e274af514d4edb347eb803076f34b13f2f88a",
+    "doe-metal-closure.log": "abf54710b63e7c479cf8b651cc22e25c1b9975e4376fafb0ffd5f0ad440642fc",
+    "doe-metal-closure-r2.log": "4f9e9b491e605a9a981b069c093d83826af64063168fc32de61a2d5c7455225a",
+    "doe-metal-closure-r3.log": "3008d4cc84f0c23c26028a2d0c26fb4dedcbea477ae7039845df5462699b6764"
+  },
+  "limitations": [
+    "No DXC or Apple SDK/compiler/device qualification",
+    "Unused concrete type declarations and HLSL constants may still be emitted once per selected module section; the repaired finding concerns resource/access helper multiplication",
+    "Larger target work budget is explicit and remains bounded; no shared compiler workspace/stack ceiling changed",
+    "Source-stage semantic validation remains shared compiler responsibility, including skipped syntax; this target pass only selects emitted operations"
+  ]
+}

@@ -73,11 +73,12 @@ void metal_value(MetalEmitter *e, uint32_t id) {
     } else metal_format(e, "v%u", id);
 }
 static void emit_module(MetalEmitter *e) {
-    e->traversal_left = 1024u * ((uint64_t)e->module->type_count + e->module->member_count + 1u);
+    e->traversal_left = 4096u * ((uint64_t)e->module->type_count +
+        e->module->member_count + e->module->instruction_count + e->module->function_count + 1u);
     e->handle_work_left = 4096u * ((uint64_t)e->module->instruction_count +
         e->module->function_count + e->module->resource_count + 1u);
     for (uint32_t i = 0u; i < e->module->function_count; ++i) {
-        if ((e->module->functions[i].flags & (FUNCTION_VERTEX | FUNCTION_FRAGMENT)) != 0u) {
+        if (metal_function_used(e, i) && (e->module->functions[i].flags & (FUNCTION_VERTEX | FUNCTION_FRAGMENT)) != 0u) {
             e->offset = e->module->functions[i].name.offset;
             metal_error(e, "Metal graphics stages have no implemented lowering");
             return;

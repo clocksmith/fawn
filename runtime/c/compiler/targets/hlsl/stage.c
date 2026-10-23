@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: MIT
  * Copyright (c) 2026 Doe contributors */
 #include "private.h"
+#include "../closure.h"
 
 static bool reference(HlslEmitter *e, uint32_t first, uint32_t count, uint32_t item) {
     const CompilerWorkspace *c = e->module;
@@ -21,54 +22,12 @@ bool hlsl_entry_workgroup(HlslEmitter *e, uint32_t item) {
     const EntryRecord *entry = &e->module->entries[e->entry];
     return reference(e, entry->state.resolved.workgroup_first, entry->state.resolved.workgroup_count, item);
 }
-/* Explicit bounded graph walk; no semantic mutation or second call classifier.
- * Every edge is an already validated IR_CALL, never a replay of source syntax. */
 bool hlsl_function_used(HlslEmitter *e, uint32_t wanted) {
-    const CompilerWorkspace *c = e->module;
-    struct { uint32_t function, cursor; } stack[DOE_HLSL_MAX_DEPTH];
-    uint32_t function = c->entries[e->entry].function;
-    unsigned depth = 0u;
-    if (function >= c->function_count) {
-        hlsl_error(e, "HLSL entry function is invalid");
-        return false;
-    }
-    stack[0].function = function;
-    stack[0].cursor = c->functions[function].instruction_start;
-    for (;;) {
-        if (e->traversal_left == 0u) {
-            hlsl_error(e, "HLSL call graph exceeds bounded traversal work");
-            return false;
-        }
-        --e->traversal_left;
-        function = stack[depth].function;
-        if (function == wanted) return true;
-        const FunctionRecord *f = &c->functions[function];
-        if (f->instruction_start > f->instruction_end || f->instruction_end > c->instruction_count) {
-            hlsl_error(e, "HLSL function instruction range is invalid");
-            return false;
-        }
-        if (stack[depth].cursor == f->instruction_end) {
-            if (depth == 0u) return false;
-            --depth;
-            continue;
-        }
-        const IrInstruction *ir = &c->instructions[stack[depth].cursor++];
-        if (ir->opcode != IR_CALL) continue;
-        const uint32_t callee = ir->operands.scalar.binding;
-        if (callee >= c->function_count || depth + 1u == DOE_HLSL_MAX_DEPTH) {
-            hlsl_error(e, "HLSL call graph exceeds target identity or nesting bounds");
-            return false;
-        }
-        for (unsigned i = 0u; i <= depth; ++i) {
-            if (stack[i].function == callee) {
-                hlsl_error(e, "HLSL call graph is cyclic");
-                return false;
-            }
-        }
-        ++depth;
-        stack[depth].function = callee;
-        stack[depth].cursor = c->functions[callee].instruction_start;
-    }
+    const char *error = NULL;
+    const bool used = target_function_reachable(e->module, e->entry, wanted,
+        &e->traversal_left, &error);
+    if (error != NULL) hlsl_error(e, error);
+    return used;
 }
 static void signature(HlslEmitter *e, uint32_t index) {
     const CompilerWorkspace *c = e->module;
