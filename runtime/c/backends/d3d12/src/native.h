@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: MIT */
 #ifndef DOE_DX_NATIVE_H
 #define DOE_DX_NATIVE_H
-#include "../include/doe_d3d12.h"
+#include "../include/doe_d3d12_texture.h"
 #if defined(DOE_DX_REQUIRE_WINDOWS) && !defined(_WIN32)
 #error "The native D3D12 build requires a Windows target and actual Windows SDK."
 #endif
@@ -12,11 +12,17 @@
 typedef struct doe_dx_native_context doe_dx_native_context;
 typedef struct doe_dx_native_buffer doe_dx_native_buffer;
 typedef struct doe_dx_native_pipeline doe_dx_native_pipeline;
+typedef struct doe_dx_native_texture doe_dx_native_texture;
 typedef struct doe_dx_native_commands doe_dx_native_commands;
 typedef struct doe_dx_native_binding {
     doe_dx_native_buffer *buffer;
     uint64_t offset, size;
 } doe_dx_native_binding;
+typedef struct doe_dx_native_resources {
+    doe_dx_native_binding buffers[DOE_DX_MAX_BINDINGS];
+    doe_dx_native_texture *textures[DOE_DX_MAX_BINDINGS];
+    size_t buffer_count, texture_count;
+} doe_dx_native_resources;
 
 doe_dx_status doe_dx_fail(doe_dx_status status, int32_t native_code,
     const char *operation, doe_dx_error *error);
@@ -31,7 +37,18 @@ doe_dx_status doe_dx_native_write(doe_dx_native_buffer *buffer, uint64_t offset,
 doe_dx_status doe_dx_native_read(doe_dx_native_buffer *buffer, uint64_t offset,
     void *bytes, size_t size, doe_dx_error *error);
 doe_dx_status doe_dx_native_pipeline_create(doe_dx_native_context *context,
-    const doe_dx_pipeline_desc *desc, doe_dx_native_pipeline **out, doe_dx_error *error);
+    const doe_dx_resource_pipeline_desc *desc, doe_dx_native_pipeline **out, doe_dx_error *error);
+/* Shared normalized footprint; native SDK query must agree before allocation publishes. */
+doe_dx_status doe_dx_texture_layout_2d(const doe_dx_texture_desc *desc,
+    doe_dx_texture_layout layout, doe_dx_texture_footprint *out);
+doe_dx_status doe_dx_native_texture_create(doe_dx_native_context *context,
+    const doe_dx_texture_desc *desc, doe_dx_native_texture **out, doe_dx_error *error);
+void doe_dx_native_texture_destroy(doe_dx_native_texture *texture);
+void doe_dx_native_texture_transfer(doe_dx_native_commands *commands,
+    doe_dx_native_buffer *buffer, doe_dx_native_texture *texture,
+    const doe_dx_texture_footprint *footprint, bool upload);
+void doe_dx_native_texture_copy(doe_dx_native_commands *commands,
+    doe_dx_native_texture *source, doe_dx_native_texture *destination);
 void doe_dx_native_pipeline_destroy(doe_dx_native_pipeline *pipeline);
 doe_dx_status doe_dx_native_commands_create(doe_dx_native_context *context,
     doe_dx_native_commands **out, doe_dx_error *error);
@@ -41,8 +58,8 @@ void doe_dx_native_copy(doe_dx_native_commands *commands, doe_dx_native_buffer *
     uint64_t destination_offset, uint64_t size);
 /* Allocation failure is before recording; only successful calls append work. */
 doe_dx_status doe_dx_native_dispatch(doe_dx_native_commands *commands,
-    doe_dx_native_pipeline *pipeline, const doe_dx_native_binding *bindings,
-    size_t count, uint32_t x, uint32_t y, uint32_t z, doe_dx_error *error);
+    doe_dx_native_pipeline *pipeline, const doe_dx_native_resources *resources,
+    uint32_t x, uint32_t y, uint32_t z, doe_dx_error *error);
 doe_dx_status doe_dx_native_finish(doe_dx_native_commands *commands, doe_dx_error *error);
 void doe_dx_native_execute(doe_dx_native_context *context, doe_dx_native_commands *commands);
 doe_dx_status doe_dx_native_signal(doe_dx_native_context *context, uint64_t value,

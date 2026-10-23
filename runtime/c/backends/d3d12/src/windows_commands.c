@@ -60,60 +60,12 @@ void doe_dx_native_copy(doe_dx_native_commands *commands, doe_dx_native_buffer *
             D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_COPY_DEST);
 }
 
-static doe_dx_status prepare_descriptors(doe_dx_native_commands *commands,
-    doe_dx_native_pipeline *pipeline, const doe_dx_native_binding *bindings,
-    size_t count, doe_dx_descriptor_use **out, doe_dx_error *error) {
-    doe_dx_descriptor_use *use = calloc(1, sizeof(*use));
-    if (!use) return doe_dx_fail(DOE_DX_OUT_OF_MEMORY, 0, "descriptors.allocate", error);
-    ID3D12Device *device = commands->context->device;
-    D3D12_DESCRIPTOR_HEAP_DESC description = {0};
-    description.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-    description.NumDescriptors = (UINT)count;
-    description.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-    HRESULT result = ID3D12Device_CreateDescriptorHeap(device, &description,
-        &IID_ID3D12DescriptorHeap, (void **)&use->heap);
-    if (FAILED(result)) {
-        free(use);
-        return doe_dx_hresult(result, "ID3D12Device.CreateDescriptorHeap", error);
-    }
-    D3D12_CPU_DESCRIPTOR_HANDLE handle;
-    use->heap->lpVtbl->GetCPUDescriptorHandleForHeapStart(use->heap, &handle);
-    UINT increment = ID3D12Device_GetDescriptorHandleIncrementSize(device,
-        D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-    for (size_t index = 0; index < count; index++) {
-        const doe_dx_binding_layout *layout = &pipeline->bindings[index];
-        const doe_dx_native_binding *binding = &bindings[index];
-        if (layout->access == DOE_DX_READ_ONLY) {
-            D3D12_SHADER_RESOURCE_VIEW_DESC view = {0};
-            view.Format = DXGI_FORMAT_UNKNOWN;
-            view.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
-            view.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-            view.Buffer.FirstElement = binding->offset / layout->stride;
-            view.Buffer.NumElements = (UINT)(binding->size / layout->stride);
-            view.Buffer.StructureByteStride = layout->stride;
-            ID3D12Device_CreateShaderResourceView(device, binding->buffer->resource, &view, handle);
-        } else {
-            D3D12_UNORDERED_ACCESS_VIEW_DESC view = {0};
-            view.Format = DXGI_FORMAT_UNKNOWN;
-            view.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
-            view.Buffer.FirstElement = binding->offset / layout->stride;
-            view.Buffer.NumElements = (UINT)(binding->size / layout->stride);
-            view.Buffer.StructureByteStride = layout->stride;
-            ID3D12Device_CreateUnorderedAccessView(device, binding->buffer->resource,
-                NULL, &view, handle);
-        }
-        handle.ptr += increment;
-    }
-    *out = use;
-    return DOE_DX_OK;
-}
-
 doe_dx_status doe_dx_native_dispatch(doe_dx_native_commands *commands,
-    doe_dx_native_pipeline *pipeline, const doe_dx_native_binding *bindings,
-    size_t count, uint32_t x, uint32_t y, uint32_t z, doe_dx_error *error) {
+    doe_dx_native_pipeline *pipeline, const doe_dx_native_resources *resources,
+    uint32_t x, uint32_t y, uint32_t z, doe_dx_error *error) {
     doe_dx_descriptor_use *use = NULL;
-    if (count) {
-        doe_dx_status status = prepare_descriptors(commands, pipeline, bindings, count, &use, error);
+    if (resources->buffer_count + resources->texture_count) {
+        doe_dx_status status = doe_dx_prepare_descriptors(commands, pipeline, resources, &use, error);
         if (status != DOE_DX_OK) return status;
         use->next = commands->descriptors;
         commands->descriptors = use;
@@ -127,16 +79,26 @@ doe_dx_status doe_dx_native_dispatch(doe_dx_native_commands *commands,
         use->heap->lpVtbl->GetGPUDescriptorHandleForHeapStart(use->heap, &handle);
         ID3D12GraphicsCommandList_SetComputeRootDescriptorTable(list, 0, handle);
     }
-    for (size_t index = 0; index < count; index++) {
+    for (size_t index = 0; index < resources->buffer_count; index++) {
         D3D12_RESOURCE_STATES state = pipeline->bindings[index].access == DOE_DX_READ_ONLY ?
             D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE : D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
-        doe_dx_transition(list, bindings[index].buffer->resource, D3D12_RESOURCE_STATE_COPY_DEST, state);
+        doe_dx_transition(list, resources->buffers[index].buffer->resource, D3D12_RESOURCE_STATE_COPY_DEST, state);
+    }
+    for (size_t index = 0; index < resources->texture_count; index++) {
+        D3D12_RESOURCE_STATES state = pipeline->textures[index].access == DOE_DX_READ_ONLY ?
+            D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE : D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+        doe_dx_transition(list, resources->textures[index]->resource, D3D12_RESOURCE_STATE_COPY_DEST, state);
     }
     ID3D12GraphicsCommandList_Dispatch(list, x, y, z);
-    for (size_t index = 0; index < count; index++) {
+    for (size_t index = 0; index < resources->texture_count; index++) {
+        D3D12_RESOURCE_STATES state = pipeline->textures[index].access == DOE_DX_READ_ONLY ?
+            D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE : D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+        doe_dx_transition(list, resources->textures[index]->resource, state, D3D12_RESOURCE_STATE_COPY_DEST);
+    }
+    for (size_t index = 0; index < resources->buffer_count; index++) {
         D3D12_RESOURCE_STATES state = pipeline->bindings[index].access == DOE_DX_READ_ONLY ?
             D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE : D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
-        doe_dx_transition(list, bindings[index].buffer->resource, state, D3D12_RESOURCE_STATE_COPY_DEST);
+        doe_dx_transition(list, resources->buffers[index].buffer->resource, state, D3D12_RESOURCE_STATE_COPY_DEST);
     }
     return doe_dx_fail(DOE_DX_OK, 0, "native.dispatch", error);
 }

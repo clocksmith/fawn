@@ -4,7 +4,7 @@ Parent: [Experimental C migration](../../CATSCAN.md)
 
 ## Target
 
-Execute admitted D3D12 compute and buffer transfers through an independently usable C owner, preserving native resource and completion obligations.
+Execute admitted D3D12 compute, buffer and admitted texture transfers through an independently usable C owner, preserving native resource and completion obligations.
 
 ## Authority
 
@@ -31,9 +31,9 @@ Execute admitted D3D12 compute and buffer transfers through an independently usa
 ## Acceptance
 
 - [Focused checks](Makefile) exercise rollback, ranges, ordering and lifetime through a private native-call seam.
-- [Native fixture](tests/native_compute.c) requires Windows SDK compilation and separately authorized driver execution.
+- [Native fixtures](tests/native_texture.c) requires Windows SDK compilation and separately authorized driver execution.
 - Complete retained consumer parity and physical qualification remain separate gates.
-- Evidence: [source-bound receipt](TERMINAL_RECEIPT.txt).
+- Evidence: [current source-bound receipt](TEXTURE_TERMINAL_RECEIPT.txt); [historical core](TERMINAL_RECEIPT.txt).
 
 ## Non-goals
 

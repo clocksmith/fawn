@@ -7,17 +7,20 @@
 struct doe_dx_native_context { unsigned tag; };
 struct doe_dx_native_buffer { unsigned recorded; };
 struct doe_dx_native_pipeline { unsigned recorded; };
+struct doe_dx_native_texture { unsigned recorded; };
 struct doe_dx_native_commands {
     uint64_t execution;
     doe_dx_native_buffer *buffers[DOE_DX_MAX_COMMAND_RESOURCES];
     size_t buffer_count;
     doe_dx_native_pipeline *pipelines[DOE_DX_MAX_COMMAND_RESOURCES];
     size_t pipeline_count;
+    doe_dx_native_texture *textures[DOE_DX_MAX_COMMAND_RESOURCES];
+    size_t texture_count;
 };
 mock_state mock;
 
 void mock_reset(void) {
-    assert(!mock.contexts && !mock.buffers && !mock.pipelines && !mock.commands);
+    assert(!mock.contexts && !mock.buffers && !mock.pipelines && !mock.commands && !mock.textures);
     assert(!mock.allocations);
     memset(&mock, 0, sizeof(mock));
 }
@@ -100,12 +103,17 @@ doe_dx_status doe_dx_native_read(doe_dx_native_buffer *buffer, uint64_t offset,
 }
 
 doe_dx_status doe_dx_native_pipeline_create(doe_dx_native_context *context,
-    const doe_dx_pipeline_desc *desc, doe_dx_native_pipeline **out, doe_dx_error *error) {
-    assert(context && desc->bytecode && desc->bytecode_size);
+    const doe_dx_resource_pipeline_desc *desc, doe_dx_native_pipeline **out, doe_dx_error *error) {
+    assert(context && desc->buffers.bytecode && desc->buffers.bytecode_size);
     doe_dx_status status = outcome(MOCK_PIPELINE, error);
     if (status != DOE_DX_OK) return status;
     *out = calloc(1, sizeof(**out));
     assert(*out);
+    mock.pipeline_desc = *desc;
+    for (size_t index = 0; index < desc->texture_count; index++)
+        mock.texture_layouts[index] = desc->textures[index];
+    for (size_t index = 0; index < desc->sampler_count; index++)
+        mock.samplers[index] = desc->samplers[index];
     mock.pipelines++;
     return DOE_DX_OK;
 }
@@ -134,6 +142,8 @@ void doe_dx_native_commands_destroy(doe_dx_native_commands *commands) {
         commands->buffers[index]->recorded--;
     for (size_t index = 0; index < commands->pipeline_count; index++)
         commands->pipelines[index]->recorded--;
+    for (size_t index = 0; index < commands->texture_count; index++)
+        commands->textures[index]->recorded--;
     assert(mock.commands);
     mock.commands--;
     free(commands);
@@ -160,9 +170,17 @@ void doe_dx_native_copy(doe_dx_native_commands *commands, doe_dx_native_buffer *
     mock.copies++;
 }
 
+static void record_texture(doe_dx_native_commands *commands, doe_dx_native_texture *texture) {
+    for (size_t index = 0; index < commands->texture_count; index++)
+        if (commands->textures[index] == texture) return;
+    assert(commands->texture_count < DOE_DX_MAX_COMMAND_RESOURCES);
+    commands->textures[commands->texture_count++] = texture;
+    texture->recorded++;
+}
+
 doe_dx_status doe_dx_native_dispatch(doe_dx_native_commands *commands,
-    doe_dx_native_pipeline *pipeline, const doe_dx_native_binding *bindings,
-    size_t count, uint32_t x, uint32_t y, uint32_t z, doe_dx_error *error) {
+    doe_dx_native_pipeline *pipeline, const doe_dx_native_resources *resources,
+    uint32_t x, uint32_t y, uint32_t z, doe_dx_error *error) {
     doe_dx_status status = outcome(MOCK_DISPATCH, error);
     if (status != DOE_DX_OK) return status;
     bool found = false;
@@ -173,11 +191,16 @@ doe_dx_status doe_dx_native_dispatch(doe_dx_native_commands *commands,
         commands->pipelines[commands->pipeline_count++] = pipeline;
         pipeline->recorded++;
     }
-    for (size_t index = 0; index < count; index++) {
-        record_buffer(commands, bindings[index].buffer);
-        mock.bindings[index] = bindings[index];
+    for (size_t index = 0; index < resources->buffer_count; index++) {
+        record_buffer(commands, resources->buffers[index].buffer);
+        mock.bindings[index] = resources->buffers[index];
     }
-    mock.binding_count = count;
+    for (size_t index = 0; index < resources->texture_count; index++) {
+        record_texture(commands, resources->textures[index]);
+        mock.texture_bindings[index] = resources->textures[index];
+    }
+    mock.binding_count = resources->buffer_count;
+    mock.texture_count = resources->texture_count;
     mock.x = x;
     mock.y = y;
     mock.z = z;
@@ -220,4 +243,42 @@ doe_dx_status doe_dx_native_wait(doe_dx_native_context *context, uint64_t value,
     doe_dx_status status = outcome(MOCK_WAIT, error);
     if (status != DOE_DX_OK) return status;
     return mock.completed >= value ? DOE_DX_OK : DOE_DX_PENDING;
+}
+
+doe_dx_status doe_dx_native_texture_create(doe_dx_native_context *context,
+    const doe_dx_texture_desc *desc, doe_dx_native_texture **out, doe_dx_error *error) {
+    assert(context && desc->width && desc->height);
+    doe_dx_status status = outcome(MOCK_TEXTURE, error);
+    if (status != DOE_DX_OK) return status;
+    *out = calloc(1, sizeof(**out));
+    assert(*out);
+    mock.textures++;
+    return DOE_DX_OK;
+}
+
+void doe_dx_native_texture_destroy(doe_dx_native_texture *texture) {
+    assert(texture && !texture->recorded && mock.textures);
+    mock.textures--;
+    free(texture);
+}
+
+void doe_dx_native_texture_transfer(doe_dx_native_commands *commands,
+    doe_dx_native_buffer *buffer, doe_dx_native_texture *texture,
+    const doe_dx_texture_footprint *footprint, bool upload) {
+    record_buffer(commands, buffer);
+    record_texture(commands, texture);
+    mock.transfer_texture = texture;
+    mock.transfer_buffer = buffer;
+    mock.footprint = *footprint;
+    mock.upload = upload;
+    mock.texture_transfers++;
+}
+
+void doe_dx_native_texture_copy(doe_dx_native_commands *commands,
+    doe_dx_native_texture *source, doe_dx_native_texture *destination) {
+    record_texture(commands, source);
+    record_texture(commands, destination);
+    mock.texture_source = source;
+    mock.texture_destination = destination;
+    mock.texture_copies++;
 }

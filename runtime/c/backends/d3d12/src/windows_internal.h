@@ -22,10 +22,15 @@ struct doe_dx_native_buffer {
     uint64_t size;
     doe_dx_memory memory;
 };
+struct doe_dx_native_texture {
+    ID3D12Resource *resource;
+    D3D12_RESOURCE_DESC description;
+};
 struct doe_dx_native_pipeline {
     ID3D12RootSignature *root;
     ID3D12PipelineState *state;
     doe_dx_binding_layout bindings[DOE_DX_MAX_BINDINGS];
+    doe_dx_texture_binding_layout textures[DOE_DX_MAX_BINDINGS];
 };
 typedef struct doe_dx_descriptor_use {
     ID3D12DescriptorHeap *heap;
@@ -38,6 +43,10 @@ struct doe_dx_native_commands {
     doe_dx_descriptor_use *descriptors;
 };
 doe_dx_status doe_dx_hresult(HRESULT result, const char *operation, doe_dx_error *error);
+DXGI_FORMAT doe_dx_texture_format(doe_dx_format format);
+doe_dx_status doe_dx_prepare_descriptors(doe_dx_native_commands *commands,
+    doe_dx_native_pipeline *pipeline, const doe_dx_native_resources *resources,
+    doe_dx_descriptor_use **out, doe_dx_error *error);
 void doe_dx_transition(ID3D12GraphicsCommandList *list, ID3D12Resource *resource,
     D3D12_RESOURCE_STATES before, D3D12_RESOURCE_STATES after);
 #endif

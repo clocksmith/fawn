@@ -1,0 +1,146 @@
+D3D12 C texture/compute owner checkpoint
+UTC: 20261023T203913Z
+Scope: real Windows SDK source authored; portable ownership controls compiled/exercised only.
+No SDK installation, provider cutover, native execution, hardware run, commit or push.
+a52c417e0baf19491e959dac18829997265a3c21fe327b7e64a7538cce3205da  runtime/c/backends/d3d12/TEXTURE_SOURCE_INPUTS.sha256
+
+$ cc --version | head -1; g++ --version | head -1
+cc (Debian 14.2.0-19) 14.2.0
+g++ (Debian 14.2.0-19) 14.2.0
+exit=0
+
+$ make -C runtime/c/backends/d3d12 BUILD=/tmp/doe-c-d3d12/texture-final-20261023T203913Z check
+make: Entering directory '/workspace/shared/doe-c-migration-20261023/runtime/c/backends/d3d12'
+mkdir -p /tmp/doe-c-d3d12/texture-final-20261023T203913Z/host
+cc -Iinclude -O2 -g -std=c11 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wshadow -Dcalloc=doe_dx_test_calloc -Dfree=doe_dx_test_free -c src/context.c -o /tmp/doe-c-d3d12/texture-final-20261023T203913Z/host/context.o
+cc -Iinclude -O2 -g -std=c11 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wshadow -Dcalloc=doe_dx_test_calloc -Dfree=doe_dx_test_free -c src/resources.c -o /tmp/doe-c-d3d12/texture-final-20261023T203913Z/host/resources.o
+cc -Iinclude -O2 -g -std=c11 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wshadow -Dcalloc=doe_dx_test_calloc -Dfree=doe_dx_test_free -c src/commands.c -o /tmp/doe-c-d3d12/texture-final-20261023T203913Z/host/commands.o
+cc -Iinclude -O2 -g -std=c11 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wshadow -Dcalloc=doe_dx_test_calloc -Dfree=doe_dx_test_free -c src/compute.c -o /tmp/doe-c-d3d12/texture-final-20261023T203913Z/host/compute.o
+cc -Iinclude -O2 -g -std=c11 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wshadow -Dcalloc=doe_dx_test_calloc -Dfree=doe_dx_test_free -c src/pipeline.c -o /tmp/doe-c-d3d12/texture-final-20261023T203913Z/host/pipeline.o
+cc -Iinclude -O2 -g -std=c11 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wshadow -Dcalloc=doe_dx_test_calloc -Dfree=doe_dx_test_free -c src/textures.c -o /tmp/doe-c-d3d12/texture-final-20261023T203913Z/host/textures.o
+cc -Iinclude -O2 -g -std=c11 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wshadow -Dcalloc=doe_dx_test_calloc -Dfree=doe_dx_test_free -c src/texture_transfer.c -o /tmp/doe-c-d3d12/texture-final-20261023T203913Z/host/texture_transfer.o
+cc -Iinclude -O2 -g -std=c11 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wshadow tests/test_owner.c tests/mock_native.c /tmp/doe-c-d3d12/texture-final-20261023T203913Z/host/context.o /tmp/doe-c-d3d12/texture-final-20261023T203913Z/host/resources.o /tmp/doe-c-d3d12/texture-final-20261023T203913Z/host/commands.o /tmp/doe-c-d3d12/texture-final-20261023T203913Z/host/compute.o /tmp/doe-c-d3d12/texture-final-20261023T203913Z/host/pipeline.o /tmp/doe-c-d3d12/texture-final-20261023T203913Z/host/textures.o /tmp/doe-c-d3d12/texture-final-20261023T203913Z/host/texture_transfer.o -o /tmp/doe-c-d3d12/texture-final-20261023T203913Z/test_owner
+cc -Iinclude -O2 -g -std=c11 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wshadow tests/test_textures.c tests/mock_native.c /tmp/doe-c-d3d12/texture-final-20261023T203913Z/host/context.o /tmp/doe-c-d3d12/texture-final-20261023T203913Z/host/resources.o /tmp/doe-c-d3d12/texture-final-20261023T203913Z/host/commands.o /tmp/doe-c-d3d12/texture-final-20261023T203913Z/host/compute.o /tmp/doe-c-d3d12/texture-final-20261023T203913Z/host/pipeline.o /tmp/doe-c-d3d12/texture-final-20261023T203913Z/host/textures.o /tmp/doe-c-d3d12/texture-final-20261023T203913Z/host/texture_transfer.o -o /tmp/doe-c-d3d12/texture-final-20261023T203913Z/test_textures
+/tmp/doe-c-d3d12/texture-final-20261023T203913Z/test_owner
+D3D12 C host owner: 13 groups passed (no SDK or GPU execution)
+/tmp/doe-c-d3d12/texture-final-20261023T203913Z/test_textures
+D3D12 C texture owner: 9 groups passed (no SDK or GPU execution)
+make: Leaving directory '/workspace/shared/doe-c-migration-20261023/runtime/c/backends/d3d12'
+exit=0
+
+$ ASAN_OPTIONS=detect_leaks=0 make -C runtime/c/backends/d3d12 BUILD=/tmp/doe-c-d3d12/texture-final-20261023T203913Z sanitize
+make: Entering directory '/workspace/shared/doe-c-migration-20261023/runtime/c/backends/d3d12'
+make BUILD=/tmp/doe-c-d3d12/texture-final-20261023T203913Z/sanitize CFLAGS='-O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer' check
+make[1]: Entering directory '/workspace/shared/doe-c-migration-20261023/runtime/c/backends/d3d12'
+mkdir -p /tmp/doe-c-d3d12/texture-final-20261023T203913Z/sanitize/host
+cc -Iinclude -O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer -std=c11 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wshadow -Dcalloc=doe_dx_test_calloc -Dfree=doe_dx_test_free -c src/context.c -o /tmp/doe-c-d3d12/texture-final-20261023T203913Z/sanitize/host/context.o
+cc -Iinclude -O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer -std=c11 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wshadow -Dcalloc=doe_dx_test_calloc -Dfree=doe_dx_test_free -c src/resources.c -o /tmp/doe-c-d3d12/texture-final-20261023T203913Z/sanitize/host/resources.o
+cc -Iinclude -O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer -std=c11 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wshadow -Dcalloc=doe_dx_test_calloc -Dfree=doe_dx_test_free -c src/commands.c -o /tmp/doe-c-d3d12/texture-final-20261023T203913Z/sanitize/host/commands.o
+cc -Iinclude -O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer -std=c11 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wshadow -Dcalloc=doe_dx_test_calloc -Dfree=doe_dx_test_free -c src/compute.c -o /tmp/doe-c-d3d12/texture-final-20261023T203913Z/sanitize/host/compute.o
+cc -Iinclude -O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer -std=c11 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wshadow -Dcalloc=doe_dx_test_calloc -Dfree=doe_dx_test_free -c src/pipeline.c -o /tmp/doe-c-d3d12/texture-final-20261023T203913Z/sanitize/host/pipeline.o
+cc -Iinclude -O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer -std=c11 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wshadow -Dcalloc=doe_dx_test_calloc -Dfree=doe_dx_test_free -c src/textures.c -o /tmp/doe-c-d3d12/texture-final-20261023T203913Z/sanitize/host/textures.o
+cc -Iinclude -O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer -std=c11 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wshadow -Dcalloc=doe_dx_test_calloc -Dfree=doe_dx_test_free -c src/texture_transfer.c -o /tmp/doe-c-d3d12/texture-final-20261023T203913Z/sanitize/host/texture_transfer.o
+cc -Iinclude -O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer -std=c11 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wshadow tests/test_owner.c tests/mock_native.c /tmp/doe-c-d3d12/texture-final-20261023T203913Z/sanitize/host/context.o /tmp/doe-c-d3d12/texture-final-20261023T203913Z/sanitize/host/resources.o /tmp/doe-c-d3d12/texture-final-20261023T203913Z/sanitize/host/commands.o /tmp/doe-c-d3d12/texture-final-20261023T203913Z/sanitize/host/compute.o /tmp/doe-c-d3d12/texture-final-20261023T203913Z/sanitize/host/pipeline.o /tmp/doe-c-d3d12/texture-final-20261023T203913Z/sanitize/host/textures.o /tmp/doe-c-d3d12/texture-final-20261023T203913Z/sanitize/host/texture_transfer.o -o /tmp/doe-c-d3d12/texture-final-20261023T203913Z/sanitize/test_owner
+cc -Iinclude -O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer -std=c11 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wshadow tests/test_textures.c tests/mock_native.c /tmp/doe-c-d3d12/texture-final-20261023T203913Z/sanitize/host/context.o /tmp/doe-c-d3d12/texture-final-20261023T203913Z/sanitize/host/resources.o /tmp/doe-c-d3d12/texture-final-20261023T203913Z/sanitize/host/commands.o /tmp/doe-c-d3d12/texture-final-20261023T203913Z/sanitize/host/compute.o /tmp/doe-c-d3d12/texture-final-20261023T203913Z/sanitize/host/pipeline.o /tmp/doe-c-d3d12/texture-final-20261023T203913Z/sanitize/host/textures.o /tmp/doe-c-d3d12/texture-final-20261023T203913Z/sanitize/host/texture_transfer.o -o /tmp/doe-c-d3d12/texture-final-20261023T203913Z/sanitize/test_textures
+/tmp/doe-c-d3d12/texture-final-20261023T203913Z/sanitize/test_owner
+D3D12 C host owner: 13 groups passed (no SDK or GPU execution)
+/tmp/doe-c-d3d12/texture-final-20261023T203913Z/sanitize/test_textures
+D3D12 C texture owner: 9 groups passed (no SDK or GPU execution)
+make[1]: Leaving directory '/workspace/shared/doe-c-migration-20261023/runtime/c/backends/d3d12'
+make: Leaving directory '/workspace/shared/doe-c-migration-20261023/runtime/c/backends/d3d12'
+exit=0
+
+$ make -C runtime/c/backends/d3d12 BUILD=/tmp/doe-c-d3d12/texture-final-20261023T203913Z/analyzer CFLAGS="-O0 -g -fanalyzer" check
+make: Entering directory '/workspace/shared/doe-c-migration-20261023/runtime/c/backends/d3d12'
+mkdir -p /tmp/doe-c-d3d12/texture-final-20261023T203913Z/analyzer/host
+cc -Iinclude -O0 -g -fanalyzer -std=c11 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wshadow -Dcalloc=doe_dx_test_calloc -Dfree=doe_dx_test_free -c src/context.c -o /tmp/doe-c-d3d12/texture-final-20261023T203913Z/analyzer/host/context.o
+cc -Iinclude -O0 -g -fanalyzer -std=c11 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wshadow -Dcalloc=doe_dx_test_calloc -Dfree=doe_dx_test_free -c src/resources.c -o /tmp/doe-c-d3d12/texture-final-20261023T203913Z/analyzer/host/resources.o
+cc -Iinclude -O0 -g -fanalyzer -std=c11 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wshadow -Dcalloc=doe_dx_test_calloc -Dfree=doe_dx_test_free -c src/commands.c -o /tmp/doe-c-d3d12/texture-final-20261023T203913Z/analyzer/host/commands.o
+cc -Iinclude -O0 -g -fanalyzer -std=c11 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wshadow -Dcalloc=doe_dx_test_calloc -Dfree=doe_dx_test_free -c src/compute.c -o /tmp/doe-c-d3d12/texture-final-20261023T203913Z/analyzer/host/compute.o
+cc -Iinclude -O0 -g -fanalyzer -std=c11 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wshadow -Dcalloc=doe_dx_test_calloc -Dfree=doe_dx_test_free -c src/pipeline.c -o /tmp/doe-c-d3d12/texture-final-20261023T203913Z/analyzer/host/pipeline.o
+cc -Iinclude -O0 -g -fanalyzer -std=c11 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wshadow -Dcalloc=doe_dx_test_calloc -Dfree=doe_dx_test_free -c src/textures.c -o /tmp/doe-c-d3d12/texture-final-20261023T203913Z/analyzer/host/textures.o
+cc -Iinclude -O0 -g -fanalyzer -std=c11 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wshadow -Dcalloc=doe_dx_test_calloc -Dfree=doe_dx_test_free -c src/texture_transfer.c -o /tmp/doe-c-d3d12/texture-final-20261023T203913Z/analyzer/host/texture_transfer.o
+cc -Iinclude -O0 -g -fanalyzer -std=c11 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wshadow tests/test_owner.c tests/mock_native.c /tmp/doe-c-d3d12/texture-final-20261023T203913Z/analyzer/host/context.o /tmp/doe-c-d3d12/texture-final-20261023T203913Z/analyzer/host/resources.o /tmp/doe-c-d3d12/texture-final-20261023T203913Z/analyzer/host/commands.o /tmp/doe-c-d3d12/texture-final-20261023T203913Z/analyzer/host/compute.o /tmp/doe-c-d3d12/texture-final-20261023T203913Z/analyzer/host/pipeline.o /tmp/doe-c-d3d12/texture-final-20261023T203913Z/analyzer/host/textures.o /tmp/doe-c-d3d12/texture-final-20261023T203913Z/analyzer/host/texture_transfer.o -o /tmp/doe-c-d3d12/texture-final-20261023T203913Z/analyzer/test_owner
+cc -Iinclude -O0 -g -fanalyzer -std=c11 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wshadow tests/test_textures.c tests/mock_native.c /tmp/doe-c-d3d12/texture-final-20261023T203913Z/analyzer/host/context.o /tmp/doe-c-d3d12/texture-final-20261023T203913Z/analyzer/host/resources.o /tmp/doe-c-d3d12/texture-final-20261023T203913Z/analyzer/host/commands.o /tmp/doe-c-d3d12/texture-final-20261023T203913Z/analyzer/host/compute.o /tmp/doe-c-d3d12/texture-final-20261023T203913Z/analyzer/host/pipeline.o /tmp/doe-c-d3d12/texture-final-20261023T203913Z/analyzer/host/textures.o /tmp/doe-c-d3d12/texture-final-20261023T203913Z/analyzer/host/texture_transfer.o -o /tmp/doe-c-d3d12/texture-final-20261023T203913Z/analyzer/test_textures
+/tmp/doe-c-d3d12/texture-final-20261023T203913Z/analyzer/test_owner
+D3D12 C host owner: 13 groups passed (no SDK or GPU execution)
+/tmp/doe-c-d3d12/texture-final-20261023T203913Z/analyzer/test_textures
+D3D12 C texture owner: 9 groups passed (no SDK or GPU execution)
+make: Leaving directory '/workspace/shared/doe-c-migration-20261023/runtime/c/backends/d3d12'
+exit=0
+
+$ cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wshadow -Iruntime/c/backends/d3d12/include -fsyntax-only runtime/c/backends/d3d12/tests/native_compute.c runtime/c/backends/d3d12/tests/native_texture.c
+exit=0
+
+$ printf '#include "doe_d3d12_texture.h"\nint main() { return 0; }\n' | g++ -x c++ -std=c++17 -Wall -Wextra -Wpedantic -Werror -Iruntime/c/backends/d3d12/include -fsyntax-only -
+exit=0
+
+$ python3 runtime/c/tools/check_source_size.py
+C size check: 596 files, 0 failures; limit 999
+exit=0
+
+$ git diff --check -- runtime/c/backends/d3d12
+exit=0
+
+$ catscan_gate.write_component_index(repo_root, alternate_tmp_index)
+PASS: alternate only, canonical shared index not edited.
+
+$ python3 bench/gates/catscan_gate.py --index /tmp/doe-c-d3d12/texture-final-20261023T203913Z/component-index.md --json
+{
+  "failures": [],
+  "ok": true,
+  "summary": {
+    "charterCount": 36,
+    "indexPath": "/tmp/doe-c-d3d12/texture-final-20261023T203913Z/component-index.md",
+    "maxWords": 250
+  }
+}
+exit=0
+
+Physical source size: 25 C/header files, 3170 lines, maximum=413, every file <=999.
+No trailing whitespace in source inputs.
+
+$ sha256sum --check runtime/c/backends/d3d12/TEXTURE_SOURCE_INPUTS.sha256
+runtime/c/backends/d3d12/AGENTS.md: OK
+runtime/c/backends/d3d12/CATSCAN.md: OK
+runtime/c/backends/d3d12/Makefile: OK
+runtime/c/backends/d3d12/README.md: OK
+runtime/c/backends/d3d12/build_windows.cmd: OK
+runtime/c/backends/d3d12/include/doe_d3d12.h: OK
+runtime/c/backends/d3d12/include/doe_d3d12_texture.h: OK
+runtime/c/backends/d3d12/src/commands.c: OK
+runtime/c/backends/d3d12/src/compute.c: OK
+runtime/c/backends/d3d12/src/context.c: OK
+runtime/c/backends/d3d12/src/internal.h: OK
+runtime/c/backends/d3d12/src/native.h: OK
+runtime/c/backends/d3d12/src/pipeline.c: OK
+runtime/c/backends/d3d12/src/resources.c: OK
+runtime/c/backends/d3d12/src/texture_transfer.c: OK
+runtime/c/backends/d3d12/src/textures.c: OK
+runtime/c/backends/d3d12/src/windows_bindings.c: OK
+runtime/c/backends/d3d12/src/windows_commands.c: OK
+runtime/c/backends/d3d12/src/windows_context.c: OK
+runtime/c/backends/d3d12/src/windows_internal.h: OK
+runtime/c/backends/d3d12/src/windows_pipeline.c: OK
+runtime/c/backends/d3d12/src/windows_resources.c: OK
+runtime/c/backends/d3d12/src/windows_textures.c: OK
+runtime/c/backends/d3d12/tests/mock_native.c: OK
+runtime/c/backends/d3d12/tests/mock_native.h: OK
+runtime/c/backends/d3d12/tests/native_compute.c: OK
+runtime/c/backends/d3d12/tests/native_compute.hlsl: OK
+runtime/c/backends/d3d12/tests/native_fixture.h: OK
+runtime/c/backends/d3d12/tests/native_texture.c: OK
+runtime/c/backends/d3d12/tests/native_texture.hlsl: OK
+runtime/c/backends/d3d12/tests/test_owner.c: OK
+runtime/c/backends/d3d12/tests/test_textures.c: OK
+runtime/c/common/include/doe_copy_footprint.h: OK
+exit=0
+
+First failures retained:
+The initial new overflow assertion expected UINT64_MAX-511 + 268 to overflow, which is false. Test failed with assertion; corrected fixture uses row_pitch=512 and span=524, a true overflow. Arithmetic implementation was not weakened.
+New transfer test initially assigned size_t mock.texture_transfers to unsigned; strict GCC rejected -Wconversion. Corrected local snapshot type to size_t.
+git diff --check found a new blank line at src/resources.c EOF after moving pipeline code. Removed it; final check passes.
+Prior core default LeakSanitizer failed under ptrace. Current ASan/UBSan explicitly disables leak detection; no LSAN pass. Owner allocation counters and mock native counts return to zero in all host groups.
+Historical core manifest/receipt remain unchanged and qualify their old snapshot only.
+UNRUN: Windows SDK C compilation/link; build_windows.cmd; DXC; native buffer and texture fixture execution; debug layer; device readback; physical qualification; performance; complete retained-consumer parity.
+Windows SDK/DXC prerequisites unavailable in this dot cloud environment. Portable native-fixture syntax checks do not qualify SDK ABI, shaders or driver behavior.
