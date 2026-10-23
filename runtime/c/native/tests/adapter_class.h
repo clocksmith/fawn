@@ -21,8 +21,18 @@ static inline bool adapter_class_physical(void)
     abort();
 }
 
+static inline WGPUBackendType adapter_class_backend(void)
+{
+    const char *value = getenv("DOE_C_TEST_BACKEND");
+    if (!value || !strcmp(value, "vulkan")) return WGPUBackendType_Vulkan;
+    if (!strcmp(value, "metal")) return WGPUBackendType_Metal;
+    fprintf(stderr, "DOE_C_TEST_BACKEND must be vulkan or metal, not %s\n", value);
+    abort();
+}
+
 static inline void adapter_class_options(WGPURequestAdapterOptions *options)
 {
+    options->backendType = adapter_class_backend();
     options->forceFallbackAdapter = adapter_class_physical() ? WGPU_FALSE : WGPU_TRUE;
 }
 
@@ -38,7 +48,20 @@ static inline void adapter_class_require(WGPUAdapter adapter)
 {
     WGPUAdapterInfo info = WGPU_ADAPTER_INFO_INIT;
     assert(wgpuAdapterGetInfo(adapter, &info) == WGPUStatus_Success);
-    assert(info.backendType == WGPUBackendType_Vulkan);
+    assert(info.backendType == adapter_class_backend());
+    if (info.backendType == WGPUBackendType_Metal) {
+        /* Metal has no CPU fallback; subtype is not queried by this provider. */
+        assert(adapter_class_physical() && info.device.length && info.device.data);
+        assert(info.adapterType == WGPUAdapterType_Unknown || info.adapterType == WGPUAdapterType_IntegratedGPU ||
+            info.adapterType == WGPUAdapterType_DiscreteGPU);
+        snprintf(adapter_class_label, sizeof(adapter_class_label),
+            "(native Metal device: %.*s; subtype unclassified; developer run, not qualification)",
+            (int)info.device.length, info.device.data);
+        printf("Selected adapter backend Metal, type %u: %.*s\n", (unsigned)info.adapterType,
+            (int)info.device.length, info.device.data);
+        wgpuAdapterInfoFreeMembers(info);
+        return;
+    }
     if (adapter_class_physical()) {
         assert(info.adapterType == WGPUAdapterType_DiscreteGPU ||
                info.adapterType == WGPUAdapterType_IntegratedGPU);

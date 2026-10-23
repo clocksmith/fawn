@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: MIT */
 #include "internal.h"
+#include "metal_frontend.h"
 #include <stdlib.h>
 
 void native_texture_release(void *userdata, void *handle)
@@ -7,7 +8,8 @@ void native_texture_release(void *userdata, void *handle)
     (void)userdata;
     native_texture *payload = handle;
     native_lock(payload->device);
-    doe_vk_texture_release(payload->texture);
+    if (payload->device->backend.kind == WGPUBackendType_Metal) doe_mtl_texture_release(payload->metal);
+    else doe_vk_texture_release(payload->texture);
     native_unlock(payload->device);
     free(payload);
 }
@@ -16,6 +18,7 @@ WGPUTexture wgpuDeviceCreateTexture(WGPUDevice handle, const WGPUTextureDescript
 {
     native_device *device = (native_device *)handle;
     if (!device) return NULL;
+    if (device->backend.kind == WGPUBackendType_Metal) return native_metal_create_texture(device, descriptor);
     if (device->backend.kind != WGPUBackendType_Vulkan) {
         native_error(device, WGPUErrorType_Validation, "operation not yet composed for selected backend");
         return NULL;

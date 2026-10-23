@@ -1,13 +1,15 @@
 /* SPDX-License-Identifier: MIT */
 #include "internal.h"
+#include "metal_frontend.h"
 #include <stdlib.h>
 
-static void release_view(void *userdata, void *handle)
+void native_view_release(void *userdata, void *handle)
 {
     (void)userdata;
     native_view *payload = handle;
     native_lock(payload->device);
-    doe_vk_texture_view_release(payload->view);
+    if (payload->device->backend.kind == WGPUBackendType_Metal) doe_mtl_texture_view_release(payload->metal);
+    else doe_vk_texture_view_release(payload->view);
     native_unlock(payload->device);
     free(payload);
 }
@@ -16,6 +18,7 @@ WGPUTextureView wgpuTextureCreateView(WGPUTexture handle, const WGPUTextureViewD
     doe_resource_texture *texture = (doe_resource_texture *)handle;
     native_device *device = doe_resource_texture_device(texture);
     if (!device) return NULL;
+    if (device->backend.kind == WGPUBackendType_Metal) return native_metal_create_view(texture, descriptor);
     WGPUTextureViewDescriptor defaults = WGPU_TEXTURE_VIEW_DESCRIPTOR_INIT;
     if (!descriptor) descriptor = &defaults;
     doe_resource_view_desc desc = {.format=descriptor->format, .dimension=descriptor->dimension,
@@ -65,11 +68,11 @@ WGPUTextureView wgpuTextureCreateView(WGPUTexture handle, const WGPUTextureViewD
         backend = doe_vk_texture_view_create(parent->texture, &native, &payload->view, &error);
         if (backend == DOE_VK_OK)
             status = doe_resource_view_create(texture, &resolved,
-                (doe_resource_native){payload, NULL, release_view}, &view);
+                (doe_resource_native){payload, NULL, native_view_release}, &view);
     } else if (status == DOE_RESOURCE_OK) status = DOE_RESOURCE_OUT_OF_MEMORY;
     native_unlock(device);
     if (!view) {
-        if (payload) release_view(NULL, payload);
+        if (payload) native_view_release(NULL, payload);
         native_error(device, backend != DOE_VK_OK ? native_backend_error(backend) : native_resource_error(status),
             "texture view creation failed or unsupported");
     } else native_label(device, view, descriptor->label);
@@ -82,12 +85,13 @@ void wgpuTextureViewSetLabel(WGPUTextureView view, WGPUStringView label)
     native_label(doe_resource_view_device((doe_resource_view *)view), view, label);
 }
 
-static void release_sampler(void *userdata, void *handle)
+void native_sampler_release(void *userdata, void *handle)
 {
     (void)userdata;
     native_sampler *payload = handle;
     native_lock(payload->device);
-    doe_vk_sampler_release(payload->sampler);
+    if (payload->device->backend.kind == WGPUBackendType_Metal) doe_mtl_sampler_release(payload->metal);
+    else doe_vk_sampler_release(payload->sampler);
     native_unlock(payload->device);
     free(payload);
 }
@@ -103,6 +107,7 @@ WGPUSampler wgpuDeviceCreateSampler(WGPUDevice handle, const WGPUSamplerDescript
 {
     native_device *device = (native_device *)handle;
     if (!device) return NULL;
+    if (device->backend.kind == WGPUBackendType_Metal) return native_metal_create_sampler(device, descriptor);
     if (device->backend.kind != WGPUBackendType_Vulkan) {
         native_error(device, WGPUErrorType_Validation, "operation not yet composed for selected backend");
         return NULL;
@@ -144,10 +149,10 @@ WGPUSampler wgpuDeviceCreateSampler(WGPUDevice handle, const WGPUSamplerDescript
     doe_resource_status adopted = DOE_RESOURCE_INVALID_ARGUMENT;
     if (status == DOE_VK_OK)
         adopted = doe_resource_sampler_create(&device->resources, &resolved,
-            (doe_resource_native){payload, NULL, release_sampler}, &sampler);
+            (doe_resource_native){payload, NULL, native_sampler_release}, &sampler);
     native_unlock(device);
     if (!sampler) {
-        release_sampler(NULL, payload);
+        native_sampler_release(NULL, payload);
         native_error(device, status != DOE_VK_OK ? native_backend_error(status) : native_resource_error(adopted),
             "sampler creation failed");
     } else native_label(device, sampler, descriptor->label);

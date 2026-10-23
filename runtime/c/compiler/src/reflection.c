@@ -168,7 +168,8 @@ void reflect_typed(const Source *s, const CompilerWorkspace *c, const DoeCompile
     uint32_t cursor = 0u;
     memset(module, 0, sizeof(*module));
     module->schema_version = DOE_COMPILER_TYPED_SCHEMA_VERSION;
-    module->layout_profile = DOE_COMPILER_TYPED_PROFILE_CONSERVATIVE_UNIFORM;
+    module->layout_profile = (c->module_flags & MODULE_STANDARD_UNIFORM) != 0u ?
+        DOE_COMPILER_TYPED_PROFILE_STANDARD_UNIFORM : DOE_COMPILER_TYPED_PROFILE_CONSERVATIVE_UNIFORM;
     module->entry_point = publish_name(s, c->functions[c->entries[0].function].name, o->names, &cursor);
     module->declared_struct_count = declared_structs(c);
     for (uint32_t i = 0u;i<3u;++i) module->workgroup_size[i] = c->entries[0].state.resolved.workgroup_size[i];
@@ -179,7 +180,8 @@ void reflect_module(const Source *s, const CompilerWorkspace *c, const DoeCompil
     uint32_t cursor=0u;
     memset(module,0,sizeof(*module));
     module->schema_version=DOE_COMPILER_MODULE_SCHEMA_VERSION;
-    module->layout_profile=DOE_COMPILER_TYPED_PROFILE_CONSERVATIVE_UNIFORM;
+    module->layout_profile = (c->module_flags & MODULE_STANDARD_UNIFORM) != 0u ?
+        DOE_COMPILER_TYPED_PROFILE_STANDARD_UNIFORM : DOE_COMPILER_TYPED_PROFILE_CONSERVATIVE_UNIFORM;
     module->declared_struct_count=declared_structs(c);
     module->selected_entry=selected;
     for (uint32_t i=0u;i<c->entry_count;++i) {

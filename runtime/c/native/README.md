@@ -656,11 +656,13 @@ completion is unknown. It does not simulate shader results.
 
 ## Physical developer runs and holds
 
-Do not run this on Miles or Suby while their possible disassembly/cooling hold
-remains. Every adapter-using client selects its adapter through
+Physical runs require owner authorization and current cooling readiness. Miles is
+authorized for bounded D3D12 developer runs; its
+[private backend guide](../backends/d3d12/README.md) owns that route.
+Every adapter-using client selects its adapter through
 `tests/adapter_class.h`: software (CPU fallback adapter) by default, or a
 nonfallback GPU adapter with `DOE_C_TEST_ADAPTER=physical`. Each PASS line names
-the class and device it ran on. `make check-physical` runs the same 36 clients on
+the class and device it ran on. `make check-physical` runs the declared clients on
 the system ICDs (`VK_ICD_FILENAMES` unset):
 
 ```
@@ -768,3 +770,24 @@ Metal call boundary without GPU execution. `tests/metal_bridge.c` checks exact
 public synchronous and deferred messages; `tests/pending_progress.c` checks a
 background Vulkan detail is observed once. These are developer correctness
 controls, separate from physical failure/recovery qualification.
+
+The Metal frontend now composes real initialized textures/views/samplers, color
+copies and packed QueueWriteTexture uploads, compiler-reflected vertex/fragment
+pipelines and direct nonindexed whole passes. Vertex and fragment use their own
+compiler-provided binding tables; vertex-fetch slots avoid shader buffer/size
+slots. Shared public fixed/depth/interface admission is converted explicitly to
+Metal without synthetic Vulkan capabilities. Partial sample masks, unclipped depth,
+Metal indirect/indexed draws and depth/stencil texture transfers reject explicitly.
+Texture initialization, discard recovery and public submissions share the same
+backend aspect state and tagged pending owner. An initialization that becomes
+unknown does not publish a public texture and cannot drop its private allocation.
+
+`offscreen-triangle` is one public consumer for Vulkan (the default) and Metal:
+`DOE_C_TEST_BACKEND=metal DOE_C_TEST_ADAPTER=physical` selects Metal explicitly.
+It checks ordinary WGSL vertex_index rendering into RGBA8, asymmetric triangle
+pixels, public early releases, discard followed by zero readback and packed upload
+roundtrip. The Metal adapter prints its actual name and truthful unclassified
+subtype. These focused developer results do not qualify Metal graphics, broader
+platforms, performance or a production provider switch. The host-only
+`metal-bridge` control separately checks native initialization failure detail,
+unknown-work private lifetime and direct-render call identity without GPU emulation.

@@ -3,49 +3,38 @@
 Parent: [Experimental C migration](../CATSCAN.md)
 
 ## Target
-
-Translate the explicitly admitted WGSL surface into independently usable, source-linked target artifacts using only a native C toolchain.
+Translate admitted WGSL into independently usable, source-linked target artifacts
+using a native C toolchain.
 
 ## Authority
-
-- Owns lexical admission, parsing, validation, typed IR, robustness lowering, target emission, reflection and diagnostics.
-- Does not own native device execution or application acceptance.
+Own lexical admission, parsing, validation, typed IR, robustness lowering,
+emission, reflection and diagnostics; exclude device execution and application acceptance.
 
 ## Scope
-
-- Includes the evolving standalone C compiler; initial coverage is the [first milestone](MILESTONE_1.md).
+The standalone compiler; [initial coverage](MILESTONE_1.md) is historical.
 
 ## Contracts
-
-- Inputs: caller-owned source and explicitly sized output buffers through the versioned C API.
-- Outputs: SPIR-V, ABI10 experimental MSL and additive ABI11 HLSL artifacts from
-  one shared typed pipeline, reflection, target binding/entry metadata and
-  original-source diagnostics. HLSL records include register namespaces/spaces,
-  exact entry names and dispatch/native feature requirements.
+Caller-owned source and explicitly sized versioned C API outputs produce SPIR-V,
+MSL or HLSL through one typed pipeline. Reflection includes exact entry/binding
+metadata, HLSL namespaces/spaces and native requirements; diagnostics retain source locations.
 
 ## Invariants
-
-- Unsupported syntax/types/targets fail explicitly without fallback.
-- Failure publishes no partial output and retains no caller pointers.
-- Reflection and emitted behavior derive from validated typed IR, not source matching.
-- Limits reject rather than truncate; checked arithmetic precedes casts and memory accesses.
+Unsupported syntax, types and targets reject without fallback.
+Failure publishes no partial output and retains no caller pointers.
+Reflection and behavior derive from validated IR, never source matching.
+Limits reject rather than truncate; checked arithmetic precedes narrowing and access.
 
 ## Acceptance
-
-- Frozen milestone tests, independent instruction execution, SPIR-V target validation, sanitizer boundaries and ordinary GCC consumption pass.
-- Complete compiler migration additionally requires the retained support matrix, target interfaces and real adopter gates; a milestone pass is not completion.
-
-- Experimental MSL has [developer checks](targets/metal/README.md), not Metal SDK or GPU qualification.
-- Public HLSL has [typed developer consumption and bounded DXC checks](targets/hlsl/README.md),
-  not independent semantic, Windows SDK, device or production-provider qualification.
-- Evidence: [accepted numeric/vector owner](MILESTONE_12_RESULTS.md), its
-  [independent source-only gate](independent_tests_m12/PORTABLE_USAGE.md), and
-  retained [compiler tests](tests/).
+Frozen milestone tests, independent instruction execution, target validation,
+sanitizer boundaries and ordinary GCC consumption pass. Full migration additionally
+requires retained support-matrix, target-interface and real-adopter gates.
+[MSL](targets/metal/README.md) and [HLSL](targets/hlsl/README.md) developer controls
+never establish independent semantics, SDK/device qualification or production adoption.
+- Evidence: [numeric/vector owner](MILESTONE_12_RESULTS.md), [independent gate](independent_tests_m12/PORTABLE_USAGE.md)
+and [retained tests](tests/).
 
 ## Non-goals
-
-- A second host-side interpretation, GPU simulation as qualification or a universal-framework rewrite.
+Second host interpreters, GPU simulation as qualification or universal frameworks.
 
 ## Freedom
-
-Any implementation is permitted if it preserves these boundaries and passes the acceptance evidence.
+Internal algorithms may vary within these boundaries.

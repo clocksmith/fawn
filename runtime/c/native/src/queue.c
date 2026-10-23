@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: MIT */
 #include "surface.h"
+#include "metal_frontend.h"
 #include <stdlib.h>
 
 static doe_vk_status record_dispatch(doe_vk_commands *commands, const doe_resource_command *record)
@@ -117,33 +118,9 @@ native_failure native_record_resource_commands(native_command_handle *native, do
 {
     if (native->kind == WGPUBackendType_Vulkan)
         return native_failure_status(native_from_vulkan(record_vulkan_commands(native->value.vulkan, commands)));
-    if (native->kind != WGPUBackendType_Metal) return native_failure_status(NATIVE_UNSUPPORTED);
-    size_t count = 0;
-    const doe_resource_command *records = doe_resource_commands_borrow(commands, &count);
-    for (size_t i = 0; i < count; ++i) {
-        const doe_resource_command *record = &records[i];
-        doe_mtl_status status;
-        doe_mtl_error error = {0};
-        if (record->kind == DOE_COMMAND_COPY_BUFFER) {
-            native_buffer *source = doe_resource_buffer_native(record->value.copy.source);
-            native_buffer *destination = doe_resource_buffer_native(record->value.copy.destination);
-            if (!record->value.copy.size) continue;
-            status = doe_mtl_commands_copy(native->value.metal, source->handle.metal,
-                record->value.copy.source_offset, destination->handle.metal,
-                record->value.copy.destination_offset, record->value.copy.size, &error);
-        } else if (record->kind == DOE_COMMAND_CLEAR_BUFFER) {
-            native_buffer *buffer = doe_resource_buffer_native(record->value.clear.buffer);
-            if (!record->value.clear.size) continue;
-            status = doe_mtl_commands_fill(native->value.metal, buffer->handle.metal,
-                record->value.clear.offset, record->value.clear.size, 0, &error);
-        } else if (record->kind == DOE_COMMAND_DISPATCH) {
-            native_failure dispatched = native_metal_dispatch(native->value.metal,record);
-            if (dispatched.status != NATIVE_OK) return dispatched;
-            continue;
-        } else return native_failure_status(NATIVE_UNSUPPORTED);
-        if (status != DOE_MTL_OK) return native_failure_metal(status, &error);
-    }
-    return native_failure_status(NATIVE_OK);
+    if (native->kind == WGPUBackendType_Metal)
+        return native_metal_record_commands(native->value.metal, commands);
+    return native_failure_status(NATIVE_UNSUPPORTED);
 }
 
 static void settle_resources(native_pending *pending, bool success)
@@ -295,17 +272,23 @@ native_failure native_submit_program(native_device *device, native_command_handl
     return submit_pending(device, pending);
 }
 
-native_failure native_submit_commands(native_device *device, doe_vk_commands *commands)
+native_failure native_submit_backend_commands(native_device *device, native_command_handle commands)
 {
     native_pending *pending = calloc(1, sizeof(*pending));
     if (!pending) {
-        if (doe_vk_commands_release(commands) != DOE_VK_OK) abort();
+        if (native_command_release(&commands) != NATIVE_OK) abort();
         return native_failure_status(NATIVE_OUT_OF_MEMORY);
     }
     pending->device = device;
     native_device_retain(device);
-    pending->native = (native_command_handle){.kind=WGPUBackendType_Vulkan,.value.vulkan=commands};
+    pending->native = commands;
     return submit_pending(device, pending);
+}
+
+native_failure native_submit_commands(native_device *device, doe_vk_commands *commands)
+{
+    native_command_handle native = {.kind=WGPUBackendType_Vulkan,.value.vulkan=commands};
+    return native_submit_backend_commands(device, native);
 }
 
 native_presentation native_submit_present(native_device *device, doe_vk_commands *commands,

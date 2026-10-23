@@ -191,6 +191,7 @@ bool native_pipeline_bindings(native_pipeline *payload, const native_stage *stag
             if (stage->visibility != WGPUShaderStage_Compute && resource->access != DOE_COMPILER_READ &&
                 (resource->kind == DOE_COMPILER_STORAGE_BUFFER || resource->kind == DOE_COMPILER_STORAGE_TEXTURE) &&
                 (stage->visibility != WGPUShaderStage_Fragment ||
+                payload->device->backend.kind != WGPUBackendType_Vulkan ||
                 !payload->device->backend.value.vulkan.caps.fragment_stores_and_atomics)) return false;
             doe_resource_layout_entry required;
             if (!resource_entry(view, index, stage->visibility, sampled, &required)) return false;

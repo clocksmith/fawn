@@ -37,7 +37,7 @@ static bool target_output(const native_stage *fragment, const WGPUColorTargetSta
 }
 
 bool native_render_interfaces(const native_stage stages[2], size_t stage_count, const WGPUVertexState *vertex,
-    const WGPUFragmentState *fragment, bool alpha_to_coverage, const doe_vk_caps *caps)
+    const WGPUFragmentState *fragment, bool alpha_to_coverage, const native_graphics_limits *caps)
 {
     const native_stage *fragment_stage = stage_count == 2 ? &stages[1] : NULL;
     size_t targets = fragment ? fragment->targetCount : 0;

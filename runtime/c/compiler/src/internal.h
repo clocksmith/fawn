@@ -192,7 +192,7 @@ typedef struct {
     uint32_t entries, entry_inputs, entry_references;
 } CompilerLimits;
 enum { LIMIT_LEGACY = 1u, LIMIT_SINGULAR = 2u, LIMIT_MODULE = 4u };
-enum { MODULE_SUBGROUPS = 1u };
+enum { MODULE_SUBGROUPS = 1u, MODULE_STANDARD_UNIFORM = 2u };
 typedef struct CompilerWorkspace CompilerWorkspace;
 typedef struct StageWorkspace StageWorkspace;
 typedef struct { const char *source; size_t length; DoeCompilerDiagnostic *diagnostic;

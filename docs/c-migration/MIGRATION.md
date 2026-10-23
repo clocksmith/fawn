@@ -166,6 +166,34 @@ follow-up. GPU-recorded programs remain Vulkan-only. These developer checks do n
 close full language coverage, public Metal graphics, public D3D12, browser adoption
 or the production cutover gates.
 
+The public Metal frontend now composes WGSL stage metadata, resource-owned
+textures/views/samplers, whole render passes and typed copies through the existing
+tagged backend and pending owner. A bounded [Apple M3 developer control](../../runtime/c/native/DEVELOPER_RECEIPT_METAL_PUBLIC_GRAPHICS.json)
+checks offscreen pixels, early release, discarded attachment zeros and packed
+texture uploads. Indirect/indexed guards, queries, depth/stencil transfers and
+sampling, partial sample masks and presentation remain separate missing paths;
+this slice is not full Metal qualification. Backend-specific format queries and
+fragment-write admission must inspect only the selected payload arm.
+
+The standalone compiler offers explicit standard uniform layout support while
+retaining conservative defaults. Natural layout and one physical uniform-load
+owner cover compact buffers without requiring a Vulkan optional layout feature;
+the [public compiler controls](../../runtime/c/compiler/tests/test_uniform_standard.c)
+and exact-range CPU consumer check small bindings, guarded dynamic access and
+layout identity. This compiler opt-in alone does not advertise a native WGSL
+language feature.
+
+Private D3D12 now has [actual CPU WARP execution evidence](../../runtime/c/backends/d3d12/DEVELOPER_RECEIPT_WARP.json)
+in addition to SDK compilation: explicit software selection, native compute,
+readback, early release and terminal cleanup. Public native D3D12 integration,
+physical adapter coverage and performance remain distinct gates.
+[Miles developer controls](../../runtime/c/backends/d3d12/DEVELOPER_RECEIPT_MILES_D3D12.json)
+now bind the SDK-built artifacts to physical AMD compute, indirect dispatch,
+uniforms, textures, sampled graphics/timestamps and indexed geometry/depth.
+The isolated installation and exact driver evidence do not qualify the unfinished
+public frontend, presentation or performance. Additional physical campaigns retain
+their own authorization and qualification gates.
+
 Guides: the common C style retains one parser/semantic/layout owner with multiple
 explicit target adapters. Vulkan's owner guide now states serialized operations
 and callback/lease boundaries; its recursive mutex is retained because finalizers

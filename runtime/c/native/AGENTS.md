@@ -103,8 +103,20 @@ command records still require proven terminal completion.
 Public consumer tests select adapters only through tests/adapter_class.h
 (adapter_class_options, adapter_class_require) and end PASS lines with
 adapter_class_scope(), so one binary runs on the CPU fallback adapter by default
-and on a GPU under DOE_C_TEST_ADAPTER=physical. Add every adapter-using client to
-PHYSICAL_CLIENTS; window-system clients belong to check-present and exit 77 (skip,
+and on a GPU under DOE_C_TEST_ADAPTER=physical. DOE_C_TEST_BACKEND defaults to
+Vulkan; explicit Metal selects the native-only Metal adapter and must not claim a
+queried integrated/discrete subtype when the provider reports Unknown. Add every
+adapter-using client to PHYSICAL_CLIENTS; window-system clients belong to check-present and exit 77 (skip,
 never pass) without a display. Never hard-code forceFallbackAdapter or a CPU label.
 Adapter selection is by class, and device contexts reopen the adapter's hardware
 by UUID; never select or recreate by enumeration ordinal.
+
+Metal render conversion consumes each selected compiler entry's own MSL binding
+metadata; vertex and fragment namespaces can differ even for the same public
+binding. Allocate vertex-fetch slots around the selected vertex resource/size
+slots, preserving canonical empty vertex slots. Whole passes lower once through
+the existing backend attachment owner, including empty clear/load and discard.
+Never publish a public texture until its real initialization completes; unknown
+initialization retains the private allocation on the existing pending owner.
+Depth/stencil transfers, indirect/indexed render guards and sample-mask support
+must be admitted by their actual composed path, not inferred from another backend.

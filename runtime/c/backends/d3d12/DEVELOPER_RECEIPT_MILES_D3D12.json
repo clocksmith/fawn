@@ -1,0 +1,656 @@
+{
+  "status": "Actual Miles physical D3D12 private-backend compute, indirect, uniform, texture, sampled graphics/timestamps and indexed graphics/depth developer controls passed.",
+  "recorded_utc": "2026-10-23T23:46:45.502871+00:00",
+  "component": "Private C D3D12 backend physical developer consumers on Miles",
+  "intent": "Preserved backend and production boundaries; exercised retained native fixtures on the explicitly authorized physical adapter.",
+  "source_commit": "159b58a18e5466d409209debce807b4aa24f14d9",
+  "source_binding": "43 exact Git blobs/SHA256 inputs at source_commit. Backend executables are the unchanged verified source-bound Windows SDK CI build; shader fixtures are extracted from that same commit. No build from the active Miles checkout.",
+  "source_inputs": {
+    ".github/workflows/c-d3d12-sdk-build.yml": {
+      "git_blob": "8e0363ee7eddebc81ab9552bba7aaf26a241f3d1",
+      "sha256": "34c664c0f821f2d9ca8f37fc4abcda21648ab39dd6d4b1c3a36b1328ab0c6553"
+    },
+    "runtime/c/backends/d3d12/build_windows.cmd": {
+      "git_blob": "9646962930f9c03e6b6b2a715d59bc2e1e5910d6",
+      "sha256": "1443483ca83b5410e4b4dc5c513920f0c938474695e31ac8040d77b678d63d8f"
+    },
+    "runtime/c/backends/d3d12/include/doe_d3d12.h": {
+      "git_blob": "8acb97bbb9d2ce295daf6a4562181d520e970689",
+      "sha256": "83a9d6d0c2fe53666c67fd4eb6bc23a13b652669bda573517a67eb86b91dde24"
+    },
+    "runtime/c/backends/d3d12/include/doe_d3d12_graphics.h": {
+      "git_blob": "60ea7a1a71159be8f7b89adfd58680a95901a859",
+      "sha256": "79072a43c9838627260635c9eab0373665816fd0817ab5f87f6afdb4b02da1dc"
+    },
+    "runtime/c/backends/d3d12/include/doe_d3d12_mesh.h": {
+      "git_blob": "5b5fd24684f2696366bce1860a388d7b3b2225a5",
+      "sha256": "18df45010bcf06936ca499ef6bcfddd05681ecfe2833ed1db2b0776f96facc1c"
+    },
+    "runtime/c/backends/d3d12/include/doe_d3d12_texture.h": {
+      "git_blob": "9f6bca4d892e20334f0f02811daa06fcd0397528",
+      "sha256": "9b8a6044521aedbf8e8b01f2a715ce22976dc5f5dafe8347fe91f03ab82100cc"
+    },
+    "runtime/c/backends/d3d12/run_warp.cmd": {
+      "git_blob": "31037f97c39f6a755784994b685b8582bb5339d7",
+      "sha256": "b44a561baf9a9de3050c5fdeaac1e895fccb18407be79428324d4d13b5f82fa6"
+    },
+    "runtime/c/backends/d3d12/src/bindings.c": {
+      "git_blob": "7d2bc0d585ceacc3baf25d9dff2a487121d4c5b1",
+      "sha256": "b7db0f61f422462704ccfd082bbb0bbd337e52619605f2b2b2c460670608c15e"
+    },
+    "runtime/c/backends/d3d12/src/commands.c": {
+      "git_blob": "b7b3fa4e1a8abcb6729ebf841bbba9f4d2ae66cf",
+      "sha256": "3bd8d3fa1658b50892be179a96e41d42e5d394024ab5b5939e888dd84c460b4f"
+    },
+    "runtime/c/backends/d3d12/src/compute.c": {
+      "git_blob": "e9eb3105887c06c55402a3ac64bb2717e5a58d74",
+      "sha256": "fb76d479e86baa49cdd92d0867d0c62c9f9f3f786e16f25ae8139d59a43e8226"
+    },
+    "runtime/c/backends/d3d12/src/context.c": {
+      "git_blob": "2b4cf946cc4d2e967a56789998dd5d9d6c760c12",
+      "sha256": "97f4573db05cc47b97bdecb0b70095b414c3967c0a3ee24c1333685ecd4ed460"
+    },
+    "runtime/c/backends/d3d12/src/geometry.c": {
+      "git_blob": "749a455710818933f96016588aa7672c31a5fd58",
+      "sha256": "f98c9919fd3d105e6b0488ada5dcbfcbf4843a0c93b5a8c0eeec0780b3e15f34"
+    },
+    "runtime/c/backends/d3d12/src/graphics.c": {
+      "git_blob": "6e79d21b739d9fa7853e5fa13dd875c547268b09",
+      "sha256": "6d4c388f2c62d8484a64f72a2f7d646c0dc4930fd1dd2ec3685a740d756e66b4"
+    },
+    "runtime/c/backends/d3d12/src/internal.h": {
+      "git_blob": "f7590453354e7e278058cb7cc90b151c1b257de6",
+      "sha256": "f361591397fe509010f242f916df3cb31e24a9d3977469db78f1eb050dce7890"
+    },
+    "runtime/c/backends/d3d12/src/native.h": {
+      "git_blob": "2dfd968d9e58ec9d29a0a19cd71cd5bf235e0728",
+      "sha256": "603500f39d54c6d33a4b6e92625ccd5247760452b9ee9176ffd2b0a4caa73af3"
+    },
+    "runtime/c/backends/d3d12/src/pipeline.c": {
+      "git_blob": "058209125c88a3e05b879bde6401810f13076cb8",
+      "sha256": "d9aad032951e71d747bb43b5af3f0dd7024a32049a2c516e26064d000ee291a0"
+    },
+    "runtime/c/backends/d3d12/src/resources.c": {
+      "git_blob": "700b6863fff3ae07110d419b9090911686708daf",
+      "sha256": "54aa712bd6e3a7ed2e51aa6e6fd40cd2b3be02e82c0c7dc40547356c3603a57f"
+    },
+    "runtime/c/backends/d3d12/src/texture_transfer.c": {
+      "git_blob": "4dc5c4e56b46a36df07f772b12dbea2244721679",
+      "sha256": "ebe2ab455a9df17c10b6ed8ce75cf9f45e2257cb866be35e6d4efe5db5f82571"
+    },
+    "runtime/c/backends/d3d12/src/textures.c": {
+      "git_blob": "ce6dc8af1005b59f27a7f96e89c736f57dbb05dd",
+      "sha256": "48e7d373e38ccaf812294bd0a7437d9adfbbcf83120821c0ef8995950290ce31"
+    },
+    "runtime/c/backends/d3d12/src/timestamps.c": {
+      "git_blob": "8a07b4314bbcd16e016c5531c200abe8a1d32881",
+      "sha256": "f0cc313f692a913351c24b298f0e4e634bdb4f90a9d67f8190bc949204aa3d4a"
+    },
+    "runtime/c/backends/d3d12/src/vertex_layout.c": {
+      "git_blob": "a801a9dabd39ca916ea5e98f3189ae3b1ecba06a",
+      "sha256": "57fa5dda96188f4bfa587ed2c118faa4e99f3a4c9f6350594daf27ffe8ae6873"
+    },
+    "runtime/c/backends/d3d12/src/windows_bindings.c": {
+      "git_blob": "d9699c804f04b79f637eb20440c80094bd974917",
+      "sha256": "f29edf1a2e5bb91b0a1d5b292a5f166e1bab8ba86833e213afc05ec553fc5cc0"
+    },
+    "runtime/c/backends/d3d12/src/windows_commands.c": {
+      "git_blob": "7fef5a022e1b61603b73e4a337e730793fd2cc9b",
+      "sha256": "cde862ec77a1a5896c374bfd9c3f0d6ccef3fa570c1dfc71ed30040833189879"
+    },
+    "runtime/c/backends/d3d12/src/windows_context.c": {
+      "git_blob": "7f1fbf0dad5622a41cd46b8bd0548e9b3a579feb",
+      "sha256": "90000dda582aeda14a7272e87dc7c8ebecbab59238fb1e66f7bd6bdb4cf3715d"
+    },
+    "runtime/c/backends/d3d12/src/windows_geometry.c": {
+      "git_blob": "d76b14abdcc7384629838ee0705923f418670217",
+      "sha256": "12fbe4ca1ceea8c3450574de581dd447d3dae17db698a3972aa69105441c96fd"
+    },
+    "runtime/c/backends/d3d12/src/windows_graphics.c": {
+      "git_blob": "53d7a2e4abae2527bd72c23ab4306f4302b8ea18",
+      "sha256": "e824f9b87f5f1338cfc26e05a3795794b0838c8c1e547a5cfa2588c537eb1550"
+    },
+    "runtime/c/backends/d3d12/src/windows_internal.h": {
+      "git_blob": "06d0284348285f2e889ff4bd6e11975af0b7c563",
+      "sha256": "121c5f3df254ca2d78e62aa92023108e41bb61a9af511e8f9c6bd18b179b7964"
+    },
+    "runtime/c/backends/d3d12/src/windows_pipeline.c": {
+      "git_blob": "2de14c510b25aa68a1f8e763dffab49d9de29608",
+      "sha256": "8e4997d987ccb115223864bf769e741c96e5a0a0886098938d3a0b6694da9563"
+    },
+    "runtime/c/backends/d3d12/src/windows_resources.c": {
+      "git_blob": "86938ff36694e028a4b43eaedc4b44f94a37aae6",
+      "sha256": "d46a1bdbd4e41936b5dae1b212fdb2b08e13b29ff4876ef9a1b54d9825e7f32a"
+    },
+    "runtime/c/backends/d3d12/src/windows_textures.c": {
+      "git_blob": "4d87856ab695f6fbb53f3a4fecc3eada308b5b57",
+      "sha256": "73881fd62add4d65db9872b806f86098964a7e749eeaf1e13932e7cff87bde5a"
+    },
+    "runtime/c/backends/d3d12/src/windows_timestamps.c": {
+      "git_blob": "7ede7bbec092c24d1649449914be122b7e616c3a",
+      "sha256": "29cc653f7cd4cf0b650428d0993e9eb85149585da892f721e74a82a2f29cec9e"
+    },
+    "runtime/c/backends/d3d12/tests/native_compute.c": {
+      "git_blob": "8f1d55149d4132e0ce7ae22a36e6916e3266482c",
+      "sha256": "e0fd613f3779199fc8509e34d025a2e0d8469601a50087e8444aeb12a9a86047"
+    },
+    "runtime/c/backends/d3d12/tests/native_compute.hlsl": {
+      "git_blob": "19af01adc0fe330af7a520dba894980b9932fa92",
+      "sha256": "f6f56a57852fbc37c044301b4ed698df3d586ebbccd6ace4c26eb38584b360fa"
+    },
+    "runtime/c/backends/d3d12/tests/native_fixture.h": {
+      "git_blob": "24ba3d2802b77482800f58e269b9b1d73dbc8811",
+      "sha256": "6c7df7b3365deec943baa4c3c87d6b249b7bee5cf457c49a3a2e375a68b2a962"
+    },
+    "runtime/c/backends/d3d12/tests/native_graphics.c": {
+      "git_blob": "1ba2c9db64598221f9352c2f0873a7f9ebcb6b1b",
+      "sha256": "d790a7e8f1f69350c29017505b33da8b682c7ffc8d4780216665c5978a087df4"
+    },
+    "runtime/c/backends/d3d12/tests/native_mesh.c": {
+      "git_blob": "c50f1ed8d486f63011eb497d66dade0a2de008e6",
+      "sha256": "a767feea4c162cf9c346f6cc0f58457dbd4d720e27f12906d60f407ac7a577c2"
+    },
+    "runtime/c/backends/d3d12/tests/native_texture.c": {
+      "git_blob": "85f42ffb65ed5a9c2a70785a00175a498be62f86",
+      "sha256": "da36bde40f728eecb3894a1e89f30430b3c9016f9edcda48f8b19ec43e59d75a"
+    },
+    "runtime/c/common/include/doe_copy_footprint.h": {
+      "git_blob": "4ddf2c48aba5bd7634e85cd008620df42b9d82af",
+      "sha256": "461535e48bc3d5248928416513b0978baadcc865db33826cb6244f5d9e3fde4b"
+    },
+    "runtime/c/backends/d3d12/tests/native_indirect.hlsl": {
+      "git_blob": "3b44a6581a018fcc65ca8eb47f3bcec41aa0e7c8",
+      "sha256": "b1e16a93f80409da41702107c341bc114d5f7627c4273d956362cd7733985b81"
+    },
+    "runtime/c/backends/d3d12/tests/native_uniform.hlsl": {
+      "git_blob": "7049e526553488ebf927b264b2943887e08bd612",
+      "sha256": "9bc45ab3f73d6b8ff1f49086a8baf354c6d8e16f7f82b5c3ddb2fd307418681c"
+    },
+    "runtime/c/backends/d3d12/tests/native_texture.hlsl": {
+      "git_blob": "8e43afdfbfd6ba3576c816052e82e217c48ebf10",
+      "sha256": "8eadd300727c6a1addc4edd61b201021d2d01ae9cc84210f88ce3db2ad484911"
+    },
+    "runtime/c/backends/d3d12/tests/native_graphics.hlsl": {
+      "git_blob": "62a21dd7860e1e6d8596329b280b046c2159b7d2",
+      "sha256": "9b732e7c7b55cba1f97c69784048d54d4032ad9f5f9b9b8a77e4e78e03f34fc9"
+    },
+    "runtime/c/backends/d3d12/tests/native_mesh.hlsl": {
+      "git_blob": "5b890850d4b38ed04b9ac48a70c5ce474168b42f",
+      "sha256": "95b62c22fee401834a428ccd53d76d0995ee98970d70a6d066a95abefb24a435"
+    }
+  },
+  "binary_provenance": {
+    "workflow_run": "https://github.com/doerun/doe/actions/runs/40040368403",
+    "workflow_job_id": 120709769580,
+    "artifact_id": 12539012010,
+    "artifact_zip_sha256": "efe1cc15a9783bc3d31aa2e3ea102a5deb639d0a3802e138858d523b08c22c14",
+    "build": "Actual hosted MSVC 14.51.36231 /std:c11 /W4 /WX and Windows SDK 10.0.26100.0; all 30 build outputs reverified on Miles before execution.",
+    "clients_sha256": {
+      "native_compute.exe": "adbe19e6d5d73b7d19022244eebae04634a9139cd9ae2554e71017bd2932e6e9",
+      "native_texture.exe": "5c96c52ffde054e64b51b3801837bbbd857345be3ad7a010dc32423f81e6a9c2",
+      "native_graphics.exe": "9fae07d23160dba4dcc2477342b8c0ee75e0a71ceab0276d1a0bab04d37c2a40",
+      "native_mesh.exe": "c98c1cb2d6c5e287e5d0d21e1327c56593069e42b44d45ef7969beb9b044529f"
+    },
+    "sdk_receipt": "DEVELOPER_RECEIPT_WARP.json"
+  },
+  "host": {
+    "machine": "Miles",
+    "os": {
+      "Caption": "Microsoft Windows 11 Pro",
+      "Version": "10.0.22631",
+      "BuildNumber": "22631",
+      "OSArchitecture": "64-bit"
+    },
+    "adapter": {
+      "name": "AMD Radeon(TM) Graphics",
+      "vendor_id": 4098,
+      "device_id": 5761,
+      "luid_high": 0,
+      "luid_low": 62145,
+      "software_adapter": false,
+      "adapter_selection": "DOE_DX_SELECT_ORDINAL",
+      "adapter_ordinal": 0
+    },
+    "driver": {
+      "version": "32.0.21030.2001",
+      "inventory_status": "OK",
+      "inventory_source": "Win32_VideoController; single AMD adapter matches printed name/vendor/device."
+    },
+    "authorization": "Owner explicitly authorized Miles installation and D3D12 execution and confirmed fan cooling. No Suby work performed.",
+    "installation": "New isolated per-user LOCALAPPDATA/deco/validation/doe-d3d12-159b58-ki3pcb23. Existing checkout, PATH, SSH configuration, execution policy and machinewide SDK installation remain untouched."
+  },
+  "shader_tool": {
+    "release": "https://github.com/microsoft/DirectXShaderCompiler/releases/tag/v1.9.2609",
+    "primary_metadata": "https://api.github.com/repos/microsoft/DirectXShaderCompiler/releases/tags/v1.9.2609",
+    "download": "https://github.com/microsoft/DirectXShaderCompiler/releases/download/v1.9.2609/dxc_2026_09_29.zip",
+    "asset_id": 596913261,
+    "archive_sha256": "ad31b1fc8443175d204f77a611fdb3ef2ec42759bdc2f1167368de24a4a7e7f1",
+    "verification": "Downloaded archive equals the sha256 digest published in the primary Microsoft GitHub release asset metadata; verified locally and again on Miles before extraction.",
+    "observed_version": "dxcompiler.dll: 1.9(5512-01b62ad4)(1.9.2609.5) - 1.9.2609.5 (01b62ad47)",
+    "tool_files": [
+      {
+        "path": "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\dxc\\bin\\x64\\dxc.exe",
+        "sha256": "aa7965b3763d9c710baaa5a28cedcc633449962a75d1391d161a85304a41b3e2"
+      },
+      {
+        "path": "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\dxc\\bin\\x64\\dxcompiler.dll",
+        "sha256": "0689e2fee0a1c9df8662a59680469f24e2a3ad7ce6bbbcc9284f7a83172bfc59"
+      },
+      {
+        "path": "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\dxc\\bin\\x64\\dxil.dll",
+        "sha256": "64be2368211d257a038a7d4ea6bb3e24c878eb8d588c7b8414fccf759b69c2ac"
+      }
+    ],
+    "license": "Complete official portable release archive, including its licenses, retained locally; no third-party binary or source added to Git."
+  },
+  "bounds": {
+    "controller": "run-miles.cjs, Node v22.23.4",
+    "controller_sha256": "d2cf40fd8ebbf7a8b3154d7e3a2b113a07e68a84825064fee0ef92ac7d4edc02",
+    "per_child_guard_ms": 120000,
+    "timeout_action": "taskkill /PID <child> /T /F; stop on first failure and retain diagnostics.",
+    "native_completion_poll_ms": 30000,
+    "selection": "Zero/default exact ordinal 0 with software disabled. Each client prints actual hardware identity; controller rejects missing software=0 before continuing. No adapter retry, WARP option or CPU shader fallback used."
+  },
+  "compiled_shaders": {
+    "compute": {
+      "args": [
+        "-Ges",
+        "-WX",
+        "-T",
+        "cs_6_0",
+        "-E",
+        "main",
+        "-Fo",
+        "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\physical-evidence\\shaders\\compute.dxil",
+        "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\source\\runtime\\c\\backends\\d3d12\\tests\\native_compute.hlsl"
+      ],
+      "exit_code": 0,
+      "shader_sha256": "b819a7745affacb2bd3f1b01ba498997ce8b356e92e940e42409f681c0b1523a"
+    },
+    "indirect": {
+      "args": [
+        "-Ges",
+        "-WX",
+        "-T",
+        "cs_6_0",
+        "-E",
+        "main",
+        "-Fo",
+        "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\physical-evidence\\shaders\\indirect.dxil",
+        "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\source\\runtime\\c\\backends\\d3d12\\tests\\native_indirect.hlsl"
+      ],
+      "exit_code": 0,
+      "shader_sha256": "9ccb7afe2353dc287297141653b83648684875b9707359770e7ca8e920e3cc28"
+    },
+    "uniform": {
+      "args": [
+        "-Ges",
+        "-WX",
+        "-T",
+        "cs_6_0",
+        "-E",
+        "main",
+        "-Fo",
+        "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\physical-evidence\\shaders\\uniform.dxil",
+        "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\source\\runtime\\c\\backends\\d3d12\\tests\\native_uniform.hlsl"
+      ],
+      "exit_code": 0,
+      "shader_sha256": "5b4d4d1e0d2860024375c4083dca77956a94b2c68c4c173cfd43de5d8d470be9"
+    },
+    "texture": {
+      "args": [
+        "-Ges",
+        "-WX",
+        "-T",
+        "cs_6_0",
+        "-E",
+        "main",
+        "-Fo",
+        "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\physical-evidence\\shaders\\texture.dxil",
+        "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\source\\runtime\\c\\backends\\d3d12\\tests\\native_texture.hlsl"
+      ],
+      "exit_code": 0,
+      "shader_sha256": "0b7fad5eadcc5235d54da4d9255253dc42dacff5ed8fa72d9cf850a47dc75872"
+    },
+    "graphics-vs": {
+      "args": [
+        "-Ges",
+        "-WX",
+        "-T",
+        "vs_6_0",
+        "-E",
+        "vertex_main",
+        "-Fo",
+        "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\physical-evidence\\shaders\\graphics-vs.dxil",
+        "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\source\\runtime\\c\\backends\\d3d12\\tests\\native_graphics.hlsl"
+      ],
+      "exit_code": 0,
+      "shader_sha256": "ea252dac9cd901616d388bd335e67b8415b4cfaa4bdacaa55b7b78e8de61beec"
+    },
+    "graphics-ps": {
+      "args": [
+        "-Ges",
+        "-WX",
+        "-T",
+        "ps_6_0",
+        "-E",
+        "fragment_main",
+        "-Fo",
+        "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\physical-evidence\\shaders\\graphics-ps.dxil",
+        "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\source\\runtime\\c\\backends\\d3d12\\tests\\native_graphics.hlsl"
+      ],
+      "exit_code": 0,
+      "shader_sha256": "6d007b5bf468fd636953a761210443136d33173093d9a42507407b80fbca270c"
+    },
+    "mesh-vs": {
+      "args": [
+        "-Ges",
+        "-WX",
+        "-T",
+        "vs_6_0",
+        "-E",
+        "vertex_main",
+        "-Fo",
+        "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\physical-evidence\\shaders\\mesh-vs.dxil",
+        "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\source\\runtime\\c\\backends\\d3d12\\tests\\native_mesh.hlsl"
+      ],
+      "exit_code": 0,
+      "shader_sha256": "1e83e3817bcde33f9f9e05e8b247a12a1172c3c6e56e2283c8d89a9f3c014b82"
+    },
+    "mesh-ps": {
+      "args": [
+        "-Ges",
+        "-WX",
+        "-T",
+        "ps_6_0",
+        "-E",
+        "fragment_main",
+        "-Fo",
+        "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\physical-evidence\\shaders\\mesh-ps.dxil",
+        "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\source\\runtime\\c\\backends\\d3d12\\tests\\native_mesh.hlsl"
+      ],
+      "exit_code": 0,
+      "shader_sha256": "526c1a163940c778abff9686de48cd0ae4b1052f61993b489ebb7bec3782df4c"
+    }
+  },
+  "executed_controls": {
+    "compute": {
+      "command": {
+        "exe": "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\sdk-artifact\\build\\native_compute.exe",
+        "args": [
+          "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\physical-evidence\\shaders\\compute.dxil"
+        ],
+        "cwd": "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23",
+        "deadline_ms": 120000
+      },
+      "result": {
+        "code": 0,
+        "signal": null,
+        "timeout": false,
+        "started_utc": "2026-10-23T23:44:27.744Z",
+        "finished_utc": "2026-10-23T23:44:27.959Z"
+      },
+      "stdout": [
+        "adapter=AMD Radeon(TM) Graphics vendor=4098 device=5761 LUID=0:62145 software=0",
+        "selection=0 ordinal=0",
+        "native D3D12 readback and early caller release passed"
+      ],
+      "stderr_empty": true
+    },
+    "indirect": {
+      "command": {
+        "exe": "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\sdk-artifact\\build\\native_compute.exe",
+        "args": [
+          "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\physical-evidence\\shaders\\compute.dxil",
+          "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\physical-evidence\\shaders\\indirect.dxil"
+        ],
+        "cwd": "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23",
+        "deadline_ms": 120000
+      },
+      "result": {
+        "code": 0,
+        "signal": null,
+        "timeout": false,
+        "started_utc": "2026-10-23T23:44:27.966Z",
+        "finished_utc": "2026-10-23T23:44:28.076Z"
+      },
+      "stdout": [
+        "adapter=AMD Radeon(TM) Graphics vendor=4098 device=5761 LUID=0:62145 software=0",
+        "selection=0 ordinal=0",
+        "native D3D12 GPU-generated indirect arguments and early caller release passed"
+      ],
+      "stderr_empty": true
+    },
+    "uniform": {
+      "command": {
+        "exe": "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\sdk-artifact\\build\\native_compute.exe",
+        "args": [
+          "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\physical-evidence\\shaders\\uniform.dxil",
+          "--uniform"
+        ],
+        "cwd": "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23",
+        "deadline_ms": 120000
+      },
+      "result": {
+        "code": 0,
+        "signal": null,
+        "timeout": false,
+        "started_utc": "2026-10-23T23:44:28.081Z",
+        "finished_utc": "2026-10-23T23:44:28.200Z"
+      },
+      "stdout": [
+        "adapter=AMD Radeon(TM) Graphics vendor=4098 device=5761 LUID=0:62145 software=0",
+        "selection=0 ordinal=0",
+        "native D3D12 uniform binding readback and early caller release passed"
+      ],
+      "stderr_empty": true
+    },
+    "texture": {
+      "command": {
+        "exe": "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\sdk-artifact\\build\\native_texture.exe",
+        "args": [
+          "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\physical-evidence\\shaders\\texture.dxil"
+        ],
+        "cwd": "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23",
+        "deadline_ms": 120000
+      },
+      "result": {
+        "code": 0,
+        "signal": null,
+        "timeout": false,
+        "started_utc": "2026-10-23T23:44:28.205Z",
+        "finished_utc": "2026-10-23T23:44:28.416Z"
+      },
+      "stdout": [
+        "adapter=AMD Radeon(TM) Graphics vendor=4098 device=5761 LUID=0:62145 software=0",
+        "native D3D12 sampled/storage texture readback and early caller release passed"
+      ],
+      "stderr_empty": true
+    },
+    "graphics": {
+      "command": {
+        "exe": "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\sdk-artifact\\build\\native_graphics.exe",
+        "args": [
+          "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\physical-evidence\\shaders\\graphics-vs.dxil",
+          "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\physical-evidence\\shaders\\graphics-ps.dxil"
+        ],
+        "cwd": "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23",
+        "deadline_ms": 120000
+      },
+      "result": {
+        "code": 0,
+        "signal": null,
+        "timeout": false,
+        "started_utc": "2026-10-23T23:44:28.422Z",
+        "finished_utc": "2026-10-23T23:44:28.644Z"
+      },
+      "stdout": [
+        "adapter=AMD Radeon(TM) Graphics vendor=4098 device=5761 LUID=0:62145 software=0",
+        "native sampled draw passed; timestamp ticks=1872 frequency=100000000"
+      ],
+      "stderr_empty": true
+    },
+    "mesh": {
+      "command": {
+        "exe": "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\sdk-artifact\\build\\native_mesh.exe",
+        "args": [
+          "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\physical-evidence\\shaders\\mesh-vs.dxil",
+          "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\physical-evidence\\shaders\\mesh-ps.dxil"
+        ],
+        "cwd": "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23",
+        "deadline_ms": 120000
+      },
+      "result": {
+        "code": 0,
+        "signal": null,
+        "timeout": false,
+        "started_utc": "2026-10-23T23:44:28.649Z",
+        "finished_utc": "2026-10-23T23:44:28.879Z"
+      },
+      "stdout": [
+        "adapter=AMD Radeon(TM) Graphics vendor=4098 device=5761 LUID=0:62145 software=0",
+        "native indexed vertex/instance draw passed: exact BGRA blue and D32 0.25 readback"
+      ],
+      "stderr_empty": true
+    }
+  },
+  "oracles": {
+    "compute": "All 16 uint32 words equal ((index*97u+3u)^0x13579bdfu)+7u.",
+    "indirect": "Actual producer dispatch writes argument words 4..6 as 1. ExecuteIndirect consumes offset 16; all 16 target and all 16 argument words checked, including unchanged surrounding words.",
+    "uniform": "Same 16-word arithmetic through an initialized 256-byte b0 uniform view; logical parameters and physical padding preserved.",
+    "texture": "R32_FLOAT 3x2 source values 1,2,4,8,16,32 sampled and incremented by 0.25, stored, texture-copied and read back; every byte of 268-byte span checked, including preserved row padding.",
+    "graphics": "64x2 sampled fullscreen triangle over a red clear; all 512 RGBA bytes equal green. Two actual timestamps are ordered and frequency nonzero; retained ticks/frequency are diagnostics, not a performance comparison.",
+    "mesh": "Indexed per-vertex positions plus per-instance blue-near/red-far colors with LESS depth test. All 128 BGRA pixels exact blue and all128 D32 values exactly 0.25.",
+    "lifetime": "Every client releases source/pipeline/resource caller references before submission and command callers before completion polling. Exit 0 additionally requires successful context destruction after retained readbacks are released.",
+    "output_retention": "Native clients perform complete expected-versus-actual comparisons and retain pass/error logs, not separate raw readback arrays. These are developer host oracles, not an independent release campaign."
+  },
+  "evidence": {
+    "retained_bundle": "bench/out/c-d3d12-miles-159b58-20261023T2344/evidence.zip",
+    "retained_bundle_sha256": "b8f96dfb7114fb85590bf080ec6034e4d83f3596c52fc26a13d51eab224f071d",
+    "physical_manifest_sha256": "5c8532c4aecd294c4b414d0ae3d17fffa9426fe879441cd3040bb564c25bef04",
+    "physical_member_count": 97,
+    "physical_members_sha256": {
+      "commit.txt": "feeb6699d95d33949d77b9ea4fbc03f1e41e488bf56ecf16f6dc9776e2990b5e",
+      "compile-compute.command.json": "c4474e48033cedf491ece04fc706827dc6b42b1092dc7c8540e7f4de9a26dd89",
+      "compile-compute.result.json": "43c6eafcddf50b49965fa89acb87d6c9cf2df37e6eb748ee373a8e608b4cad22",
+      "compile-compute.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compile-compute.stdout.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compile-graphics-ps.command.json": "9a2a220ed40582362f6ab968b0d61cc426366f5c950d85bbe8cda6553f55c68c",
+      "compile-graphics-ps.result.json": "c73fc2fb9b698e52777e501a439f8fd80282639f36c8663c2f7eb07d3256fb26",
+      "compile-graphics-ps.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compile-graphics-ps.stdout.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compile-graphics-vs.command.json": "c4d27d828937654140c16871e408c123fdfc414ae9199c31e9bbca281b108d84",
+      "compile-graphics-vs.result.json": "2ae0cf44052c13816de06f49073a391b67358788c633b1dc2f893510595566eb",
+      "compile-graphics-vs.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compile-graphics-vs.stdout.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compile-indirect.command.json": "45f6e1643678e1e5cc3847c8883e894efe52f095c3206bc9ba7f7796c9ecbb46",
+      "compile-indirect.result.json": "9549ca498a9eff8458988e3b0bba3592bbeb7385ed5c4c0eeb5c3184fccef13a",
+      "compile-indirect.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compile-indirect.stdout.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compile-mesh-ps.command.json": "a79ced8cd429e30427fca6e2c731dc9191d4af36f2f2d2b85c4bc05715bd34d0",
+      "compile-mesh-ps.result.json": "dd1e562e0364bd43b7c1391a1f5ca252c198b0e8cfd4de8c35ea3c5d8885fa0f",
+      "compile-mesh-ps.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compile-mesh-ps.stdout.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compile-mesh-vs.command.json": "ff65198daea6180dc57b3617ca1e918f6f744b4bef6e2a4194b5dfb40532280d",
+      "compile-mesh-vs.result.json": "c8cba46d2452eb0dc23c2a4f25c9ca21a1fa4e9d221ebdc2d627cca497c51196",
+      "compile-mesh-vs.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compile-mesh-vs.stdout.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compile-texture.command.json": "9470ccf0cb2cac42b154a28a8859a02239eb2a21889a30817223f91556d44c9b",
+      "compile-texture.result.json": "e749e46e10056e04b23383304b276fb45d31dcbc00e5d15e2e91cbc80802ee15",
+      "compile-texture.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compile-texture.stdout.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compile-uniform.command.json": "1db5128bba16f08358a7cab3e312b820714b78d76fc500def372d1a03c73a070",
+      "compile-uniform.result.json": "d2b0d6a11758d7262e9629dd05869d5ed789bd8f16c586096eccb7edd759ec39",
+      "compile-uniform.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compile-uniform.stdout.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compute.command.json": "63af29ed9f95f7b861c1b6b7b4632e14c094d78592c3564632bc959169e4e172",
+      "compute.result.json": "a81cfc99b229b63fc71b8ad95c4a90eba19181d6cb16165e0e684eace70e4f68",
+      "compute.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compute.stdout.txt": "81d8ff3f3e1d140b0774a03e43e34375ceff9c8f7a8792ac6b390421fe602243",
+      "controller.json": "97fab080652ecd0794f835b087177f15fbb11680b97f07a545c0a297a2b145c5",
+      "dxc-files.json": "3236766493275b207f9f19882d33deba0e01e28a1a185332a1efcb242eec53ef",
+      "dxc-version.command.json": "ef3b11e6951868612d05d0c72bf238e4d2c65b843dea00ee8e95955d35b640ef",
+      "dxc-version.result.json": "9fa633575093c598ac95978917e78f44325c33d07f9dffdcff006a8063fc39eb",
+      "dxc-version.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "dxc-version.stdout.txt": "db4a6f2651741b87d8046e258d4919033a9fe04d7e2afb69886570ee05ad6705",
+      "extract-dxc.command.json": "e81575e9e7042d3b3f44cf82b051c50f9b4def938b69b90dc8a5b11427562cd2",
+      "extract-dxc.result.json": "3a839adc160d7e95e419efa3949230606062e235552c3d529b70e30718e39520",
+      "extract-dxc.stderr.txt": "773bcda37e9b19382d004bac898c1899ac2c83d92c55796ec734e073229a8108",
+      "extract-dxc.stdout.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "extract-sdk.command.json": "d43b8b66195826ba96e2d6e26a0005bab9ae7fe32a230793ac336441296c704c",
+      "extract-sdk.result.json": "fc5515faa92555e177e0b957bc0580d80e12d163c2a4d65ffff1507211f26c13",
+      "extract-sdk.stderr.txt": "bd929f5d049ac02e9fe23dd0a1844eff1f44465aea22af4edbbc12679213b8c6",
+      "extract-sdk.stdout.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "extract-source.command.json": "06b8ea8ea208549a4ba190d895f893f55e2a5ddc145db1bb3bcfebf0da1bced9",
+      "extract-source.result.json": "f94469dadf1035a8c78026030d5801e3a2b22416608614611199a4657e33e9c0",
+      "extract-source.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "extract-source.stdout.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "graphics.command.json": "0eb6fe2552ef50afc0d50cbe28dcfc0aa3f1acf0bf2fb3ca4cf871de4dc0b47f",
+      "graphics.result.json": "22abf31b9f76a5942efc56ff9998e03a327d8e7640439cc2ca98b4d4db0faca0",
+      "graphics.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "graphics.stdout.txt": "66ffeb2f6b5763aa2ca62861acca93e7af9db8e9a741eae9784d41b62e77142b",
+      "indirect.command.json": "6f1799c1db152fae89e9a213c62b265e8468297a4ecdb84f571dfef083e0ac81",
+      "indirect.result.json": "28d4d157b8a83ac8615b72ffd5300362f644be853a3fd487d5f2dd62dffcddfc",
+      "indirect.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "indirect.stdout.txt": "b86a4f17875b708cff92cd202266ea48e4176369bde3c4a2012e651321a58efe",
+      "inputs.json": "da74fc6583095511ae4b50ea1424612cc0606455f2828a45b35630e4187f4e41",
+      "mesh.command.json": "5daebe782848fd245a8cb7fc8b4d07d3032ee8bca31872de9eb11c97ce532d82",
+      "mesh.result.json": "bd5c8e6878c936d1d16a2483b834e3c9b9f05e724fc6c9a606fe140457b1e6af",
+      "mesh.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mesh.stdout.txt": "7e79046689291c13d08fba295e4cb2cbc065c0d40d43f611b82a3423fb269033",
+      "os-inventory.command.json": "15ca63fe04d23274cc8cf19b05fa55c9cc73db83a2df5799c73f451f5f15db48",
+      "os-inventory.result.json": "7760f5b1cac5c3eed7eb116e90c98ac285e17a8d271dc61fdd35c098e6017b4a",
+      "os-inventory.stderr.txt": "aa4c6b5187e8a52a4b02316c91eb0c7a4cfdce4cdea9b9d7ecfe2faa1d97cce4",
+      "os-inventory.stdout.txt": "3f38398c0bb524d54325b67bb4a00280fb19148497eb4658a1fe508a1c124304",
+      "os.json": "3f38398c0bb524d54325b67bb4a00280fb19148497eb4658a1fe508a1c124304",
+      "OUTCOME.txt": "c26de83abdc9496cd1301470918ec39ecca1cf389ef0ae1c6504da1800d1c431",
+      "SCOPE.txt": "2620946694f572a5f0b5980307b2d59f3d58e07886546a02dcc9e4ccb2172b42",
+      "shaders/compute.dxil": "b819a7745affacb2bd3f1b01ba498997ce8b356e92e940e42409f681c0b1523a",
+      "shaders/graphics-ps.dxil": "6d007b5bf468fd636953a761210443136d33173093d9a42507407b80fbca270c",
+      "shaders/graphics-vs.dxil": "ea252dac9cd901616d388bd335e67b8415b4cfaa4bdacaa55b7b78e8de61beec",
+      "shaders/indirect.dxil": "9ccb7afe2353dc287297141653b83648684875b9707359770e7ca8e920e3cc28",
+      "shaders/mesh-ps.dxil": "526c1a163940c778abff9686de48cd0ae4b1052f61993b489ebb7bec3782df4c",
+      "shaders/mesh-vs.dxil": "1e83e3817bcde33f9f9e05e8b247a12a1172c3c6e56e2283c8d89a9f3c014b82",
+      "shaders/texture.dxil": "0b7fad5eadcc5235d54da4d9255253dc42dacff5ed8fa72d9cf850a47dc75872",
+      "shaders/uniform.dxil": "5b4d4d1e0d2860024375c4083dca77956a94b2c68c4c173cfd43de5d8d470be9",
+      "source-inputs.json": "68d3f451276dd9f35b5fd7f4749e647337a64e7393d5e12771459f03ee4a9bcf",
+      "texture.command.json": "2d58ed863435c4826876fa8682642e82934c660d062861ebcb5eeedf2168354a",
+      "texture.result.json": "794ea2a912c08c42548e75fcbdf2fb894cfb220b781f835dd2f30b251b3c96a7",
+      "texture.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "texture.stdout.txt": "a6342105c89d909e484ccdbcc1212af968778355092e391605d3be17436c17ec",
+      "uniform.command.json": "5152fc40a07bbb5eb4e4345abde28e90e98977be26d8e0b960d76cd614c6e73b",
+      "uniform.result.json": "3c578c93a10a5fad93a49f9b00100406a4de0a165c3c3d60c8209fc00c5efc0e",
+      "uniform.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "uniform.stdout.txt": "ab857115b5dde9baa6473e61cca4f20c22e497dc01741b1b923f22c3bba0de50",
+      "video-controller.json": "ac5b47cfbaea44c2a8789dd98fb4102ac720c24627a2d44a873eb92968a25c60",
+      "video-inventory.command.json": "ad765ee137e2423b4f6a6fbebbc3ff2fdfd62b60dcf2c9bdc3976f770ab8fa1a",
+      "video-inventory.result.json": "997014b58a7c55504aec9f4d4981ce8faae3303d0144a7e972af65226c642b3b",
+      "video-inventory.stderr.txt": "aa4c6b5187e8a52a4b02316c91eb0c7a4cfdce4cdea9b9d7ecfe2faa1d97cce4",
+      "video-inventory.stdout.txt": "ac5b47cfbaea44c2a8789dd98fb4102ac720c24627a2d44a873eb92968a25c60"
+    },
+    "controller_and_bootstrap_sha256": {
+      "run-miles.cjs": "d2cf40fd8ebbf7a8b3154d7e3a2b113a07e68a84825064fee0ef92ac7d4edc02",
+      "run-miles.ps1": "5b6f3ea2730c4f534a53cf67f3960dde5e5c8cef9c57e3b8a17b77c4cbff7770",
+      "ssh-run.stdout.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "ssh-run.stderr.txt": "8419d72aeea44942fd20cd82408d2ca9274b6a3273fa4eec2944ba39557721d3",
+      "ssh-node.stdout.txt": "be15f20cf11570ba198f3eb5314f7672823d0cace3f221367d1610601a901ee1",
+      "ssh-node.stderr.txt": "048e2ba89ae430962e02f5341cf60c694fb7e131cb417790075a56b32ca09992",
+      "dxc-release.json": "c0f32c38b0ff5d8587983f19ee4d9e161a187f113d0c1119b518b7324f38c966",
+      "inputs.json": "da74fc6583095511ae4b50ea1424612cc0606455f2828a45b35630e4187f4e41",
+      "source-inputs.json": "68d3f451276dd9f35b5fd7f4749e647337a64e7393d5e12771459f03ee4a9bcf"
+    },
+    "verification": "All 97 downloaded physical evidence member hashes independently match the remote controller manifest. All 43 source inputs and all 39 original CI build/WARP member hashes verified on Miles before physical tests. Retained ZIP integrity checked locally."
+  },
+  "first_infrastructure_failure": {
+    "stage": "PowerShell -File controller launch, before staging or any GPU execution.",
+    "outcome": "Miles execution policy rejects unsigned .ps1 files; original SSH exit 1 and stderr retained.",
+    "resolution": "Use the already-installed Node 22 controller; ordinary PowerShell ZIP/CIM commands remain allowed. No execution policy change or bypass, no admin installation. No product failure or suppressed client/compile diagnostic."
+  },
+  "scope_limits": [
+    "One source-bound physical adapter/driver/Windows tuple and six bounded developer controls, not release qualification or universal backend support.",
+    "Private C D3D12 API consumes hand-authored HLSL compiled by DXC. Public WGSL compiler-to-native D3D12 frontend, packages, browsers and presentation remain unproven.",
+    "No debug-layer/leak audit, device-loss campaign, concurrency matrix, benchmark or matched-Dawn performance comparison.",
+    "Actual driver execution qualifies only these tested source bytes/cases. It does not transfer evidence to later source, other hardware or earlier SDK-only/WARP receipts.",
+    "Production remains retained Zig. No Suby device work or existing session/checkout/configuration changes."
+  ]
+}

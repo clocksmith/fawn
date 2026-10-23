@@ -227,15 +227,16 @@ all target output words and every argument word after native indirect consumptio
 It drops producer, argument and target callers before submission. Its `--uniform`
 variant consumes the same arithmetic through a 256-byte b0 uniform view, keeping
 logical parameters and initialized padding explicit. Both are authored real-driver
-consumers with portable C syntax checks, not exercised GPU results.
+consumers with physical developer execution recorded below; host syntax checks
+alone never establish their driver behavior.
 
 The original dot host evidence did not run Windows SDK compilation, native driver
-readback or debug-layer validation. Later source-bound SDK evidence is separate
-below; portable syntax checks never establish those properties or physical
-qualification. New WARP source requires its own hosted SDK/driver execution.
+readback or debug-layer validation. Later source-bound SDK and CPU WARP evidence
+is separate below; portable syntax checks never establish those properties or
+physical qualification.
 
 Core SOURCE_INPUTS.sha256 / TERMINAL_RECEIPT.txt, TEXTURE_*, GRAPHICS_* and MESH_*
-seals are historical. [The current developer receipt](DEVELOPER_RECEIPT_INDIRECT_UNIFORM.json)
+seals are historical. [The indirect/uniform host receipt](DEVELOPER_RECEIPT_INDIRECT_UNIFORM.json)
 binds 49 exact owner inputs, unchanged across strict and UBSan-only host checks:
 47 groups cover core, texture, graphics, mesh, indirect and uniform behavior.
 It records the ASan startup block and unrun SDK/DXC/driver boundaries explicitly.
@@ -247,3 +248,33 @@ clients with MSVC14.51/SDK10.0.26100 under `/std:c11 /W4 /WX`.
 The first SDK failure was fixed by replacing an unused legacy compiler include
 with the required common SDK types. All30 output hashes verify. No client was
 executed; device, public frontend and physical qualification remain separate.
+
+[Actual CPU WARP developer execution](DEVELOPER_RECEIPT_WARP.json) at
+`159b58a18` compiles the private backend and all four native clients with the
+actual Windows SDK, then runs only the direct compute client. SDK FXC 10.0.26100.9457
+compiles the exact HLSL fixture under `/Ges /WX /T cs_5_1`. The client observes
+Microsoft Basic Render Driver, vendor 5140/device 140, software flag 1, explicit
+WARP selection and no ordinal. All 16 readback words match the host arithmetic
+oracle after upload, dispatch and copy; early caller releases and successful
+context destruction pass. The receipt binds 38 exact Git source blobs, the
+[hosted run](https://github.com/doerun/doe/actions/runs/40040368403), tool identity,
+artifact ZIP and 39 verified build/control hashes. Raw output words were compared
+by the client and are not retained separately. This is CPU driver correctness
+evidence for that direct fixture; it does not establish physical GPU, indirect,
+uniform, graphics, public D3D12 frontend, performance or release qualification.
+
+[Miles physical developer execution](DEVELOPER_RECEIPT_MILES_D3D12.json) runs the
+unchanged source `159b58a18` SDK-built clients on AMD Radeon(TM) Graphics,
+vendor 4098/device 5761, driver 32.0.21030.2001, Windows 11 build 22631. Every
+client reports software flag 0 and exact ordinal 0. All six controls pass:
+16-word compute, GPU-generated indirect arguments, uniform buffers, sampled and
+storage texture transfers with preserved padding, sampled RGBA drawing with
+timestamp ordering, and indexed instance drawing with exact BGRA/depth readback.
+Each requires completion after early caller releases and successful context
+destruction. Official portable DXC 1.9.2609.5 compiles all eight shader stages
+under `-Ges -WX`; its archive matches Microsoft's published SHA256. The receipt
+binds 43 source blobs, binary and shader hashes, commands, actual adapter/driver,
+120-second process guards, and 97 verified evidence files. The isolated per-user
+run changes no existing checkout, PATH, SDK installation or execution policy.
+This is bounded private-backend hardware evidence for those cases, with no public
+D3D12 frontend, presentation, performance or release qualification claim.

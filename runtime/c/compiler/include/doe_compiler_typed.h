@@ -18,6 +18,11 @@ extern "C" {
 #define DOE_COMPILER_TYPED_REFLECTION 2u
 #define DOE_COMPILER_TYPED_MEASURE 4u
 #define DOE_COMPILER_TYPED_PROFILE_CONSERVATIVE_UNIFORM 1u
+#define DOE_COMPILER_TYPED_PROFILE_STANDARD_UNIFORM 2u
+/* Explicit implementation support, shared by flags-bearing ABI4-11 calls.
+ * Unset preserves conservative uniform admission. `requires` checks this bit;
+ * it never enables the feature. Natural type/member layouts remain unchanged. */
+#define DOE_COMPILER_UNIFORM_BUFFER_STANDARD_LAYOUT 8u
 
 #define DOE_COMPILER_TYPE_SCALAR 1u
 #define DOE_COMPILER_TYPE_VECTOR 2u

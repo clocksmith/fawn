@@ -1,0 +1,64 @@
+{
+  "kind": "developer-correctness-evidence",
+  "component": "Native public Metal offscreen graphics",
+  "date": "2026-10-23",
+  "consumer": "C migration public Metal graphics integration gate; no production promotion",
+  "intent": "preserved: public WebGPU lowering uses selected Metal backend and existing resource/pending owners",
+  "source_head": "937916190de1bd6cf6162c77f1d74ee6853f40ea",
+  "source_manifest": {
+    "path": "runtime/c/native/METAL_PUBLIC_GRAPHICS_SOURCE_INPUTS.json",
+    "sha256": "3d8c83aa0e5888c3d79464fc35d50a81d207447a5e4f4a0cf155c1a9b8233dcc"
+  },
+  "artifact": {
+    "path": "/tmp/doe-c-metal-public-20261023/libwebgpu_doe_c.dylib",
+    "sha256": "d9646d2eea7034a80c67b5af6cb9180d2326c5046ae57d3cc358712d82fef689"
+  },
+  "compiler_artifact": {
+    "path": "/tmp/doe-c-metal-public-20261023/libdoe_compiler.dylib",
+    "sha256": "23b2a7c5c8d5cbf27d9498bd2f943a8f6c73183c1ccb40b227e4486ccdead6d9"
+  },
+  "public_control": {
+    "path": "runtime/c/native/tests/offscreen_triangle.c",
+    "sha256": "ea6a8fc07d42f9f6375e9878fdf986d472f0ac6cfcacf01dbbd67c73efeae752"
+  },
+  "shared_control": {
+    "path": "runtime/c/native/tests/metal_graphics_cases.h",
+    "sha256": "c5635b8dbc6fc44525d3d262fe848389d91d0e1951207ebd33c48f8d1be5a78f"
+  },
+  "binary": {
+    "path": "/tmp/doe-c-metal-public-20261023/offscreen-triangle",
+    "sha256": "770862320a3f64dd5675ee351fa4955776f1604545fa9b7e2fa0bb4ef4dfeb66"
+  },
+  "actual_run": {
+    "elapsed_seconds": 0.1887006249744445,
+    "exit_code": 0,
+    "binary_sha256": "770862320a3f64dd5675ee351fa4955776f1604545fa9b7e2fa0bb4ef4dfeb66",
+    "library_sha256": "d9646d2eea7034a80c67b5af6cb9180d2326c5046ae57d3cc358712d82fef689",
+    "output": "Selected adapter backend Metal, type 4: Apple M3\nPASS public WGSL triangle, early release, discard initialization and packed uploads (native Metal device: Apple M3; subtype unclassified; developer run, not qualification)\n"
+  },
+  "terminal": {
+    "path": "runtime/c/native/METAL_PUBLIC_GRAPHICS_TERMINAL.txt",
+    "sha256": "e885dffe898ff02cd4f54c33b31289d14edc4210f0eb84ab7bcfcbbe1264f197"
+  },
+  "scope": [
+    "Apple M3 native Metal, adapter subtype unclassified",
+    "Real compiler WGSL vertex_index and fragment ->8x8 RGBA8 triangle with asymmetric corner oracle",
+    "Public shader/pipeline/view/texture early release before native submit",
+    "Attachment discard then texture copy yields zero bytes",
+    "Packed256byte QueueWriteTexture upload then aligned texture copy/map preserves exact bytes"
+  ],
+  "build": "Fresh Darwin strict C11 native all and public consumer link; no mock native library",
+  "post_run_source_changes": [
+    "runtime/c/native/tests/metal_bridge.c",
+    "runtime/c/native/src/bindings.c",
+    "runtime/c/native/src/pipeline_layouts.c",
+    "runtime/c/native/Makefile"
+  ],
+  "host_controls": "Combined Linux snapshot /tmp/doe-c-metal-layout-uiy6om0p passed full native controls, including Metal initialization failure/unknown lifetime, fragment-write rejection and zero Vulkan format-query routing, plus offscreen-triangle on CPU Vulkan; first physical receipt remains bound to its original input manifest.",
+  "limits": [
+    "Bounded developer correctness on one Mac only; not independent or numerical/performance qualification",
+    "No surface/presentation, indirect/indexed Metal guards, depth/stencil transfer, partial sample masks or production cutover claim",
+    "Five-second whole child deadline, no forced GPU cancellation or completion inference",
+    "Source manifest binds first physical bytes; later source must be checked separately"
+  ]
+}

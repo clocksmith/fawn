@@ -485,3 +485,30 @@ flags/traps, subnormals and independent threads. Current executed qualification
 is Linux x86-64 GCC 14.2 only. ARM64/Darwin and other compiler builds are authored
 paths, not executed or numerically qualified platforms; Apple SDK checks remain
 pending. Existing historical host restrictions/receipts are unchanged.
+
+## Explicit standard uniform layout
+
+Flags-bearing ABI4–11 calls accept `DOE_COMPILER_UNIFORM_BUFFER_STANDARD_LAYOUT`
+in addition to selected output/measure bits. This opts the compiler into the
+[WGSL standard uniform layout language feature](https://www.w3.org/TR/2026/CRD-WGSL-20261021/#address-space-layout-constraints); it is accepted with or without
+`requires uniform_buffer_standard_layout;`. The directive checks implementation
+support and does not enable it. Calls without the flag, including ABI1–3, retain
+conservative uniform admission. Native provider feature reporting is unchanged.
+
+Natural type sizes, array strides, member offsets, explicit alignment/size and all
+host-shareable/fixed-size restrictions remain canonical. Reflection reports
+`DOE_COMPILER_TYPED_PROFILE_STANDARD_UNIFORM` and natural uniform address-space
+alignment when selected. SPIR-V uses the existing baseline-compatible raw uniform
+representation when native block layout cannot express those bytes, including
+exact 4/8/12-byte tail-only blocks. No Vulkan uniform-layout feature is requested.
+MSL/HLSL use the same semantic byte offsets. Public records, symbols, workspace
+requirements and existing profile values do not change.
+
+`make test-uniform-standard` checks opt-in/default/directive behavior, natural
+reflection, nested/attribute/matrix layout and failure publication. An optional
+output directory argument to its binary emits SPIR-V/MSL/HLSL developer artifacts.
+`test-uniform-standard-vulkan` takes `SOFTWARE_VULKAN_ICD` and
+`UNIFORM_STANDARD_ARTIFACTS`; it checks exact-size CPU descriptors and a well-typed
+wrong-offset SPIR-V control. `test-uniform-standard-host` consumes the emitted MSL
+with erased address spaces/attributes; it is not MSL SDK or GPU qualification.
+Independent semantic acceptance and physical qualification remain separate.
