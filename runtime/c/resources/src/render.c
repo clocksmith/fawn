@@ -284,7 +284,8 @@ doe_resource_status doe_resource_render_pass_set_pipeline(doe_resource_render_pa
 {
     doe_resource_status status = resource_render_pass_active(pass);
     if (status != DOE_RESOURCE_OK) return status;
-    status = resource_render_set_pipeline(pass->base.config.device.identity, &pass->state, pipeline);
+    doe_resource_render_bundle_desc signature = resource_render_targets_layout(&pass->state.targets);
+    status = resource_render_set_pipeline(pass->base.config.device.identity, &pass->state, &signature, pipeline);
     return resource_encoder_fail(pass->encoder, status);
 }
 

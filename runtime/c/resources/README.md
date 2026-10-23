@@ -400,3 +400,16 @@ behavior to the pinned typed-chain initializer and
 [WebGPU draw budget](https://gpuweb.github.io/gpuweb/#dom-gpurenderpassdescriptor-maxdrawcount).
 `DEVELOPER_RECEIPT_DRAW_BUDGET.json` preserves the first failure and focused host
 ownership checks; native descriptor-chain parsing and real execution are separate.
+
+Pipeline attachment/read-only compatibility is checked when set, not postponed
+until a draw that might never occur. Pass and bundle setters reuse the same
+signature validator as draw/replay; rejection retains the old binding, acquires
+no candidate lease and preserves the sticky error. Canonical layout construction
+also rejects Vertex-visible writable storage buffers/textures and multisampled
+Float bindings before allocation. Legal read-only Vertex, writable Fragment/Compute
+and unfilterable/depth multisample layouts remain admitted. These follow the
+[setPipeline rules](https://gpuweb.github.io/gpuweb/#dom-gpurendercommandsmixin-setpipeline)
+and [layout-entry rules](https://gpuweb.github.io/gpuweb/#dom-gpudevice-createbindgrouplayout).
+Existing visibility-alias controls use legal Fragment/Compute pairs; whole-pass
+usage history remains independent of visibility. `DEVELOPER_RECEIPT_PIPELINE_ADMISSION.json`
+preserves the four first failures and focused host evidence, not GPU qualification.

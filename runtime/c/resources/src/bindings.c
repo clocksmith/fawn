@@ -59,6 +59,12 @@ static doe_resource_status normalize_entry(const doe_resource_layout_entry *inpu
         if (result.multisampled && result.view_dimension != WGPUTextureViewDimension_2D)
             return DOE_RESOURCE_LAYOUT;
     }
+    if ((result.visibility & WGPUShaderStage_Vertex) &&
+        ((result.kind == DOE_BIND_BUFFER && result.buffer_type == WGPUBufferBindingType_Storage) ||
+         (result.kind == DOE_BIND_STORAGE_TEXTURE && result.storage_access != WGPUStorageTextureAccess_ReadOnly)))
+        return DOE_RESOURCE_LAYOUT;
+    if (result.kind == DOE_BIND_TEXTURE && result.multisampled && result.sample_type == WGPUTextureSampleType_Float)
+        return DOE_RESOURCE_LAYOUT;
     *out = result;
     return DOE_RESOURCE_OK;
 }

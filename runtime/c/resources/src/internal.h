@@ -186,7 +186,7 @@ doe_resource_status resource_render_layout_validate(WGPUTextureFormat color,
     WGPUTextureFormat depth_stencil, uint32_t samples);
 doe_resource_render_bundle_desc resource_render_targets_layout(const doe_resource_render_targets *targets);
 doe_resource_status resource_render_set_pipeline(void *device, doe_resource_render_packet *state,
-    doe_resource_render_pipeline *pipeline);
+    const doe_resource_render_bundle_desc *signature, doe_resource_render_pipeline *pipeline);
 doe_resource_status resource_render_set_group(const doe_resource_config *config,
     resource_usage_scope *scope, doe_resource_render_packet *state,
     uint32_t index, const doe_resource_dispatch_group *group);

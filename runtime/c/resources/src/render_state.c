@@ -28,12 +28,25 @@ doe_resource_render_bundle_desc resource_render_targets_layout(const doe_resourc
     };
 }
 
+static doe_resource_status validate_pipeline(const doe_resource_render_pipeline *pipeline,
+    void *device, const doe_resource_render_bundle_desc *signature)
+{
+    if (!pipeline || !resource_alive(&pipeline->base)) return DOE_RESOURCE_UNAVAILABLE;
+    if (pipeline->base.config.device.identity != device) return DOE_RESOURCE_DEVICE_MISMATCH;
+    if (pipeline->desc.color_format != signature->color_format ||
+        pipeline->desc.depth_stencil_format != signature->depth_stencil_format ||
+        pipeline->desc.samples != signature->samples ||
+        (signature->depth_read_only && pipeline->desc.depth_write) ||
+        (signature->stencil_read_only && pipeline->desc.stencil_write)) return DOE_RESOURCE_LAYOUT;
+    return DOE_RESOURCE_OK;
+}
+
 doe_resource_status resource_render_set_pipeline(void *device, doe_resource_render_packet *state,
-    doe_resource_render_pipeline *pipeline)
+    const doe_resource_render_bundle_desc *signature, doe_resource_render_pipeline *pipeline)
 {
     if (!pipeline) return DOE_RESOURCE_INVALID_ARGUMENT;
-    if (pipeline->base.config.device.identity != device)
-        return DOE_RESOURCE_DEVICE_MISMATCH;
+    doe_resource_status status = validate_pipeline(pipeline, device, signature);
+    if (status != DOE_RESOURCE_OK) return status;
     doe_resource_render_pipeline_retain(pipeline);
     doe_resource_render_pipeline_release(state->pipeline);
     state->pipeline = pipeline;
@@ -138,13 +151,8 @@ doe_resource_status resource_render_draw_validate(const doe_resource_render_pack
         if (packet->indirect->mapped || packet->indirect->map_pending) return DOE_RESOURCE_STATE;
     }
     const doe_resource_render_pipeline *pipeline = packet->pipeline;
-    if (!pipeline || !resource_alive(&pipeline->base)) return DOE_RESOURCE_UNAVAILABLE;
-    if (pipeline->base.config.device.identity != device) return DOE_RESOURCE_DEVICE_MISMATCH;
-    if (pipeline->desc.color_format != signature->color_format ||
-        pipeline->desc.depth_stencil_format != signature->depth_stencil_format ||
-        pipeline->desc.samples != signature->samples ||
-        (signature->depth_read_only && pipeline->desc.depth_write) ||
-        (signature->stencil_read_only && pipeline->desc.stencil_write)) return DOE_RESOURCE_LAYOUT;
+    status = validate_pipeline(pipeline, device, signature);
+    if (status != DOE_RESOURCE_OK) return status;
     doe_resource_dispatch_group groups[DOE_RESOURCE_MAX_GROUPS];
     for (size_t i = 0; i < pipeline->layout->count; i++)
         groups[i] = (doe_resource_dispatch_group){packet->groups[i], packet->offsets.values[i], packet->offsets.counts[i]};
