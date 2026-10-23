@@ -93,6 +93,21 @@ static void scalar_operation(HlslEmitter *e, const IrInstruction *ir, uint32_t l
     if (wrap) hlsl_text(e, ")");
 }
 static void numeric_operation(HlslEmitter *e, const IrInstruction *ir) {
+    if ((ir->opcode == IR_ADD || ir->opcode == IR_SUBTRACT || ir->opcode == IR_MULTIPLY) &&
+        (type_matrix(e->module, ir->operands.scalar.binding) ||
+         type_matrix(e->module, ir->operands.scalar.literal))) {
+        const bool product = ir->opcode == IR_MULTIPLY &&
+            ir->operands.scalar.binding != IR_F32 && ir->operands.scalar.literal != IR_F32;
+        /* HLSL rows represent WGSL columns, so (A B)^T = B^T A^T.
+         * HLSL '*' is componentwise; only scalar products may use it here. */
+        hlsl_text(e, product ? "mul(" : "(");
+        hlsl_value(e, product ? ir->operands.scalar.right : ir->operands.scalar.left);
+        if (product) hlsl_text(e, ", ");
+        else hlsl_format(e, " %s ", binary_operator(ir->opcode));
+        hlsl_value(e, product ? ir->operands.scalar.left : ir->operands.scalar.right);
+        hlsl_text(e, ")");
+        return;
+    }
     const uint32_t width = type_vector_width(e->module, ir->type);
     if (width != 1u) {
         hlsl_type(e, ir->type);
@@ -227,7 +242,8 @@ static void builtin_expression(HlslEmitter *e, const IrInstruction *ir) {
         case BUILTIN_DISTANCE: intrinsic = "distance"; break;
         case BUILTIN_NORMALIZE: intrinsic = "normalize"; break;
         case BUILTIN_CROSS: intrinsic = "cross"; break;
-        case BUILTIN_TRANSPOSE: case BUILTIN_DETERMINANT:
+        case BUILTIN_TRANSPOSE: intrinsic = "transpose"; break;
+        case BUILTIN_DETERMINANT: intrinsic = "determinant"; break;
         case BUILTIN_MIN: case BUILTIN_MAX: case BUILTIN_CLAMP:
         case BUILTIN_SUBGROUP_ADD: case BUILTIN_SUBGROUP_MIN: case BUILTIN_SUBGROUP_MAX:
         case BUILTIN_SUBGROUP_MUL: case BUILTIN_SUBGROUP_AND: case BUILTIN_SUBGROUP_OR:

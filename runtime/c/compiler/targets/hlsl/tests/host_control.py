@@ -11,13 +11,14 @@ wave intrinsics, descriptor lifetime, a driver, or target compiler acceptance.
 """
 import pathlib
 import re
+import signal
 import subprocess
 import sys
 
 out = pathlib.Path(sys.argv[1])
 subprocess.run([str(out / "test_hlsl"), str(out / "control.hlsl"),
                 str(out / "aggregate.hlsl"), str(out / "effects.hlsl"), str(out / "image_guard.hlsl"),
-                str(out / "graphics.hlsl"), str(out / "array_length.hlsl")], check=True)
+                str(out / "graphics.hlsl"), str(out / "array_length.hlsl"), str(out / "matrices.hlsl")], check=True)
 prelude = r"""
 #include <algorithm>
 #include <array>
@@ -182,7 +183,8 @@ int main() {
 }
 """
 for name, main in (("control", scalar), ("aggregate", aggregate), ("effects", effects),
-                   ("image_guard", image_guard), ("graphics", graphics), ("array_length", array_length)):
+                   ("image_guard", image_guard), ("graphics", graphics), ("array_length", array_length),
+                   ("matrices", pathlib.Path("tests/matrix_main.cpp").read_text())):
     text = (out / (name + ".hlsl")).read_text()
     if name == "image_guard":
         text = re.sub(r"Texture2D<float> (r\d+) : register\([^;]+;", r"ImageTexture \1;", text)
@@ -193,16 +195,41 @@ for name, main in (("control", scalar), ("aggregate", aggregate), ("effects", ef
     text = re.sub(r"(r\d+)\.GetDimensions\(count, stride\);",
                   lambda m: f"count = {m[1]}_count; stride = {m[1]}_stride;", text)
     text = re.sub(r"\[numthreads\([^\n]+\]\n", "", text)
+    if name == "matrices":
+        # HLSL's aggregate zero cast initializes every numeric member. C++ {}
+        # would call the deliberately poisoned matrix default constructor.
+        text = re.sub(r"\((DoeT\d+|DoeContext)\)0", r"host_zero<\1>()", text)
     text = re.sub(r"\((DoeT\d+|DoeContext|uint3|uint4)\)0", r"\1{}", text)
     text = text.replace("precise ", "")
     if name == "graphics":
         text = re.sub(r" : (?:TEXCOORD|SV_)[A-Za-z0-9_]+", "", text)
         text = re.sub(r"\b(?:nointerpolation|noperspective|linear|centroid|sample) ", "", text)
         text = re.sub(r"\((DoeStage[12])\)0", r"\1{}", text)
+    if name == "matrices":
+        text = re.sub(r"cbuffer DoeUniform\d+ : register\([^\n]+\n(.*?)\n};", r"\1", text, flags=re.S)
     path = out / (name + "_host.cpp")
-    path.write_text(prelude + (image_types if name == "image_guard" else "") + text + main)
+    extra = image_types if name == "image_guard" else ""
+    if name == "matrices":
+        extra = '#include "matrix_control.h"\n'
+    path.write_text(prelude + extra + text + main)
     executable = out / (name + "_host")
     subprocess.run(["g++", "-std=c++17", "-O2", "-fno-fast-math", "-ffp-contract=off",
-                    "-fno-exceptions", "-fno-rtti", "-fsanitize=undefined", str(path),
+                    "-fno-exceptions", "-fno-rtti", "-fsanitize=undefined", "-Itests", str(path),
                     "-o", str(executable)], check=True)
     subprocess.run([str(executable)], check=True)
+
+    if name == "matrices":
+        # Same-shaped noncommuting matrices still type-check if reversed. The
+        # literal expected outputs must reject that wrong-but-well-typed edit.
+        original = path.read_text()
+        match = list(re.finditer(r"mul\((v\d+), (v\d+)\)", original))[-1]
+        wrong = original[:match.start()] + f"mul({match[2]}, {match[1]})" + original[match.end():]
+        wrong_path = out / "matrices_wrong_order.cpp"
+        wrong_path.write_text(wrong)
+        wrong_binary = out / "matrices_wrong_order"
+        subprocess.run(["g++", "-std=c++17", "-O2", "-fno-fast-math", "-ffp-contract=off",
+                        "-fsanitize=undefined", "-Itests", str(wrong_path), "-o", str(wrong_binary)], check=True)
+        result = subprocess.run([str(wrong_binary)], capture_output=True, text=True)
+        assert result.returncode == -signal.SIGABRT
+        assert "asfloat(output[i]) == expected[i]" in result.stderr
+        print("HLSL matrix wrong-order control rejected the same-shaped noncommuting product.")

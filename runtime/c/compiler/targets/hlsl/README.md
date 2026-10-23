@@ -19,7 +19,7 @@ while the call runs. Error status/offset remain explicit; errno is preserved.
 
 Implemented over current C IR:
 
-- Concrete bool/i32/u32/f32 scalars, vectors, nested fixed arrays, structures,
+- Concrete bool/i32/u32/f32 scalars, vectors, all nine f32 matrix shapes, nested fixed arrays, structures,
   constants, immutable argument values, helper calls and multiple compute/vertex/fragment entries.
 - ABI7 graphics interface leaves map to explicit HLSL semantics. Flat source
   structures remain typed values internally; the wrapper composes input formals
@@ -116,9 +116,9 @@ and [structure interpolation](https://learn.microsoft.com/en-us/windows/win32/di
 ## Unfinished surface
 
 Derivative/implicit-LOD texture sampling, gather,
-comparison sampling, texture offsets, external textures, matrices, f16, atomics,
-pointer parameters, overrides and remaining retained builtin families are not
-present in this C IR owner and remain explicitly rejected by shared admission.
+comparison sampling, texture offsets, external textures, f16, pointer parameters,
+overrides and remaining retained builtin families remain incomplete. New shared
+atomic IR explicitly rejects here until HLSL atomic lowering is implemented.
 Subgroup size and invocation inputs use WaveGetLaneCount/WaveGetLaneIndex;
 num_subgroups and subgroup_id explicitly reject because this owner does not
 assume a portable mapping from local invocation order to HLSL wave membership.
@@ -185,3 +185,25 @@ one per type (including seven primitives) prevents repeated aggregate subtrees.
 No allocation, fixed function-count cap, IR mutation or larger work budget was
 introduced. Each selected entry closure visits each reachable function once;
 MSL's all-entry mode resolves the union once. Shared call DAGs are not unrolled.
+
+## Matrix value representation
+
+HLSL native rows represent WGSL columns: WGSL matCxR uses HLSL floatCxR, whose
+native dimensions are C rows and R columns. Indexing and compact column constant
+DAGs stay direct. Matrix addition/subtraction and scalar multiplication are
+componentwise; linear matrix/vector products use `mul(right, left)` because the
+internal value is transposed. Transpose and determinant map directly. This avoids
+wrapper copies or an additional semantic/layout engine. Shared WGSL offsets and
+column stride still own external buffers, including vec3 padding; native HLSL
+packing never determines them. The mapping follows Microsoft's
+[matrix dimensions](https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-matrix),
+[mul operand rules](https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-mul)
+and [scalar-to-aggregate casts](https://learn.microsoft.com/en-us/windows/win32/direct3d9/casting-and-conversion).
+
+The common matrix source fixture is shared with Metal, but each host operation
+model uses its target's actual row/column convention. Seventeen exact finite
+outputs cover nonsquare matrix/vector products, a noncommuting square product,
+scalar/column constructors, transpose, determinant, zero and padding. A deliberate
+same-shaped product reversal must fail. The host shim preserves HLSL aggregate
+zero casts rather than incorrectly calling poisoned C++ default constructors.
+This is emitted-operation evidence, not DXC, DXIL, GPU precision or SDK acceptance.

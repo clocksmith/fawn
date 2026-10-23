@@ -32,6 +32,16 @@ void hlsl_type(HlslEmitter *e, TypeId type) {
             return;
         }
         hlsl_format(e, "%s%u", scalars[t->element], t->count);
+    } else if (t->kind == TYPE_MATRIX) {
+        const TypeRecord *column = aggregate(e, t->element);
+        if (column == NULL || column->kind != TYPE_VECTOR || column->element != IR_F32 ||
+            t->count < 2u || t->count > 4u || column->count < 2u || column->count > 4u) {
+            hlsl_error(e, "HLSL matrix shape is invalid");
+            return;
+        }
+        /* Native rows are WGSL columns. Indexing stays direct; linear products
+         * reverse their operands in numeric.c, not external memory layout. */
+        hlsl_format(e, "float%ux%u", t->count, column->count);
     } else if (t->kind == TYPE_ARRAY || t->kind == TYPE_STRUCT) {
         hlsl_format(e, "DoeT%u", type);
     } else hlsl_error(e, "HLSL type kind has no value representation");
@@ -98,7 +108,7 @@ void hlsl_constant(HlslEmitter *e, TypeId type, uint64_t bits, bool composite) {
 static void member_suffix(HlslEmitter *e, const TypeRecord *t, uint32_t index) {
     if (t->kind == TYPE_STRUCT) hlsl_format(e, ".m%u", index);
     else if (t->kind == TYPE_ARRAY) hlsl_format(e, ".elements[%u]", index);
-    else if (t->kind == TYPE_VECTOR) hlsl_format(e, "[%u]", index);
+    else if (t->kind == TYPE_VECTOR || t->kind == TYPE_MATRIX) hlsl_format(e, "[%u]", index);
     else hlsl_error(e, "HLSL constructor kind is unsupported");
 }
 void hlsl_constants(HlslEmitter *e) {
@@ -151,7 +161,7 @@ void hlsl_composite(HlslEmitter *e, const IrInstruction *ir) {
     hlsl_indent(e);
     hlsl_value(e, ir->result);
     hlsl_text(e, " = ");
-    if (t->kind == TYPE_VECTOR && count != 0u) {
+    if ((t->kind == TYPE_VECTOR || t->kind == TYPE_MATRIX) && count != 0u) {
         hlsl_type(e, ir->type);
         hlsl_text(e, "(");
         for (uint32_t i = 0u; i < count; ++i) {

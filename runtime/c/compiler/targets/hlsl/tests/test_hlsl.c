@@ -405,6 +405,7 @@ static void test_array_length(const char *path) {
     release(f);
 }
 int main(int argc, char **argv) {
+    test_matrices(argc > 7 ? argv[7] : NULL);
     test_array_length(argc > 6 ? argv[6] : NULL);
     test_graphics(argc > 5 ? argv[5] : NULL);
     test_images(argc > 4 ? argv[4] : NULL);
