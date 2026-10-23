@@ -13,8 +13,8 @@ modify installed ICD configuration for tests; use process-local selection.
 
 Adapter enumeration order is not identity. Preserve the core device/driver UUID
 pair when a native adapter creates a device; reject absent or ambiguous matches
-without ordinal substitution. Explicit CPU selection is distinct from permitting
-CPU at an exact ordinal. Query the official ID-properties chain, never names,
+without ordinal substitution. Explicit CPU and non-CPU class selection are
+distinct from permitting CPU at an exact ordinal. Query the official ID-properties chain, never names,
 vendor/device numbers, pipeline-cache UUIDs or instance-local handles. Keep UUIDs
 as owned values and independent contexts under their existing serialization rule.
 

@@ -9,9 +9,10 @@ The texture owner adds uncompressed color images, retained views/samplers and
 mip/layer-aware padded transfers across 1D/2D/3D images.
 It is not wired into the production provider. It is not full Vulkan/WebGPU parity.
 
-Adapter selection has three explicit modes: the existing exact ordinal (the zero
+Adapter selection has four explicit modes: the existing exact ordinal (the zero
 default), first CPU device when software is explicitly requested and permitted,
-or one exact device/driver UUID-pair match. Native device creation uses the
+first non-CPU device for a hardware request, or one exact device/driver UUID-pair
+match. Native device creation uses the
 adapter's copied UUID identity, so changing enumeration order or instance-local
 handles cannot choose another device. Missing or duplicate identity matches
 reject; no ordinal or hardware substitute is attempted. UUID properties come
@@ -59,8 +60,7 @@ selection described below; unsupported feature use must be rejected by
 the compiler/native admission path before creating a pipeline. This is not a
 complete public validation boundary for untrusted SPIR-V.
 
-Surfaces,
-prepared-program caches and tuned hazard elision are not yet migrated here.
+Prepared-program caches and tuned hazard elision are not yet migrated here.
 Indirect compute uses the explicit GPU validator below; unchecked forwarding is not exposed.
 The retained production owners remain authoritative for those behaviors.
 
@@ -337,8 +337,20 @@ per-aspect masks, so discarding depth does not discard stencil and an abandoned
 clear does not publish either. A read-only aspect cannot clear/discard or use a
 pipeline that may write it. LOAD requires prior initialization, including empty
 passes. Views and native framebuffers stay retained through unresolved work.
-Depth formats currently admit only 2D attachment usage: depth copying, sampling
-and storage are explicitly unsupported rather than using color-aspect transfers.
+Depth/stencil images admit 2D attachment and/or copy usage; sampling and storage
+remain explicitly unsupported. Transfers carry an explicit aspect on
+`doe_vk_texture_region`: ALL for color and for all-aspect texture-to-texture
+copies, DEPTH or STENCIL for buffer copies, which need exactly one aspect. Linear
+bytes are per aspect (D16 depth 2, D32 and D32S8 depth 4, stencil 1); packed D24
+depth has no linear layout here and buffer copies of it return UNSUPPORTED. The
+native aspect mask reaches `VkBufferImageCopy`/`VkImageCopy`; layout transitions
+still cover every aspect of the image. Reads require the copied aspects to be
+initialized and full writes initialize only those aspects, using the same
+per-aspect masks as attachments. Public per-format copy direction and full-
+subresource rules belong to the resource owner. D16_UNORM is admitted as a named
+retained format (value 124 from `vk_formats.zig`). `tests/depth_copy_contract.c`
+checks these packets, creation rejection, per-aspect publication and partial-write
+refusal with mocked native calls, not GPU execution.
 
 The extended native render witness uses D32S8 with near/far depth tests, stencil
 replace/equal, dynamic references, an empty read-only LOAD, independent rejected
@@ -500,7 +512,7 @@ headless image. Instance surface/platform extensions and the full EXT maintenanc
 dependency chain are required, followed by actual device feature enablement and
 loaded native procedures. `surface_probe` reports discovery only.
 
-Capabilities are bounded (32 formats, 8 present modes/images), with exact requested
+Capabilities are bounded (128 formats, 8 present modes/images), with exact requested
 format, SRGB nonlinear color space, alpha, usage, extent and present-mode admission.
 MAILBOX is native value1 and FIFO_RELAXED value3, correcting reversed constants in
 the retained surface translation. Configure requires an explicitly unconfigured
@@ -532,6 +544,13 @@ waits pending presentation, discards a quiescent frame and unconfigures. It neve
 starts an acquire or releases caller command/image leases; BUSY preserves them.
 
 Host tests inject actual native-call boundaries and test these states, not display
-output. The installed software ICD admits Wayland/XCB maintenance1 and rejects Xlib.
-This cloud environment has no connected X/Wayland display or Xvfb, so actual window
-creation/acquisition/presentation and physical hardware qualification remain unrun.
+output. The public native frontend (`runtime/c/native`, `check-present`) now drives
+this owner end to end on real windows: on Jupiter (GNOME Wayland with Xwayland),
+lavapipe and Radeon 8060S/RADV both acquired, rendered, read back and presented
+XCB and Xlib windows (FIFO, including one Timeout retry and a resize that returned
+suboptimal) and a role-less Wayland `wl_surface`, with exact pixels read back in the
+presenting submission. That proves native acquisition, prepare-present,
+present-fence retirement, maintenance1 discard and swapchain teardown on those two
+drivers, not what the compositor displayed, OUTDATED/LOST observation on a real
+swapchain (host-tested only) or physical hardware qualification. Mesa Wayland
+reports 64 surface formats, so the explicit format capacity is 128.

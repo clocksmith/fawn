@@ -41,17 +41,20 @@ typedef struct doe_vk_error {
 
 enum { DOE_VK_SURFACE_WAYLAND = 1, DOE_VK_SURFACE_XCB = 2, DOE_VK_SURFACE_XLIB = 4 };
 
+enum { DOE_VK_UUID_SIZE = 16 };
+
 /* Physical device plus driver build, copied from core1.1 ID properties. Names,
  * vendor/device numbers and pipeline-cache compatibility UUIDs are not identity. */
 typedef struct doe_vk_adapter_identity {
-    uint8_t device_uuid[16];
-    uint8_t driver_uuid[16];
+    uint8_t device_uuid[DOE_VK_UUID_SIZE];
+    uint8_t driver_uuid[DOE_VK_UUID_SIZE];
 } doe_vk_adapter_identity;
 
 typedef enum doe_vk_adapter_selection {
     DOE_VK_SELECT_ORDINAL = 0,
     DOE_VK_SELECT_SOFTWARE,
-    DOE_VK_SELECT_IDENTITY
+    DOE_VK_SELECT_IDENTITY,
+    DOE_VK_SELECT_HARDWARE
 } doe_vk_adapter_selection;
 
 typedef struct doe_vk_options {
@@ -61,8 +64,9 @@ typedef struct doe_vk_options {
     bool enable_shader_demote_if_supported; /* Explicit opt-in; unavailable remains disabled. */
     uint32_t surface_platforms; /* Zero disables WSI; exact required platform bits. */
     /* Zero keeps exact ordinal admission. SOFTWARE explicitly selects the first
-     * CPU device and requires allow_cpu_adapter; IDENTITY requires one unique
-     * UUID-pair match. Neither selection substitutes an ordinal on failure. */
+     * CPU device and requires allow_cpu_adapter; HARDWARE selects the first
+     * non-CPU device; IDENTITY requires one unique UUID-pair match. Failure
+     * never substitutes an ordinal or another selection mode. */
     doe_vk_adapter_selection adapter_selection;
     doe_vk_adapter_identity required_identity; /* Owned value, no borrowed pointer. */
 } doe_vk_options;
@@ -73,7 +77,7 @@ typedef struct doe_vk_caps {
     uint32_t vendor_id;
     uint32_t device_id;
     uint32_t device_type;
-    uint32_t adapter_ordinal;
+    uint32_t adapter_ordinal; /* Actual enumeration index of the selected device. */
     uint32_t queue_family;
     uint32_t queue_flags;
     uint32_t timestamp_valid_bits;

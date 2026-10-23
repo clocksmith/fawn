@@ -18,7 +18,9 @@ typedef struct doe_vk_surface_desc {
         uint64_t xlib_window;
     } window;
 } doe_vk_surface_desc;
-enum { DOE_VK_MAX_SURFACE_FORMATS = 32, DOE_VK_MAX_PRESENT_MODES = 8 };
+/* Explicit capacities; overflow rejects rather than truncating. Mesa Wayland
+ * WSI reports 64 formats (sRGB nonlinear plus extended color spaces). */
+enum { DOE_VK_MAX_SURFACE_FORMATS = 128, DOE_VK_MAX_PRESENT_MODES = 8 };
 typedef struct doe_vk_surface_format {
     uint32_t format, color_space;
 } doe_vk_surface_format;

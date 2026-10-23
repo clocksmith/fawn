@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: MIT */
-#include "internal.h"
+#include "surface.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -38,6 +38,7 @@ void wgpuAdapterRelease(WGPUAdapter handle)
     if (!adapter || !native_release_count(&adapter->references)) return;
     doe_instance *instance = adapter->instance;
     native_backend_close(&adapter->backend);
+    if (pthread_mutex_destroy(&adapter->mutex)) abort();
     free(adapter);
     doe_instance_release(instance);
 }
@@ -73,7 +74,10 @@ WGPUFuture wgpuInstanceRequestAdapter(WGPUInstance handle,
         .callback = callback, .status = WGPURequestAdapterStatus_Unavailable,
         .message = "requested C backend unavailable"
     };
-    bool valid = !options || (!options->nextInChain && !options->compatibleSurface);
+    bool valid = !options || !options->nextInChain;
+    /* A compatibleSurface enables exactly its platform's WSI chain on this
+     * adapter and its devices; absence of that chain is unavailable, not fallback. */
+    WGPUSurface compatible = options ? options->compatibleSurface : NULL;
     WGPUBackendType kind = options ? options->backendType : WGPUBackendType_Undefined;
     if (kind == WGPUBackendType_Undefined) {
 #if defined(__APPLE__)
@@ -84,9 +88,18 @@ WGPUFuture wgpuInstanceRequestAdapter(WGPUInstance handle,
     }
     if (valid) {
         native_backend backend = {0};
-        native_result status = native_backend_open(kind, options && options->forceFallbackAdapter, &backend);
+        native_result status = native_backend_open(kind, options && options->forceFallbackAdapter,
+            native_surface_platform(compatible), &backend);
+        if (status == NATIVE_OK && compatible) {
+            status = native_surface_compatible(compatible, &backend);
+            if (status != NATIVE_OK) native_backend_close(&backend);
+        }
         if (status == NATIVE_OK) {
             native_adapter *adapter = calloc(1, sizeof(*adapter));
+            if (adapter && pthread_mutex_init(&adapter->mutex, NULL)) {
+                free(adapter);
+                adapter = NULL;
+            }
             if (adapter) {
                 atomic_init(&adapter->references, 1);
                 adapter->instance = instance;
@@ -104,7 +117,7 @@ WGPUFuture wgpuInstanceRequestAdapter(WGPUInstance handle,
             delivery.status = WGPURequestAdapterStatus_Error;
             delivery.message = "requested backend initialization failed";
         }
-    } else delivery.message = "requested adapter extension or surface is unsupported";
+    } else delivery.message = "requested adapter extension is unsupported";
     WGPUFuture future = native_callback(instance, callback.mode, &delivery,
         sizeof(delivery), _Alignof(adapter_delivery), copy_adapter, deliver_adapter);
     if (!future.id) wgpuAdapterRelease((WGPUAdapter)delivery.adapter);

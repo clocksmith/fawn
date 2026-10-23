@@ -377,7 +377,7 @@ int main(int argc, char **argv)
                 records[i].value.texture.direction == DOE_RESOURCE_TEXTURE_TO_BUFFER);
             const doe_resource_texture_copy *copy = &records[i].value.texture.copy;
             doe_vk_texture_region region = {copy->mip, {copy->origin[0], copy->origin[1], copy->origin[2]},
-                {copy->width, copy->height, copy->depth_or_layers}};
+                {copy->width, copy->height, copy->depth_or_layers}, DOE_VK_ASPECT_ALL};
             doe_vk_texture_buffer_layout packed = {copy->offset,
                 records[i].value.texture.region.pitch, records[i].value.texture.region.image_rows};
             require(doe_vk_commands_read_texture(native_commands,
