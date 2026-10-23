@@ -536,6 +536,11 @@ function requireAutoLayoutEntriesFromNative(shaderNative, visibility, path, entr
   const bindings = entryPointSpecific
     ? reflectionMethod(shaderNative, entryPoint)
     : reflectionMethod(shaderNative);
+  // undefined: the provider exports no Doe binding reflection. The pipeline's
+  // own auto layout (wgpu*PipelineGetBindGroupLayout) is then authoritative.
+  if (bindings === undefined) {
+    return null;
+  }
   if (!Array.isArray(bindings)) {
     failValidation(
       path,
