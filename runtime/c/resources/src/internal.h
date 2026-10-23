@@ -50,6 +50,7 @@ struct doe_resource_bind_group {
     resource_base base;
     doe_resource_layout *layout;
     doe_resource_binding_limits limits;
+    doe_resource_binding_features features;
     size_t count;
     doe_resource_binding bindings[DOE_RESOURCE_MAX_BINDINGS];
 };

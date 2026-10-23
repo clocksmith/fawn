@@ -170,6 +170,12 @@ bool resource_format_aspect(WGPUTextureFormat format, WGPUTextureAspect aspect)
 WGPUTextureSampleType resource_format_sample(WGPUTextureFormat format)
 {
     switch (format) {
+    case WGPUTextureFormat_R32Float:
+    case WGPUTextureFormat_RG32Float:
+    case WGPUTextureFormat_RGBA32Float:
+        return WGPUTextureSampleType_UnfilterableFloat;
+    case WGPUTextureFormat_Stencil8:
+        return WGPUTextureSampleType_Uint;
     case WGPUTextureFormat_Depth16Unorm:
     case WGPUTextureFormat_Depth24Plus:
     case WGPUTextureFormat_Depth24PlusStencil8:

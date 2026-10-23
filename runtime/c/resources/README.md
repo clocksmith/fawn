@@ -21,6 +21,10 @@ an alias of device-free compiled data or a second count for one WebGPU object.
   textures/views/samplers and shared checked block/mip/row/image copy geometry.
 - `bindings.c`: canonical layouts, exclusive automatic-layout identity, retained
   groups/pipeline layouts, dynamic binding ranges and native pipeline leases.
+  Float32 textures require the explicit device-enabled `float32_filterable` policy
+  for Float bindings; default admission is UnfilterableFloat regardless of driver
+  capability. Features are copied for later resolve/submit revalidation. Normalized
+  sampler descriptors are borrowed from the existing owner, not reconstructed.
 - `commands.c`, `compute_pass.c`: sticky encoder admission, pass locking, transfer,
   direct/indirect compute snapshots and single-use submission self-leases.
 - `queries.c`, `external_textures.c`, `render.c`, `render_state.c`: real native query-pool ownership,
@@ -72,7 +76,8 @@ exercise empty lists, independent snapshots, replay failure and pending leases.
 
 Render ownership currently admits the retained one-color/optional-depth-stencil,
 eight-vertex-buffer/four-group envelope, direct/indexed/indirect draws, timestamp writes and occlusion scopes.
-It does not execute graphics/query work. MRT, resolves,
+The owner itself does not execute graphics/query work. The standalone native
+consumer below exercises a narrower real graphics subset. MRT, resolves,
 surface presentation, binding arrays and external-texture color conversion remain
 unsupported. Actual map/future delivery and native shader execution are consumer
 responsibilities. Unsupported consumer command kinds must reject before submit.
@@ -80,7 +85,7 @@ responsibilities. Unsupported consumer command kinds must reject before submit.
 ## Focused checks and evidence
 
 `make -C runtime/c/resources check` builds GCC C11/Werror into `/tmp`: 13 base and
-8 extended plus 5 bundle host suites cover transactional failure/untouched outputs, first error,
+8 extended, 5 bundle and 6 binding-feature host suites cover transactional failure/untouched outputs, first error,
 label cleanup, atomic references, stale/read-only maps, copies/aliases, dynamic
 snapshots, pass abandonment/unbinding, shader/query/external/render leases and
 unresolved submission lifetime. Host native tokens test finalization, not GPU work.
@@ -97,7 +102,21 @@ It explicitly permits software and refuses a non-software adapter. Actual
 SwiftShader fill/buffer copy/full image upload/image copy/readback validates early
 caller release and unresolved-work retention. Full writes precede image reads;
 this is not a substitute for general WebGPU zero initialization. Only that native
-transfer subset is established here, not native rendering/query execution.
+transfer subset is established by that consumer, not queries or broader graphics.
+
+The reusable-bundle consumer uses the same explicit ICD selection and timeout,
+with target `vulkan-render-lifetime`. One self-contained bundle is replayed twice
+under distinct dynamic scissors, producing 48 magenta and 16 blue pixels in an
+8x8 target. All caller resources and the bundle are released before native
+recording; pending native reads/releases reject, and all six adopted payloads
+finalize only at terminal resource settlement. Native commands retain exact
+physical objects through later readback and retirement. Shader fixtures are
+retained Tint `particles.wgsl` vertex/fragment SPIR-V, not C graphics compiler
+output; their hashes/provenance are in the backend `SMOKE_IMAGE_FIXTURES.json`.
+The consumer admits one RGBA8 target, one uniform binding and one vertex buffer;
+unsupported depth/query/indexed/indirect/discard/dynamic blend state rejects.
+This is software execution and ownership evidence, not public native render ABI
+integration, graphics parity or physical GPU qualification.
 
 ```
 ASAN_OPTIONS=detect_leaks=0 make -C runtime/c/resources \
@@ -111,5 +130,7 @@ not whole-program leak qualification. `DEVELOPER_RECEIPT_EXTENDED.json` binds th
 software-transfer checkpoint to unchanged source hashes, including consumed backend
 bytes. `DEVELOPER_RECEIPT_PASS_CONTROLS.json` binds the later host-only timed-pass,
 indirect-render and shared-preflight follow-up; it does not extend GPU evidence.
-`DEVELOPER_RECEIPT_BUNDLES.json` binds the host-only reusable-bundle extension. `DEVELOPER_RECEIPT.json` preserves the earlier smaller historical check.
+`DEVELOPER_RECEIPT_BUNDLES.json` binds the host-only reusable-bundle extension.
+`DEVELOPER_RECEIPT_RENDER.json` binds the later binding-feature correction and
+real software bundle/render and transfer consumers, including backend and shader bytes. `DEVELOPER_RECEIPT.json` preserves the earlier smaller historical check.
 Run the common source-size check; every owned C source/header is below 999 lines.

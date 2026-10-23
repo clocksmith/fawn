@@ -1,0 +1,255 @@
+/* SPDX-License-Identifier: MIT
+ * Resource/bundle ownership consumed by real Vulkan, software ICD only.
+ * Shader bytes are retained Tint fixtures, not the C graphics compiler. */
+#include "vulkan_fixture.h"
+#include "doe_vk_render.h"
+
+static doe_vk_shader load_shader(const char *path, const char *entry)
+{
+    FILE *file = fopen(path, "rb");
+    assert(file && fseek(file, 0, SEEK_END) == 0);
+    long size = ftell(file);
+    assert(size >= 20 && size % 4 == 0 && size <= 16 * 1024 * 1024);
+    assert(fseek(file, 0, SEEK_SET) == 0);
+    uint32_t *words = malloc((size_t)size);
+    assert(words && fread(words, 1, (size_t)size, file) == (size_t)size);
+    assert(fclose(file) == 0);
+    return (doe_vk_shader){words, (size_t)size / 4, entry};
+}
+
+/* This consumer deliberately admits only its exercised graphics signature.
+ * It consumes immutable packets rather than creating a second pass recorder.
+ * Unsupported state is rejected, never silently omitted or CPU emulated. */
+static doe_vk_status render_packet(doe_vk_commands *commands, const doe_resource_render_packet *packet)
+{
+    if (!packet || packet->targets.depth_stencil || packet->targets.occlusion_queries ||
+        packet->targets.color_store != WGPUStoreOp_Store || packet->indexed || packet->indirect ||
+        packet->occlusion_active || packet->state.stencil_reference) return DOE_VK_UNSUPPORTED;
+    for (size_t i = 0; i < 4; i++) if (packet->state.blend[i] != 0) return DOE_VK_UNSUPPORTED;
+    doe_vk_texture_view *target = doe_resource_view_native(packet->targets.color);
+    if (packet->boundary_only) {
+        if (packet->first_in_pass) {
+            if (packet->targets.color_load != WGPULoadOp_Clear) return DOE_VK_UNSUPPORTED;
+            doe_vk_clear_color clear = {0};
+            for (size_t i = 0; i < 4; i++) clear.float32[i] = (float)packet->targets.clear_color[i];
+            return doe_vk_commands_clear_color(commands, target, clear);
+        }
+        /* Native draw packets store unconditionally. Explicit pass end with
+         * Store therefore needs no additional native action; discard rejects. */
+        return packet->last_in_pass ? DOE_VK_OK : DOE_VK_UNSUPPORTED;
+    }
+    if (!packet->groups[0] || !packet->vertices[0].buffer) return DOE_VK_UNSUPPORTED;
+    for (size_t i = 1; i < DOE_RESOURCE_MAX_GROUPS; i++)
+        if (packet->groups[i]) return DOE_VK_UNSUPPORTED;
+    for (size_t i = 1; i < DOE_RESOURCE_MAX_VERTEX_BUFFERS; i++)
+        if (packet->vertices[i].buffer) return DOE_VK_UNSUPPORTED;
+    size_t count;
+    const doe_resource_binding *bindings = doe_resource_bind_group_bindings(packet->groups[0], &count);
+    if (!bindings || count != 1 || bindings[0].kind != DOE_BIND_BUFFER || bindings[0].binding != 0)
+        return DOE_VK_UNSUPPORTED;
+    doe_resource_binding resolved;
+    if (doe_resource_bind_group_resolve(packet->groups[0], packet->offsets.values[0],
+        packet->offsets.counts[0], &resolved, 1) != DOE_RESOURCE_OK) return DOE_VK_INVALID_ARGUMENT;
+    doe_vk_binding_resource binding = {.kind = DOE_VK_BINDING_UNIFORM,
+        .value.buffer = {doe_resource_buffer_native(resolved.resource.buffer.buffer),
+            resolved.resource.buffer.offset, resolved.resource.buffer.size}};
+    doe_vk_buffer_binding vertex = {doe_resource_buffer_native(packet->vertices[0].buffer),
+        packet->vertices[0].offset, packet->vertices[0].size};
+    doe_vk_render_draw draw = {.vertex_count = packet->count, .instance_count = packet->instances,
+        .first_vertex = packet->first, .first_instance = packet->first_instance};
+    memcpy(draw.viewport, packet->state.viewport, sizeof(draw.viewport));
+    memcpy(draw.scissor, packet->state.scissor, sizeof(draw.scissor));
+    return doe_vk_commands_draw(commands, doe_resource_render_pipeline_native(packet->pipeline),
+        target, &binding, 1, &vertex, 1, &draw);
+}
+
+static doe_resource_buffer *adopt_buffer(const doe_resource_config *config, lifecycle *life,
+    doe_vk_context *context, uint64_t size, uint32_t native_usage, WGPUBufferUsage usage)
+{
+    doe_vk_error error = {0};
+    doe_vk_buffer *native;
+    require(doe_vk_buffer_create(context, size, native_usage, DOE_VK_MEMORY_HOST, &native, &error), "buffer create");
+    doe_resource_buffer_desc desc = {size, usage, false};
+    doe_resource_buffer *buffer;
+    assert(doe_resource_buffer_create(config, &desc,
+        (doe_resource_native){native, life, release_buffer}, &buffer) == DOE_RESOURCE_OK);
+    return buffer;
+}
+
+int main(int argc, char **argv)
+{
+    if (argc != 4 || strcmp(argv[3], "--allow-software")) return 2;
+    doe_vk_options options = {.allow_cpu_adapter = true, .require_graphics_queue = true};
+    doe_vk_context *context;
+    doe_vk_error error = {0};
+    require(doe_vk_context_create(&options, &context, &error), "create graphics context");
+    doe_vk_caps caps;
+    require(doe_vk_context_caps(context, &caps), "caps");
+    if (!caps.software_adapter) {
+        doe_vk_context_release(context);
+        fputs("Refusing non-software adapter in software-only developer check\n", stderr);
+        return 77;
+    }
+    printf("Resource bundle Vulkan consumer: %s; retained Tint shaders, not C graphics compiler or physical GPU qualification\n",
+        caps.device_name);
+    lifecycle life = {0};
+    doe_resource_config config = {.allocator = {&life, NULL, allocate, deallocate},
+        .device = {context, alive, retain, release}};
+    doe_resource_buffer *uniform = adopt_buffer(&config, &life, context, 256,
+        DOE_VK_BUFFER_UNIFORM, WGPUBufferUsage_Uniform);
+    doe_resource_buffer *vertices = adopt_buffer(&config, &life, context, 108,
+        DOE_VK_BUFFER_VERTEX, WGPUBufferUsage_Vertex);
+    doe_resource_buffer *readback = adopt_buffer(&config, &life, context, 256,
+        DOE_VK_BUFFER_COPY_DST, WGPUBufferUsage_CopyDst);
+    doe_vk_buffer *native_readback = doe_resource_buffer_native(readback);
+    float parameters[24] = {0};
+    parameters[0] = parameters[5] = parameters[10] = parameters[15] = 1;
+    const float triangle[3][9] = {
+        {-1, -1, 0, 1, 0, 1, 1, 0, 0}, {3, -1, 0, 1, 0, 1, 1, 0, 0}, {-1, 3, 0, 1, 0, 1, 1, 0, 0}
+    };
+    require(doe_vk_buffer_write(doe_resource_buffer_native(uniform), 0, parameters, sizeof(parameters)), "parameters");
+    require(doe_vk_buffer_write(doe_resource_buffer_native(vertices), 0, triangle, sizeof(triangle)), "triangle");
+    doe_vk_texture_desc native_desc = {.dimension = DOE_VK_TEXTURE_2D, .format = DOE_VK_FORMAT_RGBA8_UNORM,
+        .width = 8, .height = 8, .depth_or_layers = 1, .mip_levels = 1,
+        .usage = DOE_VK_TEXTURE_COLOR_ATTACHMENT | DOE_VK_TEXTURE_COPY_SRC};
+    doe_vk_texture *native_image;
+    doe_vk_texture_view *native_view;
+    require(doe_vk_texture_create(context, &native_desc, &native_image, &error), "image");
+    doe_vk_texture_view_desc native_view_desc = {DOE_VK_VIEW_2D, 0, 1, 0, 1};
+    require(doe_vk_texture_view_create(native_image, &native_view_desc, &native_view, &error), "view");
+    doe_resource_texture_desc image_desc = {.dimension = WGPUTextureDimension_2D,
+        .format = WGPUTextureFormat_RGBA8Unorm, .width = 8, .height = 8, .depth_or_layers = 1,
+        .mip_levels = 1, .samples = 1, .usage = WGPUTextureUsage_RenderAttachment | WGPUTextureUsage_CopySrc};
+    doe_resource_texture_limits image_limits = {caps.max_texture_dimension_1d, caps.max_texture_dimension_2d,
+        caps.max_texture_dimension_3d, caps.max_texture_array_layers};
+    doe_resource_texture *image;
+    doe_resource_view *view;
+    assert(doe_resource_texture_create(&config, &image_desc, &image_limits,
+        (doe_resource_native){native_image, &life, release_texture}, &image) == DOE_RESOURCE_OK);
+    doe_resource_view_desc view_desc = {0};
+    assert(doe_resource_view_create(image, &view_desc,
+        (doe_resource_native){native_view, &life, release_view}, &view) == DOE_RESOURCE_OK);
+    doe_resource_layout_entry entry = {.kind = DOE_BIND_BUFFER, .visibility = WGPUShaderStage_Vertex,
+        .buffer_type = WGPUBufferBindingType_Uniform, .minimum_size = 96};
+    doe_resource_layout *layout;
+    doe_resource_pipeline_layout *pipeline_layout;
+    assert(doe_resource_layout_create(&config, &entry, 1, false, &layout) == DOE_RESOURCE_OK);
+    assert(doe_resource_pipeline_layout_create(&config, &layout, 1, 0, &pipeline_layout) == DOE_RESOURCE_OK);
+    doe_resource_binding binding = {.kind = DOE_BIND_BUFFER, .resource.buffer = {uniform, 0, 96}};
+    doe_resource_binding_limits binding_limits = {caps.uniform_offset_alignment,
+        caps.storage_offset_alignment, caps.max_uniform_buffer_range, caps.max_storage_buffer_range};
+    doe_resource_bind_group *group;
+    assert(doe_resource_bind_group_create(layout, &binding, 1, &binding_limits, &group) == DOE_RESOURCE_OK);
+    doe_vk_shader vertex_shader = load_shader(argv[1], "vs_main");
+    doe_vk_shader fragment_shader = load_shader(argv[2], "fs_main");
+    doe_vk_vertex_layout vertex_layout = {36, false};
+    doe_vk_vertex_attribute attributes[] = {{0, 0, 0, DOE_VK_VERTEX_FLOAT32X3},
+        {1, 0, 12, DOE_VK_VERTEX_FLOAT32X4}, {2, 0, 28, DOE_VK_VERTEX_FLOAT32X2}};
+    doe_vk_binding_layout native_layout = {0, 0, DOE_VK_BINDING_UNIFORM};
+    doe_vk_render_pipeline_desc native_pipeline_desc = {.vertex = vertex_shader, .fragment = fragment_shader,
+        .color_format = DOE_VK_FORMAT_RGBA8_UNORM, .topology = DOE_VK_TRIANGLES, .color_write_mask = 15,
+        .vertex_buffer_count = 1, .attribute_count = 3, .vertex_buffers = &vertex_layout, .attributes = attributes,
+        .binding_count = 1, .bindings = &native_layout};
+    doe_vk_pipeline *native_pipeline;
+    require(doe_vk_render_pipeline_create(context, &native_pipeline_desc, &native_pipeline, &error), "pipeline");
+    free((void *)vertex_shader.words);
+    free((void *)fragment_shader.words);
+    doe_resource_render_pipeline_desc pipeline_desc = {.color_format = WGPUTextureFormat_RGBA8Unorm,
+        .samples = 1, .vertex_count = 1, .vertices = {{36, 36, WGPUVertexStepMode_Vertex}}};
+    doe_resource_render_pipeline *pipeline;
+    assert(doe_resource_render_pipeline_create(&config, pipeline_layout, &pipeline_desc,
+        (doe_resource_native){native_pipeline, &life, release_pipeline}, &pipeline) == DOE_RESOURCE_OK);
+    doe_resource_pipeline_layout_release(pipeline_layout);
+    doe_resource_layout_release(layout);
+    doe_resource_bundle_encoder *bundle_encoder;
+    doe_resource_render_bundle_desc bundle_desc = {.color_format = WGPUTextureFormat_RGBA8Unorm, .samples = 1};
+    assert(doe_resource_bundle_encoder_create(&config, &bundle_desc, &bundle_encoder) == DOE_RESOURCE_OK);
+    assert(doe_resource_bundle_encoder_set_pipeline(bundle_encoder, pipeline) == DOE_RESOURCE_OK);
+    doe_resource_dispatch_group dispatch_group = {group, NULL, 0};
+    assert(doe_resource_bundle_encoder_set_group(bundle_encoder, 0, &dispatch_group) == DOE_RESOURCE_OK);
+    assert(doe_resource_bundle_encoder_set_vertex(bundle_encoder, 0, vertices, 0, 108) == DOE_RESOURCE_OK);
+    assert(doe_resource_bundle_encoder_draw(bundle_encoder, false, 3, 1, 0, 0, 0) == DOE_RESOURCE_OK);
+    doe_resource_render_bundle *bundle;
+    assert(doe_resource_bundle_encoder_finish(bundle_encoder, &bundle) == DOE_RESOURCE_OK);
+    doe_resource_bundle_encoder_release(bundle_encoder);
+    doe_resource_render_pipeline_release(pipeline);
+    doe_resource_bind_group_release(group);
+    doe_resource_buffer_release(uniform);
+    doe_resource_buffer_release(vertices);
+    doe_resource_encoder *encoder;
+    doe_resource_render_pass *pass;
+    doe_resource_render_targets targets = {.color = view, .color_load = WGPULoadOp_Clear,
+        .color_store = WGPUStoreOp_Store, .clear_color = {0, 0, 1, 1}};
+    assert(doe_resource_encoder_create(&config, &encoder) == DOE_RESOURCE_OK);
+    assert(doe_resource_encoder_begin_render(encoder, &targets, &pass) == DOE_RESOURCE_OK);
+    doe_resource_render_state state = *doe_resource_render_pass_state(pass);
+    state.scissor[2] = 4;
+    assert(doe_resource_render_pass_set_state(pass, &state) == DOE_RESOURCE_OK);
+    assert(doe_resource_render_pass_execute_bundles(pass, &bundle, 1) == DOE_RESOURCE_OK);
+    state.scissor[0] = 4;
+    state.scissor[3] = 4;
+    assert(doe_resource_render_pass_set_state(pass, &state) == DOE_RESOURCE_OK);
+    assert(doe_resource_render_pass_execute_bundles(pass, &bundle, 1) == DOE_RESOURCE_OK);
+    doe_resource_render_bundle_release(bundle);
+    assert(doe_resource_render_pass_end(pass) == DOE_RESOURCE_OK);
+    doe_resource_render_pass_release(pass);
+    doe_resource_texture_copy read = {.bytes_per_row = 32, .rows_per_image = 8,
+        .width = 8, .height = 8, .depth_or_layers = 1};
+    assert(doe_resource_encoder_copy_texture(encoder, readback, image, &read,
+        DOE_RESOURCE_TEXTURE_TO_BUFFER, DOE_RESOURCE_COPY_NATIVE) == DOE_RESOURCE_OK);
+    doe_resource_commands *commands;
+    assert(doe_resource_encoder_finish(encoder, &commands) == DOE_RESOURCE_OK);
+    doe_resource_encoder_release(encoder);
+    doe_resource_buffer_release(readback);
+    doe_resource_view_release(view);
+    doe_resource_texture_release(image);
+    assert(!life.native_releases);
+    doe_vk_commands *native_commands;
+    require(doe_vk_commands_create(context, &native_commands, &error), "commands");
+    doe_vk_context_release(context); /* All remaining device leases belong to owners. */
+    size_t count;
+    const doe_resource_command *records = doe_resource_commands_borrow(commands, &count);
+    assert(count == 5);
+    for (size_t i = 0; i < count; i++) {
+        if (records[i].kind == DOE_COMMAND_RENDER) {
+            const doe_resource_render_packet *packet = doe_resource_render_record_borrow(records[i].value.render);
+            if (i == 0) {
+                doe_resource_render_packet unsupported = *packet;
+                unsupported.targets.color_store = WGPUStoreOp_Discard;
+                assert(render_packet(native_commands, &unsupported) == DOE_VK_UNSUPPORTED);
+            }
+            require(render_packet(native_commands, packet), "render owned packet");
+        } else {
+            assert(records[i].kind == DOE_COMMAND_BUFFER_TEXTURE &&
+                records[i].value.texture.direction == DOE_RESOURCE_TEXTURE_TO_BUFFER);
+            const doe_resource_texture_copy *copy = &records[i].value.texture.copy;
+            doe_vk_texture_region region = {copy->mip, {copy->origin[0], copy->origin[1], copy->origin[2]},
+                {copy->width, copy->height, copy->depth_or_layers}};
+            doe_vk_texture_buffer_layout packed = {copy->offset,
+                records[i].value.texture.region.pitch, records[i].value.texture.region.image_rows};
+            require(doe_vk_commands_read_texture(native_commands,
+                doe_resource_texture_native(records[i].value.texture.texture), region,
+                doe_resource_buffer_native(records[i].value.texture.buffer), packed), "read owned attachment");
+        }
+    }
+    assert(doe_resource_commands_begin_submit(commands) == DOE_RESOURCE_OK);
+    doe_resource_commands_release(commands);
+    require(doe_vk_commands_submit(native_commands, &error), "submit");
+    assert(doe_resource_commands_settle(commands, DOE_RESOURCE_PENDING) == DOE_RESOURCE_PENDING);
+    assert(doe_vk_commands_release(native_commands) == DOE_VK_BUSY);
+    uint8_t pixels[8][8][4];
+    assert(doe_vk_buffer_read(native_readback, 0, pixels, sizeof(pixels)) == DOE_VK_BUSY);
+    assert(!life.native_releases);
+    require(doe_vk_commands_wait(native_commands, UINT64_C(5000000000), &error), "wait");
+    assert(doe_resource_commands_settle(commands, DOE_RESOURCE_OK) == DOE_RESOURCE_OK);
+    assert(life.native_releases == 6 && !life.allocations);
+    /* Native command retirement, not resource wrapper lifetime, owns this borrow. */
+    require(doe_vk_buffer_read(native_readback, 0, pixels, sizeof(pixels)), "readback after resource finalization");
+    for (unsigned y = 0; y < 8; y++) for (unsigned x = 0; x < 8; x++) {
+        uint8_t expected[4] = {(x < 4 || y < 4) ? 255 : 0, 0, 255, 255};
+        assert(!memcmp(pixels[y][x], expected, sizeof(expected)));
+    }
+    require(doe_vk_commands_release(native_commands), "retire native owner");
+    puts("PASS self-contained resource bundle replay twice, exact 64 pixels, early caller release, pending retention and six terminal native finalizers");
+    return 0;
+}

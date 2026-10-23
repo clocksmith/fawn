@@ -169,7 +169,8 @@ void doe_resource_pipeline_layout_release(doe_resource_pipeline_layout *layout)
 
 static doe_resource_status validate_binding(const doe_resource_layout *layout,
     const doe_resource_layout_entry *entry, const doe_resource_binding *binding,
-    const doe_resource_binding_limits *limits, doe_resource_binding *out)
+    const doe_resource_binding_limits *limits, const doe_resource_binding_features *features,
+    doe_resource_binding *out)
 {
     if (binding->binding != entry->binding || binding->kind != entry->kind) return DOE_RESOURCE_LAYOUT;
     doe_resource_binding resolved = *binding;
@@ -204,6 +205,9 @@ static doe_resource_status validate_binding(const doe_resource_layout *layout,
             if (!(view->desc.usage & WGPUTextureUsage_TextureBinding)) return DOE_RESOURCE_USAGE;
             if (entry->multisampled != (view->texture->desc.samples > 1)) return DOE_RESOURCE_LAYOUT;
             WGPUTextureSampleType sample = resource_format_sample(view->desc.format);
+            if (view->desc.aspect == WGPUTextureAspect_StencilOnly) sample = WGPUTextureSampleType_Uint;
+            if (sample == WGPUTextureSampleType_UnfilterableFloat && features->float32_filterable)
+                sample = WGPUTextureSampleType_Float;
             if (entry->sample_type != sample &&
                 !(sample == WGPUTextureSampleType_Float && entry->sample_type == WGPUTextureSampleType_UnfilterableFloat))
                 return DOE_RESOURCE_LAYOUT;
@@ -255,7 +259,16 @@ doe_resource_status doe_resource_bind_group_create(doe_resource_layout *layout,
     const doe_resource_binding *bindings, size_t count,
     const doe_resource_binding_limits *limits, doe_resource_bind_group **out)
 {
+    return doe_resource_bind_group_create_with_features(layout, bindings, count, limits, NULL, out);
+}
+
+doe_resource_status doe_resource_bind_group_create_with_features(doe_resource_layout *layout,
+    const doe_resource_binding *bindings, size_t count,
+    const doe_resource_binding_limits *limits, const doe_resource_binding_features *features,
+    doe_resource_bind_group **out)
+{
     if (!layout || !out || !limits || (count && !bindings)) return DOE_RESOURCE_INVALID_ARGUMENT;
+    doe_resource_binding_features enabled = features ? *features : (doe_resource_binding_features){0};
     if (!resource_alive(&layout->base)) return DOE_RESOURCE_UNAVAILABLE;
     if (count != layout->count) return DOE_RESOURCE_LAYOUT;
     doe_resource_binding ordered[DOE_RESOURCE_MAX_BINDINGS];
@@ -267,7 +280,7 @@ doe_resource_status doe_resource_bind_group_create(doe_resource_layout *layout,
             found = &bindings[j];
         }
         if (!found) return DOE_RESOURCE_LAYOUT;
-        doe_resource_status status = validate_binding(layout, &layout->entries[i], found, limits, &ordered[i]);
+        doe_resource_status status = validate_binding(layout, &layout->entries[i], found, limits, &enabled, &ordered[i]);
         if (status != DOE_RESOURCE_OK) return status;
     }
     doe_resource_bind_group *group = resource_allocate(&layout->base.config, sizeof(*group), _Alignof(doe_resource_bind_group));
@@ -275,6 +288,7 @@ doe_resource_status doe_resource_bind_group_create(doe_resource_layout *layout,
     group->count = count;
     group->layout = layout;
     group->limits = *limits;
+    group->features = enabled;
     for (size_t i = 0; i < count; i++) {
         group->bindings[i] = ordered[i];
         retain_binding(&ordered[i]);
@@ -312,7 +326,7 @@ doe_resource_status resource_group_validate(const doe_resource_bind_group *group
     for (size_t i = 0; i < group->count; i++) {
         doe_resource_binding resolved;
         doe_resource_status status = validate_binding(group->layout, &group->layout->entries[i],
-            &group->bindings[i], &group->limits, &resolved);
+            &group->bindings[i], &group->limits, &group->features, &resolved);
         if (status != DOE_RESOURCE_OK) return status;
         if (resolved.kind == DOE_BIND_BUFFER &&
             (resolved.resource.buffer.buffer->mapped || resolved.resource.buffer.buffer->map_pending))
@@ -342,7 +356,7 @@ doe_resource_status doe_resource_bind_group_resolve(const doe_resource_bind_grou
         if (resolved[i].resource.buffer.offset > UINT64_MAX - dynamic) return DOE_RESOURCE_OVERFLOW;
         resolved[i].resource.buffer.offset += dynamic;
         doe_resource_binding checked;
-        status = validate_binding(group->layout, entry, &resolved[i], &group->limits, &checked);
+        status = validate_binding(group->layout, entry, &resolved[i], &group->limits, &group->features, &checked);
         if (status != DOE_RESOURCE_OK) return status;
     }
     if (next != offset_count) return DOE_RESOURCE_LAYOUT;

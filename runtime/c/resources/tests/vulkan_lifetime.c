@@ -1,52 +1,12 @@
 /* SPDX-License-Identifier: MIT
  * Real native-API lifetime consumer. Explicit software ICD only, not GPU evidence. */
-#include "doe_resources.h"
-#include "doe_vk_texture.h"
-#include <assert.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include "vulkan_fixture.h"
 
-typedef struct lifecycle { unsigned native_releases; size_t allocations; } lifecycle;
-static void *allocate(void *state, const void *vtable, size_t size, size_t alignment)
-{
-    lifecycle *life = state;
-    assert(!vtable && alignment <= _Alignof(max_align_t));
-    void *memory = malloc(size);
-    if (memory) life->allocations++;
-    return memory;
-}
-static void deallocate(void *state, const void *vtable, void *memory, size_t size, size_t alignment)
-{
-    lifecycle *life = state;
-    assert(!vtable && size && alignment <= _Alignof(max_align_t) && life->allocations);
-    life->allocations--;
-    free(memory);
-}
-static bool alive(void *context) { return doe_vk_context_alive(context); }
-static void retain(void *context) { if (doe_vk_context_retain(context) != DOE_VK_OK) abort(); }
-static void release(void *context) { doe_vk_context_release(context); }
-static void release_buffer(void *state, void *buffer)
-{
-    ((lifecycle *)state)->native_releases++;
-    doe_vk_buffer_release(buffer);
-}
-static void release_texture(void *state, void *texture)
-{
-    ((lifecycle *)state)->native_releases++;
-    doe_vk_texture_release(texture);
-}
 static doe_vk_texture_region image_region(const doe_resource_image_copy *image,
     const doe_resource_texture_blit *copy)
 {
     return (doe_vk_texture_region){image->mip, {image->origin[0], image->origin[1], image->origin[2]},
         {copy->width, copy->height, copy->depth_or_layers}};
-}
-static void require(doe_vk_status status, const char *operation)
-{
-    if (status == DOE_VK_OK) return;
-    fprintf(stderr, "%s: %s\n", operation, doe_vk_status_name(status));
-    exit(1);
 }
 
 int main(int argc, char **argv)
