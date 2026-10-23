@@ -197,7 +197,37 @@ vertex/fragment source. Rendering and application qualification remain separate.
 Rules: [WGSL 2026-10-21](https://www.w3.org/TR/2026/CRD-WGSL-20261021/#discard-statement)
 and the [Khronos demote extension](https://github.khronos.org/SPIRV-Registry/extensions/EXT/SPV_EXT_demote_to_helper_invocation.html).
 
-Other barriers, atomics, general pointers, aliases,
+Scalar `atomic<i32>` / `atomic<u32>` types are admitted in storage read_write and
+workgroup roots, including arrays and structures. Atomic-containing types have
+normal source layout but cannot be loaded, assigned or constructed by value.
+All eleven standard scalar atomic builtins use direct address expressions and
+the shared access-path owner; first-class pointer values/formals remain separate.
+Dynamic OOB paths are guarded before pointer formation and atomic execution:
+loads/updates yield zero, stores are discarded, and compare-exchange yields
+`old_value=0, exchanged=false`. Address indices and value arguments execute once
+in source order. Every atomic result is nonuniform for collective analysis.
+
+The GLSL450 target uses Relaxed memory semantics with Workgroup scope for
+workgroup objects and Device scope for storage, as prescribed by
+[WGSL 2026-10-21 memory scopes](https://www.w3.org/TR/2026/CRD-WGSL-20261021/#scoped-operations)
+when the Vulkan memory model is not enabled. CompareExchangeWeak uses strong
+compare-exchange, a permitted weak realization without spurious failure. Its
+inferred two-field result remains a typed composite; no source-visible synthetic
+type spelling is invented. Existing per-entry workgroup zero initialization and
+barrier ordering are preserved. Scalar compute atomics require no additional
+SPIR-V capability beyond Shader; native fragment writes retain device feature
+requirements. The optional atomic_vec2u_min_max extension is not admitted.
+
+ABI9 adds reflection kind7 ATOMIC in the unchanged typed record. Its element
+names the i32/u32 scalar, size/alignment are four, and constructible is false.
+Older selected reflection rejects atomic-reachable graphs; binary-only paths
+share the general pipeline without that projection limit. Query sizes and public
+export counts are unchanged. `make test-atomics` covers semantic/SPIR-V and ABI
+checks, including both unchanged workgroup-atomic source witnesses. Normal/PIC
+stack audits count the consolidated recursive call owner, not superseded TUs;
+no scratch pool or recursive ceiling was increased.
+
+Other barriers, general pointers, aliases,
 overrides, f16, remaining subgroup operations, remaining texture operations, wider builtins,
 other targets and runtime metadata/adoption remain open owners, not implied coverage.
 
@@ -233,8 +263,8 @@ pool accounting and ceilings; future growth requires an explicit reviewed change
 
 - lex.c / parse.c: one grammar and original source positions.
 - numeric.c: checked scalar constants/conversions and per-call host environment.
-- builtin.c / sema_builtin.c: shared overload identity, typed snapshots and builtin constants.
-- image.c / sema_image.c / sema_image_call.c: typed handle resources and image overloads.
+- builtin.c / sema_call.c: shared overload identity, typed snapshots and builtin constants.
+- image.c / sema_image.c: typed handle resources and image overload rules.
 - spirv_image.c: checked real image queries, access and sampling.
 - sema_finalize.c: nonrecursive typed numeric/swizzle value finalization.
 - sema_array.c: direct runtime-array address and length validation.

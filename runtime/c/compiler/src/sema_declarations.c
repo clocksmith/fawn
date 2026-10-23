@@ -165,8 +165,8 @@ bool sema_type_reference(Source *s, TypeRef ref, const LocalScope *scope, TypeId
         if (ref.syntax >= c->generic_count) return source_error(s, DOE_COMPILER_INPUT_ERROR, ref.offset, "invalid type syntax identity");
         const GenericSyntax *g = &c->generic_syntax[ref.syntax];
         if (lexical_value(s, scope, g->name) || sema_module_declared(s, g->name)) return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, g->name.offset, "type generator is shadowed");
-        if (source_span_is(s,g->name,"atomic") || source_span_is(s,g->name,"ptr"))
-            return source_error(s,DOE_COMPILER_UNSUPPORTED,g->name.offset,"atomic and pointer types are not supported");
+        if (source_span_is(s,g->name,"ptr"))
+            return source_error(s,DOE_COMPILER_UNSUPPORTED,g->name.offset,"first-class pointer types are not supported");
         if (g->name.length >= 16u && memcmp(s->source + g->name.offset, "texture_storage_", 16u) == 0) {
             if (!sema_image_type(s, ref, IR_VOID, &type)) return false;
             break;
@@ -183,6 +183,10 @@ bool sema_type_reference(Source *s, TypeRef ref, const LocalScope *scope, TypeId
         const GenericSyntax *g = &c->generic_syntax[index];
         if (type_image_named(s, g->name)) {
             if (!sema_image_type(s, (TypeRef){g->name.offset, index}, type, &type)) return false;
+        } else if (source_span_is(s, g->name, "atomic")) {
+            if (g->count_expression != NO_ID || (type != IR_I32 && type != IR_U32))
+                return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, g->name.offset, "atomic requires one i32 or u32 element type");
+            if (!type_intern(s, TYPE_ATOMIC, type, 1u, &type)) return false;
         } else if (source_span_is(s, g->name, "array")) {
             uint32_t count = 0u;
             if (g->count_expression != NO_ID && (!integer_attribute(s, g->count_expression, scope, true, &count) || count == 0u)) {
@@ -535,8 +539,8 @@ bool sema_resolve_declarations(Source *s, LocalScope *scope) {
         WorkgroupRoot *root=&c->workgroups[i];
         if (!sema_type_reference(s,root->annotation,scope,&root->type)) return false;
         const uint32_t flags=type_flags(c,root->type);
-        if ((flags&(TYPE_FIXED|TYPE_CONSTRUCTIBLE))!=(TYPE_FIXED|TYPE_CONSTRUCTIBLE) || (flags&TYPE_ABSTRACT)!=0u)
-            return source_error(s,DOE_COMPILER_SEMANTIC_ERROR,root->name.offset,"workgroup type must be concrete, constructible and fixed-footprint");
+        if ((flags & TYPE_FIXED) == 0u || (flags & (TYPE_CONSTRUCTIBLE | TYPE_ATOMIC_CONTENT)) == 0u || (flags & TYPE_ABSTRACT) != 0u)
+            return source_error(s,DOE_COMPILER_SEMANTIC_ERROR,root->name.offset,"workgroup type must be concrete, fixed-footprint and constructible or contain atomics");
     }
     for (uint32_t e=0u;e<c->entry_count;++e) {
     const EntryRecord *entry=&c->entries[e];

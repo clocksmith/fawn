@@ -24,6 +24,8 @@ static bool lower_assignment(Source *source,const Syntax *s,const Assignment *as
     (void)s;(void)program;ValueReference reference;
     if (!sema_assignment_reference(source,assignment,scope,&reference,slot)) return false;
     const uint32_t offset=assignment->root.offset;
+    if (!type_constructible(program, reference.type))
+        return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, offset, "non-constructible reference cannot be assigned by value");
     const bool increment=assignment->operation==UPDATE_INCREMENT || assignment->operation==UPDATE_DECREMENT;
     ExpressionValue previous={0},result={0};
     if (assignment->operation!=UPDATE_SET) {

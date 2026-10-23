@@ -129,6 +129,7 @@ uint32_t spirv_unsigned_constant(Emitter *e, uint32_t value) {
 }
 uint32_t spirv_pointer_type(Emitter *e, TypeId type, uint32_t storage) {
     CompilerWorkspace *c = e->program;
+    if (type >= 7u && c->types[type - 7u].kind == TYPE_ATOMIC) type = c->types[type - 7u].element;
     const uint32_t slot = storage == 7u ? 0u : storage == 2u ? 1u : storage == 12u ? 2u : 3u;
     if (type >= IR_BOOL && type <= IR_F32 && (storage == 7u || storage == 2u || storage == 12u || storage == 4u)) {
         if (e->local_pointers[slot][type] == 0u) e->local_pointers[slot][type] = spirv_reserve_ids(e, 1u);
@@ -190,7 +191,7 @@ static bool plan_type(Emitter *e, TypeId type) {
     while (c->walk_count != 0u) {
         WalkItem *w = &c->walk[c->walk_count - 1u];
         TypeRecord *t = &c->types[w->object - 7u];
-        const uint32_t children = type_handle(c, w->object) ? 0u : t->kind == TYPE_STRUCT ? t->count : 1u;
+        const uint32_t children = type_handle(c, w->object) ? 0u : (t->kind == TYPE_STRUCT || t->kind == TYPE_ATOMIC_RESULT) ? t->count : 1u;
         if (w->cursor < children) {
             const TypeId child = type_child(c, w->object, w->cursor++);
             if (child < 7u) {
@@ -215,7 +216,8 @@ static bool plan_type(Emitter *e, TypeId type) {
             return source_error(e->source, DOE_COMPILER_UNSUPPORTED, t->name.offset,
                                 "SPIR-V ArrayStride format capacity exceeded");
         }
-        if (t->kind == TYPE_VECTOR && t->element == IR_U32 && t->count == 3u) t->target = ID_VEC3;
+        if (t->kind == TYPE_ATOMIC) t->target = spirv_scalar_type(t->element);
+        else if (t->kind == TYPE_VECTOR && t->element == IR_U32 && t->count == 3u) t->target = ID_VEC3;
         else {
             const uint32_t length = t->kind == TYPE_ARRAY ? spirv_unsigned_constant(e, t->count) : 0u;
             TargetDeclaration *d = spirv_append_declaration(e, DECL_TYPE, w->object);
@@ -418,6 +420,12 @@ bool spirv_plan_module(Emitter *e) {
                 if (!plan_constant(e, ir->operands.scalar.binding)) return false;
                 e->values[ir->result] = c->constants[ir->operands.scalar.binding].target;
             } else e->values[ir->result] = spirv_reserve_ids(e, 1u);
+        } else if (atomic_opcode(ir->opcode)) {
+            const uint32_t storage = ir->operands.access.category == ROOT_WORKGROUP ? 4u : 12u;
+            if (spirv_pointer_type(e, atomic_element(c, ir), storage) == 0u ||
+                (ir->type != IR_VOID && spirv_zero_constant(e, ir->type) == 0u)) return false;
+            (void)spirv_unsigned_constant(e, ir->operands.access.category == ROOT_WORKGROUP ? 2u : 1u);
+            (void)spirv_unsigned_constant(e, 0u);
         } else if (ir->opcode == IR_IMAGE) {
             if (!spirv_image_plan(e, ir)) return false;
         } else if (ir->opcode == IR_DISCARD) {
@@ -556,7 +564,7 @@ static bool dynamic_declarations(Emitter *e) {
                     uint32_t *words = NULL;
                     if (!spirv_instruction_space(e, OP_TYPE_STRUCT, (size_t)t->count + 1u, &words)) return false;
                     words[0] = d->id;
-                    for (uint32_t m = 0u; m < t->count; ++m) words[m + 1u] = spirv_target_type(e, c->members[t->element + m].type);
+                    for (uint32_t m = 0u; m < t->count; ++m) words[m + 1u] = spirv_target_type(e, type_child(c, d->type, m));
                 }
                 break;
             }

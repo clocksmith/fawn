@@ -101,9 +101,9 @@ typedef struct { NameSpan name; union { TypeRef annotation;
     struct { TypeId type; uint32_t offset; } resolved; } type; } FormalRecord;
 typedef struct { uint32_t expression, next; } ArgumentSyntax;
 typedef struct { NameSpan name; TypeRef element; uint32_t count_expression, flags; } GenericSyntax;
-enum { TYPE_VECTOR = 1u, TYPE_ARRAY, TYPE_RUNTIME_ARRAY, TYPE_STRUCT, TYPE_TEXTURE, TYPE_SAMPLER, TYPE_MATRIX };
+enum { TYPE_VECTOR = 1u, TYPE_ARRAY, TYPE_RUNTIME_ARRAY, TYPE_STRUCT, TYPE_TEXTURE, TYPE_SAMPLER, TYPE_MATRIX, TYPE_ATOMIC, TYPE_ATOMIC_RESULT };
 enum { TYPE_CONSTRUCTIBLE = 1u, TYPE_HOST = 2u, TYPE_FIXED = 4u, TYPE_TAIL = 8u,
-    TYPE_RESOLVING = 16u, TYPE_RESOLVED = 32u, TYPE_ABSTRACT = 64u, TYPE_UNIFORM = 128u };
+    TYPE_RESOLVING = 16u, TYPE_RESOLVED = 32u, TYPE_ABSTRACT = 64u, TYPE_UNIFORM = 128u, TYPE_ATOMIC_CONTENT = 256u };
 typedef struct { uint32_t dimension, format, access, flags; } ImageType;
 typedef struct { uint32_t kind, flags, element, count; NameSpan name;
     union { struct { uint64_t size, alignment, stride; } layout;
@@ -130,7 +130,9 @@ typedef enum {
     IR_BREAK, IR_CONTINUE, IR_BREAK_IF, IR_NEGATE, IR_COMPLEMENT,
     IR_DIVIDE, IR_REMAINDER, IR_BIT_AND, IR_BIT_OR, IR_BIT_XOR,
     IR_SHIFT_LEFT, IR_SHIFT_RIGHT, IR_CONVERT, IR_BITCAST, IR_CALL, IR_BUILTIN,
-    IR_COMPOSITE, IR_ACCESS_LOAD, IR_ACCESS_STORE, IR_VALUE_ACCESS, IR_SWIZZLE, IR_WORKGROUP_BARRIER, IR_HANDLE, IR_IMAGE, IR_STAGE_INPUT, IR_ARRAY_LENGTH, IR_DISCARD
+    IR_COMPOSITE, IR_ACCESS_LOAD, IR_ACCESS_STORE, IR_VALUE_ACCESS, IR_SWIZZLE, IR_WORKGROUP_BARRIER, IR_HANDLE, IR_IMAGE, IR_STAGE_INPUT, IR_ARRAY_LENGTH, IR_DISCARD,
+    IR_ATOMIC_LOAD, IR_ATOMIC_STORE, IR_ATOMIC_ADD, IR_ATOMIC_SUBTRACT, IR_ATOMIC_MAX,
+    IR_ATOMIC_MIN, IR_ATOMIC_AND, IR_ATOMIC_OR, IR_ATOMIC_XOR, IR_ATOMIC_EXCHANGE, IR_ATOMIC_COMPARE_EXCHANGE
 } IrOpcode;
 typedef struct { uint32_t id; TypeId type; uint32_t source_offset; } IrValue;
 /* Four words have operation-specific, named meanings. Scalar aliases preserve
@@ -166,7 +168,7 @@ typedef struct {
     } state;
 } EntryRecord;
 typedef enum { SOURCE_NONE, SOURCE_FUNCTION, SOURCE_BARRIER, SOURCE_RESOURCE,
-    SOURCE_WORKGROUP, SOURCE_INPUT, SOURCE_SUBGROUP, SOURCE_IMAGE, SOURCE_DISCARD } SourceReferenceKind;
+    SOURCE_WORKGROUP, SOURCE_INPUT, SOURCE_SUBGROUP, SOURCE_IMAGE, SOURCE_DISCARD, SOURCE_ATOMIC } SourceReferenceKind;
 typedef struct { SourceReferenceKind kind; uint32_t index; } SourceReference;
 typedef struct {
     uint32_t source_bytes, tokens, statements, expressions, physical_expressions, instructions;
@@ -250,7 +252,7 @@ bool emit_spirv(Source *, CompilerWorkspace *);
 bool reflect_prepare(Source *, CompilerWorkspace *, DoeCompilerTypedOutputCounts *);
 void reflect_module(const Source *, const CompilerWorkspace *, const DoeCompilerModuleOutputs *, uint32_t, DoeCompilerModuleV5 *);
 void reflect_typed(const Source *, const CompilerWorkspace *, const DoeCompilerTypedOutputs *, DoeCompilerModuleV4 *);
-bool reflect_matrix_admit(Source *);
+bool reflect_version_admit(Source *, uint32_t);
 bool reflect_legacy_admit(Source *, const CompilerWorkspace *, bool);
 void reflect_program(const Source *, const CompilerWorkspace *, DoeCompilerReflection *);
 void reflect_program_v2(const Source *, const CompilerWorkspace *, DoeCompilerReflectionV2 *);
@@ -258,6 +260,8 @@ NameSpan source_name_at(const Source *, uint32_t);
 bool source_spans_equal(const Source *, NameSpan, NameSpan);
 bool source_span_is(const Source *, NameSpan, const char *);
 bool type_matrix(const CompilerWorkspace *, TypeId);
+bool atomic_opcode(IrOpcode);
+TypeId atomic_element(const CompilerWorkspace *, const IrInstruction *);
 bool type_matrix_name(const Source *, NameSpan, uint32_t *, uint32_t *);
 bool type_matrix_intern(Source *, TypeId, uint32_t, uint32_t, TypeId *);
 TypeId type_leaf(const CompilerWorkspace *, TypeId);

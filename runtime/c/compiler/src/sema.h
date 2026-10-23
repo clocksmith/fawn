@@ -51,7 +51,6 @@ bool sema_matrix_binary(Source *, ExpressionKind, ExpressionValue *, ExpressionV
 bool sema_binary(Source *,ExpressionKind,Comparison,ExpressionValue *,ExpressionValue *,uint32_t,bool,bool,ExpressionValue *);
 bool sema_call_statement(Source *,uint32_t,const LocalScope *);
 /* The call dispatcher validates builtin arity, type arguments and result use. */
-bool sema_builtin_value(Source *,const Expression *,const LocalScope *,const NumericBuiltin *,bool,bool,ExpressionValue *);
 bool sema_constant_lane(Source *, ConstantValue, uint32_t, NumericValue *);
 bool sema_finish_lanes(Source *, TypeId, ConstantValue[4], uint32_t, ConstantValue *);
 bool sema_swizzle_value(Source *, const Expression *, ExpressionValue *, TypeId, uint32_t, bool, bool, ExpressionValue *);
@@ -62,7 +61,10 @@ bool sema_image_argument(Source *, const TypeRecord *, ImageOperation, uint32_t,
 bool sema_image_auxiliaries(Source *, TypeId, ImageOperation);
 bool sema_image_type(Source *, TypeRef, TypeId, TypeId *);
 uint32_t image_builtin_kind(const Source *, NameSpan);
-bool sema_image_call(Source *, const Expression *, const LocalScope *, bool, bool, ImageOperation, ExpressionValue *);
+uint32_t atomic_builtin_kind(const Source *, NameSpan);
+bool atomic_opcode(IrOpcode);
+TypeId atomic_element(const CompilerWorkspace *, const IrInstruction *);
+bool sema_address_reference(Source *, uint32_t, const LocalScope *, bool, bool, ValueReference *);
 bool sema_array_length(Source *, uint32_t, const LocalScope *, bool, ExpressionValue *);
 bool sema_call_value(Source *,uint32_t,const LocalScope *,bool,bool,bool,ExpressionValue *);
 #endif
