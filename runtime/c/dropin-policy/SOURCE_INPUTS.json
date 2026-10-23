@@ -1,0 +1,643 @@
+{
+  "accepted_head": "fbd5f079edc8f397eae16adc4240f5b2598e318b",
+  "branch": "experimental/c-migration-dot-20261023",
+  "historical_trace": {
+    "head": "2220c64cff0bd87b1eed6b246515941ce7d18d24",
+    "path": "/workspace/shared/doe-c-migration-evidence-20261023/planning/native-dispatch-owner/INPUTS.json",
+    "preserved": true,
+    "sha256": "917d5ee3f1112818541f616489057e2b48e98c6302007b9f1ee94e6ca60afb35"
+  },
+  "inputs": [
+    {
+      "accepted_head_sha256": "123614ec5e93ab5c4c7b174111d11fdc5c67fb4be368f542a414ebcd355ad39d",
+      "bytes": 4708,
+      "lines": 75,
+      "matches_accepted_head": true,
+      "matches_prior_observed_bytes": true,
+      "path": "AGENTS.md",
+      "prior_trace_sha256": "123614ec5e93ab5c4c7b174111d11fdc5c67fb4be368f542a414ebcd355ad39d",
+      "sha256": "123614ec5e93ab5c4c7b174111d11fdc5c67fb4be368f542a414ebcd355ad39d"
+    },
+    {
+      "accepted_head_sha256": "e0c7956ff1ef165011d9e7aace8e7cb4933a53937c318e07cc308b485e6ba00c",
+      "bytes": 16795,
+      "lines": 253,
+      "matches_accepted_head": true,
+      "matches_prior_observed_bytes": true,
+      "path": "GOALS.md",
+      "prior_trace_sha256": "e0c7956ff1ef165011d9e7aace8e7cb4933a53937c318e07cc308b485e6ba00c",
+      "sha256": "e0c7956ff1ef165011d9e7aace8e7cb4933a53937c318e07cc308b485e6ba00c"
+    },
+    {
+      "accepted_head_sha256": "818112ce166ea8b6d3c788782ae4847ea4e08cdab73f7ac1f30855bcfd92759d",
+      "bytes": 7096,
+      "lines": 115,
+      "matches_accepted_head": true,
+      "matches_prior_observed_bytes": true,
+      "path": "INTENT.md",
+      "prior_trace_sha256": "818112ce166ea8b6d3c788782ae4847ea4e08cdab73f7ac1f30855bcfd92759d",
+      "sha256": "818112ce166ea8b6d3c788782ae4847ea4e08cdab73f7ac1f30855bcfd92759d"
+    },
+    {
+      "accepted_head_sha256": "d02b6c32a3d9e8f4fa07d84479ab0b378556adb62e85319c289e700f6ea4846a",
+      "bytes": 1962,
+      "lines": 50,
+      "matches_accepted_head": true,
+      "matches_prior_observed_bytes": true,
+      "path": "CATSCAN.md",
+      "prior_trace_sha256": "d02b6c32a3d9e8f4fa07d84479ab0b378556adb62e85319c289e700f6ea4846a",
+      "sha256": "d02b6c32a3d9e8f4fa07d84479ab0b378556adb62e85319c289e700f6ea4846a"
+    },
+    {
+      "accepted_head_sha256": "a2979d9d8f3d21ae837afc14ed13dcfae3e30008f216d5ef2a2f1d8c8da0b8a4",
+      "bytes": 1440,
+      "lines": 44,
+      "matches_accepted_head": true,
+      "matches_prior_observed_bytes": true,
+      "path": "runtime/CATSCAN.md",
+      "prior_trace_sha256": "a2979d9d8f3d21ae837afc14ed13dcfae3e30008f216d5ef2a2f1d8c8da0b8a4",
+      "sha256": "a2979d9d8f3d21ae837afc14ed13dcfae3e30008f216d5ef2a2f1d8c8da0b8a4"
+    },
+    {
+      "accepted_head_sha256": "1fa55de4f8166bf9367098a5769d13fb74a3805fc46fa9b3487e7c2e98febee5",
+      "bytes": 1898,
+      "lines": 50,
+      "matches_accepted_head": true,
+      "matches_prior_observed_bytes": true,
+      "path": "runtime/zig/CATSCAN.md",
+      "prior_trace_sha256": "1fa55de4f8166bf9367098a5769d13fb74a3805fc46fa9b3487e7c2e98febee5",
+      "sha256": "1fa55de4f8166bf9367098a5769d13fb74a3805fc46fa9b3487e7c2e98febee5"
+    },
+    {
+      "accepted_head_sha256": "53144dc8dd85f67bffefb30386dacc5a293344989ed04c3f229bbea153e232d8",
+      "bytes": 1688,
+      "lines": 41,
+      "matches_accepted_head": true,
+      "matches_prior_observed_bytes": true,
+      "path": "runtime/c/CATSCAN.md",
+      "prior_trace_sha256": "53144dc8dd85f67bffefb30386dacc5a293344989ed04c3f229bbea153e232d8",
+      "sha256": "53144dc8dd85f67bffefb30386dacc5a293344989ed04c3f229bbea153e232d8"
+    },
+    {
+      "accepted_head_sha256": "fed9ff00d27d27c509245b20f607c9ad634e4ba3f8b03f6e9cf8b17278e0072a",
+      "bytes": 1424,
+      "lines": 44,
+      "matches_accepted_head": true,
+      "matches_prior_observed_bytes": true,
+      "path": "config/CATSCAN.md",
+      "prior_trace_sha256": "fed9ff00d27d27c509245b20f607c9ad634e4ba3f8b03f6e9cf8b17278e0072a",
+      "sha256": "fed9ff00d27d27c509245b20f607c9ad634e4ba3f8b03f6e9cf8b17278e0072a"
+    },
+    {
+      "accepted_head_sha256": "68bfd848b974b4b6f6d040ba871c685c9d563ddb9d966fa4e7ce6e1eb16a58b6",
+      "bytes": 4379,
+      "lines": 109,
+      "matches_accepted_head": true,
+      "matches_prior_observed_bytes": true,
+      "path": "config/STYLE.md",
+      "prior_trace_sha256": "68bfd848b974b4b6f6d040ba871c685c9d563ddb9d966fa4e7ce6e1eb16a58b6",
+      "sha256": "68bfd848b974b4b6f6d040ba871c685c9d563ddb9d966fa4e7ce6e1eb16a58b6"
+    },
+    {
+      "accepted_head_sha256": "6258ac336d6b188deae3fb07488c45487f3626f2a9ea7505e8a768bd4c3929d6",
+      "bytes": 31801,
+      "lines": 541,
+      "matches_accepted_head": true,
+      "matches_prior_observed_bytes": true,
+      "path": "runtime/zig/STYLE.md",
+      "prior_trace_sha256": "6258ac336d6b188deae3fb07488c45487f3626f2a9ea7505e8a768bd4c3929d6",
+      "sha256": "6258ac336d6b188deae3fb07488c45487f3626f2a9ea7505e8a768bd4c3929d6"
+    },
+    {
+      "accepted_head_sha256": "998dfe9b1f6b822bedb52aa1442186591e26ec13545c70ce8fb8051598034aea",
+      "bytes": 26603,
+      "lines": 411,
+      "matches_accepted_head": true,
+      "matches_prior_observed_bytes": true,
+      "path": "runtime/zig/README.md",
+      "prior_trace_sha256": "998dfe9b1f6b822bedb52aa1442186591e26ec13545c70ce8fb8051598034aea",
+      "sha256": "998dfe9b1f6b822bedb52aa1442186591e26ec13545c70ce8fb8051598034aea"
+    },
+    {
+      "accepted_head_sha256": "b4b176465d59b596db4cfb60056a580d661dc796a5c19dd7427bfbb0c6de441e",
+      "bytes": 34813,
+      "lines": 614,
+      "matches_accepted_head": true,
+      "matches_prior_observed_bytes": true,
+      "path": "docs/architecture.md",
+      "prior_trace_sha256": "b4b176465d59b596db4cfb60056a580d661dc796a5c19dd7427bfbb0c6de441e",
+      "sha256": "b4b176465d59b596db4cfb60056a580d661dc796a5c19dd7427bfbb0c6de441e"
+    },
+    {
+      "accepted_head_sha256": "ba771080a938577cebcdf1c58583cbfe6640b2c83797882c90beba0106290463",
+      "bytes": 61603,
+      "lines": 904,
+      "matches_accepted_head": true,
+      "matches_prior_observed_bytes": true,
+      "path": "docs/process.md",
+      "prior_trace_sha256": "ba771080a938577cebcdf1c58583cbfe6640b2c83797882c90beba0106290463",
+      "sha256": "ba771080a938577cebcdf1c58583cbfe6640b2c83797882c90beba0106290463"
+    },
+    {
+      "accepted_head_sha256": "29d8ae03e114866decbb223499a5332223eb1c48051bce9c0d01f58357b909f3",
+      "bytes": 3138,
+      "lines": 102,
+      "matches_accepted_head": true,
+      "matches_prior_observed_bytes": true,
+      "path": "docs/component-charters.md",
+      "prior_trace_sha256": "29d8ae03e114866decbb223499a5332223eb1c48051bce9c0d01f58357b909f3",
+      "sha256": "29d8ae03e114866decbb223499a5332223eb1c48051bce9c0d01f58357b909f3"
+    },
+    {
+      "accepted_head_sha256": "12b864966f33494d5b200f59e2db8628e5540daabbe789143eb97bc4d98cb077",
+      "bytes": 22199,
+      "lines": 338,
+      "matches_accepted_head": true,
+      "matches_prior_observed_bytes": false,
+      "path": "docs/c-migration/MIGRATION.md",
+      "prior_trace_sha256": "db912873b1c4b24db42a371bf61ca4f63ee9c8b45b5007e7be1a231a40b4af89",
+      "sha256": "12b864966f33494d5b200f59e2db8628e5540daabbe789143eb97bc4d98cb077"
+    },
+    {
+      "accepted_head_sha256": "6192eb56f912d252109297885b556421c2c8649ce9c657035bd6027d2e616a0c",
+      "bytes": 93538,
+      "lines": 1863,
+      "matches_accepted_head": true,
+      "matches_prior_observed_bytes": true,
+      "path": "runtime/zig/build.zig",
+      "prior_trace_sha256": "6192eb56f912d252109297885b556421c2c8649ce9c657035bd6027d2e616a0c",
+      "sha256": "6192eb56f912d252109297885b556421c2c8649ce9c657035bd6027d2e616a0c"
+    },
+    {
+      "accepted_head_sha256": "6a97d9b5e731fd9c72c9fa73f78486fe2afefaf1f990146ac52199bd58e10344",
+      "bytes": 829,
+      "lines": 22,
+      "matches_accepted_head": true,
+      "matches_prior_observed_bytes": true,
+      "path": "config/dropin-abi-behavior.json",
+      "prior_trace_sha256": "6a97d9b5e731fd9c72c9fa73f78486fe2afefaf1f990146ac52199bd58e10344",
+      "sha256": "6a97d9b5e731fd9c72c9fa73f78486fe2afefaf1f990146ac52199bd58e10344"
+    },
+    {
+      "accepted_head_sha256": "4a0bef55501b1f2ab0c35fc6415d623e691ce4c63d26286f59833f47f84df6f3",
+      "bytes": 798,
+      "lines": 22,
+      "matches_accepted_head": true,
+      "matches_prior_observed_bytes": true,
+      "path": "config/dropin-abi-behavior.schema.json",
+      "prior_trace_sha256": "4a0bef55501b1f2ab0c35fc6415d623e691ce4c63d26286f59833f47f84df6f3",
+      "sha256": "4a0bef55501b1f2ab0c35fc6415d623e691ce4c63d26286f59833f47f84df6f3"
+    },
+    {
+      "accepted_head_sha256": "8b3e24938dd3238892071ea316930881c8078ba29e96b3e944a93111558f34d8",
+      "bytes": 2352,
+      "lines": 100,
+      "matches_accepted_head": true,
+      "matches_prior_observed_bytes": true,
+      "path": "config/dropin-symbol-ownership.json",
+      "prior_trace_sha256": "8b3e24938dd3238892071ea316930881c8078ba29e96b3e944a93111558f34d8",
+      "sha256": "8b3e24938dd3238892071ea316930881c8078ba29e96b3e944a93111558f34d8"
+    },
+    {
+      "accepted_head_sha256": "daeaeb25e209d9bd43fba760715ddeae05b7cd9688ff437a118024868ff6f23f",
+      "bytes": 930,
+      "lines": 31,
+      "matches_accepted_head": true,
+      "matches_prior_observed_bytes": true,
+      "path": "config/dropin-symbol-ownership.schema.json",
+      "prior_trace_sha256": "daeaeb25e209d9bd43fba760715ddeae05b7cd9688ff437a118024868ff6f23f",
+      "sha256": "daeaeb25e209d9bd43fba760715ddeae05b7cd9688ff437a118024868ff6f23f"
+    },
+    {
+      "accepted_head_sha256": "bb411704ba439c7eed7bb8bdf5d016de07af43edd97414e6c2a332caee5a23a8",
+      "bytes": 9114,
+      "lines": 351,
+      "matches_accepted_head": true,
+      "matches_prior_observed_bytes": true,
+      "path": "config/governed-lanes.json",
+      "prior_trace_sha256": "bb411704ba439c7eed7bb8bdf5d016de07af43edd97414e6c2a332caee5a23a8",
+      "sha256": "bb411704ba439c7eed7bb8bdf5d016de07af43edd97414e6c2a332caee5a23a8"
+    },
+    {
+      "accepted_head_sha256": "5513af36edd6e0bfd9c5c888fed70e53a4a2a42868f372e82bb30f74a3a52825",
+      "bytes": 39388,
+      "lines": 1441,
+      "matches_accepted_head": true,
+      "matches_prior_observed_bytes": true,
+      "path": "config/zig-test-inventory.json",
+      "prior_trace_sha256": "5513af36edd6e0bfd9c5c888fed70e53a4a2a42868f372e82bb30f74a3a52825",
+      "sha256": "5513af36edd6e0bfd9c5c888fed70e53a4a2a42868f372e82bb30f74a3a52825"
+    },
+    {
+      "accepted_head_sha256": "6428221d860944e1d7466f9c936c8059bbb3f6c22116b073a685a8a57ddbddc1",
+      "bytes": 21570,
+      "lines": 244,
+      "matches_accepted_head": true,
+      "matches_prior_observed_bytes": true,
+      "path": "runtime/zig/test_suite.zig",
+      "prior_trace_sha256": "6428221d860944e1d7466f9c936c8059bbb3f6c22116b073a685a8a57ddbddc1",
+      "sha256": "6428221d860944e1d7466f9c936c8059bbb3f6c22116b073a685a8a57ddbddc1"
+    },
+    {
+      "accepted_head_sha256": "e2308200b84d3b8845e38ef98c5ade97ac88acc8c490d4f2698c87d8aebdc570",
+      "bytes": 6450,
+      "lines": 189,
+      "matches_accepted_head": true,
+      "matches_prior_observed_bytes": true,
+      "path": "runtime/zig/src/contracts/backend.zig",
+      "prior_trace_sha256": "e2308200b84d3b8845e38ef98c5ade97ac88acc8c490d4f2698c87d8aebdc570",
+      "sha256": "e2308200b84d3b8845e38ef98c5ade97ac88acc8c490d4f2698c87d8aebdc570"
+    },
+    {
+      "accepted_head_sha256": "3e736b50bce46022e7e9edc10a6ecea25f13e8338f1cb297276827afdb739cae",
+      "bytes": 1516,
+      "lines": 32,
+      "matches_accepted_head": true,
+      "matches_prior_observed_bytes": true,
+      "path": "runtime/zig/src/core/abi/wgpu_handle_types.zig",
+      "prior_trace_sha256": "3e736b50bce46022e7e9edc10a6ecea25f13e8338f1cb297276827afdb739cae",
+      "sha256": "3e736b50bce46022e7e9edc10a6ecea25f13e8338f1cb297276827afdb739cae"
+    },
+    {
+      "accepted_head_sha256": "70021bb92a69688a40a3c3af41bdbe8708d1f2362a572d30653b3f47e430c616",
+      "bytes": 19907,
+      "lines": 422,
+      "matches_accepted_head": true,
+      "matches_prior_observed_bytes": true,
+      "path": "runtime/zig/src/core/abi/wgpu_loader.zig",
+      "prior_trace_sha256": "70021bb92a69688a40a3c3af41bdbe8708d1f2362a572d30653b3f47e430c616",
+      "sha256": "70021bb92a69688a40a3c3af41bdbe8708d1f2362a572d30653b3f47e430c616"
+    },
+    {
+      "accepted_head_sha256": "7691d76ceb67056f89e97b9ff0b62163eacf19a8e0e09a8fa7dbb32069b7978c",
+      "bytes": 259748,
+      "lines": 6769,
+      "matches_accepted_head": true,
+      "matches_prior_observed_bytes": true,
+      "path": "runtime/zig/vendor/webgpu-headers/webgpu.h",
+      "prior_trace_sha256": "7691d76ceb67056f89e97b9ff0b62163eacf19a8e0e09a8fa7dbb32069b7978c",
+      "sha256": "7691d76ceb67056f89e97b9ff0b62163eacf19a8e0e09a8fa7dbb32069b7978c"
+    },
+    {
+      "accepted_head_sha256": "88ad277abb8b4c4a498aab2b44291d2663d427b8ad9f864a233cf0235ae0361f",
+      "bytes": 7032,
+      "lines": 189,
+      "matches_accepted_head": true,
+      "matches_prior_observed_bytes": true,
+      "path": "runtime/zig/src/dropin/dropin_runtime_config.zig",
+      "prior_trace_sha256": "88ad277abb8b4c4a498aab2b44291d2663d427b8ad9f864a233cf0235ae0361f",
+      "sha256": "88ad277abb8b4c4a498aab2b44291d2663d427b8ad9f864a233cf0235ae0361f"
+    },
+    {
+      "accepted_head_sha256": "71954593b7b4a0d4a94b84169e866f59a3a3ef499844f82480509b714c937690",
+      "bytes": 421,
+      "lines": 16,
+      "matches_accepted_head": true,
+      "matches_prior_observed_bytes": true,
+      "path": "runtime/zig/src/dropin/dropin_behavior_policy.zig",
+      "prior_trace_sha256": "71954593b7b4a0d4a94b84169e866f59a3a3ef499844f82480509b714c937690",
+      "sha256": "71954593b7b4a0d4a94b84169e866f59a3a3ef499844f82480509b714c937690"
+    },
+    {
+      "accepted_head_sha256": "65b142c366fbaf37636bc0315764b1fc849fa1c0482f7b1e180a9a993f4104ee",
+      "bytes": 2298,
+      "lines": 89,
+      "matches_accepted_head": true,
+      "matches_prior_observed_bytes": true,
+      "path": "runtime/zig/src/dropin/dropin_symbol_ownership.zig",
+      "prior_trace_sha256": "65b142c366fbaf37636bc0315764b1fc849fa1c0482f7b1e180a9a993f4104ee",
+      "sha256": "65b142c366fbaf37636bc0315764b1fc849fa1c0482f7b1e180a9a993f4104ee"
+    },
+    {
+      "accepted_head_sha256": "59802651dc492bc0a48de85ba802a69822dbb8cc1ecf307f4b2448de94cc5bf4",
+      "bytes": 1068,
+      "lines": 29,
+      "matches_accepted_head": true,
+      "matches_prior_observed_bytes": true,
+      "path": "runtime/zig/src/dropin/dropin_router.zig",
+      "prior_trace_sha256": "59802651dc492bc0a48de85ba802a69822dbb8cc1ecf307f4b2448de94cc5bf4",
+      "sha256": "59802651dc492bc0a48de85ba802a69822dbb8cc1ecf307f4b2448de94cc5bf4"
+    },
+    {
+      "accepted_head_sha256": "049ef2d2799b55079b4570e04eab5c5f3755eef20421b8e79e0185c48de870af",
+      "bytes": 14588,
+      "lines": 228,
+      "matches_accepted_head": true,
+      "matches_prior_observed_bytes": true,
+      "path": "runtime/zig/src/dropin/dropin_proc_manifest.zig",
+      "prior_trace_sha256": "049ef2d2799b55079b4570e04eab5c5f3755eef20421b8e79e0185c48de870af",
+      "sha256": "049ef2d2799b55079b4570e04eab5c5f3755eef20421b8e79e0185c48de870af"
+    },
+    {
+      "accepted_head_sha256": "5fc7279460eb9481903b6c13621249b1df6e5bcdc7fcce1083de946cf739e56a",
+      "bytes": 2783,
+      "lines": 84,
+      "matches_accepted_head": true,
+      "matches_prior_observed_bytes": true,
+      "path": "runtime/zig/src/dropin/dropin_diagnostics.zig",
+      "prior_trace_sha256": "5fc7279460eb9481903b6c13621249b1df6e5bcdc7fcce1083de946cf739e56a",
+      "sha256": "5fc7279460eb9481903b6c13621249b1df6e5bcdc7fcce1083de946cf739e56a"
+    },
+    {
+      "accepted_head_sha256": "2280167cbc8cc65059994b2f07578a2db570af6f9ab7452edd2041393d5e3153",
+      "bytes": 42979,
+      "lines": 679,
+      "matches_accepted_head": true,
+      "matches_prior_observed_bytes": true,
+      "path": "runtime/zig/src/dropin/wgpu_dropin_lib.zig",
+      "prior_trace_sha256": "2280167cbc8cc65059994b2f07578a2db570af6f9ab7452edd2041393d5e3153",
+      "sha256": "2280167cbc8cc65059994b2f07578a2db570af6f9ab7452edd2041393d5e3153"
+    },
+    {
+      "accepted_head_sha256": "747cbe636702a43c3ddbd28645ee66845b4eebd5a724b7570e7559697b2b05ed",
+      "bytes": 28491,
+      "lines": 626,
+      "matches_accepted_head": true,
+      "matches_prior_observed_bytes": true,
+      "path": "runtime/zig/src/dropin/dropin_abi_procs.zig",
+      "prior_trace_sha256": "747cbe636702a43c3ddbd28645ee66845b4eebd5a724b7570e7559697b2b05ed",
+      "sha256": "747cbe636702a43c3ddbd28645ee66845b4eebd5a724b7570e7559697b2b05ed"
+    },
+    {
+      "accepted_head_sha256": "e7a3835c7537de9e60439520a817446eab436f9d117f8b25ad18c27deb605cfc",
+      "bytes": 9717,
+      "lines": 217,
+      "matches_accepted_head": true,
+      "matches_prior_observed_bytes": true,
+      "path": "runtime/zig/src/dropin/wgpu_dropin_ext_a_core.zig",
+      "prior_trace_sha256": "e7a3835c7537de9e60439520a817446eab436f9d117f8b25ad18c27deb605cfc",
+      "sha256": "e7a3835c7537de9e60439520a817446eab436f9d117f8b25ad18c27deb605cfc"
+    },
+    {
+      "accepted_head_sha256": "99faace33349e70c93ac5bef1f7ca7336c2b386490335de8989c2d31eb712f0f",
+      "bytes": 24678,
+      "lines": 510,
+      "matches_accepted_head": true,
+      "matches_prior_observed_bytes": true,
+      "path": "runtime/zig/src/dropin/wgpu_dropin_ext_b.zig",
+      "prior_trace_sha256": "99faace33349e70c93ac5bef1f7ca7336c2b386490335de8989c2d31eb712f0f",
+      "sha256": "99faace33349e70c93ac5bef1f7ca7336c2b386490335de8989c2d31eb712f0f"
+    },
+    {
+      "accepted_head_sha256": "ce6df4975e46cf99ea8954f807516bc6def90b9b06ec60da2f38da6df8565d9c",
+      "bytes": 1439,
+      "lines": 29,
+      "matches_accepted_head": true,
+      "matches_prior_observed_bytes": true,
+      "path": "runtime/zig/tests/dropin/dropin_behavior_policy_test.zig",
+      "prior_trace_sha256": "ce6df4975e46cf99ea8954f807516bc6def90b9b06ec60da2f38da6df8565d9c",
+      "sha256": "ce6df4975e46cf99ea8954f807516bc6def90b9b06ec60da2f38da6df8565d9c"
+    },
+    {
+      "accepted_head_sha256": "ff098b8902e986a6b6adfc5f5c92fac7d8e05e1fc69b99d753a0d1d6ffb2fb61",
+      "bytes": 1722,
+      "lines": 34,
+      "matches_accepted_head": true,
+      "matches_prior_observed_bytes": true,
+      "path": "runtime/zig/tests/dropin/dropin_router_test.zig",
+      "prior_trace_sha256": "ff098b8902e986a6b6adfc5f5c92fac7d8e05e1fc69b99d753a0d1d6ffb2fb61",
+      "sha256": "ff098b8902e986a6b6adfc5f5c92fac7d8e05e1fc69b99d753a0d1d6ffb2fb61"
+    },
+    {
+      "accepted_head_sha256": "b8a5446c583efd1bcde22ff5b86e3c5ef7e1898ae68a9d4421ad859162a3b41a",
+      "bytes": 1020,
+      "lines": 23,
+      "matches_accepted_head": true,
+      "matches_prior_observed_bytes": true,
+      "path": "runtime/zig/tests/dropin/dropin_symbol_ownership_test.zig",
+      "prior_trace_sha256": "b8a5446c583efd1bcde22ff5b86e3c5ef7e1898ae68a9d4421ad859162a3b41a",
+      "sha256": "b8a5446c583efd1bcde22ff5b86e3c5ef7e1898ae68a9d4421ad859162a3b41a"
+    },
+    {
+      "accepted_head_sha256": "8f6e8dadb9438874219416d8a42d295f37213f12692b40ae3bc6cbe80bc9adb4",
+      "bytes": 1415,
+      "lines": 34,
+      "matches_accepted_head": true,
+      "matches_prior_observed_bytes": true,
+      "path": "runtime/zig/tests/dropin/dropin_proc_manifest_test.zig",
+      "prior_trace_sha256": "8f6e8dadb9438874219416d8a42d295f37213f12692b40ae3bc6cbe80bc9adb4",
+      "sha256": "8f6e8dadb9438874219416d8a42d295f37213f12692b40ae3bc6cbe80bc9adb4"
+    },
+    {
+      "accepted_head_sha256": "94ce7f706eea603d8331b57d21d90bb290e6f9874646872064b7d2cd05d1ebd7",
+      "bytes": 2253,
+      "lines": 48,
+      "matches_accepted_head": true,
+      "matches_prior_observed_bytes": true,
+      "path": "runtime/zig/tests/instance_feature_lookup.c",
+      "prior_trace_sha256": "94ce7f706eea603d8331b57d21d90bb290e6f9874646872064b7d2cd05d1ebd7",
+      "sha256": "94ce7f706eea603d8331b57d21d90bb290e6f9874646872064b7d2cd05d1ebd7"
+    },
+    {
+      "accepted_head_sha256": "7cde03b0bca2d4d1c8477c580301cb64b60bc0b01e48ff02c8c368b861667f72",
+      "bytes": 8031,
+      "lines": 191,
+      "matches_accepted_head": true,
+      "path": "bench/STYLE.md",
+      "sha256": "7cde03b0bca2d4d1c8477c580301cb64b60bc0b01e48ff02c8c368b861667f72"
+    },
+    {
+      "accepted_head_sha256": "8c8a8bae6e32d30fd55dd11e2de155a99596541b3092c30c69dcad693de5ad26",
+      "bytes": 6169,
+      "lines": 117,
+      "matches_accepted_head": true,
+      "path": "docs/INDEX.md",
+      "sha256": "8c8a8bae6e32d30fd55dd11e2de155a99596541b3092c30c69dcad693de5ad26"
+    },
+    {
+      "accepted_head_sha256": "bda3a247ddc173b5e2bab8c827de31b675c28ae0277b47dca307eba7e457dfd0",
+      "bytes": 709,
+      "lines": 17,
+      "matches_accepted_head": true,
+      "path": "docs/status/README.md",
+      "sha256": "bda3a247ddc173b5e2bab8c827de31b675c28ae0277b47dca307eba7e457dfd0"
+    },
+    {
+      "accepted_head_sha256": "a9869744381658c04b6e1587fdd11e5c3baa0da45fdd35706f1d2d6bee49318a",
+      "bytes": 9931,
+      "lines": 152,
+      "matches_accepted_head": true,
+      "path": "reports/README.md",
+      "sha256": "a9869744381658c04b6e1587fdd11e5c3baa0da45fdd35706f1d2d6bee49318a"
+    },
+    {
+      "accepted_head_sha256": "3b4297a435249b0e06e5ae7379c191978d807f149796ba85816bba69b95d8212",
+      "bytes": 1440,
+      "lines": 21,
+      "matches_accepted_head": true,
+      "path": "runtime/c/futures/STYLE.md",
+      "sha256": "3b4297a435249b0e06e5ae7379c191978d807f149796ba85816bba69b95d8212"
+    },
+    {
+      "accepted_head_sha256": "554133f56c62e91de22e7f687c4f3fa94ef095083d9ae29dc4a30b8416279cc0",
+      "bytes": 1469,
+      "lines": 22,
+      "matches_accepted_head": true,
+      "path": "runtime/c/instance/STYLE.md",
+      "sha256": "554133f56c62e91de22e7f687c4f3fa94ef095083d9ae29dc4a30b8416279cc0"
+    },
+    {
+      "accepted_head_sha256": "863968e863c130ea304590684a9fc1eea58bd3798ea3e5d8a449b02afd3f1f09",
+      "bytes": 23888,
+      "lines": 351,
+      "matches_accepted_head": true,
+      "path": "runtime/c/instance/CONTRACT.md",
+      "sha256": "863968e863c130ea304590684a9fc1eea58bd3798ea3e5d8a449b02afd3f1f09"
+    },
+    {
+      "accepted_head_sha256": "9bd7f94c1c0b7a49e389aa1a1c7d440d38c0a8a801648c617f7130c92b16e989",
+      "bytes": 15156,
+      "lines": 209,
+      "matches_accepted_head": true,
+      "path": "runtime/c/instance/EVALUATION.md",
+      "sha256": "9bd7f94c1c0b7a49e389aa1a1c7d440d38c0a8a801648c617f7130c92b16e989"
+    },
+    {
+      "accepted_head_sha256": "eb9db63cca8f4b8a9c449917459bcf779e2dfe6e0e98c6efedddf18eebc409ce",
+      "bytes": 3952,
+      "lines": 65,
+      "matches_accepted_head": true,
+      "path": "runtime/c/instance/RESULTS.md",
+      "sha256": "eb9db63cca8f4b8a9c449917459bcf779e2dfe6e0e98c6efedddf18eebc409ce"
+    },
+    {
+      "accepted_head_sha256": "37719299c2d9565e2b69523672a563e0bb87fb407cc9cf0b9091a7f02256577f",
+      "bytes": 2216,
+      "lines": 46,
+      "matches_accepted_head": true,
+      "path": "runtime/c/instance/Makefile",
+      "sha256": "37719299c2d9565e2b69523672a563e0bb87fb407cc9cf0b9091a7f02256577f"
+    },
+    {
+      "accepted_head_sha256": "171cc17a7128516a55594b5ffe983d25ec63cf27e56fa871517fbb7c36702ba9",
+      "bytes": 266343,
+      "lines": 4509,
+      "matches_accepted_head": true,
+      "path": "runtime/zig/source-layout.json",
+      "sha256": "171cc17a7128516a55594b5ffe983d25ec63cf27e56fa871517fbb7c36702ba9"
+    },
+    {
+      "accepted_head_sha256": "4c3b6887093c6eb3112cfa26a473a192926c779477318b51e2662213a250465f",
+      "bytes": 64,
+      "lines": 5,
+      "matches_accepted_head": true,
+      "path": "runtime/zig/src/dropin/root.zig",
+      "sha256": "4c3b6887093c6eb3112cfa26a473a192926c779477318b51e2662213a250465f"
+    },
+    {
+      "accepted_head_sha256": "52f74277382843b47dc04b47becf9ebd7509dba302359876f99dc0a96b8aaedb",
+      "bytes": 961,
+      "lines": 38,
+      "matches_accepted_head": true,
+      "path": "runtime/zig/src/mod.zig",
+      "sha256": "52f74277382843b47dc04b47becf9ebd7509dba302359876f99dc0a96b8aaedb"
+    },
+    {
+      "accepted_head_sha256": "f9ed72523004a3831bd8e1bc2fbad2b753e1ab049822fe901725ed6cbcaf1650",
+      "bytes": 68305,
+      "lines": 1057,
+      "matches_accepted_head": true,
+      "path": "runtime/zig/src/core/abi/generated/webgpu_upstream.zig",
+      "sha256": "f9ed72523004a3831bd8e1bc2fbad2b753e1ab049822fe901725ed6cbcaf1650"
+    },
+    {
+      "accepted_head_sha256": "78135c12ab3bf2bdada361c52eff0b2baed6edbf264e4ad512b04fb652818f2c",
+      "bytes": 248,
+      "lines": 9,
+      "matches_accepted_head": true,
+      "path": "runtime/zig/src/dropin/wgpu_dropin_ext_a.zig",
+      "sha256": "78135c12ab3bf2bdada361c52eff0b2baed6edbf264e4ad512b04fb652818f2c"
+    },
+    {
+      "accepted_head_sha256": "1a871459d581650a088f7fe00d916b28e87b5298a5c869f45c19f6439d94b6f9",
+      "bytes": 9998,
+      "lines": 251,
+      "matches_accepted_head": true,
+      "path": "runtime/zig/src/dropin/wgpu_dropin_ext_c.zig",
+      "sha256": "1a871459d581650a088f7fe00d916b28e87b5298a5c869f45c19f6439d94b6f9"
+    },
+    {
+      "accepted_head_sha256": "6325bc008699ee9b9f36aff83cf6757324c971234494da6391b414ddd08b546f",
+      "bytes": 303,
+      "lines": 7,
+      "matches_accepted_head": true,
+      "path": "runtime/zig/test_suite_c_instance.zig",
+      "sha256": "6325bc008699ee9b9f36aff83cf6757324c971234494da6391b414ddd08b546f"
+    },
+    {
+      "accepted_head_sha256": "40ac9f4a74ab42350e293c7f6bf1c04c94c3b78236cd6d7aa3fb97b1f432ad06",
+      "bytes": 306,
+      "lines": 7,
+      "matches_accepted_head": true,
+      "path": "runtime/zig/test_suite_c_callbacks.zig",
+      "sha256": "40ac9f4a74ab42350e293c7f6bf1c04c94c3b78236cd6d7aa3fb97b1f432ad06"
+    },
+    {
+      "accepted_head_sha256": "7711dee0fed85a269f805320c66c5ccc67659d835721239b7531b934e5dbf925",
+      "bytes": 300,
+      "lines": 7,
+      "matches_accepted_head": true,
+      "path": "runtime/zig/test_suite_c_futures.zig",
+      "sha256": "7711dee0fed85a269f805320c66c5ccc67659d835721239b7531b934e5dbf925"
+    }
+  ],
+  "observed_at_utc": "2026-10-23T12:07:53.589942+00:00",
+  "source_root": "/workspace/shared/doe-c-migration-20261023",
+  "status": "planning only; no implementation, compiler invocation, fixture or behavioral test",
+  "toolchain_source_inputs": [
+    {
+      "bytes": 33944,
+      "lines": 809,
+      "path": "/workspace/shared/doe-language-experiment-20261023/phase1/deps/zig-x86_64-linux-0.15.2/lib/std/json/static.zig",
+      "sha256": "c165d2d2773ff1e41541e8860605a2281f73ccaff7da87aebdefa9f1da9da3de"
+    },
+    {
+      "bytes": 7996,
+      "lines": 193,
+      "path": "/workspace/shared/doe-language-experiment-20261023/phase1/deps/zig-x86_64-linux-0.15.2/lib/std/json/dynamic.zig",
+      "sha256": "0da5979e6cf800ac9e2997082469e8caed6ab2d56f4281cc316dff1d21a6cebb"
+    },
+    {
+      "bytes": 72868,
+      "lines": 1766,
+      "path": "/workspace/shared/doe-language-experiment-20261023/phase1/deps/zig-x86_64-linux-0.15.2/lib/std/json/Scanner.zig",
+      "sha256": "7d5b3f46a743d4546744bd9f75746a0c5c2b5de5297adb6868b803ef9f8b836a"
+    },
+    {
+      "bytes": 58752,
+      "lines": 1597,
+      "path": "/workspace/shared/doe-language-experiment-20261023/phase1/deps/zig-x86_64-linux-0.15.2/lib/std/fmt.zig",
+      "sha256": "667eac6285e472b5516ebebf8a6e69959a171be4fb97cac1e56419ffec20d500"
+    },
+    {
+      "bytes": 13189,
+      "lines": 258,
+      "path": "/workspace/shared/doe-language-experiment-20261023/phase1/deps/zig-x86_64-linux-0.15.2/lib/std/fmt/parse_float.zig",
+      "sha256": "6a0a63d1f7305fdef286a5691ab2dd52cda88bd4de40a216ce91a408cbc45ee9"
+    },
+    {
+      "bytes": 9426,
+      "lines": 297,
+      "path": "/workspace/shared/doe-language-experiment-20261023/phase1/deps/zig-x86_64-linux-0.15.2/lib/std/fmt/parse_float/parse.zig",
+      "sha256": "8dabeac30309345acf8c9243c32512ea382e8d7f015e93917cd8afab00879bb3"
+    },
+    {
+      "bytes": 79140,
+      "lines": 2085,
+      "path": "/workspace/shared/doe-language-experiment-20261023/phase1/deps/zig-x86_64-linux-0.15.2/lib/std/process.zig",
+      "sha256": "2ba5e54cd1b4c1e2886c14eb6a3c80155c9d761cee39153e5a4831a69d34d71c"
+    },
+    {
+      "bytes": 290949,
+      "lines": 7358,
+      "path": "/workspace/shared/doe-language-experiment-20261023/phase1/deps/zig-x86_64-linux-0.15.2/lib/std/posix.zig",
+      "sha256": "668d5a0d8332d10777a1a59bb9a45a4b01dcb2a5fd9e4a25fed9ab9caef9d6c3"
+    },
+    {
+      "bytes": 16059,
+      "lines": 479,
+      "path": "/workspace/shared/doe-language-experiment-20261023/phase1/deps/zig-x86_64-linux-0.15.2/lib/std/ascii.zig",
+      "sha256": "245e0e29ff75a5cbcf294bade7a32b35d1a5e0242bad59342822831c56f97b88"
+    }
+  ]
+}
