@@ -47,8 +47,11 @@ static doe_vk_status prepare_draw(doe_vk_commands *commands, const doe_resource_
         status = native_draw_guard_initialize(pipeline->device);
         if (status != DOE_VK_OK) return status;
         native_buffer *arguments = doe_resource_buffer_native(packet->indirect);
+        /* indirect-first-instance admits a nonzero GPU firstInstance; without it
+         * the guard keeps such draws as no-ops. */
         *indirect = (doe_vk_render_indirect){pipeline->device->draw_validator,
-            arguments->handle.vulkan,packet->indirect_offset};
+            arguments->handle.vulkan,packet->indirect_offset,
+            native_feature_enabled(pipeline->device, WGPUFeatureName_IndirectFirstInstance)};
         draw->indirect = indirect;
     }
     if (packet->indexed) {

@@ -34,6 +34,10 @@ doe_vk_status doe_vk_prepare_features(doe_vk_context *context, const doe_vk_opti
     /* Optional storage-image formats and fragment stores, enabled only when offered. */
     if (features.features.shaderStorageImageExtendedFormats) selection.base.shaderStorageImageExtendedFormats = 1;
     if (features.features.fragmentStoresAndAtomics) selection.base.fragmentStoresAndAtomics = 1;
+    /* Optional nonzero firstInstance in indirect draws and depth clamping without
+     * clipping (WebGPU indirect-first-instance and unclippedDepth). */
+    if (features.features.drawIndirectFirstInstance) selection.base.drawIndirectFirstInstance = 1;
+    if (features.features.depthClamp) selection.base.depthClamp = 1;
     if (available && demote.shaderDemoteToHelperInvocation) {
         selection.demote = demote;
         selection.extension = demote_extension;

@@ -47,6 +47,8 @@ uint32_t native_adapter_features(const native_backend *backend)
     if (formats_offer(context, float32, 3, blendable)) features |= NATIVE_FEATURE(WGPUFeatureName_Float32Blendable);
     if (formats_offer(context, depth32_stencil8, 1, depth_stencil))
         features |= NATIVE_FEATURE(WGPUFeatureName_Depth32FloatStencil8);
+    if (caps->draw_indirect_first_instance) features |= NATIVE_FEATURE(WGPUFeatureName_IndirectFirstInstance);
+    if (caps->depth_clamp) features |= NATIVE_FEATURE(WGPUFeatureName_DepthClipControl);
     return features;
 }
 bool native_requested_features(const native_backend *backend,

@@ -10,7 +10,8 @@ static const char draw_source[] =
     "    let count = record[0];\n"
     "    let instance_count = record[1];\n"
     "    let first = record[2];\n"
-    "    let indexed = record[7] != 0u;\n"
+    "    let indexed = (record[7] & 1u) != 0u;\n"
+    "    let first_allowed = (record[7] & 2u) != 0u;\n"
     "    var first_instance = record[3];\n"
     "    var count_limit = record[4];\n"
     "    var instance_limit = record[5];\n"
@@ -19,9 +20,9 @@ static const char draw_source[] =
     "        count_limit = record[5];\n"
     "        instance_limit = record[6];\n"
     "    }\n"
-    "    if (count == 0u || instance_count == 0u || first_instance != 0u ||\n"
+    "    if (count == 0u || instance_count == 0u || (first_instance != 0u && !first_allowed) ||\n"
     "        first > count_limit || count > count_limit - first ||\n"
-    "        instance_count > instance_limit) {\n"
+    "        first_instance > instance_limit || instance_count > instance_limit - first_instance) {\n"
     "        record[0] = 0u;\n        record[1] = 0u;\n"
     "        record[2] = 0u;\n        record[3] = 0u;\n"
     "        if (indexed) {\n            record[4] = 0u;\n        }\n"
@@ -85,6 +86,7 @@ doe_vk_status doe_vk_draw_indirect_validate(doe_vk_commands *commands,
         !(indirect->arguments->usage & DOE_VK_BUFFER_COPY_SRC) ||
         !doe_vk_range(indirect->arguments->size, indirect->offset, indexed ? 20 : 16))
         return DOE_VK_INVALID_ARGUMENT;
+    if (indirect->first_instance && !commands->context->caps.draw_indirect_first_instance) return DOE_VK_UNSUPPORTED;
     return indirect->arguments->content_status;
 }
 
@@ -95,10 +97,11 @@ doe_vk_status doe_vk_draw_indirect_prepare(doe_vk_commands *commands,
         DOE_VK_BUFFER_STORAGE | DOE_VK_BUFFER_COPY_DST | DOE_VK_BUFFER_INDIRECT,
         DOE_VK_MEMORY_HOST, &scratch, NULL);
     if (status != DOE_VK_OK) return status;
-    /* Nonindexed: words4..7 = vertex/instance capacities, 0, mode0. Indexed:
-     * words5..7 = index/instance capacities, mode1. The copy never overlaps. */
+    /* Nonindexed: words4..7 = vertex/instance capacities, 0, mode. Indexed:
+     * words5..7 = index/instance capacities, mode. The copy never overlaps. */
     const uint64_t copied = indexed ? 20 : 16;
-    const uint32_t tail[4] = {limits[0], limits[1], indexed ? 1u : 0u, 0};
+    const uint32_t mode = (indexed ? 1u : 0u) | (indirect->first_instance ? 2u : 0u);
+    const uint32_t tail[4] = {limits[0], limits[1], indexed ? mode : 0u, mode};
     status = doe_vk_buffer_write(scratch, copied, tail, (size_t)(32 - copied));
     if (status == DOE_VK_OK)
         status = doe_vk_commands_copy(commands, indirect->arguments, indirect->offset, scratch, 0, copied);

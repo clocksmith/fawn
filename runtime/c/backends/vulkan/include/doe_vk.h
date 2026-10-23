@@ -139,6 +139,12 @@ typedef struct doe_vk_caps {
     /* Enabled fragmentStoresAndAtomics: fragment-stage storage writes. Vertex-stage
      * stores stay disabled. */
     bool fragment_stores_and_atomics;
+    /* Enabled drawIndirectFirstInstance: guarded indirect draws may then admit a
+     * nonzero firstInstance when the render indirect request asks for it. */
+    bool draw_indirect_first_instance;
+    /* Enabled depthClamp: pipelines may disable depth clipping (unclipped_depth),
+     * clamping depth to the viewport range instead. */
+    bool depth_clamp;
 } doe_vk_caps;
 
 /* One owned reference on success. Objects retain their creating context. */

@@ -40,9 +40,12 @@ bool native_render_fixed(uint32_t features, const WGPURenderPipelineDescriptor *
 {
     /* stripIndexFormat admission (strip-only, Uint16/Uint32) belongs to the
      * resource pipeline owner; native strips always enable primitive restart. */
-    if (source->primitive.nextInChain || source->primitive.unclippedDepth ||
+    /* unclippedDepth needs depth-clip-control: native depth clamping replaces clipping. */
+    if (source->primitive.nextInChain ||
+        (source->primitive.unclippedDepth && !(features & NATIVE_FEATURE(WGPUFeatureName_DepthClipControl))) ||
         source->multisample.nextInChain || (source->multisample.count != 1 && source->multisample.count != 4) ||
         (source->multisample.alphaToCoverageEnabled && source->multisample.count == 1)) return false;
+    target->unclipped_depth = source->primitive.unclippedDepth != 0;
     target->sample_count = source->multisample.count;
     target->override_sample_mask = true;
     target->sample_mask = source->multisample.mask;

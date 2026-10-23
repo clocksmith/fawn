@@ -147,7 +147,8 @@ Apple SDK compilation, Darwin execution and physical qualification remain unrun.
 - Indirect Vulkan commands consume GPU-produced argument bytes through backend-
   generated WGSL guards compiled by the existing C shader owner. Dispatch guards
   use the admitted device dimension limits; draw guards use exact bound vertex/
-  instance spans and suppress nonzero firstInstance while its feature is disabled.
+  instance spans and suppress nonzero firstInstance unless the device enabled
+  indirect-first-instance, which then bounds firstInstance+instanceCount instead.
   Draws retain distinct scratch until retirement. Public Indirect usage gains only
   internal native CopySrc, not new public usage. No CPU argument readback or second
   recording engine is used. Failed terminal work discards private helpers; unknown
@@ -161,7 +162,8 @@ Apple SDK compilation, Darwin execution and physical qualification remain unrun.
   backend. Strip pipelines enable primitive restart (all-ones index); lists never
   do. Indexed indirect uses the same backend guard owner and distinct scratch: a
   GPU-read firstIndex+indexCount beyond the bound range, a wrapping sum, zero
-  counts, instance-step overrun or nonzero firstInstance becomes a native no-op.
+  counts, instance-step overrun or (without indirect-first-instance) nonzero
+  firstInstance becomes a native no-op.
   Uint32 indices require the enabled native fullDrawIndexUint32 feature. Index
   values are never read on the host; vertex-step fetches through arbitrary GPU
   indices rely on enabled robustBufferAccess. Metal indexed drawing is absent.
@@ -294,21 +296,31 @@ reports a feature only from what the selected Vulkan device really offers: the
 canonical timestamp normalizer for `timestamp-query`; linear filtering of
 r32/rg32/rgba32 float for `float32-filterable`; blending of those formats for
 `float32-blendable`; D32S8 depth/stencil attachment, sampling and transfer for
-`depth32float-stencil8`. A device request naming an unreported feature fails.
+`depth32float-stencil8`; enabled native drawIndirectFirstInstance for
+`indirect-first-instance` and depthClamp for `depth-clip-control`. A device
+request naming an unreported feature fails.
 The device keeps the requested set as `NATIVE_FEATURE` bits and every gated use
 checks that set, never the adapter facts: feature formats map only when enabled
 (textures, views, pipeline targets, bundles and layouts all reject
 depth32float-stencil8 otherwise); blending an r32/rg32/rgba32 float target rejects
 without float32-blendable; and without float32-filterable those views keep the
 'unfilterable-float' sample type, so a 'float' (sampler-using) layout rejects them.
+Indirect draws admit a GPU-produced nonzero firstInstance only with
+indirect-first-instance (otherwise the guard keeps them no-ops; direct draws
+always honor firstInstance), and unclippedDepth rejects without
+depth-clip-control; with it the pipeline clamps depth instead of clipping.
 
 `tests/format_features.c` reads back exact results on a device that enabled every
 offered feature: linear midpoints of r32float/rgba32float values that no 16-bit
 format holds (1000001.0), two additive draws onto a 1000000.0 r32float clear
 (1000007.0) and depth 0.25/stencil 7 per aspect of depth32float-stencil8. On a
 device without them it checks each rejection and that an unoffered feature
-fails the request. A feature the adapter does not offer prints SKIP with its
-reason.
+fails the request. `tests/draw_features.c` reads back exact r32uint values
+a*1000+instance_index for GPU firstInstance 2/1 through indirect, indexed indirect
+and bundle draws (an instance-buffer overrun stays a no-op; without the feature
+all stay no-ops while a direct firstInstance draws), and unclippedDepth geometry at
+z 1.5/-0.5 stored as depth 1.0/0.0 where the clipped control draws nothing. A
+feature the adapter does not offer prints SKIP with its reason.
 
 ## WGSL language features and texture binding view dimension
 
@@ -511,6 +523,7 @@ PASS public textures: actual zero mips, packed upload, linear sampling, image OO
 PASS public admission: sparse/trailing/null layout holes, null unbind, ignored destroyed resources, dynamic writable ranges, whole-buffer read/write conflicts and texture subresource aliases (CPU Vulkan only)
 PASS public error types: resource allocation, automatic-layout allocation, compute/render backend OOM/native/validation failures, failed requested-feature device and successful recovery
 PASS public format features: 3 of 3 offered and enabled (float32-filterable linear r32float/rgba32float midpoints exact, float32-blendable additive r32float 1000007.0, depth32float-stencil8 depth 0.25/stencil 7 per aspect); without them depth32float-stencil8 texture/pipeline/bundle, r32float blending and 'float' r32float binding reject, an unoffered feature fails the request (CPU Vulkan only)
+PASS public draw features: 2 of 2 offered and enabled (indirect-first-instance: GPU firstInstance 2/1 reaches instance attributes and instance_index exactly for indirect, indexed indirect and bundle draws, an instance-buffer overrun stays a no-op; depth-clip-control: unclippedDepth draws z 1.5/-0.5 clamped to depth 1.0/0.0 where the clipped control draws nothing); without them nonzero indirect firstInstance is a no-op while direct firstInstance draws, and unclippedDepth rejects (CPU Vulkan only)
 PASS public timestamps: requested feature, zero/max/range/destroy admission, real pass/command writes, exact GPU nanoseconds, same-batch copy, scratch reuse and early query release (CPU Vulkan only)
 PASS typed recovery: native/OOM/pending errors survive submit/write/texture/workdone, unknown leases retained, terminal cleanup and fresh GPU normalizer recovery
 PASS every implemented procedure address matches; every unprovided name returns NULL
@@ -629,7 +642,7 @@ Do not run this on Miles or Suby while their possible disassembly/cooling hold
 remains. Every adapter-using client selects its adapter through
 `tests/adapter_class.h`: software (CPU fallback adapter) by default, or a
 nonfallback GPU adapter with `DOE_C_TEST_ADAPTER=physical`. Each PASS line names
-the class and device it ran on. `make check-physical` runs the same 34 clients on
+the class and device it ran on. `make check-physical` runs the same 35 clients on
 the system ICDs (`VK_ICD_FILENAMES` unset):
 
 ```
@@ -658,7 +671,8 @@ view clients) all 22 (including `depth-copies`) passed; with depth sampling all 
 vertex formats, storage textures, point lists, attachment discard and multisampled
 reads all 33 (including `storage-textures`, `point-list`, `color-discard` and
 `msaa-sampling`) passed; with optional format features all 34 (including
-`format-features`) passed. That is
+`format-features`) passed; with optional draw features all 35 (including
+`draw-features`) passed. That is
 developer evidence for these exact clients on that
 adapter/driver: the oracles are the clients' own expected values, not frozen
 independent workloads, and it is not Vulkan backend qualification, a performance

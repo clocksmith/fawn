@@ -364,6 +364,16 @@ it point lists return UNSUPPORTED and shaders are never rewritten. lavapipe and
 RADV (Mesa 26.0.3) both offer it here. `tests/feature_contract.c` and
 `tests/depth_pipeline_contract.c` check the selection chain and the gate.
 
+drawIndirectFirstInstance and depthClamp are likewise enabled when the device
+offers them and reported as `caps.draw_indirect_first_instance` and
+`caps.depth_clamp`. A render indirect request with `first_instance` set needs the
+first (UNSUPPORTED otherwise); its guard then admits a nonzero GPU firstInstance
+and bounds firstInstance+instanceCount against the instance capacity without
+forming the sum. A pipeline with `unclipped_depth` needs the second and sets
+native depthClampEnable: no depth clipping, depth clamped to the viewport range.
+`tests/draw_indirect_contract.c` and `tests/depth_pipeline_contract.c` check both
+gates; lavapipe and RADV (Mesa 26.0.3) offer both here.
+
 Optional demote feature selection is explicit: set
 `enable_shader_demote_if_supported` before device creation. The default remains
 off. `caps.shader_demote_to_helper_invocation` reports successful enablement,
@@ -502,8 +512,9 @@ Nonindexed draw-indirect uses the same full-pass recorder. Supply the exact
 are prepared before argument copies/guards, after preceding producer commands.
 Each indirect draw has distinct command-retained32-byte scratch:16 copied argument
 bytes and exact host-produced vertex/instance capacities. The GPU suppresses
-over-capacity, wrapping, zero-count and nonzero-firstInstance draws; it never
-changes original arguments. No optional indirect-first-instance feature is enabled.
+over-capacity, wrapping, zero-count and unadmitted nonzero-firstInstance draws; it
+never changes original arguments. A nonzero firstInstance is admitted only for a
+request with `first_instance` on a context with drawIndirectFirstInstance.
 Stride-zero and attribute-free native holes retain their existing semantics.
 Only guarded native drawIndirect(count1,stride16) executes inside the pass; guards
 and barriers stay outside. Linux presentation is described below.
@@ -524,11 +535,12 @@ bound element capacity. The native bind has no size, so this range check and the
 guard below are what enforce the public bound range.
 
 Indexed draw-indirect uses the same validator and source as nonindexed draws. The
-source selects the layout from mode word 7: nonindexed scratch is 16 copied bytes,
-vertex/instance capacities, zero and mode0; indexed scratch is 20 copied
-drawIndexed bytes, index/instance capacities and mode1. The GPU guard suppresses
+source selects the layout from mode word 7 (bit 1 indexed, bit 2 firstInstance
+admitted): nonindexed scratch is 16 copied bytes, vertex/instance capacities, zero
+and the mode; indexed scratch is 20 copied drawIndexed bytes, index/instance
+capacities and the mode. The GPU guard suppresses
 firstIndex+indexCount beyond the bound index range (compared without forming the
-sum), zero counts, instance-step overrun and nonzero firstInstance by zeroing the
+sum), zero counts, instance-step overrun and unadmitted nonzero firstInstance by zeroing the
 copied record; it never changes the caller's arguments. Only guarded
 `vkCmdDrawIndexedIndirect(count1,stride20)` executes inside the pass. Index values
 are never read on the host or guarded: vertex-step fetches through arbitrary GPU
