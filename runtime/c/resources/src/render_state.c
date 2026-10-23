@@ -2,6 +2,32 @@
 #include "internal.h"
 #include <string.h>
 
+/* Shared pass-layout admission; backend renderability/features remain explicit. */
+doe_resource_status resource_render_layout_validate(WGPUTextureFormat color,
+    WGPUTextureFormat depth_stencil, uint32_t samples)
+{
+    if (!color && !depth_stencil) return DOE_RESOURCE_LAYOUT;
+    if (color) {
+        uint32_t bytes, width, height;
+        doe_resource_status status = resource_format_block(color, &bytes, &width, &height);
+        if (status != DOE_RESOURCE_OK) return status;
+        if (resource_format_depth(color) || width != 1 || height != 1) return DOE_RESOURCE_LAYOUT;
+    }
+    if (depth_stencil && !resource_format_depth(depth_stencil)) return DOE_RESOURCE_LAYOUT;
+    return samples == 1 || samples == 4 ? DOE_RESOURCE_OK : DOE_RESOURCE_UNSUPPORTED;
+}
+
+/* Targets have already passed attachment admission, so at least one exists. */
+doe_resource_render_bundle_desc resource_render_targets_layout(const doe_resource_render_targets *targets)
+{
+    const doe_resource_view *primary = targets->color ? targets->color : targets->depth_stencil;
+    return (doe_resource_render_bundle_desc){
+        targets->color ? targets->color->desc.format : WGPUTextureFormat_Undefined,
+        targets->depth_stencil ? targets->depth_stencil->desc.format : WGPUTextureFormat_Undefined,
+        primary->texture->desc.samples, targets->depth_read_only, targets->stencil_read_only
+    };
+}
+
 doe_resource_status resource_render_set_pipeline(void *device, doe_resource_render_packet *state,
     doe_resource_render_pipeline *pipeline)
 {

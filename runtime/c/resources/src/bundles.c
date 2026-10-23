@@ -58,12 +58,9 @@ doe_resource_status doe_resource_bundle_encoder_create(const doe_resource_config
 {
     if (!resource_config_valid(config) || !desc || !out) return DOE_RESOURCE_INVALID_ARGUMENT;
     if (!config->device.alive(config->device.identity)) return DOE_RESOURCE_UNAVAILABLE;
-    uint32_t bytes, width, height;
-    doe_resource_status status = resource_format_block(desc->color_format, &bytes, &width, &height);
+    doe_resource_status status = resource_render_layout_validate(desc->color_format,
+        desc->depth_stencil_format, desc->samples);
     if (status != DOE_RESOURCE_OK) return status;
-    if (width != 1 || height != 1 || resource_format_depth(desc->color_format) ||
-        (desc->depth_stencil_format && !resource_format_depth(desc->depth_stencil_format))) return DOE_RESOURCE_LAYOUT;
-    if (desc->samples != 1 && desc->samples != 4) return DOE_RESOURCE_UNSUPPORTED;
     doe_resource_bundle_encoder *encoder = resource_allocate(config, sizeof(*encoder), _Alignof(doe_resource_bundle_encoder));
     if (!encoder) return DOE_RESOURCE_OUT_OF_MEMORY;
     memset(encoder, 0, sizeof(*encoder));
@@ -228,12 +225,7 @@ doe_resource_status doe_resource_render_pass_execute_bundles(doe_resource_render
     doe_resource_status status = resource_render_pass_active(pass);
     if (status != DOE_RESOURCE_OK) return status;
     if (count && !bundles) return resource_encoder_fail(pass->encoder, DOE_RESOURCE_INVALID_ARGUMENT);
-    doe_resource_render_bundle_desc signature = {
-        pass->state.targets.color->desc.format,
-        pass->state.targets.depth_stencil ? pass->state.targets.depth_stencil->desc.format : 0,
-        pass->state.targets.color->texture->desc.samples,
-        pass->state.targets.depth_read_only, pass->state.targets.stencil_read_only
-    };
+    doe_resource_render_bundle_desc signature = resource_render_targets_layout(&pass->state.targets);
     uint64_t remaining = pass->state.targets.max_draw_count - pass->draw_count;
     for (size_t i = 0; i < count; i++) {
         doe_resource_render_bundle *bundle = bundles[i];

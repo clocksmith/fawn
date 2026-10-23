@@ -78,8 +78,10 @@ doe_resource_status resource_scope_input(const doe_resource_config *config, reso
 doe_resource_status resource_scope_targets(const doe_resource_config *config, resource_usage_scope *scope,
     const doe_resource_render_targets *targets)
 {
-    resource_use uses[4] = {{.view = targets->color, .aspects = 1, .usage = RESOURCE_ATTACHMENT}};
-    size_t count = 1;
+    resource_use uses[4];
+    size_t count = 0;
+    if (targets->color) uses[count++] = (resource_use){.view = targets->color,
+        .aspects = 1, .usage = RESOURCE_ATTACHMENT};
     if (targets->depth_stencil) {
         unsigned aspects = resource_view_aspects(targets->depth_stencil);
         if (aspects & 2) uses[count++] = (resource_use){.view = targets->depth_stencil, .aspects = 2,

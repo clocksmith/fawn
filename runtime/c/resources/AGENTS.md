@@ -55,3 +55,6 @@ renderability requires all actual parent aspects, not the literal All enum.
 Debug nesting belongs to each existing recording owner. Keep parent/child stacks
 independent, preserve sticky errors and require balance at end/finish. Optional
 diagnostic labels must not introduce another string store or resource command queue.
+Optional color must not create a synthetic attachment. Derive extents and sample
+identity from the actual retained color or depth/stencil view, and share layout
+admission between pipelines, bundles and pass snapshots. Native draw support is separate.
