@@ -1,0 +1,116 @@
+/* SPDX-License-Identifier: MIT */
+#include "objc_abi.h"
+
+doe_mtl_status doe_mtl_objc_command(void *userdata, void *queue, void **out,
+    doe_mtl_error *error) {
+    doe_mtl_objc *runtime = userdata;
+    void *pool = doe_mtl_objc_pool(runtime);
+    void *command;
+    if (pool == NULL) return doe_mtl_fail(DOE_MTL_NATIVE_FAILURE, "autorelease pool", error);
+    command = doe_mtl_objc_object(runtime, queue, runtime->new_command);
+    if (command != NULL) command = doe_mtl_objc_object(runtime, command, runtime->retain);
+    doe_mtl_objc_drain(runtime, pool);
+    if (command == NULL)
+        return doe_mtl_fail(DOE_MTL_NATIVE_FAILURE, "commandBufferWithUnretainedReferences", error);
+    *out = command;
+    return doe_mtl_fail(DOE_MTL_OK, "commandBufferWithUnretainedReferences", error);
+}
+
+doe_mtl_status doe_mtl_objc_copy(void *userdata, void *command, void *source,
+    size_t source_offset, void *destination, size_t destination_offset, size_t length,
+    doe_mtl_error *error) {
+    doe_mtl_objc *runtime = userdata;
+    void *pool = doe_mtl_objc_pool(runtime);
+    void *encoder;
+    if (pool == NULL) return doe_mtl_fail(DOE_MTL_NATIVE_FAILURE, "autorelease pool", error);
+    encoder = doe_mtl_objc_object(runtime, command, runtime->blit_encoder);
+    if (encoder == NULL) {
+        doe_mtl_objc_drain(runtime, pool);
+        return doe_mtl_fail(DOE_MTL_NATIVE_FAILURE, "blitCommandEncoder", error);
+    }
+    runtime->copy_call(encoder, runtime->copy_buffer,
+        source, source_offset, destination, destination_offset, length);
+    doe_mtl_objc_void(runtime, encoder, runtime->end_encoding);
+    doe_mtl_objc_drain(runtime, pool);
+    return doe_mtl_fail(DOE_MTL_OK, "copyFromBuffer:sourceOffset:toBuffer:destinationOffset:size:", error);
+}
+
+doe_mtl_status doe_mtl_objc_fill(void *userdata, void *command, void *buffer,
+    size_t offset, size_t length, uint8_t value, doe_mtl_error *error) {
+    doe_mtl_objc *runtime = userdata;
+    void *pool = doe_mtl_objc_pool(runtime);
+    void *encoder;
+    const doe_mtl_range_abi range = {offset, length};
+    if (pool == NULL) return doe_mtl_fail(DOE_MTL_NATIVE_FAILURE, "autorelease pool", error);
+    encoder = doe_mtl_objc_object(runtime, command, runtime->blit_encoder);
+    if (encoder == NULL) {
+        doe_mtl_objc_drain(runtime, pool);
+        return doe_mtl_fail(DOE_MTL_NATIVE_FAILURE, "blitCommandEncoder", error);
+    }
+    runtime->fill_call(encoder, runtime->fill_buffer, buffer, range, value);
+    doe_mtl_objc_void(runtime, encoder, runtime->end_encoding);
+    doe_mtl_objc_drain(runtime, pool);
+    return doe_mtl_fail(DOE_MTL_OK, "fillBuffer:range:value:", error);
+}
+
+doe_mtl_status doe_mtl_objc_dispatch(void *userdata, void *command, void *pipeline,
+    const doe_mtl_native_binding *bindings, uint32_t sizes_slot,
+    doe_mtl_dimensions groups, doe_mtl_dimensions workgroup, uint32_t repeat,
+    doe_mtl_error *error) {
+    doe_mtl_objc *runtime = userdata;
+    void *pool = doe_mtl_objc_pool(runtime);
+    void *encoder;
+    uint32_t sizes[DOE_MTL_BUFFER_SLOTS] = {0};
+    uint32_t i;
+    const doe_mtl_size grid = {groups.x, groups.y, groups.z};
+    const doe_mtl_size group = {workgroup.x, workgroup.y, workgroup.z};
+    if (pool == NULL) return doe_mtl_fail(DOE_MTL_NATIVE_FAILURE, "autorelease pool", error);
+    encoder = doe_mtl_objc_object(runtime, command, runtime->compute_encoder);
+    if (encoder == NULL) {
+        doe_mtl_objc_drain(runtime, pool);
+        return doe_mtl_fail(DOE_MTL_NATIVE_FAILURE, "computeCommandEncoder", error);
+    }
+    runtime->set_object_call(encoder, runtime->set_pipeline, pipeline);
+    for (i = 0; i < DOE_MTL_BUFFER_SLOTS; ++i) {
+        runtime->bind_buffer_call(encoder, runtime->set_buffer,
+            bindings[i].buffer, bindings[i].offset, i);
+        sizes[i] = bindings[i].size;
+    }
+    if (sizes_slot != UINT32_MAX) {
+        runtime->bind_bytes_call(encoder, runtime->set_bytes,
+            sizes, ((size_t)sizes_slot + 1) * sizeof(uint32_t), sizes_slot);
+    }
+    for (i = 0; i < repeat; ++i)
+        runtime->dispatch_call(encoder, runtime->dispatch, grid, group);
+    doe_mtl_objc_void(runtime, encoder, runtime->end_encoding);
+    doe_mtl_objc_drain(runtime, pool);
+    return doe_mtl_fail(DOE_MTL_OK, "dispatchThreadgroups:threadsPerThreadgroup:", error);
+}
+
+void doe_mtl_objc_commit(void *userdata, void *command) {
+    doe_mtl_objc *runtime = userdata;
+    void *pool = doe_mtl_objc_pool(runtime);
+    doe_mtl_objc_void(runtime, command, runtime->commit);
+    doe_mtl_objc_drain(runtime, pool);
+}
+
+size_t doe_mtl_objc_observe(void *userdata, void *command, bool wait, int64_t *code) {
+    doe_mtl_objc *runtime = userdata;
+    void *pool = doe_mtl_objc_pool(runtime);
+    size_t status;
+    *code = 0;
+    if (pool == NULL) return SIZE_MAX;
+    status = doe_mtl_objc_size(runtime, command, runtime->status);
+    /* Matches retained wait_result: never wait an uncommitted buffer. */
+    if (wait && (status == 2 || status == 3)) {
+        doe_mtl_objc_void(runtime, command, runtime->wait);
+        status = doe_mtl_objc_size(runtime, command, runtime->status);
+    }
+    if (status == 5) {
+        void *native_error = doe_mtl_objc_object(runtime, command, runtime->error);
+        if (native_error != NULL)
+            *code = runtime->integer_call(native_error, runtime->code);
+    }
+    doe_mtl_objc_drain(runtime, pool);
+    return status;
+}

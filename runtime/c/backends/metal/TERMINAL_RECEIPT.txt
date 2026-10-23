@@ -1,0 +1,79 @@
+FIRST OBSERVED FAILURE (before final typed-call additions; intermediate source was not sealed)
+Command: make -C runtime/c/backends/metal sanitize
+Time window: 2026-10-23T18:38:28Z
+==36==LeakSanitizer has encountered a fatal error.
+==36==HINT: For debugging, try setting environment variable LSAN_OPTIONS=verbosity=1:log_threads=1
+==36==HINT: LeakSanitizer does not work under ptrace (strace, gdb, etc)
+make[1]: *** [Makefile:29: check] Error 1
+make: *** [Makefile:33: sanitize] Error 2
+Classification: hosted LeakSanitizer/ptrace runtime restriction. Not a Metal result.
+Subsequent runs disable only leak scanning, explicitly; native ownership assertions remain enabled.
+
+FINAL SOURCE-BOUND DEVELOPER CHECKS
+Consumer: C migration lead integration review; not physical qualification or performance promotion.
+Source identity: SOURCE_INPUTS.sha256 (verify from repository root).
+Metal developer final source checks, UTC: 2026-10-23T18:44:37Z
+Base repository HEAD: c87e494fb1df4dfdb4750ff8ed7357c22661b384
+cc (Debian 14.2.0-19) 14.2.0
+
+$ make -C runtime/c/backends/metal BUILD=/tmp/doe-c-metal-final all check abi-compile probe
+make: Entering directory '/workspace/shared/doe-c-migration-20261023/runtime/c/backends/metal'
+mkdir -p /tmp/doe-c-metal-final
+cc -Iinclude -O2 -g -std=c11 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wshadow -c src/context.c -o /tmp/doe-c-metal-final/context.o
+cc -Iinclude -O2 -g -std=c11 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wshadow -c src/resources.c -o /tmp/doe-c-metal-final/resources.o
+cc -Iinclude -O2 -g -std=c11 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wshadow -c src/commands.c -o /tmp/doe-c-metal-final/commands.o
+cc -Iinclude -O2 -g -std=c11 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wshadow -c src/objc_runtime.c -o /tmp/doe-c-metal-final/objc_runtime.o
+cc -Iinclude -O2 -g -std=c11 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wshadow -c src/objc_pipeline.c -o /tmp/doe-c-metal-final/objc_pipeline.o
+cc -Iinclude -O2 -g -std=c11 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wshadow -c src/objc_commands.c -o /tmp/doe-c-metal-final/objc_commands.o
+ar rcs /tmp/doe-c-metal-final/libdoe_metal.a /tmp/doe-c-metal-final/context.o /tmp/doe-c-metal-final/resources.o /tmp/doe-c-metal-final/commands.o /tmp/doe-c-metal-final/objc_runtime.o /tmp/doe-c-metal-final/objc_pipeline.o /tmp/doe-c-metal-final/objc_commands.o
+cc -Iinclude -O2 -g -std=c11 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wshadow tests/test_lifetime.c tests/mock_native.c /tmp/doe-c-metal-final/libdoe_metal.a -ldl -o /tmp/doe-c-metal-final/test_lifetime
+cc -Iinclude -O2 -g -std=c11 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wshadow tests/test_objc_calls.c /tmp/doe-c-metal-final/libdoe_metal.a -ldl -o /tmp/doe-c-metal-final/test_objc_calls
+/tmp/doe-c-metal-final/test_lifetime
+Metal developer controls: 10 scenario groups passed; mocked calls, no GPU execution
+/tmp/doe-c-metal-final/test_objc_calls
+Metal typed-call controls: pipeline cleanup, exact dispatch/copy/fill and completion passed; no SDK/GPU
+cc -Iinclude -O2 -g -std=c11 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wshadow -D__APPLE__ -D__MACH__ -D__ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__=130000 -c src/objc_runtime.c -o /tmp/doe-c-metal-final/objc_x86_64_compile.o
+cc -Iinclude -O2 -g -std=c11 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wshadow -D__APPLE__ -D__MACH__ -D__ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__=130000 -D__arm64__ -c src/objc_runtime.c -o /tmp/doe-c-metal-final/objc_arm64_branch_compile.o
+cc -Iinclude -O2 -g -std=c11 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wshadow tests/probe.c /tmp/doe-c-metal-final/libdoe_metal.a -ldl -o /tmp/doe-c-metal-final/probe
+/tmp/doe-c-metal-final/probe
+Metal probe: unsupported (Metal requires 64-bit macOS); no device or execution claimed
+make: Leaving directory '/workspace/shared/doe-c-migration-20261023/runtime/c/backends/metal'
+
+$ ASAN_OPTIONS=detect_leaks=0 make -C runtime/c/backends/metal BUILD=/tmp/doe-c-metal-final sanitize
+make: Entering directory '/workspace/shared/doe-c-migration-20261023/runtime/c/backends/metal'
+make BUILD=/tmp/doe-c-metal-final/sanitize CFLAGS='-O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer' check
+make[1]: Entering directory '/workspace/shared/doe-c-migration-20261023/runtime/c/backends/metal'
+mkdir -p /tmp/doe-c-metal-final/sanitize
+cc -Iinclude -O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer -std=c11 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wshadow -c src/context.c -o /tmp/doe-c-metal-final/sanitize/context.o
+cc -Iinclude -O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer -std=c11 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wshadow -c src/resources.c -o /tmp/doe-c-metal-final/sanitize/resources.o
+cc -Iinclude -O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer -std=c11 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wshadow -c src/commands.c -o /tmp/doe-c-metal-final/sanitize/commands.o
+cc -Iinclude -O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer -std=c11 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wshadow -c src/objc_runtime.c -o /tmp/doe-c-metal-final/sanitize/objc_runtime.o
+cc -Iinclude -O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer -std=c11 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wshadow -c src/objc_pipeline.c -o /tmp/doe-c-metal-final/sanitize/objc_pipeline.o
+cc -Iinclude -O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer -std=c11 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wshadow -c src/objc_commands.c -o /tmp/doe-c-metal-final/sanitize/objc_commands.o
+ar rcs /tmp/doe-c-metal-final/sanitize/libdoe_metal.a /tmp/doe-c-metal-final/sanitize/context.o /tmp/doe-c-metal-final/sanitize/resources.o /tmp/doe-c-metal-final/sanitize/commands.o /tmp/doe-c-metal-final/sanitize/objc_runtime.o /tmp/doe-c-metal-final/sanitize/objc_pipeline.o /tmp/doe-c-metal-final/sanitize/objc_commands.o
+cc -Iinclude -O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer -std=c11 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wshadow tests/test_lifetime.c tests/mock_native.c /tmp/doe-c-metal-final/sanitize/libdoe_metal.a -ldl -o /tmp/doe-c-metal-final/sanitize/test_lifetime
+cc -Iinclude -O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer -std=c11 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wshadow tests/test_objc_calls.c /tmp/doe-c-metal-final/sanitize/libdoe_metal.a -ldl -o /tmp/doe-c-metal-final/sanitize/test_objc_calls
+/tmp/doe-c-metal-final/sanitize/test_lifetime
+Metal developer controls: 10 scenario groups passed; mocked calls, no GPU execution
+/tmp/doe-c-metal-final/sanitize/test_objc_calls
+Metal typed-call controls: pipeline cleanup, exact dispatch/copy/fill and completion passed; no SDK/GPU
+make[1]: Leaving directory '/workspace/shared/doe-c-migration-20261023/runtime/c/backends/metal'
+make: Leaving directory '/workspace/shared/doe-c-migration-20261023/runtime/c/backends/metal'
+
+$ printf header consumer | c++ -std=c++17 -Wall -Wextra -Werror -x c++ - -fsyntax-only
+
+$ python3 runtime/c/tools/check_source_size.py
+C size check: 433 files, 0 failures; limit 999
+
+$ git diff --check
+
+CHARTER REVIEW
+First gate: Metal/native charters lacked required '- Evidence:' label; shared index stale.
+Metal label corrected, owner-only source seal refreshed. Recheck no longer reports Metal.
+Remaining: native/CATSCAN.md Evidence label; docs/component-index.md shared index.
+The integration lead was notified; this lane did not edit their files.
+
+GCC STATIC ANALYZER
+Command: cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wshadow -fanalyzer -c
+Targets: src/context.c, src/resources.c, src/commands.c
+Result: all three passed with no diagnostics.

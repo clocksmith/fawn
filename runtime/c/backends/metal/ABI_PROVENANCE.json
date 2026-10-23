@@ -1,0 +1,89 @@
+{
+  "scope": "Retained source/primary documentation provenance only; not Apple SDK ABI or physical qualification.",
+  "accessed_utc": "2026-10-23",
+  "retained_sources": [
+    {
+      "path": "runtime/zig/src/backend/metal/metal_bridge.h",
+      "sha256": "b57cef7d731d5d573aec0168b0ef3f850094b91f56a078f6090684fcc3aee13b"
+    },
+    {
+      "path": "runtime/zig/src/backend/metal/metal_bridge.m",
+      "sha256": "d6347f265881162aeaf49d1b9da292af9d5b2f28aa4450373ed8be35f12beb8f"
+    },
+    {
+      "path": "runtime/zig/src/backend/metal/metal_native_runtime.zig",
+      "sha256": "d08e4722ec0048c4d50e2136d73beff95ae5abb9623b43270f09090ba87e183b"
+    },
+    {
+      "path": "runtime/zig/src/backend/metal/metal_completion.zig",
+      "sha256": "b6b9d790552243a0da316233b45d78fd5ea8b09c0d83674ba860e8757aa83d3a"
+    },
+    {
+      "path": "runtime/zig/src/backend/metal/metal_runtime_resources.zig",
+      "sha256": "fdff7cb9951545e93ba496bfa5ae9173e4ce17711911a16a5b18cd8fa4ca2d0b"
+    },
+    {
+      "path": "runtime/zig/src/native/compute/doe_compute_fast.zig",
+      "sha256": "6cb4c0a1a46cb52e5c8d4ad3946d5d4179d9e0d8434132ed2bcd683720611ac1"
+    },
+    {
+      "path": "runtime/zig/src/native/queue/doe_queue_submit_metal.zig",
+      "sha256": "47273289df0ba2c562a2a72f92767b31f5652b68bde10e4ccfd75f5a924ee2a4"
+    },
+    {
+      "path": "runtime/c/resources/include/doe_resources.h",
+      "sha256": "7824710101f9f03943a449583b5fa6ef482568d6ec2679286fbb9d7ecd1f2c2c"
+    }
+  ],
+  "primary_references": [
+    {
+      "subject": "Objective-C typed message dispatch",
+      "url": "https://developer.apple.com/documentation/objectivec/objc_msgsend"
+    },
+    {
+      "subject": "Typed function-pointer rules",
+      "url": "https://developer.apple.com/documentation/uikit/managing-functions-and-function-pointers"
+    },
+    {
+      "subject": "Native struct-return dispatcher",
+      "url": "https://developer.apple.com/documentation/objectivec/objc_msgsend_stret"
+    },
+    {
+      "subject": "Default-device +1 ownership and temporary object pools",
+      "url": "https://github.com/apple/metal-cpp"
+    },
+    {
+      "subject": "Unretained command resources and execution ordering",
+      "url": "https://developer.apple.com/library/archive/documentation/Miscellaneous/Conceptual/MetalProgrammingGuide/Cmd-Submiss/Cmd-Submiss.html"
+    },
+    {
+      "subject": "Storage-mode enum values and shift",
+      "url": "https://developer.apple.com/library/archive/documentation/Miscellaneous/Conceptual/MetalProgrammingGuide/WhatsNewiniOS9andOSX1011/WhatsNewiniOS9andOSX1011.html"
+    },
+    {
+      "subject": "Compute encoder bindings and dispatch",
+      "url": "https://developer.apple.com/documentation/metal/mtlcomputecommandencoder"
+    },
+    {
+      "subject": "Native completion states",
+      "url": "https://developer.apple.com/documentation/metal/mtlcommandbufferstatus"
+    },
+    {
+      "subject": "Workgroup versus thread dimensions",
+      "url": "https://developer.apple.com/documentation/metal/mtlcomputecommandencoder/1443138-dispatchthreadgroups"
+    }
+  ],
+  "abi_facts": [
+    "64-bit NSUInteger fields for MTLSize and NSRange.",
+    "Exact method signatures, including structures by value, are selected before dispatch.",
+    "MTLResourceStorageModeShared=0 and Private=2<<4.",
+    "Native command states 0/1 unknown, 2/3 pending, 4 completed, 5 error.",
+    "Create/new native objects own +1; autoreleased command buffers retained before pool drain."
+  ],
+  "not_verified": [
+    "Apple SDK declaration compatibility",
+    "Apple compiler/linker consumption",
+    "Physical Metal shader output",
+    "Full retained Metal consumer parity"
+  ]
+}
