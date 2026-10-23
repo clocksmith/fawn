@@ -48,7 +48,7 @@ typedef struct {
     EntryRecord *entry;
     uint32_t *values;
     uint32_t local_base, local_start, local_pointers[4][5], math_import;
-    uint32_t barrier_semantics;
+    uint32_t barrier_semantics, subgroup_capabilities;
     size_t function_end;
     uint32_t constants_used;
     bool failed;
@@ -69,6 +69,7 @@ uint32_t spirv_resource_storage(const ResourceRecord *r);
 bool spirv_plan_module(Emitter *e);
 bool spirv_hidden_initialization_input(const CompilerWorkspace *c, const EntryRecord *entry);
 bool spirv_module_declarations(Emitter *e);
+bool spirv_subgroup_builtin(Emitter *, const IrInstruction *, const NumericBuiltin *, TypeId);
 #define EMIT(opcode, ...) do { \
     const uint32_t arguments[] = { __VA_ARGS__ }; \
     if (!spirv_instruction(e, opcode, arguments, sizeof(arguments) / sizeof(arguments[0]))) return false; \

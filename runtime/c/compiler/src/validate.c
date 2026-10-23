@@ -306,7 +306,7 @@ bool validate_syntax(Source *source,CompilerWorkspace *c) {
         function->instruction_start=c->instruction_count;function->local_start=c->local_count;
         if (sema_alias_visible(source)) {
             const uint32_t parameter=sema_find_parameter(source,c->alias_source);IrValue alias;
-            if (parameter==NO_ID || c->entry_inputs[parameter].kind==INPUT_LOCAL_INDEX)
+            if (parameter==NO_ID || input_scalar(c->entry_inputs[parameter].kind))
                 return source_error(source,DOE_COMPILER_SEMANTIC_ERROR,c->alias_source.offset,"leading alias requires a vector compute input");
             if (!sema_append(source,(IrInstruction){.opcode=IR_INPUT,.type=IR_U32,.source_offset=c->alias_source.offset,
                 .operands.scalar={.binding=parameter,.literal=0u}},&alias)) return false;

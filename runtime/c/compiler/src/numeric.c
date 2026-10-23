@@ -178,6 +178,10 @@ bool numeric_builtin(Source *source, size_t offset, const NumericBuiltin *signat
         case BUILTIN_DISTANCE:
         case BUILTIN_NORMALIZE:
         case BUILTIN_CROSS:
+        case BUILTIN_SUBGROUP_ADD: case BUILTIN_SUBGROUP_MIN: case BUILTIN_SUBGROUP_MAX:
+        case BUILTIN_SUBGROUP_MUL: case BUILTIN_SUBGROUP_AND: case BUILTIN_SUBGROUP_OR:
+        case BUILTIN_SUBGROUP_XOR: case BUILTIN_SUBGROUP_EXCLUSIVE_ADD: case BUILTIN_SUBGROUP_INCLUSIVE_ADD:
+        case BUILTIN_SUBGROUP_EXCLUSIVE_MUL: case BUILTIN_SUBGROUP_INCLUSIVE_MUL:
             return numeric_error(source, offset, "non-component builtin reached scalar primitive");
     }
     NumericValue answer = { .bits = 0u, .type = type };

@@ -54,7 +54,11 @@ typedef struct {
 typedef enum {
     BUILTIN_MIN, BUILTIN_MAX, BUILTIN_CLAMP, BUILTIN_EXP, BUILTIN_TANH,
     BUILTIN_SQRT, BUILTIN_DOT, BUILTIN_LENGTH, BUILTIN_DISTANCE,
-    BUILTIN_NORMALIZE, BUILTIN_CROSS
+    BUILTIN_NORMALIZE, BUILTIN_CROSS,
+    BUILTIN_SUBGROUP_ADD, BUILTIN_SUBGROUP_MIN, BUILTIN_SUBGROUP_MAX, BUILTIN_SUBGROUP_MUL,
+    BUILTIN_SUBGROUP_AND, BUILTIN_SUBGROUP_OR, BUILTIN_SUBGROUP_XOR,
+    BUILTIN_SUBGROUP_EXCLUSIVE_ADD, BUILTIN_SUBGROUP_INCLUSIVE_ADD,
+    BUILTIN_SUBGROUP_EXCLUSIVE_MUL, BUILTIN_SUBGROUP_INCLUSIVE_MUL
 } NumericBuiltinKind;
 typedef struct { uint64_t bits; IrType type; } NumericValue;
 typedef struct { TypeId type; uint32_t flags; uint64_t bits; } ConstantValue;
@@ -143,7 +147,8 @@ enum { ROOT_LOCAL, ROOT_RESOURCE, ROOT_VALUE, ROOT_INPUT, ROOT_WORKGROUP };
 typedef struct { uint32_t kind, id; TypeId type; uint32_t storage, first, count; uint64_t payload; } TargetDeclaration;
 typedef struct { uint32_t kind, object, cursor, parent; } WalkItem;
 typedef enum { INPUT_GLOBAL_INVOCATION, INPUT_LOCAL_INVOCATION, INPUT_WORKGROUP,
-    INPUT_NUM_WORKGROUPS, INPUT_LOCAL_INDEX } InputKind;
+    INPUT_NUM_WORKGROUPS, INPUT_LOCAL_INDEX, INPUT_SUBGROUP_SIZE, INPUT_SUBGROUP_INVOCATION,
+    INPUT_NUM_SUBGROUPS, INPUT_SUBGROUP_ID } InputKind;
 typedef struct { NameSpan name; InputKind kind; uint32_t flags, target; } EntryInput;
 typedef struct {
     uint32_t function, input_first, input_count, source_input_mask;
@@ -157,7 +162,7 @@ typedef struct {
     } state;
 } EntryRecord;
 typedef enum { SOURCE_NONE, SOURCE_FUNCTION, SOURCE_BARRIER, SOURCE_RESOURCE,
-    SOURCE_WORKGROUP, SOURCE_INPUT } SourceReferenceKind;
+    SOURCE_WORKGROUP, SOURCE_INPUT, SOURCE_SUBGROUP } SourceReferenceKind;
 typedef struct { SourceReferenceKind kind; uint32_t index; } SourceReference;
 typedef struct {
     uint32_t source_bytes, tokens, statements, expressions, physical_expressions, instructions;
@@ -167,6 +172,7 @@ typedef struct {
     uint32_t entries, entry_inputs, entry_references;
 } CompilerLimits;
 enum { LIMIT_LEGACY = 1u, LIMIT_SINGULAR = 2u, LIMIT_MODULE = 4u };
+enum { MODULE_SUBGROUPS = 1u };
 typedef struct CompilerWorkspace CompilerWorkspace;
 typedef struct { const char *source; size_t length; DoeCompilerDiagnostic *diagnostic;
     const CompilerLimits *limits; CompilerWorkspace *compiler;
@@ -188,7 +194,7 @@ struct CompilerWorkspace {
     size_t word_count;
     NameSpan alias, alias_source;
     WorkgroupRoot *workgroups; unsigned char *uniformity;
-    uint32_t workgroup_count, uniformity_flags;
+    uint32_t workgroup_count, module_flags;
     unsigned char *statement_behaviors;
 };
 typedef CompilerWorkspace Syntax;
@@ -232,6 +238,8 @@ bool lex_source(Source *, CompilerWorkspace *);
 bool parse_tokens(Source *, CompilerWorkspace *);
 bool validate_syntax(Source *, CompilerWorkspace *);
 bool module_closures(Source *);
+bool input_scalar(InputKind);
+bool input_subgroup(InputKind);
 bool source_reference_record(Source *, SourceReference *, SourceReferenceKind, uint32_t, uint32_t);
 bool emit_spirv(Source *, CompilerWorkspace *);
 bool reflect_prepare(Source *, CompilerWorkspace *, DoeCompilerTypedOutputCounts *);

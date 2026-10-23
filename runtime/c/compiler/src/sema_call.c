@@ -202,6 +202,13 @@ bool sema_call_value(Source *s, uint32_t id, const LocalScope *scope, bool evalu
         if (statement || node->value.call.type.offset != NO_ID || node->right != builtin->arity)
             return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, node->source_offset,
                                 "numeric builtin requires its exact arguments and a used result");
+        if (builtin_subgroup(builtin)) {
+            if ((c->module_flags & MODULE_SUBGROUPS) == 0u || c->current_function == NO_ID)
+                return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, node->source_offset,
+                    "subgroup operations require enable subgroups and a runtime function");
+            if (!source_reference_record(s, &c->expression_references[id], SOURCE_SUBGROUP,
+                                         (uint32_t)builtin->kind, node->source_offset)) return false;
+        }
         return sema_builtin_value(s, node, scope, builtin, evaluate, emit, out);
     }
     if (statement) return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, name.offset, "constructor result cannot be discarded");

@@ -148,6 +148,7 @@ static bool emit_numeric_builtin(Emitter *e, const IrInstruction *ir) {
     const uint32_t right = builtin->arity > 1u ? e->values[ir->operands.scalar.right] : 0u;
     const TypeId operand_type = semantic_type(e->program, ir->operands.scalar.left);
     const TypeId leaf = type_leaf(e->program, operand_type);
+    if (builtin_subgroup(builtin)) return spirv_subgroup_builtin(e, ir, builtin, leaf);
     if (builtin->extended_instruction != 0u) {
         if (builtin->arity == 1u) {
             EMIT(OP_EXT_INST, spirv_target_type(e, ir->type), result, e->math_import,
@@ -609,7 +610,7 @@ static bool emit_block(Emitter *e, const IrProgram *program, size_t *cursor,
                 if (e->entry==NULL) return spirv_emit_error(e,ir->source_offset,"helper cannot read an entry input");
                 e->entry->state.resolved.target_input_mask|=1u<<program->entry_inputs[ir->operands.scalar.binding].kind; {
                 const uint32_t input = program->entry_inputs[ir->operands.scalar.binding].target;
-                if (program->entry_inputs[ir->operands.scalar.binding].kind == INPUT_LOCAL_INDEX) {
+                if (input_scalar(program->entry_inputs[ir->operands.scalar.binding].kind)) {
                     EMIT(OP_LOAD, ID_U32, result, input);
                 } else if (ir->operands.scalar.literal == NO_ID) {
                     EMIT(OP_LOAD, ID_VEC3, result, input);

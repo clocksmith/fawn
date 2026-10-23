@@ -20,6 +20,7 @@ typedef struct {
     UniformityFrame *frames;
     size_t local_slots, frame_capacity;
     uint32_t frame_count, loop, seed, cf, required, returned, required_offset;
+    bool subgroup;
 } Uniformity;
 
 bool uniformity_charge(Source *source,UniformityBudget *budget,uint64_t count) {
@@ -68,6 +69,11 @@ static bool require_uniform(Uniformity *a,uint32_t bit,uint32_t offset) {
     a->required|=bit; return true;
 }
 static uint32_t varying(const Uniformity *a) {return a->seed==NO_ID?1u:0u;}
+static bool uniform_input(const Uniformity *a, InputKind kind) {
+    return kind == INPUT_WORKGROUP || kind == INPUT_NUM_WORKGROUPS ||
+        kind == INPUT_SUBGROUP_SIZE || kind == INPUT_NUM_SUBGROUPS ||
+        (a->subgroup && kind == INPUT_SUBGROUP_ID);
+}
 static bool name_bit(Uniformity *a,NameSpan name,uint32_t cf,uint32_t *out) {
     ValueIdentity identity;
     if (!sema_value_identity(a->source,&a->scope,name,&a->budget,&identity) || !charge(a,1u)) return false;
@@ -84,13 +90,13 @@ static bool name_bit(Uniformity *a,NameSpan name,uint32_t cf,uint32_t *out) {
                 if (!charge(a,1u)) return false;
                 if (source_spans_equal(a->source,a->compiler->alias_source,a->compiler->entry_inputs[i].name)) {
                     const InputKind kind=a->compiler->entry_inputs[i].kind;
-                    *out=kind==INPUT_WORKGROUP || kind==INPUT_NUM_WORKGROUPS?cf:varying(a); return true;
+                    *out=uniform_input(a,kind)?cf:varying(a); return true;
                 }
             }
             break;
         case IDENTITY_INPUT: {
             const InputKind kind=a->compiler->entry_inputs[identity.index].kind;
-            *out=kind==INPUT_WORKGROUP || kind==INPUT_NUM_WORKGROUPS?cf:varying(a); return true;
+            *out=uniform_input(a,kind)?cf:varying(a); return true;
         }
         case IDENTITY_RESOURCE:
             if (a->compiler->resources[identity.index].access==DOE_COMPILER_READ_WRITE) *out=varying(a);
@@ -107,7 +113,14 @@ static bool call_bit(Uniformity *a,uint32_t id,uint32_t cf,uint32_t *out) {
     const SourceReference reference=a->compiler->expression_references[id];
     const uint32_t callee=reference.kind==SOURCE_FUNCTION?reference.index+1u:0u;
     *out=cf;
-    if (reference.kind==SOURCE_BARRIER) return require_uniform(a,cf,e->source_offset);
+    if (reference.kind==SOURCE_BARRIER)
+        return a->subgroup || require_uniform(a,cf,e->source_offset);
+    const NumericBuiltin *collective = reference.kind == SOURCE_SUBGROUP ?
+        builtin_kind((NumericBuiltinKind)reference.index) : NULL;
+    if (collective != NULL) {
+        if (a->subgroup && !require_uniform(a, cf, e->source_offset)) return false;
+        if (!a->subgroup || !builtin_subgroup_uniform(collective)) *out |= varying(a);
+    }
     const FunctionRecord *function=callee==0u?NULL:&a->compiler->functions[callee-1u];
     if (function!=NULL) {
         if (!charge(a,1u)) return false;
@@ -363,7 +376,9 @@ static bool function_bits(Uniformity *a,uint32_t index) {
         if (!block_bits(a,f->statement_start,f->statement_end,true,&next)) return false;
         if (run==0u) {
             if (a->required!=0u)
-                return source_error(a->source,DOE_COMPILER_SEMANTIC_ERROR,a->required_offset,"uniform control cannot be established");
+                return source_error(a->source,DOE_COMPILER_SEMANTIC_ERROR,a->required_offset,
+                    a->subgroup ? "subgroup uniform control cannot be established" :
+                    "uniform control cannot be established");
             if (a->returned!=0u) a->function_summary[index]|=SUMMARY_RETURN;
         } else if (run==1u) {
             if (a->required!=0u) a->function_summary[index]|=SUMMARY_REQUIRED;
@@ -412,9 +427,12 @@ static bool module_bits(Uniformity *a) {
 bool uniformity_analyze(Source *source,uint64_t limit,uint64_t *used) {
     CompilerWorkspace *c=source->compiler;
     if (used!=NULL) *used=0u;
-    bool barrier=false;
-    for (uint32_t i=0u;i<c->expression_count;++i) barrier=barrier || c->expression_references[i].kind==SOURCE_BARRIER;
-    if (!barrier) return true;
+    bool barrier=false, subgroup=false;
+    for (uint32_t i=0u;i<c->expression_count;++i) {
+        barrier=barrier || c->expression_references[i].kind==SOURCE_BARRIER;
+        subgroup=subgroup || c->expression_references[i].kind==SOURCE_SUBGROUP;
+    }
+    if (!barrier && !subgroup) return true;
     Uniformity a={.source=source,.compiler=c,.budget={.limit=limit},
         .scope={.values=c->scope,.capacity=(size_t)c->limits.statements+1u},
         .local_slots=(size_t)c->limits.statements+1u,
@@ -429,7 +447,13 @@ bool uniformity_analyze(Source *source,uint64_t limit,uint64_t *used) {
     a.frames=(UniformityFrame *)cursor; cursor+=a.frame_capacity*sizeof(UniformityFrame);
     a.frame_maps=cursor;
     const uint32_t saved_function=c->current_function;
-    const bool ok=module_bits(&a);
+    /* Both scope analyses reuse dead scratch, but share the one work budget.
+     * A subgroup-uniform result never becomes a workgroup barrier proof. */
+    bool ok=!barrier || module_bits(&a);
+    if (ok && subgroup) {
+        a.subgroup=true;
+        ok=module_bits(&a);
+    }
     c->current_function=saved_function;
     if (used!=NULL) *used=a.budget.used;
     return ok;

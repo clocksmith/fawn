@@ -8,7 +8,7 @@ bool sema_builtin_value(Source *source, const Expression *node, const LocalScope
     CompilerWorkspace *compiler = source->compiler;
     ExpressionValue arguments[3];
     uint32_t link = node->left, width = 0u;
-    bool runtime = false, known = evaluate;
+    bool runtime = builtin_subgroup(builtin), known = evaluate;
     TypeId leaf = IR_VOID;
     for (uint32_t i = 0u; i < builtin->arity; ++i) {
         if (!sema_expression(source, compiler->arguments[link].expression, scope,
@@ -30,6 +30,7 @@ bool sema_builtin_value(Source *source, const Expression *node, const LocalScope
     }
     if (builtin_floating(builtin) && leaf == IR_ABSTRACT_INT) leaf = IR_ABSTRACT_FLOAT;
     if (!builtin_shape(builtin, width) ||
+        (builtin->family == BUILTIN_SUBGROUP_INTEGER && leaf != IR_I32 && leaf != IR_U32 && leaf != IR_ABSTRACT_INT) ||
         (builtin_floating(builtin) && leaf != IR_F32 && leaf != IR_ABSTRACT_FLOAT))
         return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, node->source_offset,
                             "no matching numeric builtin overload");

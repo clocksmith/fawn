@@ -6,8 +6,8 @@ export TMPDIR := $(CURDIR)/build/tmp
 export PYTHONDONTWRITEBYTECODE := 1
 CFLAGS = -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror
 CXXFLAGS = -std=c++17 -fno-exceptions -fno-rtti -O2 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror
-LIB_SOURCES = src/module.c src/builtin.c src/sema_builtin.c src/numeric.c src/lex.c src/parse.c src/validate.c src/uniformity.c src/types.c src/constants.c src/sema_declarations.c src/sema_expression.c src/sema_call.c src/reflection.c src/spirv.c src/spirv_module.c src/compile.c src/storage.c
-HEADERS = include/doe_compiler_module.h src/builtin.h src/spirv_decl.h src/spirv_internal.h include/doe_compiler_typed.h src/sema.h src/numeric.h src/internal.h include/doe_compiler.h include/doe_compiler_v2.h include/doe_compiler_job.h src/cli_json.h
+LIB_SOURCES = src/module.c src/builtin.c src/sema_builtin.c src/numeric.c src/lex.c src/parse.c src/validate.c src/uniformity.c src/types.c src/constants.c src/sema_declarations.c src/sema_expression.c src/sema_call.c src/reflection.c src/spirv.c src/spirv_module.c src/spirv_subgroup.c src/compile.c src/storage.c
+HEADERS = include/doe_compiler_features.h include/doe_compiler_module.h src/builtin.h src/spirv_decl.h src/spirv_internal.h include/doe_compiler_typed.h src/sema.h src/numeric.h src/internal.h include/doe_compiler.h include/doe_compiler_v2.h include/doe_compiler_job.h src/cli_json.h
 SPIRV_VAL ?= spirv-val
 CLI_FAULT_FLAGS = -Wl,--wrap=write,--wrap=close,--wrap=link,--wrap=mkstemp,--wrap=malloc,--wrap=free,--wrap=doe_compiler_job_requirements
 .PHONY: all test test-cli-modes test-uniform sanitize sanitize-cli sanitize-uniform clean
@@ -165,3 +165,10 @@ test-module: all build/test_m13_module build/test_m13_cpp
 	build/test_m13_module
 	build/test_m13_cpp
 	DOE_COMPILER_CLI="$(CURDIR)/build/doe-compiler-c" SPIRV_VAL="$(SPIRV_VAL)" python3 tests/test_m13_modules.py
+
+.PHONY: test-subgroups
+build/test_subgroup_api: $(LIB_SOURCES) tests/test_subgroup_api.c $(HEADERS) | build/.ready
+	$(CC) $(CFLAGS) $(LIB_SOURCES) tests/test_subgroup_api.c -lm -o $@
+test-subgroups: all build/test_subgroup_api
+	build/test_subgroup_api
+	DOE_COMPILER_CLI="$(CURDIR)/build/doe-compiler-c" SPIRV_VAL="$(SPIRV_VAL)" python3 tests/test_subgroups.py
