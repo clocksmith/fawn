@@ -55,6 +55,25 @@ int main(void) {
     doe_vk_buffer_binding vertex = {&buffer, 0, 47};
     doe_vk_render_draw draw = {.vertex_count = 3, .instance_count = 1,
         .viewport = {0, 0, 8, 8, 0, 1}, .scissor = {0, 0, 8, 8}};
+    VkViewport viewport;
+    assert(doe_vk_render_viewport(&context, &draw, 8, 8, &viewport) == DOE_VK_OK);
+    assert(viewport.y == 0 && viewport.height == 8);
+    draw.viewport_convention = DOE_VK_VIEWPORT_WEBGPU;
+    assert(doe_vk_render_viewport(&context, &draw, 8, 8, &viewport) == DOE_VK_UNSUPPORTED);
+    context.caps.api_version = (1u << 22) | (1u << 12);
+    assert(doe_vk_render_viewport(&context, &draw, 8, 8, &viewport) == DOE_VK_OK);
+    assert(viewport.y == 8 && viewport.height == -8 && viewport.minDepth == 0 && viewport.maxDepth == 1);
+    draw.viewport[1] = 2;
+    draw.viewport[3] = 3;
+    assert(doe_vk_render_viewport(&context, &draw, 8, 8, &viewport) == DOE_VK_OK);
+    assert(viewport.y == 5 && viewport.height == -3);
+    VkViewport unchanged = viewport;
+    draw.viewport_convention = (doe_vk_viewport_convention)2;
+    assert(doe_vk_render_viewport(&context, &draw, 8, 8, &viewport) == DOE_VK_INVALID_ARGUMENT);
+    assert(memcmp(&viewport, &unchanged, sizeof(viewport)) == 0);
+    draw.viewport_convention = DOE_VK_VIEWPORT_RAW_VULKAN;
+    draw.viewport[1] = 0;
+    draw.viewport[3] = 8;
     doe_vk_commands commands = recording(&context);
     assert(doe_vk_commands_draw(&commands, &pipeline, &view, NULL, 0, &vertex, 1, &draw) == DOE_VK_INVALID_ARGUMENT);
     assert(commands.dispatches == NULL && commands.renders == NULL && commands.textures == NULL);
@@ -89,6 +108,6 @@ int main(void) {
     commands = recording(&context);
     assert(doe_vk_commands_clear_color(&commands, &view, clear) == DOE_VK_UNSUPPORTED);
     assert(commands.renders == NULL && commands.textures == NULL);
-    puts("PASS render vertex last-byte, NaN viewport, scissor/count overflow, compute/graphics kind mismatch, graphics-family admission and framebuffer rollback without initialized-output publication");
+    puts("PASS explicit raw/WebGPU viewport, version/enum rejection and untouched output, render vertex last-byte, NaN viewport, scissor/count overflow, compute/graphics kind mismatch, graphics-family admission and framebuffer rollback without initialized-output publication");
     return 0;
 }

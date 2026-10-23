@@ -58,10 +58,19 @@ typedef union doe_vk_clear_color {
     uint32_t uint32[4];
     int32_t int32[4];
 } doe_vk_clear_color;
+typedef enum doe_vk_viewport_convention {
+    DOE_VK_VIEWPORT_RAW_VULKAN = 0,
+    DOE_VK_VIEWPORT_WEBGPU = 1
+} doe_vk_viewport_convention;
 typedef struct doe_vk_render_draw {
     uint32_t vertex_count, instance_count, first_vertex, first_instance;
     float viewport[6]; /* x,y,width,height,min/max depth; all explicit. */
     uint32_t scissor[4]; /* x,y,width,height within the attachment. */
+    /* Raw preserves retained positive-height Vulkan mapping. WebGPU keeps
+     * source Position unchanged and uses y+height/-height once at the viewport.
+     * Scissor and fragment framebuffer coordinates stay top-left. Pipeline
+     * clockwise_front remains the explicit native framebuffer winding choice. */
+    doe_vk_viewport_convention viewport_convention;
 } doe_vk_render_draw;
 /* Each operation records one real native pass, retaining its framebuffer/pass,
  * view, pipeline and resources. A clear-only begin packet initializes one full

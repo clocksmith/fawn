@@ -165,3 +165,22 @@ retains/releases `doe_vk_context`. Recorded commands must retain actual backend
 objects independently of public wrapper lifetimes. No new shared object registry
 or replacement public reference-count authority is introduced. Shared build and
 native consumer edits belong to the integration lead, not this backend directory.
+
+### Explicit viewport convention
+
+`doe_vk_render_draw.viewport_convention` defaults to `DOE_VK_VIEWPORT_RAW_VULKAN`,
+preserving the retained positive-height Vulkan behavior and existing Tint fixtures.
+For unmodified WebGPU vertex Position outputs, select `DOE_VK_VIEWPORT_WEBGPU`:
+the one viewport owner emits native `y + height` and `-height`, with unchanged
+x/depth/scissor. Source compilation must not additionally negate Position.y.
+The pipeline's `clockwise_front` remains explicit native framebuffer winding,
+not an implicit second coordinate correction. Old private-ABI consumers rebuild
+with the appended field; this does not change the pinned public WebGPU ABI.
+
+This follows [Vulkan's negative-height viewport definition](https://docs.vulkan.org/refpages/latest/refpages/source/VkViewport.html)
+and its [framebuffer-space front-face rule](https://docs.vulkan.org/refpages/latest/refpages/source/VkFrontFace.html),
+checked 2026-10-23. Negative height requires Vulkan 1.1, already the loader baseline;
+the helper still rejects older contexts. Host tests check offset and full-size
+transforms, raw preservation, invalid enum/version and failure output preservation.
+A full-screen triangle is not orientation evidence; the shader owner's asymmetric
+C-source consumer separately checks actual target orientation.
