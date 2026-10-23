@@ -25,16 +25,18 @@ unsigned resource_view_aspects(const doe_resource_view *view)
 
 doe_resource_status resource_use_conflict(const resource_use *a, const resource_use *b, bool binding_aliases)
 {
+    /* Whole-scope compatibility is unconditional; only shader binding alias
+     * checks are restricted to stages shared by both entries. */
     if (a->usage == RESOURCE_READ && b->usage == RESOURCE_READ) return DOE_RESOURCE_OK;
     if (a->buffer) {
         if (a->buffer != b->buffer) return DOE_RESOURCE_OK;
         if (a->usage != b->usage) return DOE_RESOURCE_USAGE;
-        if (binding_aliases && overlaps(a->offset, a->size, b->offset, b->size)) return DOE_RESOURCE_ALIAS;
+        if (binding_aliases && (a->visibility & b->visibility) && overlaps(a->offset, a->size, b->offset, b->size)) return DOE_RESOURCE_ALIAS;
     } else if (b->view && a->view->texture == b->view->texture && (a->aspects & b->aspects) &&
         overlaps(a->view->desc.base_mip, a->view->desc.mip_count, b->view->desc.base_mip, b->view->desc.mip_count) &&
         overlaps(a->view->desc.base_layer, a->view->desc.layer_count, b->view->desc.base_layer, b->view->desc.layer_count)) {
         if (a->usage != b->usage) return DOE_RESOURCE_USAGE;
-        if (binding_aliases) return DOE_RESOURCE_ALIAS;
+        if (binding_aliases && (a->visibility & b->visibility)) return DOE_RESOURCE_ALIAS;
     }
     return DOE_RESOURCE_OK;
 }
@@ -52,7 +54,7 @@ doe_resource_status resource_group_uses(const doe_resource_dispatch_group *input
     for (size_t i = 0; i < group->count; i++) {
         const doe_resource_binding *binding = &resolved[i];
         const doe_resource_layout_entry *entry = &group->layout->entries[i];
-        resource_use use = {0};
+        resource_use use = {.visibility = entry->visibility};
         switch (binding->kind) {
         case DOE_BIND_BUFFER:
             use.buffer = binding->resource.buffer.buffer;

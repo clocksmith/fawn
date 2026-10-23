@@ -213,6 +213,7 @@ bool doe_resource_layout_compatible(const doe_resource_layout *a, const doe_reso
 const doe_resource_layout_entry *doe_resource_layout_entries(const doe_resource_layout *layout,
     size_t *count);
 
+/* Explicit NULL/empty slots are permitted and never require bound groups. */
 doe_resource_status doe_resource_pipeline_layout_create(const doe_resource_config *config,
     doe_resource_layout *const *groups, size_t count, uint32_t immediate_size,
     doe_resource_pipeline_layout **out);
@@ -434,6 +435,12 @@ doe_resource_status doe_resource_buffer_write_validate(const doe_resource_buffer
     const void *device, uint64_t offset, uint64_t size);
 size_t doe_resource_pipeline_layout_count(const doe_resource_pipeline_layout *layout);
 /* Empty layout slots never require a bound group; invalid indices return false. */
+/* Materialize a canonical owner-held empty layout for absent/trailing slots
+ * below MAX_GROUPS. Output is borrowed, untouched on failure. Caller serializes
+ * this lazy mutation with other device operations; OOM is retriable. */
+doe_resource_status doe_resource_pipeline_layout_get_group(doe_resource_pipeline_layout *layout,
+    size_t index, doe_resource_layout **out);
+/* Empty/NULL layout slots never require a group; invalid index returns false. */
 bool doe_resource_pipeline_layout_group_required(const doe_resource_pipeline_layout *layout, size_t index);
 doe_resource_layout *doe_resource_pipeline_layout_group(const doe_resource_pipeline_layout *layout,
     size_t index);

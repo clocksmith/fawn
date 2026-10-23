@@ -115,13 +115,13 @@ doe_resource_status doe_resource_render_pipeline_create(const doe_resource_confi
         if (vertex->stride && vertex->last_attribute_end > vertex->stride) return DOE_RESOURCE_RANGE;
     }
     for (size_t i = 0; i < layout->count; i++)
-        if (layout->groups[i]->automatic && layout->groups[i]->automatic_claimed) return DOE_RESOURCE_LAYOUT;
+        if (layout->groups[i] && layout->groups[i]->automatic && layout->groups[i]->automatic_claimed) return DOE_RESOURCE_LAYOUT;
     doe_resource_render_pipeline *pipeline = resource_allocate(config, sizeof(*pipeline), _Alignof(doe_resource_render_pipeline));
     if (!pipeline) return DOE_RESOURCE_OUT_OF_MEMORY;
     pipeline->layout = layout;
     pipeline->desc = *desc;
     for (size_t i = 0; i < layout->count; i++)
-        if (layout->groups[i]->automatic) layout->groups[i]->automatic_claimed = true;
+        if (layout->groups[i] && layout->groups[i]->automatic) layout->groups[i]->automatic_claimed = true;
     doe_resource_pipeline_layout_retain(layout);
     resource_init(&pipeline->base, config, native);
     *out = pipeline;

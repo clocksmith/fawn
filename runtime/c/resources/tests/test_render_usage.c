@@ -51,9 +51,9 @@ static doe_resource_bind_group *make_group(fixture *f, const doe_resource_layout
 }
 
 static doe_resource_bind_group *buffer_group(fixture *f, doe_resource_buffer *storage,
-    doe_resource_layout **layout)
+    doe_resource_layout **layout, WGPUShaderStage visibility)
 {
-    doe_resource_layout_entry entry = {.kind = DOE_BIND_BUFFER, .visibility = WGPUShaderStage_Fragment,
+    doe_resource_layout_entry entry = {.kind = DOE_BIND_BUFFER, .visibility = visibility,
         .buffer_type = WGPUBufferBindingType_Storage};
     doe_resource_binding binding = {.kind = DOE_BIND_BUFFER, .resource.buffer = {storage, 0, 64}};
     return make_group(f, &entry, &binding, 1, layout);
@@ -111,14 +111,14 @@ static void test_overwritten_setters(void)
 
 static void test_history_conflicts(void)
 {
-    for (unsigned scenario = 0; scenario < 4; scenario++) {
+    for (unsigned scenario = 0; scenario < 5; scenario++) {
         fixture f = fresh();
         native_token image_token = {0}, view_token = {0}, token = {0};
         doe_resource_view *view = make_view(&f, &image_token, &view_token, WGPUTextureFormat_RGBA8Unorm);
         doe_resource_buffer *storage = buffer(&f, &token, 256,
             WGPUBufferUsage_Storage | WGPUBufferUsage_Vertex | WGPUBufferUsage_Index);
         doe_resource_layout *layout;
-        doe_resource_bind_group *group = buffer_group(&f, storage, &layout);
+        doe_resource_bind_group *group = buffer_group(&f, storage, &layout, scenario == 4 ? 0 : WGPUShaderStage_Fragment);
         doe_resource_dispatch_group input = {group, NULL, 0};
         doe_resource_encoder *encoder;
         doe_resource_render_pass *pass = begin(&f, view, &encoder);
@@ -219,7 +219,7 @@ static void test_attachment_scopes(void)
 
 static void test_draw_aliases(void)
 {
-    for (unsigned scenario = 0; scenario < 3; scenario++) {
+    for (unsigned scenario = 0; scenario < 6; scenario++) {
         fixture f = fresh();
         doe_resource_config c = config(&f);
         native_token image_token = {0}, view_token = {0}, storage_token = {0}, pipeline_token = {0};
@@ -233,6 +233,12 @@ static void test_draw_aliases(void)
             {.binding = 0, .kind = DOE_BIND_BUFFER, .resource.buffer = {storage, 0, 64}},
             {.binding = 1, .kind = DOE_BIND_BUFFER, .resource.buffer = {storage, scenario == 1 ? 64 : 0, 64}}
         };
+        if (scenario == 3) {
+            entries[0].visibility = WGPUShaderStage_Vertex;
+            entries[1].visibility = WGPUShaderStage_Fragment;
+        }
+        if (scenario == 4) entries[0].visibility = WGPUShaderStage_Vertex | WGPUShaderStage_Fragment;
+        if (scenario == 5) entries[1].visibility = 0;
         size_t count = scenario == 2 ? 1 : 2;
         doe_resource_layout *layout;
         doe_resource_bind_group *group = make_group(&f, entries, bindings, count, &layout);
@@ -246,7 +252,7 @@ static void test_draw_aliases(void)
         doe_resource_dispatch_group input = {group, NULL, 0};
         assert(doe_resource_bundle_encoder_set_pipeline(builder, pipeline) == DOE_RESOURCE_OK);
         assert(doe_resource_bundle_encoder_set_group(builder, 0, &input) == DOE_RESOURCE_OK);
-        doe_resource_status expected = scenario == 0 ? DOE_RESOURCE_ALIAS : DOE_RESOURCE_OK;
+        doe_resource_status expected = scenario == 0 || scenario == 4 ? DOE_RESOURCE_ALIAS : DOE_RESOURCE_OK;
         assert(doe_resource_bundle_encoder_draw(builder, false, 3, 1, 0, 0, 0) == expected);
         if (expected == DOE_RESOURCE_OK) {
             /* Same writable resources may be used by successive draws/bundles. */
@@ -325,7 +331,7 @@ static void test_scope_allocation_failure(void)
     doe_resource_buffer *vertices = buffer(&f, &tokens[0], 64, WGPUBufferUsage_Vertex);
     doe_resource_buffer *storage = buffer(&f, &tokens[1], 64, WGPUBufferUsage_Storage);
     doe_resource_layout *layout;
-    doe_resource_bind_group *group = buffer_group(&f, storage, &layout);
+    doe_resource_bind_group *group = buffer_group(&f, storage, &layout, WGPUShaderStage_Fragment);
     for (unsigned scenario = 0; scenario < 2; scenario++) {
         doe_resource_bundle_encoder *encoder = bundle_encoder(&f);
         f.fail_at = f.allocations;
@@ -355,7 +361,7 @@ static void test_indirect_history(void)
     native_token token = {0}, pipeline_token = {0};
     doe_resource_buffer *arguments = buffer(&f, &token, 256, WGPUBufferUsage_Storage | WGPUBufferUsage_Indirect);
     doe_resource_layout *layout;
-    doe_resource_bind_group *group = buffer_group(&f, arguments, &layout);
+    doe_resource_bind_group *group = buffer_group(&f, arguments, &layout, WGPUShaderStage_Fragment);
     doe_resource_pipeline_layout *pipeline_layout;
     assert(doe_resource_pipeline_layout_create(&c, NULL, 0, 0, &pipeline_layout) == DOE_RESOURCE_OK);
     doe_resource_render_pipeline_desc desc = {.color_format = WGPUTextureFormat_RGBA8Unorm, .samples = 1};

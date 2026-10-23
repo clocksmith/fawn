@@ -140,12 +140,13 @@ doe_resource_status doe_resource_pipeline_layout_create(const doe_resource_confi
     if (!config->device.alive(config->device.identity)) return DOE_RESOURCE_UNAVAILABLE;
     if (immediate_size || count > DOE_RESOURCE_MAX_GROUPS) return DOE_RESOURCE_UNSUPPORTED;
     for (size_t i = 0; i < count; i++) {
-        if (!groups[i]) return DOE_RESOURCE_INVALID_ARGUMENT;
+        if (!groups[i]) continue;
         if (groups[i]->base.config.device.identity != config->device.identity) return DOE_RESOURCE_DEVICE_MISMATCH;
     }
     doe_resource_pipeline_layout *layout = resource_allocate(config, sizeof(*layout), _Alignof(doe_resource_pipeline_layout));
     if (!layout) return DOE_RESOURCE_OUT_OF_MEMORY;
     layout->count = count;
+    layout->empty = NULL;
     for (size_t i = 0; i < count; i++) {
         layout->groups[i] = groups[i];
         doe_resource_layout_retain(groups[i]);
@@ -164,6 +165,7 @@ void doe_resource_pipeline_layout_release(doe_resource_pipeline_layout *layout)
 {
     if (!layout || !resource_last_reference(&layout->base)) return;
     for (size_t i = 0; i < layout->count; i++) doe_resource_layout_release(layout->groups[i]);
+    doe_resource_layout_release(layout->empty);
     resource_finalize(&layout->base, sizeof(*layout), _Alignof(doe_resource_pipeline_layout));
 }
 
@@ -374,13 +376,13 @@ doe_resource_status doe_resource_pipeline_create(const doe_resource_config *conf
     if (layout->base.config.device.identity != config->device.identity) return DOE_RESOURCE_DEVICE_MISMATCH;
     if (!workgroup[0] || !workgroup[1] || !workgroup[2]) return DOE_RESOURCE_RANGE;
     for (size_t i = 0; i < layout->count; i++)
-        if (layout->groups[i]->automatic && layout->groups[i]->automatic_claimed) return DOE_RESOURCE_LAYOUT;
+        if (layout->groups[i] && layout->groups[i]->automatic && layout->groups[i]->automatic_claimed) return DOE_RESOURCE_LAYOUT;
     doe_resource_pipeline *pipeline = resource_allocate(config, sizeof(*pipeline), _Alignof(doe_resource_pipeline));
     if (!pipeline) return DOE_RESOURCE_OUT_OF_MEMORY;
     pipeline->layout = layout;
     memcpy(pipeline->workgroup, workgroup, sizeof(pipeline->workgroup));
     for (size_t i = 0; i < layout->count; i++)
-        if (layout->groups[i]->automatic) layout->groups[i]->automatic_claimed = true;
+        if (layout->groups[i] && layout->groups[i]->automatic) layout->groups[i]->automatic_claimed = true;
     doe_resource_pipeline_layout_retain(layout);
     resource_init(&pipeline->base, config, native);
     *out = pipeline;

@@ -83,11 +83,17 @@ bundle contains no draws; it is not inferred only from individual pipelines.
 
 Dispatch validation follows [WebGPU usage scopes](https://gpuweb.github.io/gpuweb/#usage-scopes):
 read/write incompatibility is whole-buffer, even for disjoint ranges. Multiple
-writable-storage bindings may share one buffer only at disjoint effective ranges;
-readonly overlaps are permitted. Texture conflicts use mip/layer/aspect identity.
+writable-storage bindings visible to the same shader stage may share one buffer
+only at disjoint effective ranges; readonly overlaps are permitted. Writable
+alias checks preserve each entry's stage mask, allowing visibility0 or disjoint
+stages without weakening unconditional whole-scope usage compatibility. Texture conflicts use mip/layer/aspect identity.
 All groups and indirect input are admitted before offset allocation or command
 publication. Empty pipeline-layout slots require no group and normalize to null
 compute snapshots with zero offsets; ignored stale bindings are not submitted.
+Explicit NULL slots follow the same required-group predicate. The status-returning
+pipeline-layout getter lazily owns one empty layout for absent/trailing indices
+below MAX_GROUPS, avoiding eager allocation and frontend caches. Failure leaves
+output and cached identity untouched; OOM can be retried under caller serialization.
 
 Render scopes reuse these conflict rules across attachments, every group/vertex/
 index setter (including overwritten or unused state), indirect input and bundle
@@ -127,7 +133,7 @@ responsibilities. Unsupported consumer command kinds must reject before submit.
 ## Focused checks and evidence
 
 `make -C runtime/c/resources check` builds GCC C11/Werror into `/tmp`: 13 base and
-8 extended, 6 bundle, 6 binding-feature, 4 dispatch-usage, 9 render-usage and 1 query-admission host suites cover transactional failure/untouched outputs, first error,
+8 extended, 6 bundle, 6 binding-feature, 6 dispatch-usage, 9 render-usage and 1 query-admission host suites cover transactional failure/untouched outputs, first error,
 label cleanup, atomic references, stale/read-only maps, copies/aliases, dynamic
 snapshots, pass abandonment/unbinding, shader/query/external/render leases and
 unresolved submission lifetime. Host native tokens test finalization, not GPU work.
@@ -197,5 +203,7 @@ whole-render-scope and query-descriptor checks.
 nullable vertex unbind and pass-local occlusion admission host checks.
 `DEVELOPER_RECEIPT_NATIVE_PASS.json` binds the later actual single-pass span and
 empty LOAD/STORE consumer; it does not qualify native occlusion execution.
+`DEVELOPER_RECEIPT_LAYOUT_VISIBILITY.json` preserves the first NULL-slot and
+visibility0 reproductions and binds their focused corrections.
 `DEVELOPER_RECEIPT.json` preserves the earlier smaller historical check.
 Run the common source-size check; every owned C source/header is below 999 lines.
