@@ -8,7 +8,7 @@ Execute admitted native Vulkan work through an independently usable C owner whil
 
 ## Authority
 
-- Owns experimental Vulkan loader, native allocations, descriptors, pipelines, command recording, submission and retirement.
+- Owns experimental Vulkan loader, native allocations, descriptors, pipelines, command recording, submission, retirement and selected native Linux surface ownership.
 - Does not own WGSL meaning, public WebGPU validation, provider selection or qualification.
 
 ## Scope
@@ -27,6 +27,7 @@ Execute admitted native Vulkan work through an independently usable C owner whil
 - No interpreter, silent backend substitution or production default change.
 - Pinned ABI verification, software execution and physical qualification remain distinct.
 - Caller serialization and ownership transfer remain explicit.
+- Acquisition and presentation fences are distinct from command completion; unsupported WSI never fabricates a surface.
 
 ## Acceptance
 

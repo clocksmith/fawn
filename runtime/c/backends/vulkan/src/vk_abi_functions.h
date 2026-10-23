@@ -7,8 +7,29 @@
 #include "vk_abi_caps.h"
 #include "vk_abi_images.h"
 #include "vk_abi_render.h"
+#include "vk_abi_surface.h"
 
 typedef struct doe_vk_functions {
+    doe_vk_proc (*vkGetInstanceProcAddr)(VkInstance, const char *);
+    doe_vk_proc (*vkGetDeviceProcAddr)(VkDevice, const char *);
+    VkResult (*vkEnumerateInstanceExtensionProperties)(const uint8_t *, uint32_t *, VkExtensionProperties *);
+    void (*vkDestroySurfaceKHR)(VkInstance, VkSurfaceKHR, const VkAllocationCallbacks *);
+    VkResult (*vkGetPhysicalDeviceSurfaceSupportKHR)(VkPhysicalDevice, uint32_t, VkSurfaceKHR, VkBool32 *);
+    VkResult (*vkGetPhysicalDeviceSurfaceCapabilitiesKHR)(VkPhysicalDevice, VkSurfaceKHR, VkSurfaceCapabilitiesKHR *);
+    VkResult (*vkGetPhysicalDeviceSurfaceFormatsKHR)(VkPhysicalDevice, VkSurfaceKHR, uint32_t *, VkSurfaceFormatKHR *);
+    VkResult (*vkGetPhysicalDeviceSurfacePresentModesKHR)(VkPhysicalDevice, VkSurfaceKHR, uint32_t *, uint32_t *);
+    VkResult (*vkCreateWaylandSurfaceKHR)(VkInstance, const VkWaylandSurfaceCreateInfoKHR *, const VkAllocationCallbacks *, VkSurfaceKHR *);
+    VkResult (*vkCreateXcbSurfaceKHR)(VkInstance, const VkXcbSurfaceCreateInfoKHR *, const VkAllocationCallbacks *, VkSurfaceKHR *);
+    VkResult (*vkCreateXlibSurfaceKHR)(VkInstance, const VkXlibSurfaceCreateInfoKHR *, const VkAllocationCallbacks *, VkSurfaceKHR *);
+    VkResult (*vkCreateSwapchainKHR)(VkDevice, const VkSwapchainCreateInfoKHR *, const VkAllocationCallbacks *, VkSwapchainKHR *);
+    void (*vkDestroySwapchainKHR)(VkDevice, VkSwapchainKHR, const VkAllocationCallbacks *);
+    VkResult (*vkGetSwapchainImagesKHR)(VkDevice, VkSwapchainKHR, uint32_t *, VkImage *);
+    VkResult (*vkAcquireNextImageKHR)(VkDevice, VkSwapchainKHR, uint64_t, VkSemaphore, VkFence, uint32_t *);
+    VkResult (*vkQueuePresentKHR)(VkQueue, const VkPresentInfoKHR *);
+    VkResult (*vkCreateSemaphore)(VkDevice, const VkSemaphoreCreateInfo *, const VkAllocationCallbacks *, VkSemaphore *);
+    void (*vkDestroySemaphore)(VkDevice, VkSemaphore, const VkAllocationCallbacks *);
+    VkResult (*vkReleaseSwapchainImagesEXT)(VkDevice, const VkReleaseSwapchainImagesInfoEXT *);
+
     VkResult (*vkCreateInstance)(const VkInstanceCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator, VkInstance *pInstance);
     void (*vkDestroyInstance)(VkInstance instance, const VkAllocationCallbacks *pAllocator);
     VkResult (*vkEnumeratePhysicalDevices)(VkInstance instance, uint32_t *pPhysicalDeviceCount, VkPhysicalDevice *pPhysicalDevices);

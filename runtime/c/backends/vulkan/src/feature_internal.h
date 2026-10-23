@@ -5,6 +5,8 @@ typedef struct doe_vk_feature_selection {
     VkPhysicalDeviceFeatures base;
     VkPhysicalDeviceShaderDemoteToHelperInvocationFeatures demote;
     const uint8_t *extension;
+    VkPhysicalDeviceSwapchainMaintenance1FeaturesEXT swapchain;
+    bool surface_enabled;
 } doe_vk_feature_selection;
 /* Caller-owned immediate device-create data, no retained pointer or handles.
  * Failure leaves output unchanged. Optional unsupported demote stays disabled. */

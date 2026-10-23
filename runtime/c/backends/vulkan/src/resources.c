@@ -13,6 +13,8 @@ doe_vk_status doe_vk_result(doe_vk_context *context, VkResult result,
         case 1: status = DOE_VK_PENDING; break;
         case 2: status = DOE_VK_TIMEOUT; break;
         case -1: case -2: status = DOE_VK_OUT_OF_MEMORY; break;
+        case VK_ERROR_OUT_OF_DATE_KHR: status = DOE_VK_SURFACE_OUTDATED; break;
+        case VK_ERROR_SURFACE_LOST_KHR: status = DOE_VK_SURFACE_LOST; break;
         case -4:
             status = DOE_VK_DEVICE_LOST;
             if (context != NULL) context->lost = true;
@@ -41,6 +43,8 @@ const char *doe_vk_status_name(doe_vk_status status) {
         case DOE_VK_DEVICE_LOST: return "device lost";
         case DOE_VK_BUSY: return "busy";
         case DOE_VK_INVALID_STATE: return "invalid state";
+        case DOE_VK_SURFACE_OUTDATED: return "surface outdated";
+        case DOE_VK_SURFACE_LOST: return "surface lost";
     }
     return "unknown status";
 }

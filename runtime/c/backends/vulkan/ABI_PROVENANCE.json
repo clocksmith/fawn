@@ -10,7 +10,9 @@
     "vk_formats.zig": "ec953998cab8cab6679c26fd0431d91ab0bc9f006e73f6cbf94db6f089f2880d",
     "vk_samplers.zig": "d69660a49a4d143b1fddbd59a8140c424f598ff37ce020553ea9f5b15c641caf",
     "vk_feature_caps.zig": "3317a92ff51e84baacc6de5f7fea0063a1ed8e99e8e81493606a170fd8298e41",
-    "vk_render_pipeline.zig": "5cd563db312049e78ba04f7832ea5df74edf9b14e27dbe525020aa7eae7026eb"
+    "vk_render_pipeline.zig": "5cd563db312049e78ba04f7832ea5df74edf9b14e27dbe525020aa7eae7026eb",
+    "vulkan_surface.zig": "f095055b695e9c6b9fd3821b98f1f54f949746c701660d4568207046cf3c2ba3",
+    "vk_surface_sync.zig": "7652fdf18cfcfae843a3c3ef5985b45863a3e27833123409b61156ab25b0eb87"
   },
   "structs": [
     "VkApplicationInfo",
@@ -90,7 +92,14 @@
     "VkGraphicsPipelineCreateInfo",
     "VkQueryPoolCreateInfo",
     "VkStencilOpState",
-    "VkPipelineDepthStencilStateCreateInfo"
+    "VkPipelineDepthStencilStateCreateInfo",
+    "VkSurfaceCapabilitiesKHR",
+    "VkSurfaceFormatKHR",
+    "VkSwapchainCreateInfoKHR",
+    "VkPresentInfoKHR",
+    "VkWaylandSurfaceCreateInfoKHR",
+    "VkXcbSurfaceCreateInfoKHR",
+    "VkXlibSurfaceCreateInfoKHR"
   ],
   "functions": [
     "vkCreateInstance",
@@ -192,7 +201,19 @@
       "VK_QUERY_TYPE_OCCLUSION": 0,
       "VK_DYNAMIC_STATE_BLEND_CONSTANTS": 4,
       "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DEMOTE_TO_HELPER_INVOCATION_FEATURES": 1000276000,
-      "VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT": 512
+      "VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT": 512,
+      "VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO": 9,
+      "VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR": 1000001000,
+      "VK_STRUCTURE_TYPE_PRESENT_INFO_KHR": 1000001001,
+      "VK_STRUCTURE_TYPE_WAYLAND_SURFACE_CREATE_INFO_KHR": 1000006000,
+      "VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR": 1000005000,
+      "VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR": 1000004000,
+      "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SWAPCHAIN_MAINTENANCE_1_FEATURES_EXT": 1000275000,
+      "VK_STRUCTURE_TYPE_SWAPCHAIN_PRESENT_FENCE_INFO_EXT": 1000275001,
+      "VK_STRUCTURE_TYPE_RELEASE_SWAPCHAIN_IMAGES_INFO_EXT": 1000275005,
+      "VK_SUBOPTIMAL_KHR": 1000001003,
+      "VK_ERROR_OUT_OF_DATE_KHR": -1000001004,
+      "VK_ERROR_SURFACE_LOST_KHR": -1000000000
     },
     "additional_sources": [
       "https://docs.vulkan.org/refpages/latest/refpages/source/VkQueryType.html",
@@ -258,6 +279,90 @@
           "VkDeviceSize"
         ]
       ]
+    },
+    "VkSemaphoreCreateInfo": {
+      "source": "https://raw.githubusercontent.com/KhronosGroup/Vulkan-Headers/v1.3.290/include/vulkan/vulkan_core.h",
+      "fields": [
+        [
+          "sType",
+          "VkStructureType"
+        ],
+        [
+          "pNext",
+          "pointer"
+        ],
+        [
+          "flags",
+          "VkFlags"
+        ]
+      ],
+      "retained_equivalent": "vk_surface_sync.zig"
+    },
+    "VkPhysicalDeviceSwapchainMaintenance1FeaturesEXT": {
+      "source": "https://raw.githubusercontent.com/KhronosGroup/Vulkan-Headers/v1.3.290/include/vulkan/vulkan_core.h",
+      "fields": [
+        [
+          "sType",
+          "VkStructureType"
+        ],
+        [
+          "pNext",
+          "pointer"
+        ],
+        [
+          "swapchainMaintenance1",
+          "VkBool32"
+        ]
+      ],
+      "retained_equivalent": "vk_surface_sync.zig"
+    },
+    "VkSwapchainPresentFenceInfoEXT": {
+      "source": "https://raw.githubusercontent.com/KhronosGroup/Vulkan-Headers/v1.3.290/include/vulkan/vulkan_core.h",
+      "fields": [
+        [
+          "sType",
+          "VkStructureType"
+        ],
+        [
+          "pNext",
+          "pointer"
+        ],
+        [
+          "swapchainCount",
+          "u32"
+        ],
+        [
+          "pFences",
+          "pointer"
+        ]
+      ],
+      "retained_equivalent": "vk_surface_sync.zig"
+    },
+    "VkReleaseSwapchainImagesInfoEXT": {
+      "source": "https://raw.githubusercontent.com/KhronosGroup/Vulkan-Headers/v1.3.290/include/vulkan/vulkan_core.h",
+      "fields": [
+        [
+          "sType",
+          "VkStructureType"
+        ],
+        [
+          "pNext",
+          "pointer"
+        ],
+        [
+          "swapchain",
+          "VkSwapchainKHR"
+        ],
+        [
+          "imageIndexCount",
+          "u32"
+        ],
+        [
+          "pImageIndices",
+          "pointer"
+        ]
+      ],
+      "retained_equivalent": null
     }
   },
   "retained_functions": {
@@ -266,5 +371,134 @@
       "signature": "void(VkCommandBuffer,VkBuffer,VkDeviceSize,u32,u32)",
       "usage": "One guarded nonindexed draw per call, stride16; drawIndirectFirstInstance remains disabled."
     }
-  }
+  },
+  "surface_policy": {
+    "platforms": "Retained Wayland, XCB and Xlib native handles only; no fabricated headless surface",
+    "present_modes": "Retained vulkan_surface.zig swaps MAILBOX and FIFO_RELAXED. Correct native values MAILBOX1/FIFO_RELAXED3 verified against pinned official header, never blind-cast legacy constants.",
+    "required_extensions": [
+      "VK_KHR_surface",
+      "VK_KHR_get_surface_capabilities2",
+      "VK_EXT_surface_maintenance1",
+      "selected platform extension",
+      "VK_KHR_swapchain",
+      "VK_EXT_swapchain_maintenance1"
+    ],
+    "completion": "Maintenance1 present fence permits resource retirement, not proof of displayed pixels or timing. Queue idle is not used to retire presentation."
+  },
+  "surface_functions": [
+    {
+      "name": "vkGetInstanceProcAddr",
+      "result": "doe_vk_proc",
+      "parameters": "VkInstance, const char *",
+      "source": "https://raw.githubusercontent.com/KhronosGroup/Vulkan-Headers/v1.3.290/include/vulkan/vulkan_core.h"
+    },
+    {
+      "name": "vkGetDeviceProcAddr",
+      "result": "doe_vk_proc",
+      "parameters": "VkDevice, const char *",
+      "source": "https://raw.githubusercontent.com/KhronosGroup/Vulkan-Headers/v1.3.290/include/vulkan/vulkan_core.h"
+    },
+    {
+      "name": "vkEnumerateInstanceExtensionProperties",
+      "result": "VkResult",
+      "parameters": "const uint8_t *, uint32_t *, VkExtensionProperties *",
+      "source": "https://raw.githubusercontent.com/KhronosGroup/Vulkan-Headers/v1.3.290/include/vulkan/vulkan_core.h"
+    },
+    {
+      "name": "vkDestroySurfaceKHR",
+      "result": "void",
+      "parameters": "VkInstance, VkSurfaceKHR, const VkAllocationCallbacks *",
+      "source": "vulkan_surface.zig"
+    },
+    {
+      "name": "vkGetPhysicalDeviceSurfaceSupportKHR",
+      "result": "VkResult",
+      "parameters": "VkPhysicalDevice, uint32_t, VkSurfaceKHR, VkBool32 *",
+      "source": "vulkan_surface.zig"
+    },
+    {
+      "name": "vkGetPhysicalDeviceSurfaceCapabilitiesKHR",
+      "result": "VkResult",
+      "parameters": "VkPhysicalDevice, VkSurfaceKHR, VkSurfaceCapabilitiesKHR *",
+      "source": "vulkan_surface.zig"
+    },
+    {
+      "name": "vkGetPhysicalDeviceSurfaceFormatsKHR",
+      "result": "VkResult",
+      "parameters": "VkPhysicalDevice, VkSurfaceKHR, uint32_t *, VkSurfaceFormatKHR *",
+      "source": "vulkan_surface.zig"
+    },
+    {
+      "name": "vkGetPhysicalDeviceSurfacePresentModesKHR",
+      "result": "VkResult",
+      "parameters": "VkPhysicalDevice, VkSurfaceKHR, uint32_t *, uint32_t *",
+      "source": "vulkan_surface.zig"
+    },
+    {
+      "name": "vkCreateWaylandSurfaceKHR",
+      "result": "VkResult",
+      "parameters": "VkInstance, const VkWaylandSurfaceCreateInfoKHR *, const VkAllocationCallbacks *, VkSurfaceKHR *",
+      "source": "vulkan_surface.zig"
+    },
+    {
+      "name": "vkCreateXcbSurfaceKHR",
+      "result": "VkResult",
+      "parameters": "VkInstance, const VkXcbSurfaceCreateInfoKHR *, const VkAllocationCallbacks *, VkSurfaceKHR *",
+      "source": "vulkan_surface.zig"
+    },
+    {
+      "name": "vkCreateXlibSurfaceKHR",
+      "result": "VkResult",
+      "parameters": "VkInstance, const VkXlibSurfaceCreateInfoKHR *, const VkAllocationCallbacks *, VkSurfaceKHR *",
+      "source": "vulkan_surface.zig"
+    },
+    {
+      "name": "vkCreateSwapchainKHR",
+      "result": "VkResult",
+      "parameters": "VkDevice, const VkSwapchainCreateInfoKHR *, const VkAllocationCallbacks *, VkSwapchainKHR *",
+      "source": "vulkan_surface.zig"
+    },
+    {
+      "name": "vkDestroySwapchainKHR",
+      "result": "void",
+      "parameters": "VkDevice, VkSwapchainKHR, const VkAllocationCallbacks *",
+      "source": "vulkan_surface.zig"
+    },
+    {
+      "name": "vkGetSwapchainImagesKHR",
+      "result": "VkResult",
+      "parameters": "VkDevice, VkSwapchainKHR, uint32_t *, VkImage *",
+      "source": "vulkan_surface.zig"
+    },
+    {
+      "name": "vkAcquireNextImageKHR",
+      "result": "VkResult",
+      "parameters": "VkDevice, VkSwapchainKHR, uint64_t, VkSemaphore, VkFence, uint32_t *",
+      "source": "vulkan_surface.zig"
+    },
+    {
+      "name": "vkQueuePresentKHR",
+      "result": "VkResult",
+      "parameters": "VkQueue, const VkPresentInfoKHR *",
+      "source": "vulkan_surface.zig"
+    },
+    {
+      "name": "vkCreateSemaphore",
+      "result": "VkResult",
+      "parameters": "VkDevice, const VkSemaphoreCreateInfo *, const VkAllocationCallbacks *, VkSemaphore *",
+      "source": "https://raw.githubusercontent.com/KhronosGroup/Vulkan-Headers/v1.3.290/include/vulkan/vulkan_core.h"
+    },
+    {
+      "name": "vkDestroySemaphore",
+      "result": "void",
+      "parameters": "VkDevice, VkSemaphore, const VkAllocationCallbacks *",
+      "source": "https://raw.githubusercontent.com/KhronosGroup/Vulkan-Headers/v1.3.290/include/vulkan/vulkan_core.h"
+    },
+    {
+      "name": "vkReleaseSwapchainImagesEXT",
+      "result": "VkResult",
+      "parameters": "VkDevice, const VkReleaseSwapchainImagesInfoEXT *",
+      "source": "https://raw.githubusercontent.com/KhronosGroup/Vulkan-Headers/v1.3.290/include/vulkan/vulkan_core.h"
+    }
+  ]
 }

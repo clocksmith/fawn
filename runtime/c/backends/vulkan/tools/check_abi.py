@@ -39,7 +39,7 @@ def main():
             types[name] = types[definition]
     selected = set(manifest["structs"])
     fields = {}
-    for file in ("vk_structs.zig", "vk_capability_structs.zig", "vk_render_pipeline.zig"):
+    for file in ("vk_structs.zig", "vk_capability_structs.zig", "vk_render_pipeline.zig", "vulkan_surface.zig"):
         for name, kind, body in re.findall(r"(?:pub )?const (Vk\w+) = extern (struct|union) \{(.*?)\n\};", (source / file).read_text(), re.S):
             if name not in selected:
                 continue
@@ -87,6 +87,14 @@ def main():
             'void doe_vk_abi_draw_indirect_signature(doe_vk_functions *functions) {',
             '    void (*draw)(VkCommandBuffer, VkBuffer, VkDeviceSize, uint32_t, uint32_t) = functions->vkCmdDrawIndirect;',
             '    (void)draw;',
+            '}'
+        ])
+    for signature in manifest.get("surface_functions", []):
+        name = signature["name"]
+        lines.extend([
+            f'void doe_vk_abi_{name}(doe_vk_functions *functions) {{',
+            f'    {signature["result"]} (*checked)({signature["parameters"]}) = functions->{name};',
+            '    (void)checked;',
             '}'
         ])
     assertions = 0

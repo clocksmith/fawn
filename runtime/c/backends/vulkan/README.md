@@ -417,7 +417,8 @@ over-capacity, wrapping, zero-count and nonzero-firstInstance draws; it never
 changes original arguments. No optional indirect-first-instance feature is enabled.
 Stride-zero and attribute-free native holes retain their existing semantics.
 Only guarded native drawIndirect(count1,stride16) executes inside the pass; guards
-and barriers stay outside. Indexed drawing and presentation remain unsupported.
+and barriers stay outside. Indexed drawing remains unsupported; Linux presentation
+is described below.
 Host boundary/geometry checks are not shader execution proof. The API preserves
 resource-owned pass usage history and failure/uncertain retirement obligations.
 
@@ -426,3 +427,48 @@ attachment extent; scissor remains attachment-bound. Negative origins are valid.
 A zero logical width or height is implemented by a valid native viewport and
 empty scissor while preserving draw/vertex work and occlusion ordering. Public
 requested-device limits remain the canonical resource owner's responsibility.
+
+## Linux native surfaces
+
+`doe_vk_surface.h` implements the retained Wayland, XCB and Xlib native-handle
+routes. Select exact `surface_platforms` at context creation. The selected graphics
+queue must support the actual surface; there is no fallback adapter, queue or
+headless image. Instance surface/platform extensions and the full EXT maintenance1
+dependency chain are required, followed by actual device feature enablement and
+loaded native procedures. `surface_probe` reports discovery only.
+
+Capabilities are bounded (32 formats, 8 present modes/images), with exact requested
+format, SRGB nonlinear color space, alpha, usage, extent and present-mode admission.
+MAILBOX is native value1 and FIFO_RELAXED value3, correcting reversed constants in
+the retained surface translation. Configure requires an explicitly unconfigured
+surface, avoiding accidental old-swapchain retirement on failed replacement.
+
+One acquired frame is supported at a time. Acquire uses a real fence; a timeout
+retains that acquisition and a retry waits it rather than acquiring another image.
+The native acquisition and fence waits are each bounded by the supplied timeout,
+so a call may wait up to twice that value. UINT64_MAX acquisition is rejected.
+The borrowed frame is valid until present/discard. Old texture/view/command leases
+must be released before the next acquisition; stale generations reject recording.
+
+Prepare-present attaches a retained surface to the existing one-shot commands.
+Their normal submit records canonical zero-if-undefined and the final PRESENT
+transition, then signals a binary semaphore. No second submission engine exists.
+The frame is exclusively sealed to that command owner, even after render completion.
+Present waits that semaphore and chains a maintenance1 fence. Render/queue-idle
+completion never retires presentation resources. A successful present-fence wait
+permits semaphore/swapchain retirement, not a claim that pixels were displayed.
+Unknown acquire/present completion retains native obligations. Teardown returns
+BUSY rather than spinning or freeing them. Known failed present enqueue OOM permits
+retry, while other enqueued/uncertain errors retain the fence and original status.
+An acquired, quiescent image can be discarded with actual ReleaseSwapchainImagesEXT.
+Borrowed platform connections/windows must outlive all this ownership.
+`surface_retire_frame` preserves configuration for the normal queue/present loop,
+including the original failed-present status after proven retirement.
+`surface_retire` adds unconfiguration after that canonical frame cleanup: it retries only an existing acquisition,
+waits pending presentation, discards a quiescent frame and unconfigures. It never
+starts an acquire or releases caller command/image leases; BUSY preserves them.
+
+Host tests inject actual native-call boundaries and test these states, not display
+output. The installed software ICD admits Wayland/XCB maintenance1 and rejects Xlib.
+This cloud environment has no connected X/Wayland display or Xvfb, so actual window
+creation/acquisition/presentation and physical hardware qualification remain unrun.

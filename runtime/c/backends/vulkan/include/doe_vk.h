@@ -27,7 +27,9 @@ typedef enum doe_vk_status {
     DOE_VK_NATIVE_FAILURE,
     DOE_VK_DEVICE_LOST,
     DOE_VK_BUSY,
-    DOE_VK_INVALID_STATE
+    DOE_VK_INVALID_STATE,
+    DOE_VK_SURFACE_OUTDATED,
+    DOE_VK_SURFACE_LOST
 } doe_vk_status;
 
 typedef struct doe_vk_error {
@@ -36,11 +38,14 @@ typedef struct doe_vk_error {
     const char *operation; /* Static string, never shader-location attribution. */
 } doe_vk_error;
 
+enum { DOE_VK_SURFACE_WAYLAND = 1, DOE_VK_SURFACE_XCB = 2, DOE_VK_SURFACE_XLIB = 4 };
+
 typedef struct doe_vk_options {
     uint32_t adapter_ordinal; /* Exact enumeration ordinal, no silent fallback. */
     bool allow_cpu_adapter; /* False by default; software is never GPU evidence. */
     bool require_graphics_queue; /* Select a compute+graphics family or reject. */
     bool enable_shader_demote_if_supported; /* Explicit opt-in; unavailable remains disabled. */
+    uint32_t surface_platforms; /* Zero disables WSI; exact required platform bits. */
 } doe_vk_options;
 
 typedef struct doe_vk_caps {
@@ -83,6 +88,7 @@ typedef struct doe_vk_caps {
     uint32_t max_vertex_output_components;
     uint32_t max_fragment_input_components;
     bool shader_demote_to_helper_invocation; /* Enabled, not merely advertised. */
+    uint32_t surface_platforms; /* Enabled with swapchain-maintenance1, not discovery only. */
 } doe_vk_caps;
 
 /* One owned reference on success. Objects retain their creating context. */
