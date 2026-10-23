@@ -63,7 +63,8 @@ WGPURenderPipeline native_create_render_pipeline(native_device *device,
         .topology=descriptor->primitive.topology,.strip_index_format=descriptor->primitive.stripIndexFormat};
     doe_vk_vertex_layout layouts[DOE_VK_MAX_VERTEX_BUFFERS];
     doe_vk_vertex_attribute attributes[DOE_VK_MAX_VERTEX_ATTRIBUTES];
-    if (!native_render_fixed(descriptor, &native) || !vertices(&descriptor->vertex, &native, &resource, &device->caps, layouts, attributes) ||
+    if (!native_render_fixed(descriptor, &native) || !native_render_depth(descriptor->depthStencil, &native, &resource) ||
+        !vertices(&descriptor->vertex, &native, &resource, &device->caps, layouts, attributes) ||
         !native_render_interfaces(stages, &descriptor->vertex, descriptor->fragment->targets, &device->caps)) return NULL;
     native_pipeline *payload = calloc(1, sizeof(*payload));
     if (!payload) { *error = (native_pipeline_error){WGPUErrorType_OutOfMemory,"render pipeline payload allocation failed"}; return NULL; }

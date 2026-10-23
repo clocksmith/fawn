@@ -7,7 +7,7 @@ WGPURenderPassEncoder wgpuCommandEncoderBeginRenderPass(WGPUCommandEncoder handl
     doe_resource_encoder *encoder = (doe_resource_encoder *)handle;
     native_device *device = doe_resource_encoder_device(encoder);
     if (!device) return NULL;
-    bool valid = descriptor && !descriptor->nextInChain && !descriptor->depthStencilAttachment &&
+    bool valid = descriptor && !descriptor->nextInChain &&
         descriptor->colorAttachmentCount == 1 && descriptor->colorAttachments;
     doe_resource_render_targets targets = {0};
     const WGPUPassTimestampWrites *writes = valid ? descriptor->timestampWrites : NULL;
@@ -24,6 +24,20 @@ WGPURenderPassEncoder wgpuCommandEncoderBeginRenderPass(WGPUCommandEncoder handl
         doe_vk_clear_color converted;
         if (color->loadOp == WGPULoadOp_Clear && (!view || !native_render_clear(view->format, targets.clear_color, &converted)))
             valid = false;
+        if (descriptor->depthStencilAttachment) {
+            const WGPURenderPassDepthStencilAttachment *depth = descriptor->depthStencilAttachment;
+            if (depth->nextInChain) valid = false;
+            targets.depth_stencil = (doe_resource_view *)depth->view;
+            targets.depth_load = depth->depthLoadOp;
+            targets.depth_store = depth->depthStoreOp;
+            targets.clear_depth = depth->depthClearValue;
+            targets.depth_read_only = depth->depthReadOnly;
+            targets.stencil_load = depth->stencilLoadOp;
+            targets.stencil_store = depth->stencilStoreOp;
+            targets.clear_stencil = depth->stencilClearValue;
+            targets.stencil_read_only = depth->stencilReadOnly;
+            if (!targets.depth_stencil) valid = false;
+        }
         if (writes) {
             if (writes->nextInChain || !device->timestamp_enabled) valid = false;
             timestamps = (doe_resource_pass_timestamps){(doe_resource_query_set *)writes->querySet,
@@ -146,7 +160,7 @@ void wgpuRenderPassEncoderSetStencilReference(WGPURenderPassEncoder handle, uint
     if (!device) return;
     native_lock(device);
     doe_resource_render_state state = *doe_resource_render_pass_state(pass);
-    state.stencil_reference = reference; /* Inert when this baseline has no stencil attachment. */
+    state.stencil_reference = reference;
     doe_resource_status status = doe_resource_render_pass_set_state(pass,&state);
     native_unlock(device);
     if (status != DOE_RESOURCE_OK) native_error(device, native_resource_error(status), "render stencil reference failed");

@@ -38,7 +38,7 @@ static bool blend(const WGPUBlendComponent *source, uint32_t *operation, uint32_
 
 bool native_render_fixed(const WGPURenderPipelineDescriptor *source, doe_vk_render_pipeline_desc *target)
 {
-    if (source->primitive.nextInChain || source->primitive.unclippedDepth || source->depthStencil ||
+    if (source->primitive.nextInChain || source->primitive.unclippedDepth ||
         source->primitive.stripIndexFormat != WGPUIndexFormat_Undefined ||
         source->multisample.nextInChain || source->multisample.count != 1 ||
         source->multisample.mask != UINT32_MAX || source->multisample.alphaToCoverageEnabled) return false;

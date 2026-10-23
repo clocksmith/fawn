@@ -30,3 +30,9 @@ resource-owned pass/bundle snapshots. Preserve the whole pass when lowering to t
 backend, including empty LOAD/CLEAR and ordered occlusion events. Empty vertex
 slots differ from explicit Vertex/Instance slots without attributes. Do not invent
 buffers or drop historical usage; use the resource owner's required-slot rules.
+
+Depth/stencil initialization belongs to the backend's existing per-aspect command
+state. Use real attachment clears before publication and after Discard; never add
+frontend availability bits or a fake color attachment. Public Plus format backing
+and optional feature identity are distinct. Preserve canonical absent-aspect,
+read-only and view-default admission when converting pinned ABI sentinels.
