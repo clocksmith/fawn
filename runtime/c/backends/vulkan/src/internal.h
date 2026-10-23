@@ -50,6 +50,8 @@ typedef struct doe_vk_buffer_use {
 typedef struct doe_vk_dispatch_use {
     doe_vk_pipeline *pipeline;
     VkDescriptorPool pool;
+    struct doe_vk_texture_view *views[DOE_VK_MAX_BINDINGS];
+    struct doe_vk_sampler *samplers[DOE_VK_MAX_BINDINGS];
     struct doe_vk_dispatch_use *next;
 } doe_vk_dispatch_use;
 typedef enum doe_vk_command_state {
@@ -85,6 +87,8 @@ void doe_vk_barrier(doe_vk_commands *commands);
 doe_vk_status doe_vk_recording(doe_vk_commands *commands);
 void doe_vk_textures_complete(doe_vk_commands *commands, doe_vk_status status);
 void doe_vk_textures_release(doe_vk_commands *commands);
+uint32_t doe_vk_descriptor_type(doe_vk_binding_kind kind);
+void doe_vk_dispatch_release(doe_vk_context *context, doe_vk_dispatch_use *use);
 doe_vk_status doe_vk_bind_dispatch(doe_vk_commands *commands,
     doe_vk_pipeline *pipeline, const doe_vk_buffer_binding *bindings,
     size_t binding_count);

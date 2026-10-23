@@ -269,9 +269,7 @@ doe_vk_status doe_vk_commands_release(doe_vk_commands *commands) {
     while (commands->dispatches != NULL) {
         doe_vk_dispatch_use *use = commands->dispatches;
         commands->dispatches = use->next;
-        if (use->pool != 0) context->vk.vkDestroyDescriptorPool(context->device, use->pool, NULL);
-        doe_vk_pipeline_release(use->pipeline);
-        free(use);
+        doe_vk_dispatch_release(context, use);
     }
     doe_vk_textures_release(commands);
     while (commands->buffers != NULL) {

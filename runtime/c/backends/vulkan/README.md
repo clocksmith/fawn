@@ -2,7 +2,7 @@
 
 This private C11 owner implements real Linux LP64 Vulkan 1.2 discovery, device and
 queue selection, capabilities, host-coherent and device-local buffers, sparse
-multi-group uniform/storage descriptors, SPIR-V compute pipelines, copy/fill and
+multi-group buffer/image/sampler descriptors, SPIR-V compute pipelines, copy/fill and
 direct dispatch recording, asynchronous fence submission, readback and retirement.
 The texture owner adds uncompressed color images, retained views/samplers and
 mip/layer-aware padded transfers across 1D/2D/3D images.
@@ -17,7 +17,8 @@ it never recognizes shader source patterns or executes a CPU shader interpreter.
 
 Read `include/doe_vk.h`. A context and all its objects require caller serialization.
 Resources retain their creating context. Recording retains exact buffers and
-pipelines; descriptor pools belong to each dispatch until command retirement.
+pipelines, image views and samplers; descriptor pools belong to each dispatch until
+command retirement.
 Host accesses are blocked while commands may use a buffer. Successful fence
 completion unlocks host access. Pending/uncertain command release returns `BUSY`
 and does not consume the handle. A timed-out waiter must retain and settle it.
@@ -36,7 +37,7 @@ baseline shader features are enabled; unsupported feature use must be rejected b
 the compiler/native admission path before creating a pipeline. This is not a
 complete public validation boundary for untrusted SPIR-V.
 
-GPU-produced indirect counts, image shader descriptors, rendering, surfaces, timestamp queries,
+GPU-produced indirect counts, rendering, surfaces, timestamp queries,
 prepared-program caches and tuned hazard elision are not yet migrated here.
 Indirect recording rejects explicitly rather than dispatching unchecked counts.
 The retained production owners remain authoritative for those behaviors.
@@ -58,6 +59,24 @@ existing software ICD checks real image/view/sampler creation, two mip levels an
 two array layers, padding/last-byte layout, image copy/readback, initialization
 rejection, competing ownership rejection and early caller release. It is not a
 physical run or a complete texture-feature qualification.
+
+## Typed shader resources
+
+`include/doe_vk_bindings.h` records mixed uniform/storage buffers, sampled images,
+storage images and samplers against the pipeline's immutable sparse layout. The
+existing buffer-only dispatch API delegates to the same descriptor owner. Tags,
+native usage, ranges, initialization and context identity are checked. Compiler
+and native admission must still check shader sample type, view dimension, format,
+access and filtering compatibility; this primitive does not infer WGSL meaning.
+Image views and samplers stay retained through command retirement. Image layout
+transitions and transfer/shader visibility are real native barriers.
+
+`make native-descriptors SPIRV=<retained import_level fixture>` uses the fixture
+bound in `SMOKE_IMAGE_FIXTURES.json`. It exercises a real sampled-image shader,
+not the still-separate C texture compiler: 64 exact fetched alpha values, sparse
+mixed descriptors, full upload and early caller release. An unused sampler binding
+checks native descriptor lifetime, not sampling semantics. Storage-image descriptor
+recording is implemented but a storage-image shader is not yet exercised here.
 
 ## ABI provenance and checks
 
