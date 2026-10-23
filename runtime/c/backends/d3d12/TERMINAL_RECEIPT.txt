@@ -1,0 +1,102 @@
+D3D12 C compute/resource owner checkpoint
+UTC: 2026-10-23T20:21:59Z
+Scope: authored Windows SDK C source; compiled/exercised portable owner only.
+Production Zig retained; no provider change, hardware run, SDK installation, commit or push.
+
+50a5e622820693812a854dafc91dded401589793f67e24fda7fef4bd844129c3  runtime/c/backends/d3d12/SOURCE_INPUTS.sha256
+cc (Debian 14.2.0-19) 14.2.0
+g++ (Debian 14.2.0-19) 14.2.0
+
+$ make -C runtime/c/backends/d3d12 BUILD=/tmp/doe-c-d3d12/final check
+make: Entering directory '/workspace/shared/doe-c-migration-20261023/runtime/c/backends/d3d12'
+mkdir -p /tmp/doe-c-d3d12/final/host
+cc -Iinclude -O2 -g -std=c11 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wshadow -Dcalloc=doe_dx_test_calloc -Dfree=doe_dx_test_free -c src/context.c -o /tmp/doe-c-d3d12/final/host/context.o
+cc -Iinclude -O2 -g -std=c11 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wshadow -Dcalloc=doe_dx_test_calloc -Dfree=doe_dx_test_free -c src/resources.c -o /tmp/doe-c-d3d12/final/host/resources.o
+cc -Iinclude -O2 -g -std=c11 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wshadow -Dcalloc=doe_dx_test_calloc -Dfree=doe_dx_test_free -c src/commands.c -o /tmp/doe-c-d3d12/final/host/commands.o
+cc -Iinclude -O2 -g -std=c11 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wshadow -Dcalloc=doe_dx_test_calloc -Dfree=doe_dx_test_free -c src/compute.c -o /tmp/doe-c-d3d12/final/host/compute.o
+cc -Iinclude -O2 -g -std=c11 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wshadow tests/test_owner.c tests/mock_native.c /tmp/doe-c-d3d12/final/host/context.o /tmp/doe-c-d3d12/final/host/resources.o /tmp/doe-c-d3d12/final/host/commands.o /tmp/doe-c-d3d12/final/host/compute.o -o /tmp/doe-c-d3d12/final/test_owner
+/tmp/doe-c-d3d12/final/test_owner
+D3D12 C host owner: 13 groups passed (no SDK or GPU execution)
+make: Leaving directory '/workspace/shared/doe-c-migration-20261023/runtime/c/backends/d3d12'
+
+$ ASAN_OPTIONS=detect_leaks=0 make -C runtime/c/backends/d3d12 BUILD=/tmp/doe-c-d3d12/final sanitize
+make: Entering directory '/workspace/shared/doe-c-migration-20261023/runtime/c/backends/d3d12'
+make BUILD=/tmp/doe-c-d3d12/final/sanitize CFLAGS='-O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer' check
+make[1]: Entering directory '/workspace/shared/doe-c-migration-20261023/runtime/c/backends/d3d12'
+mkdir -p /tmp/doe-c-d3d12/final/sanitize/host
+cc -Iinclude -O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer -std=c11 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wshadow -Dcalloc=doe_dx_test_calloc -Dfree=doe_dx_test_free -c src/context.c -o /tmp/doe-c-d3d12/final/sanitize/host/context.o
+cc -Iinclude -O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer -std=c11 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wshadow -Dcalloc=doe_dx_test_calloc -Dfree=doe_dx_test_free -c src/resources.c -o /tmp/doe-c-d3d12/final/sanitize/host/resources.o
+cc -Iinclude -O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer -std=c11 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wshadow -Dcalloc=doe_dx_test_calloc -Dfree=doe_dx_test_free -c src/commands.c -o /tmp/doe-c-d3d12/final/sanitize/host/commands.o
+cc -Iinclude -O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer -std=c11 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wshadow -Dcalloc=doe_dx_test_calloc -Dfree=doe_dx_test_free -c src/compute.c -o /tmp/doe-c-d3d12/final/sanitize/host/compute.o
+cc -Iinclude -O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer -std=c11 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wshadow tests/test_owner.c tests/mock_native.c /tmp/doe-c-d3d12/final/sanitize/host/context.o /tmp/doe-c-d3d12/final/sanitize/host/resources.o /tmp/doe-c-d3d12/final/sanitize/host/commands.o /tmp/doe-c-d3d12/final/sanitize/host/compute.o -o /tmp/doe-c-d3d12/final/sanitize/test_owner
+/tmp/doe-c-d3d12/final/sanitize/test_owner
+D3D12 C host owner: 13 groups passed (no SDK or GPU execution)
+make[1]: Leaving directory '/workspace/shared/doe-c-migration-20261023/runtime/c/backends/d3d12'
+make: Leaving directory '/workspace/shared/doe-c-migration-20261023/runtime/c/backends/d3d12'
+
+$ make -C runtime/c/backends/d3d12 BUILD=/tmp/doe-c-d3d12/final-analyzer CFLAGS="-O0 -g -fanalyzer" check
+make: Entering directory '/workspace/shared/doe-c-migration-20261023/runtime/c/backends/d3d12'
+mkdir -p /tmp/doe-c-d3d12/final-analyzer/host
+cc -Iinclude -O0 -g -fanalyzer -std=c11 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wshadow -Dcalloc=doe_dx_test_calloc -Dfree=doe_dx_test_free -c src/context.c -o /tmp/doe-c-d3d12/final-analyzer/host/context.o
+cc -Iinclude -O0 -g -fanalyzer -std=c11 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wshadow -Dcalloc=doe_dx_test_calloc -Dfree=doe_dx_test_free -c src/resources.c -o /tmp/doe-c-d3d12/final-analyzer/host/resources.o
+cc -Iinclude -O0 -g -fanalyzer -std=c11 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wshadow -Dcalloc=doe_dx_test_calloc -Dfree=doe_dx_test_free -c src/commands.c -o /tmp/doe-c-d3d12/final-analyzer/host/commands.o
+cc -Iinclude -O0 -g -fanalyzer -std=c11 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wshadow -Dcalloc=doe_dx_test_calloc -Dfree=doe_dx_test_free -c src/compute.c -o /tmp/doe-c-d3d12/final-analyzer/host/compute.o
+cc -Iinclude -O0 -g -fanalyzer -std=c11 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wshadow tests/test_owner.c tests/mock_native.c /tmp/doe-c-d3d12/final-analyzer/host/context.o /tmp/doe-c-d3d12/final-analyzer/host/resources.o /tmp/doe-c-d3d12/final-analyzer/host/commands.o /tmp/doe-c-d3d12/final-analyzer/host/compute.o -o /tmp/doe-c-d3d12/final-analyzer/test_owner
+/tmp/doe-c-d3d12/final-analyzer/test_owner
+D3D12 C host owner: 13 groups passed (no SDK or GPU execution)
+make: Leaving directory '/workspace/shared/doe-c-migration-20261023/runtime/c/backends/d3d12'
+
+$ cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wshadow -Iruntime/c/backends/d3d12/include -c runtime/c/backends/d3d12/tests/native_compute.c -o /tmp/doe-c-d3d12/native_fixture_host_syntax.o
+PASS: portable fixture syntax only, not Windows native compilation.
+
+$ public-header C++17 strict syntax check
+PASS
+
+$ python3 runtime/c/tools/check_source_size.py
+C size check: 568 files, 0 failures; limit 999
+
+$ python3 bench/gates/catscan_gate.py --index /tmp/doe-c-d3d12/component-index.md --json
+{
+  "failures": [],
+  "ok": true,
+  "summary": {
+    "charterCount": 36,
+    "indexPath": "/tmp/doe-c-d3d12/component-index.md",
+    "maxWords": 250
+  }
+}
+
+Source hygiene and owned physical-line accounting:
+15 C/header files; 2001 physical lines; maximum=413; every file <=999
+PASS: no trailing whitespace in owned text files
+
+$ sha256sum --check runtime/c/backends/d3d12/SOURCE_INPUTS.sha256
+runtime/c/backends/d3d12/AGENTS.md: OK
+runtime/c/backends/d3d12/CATSCAN.md: OK
+runtime/c/backends/d3d12/Makefile: OK
+runtime/c/backends/d3d12/README.md: OK
+runtime/c/backends/d3d12/build_windows.cmd: OK
+runtime/c/backends/d3d12/include/doe_d3d12.h: OK
+runtime/c/backends/d3d12/src/commands.c: OK
+runtime/c/backends/d3d12/src/compute.c: OK
+runtime/c/backends/d3d12/src/context.c: OK
+runtime/c/backends/d3d12/src/internal.h: OK
+runtime/c/backends/d3d12/src/native.h: OK
+runtime/c/backends/d3d12/src/resources.c: OK
+runtime/c/backends/d3d12/src/windows_commands.c: OK
+runtime/c/backends/d3d12/src/windows_context.c: OK
+runtime/c/backends/d3d12/src/windows_internal.h: OK
+runtime/c/backends/d3d12/src/windows_resources.c: OK
+runtime/c/backends/d3d12/tests/mock_native.c: OK
+runtime/c/backends/d3d12/tests/mock_native.h: OK
+runtime/c/backends/d3d12/tests/native_compute.c: OK
+runtime/c/backends/d3d12/tests/native_compute.hlsl: OK
+runtime/c/backends/d3d12/tests/test_owner.c: OK
+
+First failures and exact limits retained:
+Initial make sanitize exited 2: LeakSanitizer has encountered a fatal error; LeakSanitizer does not work under ptrace.
+Subsequent ASan/UBSan runs disable leak detection explicitly; no LSAN pass is claimed. Owner/mock allocation counters settle to zero in all groups.
+Initial catscan --index /tmp/doe-c-d3d12/component-index.md --write-index --json wrote its alternate index but raised ValueError while formatting its outside-root path.
+The no-write check against that generated alternate index passes. Canonical docs/component-index.md is stale and remains the shared lead owner integration edit.
+UNRUN: Windows SDK native compilation/link, build_windows.cmd, DXC, debug layer, device readback, physical GPU, performance and complete retained-consumer parity.
+Unavailable prerequisites verified: no cl, dxc, clang, x86_64-w64-mingw32-gcc in PATH; no /usr/include/d3d12.h or /usr/x86_64-w64-mingw32/include/d3d12.h.
