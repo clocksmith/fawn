@@ -30,6 +30,7 @@ typedef enum doe_vk_texture_format {
     DOE_VK_FORMAT_RGBA32_UINT = 107,
     DOE_VK_FORMAT_RGBA32_SINT = 108,
     DOE_VK_FORMAT_RGBA32_FLOAT = 109,
+    DOE_VK_FORMAT_D16_UNORM = 124,
     DOE_VK_FORMAT_D32_FLOAT = 126,
     DOE_VK_FORMAT_S8_UINT = 127,
     DOE_VK_FORMAT_D24_UNORM_S8_UINT = 129,
@@ -49,6 +50,7 @@ typedef struct doe_vk_format_caps {
     bool copy_dst;
     bool depth_stencil_attachment;
     uint32_t attachment_sample_counts; /* Exact 2D attachment-only native sample mask. */
+    uint32_t aspects; /* Native aspect bits of the format: color1, depth2, stencil4. */
 } doe_vk_format_caps;
 doe_vk_status doe_vk_texture_format_caps(doe_vk_context *context,
     doe_vk_texture_format format, doe_vk_format_caps *out);
@@ -76,9 +78,10 @@ typedef struct doe_vk_texture_desc {
     bool cube_compatible;
     uint32_t sample_count; /* Zero preserves the original sample1 default. */
 } doe_vk_texture_desc;
-/* Depth/stencil currently admits only 2D attachment usage (no copy, sampling or
- * storage). Multisample images additionally require one mip/layer, no cube flag,
- * and attachment-only usage. Format facts do not override this owner admission.
+/* Depth/stencil admits 2D images with attachment and/or copy usage only; sampling
+ * and storage are unsupported. Multisample images additionally require one
+ * mip/layer, no cube flag, and attachment-only usage. Format facts do not
+ * override this owner admission.
  * Images start uninitialized/UNDEFINED. Native WebGPU initialization ownership
  * remains upstream. A texture may be used by only one unresolved command owner;
  * its final layout is published on established successful completion only. */
@@ -129,10 +132,20 @@ doe_vk_status doe_vk_sampler_create(doe_vk_context *context,
 doe_vk_status doe_vk_sampler_retain(doe_vk_sampler *sampler);
 void doe_vk_sampler_release(doe_vk_sampler *sampler);
 
+/* Native aspect bits. ALL selects every aspect of the format: required for color
+ * and for texture-to-texture copies. Buffer copies of a combined depth/stencil
+ * format must select exactly one aspect. Byte layouts per aspect: D16 depth 2,
+ * D32/D32S8 depth 4, stencil 1. D24S8 depth buffer copies are unsupported. */
+typedef enum doe_vk_texture_aspect {
+    DOE_VK_ASPECT_ALL = 0,
+    DOE_VK_ASPECT_DEPTH = 2,
+    DOE_VK_ASPECT_STENCIL = 4
+} doe_vk_texture_aspect;
 typedef struct doe_vk_texture_region {
     uint32_t mip;
     uint32_t origin[3];
     uint32_t extent[3]; /* Third component means depth for 3D, array layers otherwise. */
+    doe_vk_texture_aspect aspect;
 } doe_vk_texture_region;
 typedef struct doe_vk_texture_buffer_layout {
     uint64_t offset;

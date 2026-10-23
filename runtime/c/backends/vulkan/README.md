@@ -315,8 +315,20 @@ per-aspect masks, so discarding depth does not discard stencil and an abandoned
 clear does not publish either. A read-only aspect cannot clear/discard or use a
 pipeline that may write it. LOAD requires prior initialization, including empty
 passes. Views and native framebuffers stay retained through unresolved work.
-Depth formats currently admit only 2D attachment usage: depth copying, sampling
-and storage are explicitly unsupported rather than using color-aspect transfers.
+Depth/stencil images admit 2D attachment and/or copy usage; sampling and storage
+remain explicitly unsupported. Transfers carry an explicit aspect on
+`doe_vk_texture_region`: ALL for color and for all-aspect texture-to-texture
+copies, DEPTH or STENCIL for buffer copies, which need exactly one aspect. Linear
+bytes are per aspect (D16 depth 2, D32 and D32S8 depth 4, stencil 1); packed D24
+depth has no linear layout here and buffer copies of it return UNSUPPORTED. The
+native aspect mask reaches `VkBufferImageCopy`/`VkImageCopy`; layout transitions
+still cover every aspect of the image. Reads require the copied aspects to be
+initialized and full writes initialize only those aspects, using the same
+per-aspect masks as attachments. Public per-format copy direction and full-
+subresource rules belong to the resource owner. D16_UNORM is admitted as a named
+retained format (value 124 from `vk_formats.zig`). `tests/depth_copy_contract.c`
+checks these packets, creation rejection, per-aspect publication and partial-write
+refusal with mocked native calls, not GPU execution.
 
 The extended native render witness uses D32S8 with near/far depth tests, stencil
 replace/equal, dynamic references, an empty read-only LOAD, independent rejected
