@@ -21,7 +21,7 @@ const command_storage = @import("../command/doe_command_storage.zig");
 const build_options = @import("build_options");
 const device_loss = @import("../support/doe_device_loss.zig");
 const resource_leases = @import("../../contracts/resource_lease.zig");
-const callback_delivery = @import("../support/doe_callback_delivery.zig");
+const callback_delivery = @import("../support/doe_callback_owner.zig");
 
 const alloc = native_helpers.alloc;
 const make = native_helpers.make;

@@ -31,3 +31,24 @@ consumer execution, sanitizer runs, archive/build costs and acceptance are all
 pending. No production/default path has been replaced and no physical backend
 qualification has transferred. Original campaign evidence is retained outside
 this source tree; draft verification is not a rewritten historical receipt.
+
+## Acceptance
+
+The drafting paragraph above is historical. The independently accepted candidate2
+implementation and exact tests are now retained with the [report](independent_tests/REPORT.md).
+Candidate1's stateless allocator reconstruction defect and the supplemental
+pre-candidate2 fixture remain disclosed there; the C core did not change.
+
+The accepted 1,294-input manifest is
+[independent_tests/NATIVE_SOURCE_INPUTS_V2.sha256](independent_tests/NATIVE_SOURCE_INPUTS_V2.sha256).
+All entries were rechecked immediately before this acceptance documentation edit.
+[SOURCE_INPUTS_CURRENT.sha256](SOURCE_INPUTS_CURRENT.sha256) changes only the
+README, CATSCAN and this provenance document to record acceptance. Every compiled
+source, build setting, header, layout and test inventory retains its independently
+tested bytes. The historical manifest and fixture seals are not rewritten.
+The current manifest permits reproduction from the accepted checkout; it is not
+a claim that the evaluator executed these later prose edits.
+
+The original callback implementation and inline tests remain byte-identical.
+The selected facade and native typed adapter are transitional Zig obligations;
+acceptance does not remove them from the full migration goal.

@@ -13,7 +13,7 @@ Own native callback payload allocation, publication and retirement with explicit
 
 ## Scope
 
-- Includes this proposed independent C owner and its default-off retained native adapter contract.
+- Includes this independent C owner and its default-off retained native adapter.
 
 ## Contracts
 
@@ -31,8 +31,8 @@ Own native callback payload allocation, publication and retirement with explicit
 
 ## Acceptance
 
-- Independent C/native tests cover the [planned obligations](CONTRACT.md#acceptance-before-implementation-admission), actual retained consumers and reversible build selection before migration claims.
-- Evidence: [migration gates](../../../docs/c-migration/MIGRATION.md).
+- Independent C/native tests cover the [frozen obligations](CONTRACT.md#acceptance-before-implementation-admission), actual retained consumers and reversible build selection before migration claims.
+- Evidence: [independent acceptance and reproduction](RESULTS.md).
 
 ## Non-goals
 

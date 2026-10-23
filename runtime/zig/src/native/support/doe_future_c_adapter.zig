@@ -111,6 +111,11 @@ pub const PendingCompletions = struct {
         return &self.storage;
     }
 
+    /// Borrow the actual initialized queue; the caller supplies its own lease.
+    pub fn borrowedQueue(self: *PendingCompletions) *c.doe_future_queue {
+        return self.queue();
+    }
+
     pub fn newFuture(self: *PendingCompletions) u64 {
         var id: u64 = undefined;
         requireOk("instance identity", c.doe_future_new_id(self.queue(), &id));
