@@ -47,6 +47,30 @@ doe_vk_status doe_vk_texture_transfer_region(const doe_vk_context *context,
     return DOE_VK_OK;
 }
 
+/* Resolves a region aspect to native bits. Buffer copies additionally need one
+ * aspect with a defined linear texel size: the packed D24 depth layout and a
+ * combined two-aspect selection have none. Public per-format copy direction
+ * rules (for example, no depth32float upload) remain with the resource owner. */
+static doe_vk_status region_aspect(const doe_vk_texture *texture, doe_vk_texture_aspect aspect,
+    bool buffer, uint32_t *mask, uint32_t *bytes) {
+    if (aspect != DOE_VK_ASPECT_ALL && aspect != DOE_VK_ASPECT_DEPTH && aspect != DOE_VK_ASPECT_STENCIL)
+        return DOE_VK_INVALID_ARGUMENT;
+    uint32_t aspects = doe_vk_format_aspects(texture->desc.format);
+    uint32_t selected = aspect == DOE_VK_ASPECT_ALL ? aspects : (uint32_t)aspect;
+    if ((selected & ~aspects) != 0) return DOE_VK_INVALID_ARGUMENT;
+    uint32_t size = texture->texel_bytes;
+    if (buffer && selected == VK_IMAGE_ASPECT_STENCIL_BIT) size = 1;
+    else if (buffer && selected == VK_IMAGE_ASPECT_DEPTH_BIT) {
+        if (texture->desc.format == DOE_VK_FORMAT_D16_UNORM) size = 2;
+        else if (texture->desc.format == DOE_VK_FORMAT_D32_FLOAT ||
+            texture->desc.format == DOE_VK_FORMAT_D32_FLOAT_S8_UINT) size = 4;
+        else return DOE_VK_UNSUPPORTED;
+    } else if (buffer && selected != VK_IMAGE_ASPECT_COLOR_BIT) return DOE_VK_INVALID_ARGUMENT;
+    *mask = selected;
+    *bytes = size;
+    return DOE_VK_OK;
+}
+
 doe_vk_status doe_vk_texture_copy_region(const doe_vk_texture *texture,
     doe_vk_texture_region region, uint64_t buffer_size,
     doe_vk_texture_buffer_layout layout, VkBufferImageCopy *out) {
@@ -54,21 +78,24 @@ doe_vk_status doe_vk_texture_copy_region(const doe_vk_texture *texture,
         return DOE_VK_INVALID_ARGUMENT;
     doe_vk_status status = region_valid(texture, region);
     if (status != DOE_VK_OK) return status;
-    uint64_t row_bytes = (uint64_t)region.extent[0] * texture->texel_bytes;
+    uint32_t aspect = 0, texel = 0;
+    status = region_aspect(texture, region.aspect, true, &aspect, &texel);
+    if (status != DOE_VK_OK) return status;
+    uint64_t row_bytes = (uint64_t)region.extent[0] * texel;
     uint64_t pitch = layout.bytes_per_row != 0 ? layout.bytes_per_row : row_bytes;
     uint64_t rows = layout.rows_per_image != 0 ? layout.rows_per_image : region.extent[1];
-    if (pitch < row_bytes || pitch % texture->texel_bytes != 0 || rows < region.extent[1] ||
-        (layout.offset & 3) != 0 || layout.offset % texture->texel_bytes != 0 ||
-        pitch / texture->texel_bytes > UINT32_MAX) return DOE_VK_INVALID_ARGUMENT;
+    if (pitch < row_bytes || pitch % texel != 0 || rows < region.extent[1] ||
+        (layout.offset & 3) != 0 || layout.offset % texel != 0 ||
+        pitch / texel > UINT32_MAX) return DOE_VK_INVALID_ARGUMENT;
     uint64_t bytes;
     if (!doe_copy_footprint(row_bytes, region.extent[1], rows, pitch, region.extent[2], &bytes) ||
         !doe_vk_range(buffer_size, layout.offset, bytes)) return DOE_VK_INVALID_ARGUMENT;
     bool volume = texture->desc.dimension == DOE_VK_TEXTURE_3D;
     VkBufferImageCopy copy = {
         .bufferOffset = layout.offset,
-        .bufferRowLength = layout.bytes_per_row != 0 ? (uint32_t)(pitch / texture->texel_bytes) : 0,
+        .bufferRowLength = layout.bytes_per_row != 0 ? (uint32_t)(pitch / texel) : 0,
         .bufferImageHeight = layout.rows_per_image,
-        .imageSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, region.mip,
+        .imageSubresource = { aspect, region.mip,
             volume ? 0 : region.origin[2], volume ? 1 : region.extent[2] },
         .imageOffset = { (int32_t)region.origin[0], (int32_t)region.origin[1], volume ? (int32_t)region.origin[2] : 0 },
         .imageExtent = { region.extent[0], region.extent[1], volume ? region.extent[2] : 1 }
@@ -136,9 +163,11 @@ void doe_vk_texture_transition(doe_vk_commands *commands, doe_vk_texture_use *us
 }
 
 /* Only full writes initialize previously undefined subresources. This prevents
- * reading allocator contents while retaining partial updates of initialized data. */
+ * reading allocator contents while retaining partial updates of initialized data.
+ * Initialization bytes are the existing per-aspect masks; only the copied
+ * aspects must be initialized for reads, and only they become initialized. */
 static doe_vk_status initialize_region(doe_vk_texture_use *use,
-    doe_vk_texture_region region, bool writing) {
+    doe_vk_texture_region region, uint32_t aspects, bool writing) {
     doe_vk_texture *texture = use->texture;
     bool volume = texture->desc.dimension == DOE_VK_TEXTURE_3D;
     uint32_t layers = volume ? 1 : texture->desc.depth_or_layers;
@@ -151,11 +180,11 @@ static doe_vk_status initialize_region(doe_vk_texture_use *use,
         region.extent[2] == mip_extent(texture->desc.depth_or_layers, region.mip);
     for (uint32_t layer = first; layer < first + count; ++layer) {
         size_t index = (size_t)region.mip * layers + layer;
-        if (!use->initialized[index] && !(writing && full)) return DOE_VK_INVALID_STATE;
+        if ((use->initialized[index] & aspects) != aspects && !(writing && full)) return DOE_VK_INVALID_STATE;
     }
     if (writing && full) {
         for (uint32_t layer = first; layer < first + count; ++layer)
-            use->initialized[(size_t)region.mip * layers + layer] = 1;
+            use->initialized[(size_t)region.mip * layers + layer] |= (uint8_t)aspects;
     }
     return DOE_VK_OK;
 }
@@ -178,7 +207,7 @@ static doe_vk_status buffer_texture_copy(doe_vk_commands *commands,
     doe_vk_texture_use *use = NULL;
     status = doe_vk_use_texture(commands, texture, &use);
     if (status != DOE_VK_OK) return doe_vk_poison(commands, status);
-    status = initialize_region(use, region, upload);
+    status = initialize_region(use, region, copy.imageSubresource.aspectMask, upload);
     if (status == DOE_VK_OK) status = doe_vk_use_buffer(commands, buffer);
     if (status != DOE_VK_OK) return doe_vk_poison(commands, status);
     doe_vk_barrier(commands);
@@ -214,6 +243,12 @@ doe_vk_status doe_vk_commands_copy_texture(doe_vk_commands *commands,
         source->desc.format != destination->desc.format || source->desc.dimension != destination->desc.dimension ||
         memcmp(source_region.extent, destination_region.extent, sizeof(source_region.extent)) != 0)
         return doe_vk_poison(commands, DOE_VK_INVALID_ARGUMENT);
+    uint32_t source_aspects = 0, destination_aspects = 0, unused = 0;
+    status = region_aspect(source, source_region.aspect, false, &source_aspects, &unused);
+    if (status == DOE_VK_OK)
+        status = region_aspect(destination, destination_region.aspect, false, &destination_aspects, &unused);
+    if (status == DOE_VK_OK && source_aspects != destination_aspects) status = DOE_VK_INVALID_ARGUMENT;
+    if (status != DOE_VK_OK) return doe_vk_poison(commands, status);
     status = doe_vk_texture_transfer_region(commands->context, source, source_region);
     if (status == DOE_VK_OK) status = doe_vk_texture_transfer_region(commands->context, destination, destination_region);
     if (status != DOE_VK_OK) return doe_vk_poison(commands, status);
@@ -221,15 +256,15 @@ doe_vk_status doe_vk_commands_copy_texture(doe_vk_commands *commands,
     doe_vk_texture_use *destination_use = NULL;
     status = doe_vk_use_texture(commands, source, &source_use);
     if (status == DOE_VK_OK) status = doe_vk_use_texture(commands, destination, &destination_use);
-    if (status == DOE_VK_OK) status = initialize_region(source_use, source_region, false);
-    if (status == DOE_VK_OK) status = initialize_region(destination_use, destination_region, true);
+    if (status == DOE_VK_OK) status = initialize_region(source_use, source_region, source_aspects, false);
+    if (status == DOE_VK_OK) status = initialize_region(destination_use, destination_region, destination_aspects, true);
     if (status != DOE_VK_OK) return doe_vk_poison(commands, status);
     bool volume = source->desc.dimension == DOE_VK_TEXTURE_3D;
     const VkImageCopy copy = {
-        .srcSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, source_region.mip,
+        .srcSubresource = { source_aspects, source_region.mip,
             volume ? 0 : source_region.origin[2], volume ? 1 : source_region.extent[2] },
         .srcOffset = { (int32_t)source_region.origin[0], (int32_t)source_region.origin[1], volume ? (int32_t)source_region.origin[2] : 0 },
-        .dstSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, destination_region.mip,
+        .dstSubresource = { destination_aspects, destination_region.mip,
             volume ? 0 : destination_region.origin[2], volume ? 1 : destination_region.extent[2] },
         .dstOffset = { (int32_t)destination_region.origin[0], (int32_t)destination_region.origin[1], volume ? (int32_t)destination_region.origin[2] : 0 },
         .extent = { source_region.extent[0], source_region.extent[1], volume ? source_region.extent[2] : 1 }

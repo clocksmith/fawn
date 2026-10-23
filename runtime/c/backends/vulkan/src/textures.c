@@ -4,6 +4,7 @@
 
 uint32_t doe_vk_format_aspects(doe_vk_texture_format format) {
     switch (format) {
+        case DOE_VK_FORMAT_D16_UNORM:
         case DOE_VK_FORMAT_D32_FLOAT: return VK_IMAGE_ASPECT_DEPTH_BIT;
         case DOE_VK_FORMAT_S8_UINT: return VK_IMAGE_ASPECT_STENCIL_BIT;
         case DOE_VK_FORMAT_D24_UNORM_S8_UINT:
@@ -18,6 +19,7 @@ static uint32_t texel_bytes(doe_vk_texture_format format) {
         case DOE_VK_FORMAT_S8_UINT:
         case DOE_VK_FORMAT_R8_UNORM: return 1;
         case DOE_VK_FORMAT_RG8_UNORM:
+        case DOE_VK_FORMAT_D16_UNORM:
         case DOE_VK_FORMAT_R16_FLOAT: return 2;
         case DOE_VK_FORMAT_D32_FLOAT:
         case DOE_VK_FORMAT_D24_UNORM_S8_UINT:
@@ -59,7 +61,8 @@ doe_vk_status doe_vk_texture_format_caps(doe_vk_context *context,
         .filterable = (flags & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT) != 0,
         .copy_src = (flags & VK_FORMAT_FEATURE_TRANSFER_SRC_BIT) != 0,
         .copy_dst = (flags & VK_FORMAT_FEATURE_TRANSFER_DST_BIT) != 0,
-        .depth_stencil_attachment = (flags & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) != 0
+        .depth_stencil_attachment = (flags & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) != 0,
+        .aspects = doe_vk_format_aspects(format)
     };
     if (caps.color_attachment || caps.depth_stencil_attachment) {
         doe_vk_status status = doe_vk_attachment_samples(context, format, &caps.attachment_sample_counts);
@@ -84,8 +87,10 @@ static doe_vk_status validate_texture(doe_vk_context *context,
     *bytes = texel_bytes(desc->format);
     if (*bytes == 0) return DOE_VK_UNSUPPORTED;
     bool depth_stencil = doe_vk_format_aspects(desc->format) != VK_IMAGE_ASPECT_COLOR_BIT;
+    const uint32_t depth_usage = DOE_VK_TEXTURE_DEPTH_STENCIL_ATTACHMENT |
+        DOE_VK_TEXTURE_COPY_SRC | DOE_VK_TEXTURE_COPY_DST;
     if (depth_stencil && (desc->dimension != DOE_VK_TEXTURE_2D ||
-        desc->usage != DOE_VK_TEXTURE_DEPTH_STENCIL_ATTACHMENT || desc->cube_compatible))
+        (desc->usage & ~depth_usage) != 0 || desc->cube_compatible))
         return DOE_VK_UNSUPPORTED;
     if (!depth_stencil && (desc->usage & DOE_VK_TEXTURE_DEPTH_STENCIL_ATTACHMENT))
         return DOE_VK_INVALID_ARGUMENT;
