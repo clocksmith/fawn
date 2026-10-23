@@ -509,6 +509,9 @@ static bool assignment(Parser *p,Syntax *s,Assignment *out,unsigned terminator) 
         if (!primary(p, s, 0u, &out->path)) return false;
         out->kind = TARGET_REFERENCE;
     } else if (!parser_name_span(p,&out->root)) return false;
+    /* '_' is a statement token, never a writable name or access path. */
+    if (!reference && source_span_is(p->source, out->root, "_") &&
+        parser_peek(p)->kind != '=') return parser_reject(p, "'=' after phony assignment token");
     Expression previous={0};bool has_previous=false;
     while (parser_peek(p)->kind=='.' || parser_peek(p)->kind=='[') {
         if (has_previous && !expression_node(p,s,&previous,true,&out->path)) return false;

@@ -1,0 +1,68 @@
+{
+  "status": "Focused developer checks passed; no physical or independent full-compiler qualification.",
+  "checked_at_utc": "2026-10-23T21:02:27.240088+00:00",
+  "base": "c24d97efb3cac9e9ff3444a5246c711e34f1000e",
+  "composition": "Isolated base compiler plus exactly the three changed implementation files and two new tests below. Later portable numeric-environment edits are not included.",
+  "input_sha256": {
+    "runtime/c/compiler/src/parse.c": "80b0dec73e9a3d106f5f9559bfeaaf58d601813b24a7980caf3b25e8f5dabad5",
+    "runtime/c/compiler/src/validate.c": "3edfa1472fbee1d1283a0fab534fa6954e1e7486790ee88612d9c27f422646bb",
+    "runtime/c/compiler/src/uniformity.c": "cb3406d04cabfd81232c1330d92889a330f99b2ae1ba43a7545d60cce694b416",
+    "runtime/c/compiler/tests/test_phony_assignment.py": "57c8fe5c304fb2a673aaf20e71e429bfd0622461975595283fbf9977f3f87916",
+    "runtime/c/compiler/tests/test_phony_api.c": "c61b4d6f55a78e53b3742a5502a585e8499cd0a68ce34527bd8ae86612e3122c"
+  },
+  "semantics": [
+    "WGSL phony assignment evaluates RHS once and ignores its value; compound/update/member forms reject.",
+    "One existing assignment AST and expression/reference resolver; no new IR opcode, pool, storage layout, target emitter or parser dialect.",
+    "Non-escaping address evaluates indices without loading resource contents or materializing a target pointer. Source-static interface, helper and uniformity dependencies remain recorded.",
+    "Abstract constants retain their type when discarded; must-use results may be explicitly ignored. Void, nonconstructible-by-value and invalid source still reject.",
+    "Former phony-assignment rejection intentionally becomes valid WGSL admission; historical tests and receipts remain unchanged."
+  ],
+  "primary_source": "https://www.w3.org/TR/2026/CRD-WGSL-20261021/#phony-assignment-section",
+  "checks": {
+    "source_methods": 9,
+    "retained_regression_methods": 20,
+    "modes": [
+      "GCC14.2 strict optimized",
+      "fully instrumented ASan/UBSan, LSan disabled"
+    ],
+    "spirv": "Actual source output independently validates for Vulkan1.1.",
+    "execution": "Existing emitted-SPIRV developer instruction model checks ordered once-only calls, skipped calls and discarded indexed-address side effects. Not a GPU model qualification.",
+    "public_api": "ABI1 atomic parse/output-capacity failure and ABI10 exact selected entry resource counts, whole-module declaration count, workspace reuse and errno.",
+    "real_witness": "Unchanged bench/kernels/shader_compile_pipeline_stress.wgsl compiles and validates, including4096-iteration source and discarded result. Not executed for timing or GPU qualification.",
+    "code_size": "21 added implementation lines across three existing owners; all changed C/header files below999 physical lines."
+  },
+  "first_failures": [
+    "Baseline rejected all8 initial cases, including unchanged stress shader.",
+    "First candidate rejected discarded storage addresses; fixed through the existing reference resolver, preserving no-load semantics.",
+    "Void diagnostic expectation corrected from statement to no-result, without changing rejection.",
+    "Initial reflection test wrongly expected SPIR-V to omit unreferenced module declarations; corrected to existing declared-resource behavior and added a separate public target-closure assertion.",
+    "First broader regression harness omitted two retained vertex fixtures; imported unchanged pinned Git blobs and reran all20 methods successfully."
+  ],
+  "reproduction": [
+    "Build the base compiler tree with the listed implementation/test blobs using its canonical strict flags; build tests/test_phony_api.c against the same library sources.",
+    "DOE_COMPILER_CLI=<exact built CLI> SPIRV_VAL=<spirv-val> python3 runtime/c/compiler/tests/test_phony_assignment.py",
+    "From compiler/tests: python3 -m unittest test_functions test_stages test_component_math with the same environment.",
+    "Repeat with -O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer and ASAN_OPTIONS=detect_leaks=0."
+  ],
+  "log_sha256": {
+    "baseline.log": "284529a0f58ad0b92fd9782fb058bd76ba73443e79a0c74a6fe7ade8300881c9",
+    "build-normal.log": "968265379d5462fcdac8a6b6d16cd995671f6bd14890e7907feebb8401eaf4fd",
+    "source-normal-first.log": "66ad7c133da58d0dd210ef2997492d56f728bfab9bd03f208d8b240df4499d23",
+    "build-second.log": "acc75069656c1579440cc242cfeec49db8f27b00882c794a530a1c523cefab72",
+    "source-normal-second.log": "5cb869343ed60e6fdca4004d9f55995ff311a017bbc371e17d10cce49b05424c",
+    "source-normal-third.log": "6542cfa23588d4af4daf63616bca8620905d5eaafa2553b28a1b909d41dc65b8",
+    "checks/terminal.log": "860a75f667141aeab4e192480f962c571505693f60144f67fa3562d298dd499e",
+    "checks/normal-regression-final.log": "b90600b3aeaad281a715db33b757e56d7ea16e92a8dfa0c0fb904040aceca97b",
+    "checks/terminal-sanitize.log": "30f53bcaf4919101ffd9600c5edcbbe7627fc8665a03eed6e174b5b6d7bf1622"
+  },
+  "artifact_sha256": {
+    "checks/normal/api": "e9462c53d0039052800c14dd901be068ecf49b73308c9a67dbee59f46cb5c524",
+    "checks/normal/cli": "0b301e352c8e2c87d0856b6e3763b9cb14c6293667bdf8dba0ec862f53f93888",
+    "checks/sanitize/api": "d4ab8b32027e162fa01487a5835221e42d7f7ab5cf81da3b7785863bdb791eb8",
+    "checks/sanitize/cli": "75e0afc9a4bccc27d748f225a576a736587bc9f0cff377b6f1f33beff54dab90"
+  },
+  "limits": [
+    "No Apple SDK, DXC or physical GPU qualification. No full migration or 50percent reduction claim.",
+    "Public address-valued storage pointers remain outside ordinary expression admission; discarded addresses do not escape and do not relax that separate pointer-owner boundary."
+  ]
+}
