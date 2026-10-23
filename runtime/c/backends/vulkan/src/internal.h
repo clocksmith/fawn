@@ -69,6 +69,7 @@ struct doe_vk_commands {
     VkFence fence;
     doe_vk_buffer_use *buffers;
     doe_vk_dispatch_use *dispatches;
+    struct doe_vk_texture_use *textures;
 };
 doe_vk_status doe_vk_result(doe_vk_context *context, VkResult result,
     const char *operation, doe_vk_error *error);
@@ -80,6 +81,9 @@ doe_vk_status doe_vk_memory_type(const VkPhysicalDeviceMemoryProperties *propert
 doe_vk_status doe_vk_poison(doe_vk_commands *commands, doe_vk_status status);
 doe_vk_status doe_vk_use_buffer(doe_vk_commands *commands, doe_vk_buffer *buffer);
 void doe_vk_barrier(doe_vk_commands *commands);
+doe_vk_status doe_vk_recording(doe_vk_commands *commands);
+void doe_vk_textures_complete(doe_vk_commands *commands, doe_vk_status status);
+void doe_vk_textures_release(doe_vk_commands *commands);
 doe_vk_status doe_vk_bind_dispatch(doe_vk_commands *commands,
     doe_vk_pipeline *pipeline, const doe_vk_buffer_binding *bindings,
     size_t binding_count);

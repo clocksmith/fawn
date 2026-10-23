@@ -5,6 +5,7 @@
 #define DOE_VK_ABI_FUNCTIONS_H
 #include "vk_abi_structs.h"
 #include "vk_abi_caps.h"
+#include "vk_abi_images.h"
 
 typedef struct doe_vk_functions {
     VkResult (*vkCreateInstance)(const VkInstanceCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator, VkInstance *pInstance);
@@ -56,5 +57,17 @@ typedef struct doe_vk_functions {
     VkResult (*vkCreateComputePipelines)(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount, const VkComputePipelineCreateInfo *pCreateInfos, const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines);
     void (*vkDestroyPipeline)(VkDevice device, VkPipeline pipeline, const VkAllocationCallbacks *pAllocator);
     void (*vkCmdBindDescriptorSets)(VkCommandBuffer commandBuffer, int32_t pipelineBindPoint, VkPipelineLayout layout, uint32_t firstSet, uint32_t descriptorSetCount, const VkDescriptorSet *pDescriptorSets, uint32_t dynamicOffsetCount, const uint32_t *pDynamicOffsets);
+    void (*vkCmdCopyBufferToImage)(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage, uint32_t dstImageLayout, uint32_t regionCount, const VkBufferImageCopy *pRegions);
+    void (*vkCmdCopyImageToBuffer)(VkCommandBuffer commandBuffer, VkImage srcImage, uint32_t srcImageLayout, VkBuffer dstBuffer, uint32_t regionCount, const VkBufferImageCopy *pRegions);
+    void (*vkCmdCopyImage)(VkCommandBuffer commandBuffer, VkImage srcImage, uint32_t srcImageLayout, VkImage dstImage, uint32_t dstImageLayout, uint32_t regionCount, const VkImageCopy *pRegions);
+    VkResult (*vkCreateImage)(VkDevice device, const VkImageCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator, VkImage *pImage);
+    void (*vkDestroyImage)(VkDevice device, VkImage image, const VkAllocationCallbacks *pAllocator);
+    void (*vkGetImageMemoryRequirements)(VkDevice device, VkImage image, VkMemoryRequirements *pMemoryRequirements);
+    VkResult (*vkBindImageMemory)(VkDevice device, VkImage image, VkDeviceMemory memory, VkDeviceSize memoryOffset);
+    VkResult (*vkCreateImageView)(VkDevice device, const VkImageViewCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator, VkImageView *pView);
+    void (*vkDestroyImageView)(VkDevice device, VkImageView imageView, const VkAllocationCallbacks *pAllocator);
+    void (*vkGetPhysicalDeviceFormatProperties)(VkPhysicalDevice physicalDevice, uint32_t format, VkFormatProperties *pFormatProperties);
+    VkResult (*vkCreateSampler)(VkDevice device, const VkSamplerCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator, VkSampler *pSampler);
+    void (*vkDestroySampler)(VkDevice device, VkSampler sampler, const VkAllocationCallbacks *pAllocator);
 } doe_vk_functions;
 #endif

@@ -8,7 +8,7 @@ doe_vk_status doe_vk_poison(doe_vk_commands *commands, doe_vk_status status) {
     return status;
 }
 
-static doe_vk_status recording(doe_vk_commands *commands) {
+doe_vk_status doe_vk_recording(doe_vk_commands *commands) {
     if (commands == NULL) return DOE_VK_INVALID_ARGUMENT;
     if (commands->state == DOE_VK_POISONED) return commands->failure;
     if (commands->state != DOE_VK_RECORDING) return DOE_VK_INVALID_STATE;
@@ -96,7 +96,7 @@ failed:
 doe_vk_status doe_vk_commands_copy(doe_vk_commands *commands,
     doe_vk_buffer *source, uint64_t source_offset, doe_vk_buffer *destination,
     uint64_t destination_offset, uint64_t size) {
-    doe_vk_status status = recording(commands);
+    doe_vk_status status = doe_vk_recording(commands);
     if (status != DOE_VK_OK) return status;
     if (source == NULL || destination == NULL || source->context != commands->context ||
         destination->context != commands->context || !(source->usage & DOE_VK_BUFFER_COPY_SRC) ||
@@ -118,7 +118,7 @@ doe_vk_status doe_vk_commands_copy(doe_vk_commands *commands,
 
 doe_vk_status doe_vk_commands_fill(doe_vk_commands *commands,
     doe_vk_buffer *destination, uint64_t offset, uint64_t size, uint32_t value) {
-    doe_vk_status status = recording(commands);
+    doe_vk_status status = doe_vk_recording(commands);
     if (status != DOE_VK_OK) return status;
     if (destination == NULL || destination->context != commands->context ||
         !(destination->usage & DOE_VK_BUFFER_COPY_DST) || size == 0 ||
@@ -134,7 +134,7 @@ doe_vk_status doe_vk_commands_fill(doe_vk_commands *commands,
 doe_vk_status doe_vk_commands_dispatch(doe_vk_commands *commands,
     doe_vk_pipeline *pipeline, const doe_vk_buffer_binding *bindings,
     size_t binding_count, uint32_t x, uint32_t y, uint32_t z) {
-    doe_vk_status status = recording(commands);
+    doe_vk_status status = doe_vk_recording(commands);
     if (status != DOE_VK_OK) return status;
     const uint32_t *limit = commands->context->caps.max_workgroup_count;
     if (x > limit[0] || y > limit[1] || z > limit[2])
@@ -148,7 +148,7 @@ doe_vk_status doe_vk_commands_dispatch(doe_vk_commands *commands,
 doe_vk_status doe_vk_commands_dispatch_indirect(doe_vk_commands *commands,
     doe_vk_pipeline *pipeline, const doe_vk_buffer_binding *bindings,
     size_t binding_count, doe_vk_buffer *arguments, uint64_t offset) {
-    doe_vk_status status = recording(commands);
+    doe_vk_status status = doe_vk_recording(commands);
     if (status != DOE_VK_OK) return status;
     if (arguments == NULL || arguments->context != commands->context ||
         !(arguments->usage & DOE_VK_BUFFER_INDIRECT) || (offset & 3) != 0 ||
@@ -165,6 +165,7 @@ doe_vk_status doe_vk_commands_dispatch_indirect(doe_vk_commands *commands,
 static void complete(doe_vk_commands *commands, doe_vk_status status) {
     commands->state = status == DOE_VK_OK ? DOE_VK_COMPLETE : DOE_VK_FAILED;
     commands->failure = status;
+    doe_vk_textures_complete(commands, status);
     if (!commands->uses_active) return;
     for (doe_vk_buffer_use *use = commands->buffers; use != NULL; use = use->next) {
         if (status != DOE_VK_OK && use->buffer->content_status == DOE_VK_OK)
@@ -175,7 +176,7 @@ static void complete(doe_vk_commands *commands, doe_vk_status status) {
 }
 
 doe_vk_status doe_vk_commands_submit(doe_vk_commands *commands, doe_vk_error *error) {
-    doe_vk_status status = recording(commands);
+    doe_vk_status status = doe_vk_recording(commands);
     if (status != DOE_VK_OK) return doe_vk_fail(status, "submit recording state", error);
     doe_vk_context *context = commands->context;
     for (doe_vk_buffer_use *use = commands->buffers; use != NULL; use = use->next) {
@@ -272,6 +273,7 @@ doe_vk_status doe_vk_commands_release(doe_vk_commands *commands) {
         doe_vk_pipeline_release(use->pipeline);
         free(use);
     }
+    doe_vk_textures_release(commands);
     while (commands->buffers != NULL) {
         doe_vk_buffer_use *use = commands->buffers;
         commands->buffers = use->next;
