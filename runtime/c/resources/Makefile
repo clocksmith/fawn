@@ -31,6 +31,8 @@ $(BUILD)/test_query_admission: tests/test_query_admission.c $(BUILD)/libdoe_reso
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(filter-out %.h,$^) -o $@
 $(BUILD)/test_draw_admission: tests/test_draw_admission.c $(BUILD)/libdoe_resources.a $(LABEL_SOURCES) tests/fixture.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(filter-out %.h,$^) -o $@
+$(BUILD)/test_storage_formats: tests/test_storage_formats.c $(BUILD)/libdoe_resources.a $(LABEL_SOURCES) tests/fixture.h
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(filter-out %.h,$^) -o $@
 $(BUILD)/test_color_targets: tests/test_color_targets.c $(BUILD)/libdoe_resources.a $(LABEL_SOURCES) tests/fixture.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(filter-out %.h,$^) -o $@
 $(BUILD)/test_attachment_admission: tests/test_attachment_admission.c $(BUILD)/libdoe_resources.a $(LABEL_SOURCES) tests/fixture.h
@@ -49,7 +51,7 @@ $(BUILD)/test_draw_budget: tests/test_draw_budget.c $(BUILD)/libdoe_resources.a 
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(filter-out %.h,$^) -o $@
 $(BUILD)/test_pipeline_admission: tests/test_pipeline_admission.c $(BUILD)/libdoe_resources.a $(LABEL_SOURCES) tests/fixture.h src/internal.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(filter-out %.h,$^) -o $@
-check: $(BUILD)/test_color_targets $(BUILD)/test_pipeline_admission $(BUILD)/test_draw_budget $(BUILD)/test_viewport_admission $(BUILD)/test_depth_only $(BUILD)/test_debug_groups $(BUILD)/test_view_defaults $(BUILD)/test_resolve_admission $(BUILD)/test_attachment_admission $(BUILD)/test_draw_admission $(BUILD)/test_query_admission $(BUILD)/test_render_usage $(BUILD)/test_usage_scope $(BUILD)/test_resources $(BUILD)/test_extended $(BUILD)/test_bundles $(BUILD)/test_binding_features
+check: $(BUILD)/test_storage_formats $(BUILD)/test_color_targets $(BUILD)/test_pipeline_admission $(BUILD)/test_draw_budget $(BUILD)/test_viewport_admission $(BUILD)/test_depth_only $(BUILD)/test_debug_groups $(BUILD)/test_view_defaults $(BUILD)/test_resolve_admission $(BUILD)/test_attachment_admission $(BUILD)/test_draw_admission $(BUILD)/test_query_admission $(BUILD)/test_render_usage $(BUILD)/test_usage_scope $(BUILD)/test_resources $(BUILD)/test_extended $(BUILD)/test_bundles $(BUILD)/test_binding_features
 	$(BUILD)/test_resources
 	$(BUILD)/test_extended
 	$(BUILD)/test_bundles
@@ -60,6 +62,7 @@ check: $(BUILD)/test_color_targets $(BUILD)/test_pipeline_admission $(BUILD)/tes
 	$(BUILD)/test_draw_admission
 	$(BUILD)/test_attachment_admission
 	$(BUILD)/test_color_targets
+	$(BUILD)/test_storage_formats
 	$(BUILD)/test_resolve_admission
 	$(BUILD)/test_view_defaults
 	$(BUILD)/test_debug_groups

@@ -67,7 +67,7 @@ The retained production owners remain authoritative for those behaviors.
 ## Texture transactions
 
 `include/doe_vk_texture.h` uses named native format values, never WebGPU numeric
-casts. Eighteen uncompressed color formats plus four attachment-only depth/stencil formats
+casts. Twenty-three uncompressed color formats plus four attachment-only depth/stencil formats
 are admitted when native format support exists. Compressed formats, multisampling,
 swizzles remain outside this increment. Format reinterpretation is limited to the
 srgb/unorm pairs RGBA8 and BGRA8: `doe_vk_texture_desc.view_formats` naming the
@@ -143,6 +143,15 @@ viewport/scissor. Blend constants default to pipeline state; explicit per-draw o
 native dynamic state after whole-span finite-value validation. The full descriptor
 adds one depth/stencil attachment, independent per-aspect load/clear/store/discard,
 read-only admission and dynamic stencil reference. Indexed and guarded indirect draws are described below.
+
+### Optional storage features
+
+`shaderStorageImageExtendedFormats` and `fragmentStoresAndAtomics` are enabled
+only when the device offers them and reported as `caps.storage_image_extended_formats`
+and `caps.fragment_stores_and_atomics`; consumers admit the SPIR-V
+StorageImageExtendedFormats capability and fragment storage writes only then.
+Vertex-pipeline stores stay disabled. Storage image support per format still comes
+from the actual optimal-tiling STORAGE_IMAGE feature at image creation.
 
 ### Indexed color slots and anisotropic samplers
 

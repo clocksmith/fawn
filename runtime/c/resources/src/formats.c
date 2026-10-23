@@ -305,3 +305,36 @@ doe_resource_status doe_resource_format_color_components(WGPUTextureFormat forma
     *out = components;
     return DOE_RESOURCE_OK;
 }
+
+/* WebGPU core storage-texture formats (texture format capabilities table):
+ * read-only and write-only for all, read-write only for the r32 formats.
+ * bgra8unorm needs bgra8unorm-storage and tier formats need texture-formats-
+ * tier1/2; neither feature is offered, so those remain non-storage formats.
+ * https://gpuweb.github.io/gpuweb/#plain-color-formats */
+bool resource_storage_format(WGPUTextureFormat format, bool *read_write)
+{
+    switch (format) {
+    case WGPUTextureFormat_R32Float:
+    case WGPUTextureFormat_R32Uint:
+    case WGPUTextureFormat_R32Sint:
+        *read_write = true;
+        return true;
+    case WGPUTextureFormat_RGBA8Unorm:
+    case WGPUTextureFormat_RGBA8Snorm:
+    case WGPUTextureFormat_RGBA8Uint:
+    case WGPUTextureFormat_RGBA8Sint:
+    case WGPUTextureFormat_RGBA16Uint:
+    case WGPUTextureFormat_RGBA16Sint:
+    case WGPUTextureFormat_RGBA16Float:
+    case WGPUTextureFormat_RG32Uint:
+    case WGPUTextureFormat_RG32Sint:
+    case WGPUTextureFormat_RG32Float:
+    case WGPUTextureFormat_RGBA32Uint:
+    case WGPUTextureFormat_RGBA32Sint:
+    case WGPUTextureFormat_RGBA32Float:
+        *read_write = false;
+        return true;
+    default:
+        return false;
+    }
+}
