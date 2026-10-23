@@ -123,8 +123,8 @@ The independent compiler and runtime retain these outcomes:
    Measure compilation cost separately from execution and attribute compiler
    and runtime improvements separately.
 4. **Prove away repeated checks.** Enforce preconditions and remove repeated
-   validation only when they remain established. Use Zig for structural checks
-   and Lean for selected obligations; retain validation when changed inputs or
+   validation only when they remain established. Use structural checks
+   and selected proof obligations; retain validation when changed inputs or
    resources invalidate assumptions.
 5. **Improvement that compounds.** Turn minimized reproductions into general
    corrections, independent verification, and transferable regressions. Agents
@@ -150,7 +150,8 @@ The independent compiler and runtime retain these outcomes:
    rule source; test reduction must preserve semantic, ownership, callback,
    recovery, and physical-execution defect detection.
    The maintainability acceptance above is mandatory for the Chromium foundation.
-   Zig enables engineering discipline; choosing it is not itself a product advantage.
+   The selected C migration must earn engineering and product gains; language
+   choice alone establishes neither.
 
 ## Strategic constraints
 
@@ -194,26 +195,21 @@ The independent compiler and runtime retain these outcomes:
   no private provider preference.
 - Adoption: supporting-feature value, receipts, internal benchmarks, and sibling
   integrations do not establish independent adoption or retained use.
-- Selected experimental migration (2026-10-23): the owner has authorized an
-  incremental full Doe-to-C campaign on an isolated local branch. Develop the
-  independently usable compiler first, then native/backend owners under the
-  [migration gates](docs/c-migration/MIGRATION.md). This selection supersedes the
-  earlier comparison-only limit for that isolated campaign, not production
-  provider selection or qualification. Preserve production Zig, historical
-  evidence, source licenses and every semantic/lifetime/adopter gate. A partial
-  C compiler or cloud-only pass does not complete the migration.
-- New experiments: bound [implementation-language comparisons](docs/architecture.md#language-evaluation-by-layer--proposed-investigation)
-  to one compiler pass through parsing, IR, and emission, and one asynchronous
-  native device/resource lifecycle. Compare retained Zig with disciplined C++
-  and Rust; C remains eligible. The [language assessment](docs/implementation-language-assessment.md)
-  keeps high-level compiler/preparation references eligible within the same case,
-  without selecting them for the native execution core. Preserve semantic,
-  ownership, failure, and completion requirements; measure gains against migration
-  risk before any rewrite. Keep
-  [Python browser scripting](docs/python-browser-scripting-incubation.md) as
-  documentation-only incubation. These proposals do not authorize a rewrite or
-  displace current proofs; wider rendering remains gated on the existing WebGPU
-  acceptance requirements.
+- Selected implementation direction: complete the incremental Doe-to-C migration
+  under the [recorded decision](README.md#selected-direction-a-better-doe-in-c)
+  and [owner gates](docs/c-migration/MIGRATION.md). C is selected, not awaiting a
+  further language contest. Production defaults remain retained Zig until the
+  relevant behavior, lifetime, consumer and backend gates pass. Preserve historical
+  findings, source licenses and tests; publication is not production promotion.
+  The [50% source-reduction target](docs/c-migration/QUALITY_TARGET.md) includes
+  the complete delivery burden and never excuses feature or quality loss.
+- Separate dependency removal, engineering improvement and product improvement.
+  Measure unfamiliar maintenance cost and actual integration/application gains;
+  neither a partial compiler, a cloud-only pass nor fewer lines completes the goal.
+  The [prior language assessment](docs/implementation-language-assessment.md)
+  remains historical evidence, not current work selection. Python browser scripting
+  remains [documentation-only incubation](docs/python-browser-scripting-incubation.md);
+  wider rendering still requires the existing WebGPU acceptance gates.
 - Deployment: no mandatory browser or cloud service. Platform drivers and
   frameworks remain dependencies; there is no universal zero-dependency or
   zero-allocation promise. Provider substitution must permit safe reversion.

@@ -41,6 +41,50 @@ resource retirement. The application and platform driver/GPU are external.
 
 [Architecture and source owners](docs/architecture.md) · [Prepared-program lifetimes](docs/architecture.md#optional-prepared-program-resource-lifetime)
 
+## Selected direction: a better Doe in C
+
+**Use agent assistance to make explicit implementations affordable, architecture
+to make them understandable, and executable enforcement to make them dependable.
+C is the selected means; a better Doe is the result that must still be earned.**
+
+C is the chosen migration direction, not an ongoing language contest or a claim
+that C is universally safer or faster. The production default remains the retained
+Zig implementation. The [experimental C migration](docs/c-migration/MIGRATION.md)
+is incremental: accepted compiler and native owners have bounded evidence;
+complete feature parity, backend qualification and production cutover remain open.
+Publishing an increment does not promote it to the production default.
+
+The architecture should make reusable semantics explicit: one owner per rule,
+small typed operations with consistent representations, and clear composition of
+ownership, effects, ordering and failures. Reuse follows shared meaning, not
+similar spelling or a universal framework. Invariants must be enforced or their
+violations detected by checked boundaries, structural checks and independent
+behavioral, failure and lifetime tests. Agent-generated code receives the same
+review and qualification as any other code; executable checks are not a claim of
+formal correctness. The [common C guide](runtime/c/STYLE.md) governs new work.
+
+Keep three objectives separate:
+- **Dependency removal:** complete declared builds and consumers without Zig
+  implementation, generation, linking or runtime fallback.
+- **Engineering improvement:** readable ownership, dependable diagnostics and
+  composition, easier native integration, and lower verified maintenance cost.
+  Measure unfamiliar maintenance changes rather than assuming agent productivity.
+- **Product improvement:** preserve all supported features and earn useful
+  application, reliability and adoption gains. Removing a dependency alone does
+  not establish these gains.
+
+Each owner earns promotion through its [migration gates](docs/c-migration/MIGRATION.md):
+independent behavior and failure evidence, actual consumer integration, qualified
+backend/lifetime obligations, and measured maintenance and product benefits.
+Retain earlier findings and failed candidates; missing evidence stays unqualified.
+
+The final target is **at least 50% less implementation source with full feature
+coverage and improved clarity**, not fewer tests or hidden complexity. The
+[fair accounting contract](docs/c-migration/QUALITY_TARGET.md) charges headers,
+generated code and its inputs, build/adapter glue and necessary dependency burden,
+with test and transitional totals reported separately. Correctness, readability
+and qualification cannot be traded for lines. This target is not yet achieved.
+
 ## Evidence
 
 A current Doe advantage over Dawn, including complete Doppler generation on
