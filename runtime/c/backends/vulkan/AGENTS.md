@@ -3,8 +3,20 @@
 Follow the common C instructions and style. Keep each declaration's retained or explicitly verified official ABI
 source in ABI_PROVENANCE.json and run tools/check_abi.py after ABI changes. A
 native error after submission is not proof that commands stopped using resources.
+The command owner's existing failure record includes the original operation and
+native result, even when the caller declines error output. Proven recovery may
+retire uncertain work; it must not rewrite that first failure as queue-idle
+success or a generic terminal status. Repeated terminal observations return the
+same error snapshot.
 Keep physical qualification separate from explicit software ICD tests. Never
 modify installed ICD configuration for tests; use process-local selection.
+
+Adapter enumeration order is not identity. Preserve the core device/driver UUID
+pair when a native adapter creates a device; reject absent or ambiguous matches
+without ordinal substitution. Explicit CPU selection is distinct from permitting
+CPU at an exact ordinal. Query the official ID-properties chain, never names,
+vendor/device numbers, pipeline-cache UUIDs or instance-local handles. Keep UUIDs
+as owned values and independent contexts under their existing serialization rule.
 
 Keep buffer-only and mixed image/sampler dispatches on the same descriptor owner.
 Shader type/format/capability admission stays with the compiler/native consumer.

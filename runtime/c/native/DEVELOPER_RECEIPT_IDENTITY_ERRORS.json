@@ -1,0 +1,86 @@
+{
+  "status": "Developer correctness controls pass; no migration/default/physical qualification.",
+  "timestamp_utc": "2026-10-23T22:10:34.461718+00:00",
+  "component": "Vulkan adapter identity and native first-failure transport",
+  "intent": "Preserved backend/resource/callback authority; extended backend-private identity values and owned error transport.",
+  "source_binding": {
+    "base": "400ff265e2b3f16e8d878b73a051f49eb314fd60",
+    "final_overlays_sha256": {
+      "runtime/c/DEVELOPER_RECEIPT_NODE_METAL.json": "2459432910b3cace6c41744fe1ac9e2a780a6b2d0e24c029d3d2f779970efb44",
+      "runtime/c/README.md": "14b81bfb1344bf5f88ed0a46870a48617c033d1b0156bbe0a066745472b74a2f",
+      "runtime/c/backends/vulkan/ABI_PROVENANCE.json": "908a47072e6c9f12021a5280cf6b0f3231f5b99215be4267935c67770f9aa2bd",
+      "runtime/c/backends/vulkan/AGENTS.md": "d2a66b4f51e7c90acb0aafaf42a153147699d816b5593533966fd3d5119cf27e",
+      "runtime/c/backends/vulkan/Makefile": "c8eec97ff58e54418a0fbde6bc2cf7cf49f7f5d207fe7f9ea2511536bd53c17a",
+      "runtime/c/backends/vulkan/README.md": "92c3d51315bb4c702dde5d7345964fd050856210be8294f9085a19a1571047ae",
+      "runtime/c/backends/vulkan/include/doe_vk.h": "f62f43af59bbf27cc58a96284f98bdf3cbb0651e9d057ac7b489738c6d57f1b9",
+      "runtime/c/backends/vulkan/src/commands.c": "ca1638c64527558035a14b56c08be2dc961a7e6fc2b885e6061bd3147f1ace58",
+      "runtime/c/backends/vulkan/src/device_selection.c": "3d8e4eaed557042bc3e48d90e200aecea1597795205a532053e22fb689a4f96d",
+      "runtime/c/backends/vulkan/src/internal.h": "696e0a57db2ad06e6863e6caff78ca14c51dbb30de4ea0848402dacbaf64dfb7",
+      "runtime/c/backends/vulkan/src/loader.c": "29ba0d47493c3b948e49e5c3b43eab058b36be02fb03f3c253a801af14a65cd0",
+      "runtime/c/backends/vulkan/src/vk_abi_caps.h": "ffdf9bfa15043dcc4e4613304d6692ccc6732cc9d725d2cf942d4eae03f9bce4",
+      "runtime/c/backends/vulkan/src/vk_abi_constants.h": "8470ddece77ae121aeef05f1232b021cd702186a20f58205c634f366e1ecba70",
+      "runtime/c/backends/vulkan/tests/adapter_identity.c": "958f76e91bc027e6c6447d5cda0f70d17824d72817bfd306dfe6fb7ed8df4fe3",
+      "runtime/c/backends/vulkan/tests/adapter_identity_fixture.h": "721d9222776d304acd69945e2fe08173f8fc6556104c75e506df3cb862712d03",
+      "runtime/c/backends/vulkan/tests/ownership.c": "031923a793a8a7c7153f5ee7a5c9c5a5e307d9d197f8e65442349314a64c40c5",
+      "runtime/c/backends/vulkan/tools/check_abi.py": "49e15c4f0aa356a06a9e34251cf17782833ce9cc0cb13fe092bc0fea5ba157ae",
+      "runtime/c/native/AGENTS.md": "24ac5ad0e9bbcc975971638359f0673cc465667b53f53690cc6abb7f916b2965",
+      "runtime/c/native/Makefile": "03a58828301a6c763d188fa365c7b2d5828a9ae0ce982d83cdb7ba499caafb8f",
+      "runtime/c/native/README.md": "a530da45d27d1b42d6216e661c44a309110b3c4c337e06059123d6dff73219b7",
+      "runtime/c/native/src/backend.c": "933b41a1b86429b2924106458e91e5430ad8d36271780ee5c7f639bbc822211d",
+      "runtime/c/native/src/backend.h": "8413b97b8024656dd9d0eedaab055c064c689d8d9fb945052603196328c18c59",
+      "runtime/c/native/src/backend_commands.c": "37a802fe3eb6ad1c74f72177d00db63ce84a484f0f0c2d0d30e8cb223bf2f6cf",
+      "runtime/c/native/src/backend_failure.c": "19f1d7c5e92ade98ba891008736bc5b3ead9e515d82e9fc53ed952039284ab40",
+      "runtime/c/native/src/buffers.c": "697e5869290697316ac37a1e6a0409c7efc7b7667f9a1da36baf6a4282f6ea9f",
+      "runtime/c/native/src/internal.h": "2ea0db2e83281ccc01461f54c21c55512fecc16fe941e9e369cb1a06168c24c7",
+      "runtime/c/native/src/lifecycle.c": "1cf8621caf9ca57d42ded27872a8ec1f3b2ac44478b9da53bb98367f409773d1",
+      "runtime/c/native/src/metal_compute.c": "200f80832215e110363a937419f6a4ae906ffb0025a770145a56813615b940ed",
+      "runtime/c/native/src/pipeline_callbacks.c": "548ff9f9c2adead39501bb1127fe182ed4025349c67dcaecb3226e951312b0bc",
+      "runtime/c/native/src/pipelines.c": "7fde8900ae80b87bd8d607140e70052d6bc2376dbb38a43e777a198b03b035c9",
+      "runtime/c/native/src/queue.c": "89e66e6ddc71ce41fb0af85a4bdb44d818f170ecf09ce298dac12d81cc7b402c",
+      "runtime/c/native/src/render_callbacks.c": "c73f4f5680efacc716d0b13332626e44e9998536ac4dcfee7a56919c6d995e06",
+      "runtime/c/native/src/texture_init.c": "2a2d84c2f4ee4b385ba469fe720b61a598463e95a9772523c26a636240c11abc",
+      "runtime/c/native/src/textures.c": "d2501db7ab13e0a438e6580ac145443f464cf488d5bcaa6ca8db6e6965eb7051",
+      "runtime/c/native/tests/backend_failure.c": "340a3f72bc81f4c7cd163c667bb236c8ecca72e1fd37edb1860d28c2fc1648d6",
+      "runtime/c/native/tests/metal_bridge.c": "1d9bf1ef4afaa37e5201b31819fc52050f704d503611a93bd80fcdee20b08349",
+      "runtime/c/native/tests/pending_progress.c": "fd9a71c6543619d6d2aac97e39fc5c01c0266699f9ac95dd8659f26079bb8ad1",
+      "runtime/c/native/tests/vulkan_identity.c": "914b0f6748bf87049d51b37ab441f7f07510857de066f92bedf1d299a8ee27e2"
+    }
+  },
+  "checks": [
+    "Full public native suite at captured400ff265e plus identity/error overlays: CPU Vulkan, exact182 implemented/20 unprovided procedure inventory.",
+    "Final callback-admission/Destroy followup rebuilt Metal host composition, lifecycle and pending-progress controls: PASS.",
+    "Final make -C runtime/c check: 699 style sources/zero failures,20 tool tests,13 owner builds: PASS.",
+    "GCC ASan+UBSan: final backend-failure, metal-bridge, pending-progress and vulkan-identity controls: PASS (detect_leaks=0, halt_on_error=1).",
+    "Apple Clang native artifact and portable controls: PASS; exact backend failure record/copy/bounds test. No GPU in these controls.",
+    "Vulkan ABI provenance:92 records/1605 assertions; full Vulkan host contracts PASS.",
+    "Explicit software fallback bridge + two real lavapipe CPU contexts: PASS; selector sanitizer PASS. No dispatch or physical adapter selection claim."
+  ],
+  "identity_cases": [
+    "Identical names/vendor/device/cache IDs do not alias different deviceUUID/driverUUID pairs.",
+    "Reordered enumeration and new instance-local handles retain the selected UUID pair.",
+    "Missing/duplicate/mismatched identities or changed driver identity reject without substitution or output mutation.",
+    "Explicit fallback searches for CPU and preserves CPU class across device creation; exact ordinal callers retain their selection contract."
+  ],
+  "error_cases": [
+    "Original Vulkan QueueSubmit/-1 and fence failure/-4 survive successful recovery and repeated terminal observations.",
+    "Owned Metal operation/signed64 native code/message survive source mutation, terminal command release and deferred pipeline/map/work-done callbacks.",
+    "Background terminal error is observed once by the next write, preserving untouched buffer bytes on the failed write and correct later success.",
+    "Callback admission rejection delivers already-owned constructor/settlement failure through existing native_error outside locks before protecting lease drops.",
+    "DeviceDestroy polls without consuming an unobserved error; subsequent WorkDone retains exact original detail."
+  ],
+  "first_failure": {
+    "control": "Cache a terminal failure, Destroy, then deferred WorkDone",
+    "before": "Expected assertion failure: message length/content differs; Destroy silently consumed the cached receipt. Log retained in isolated destroy-first-failure.log.",
+    "after": "Nonconsuming native_progress_pending preserves receipt; focused Metal host/lifecycle and final sanitized control pass."
+  },
+  "independent_source_reviews": [
+    "UUID selection/native bridge review found no concrete identity blocker.",
+    "Error transport review found callback-admission receipt loss; corrected and controlled for map/work-done/compute/render pipeline."
+  ],
+  "scope_limits": [
+    "All Vulkan execution here explicitly selected CPU lavapipe. No Windows SDK/DXC/device, new physical Vulkan, or performance claim.",
+    "No leak qualification with detect_leaks=0. Apple ASan initialization issue remains separately recorded; GCC sanitizer used for these checks.",
+    "Baseline182-source predates incoming e517f23b4 public surfaces. Its WSI release-all/acquisition-retry liveness findings require separate integration and controls.",
+    "Metal Node GPU receipt covers staged00bbd786d only; it does not qualify this changed native source."
+  ]
+}

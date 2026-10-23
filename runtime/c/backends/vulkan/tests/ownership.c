@@ -304,6 +304,38 @@ static void failed_output_requires_reinitialization(void) {
     assert(ctx.references == 1);
 }
 
+static void first_failure_detail(void) {
+    memset(&mock, 0, sizeof(mock));
+    doe_vk_context ctx = context();
+    doe_vk_commands *commands = NULL;
+    doe_vk_error error = {0};
+    assert(doe_vk_commands_create(&ctx, &commands, NULL) == DOE_VK_OK);
+    mock.submit_result = -1;
+    /* The owner must snapshot even when the original caller declines output. */
+    assert(doe_vk_commands_submit(commands, NULL) == DOE_VK_OUT_OF_MEMORY);
+    assert(doe_vk_commands_release(commands) == DOE_VK_BUSY);
+    assert(doe_vk_commands_recover(commands, &error) == DOE_VK_OUT_OF_MEMORY);
+    assert(error.status == DOE_VK_OUT_OF_MEMORY && error.native_result == -1);
+    assert(!strcmp(error.operation, "vkQueueSubmit"));
+    memset(&error, 0, sizeof(error));
+    assert(doe_vk_commands_poll(commands, &error) == DOE_VK_OUT_OF_MEMORY);
+    assert(error.native_result == -1 && !strcmp(error.operation, "vkQueueSubmit"));
+    assert(doe_vk_commands_wait(commands, 0, &error) == DOE_VK_OUT_OF_MEMORY);
+    assert(error.native_result == -1 && !strcmp(error.operation, "vkQueueSubmit"));
+    assert(doe_vk_commands_release(commands) == DOE_VK_OK);
+
+    assert(doe_vk_commands_create(&ctx, &commands, NULL) == DOE_VK_OK);
+    mock.submit_result = 0;
+    assert(doe_vk_commands_submit(commands, NULL) == DOE_VK_OK);
+    mock.fence_result = -4;
+    assert(doe_vk_commands_poll(commands, NULL) == DOE_VK_DEVICE_LOST);
+    assert(doe_vk_commands_wait(commands, 0, &error) == DOE_VK_DEVICE_LOST);
+    assert(error.native_result == -4 && !strcmp(error.operation, "vkGetFenceStatus"));
+    assert(doe_vk_commands_recover(commands, &error) == DOE_VK_DEVICE_LOST);
+    assert(error.native_result == -4 && !strcmp(error.operation, "vkGetFenceStatus"));
+    assert(doe_vk_commands_release(commands) == DOE_VK_OK && ctx.references == 1);
+}
+
 static void rejection_and_memory(void) {
     assert(doe_vk_range(UINT64_MAX, UINT64_MAX, 0));
     assert(!doe_vk_range(UINT64_MAX, UINT64_MAX, 1));
@@ -339,6 +371,7 @@ int main(void) {
     uncertain_and_loss();
     rejection_and_memory();
     failed_output_requires_reinitialization();
+    first_failure_detail();
     puts("PASS host Vulkan boundary rollback, timeout, uncertain submission, device loss, bounds, poisoning");
     return 0;
 }

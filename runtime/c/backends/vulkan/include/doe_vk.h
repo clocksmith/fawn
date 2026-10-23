@@ -41,12 +41,30 @@ typedef struct doe_vk_error {
 
 enum { DOE_VK_SURFACE_WAYLAND = 1, DOE_VK_SURFACE_XCB = 2, DOE_VK_SURFACE_XLIB = 4 };
 
+/* Physical device plus driver build, copied from core1.1 ID properties. Names,
+ * vendor/device numbers and pipeline-cache compatibility UUIDs are not identity. */
+typedef struct doe_vk_adapter_identity {
+    uint8_t device_uuid[16];
+    uint8_t driver_uuid[16];
+} doe_vk_adapter_identity;
+
+typedef enum doe_vk_adapter_selection {
+    DOE_VK_SELECT_ORDINAL = 0,
+    DOE_VK_SELECT_SOFTWARE,
+    DOE_VK_SELECT_IDENTITY
+} doe_vk_adapter_selection;
+
 typedef struct doe_vk_options {
-    uint32_t adapter_ordinal; /* Exact enumeration ordinal, no silent fallback. */
+    uint32_t adapter_ordinal; /* Used only by exact ORDINAL selection. */
     bool allow_cpu_adapter; /* False by default; software is never GPU evidence. */
     bool require_graphics_queue; /* Select a compute+graphics family or reject. */
     bool enable_shader_demote_if_supported; /* Explicit opt-in; unavailable remains disabled. */
     uint32_t surface_platforms; /* Zero disables WSI; exact required platform bits. */
+    /* Zero keeps exact ordinal admission. SOFTWARE explicitly selects the first
+     * CPU device and requires allow_cpu_adapter; IDENTITY requires one unique
+     * UUID-pair match. Neither selection substitutes an ordinal on failure. */
+    doe_vk_adapter_selection adapter_selection;
+    doe_vk_adapter_identity required_identity; /* Owned value, no borrowed pointer. */
 } doe_vk_options;
 
 typedef struct doe_vk_caps {
@@ -93,6 +111,7 @@ typedef struct doe_vk_caps {
     /* Enabled fullDrawIndexUint32, not merely advertised. Without it, uint32
      * index draws reject because larger index values exceed the native limit. */
     bool full_draw_index_uint32;
+    doe_vk_adapter_identity identity;
 } doe_vk_caps;
 
 /* One owned reference on success. Objects retain their creating context. */

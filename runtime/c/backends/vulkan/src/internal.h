@@ -9,6 +9,7 @@
 #include <string.h>
 #include <limits.h>
 
+doe_vk_status doe_vk_choose_device(doe_vk_context *context, const doe_vk_options *options, doe_vk_error *error);
 doe_vk_status doe_vk_load_symbol(void *library, const char *name,
     void *destination, size_t destination_size, doe_vk_error *error);
 
@@ -81,7 +82,7 @@ typedef enum doe_vk_command_state {
 struct doe_vk_commands {
     doe_vk_context *context;
     doe_vk_command_state state;
-    doe_vk_status failure;
+    doe_vk_error failure;
     bool uses_active;
     VkCommandPool pool;
     VkCommandBuffer command;

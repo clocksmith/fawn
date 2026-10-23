@@ -90,10 +90,20 @@ WGPUTexture wgpuDeviceCreateTexture(WGPUDevice handle, const WGPUTextureDescript
     doe_vk_format_caps caps;
     native_lock(device);
     doe_vk_status status = native_device_status(device);
-    if (status == DOE_VK_OK) status = native_to_vulkan(native_settle_pending(device).status);
+    native_failure failure = native_failure_status(native_from_vulkan(status));
+    if (status == DOE_VK_OK) {
+        failure = native_settle_pending(device).failure;
+        status = native_to_vulkan(failure.status);
+    }
     if (status == DOE_VK_OK) status = doe_vk_texture_format_caps(device->backend.value.vulkan.context, native.format, &caps);
-    if (status == DOE_VK_OK) status = doe_vk_texture_create(device->backend.value.vulkan.context, &native, &payload->texture, &error);
-    if (status == DOE_VK_OK) status = native_initialize_texture(device, payload->texture, &native, caps.texel_bytes);
+    if (status == DOE_VK_OK) {
+        status = doe_vk_texture_create(device->backend.value.vulkan.context, &native, &payload->texture, &error);
+        failure = native_failure_vulkan(status, &error);
+    }
+    if (status == DOE_VK_OK) {
+        failure = native_initialize_texture(device, payload->texture, &native, caps.texel_bytes);
+        status = native_to_vulkan(failure.status);
+    }
     doe_resource_status adopted = DOE_RESOURCE_INVALID_ARGUMENT;
     if (status == DOE_VK_OK)
         adopted = doe_resource_texture_create(&device->resources, &desc, &limits,
@@ -101,8 +111,10 @@ WGPUTexture wgpuDeviceCreateTexture(WGPUDevice handle, const WGPUTextureDescript
     native_unlock(device);
     if (!texture) {
         release_texture(NULL, payload);
-        native_error(device, status != DOE_VK_OK ? native_backend_error(status) : native_resource_error(adopted),
-            "texture creation or proven zero initialization failed");
+        char message[NATIVE_FAILURE_MESSAGE_CAPACITY];
+        if (failure.status == NATIVE_OK) failure = native_failure_status(NATIVE_FAILURE);
+        native_failure_format(&failure, "texture creation or proven zero initialization failed", message);
+        native_error(device, status != DOE_VK_OK ? native_backend_error(status) : native_resource_error(adopted), message);
     } else native_label(device, texture, descriptor->label);
     return (WGPUTexture)texture;
 }

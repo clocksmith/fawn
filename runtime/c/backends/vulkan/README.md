@@ -9,6 +9,27 @@ The texture owner adds uncompressed color images, retained views/samplers and
 mip/layer-aware padded transfers across 1D/2D/3D images.
 It is not wired into the production provider. It is not full Vulkan/WebGPU parity.
 
+Adapter selection has three explicit modes: the existing exact ordinal (the zero
+default), first CPU device when software is explicitly requested and permitted,
+or one exact device/driver UUID-pair match. Native device creation uses the
+adapter's copied UUID identity, so changing enumeration order or instance-local
+handles cannot choose another device. Missing or duplicate identity matches
+reject; no ordinal or hardware substitute is attempted. UUID properties come
+from the core1.1 `VkPhysicalDeviceIDProperties` chain on the already-required
+properties query. The [official identity contract](https://docs.vulkan.org/refpages/latest/refpages/source/VkPhysicalDeviceIDProperties.html)
+distinguishes device identity from pipeline-cache compatibility.
+
+`make check-adapter-identity` exercises the actual selector with typed native
+enumeration/property procedures: changed handles/order, identical weak labels,
+driver mismatch, duplicate/missing identity, GPU-before-CPU fallback and failed
+enumeration. Native `vulkan-identity` additionally checks the adapter/device
+bridge and unchanged output/cleanup after mismatch. These are host contract
+controls. `vulkan-identity --software-context` also creates real CPU adapter/device
+contexts when a software ICD is explicitly selected with process-local
+`VK_DRIVER_FILES`; it submits no commands. `sanitize-adapter-identity` runs the
+selector control under address/undefined sanitizers. No physical GPU identity or
+device-execution qualification follows.
+
 The retained consumer path is `native/vulkan/vulkan_compute_native.zig` through
 `backend/dropin_resource_ops.zig` to the Vulkan device/resource/descriptor/pipeline/
 command/synchronization owners. This boundary accepts compiler-produced SPIR-V;

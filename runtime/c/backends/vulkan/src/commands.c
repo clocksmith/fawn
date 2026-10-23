@@ -5,14 +5,14 @@
 doe_vk_status doe_vk_poison(doe_vk_commands *commands, doe_vk_status status) {
     if (commands != NULL && commands->state == DOE_VK_RECORDING) {
         commands->state = DOE_VK_POISONED;
-        commands->failure = status;
+        commands->failure = (doe_vk_error){status, 0, "recording failure"};
     }
     return status;
 }
 
 doe_vk_status doe_vk_recording(doe_vk_commands *commands) {
     if (commands == NULL) return DOE_VK_INVALID_ARGUMENT;
-    if (commands->state == DOE_VK_POISONED) return commands->failure;
+    if (commands->state == DOE_VK_POISONED) return commands->failure.status;
     if (commands->state != DOE_VK_RECORDING) return DOE_VK_INVALID_STATE;
     if (commands->context->lost) return doe_vk_poison(commands, DOE_VK_DEVICE_LOST);
     return DOE_VK_OK;
@@ -147,9 +147,14 @@ doe_vk_status doe_vk_commands_dispatch(doe_vk_commands *commands,
     return DOE_VK_OK;
 }
 
-static void complete(doe_vk_commands *commands, doe_vk_status status) {
+static void complete(doe_vk_commands *commands, doe_vk_status status, const doe_vk_error *error) {
+    if (status != DOE_VK_OK) {
+        if (commands->failure.status == DOE_VK_OK)
+            commands->failure = error && error->status == status ? *error :
+                (doe_vk_error){status, 0, "terminal failure"};
+        status = commands->failure.status;
+    }
     commands->state = status == DOE_VK_OK ? DOE_VK_COMPLETE : DOE_VK_FAILED;
-    commands->failure = status;
     doe_vk_textures_complete(commands, status);
     doe_vk_queries_complete(commands, status);
     if (!commands->uses_active) return;
@@ -162,6 +167,8 @@ static void complete(doe_vk_commands *commands, doe_vk_status status) {
 }
 
 doe_vk_status doe_vk_commands_submit(doe_vk_commands *commands, doe_vk_error *error) {
+    doe_vk_error local_error = {0};
+    if (error == NULL) error = &local_error;
     doe_vk_status status = doe_vk_recording(commands);
     if (status != DOE_VK_OK) return doe_vk_fail(status, "submit recording state", error);
     doe_vk_context *context = commands->context;
@@ -172,10 +179,18 @@ doe_vk_status doe_vk_commands_submit(doe_vk_commands *commands, doe_vk_error *er
         }
     }
     status = doe_vk_surface_submit_prepare(commands, error);
-    if (status != DOE_VK_OK) return doe_vk_poison(commands, status);
+    if (status != DOE_VK_OK) {
+        (void)doe_vk_poison(commands, status);
+        commands->failure = *error;
+        return status;
+    }
     doe_vk_barrier(commands);
     status = doe_vk_result(context, context->vk.vkEndCommandBuffer(commands->command), "vkEndCommandBuffer", error);
-    if (status != DOE_VK_OK) return doe_vk_poison(commands, status);
+    if (status != DOE_VK_OK) {
+        (void)doe_vk_poison(commands, status);
+        commands->failure = *error;
+        return status;
+    }
     const VkSubmitInfo submit = {
         .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
         .commandBufferCount = 1,
@@ -185,10 +200,10 @@ doe_vk_status doe_vk_commands_submit(doe_vk_commands *commands, doe_vk_error *er
     };
     commands->state = DOE_VK_SUBMITTED;
     status = doe_vk_result(context, context->vk.vkQueueSubmit(context->queue, 1, &submit, commands->fence), "vkQueueSubmit", error);
-    if (status == DOE_VK_DEVICE_LOST) complete(commands, status);
+    if (status == DOE_VK_DEVICE_LOST) complete(commands, status, error);
     else if (status != DOE_VK_OK) {
         commands->state = DOE_VK_UNCERTAIN;
-        commands->failure = status;
+        commands->failure = *error;
     }
     return status;
 }
@@ -196,54 +211,77 @@ doe_vk_status doe_vk_commands_submit(doe_vk_commands *commands, doe_vk_error *er
 static doe_vk_status completion_state(doe_vk_commands *commands, doe_vk_error *error) {
     if (commands == NULL) return doe_vk_fail(DOE_VK_INVALID_ARGUMENT, "completion command", error);
     if (commands->state == DOE_VK_COMPLETE) return doe_vk_fail(DOE_VK_OK, "completed", error);
-    if (commands->state == DOE_VK_FAILED) return doe_vk_fail(commands->failure, "terminal failure", error);
+    if (commands->state == DOE_VK_FAILED) {
+        if (error != NULL) *error = commands->failure;
+        return commands->failure.status;
+    }
     if (commands->state != DOE_VK_SUBMITTED && commands->state != DOE_VK_UNCERTAIN)
         return doe_vk_fail(DOE_VK_INVALID_STATE, "command not submitted", error);
     if (commands->context->lost) {
-        complete(commands, DOE_VK_DEVICE_LOST);
-        return doe_vk_fail(DOE_VK_DEVICE_LOST, "device lost", error);
+        doe_vk_error lost = {DOE_VK_DEVICE_LOST, 0, "device lost"};
+        complete(commands, DOE_VK_DEVICE_LOST, &lost);
+        if (error != NULL) *error = commands->failure;
+        return commands->failure.status;
     }
     return DOE_VK_PENDING;
 }
 
 doe_vk_status doe_vk_commands_wait(doe_vk_commands *commands,
     uint64_t timeout_ns, doe_vk_error *error) {
+    doe_vk_error local_error = {0};
+    if (error == NULL) error = &local_error;
     doe_vk_status status = completion_state(commands, error);
     if (status != DOE_VK_PENDING) return status;
     doe_vk_context *context = commands->context;
     status = doe_vk_result(context, context->vk.vkWaitForFences(context->device, 1,
         &commands->fence, 1, timeout_ns), "vkWaitForFences", error);
     if (status == DOE_VK_OK) {
-        if (commands->state == DOE_VK_UNCERTAIN) status = commands->failure;
-        complete(commands, status);
-        if (error != NULL) error->status = status;
-    } else if (status == DOE_VK_DEVICE_LOST) complete(commands, status);
+        if (commands->state == DOE_VK_UNCERTAIN) status = commands->failure.status;
+        complete(commands, status, error);
+        if (status != DOE_VK_OK) *error = commands->failure;
+    } else if (status == DOE_VK_DEVICE_LOST) {
+        complete(commands, status, error);
+        *error = commands->failure;
+        status = commands->failure.status;
+    }
     return status;
 }
 
 doe_vk_status doe_vk_commands_poll(doe_vk_commands *commands, doe_vk_error *error) {
+    doe_vk_error local_error = {0};
+    if (error == NULL) error = &local_error;
     doe_vk_status status = completion_state(commands, error);
     if (status != DOE_VK_PENDING) return status;
     doe_vk_context *context = commands->context;
     status = doe_vk_result(context, context->vk.vkGetFenceStatus(context->device, commands->fence), "vkGetFenceStatus", error);
     if (status == DOE_VK_OK) {
-        if (commands->state == DOE_VK_UNCERTAIN) status = commands->failure;
-        complete(commands, status);
-        if (error != NULL) error->status = status;
-    } else if (status == DOE_VK_DEVICE_LOST) complete(commands, status);
+        if (commands->state == DOE_VK_UNCERTAIN) status = commands->failure.status;
+        complete(commands, status, error);
+        if (status != DOE_VK_OK) *error = commands->failure;
+    } else if (status == DOE_VK_DEVICE_LOST) {
+        complete(commands, status, error);
+        *error = commands->failure;
+        status = commands->failure.status;
+    }
     return status;
 }
 
 doe_vk_status doe_vk_commands_recover(doe_vk_commands *commands, doe_vk_error *error) {
+    doe_vk_error local_error = {0};
+    if (error == NULL) error = &local_error;
     doe_vk_status status = completion_state(commands, error);
     if (status != DOE_VK_PENDING) return status;
     doe_vk_context *context = commands->context;
     status = doe_vk_result(context, context->vk.vkQueueWaitIdle(context->queue), "vkQueueWaitIdle", error);
     if (status == DOE_VK_OK) {
-        if (commands->state == DOE_VK_UNCERTAIN) status = commands->failure;
-        complete(commands, status);
-        if (error != NULL) error->status = status;
-    } else if (status == DOE_VK_DEVICE_LOST) complete(commands, status);
+        if (commands->state == DOE_VK_UNCERTAIN) status = commands->failure.status;
+        complete(commands, status, error);
+        if (status != DOE_VK_OK) *error = commands->failure;
+    } else if (status == DOE_VK_DEVICE_LOST) {
+        complete(commands, status, error);
+        *error = commands->failure;
+        status = commands->failure.status;
+    }
     return status;
 }
 
@@ -251,7 +289,7 @@ doe_vk_status doe_vk_commands_release(doe_vk_commands *commands) {
     if (commands == NULL) return DOE_VK_OK;
     if (commands->state == DOE_VK_SUBMITTED || commands->state == DOE_VK_UNCERTAIN) {
         if (!commands->context->lost) return DOE_VK_BUSY;
-        complete(commands, DOE_VK_DEVICE_LOST);
+        complete(commands, DOE_VK_DEVICE_LOST, NULL);
     }
     doe_vk_status surface_status = doe_vk_surface_commands_release(commands);
     if (surface_status != DOE_VK_OK) return surface_status;
