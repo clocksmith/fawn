@@ -3,22 +3,22 @@ CXX = g++
 BUILD ?= /tmp/doe-c-native
 COMPILER_LIBRARY ?= $(BUILD)/libdoe_compiler.so
 SANITIZE ?=
-# The compiler owns its complete target/source/flag closure through `shared`.
-CPPFLAGS += -D_POSIX_C_SOURCE=200809L -DWGPU_SHARED_LIBRARY -DWGPU_IMPLEMENTATION -I../../zig/vendor/webgpu-headers \
- -I../instance/include -I../futures/include -I../callbacks/include -I../resources/include \
- -I../labels/include -I../error-scopes/include -I../shader/include -I../compiler/include \
- -I../backends/vulkan/include -I../backends/metal/include
+# One owner list drives source, public include and private header dependencies.
+OWNER_DIRS = ../instance ../futures ../callbacks ../resources ../labels \
+ ../error-scopes ../shader ../backends/vulkan ../backends/metal
+CPPFLAGS += -D_POSIX_C_SOURCE=200809L -DWGPU_SHARED_LIBRARY -DWGPU_IMPLEMENTATION \
+ -I../../zig/vendor/webgpu-headers -I../compiler/include $(addprefix -I,$(addsuffix /include,$(OWNER_DIRS)))
 CFLAGS ?= -O2 -g
 CFLAGS += -std=c11 -Wall -Wextra -Wpedantic -Werror -fPIC -pthread $(SANITIZE)
-SOURCES = $(wildcard src/*.c) $(wildcard ../instance/src/*.c) $(wildcard ../futures/src/*.c) \
- $(wildcard ../callbacks/src/*.c) $(wildcard ../resources/src/*.c) $(wildcard ../labels/src/*.c) \
- $(wildcard ../error-scopes/src/*.c) ../shader/src/shader.c $(wildcard ../backends/vulkan/src/*.c) $(wildcard ../backends/metal/src/*.c)
+SOURCES = $(wildcard src/*.c) $(foreach owner,$(OWNER_DIRS),$(wildcard $(owner)/src/*.c))
 OBJECTS = $(patsubst src/%.c,$(BUILD)/native/%.o,$(filter src/%,$(SOURCES))) \
  $(patsubst ../%.c,$(BUILD)/owners/%.o,$(filter ../%,$(SOURCES)))
-HEADERS = $(wildcard src/*.h ../*/include/*.h ../resources/src/*.h ../backends/vulkan/src/*.h ../backends/vulkan/include/*.h ../backends/metal/src/*.h ../backends/metal/include/*.h)
+HEADERS = $(wildcard src/*.h ../compiler/include/*.h ../common/include/*.h) \
+ $(foreach owner,$(OWNER_DIRS),$(wildcard $(owner)/include/*.h $(owner)/src/*.h)) \
+ ../../zig/vendor/webgpu-headers/webgpu.h
 COMPILER_RUNPATH ?= $(abspath $(dir $(COMPILER_LIBRARY)))
 COMPILER_LINK = -L$(abspath $(dir $(COMPILER_LIBRARY))) -l:$(notdir $(COMPILER_LIBRARY)) '-Wl,-rpath,$(COMPILER_RUNPATH)'
-.PHONY: all check check-empty-module clean
+.PHONY: all check check-build-dependencies check-empty-module clean
 all: $(BUILD)/libwebgpu_doe_c.so
 $(BUILD):
 	mkdir -p $@
@@ -73,7 +73,7 @@ $(BUILD)/lifecycle: tests/lifecycle.c $(OBJECTS) $(COMPILER_LIBRARY) | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) tests/lifecycle.c $(OBJECTS) $(COMPILER_LINK) -ldl -o $@
 $(BUILD)/procedures-cxx: tests/procedures.cpp $(BUILD)/libwebgpu_doe_c.so
 	$(CXX) $(CPPFLAGS) -std=c++17 -Wall -Wextra -Wpedantic -Werror $(SANITIZE) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
-check: check-host-bridge $(BUILD)/atomics $(BUILD)/debug $(BUILD)/msaa $(BUILD)/depth $(BUILD)/demote $(BUILD)/graphics-admission $(BUILD)/empty-shader $(BUILD)/graphics $(BUILD)/compute $(BUILD)/procedures-cxx $(BUILD)/lifecycle $(BUILD)/textures $(BUILD)/admission $(BUILD)/failures $(BUILD)/timestamps $(BUILD)/recovery
+check: check-build-dependencies check-host-bridge $(BUILD)/atomics $(BUILD)/debug $(BUILD)/msaa $(BUILD)/depth $(BUILD)/demote $(BUILD)/graphics-admission $(BUILD)/empty-shader $(BUILD)/graphics $(BUILD)/compute $(BUILD)/procedures-cxx $(BUILD)/lifecycle $(BUILD)/textures $(BUILD)/admission $(BUILD)/failures $(BUILD)/timestamps $(BUILD)/recovery
 	$(BUILD)/atomics
 	$(BUILD)/debug
 	$(BUILD)/msaa
@@ -91,6 +91,8 @@ check: check-host-bridge $(BUILD)/atomics $(BUILD)/debug $(BUILD)/msaa $(BUILD)/
 	$(BUILD)/timestamps
 	$(BUILD)/recovery
 	python3 tests/audit-exports.py $(BUILD)/libwebgpu_doe_c.so $(if $(SANITIZE),,--runtime)
+check-build-dependencies:
+	python3 tests/build_dependencies.py
 .PHONY: check-host-bridge
 check-host-bridge: $(BUILD)/backend-selection $(BUILD)/metal-bridge
 	$(BUILD)/backend-selection
