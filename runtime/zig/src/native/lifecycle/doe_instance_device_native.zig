@@ -23,6 +23,7 @@ const device_loss = @import("../support/doe_device_loss.zig");
 const instance_adapter = if (build_options.experimental_c_instance) @import("../support/doe_instance_c_adapter.zig") else struct {};
 const resource_leases = @import("../../contracts/resource_lease.zig");
 const callback_delivery = @import("../support/doe_callback_owner.zig");
+const error_scope_owner = @import("../support/doe_error_scope_owner.zig");
 
 const alloc = native_helpers.alloc;
 const make = native_helpers.make;
@@ -493,6 +494,14 @@ fn create_device_for_adapter(adapter: *DoeAdapter, adapter_raw: ?*anyopaque, des
         event.release();
         return err;
     };
+    // The backend's whole-object assignment is complete. Initialize only here,
+    // at the final stable address and before any loss event can expose the device.
+    error_scope_owner.initialize(&device.error_scopes) catch {
+        doeNativeDeviceReleaseInternal(toOpaque(device));
+        event.lose(.failedCreation, "device initialization failed");
+        event.release();
+        return error.DeviceAllocationFailed;
+    };
     device.loss = event;
     event.setDevice(toOpaque(device));
     return device;
@@ -854,6 +863,7 @@ pub export fn doeNativeDeviceReleaseInternal(raw: ?*anyopaque) callconv(.c) void
         }
         if (d.enabled_features.len > 0) alloc.free(d.enabled_features);
         const adapter = d.adapter;
+        error_scope_owner.deinitialize(&d.error_scopes);
         alloc.destroy(d);
         if (adapter) |adapter_ref| doeNativeAdapterRelease(toOpaque(adapter_ref));
     }

@@ -1,0 +1,360 @@
+--- a/runtime/zig/build.zig
++++ b/runtime/zig/build.zig
+@@ -516,6 +516,18 @@
+     artifact.step.dependOn(&verifier.step);
+ }
+ 
++fn configureCLabelsModule(module: *std.Build.Module, b: *std.Build, archive: []const u8) void {
++    module.addIncludePath(b.path("../c/labels/include"));
++    module.addObjectFile(.{ .cwd_relative = archive });
++    module.linkSystemLibrary("pthread", .{});
++    module.link_libc = true;
++}
++
++fn configureCLabelsArtifact(artifact: *std.Build.Step.Compile, b: *std.Build, archive: []const u8, verifier: *std.Build.Step.Run) void {
++    configureCLabelsModule(artifact.root_module, b, archive);
++    artifact.step.dependOn(&verifier.step);
++}
++
+ pub fn build(b: *std.Build) void {
+     const target = b.standardTargetOptions(.{});
+     const optimize = b.standardOptimizeOption(.{});
+@@ -530,6 +542,16 @@
+         verifier.has_side_effects = true;
+         break :blk verifier;
+     } else null;
++    const c_labels_archive = b.option([]const u8, "experimental-c-labels-archive", "Explicit GCC-built copied-byte label archive (default: retained Zig)");
++    const c_labels_verifier: ?*std.Build.Step.Run = if (c_labels_archive) |archive| blk: {
++        if (!target.query.isNative() or target.result.os.tag != .linux or target.result.cpu.arch != .x86_64 or target.result.abi != .gnu)
++            @panic("experimental C labels requires native Linux x86-64 GNU ABI");
++        if (!std.fs.path.isAbsolute(archive) or !fileExists(archive))
++            @panic("experimental C labels requires an existing absolute GCC archive; no fallback");
++        const verifier = b.addSystemCommand(&.{ "python3", "../c/labels/tools/archive.py", "--archive", archive, "--repo-root", "../..", "--target", "x86_64-linux-gnu", "--profile", "normal", "--require-native" });
++        verifier.has_side_effects = true;
++        break :blk verifier;
++    } else null;
+     const c_futures_archive = b.option([]const u8, "experimental-c-futures-archive", "Explicit external GCC-built PIC C futures archive (default: retained Zig)");
+     const c_callbacks_archive = b.option([]const u8, "experimental-c-callbacks-archive", "Explicit external GCC-built callback archive (requires C futures; default: retained Zig)");
+     const c_instance_archive = b.option([]const u8, "experimental-c-instance-archive", "Explicit external GCC-built instance archive (requires C futures and callbacks; default: retained Zig)");
+@@ -572,8 +594,8 @@
+     browser_wasm.max_memory = 64 * 1024 * 1024;
+     const wasm_install = b.addInstallArtifact(browser_wasm, .{});
+     const browser_wasm_step = b.step("browser-wasm", "Build the bounded browser WGSL compiler (no native GPU access)");
+-    if (c_futures_archive != null) {
+-        browser_wasm_step.dependOn(&b.addFail("experimental C futures is not supported by the non-native browser-wasm artifact").step);
++    if (c_futures_archive != null or c_labels_archive != null) {
++        browser_wasm_step.dependOn(&b.addFail("experimental C native owners are not supported by the non-native browser-wasm artifact").step);
+     } else browser_wasm_step.dependOn(&wasm_install.step);
+     const browser_tests = b.addTest(.{
+         .root_module = b.createModule(.{
+@@ -634,6 +656,7 @@
+     const lean_verified = b.option(bool, "lean-verified", "Embed Lean proof artifact and validate at comptime") orelse false;
+     const build_options = b.addOptions();
+     build_options.addOption(bool, "experimental_c_dropin_policy", c_dropin_policy_archive != null);
++    build_options.addOption(bool, "experimental_c_labels", c_labels_archive != null);
+     build_options.addOption(bool, "experimental_c_futures", c_futures_archive != null);
+     build_options.addOption(bool, "experimental_c_callbacks", c_callbacks_archive != null);
+     build_options.addOption(bool, "experimental_c_instance", c_instance_archive != null);
+@@ -1436,6 +1459,7 @@
+     // These named steps override tier for convenience.
+     const compute_build_options = b.addOptions();
+     compute_build_options.addOption(bool, "experimental_c_dropin_policy", c_dropin_policy_archive != null);
++    compute_build_options.addOption(bool, "experimental_c_labels", c_labels_archive != null);
+     compute_build_options.addOption(bool, "experimental_c_futures", c_futures_archive != null);
+     compute_build_options.addOption(bool, "experimental_c_callbacks", c_callbacks_archive != null);
+     compute_build_options.addOption(bool, "experimental_c_instance", c_instance_archive != null);
+@@ -1488,6 +1512,7 @@
+     // Full Dawn drop-in variant (tier=full).
+     const full_build_options = b.addOptions();
+     full_build_options.addOption(bool, "experimental_c_dropin_policy", c_dropin_policy_archive != null);
++    full_build_options.addOption(bool, "experimental_c_labels", c_labels_archive != null);
+     full_build_options.addOption(bool, "experimental_c_futures", c_futures_archive != null);
+     full_build_options.addOption(bool, "experimental_c_callbacks", c_callbacks_archive != null);
+     full_build_options.addOption(bool, "experimental_c_instance", c_instance_archive != null);
+@@ -1828,6 +1853,29 @@
+     runtime_compile_report_run_step.dependOn(&install_runtime_compile_report.step);
+     runtime_compile_report_run_step.dependOn(&run_runtime_compile_report.step);
+ 
++    const c_labels_test_step = b.step("test-c-labels-integration", "Run selected C copied-label native CPU integration cases");
++    if (c_labels_archive) |archive| {
++        const labels_module = b.createModule(.{
++            .root_source_file = b.path("test_suite_c_labels.zig"),
++            .target = target,
++            .optimize = optimize,
++            .imports = &.{.{ .name = "build_options", .module = build_options_module }},
++        });
++        addSourceModuleIncludePaths(labels_module, b);
++        if (c_futures_archive) |futures|
++            configureCOwnersModule(labels_module, b, futures, c_callbacks_archive, c_instance_archive);
++        const labels_tests = b.addTest(.{
++            .root_module = labels_module,
++            .filters = if (test_filter != null) test_filters else &.{"C labels integration:"},
++        });
++        configureCLabelsArtifact(labels_tests, b, archive, c_labels_verifier.?);
++        if (c_dropin_policy_archive) |policy_archive|
++            configureCDropinPolicyArtifact(labels_tests, b, policy_archive, c_dropin_policy_verifier.?);
++        configureNativeGraphics(labels_tests, b, target);
++        c_labels_test_step.dependOn(&test_inventory_check.step);
++        c_labels_test_step.dependOn(&b.addRunArtifact(labels_tests).step);
++    } else c_labels_test_step.dependOn(&b.addFail("test-c-labels-integration requires an explicit GCC labels archive").step);
++
+     const c_dropin_policy_test_step = b.step("test-c-dropin-policy-integration", "Run actual selected C policy native resolver and projection cases");
+     if (c_dropin_policy_archive) |archive| {
+         const policy_module = b.createModule(.{
+@@ -1845,6 +1893,8 @@
+         });
+         configureCDropinPolicyArtifact(policy_tests, b, archive, c_dropin_policy_verifier.?);
+         configureNativeGraphics(policy_tests, b, target);
++        if (c_labels_archive) |labels_archive|
++            configureCLabelsArtifact(policy_tests, b, labels_archive, c_labels_verifier.?);
+         c_dropin_policy_test_step.dependOn(&test_inventory_check.step);
+         c_dropin_policy_test_step.dependOn(&b.addRunArtifact(policy_tests).step);
+     } else c_dropin_policy_test_step.dependOn(&b.addFail("test-c-dropin-policy-integration requires an explicit GCC policy archive").step);
+@@ -1861,6 +1911,8 @@
+         configureCOwnersModule(instance_module, b, c_futures_archive.?, c_callbacks_archive, c_instance_archive);
+         const instance_tests = b.addTest(.{ .root_module = instance_module, .filters = &.{"C instance integration:"} });
+         configureNativeGraphics(instance_tests, b, target);
++        if (c_labels_archive) |labels_archive|
++            configureCLabelsArtifact(instance_tests, b, labels_archive, c_labels_verifier.?);
+         if (c_dropin_policy_archive) |policy_archive|
+             configureCDropinPolicyArtifact(instance_tests, b, policy_archive, c_dropin_policy_verifier.?);
+         c_instance_test_step.dependOn(&b.addRunArtifact(instance_tests).step);
+@@ -1879,6 +1931,8 @@
+         configureCOwnersModule(callbacks_module, b, c_futures_archive.?, c_callbacks_archive, c_instance_archive);
+         const callbacks_tests = b.addTest(.{ .root_module = callbacks_module, .filters = &.{"C callbacks integration:"} });
+         configureNativeGraphics(callbacks_tests, b, target);
++        if (c_labels_archive) |labels_archive|
++            configureCLabelsArtifact(callbacks_tests, b, labels_archive, c_labels_verifier.?);
+         if (c_dropin_policy_archive) |policy_archive|
+             configureCDropinPolicyArtifact(callbacks_tests, b, policy_archive, c_dropin_policy_verifier.?);
+         c_callbacks_test_step.dependOn(&b.addRunArtifact(callbacks_tests).step);
+@@ -1904,6 +1958,8 @@
+             configureCOwnersModule(integration_module, b, archive, c_callbacks_archive, c_instance_archive);
+             const integration_tests = b.addTest(.{ .root_module = integration_module, .filters = &.{"C futures integration:"} });
+             configureNativeGraphics(integration_tests, b, target);
++            if (c_labels_archive) |labels_archive|
++                configureCLabelsArtifact(integration_tests, b, labels_archive, c_labels_verifier.?);
+             if (c_dropin_policy_archive) |policy_archive|
+                 configureCDropinPolicyArtifact(integration_tests, b, policy_archive, c_dropin_policy_verifier.?);
+             c_futures_test_step.dependOn(&b.addRunArtifact(integration_tests).step);
+@@ -1939,4 +1995,20 @@
+             runtime_compile_report_tests,
+         }) |artifact| configureCDropinPolicyArtifact(artifact, b, archive, c_dropin_policy_verifier.?);
+     }
+-}
++    if (c_labels_archive) |archive| {
++        for ([_]*std.Build.Module{ doe_module, compute_doe_module, full_doe_module }) |module|
++            configureCLabelsModule(module, b, archive);
++        for ([_]*std.Build.Step.Compile{
++            dropin_lib,                   core_dropin_lib,          full_dropin_lib,                exe,
++            module_runner,                metal_staged_write_bench, metal_compute_bench,            emit_msl_exe,
++            emit_ir_digest_exe,           emit_csl_exe,             emit_tsir_attention_canary_exe, emit_hlsl_exe,
++            emit_dxil_exe,                emit_spirv_exe,           doe_plan_executor,              webgpu_plan_executor,
++            csl_sim_runner,               csl_bundle_emitter,       csl_host_plan_tool,             tsir_bootstrap_manifest_inputs,
++            tsir_bootstrap_oracle,        test_exec,                device_test_exec,               core_test_exec,
++            full_test_exec,               d3d12_test_exec,          wgsl_test_exec,                 metal_staged_write_bench_tests,
++            metal_compute_bench_tests,    shader_bench_exe,         shader_bench_tests,             host_hotpath_bench_exe,
++            host_hotpath_bench_tests,     compilation_bench_exe,    compilation_bench_tests,        runtime_compile_report_exe,
++            runtime_compile_report_tests,
++        }) |artifact| configureCLabelsArtifact(artifact, b, archive, c_labels_verifier.?);
++    }
++}
+--- a/runtime/zig/src/native/support/doe_native_object_helpers.zig
++++ b/runtime/zig/src/native/support/doe_native_object_helpers.zig
+@@ -8,7 +8,7 @@
+ var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+ 
+ pub const alloc = gpa.allocator();
+-pub const label_store = @import("doe_label_store.zig");
++pub const label_store = @import("doe_label_owner.zig");
+ 
+ pub fn make(comptime T: type) ?*T {
+     return create(T, alloc) catch null;
+--- a/runtime/zig/src/native/api/doe_native_api_misc_exports.zig
++++ b/runtime/zig/src/native/api/doe_native_api_misc_exports.zig
+@@ -29,7 +29,7 @@
+ 
+ pub const doeNativeShaderModuleGetCompilationInfo = shader_compilation_info.doeNativeShaderModuleGetCompilationInfo;
+ 
+-pub const label_store = @import("../support/doe_label_store.zig");
++pub const label_store = @import("../support/doe_label_owner.zig");
+ pub const doeNativeObjectSetLabel = label_store.doeNativeObjectSetLabel;
+ pub const doeNativeObjectGetLabel = label_store.doeNativeObjectGetLabel;
+ pub const doeNativeObjectRemoveLabel = label_store.doeNativeObjectRemoveLabel;
+--- a/runtime/zig/src/native/support/doe_label_owner.zig
++++ b/runtime/zig/src/native/support/doe_label_owner.zig
+@@ -0,0 +1,12 @@
++//! Default-off selection only. All label consumers share this one owner.
++const owner = if (@import("build_options").experimental_c_labels)
++    @import("doe_label_c_adapter.zig")
++else
++    @import("doe_label_store.zig");
++
++pub const set = owner.set;
++pub const get = owner.get;
++pub const remove = owner.remove;
++pub const doeNativeObjectSetLabel = owner.doeNativeObjectSetLabel;
++pub const doeNativeObjectGetLabel = owner.doeNativeObjectGetLabel;
++pub const doeNativeObjectRemoveLabel = owner.doeNativeObjectRemoveLabel;
+--- a/runtime/zig/src/native/support/doe_label_c_adapter.zig
++++ b/runtime/zig/src/native/support/doe_label_c_adapter.zig
+@@ -0,0 +1,42 @@
++//! Typed copied-byte/borrowed-view seam. No map or object policy lives here.
++const std = @import("std");
++const c = @cImport({
++    @cInclude("doe_labels_native_private.h");
++});
++
++fn fatal(operation: []const u8, status: c.doe_label_status) noreturn {
++    std.debug.panic("C labels {s}: unexpected status {d}", .{ operation, status });
++}
++
++pub fn set(handle: ?*anyopaque, data: ?[*]const u8, len: usize) void {
++    switch (c.doe_labels_native_set(handle, data, len)) {
++        c.DOE_LABEL_OK, c.DOE_LABEL_OUT_OF_MEMORY, c.DOE_LABEL_LAYOUT_OVERFLOW => {},
++        else => |status| fatal("set", status),
++    }
++}
++
++pub fn get(handle: ?*anyopaque) []const u8 {
++    var view: c.doe_label_view = undefined;
++    const status = c.doe_labels_native_get(handle, &view);
++    if (status != c.DOE_LABEL_OK) fatal("get", status);
++    return if (view.length == 0) "" else view.data[0..view.length];
++}
++
++pub fn remove(handle: ?*anyopaque) void {
++    const status = c.doe_labels_native_remove(handle);
++    if (status != c.DOE_LABEL_OK) fatal("remove", status);
++}
++
++pub export fn doeNativeObjectSetLabel(handle: ?*anyopaque, data: ?[*]const u8, len: usize) callconv(.c) void {
++    set(handle, data, len);
++}
++
++pub export fn doeNativeObjectGetLabel(handle: ?*anyopaque, out_len: ?*usize) callconv(.c) ?[*]const u8 {
++    const label = get(handle);
++    if (out_len) |length| length.* = label.len;
++    return if (label.len == 0) null else label.ptr;
++}
++
++pub export fn doeNativeObjectRemoveLabel(handle: ?*anyopaque) callconv(.c) void {
++    remove(handle);
++}
+--- a/runtime/zig/tests/c_labels_integration_test.zig
++++ b/runtime/zig/tests/c_labels_integration_test.zig
+@@ -0,0 +1,39 @@
++//! Developer native CPU checks, not independent acceptance or GPU evidence.
++const std = @import("std");
++const options = @import("build_options");
++const native = @import("../src/native/mod.zig");
++const helpers = @import("../src/native/support/doe_native_object_helpers.zig");
++const surface = @import("../src/native/surface/doe_surface_native.zig");
++const dropin = @import("../src/dropin/wgpu_dropin_ext_c.zig");
++
++test "C labels integration: binary copies and real instance final cleanup share owner" {
++    try std.testing.expect(options.experimental_c_labels);
++    const instance = native.doeNativeCreateInstance(null) orelse return error.CreateFailed;
++    const key = @intFromPtr(instance);
++    var bytes = [_]u8{ 0, 255, 128, 23 };
++    const expected = bytes;
++    native.doeNativeObjectSetLabel(instance, &bytes, bytes.len);
++    @memset(&bytes, 7);
++    try std.testing.expectEqualSlices(u8, &expected, helpers.label_store.get(instance));
++    native.doeNativeInstanceAddRef(instance);
++    native.doeNativeInstanceRelease(instance);
++    try std.testing.expectEqualSlices(u8, &expected, helpers.label_store.get(instance));
++    native.doeNativeInstanceRelease(instance);
++    // Integer-key map query only, never an operation on the released object.
++    try std.testing.expectEqual(@as(usize, 0), helpers.label_store.get(@ptrFromInt(key)).len);
++}
++
++test "C labels integration: surface setter and final release share owner" {
++    const instance = native.doeNativeCreateInstance(null) orelse return error.CreateFailed;
++    const raw = surface.doeNativeInstanceCreateSurface(instance, null, null) orelse return error.CreateFailed;
++    const key = @intFromPtr(raw);
++    const bytes = [_]u8{ 0, 255, 81 };
++    dropin.wgpuSurfaceSetLabel(raw, .{ .data = &bytes, .length = bytes.len });
++    try std.testing.expectEqualSlices(u8, &bytes, helpers.label_store.get(raw));
++    surface.doeNativeSurfaceAddRef(raw);
++    surface.doeNativeSurfaceRelease(raw);
++    try std.testing.expectEqualSlices(u8, &bytes, helpers.label_store.get(raw));
++    native.doeNativeInstanceRelease(instance);
++    surface.doeNativeSurfaceRelease(raw);
++    try std.testing.expectEqual(@as(usize, 0), helpers.label_store.get(@ptrFromInt(key)).len);
++}
+--- a/config/zig-test-inventory.json
++++ b/config/zig-test-inventory.json
+@@ -1344,6 +1344,15 @@
+       "entries": [
+         {
+           "path": "tests/c_dropin_policy_integration_test.zig",
++          "kind": "integration"
++        }
++      ]
++    },
++    "c-labels": {
++      "output": "test_suite_c_labels.zig",
++      "entries": [
++        {
++          "path": "tests/c_labels_integration_test.zig",
+           "kind": "integration"
+         }
+       ]
+--- a/runtime/zig/test_suite_c_labels.zig
++++ b/runtime/zig/test_suite_c_labels.zig
+@@ -0,0 +1,7 @@
++// Generated by tools/generate_test_suites.py from config/zig-test-inventory.json.
++// Do not edit this file directly.
++const test_tests_c_labels_integration_test_zig_db4a60cc = @import("tests/c_labels_integration_test.zig");
++
++comptime {
++    _ = test_tests_c_labels_integration_test_zig_db4a60cc;
++}
+--- a/runtime/zig/source-layout.json
++++ b/runtime/zig/source-layout.json
+@@ -3493,9 +3493,9 @@
+       },
+       "src/native/api/doe_native_api_misc_exports.zig": {
+         "decision": "Keep",
+-        "moduleSha256": "862eb2e80a3a4f0df4e133cdfb78f761e66183baa0edef5fa63bd38722807b55",
+-        "reason": "Keep: reachable native implementation with a distinct named responsibility and no merge, elevation, recomposition, or deletion signal.",
+-        "reviewer": "codex-vulkan-adapter-provenance/2026-08-10"
++        "moduleSha256": "dc92ab07a04b4cb43ba5ec15d8dcd9b92e85b85bc3e7ef9e764ec32d2c7aef6f",
++        "reason": "Keep: default-off copied-label selection preserves the native ABI and object lifetime; C alone owns selected map storage and allocation.",
++        "reviewer": "codex-c-labels-author/2026-10-23"
+       },
+       "src/native/api/doe_native_api_render_exports.zig": {
+         "decision": "Keep",
+@@ -3775,9 +3775,9 @@
+       },
+       "src/native/support/doe_native_object_helpers.zig": {
+         "decision": "Keep",
+-        "moduleSha256": "c6b8c87edc910e1603fc35a955983cc091b6337b8ff0cfc333d11eb32142e6ae",
+-        "reason": "Keep: frozen C-instance seam preserves this native owner and default behavior; only selected identity/lease routing and required test-only observations change.",
+-        "reviewer": "codex-c-instance-author/2026-10-23"
++        "moduleSha256": "237f9b34bfc13b6e5b113ae3c40a62f3060dee811f7b03d45e8ebae97c231025",
++        "reason": "Keep: default-off copied-label selection preserves the native ABI and object lifetime; C alone owns selected map storage and allocation.",
++        "reviewer": "codex-c-labels-author/2026-10-23"
+       },
+       "src/native/support/doe_native_object_types.zig": {
+         "decision": "Keep",
+@@ -4498,6 +4498,18 @@
+         "moduleSha256": "a258e65e81131d12eb1198f28ce9bb664973dad38332fdd322dae6877049a575",
+         "reason": "Keep: private C header import, immutable native identity projection and named code/status delivery only; all selected policy and publication decisions stay in C.",
+         "reviewer": "codex-c-dropin-policy-author/2026-10-23"
++      },
++      "src/native/support/doe_label_owner.zig": {
++        "decision": "Keep",
++        "moduleSha256": "b1fa71c499a47ad25457d5474f6e555d1f6fdc9a539b5feca9e6aa7515ce666a",
++        "reason": "Keep: default-off copied-label selection preserves the native ABI and object lifetime; C alone owns selected map storage and allocation.",
++        "reviewer": "codex-c-labels-author/2026-10-23"
++      },
++      "src/native/support/doe_label_c_adapter.zig": {
++        "decision": "Keep",
++        "moduleSha256": "972f13fe086aeaa5ac4ab3e54472b6c4e9c5e15fb6fdb152a0f43485548a0473",
++        "reason": "Keep: default-off copied-label selection preserves the native ABI and object lifetime; C alone owns selected map storage and allocation.",
++        "reviewer": "codex-c-labels-author/2026-10-23"
+       }
+     },
+     "linePolicy": {

@@ -51,13 +51,13 @@ pub const BackendLane = enum {
     d3d12_dawn_release,
 };
 
-const LaneSpec = struct {
+pub const LaneSpec = struct {
     lane: BackendLane,
     name: []const u8,
     aliases: []const []const u8 = &.{},
 };
 
-const LANE_SPECS = [_]LaneSpec{
+pub const LANE_SPECS = [_]LaneSpec{
     .{ .lane = .metal_doe_app, .name = "metal_doe_app" },
     .{ .lane = .metal_doe_directional, .name = "metal_doe_directional" },
     .{ .lane = .metal_doe_comparable, .name = "metal_doe_comparable" },

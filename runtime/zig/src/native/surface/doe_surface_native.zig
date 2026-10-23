@@ -503,6 +503,7 @@ pub export fn doeNativeSurfaceRelease(surf_raw: ?*anyopaque) callconv(.c) void {
     }
     if (surf.device_ref) |dev| device_native.doeNativeDeviceReleaseInternal(toOpaque(dev));
     release_surface_instance(surf);
+    native_helpers.label_store.remove(surf_raw);
     surface_allocator().destroy(surf);
 }
 

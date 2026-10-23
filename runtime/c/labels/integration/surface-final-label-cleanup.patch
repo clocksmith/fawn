@@ -1,0 +1,10 @@
+--- a/runtime/zig/src/native/surface/doe_surface_native.zig
++++ b/runtime/zig/src/native/surface/doe_surface_native.zig
+@@ -503,6 +503,7 @@
+     }
+     if (surf.device_ref) |dev| device_native.doeNativeDeviceReleaseInternal(toOpaque(dev));
+     release_surface_instance(surf);
++    native_helpers.label_store.remove(surf_raw);
+     surface_allocator().destroy(surf);
+ }
+ 

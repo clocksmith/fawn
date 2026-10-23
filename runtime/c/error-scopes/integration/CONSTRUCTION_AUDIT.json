@@ -1,0 +1,119 @@
+{
+  "scope": "Manual source audit of the 22 frozen lexical leads, not a whole-program AST proof or executed coverage. No successful GPU constructor was run.",
+  "paths": [
+    {
+      "path": "runtime/zig/src/dropin/dropin_browser_shared_memory.zig",
+      "sha256": "a148b324104cb518848dd9c5f119f03ae375440edf6e9dd52b1808f70ddccef2",
+      "disposition": "Original tests or test-only helper constructors remain unchanged and default-only. Selected error-scope suite uses the explicit real topology fixture; imported inline tests are filtered out."
+    },
+    {
+      "path": "runtime/zig/src/dropin/wgpu_dropin_ext_a_pipeline.zig",
+      "sha256": "3efb9351176e6d84404be272f8daccc1bfe7472dd3fc64387b12fae9aeff51da",
+      "disposition": "Original tests or test-only helper constructors remain unchanged and default-only. Selected error-scope suite uses the explicit real topology fixture; imported inline tests are filtered out."
+    },
+    {
+      "path": "runtime/zig/src/native/command/doe_buffer_copy.zig",
+      "sha256": "c9f845ec06040a55045ae71a7524d6b8c717c61427fd7221269d8204dc52c402",
+      "disposition": "Original tests or test-only helper constructors remain unchanged and default-only. Selected error-scope suite uses the explicit real topology fixture; imported inline tests are filtered out."
+    },
+    {
+      "path": "runtime/zig/src/native/command/doe_buffer_texture_copy.zig",
+      "sha256": "c5f0ebbbaed095c6aee7928d869eeff7c63d0303af835db5f46cc1da0fedf301",
+      "disposition": "Original tests or test-only helper constructors remain unchanged and default-only. Selected error-scope suite uses the explicit real topology fixture; imported inline tests are filtered out."
+    },
+    {
+      "path": "runtime/zig/src/native/command/doe_encoder_native.zig",
+      "sha256": "2d018f8fbc4ef0b3be560b36d5ed340009c9ebcb62a376a83d75ad9bb1982504",
+      "disposition": "Original tests or test-only helper constructors remain unchanged and default-only. Selected error-scope suite uses the explicit real topology fixture; imported inline tests are filtered out."
+    },
+    {
+      "path": "runtime/zig/src/native/command/doe_immediates_external_native.zig",
+      "sha256": "336a3c8a133995cf62efa48fe003d167de0c9672957ec27ebd0a338541f16b77",
+      "disposition": "Original tests or test-only helper constructors remain unchanged and default-only. Selected error-scope suite uses the explicit real topology fixture; imported inline tests are filtered out."
+    },
+    {
+      "path": "runtime/zig/src/native/compute/doe_compute_fast.zig",
+      "sha256": "6cb4c0a1a46cb52e5c8d4ad3946d5d4179d9e0d8434132ed2bcd683720611ac1",
+      "disposition": "Original tests or test-only helper constructors remain unchanged and default-only. Selected error-scope suite uses the explicit real topology fixture; imported inline tests are filtered out."
+    },
+    {
+      "path": "runtime/zig/src/native/compute/doe_compute_recorded.zig",
+      "sha256": "ba39cef5fdb16a6d3fe2960c0ea70d86379b31a8541063788cdacf9bdca69823",
+      "disposition": "Original tests or test-only helper constructors remain unchanged and default-only. Selected error-scope suite uses the explicit real topology fixture; imported inline tests are filtered out."
+    },
+    {
+      "path": "runtime/zig/src/native/lifecycle/doe_instance_device_native.zig",
+      "sha256": "3dd953f94ce73db207277273d92e3ba39530e603a0a2e0830389ff5875780cb7",
+      "disposition": "Three backend whole-object assignments converge on create_device_for_adapter; selected initialize follows their final return and precedes loss/event publication."
+    },
+    {
+      "path": "runtime/zig/src/native/queue/doe_queue_lifecycle.zig",
+      "sha256": "42e1e9819900181ddbf7b17681e0c4423e0b79f9e00456a6fb3f22a54d404a3a",
+      "disposition": "Original tests or test-only helper constructors remain unchanged and default-only. Selected error-scope suite uses the explicit real topology fixture; imported inline tests are filtered out."
+    },
+    {
+      "path": "runtime/zig/src/native/queue/doe_submission_validation.zig",
+      "sha256": "cbdda99abaa6e083081e5521e3d9c75c105584f79fd3776f88008d526388c9f9",
+      "disposition": "Original tests or test-only helper constructors remain unchanged and default-only. Selected error-scope suite uses the explicit real topology fixture; imported inline tests are filtered out."
+    },
+    {
+      "path": "runtime/zig/src/native/render/doe_bundle_native.zig",
+      "sha256": "db0ffd7729f1cee33275313c8a39a8b2d668f4a52e0fd11adf939eb976f6e462",
+      "disposition": "Original tests or test-only helper constructors remain unchanged and default-only. Selected error-scope suite uses the explicit real topology fixture; imported inline tests are filtered out."
+    },
+    {
+      "path": "runtime/zig/src/native/render/doe_render_native.zig",
+      "sha256": "9cac7998e281300b84c53dcc0784c3cd27d314a3a9e6b4147a2b670806d84d58",
+      "disposition": "Original tests or test-only helper constructors remain unchanged and default-only. Selected error-scope suite uses the explicit real topology fixture; imported inline tests are filtered out."
+    },
+    {
+      "path": "runtime/zig/src/native/resource/doe_texture_validation.zig",
+      "sha256": "f3da921b53eef900fb2085f2f213878ea518e778b144c30c7f119f5e5d31c26b",
+      "disposition": "Original tests or test-only helper constructors remain unchanged and default-only. Selected error-scope suite uses the explicit real topology fixture; imported inline tests are filtered out."
+    },
+    {
+      "path": "runtime/zig/src/native/vulkan/vulkan_render_attachments.zig",
+      "sha256": "74cf74a5aad6134906c7f8a75183c517517bcfa548d26bd0906e9c9ba2b6adb7",
+      "disposition": "Original tests or test-only helper constructors remain unchanged and default-only. Selected error-scope suite uses the explicit real topology fixture; imported inline tests are filtered out."
+    },
+    {
+      "path": "runtime/zig/tests/core/doe_shader_native_test.zig",
+      "sha256": "a2706268cbb7a93dd970d0e2d23859a828f2a715a50d6dc0f7d999179d84cf24",
+      "disposition": "Original tests or test-only helper constructors remain unchanged and default-only. Selected error-scope suite uses the explicit real topology fixture; imported inline tests are filtered out."
+    },
+    {
+      "path": "runtime/zig/tests/core/handle_safety_test.zig",
+      "sha256": "ee3652e49587ac5cedf50716c6829d9fdd0473a3342ffa1a23930d7e06a4bd3b",
+      "disposition": "Original tests or test-only helper constructors remain unchanged and default-only. Selected error-scope suite uses the explicit real topology fixture; imported inline tests are filtered out."
+    },
+    {
+      "path": "runtime/zig/tests/core/native_api_core_test.zig",
+      "sha256": "ba8005b6dcfd70db81133425f6582add40085ba586bc577971e1f49e647b1d23",
+      "disposition": "Original tests or test-only helper constructors remain unchanged and default-only. Selected error-scope suite uses the explicit real topology fixture; imported inline tests are filtered out."
+    },
+    {
+      "path": "runtime/zig/tests/core/native_device_lifecycle_test.zig",
+      "sha256": "a279799dcc22c39a7fa7cdbd4caa1058046dd02cc172b7e7fdead78b215d361a",
+      "disposition": "Original tests or test-only helper constructors remain unchanged and default-only. Selected error-scope suite uses the explicit real topology fixture; imported inline tests are filtered out."
+    },
+    {
+      "path": "runtime/zig/tests/core/native_shader_render_test.zig",
+      "sha256": "2bd3933d9e316d044991c62166c8cbb9c53bddba615c79e77cdf4d24b0a171a1",
+      "disposition": "Original tests or test-only helper constructors remain unchanged and default-only. Selected error-scope suite uses the explicit real topology fixture; imported inline tests are filtered out."
+    },
+    {
+      "path": "runtime/zig/tests/core/precompiled_shader_test.zig",
+      "sha256": "c4b8b83a327abe6f896ca92a5892955c0d0569ed8d7ccc6fa192d877fbf62938",
+      "disposition": "Original tests or test-only helper constructors remain unchanged and default-only. Selected error-scope suite uses the explicit real topology fixture; imported inline tests are filtered out."
+    },
+    {
+      "path": "runtime/zig/tests/core/runtime_integration_test.zig",
+      "sha256": "366f3e789b5f1b7f523de4d13a5881bb811ab6fd9a8e4bfd9546e16cd61eaa4c",
+      "disposition": "Original tests or test-only helper constructors remain unchanged and default-only. Selected error-scope suite uses the explicit real topology fixture; imported inline tests are filtered out."
+    }
+  ],
+  "new_fixture": {
+    "path": "runtime/zig/tests/support/c_error_scopes_fixture.zig",
+    "ownership": "Creates real native instance and actual adapter/device allocations, transfers references, initializes final typed address, cold-rolls back using real ReleaseInternal, publishes only test CPU diagnostics, not backend success."
+  }
+}

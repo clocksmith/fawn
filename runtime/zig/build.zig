@@ -494,9 +494,88 @@ fn configureCOwnersModule(module: *std.Build.Module, b: *std.Build, archive: []c
     module.link_libc = true;
 }
 
+fn configureCDropinPolicyModule(module: *std.Build.Module, b: *std.Build, archive: []const u8) void {
+    module.addIncludePath(b.path("../c/dropin-policy/include"));
+    module.addObjectFile(.{ .cwd_relative = archive });
+    module.linkSystemLibrary("pthread", .{});
+    module.link_libc = true;
+}
+
+fn configureCDropinPolicyArtifact(
+    artifact: *std.Build.Step.Compile,
+    b: *std.Build,
+    archive: []const u8,
+    verifier: *std.Build.Step.Run,
+) void {
+    configureCDropinPolicyModule(artifact.root_module, b, archive);
+    // Selected immutable descriptors need read-only storage after relocations.
+    // Pin LLVM with LLD; the pinned default-codegen/LLD diagnostic failed.
+    artifact.use_llvm = true;
+    artifact.use_lld = true;
+    artifact.link_z_relro = true;
+    artifact.step.dependOn(&verifier.step);
+}
+
+fn configureCLabelsModule(module: *std.Build.Module, b: *std.Build, archive: []const u8) void {
+    module.addIncludePath(b.path("../c/labels/include"));
+    module.addObjectFile(.{ .cwd_relative = archive });
+    module.linkSystemLibrary("pthread", .{});
+    module.link_libc = true;
+}
+
+fn configureCLabelsArtifact(artifact: *std.Build.Step.Compile, b: *std.Build, archive: []const u8, verifier: *std.Build.Step.Run) void {
+    configureCLabelsModule(artifact.root_module, b, archive);
+    artifact.step.dependOn(&verifier.step);
+}
+
+fn configureCErrorScopesModule(module: *std.Build.Module, b: *std.Build, archive: []const u8) void {
+    module.addIncludePath(b.path("../c/error-scopes/include"));
+    module.addIncludePath(b.path("../c/error-scopes/integration"));
+    module.addIncludePath(b.path("vendor/webgpu-headers"));
+    module.addObjectFile(.{ .cwd_relative = archive });
+    module.linkSystemLibrary("pthread", .{});
+    module.link_libc = true;
+}
+
+fn configureCErrorScopesArtifact(artifact: *std.Build.Step.Compile, b: *std.Build, archive: []const u8, verifier: *std.Build.Step.Run) void {
+    configureCErrorScopesModule(artifact.root_module, b, archive);
+    artifact.step.dependOn(&verifier.step);
+}
+
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
+    const c_dropin_policy_archive = b.option([]const u8, "experimental-c-dropin-policy-archive", "Explicit GCC-built process-once routing archive (default: retained Zig)");
+    const c_dropin_policy_verifier: ?*std.Build.Step.Run = if (c_dropin_policy_archive) |archive| blk: {
+        if (!target.query.isNative() or target.result.os.tag != .linux or target.result.cpu.arch != .x86_64 or target.result.abi != .gnu)
+            @panic("experimental C drop-in policy requires native Linux x86-64 GNU ABI");
+        if (!std.fs.path.isAbsolute(archive) or !fileExists(archive))
+            @panic("experimental C drop-in policy requires an existing absolute GCC archive; no fallback");
+        const verifier = b.addSystemCommand(&.{ "python3", "../c/dropin-policy/tools/verify_archive.py", "--archive", archive, "--repo-root", "../..", "--target", "x86_64-linux-gnu", "--profile", "1" });
+        // Verification must run even when the external archive's path is unchanged.
+        verifier.has_side_effects = true;
+        break :blk verifier;
+    } else null;
+    const c_labels_archive = b.option([]const u8, "experimental-c-labels-archive", "Explicit GCC-built copied-byte label archive (default: retained Zig)");
+    const c_labels_verifier: ?*std.Build.Step.Run = if (c_labels_archive) |archive| blk: {
+        if (!target.query.isNative() or target.result.os.tag != .linux or target.result.cpu.arch != .x86_64 or target.result.abi != .gnu)
+            @panic("experimental C labels requires native Linux x86-64 GNU ABI");
+        if (!std.fs.path.isAbsolute(archive) or !fileExists(archive))
+            @panic("experimental C labels requires an existing absolute GCC archive; no fallback");
+        const verifier = b.addSystemCommand(&.{ "python3", "../c/labels/tools/archive.py", "--archive", archive, "--repo-root", "../..", "--target", "x86_64-linux-gnu", "--profile", "normal", "--require-native" });
+        verifier.has_side_effects = true;
+        break :blk verifier;
+    } else null;
+    const c_error_scopes_archive = b.option([]const u8, "experimental-c-error-scopes-archive", "Explicit GCC-built typed C error-scope archive (default: retained Zig)");
+    const c_error_scopes_verifier: ?*std.Build.Step.Run = if (c_error_scopes_archive) |archive| blk: {
+        if (!target.query.isNative() or target.result.os.tag != .linux or target.result.cpu.arch != .x86_64 or target.result.abi != .gnu)
+            @panic("experimental C error scopes requires native Linux x86-64 GNU ABI");
+        if (!std.fs.path.isAbsolute(archive) or !fileExists(archive))
+            @panic("experimental C error scopes requires an existing absolute GCC archive; no fallback");
+        const verifier = b.addSystemCommand(&.{ "python3", "../c/error-scopes/tools/archive.py", "--archive", archive, "--repo-root", "../.." });
+        verifier.has_side_effects = true;
+        break :blk verifier;
+    } else null;
     const c_futures_archive = b.option([]const u8, "experimental-c-futures-archive", "Explicit external GCC-built PIC C futures archive (default: retained Zig)");
     const c_callbacks_archive = b.option([]const u8, "experimental-c-callbacks-archive", "Explicit external GCC-built callback archive (requires C futures; default: retained Zig)");
     const c_instance_archive = b.option([]const u8, "experimental-c-instance-archive", "Explicit external GCC-built instance archive (requires C futures and callbacks; default: retained Zig)");
@@ -539,8 +618,8 @@ pub fn build(b: *std.Build) void {
     browser_wasm.max_memory = 64 * 1024 * 1024;
     const wasm_install = b.addInstallArtifact(browser_wasm, .{});
     const browser_wasm_step = b.step("browser-wasm", "Build the bounded browser WGSL compiler (no native GPU access)");
-    if (c_futures_archive != null) {
-        browser_wasm_step.dependOn(&b.addFail("experimental C futures is not supported by the non-native browser-wasm artifact").step);
+    if (c_futures_archive != null or c_labels_archive != null or c_error_scopes_archive != null) {
+        browser_wasm_step.dependOn(&b.addFail("experimental C native owners are not supported by the non-native browser-wasm artifact").step);
     } else browser_wasm_step.dependOn(&wasm_install.step);
     const browser_tests = b.addTest(.{
         .root_module = b.createModule(.{
@@ -600,6 +679,9 @@ pub fn build(b: *std.Build) void {
 
     const lean_verified = b.option(bool, "lean-verified", "Embed Lean proof artifact and validate at comptime") orelse false;
     const build_options = b.addOptions();
+    build_options.addOption(bool, "experimental_c_dropin_policy", c_dropin_policy_archive != null);
+    build_options.addOption(bool, "experimental_c_labels", c_labels_archive != null);
+    build_options.addOption(bool, "experimental_c_error_scopes", c_error_scopes_archive != null);
     build_options.addOption(bool, "experimental_c_futures", c_futures_archive != null);
     build_options.addOption(bool, "experimental_c_callbacks", c_callbacks_archive != null);
     build_options.addOption(bool, "experimental_c_instance", c_instance_archive != null);
@@ -1401,6 +1483,9 @@ pub fn build(b: *std.Build) void {
     // The default `dropin` step uses the --tier option (default: headless).
     // These named steps override tier for convenience.
     const compute_build_options = b.addOptions();
+    compute_build_options.addOption(bool, "experimental_c_dropin_policy", c_dropin_policy_archive != null);
+    compute_build_options.addOption(bool, "experimental_c_labels", c_labels_archive != null);
+    compute_build_options.addOption(bool, "experimental_c_error_scopes", c_error_scopes_archive != null);
     compute_build_options.addOption(bool, "experimental_c_futures", c_futures_archive != null);
     compute_build_options.addOption(bool, "experimental_c_callbacks", c_callbacks_archive != null);
     compute_build_options.addOption(bool, "experimental_c_instance", c_instance_archive != null);
@@ -1452,6 +1537,9 @@ pub fn build(b: *std.Build) void {
 
     // Full Dawn drop-in variant (tier=full).
     const full_build_options = b.addOptions();
+    full_build_options.addOption(bool, "experimental_c_dropin_policy", c_dropin_policy_archive != null);
+    full_build_options.addOption(bool, "experimental_c_labels", c_labels_archive != null);
+    full_build_options.addOption(bool, "experimental_c_error_scopes", c_error_scopes_archive != null);
     full_build_options.addOption(bool, "experimental_c_futures", c_futures_archive != null);
     full_build_options.addOption(bool, "experimental_c_callbacks", c_callbacks_archive != null);
     full_build_options.addOption(bool, "experimental_c_instance", c_instance_archive != null);
@@ -1792,6 +1880,101 @@ pub fn build(b: *std.Build) void {
     runtime_compile_report_run_step.dependOn(&install_runtime_compile_report.step);
     runtime_compile_report_run_step.dependOn(&run_runtime_compile_report.step);
 
+    const c_error_scopes_test_step = b.step("test-c-error-scopes-integration", "Run explicitly initialized C error-scope native CPU cases");
+    const c_error_scopes_library_step = b.step("test-c-error-scopes-library", "Build test-only native DSO with CPU diagnostic topology factory");
+    if (c_error_scopes_archive) |archive| {
+        const scopes_module = b.createModule(.{
+            .root_source_file = b.path("test_suite_c_error_scopes.zig"),
+            .target = target,
+            .optimize = optimize,
+            .imports = &.{.{ .name = "build_options", .module = build_options_module }},
+        });
+        const fixture_module = b.createModule(.{
+            .root_source_file = b.path("test_c_error_scopes_library.zig"),
+            .target = target,
+            .optimize = optimize,
+            .imports = &.{.{ .name = "build_options", .module = build_options_module }},
+        });
+        for ([_]*std.Build.Module{ scopes_module, fixture_module }) |module| {
+            addSourceModuleIncludePaths(module, b);
+            if (c_futures_archive) |futures|
+                configureCOwnersModule(module, b, futures, c_callbacks_archive, c_instance_archive);
+        }
+        const scopes_tests = b.addTest(.{
+            .root_module = scopes_module,
+            .filters = if (test_filter != null) test_filters else &.{"C error scopes integration:"},
+        });
+        const fixture_library = b.addLibrary(.{
+            .name = "doe_error_scopes_test",
+            .linkage = .dynamic,
+            .root_module = fixture_module,
+        });
+        for ([_]*std.Build.Step.Compile{ scopes_tests, fixture_library }) |artifact| {
+            configureCErrorScopesArtifact(artifact, b, archive, c_error_scopes_verifier.?);
+            if (c_labels_archive) |labels_archive|
+                configureCLabelsArtifact(artifact, b, labels_archive, c_labels_verifier.?);
+            if (c_dropin_policy_archive) |policy_archive|
+                configureCDropinPolicyArtifact(artifact, b, policy_archive, c_dropin_policy_verifier.?);
+            configureNativeGraphics(artifact, b, target);
+        }
+        c_error_scopes_test_step.dependOn(&test_inventory_check.step);
+        c_error_scopes_test_step.dependOn(&b.addRunArtifact(scopes_tests).step);
+        c_error_scopes_library_step.dependOn(&b.addInstallArtifact(fixture_library, .{}).step);
+    } else {
+        c_error_scopes_test_step.dependOn(&b.addFail("test-c-error-scopes-integration requires an explicit GCC error-scope archive").step);
+        c_error_scopes_library_step.dependOn(&b.addFail("test-c-error-scopes-library requires an explicit GCC error-scope archive").step);
+    }
+
+    const c_labels_test_step = b.step("test-c-labels-integration", "Run selected C copied-label native CPU integration cases");
+    if (c_labels_archive) |archive| {
+        const labels_module = b.createModule(.{
+            .root_source_file = b.path("test_suite_c_labels.zig"),
+            .target = target,
+            .optimize = optimize,
+            .imports = &.{.{ .name = "build_options", .module = build_options_module }},
+        });
+        addSourceModuleIncludePaths(labels_module, b);
+        if (c_futures_archive) |futures|
+            configureCOwnersModule(labels_module, b, futures, c_callbacks_archive, c_instance_archive);
+        const labels_tests = b.addTest(.{
+            .root_module = labels_module,
+            .filters = if (test_filter != null) test_filters else &.{"C labels integration:"},
+        });
+        configureCLabelsArtifact(labels_tests, b, archive, c_labels_verifier.?);
+        if (c_dropin_policy_archive) |policy_archive|
+            configureCDropinPolicyArtifact(labels_tests, b, policy_archive, c_dropin_policy_verifier.?);
+        configureNativeGraphics(labels_tests, b, target);
+        if (c_error_scopes_archive) |scopes_archive|
+            configureCErrorScopesArtifact(labels_tests, b, scopes_archive, c_error_scopes_verifier.?);
+        c_labels_test_step.dependOn(&test_inventory_check.step);
+        c_labels_test_step.dependOn(&b.addRunArtifact(labels_tests).step);
+    } else c_labels_test_step.dependOn(&b.addFail("test-c-labels-integration requires an explicit GCC labels archive").step);
+
+    const c_dropin_policy_test_step = b.step("test-c-dropin-policy-integration", "Run actual selected C policy native resolver and projection cases");
+    if (c_dropin_policy_archive) |archive| {
+        const policy_module = b.createModule(.{
+            .root_source_file = b.path("test_suite_c_dropin_policy.zig"),
+            .target = target,
+            .optimize = optimize,
+            .imports = &.{.{ .name = "build_options", .module = build_options_module }},
+        });
+        addSourceModuleIncludePaths(policy_module, b);
+        if (c_futures_archive) |futures|
+            configureCOwnersModule(policy_module, b, futures, c_callbacks_archive, c_instance_archive);
+        const policy_tests = b.addTest(.{
+            .root_module = policy_module,
+            .filters = if (test_filter != null) test_filters else &.{"C drop-in policy integration:"},
+        });
+        configureCDropinPolicyArtifact(policy_tests, b, archive, c_dropin_policy_verifier.?);
+        configureNativeGraphics(policy_tests, b, target);
+        if (c_error_scopes_archive) |scopes_archive|
+            configureCErrorScopesArtifact(policy_tests, b, scopes_archive, c_error_scopes_verifier.?);
+        if (c_labels_archive) |labels_archive|
+            configureCLabelsArtifact(policy_tests, b, labels_archive, c_labels_verifier.?);
+        c_dropin_policy_test_step.dependOn(&test_inventory_check.step);
+        c_dropin_policy_test_step.dependOn(&b.addRunArtifact(policy_tests).step);
+    } else c_dropin_policy_test_step.dependOn(&b.addFail("test-c-dropin-policy-integration requires an explicit GCC policy archive").step);
+
     const c_instance_test_step = b.step("test-c-instance-integration", "Run selected opaque C instance native integration cases");
     if (c_instance_archive != null) {
         const instance_module = b.createModule(.{
@@ -1804,6 +1987,12 @@ pub fn build(b: *std.Build) void {
         configureCOwnersModule(instance_module, b, c_futures_archive.?, c_callbacks_archive, c_instance_archive);
         const instance_tests = b.addTest(.{ .root_module = instance_module, .filters = &.{"C instance integration:"} });
         configureNativeGraphics(instance_tests, b, target);
+        if (c_error_scopes_archive) |scopes_archive|
+            configureCErrorScopesArtifact(instance_tests, b, scopes_archive, c_error_scopes_verifier.?);
+        if (c_labels_archive) |labels_archive|
+            configureCLabelsArtifact(instance_tests, b, labels_archive, c_labels_verifier.?);
+        if (c_dropin_policy_archive) |policy_archive|
+            configureCDropinPolicyArtifact(instance_tests, b, policy_archive, c_dropin_policy_verifier.?);
         c_instance_test_step.dependOn(&b.addRunArtifact(instance_tests).step);
     } else c_instance_test_step.dependOn(&b.addFail("test-c-instance-integration requires explicit instance, callback and future GCC archives").step);
 
@@ -1820,6 +2009,12 @@ pub fn build(b: *std.Build) void {
         configureCOwnersModule(callbacks_module, b, c_futures_archive.?, c_callbacks_archive, c_instance_archive);
         const callbacks_tests = b.addTest(.{ .root_module = callbacks_module, .filters = &.{"C callbacks integration:"} });
         configureNativeGraphics(callbacks_tests, b, target);
+        if (c_error_scopes_archive) |scopes_archive|
+            configureCErrorScopesArtifact(callbacks_tests, b, scopes_archive, c_error_scopes_verifier.?);
+        if (c_labels_archive) |labels_archive|
+            configureCLabelsArtifact(callbacks_tests, b, labels_archive, c_labels_verifier.?);
+        if (c_dropin_policy_archive) |policy_archive|
+            configureCDropinPolicyArtifact(callbacks_tests, b, policy_archive, c_dropin_policy_verifier.?);
         c_callbacks_test_step.dependOn(&b.addRunArtifact(callbacks_tests).step);
     } else {
         c_callbacks_test_step.dependOn(&b.addFail("test-c-callbacks-integration requires explicit callback and future GCC archives with retained instance; use test-c-instance-integration for opaque instances").step);
@@ -1843,6 +2038,12 @@ pub fn build(b: *std.Build) void {
             configureCOwnersModule(integration_module, b, archive, c_callbacks_archive, c_instance_archive);
             const integration_tests = b.addTest(.{ .root_module = integration_module, .filters = &.{"C futures integration:"} });
             configureNativeGraphics(integration_tests, b, target);
+            if (c_error_scopes_archive) |scopes_archive|
+                configureCErrorScopesArtifact(integration_tests, b, scopes_archive, c_error_scopes_verifier.?);
+            if (c_labels_archive) |labels_archive|
+                configureCLabelsArtifact(integration_tests, b, labels_archive, c_labels_verifier.?);
+            if (c_dropin_policy_archive) |policy_archive|
+                configureCDropinPolicyArtifact(integration_tests, b, policy_archive, c_dropin_policy_verifier.?);
             c_futures_test_step.dependOn(&b.addRunArtifact(integration_tests).step);
         } else c_futures_test_step.dependOn(&b.addFail("old selected fixtures require retained instance; use test-c-instance-integration").step);
         for ([_]*std.Build.Module{ doe_module, compute_doe_module, full_doe_module }) |module|
@@ -1859,5 +2060,45 @@ pub fn build(b: *std.Build) void {
         }) |artifact| configureCOwnersModule(artifact.root_module, b, archive, c_callbacks_archive, c_instance_archive);
     } else {
         c_futures_test_step.dependOn(&b.addFail("test-c-futures-integration requires -Dexperimental-c-futures-archive=/absolute/GCC/archive.a").step);
+    }
+    const selected_c_artifacts = [_]*std.Build.Step.Compile{
+        dropin_lib,                   core_dropin_lib,          full_dropin_lib,                exe,
+        module_runner,                metal_staged_write_bench, metal_compute_bench,            emit_msl_exe,
+        emit_ir_digest_exe,           emit_csl_exe,             emit_tsir_attention_canary_exe, emit_hlsl_exe,
+        emit_dxil_exe,                emit_spirv_exe,           doe_plan_executor,              webgpu_plan_executor,
+        csl_sim_runner,               csl_bundle_emitter,       csl_host_plan_tool,             tsir_bootstrap_manifest_inputs,
+        tsir_bootstrap_oracle,        test_exec,                device_test_exec,               core_test_exec,
+        full_test_exec,               d3d12_test_exec,          wgsl_test_exec,                 metal_staged_write_bench_tests,
+        metal_compute_bench_tests,    shader_bench_exe,         shader_bench_tests,             host_hotpath_bench_exe,
+        host_hotpath_bench_tests,     compilation_bench_exe,    compilation_bench_tests,        runtime_compile_report_exe,
+        runtime_compile_report_tests,
+    };
+    if (c_dropin_policy_archive) |archive| {
+        for ([_]*std.Build.Module{ doe_module, compute_doe_module, full_doe_module }) |module|
+            configureCDropinPolicyModule(module, b, archive);
+        for (selected_c_artifacts) |artifact| configureCDropinPolicyArtifact(artifact, b, archive, c_dropin_policy_verifier.?);
+    }
+    if (c_labels_archive) |archive| {
+        for ([_]*std.Build.Module{ doe_module, compute_doe_module, full_doe_module }) |module|
+            configureCLabelsModule(module, b, archive);
+        for (selected_c_artifacts) |artifact| configureCLabelsArtifact(artifact, b, archive, c_labels_verifier.?);
+    }
+    if (c_error_scopes_archive) |archive| {
+        for ([_]*std.Build.Module{ doe_module, compute_doe_module, full_doe_module }) |module|
+            configureCErrorScopesModule(module, b, archive);
+        for (selected_c_artifacts) |artifact| configureCErrorScopesArtifact(artifact, b, archive, c_error_scopes_verifier.?);
+    }
+    if (c_futures_archive != null or c_error_scopes_archive != null) {
+        // Only these build-bound bridges are private; standalone C owner APIs
+        // and public WebGPU exports remain visible. Selection is Linux-only.
+        for ([_]*std.Build.Step.Compile{ dropin_lib, core_dropin_lib, full_dropin_lib }) |artifact|
+            artifact.setVersionScript(b.path("../c/integration/private-bridges.map"));
+    }
+    if (c_error_scopes_archive != null) {
+        // Original fixtures do not initialize selected storage at its final address.
+        for ([_]*std.Build.Step{ test_step, device_test_step, core_test_step, full_test_step, d3d12_test_step }) |step| {
+            step.dependencies.clearRetainingCapacity();
+            step.dependOn(&b.addFail("retained generic native suites require default error scopes; use test-c-error-scopes-integration").step);
+        }
     }
 }

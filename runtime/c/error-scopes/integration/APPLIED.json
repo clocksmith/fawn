@@ -1,0 +1,68 @@
+{
+  "state": "source seam applied; native compilation not run; temporary author outputs lost at executor reset 2026-10-23T15:59Z",
+  "after": {
+    "runtime/zig/build.zig": {
+      "sha256": "f614e3bad18bb78d37490d1b062b7b9976e91dfe3a7c420827bb1639fd8b6406",
+      "bytes": 111606,
+      "physical_lines": 2119
+    },
+    "runtime/zig/source-layout.json": {
+      "sha256": "e6a21731efa2b08af619adc14b95588c205ebd2b3f867b35b1e33d8b1ef9ced4",
+      "bytes": 268771,
+      "physical_lines": 4540
+    },
+    "config/zig-test-inventory.json": {
+      "sha256": "38ef9b60d91cfdeb4cfae4d3b0876f37c021a51dd807fce050c9bb5cce7a9c0f",
+      "bytes": 40266,
+      "physical_lines": 1476
+    },
+    "runtime/zig/src/native/support/doe_native_object_types.zig": {
+      "sha256": "48a0ebec0686c459fc360f1c0b9f1579d0628026147c093f21df818d3b386329",
+      "bytes": 21841,
+      "physical_lines": 507
+    },
+    "runtime/zig/src/native/lifecycle/doe_instance_device_native.zig": {
+      "sha256": "3dd953f94ce73db207277273d92e3ba39530e603a0a2e0830389ff5875780cb7",
+      "bytes": 40117,
+      "physical_lines": 887
+    },
+    "runtime/zig/src/native/support/doe_error_scope_owner.zig": {
+      "sha256": "ab5ec34fc23ef6d025d662f62f2a70656dfdbb4318cc398ffca8fb806e1db2d1",
+      "bytes": 662,
+      "physical_lines": 15
+    },
+    "runtime/zig/src/native/support/doe_error_scope_c_adapter.zig": {
+      "sha256": "b8738d1167c05bb4e2b8013fb894bc3aed64f0ffeca843dd188ffcecd506c954",
+      "bytes": 5897,
+      "physical_lines": 111
+    },
+    "runtime/zig/tests/c_error_scopes_integration_test.zig": {
+      "sha256": "de4c91ef0cdccda7e9d798dbab83c5a6449841d1d816b29767a443d105f29f31",
+      "bytes": 9220,
+      "physical_lines": 156
+    },
+    "runtime/zig/tests/support/c_error_scopes_fixture.zig": {
+      "sha256": "48075b2ecbea336a620335cc017f978a97ad302cecd0ef4956d98a77db3c94e6",
+      "bytes": 2102,
+      "physical_lines": 39
+    },
+    "runtime/zig/test_c_error_scopes_library.zig": {
+      "sha256": "0af8a8639a62b4f0db755e66d434beb9e46a3affacb4a76ab64326ab781f40ac",
+      "bytes": 207,
+      "physical_lines": 5
+    },
+    "runtime/zig/test_suite_c_error_scopes.zig": {
+      "sha256": "7bd427c472fb0de484e6ceaea63a1374b0db8c34c1ee50ee42745ca6e812df99",
+      "bytes": 315,
+      "physical_lines": 7
+    }
+  },
+  "checks": {
+    "zig_fmt": "pass Zig0.15.2",
+    "test_inventory": "pass generate_test_suites --check",
+    "source_layout": "pass check_source_layout",
+    "source_layout_docs": "pass generate_source_layout_docs",
+    "native_compilation": "not run; serialized lane not granted"
+  },
+  "preserved": "labels and route selection changes retained; original error_scope.zig and original error_scope_test.zig unchanged"
+}

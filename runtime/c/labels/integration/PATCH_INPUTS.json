@@ -1,0 +1,18 @@
+{
+  "baseline_sha256": {
+    "config/zig-test-inventory.json": "340c54c88eaeb6d42d5f62398e111d2ac8f0698e508667d3eda28d9eca6dc7cd",
+    "runtime/zig/build.zig": "8f53cd0aa87332358602537b17e0973b81a0dad50ab8e76bb0dc49aa7baffc0d",
+    "runtime/zig/source-layout.json": "96aa6faae1bc1c625aa0a8d2832e5ab375a0992df6da800864147152d7387fec",
+    "runtime/zig/src/native/api/doe_native_api_misc_exports.zig": "862eb2e80a3a4f0df4e133cdfb78f761e66183baa0edef5fa63bd38722807b55",
+    "runtime/zig/src/native/support/doe_native_object_helpers.zig": "c6b8c87edc910e1603fc35a955983cc091b6337b8ff0cfc333d11eb32142e6ae"
+  },
+  "new_files": [
+    "runtime/zig/src/native/support/doe_label_owner.zig",
+    "runtime/zig/src/native/support/doe_label_c_adapter.zig",
+    "runtime/zig/tests/c_labels_integration_test.zig",
+    "runtime/zig/test_suite_c_labels.zig"
+  ],
+  "patch_sha256": "444ec4aab702f4ca666cf2e5a3b930a80eaab387b0230ed4e9e02dda44514928",
+  "status": "unapplied; requires lead shared-source seam release; surface additionally requires independent old-source failure",
+  "surface_patch_sha256": "db90d6bb636ee734f088a83c7e55927225dc40e4ef1d778f10a341d719e12be8"
+}

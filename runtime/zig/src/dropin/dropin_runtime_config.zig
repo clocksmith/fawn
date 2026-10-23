@@ -7,6 +7,7 @@ const dropin_router = @import("dropin_router.zig");
 const dropin_symbol_ownership = @import("dropin_symbol_ownership.zig");
 
 const build_options = @import("build_options");
+const c_policy = if (build_options.experimental_c_dropin_policy) @import("dropin_policy_c_adapter.zig") else struct {};
 const DROPIN_BEHAVIOR_CONFIG_JSON = build_options.dropin_behavior_config_json;
 const DROPIN_SYMBOL_OWNERSHIP_CONFIG_JSON = build_options.dropin_symbol_ownership_config_json;
 const DROPIN_BEHAVIOR_DEFAULT_MODE: dropin_behavior_policy.BehaviorMode = .dawn_ownership;
@@ -108,6 +109,10 @@ fn validateSymbolOwnershipConfig(entries: []const dropin_symbol_ownership.Symbol
 }
 
 pub fn activeBehaviorConfig() ParsedDropinBehaviorConfig {
+    if (comptime build_options.experimental_c_dropin_policy) {
+        const behavior = c_policy.activeBehaviorConfig();
+        return .{ .mode = behavior.mode, .strict_no_fallback = behavior.strict_no_fallback };
+    }
     if (g_behavior_ready.load(.acquire) != 0) {
         return g_behavior_config;
     }
@@ -133,6 +138,8 @@ pub fn activeStrictNoFallback() bool {
 }
 
 pub fn activeSymbolOwnershipConfig() []const dropin_symbol_ownership.SymbolOwnership {
+    if (comptime build_options.experimental_c_dropin_policy)
+        @compileError("selected C policy owns its immutable ownership table; use symbolOwnerForName");
     if (g_symbol_ownership_ready.load(.acquire) != 0) {
         return g_symbol_ownership_config;
     }
@@ -154,6 +161,7 @@ pub fn activeSymbolOwnershipConfig() []const dropin_symbol_ownership.SymbolOwner
 }
 
 pub fn symbolOwnerForName(symbol: []const u8) dropin_symbol_ownership.SymbolOwner {
+    if (comptime build_options.experimental_c_dropin_policy) return c_policy.symbolOwnerForName(symbol);
     if (dropin_proc_manifest.manifestOwnerForSymbol(symbol)) |owner| {
         return owner;
     }
@@ -164,6 +172,7 @@ pub fn symbolOwnerForName(symbol: []const u8) dropin_symbol_ownership.SymbolOwne
 }
 
 pub fn symbolRouteForName(symbol: []const u8) dropin_router.RouteDecision {
+    if (comptime build_options.experimental_c_dropin_policy) return c_policy.symbolRouteForName(symbol);
     return dropin_router.decide_symbol_route(
         symbolOwnerForName(symbol),
         activeBehaviorMode(),
@@ -182,6 +191,7 @@ pub fn symbolNameSlice(name: abi_base.WGPUStringView) ?[]const u8 {
 }
 
 pub fn symbolRouteForView(name: abi_base.WGPUStringView) dropin_router.RouteDecision {
+    if (comptime build_options.experimental_c_dropin_policy) return c_policy.symbolRouteForView(name);
     if (symbolNameSlice(name)) |symbol| {
         return symbolRouteForName(symbol);
     }

@@ -522,7 +522,8 @@
           "src/**/*ffi*.zig",
           "src/native/support/doe_future_c_adapter.zig",
           "src/native/support/doe_callback_c_adapter.zig",
-          "src/native/support/doe_instance_c_adapter.zig"
+          "src/native/support/doe_instance_c_adapter.zig",
+          "src/native/support/doe_error_scope_c_adapter.zig"
         ]
       },
       "generated": {
@@ -2671,9 +2672,9 @@
       },
       "src/contracts/backend.zig": {
         "decision": "Keep",
-        "moduleSha256": "e2308200b84d3b8845e38ef98c5ade97ac88acc8c490d4f2698c87d8aebdc570",
-        "reason": "Keep: reachable neutral contract owner at src/contracts/backend.zig.",
-        "reviewer": "codex-vulkan-adapter-provenance/2026-08-10"
+        "moduleSha256": "c6a8808016ecb01591e1b1c75127094120dae2c36dd697747e6aa447de25622e",
+        "reason": "Keep: expose immutable existing lane names and aliases for the explicitly selected C policy identity projection; backend selection and normalization remain unchanged.",
+        "reviewer": "codex-c-dropin-policy-author/2026-10-23"
       },
       "src/contracts/binding.zig": {
         "decision": "Keep",
@@ -3193,9 +3194,9 @@
       },
       "src/dropin/dropin_proc_manifest.zig": {
         "decision": "Keep",
-        "moduleSha256": "049ef2d2799b55079b4570e04eab5c5f3755eef20421b8e79e0185c48de870af",
-        "reason": "Keep: reachable dropin implementation with private behavior tests and no merge, elevation, recomposition, or deletion signal.",
-        "reviewer": "codex-recomposition-review/2026-08-08"
+        "moduleSha256": "6b03f2a65ad0b258682bc733e9cc53e8392aa2c4bd8748d37677755f93209167",
+        "reason": "Keep: native proc groups retain typed pointer completeness and active-tier identity authority; project immutable owner/name records without copied symbols.",
+        "reviewer": "codex-c-dropin-policy-author/2026-10-23"
       },
       "src/dropin/dropin_router.zig": {
         "decision": "Keep",
@@ -3205,9 +3206,9 @@
       },
       "src/dropin/dropin_runtime_config.zig": {
         "decision": "Keep",
-        "moduleSha256": "88ad277abb8b4c4a498aab2b44291d2663d427b8ad9f864a233cf0235ae0361f",
-        "reason": "Keep: reachable dropin implementation with a distinct named responsibility and no merge, elevation, recomposition, or deletion signal.",
-        "reviewer": "codex-hexagonal-migration/2026-08-22"
+        "moduleSha256": "c08527615084f08f1d3279f65857101f1675ffb12bf640f54e7701b74072608f",
+        "reason": "Keep: retained policy remains default; selected behavior/owner/route calls use the one C owner through a thin facade with no selected retained-parser path.",
+        "reviewer": "codex-c-dropin-policy-author/2026-10-23"
       },
       "src/dropin/dropin_symbol_ownership.zig": {
         "decision": "Keep",
@@ -3259,9 +3260,9 @@
       },
       "src/dropin/wgpu_dropin_lib.zig": {
         "decision": "Keep",
-        "moduleSha256": "2280167cbc8cc65059994b2f07578a2db570af6f9ab7452edd2041393d5e3153",
-        "reason": "Keep: reviewed pre-existing delta from 8d5b020c33e7493bcd4716c86be88a12aca03f12; four capability/free-members mappings stay at the exported ABI lookup owner. C fixtures verify local/direct identity for explicit and sentinel name lengths without forwarding Doe handles to Dawn.",
-        "reviewer": "codex-windows-provenance/2026-10-19"
+        "moduleSha256": "76a143eff0180e87e4a16d5e6a075ec10e155d9a3b1cfac293d054c89bb9ce41",
+        "reason": "Keep: actual proc loading, caching, last-error and diagnostics remain native; original-owner diagnostics use the selected policy facade without an independent shortcut.",
+        "reviewer": "codex-c-dropin-policy-author/2026-10-23"
       },
       "src/evidence/mod.zig": {
         "decision": "Keep",
@@ -3493,9 +3494,9 @@
       },
       "src/native/api/doe_native_api_misc_exports.zig": {
         "decision": "Keep",
-        "moduleSha256": "862eb2e80a3a4f0df4e133cdfb78f761e66183baa0edef5fa63bd38722807b55",
-        "reason": "Keep: reachable native implementation with a distinct named responsibility and no merge, elevation, recomposition, or deletion signal.",
-        "reviewer": "codex-vulkan-adapter-provenance/2026-08-10"
+        "moduleSha256": "dc92ab07a04b4cb43ba5ec15d8dcd9b92e85b85bc3e7ef9e764ec32d2c7aef6f",
+        "reason": "Keep: default-off copied-label selection preserves the native ABI and object lifetime; C alone owns selected map storage and allocation.",
+        "reviewer": "codex-c-labels-author/2026-10-23"
       },
       "src/native/api/doe_native_api_render_exports.zig": {
         "decision": "Keep",
@@ -3583,9 +3584,9 @@
       },
       "src/native/lifecycle/doe_instance_device_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "2a42b958b19cce4c28b88485baeda0483c354d1b3964399b34f89428418757ad",
-        "reason": "Keep: frozen C-instance seam preserves this native owner and default behavior; only selected identity/lease routing and required test-only observations change.",
-        "reviewer": "codex-c-instance-author/2026-10-23"
+        "moduleSha256": "3dd953f94ce73db207277273d92e3ba39530e603a0a2e0830389ff5875780cb7",
+        "reason": "Keep: default-off C error-scope partial owner uses final-address typed storage, cold creation rollback and checked final deinit; original classifier, callbacks and device references remain with their existing owners.",
+        "reviewer": "codex-c-error-scopes-author/2026-10-23"
       },
       "src/native/mod.zig": {
         "decision": "Keep",
@@ -3775,15 +3776,15 @@
       },
       "src/native/support/doe_native_object_helpers.zig": {
         "decision": "Keep",
-        "moduleSha256": "c6b8c87edc910e1603fc35a955983cc091b6337b8ff0cfc333d11eb32142e6ae",
-        "reason": "Keep: frozen C-instance seam preserves this native owner and default behavior; only selected identity/lease routing and required test-only observations change.",
-        "reviewer": "codex-c-instance-author/2026-10-23"
+        "moduleSha256": "237f9b34bfc13b6e5b113ae3c40a62f3060dee811f7b03d45e8ebae97c231025",
+        "reason": "Keep: default-off copied-label selection preserves the native ABI and object lifetime; C alone owns selected map storage and allocation.",
+        "reviewer": "codex-c-labels-author/2026-10-23"
       },
       "src/native/support/doe_native_object_types.zig": {
         "decision": "Keep",
-        "moduleSha256": "e1890e6b854b502e5eb967a2a8822980a38c9254aba35cf45c94efda5577561b",
-        "reason": "Keep: frozen C-instance seam preserves this native owner and default behavior; only selected identity/lease routing and required test-only observations change.",
-        "reviewer": "codex-c-instance-author/2026-10-23"
+        "moduleSha256": "48a0ebec0686c459fc360f1c0b9f1579d0628026147c093f21df818d3b386329",
+        "reason": "Keep: default-off C error-scope partial owner uses final-address typed storage, cold creation rollback and checked final deinit; original classifier, callbacks and device references remain with their existing owners.",
+        "reviewer": "codex-c-error-scopes-author/2026-10-23"
       },
       "src/native/support/doe_native_runtime_helpers.zig": {
         "decision": "Keep",
@@ -3799,9 +3800,9 @@
       },
       "src/native/surface/doe_surface_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "4cb23057c973d00d96b90e27b5ec16b0c62498eb9ef84972902c6dd8158840de",
-        "reason": "Keep: frozen C-instance seam preserves this native owner and default behavior; only selected identity/lease routing and required test-only observations change.",
-        "reviewer": "codex-c-instance-author/2026-10-23"
+        "moduleSha256": "1737424b1d17b2fb809659b1bc17928145291aff91534821b55ed15007e8919c",
+        "reason": "Keep: provider-independent final-reference surface cleanup removes its debug label after instance lease release and before surface storage deallocation; separately reproduced inherited missing-remove defect.",
+        "reviewer": "codex-c-labels-author/2026-10-23"
       },
       "src/native/vulkan/vulkan_compute_bindings.zig": {
         "decision": "Keep",
@@ -4492,6 +4493,36 @@
         "moduleSha256": "056cb14ec1ddf900f70b0416b4a5e3f7969ddc1dee0e5918bcefd4e7cd83edc1",
         "reason": "Keep: authoritative opaque C header, pinned WebGPU typed adapters and allocator bindings; no object, lifecycle, registry or backend policy imports.",
         "reviewer": "codex-c-instance-author/2026-10-23"
+      },
+      "src/dropin/dropin_policy_c_adapter.zig": {
+        "decision": "Keep",
+        "moduleSha256": "a258e65e81131d12eb1198f28ce9bb664973dad38332fdd322dae6877049a575",
+        "reason": "Keep: private C header import, immutable native identity projection and named code/status delivery only; all selected policy and publication decisions stay in C.",
+        "reviewer": "codex-c-dropin-policy-author/2026-10-23"
+      },
+      "src/native/support/doe_label_owner.zig": {
+        "decision": "Keep",
+        "moduleSha256": "b1fa71c499a47ad25457d5474f6e555d1f6fdc9a539b5feca9e6aa7515ce666a",
+        "reason": "Keep: default-off copied-label selection preserves the native ABI and object lifetime; C alone owns selected map storage and allocation.",
+        "reviewer": "codex-c-labels-author/2026-10-23"
+      },
+      "src/native/support/doe_label_c_adapter.zig": {
+        "decision": "Keep",
+        "moduleSha256": "972f13fe086aeaa5ac4ab3e54472b6c4e9c5e15fb6fdb152a0f43485548a0473",
+        "reason": "Keep: default-off copied-label selection preserves the native ABI and object lifetime; C alone owns selected map storage and allocation.",
+        "reviewer": "codex-c-labels-author/2026-10-23"
+      },
+      "src/native/support/doe_error_scope_owner.zig": {
+        "decision": "Keep",
+        "moduleSha256": "ab5ec34fc23ef6d025d662f62f2a70656dfdbb4318cc398ffca8fb806e1db2d1",
+        "reason": "Keep: default-off C error-scope partial owner uses final-address typed storage, cold creation rollback and checked final deinit; original classifier, callbacks and device references remain with their existing owners.",
+        "reviewer": "codex-c-error-scopes-author/2026-10-23"
+      },
+      "src/native/support/doe_error_scope_c_adapter.zig": {
+        "decision": "Keep",
+        "moduleSha256": "b8738d1167c05bb4e2b8013fb894bc3aed64f0ffeca843dd188ffcecd506c954",
+        "reason": "Keep: default-off C error-scope partial owner uses final-address typed storage, cold creation rollback and checked final deinit; original classifier, callbacks and device references remain with their existing owners.",
+        "reviewer": "codex-c-error-scopes-author/2026-10-23"
       }
     },
     "linePolicy": {
