@@ -13,13 +13,53 @@ typedef struct doe_vk_shader {
     size_t word_count;
     const char *entrypoint;
 } doe_vk_shader;
-/* Native named formats from pinned vk_formats.zig; never WebGPU enum casts. */
+/* Native VkFormat values named in pinned vk_formats.zig (ABI_PROVENANCE.json
+ * retained_constants); never WebGPU enum casts. */
 typedef enum doe_vk_vertex_format {
-    DOE_VK_VERTEX_UINT32 = 98, DOE_VK_VERTEX_SINT32 = 99, DOE_VK_VERTEX_FLOAT32 = 100,
-    DOE_VK_VERTEX_UINT32X2 = 101, DOE_VK_VERTEX_SINT32X2 = 102, DOE_VK_VERTEX_FLOAT32X2 = 103,
-    DOE_VK_VERTEX_UINT32X3 = 104, DOE_VK_VERTEX_SINT32X3 = 105, DOE_VK_VERTEX_FLOAT32X3 = 106,
-    DOE_VK_VERTEX_UINT32X4 = 107, DOE_VK_VERTEX_SINT32X4 = 108, DOE_VK_VERTEX_FLOAT32X4 = 109
+    DOE_VK_VERTEX_UNORM8 = 9,
+    DOE_VK_VERTEX_SNORM8 = 10,
+    DOE_VK_VERTEX_UINT8 = 13,
+    DOE_VK_VERTEX_SINT8 = 14,
+    DOE_VK_VERTEX_UNORM8X2 = 16,
+    DOE_VK_VERTEX_SNORM8X2 = 17,
+    DOE_VK_VERTEX_UINT8X2 = 20,
+    DOE_VK_VERTEX_SINT8X2 = 21,
+    DOE_VK_VERTEX_UNORM8X4 = 37,
+    DOE_VK_VERTEX_SNORM8X4 = 38,
+    DOE_VK_VERTEX_UINT8X4 = 41,
+    DOE_VK_VERTEX_SINT8X4 = 42,
+    DOE_VK_VERTEX_UNORM8X4_BGRA = 44,
+    DOE_VK_VERTEX_UNORM10_10_10_2 = 64,
+    DOE_VK_VERTEX_UNORM16 = 70,
+    DOE_VK_VERTEX_SNORM16 = 71,
+    DOE_VK_VERTEX_UINT16 = 74,
+    DOE_VK_VERTEX_SINT16 = 75,
+    DOE_VK_VERTEX_FLOAT16 = 76,
+    DOE_VK_VERTEX_UNORM16X2 = 77,
+    DOE_VK_VERTEX_SNORM16X2 = 78,
+    DOE_VK_VERTEX_UINT16X2 = 81,
+    DOE_VK_VERTEX_SINT16X2 = 82,
+    DOE_VK_VERTEX_FLOAT16X2 = 83,
+    DOE_VK_VERTEX_UNORM16X4 = 91,
+    DOE_VK_VERTEX_SNORM16X4 = 92,
+    DOE_VK_VERTEX_UINT16X4 = 95,
+    DOE_VK_VERTEX_SINT16X4 = 96,
+    DOE_VK_VERTEX_FLOAT16X4 = 97,
+    DOE_VK_VERTEX_UINT32 = 98,
+    DOE_VK_VERTEX_SINT32 = 99,
+    DOE_VK_VERTEX_FLOAT32 = 100,
+    DOE_VK_VERTEX_UINT32X2 = 101,
+    DOE_VK_VERTEX_SINT32X2 = 102,
+    DOE_VK_VERTEX_FLOAT32X2 = 103,
+    DOE_VK_VERTEX_UINT32X3 = 104,
+    DOE_VK_VERTEX_SINT32X3 = 105,
+    DOE_VK_VERTEX_FLOAT32X3 = 106,
+    DOE_VK_VERTEX_UINT32X4 = 107,
+    DOE_VK_VERTEX_SINT32X4 = 108,
+    DOE_VK_VERTEX_FLOAT32X4 = 109
 } doe_vk_vertex_format;
+/* Bytes one attribute of this format reads; 0 for a non-vertex format. */
+uint32_t doe_vk_vertex_format_bytes(doe_vk_vertex_format format);
 typedef struct doe_vk_vertex_layout {
     uint32_t stride;
     bool per_instance;

@@ -148,11 +148,12 @@ static doe_vk_status validate_pipeline(doe_vk_context *context,
     }
     for (size_t i = 0; i < desc->attribute_count; ++i) {
         const doe_vk_vertex_attribute *attribute = &desc->attributes[i];
-        if (attribute->format < DOE_VK_VERTEX_UINT32 || attribute->format > DOE_VK_VERTEX_FLOAT32X4 ||
-            attribute->slot >= desc->vertex_buffer_count || attribute->location >= limits->maxVertexInputAttributes ||
-            attribute->offset > limits->maxVertexInputAttributeOffset || attribute->offset % 4 != 0)
+        /* WebGPU aligns attribute offsets to min(4, format byte size). */
+        uint32_t bytes = doe_vk_vertex_format_bytes(attribute->format);
+        if (bytes == 0 || attribute->slot >= desc->vertex_buffer_count ||
+            attribute->location >= limits->maxVertexInputAttributes ||
+            attribute->offset > limits->maxVertexInputAttributeOffset || attribute->offset % (bytes < 4 ? bytes : 4) != 0)
             return DOE_VK_INVALID_ARGUMENT;
-        uint32_t bytes = 4 * (1 + ((uint32_t)attribute->format - 98) / 3);
         uint32_t stride = desc->vertex_buffers[attribute->slot].stride;
         if (attribute->offset > UINT32_MAX - bytes ||
             (stride != 0 && !doe_vk_range(stride, attribute->offset, bytes))) return DOE_VK_INVALID_ARGUMENT;
@@ -228,7 +229,7 @@ doe_vk_status doe_vk_render_pipeline_create(doe_vk_context *context,
         const doe_vk_vertex_attribute *attribute = &desc->attributes[i];
         attributes[i] = (VkVertexInputAttributeDescription){attribute->location, attribute->slot,
             (uint32_t)attribute->format, attribute->offset};
-        uint32_t end = attribute->offset + 4 * (1 + ((uint32_t)attribute->format - 98) / 3);
+        uint32_t end = attribute->offset + doe_vk_vertex_format_bytes(attribute->format);
         if (end > pipeline->vertex_attribute_end[attribute->slot]) pipeline->vertex_attribute_end[attribute->slot] = end;
     }
     const VkPipelineVertexInputStateCreateInfo vertex_input = {
