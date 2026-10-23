@@ -88,7 +88,13 @@ shader-library:
 	$(MAKE) -C $(SHADER_ROOT) BUILD=$(SHADER_BUILD) all
 compiler-library:
 	@test -n "$(COMPILER_LIBRARY)" && test -r "$(COMPILER_LIBRARY)" || { echo 'Set COMPILER_LIBRARY to an explicitly qualified ABI9 producer'; exit 2; }
-$(BUILD)/vulkan_indirect_lifetime: tests/vulkan_indirect_lifetime.c $(BUILD)/libdoe_resources.a $(LABEL_SOURCES) tests/vulkan_fixture.h vulkan-library shader-library compiler-library $(COMPILER_LIBRARY)
+$(BUILD)/vulkan_indirect_lifetime: tests/vulkan_indirect_lifetime.c $(BUILD)/libdoe_resources.a $(LABEL_SOURCES) tests/vulkan_fixture.h tests/vulkan_compute_fixture.h vulkan-library shader-library compiler-library $(COMPILER_LIBRARY)
 	$(CC) $(CPPFLAGS) -I../backends/vulkan/include -I$(SHADER_ROOT)/include -I$(SHADER_ROOT)/../compiler/include $(CFLAGS) $(filter-out %.h vulkan-library shader-library compiler-library $(COMPILER_LIBRARY),$^) $(VK_BUILD)/libdoe_vk.a $(SHADER_BUILD)/libdoe_shader.a $(COMPILER_LIBRARY) -Wl,-rpath,$(abspath $(dir $(COMPILER_LIBRARY))) -ldl -o $@
 vulkan-indirect-lifetime: $(BUILD)/vulkan_indirect_lifetime
 	$(BUILD)/vulkan_indirect_lifetime tests/indirect_arguments.wgsl tests/indirect_counter.wgsl "$$(sha256sum $(COMPILER_LIBRARY) | cut -d ' ' -f 1)" --allow-software
+
+.PHONY: vulkan-indirect-render-lifetime
+$(BUILD)/vulkan_indirect_render_lifetime: tests/vulkan_indirect_render_lifetime.c $(BUILD)/libdoe_resources.a $(LABEL_SOURCES) tests/vulkan_fixture.h tests/vulkan_compute_fixture.h vulkan-library shader-library compiler-library $(COMPILER_LIBRARY)
+	$(CC) $(CPPFLAGS) -I../backends/vulkan/include -I$(SHADER_ROOT)/include -I$(SHADER_ROOT)/../compiler/include $(CFLAGS) $(filter-out %.h vulkan-library shader-library compiler-library $(COMPILER_LIBRARY),$^) $(VK_BUILD)/libdoe_vk.a $(SHADER_BUILD)/libdoe_shader.a $(COMPILER_LIBRARY) -Wl,-rpath,$(abspath $(dir $(COMPILER_LIBRARY))) -ldl -o $@
+vulkan-indirect-render-lifetime: $(BUILD)/vulkan_indirect_render_lifetime
+	$(BUILD)/vulkan_indirect_render_lifetime $(TINT_GRAPHICS)/output.vs_main.spv $(TINT_GRAPHICS)/output.fs_main.spv tests/indirect_draw_arguments.wgsl "$$(sha256sum $(COMPILER_LIBRARY) | cut -d ' ' -f 1)" --allow-software
