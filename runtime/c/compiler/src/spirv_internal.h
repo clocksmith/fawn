@@ -57,6 +57,7 @@ typedef struct {
     uint32_t constants_used;
     bool failed;
 } Emitter;
+bool spirv_runtime_length(Emitter *, uint32_t, uint32_t);
 bool spirv_emit_error(Emitter *e, uint32_t offset, const char *message);
 uint32_t spirv_reserve_ids(Emitter *e, uint32_t count);
 uint32_t spirv_scalar_type(TypeId type);

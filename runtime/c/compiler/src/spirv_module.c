@@ -23,6 +23,15 @@ uint32_t spirv_reserve_ids(Emitter *e, uint32_t count) {
     e->next_id += count;
     return first;
 }
+bool spirv_runtime_length(Emitter *e, uint32_t resource, uint32_t result) {
+    const CompilerWorkspace *c = e->program;
+    if (resource >= c->resource_count || c->resources[resource].tail_type == NO_ID)
+        return spirv_emit_error(e, 0u, "runtime length requires a runtime-tail storage resource");
+    const ResourceRecord *r = &c->resources[resource];
+    const uint32_t member = spirv_wrapped_resource(c, r) ? 0u : c->types[r->type - 7u].count - 1u;
+    const uint32_t words[] = { ID_U32, result, r->target, member };
+    return spirv_instruction(e, OP_ARRAY_LENGTH, words, 4u);
+}
 uint32_t spirv_scalar_type(TypeId type) {
     switch (type) {
         case IR_VOID: return ID_VOID;
@@ -331,7 +340,9 @@ bool spirv_plan_module(Emitter *e) {
         const ImageType image = t->state.image;
         if (image.dimension == DOE_COMPILER_VIEW_1D) e->image_capabilities |= image.format != 0u ? 4u : 2u;
         if (image.dimension == DOE_COMPILER_VIEW_CUBE_ARRAY) e->image_capabilities |= 8u;
-        if (image.format == 6u || image.format == 25u || image.format == 35u) e->image_capabilities |= 16u;
+        if (image.format == DOE_COMPILER_FORMAT_RG32FLOAT ||
+            image.format == DOE_COMPILER_FORMAT_RG32SINT ||
+            image.format == DOE_COMPILER_FORMAT_RG32UINT) e->image_capabilities |= 16u;
     }
     for (uint32_t f = 0u; f < c->function_count; ++f) {
         FunctionRecord *function = &c->functions[f];

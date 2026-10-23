@@ -354,7 +354,7 @@ static IrOpcode binary_opcode(ExpressionKind op) {
         case EXPRESSION_ABSTRACT_INTEGER: case EXPRESSION_BOOLEAN: case EXPRESSION_NOT:
         case EXPRESSION_AND: case EXPRESSION_OR: case EXPRESSION_LITERAL:
         case EXPRESSION_NEGATE: case EXPRESSION_COMPLEMENT: case EXPRESSION_CONSTRUCT:
-        case EXPRESSION_BITCAST: case EXPRESSION_CALL: return IR_CONSTANT;
+        case EXPRESSION_BITCAST: case EXPRESSION_CALL: case EXPRESSION_ADDRESS: return IR_CONSTANT;
     }
     return IR_CONSTANT;
 }
@@ -423,6 +423,9 @@ bool sema_expression(Source *s, uint32_t id, const LocalScope *scope, bool evalu
     if (id >= c->expression_count) return source_error(s, DOE_COMPILER_INPUT_ERROR, s->length, "invalid expression identity");
     const Expression *e = &c->expressions[id];
     *out = (ExpressionValue){.value.source_offset = e->source_offset};
+    if (e->kind == EXPRESSION_ADDRESS)
+        return source_error(s, DOE_COMPILER_UNSUPPORTED, e->source_offset,
+            "address values are currently supported only as arrayLength operands");
     if (e->kind == EXPRESSION_CALL) return sema_call_value(s, id, scope, evaluate, emit, false, out);
     if (e->kind == EXPRESSION_LITERAL || e->kind == EXPRESSION_BOOLEAN) {
         NumericValue n;

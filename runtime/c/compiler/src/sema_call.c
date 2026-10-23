@@ -185,6 +185,12 @@ bool sema_call_value(Source *s, uint32_t id, const LocalScope *scope, bool evalu
     if (function != NO_ID) return user_call(s, id, scope, function, evaluate, emit, statement, out);
     const TypeId nominal = sema_find_struct(s, name);
     if (nominal == NO_ID && sema_module_declared(s, name)) return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, name.offset, "call target resolves to a module value");
+    if (nominal == NO_ID && source_span_is(s, name, "arrayLength")) {
+        if (statement || node->right != 1u || node->value.call.type.offset != NO_ID)
+            return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, name.offset,
+                "arrayLength requires one runtime array pointer and a used result");
+        return sema_array_length(s, id, scope, emit, out);
+    }
     if (nominal==NO_ID && source_span_is(s,name,"workgroupBarrier")) {
         if (!statement || node->right!=0u || node->value.call.type.offset!=NO_ID || c->current_function==NO_ID)
             return source_error(s,DOE_COMPILER_SEMANTIC_ERROR,name.offset,"workgroupBarrier requires no arguments and no result");

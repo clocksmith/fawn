@@ -39,12 +39,12 @@ bool type_image_intern(Source *s, uint32_t kind, TypeId scalar, ImageType image,
 }
 bool image_format(const Source *s, NameSpan name, uint32_t *format, TypeId *scalar) {
     static const struct { const char *name; uint32_t format; TypeId scalar; } formats[] = {
-        {"rgba32float", 1u, IR_F32}, {"rgba16float", 2u, IR_F32}, {"r32float", 3u, IR_F32},
-        {"rgba8unorm", 4u, IR_F32}, {"rgba8snorm", 5u, IR_F32}, {"rg32float", 6u, IR_F32},
-        {"rgba32sint", 21u, IR_I32}, {"rgba16sint", 22u, IR_I32}, {"rgba8sint", 23u, IR_I32},
-        {"r32sint", 24u, IR_I32}, {"rg32sint", 25u, IR_I32}, {"rgba32uint", 30u, IR_U32},
-        {"rgba16uint", 31u, IR_U32}, {"rgba8uint", 32u, IR_U32}, {"r32uint", 33u, IR_U32},
-        {"rg32uint", 35u, IR_U32}
+        {"rgba32float", DOE_COMPILER_FORMAT_RGBA32FLOAT, IR_F32}, {"rgba16float", DOE_COMPILER_FORMAT_RGBA16FLOAT, IR_F32}, {"r32float", DOE_COMPILER_FORMAT_R32FLOAT, IR_F32},
+        {"rgba8unorm", DOE_COMPILER_FORMAT_RGBA8UNORM, IR_F32}, {"rgba8snorm", DOE_COMPILER_FORMAT_RGBA8SNORM, IR_F32}, {"rg32float", DOE_COMPILER_FORMAT_RG32FLOAT, IR_F32},
+        {"rgba32sint", DOE_COMPILER_FORMAT_RGBA32SINT, IR_I32}, {"rgba16sint", DOE_COMPILER_FORMAT_RGBA16SINT, IR_I32}, {"rgba8sint", DOE_COMPILER_FORMAT_RGBA8SINT, IR_I32},
+        {"r32sint", DOE_COMPILER_FORMAT_R32SINT, IR_I32}, {"rg32sint", DOE_COMPILER_FORMAT_RG32SINT, IR_I32}, {"rgba32uint", DOE_COMPILER_FORMAT_RGBA32UINT, IR_U32},
+        {"rgba16uint", DOE_COMPILER_FORMAT_RGBA16UINT, IR_U32}, {"rgba8uint", DOE_COMPILER_FORMAT_RGBA8UINT, IR_U32}, {"r32uint", DOE_COMPILER_FORMAT_R32UINT, IR_U32},
+        {"rg32uint", DOE_COMPILER_FORMAT_RG32UINT, IR_U32}
     };
     for (size_t i = 0u; i < sizeof(formats) / sizeof(formats[0]); ++i)
         if (source_span_is(s, name, formats[i].name)) {
