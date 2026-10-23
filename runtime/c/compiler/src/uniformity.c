@@ -102,6 +102,7 @@ static bool name_bit(Uniformity *a,NameSpan name,uint32_t cf,uint32_t *out) {
             if (!type_handle(a->compiler, a->compiler->resources[identity.index].type) &&
                 a->compiler->resources[identity.index].access==DOE_COMPILER_READ_WRITE) *out=varying(a);
             return true;
+        case IDENTITY_STAGE_INPUT:
         case IDENTITY_WORKGROUP: *out=varying(a); return true;
         case IDENTITY_NONE: break;
     }

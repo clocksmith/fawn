@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: MIT
  * Copyright (c) 2026 Doe contributors */
 #include "numeric.h"
+#include "stage.h"
 #include <errno.h>
 #include <string.h>
 
@@ -250,7 +251,7 @@ static bool select_entry(Source *s, const DoeCompilerEntrySelectionV5 *selection
     *selected=DOE_COMPILER_MODULE_NONE;
     if (selection->mode==DOE_COMPILER_SELECT_NONE) return true;
     if (selection->mode==DOE_COMPILER_SELECT_AUTO) {
-        if (c->entry_count!=1u) return source_error(s,DOE_COMPILER_SEMANTIC_ERROR,0u,"AUTO requires exactly one compute entry");
+        if (c->entry_count!=1u) return source_error(s,DOE_COMPILER_SEMANTIC_ERROR,0u,"AUTO requires exactly one shader entry");
         *selected=0u;
         return true;
     }
@@ -258,11 +259,11 @@ static bool select_entry(Source *s, const DoeCompilerEntrySelectionV5 *selection
         const FunctionRecord *f=&c->functions[i];
         if (f->name.length!=selection->name_length || memcmp(s->source+f->name.offset,selection->name,selection->name_length)!=0) continue;
         if ((f->flags&FUNCTION_ENTRY)==0u)
-            return source_error(s,DOE_COMPILER_SEMANTIC_ERROR,f->name.offset,"selected function is not a compute entry");
+            return source_error(s,DOE_COMPILER_SEMANTIC_ERROR,f->name.offset,"selected function is not a shader entry");
         *selected=f->entry_index;
         return true;
     }
-    return source_error(s,DOE_COMPILER_SEMANTIC_ERROR,0u,"selected compute entry does not exist");
+    return source_error(s,DOE_COMPILER_SEMANTIC_ERROR,0u,"selected shader entry does not exist");
 }
 static bool module_spans(Source *s, uint32_t flags, const DoeCompilerModuleOutputs *o) {
     const bool measure=(flags&DOE_COMPILER_MODULE_MEASURE)!=0u;
@@ -291,14 +292,17 @@ static DoeCompilerStatus compile_module(const DoeCompilerModuleCapacities *capac
     void *workspace, size_t workspace_size, const char *source, size_t length,
     const DoeCompilerEntrySelectionV5 *selection, uint32_t flags, const DoeCompilerModuleOutputs *outputs,
     DoeCompilerModuleResult *result, const DoeCompilerResourceOutputs *resource_outputs,
-    DoeCompilerResourceResult *resource_result) {
+    DoeCompilerResourceResult *resource_result, const DoeCompilerStageCapacities *stage_capacities,
+    const DoeCompilerStageOutputs *stage_outputs, DoeCompilerStageResult *stage_result) {
     const int saved_errno=errno;
     memset(result,0,sizeof(*result));
     Source context={.source=source,.length=length,.diagnostic=&result->diagnostic,
         .exhausted_pool=&result->exhausted_pool,.minimum_pool_capacity=&result->minimum_pool_capacity};
     CompilerLimits limits;
-    size_t bytes;
-    if (!compiler_module_layout(capacities,&limits,&bytes)) {
+    size_t bytes, base = 0u;
+    const bool layout = stage_capacities != NULL ? stage_layout(stage_capacities, &limits, &base, &bytes) :
+        compiler_module_layout(capacities, &limits, &bytes);
+    if (!layout) {
         (void)source_error(&context,DOE_COMPILER_INPUT_ERROR,0u,"invalid module capacities or layout overflow");
         return compiler_return(result->diagnostic.status,saved_errno);
     }
@@ -306,6 +310,12 @@ static DoeCompilerStatus compile_module(const DoeCompilerModuleCapacities *capac
         !valid_span(resource_outputs->handles, resource_outputs->handle_capacity, sizeof(DoeCompilerHandleV6),
             _Alignof(DoeCompilerHandleV6), (flags & DOE_COMPILER_MODULE_REFLECTION) != 0u)) {
         (void)source_error(&context, DOE_COMPILER_INPUT_ERROR, 0u, "invalid selected handle span or capacity product");
+        return compiler_return(result->diagnostic.status, saved_errno);
+    }
+    if (stage_outputs != NULL && !valid_span(stage_outputs->interfaces, stage_outputs->interface_capacity,
+        sizeof(DoeCompilerStageInterfaceV7), _Alignof(DoeCompilerStageInterfaceV7),
+        (flags & DOE_COMPILER_MODULE_REFLECTION) != 0u)) {
+        (void)source_error(&context, DOE_COMPILER_INPUT_ERROR, 0u, "invalid selected stage interface span or capacity product");
         return compiler_return(result->diagnostic.status, saved_errno);
     }
     if (!selection_shape(&context,selection) || !module_spans(&context,flags,outputs))
@@ -316,12 +326,21 @@ static DoeCompilerStatus compile_module(const DoeCompilerModuleCapacities *capac
     }
     CompilerWorkspace *c=workspace;
     compiler_job_bind(c,workspace,&limits);
+    if (stage_capacities != NULL) stage_bind(&context, workspace, stage_capacities, base);
     DoeCompilerTypedOutputCounts typed;
     uint32_t selected;
     if (!compile_pipeline(&context,c,0u,&typed) || !select_entry(&context,selection,&selected))
         return compiler_return(result->diagnostic.status,saved_errno);
     if (resource_result == NULL && (flags & DOE_COMPILER_MODULE_REFLECTION) != 0u && !reflect_buffers_only(&context))
         return compiler_return(result->diagnostic.status, saved_errno);
+    const uint64_t stage_names = stage_name_bytes(&context);
+    if (stage_names > UINT32_MAX - typed.name_bytes) {
+        (void)source_error(&context, DOE_COMPILER_UNSUPPORTED, length, "interface names exceed uint32 metadata format");
+        return compiler_return(result->diagnostic.status, saved_errno);
+    }
+    typed.name_bytes += (size_t)stage_names;
+    const size_t interfaces = context.stages != NULL && (flags & DOE_COMPILER_MODULE_REFLECTION) != 0u ?
+        context.stages->interface_count : 0u;
     const size_t handles = resource_result != NULL && (flags & DOE_COMPILER_MODULE_REFLECTION) != 0u ? reflect_handle_count(c) : 0u;
     DoeCompilerModuleOutputCounts counts={0};
     if ((flags&DOE_COMPILER_MODULE_WORDS)!=0u) counts.words=typed.words;
@@ -334,11 +353,13 @@ static DoeCompilerStatus compile_module(const DoeCompilerModuleCapacities *capac
         counts.entry_references=c->entry_reference_count;
         counts.name_bytes=typed.name_bytes;
     }
+    if (stage_result != NULL) stage_result->required_interfaces = interfaces;
     if (resource_result != NULL) resource_result->required_handles = handles;
     result->required=counts;
     result->required_is_exact=1u;
     if ((flags&DOE_COMPILER_MODULE_MEASURE)!=0u) return compiler_return(DOE_COMPILER_OK,saved_errno);
-    if ((resource_outputs != NULL && resource_outputs->handle_capacity < handles) || outputs->word_capacity<counts.words || outputs->type_capacity<counts.types || outputs->member_capacity<counts.members ||
+    if ((stage_outputs != NULL && stage_outputs->interface_capacity < interfaces) ||
+        (resource_outputs != NULL && resource_outputs->handle_capacity < handles) || outputs->word_capacity<counts.words || outputs->type_capacity<counts.types || outputs->member_capacity<counts.members ||
         outputs->resource_capacity<counts.resources || outputs->workgroup_capacity<counts.workgroups ||
         outputs->entry_capacity<counts.entries || outputs->entry_reference_capacity<counts.entry_references || outputs->name_capacity<counts.name_bytes) {
         (void)source_error(&context,DOE_COMPILER_OUTPUT_TOO_SMALL,length,"selected module output capacity is too small");
@@ -350,6 +371,11 @@ static DoeCompilerStatus compile_module(const DoeCompilerModuleCapacities *capac
         reflect_handles(c, resource_outputs->handles);
         result->module.schema_version = DOE_COMPILER_RESOURCES_SCHEMA_VERSION;
         resource_result->published_handles = handles;
+    }
+    if (stage_result != NULL && (flags & DOE_COMPILER_MODULE_REFLECTION) != 0u) {
+        stage_reflect(&context, stage_outputs->interfaces, outputs->names, (uint32_t)(typed.name_bytes - stage_names));
+        result->module.schema_version = DOE_COMPILER_STAGES_SCHEMA_VERSION;
+        stage_result->published_interfaces = interfaces;
     }
     result->published=counts;
     return compiler_return(DOE_COMPILER_OK,saved_errno);
@@ -368,7 +394,7 @@ DoeCompilerStatus doe_compiler_compile_module(uint32_t version,
         return compiler_return(DOE_COMPILER_ABI_MISMATCH,saved_errno);
     if (!module_records(outputs)) return compiler_return(DOE_COMPILER_ABI_MISMATCH,saved_errno);
     return compiler_return(compile_module(capacities, workspace, workspace_size, source, length,
-        selection, flags, outputs, result, NULL, NULL), saved_errno);
+        selection, flags, outputs, result, NULL, NULL, NULL, NULL, NULL), saved_errno);
 }
 
 DoeCompilerStatus doe_compiler_resource_requirements(uint32_t version,
@@ -400,5 +426,45 @@ DoeCompilerStatus doe_compiler_compile_resources(uint32_t version,
         return compiler_return(DOE_COMPILER_ABI_MISMATCH, saved_errno);
     memset(result, 0, sizeof(*result));
     return compiler_return(compile_module(capacities, workspace, workspace_size, source, length,
-        selection, flags, outputs != NULL ? &outputs->module : NULL, &result->module, outputs, result), saved_errno);
+        selection, flags, outputs != NULL ? &outputs->module : NULL, &result->module, outputs, result, NULL, NULL, NULL), saved_errno);
+}
+
+DoeCompilerStatus doe_compiler_stage_requirements(uint32_t version,
+    const DoeCompilerStageCapacities *capacities, size_t capacities_size,
+    DoeCompilerWorkspaceRequirements *requirements, size_t requirements_size) {
+    const int saved_errno = errno;
+    if (requirements == NULL) return compiler_return(DOE_COMPILER_INPUT_ERROR, saved_errno);
+    if (version != DOE_COMPILER_STAGES_ABI_VERSION || capacities_size != sizeof(*capacities) || requirements_size != sizeof(*requirements))
+        return compiler_return(DOE_COMPILER_ABI_MISMATCH, saved_errno);
+    CompilerLimits limits;
+    size_t base, bytes;
+    if (!stage_layout(capacities, &limits, &base, &bytes)) return compiler_return(DOE_COMPILER_INPUT_ERROR, saved_errno);
+    *requirements = (DoeCompilerWorkspaceRequirements){bytes, _Alignof(max_align_t)};
+    return compiler_return(DOE_COMPILER_OK, saved_errno);
+}
+DoeCompilerStatus doe_compiler_compile_stages(uint32_t version,
+    const DoeCompilerStageCapacities *capacities, size_t capacities_size,
+    void *workspace, size_t workspace_size, const char *source, size_t length,
+    const DoeCompilerEntrySelectionV5 *selection, size_t selection_size, uint32_t flags,
+    const DoeCompilerStageOutputs *outputs, size_t outputs_size,
+    DoeCompilerStageResult *result, size_t result_size) {
+    const int saved_errno = errno;
+    if (result == NULL) return compiler_return(DOE_COMPILER_INPUT_ERROR, saved_errno);
+    if (version != DOE_COMPILER_STAGES_ABI_VERSION || capacities_size != sizeof(*capacities) ||
+        selection_size != sizeof(*selection) || result_size != sizeof(*result) ||
+        (outputs != NULL ? outputs_size != sizeof(*outputs) : outputs_size != 0u))
+        return compiler_return(DOE_COMPILER_ABI_MISMATCH, saved_errno);
+    if (outputs != NULL && (!module_records(&outputs->resources.module) ||
+        outputs->resources.handle_record_size != sizeof(DoeCompilerHandleV6) ||
+        outputs->interface_record_size != sizeof(DoeCompilerStageInterfaceV7)))
+        return compiler_return(DOE_COMPILER_ABI_MISMATCH, saved_errno);
+    memset(result, 0, sizeof(*result));
+    if (capacities == NULL) {
+        result->resources.module.diagnostic.status = DOE_COMPILER_INPUT_ERROR;
+        return compiler_return(DOE_COMPILER_INPUT_ERROR, saved_errno);
+    }
+    return compiler_return(compile_module(capacities != NULL ? &capacities->module : NULL,
+        workspace, workspace_size, source, length, selection, flags,
+        outputs != NULL ? &outputs->resources.module : NULL, &result->resources.module,
+        outputs != NULL ? &outputs->resources : NULL, &result->resources, capacities, outputs, result), saved_errno);
 }

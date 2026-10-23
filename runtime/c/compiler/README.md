@@ -14,6 +14,11 @@ public headers remain unchanged; ABI5 is additive. This is an isolated
 [C migration](../../../docs/c-migration/MIGRATION.md), not complete WGSL,
 production replacement, native runtime adoption or physical GPU qualification.
 
+The additive [texture/sampler family](TEXTURES.md) and [vertex/fragment interfaces](STAGES.md)
+now have focused software checks. ABI7 uses explicit interface pools; unchanged
+compute layouts remain available. Native graphics orientation, pipeline admission
+and physical execution are not inherited from SPIR-V validation.
+
 ## Build and decisive checks
 
 From the repository root, ordinary source consumption is:
@@ -50,11 +55,12 @@ counts and explicitly lifted negative cases. Never broadly relax those assertion
 
 ## Native API and caller ownership
 
-The shared library exports exactly eleven symbols: the five retained compile,
+The shared library exports exactly thirteen symbols: the five retained compile,
 workspace and job entrypoints, plus `doe_compiler_typed_requirements` and
 `doe_compiler_compile_typed`, plus the two additive
 [ABI5 module operations](include/doe_compiler_module.h), and the two additive
-[ABI6 resource operations](include/doe_compiler_resources.h). See [ABI4](include/doe_compiler_typed.h), the
+[ABI6 resource operations](include/doe_compiler_resources.h), and the two additive
+[ABI7 stage operations](include/doe_compiler_stages.h). See [ABI4](include/doe_compiler_typed.h), the
 [frozen numeric semantics](MILESTONE_12.md) and [lowering ledger](MILESTONE_12_LEDGER.md),
 with retained storage ownership.
 

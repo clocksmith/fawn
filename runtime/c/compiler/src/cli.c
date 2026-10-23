@@ -3,7 +3,7 @@
 #define _POSIX_C_SOURCE 200809L
 #include "cli_json.h"
 #include "../include/doe_compiler_job.h"
-#include "../include/doe_compiler_typed.h"
+#include "../include/doe_compiler_stages.h"
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
@@ -98,14 +98,20 @@ int main(int argc, char **argv) {
         .ir_operands = 4096u, .target_declarations = 7744u, .traversal_items = 1281u,
         .words = 65536u, .expression_depth = 32u, .control_depth = 16u, .type_syntax_depth = 32u
     };
+    const DoeCompilerStageCapacities stages = {
+        .module = {.typed = typed, .entries = 630u, .entry_inputs = 1024u,
+            .entry_references = 665280u},
+        .interface_attributes = 4096u, .stage_interfaces = 4096u
+    };
+    const DoeCompilerEntrySelectionV5 selection = {.mode = DOE_COMPILER_SELECT_NONE};
     const bool binary_only = reflection == NULL;
     size_t word_capacity = legacy ? DOE_COMPILER_MAX_WORDS : job.words;
-    DoeCompilerTypedResult typed_result;
+    DoeCompilerStageResult stage_result;
     DoeCompilerWorkspaceRequirements requirements = {0};
     if (!legacy) {
         const DoeCompilerStatus queried = binary_only ?
-            doe_compiler_typed_requirements(DOE_COMPILER_TYPED_ABI_VERSION,
-                &typed, sizeof(typed), &requirements, sizeof(requirements)) :
+            doe_compiler_stage_requirements(DOE_COMPILER_STAGES_ABI_VERSION,
+                &stages, sizeof(stages), &requirements, sizeof(requirements)) :
             doe_compiler_job_requirements(DOE_COMPILER_JOB_ABI_VERSION,
                 &job, sizeof(job), &requirements, sizeof(requirements));
         if (queried != DOE_COMPILER_OK) {
@@ -114,18 +120,18 @@ int main(int argc, char **argv) {
         workspace = malloc(requirements.size_bytes);
         if (workspace == NULL) { fprintf(stderr, "workspace allocation failed\n"); goto cleanup; }
         if (binary_only) {
-            const DoeCompilerStatus measured = doe_compiler_compile_typed(
-                DOE_COMPILER_TYPED_ABI_VERSION, &typed, sizeof(typed), workspace,
-                requirements.size_bytes, source, length,
+            const DoeCompilerStatus measured = doe_compiler_compile_stages(
+                DOE_COMPILER_STAGES_ABI_VERSION, &stages, sizeof(stages), workspace,
+                requirements.size_bytes, source, length, &selection, sizeof(selection),
                 DOE_COMPILER_TYPED_WORDS | DOE_COMPILER_TYPED_MEASURE,
-                NULL, 0u, &typed_result, sizeof(typed_result));
+                NULL, 0u, &stage_result, sizeof(stage_result));
             if (measured != DOE_COMPILER_OK) {
-                const DoeCompilerDiagnostic *d = &typed_result.diagnostic;
+                const DoeCompilerDiagnostic *d = &stage_result.resources.module.diagnostic;
                 fprintf(stderr, "%s:%u:%u: category=%u offset=%zu: %s\n", input,
                     d->line, d->column, (unsigned)d->status, d->offset, d->message);
                 goto cleanup;
             }
-            word_capacity = typed_result.required.words;
+            word_capacity = stage_result.resources.module.required.words;
         } else {
             result_v2 = malloc(sizeof(*result_v2));
             if (result_v2 == NULL) { fprintf(stderr, "result allocation failed\n"); goto cleanup; }
@@ -146,17 +152,20 @@ int main(int argc, char **argv) {
         diagnostic = &result.diagnostic;
         word_count = result.word_count;
     } else if (binary_only) {
-        const DoeCompilerTypedOutputs spans = {
+        const DoeCompilerStageOutputs spans = {.resources = {.module = {
             .words = words, .word_capacity = word_capacity,
             .type_record_size = sizeof(DoeCompilerTypeV4),
             .member_record_size = sizeof(DoeCompilerMemberV4),
-            .resource_record_size = sizeof(DoeCompilerResourceV4)
+            .resource_record_size = sizeof(DoeCompilerResourceV4),
+            .workgroup_record_size = sizeof(DoeCompilerWorkgroupV5),
+            .entry_record_size = sizeof(DoeCompilerEntryV5)}, .handle_record_size = sizeof(DoeCompilerHandleV6)},
+            .interface_record_size = sizeof(DoeCompilerStageInterfaceV7)
         };
-        compiled = doe_compiler_compile_typed(DOE_COMPILER_TYPED_ABI_VERSION,
-            &typed, sizeof(typed), workspace, requirements.size_bytes, source, length,
-            DOE_COMPILER_TYPED_WORDS, &spans, sizeof(spans), &typed_result, sizeof(typed_result));
-        diagnostic = &typed_result.diagnostic;
-        word_count = typed_result.published.words;
+        compiled = doe_compiler_compile_stages(DOE_COMPILER_STAGES_ABI_VERSION,
+            &stages, sizeof(stages), workspace, requirements.size_bytes, source, length, &selection, sizeof(selection),
+            DOE_COMPILER_TYPED_WORDS, &spans, sizeof(spans), &stage_result, sizeof(stage_result));
+        diagnostic = &stage_result.resources.module.diagnostic;
+        word_count = stage_result.resources.module.published.words;
     } else {
         compiled = doe_compiler_compile_job(DOE_COMPILER_JOB_ABI_VERSION,
             &job, sizeof(job), workspace, requirements.size_bytes,

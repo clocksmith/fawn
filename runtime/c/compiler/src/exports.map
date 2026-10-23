@@ -8,5 +8,7 @@
     doe_compiler_compile_module;
     doe_compiler_resource_requirements;
     doe_compiler_compile_resources;
-    local: *;
+    doe_compiler_stage_requirements;
+    doe_compiler_compile_stages;
+  local: *;
 };

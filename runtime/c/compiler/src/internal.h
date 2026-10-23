@@ -86,7 +86,7 @@ typedef struct {
     union { uint64_t bits; struct { uint32_t scan, parent; } dependency; } value;
     TypeId type; uint32_t state;
 } ConstantSyntax;
-enum { FUNCTION_ENTRY = 1u, FUNCTION_MUST_USE = 2u };
+enum { FUNCTION_ENTRY = 1u, FUNCTION_MUST_USE = 2u, FUNCTION_VERTEX = 4u, FUNCTION_FRAGMENT = 8u };
 typedef struct {
     NameSpan name; TypeRef annotation;
     union { uint32_t formal_start, entry_index; };
@@ -129,7 +129,7 @@ typedef enum {
     IR_BREAK, IR_CONTINUE, IR_BREAK_IF, IR_NEGATE, IR_COMPLEMENT,
     IR_DIVIDE, IR_REMAINDER, IR_BIT_AND, IR_BIT_OR, IR_BIT_XOR,
     IR_SHIFT_LEFT, IR_SHIFT_RIGHT, IR_CONVERT, IR_BITCAST, IR_CALL, IR_BUILTIN,
-    IR_COMPOSITE, IR_ACCESS_LOAD, IR_ACCESS_STORE, IR_VALUE_ACCESS, IR_SWIZZLE, IR_WORKGROUP_BARRIER, IR_HANDLE, IR_IMAGE
+    IR_COMPOSITE, IR_ACCESS_LOAD, IR_ACCESS_STORE, IR_VALUE_ACCESS, IR_SWIZZLE, IR_WORKGROUP_BARRIER, IR_HANDLE, IR_IMAGE, IR_STAGE_INPUT
 } IrOpcode;
 typedef struct { uint32_t id; TypeId type; uint32_t source_offset; } IrValue;
 /* Four words have operation-specific, named meanings. Scalar aliases preserve
@@ -177,9 +177,10 @@ typedef struct {
 enum { LIMIT_LEGACY = 1u, LIMIT_SINGULAR = 2u, LIMIT_MODULE = 4u };
 enum { MODULE_SUBGROUPS = 1u };
 typedef struct CompilerWorkspace CompilerWorkspace;
+typedef struct StageWorkspace StageWorkspace;
 typedef struct { const char *source; size_t length; DoeCompilerDiagnostic *diagnostic;
     const CompilerLimits *limits; CompilerWorkspace *compiler;
-    uint32_t *exhausted_pool; size_t *minimum_pool_capacity; } Source;
+    uint32_t *exhausted_pool; size_t *minimum_pool_capacity; StageWorkspace *stages; } Source;
 struct CompilerWorkspace {
     CompilerLimits limits;
     union { Token *tokens; IrInstruction *instructions; }; Expression *expressions; Statement *statements; ConstantSyntax *constant_decls;

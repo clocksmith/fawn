@@ -121,7 +121,7 @@ uint32_t spirv_unsigned_constant(Emitter *e, uint32_t value) {
 uint32_t spirv_pointer_type(Emitter *e, TypeId type, uint32_t storage) {
     CompilerWorkspace *c = e->program;
     const uint32_t slot = storage == 7u ? 0u : storage == 2u ? 1u : storage == 12u ? 2u : 3u;
-    if (type >= IR_BOOL && type <= IR_F32) {
+    if (type >= IR_BOOL && type <= IR_F32 && (storage == 7u || storage == 2u || storage == 12u || storage == 4u)) {
         if (e->local_pointers[slot][type] == 0u) e->local_pointers[slot][type] = spirv_reserve_ids(e, 1u);
         return e->local_pointers[slot][type];
     }
@@ -338,18 +338,19 @@ bool spirv_plan_module(Emitter *e) {
         function->state.target.function = spirv_reserve_ids(e, 1u);
         function->state.target.label = spirv_reserve_ids(e, 1u);
         function->state.target.signature = 0u;
-        if (function->result_type == IR_VOID && function->formal_count == 0u) function->state.target.signature = ID_FN_TYPE;
+        if (stage_graphics(function) || (function->result_type == IR_VOID && function->formal_count == 0u)) function->state.target.signature = ID_FN_TYPE;
         else {
             if (function->formal_count > UINT16_MAX - 3u)
                 return source_error(e->source, DOE_COMPILER_UNSUPPORTED, function->name.offset,
                                     "SPIR-V function spirv_instruction word-count format capacity exceeded");
             for (uint32_t p = 0u; p < f; ++p)
-                if (same_signature(c, function, &c->functions[p])) {
+                if (!stage_graphics(&c->functions[p]) && same_signature(c, function, &c->functions[p])) {
                     function->state.target.signature = c->functions[p].state.target.signature; break;
                 }
             if (function->state.target.signature == 0u) function->state.target.signature = spirv_reserve_ids(e, 1u);
         }
     }
+    if (!spirv_stage_plan(e)) return false;
     for (uint32_t i=0u;i<c->entry_input_count;++i) {
         c->entry_inputs[i].target=spirv_reserve_ids(e,1u);
         if (input_subgroup(c->entry_inputs[i].kind)) e->subgroup_capabilities |= 2u;
@@ -572,6 +573,7 @@ static bool dynamic_declarations(Emitter *e) {
 bool spirv_module_declarations(Emitter *e) {
     CompilerWorkspace *c = e->program;
     EMIT(OP_CAPABILITY, 1u);
+    if (e->sample_rate_shading) { EMIT(OP_CAPABILITY, 35u); }
     if ((e->image_capabilities & 1u) != 0u) { EMIT(OP_CAPABILITY, 50u); }
     if ((e->image_capabilities & 2u) != 0u) { EMIT(OP_CAPABILITY, 43u); }
     if ((e->image_capabilities & 4u) != 0u) { EMIT(OP_CAPABILITY, 44u); }
@@ -591,12 +593,16 @@ bool spirv_module_declarations(Emitter *e) {
         const size_t name_words=function->name.length/4u+1u;
         uint32_t *arguments=NULL;
         if (!spirv_instruction_space(e,OP_ENTRY_POINT,2u+name_words,&arguments)) return false;
-        arguments[0]=5u;
+        arguments[0]=(function->flags & FUNCTION_VERTEX) != 0u ? 0u : (function->flags & FUNCTION_FRAGMENT) != 0u ? 4u : 5u;
         arguments[1]=function->state.target.function;
         (void)span_words(e->source,function->name,arguments+2u);
     }
     for (uint32_t i=0u;i<c->entry_count;++i) {
         const EntryRecord *entry=&c->entries[i];
+        if (stage_graphics(&c->functions[entry->function])) {
+            if (!spirv_stage_modes(e, i)) return false;
+            continue;
+        }
         EMIT(OP_EXECUTION_MODE,c->functions[entry->function].state.target.function,17u,
             entry->state.resolved.workgroup_size[0],entry->state.resolved.workgroup_size[1],entry->state.resolved.workgroup_size[2]);
     }
@@ -610,7 +616,7 @@ bool spirv_module_declarations(Emitter *e) {
         if (!debug_name(e, c->resources[i].target, c->resources[i].name)) return false;
     for (uint32_t i = 0u; i < c->workgroup_count; ++i)
         if (!debug_name(e, c->workgroups[i].target, c->workgroups[i].name)) return false;
-    if (!annotations(e) || !primitive_declarations(e) || !dynamic_declarations(e)) return false;
+    if (!annotations(e) || !spirv_stage_annotations(e) || !primitive_declarations(e) || !dynamic_declarations(e)) return false;
     for (uint32_t f = 0u; f < c->function_count; ++f) {
         const FunctionRecord *fn = &c->functions[f];
         bool emitted = fn->state.target.signature == ID_FN_TYPE;
@@ -644,7 +650,7 @@ bool spirv_module_declarations(Emitter *e) {
         if (spirv_hidden_initialization_input(c,&c->entries[i])) {
             EMIT(OP_VARIABLE,ID_PTR_INPUT_U32,c->entries[i].state.resolved.local_index_target,1u);
         }
-    return true;
+    return spirv_stage_variables(e);
 }
 
 #undef EMIT
