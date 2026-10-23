@@ -38,7 +38,7 @@ named constant is also newly valid as an index or index offset/condition operand
 
 These are intentional grammar changes, not weakened validation. Under current M4, decimal floats and scoped scalar locals are explicitly
 admitted. Wrong scalar types, writes to read-only storage, undefined or shadowed names,
-y/z indices, chained/parenthesized arithmetic, logical conditions, else-if,
+logical conditions, else-if,
 unsupported bare blocks/mutable locals and invalid unreachable statements still reject.
 Two-character comparisons must be contiguous tokens; whitespace or comments
 cannot turn separate punctuation into a composite operator.
@@ -103,9 +103,10 @@ M4 contract, rather than silently skipped:
   in branch-dependent multiplication. Mutable `var` remains rejected.
 
 Historical independent M1/M2/M3 suites and their earlier verdicts are unchanged.
-Current developer tests additionally cover the exact 64/65 expression-node,
-16/17 expression-depth, 16/17 statement and legacy leading-alias accounting
-boundaries. `test_cli_modes.py` now routes both additional unchanged real sources
+M4 developer tests originally covered 64/65 expression-node and 16/17
+expression-depth limits. M6 retains those admitted shapes and moves the unified
+limits to 320/321 nodes and 18/19 depth, counting all index edges. The 16/17
+statement and legacy leading-alias boundaries remain unchanged. `test_cli_modes.py` now routes both additional unchanged real sources
 through the same existing consumer and verifies binary/reflection equality and
 explicit Vulkan 1.1 target validation. No full discovery gate or GPU is run.
 
@@ -137,3 +138,43 @@ same checks through instrumented real CLI sources. Legacy reflection still
 rejects every struct/uniform module, including unused declarations; malformed or
 type-invalid cases were not relabeled as intentional lifts. M5 therefore needs
 no change to retained ABI1 negative expectations.
+
+## Milestone-6 unified scalar and compute-input coverage
+
+`make test-compute` runs `test_compute_api.c` and `test_compute.py`. The native
+check uses all five reordered builtin inputs, nested storage indices/conditions,
+a zero-input no-op, ABI1/v2 target equivalence, source/workspace guard pages,
+every short output capacity, atomic errors, source prefixes and byte mutations,
+reuse across successes/failures/no-ops, and 1,024 parallel calls. Its ASan/UBSan
+route is `make sanitize-compute`; retained native/CLI sanitizers remain separate.
+
+The opcode tests compile all six unchanged M6 witnesses and validate Vulkan 1.1.
+Gather uses raw packed uniforms and unequal/empty token/table resources, retained
+outputs, UINT32_MAX tokens and coherent 256-wide global dispatch. Copy uses actual
+WorkgroupId input identity. No-op tests assert zero storage effects and only
+declared inputs. A race-free 3D dispatch exercises every builtin component,
+reordered parameters, scalar local index, 63-byte entry names and workgroup
+LocalSize reflection. Decoration/component/Phi mutation controls check oracle
+sensitivity. Synthetic uint32 injections separately exercise wrap and OOB-to-valid
+nested reads/stores. Nested load-valued comparisons, snapshots, scope/type errors,
+320/321-node and 18/19-depth limits use the actual parser and emitter.
+
+The precise retained negative lifts are intentional, not blanket exclusions:
+
+- `test_api.c`: workgroup_size(1,1,1), local_invocation_id and destination id.y
+  become explicit positives. Four dimensions, subgroup_invocation_id and id.w
+  remain nearby negatives; all old malformed/type/access negatives remain.
+- `test_control.py`: empty body, gid.y index, parenthesized gid.x index,
+  gid.x+1u+2u, gid.x+gid.x, and gid.x==gid.x are now executed positives in
+  `test_compute.py:test_precise_retained_negative_lifts`.
+- `test_expressions.py`: let-valued index offsets and comparison RHS become
+  executed positives in the same M6 method. Previous 17-level/65-node rejections
+  are explicitly admitted alongside their old accepted neighboring cases;
+  new exact limits have independent positive/negative fixtures.
+- `test_uniforms.py`: p.x+p.z index, p.z+1u comparison RHS and global-x comparison
+  RHS become executed positives with packed uniforms in the M6 method.
+
+No old invalid scalar type, scope/access violation, malformed operator, dead-source
+error or unsupported grammar is reclassified. The historical independent suites
+and verdicts are unchanged; cross-version target byte identity is not required,
+but current ABI/CLI mode equivalence, semantics and metadata remain mandatory.

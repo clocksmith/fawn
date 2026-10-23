@@ -48,7 +48,7 @@ static bool compile_pipeline(Source *context, CompilerWorkspace *workspace,
     if (!lex_source(context, &workspace->phase.tokens) ||
         !parse_tokens(context, &workspace->phase.tokens, &workspace->syntax, allow_uniforms)) return false;
     /* Tokens are dead here. Validation starts the other union member and does
-     * not inspect stale token bytes. Syntax owns every spelling it needs. */
+     * not inspect stale token bytes. Syntax owns declaration names and validated source spans for expressions. */
     IrProgram *program = &workspace->phase.lowered.program;
     Spirv *output = &workspace->phase.lowered.output;
     if (!validate_syntax(context, &workspace->syntax, program) ||

@@ -1,0 +1,11 @@
+{
+  "contract_commit": "b75ef8af6f7137bea46e90513e3bd85e25c6d53d",
+  "initial_inventory_sha256": "f025173e638136ca49acb11f5230a1b2ed165750fdd43581474dfdbf89198f27",
+  "preinspection_semantic_sources": [
+    "ed5b958f4f3fe1bc3b1a27485e604712bd5eb6ffcfbed1374d1fb8e02bcd94c0  suite/fixtures_m6.py",
+    "338a6662a8ff924598f14c1c25b281f06f313d1bb99d862bd9f7799c445eb717  suite/compute_oracle_m6.py",
+    "70eec604842a9081670b7fc90cf9718daa9f90783b84f72fc60de35ea6af33e3  suite/semantic_m6.py"
+  ],
+  "additions": "Before any candidate implementation inspection/build/test: added old_depth16_with_index_edges and old_64_rhs_nodes_plus_indices to make the contract's preserved separate-index accounting concrete. These are additions, not changed expected values. Original semantic freeze retained in FROZEN_SEMANTIC_SOURCE.sha256; final preinspection source identities are in PREINSPECTION_SEMANTIC_SOURCE.sha256.\n",
+  "note": "All expected values frozen before candidate source inspection. Later changes are suite orchestration and documentation only."
+}

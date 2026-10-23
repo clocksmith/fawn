@@ -22,14 +22,15 @@ enum {
     ID_VOID = 1, ID_BOOL, ID_U32, ID_F32, ID_VEC3,
     ID_ARRAY_U32, ID_ARRAY_F32, ID_BLOCK_U32, ID_BLOCK_F32,
     ID_PTR_BLOCK_U32, ID_PTR_BLOCK_F32, ID_PTR_ELEMENT_U32, ID_PTR_ELEMENT_F32,
-    ID_PTR_INPUT, ID_FN_TYPE, ID_ZERO_U32, ID_ZERO_F32,
-    ID_INVOCATION, ID_ENTRY, FIRST_DYNAMIC_ID
+    ID_PTR_INPUT, ID_PTR_INPUT_U32, ID_FN_TYPE, ID_ZERO_U32, ID_ZERO_F32,
+    ID_ENTRY, FIRST_DYNAMIC_ID
 };
 typedef struct {
     Source *source;
     Spirv *output;
     uint32_t next_id, current_label;
     uint32_t buffers[DOE_COMPILER_MAX_BINDINGS];
+    uint32_t inputs[MAX_ENTRY_PARAMETERS];
     uint32_t values[MAX_IR_VALUES];
     uint32_t uniform_types[DOE_COMPILER_MAX_STRUCTS];
     uint32_t uniform_pointers[DOE_COMPILER_MAX_STRUCTS];
@@ -71,8 +72,19 @@ static bool debug_name(Emitter *e, uint32_t id, const char *name) {
     if (!instruction(e, opcode, arguments, sizeof(arguments) / sizeof(arguments[0]))) return false; \
 } while (0)
 
+static uint32_t builtin_decoration(InputKind kind) {
+    switch (kind) {
+        case INPUT_NUM_WORKGROUPS: return 24u;
+        case INPUT_WORKGROUP: return 26u;
+        case INPUT_LOCAL_INVOCATION: return 27u;
+        case INPUT_GLOBAL_INVOCATION: return 28u;
+        case INPUT_LOCAL_INDEX: return 29u;
+    }
+    return 0u;
+}
 static bool module_declarations(Emitter *e, const IrProgram *program) {
     for (size_t i = 0; i < program->binding_count; ++i) e->buffers[i] = e->next_id++;
+    for (size_t i = 0; i < program->parameter_count; ++i) e->inputs[i] = e->next_id++;
     if (program->struct_count != 0u) {
         e->uniform_u32_pointer = e->next_id++;
         e->uniform_f32_pointer = e->next_id++;
@@ -85,13 +97,18 @@ static bool module_declarations(Emitter *e, const IrProgram *program) {
     }
     EMIT(OP_CAPABILITY, 1u); /* Shader */
     EMIT(OP_MEMORY_MODEL, 0u, 1u); /* Logical, GLSL450 */
-    uint32_t entry_arguments[19] = { 5u, ID_ENTRY }; /* GLCompute */
+    /* Model, function, NUL-terminated maximum name, and all declared inputs. */
+    uint32_t entry_arguments[2u + (DOE_COMPILER_MAX_NAME_BYTES + 4u) / 4u +
+                             MAX_ENTRY_PARAMETERS] = { 5u, ID_ENTRY }; /* GLCompute */
     const size_t entry_string_count = string_words(program->entry.text, entry_arguments + 2u);
-    entry_arguments[entry_string_count + 2u] = ID_INVOCATION;
-    if (!instruction(e, OP_ENTRY_POINT, entry_arguments, entry_string_count + 3u)) return false;
+    for (size_t i = 0; i < program->parameter_count; ++i)
+        entry_arguments[entry_string_count + 2u + i] = e->inputs[i];
+    if (!instruction(e, OP_ENTRY_POINT, entry_arguments,
+                     entry_string_count + 2u + program->parameter_count)) return false;
     EMIT(OP_EXECUTION_MODE, ID_ENTRY, 17u, program->local_size[0], program->local_size[1], program->local_size[2]);
-    if (!debug_name(e, ID_ENTRY, program->entry.text) ||
-        !debug_name(e, ID_INVOCATION, program->invocation.text)) return false;
+    if (!debug_name(e, ID_ENTRY, program->entry.text)) return false;
+    for (size_t i = 0; i < program->parameter_count; ++i)
+        if (!debug_name(e, e->inputs[i], program->parameters[i].name.text)) return false;
     for (size_t i = 0; i < program->binding_count; ++i)
         if (!debug_name(e, e->buffers[i], program->bindings[i].name.text)) return false;
     EMIT(OP_DECORATE, ID_ARRAY_U32, 6u, 4u); /* ArrayStride */
@@ -112,7 +129,8 @@ static bool module_declarations(Emitter *e, const IrProgram *program) {
             EMIT(OP_MEMBER_DECORATE, e->uniform_types[i], j, 35u,
                  program->structs[i].members[j].offset_bytes);
     }
-    EMIT(OP_DECORATE, ID_INVOCATION, 11u, 28u); /* BuiltIn GlobalInvocationId */
+    for (size_t i = 0; i < program->parameter_count; ++i)
+        EMIT(OP_DECORATE, e->inputs[i], 11u, builtin_decoration(program->parameters[i].kind));
     EMIT(OP_TYPE_VOID, ID_VOID);
     EMIT(OP_TYPE_BOOL, ID_BOOL);
     EMIT(OP_TYPE_INT, ID_U32, 32u, 0u);
@@ -139,6 +157,7 @@ static bool module_declarations(Emitter *e, const IrProgram *program) {
         }
     }
     EMIT(OP_TYPE_POINTER, ID_PTR_INPUT, 1u, ID_VEC3); /* Input */
+    EMIT(OP_TYPE_POINTER, ID_PTR_INPUT_U32, 1u, ID_U32);
     EMIT(OP_TYPE_FUNCTION, ID_FN_TYPE, ID_VOID);
     EMIT(OP_CONSTANT, ID_U32, ID_ZERO_U32, 0u);
     EMIT(OP_CONSTANT, ID_F32, ID_ZERO_F32, 0u);
@@ -159,7 +178,11 @@ static bool module_declarations(Emitter *e, const IrProgram *program) {
             binding->scalar == DOE_COMPILER_F32 ? ID_PTR_BLOCK_F32 : ID_PTR_BLOCK_U32;
         EMIT(OP_VARIABLE, pointer_type, e->buffers[i], uniform ? 2u : 12u);
     }
-    EMIT(OP_VARIABLE, ID_PTR_INPUT, ID_INVOCATION, 1u);
+    for (size_t i = 0; i < program->parameter_count; ++i) {
+        const uint32_t type = program->parameters[i].kind == INPUT_LOCAL_INDEX ?
+            ID_PTR_INPUT_U32 : ID_PTR_INPUT;
+        EMIT(OP_VARIABLE, type, e->inputs[i], 1u);
+    }
     return true;
 }
 static bool robust_access(Emitter *e, const IrInstruction *ir) {
@@ -263,10 +286,15 @@ static bool emit_block(Emitter *e, const IrProgram *program, size_t *cursor,
         if (!*live) continue; /* Validation already covered unreachable source. */
         if (ir->result != 0u && ir->opcode != IR_CONSTANT) e->values[ir->result] = e->next_id++;
         switch (ir->opcode) {
-            case IR_INVOCATION_X: {
-                const uint32_t vector = e->next_id++;
-                EMIT(OP_LOAD, ID_VEC3, vector, ID_INVOCATION);
-                EMIT(OP_COMPOSITE_EXTRACT, ID_U32, e->values[ir->result], vector, 0u);
+            case IR_INPUT: {
+                const uint32_t input = e->inputs[ir->binding];
+                if (program->parameters[ir->binding].kind == INPUT_LOCAL_INDEX) {
+                    EMIT(OP_LOAD, ID_U32, e->values[ir->result], input);
+                } else {
+                    const uint32_t vector = e->next_id++;
+                    EMIT(OP_LOAD, ID_VEC3, vector, input);
+                    EMIT(OP_COMPOSITE_EXTRACT, ID_U32, e->values[ir->result], vector, ir->literal);
+                }
                 break;
             }
             case IR_UNIFORM_LOAD: {

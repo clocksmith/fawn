@@ -13,25 +13,29 @@ Follow the repository's native adapter rules and the frozen milestone. This loca
 
 ## Structured owner limits
 
-The private syntax owns at most 16 preorder statements and 64 expression
-nodes. Each if records then/else ranges, and parsing rejects the fifth nested
-if. Expression depth is at most 16: leaves count one, binary/max nodes add one
-to the deepest child, and parentheses add one without allocating another node.
-Indices keep the separate bounded M2 grammar. The exact leading invocation-x
-alias retains its old zero statement/node accounting; other lets count normally.
+The private syntax owns at most 16 preorder statements and 320 unified scalar
+expression nodes. Each if records then/else ranges; the fifth nested if rejects.
+Expression depth is at most 18: leaves count one, load(index) adds one, binary/max
+adds one to the deepest child, and parentheses add one without another node.
+Every storage index and both unsigned comparison operands use this same tree
+and typed lowering, not a second atom/index grammar. These are this increment's
+explicit envelope, not a permanent full-compiler allocation model.
 
-The typed linear IR uses explicit if/else/end markers, not source text. Each
-expression node needs at most four instructions (an index with at most three
-instructions plus one robust load). A statement adds at most eight instructions:
-an if's three-operation left index, right constant, comparison and three control
-markers. An assignment adds at most four for its destination index and store;
-a let adds none beyond its expression, and return adds one. Child statements
-and expressions are counted separately. Thus the checked safe capacity is
-1 + 64 * 4 + 16 * 8 = 385 instructions, including shared invocation x.
-IDs use instruction positions plus one, with 386 value-map slots including
-unused zero. This conservative capacity is not a claim that every slot is
-reachable by a grammar-valid program. Every append and every serialization
-checks its bound; the public 4,096-word output cap is unchanged.
+A scalar node emits at most one typed IR operation. Each if adds a comparison
+and three control markers; other statements add at most one operation. Only an
+exact leading unannotated global-invocation-x alias adds one exempt input value,
+with no statement or node charge. All other builtin reads count as nodes, with
+no input prelude. Thus 1 + 320 + 16 * 4 = 385 instructions and 386 value-map slots
+remain sufficient. Reusing locals adds no operations. Appends and serialization
+check their own bounds, including the separate 4,096-word output cap.
+
+Compute input declarations own semantic identities independently of order/name.
+The four vector builtins have u32 x/y/z components; local_invocation_index is
+scalar. The emitter maps those identities to BuiltIn decorations and includes
+all and only declared input variables, including unused inputs. Entry-point
+argument storage derives from the maximum name length and five inputs. Zero
+resources, parameters or body statements never fabricate a global input.
+Workgroup dimensions and their checked product remain within the frozen bound.
 
 Scope records retain evaluated typed value IDs, not expressions to replay.
 Save/restore the visible record count around each brace-delimited block. A new
@@ -68,7 +72,10 @@ Uniform storage class with Block/Offset and fixed member indices, not runtime
 array length or short-buffer repair. Storage robustness keeps each access's own
 binding, even beside uniform loads and early returns.
 
-Syntax owns its copied names and survives parsing. TokenList lifetime ends at
+Syntax owns copied declaration names and compact offset/length spans for scalar
+expression names. Validate spans against source length before use; no expression
+stores a 64-byte name or token pointer. IR/reflection own published names. Syntax
+survives parsing while the caller source remains borrowed for the complete call. TokenList lifetime ends at
 parse return, permitting its union storage to become the combined typed program
 and target scratch. Do not retain token pointers or reinterpret live token state
 as IR. ABI1 has a real typed local workspace, while v2 accepts correctly aligned
@@ -77,8 +84,9 @@ shared capability-parameterized pipeline performs lexical admission through
 emission. Result layout projection stays at its API wrapper's successful
 publication point. No library allocator or implicit second workspace is allowed.
 
-The original 385-instruction capacity remains conservative: a new member load
-costs one instruction, including an index base or condition RHS, so it fits the
-old expression/index/condition bounds without growth. Uniform type/member limits
-and the target word cap remain checked separately. CLI JSON serialization owns
-only bounded append mechanics, not another semantic/reflection registry.
+Every nested robust load finishes its own merge before the surrounding index
+arithmetic or comparison uses its value. OOB loads yield typed zero, not an
+invalid flag; zero may select a valid outer read or store. Wrap u32 arithmetic
+before independently guarding the final index of each binding. Keep uniform
+minimum binding requirements separate from storage robustness. CLI JSON owns
+bounded append mechanics, not another semantic/reflection registry.

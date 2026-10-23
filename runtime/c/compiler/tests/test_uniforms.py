@@ -101,8 +101,7 @@ class TestUniforms(CompilerFixture):
         self.compile(header + STORAGE + ENTRY + "let first=p.x;let second=p.x;o[0u]=first+second;}")
         for body in ("o[0u]=p;", "o[0u]=p.missing;", "o[p.y]=1u;", "if(p.y<1u){}",
                      "if(0u<p.y){}", "o[0u]=p.y+1u;", "let P=1u;", "let p=1u;",
-                     "p.x=1u;", "p[0u]=1u;", "o[0u]=p[0u];", "return;o[0u]=p.missing;",
-                     "o[p.x+p.z]=1u;", "if(p.x<p.z+1u){}", "if(p.x<g.x){}"):
+                     "p.x=1u;", "p[0u]=1u;", "o[0u]=p[0u];", "return;o[0u]=p.missing;"):
             self.reject(header + STORAGE + ENTRY + body + "}")
         invalid_headers = (
             header.replace("z:u32", "x:u32"), header.replace("x:u32", "x:i32"),
