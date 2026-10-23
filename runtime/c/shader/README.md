@@ -71,3 +71,9 @@ shader. Pipeline creation still requires a real selected entry. Matrix records
 use explicit ABI8 column/row/stride metadata; the owner copies it without a
 second layout calculation. Empty/library/matrix controls exercise both acquisition
 failures, exact source identity, retained views and final release.
+
+Add `NATIVE_ARGS="--allow-software --demote"` to the graphics consumer for
+explicit optional demote feature selection and an asymmetric discard-pixel oracle.
+The baseline and demote modes pass on SwiftShader with early caller releases;
+this does not qualify physical hardware, derivatives or helper-invocation parity.
+An unavailable requested feature reports SKIP77 rather than substituting OpKill.
