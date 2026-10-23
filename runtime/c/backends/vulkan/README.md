@@ -38,7 +38,7 @@ baseline shader features are enabled; unsupported feature use must be rejected b
 the compiler/native admission path before creating a pipeline. This is not a
 complete public validation boundary for untrusted SPIR-V.
 
-GPU-produced indirect counts, surfaces, occlusion queries,
+GPU-produced indirect counts, surfaces,
 prepared-program caches and tuned hazard elision are not yet migrated here.
 Indirect recording rejects explicitly rather than dispatching unchecked counts.
 The retained production owners remain authoritative for those behaviors.
@@ -109,7 +109,7 @@ Pipeline state admits sample1, one color target, eight vertex layouts/sixteen
 32-bit scalar/vector attributes, native blend/cull/topology controls and dynamic
 viewport/scissor. Blend constants are immutable pipeline state. Depth/stencil,
 MSAA, multiple attachments, indexed/indirect draws, dynamic blend constants,
-occlusion queries and discard-store semantics are not implemented by this interface.
+and discard-store semantics are not implemented by this interface.
 Unsupported resource packets must be rejected, not silently dropped. Graphics
 requires `require_graphics_queue=true` at context creation when the device offers
 separate compute-only queues; default compute queue selection is unchanged.
@@ -136,7 +136,28 @@ resolve is a validated no-op. The resource owner retains its WebGPU256-byte offs
 rule while this native primitive requires8-byte alignment. `make native-queries`
 checks real writes/resolves, unwritten zero semantics, fill payload visibility and
 early caller release with a5-second fence deadline. Tick values are not benchmark
-results or physical qualification. Occlusion queries are not implemented yet.
+results or physical qualification.
+
+`doe_vk_occlusion_pool_create` uses the same query state/lease/resolve owner,
+requiring a graphics-capable queue but no timestamp feature. Supply that pool to
+`doe_vk_commands_render_pass_ops` with typed DRAW/BEGIN_OCCLUSION/END_OCCLUSION
+operations. The complete span rejects nesting, an unmatched end, an unclosed
+query, out-of-range or duplicate indices before native begin. Each actual written
+slot is reset outside the pass; native query events then bracket the real draws.
+Later passes may reuse a slot. Empty queries execute native begin/end and return
+zero; they are not synthesized CPU values. Unwritten slots still use native zero
+fills, never an unissued WAIT. Caller release before submit is safe through the
+existing command owner. Timestamp-write and nanosecond-normalization operations
+reject an occlusion pool instead of reinterpreting it.
+
+Occlusion uses flags zero, without the optional precise-count feature: only zero
+versus nonzero is guaranteed, as required by the public occlusion contract. This
+follows the [Vulkan query definition](https://docs.vulkan.org/refpages/latest/refpages/source/vkCmdBeginQuery.html),
+checked 2026-10-23. The pool enum value is separately bound to the official
+[query type reference](https://docs.vulkan.org/refpages/latest/refpages/source/VkQueryType.html).
+The retained pinned declarations already define native begin/end query signatures.
+The render smoke preserves its exact pixel oracle while checking visible, empty,
+clipped, unwritten and later-pass reused query slots, with early pool release.
 
 ## ABI provenance and checks
 
@@ -144,8 +165,8 @@ No SDK headers were available. The selected declarations are a narrow translatio
 of the existing source hashes in `ABI_PROVENANCE.json`, not invented opaque-sized
 struct storage. `tools/check_abi.py` refuses source drift and independently models
 the pinned extern fields to compile 1344 size/offset/alignment assertions over 76
-records, including retained unions, plus eight format-bit assertions verified against the linked Khronos
-reference. No SDK or other dependency was downloaded. It does not prove the retained declarations against an official SDK.
+records, including retained unions, plus nine format/query constant assertions verified against the linked Khronos
+references. No SDK or other dependency was downloaded. It does not prove the retained declarations against an official SDK.
 `VK_ERROR_UNKNOWN` retains the existing Zig `UnsupportedFeature` classification;
 raw native error codes remain available. No Zig runs or links in the C backend.
 

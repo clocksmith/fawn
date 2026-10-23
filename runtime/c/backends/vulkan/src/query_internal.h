@@ -2,11 +2,13 @@
 #define DOE_VK_QUERY_INTERNAL_H
 #include "internal.h"
 #include "../include/doe_vk_queries.h"
+typedef enum doe_vk_query_kind { DOE_VK_QUERY_TIMESTAMP, DOE_VK_QUERY_OCCLUSION } doe_vk_query_kind;
 enum { DOE_VK_QUERY_UNRESET, DOE_VK_QUERY_RESET, DOE_VK_QUERY_WRITTEN };
 struct doe_vk_query_pool {
     doe_vk_context *context;
     uint32_t references;
     uint32_t count;
+    doe_vk_query_kind kind;
     uint8_t *states;
     doe_vk_status content_status;
     doe_vk_commands *recording_owner;

@@ -1,14 +1,16 @@
 #include "query_internal.h"
 #include <math.h>
 
-doe_vk_status doe_vk_query_pool_create(doe_vk_context *context, uint32_t count,
-    doe_vk_query_pool **out, doe_vk_error *error) {
+static doe_vk_status create_pool(doe_vk_context *context, uint32_t count,
+    doe_vk_query_kind kind, doe_vk_query_pool **out, doe_vk_error *error) {
     if (context == NULL || out == NULL || count == 0)
         return doe_vk_fail(DOE_VK_INVALID_ARGUMENT, "query descriptor", error);
     if (context->lost) return doe_vk_fail(DOE_VK_DEVICE_LOST, "query context", error);
-    if (context->caps.timestamp_valid_bits == 0 || context->caps.timestamp_valid_bits > 64 ||
-        !isfinite(context->caps.timestamp_period_ns) || context->caps.timestamp_period_ns <= 0)
+    if (kind == DOE_VK_QUERY_TIMESTAMP && (context->caps.timestamp_valid_bits == 0 || context->caps.timestamp_valid_bits > 64 ||
+        !isfinite(context->caps.timestamp_period_ns) || context->caps.timestamp_period_ns <= 0))
         return doe_vk_fail(DOE_VK_UNSUPPORTED, "queue timestamps unavailable", error);
+    if (kind == DOE_VK_QUERY_OCCLUSION && !(context->caps.queue_flags & VK_QUEUE_GRAPHICS_BIT))
+        return doe_vk_fail(DOE_VK_UNSUPPORTED, "queue occlusion unavailable", error);
     doe_vk_query_pool *pool = calloc(1, sizeof(*pool));
     if (pool == NULL) return doe_vk_fail(DOE_VK_OUT_OF_MEMORY, "query owner", error);
     pool->states = calloc(count, 1);
@@ -25,8 +27,9 @@ doe_vk_status doe_vk_query_pool_create(doe_vk_context *context, uint32_t count,
     pool->context = context;
     pool->references = 1;
     pool->count = count;
+    pool->kind = kind;
     const VkQueryPoolCreateInfo create = { .sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO,
-        .queryType = VK_QUERY_TYPE_TIMESTAMP, .queryCount = count };
+        .queryType = kind == DOE_VK_QUERY_TIMESTAMP ? VK_QUERY_TYPE_TIMESTAMP : VK_QUERY_TYPE_OCCLUSION, .queryCount = count };
     status = doe_vk_result(context, context->vk.vkCreateQueryPool(context->device, &create, NULL, &pool->pool), "vkCreateQueryPool", error);
     if (status != DOE_VK_OK) {
         doe_vk_query_pool_release(pool);
@@ -34,6 +37,16 @@ doe_vk_status doe_vk_query_pool_create(doe_vk_context *context, uint32_t count,
     }
     *out = pool;
     return doe_vk_fail(DOE_VK_OK, "query pool ready", error);
+}
+
+doe_vk_status doe_vk_query_pool_create(doe_vk_context *context, uint32_t count,
+    doe_vk_query_pool **out, doe_vk_error *error) {
+    return create_pool(context, count, DOE_VK_QUERY_TIMESTAMP, out, error);
+}
+
+doe_vk_status doe_vk_occlusion_pool_create(doe_vk_context *context, uint32_t count,
+    doe_vk_query_pool **out, doe_vk_error *error) {
+    return create_pool(context, count, DOE_VK_QUERY_OCCLUSION, out, error);
 }
 
 doe_vk_status doe_vk_query_pool_retain(doe_vk_query_pool *pool) {
@@ -109,7 +122,8 @@ doe_vk_status doe_vk_commands_write_timestamp(doe_vk_commands *commands,
     doe_vk_status status = doe_vk_recording(commands);
     if (status != DOE_VK_OK) return status;
     doe_vk_query_use *use = NULL;
-    if (stage != DOE_VK_TIMESTAMP_BEGIN && stage != DOE_VK_TIMESTAMP_END)
+    if (pool == NULL || pool->kind != DOE_VK_QUERY_TIMESTAMP ||
+        (stage != DOE_VK_TIMESTAMP_BEGIN && stage != DOE_VK_TIMESTAMP_END))
         return doe_vk_poison(commands, DOE_VK_INVALID_ARGUMENT);
     status = range_use(commands, pool, index, 1, &use);
     if (status != DOE_VK_OK) return doe_vk_poison(commands, status);

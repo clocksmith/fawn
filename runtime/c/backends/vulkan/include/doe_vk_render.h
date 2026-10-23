@@ -1,6 +1,7 @@
 #ifndef DOE_VK_RENDER_H
 #define DOE_VK_RENDER_H
 #include "doe_vk_bindings.h"
+#include "doe_vk_queries.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -80,6 +81,27 @@ typedef struct doe_vk_render_pass_draw {
     size_t vertex_buffer_count;
     doe_vk_render_draw draw;
 } doe_vk_render_pass_draw;
+typedef enum doe_vk_render_operation {
+    DOE_VK_RENDER_DRAW,
+    DOE_VK_RENDER_BEGIN_OCCLUSION,
+    DOE_VK_RENDER_END_OCCLUSION
+} doe_vk_render_operation;
+typedef struct doe_vk_render_pass_op {
+    doe_vk_render_operation kind;
+    union {
+        doe_vk_render_pass_draw draw;
+        uint32_t query_index; /* BEGIN only; END closes the active index. */
+    } value;
+} doe_vk_render_pass_op;
+/* General typed pass span. Occlusion events require the one supplied occlusion
+ * pool. Nesting, unclosed events and duplicate indices within a pass reject
+ * before native begin. Written slots are reset before begin, then native query
+ * begin/end brackets the actual draws. Results are real zero/nonzero values,
+ * not precise sample counts. A later pass may reuse an index. NULL pool is valid
+ * only for draw-only/empty spans. Borrowing and failure rules match below. */
+doe_vk_status doe_vk_commands_render_pass_ops(doe_vk_commands *commands,
+    doe_vk_texture_view *target, const doe_vk_clear_color *clear,
+    doe_vk_query_pool *occlusion, const doe_vk_render_pass_op *ops, size_t count);
 /* One real single-color native pass for the entire borrowed draw span. NULL
  * clear means LOAD of initialized contents; non-NULL clears once at begin.
  * All structural draw checks precede resource preparation; all descriptor/image
@@ -87,7 +109,7 @@ typedef struct doe_vk_render_pass_draw {
  * the call; existing command leases retain each used native resource. On any
  * error discard the poisoned command owner, never submit a partial pass.
  * This consumes immutable resource packets, not a second recording engine.
- * Depth/stencil/MSAA/indexed/indirect/occlusion remain unsupported here. */
+ * Depth/stencil/MSAA/indexed/indirect remain unsupported here. */
 doe_vk_status doe_vk_commands_render_pass(doe_vk_commands *commands,
     doe_vk_texture_view *target, const doe_vk_clear_color *clear,
     const doe_vk_render_pass_draw *draws, size_t count);

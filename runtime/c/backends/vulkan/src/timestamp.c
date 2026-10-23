@@ -99,7 +99,8 @@ doe_vk_status doe_vk_commands_resolve_queries_ns(doe_vk_commands *commands,
     doe_vk_status status = doe_vk_recording(commands);
     if (status != DOE_VK_OK) return status;
     uint64_t size = (uint64_t)count * 8;
-    if (normalizer == NULL || normalizer->pipeline->context != commands->context ||
+    if (pool == NULL || pool->kind != DOE_VK_QUERY_TIMESTAMP ||
+        normalizer == NULL || normalizer->pipeline->context != commands->context ||
         count > normalizer->capacity || destination == NULL ||
         destination->context != commands->context || !(destination->usage & DOE_VK_BUFFER_COPY_DST) ||
         offset % 8 != 0 || !doe_vk_range(destination->size, offset, size))

@@ -1,4 +1,5 @@
 #include "render_internal.h"
+#include "query_internal.h"
 #include <math.h>
 
 doe_vk_status doe_vk_render_pass_create(doe_vk_context *context,
@@ -194,32 +195,83 @@ static void record_draw(doe_vk_commands *commands, const doe_vk_render_pass_draw
         draw->draw.first_vertex, draw->draw.first_instance);
 }
 
-doe_vk_status doe_vk_commands_render_pass(doe_vk_commands *commands,
+static doe_vk_status validate_query_ops(doe_vk_commands *commands,
+    doe_vk_query_pool *pool, const doe_vk_render_pass_op *ops, size_t count) {
+    if (pool != NULL && (pool->context != commands->context || pool->kind != DOE_VK_QUERY_OCCLUSION))
+        return DOE_VK_INVALID_ARGUMENT;
+    if (pool != NULL && pool->content_status != DOE_VK_OK) return pool->content_status;
+    uint8_t *written = pool != NULL ? calloc(pool->count, 1) : NULL;
+    if (pool != NULL && written == NULL) return DOE_VK_OUT_OF_MEMORY;
+    bool active = false;
+    doe_vk_status status = DOE_VK_OK;
+    for (size_t i = 0; i < count; ++i) {
+        if (ops[i].kind == DOE_VK_RENDER_DRAW) continue;
+        if (ops[i].kind == DOE_VK_RENDER_BEGIN_OCCLUSION) {
+            uint32_t index = ops[i].value.query_index;
+            if (pool == NULL || active || index >= pool->count || written[index]) {
+                status = DOE_VK_INVALID_ARGUMENT;
+                break;
+            }
+            written[index] = 1;
+            active = true;
+        } else if (ops[i].kind == DOE_VK_RENDER_END_OCCLUSION && active) active = false;
+        else {
+            status = DOE_VK_INVALID_ARGUMENT;
+            break;
+        }
+    }
+    if (active) status = DOE_VK_INVALID_ARGUMENT;
+    free(written);
+    return status;
+}
+
+doe_vk_status doe_vk_commands_render_pass_ops(doe_vk_commands *commands,
     doe_vk_texture_view *target, const doe_vk_clear_color *clear,
-    const doe_vk_render_pass_draw *draws, size_t count) {
+    doe_vk_query_pool *occlusion, const doe_vk_render_pass_op *ops, size_t count) {
     doe_vk_status status = doe_vk_recording(commands);
     if (status != DOE_VK_OK) return status;
-    if ((count != 0 && draws == NULL) || count > SIZE_MAX / sizeof(prepared_draw))
+    if ((count != 0 && ops == NULL) || count > SIZE_MAX / sizeof(prepared_draw))
         return doe_vk_poison(commands, DOE_VK_INVALID_ARGUMENT);
     uint32_t width = 0, height = 0;
     status = validate_target(commands, target, &width, &height);
     if (status != DOE_VK_OK) return doe_vk_poison(commands, status);
+    status = validate_query_ops(commands, occlusion, ops, count);
+    if (status != DOE_VK_OK) return doe_vk_poison(commands, status);
     prepared_draw *prepared = count != 0 ? calloc(count, sizeof(*prepared)) : NULL;
     if (count != 0 && prepared == NULL) return doe_vk_poison(commands, DOE_VK_OUT_OF_MEMORY);
     for (size_t i = 0; i < count; ++i) {
-        status = validate_pass_draw(commands, target, &draws[i], width, height, &prepared[i]);
+        if (ops[i].kind != DOE_VK_RENDER_DRAW) continue;
+        status = validate_pass_draw(commands, target, &ops[i].value.draw, width, height, &prepared[i]);
         if (status != DOE_VK_OK) goto failed;
     }
+    doe_vk_query_use *queries = NULL;
     for (size_t i = 0; i < count; ++i) {
-        status = prepare_draw(commands, &draws[i], &prepared[i]);
+        if (ops[i].kind == DOE_VK_RENDER_DRAW) {
+            status = prepare_draw(commands, &ops[i].value.draw, &prepared[i]);
+        } else if (ops[i].kind == DOE_VK_RENDER_BEGIN_OCCLUSION) {
+            status = doe_vk_use_queries(commands, occlusion, &queries);
+            if (status == DOE_VK_OK) status = doe_vk_commands_reset_queries(commands,
+                occlusion, ops[i].value.query_index, 1);
+        }
         if (status != DOE_VK_OK) goto failed;
     }
     doe_vk_render_use *use = NULL;
     status = prepare_pass(commands, target, clear != NULL, width, height, &use);
     if (status != DOE_VK_OK) goto failed;
     begin_pass(commands, use, width, height, clear);
-    for (size_t i = 0; i < count; ++i) record_draw(commands, &draws[i], &prepared[i]);
-    commands->context->vk.vkCmdEndRenderPass(commands->command);
+    uint32_t active_index = 0;
+    doe_vk_context *context = commands->context;
+    for (size_t i = 0; i < count; ++i) {
+        if (ops[i].kind == DOE_VK_RENDER_DRAW) record_draw(commands, &ops[i].value.draw, &prepared[i]);
+        else if (ops[i].kind == DOE_VK_RENDER_BEGIN_OCCLUSION) {
+            active_index = ops[i].value.query_index;
+            context->vk.vkCmdBeginQuery(commands->command, occlusion->pool, active_index, 0);
+        } else {
+            context->vk.vkCmdEndQuery(commands->command, occlusion->pool, active_index);
+            queries->states[active_index] = DOE_VK_QUERY_WRITTEN;
+        }
+    }
+    context->vk.vkCmdEndRenderPass(commands->command);
     free(prepared);
     return DOE_VK_OK;
 failed:
@@ -227,9 +279,27 @@ failed:
     return doe_vk_poison(commands, status);
 }
 
+doe_vk_status doe_vk_commands_render_pass(doe_vk_commands *commands,
+    doe_vk_texture_view *target, const doe_vk_clear_color *clear,
+    const doe_vk_render_pass_draw *draws, size_t count) {
+    doe_vk_status status = doe_vk_recording(commands);
+    if (status != DOE_VK_OK) return status;
+    if ((count != 0 && draws == NULL) || count > SIZE_MAX / sizeof(doe_vk_render_pass_op))
+        return doe_vk_poison(commands, DOE_VK_INVALID_ARGUMENT);
+    doe_vk_render_pass_op *ops = count != 0 ? calloc(count, sizeof(*ops)) : NULL;
+    if (count != 0 && ops == NULL) return doe_vk_poison(commands, DOE_VK_OUT_OF_MEMORY);
+    for (size_t i = 0; i < count; ++i) {
+        ops[i].kind = DOE_VK_RENDER_DRAW;
+        ops[i].value.draw = draws[i];
+    }
+    status = doe_vk_commands_render_pass_ops(commands, target, clear, NULL, ops, count);
+    free(ops);
+    return status;
+}
+
 doe_vk_status doe_vk_commands_clear_color(doe_vk_commands *commands,
     doe_vk_texture_view *target, doe_vk_clear_color clear) {
-    return doe_vk_commands_render_pass(commands, target, &clear, NULL, 0);
+    return doe_vk_commands_render_pass_ops(commands, target, &clear, NULL, NULL, 0);
 }
 
 doe_vk_status doe_vk_commands_draw(doe_vk_commands *commands,
@@ -239,8 +309,9 @@ doe_vk_status doe_vk_commands_draw(doe_vk_commands *commands,
     doe_vk_status status = doe_vk_recording(commands);
     if (status != DOE_VK_OK) return status;
     if (draw == NULL) return doe_vk_poison(commands, DOE_VK_INVALID_ARGUMENT);
-    const doe_vk_render_pass_draw item = {pipeline, bindings, binding_count, vertices, vertex_count, *draw};
-    return doe_vk_commands_render_pass(commands, target, NULL, &item, 1);
+    const doe_vk_render_pass_op op = {.kind = DOE_VK_RENDER_DRAW,
+        .value.draw = {pipeline, bindings, binding_count, vertices, vertex_count, *draw}};
+    return doe_vk_commands_render_pass_ops(commands, target, NULL, NULL, &op, 1);
 }
 
 void doe_vk_render_release(doe_vk_commands *commands) {
