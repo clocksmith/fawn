@@ -1,0 +1,202 @@
+/* SPDX-License-Identifier: MIT */
+#include "internal.h"
+
+doe_resource_status resource_format_block(WGPUTextureFormat format, uint32_t *bytes,
+    uint32_t *width, uint32_t *height)
+{
+    uint32_t n;
+    switch (format) {
+    case WGPUTextureFormat_R8Unorm:
+    case WGPUTextureFormat_R8Snorm:
+    case WGPUTextureFormat_R8Uint:
+    case WGPUTextureFormat_R8Sint:
+    case WGPUTextureFormat_Stencil8:
+        n = 1;
+        break;
+    case WGPUTextureFormat_R16Unorm:
+    case WGPUTextureFormat_R16Snorm:
+    case WGPUTextureFormat_R16Uint:
+    case WGPUTextureFormat_R16Sint:
+    case WGPUTextureFormat_R16Float:
+    case WGPUTextureFormat_RG8Unorm:
+    case WGPUTextureFormat_RG8Snorm:
+    case WGPUTextureFormat_RG8Uint:
+    case WGPUTextureFormat_RG8Sint:
+    case WGPUTextureFormat_Depth16Unorm:
+        n = 2;
+        break;
+    case WGPUTextureFormat_RGBA8Unorm:
+    case WGPUTextureFormat_RGBA8UnormSrgb:
+    case WGPUTextureFormat_RGBA8Snorm:
+    case WGPUTextureFormat_RGBA8Uint:
+    case WGPUTextureFormat_RGBA8Sint:
+    case WGPUTextureFormat_BGRA8Unorm:
+    case WGPUTextureFormat_BGRA8UnormSrgb:
+    case WGPUTextureFormat_RGB10A2Uint:
+    case WGPUTextureFormat_RGB10A2Unorm:
+    case WGPUTextureFormat_RG11B10Ufloat:
+    case WGPUTextureFormat_RGB9E5Ufloat:
+    case WGPUTextureFormat_RG16Unorm:
+    case WGPUTextureFormat_RG16Snorm:
+    case WGPUTextureFormat_RG16Uint:
+    case WGPUTextureFormat_RG16Sint:
+    case WGPUTextureFormat_RG16Float:
+    case WGPUTextureFormat_R32Uint:
+    case WGPUTextureFormat_R32Sint:
+    case WGPUTextureFormat_R32Float:
+    case WGPUTextureFormat_Depth32Float:
+    case WGPUTextureFormat_Depth24Plus:
+    case WGPUTextureFormat_Depth24PlusStencil8:
+        n = 4;
+        break;
+    case WGPUTextureFormat_RGBA16Unorm:
+    case WGPUTextureFormat_RGBA16Snorm:
+    case WGPUTextureFormat_RGBA16Uint:
+    case WGPUTextureFormat_RGBA16Sint:
+    case WGPUTextureFormat_RGBA16Float:
+    case WGPUTextureFormat_RG32Uint:
+    case WGPUTextureFormat_RG32Sint:
+    case WGPUTextureFormat_RG32Float:
+    case WGPUTextureFormat_Depth32FloatStencil8:
+        n = 8;
+        break;
+    case WGPUTextureFormat_BC1RGBAUnorm:
+    case WGPUTextureFormat_BC1RGBAUnormSrgb:
+    case WGPUTextureFormat_BC4RUnorm:
+    case WGPUTextureFormat_BC4RSnorm:
+    case WGPUTextureFormat_ETC2RGB8Unorm:
+    case WGPUTextureFormat_ETC2RGB8UnormSrgb:
+    case WGPUTextureFormat_ETC2RGB8A1Unorm:
+    case WGPUTextureFormat_ETC2RGB8A1UnormSrgb:
+    case WGPUTextureFormat_EACR11Unorm:
+    case WGPUTextureFormat_EACR11Snorm:
+        n = 8;
+        break;
+    case WGPUTextureFormat_BC2RGBAUnorm:
+    case WGPUTextureFormat_BC2RGBAUnormSrgb:
+    case WGPUTextureFormat_BC3RGBAUnorm:
+    case WGPUTextureFormat_BC3RGBAUnormSrgb:
+    case WGPUTextureFormat_BC5RGUnorm:
+    case WGPUTextureFormat_BC5RGSnorm:
+    case WGPUTextureFormat_BC6HRGBUfloat:
+    case WGPUTextureFormat_BC6HRGBFloat:
+    case WGPUTextureFormat_BC7RGBAUnorm:
+    case WGPUTextureFormat_BC7RGBAUnormSrgb:
+    case WGPUTextureFormat_ETC2RGBA8Unorm:
+    case WGPUTextureFormat_ETC2RGBA8UnormSrgb:
+    case WGPUTextureFormat_EACRG11Unorm:
+    case WGPUTextureFormat_EACRG11Snorm:
+    case WGPUTextureFormat_ASTC4x4Unorm:
+    case WGPUTextureFormat_ASTC4x4UnormSrgb:
+    case WGPUTextureFormat_ASTC5x4Unorm:
+    case WGPUTextureFormat_ASTC5x4UnormSrgb:
+    case WGPUTextureFormat_ASTC5x5Unorm:
+    case WGPUTextureFormat_ASTC5x5UnormSrgb:
+    case WGPUTextureFormat_ASTC6x5Unorm:
+    case WGPUTextureFormat_ASTC6x5UnormSrgb:
+    case WGPUTextureFormat_ASTC6x6Unorm:
+    case WGPUTextureFormat_ASTC6x6UnormSrgb:
+    case WGPUTextureFormat_ASTC8x5Unorm:
+    case WGPUTextureFormat_ASTC8x5UnormSrgb:
+    case WGPUTextureFormat_ASTC8x6Unorm:
+    case WGPUTextureFormat_ASTC8x6UnormSrgb:
+    case WGPUTextureFormat_ASTC8x8Unorm:
+    case WGPUTextureFormat_ASTC8x8UnormSrgb:
+    case WGPUTextureFormat_ASTC10x5Unorm:
+    case WGPUTextureFormat_ASTC10x5UnormSrgb:
+    case WGPUTextureFormat_ASTC10x6Unorm:
+    case WGPUTextureFormat_ASTC10x6UnormSrgb:
+    case WGPUTextureFormat_ASTC10x8Unorm:
+    case WGPUTextureFormat_ASTC10x8UnormSrgb:
+    case WGPUTextureFormat_ASTC10x10Unorm:
+    case WGPUTextureFormat_ASTC10x10UnormSrgb:
+    case WGPUTextureFormat_ASTC12x10Unorm:
+    case WGPUTextureFormat_ASTC12x10UnormSrgb:
+    case WGPUTextureFormat_ASTC12x12Unorm:
+    case WGPUTextureFormat_ASTC12x12UnormSrgb:
+        n = 16;
+        break;
+    case WGPUTextureFormat_RGBA32Uint:
+    case WGPUTextureFormat_RGBA32Sint:
+    case WGPUTextureFormat_RGBA32Float:
+        n = 16;
+        break;
+    default: return DOE_RESOURCE_UNSUPPORTED;
+    }
+    uint32_t w = 1, h = 1;
+    if (format >= WGPUTextureFormat_BC1RGBAUnorm && format <= WGPUTextureFormat_EACRG11Snorm) {
+        w = 4;
+        h = 4;
+    } else if (format >= WGPUTextureFormat_ASTC4x4Unorm && format <= WGPUTextureFormat_ASTC12x12UnormSrgb) {
+        static const uint8_t extents[][2] = {
+            {4,4}, {5,4}, {5,5}, {6,5}, {6,6}, {8,5}, {8,6},
+            {8,8}, {10,5}, {10,6}, {10,8}, {10,10}, {12,10}, {12,12}
+        };
+        size_t index = ((unsigned)format - WGPUTextureFormat_ASTC4x4Unorm) / 2;
+        w = extents[index][0];
+        h = extents[index][1];
+    }
+    *bytes = n;
+    *width = w;
+    *height = h;
+    return DOE_RESOURCE_OK;
+}
+
+bool resource_format_compatible(WGPUTextureFormat base, WGPUTextureFormat view)
+{
+    if (base == view) return true;
+    return (base == WGPUTextureFormat_RGBA8Unorm && view == WGPUTextureFormat_RGBA8UnormSrgb) ||
+        (view == WGPUTextureFormat_RGBA8Unorm && base == WGPUTextureFormat_RGBA8UnormSrgb) ||
+        (base == WGPUTextureFormat_BGRA8Unorm && view == WGPUTextureFormat_BGRA8UnormSrgb) ||
+        (view == WGPUTextureFormat_BGRA8Unorm && base == WGPUTextureFormat_BGRA8UnormSrgb);
+}
+
+bool resource_format_depth(WGPUTextureFormat format)
+{
+    return format >= WGPUTextureFormat_Stencil8 && format <= WGPUTextureFormat_Depth32FloatStencil8;
+}
+
+bool resource_format_aspect(WGPUTextureFormat format, WGPUTextureAspect aspect)
+{
+    if (aspect == WGPUTextureAspect_All) return true;
+    if (aspect == WGPUTextureAspect_DepthOnly)
+        return resource_format_depth(format) && format != WGPUTextureFormat_Stencil8;
+    if (aspect == WGPUTextureAspect_StencilOnly)
+        return format == WGPUTextureFormat_Stencil8 ||
+            format == WGPUTextureFormat_Depth24PlusStencil8 || format == WGPUTextureFormat_Depth32FloatStencil8;
+    return false;
+}
+
+WGPUTextureSampleType resource_format_sample(WGPUTextureFormat format)
+{
+    switch (format) {
+    case WGPUTextureFormat_Depth16Unorm:
+    case WGPUTextureFormat_Depth24Plus:
+    case WGPUTextureFormat_Depth24PlusStencil8:
+    case WGPUTextureFormat_Depth32Float:
+    case WGPUTextureFormat_Depth32FloatStencil8:
+        return WGPUTextureSampleType_Depth;
+    case WGPUTextureFormat_R8Uint:
+    case WGPUTextureFormat_R16Uint:
+    case WGPUTextureFormat_RG8Uint:
+    case WGPUTextureFormat_R32Uint:
+    case WGPUTextureFormat_RG16Uint:
+    case WGPUTextureFormat_RGBA8Uint:
+    case WGPUTextureFormat_RGB10A2Uint:
+    case WGPUTextureFormat_RG32Uint:
+    case WGPUTextureFormat_RGBA16Uint:
+    case WGPUTextureFormat_RGBA32Uint:
+        return WGPUTextureSampleType_Uint;
+    case WGPUTextureFormat_R8Sint:
+    case WGPUTextureFormat_R16Sint:
+    case WGPUTextureFormat_RG8Sint:
+    case WGPUTextureFormat_R32Sint:
+    case WGPUTextureFormat_RG16Sint:
+    case WGPUTextureFormat_RGBA8Sint:
+    case WGPUTextureFormat_RG32Sint:
+    case WGPUTextureFormat_RGBA16Sint:
+    case WGPUTextureFormat_RGBA32Sint:
+        return WGPUTextureSampleType_Sint;
+    default: return WGPUTextureSampleType_Float;
+    }
+}
