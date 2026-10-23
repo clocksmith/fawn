@@ -420,3 +420,9 @@ Only guarded native drawIndirect(count1,stride16) executes inside the pass; guar
 and barriers stay outside. Indexed drawing and presentation remain unsupported.
 Host boundary/geometry checks are not shader execution proof. The API preserves
 resource-owned pass usage history and failure/uncertain retirement obligations.
+
+Viewport admission uses actual device dimensions and bounds, independently of
+attachment extent; scissor remains attachment-bound. Negative origins are valid.
+A zero logical width or height is implemented by a valid native viewport and
+empty scissor while preserving draw/vertex work and occlusion ordering. Public
+requested-device limits remain the canonical resource owner's responsibility.

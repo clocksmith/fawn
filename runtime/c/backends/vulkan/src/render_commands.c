@@ -12,8 +12,7 @@ doe_vk_status doe_vk_render_viewport(const doe_vk_context *context, const doe_vk
     const VkPhysicalDeviceLimits *limits = &context->properties.limits;
     for (unsigned i = 0; i < 6; ++i) if (!isfinite(draw->viewport[i])) return DOE_VK_INVALID_ARGUMENT;
     const float *v = draw->viewport;
-    if (v[0] < 0 || v[1] < 0 || v[2] <= 0 || v[3] <= 0 || v[4] < 0 || v[4] > 1 || v[5] < 0 || v[5] > 1 ||
-        (double)v[0] + v[2] > width || (double)v[1] + v[3] > height ||
+    if (v[2] < 0 || v[3] < 0 || v[4] < 0 || v[4] > 1 || v[5] < 0 || v[5] > 1 ||
         v[2] > limits->maxViewportDimensions[0] || v[3] > limits->maxViewportDimensions[1] ||
         v[0] < limits->viewportBoundsRange[0] || v[1] < limits->viewportBoundsRange[0] ||
         (double)v[0] + v[2] > limits->viewportBoundsRange[1] ||
@@ -22,10 +21,19 @@ doe_vk_status doe_vk_render_viewport(const doe_vk_context *context, const doe_vk
         !doe_vk_range(width, draw->scissor[0], draw->scissor[2]) ||
         !doe_vk_range(height, draw->scissor[1], draw->scissor[3])) return DOE_VK_INVALID_ARGUMENT;
     VkViewport viewport = {v[0], v[1], v[2], v[3], v[4], v[5]};
-    if (draw->viewport_convention == DOE_VK_VIEWPORT_WEBGPU) {
+    if (v[2] == 0 || v[3] == 0) {
+        /* Vulkan width must be positive. The original logical bounds above
+         * remain mandatory; an empty scissor below preserves vertex work. */
+        if (limits->maxViewportDimensions[0] < 1 || limits->maxViewportDimensions[1] < 1 ||
+            limits->viewportBoundsRange[0] > 0 || limits->viewportBoundsRange[1] < 1)
+            return DOE_VK_UNSUPPORTED;
+        viewport = (VkViewport){0, 0, 1, 1, v[4], v[5]};
+    } else if (draw->viewport_convention == DOE_VK_VIEWPORT_WEBGPU) {
         viewport.y = v[1] + v[3];
         viewport.height = -v[3];
-        if (!isfinite(viewport.y) || viewport.y > limits->viewportBoundsRange[1])
+        if (!isfinite(viewport.y) || viewport.y > limits->viewportBoundsRange[1] ||
+            (double)viewport.y + viewport.height < limits->viewportBoundsRange[0] ||
+            (double)viewport.y + viewport.height > limits->viewportBoundsRange[1])
             return DOE_VK_INVALID_ARGUMENT;
     }
     *out = viewport;
@@ -88,6 +96,8 @@ static doe_vk_status validate_pass_draw(doe_vk_commands *commands, const doe_vk_
         .offset = {(int32_t)draw->draw.scissor[0], (int32_t)draw->draw.scissor[1]},
         .extent = {draw->draw.scissor[2], draw->draw.scissor[3]}
     };
+    if (draw->draw.viewport[2] == 0 || draw->draw.viewport[3] == 0)
+        prepared->scissor.extent = (VkExtent2D){0, 0};
     return DOE_VK_OK;
 }
 

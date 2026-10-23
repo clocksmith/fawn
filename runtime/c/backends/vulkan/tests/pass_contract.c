@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <math.h>
 
-static bool inside;
+static bool inside, empty_viewport;
 static unsigned begins, ends, draws, barriers, destroyed;
 static void barrier(VkCommandBuffer command, VkFlags source, VkFlags destination,
     VkFlags flags, uint32_t memory_count, const void *memory, uint32_t buffer_count,
@@ -71,11 +71,11 @@ static void blend_constants(VkCommandBuffer command, const float values[4]) {
 }
 static void viewport(VkCommandBuffer command, uint32_t first, uint32_t count, const VkViewport *view) {
     (void)command;
-    assert(inside && first == 0 && count == 1 && view->height == 8);
+    assert(inside && first == 0 && count == 1 && view->height == (empty_viewport ? 1 : 8));
 }
 static void scissor(VkCommandBuffer command, uint32_t first, uint32_t count, const VkRect2D *rect) {
     (void)command;
-    assert(inside && first == 0 && count == 1 && rect->extent.width == 4);
+    assert(inside && first == 0 && count == 1 && rect->extent.width == (empty_viewport ? 0 : 4));
     assert(rect->offset.x == (draws == 0 ? 0 : 4));
 }
 static void draw(VkCommandBuffer command, uint32_t count, uint32_t instances, uint32_t first, uint32_t first_instance) {
@@ -256,6 +256,18 @@ int main(void) {
     assert(doe_vk_commands_write_timestamp(commands, &pool, 1, DOE_VK_TIMESTAMP_BEGIN) == DOE_VK_INVALID_ARGUMENT);
     assert(doe_vk_commands_release(commands) == DOE_VK_OK);
     assert(pool.references == 1 && pool.recording_owner == NULL && query_states[0] == DOE_VK_QUERY_UNRESET);
-    puts("PASS whole-pass preflight, two draws in one native begin/end, no in-pass barriers, pipeline/default and per-draw blend constants, NaN preflight, empty clear, occlusion type/nesting/duplicate/end rejection, native reset-before-pass and paired query events, exact leases and rollback");
+    empty_viewport = true;
+    for (unsigned axis = 0; axis < 2; ++axis) {
+        draws = 0;
+        ops[1].value.draw = items[0];
+        ops[1].value.draw.draw.viewport[2 + axis] = 0;
+        commands = recording(&context);
+        assert(doe_vk_commands_render_pass_ops(commands, &view, &blue, &pool, ops, 3) == DOE_VK_OK);
+        assert(draws == 1 && !inside && !query_active);
+        assert(commands->queries->states[0] == DOE_VK_QUERY_WRITTEN);
+        assert(doe_vk_commands_release(commands) == DOE_VK_OK);
+    }
+    assert(query_begins == 4 && query_ends == 4);
+    puts("PASS whole-pass preflight, two draws in one native begin/end, no in-pass barriers, pipeline/default and per-draw blend constants, NaN preflight, empty clear, occlusion type/nesting/duplicate/end rejection, native reset-before-pass and paired query events, zero-extent viewport retains real draw/query calls with empty scissor, exact leases and rollback");
     return 0;
 }
