@@ -61,7 +61,32 @@
     "VkImageMemoryBarrier",
     "VkSamplerCreateInfo",
     "VkDescriptorImageInfo",
-    "VkFormatProperties"
+    "VkFormatProperties",
+    "VkAttachmentDescription",
+    "VkAttachmentReference",
+    "VkSubpassDescription",
+    "VkSubpassDependency",
+    "VkRenderPassCreateInfo",
+    "VkFramebufferCreateInfo",
+    "VkOffset2D",
+    "VkExtent2D",
+    "VkRect2D",
+    "VkClearColorValue",
+    "VkClearDepthStencilValue",
+    "VkClearValue",
+    "VkRenderPassBeginInfo",
+    "VkViewport",
+    "VkVertexInputBindingDescription",
+    "VkVertexInputAttributeDescription",
+    "VkPipelineVertexInputStateCreateInfo",
+    "VkPipelineInputAssemblyStateCreateInfo",
+    "VkPipelineViewportStateCreateInfo",
+    "VkPipelineRasterizationStateCreateInfo",
+    "VkPipelineMultisampleStateCreateInfo",
+    "VkPipelineColorBlendAttachmentState",
+    "VkPipelineColorBlendStateCreateInfo",
+    "VkPipelineDynamicStateCreateInfo",
+    "VkGraphicsPipelineCreateInfo"
   ],
   "functions": [
     "vkCreateInstance",
@@ -124,7 +149,18 @@
     "vkDestroySampler",
     "vkCmdCopyBufferToImage",
     "vkCmdCopyImageToBuffer",
-    "vkCmdCopyImage"
+    "vkCmdCopyImage",
+    "vkCreateRenderPass",
+    "vkDestroyRenderPass",
+    "vkCreateFramebuffer",
+    "vkDestroyFramebuffer",
+    "vkCreateGraphicsPipelines",
+    "vkCmdBeginRenderPass",
+    "vkCmdEndRenderPass",
+    "vkCmdSetViewport",
+    "vkCmdSetScissor",
+    "vkCmdBindVertexBuffers",
+    "vkCmdDraw"
   ],
   "restriction": "Linux LP64 C ABI; no fallback or production promotion",
   "official_constants": {
@@ -138,7 +174,8 @@
       "VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT": 256,
       "VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT": 4096,
       "VK_FORMAT_FEATURE_TRANSFER_SRC_BIT": 16384,
-      "VK_FORMAT_FEATURE_TRANSFER_DST_BIT": 32768
+      "VK_FORMAT_FEATURE_TRANSFER_DST_BIT": 32768,
+      "VK_FORMAT_FEATURE_VERTEX_BUFFER_BIT": 64
     }
   }
 }

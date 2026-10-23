@@ -6,6 +6,7 @@
 #include "vk_abi_structs.h"
 #include "vk_abi_caps.h"
 #include "vk_abi_images.h"
+#include "vk_abi_render.h"
 
 typedef struct doe_vk_functions {
     VkResult (*vkCreateInstance)(const VkInstanceCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator, VkInstance *pInstance);
@@ -69,5 +70,16 @@ typedef struct doe_vk_functions {
     void (*vkGetPhysicalDeviceFormatProperties)(VkPhysicalDevice physicalDevice, uint32_t format, VkFormatProperties *pFormatProperties);
     VkResult (*vkCreateSampler)(VkDevice device, const VkSamplerCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator, VkSampler *pSampler);
     void (*vkDestroySampler)(VkDevice device, VkSampler sampler, const VkAllocationCallbacks *pAllocator);
+    VkResult (*vkCreateRenderPass)(VkDevice device, const VkRenderPassCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass);
+    void (*vkDestroyRenderPass)(VkDevice device, VkRenderPass renderPass, const VkAllocationCallbacks *pAllocator);
+    VkResult (*vkCreateFramebuffer)(VkDevice device, const VkFramebufferCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator, VkFramebuffer *pFramebuffer);
+    void (*vkDestroyFramebuffer)(VkDevice device, VkFramebuffer framebuffer, const VkAllocationCallbacks *pAllocator);
+    VkResult (*vkCreateGraphicsPipelines)(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount, const VkGraphicsPipelineCreateInfo *pCreateInfos, const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines);
+    void (*vkCmdBeginRenderPass)(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin, uint32_t contents);
+    void (*vkCmdEndRenderPass)(VkCommandBuffer commandBuffer);
+    void (*vkCmdSetViewport)(VkCommandBuffer commandBuffer, uint32_t firstViewport, uint32_t viewportCount, const VkViewport *pViewports);
+    void (*vkCmdSetScissor)(VkCommandBuffer commandBuffer, uint32_t firstScissor, uint32_t scissorCount, const VkRect2D *pScissors);
+    void (*vkCmdBindVertexBuffers)(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount, const VkBuffer *pBuffers, const VkDeviceSize *pOffsets);
+    void (*vkCmdDraw)(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance);
 } doe_vk_functions;
 #endif

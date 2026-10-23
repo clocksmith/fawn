@@ -39,6 +39,7 @@ typedef struct doe_vk_error {
 typedef struct doe_vk_options {
     uint32_t adapter_ordinal; /* Exact enumeration ordinal, no silent fallback. */
     bool allow_cpu_adapter; /* False by default; software is never GPU evidence. */
+    bool require_graphics_queue; /* Select a compute+graphics family or reject. */
 } doe_vk_options;
 
 typedef struct doe_vk_caps {
@@ -89,6 +90,7 @@ enum {
     DOE_VK_BUFFER_COPY_DST = 2,
     DOE_VK_BUFFER_UNIFORM = 16,
     DOE_VK_BUFFER_STORAGE = 32,
+    DOE_VK_BUFFER_VERTEX = 128,
     DOE_VK_BUFFER_INDIRECT = 256
 };
 typedef enum doe_vk_memory_kind {

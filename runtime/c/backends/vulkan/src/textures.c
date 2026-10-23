@@ -75,6 +75,7 @@ static doe_vk_status validate_texture(doe_vk_context *context,
     if (desc->mip_levels > mips) return DOE_VK_INVALID_ARGUMENT;
     if (desc->cube_compatible && (desc->dimension != DOE_VK_TEXTURE_2D ||
         desc->width != desc->height || desc->depth_or_layers < 6)) return DOE_VK_INVALID_ARGUMENT;
+    if (desc->cube_compatible && desc->width > limits->maxImageDimensionCube) return DOE_VK_UNSUPPORTED;
     doe_vk_format_caps caps;
     doe_vk_status status = doe_vk_texture_format_caps(context, desc->format, &caps);
     if (status != DOE_VK_OK) return status;

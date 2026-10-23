@@ -105,7 +105,7 @@ static doe_vk_status descriptor_pool(doe_vk_commands *commands,
         &allocate, sets), "vkAllocateDescriptorSets", NULL);
 }
 
-static doe_vk_status bind_resources(doe_vk_commands *commands,
+doe_vk_status doe_vk_bind_resources(doe_vk_commands *commands,
     doe_vk_pipeline *pipeline, const doe_vk_binding_resource *bindings, size_t count) {
     doe_vk_status status = validate_resources(commands, pipeline, bindings, count);
     if (status != DOE_VK_OK) return doe_vk_poison(commands, status);
@@ -165,15 +165,16 @@ static doe_vk_status bind_resources(doe_vk_commands *commands,
         if (status != DOE_VK_OK) return doe_vk_poison(commands, status);
         doe_vk_texture_transition(commands, texture_use, VK_IMAGE_LAYOUT_GENERAL);
     }
-    context->vk.vkCmdBindPipeline(commands->command, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline->pipeline);
+    int32_t bind_point = pipeline->graphics ? VK_PIPELINE_BIND_POINT_GRAPHICS : VK_PIPELINE_BIND_POINT_COMPUTE;
+    context->vk.vkCmdBindPipeline(commands->command, bind_point, pipeline->pipeline);
     if (pipeline->group_count != 0) context->vk.vkCmdBindDescriptorSets(commands->command,
-        VK_PIPELINE_BIND_POINT_COMPUTE, pipeline->layout, 0, pipeline->group_count, sets, 0, NULL);
+        bind_point, pipeline->layout, 0, pipeline->group_count, sets, 0, NULL);
     return DOE_VK_OK;
 }
 
 doe_vk_status doe_vk_bind_dispatch(doe_vk_commands *commands,
     doe_vk_pipeline *pipeline, const doe_vk_buffer_binding *bindings, size_t count) {
-    if (pipeline == NULL || count > DOE_VK_MAX_BINDINGS || count != pipeline->binding_count ||
+    if (pipeline == NULL || pipeline->graphics || count > DOE_VK_MAX_BINDINGS || count != pipeline->binding_count ||
         (count != 0 && bindings == NULL)) return doe_vk_poison(commands, DOE_VK_INVALID_ARGUMENT);
     doe_vk_binding_resource resources[DOE_VK_MAX_BINDINGS];
     for (size_t i = 0; i < count; ++i) {
@@ -182,7 +183,7 @@ doe_vk_status doe_vk_bind_dispatch(doe_vk_commands *commands,
         resources[i].kind = pipeline->bindings[i].kind;
         resources[i].value.buffer = bindings[i];
     }
-    return bind_resources(commands, pipeline, resources, count);
+    return doe_vk_bind_resources(commands, pipeline, resources, count);
 }
 
 doe_vk_status doe_vk_commands_dispatch_resources(doe_vk_commands *commands,
@@ -190,9 +191,10 @@ doe_vk_status doe_vk_commands_dispatch_resources(doe_vk_commands *commands,
     size_t count, uint32_t x, uint32_t y, uint32_t z) {
     doe_vk_status status = doe_vk_recording(commands);
     if (status != DOE_VK_OK) return status;
+    if (pipeline == NULL || pipeline->graphics) return doe_vk_poison(commands, DOE_VK_INVALID_ARGUMENT);
     const uint32_t *limit = commands->context->caps.max_workgroup_count;
     if (x > limit[0] || y > limit[1] || z > limit[2]) return doe_vk_poison(commands, DOE_VK_INVALID_ARGUMENT);
-    status = bind_resources(commands, pipeline, bindings, count);
+    status = doe_vk_bind_resources(commands, pipeline, bindings, count);
     if (status != DOE_VK_OK) return status;
     commands->context->vk.vkCmdDispatch(commands->command, x, y, z);
     return DOE_VK_OK;

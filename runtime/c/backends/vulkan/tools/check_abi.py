@@ -40,7 +40,7 @@ def main():
     selected = set(manifest["structs"])
     fields = {}
     for file in ("vk_structs.zig", "vk_capability_structs.zig"):
-        for name, body in re.findall(r"pub const (Vk\w+) = extern struct \{(.*?)\n\};", (source / file).read_text(), re.S):
+        for name, kind, body in re.findall(r"pub const (Vk\w+) = extern (struct|union) \{(.*?)\n\};", (source / file).read_text(), re.S):
             if name not in selected:
                 continue
             members = []
@@ -60,7 +60,7 @@ def main():
                     else:
                         value = types[spelling]
                 members.append((member, value))
-            types[name] = type(name, (ctypes.Structure,), {"_fields_": members})
+            types[name] = type(name, (ctypes.Structure if kind == "struct" else ctypes.Union,), {"_fields_": members})
             fields[name] = members
     lines = ['#include "vk_abi_functions.h"', '#include "vk_abi_constants.h"']
     assertions = 0
