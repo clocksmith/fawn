@@ -112,8 +112,9 @@ no Phi or pointer may refer to a dead or sibling block. Validate unreachable
 source even when the emitter omits it.
 
 Bound the whole function to 64 RHS/initializer expression nodes, with expression
-nesting at most 16. Existing index representation is separate. Parentheses count
-toward nesting but need not allocate a value node. Existing 16 statements and
+depth at most 16: a primary has depth one, each binary/max node adds one
+to its deepest child, and each parenthesis adds one. Existing index representation
+is separate. Parentheses need not allocate a value node. Existing 16 statements and
 four nested-if levels remain. Derive and document a safe checked IR/value bound
 from these combined limits, replacing the old two-operand derivation. Check the
 4,096-word target cap and report exhaustion without output. Measure stack/frame
