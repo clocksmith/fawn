@@ -71,3 +71,7 @@ Scissors alone remain bounded to the actual pass attachment extent.
 Draw-budget presence is explicit: normalize omission once at pass creation and
 retain exact zero. Every draw command counts, even a no-op; preflight complete
 bundle lists against the same remaining budget before emitting partial records.
+Validate pipeline/signature compatibility at every setter as well as draw/replay;
+overwriting an invalid pipeline must not erase failure. Layout-entry stage and
+multisample constraints belong before allocation, while alias history still uses
+its existing visibility and whole-pass rules, not a second frontend validator.

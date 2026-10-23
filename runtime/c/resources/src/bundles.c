@@ -91,7 +91,7 @@ doe_resource_status doe_resource_bundle_encoder_set_pipeline(doe_resource_bundle
 {
     doe_resource_status status = admit_operation(encoder);
     if (status != DOE_RESOURCE_OK) return status;
-    status = resource_render_set_pipeline(encoder->base.config.device.identity, &encoder->state, pipeline);
+    status = resource_render_set_pipeline(encoder->base.config.device.identity, &encoder->state, &encoder->desc, pipeline);
     return complete_operation(encoder, status);
 }
 

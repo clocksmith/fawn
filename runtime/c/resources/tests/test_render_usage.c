@@ -235,10 +235,10 @@ static void test_draw_aliases(void)
             {.binding = 1, .kind = DOE_BIND_BUFFER, .resource.buffer = {storage, scenario == 1 ? 64 : 0, 64}}
         };
         if (scenario == 3) {
-            entries[0].visibility = WGPUShaderStage_Vertex;
+            entries[0].visibility = WGPUShaderStage_Compute;
             entries[1].visibility = WGPUShaderStage_Fragment;
         }
-        if (scenario == 4) entries[0].visibility = WGPUShaderStage_Vertex | WGPUShaderStage_Fragment;
+        if (scenario == 4) entries[0].visibility = WGPUShaderStage_Compute | WGPUShaderStage_Fragment;
         if (scenario == 5) entries[1].visibility = 0;
         size_t count = scenario == 2 ? 1 : 2;
         doe_resource_layout *layout;

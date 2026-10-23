@@ -168,7 +168,7 @@ static void test_texture_scope(void)
         if (scenario >= 9) {
             entries[1] = entries[0];
             entries[1].binding = 1;
-            entries[1].visibility = scenario == 9 ? 0 : scenario == 10 ? WGPUShaderStage_Vertex : WGPUShaderStage_Compute;
+            entries[1].visibility = scenario == 9 ? 0 : scenario == 10 ? WGPUShaderStage_Fragment : WGPUShaderStage_Compute;
             bindings[1].kind = DOE_BIND_STORAGE_TEXTURE;
             expected = scenario == 11 ? DOE_RESOURCE_ALIAS : DOE_RESOURCE_OK;
         }
@@ -258,14 +258,14 @@ static void test_binding_visibility(void)
             {.binding = 0, .kind = DOE_BIND_BUFFER, .buffer_type = WGPUBufferBindingType_Storage,
                 .visibility = WGPUShaderStage_Compute},
             {.binding = 1, .kind = DOE_BIND_BUFFER, .buffer_type = WGPUBufferBindingType_Storage,
-                .visibility = scenario == 0 ? 0 : scenario == 1 ? WGPUShaderStage_Vertex : WGPUShaderStage_Compute}
+                .visibility = scenario == 0 ? 0 : scenario == 1 ? WGPUShaderStage_Fragment : WGPUShaderStage_Compute}
         };
         if (scenario == 3) {
-            entries[0].visibility = WGPUShaderStage_Vertex | WGPUShaderStage_Fragment;
+            entries[0].visibility = WGPUShaderStage_Compute | WGPUShaderStage_Fragment;
             entries[1].visibility = WGPUShaderStage_Fragment;
         }
         if (scenario == 4) {
-            entries[0].visibility = WGPUShaderStage_Vertex;
+            entries[0].visibility = WGPUShaderStage_Compute;
             entries[1].visibility = WGPUShaderStage_Fragment;
         }
         doe_resource_binding bindings[2] = {
