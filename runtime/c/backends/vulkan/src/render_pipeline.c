@@ -8,6 +8,13 @@ static bool stencil_face_valid(doe_vk_stencil_face face) {
 static bool stencil_face_writes(doe_vk_stencil_face face) {
     return face.fail_operation != 0 || face.pass_operation != 0 || face.depth_fail_operation != 0;
 }
+bool doe_vk_render_stencil_writes(const doe_vk_render_pipeline_desc *desc) {
+    if (!desc->stencil_test || desc->stencil_write_mask == 0) return false;
+    bool front = !(desc->cull_mask & 1) && stencil_face_writes(desc->stencil_front);
+    bool back = !(desc->cull_mask & 2) && stencil_face_writes(desc->stencil_back);
+    return front || back;
+}
+
 static doe_vk_status validate_depth_stencil(doe_vk_context *context,
     const doe_vk_render_pipeline_desc *desc) {
     if (desc->depth_stencil_format == 0) {
@@ -103,8 +110,7 @@ doe_vk_status doe_vk_render_pipeline_create(doe_vk_context *context,
     pipeline->depth_stencil_format = desc->depth_stencil_format;
     pipeline->depth_write = desc->depth_write;
     pipeline->stencil_test = desc->stencil_test;
-    pipeline->stencil_write = desc->stencil_test && desc->stencil_write_mask != 0 &&
-        (stencil_face_writes(desc->stencil_front) || stencil_face_writes(desc->stencil_back));
+    pipeline->stencil_write = doe_vk_render_stencil_writes(desc);
     pipeline->vertex_count = (uint32_t)desc->vertex_buffer_count;
     if (pipeline->vertex_count != 0) memcpy(pipeline->vertices, desc->vertex_buffers,
         pipeline->vertex_count * sizeof(*desc->vertex_buffers));
