@@ -40,7 +40,7 @@ WGPUTexture wgpuDeviceCreateTexture(WGPUDevice handle, const WGPUTextureDescript
     for (size_t i = 0; i < descriptor->viewFormatCount; ++i) {
         doe_vk_texture_format mapped;
         if (descriptor->viewFormats[i] == descriptor->format) continue;
-        if (view_format_count == 2 || !native_texture_format(descriptor->viewFormats[i], &mapped)) {
+        if (view_format_count == 2 || !native_texture_format(device->features, descriptor->viewFormats[i], &mapped)) {
             native_error(device, WGPUErrorType_Validation, "texture format reinterpretation unsupported");
             return NULL;
         }
@@ -61,7 +61,7 @@ WGPUTexture wgpuDeviceCreateTexture(WGPUDevice handle, const WGPUTextureDescript
         .usage=DOE_VK_TEXTURE_COPY_DST, /* Initialization is internal usage only. */
         .view_formats=view_format_count ? view_formats : NULL,.view_format_count=view_format_count};
     if (doe_resource_texture_validate(&desc, &limits) != DOE_RESOURCE_OK ||
-        !native_texture_format(desc.format, &native.format)) {
+        !native_texture_format(device->features, desc.format, &native.format)) {
         native_error(device, WGPUErrorType_Validation, "texture shape or format unsupported");
         return NULL;
     }
@@ -73,7 +73,7 @@ WGPUTexture wgpuDeviceCreateTexture(WGPUDevice handle, const WGPUTextureDescript
     }
     native.cube_compatible = desc.dimension == WGPUTextureDimension_2D &&
         desc.width == desc.height && desc.depth_or_layers >= 6;
-    bool depth_stencil = native_depth_format(desc.format, &native.format);
+    bool depth_stencil = native_depth_format(device->features, desc.format, &native.format);
     if (depth_stencil) {
         /* Attachment, copy and sampled usage are admitted; per-format/aspect copy
          * direction and sample types belong to the resource owner. No storage. */
@@ -90,11 +90,15 @@ WGPUTexture wgpuDeviceCreateTexture(WGPUDevice handle, const WGPUTextureDescript
         if (!(desc.usage & WGPUTextureUsage_TextureBinding)) native.cube_compatible = false;
     }
     if (desc.samples > 1) {
-        if (desc.usage != WGPUTextureUsage_RenderAttachment) {
-            native_error(device, WGPUErrorType_Validation, "multisample textures currently support attachment usage only");
+        /* Resource validation requires RenderAttachment and rejects storage;
+         * copy usage serves equal-count whole-subresource texture copies. */
+        const WGPUTextureUsage extra = WGPUTextureUsage_TextureBinding | WGPUTextureUsage_CopySrc | WGPUTextureUsage_CopyDst;
+        if ((desc.usage & ~extra) != WGPUTextureUsage_RenderAttachment) {
+            native_error(device, WGPUErrorType_Validation, "multisample textures need attachment usage and no storage");
             return NULL;
         }
         native.usage = depth_stencil ? DOE_VK_TEXTURE_DEPTH_STENCIL_ATTACHMENT : DOE_VK_TEXTURE_COLOR_ATTACHMENT;
+        if (desc.usage & WGPUTextureUsage_CopyDst) native.usage |= DOE_VK_TEXTURE_COPY_DST;
         native.cube_compatible = false;
     }
     if (desc.usage & WGPUTextureUsage_CopySrc) native.usage |= DOE_VK_TEXTURE_COPY_SRC;

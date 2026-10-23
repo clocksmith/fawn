@@ -118,6 +118,10 @@ typedef struct doe_vk_caps {
     /* Enabled imageCubeArray, not merely advertised. Without it cube-array views
      * and SampledCubeArray shaders are rejected. */
     bool image_cube_array;
+    /* VK_KHR_maintenance5 (with VK_KHR_dynamic_rendering) successfully enabled,
+     * not merely advertised. Point-list pipelines require it: the default
+     * PointSize of 1.0 replaces any shader or SPIR-V rewrite. */
+    bool maintenance5;
     doe_vk_adapter_identity identity;
     /* Actual native color-attachment count limit (pipelines and passes are also
      * bounded by DOE_VK_MAX_COLOR_ATTACHMENTS). */
@@ -129,6 +133,18 @@ typedef struct doe_vk_caps {
      * when the feature is absent, so anisotropic samplers then reject. */
     bool sampler_anisotropy;
     float max_sampler_anisotropy;
+    /* Enabled shaderStorageImageExtendedFormats (SPIR-V StorageImageExtendedFormats,
+     * e.g. rg32 storage formats), not merely advertised. */
+    bool storage_image_extended_formats;
+    /* Enabled fragmentStoresAndAtomics: fragment-stage storage writes. Vertex-stage
+     * stores stay disabled. */
+    bool fragment_stores_and_atomics;
+    /* Enabled drawIndirectFirstInstance: guarded indirect draws may then admit a
+     * nonzero firstInstance when the render indirect request asks for it. */
+    bool draw_indirect_first_instance;
+    /* Enabled depthClamp: pipelines may disable depth clipping (unclipped_depth),
+     * clamping depth to the viewport range instead. */
+    bool depth_clamp;
 } doe_vk_caps;
 
 /* One owned reference on success. Objects retain their creating context. */
@@ -225,15 +241,22 @@ doe_vk_status doe_vk_commands_release(doe_vk_commands *commands);
  * completion the recording is READY and may be submitted again: each submission
  * re-acquires its buffer uses (so buffers can be mapped between runs), rejects
  * poisoned buffer contents and re-arms its own fence. Failure stays terminal.
- * Only copy, fill and direct buffer dispatch are admitted; recordings holding
- * texture, query, render, indirect-guard or surface state reject at submit.
+ * Copy, fill, direct buffer dispatch and self-contained timestamp queries are
+ * admitted: every query index a recording writes or resolves must be reset
+ * earlier in the same recording, otherwise seal/submit rejects it. Pool
+ * ownership is released at seal and after each completion, and every
+ * resubmission re-acquires it (BUSY while another recording owns the pool)
+ * after checking pool content health; completion publishes the indices the
+ * recording reset or wrote, and failure poisons the pool. Recordings holding
+ * texture, render or surface state reject at submit.
  * retain adds a holder (one per pending submission); release keeps the existing
  * BUSY rule for in-flight work. drop releases a holder that does not own
  * completion: while another holder remains it never waits or reports BUSY. */
 doe_vk_status doe_vk_commands_create_reusable(doe_vk_context *context,
     doe_vk_commands **out, doe_vk_error *error);
-/* Ends a reusable recording without submitting it and drops its buffer uses, so
- * hosts may write or map buffers before the first submission. READY afterwards. */
+/* Ends a reusable recording without submitting it and drops its buffer uses and
+ * query-pool ownership, so hosts may write or map buffers and other submissions
+ * may use the pools before the first run. READY afterwards. */
 doe_vk_status doe_vk_commands_seal(doe_vk_commands *commands, doe_vk_error *error);
 doe_vk_status doe_vk_commands_retain(doe_vk_commands *commands);
 doe_vk_status doe_vk_commands_drop(doe_vk_commands *commands);

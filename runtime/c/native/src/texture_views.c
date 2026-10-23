@@ -40,7 +40,7 @@ WGPUTextureView wgpuTextureCreateView(WGPUTexture handle, const WGPUTextureViewD
         /* A different full-aspect format is a resource-validated viewFormats
          * entry; the backend admits it only from the image's srgb/unorm list. */
         else if (resolved.format != aspect_format && (resolved.aspect != WGPUTextureAspect_All ||
-            !native_texture_format(resolved.format, &native.format))) status = DOE_RESOURCE_UNSUPPORTED;
+            !native_texture_format(device->features, resolved.format, &native.format))) status = DOE_RESOURCE_UNSUPPORTED;
         native.base_mip = resolved.base_mip;
         native.mip_count = resolved.mip_count;
         native.base_layer = resolved.base_layer;

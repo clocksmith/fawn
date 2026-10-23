@@ -7,7 +7,7 @@
 doe_vk_status native_timestamp_initialize(native_device *device)
 {
     if (device->timestamp_normalizer) return DOE_VK_OK;
-    if (!device->timestamp_enabled || !native_timestamp_supported(&device->backend.value.vulkan.caps)) return DOE_VK_UNSUPPORTED;
+    if (!native_feature_enabled(device, WGPUFeatureName_TimestampQuery) || !native_timestamp_supported(&device->backend.value.vulkan.caps)) return DOE_VK_UNSUPPORTED;
     uint32_t workgroup = native_timestamp_workgroup(&device->backend.value.vulkan.caps);
     char source[DOE_VK_TIMESTAMP_SOURCE_CAPACITY];
     size_t size = 0;
@@ -52,7 +52,7 @@ WGPUQuerySet wgpuDeviceCreateQuerySet(WGPUDevice handle, const WGPUQuerySetDescr
     }
     doe_resource_status status = descriptor && !descriptor->nextInChain &&
         (descriptor->type == WGPUQueryType_Occlusion ||
-            (descriptor->type == WGPUQueryType_Timestamp && device->timestamp_enabled)) ?
+            (descriptor->type == WGPUQueryType_Timestamp && native_feature_enabled(device, WGPUFeatureName_TimestampQuery))) ?
         doe_resource_query_set_validate(descriptor->type, descriptor->count) : DOE_RESOURCE_UNSUPPORTED;
     if (status != DOE_RESOURCE_OK) {
         native_error(device, native_resource_error(status), "query descriptor invalid or timestamp feature not enabled");
@@ -102,7 +102,7 @@ void wgpuCommandEncoderWriteTimestamp(WGPUCommandEncoder handle, WGPUQuerySet se
     native_device *device = doe_resource_encoder_device(encoder);
     if (!device) return;
     native_lock(device);
-    doe_resource_status status = device->timestamp_enabled ? doe_resource_encoder_write_timestamp(encoder,
+    doe_resource_status status = native_feature_enabled(device, WGPUFeatureName_TimestampQuery) ? doe_resource_encoder_write_timestamp(encoder,
         (doe_resource_query_set *)set, index, DOE_TIMESTAMP_COMMAND) :
         doe_resource_encoder_invalidate(encoder, DOE_RESOURCE_UNSUPPORTED);
     native_unlock(device);

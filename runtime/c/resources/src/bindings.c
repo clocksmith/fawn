@@ -42,6 +42,9 @@ static doe_resource_status normalize_entry(const doe_resource_layout_entry *inpu
         if (status != DOE_RESOURCE_OK) return status;
         if (resource_format_depth(input->storage_format) || width != 1 || height != 1)
             return DOE_RESOURCE_LAYOUT;
+        bool read_write = false;
+        if (!resource_storage_format(input->storage_format, &read_write) ||
+            (input->storage_access == WGPUStorageTextureAccess_ReadWrite && !read_write)) return DOE_RESOURCE_LAYOUT;
         result.storage_access = input->storage_access;
         result.storage_format = input->storage_format;
         result.view_dimension = input->view_dimension;

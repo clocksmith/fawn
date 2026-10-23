@@ -7,8 +7,9 @@ static uint32_t mip_extent(uint32_t size, uint32_t mip) {
     return value != 0 ? value : 1;
 }
 
+/* Multisampled images copy only image-to-image (equal sample counts, whole
+ * subresource, checked by the copy); buffer copies need one sample. */
 static doe_vk_status region_valid(const doe_vk_texture *texture, doe_vk_texture_region region) {
-    if (doe_vk_samples(texture->desc.sample_count) != 1) return DOE_VK_UNSUPPORTED;
     if (region.mip >= texture->desc.mip_levels || region.mip >= 32 ||
         region.extent[0] == 0 || region.extent[1] == 0 || region.extent[2] == 0)
         return DOE_VK_INVALID_ARGUMENT;
@@ -74,6 +75,7 @@ doe_vk_status doe_vk_texture_copy_region(const doe_vk_texture *texture,
     doe_vk_texture_buffer_layout layout, VkBufferImageCopy *out) {
     if (texture == NULL || out == NULL || texture->texel_bytes == 0)
         return DOE_VK_INVALID_ARGUMENT;
+    if (doe_vk_samples(texture->desc.sample_count) != 1) return DOE_VK_UNSUPPORTED;
     doe_vk_status status = region_valid(texture, region);
     if (status != DOE_VK_OK) return status;
     uint32_t aspect = 0, texel = 0;
@@ -239,8 +241,18 @@ doe_vk_status doe_vk_commands_copy_texture(doe_vk_commands *commands,
         destination->context != commands->context || !(source->desc.usage & DOE_VK_TEXTURE_COPY_SRC) ||
         !(destination->desc.usage & DOE_VK_TEXTURE_COPY_DST) || source == destination ||
         source->desc.format != destination->desc.format || source->desc.dimension != destination->desc.dimension ||
-        memcmp(source_region.extent, destination_region.extent, sizeof(source_region.extent)) != 0)
+        memcmp(source_region.extent, destination_region.extent, sizeof(source_region.extent)) != 0 ||
+        doe_vk_samples(source->desc.sample_count) != doe_vk_samples(destination->desc.sample_count))
         return doe_vk_poison(commands, DOE_VK_INVALID_ARGUMENT);
+    /* Multisampled image copies cover the whole single subresource (WebGPU). */
+    if (doe_vk_samples(source->desc.sample_count) != 1) {
+        const doe_vk_texture_region *regions[2] = {&source_region, &destination_region};
+        for (uint32_t i = 0; i < 2; ++i)
+            if (regions[i]->mip != 0 || regions[i]->origin[0] != 0 || regions[i]->origin[1] != 0 ||
+                regions[i]->origin[2] != 0 || regions[i]->extent[0] != source->desc.width ||
+                regions[i]->extent[1] != source->desc.height || regions[i]->extent[2] != 1)
+                return doe_vk_poison(commands, DOE_VK_INVALID_ARGUMENT);
+    }
     uint32_t source_aspects = 0, destination_aspects = 0, unused = 0;
     status = region_aspect(source, source_region.aspect, false, &source_aspects, &unused);
     if (status == DOE_VK_OK)

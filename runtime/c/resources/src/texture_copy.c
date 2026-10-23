@@ -8,11 +8,13 @@ static uint64_t ceil_blocks(uint32_t value, uint32_t block)
     return ((uint64_t)value + block - 1) / block;
 }
 
+/* Buffer copies need one sample; texture copies check equal counts and, for
+ * multisampled textures, the whole subresource (as for depth/stencil). */
 static doe_resource_status copy_bounds(const doe_resource_texture_desc *texture,
     const doe_resource_texture_copy *copy, doe_resource_copy_alignment alignment,
-    uint32_t physical_extent[3])
+    bool multisample, uint32_t physical_extent[3])
 {
-    if (copy->mip >= texture->mip_levels || copy->mip >= 32 || texture->samples != 1)
+    if (copy->mip >= texture->mip_levels || copy->mip >= 32 || (!multisample && texture->samples != 1))
         return DOE_RESOURCE_RANGE;
     uint32_t bytes, block_width, block_height;
     doe_resource_status status = resource_format_block(texture->format, &bytes, &block_width, &block_height);
@@ -53,7 +55,7 @@ doe_resource_status doe_resource_texture_copy_validate(uint64_t buffer_size,
         (alignment != DOE_RESOURCE_COPY_NATIVE && alignment != DOE_RESOURCE_COPY_WEBGPU))
         return DOE_RESOURCE_INVALID_ARGUMENT;
     uint32_t extent[3];
-    doe_resource_status status = copy_bounds(texture, copy, alignment, extent);
+    doe_resource_status status = copy_bounds(texture, copy, alignment, false, extent);
     if (status != DOE_RESOURCE_OK) return status;
     uint32_t bytes, block_width, block_height;
     status = resource_format_block(texture->format, &bytes, &block_width, &block_height);
@@ -123,7 +125,8 @@ doe_resource_status doe_resource_texture_blit_validate(const void *device,
     if (!(source->desc.usage & WGPUTextureUsage_CopySrc) ||
         !(destination->desc.usage & WGPUTextureUsage_CopyDst)) return DOE_RESOURCE_USAGE;
     if (!resource_format_compatible(source->desc.format, destination->desc.format) ||
-        source->desc.dimension != destination->desc.dimension) return DOE_RESOURCE_LAYOUT;
+        source->desc.dimension != destination->desc.dimension ||
+        source->desc.samples != destination->desc.samples) return DOE_RESOURCE_LAYOUT;
     doe_resource_texture_blit result = *copy;
     doe_resource_image_copy *endpoints[2] = {&result.source, &result.destination};
     for (size_t i = 0; i < 2; i++) {
@@ -135,9 +138,9 @@ doe_resource_status doe_resource_texture_blit_validate(const void *device,
             .width = copy->width, .height = copy->height, .depth_or_layers = copy->depth_or_layers
         };
         uint32_t extent[3];
-        doe_resource_status status = copy_bounds(&endpoint->texture->desc, &region, alignment, extent);
+        doe_resource_status status = copy_bounds(&endpoint->texture->desc, &region, alignment, true, extent);
         if (status != DOE_RESOURCE_OK) return status;
-        if (resource_format_depth(endpoint->texture->desc.format) &&
+        if ((resource_format_depth(endpoint->texture->desc.format) || endpoint->texture->desc.samples > 1) &&
             (copy->width != extent[0] || copy->height != extent[1])) return DOE_RESOURCE_RANGE;
     }
     if (source == destination && copy->source.mip == copy->destination.mip) {

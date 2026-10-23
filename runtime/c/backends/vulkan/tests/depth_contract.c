@@ -4,7 +4,20 @@
 #include <math.h>
 #include <stdio.h>
 
-static unsigned begins, ends, created, destroyed;
+static unsigned begins, ends, created, destroyed, views_created, views_destroyed;
+static VkResult create_view(VkDevice device, const VkImageViewCreateInfo *info,
+    const VkAllocationCallbacks *allocator, VkImageView *out) {
+    (void)device; (void)allocator;
+    assert(info->subresourceRange.levelCount == 1 && info->subresourceRange.layerCount == 1);
+    *out = 22; /* The depth attachment handle the framebuffer mock expects. */
+    ++views_created;
+    return 0;
+}
+static void destroy_view(VkDevice device, VkImageView view, const VkAllocationCallbacks *allocator) {
+    (void)device; (void)allocator;
+    assert(view == 22);
+    ++views_destroyed;
+}
 static bool inside;
 static doe_vk_render_pass_desc expected;
 static VkResult create_pass(VkDevice device, const VkRenderPassCreateInfo *info,
@@ -272,6 +285,33 @@ int main(void) {
     assert(doe_vk_commands_render_pass_full(commands, &desc, NULL, NULL, 0) == DOE_VK_OK);
     assert(doe_vk_commands_release(commands) == DOE_VK_OK && resolve_state == 0);
     assert(begins == 6 && ends == 6 && created == destroyed && context.references == 1);
+    /* Whole-image initializer for copies/bindings after a discard: clears only
+     * the undefined depth aspect through a temporary single-subresource view,
+     * then is a no-op; images without attachment usage are never touched. */
+    context.vk.vkCreateImageView = create_view;
+    context.vk.vkDestroyImageView = destroy_view;
+    depth_state = VK_IMAGE_ASPECT_STENCIL_BIT;
+    expected = (doe_vk_render_pass_desc){.depth_stencil = &depth_view, .clear_depth = true};
+    commands = recording(&context);
+    assert(doe_vk_commands_initialize_texture(commands, &depth) == DOE_VK_OK);
+    /* The recorded pass retains the temporary view until command release. */
+    assert(begins == 7 && views_created == 1 && views_destroyed == 0);
+    doe_vk_textures_complete(commands, DOE_VK_OK);
+    assert(depth_state == (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT));
+    assert(doe_vk_commands_release(commands) == DOE_VK_OK && views_destroyed == 1);
+    commands = recording(&context);
+    assert(doe_vk_commands_initialize_texture(commands, &depth) == DOE_VK_OK);
+    assert(begins == 7 && commands->textures != NULL && commands->renders == NULL);
+    assert(doe_vk_commands_release(commands) == DOE_VK_OK);
+    doe_vk_texture copy_only = color;
+    copy_only.desc.usage = DOE_VK_TEXTURE_COPY_SRC;
+    copy_only.initialized = &resolve_state;
+    resolve_state = 0;
+    commands = recording(&context);
+    assert(doe_vk_commands_initialize_texture(commands, &copy_only) == DOE_VK_OK);
+    assert(commands->textures == NULL && begins == 7);
+    assert(doe_vk_commands_release(commands) == DOE_VK_OK && context.references == 1);
+    puts("PASS whole-image initializer after discard: only undefined aspects cleared once through a temporary single-subresource view, then no-op; non-attachment images untouched");
     puts("PASS per-aspect native load/clear/store/discard, full depth/stencil transitions, read-only write/clear rejection, extent/NaN/absent-aspect preflight, speculative initialization, canonical depth-only zero with stencil preservation/no-op, culled-face stencil write summary and exact attachment leases; real MSAA/resolve native records, mismatch rejection, discard-independent resolve availability and uncertain/abandoned ownership");
     return 0;
 }

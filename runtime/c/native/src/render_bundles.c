@@ -11,7 +11,7 @@ WGPURenderBundleEncoder wgpuDeviceCreateRenderBundleEncoder(WGPUDevice handle,
         (descriptor->sampleCount == 1 || descriptor->sampleCount == 4);
     doe_vk_texture_format depth;
     if (valid && descriptor->depthStencilFormat != WGPUTextureFormat_Undefined &&
-        !native_depth_format(descriptor->depthStencilFormat, &depth)) valid = false;
+        !native_depth_format(device->features, descriptor->depthStencilFormat, &depth)) valid = false;
     doe_resource_render_bundle_desc converted = {0};
     if (valid) {
         converted = (doe_resource_render_bundle_desc){.depth_stencil_format=descriptor->depthStencilFormat,

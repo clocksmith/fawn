@@ -297,7 +297,8 @@ napi_value native_direct_queue_write_texture(napi_env env, napi_callback_info in
     /* dataLayout: {offset?, bytesPerRow, rowsPerImage?} */
     uint32_t layout_offset = get_u32_prop(env, argv[2], "offset");
     uint32_t bytes_per_row = get_u32_prop(env, argv[2], "bytesPerRow");
-    uint32_t rows_per_image = get_u32_prop(env, argv[2], "rowsPerImage");
+    uint32_t rows_per_image = has_prop(env, argv[2], "rowsPerImage")
+        ? get_u32_prop(env, argv[2], "rowsPerImage") : 0xFFFFFFFFu; /* WGPU_COPY_STRIDE_UNDEFINED */
     if (layout_offset > 0 && layout_offset < data_len) {
         data = ((uint8_t*)data) + layout_offset;
         data_len -= layout_offset;

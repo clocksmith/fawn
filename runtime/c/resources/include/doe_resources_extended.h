@@ -164,6 +164,9 @@ doe_resource_status doe_resource_encoder_begin_render(doe_resource_encoder *enco
 doe_resource_status doe_resource_encoder_begin_render_with_timestamps(doe_resource_encoder *encoder,
     const doe_resource_render_targets *targets, const doe_resource_pass_timestamps *timestamps,
     doe_resource_render_pass **out);
+/* The WebGPU invalid render pass after a rejected begin, with the same contract
+ * as doe_resource_compute_pass_rejected. */
+doe_resource_render_pass *doe_resource_render_pass_rejected(doe_resource_encoder *encoder);
 /* Frontend preflight rejection poisons the canonical active recording owner;
  * non-rejection statuses are invalid arguments and do not mutate state. */
 doe_resource_status doe_resource_render_pass_invalidate(doe_resource_render_pass *pass,

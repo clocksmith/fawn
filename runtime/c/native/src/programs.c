@@ -34,22 +34,27 @@ uint32_t doeNativeComputeProgramTimestampNanoseconds(void *handle, double *perio
 {
     const native_device *device = handle;
     if (!device || !period_ns || !valid_bits || device->backend.kind != WGPUBackendType_Vulkan ||
-            !device->timestamp_enabled) return 0;
+            !native_feature_enabled(device, WGPUFeatureName_TimestampQuery)) return 0;
     *period_ns = 1.0;
     *valid_bits = 64;
     return 1;
 }
 
-/* One recording must not depend on per-submission texture, query, render or
- * indirect-guard state; those programs use host replay or ordinary submission. */
+/* One recording must not depend on per-submission texture, render or
+ * indirect-guard state, nor on query state it did not reset itself; those
+ * programs use host replay or ordinary submission. */
 static bool gpu_recordable(const doe_resource_commands *commands)
 {
     size_t count = 0;
     const doe_resource_command *records = doe_resource_commands_borrow(commands, &count);
     for (size_t i = 0; i < count; ++i) {
         doe_resource_command_kind kind = records[i].kind;
+        /* Timestamp writes (including compute-pass timestampWrites) lower to
+         * reset+write of each index; the Vulkan owner seals only recordings
+         * whose every written or resolved index is reset by the recording. */
         if (kind != DOE_COMMAND_COPY_BUFFER && kind != DOE_COMMAND_CLEAR_BUFFER &&
-                kind != DOE_COMMAND_DISPATCH) return false;
+                kind != DOE_COMMAND_DISPATCH && kind != DOE_COMMAND_WRITE_TIMESTAMP &&
+                kind != DOE_COMMAND_RESOLVE_QUERY) return false;
     }
     return count != 0;
 }
@@ -65,7 +70,7 @@ static native_program *prepare(void *queue, void *handle, bool host_replay)
     else if (!host_replay && device->backend.kind != WGPUBackendType_Vulkan)
         message = "compute program: GPU recording requires the Vulkan backend";
     else if (!host_replay && !gpu_recordable(commands))
-        message = "compute program: GPU recording admits buffer copies, clears and direct dispatches only";
+        message = "compute program: GPU recording admits buffer copies, clears, direct dispatches and self-contained timestamp queries only";
     native_program *program = message ? NULL : calloc(1, sizeof(*program));
     if (!message && !program) {
         type = WGPUErrorType_OutOfMemory;

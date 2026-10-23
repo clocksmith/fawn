@@ -34,6 +34,9 @@ static uint32_t texel_bytes(doe_vk_texture_format format) {
         case DOE_VK_FORMAT_D32_FLOAT:
         case DOE_VK_FORMAT_D24_UNORM_S8_UINT:
         case DOE_VK_FORMAT_RGBA8_UNORM:
+        case DOE_VK_FORMAT_RGBA8_SNORM:
+        case DOE_VK_FORMAT_RGBA8_UINT:
+        case DOE_VK_FORMAT_RGBA8_SINT:
         case DOE_VK_FORMAT_RGBA8_SRGB:
         case DOE_VK_FORMAT_BGRA8_UNORM:
         case DOE_VK_FORMAT_BGRA8_SRGB:
@@ -42,6 +45,8 @@ static uint32_t texel_bytes(doe_vk_texture_format format) {
         case DOE_VK_FORMAT_R32_SINT:
         case DOE_VK_FORMAT_R32_FLOAT: return 4;
         case DOE_VK_FORMAT_D32_FLOAT_S8_UINT:
+        case DOE_VK_FORMAT_RGBA16_UINT:
+        case DOE_VK_FORMAT_RGBA16_SINT:
         case DOE_VK_FORMAT_RGBA16_FLOAT:
         case DOE_VK_FORMAT_RG32_UINT:
         case DOE_VK_FORMAT_RG32_SINT:
@@ -90,9 +95,14 @@ static doe_vk_status validate_texture(doe_vk_context *context,
         return DOE_VK_INVALID_ARGUMENT;
     uint32_t samples = doe_vk_samples(desc->sample_count);
     if (samples > 64 || (samples & (samples - 1)) != 0) return DOE_VK_INVALID_ARGUMENT;
+    /* Multisample images: one 2D attachment, optionally also sampled (shader
+     * textureLoad per sample) and image-to-image copied; never storage. The
+     * native image-format query below checks the exact combined sample support. */
+    const uint32_t attachment = desc->usage &
+        ~(uint32_t)(DOE_VK_TEXTURE_SAMPLED | DOE_VK_TEXTURE_COPY_SRC | DOE_VK_TEXTURE_COPY_DST);
     if (samples != 1 && (desc->dimension != DOE_VK_TEXTURE_2D || desc->mip_levels != 1 ||
         desc->depth_or_layers != 1 || desc->cube_compatible ||
-        (desc->usage != DOE_VK_TEXTURE_COLOR_ATTACHMENT && desc->usage != DOE_VK_TEXTURE_DEPTH_STENCIL_ATTACHMENT)))
+        (attachment != DOE_VK_TEXTURE_COLOR_ATTACHMENT && attachment != DOE_VK_TEXTURE_DEPTH_STENCIL_ATTACHMENT)))
         return DOE_VK_UNSUPPORTED;
     *bytes = texel_bytes(desc->format);
     if (*bytes == 0) return DOE_VK_UNSUPPORTED;

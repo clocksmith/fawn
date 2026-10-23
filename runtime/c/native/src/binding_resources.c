@@ -49,9 +49,9 @@ bool native_vulkan_binding_layout(const native_pipeline *pipeline, doe_vk_bindin
     return true;
 }
 
-doe_vk_status native_resolve_bindings(const native_pipeline *pipeline, doe_resource_pipeline_layout *layout,
-    doe_resource_bind_group *const *groups, const doe_resource_dispatch_offsets *offsets,
-    doe_vk_binding_resource *bindings)
+doe_vk_status native_resolve_bindings(doe_vk_commands *commands, const native_pipeline *pipeline,
+    doe_resource_pipeline_layout *layout, doe_resource_bind_group *const *groups,
+    const doe_resource_dispatch_offsets *offsets, doe_vk_binding_resource *bindings)
 {
     doe_resource_binding resolved[DOE_RESOURCE_MAX_GROUPS * DOE_RESOURCE_MAX_BINDINGS];
     doe_resource_status status = native_resolve_resources(pipeline,layout,groups,offsets,resolved);
@@ -71,6 +71,11 @@ doe_vk_status native_resolve_bindings(const native_pipeline *pipeline, doe_resou
         } else {
             native_view *view = doe_resource_view_native(binding->resource.view);
             bindings[i].value.view = view->view;
+            if (commands) {
+                native_texture *texture = doe_resource_texture_native(doe_resource_view_texture(binding->resource.view));
+                doe_vk_status status = doe_vk_commands_initialize_texture(commands, texture->texture);
+                if (status != DOE_VK_OK) return status;
+            }
         }
     }
     return DOE_VK_OK;

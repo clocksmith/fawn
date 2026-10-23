@@ -297,6 +297,19 @@ doe_resource_status resource_render_pass_active(doe_resource_render_pass *pass)
     return DOE_RESOURCE_OK;
 }
 
+doe_resource_render_pass *doe_resource_render_pass_rejected(doe_resource_encoder *encoder)
+{
+    if (!encoder || encoder->status == DOE_RESOURCE_OK) return NULL;
+    doe_resource_render_pass *pass = resource_allocate(&encoder->base.config,
+        sizeof(*pass), _Alignof(doe_resource_render_pass));
+    if (!pass) return NULL;
+    memset(pass, 0, sizeof(*pass));
+    pass->encoder = encoder;
+    doe_resource_encoder_retain(encoder);
+    resource_init(&pass->base, &encoder->base.config, (doe_resource_native){0});
+    return pass;
+}
+
 void doe_resource_render_pass_retain(doe_resource_render_pass *pass)
 {
     if (pass) resource_retain(&pass->base);

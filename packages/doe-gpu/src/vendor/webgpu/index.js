@@ -108,6 +108,16 @@ const TEXTURE_ASPECT_MAP = Object.freeze({
   'stencil-only': 2,
   'depth-only': 3,
 });
+// webgpu.h WGPU_COPY_STRIDE_UNDEFINED: an omitted bytesPerRow/rowsPerImage, not an explicit 0.
+const COPY_STRIDE_UNDEFINED = 0xFFFFFFFF;
+// GPUTexelCopyTextureInfo.aspect as the addon's WGPUTextureAspect value.
+function textureAspectValue(aspect) {
+  if (aspect === undefined) return TEXTURE_ASPECT_MAP.all;
+  if (typeof aspect === 'number') return aspect;
+  const value = TEXTURE_ASPECT_MAP[aspect];
+  if (value === undefined) failValidation('GPUTexelCopyTextureInfo.aspect', `unknown aspect "${aspect}"`);
+  return value;
+}
 const TEXTURE_SWIZZLE_COMPONENT_MAP = Object.freeze({
   '0': 1,
   '1': 2,
@@ -1694,11 +1704,12 @@ const nodeEncoderBackend = {
   },
   commandEncoderBeginRenderPass(encoder, passDescriptor, classes) {
     const attachments = assertArray(passDescriptor.colorAttachments ?? [], 'GPUCommandEncoder.beginRenderPass', 'descriptor.colorAttachments');
-    if (attachments.length === 0) {
-      failValidation('GPUCommandEncoder.beginRenderPass', 'descriptor.colorAttachments must contain at least one attachment');
+    if (!attachments.some((attachment) => attachment != null) && passDescriptor.depthStencilAttachment == null) {
+      failValidation('GPUCommandEncoder.beginRenderPass', 'descriptor needs a color attachment or a depthStencilAttachment');
     }
     ensureNodeCommandEncoderNative(encoder);
     const colorAttachments = attachments.map((attachment, index) => {
+      if (attachment === null || attachment === undefined) return null;
       const entry = assertObject(attachment, 'GPUCommandEncoder.beginRenderPass', `descriptor.colorAttachments[${index}]`);
       const normalized = {
         view: assertLiveResource(entry.view, 'GPUCommandEncoder.beginRenderPass', 'GPUTextureView'),
@@ -1719,12 +1730,14 @@ const nodeEncoderBackend = {
       const depthAttachment = assertObject(passDescriptor.depthStencilAttachment, 'GPUCommandEncoder.beginRenderPass', 'descriptor.depthStencilAttachment');
       depthStencilAttachment = {
         view: assertLiveResource(depthAttachment.view, 'GPUCommandEncoder.beginRenderPass', 'GPUTextureView'),
-        depthLoadOp: depthAttachment.depthLoadOp ?? 'clear',
-        depthStoreOp: depthAttachment.depthStoreOp ?? 'store',
+        // Operations stay absent when not given: the spec requires them only
+        // for an aspect the format has, and forbids them otherwise.
+        depthLoadOp: depthAttachment.depthLoadOp,
+        depthStoreOp: depthAttachment.depthStoreOp,
         depthClearValue: depthAttachment.depthClearValue ?? 1,
         depthReadOnly: depthAttachment.depthReadOnly ?? false,
-        stencilLoadOp: depthAttachment.stencilLoadOp ?? 'clear',
-        stencilStoreOp: depthAttachment.stencilStoreOp ?? 'store',
+        stencilLoadOp: depthAttachment.stencilLoadOp,
+        stencilStoreOp: depthAttachment.stencilStoreOp,
         stencilClearValue: depthAttachment.stencilClearValue ?? 0,
         stencilReadOnly: depthAttachment.stencilReadOnly ?? false,
       };
@@ -1786,14 +1799,14 @@ const nodeEncoderBackend = {
       encoder._native,
       source.buffer,
       source.offset ?? 0,
-      source.bytesPerRow ?? 0,
-      source.rowsPerImage ?? 0,
+      source.bytesPerRow ?? COPY_STRIDE_UNDEFINED,
+      source.rowsPerImage ?? COPY_STRIDE_UNDEFINED,
       destination.texture,
       destination.mipLevel ?? 0,
       destination.origin?.x ?? 0,
       destination.origin?.y ?? 0,
       destination.origin?.z ?? 0,
-      destination.aspect ?? 1,
+      textureAspectValue(destination.aspect),
       copySize.width,
       copySize.height,
       copySize.depthOrArrayLayers ?? 1,
@@ -1808,11 +1821,11 @@ const nodeEncoderBackend = {
       source.origin?.x ?? 0,
       source.origin?.y ?? 0,
       source.origin?.z ?? 0,
-      source.aspect ?? 1,
+      textureAspectValue(source.aspect),
       destination.buffer,
       destination.offset ?? 0,
-      destination.bytesPerRow ?? 0,
-      destination.rowsPerImage ?? 0,
+      destination.bytesPerRow ?? COPY_STRIDE_UNDEFINED,
+      destination.rowsPerImage ?? COPY_STRIDE_UNDEFINED,
       copySize.width,
       copySize.height,
       copySize.depthOrArrayLayers ?? 1,
@@ -1854,13 +1867,13 @@ const nodeEncoderBackend = {
       source.origin?.x ?? 0,
       source.origin?.y ?? 0,
       source.origin?.z ?? 0,
-      source.aspect ?? 1,
+      textureAspectValue(source.aspect),
       destination.texture,
       destination.mipLevel ?? 0,
       destination.origin?.x ?? 0,
       destination.origin?.y ?? 0,
       destination.origin?.z ?? 0,
-      destination.aspect ?? 1,
+      textureAspectValue(destination.aspect),
       copySize.width,
       copySize.height,
       copySize.depthOrArrayLayers ?? 1,
@@ -2382,8 +2395,8 @@ const fullSurfaceBackend = {
       destination.texture,
       data,
       dataLayout.offset ?? 0,
-      dataLayout.bytesPerRow ?? 0,
-      dataLayout.rowsPerImage ?? 0,
+      dataLayout.bytesPerRow ?? COPY_STRIDE_UNDEFINED,
+      dataLayout.rowsPerImage ?? COPY_STRIDE_UNDEFINED,
       destination.mipLevel ?? 0,
       destination.origin?.x ?? 0,
       destination.origin?.y ?? 0,
@@ -2664,7 +2677,8 @@ const fullSurfaceBackend = {
   },
   deviceCreateRenderPipeline(device, descriptor) {
     try {
-      const fragmentTarget = descriptor.fragmentTarget ?? { format: descriptor.colorFormat ?? 'rgba8unorm' };
+      const targets = descriptor.fragmentTargets
+        ?? [descriptor.fragmentTarget ?? { format: descriptor.colorFormat ?? 'rgba8unorm' }];
       return addon.createRenderPipeline(
         assertLiveResource(device, 'GPUDevice.createRenderPipeline', 'GPUDevice'),
         {
@@ -2675,15 +2689,15 @@ const fullSurfaceBackend = {
             buffers: descriptor.vertexBuffers ?? [],
             constants: descriptor.vertexConstants ?? null,
           },
-          fragment: {
+          fragment: descriptor.fragmentModule === null ? undefined : {
             module: descriptor.fragmentModule,
             entryPoint: descriptor.fragmentEntryPoint,
             constants: descriptor.fragmentConstants ?? null,
-            targets: [{
-              format: fragmentTarget.format,
-              writeMask: fragmentTarget.writeMask ?? globals.GPUColorWrite.ALL,
-              blend: fragmentTarget.blend ?? undefined,
-            }],
+            targets: targets.map((target) => (target ? {
+              format: target.format,
+              writeMask: target.writeMask ?? globals.GPUColorWrite.ALL,
+              blend: target.blend ?? undefined,
+            } : null)),
           },
           primitive: descriptor.primitive ? {
             topology: descriptor.primitive.topology ?? 'triangle-list',

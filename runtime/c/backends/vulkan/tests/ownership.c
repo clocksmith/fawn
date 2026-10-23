@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: MIT */
-#include "../src/internal.h"
+#include "../src/query_internal.h"
 #include <assert.h>
 #include <stdio.h>
 
@@ -473,6 +473,102 @@ static void reusable_lifetime(void) {
     assert(ctx.references == 1);
 }
 
+static unsigned query_resets, query_writes, query_copies;
+static void reset_queries(VkCommandBuffer command, VkQueryPool pool, uint32_t first, uint32_t count) {
+    (void)command;
+    assert(pool == 41 && first == 0 && count == 2);
+    ++query_resets;
+}
+static void write_timestamp(VkCommandBuffer command, VkFlags stage, VkQueryPool pool, uint32_t index) {
+    (void)command; (void)stage;
+    assert(pool == 41 && index < 2);
+    ++query_writes;
+}
+static void copy_queries(VkCommandBuffer command, VkQueryPool pool, uint32_t first, uint32_t count,
+    VkBuffer buffer, VkDeviceSize offset, VkDeviceSize stride, VkFlags flags) {
+    (void)command; (void)buffer; (void)offset; (void)flags;
+    assert(pool == 41 && first == 0 && count == 2 && stride == 8);
+    ++query_copies;
+}
+static doe_vk_commands *query_recording(doe_vk_context *ctx, doe_vk_query_pool *pool, doe_vk_buffer *buffer,
+    bool reset, bool write) {
+    doe_vk_commands *commands = NULL;
+    assert(doe_vk_commands_create_reusable(ctx, &commands, NULL) == DOE_VK_OK);
+    if (reset) assert(doe_vk_commands_reset_queries(commands, pool, 0, 2) == DOE_VK_OK);
+    if (write) {
+        assert(doe_vk_commands_write_timestamp(commands, pool, 0, DOE_VK_TIMESTAMP_BEGIN) == DOE_VK_OK);
+        assert(doe_vk_commands_write_timestamp(commands, pool, 1, DOE_VK_TIMESTAMP_END) == DOE_VK_OK);
+    }
+    assert(doe_vk_commands_resolve_queries(commands, pool, 0, 2, buffer, 0) == DOE_VK_OK);
+    return commands;
+}
+
+/* Reusable timestamp recordings: self-contained indices only, pool ownership
+ * per run, publication of exactly the recorded indices, health and poisoning. */
+static void reusable_queries(void) {
+    memset(&mock, 0, sizeof(mock));
+    mock.reusable_begin = true;
+    doe_vk_context ctx = context();
+    ctx.vk.vkCmdResetQueryPool = reset_queries;
+    ctx.vk.vkCmdWriteTimestamp = write_timestamp;
+    ctx.vk.vkCmdCopyQueryPoolResults = copy_queries;
+    uint8_t states[3] = {DOE_VK_QUERY_UNRESET, DOE_VK_QUERY_UNRESET, DOE_VK_QUERY_UNRESET};
+    doe_vk_query_pool pool = {.context = &ctx, .references = 1, .count = 3, .states = states, .pool = 41};
+    doe_vk_buffer *buffer = NULL;
+    assert(doe_vk_buffer_create(&ctx, 256, DOE_VK_BUFFER_COPY_DST, DOE_VK_MEMORY_HOST, &buffer, NULL) == DOE_VK_OK);
+    doe_vk_commands *commands = query_recording(&ctx, &pool, buffer, true, true);
+    assert(pool.recording_owner == commands && query_copies == 1);
+    assert(doe_vk_commands_seal(commands, NULL) == DOE_VK_OK);
+    /* Sealed: the pool is free for other work and unchanged until a run completes. */
+    assert(pool.recording_owner == NULL && states[0] == DOE_VK_QUERY_UNRESET);
+    doe_vk_commands other = {.context = &ctx};
+    pool.recording_owner = &other;
+    unsigned submits = mock.submits;
+    assert(doe_vk_commands_submit(commands, NULL) == DOE_VK_BUSY && mock.submits == submits);
+    assert(doe_vk_buffer_write(buffer, 0, states, 1) == DOE_VK_OK); /* No uses were taken. */
+    pool.recording_owner = NULL;
+    for (unsigned run = 1; run <= 3; ++run) {
+        states[2] = (uint8_t)(run % 2 ? DOE_VK_QUERY_WRITTEN : DOE_VK_QUERY_RESET); /* Other work between runs. */
+        assert(doe_vk_commands_submit(commands, NULL) == DOE_VK_OK && mock.submits == submits + run);
+        assert(pool.recording_owner == commands);
+        assert(doe_vk_commands_wait(commands, 1, NULL) == DOE_VK_OK);
+        assert(pool.recording_owner == NULL);
+        assert(states[0] == DOE_VK_QUERY_WRITTEN && states[1] == DOE_VK_QUERY_WRITTEN);
+        assert(states[2] == (run % 2 ? DOE_VK_QUERY_WRITTEN : DOE_VK_QUERY_RESET)); /* Untouched. */
+    }
+    /* Unhealthy pool content rejects before any native call. */
+    pool.content_status = DOE_VK_NATIVE_FAILURE;
+    submits = mock.submits;
+    assert(doe_vk_commands_submit(commands, NULL) == DOE_VK_NATIVE_FAILURE && mock.submits == submits);
+    pool.content_status = DOE_VK_OK;
+    /* A failed run poisons the pool, as for one-shot work. */
+    mock.submit_result = -1;
+    assert(doe_vk_commands_submit(commands, NULL) == DOE_VK_OUT_OF_MEMORY);
+    assert(doe_vk_commands_recover(commands, NULL) == DOE_VK_OUT_OF_MEMORY);
+    assert(pool.content_status == DOE_VK_OUT_OF_MEMORY && pool.recording_owner == NULL);
+    mock.submit_result = 0;
+    assert(doe_vk_commands_release(commands) == DOE_VK_OK);
+    pool.content_status = DOE_VK_OK;
+    /* The failed run also poisoned the resolve destination; a full rewrite heals it. */
+    unsigned char rewrite[256] = {0};
+    assert(doe_vk_buffer_write(buffer, 0, rewrite, 1) == DOE_VK_OUT_OF_MEMORY);
+    assert(doe_vk_buffer_write(buffer, 0, rewrite, sizeof(rewrite)) == DOE_VK_OK);
+
+    /* Not self-contained: a write of an index reset only by earlier work, or a
+     * resolve of an index this recording never reset, rejects at seal. */
+    states[0] = states[1] = DOE_VK_QUERY_RESET;
+    commands = query_recording(&ctx, &pool, buffer, false, true);
+    assert(doe_vk_commands_seal(commands, NULL) == DOE_VK_UNSUPPORTED && pool.recording_owner == commands);
+    assert(doe_vk_commands_release(commands) == DOE_VK_OK && pool.recording_owner == NULL);
+    states[0] = states[1] = DOE_VK_QUERY_WRITTEN; /* Values written by earlier work. */
+    commands = query_recording(&ctx, &pool, buffer, false, false);
+    assert(doe_vk_commands_seal(commands, NULL) == DOE_VK_UNSUPPORTED);
+    assert(doe_vk_commands_release(commands) == DOE_VK_OK);
+    assert(states[0] == DOE_VK_QUERY_WRITTEN && pool.references == 1);
+    doe_vk_buffer_release(buffer);
+    assert(ctx.references == 1);
+}
+
 int main(void) {
     acquisition_failures();
     async_lifetime();
@@ -481,7 +577,9 @@ int main(void) {
     failed_output_requires_reinitialization();
     first_failure_detail();
     reusable_lifetime();
+    reusable_queries();
     puts("PASS host Vulkan boundary rollback, timeout, uncertain submission, device loss, bounds, poisoning");
     puts("PASS reusable recording: one native command buffer resubmitted with fence re-arm, buffer uses dropped between runs, pending-holder BUSY vs program drop, terminal reset/execution failure, one-shot retain rejected");
+    puts("PASS reusable timestamp recording: self-contained reset/write/resolve sealed, pool ownership released at seal and per completion, BUSY under another owner without native submit, three runs publishing only recorded indices, unhealthy pool rejection, failed run poisoning, non-self-contained write/resolve rejected at seal");
     return 0;
 }

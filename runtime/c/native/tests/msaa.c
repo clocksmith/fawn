@@ -135,7 +135,7 @@ static void negatives(state *s)
     image_desc.format = WGPUTextureFormat_RGBA8Unorm;
     image_desc.size = (WGPUExtent3D){2,2,1};
     image_desc.sampleCount = 4;
-    image_desc.usage = WGPUTextureUsage_RenderAttachment|WGPUTextureUsage_CopySrc;
+    image_desc.usage = WGPUTextureUsage_RenderAttachment|WGPUTextureUsage_StorageBinding;
     wgpuDevicePushErrorScope(s->device,WGPUErrorFilter_Validation);
     assert(!wgpuDeviceCreateTexture(s->device,&image_desc));
     expect_validation(s);
@@ -156,7 +156,10 @@ static void negatives(state *s)
     WGPURenderPassDescriptor pass_desc = {.colorAttachmentCount=1,.colorAttachments=&color};
     WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(s->device,NULL);
     wgpuDevicePushErrorScope(s->device,WGPUErrorFilter_Validation);
-    assert(!wgpuCommandEncoderBeginRenderPass(encoder,&pass_desc));
+    WGPURenderPassEncoder rejected = wgpuCommandEncoderBeginRenderPass(encoder,&pass_desc);
+    assert(rejected); /* WebGPU invalid pass; the error also surfaces at Finish. */
+    wgpuRenderPassEncoderEnd(rejected);
+    wgpuRenderPassEncoderRelease(rejected);
     assert(!wgpuCommandEncoderFinish(encoder,NULL));
     expect_validation(s);
     wgpuCommandEncoderRelease(encoder);

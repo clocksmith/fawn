@@ -75,6 +75,7 @@ typedef uint32_t WGPUBool;
 #define DOE_DEFAULT_TIMEOUT_NS 2000000000ULL
 #define DOE_WAIT_SLICE_NS 1000ULL
 #define DOE_ERROR_BUF_CAP 512
+#define DOE_MAX_COLOR_TARGETS 8 /* Addon capacity; the Zig and C providers report maxColorAttachments 8. */
 #define WGPU_FEATURE_SHADER_F16 0x0000000B
 #define WGPU_CALLBACK_MODE_WAIT_ANY_ONLY 1
 #define WGPU_CALLBACK_MODE_ALLOW_SPONTANEOUS 3
@@ -712,6 +713,7 @@ extern FnDevicePushErrorScope pfn_doeNativeDevicePushErrorScope;
 extern FnDevicePopErrorScope pfn_doeNativeDevicePopErrorScope;
 extern FnDevicePushErrorScope pfn_wgpuDevicePushErrorScope;
 extern FnDevicePopErrorScope pfn_wgpuDevicePopErrorScope;
+extern void* g_wgpuShaderModuleGetCompilationInfo;
 extern FnDeviceSetUncapturedErrorCallback pfn_doeNativeDeviceSetUncapturedErrorCallback;
 extern FnDeviceRegisterLostCallback pfn_doeNativeDeviceRegisterLostCallback;
 extern FnRenderPipelineGetBindGroupLayout pfn_doeNativeRenderPipelineGetBindGroupLayout;
@@ -776,6 +778,7 @@ extern FnWgpuRenderBundleEncoderDrawIndirect pfn_wgpuRenderBundleEncoderDrawIndi
 extern FnWgpuRenderBundleEncoderDrawIndexedIndirect pfn_wgpuRenderBundleEncoderDrawIndexedIndirect;
 
 extern void* g_lib;
+extern bool g_zig_enum_order;
 
 /* Native-direct property key constants */
 #define DOE_DIRECT_NATIVE "__doe_native"
@@ -966,6 +969,11 @@ const char* doe_binding_access_name(uint32_t access);
 
 /* Compilation message helpers (doe_napi_shader.c) */
 void ensure_compilation_message_fields(napi_env env, napi_value msg);
+napi_value shader_compilation_messages(napi_env env, void* shader_module);
+/* Standard device-event delivery (doe_napi_device_events.c). */
+void device_events_install(void);
+void* device_events_describe(WGPUDeviceDescriptor* descriptor);
+void device_events_attach(void* slot, void* device);
 
 /* Device label stubs */
 napi_value doe_device_get_label(napi_env env, napi_callback_info info);
