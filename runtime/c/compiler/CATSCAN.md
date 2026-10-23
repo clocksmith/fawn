@@ -18,7 +18,7 @@ Translate the explicitly admitted WGSL surface into independently usable, source
 ## Contracts
 
 - Inputs: caller-owned source and explicitly sized output buffers through the versioned C API.
-- Outputs: SPIR-V, experimental MSL through the private typed-IR boundary, reflection and original-source diagnostics.
+- Outputs: SPIR-V and explicit ABI10 experimental MSL artifacts from one shared typed pipeline, reflection, target binding/entry metadata and original-source diagnostics.
 
 ## Invariants
 

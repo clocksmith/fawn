@@ -58,7 +58,9 @@ def read_graph(root):
         file, symbol = target.rsplit(':', 1)
         canonical = symbol.removesuffix('.localalias')
         assert canonical in frames
-        object_path = root / (Path(file).stem + '.o')
+        # The recorded unit identifies the object even when core and a target
+        # both own types.c or stage.c. Basename inference is ambiguous.
+        object_path = root / (Path(frames[canonical]['unit']).stem + '.o')
         symbols = {}
         for line in subprocess.check_output(['nm', str(object_path)], text=True).splitlines():
             fields = line.split()

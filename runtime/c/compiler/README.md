@@ -332,3 +332,44 @@ software ICD. Its five invocations compare 55 integer words, including actual
 aggregate caller mutations, immutable index snapshots and OOB behavior. It requires
 a software adapter and checks sentinels and pending lifetimes; no native runtime
 parser, reflected execution or physical qualification is substituted.
+
+## Explicit text artifacts, ABI10
+
+`include/doe_compiler_text.h` adds `doe_compiler_text_requirements` and
+`doe_compiler_compile_text`. The target-independent `compiler_analyze` owns the
+same source preflight, grammar, typed validation, source closures, alias checks
+and uniformity as ABI1-9. The selected Metal emitter consumes that IR directly;
+zero SPIR-V words and target-declaration capacities are sufficient. Unsupported
+Metal features fail explicitly without another parser, SPIR-V translation or
+Zig fallback. The current target is MSL3.0, not a qualified Metal SDK artifact.
+
+A checked ABI10 query appends one byte per maximum function/type identity, one
+private staging record per resource/entry capacity, and the explicit `text_bytes`
+pool to the retained stage workspace. ABI1-9 sizes are unchanged. Measurements
+need no text staging bytes. Full code publication serializes privately, checks
+all selected output spans and restores the one numeric environment before copying
+any output. The metadata staging also prevents partial record publication if
+name/slot serialization fails. Text is an exact byte span without a terminator.
+
+Stage/resource reflection remains whole-module schema9. Sparse target bindings
+name source resource indices once; the retained entry-reference spans determine
+membership. Target entry records carry actual emitted Metal host names and
+per-entry sizes-buffer slot/minimum byte span. Each runtime-tail size element is
+an actual uint32 binding byte length indexed by the emitted buffer slot. This is
+a narrow target contract, not complete retained TranslationInfo or device feature
+authorization. Selected entries emit only their target closure while unused source
+siblings still undergo complete source validation. Entryless NONE has no text.
+
+`make test-text` checks public C/C++ use, graphics and resource mapping, exact
+measure/capacity failures, sparse metadata, final FP-restore failure after real
+serialization, reuse, and emitted C++ operations. Those host controls do not
+qualify Metal address spaces, the SDK or a GPU. `audit_text_stack.py` retains all
+normal/PIC frames, verifies GCC aliases against their actual object units and
+charges all bounded Metal recursive families separately from source analysis.
+The libc formatter is an explicit external leaf, not silently omitted storage.
+
+Consumers build the canonical shared library with `make shared`, optionally
+setting `SHARED_LIBRARY=/tmp/output/libdoe_compiler.so`, `TMPDIR=/tmp/output/tmp`
+and `EXTRA_CFLAGS` for instrumentation. The compiler and private Metal checks
+reuse `targets/metal/sources.mk`; consumers must not parse or copy source lists.
+`make -s print-library-sources` exposes expanded paths for source/graph audits.
