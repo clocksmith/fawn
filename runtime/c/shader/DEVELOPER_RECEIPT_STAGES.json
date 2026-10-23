@@ -1,0 +1,38 @@
+{
+  "status": "authored and exact-artifact developer exercised; not independent or physical qualification",
+  "core_commit": "aaac04ab92b9948a7cc1459a6dc56e0824900db1",
+  "backend_commit": "9e66a2858b46fbdb9a26a48bc1bc51a2db89c8f8",
+  "compiler_library_sha256": "1a359e07bab100d11d248fa23fd3d3151a24ce46f1c596483257bb9cb54d67ed",
+  "checks": [
+    "make test sanitize: C/C++ owner lifetime and two acquisition failures for buffer/image/graphics; source capacities and IO identities",
+    "make test-vulkan-graphics with explicit SwiftShader: actual C WGSL both stages, asymmetric top-half rectangle, flat integer varying, exact256bytes, early references",
+    "make test-vulkan-images with same ABI7 library: actual image load/sample/store/reversed coordinates/exact256bytes/OOB discard"
+  ],
+  "instrumentation": "Shader owner ASan/UBSan only; selected compiler library is the separately checked normal ABI7 build. No LSan claim.",
+  "first_failure": "Test referenced nonexistent source_builtin_mask; corrected to existing static_builtin_mask. Original compiler diagnostic retained; no product failure or acceptance change.",
+  "source_sha256": {
+    "runtime/c/shader/Makefile": "add5497ee7cd64b33770d58e38fbc074b3cd946dc9a7854c8d7297916a18f948",
+    "runtime/c/shader/README.md": "13395f446ad0204c0fb28ec66e42606a2cc0d446a4fd4d6bac15508d21ecc2ca",
+    "runtime/c/shader/include/doe_shader.h": "27f949267355283fcb529953ec9f2d0bd58edd0d937ad04efe819bef2b7a14f1",
+    "runtime/c/shader/src/shader.c": "345d8820dba4bfae5f31d33bd474a69af6b241caa288047ac1e5fc078e04abb1",
+    "runtime/c/shader/tests/cpp.cpp": "e4ccf651ecb3e960e2f436b7176ff32a0cb5eedc72dcba36798f420ad29c1cb5",
+    "runtime/c/shader/tests/test_shader.c": "0a3864783c0e633d3fa7e7a980d065eeb81ca39942f7fe9be2354312e7d2cd97",
+    "runtime/c/shader/tests/vulkan_graphics.c": "7db6569a16bbd27e769ba76fa3292b328afda0bc55c71c36532e30aad260d760",
+    "runtime/c/shader/tests/vulkan_images.c": "c0351de9cd0953e66fbc45704353a6a96bb7c8afee6902973931c1d63206fad4"
+  },
+  "logs_sha256": {
+    "/tmp/doe-shader-abi7.log": "c5c23b98b523ddf9261ddc6aefe8592f6fdfdc4b66c6576079f7da54dd0bc7e6",
+    "/tmp/doe-shader-abi7-graphics.log": "6effad4e955dba391db209355e7ad2be9738d0a1eb15a6daa56839394abb0d0d",
+    "/tmp/doe-shader-abi7-images.log": "c07a95281767b3df2adf6562e2fb85866fadc5a7b1148889398d2a0f00c4da0e",
+    "/tmp/doe-shader-abi7-first-compile.log": "9747eba9d5fbd7448d796d0f965f15be7c8945e18d3f96c4a5dbe8e104e3856a"
+  },
+  "artifacts_sha256": {
+    "/tmp/doe-shader-abi7/cpp": "86eac7beecfee1393fedb66897df710ee939aa23f09d2e4057c5a201ed841acc",
+    "/tmp/doe-shader-abi7/libdoe_shader.a": "cfdf65a57e8531415b2bb5a2b5755ad012fb17e30ee37f6a7ef5ca88b19dadf2",
+    "/tmp/doe-shader-abi7/sanitize": "695ce7545027c5c85a8e1a7aea9d01ecfec2559c1d9f10f200d5a9ae0d6a430d",
+    "/tmp/doe-shader-abi7/shader.o": "c542435383a549a58bf91762fd79dab1fb59529a5e41693f30e71915d2461d0f",
+    "/tmp/doe-shader-abi7/test_shader": "9db10c122a5157565995fa0eb53a89fb97f860aec53d15d9d2934292689e392a",
+    "/tmp/doe-shader-abi7/vulkan_graphics": "9960c0ea526d3f4e12933982213cfb3e1bd55d32c8f5b6fb77d3160847c48f86",
+    "/tmp/doe-shader-abi7/vulkan_images": "8f570dab9e14dfcd1fb0889c8a33ba3a8bb22e3ca1e10ffec7d1f2afa475acd9"
+  }
+}

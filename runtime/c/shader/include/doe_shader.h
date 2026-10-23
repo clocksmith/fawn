@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: MIT */
 #ifndef DOE_SHADER_H
 #define DOE_SHADER_H
-#include "doe_compiler_resources.h"
+#include "doe_compiler_stages.h"
 #include <stdbool.h>
 #ifdef __cplusplus
 extern "C" {
@@ -28,6 +28,8 @@ typedef struct doe_shader_options {
      * options. Not a self-certified hash or a cross-build compatibility claim. */
     const void *compiler_identity;
     size_t compiler_identity_size;
+    /* Explicit additional typed stage pools; zero preserves compute-only admission. */
+    size_t interface_attributes, stage_interfaces;
 } doe_shader_options;
 typedef struct doe_shader_error {
     doe_shader_status status;
@@ -47,13 +49,16 @@ typedef struct doe_shader_view {
     const char *names;
     const DoeCompilerHandleV6 *handles;
     size_t handle_count;
+    const DoeCompilerStageInterfaceV7 *interfaces;
+    size_t interface_count;
 } doe_shader_view;
 /* Compiles with the one public C pipeline, owns a source/identity copy and exact
  * target/reflection spans. Outputs remain untouched on failure; error may change.
  * No source pointer survives. Workspace is freed before success publication.
  * All declared entries and each entry's static resource closure remain distinct.
  * Texture/sampler descriptors are sparse, indexed into the resource span, never
- * fabricated buffer layouts. This internal static-library view requires callers
+ * fabricated buffer layouts. Graphics IO is a separate typed leaf span, never
+ * fabricated compute invocation inputs. This internal static-library view requires callers
  * to rebuild with this header; it is not a frozen independently loaded ABI.
  * A view borrows immutable data while the caller owns a shader reference.
  * This owns compiled data, not device pipelines, GPU work or a cache policy.

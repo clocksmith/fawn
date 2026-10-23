@@ -91,7 +91,7 @@ int main(void)
     a = (allocations){0};
     assert(doe_shader_create(&options,image_source,strlen(image_source),&shader,&error)==DOE_SHADER_OK);
     assert(doe_shader_borrow(shader,&view)==DOE_SHADER_OK);
-    assert(view.module.schema_version==DOE_COMPILER_RESOURCES_SCHEMA_VERSION);
+    assert(view.module.schema_version==DOE_COMPILER_STAGES_SCHEMA_VERSION);
     assert(view.handle_count==2 && view.counts.resources==2);
     for (size_t i=0; i<view.handle_count; ++i) {
         const DoeCompilerHandleV6 *handle=&view.handles[i];
@@ -106,6 +106,40 @@ int main(void)
     assert(view.handles[1].storage_format==DOE_COMPILER_FORMAT_RGBA8UNORM);
     doe_shader_release(shader);
     assert(a.live==0);
-    puts("owned shader: buffer/handle metadata, identity, allocation rollback, lifetime PASS");
+    const char *graphics_source =
+        "struct V{@builtin(position) p:vec4f,@location(3) @interpolate(flat) tag:u32}"
+        "@vertex fn vertex(@builtin(vertex_index) index:u32)->V{return V(vec4f(1.0),index);}"
+        "@fragment fn fragment(input:V)->@location(0) vec4f{return vec4f(f32(input.tag));}";
+    shader=sentinel;
+    assert(doe_shader_create(&options,graphics_source,strlen(graphics_source),&shader,&error)==DOE_SHADER_COMPILE_FAILED);
+    assert(shader==sentinel && a.live==0);
+    options.interface_attributes=32;
+    options.stage_interfaces=32;
+    for(unsigned ordinal=1;ordinal<=2;ordinal++) {
+        a=(allocations){.fail_at=ordinal};
+        assert(doe_shader_create(&options,graphics_source,strlen(graphics_source),&shader,&error)==DOE_SHADER_OUT_OF_MEMORY);
+        assert(shader==sentinel && a.live==0);
+    }
+    a=(allocations){0};
+    assert(doe_shader_create(&options,graphics_source,strlen(graphics_source),&shader,&error)==DOE_SHADER_OK);
+    assert(doe_shader_borrow(shader,&view)==DOE_SHADER_OK);
+    assert(view.counts.entries==2 && view.interface_count==6 && view.handle_count==0);
+    assert(view.entries[0].stage==DOE_COMPILER_STAGE_VERTEX);
+    assert(view.entries[1].stage==DOE_COMPILER_STAGE_FRAGMENT);
+    assert(view.entries[0].workgroup_size[0]==0 && view.entries[1].static_builtin_mask==0);
+    assert(view.interfaces[0].builtin==DOE_COMPILER_BUILTIN_VERTEX_INDEX);
+    assert(view.interfaces[0].direction==DOE_COMPILER_INTERFACE_INPUT);
+    assert(view.interfaces[2].entry_index==0 && view.interfaces[2].location==3);
+    assert(view.interfaces[2].interpolation==DOE_COMPILER_INTERPOLATION_FLAT);
+    assert(view.interfaces[5].entry_index==1 && view.interfaces[5].location==0);
+    assert(view.interfaces[5].direction==DOE_COMPILER_INTERFACE_OUTPUT);
+    for(size_t i=0;i<view.interface_count;i++) {
+        assert(view.interfaces[i].name.offset+view.interfaces[i].name.length<view.counts.name_bytes);
+        assert(view.names[view.interfaces[i].name.offset+view.interfaces[i].name.length]=='\0');
+    }
+    assert(a.calls==2 && a.live==1);
+    doe_shader_release(shader);
+    assert(a.live==0);
+    puts("owned shader: buffer/handle/stage metadata, identity, allocation rollback, lifetime PASS");
     return 0;
 }

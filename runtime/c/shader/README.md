@@ -4,16 +4,20 @@ Authored and focused-host-checked, consumed by the experimental C-only native
 compute path, not independently or physically qualified.
 This is the persistent ownership half of the standalone C compiler boundary:
 one compilation pipeline, copied source/compiler identity, exact immutable target,
-types, resource layouts, sparse texture/sampler descriptors and separate entry
-closures. ABI6 handle descriptors are retained in the same owned allocation,
+types, resource layouts, sparse texture/sampler descriptors, graphics IO leaves
+and separate entry closures. ABI6 handle and ABI7 interface descriptors are retained
+in the same owned allocation,
 not represented as fabricated buffer layouts. Static-library consumers rebuild
-with this internal view header; the versioned compiler ABI1–5 records do not grow. It follows the allocation,
+with this internal view header; the versioned compiler ABI1–6 records do not grow. It follows the allocation,
 clone/deinit and entry-binding responsibility of the retained
 [TranslationInfo owner](../../zig/src/compiler/wgsl/runtime/runtime_translation_info.zig),
 without pretending that standalone reflection supplies its dispatch/texture
 preconditions, Metal size-buffer policy or complete production cache semantics.
 
-The caller supplies explicit compiler capacities and allocator hooks. Two compiler
+The caller supplies explicit compiler capacities and allocator hooks. Additional
+interface-attribute and stage-interface capacities are explicit options; zero
+retains compute-only admission rather than inventing hidden capacity. Graphics
+entries retain actual stage and zero compute metadata. Two compiler
 calls measure then publish; no source re-parser or alternate semantic engine.
 The temporary workspace is released before publication. One owned allocation
 contains the retained result. Identity matching compares exact source, explicit
@@ -32,8 +36,9 @@ make -C runtime/c/shader sanitize BUILD=/tmp/doe-shader \
 ```
 
 The focused test covers two entry closures, exact identity, copied source,
-allocation failure at both acquisition points for buffer and image modules, error
-cleanup and retained views. Image compilation is not device/image execution.
+allocation failure at both acquisition points for buffer, image and graphics modules, error
+cleanup and retained views, flat IO leaves and per-entry stage identity. Compilation
+is not device execution.
 Sanitizers instrument this owner; the selected compiler library has its own
 instrumentation status. LeakSanitizer is disabled in the ptrace cloud environment;
 allocation counters check this owner's cleanup, not universal leak freedom.
@@ -49,3 +54,13 @@ through pipeline creation. The target uses the Vulkan owner's canonical sources.
 Software adapters require explicit `NATIVE_ARGS=--allow-software`; select an ICD
 only in that process environment. A software pass does not qualify physical GPU
 execution or the not-yet-integrated public WebGPU texture APIs.
+
+`make test-vulkan-graphics BUILD=/tmp/doe-shader COMPILER_LIBRARY=/path/to/libdoe_compiler.so`
+compiles real WGSL vertex and fragment entries, retaining their typed IO and target
+in the same owned artifact. It renders an asymmetric top-half rectangle with a flat
+integer varying and checks all256 readback bytes after early shader/vertex/view/
+pipeline releases. Explicit WebGPU viewport mapping belongs to the Vulkan backend;
+the compiler leaves source position unchanged. Software opt-in is the same as the
+image target. This is a single-color offscreen developer integration, not full
+render-pipeline validation, public graphics API, interstage device-limit or physical
+qualification. No retained Tint binary is substituted for either stage.

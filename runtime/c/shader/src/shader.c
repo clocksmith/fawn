@@ -18,7 +18,7 @@ struct doe_shader {
     uint32_t selection_mode;
     size_t selection_size;
     char selection_name[64];
-    DoeCompilerResourceOutputs outputs;
+    DoeCompilerStageOutputs outputs;
     doe_shader_view view;
 };
 
@@ -47,8 +47,8 @@ static bool reserve(size_t *cursor, size_t count, size_t width, size_t alignment
     return true;
 }
 
-static bool layout(DoeCompilerModuleOutputCounts n, size_t handles, size_t source, size_t identity,
-    size_t *bytes, size_t offsets[11])
+static bool layout(DoeCompilerModuleOutputCounts n, size_t handles, size_t interfaces, size_t source, size_t identity,
+    size_t *bytes, size_t offsets[12])
 {
     *bytes = sizeof(doe_shader);
     return reserve(bytes, source, 1, 1, &offsets[0]) &&
@@ -61,16 +61,18 @@ static bool layout(DoeCompilerModuleOutputCounts n, size_t handles, size_t sourc
         reserve(bytes, n.entries, sizeof(DoeCompilerEntryV5), alignof(DoeCompilerEntryV5), &offsets[7]) &&
         reserve(bytes, n.entry_references, sizeof(uint32_t), alignof(uint32_t), &offsets[8]) &&
         reserve(bytes, n.name_bytes, 1, 1, &offsets[9]) &&
-        reserve(bytes, handles, sizeof(DoeCompilerHandleV6), alignof(DoeCompilerHandleV6), &offsets[10]);
+        reserve(bytes, handles, sizeof(DoeCompilerHandleV6), alignof(DoeCompilerHandleV6), &offsets[10]) &&
+        reserve(bytes, interfaces, sizeof(DoeCompilerStageInterfaceV7),
+            alignof(DoeCompilerStageInterfaceV7), &offsets[11]);
 }
 
-static void assign_outputs(doe_shader *shader, const size_t offsets[11],
-    DoeCompilerModuleOutputCounts n, size_t handles)
+static void assign_outputs(doe_shader *shader, const size_t offsets[12],
+    DoeCompilerModuleOutputCounts n, size_t handles, size_t interfaces)
 {
     unsigned char *base = (unsigned char *)shader;
     shader->source = (char *)(base + offsets[0]);
     shader->identity = base + offsets[1];
-    shader->outputs.module = (DoeCompilerModuleOutputs) {
+    shader->outputs.resources.module = (DoeCompilerModuleOutputs) {
         .words = (uint32_t *)(base + offsets[2]), .word_capacity = n.words,
         .types = (DoeCompilerTypeV4 *)(base + offsets[3]), .type_capacity = n.types,
         .type_record_size = sizeof(DoeCompilerTypeV4),
@@ -85,9 +87,12 @@ static void assign_outputs(doe_shader *shader, const size_t offsets[11],
         .entry_references = (uint32_t *)(base + offsets[8]), .entry_reference_capacity = n.entry_references,
         .names = (char *)(base + offsets[9]), .name_capacity = n.name_bytes
     };
-    shader->outputs.handles = handles ? (DoeCompilerHandleV6 *)(base + offsets[10]) : NULL;
-    shader->outputs.handle_capacity = handles;
-    shader->outputs.handle_record_size = sizeof(DoeCompilerHandleV6);
+    shader->outputs.resources.handles = handles ? (DoeCompilerHandleV6 *)(base + offsets[10]) : NULL;
+    shader->outputs.resources.handle_capacity = handles;
+    shader->outputs.resources.handle_record_size = sizeof(DoeCompilerHandleV6);
+    shader->outputs.interfaces = interfaces ? (DoeCompilerStageInterfaceV7 *)(base + offsets[11]) : NULL;
+    shader->outputs.interface_capacity = interfaces;
+    shader->outputs.interface_record_size = sizeof(DoeCompilerStageInterfaceV7);
 }
 
 doe_shader_status doe_shader_create(const doe_shader_options *options,
@@ -101,26 +106,28 @@ doe_shader_status doe_shader_create(const doe_shader_options *options,
     if (saved.selection.name_length > 63 ||
         (!saved.selection.name && saved.selection.name_length))
         return fail(error, DOE_SHADER_INVALID_ARGUMENT, DOE_COMPILER_INPUT_ERROR, NULL);
+    const DoeCompilerStageCapacities capacities = {.module = saved.capacities,
+        .interface_attributes = saved.interface_attributes, .stage_interfaces = saved.stage_interfaces};
     DoeCompilerWorkspaceRequirements requirements;
-    DoeCompilerStatus status = doe_compiler_resource_requirements(
-        DOE_COMPILER_RESOURCES_ABI_VERSION, &saved.capacities, sizeof(saved.capacities),
+    DoeCompilerStatus status = doe_compiler_stage_requirements(
+        DOE_COMPILER_STAGES_ABI_VERSION, &capacities, sizeof(capacities),
         &requirements, sizeof(requirements));
     if (status != DOE_COMPILER_OK)
         return fail(error, DOE_SHADER_COMPILE_FAILED, status, NULL);
     void *workspace = saved.allocator.allocate(saved.allocator.userdata,
         requirements.size_bytes, requirements.alignment_bytes);
     if (!workspace) return fail(error, DOE_SHADER_OUT_OF_MEMORY, DOE_COMPILER_OK, NULL);
-    DoeCompilerResourceResult result = {0};
-    status = doe_compiler_compile_resources(DOE_COMPILER_RESOURCES_ABI_VERSION,
-        &saved.capacities, sizeof(saved.capacities), workspace, requirements.size_bytes,
+    DoeCompilerStageResult result = {0};
+    status = doe_compiler_compile_stages(DOE_COMPILER_STAGES_ABI_VERSION,
+        &capacities, sizeof(capacities), workspace, requirements.size_bytes,
         source, source_size, &saved.selection, sizeof(saved.selection),
         DOE_COMPILER_MODULE_WORDS | DOE_COMPILER_MODULE_REFLECTION | DOE_COMPILER_MODULE_MEASURE,
         NULL, 0, &result, sizeof(result));
     doe_shader *shader = NULL;
     doe_shader_status outcome = DOE_SHADER_COMPILE_FAILED;
     if (status != DOE_COMPILER_OK) goto finished;
-    size_t bytes, offsets[11];
-    if (!result.module.required_is_exact || !layout(result.module.required, result.required_handles, source_size,
+    size_t bytes, offsets[12];
+    if (!result.resources.module.required_is_exact || !layout(result.resources.module.required, result.resources.required_handles, result.required_interfaces, source_size,
             saved.compiler_identity_size, &bytes, offsets)) {
         outcome = DOE_SHADER_OVERFLOW;
         goto finished;
@@ -140,22 +147,23 @@ doe_shader_status doe_shader_create(const doe_shader_options *options,
     shader->selection_size = saved.selection.name_length;
     if (saved.selection.name_length)
         memcpy(shader->selection_name, saved.selection.name, saved.selection.name_length);
-    assign_outputs(shader, offsets, result.module.required, result.required_handles);
+    assign_outputs(shader, offsets, result.resources.module.required, result.resources.required_handles, result.required_interfaces);
     if (source_size) memcpy(shader->source, source, source_size);
     memcpy(shader->identity, saved.compiler_identity, saved.compiler_identity_size);
-    status = doe_compiler_compile_resources(DOE_COMPILER_RESOURCES_ABI_VERSION,
-        &saved.capacities, sizeof(saved.capacities), workspace, requirements.size_bytes,
+    status = doe_compiler_compile_stages(DOE_COMPILER_STAGES_ABI_VERSION,
+        &capacities, sizeof(capacities), workspace, requirements.size_bytes,
         shader->source, source_size, &saved.selection, sizeof(saved.selection),
         DOE_COMPILER_MODULE_WORDS | DOE_COMPILER_MODULE_REFLECTION,
         &shader->outputs, sizeof(shader->outputs), &result, sizeof(result));
     if (status == DOE_COMPILER_OK) {
         shader->view = (doe_shader_view) {
-            .module = result.module.module, .counts = result.module.published,
-            .words = shader->outputs.module.words, .types = shader->outputs.module.types,
-            .members = shader->outputs.module.members, .resources = shader->outputs.module.resources,
-            .workgroups = shader->outputs.module.workgroups, .entries = shader->outputs.module.entries,
-            .entry_references = shader->outputs.module.entry_references, .names = shader->outputs.module.names,
-            .handles = shader->outputs.handles, .handle_count = result.published_handles
+            .module = result.resources.module.module, .counts = result.resources.module.published,
+            .words = shader->outputs.resources.module.words, .types = shader->outputs.resources.module.types,
+            .members = shader->outputs.resources.module.members, .resources = shader->outputs.resources.module.resources,
+            .workgroups = shader->outputs.resources.module.workgroups, .entries = shader->outputs.resources.module.entries,
+            .entry_references = shader->outputs.resources.module.entry_references, .names = shader->outputs.resources.module.names,
+            .handles = shader->outputs.resources.handles, .handle_count = result.resources.published_handles,
+            .interfaces = shader->outputs.interfaces, .interface_count = result.published_interfaces
         };
         outcome = DOE_SHADER_OK;
     }
@@ -164,7 +172,7 @@ finished:
         requirements.size_bytes, requirements.alignment_bytes);
     if (outcome != DOE_SHADER_OK && shader) doe_shader_release(shader);
     if (outcome == DOE_SHADER_OK) *out = shader;
-    return fail(error, outcome, status, &result.module.diagnostic);
+    return fail(error, outcome, status, &result.resources.module.diagnostic);
 }
 
 doe_shader_status doe_shader_retain(doe_shader *shader)
