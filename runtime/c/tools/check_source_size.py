@@ -21,13 +21,17 @@ def check(path: Path) -> str | None:
 
 def main() -> int:
     paths = sys.argv[1:]
+    explicit = bool(paths)
     if not paths:
         output = subprocess.check_output(
             ["git", "ls-files", "--cached", "--others", "--exclude-standard",
              "-z", "--", "runtime/c"], cwd=ROOT)
         paths = sorted(set(p.decode() for p in output.split(b"\0") if p))
-    paths = [Path(p) for p in paths if Path(p).suffix in (".c", ".h")]
-    failures = [error for path in paths if (error := check(ROOT / path))]
+    requested = [Path(p) for p in paths]
+    failures = [f"{path}: expected a C/header file; omit arguments to check the full tree"
+                for path in requested if explicit and path.suffix not in (".c", ".h")]
+    paths = [path for path in requested if path.suffix in (".c", ".h")]
+    failures.extend(error for path in paths if (error := check(ROOT / path)))
     for error in failures:
         print(error, file=sys.stderr)
     print(f"C size check: {len(paths)} files, {len(failures)} failures; limit {MAX_LINES}")

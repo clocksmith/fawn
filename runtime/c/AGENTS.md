@@ -1,7 +1,8 @@
 # C migration work
 
 Read the repository AGENTS.md, applicable CATSCAN.md, and [common style](STYLE.md).
-C is selected. Author coherent subsystems in parallel on the experimental branch;
+C is selected. Author coherent subsystems in parallel; integrate focused-checked
+source progress into canonical main without force, preserving production defaults.
 review and run focused compile/behavior checks as code changes. Do not require a
 new exhaustive independent qualification campaign before implementing the next
 subsystem. Integrated independent qualification still precedes qualified cutover.
