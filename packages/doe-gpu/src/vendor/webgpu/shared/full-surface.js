@@ -11,6 +11,8 @@ import {
   assertOptionalIntegerInRange,
   assertLiveResource,
   destroyResource,
+  normalizeOrigin3D,
+  normalizeExtent3D,
 } from './resource-lifecycle.js';
 import {
   assertBufferDescriptor,
@@ -947,7 +949,7 @@ function createFullSurfaceClasses({
       const native = assertLiveResource(this, 'GPUQueue.writeTexture', 'GPUQueue');
       const destinationObject = assertObject(destination, 'GPUQueue.writeTexture', 'destination');
       const layoutObject = assertObject(dataLayout, 'GPUQueue.writeTexture', 'dataLayout');
-      const sizeObject = assertObject(size, 'GPUQueue.writeTexture', 'size');
+      const sizeObject = normalizeExtent3D(size, 'GPUQueue.writeTexture', 'size');
       const view = validateWriteBufferInput(data, 0, undefined, 'GPUQueue.writeTexture');
       return backend.queueWriteTexture(
         this,
@@ -955,18 +957,14 @@ function createFullSurfaceClasses({
         {
           texture: assertLiveResource(destinationObject.texture, 'GPUQueue.writeTexture', 'GPUTexture'),
           mipLevel: destinationObject.mipLevel ?? 0,
-          origin: {
-            x: destinationObject.origin?.x ?? 0,
-            y: destinationObject.origin?.y ?? 0,
-            z: destinationObject.origin?.z ?? 0,
-          },
+          origin: normalizeOrigin3D(destinationObject.origin, 'GPUQueue.writeTexture', 'destination.origin'),
           aspect: destinationObject.aspect,
         },
         view,
         {
           offset: layoutObject.offset ?? 0,
-          bytesPerRow: layoutObject.bytesPerRow ?? 0,
-          rowsPerImage: layoutObject.rowsPerImage ?? 0,
+          bytesPerRow: layoutObject.bytesPerRow,
+          rowsPerImage: layoutObject.rowsPerImage,
         },
         {
           width: sizeObject.width,
