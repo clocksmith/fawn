@@ -10,19 +10,22 @@ STAGE ?= /tmp/doe-c-package
 # or enum must still build every consumer; owner checks alone cannot see that.
 OWNERS = futures callbacks instance labels error-scopes dropin-policy shader \
 	resources compiler backends/vulkan backends/metal backends/d3d12 native
-.PHONY: package check check-tools check-style check-build check-js
+.PHONY: package check check-tools check-style check-build check-globals check-js
 package:
 	$(PYTHON) tools/build-native-package.py --ref '$(REVISION)' --build '$(BUILD)' --destination '$(STAGE)' --cc '$(CC)' --cxx '$(CXX)'
-check: check-style check-tools check-build
+check: check-style check-tools check-globals
 check-tools:
 	$(PYTHON) -m unittest discover -s tools -p 'test_*.py'
 check-style:
 	$(PYTHON) tools/check_style.py
 check-build:
 	@set -e; for owner in $(OWNERS); do \
-		$(MAKE) --no-print-directory -C $$owner BUILD='$(BUILD)'/$$owner all; \
+		$(MAKE) --no-print-directory -C $$owner BUILD='$(BUILD)'/$$owner OUT='$(BUILD)'/$$owner all; \
 	done
 	@echo "C owner build: $(words $(OWNERS)) owners built into $(BUILD)"
+# The compiler owner builds into its gitignored compiler/build regardless of BUILD.
+check-globals: check-build
+	$(PYTHON) tools/check_globals.py '$(BUILD)' compiler/build
 # Unchanged doe-gpu JavaScript consumer on a staged package (make package first).
 # Rebuilds the gitignored N-API addon and runs the first-kernel integration test
 # with DOE_WEBGPU_LIB on the staged C library. Needs Node headers and a physical
