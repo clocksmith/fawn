@@ -108,7 +108,7 @@ static inline bool target_memory_dependency(const CompilerWorkspace *c, TargetCl
         if (type == wanted) return true;
         const TypeRecord *t = type >= 7u ? &c->types[type - 7u] : NULL;
         const uint32_t children = t != NULL && t->kind == TYPE_STRUCT ? t->count :
-            t != NULL && t->kind == TYPE_ARRAY ? 1u : 0u;
+            t != NULL && (t->kind == TYPE_ARRAY || t->kind == TYPE_MATRIX) ? 1u : 0u;
         if (t != NULL && t->kind == TYPE_STRUCT &&
             (t->element > c->member_count || t->count > c->member_count - t->element)) {
             *error = "target memory member range is invalid";
@@ -120,7 +120,7 @@ static inline bool target_memory_dependency(const CompilerWorkspace *c, TargetCl
             --depth;
             continue;
         }
-        const TypeId child = t->kind == TYPE_ARRAY ? t->element :
+        const TypeId child = (t->kind == TYPE_ARRAY || t->kind == TYPE_MATRIX) ? t->element :
             c->members[t->element + frames[depth].child].type;
         ++frames[depth].child;
         if (child >= closure->type_count) {

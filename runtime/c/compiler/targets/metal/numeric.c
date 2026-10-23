@@ -93,6 +93,16 @@ static void scalar_operation(MetalEmitter *e, const IrInstruction *ir, uint32_t 
     if (wrap) metal_text(e, ")");
 }
 static void numeric_operation(MetalEmitter *e, const IrInstruction *ir) {
+    if ((ir->opcode == IR_ADD || ir->opcode == IR_SUBTRACT || ir->opcode == IR_MULTIPLY) &&
+        (type_matrix(e->module, ir->operands.scalar.binding) ||
+         type_matrix(e->module, ir->operands.scalar.literal))) {
+        metal_text(e, "(");
+        metal_value(e, ir->operands.scalar.left);
+        metal_format(e, " %s ", binary_operator(ir->opcode));
+        metal_value(e, ir->operands.scalar.right);
+        metal_text(e, ")");
+        return;
+    }
     const uint32_t width = type_vector_width(e->module, ir->type);
     if (width != 1u) {
         metal_type(e, ir->type);
@@ -113,7 +123,7 @@ static void builtin_expression(MetalEmitter *e, const IrInstruction *ir) {
     /* A source builtin registry is not a target support table. New shared
      * operations must never become unchecked MSL names by default. */
     const NumericBuiltinKind kind = builtin->kind;
-    const bool supported = kind == BUILTIN_CEIL || kind == BUILTIN_MIN || kind == BUILTIN_MAX || kind == BUILTIN_CLAMP ||
+    const bool supported = kind == BUILTIN_TRANSPOSE || kind == BUILTIN_DETERMINANT || kind == BUILTIN_CEIL || kind == BUILTIN_MIN || kind == BUILTIN_MAX || kind == BUILTIN_CLAMP ||
         kind == BUILTIN_EXP || kind == BUILTIN_TANH || kind == BUILTIN_SQRT ||
         kind == BUILTIN_DOT || kind == BUILTIN_LENGTH || kind == BUILTIN_DISTANCE ||
         kind == BUILTIN_NORMALIZE || kind == BUILTIN_CROSS;
@@ -251,7 +261,7 @@ void metal_expression(MetalEmitter *e, const IrInstruction *ir) {
                 break;
             }
             metal_type(e, ir->type);
-            const bool vector = type_vector_width(e->module, ir->type) != 1u;
+            const bool vector = type_vector_width(e->module, ir->type) != 1u || type_matrix(e->module, ir->type);
             metal_text(e, vector ? "(" : "{");
             for (uint32_t i = 0u; i < count; ++i) {
                 if (i != 0u) metal_text(e, ", ");
@@ -284,6 +294,9 @@ void metal_expression(MetalEmitter *e, const IrInstruction *ir) {
         case IR_LOOP_CONTINUING: case IR_END_LOOP: case IR_BREAK: case IR_CONTINUE:
         case IR_BREAK_IF: case IR_ACCESS_LOAD: case IR_ACCESS_STORE: case IR_VALUE_ACCESS:
         case IR_WORKGROUP_BARRIER:
+        case IR_ATOMIC_LOAD: case IR_ATOMIC_STORE: case IR_ATOMIC_ADD: case IR_ATOMIC_SUBTRACT:
+        case IR_ATOMIC_MAX: case IR_ATOMIC_MIN: case IR_ATOMIC_AND: case IR_ATOMIC_OR:
+        case IR_ATOMIC_XOR: case IR_ATOMIC_EXCHANGE: case IR_ATOMIC_COMPARE_EXCHANGE:
         default: metal_error(e, "Metal IR expression has no implemented lowering"); break;
     }
 }

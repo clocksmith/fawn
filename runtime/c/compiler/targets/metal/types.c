@@ -39,6 +39,16 @@ static void type_name(MetalEmitter *e, TypeId type, unsigned depth) {
             }
             metal_format(e, "%s%u", scalars[t->element], t->count);
             break;
+        case TYPE_MATRIX: {
+            const uint32_t rows = type_vector_width(e->module, t->element);
+            if (t->count < 2u || t->count > 4u || rows < 2u || rows > 4u ||
+                type_leaf(e->module, t->element) != IR_F32) {
+                metal_error(e, "Metal matrix shape is invalid");
+                return;
+            }
+            metal_format(e, "float%ux%u", t->count, rows);
+            break;
+        }
         case TYPE_ARRAY:
             metal_text(e, "array<");
             type_name(e, t->element, depth + 1u);
@@ -109,8 +119,10 @@ void metal_constant(MetalEmitter *e, TypeId type, uint64_t bits, bool composite,
         metal_error(e, "Metal constant type identity mismatch");
         return;
     }
+    if (k->kind == CONSTANT_ZERO) { metal_zero(e, type); return; }
+    const bool matrix = type_matrix(e->module, type);
     metal_type(e, type);
-    metal_text(e, "{");
+    metal_text(e, matrix ? "(" : "{");
     if (k->kind != CONSTANT_ZERO) {
         const uint32_t edges = k->kind == CONSTANT_REPEAT ? 1u : k->count;
         if (k->first > e->module->edge_count || edges > e->module->edge_count - k->first) {
@@ -123,7 +135,7 @@ void metal_constant(MetalEmitter *e, TypeId type, uint64_t bits, bool composite,
             metal_constant(e, v.type, v.bits, (v.flags & CONSTANT_AGGREGATE) != 0u, depth + 1u);
         }
     }
-    metal_text(e, "}");
+    metal_text(e, matrix ? ")" : "}");
 }
 static bool memory_type(const CompilerWorkspace *c, TypeId type) {
     return (type >= IR_I32 && type <= IR_F32) ||
@@ -171,9 +183,11 @@ static void memory_body(MetalEmitter *e, TypeId type, unsigned mode) {
         if (mode != 2u) {
             metal_text(e, "    ");
             metal_type(e, type);
-            metal_text(e, " value{};\n");
+            metal_text(e, " value = ");
+            metal_zero(e, type);
+            metal_text(e, ";\n");
         }
-        if (t->kind == TYPE_ARRAY) {
+        if (t->kind == TYPE_ARRAY || t->kind == TYPE_MATRIX) {
             metal_format(e, "    for (uint i = 0u; i < %uu; ++i) {\n", t->count);
             memory_array_child(e, t->element, mode, t->state.layout.stride);
             metal_text(e, "    }\n");
@@ -244,9 +258,11 @@ static void workgroup_body(MetalEmitter *e, TypeId type, bool store) {
         if (!store) {
             metal_text(e, "    ");
             metal_type(e, type);
-            metal_text(e, " value{};\n");
+            metal_text(e, " value = ");
+            metal_zero(e, type);
+            metal_text(e, ";\n");
         }
-        if (t->kind == TYPE_ARRAY) {
+        if (t->kind == TYPE_ARRAY || t->kind == TYPE_MATRIX) {
             metal_format(e, "    for (uint i = 0u; i < %uu; ++i) {\n", t->count);
             if (store) metal_format(e, "        doe_wstore%u(&((*p)[i]), value[i]);\n", t->element);
             else metal_format(e, "        value[i] = doe_wload%u(&((*p)[i]));\n", t->element);

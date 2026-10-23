@@ -5,6 +5,9 @@
  * Address spaces/entry attributes are intentionally not exercised here. */
 #ifndef DOE_METAL_SCALAR_HOST_CONTROL
 #define DOE_METAL_SCALAR_HOST_CONTROL
+#ifndef __METAL_VERSION__
+#define __METAL_VERSION__ 300
+#endif
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -31,6 +34,9 @@ template<class To, class From> To as_type(From input) {
 }
 }
 #include "vector_control.h"
+#ifdef DOE_METAL_MATRIX_CONTROL
+#include "matrix_control.h"
+#endif
 #ifdef DOE_METAL_IMAGE_CONTROL
 #include "image_control.h"
 #endif

@@ -85,15 +85,15 @@ the runtime must dispatch that shape. No native queue/resource behavior changed.
 ## Explicit unfinished surface
 
 Vertex/fragment wrappers use the shared typed stage view and have focused emitted-
-operation controls, not SDK validation. Matrix, f16, atomic, discard and
-pointer-parameter target owners remain unfinished. Shared subgroup admission
+operation controls, not SDK validation. f16, atomic operations and pointer-
+parameter target owners remain unfinished. Shared subgroup admission
 exists, but this Metal owner still explicitly rejects all eleven collective
 arithmetic operations and four used subgroup inputs. Other missing features
 reject at shared admission or the explicit target boundary, never with fake
 output. This source progress does not establish retained Metal owner completeness.
 
 Emission is bounded at 1 MiB, nesting at 96, and type traversal at
-1024 * (types + members + 1) visits. Global handle call-closure traversal has a
+4096 * (types + members + instructions + functions + 1) visits. Global handle call-closure traversal has a
 separate budget of 4096 * (instructions + functions + resources + 1) visits. These are explicit target work/format limits,
 not extensions to shared source capacities. No library heap or proportional VLA.
 
@@ -158,3 +158,24 @@ one per type (including seven primitives) prevents repeated aggregate subtrees.
 No allocation, fixed function-count cap, IR mutation or larger work budget was
 introduced. Each selected entry closure visits each reachable function once;
 MSL's all-entry mode resolves the union once. Shared call DAGs are not unrolled.
+
+## Matrices and continuing discard
+
+All nine f32 matrix shapes use native column-major MSL types. Shared column
+strides drive storage/uniform transfers, including packed three-row columns;
+native matrix/vector/scalar products, transpose and determinant preserve the
+shared operand identities rather than applying scalar-per-lane lowering. Typed
+zero helpers fill only selected aggregate fields/columns in compact loops, never
+padding, flattened repeated constants or uninitialized native matrix defaults.
+
+`discard_fragment()` is emitted without a synthetic return. Generated text
+enforces the existing MSL3.0 baseline: Apple’s MSL4.1 specification sections2.3,
+5 and6.11.1.3 define matrix construction/operators and continuing helper behavior
+from MSL2.3 onward. Ordinary HLSL remains explicitly unsupported for discard.
+
+`make matrix-host-control` checks all nine source shapes and executes the emitted
+finite exact arithmetic/access operations with column-major C++ control types,
+poisoned default matrices, short buffers and padding sentinels. This is not an MSL
+parser, SDK validation, GPU simulator, floating-point accuracy proof or physical
+qualification. Source-level workgroup/fragment mapping and failure-atomic atomic-
+operation rejection have separate focused controls.

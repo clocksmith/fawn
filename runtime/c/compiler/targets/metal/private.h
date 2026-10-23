@@ -25,6 +25,8 @@ void metal_value(MetalEmitter *, uint32_t);
 TypeId metal_value_type(MetalEmitter *, uint32_t);
 void metal_constant(MetalEmitter *, TypeId, uint64_t, bool, unsigned);
 void metal_types(MetalEmitter *);
+void metal_zero(MetalEmitter *, TypeId);
+void metal_zero_helpers(MetalEmitter *);
 void metal_memory_helpers(MetalEmitter *);
 void metal_workgroup_helpers(MetalEmitter *);
 void metal_numeric_helpers(MetalEmitter *);

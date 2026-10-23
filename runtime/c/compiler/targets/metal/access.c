@@ -119,8 +119,8 @@ void metal_access(MetalEmitter *e, const IrInstruction *ir) {
         metal_indent(e);
         metal_value(e, ir->result);
         metal_text(e, " = ");
-        metal_type(e, ir->type);
-        metal_text(e, "{};\n");
+        metal_zero(e, ir->type);
+        metal_text(e, ";\n");
     }
     metal_indent(e);
     metal_text(e, "if (");
