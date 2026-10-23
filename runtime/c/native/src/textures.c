@@ -65,6 +65,13 @@ WGPUTexture wgpuDeviceCreateTexture(WGPUDevice handle, const WGPUTextureDescript
         native_error(device, WGPUErrorType_Validation, "texture shape or format unsupported");
         return NULL;
     }
+    /* 3D BC textures need texture-compression-bc-sliced-3d as well. */
+    if (desc.dimension == WGPUTextureDimension_3D && desc.format >= WGPUTextureFormat_BC1RGBAUnorm &&
+        desc.format <= WGPUTextureFormat_BC7RGBAUnormSrgb &&
+        !native_feature_enabled(device, WGPUFeatureName_TextureCompressionBCSliced3D)) {
+        native_error(device, WGPUErrorType_Validation, "3D BC textures need texture-compression-bc-sliced-3d");
+        return NULL;
+    }
     switch (desc.dimension) {
     case WGPUTextureDimension_1D: native.dimension = DOE_VK_TEXTURE_1D; break;
     case WGPUTextureDimension_2D: native.dimension = DOE_VK_TEXTURE_2D; break;

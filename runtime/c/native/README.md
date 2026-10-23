@@ -308,7 +308,10 @@ canonical timestamp normalizer for `timestamp-query`; linear filtering of
 r32/rg32/rgba32 float for `float32-filterable`; blending of those formats for
 `float32-blendable`; D32S8 depth/stencil attachment, sampling and transfer for
 `depth32float-stencil8`; enabled native drawIndirectFirstInstance for
-`indirect-first-instance` and depthClamp for `depth-clip-control`. A device
+`indirect-first-instance` and depthClamp for `depth-clip-control`; enabled
+textureCompressionBC with sampled, filterable, copyable formats for all
+fourteen BC formats for `texture-compression-bc`, plus 3D images of each for
+`texture-compression-bc-sliced-3d`. A device
 request naming an unreported feature fails.
 The device keeps the requested set as `NATIVE_FEATURE` bits and every gated use
 checks that set, never the adapter facts: feature formats map only when enabled
@@ -331,7 +334,13 @@ a*1000+instance_index for GPU firstInstance 2/1 through indirect, indexed indire
 and bundle draws (an instance-buffer overrun stays a no-op; without the feature
 all stay no-ops while a direct firstInstance draws), and unclippedDepth geometry at
 z 1.5/-0.5 stored as depth 1.0/0.0 where the clipped control draws nothing. A
-feature the adapter does not offer prints SKIP with its reason.
+feature the adapter does not offer prints SKIP with its reason. BC formats map
+only with texture-compression-bc, 3D BC textures also need the sliced-3D feature,
+compressed textures have whole blocks at mip 0 (resource owner) and are never
+attachments or storage. `tests/bc_compression.c` decodes solid BC1, BC1-srgb and
+BC4 blocks to exact texels through queue writes and buffer copies, copies a 6x6
+mip by its physical 8x8 extent, returns exact blocks from texture and buffer
+copies, and decodes a 3D BC1 texture uploaded with rowsPerImage 2 per slice.
 
 ## WGSL language features and texture binding view dimension
 
@@ -560,6 +569,7 @@ PASS public error types: resource allocation, automatic-layout allocation, compu
 PASS public format features: 3 of 3 offered and enabled (float32-filterable linear r32float/rgba32float midpoints exact, float32-blendable additive r32float 1000007.0, depth32float-stencil8 depth 0.25/stencil 7 per aspect); without them depth32float-stencil8 texture/pipeline/bundle, r32float blending and 'float' r32float binding reject, an unoffered feature fails the request (CPU Vulkan only)
 PASS public draw features: 2 of 2 offered and enabled (indirect-first-instance: GPU firstInstance 2/1 reaches instance attributes and instance_index exactly for indirect, indexed indirect and bundle draws, an instance-buffer overrun stays a no-op; depth-clip-control: unclippedDepth draws z 1.5/-0.5 clamped to depth 1.0/0.0 where the clipped control draws nothing); without them nonzero indirect firstInstance is a no-op while direct firstInstance draws, and unclippedDepth rejects (CPU Vulkan only)
 PASS public copy layouts: undefined rowsPerImage for one image and undefined bytesPerRow for one row through queue writes, buffer-to-texture and texture-to-buffer copies with exact texels; two-image and two-row undefined-stride and rowsPerImage-0 rejections reported once at Finish (CPU Vulkan only)
+PASS public BC compression: solid BC1/BC1-srgb/BC4 blocks decode to exact texels through queue writes and buffer copies, a 6x6 mip takes its physical 8x8 copy, texture-to-texture and texture-to-buffer copies return exact blocks, a 3D BC1 texture uploaded with rowsPerImage 2 decodes per slice (sliced 3D); without the feature, non-block sizes, attachment/storage usage, 3D without sliced 3D and unaligned copies reject (CPU Vulkan only)
 PASS public timestamps: requested feature, zero/max/range/destroy admission, real pass/command writes, exact GPU nanoseconds, same-batch copy, scratch reuse and early query release (CPU Vulkan only)
 PASS typed recovery: native/OOM/pending errors survive submit/write/texture/workdone, unknown leases retained, terminal cleanup and fresh GPU normalizer recovery
 PASS every implemented procedure address matches; every unprovided name returns NULL
@@ -684,7 +694,7 @@ Do not run this on Miles or Suby while their possible disassembly/cooling hold
 remains. Every adapter-using client selects its adapter through
 `tests/adapter_class.h`: software (CPU fallback adapter) by default, or a
 nonfallback GPU adapter with `DOE_C_TEST_ADAPTER=physical`. Each PASS line names
-the class and device it ran on. `make check-physical` runs the same 36 clients on
+the class and device it ran on. `make check-physical` runs the same 39 clients on
 the system ICDs (`VK_ICD_FILENAMES` unset):
 
 ```
@@ -716,7 +726,8 @@ reads all 33 (including `storage-textures`, `point-list`, `color-discard` and
 `format-features`) passed; with optional draw features all 35 (including
 `draw-features`) passed; with undefined copy strides all 36 (including
 `copy-layouts`) passed; with limits resolution all 38 (including
-`program-prepare` and `limits`) passed. That is
+`program-prepare` and `limits`) passed; with BC compression all 39 (including
+`bc-compression`) passed. That is
 developer evidence for these exact clients on that
 adapter/driver: the oracles are the clients' own expected values, not frozen
 independent workloads, and it is not Vulkan backend qualification, a performance

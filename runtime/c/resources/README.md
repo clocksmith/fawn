@@ -18,7 +18,8 @@ an alias of device-free compiled data or a second count for one WebGPU object.
 - `objects.c` and `accessors.c`: native/device lifetime, checked buffer ranges,
   shader identity, map modes, span and stale-generation admission.
 - `formats.c`, `textures.c`, `texture_copy.c`: named format semantics, immutable
-  textures/views/samplers and shared checked block/mip/row/image copy geometry.
+  textures/views/samplers and shared checked block/mip/row/image copy geometry;
+  compressed textures have whole blocks at mip 0.
   The checked format/aspect sample-class and named channel-count functions serve
   native shader/clear scalar conversion; binding admission uses the same owner, including stencil-only
   combined formats. Baseline class is separate from optional feature promotion,

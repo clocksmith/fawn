@@ -29,6 +29,8 @@ doe_resource_status doe_resource_texture_validate(const doe_resource_texture_des
     if (status != DOE_RESOURCE_OK) return status;
     if (!desc->width || !desc->height || !desc->depth_or_layers || !desc->mip_levels)
         return DOE_RESOURCE_RANGE;
+    /* Compressed textures have a whole number of blocks at mip 0. */
+    if (desc->width % block_width || desc->height % block_height) return DOE_RESOURCE_LAYOUT;
     if (desc->samples != 1 && desc->samples != 4) return DOE_RESOURCE_UNSUPPORTED;
     uint32_t extent = desc->width;
     switch (desc->dimension) {

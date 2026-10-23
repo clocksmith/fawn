@@ -68,8 +68,16 @@ The retained production owners remain authoritative for those behaviors.
 
 `include/doe_vk_texture.h` uses named native format values, never WebGPU numeric
 casts. Twenty-three uncompressed color formats plus four attachment-only depth/stencil formats
-are admitted when native format support exists. Compressed formats, multisampling,
-swizzles remain outside this increment. Format reinterpretation is limited to the
+are admitted when native format support exists. The fourteen BC formats (4x4
+blocks of 8 or 16 bytes) exist for a context only with enabled
+textureCompressionBC (`caps.texture_compression_bc`); `doe_vk_format_caps` then
+reports `block_extent` 4, and `volume` reports sampled+transfer 3D images (for
+sliced 3D). Buffer copies of block formats count block columns and rows
+(`rows_per_image` is in block rows; native row length and image height are
+texels), regions start block-aligned and end on whole blocks or at the
+subresource edge, and a block-rounded WebGPU extent is clamped to that edge.
+`tests/image_format_contract.c` checks the gate, block caps and copy regions.
+Swizzles remain outside this increment. Format reinterpretation is limited to the
 srgb/unorm pairs RGBA8 and BGRA8: `doe_vk_texture_desc.view_formats` naming the
 pair creates a MUTABLE_FORMAT image chained with `VkImageFormatListCreateInfo`
 (image format first; official Vulkan-Headers v1.3.290 declaration and constants

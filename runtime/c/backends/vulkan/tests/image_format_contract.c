@@ -7,17 +7,28 @@ static VkResult query_result;
 static unsigned queries, creations;
 static uint32_t expected_samples;
 static VkFlags expected_flags; /* Query and creation flags of the next image. */
-static unsigned mutable_queries;
+static unsigned mutable_queries, volume_queries;
 static void format_properties(VkPhysicalDevice device, uint32_t format, VkFormatProperties *out) {
     (void)device;
     *out = (VkFormatProperties){.optimalTilingFeatures =
         format == DOE_VK_FORMAT_RGBA8_UNORM ? VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT | VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT |
             VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT :
+        format >= DOE_VK_FORMAT_BC1_RGBA_UNORM ? VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT |
+            VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT | VK_FORMAT_FEATURE_TRANSFER_SRC_BIT |
+            VK_FORMAT_FEATURE_TRANSFER_DST_BIT :
         VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT};
 }
 static VkResult image_properties(VkPhysicalDevice device, uint32_t format, uint32_t type,
     uint32_t tiling, VkFlags usage, VkFlags flags, VkImageFormatProperties *out) {
     (void)device;
+    /* Format caps probe sampled+transfer 3D support (sliced 3D for block formats). */
+    if (type == DOE_VK_TEXTURE_3D) {
+        assert(tiling == VK_IMAGE_TILING_OPTIMAL && flags == 0 &&
+            usage == (DOE_VK_TEXTURE_SAMPLED | DOE_VK_TEXTURE_COPY_SRC | DOE_VK_TEXTURE_COPY_DST));
+        ++volume_queries;
+        *out = (VkImageFormatProperties){.maxExtent = {64, 64, 64}, .maxMipLevels = 7, .maxArrayLayers = 1, .sampleCounts = 1};
+        return query_result;
+    }
     /* Attachment sample-mask queries stay flagless; the image query carries the flags. */
     assert(type == DOE_VK_TEXTURE_2D && tiling == VK_IMAGE_TILING_OPTIMAL && (flags == 0 || flags == expected_flags));
     if (flags == VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT) ++mutable_queries;
@@ -66,6 +77,16 @@ int main(void) {
     doe_vk_format_caps caps = {0};
     assert(doe_vk_texture_format_caps(&context, DOE_VK_FORMAT_RGBA8_UNORM, &caps) == DOE_VK_OK);
     assert(caps.attachment_sample_counts == 5 && caps.color_attachment && !caps.depth_stencil_attachment);
+    assert(caps.block_extent == 1 && caps.volume && volume_queries == 1);
+    /* BC formats report caps only with enabled textureCompressionBC: 4x4 blocks. */
+    assert(doe_vk_texture_format_caps(&context, DOE_VK_FORMAT_BC1_RGBA_UNORM, &caps) == DOE_VK_UNSUPPORTED);
+    context.caps.texture_compression_bc = true;
+    assert(doe_vk_texture_format_caps(&context, DOE_VK_FORMAT_BC7_RGBA_SRGB, &caps) == DOE_VK_OK);
+    assert(caps.block_extent == 4 && caps.texel_bytes == 16);
+    assert(doe_vk_texture_format_caps(&context, DOE_VK_FORMAT_BC4_R_SNORM, &caps) == DOE_VK_OK);
+    assert(caps.block_extent == 4 && caps.texel_bytes == 8);
+    context.caps.texture_compression_bc = false;
+    assert(doe_vk_texture_format_caps(&context, DOE_VK_FORMAT_RGBA8_UNORM, &caps) == DOE_VK_OK);
     assert(doe_vk_texture_format_caps(&context, DOE_VK_FORMAT_D32_FLOAT, &caps) == DOE_VK_OK);
     assert(caps.attachment_sample_counts == 5 && caps.depth_stencil_attachment);
     assert(doe_vk_texture_format_caps(&context, DOE_VK_FORMAT_D32_FLOAT_S8_UINT, &caps) == DOE_VK_OK);
@@ -132,6 +153,20 @@ int main(void) {
     assert(doe_vk_texture_copy_region(&texture, region, 256,
         (doe_vk_texture_buffer_layout){0}, &copy) == DOE_VK_UNSUPPORTED);
     assert(copy.bufferOffset == 99);
-    puts("PASS exact native image-format query arguments, actual sample masks and aspect intersections, format-specific limits, MSAA restrictions with sampled/copyable-attachment admission, mutable srgb format-list packets, allocation rollback, output preservation and copy rejection");
+    /* BC buffer copies count block rows and columns: a 6x6 mip of a 12x12 BC1
+     * image is 2x2 blocks; native row length and image height are in texels. */
+    texture.desc = (doe_vk_texture_desc){.dimension = DOE_VK_TEXTURE_2D, .format = DOE_VK_FORMAT_BC1_RGBA_UNORM,
+        .width = 12, .height = 12, .depth_or_layers = 1, .mip_levels = 2, .usage = DOE_VK_TEXTURE_COPY_DST,
+        .sample_count = 1};
+    texture.texel_bytes = 8;
+    const doe_vk_texture_region block = {.mip = 1, .extent = {6, 6, 1}};
+    assert(doe_vk_texture_copy_region(&texture, block, 512, (doe_vk_texture_buffer_layout){0, 256, 2}, &copy) == DOE_VK_OK);
+    assert(copy.bufferRowLength == 128 && copy.bufferImageHeight == 8 && copy.imageExtent.width == 6);
+    assert(doe_vk_texture_copy_region(&texture, block, 256 + 15, (doe_vk_texture_buffer_layout){0, 256, 2}, &copy) ==
+        DOE_VK_INVALID_ARGUMENT); /* two block rows need 256 + 16 bytes */
+    const doe_vk_texture_region unaligned = {.mip = 0, .origin = {2, 0, 0}, .extent = {4, 4, 1}};
+    assert(doe_vk_texture_copy_region(&texture, unaligned, 4096, (doe_vk_texture_buffer_layout){0, 256, 0}, &copy) ==
+        DOE_VK_INVALID_ARGUMENT);
+    puts("PASS exact native image-format query arguments, actual sample masks and aspect intersections, format-specific limits, BC block caps behind textureCompressionBC, 3D volume probes, MSAA restrictions with sampled/copyable-attachment admission, mutable srgb format-list packets, allocation rollback, output preservation, MSAA buffer-copy rejection and BC block copy regions");
     return 0;
 }
