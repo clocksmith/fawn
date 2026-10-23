@@ -17,4 +17,5 @@ char *emit(Fixture *, uint32_t selected);
 void has(const char *, const char *);
 void test_images(const char *);
 void test_graphics(const char *);
+void test_matrices(const char *);
 #endif

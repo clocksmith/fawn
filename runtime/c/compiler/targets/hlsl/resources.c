@@ -60,12 +60,13 @@ static void body(HlslEmitter *e, uint32_t resource, TypeId type, bool store) {
             }
             hlsl_text(e, ";\n");
         }
-    } else if (t->kind == TYPE_ARRAY) {
+    } else if (t->kind == TYPE_ARRAY || t->kind == TYPE_MATRIX) {
+        const char *member = t->kind == TYPE_ARRAY ? ".elements" : "";
         hlsl_format(e, "    for (uint i = 0u; i < %uu; ++i) {\n", t->count);
-        if (store) hlsl_format(e, "        doe_r%u_store%u(offset + %" PRIu64 "u * i, value.elements[i]);\n",
-                               resource, t->element, t->state.layout.stride);
-        else hlsl_format(e, "        value.elements[i] = doe_r%u_load%u(offset + %" PRIu64 "u * i);\n",
-                          resource, t->element, t->state.layout.stride);
+        if (store) hlsl_format(e, "        doe_r%u_store%u(offset + %" PRIu64 "u * i, value%s[i]);\n",
+                               resource, t->element, t->state.layout.stride, member);
+        else hlsl_format(e, "        value%s[i] = doe_r%u_load%u(offset + %" PRIu64 "u * i);\n",
+                          member, resource, t->element, t->state.layout.stride);
         hlsl_text(e, "    }\n");
     } else if (t->kind == TYPE_STRUCT) {
         for (uint32_t i = 0u; i < t->count && !e->failed; ++i) {

@@ -64,7 +64,7 @@ graphics-host-control: $(OUT)/test_graphics
 	$(CXX) -std=c++17 -O2 -fsanitize=undefined -Wno-attributes -Itests/host -I$(OUT) tests/host/check_graphics.cpp -o $(OUT)/check_graphics
 	$(OUT)/check_graphics
 
-$(OUT)/test_matrices: $(SOURCES) metal.h private.h ../closure.h ../scratch.h tests/fixture.h tests/test_matrices.c $(CORE) $(wildcard ../../src/*.h)
+$(OUT)/test_matrices: $(SOURCES) metal.h private.h ../closure.h ../scratch.h tests/fixture.h tests/test_matrices.c ../tests/matrix_source.h $(CORE) $(wildcard ../../src/*.h)
 	mkdir -p $(OUT)
 	$(CC) $(CFLAGS) $(SOURCES) $(CORE) tests/test_matrices.c -lm -o $@
 .PHONY: matrix-host-control

@@ -41,3 +41,8 @@ Resolve the function closure once and remember completed DAG nodes; a depth boun
 alone does not bound repeated shared subtrees. Do not grow a second semantic graph.
 Workgroup zero initialization also requires whole-root store helpers. Keep target
 address spaces and byte-view validation local. All walks charge composed work.
+
+Matrix native rows are WGSL columns, so linear products reverse operands in mul;
+componentwise scalar products do not. Keep indexing, constant DAG children and
+byte-layout column stride on that one representation. The shared matrix fixture
+and wrong-order control protect against accidental target-convention mixing.
