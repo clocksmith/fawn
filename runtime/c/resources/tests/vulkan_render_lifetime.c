@@ -22,9 +22,9 @@ static doe_vk_shader load_shader(const char *path, const char *entry)
  * Unsupported events/state reject before any native pass preparation. */
 static doe_vk_status validate_render_packet(const doe_resource_render_packet *packet)
 {
-    if (!packet || packet->targets.depth_stencil || packet->targets.occlusion_queries ||
+    if (!packet || packet->targets.depth_stencil ||
         packet->targets.color_store != WGPUStoreOp_Store || packet->indexed || packet->indirect ||
-        packet->occlusion_active || packet->state.stencil_reference) return DOE_VK_UNSUPPORTED;
+        packet->state.stencil_reference) return DOE_VK_UNSUPPORTED;
     for (size_t i = 0; i < 4; i++) if (packet->state.blend[i] != 0) return DOE_VK_UNSUPPORTED;
     return DOE_VK_OK;
 }
@@ -66,34 +66,54 @@ static doe_vk_status render_pass(doe_vk_commands *commands,
     const doe_resource_render_packet *begin = doe_resource_render_record_borrow(records[0].value.render);
     if (validate_render_packet(begin) != DOE_VK_OK || !begin->boundary_only ||
         !begin->first_in_pass || begin->last_in_pass) return DOE_VK_UNSUPPORTED;
+    doe_resource_query_set *queries = begin->targets.occlusion_queries;
+    if (queries && doe_resource_query_set_type(queries) != WGPUQueryType_Occlusion)
+        return DOE_VK_UNSUPPORTED;
     doe_vk_clear_color clear = {0};
     const doe_vk_clear_color *clear_pointer = NULL;
     if (begin->targets.color_load == WGPULoadOp_Clear) {
         for (size_t i = 0; i < 4; i++) clear.float32[i] = (float)begin->targets.clear_color[i];
         clear_pointer = &clear;
     } else if (begin->targets.color_load != WGPULoadOp_Load) return DOE_VK_UNSUPPORTED;
-    enum { MAX_CONSUMER_DRAWS = 2 };
-    doe_vk_render_pass_draw draws[MAX_CONSUMER_DRAWS];
+    enum { MAX_CONSUMER_DRAWS = 3, MAX_CONSUMER_OPS = 9 };
+    doe_vk_render_pass_op ops[MAX_CONSUMER_OPS];
     doe_vk_binding_resource bindings[MAX_CONSUMER_DRAWS];
     doe_vk_buffer_binding vertices[MAX_CONSUMER_DRAWS];
-    size_t draw_count = 0;
+    size_t draw_count = 0, op_count = 0;
     for (size_t i = 1; i < count; i++) {
-        /* Actual occlusion native support is not present in this increment. */
-        if (records[i].kind != DOE_COMMAND_RENDER) return DOE_VK_UNSUPPORTED;
-        const doe_resource_render_packet *packet = doe_resource_render_record_borrow(records[i].value.render);
+        const doe_resource_command *record = &records[i];
+        if (record->kind == DOE_COMMAND_BEGIN_OCCLUSION || record->kind == DOE_COMMAND_END_OCCLUSION) {
+            if (!queries || record->value.timestamp.set != queries || op_count == MAX_CONSUMER_OPS)
+                return DOE_VK_UNSUPPORTED;
+            ops[op_count++] = (doe_vk_render_pass_op){
+                .kind = record->kind == DOE_COMMAND_BEGIN_OCCLUSION ?
+                    DOE_VK_RENDER_BEGIN_OCCLUSION : DOE_VK_RENDER_END_OCCLUSION,
+                .value.query_index = record->value.timestamp.index};
+            continue;
+        }
+        if (record->kind != DOE_COMMAND_RENDER) return DOE_VK_UNSUPPORTED;
+        const doe_resource_render_packet *packet = doe_resource_render_record_borrow(record->value.render);
         if (validate_render_packet(packet) != DOE_VK_OK || packet->first_in_pass ||
-            packet->targets.color != begin->targets.color) return DOE_VK_UNSUPPORTED;
+            packet->targets.color != begin->targets.color || packet->targets.occlusion_queries != queries)
+            return DOE_VK_UNSUPPORTED;
         if (packet->boundary_only) {
             if (!packet->last_in_pass) return DOE_VK_UNSUPPORTED;
-            doe_vk_status status = doe_vk_commands_render_pass(commands,
-                doe_resource_view_native(begin->targets.color), clear_pointer, draws, draw_count);
+            /* The native owner validates query nesting/reset/availability. This
+             * adapter preserves event order and identity, not a second state map. */
+            doe_vk_status status = doe_vk_commands_render_pass_ops(commands,
+                doe_resource_view_native(begin->targets.color), clear_pointer,
+                doe_resource_query_set_native(queries), ops, op_count);
             if (status == DOE_VK_OK) *consumed = i + 1;
             return status;
         }
-        if (packet->last_in_pass || draw_count == MAX_CONSUMER_DRAWS) return DOE_VK_UNSUPPORTED;
-        doe_vk_status status = prepare_draw(packet, &draws[draw_count], &bindings[draw_count], &vertices[draw_count]);
+        if (packet->last_in_pass || draw_count == MAX_CONSUMER_DRAWS || op_count == MAX_CONSUMER_OPS)
+            return DOE_VK_UNSUPPORTED;
+        ops[op_count].kind = DOE_VK_RENDER_DRAW;
+        doe_vk_status status = prepare_draw(packet, &ops[op_count].value.draw,
+            &bindings[draw_count], &vertices[draw_count]);
         if (status != DOE_VK_OK) return status;
         draw_count++;
+        op_count++;
     }
     return DOE_VK_UNSUPPORTED; /* Missing end must not emit a partial pass. */
 }
@@ -137,6 +157,17 @@ int main(int argc, char **argv)
     doe_resource_buffer *readback = adopt_buffer(&config, &life, context, 256,
         DOE_VK_BUFFER_COPY_DST, WGPUBufferUsage_CopyDst);
     doe_vk_buffer *native_readback = doe_resource_buffer_native(readback);
+    doe_resource_buffer *query_result = adopt_buffer(&config, &life, context, 512,
+        DOE_VK_BUFFER_COPY_DST, WGPUBufferUsage_QueryResolve | WGPUBufferUsage_CopyDst);
+    doe_vk_buffer *native_query_result = doe_resource_buffer_native(query_result);
+    uint8_t sentinel[512];
+    memset(sentinel, 0xa5, sizeof(sentinel));
+    require(doe_vk_buffer_write(native_query_result, 0, sentinel, sizeof(sentinel)), "query sentinel");
+    doe_vk_query_pool *native_pool;
+    require(doe_vk_occlusion_pool_create(context, 4, &native_pool, &error), "occlusion pool");
+    doe_resource_query_set *queries;
+    assert(doe_resource_query_set_create(&config, WGPUQueryType_Occlusion, 4,
+        (doe_resource_native){native_pool, &life, release_queries}, &queries) == DOE_RESOURCE_OK);
     float parameters[24] = {0};
     parameters[0] = parameters[5] = parameters[10] = parameters[15] = 1;
     const float triangle[3][9] = {
@@ -214,9 +245,10 @@ int main(int argc, char **argv)
     doe_resource_encoder *encoder;
     doe_resource_render_pass *pass;
     doe_resource_render_targets targets = {.color = view, .color_load = WGPULoadOp_Clear,
-        .color_store = WGPUStoreOp_Store, .clear_color = {0, 0, 1, 1}};
+        .color_store = WGPUStoreOp_Store, .clear_color = {0, 0, 1, 1}, .occlusion_queries = queries};
     assert(doe_resource_encoder_create(&config, &encoder) == DOE_RESOURCE_OK);
     assert(doe_resource_encoder_begin_render(encoder, &targets, &pass) == DOE_RESOURCE_OK);
+    assert(doe_resource_render_pass_begin_occlusion(pass, 0) == DOE_RESOURCE_OK);
     doe_resource_render_state state = *doe_resource_render_pass_state(pass);
     state.scissor[2] = 4;
     assert(doe_resource_render_pass_set_state(pass, &state) == DOE_RESOURCE_OK);
@@ -225,13 +257,26 @@ int main(int argc, char **argv)
     state.scissor[3] = 4;
     assert(doe_resource_render_pass_set_state(pass, &state) == DOE_RESOURCE_OK);
     assert(doe_resource_render_pass_execute_bundles(pass, &bundle, 1) == DOE_RESOURCE_OK);
+    assert(doe_resource_render_pass_end_occlusion(pass) == DOE_RESOURCE_OK);
+    assert(doe_resource_render_pass_begin_occlusion(pass, 1) == DOE_RESOURCE_OK);
+    state.scissor[2] = 0;
+    assert(doe_resource_render_pass_set_state(pass, &state) == DOE_RESOURCE_OK);
+    assert(doe_resource_render_pass_execute_bundles(pass, &bundle, 1) == DOE_RESOURCE_OK);
+    assert(doe_resource_render_pass_end_occlusion(pass) == DOE_RESOURCE_OK);
+    assert(doe_resource_render_pass_begin_occlusion(pass, 2) == DOE_RESOURCE_OK);
+    assert(doe_resource_render_pass_end_occlusion(pass) == DOE_RESOURCE_OK);
     doe_resource_render_bundle_release(bundle);
     assert(doe_resource_render_pass_end(pass) == DOE_RESOURCE_OK);
     doe_resource_render_pass_release(pass);
+    assert(doe_resource_encoder_resolve_queries(encoder, queries, 0, 4, query_result, 256) == DOE_RESOURCE_OK);
     targets.color_load = WGPULoadOp_Load;
     assert(doe_resource_encoder_begin_render(encoder, &targets, &pass) == DOE_RESOURCE_OK);
+    /* A later zero-draw pass may reuse index0; native reset must replace its hit. */
+    assert(doe_resource_render_pass_begin_occlusion(pass, 0) == DOE_RESOURCE_OK);
+    assert(doe_resource_render_pass_end_occlusion(pass) == DOE_RESOURCE_OK);
     assert(doe_resource_render_pass_end(pass) == DOE_RESOURCE_OK);
     doe_resource_render_pass_release(pass);
+    assert(doe_resource_encoder_resolve_queries(encoder, queries, 0, 1, query_result, 0) == DOE_RESOURCE_OK);
     doe_resource_texture_copy read = {.bytes_per_row = 32, .rows_per_image = 8,
         .width = 8, .height = 8, .depth_or_layers = 1};
     assert(doe_resource_encoder_copy_texture(encoder, readback, image, &read,
@@ -240,6 +285,8 @@ int main(int argc, char **argv)
     assert(doe_resource_encoder_finish(encoder, &commands) == DOE_RESOURCE_OK);
     doe_resource_encoder_release(encoder);
     doe_resource_buffer_release(readback);
+    doe_resource_buffer_release(query_result);
+    doe_resource_query_set_release(queries);
     doe_resource_view_release(view);
     doe_resource_texture_release(image);
     assert(!life.native_releases);
@@ -248,11 +295,11 @@ int main(int argc, char **argv)
     doe_vk_context_release(context); /* All remaining device leases belong to owners. */
     size_t count;
     const doe_resource_command *records = doe_resource_commands_borrow(commands, &count);
-    assert(count == 7);
+    assert(count == 18);
     doe_resource_render_packet unsupported = *doe_resource_render_record_borrow(records[0].value.render);
     unsupported.targets.color_store = WGPUStoreOp_Discard;
     assert(validate_render_packet(&unsupported) == DOE_VK_UNSUPPORTED);
-    doe_resource_command unsupported_events[] = {records[0], {.kind = DOE_COMMAND_BEGIN_OCCLUSION}};
+    doe_resource_command unsupported_events[] = {records[0], {.kind = DOE_COMMAND_WRITE_TIMESTAMP}};
     size_t consumed = 99;
     assert(render_pass(native_commands, unsupported_events, 2, &consumed) == DOE_VK_UNSUPPORTED && consumed == 99);
     assert(render_pass(native_commands, records, 3, &consumed) == DOE_VK_UNSUPPORTED && consumed == 99);
@@ -262,6 +309,12 @@ int main(int argc, char **argv)
             require(render_pass(native_commands, records + i, count - i, &consumed), "render owned pass span");
             i += consumed;
             native_passes++;
+        } else if (records[i].kind == DOE_COMMAND_RESOLVE_QUERY) {
+            require(doe_vk_commands_resolve_queries(native_commands,
+                doe_resource_query_set_native(records[i].value.resolve.set), records[i].value.resolve.first,
+                records[i].value.resolve.count, doe_resource_buffer_native(records[i].value.resolve.destination),
+                records[i].value.resolve.offset), "resolve owned occlusion span");
+            i++;
         } else {
             assert(records[i].kind == DOE_COMMAND_BUFFER_TEXTURE &&
                 records[i].value.texture.direction == DOE_RESOURCE_TEXTURE_TO_BUFFER);
@@ -276,7 +329,7 @@ int main(int argc, char **argv)
             i++;
         }
     }
-    assert(native_passes == 2); /* One two-draw pass, one empty load/store pass. */
+    assert(native_passes == 2); /* Three draws then a zero-draw query-only load/store pass. */
     assert(doe_resource_commands_begin_submit(commands) == DOE_RESOURCE_OK);
     doe_resource_commands_release(commands);
     require(doe_vk_commands_submit(native_commands, &error), "submit");
@@ -284,17 +337,29 @@ int main(int argc, char **argv)
     assert(doe_vk_commands_release(native_commands) == DOE_VK_BUSY);
     uint8_t pixels[8][8][4];
     assert(doe_vk_buffer_read(native_readback, 0, pixels, sizeof(pixels)) == DOE_VK_BUSY);
+    uint64_t results[4];
+    assert(doe_vk_buffer_read(native_query_result, 256, results, sizeof(results)) == DOE_VK_BUSY);
     assert(!life.native_releases);
     require(doe_vk_commands_wait(native_commands, UINT64_C(5000000000), &error), "wait");
     assert(doe_resource_commands_settle(commands, DOE_RESOURCE_OK) == DOE_RESOURCE_OK);
-    assert(life.native_releases == 6 && !life.allocations);
+    assert(life.native_releases == 8 && !life.allocations);
     /* Native command retirement, not resource wrapper lifetime, owns this borrow. */
     require(doe_vk_buffer_read(native_readback, 0, pixels, sizeof(pixels)), "readback after resource finalization");
     for (unsigned y = 0; y < 8; y++) for (unsigned x = 0; x < 8; x++) {
         uint8_t expected[4] = {(x < 4 || y < 4) ? 255 : 0, 0, 255, 255};
         assert(!memcmp(pixels[y][x], expected, sizeof(expected)));
     }
+    require(doe_vk_buffer_read(native_query_result, 256, results, sizeof(results)), "read actual occlusion results");
+    assert(results[0] != 0 && results[1] == 0 && results[2] == 0 && results[3] == 0);
+    uint64_t reused;
+    require(doe_vk_buffer_read(native_query_result, 0, &reused, sizeof(reused)), "read later-pass reused query");
+    assert(reused == 0);
+    require(doe_vk_buffer_read(native_query_result, 0, sentinel, sizeof(sentinel)), "query payload boundaries");
+    for (size_t i = 0; i < sizeof(sentinel); i++) {
+        if (i < 8 || (i >= 256 && i < 288)) continue;
+        assert(sentinel[i] == 0xa5);
+    }
     require(doe_vk_commands_release(native_commands), "retire native owner");
-    puts("PASS resource bundle replay twice in one native pass, empty load/store pass, exact 64 pixels, early release, pending retention and six terminal native finalizers");
+    puts("PASS resource bundle/query event order, real hit/clipped/empty/unwritten/later-pass reuse, exact 64 pixels and query payload, pending retention and eight terminal native finalizers");
     return 0;
 }

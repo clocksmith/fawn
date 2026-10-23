@@ -153,20 +153,26 @@ this is not a substitute for general WebGPU zero initialization. Only that nativ
 transfer subset is established by that consumer, not queries or broader graphics.
 
 The reusable-bundle consumer uses the same explicit ICD selection and timeout,
-with target `vulkan-render-lifetime`. One self-contained bundle is replayed twice
-under distinct dynamic scissors within one real native pass, producing 48 magenta
-and 16 blue pixels in an 8x8 target. A following empty LOAD/STORE pass preserves
-the image. A bounded borrowed draw span lowers the existing immutable packets;
-missing end and unsupported interleaved query events reject before native work. All caller resources and the bundle are released before native
-recording; pending native reads/releases reject, and all six adopted payloads
+with target `vulkan-render-lifetime`. One self-contained bundle is replayed under
+three dynamic scissors inside one real native pass: two visible draws produce
+48 magenta and 16 blue pixels in an 8x8 target, and a clipped draw changes nothing.
+The ordered draw/query span consumes BEGIN/END occlusion events without another
+recorder or availability map. Actual hit, clipped, empty and unwritten results
+resolve as one nonzero and three zeros. A following zero-draw LOAD/STORE pass
+reuses the hit index as an empty query and resolves zero, preserving the image.
+All neighboring query-buffer bytes retain their sentinel values. Missing end and
+unsupported interleaved timestamp events reject before native work, preserving
+consumed output. All caller resources and the bundle are released before native
+recording; pending native reads/releases reject, and all eight adopted payloads
 finalize only at terminal resource settlement. Native commands retain exact
 physical objects through later readback and retirement. Shader fixtures are
 retained Tint `particles.wgsl` vertex/fragment SPIR-V, not C graphics compiler
 output; their hashes/provenance are in the backend `SMOKE_IMAGE_FIXTURES.json`.
-The focused consumer admits two direct draws, one RGBA8 target, one uniform
-binding and one vertex buffer;
-unsupported depth/query/indexed/indirect/discard/dynamic blend state rejects.
-This is software execution and ownership evidence, not public native render ABI
+The bounded consumer admits three direct draws, one RGBA8 target, one uniform
+binding, one vertex buffer and one occlusion pool. Unsupported depth, stencil,
+MSAA, indexed/indirect, discard and dynamic blend state reject. Occlusion values
+establish only zero/nonzero visibility, not precise sample counts. This is
+software execution and ownership evidence, not public native render ABI
 integration, graphics parity or physical GPU qualification.
 
 The `vulkan-query-lifetime` target uses the same explicit software ICD and timeout.
@@ -177,7 +183,8 @@ No CPU-generated query values or second availability map are used. Public
 256-byte resolve alignment remains stricter than the native packed8-byte seam;
 CPU reads remain unavailable until actual native completion. Raw ticks are not a
 portable WebGPU nanosecond result: the retained GPU normalization shader/calibration
-path still needs integration before public timestamp semantics are complete.
+path is separately implemented in the backend/native owners; this raw consumer
+does not establish their public timestamp semantics.
 
 ```
 ASAN_OPTIONS=detect_leaks=0 make -C runtime/c/resources \
@@ -205,5 +212,7 @@ nullable vertex unbind and pass-local occlusion admission host checks.
 empty LOAD/STORE consumer; it does not qualify native occlusion execution.
 `DEVELOPER_RECEIPT_LAYOUT_VISIBILITY.json` preserves the first NULL-slot and
 visibility0 reproductions and binds their focused corrections.
+`DEVELOPER_RECEIPT_OCCLUSION.json` binds the subsequent real ordered occlusion
+span, mixed results, later-pass reuse and exact resource/native retirement.
 `DEVELOPER_RECEIPT.json` preserves the earlier smaller historical check.
 Run the common source-size check; every owned C source/header is below 999 lines.
