@@ -23,6 +23,11 @@ WGPUBuffer wgpuDeviceCreateBuffer(WGPUDevice handle, const WGPUBufferDescriptor 
         native_error(device, WGPUErrorType_Validation, "buffer descriptor unsupported or exceeds limit");
         return NULL;
     }
+    doe_resource_buffer_desc desc = {descriptor->size, descriptor->usage, descriptor->mappedAtCreation != 0};
+    if (doe_resource_buffer_validate(&desc) != DOE_RESOURCE_OK) {
+        native_error(device, WGPUErrorType_Validation, "buffer descriptor validation failed");
+        return NULL;
+    }
     native_buffer *payload = calloc(1, sizeof(*payload));
     if (!payload) { native_error(device, WGPUErrorType_OutOfMemory, "buffer allocation failed"); return NULL; }
     payload->device = device;
@@ -43,7 +48,6 @@ WGPUBuffer wgpuDeviceCreateBuffer(WGPUDevice handle, const WGPUBufferDescriptor 
         status = doe_vk_buffer_create(device->context, descriptor->size ? descriptor->size : 4,
             usage, DOE_VK_MEMORY_HOST, &payload->buffer, &error);
     if (status == DOE_VK_OK) {
-        doe_resource_buffer_desc desc = {descriptor->size, descriptor->usage, descriptor->mappedAtCreation != 0};
         doe_resource_status created = doe_resource_buffer_create(&device->resources, &desc,
             (doe_resource_native){payload, NULL, native_buffer_release}, &buffer);
         if (created == DOE_RESOURCE_OK && descriptor->mappedAtCreation) {
@@ -61,6 +65,7 @@ WGPUBuffer wgpuDeviceCreateBuffer(WGPUDevice handle, const WGPUBufferDescriptor 
         if (payload) native_buffer_release(NULL, payload);
         native_error(device, WGPUErrorType_Validation, "buffer creation failed or unsupported usage");
     }
+    if (buffer) native_label(device, buffer, descriptor->label);
     return (WGPUBuffer)buffer;
 }
 

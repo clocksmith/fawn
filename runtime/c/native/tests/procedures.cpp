@@ -15,6 +15,15 @@ int main()
     assert(wait(instance, 0, nullptr, 0) == WGPUWaitStatus_Success);
     assert(!wgpuGetProcAddress({"wgpuDeviceCreateRenderPipeline", WGPU_STRLEN}));
     assert(!wgpuGetProcAddress({"wgpuCreateInstance-extra", WGPU_STRLEN}));
+    auto lost = reinterpret_cast<WGPUProcDeviceGetLostFuture>(wgpuGetProcAddress({"wgpuDeviceGetLostFuture", WGPU_STRLEN}));
+    auto compilation = reinterpret_cast<WGPUProcShaderModuleGetCompilationInfo>(wgpuGetProcAddress({"wgpuShaderModuleGetCompilationInfo", WGPU_STRLEN}));
+    auto pipeline = reinterpret_cast<WGPUProcDeviceCreateComputePipelineAsync>(wgpuGetProcAddress({"wgpuDeviceCreateComputePipelineAsync", WGPU_STRLEN}));
+    auto label = reinterpret_cast<WGPUProcBufferSetLabel>(wgpuGetProcAddress({"wgpuBufferSetLabel", WGPU_STRLEN}));
+    assert(lost && compilation && pipeline && label);
+    assert(!lost(nullptr).id);
+    assert(!compilation(nullptr, {}).id);
+    assert(!pipeline(nullptr, nullptr, {}).id);
+    label(nullptr, {"not a live object", WGPU_STRLEN});
     release(instance);
     std::puts("PASS C++ pinned typed procedure calls and unsupported-name rejection");
 }

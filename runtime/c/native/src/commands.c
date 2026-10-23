@@ -12,6 +12,7 @@ WGPUCommandEncoder wgpuDeviceCreateCommandEncoder(WGPUDevice handle,
         doe_resource_encoder_create(&device->resources, &encoder);
     native_unlock(device);
     if (status != DOE_RESOURCE_OK) native_error(device, WGPUErrorType_Validation, "command encoder creation failed");
+    if (encoder && descriptor) native_label(device, encoder, descriptor->label);
     return (WGPUCommandEncoder)encoder;
 }
 void wgpuCommandEncoderAddRef(WGPUCommandEncoder encoder) { doe_resource_encoder_retain((doe_resource_encoder *)encoder); }
@@ -40,6 +41,7 @@ WGPUComputePassEncoder wgpuCommandEncoderBeginComputePass(WGPUCommandEncoder han
         doe_resource_encoder_begin_compute(encoder, &pass);
     native_unlock(device);
     if (status != DOE_RESOURCE_OK) native_error(device, WGPUErrorType_Validation, "compute pass begin failed");
+    if (pass && descriptor) native_label(device, pass, descriptor->label);
     return (WGPUComputePassEncoder)pass;
 }
 void wgpuComputePassEncoderAddRef(WGPUComputePassEncoder pass) { doe_resource_compute_pass_retain((doe_resource_compute_pass *)pass); }
@@ -133,6 +135,7 @@ WGPUCommandBuffer wgpuCommandEncoderFinish(WGPUCommandEncoder handle, const WGPU
         doe_resource_encoder_finish(encoder, &commands);
     native_unlock(device);
     if (status != DOE_RESOURCE_OK) native_error(device, WGPUErrorType_Validation, "command encoder finish failed");
+    if (commands && descriptor) native_label(device, commands, descriptor->label);
     return (WGPUCommandBuffer)commands;
 }
 void wgpuCommandBufferAddRef(WGPUCommandBuffer commands) { doe_resource_commands_retain((doe_resource_commands *)commands); }

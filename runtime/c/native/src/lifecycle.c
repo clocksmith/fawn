@@ -141,6 +141,9 @@ void native_device_release(void *identity)
     if (device->pending) abort();
     if (doe_error_scope_deinit(device->errors).status != DOE_ERROR_SCOPE_OK) abort();
     free(device->error_storage);
+    if (doe_label_store_destroy(device->labels) != DOE_LABEL_OK) abort();
+    native_loss_bind(device->loss, NULL);
+    native_loss_release(device->loss);
     doe_vk_context_release(device->context);
     doe_instance *instance = device->instance;
     if (pthread_mutex_destroy(&device->mutex)) abort();
@@ -148,11 +151,11 @@ void native_device_release(void *identity)
     doe_instance_release(instance);
 }
 
-static native_device *create_device(native_adapter *adapter, const WGPUDeviceDescriptor *descriptor)
+static native_device *create_device(native_adapter *adapter, const WGPUDeviceDescriptor *descriptor, native_loss *loss)
 {
     if (descriptor && (descriptor->nextInChain || descriptor->requiredFeatureCount ||
         descriptor->requiredLimits || descriptor->defaultQueue.nextInChain ||
-        descriptor->deviceLostCallbackInfo.callback || descriptor->deviceLostCallbackInfo.nextInChain ||
+        descriptor->deviceLostCallbackInfo.nextInChain ||
         descriptor->uncapturedErrorCallbackInfo.nextInChain)) return NULL;
     native_device *device = calloc(1, sizeof(*device));
     if (!device) return NULL;
@@ -174,6 +177,19 @@ static native_device *create_device(native_adapter *adapter, const WGPUDeviceDes
         if (result.status == DOE_ERROR_SCOPE_CLEANUP_REQUIRED) abort();
         goto failed_storage;
     }
+    doe_label_config label_config = {.abi_version=DOE_LABELS_ABI_VERSION,
+        .allocator={NULL,NULL,native_allocate,native_deallocate}};
+    if (doe_label_store_create(&label_config, &device->labels) != DOE_LABEL_OK) goto failed_errors;
+    if (descriptor) {
+        size_t label_size, queue_size;
+        if (!native_string_size(descriptor->label, &label_size) ||
+            !native_string_size(descriptor->defaultQueue.label, &queue_size) ||
+            doe_label_store_set(device->labels, device, (const unsigned char *)descriptor->label.data,
+                label_size) != DOE_LABEL_OK ||
+            doe_label_store_set(device->labels, &device->queue_label_key,
+                (const unsigned char *)descriptor->defaultQueue.label.data, queue_size) != DOE_LABEL_OK)
+            goto failed_errors;
+    }
     doe_vk_error error = {0};
     if (doe_vk_context_create(&adapter->options, &device->context, &error) != DOE_VK_OK)
         goto failed_errors;
@@ -182,17 +198,22 @@ static native_device *create_device(native_adapter *adapter, const WGPUDeviceDes
         goto failed_errors;
     }
     atomic_init(&device->references, 1);
+    atomic_init(&device->external_references, 1);
+    device->loss = loss;
     device->instance = adapter->instance;
     doe_instance_retain(device->instance);
     device->resources = (doe_resource_config){
         .allocator = {NULL, NULL, native_allocate, native_deallocate},
-        .device = {device, native_device_alive, native_device_retain, native_device_release}
+        .device = {device, native_device_alive, native_device_retain, native_device_release},
+        .labels = device->labels
     };
     if (descriptor) device->uncaptured = descriptor->uncapturedErrorCallbackInfo;
     result = doe_error_scope_set_handler(device->errors, uncaptured_error, device, NULL);
     if (result.status != DOE_ERROR_SCOPE_OK) abort();
+    native_loss_bind(loss, device);
     return device;
 failed_errors:
+    if (doe_label_store_destroy(device->labels) != DOE_LABEL_OK) abort();
     if (doe_error_scope_deinit(device->errors).status != DOE_ERROR_SCOPE_OK) abort();
 failed_storage:
     free(device->error_storage);
@@ -219,7 +240,7 @@ static void deliver_device(void *context)
         value.callback.callback(value.device ? WGPURequestDeviceStatus_Success : WGPURequestDeviceStatus_Error,
             (WGPUDevice)value.device, native_string(value.device ? "" : "C device creation failed or descriptor unsupported"),
             value.callback.userdata1, value.callback.userdata2);
-    else native_device_release(value.device);
+    else wgpuDeviceRelease((WGPUDevice)value.device);
 }
 
 WGPUFuture wgpuAdapterRequestDevice(WGPUAdapter handle,
@@ -228,25 +249,38 @@ WGPUFuture wgpuAdapterRequestDevice(WGPUAdapter handle,
     native_adapter *adapter = (native_adapter *)handle;
     if (!adapter || callback.nextInChain) return (WGPUFuture){0};
     wgpuAdapterAddRef(handle);
-    device_delivery delivery = {callback, create_device(adapter, descriptor)};
+    WGPUDeviceLostCallbackInfo lost = descriptor ? descriptor->deviceLostCallbackInfo :
+        (WGPUDeviceLostCallbackInfo){0};
+    native_loss *loss = native_loss_create(adapter->instance, lost);
+    device_delivery delivery = {callback, loss ? create_device(adapter, descriptor, loss) : NULL};
+    if (loss && !delivery.device) {
+        native_loss_complete(loss, WGPUDeviceLostReason_FailedCreation, "device initialization failed");
+        native_loss_release(loss);
+    }
     WGPUFuture future = native_callback(adapter->instance, callback.mode, &delivery,
         sizeof(delivery), _Alignof(device_delivery), copy_device, deliver_device);
-    if (!future.id) native_device_release(delivery.device);
+    if (!future.id) wgpuDeviceRelease((WGPUDevice)delivery.device);
     wgpuAdapterRelease(handle);
     return future;
 }
 
-void wgpuDeviceAddRef(WGPUDevice device) { native_device_retain((native_device *)device); }
-void wgpuDeviceRelease(WGPUDevice device) { native_device_release((native_device *)device); }
 void wgpuDeviceDestroy(WGPUDevice handle)
 {
     native_device *device = (native_device *)handle;
     if (!device) return;
+    native_device_retain(device);
     native_lock(device);
-    (void)native_settle_pending(device);
-    device->destroyed = true;
+    bool first = !device->destroyed;
+    if (first) {
+        (void)native_settle_pending(device);
+        device->destroyed = true;
+        if (doe_error_scope_set_handler(device->errors, NULL, NULL, NULL).status != DOE_ERROR_SCOPE_OK) abort();
+    }
     native_unlock(device);
+    if (first) native_loss_complete(device->loss, WGPUDeviceLostReason_Destroyed, "device destroyed");
+    native_device_release(device);
 }
+
 WGPUQueue wgpuDeviceGetQueue(WGPUDevice handle)
 {
     native_device_retain((native_device *)handle);

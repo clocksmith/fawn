@@ -9,13 +9,16 @@ exported; unknown and unimplemented names return NULL from `wgpuGetProcAddress`.
 ## Actual ownership and execution path
 
 - Public instances alias the accepted C instance, including its future queue.
-  Requests, map and queue callbacks use accepted C callback payloads and leases.
+  Requests, map, queue, loss, compilation-info and async pipeline callbacks use
+  accepted C callback payloads and leases. Device-loss obligations outlive device
+  storage without retaining a device cycle; last external release clears the weak
+  callback handle before destruction. Explicit destruction completes loss once.
 - Adapters/devices have their sole native references here. Queue handles retain
   their device. Public buffers, shaders, layouts, groups, pipelines, encoders,
   passes and command buffers alias their typed C resource owners, not wrappers
   with duplicate references. Device-bound shader resources adopt the separately
   shareable immutable `doe_shader` artifact.
-- Shader creation calls compiler ABI5. Entry selection uses the actual entry
+- Shader creation calls the C compiler. Entry selection uses the actual entry
   reflection and its static resource closure. Layout checks include reflected
   minimum binding sizes, access kind, stage, resource/device identity and native
   limits. SPIR-V capabilities beyond baseline Shader/Matrix and extensions are
@@ -43,14 +46,16 @@ exported; unknown and unimplemented names return NULL from `wgpuGetProcAddress`.
 
 ## Intentionally unprovided or rejected
 
-Graphics, surfaces, public textures/samplers, query/timestamp entrypoints, indirect
-dispatch, device-loss future/callback delivery, async pipeline creation, compilation
-info and SetLabel exports remain absent. Device descriptors requesting device-loss
-callbacks, required features or required limits are rejected rather than silently
-accepted. Buffer-only binding layouts are admitted; extensions, binding arrays,
+Graphics, surfaces, public textures/samplers, query/timestamp entrypoints and
+indirect dispatch remain absent. Device descriptors requesting required features
+or required limits are rejected rather than silently accepted. Buffer-only binding layouts are admitted; extensions, binding arrays,
 immediates, specialization constants and nonbaseline shader capabilities reject.
-Descriptor labels are not retained by this experimental surface. No blanket
-success stubs or fallback provider resolution exist. The public advertised limits
+Descriptor labels and SetLabel use the existing label owner, including exact
+length-delimited bytes and resource-finalizer cleanup. Failed WGSL modules retain
+real compiler diagnostics for GetCompilationInfo. Compute pipeline construction
+is synchronous; the async API delivers its actual result through the requested
+callback mode, not a claimed background compiler. No blanket success stubs or
+fallback provider resolution exist. The public advertised limits
 are deliberately compute-only and do not claim the WebGPU Core feature level is
 complete; adapter/device creation here is an experimental compute consumer path.
 
@@ -73,6 +78,9 @@ adapter type is CPU. Its ordinary result is:
 Explicit software-only WebGPU C path: SwiftShader Device (Subzero); not physical GPU qualification
 PASS public ABI: compute/readback, OOB guards, dynamic offsets, cross-device rejection, one-shot submit, early releases, callback reentry and map cancellation
 PASS C++ pinned typed procedure calls and unsupported-name rejection
+PASS device loss modes/future/last-external-release/failed-creation, owned labels, async pipeline and real compilation diagnostics
+PASS every implemented procedure address matches; every unprovided name returns NULL
+PASS exact exports: 89 implemented, 113 pinned unprovided, no private exports
 ```
 
 A compute shader with two declared entries selects `transform`, runs 72
@@ -81,7 +89,10 @@ Checks also cover mapped-at-creation writeback, dynamic offsets, invalid dynamic
 offset poisoning, readonly-map write rejection, wrong-device shader rejection,
 one-shot command rejection, cancellation generation, duplicate wait records,
 early caller releases and explicit recursive event pumping. C and C++ invoke
-real returned procedures through the pinned typed function pointers.
+real returned procedures through the pinned typed function pointers. Lifecycle
+checks cover all three loss modes, eight concurrent last-reference releases,
+failed device creation, nested event pumping, label copying/removal, deferred
+shader-release-safe diagnostics and success/failure async pipeline delivery.
 
 ```
 ASAN_OPTIONS=detect_leaks=0:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1 \
@@ -92,8 +103,10 @@ make -C runtime/c/native BUILD=/tmp/doe-c-native-asan \
 
 That build instruments both C compiler and native runtime owners. LeakSanitizer
 is separately unavailable in this execution environment under ptrace; disabling
-leak detection does not claim leak qualification. The developer receipt binds
-exact source and artifact hashes. An initial live-worktree compiler build caught
+leak detection does not claim leak qualification. `DEVELOPER_RECEIPT_LIFECYCLE.json`
+binds the later ABI6 compute/lifecycle source and artifacts. The earlier
+`DEVELOPER_RECEIPT.json` and source manifest remain the historical first compute
+checkpoint, not evidence for changed bytes. An initial live-worktree build caught
 unfinished parallel ABI6 enum edits; checkpoint testing instead materialized the
 committed ABI5 compiler 54f0fb9f6f7202cb13d37e7440ea9d7e13e99b0f with the recorded
 runtime snapshot. That development drift is not a published checkpoint result.
