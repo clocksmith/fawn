@@ -1,0 +1,42 @@
+#ifndef DOE_VK_TIMESTAMP_SHADER_H
+#define DOE_VK_TIMESTAMP_SHADER_H
+/* Verbatim retained WGSL body; provenance and byte identity are checked by
+ * tools/check_timestamp_source.py. This is the sole runtime kernel copy. */
+static const char doe_vk_timestamp_kernel[] =
+    "// Exact f32-period multiplication using base-2^16 limbs; no shaderInt64 required.\n"
+    "@group(0) @binding(0) var<storage, read_write> timestamps: array<vec2<u32>>;\n"
+    "\n"
+    "fn limb_at(product: array<u32, 6>, start: i32) -> u32 {\n"
+    "  if (start <= -16 || start >= 96) { return 0u; }\n"
+    "  if (start < 0) { return (product[0] << u32(-start)) & 65535u; }\n"
+    "  let index = u32(start) >> 4u;\n"
+    "  let shift = u32(start) & 15u;\n"
+    "  var value = product[index] >> shift;\n"
+    "  if (shift != 0u && index < 5u) {\n"
+    "    value = value | (product[index + 1u] << (16u - shift));\n"
+    "  }\n"
+    "  return value & 65535u;\n"
+    "}\n"
+    "\n"
+    "@compute @workgroup_size(WORKGROUP_SIZE)\n"
+    "fn main(@builtin(global_invocation_id) id: vec3<u32>) {\n"
+    "  if (id.x >= arrayLength(&timestamps)) { return; }\n"
+    "  let ticks = timestamps[id.x] & vec2<u32>(MASK_LOW, MASK_HIGH);\n"
+    "  let digits = array<u32, 4>(ticks.x & 65535u, ticks.x >> 16u,\n"
+    "    ticks.y & 65535u, ticks.y >> 16u);\n"
+    "  let multiplier = array<u32, 2>(MANTISSA & 65535u, MANTISSA >> 16u);\n"
+    "  var product: array<u32, 6>;\n"
+    "  for (var i = 0u; i < 4u; i++) {\n"
+    "    var carry = 0u;\n"
+    "    for (var j = 0u; j < 2u; j++) {\n"
+    "      let value = digits[i] * multiplier[j] + product[i + j] + carry;\n"
+    "      product[i + j] = value & 65535u;\n"
+    "      carry = value >> 16u;\n"
+    "    }\n"
+    "    product[i + 2u] = carry;\n"
+    "  }\n"
+    "  timestamps[id.x] = vec2<u32>(\n"
+    "    limb_at(product, -PERIOD_SHIFT) | (limb_at(product, 16 - PERIOD_SHIFT) << 16u),\n"
+    "    limb_at(product, 32 - PERIOD_SHIFT) | (limb_at(product, 48 - PERIOD_SHIFT) << 16u));\n"
+    "}\n";
+#endif

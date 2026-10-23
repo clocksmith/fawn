@@ -15,3 +15,7 @@ invent attachments, drop unsupported packets or publish speculative layouts.
 Keep viewport convention explicit: retained raw Vulkan defaults remain unchanged;
 unmodified WebGPU Position uses one negative-height viewport transform, never a
 second compiler flip. Use asymmetric pixels, not full-screen coverage, as evidence.
+
+Timestamp normalization must remain an in-command GPU transform. Preserve the
+pinned exact f32-period policy and zero unwritten queries; never relabel raw ticks
+or patch CPU readbacks after later commands have already copied them.
