@@ -206,8 +206,9 @@ static doe_resource_status validate_binding(const doe_resource_layout *layout,
         if (entry->kind == DOE_BIND_TEXTURE) {
             if (!(view->desc.usage & WGPUTextureUsage_TextureBinding)) return DOE_RESOURCE_USAGE;
             if (entry->multisampled != (view->texture->desc.samples > 1)) return DOE_RESOURCE_LAYOUT;
-            WGPUTextureSampleType sample = resource_format_sample(view->desc.format);
-            if (view->desc.aspect == WGPUTextureAspect_StencilOnly) sample = WGPUTextureSampleType_Uint;
+            WGPUTextureSampleType sample;
+            doe_resource_status status = doe_resource_format_sample_type(view->desc.format, view->desc.aspect, &sample);
+            if (status != DOE_RESOURCE_OK) return status;
             if (sample == WGPUTextureSampleType_UnfilterableFloat && features->float32_filterable)
                 sample = WGPUTextureSampleType_Float;
             if (entry->sample_type != sample &&

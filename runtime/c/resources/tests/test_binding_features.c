@@ -87,6 +87,84 @@ static void check_sampler_filter(void)
     empty(&f);
 }
 
+static void check_format_class(void)
+{
+    static const struct {
+        WGPUTextureFormat format;
+        WGPUTextureAspect aspect;
+        WGPUTextureSampleType sample;
+    } cases[] = {
+        {WGPUTextureFormat_RGBA8Unorm, WGPUTextureAspect_All, WGPUTextureSampleType_Float},
+        {WGPUTextureFormat_RGBA8UnormSrgb, WGPUTextureAspect_All, WGPUTextureSampleType_Float},
+        {WGPUTextureFormat_RGBA16Unorm, WGPUTextureAspect_All, WGPUTextureSampleType_Float},
+        {WGPUTextureFormat_RGBA16Float, WGPUTextureAspect_All, WGPUTextureSampleType_Float},
+        {WGPUTextureFormat_RGBA16Uint, WGPUTextureAspect_All, WGPUTextureSampleType_Uint},
+        {WGPUTextureFormat_RGBA16Sint, WGPUTextureAspect_All, WGPUTextureSampleType_Sint},
+        {WGPUTextureFormat_RGB10A2Uint, WGPUTextureAspect_All, WGPUTextureSampleType_Uint},
+        {WGPUTextureFormat_RGBA32Uint, WGPUTextureAspect_All, WGPUTextureSampleType_Uint},
+        {WGPUTextureFormat_RGBA32Sint, WGPUTextureAspect_All, WGPUTextureSampleType_Sint},
+        {WGPUTextureFormat_RGBA32Float, WGPUTextureAspect_All, WGPUTextureSampleType_UnfilterableFloat},
+        {WGPUTextureFormat_Depth32Float, WGPUTextureAspect_DepthOnly, WGPUTextureSampleType_Depth},
+        {WGPUTextureFormat_Depth24PlusStencil8, WGPUTextureAspect_DepthOnly, WGPUTextureSampleType_Depth},
+        {WGPUTextureFormat_Depth24PlusStencil8, WGPUTextureAspect_StencilOnly, WGPUTextureSampleType_Uint},
+        {WGPUTextureFormat_Depth32FloatStencil8, WGPUTextureAspect_StencilOnly, WGPUTextureSampleType_Uint},
+        {WGPUTextureFormat_Stencil8, WGPUTextureAspect_All, WGPUTextureSampleType_Uint},
+        {WGPUTextureFormat_BC1RGBAUnorm, WGPUTextureAspect_All, WGPUTextureSampleType_Float}
+    };
+    for (size_t i = 0; i < sizeof(cases) / sizeof(cases[0]); i++) {
+        WGPUTextureSampleType sample = WGPUTextureSampleType_Undefined;
+        assert(doe_resource_format_sample_type(cases[i].format, cases[i].aspect, &sample) == DOE_RESOURCE_OK);
+        assert(sample == cases[i].sample);
+    }
+    WGPUTextureSampleType sample = WGPUTextureSampleType_Sint;
+    assert(doe_resource_format_sample_type(WGPUTextureFormat_Undefined,
+        WGPUTextureAspect_All, &sample) == DOE_RESOURCE_UNSUPPORTED);
+    assert(sample == WGPUTextureSampleType_Sint);
+    assert(doe_resource_format_sample_type((WGPUTextureFormat)UINT32_C(0x7ffffffe),
+        WGPUTextureAspect_All, &sample) == DOE_RESOURCE_UNSUPPORTED);
+    assert(sample == WGPUTextureSampleType_Sint);
+    assert(doe_resource_format_sample_type(WGPUTextureFormat_RGBA8Unorm,
+        WGPUTextureAspect_StencilOnly, &sample) == DOE_RESOURCE_LAYOUT);
+    assert(sample == WGPUTextureSampleType_Sint);
+    assert(doe_resource_format_sample_type(WGPUTextureFormat_Stencil8,
+        WGPUTextureAspect_DepthOnly, &sample) == DOE_RESOURCE_LAYOUT);
+    assert(sample == WGPUTextureSampleType_Sint);
+    assert(doe_resource_format_sample_type(WGPUTextureFormat_RGBA8Unorm,
+        WGPUTextureAspect_Undefined, &sample) == DOE_RESOURCE_LAYOUT);
+    assert(sample == WGPUTextureSampleType_Sint);
+    assert(doe_resource_format_sample_type(WGPUTextureFormat_RGBA8Unorm,
+        WGPUTextureAspect_All, NULL) == DOE_RESOURCE_INVALID_ARGUMENT);
+}
+
+static void check_color_components(void)
+{
+    static const struct { WGPUTextureFormat format; uint32_t components; } cases[] = {
+        {WGPUTextureFormat_R8Uint, 1}, {WGPUTextureFormat_R16Float, 1}, {WGPUTextureFormat_R32Float, 1},
+        {WGPUTextureFormat_RG8Unorm, 2}, {WGPUTextureFormat_RG16Unorm, 2}, {WGPUTextureFormat_RG32Sint, 2},
+        {WGPUTextureFormat_RGB9E5Ufloat, 3}, {WGPUTextureFormat_RG11B10Ufloat, 3},
+        {WGPUTextureFormat_RGBA8Unorm, 4}, {WGPUTextureFormat_BGRA8UnormSrgb, 4},
+        {WGPUTextureFormat_RGB10A2Uint, 4}, {WGPUTextureFormat_RGBA16Uint, 4}, {WGPUTextureFormat_RGBA32Float, 4},
+        {WGPUTextureFormat_BC4RSnorm, 1}, {WGPUTextureFormat_BC5RGUnorm, 2},
+        {WGPUTextureFormat_BC6HRGBUfloat, 3}, {WGPUTextureFormat_BC1RGBAUnorm, 4},
+        {WGPUTextureFormat_EACR11Unorm, 1}, {WGPUTextureFormat_EACRG11Snorm, 2},
+        {WGPUTextureFormat_ETC2RGB8UnormSrgb, 3}, {WGPUTextureFormat_ETC2RGB8A1Unorm, 4},
+        {WGPUTextureFormat_ASTC12x12UnormSrgb, 4}
+    };
+    for (size_t i = 0; i < sizeof(cases) / sizeof(cases[0]); i++) {
+        uint32_t components = 0;
+        assert(doe_resource_format_color_components(cases[i].format, &components) == DOE_RESOURCE_OK);
+        assert(components == cases[i].components);
+    }
+    uint32_t components = 99;
+    assert(doe_resource_format_color_components(WGPUTextureFormat_Undefined, &components) == DOE_RESOURCE_UNSUPPORTED);
+    assert(components == 99);
+    assert(doe_resource_format_color_components(WGPUTextureFormat_Depth24PlusStencil8, &components) == DOE_RESOURCE_LAYOUT);
+    assert(components == 99);
+    assert(doe_resource_format_color_components(WGPUTextureFormat_Stencil8, &components) == DOE_RESOURCE_LAYOUT);
+    assert(components == 99);
+    assert(doe_resource_format_color_components(WGPUTextureFormat_RGBA8Unorm, NULL) == DOE_RESOURCE_INVALID_ARGUMENT);
+}
+
 int main(void)
 {
     check_sample_class(WGPUTextureFormat_R32Float, WGPUTextureAspect_All,
@@ -100,6 +178,8 @@ int main(void)
     check_sample_class(WGPUTextureFormat_Depth24PlusStencil8, WGPUTextureAspect_StencilOnly,
         WGPUTextureSampleType_Uint, false);
     check_sampler_filter();
-    puts("binding feature owner: 6 host suites passed; no texture execution claimed");
+    check_format_class();
+    check_color_components();
+    puts("binding feature owner: 8 host suites passed; no texture execution claimed");
     return 0;
 }

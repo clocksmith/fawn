@@ -32,3 +32,9 @@ status and untouched-output failure semantics, never a frontend cache.
 Keep occlusion event order and exact pool identity in native pass spans. Native
 reset/availability remains the backend's responsibility; no synthetic results or
 second query-state map. Software zero/nonzero evidence is not precise samples.
+Keep baseline format/aspect scalar classification in the canonical format owner.
+Optional filterability, backend support and renderability remain separate admission;
+do not infer them from a Float class or duplicate the stencil-only rule in adapters.
+Clear values are ignored unless the corresponding load operation is Clear.
+Do not let finite/range checks on unused values contradict the public descriptor;
+actual native scalar conversion remains checked at its representation boundary.

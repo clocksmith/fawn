@@ -19,6 +19,10 @@ an alias of device-free compiled data or a second count for one WebGPU object.
   shader identity, map modes, span and stale-generation admission.
 - `formats.c`, `textures.c`, `texture_copy.c`: named format semantics, immutable
   textures/views/samplers and shared checked block/mip/row/image copy geometry.
+  The checked format/aspect sample-class and named channel-count functions serve
+  native shader/clear scalar conversion; binding admission uses the same owner, including stencil-only
+  combined formats. Baseline class is separate from optional feature promotion,
+  native support and attachment renderability. Invalid inputs preserve output.
 - `bindings.c`: canonical layouts, exclusive automatic-layout identity, retained
   groups/pipeline layouts, dynamic binding ranges and native pipeline leases.
   Float32 textures require the explicit device-enabled `float32_filterable` policy
@@ -110,6 +114,9 @@ layout and descriptor getters borrow existing objects without extra leases.
 Occlusion indices are single-write within each pass, including empty query scopes;
 a later pass may reuse them. A bounded per-pass bitmap enforces this before
 command allocation, without introducing native query availability state.
+Color/depth clear values are admitted only when the corresponding load operation
+is Clear; Load and depth-read-only paths ignore them, including nonfinite values.
+Native clear conversion still validates its actual scalar representation.
 
 Query descriptors use one allocation-free preflight for named type and count
 0..4096, following current [WebGPU query creation](https://gpuweb.github.io/gpuweb/#dom-gpudevice-createqueryset)
@@ -133,7 +140,7 @@ responsibilities. Unsupported consumer command kinds must reject before submit.
 ## Focused checks and evidence
 
 `make -C runtime/c/resources check` builds GCC C11/Werror into `/tmp`: 13 base and
-8 extended, 6 bundle, 6 binding-feature, 6 dispatch-usage, 9 render-usage and 1 query-admission host suites cover transactional failure/untouched outputs, first error,
+8 extended, 6 bundle, 8 binding-feature, 6 dispatch-usage, 10 render-usage and 1 query-admission host suites cover transactional failure/untouched outputs, first error,
 label cleanup, atomic references, stale/read-only maps, copies/aliases, dynamic
 snapshots, pass abandonment/unbinding, shader/query/external/render leases and
 unresolved submission lifetime. Host native tokens test finalization, not GPU work.
@@ -214,5 +221,8 @@ empty LOAD/STORE consumer; it does not qualify native occlusion execution.
 visibility0 reproductions and binds their focused corrections.
 `DEVELOPER_RECEIPT_OCCLUSION.json` binds the subsequent real ordered occlusion
 span, mixed results, later-pass reuse and exact resource/native retirement.
+`DEVELOPER_RECEIPT_FORMAT_CLASS.json` binds the shared checked format/aspect
+classification, channel counts, unchanged-output/feature-independence controls
+and the first ignored-clear reproduction with its correction.
 `DEVELOPER_RECEIPT.json` preserves the earlier smaller historical check.
 Run the common source-size check; every owned C source/header is below 999 lines.

@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: MIT */
 #include "fixture.h"
+#include <math.h>
 
 static doe_resource_view *make_view(fixture *f, native_token *image_token, native_token *view_token,
     WGPUTextureFormat format)
@@ -508,6 +509,50 @@ static void test_occlusion_pass_identity(void)
     }
 }
 
+static void test_ignored_clear_values(void)
+{
+    for (unsigned scenario = 0; scenario < 6; scenario++) {
+        fixture f = fresh();
+        doe_resource_config c = config(&f);
+        native_token image_token = {0}, view_token = {0}, depth_token = {0}, depth_view_token = {0};
+        doe_resource_view *view = make_view(&f, &image_token, &view_token, WGPUTextureFormat_RGBA8Unorm);
+        doe_resource_view *depth = scenario >= 2 ?
+            make_view(&f, &depth_token, &depth_view_token, WGPUTextureFormat_Depth32Float) : NULL;
+        doe_resource_render_targets targets = {.color = view, .color_load = WGPULoadOp_Load,
+            .color_store = WGPUStoreOp_Store, .clear_color = {NAN, INFINITY, -INFINITY, NAN},
+            .depth_stencil = depth, .depth_load = WGPULoadOp_Load, .depth_store = WGPUStoreOp_Store,
+            .clear_depth = NAN};
+        if (scenario == 1) targets.color_load = WGPULoadOp_Clear;
+        if (scenario == 3 || scenario == 5) targets.depth_load = WGPULoadOp_Clear;
+        if (scenario == 4) {
+            targets.depth_read_only = true;
+            targets.depth_load = WGPULoadOp_Undefined;
+            targets.depth_store = WGPUStoreOp_Undefined;
+        }
+        if (scenario == 5) targets.clear_depth = 1;
+        doe_resource_encoder *encoder;
+        assert(doe_resource_encoder_create(&c, &encoder) == DOE_RESOURCE_OK);
+        doe_resource_render_pass *pass = (void *)(uintptr_t)1;
+        size_t allocations = f.allocations;
+        doe_resource_status status = doe_resource_encoder_begin_render(encoder, &targets, &pass);
+        if (scenario == 1 || scenario == 3) {
+            assert(status == DOE_RESOURCE_RANGE && pass == (void *)(uintptr_t)1);
+            assert(f.allocations == allocations);
+            doe_resource_encoder_release(encoder);
+        } else {
+            assert(status == DOE_RESOURCE_OK);
+            doe_resource_commands *commands = finish(encoder, pass);
+            /* Submission revalidates the same ignored-value semantics. */
+            assert(doe_resource_commands_begin_submit(commands) == DOE_RESOURCE_OK);
+            assert(doe_resource_commands_settle(commands, DOE_RESOURCE_OK) == DOE_RESOURCE_OK);
+            doe_resource_commands_release(commands);
+        }
+        doe_resource_view_release(view);
+        doe_resource_view_release(depth);
+        empty(&f);
+    }
+}
+
 int main(void)
 {
     test_overwritten_setters();
@@ -519,6 +564,7 @@ int main(void)
     test_indirect_history();
     test_nullable_vertex_and_accessors();
     test_occlusion_pass_identity();
-    puts("render usage owner: 9 host suites passed; no GPU execution claimed");
+    test_ignored_clear_values();
+    puts("render usage owner: 10 host suites passed; no GPU execution claimed");
     return 0;
 }

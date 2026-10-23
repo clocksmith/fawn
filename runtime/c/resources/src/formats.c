@@ -167,7 +167,7 @@ bool resource_format_aspect(WGPUTextureFormat format, WGPUTextureAspect aspect)
     return false;
 }
 
-WGPUTextureSampleType resource_format_sample(WGPUTextureFormat format)
+static WGPUTextureSampleType format_sample_type(WGPUTextureFormat format)
 {
     switch (format) {
     case WGPUTextureFormat_R32Float:
@@ -205,4 +205,77 @@ WGPUTextureSampleType resource_format_sample(WGPUTextureFormat format)
         return WGPUTextureSampleType_Sint;
     default: return WGPUTextureSampleType_Float;
     }
+}
+
+doe_resource_status doe_resource_format_sample_type(WGPUTextureFormat format,
+    WGPUTextureAspect aspect, WGPUTextureSampleType *out)
+{
+    if (!out) return DOE_RESOURCE_INVALID_ARGUMENT;
+    uint32_t bytes, width, height;
+    doe_resource_status status = resource_format_block(format, &bytes, &width, &height);
+    if (status != DOE_RESOURCE_OK) return status;
+    if (!resource_format_aspect(format, aspect)) return DOE_RESOURCE_LAYOUT;
+    *out = aspect == WGPUTextureAspect_StencilOnly ? WGPUTextureSampleType_Uint : format_sample_type(format);
+    return DOE_RESOURCE_OK;
+}
+
+doe_resource_status doe_resource_format_color_components(WGPUTextureFormat format,
+    uint32_t *out)
+{
+    if (!out) return DOE_RESOURCE_INVALID_ARGUMENT;
+    uint32_t bytes, width, height;
+    doe_resource_status status = resource_format_block(format, &bytes, &width, &height);
+    if (status != DOE_RESOURCE_OK) return status;
+    if (resource_format_depth(format)) return DOE_RESOURCE_LAYOUT;
+    uint32_t components = 4;
+    switch (format) {
+    case WGPUTextureFormat_R8Unorm:
+    case WGPUTextureFormat_R8Snorm:
+    case WGPUTextureFormat_R8Uint:
+    case WGPUTextureFormat_R8Sint:
+    case WGPUTextureFormat_R16Unorm:
+    case WGPUTextureFormat_R16Snorm:
+    case WGPUTextureFormat_R16Uint:
+    case WGPUTextureFormat_R16Sint:
+    case WGPUTextureFormat_R16Float:
+    case WGPUTextureFormat_R32Uint:
+    case WGPUTextureFormat_R32Sint:
+    case WGPUTextureFormat_R32Float:
+    case WGPUTextureFormat_BC4RUnorm:
+    case WGPUTextureFormat_BC4RSnorm:
+    case WGPUTextureFormat_EACR11Unorm:
+    case WGPUTextureFormat_EACR11Snorm:
+        components = 1;
+        break;
+    case WGPUTextureFormat_RG8Unorm:
+    case WGPUTextureFormat_RG8Snorm:
+    case WGPUTextureFormat_RG8Uint:
+    case WGPUTextureFormat_RG8Sint:
+    case WGPUTextureFormat_RG16Unorm:
+    case WGPUTextureFormat_RG16Snorm:
+    case WGPUTextureFormat_RG16Uint:
+    case WGPUTextureFormat_RG16Sint:
+    case WGPUTextureFormat_RG16Float:
+    case WGPUTextureFormat_RG32Uint:
+    case WGPUTextureFormat_RG32Sint:
+    case WGPUTextureFormat_RG32Float:
+    case WGPUTextureFormat_BC5RGUnorm:
+    case WGPUTextureFormat_BC5RGSnorm:
+    case WGPUTextureFormat_EACRG11Unorm:
+    case WGPUTextureFormat_EACRG11Snorm:
+        components = 2;
+        break;
+    case WGPUTextureFormat_RG11B10Ufloat:
+    case WGPUTextureFormat_RGB9E5Ufloat:
+    case WGPUTextureFormat_BC6HRGBUfloat:
+    case WGPUTextureFormat_BC6HRGBFloat:
+    case WGPUTextureFormat_ETC2RGB8Unorm:
+    case WGPUTextureFormat_ETC2RGB8UnormSrgb:
+        components = 3;
+        break;
+    default:
+        break; /* Remaining known color formats all contain RGBA channels. */
+    }
+    *out = components;
+    return DOE_RESOURCE_OK;
 }
