@@ -105,6 +105,9 @@ void stage_reflect(const Source *source, DoeCompilerStageInterfaceV7 *outputs, c
 }
 bool stage_closure(Source *source, uint32_t function, SourceReference reference) {
     const FunctionRecord *entry = &source->compiler->functions[function];
+    if (reference.kind == SOURCE_DISCARD && (entry->flags & FUNCTION_FRAGMENT) == 0u)
+        return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, reference.index,
+            "discard is restricted to fragment entry call graphs");
     if (!stage_graphics(entry)) return true;
     if (reference.kind == SOURCE_WORKGROUP || reference.kind == SOURCE_BARRIER)
         return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, entry->name.offset,

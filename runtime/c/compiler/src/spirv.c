@@ -692,6 +692,9 @@ static bool emit_block(Emitter *e, const IrProgram *program, size_t *cursor,
             case IR_BUILTIN:
                 if (!emit_numeric_builtin(e, ir)) return false;
                 break;
+            case IR_DISCARD:
+                if (!spirv_instruction(e, OP_DEMOTE_TO_HELPER_INVOCATION, NULL, 0u)) return false;
+                break;
             case IR_WORKGROUP_BARRIER:
                 if (!emit_workgroup_barrier(e)) return false;
                 break;

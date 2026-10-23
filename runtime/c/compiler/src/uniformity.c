@@ -353,6 +353,7 @@ static bool statement_bits(Uniformity *a,uint32_t id) {
         case STATEMENT_FOR: case STATEMENT_WHILE: case STATEMENT_LOOP: return loop_bits(a,id);
         case STATEMENT_CONTINUING:
             return source_error(a->source,DOE_COMPILER_INPUT_ERROR,st->source_offset,"unexpected validated continuing statement");
+        case STATEMENT_DISCARD: /* Helper demotion is not a control-flow exit. */
         case STATEMENT_EMPTY: return true;
     }
     return false;

@@ -1,0 +1,100 @@
+{
+  "scope": "nonterminating fragment discard and scalar/vector ceil; unchanged Gaussian splat shader admission",
+  "source_manifest_sha256": "39437189cc47c6c385024054796d48314889078e6c001b5722fd236253d6b859",
+  "source_paths": [
+    "runtime/c/compiler/Makefile",
+    "runtime/c/compiler/README.md",
+    "runtime/c/compiler/src/builtin.c",
+    "runtime/c/compiler/src/internal.h",
+    "runtime/c/compiler/src/module.c",
+    "runtime/c/compiler/src/numeric.c",
+    "runtime/c/compiler/src/parse.c",
+    "runtime/c/compiler/src/spirv.c",
+    "runtime/c/compiler/src/spirv_internal.h",
+    "runtime/c/compiler/src/spirv_module.c",
+    "runtime/c/compiler/src/spirv_subgroup.c",
+    "runtime/c/compiler/src/stage.c",
+    "runtime/c/compiler/src/uniformity.c",
+    "runtime/c/compiler/src/validate.c",
+    "runtime/c/compiler/tests/test_discard.py"
+  ],
+  "library_sha256": "f9250c9b8b52e10500ab2dc16b528036a765ed61daaf814c7cac611d553a4021",
+  "checks": {
+    "strict_gcc_normal_pic": "pass",
+    "source_spirv_tests": 36,
+    "asan_ubsan_cli_tests": 16,
+    "sanitizer_leak_detection": false,
+    "abi_stage_and_library_reuse_atomicity": "pass",
+    "source_size": "489 files, zero failures",
+    "git_diff_check": "pass"
+  },
+  "stack": {
+    "normal": {
+      "frame_count": 268,
+      "all_other_frame_sum": 24784,
+      "maximum_acyclic_library_path_bytes": 2528,
+      "fixed_combined": 191728,
+      "maximum_job_combined": 181040,
+      "semantic_scc_bytes": 1536,
+      "semantic_scc_ceiling": 1536
+    },
+    "pic": {
+      "frame_count": 264,
+      "all_other_frame_sum": 24824,
+      "maximum_acyclic_library_path_bytes": 2512,
+      "fixed_combined": 191712,
+      "maximum_job_combined": 181024,
+      "semantic_scc_bytes": 1536,
+      "semantic_scc_ceiling": 1536
+    }
+  },
+  "retained_source": {
+    "path": "demos/gaussian-splat-viewer/splat-render.wgsl",
+    "sha256": "01e2cd19d3d1e537f8e38a0dbef2c0a1cb20bb5b7e03ca01ecd76f344e0f8bd6",
+    "target_sha256": "eb66792e2f3f1690a0e505f6d5a8e71256b514ea9ddba776f42936f4b51e3995",
+    "validator": "spirv-val --target-env vulkan1.1 pass",
+    "execution": "not exercised by core; native feature enablement/admission owned separately"
+  },
+  "target_requirements": {
+    "spirv": "1.3",
+    "extension": "SPV_EXT_demote_to_helper_invocation",
+    "capability": 5379,
+    "opcode": 5380,
+    "device_feature": "shaderDemoteToHelperInvocation must be explicitly enabled"
+  },
+  "first_failures": [
+    {
+      "file": "build-first.log",
+      "cause": "new BUILTIN_CEIL initially omitted from closed non-subgroup rejection switch",
+      "resolution": "explicit case added; build-second.log passes"
+    },
+    {
+      "file": "tests-first.log",
+      "cause": "two new negative assertions expected words absent from existing correct diagnostics",
+      "resolution": "test uses actual name-resolution and used-result diagnostics; no acceptance relaxed"
+    }
+  ],
+  "pending": [
+    "native demote feature admission and actual software render integration",
+    "full independent integrated qualification",
+    "physical backend qualification",
+    "full-feature 50% source reduction"
+  ],
+  "source_sha256": {
+    "runtime/c/compiler/Makefile": "2f6946560471ca60fc5a21aaa22920ae95cbfc0b73fa71c7bce3bc2bbedff01e",
+    "runtime/c/compiler/README.md": "fc127d18eaa5da7ebc864df865097742626b6614db7af3a06a2a9bf6a65d411e",
+    "runtime/c/compiler/src/builtin.c": "7be8508ff1517b6e51883e498c3853fc95710a4f2d2aa8d1dd26935372754b74",
+    "runtime/c/compiler/src/internal.h": "fd51f52590cfdc4ef4dd1d6b6dc6a42eae909fb6b3c1c704f0223eb19fa656fc",
+    "runtime/c/compiler/src/module.c": "90872bdeba455e62050a8d542c5ae251de526af12ca7567a647e517f9d6d45f8",
+    "runtime/c/compiler/src/numeric.c": "710107113e36677471656a3d15dd761eb227a7f950eb5b222358b7502c90063f",
+    "runtime/c/compiler/src/parse.c": "ae98634ed1be0449502a69324445a2c341d9961fededdba3944f21879df29276",
+    "runtime/c/compiler/src/spirv.c": "080f459289eafbde174663b8c5d1f029b577e87dffcd2e847f841e09bac21aca",
+    "runtime/c/compiler/src/spirv_internal.h": "1f5973cccffceb2250608ad76919546d0677ba1053a90918f98c975013cdbaf8",
+    "runtime/c/compiler/src/spirv_module.c": "7b5bd6cb22b97ed0779f2fd38d69b1f9646628c75a0a097c125455100dac229f",
+    "runtime/c/compiler/src/spirv_subgroup.c": "7e53fb2e2816a14cfe7a012b580290cc465161e3784a09a5f329da702e2ab6bb",
+    "runtime/c/compiler/src/stage.c": "bc7fbfacc1d635e810f7799115bc2ef479b00ef6344f05600d9eb02902573e7f",
+    "runtime/c/compiler/src/uniformity.c": "4c0e33df5d8d90182523c0a2e343c1e30bca6e9dbb023a77de5d119f49241144",
+    "runtime/c/compiler/src/validate.c": "c5cf57a62779a17779dc0c98f20be7767cca19b105d29737362c9ccd3548a2fa",
+    "runtime/c/compiler/tests/test_discard.py": "5af41322389b67e40e58baf7272eadecb82abef00ac2c1ffa69d1ea0b277552a"
+  }
+}

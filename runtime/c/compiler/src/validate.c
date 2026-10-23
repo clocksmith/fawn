@@ -255,6 +255,12 @@ static bool lower_block(Source *source, const Syntax *s, size_t start, size_t en
             case STATEMENT_CONTINUING:
                 return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, st->source_offset,
                                     "continuing must be the final direct child of loop");
+            case STATEMENT_DISCARD:
+                if (!source_reference_record(source, &program->statement_references[i],
+                    SOURCE_DISCARD, st->source_offset, st->source_offset) ||
+                    !marker(source, program, IR_DISCARD, st->source_offset, 0u)) return false;
+                /* Demotion preserves control flow, including continuing. */
+                break;
             case STATEMENT_EMPTY: break;
         }
         if (st->kind!=STATEMENT_FOR && st->kind!=STATEMENT_WHILE && st->kind!=STATEMENT_LOOP)

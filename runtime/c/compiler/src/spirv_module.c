@@ -420,6 +420,8 @@ bool spirv_plan_module(Emitter *e) {
             } else e->values[ir->result] = spirv_reserve_ids(e, 1u);
         } else if (ir->opcode == IR_IMAGE) {
             if (!spirv_image_plan(e, ir)) return false;
+        } else if (ir->opcode == IR_DISCARD) {
+            e->demote_to_helper = true;
         } else if (ir->opcode == IR_WORKGROUP_BARRIER) {
             if (!plan_workgroup_barrier(e)) return false;
         } else if (ir->opcode == IR_BUILTIN) {
@@ -607,6 +609,15 @@ bool spirv_module_declarations(Emitter *e) {
     if (e->subgroup_capabilities != 0u) {
         EMIT(OP_CAPABILITY, 61u); /* GroupNonUniform, SPIR-V 1.3. */
         if ((e->subgroup_capabilities & 1u) != 0u) { EMIT(OP_CAPABILITY, 63u); }
+    }
+    if (e->demote_to_helper) {
+        EMIT(OP_CAPABILITY, 5379u);
+        const char extension[] = "SPV_EXT_demote_to_helper_invocation";
+        const size_t count = (sizeof(extension) + 3u) / 4u;
+        uint32_t *words = NULL;
+        if (!spirv_instruction_space(e, OP_EXTENSION, count, &words)) return false;
+        memset(words, 0, count * sizeof(*words));
+        memcpy(words, extension, sizeof(extension));
     }
     if (e->math_import != 0u) {
         const uint32_t imported[] = { e->math_import, UINT32_C(0x4c534c47), UINT32_C(0x6474732e), UINT32_C(0x3035342e), 0u };

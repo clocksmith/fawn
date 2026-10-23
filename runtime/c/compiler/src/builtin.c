@@ -11,6 +11,7 @@ static const NumericBuiltin numeric_builtins[] = {
     {"exp", BUILTIN_EXP, 1u, BUILTIN_COMPONENT_FLOAT, 27u},
     {"tanh", BUILTIN_TANH, 1u, BUILTIN_COMPONENT_FLOAT, 21u},
     {"sqrt", BUILTIN_SQRT, 1u, BUILTIN_COMPONENT_FLOAT, 31u},
+    {"ceil", BUILTIN_CEIL, 1u, BUILTIN_COMPONENT_FLOAT, 9u},
     {"dot", BUILTIN_DOT, 2u, BUILTIN_NUMERIC_REDUCTION, 0u},
     {"length", BUILTIN_LENGTH, 1u, BUILTIN_FLOAT_REDUCTION, 66u},
     {"distance", BUILTIN_DISTANCE, 2u, BUILTIN_FLOAT_REDUCTION, 67u},

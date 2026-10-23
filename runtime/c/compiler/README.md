@@ -184,6 +184,19 @@ a matching shader entry, and retained singular APIs still require one entry.
 An empty source span may be NULL with length zero; NULL with positive length
 remains an input error. `make test-library-modules` checks these boundaries.
 
+Fragment `discard` converts the invocation to a helper without terminating its
+control flow. The shared statement/behavior owner preserves subsequent local
+computation and returns; source-static entry closures reject discard reached
+from compute or vertex entries, including skipped and dead syntax. SPIR-V 1.3
+uses `SPV_EXT_demote_to_helper_invocation`, capability 5379 and opcode 5380,
+never early `OpKill`. Native admission must explicitly enable the corresponding
+Vulkan feature; successful validation alone does not establish device support.
+Scalar/vector `ceil` uses the existing numeric overload and constant owners.
+`make test-discard` checks these paths and emits the unchanged Gaussian splat
+vertex/fragment source. Rendering and application qualification remain separate.
+Rules: [WGSL 2026-10-21](https://www.w3.org/TR/2026/CRD-WGSL-20261021/#discard-statement)
+and the [Khronos demote extension](https://github.khronos.org/SPIRV-Registry/extensions/EXT/SPV_EXT_demote_to_helper_invocation.html).
+
 Other barriers, atomics, general pointers, aliases,
 overrides, f16, remaining subgroup operations, remaining texture operations, wider builtins,
 other targets and runtime metadata/adoption remain open owners, not implied coverage.

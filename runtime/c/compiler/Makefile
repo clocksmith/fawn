@@ -215,3 +215,7 @@ build/test_library_module: $(LIB_SOURCES) tests/test_library_module.c $(HEADERS)
 test-library-modules: build/test_library_module
 	build/test_library_module
 .PHONY: test-library-modules
+
+test-discard: build/doe-compiler-c
+	DOE_COMPILER_CLI="$(CURDIR)/build/doe-compiler-c" SPIRV_VAL="$(SPIRV_VAL)" python3 tests/test_discard.py
+.PHONY: test-discard
