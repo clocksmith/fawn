@@ -149,13 +149,14 @@ static void settle_resources(native_pending *pending, bool success)
     native_device_release(device);
 }
 
-native_queue_settlement native_settle_pending(native_device *device)
+static native_queue_settlement settle_pending(native_device *device, bool background)
 {
     native_queue_settlement result = {true, NATIVE_OK};
     native_pending **cursor = &device->pending;
     while (*cursor) {
         native_pending *pending = *cursor;
-        native_result status = native_command_recover(&pending->native);
+        native_result status = background ? native_command_poll(&pending->native) :
+            native_command_recover(&pending->native);
         native_result released = native_command_release(&pending->native);
         if (result.status == NATIVE_OK && status != NATIVE_OK) result.status = status;
         if (released == NATIVE_BUSY) {
@@ -167,6 +168,7 @@ native_queue_settlement native_settle_pending(native_device *device)
         if (released != NATIVE_OK) abort();
         *cursor = pending->next;
         if (status != NATIVE_OK) {
+            if (device->retired_failure == NATIVE_OK) device->retired_failure = status;
             device->queue_failed = true;
             /* Proven terminal failure may poison private helper scratch. Later
              * operations reconstruct helpers, never reuse failed storage. */
@@ -179,10 +181,28 @@ native_queue_settlement native_settle_pending(native_device *device)
     return result;
 }
 
+native_queue_settlement native_settle_pending(native_device *device)
+{
+    native_queue_settlement result = settle_pending(device, false);
+    if (device->retired_failure != NATIVE_OK) {
+        result.status = device->retired_failure;
+        device->retired_failure = NATIVE_OK;
+    }
+    return result;
+}
+
+void native_progress_pending(native_device *device)
+{
+    /* Preserve the first terminal failure until a public operation observes it.
+     * Background retirement cannot silently turn its next write into success. */
+    (void)settle_pending(device, true);
+}
+
 static native_result submit_pending(native_device *device, native_pending *pending)
 {
     pending->next = device->pending;
     device->pending = pending;
+    native_pending_progress_wake(device);
     native_result status = native_command_submit(&pending->native);
     if (status == NATIVE_OK) status = native_command_wait(&pending->native);
     if (status != NATIVE_OK) device->queue_failed = true;

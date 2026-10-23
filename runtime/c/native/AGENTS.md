@@ -11,8 +11,13 @@ absent; do not generate placeholder success symbols to satisfy a symbol inventor
 Device loss is an independent callback obligation with a weak device identity,
 not a second device owner. Clear it before the last external reference drops;
 callback delivery may retain storage only while snapshotting under its mutex.
-Keep synchronous construction distinct from callback scheduling and from the
-unfinished asynchronous queue recovery lane.
+Keep synchronous construction distinct from callback scheduling and pending
+queue progress. Before worker publication, acquire process-code residency without
+holding device/resource locks. A single loader reference deliberately survives to
+process exit; GPU/resource leases settle independently. The pending owner retains
+one device lease and polls completion; do not add a second queue or report
+unknown work as terminal. Idle final release joins the worker. Preserve the first
+background terminal error for a public operation to observe.
 
 Pipeline-layout required slots and usage conflicts belong to the resource owner.
 Skip canonical empty slots rather than inventing a native binding requirement.

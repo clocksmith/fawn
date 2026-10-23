@@ -32,6 +32,15 @@ native_result native_command_wait(native_command_handle *commands)
     return NATIVE_UNSUPPORTED;
 }
 
+native_result native_command_poll(native_command_handle *commands)
+{
+    if (commands->kind == WGPUBackendType_Vulkan)
+        return native_from_vulkan(doe_vk_commands_poll(commands->value.vulkan, NULL));
+    if (commands->kind == WGPUBackendType_Metal)
+        return native_from_metal(doe_mtl_commands_poll(commands->value.metal, NULL));
+    return NATIVE_UNSUPPORTED;
+}
+
 native_result native_command_recover(native_command_handle *commands)
 {
     if (commands->kind == WGPUBackendType_Vulkan)

@@ -77,7 +77,24 @@ $(BUILD)/failures: tests/failures.c tests/consumer.h tests/adapter_class.h $(OBJ
 $(BUILD)/timestamps: tests/timestamps.c tests/consumer.h tests/adapter_class.h $(OBJECTS) $(COMPILER_LIBRARY) | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) tests/timestamps.c $(OBJECTS) $(COMPILER_LINK) $(PLATFORM_LIBS) -o $@
 $(BUILD)/recovery: tests/recovery.c tests/consumer.h tests/adapter_class.h $(OBJECTS) $(COMPILER_LIBRARY) | $(BUILD)
-	$(CC) $(CPPFLAGS) $(CFLAGS) tests/recovery.c $(OBJECTS) $(COMPILER_LINK) $(PLATFORM_LIBS) -Wl,--wrap=doe_vk_commands_submit -Wl,--wrap=doe_vk_commands_recover -Wl,--wrap=doe_vk_commands_release -o $@
+	$(CC) $(CPPFLAGS) $(CFLAGS) tests/recovery.c $(OBJECTS) $(COMPILER_LINK) $(PLATFORM_LIBS) -Wl,--wrap=doe_vk_commands_submit -Wl,--wrap=doe_vk_commands_poll -Wl,--wrap=doe_vk_commands_recover -Wl,--wrap=doe_vk_commands_release -o $@
+# A real loader control: code admission and dlclose lifetime, without a GPU.
+ifeq ($(SHARED_PLATFORM),Darwin)
+PIN_FIXTURE_FLAGS = -dynamiclib -Wl,-undefined,error
+else
+PIN_FIXTURE_FLAGS = -shared -Wl,-z,defs
+endif
+$(BUILD)/provider-pin-fixture.$(SHARED_SUFFIX): tests/provider_pin_fixture.c tests/provider_pin_fixture.h src/provider_pin.c src/provider_pin.h | $(BUILD)
+	$(CC) $(CPPFLAGS) $(CFLAGS) -fvisibility=hidden $(PIN_FIXTURE_FLAGS) tests/provider_pin_fixture.c src/provider_pin.c $(PLATFORM_LIBS) -o $@
+$(BUILD)/provider-pin: tests/provider_pin.c tests/provider_pin_fixture.h src/provider_pin.c src/provider_pin.h | $(BUILD)
+	$(CC) $(CPPFLAGS) $(CFLAGS) tests/provider_pin.c src/provider_pin.c $(PLATFORM_LIBS) -o $@
+.PHONY: check-provider-pin
+check-provider-pin: $(BUILD)/provider-pin $(BUILD)/provider-pin-fixture.$(SHARED_SUFFIX)
+	$(BUILD)/provider-pin $(abspath $(BUILD)/provider-pin-fixture.$(SHARED_SUFFIX))
+$(BUILD)/pending-progress: tests/pending_progress.c tests/consumer.h tests/adapter_class.h $(OBJECTS) $(COMPILER_LIBRARY) | $(BUILD)
+	$(CC) $(CPPFLAGS) $(CFLAGS) tests/pending_progress.c $(OBJECTS) $(COMPILER_LINK) $(PLATFORM_LIBS) \
+	  -Wl,--wrap=pthread_create -Wl,--wrap=native_backend_close -Wl,--wrap=native_buffer_close \
+	  -Wl,--wrap=doe_vk_commands_submit -Wl,--wrap=doe_vk_commands_poll -Wl,--wrap=doe_vk_commands_recover -Wl,--wrap=doe_vk_commands_release -o $@
 $(BUILD)/empty-shader: tests/empty_shader.c tests/consumer.h tests/adapter_class.h $(NATIVE_LIBRARY)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
 $(BUILD)/lifecycle: tests/lifecycle.c tests/adapter_class.h $(OBJECTS) $(COMPILER_LIBRARY) | $(BUILD)
@@ -85,7 +102,7 @@ $(BUILD)/lifecycle: tests/lifecycle.c tests/adapter_class.h $(OBJECTS) $(COMPILE
 $(BUILD)/procedures-cxx: tests/procedures.cpp $(NATIVE_LIBRARY)
 	$(CXX) $(CPPFLAGS) -std=c++17 -Wall -Wextra -Wpedantic -Werror $(SANITIZE) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
 ifeq ($(SHARED_PLATFORM),Linux)
-check: $(BUILD)/draw-budget $(BUILD)/indirect-render $(BUILD)/indirect-compute check-build-dependencies check-host-bridge $(BUILD)/atomics $(BUILD)/debug $(BUILD)/msaa $(BUILD)/depth $(BUILD)/demote $(BUILD)/graphics-admission $(BUILD)/empty-shader $(BUILD)/graphics $(BUILD)/compute $(BUILD)/procedures-cxx $(BUILD)/lifecycle $(BUILD)/textures $(BUILD)/admission $(BUILD)/failures $(BUILD)/timestamps $(BUILD)/recovery
+check: check-provider-pin $(BUILD)/draw-budget $(BUILD)/indirect-render $(BUILD)/indirect-compute check-build-dependencies check-host-bridge $(BUILD)/atomics $(BUILD)/debug $(BUILD)/msaa $(BUILD)/depth $(BUILD)/demote $(BUILD)/graphics-admission $(BUILD)/empty-shader $(BUILD)/graphics $(BUILD)/compute $(BUILD)/procedures-cxx $(BUILD)/lifecycle $(BUILD)/textures $(BUILD)/admission $(BUILD)/failures $(BUILD)/timestamps $(BUILD)/recovery $(BUILD)/pending-progress
 	$(BUILD)/draw-budget
 	$(BUILD)/indirect-render
 	$(BUILD)/indirect-compute
@@ -105,6 +122,7 @@ check: $(BUILD)/draw-budget $(BUILD)/indirect-render $(BUILD)/indirect-compute c
 	$(BUILD)/failures
 	$(BUILD)/timestamps
 	$(BUILD)/recovery
+	$(BUILD)/pending-progress
 	python3 tests/audit-exports.py $(NATIVE_LIBRARY) $(if $(SANITIZE),,--runtime)
 # The same public clients on a nonfallback GPU adapter (DOE_C_TEST_ADAPTER=physical).
 # Developer evidence on the printed adapter/driver only, not qualification. Uses the
@@ -121,7 +139,7 @@ else
 check:
 	@echo "The SwiftShader/fault-injection suite requires Linux; use check-portable for host ABI checks." >&2
 	@exit 2
-GNU_ONLY_TESTS = metal-bridge demote failures recovery indirect-compute
+GNU_ONLY_TESTS = metal-bridge demote failures recovery indirect-compute pending-progress
 $(addprefix $(BUILD)/,$(GNU_ONLY_TESTS)): | unavailable-gnu-tests
 .PHONY: unavailable-gnu-tests
 unavailable-gnu-tests:
@@ -129,7 +147,7 @@ unavailable-gnu-tests:
 	@exit 2
 endif
 .PHONY: check-portable check-platform
-check-portable: check-build-dependencies $(BUILD)/backend-selection $(BUILD)/procedures-cxx
+check-portable: check-provider-pin check-build-dependencies $(BUILD)/backend-selection $(BUILD)/procedures-cxx
 	$(BUILD)/backend-selection
 	$(BUILD)/procedures-cxx
 	python3 tests/audit-exports.py $(NATIVE_LIBRARY) $(if $(SANITIZE),,--runtime)

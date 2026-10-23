@@ -129,6 +129,24 @@ Apple SDK compilation, Darwin execution and physical qualification remain unrun.
   recursive acquisition permits resource-finalizer cleanup using the same lock.
   Foreign callbacks run only after unlocking, with required full-call leases.
 
+- Each published device owns one progress worker and an ordinary device lease.
+  It polls the existing pending list without waiting for queue idle. Unknown
+  completion retains every submission/resource lease even after all public
+  handles disappear; terminal success or failure retires them. The first retired
+  failure remains observable by a later public operation. An idle last release
+  joins the worker before returning. Startup failure publishes no device.
+- Background execution pins one provider loader reference until process exit.
+  This keeps provider and dependency code valid after a caller's `dlclose`; it
+  retains no GPU/device resource after terminal retirement. A statically linked
+  main executable already has this code lifetime. Acquire the loader reference
+  outside device/resource locks, before starting a worker. Repeatedly loading
+  distinct provider images therefore retains each image's code until exit.
+- `make check-provider-pin` exercises real unload versus retained worker code on
+  Linux/macOS without a GPU. Linux `pending-progress` uses actual CPU Vulkan work
+  with completion obscured at backend boundaries: release-all success/failure,
+  no premature resource destruction, failed worker startup and synchronous idle
+  release. Neither control establishes physical failure recovery or driver liveness.
+
 ## Intentionally unprovided or rejected
 
 Surfaces and indexed draws remain absent. Vulkan indirect dispatch and nonindexed
