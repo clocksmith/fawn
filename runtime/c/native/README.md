@@ -439,7 +439,11 @@ make -C runtime/c/native BUILD=/tmp/doe-c-native-asan \
 
 That build instruments both C compiler and native runtime owners. LeakSanitizer
 is separately unavailable in this execution environment under ptrace; disabling
-leak detection does not claim leak qualification. `DEVELOPER_RECEIPT_IMAGES.json`
+leak detection does not claim leak qualification. On 2026-10-23 at 301fef689 on Jupiter (no ptrace),
+the same instrumented `check` on lavapipe also passed all 29 checks with
+`ASAN_OPTIONS=detect_leaks=1:halt_on_error=1`, with LeakSanitizer confirmed active
+by a deliberate-leak control. That is leak evidence for these software-adapter
+clients only, not for physical drivers or untested paths. `DEVELOPER_RECEIPT_IMAGES.json`
 binds the image increment to immutable committed dependency8a3fd4c1 plus listed
 native bytes, including a fresh canonical compiler build. An earlier live image
 sanitizer build overlapped unfinished ABI7 compiler edits and is not source-bound
