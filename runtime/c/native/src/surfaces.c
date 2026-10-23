@@ -342,6 +342,9 @@ void wgpuSurfaceConfigure(WGPUSurface handle, const WGPUSurfaceConfiguration *co
     else if (!(device->backend.value.vulkan.caps.surface_platforms & surface->source.platform))
         message = "device adapter was not requested with a compatibleSurface of this platform";
     else if (surface->vulkan) message = "previous configuration's frame texture or views are still referenced";
+    else if (config->width > device->backend.limits.maxTextureDimension2D ||
+        config->height > device->backend.limits.maxTextureDimension2D)
+        message = "surface size exceeds the device maxTextureDimension2D limit";
     native_lock(device);
     doe_vk_status status = message ? DOE_VK_INVALID_ARGUMENT : native_device_status(device);
     native_failure failure = native_failure_status(native_from_vulkan(status));

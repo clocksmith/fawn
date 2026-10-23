@@ -124,7 +124,7 @@ WGPUComputePipeline native_create_compute_pipeline(native_device *device,
         resource_status = DOE_RESOURCE_LAYOUT;
     if (resource_status == DOE_RESOURCE_OK && backend_failure.status == NATIVE_OK) {
         if (device->backend.kind == WGPUBackendType_Vulkan) {
-            doe_vk_binding_layout native_bindings[DOE_RESOURCE_MAX_GROUPS * DOE_RESOURCE_MAX_BINDINGS];
+            doe_vk_binding_layout native_bindings[NATIVE_MAX_PIPELINE_BINDINGS];
             if (!native_vulkan_binding_layout(payload,native_bindings)) backend_failure = native_failure_status(NATIVE_UNSUPPORTED);
             else {
                 doe_vk_error detail = {0};

@@ -53,9 +53,9 @@ WGPUTexture wgpuDeviceCreateTexture(WGPUDevice handle, const WGPUTextureDescript
         .samples=descriptor->sampleCount, .usage=descriptor->usage,
         .view_formats=descriptor->viewFormats, .view_format_count=descriptor->viewFormatCount
     };
-    doe_resource_texture_limits limits = {device->backend.value.vulkan.caps.max_texture_dimension_1d,
-        device->backend.value.vulkan.caps.max_texture_dimension_2d, device->backend.value.vulkan.caps.max_texture_dimension_3d,
-        device->backend.value.vulkan.caps.max_texture_array_layers};
+    doe_resource_texture_limits limits = {device->backend.limits.maxTextureDimension1D,
+        device->backend.limits.maxTextureDimension2D, device->backend.limits.maxTextureDimension3D,
+        device->backend.limits.maxTextureArrayLayers};
     doe_vk_texture_desc native = {.width=desc.width, .height=desc.height,
         .depth_or_layers=desc.depth_or_layers, .mip_levels=desc.mip_levels,.sample_count=desc.samples,
         .usage=DOE_VK_TEXTURE_COPY_DST, /* Initialization is internal usage only. */

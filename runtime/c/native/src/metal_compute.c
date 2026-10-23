@@ -61,7 +61,7 @@ native_failure native_metal_dispatch(doe_mtl_commands *commands, const doe_resou
     if (record->value.dispatch.x > limits->maxComputeWorkgroupsPerDimension ||
         record->value.dispatch.y > limits->maxComputeWorkgroupsPerDimension ||
         record->value.dispatch.z > limits->maxComputeWorkgroupsPerDimension) return native_failure_status(NATIVE_INVALID_ARGUMENT);
-    doe_resource_binding resolved[DOE_RESOURCE_MAX_GROUPS * DOE_RESOURCE_MAX_BINDINGS];
+    doe_resource_binding resolved[NATIVE_MAX_PIPELINE_BINDINGS];
     doe_resource_status status = native_resolve_resources(pipeline,
         doe_resource_pipeline_get_layout(record->value.dispatch.pipeline),record->value.dispatch.groups,
         record->value.dispatch.dynamic_offsets,resolved);

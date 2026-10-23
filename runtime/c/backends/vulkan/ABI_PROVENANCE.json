@@ -218,7 +218,8 @@
       "VK_ATTACHMENT_UNUSED": 4294967295,
       "VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT": 8,
       "VK_STRUCTURE_TYPE_IMAGE_FORMAT_LIST_CREATE_INFO": 1000147000,
-      "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_5_FEATURES_KHR": 1000470000
+      "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_5_FEATURES_KHR": 1000470000,
+      "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_3_PROPERTIES": 1000168000
     },
     "additional_sources": [
       "https://docs.vulkan.org/refpages/latest/refpages/source/VkQueryType.html",
@@ -448,6 +449,29 @@
       ],
       "dependencies": "vk.xml v1.3.290: VK_KHR_maintenance5 depends on (VK_VERSION_1_1+VK_KHR_dynamic_rendering),VK_VERSION_1_3; VK_KHR_dynamic_rendering depends on ...,VK_VERSION_1_2",
       "retained_equivalent": null
+    },
+    "VkPhysicalDeviceMaintenance3Properties": {
+      "source": "https://raw.githubusercontent.com/KhronosGroup/Vulkan-Headers/v1.3.290/include/vulkan/vulkan_core.h",
+      "verified_utc": "2026-10-23",
+      "fields": [
+        [
+          "sType",
+          "VkStructureType"
+        ],
+        [
+          "pNext",
+          "pointer"
+        ],
+        [
+          "maxPerSetDescriptors",
+          "u32"
+        ],
+        [
+          "maxMemoryAllocationSize",
+          "VkDeviceSize"
+        ]
+      ],
+      "scope": "Core1.1 maxMemoryAllocationSize queried through the already-retained vkGetPhysicalDeviceProperties2; bounds the reported WebGPU maxBufferSize."
     }
   },
   "retained_functions": {

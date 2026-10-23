@@ -35,9 +35,9 @@ static native_failure publish_frame(native_surface *surface, doe_vk_texture *fra
     payload->texture = (native_texture){device, frame};
     payload->surface = surface;
     native_retain_count(&surface->leases);
-    const doe_vk_caps *caps = &device->backend.value.vulkan.caps;
-    doe_resource_texture_limits limits = {caps->max_texture_dimension_1d, caps->max_texture_dimension_2d,
-        caps->max_texture_dimension_3d, caps->max_texture_array_layers};
+    const WGPULimits *device_limits = &device->backend.limits;
+    doe_resource_texture_limits limits = {device_limits->maxTextureDimension1D, device_limits->maxTextureDimension2D,
+        device_limits->maxTextureDimension3D, device_limits->maxTextureArrayLayers};
     doe_resource_texture_desc desc = {.dimension=WGPUTextureDimension_2D,.format=surface->format,
         .width=surface->width,.height=surface->height,.depth_or_layers=1,.mip_levels=1,.samples=1,
         .usage=surface->usage};

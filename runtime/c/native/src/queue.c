@@ -5,7 +5,7 @@
 static doe_vk_status record_dispatch(doe_vk_commands *commands, const doe_resource_command *record)
 {
     native_pipeline *pipeline = doe_resource_pipeline_native(record->value.dispatch.pipeline);
-    doe_vk_binding_resource bindings[DOE_RESOURCE_MAX_GROUPS * DOE_RESOURCE_MAX_BINDINGS];
+    doe_vk_binding_resource bindings[NATIVE_MAX_PIPELINE_BINDINGS];
     doe_vk_status status = native_resolve_bindings(commands, pipeline,
         doe_resource_pipeline_get_layout(record->value.dispatch.pipeline), record->value.dispatch.groups,
         record->value.dispatch.dynamic_offsets, bindings);

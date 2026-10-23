@@ -39,7 +39,8 @@ struct doe_resource_layout {
     resource_base base;
     size_t count;
     bool automatic, automatic_claimed;
-    doe_resource_layout_entry entries[DOE_RESOURCE_MAX_BINDINGS];
+    size_t dynamic_count;
+    doe_resource_layout_entry entries[]; /* count entries, ascending binding. */
 };
 struct doe_resource_pipeline_layout {
     resource_base base;
@@ -53,7 +54,7 @@ struct doe_resource_bind_group {
     doe_resource_binding_limits limits;
     doe_resource_binding_features features;
     size_t count;
-    doe_resource_binding bindings[DOE_RESOURCE_MAX_BINDINGS];
+    doe_resource_binding bindings[]; /* count bindings in layout entry order. */
 };
 struct doe_resource_pipeline {
     resource_base base;
@@ -114,7 +115,8 @@ typedef struct resource_usage_scope {
     resource_use *uses;
     size_t count, capacity;
 } resource_usage_scope;
-enum { RESOURCE_GROUP_USES = DOE_RESOURCE_MAX_BINDINGS * 2 };
+/* A binding contributes at most two uses (two external-texture planes). */
+enum { RESOURCE_USES_PER_BINDING = 2 };
 
 
 struct doe_resource_render_pipeline {
@@ -145,8 +147,21 @@ doe_resource_status resource_shader_bindings_validate(const doe_resource_pipelin
     doe_resource_buffer *indirect, bool *has_dynamic_offsets);
 unsigned resource_view_aspects(const doe_resource_view *view);
 doe_resource_status resource_use_conflict(const resource_use *a, const resource_use *b, bool binding_aliases);
-doe_resource_status resource_group_uses(const doe_resource_dispatch_group *group,
-    resource_use uses[RESOURCE_GROUP_USES], size_t *count);
+/* Scratch capacity callers keep on the stack; larger groups allocate. */
+enum { RESOURCE_STACK_USES = 128 };
+/* Collects a group's resolved usages into stack when they fit, otherwise
+ * into config-allocated storage; release with resource_group_uses_free. */
+doe_resource_status resource_group_uses(const doe_resource_config *config, const doe_resource_dispatch_group *group,
+    resource_use stack[RESOURCE_STACK_USES], resource_use **uses, size_t *count, size_t *capacity);
+void resource_group_uses_free(const doe_resource_config *config, resource_use *uses, size_t capacity,
+    resource_use *stack);
+/* Full group validation and dynamic-offset resolution of one entry index;
+ * *next_dynamic counts dynamic entries already consumed before index. */
+doe_resource_status resource_group_resolve_at(const doe_resource_bind_group *group, const uint32_t *offsets,
+    size_t offset_count, size_t index, size_t *next_dynamic, doe_resource_binding *out);
+/* Whole-group validation plus dynamic offset count/alignment/range, no output. */
+doe_resource_status resource_group_check(const doe_resource_bind_group *group,
+    const uint32_t *offsets, size_t offset_count);
 doe_resource_status resource_scope_add(const doe_resource_config *config, resource_usage_scope *scope,
     const resource_use *uses, size_t count);
 doe_resource_status resource_scope_group(const doe_resource_config *config, resource_usage_scope *scope,

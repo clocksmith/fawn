@@ -90,10 +90,13 @@ void wgpuComputePassEncoderDispatchWorkgroups(WGPUComputePassEncoder handle, uin
     doe_resource_compute_pass *pass = (doe_resource_compute_pass *)handle;
     native_device *device = doe_resource_compute_pass_device(pass);
     if (!device) return;
+    const uint32_t bound = device->backend.limits.maxComputeWorkgroupsPerDimension;
     native_lock(device);
-    /* Recording keeps dimensions; actual Vulkan admission validates its limits
-     * before any submission. No duplicate dimension classifier is kept here. */
-    doe_resource_status status = doe_resource_compute_pass_dispatch(pass, x, y, z);
+    /* https://gpuweb.github.io/gpuweb/#dom-gpucomputepassencoder-dispatchworkgroups:
+     * counts above the device limit invalidate the pass at encoding time. */
+    doe_resource_status status = x > bound || y > bound || z > bound ?
+        doe_resource_compute_pass_invalidate(pass, DOE_RESOURCE_RANGE) :
+        doe_resource_compute_pass_dispatch(pass, x, y, z);
     native_unlock(device);
     if (status != DOE_RESOURCE_OK) native_error(device, native_resource_error(status), "compute dispatch recording failed");
 }
