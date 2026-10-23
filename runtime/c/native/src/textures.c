@@ -66,11 +66,17 @@ WGPUTexture wgpuDeviceCreateTexture(WGPUDevice handle, const WGPUTextureDescript
         desc.width == desc.height && desc.depth_or_layers >= 6;
     bool depth_stencil = native_depth_format(desc.format, &native.format);
     if (depth_stencil) {
-        if (desc.usage != WGPUTextureUsage_RenderAttachment) {
-            native_error(device, WGPUErrorType_Validation, "depth/stencil currently supports attachment usage only");
+        /* Attachment and copy usage are admitted; per-format/aspect copy direction
+         * belongs to the resource copy owner. Depth sampling/storage stay absent. */
+        if (desc.usage & (WGPUTextureUsage_TextureBinding | WGPUTextureUsage_StorageBinding)) {
+            native_error(device, WGPUErrorType_Validation, "depth/stencil sampling and storage are unsupported");
             return NULL;
         }
-        native.usage = DOE_VK_TEXTURE_DEPTH_STENCIL_ATTACHMENT;
+        /* Attachments zero-initialize through real clears; copy-only images need
+         * internal transfer-destination usage for their zero uploads instead. */
+        native.usage = (desc.usage & WGPUTextureUsage_RenderAttachment) ?
+            DOE_VK_TEXTURE_DEPTH_STENCIL_ATTACHMENT : DOE_VK_TEXTURE_COPY_DST;
+        if (desc.usage & WGPUTextureUsage_CopyDst) native.usage |= DOE_VK_TEXTURE_COPY_DST;
         native.cube_compatible = false; /* Native depth supports array attachments, not cube sampling. */
     }
     if (desc.samples > 1) {
@@ -99,7 +105,7 @@ WGPUTexture wgpuDeviceCreateTexture(WGPUDevice handle, const WGPUTextureDescript
     if (status == DOE_VK_OK) status = native_to_vulkan(native_settle_pending(device).status);
     if (status == DOE_VK_OK) status = doe_vk_texture_format_caps(device->backend.value.vulkan.context, native.format, &caps);
     if (status == DOE_VK_OK) status = doe_vk_texture_create(device->backend.value.vulkan.context, &native, &payload->texture, &error);
-    if (status == DOE_VK_OK) status = native_initialize_texture(device, payload->texture, &native, caps.texel_bytes);
+    if (status == DOE_VK_OK) status = native_initialize_texture(device, payload->texture, &native, &caps);
     doe_resource_status adopted = DOE_RESOURCE_INVALID_ARGUMENT;
     if (status == DOE_VK_OK)
         adopted = doe_resource_texture_create(&device->resources, &desc, &limits,

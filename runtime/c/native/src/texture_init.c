@@ -7,8 +7,9 @@
  * Attachment-only images without internal CopyDst (depth/stencil, multisample
  * and borrowed surface frames) are cleared by the canonical attachment owner. */
 doe_vk_status native_initialize_texture(native_device *device, doe_vk_texture *texture,
-    const doe_vk_texture_desc *desc, uint32_t texel_bytes)
+    const doe_vk_texture_desc *desc, const doe_vk_format_caps *caps)
 {
+    const uint32_t texel_bytes = caps->texel_bytes;
     if ((desc->usage & DOE_VK_TEXTURE_DEPTH_STENCIL_ATTACHMENT) || desc->sample_count > 1 ||
         !(desc->usage & DOE_VK_TEXTURE_COPY_DST)) {
         doe_vk_texture_view *view = NULL;
@@ -36,14 +37,22 @@ doe_vk_status native_initialize_texture(native_device *device, doe_vk_texture *t
     doe_vk_status status = doe_vk_buffer_create(device->backend.value.vulkan.context, size,
         DOE_VK_BUFFER_COPY_SRC, DOE_VK_MEMORY_HOST, &zero, &error);
     if (status == DOE_VK_OK) status = doe_vk_commands_create(device->backend.value.vulkan.context, &commands, &error);
+    /* Copy-only combined depth/stencil images upload each aspect separately; the
+     * zero staging size covers the largest packed texel. Single-aspect and color
+     * images use their whole format. */
+    const bool combined = caps->aspects == (DOE_VK_ASPECT_DEPTH | DOE_VK_ASPECT_STENCIL);
+    const doe_vk_texture_aspect aspects[2] = {combined ? DOE_VK_ASPECT_DEPTH : DOE_VK_ASPECT_ALL,
+        DOE_VK_ASPECT_STENCIL};
     for (uint32_t mip = 0; status == DOE_VK_OK && mip < desc->mip_levels; ++mip) {
         uint32_t width = desc->width >> mip;
         uint32_t height = desc->height >> mip;
         uint32_t depth = desc->dimension == DOE_VK_TEXTURE_3D ? desc->depth_or_layers >> mip : desc->depth_or_layers;
-        doe_vk_texture_region region = {.mip=mip,
-            .extent={width ? width : 1, height ? height : 1, depth ? depth : 1}};
-        status = doe_vk_commands_upload_texture(commands, zero,
-            (doe_vk_texture_buffer_layout){0}, texture, region);
+        for (size_t aspect = 0; status == DOE_VK_OK && aspect < (combined ? 2u : 1u); ++aspect) {
+            doe_vk_texture_region region = {.mip=mip,
+                .extent={width ? width : 1, height ? height : 1, depth ? depth : 1}, .aspect=aspects[aspect]};
+            status = doe_vk_commands_upload_texture(commands, zero,
+                (doe_vk_texture_buffer_layout){0}, texture, region);
+        }
     }
     if (status == DOE_VK_OK) status = native_submit_commands(device, commands);
     else if (doe_vk_commands_release(commands) != DOE_VK_OK) abort();

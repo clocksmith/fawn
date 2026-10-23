@@ -63,6 +63,11 @@ static doe_vk_status record_vulkan_commands(doe_vk_commands *native, doe_resourc
             doe_vk_texture_region region = {.mip=copy->mip,
                 .origin={copy->origin[0], copy->origin[1], copy->origin[2]},
                 .extent={copy->width, copy->height, copy->depth_or_layers}};
+            /* The resource region carries the admitted single aspect. */
+            if (!native_texture_aspect(record->value.texture.region.aspect, &region.aspect)) {
+                status = DOE_VK_INVALID_ARGUMENT;
+                break;
+            }
             status = record->value.texture.direction == DOE_RESOURCE_BUFFER_TO_TEXTURE ?
                 doe_vk_commands_upload_texture(native, buffer->handle.vulkan, layout, texture->texture, region) :
                 doe_vk_commands_read_texture(native, texture->texture, region, buffer->handle.vulkan, layout);
@@ -79,6 +84,12 @@ static doe_vk_status record_vulkan_commands(doe_vk_commands *native, doe_resourc
             doe_vk_texture_region to = {.mip=copy->destination.mip,
                 .origin={copy->destination.origin[0],copy->destination.origin[1],copy->destination.origin[2]},
                 .extent={copy->width,copy->height,copy->depth_or_layers}};
+            /* Admitted texture copies use every aspect of both endpoints. */
+            if (!native_texture_aspect(copy->source.aspect, &from.aspect) ||
+                !native_texture_aspect(copy->destination.aspect, &to.aspect)) {
+                status = DOE_VK_INVALID_ARGUMENT;
+                break;
+            }
             status = doe_vk_commands_copy_texture(native, source->texture, from, destination->texture, to);
             break;
         }

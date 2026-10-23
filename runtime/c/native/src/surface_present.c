@@ -21,7 +21,9 @@ static doe_vk_status publish_frame(native_surface *surface, doe_vk_texture *fram
     doe_vk_texture_desc native = {.dimension=DOE_VK_TEXTURE_2D,.width=surface->width,
         .height=surface->height,.depth_or_layers=1,.mip_levels=1,.sample_count=1,
         .usage=DOE_VK_TEXTURE_COLOR_ATTACHMENT}; /* Attachment clear, never a CPU image. */
-    doe_vk_status status = native_initialize_texture(device, frame, &native, 4);
+    /* Attachment-only frames take the clear path; these upload facts are unused. */
+    const doe_vk_format_caps facts = {.texel_bytes=4,.aspects=1};
+    doe_vk_status status = native_initialize_texture(device, frame, &native, &facts);
     if (status != DOE_VK_OK) return status;
     native_surface_frame *payload = calloc(1, sizeof(*payload));
     if (!payload) return DOE_VK_OUT_OF_MEMORY;
