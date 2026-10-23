@@ -217,6 +217,7 @@ bool native_compare_operation(WGPUCompareFunction value, uint32_t fallback, uint
 /* features: the device's enabled NATIVE_FEATURE bits; feature formats map only when enabled. */
 bool native_depth_format(uint32_t features, WGPUTextureFormat format, doe_vk_texture_format *out);
 bool native_texture_format(uint32_t features, WGPUTextureFormat format, doe_vk_texture_format *out);
+bool native_color_renderable(uint32_t features, WGPUTextureFormat format);
 /* Resource-normalized copy aspect to native aspect bits; Undefined is rejected
  * because the resource owner always resolves a concrete aspect first. */
 bool native_texture_aspect(WGPUTextureAspect aspect, doe_vk_texture_aspect *out);

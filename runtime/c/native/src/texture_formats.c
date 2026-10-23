@@ -64,6 +64,7 @@ bool native_texture_format(uint32_t features, WGPUTextureFormat format, doe_vk_t
     case WGPUTextureFormat_RGBA32Uint: *out = DOE_VK_FORMAT_RGBA32_UINT; break;
     case WGPUTextureFormat_RGBA32Sint: *out = DOE_VK_FORMAT_RGBA32_SINT; break;
     case WGPUTextureFormat_RGBA32Float: *out = DOE_VK_FORMAT_RGBA32_FLOAT; break;
+    case WGPUTextureFormat_RG11B10Ufloat: *out = DOE_VK_FORMAT_RG11B10_UFLOAT; break;
     case WGPUTextureFormat_BC1RGBAUnorm: *out = DOE_VK_FORMAT_BC1_RGBA_UNORM; break;
     case WGPUTextureFormat_BC1RGBAUnormSrgb: *out = DOE_VK_FORMAT_BC1_RGBA_SRGB; break;
     case WGPUTextureFormat_BC2RGBAUnorm: *out = DOE_VK_FORMAT_BC2_RGBA_UNORM; break;
@@ -81,6 +82,15 @@ bool native_texture_format(uint32_t features, WGPUTextureFormat format, doe_vk_t
     default: return native_depth_format(features, format, out);
     }
     return true;
+}
+
+/* Feature-dependent renderability of a mapped color format: rg11b10ufloat is a
+ * core sampled format, renderable (blendable, multisampled, resolvable) only
+ * with rg11b10ufloat-renderable. The backend still checks native support. */
+bool native_color_renderable(uint32_t features, WGPUTextureFormat format)
+{
+    return format != WGPUTextureFormat_RG11B10Ufloat ||
+        (features & NATIVE_FEATURE(WGPUFeatureName_RG11B10UfloatRenderable)) != 0;
 }
 
 bool native_storage_format(uint32_t format, WGPUTextureFormat *out)

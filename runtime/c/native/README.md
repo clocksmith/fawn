@@ -309,6 +309,8 @@ r32/rg32/rgba32 float for `float32-filterable`; blending of those formats for
 `float32-blendable`; D32S8 depth/stencil attachment, sampling and transfer for
 `depth32float-stencil8`; enabled native drawIndirectFirstInstance for
 `indirect-first-instance` and depthClamp for `depth-clip-control`; enabled
+color attachment, blending and 4x samples of rg11b10ufloat for
+`rg11b10ufloat-renderable`; enabled
 textureCompressionBC with sampled, filterable, copyable formats for all
 fourteen BC formats for `texture-compression-bc`, plus 3D images of each for
 `texture-compression-bc-sliced-3d`. A device
@@ -316,7 +318,9 @@ request naming an unreported feature fails.
 The device keeps the requested set as `NATIVE_FEATURE` bits and every gated use
 checks that set, never the adapter facts: feature formats map only when enabled
 (textures, views, pipeline targets, bundles and layouts all reject
-depth32float-stencil8 otherwise); blending an r32/rg32/rgba32 float target rejects
+depth32float-stencil8 otherwise, and rg11b10ufloat render attachments,
+pipeline targets and bundle formats reject without rg11b10ufloat-renderable while
+the core format still samples); blending an r32/rg32/rgba32 float target rejects
 without float32-blendable; and without float32-filterable those views keep the
 'unfilterable-float' sample type, so a 'float' (sampler-using) layout rejects them.
 Indirect draws admit a GPU-produced nonzero firstInstance only with
@@ -327,7 +331,8 @@ depth-clip-control; with it the pipeline clamps depth instead of clipping.
 `tests/format_features.c` reads back exact results on a device that enabled every
 offered feature: linear midpoints of r32float/rgba32float values that no 16-bit
 format holds (1000001.0), two additive draws onto a 1000000.0 r32float clear
-(1000007.0) and depth 0.25/stencil 7 per aspect of depth32float-stencil8. On a
+(1000007.0), depth 0.25/stencil 7 per aspect of depth32float-stencil8, and
+rg11b10ufloat packed bits after an additive draw and a 4x resolve. On a
 device without them it checks each rejection and that an unoffered feature
 fails the request. `tests/draw_features.c` reads back exact r32uint values
 a*1000+instance_index for GPU firstInstance 2/1 through indirect, indexed indirect
@@ -504,7 +509,8 @@ Texture format reinterpretation beyond srgb/unorm viewFormats pairs (RGBA8,
 BGRA8; resource-validated, then a mutable Vulkan image with a format list), srgb
 viewFormats together with StorageBinding, depth storage, depth comparison sampling (compiler), multisampled
 buffer copies/storage, and cube arrays without device imageCubeArray are rejected.
-The baseline admits 23 named Vulkan
+The baseline admits 24 named Vulkan (rg11b10ufloat sampled; renderable only
+with rg11b10ufloat-renderable)
 color formats, subject to actual device usage/format capabilities. Device
 descriptors may request the optional features `src/features.c` reports for the
 actual adapter (see Optional device features). Other required features reject
@@ -577,7 +583,7 @@ PASS device loss modes/future/last-external-release/failed-creation, owned label
 PASS public textures: actual zero mips, packed upload, linear sampling, image OOB guards, storage readback, early releases, exact view defaults and filter/pair/copy negatives (CPU Vulkan only)
 PASS public admission: sparse/trailing/null layout holes, null unbind, ignored destroyed resources, dynamic writable ranges, whole-buffer read/write conflicts and texture subresource aliases (CPU Vulkan only)
 PASS public error types: resource allocation, automatic-layout allocation, compute/render backend OOM/native/validation failures, failed requested-feature device and successful recovery
-PASS public format features: 3 of 3 offered and enabled (float32-filterable linear r32float/rgba32float midpoints exact, float32-blendable additive r32float 1000007.0, depth32float-stencil8 depth 0.25/stencil 7 per aspect); without them depth32float-stencil8 texture/pipeline/bundle, r32float blending and 'float' r32float binding reject, an unoffered feature fails the request (CPU Vulkan only)
+PASS public format features: 4 of 4 offered and enabled (float32-filterable linear r32float/rgba32float midpoints exact, float32-blendable additive r32float 1000007.0, depth32float-stencil8 depth 0.25/stencil 7 per aspect, rg11b10ufloat-renderable blended (1.25,1,2.25) and 4x-resolved (1,.5,.25) packed bits); without them depth32float-stencil8 texture/pipeline/bundle, r32float blending, 'float' r32float binding and rg11b10ufloat attachment/target/bundle reject while rg11b10ufloat still samples exactly, an unoffered feature fails the request (CPU Vulkan only)
 PASS public draw features: 2 of 2 offered and enabled (indirect-first-instance: GPU firstInstance 2/1 reaches instance attributes and instance_index exactly for indirect, indexed indirect and bundle draws, an instance-buffer overrun stays a no-op; depth-clip-control: unclippedDepth draws z 1.5/-0.5 clamped to depth 1.0/0.0 where the clipped control draws nothing); without them nonzero indirect firstInstance is a no-op while direct firstInstance draws, and unclippedDepth rejects (CPU Vulkan only)
 PASS public copy layouts: undefined rowsPerImage for one image and undefined bytesPerRow for one row through queue writes, buffer-to-texture and texture-to-buffer copies with exact texels; two-image and two-row undefined-stride and rowsPerImage-0 rejections reported once at Finish (CPU Vulkan only)
 PASS public BC compression: solid BC1/BC1-srgb/BC4 blocks decode to exact texels through queue writes and buffer copies, a 6x6 mip takes its physical 8x8 copy, texture-to-texture and texture-to-buffer copies return exact blocks, a 3D BC1 texture uploaded with rowsPerImage 2 decodes per slice (sliced 3D); without the feature, non-block sizes, attachment/storage usage, 3D without sliced 3D and unaligned copies reject (CPU Vulkan only)
