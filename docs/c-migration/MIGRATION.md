@@ -61,18 +61,23 @@ Developer checks below are not physical qualification or full feature closure.
    whole render-pass/bundle history. `resources/DEVELOPER_RECEIPT_SCOPES.json`
    records conflicting/disjoint ranges, overwritten setters, subresources and
    retirement checks. Follow-up review found stage-visibility false positives;
-   shared-stage alias filtering with independent render history is being corrected.
+   `97fb777c` now filters aliases by shared stage while preserving independent
+   whole-render history. Zero/disjoint/shared-stage buffer and texture controls
+   pass in49 host suites and sanitizers; independent recheck remains pending.
    Public graphics integration remains in progress.
 2. **Empty auto-layout holes:** resource/native owners, `45f8264d` and `c87e494f`.
    One required-group predicate normalizes ignored groups/offsets; explicit null
    unbind works. Native admission tests execute sparse group 2 and ignored holes.
-   Follow-up explicit-null layout slots and valid trailing layout queries remain
-   open with the same resource/native owners.
+   Follow-up explicit-null layout slots and valid trailing layout queries now use
+   one lazy canonical empty-layout owner (`97fb777c`, `05444824`), including
+   untouched-output OOM/retry and all valid device indices. Independent recheck pending.
 3. **Typed failure propagation:** native owner, `c87e494f`. Layout allocation
    results are handled; one ABI status conversion preserves OOM versus internal
    execution failure versus validation. Real allocation/backend fault tests are
    recorded in `native/DEVELOPER_RECEIPT_ADMISSION.json`. Follow-up review found
-   pending-work recovery still collapses status; that separate path is being fixed.
+   pending-work recovery still collapsed status. `05444824` separates terminal
+   state from typed status; real submit/write/texture/work-done fault controls
+   preserve Internal/OOM/Pending and unknown leases. Independent recheck pending.
 4. **Duplicate target semantics:** text-target owner. Shared read-only value IDs,
    ordered access paths and runtime-tail identity now replace duplicate helpers in
    `compiler/targets/ir_view.h`. Malformed-IR sanitizer controls and both targets
@@ -83,8 +88,10 @@ Developer checks below are not physical qualification or full feature closure.
    and workgroup-initialization helpers. Duplicate HLSL call walking is removed;
    Metal also omits unrelated function/context resources for a selected entry.
    `DEVELOPER_RECEIPT_CLOSURE.json` binds positive/absence tests, malformed-graph
-   sanitizers and unchanged emitted-operation controls. Independent recheck remains
-   pending. This trims resource helper multiplication, not every unused declaration.
+   sanitizers and unchanged emitted-operation controls. Independent recheck found
+   shared call DAGs revisit completed functions exponentially. A25-level doubling
+   graph reproduces bounded-work exhaustion; explicit visited closure correction
+   remains open. This trims resource helper multiplication, not every unused declaration.
 6. **Duplicate texture-copy footprint arithmetic:** resource/backend owners,
    `45f8264d` and `a6901a80`. Both call the small checked arithmetic leaf in
    `runtime/c/common`; 59,049 bounded independent arithmetic cases plus overflow
@@ -97,8 +104,12 @@ Guides: the common C style retains one parser/semantic/layout owner with multipl
 explicit target adapters. Vulkan's owner guide now states serialized operations
 and callback/lease boundaries; its recursive mutex is retained because finalizers
 reenter. No arbitrary mutex removal or claimed system-level security change.
-Current native admission evidence uses its exact pinned ABI6/core snapshot;
-combining later compiler/backend increments requires a fresh composition check.
+Native timestamp/recovery evidence binds its isolated ABI7 dependency snapshot,
+123/202 real exports, eight normal clients and focused full-stack sanitizers.
+Matrix ABI8 has separate exact24-byte-uniform software Vulkan execution and
+31 source/validator controls, not blanket qualification of all later composition.
+Metal image ownership has host/typed-call/sanitizer controls; Apple SDK/device
+execution and all physical hardware qualification remain pending.
 
 ## Accepted experimental coverage
 
