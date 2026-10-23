@@ -8,6 +8,20 @@ make -C runtime/c/futures all
 make -C runtime/c/callbacks check
 ```
 
+Run the incremental-link regression separately:
+
+```
+python3 runtime/c/callbacks/tests/test_build_dependencies.py
+```
+
+It builds the real futures owner and existing C/C++ tests with GCC/G++, checks
+an initial no-op, then replaces the selected archive with a byte-different,
+strictly newer build and requires both test executables to relink and pass.
+The callback object/archive must stay unchanged. Output is temporary unless a
+fresh `--output-dir` is supplied; `--makefile` selects a preserved negative
+control. Changing the `FUTURES_ARCHIVE` pathname requires a fresh `BUILD`
+directory, since Make tracks file timestamps, not variable-value changes.
+
 The C test checks validation precedence, failed allocation/layout without ID or
 resource transfer, over-alignment, allocator-token copy and exact free pairing,
 inline payload-copy lifetime, all delivery modes, self-wait while registered,

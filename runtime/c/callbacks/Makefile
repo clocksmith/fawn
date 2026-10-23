@@ -15,9 +15,9 @@ $(BUILD)/callbacks.o: src/callbacks.c include/doe_callbacks.h ../futures/include
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 $(BUILD)/libdoe_callbacks.a: $(BUILD)/callbacks.o
 	$(AR) rcs $@ $^
-$(BUILD)/test_api: tests/test_api.c $(BUILD)/libdoe_callbacks.a
+$(BUILD)/test_api: tests/test_api.c $(BUILD)/libdoe_callbacks.a $(FUTURES_ARCHIVE)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< $(BUILD)/libdoe_callbacks.a $(FUTURES_ARCHIVE) $(LDFLAGS) $(LDLIBS) -o $@
-$(BUILD)/test_cpp: tests/test_cpp.cpp $(BUILD)/libdoe_callbacks.a
+$(BUILD)/test_cpp: tests/test_cpp.cpp $(BUILD)/libdoe_callbacks.a $(FUTURES_ARCHIVE)
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $< $(BUILD)/libdoe_callbacks.a $(FUTURES_ARCHIVE) $(LDFLAGS) $(LDLIBS) -o $@
 check: $(BUILD)/test_api $(BUILD)/test_cpp
 	$(BUILD)/test_api
