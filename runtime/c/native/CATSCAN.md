@@ -29,6 +29,7 @@ Shader reflection is not a substitute for missing production dispatch analysis.
 ## Acceptance
 Focused developer build and software-only compute checks are separate from later
 independent integrated qualification and blocked physical GPU runs.
+- Evidence: [developer admission checks](DEVELOPER_RECEIPT_ADMISSION.json).
 
 ## Non-goals
 A parallel resource engine, fake backend, full graphics support or default cutover.
