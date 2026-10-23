@@ -162,7 +162,7 @@ static void test_render_recording(void)
     doe_resource_buffer *vertices = buffer(&f, &vertex_token, 64, WGPUBufferUsage_Vertex);
     doe_resource_buffer *indices = buffer(&f, &index_token, 6, WGPUBufferUsage_Index);
     doe_resource_render_targets targets = {.color = view, .color_load = WGPULoadOp_Clear,
-        .color_store = WGPUStoreOp_Store, .occlusion_queries = query, .max_draw_count = 4};
+        .color_store = WGPUStoreOp_Store, .occlusion_queries = query, .max_draw_count = 4, .has_max_draw_count = true};
     doe_resource_encoder *encoder;
     doe_resource_render_pass *pass;
     assert(doe_resource_encoder_create(&c, &encoder) == DOE_RESOURCE_OK);

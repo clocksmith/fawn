@@ -388,3 +388,15 @@ while retained Zig's setter only stores values. `DEVELOPER_RECEIPT_VIEWPORT.json
 preserves those first failures and host boundary/lifetime controls. Native physical
 limits and empty-raster lowering remain backend responsibilities; host acceptance
 alone does not prove native rendering or physical qualification.
+
+Pass draw budgets distinguish omission from an explicit zero through
+`has_max_draw_count`. Omission ignores the value and selects 50,000,000; begin
+normalizes the copied target once. Direct, indexed and indirect commands each
+consume one budget entry even when their counts are zero, while boundaries,
+markers and empty bundles consume none. Bundle lists preflight their total before
+emitting any draw. Allocation failure leaves the count unchanged, and the final
+UINT64_MAX count cannot wrap. This corrects retained Zig's explicit-zero-as-default
+behavior to the pinned typed-chain initializer and
+[WebGPU draw budget](https://gpuweb.github.io/gpuweb/#dom-gpurenderpassdescriptor-maxdrawcount).
+`DEVELOPER_RECEIPT_DRAW_BUDGET.json` preserves the first failure and focused host
+ownership checks; native descriptor-chain parsing and real execution are separate.

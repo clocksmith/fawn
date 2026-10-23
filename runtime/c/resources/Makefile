@@ -43,7 +43,9 @@ $(BUILD)/test_depth_only: tests/test_depth_only.c $(BUILD)/libdoe_resources.a $(
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(filter-out %.h,$^) -o $@
 $(BUILD)/test_viewport_admission: tests/test_viewport_admission.c $(BUILD)/libdoe_resources.a $(LABEL_SOURCES) tests/fixture.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(filter-out %.h,$^) -o $@
-check: $(BUILD)/test_viewport_admission $(BUILD)/test_depth_only $(BUILD)/test_debug_groups $(BUILD)/test_view_defaults $(BUILD)/test_resolve_admission $(BUILD)/test_attachment_admission $(BUILD)/test_draw_admission $(BUILD)/test_query_admission $(BUILD)/test_render_usage $(BUILD)/test_usage_scope $(BUILD)/test_resources $(BUILD)/test_extended $(BUILD)/test_bundles $(BUILD)/test_binding_features
+$(BUILD)/test_draw_budget: tests/test_draw_budget.c $(BUILD)/libdoe_resources.a $(LABEL_SOURCES) tests/fixture.h src/internal.h
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(filter-out %.h,$^) -o $@
+check: $(BUILD)/test_draw_budget $(BUILD)/test_viewport_admission $(BUILD)/test_depth_only $(BUILD)/test_debug_groups $(BUILD)/test_view_defaults $(BUILD)/test_resolve_admission $(BUILD)/test_attachment_admission $(BUILD)/test_draw_admission $(BUILD)/test_query_admission $(BUILD)/test_render_usage $(BUILD)/test_usage_scope $(BUILD)/test_resources $(BUILD)/test_extended $(BUILD)/test_bundles $(BUILD)/test_binding_features
 	$(BUILD)/test_resources
 	$(BUILD)/test_extended
 	$(BUILD)/test_bundles
@@ -58,6 +60,7 @@ check: $(BUILD)/test_viewport_admission $(BUILD)/test_depth_only $(BUILD)/test_d
 	$(BUILD)/test_debug_groups
 	$(BUILD)/test_depth_only
 	$(BUILD)/test_viewport_admission
+	$(BUILD)/test_draw_budget
 
 VK_BUILD ?= /tmp/doe-c-resources-vulkan
 .PHONY: vulkan-lifetime vulkan-library
