@@ -4,19 +4,6 @@
 #include "vulkan_fixture.h"
 #include "doe_vk_render.h"
 
-static doe_vk_shader load_shader(const char *path, const char *entry)
-{
-    FILE *file = fopen(path, "rb");
-    assert(file && fseek(file, 0, SEEK_END) == 0);
-    long size = ftell(file);
-    assert(size >= 20 && size % 4 == 0 && size <= 16 * 1024 * 1024);
-    assert(fseek(file, 0, SEEK_SET) == 0);
-    uint32_t *words = malloc((size_t)size);
-    assert(words && fread(words, 1, (size_t)size, file) == (size_t)size);
-    assert(fclose(file) == 0);
-    return (doe_vk_shader){words, (size_t)size / 4, entry};
-}
-
 /* This consumer deliberately admits only its exercised graphics signature.
  * A bounded borrowed span lowers into ONE native pass, never a second recorder.
  * Unsupported events/state reject before any native pass preparation. */

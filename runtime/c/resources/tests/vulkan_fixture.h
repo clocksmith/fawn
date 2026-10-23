@@ -5,6 +5,7 @@
 #include "doe_resources_extended.h"
 #include "doe_vk_texture.h"
 #include "doe_vk_queries.h"
+#include "doe_vk_render.h"
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -61,4 +62,17 @@ static inline void release_queries(void *state, void *pool)
     ((lifecycle *)state)->native_releases++;
     doe_vk_query_pool_release(pool);
 }
+static inline doe_vk_shader load_shader(const char *path, const char *entry)
+{
+    FILE *file = fopen(path, "rb");
+    assert(file && fseek(file, 0, SEEK_END) == 0);
+    long size = ftell(file);
+    assert(size >= 20 && size % 4 == 0 && size <= 16 * 1024 * 1024);
+    assert(fseek(file, 0, SEEK_SET) == 0);
+    uint32_t *words = malloc((size_t)size);
+    assert(words && fread(words, 1, (size_t)size, file) == (size_t)size);
+    assert(fclose(file) == 0);
+    return (doe_vk_shader){words, (size_t)size / 4, entry};
+}
+
 #endif

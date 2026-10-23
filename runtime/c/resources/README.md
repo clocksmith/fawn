@@ -358,3 +358,19 @@ Empty end-of-buffer mappings and the last UINT64_MAX token preserve checked rang
 untouched-output and retirement contracts. `DEVELOPER_RECEIPT_MAP_TOKEN.json`
 preserves the first failure. This was a private resource-owner contract bug;
 current public native zero-size backing is non-NULL, so public exposure is not claimed.
+
+The optional `vulkan-indirect-render-lifetime` consumer uses the same explicit
+compiler/snapshot options. A C-compiled GPU producer supplies padded draw records;
+the backend's C-compiled guard prepares distinct scratch for eight draws in one
+actual native pass, including bundle replay. Retained Tint graphics shaders render
+48 magenta and 16 blue pixels. Per-draw occlusion distinguishes valid draws from
+vertex-index overflow, instance overrun, nonzero firstInstance, zero-count and
+one-byte-short subrange rejection. True unused vertex holes and stride-zero
+instance input remain valid controls. Original arguments/padding are unchanged,
+and twelve native payloads retire after pending completion. Shared fixture helpers
+replace duplicate artifact setup and retained SPIR-V loading; no production packet,
+recording engine or resource-side GPU count validator was introduced.
+`DEVELOPER_RECEIPT_INDIRECT_RENDER.json` binds the optimized/instrumented software
+witness and the earlier compute/full-pass consumer regressions. It does not claim
+C graphics compilation, indexed-indirect support, public native draw-indirect
+integration, precise occlusion sample counts or physical qualification.
