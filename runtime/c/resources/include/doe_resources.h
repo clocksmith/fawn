@@ -136,6 +136,17 @@ typedef struct doe_resource_texture_limits {
     uint32_t dimension_1d, dimension_2d, dimension_3d, array_layers;
 } doe_resource_texture_limits;
 
+/* Allocation-free named format/aspect classification, before optional feature
+ * promotion. Does not imply native format support or attachment renderability.
+ * Unknown formats/invalid aspects fail without changing out. */
+doe_resource_status doe_resource_format_sample_type(WGPUTextureFormat format,
+    WGPUTextureAspect aspect, WGPUTextureSampleType *out);
+
+/* Named color channels, including compressed formats, not renderability.
+ * Depth/stencil and unknown formats reject with out unchanged. */
+doe_resource_status doe_resource_format_color_components(WGPUTextureFormat format,
+    uint32_t *out);
+
 doe_resource_status doe_resource_texture_validate(const doe_resource_texture_desc *desc,
     const doe_resource_texture_limits *limits);
 doe_resource_status doe_resource_texture_create(const doe_resource_config *config,

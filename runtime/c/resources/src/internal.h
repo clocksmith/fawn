@@ -206,7 +206,6 @@ doe_resource_status resource_range(uint64_t total, uint64_t offset, uint64_t req
 bool resource_format_compatible(WGPUTextureFormat base, WGPUTextureFormat view);
 bool resource_format_depth(WGPUTextureFormat format);
 bool resource_format_aspect(WGPUTextureFormat format, WGPUTextureAspect aspect);
-WGPUTextureSampleType resource_format_sample(WGPUTextureFormat format);
 doe_resource_status resource_format_block(WGPUTextureFormat format, uint32_t *bytes,
     uint32_t *width, uint32_t *height);
 doe_resource_status resource_group_validate(const doe_resource_bind_group *group);

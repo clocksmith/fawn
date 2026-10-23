@@ -37,7 +37,8 @@ static doe_resource_status validate_targets(void *device,
     doe_resource_status status = validate_attachment(device, targets->color, false, extent);
     if (status != DOE_RESOURCE_OK) return status;
     if (!valid_operations(targets->color_load, targets->color_store)) return DOE_RESOURCE_LAYOUT;
-    for (size_t i = 0; i < 4; i++) if (!isfinite(targets->clear_color[i])) return DOE_RESOURCE_RANGE;
+    if (targets->color_load == WGPULoadOp_Clear)
+        for (size_t i = 0; i < 4; i++) if (!isfinite(targets->clear_color[i])) return DOE_RESOURCE_RANGE;
     if (targets->depth_stencil) {
         uint32_t depth_extent[2];
         status = validate_attachment(device, targets->depth_stencil, true, depth_extent);
@@ -51,7 +52,8 @@ static doe_resource_status validate_targets(void *device,
                 if (targets->depth_load != WGPULoadOp_Undefined || targets->depth_store != WGPUStoreOp_Undefined)
                     return DOE_RESOURCE_LAYOUT;
             } else if (!valid_operations(targets->depth_load, targets->depth_store)) return DOE_RESOURCE_LAYOUT;
-            if (!isfinite(targets->clear_depth) || targets->clear_depth < 0 || targets->clear_depth > 1)
+            if (targets->depth_load == WGPULoadOp_Clear &&
+                (!isfinite(targets->clear_depth) || targets->clear_depth < 0 || targets->clear_depth > 1))
                 return DOE_RESOURCE_RANGE;
         }
         if (resource_format_aspect(format, WGPUTextureAspect_StencilOnly)) {
