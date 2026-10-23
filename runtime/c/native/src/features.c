@@ -57,7 +57,8 @@ uint32_t native_adapter_features(const native_backend *backend)
         DOE_VK_FORMAT_BC3_RGBA_SRGB, DOE_VK_FORMAT_BC4_R_UNORM, DOE_VK_FORMAT_BC4_R_SNORM,
         DOE_VK_FORMAT_BC5_RG_UNORM, DOE_VK_FORMAT_BC5_RG_SNORM, DOE_VK_FORMAT_BC6H_RGB_UFLOAT,
         DOE_VK_FORMAT_BC6H_RGB_FLOAT, DOE_VK_FORMAT_BC7_RGBA_UNORM, DOE_VK_FORMAT_BC7_RGBA_SRGB};
-    uint32_t features = 0;
+    /* No compatibility mode: every adapter is a core adapter. */
+    uint32_t features = NATIVE_FEATURE(WGPUFeatureName_CoreFeaturesAndLimits);
     if (native_timestamp_supported(caps)) features |= NATIVE_FEATURE(WGPUFeatureName_TimestampQuery);
     if (formats_offer(context, float32, 3, filterable)) features |= NATIVE_FEATURE(WGPUFeatureName_Float32Filterable);
     if (formats_offer(context, float32, 3, blendable)) features |= NATIVE_FEATURE(WGPUFeatureName_Float32Blendable);
@@ -81,10 +82,12 @@ uint32_t native_adapter_features(const native_backend *backend)
 bool native_requested_features(const native_backend *backend,
     const WGPUDeviceDescriptor *descriptor, uint32_t *enabled)
 {
-    *enabled = 0;
+    /* A core device always has core-features-and-limits, requested or not. */
+    const uint32_t core = backend->kind == WGPUBackendType_Vulkan ? NATIVE_FEATURE(WGPUFeatureName_CoreFeaturesAndLimits) : 0;
+    *enabled = core;
     if (!descriptor || !descriptor->requiredFeatureCount) return true;
     if (!descriptor->requiredFeatures) return false;
-    uint32_t offered = native_adapter_features(backend), requested = 0;
+    uint32_t offered = native_adapter_features(backend), requested = core;
     for (size_t i = 0; i < descriptor->requiredFeatureCount; ++i) {
         WGPUFeatureName name = descriptor->requiredFeatures[i];
         if (name >= 32 || !(offered & NATIVE_FEATURE(name))) return false;

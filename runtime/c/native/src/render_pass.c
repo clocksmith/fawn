@@ -71,17 +71,14 @@ WGPURenderPassEncoder wgpuCommandEncoderBeginRenderPass(WGPUCommandEncoder handl
     }
     doe_resource_render_pass *pass = NULL;
     native_lock(device);
+    const bool ended = doe_resource_encoder_ended(encoder);
     doe_resource_status status = valid ? doe_resource_encoder_begin_render_with_timestamps(encoder,
         &targets, writes ? &timestamps : NULL, &pass) : doe_resource_encoder_invalidate(encoder, rejected);
-    native_unlock(device);
     /* A rejected begin still returns a pass (WebGPU invalid pass): it records
-     * nothing and its commands, End and the encoder's Finish report the error. */
-    if (status != DOE_RESOURCE_OK) {
-        native_lock(device);
-        pass = doe_resource_render_pass_rejected(encoder);
-        native_unlock(device);
-        native_error(device, native_resource_error(status), "render pass descriptor invalid or unsupported");
-    }
+     * nothing, and the encoder's Finish reports the rejection. */
+    if (status != DOE_RESOURCE_OK) pass = doe_resource_render_pass_rejected(encoder);
+    native_unlock(device);
+    native_encoding_error(device, ended, status, "render pass descriptor invalid or unsupported");
     if (pass && descriptor) native_label(device, pass, descriptor->label);
     return (WGPURenderPassEncoder)pass;
 }
@@ -107,9 +104,10 @@ void wgpuRenderPassEncoderSetPipeline(WGPURenderPassEncoder handle, WGPURenderPi
     native_device *device = doe_resource_render_pass_device(pass);
     if (!device) return;
     native_lock(device);
+    const bool ended = doe_resource_render_pass_ended(pass);
     doe_resource_status status = doe_resource_render_pass_set_pipeline(pass, (doe_resource_render_pipeline *)pipeline);
     native_unlock(device);
-    if (status != DOE_RESOURCE_OK) native_error(device, native_resource_error(status), "render pipeline binding failed");
+    native_encoding_error(device, ended, status, "render pipeline binding failed");
 }
 void wgpuRenderPassEncoderSetBindGroup(WGPURenderPassEncoder handle, uint32_t index,
     WGPUBindGroup group, size_t count, const uint32_t *offsets)
@@ -119,9 +117,10 @@ void wgpuRenderPassEncoderSetBindGroup(WGPURenderPassEncoder handle, uint32_t in
     if (!device) return;
     doe_resource_dispatch_group binding = {(doe_resource_bind_group *)group,offsets,count};
     native_lock(device);
+    const bool ended = doe_resource_render_pass_ended(pass);
     doe_resource_status status = doe_resource_render_pass_set_group(pass,index,&binding);
     native_unlock(device);
-    if (status != DOE_RESOURCE_OK) native_error(device, native_resource_error(status), "render bind group binding failed");
+    native_encoding_error(device, ended, status, "render bind group binding failed");
 }
 void wgpuRenderPassEncoderSetVertexBuffer(WGPURenderPassEncoder handle, uint32_t slot,
     WGPUBuffer buffer, uint64_t offset, uint64_t size)
@@ -130,9 +129,10 @@ void wgpuRenderPassEncoderSetVertexBuffer(WGPURenderPassEncoder handle, uint32_t
     native_device *device = doe_resource_render_pass_device(pass);
     if (!device) return;
     native_lock(device);
+    const bool ended = doe_resource_render_pass_ended(pass);
     doe_resource_status status = doe_resource_render_pass_set_vertex(pass,slot,(doe_resource_buffer *)buffer,offset,size);
     native_unlock(device);
-    if (status != DOE_RESOURCE_OK) native_error(device, native_resource_error(status), "render vertex binding failed");
+    native_encoding_error(device, ended, status, "render vertex binding failed");
 }
 void wgpuRenderPassEncoderSetIndexBuffer(WGPURenderPassEncoder handle, WGPUBuffer buffer,
     WGPUIndexFormat format, uint64_t offset, uint64_t size)
@@ -141,9 +141,10 @@ void wgpuRenderPassEncoderSetIndexBuffer(WGPURenderPassEncoder handle, WGPUBuffe
     native_device *device = doe_resource_render_pass_device(pass);
     if (!device) return;
     native_lock(device);
+    const bool ended = doe_resource_render_pass_ended(pass);
     doe_resource_status status = doe_resource_render_pass_set_index(pass,(doe_resource_buffer *)buffer,format,offset,size);
     native_unlock(device);
-    if (status != DOE_RESOURCE_OK) native_error(device, native_resource_error(status), "render index binding failed");
+    native_encoding_error(device, ended, status, "render index binding failed");
 }
 void wgpuRenderPassEncoderSetViewport(WGPURenderPassEncoder handle, float x, float y, float width,
     float height, float minimum, float maximum)
@@ -152,6 +153,7 @@ void wgpuRenderPassEncoderSetViewport(WGPURenderPassEncoder handle, float x, flo
     native_device *device = doe_resource_render_pass_device(pass);
     if (!device) return;
     native_lock(device);
+    const bool ended = doe_resource_render_pass_ended(pass);
     doe_resource_render_state state = *doe_resource_render_pass_state(pass);
     state.viewport[0] = x;
     state.viewport[1] = y;
@@ -161,7 +163,7 @@ void wgpuRenderPassEncoderSetViewport(WGPURenderPassEncoder handle, float x, flo
     state.viewport[5] = maximum;
     doe_resource_status status = doe_resource_render_pass_set_state(pass,&state);
     native_unlock(device);
-    if (status != DOE_RESOURCE_OK) native_error(device, native_resource_error(status), "render viewport failed");
+    native_encoding_error(device, ended, status, "render viewport failed");
 }
 void wgpuRenderPassEncoderSetScissorRect(WGPURenderPassEncoder handle, uint32_t x, uint32_t y, uint32_t width, uint32_t height)
 {
@@ -169,6 +171,7 @@ void wgpuRenderPassEncoderSetScissorRect(WGPURenderPassEncoder handle, uint32_t 
     native_device *device = doe_resource_render_pass_device(pass);
     if (!device) return;
     native_lock(device);
+    const bool ended = doe_resource_render_pass_ended(pass);
     doe_resource_render_state state = *doe_resource_render_pass_state(pass);
     state.scissor[0] = x;
     state.scissor[1] = y;
@@ -176,7 +179,7 @@ void wgpuRenderPassEncoderSetScissorRect(WGPURenderPassEncoder handle, uint32_t 
     state.scissor[3] = height;
     doe_resource_status status = doe_resource_render_pass_set_state(pass,&state);
     native_unlock(device);
-    if (status != DOE_RESOURCE_OK) native_error(device, native_resource_error(status), "render scissor failed");
+    native_encoding_error(device, ended, status, "render scissor failed");
 }
 void wgpuRenderPassEncoderSetBlendConstant(WGPURenderPassEncoder handle, const WGPUColor *color)
 {
@@ -184,6 +187,7 @@ void wgpuRenderPassEncoderSetBlendConstant(WGPURenderPassEncoder handle, const W
     native_device *device = doe_resource_render_pass_device(pass);
     if (!device) return;
     native_lock(device);
+    const bool ended = doe_resource_render_pass_ended(pass);
     doe_resource_render_state state = *doe_resource_render_pass_state(pass);
     if (color) {
         state.blend[0] = color->r;
@@ -194,7 +198,7 @@ void wgpuRenderPassEncoderSetBlendConstant(WGPURenderPassEncoder handle, const W
     doe_resource_status status = color ? doe_resource_render_pass_set_state(pass,&state) :
         doe_resource_render_pass_set_state(pass,NULL);
     native_unlock(device);
-    if (status != DOE_RESOURCE_OK) native_error(device, native_resource_error(status), "render blend constant failed");
+    native_encoding_error(device, ended, status, "render blend constant failed");
 }
 void wgpuRenderPassEncoderSetStencilReference(WGPURenderPassEncoder handle, uint32_t reference)
 {
@@ -202,11 +206,12 @@ void wgpuRenderPassEncoderSetStencilReference(WGPURenderPassEncoder handle, uint
     native_device *device = doe_resource_render_pass_device(pass);
     if (!device) return;
     native_lock(device);
+    const bool ended = doe_resource_render_pass_ended(pass);
     doe_resource_render_state state = *doe_resource_render_pass_state(pass);
     state.stencil_reference = reference;
     doe_resource_status status = doe_resource_render_pass_set_state(pass,&state);
     native_unlock(device);
-    if (status != DOE_RESOURCE_OK) native_error(device, native_resource_error(status), "render stencil reference failed");
+    native_encoding_error(device, ended, status, "render stencil reference failed");
 }
 void wgpuRenderPassEncoderDraw(WGPURenderPassEncoder handle, uint32_t count,
     uint32_t instances, uint32_t first, uint32_t first_instance)
@@ -215,9 +220,10 @@ void wgpuRenderPassEncoderDraw(WGPURenderPassEncoder handle, uint32_t count,
     native_device *device = doe_resource_render_pass_device(pass);
     if (!device) return;
     native_lock(device);
+    const bool ended = doe_resource_render_pass_ended(pass);
     doe_resource_status status = doe_resource_render_pass_draw(pass,count,instances,first,first_instance);
     native_unlock(device);
-    if (status != DOE_RESOURCE_OK) native_error(device, native_resource_error(status), "render draw failed");
+    native_encoding_error(device, ended, status, "render draw failed");
 }
 void wgpuRenderPassEncoderDrawIndexed(WGPURenderPassEncoder handle, uint32_t count,
     uint32_t instances, uint32_t first_index, int32_t base_vertex, uint32_t first_instance)
@@ -226,9 +232,10 @@ void wgpuRenderPassEncoderDrawIndexed(WGPURenderPassEncoder handle, uint32_t cou
     native_device *device = doe_resource_render_pass_device(pass);
     if (!device) return;
     native_lock(device);
+    const bool ended = doe_resource_render_pass_ended(pass);
     doe_resource_status status = doe_resource_render_pass_draw_indexed(pass,count,instances,first_index,base_vertex,first_instance);
     native_unlock(device);
-    if (status != DOE_RESOURCE_OK) native_error(device, native_resource_error(status), "render indexed draw failed");
+    native_encoding_error(device, ended, status, "render indexed draw failed");
 }
 void wgpuRenderPassEncoderBeginOcclusionQuery(WGPURenderPassEncoder handle, uint32_t index)
 {
@@ -236,9 +243,10 @@ void wgpuRenderPassEncoderBeginOcclusionQuery(WGPURenderPassEncoder handle, uint
     native_device *device = doe_resource_render_pass_device(pass);
     if (!device) return;
     native_lock(device);
+    const bool ended = doe_resource_render_pass_ended(pass);
     doe_resource_status status = doe_resource_render_pass_begin_occlusion(pass,index);
     native_unlock(device);
-    if (status != DOE_RESOURCE_OK) native_error(device, native_resource_error(status), "occlusion begin failed");
+    native_encoding_error(device, ended, status, "occlusion begin failed");
 }
 void wgpuRenderPassEncoderEndOcclusionQuery(WGPURenderPassEncoder handle)
 {
@@ -246,9 +254,10 @@ void wgpuRenderPassEncoderEndOcclusionQuery(WGPURenderPassEncoder handle)
     native_device *device = doe_resource_render_pass_device(pass);
     if (!device) return;
     native_lock(device);
+    const bool ended = doe_resource_render_pass_ended(pass);
     doe_resource_status status = doe_resource_render_pass_end_occlusion(pass);
     native_unlock(device);
-    if (status != DOE_RESOURCE_OK) native_error(device, native_resource_error(status), "occlusion end failed");
+    native_encoding_error(device, ended, status, "occlusion end failed");
 }
 void wgpuRenderPassEncoderEnd(WGPURenderPassEncoder handle)
 {
@@ -256,7 +265,8 @@ void wgpuRenderPassEncoderEnd(WGPURenderPassEncoder handle)
     native_device *device = doe_resource_render_pass_device(pass);
     if (!device) return;
     native_lock(device);
+    const bool ended = doe_resource_render_pass_ended(pass);
     doe_resource_status status = doe_resource_render_pass_end(pass);
     native_unlock(device);
-    if (status != DOE_RESOURCE_OK) native_error(device, native_resource_error(status), "render pass end failed");
+    native_encoding_error(device, ended, status, "render pass end failed");
 }

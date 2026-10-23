@@ -132,6 +132,11 @@ doe_vk_status native_device_status(native_device *device);
 void native_lock(native_device *device);
 void native_unlock(native_device *device);
 void native_error(native_device *device, WGPUErrorType type, const char *message);
+/* The WebGPU encoding rule: a rejected encoder or pass command only invalidates
+ * the encoder, and Finish reports that once; a command on an encoder or pass
+ * that was already ended (sampled under the device lock before the call) is
+ * reported at the call. */
+void native_encoding_error(native_device *device, bool ended, doe_resource_status status, const char *message);
 WGPUErrorType native_resource_error(doe_resource_status status);
 WGPUErrorType native_backend_error(doe_vk_status status);
 WGPUErrorType native_label_error(doe_label_status status);

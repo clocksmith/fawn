@@ -220,7 +220,9 @@ static void disabled_controls(state *s)
 {
     WGPUSupportedFeatures listed = WGPU_SUPPORTED_FEATURES_INIT;
     wgpuDeviceGetFeatures(s->device,&listed);
-    assert(listed.featureCount == 0);
+    /* A core device lists only core-features-and-limits, enabled automatically. */
+    assert(listed.featureCount == 1 && listed.features[0] == WGPUFeatureName_CoreFeaturesAndLimits);
+    assert(wgpuDeviceHasFeature(s->device,WGPUFeatureName_CoreFeaturesAndLimits));
     wgpuSupportedFeaturesFreeMembers(listed);
     assert(!wgpuDeviceHasFeature(s->device,WGPUFeatureName_Float32Filterable) &&
         !wgpuDeviceHasFeature(s->device,WGPUFeatureName_Float32Blendable) &&
@@ -474,7 +476,7 @@ int main(void)
     consumer_init_features(&enabled,offered,count);
     WGPUSupportedFeatures device_features = WGPU_SUPPORTED_FEATURES_INIT;
     wgpuDeviceGetFeatures(enabled.device,&device_features);
-    assert(device_features.featureCount == count);
+    assert(device_features.featureCount == count + 1); /* plus core-features-and-limits */
     wgpuSupportedFeaturesFreeMembers(device_features);
     for (size_t i = 0; i < count; ++i) {
         assert(wgpuDeviceHasFeature(enabled.device,offered[i]));

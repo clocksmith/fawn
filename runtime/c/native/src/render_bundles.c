@@ -151,9 +151,10 @@ void wgpuRenderPassEncoderExecuteBundles(WGPURenderPassEncoder handle, size_t co
         else for (size_t i = 0; i < count; ++i) converted[i] = (doe_resource_render_bundle *)bundles[i];
     }
     native_lock(device);
+    const bool ended = doe_resource_render_pass_ended(pass);
     if (status == DOE_RESOURCE_OK) status = doe_resource_render_pass_execute_bundles(pass,converted,count);
     else status = doe_resource_render_pass_invalidate(pass,status);
     native_unlock(device);
     if (converted) native_deallocate(NULL,NULL,converted,count*sizeof(*converted),_Alignof(doe_resource_render_bundle *));
-    if (status != DOE_RESOURCE_OK) native_error(device, native_resource_error(status), "bundle execution recording failed");
+    native_encoding_error(device, ended, status, "bundle execution recording failed");
 }

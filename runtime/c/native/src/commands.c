@@ -36,6 +36,7 @@ WGPUComputePassEncoder wgpuCommandEncoderBeginComputePass(WGPUCommandEncoder han
     if (!device) return NULL;
     doe_resource_compute_pass *pass = NULL;
     native_lock(device);
+    const bool ended = doe_resource_encoder_ended(encoder);
     const WGPUPassTimestampWrites *writes = descriptor ? descriptor->timestampWrites : NULL;
     doe_resource_pass_timestamps timestamps = {0};
     if (writes) timestamps = (doe_resource_pass_timestamps){(doe_resource_query_set *)writes->querySet,
@@ -47,7 +48,7 @@ WGPUComputePassEncoder wgpuCommandEncoderBeginComputePass(WGPUCommandEncoder han
     /* A rejected begin still returns a pass (WebGPU invalid pass). */
     if (status != DOE_RESOURCE_OK) pass = doe_resource_compute_pass_rejected(encoder);
     native_unlock(device);
-    if (status != DOE_RESOURCE_OK) native_error(device, native_resource_error(status), "compute pass begin failed");
+    native_encoding_error(device, ended, status, "compute pass begin failed");
     if (pass && descriptor) native_label(device, pass, descriptor->label);
     return (WGPUComputePassEncoder)pass;
 }
@@ -69,9 +70,10 @@ void wgpuComputePassEncoderSetPipeline(WGPUComputePassEncoder handle, WGPUComput
     native_device *device = doe_resource_compute_pass_device(pass);
     if (!device) return;
     native_lock(device);
+    const bool ended = doe_resource_compute_pass_ended(pass);
     doe_resource_status status = doe_resource_compute_pass_set_pipeline(pass, (doe_resource_pipeline *)pipeline);
     native_unlock(device);
-    if (status != DOE_RESOURCE_OK) native_error(device, native_resource_error(status), "compute pipeline binding failed");
+    native_encoding_error(device, ended, status, "compute pipeline binding failed");
 }
 void wgpuComputePassEncoderSetBindGroup(WGPUComputePassEncoder handle, uint32_t index,
     WGPUBindGroup group, size_t count, const uint32_t *offsets)
@@ -81,9 +83,10 @@ void wgpuComputePassEncoderSetBindGroup(WGPUComputePassEncoder handle, uint32_t 
     if (!device) return;
     doe_resource_dispatch_group binding = {(doe_resource_bind_group *)group, offsets, count};
     native_lock(device);
+    const bool ended = doe_resource_compute_pass_ended(pass);
     doe_resource_status status = doe_resource_compute_pass_set_group(pass, index, &binding);
     native_unlock(device);
-    if (status != DOE_RESOURCE_OK) native_error(device, native_resource_error(status), "compute bind group binding failed");
+    native_encoding_error(device, ended, status, "compute bind group binding failed");
 }
 void wgpuComputePassEncoderDispatchWorkgroups(WGPUComputePassEncoder handle, uint32_t x, uint32_t y, uint32_t z)
 {
@@ -92,13 +95,14 @@ void wgpuComputePassEncoderDispatchWorkgroups(WGPUComputePassEncoder handle, uin
     if (!device) return;
     const uint32_t bound = device->backend.limits.maxComputeWorkgroupsPerDimension;
     native_lock(device);
+    const bool ended = doe_resource_compute_pass_ended(pass);
     /* https://gpuweb.github.io/gpuweb/#dom-gpucomputepassencoder-dispatchworkgroups:
      * counts above the device limit invalidate the pass at encoding time. */
     doe_resource_status status = x > bound || y > bound || z > bound ?
         doe_resource_compute_pass_invalidate(pass, DOE_RESOURCE_RANGE) :
         doe_resource_compute_pass_dispatch(pass, x, y, z);
     native_unlock(device);
-    if (status != DOE_RESOURCE_OK) native_error(device, native_resource_error(status), "compute dispatch recording failed");
+    native_encoding_error(device, ended, status, "compute dispatch recording failed");
 }
 void wgpuComputePassEncoderEnd(WGPUComputePassEncoder handle)
 {
@@ -106,9 +110,10 @@ void wgpuComputePassEncoderEnd(WGPUComputePassEncoder handle)
     native_device *device = doe_resource_compute_pass_device(pass);
     if (!device) return;
     native_lock(device);
+    const bool ended = doe_resource_compute_pass_ended(pass);
     doe_resource_status status = doe_resource_compute_pass_end(pass);
     native_unlock(device);
-    if (status != DOE_RESOURCE_OK) native_error(device, native_resource_error(status), "compute pass end failed");
+    native_encoding_error(device, ended, status, "compute pass end failed");
 }
 void wgpuCommandEncoderCopyBufferToBuffer(WGPUCommandEncoder handle, WGPUBuffer source,
     uint64_t source_offset, WGPUBuffer destination, uint64_t destination_offset, uint64_t size)
@@ -119,9 +124,10 @@ void wgpuCommandEncoderCopyBufferToBuffer(WGPUCommandEncoder handle, WGPUBuffer 
     doe_resource_buffer_copy copy = {(doe_resource_buffer *)source, (doe_resource_buffer *)destination,
         source_offset, destination_offset, size};
     native_lock(device);
+    const bool ended = doe_resource_encoder_ended(encoder);
     doe_resource_status status = doe_resource_encoder_copy_buffer(encoder, &copy, DOE_RESOURCE_DISTINCT_BUFFERS);
     native_unlock(device);
-    if (status != DOE_RESOURCE_OK) native_error(device, native_resource_error(status), "buffer copy recording failed");
+    native_encoding_error(device, ended, status, "buffer copy recording failed");
 }
 void wgpuCommandEncoderClearBuffer(WGPUCommandEncoder handle, WGPUBuffer buffer, uint64_t offset, uint64_t size)
 {
@@ -129,9 +135,10 @@ void wgpuCommandEncoderClearBuffer(WGPUCommandEncoder handle, WGPUBuffer buffer,
     native_device *device = doe_resource_encoder_device(encoder);
     if (!device) return;
     native_lock(device);
+    const bool ended = doe_resource_encoder_ended(encoder);
     doe_resource_status status = doe_resource_encoder_clear_buffer(encoder, (doe_resource_buffer *)buffer, offset, size);
     native_unlock(device);
-    if (status != DOE_RESOURCE_OK) native_error(device, native_resource_error(status), "buffer clear recording failed");
+    native_encoding_error(device, ended, status, "buffer clear recording failed");
 }
 WGPUCommandBuffer wgpuCommandEncoderFinish(WGPUCommandEncoder handle, const WGPUCommandBufferDescriptor *descriptor)
 {

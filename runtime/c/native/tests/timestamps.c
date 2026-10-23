@@ -174,7 +174,7 @@ int main(void)
     assert(!query_set(&s,2));
     expect_validation(&s);
     wgpuDeviceGetFeatures(s.device,&features);
-    assert(!features.featureCount);
+    assert(features.featureCount == 1 && features.features[0] == WGPUFeatureName_CoreFeaturesAndLimits);
     wgpuSupportedFeaturesFreeMembers(features);
     wgpuDeviceRelease(s.device);
     WGPUFeatureName required = WGPUFeatureName_TimestampQuery;
@@ -183,7 +183,9 @@ int main(void)
     assert(wgpuAdapterRequestDevice(s.adapter,&descriptor,requested).id && s.device);
     assert(wgpuDeviceHasFeature(s.device,required));
     wgpuDeviceGetFeatures(s.device,&features);
-    assert(features.featureCount == 1 && features.features[0] == required);
+    /* Listed in ascending enum order after the automatic core feature. */
+    assert(features.featureCount == 2 && features.features[0] == WGPUFeatureName_CoreFeaturesAndLimits &&
+        features.features[1] == required);
     wgpuSupportedFeaturesFreeMembers(features);
     s.queue = wgpuDeviceGetQueue(s.device);
     invalid_ranges(&s);
