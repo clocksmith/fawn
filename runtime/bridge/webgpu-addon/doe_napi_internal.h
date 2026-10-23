@@ -75,6 +75,7 @@ typedef uint32_t WGPUBool;
 #define DOE_DEFAULT_TIMEOUT_NS 2000000000ULL
 #define DOE_WAIT_SLICE_NS 1000ULL
 #define DOE_ERROR_BUF_CAP 512
+#define DOE_MAX_COLOR_TARGETS 8 /* Addon capacity; the Zig and C providers report maxColorAttachments 8. */
 #define WGPU_FEATURE_SHADER_F16 0x0000000B
 #define WGPU_CALLBACK_MODE_WAIT_ANY_ONLY 1
 #define WGPU_CALLBACK_MODE_ALLOW_SPONTANEOUS 3

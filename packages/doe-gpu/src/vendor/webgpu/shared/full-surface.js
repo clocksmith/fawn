@@ -658,6 +658,44 @@ function createFullSurfaceClasses({
     return target;
   }
 
+  // A render pipeline may omit the fragment stage (depth/stencil only) and may
+  // leave color target slots null. fragmentTarget keeps the first non-null
+  // target for backends that carry a single target.
+  function normalizeFragmentStage(renderDescriptor, features, path) {
+    if (renderDescriptor.fragment === undefined || renderDescriptor.fragment === null) {
+      if (!renderDescriptor.depthStencil) {
+        failValidation(path, 'descriptor needs a fragment stage or a depthStencil state');
+      }
+      return { fragmentModule: null, fragmentEntryPoint: null, fragmentConstants: null, fragmentTargets: [], fragmentTarget: null };
+    }
+    const fragment = assertObject(renderDescriptor.fragment, path, 'descriptor.fragment');
+    const fragmentModule = assertLiveResource(fragment.module, path, 'GPUShaderModule');
+    const targets = assertArray(fragment.targets ?? [], path, 'descriptor.fragment.targets').map((target, index) => {
+      if (target === null || target === undefined) return null;
+      const label = `descriptor.fragment.targets[${index}]`;
+      const object = assertObject(target, path, label);
+      return {
+        ...object,
+        format: normalizeTextureViewDescriptor(
+          { format: assertNonEmptyString(object.format, path, `${label}.format`) },
+          null,
+          features,
+          path,
+        ).format,
+      };
+    });
+    if (!targets.some(Boolean) && !renderDescriptor.depthStencil) {
+      failValidation(path, 'descriptor.fragment.targets needs a color target when there is no depthStencil state');
+    }
+    return {
+      fragmentModule,
+      fragmentEntryPoint: inferShaderEntryPoint(fragment.module, fragment.entryPoint, 'fragment', path, 'descriptor.fragment.entryPoint'),
+      fragmentConstants: fragment.constants ?? null,
+      fragmentTargets: targets,
+      fragmentTarget: targets.find(Boolean) ?? null,
+    };
+  }
+
   function renderAutoLayoutEntriesByGroup(renderDescriptor, path) {
     if (typeof backend.requireAutoLayoutEntriesFromNative !== 'function') {
       return null;
@@ -671,11 +709,13 @@ function createFullSurfaceClasses({
       globals.GPUShaderStage.VERTEX,
       path,
     );
-    const fragmentEntries = backend.requireAutoLayoutEntriesFromNative(
-      renderDescriptor.fragmentModule,
-      globals.GPUShaderStage.FRAGMENT,
-      path,
-    );
+    const fragmentEntries = renderDescriptor.fragmentModule
+      ? backend.requireAutoLayoutEntriesFromNative(
+        renderDescriptor.fragmentModule,
+        globals.GPUShaderStage.FRAGMENT,
+        path,
+      )
+      : null;
     if (!vertexEntries && !fragmentEntries) {
       return null;
     }
@@ -1626,13 +1666,8 @@ function createFullSurfaceClasses({
       try {
         const renderDescriptor = assertObject(descriptor, 'GPUDevice.createRenderPipeline', 'descriptor');
         const vertex = assertObject(renderDescriptor.vertex, 'GPUDevice.createRenderPipeline', 'descriptor.vertex');
-        const fragment = assertObject(renderDescriptor.fragment, 'GPUDevice.createRenderPipeline', 'descriptor.fragment');
         const vertexModule = assertLiveResource(vertex.module, 'GPUDevice.createRenderPipeline', 'GPUShaderModule');
-        const fragmentModule = assertLiveResource(fragment.module, 'GPUDevice.createRenderPipeline', 'GPUShaderModule');
-        const targets = assertArray(fragment.targets ?? [], 'GPUDevice.createRenderPipeline', 'descriptor.fragment.targets');
-        if (targets.length === 0) {
-          failValidation('GPUDevice.createRenderPipeline', 'descriptor.fragment.targets must contain at least one target');
-        }
+        const fragmentStage = normalizeFragmentStage(renderDescriptor, this.features, 'GPUDevice.createRenderPipeline');
         const vertexBuffers = vertex.buffers === undefined
           ? []
           : normalizeVertexBufferLayouts(vertex.buffers, 'GPUDevice.createRenderPipeline');
@@ -1648,18 +1683,7 @@ function createFullSurfaceClasses({
           vertexEntryPoint: inferShaderEntryPoint(vertex.module, vertex.entryPoint, 'vertex', 'GPUDevice.createRenderPipeline', 'descriptor.vertex.entryPoint'),
           vertexBuffers,
           vertexConstants: vertex.constants ?? null,
-          fragmentModule,
-          fragmentEntryPoint: inferShaderEntryPoint(fragment.module, fragment.entryPoint, 'fragment', 'GPUDevice.createRenderPipeline', 'descriptor.fragment.entryPoint'),
-          fragmentConstants: fragment.constants ?? null,
-          fragmentTarget: {
-            ...targets[0],
-            format: normalizeTextureViewDescriptor(
-              { format: assertNonEmptyString(targets[0].format, 'GPUDevice.createRenderPipeline', 'descriptor.fragment.targets[0].format') },
-              null,
-              this.features,
-              'GPUDevice.createRenderPipeline',
-            ).format,
-          },
+          ...fragmentStage,
           primitive: normalizePrimitiveState(renderDescriptor.primitive ?? null, 'GPUDevice.createRenderPipeline'),
           depthStencil: normalizeDepthStencilState(renderDescriptor.depthStencil ?? null, this.features, 'GPUDevice.createRenderPipeline'),
           multisample: renderDescriptor.multisample ?? null,
@@ -1670,7 +1694,7 @@ function createFullSurfaceClasses({
           : renderAutoLayoutEntriesByGroup({
             layout: renderDescriptor.layout,
             vertexModule: vertex.module,
-            fragmentModule: fragment.module,
+            fragmentModule: renderDescriptor.fragment?.module ?? null,
           }, 'GPUDevice.createRenderPipeline');
         const rp = new DoeGPURenderPipeline(native, this, layout, autoLayoutEntriesByGroup);
         rp.label = renderDescriptor.label ?? '';
@@ -1684,13 +1708,8 @@ function createFullSurfaceClasses({
       try {
         const renderDescriptor = assertObject(descriptor, 'GPUDevice.createRenderPipelineAsync', 'descriptor');
         const vertex = assertObject(renderDescriptor.vertex, 'GPUDevice.createRenderPipelineAsync', 'descriptor.vertex');
-        const fragment = assertObject(renderDescriptor.fragment, 'GPUDevice.createRenderPipelineAsync', 'descriptor.fragment');
         const vertexModule = assertLiveResource(vertex.module, 'GPUDevice.createRenderPipelineAsync', 'GPUShaderModule');
-        const fragmentModule = assertLiveResource(fragment.module, 'GPUDevice.createRenderPipelineAsync', 'GPUShaderModule');
-        const targets = assertArray(fragment.targets ?? [], 'GPUDevice.createRenderPipelineAsync', 'descriptor.fragment.targets');
-        if (targets.length === 0) {
-          failValidation('GPUDevice.createRenderPipelineAsync', 'descriptor.fragment.targets must contain at least one target');
-        }
+        const fragmentStage = normalizeFragmentStage(renderDescriptor, this.features, 'GPUDevice.createRenderPipelineAsync');
         const vertexBuffers = vertex.buffers === undefined
           ? []
           : normalizeVertexBufferLayouts(vertex.buffers, 'GPUDevice.createRenderPipelineAsync');
@@ -1706,18 +1725,7 @@ function createFullSurfaceClasses({
           vertexEntryPoint: inferShaderEntryPoint(vertex.module, vertex.entryPoint, 'vertex', 'GPUDevice.createRenderPipelineAsync', 'descriptor.vertex.entryPoint'),
           vertexBuffers,
           vertexConstants: vertex.constants ?? null,
-          fragmentModule,
-          fragmentEntryPoint: inferShaderEntryPoint(fragment.module, fragment.entryPoint, 'fragment', 'GPUDevice.createRenderPipelineAsync', 'descriptor.fragment.entryPoint'),
-          fragmentConstants: fragment.constants ?? null,
-          fragmentTarget: {
-            ...targets[0],
-            format: normalizeTextureViewDescriptor(
-              { format: assertNonEmptyString(targets[0].format, 'GPUDevice.createRenderPipelineAsync', 'descriptor.fragment.targets[0].format') },
-              null,
-              this.features,
-              'GPUDevice.createRenderPipelineAsync',
-            ).format,
-          },
+          ...fragmentStage,
           primitive: normalizePrimitiveState(renderDescriptor.primitive ?? null, 'GPUDevice.createRenderPipelineAsync'),
           depthStencil: normalizeDepthStencilState(renderDescriptor.depthStencil ?? null, this.features, 'GPUDevice.createRenderPipelineAsync'),
           multisample: renderDescriptor.multisample ?? null,
@@ -1730,7 +1738,7 @@ function createFullSurfaceClasses({
           : renderAutoLayoutEntriesByGroup({
             layout: renderDescriptor.layout,
             vertexModule: vertex.module,
-            fragmentModule: fragment.module,
+            fragmentModule: renderDescriptor.fragment?.module ?? null,
           }, 'GPUDevice.createRenderPipelineAsync');
         const rp = new DoeGPURenderPipeline(native, this, layout, autoLayoutEntriesByGroup);
         rp.label = renderDescriptor.label ?? '';

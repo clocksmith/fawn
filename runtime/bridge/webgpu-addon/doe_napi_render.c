@@ -90,23 +90,28 @@ napi_value doe_create_render_pipeline(napi_env env, napi_callback_info info) {
     if (descriptor_type != napi_object) NAPI_THROW(env, "createRenderPipeline requires a descriptor object");
     if (prop_type(env, _args[1], "vertex") != napi_object)
         NAPI_THROW(env, "createRenderPipeline requires descriptor.vertex");
-    if (prop_type(env, _args[1], "fragment") != napi_object)
-        NAPI_THROW(env, "createRenderPipeline requires descriptor.fragment");
+    /* No fragment stage is a depth/stencil-only pipeline; null target slots
+     * are color attachments the pipeline does not write. */
+    const bool has_fragment = prop_type(env, _args[1], "fragment") == napi_object;
 
     napi_value vertex   = get_prop(env, _args[1], "vertex");
-    napi_value fragment = get_prop(env, _args[1], "fragment");
-    napi_value targets  = get_prop(env, fragment, "targets");
-    bool is_targets_array = false;
-    napi_is_array(env, targets, &is_targets_array);
-    if (!is_targets_array) NAPI_THROW(env, "createRenderPipeline requires descriptor.fragment.targets");
-    uint32_t target_count = 0; napi_get_array_length(env, targets, &target_count);
-    if (target_count == 0) NAPI_THROW(env, "createRenderPipeline requires at least one fragment target");
-    if (target_count > 1) NAPI_THROW(env, "createRenderPipeline currently supports one color target on this package surface");
+    napi_value fragment = has_fragment ? get_prop(env, _args[1], "fragment") : NULL;
+    napi_value targets  = NULL;
+    uint32_t target_count = 0;
+    if (has_fragment) {
+        targets = get_prop(env, fragment, "targets");
+        bool is_targets_array = false;
+        napi_is_array(env, targets, &is_targets_array);
+        if (!is_targets_array) NAPI_THROW(env, "createRenderPipeline requires descriptor.fragment.targets");
+        napi_get_array_length(env, targets, &target_count);
+        if (target_count > DOE_MAX_COLOR_TARGETS)
+            NAPI_THROW(env, "createRenderPipeline: descriptor.fragment.targets exceeds the color attachment limit");
+    }
 
     WGPUShaderModule vertex_module   = unwrap_ptr(env, get_prop(env, vertex, "module"));
-    WGPUShaderModule fragment_module = unwrap_ptr(env, get_prop(env, fragment, "module"));
+    WGPUShaderModule fragment_module = has_fragment ? unwrap_ptr(env, get_prop(env, fragment, "module")) : NULL;
     if (!vertex_module)   NAPI_THROW(env, "createRenderPipeline: descriptor.vertex.module must be a shader module");
-    if (!fragment_module) NAPI_THROW(env, "createRenderPipeline: descriptor.fragment.module must be a shader module");
+    if (has_fragment && !fragment_module) NAPI_THROW(env, "createRenderPipeline: descriptor.fragment.module must be a shader module");
 
     size_t vertex_entry_len = 0, fragment_entry_len = 0;
     char* vertex_entry = has_prop(env, vertex, "entryPoint")
@@ -117,15 +122,15 @@ napi_value doe_create_render_pipeline(napi_env env, napi_callback_info info) {
         vertex_entry = (char*)malloc(vertex_entry_len + 1);
         if (vertex_entry) memcpy(vertex_entry, "main", vertex_entry_len + 1);
     }
-    char* fragment_entry = has_prop(env, fragment, "entryPoint")
-        ? dup_string_value(env, get_prop(env, fragment, "entryPoint"), &fragment_entry_len)
-        : NULL;
-    if (!has_prop(env, fragment, "entryPoint")) fragment_entry_len = 4;
-    if (!has_prop(env, fragment, "entryPoint")) {
+    char* fragment_entry = NULL;
+    if (has_fragment && has_prop(env, fragment, "entryPoint")) {
+        fragment_entry = dup_string_value(env, get_prop(env, fragment, "entryPoint"), &fragment_entry_len);
+    } else if (has_fragment) {
+        fragment_entry_len = 4;
         fragment_entry = (char*)malloc(fragment_entry_len + 1);
         if (fragment_entry) memcpy(fragment_entry, "main", fragment_entry_len + 1);
     }
-    if (!vertex_entry || !fragment_entry) {
+    if (!vertex_entry || (has_fragment && !fragment_entry)) {
         free(vertex_entry); free(fragment_entry);
         NAPI_THROW(env, "createRenderPipeline: out of memory");
     }
@@ -187,31 +192,36 @@ napi_value doe_create_render_pipeline(napi_env env, napi_callback_info info) {
         }
     }
 
-    napi_value target0; napi_get_element(env, targets, 0, &target0);
-    WGPURenderColorTargetState color_target; memset(&color_target, 0, sizeof(color_target));
-    color_target.format = texture_format_from_string(env, get_prop(env, target0, "format"));
-    color_target.writeMask = has_prop(env, target0, "writeMask")
-        ? (uint64_t)get_uint32_prop(env, target0, "writeMask") : 0xF;
-    WGPUBlendState* blend_state = NULL;
-    if (has_prop(env, target0, "blend") && prop_type(env, target0, "blend") == napi_object) {
-        napi_value blend_obj = get_prop(env, target0, "blend");
-        blend_state = (WGPUBlendState*)calloc(1, sizeof(WGPUBlendState));
-        if (!blend_state) { free(vertex_buffers); free(vertex_attributes); free(vertex_entry); free(fragment_entry); NAPI_THROW(env, "createRenderPipeline: out of memory"); }
-        if (has_prop(env, blend_obj, "color") && prop_type(env, blend_obj, "color") == napi_object)
-            blend_state->color = parse_blend_component(env, get_prop(env, blend_obj, "color"));
-        else
-            blend_state->color = (WGPUBlendComponent){ 1, 2, 1 }; /* add, one, zero */
-        if (has_prop(env, blend_obj, "alpha") && prop_type(env, blend_obj, "alpha") == napi_object)
-            blend_state->alpha = parse_blend_component(env, get_prop(env, blend_obj, "alpha"));
-        else
-            blend_state->alpha = (WGPUBlendComponent){ 1, 2, 1 }; /* add, one, zero */
-        color_target.blend = blend_state;
+    WGPURenderColorTargetState color_targets[DOE_MAX_COLOR_TARGETS];
+    WGPUBlendState blend_states[DOE_MAX_COLOR_TARGETS];
+    memset(color_targets, 0, sizeof(color_targets));
+    memset(blend_states, 0, sizeof(blend_states));
+    for (uint32_t i = 0; i < target_count; i++) {
+        napi_value target; napi_get_element(env, targets, i, &target);
+        napi_valuetype target_type; napi_typeof(env, target, &target_type);
+        if (target_type != napi_object) continue; /* Null slot: WGPUTextureFormat_Undefined. */
+        color_targets[i].format = texture_format_from_string(env, get_prop(env, target, "format"));
+        color_targets[i].writeMask = has_prop(env, target, "writeMask")
+            ? (uint64_t)get_uint32_prop(env, target, "writeMask") : 0xF;
+        if (has_prop(env, target, "blend") && prop_type(env, target, "blend") == napi_object) {
+            napi_value blend_obj = get_prop(env, target, "blend");
+            WGPUBlendState* blend_state = &blend_states[i];
+            if (has_prop(env, blend_obj, "color") && prop_type(env, blend_obj, "color") == napi_object)
+                blend_state->color = parse_blend_component(env, get_prop(env, blend_obj, "color"));
+            else
+                blend_state->color = (WGPUBlendComponent){ 1, 2, 1 }; /* add, one, zero */
+            if (has_prop(env, blend_obj, "alpha") && prop_type(env, blend_obj, "alpha") == napi_object)
+                blend_state->alpha = parse_blend_component(env, get_prop(env, blend_obj, "alpha"));
+            else
+                blend_state->alpha = (WGPUBlendComponent){ 1, 2, 1 }; /* add, one, zero */
+            color_targets[i].blend = blend_state;
+        }
     }
 
     WGPURenderFragmentState fragment_state; memset(&fragment_state, 0, sizeof(fragment_state));
     fragment_state.module = fragment_module;
     fragment_state.entryPoint.data = fragment_entry; fragment_state.entryPoint.length = fragment_entry_len;
-    fragment_state.targetCount = 1; fragment_state.targets = &color_target;
+    fragment_state.targetCount = target_count; fragment_state.targets = color_targets;
 
     char* label_str = NULL;
     size_t label_len = 0;
@@ -278,12 +288,12 @@ napi_value doe_create_render_pipeline(napi_env env, napi_callback_info info) {
 
     WGPUConstantEntry* fragment_constants = NULL;
     size_t fragment_constant_count = 0;
-    if (has_prop(env, fragment, "constants") && prop_type(env, fragment, "constants") == napi_object)
+    if (has_fragment && has_prop(env, fragment, "constants") && prop_type(env, fragment, "constants") == napi_object)
         fragment_constant_count = parse_js_override_constants(env, get_prop(env, fragment, "constants"), &fragment_constants);
     fragment_state.constantCount = fragment_constant_count;
     fragment_state.constants = fragment_constants;
 
-    desc.fragment = &fragment_state;
+    desc.fragment = has_fragment ? &fragment_state : NULL;
 
     void* scoped = doe_scoped_validation_begin(device);
     WGPURenderPipeline rp = pfn_wgpuDeviceCreateRenderPipeline(device, &desc);
@@ -291,7 +301,7 @@ napi_value doe_create_render_pipeline(napi_env env, napi_callback_info info) {
     bool scoped_validation = doe_scoped_validation_end(device, scoped, scoped_message, sizeof(scoped_message));
     free_override_constants(vertex_constants, vertex_constant_count);
     free_override_constants(fragment_constants, fragment_constant_count);
-    free(blend_state); free(depth_stencil); free(vertex_attributes); free(vertex_buffers);
+    free(depth_stencil); free(vertex_attributes); free(vertex_buffers);
     free(vertex_entry); free(fragment_entry); free(label_str);
     if (!rp && scoped_validation) {
         char full_msg[DOE_ERROR_BUF_CAP + 32];
@@ -350,12 +360,19 @@ napi_value doe_begin_render_pass(napi_env env, napi_callback_info info) {
         NAPI_THROW(env, "beginRenderPass requires descriptor.colorAttachments");
     napi_value color_attachments = get_prop(env, _args[1], "colorAttachments");
     uint32_t att_count = 0; napi_get_array_length(env, color_attachments, &att_count);
-    if (att_count == 0) NAPI_THROW(env, "beginRenderPass: need at least one color attachment");
-    WGPURenderPassColorAttachment* atts = (WGPURenderPassColorAttachment*)calloc(att_count, sizeof(WGPURenderPassColorAttachment));
+    if (att_count > DOE_MAX_COLOR_TARGETS) NAPI_THROW(env, "beginRenderPass: too many color attachments");
+    /* An empty list (depth/stencil-only pass) still gets one slot of storage. */
+    WGPURenderPassColorAttachment* atts = (WGPURenderPassColorAttachment*)calloc(att_count ? att_count : 1, sizeof(WGPURenderPassColorAttachment));
+    if (!atts) NAPI_THROW(env, "beginRenderPass: out of memory");
     WGPURenderPassDepthStencilAttachment depth_att; memset(&depth_att, 0, sizeof(depth_att));
     bool has_depth_att = false;
     for (uint32_t i = 0; i < att_count; i++) {
         napi_value elem; napi_get_element(env, color_attachments, i, &elem);
+        napi_valuetype elem_type; napi_typeof(env, elem, &elem_type);
+        if (elem_type != napi_object) { /* Null slot: no view, no operations. */
+            atts[i].depthSlice = UINT32_MAX;
+            continue;
+        }
         atts[i].view = unwrap_ptr(env, get_prop(env, elem, "view"));
         if (has_prop(env, elem, "resolveTarget") && prop_type(env, elem, "resolveTarget") == napi_external)
             atts[i].resolveTarget = unwrap_ptr(env, get_prop(env, elem, "resolveTarget"));
