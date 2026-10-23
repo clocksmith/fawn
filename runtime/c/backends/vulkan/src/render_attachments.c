@@ -140,7 +140,7 @@ doe_vk_status doe_vk_render_attachments_validate(doe_vk_commands *commands,
         if (slot->resolve_target != NULL) {
             const doe_vk_texture *resolve = slot->resolve_target->texture;
             if (samples == 1 || doe_vk_samples(resolve->desc.sample_count) != 1 ||
-                resolve == slot->view->texture || resolve->desc.format != slot->view->texture->desc.format)
+                resolve == slot->view->texture || slot->resolve_target->format != slot->view->format)
                 return DOE_VK_INVALID_ARGUMENT;
             for (uint32_t j = 0; j < colors->count; ++j) {
                 if (j != i && (same_subresource(colors->slots[j].view, slot->resolve_target) ||
@@ -196,7 +196,7 @@ doe_vk_status doe_vk_render_attachments_prepare(doe_vk_commands *commands, const
         if (status != DOE_VK_OK) return status;
         if (!slot->clear && !(color[i]->initialized[subresource_index(slot->view)] & VK_IMAGE_ASPECT_COLOR_BIT))
             return DOE_VK_INVALID_STATE;
-        layout.colors[i] = slot->view->texture->desc.format;
+        layout.colors[i] = slot->view->format; /* The view format, possibly a reinterpreted pair. */
         layout.samples = doe_vk_samples(slot->view->texture->desc.sample_count);
         if (slot->resolve_target != NULL) {
             status = doe_vk_use_texture(commands, slot->resolve_target->texture, &resolve[i]);

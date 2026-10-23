@@ -215,13 +215,16 @@
       "VK_ERROR_OUT_OF_DATE_KHR": -1000001004,
       "VK_ERROR_SURFACE_LOST_KHR": -1000000000,
       "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ID_PROPERTIES": 1000071004,
-      "VK_ATTACHMENT_UNUSED": 4294967295
+      "VK_ATTACHMENT_UNUSED": 4294967295,
+      "VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT": 8,
+      "VK_STRUCTURE_TYPE_IMAGE_FORMAT_LIST_CREATE_INFO": 1000147000
     },
     "additional_sources": [
       "https://docs.vulkan.org/refpages/latest/refpages/source/VkQueryType.html",
       "https://docs.vulkan.org/refpages/latest/refpages/source/VkDynamicState.html",
       "https://docs.vulkan.org/refpages/latest/refpages/source/VkStructureType.html",
-      "https://docs.vulkan.org/refpages/latest/refpages/source/VK_ATTACHMENT_UNUSED.html"
+      "https://docs.vulkan.org/refpages/latest/refpages/source/VK_ATTACHMENT_UNUSED.html",
+      "https://raw.githubusercontent.com/KhronosGroup/Vulkan-Headers/v1.3.290/include/vulkan/vulkan_core.h"
     ]
   },
   "official_functions": {
@@ -401,6 +404,29 @@
         ]
       ],
       "scope": "Core1.1 identity queried through the already-retained vkGetPhysicalDeviceProperties2; device/driver UUIDs are copied, never pipelineCacheUUID or optional LUID fields."
+    },
+    "VkImageFormatListCreateInfo": {
+      "source": "https://raw.githubusercontent.com/KhronosGroup/Vulkan-Headers/v1.3.290/include/vulkan/vulkan_core.h",
+      "verified_utc": "2026-10-23",
+      "fields": [
+        [
+          "sType",
+          "VkStructureType"
+        ],
+        [
+          "pNext",
+          "pointer"
+        ],
+        [
+          "viewFormatCount",
+          "u32"
+        ],
+        [
+          "pViewFormats",
+          "pointer"
+        ]
+      ],
+      "retained_equivalent": null
     }
   },
   "retained_functions": {
