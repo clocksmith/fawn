@@ -77,6 +77,7 @@ typedef uint32_t WGPUBool;
 #define DOE_ERROR_BUF_CAP 512
 #define WGPU_FEATURE_SHADER_F16 0x0000000B
 #define WGPU_CALLBACK_MODE_WAIT_ANY_ONLY 1
+#define WGPU_CALLBACK_MODE_ALLOW_SPONTANEOUS 3
 #define WGPU_QUEUE_WORK_DONE_STATUS_SUCCESS 1
 #define BATCH_MAX_BIND_GROUPS 4
 #define DOE_SHADER_BINDING_CAPACITY 32
@@ -979,6 +980,12 @@ napi_value doe_canvas_surface_release(napi_env env, napi_callback_info info);
 /* Limits helper */
 napi_value create_limits_object(napi_env env, const WGPULimits* limits);
 void pop_error_scope_callback(uint32_t error_type, WGPUStringView message, void* userdata1, void* userdata2);
+/* Standard webgpu.h error scope used around pipeline creation when a provider
+ * has no Doe last-error metadata. begin returns an opaque capture or NULL when
+ * not applicable; end pops it and copies a captured validation message,
+ * returning true only for a validation error. */
+void* doe_scoped_validation_begin(WGPUDevice device);
+bool doe_scoped_validation_end(WGPUDevice device, void* capture, char* message, size_t capacity);
 void extract_buffer_data(napi_env env, napi_value val, void** out_ptr, size_t* out_len);
 
 /* Native-direct helpers */

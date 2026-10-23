@@ -1,4 +1,5 @@
 #include "doe_napi_internal.h"
+#include <stdatomic.h>
 
 #define DOE_STACK_BIND_GROUP_LAYOUT_ENTRIES 8
 #define DOE_STACK_BIND_GROUP_ENTRIES 8
@@ -111,9 +112,18 @@ napi_value doe_create_compute_pipeline(napi_env env, napi_callback_info info) {
     desc.compute.constantCount = override_count;
     desc.compute.constants = override_entries;
 
+    void* scoped = doe_scoped_validation_begin(device);
     WGPUComputePipeline pipeline = pfn_wgpuDeviceCreateComputePipeline(device, &desc);
+    char scoped_message[DOE_ERROR_BUF_CAP] = {0};
+    bool scoped_validation = doe_scoped_validation_end(device, scoped, scoped_message, sizeof(scoped_message));
     if (ep_on_heap) free(ep);
     free_override_constants(override_entries, override_count);
+    if (!pipeline && scoped_validation) {
+        char full_msg[DOE_ERROR_BUF_CAP + 32];
+        snprintf(full_msg, sizeof(full_msg), "createComputePipeline: %s", scoped_message);
+        napi_throw_error(env, "DOE_COMPUTE_PIPELINE_ERROR", full_msg);
+        return NULL;
+    }
     if (!pipeline) {
         char msg[DOE_ERROR_BUF_CAP];
         char stage[64];
@@ -131,6 +141,64 @@ napi_value doe_create_compute_pipeline(napi_env env, napi_callback_info info) {
         return NULL;
     }
     return wrap_ptr(env, pipeline);
+}
+
+/* webgpu.h WGPUPopErrorScopeCallback: (status, type, message, userdata1, userdata2). */
+typedef void (*StandardPopErrorScopeCallback)(uint32_t status, uint32_t type, WGPUStringView message,
+    void* userdata1, void* userdata2);
+typedef struct {
+    void* next_in_chain; uint32_t mode; StandardPopErrorScopeCallback callback;
+    void* userdata1; void* userdata2;
+} StandardPopErrorScopeCallbackInfo;
+typedef WGPUFuture (*StandardPopErrorScope)(WGPUDevice device, StandardPopErrorScopeCallbackInfo info);
+
+/* Heap capture with an atomic handoff: a provider that delivers later than the
+ * pop call frees the capture itself instead of writing to a dead frame. */
+typedef struct {
+    _Atomic uint32_t state; /* 0 waiting, 1 delivered, 2 abandoned by the caller */
+    uint32_t status, type;
+    char message[DOE_ERROR_BUF_CAP];
+} ScopedValidation;
+
+static void scoped_validation_reply(uint32_t status, uint32_t type, WGPUStringView message,
+    void* userdata1, void* userdata2) {
+    (void)userdata2;
+    ScopedValidation* capture = (ScopedValidation*)userdata1;
+    capture->status = status;
+    capture->type = type;
+    copy_string_view_message(message, capture->message, sizeof(capture->message));
+    uint32_t expected = 0;
+    if (!atomic_compare_exchange_strong(&capture->state, &expected, 1u)) free(capture);
+}
+
+void* doe_scoped_validation_begin(WGPUDevice device) {
+    if (pfn_doeNativeCopyLastErrorMessage || !pfn_wgpuDevicePushErrorScope || !pfn_wgpuDevicePopErrorScope) return NULL;
+    ScopedValidation* capture = (ScopedValidation*)calloc(1, sizeof(*capture));
+    if (!capture) return NULL;
+    pfn_wgpuDevicePushErrorScope(device, 0x00000001u /* WGPUErrorFilter_Validation */);
+    return capture;
+}
+
+bool doe_scoped_validation_end(WGPUDevice device, void* opaque, char* message, size_t capacity) {
+    ScopedValidation* capture = (ScopedValidation*)opaque;
+    if (!capture) return false;
+    StandardPopErrorScopeCallbackInfo info = {NULL, WGPU_CALLBACK_MODE_ALLOW_SPONTANEOUS,
+        scoped_validation_reply, capture, NULL};
+    /* The loaded symbol is the standard procedure; only the addon's legacy
+     * declaration types it with the Doe four-argument callback. */
+    StandardPopErrorScope pop;
+    void* symbol = (void*)pfn_wgpuDevicePopErrorScope;
+    memcpy(&pop, &symbol, sizeof(pop));
+    WGPUFuture future = pop(device, info);
+    uint32_t expected = 0;
+    if (!future.id || atomic_compare_exchange_strong(&capture->state, &expected, 2u)) {
+        if (!future.id) free(capture); /* Rejected: no callback will run. */
+        return false;                  /* Not delivered yet: the callback frees it. */
+    }
+    bool validation = capture->status == 0x00000001u && capture->type == 0x00000002u;
+    if (validation) snprintf(message, capacity, "%s", capture->message);
+    free(capture);
+    return validation;
 }
 
 napi_value doe_compute_pipeline_release(napi_env env, napi_callback_info info) {
