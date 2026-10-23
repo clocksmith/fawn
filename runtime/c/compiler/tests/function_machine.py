@@ -81,7 +81,7 @@ def execute_functions(instructions: list[Instruction], memory: dict[Descriptor, 
             assert len(uniforms[descriptor]) >= minimum, "short uniform binding rejected before invocation"
             values[ident] = ("uniform", descriptor, type_id)
         elif storage == 7:
-            values[ident] = ("local", ident)
+            values[ident] = ("local", ident, local_memory)
             local_memory[ident] = None
         else:
             raise AssertionError(("unexpected storage class", storage))
@@ -100,7 +100,7 @@ def execute_functions(instructions: list[Instruction], memory: dict[Descriptor, 
             continue
         elif op == 59:
             assert args[2] == 7
-            values[args[1]] = ("local", args[1])
+            values[args[1]] = ("local", args[1], local_memory)
             local_memory[args[1]] = None
         elif op == 57:
             start, parameters = functions[args[2]]
@@ -129,8 +129,8 @@ def execute_functions(instructions: list[Instruction], memory: dict[Descriptor, 
             if pointer[0] == "input":
                 values[args[1]] = inputs[pointer[1]]
             elif pointer[0] == "local":
-                assert local_memory[pointer[1]] is not None, "uninitialized Function local read"
-                values[args[1]] = local_memory[pointer[1]]
+                assert pointer[2][pointer[1]] is not None, "uninitialized Function local read"
+                values[args[1]] = pointer[2][pointer[1]]
             elif pointer[0] == "member":
                 values[args[1]] = struct.unpack_from("<I", uniforms[pointer[1]], pointer[2])[0]
             else:
@@ -235,7 +235,7 @@ def execute_functions(instructions: list[Instruction], memory: dict[Descriptor, 
         elif op == 62:
             pointer = values[args[0]]
             if pointer[0] == "local":
-                local_memory[pointer[1]] = values[args[1]]
+                pointer[2][pointer[1]] = values[args[1]]
                 continue
             assert pointer[0] == "element" and pointer[3] not in readonly
             buffer, index = memory[pointer[1]], pointer[2]

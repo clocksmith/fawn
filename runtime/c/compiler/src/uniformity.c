@@ -172,7 +172,7 @@ static bool expression_bit(Uniformity *a,uint32_t id,uint32_t cf,uint32_t *out) 
             if (!call_bit(a,id,cf,&left)) return false;
             break;
         case EXPRESSION_NOT: case EXPRESSION_NEGATE: case EXPRESSION_COMPLEMENT:
-        case EXPRESSION_CONSTRUCT: case EXPRESSION_BITCAST:
+        case EXPRESSION_CONSTRUCT: case EXPRESSION_BITCAST: case EXPRESSION_DEREFERENCE:
             if (!expression_bit(a,e->left,cf,&left)) return false;
             break;
         case EXPRESSION_AND: case EXPRESSION_OR:

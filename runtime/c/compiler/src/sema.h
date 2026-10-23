@@ -7,8 +7,8 @@
 typedef struct LoopScope LoopScope;
 struct LoopScope { LoopScope *parent; size_t body_scope_start, body_scope_end; uint32_t first_continue; bool continuing; };
 typedef struct { LocalBinding *values; size_t count, capacity, scope_start, level; LoopScope *loop; } LocalScope;
-typedef struct { IrValue value; ConstantValue constant; bool runtime, known; } ExpressionValue;
-typedef struct { uint32_t root, path, category; TypeId type; bool writable; } ValueReference;
+typedef struct { IrValue value; union { ConstantValue constant; PointerValue pointer; }; bool runtime, known; } ExpressionValue;
+typedef struct { uint32_t root, path, category; TypeId type; bool writable, addressable; } ValueReference;
 typedef struct { uint64_t used, limit; uint32_t offset; } UniformityBudget;
 #define UNIFORMITY_WORK_LIMIT UINT64_C(67108864)
 typedef enum { IDENTITY_NONE, IDENTITY_LOCAL, IDENTITY_FORMAL, IDENTITY_INPUT,
@@ -65,6 +65,8 @@ uint32_t atomic_builtin_kind(const Source *, NameSpan);
 bool atomic_opcode(IrOpcode);
 TypeId atomic_element(const CompilerWorkspace *, const IrInstruction *);
 bool sema_address_reference(Source *, uint32_t, const LocalScope *, bool, bool, ValueReference *);
+bool sema_pointer_argument(Source *, uint32_t, const ExpressionValue *);
+bool sema_pointer_aliases(Source *);
 bool sema_array_length(Source *, uint32_t, const LocalScope *, bool, ExpressionValue *);
 bool sema_call_value(Source *,uint32_t,const LocalScope *,bool,bool,bool,ExpressionValue *);
 #endif

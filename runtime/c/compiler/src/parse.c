@@ -157,6 +157,24 @@ static bool generic_reference(Parser *p,Syntax *s,NameSpan name,TypeRef *out) {
     GenericSyntax *g=&s->generic_syntax[id];
     *g=(GenericSyntax){.name=name,.element={NO_ID,NO_ID},.count_expression=NO_ID};
     ++p->cursor;
+    if (source_span_is(p->source, name, "ptr")) {
+        NameSpan space;
+        if (!parser_name_span(p, &space) || !parser_punctuation(p, ',', ",")) return false;
+        if (!source_span_is(p->source, space, "function"))
+            return source_error(p->source, DOE_COMPILER_UNSUPPORTED, space.offset,
+                "only function-address pointer types are currently admitted");
+        if (!type_reference(p, s, &g->element)) return false;
+        if (parser_peek(p)->kind == ',') {
+            ++p->cursor;
+            if (parser_peek(p)->kind != '>')
+                return source_error(p->source, DOE_COMPILER_SEMANTIC_ERROR, parser_peek(p)->offset,
+                    "function pointer types cannot specify an access mode");
+        }
+        if (!template_close(p)) return false;
+        --p->active_type;
+        *out = (TypeRef){name.offset, id};
+        return true;
+    }
     if (!type_reference(p,s,&g->element)) return false;
     if (parser_peek(p)->kind==',') {
         ++p->cursor; ++p->template_count;
@@ -307,9 +325,9 @@ static bool primary(Parser *p,Syntax *s,unsigned nesting,uint32_t *id) {
         if (s->expressions[*id].depth>=p->source->limits->expression_depth)
             return source_pool_error(p->source,DOE_COMPILER_POOL_EXPRESSION_DEPTH,(size_t)s->expressions[*id].depth+1u,node.source_offset,"expression depth capacity exceeded");
         ++s->expressions[*id].depth;s->expressions[*id].grouped=true;stored=true;
-    } else if (parser_peek(p)->kind=='!' || parser_peek(p)->kind=='-' || parser_peek(p)->kind=='~' || parser_peek(p)->kind=='&') {
+    } else if (parser_peek(p)->kind=='!' || parser_peek(p)->kind=='-' || parser_peek(p)->kind=='~' || parser_peek(p)->kind=='&' || parser_peek(p)->kind=='*') {
         node.kind=parser_peek(p)->kind=='!'?EXPRESSION_NOT:parser_peek(p)->kind=='-'?EXPRESSION_NEGATE:
-            parser_peek(p)->kind=='&'?EXPRESSION_ADDRESS:EXPRESSION_COMPLEMENT;
+            parser_peek(p)->kind=='&'?EXPRESSION_ADDRESS:parser_peek(p)->kind=='*'?EXPRESSION_DEREFERENCE:EXPRESSION_COMPLEMENT;
         ++p->cursor; ++p->active_expression;
         const bool ok=primary(p,s,nesting+1u,&node.left); --p->active_expression; if (!ok) return false;
         node.depth=1u+s->expressions[node.left].depth;
@@ -318,8 +336,6 @@ static bool primary(Parser *p,Syntax *s,unsigned nesting,uint32_t *id) {
     } else if (parser_spelled(p,parser_peek(p),"true") || parser_spelled(p,parser_peek(p),"false")) {
         node.kind=EXPRESSION_BOOLEAN;node.value.integer=parser_spelled(p,parser_peek(p),"true")?1u:0u;++p->cursor;
     } else {
-        if (parser_peek(p)->kind=='*')
-            return source_error(p->source,DOE_COMPILER_UNSUPPORTED,parser_peek(p)->offset,"pointer expressions are outside the typed owner");
         NameSpan name;
         if (!parser_name_span(p,&name)) return false;
         node.kind=EXPRESSION_NAME;node.value.name=name;
@@ -403,7 +419,7 @@ static bool unary_form(const Expression *node) {
         node->kind == EXPRESSION_MEMBER || node->kind == EXPRESSION_LITERAL ||
         node->kind == EXPRESSION_BOOLEAN || node->kind == EXPRESSION_NOT ||
         node->kind == EXPRESSION_NEGATE || node->kind == EXPRESSION_COMPLEMENT ||
-        node->kind == EXPRESSION_ADDRESS ||
+        node->kind == EXPRESSION_ADDRESS || node->kind == EXPRESSION_DEREFERENCE ||
         node->kind == EXPRESSION_CONSTRUCT || node->kind == EXPRESSION_BITCAST ||
         node->kind == EXPRESSION_MAX || node->kind == EXPRESSION_CALL;
 }
@@ -487,7 +503,12 @@ static bool condition(Parser *p, Syntax *s, uint32_t *id) {
 }
 static bool assignment(Parser *p,Syntax *s,Assignment *out,unsigned terminator) {
     *out=(Assignment){.path=NO_ID,.index=NO_ID,.expression=NO_ID};
-    if (!parser_name_span(p,&out->root)) return false;
+    const bool reference = parser_peek(p)->kind == '*' || parser_peek(p)->kind == '(';
+    if (reference) {
+        out->root = (NameSpan){parser_peek(p)->offset, 0u};
+        if (!primary(p, s, 0u, &out->path)) return false;
+        out->kind = TARGET_REFERENCE;
+    } else if (!parser_name_span(p,&out->root)) return false;
     Expression previous={0};bool has_previous=false;
     while (parser_peek(p)->kind=='.' || parser_peek(p)->kind=='[') {
         if (has_previous && !expression_node(p,s,&previous,true,&out->path)) return false;

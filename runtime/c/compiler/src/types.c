@@ -67,6 +67,9 @@ static bool type_matrix_intern_valid(const CompilerWorkspace *c, TypeId column, 
     const TypeRecord *vector = &c->types[column - 7u];
     return vector->kind == TYPE_VECTOR && (vector->element == IR_F32 || vector->element == IR_ABSTRACT_FLOAT);
 }
+bool type_pointer(const CompilerWorkspace *c, TypeId type) {
+    return type >= 7u && c->types[type - 7u].kind == TYPE_POINTER;
+}
 bool type_matrix(const CompilerWorkspace *c, TypeId type) {
     return type >= 7u && c->types[type - 7u].kind == TYPE_MATRIX;
 }
@@ -99,7 +102,12 @@ bool type_intern(Source *s, uint32_t kind, TypeId element, uint32_t count, TypeI
     const uint32_t flags = type_flags(c, element);
     if (!type_constructible(c, element) && (flags & TYPE_ATOMIC_CONTENT) == 0u)
         return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, s->length, "aggregate element must be constructible or contain atomics");
-    if (kind == TYPE_ATOMIC || kind == TYPE_ATOMIC_RESULT) {
+    if (kind == TYPE_POINTER) {
+        if (!type_constructible(c, element) || type_abstract(c, element))
+            return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, s->length, "function pointer requires a concrete constructible store type");
+        t.state.layout.alignment = 1u;
+    }
+    else if (kind == TYPE_ATOMIC || kind == TYPE_ATOMIC_RESULT) {
         if (element != IR_I32 && element != IR_U32)
             return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, s->length, "atomic element requires i32 or u32");
         t.flags |= TYPE_FIXED | (kind == TYPE_ATOMIC ? TYPE_HOST | TYPE_ATOMIC_CONTENT : TYPE_CONSTRUCTIBLE);
@@ -145,7 +153,7 @@ bool type_layout_struct(Source *s, TypeId id) {
     for (uint32_t i = 0u;i<t->count;++i) {
         MemberRecord *m = &c->members[t->element+i];
         const uint32_t child_flags = type_flags(c, m->type);
-        if ((child_flags&TYPE_ABSTRACT) != 0u || m->type == IR_VOID || type_handle(c, m->type))
+        if ((child_flags&TYPE_ABSTRACT) != 0u || m->type == IR_VOID || type_handle(c, m->type) || type_pointer(c, m->type))
             return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, m->name.offset, "struct member type must be concrete");
         const bool tail = m->type >= 7u && c->types[m->type-7u].kind == TYPE_RUNTIME_ARRAY;
         if ((child_flags&TYPE_TAIL) != 0u && (!tail || i+1u != t->count))
