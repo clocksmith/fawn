@@ -62,3 +62,5 @@ GPU indirect counts remain queue-time data. Keep descriptor/usage/lease admissio
 here and actual argument sanitization in the backend's existing command owner;
 never CPU-inspect or forward unchecked counts. Hidden native copy capability must
 not alter public usage, and new product-sensitive builtins require guard coordination.
+Mapping attachment consumes its generation even when an empty borrowed mapping
+has no pointer. Never use pointer nullness as proof that completion is unconsumed.

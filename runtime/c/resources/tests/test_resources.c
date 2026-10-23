@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: MIT */
 #include "fixture.h"
+#include "../src/internal.h"
 
 static void test_copy_admission(void)
 {
@@ -73,6 +74,83 @@ static void test_mapping(void)
     doe_resource_buffer_destroy(buf);
     assert(doe_resource_buffer_map_complete(buf, 0, true, memory) == DOE_RESOURCE_UNAVAILABLE);
     doe_resource_buffer_release(buf);
+    empty(&f);
+}
+
+static void test_mapping_completion_tokens(void)
+{
+    for (unsigned nonempty = 0; nonempty < 2; nonempty++) {
+        for (unsigned failure = 0; failure < 2; failure++) {
+            fixture f = fresh();
+            native_token token = {0};
+            doe_resource_config c = config(&f);
+            const uint64_t size = nonempty ? 16 : 0;
+            doe_resource_buffer_desc desc = {size, WGPUBufferUsage_MapWrite | WGPUBufferUsage_CopySrc, true};
+            doe_resource_buffer *buf;
+            assert(doe_resource_buffer_create(&c, &desc, native(&f, &token), &buf) == DOE_RESOURCE_OK);
+            size_t allocations = f.allocations;
+            unsigned char memory[16] = {0};
+            unsigned char *mapping = nonempty ? memory : NULL;
+            assert(doe_resource_buffer_map_complete(buf, 1, true, mapping) == DOE_RESOURCE_STATE);
+            if (nonempty)
+                assert(doe_resource_buffer_map_complete(buf, 0, true, NULL) == DOE_RESOURCE_INVALID_ARGUMENT);
+            assert(doe_resource_buffer_map_complete(buf, 0, !failure, mapping) ==
+                (failure ? DOE_RESOURCE_EXECUTION_FAILED : DOE_RESOURCE_OK));
+            assert(doe_resource_buffer_map_complete(buf, 0, true, memory) == DOE_RESOURCE_STATE);
+            assert(doe_resource_buffer_map_complete(buf, 0, true, NULL) == DOE_RESOURCE_STATE);
+            assert(doe_resource_buffer_map_complete(buf, 0, false, NULL) == DOE_RESOURCE_STATE);
+            assert(doe_resource_buffer_map_mode(buf) == (failure ? WGPUMapMode_None : WGPUMapMode_Write));
+            unsigned char *range = memory + 1;
+            if (failure) {
+                assert(doe_resource_buffer_mapped_range(buf, 0, size, &range) == DOE_RESOURCE_USAGE);
+                assert(range == memory + 1);
+            } else {
+                assert(doe_resource_buffer_mapped_range(buf, 0, size, &range) == DOE_RESOURCE_OK);
+                assert(range == mapping);
+            }
+            assert(doe_resource_buffer_unmap(buf) == DOE_RESOURCE_OK);
+            assert(doe_resource_buffer_map_complete(buf, 0, true, mapping) == DOE_RESOURCE_STATE);
+            uint64_t generation = 0;
+            assert(doe_resource_buffer_map_begin(buf, WGPUMapMode_Write, size, 0, &generation) == DOE_RESOURCE_OK);
+            assert(generation > 0);
+            assert(doe_resource_buffer_map_complete(buf, 0, true, mapping) == DOE_RESOURCE_STATE);
+            assert(doe_resource_buffer_map_complete(buf, generation, true, NULL) == DOE_RESOURCE_OK);
+            assert(doe_resource_buffer_map_complete(buf, generation, true, memory) == DOE_RESOURCE_STATE);
+            range = memory + 1;
+            assert(doe_resource_buffer_mapped_range(buf, size, 0, &range) == DOE_RESOURCE_OK && !range);
+            assert(doe_resource_buffer_unmap(buf) == DOE_RESOURCE_OK);
+            uint64_t newer = 0;
+            assert(doe_resource_buffer_map_begin(buf, WGPUMapMode_Write, 0, size, &newer) == DOE_RESOURCE_OK);
+            assert(newer > generation);
+            assert(doe_resource_buffer_map_complete(buf, generation, true, memory) == DOE_RESOURCE_STATE);
+            assert(doe_resource_buffer_map_complete(buf, newer, false, NULL) == DOE_RESOURCE_EXECUTION_FAILED);
+            assert(doe_resource_buffer_map_complete(buf, newer, true, mapping) == DOE_RESOURCE_STATE);
+            assert(doe_resource_buffer_map_begin(buf, WGPUMapMode_Write, 0, size, &generation) == DOE_RESOURCE_OK);
+            assert(generation > newer);
+            doe_resource_buffer_destroy(buf);
+            assert(doe_resource_buffer_map_complete(buf, generation, true, mapping) == DOE_RESOURCE_UNAVAILABLE);
+            assert(f.allocations == allocations && !token.releases);
+            doe_resource_buffer_release(buf);
+            assert(token.releases == 1);
+            empty(&f);
+        }
+    }
+    fixture f = fresh();
+    native_token token = {0};
+    doe_resource_buffer *buf = buffer(&f, &token, 0, WGPUBufferUsage_MapWrite);
+    /* Private boundary injection, not a public mutation hook. */
+    buf->generation = UINT64_MAX - 1;
+    uint64_t generation = 0;
+    assert(doe_resource_buffer_map_begin(buf, WGPUMapMode_Write, 0, 0, &generation) == DOE_RESOURCE_OK);
+    assert(generation == UINT64_MAX);
+    assert(doe_resource_buffer_map_complete(buf, generation, true, NULL) == DOE_RESOURCE_OK);
+    assert(doe_resource_buffer_unmap(buf) == DOE_RESOURCE_OK);
+    generation = 123;
+    assert(doe_resource_buffer_map_begin(buf, WGPUMapMode_Write, 0, 0, &generation) == DOE_RESOURCE_OVERFLOW);
+    assert(generation == 123 && doe_resource_buffer_map_mode(buf) == WGPUMapMode_None);
+    assert(doe_resource_buffer_map_complete(buf, UINT64_MAX, true, NULL) == DOE_RESOURCE_STATE);
+    doe_resource_buffer_release(buf);
+    assert(token.releases == 1);
     empty(&f);
 }
 
@@ -503,6 +581,7 @@ int main(void)
 {
     test_copy_admission();
     test_mapping();
+    test_mapping_completion_tokens();
     test_texture_layout();
     test_view_lifetime();
     test_binding_layouts();
@@ -514,6 +593,6 @@ int main(void)
     test_sampler_and_texture_group();
     test_label_reuse();
     test_atomic_references();
-    puts("resource owner: 13 host suites passed; no GPU execution claimed");
+    puts("resource owner: 14 host suites passed; no GPU execution claimed");
     return 0;
 }
