@@ -10,12 +10,14 @@ typedef struct doe_dx_texture doe_dx_texture;
 /* Backend formats, not WebGPU enum values. All admitted formats have 4-byte
  * texels; actual SDK format support is checked during native allocation. */
 typedef enum doe_dx_format {
-    DOE_DX_RGBA8_UNORM, DOE_DX_RGBA8_UINT, DOE_DX_R32_FLOAT, DOE_DX_R32_UINT
+    DOE_DX_RGBA8_UNORM, DOE_DX_RGBA8_UINT, DOE_DX_R32_FLOAT, DOE_DX_R32_UINT,
+    DOE_DX_BGRA8_UNORM, DOE_DX_D32_FLOAT
 } doe_dx_format;
 enum {
     DOE_DX_TEXTURE_COPY_SRC = 1, DOE_DX_TEXTURE_COPY_DST = 2,
     DOE_DX_TEXTURE_SAMPLED = 4, DOE_DX_TEXTURE_STORAGE = 8,
-    DOE_DX_TEXTURE_RENDER_ATTACHMENT = 16 /* RGBA8_UNORM only. */
+    DOE_DX_TEXTURE_RENDER_ATTACHMENT = 16, /* RGBA8/BGRA8 UNORM. */
+    DOE_DX_TEXTURE_DEPTH_ATTACHMENT = 32 /* D32_FLOAT only. */
 };
 typedef struct doe_dx_texture_desc {
     uint32_t width, height;
@@ -23,7 +25,9 @@ typedef struct doe_dx_texture_desc {
     uint32_t usage;
 } doe_dx_texture_desc;
 /* Explicit subset: 2D, one mip, one layer, one sample, immutable same-format
- * whole-resource views. No depth, compressed, sRGB, multisample or reinterpretation.
+ * whole-resource views. No compressed, sRGB, multisample or reinterpretation.
+ * D32_FLOAT requires depth attachment usage and permits only full copy usages
+ * in addition; it cannot be a sampled/storage binding.
  * A full upload/copy initializes the texture; dispatch never implies full writes. */
 doe_dx_status doe_dx_texture_create(doe_dx_context *context,
     const doe_dx_texture_desc *desc, doe_dx_texture **out, doe_dx_error *error);

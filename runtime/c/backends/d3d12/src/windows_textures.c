@@ -8,6 +8,8 @@ DXGI_FORMAT doe_dx_texture_format(doe_dx_format format) {
         case DOE_DX_RGBA8_UINT: return DXGI_FORMAT_R8G8B8A8_UINT;
         case DOE_DX_R32_FLOAT: return DXGI_FORMAT_R32_FLOAT;
         case DOE_DX_R32_UINT: return DXGI_FORMAT_R32_UINT;
+        case DOE_DX_BGRA8_UNORM: return DXGI_FORMAT_B8G8R8A8_UNORM;
+        case DOE_DX_D32_FLOAT: return DXGI_FORMAT_D32_FLOAT;
     }
     return DXGI_FORMAT_UNKNOWN;
 }
@@ -28,11 +30,12 @@ doe_dx_status doe_dx_native_texture_create(doe_dx_native_context *context,
     UINT required = D3D12_FORMAT_SUPPORT1_TEXTURE2D;
     if (desc->usage & DOE_DX_TEXTURE_SAMPLED) required |= D3D12_FORMAT_SUPPORT1_SHADER_LOAD;
     if ((desc->usage & DOE_DX_TEXTURE_SAMPLED) &&
-        (desc->format == DOE_DX_RGBA8_UNORM || desc->format == DOE_DX_R32_FLOAT))
+        (desc->format == DOE_DX_RGBA8_UNORM || desc->format == DOE_DX_BGRA8_UNORM || desc->format == DOE_DX_R32_FLOAT))
         required |= D3D12_FORMAT_SUPPORT1_SHADER_SAMPLE;
     if (desc->usage & DOE_DX_TEXTURE_STORAGE)
         required |= D3D12_FORMAT_SUPPORT1_TYPED_UNORDERED_ACCESS_VIEW;
     if (desc->usage & DOE_DX_TEXTURE_RENDER_ATTACHMENT) required |= D3D12_FORMAT_SUPPORT1_RENDER_TARGET;
+    if (desc->usage & DOE_DX_TEXTURE_DEPTH_ATTACHMENT) required |= D3D12_FORMAT_SUPPORT1_DEPTH_STENCIL;
     if (((UINT)support.Support1 & required) != required)
         return doe_dx_fail(DOE_DX_UNSUPPORTED, 0, "texture.native_format", error);
     if (desc->usage & DOE_DX_TEXTURE_STORAGE) {
@@ -55,6 +58,8 @@ doe_dx_status doe_dx_native_texture_create(doe_dx_native_context *context,
         description->Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
     if (desc->usage & DOE_DX_TEXTURE_RENDER_ATTACHMENT)
         description->Flags |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+    if (desc->usage & DOE_DX_TEXTURE_DEPTH_ATTACHMENT)
+        description->Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL | D3D12_RESOURCE_FLAG_DENY_SHADER_RESOURCE;
     D3D12_HEAP_PROPERTIES heap = {0};
     heap.Type = D3D12_HEAP_TYPE_DEFAULT;
     heap.CreationNodeMask = 1;

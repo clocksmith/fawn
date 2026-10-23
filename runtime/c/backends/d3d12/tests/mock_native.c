@@ -295,8 +295,10 @@ void doe_dx_native_texture_copy(doe_dx_native_commands *commands,
 }
 
 doe_dx_status doe_dx_native_graphics_create(doe_dx_native_context *context,
-    const doe_dx_graphics_pipeline_desc *desc, doe_dx_native_pipeline **out, doe_dx_error *error) {
-    assert(desc->vertex_bytecode && desc->vertex_bytecode_size && desc->color_format == DOE_DX_RGBA8_UNORM);
+    const doe_dx_mesh_pipeline_desc *mesh, doe_dx_native_pipeline **out, doe_dx_error *error) {
+    const doe_dx_graphics_pipeline_desc *desc = &mesh->graphics;
+    assert(desc->vertex_bytecode && desc->vertex_bytecode_size);
+    assert(desc->color_format == DOE_DX_RGBA8_UNORM || desc->color_format == DOE_DX_BGRA8_UNORM);
     doe_dx_status status = outcome(MOCK_GRAPHICS, error);
     if (status != DOE_DX_OK) return status;
     return doe_dx_native_pipeline_create(context, &desc->fragment, out, error);
@@ -304,13 +306,26 @@ doe_dx_status doe_dx_native_graphics_create(doe_dx_native_context *context,
 
 doe_dx_status doe_dx_native_draw(doe_dx_native_commands *commands,
     doe_dx_native_pipeline *pipeline, const doe_dx_native_resources *resources,
-    doe_dx_native_texture *color, const doe_dx_draw_desc *draw, doe_dx_error *error) {
+    doe_dx_native_texture *color, const doe_dx_native_geometry *geometry,
+    const doe_dx_mesh_draw_desc *mesh, doe_dx_error *error) {
     doe_dx_status status = outcome(MOCK_DRAW, error);
     if (status != DOE_DX_OK) return status;
     record_resources(commands, pipeline, resources);
     record_texture(commands, color);
     mock.draw_color = color;
-    mock.draw = *draw;
+    mock.draw = mesh->draw;
+    mock.geometry = *geometry;
+    mock.vertex_count = mesh->vertex_count;
+    mock.indexed = mesh->indices != NULL;
+    if (mesh->indices) {
+        mock.indices = *mesh->indices;
+        record_buffer(commands, geometry->indices.buffer);
+    }
+    for (size_t index = 0; index < mesh->vertex_count; index++)
+        record_buffer(commands, geometry->vertices[index].buffer);
+    if (geometry->depth) record_texture(commands, geometry->depth);
+    mock.clear_depth = mesh->clear_depth;
+    mock.depth_clear = mesh->depth_clear;
     mock.draws++;
     return DOE_DX_OK;
 }

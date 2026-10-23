@@ -13,13 +13,19 @@ COM declarations. No retained Zig bridge is linked, invoked or removed.
   a full copy, published only after successful completion.
 - Precompiled DXIL/DXBC compute pipelines, immutable structured SRV/UAV layout,
   register spaces, ranged descriptors and three-dimensional dispatch.
-- Four explicit texture formats: RGBA8_UNORM, RGBA8_UINT, R32_FLOAT and R32_UINT,
+- Six explicit texture formats: RGBA8_UNORM, RGBA8_UINT, R32_FLOAT, R32_UINT,
+  BGRA8_UNORM and depth-only D32_FLOAT,
   all 2D/single-mip/single-layer/single-sample. Native format capability checks,
   whole-resource upload/readback/copy, immutable same-format SRV/UAV bindings,
   mixed buffer/texture dispatch and copied static nearest/linear samplers.
-- Offscreen triangle-list graphics with procedural vertices, actual VS/PS PSOs,
-  one RGBA8_UNORM attachment, explicit clear/load, unconditional store and shared
-  sampled/storage bindings. Full-target viewport/scissor, no blend/cull/depth.
+  D32 requires depth-attachment usage and admits only copy usages in addition;
+  it cannot be sampled or stored through shader bindings.
+- Offscreen triangle-list graphics with actual VS/PS PSOs, one RGBA8/BGRA8 UNORM
+  attachment, optional D32 depth compare/write, explicit clear/load, unconditional
+  store and shared sampled/storage bindings. Full-target viewport/scissor, no blend/cull.
+- Procedural or typed vertex/instance input: up to eight slots, sixteen TEXCOORD
+  attributes, explicit 32-bit float/uint/sint scalar/vector formats, checked direct
+  spans and bounded uint16/uint32 indexed views. Layouts are copied at creation.
 - Timestamp heaps (1..64 slots), explicit EndQuery and ResolveQueryData into
   readback, real direct-queue frequency and completion-backed slot publication.
 - Single-use command recording, early caller release, atomic submission ownership,
@@ -35,8 +41,8 @@ canceled by release. Different pending commands may use disjoint resources; a
 buffer, texture or timestamp heap cannot belong to another recorded/unresolved command. This restriction is
 explicit, not a claim of full command-buffer or WebGPU concurrency parity.
 
-No depth/compressed/sRGB texture, mip/array/partial copy, dynamic sampler/view,
-vertex/index attributes, indexed/indirect draw, depth/MSAA/multiple attachments,
+No depth sampling/stencil/compressed/sRGB texture, mip/array/partial copy, dynamic
+sampler/view, indirect draw, base vertex, primitive restart, MSAA/multiple attachments,
 presentation, occlusion/pipeline-statistic query, indirect dispatch, uniform-binding,
 WGSL-to-DXIL compiler invocation or public WebGPU export is implemented here.
 Unsupported broad surfaces are not padded out with success-looking exports.
@@ -56,9 +62,19 @@ before publication. The SDK helper
 [uses last-occupied-row sizing](https://github.com/microsoft/DirectX-Headers/blob/main/include/directx/d3dx12_resource_helpers.h),
 matching the common arithmetic leaf for this four-byte, single-plane subset.
 
-A clear initializes the full color attachment; draw coverage alone never does.
+A clear initializes the full color/depth attachment; draw coverage alone never does.
+Geometry requires default-heap initialized buffers, allocation-bounded views and
+non-aliasing shader/vertex/index roles. Direct vertex/instance spans are checked
+against each view. Indexed vertex values are GPU data: this owner does not scan
+or claim to prove index contents. Native view bounds remain in force, with base
+vertex fixed at zero and instance step rate one. The native
+[vertex view](https://learn.microsoft.com/en-us/windows/win32/api/d3d12/ns-d3d12-d3d12_vertex_buffer_view)
+carries byte size/stride, and [indexed draw](https://learn.microsoft.com/en-us/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-drawindexedinstanced)
+keeps index start and instance start distinct. D32 extent must match color. Depth
+transfers copy the entire subresource with zero coordinates and no source box,
+following [CopyTextureRegion depth rules](https://learn.microsoft.com/en-us/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-copytextureregion).
 Graphics resources use both pixel and non-pixel shader read states and return to
-COPY_DEST after each draw. RTV and shader heaps remain owned by the command until
+COPY_DEST after each draw. RTV, DSV and shader heaps remain owned by the command until
 completion or terminal loss. All fallible descriptor preparation precedes command
 mutation. Timestamp resolves reject unwritten slots and partial destinations with
 uninitialized bytes, following the native
@@ -77,7 +93,11 @@ through `native/compute/doe_compute_d3d12.zig` into
 `d3d12_runtime_upload.zig`. Texture allocation/copy/view behavior traces
 `resources/d3d12_texture.zig` and the texture/SRV/UAV/sampler operations of
 `d3d12_bridge.c`. Graphics traces `commands/d3d12_native_render_pass.zig`
-and bridge graphics PSO/RTV/draw operations. Timestamps trace
+and `commands/d3d12_render_vertex.zig` PipelineKey/ResolvedVertexAttribute, plus
+bridge input-layout, IA vertex/index, depth-state and draw operations. The retained
+bridge uses ATTR, but this C owner uses TEXCOORD to match the current C HLSL
+[location mapping](../../compiler/targets/hlsl/graphics.c); it does not copy that
+incompatible retained semantic-name convention. Timestamps trace
 `commands/d3d12_gpu_timestamps.zig` and `d3d12_query_set.zig`; this owner does not
 copy their separate query command/queue machinery. The new owner consolidates device, ownership, commands
 and resource rules by responsibility instead of translating every Zig file.
@@ -113,12 +133,15 @@ On Windows in a configured MSVC/Windows SDK developer command prompt:
     dxc -T cs_6_0 -E main tests\native_texture.hlsl -Fo "%TEMP%\doe-c-d3d12\native_texture.dxil"
     dxc -T vs_6_0 -E vertex_main tests\native_graphics.hlsl -Fo "%TEMP%\doe-c-d3d12\vertex.dxil"
     dxc -T ps_6_0 -E fragment_main tests\native_graphics.hlsl -Fo "%TEMP%\doe-c-d3d12\fragment.dxil"
+    dxc -T vs_6_0 -E vertex_main tests\native_mesh.hlsl -Fo "%TEMP%\doe-c-d3d12\mesh_vertex.dxil"
+    dxc -T ps_6_0 -E fragment_main tests\native_mesh.hlsl -Fo "%TEMP%\doe-c-d3d12\mesh_fragment.dxil"
 
 The build script only builds. After separate execution authorization:
 
     "%TEMP%\doe-c-d3d12\native_compute.exe" "%TEMP%\doe-c-d3d12\native_compute.dxil"
     "%TEMP%\doe-c-d3d12\native_texture.exe" "%TEMP%\doe-c-d3d12\native_texture.dxil"
     "%TEMP%\doe-c-d3d12\native_graphics.exe" "%TEMP%\doe-c-d3d12\vertex.dxil" "%TEMP%\doe-c-d3d12\fragment.dxil"
+    "%TEMP%\doe-c-d3d12\native_mesh.exe" "%TEMP%\doe-c-d3d12\mesh_vertex.dxil" "%TEMP%\doe-c-d3d12\mesh_fragment.dxil"
 
 A Windows-target C compiler with the actual SDK may alternatively use
 `make windows` and `make native-fixture`. Non-Windows `make` runs only host
@@ -130,14 +153,16 @@ a storage texture, copies to another texture and checks every byte of padded
 readback against binary-exact values, including preserved padding. The graphics
 fixture draws a sampled green fullscreen triangle over a red clear and checks
 exact RGBA bytes plus real timestamp ordering/frequency, releasing caller texture,
-query, upload, pipeline and command references before completion. No native fixture
+query, upload, pipeline and command references before completion. The mesh fixture
+draws indexed blue-near then red-far triangles with per-instance color and LESS
+depth testing. It checks exact BGRA blue bytes and every D32 value at 0.25 after
+early caller geometry/attachment/pipeline/command release. No native fixture
 executes as part of host checks.
 
 Windows SDK compilation, DXC compilation, native driver readback, debug-layer
 validation and physical qualification are **unrun** in the dot cloud environment.
 The fixture's portable syntax check is not any of those qualifications.
 
-The core SOURCE_INPUTS.sha256 / TERMINAL_RECEIPT.txt and texture TEXTURE_* seals
-are historical. Current graphics/query inputs and checks are in
-GRAPHICS_SOURCE_INPUTS.sha256 and GRAPHICS_TERMINAL_RECEIPT.txt; earlier evidence
-does not qualify changed bytes.
+Core SOURCE_INPUTS.sha256 / TERMINAL_RECEIPT.txt, TEXTURE_* and GRAPHICS_* seals
+are historical. Current mesh/depth inputs and checks are in MESH_SOURCE_INPUTS.sha256
+and MESH_TERMINAL_RECEIPT.txt; earlier evidence does not qualify changed bytes.

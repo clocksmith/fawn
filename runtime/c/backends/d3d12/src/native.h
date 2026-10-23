@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: MIT */
 #ifndef DOE_DX_NATIVE_H
 #define DOE_DX_NATIVE_H
-#include "../include/doe_d3d12_graphics.h"
+#include "../include/doe_d3d12_mesh.h"
 #if defined(DOE_DX_REQUIRE_WINDOWS) && !defined(_WIN32)
 #error "The native D3D12 build requires a Windows target and actual Windows SDK."
 #endif
@@ -24,6 +24,12 @@ typedef struct doe_dx_native_resources {
     doe_dx_native_texture *textures[DOE_DX_MAX_BINDINGS];
     size_t buffer_count, texture_count;
 } doe_dx_native_resources;
+
+typedef struct doe_dx_native_geometry {
+    doe_dx_native_binding vertices[DOE_DX_MAX_VERTEX_BUFFERS];
+    doe_dx_native_binding indices;
+    doe_dx_native_texture *depth;
+} doe_dx_native_geometry;
 
 doe_dx_status doe_dx_fail(doe_dx_status status, int32_t native_code,
     const char *operation, doe_dx_error *error);
@@ -51,10 +57,11 @@ void doe_dx_native_texture_transfer(doe_dx_native_commands *commands,
 void doe_dx_native_texture_copy(doe_dx_native_commands *commands,
     doe_dx_native_texture *source, doe_dx_native_texture *destination);
 doe_dx_status doe_dx_native_graphics_create(doe_dx_native_context *context,
-    const doe_dx_graphics_pipeline_desc *desc, doe_dx_native_pipeline **out, doe_dx_error *error);
+    const doe_dx_mesh_pipeline_desc *desc, doe_dx_native_pipeline **out, doe_dx_error *error);
 doe_dx_status doe_dx_native_draw(doe_dx_native_commands *commands,
     doe_dx_native_pipeline *pipeline, const doe_dx_native_resources *resources,
-    doe_dx_native_texture *color, const doe_dx_draw_desc *draw, doe_dx_error *error);
+    doe_dx_native_texture *color, const doe_dx_native_geometry *geometry,
+    const doe_dx_mesh_draw_desc *draw, doe_dx_error *error);
 doe_dx_status doe_dx_native_timestamps_create(doe_dx_native_context *context, uint32_t count,
     doe_dx_native_timestamps **out, doe_dx_error *error);
 void doe_dx_native_timestamps_destroy(doe_dx_native_timestamps *timestamps);

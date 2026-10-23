@@ -12,6 +12,7 @@ cl /nologo /std:c11 /W4 /WX /Iinclude /DDOE_DX_REQUIRE_WINDOWS /c ^
     src\timestamps.c src\windows_context.c src\windows_resources.c ^
     src\windows_commands.c src\windows_pipeline.c src\windows_bindings.c ^
     src\windows_textures.c src\windows_graphics.c src\windows_timestamps.c ^
+    src\vertex_layout.c src\geometry.c src\windows_geometry.c ^
     /Fo"%OUT%\\"
 if errorlevel 1 exit /b 1
 lib /nologo /OUT:"%OUT%\doe_d3d12.lib" ^
@@ -20,7 +21,8 @@ lib /nologo /OUT:"%OUT%\doe_d3d12.lib" ^
     "%OUT%\texture_transfer.obj" "%OUT%\bindings.obj" "%OUT%\graphics.obj" ^
     "%OUT%\timestamps.obj" "%OUT%\windows_context.obj" "%OUT%\windows_resources.obj" ^
     "%OUT%\windows_commands.obj" "%OUT%\windows_pipeline.obj" "%OUT%\windows_bindings.obj" ^
-    "%OUT%\windows_textures.obj" "%OUT%\windows_graphics.obj" "%OUT%\windows_timestamps.obj"
+    "%OUT%\windows_textures.obj" "%OUT%\windows_graphics.obj" "%OUT%\windows_timestamps.obj" ^
+    "%OUT%\vertex_layout.obj" "%OUT%\geometry.obj" "%OUT%\windows_geometry.obj"
 if errorlevel 1 exit /b 1
 cl /nologo /std:c11 /W4 /WX /D_CRT_SECURE_NO_WARNINGS /Iinclude ^
     tests\native_compute.c "%OUT%\doe_d3d12.lib" d3d12.lib dxgi.lib dxguid.lib ^
@@ -33,5 +35,9 @@ if errorlevel 1 exit /b 1
 cl /nologo /std:c11 /W4 /WX /D_CRT_SECURE_NO_WARNINGS /Iinclude ^
     tests\native_graphics.c "%OUT%\doe_d3d12.lib" d3d12.lib dxgi.lib dxguid.lib ^
     /Fo"%OUT%\native_graphics.obj" /Fe"%OUT%\native_graphics.exe"
+if errorlevel 1 exit /b 1
+cl /nologo /std:c11 /W4 /WX /D_CRT_SECURE_NO_WARNINGS /Iinclude ^
+    tests\native_mesh.c "%OUT%\doe_d3d12.lib" d3d12.lib dxgi.lib dxguid.lib ^
+    /Fo"%OUT%\native_mesh.obj" /Fe"%OUT%\native_mesh.exe"
 if errorlevel 1 exit /b 1
 exit /b 0

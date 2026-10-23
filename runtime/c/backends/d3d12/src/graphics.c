@@ -2,15 +2,16 @@
 #include "internal.h"
 #include <math.h>
 
-doe_dx_status doe_dx_commands_draw(doe_dx_commands *commands, doe_dx_pipeline *pipeline,
-    const doe_dx_compute_resources *resources, const doe_dx_draw_desc *draw, doe_dx_error *error) {
+doe_dx_status doe_dx_commands_draw_mesh(doe_dx_commands *commands, doe_dx_pipeline *pipeline,
+    const doe_dx_compute_resources *resources, const doe_dx_mesh_draw_desc *mesh, doe_dx_error *error) {
     doe_dx_status status = doe_dx_recording(commands, error);
     if (status != DOE_DX_OK) return status;
-    if (!pipeline || !draw || !draw->color || !draw->vertex_count || !draw->instance_count)
+    const doe_dx_draw_desc *draw = mesh ? &mesh->draw : NULL;
+    if (!pipeline || !draw || !draw->color || (!mesh->indices && !draw->vertex_count) || !draw->instance_count)
         return doe_dx_fail(DOE_DX_INVALID_ARGUMENT, 0, "commands.draw", error);
     if (!pipeline->graphics)
         return doe_dx_fail(DOE_DX_INVALID_ARGUMENT, 0, "commands.graphics_pipeline", error);
-    if (draw->vertex_count - 1 > UINT32_MAX - draw->first_vertex ||
+    if ((!mesh->indices && draw->vertex_count - 1 > UINT32_MAX - draw->first_vertex) ||
         draw->instance_count - 1 > UINT32_MAX - draw->first_instance || commands->operation_count == 65536)
         return doe_dx_fail(DOE_DX_RANGE, 0, "commands.draw.counts", error);
     if (draw->clear) {
@@ -29,14 +30,26 @@ doe_dx_status doe_dx_commands_draw(doe_dx_commands *commands, doe_dx_pipeline *p
     for (size_t index = 0; index < resources->texture_count; index++)
         if (resources->textures[index] == draw->color)
             return doe_dx_fail(DOE_DX_UNSUPPORTED, 0, "commands.draw.attachment_alias", error);
+    doe_dx_native_geometry geometry = {0};
+    status = doe_dx_prepare_geometry(commands, pipeline, resources, mesh, &geometry, &added, error);
+    if (status != DOE_DX_OK) return status;
     if (!doe_dx_find_texture(commands, draw->color)) added++;
     if (added > DOE_DX_MAX_COMMAND_RESOURCES - commands->buffer_count - commands->texture_count - commands->timestamp_count)
         return doe_dx_fail(DOE_DX_RANGE, 0, "commands.draw.resource_budget", error);
-    status = doe_dx_native_draw(commands->native, pipeline->native, &native, draw->color->native, draw, error);
+    status = doe_dx_native_draw(commands->native, pipeline->native, &native, draw->color->native, &geometry, mesh, error);
     if (status != DOE_DX_OK) return doe_dx_context_result(commands->context, status, error);
     doe_dx_use_resources(commands, pipeline, resources);
     doe_dx_use_texture(commands, draw->color);
+    doe_dx_use_geometry(commands, mesh);
     if (draw->clear) doe_dx_find_texture(commands, draw->color)->initialized = true;
     commands->operation_count++;
     return doe_dx_fail(DOE_DX_OK, 0, "commands.draw", error);
+}
+
+doe_dx_status doe_dx_commands_draw(doe_dx_commands *commands, doe_dx_pipeline *pipeline,
+    const doe_dx_compute_resources *resources, const doe_dx_draw_desc *draw, doe_dx_error *error) {
+    if (!draw) return doe_dx_fail(DOE_DX_INVALID_ARGUMENT, 0, "commands.draw", error);
+    doe_dx_mesh_draw_desc mesh = {0};
+    mesh.draw = *draw;
+    return doe_dx_commands_draw_mesh(commands, pipeline, resources, &mesh, error);
 }

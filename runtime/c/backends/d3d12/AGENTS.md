@@ -22,8 +22,15 @@
   a second resource registry. Dynamic views/samplers need a real consumer before
   broadening the boundary. Preserve historical source seals when extending it.
 - Graphics and compute share root layout, binding validation and pipeline lifetime.
-  A rejected draw must not record a clear or transition; allocate both RTV and
+  A rejected draw must not record a clear or transition; allocate RTV, optional DSV and
   shader descriptor heaps first. Never infer full initialization from draw coverage.
 - Timestamp slots require an actual EndQuery before resolve. Track speculative slot
   initialization on the existing command, publish at completion, and reject partial
   readback into uninitialized bytes. Zero frequency is failure, never a fallback.
+- Vertex/index input uses allocation-bounded native views. Direct vertex/instance
+  spans are checked; index contents remain GPU data, not a fabricated CPU proof.
+  Reject aliases across shader/vertex/index roles before transitions or retention.
+  D32 clear/load uses the same texture initialization and command retirement owner.
+- Vertex location semantics are TEXCOORD, matching the current C HLSL emitter,
+  not the retained Zig bridge's ATTR convention. Source agreement alone is not
+  DXC compilation, SDK linkage or native-consumer admission.

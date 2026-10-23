@@ -28,6 +28,7 @@ static doe_dx_status validate_layout(const doe_dx_resource_pipeline_desc *desc) 
     }
     for (size_t index = 0; index < desc->texture_count; index++) {
         const doe_dx_texture_binding_layout *binding = &desc->textures[index];
+        if (binding->format == DOE_DX_D32_FLOAT) return DOE_DX_UNSUPPORTED;
         if (!doe_dx_format_valid(binding->format) ||
             (binding->access != DOE_DX_READ_ONLY && binding->access != DOE_DX_READ_WRITE))
             return DOE_DX_INVALID_ARGUMENT;
@@ -57,17 +58,19 @@ static doe_dx_status validate_layout(const doe_dx_resource_pipeline_desc *desc) 
 }
 
 static doe_dx_status create_pipeline(doe_dx_context *context,
-    const doe_dx_resource_pipeline_desc *desc, const doe_dx_graphics_pipeline_desc *graphics,
+    const doe_dx_resource_pipeline_desc *desc, const doe_dx_mesh_pipeline_desc *mesh,
     doe_dx_pipeline **out, doe_dx_error *error) {
     if (!context || !desc || !out)
         return doe_dx_fail(DOE_DX_INVALID_ARGUMENT, 0, "pipeline.create", error);
-    doe_dx_status status = validate_layout(desc);
+    uint32_t ends[DOE_DX_MAX_VERTEX_BUFFERS] = {0};
+    doe_dx_status status = mesh ? doe_dx_validate_mesh(mesh, ends) : DOE_DX_OK;
+    if (status == DOE_DX_OK) status = validate_layout(desc);
     if (status != DOE_DX_OK) return doe_dx_fail(status, 0, "pipeline.layout", error);
     if (context->objects == SIZE_MAX) return doe_dx_fail(DOE_DX_RANGE, 0, "pipeline.create", error);
     if (context->lost) return doe_dx_fail(DOE_DX_DEVICE_LOST, 0, "pipeline.create", error);
     doe_dx_pipeline *pipeline = calloc(1, sizeof(*pipeline));
     if (!pipeline) return doe_dx_fail(DOE_DX_OUT_OF_MEMORY, 0, "pipeline.allocate", error);
-    if (graphics) status = doe_dx_native_graphics_create(context->native, graphics, &pipeline->native, error);
+    if (mesh) status = doe_dx_native_graphics_create(context->native, mesh, &pipeline->native, error);
     else status = doe_dx_native_pipeline_create(context->native, desc, &pipeline->native, error);
     if (status != DOE_DX_OK) {
         free(pipeline);
@@ -75,8 +78,16 @@ static doe_dx_status create_pipeline(doe_dx_context *context,
     }
     pipeline->context = context;
     pipeline->references = 1;
-    pipeline->graphics = graphics != NULL;
-    if (graphics) pipeline->color_format = graphics->color_format;
+    pipeline->graphics = mesh != NULL;
+    if (mesh) {
+        pipeline->color_format = mesh->graphics.color_format;
+        pipeline->depth_enabled = mesh->depth_enabled;
+        pipeline->vertex_buffer_count = mesh->vertex_buffer_count;
+        for (size_t index = 0; index < mesh->vertex_buffer_count; index++) {
+            pipeline->vertex_buffers[index] = mesh->vertex_buffers[index];
+            pipeline->vertex_ends[index] = ends[index];
+        }
+    }
     pipeline->binding_count = desc->buffers.binding_count;
     pipeline->texture_count = desc->texture_count;
     if (pipeline->binding_count)
@@ -97,11 +108,16 @@ doe_dx_status doe_dx_pipeline_create_resources(doe_dx_context *context,
 
 doe_dx_status doe_dx_pipeline_create_graphics(doe_dx_context *context,
     const doe_dx_graphics_pipeline_desc *desc, doe_dx_pipeline **out, doe_dx_error *error) {
-    if (!desc || !desc->vertex_bytecode || !desc->vertex_bytecode_size)
-        return doe_dx_fail(DOE_DX_INVALID_ARGUMENT, 0, "graphics.create", error);
-    if (desc->color_format != DOE_DX_RGBA8_UNORM)
-        return doe_dx_fail(DOE_DX_UNSUPPORTED, 0, "graphics.format", error);
-    return create_pipeline(context, &desc->fragment, desc, out, error);
+    if (!desc) return doe_dx_fail(DOE_DX_INVALID_ARGUMENT, 0, "graphics.create", error);
+    doe_dx_mesh_pipeline_desc mesh = {0};
+    mesh.graphics = *desc;
+    return doe_dx_pipeline_create_mesh(context, &mesh, out, error);
+}
+
+doe_dx_status doe_dx_pipeline_create_mesh(doe_dx_context *context,
+    const doe_dx_mesh_pipeline_desc *desc, doe_dx_pipeline **out, doe_dx_error *error) {
+    if (!desc) return doe_dx_fail(DOE_DX_INVALID_ARGUMENT, 0, "mesh.create", error);
+    return create_pipeline(context, &desc->graphics.fragment, desc, out, error);
 }
 
 doe_dx_status doe_dx_pipeline_create(doe_dx_context *context,

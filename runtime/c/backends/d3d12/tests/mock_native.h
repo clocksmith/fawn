@@ -31,6 +31,11 @@ typedef struct mock_state {
     size_t draws, timestamp_writes, timestamp_resolves;
     doe_dx_native_texture *draw_color;
     doe_dx_draw_desc draw;
+    doe_dx_native_geometry geometry;
+    doe_dx_index_binding indices;
+    size_t vertex_count;
+    bool indexed, clear_depth;
+    float depth_clear;
     doe_dx_native_timestamps *timestamp_heap;
     uint32_t timestamp_index, resolve_first, resolve_count;
     uint64_t resolve_offset, frequency;

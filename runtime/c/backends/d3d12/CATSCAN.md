@@ -31,9 +31,9 @@ Execute admitted D3D12 compute, offscreen draws, transfers and timestamp queries
 ## Acceptance
 
 - [Focused checks](Makefile) exercise rollback, ranges, ordering and lifetime through a private native-call seam.
-- [Native fixtures](tests/native_graphics.c) require Windows SDK compilation and separately authorized driver execution.
+- [Native fixtures](tests/native_mesh.c) require Windows SDK compilation and separately authorized driver execution.
 - Complete retained consumer parity and physical qualification remain separate gates.
-- Evidence: [current source-bound receipt](GRAPHICS_TERMINAL_RECEIPT.txt); [historical core](TERMINAL_RECEIPT.txt).
+- Evidence: [current source-bound receipt](MESH_TERMINAL_RECEIPT.txt); [historical core](TERMINAL_RECEIPT.txt).
 
 ## Non-goals
 
