@@ -4,7 +4,7 @@
 #include <string.h>
 
 typedef struct {
-    size_t statements, expressions, tokens, instructions, locals, scope, values, words, total;
+    size_t statements, expressions, constants, tokens, instructions, locals, scope, values, words, total;
 } JobLayout;
 static bool reserve_array(size_t *cursor, size_t count, size_t element,
                           size_t alignment, size_t *offset) {
@@ -21,6 +21,7 @@ static bool layout_job(const CompilerLimits *l, JobLayout *out) {
     size_t cursor = sizeof(CompilerWorkspace);
     if (!reserve_array(&cursor, l->statements, sizeof(Statement), _Alignof(Statement), &out->statements) ||
         !reserve_array(&cursor, l->physical_expressions, sizeof(Expression), _Alignof(Expression), &out->expressions) ||
+        !reserve_array(&cursor, l->constants, sizeof(ConstantSyntax), _Alignof(ConstantSyntax), &out->constants) ||
         !reserve_array(&cursor, l->tokens + 1u, sizeof(Token), _Alignof(Token), &out->tokens) ||
         !reserve_array(&cursor, l->instructions, sizeof(IrInstruction), _Alignof(IrInstruction), &out->instructions) ||
         !reserve_array(&cursor, l->locals, sizeof(IrLocal), _Alignof(IrLocal), &out->locals) ||
@@ -39,15 +40,15 @@ bool compiler_job_layout(const DoeCompilerJobCapacities *c, CompilerLimits *limi
     /* Reserve the final header bound as well as each actual target identity. */
     const uint64_t instructions = UINT64_C(1) + UINT64_C(4) * c->expressions +
                                   UINT64_C(8) * c->statements;
-    const uint64_t target_bound = UINT64_C(256) + UINT64_C(16) * instructions;
+    const uint64_t target_bound = UINT64_C(256) + UINT64_C(32) * instructions;
     if (instructions >= UINT32_MAX || target_bound >= UINT32_MAX) return false;
     CompilerLimits candidate = { .source_bytes = c->source_bytes, .tokens = c->tokens,
         .statements = c->statements, .expressions = c->expressions,
-        .physical_expressions = c->expressions, .instructions = (size_t)instructions,
+        .physical_expressions = c->expressions + 1u, .constants = c->expressions + 1u, .instructions = (size_t)instructions,
         .values = (size_t)instructions + 1u, .locals = c->statements + 1u,
         .words = c->words, .expression_depth = c->expression_depth,
         .control_depth = c->control_depth, .target_bound = (uint32_t)target_bound,
-        .extended = true, .uniforms = true };
+        .legacy_counts = false, .uniforms = true };
     JobLayout layout;
     if (!layout_job(&candidate, &layout)) return false;
     *limits = candidate;
@@ -57,6 +58,7 @@ bool compiler_job_layout(const DoeCompilerJobCapacities *c, CompilerLimits *limi
 static void bind_counts(CompilerWorkspace *job) {
     job->syntax.statement_capacity = job->limits.statements;
     job->syntax.expression_capacity = job->limits.physical_expressions;
+    job->syntax.constant_capacity = job->limits.constants;
     job->tokens.capacity = job->limits.tokens;
     job->program.instruction_capacity = job->limits.instructions;
     job->program.local_capacity = job->limits.locals;
@@ -71,6 +73,7 @@ void compiler_job_bind(CompilerWorkspace *job, void *memory, const CompilerLimit
     job->syntax.statements = (Statement *)(bytes + layout.statements);
     job->syntax.expressions = (Expression *)(bytes + layout.expressions);
     job->tokens.tokens = (Token *)(bytes + layout.tokens);
+    job->syntax.constants = (ConstantSyntax *)(bytes + layout.constants);
     job->program.instructions = (IrInstruction *)(bytes + layout.instructions);
     job->program.locals = (IrLocal *)(bytes + layout.locals);
     job->scope = (LocalBinding *)(bytes + layout.scope);
@@ -83,13 +86,16 @@ void compiler_legacy_bind(LegacyWorkspace *storage, bool uniforms) {
     memset(job, 0, sizeof(*job));
     job->limits = (CompilerLimits){ .source_bytes = DOE_COMPILER_MAX_SOURCE_BYTES,
         .tokens = DOE_COMPILER_MAX_TOKENS, .statements = MAX_STATEMENTS,
-        .expressions = MAX_EXPRESSIONS, .physical_expressions = MAX_EXPRESSIONS + MAX_STATEMENTS,
+        .expressions = MAX_EXPRESSIONS, .physical_expressions = MAX_EXPRESSIONS + MAX_STATEMENTS + 1u,
+        .constants = MAX_EXPRESSIONS + 1u,
         .instructions = MAX_IR_INSTRUCTIONS, .values = MAX_IR_VALUES,
         .locals = MAX_STATEMENTS + 1u, .words = DOE_COMPILER_MAX_WORDS,
         .expression_depth = MAX_EXPRESSION_DEPTH, .control_depth = MAX_IF_DEPTH,
-        .target_bound = 256u + 16u * MAX_IR_INSTRUCTIONS, .uniforms = uniforms };
+        .target_bound = 256u + 32u * MAX_IR_INSTRUCTIONS,
+        .legacy_counts = true, .uniforms = uniforms };
     job->syntax.statements = storage->statements;
     job->syntax.expressions = storage->expressions;
+    job->syntax.constants = storage->constants;
     job->tokens.tokens = storage->phase.tokens;
     job->program.instructions = storage->phase.lowered.instructions;
     job->program.locals = storage->phase.lowered.locals;

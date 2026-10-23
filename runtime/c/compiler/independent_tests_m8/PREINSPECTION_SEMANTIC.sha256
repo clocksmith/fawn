@@ -1,0 +1,7 @@
+8a9faa9578104b97972f519877e2fa6147ff425b303b092d7b639258142fbc37  /workspace/shared/doe-c-migration-evidence-20261023/milestone8/evaluator/compute_oracle_m8.py
+f719a368c7bae47f29421c786d91239aeff1395b4e79e2805dc63f7ba526a4c4  /workspace/shared/doe-c-migration-evidence-20261023/milestone8/evaluator/exact_numeric_m8.py
+930fb7efabb71588476cad92285f57541dd6efbf5490d2be9b13464e1abe6daa  /workspace/shared/doe-c-migration-evidence-20261023/milestone8/evaluator/fixtures_constants_m8.py
+9299e09fe25e6c28702deeee19dd31c8b1e9b356dc71bce4d54618228cf2092b  /workspace/shared/doe-c-migration-evidence-20261023/milestone8/evaluator/fixtures_scalar_m8.py
+cb1a4d04822095a53e6c27bb3d8e3299111ed8ba3e908bc43f80e7286efe0d4d  /workspace/shared/doe-c-migration-evidence-20261023/milestone8/evaluator/semantic_m8.py
+00f5c56cadd6f78a52d88bf49ed4379f88658af0f3ae0ef082ff739a0f479d85  /workspace/shared/doe-c-migration-evidence-20261023/milestone8/evaluator/test_oracle_m8.py
+ef2b2d9f9199915d1c87dadc6b4a585fb37a9d2f210f4cce95884a13071294b2  /workspace/shared/doe-c-migration-evidence-20261023/milestone8/evaluator/witnesses_m8.py

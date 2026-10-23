@@ -1,137 +1,105 @@
 # C compiler implementation style
 
-Follow the repository's native adapter rules and the frozen milestone. This local guide records implementation choices, not expanded language or qualification claims.
+Follow repository native adapter rules and the frozen milestone. This guide
+records current implementation choices, not expanded qualification claims.
 
-- Use C11, explicit status/boolean results and caller-owned spans. Check lengths and capacities before indexing, casts and publication.
-- Keep lexical, parsed, validated and target representations separate. Emission consumes typed binding identities and operations, never source spelling.
-- Preserve source offsets through semantic lowering. Report the first admitted pipeline failure with a useful bounded message.
-- Keep ownership visible: typed caller workspace (v2) or private stack workspace (ABI1), explicit CLI allocations and file descriptors with one cleanup path, no retained caller pointers or mutable globals. Optional reflection is a nullable path, not a default filename; only a successfully acquired temporary or published artifact is eligible for cleanup.
-- Prefer typed, bounded records over generic containers, callback frameworks or erased `void *` domain values.
-- Use named small helpers for parsing, resolution, validation and emission. The emitter's local serialization macro only supplies an array length and propagates failure; it is not an IR or dispatch framework.
-- Keep test evidence separate from implementation. Test semantics, error/output atomicity and real native consumers, not desired source snippets. Keep first failures when repairing implementation or classifying intentional contract expansion.
-- Preserve MIT notices and imported-source identity. Do not mechanically translate production Zig or mutate historical experiments.
+- Use C11, explicit boolean/status results and caller-owned spans. Check lengths,
+  multiplication, alignment, capacities, IDs and publication before use.
+- Keep lexical, syntax, scalar/type/constant, IR and target ownership distinct.
+  One grammar/sema/emitter serves fixed and job adapters; capacity differences
+  are not alternate language dialects.
+- Prefer typed bounded records and named domain helpers to generic containers,
+  callback frameworks, erased domain values or mechanically translated Zig.
+- Preserve original source offsets. Private source spans borrow caller bytes only
+  for the call; published IR/reflection names are copied. Token storage dies at
+  parse return before fixed union storage becomes IR/target scratch.
+- No library allocation, retained pointer, mutable global or hidden second
+  workspace. CLI allocations/file descriptors have visible ownership and cleanup.
+  Only owned temporary/published artifacts may be removed after failure.
+- Keep original tests/seals/receipts immutable. Classify each intentional former
+  rejection explicitly; do not relax whole classes to obtain a passing suite.
 
-## Structured owner limits
+## Scalar and stage ownership
 
-The fixed ABI1/v2 capability owns at most 16 preorder statements and 320 charged scalar
-expression nodes. Each if records then/else ranges; the fifth nested if rejects.
-Expression depth is at most 18: leaves count one, load(index) adds one, binary/max
-adds one to the deepest child, and parentheses add one without another node.
-Every storage index and both unsigned comparison operands use this same tree
-and typed lowering, not a second atom/index grammar. These are legacy capability limits, not a permanent full-compiler allocation model.
-Job capacities use the same owners through checked caller slices.
+NumericValue carries independent IrType and bit payload. AbstractInt is signed64;
+AbstractFloat is binary64. Do not use a u32 payload for abstract integers, fold
+abstract floats at f32, propagate a destination type through an abstract subtree,
+or treat explicit conversion as automatic materialization. Overload selection
+precedes conversion, including concrete-only f32 constructor and runtime shift
+rules. Let snapshots are runtime-stage reads; consts retain their numeric stage.
 
-In the legacy capability, a scalar node emits at most one typed IR operation. Each if adds a comparison
-and three control markers; other statements add at most one operation. Only an
-exact leading unannotated global-invocation-x alias adds one exempt input value,
-with no statement or node charge. All other builtin reads count as nodes, with
-no input prelude. Thus 1 + 320 + 16 * 4 = 385 instructions and 386 value-map slots
-remain sufficient. Reusing locals adds no operations. Appends and serialization
-check their own bounds, including the separate 4,096-word output cap.
+numeric.c owns locale-free bounded literal parsing, rounding, const arithmetic and
+checked conversions. Lexer/parser preserve raw literal spans, not floating host
+values. Const evaluation checks every evaluated intermediate. Skipped short-circuit
+numeric evaluation is distinct from required name/type/dependency validation and
+mandatory divisor/count checks. Runtime operators never call the const evaluator.
 
-Compute input declarations own semantic identities independently of order/name.
-The four vector builtins have u32 x/y/z components; local_invocation_index is
-scalar. The emitter maps those identities to BuiltIn decorations and includes
-all and only declared input variables, including unused inputs. Entry-point
-argument storage derives from the maximum name length and five inputs. Zero
-resources, parameters or body statements never fabricate a global input.
-Workgroup dimensions and their checked product remain within the frozen bound.
+The pipeline owns one NumericEnvironment. Save/hold/normalize caller rounding,
+traps, exception flags and SSE subnormal modes; restore before publication on both
+success and failure. Use the frozen strict FP build flags and qualified IEEE host,
+with no contraction/reassociation or process-global locale changes. A failed
+restore is a specific host error, not a claim of successful state preservation.
 
-Scope records retain evaluated typed value IDs, not expressions to replay.
-Save/restore the visible record count around each brace-delimited block. A new
-local enters scope only after its initializer; sibling scopes cannot leak
-values. Preserve legacy alias lookup rules and its no-shadowing capability. Job scopes
-allow ordinary shadowing but reject same-scope duplicates; initializer and type
-lookup occur before the new binding enters scope. Resolve max and explicit type annotations against
-visible values before treating their spellings as builtins.
+Typed IR uses concrete scalar types only. Keep safe-operation guards in the
+emitter: normalize integer denominators, mask shifts, and sanitize/clamp float
+conversion inputs before potentially invalid target instructions. Do not select
+over an already-invalid result. Signed robust indices test nonnegativity before
+combining with the independent resource length check. Target bitcast semantics do
+not prove universal physical NaN/subnormal payload preservation.
 
-Decimal syntax retains exact numerator/denominator records. Materialization
-normalizes that rational with checked integer operations, forms a 24-bit
-significand, and rounds by comparing remainder against denominator minus
-remainder, breaking ties toward an even significand. There is no locale-sensitive
-or host-floating conversion. A float leaf is not a runtime operand until bound
-to a local; reject constant-only f32 arithmetic/max subtrees instead of evaluating
-abstract expressions at binary32 precision. Target arithmetic follows tree and
-source order as separate operations; there is no reassociation or contraction
-pass. Max lowers to a typed comparison and select.
+## Namespace and caller storage
 
-Validate and lower all source statements even after return. The emitter alone
-suppresses unreachable operations, carries actual current labels through robust
-access merges, and adds branches only to live blocks. Both-return selections
-still emit their required merge with `OpUnreachable`. This preserves nested Phi
-predecessors without ever adding a second terminator after return. Keep the ABI1 public
-header byte-identical; v2 has its own frozen header, and private workspace is measured, not hidden.
+Module declarations are hoisted and source-order independent. Constant resolution
+is iterative: unresolved ConstantSyntax value storage holds scan/parent links;
+only a fully resolved declaration publishes a numeric payload into that union.
+Scan all initializer references even in unused/skipped expressions. C=E+1 follows
+from one node per new initializer and one exact legacy exemption. No recursive
+stack proportional to module declarations or private heap worklist is allowed.
 
-## Resource layout and workspace ownership
+Local scopes save/restore visible record counts. A binding enters scope after its
+initializer; same-scope duplicates reject and nested/module shadowing is ordinary
+WGSL lookup across all adapters. Type names, constructors, max and bitcast must
+resolve normally before builtin dispatch. Immutable runtime bindings retain IDs,
+not ASTs to replay; const bindings retain typed numeric values.
 
-Represent module resources and flat struct/member declarations independently.
-Type resolution is declaration-order independent; member identity is an owner
-struct index plus member index, never a resource/field spelling convention.
-Validate the full module namespace before lowering. Use the same typed resource
-and layout IR for emission and each reflection schema. Uniform access uses the
-Uniform storage class with Block/Offset and fixed member indices, not runtime
-array length or short-buffer repair. Storage robustness keeps each access's own
-binding, even beside uniform loads and early returns.
+storage.c owns the frozen job formula I=1+4E+8S, I+1 semantic-value entries, S+1
+local/scope entries, E+1 constants and the target bound256+32I. Each typed slice
+checks SIZE_MAX/alignment, every semantic append checks capacity, each target
+reservation checks its bound, and word serialization remains independent. Record
+an operation-by-operation proof when adding IR/target operations; do not enlarge
+bounds after failures. Semantic IDs alone index value maps, never target IDs.
 
-Syntax owns copied declaration names and compact offset/length spans for scalar
-expression names. Validate spans against source length before use; no expression
-stores a 64-byte name or token pointer. IR/reflection own published names. Syntax
-survives parsing while the caller source remains borrowed for the complete call. TokenList lifetime ends at
-parse return, permitting its union storage to become the combined typed program
-and target scratch. Do not retain token pointers or reinterpret live token state
-as IR. ABI1 has a real typed local workspace, while v2 accepts correctly aligned
-malloc/aligned-allocation storage after version/size/alignment preflight. One
-shared capability-parameterized pipeline performs lexical admission through
-emission. Result layout projection stays at its API wrapper's successful
-publication point. No library allocator or implicit second workspace is allowed.
+Fixed adapters retain source/token/statement/expression/depth/IR/word limits and
+exact leading-constant, leading-global-x-alias, old-if-comparison and bare-attribute
+accounting. Compact private names create space for constant metadata without
+expanding public headers. Actual measured workspace must remain<=77760 and ABI1
+frame<=77824; every other library frame<=8192. See README for current measurements.
 
-Every nested robust load finishes its own merge before the surrounding index
-arithmetic or comparison uses its value. OOB loads yield typed zero, not an
-invalid flag; zero may select a valid outer read or store. Wrap u32 arithmetic
-before independently guarding the final index of each binding. Keep uniform
-minimum binding requirements separate from storage robustness. CLI JSON owns
-bounded append mechanics, not another semantic/reflection registry.
+## Structured state and resources
 
-## Configurable function jobs and structured state
+Validate all source after return; only emission suppresses dead operations. Keep
+actual current labels through robust and short-circuit merges. Both-return ifs
+retain OpUnreachable at their structural merge; no block receives a second
+terminator. Each runtime logical RHS needs a branch/Phi, not eager evaluation.
 
-`storage.c` owns checked count-to-byte multiplication, aligned slice offsets and
-ID/header-bound arithmetic. Do not grow fixed arrays with language milestones.
-New jobs derive I=1+4*E+8*S instructions, I+1 semantic-value map entries and S+1
-local/scope entries; staging words remain independent. Fixed reflection/module
-bounds are explicit, not silently expanded by job sizing. Every append/reservation
-checks capacity even when a conservative sizing proof exists. The library never
-allocates; the caller distinguishes its own allocation failure from compiler
-INPUT_ERROR/OUTPUT_TOO_SMALL. Versioned public layout is separate from evolving
-language admission; amendments preserve receipts rather than arbitrary bugs.
+Function variables are declared at target entry but initialized at their source
+point on every iteration. For-header scope survives test/update/body; body locals
+cannot leak into update. Continuing may reference body scope only when targeted
+continue cannot bypass its declaration. Validate behavior sets and continuing
+restrictions even in dead source. A predecessorless continuing block retains only
+the required structural back edge. Observation step limits are not source limits.
 
-Keep source scope, semantic mutable-local identity and target pointer identity
-separate. Function OpVariable declarations are at entry; initialization stores
-are at the original declaration point on every iteration. Immutable bindings
-hold evaluated value IDs, not AST expressions to replay. For-header scope
-survives test/update/body, but body locals cannot leak into update. A loop body
-scope may be referenced by continuing only when a targeted continue cannot
-bypass that declaration. Check continuing control restrictions against the
-nearest loop and reject return through every enclosing continuing context.
+Resource/member identity is a typed declaration index, not spelling. Frozen public
+resources remain u32/f32. Uniform layout and minimum extents are distinct from
+storage robustness. Each array access guards its own resource before even forming
+an element pointer; OOB load zero can be a valid outer index. No combined-length
+shortcut suppresses an otherwise valid outer operation.
 
-Lower Next/Break/Continue/Return behavior sets bottom-up while still checking
-unreachable source. An unreachable continuing block must not invent Next.
-The backend suppresses dead operations, not validation, and tracks actual labels
-after robust loads and short circuits. A predecessorless loop continuing block
-still supplies SPIR-V's structural back-edge, with no source operations emitted.
-Each logical RHS has a branch and Phi; eager select/logical operations cannot
-stand in for short circuit. Loop labels and target IDs are reserved independently
-of semantic values, never by indexing an array with arbitrary target IDs.
+Expression/control depths remain64/32 for jobs and18/4 fixed. The parser's
+compound ceiling2C+1 bounds malformed continuing syntax too. Re-measure per-function
+frames and derive conservative combined parse/sema/emission call paths whenever
+recursive owners change. Caller capacity and spare workspace never increase depth.
 
-Direct integer literals retain AbstractInt until direct contextual conversion.
-Do not propagate expected concrete types through unsupported abstract subtrees.
-Concrete u32 wraps; floating constant-only trees remain outside this owner.
-All name, type, mutability and behavior checks apply to dead source too.
-
-Expression/control depths are independently bounded at 64/32 for jobs, 18/4 for
-legacy adapters. Malformed nested continuing syntax also has a checked compound
-recursion ceiling of 2*control_depth+1. Neither source/node/statement capacity nor
-extra supplied workspace bytes increases stack depth. Record per-function GCC
-frames and a conservative combined call-path bound when changing recursion.
-The current legacy workspace/frame are 73,400/73,488 bytes; every other library
-frame is at most 672 bytes at GCC14.2 -O2. See README for the derived recursion
-bounds and exact native/CLI reproduction.
+The emitter's local EMIT macro only serializes a bounded typed operand array and
+propagates failure; it is not an IR or dispatch framework. Preserve MIT notices,
+source provenance and the separation of developer tests from independent acceptance.

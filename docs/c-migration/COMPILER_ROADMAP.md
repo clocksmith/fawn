@@ -27,10 +27,29 @@ Preserve ABI1/v2 layouts and applicable storage/reflection behavior
 through shared-pipeline compatibility adapters, not a second compiler or hidden
 large stack workspace. Any allocating convenience path needs a distinct,
 documented OOM result and fault tests. Avoid increasing private arrays indefinitely
-or treating historical unsupported cases as permanent grammar promises. General
-numeric/type/module ownership is the next dependency to scope from the remaining
-81 source failures; first lexical failure alone does not describe all missing
-semantics. Physical backend qualification remains independent.
+or treating historical unsupported cases as permanent grammar promises. Physical
+backend qualification remains independent.
+
+## Accepted scalar numeric prerequisite and next owner
+
+The [accepted M8 owner](../../runtime/c/compiler/MILESTONE_8_RESULTS.md) adds
+abstract/concrete scalar types, constants and iterative dependency resolution,
+constant attributes, conversions and guarded numeric target operations. One
+grammar serves all APIs; their actual storage/reflection limits remain explicit.
+The unchanged consumer now admits 23 of 98 paths. The remaining 75 first blockers
+include workgroup storage (37), mathematical builtins (12), extension directives
+(12), vector storage (9), and five other cases. These are overlapping dependency
+observations, not a promise that one fix admits each source.
+
+Next trace and freeze the reusable module/function-call and typed scalar-builtin
+owner: signatures, lexical lookup, argument evaluation, return behavior, call
+graph validation, owned function IR and actual target calls. Scalar helper
+witnesses also need a coherent mathematical builtin family. Multiple compute
+entries additionally require explicit entry selection and reflection disposition;
+helper support must not silently claim that surface. Preserve independent numeric
+accuracy/domain oracles and guard target operations whose exceptional behavior
+differs from WGSL. Aggregate/address-space layout and workgroup collective
+semantics follow as separate owners, not shader-specific recognizers.
 
 ## Remaining dependency map
 

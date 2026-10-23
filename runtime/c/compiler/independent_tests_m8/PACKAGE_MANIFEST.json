@@ -1,0 +1,264 @@
+{
+  "source_only": true,
+  "files": [
+    {
+      "path": "EVALUATOR_ERRATA_M8.md",
+      "bytes": 3497,
+      "sha256": "1ab245ad1dfc6b45bc5dc3ec846466d3de57c249553e1bd85542f4740f5b0547"
+    },
+    {
+      "path": "FREEZE_INDEX.json",
+      "bytes": 1341,
+      "sha256": "a5e3bac8e8cc3944b4b1607a8eab65f9bbb524b20b14aa1398e767435f1f7135"
+    },
+    {
+      "path": "FROZEN_OBLIGATIONS_M8.md",
+      "bytes": 12366,
+      "sha256": "c362c9f6828209464fbfa49ad5da2399e22dfe246264255a64c99a45bfa7d1e9"
+    },
+    {
+      "path": "FROZEN_OBLIGATIONS_M8.sha256",
+      "bytes": 164,
+      "sha256": "98cd5bb555494b9a971b4274ed82ddbda26063919aefc8e0d5a552526bef9108"
+    },
+    {
+      "path": "LICENSE",
+      "bytes": 1073,
+      "sha256": "66ccf82f3056418261f3a501d5ad03f156655171980c6d51a25a46495353c4d3"
+    },
+    {
+      "path": "ORACLE_IMPORT.sha256",
+      "bytes": 127,
+      "sha256": "0bf4cde8cb1deb668f14f4902b6ee769ee8ff4678bd2a9cace2df4d66068d41a"
+    },
+    {
+      "path": "PREINSPECTION_SEMANTIC.sha256",
+      "bytes": 1110,
+      "sha256": "73abc9e2e2e956954bf3932c52eb1820985a9b0853dae2a7198ef24583778ed3"
+    },
+    {
+      "path": "README.md",
+      "bytes": 5317,
+      "sha256": "cf05f7fb887e97211f2d9233b70bd771e0469e38d8923c5ef43e823de9637771"
+    },
+    {
+      "path": "STORAGE_LEDGER_REVIEW_M8.md",
+      "bytes": 6166,
+      "sha256": "ac240c603e711e6816caeafc1cc8ef416a8e08304e388f4657a89aa6b7fb6618"
+    },
+    {
+      "path": "capacity_m8.py",
+      "bytes": 8630,
+      "sha256": "2c5d995e110d70f6c5696e4eea62fccd2e4b67c11ee0dde2c5e1e3543a1d89ee"
+    },
+    {
+      "path": "compute_oracle_m8.py",
+      "bytes": 18074,
+      "sha256": "8460335bfba23b2723c964a8bc42307b76e9530ff44bfb34df3e9b55a6cf6a5d"
+    },
+    {
+      "path": "corpus_m8.py",
+      "bytes": 9751,
+      "sha256": "65e626c0d59530139aa50c26f746f9d8041518e28253ad7c1b325f85836c6577"
+    },
+    {
+      "path": "evaluator_errata_m8.py",
+      "bytes": 1201,
+      "sha256": "11fa57cd6e2c64780048466a1f882c6e253560f344b4ad6397ba54bb2cd83f5e"
+    },
+    {
+      "path": "exact_numeric_m8.py",
+      "bytes": 6544,
+      "sha256": "f719a368c7bae47f29421c786d91239aeff1395b4e79e2805dc63f7ba526a4c4"
+    },
+    {
+      "path": "fixtures_constants_m8.py",
+      "bytes": 7185,
+      "sha256": "930fb7efabb71588476cad92285f57541dd6efbf5490d2be9b13464e1abe6daa"
+    },
+    {
+      "path": "fixtures_scalar_m8.py",
+      "bytes": 24446,
+      "sha256": "9299e09fe25e6c28702deeee19dd31c8b1e9b356dc71bce4d54618228cf2092b"
+    },
+    {
+      "path": "mutations_m8.py",
+      "bytes": 6804,
+      "sha256": "3edd0ad6fe0f457cb19d77ef3ef139d7e973befc15ed1daa83fdde0b1f500060"
+    },
+    {
+      "path": "native_host/CLI_PRE_CANDIDATE_FREEZE.json",
+      "bytes": 1266,
+      "sha256": "e6b569498369456548ccef2aec4f1a4b3629c196deeba3f13017a61457faab1a"
+    },
+    {
+      "path": "native_host/CONTROLS_PRE_CANDIDATE.sha256",
+      "bytes": 170,
+      "sha256": "01ef8fcdd1a974a188e981afb06ba7e63d2182322bd09abfb8c39bb0ad5062fb"
+    },
+    {
+      "path": "native_host/NATIVE_FROZEN_EXPECTATIONS.md",
+      "bytes": 3988,
+      "sha256": "d005285425598b7d2cd09f39950e8e7f0a5f66691b78a103a09411440268a9fd"
+    },
+    {
+      "path": "native_host/ORCHESTRATION_PRE_CANDIDATE.sha256",
+      "bytes": 168,
+      "sha256": "e104211809043685b7ede73becd518a1967880900b624a1802be8fa891325b87"
+    },
+    {
+      "path": "native_host/PRE_CANDIDATE_FREEZE.json",
+      "bytes": 2467,
+      "sha256": "24892d8e47c0fa63292cf69de4bf0fcf3ab5eadcee68808780f1939972a546ca"
+    },
+    {
+      "path": "native_host/README.md",
+      "bytes": 2598,
+      "sha256": "43e93711a21331201f46daef72abe9656f4595ea52aba69bc4d53c8a59cf7eaf"
+    },
+    {
+      "path": "native_host/cli_fenv_wrap_m8.c",
+      "bytes": 1573,
+      "sha256": "f6d1b2209fcc91b7f92a338802f4664a3142b7ec0ec49f4f07843f06bc4f8232"
+    },
+    {
+      "path": "native_host/fenv_faults_m8.c",
+      "bytes": 7489,
+      "sha256": "2eccc88968cd7020643bd888b82c53387f3b8e3acf91a84bab895459e67a9f4f"
+    },
+    {
+      "path": "native_host/fixtures_m8.h",
+      "bytes": 1559,
+      "sha256": "504bb03e544047ff254413017c204e2ec6ecee4e5e25cf6a023476a50ebf5357"
+    },
+    {
+      "path": "native_host/frozen_headers/doe_compiler.h",
+      "bytes": 2464,
+      "sha256": "5bf4f5e5a4e4624c094320ad9ec97119278bc7f6f06b0e47c01e444d42c6dc5b"
+    },
+    {
+      "path": "native_host/frozen_headers/doe_compiler_job.h",
+      "bytes": 3848,
+      "sha256": "6160e631973ffcd9777553520d329b6d6048315f2a90b1283989077e9f51237f"
+    },
+    {
+      "path": "native_host/frozen_headers/doe_compiler_v2.h",
+      "bytes": 3752,
+      "sha256": "b0a60c2f05b70dba0786365dadd81b993accbd93f7f68f0e3accf86a815ae891"
+    },
+    {
+      "path": "native_host/host_controls_m8.c",
+      "bytes": 2175,
+      "sha256": "ae5f34c788a41b6500b585e7ebe92e28ebe4e79d243232597216311b20b3d36b"
+    },
+    {
+      "path": "native_host/host_environment_m8.c",
+      "bytes": 7823,
+      "sha256": "a86f318ae64c46ce39a3dca31a0ea0985c3d1bc17badd9b7561620836c31cb72"
+    },
+    {
+      "path": "native_host/host_support_m8.h",
+      "bytes": 3812,
+      "sha256": "d5c00b36b357e82767fb6ab9d684aa3be57c489f6a285c51340329f8dce192e9"
+    },
+    {
+      "path": "native_host/native_m8.cpp",
+      "bytes": 1961,
+      "sha256": "7a85a3d4d5ddb7b4ba668d359fd9df58045a628c20b9b3519ac9ba847f50d99d"
+    },
+    {
+      "path": "native_host/numeric_fixture_m8.wgsl",
+      "bytes": 521,
+      "sha256": "67f983c7ad62d6db8eb9b26057138af913c5ebf773185cc1c0250d9ac1331966"
+    },
+    {
+      "path": "native_host/private_layout_m8.c",
+      "bytes": 675,
+      "sha256": "c75ce99f53681f01eb51dadf066e6cd864b82b261cebf9c5c6a5eee53ec8b512"
+    },
+    {
+      "path": "native_host/run_cli_numeric_m8.py",
+      "bytes": 6502,
+      "sha256": "1ada51c425ca967ab83726faa1c9ace2a6f7dc444fed006d522eaeaeafc79cbd"
+    },
+    {
+      "path": "native_host/run_native_m8.py",
+      "bytes": 12494,
+      "sha256": "ef238aa1b09c60d4d8b12d5b6ae28f2c5236bf79498d3d0487ebfb28d3d2c62c"
+    },
+    {
+      "path": "original_sealed_tools/compute_oracle_m8.py",
+      "bytes": 17835,
+      "sha256": "8a9faa9578104b97972f519877e2fa6147ff425b303b092d7b639258142fbc37"
+    },
+    {
+      "path": "original_sealed_tools/semantic_m8.py",
+      "bytes": 11964,
+      "sha256": "cb1a4d04822095a53e6c27bb3d8e3299111ed8ba3e908bc43f80e7286efe0d4d"
+    },
+    {
+      "path": "postdisclosure_overload_seal/inventory.json",
+      "bytes": 15548,
+      "sha256": "23eb3c79b75dd0b4d1cb128a46aefe439d7c89898d4868dce227dcde8017dd65"
+    },
+    {
+      "path": "postinspection_ir/frozen-additional-case.json",
+      "bytes": 7129,
+      "sha256": "127856900ba4b3f80589613675a4df7884666c9f0c3d6a732de11013a3023d9f"
+    },
+    {
+      "path": "preinspection_capacity/inventory.json",
+      "bytes": 10432,
+      "sha256": "de98a863a64a211316808297e415017c2c9034a874584c708c5d5413275e5d18"
+    },
+    {
+      "path": "preinspection_corpus/inventory.json",
+      "bytes": 39116,
+      "sha256": "eef2bf0e688c2a6a9954dafa4c395c3499b4117d74e9a070afe1c6f023cefafe"
+    },
+    {
+      "path": "preinspection_exact_cases/inventory.json",
+      "bytes": 272676,
+      "sha256": "4c1fc589804fa80870ed4a39dd5f53b30c016da8bdb45e87ad4751ffcf69a0e2"
+    },
+    {
+      "path": "preinspection_retained_v2/inventory.json",
+      "bytes": 179018,
+      "sha256": "1f6ecd0ef4173cf7aa2b4571b27f52e9d46fd371720ba5b10e54183903e68d36"
+    },
+    {
+      "path": "retained_m8.py",
+      "bytes": 14055,
+      "sha256": "582772dc2a15ef4c89e149486c71f9cade5801cdd160968471ad641d65dbcfea"
+    },
+    {
+      "path": "run_acceptance_m8.py",
+      "bytes": 6147,
+      "sha256": "64d1be0b838b7d426158daf8baf4cacbae4c0aa1d3d006222912df2277996023"
+    },
+    {
+      "path": "semantic_m8.py",
+      "bytes": 12214,
+      "sha256": "6c7ad0cb3858b1214c4184341ff4813fb238696edd3071b780743e2d7f321b1d"
+    },
+    {
+      "path": "supplemental_m8.py",
+      "bytes": 3382,
+      "sha256": "986396c00aa8c201a11c0c8ade2af2e547db28149042068b64ed193d37f83617"
+    },
+    {
+      "path": "test_oracle_m8.py",
+      "bytes": 6706,
+      "sha256": "00f5c56cadd6f78a52d88bf49ed4379f88658af0f3ae0ef082ff739a0f479d85"
+    },
+    {
+      "path": "witnesses_m8.py",
+      "bytes": 9084,
+      "sha256": "ef2b2d9f9199915d1c87dadc6b4a585fb37a9d2f210f4cce95884a13071294b2"
+    }
+  ],
+  "total_files": 51,
+  "total_bytes": 786407,
+  "no_candidate_binary_dependency": true,
+  "no_private_baseline_dependency": true
+}

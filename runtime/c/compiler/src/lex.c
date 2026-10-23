@@ -50,44 +50,58 @@ bool lex_source(Source *source, TokenList *tokens) {
                 ++cursor;
             }
             token.length = (uint32_t)(cursor - token.offset);
-        } else if (is_digit(c)) {
+        } else if (is_digit(c) || (c == '.' && cursor + 1u < source->length &&
+                                      is_digit((unsigned char)source->source[cursor + 1u]))) {
             token.kind = TOKEN_NUMBER;
+            const bool hex = c == '0' && cursor + 1u < source->length &&
+                (source->source[cursor + 1u] == 'x' || source->source[cursor + 1u] == 'X');
             ++cursor;
             while (cursor < source->length) {
                 const unsigned char next = (unsigned char)source->source[cursor];
                 const char previous = source->source[cursor - 1u];
-                if (next == '.') token.kind = TOKEN_DECIMAL;
-                else if (!is_letter(next) && !is_digit(next) &&
-                         !((next == '+' || next == '-') &&
-                           (previous == 'e' || previous == 'E' ||
-                            previous == 'p' || previous == 'P'))) break;
+                const bool exponent = hex ? (previous == 'p' || previous == 'P') :
+                                            (previous == 'e' || previous == 'E');
+                if (!is_letter(next) && !is_digit(next) && next != '.' &&
+                    !((next == '+' || next == '-') && exponent)) break;
                 ++cursor;
             }
             token.length = (uint32_t)(cursor - token.offset);
-        } else if (cursor + 1u < source->length &&
-                   ((c == '&' && source->source[cursor + 1u] == '&') ||
-                    (c == '|' && source->source[cursor + 1u] == '|') ||
-                    ((c == '+' || c == '-' || c == '*') && source->source[cursor + 1u] == '=') ||
-                    ((c == '+' || c == '-') && source->source[cursor + 1u] == (char)c))) {
-            if (!source->limits->extended)
-                return source_error(source, DOE_COMPILER_UNSUPPORTED, cursor, "operator requires job API");
-            const char second = source->source[cursor + 1u];
-            token.kind = c == '&' ? TOKEN_AND : c == '|' ? TOKEN_OR :
-                second == '=' ? (c == '+' ? TOKEN_ADD_ASSIGN : c == '-' ? TOKEN_SUB_ASSIGN : TOKEN_MUL_ASSIGN) :
-                c == '+' ? TOKEN_INCREMENT : TOKEN_DECREMENT;
-            token.length = 2u;
-            cursor += 2u;
-        } else if (cursor + 1u < source->length && source->source[cursor + 1u] == '=' &&
-                   (c == '=' || c == '!' || c == '<' || c == '>')) {
-            token.kind = c == '=' ? TOKEN_EQUAL : c == '!' ? TOKEN_NOT_EQUAL :
-                         c == '<' ? TOKEN_LESS_EQUAL : TOKEN_GREATER_EQUAL;
-            token.length = 2u;
-            cursor += 2u;
         } else {
-            if (strchr(source->limits->extended ? "@()<>:,;{}[].=+-*!" : "@()<>:,;{}[].=+-*", (int)c) == NULL)
+            const unsigned char next = cursor + 1u < source->length ?
+                (unsigned char)source->source[cursor + 1u] : 0u;
+            if ((c == '<' || c == '>') && next == c) {
+                token.kind = c == '<' ? TOKEN_SHIFT_LEFT : TOKEN_SHIFT_RIGHT;
+                token.length = 2u;
+                if (cursor + 2u < source->length && source->source[cursor + 2u] == '=') {
+                    token.kind = c == '<' ? TOKEN_SHIFT_LEFT_ASSIGN : TOKEN_SHIFT_RIGHT_ASSIGN;
+                    token.length = 3u;
+                }
+            } else if ((c == '&' || c == '|') && next == c) {
+                token.kind = c == '&' ? TOKEN_AND : TOKEN_OR; token.length = 2u;
+            } else if ((c == '+' || c == '-') && next == c) {
+                token.kind = c == '+' ? TOKEN_INCREMENT : TOKEN_DECREMENT; token.length = 2u;
+            } else if (next == '=' && strchr("=!<>+-*/%&|^", (int)c) != NULL) {
+                switch (c) {
+                    case '=': token.kind = TOKEN_EQUAL; break;
+                    case '!': token.kind = TOKEN_NOT_EQUAL; break;
+                    case '<': token.kind = TOKEN_LESS_EQUAL; break;
+                    case '>': token.kind = TOKEN_GREATER_EQUAL; break;
+                    case '+': token.kind = TOKEN_ADD_ASSIGN; break;
+                    case '-': token.kind = TOKEN_SUB_ASSIGN; break;
+                    case '*': token.kind = TOKEN_MUL_ASSIGN; break;
+                    case '/': token.kind = TOKEN_DIV_ASSIGN; break;
+                    case '%': token.kind = TOKEN_REM_ASSIGN; break;
+                    case '&': token.kind = TOKEN_BIT_AND_ASSIGN; break;
+                    case '|': token.kind = TOKEN_BIT_OR_ASSIGN; break;
+                    case '^': token.kind = TOKEN_BIT_XOR_ASSIGN; break;
+                    default: break;
+                }
+                token.length = 2u;
+            } else if (strchr("@()<>:,;{}[].=+-*!/%&|^~", (int)c) == NULL) {
                 return source_error(source, DOE_COMPILER_UNSUPPORTED, cursor,
-                                    "unsupported character or operator in bounded WGSL grammar");
-            ++cursor;
+                                    "unsupported character in ASCII WGSL envelope");
+            }
+            cursor += token.length;
         }
         tokens->tokens[tokens->count++] = token;
     }

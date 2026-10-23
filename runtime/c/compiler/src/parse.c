@@ -3,7 +3,7 @@
 #include "internal.h"
 #include <string.h>
 
-typedef struct { Source *source; const TokenList *tokens; size_t cursor; unsigned block_nesting; } Parser;
+typedef struct { Source *source; const TokenList *tokens; size_t cursor; unsigned block_nesting; uint32_t exempt_comparison, exempt_literal; } Parser;
 static const Token *peek(const Parser *p) { return &p->tokens->tokens[p->cursor]; }
 static bool spelled(const Parser *p, const Token *t, const char *text) {
     return strlen(text) == t->length && memcmp(p->source->source + t->offset, text, t->length) == 0;
@@ -76,14 +76,28 @@ static bool integer(Parser *p, bool require_u, Integer *out) {
                                 "integer literal exceeds u32 range");
         value = value * 10u + digit;
     }
-    *out = (Integer){ .value = value, .offset = t->offset };
+    *out = (Integer){ .value = value, .expression = UINT32_MAX, .offset = t->offset };
     ++p->cursor;
     return true;
 }
-static bool parenthesized_integer(Parser *p, Integer *out) {
-    return punctuation(p, '(', "(") && integer(p, false, out) && punctuation(p, ')', ")");
+static bool expression(Parser *, Syntax *, unsigned, unsigned, uint32_t *);
+static bool attribute_value(Parser *p, Syntax *s, Integer *out) {
+    const Token *token = peek(p);
+    bool bare_decimal = token->kind == TOKEN_NUMBER;
+    for (uint32_t i = 0u; i < token->length && bare_decimal; ++i) {
+        const char c = p->source->source[token->offset + i];
+        bare_decimal = c >= '0' && c <= '9';
+    }
+    if (bare_decimal && (p->tokens->tokens[p->cursor + 1u].kind == ')' ||
+                         p->tokens->tokens[p->cursor + 1u].kind == ','))
+        return integer(p, false, out);
+    out->offset = token->offset;
+    return expression(p, s, 0u, 0u, &out->expression);
 }
-static bool resource_attributes(Parser *p, ResourceSyntax *s) {
+static bool parenthesized_integer(Parser *p, Syntax *s, Integer *out) {
+    return punctuation(p, '(', "(") && attribute_value(p, s, out) && punctuation(p, ')', ")");
+}
+static bool resource_attributes(Parser *p, Syntax *syntax, ResourceSyntax *s) {
     unsigned seen = 0u;
     while (peek(p)->kind == '@') {
         ++p->cursor;
@@ -98,17 +112,17 @@ static bool resource_attributes(Parser *p, ResourceSyntax *s) {
             return source_error(p->source, DOE_COMPILER_SEMANTIC_ERROR, t->offset, "duplicate resource attribute");
         seen |= flag;
         ++p->cursor;
-        if (!parenthesized_integer(p, value)) return false;
+        if (!parenthesized_integer(p, syntax, value)) return false;
     }
     return seen == 3u || reject(p, "one @group(G) and one @binding(B)");
 }
 static bool workgroup_dimensions(Parser *p, Syntax *s) {
     if (!punctuation(p, '(', "(")) return false;
-    for (size_t i = 0; i < 3u; ++i) s->local_size[i].value = 1u;
+    for (size_t i = 0; i < 3u; ++i) s->local_size[i] = (Integer){ .value = 1u, .expression = UINT32_MAX };
     size_t count = 0u;
     do {
         if (count == 3u) return reject(p, "at most three workgroup dimensions");
-        if (!integer(p, false, &s->local_size[count++])) return false;
+        if (!attribute_value(p, s, &s->local_size[count++])) return false;
         if (peek(p)->kind != ',') break;
         ++p->cursor;
     } while (peek(p)->kind != ')');
@@ -133,30 +147,32 @@ static bool entry_attributes(Parser *p, Syntax *s) {
     }
     return seen == 3u || reject(p, "one @compute and one @workgroup_size(N)");
 }
-static bool scalar_annotation(Parser *p, Name *annotation, DoeCompilerScalar *scalar) {
-    if (!name(p, annotation)) return false;
-    if (strcmp(annotation->text, "u32") == 0) *scalar = DOE_COMPILER_U32;
-    else if (strcmp(annotation->text, "f32") == 0) *scalar = DOE_COMPILER_F32;
+static bool scalar_annotation(Parser *p, NameSpan *annotation, DoeCompilerScalar *scalar) {
+    const Token *token = peek(p);
+    if (!name_span(p, annotation)) return false;
+    if (spelled(p, token, "u32")) *scalar = DOE_COMPILER_U32;
+    else if (spelled(p, token, "f32")) *scalar = DOE_COMPILER_F32;
     else return source_error(p->source, DOE_COMPILER_UNSUPPORTED, annotation->offset,
-                             "flat scalar type must be u32 or f32");
+        spelled(p, token, "bool") ? "bool is not a host-shareable resource type" :
+        "resource reflection represents only u32 and f32 scalars");
     return true;
 }
 static bool struct_declaration(Parser *p, StructSyntax *s) {
-    if (!word(p, "struct") || !name(p, &s->name) || !punctuation(p, '{', "{")) return false;
+    if (!word(p, "struct") || !name_span(p, &s->name) || !punctuation(p, '{', "{")) return false;
     do {
         if (s->member_count == DOE_COMPILER_MAX_STRUCT_MEMBERS)
             return source_error(p->source, DOE_COMPILER_INPUT_ERROR, peek(p)->offset,
                                 "flat struct exceeds eight members");
         MemberDeclaration *member = &s->members[s->member_count++];
-        if (!name(p, &member->name) || !punctuation(p, ':', ":") ||
+        if (!name_span(p, &member->name) || !punctuation(p, ':', ":") ||
             !scalar_annotation(p, &member->annotation, &member->scalar)) return false;
         if (peek(p)->kind != ',') break;
         ++p->cursor;
     } while (peek(p)->kind != '}');
     return punctuation(p, '}', "}");
 }
-static bool resource_declaration(Parser *p, ResourceSyntax *s, bool allow_uniforms) {
-    if (!resource_attributes(p, s) || !word(p, "var") ||
+static bool resource_declaration(Parser *p, Syntax *syntax, ResourceSyntax *s, bool allow_uniforms) {
+    if (!resource_attributes(p, syntax, s) || !word(p, "var") ||
         !punctuation(p, '<', "<storage, access> or <uniform>")) return false;
     if (spelled(p, peek(p), "uniform")) {
         if (!allow_uniforms)
@@ -165,8 +181,8 @@ static bool resource_declaration(Parser *p, ResourceSyntax *s, bool allow_unifor
         ++p->cursor;
         s->kind = DOE_COMPILER_UNIFORM_BUFFER;
         s->access = DOE_COMPILER_READ;
-        return punctuation(p, '>', ">") && name(p, &s->name) &&
-               punctuation(p, ':', ":") && name(p, &s->type_name) && punctuation(p, ';', ";");
+        return punctuation(p, '>', ">") && name_span(p, &s->name) &&
+               punctuation(p, ':', ":") && name_span(p, &s->type_name) && punctuation(p, ';', ";");
     }
     s->kind = DOE_COMPILER_STORAGE_BUFFER;
     if (!word(p, "storage") || !punctuation(p, ',', ",")) return false;
@@ -174,7 +190,7 @@ static bool resource_declaration(Parser *p, ResourceSyntax *s, bool allow_unifor
     else if (spelled(p, peek(p), "read_write")) s->access = DOE_COMPILER_READ_WRITE;
     else return reject(p, "read or read_write storage access");
     ++p->cursor;
-    if (!punctuation(p, '>', ">") || !name(p, &s->name) || !punctuation(p, ':', ":") ||
+    if (!punctuation(p, '>', ">") || !name_span(p, &s->name) || !punctuation(p, ':', ":") ||
         !word(p, "array") || !punctuation(p, '<', "<u32 or f32>") ||
         !scalar_annotation(p, &s->type_name, &s->scalar)) return false;
     return punctuation(p, '>', ">") && punctuation(p, ';', ";");
@@ -194,7 +210,8 @@ static bool expression(Parser *p, Syntax *s, unsigned minimum, unsigned nesting,
 static bool primary(Parser *p, Syntax *s, unsigned nesting, uint32_t *id) {
     if (nesting >= p->source->limits->expression_depth)
         return source_error(p->source, DOE_COMPILER_INPUT_ERROR, peek(p)->offset, "expression depth capacity exceeded");
-    Expression node = { .source_offset = peek(p)->offset, .depth = 1u };
+    Expression node = { .source_offset = peek(p)->offset, .depth = 1u,
+                        .left = UINT32_MAX, .right = UINT32_MAX };
     if (peek(p)->kind == '(') {
         ++p->cursor;
         if (!expression(p, s, 0u, nesting + 1u, id) || !punctuation(p, ')', ")")) return false;
@@ -204,33 +221,26 @@ static bool primary(Parser *p, Syntax *s, unsigned nesting, uint32_t *id) {
         s->expressions[*id].grouped = true;
         return true;
     }
-    if (peek(p)->kind == '!') {
+    if (peek(p)->kind == '!' || peek(p)->kind == '-' || peek(p)->kind == '~') {
+        node.kind = peek(p)->kind == '!' ? EXPRESSION_NOT :
+                    peek(p)->kind == '-' ? EXPRESSION_NEGATE : EXPRESSION_COMPLEMENT;
         ++p->cursor;
-        node.kind = EXPRESSION_NOT;
         if (!primary(p, s, nesting + 1u, &node.left)) return false;
         node.depth = 1u + s->expressions[node.left].depth;
-    } else if (peek(p)->kind == TOKEN_NUMBER) {
-        const Token *token = peek(p);
-        const bool suffixed = token->length != 0u && p->source->source[token->offset + token->length - 1u] == 'u';
-        Integer value;
-        if (!integer(p, suffixed || !p->source->limits->extended, &value)) return false;
-        node.kind = suffixed ? EXPRESSION_INTEGER : EXPRESSION_ABSTRACT_INTEGER;
-        node.value.integer = value.value;
-    } else if (peek(p)->kind == TOKEN_DECIMAL) {
-        Decimal value;
-        if (!parse_decimal(p->source, peek(p), &value)) return false;
+    } else if (peek(p)->kind == TOKEN_NUMBER || peek(p)->kind == TOKEN_DECIMAL) {
+        node.kind = EXPRESSION_LITERAL;
+        node.value.name = (NameSpan){ .offset = peek(p)->offset, .length = peek(p)->length };
         ++p->cursor;
-        node.kind = EXPRESSION_DECIMAL;
-        node.value.decimal.numerator = value.numerator;
-        node.value.decimal.denominator = value.denominator;
-    } else if (p->source->limits->extended &&
-               (spelled(p, peek(p), "true") || spelled(p, peek(p), "false"))) {
+    } else if (spelled(p, peek(p), "true") || spelled(p, peek(p), "false")) {
         node.kind = EXPRESSION_BOOLEAN;
         node.value.integer = spelled(p, peek(p), "true") ? 1u : 0u;
         ++p->cursor;
     } else {
         const Token *identifier_token = peek(p);
         NameSpan identifier;
+        if (peek(p)->kind == '&' || peek(p)->kind == '*')
+            return source_error(p->source, DOE_COMPILER_UNSUPPORTED, peek(p)->offset,
+                                "pointer expressions are outside the scalar owner");
         if (!name_span(p, &identifier)) return false;
         if (peek(p)->kind == '[') {
             node.kind = EXPRESSION_LOAD;
@@ -243,19 +253,30 @@ static bool primary(Parser *p, Syntax *s, unsigned nesting, uint32_t *id) {
             node.kind = EXPRESSION_MEMBER;
             node.value.member.object = identifier;
             if (!name_span(p, &node.value.member.member)) return false;
-        } else if (peek(p)->kind == '(') {
-            if (!spelled(p, identifier_token, "max"))
-                return source_error(p->source, DOE_COMPILER_UNSUPPORTED, identifier.offset, "only scalar max calls are supported");
-            ++p->cursor;
-            node.kind = EXPRESSION_MAX;
-            node.value.name = identifier;
-            if (!expression(p, s, 0u, nesting + 1u, &node.left) || !punctuation(p, ',', ",") ||
-                !expression(p, s, 0u, nesting + 1u, &node.right) || !punctuation(p, ')', ")")) return false;
-            node.depth = 1u + (s->expressions[node.left].depth > s->expressions[node.right].depth ?
-                              s->expressions[node.left].depth : s->expressions[node.right].depth);
+        } else if (peek(p)->kind == '(' ||
+                   (peek(p)->kind == '<' && spelled(p, identifier_token, "bitcast"))) {
+            node.value.call.callee = identifier;
+            if (spelled(p, identifier_token, "bitcast")) {
+                node.kind = EXPRESSION_BITCAST;
+                if (!punctuation(p, '<', "bitcast scalar type") ||
+                    !name_span(p, &node.value.call.type) || !punctuation(p, '>', ">")) return false;
+            } else node.kind = spelled(p, identifier_token, "max") ? EXPRESSION_MAX : EXPRESSION_CONSTRUCT;
+            if (!punctuation(p, '(', "(")) return false;
+            if (peek(p)->kind != ')') {
+                if (!expression(p, s, 0u, nesting + 1u, &node.left)) return false;
+                node.depth = 1u + s->expressions[node.left].depth;
+                if (node.kind == EXPRESSION_MAX) {
+                    if (!punctuation(p, ',', ",") || !expression(p, s, 0u, nesting + 1u, &node.right)) return false;
+                    if (node.depth <= s->expressions[node.right].depth) node.depth = 1u + s->expressions[node.right].depth;
+                }
+                if (peek(p)->kind == ',') ++p->cursor;
+            }
+            if (node.kind != EXPRESSION_CONSTRUCT && node.left == UINT32_MAX)
+                return reject(p, "required scalar call argument");
+            if (!punctuation(p, ')', ")")) return false;
         } else { node.kind = EXPRESSION_NAME; node.value.name = identifier; }
     }
-    return expression_node(p, s, node, true, id);
+    return expression_node(p, s, node, node.source_offset != p->exempt_literal, id);
 }
 static bool comparison_kind(unsigned kind, Comparison *comparison) {
     switch (kind) {
@@ -268,37 +289,62 @@ static bool comparison_kind(unsigned kind, Comparison *comparison) {
         default: return false;
     }
 }
-static unsigned binary_precedence(const Parser *p, unsigned token, ExpressionKind *kind, Comparison *comparison) {
-    if (token == '*') { *kind = EXPRESSION_MULTIPLY; return 4u; }
-    if (token == '+' || token == '-') { *kind = token == '+' ? EXPRESSION_ADD : EXPRESSION_SUBTRACT; return 3u; }
-    if (!p->source->limits->extended) return 0u;
-    if (comparison_kind(token, comparison)) { *kind = EXPRESSION_COMPARE; return 2u; }
-    if (token == TOKEN_AND || token == TOKEN_OR) { *kind = token == TOKEN_AND ? EXPRESSION_AND : EXPRESSION_OR; return 1u; }
+static unsigned binary_precedence(unsigned token, ExpressionKind *kind, Comparison *comparison) {
+    if (token == '*' || token == '/' || token == '%') {
+        *kind = token == '*' ? EXPRESSION_MULTIPLY : token == '/' ? EXPRESSION_DIVIDE : EXPRESSION_REMAINDER;
+        return 6u;
+    }
+    if (token == '+' || token == '-') { *kind = token == '+' ? EXPRESSION_ADD : EXPRESSION_SUBTRACT; return 5u; }
+    if (token == TOKEN_SHIFT_LEFT || token == TOKEN_SHIFT_RIGHT) {
+        *kind = token == TOKEN_SHIFT_LEFT ? EXPRESSION_SHIFT_LEFT : EXPRESSION_SHIFT_RIGHT; return 4u;
+    }
+    if (comparison_kind(token, comparison)) { *kind = EXPRESSION_COMPARE; return 3u; }
+    if (token == TOKEN_AND || token == TOKEN_OR) { *kind = token == TOKEN_AND ? EXPRESSION_AND : EXPRESSION_OR; return 2u; }
+    if (token == '&' || token == '|' || token == '^') {
+        *kind = token == '&' ? EXPRESSION_BIT_AND : token == '|' ? EXPRESSION_BIT_OR : EXPRESSION_BIT_XOR;
+        return 1u;
+    }
     return 0u;
+}
+static bool unary_form(const Expression *node) {
+    if (node->grouped) return true;
+    return node->kind == EXPRESSION_LOAD || node->kind == EXPRESSION_NAME ||
+        node->kind == EXPRESSION_MEMBER || node->kind == EXPRESSION_LITERAL ||
+        node->kind == EXPRESSION_BOOLEAN || node->kind == EXPRESSION_NOT ||
+        node->kind == EXPRESSION_NEGATE || node->kind == EXPRESSION_COMPLEMENT ||
+        node->kind == EXPRESSION_CONSTRUCT || node->kind == EXPRESSION_BITCAST ||
+        node->kind == EXPRESSION_MAX;
 }
 static bool expression(Parser *p, Syntax *s, unsigned minimum, unsigned nesting, uint32_t *id) {
     if (!primary(p, s, nesting, id)) return false;
     for (;;) {
         ExpressionKind kind = EXPRESSION_ADD;
         Comparison comparison = COMPARE_EQUAL;
-        const unsigned precedence = binary_precedence(p, peek(p)->kind, &kind, &comparison);
+        const unsigned precedence = binary_precedence(peek(p)->kind, &kind, &comparison);
         if (precedence == 0u || precedence < minimum) return true;
         const Expression left = s->expressions[*id];
-        if (!left.grouped && ((kind == EXPRESSION_COMPARE && left.kind == EXPRESSION_COMPARE) ||
+        const bool shift = kind == EXPRESSION_SHIFT_LEFT || kind == EXPRESSION_SHIFT_RIGHT;
+        const bool bit = precedence == 1u;
+        if ((!left.grouped && ((kind == EXPRESSION_COMPARE && left.kind == EXPRESSION_COMPARE) ||
             ((kind == EXPRESSION_AND || kind == EXPRESSION_OR) &&
-             (left.kind == EXPRESSION_AND || left.kind == EXPRESSION_OR) && kind != left.kind)))
-            return reject(p, "parentheses around mixed logical or chained comparisons");
+             (left.kind == EXPRESSION_AND || left.kind == EXPRESSION_OR) && kind != left.kind))) ||
+            (shift && !unary_form(&left)) || (bit && !unary_form(&left) && left.kind != kind))
+            return reject(p, "WGSL parentheses around incompatible operator groups");
         Expression node = { .source_offset = peek(p)->offset, .kind = kind, .left = *id };
         node.value.comparison = comparison;
+        const bool exempt = kind == EXPRESSION_COMPARE && node.source_offset == p->exempt_comparison;
         ++p->cursor;
-        if (!expression(p, s, precedence + 1u, nesting + 1u, &node.right)) return false;
+        if (!expression(p, s, precedence + 1u, nesting + (exempt ? 0u : 1u), &node.right)) return false;
         const Expression *right = &s->expressions[node.right];
-        node.depth = 1u + (left.depth > right->depth ? left.depth : right->depth);
-        if (!expression_node(p, s, node, true, id)) return false;
+        if ((shift || bit) && !unary_form(right))
+            return reject(p, "unary operands or parentheses for shift/bitwise expression");
+        node.depth = (exempt ? 0u : 1u) + (left.depth > right->depth ? left.depth : right->depth);
+        if (!expression_node(p, s, node, !exempt, id)) return false;
     }
 }
 static bool local_declaration(Parser *p, Syntax *s, LocalSyntax *local, unsigned terminator) {
     local->mutable = spelled(p, peek(p), "var");
+    local->constant = spelled(p, peek(p), "const");
     ++p->cursor;
     if (local->mutable && peek(p)->kind == '<') {
         ++p->cursor;
@@ -312,7 +358,8 @@ static bool local_declaration(Parser *p, Syntax *s, LocalSyntax *local, unsigned
         if (!name_span(p, &local->annotation)) return false;
         if (spelled(p, type, "u32")) local->type = IR_U32;
         else if (spelled(p, type, "f32")) local->type = IR_F32;
-        else if (p->source->limits->extended && spelled(p, type, "bool")) local->type = IR_BOOL;
+        else if (spelled(p, type, "bool")) local->type = IR_BOOL;
+        else if (spelled(p, type, "i32")) local->type = IR_I32;
         else return source_error(p->source, DOE_COMPILER_UNSUPPORTED, type->offset, "unsupported local scalar annotation");
     }
     if (peek(p)->kind == '=') {
@@ -323,20 +370,37 @@ static bool local_declaration(Parser *p, Syntax *s, LocalSyntax *local, unsigned
     return terminator == 0u || punctuation(p, terminator, ";");
 }
 static bool condition(Parser *p, Syntax *s, uint32_t *id) {
-    if (p->source->limits->extended) return expression(p, s, 0u, 0u, id);
-    Expression node = { .source_offset = peek(p)->offset, .kind = EXPRESSION_COMPARE };
-    if (!punctuation(p, '(', "(") || !expression(p, s, 0u, 0u, &node.left)) return false;
-    if (!comparison_kind(peek(p)->kind, &node.value.comparison)) return reject(p, "unsigned comparison operator");
+    /* Preserve only the old accounting exemption, never a second grammar. */
+    uint32_t comparison_offset = UINT32_MAX;
+    if (p->source->limits->legacy_counts && peek(p)->kind == '(') {
+        unsigned depth = 0u, brackets = 0u, comparisons = 0u;
+        size_t end = p->cursor;
+        for (; end < p->tokens->count; ++end) {
+            const Token *token = &p->tokens->tokens[end];
+            if (token->kind == '(') ++depth;
+            else if (token->kind == ')') { if (--depth == 0u) break; }
+            else if (token->kind == '[') ++brackets;
+            else if (token->kind == ']' && brackets != 0u) --brackets;
+            Comparison ignored;
+            if (depth == 1u && brackets == 0u && comparison_kind(token->kind, &ignored)) {
+                ++comparisons; comparison_offset = token->offset;
+            }
+            if (depth == 1u && (token->kind == TOKEN_AND || token->kind == TOKEN_OR ||
+                token->kind == '&' || token->kind == '|' || token->kind == '^')) comparisons += 2u;
+        }
+        if (comparisons != 1u || end + 1u >= p->tokens->count ||
+            p->tokens->tokens[end + 1u].kind != '{') comparison_offset = UINT32_MAX;
+    }
+    if (comparison_offset == UINT32_MAX) return expression(p, s, 0u, 0u, id);
     ++p->cursor;
-    if (!expression(p, s, 0u, 0u, &node.right) || !punctuation(p, ')', ")")) return false;
-    node.depth = s->expressions[node.left].depth > s->expressions[node.right].depth ?
-                 s->expressions[node.left].depth : s->expressions[node.right].depth;
-    return expression_node(p, s, node, false, id);
+    p->exempt_comparison = comparison_offset;
+    const bool ok = expression(p, s, 0u, 0u, id) && punctuation(p, ')', ")");
+    p->exempt_comparison = UINT32_MAX;
+    return ok;
 }
 static bool assignment(Parser *p, Syntax *s, Assignment *out, unsigned terminator) {
     if (!name_span(p, &out->target.storage)) return false;
     out->local = peek(p)->kind != '[';
-    if (out->local && !p->source->limits->extended) return reject(p, "[");
     if (!out->local) {
         ++p->cursor;
         if (!expression(p, s, 0u, 0u, &out->target.index) || !punctuation(p, ']', "]")) return false;
@@ -346,6 +410,13 @@ static bool assignment(Parser *p, Syntax *s, Assignment *out, unsigned terminato
         case TOKEN_ADD_ASSIGN: out->operation = UPDATE_ADD; break;
         case TOKEN_SUB_ASSIGN: out->operation = UPDATE_SUBTRACT; break;
         case TOKEN_MUL_ASSIGN: out->operation = UPDATE_MULTIPLY; break;
+        case TOKEN_DIV_ASSIGN: out->operation = UPDATE_DIVIDE; break;
+        case TOKEN_REM_ASSIGN: out->operation = UPDATE_REMAINDER; break;
+        case TOKEN_BIT_AND_ASSIGN: out->operation = UPDATE_BIT_AND; break;
+        case TOKEN_BIT_OR_ASSIGN: out->operation = UPDATE_BIT_OR; break;
+        case TOKEN_BIT_XOR_ASSIGN: out->operation = UPDATE_BIT_XOR; break;
+        case TOKEN_SHIFT_LEFT_ASSIGN: out->operation = UPDATE_SHIFT_LEFT; break;
+        case TOKEN_SHIFT_RIGHT_ASSIGN: out->operation = UPDATE_SHIFT_RIGHT; break;
         case TOKEN_INCREMENT: out->operation = UPDATE_INCREMENT; break;
         case TOKEN_DECREMENT: out->operation = UPDATE_DECREMENT; break;
         default: return reject(p, "assignment or update operator");
@@ -369,8 +440,9 @@ static bool statement_slot(Parser *p, Syntax *s, uint32_t *id) {
 static bool simple_statement(Parser *p, Syntax *s, bool declaration, unsigned terminator, uint32_t *id) {
     if (!statement_slot(p, s, id)) return false;
     Statement *st = &s->statements[*id];
-    if (declaration && (spelled(p, peek(p), "let") || spelled(p, peek(p), "var"))) {
-        st->kind = spelled(p, peek(p), "var") ? STATEMENT_VAR : STATEMENT_LET;
+    if (declaration && (spelled(p, peek(p), "let") || spelled(p, peek(p), "var") || spelled(p, peek(p), "const"))) {
+        st->kind = spelled(p, peek(p), "var") ? STATEMENT_VAR :
+                   spelled(p, peek(p), "const") ? STATEMENT_CONST : STATEMENT_LET;
         if (!local_declaration(p, s, &st->value.local, terminator)) return false;
     } else {
         st->kind = STATEMENT_ASSIGN;
@@ -381,24 +453,22 @@ static bool simple_statement(Parser *p, Syntax *s, bool declaration, unsigned te
 }
 static bool block(Parser *p, Syntax *s, unsigned depth);
 static bool statement(Parser *p, Syntax *s, unsigned depth) {
-    const bool extended = p->source->limits->extended;
     const Token *token = peek(p);
     const bool is_if = spelled(p, token, "if");
-    const bool is_for = extended && spelled(p, token, "for");
-    const bool is_while = extended && spelled(p, token, "while");
-    const bool is_loop = extended && spelled(p, token, "loop");
-    const bool is_block = extended && token->kind == '{';
-    const bool is_continuing = extended && spelled(p, token, "continuing");
+    const bool is_for = spelled(p, token, "for");
+    const bool is_while = spelled(p, token, "while");
+    const bool is_loop = spelled(p, token, "loop");
+    const bool is_block = token->kind == '{';
+    const bool is_continuing = spelled(p, token, "continuing");
     if (is_if || is_for || is_while || is_loop || is_block) {
         if (depth >= p->source->limits->control_depth)
             return source_error(p->source, DOE_COMPILER_INPUT_ERROR, token->offset, "control depth capacity exceeded");
     }
     uint32_t id;
-    if (spelled(p, token, "let") || (extended && spelled(p, token, "var")))
+    if (spelled(p, token, "let") || spelled(p, token, "var") || spelled(p, token, "const"))
         return simple_statement(p, s, true, ';', &id);
     if (!is_if && !is_for && !is_while && !is_loop && !is_block && !is_continuing &&
-        !spelled(p, token, "return") && !(extended &&
-        (spelled(p, token, "break") || spelled(p, token, "continue") || token->kind == ';')))
+        !spelled(p, token, "return") && !((spelled(p, token, "break") || spelled(p, token, "continue") || token->kind == ';')))
         return simple_statement(p, s, false, ';', &id);
     if (!statement_slot(p, s, &id)) return false;
     Statement *st = &s->statements[id];
@@ -411,7 +481,7 @@ static bool statement(Parser *p, Syntax *s, unsigned depth) {
         st->else_start = (uint32_t)s->statement_count;
         if (spelled(p, peek(p), "else")) {
             ++p->cursor;
-            if (extended && spelled(p, peek(p), "if")) {
+            if (spelled(p, peek(p), "if")) {
                 if (!statement(p, s, depth + 1u)) return false;
             } else if (!punctuation(p, '{', "{") || !block(p, s, depth + 1u)) return false;
         }
@@ -524,55 +594,83 @@ static bool entry_parameters(Parser *p, Syntax *s) {
     return punctuation(p, ')', ")");
 }
 
+static bool module_constant(Parser *p, Syntax *s, bool first) {
+    if (s->constant_count == s->constant_capacity)
+        return source_error(p->source, DOE_COMPILER_INPUT_ERROR, peek(p)->offset,
+                            "module constant capacity exceeded");
+    /* Exact retained declaration: const NAME : u32 = DECIMAL_U ; */
+    if (first && p->tokens->count - p->cursor >= 7u) {
+        const Token *t = p->tokens->tokens + p->cursor;
+        bool digits = t[5].kind == TOKEN_NUMBER && t[5].length >= 2u &&
+            p->source->source[t[5].offset + t[5].length - 1u] == 'u';
+        for (uint32_t i = 0u; digits && i + 1u < t[5].length; ++i) {
+            const char c = p->source->source[t[5].offset + i];
+            digits = c >= '0' && c <= '9';
+        }
+        if (t[1].kind == TOKEN_WORD && t[2].kind == ':' && spelled(p, &t[3], "u32") &&
+            t[4].kind == '=' && digits && t[6].kind == ';') p->exempt_literal = t[5].offset;
+    }
+    LocalSyntax local = {0};
+    ConstantSyntax *constant = &s->constants[s->constant_count];
+    memset(constant, 0, sizeof(*constant));
+    constant->first_expression = (uint32_t)s->expression_count;
+    if (!local_declaration(p, s, &local, ';')) return false;
+    p->exempt_literal = UINT32_MAX;
+    constant->name = local.name;
+    constant->annotation = local.annotation;
+    constant->expression = local.expression;
+    ++s->constant_count;
+    return true;
+}
 bool parse_tokens(Source *source, const TokenList *tokens, Syntax *syntax, bool allow_uniforms) {
-    Parser p = { .source = source, .tokens = tokens };
+    Parser p = { .source = source, .tokens = tokens,
+                 .exempt_comparison = UINT32_MAX, .exempt_literal = UINT32_MAX };
     Statement *statements = syntax->statements;
     Expression *expressions = syntax->expressions;
+    ConstantSyntax *constants = syntax->constants;
     const size_t statement_capacity = syntax->statement_capacity;
     const size_t expression_capacity = syntax->expression_capacity;
+    const size_t constant_capacity = syntax->constant_capacity;
     memset(syntax, 0, sizeof(*syntax));
-    syntax->statements = statements; syntax->expressions = expressions;
+    syntax->statements = statements; syntax->expressions = expressions; syntax->constants = constants;
     syntax->statement_capacity = statement_capacity; syntax->expression_capacity = expression_capacity;
-    while (peek(&p)->kind == ';') ++p.cursor;
-    if (peek(&p)->kind == TOKEN_WORD && spelled(&p, peek(&p), "const")) {
-        ++p.cursor;
-        syntax->has_constant = true;
-        if (!name(&p, &syntax->constant_name) || !punctuation(&p, ':', ":") ||
-            !word(&p, "u32") || !punctuation(&p, '=', "=") ||
-            !integer(&p, true, &syntax->constant_value) || !punctuation(&p, ';', ";")) return false;
-    }
-    while (starts_storage(&p) || spelled(&p, peek(&p), "struct") ||
-           peek(&p)->kind == ';') {
+    syntax->constant_capacity = constant_capacity;
+    bool has_entry = false, first = true;
+    while (peek(&p)->kind != TOKEN_END) {
         if (peek(&p)->kind == ';') { ++p.cursor; continue; }
-        if (spelled(&p, peek(&p), "struct")) {
+        if (spelled(&p, peek(&p), "const")) {
+            if (!module_constant(&p, syntax, first)) return false;
+        } else if (spelled(&p, peek(&p), "struct")) {
             if (!allow_uniforms)
                 return source_error(source, DOE_COMPILER_UNSUPPORTED, peek(&p)->offset,
-                                    "struct declarations require compiler API v2");
+                                    "ABI1 reflection cannot represent uniform struct layouts");
             if (syntax->struct_count == DOE_COMPILER_MAX_STRUCTS)
                 return source_error(source, DOE_COMPILER_INPUT_ERROR, peek(&p)->offset,
                                     "module exceeds eight flat structs");
             if (!struct_declaration(&p, &syntax->structs[syntax->struct_count++])) return false;
-            continue;
+        } else if (starts_storage(&p)) {
+            if (syntax->resource_count == DOE_COMPILER_MAX_BINDINGS)
+                return source_error(source, DOE_COMPILER_UNSUPPORTED, peek(&p)->offset,
+                                    "resource declaration count exceeds 8 bindings");
+            if (!resource_declaration(&p, syntax, &syntax->resources[syntax->resource_count], allow_uniforms)) return false;
+            ++syntax->resource_count;
+        } else {
+            if (has_entry)
+                return source_error(source, DOE_COMPILER_UNSUPPORTED, peek(&p)->offset,
+                                    "one compute entry and scalar module declarations are supported");
+            if (!entry_attributes(&p, syntax) || !word(&p, "fn") || !name(&p, &syntax->entry) ||
+                !entry_parameters(&p, syntax) || !punctuation(&p, '{', "{")) return false;
+            has_entry = true;
+            if (source->limits->legacy_counts && starts_legacy_alias(&p, syntax)) {
+                ++p.cursor;
+                syntax->has_alias = true;
+                if (!name(&p, &syntax->alias) || !punctuation(&p, '=', "=") ||
+                    !name(&p, &syntax->alias_source) || !punctuation(&p, '.', ".") ||
+                    !word(&p, "x") || !punctuation(&p, ';', ";")) return false;
+            }
+            if (!block(&p, syntax, 0u)) return false;
         }
-        if (syntax->resource_count == DOE_COMPILER_MAX_BINDINGS)
-            return source_error(source, DOE_COMPILER_UNSUPPORTED, peek(&p)->offset,
-                                "resource declaration count exceeds 8 bindings");
-        if (!resource_declaration(&p, &syntax->resources[syntax->resource_count], allow_uniforms)) return false;
-        ++syntax->resource_count;
+        first = false;
     }
-    if (!entry_attributes(&p, syntax) || !word(&p, "fn") || !name(&p, &syntax->entry) ||
-        !entry_parameters(&p, syntax) || !punctuation(&p, '{', "{")) return false;
-    if (!source->limits->extended && starts_legacy_alias(&p, syntax)) {
-        ++p.cursor;
-        syntax->has_alias = true;
-        if (!name(&p, &syntax->alias) || !punctuation(&p, '=', "=") ||
-            !name(&p, &syntax->alias_source) || !punctuation(&p, '.', ".") ||
-            !word(&p, "x") || !punctuation(&p, ';', ";")) return false;
-    }
-    if (!block(&p, syntax, 0u)) return false;
-    while (peek(&p)->kind == ';') ++p.cursor;
-    if (peek(&p)->kind != TOKEN_END)
-        return source_error(source, DOE_COMPILER_UNSUPPORTED, peek(&p)->offset,
-                            "trailing declarations, statements or tokens are outside the subset");
-    return true;
+    return has_entry || reject(&p, "one compute entry point");
 }

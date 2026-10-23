@@ -1,0 +1,29 @@
+{
+  "accepted": "7478e5d071a1ea3745d6ad9725a62a29c04d84b3",
+  "candidate_inspected": false,
+  "contract": "0e1e201030c60474e07db99cdbb1a5ea025d3989",
+  "files": {
+    "NATIVE_FROZEN_EXPECTATIONS.md": "d005285425598b7d2cd09f39950e8e7f0a5f66691b78a103a09411440268a9fd",
+    "fenv_faults_m8.c": "2eccc88968cd7020643bd888b82c53387f3b8e3acf91a84bab895459e67a9f4f",
+    "fixtures_m8.h": "504bb03e544047ff254413017c204e2ec6ecee4e5e25cf6a023476a50ebf5357",
+    "frozen_headers/doe_compiler.h": "5bf4f5e5a4e4624c094320ad9ec97119278bc7f6f06b0e47c01e444d42c6dc5b",
+    "frozen_headers/doe_compiler_job.h": "6160e631973ffcd9777553520d329b6d6048315f2a90b1283989077e9f51237f",
+    "frozen_headers/doe_compiler_v2.h": "b0a60c2f05b70dba0786365dadd81b993accbd93f7f68f0e3accf86a815ae891",
+    "host_environment_m8.c": "a86f318ae64c46ce39a3dca31a0ea0985c3d1bc17badd9b7561620836c31cb72",
+    "host_support_m8.h": "d5c00b36b357e82767fb6ab9d684aa3be57c489f6a285c51340329f8dce192e9",
+    "native_m8.cpp": "7a85a3d4d5ddb7b4ba668d359fd9df58045a628c20b9b3519ac9ba847f50d99d",
+    "private_layout_m8.c": "c75ce99f53681f01eb51dadf066e6cd864b82b261cebf9c5c6a5eee53ec8b512"
+  },
+  "retained": {
+    "runtime/c/compiler/independent_tests_m7/api_job_m7.py": "5ee5825ab9cbc74cce36e37f04a65db21959522e1798d1d92e3fdd806c3fabdd",
+    "runtime/c/compiler/independent_tests_m7/api_m5.py": "9aa61a745964518bca548a3a4f4674e5784fd29930f3f2c92f9c909f7bb29ae3",
+    "runtime/c/compiler/independent_tests_m7/evaluate.py": "bce10517cb59dcd905959639cb90f12e187cad54b8e5df2ca9c0e6eef0b90cc0",
+    "runtime/c/compiler/independent_tests_m7/fixtures_m6.py": "ed5b958f4f3fe1bc3b1a27485e604712bd5eb6ffcfbed1374d1fb8e02bcd94c0",
+    "runtime/c/compiler/independent_tests_m7/native_job_m7.c": "08dc527e048a0eab814947f50c34324e1065937f59973b36f918f2fd6608cd70",
+    "runtime/c/compiler/independent_tests_m7/native_job_m7.cpp": "8fbae62cbdc356dfa2181ba02bab009b9653eecd99c6619ce47f2a4819a6608a",
+    "runtime/c/compiler/independent_tests_m7/native_job_m7.py": "02526494b6e780f13da5cf42a7cf7aed7d7e2f4094c7b98b224e023c237f0f3b",
+    "runtime/c/compiler/independent_tests_m7/native_layout_m5.cpp": "203a62b2c38c6d24b0ff2996926d847f33740c2149458ba96ddea05c3aa366ec",
+    "runtime/c/compiler/independent_tests_m7/native_m5.c": "23f160eedc6b9651a09ede985188bbbea575e1b127af894204df697d77d951c4",
+    "runtime/c/compiler/independent_tests_m7/native_m6.c": "c58a7f7ef1fa33cefe68edef1c5728d3d5c854567b6766283325427f5468cac6"
+  }
+}

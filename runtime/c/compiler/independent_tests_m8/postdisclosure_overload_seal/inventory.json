@@ -1,0 +1,521 @@
+{
+  "negative": [
+    {
+      "name": "disclosed_runtime_shift_no_expected_u32",
+      "source": {
+        "bytes_hex": "4067726f7570283029204062696e64696e67283029207661723c73746f726167652c20726561645f77726974653e206f75743a2061727261793c7533323e3b0a4067726f7570283029204062696e64696e67283129207661723c73746f726167652c20726561643e207372633a2061727261793c7533323e3b0a40636f6d707574652040776f726b67726f75705f73697a6528312920666e206d61696e2829207b206c657420636f756e743d31753b6c657420783a7533323d31203c3c20636f756e743b207d"
+      },
+      "source_sha256": "002ff21f44bb45010fa01e8cf2153e840e59f6796733c6f44a496a0250cc2806",
+      "status": 4
+    },
+    {
+      "name": "disclosed_runtime_shift_i32_range",
+      "source": {
+        "bytes_hex": "4067726f7570283029204062696e64696e67283029207661723c73746f726167652c20726561645f77726974653e206f75743a2061727261793c7533323e3b0a4067726f7570283029204062696e64696e67283129207661723c73746f726167652c20726561643e207372633a2061727261793c7533323e3b0a40636f6d707574652040776f726b67726f75705f73697a6528312920666e206d61696e2829207b206c657420636f756e743d30753b6c657420783d32313437343833363438203c3c20636f756e743b207d"
+      },
+      "source_sha256": "1bdf449301fcac1002be528ca456c02207e96acd7cd4c9f0a8b37e790bb8f720",
+      "status": 4
+    },
+    {
+      "name": "disclosed_runtime_shift_range_not_annotation",
+      "source": {
+        "bytes_hex": "4067726f7570283029204062696e64696e67283029207661723c73746f726167652c20726561645f77726974653e206f75743a2061727261793c7533323e3b0a4067726f7570283029204062696e64696e67283129207661723c73746f726167652c20726561643e207372633a2061727261793c7533323e3b0a40636f6d707574652040776f726b67726f75705f73697a6528312920666e206d61696e2829207b206c657420636f756e743d30753b6c657420783a7533323d32313437343833363438203c3c20636f756e743b207d"
+      },
+      "source_sha256": "6901a6f12a5eca43ea17de55c7d52c1639520553eae10664ac6a16d957d13515",
+      "status": 4
+    }
+  ],
+  "positive": [
+    {
+      "expected": {
+        "bindings": [
+          {
+            "access": 2,
+            "address_space_alignment_bytes": 4,
+            "binding": 0,
+            "element_stride": 4,
+            "group": 0,
+            "kind": 1,
+            "minimum_binding_size_bytes": 4,
+            "name": "out",
+            "runtime_sized": 1,
+            "scalar": 1,
+            "struct_index": 4294967295,
+            "type_alignment_bytes": 4
+          },
+          {
+            "access": 1,
+            "address_space_alignment_bytes": 4,
+            "binding": 1,
+            "element_stride": 4,
+            "group": 0,
+            "kind": 1,
+            "minimum_binding_size_bytes": 4,
+            "name": "src",
+            "runtime_sized": 1,
+            "scalar": 1,
+            "struct_index": 4294967295,
+            "type_alignment_bytes": 4
+          }
+        ],
+        "builtins": [],
+        "entry": "main",
+        "n": [
+          1,
+          1,
+          1
+        ],
+        "structs": [],
+        "vectors": [
+          {
+            "initial": {
+              "(0, 0)": [
+                2774152905,
+                2774152905,
+                2774152905
+              ],
+              "(0, 1)": [
+                0,
+                1
+              ]
+            },
+            "inputs": {
+              "24": [
+                1,
+                1,
+                1
+              ],
+              "26": [
+                0,
+                0,
+                0
+              ],
+              "27": [
+                0,
+                0,
+                0
+              ],
+              "28": [
+                0,
+                0,
+                0
+              ],
+              "29": 0
+            },
+            "synthetic": false,
+            "uniforms": {},
+            "want": {
+              "(0, 0)": [
+                2,
+                2774152905,
+                2774152905
+              ],
+              "(0, 1)": [
+                0,
+                1
+              ]
+            }
+          }
+        ]
+      },
+      "name": "disclosed_runtime_shift_default_i32",
+      "source": {
+        "bytes_hex": "4067726f7570283029204062696e64696e67283029207661723c73746f726167652c20726561645f77726974653e206f75743a2061727261793c7533323e3b0a4067726f7570283029204062696e64696e67283129207661723c73746f726167652c20726561643e207372633a2061727261793c7533323e3b0a40636f6d707574652040776f726b67726f75705f73697a6528312920666e206d61696e2829207b206c657420636f756e743d31753b6c657420783d31203c3c20636f756e743b6f75745b305d3d626974636173743c7533323e2878293b207d"
+      },
+      "source_sha256": "0cf9b78cbeecb593662954a9803d3affff9b542798c2398c2fdee43397e2cd36"
+    },
+    {
+      "expected": {
+        "bindings": [
+          {
+            "access": 2,
+            "address_space_alignment_bytes": 4,
+            "binding": 0,
+            "element_stride": 4,
+            "group": 0,
+            "kind": 1,
+            "minimum_binding_size_bytes": 4,
+            "name": "out",
+            "runtime_sized": 1,
+            "scalar": 1,
+            "struct_index": 4294967295,
+            "type_alignment_bytes": 4
+          },
+          {
+            "access": 1,
+            "address_space_alignment_bytes": 4,
+            "binding": 1,
+            "element_stride": 4,
+            "group": 0,
+            "kind": 1,
+            "minimum_binding_size_bytes": 4,
+            "name": "src",
+            "runtime_sized": 1,
+            "scalar": 1,
+            "struct_index": 4294967295,
+            "type_alignment_bytes": 4
+          }
+        ],
+        "builtins": [],
+        "entry": "main",
+        "n": [
+          1,
+          1,
+          1
+        ],
+        "structs": [],
+        "vectors": [
+          {
+            "initial": {
+              "(0, 0)": [
+                2774152905,
+                2774152905,
+                2774152905
+              ],
+              "(0, 1)": [
+                0,
+                1
+              ]
+            },
+            "inputs": {
+              "24": [
+                1,
+                1,
+                1
+              ],
+              "26": [
+                0,
+                0,
+                0
+              ],
+              "27": [
+                0,
+                0,
+                0
+              ],
+              "28": [
+                0,
+                0,
+                0
+              ],
+              "29": 0
+            },
+            "synthetic": false,
+            "uniforms": {},
+            "want": {
+              "(0, 0)": [
+                2,
+                2774152905,
+                2774152905
+              ],
+              "(0, 1)": [
+                0,
+                1
+              ]
+            }
+          }
+        ]
+      },
+      "name": "disclosed_runtime_shift_i32_annotated",
+      "source": {
+        "bytes_hex": "4067726f7570283029204062696e64696e67283029207661723c73746f726167652c20726561645f77726974653e206f75743a2061727261793c7533323e3b0a4067726f7570283029204062696e64696e67283129207661723c73746f726167652c20726561643e207372633a2061727261793c7533323e3b0a40636f6d707574652040776f726b67726f75705f73697a6528312920666e206d61696e2829207b206c657420636f756e743d31753b6c657420783a6933323d31203c3c20636f756e743b6f75745b305d3d626974636173743c7533323e2878293b207d"
+      },
+      "source_sha256": "46513a5cb3a2c2b27420ba8172669858829d3360af7ab4f0ba0af881bb8c67e0"
+    },
+    {
+      "expected": {
+        "bindings": [
+          {
+            "access": 2,
+            "address_space_alignment_bytes": 4,
+            "binding": 0,
+            "element_stride": 4,
+            "group": 0,
+            "kind": 1,
+            "minimum_binding_size_bytes": 4,
+            "name": "out",
+            "runtime_sized": 1,
+            "scalar": 1,
+            "struct_index": 4294967295,
+            "type_alignment_bytes": 4
+          },
+          {
+            "access": 1,
+            "address_space_alignment_bytes": 4,
+            "binding": 1,
+            "element_stride": 4,
+            "group": 0,
+            "kind": 1,
+            "minimum_binding_size_bytes": 4,
+            "name": "src",
+            "runtime_sized": 1,
+            "scalar": 1,
+            "struct_index": 4294967295,
+            "type_alignment_bytes": 4
+          }
+        ],
+        "builtins": [],
+        "entry": "main",
+        "n": [
+          1,
+          1,
+          1
+        ],
+        "structs": [],
+        "vectors": [
+          {
+            "initial": {
+              "(0, 0)": [
+                2774152905,
+                2774152905,
+                2774152905
+              ],
+              "(0, 1)": [
+                0,
+                1
+              ]
+            },
+            "inputs": {
+              "24": [
+                1,
+                1,
+                1
+              ],
+              "26": [
+                0,
+                0,
+                0
+              ],
+              "27": [
+                0,
+                0,
+                0
+              ],
+              "28": [
+                0,
+                0,
+                0
+              ],
+              "29": 0
+            },
+            "synthetic": false,
+            "uniforms": {},
+            "want": {
+              "(0, 0)": [
+                4294967295,
+                2774152905,
+                2774152905
+              ],
+              "(0, 1)": [
+                0,
+                1
+              ]
+            }
+          }
+        ]
+      },
+      "name": "disclosed_runtime_shift_negative",
+      "source": {
+        "bytes_hex": "4067726f7570283029204062696e64696e67283029207661723c73746f726167652c20726561645f77726974653e206f75743a2061727261793c7533323e3b0a4067726f7570283029204062696e64696e67283129207661723c73746f726167652c20726561643e207372633a2061727261793c7533323e3b0a40636f6d707574652040776f726b67726f75705f73697a6528312920666e206d61696e2829207b206c657420636f756e743d31753b6c657420783d282d3129203e3e20636f756e743b6f75745b305d3d626974636173743c7533323e2878293b207d"
+      },
+      "source_sha256": "5ca9494ecf4e36f429316fb632d0eb0695884f4cba6fe8002c76da7bdddb7efc"
+    },
+    {
+      "expected": {
+        "bindings": [
+          {
+            "access": 2,
+            "address_space_alignment_bytes": 4,
+            "binding": 0,
+            "element_stride": 4,
+            "group": 0,
+            "kind": 1,
+            "minimum_binding_size_bytes": 4,
+            "name": "out",
+            "runtime_sized": 1,
+            "scalar": 1,
+            "struct_index": 4294967295,
+            "type_alignment_bytes": 4
+          },
+          {
+            "access": 1,
+            "address_space_alignment_bytes": 4,
+            "binding": 1,
+            "element_stride": 4,
+            "group": 0,
+            "kind": 1,
+            "minimum_binding_size_bytes": 4,
+            "name": "src",
+            "runtime_sized": 1,
+            "scalar": 1,
+            "struct_index": 4294967295,
+            "type_alignment_bytes": 4
+          }
+        ],
+        "builtins": [],
+        "entry": "main",
+        "n": [
+          1,
+          1,
+          1
+        ],
+        "structs": [],
+        "vectors": [
+          {
+            "initial": {
+              "(0, 0)": [
+                2774152905,
+                2774152905,
+                2774152905
+              ],
+              "(0, 1)": [
+                0,
+                1
+              ]
+            },
+            "inputs": {
+              "24": [
+                1,
+                1,
+                1
+              ],
+              "26": [
+                0,
+                0,
+                0
+              ],
+              "27": [
+                0,
+                0,
+                0
+              ],
+              "28": [
+                0,
+                0,
+                0
+              ],
+              "29": 0
+            },
+            "synthetic": false,
+            "uniforms": {},
+            "want": {
+              "(0, 0)": [
+                2147483648,
+                2774152905,
+                2774152905
+              ],
+              "(0, 1)": [
+                0,
+                1
+              ]
+            }
+          }
+        ]
+      },
+      "name": "disclosed_const_shift_abstract_survives",
+      "source": {
+        "bytes_hex": "4067726f7570283029204062696e64696e67283029207661723c73746f726167652c20726561645f77726974653e206f75743a2061727261793c7533323e3b0a4067726f7570283029204062696e64696e67283129207661723c73746f726167652c20726561643e207372633a2061727261793c7533323e3b0a40636f6d707574652040776f726b67726f75705f73697a6528312920666e206d61696e2829207b20636f6e737420636f756e743d30753b6c657420783a7533323d32313437343833363438203c3c20636f756e743b6f75745b305d3d783b207d"
+      },
+      "source_sha256": "9beffd25dc12a5faa55482ede49617c639f86351e0c68976b5193661ba364c99"
+    },
+    {
+      "expected": {
+        "bindings": [
+          {
+            "access": 2,
+            "address_space_alignment_bytes": 4,
+            "binding": 0,
+            "element_stride": 4,
+            "group": 0,
+            "kind": 1,
+            "minimum_binding_size_bytes": 4,
+            "name": "out",
+            "runtime_sized": 1,
+            "scalar": 1,
+            "struct_index": 4294967295,
+            "type_alignment_bytes": 4
+          },
+          {
+            "access": 1,
+            "address_space_alignment_bytes": 4,
+            "binding": 1,
+            "element_stride": 4,
+            "group": 0,
+            "kind": 1,
+            "minimum_binding_size_bytes": 4,
+            "name": "src",
+            "runtime_sized": 1,
+            "scalar": 1,
+            "struct_index": 4294967295,
+            "type_alignment_bytes": 4
+          }
+        ],
+        "builtins": [],
+        "entry": "main",
+        "n": [
+          1,
+          1,
+          1
+        ],
+        "structs": [],
+        "vectors": [
+          {
+            "initial": {
+              "(0, 0)": [
+                2774152905,
+                2774152905,
+                2774152905
+              ],
+              "(0, 1)": [
+                0,
+                1
+              ]
+            },
+            "inputs": {
+              "24": [
+                1,
+                1,
+                1
+              ],
+              "26": [
+                0,
+                0,
+                0
+              ],
+              "27": [
+                0,
+                0,
+                0
+              ],
+              "28": [
+                0,
+                0,
+                0
+              ],
+              "29": 0
+            },
+            "synthetic": false,
+            "uniforms": {},
+            "want": {
+              "(0, 0)": [
+                1073741824,
+                2774152905,
+                2774152905
+              ],
+              "(0, 1)": [
+                0,
+                1
+              ]
+            }
+          }
+        ]
+      },
+      "name": "disclosed_concrete_u32_shift",
+      "source": {
+        "bytes_hex": "4067726f7570283029204062696e64696e67283029207661723c73746f726167652c20726561645f77726974653e206f75743a2061727261793c7533323e3b0a4067726f7570283029204062696e64696e67283129207661723c73746f726167652c20726561643e207372633a2061727261793c7533323e3b0a40636f6d707574652040776f726b67726f75705f73697a6528312920666e206d61696e2829207b206c657420636f756e743d31753b6c657420783a7533323d3231343734383336343875203e3e20636f756e743b6f75745b305d3d783b207d"
+      },
+      "source_sha256": "83768e50be73e2c56767b1a47aed07d7da7a71b7b2a4f5d16b14682457758875"
+    }
+  ],
+  "provenance": "author edge disclosed by parent; no implementation/developer test inspection"
+}

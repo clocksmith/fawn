@@ -1,0 +1,37 @@
+{
+  "FROZEN_OBLIGATIONS_M8.md": {
+    "bytes": 12366,
+    "classification": "preinspection",
+    "sha256": "c362c9f6828209464fbfa49ad5da2399e22dfe246264255a64c99a45bfa7d1e9"
+  },
+  "postdisclosure_overload_seal/inventory.json": {
+    "bytes": 15548,
+    "classification": "postdisclosure",
+    "sha256": "23eb3c79b75dd0b4d1cb128a46aefe439d7c89898d4868dce227dcde8017dd65"
+  },
+  "postinspection_ir/frozen-additional-case.json": {
+    "bytes": 7129,
+    "classification": "postinspection",
+    "sha256": "127856900ba4b3f80589613675a4df7884666c9f0c3d6a732de11013a3023d9f"
+  },
+  "preinspection_capacity/inventory.json": {
+    "bytes": 10432,
+    "classification": "preinspection",
+    "sha256": "de98a863a64a211316808297e415017c2c9034a874584c708c5d5413275e5d18"
+  },
+  "preinspection_corpus/inventory.json": {
+    "bytes": 39116,
+    "classification": "preinspection",
+    "sha256": "eef2bf0e688c2a6a9954dafa4c395c3499b4117d74e9a070afe1c6f023cefafe"
+  },
+  "preinspection_exact_cases/inventory.json": {
+    "bytes": 272676,
+    "classification": "preinspection",
+    "sha256": "4c1fc589804fa80870ed4a39dd5f53b30c016da8bdb45e87ad4751ffcf69a0e2"
+  },
+  "preinspection_retained_v2/inventory.json": {
+    "bytes": 179018,
+    "classification": "preinspection",
+    "sha256": "1f6ecd0ef4173cf7aa2b4571b27f52e9d46fd371720ba5b10e54183903e68d36"
+  }
+}
