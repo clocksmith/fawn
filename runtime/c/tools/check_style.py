@@ -7,6 +7,9 @@ Each failure names its rule:
   guard    Headers have an #ifndef/#define include guard or #pragma once.
   pragma   No compiler diagnostic suppression pragmas.
   flags    Owner Makefiles that define CFLAGS compile strict C11 with -Werror.
+  test     Every test source (tests/*.c, *.cpp, *.m) is named by a Makefile, .mk,
+           .py or .cmd build script in runtime/c, so no client exists only as
+           manual instructions and silently stops compiling.
   adapter  Native public consumers select adapters only through
            tests/adapter_class.h (no direct forceFallbackAdapter or CPU-type checks);
            tests/backend_selection.c tests fallback semantics themselves.
@@ -104,12 +107,25 @@ def makefile_failures(root: Path, path: str) -> list[str]:
     return [f"flags: {path}: CFLAGS owner lacks {' '.join(missing)}"] if missing else []
 
 
+BUILD_SCRIPT_SUFFIXES = {".mk", ".py", ".cmd"}
+TEST_SOURCE = re.compile(r"(^|/)tests/[^/]+\.(c|cpp|m)$")
+
+
+def orphan_tests(root: Path, paths: list[str], sealed: set[str]) -> list[str]:
+    scripts = [p for p in paths if Path(p).name == "Makefile" or Path(p).suffix in BUILD_SCRIPT_SUFFIXES]
+    text = "\n".join((root / p).read_text(errors="replace") for p in scripts if (root / p).is_file())
+    return [f"test: {path}: no Makefile or build script in runtime/c names it"
+            for path in paths if TEST_SOURCE.search(path) and not frozen(path, sealed)
+            and Path(path).name not in text]
+
+
 def run(root: Path, paths: list[str]) -> tuple[int, list[str]]:
     sealed = sealed_files(root, paths)
     sources = [p for p in paths if Path(p).suffix in SOURCE_SUFFIXES]
     failures = []
     for path in sources:
         failures.extend(source_failures(root, path, frozen(path, sealed)))
+    failures.extend(orphan_tests(root, paths, sealed))
     for path in (p for p in paths if Path(p).name == "Makefile"):
         failures.extend(makefile_failures(root, path))
     return len(sources), failures
