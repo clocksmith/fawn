@@ -38,16 +38,27 @@ static bool valid_name(Source *source, const Name *name) {
 }
 static bool same_name(const Name *a, const Name *b) { return strcmp(a->text, b->text) == 0; }
 static bool required_type(const Syntax *s, const Name *name) {
-    if (strcmp(name->text, "array") == 0 ||
-        strcmp(name->text, s->vector_alias ? "vec3u" : "vec3") == 0) return true;
+    if (strcmp(name->text, s->vector_alias ? "vec3u" : "vec3") == 0) return true;
     bool uses_u32 = s->has_constant || !s->vector_alias;
-    bool uses_f32 = false;
-    for (size_t i = 0; i < s->storage_count; ++i) {
-        uses_u32 = uses_u32 || s->storage[i].scalar == DOE_COMPILER_U32;
-        uses_f32 = uses_f32 || s->storage[i].scalar == DOE_COMPILER_F32;
+    bool uses_f32 = false, uses_array = false;
+    for (size_t i = 0; i < s->resource_count; ++i) {
+        uses_array = uses_array || s->resources[i].kind == DOE_COMPILER_STORAGE_BUFFER;
+        uses_u32 = uses_u32 || s->resources[i].scalar == DOE_COMPILER_U32;
+        uses_f32 = uses_f32 || s->resources[i].scalar == DOE_COMPILER_F32;
     }
-    return (uses_u32 && strcmp(name->text, "u32") == 0) ||
+    for (size_t i = 0; i < s->struct_count; ++i)
+        for (size_t j = 0; j < s->structs[i].member_count; ++j) {
+            uses_u32 = uses_u32 || s->structs[i].members[j].scalar == DOE_COMPILER_U32;
+            uses_f32 = uses_f32 || s->structs[i].members[j].scalar == DOE_COMPILER_F32;
+        }
+    return (uses_array && strcmp(name->text, "array") == 0) ||
+           (uses_u32 && strcmp(name->text, "u32") == 0) ||
            (uses_f32 && strcmp(name->text, "f32") == 0);
+}
+static size_t find_struct(const Syntax *s, const Name *name) {
+    for (size_t i = 0; i < s->struct_count; ++i)
+        if (same_name(name, &s->structs[i].name)) return i;
+    return s->struct_count;
 }
 static bool module_name(Source *source, const Syntax *s, const Name *name) {
     if (!valid_name(source, name)) return false;
@@ -62,8 +73,8 @@ static bool validate_declarations(Source *source, const Syntax *s) {
     if (s->has_constant && same_name(&s->constant_name, &s->entry))
         return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, s->entry.offset,
                             "entry point collides with module constant");
-    for (size_t i = 0; i < s->storage_count; ++i) {
-        const StorageSyntax *binding = &s->storage[i];
+    for (size_t i = 0; i < s->resource_count; ++i) {
+        const ResourceSyntax *binding = &s->resources[i];
         if (!module_name(source, s, &binding->name)) return false;
         if (same_name(&binding->name, &s->entry) ||
             (s->has_constant && same_name(&binding->name, &s->constant_name)))
@@ -74,15 +85,44 @@ static bool validate_declarations(Source *source, const Syntax *s) {
                                 binding->group.value > 3u ? binding->group.offset : binding->binding.offset,
                                 "storage requires group 0..3 and binding 0..31");
         for (size_t j = 0; j < i; ++j) {
-            if (same_name(&binding->name, &s->storage[j].name))
+            if (same_name(&binding->name, &s->resources[j].name))
                 return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, binding->name.offset,
                                     "duplicate storage name at module scope");
-            if (binding->group.value == s->storage[j].group.value &&
-                binding->binding.value == s->storage[j].binding.value)
+            if (binding->group.value == s->resources[j].group.value &&
+                binding->binding.value == s->resources[j].binding.value)
                 return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, binding->binding.offset,
                                     "duplicate storage group and binding pair");
         }
     }
+    for (size_t i = 0; i < s->struct_count; ++i) {
+        const StructSyntax *type = &s->structs[i];
+        if (!module_name(source, s, &type->name)) return false;
+        if (same_name(&type->name, &s->entry) ||
+            (s->has_constant && same_name(&type->name, &s->constant_name)))
+            return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, type->name.offset,
+                                "struct name collides with a module declaration");
+        for (size_t j = 0; j < s->resource_count; ++j)
+            if (same_name(&type->name, &s->resources[j].name))
+                return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, type->name.offset,
+                                    "struct and resource names collide");
+        for (size_t j = 0; j < i; ++j)
+            if (same_name(&type->name, &s->structs[j].name))
+                return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, type->name.offset,
+                                    "duplicate module struct name");
+        for (size_t j = 0; j < type->member_count; ++j) {
+            if (!valid_name(source, &type->members[j].name)) return false;
+            for (size_t k = 0; k < j; ++k)
+                if (same_name(&type->members[j].name, &type->members[k].name))
+                    return source_error(source, DOE_COMPILER_SEMANTIC_ERROR,
+                                        type->members[j].name.offset, "duplicate struct member name");
+        }
+    }
+    for (size_t i = 0; i < s->resource_count; ++i)
+        if (s->resources[i].kind == DOE_COMPILER_UNIFORM_BUFFER &&
+            find_struct(s, &s->resources[i].type_name) == s->struct_count)
+            return source_error(source, DOE_COMPILER_SEMANTIC_ERROR,
+                                s->resources[i].type_name.offset,
+                                "uniform type must resolve to a declared flat struct");
     if (s->local_size.value < 1u || s->local_size.value > 256u)
         return source_error(source, DOE_COMPILER_UNSUPPORTED, s->local_size.offset,
                             "workgroup size must be between 1 and 256");
@@ -104,10 +144,13 @@ static bool resolve_reference(Source *source, const Syntax *s, const Reference *
         return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, name->offset,
                             "storage reference resolves to a shadowing local declaration");
     size_t index = 0u;
-    while (index < s->storage_count && !same_name(name, &s->storage[index].name)) ++index;
-    if (index == s->storage_count)
+    while (index < s->resource_count && !same_name(name, &s->resources[index].name)) ++index;
+    if (index == s->resource_count)
         return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, name->offset,
                             "storage reference does not resolve to a declared buffer");
+    if (s->resources[index].kind != DOE_COMPILER_STORAGE_BUFFER)
+        return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, name->offset,
+                            "indexed reference requires a storage array, not a uniform struct");
     *binding_index = (uint32_t)index;
     return true;
 }
@@ -156,9 +199,40 @@ static bool user_declared(const Syntax *s, const LocalScope *scope, const Name *
         (s->has_alias && same_name(name, &s->alias)) ||
         (s->has_constant && same_name(name, &s->constant_name)) ||
         find_local(scope, name) != NULL) return true;
-    for (size_t i = 0u; i < s->storage_count; ++i)
-        if (same_name(name, &s->storage[i].name)) return true;
+    for (size_t i = 0u; i < s->resource_count; ++i)
+        if (same_name(name, &s->resources[i].name)) return true;
+    for (size_t i = 0u; i < s->struct_count; ++i)
+        if (same_name(name, &s->structs[i].name)) return true;
     return false;
+}
+static bool lower_member(Source *source, const Syntax *s, const MemberSyntax *member,
+                         bool allow_invocation, const LocalScope *scope,
+                         IrProgram *program, IrValue *value) {
+    const Name *object = &member->object;
+    if (same_name(object, &s->invocation)) {
+        if (!allow_invocation || strcmp(member->member.text, "x") != 0)
+            return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, member->member.offset,
+                                "only invocation x is admitted in this operand");
+        *value = (IrValue){ .id = 1u, .type = IR_U32, .source_offset = object->offset };
+        return true;
+    }
+    if ((s->has_alias && same_name(object, &s->alias)) || find_local(scope, object) != NULL)
+        return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, object->offset,
+                            "scalar local has no members");
+    size_t binding = 0u;
+    while (binding < s->resource_count && !same_name(object, &s->resources[binding].name)) ++binding;
+    if (binding == s->resource_count || s->resources[binding].kind != DOE_COMPILER_UNIFORM_BUFFER)
+        return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, object->offset,
+                            "member object must resolve to a uniform resource");
+    const IrStruct *type = &program->structs[program->bindings[binding].struct_index];
+    size_t field = 0u;
+    while (field < type->member_count && !same_name(&member->member, &type->members[field].name)) ++field;
+    if (field == type->member_count)
+        return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, member->member.offset,
+                            "unknown uniform member");
+    return append(source, program, (IrInstruction){ .opcode = IR_UNIFORM_LOAD,
+        .type = value_type(type->members[field].scalar), .binding = (uint32_t)binding,
+        .literal = (uint32_t)field, .source_offset = object->offset }, value);
 }
 static bool lower_atom(Source *source, const Syntax *s, const Atom *atom,
                        bool allow_invocation, const LocalScope *scope, IrProgram *program, IrValue *value) {
@@ -166,11 +240,12 @@ static bool lower_atom(Source *source, const Syntax *s, const Atom *atom,
         case ATOM_LITERAL:
             return literal_value(source, program, atom->value.literal.value,
                                  atom->value.literal.offset, value);
-        case ATOM_MEMBER_X:
-            if (!allow_invocation || !same_name(&atom->value.name, &s->invocation))
-                return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, atom->value.name.offset,
-                                    "member index must be the invocation parameter's x component");
-            *value = (IrValue){ .id = 1u, .type = IR_U32, .source_offset = atom->value.name.offset };
+        case ATOM_MEMBER:
+            if (!lower_member(source, s, &atom->value.member, allow_invocation, scope, program, value))
+                return false;
+            if (value->type != IR_U32)
+                return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, value->source_offset,
+                                    "index and condition members require u32 type");
             return true;
         case ATOM_NAME:
             if (allow_invocation && s->has_alias && same_name(&atom->value.name, &s->alias)) {
@@ -225,7 +300,7 @@ static bool lower_expression(Source *source, const Syntax *s, uint32_t id,
                 !lower_index(source, s, &reference->index, scope, program, &index)) return false;
             out->runtime = true;
             return append(source, program, (IrInstruction){ .opcode = IR_ROBUST_LOAD,
-                .type = value_type(s->storage[binding].scalar), .binding = binding,
+                .type = value_type(s->resources[binding].scalar), .binding = binding,
                 .left = index.id, .source_offset = reference->storage.offset }, &out->value);
         }
         case EXPRESSION_INTEGER:
@@ -237,13 +312,9 @@ static bool lower_expression(Source *source, const Syntax *s, uint32_t id,
             return append(source, program, (IrInstruction){ .opcode = IR_CONSTANT,
                 .type = IR_F32, .literal = bits, .source_offset = node->source_offset }, &out->value);
         }
-        case EXPRESSION_MEMBER_X:
-            if (!same_name(&node->value.name, &s->invocation))
-                return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, node->source_offset,
-                                    "member expression must be invocation x");
+        case EXPRESSION_MEMBER:
             out->runtime = true;
-            out->value = (IrValue){ .id = 1u, .type = IR_U32, .source_offset = node->source_offset };
-            return true;
+            return lower_member(source, s, &node->value.member, true, scope, program, &out->value);
         case EXPRESSION_NAME: {
             const IrValue *local = find_local(scope, &node->value.name);
             if (local != NULL) {
@@ -290,10 +361,10 @@ static bool lower_assignment(Source *source, const Syntax *s, const Assignment *
                              const LocalScope *scope, IrProgram *program) {
     uint32_t binding;
     if (!resolve_reference(source, s, &assignment->target, &binding)) return false;
-    if (s->storage[binding].access != DOE_COMPILER_READ_WRITE)
+    if (s->resources[binding].access != DOE_COMPILER_READ_WRITE)
         return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, assignment->target.storage.offset,
                             "assignment target requires read_write storage access");
-    const IrType type = value_type(s->storage[binding].scalar);
+    const IrType type = value_type(s->resources[binding].scalar);
     IrValue index;
     ExpressionValue result = {0};
     if (!lower_index(source, s, &assignment->target.index, scope, program, &index) ||
@@ -376,12 +447,37 @@ bool validate_syntax(Source *source, const Syntax *s, IrProgram *program) {
     memset(program, 0, sizeof(*program));
     program->entry = s->entry;
     program->invocation = s->invocation;
-    program->binding_count = s->storage_count;
-    for (size_t i = 0; i < s->storage_count; ++i) {
-        const StorageSyntax *binding = &s->storage[i];
-        program->bindings[i] = (IrBinding){ .name = binding->name,
+    program->binding_count = s->resource_count;
+    program->struct_count = s->struct_count;
+    for (size_t i = 0; i < s->struct_count; ++i) {
+        const StructSyntax *syntax = &s->structs[i];
+        IrStruct *type = &program->structs[i];
+        type->name = syntax->name;
+        type->member_count = (uint32_t)syntax->member_count;
+        type->size_bytes = 4u * type->member_count;
+        type->alignment_bytes = 4u;
+        for (size_t j = 0; j < syntax->member_count; ++j)
+            type->members[j] = (IrMember){ .name = syntax->members[j].name,
+                .scalar = syntax->members[j].scalar, .offset_bytes = 4u * (uint32_t)j,
+                .size_bytes = 4u, .alignment_bytes = 4u };
+    }
+    for (size_t i = 0; i < s->resource_count; ++i) {
+        const ResourceSyntax *binding = &s->resources[i];
+        IrBinding *ir = &program->bindings[i];
+        *ir = (IrBinding){ .name = binding->name,
             .group = binding->group.value, .binding = binding->binding.value,
-            .scalar = binding->scalar, .access = binding->access };
+            .scalar = binding->scalar, .access = binding->access, .kind = binding->kind,
+            .struct_index = DOE_COMPILER_NO_STRUCT, .type_alignment_bytes = 4u };
+        if (binding->kind == DOE_COMPILER_STORAGE_BUFFER) {
+            ir->element_stride = 4u;
+            ir->runtime_sized = 1u;
+            ir->minimum_binding_size_bytes = 4u;
+            ir->address_space_alignment_bytes = 4u;
+        } else {
+            ir->struct_index = (uint32_t)find_struct(s, &binding->type_name);
+            ir->minimum_binding_size_bytes = program->structs[ir->struct_index].size_bytes;
+            ir->address_space_alignment_bytes = 16u;
+        }
     }
     program->local_size[0] = s->local_size.value;
     program->local_size[1] = 1u;
@@ -392,22 +488,4 @@ bool validate_syntax(Source *source, const Syntax *s, IrProgram *program) {
     /* Unreachable statements are lowered too: no dead-code validation bypass. */
     LocalScope scope = {0};
     return lower_block(source, s, 0u, s->statement_count, &scope, program);
-}
-
-void reflect_program(const IrProgram *program, DoeCompilerReflection *reflection) {
-    memset(reflection, 0, sizeof(*reflection));
-    memcpy(reflection->entry_point, program->entry.text, sizeof(reflection->entry_point));
-    memcpy(reflection->workgroup_size, program->local_size, sizeof(reflection->workgroup_size));
-    reflection->binding_count = (uint32_t)program->binding_count;
-    for (size_t i = 0; i < program->binding_count; ++i) {
-        DoeCompilerBinding *binding = &reflection->bindings[i];
-        const IrBinding *ir = &program->bindings[i];
-        memcpy(binding->name, ir->name.text, sizeof(binding->name));
-        binding->group = ir->group;
-        binding->binding = ir->binding;
-        binding->scalar = ir->scalar;
-        binding->access = ir->access;
-        binding->element_stride = 4u;
-        binding->runtime_sized = 1u;
-    }
 }
