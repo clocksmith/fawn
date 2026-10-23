@@ -9,6 +9,7 @@ struct doe_resource_bundle_encoder {
     doe_resource_render_bundle_desc desc;
     doe_resource_status status;
     bool finished;
+    bool created_invalid; /* Rejected descriptor; creation reported the error. */
     size_t operations, count, capacity, debug_depth;
     doe_resource_render_packet state;
     doe_resource_render_packet *draws;
@@ -73,6 +74,24 @@ doe_resource_status doe_resource_bundle_encoder_create(const doe_resource_config
     resource_init(&encoder->base, config, (doe_resource_native){0});
     *out = encoder;
     return DOE_RESOURCE_OK;
+}
+
+doe_resource_bundle_encoder *doe_resource_bundle_encoder_rejected(const doe_resource_config *config,
+    doe_resource_status rejection)
+{
+    if (!resource_config_valid(config) || !resource_status_is_rejection(rejection)) return NULL;
+    doe_resource_bundle_encoder *encoder = resource_allocate(config, sizeof(*encoder), _Alignof(doe_resource_bundle_encoder));
+    if (!encoder) return NULL;
+    memset(encoder, 0, sizeof(*encoder));
+    encoder->status = rejection;
+    encoder->created_invalid = true;
+    resource_init(&encoder->base, config, (doe_resource_native){0});
+    return encoder;
+}
+
+bool doe_resource_bundle_encoder_created_invalid(const doe_resource_bundle_encoder *encoder)
+{
+    return encoder && encoder->created_invalid;
 }
 
 void doe_resource_bundle_encoder_retain(doe_resource_bundle_encoder *encoder)

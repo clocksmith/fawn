@@ -82,7 +82,9 @@ doe_resource_status doe_resource_texture_copy_validate(uint64_t buffer_size,
         }
         if (copy->width != extent[0] || copy->height != extent[1]) return DOE_RESOURCE_RANGE;
     }
-    if (copy->offset % (depth ? 4 : bytes)) return DOE_RESOURCE_LAYOUT;
+    /* writeTexture (QUEUE) data has no offset or bytesPerRow block alignment;
+     * the caller repacks it into an aligned staging layout. */
+    if (alignment != DOE_RESOURCE_COPY_QUEUE && copy->offset % (depth ? 4 : bytes)) return DOE_RESOURCE_LAYOUT;
     uint64_t row_bytes = ceil_blocks(copy->width, block_width) * bytes;
     uint64_t rows = ceil_blocks(copy->height, block_height);
     bool pitch_missing = copy->bytes_per_row == UINT32_MAX ||
@@ -97,7 +99,8 @@ doe_resource_status doe_resource_texture_copy_validate(uint64_t buffer_size,
     }
     uint64_t pitch = pitch_missing ? row_bytes : copy->bytes_per_row;
     uint64_t image_rows = image_missing ? rows : copy->rows_per_image;
-    if (pitch < row_bytes || pitch % bytes || image_rows < rows) return DOE_RESOURCE_LAYOUT;
+    if (pitch < row_bytes || (alignment != DOE_RESOURCE_COPY_QUEUE && pitch % bytes) || image_rows < rows)
+        return DOE_RESOURCE_LAYOUT;
     uint64_t required;
     if (!doe_copy_footprint(row_bytes, rows, image_rows, pitch, copy->depth_or_layers, &required))
         return DOE_RESOURCE_RANGE;
@@ -106,8 +109,9 @@ doe_resource_status doe_resource_texture_copy_validate(uint64_t buffer_size,
     uint64_t image_height = image_rows * block_height;
     if (pitch > UINT32_MAX || image_rows > UINT32_MAX || row_length > UINT32_MAX || image_height > UINT32_MAX)
         return DOE_RESOURCE_RANGE;
-    *out = (doe_resource_copy_region){aspect, (uint32_t)pitch, (uint32_t)image_rows,
-        (uint32_t)row_length, (uint32_t)image_height, required};
+    *out = (doe_resource_copy_region){.aspect=aspect, .pitch=(uint32_t)pitch, .image_rows=(uint32_t)image_rows,
+        .row_length=(uint32_t)row_length, .image_height=(uint32_t)image_height, .required_bytes=required,
+        .row_bytes=(uint32_t)row_bytes, .rows=(uint32_t)rows};
     return DOE_RESOURCE_OK;
 }
 

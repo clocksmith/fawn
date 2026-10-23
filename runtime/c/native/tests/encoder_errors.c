@@ -193,6 +193,32 @@ int main(void)
             expect_errors(&s,before,0,"valid bundle execution");
         } else finish_rejected(&s,encoder,before,"invalid bundle execution");
     }
+    /* An invalid descriptor: one error at creation and an invalid encoder whose
+     * commands and Finish add nothing; its invalid bundle invalidates the pass's
+     * command encoder, whose Finish reports once; a second Finish reports. */
+    before = s.errors;
+    WGPURenderBundleEncoderDescriptor bad = WGPU_RENDER_BUNDLE_ENCODER_DESCRIPTOR_INIT;
+    bad.depthStencilFormat = WGPUTextureFormat_RGBA8Unorm; /* a color format as depth/stencil */
+    builder = wgpuDeviceCreateRenderBundleEncoder(s.device,&bad);
+    assert(builder);
+    expect_errors(&s,before,1,"invalid bundle encoder descriptor");
+    wgpuRenderBundleEncoderSetPipeline(builder,matching);
+    wgpuRenderBundleEncoderDraw(builder,3,1,0,0);
+    WGPURenderBundle born_invalid = wgpuRenderBundleEncoderFinish(builder,NULL);
+    assert(born_invalid);
+    expect_errors(&s,before,1,"invalid-descriptor encoder commands and Finish");
+    WGPURenderBundle finished_twice = wgpuRenderBundleEncoderFinish(builder,NULL);
+    expect_errors(&s,before,2,"second Finish of an invalid-descriptor encoder");
+    wgpuRenderBundleRelease(finished_twice);
+    wgpuRenderBundleEncoderRelease(builder);
+    before = s.errors;
+    encoder = wgpuDeviceCreateCommandEncoder(s.device,NULL);
+    pass = begin_render(encoder,view,WGPUStoreOp_Store);
+    wgpuRenderPassEncoderExecuteBundles(pass,1,&born_invalid);
+    wgpuRenderPassEncoderEnd(pass);
+    wgpuRenderPassEncoderRelease(pass);
+    finish_rejected(&s,encoder,before,"invalid-descriptor bundle execution");
+    wgpuRenderBundleRelease(born_invalid);
     wgpuRenderBundleRelease(valid_bundle);
     wgpuRenderBundleRelease(invalid_bundle);
     wgpuRenderPipelineRelease(mismatched);
@@ -215,7 +241,8 @@ int main(void)
         "End/dispatch on ended passes, copies/clears/begin on a finished encoder and a second Finish report at "
         "the call; render bundle encoders: invalid setPipeline/draw give one error at bundle Finish and an "
         "invalid bundle, executing it in a valid pass gives one error at the command encoder's Finish, commands "
-        "and a second Finish after bundle Finish report at the call; core-features-and-limits listed and "
+        "and a second Finish after bundle Finish report at the call, an invalid bundle encoder descriptor reports "
+        "once at creation and its bundle once at the executing encoder's Finish; core-features-and-limits listed and "
         "accepted %s\n", adapter_class_scope());
     return 0;
 }
