@@ -1,0 +1,31 @@
+{
+  "accepted_M9_commit": "dee5f42acbb50e05d5690f1d2d13777c5c26d51d",
+  "accepted_M9_diagnostic": "unsupported local scalar annotation",
+  "accepted_M9_offset": 46,
+  "accepted_M9_status": 3,
+  "candidate_source_changes": false,
+  "candidate_v3_diagnostic": "vector annotation requires one concrete scalar type",
+  "candidate_v3_modes": [
+    1,
+    2,
+    3,
+    5,
+    6,
+    7
+  ],
+  "candidate_v3_offset": 46,
+  "candidate_v3_status": 4,
+  "disposition": "FAIL_CONFIRMED_CANDIDATE_REGRESSION",
+  "expectation_changes": false,
+  "original_evidence_manifest_sha256": "0dc0a735f4582f2c830055126e39d4ac14c80fcac8a8e4230fabb18369f9603b",
+  "original_result_sha256": "3f9393c018974f5165ea1c12f431a0b726082b6c578cba07604ca79631760a8c",
+  "parent_source_built_baseline_receipt": "../baseline-categories.json",
+  "parent_source_built_baseline_receipt_sha256": "bf8296db1e1d8bb92050203b72bcef8838b28a4bc118bb7ec497b1ea0559bc2b",
+  "parent_source_built_baseline_text_sha256": "21fef84378ffdea067f2326e16a1bb39aa93edf253bc160e05d00ae9a0f648c8",
+  "requirement": "Preserve historical rejection categories for unsupported matrix annotation; exact native ABI suite remains failing until candidate repair and independently rerun fixed source.",
+  "sealed_expected_status": 3,
+  "source": "@compute @workgroup_size(1) fn broken(){var a:mat2x2<f32>;}",
+  "supersedes_disposition_only": "NATIVE_V3_RESULT.json pending category review; original result/evidence seal remain unchanged",
+  "test_source_changes": false,
+  "utc": "2026-10-23T09:45:47.528876+00:00"
+}

@@ -1,0 +1,63 @@
+{
+  "boundary_case_count": 5,
+  "candidate": {
+    "built": false,
+    "executed": false,
+    "inspected": false,
+    "linked": false,
+    "loaded": false
+  },
+  "cli_instrumentation_parent": {
+    "adaptation": "Separate attributed copy with public ABI4 wrappers and counters; original unchanged",
+    "commit": "dee5f42acbb50e05d5690f1d2d13777c5c26d51d",
+    "path": "runtime/c/compiler/independent_tests_m5/cli_io_wrap_m5.c",
+    "sha256": "90c012a3a39924b74ce3ac4f256dfcd3f0d1f99faac502e471f2727413e1a904"
+  },
+  "contract_commit": "8530b04f6b2171bc24888530dd200e2f4a60983f",
+  "contract_manifest_sha256": "a1051f4b1bcc6a0ce63130c744d969406f797db0f18c60b7fe2b00fa60c8503c",
+  "fixture_count": 575,
+  "fixture_expected_status": {
+    "0": 476,
+    "3": 12,
+    "4": 87
+  },
+  "format": "m10-concrete-preinspection-v2",
+  "known_fixture_self_check_failures": [],
+  "native_receipt_sha256": "fe46b45b2e7e970e6ebbd1fa0a5e83c209f5207976d8a4e233765a510301656f",
+  "native_source_seal_sha256": "de784f1927dd9abde7272d60c3e3983fd0b65f6f8738c78f1ddc3923acfcd7dc",
+  "original_high_level_seal_sha256": "ec46133dd3926cf8cb3630a2d82052c698ff2512ee16e845d75a55b5e0dca93a",
+  "preparation_checks": [
+    "All independent Python sources AST parsed",
+    "Five handcrafted target mutant pairs validated with Vulkan1.1 and killed by byte/safety checks",
+    "Frozen-header CLI wrapper C11 syntax-only passed",
+    "Native source seal15 entries verified"
+  ],
+  "real_source_scenarios": 18,
+  "real_source_witnesses": 3,
+  "self_controls_sha256": "b7f9d5535bb582bc5e619ad4f369d2ed21786524e3fe7a5b71a0161fe013a105",
+  "supersedes": {
+    "reason": "Prehandoff witness-generator loop return correction; original files preserved. No candidate knowledge.",
+    "receipt_sha256": "82718c43720fbcd93fc330a94682b8c55d415c9f23f3538545548a06058d97b4",
+    "source_manifest_sha256": "1d6d86fbb19624b2152521a58a1a444b8f678339baccfebd4abb2b25867bfd08"
+  },
+  "unrun": [
+    "candidate semantic execution",
+    "candidate native/ABI/fault/concurrency",
+    "candidate CLI faults",
+    "target width/depth boundaries",
+    "unchanged historical suites",
+    "real98-source ledger",
+    "actual record/workspace/stack/ID source audit",
+    "physical GPU",
+    "runtime TranslationInfo/cache/native adoption"
+  ],
+  "utc": "2026-10-23T09:18:12.675385+00:00",
+  "validator": {
+    "options": [
+      "--target-env",
+      "vulkan1.1"
+    ],
+    "path": "/workspace/shared/doe-language-experiment-20261023/phase2/deps/spirv-tools/usr/bin/spirv-val",
+    "sha256": "f386e67676bc134802b6bfec6d96fff0f9437d0f60e4c97ee0afa59ab4f1c4ea"
+  }
+}

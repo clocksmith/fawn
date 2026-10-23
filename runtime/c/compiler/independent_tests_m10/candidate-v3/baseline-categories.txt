@@ -1,0 +1,6 @@
+/tmp/doe-m9-evaluator-category-baseline/f16.wgsl	2	61	expected fn; unsupported or malformed WGSL subset
+/tmp/doe-m9-evaluator-category-baseline/workgroup.wgsl	2	61	expected fn; unsupported or malformed WGSL subset
+/tmp/doe-m9-evaluator-category-baseline/private.wgsl	2	61	expected fn; unsupported or malformed WGSL subset
+/tmp/doe-m9-evaluator-category-baseline/alias.wgsl	2	61	expected fn; unsupported or malformed WGSL subset
+/tmp/doe-m9-evaluator-category-baseline/override.wgsl	2	61	expected fn; unsupported or malformed WGSL subset
+/tmp/doe-m9-evaluator-category-baseline/matrix.wgsl	3	46	unsupported local scalar annotation

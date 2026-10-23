@@ -46,15 +46,25 @@ module/function calls and the selected scalar math family. The unchanged consume
 admits 33 of 98 paths; 65 remain explicit rejections. General functions and scalar
 math do not imply aggregates, multiple entries or collective semantics.
 
-Next is the reusable aggregate/type/access-path and reflection owner: vectors,
-constant-length arrays, named/nested structures, constructors, by-value calls,
-member/index references, checked layout and per-access robustness. New typed
-reflection needs an explicit additive API because old scalar/flat-struct results
-cannot represent it. Preserve historical successful projections and use the same
-pipeline, not per-API grammars or silent omission. Independent packed-layout and
-instruction oracles must cover types absent from this 98-source corpus. Workgroup
-storage/barriers, matrices, pointers, extensions and wider math remain separately
-selected dependencies, not inferred aggregate coverage.
+The [accepted M10 owner](../../runtime/c/compiler/MILESTONE_10_RESULTS.md) now
+covers reusable aggregate types/access paths, checked resource layout and typed
+reflection. The unchanged consumer admits 37 of 98 paths. This is not complete
+aggregate/language or production compiler ownership: matrices, pointers and
+other address spaces remain separate.
+
+The next selected owner is typed workgroup storage, zero initialization,
+synchronization and uniformity over the already admitted compute/control/call
+language. Of 61 current rejections, 34 first stop at workgroup storage; hidden
+builtin, multiple-entry and atomic dependencies mean these are not 34 promised
+admissions. Unchanged zero-initialization, cross-lane permutation and repeated
+reduction sources provide witnesses, not source templates. Freeze initialization,
+execution/memory scopes, transitive control/data uniformity and dynamic barrier
+agreement before implementation. Independently scheduled multi-invocation
+execution must model shared visibility, rendezvous, group isolation and race
+boundaries. Single-invocation replay and retained Zig gaps are not proof. Explicit
+unsupported/unproven cases and physical GPU qualification remain separate.
+Vector math, matrices, pointers, aliases, multiple entries, atomics and extensions
+are subsequent reusable dependencies, not silently bundled acceptance claims.
 
 ## Remaining dependency map
 

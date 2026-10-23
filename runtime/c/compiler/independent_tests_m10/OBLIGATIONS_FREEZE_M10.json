@@ -1,0 +1,26 @@
+{
+  "accepted_head": "dee5f42acbb50e05d5690f1d2d13777c5c26d51d",
+  "build_or_test_executed": false,
+  "candidate_executed": false,
+  "candidate_inspected": false,
+  "closure_sha256": "81a8d8ed13eaaca90c37beee66f8bb3f5c040532e9a57cb9e04576d830b27ca5",
+  "concrete_suite_gate": "Source seal before first candidate inspection/execution; authoring may follow contract freeze.",
+  "date_utc": "2026-10-23",
+  "exact_fixtures_created_or_disclosed": false,
+  "historical_drafts_preserved": true,
+  "implementation_audit_pending": true,
+  "kind": "M10 high-level independent obligations freeze",
+  "obligations_sha256": "a64f95017b07c7fe89f19ac31e039b5d65c53770c22ddcdef7799a4ff62bb02b",
+  "planning_inputs_sha256": {
+    "DRAFT.md": "d3e65bf7624b56716ee9f6805d900f19c119f267bfec6ffbd35b119060fb5c9b",
+    "LEDGER.md": "1554280166112044d815dc5bbd2660241298b28006bfab603b98a8351cf37fb7",
+    "PLANNING.sha256": "62e5b69e1a02e7a2fb0ea3c1fade4340b9c700e203f5a5393dc26abfa560c079"
+  },
+  "scope_changes": [
+    "Clarify out-of-contract overlap is not guaranteed checked rejection.",
+    "JSON4 CLI option not selected; old schemas unchanged."
+  ],
+  "source_entries_verified": 172,
+  "source_manifest_sha256": "d5ebad79e4eea296ab557c6c86f9df580081048051c94f401e10203b8788e738",
+  "verdict": "All six scoped freeze questions closed; no implementation acceptance"
+}

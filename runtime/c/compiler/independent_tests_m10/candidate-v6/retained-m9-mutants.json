@@ -1,0 +1,127 @@
+{
+  "failed": 0,
+  "passed": 12,
+  "records": [
+    {
+      "case": "argument_order_snapshots",
+      "description": "swapped first two actual argument IDs",
+      "detection": "actual_instruction_execution",
+      "message": "vector 0: wrong raw effects (first8) [((0, 0), 1, 213, 123, [123])]",
+      "passed": true,
+      "policy": "swap_call_args",
+      "validator_returncode": 0,
+      "validator_stderr": ""
+    },
+    {
+      "case": "nested_argument_segments",
+      "description": "swapped first two actual argument IDs",
+      "detection": "actual_instruction_execution",
+      "message": "vector 0: wrong raw effects (first8) [((0, 0), 0, 352, 154, [154])]",
+      "passed": true,
+      "policy": "swap_call_args",
+      "validator_returncode": 0,
+      "validator_stderr": ""
+    },
+    {
+      "case": "calls_preserve_live_caller",
+      "description": "returned parameter instead of computed value",
+      "detection": "actual_instruction_execution",
+      "message": "vector 0: wrong raw effects (first8) [((0, 0), 0, 23, 45, [45])]",
+      "passed": true,
+      "policy": "return_parameter",
+      "validator_returncode": 0,
+      "validator_stderr": ""
+    },
+    {
+      "case": "post_call_resource_reload",
+      "description": "replaced one store with three valid OpNop instructions",
+      "detection": "actual_instruction_execution",
+      "message": "vector 0: wrong raw effects (first8) [((0, 0), 0, 3, 9, [9]), ((0, 0), 1, 6, 12, [12])]",
+      "passed": true,
+      "policy": "omit_helper_store",
+      "validator_returncode": 0,
+      "validator_stderr": ""
+    },
+    {
+      "case": "no_result",
+      "description": "replaced one store with three valid OpNop instructions",
+      "detection": "actual_instruction_execution",
+      "message": "vector 0: wrong raw effects (first8) [((0, 0), 2, 2774152905, 23, [23])]",
+      "passed": true,
+      "policy": "omit_entry_store",
+      "validator_returncode": 0,
+      "validator_stderr": ""
+    },
+    {
+      "case": "runtime_exp_f32",
+      "description": "changed typed GLSL scalar operation identity",
+      "detection": "actual_instruction_execution",
+      "message": "vector 0: wrong raw effects (first8) [((0, 0), 0, 0, 1065353216, [1065353216])]",
+      "passed": true,
+      "policy": "wrong_math",
+      "validator_returncode": 0,
+      "validator_stderr": ""
+    },
+    {
+      "case": "runtime_tanh_f32",
+      "description": "changed typed GLSL scalar operation identity",
+      "detection": "actual_instruction_execution",
+      "message": "vector 0: wrong raw effects (first8) [((0, 0), 0, 1065353216, 0, [0])]",
+      "passed": true,
+      "policy": "wrong_math",
+      "validator_returncode": 0,
+      "validator_stderr": ""
+    },
+    {
+      "case": "runtime_sqrt_f32",
+      "description": "changed typed GLSL scalar operation identity",
+      "detection": "actual_instruction_execution",
+      "message": "vector 2: wrong raw effects (first8) [((0, 0), 0, 1, 439682291, [439682291])]",
+      "passed": true,
+      "policy": "wrong_math",
+      "validator_returncode": 0,
+      "validator_stderr": ""
+    },
+    {
+      "case": "constant_exp_f32_9",
+      "description": "biased folded result by eight representable steps",
+      "detection": "actual_instruction_execution",
+      "message": "vector 0: wrong raw effects (first8) [((0, 0), 0, 1076754524, 1076754516, [1076754515, 1076754516, 1076754517, 1076754518])]",
+      "passed": true,
+      "policy": "wrong_constant",
+      "validator_returncode": 0,
+      "validator_stderr": ""
+    },
+    {
+      "case": "runtime_u32_min",
+      "description": "inverted ordered comparison before select",
+      "detection": "actual_instruction_execution",
+      "message": "vector 0: wrong raw effects (first8) [((0, 0), 0, 1, 0, [0])]",
+      "passed": true,
+      "policy": "invert_order",
+      "validator_returncode": 0,
+      "validator_stderr": ""
+    },
+    {
+      "case": "runtime_i32_max",
+      "description": "inverted ordered comparison before select",
+      "detection": "actual_instruction_execution",
+      "message": "vector 0: wrong raw effects (first8) [((0, 0), 0, 0, 1, [1])]",
+      "passed": true,
+      "policy": "invert_order",
+      "validator_returncode": 0,
+      "validator_stderr": ""
+    },
+    {
+      "case": "runtime_f32_clamp",
+      "description": "inverted ordered comparison before select",
+      "detection": "actual_instruction_execution",
+      "message": "vector 3: wrong raw effects (first8) [((0, 0), 0, 3212836864, 0, [0])]",
+      "passed": true,
+      "policy": "invert_order",
+      "validator_returncode": 0,
+      "validator_stderr": ""
+    }
+  ],
+  "total": 12
+}

@@ -40,7 +40,8 @@ success and failure. Use the frozen strict FP build flags and qualified IEEE hos
 with no contraction/reassociation or process-global locale changes. A failed
 restore is a specific host error, not a claim of successful state preservation.
 
-Typed IR uses concrete scalar types only. Keep safe-operation guards in the
+Typed IR uses concrete scalar and aggregate TypeIds; abstract constants stay in
+the typed constant owner until materialization. Keep safe-operation guards in the
 emitter: normalize integer denominators, mask shifts, and sanitize/clamp float
 conversion inputs before potentially invalid target instructions. Do not select
 over an already-invalid result. Signed robust indices test nonnegativity before
@@ -62,21 +63,20 @@ WGSL lookup across all adapters. Type names, constructors, max and bitcast must
 resolve normally before builtin dispatch. Immutable runtime bindings retain IDs,
 not ASTs to replay; const bindings retain typed numeric values.
 
-storage.c owns the frozen job formula I=1+4E+8S, I+P+1 semantic-value entries, S+1
-local/scope entries, E+1 constants, F=floor(T/6) functions, P=floor(T/4) formals,
-E syntax/typed arguments, physical-expression callee slots and target bound
-256+32I+3F+P. Each typed slice
-checks SIZE_MAX/alignment, every semantic append checks capacity, each target
-reservation checks its bound, and word serialization remains independent. Record
-an operation-by-operation proof when adding IR/target operations; do not enlarge
-bounds after failures. Semantic IDs alone index value maps, never target IDs.
+storage.c owns checked typed caller slices and the fixed compatibility adapters.
+The [M10 ledger](MILESTONE_10_LEDGER.md) owns exact syntax/type/member/resource,
+access-step, constant-DAG, IR/operand, target-declaration and traversal accounting.
+Do not flatten storage proportional to array lengths, hide a second allocator,
+reuse target IDs as semantic indices, or enlarge pools after a failing case.
+Every append/reservation checks its domain; word capacity and target-format
+capacity are distinct. Saturated format exhaustion is not a growable input error.
 
-Fixed adapters retain source/token/statement/expression/depth/IR/word limits and
-exact leading-constant, leading-global-x-alias, old-if-comparison and bare-attribute
-accounting. Compact private names create space for constant metadata without
-expanding public headers. M9 explicitly reviews workspace<=122880 and ABI1
-frame<=123136; every other library frame<=8192. M8 ceilings and measurements remain
-historical receipts, not a reason to steal old E/S budgets. See README for measurements.
+Fixed adapters retain exact leading-constant/global-x-alias/old-if/bare-attribute
+accounting and public limits. M10 explicitly reviews workspace<=147456 and ABI1
+frame<=147968, with every other library frame<=8192 and separate recursive-family
+and combined ceilings. Earlier measurements remain historical, not current limits.
+The parser's active expression/type counters span mutual transitions; declaration,
+layout/materialization and call graphs use bounded iterative traversal.
 
 ## Structured state and resources
 
@@ -92,8 +92,10 @@ continue cannot bypass its declaration. Validate behavior sets and continuing
 restrictions even in dead source. A predecessorless continuing block retains only
 the required structural back edge. Observation step limits are not source limits.
 
-Resource/member identity is a typed declaration index, not spelling. Frozen public
-resources remain u32/f32. Uniform layout and minimum extents are distinct from
+Resource/member identity is a typed declaration index, not spelling. Typed ABI4
+resources and legacy scalar projections are explicit separate output capabilities.
+One checked natural-layout result feeds validation, reflection and emission; uniform
+constraints validate rather than repack. Minimum extents are distinct from
 storage robustness. Each array access guards its own resource before even forming
 an element pointer; OOB load zero can be a valid outer index. No combined-length
 shortcut suppresses an otherwise valid outer operation.
@@ -110,7 +112,7 @@ source provenance and the separation of developer tests from independent accepta
 ## Module functions and selected builtins
 
 One function record owns ranges in shared syntax/IR/local storage. Parse all
-signatures before resolving bodies. Formals are separate immutable scalar values,
+signatures before resolving bodies. Formals are separate immutable typed values,
 not mutable-local records or entry interface variables. Reserve all target callee
 IDs before emission and emit each validated body once. Never recurse over callee
 bodies or replay runtime source on the host. Whole-module iterative cycle checking
@@ -127,3 +129,22 @@ expressions. Save entry errno in every public wrapper and restore it on every ex
 Stream parameter and argument operands into checked private staging, with the
 separate 16-bit instruction count guard before writes. No operand-count VLA or
 arbitrary arity cap. Formal debug names are not emitted under the 4P word ledger.
+
+## Aggregate layout, values and projections
+
+Keep nominal type identity separate from structural layout. Resolve lexical and
+module declarations before every predeclared spelling, including constructors.
+Use one constructor path, not name-specific exceptions. Preserve source-order
+argument snapshots and no load caching across calls/stores.
+
+Use checked uint64 size/alignment/stride/offset arithmetic before target narrowing.
+Runtime-tail types cannot silently become by-value constructible values. Typed
+constant DAGs and access paths retain their own IDs/pool bounds; zero aggregates
+must not force recursive host flattening. Every indexed subobject is guarded
+before pointer formation, with independent load-zero/store-discard behavior.
+
+Typed reflection publishes the declared graph/resource closure atomically. Legacy
+projection failure identifies an unrepresentable declaration rather than silently
+omitting it. MEASURE and each output selection still perform full private emission
+and honor the same capacities. Keep the seven-symbol native ABI bounded; no private
+cross-file helper or test hook becomes a public export.

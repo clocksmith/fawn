@@ -1,0 +1,38 @@
+{
+  "baseline_binary_sha256": "83827e252cdb3d70ece07292914d1957b9e985cf3ff7fb4353405d1608c236f0",
+  "baseline_commit": "dee5f42acbb50e05d5690f1d2d13777c5c26d51d",
+  "command": [
+    "/tmp/doe-m9-evaluator-category-baseline/status",
+    "/tmp/doe-m9-evaluator-category-baseline/f16.wgsl",
+    "/tmp/doe-m9-evaluator-category-baseline/workgroup.wgsl",
+    "/tmp/doe-m9-evaluator-category-baseline/private.wgsl",
+    "/tmp/doe-m9-evaluator-category-baseline/alias.wgsl",
+    "/tmp/doe-m9-evaluator-category-baseline/override.wgsl",
+    "/tmp/doe-m9-evaluator-category-baseline/matrix.wgsl"
+  ],
+  "harness_sha256": "5c31fc1cb15b67b3250cf76a138bf8522746edd6102cd9a858b31b8477bdd01a",
+  "results": [
+    "/tmp/doe-m9-evaluator-category-baseline/f16.wgsl\t2\t61\texpected fn; unsupported or malformed WGSL subset",
+    "/tmp/doe-m9-evaluator-category-baseline/workgroup.wgsl\t2\t61\texpected fn; unsupported or malformed WGSL subset",
+    "/tmp/doe-m9-evaluator-category-baseline/private.wgsl\t2\t61\texpected fn; unsupported or malformed WGSL subset",
+    "/tmp/doe-m9-evaluator-category-baseline/alias.wgsl\t2\t61\texpected fn; unsupported or malformed WGSL subset",
+    "/tmp/doe-m9-evaluator-category-baseline/override.wgsl\t2\t61\texpected fn; unsupported or malformed WGSL subset",
+    "/tmp/doe-m9-evaluator-category-baseline/matrix.wgsl\t3\t46\tunsupported local scalar annotation"
+  ],
+  "source_manifest": {
+    "src/cli.c": "214ab5055ae6ba98d74404c7e133f089eb19b8e91f75d64edf22cb68ee8744e7",
+    "src/cli_json.c": "79b35778c0f974c17da970fc8b98af75adac40d174ad3423a79d3847cd217d34",
+    "src/cli_json.h": "7d76808edeb7acd26524f0316659784018577019b98677d10dddb2ff99754305",
+    "src/compile.c": "c8f38ef073db5875a58eaea6924a40a57e4be3565ffe049afc97687fc1b169ee",
+    "src/exports.map": "2168d0825b7d9a8500958c7b4fb7579e309769ffa7f560ffdc7017015c87d64a",
+    "src/internal.h": "c3fcabf1bc72c46b1017cfae3905667b83bdf0216fffe1799e7a266e3884b85a",
+    "src/lex.c": "3fe4a5ebab209cdcb0724419d2c9389e510ccbdc30df925ec1fa323e67d209f1",
+    "src/numeric.c": "390cf61b3f13f56b48c8ed6af4aea676b1ae116388ec7f0ad9439f985d91a614",
+    "src/numeric.h": "3ba4d3c7caff37d08d5a5adc4e2c98c8cdf2d7f9b2bc2db8c5db174c987fd0fd",
+    "src/parse.c": "ec9e05e70bc3ac26bfa8b2ce57e1c6b2aca626fbb4603b71d4d895d04ede1271",
+    "src/reflection.c": "46d78b61d5ea8b9fc926b6af867e9d12a588b3005cbd6ca46c4ad192676d48d5",
+    "src/spirv.c": "7556c7e30f8b5f05afb1574c81e818a18cfff48aa56a86714c0a0e0945d5128e",
+    "src/storage.c": "48ce9b3938ff22d9f2d93f0e986304a3da22cec3d3790a2058aebd1937b3c21b",
+    "src/validate.c": "c76f4e244bd599ed8a0318dd250841d122efb7427b9a0a221c9565b442f0fb67"
+  }
+}

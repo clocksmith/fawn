@@ -1,0 +1,47 @@
+{
+  "candidate_used": false,
+  "case_count": 575,
+  "checks": [
+    "exact rational scalar known vectors",
+    "six literal WGSL layout answers and tail minimum distinction",
+    "validator-valid lane/stride/member-offset mutants killed by independent bytes",
+    "validator-valid wrong-binding guard and wrong value-TypeId family mutants killed",
+    "immutable by-value local snapshot",
+    "billion-element typed zero uses one sparse update, not flattening",
+    "unsafe numeric instructions rejected before any later select",
+    "IEEE signed zero, NaN ordered/unordered and signed-shift controls",
+    "malformed target bound rejected",
+    "all three real witnesses, three grid shapes, both range variants present",
+    "deterministic source-schema inventory and finite expected byte spans"
+  ],
+  "format": "m10-oracle-self-controls-v1",
+  "mutants": [
+    {
+      "kill": "differs",
+      "name": "shuffle_lane",
+      "validator": "passed"
+    },
+    {
+      "kill": "differs",
+      "name": "stride",
+      "validator": "passed"
+    },
+    {
+      "kill": "differs",
+      "name": "member_offset",
+      "validator": "passed"
+    },
+    {
+      "kill": "unsafe",
+      "name": "guard_other_binding",
+      "validator": "passed"
+    },
+    {
+      "kill": "differs",
+      "name": "value_type_family",
+      "validator": "passed"
+    }
+  ],
+  "physical_device": "unrun",
+  "validator": "/workspace/shared/doe-language-experiment-20261023/phase2/deps/spirv-tools/usr/bin/spirv-val"
+}

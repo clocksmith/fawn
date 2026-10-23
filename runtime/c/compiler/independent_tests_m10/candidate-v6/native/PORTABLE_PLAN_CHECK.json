@@ -1,0 +1,8 @@
+{
+  "status": "PORTABLE_PLAN_VERIFIED",
+  "sealed_inputs": 15,
+  "candidate_entries": 30,
+  "candidate_compiled_or_executed": false,
+  "harness_only_flag": "-fno-builtin",
+  "sanitizers_default": true
+}

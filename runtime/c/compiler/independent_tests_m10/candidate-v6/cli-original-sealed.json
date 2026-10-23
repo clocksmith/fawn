@@ -1,0 +1,145 @@
+{
+  "binary_sha256": "1a68558935c2fd5146fda04d2484ece819574b5417b5ebed4f9cd56b17af518e",
+  "checks": [
+    "binary-only ABI4 project execution, no sidecar",
+    "--reflection preserved projection and no aggregate misrepresentation",
+    "--reflection-v2 preserved projection and no aggregate misrepresentation",
+    "no-clobber and no unselected JSON4 surface"
+  ],
+  "faults": [
+    [
+      "allocation",
+      1,
+      "failed_cleanly"
+    ],
+    [
+      "allocation",
+      2,
+      "failed_cleanly"
+    ],
+    [
+      "allocation",
+      3,
+      "failed_cleanly"
+    ],
+    [
+      "read",
+      1,
+      "failed_cleanly"
+    ],
+    [
+      "read",
+      2,
+      "failed_cleanly"
+    ],
+    [
+      "write",
+      1,
+      "failed_cleanly"
+    ],
+    [
+      "close",
+      1,
+      "failed_cleanly"
+    ],
+    [
+      "close",
+      2,
+      "failed_cleanly"
+    ],
+    [
+      "link",
+      1,
+      "failed_cleanly"
+    ],
+    [
+      "mkstemp",
+      1,
+      "failed_cleanly"
+    ],
+    [
+      "typed_query",
+      1,
+      "failed_cleanly"
+    ],
+    [
+      "typed_compile",
+      1,
+      "failed_cleanly"
+    ],
+    [
+      "typed_compile",
+      2,
+      "failed_cleanly"
+    ],
+    [
+      "read_eintr",
+      1,
+      "recovered"
+    ],
+    [
+      "read_short",
+      1,
+      "recovered"
+    ],
+    [
+      "write_eintr",
+      1,
+      "recovered"
+    ],
+    [
+      "write_short",
+      1,
+      "recovered"
+    ],
+    [
+      "publish_collision",
+      1,
+      "unowned_preserved"
+    ],
+    [
+      "unowned_temp",
+      1,
+      "unowned_preserved"
+    ]
+  ],
+  "faults_status": "run",
+  "format": "m10-cli-v1",
+  "physical_device": "unrun",
+  "wrapper_build": [
+    "cc",
+    "-std=c11",
+    "-O2",
+    "-Wall",
+    "-Wextra",
+    "-Wpedantic",
+    "-Werror",
+    "-fno-fast-math",
+    "-ffp-contract=off",
+    "-frounding-math",
+    "-I/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/include",
+    "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/cli.c",
+    "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/cli_json.c",
+    "/workspace/shared/doe-c-migration-evidence-20261023/milestone10/evaluator/source/cli_fault_m10.c",
+    "/tmp/doe-m10-native-v6-final/build/libdoe-native.a",
+    "-Wl,--wrap=main",
+    "-Wl,--wrap=malloc",
+    "-Wl,--wrap=calloc",
+    "-Wl,--wrap=realloc",
+    "-Wl,--wrap=free",
+    "-Wl,--wrap=write",
+    "-Wl,--wrap=read",
+    "-Wl,--wrap=close",
+    "-Wl,--wrap=link",
+    "-Wl,--wrap=mkstemp",
+    "-Wl,--wrap=lstat",
+    "-Wl,--wrap=doe_compiler_workspace_requirements",
+    "-Wl,--wrap=doe_compiler_compile",
+    "-Wl,--wrap=doe_compiler_compile_v2",
+    "-Wl,--wrap=doe_compiler_typed_requirements",
+    "-Wl,--wrap=doe_compiler_compile_typed",
+    "-lm",
+    "-o",
+    "/tmp/doe-m10-native-v6-final/build/cli-wrapped-m10"
+  ]
+}

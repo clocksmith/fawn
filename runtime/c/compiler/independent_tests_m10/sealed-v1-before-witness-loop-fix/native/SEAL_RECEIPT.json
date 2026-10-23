@@ -1,0 +1,33 @@
+{
+  "awaiting": "Explicit parent evaluator handoff after all applicable source seals; no candidate evaluation authorized by this receipt",
+  "boundaries_not_claimed": [
+    "independently configurable/reached TYPE_SYNTAX pool; ABI4 derives it from tokens",
+    "complete semantic byte/layout/instruction/numeric oracle coverage",
+    "complete historical suites and consumer corpus reruns",
+    "CLI allocation/I/O/no-clobber failure paths",
+    "private record sizes, source recursion/VLA audit and measured/combined frame bounds",
+    "target instruction-width/ID boundaries",
+    "physical-device execution or production/runtime adoption"
+  ],
+  "candidate_build_link_load_execute": false,
+  "candidate_inspected": false,
+  "contract_commit": "8530b04f6b2171bc24888530dd200e2f4a60983f",
+  "contract_entries_verified": 12,
+  "contract_manifest_sha256": "a1051f4b1bcc6a0ce63130c744d969406f797db0f18c60b7fe2b00fa60c8503c",
+  "entries": 15,
+  "preparation_validation": "SYNTAX_ONLY_PASS",
+  "python_runner_check": "ast.parse passed without .pyc creation",
+  "sealed_utc": "2026-10-23T08:58:24.306965+00:00",
+  "source_manifest": "SOURCE_SEAL.sha256",
+  "source_seal_sha256": "de784f1927dd9abde7272d60c3e3983fd0b65f6f8738c78f1ddc3923acfcd7dc",
+  "syntax_commands_sha256": "cabea5e57de389a11906b241853e800dfec2fb03e0e5d3e5e7b5cbd4f3cfd0af",
+  "syntax_report": "syntax_receipt_20261023_0858/REPORT.json",
+  "syntax_report_sha256": "183bd9faa5a7edef73bfcc651e86b1b800ca9be8939cf3ce764caf9903da0f12",
+  "unrun": [
+    "all actual candidate ABI/runtime assertions",
+    "shared/archive consumer execution",
+    "allocator and fenv fault injection",
+    "ASan/UBSan",
+    "physical GPU"
+  ]
+}

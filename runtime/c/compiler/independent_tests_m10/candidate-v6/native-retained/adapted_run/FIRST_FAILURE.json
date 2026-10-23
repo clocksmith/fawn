@@ -1,0 +1,8 @@
+{
+  "command": [
+    "/tmp/doe-m10-native-v6-retained-adapted/build/source_archive-public_exits"
+  ],
+  "elapsed_seconds": 0.0017972770147025585,
+  "name": "run_source_archive_public_exits",
+  "returncode": 1
+}

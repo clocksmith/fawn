@@ -1,0 +1,256 @@
+{
+  "provenance": "Postdisclosure from unchanged M5 max_type_shadow_builtin failure; expected lookup derived from frozen M10 \u00a72 module-before-predeclared rule.",
+  "library_sha256": "0c4a592aaf3547de204324ee494dfae54a95191a90bbe360f0ad6678c443c578",
+  "cases": [
+    {
+      "name": "nominal_max_wrong_arity",
+      "source": "struct max{x:u32}@compute @workgroup_size(1) fn main(){let x=max(1u,2u);}",
+      "source_sha256": "667061dabe8bf7e6e7b5dd8b0621cd61297c9a8325ec1781302ae72ca5840a7a",
+      "expected_status": 4,
+      "modes": [
+        {
+          "flags": 1,
+          "status": 4,
+          "offset": 61,
+          "diagnostic": "aggregate constructor component count mismatch",
+          "passed": true
+        },
+        {
+          "flags": 2,
+          "status": 4,
+          "offset": 61,
+          "diagnostic": "aggregate constructor component count mismatch",
+          "passed": true
+        },
+        {
+          "flags": 3,
+          "status": 4,
+          "offset": 61,
+          "diagnostic": "aggregate constructor component count mismatch",
+          "passed": true
+        },
+        {
+          "flags": 5,
+          "status": 4,
+          "offset": 61,
+          "diagnostic": "aggregate constructor component count mismatch",
+          "passed": true
+        },
+        {
+          "flags": 6,
+          "status": 4,
+          "offset": 61,
+          "diagnostic": "aggregate constructor component count mismatch",
+          "passed": true
+        },
+        {
+          "flags": 7,
+          "status": 4,
+          "offset": 61,
+          "diagnostic": "aggregate constructor component count mismatch",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "nominal_max_constructor",
+      "source": "struct max{x:u32}@compute @workgroup_size(1) fn main(){let x:max=max(1u);}",
+      "source_sha256": "1ecee5ee04700e0d52c5d53f016512517bddb0311c2a16a47a61a05a4bdffc76",
+      "expected_status": 0,
+      "modes": [
+        {
+          "flags": 1,
+          "status": 0,
+          "offset": 0,
+          "diagnostic": "",
+          "passed": true
+        },
+        {
+          "flags": 2,
+          "status": 0,
+          "offset": 0,
+          "diagnostic": "",
+          "passed": true
+        },
+        {
+          "flags": 3,
+          "status": 0,
+          "offset": 0,
+          "diagnostic": "",
+          "passed": true
+        },
+        {
+          "flags": 5,
+          "status": 0,
+          "offset": 0,
+          "diagnostic": "",
+          "passed": true
+        },
+        {
+          "flags": 6,
+          "status": 0,
+          "offset": 0,
+          "diagnostic": "",
+          "passed": true
+        },
+        {
+          "flags": 7,
+          "status": 0,
+          "offset": 0,
+          "diagnostic": "",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "nominal_array_constructor",
+      "source": "struct array{x:u32}@compute @workgroup_size(1) fn main(){let x:array=array(1u);}",
+      "source_sha256": "43c6c5c608fafd210d7e4e2f781376b5e30a9cde8a5310730b25656823d22c0b",
+      "expected_status": 0,
+      "modes": [
+        {
+          "flags": 1,
+          "status": 0,
+          "offset": 0,
+          "diagnostic": "",
+          "passed": true
+        },
+        {
+          "flags": 2,
+          "status": 0,
+          "offset": 0,
+          "diagnostic": "",
+          "passed": true
+        },
+        {
+          "flags": 3,
+          "status": 0,
+          "offset": 0,
+          "diagnostic": "",
+          "passed": true
+        },
+        {
+          "flags": 5,
+          "status": 0,
+          "offset": 0,
+          "diagnostic": "",
+          "passed": true
+        },
+        {
+          "flags": 6,
+          "status": 0,
+          "offset": 0,
+          "diagnostic": "",
+          "passed": true
+        },
+        {
+          "flags": 7,
+          "status": 0,
+          "offset": 0,
+          "diagnostic": "",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "nominal_vec2_constructor",
+      "source": "struct vec2{x:u32}@compute @workgroup_size(1) fn main(){let x:vec2=vec2(1u);}",
+      "source_sha256": "23bdb57437a88ee5d1e01a6cb3eb35d767b9cf907a7698acd5902a14ace6b141",
+      "expected_status": 0,
+      "modes": [
+        {
+          "flags": 1,
+          "status": 0,
+          "offset": 0,
+          "diagnostic": "",
+          "passed": true
+        },
+        {
+          "flags": 2,
+          "status": 0,
+          "offset": 0,
+          "diagnostic": "",
+          "passed": true
+        },
+        {
+          "flags": 3,
+          "status": 0,
+          "offset": 0,
+          "diagnostic": "",
+          "passed": true
+        },
+        {
+          "flags": 5,
+          "status": 0,
+          "offset": 0,
+          "diagnostic": "",
+          "passed": true
+        },
+        {
+          "flags": 6,
+          "status": 0,
+          "offset": 0,
+          "diagnostic": "",
+          "passed": true
+        },
+        {
+          "flags": 7,
+          "status": 0,
+          "offset": 0,
+          "diagnostic": "",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "nominal_bitcast_constructor",
+      "source": "struct bitcast{x:u32}@compute @workgroup_size(1) fn main(){let x:bitcast=bitcast(1u);}",
+      "source_sha256": "674ba46afb82f2eeac81e55e908c6f291695180734d200bb1643da37efb3d366",
+      "expected_status": 0,
+      "modes": [
+        {
+          "flags": 1,
+          "status": 0,
+          "offset": 0,
+          "diagnostic": "",
+          "passed": true
+        },
+        {
+          "flags": 2,
+          "status": 0,
+          "offset": 0,
+          "diagnostic": "",
+          "passed": true
+        },
+        {
+          "flags": 3,
+          "status": 0,
+          "offset": 0,
+          "diagnostic": "",
+          "passed": true
+        },
+        {
+          "flags": 5,
+          "status": 0,
+          "offset": 0,
+          "diagnostic": "",
+          "passed": true
+        },
+        {
+          "flags": 6,
+          "status": 0,
+          "offset": 0,
+          "diagnostic": "",
+          "passed": true
+        },
+        {
+          "flags": 7,
+          "status": 0,
+          "offset": 0,
+          "diagnostic": "",
+          "passed": true
+        }
+      ]
+    }
+  ]
+}

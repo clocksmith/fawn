@@ -1,0 +1,130 @@
+{
+  "status": "PASS",
+  "exact_source": "struct P{n:array<u32,4>} @group(0) @binding(0) var<uniform> p:P;@compute @workgroup_size(1) fn main(){}",
+  "exact_source_sha256": "890fcacb0d44a98b7e845ca7627d164cb0c89162a2c7d7da4493e6bb5433369e",
+  "old_status": 3,
+  "new_status": 4,
+  "reason": "M10 section4: admitted array type, illegal uniform scalar-array stride4",
+  "original_failure": "adapted_run/FIRST_FAILURE.json",
+  "commands": [
+    {
+      "name": "build_source_archive",
+      "command": [
+        "gcc",
+        "-std=c11",
+        "-O2",
+        "-Wall",
+        "-Wextra",
+        "-Wpedantic",
+        "-Wconversion",
+        "-Wshadow",
+        "-Wstrict-prototypes",
+        "-Wmissing-prototypes",
+        "-Werror",
+        "-Wvla",
+        "-fno-fast-math",
+        "-ffp-contract=off",
+        "-frounding-math",
+        "-I/tmp/doe-m10-historical-dee5/runtime/c/compiler/independent_tests_m7",
+        "-fno-builtin",
+        "-I/tmp/doe-m10-native-v6-final-source/runtime/c/compiler/include",
+        "/workspace/shared/doe-c-migration-evidence-20261023/milestone10/evaluator/candidate-v6/native-retained/final_sources/public_exits_m9.c",
+        "/tmp/doe-m10-native-v6-retained-adapted/build/libm8-source.a",
+        "-pthread",
+        "-lm",
+        "-o",
+        "/tmp/doe-m10-native-v6-retained-final-exits/source_archive"
+      ],
+      "returncode": 0
+    },
+    {
+      "name": "run_source_archive",
+      "command": [
+        "/tmp/doe-m10-native-v6-retained-final-exits/source_archive"
+      ],
+      "returncode": 0
+    },
+    {
+      "name": "build_source_shared",
+      "command": [
+        "gcc",
+        "-std=c11",
+        "-O2",
+        "-Wall",
+        "-Wextra",
+        "-Wpedantic",
+        "-Wconversion",
+        "-Wshadow",
+        "-Wstrict-prototypes",
+        "-Wmissing-prototypes",
+        "-Werror",
+        "-Wvla",
+        "-fno-fast-math",
+        "-ffp-contract=off",
+        "-frounding-math",
+        "-I/tmp/doe-m10-historical-dee5/runtime/c/compiler/independent_tests_m7",
+        "-fno-builtin",
+        "-I/tmp/doe-m10-native-v6-final-source/runtime/c/compiler/include",
+        "/workspace/shared/doe-c-migration-evidence-20261023/milestone10/evaluator/candidate-v6/native-retained/final_sources/public_exits_m9.c",
+        "/tmp/doe-m10-native-v6-retained-adapted/build/libm8-source.so",
+        "-Wl,-rpath,/tmp/doe-m10-native-v6-retained-adapted/build",
+        "-pthread",
+        "-lm",
+        "-o",
+        "/tmp/doe-m10-native-v6-retained-final-exits/source_shared"
+      ],
+      "returncode": 0
+    },
+    {
+      "name": "run_source_shared",
+      "command": [
+        "/tmp/doe-m10-native-v6-retained-final-exits/source_shared"
+      ],
+      "returncode": 0
+    },
+    {
+      "name": "build_sanitized",
+      "command": [
+        "gcc",
+        "-std=c11",
+        "-O2",
+        "-Wall",
+        "-Wextra",
+        "-Wpedantic",
+        "-Wconversion",
+        "-Wshadow",
+        "-Wstrict-prototypes",
+        "-Wmissing-prototypes",
+        "-Werror",
+        "-Wvla",
+        "-fno-fast-math",
+        "-ffp-contract=off",
+        "-frounding-math",
+        "-I/tmp/doe-m10-historical-dee5/runtime/c/compiler/independent_tests_m7",
+        "-O1",
+        "-g",
+        "-fno-omit-frame-pointer",
+        "-fsanitize=address,undefined",
+        "-fno-builtin",
+        "-fno-pie",
+        "-no-pie",
+        "-I/tmp/doe-m10-native-v6-final-source/runtime/c/compiler/include",
+        "/workspace/shared/doe-c-migration-evidence-20261023/milestone10/evaluator/candidate-v6/native-retained/final_sources/public_exits_m9.c",
+        "/tmp/doe-m10-native-v6-retained-adapted/build/libm8-sanitized.so",
+        "-Wl,-rpath,/tmp/doe-m10-native-v6-retained-adapted/build",
+        "-pthread",
+        "-lm",
+        "-o",
+        "/tmp/doe-m10-native-v6-retained-final-exits/sanitized"
+      ],
+      "returncode": 0
+    },
+    {
+      "name": "run_sanitized",
+      "command": [
+        "/tmp/doe-m10-native-v6-retained-final-exits/sanitized"
+      ],
+      "returncode": 0
+    }
+  ]
+}

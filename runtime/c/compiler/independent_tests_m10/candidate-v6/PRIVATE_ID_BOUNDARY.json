@@ -1,0 +1,21 @@
+{
+  "probes": {
+    "4": {
+      "binary_sha256": "659cb024a6f152fdbbc11d0c8eb79f0e7dde616850a71ee9bbed38aacd5619a4",
+      "status": 2,
+      "source_sha256": "d532ab7ab153d64d06c8ac4a7b2a208953c4924ff6222325c2106a301c92bc3e"
+    },
+    "5": {
+      "binary_sha256": "605ad0afae484ae5faafa1fef6df7184ade1a9a774f4831b3707867e653bda39",
+      "status": 0,
+      "source_sha256": "d532ab7ab153d64d06c8ac4a7b2a208953c4924ff6222325c2106a301c92bc3e"
+    },
+    "6": {
+      "binary_sha256": "605ad0afae484ae5faafa1fef6df7184ade1a9a774f4831b3707867e653bda39",
+      "status": 0,
+      "source_sha256": "d532ab7ab153d64d06c8ac4a7b2a208953c4924ff6222325c2106a301c92bc3e"
+    }
+  },
+  "scope": "Direct included private reserve_ids boundary, not public 2^32-ID source execution",
+  "expected": "saturated format UNSUPPORTED3; nonsaturated envelope INPUT_ERROR1; exact boundary and sticky failures"
+}

@@ -1,0 +1,23 @@
+{
+  "addendum": "Mutual parser transitions retain globally active expression/type counters. Combined expression/type parser SCC <=512 per level; parser512*(Dexpr+Dtype+2)+256*(3C+4), fixed Dtype18, old-job64, ABI4<=64. Bounds23552/92160 remain below semantic maxima; existing total ceilings unchanged. The final subsequent change fixes one probe-navigation line only. Original high-level seal is preserved.",
+  "candidate_execution": false,
+  "candidate_inspection": false,
+  "commit": "8530b04f6b2171bc24888530dd200e2f4a60983f",
+  "contract_entries": [
+    "ad185469ca3c05b5eb89dcab48adb909a208a358b8980e9a0da952a2c44052e6  runtime/c/compiler/MILESTONE_10.md",
+    "9230a960cef5bf9ff08cdb5f8cc4f0c26bf97d48858f280941b9121fcba39d4b  runtime/c/compiler/MILESTONE_10_LEDGER.md",
+    "a64f95017b07c7fe89f19ac31e039b5d65c53770c22ddcdef7799a4ff62bb02b  runtime/c/compiler/MILESTONE_10_EVALUATION.md",
+    "39152526396fe9290e94ac359318482ddeaeaeb4eb7afe08a2d52e9d1a4db6c6  runtime/c/compiler/contracts/m10_layout_probe.c",
+    "c7decbdb8da093a3485ded84901bf97f88eea8db6237dfd4089c730aa08e6216  runtime/c/compiler/include/doe_compiler_typed.h",
+    "5bf4f5e5a4e4624c094320ad9ec97119278bc7f6f06b0e47c01e444d42c6dc5b  runtime/c/compiler/include/doe_compiler.h",
+    "b0a60c2f05b70dba0786365dadd81b993accbd93f7f68f0e3accf86a815ae891  runtime/c/compiler/include/doe_compiler_v2.h",
+    "6160e631973ffcd9777553520d329b6d6048315f2a90b1283989077e9f51237f  runtime/c/compiler/include/doe_compiler_job.h",
+    "9813094c4bb5396122eeb4555cbbdb524163c2db0b04a6a3200b4afc6cd13444  bench/kernels/stable_fluids_pressure.wgsl",
+    "bc5b50ed5e99f0f877cdb8c483f0b40ac2f54ce42e211a01bca302c20b52bdf1  bench/kernels/stable_fluids_divergence.wgsl",
+    "2c0903b10003c77e53d5df2cf97e651a1bfaf7e81538f5dad57040700e4a0b6e  bench/kernels/stable_fluids_project.wgsl",
+    "f715496e278e6c2fbdad94f4ce9e2a29b8b67095f933990f2568ec9c6237677b  bench/gates/spirv_val_gate.py"
+  ],
+  "prior_commit": "cbad7b07ad426aa11d1cc4dd03722ca9dbf7b38a",
+  "prior_seal_sha256": "2a4e9aa3b4f1f3ac2fdd331be64defa5a3849ec820f0f4b0fd865d38cb877687",
+  "seal_sha256": "a1051f4b1bcc6a0ce63130c744d969406f797db0f18c60b7fe2b00fa60c8503c"
+}

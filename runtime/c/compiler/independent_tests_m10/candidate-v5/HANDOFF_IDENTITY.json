@@ -1,0 +1,49 @@
+{
+  "artifact_seals": {
+    "candidate-v5-artifacts.sha256": "2740338229a30dd1713a0a3b51eba69585ff686d0f5ae29cccd50d8f38467ed4",
+    "candidate-v5-source.sha256": "a5baac9503bbf65d86eddddd2918efddff87b75731047e19f70b78b3167a9d7f",
+    "candidate-v5-source.tar.gz": "296c280ba3db20a8ed8dafbf1ae6bc994d9b77a9c5d96705b93085b6653978f0"
+  },
+  "changed_from_v4": [
+    "runtime/c/compiler/src/spirv.c"
+  ],
+  "evaluator_manifest_sha256": "fac2e3ce9f8869257d21d6c31b4ad79758c18c03426115e85013f03ba96aacb5",
+  "prebuilt": {
+    "doe-compiler-c": "5f535f6b24e99d25064766a2c8b85d4b7f54b2c2d5777fff478c1bbbf0209fb2",
+    "libdoe_compiler.so": "f73430a7f8898ef71dc8b28084f82139d34187598c683d5d3faf1d79ce699cf4"
+  },
+  "snapshot": "/tmp/doe-m10-evaluator-v5-source",
+  "source_entries": {
+    "runtime/c/compiler/CONTRACT_10.sha256": "a1051f4b1bcc6a0ce63130c744d969406f797db0f18c60b7fe2b00fa60c8503c",
+    "runtime/c/compiler/MILESTONE_10.md": "ad185469ca3c05b5eb89dcab48adb909a208a358b8980e9a0da952a2c44052e6",
+    "runtime/c/compiler/MILESTONE_10_EVALUATION.md": "a64f95017b07c7fe89f19ac31e039b5d65c53770c22ddcdef7799a4ff62bb02b",
+    "runtime/c/compiler/MILESTONE_10_LEDGER.md": "9230a960cef5bf9ff08cdb5f8cc4f0c26bf97d48858f280941b9121fcba39d4b",
+    "runtime/c/compiler/Makefile": "44173a861f7fed9dea8d97a41d774a1cc9b50b62adc620affdbf01627b6ef16f",
+    "runtime/c/compiler/include/doe_compiler.h": "5bf4f5e5a4e4624c094320ad9ec97119278bc7f6f06b0e47c01e444d42c6dc5b",
+    "runtime/c/compiler/include/doe_compiler_job.h": "6160e631973ffcd9777553520d329b6d6048315f2a90b1283989077e9f51237f",
+    "runtime/c/compiler/include/doe_compiler_typed.h": "c7decbdb8da093a3485ded84901bf97f88eea8db6237dfd4089c730aa08e6216",
+    "runtime/c/compiler/include/doe_compiler_v2.h": "b0a60c2f05b70dba0786365dadd81b993accbd93f7f68f0e3accf86a815ae891",
+    "runtime/c/compiler/src/cli.c": "7b50651f239ae7c93c47991813678669ff7ad118cb9639a82b4e3d5e40636a6f",
+    "runtime/c/compiler/src/cli_json.c": "79b35778c0f974c17da970fc8b98af75adac40d174ad3423a79d3847cd217d34",
+    "runtime/c/compiler/src/cli_json.h": "7d76808edeb7acd26524f0316659784018577019b98677d10dddb2ff99754305",
+    "runtime/c/compiler/src/compile.c": "0c0ccf8df4681794f62792e014a9c7ff7ed47f11f7146c8dc4026b9adbdde1d6",
+    "runtime/c/compiler/src/constants.c": "b8431560c29221a2ce5d87166306b321e257095b6c0c7488ca7f858654b54a97",
+    "runtime/c/compiler/src/exports.map": "a9025f34c30ba7251802facbaa8bf3660890558dc8ecc8f3fee884de75f9d816",
+    "runtime/c/compiler/src/internal.h": "3859bd9fa402b0f6f40822d8942e89fe19a3c93bcdd530bfa3949a9a9a2e6d3a",
+    "runtime/c/compiler/src/lex.c": "078b86d235ba65a6710e896a0616b87939788a32b9aaa4b24cf7cedc9b6d435c",
+    "runtime/c/compiler/src/numeric.c": "390cf61b3f13f56b48c8ed6af4aea676b1ae116388ec7f0ad9439f985d91a614",
+    "runtime/c/compiler/src/numeric.h": "3ba4d3c7caff37d08d5a5adc4e2c98c8cdf2d7f9b2bc2db8c5db174c987fd0fd",
+    "runtime/c/compiler/src/parse.c": "0c371df30868b6262692806f468c835e7816b2c9511605a5d1d0bb44211d92f4",
+    "runtime/c/compiler/src/reflection.c": "581645d97a2f1cd8d67e98fa3ca9e7c250a5566faccd4beaf123a63dce4959c1",
+    "runtime/c/compiler/src/sema.h": "e9098e0d4472e399b0f3bdcae8c05af0e7a00d047de95de5624fb7a007036bf9",
+    "runtime/c/compiler/src/sema_call.c": "83b5f1436c48f3727c09ad392dda1dfef195c4d938219f0c4a46d2254039a1f2",
+    "runtime/c/compiler/src/sema_declarations.c": "7c62fe71a1a68f92395c8da92a0c0bbeea083e837645b97e0c2e945af5bb97e1",
+    "runtime/c/compiler/src/sema_expression.c": "8e57318e1f9a066a5ad05503ede16e5f075fed6e5f94bd250d2625788859dd9d",
+    "runtime/c/compiler/src/spirv.c": "6c33ea7580cc2d98cca221aef65b538f5242a953cb66e15a6b65530aebd689fe",
+    "runtime/c/compiler/src/spirv_decl.h": "5a2024c97baf98a3f0171a0ae6a898cdf5439882e29dc417642fd82ac71ccd69",
+    "runtime/c/compiler/src/storage.c": "442ceaf8d0a400e2fb1693ed0c22e1ade730ef9f5aeeefc0699bd879fd00f09a",
+    "runtime/c/compiler/src/types.c": "8c6d7a8c9ac369bdcbf69f7b9950acee13e35951f7efb3201388378d8e499397",
+    "runtime/c/compiler/src/validate.c": "1f512d0a7d00dcc6673104c09c25d54db2f3ff7207a44c9b0ef777ebcb2d0809"
+  },
+  "verified_utc": "2026-10-23T09:59:04.656458+00:00"
+}

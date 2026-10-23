@@ -1,0 +1,16 @@
+/* SPDX-License-Identifier: MIT */
+#include "support_m10.h"
+static DoeCompilerStatus call(unsigned api,void *work,size_t ws,const char *src,uint32_t *words,size_t cap,DoeCompilerResult *r1,DoeCompilerResultV2 *r2){static const DoeCompilerJobCapacities jc={65536u,8192u,1024u,4096u,65536u,64u,32u};++native_inside;DoeCompilerStatus s;
+ if(api==1u)s=doe_compiler_compile(1u,src,strlen(src),words,cap,r1,sizeof(*r1));else if(api==2u)s=doe_compiler_compile_v2(2u,work,ws,src,strlen(src),words,cap,r2,sizeof(*r2));else s=doe_compiler_compile_job(3u,&jc,sizeof(jc),work,ws,src,strlen(src),words,cap,r2,sizeof(*r2));--native_inside;return s;}
+int main(void){CHECK(native_allocator_control()==0,"allocator interception positive control");static const DoeCompilerJobCapacities jc={65536u,8192u,1024u,4096u,65536u,64u,32u};
+ for(unsigned api=1u;api<=3u;++api){DoeCompilerWorkspaceRequirements req={0u,0u};Guard w,words;memset(&w,0,sizeof(w));
+  if(api>1u){++native_inside;DoeCompilerStatus q=api==2u?doe_compiler_workspace_requirements(2u,&req,sizeof(req)):doe_compiler_job_requirements(3u,&jc,sizeof(jc),&req,sizeof(req));--native_inside;CHECK(q==DOE_COMPILER_OK&&req.alignment_bytes<=_Alignof(max_align_t),"old query ABI");if(api==2u)CHECK(req.size_bytes<=147456u,"frozen new fixed workspace ceiling");CHECK(guard_new(&w,req.size_bytes)==0,"old caller workspace");}
+  CHECK(guard_new(&words,65536u*sizeof(uint32_t))==0,"old output");DoeCompilerResult r1;DoeCompilerResultV2 r2;
+  const char *positives[]={old_source,local_source};for(unsigned i=0;i<COUNT(positives);++i){guard_mark(&words);CHECK(call(api,w.data,req.size_bytes,positives[i],(uint32_t *)words.data,65536u,&r1,&r2)==DOE_COMPILER_OK,"preserved scalar/local aggregate success");size_t count=api==1u?r1.word_count:r2.word_count;CHECK(count>5u&&count<=65536u,"old bounded words");CHECK(bytes_are(words.data+count*sizeof(uint32_t),words.bytes-count*sizeof(uint32_t),MARK),"old output suffix");}
+  guard_mark(&words);CHECK(call(api,w.data,req.size_bytes,aggregate_source,(uint32_t *)words.data,65536u,&r1,&r2)==DOE_COMPILER_UNSUPPORTED,"shared grammar rejects only old projection");
+  const DoeCompilerDiagnostic *d=api==1u?&r1.diagnostic:&r2.diagnostic;const char prefix[]="legacy reflection projection cannot represent";
+  CHECK(strncmp(d->message,prefix,sizeof(prefix)-1u)==0&&strstr(d->message,"Pebble")!=NULL,"first offending declaration diagnostic");CHECK(d->offset<sizeof(aggregate_source)-1u,"projection original source offset");CHECK(bytes_are(words.data,words.bytes,MARK),"projection words unchanged");
+  if(api==1u)CHECK(r1.word_count==0u&&bytes_are(&r1.reflection,sizeof(r1.reflection),0),"ABI1 failure clears reflection");else CHECK(r2.word_count==0u&&bytes_are(&r2.reflection,sizeof(r2.reflection),0),"old workspace failure clears reflection");
+  CHECK(call(api,w.data,req.size_bytes,old_source,(uint32_t *)words.data,65536u,&r1,&r2)==DOE_COMPILER_OK,"old workspace reuse after projection failure");CHECK(guard_ok(&words)&&(api==1u||guard_ok(&w)),"old redzones");guard_free(&words);if(api>1u)guard_free(&w);
+ }
+ CHECK(atomic_load(&native_allocations)==0u,"old/new library allocation-free");puts("PASS preserved five old exports and old projections, admitted local aggregates");return 0;}

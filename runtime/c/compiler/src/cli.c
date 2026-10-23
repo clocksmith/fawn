@@ -3,6 +3,7 @@
 #define _POSIX_C_SOURCE 200809L
 #include "cli_json.h"
 #include "../include/doe_compiler_job.h"
+#include "../include/doe_compiler_typed.h"
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
@@ -90,17 +91,45 @@ int main(int argc, char **argv) {
         .expressions = 4096u, .words = 65536u,
         .expression_depth = 32u, .control_depth = 16u
     };
-    const size_t word_capacity = legacy ? DOE_COMPILER_MAX_WORDS : job.words;
+    const DoeCompilerTypedCapacities typed = {
+        .source_bytes = 65536u, .tokens = 8192u, .statements = 1024u, .expressions = 4096u,
+        .types = 256u, .members = 1024u, .resources = 32u, .access_steps = 5121u,
+        .constants = 1024u, .constant_edges = 4096u, .ir_instructions = 24577u,
+        .ir_operands = 4096u, .target_declarations = 7744u, .traversal_items = 1281u,
+        .words = 65536u, .expression_depth = 32u, .control_depth = 16u, .type_syntax_depth = 32u
+    };
+    const bool binary_only = reflection == NULL;
+    size_t word_capacity = legacy ? DOE_COMPILER_MAX_WORDS : job.words;
+    DoeCompilerTypedResult typed_result;
     DoeCompilerWorkspaceRequirements requirements = {0};
     if (!legacy) {
-        if (doe_compiler_job_requirements(DOE_COMPILER_JOB_ABI_VERSION,
-                &job, sizeof(job), &requirements, sizeof(requirements)) != DOE_COMPILER_OK) {
+        const DoeCompilerStatus queried = binary_only ?
+            doe_compiler_typed_requirements(DOE_COMPILER_TYPED_ABI_VERSION,
+                &typed, sizeof(typed), &requirements, sizeof(requirements)) :
+            doe_compiler_job_requirements(DOE_COMPILER_JOB_ABI_VERSION,
+                &job, sizeof(job), &requirements, sizeof(requirements));
+        if (queried != DOE_COMPILER_OK) {
             fprintf(stderr, "workspace requirements query failed\n"); goto cleanup;
         }
         workspace = malloc(requirements.size_bytes);
         if (workspace == NULL) { fprintf(stderr, "workspace allocation failed\n"); goto cleanup; }
-        result_v2 = malloc(sizeof(*result_v2));
-        if (result_v2 == NULL) { fprintf(stderr, "result allocation failed\n"); goto cleanup; }
+        if (binary_only) {
+            const DoeCompilerStatus measured = doe_compiler_compile_typed(
+                DOE_COMPILER_TYPED_ABI_VERSION, &typed, sizeof(typed), workspace,
+                requirements.size_bytes, source, length,
+                DOE_COMPILER_TYPED_WORDS | DOE_COMPILER_TYPED_MEASURE,
+                NULL, 0u, &typed_result, sizeof(typed_result));
+            if (measured != DOE_COMPILER_OK) {
+                const DoeCompilerDiagnostic *d = &typed_result.diagnostic;
+                fprintf(stderr, "%s:%u:%u: category=%u offset=%zu: %s\n", input,
+                    d->line, d->column, (unsigned)d->status, d->offset, d->message);
+                goto cleanup;
+            }
+            word_capacity = typed_result.required.words;
+        } else {
+            result_v2 = malloc(sizeof(*result_v2));
+            if (result_v2 == NULL) { fprintf(stderr, "result allocation failed\n"); goto cleanup; }
+        }
     }
     if (word_capacity > SIZE_MAX / sizeof(*words)) {
         fprintf(stderr, "word capacity exceeds byte range\n"); goto cleanup;
@@ -116,6 +145,18 @@ int main(int argc, char **argv) {
                                        words, word_capacity, &result, sizeof(result));
         diagnostic = &result.diagnostic;
         word_count = result.word_count;
+    } else if (binary_only) {
+        const DoeCompilerTypedOutputs spans = {
+            .words = words, .word_capacity = word_capacity,
+            .type_record_size = sizeof(DoeCompilerTypeV4),
+            .member_record_size = sizeof(DoeCompilerMemberV4),
+            .resource_record_size = sizeof(DoeCompilerResourceV4)
+        };
+        compiled = doe_compiler_compile_typed(DOE_COMPILER_TYPED_ABI_VERSION,
+            &typed, sizeof(typed), workspace, requirements.size_bytes, source, length,
+            DOE_COMPILER_TYPED_WORDS, &spans, sizeof(spans), &typed_result, sizeof(typed_result));
+        diagnostic = &typed_result.diagnostic;
+        word_count = typed_result.published.words;
     } else {
         compiled = doe_compiler_compile_job(DOE_COMPILER_JOB_ABI_VERSION,
             &job, sizeof(job), workspace, requirements.size_bytes,

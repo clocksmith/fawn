@@ -1,0 +1,83 @@
+{
+  "candidate_entries_verified_before_and_after": 30,
+  "candidate_manifest_sha256": "96b6817e44316356f7075364be31eb7b1bd02b986d4e987e4257bd687e9af3d5",
+  "candidate_source_changed": false,
+  "disposition": "FAIL_PENDING_MATRIX_STATUS_CATEGORY_REVIEW",
+  "independently_built": {
+    "archive_sha256": "6eb1cacd658dcb27a160cb652b9907fdcd2388128d9c8670fd062767d3be0f48",
+    "sanitized_shared_sha256": "2e841a4bf51fa8b6290e7c8f604f2e62a8dc43a38c9e77eaf02abea8ac99c7e9",
+    "shared_sha256": "da09950c85712f54f7fc63705ccdc82e8186eea3dc865788d3f44af97e68c3b7"
+  },
+  "instrumentation_correction": {
+    "correction": "Add -fno-builtin only when separately compiling unchanged native harness sources; candidate objects/archive untouched",
+    "evidence": [
+      "allocator_control_original.disassembly.txt",
+      "allocator_control_corrected.disassembly.txt"
+    ],
+    "expectation_changes": false,
+    "original": "GCC builtin malloc/free assumptions removed native_inside=1 store in allocator positive control; first archive wrappers/faults did not reach candidate calls",
+    "original_failures_preserved": true,
+    "rerun": "run_2_wrappers"
+  },
+  "partial": [
+    "ABI query/preflight, flag/count, names/ownership and selected-span atomicity checks reached and passed before the final language status matrix failed on unsupported matrix annotation; full ABI executable remains FAIL"
+  ],
+  "passed": [
+    "exact seven public exports; no direct allocator imports",
+    "C++17 source archive consumer",
+    "C++17 source shared-library consumer",
+    "C11 shared and corrected archive pool boundaries/depth/reuse",
+    "32 caller FP environment profiles and eight concurrent independent workspaces, shared/corrected archive",
+    "preserved old exports/projection/ownership, shared/corrected archive",
+    "allocator positive control and allocation-free library calls, corrected archive passing suites",
+    "66 injected fenv failures across 30 actually reached host-function/mode/source paths; fault/reuse/atomicity/errno",
+    "ASan+UBSan capacity/depth, host/concurrency, preserved legacy native suites"
+  ],
+  "postseal_orchestration": {
+    "ORCHESTRATION_ADAPTATION.json": "8c96cd3403b05f18cd6a0bcf77fa7081dbc7a51d9bd6badc6ea69d9de1b4cf70",
+    "diagnose_status_v3.c": "9096d4009b655a8846c99b6f1d83cf9b84ee867c6bec4fc756981645f5475a81",
+    "rerun_wrappers_v3.py": "fcd4333657b7788aed595bb4dd7e5894e1e4680e9a79704e9d195f100379c215",
+    "runner_manifest_v3.py": "f563bd24171f4c2ce359e4a4357a8096c10fe091b2957b9470d9adb91fa518a1"
+  },
+  "remaining_failure": {
+    "diagnostic": "vector annotation requires one concrete scalar type",
+    "expected_status": 3,
+    "interpretation": "Exact frozen expected category remains unchanged while parent reviews retained historical classification; not silently waived.",
+    "modes": [
+      1,
+      2,
+      3,
+      5,
+      6,
+      7
+    ],
+    "observed_offset": 46,
+    "observed_status": 4,
+    "routes": [
+      "archive corrected instrumentation",
+      "shared",
+      "ASan+UBSan shared"
+    ],
+    "source": "@compute @workgroup_size(1) fn broken(){var a:mat2x2<f32>;}"
+  },
+  "reports": {
+    "diagnose_status_v3.log": "86d21327dbb5f5306086ba2d8f88470040abce59ae275b9c08438bb157718143",
+    "run_1/REPORT.json": "47928eb4a8eae3f7ec381a4e97a3f60ee577cfacc64f77f230aa19acdaeb6234",
+    "run_2_wrappers/REPORT.json": "b51cbadfd46596eebbd467c7fc161e3f22ace21054b6bb76caca5269341f1542"
+  },
+  "scope": "Native ABI4 and preserved old native API/ownership lane only; no semantic, CLI, corpus, stack or GPU acceptance",
+  "sealed_expected_categories_changed": false,
+  "sealed_test_sources_changed": false,
+  "source_seal_entries_unchanged": 15,
+  "source_seal_sha256": "de784f1927dd9abde7272d60c3e3983fd0b65f6f8738c78f1ddc3923acfcd7dc",
+  "unclaimed": [
+    "TYPE_SYNTAX independently reached exhaustion",
+    "complete semantic byte/layout/instruction/numeric checks",
+    "historical corpus and consumer-suite acceptance",
+    "CLI allocator/I/O/no-clobber faults",
+    "private-record/VLA/source-recursion/combined-stack audit",
+    "target instruction width/ID limits",
+    "physical-device execution"
+  ],
+  "utc": "2026-10-23T09:44:48.695429+00:00"
+}
