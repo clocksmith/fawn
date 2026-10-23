@@ -69,8 +69,11 @@ The retained production owners remain authoritative for those behaviors.
 `include/doe_vk_texture.h` uses named native format values, never WebGPU numeric
 casts. Eighteen uncompressed color formats plus four attachment-only depth/stencil formats
 are admitted when native format support exists. Compressed formats, multisampling,
-reinterpretation, swizzles and cube-array
-feature enablement remain outside this increment. Native views retain their image.
+reinterpretation and swizzles remain outside this increment. Context creation
+enables the optional imageCubeArray feature when offered and reports successful
+enablement as `caps.image_cube_array`; cube-array views then require a
+cube-compatible image and whole cubes, and without the feature they return
+UNSUPPORTED (`tests/texture_contract.c`). Native views retain their image.
 A texture is held by one unresolved command owner to avoid stale recorded layouts.
 Layouts and per-mip/layer initialization are speculative until successful native
 completion; discarded/failed recordings cannot publish them. Undefined subresources

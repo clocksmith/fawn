@@ -115,6 +115,9 @@ typedef struct doe_vk_caps {
     /* Enabled fullDrawIndexUint32, not merely advertised. Without it, uint32
      * index draws reject because larger index values exceed the native limit. */
     bool full_draw_index_uint32;
+    /* Enabled imageCubeArray, not merely advertised. Without it cube-array views
+     * and SampledCubeArray shaders are rejected. */
+    bool image_cube_array;
     doe_vk_adapter_identity identity;
 } doe_vk_caps;
 

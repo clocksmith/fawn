@@ -30,6 +30,7 @@ static bool resource_entry(const doe_shader_view *view, uint32_t index, WGPUShad
     case DOE_COMPILER_VIEW_2D_ARRAY: out->view_dimension = WGPUTextureViewDimension_2DArray; break;
     case DOE_COMPILER_VIEW_3D: out->view_dimension = WGPUTextureViewDimension_3D; break;
     case DOE_COMPILER_VIEW_CUBE: out->view_dimension = WGPUTextureViewDimension_Cube; break;
+    case DOE_COMPILER_VIEW_CUBE_ARRAY: out->view_dimension = WGPUTextureViewDimension_CubeArray; break;
     default: return false;
     }
     if (resource->kind == DOE_COMPILER_SAMPLED_TEXTURE && (handle->flags & DOE_COMPILER_HANDLE_DEPTH)) {
