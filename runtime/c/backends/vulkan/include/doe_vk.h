@@ -113,7 +113,10 @@ doe_vk_status doe_vk_buffer_read(doe_vk_buffer *buffer, uint64_t offset,
 
 typedef enum doe_vk_binding_kind {
     DOE_VK_BINDING_UNIFORM,
-    DOE_VK_BINDING_STORAGE
+    DOE_VK_BINDING_STORAGE,
+    DOE_VK_BINDING_SAMPLED_TEXTURE,
+    DOE_VK_BINDING_STORAGE_TEXTURE,
+    DOE_VK_BINDING_SAMPLER
 } doe_vk_binding_kind;
 typedef struct doe_vk_binding_layout {
     uint32_t group;

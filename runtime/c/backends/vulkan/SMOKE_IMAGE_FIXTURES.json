@@ -1,0 +1,8 @@
+{
+  "purpose": "Existing retained Tint fixture exercises real Vulkan consumption, not the C texture compiler or hardware qualification.",
+  "fixtures": {
+    "examples/tint-compiler-evidence.benchmark-corpus.spirv.sample.artifacts/particles.wgsl/tint/output.import_level.spv": "d9ee2119347f00da2b6019a7dbdf7925c2438f2e85ff631100cf6068b642e246"
+  },
+  "entrypoint": "import_level",
+  "oracle": "64 output floats equal uploaded alpha i * 0.25f; unused sampler checks descriptor lifetime only."
+}
