@@ -11,6 +11,9 @@ const errors = @import("../queue/doe_queue_submit_shared.zig");
 const trace = @import("../diagnostics/doe_program_identity_trace.zig");
 const query = @import("../resource/doe_query_native.zig");
 const abi = @import("../../core/abi/wgpu_core_base_types.zig");
+const queue_submit = @import("../queue/doe_queue_submit_native.zig");
+const queue_lifecycle = @import("../queue/doe_queue_lifecycle.zig");
+const error_scope = @import("../../runtime/diagnostics/error_scope.zig");
 
 const alloc = helpers.alloc;
 
@@ -186,6 +189,30 @@ const Program = struct {
     }
 };
 
+/// A native-recorded program replays a claimed command buffer on the host
+/// every submit; it never owns a reusable native recording.
+const HostReplay = struct {
+    queue: *objects.DoeQueue,
+    commands: *objects.DoeCommandBuffer,
+    submissions: u64 = 0,
+
+    fn destroy(self: *HostReplay) void {
+        exports.doeNativeCommandBufferRelease(helpers.toOpaque(self.commands));
+        queue_lifecycle.doeNativeQueueRelease(helpers.toOpaque(self.queue));
+    }
+};
+
+/// The opaque program handle: Submit and Release dispatch on the kind that
+/// Prepare or PrepareHostReplay created, never on the platform alone.
+const Handle = union(enum) {
+    gpu_recorded: *Program,
+    host_replay: HostReplay,
+};
+
+fn handleFrom(raw: ?*anyopaque) ?*Handle {
+    return @ptrCast(@alignCast(raw orelse return null));
+}
+
 pub export fn doeNativeComputeProgramPrepare(queue_raw: ?*anyopaque, commands_raw: ?*anyopaque) callconv(.c) ?*anyopaque {
     if (comptime builtin.os.tag != .linux) return null;
     const queue = helpers.cast(objects.DoeQueue, queue_raw) orelse return null;
@@ -206,12 +233,58 @@ pub export fn doeNativeComputeProgramPrepare(queue_raw: ?*anyopaque, commands_ra
         program.destroy();
         return null;
     };
-    return @ptrCast(program);
+    const handle = alloc.create(Handle) catch {
+        errors.deliverInternalError(queue.dev, "compute program preparation: OutOfMemory", .{});
+        program.destroy();
+        return null;
+    };
+    handle.* = .{ .gpu_recorded = program };
+    return @ptrCast(handle);
+}
+
+/// Claims a finished, never-submitted command buffer as ordinary public
+/// submission would, so it cannot also be submitted through the queue, and
+/// returns a program whose every submit replays it on any backend.
+pub export fn doeNativeComputeProgramPrepareHostReplay(queue_raw: ?*anyopaque, commands_raw: ?*anyopaque) callconv(.c) ?*anyopaque {
+    const queue = helpers.cast(objects.DoeQueue, queue_raw) orelse return null;
+    if (!queue.dev.requireAlive()) return null;
+    const commands = helpers.cast(objects.DoeCommandBuffer, commands_raw) orelse {
+        queue.dev.error_scopes.deliver(error_scope.ERROR_TYPE_VALIDATION, "compute program host replay requires a command buffer");
+        return null;
+    };
+    if (commands.dev != queue.dev) {
+        queue.dev.error_scopes.deliver(error_scope.ERROR_TYPE_VALIDATION, "compute program host replay requires commands from the queue device");
+        return null;
+    }
+    const handle = alloc.create(Handle) catch {
+        errors.deliverInternalError(queue.dev, "compute program host replay preparation: OutOfMemory", .{});
+        return null;
+    };
+    if (commands.error_object or @atomicRmw(bool, &commands.submitted, .Xchg, true, .acq_rel)) {
+        alloc.destroy(handle);
+        queue.dev.error_scopes.deliver(error_scope.ERROR_TYPE_VALIDATION, "compute program host replay requires a valid command buffer that has not been submitted");
+        return null;
+    }
+    helpers.object_add_ref(objects.DoeCommandBuffer, helpers.toOpaque(commands));
+    queue_lifecycle.doeNativeQueueAddRef(helpers.toOpaque(queue));
+    handle.* = .{ .host_replay = .{ .queue = queue, .commands = commands } };
+    return @ptrCast(handle);
 }
 
 pub export fn doeNativeComputeProgramSubmit(raw: ?*anyopaque) callconv(.c) u32 {
+    const handle = handleFrom(raw) orelse return 0;
+    switch (handle.*) {
+        .host_replay => |*replay| {
+            if (!queue_submit.submitClaimed(replay.queue, replay.commands)) return 0;
+            replay.submissions += 1;
+            return 1;
+        },
+        .gpu_recorded => |program| return submitRecorded(program),
+    }
+}
+
+fn submitRecorded(program: *Program) u32 {
     if (comptime builtin.os.tag != .linux) return 0;
-    const program: *Program = @ptrCast(@alignCast(raw orelse return 0));
     if (!program.device.requireAlive()) return 0;
     program.validate() catch |err| {
         errors.deliverInternalError(program.device, "compute program invalidated: {s}", .{@errorName(err)});
@@ -227,7 +300,52 @@ pub export fn doeNativeComputeProgramSubmit(raw: ?*anyopaque) callconv(.c) u32 {
 }
 
 pub export fn doeNativeComputeProgramRelease(raw: ?*anyopaque) callconv(.c) void {
-    if (comptime builtin.os.tag != .linux) return;
-    const program: *Program = @ptrCast(@alignCast(raw orelse return));
-    program.destroy();
+    const handle = handleFrom(raw) orelse return;
+    switch (handle.*) {
+        .host_replay => |*replay| replay.destroy(),
+        .gpu_recorded => |program| if (comptime builtin.os.tag == .linux) program.destroy(),
+    }
+    alloc.destroy(handle);
+}
+
+test "host replay claims a command buffer once, revalidates every submit and releases its holders" {
+    const leases = @import("../../contracts/resource_lease.zig");
+    const availability = @import("../queue/doe_submission_validation.zig");
+    var device: objects.DoeDevice = .{};
+    var queue: objects.DoeQueue = .{ .dev = &device };
+    var buffer: objects.DoeBuffer = .{ .mapped = true };
+    var references = [_]leases.ResourceLease{.{ .kind = .buffer, .handle = &buffer, .release = struct {
+        fn unused(_: ?*anyopaque) callconv(.c) void {}
+    }.unused }};
+    var commands: objects.DoeCommandBuffer = .{
+        .allocator = std.testing.allocator,
+        .dev = &device,
+        .references = .{ .items = &references, .capacity = references.len },
+    };
+    const program = doeNativeComputeProgramPrepareHostReplay(&queue, &commands) orelse return error.TestUnexpectedResult;
+    try std.testing.expect(commands.submitted);
+    try std.testing.expectEqual(@as(u32, 2), commands.ref_count);
+    try std.testing.expectEqual(@as(u32, 2), queue.ref_count);
+    // The claim is the public consumption: neither path can take the buffer again.
+    try std.testing.expect(doeNativeComputeProgramPrepareHostReplay(&queue, &commands) == null);
+    try std.testing.expectError(error.CommandBufferUnavailable, availability.consumeCommandBuffers(&device, &.{&commands}));
+    // A mapped retained buffer rejects the replay before any backend submission.
+    try std.testing.expectEqual(@as(u32, 0), doeNativeComputeProgramSubmit(program));
+    try std.testing.expectEqual(@as(u64, 0), handleFrom(program).?.host_replay.submissions);
+    doeNativeComputeProgramRelease(program);
+    try std.testing.expectEqual(@as(u32, 1), commands.ref_count);
+    try std.testing.expectEqual(@as(u32, 1), queue.ref_count);
+}
+
+test "host replay rejects foreign and invalid command buffers without claiming them" {
+    var device: objects.DoeDevice = .{};
+    var other: objects.DoeDevice = .{};
+    var queue: objects.DoeQueue = .{ .dev = &device };
+    var foreign: objects.DoeCommandBuffer = .{ .allocator = std.testing.allocator, .dev = &other };
+    try std.testing.expect(doeNativeComputeProgramPrepareHostReplay(&queue, &foreign) == null);
+    try std.testing.expect(!foreign.submitted);
+    var invalid: objects.DoeCommandBuffer = .{ .allocator = std.testing.allocator, .dev = &device, .error_object = true };
+    try std.testing.expect(doeNativeComputeProgramPrepareHostReplay(&queue, &invalid) == null);
+    try std.testing.expectEqual(@as(u32, 1), invalid.ref_count);
+    try std.testing.expectEqual(@as(u32, 1), queue.ref_count);
 }
