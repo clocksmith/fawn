@@ -10,7 +10,7 @@ STAGE ?= /tmp/doe-c-package
 # or enum must still build every consumer; owner checks alone cannot see that.
 OWNERS = futures callbacks instance labels error-scopes dropin-policy shader \
 	resources compiler backends/vulkan backends/metal backends/d3d12 native
-.PHONY: package check check-tools check-style check-build
+.PHONY: package check check-tools check-style check-build check-js
 package:
 	$(PYTHON) tools/build-native-package.py --ref '$(REVISION)' --build '$(BUILD)' --destination '$(STAGE)' --cc '$(CC)' --cxx '$(CXX)'
 check: check-style check-tools check-build
@@ -23,3 +23,12 @@ check-build:
 		$(MAKE) --no-print-directory -C $$owner BUILD='$(BUILD)'/$$owner all; \
 	done
 	@echo "C owner build: $(words $(OWNERS)) owners built into $(BUILD)"
+# Unchanged doe-gpu JavaScript consumer on a staged package (make package first).
+# Rebuilds the gitignored N-API addon and runs the first-kernel integration test
+# with DOE_WEBGPU_LIB on the staged C library. Needs Node headers and a physical
+# GPU (the package requests a nonfallback adapter); developer evidence only.
+check-js:
+	@test -f '$(STAGE)/MANIFEST.json' || { echo 'check-js needs a finished STAGE from make package' >&2; exit 2; }
+	cd ../../packages/doe-gpu && node scripts/build-addon.js
+	cd ../../packages/doe-gpu && env -u VK_ICD_FILENAMES DOE_WEBGPU_LIB='$(abspath $(STAGE))/lib/libwebgpu_doe_c.so' \
+		node test/integration/test-integration-first-kernel.js
