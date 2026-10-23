@@ -113,6 +113,10 @@ This guide is the JavaScript style contract for `packages/doe-gpu`.
 - Run the touched test file with `node`. `npm test` chains contracts and smoke;
   native integration is `npm run test:integration`. `prepublishOnly` runs both;
   neither is a default development gate.
+- `test/unit/js-style.test.js` (in `npm run test:contracts`) enforces the
+  mechanical rules above: file naming, `.js` only, no `require()` outside the
+  addon loader, no TODO/FIXME. The native addon's rules live in
+  [its AGENTS.md](../../runtime/bridge/webgpu-addon/AGENTS.md).
 
 ## Dependencies
 
