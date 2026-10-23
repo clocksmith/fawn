@@ -23,10 +23,13 @@ an alias of device-free compiled data or a second count for one WebGPU object.
   groups/pipeline layouts, dynamic binding ranges and native pipeline leases.
 - `commands.c`, `compute_pass.c`: sticky encoder admission, pass locking, transfer,
   direct/indirect compute snapshots and single-use submission self-leases.
-- `queries.c`, `external_textures.c`, `render.c`: real native query-pool ownership,
+- `queries.c`, `external_textures.c`, `render.c`, `render_state.c`: real native query-pool ownership,
   retained imported plane views, and attachment/draw/query replay snapshots.
   Render begin/end packets bracket query events, including empty query scopes.
   Pass timestamps retain delayed end-write pools; indirect records retain arguments.
+- `bundles.c`: reusable immutable draw snapshots sharing pass state/validation,
+  with a 4096-operation budget and transactional storage move on finish. Replay
+  creates the same retained command packets, not fake attachments or a renderer.
 
 Uses existing `doe_instance_allocator` and optional `doe_label_store`. No second
 label store, future queue, callback dispatcher or error-scope stack is present.
@@ -60,9 +63,16 @@ was changed. Duplicate binding, same-device, range, read-only-map and mapped-sub
 admission deliberately fail closed rather than reproducing silent legacy drops.
 These stricter checks are not a claim of complete parity.
 
+Bundle replay deliberately corrects retained Vulkan's binding restoration: logical
+pipeline/group/vertex/index bindings clear even for an empty list, while dynamic
+viewport/scissor/blend/stencil state survives. Each bundle starts self-contained.
+This follows the [official executeBundles semantics](https://gpuweb.github.io/types/interfaces/GPURenderPassEncoder.html#executeBundles),
+not the legacy internal save/restore helper. Host tests require rebinding and
+exercise empty lists, independent snapshots, replay failure and pending leases.
+
 Render ownership currently admits the retained one-color/optional-depth-stencil,
 eight-vertex-buffer/four-group envelope, direct/indexed/indirect draws, timestamp writes and occlusion scopes.
-It does not execute graphics/query work. MRT, resolves, bundles,
+It does not execute graphics/query work. MRT, resolves,
 surface presentation, binding arrays and external-texture color conversion remain
 unsupported. Actual map/future delivery and native shader execution are consumer
 responsibilities. Unsupported consumer command kinds must reject before submit.
@@ -70,7 +80,7 @@ responsibilities. Unsupported consumer command kinds must reject before submit.
 ## Focused checks and evidence
 
 `make -C runtime/c/resources check` builds GCC C11/Werror into `/tmp`: 13 base and
-8 extended host suites cover transactional failure/untouched outputs, first error,
+8 extended plus 5 bundle host suites cover transactional failure/untouched outputs, first error,
 label cleanup, atomic references, stale/read-only maps, copies/aliases, dynamic
 snapshots, pass abandonment/unbinding, shader/query/external/render leases and
 unresolved submission lifetime. Host native tokens test finalization, not GPU work.
@@ -100,5 +110,6 @@ ptrace environment. Exact fixture allocation/native-release counters reach zero,
 not whole-program leak qualification. `DEVELOPER_RECEIPT_EXTENDED.json` binds the
 software-transfer checkpoint to unchanged source hashes, including consumed backend
 bytes. `DEVELOPER_RECEIPT_PASS_CONTROLS.json` binds the later host-only timed-pass,
-indirect-render and shared-preflight follow-up; it does not extend GPU evidence. `DEVELOPER_RECEIPT.json` preserves the earlier smaller historical check.
+indirect-render and shared-preflight follow-up; it does not extend GPU evidence.
+`DEVELOPER_RECEIPT_BUNDLES.json` binds the host-only reusable-bundle extension. `DEVELOPER_RECEIPT.json` preserves the earlier smaller historical check.
 Run the common source-size check; every owned C source/header is below 999 lines.

@@ -63,6 +63,12 @@ typedef struct doe_resource_render_pipeline_desc {
     size_t vertex_count;
     doe_resource_vertex_layout vertices[DOE_RESOURCE_MAX_VERTEX_BUFFERS];
 } doe_resource_render_pipeline_desc;
+typedef struct doe_resource_render_bundle_desc {
+    WGPUTextureFormat color_format, depth_stencil_format;
+    uint32_t samples;
+    bool depth_read_only, stencil_read_only;
+} doe_resource_render_bundle_desc;
+
 typedef struct doe_resource_render_targets {
     doe_resource_view *color, *depth_stencil;
     WGPULoadOp color_load, depth_load, stencil_load;
@@ -140,6 +146,37 @@ doe_resource_status doe_resource_render_pass_begin_occlusion(doe_resource_render
 doe_resource_status doe_resource_render_pass_end_occlusion(doe_resource_render_pass *pass);
 doe_resource_status doe_resource_render_pass_end(doe_resource_render_pass *pass);
 const doe_resource_render_packet *doe_resource_render_record_borrow(const doe_resource_render_record *record);
+
+/* Bundles contain self-contained draw snapshots, not synthetic attachments.
+ * At most 4096 successful setter/draw operations, matching retained command budget.
+ * Finish moves storage. Replay expands through the same pass recording owner;
+ * caller pipeline/group/vertex/index bindings are cleared even for zero bundles;
+ * viewport/scissor/blend/stencil and attachment/query state remain unchanged. */
+typedef struct doe_resource_bundle_encoder doe_resource_bundle_encoder;
+typedef struct doe_resource_render_bundle doe_resource_render_bundle;
+doe_resource_status doe_resource_bundle_encoder_create(const doe_resource_config *config,
+    const doe_resource_render_bundle_desc *desc, doe_resource_bundle_encoder **out);
+void doe_resource_bundle_encoder_retain(doe_resource_bundle_encoder *encoder);
+void doe_resource_bundle_encoder_release(doe_resource_bundle_encoder *encoder);
+doe_resource_status doe_resource_bundle_encoder_set_pipeline(doe_resource_bundle_encoder *encoder,
+    doe_resource_render_pipeline *pipeline);
+doe_resource_status doe_resource_bundle_encoder_set_group(doe_resource_bundle_encoder *encoder,
+    uint32_t index, const doe_resource_dispatch_group *group);
+doe_resource_status doe_resource_bundle_encoder_set_vertex(doe_resource_bundle_encoder *encoder,
+    uint32_t slot, doe_resource_buffer *buffer, uint64_t offset, uint64_t size);
+doe_resource_status doe_resource_bundle_encoder_set_index(doe_resource_bundle_encoder *encoder,
+    doe_resource_buffer *buffer, WGPUIndexFormat format, uint64_t offset, uint64_t size);
+doe_resource_status doe_resource_bundle_encoder_draw(doe_resource_bundle_encoder *encoder,
+    bool indexed, uint32_t count, uint32_t instances, uint32_t first,
+    int32_t base_vertex, uint32_t first_instance);
+doe_resource_status doe_resource_bundle_encoder_draw_indirect(doe_resource_bundle_encoder *encoder,
+    doe_resource_buffer *arguments, uint64_t offset, bool indexed);
+doe_resource_status doe_resource_bundle_encoder_finish(doe_resource_bundle_encoder *encoder,
+    doe_resource_render_bundle **out);
+void doe_resource_render_bundle_retain(doe_resource_render_bundle *bundle);
+void doe_resource_render_bundle_release(doe_resource_render_bundle *bundle);
+doe_resource_status doe_resource_render_pass_execute_bundles(doe_resource_render_pass *pass,
+    doe_resource_render_bundle *const *bundles, size_t count);
 
 #ifdef __cplusplus
 }

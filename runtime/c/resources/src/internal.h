@@ -132,6 +132,22 @@ doe_resource_status resource_record_timestamp(doe_resource_encoder *encoder,
     doe_resource_query_set *set, uint32_t index, doe_resource_timestamp_position position);
 bool resource_query_available(const doe_resource_query_set *set);
 bool resource_external_available(const doe_resource_external_texture *texture);
+doe_resource_status resource_render_pass_active(doe_resource_render_pass *pass);
+doe_resource_status resource_render_replay_packet(doe_resource_render_pass *pass,
+    const doe_resource_render_packet *packet);
+void resource_render_clear_bindings(doe_resource_render_packet *state);
+void resource_render_packet_retain(const doe_resource_render_packet *packet);
+void resource_render_packet_release(const doe_resource_render_packet *packet);
+doe_resource_status resource_render_set_pipeline(void *device, doe_resource_render_packet *state,
+    doe_resource_render_pipeline *pipeline);
+doe_resource_status resource_render_set_group(void *device, doe_resource_render_packet *state,
+    uint32_t index, const doe_resource_dispatch_group *group);
+doe_resource_status resource_render_set_vertex(void *device, doe_resource_render_packet *state,
+    uint32_t slot, doe_resource_buffer *buffer, uint64_t offset, uint64_t size);
+doe_resource_status resource_render_set_index(void *device, doe_resource_render_packet *state,
+    doe_resource_buffer *buffer, WGPUIndexFormat format, uint64_t offset, uint64_t size);
+doe_resource_status resource_render_draw_validate(const doe_resource_render_packet *packet,
+    void *device, const doe_resource_render_bundle_desc *signature);
 void resource_render_record_release(doe_resource_render_record *record);
 doe_resource_status resource_render_record_validate(const doe_resource_render_record *record);
 bool resource_config_valid(const doe_resource_config *config);
