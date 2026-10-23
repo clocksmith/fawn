@@ -117,6 +117,7 @@ typedef struct doe_mtl_objc {
     void *new_buffer;
     void *contents;
     void *max_buffer_length;
+    void *max_threadgroup_memory;
     void *max_threads;
     void *name;
     void *utf8;
@@ -146,6 +147,7 @@ typedef struct doe_mtl_objc {
 void *doe_mtl_objc_object(doe_mtl_objc *runtime, void *object, void *selector);
 void doe_mtl_objc_void(doe_mtl_objc *runtime, void *object, void *selector);
 size_t doe_mtl_objc_size(doe_mtl_objc *runtime, void *object, void *selector);
+bool doe_mtl_objc_limits(doe_mtl_objc *runtime, void *device, doe_mtl_caps *caps);
 void *doe_mtl_objc_pool(doe_mtl_objc *runtime);
 void doe_mtl_objc_drain(doe_mtl_objc *runtime, void *pool);
 void doe_mtl_objc_release(void *userdata, void *object);

@@ -58,6 +58,7 @@ static doe_mtl_status device_create(void *userdata, void **out,
     doe_mtl_caps result = {0};
     if (mock->fail == MOCK_DEVICE) return failure(error);
     result.max_buffer_length = 4096;
+    result.max_threadgroup_memory_length = 32768;
     result.max_threads_per_dimension[0] = 1024;
     result.max_threads_per_dimension[1] = 1024;
     result.max_threads_per_dimension[2] = 64;

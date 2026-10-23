@@ -45,6 +45,7 @@ typedef struct doe_mtl_error {
 typedef struct doe_mtl_dimensions { uint32_t x, y, z; } doe_mtl_dimensions;
 typedef struct doe_mtl_caps {
     uint64_t max_buffer_length;
+    uint64_t max_threadgroup_memory_length;
     uint64_t max_threads_per_dimension[3];
     char device_name[256];
     uint32_t max_texture_1d, max_texture_2d, max_texture_3d, max_texture_layers;

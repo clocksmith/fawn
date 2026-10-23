@@ -234,10 +234,9 @@ passes AddressSanitizer and UndefinedBehaviorSanitizer with leak scanning disabl
 Owned native allocations/releases are still checked by the call ledger. Run leak
 scanning in a supported environment before qualification.
 
-`TIMESTAMP_SOURCE_INPUTS.sha256` binds the current sources/tests/build/documents
-exercised by `DEVELOPER_RECEIPT_TIMESTAMPS.json`. Verify with
-`sha256sum -c runtime/c/backends/metal/TIMESTAMP_SOURCE_INPUTS.sha256` from the repository
-root. Multisample evidence (`MULTISAMPLE_SOURCE_INPUTS.sha256`,
+`TIMESTAMP_SOURCE_INPUTS.sha256` preserves the sources/tests/build/documents
+exercised by `DEVELOPER_RECEIPT_TIMESTAMPS.json` at commit `492968b3`, before
+the device-limit addition below. Verify it at that historical revision. Multisample evidence (`MULTISAMPLE_SOURCE_INPUTS.sha256`,
 `DEVELOPER_RECEIPT_MULTISAMPLE.json`, `MULTISAMPLE_TERMINAL_RECEIPT.txt`) remains
 unchanged historical evidence for `db455842`. Graphics evidence (`RENDER_SOURCE_INPUTS.sha256`, `DEVELOPER_RECEIPT_RENDER.json`,
 `RENDER_TERMINAL_RECEIPT.txt`) is unchanged historical evidence for commit `74a329c5`.
@@ -254,3 +253,20 @@ rerun; `TIMESTAMP_FIRST_INPUTS.sha256` binds those failed-attempt inputs, not cu
 sources. The multisample terminal receipt preserves its exact failed controls;
 `MULTISAMPLE_FIRST_INPUTS.sha256` records the initial failed compile inputs, not
 the final source set. Later fixture failures and their fixes are also retained.
+
+## Native device limits
+
+Device creation now also requires and reads `maxThreadgroupMemoryLength`, alongside
+`maxBufferLength` and all three `maxThreadsPerThreadgroup` axes. The one typed
+property reader publishes these facts only when all required selectors and values
+are valid. It does not invent a per-device aggregate-thread limit: the actual
+pipeline's `maxTotalThreadsPerThreadgroup` remains a separate dispatch constraint.
+Upstream public limits may be deliberately smaller, but must be labelled as an
+admitted policy rather than queried hardware capability.
+
+`make check sanitize abi-compile` includes missing selectors, zero limits,
+distinct axes, non-narrowed buffer sizes and unchanged-output controls. The final
+checks and exact source hashes are in `DEVELOPER_RECEIPT_LIMITS.json`. Typed host
+calls and both syntax branches are not Apple SDK or physical-device qualification.
+The property's official declaration is documented by Apple at
+https://developer.apple.com/documentation/metal/mtldevice/maxthreadgroupmemorylength?language=objc .

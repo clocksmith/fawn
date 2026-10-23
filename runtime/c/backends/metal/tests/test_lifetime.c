@@ -9,6 +9,9 @@ static doe_mtl_context *context_create(mock_native *mock) {
     doe_mtl_native native = mock_driver(mock);
     assert(doe_mtl_context_open(native, &context, NULL) == DOE_MTL_OK);
     assert(context != NULL && mock->live == 2);
+    doe_mtl_caps caps;
+    assert(doe_mtl_context_caps(context, &caps) == DOE_MTL_OK);
+    assert(caps.max_threadgroup_memory_length == 32768);
     return context;
 }
 
