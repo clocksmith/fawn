@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: MIT */
 #ifndef DOE_SHADER_H
 #define DOE_SHADER_H
-#include "doe_compiler_stages.h"
+#include "doe_compiler_text.h"
 #include <stdbool.h>
 #ifdef __cplusplus
 extern "C" {
@@ -20,7 +20,11 @@ typedef struct doe_shader_allocator {
     void *(*allocate)(void *userdata, size_t bytes, size_t alignment);
     void (*deallocate)(void *userdata, void *memory, size_t bytes, size_t alignment);
 } doe_shader_allocator;
+typedef enum doe_shader_target {
+    DOE_SHADER_SPIRV = 0, DOE_SHADER_METAL = 1
+} doe_shader_target;
 typedef struct doe_shader_options {
+    doe_shader_target target; /* Zero preserves the SPIR-V default. No fallback. */
     doe_shader_allocator allocator;
     DoeCompilerModuleCapacities capacities;
     DoeCompilerEntrySelectionV5 selection;
@@ -37,6 +41,14 @@ typedef struct doe_shader_error {
     DoeCompilerDiagnostic diagnostic;
 } doe_shader_error;
 typedef struct doe_shader_view {
+    doe_shader_target target;
+    uint32_t target_language_version;
+    const char *text; /* Exact owned bytes, not NUL terminated; NULL for SPIR-V. */
+    size_t text_size;
+    const DoeCompilerTextBindingV10 *target_bindings;
+    size_t target_binding_count;
+    const DoeCompilerTextEntryV10 *target_entries;
+    size_t target_entry_count;
     DoeCompilerModuleV5 module;
     DoeCompilerModuleOutputCounts counts;
     const uint32_t *words;
@@ -65,8 +77,10 @@ typedef struct doe_shader_view {
  * Valid entryless/library modules own zero words and zero entries; they are not
  * Vulkan shaders and cannot create a pipeline without a selected stage.
  * This owns compiled data, not device pipelines, GPU work or a cache policy.
- * Runtime dispatch/texture preconditions and Metal size metadata are NOT inferred
- * from standalone reflection; that production TranslationInfo seam is unfinished. */
+ * Explicit Metal artifacts own compiler-produced target slots and per-entry size
+ * metadata. The runtime supplies actual bound byte lengths; no layout/slot policy
+ * is recalculated here. Other production TranslationInfo preconditions remain
+ * unfinished. Different target selections never share artifact identity. */
 doe_shader_status doe_shader_create(const doe_shader_options *options,
     const char *source, size_t source_size, doe_shader **out, doe_shader_error *error);
 doe_shader_status doe_shader_retain(doe_shader *shader);
@@ -74,7 +88,8 @@ void doe_shader_release(doe_shader *shader);
 doe_shader_status doe_shader_borrow(const doe_shader *shader, doe_shader_view *out);
 /* Exact byte equality only. This helper does not validate a compiler identity
  * supplied by the caller, hash source or equate different entry selections. */
-bool doe_shader_matches(const doe_shader *shader, const char *source, size_t size,
+bool doe_shader_matches(const doe_shader *shader, doe_shader_target target,
+    const char *source, size_t size,
     const void *identity, size_t identity_size,
     const DoeCompilerEntrySelectionV5 *selection);
 #ifdef __cplusplus

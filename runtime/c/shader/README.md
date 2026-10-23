@@ -12,7 +12,8 @@ with this internal view header; the retained versioned compiler records do not g
 clone/deinit and entry-binding responsibility of the retained
 [TranslationInfo owner](../../zig/src/compiler/wgsl/runtime/runtime_translation_info.zig),
 without pretending that standalone reflection supplies its dispatch/texture
-preconditions, Metal size-buffer policy or complete production cache semantics.
+preconditions or complete production cache semantics. Metal slots and per-entry
+size-buffer facts are now retained directly from compiler ABI10, not recomputed.
 
 The caller supplies explicit compiler capacities and allocator hooks. Additional
 interface-attribute and stage-interface capacities are explicit options; zero
@@ -78,7 +79,22 @@ The baseline and demote modes pass on SwiftShader with early caller releases;
 this does not qualify physical hardware, derivatives or helper-invocation parity.
 An unavailable requested feature reports SKIP77 rather than substituting OpKill.
 
-The internal owned artifact selects explicit compiler ABI9. Atomic records retain
+The default SPIR-V artifact selects explicit compiler ABI9. Atomic records retain
 their referenced scalar type and non-constructible flag; they are not ordinary
 scalar values. Buffer layout remains the compiler owner’s result. Both acquisition
 faults and retained-view lifetime are checked for atomic-containing modules.
+
+Explicit `DOE_SHADER_METAL` artifacts select ABI10 and own the exact emitted MSL,
+selected entry names, sparse buffer/texture/sampler slots and per-entry size-buffer
+metadata in the same reference-counted allocation as whole-module reflection.
+There is no SPIR-V intermediate or target fallback. Target identity participates
+in exact artifact matching. Runtime callers still supply the bound byte lengths;
+this owner does not infer binding sizes from WGSL or duplicate slot allocation.
+
+Metal measurement determines exact text staging space, so creation uses three
+fallible allocation acquisitions: measurement workspace, publication workspace,
+and final artifact. Each is checked independently, failure leaves the caller's
+artifact untouched, and retained views remain valid after source/option lifetime
+ends. NONE-selected entryless modules own empty text rather than fake shaders.
+Focused C/C++ and owner ASan/UBSan controls cover these paths and target rejection;
+no Apple SDK or physical execution is claimed by those host checks.
