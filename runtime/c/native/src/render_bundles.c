@@ -73,6 +73,28 @@ void wgpuRenderBundleEncoderSetVertexBuffer(WGPURenderBundleEncoder handle, uint
     native_unlock(device);
     if (status != DOE_RESOURCE_OK) native_error(device, native_resource_error(status), "bundle vertex binding failed");
 }
+void wgpuRenderBundleEncoderSetIndexBuffer(WGPURenderBundleEncoder handle, WGPUBuffer buffer,
+    WGPUIndexFormat format, uint64_t offset, uint64_t size)
+{
+    doe_resource_bundle_encoder *encoder = (doe_resource_bundle_encoder *)handle;
+    native_device *device = doe_resource_bundle_encoder_device(encoder);
+    if (!device) return;
+    native_lock(device);
+    doe_resource_status status = doe_resource_bundle_encoder_set_index(encoder,(doe_resource_buffer *)buffer,format,offset,size);
+    native_unlock(device);
+    if (status != DOE_RESOURCE_OK) native_error(device, native_resource_error(status), "bundle index binding failed");
+}
+void wgpuRenderBundleEncoderDrawIndexed(WGPURenderBundleEncoder handle, uint32_t count,
+    uint32_t instances, uint32_t first_index, int32_t base_vertex, uint32_t first_instance)
+{
+    doe_resource_bundle_encoder *encoder = (doe_resource_bundle_encoder *)handle;
+    native_device *device = doe_resource_bundle_encoder_device(encoder);
+    if (!device) return;
+    native_lock(device);
+    doe_resource_status status = doe_resource_bundle_encoder_draw(encoder,true,count,instances,first_index,base_vertex,first_instance);
+    native_unlock(device);
+    if (status != DOE_RESOURCE_OK) native_error(device, native_resource_error(status), "bundle indexed draw failed");
+}
 void wgpuRenderBundleEncoderDraw(WGPURenderBundleEncoder handle, uint32_t count,
     uint32_t instances, uint32_t first, uint32_t first_instance)
 {
