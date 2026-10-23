@@ -141,6 +141,19 @@ int main(int argc, char **argv) {
     memcpy(alpha_triangle, triangle, sizeof(triangle));
     for (unsigned i = 0; i < 3; ++i) alpha_triangle[i][6] = 0;
     require(doe_vk_buffer_write(alpha_vertices, 0, alpha_triangle, sizeof(alpha_triangle)), "alpha-zero triangle");
+    doe_vk_render_pipeline_desc depth_only_desc = desc;
+    depth_only_desc.fragment = (doe_vk_shader){0};
+    depth_only_desc.color_format = 0;
+    depth_only_desc.blend_enabled = false;
+    depth_only_desc.color_write_mask = 0;
+    depth_only_desc.depth_stencil_format = depth_desc.format;
+    depth_only_desc.depth_test = depth_only_desc.depth_write = true;
+    depth_only_desc.depth_compare = 1;
+    doe_vk_pipeline *depth_only_pipeline = NULL;
+    require(doe_vk_render_pipeline_create(context, &depth_only_desc, &depth_only_pipeline, &error), "vertex-only depth pipeline");
+    doe_vk_buffer *depth_only_readback = NULL;
+    require(doe_vk_buffer_create(context, 256, DOE_VK_BUFFER_COPY_DST,
+        DOE_VK_MEMORY_HOST, &depth_only_readback, &error), "depth-only oracle");
     free((void *)vertex.words);
     free((void *)fragment.words);
     doe_vk_commands *commands = NULL;
@@ -291,6 +304,27 @@ int main(int argc, char **argv) {
     require(doe_vk_commands_render_pass_full(commands, &msaa_pass, NULL, msaa_ops, 1), "zero alpha-to-coverage resolve");
     msaa_layout.offset = 1024;
     require(doe_vk_commands_read_texture(commands, texture, region, msaa_readback, msaa_layout), "alpha coverage pixels");
+    const doe_vk_render_pass_desc depth_only_pass = {.depth_stencil = depth_view,
+        .clear_depth = true, .clear_stencil = true, .depth_clear_value = 1, .stencil_clear_value = 7};
+    doe_vk_render_pass_op depth_only_op = {.kind = DOE_VK_RENDER_DRAW,
+        .value.draw = {depth_only_pipeline, &binding, 1, vertex_binding, 2,
+            {.vertex_count = 3, .instance_count = 1, .viewport = {0, 0, 8, 8, 0.25f, 0.25f},
+                .scissor = {0, 0, 8, 8}}}};
+    require(doe_vk_commands_render_pass_full(commands, &depth_only_pass, NULL, &depth_only_op, 1), "actual depth-only vertex draw");
+    const doe_vk_render_pass_desc observe_depth = {.color = view, .clear_color = &blue,
+        .depth_stencil = depth_view, .depth_read_only = true, .stencil_read_only = true};
+    doe_vk_render_pass_op observe_ops[2] = {depth_only_op, depth_only_op};
+    for (unsigned i = 0; i < 2; ++i) {
+        observe_ops[i].value.draw.pipeline = depth_read;
+        observe_ops[i].value.draw.draw.stencil_reference = 7;
+    }
+    observe_ops[0].value.draw.draw.viewport[4] = observe_ops[0].value.draw.draw.viewport[5] = 0.5f;
+    observe_ops[1].value.draw.draw.viewport[4] = observe_ops[1].value.draw.draw.viewport[5] = 0.125f;
+    observe_ops[1].value.draw.draw.scissor[0] = 4;
+    observe_ops[1].value.draw.draw.scissor[2] = 4;
+    require(doe_vk_commands_render_pass_full(commands, &observe_depth, NULL, observe_ops, 2), "observe genuine depth-only writes");
+    require(doe_vk_commands_read_texture(commands, texture, region, depth_only_readback, packed), "depth-only observed pixels");
+    doe_vk_pipeline_release(depth_only_pipeline);
     doe_vk_buffer_release(alpha_vertices);
     doe_vk_pipeline_release(msaa_pipeline);
     doe_vk_pipeline_release(masked_pipeline);
@@ -365,6 +399,14 @@ int main(int argc, char **argv) {
             }
         }
     }
+    require(doe_vk_buffer_read(depth_only_readback, 0, pixels, sizeof(pixels)), "depth-only final oracle");
+    for (unsigned y = 0; y < 8; ++y) for (unsigned x = 0; x < 8; ++x) {
+        const uint8_t expected[4] = {x < 4 ? 0 : 255, 0, 255, 255};
+        if (memcmp(pixels[y][x], expected, 4) != 0) {
+            fprintf(stderr, "depth-only oracle mismatch at %u,%u\n", x, y);
+            return 1;
+        }
+    }
     uint64_t values[8];
     require(doe_vk_buffer_read(query_output, 0, values, sizeof(values)), "occlusion results");
     if (values[0] == 0) {
@@ -382,10 +424,12 @@ int main(int argc, char **argv) {
     doe_vk_buffer_release(depth_readback);
     doe_vk_buffer_release(zero_readback);
     doe_vk_buffer_release(msaa_readback);
+    doe_vk_buffer_release(depth_only_readback);
     doe_vk_context_release(context);
     puts("PASS one real offscreen clear/two-draw pass, dynamic scissors, an unused NULL vertex slot, uniform descriptors, exact64-pixel raw and dynamic-blend oracles, real occlusion hit/empty/clipped/unwritten results and later-pass index reuse, early native caller release");
     puts("PASS real D32S8 clear, independent depth LESS/stencil EQUAL tests, dynamic references, empty read-only LOAD, exact64-pixel depth/stencil oracle and early leases");
     puts("PASS standalone depth-only initialization, depth Discard then GPU-zero preserving stencil, color Discard then exact256-byte zero readback");
     puts("PASS real4x color/depth and single-sample resolve, empty LOAD resolve, mask0 and alpha0 coverage, resolve-before-discard, canonical4x zero and five exact64-pixel oracles with early leases");
+    puts("PASS genuine depth-only vertex-stage draw, no color/fragment stage, subsequent near/far depth observations and exact64-pixel oracle with early pipeline release");
     return 0;
 }

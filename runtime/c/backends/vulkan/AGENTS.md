@@ -42,3 +42,7 @@ frontend or manufacture a color target for depth-only initialization.
 Multisample resolve belongs to the same complete pass span. Admit actual format/
 usage sample support, retain the resolve view before begin, and preserve its
 successful contents independently of the source store/discard operation.
+
+An absent fragment stage is distinct from a malformed shader. Depth-only draws
+use the actual depth/stencil attachment and one native pipeline, not a hidden
+color target, dummy shader or rasterizer-discard substitute.

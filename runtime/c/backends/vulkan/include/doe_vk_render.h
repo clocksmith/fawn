@@ -60,11 +60,13 @@ typedef struct doe_vk_render_pipeline_desc {
     uint64_t sample_mask;
     bool alpha_to_coverage;
 } doe_vk_render_pipeline_desc;
-/* Single-color graphics pipeline with format-admitted native sample counts. Compiler/native admission validates
+/* Zero/one-color graphics pipeline with format-admitted native sample counts. Compiler/native admission validates
  * shader interfaces/capabilities including disabled vertex/fragment stores.
  * Native blend factors0..14 (no dual source), operations0..4; constant blend
  * factors use the pipeline constant unless an explicit per-draw override is set.
- * Optional depth/stencil uses the same sample count. Sample shading stays disabled. */
+ * Optional depth/stencil uses the same sample count. Sample shading stays disabled.
+ * color_format=0 requires depth/stencil, disabled blend/alpha-to-coverage and zero
+ * color_write_mask. Only then may fragment be entirely zero (no native stage). */
 doe_vk_status doe_vk_render_pipeline_create(doe_vk_context *context,
     const doe_vk_render_pipeline_desc *desc, doe_vk_pipeline **out, doe_vk_error *error);
 
@@ -114,7 +116,7 @@ typedef struct doe_vk_render_pass_op {
     } value;
 } doe_vk_render_pass_op;
 typedef struct doe_vk_render_pass_desc {
-    doe_vk_texture_view *color; /* May be NULL for an empty depth/stencil-only pass. */
+    doe_vk_texture_view *color; /* May be NULL for a depth/stencil-only pass. */
     const doe_vk_clear_color *clear_color; /* NULL loads initialized color. */
     bool discard_color;
     doe_vk_texture_view *depth_stencil;
@@ -129,8 +131,8 @@ typedef struct doe_vk_render_pass_desc {
  * participate. Read-only forbids clear/discard and any draw that may write that
  * aspect. LOAD requires initialized aspect; STORE preserves it; discard removes
  * it. All borrowed inputs die at return. Failure poisons commands; no partial
- * pass may be submitted. Color plus optional depth/stencil, sample1 only.
- * A depth/stencil-only descriptor admits an empty/query-only pass, not draws. */
+ * pass may be submitted. Samples must match the pipeline and depth/stencil.
+ * A depth/stencil-only draw requires a matching color_format=0 pipeline. */
 doe_vk_status doe_vk_commands_render_pass_full(doe_vk_commands *commands,
     const doe_vk_render_pass_desc *desc, doe_vk_query_pool *occlusion,
     const doe_vk_render_pass_op *ops, size_t count);

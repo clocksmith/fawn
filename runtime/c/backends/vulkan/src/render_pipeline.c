@@ -1,6 +1,11 @@
 #include "render_internal.h"
 #include <math.h>
 
+static bool fragment_absent(const doe_vk_render_pipeline_desc *desc) {
+    return desc->fragment.words == NULL && desc->fragment.word_count == 0 &&
+        desc->fragment.entrypoint == NULL;
+}
+
 static bool stencil_face_valid(doe_vk_stencil_face face) {
     return face.fail_operation <= 7 && face.pass_operation <= 7 &&
         face.depth_fail_operation <= 7 && face.compare_operation <= 7;
@@ -45,7 +50,8 @@ static VkStencilOpState stencil_state(doe_vk_stencil_face face,
 
 static doe_vk_status validate_pipeline(doe_vk_context *context,
     const doe_vk_render_pipeline_desc *desc) {
-    if (desc == NULL || !doe_vk_shader_valid(&desc->vertex) || !doe_vk_shader_valid(&desc->fragment) ||
+    if (desc == NULL || !doe_vk_shader_valid(&desc->vertex) ||
+        (!fragment_absent(desc) && !doe_vk_shader_valid(&desc->fragment)) ||
         desc->topology < DOE_VK_POINTS || desc->topology > DOE_VK_TRIANGLE_STRIP ||
         desc->cull_mask > 3 || desc->color_write_mask > 15 ||
         desc->vertex_buffer_count > DOE_VK_MAX_VERTEX_BUFFERS ||
@@ -53,19 +59,25 @@ static doe_vk_status validate_pipeline(doe_vk_context *context,
         (desc->vertex_buffer_count != 0 && desc->vertex_buffers == NULL) ||
         (desc->attribute_count != 0 && desc->attributes == NULL)) return DOE_VK_INVALID_ARGUMENT;
     if (!(context->caps.queue_flags & VK_QUEUE_GRAPHICS_BIT)) return DOE_VK_UNSUPPORTED;
+    if (desc->color_format == 0) {
+        if (desc->depth_stencil_format == 0 || desc->blend_enabled ||
+            desc->color_write_mask != 0 || desc->alpha_to_coverage) return DOE_VK_INVALID_ARGUMENT;
+    } else if (fragment_absent(desc)) return DOE_VK_INVALID_ARGUMENT;
     if (desc->blend_enabled && (desc->color_source_factor > 14 || desc->color_destination_factor > 14 ||
         desc->alpha_source_factor > 14 || desc->alpha_destination_factor > 14 ||
         desc->color_operation > 4 || desc->alpha_operation > 4)) return DOE_VK_UNSUPPORTED;
     for (unsigned i = 0; i < 4; ++i) if (!isfinite(desc->blend_constant[i])) return DOE_VK_INVALID_ARGUMENT;
-    doe_vk_format_caps format;
-    doe_vk_status status = doe_vk_texture_format_caps(context, desc->color_format, &format);
-    if (status != DOE_VK_OK) return status;
     uint32_t samples = doe_vk_samples(desc->sample_count);
     if (samples > 64 || (samples & (samples - 1)) != 0 || (desc->alpha_to_coverage && samples == 1))
         return DOE_VK_INVALID_ARGUMENT;
-    if (!format.color_attachment || !(format.attachment_sample_counts & samples) ||
-        (desc->blend_enabled && !format.blendable)) return DOE_VK_UNSUPPORTED;
-    status = validate_depth_stencil(context, desc);
+    if (desc->color_format != 0) {
+        doe_vk_format_caps format;
+        doe_vk_status status = doe_vk_texture_format_caps(context, desc->color_format, &format);
+        if (status != DOE_VK_OK) return status;
+        if (!format.color_attachment || !(format.attachment_sample_counts & samples) ||
+            (desc->blend_enabled && !format.blendable)) return DOE_VK_UNSUPPORTED;
+    }
+    doe_vk_status status = validate_depth_stencil(context, desc);
     if (status != DOE_VK_OK) return status;
     const VkPhysicalDeviceLimits *limits = &context->properties.limits;
     if (desc->vertex_buffer_count > limits->maxVertexInputBindings ||
@@ -121,8 +133,9 @@ doe_vk_status doe_vk_render_pipeline_create(doe_vk_context *context,
     if (pipeline->vertex_count != 0) memcpy(pipeline->vertices, desc->vertex_buffers,
         pipeline->vertex_count * sizeof(*desc->vertex_buffers));
     VkShaderModule vertex = 0, fragment = 0;
-    status = doe_vk_pipeline_layout_create(pipeline, desc->bindings, desc->binding_count,
-        VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, error);
+    bool has_fragment = !fragment_absent(desc);
+    VkFlags shader_stages = VK_SHADER_STAGE_VERTEX_BIT | (has_fragment ? VK_SHADER_STAGE_FRAGMENT_BIT : 0);
+    status = doe_vk_pipeline_layout_create(pipeline, desc->bindings, desc->binding_count, shader_stages, error);
     if (status != DOE_VK_OK) goto failed;
     /* Vulkan single-subpass compatibility ignores resolve attachment references;
      * this pipeline pass is also compatible with the recorder's resolve pass. */
@@ -130,8 +143,10 @@ doe_vk_status doe_vk_render_pipeline_create(doe_vk_context *context,
     if (status != DOE_VK_OK) goto failed;
     status = doe_vk_shader_module(context, &desc->vertex, &vertex, error);
     if (status != DOE_VK_OK) goto failed;
-    status = doe_vk_shader_module(context, &desc->fragment, &fragment, error);
-    if (status != DOE_VK_OK) goto failed;
+    if (has_fragment) {
+        status = doe_vk_shader_module(context, &desc->fragment, &fragment, error);
+        if (status != DOE_VK_OK) goto failed;
+    }
     const VkPipelineShaderStageCreateInfo stages[2] = {
         { .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO, .stage = VK_SHADER_STAGE_VERTEX_BIT,
             .module = vertex, .pName = (const uint8_t *)desc->vertex.entrypoint },
@@ -176,7 +191,8 @@ doe_vk_status doe_vk_render_pipeline_create(doe_vk_context *context,
         .alphaBlendOp = desc->alpha_operation, .colorWriteMask = desc->color_write_mask
     };
     VkPipelineColorBlendStateCreateInfo blend = {
-        .sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO, .attachmentCount = 1, .pAttachments = &attachment
+        .sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
+        .attachmentCount = desc->color_format != 0 ? 1 : 0, .pAttachments = desc->color_format != 0 ? &attachment : NULL
     };
     memcpy(blend.blendConstants, desc->blend_constant, sizeof(blend.blendConstants));
     const VkPipelineDepthStencilStateCreateInfo depth_stencil = {
@@ -191,7 +207,7 @@ doe_vk_status doe_vk_render_pipeline_create(doe_vk_context *context,
         .sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO, .dynamicStateCount = desc->stencil_test ? 4 : 3, .pDynamicStates = states
     };
     const VkGraphicsPipelineCreateInfo create = {
-        .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO, .stageCount = 2, .pStages = stages,
+        .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO, .stageCount = has_fragment ? 2 : 1, .pStages = stages,
         .pVertexInputState = &vertex_input, .pInputAssemblyState = &assembly, .pViewportState = &viewport,
         .pRasterizationState = &rasterization, .pMultisampleState = &multisample, .pColorBlendState = &blend,
         .pDepthStencilState = desc->depth_stencil_format != 0 ? &depth_stencil : NULL,
@@ -202,7 +218,7 @@ doe_vk_status doe_vk_render_pipeline_create(doe_vk_context *context,
         &create, NULL, &pipeline->pipeline), "vkCreateGraphicsPipelines", error);
     if (status != DOE_VK_OK) goto failed;
     context->vk.vkDestroyShaderModule(context->device, vertex, NULL);
-    context->vk.vkDestroyShaderModule(context->device, fragment, NULL);
+    if (fragment != 0) context->vk.vkDestroyShaderModule(context->device, fragment, NULL);
     *out = pipeline;
     return doe_vk_fail(DOE_VK_OK, "graphics ready", error);
 failed:
