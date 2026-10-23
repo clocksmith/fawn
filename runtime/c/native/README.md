@@ -523,7 +523,8 @@ Vulkan only; other backends reject preparation with a device error.
 
 - `doeNativeComputeProgramPrepare` (gpu-recorded) claims a finished, never-submitted
   command buffer in the resource owner and records ONE reusable Vulkan command buffer
-  (buffer copies, clears and direct dispatches only), sealed so preparation
+  (buffer copies, clears, direct dispatches, timestamp writes including compute-pass
+  timestampWrites, and query resolves), sealed so preparation
   dispatches nothing and buffers stay writable before the first run.
 - `doeNativeComputeProgramPrepareHostReplay` (native-recorded) claims the same way;
   every submit lowers the retained commands into a fresh one-shot native recording.
@@ -531,13 +532,22 @@ Vulkan only; other backends reject preparation with a device error.
   and submits once through the existing pending owner; mapping between runs is
   allowed. Unknown completion keeps the replay and the recording alive.
 - Standard `wgpuQueueSubmit` keeps WebGPU single-use semantics and rejects claimed
-  command buffers. Timestamp queries inside a GPU recording are currently rejected
-  (host replay admits them); `doeNativeComputeProgramTimestampNanoseconds` reports
-  period 1 / 64 bits because queries already resolve to GPU nanoseconds.
+  command buffers. Timestamp queries inside a GPU recording must be self-contained:
+  each write lowers to reset+write, and a resolve of an index the recording never
+  wrote is rejected at preparation (host replay admits it). Each run re-acquires the
+  query pool and checks its health like buffer uses; completion publishes the
+  recorded indices, so later ordinary resolves see the last run's values, and the
+  GPU-nanosecond normalizer's scratch and pipeline are held by the recording.
+  `doeNativeComputeProgramTimestampNanoseconds` reports period 1 / 64 bits because
+  queries already resolve to GPU nanoseconds.
 
 `tests/compute_programs.c` checks three exact runs per mode with changing inputs and
 mapped readback between runs, single-use rejection, claim-twice, destroyed
-dependency, early public releases and GPU-recording admission.
+dependency, early public releases and GPU-recording admission. Its gpu-recorded
+timestamp program checks three runs of strictly increasing, nonzero GPU-ns intervals,
+that an ordinary resolve afterwards returns the last run's exact values and new
+ordinary writes advance, that the program still runs after that ordinary use, and
+that a resolve-only recording is rejected.
 
 ## Physical developer runs and holds
 
