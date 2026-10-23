@@ -94,7 +94,9 @@ static void function_body(MetalEmitter *e, uint32_t index) {
     for (uint32_t i = f->local_start; i < f->local_start + f->local_count; ++i) {
         metal_indent(e);
         metal_type(e, c->locals[i].type);
-        metal_format(e, " l%u{};\n", i);
+        metal_format(e, " l%u = ", i);
+        metal_zero(e, c->locals[i].type);
+        metal_text(e, ";\n");
     }
     for (uint32_t i = f->instruction_start; i < f->instruction_end; ++i) {
         const IrInstruction *ir = &c->instructions[i];
@@ -105,7 +107,9 @@ static void function_body(MetalEmitter *e, uint32_t index) {
         }
         metal_indent(e);
         metal_type(e, ir->type);
-        metal_format(e, " v%u{};\n", ir->result);
+        metal_format(e, " v%u = ", ir->result);
+        metal_zero(e, ir->type);
+        metal_text(e, ";\n");
     }
     e->current_function = index;
     e->function_end = f->instruction_end;
@@ -254,8 +258,8 @@ static void entry_wrapper(MetalEmitter *e, uint32_t index) {
             if (!metal_entry_workgroup(c, entry, i)) continue;
             metal_indent(e);
             metal_format(e, "doe_wstore%u(&w%u, ", c->workgroups[i].type, i);
-            metal_type(e, c->workgroups[i].type);
-            metal_text(e, "{});\n");
+            metal_zero(e, c->workgroups[i].type);
+            metal_text(e, ");\n");
         }
         --e->indent;
         metal_line(e, "}");

@@ -196,6 +196,9 @@ void hlsl_block(HlslEmitter *e, uint32_t *cursor, unsigned depth, uint32_t loop,
             case IR_LOOP_BEGIN: case IR_LOOP_TEST: case IR_LOOP_CONTINUING: case IR_END_LOOP:
             case IR_ACCESS_LOAD: case IR_ACCESS_STORE: case IR_VALUE_ACCESS:
             case IR_HANDLE: case IR_IMAGE:
+            case IR_ATOMIC_LOAD: case IR_ATOMIC_STORE: case IR_ATOMIC_ADD: case IR_ATOMIC_SUBTRACT:
+            case IR_ATOMIC_MAX: case IR_ATOMIC_MIN: case IR_ATOMIC_AND: case IR_ATOMIC_OR:
+            case IR_ATOMIC_XOR: case IR_ATOMIC_EXCHANGE: case IR_ATOMIC_COMPARE_EXCHANGE:
             default:
                 hlsl_error(e, "Hlsl IR operation has no implemented lowering at this boundary");
                 break;

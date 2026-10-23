@@ -84,7 +84,11 @@ static void emit_module(MetalEmitter *e) {
         return;
     }
     metal_text(e, "#include <metal_stdlib>\nusing namespace metal;\n");
+    /* This target's declared baseline is MSL3.0. In particular discard must
+     * keep helper execution, which pre2.3 discard_fragment did not guarantee. */
+    metal_text(e, "#if __METAL_VERSION__ < 300\n#error Doe requires MSL 3.0 or later\n#endif\n");
     metal_types(e);
+    metal_zero_helpers(e);
     metal_memory_helpers(e);
     metal_workgroup_helpers(e);
     metal_numeric_helpers(e);
