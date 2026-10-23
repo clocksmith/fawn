@@ -88,7 +88,30 @@ static void rejected(doe_vk_context *context, const doe_vk_render_pass_desc *des
     assert(before == begins && commands->renders == NULL);
     assert(doe_vk_commands_release(commands) == DOE_VK_OK);
 }
+static void stencil_write_summary(void) {
+    doe_vk_render_pipeline_desc desc = {.stencil_test = true, .stencil_write_mask = 255,
+        .stencil_front = {.pass_operation = 2}};
+    assert(doe_vk_render_stencil_writes(&desc));
+    desc.cull_mask = 1;
+    assert(!doe_vk_render_stencil_writes(&desc));
+    desc.cull_mask = 2;
+    assert(doe_vk_render_stencil_writes(&desc));
+    desc.stencil_front.pass_operation = 0;
+    desc.stencil_back.depth_fail_operation = 2;
+    assert(!doe_vk_render_stencil_writes(&desc));
+    desc.cull_mask = 1;
+    assert(doe_vk_render_stencil_writes(&desc));
+    desc.cull_mask = 3;
+    assert(!doe_vk_render_stencil_writes(&desc));
+    desc.cull_mask = 0;
+    desc.stencil_write_mask = 0;
+    assert(!doe_vk_render_stencil_writes(&desc));
+    desc.stencil_write_mask = 255;
+    desc.stencil_test = false;
+    assert(!doe_vk_render_stencil_writes(&desc));
+}
 int main(void) {
+    stencil_write_summary();
     doe_vk_context context = {.references = 1};
     context.caps.queue_flags = VK_QUEUE_GRAPHICS_BIT;
     context.properties.limits.maxFramebufferWidth = context.properties.limits.maxFramebufferHeight = 64;
@@ -176,6 +199,6 @@ int main(void) {
     depth.desc.format = DOE_VK_FORMAT_D32_FLOAT;
     rejected(&context, &desc, NULL, DOE_VK_INVALID_ARGUMENT); /* No stencil aspect. */
     assert(begins == 4 && ends == 4 && created == destroyed && context.references == 1);
-    puts("PASS per-aspect native load/clear/store/discard, full depth/stencil transitions, read-only write/clear rejection, extent/NaN/absent-aspect preflight, speculative initialization, canonical depth-only zero with stencil preservation/no-op and exact attachment leases");
+    puts("PASS per-aspect native load/clear/store/discard, full depth/stencil transitions, read-only write/clear rejection, extent/NaN/absent-aspect preflight, speculative initialization, canonical depth-only zero with stencil preservation/no-op, culled-face stencil write summary and exact attachment leases");
     return 0;
 }

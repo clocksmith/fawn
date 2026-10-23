@@ -1,0 +1,24 @@
+{
+  "kind": "Focused developer cull-sensitive stencil write admission correction",
+  "utc": "2026-10-23T19:52:13.035250+00:00",
+  "input_sha256": {
+    "runtime/c/backends/vulkan/src/render_pipeline.c": "d1909f363e2b915a318eb2a3e227f8411db1d02c681153afd0f1e3f9b2b2a0ff",
+    "runtime/c/backends/vulkan/src/render_internal.h": "5acb5c11127bf1612fb5dc2b81f864100545a8e5b5ee83417c72c808a01474eb",
+    "runtime/c/backends/vulkan/tests/depth_contract.c": "a5ecc399e2f4bb212fe416bdfe5d81a877472e4970ffb55e358f06cc01ae8813"
+  },
+  "input_drift": [],
+  "base_backend_commit": "a61d944a",
+  "finding": "Native readonly summary previously counted writes from culled faces, incorrectly rejecting legal read-only passes.",
+  "change": "One private stencil-write predicate used by pipeline construction excludes native cull-front1/cull-back2 faces, and respects stencil-test/write-mask admission.",
+  "reference": "https://www.w3.org/TR/webgpu/#dom-gpudevice-createrenderpipeline",
+  "commands": [
+    "make -C runtime/c/backends/vulkan OUT=/tmp/doe-c-vulkan all /tmp/doe-c-vulkan/depth_contract",
+    "/tmp/doe-c-vulkan/depth_contract"
+  ],
+  "terminal": [
+    "PASS per-aspect native load/clear/store/discard, full depth/stencil transitions, read-only write/clear rejection, extent/NaN/absent-aspect preflight, speculative initialization, canonical depth-only zero with stencil preservation/no-op, culled-face stencil write summary and exact attachment leases"
+  ],
+  "limits": [
+    "Focused host classification/attachment lifetime controls only; no new shader/physical execution claim. Public readonly culled-face integration belongs native owner."
+  ]
+}
