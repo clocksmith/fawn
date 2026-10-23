@@ -1,0 +1,93 @@
+[
+  {
+    "path": "bench/kernels/stable_fluids_seed.wgsl",
+    "sha256": "c55be009b63237271ad5338f58bb600340d70ba9eedd3c5666ee26d6b4bdfef7",
+    "bytes": 1664,
+    "use": "vec2 f32 dot; independent non-inference consumer",
+    "additional_blockers": "No additional excluded feature found in static review. Not compiled here.",
+    "author_receipt_hash_matches": true,
+    "author_first_error": "/workspace/shared/doe-c-migration-20261023/bench/kernels/stable_fluids_seed.wgsl:47:19: category=3 offset=1295: unsupported type name",
+    "author_status": 1
+  },
+  {
+    "path": "bench/kernels/matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
+    "sha256": "18bb9b1b760f44e1b507093ffd0ecaf35a5817030ac5f18e5e548746ec9230bf",
+    "bytes": 1813,
+    "use": "vec4 f32 dot without shared memory",
+    "additional_blockers": "No additional excluded feature identified by static review; not a new admission result.",
+    "author_receipt_hash_matches": true,
+    "author_first_error": "/workspace/shared/doe-c-migration-20261023/bench/kernels/matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl:31:7: category=3 offset=939: unsupported type name",
+    "author_status": 1
+  },
+  {
+    "path": "bench/kernels/matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1.wgsl",
+    "sha256": "080408a41d8d45256a8d84b2d1b39f323ee27318270a3f691c71241cbbbeb0ce",
+    "bytes": 1610,
+    "use": "vec4 f32 dot + shared vec4 reduction",
+    "additional_blockers": "Requires independently accepted M11 workgroup/barrier/uniformity owner; no extra source exclusion identified statically.",
+    "author_receipt_hash_matches": true,
+    "author_first_error": "/workspace/shared/doe-c-migration-20261023/bench/kernels/matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1.wgsl:39:7: category=3 offset=1069: unsupported type name",
+    "author_status": 1
+  },
+  {
+    "path": "bench/inference-pipeline/kernels/matmul-gemv.wgsl",
+    "sha256": "523638d5e326b2162ea2e467e698d7d25252e771ab56f4b40555d33906ab54bf",
+    "bytes": 1919,
+    "use": "helper dot + shared scalar reduction",
+    "additional_blockers": "Requires accepted M11; complete numerical reduction still needs independent application oracle.",
+    "author_receipt_hash_matches": true,
+    "author_first_error": "/workspace/shared/doe-c-migration-20261023/bench/inference-pipeline/kernels/matmul-gemv.wgsl:27:21: category=3 offset=717: unsupported type name",
+    "author_status": 1
+  },
+  {
+    "path": "bench/inference-pipeline/kernels/attention-decode.wgsl",
+    "sha256": "d12cda916546e9c518d89bba45e9d0617a60d382c004adb440221840ee76487b",
+    "bytes": 3595,
+    "use": "dot + existing exp/clamp + three shared arrays",
+    "additional_blockers": "Requires accepted M11, workgroup storage/reflection adoption and full softmax numerical oracle, not just dot instruction correctness.",
+    "author_receipt_hash_matches": true,
+    "author_first_error": "/workspace/shared/doe-c-migration-20261023/bench/inference-pipeline/kernels/attention-decode.wgsl:25:16: category=3 offset=781: unsupported type name",
+    "author_status": 1
+  },
+  {
+    "path": "bench/kernels/stable_fluids_advect_dye.wgsl",
+    "sha256": "e2c3739f5a1659691c99814a04285041237b8f8f383006f0e9f5cbf6e2e211d2",
+    "bytes": 2042,
+    "use": "vector clamp, later dot",
+    "additional_blockers": "floor(clamped) remains outside selected owner (line 41); no claim this whole source will compile.",
+    "author_receipt_hash_matches": true,
+    "author_first_error": "/workspace/shared/doe-c-migration-20261023/bench/kernels/stable_fluids_advect_dye.wgsl:36:17: category=3 offset=889: math builtin vector overloads are outside this increment",
+    "author_status": 1
+  },
+  {
+    "path": "bench/kernels/stable_fluids_advect_velocity.wgsl",
+    "sha256": "e2d32e1cce30302986e549ca01e104a9e450abcbebf85de67c1921f3a5943260",
+    "bytes": 2153,
+    "use": "vector clamp, later dot",
+    "additional_blockers": "floor(clamped) remains outside selected owner (line 40); no claim this whole source will compile.",
+    "author_receipt_hash_matches": true,
+    "author_first_error": "/workspace/shared/doe-c-migration-20261023/bench/kernels/stable_fluids_advect_velocity.wgsl:35:17: category=3 offset=866: math builtin vector overloads are outside this increment",
+    "author_status": 1
+  },
+  {
+    "path": "demos/volume-render/volume-render.wgsl",
+    "sha256": "1839954d7bd9db3110191a50165b383c8ce2637f4e67a94f1c0df95b60ac967c",
+    "bytes": 5766,
+    "use": "real normalize/cross compute source at lines 105-114, vector clamp at 151",
+    "additional_blockers": "Texture3D declaration/load, mix and pow remain excluded; not in same98, so no measured first error. Static source dependency only."
+  },
+  {
+    "path": "packages/doe-gpu/examples/browser-compiler/particles.js",
+    "sha256": "f1969b95211ae9972ccada36fec3cbcd79fac7a33caba8d6429031946a5ac85d",
+    "bytes": 3542,
+    "use": "embedded renderWGSL length(vec2) line71, dot/exp fragment line80",
+    "additional_blockers": "Vertex/fragment interfaces, multiple entrypoints and mix remain excluded. Whole JS file hashed; no extracted/repaired shader manufactured."
+  },
+  {
+    "path": "demos/canvas-stress/canvas-stress.wgsl",
+    "sha256": "9a56a74ba81faceda3d2e240434b45912f56dfbaeb92618853a961a7746fa6f4",
+    "bytes": 3650,
+    "use": "length(max(vec2,...)) line100",
+    "additional_blockers": "Graphics I/O, vertex/fragment entrypoints, sin/cos/fract/abs/fwidth/smoothstep/discard remain excluded; not in same98, no measured first error."
+  }
+]

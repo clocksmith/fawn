@@ -1,0 +1,715 @@
+{
+  "calibrationCount": 21,
+  "caseCount": 24,
+  "cases": [
+    {
+      "a": [
+        "4294967295",
+        "4294967295"
+      ],
+      "b": [
+        "4294967295",
+        "4294967295"
+      ],
+      "classification": "ordinary",
+      "exactMathematicalResult": "36893488130239234050",
+      "expectedError": false,
+      "expectedResult": "2",
+      "id": "u32_max_2",
+      "kind": "dot",
+      "stages": [
+        "const",
+        "runtime"
+      ],
+      "type": "u32"
+    },
+    {
+      "a": [
+        "-2147483648",
+        "-2147483648"
+      ],
+      "b": [
+        "-2147483648",
+        "-2147483648"
+      ],
+      "classification": "ordinary",
+      "exactMathematicalResult": "9223372036854775808",
+      "expectedError": false,
+      "expectedResult": "0",
+      "id": "i32_min_squared_2",
+      "kind": "dot",
+      "stages": [
+        "const",
+        "runtime"
+      ],
+      "type": "i32"
+    },
+    {
+      "a": [
+        "1",
+        "2"
+      ],
+      "b": [
+        "5",
+        "6"
+      ],
+      "classification": "ordinary",
+      "exactMathematicalResult": "17",
+      "expectedError": false,
+      "expectedResult": "17",
+      "id": "ai_ordinary_2",
+      "kind": "dot",
+      "stages": [
+        "const"
+      ],
+      "type": "AI"
+    },
+    {
+      "a": [
+        "4294967295",
+        "4294967295",
+        "4294967295"
+      ],
+      "b": [
+        "4294967295",
+        "4294967295",
+        "4294967295"
+      ],
+      "classification": "ordinary",
+      "exactMathematicalResult": "55340232195358851075",
+      "expectedError": false,
+      "expectedResult": "3",
+      "id": "u32_max_3",
+      "kind": "dot",
+      "stages": [
+        "const",
+        "runtime"
+      ],
+      "type": "u32"
+    },
+    {
+      "a": [
+        "-2147483648",
+        "-2147483648",
+        "-2147483648"
+      ],
+      "b": [
+        "-2147483648",
+        "-2147483648",
+        "-2147483648"
+      ],
+      "classification": "ordinary",
+      "exactMathematicalResult": "13835058055282163712",
+      "expectedError": false,
+      "expectedResult": "0",
+      "id": "i32_min_squared_3",
+      "kind": "dot",
+      "stages": [
+        "const",
+        "runtime"
+      ],
+      "type": "i32"
+    },
+    {
+      "a": [
+        "1",
+        "2",
+        "3"
+      ],
+      "b": [
+        "5",
+        "6",
+        "7"
+      ],
+      "classification": "ordinary",
+      "exactMathematicalResult": "38",
+      "expectedError": false,
+      "expectedResult": "38",
+      "id": "ai_ordinary_3",
+      "kind": "dot",
+      "stages": [
+        "const"
+      ],
+      "type": "AI"
+    },
+    {
+      "a": [
+        "4294967295",
+        "4294967295",
+        "4294967295",
+        "4294967295"
+      ],
+      "b": [
+        "4294967295",
+        "4294967295",
+        "4294967295",
+        "4294967295"
+      ],
+      "classification": "ordinary",
+      "exactMathematicalResult": "73786976260478468100",
+      "expectedError": false,
+      "expectedResult": "4",
+      "id": "u32_max_4",
+      "kind": "dot",
+      "stages": [
+        "const",
+        "runtime"
+      ],
+      "type": "u32"
+    },
+    {
+      "a": [
+        "-2147483648",
+        "-2147483648",
+        "-2147483648",
+        "-2147483648"
+      ],
+      "b": [
+        "-2147483648",
+        "-2147483648",
+        "-2147483648",
+        "-2147483648"
+      ],
+      "classification": "ordinary",
+      "exactMathematicalResult": "18446744073709551616",
+      "expectedError": false,
+      "expectedResult": "0",
+      "id": "i32_min_squared_4",
+      "kind": "dot",
+      "stages": [
+        "const",
+        "runtime"
+      ],
+      "type": "i32"
+    },
+    {
+      "a": [
+        "1",
+        "2",
+        "3",
+        "4"
+      ],
+      "b": [
+        "5",
+        "6",
+        "7",
+        "8"
+      ],
+      "classification": "ordinary",
+      "exactMathematicalResult": "70",
+      "expectedError": false,
+      "expectedResult": "70",
+      "id": "ai_ordinary_4",
+      "kind": "dot",
+      "stages": [
+        "const"
+      ],
+      "type": "AI"
+    },
+    {
+      "a": [
+        "4294967296",
+        "4294967296"
+      ],
+      "b": [
+        "4294967296",
+        "-4294967296"
+      ],
+      "classification": "selectedInterpretationTintDivergence",
+      "exactMathematicalResult": "0",
+      "expectedError": false,
+      "expectedResult": "0",
+      "id": "ai_large_products_cancel",
+      "kind": "dot",
+      "stages": [
+        "const"
+      ],
+      "type": "AI"
+    },
+    {
+      "a": [
+        "9223372036854775807",
+        "1",
+        "-1"
+      ],
+      "b": [
+        "1",
+        "1",
+        "1"
+      ],
+      "classification": "selectedInterpretationBoundary",
+      "exactMathematicalResult": "9223372036854775807",
+      "expectedError": false,
+      "expectedResult": "9223372036854775807",
+      "id": "ai_partial_sum_overflow_cancel",
+      "kind": "dot",
+      "stages": [
+        "const"
+      ],
+      "type": "AI"
+    },
+    {
+      "a": [
+        "9223372036854775807",
+        "1"
+      ],
+      "b": [
+        "1",
+        "1"
+      ],
+      "classification": "ordinary",
+      "exactMathematicalResult": "9223372036854775808",
+      "expectedError": true,
+      "expectedResult": null,
+      "id": "ai_final_above_max",
+      "kind": "dot",
+      "stages": [
+        "const"
+      ],
+      "type": "AI"
+    },
+    {
+      "a": [
+        "-9223372036854775808",
+        "-1"
+      ],
+      "b": [
+        "1",
+        "1"
+      ],
+      "classification": "ordinary",
+      "exactMathematicalResult": "-9223372036854775809",
+      "expectedError": true,
+      "expectedResult": null,
+      "id": "ai_final_below_min",
+      "kind": "dot",
+      "stages": [
+        "const"
+      ],
+      "type": "AI"
+    },
+    {
+      "a": [
+        "-9223372036854775808",
+        "0"
+      ],
+      "b": [
+        "1",
+        "1"
+      ],
+      "classification": "ordinary",
+      "exactMathematicalResult": "-9223372036854775808",
+      "expectedError": false,
+      "expectedResult": "-9223372036854775808",
+      "id": "ai_final_min_exact",
+      "kind": "dot",
+      "stages": [
+        "const"
+      ],
+      "type": "AI"
+    },
+    {
+      "a": [
+        "-9223372036854775808",
+        "-9223372036854775808",
+        "9223372036854775807",
+        "9223372036854775807"
+      ],
+      "b": [
+        "9223372036854775807",
+        "-9223372036854775807",
+        "9223372036854775807",
+        "-9223372036854775807"
+      ],
+      "classification": "selectedInterpretationTintDivergence",
+      "exactMathematicalResult": "0",
+      "expectedError": false,
+      "expectedResult": "0",
+      "id": "ai_four_extreme_products_cancel",
+      "kind": "dot",
+      "stages": [
+        "const"
+      ],
+      "type": "AI"
+    },
+    {
+      "a": [
+        "-9223372036854775808",
+        "-9223372036854775808",
+        "-9223372036854775808",
+        "-9223372036854775808"
+      ],
+      "b": [
+        "-9223372036854775808",
+        "-9223372036854775808",
+        "-9223372036854775808",
+        "-9223372036854775808"
+      ],
+      "classification": "ordinary",
+      "exactMathematicalResult": "340282366920938463463374607431768211456",
+      "expectedError": true,
+      "expectedResult": null,
+      "id": "ai_accumulator_129_bits",
+      "kind": "dot",
+      "stages": [
+        "const"
+      ],
+      "type": "AI"
+    },
+    {
+      "a": [
+        "65536",
+        "65536"
+      ],
+      "b": [
+        "65536",
+        "-65536"
+      ],
+      "classification": "ordinary",
+      "exactMathematicalResult": "0",
+      "expectedError": false,
+      "expectedResult": "0",
+      "id": "i32_large_products_cancel",
+      "kind": "dot",
+      "stages": [
+        "const",
+        "runtime"
+      ],
+      "type": "i32"
+    },
+    {
+      "a": [
+        0,
+        4294967295,
+        1,
+        4294967294
+      ],
+      "b": [
+        4294967295,
+        0,
+        4294967294,
+        1
+      ],
+      "expectedResult": [
+        0,
+        0,
+        1,
+        1
+      ],
+      "id": "unsigned_order",
+      "kind": "min",
+      "stages": [
+        "const",
+        "runtime"
+      ],
+      "type": "u32"
+    },
+    {
+      "a": [
+        -2147483648,
+        -1,
+        7,
+        2147483647
+      ],
+      "b": [
+        0,
+        1,
+        -7,
+        -2147483648
+      ],
+      "expectedResult": [
+        0,
+        1,
+        7,
+        2147483647
+      ],
+      "id": "signed_order",
+      "kind": "max",
+      "stages": [
+        "const",
+        "runtime"
+      ],
+      "type": "i32"
+    },
+    {
+      "a": [
+        -50,
+        0,
+        50,
+        7
+      ],
+      "constBoundsExpectedError": true,
+      "expectedResult": [
+        -10,
+        -10,
+        30,
+        8
+      ],
+      "high": [
+        10,
+        -10,
+        30,
+        8
+      ],
+      "id": "clamp_reversed_mixed_lanes",
+      "kind": "clamp",
+      "low": [
+        -10,
+        10,
+        20,
+        9
+      ],
+      "stages": [
+        "runtime"
+      ],
+      "type": "i32"
+    },
+    {
+      "a": [
+        1,
+        2,
+        3
+      ],
+      "b": [
+        4,
+        5,
+        6
+      ],
+      "expectedResult": [
+        -3,
+        6,
+        -3
+      ],
+      "id": "cross_orientation",
+      "kind": "cross",
+      "stages": [
+        "const",
+        "runtime"
+      ],
+      "type": "f32"
+    },
+    {
+      "a": [
+        3,
+        4
+      ],
+      "expectedMathematicalResult": "5",
+      "id": "length_3_4",
+      "kind": "length",
+      "stages": [
+        "const",
+        "runtime"
+      ],
+      "type": "f32"
+    },
+    {
+      "a": [
+        -1,
+        2
+      ],
+      "b": [
+        2,
+        6
+      ],
+      "expectedMathematicalResult": "5",
+      "id": "distance_3_4",
+      "kind": "distance",
+      "stages": [
+        "const",
+        "runtime"
+      ],
+      "type": "f32"
+    },
+    {
+      "a": [
+        3,
+        4
+      ],
+      "accuracy": "separate dated WGSL inherited-expression enclosure",
+      "expectedMathematicalResult": [
+        "3/5",
+        "4/5"
+      ],
+      "id": "normalize_3_4",
+      "kind": "normalize",
+      "stages": [
+        "const",
+        "runtime"
+      ],
+      "type": "f32"
+    }
+  ],
+  "mathematicalEnclosureCalibrations": [
+    {
+      "id": "exp_-8",
+      "input": "-8",
+      "kind": "exp",
+      "mathematicalLower": "0.000335462627902511838821389125780861019310900133720319360544575747911640520708",
+      "mathematicalUpper": "0.000335462627902511838821389125780861019310900133720319360544575747911640520709",
+      "notAnAccuracyTolerance": true
+    },
+    {
+      "id": "exp_-1",
+      "input": "-1",
+      "kind": "exp",
+      "mathematicalLower": "0.367879441171442321595523770161460867445811131031767834507836801697461495744",
+      "mathematicalUpper": "0.367879441171442321595523770161460867445811131031767834507836801697461495745",
+      "notAnAccuracyTolerance": true
+    },
+    {
+      "id": "exp_-1_over_8",
+      "input": "-1/8",
+      "kind": "exp",
+      "mathematicalLower": "0.882496902584595402864892143229050736222004824990650741770309319208109295211",
+      "mathematicalUpper": "0.882496902584595402864892143229050736222004824990650741770309319208109295212",
+      "notAnAccuracyTolerance": true
+    },
+    {
+      "id": "exp_0",
+      "input": "0",
+      "kind": "exp",
+      "mathematicalLower": "1",
+      "mathematicalUpper": "1",
+      "notAnAccuracyTolerance": true
+    },
+    {
+      "id": "exp_1_over_8",
+      "input": "1/8",
+      "kind": "exp",
+      "mathematicalLower": "1.13314845306682631682900722781179387256550313174518162591282003607882357788",
+      "mathematicalUpper": "1.13314845306682631682900722781179387256550313174518162591282003607882357789",
+      "notAnAccuracyTolerance": true
+    },
+    {
+      "id": "exp_1",
+      "input": "1",
+      "kind": "exp",
+      "mathematicalLower": "2.71828182845904523536028747135266249775724709369995957496696762772407663035",
+      "mathematicalUpper": "2.71828182845904523536028747135266249775724709369995957496696762772407663036",
+      "notAnAccuracyTolerance": true
+    },
+    {
+      "id": "exp_8",
+      "input": "8",
+      "kind": "exp",
+      "mathematicalLower": "2980.95798704172827474359209945288867375596793913283570220896353038773072517",
+      "mathematicalUpper": "2980.95798704172827474359209945288867375596793913283570220896353038773072518",
+      "notAnAccuracyTolerance": true
+    },
+    {
+      "id": "tanh_-4",
+      "input": "-4",
+      "kind": "tanh",
+      "mathematicalLower": "-0.999329299739067043792243344341724962005339852894409648007806896456678886119",
+      "mathematicalUpper": "-0.999329299739067043792243344341724962005339852894409648007806896456678886118",
+      "notAnAccuracyTolerance": true
+    },
+    {
+      "id": "tanh_-1",
+      "input": "-1",
+      "kind": "tanh",
+      "mathematicalLower": "-0.761594155955764888119458282604793590412768597257936551596810500121953244577",
+      "mathematicalUpper": "-0.761594155955764888119458282604793590412768597257936551596810500121953244576",
+      "notAnAccuracyTolerance": true
+    },
+    {
+      "id": "tanh_-1_over_8",
+      "input": "-1/8",
+      "kind": "tanh",
+      "mathematicalLower": "-0.124353001771596208054647275805892707675918792515338750414669990872256248285",
+      "mathematicalUpper": "-0.124353001771596208054647275805892707675918792515338750414669990872256248284",
+      "notAnAccuracyTolerance": true
+    },
+    {
+      "id": "tanh_0",
+      "input": "0",
+      "kind": "tanh",
+      "mathematicalLower": "0",
+      "mathematicalUpper": "0",
+      "notAnAccuracyTolerance": true
+    },
+    {
+      "id": "tanh_1_over_8",
+      "input": "1/8",
+      "kind": "tanh",
+      "mathematicalLower": "0.124353001771596208054647275805892707675918792515338750414669990872256248284",
+      "mathematicalUpper": "0.124353001771596208054647275805892707675918792515338750414669990872256248285",
+      "notAnAccuracyTolerance": true
+    },
+    {
+      "id": "tanh_1",
+      "input": "1",
+      "kind": "tanh",
+      "mathematicalLower": "0.761594155955764888119458282604793590412768597257936551596810500121953244576",
+      "mathematicalUpper": "0.761594155955764888119458282604793590412768597257936551596810500121953244577",
+      "notAnAccuracyTolerance": true
+    },
+    {
+      "id": "tanh_4",
+      "input": "4",
+      "kind": "tanh",
+      "mathematicalLower": "0.999329299739067043792243344341724962005339852894409648007806896456678886118",
+      "mathematicalUpper": "0.999329299739067043792243344341724962005339852894409648007806896456678886119",
+      "notAnAccuracyTolerance": true
+    },
+    {
+      "id": "sqrt_0",
+      "input": "0",
+      "kind": "sqrt",
+      "mathematicalLower": "0",
+      "mathematicalUpper": "0",
+      "notAnAccuracyTolerance": true
+    },
+    {
+      "id": "sqrt_1_over_4",
+      "input": "1/4",
+      "kind": "sqrt",
+      "mathematicalLower": "0.5",
+      "mathematicalUpper": "0.5",
+      "notAnAccuracyTolerance": true
+    },
+    {
+      "id": "sqrt_2",
+      "input": "2",
+      "kind": "sqrt",
+      "mathematicalLower": "1.41421356237309504880168872420969807856967187537694807317654396116148951878",
+      "mathematicalUpper": "1.41421356237309504880168872420969807856967187537694807317670327035260276402",
+      "notAnAccuracyTolerance": true
+    },
+    {
+      "id": "sqrt_3",
+      "input": "3",
+      "kind": "sqrt",
+      "mathematicalLower": "1.73205080756887729352744634150587236694280525381038062805568306208126175528",
+      "mathematicalUpper": "1.73205080756887729352744634150587236694280525381038062805584237127237500052",
+      "notAnAccuracyTolerance": true
+    },
+    {
+      "id": "sqrt_5",
+      "input": "5",
+      "kind": "sqrt",
+      "mathematicalLower": "2.23606797749978969640917366873127623544061835961152572427074736596255620281",
+      "mathematicalUpper": "2.23606797749978969640917366873127623544061835961152572427090667515366944804",
+      "notAnAccuracyTolerance": true
+    },
+    {
+      "id": "sqrt_17",
+      "input": "17",
+      "kind": "sqrt",
+      "mathematicalLower": "4.12310562561766054982140985597407702514719922537362043439853052120516614271",
+      "mathematicalUpper": "4.12310562561766054982140985597407702514719922537362043439868983039627938795",
+      "notAnAccuracyTolerance": true
+    },
+    {
+      "id": "sqrt_65537",
+      "input": "65537",
+      "kind": "sqrt",
+      "mathematicalLower": "256.001953117549476245952937386970141822529091785782559160378121392325108891",
+      "mathematicalUpper": "256.001953117549476245952937386970141822529091785782559160378280701516222137",
+      "notAnAccuracyTolerance": true
+    }
+  ],
+  "method": "Python stdlib arbitrary integers, Fraction exact Taylor/remainder and rational transforms, isqrt rational square bracketing; Decimal directed rounding for printable bounds only. No candidate import, C build, shader execution, float exp/sqrt/tanh or host-libm reference used. These calibrations do not themselves define WGSL allowed accuracy.",
+  "schemaVersion": 1,
+  "status": "planningOnlyNotExecutedCompilerCases"
+}
