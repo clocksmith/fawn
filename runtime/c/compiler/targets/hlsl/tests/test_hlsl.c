@@ -88,6 +88,12 @@ void has(const char *text, const char *needle) {
 }
 static void test_shared_call_dag(void) {
     char source[2048];
+    assert(target_type_dag_source(source, sizeof(source)));
+    Fixture *types = prepare(source);
+    char *ordered = emit(types, 0u);
+    has(ordered, "struct DoeT");
+    free(ordered);
+    release(types);
     assert(target_dag_source(source, sizeof(source)));
     Fixture *f = prepare(source);
     char *text = emit(f, 0u);

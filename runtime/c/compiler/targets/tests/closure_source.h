@@ -28,4 +28,18 @@ static inline bool target_dag_source(char *buffer, size_t capacity) {
         "fn unrelated(){} @compute @workgroup_size(1) fn main(){f24();}");
     return count >= 0 && (size_t)count < capacity - used;
 }
+static inline bool target_type_dag_source(char *buffer, size_t capacity) {
+    int count = snprintf(buffer, capacity, "struct T0{a:u32,b:u32}");
+    if (count < 0 || (size_t)count >= capacity) return false;
+    size_t used = (size_t)count;
+    for (unsigned i = 1u; i <= 16u; ++i) {
+        count = snprintf(buffer + used, capacity - used,
+            "struct T%u{a:T%u,b:T%u}", i, i - 1u, i - 1u);
+        if (count < 0 || (size_t)count >= capacity - used) return false;
+        used += (size_t)count;
+    }
+    count = snprintf(buffer + used, capacity - used,
+        "@compute @workgroup_size(1) fn main(){}");
+    return count >= 0 && (size_t)count < capacity - used;
+}
 #endif

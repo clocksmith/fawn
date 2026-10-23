@@ -41,37 +41,24 @@ void hlsl_zero(HlslEmitter *e, TypeId type) {
     hlsl_type(e, type);
     hlsl_text(e, ")0");
 }
-static unsigned type_depth(HlslEmitter *e, TypeId type, unsigned depth) {
-    if (e->traversal_left == 0u || depth > DOE_HLSL_MAX_DEPTH) {
-        hlsl_error(e, "HLSL type traversal exceeds bounded work or nesting");
-        return 0u;
-    }
-    --e->traversal_left;
-    if (type <= IR_F32) return 0u;
-    const TypeRecord *t = aggregate(e, type);
-    if (t == NULL || t->kind == TYPE_VECTOR) return 0u;
-    if (t->kind == TYPE_ARRAY) return 1u + type_depth(e, t->element, depth + 1u);
-    if (t->kind != TYPE_STRUCT || t->element > e->module->member_count ||
-        t->count > e->module->member_count - t->element) {
-        hlsl_error(e, "HLSL structure member range is invalid");
-        return 0u;
-    }
-    unsigned maximum = 0u;
-    for (uint32_t i = 0u; i < t->count && !e->failed; ++i) {
-        const unsigned child = type_depth(e, e->module->members[t->element + i].type, depth + 1u);
-        if (child > maximum) maximum = child;
-    }
-    return maximum + 1u;
-}
 void hlsl_types(HlslEmitter *e) {
     const CompilerWorkspace *c = e->module;
+    const char *error = NULL;
+    if (!target_type_order_begin(&e->closure, &e->traversal_left, &error)) {
+        hlsl_error(e, error);
+        return;
+    }
     for (unsigned depth = 1u; depth <= DOE_HLSL_MAX_DEPTH && !e->failed; ++depth) {
         bool pending = false;
         for (uint32_t i = 0u; i < c->type_count && !e->failed; ++i) {
             const TypeRecord *t = &c->types[i];
             if ((t->kind != TYPE_STRUCT && t->kind != TYPE_ARRAY) ||
                 (t->flags & TYPE_CONSTRUCTIBLE) == 0u || (t->flags & TYPE_ABSTRACT) != 0u) continue;
-            const unsigned d = type_depth(e, i + 7u, 0u);
+            unsigned d;
+            if (!target_type_depth(c, &e->closure, i + 7u, &d, &e->traversal_left, &error)) {
+                hlsl_error(e, error);
+                return;
+            }
             if (d > depth) pending = true;
             if (d != depth) continue;
             hlsl_format(e, "struct DoeT%u {\n", i + 7u);

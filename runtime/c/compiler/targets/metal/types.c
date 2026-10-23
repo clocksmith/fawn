@@ -55,41 +55,23 @@ static void type_name(MetalEmitter *e, TypeId type, unsigned depth) {
 void metal_type(MetalEmitter *e, TypeId type) {
     type_name(e, type, 0u);
 }
-static unsigned type_depth(MetalEmitter *e, TypeId type, unsigned depth) {
-    if (e->traversal_left == 0u) {
-        metal_error(e, "Metal type graph exceeds its composed traversal work budget");
-        return 0u;
-    }
-    --e->traversal_left;
-    if (depth > DOE_METAL_MAX_DEPTH) {
-        metal_error(e, "Metal type graph is cyclic or exceeds target traversal budget");
-        return 0u;
-    }
-    if (type <= IR_F32) return 0u;
-    const TypeRecord *t = aggregate(e, type);
-    if (t == NULL) return 0u;
-    if (t->kind == TYPE_VECTOR) return 0u;
-    if (t->kind == TYPE_ARRAY) return 1u + type_depth(e, t->element, depth + 1u);
-    if (t->kind != TYPE_STRUCT) return 0u;
-    unsigned maximum = 0u;
-    if (t->element > e->module->member_count || t->count > e->module->member_count - t->element) {
-        metal_error(e, "Metal structure member range is invalid");
-        return 0u;
-    }
-    for (uint32_t i = 0u; i < t->count && !e->failed; ++i) {
-        const unsigned child = type_depth(e, e->module->members[t->element + i].type, depth + 1u);
-        if (child > maximum) maximum = child;
-    }
-    return maximum + 1u;
-}
 void metal_types(MetalEmitter *e) {
     const CompilerWorkspace *c = e->module;
+    const char *error = NULL;
+    if (!target_type_order_begin(&e->closure, &e->traversal_left, &error)) {
+        metal_error(e, error);
+        return;
+    }
     for (unsigned depth = 1u; depth <= DOE_METAL_MAX_DEPTH && !e->failed; ++depth) {
         bool pending = false;
         for (uint32_t i = 0u; i < c->type_count && !e->failed; ++i) {
             const TypeRecord *t = &c->types[i];
             if (t->kind != TYPE_STRUCT || (t->flags & TYPE_CONSTRUCTIBLE) == 0u) continue;
-            const unsigned d = type_depth(e, i + 7u, 0u);
+            unsigned d;
+            if (!target_type_depth(c, &e->closure, i + 7u, &d, &e->traversal_left, &error)) {
+                metal_error(e, error);
+                return;
+            }
             if (d > depth) pending = true;
             if (d != depth) continue;
             metal_format(e, "struct DoeT%u {\n", i + 7u);

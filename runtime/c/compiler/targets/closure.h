@@ -142,6 +142,73 @@ static inline bool target_memory_dependency(const CompilerWorkspace *c, TargetCl
         frames[depth].child = 0u;
     }
 }
+/* Reuse the type map during declaration ordering, before memory-helper queries.
+ * Values0/1 mean unseen/active; completed depth d is encoded as d+2. */
+static inline bool target_type_order_begin(TargetClosure *closure, uint64_t *work,
+        const char **error) {
+    if (!target_spend_count(work, closure->type_count, error)) return false;
+    memset(closure->types, 0, closure->type_count);
+    return true;
+}
+static inline bool target_type_depth(const CompilerWorkspace *c, TargetClosure *closure,
+        TypeId root, unsigned *out, uint64_t *work, const char **error) {
+    struct { TypeId type; uint32_t child, maximum; } frames[TARGET_CLOSURE_DEPTH];
+    if (root >= closure->type_count) {
+        *error = "target declaration type identity is invalid";
+        return false;
+    }
+    if (closure->types[root] >= 2u) {
+        *out = (unsigned)closure->types[root] - 2u;
+        return true;
+    }
+    uint32_t depth = 0u;
+    frames[0].type = root;
+    frames[0].child = frames[0].maximum = 0u;
+    closure->types[root] = 1u;
+    for (;;) {
+        if (!target_spend(work, error)) return false;
+        const TypeId type = frames[depth].type;
+        const TypeRecord *t = type >= 7u ? &c->types[type - 7u] : NULL;
+        const bool sequential = t != NULL &&
+            (t->kind == TYPE_ARRAY || t->kind == TYPE_RUNTIME_ARRAY || t->kind == TYPE_MATRIX);
+        const bool structure = t != NULL && t->kind == TYPE_STRUCT;
+        const uint32_t children = structure ? t->count : sequential ? 1u : 0u;
+        if (structure && (t->element > c->member_count || t->count > c->member_count - t->element)) {
+            *error = "target declaration member range is invalid";
+            return false;
+        }
+        if (frames[depth].child == children) {
+            const uint32_t value = frames[depth].maximum + (sequential || structure ? 1u : 0u);
+            if (value >= TARGET_CLOSURE_DEPTH) {
+                *error = "target declaration type exceeds bounded nesting";
+                return false;
+            }
+            closure->types[type] = (unsigned char)(value + 2u);
+            if (depth == 0u) { *out = value; return true; }
+            --depth;
+            continue;
+        }
+        const TypeId child = structure ? c->members[t->element + frames[depth].child].type : t->element;
+        if (child >= closure->type_count) {
+            *error = "target declaration child identity is invalid";
+            return false;
+        }
+        if (closure->types[child] >= 2u) {
+            const uint32_t value = (uint32_t)closure->types[child] - 2u;
+            if (value > frames[depth].maximum) frames[depth].maximum = value;
+            ++frames[depth].child;
+            continue;
+        }
+        if (closure->types[child] == 1u || depth + 1u == TARGET_CLOSURE_DEPTH) {
+            *error = "target declaration graph is cyclic or exceeds nesting";
+            return false;
+        }
+        closure->types[child] = 1u;
+        ++depth;
+        frames[depth].type = child;
+        frames[depth].child = frames[depth].maximum = 0u;
+    }
+}
 static inline bool target_access_helper_used(const CompilerWorkspace *c, TargetClosure *closure,
         uint32_t category, uint32_t root, TypeId type, bool store,
         uint64_t *work, const char **error) {
