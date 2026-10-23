@@ -8,11 +8,15 @@ doe_resource_status resource_encoder_fail(doe_resource_encoder *encoder, doe_res
     return encoder ? encoder->status : DOE_RESOURCE_INVALID_ARGUMENT;
 }
 
+bool resource_status_is_rejection(doe_resource_status status)
+{
+    return status > DOE_RESOURCE_OK && status <= DOE_RESOURCE_EXECUTION_FAILED && status != DOE_RESOURCE_PENDING;
+}
+
 doe_resource_status doe_resource_encoder_invalidate(doe_resource_encoder *encoder,
     doe_resource_status rejection)
 {
-    if (rejection <= DOE_RESOURCE_OK || rejection > DOE_RESOURCE_EXECUTION_FAILED ||
-        rejection == DOE_RESOURCE_PENDING) return DOE_RESOURCE_INVALID_ARGUMENT;
+    if (!resource_status_is_rejection(rejection)) return DOE_RESOURCE_INVALID_ARGUMENT;
     return resource_encoder_fail(encoder, rejection);
 }
 

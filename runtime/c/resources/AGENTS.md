@@ -38,3 +38,8 @@ do not infer them from a Float class or duplicate the stencil-only rule in adapt
 Clear values are ignored unless the corresponding load operation is Clear.
 Do not let finite/range checks on unused values contradict the public descriptor;
 actual native scalar conversion remains checked at its representation boundary.
+Normalize zero-entry pipeline layouts before automatic exclusivity; no empty
+layout identity may accidentally claim a pipeline. Preserve true vertex holes
+(Undefined mode and no attributes) versus explicit empty required slots. Direct
+bounds use first+count, not count alone; never infer GPU indices on the host.
+Frontend rejection must poison the existing pass/bundle owner explicitly.

@@ -89,13 +89,13 @@ doe_resource_status resource_render_set_index(const doe_resource_config *config,
 }
 
 static doe_resource_status validate_vertex(const doe_resource_vertex_binding *binding,
-    const doe_resource_vertex_layout *layout, uint32_t first, uint32_t count, bool indexed)
+    const doe_resource_vertex_layout *layout, uint32_t first, uint32_t count, bool check_range)
 {
     if (!resource_buffer_available(binding->buffer)) return DOE_RESOURCE_UNAVAILABLE;
     if (binding->buffer->mapped || binding->buffer->map_pending) return DOE_RESOURCE_STATE;
-    if (!count) return DOE_RESOURCE_OK;
-    uint64_t last = (uint64_t)first + count - 1;
-    if (indexed && layout->step_mode == WGPUVertexStepMode_Vertex) last = 0;
+    uint64_t strides = (uint64_t)first + count;
+    if (!check_range || !strides) return DOE_RESOURCE_OK;
+    uint64_t last = strides - 1;
     if (layout->stride && last > (UINT64_MAX - layout->last_attribute_end) / layout->stride)
         return DOE_RESOURCE_OVERFLOW;
     uint64_t required = last * layout->stride + layout->last_attribute_end;
@@ -127,18 +127,22 @@ doe_resource_status resource_render_draw_validate(const doe_resource_render_pack
         packet->indirect, &has_dynamic);
     if (status != DOE_RESOURCE_OK) return status;
     for (size_t i = 0; i < pipeline->desc.vertex_count; i++) {
+        if (!doe_resource_render_pipeline_vertex_required(pipeline, i)) continue;
         const doe_resource_vertex_layout *layout = &pipeline->desc.vertices[i];
         bool instance = layout->step_mode == WGPUVertexStepMode_Instance;
         status = validate_vertex(&packet->vertices[i], layout, instance ? packet->first_instance : packet->first,
-            instance ? packet->instances : packet->count, packet->indexed && !instance);
+            instance ? packet->instances : packet->count, !packet->indirect && (!packet->indexed || instance));
         if (status != DOE_RESOURCE_OK) return status;
     }
     if (packet->indexed) {
+        bool strip = pipeline->desc.topology == WGPUPrimitiveTopology_LineStrip ||
+            pipeline->desc.topology == WGPUPrimitiveTopology_TriangleStrip;
+        if (strip && packet->index_format != pipeline->desc.strip_index_format) return DOE_RESOURCE_LAYOUT;
         if (!resource_buffer_available(packet->index.buffer)) return DOE_RESOURCE_UNAVAILABLE;
         if (packet->index.buffer->mapped || packet->index.buffer->map_pending) return DOE_RESOURCE_STATE;
         uint32_t bytes = packet->index_format == WGPUIndexFormat_Uint16 ? 2 : 4;
         uint64_t end = ((uint64_t)packet->first + packet->count) * bytes;
-        if (end > packet->index.size) return DOE_RESOURCE_RANGE;
+        if (!packet->indirect && end > packet->index.size) return DOE_RESOURCE_RANGE;
     }
     return DOE_RESOURCE_OK;
 }

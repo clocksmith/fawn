@@ -286,3 +286,12 @@ const doe_resource_render_bundle_desc *doe_resource_render_bundle_description(co
 {
     return bundle ? &bundle->desc : NULL;
 }
+
+doe_resource_status doe_resource_bundle_encoder_invalidate(doe_resource_bundle_encoder *encoder,
+    doe_resource_status rejection)
+{
+    if (!resource_status_is_rejection(rejection)) return DOE_RESOURCE_INVALID_ARGUMENT;
+    doe_resource_status status = open_encoder(encoder);
+    if (status != DOE_RESOURCE_OK) return status;
+    return fail(encoder, rejection);
+}

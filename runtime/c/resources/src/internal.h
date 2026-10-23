@@ -163,6 +163,7 @@ doe_resource_status resource_record_dispatch_indirect(doe_resource_encoder *enco
     doe_resource_pipeline *pipeline, const doe_resource_dispatch_group *groups,
     size_t group_count, doe_resource_buffer *arguments, uint64_t offset);
 doe_resource_status resource_encoder_fail(doe_resource_encoder *encoder, doe_resource_status status);
+bool resource_status_is_rejection(doe_resource_status status);
 doe_resource_status resource_encoder_open(doe_resource_encoder *encoder);
 doe_resource_status resource_encoder_reserve(doe_resource_encoder *encoder);
 doe_resource_status resource_pass_timestamps_validate(const void *device,
