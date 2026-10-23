@@ -20,6 +20,7 @@ struct doe_resource_render_bundle {
     size_t count, capacity;
     doe_resource_render_packet *draws;
     resource_usage_scope scope;
+    bool invalid; /* Returned for a failed finish; never executable. */
 };
 
 static doe_resource_status fail(doe_resource_bundle_encoder *encoder, doe_resource_status status)
@@ -187,12 +188,14 @@ doe_resource_status doe_resource_bundle_encoder_finish(doe_resource_bundle_encod
 {
     if (!out) return DOE_RESOURCE_INVALID_ARGUMENT;
     doe_resource_status status = open_encoder(encoder);
+    if (encoder) encoder->finished = true;
     if (status != DOE_RESOURCE_OK) return status;
     if (encoder->debug_depth) return fail(encoder, DOE_RESOURCE_STATE);
     doe_resource_render_bundle *bundle = resource_allocate(&encoder->base.config,
         sizeof(*bundle), _Alignof(doe_resource_render_bundle));
     if (!bundle) return fail(encoder, DOE_RESOURCE_OUT_OF_MEMORY);
     bundle->desc = encoder->desc;
+    bundle->invalid = false;
     bundle->draws = encoder->draws;
     bundle->count = encoder->count;
     bundle->capacity = encoder->capacity;
@@ -206,6 +209,24 @@ doe_resource_status doe_resource_bundle_encoder_finish(doe_resource_bundle_encod
     memset(&encoder->state, 0, sizeof(encoder->state));
     *out = bundle;
     return DOE_RESOURCE_OK;
+}
+
+bool doe_resource_bundle_encoder_ended(const doe_resource_bundle_encoder *encoder)
+{
+    return encoder && encoder->finished;
+}
+
+doe_resource_render_bundle *doe_resource_render_bundle_rejected(doe_resource_bundle_encoder *encoder)
+{
+    if (!encoder || encoder->status == DOE_RESOURCE_OK) return NULL;
+    doe_resource_render_bundle *bundle = resource_allocate(&encoder->base.config,
+        sizeof(*bundle), _Alignof(doe_resource_render_bundle));
+    if (!bundle) return NULL;
+    memset(bundle, 0, sizeof(*bundle));
+    bundle->desc = encoder->desc;
+    bundle->invalid = true;
+    resource_init(&bundle->base, &encoder->base.config, (doe_resource_native){0});
+    return bundle;
 }
 
 void doe_resource_render_bundle_retain(doe_resource_render_bundle *bundle)
@@ -233,7 +254,8 @@ doe_resource_status doe_resource_render_pass_execute_bundles(doe_resource_render
     uint64_t remaining = pass->state.targets.max_draw_count - pass->draw_count;
     for (size_t i = 0; i < count; i++) {
         doe_resource_render_bundle *bundle = bundles[i];
-        if (!bundle || !resource_alive(&bundle->base)) return resource_encoder_fail(pass->encoder, DOE_RESOURCE_UNAVAILABLE);
+        if (!bundle || bundle->invalid || !resource_alive(&bundle->base))
+            return resource_encoder_fail(pass->encoder, DOE_RESOURCE_UNAVAILABLE);
         if (bundle->base.config.device.identity != pass->base.config.device.identity)
             return resource_encoder_fail(pass->encoder, DOE_RESOURCE_DEVICE_MISMATCH);
         if (!resource_color_layouts_equal(bundle->desc.color_count, bundle->desc.color_formats,

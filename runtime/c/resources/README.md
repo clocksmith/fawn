@@ -52,6 +52,8 @@ an alias of device-free compiled data or a second count for one WebGPU object.
   direct/indirect compute snapshots and single-use submission self-leases.
   After a rejected begin, `doe_resource_*_pass_rejected` returns the WebGPU
   invalid pass: one encoder lease, no records, the encoder's rejection reported.
+  After a failed bundle finish, `doe_resource_render_bundle_rejected` returns
+  an invalid bundle that has no draws and fails execution.
 - `queries.c`, `external_textures.c`, `render.c`, `render_state.c`: real native query-pool ownership,
   retained imported plane views, and attachment/draw/query replay snapshots.
   Render begin/end packets bracket query events, including empty query scopes.

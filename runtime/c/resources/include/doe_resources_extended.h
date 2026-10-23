@@ -234,8 +234,14 @@ doe_resource_status doe_resource_bundle_encoder_draw_indirect(doe_resource_bundl
     doe_resource_buffer *arguments, uint64_t offset, bool indexed);
 doe_resource_status doe_resource_bundle_encoder_debug(doe_resource_bundle_encoder *encoder,
     doe_resource_debug_operation operation);
+/* Finish always ends the encoder (WebGPU "ended"), successful or not. */
 doe_resource_status doe_resource_bundle_encoder_finish(doe_resource_bundle_encoder *encoder,
     doe_resource_render_bundle **out);
+bool doe_resource_bundle_encoder_ended(const doe_resource_bundle_encoder *encoder);
+/* The WebGPU invalid bundle returned after a failed finish: no draws, and
+ * executing it invalidates the pass's command encoder. NULL unless the encoder
+ * has failed, or on allocation failure. */
+doe_resource_render_bundle *doe_resource_render_bundle_rejected(doe_resource_bundle_encoder *encoder);
 void *doe_resource_render_bundle_device(const doe_resource_render_bundle *bundle);
 const doe_resource_render_bundle_desc *doe_resource_render_bundle_description(const doe_resource_render_bundle *bundle);
 void doe_resource_render_bundle_retain(doe_resource_render_bundle *bundle);

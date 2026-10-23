@@ -25,6 +25,33 @@ static WGPURenderPassEncoder begin_render(WGPUCommandEncoder encoder, WGPUTextur
     assert(pass); /* An invalid descriptor still returns an (invalid) pass. */
     return pass;
 }
+static WGPURenderPipeline target_pipeline(state *s, WGPUTextureFormat format)
+{
+    WGPUShaderSourceWGSL source = WGPU_SHADER_SOURCE_WGSL_INIT;
+    source.code = (WGPUStringView){"@vertex fn vertex(@builtin(vertex_index) i:u32)->@builtin(position) vec4f{"
+        "return vec4f(f32(i),0.0,0.0,1.0);}@fragment fn fragment()->@location(0) vec4f{return vec4f(1.0);}",WGPU_STRLEN};
+    WGPUShaderModuleDescriptor module_desc = {.nextInChain=&source.chain};
+    WGPUShaderModule module = wgpuDeviceCreateShaderModule(s->device,&module_desc);
+    WGPUColorTargetState target = {.format=format,.writeMask=WGPUColorWriteMask_All};
+    WGPUFragmentState fragment = {.module=module,.entryPoint={"fragment",WGPU_STRLEN},.targetCount=1,.targets=&target};
+    WGPURenderPipelineDescriptor descriptor = WGPU_RENDER_PIPELINE_DESCRIPTOR_INIT;
+    descriptor.vertex = (WGPUVertexState){.module=module,.entryPoint={"vertex",WGPU_STRLEN}};
+    descriptor.fragment = &fragment;
+    WGPURenderPipeline pipeline_handle = wgpuDeviceCreateRenderPipeline(s->device,&descriptor);
+    wgpuShaderModuleRelease(module);
+    assert(pipeline_handle);
+    return pipeline_handle;
+}
+static WGPURenderBundleEncoder bundle_encoder(state *s)
+{
+    static const WGPUTextureFormat format = WGPUTextureFormat_RGBA8Unorm;
+    WGPURenderBundleEncoderDescriptor descriptor = WGPU_RENDER_BUNDLE_ENCODER_DESCRIPTOR_INIT;
+    descriptor.colorFormatCount = 1;
+    descriptor.colorFormats = &format;
+    WGPURenderBundleEncoder encoder = wgpuDeviceCreateRenderBundleEncoder(s->device,&descriptor);
+    assert(encoder);
+    return encoder;
+}
 static void finish_rejected(state *s, WGPUCommandEncoder encoder, unsigned before, const char *name)
 {
     expect_errors(s,before,0,name);
@@ -124,6 +151,53 @@ int main(void)
     submit(&s,encoder);
     expect_errors(&s,before,0,"valid encoder");
 
+    /* Render bundle encoders follow the same rule: an invalid setPipeline (a
+     * target-format mismatch) and a draw without a pipeline report nothing until
+     * Finish, which reports one error and returns an invalid bundle. */
+    WGPURenderPipeline matching = target_pipeline(&s,WGPUTextureFormat_RGBA8Unorm);
+    WGPURenderPipeline mismatched = target_pipeline(&s,WGPUTextureFormat_R32Float);
+    before = s.errors;
+    WGPURenderBundleEncoder builder = bundle_encoder(&s);
+    wgpuRenderBundleEncoderSetPipeline(builder,mismatched);
+    wgpuRenderBundleEncoderDraw(builder,3,1,0,0);
+    expect_errors(&s,before,0,"invalid bundle commands");
+    WGPURenderBundle invalid_bundle = wgpuRenderBundleEncoderFinish(builder,NULL);
+    assert(invalid_bundle);
+    expect_errors(&s,before,1,"invalid bundle Finish");
+    /* Commands and a second Finish on the finished bundle encoder report at the call. */
+    wgpuRenderBundleEncoderSetPipeline(builder,matching);
+    expect_errors(&s,before,2,"setPipeline on a finished bundle encoder");
+    wgpuRenderBundleEncoderDraw(builder,3,1,0,0);
+    expect_errors(&s,before,3,"draw on a finished bundle encoder");
+    WGPURenderBundle again = wgpuRenderBundleEncoderFinish(builder,NULL);
+    expect_errors(&s,before,4,"second bundle Finish");
+    wgpuRenderBundleRelease(again);
+    wgpuRenderBundleEncoderRelease(builder);
+    /* An invalid bundle in an otherwise valid pass: one error, at the command
+     * encoder's Finish; a valid bundle in the same kind of pass submits cleanly. */
+    builder = bundle_encoder(&s);
+    wgpuRenderBundleEncoderSetPipeline(builder,matching);
+    wgpuRenderBundleEncoderDraw(builder,3,1,0,0);
+    WGPURenderBundle valid_bundle = wgpuRenderBundleEncoderFinish(builder,NULL);
+    assert(valid_bundle);
+    wgpuRenderBundleEncoderRelease(builder);
+    for (uint32_t which = 0; which < 2; ++which) {
+        before = s.errors;
+        encoder = wgpuDeviceCreateCommandEncoder(s.device,NULL);
+        pass = begin_render(encoder,view,WGPUStoreOp_Store);
+        wgpuRenderPassEncoderExecuteBundles(pass,1,which ? &valid_bundle : &invalid_bundle);
+        wgpuRenderPassEncoderEnd(pass);
+        wgpuRenderPassEncoderRelease(pass);
+        if (which) {
+            submit(&s,encoder);
+            expect_errors(&s,before,0,"valid bundle execution");
+        } else finish_rejected(&s,encoder,before,"invalid bundle execution");
+    }
+    wgpuRenderBundleRelease(valid_bundle);
+    wgpuRenderBundleRelease(invalid_bundle);
+    wgpuRenderPipelineRelease(mismatched);
+    wgpuRenderPipelineRelease(matching);
+
     s.errors = 0;
     wgpuBufferRelease(bytes);
     wgpuTextureViewRelease(view);
@@ -139,6 +213,9 @@ int main(void)
     printf("PASS public encoder errors: an invalid render/compute pass descriptor or command, an invalid copy or "
         "clear followed by valid passes, each reports exactly one uncaptured validation error at Finish; "
         "End/dispatch on ended passes, copies/clears/begin on a finished encoder and a second Finish report at "
-        "the call; core-features-and-limits listed and accepted %s\n", adapter_class_scope());
+        "the call; render bundle encoders: invalid setPipeline/draw give one error at bundle Finish and an "
+        "invalid bundle, executing it in a valid pass gives one error at the command encoder's Finish, commands "
+        "and a second Finish after bundle Finish report at the call; core-features-and-limits listed and "
+        "accepted %s\n", adapter_class_scope());
     return 0;
 }

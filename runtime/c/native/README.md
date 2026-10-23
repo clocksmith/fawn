@@ -152,7 +152,9 @@ Apple SDK compilation, Darwin execution and physical qualification remain unrun.
   records nothing. Only a command on an encoder or pass that already ended (End
   always ends a pass; Finish always ends an encoder) is reported at the call
   (`native_encoding_error`; `tests/encoder_errors.c` counts uncaptured errors).
-  Render bundle encoders still report their command rejections at the call.
+  Render bundle encoders follow the same rule: their Finish reports one error
+  and returns an invalid bundle, and executing an invalid bundle invalidates the
+  pass's command encoder, whose Finish reports it.
 - Color storeOp Discard is admitted for single-sample attachments too: Vulkan
   STORE_OP_DONT_CARE and the backend's per-aspect owner marks the subresource
   undefined. Later Load passes, buffer/texture copies and sampled or storage
@@ -599,7 +601,7 @@ PASS public draw features: 2 of 2 offered and enabled (indirect-first-instance: 
 PASS public copy layouts: undefined rowsPerImage for one image and undefined bytesPerRow for one row through queue writes, buffer-to-texture and texture-to-buffer copies with exact texels; two-image and two-row undefined-stride and rowsPerImage-0 rejections reported once at Finish (CPU Vulkan only)
 PASS public BC compression: solid BC1/BC1-srgb/BC4 blocks decode to exact texels through queue writes and buffer copies, a 6x6 mip takes its physical 8x8 copy, texture-to-texture and texture-to-buffer copies return exact blocks, a 3D BC1 texture uploaded with rowsPerImage 2 decodes per slice (sliced 3D); without the feature, non-block sizes, attachment/storage usage, 3D without sliced 3D and unaligned copies reject (CPU Vulkan only)
 PASS public component swizzle: (b,a,0,r) and (1,g,r,g) sampled views return the identity view's rgba8unorm components rearranged exactly through textureLoad and nearest textureSampleLevel; identity swizzles need no feature, a non-identity swizzle without the feature, with RenderAttachment or StorageBinding view usage, or with an unknown source rejects (CPU Vulkan only)
-PASS public encoder errors: an invalid render/compute pass descriptor or command, an invalid copy or clear followed by valid passes, each reports exactly one uncaptured validation error at Finish; End/dispatch on ended passes, copies/clears/begin on a finished encoder and a second Finish report at the call; core-features-and-limits listed and accepted (CPU Vulkan only)
+PASS public encoder errors: an invalid render/compute pass descriptor or command, an invalid copy or clear followed by valid passes, each reports exactly one uncaptured validation error at Finish; End/dispatch on ended passes, copies/clears/begin on a finished encoder and a second Finish report at the call; render bundle encoders: invalid setPipeline/draw give one error at bundle Finish and an invalid bundle, executing it in a valid pass gives one error at the command encoder's Finish, commands and a second Finish after bundle Finish report at the call; core-features-and-limits listed and accepted (CPU Vulkan only)
 PASS public timestamps: requested feature, zero/max/range/destroy admission, real pass/command writes, exact GPU nanoseconds, same-batch copy, scratch reuse and early query release (CPU Vulkan only)
 PASS typed recovery: native/OOM/pending errors survive submit/write/texture/workdone, unknown leases retained, terminal cleanup and fresh GPU normalizer recovery
 PASS every implemented procedure address matches; every unprovided name returns NULL

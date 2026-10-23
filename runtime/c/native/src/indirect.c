@@ -105,12 +105,12 @@ static void bundle_indirect(WGPURenderBundleEncoder handle, WGPUBuffer arguments
     native_device *device = doe_resource_bundle_encoder_device(encoder);
     if (!device) return;
     native_lock(device);
+    const bool ended = doe_resource_bundle_encoder_ended(encoder);
     doe_resource_status status = device->backend.kind == WGPUBackendType_Vulkan ?
         doe_resource_bundle_encoder_draw_indirect(encoder,(doe_resource_buffer *)arguments,offset,indexed) :
         doe_resource_bundle_encoder_invalidate(encoder,DOE_RESOURCE_UNSUPPORTED);
     native_unlock(device);
-    if (status != DOE_RESOURCE_OK) native_error(device,native_resource_error(status),
-        "indirect bundle draw admission failed or selected backend unsupported");
+    native_encoding_error(device, ended, status, "indirect bundle draw admission failed or selected backend unsupported");
 }
 
 void wgpuRenderPassEncoderDrawIndirect(WGPURenderPassEncoder handle, WGPUBuffer arguments, uint64_t offset)
