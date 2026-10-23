@@ -22,14 +22,11 @@ bool metal_entry_sizes(const CompilerWorkspace *c, const EntryRecord *entry) {
     }
     return false;
 }
-static const char *resource_qualifier(const ResourceRecord *resource) {
-    if (resource->kind == DOE_COMPILER_UNIFORM_BUFFER) return "constant";
-    return resource->access == DOE_COMPILER_READ_WRITE ? "device" : "device const";
-}
 static void context_type(MetalEmitter *e) {
     metal_text(e, "struct DoeContext {\n");
     for (uint32_t i = 0u; i < e->module->resource_count; ++i) {
-        metal_format(e, "    %s uchar* r%u;\n", resource_qualifier(&e->module->resources[i]), i);
+        if (!type_handle(e->module, e->module->resources[i].type))
+            metal_format(e, "    %s uchar* r%u;\n", metal_buffer_qualifier(&e->module->resources[i]), i);
     }
     for (uint32_t i = 0u; i < e->module->workgroup_count; ++i) {
         metal_text(e, "    threadgroup ");
@@ -48,6 +45,7 @@ static void signature(MetalEmitter *e, uint32_t index) {
     metal_text(e, "inline ");
     metal_type(e, f->result_type);
     metal_format(e, " doe_fn%u(thread DoeContext& ctx", index);
+    metal_handle_arguments(e, index, true);
     if ((f->flags & FUNCTION_ENTRY) == 0u) {
         for (uint32_t i = 0u; i < f->formal_count; ++i) {
             const uint32_t formal = f->formal_start + i;
@@ -80,7 +78,7 @@ static void function_body(MetalEmitter *e, uint32_t index) {
     }
     for (uint32_t i = f->instruction_start; i < f->instruction_end; ++i) {
         const IrInstruction *ir = &c->instructions[i];
-        if (ir->result == 0u) continue;
+        if (ir->result == 0u || ir->opcode == IR_HANDLE) continue;
         if (ir->result != i + 1u) {
             metal_error(e, "Metal value identity differs from its IR instruction slot");
             return;
@@ -142,19 +140,17 @@ static bool entry_admit(MetalEmitter *e, const EntryRecord *entry) {
         metal_error(e, "Metal baseline workgroup storage exceeds 16 KiB");
         return false;
     }
-    uint32_t slots = 0u;
     for (uint32_t i = 0u; i < c->resource_count; ++i) {
         if (!metal_entry_resource(c, entry, i)) continue;
         const ResourceRecord *r = &c->resources[i];
         uint32_t slot;
-        if (!doe_metal_binding_slot(r->group, r->binding, &slot) || (slots & (1u << slot)) != 0u) {
-            metal_error(e, "Metal binding collides or exceeds slots 0 through 29 (slot 30 is sizes)");
-            return false;
-        }
-        slots |= 1u << slot;
-        if (r->kind != DOE_COMPILER_STORAGE_BUFFER && r->kind != DOE_COMPILER_UNIFORM_BUFFER) {
-            metal_error(e, "Metal resource kind has no implemented lowering");
-            return false;
+        if (!metal_resource_slot(e, r, &slot)) return false;
+        for (uint32_t j = 0u; j < i; ++j) {
+            if (metal_entry_resource(c, entry, j) && c->resources[j].group == r->group &&
+                c->resources[j].binding == r->binding) {
+                metal_error(e, "Metal entry resources have colliding binding identities");
+                return false;
+            }
         }
     }
     return true;
@@ -175,14 +171,8 @@ static void entry_wrapper(MetalEmitter *e, uint32_t index) {
     bool comma = false;
     for (uint32_t i = 0u; i < c->resource_count; ++i) {
         if (!metal_entry_resource(c, entry, i)) continue;
-        uint32_t slot = 0u;
-        const ResourceRecord *r = &c->resources[i];
-        if (!doe_metal_binding_slot(r->group, r->binding, &slot)) {
-            metal_error(e, "Metal resource slot changed after admission");
-            return;
-        }
         if (comma) metal_text(e, ", ");
-        metal_format(e, "%s uchar* r%u [[buffer(%u)]]", resource_qualifier(r), i, slot);
+        metal_resource_parameter(e, i, true);
         comma = true;
     }
     if (sizes) {
@@ -200,7 +190,7 @@ static void entry_wrapper(MetalEmitter *e, uint32_t index) {
     e->indent = 1u;
     metal_line(e, "DoeContext ctx{};");
     for (uint32_t i = 0u; i < c->resource_count; ++i) {
-        if (metal_entry_resource(c, entry, i)) {
+        if (metal_entry_resource(c, entry, i) && !type_handle(c, c->resources[i].type)) {
             metal_indent(e);
             metal_format(e, "ctx.r%u = r%u;\n", i, i);
         }
@@ -236,7 +226,9 @@ static void entry_wrapper(MetalEmitter *e, uint32_t index) {
         metal_line(e, "threadgroup_barrier(mem_flags::mem_threadgroup);");
     }
     metal_indent(e);
-    metal_format(e, "doe_fn%u(ctx);\n", entry->function);
+    metal_format(e, "doe_fn%u(ctx", entry->function);
+    metal_handle_arguments(e, entry->function, false);
+    metal_text(e, ");\n");
     e->indent = 0u;
     metal_text(e, "}\n");
 }

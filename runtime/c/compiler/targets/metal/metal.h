@@ -10,6 +10,7 @@
  * byte span (not NUL terminated). NULL/zero measures. Failure leaves bytes alone.
  * Source, IR and result must not overlap output or change during the call. */
 enum { DOE_METAL_SIZES_SLOT = 30, DOE_METAL_BINDINGS_PER_GROUP = 16,
+       DOE_METAL_TEXTURE_SLOTS = 31, DOE_METAL_SAMPLER_SLOTS = 16,
        DOE_METAL_MAX_OUTPUT = 1024 * 1024, DOE_METAL_MAX_DEPTH = 96 };
 typedef struct {
     size_t required_bytes, written_bytes;

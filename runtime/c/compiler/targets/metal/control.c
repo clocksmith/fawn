@@ -122,6 +122,14 @@ void metal_block(MetalEmitter *e, uint32_t *cursor, unsigned depth, uint32_t loo
             metal_access(e, ir);
             continue;
         }
+        if (ir->opcode == IR_HANDLE) {
+            metal_handle(e, ir);
+            continue;
+        }
+        if (ir->opcode == IR_IMAGE) {
+            metal_image(e, ir);
+            continue;
+        }
         metal_indent(e);
         switch (ir->opcode) {
             case IR_WORKGROUP_BARRIER:
@@ -178,7 +186,7 @@ void metal_block(MetalEmitter *e, uint32_t *cursor, unsigned depth, uint32_t loo
                 metal_expression(e, ir);
                 metal_text(e, ";\n");
                 break;
-            case IR_HANDLE: case IR_IMAGE:
+            case IR_HANDLE: case IR_IMAGE: case IR_STAGE_INPUT:
             case IR_ROBUST_LOAD: case IR_UNIFORM_LOAD: case IR_ROBUST_STORE: case IR_MAX:
             case IR_IF: case IR_ELSE: case IR_END_IF: case IR_SHORT_BEGIN: case IR_SHORT_END:
             case IR_LOOP_BEGIN: case IR_LOOP_TEST: case IR_LOOP_CONTINUING: case IR_END_LOOP:

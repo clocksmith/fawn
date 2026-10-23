@@ -1,0 +1,9 @@
+make: Entering directory '/tmp/doe-metal-image-snapshot/runtime/c/compiler/targets/metal'
+python3 ../../../tools/check_source_size.py /tmp/doe-metal-image-snapshot/runtime/c/compiler/targets/metal/text.c /tmp/doe-metal-image-snapshot/runtime/c/compiler/targets/metal/types.c /tmp/doe-metal-image-snapshot/runtime/c/compiler/targets/metal/numeric.c /tmp/doe-metal-image-snapshot/runtime/c/compiler/targets/metal/access.c /tmp/doe-metal-image-snapshot/runtime/c/compiler/targets/metal/control.c /tmp/doe-metal-image-snapshot/runtime/c/compiler/targets/metal/stage.c /tmp/doe-metal-image-snapshot/runtime/c/compiler/targets/metal/handles.c /tmp/doe-metal-image-snapshot/runtime/c/compiler/targets/metal/image.c /tmp/doe-metal-image-snapshot/runtime/c/compiler/targets/metal/metal.h /tmp/doe-metal-image-snapshot/runtime/c/compiler/targets/metal/private.h /tmp/doe-metal-image-snapshot/runtime/c/compiler/targets/metal/tests/fixture.h /tmp/doe-metal-image-snapshot/runtime/c/compiler/targets/metal/tests/test_metal.c /tmp/doe-metal-image-snapshot/runtime/c/compiler/targets/metal/tests/test_images.c /tmp/doe-metal-image-snapshot/runtime/c/compiler/targets/metal/tests/host/image_control.h /tmp/doe-metal-image-snapshot/runtime/c/compiler/targets/metal/tests/host/vector_control.h
+C size check: 15 files, 0 failures; limit 999
+/tmp/doe-metal-image-asan/test_metal
+Metal developer checks passed: real source lowering, layout, entries, workgroups, control, atomic rejection.
+/tmp/doe-metal-image-asan/test_images
+Metal image developer controls passed: seven typed operations, 16 formats, dimensions, closures, atomic rejection.
+make: Leaving directory '/tmp/doe-metal-image-snapshot/runtime/c/compiler/targets/metal'
+Emitted Metal image operation controls passed: bounds, methods, layer clamps, raw sampling operands, identity and ordered effects.
