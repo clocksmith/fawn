@@ -3,72 +3,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-static void *shader_allocate(void *userdata, size_t size, size_t alignment)
-{
-    return native_allocate(userdata, NULL, size, alignment);
-}
-static void shader_deallocate(void *userdata, void *memory, size_t size, size_t alignment)
-{
-    native_deallocate(userdata, NULL, memory, size, alignment);
-}
-static void release_shader(void *userdata, void *handle)
-{
-    (void)userdata;
-    doe_shader_release(handle);
-}
-
-WGPUShaderModule wgpuDeviceCreateShaderModule(WGPUDevice handle, const WGPUShaderModuleDescriptor *descriptor)
-{
-    native_device *device = (native_device *)handle;
-    if (!device) return NULL;
-    if (!descriptor || !descriptor->nextInChain || descriptor->nextInChain->next ||
-        descriptor->nextInChain->sType != WGPUSType_ShaderSourceWGSL) {
-        native_error(device, WGPUErrorType_Validation, "only a single WGSL shader source is supported");
-        return NULL;
-    }
-    const WGPUShaderSourceWGSL *source = (const WGPUShaderSourceWGSL *)descriptor->nextInChain;
-    size_t size;
-    if (!native_string_size(source->code, &size) || !size || size > 65536) {
-        native_error(device, WGPUErrorType_Validation, "WGSL source exceeds admitted capacity");
-        return NULL;
-    }
-    /* Capacity is explicit and compiler-owned. Exhaustion fails visibly; no
-     * reparsing, fallback compiler, or claimed support beyond ABI5. */
-    static const char identity[] = "experimental-c-native-abi5-no-cache";
-    doe_shader_options options = {
-        .allocator = {NULL, shader_allocate, shader_deallocate},
-        .capacities = {
-            .typed = {.source_bytes=65536, .tokens=8192, .statements=2048, .expressions=8192,
-                .types=512, .members=1024, .resources=128, .access_steps=8192,
-                .constants=1024, .constant_edges=4096, .ir_instructions=32768,
-                .ir_operands=32768, .target_declarations=4096, .traversal_items=193,
-                .words=131072, .expression_depth=64, .control_depth=32, .type_syntax_depth=64},
-            .entries=64, .entry_inputs=256, .entry_references=8192},
-        .selection = {.mode=DOE_COMPILER_SELECT_NONE},
-        .compiler_identity=identity, .compiler_identity_size=sizeof(identity)-1
-    };
-    doe_shader *compiled = NULL;
-    doe_shader_error error = {0};
-    doe_shader_status status = doe_shader_create(&options, source->code.data, size, &compiled, &error);
-    if (status != DOE_SHADER_OK) {
-        native_error(device, status == DOE_SHADER_OUT_OF_MEMORY ? WGPUErrorType_OutOfMemory : WGPUErrorType_Validation,
-            error.diagnostic.message[0] ? error.diagnostic.message : "C shader compilation failed");
-        return NULL;
-    }
-    doe_resource_shader *shader = NULL;
-    native_lock(device);
-    doe_resource_status created = doe_resource_shader_create(&device->resources,
-        (doe_resource_native){compiled, NULL, release_shader}, &shader);
-    native_unlock(device);
-    if (created != DOE_RESOURCE_OK) {
-        doe_shader_release(compiled);
-        native_error(device, WGPUErrorType_Validation, "shader resource creation failed");
-    }
-    return (WGPUShaderModule)shader;
-}
-void wgpuShaderModuleAddRef(WGPUShaderModule shader) { doe_resource_shader_retain((doe_resource_shader *)shader); }
-void wgpuShaderModuleRelease(WGPUShaderModule shader) { doe_resource_shader_release((doe_resource_shader *)shader); }
-
 void native_pipeline_release(void *userdata, void *handle)
 {
     (void)userdata;
@@ -170,22 +104,31 @@ static bool native_shader_capabilities(const doe_shader_view *view)
     return true;
 }
 
-WGPUComputePipeline wgpuDeviceCreateComputePipeline(WGPUDevice handle,
-    const WGPUComputePipelineDescriptor *descriptor)
+static void pipeline_failure(native_pipeline_error *error, WGPUErrorType type, const char *message)
 {
-    native_device *device = (native_device *)handle;
+    *error = (native_pipeline_error){type, message};
+}
+
+WGPUComputePipeline native_create_compute_pipeline(native_device *device,
+    const WGPUComputePipelineDescriptor *descriptor, native_pipeline_error *error)
+{
     if (!device) return NULL;
     if (!descriptor || descriptor->nextInChain || descriptor->compute.nextInChain ||
         descriptor->compute.constantCount || !descriptor->compute.module ||
         doe_resource_shader_device((doe_resource_shader *)descriptor->compute.module) != device) {
-        native_error(device, WGPUErrorType_Validation, "compute descriptor unsupported or shader device mismatch");
+        pipeline_failure(error, WGPUErrorType_Validation, "compute descriptor unsupported or shader device mismatch");
         return NULL;
     }
-    doe_shader *shader = doe_resource_shader_native((doe_resource_shader *)descriptor->compute.module);
+    native_shader *shader_payload = doe_resource_shader_native((doe_resource_shader *)descriptor->compute.module);
+    doe_shader *shader = shader_payload->compiled;
+    if (!shader) {
+        pipeline_failure(error, WGPUErrorType_Validation, "shader module contains a compilation error");
+        return NULL;
+    }
     doe_shader_view view;
     if (doe_shader_borrow(shader, &view) != DOE_SHADER_OK) return NULL;
     if (!native_shader_capabilities(&view)) {
-        native_error(device, WGPUErrorType_Validation, "shader requires capabilities not enabled by the C Vulkan device");
+        pipeline_failure(error, WGPUErrorType_Validation, "shader requires capabilities not enabled by the C Vulkan device");
         return NULL;
     }
     const DoeCompilerEntryV5 *entry = select_entry(&view, descriptor->compute.entryPoint);
@@ -194,7 +137,7 @@ WGPUComputePipeline wgpuDeviceCreateComputePipeline(WGPUDevice handle,
      * Vulkan context also requires robustBufferAccess. No TranslationInfo
      * metadata is fabricated; texture/subgroup paths remain unprovided. */
     if (!entry || entry->stage != DOE_COMPILER_STAGE_COMPUTE || entry->workgroup_storage_bytes > device->caps.max_workgroup_storage_size) {
-        native_error(device, WGPUErrorType_Validation,
+        pipeline_failure(error, WGPUErrorType_Validation,
             "selected entry missing or workgroup storage exceeds native limit");
         return NULL;
     }
@@ -202,39 +145,69 @@ WGPUComputePipeline wgpuDeviceCreateComputePipeline(WGPUDevice handle,
     for (size_t i = 0; i < 3; ++i) {
         if (!entry->workgroup_size[i] || entry->workgroup_size[i] > device->caps.max_workgroup_size[i] ||
             invocations > device->caps.max_workgroup_invocations / entry->workgroup_size[i]) {
-            native_error(device, WGPUErrorType_Validation, "workgroup size exceeds native limit");
+            pipeline_failure(error, WGPUErrorType_Validation, "workgroup size exceeds native limit");
             return NULL;
         }
         invocations *= entry->workgroup_size[i];
     }
     native_pipeline *payload = calloc(1, sizeof(*payload));
-    if (!payload) { native_error(device, WGPUErrorType_OutOfMemory, "pipeline allocation failed"); return NULL; }
+    if (!payload) { pipeline_failure(error, WGPUErrorType_OutOfMemory, "pipeline allocation failed"); return NULL; }
     payload->device = device;
     native_lock(device);
     doe_resource_pipeline_layout *layout = (doe_resource_pipeline_layout *)descriptor->layout;
     bool automatic = !layout;
     if (automatic) layout = automatic_layout(device, &view, entry);
     doe_resource_pipeline *pipeline = NULL;
+    doe_vk_status backend_status = DOE_VK_INVALID_ARGUMENT;
+    doe_resource_status resource_status = DOE_RESOURCE_INVALID_ARGUMENT;
     if (layout && doe_resource_pipeline_layout_device(layout) == device &&
         native_device_alive(device) && pipeline_bindings(payload, &view, entry, layout)) {
         char name[64];
         memcpy(name, view.names + entry->name.offset, entry->name.length);
         name[entry->name.length] = 0;
         doe_vk_error error = {0};
-        doe_vk_status status = doe_vk_pipeline_create(device->context, view.words, view.counts.words,
+        backend_status = doe_vk_pipeline_create(device->context, view.words, view.counts.words,
             name, payload->bindings, payload->binding_count, &payload->pipeline, &error);
-        if (status == DOE_VK_OK)
-            (void)doe_resource_pipeline_create(&device->resources, layout,
+        if (backend_status == DOE_VK_OK)
+            resource_status = doe_resource_pipeline_create(&device->resources, layout,
                 (doe_resource_native){payload, NULL, native_pipeline_release}, entry->workgroup_size, &pipeline);
     }
     if (automatic) doe_resource_pipeline_layout_release(layout);
     native_unlock(device);
     if (!pipeline) {
         native_pipeline_release(NULL, payload);
-        native_error(device, WGPUErrorType_Validation, "compute pipeline creation or layout validation failed");
+        WGPUErrorType type = WGPUErrorType_Validation;
+        if (backend_status == DOE_VK_OUT_OF_MEMORY || resource_status == DOE_RESOURCE_OUT_OF_MEMORY)
+            type = WGPUErrorType_OutOfMemory;
+        else if (backend_status == DOE_VK_DEVICE_LOST || backend_status == DOE_VK_NATIVE_FAILURE)
+            type = WGPUErrorType_Internal;
+        pipeline_failure(error, type, "compute pipeline creation or layout validation failed");
+    }
+    if (pipeline) {
+        size_t label_size;
+        doe_label_status label_status = DOE_LABEL_INVALID_ARGUMENT;
+        if (native_string_size(descriptor->label, &label_size))
+            label_status = doe_label_store_set(device->labels, pipeline,
+                (const unsigned char *)descriptor->label.data, label_size);
+        if (label_status != DOE_LABEL_OK) {
+            doe_resource_pipeline_release(pipeline);
+            pipeline = NULL;
+            pipeline_failure(error, WGPUErrorType_OutOfMemory, "pipeline label storage failed");
+        }
     }
     return (WGPUComputePipeline)pipeline;
 }
+WGPUComputePipeline wgpuDeviceCreateComputePipeline(WGPUDevice handle,
+    const WGPUComputePipelineDescriptor *descriptor)
+{
+    native_device *device = (native_device *)handle;
+    if (!device) return NULL;
+    native_pipeline_error error = {WGPUErrorType_Internal, "compute pipeline creation failed"};
+    WGPUComputePipeline pipeline = native_create_compute_pipeline(device, descriptor, &error);
+    if (!pipeline) native_error(device, error.type, error.message);
+    return pipeline;
+}
+
 void wgpuComputePipelineAddRef(WGPUComputePipeline pipeline) { doe_resource_pipeline_retain((doe_resource_pipeline *)pipeline); }
 void wgpuComputePipelineRelease(WGPUComputePipeline pipeline) { doe_resource_pipeline_release((doe_resource_pipeline *)pipeline); }
 WGPUBindGroupLayout wgpuComputePipelineGetBindGroupLayout(WGPUComputePipeline handle, uint32_t index)

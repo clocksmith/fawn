@@ -20,13 +20,18 @@ typedef struct native_adapter {
 } native_adapter;
 
 typedef struct native_pending native_pending;
+typedef struct native_loss native_loss;
 typedef struct native_device {
     atomic_uint references;
+    atomic_uint external_references;
+    native_loss *loss;
     pthread_mutex_t mutex;
     doe_instance *instance;
     doe_vk_context *context;
     doe_vk_caps caps;
     doe_resource_config resources;
+    doe_label_store *labels;
+    unsigned char queue_label_key;
     doe_error_scope_stack *errors;
     void *error_storage;
     WGPUUncapturedErrorCallbackInfo uncaptured;
@@ -43,6 +48,16 @@ typedef struct native_buffer {
     unsigned char *mapping;
 } native_buffer;
 
+typedef struct native_shader {
+    doe_shader *compiled;
+    doe_shader_error error;
+} native_shader;
+
+typedef struct native_pipeline_error {
+    WGPUErrorType type;
+    const char *message;
+} native_pipeline_error;
+
 typedef struct native_pipeline {
     native_device *device;
     doe_vk_pipeline *pipeline;
@@ -55,12 +70,17 @@ void *native_allocate(void *state, const void *vtable, size_t size, size_t align
 void native_deallocate(void *state, const void *vtable, void *memory, size_t size, size_t alignment);
 void native_retain_count(atomic_uint *count);
 bool native_release_count(atomic_uint *count);
+native_loss *native_loss_create(doe_instance *instance, WGPUDeviceLostCallbackInfo callback);
+void native_loss_release(native_loss *loss);
+void native_loss_bind(native_loss *loss, native_device *device);
+void native_loss_complete(native_loss *loss, WGPUDeviceLostReason reason, const char *message);
 void native_device_retain(void *device);
 void native_device_release(void *device);
 bool native_device_alive(void *device);
 void native_lock(native_device *device);
 void native_unlock(native_device *device);
 void native_error(native_device *device, WGPUErrorType type, const char *message);
+void native_label(native_device *device, const void *identity, WGPUStringView label);
 WGPUStringView native_string(const char *text);
 bool native_string_size(WGPUStringView view, size_t *size);
 WGPUFuture native_callback(doe_instance *instance, WGPUCallbackMode mode,
@@ -70,6 +90,8 @@ WGPUStatus native_adapter_info(const doe_vk_caps *caps, WGPUAdapterInfo *out);
 WGPUStatus native_limits(const doe_vk_caps *caps, WGPULimits *out);
 void native_buffer_release(void *userdata, void *handle);
 void native_pipeline_release(void *userdata, void *handle);
+WGPUComputePipeline native_create_compute_pipeline(native_device *device,
+    const WGPUComputePipelineDescriptor *descriptor, native_pipeline_error *error);
 /* Caller holds device mutex. Attempts terminal recovery; unknown work stays
  * linked and retains its backend and resource submissions, never freed. */
 bool native_settle_pending(native_device *device);

@@ -97,6 +97,10 @@ void native_error(native_device *device, WGPUErrorType type, const char *message
 {
     if (!device) return;
     native_device_retain(device);
+    native_lock(device);
+    bool lost = !doe_vk_context_alive(device->context);
+    native_unlock(device);
+    if (lost) native_loss_complete(device->loss, WGPUDeviceLostReason_Unknown, "Vulkan device lost");
     doe_error_scope_result result = doe_error_scope_deliver(device->errors,
         (uint32_t)type, (const unsigned char *)message, strlen(message));
     if (result.status != DOE_ERROR_SCOPE_OK) abort();
