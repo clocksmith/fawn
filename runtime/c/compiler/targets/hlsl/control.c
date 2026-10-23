@@ -175,7 +175,7 @@ void hlsl_block(HlslEmitter *e, uint32_t *cursor, unsigned depth, uint32_t loop,
                     hlsl_text(e, "break;\n");
                 }
                 break;
-            case IR_INPUT: case IR_CONSTANT: case IR_ADD: case IR_SUBTRACT: case IR_MULTIPLY:
+            case IR_STAGE_INPUT: case IR_INPUT: case IR_CONSTANT: case IR_ADD: case IR_SUBTRACT: case IR_MULTIPLY:
             case IR_COMPARE: case IR_NOT: case IR_LOCAL_LOAD: case IR_NEGATE: case IR_COMPLEMENT:
             case IR_DIVIDE: case IR_REMAINDER: case IR_BIT_AND: case IR_BIT_OR: case IR_BIT_XOR:
             case IR_SHIFT_LEFT: case IR_SHIFT_RIGHT: case IR_CONVERT: case IR_BITCAST: case IR_CALL:

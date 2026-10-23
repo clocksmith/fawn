@@ -1,0 +1,41 @@
+{
+  "status": "source-bound focused developer checks; no DXC/DXIL/D3D12 or physical qualification",
+  "core_commit": "aaac04ab92b9948a7cc1459a6dc56e0824900db1",
+  "command": "make -C runtime/c/compiler/targets/hlsl check host-control library OUT=/tmp/doe-hlsl-aaac04ab",
+  "exit_code": 0,
+  "coverage": [
+    "mixed compute/vertex/fragment selection and flat source structures",
+    "all admitted stage builtin semantics; explicit interpolation mapping",
+    "source-stage formal identities and returned leaf mapping",
+    "invariant output rejection and failure atomicity",
+    "five emitted-operation C++ UBSan controls including graphics field/formal/helper behavior"
+  ],
+  "limits": [
+    "Semantic annotations are stripped for C++ control; no raster/interpolation or target syntax qualification",
+    "Invariant requires future qualified DXC policy and is explicitly unsupported",
+    "This new stage owner has strict GCC and emitted-operation UBSan evidence, not a new complete-core ASan claim"
+  ],
+  "terminal_sha256": "33ae2618caa2bff5b3d7454005691dde871a73e96ef4b257b42026b5ae73a5af",
+  "source_sha256": {
+    "runtime/c/compiler/targets/hlsl/AGENTS.md": "cb67548a488213595d8916f39475f9ef7e375bc1b7e2ce6ca72700df1194055e",
+    "runtime/c/compiler/targets/hlsl/Makefile": "ced647796d94e7dedc1cb40ae8e56a905e35a3d6fe60e12091c753f765db0c04",
+    "runtime/c/compiler/targets/hlsl/README.md": "04460811cacce6d4e27486bacc696810ef0337df870190718a703556d0d967dc",
+    "runtime/c/compiler/targets/hlsl/access.c": "8877caa3623ec239944753a7a21032e69f31c2df3079fade2f128d7f81841ba5",
+    "runtime/c/compiler/targets/hlsl/control.c": "40aa6bbad9b154f2d1c24fcc547c6ffc6c117461719c787ed6b76bb91ad14d2d",
+    "runtime/c/compiler/targets/hlsl/graphics.c": "32d670c8566a2eb95df42ed5cd520008e0547dd2dd7f4d0e1401ee780d18f02e",
+    "runtime/c/compiler/targets/hlsl/hlsl.h": "05a1731c996df3e36ff34d677cff8ec8ce1667841fd022ac10e4cc8261ee8f4b",
+    "runtime/c/compiler/targets/hlsl/image.c": "7da91071bb23d5f528ce9182ad4b0a76fb6752c904e3651239f7aae50c34d277",
+    "runtime/c/compiler/targets/hlsl/image_types.c": "3d05bae9af4b9ad01df127f95d751dc4b49ca576e6c3bdd1e0c13486f1c48649",
+    "runtime/c/compiler/targets/hlsl/numeric.c": "c30f01986416a1a987ca5ce4cf4d419f66a5f9db1581b4b05890cd8fb44eae58",
+    "runtime/c/compiler/targets/hlsl/private.h": "0c523688dd67c146294d9322d5e1fadc5369f59e989706f1bb87100d7b625fe0",
+    "runtime/c/compiler/targets/hlsl/resources.c": "5b5bff7e9cdd0a8a4b175ec511fc1d1b229f09019fcb862c137974b4e58f6ff3",
+    "runtime/c/compiler/targets/hlsl/stage.c": "ac428334d86ba5507c6f95bca29c93fb5482d78dda68a9ba1073e5bde4dbdd03",
+    "runtime/c/compiler/targets/hlsl/tests/host_control.py": "d6aa58ed10e051618bef15815074ed3b8f76efe6294a3e99b541085a6718522a",
+    "runtime/c/compiler/targets/hlsl/tests/test_graphics.c": "9dd9925e3305c04ccf948296b289333e648a34c8dcca15fa10dac0224cb715c1",
+    "runtime/c/compiler/targets/hlsl/tests/test_hlsl.c": "1a73165acc76ab4b51b5771b19382ade00f50ba93e653500e20ccf6376c3fe4c",
+    "runtime/c/compiler/targets/hlsl/tests/test_images.c": "407b7bd62b71086310fc7e0e4ad34b1a591472861e966bf16ac6224ce9ee5313",
+    "runtime/c/compiler/targets/hlsl/tests/test_support.h": "9ecc7caef7f5a6265be58192193cb04f9376a9659c110a084b3ffc0bc2c26d69",
+    "runtime/c/compiler/targets/hlsl/text.c": "e39b9eab8c640a160f73dc7abe25a552a7820c8d44527dcd45b95174e330a30e",
+    "runtime/c/compiler/targets/hlsl/types.c": "1d53408b9acdf12fec46e343ae9bc7b4b1b4d619b92dfcf123acbe9acaf406fc"
+  }
+}

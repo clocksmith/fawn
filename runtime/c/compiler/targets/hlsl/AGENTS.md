@@ -19,6 +19,10 @@ borrowed-module/output contract; this directory does not select a public target.
   coordinate/layer/sample before a texel operation. Sampling array layers clamp.
   Storage image format channels govern load expansion/store projection; typed UAV
   device capabilities remain runtime obligations, not inferred support.
+- Stage interfaces come from shared ABI7 typed leaves, not source attribute replay.
+  Preserve formal/member identity and original return values; stage semantics and
+  interpolation are explicit target maps. Invariance requires a qualified target
+  compilation policy, not merely a `precise` spelling.
 - Subgroups use explicit Shader Model 6 wave intrinsics, not workgroup memory or
   host execution. Extend closed builtin/input mappings deliberately; unknown
   operations reject before publication. Dispatch metadata follows retained b0,

@@ -155,12 +155,14 @@ static bool entry_admit(HlslEmitter *e) {
         return false;
     }
     e->offset = c->functions[entry->function].name.offset;
+    const bool graphics = (c->functions[entry->function].flags & (FUNCTION_VERTEX | FUNCTION_FRAGMENT)) != 0u;
+    if (graphics && !hlsl_graphics_admit(e)) return false;
     if (entry_private_name(e, c->functions[entry->function].name)) {
         hlsl_error(e, "HLSL entry name collides with the private target symbol namespace");
         return false;
     }
     uint64_t invocations = 1u;
-    for (unsigned i = 0u; i < 3u; ++i) {
+    for (unsigned i = 0u; !graphics && i < 3u; ++i) {
         const uint32_t dimension = entry->state.resolved.workgroup_size[i];
         const uint32_t maximum = i == 2u ? 64u : 1024u;
         if (dimension == 0u || dimension > maximum || invocations > 1024u / dimension) {
@@ -191,7 +193,7 @@ static bool entry_admit(HlslEmitter *e) {
     }
     return !e->failed;
 }
-static void entry_name(HlslEmitter *e, NameSpan name) {
+void hlsl_entry_name(HlslEmitter *e, NameSpan name) {
     if (name.length == 0u || name.length > 63u || name.offset > e->source->length ||
         name.length > e->source->length - name.offset) {
         hlsl_error(e, "HLSL entry name span is invalid");
@@ -217,7 +219,7 @@ static void entry_wrapper(HlslEmitter *e) {
     if (entry->state.resolved.workgroup_count != 0u) mask |= 1u << INPUT_LOCAL_INDEX;
     hlsl_format(e, "[numthreads(%u, %u, %u)]\nvoid ", entry->state.resolved.workgroup_size[0],
                 entry->state.resolved.workgroup_size[1], entry->state.resolved.workgroup_size[2]);
-    entry_name(e, c->functions[entry->function].name);
+    hlsl_entry_name(e, c->functions[entry->function].name);
     hlsl_text(e, "(");
     bool comma = false;
     for (unsigned i = 0u; i <= INPUT_LOCAL_INDEX; ++i) {
@@ -270,6 +272,7 @@ void hlsl_functions(HlslEmitter *e) {
     hlsl_text(e, "struct DoeContext {\n");
     for (unsigned i = 0u; i <= INPUT_SUBGROUP_INVOCATION; ++i)
         hlsl_format(e, "    %s input%u;\n", input_scalar((InputKind)i) ? "uint" : "uint3", i);
+    hlsl_graphics_context(e);
     hlsl_text(e, "};\n");
     for (uint32_t i = 0u; i < c->workgroup_count; ++i) {
         if (!hlsl_entry_workgroup(e, i)) continue;
@@ -286,5 +289,7 @@ void hlsl_functions(HlslEmitter *e) {
             } else function_body(e, i);
         }
     }
-    entry_wrapper(e);
+    if ((c->functions[entry->function].flags & (FUNCTION_VERTEX | FUNCTION_FRAGMENT)) != 0u)
+        hlsl_graphics_wrapper(e);
+    else entry_wrapper(e);
 }
