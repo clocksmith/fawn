@@ -62,11 +62,21 @@ class StyleTests(unittest.TestCase):
 
     def test_native_clients_select_adapters_through_the_helper(self):
         direct = SPDX + b"void f(void) { options.forceFallbackAdapter = WGPU_TRUE; }\n"
-        self.assertEqual(self.rules({"runtime/c/native/tests/client.c": direct}), ["adapter"])
+        built = {"runtime/c/Makefile": b"T = client.c backend_selection.c\n"}
+        self.assertEqual(self.rules({**built, "runtime/c/native/tests/client.c": direct}), ["adapter"])
         cpu = SPDX + b"int f(int t) { return t == WGPUAdapterType_CPU; }\n"
-        self.assertEqual(self.rules({"runtime/c/native/tests/client.c": cpu}), ["adapter"])
-        self.assertEqual(self.rules({"runtime/c/native/tests/backend_selection.c": direct}), [])
-        self.assertEqual(self.rules({"runtime/c/backends/vulkan/tests/client.c": direct}), [])
+        self.assertEqual(self.rules({**built, "runtime/c/native/tests/client.c": cpu}), ["adapter"])
+        self.assertEqual(self.rules({**built, "runtime/c/native/tests/backend_selection.c": direct}), [])
+        self.assertEqual(self.rules({**built, "runtime/c/backends/vulkan/tests/client.c": direct}), [])
+
+    def test_every_test_source_is_built_by_something(self):
+        client = SPDX + b"int main(void) { return 0; }\n"
+        self.assertEqual(self.rules({"o/tests/client.c": client}), ["test"])
+        self.assertEqual(self.rules({"o/tests/client.c": client,
+                                     "o/Makefile": b"check:\n\tcc tests/client.c\n"}), [])
+        self.assertEqual(self.rules({"o/tests/client.c": client,
+                                     "o/tools/run.py": b"SOURCES = ['client.c']\n"}), [])
+        self.assertEqual(self.rules({"o/independent_tests/tests/client.c": client}), [])
 
     def test_owner_flags(self):
         strict = b"CFLAGS = -std=c11 -Wall -Wextra -Wpedantic -Werror\n"
