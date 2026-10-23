@@ -25,3 +25,7 @@ zero-count logical identities need no native pool but cannot write or resolve.
 Nullable vertex unbind validates its zero buffer range without deleting historical
 scope uses. Occlusion indices are single-write per pass, not per command buffer;
 keep this logical admission separate from backend query reset/availability.
+Shader binding alias checks compare shared stage visibility; whole render usage
+history does not. NULL/empty pipeline-layout slots share required-group admission;
+materialize absent/trailing getter layouts only through the canonical owner with
+status and untouched-output failure semantics, never a frontend cache.

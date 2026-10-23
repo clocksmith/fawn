@@ -4,6 +4,7 @@
 #include "internal.h"
 #include <string.h>
 
+/* Stage visibility is deliberately irrelevant to whole-pass usage history. */
 static bool same_use(const resource_use *a, const resource_use *b)
 {
     return a->buffer == b->buffer && a->view == b->view && a->external == b->external &&

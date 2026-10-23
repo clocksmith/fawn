@@ -68,7 +68,8 @@ size_t doe_resource_pipeline_layout_count(const doe_resource_pipeline_layout *la
 doe_resource_layout *doe_resource_pipeline_layout_group(const doe_resource_pipeline_layout *layout,
     size_t index)
 {
-    return layout && index < layout->count ? layout->groups[index] : NULL;
+    if (!layout || index >= DOE_RESOURCE_MAX_GROUPS) return NULL;
+    return index < layout->count && layout->groups[index] ? layout->groups[index] : layout->empty;
 }
 doe_resource_pipeline_layout *doe_resource_pipeline_get_layout(const doe_resource_pipeline *pipeline)
 {
@@ -103,7 +104,7 @@ const WGPUSamplerDescriptor *doe_resource_sampler_description(const doe_resource
 
 bool doe_resource_pipeline_layout_group_required(const doe_resource_pipeline_layout *layout, size_t index)
 {
-    return layout && index < layout->count && layout->groups[index]->count != 0;
+    return layout && index < layout->count && layout->groups[index] && layout->groups[index]->count != 0;
 }
 
 void *doe_resource_render_pipeline_device(const doe_resource_render_pipeline *pipeline)
@@ -121,4 +122,20 @@ const doe_resource_render_pipeline_desc *doe_resource_render_pipeline_descriptio
 void *doe_resource_render_pass_device(const doe_resource_render_pass *pass)
 {
     return pass ? pass->base.config.device.identity : NULL;
+}
+
+doe_resource_status doe_resource_pipeline_layout_get_group(doe_resource_pipeline_layout *layout,
+    size_t index, doe_resource_layout **out)
+{
+    if (!layout || !out) return DOE_RESOURCE_INVALID_ARGUMENT;
+    if (index >= DOE_RESOURCE_MAX_GROUPS) return DOE_RESOURCE_RANGE;
+    if (!resource_alive(&layout->base)) return DOE_RESOURCE_UNAVAILABLE;
+    doe_resource_layout *group = doe_resource_pipeline_layout_group(layout, index);
+    if (!group) {
+        doe_resource_status status = doe_resource_layout_create(&layout->base.config, NULL, 0, false, &group);
+        if (status != DOE_RESOURCE_OK) return status;
+        layout->empty = group;
+    }
+    *out = group;
+    return DOE_RESOURCE_OK;
 }

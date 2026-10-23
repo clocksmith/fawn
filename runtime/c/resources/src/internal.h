@@ -45,6 +45,7 @@ struct doe_resource_pipeline_layout {
     resource_base base;
     size_t count;
     doe_resource_layout *groups[DOE_RESOURCE_MAX_GROUPS];
+    doe_resource_layout *empty; /* Lazily materialized owner for absent/trailing getters. */
 };
 struct doe_resource_bind_group {
     resource_base base;
@@ -104,6 +105,7 @@ typedef struct resource_use {
     doe_resource_external_texture *external;
     uint64_t offset, size;
     unsigned aspects;
+    WGPUShaderStage visibility;
     resource_usage usage;
 } resource_use;
 typedef struct resource_usage_scope {
