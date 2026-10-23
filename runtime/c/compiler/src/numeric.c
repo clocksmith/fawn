@@ -172,6 +172,7 @@ bool numeric_builtin(Source *source, size_t offset, const NumericBuiltin *signat
         case BUILTIN_EXP:
         case BUILTIN_TANH:
         case BUILTIN_SQRT:
+        case BUILTIN_CEIL:
             break;
         case BUILTIN_DOT:
         case BUILTIN_LENGTH:
@@ -195,6 +196,7 @@ bool numeric_builtin(Source *source, size_t offset, const NumericBuiltin *signat
         volatile float value;
         if (kind == BUILTIN_EXP) value = expf(input);
         else if (kind == BUILTIN_TANH) value = tanhf(input);
+        else if (kind == BUILTIN_CEIL) value = ceilf(input);
         else value = sqrtf(input);
         answer.bits = float_bits(value);
     } else {
@@ -204,6 +206,7 @@ bool numeric_builtin(Source *source, size_t offset, const NumericBuiltin *signat
         volatile double value;
         if (kind == BUILTIN_EXP) value = exp(input);
         else if (kind == BUILTIN_TANH) value = tanh(input);
+        else if (kind == BUILTIN_CEIL) value = ceil(input);
         else value = sqrt(input);
         answer.bits = double_bits(value);
     }

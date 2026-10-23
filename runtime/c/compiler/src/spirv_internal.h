@@ -7,7 +7,7 @@
 #include "spirv_decl.h"
 /* SPIR-V 1.3 numeric enums, from Khronos specification definitions. */
 enum {
-    OP_NAME = 5, OP_EXT_INST_IMPORT = 11, OP_EXT_INST = 12, OP_MEMORY_MODEL = 14, OP_ENTRY_POINT = 15, OP_EXECUTION_MODE = 16,
+    OP_NAME = 5, OP_EXTENSION = 10, OP_EXT_INST_IMPORT = 11, OP_EXT_INST = 12, OP_MEMORY_MODEL = 14, OP_ENTRY_POINT = 15, OP_EXECUTION_MODE = 16,
     OP_CAPABILITY = 17, OP_TYPE_VOID = 19, OP_TYPE_BOOL = 20, OP_TYPE_INT = 21,
     OP_TYPE_FLOAT = 22, OP_TYPE_VECTOR = 23, OP_TYPE_MATRIX = 24, OP_TYPE_IMAGE = 25, OP_TYPE_SAMPLER = 26, OP_TYPE_SAMPLED_IMAGE = 27, OP_TYPE_ARRAY = 28, OP_TYPE_RUNTIME_ARRAY = 29, OP_TYPE_STRUCT = 30,
     OP_TYPE_POINTER = 32, OP_TYPE_FUNCTION = 33, OP_CONSTANT_TRUE = 41, OP_CONSTANT_FALSE = 42,
@@ -32,7 +32,7 @@ enum {
     OP_SHIFT_RIGHT_LOGICAL = 194, OP_SHIFT_RIGHT_ARITHMETIC = 195, OP_SHIFT_LEFT = 196,
     OP_BIT_OR = 197, OP_BIT_XOR = 198, OP_BIT_AND = 199, OP_NOT = 200, OP_CONTROL_BARRIER = 224,
     OP_PHI = 245, OP_LOOP_MERGE = 246, OP_SELECTION_MERGE = 247, OP_LABEL = 248,
-    OP_BRANCH = 249, OP_BRANCH_CONDITIONAL = 250, OP_RETURN = 253, OP_RETURN_VALUE = 254, OP_UNREACHABLE = 255
+    OP_BRANCH = 249, OP_BRANCH_CONDITIONAL = 250, OP_RETURN = 253, OP_RETURN_VALUE = 254, OP_UNREACHABLE = 255, OP_DEMOTE_TO_HELPER_INVOCATION = 5380
 };
 /* Primitive/guard declarations use the frozen bounded allowance, never D or a
  * semantic-value slot. Aggregate declarations are caller-owned descriptors. */
@@ -53,7 +53,7 @@ typedef struct {
     uint32_t *values;
     uint32_t local_base, local_start, local_pointers[4][5], math_import;
     uint32_t barrier_semantics, subgroup_capabilities, image_capabilities;
-    bool sample_rate_shading;
+    bool sample_rate_shading, demote_to_helper;
     size_t function_end;
     uint32_t constants_used;
     bool failed;
