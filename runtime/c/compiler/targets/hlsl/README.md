@@ -167,3 +167,12 @@ contracts remain separate rather than creating a universal emitter framework.
 view's size metadata. It does not inspect element contents or infer a short view
 from a separate allocation size. The emitted-operation fixture covers a prefixed
 vector-element runtime tail, short views, partial elements and size-table identity.
+
+Memory helper emission follows selected entry call reachability and actual access
+root/type/mode closure. It no longer generates every concrete type for every
+buffer. Vector transfers are helper leaves; arrays and structures include their
+called child helpers. Metal retains whole-workgroup initialization helpers and
+omits unrelated function bodies/context resources when one entry is selected.
+These read-only walks have a 96-frame bound and charged work, no allocation or IR
+mutation. Shared malformed-graph tests and multi-entry helper-absence tests run in
+`make check`; source-level unused declarations do not become resource accesses.

@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: MIT
  * Copyright (c) 2026 Doe contributors */
 #include "private.h"
+#include "../closure.h"
 #include <inttypes.h>
 
 static const TypeRecord *aggregate(MetalEmitter *e, TypeId type) {
@@ -209,11 +210,26 @@ static void memory_body(MetalEmitter *e, TypeId type, unsigned mode) {
     }
     metal_text(e, "}\n");
 }
+static bool memory_helper_used(MetalEmitter *e, TypeId type, unsigned mode) {
+    const CompilerWorkspace *c = e->module;
+    for (uint32_t i = 0u; i < c->resource_count; ++i) {
+        const uint32_t kind = c->resources[i].kind;
+        if ((mode == 1u && kind != DOE_COMPILER_UNIFORM_BUFFER) ||
+            (mode != 1u && kind != DOE_COMPILER_STORAGE_BUFFER)) continue;
+        const char *error = NULL;
+        const bool used = target_access_helper_used(c, e->selected_entry, ROOT_RESOURCE,
+            i, type, mode == 2u, &e->traversal_left, &error);
+        if (error != NULL) { metal_error(e, error); return false; }
+        if (used) return true;
+    }
+    return false;
+}
 void metal_memory_helpers(MetalEmitter *e) {
     for (unsigned pass = 0u; pass < 2u; ++pass) {
         for (TypeId type = IR_I32; type < 7u + e->module->type_count && !e->failed; ++type) {
             if (!memory_type(e->module, type)) continue;
             for (unsigned mode = 0u; mode < 3u; ++mode) {
+                if (!memory_helper_used(e, type, mode)) continue;
                 if (pass == 0u) {
                     memory_signature(e, type, mode);
                     metal_text(e, ";\n");
@@ -264,6 +280,21 @@ static void workgroup_body(MetalEmitter *e, TypeId type, bool store) {
     }
     metal_text(e, "}\n");
 }
+static bool workgroup_helper_used(MetalEmitter *e, TypeId type, bool store) {
+    const CompilerWorkspace *c = e->module;
+    for (uint32_t i = 0u; i < c->workgroup_count; ++i) {
+        if (!metal_selected_workgroup(e, i)) continue;
+        const char *error = NULL;
+        /* Cooperative zeroing stores each whole root before the first barrier. */
+        bool used = store && target_memory_dependency(c, c->workgroups[i].type,
+            type, &e->traversal_left, &error);
+        if (error == NULL && !used) used = target_access_helper_used(c, e->selected_entry,
+            ROOT_WORKGROUP, i, type, store, &e->traversal_left, &error);
+        if (error != NULL) { metal_error(e, error); return false; }
+        if (used) return true;
+    }
+    return false;
+}
 void metal_workgroup_helpers(MetalEmitter *e) {
     if (e->module->workgroup_count == 0u) return;
     for (unsigned pass = 0u; pass < 2u; ++pass) {
@@ -272,6 +303,7 @@ void metal_workgroup_helpers(MetalEmitter *e) {
             if (type >= 7u && ((type_flags(e->module, type) & TYPE_CONSTRUCTIBLE) == 0u ||
                 (type_flags(e->module, type) & TYPE_ABSTRACT) != 0u)) continue;
             for (unsigned mode = 0u; mode < 2u; ++mode) {
+                if (!workgroup_helper_used(e, type, mode != 0u)) continue;
                 if (pass == 0u) {
                     workgroup_signature(e, type, mode != 0u);
                     metal_text(e, ";\n");

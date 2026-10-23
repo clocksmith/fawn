@@ -2,7 +2,27 @@
  * Copyright (c) 2026 Doe contributors */
 #include "fixture.h"
 #include "../../tests/array_length_source.h"
+#include "../../tests/closure_source.h"
 
+static void test_helper_closure(void) {
+    Fixture *f = prepare(target_closure_source);
+    char *text = emit(f, 0u);
+    has(text, "doe_store3(device uchar* p");
+    assert(strstr(text, "doe_load3(device const uchar* p") == NULL);
+    assert(strstr(text, "doe_store4(device uchar* p") == NULL);
+    assert(strstr(text, "doe_fn1(") == NULL);
+    assert(strstr(text, "uchar* r1;") == NULL);
+    free(text);
+    text = emit(f, 1u);
+    has(text, "doe_load3(device const uchar* p");
+    has(text, "doe_load4(device const uchar* p");
+    has(text, "doe_store4(device uchar* p");
+    assert(strstr(text, "doe_store3(device uchar* p") == NULL);
+    assert(strstr(text, "doe_fn0(") == NULL);
+    assert(strstr(text, "uchar* r0;") == NULL);
+    free(text);
+    release(f);
+}
 static void test_residual(void) {
     const char *source = "struct Params { count:u32, }"
         "@group(0) @binding(0) var<storage,read> left:array<f32>;"
@@ -211,6 +231,7 @@ int main(int argc, char **argv) {
     assert(!doe_metal_binding_slot(0u, 16u, &slot));
     assert(!doe_metal_binding_slot(UINT32_MAX, UINT32_MAX, &slot));
     test_unimplemented_subgroups();
+    test_helper_closure();
     test_residual();
     test_layout();
     test_workgroup();

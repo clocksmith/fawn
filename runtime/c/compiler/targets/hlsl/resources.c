@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: MIT
  * Copyright (c) 2026 Doe contributors */
 #include "private.h"
+#include "../closure.h"
 #include <inttypes.h>
 
 static bool memory_type(const CompilerWorkspace *c, TypeId type) {
@@ -123,11 +124,16 @@ void hlsl_resources(HlslEmitter *e) {
         for (unsigned pass = 0u; pass < 2u; ++pass) {
             for (TypeId type = IR_I32; type < 7u + c->type_count && !e->failed; ++type) {
                 if (!memory_type(c, type)) continue;
-                if (type_size(c, type) > UINT32_MAX) {
-                    hlsl_error(e, "HLSL value layout exceeds 32-bit byte addressing");
-                    return;
-                }
                 for (unsigned mode = 0u; mode < (writable ? 2u : 1u); ++mode) {
+                    const char *error = NULL;
+                    const bool used = target_access_helper_used(c, e->entry, ROOT_RESOURCE,
+                        resource, type, mode != 0u, &e->traversal_left, &error);
+                    if (error != NULL) { hlsl_error(e, error); return; }
+                    if (!used) continue;
+                    if (type_size(c, type) > UINT32_MAX) {
+                        hlsl_error(e, "HLSL value layout exceeds 32-bit byte addressing");
+                        return;
+                    }
                     if (pass == 0u) {
                         signature(e, resource, type, mode != 0u);
                         hlsl_text(e, ";\n");

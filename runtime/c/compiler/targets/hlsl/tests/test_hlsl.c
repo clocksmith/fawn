@@ -2,6 +2,7 @@
  * Copyright (c) 2026 Doe contributors */
 #include "test_support.h"
 #include "../../tests/array_length_source.h"
+#include "../../tests/closure_source.h"
 #include "../../../src/numeric.h"
 #include "../../../src/stage.h"
 #include <assert.h>
@@ -80,6 +81,24 @@ char *emit(Fixture *f, uint32_t selected) {
 void has(const char *text, const char *needle) {
     if (strstr(text, needle) == NULL) fprintf(stderr, "missing emission: %s\n", needle);
     assert(strstr(text, needle) != NULL);
+}
+static void test_helper_closure(void) {
+    Fixture *f = prepare(target_closure_source);
+    char *text = emit(f, 0u);
+    has(text, "doe_r0_store3(uint offset");
+    assert(strstr(text, "doe_r0_load3(uint offset") == NULL);
+    assert(strstr(text, "doe_r0_store4(uint offset") == NULL);
+    assert(strstr(text, "doe_r1_load") == NULL);
+    assert(strstr(text, "doe_fn1(") == NULL);
+    free(text);
+    text = emit(f, 1u);
+    has(text, "doe_r1_load3(uint offset");
+    has(text, "doe_r1_load4(uint offset");
+    has(text, "doe_r2_store4(uint offset");
+    assert(strstr(text, "doe_r2_store3(uint offset") == NULL);
+    assert(strstr(text, "doe_r0_") == NULL);
+    free(text);
+    release(f);
 }
 static void test_residual(void) {
     const char *source = "struct Params { count:u32, }"
@@ -364,6 +383,7 @@ int main(int argc, char **argv) {
     test_graphics_stage_rejection();
     test_subgroup_inputs();
     test_subgroups();
+    test_helper_closure();
     test_residual();
     test_layout();
     test_workgroup();

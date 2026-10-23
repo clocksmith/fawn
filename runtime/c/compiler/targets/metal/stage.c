@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: MIT
  * Copyright (c) 2026 Doe contributors */
 #include "private.h"
+#include "../closure.h"
 
 static bool entry_reference(const CompilerWorkspace *c, uint32_t first, uint32_t count, uint32_t item) {
     if (first > c->entry_reference_count || count > c->entry_reference_count - first) return false;
@@ -22,13 +23,35 @@ bool metal_entry_sizes(const CompilerWorkspace *c, const EntryRecord *entry) {
     }
     return false;
 }
+bool metal_function_used(MetalEmitter *e, uint32_t wanted) {
+    const char *error = NULL;
+    const bool used = target_function_reachable(e->module, e->selected_entry, wanted,
+        &e->traversal_left, &error);
+    if (error != NULL) metal_error(e, error);
+    return used;
+}
+bool metal_selected_resource(MetalEmitter *e, uint32_t resource) {
+    for (uint32_t i = 0u; i < e->module->entry_count; ++i) {
+        if ((e->selected_entry == NO_ID || e->selected_entry == i) &&
+            metal_entry_resource(e->module, &e->module->entries[i], resource)) return true;
+    }
+    return false;
+}
+bool metal_selected_workgroup(MetalEmitter *e, uint32_t workgroup) {
+    for (uint32_t i = 0u; i < e->module->entry_count; ++i) {
+        if ((e->selected_entry == NO_ID || e->selected_entry == i) &&
+            metal_entry_workgroup(e->module, &e->module->entries[i], workgroup)) return true;
+    }
+    return false;
+}
 static void context_type(MetalEmitter *e) {
     metal_text(e, "struct DoeContext {\n");
     for (uint32_t i = 0u; i < e->module->resource_count; ++i) {
-        if (!type_handle(e->module, e->module->resources[i].type))
+        if (metal_selected_resource(e, i) && !type_handle(e->module, e->module->resources[i].type))
             metal_format(e, "    %s uchar* r%u;\n", metal_buffer_qualifier(&e->module->resources[i]), i);
     }
     for (uint32_t i = 0u; i < e->module->workgroup_count; ++i) {
+        if (!metal_selected_workgroup(e, i)) continue;
         metal_text(e, "    threadgroup ");
         metal_type(e, e->module->workgroups[i].type);
         metal_format(e, "* w%u;\n", i);
@@ -235,10 +258,13 @@ static void entry_wrapper(MetalEmitter *e, uint32_t index) {
 void metal_functions(MetalEmitter *e) {
     context_type(e);
     for (uint32_t i = 0u; i < e->module->function_count && !e->failed; ++i) {
+        if (!metal_function_used(e, i)) continue;
         signature(e, i);
         metal_text(e, ";\n");
     }
-    for (uint32_t i = 0u; i < e->module->function_count && !e->failed; ++i) function_body(e, i);
+    for (uint32_t i = 0u; i < e->module->function_count && !e->failed; ++i) {
+        if (metal_function_used(e, i)) function_body(e, i);
+    }
     for (uint32_t i = 0u; i < e->module->entry_count && !e->failed; ++i) {
         if (e->selected_entry == NO_ID || e->selected_entry == i) entry_wrapper(e, i);
     }

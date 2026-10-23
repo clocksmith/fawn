@@ -60,22 +60,31 @@ Developer checks below are not physical qualification or full feature closure.
    `45f8264d`. One usage classifier covers dispatch bindings/dynamic offsets and
    whole render-pass/bundle history. `resources/DEVELOPER_RECEIPT_SCOPES.json`
    records conflicting/disjoint ranges, overwritten setters, subresources and
-   retirement checks. Public graphics integration remains in progress.
+   retirement checks. Follow-up review found stage-visibility false positives;
+   shared-stage alias filtering with independent render history is being corrected.
+   Public graphics integration remains in progress.
 2. **Empty auto-layout holes:** resource/native owners, `45f8264d` and `c87e494f`.
    One required-group predicate normalizes ignored groups/offsets; explicit null
    unbind works. Native admission tests execute sparse group 2 and ignored holes.
+   Follow-up explicit-null layout slots and valid trailing layout queries remain
+   open with the same resource/native owners.
 3. **Typed failure propagation:** native owner, `c87e494f`. Layout allocation
    results are handled; one ABI status conversion preserves OOM versus internal
    execution failure versus validation. Real allocation/backend fault tests are
-   recorded in `native/DEVELOPER_RECEIPT_ADMISSION.json`.
+   recorded in `native/DEVELOPER_RECEIPT_ADMISSION.json`. Follow-up review found
+   pending-work recovery still collapses status; that separate path is being fixed.
 4. **Duplicate target semantics:** text-target owner. Shared read-only value IDs,
    ordered access paths and runtime-tail identity now replace duplicate helpers in
    `compiler/targets/ir_view.h`. Malformed-IR sanitizer controls and both targets
    pass; `targets/DEVELOPER_RECEIPT_ARRAY_LENGTH.json` binds the checks. Target
    syntax, address spaces and intrinsics remain separate.
-5. **Excess emitted helper closure:** text-target owner, open. Emit only required
-   selected-entry/type/access helpers, instead of every memory type per buffer.
-   This is not closed by the identity-helper extraction or line-count claims.
+5. **Excess emitted helper closure:** text-target owner. `targets/closure.h` now
+   selects reachable access roots, transfer types and modes, plus aggregate child
+   and workgroup-initialization helpers. Duplicate HLSL call walking is removed;
+   Metal also omits unrelated function/context resources for a selected entry.
+   `DEVELOPER_RECEIPT_CLOSURE.json` binds positive/absence tests, malformed-graph
+   sanitizers and unchanged emitted-operation controls. Independent recheck remains
+   pending. This trims resource helper multiplication, not every unused declaration.
 6. **Duplicate texture-copy footprint arithmetic:** resource/backend owners,
    `45f8264d` and `a6901a80`. Both call the small checked arithmetic leaf in
    `runtime/c/common`; 59,049 bounded independent arithmetic cases plus overflow
