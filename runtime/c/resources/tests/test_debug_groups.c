@@ -220,6 +220,45 @@ static void test_debug_arithmetic(void)
     assert(doe_resource_bundle_encoder_debug(NULL, DOE_RESOURCE_DEBUG_MARKER) == DOE_RESOURCE_INVALID_ARGUMENT);
 }
 
+static void test_compute_invalidation(void)
+{
+    assert(doe_resource_compute_pass_invalidate(NULL, DOE_RESOURCE_LAYOUT) == DOE_RESOURCE_INVALID_ARGUMENT);
+    for (unsigned scenario = 0; scenario < 3; scenario++) {
+        fixture f = fresh();
+        doe_resource_config c = config(&f);
+        doe_resource_encoder *encoder;
+        doe_resource_compute_pass *pass;
+        assert(doe_resource_encoder_create(&c, &encoder) == DOE_RESOURCE_OK);
+        assert(doe_resource_encoder_begin_compute(encoder, &pass) == DOE_RESOURCE_OK);
+        size_t allocations = f.allocations;
+        const doe_resource_status ignored[] = {DOE_RESOURCE_OK, DOE_RESOURCE_PENDING,
+            (doe_resource_status)-1, (doe_resource_status)999};
+        for (size_t i = 0; i < sizeof(ignored) / sizeof(*ignored); i++)
+            assert(doe_resource_compute_pass_invalidate(pass, ignored[i]) == DOE_RESOURCE_INVALID_ARGUMENT);
+        assert(doe_resource_encoder_status(encoder) == DOE_RESOURCE_OK);
+        doe_resource_status expected = DOE_RESOURCE_INVALID_ARGUMENT;
+        if (scenario == 0) {
+            assert(doe_resource_compute_pass_invalidate(pass, expected) == expected);
+            assert(doe_resource_compute_pass_invalidate(pass, DOE_RESOURCE_OUT_OF_MEMORY) == expected);
+        } else if (scenario == 1) {
+            assert(doe_resource_compute_pass_end(pass) == DOE_RESOURCE_OK);
+            expected = DOE_RESOURCE_STATE;
+            assert(doe_resource_compute_pass_invalidate(pass, DOE_RESOURCE_LAYOUT) == expected);
+        } else {
+            f.alive = false;
+            expected = DOE_RESOURCE_UNAVAILABLE;
+            assert(doe_resource_compute_pass_invalidate(pass, DOE_RESOURCE_LAYOUT) == expected);
+        }
+        assert(f.allocations == allocations && encoder->count == 0);
+        assert(doe_resource_compute_pass_debug(pass, DOE_RESOURCE_DEBUG_PUSH) == expected);
+        doe_resource_commands *commands = NULL;
+        assert(doe_resource_encoder_finish(encoder, &commands) == expected && !commands);
+        doe_resource_encoder_release(encoder);
+        doe_resource_compute_pass_release(pass);
+        empty(&f);
+    }
+}
+
 int main(void)
 {
     test_encoder_groups();
@@ -227,6 +266,7 @@ int main(void)
     test_render_groups();
     test_bundle_groups();
     test_debug_arithmetic();
-    puts("debug group owner: 5 host suites passed; optional native diagnostics not captured");
+    test_compute_invalidation();
+    puts("debug group owner: 6 host suites passed; optional native diagnostics not captured");
     return 0;
 }

@@ -491,6 +491,10 @@ doe_resource_status doe_resource_compute_pass_dispatch_indirect(doe_resource_com
 doe_resource_status doe_resource_encoder_dispatch_indirect(doe_resource_encoder *encoder,
     doe_resource_pipeline *pipeline, const doe_resource_dispatch_group *groups,
     size_t group_count, doe_resource_buffer *arguments, uint64_t offset);
+/* ABI preflight failures poison this active pass through the canonical encoder.
+ * OK/PENDING/unknown statuses reject without mutating recording state. */
+doe_resource_status doe_resource_compute_pass_invalidate(doe_resource_compute_pass *pass,
+    doe_resource_status rejection);
 doe_resource_status doe_resource_compute_pass_debug(doe_resource_compute_pass *pass,
     doe_resource_debug_operation operation);
 doe_resource_status doe_resource_compute_pass_end(doe_resource_compute_pass *pass);
