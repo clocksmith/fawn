@@ -159,9 +159,102 @@ Apple SDK compilation, Darwin execution and physical qualification remain unrun.
   no premature resource destruction, failed worker startup and synchronous idle
   release. Neither control establishes physical failure recovery or driver liveness.
 
+## Surfaces and presentation (Vulkan, Linux)
+
+`src/surfaces.c` and `src/surface_present.c` implement `wgpuInstanceCreateSurface`,
+surface AddRef/Release/SetLabel, GetCapabilities/CapabilitiesFreeMembers,
+Configure/Unconfigure, GetCurrentTexture and Present over the Vulkan surface
+owner (`backends/vulkan/include/doe_vk_surface.h`). Design decisions:
+
+- Sources: exactly one chained `WGPUSurfaceSourceWaylandSurface`,
+  `WGPUSurfaceSourceXCBWindow` or `WGPUSurfaceSourceXlibWindow` with non-null
+  handles; any other chain, a second chain node or a non-Linux build returns NULL.
+  Platform handles are borrowed and must outlive the surface and its frames. The
+  instance-level surface stores only those handles and its label (own label store);
+  it does not change the accepted C instance.
+- WSI enablement is explicit: `compatibleSurface` in `wgpuInstanceRequestAdapter`
+  opens the adapter's Vulkan context with exactly that surface's platform bit and
+  the backend's complete WSI/maintenance1 chain, then creates and releases a probe
+  native surface to prove the selected queue can present to that window. Missing
+  support is `Unavailable`, never a fallback adapter or headless image. Devices
+  inherit the adapter's options, so their contexts carry the same WSI chain.
+  `GetCapabilities` returns `WGPUStatus_Error` for an adapter not opened with that
+  platform; `Configure` with such a device is a Validation error. Metal adapters
+  reject any compatibleSurface.
+- The native `doe_vk_surface` is created at Configure on the configured device's
+  own context (adapter contexts only host short-lived capability probes, serialized
+  by an adapter mutex). Configure first unconfigures any previous configuration.
+- Capabilities advertise RenderAttachment|CopySrc|CopyDst (the exercised subset),
+  the SRGB-nonlinear BGRA8/RGBA8 (sRGB or unorm) formats the surface reports, the
+  native present modes (Fifo always required) and alpha modes with Inherit first,
+  so Auto aliases the first element and prefers Inherit as the pinned header says.
+  Usage always adds internal native COLOR_ATTACHMENT for frame initialization.
+  View-format reinterpretation and other usages reject explicitly.
+- GetCurrentTexture acquires through the backend's fence-bounded acquisition
+  (`NATIVE_SURFACE_TIMEOUT_NS`, 1 s per native wait). Before publication the frame is
+  zero-initialized by the canonical attachment initializer in a private submission
+  on the existing pending owner, exactly like other published textures. The public
+  texture aliases the resource owner with a `native_surface_frame` payload whose
+  first member is the ordinary `native_texture`; the payload holds one surface lease.
+  A second call before Present returns the same frame with a new reference.
+  Status mapping: OK -> SuccessOptimal/SuccessSuboptimal, TIMEOUT -> Timeout (the
+  backend retains the pending acquisition and the next call waits that same one),
+  SURFACE_OUTDATED -> Outdated, SURFACE_LOST -> Lost (both sticky until
+  reconfiguration, also when observed at present), DEVICE_LOST -> Error (loss is
+  reported by the loss owner), BUSY (previous frame texture/views still held) ->
+  Error plus a Validation error, everything else -> Error plus its typed error.
+  Unconfigured surfaces return Error with a NULL texture.
+- Present creates one private command object, attaches the frame with the
+  backend's `doe_vk_surface_prepare_present`, and submits it through the same
+  `native_pending` owner (`native_submit_present` in `src/queue.c`): submit, enqueue
+  `vkQueuePresentKHR` waiting the render-finished semaphore, wait the command fence,
+  retire the frame through its presentation fence (or a maintenance1 discard when
+  present was never enqueued), then settle. Presentation never retires from command
+  completion or queue idle. This is one extra command buffer per frame carrying the
+  zero-if-undefined and PRESENT_SRC transition, not a second submission engine;
+  the caller's render work keeps its ordinary synchronous QueueSubmit path. The
+  public frame is destroyed after Present, so later recording rejects it.
+- One frame is in flight. Callers must release the previous frame's texture and
+  views before the next GetCurrentTexture or Configure (the backend refuses
+  acquisition while old leases exist). Unconfigure and final surface release defer
+  native swapchain retirement until those leases drop; the frame payload's surface
+  lease keeps the native owner alive. A presentation-fence wait that times out keeps
+  the present commands on the pending list: queue settlement then reports uncertain
+  completion (as for any unresolved work) until a later surface call retires the
+  frame. Unknown presentation completion at final
+  teardown retains the native surface, device and platform obligations rather than
+  freeing them. Foreign error callbacks run only after the surface and device
+  mutexes are released; the surface mutex is always taken before a device mutex.
+
+`make -C runtime/c/native BUILD=... check-present` builds `tests/surface_present.c`
+(XCB) and `tests/surface_platforms.c` (Xlib and a role-less Wayland `wl_surface`).
+They are not part of headless `check`; each exits 77 (skip, never a pass) when no
+display is reachable. Both use `tests/adapter_class.h`. Developer runs on Jupiter
+(GNOME Wayland, Xwayland `DISPLAY=:0`, `WAYLAND_DISPLAY=wayland-0`):
+
+```
+DISPLAY=:0 XAUTHORITY=/run/user/1000/.mutter-Xwaylandauth.* WAYLAND_DISPLAY=wayland-0 \
+  VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json \
+  make -C runtime/c/native BUILD=/tmp/doe-c-native check-present
+PASS public surface presentation: XCB window 80x40 after resize (SuccessSuboptimal), compatibleSurface adapter, capabilities, 8 verified frames with zero-init/asymmetric pixels/same-submission readback before present, stale-frame and lease rejection, reconfigure, deferred unconfigure, early releases and configure/acquire/present negatives; 1 retried Timeout statuses (CPU Vulkan only)
+PASS public surface sources: Xlib window presented; Wayland role-less wl_surface presented to the compositor (not displayed); compatibleSurface adapter, capabilities, configure, exact pixels read back in the presenting submission; 0 retried Timeout statuses (CPU Vulkan only)
+```
+
+The same binaries with `DOE_C_TEST_ADAPTER=physical` and `VK_ICD_FILENAMES` unset
+passed on Radeon 8060S Graphics (RADV STRIX_HALO, 0x1002:0x1586); that is developer
+evidence on that adapter/driver only, not qualification. A sanitizer build
+(`SANITIZE='-O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer'`, leak
+detection enabled) passed both on lavapipe. Pixels are verified by readback of the
+presented image in the presenting submission; what the compositor displayed was not
+observed. The Wayland surface has no xdg-shell role and is never shown. The single
+Timeout is the FIFO swapchain throttled by Xwayland while it is not repainting the
+window; the retry completes the retained acquisition. Resize produced
+SuccessSuboptimal on both drivers; explicit reconfiguration then rendered at the new
+size. Outdated/Lost mapping is host-tested by the backend owner, not observed here.
+
 ## Intentionally unprovided or rejected
 
-Surfaces remain absent. Vulkan indirect dispatch and nonindexed/indexed indirect
+Vulkan indirect dispatch and nonindexed/indexed indirect
 pass/bundle draws use real GPU guards; Metal graphics, indirect and indexed draws remain uncomposed.
 Graphics
 admits one color attachment and/or depth/stencil, sample counts 1 and 4, direct
@@ -200,8 +293,8 @@ callback mode, not a claimed background compiler. No blanket success stubs or
 fallback provider resolution exist. The public advertised limits
 cover the implemented compute/image/graphics path only and do not claim the WebGPU
 Core feature level is complete; adapter/device creation remains experimental.
-Metal image/graphics/timestamp composition, D3D12 admission, package adoption
-and surfaces remain unfinished. Private backend checks do not qualify those public
+Metal image/graphics/timestamp composition, Metal/Windows/Android surfaces, D3D12
+admission and package adoption remain unfinished. Private backend checks do not qualify those public
 integrations; the Metal compute bridge remains host-tested only.
 
 ## Reproduce from a coherent checkout
@@ -240,7 +333,7 @@ PASS public error types: resource allocation, automatic-layout allocation, compu
 PASS public timestamps: requested feature, zero/max/range/destroy admission, real pass/command writes, exact GPU nanoseconds, same-batch copy, scratch reuse and early query release (CPU Vulkan only)
 PASS typed recovery: native/OOM/pending errors survive submit/write/texture/workdone, unknown leases retained, terminal cleanup and fresh GPU normalizer recovery
 PASS every implemented procedure address matches; every unprovided name returns NULL
-PASS exact exports: 182 implemented, 20 pinned unprovided, no private exports
+PASS exact exports: 192 implemented, 10 pinned unprovided, no private exports
 ```
 
 A compute shader with two declared entries selects `transform`, runs 72

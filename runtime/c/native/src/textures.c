@@ -2,7 +2,7 @@
 #include "internal.h"
 #include <stdlib.h>
 
-static void release_texture(void *userdata, void *handle)
+void native_texture_release(void *userdata, void *handle)
 {
     (void)userdata;
     native_texture *payload = handle;
@@ -97,10 +97,10 @@ WGPUTexture wgpuDeviceCreateTexture(WGPUDevice handle, const WGPUTextureDescript
     doe_resource_status adopted = DOE_RESOURCE_INVALID_ARGUMENT;
     if (status == DOE_VK_OK)
         adopted = doe_resource_texture_create(&device->resources, &desc, &limits,
-            (doe_resource_native){payload, NULL, release_texture}, &texture);
+            (doe_resource_native){payload, NULL, native_texture_release}, &texture);
     native_unlock(device);
     if (!texture) {
-        release_texture(NULL, payload);
+        native_texture_release(NULL, payload);
         native_error(device, status != DOE_VK_OK ? native_backend_error(status) : native_resource_error(adopted),
             "texture creation or proven zero initialization failed");
     } else native_label(device, texture, descriptor->label);

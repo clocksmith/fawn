@@ -14,7 +14,8 @@ Instances/devices, buffers, compute pipelines, bindings, commands, submission,
 readback, device loss, labels, compilation/pipeline callbacks; initialized color
 textures/views/samplers and copies; requested GPU-normalized timestamps; reflected
 vertex/fragment or vertex-only pipelines, color/depth/stencil/MSAA passes, resolve,
-direct/guarded-indirect nonindexed and indexed draws, bundles, occlusion and canonical debug-group validation.
+direct/guarded-indirect nonindexed and indexed draws, bundles, occlusion and canonical debug-group validation;
+Linux Vulkan surfaces (Wayland/XCB/Xlib) with compatibleSurface-enabled WSI and presentation.
 Unsupported entrypoints stay absent or fail specifically, never fake success.
 
 ## Contracts

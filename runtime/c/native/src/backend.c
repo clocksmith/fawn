@@ -27,13 +27,15 @@ static void metal_limits(const doe_mtl_caps *caps, WGPULimits *out)
         .maxComputeWorkgroupsPerDimension=65535};
 }
 
-native_result native_backend_open(WGPUBackendType kind, bool fallback, native_backend *out)
+native_result native_backend_open(WGPUBackendType kind, bool fallback, uint32_t surface_platforms,
+    native_backend *out)
 {
     native_backend result = {.kind=kind};
     native_result status;
     if (kind == WGPUBackendType_Vulkan) {
         result.value.vulkan.options = (doe_vk_options){.allow_cpu_adapter=fallback,
-            .require_graphics_queue=true,.enable_shader_demote_if_supported=true};
+            .require_graphics_queue=true,.enable_shader_demote_if_supported=true,
+            .surface_platforms=surface_platforms};
         status = native_from_vulkan(doe_vk_context_create(&result.value.vulkan.options,
             &result.value.vulkan.context, NULL));
         if (status == NATIVE_OK)
@@ -45,6 +47,7 @@ native_result native_backend_open(WGPUBackendType kind, bool fallback, native_ba
                 &result.limits) != WGPUStatus_Success) status = NATIVE_FAILURE;
     } else if (kind == WGPUBackendType_Metal) {
         if (fallback) return NATIVE_UNAVAILABLE; /* No CPU adapter is advertised. */
+        if (surface_platforms) return NATIVE_UNSUPPORTED; /* Metal layer surfaces are not composed. */
         status = native_from_metal(doe_mtl_context_create(&result.value.metal.context, NULL));
         if (status == NATIVE_OK)
             status = native_from_metal(doe_mtl_context_caps(result.value.metal.context, &result.value.metal.caps));

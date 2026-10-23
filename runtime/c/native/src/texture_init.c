@@ -3,11 +3,14 @@
 #include <stdlib.h>
 
 /* Real eager initialization, using the same native queue obligation owner as
- * public submissions. Never publish allocator contents or infer completion. */
+ * public submissions. Never publish allocator contents or infer completion.
+ * Attachment-only images without internal CopyDst (depth/stencil, multisample
+ * and borrowed surface frames) are cleared by the canonical attachment owner. */
 doe_vk_status native_initialize_texture(native_device *device, doe_vk_texture *texture,
     const doe_vk_texture_desc *desc, uint32_t texel_bytes)
 {
-    if ((desc->usage & DOE_VK_TEXTURE_DEPTH_STENCIL_ATTACHMENT) || desc->sample_count > 1) {
+    if ((desc->usage & DOE_VK_TEXTURE_DEPTH_STENCIL_ATTACHMENT) || desc->sample_count > 1 ||
+        !(desc->usage & DOE_VK_TEXTURE_COPY_DST)) {
         doe_vk_texture_view *view = NULL;
         doe_vk_commands *commands = NULL;
         doe_vk_texture_view_desc span = {.dimension=DOE_VK_VIEW_2D_ARRAY,

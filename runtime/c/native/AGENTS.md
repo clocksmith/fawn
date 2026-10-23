@@ -62,3 +62,9 @@ Descriptor-chain presence is ABI conversion, not a second validation engine.
 Preserve explicit zero draw budgets and delegate accounting to resource packets.
 Platform build recipes must keep one export inventory; never make a missing
 platform suite report the success of a narrower host-only substitute.
+
+Surfaces enable WSI only through an explicit compatibleSurface adapter; never
+add platforms implicitly or substitute an offscreen image. Present attaches the
+frame to a private command object on the existing pending owner and retires it by
+the backend presentation fence, never by command completion or queue idle. Take
+the surface mutex before any device mutex, and report errors after both unlock.

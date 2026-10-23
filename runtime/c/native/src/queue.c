@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: MIT */
-#include "internal.h"
+#include "surface.h"
 #include <stdlib.h>
 
 struct native_pending {
@@ -221,6 +221,41 @@ doe_vk_status native_submit_commands(native_device *device, doe_vk_commands *com
     native_device_retain(device);
     pending->native = (native_command_handle){.kind=WGPUBackendType_Vulkan,.value.vulkan=commands};
     return native_to_vulkan(submit_pending(device, pending));
+}
+
+native_presentation native_submit_present(native_device *device, doe_vk_commands *commands,
+    doe_vk_surface *surface)
+{
+    native_presentation result = {DOE_VK_OK, DOE_VK_INVALID_STATE};
+    native_pending *pending = calloc(1, sizeof(*pending));
+    if (!pending) {
+        /* Unsubmitted commands detach their present lease on release. */
+        if (doe_vk_commands_release(commands) != DOE_VK_OK) abort();
+        result.submission = DOE_VK_OUT_OF_MEMORY;
+        return result;
+    }
+    pending->device = device;
+    native_device_retain(device);
+    pending->native = (native_command_handle){.kind=WGPUBackendType_Vulkan,.value.vulkan=commands};
+    pending->next = device->pending;
+    device->pending = pending;
+    native_pending_progress_wake(device);
+    native_result status = native_command_submit(&pending->native);
+    if (status == NATIVE_OK) {
+        bool suboptimal = false;
+        /* Waits the submit's render-finished semaphore on the same queue. */
+        result.presentation = doe_vk_surface_present(surface, commands, &suboptimal, NULL);
+        status = native_command_wait(&pending->native);
+    }
+    if (status != NATIVE_OK) device->queue_failed = true;
+    /* The presentation fence (or maintenance1 discard when present was never
+     * enqueued) retires the frame; command completion never does. Settlement
+     * must follow it: commands stay BUSY while their frame is unretired. */
+    doe_vk_status retired = doe_vk_surface_retire_frame(surface, NATIVE_SURFACE_TIMEOUT_NS, NULL);
+    if (result.presentation == DOE_VK_OK) result.presentation = retired;
+    native_queue_settlement settled = native_settle_pending(device);
+    result.submission = native_to_vulkan(status == NATIVE_OK ? settled.status : status);
+    return result;
 }
 
 void wgpuQueueSubmit(WGPUQueue handle, size_t count, const WGPUCommandBuffer *handles)

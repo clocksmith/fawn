@@ -91,6 +91,7 @@ wgpuGetInstanceLimits
 wgpuGetProcAddress
 wgpuHasInstanceFeature
 wgpuInstanceAddRef
+wgpuInstanceCreateSurface
 wgpuInstanceProcessEvents
 wgpuInstanceRelease
 wgpuInstanceRequestAdapter
@@ -164,6 +165,15 @@ wgpuShaderModuleRelease
 wgpuShaderModuleSetLabel
 wgpuSupportedFeaturesFreeMembers
 wgpuSupportedInstanceFeaturesFreeMembers
+wgpuSurfaceAddRef
+wgpuSurfaceCapabilitiesFreeMembers
+wgpuSurfaceConfigure
+wgpuSurfaceGetCapabilities
+wgpuSurfaceGetCurrentTexture
+wgpuSurfacePresent
+wgpuSurfaceRelease
+wgpuSurfaceSetLabel
+wgpuSurfaceUnconfigure
 wgpuTextureAddRef
 wgpuTextureCreateView
 wgpuTextureDestroy
