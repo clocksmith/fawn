@@ -81,6 +81,8 @@ typedef enum doe_vk_viewport_convention {
 } doe_vk_viewport_convention;
 typedef struct doe_vk_render_draw {
     uint32_t vertex_count, instance_count, first_vertex, first_instance;
+    /* Logical positive-or-zero extent; negative origins are legal within actual
+     * device bounds. Zero extent preserves the draw with an empty native scissor. */
     float viewport[6]; /* x,y,width,height,min/max depth; all explicit. */
     uint32_t scissor[4]; /* x,y,width,height within the attachment. */
     /* Raw preserves retained positive-height Vulkan mapping. WebGPU keeps
