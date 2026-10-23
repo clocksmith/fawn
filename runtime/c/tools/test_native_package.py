@@ -38,6 +38,17 @@ class PackagePreflightTests(unittest.TestCase):
                     PACKAGE.build_package(root, "HEAD", build, destination, "gcc", "g++")
                 self.assertFalse(build.exists())
 
+    def test_dangling_links_refused(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            link = root / "link"
+            link.symlink_to(root / "absent")
+            for build, destination in ((link, root / "stage"), (root / "build", link)):
+                with self.assertRaises(FileExistsError):
+                    PACKAGE.build_package(root, "HEAD", build, destination, "gcc", "g++")
+                self.assertTrue(link.is_symlink())
+                self.assertFalse((root / "absent").exists())
+
     def test_unsupported_host_has_no_side_effects(self) -> None:
         with tempfile.TemporaryDirectory() as directory, patch.object(PACKAGE.platform, "system", return_value="Darwin"):
             root = Path(directory)
