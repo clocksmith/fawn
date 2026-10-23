@@ -59,7 +59,7 @@ static bool colors_compatible(const doe_vk_render_colors *colors, const doe_vk_p
     uint32_t count = colors->count > pipeline->color_count ? colors->count : pipeline->color_count;
     for (uint32_t i = 0; i < count; ++i) {
         const doe_vk_texture_view *view = i < colors->count ? colors->slots[i].view : NULL;
-        doe_vk_texture_format pass = view != NULL ? view->texture->desc.format : 0;
+        doe_vk_texture_format pass = view != NULL ? view->format : 0;
         if (pass != (i < pipeline->color_count ? pipeline->color_formats[i] : 0)) return false;
     }
     return true;

@@ -77,6 +77,12 @@ typedef struct doe_vk_texture_desc {
     uint32_t usage;
     bool cube_compatible;
     uint32_t sample_count; /* Zero preserves the original sample1 default. */
+    /* Optional borrowed reinterpretation list: only the image format and its
+     * srgb/unorm pair (RGBA8, BGRA8). A list naming the pair creates a
+     * mutable-format image with VkImageFormatListCreateInfo; storage usage is
+     * then unsupported because the srgb view could not be a storage image. */
+    const doe_vk_texture_format *view_formats;
+    uint32_t view_format_count;
 } doe_vk_texture_desc;
 /* Depth/stencil admits 2D images with attachment, copy and/or sampled usage
  * (cube-compatible only when sampled); storage is unsupported. Multisample
@@ -117,6 +123,8 @@ typedef struct doe_vk_texture_view_desc {
     /* ALL views every aspect (required for attachments). Sampling a combined
      * depth/stencil image needs a DEPTH or STENCIL view. */
     doe_vk_texture_aspect aspect;
+    /* Zero is the image format; otherwise the image's admitted srgb/unorm pair. */
+    doe_vk_texture_format format;
 } doe_vk_texture_view_desc;
 /* A view retains its parent image. Reinterpretation/swizzle not yet admitted. */
 doe_vk_status doe_vk_texture_view_create(doe_vk_texture *texture,

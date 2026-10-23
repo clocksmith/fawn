@@ -17,12 +17,16 @@ struct doe_vk_texture {
     doe_vk_commands *external_owner; /* Prepared presentation seals this frame. */
     VkImage image;
     VkDeviceMemory memory;
+    /* Mutable-format list (image format first); zero count when immutable. */
+    doe_vk_texture_format view_formats[2];
+    uint32_t view_format_count;
 };
 struct doe_vk_texture_view {
     doe_vk_texture *texture;
     uint32_t references;
     doe_vk_texture_view_desc desc;
     uint32_t aspects; /* Resolved native aspect bits of this view. */
+    doe_vk_texture_format format; /* Resolved view format (image or its pair). */
     VkImageView view;
 };
 struct doe_vk_sampler {
@@ -39,6 +43,8 @@ typedef struct doe_vk_texture_use {
 static inline uint32_t doe_vk_samples(uint32_t requested) {
     return requested != 0 ? requested : 1;
 }
+/* The srgb/unorm reinterpretation pair of a format, or zero. */
+doe_vk_texture_format doe_vk_srgb_pair(doe_vk_texture_format format);
 doe_vk_status doe_vk_image_format_properties(doe_vk_context *context,
     const doe_vk_texture_desc *desc, VkImageFormatProperties *out);
 doe_vk_status doe_vk_attachment_samples(doe_vk_context *context,

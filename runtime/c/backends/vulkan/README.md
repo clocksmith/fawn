@@ -69,7 +69,14 @@ The retained production owners remain authoritative for those behaviors.
 `include/doe_vk_texture.h` uses named native format values, never WebGPU numeric
 casts. Eighteen uncompressed color formats plus four attachment-only depth/stencil formats
 are admitted when native format support exists. Compressed formats, multisampling,
-reinterpretation and swizzles remain outside this increment. Context creation
+swizzles remain outside this increment. Format reinterpretation is limited to the
+srgb/unorm pairs RGBA8 and BGRA8: `doe_vk_texture_desc.view_formats` naming the
+pair creates a MUTABLE_FORMAT image chained with `VkImageFormatListCreateInfo`
+(image format first; official Vulkan-Headers v1.3.290 declaration and constants
+in ABI_PROVENANCE.json), and `doe_vk_texture_view_desc.format` selects the pair
+for a view. Passes and pipelines compare view formats. Storage usage with an
+srgb pair is UNSUPPORTED because the srgb view could not be a storage image
+without a per-view usage restriction. Context creation
 enables the optional imageCubeArray feature when offered and reports successful
 enablement as `caps.image_cube_array`; cube-array views then require a
 cube-compatible image and whole cubes, and without the feature they return

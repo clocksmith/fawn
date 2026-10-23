@@ -30,7 +30,7 @@ doe_vk_status doe_vk_commands_initialize_attachment(doe_vk_commands *commands,
             bool temporary = view->desc.dimension != DOE_VK_VIEW_2D ||
                 view->desc.mip_count != 1 || view->desc.layer_count != 1;
             if (temporary) {
-                const doe_vk_texture_view_desc single = {DOE_VK_VIEW_2D, selected_mip, 1, selected_layer, 1, DOE_VK_ASPECT_ALL};
+                const doe_vk_texture_view_desc single = {DOE_VK_VIEW_2D, selected_mip, 1, selected_layer, 1, DOE_VK_ASPECT_ALL, 0};
                 status = doe_vk_texture_view_create(view->texture, &single, &target, NULL);
                 if (status != DOE_VK_OK) return doe_vk_poison(commands, status);
             }

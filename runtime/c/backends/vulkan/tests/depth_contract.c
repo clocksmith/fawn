@@ -147,8 +147,8 @@ int main(void) {
     depth.initialized = &depth_state;
     depth.desc.format = DOE_VK_FORMAT_D32_FLOAT_S8_UINT;
     depth.desc.usage = DOE_VK_TEXTURE_DEPTH_STENCIL_ATTACHMENT;
-    doe_vk_texture_view color_view = {.texture = &color, .references = 1, .aspects = 1, .view = 21, .desc = {DOE_VK_VIEW_2D, 0, 1, 0, 1, DOE_VK_ASPECT_ALL}};
-    doe_vk_texture_view depth_view = {.texture = &depth, .references = 1, .aspects = 6, .view = 22, .desc = {DOE_VK_VIEW_2D, 0, 1, 0, 1, DOE_VK_ASPECT_ALL}};
+    doe_vk_texture_view color_view = {.texture = &color, .references = 1, .aspects = 1, .format = DOE_VK_FORMAT_RGBA8_UNORM, .view = 21, .desc = {DOE_VK_VIEW_2D, 0, 1, 0, 1, DOE_VK_ASPECT_ALL, 0}};
+    doe_vk_texture_view depth_view = {.texture = &depth, .references = 1, .aspects = 6, .format = DOE_VK_FORMAT_D32_FLOAT_S8_UINT, .view = 22, .desc = {DOE_VK_VIEW_2D, 0, 1, 0, 1, DOE_VK_ASPECT_ALL, 0}};
     const doe_vk_clear_color blue = {.float32 = {0, 0, 1, 1}};
     doe_vk_render_pass_desc desc = {.color = &color_view, .clear_color = &blue,
         .depth_stencil = &depth_view, .clear_depth = true, .clear_stencil = true,
@@ -228,17 +228,17 @@ int main(void) {
     resolve.image = 13;
     resolve.initialized = &resolve_state;
     resolve.desc.sample_count = 1;
-    doe_vk_texture_view resolve_view = {.texture = &resolve, .references = 1, .aspects = 1, .view = 23,
-        .desc = {DOE_VK_VIEW_2D, 0, 1, 0, 1, DOE_VK_ASPECT_ALL}};
+    doe_vk_texture_view resolve_view = {.texture = &resolve, .references = 1, .aspects = 1, .format = DOE_VK_FORMAT_RGBA8_UNORM, .view = 23,
+        .desc = {DOE_VK_VIEW_2D, 0, 1, 0, 1, DOE_VK_ASPECT_ALL, 0}};
     desc = (doe_vk_render_pass_desc){.color = &color_view, .clear_color = &blue,
         .discard_color = true, .depth_stencil = &depth_view, .clear_depth = true,
         .clear_stencil = true, .resolve_target = &resolve_view};
     resolve.desc.sample_count = 4;
     rejected(&context, &desc, NULL, DOE_VK_INVALID_ARGUMENT);
     resolve.desc.sample_count = 1;
-    resolve.desc.format = DOE_VK_FORMAT_BGRA8_UNORM;
+    resolve.desc.format = resolve_view.format = DOE_VK_FORMAT_BGRA8_UNORM;
     rejected(&context, &desc, NULL, DOE_VK_INVALID_ARGUMENT);
-    resolve.desc.format = DOE_VK_FORMAT_RGBA8_UNORM;
+    resolve.desc.format = resolve_view.format = DOE_VK_FORMAT_RGBA8_UNORM;
     resolve.desc.width = 4;
     rejected(&context, &desc, NULL, DOE_VK_INVALID_ARGUMENT);
     resolve.desc.width = 8;

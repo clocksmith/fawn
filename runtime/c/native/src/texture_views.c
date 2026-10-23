@@ -32,12 +32,15 @@ WGPUTextureView wgpuTextureCreateView(WGPUTexture handle, const WGPUTextureViewD
     doe_vk_texture_view_desc native = {0};
     if (status == DOE_RESOURCE_OK) {
         /* A DepthOnly/StencilOnly view resolves to its aspect format; the backend
-         * view selects that native aspect over the same parent image. Any other
-         * format difference is reinterpretation, still unsupported here. */
+         * view selects that native aspect over the same parent image. */
         WGPUTextureFormat aspect_format;
         if (doe_resource_format_aspect_format(doe_resource_texture_description(texture)->format,
-                resolved.aspect, &aspect_format) != DOE_RESOURCE_OK || resolved.format != aspect_format ||
+                resolved.aspect, &aspect_format) != DOE_RESOURCE_OK ||
             !native_texture_aspect(resolved.aspect, &native.aspect)) status = DOE_RESOURCE_UNSUPPORTED;
+        /* A different full-aspect format is a resource-validated viewFormats
+         * entry; the backend admits it only from the image's srgb/unorm list. */
+        else if (resolved.format != aspect_format && (resolved.aspect != WGPUTextureAspect_All ||
+            !native_texture_format(resolved.format, &native.format))) status = DOE_RESOURCE_UNSUPPORTED;
         native.base_mip = resolved.base_mip;
         native.mip_count = resolved.mip_count;
         native.base_layer = resolved.base_layer;

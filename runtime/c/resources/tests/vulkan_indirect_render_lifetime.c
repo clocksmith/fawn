@@ -185,7 +185,7 @@ int main(int argc, char **argv)
     doe_vk_texture *native_image;
     doe_vk_texture_view *native_view;
     require(doe_vk_texture_create(context, &image_desc, &native_image, NULL), "target");
-    const doe_vk_texture_view_desc view_desc = {DOE_VK_VIEW_2D, 0, 1, 0, 1, DOE_VK_ASPECT_ALL};
+    const doe_vk_texture_view_desc view_desc = {DOE_VK_VIEW_2D, 0, 1, 0, 1, DOE_VK_ASPECT_ALL, 0};
     require(doe_vk_texture_view_create(native_image, &view_desc, &native_view, NULL), "target view");
     const doe_resource_texture_desc texture_desc = {.dimension = WGPUTextureDimension_2D,
         .format = WGPUTextureFormat_RGBA8Unorm, .width = 8, .height = 8, .depth_or_layers = 1,
