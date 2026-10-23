@@ -1,0 +1,74 @@
+{
+  "candidate_observed": false,
+  "changes": [
+    {
+      "change": "Exact identifier-only shared -> wg_scratch; types, expressions, control, inputs, expected bytes unchanged.",
+      "id": "uniform_workgroup_fixed",
+      "new_source_path": "pre_candidate_supplement/uniform_workgroup_fixed_unreserved.wgsl",
+      "new_source_sha256": "b43e69795cb54d0ce2060c15a3b08b9ef3204f318f411809602390783fc0cdac",
+      "old_source_path": "frozen/uniform_workgroup_fixed.wgsl",
+      "old_source_sha256": "93228202651d75951812eb980feca60d2fd0a9c29c202ca683bad35120fdb86d"
+    },
+    {
+      "change": "Exact identifier-only shared -> wg_scratch; types, expressions, control, inputs, expected bytes unchanged.",
+      "id": "execute_group_isolation",
+      "new_source_path": "pre_candidate_supplement/execute_group_isolation_unreserved.wgsl",
+      "new_source_sha256": "e3a0a2d19e5f5548ca0864bc95cb99eb9b71e97f96ab64796f21fa933b842078",
+      "old_source_path": "frozen/execute_group_isolation.wgsl",
+      "old_source_sha256": "6ae7e63229ee3fc7a80117db20ee42dea4df2e5a3f48ed8b459bea2f675ffcf8"
+    },
+    {
+      "change": "Exact identifier-only shared -> wg_scratch; types, expressions, control, inputs, expected bytes unchanged.",
+      "id": "execute_zero_before_return",
+      "new_source_path": "pre_candidate_supplement/execute_zero_before_return_unreserved.wgsl",
+      "new_source_sha256": "94d35be280e2d175c73ceede4b4482f0f52ee6574f597a477d19f8c20a112880",
+      "old_source_path": "frozen/execute_zero_before_return.wgsl",
+      "old_source_sha256": "bdef4297ff7fc070b9312995d8f5400941710270631500c481b3452cbb694c2c"
+    },
+    {
+      "change": "Exact identifier-only shared -> wg_scratch; types, expressions, control, inputs, expected bytes unchanged.",
+      "id": "execute_helper_phases",
+      "new_source_path": "pre_candidate_supplement/execute_helper_phases_unreserved.wgsl",
+      "new_source_sha256": "c50543a078e1a0a163277dc19f53373e974ad7f83f57c61fe011974d9455254d",
+      "old_source_path": "frozen/execute_helper_phases.wgsl",
+      "old_source_sha256": "ee9b829345a8f0c1a63e79ca2cd250a8bbcb99ad02c7d9a872fd7322349a5184"
+    },
+    {
+      "change": "Exact identifier-only shared -> wg_scratch; types, expressions, control, inputs, expected bytes unchanged.",
+      "id": "execute_bounds",
+      "new_source_path": "pre_candidate_supplement/execute_bounds_unreserved.wgsl",
+      "new_source_sha256": "37c2f83558c12c7dab72bc8bd9501e4881223f0554e31779a3814a5ff07fe716",
+      "old_source_path": "frozen/execute_bounds.wgsl",
+      "old_source_sha256": "4ea6bd6a1963a104c7ae2e9ef2222ecad6ee0922b05f20a0bf84cf95943bdedb"
+    },
+    {
+      "change": "Exact identifier-only shared -> wg_scratch; types, expressions, control, inputs, expected bytes unchanged.",
+      "id": "execute_snapshot",
+      "new_source_path": "pre_candidate_supplement/execute_snapshot_unreserved.wgsl",
+      "new_source_sha256": "69ce8f8a4142791f90b08325d46f3ee24434420959afe0376e3f08f21626c4ca",
+      "old_source_path": "frozen/execute_snapshot.wgsl",
+      "old_source_sha256": "371d8a54fa47c9348ed5a0d15b5570d23c541f9e0573570cfffb061762b97ae8"
+    },
+    {
+      "change": "Exact identifier-only shared -> wg_scratch; types, expressions, control, inputs, expected bytes unchanged.",
+      "id": "control_vector_race",
+      "new_source_path": "pre_candidate_supplement/control_vector_race_unreserved.wgsl",
+      "new_source_sha256": "a99b13800a4c2b6e1d353e644ddf0e415333e1e3b75cb517da48fdcd68e9a176",
+      "old_source_path": "frozen/control_vector_race.wgsl",
+      "old_source_sha256": "2013f00e6374d1e3ab05dd8807443945b42ea18c0ed5d14d3b85b6efe81c68b2"
+    },
+    {
+      "change": "Exact identifier-only shared -> wg_scratch; types, expressions, control, inputs, expected bytes unchanged.",
+      "id": "execute_runtime_bounds",
+      "new_source_path": "pre_candidate_supplement/execute_runtime_bounds_unreserved.wgsl",
+      "new_source_sha256": "6098ed256dfa3425e9da57cb9f7fd15fed75f20e845ce887cc8e89e48e8c5bbb",
+      "old_source_path": "pre_candidate_supplement/execute_runtime_bounds.wgsl",
+      "old_source_sha256": "5b4eb249e4eb66d69b9a3b277b089bd5c653bc6d419b5975adb844b9d6f4055d"
+    }
+  ],
+  "original_bytes_preserved": true,
+  "real_witness_bytes_changed": false,
+  "reason": "shared is a WGSL reserved word, confirmed by unchanged accepted-M10 semantic diagnostics. This lexical defect would mask the intended checks.",
+  "reference": "https://www.w3.org/TR/2026/CRD-WGSL-20261021/#reserved-words",
+  "utc": "2026-10-23T11:34:57.481297+00:00"
+}

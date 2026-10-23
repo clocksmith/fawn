@@ -1,0 +1,1 @@
+@group(0) @binding(0) var<storage,read_write> out:array<u32>;@compute @workgroup_size(4) fn main(@builtin(local_invocation_index) li:u32,@builtin(global_invocation_id) gid:vec3u,@builtin(workgroup_id) wid:vec3u){var wg_store:array<u32,4>;wg_store[li]=li+3u;let old=wg_store;wg_store[li]=9u;out[gid.x]=old[(li+1u)%4u];}

@@ -1,0 +1,165 @@
+[
+  {
+    "command": [
+      "gcc",
+      "-std=c11",
+      "-O2",
+      "-Wall",
+      "-Wextra",
+      "-Wpedantic",
+      "-Werror",
+      "-Wvla",
+      "-Wno-unused-const-variable",
+      "-Wno-misleading-indentation",
+      "-fno-fast-math",
+      "-ffp-contract=off",
+      "-frounding-math",
+      "-fno-builtin",
+      "-I/workspace/shared/doe-c-migration-20261023/runtime/c/compiler/independent_tests_m10/native/frozen_headers",
+      "-I/workspace/shared/doe-c-migration-evidence-20261023/milestone11/evaluator/native",
+      "/workspace/shared/doe-c-migration-evidence-20261023/milestone11/evaluator/native/boundary_m11_revision1.c",
+      "/workspace/shared/doe-c-migration-20261023/runtime/c/compiler/independent_tests_m10/native/allocator_m10.c",
+      "/tmp/doe-m11-independent-native-build2/libdoe-m11.a",
+      "-DWRAP_ALLOCATORS",
+      "-Wl,--wrap=malloc,--wrap=calloc,--wrap=realloc,--wrap=free,--wrap=aligned_alloc,--wrap=posix_memalign",
+      "-pthread",
+      "-lm",
+      "-o",
+      "/tmp/doe-m11-independent-native-build2/boundary-revision1/archive"
+    ],
+    "label": "build-archive",
+    "returncode": 0,
+    "seconds": 0.1966278050094843
+  },
+  {
+    "command": [
+      "/tmp/doe-m11-independent-native-build2/boundary-revision1/archive"
+    ],
+    "label": "run-archive",
+    "returncode": 0,
+    "seconds": 0.005267072992864996
+  },
+  {
+    "command": [
+      "gcc",
+      "-std=c11",
+      "-O2",
+      "-Wall",
+      "-Wextra",
+      "-Wpedantic",
+      "-Werror",
+      "-Wvla",
+      "-Wno-unused-const-variable",
+      "-Wno-misleading-indentation",
+      "-fno-fast-math",
+      "-ffp-contract=off",
+      "-frounding-math",
+      "-fno-builtin",
+      "-I/workspace/shared/doe-c-migration-20261023/runtime/c/compiler/independent_tests_m10/native/frozen_headers",
+      "-I/workspace/shared/doe-c-migration-evidence-20261023/milestone11/evaluator/native",
+      "/workspace/shared/doe-c-migration-evidence-20261023/milestone11/evaluator/native/boundary_m11_revision1.c",
+      "/workspace/shared/doe-c-migration-20261023/runtime/c/compiler/independent_tests_m10/native/allocator_m10.c",
+      "/tmp/doe-m11-independent-native-build2/libdoe-m11.so",
+      "-Wl,-rpath,/tmp/doe-m11-independent-native-build2",
+      "-pthread",
+      "-lm",
+      "-o",
+      "/tmp/doe-m11-independent-native-build2/boundary-revision1/shared"
+    ],
+    "label": "build-shared",
+    "returncode": 0,
+    "seconds": 0.1819264690275304
+  },
+  {
+    "command": [
+      "/tmp/doe-m11-independent-native-build2/boundary-revision1/shared"
+    ],
+    "label": "run-shared",
+    "returncode": 0,
+    "seconds": 0.010157891025301069
+  },
+  {
+    "command": [
+      "gcc",
+      "-std=c11",
+      "-O2",
+      "-Wall",
+      "-Wextra",
+      "-Wpedantic",
+      "-Werror",
+      "-Wvla",
+      "-Wno-unused-const-variable",
+      "-Wno-misleading-indentation",
+      "-fno-fast-math",
+      "-ffp-contract=off",
+      "-frounding-math",
+      "-fno-builtin",
+      "-I/workspace/shared/doe-c-migration-20261023/runtime/c/compiler/independent_tests_m10/native/frozen_headers",
+      "-I/workspace/shared/doe-c-migration-evidence-20261023/milestone11/evaluator/native",
+      "/workspace/shared/doe-c-migration-evidence-20261023/milestone11/evaluator/native/boundary_m11_revision1.c",
+      "/workspace/shared/doe-c-migration-20261023/runtime/c/compiler/independent_tests_m10/native/allocator_m10.c",
+      "/tmp/doe-m11-author-build2/build/libdoe_compiler.so",
+      "-Wl,-rpath,/tmp/doe-m11-author-build2/build",
+      "-pthread",
+      "-lm",
+      "-o",
+      "/tmp/doe-m11-independent-native-build2/boundary-revision1/prebuilt"
+    ],
+    "label": "build-prebuilt",
+    "returncode": 0,
+    "seconds": 0.2057394299772568
+  },
+  {
+    "command": [
+      "/tmp/doe-m11-independent-native-build2/boundary-revision1/prebuilt"
+    ],
+    "label": "run-prebuilt",
+    "returncode": 0,
+    "seconds": 0.006268783996347338
+  },
+  {
+    "command": [
+      "gcc",
+      "-std=c11",
+      "-O2",
+      "-Wall",
+      "-Wextra",
+      "-Wpedantic",
+      "-Werror",
+      "-Wvla",
+      "-Wno-unused-const-variable",
+      "-Wno-misleading-indentation",
+      "-fno-fast-math",
+      "-ffp-contract=off",
+      "-frounding-math",
+      "-fno-builtin",
+      "-I/workspace/shared/doe-c-migration-20261023/runtime/c/compiler/independent_tests_m10/native/frozen_headers",
+      "-I/workspace/shared/doe-c-migration-evidence-20261023/milestone11/evaluator/native",
+      "/workspace/shared/doe-c-migration-evidence-20261023/milestone11/evaluator/native/boundary_m11_revision1.c",
+      "/workspace/shared/doe-c-migration-20261023/runtime/c/compiler/independent_tests_m10/native/allocator_m10.c",
+      "/tmp/doe-m11-independent-native-build2/consumers-all/libdoe-m11-sanitized.so",
+      "-Wl,-rpath,/tmp/doe-m11-independent-native-build2/consumers-all",
+      "-O1",
+      "-g",
+      "-fno-omit-frame-pointer",
+      "-fsanitize=address,undefined",
+      "-fno-pie",
+      "-no-pie",
+      "-pthread",
+      "-lm",
+      "-o",
+      "/tmp/doe-m11-independent-native-build2/boundary-revision1/sanitizer"
+    ],
+    "label": "build-sanitizer",
+    "returncode": 0,
+    "seconds": 0.4256601390079595
+  },
+  {
+    "command": [
+      "/tmp/doe-m11-independent-native-build2/boundary-revision1/sanitizer"
+    ],
+    "label": "run-sanitizer",
+    "returncode": 0,
+    "seconds": 0.018724747002124786
+  }
+]

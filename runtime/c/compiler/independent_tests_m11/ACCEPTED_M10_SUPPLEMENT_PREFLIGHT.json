@@ -1,0 +1,36 @@
+{
+  "utc": "2026-10-23T11:42:50.933508+00:00",
+  "M11_candidate_used": false,
+  "library_sha256": "5b41d5c25f866c87f7c7a3be229a6cfa7c1537fe66360a215a8363b0e0cf4d97",
+  "adaptation": "Workgroup roots moved to entry locals, except helper-visible root changed to storage root. Synchronization calls removed. Syntax/type preparation only, not target Workgroup proof.",
+  "records": [
+    {
+      "id": "execute_constant_skipped_effects",
+      "source_sha256": "6683eeb929eab1f417d4fa3b436bd50745bf96a894a638b846144e46ad133e05",
+      "status": 0,
+      "offset": 0,
+      "diagnostic": ""
+    },
+    {
+      "id": "execute_multiple_roots",
+      "source_sha256": "2130ec956d17dfbea687bfe03ed5d2f62d2425051babe50b50597d077ac14969",
+      "status": 0,
+      "offset": 0,
+      "diagnostic": ""
+    },
+    {
+      "id": "execute_helper_shared_identity",
+      "source_sha256": "ac930566c85a4ccf1e96b52a458c95e753032d8aa0dc008ef598c9f6ba9bec6e",
+      "status": 0,
+      "offset": 0,
+      "diagnostic": ""
+    },
+    {
+      "id": "execute_whole_snapshot",
+      "source_sha256": "1ca85fa5f07d65eef81a43e384d61a932cb5a731f20de38a3ac752357d89748d",
+      "status": 0,
+      "offset": 0,
+      "diagnostic": ""
+    }
+  ]
+}

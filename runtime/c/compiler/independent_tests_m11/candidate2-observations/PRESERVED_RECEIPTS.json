@@ -1,0 +1,30 @@
+{
+  "utc": "2026-10-23T11:55:36.672280+00:00",
+  "receipts": [
+    {
+      "original": "/tmp/doe-m11-independent-prebuilt-rdLxOX/matrix/results.json",
+      "preserved": "candidate2-observations/PREBUILT_MATRIX.json",
+      "sha256": "0e9796162a8f76956bfdded9411d013866b253f207b54c98a8836346ad8acb85"
+    },
+    {
+      "original": "/tmp/doe-m11-independent-prebuilt-rdLxOX/small-execution/results.json",
+      "preserved": "candidate2-observations/PREBUILT_SMALL_EXECUTION.json",
+      "sha256": "307658da2ab10055c02afa35ef64b11c85728ae0229a08bf5a7a564965d253e5"
+    },
+    {
+      "original": "/tmp/doe-m11-independent-target-LPWtOk/m10-regression/results.json",
+      "preserved": "candidate2-observations/M10_REGRESSION_ORIGINAL.json",
+      "sha256": "ea6a4004956934fed798925fa5108fa958b4d31b121c8e46329977f390cead2b"
+    },
+    {
+      "original": "/tmp/doe-m11-independent-target-LPWtOk/same98/results.json",
+      "preserved": "candidate2-observations/SAME98_PENDING_LONG_GATE.json",
+      "sha256": "8913916f2ff519fbf7c8dccef7170cc3c33c23e31cda51dba8a8e47b35e33fe5"
+    },
+    {
+      "original": "/tmp/doe-m11-independent-target-LPWtOk/early-combined.json",
+      "preserved": "candidate2-observations/EARLY_TARGET_PROOFS.json",
+      "sha256": "498e6fc5ae2031d8bcf0c90b9c9937d8726bb8a18e0c50abbf22de3ebabe69d9"
+    }
+  ]
+}

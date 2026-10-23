@@ -1,0 +1,110 @@
+{
+  "library_sha256": "5d301e813223c9602f7c7ad57634b0ad53a68ba8b752066fbfdce1e9f29b2553",
+  "cases": [
+    {
+      "id": "control_vector_race",
+      "expected_status": 0,
+      "word_sha256": "119c540b988488fcc950813ec23047f1359c856db5481d2e6de7c2127de39679",
+      "counts": {
+        "words": 281,
+        "types": 0,
+        "members": 0,
+        "resources": 0,
+        "name_bytes": 5
+      },
+      "target": {
+        "workgroup_roots": 1,
+        "static_barriers": 2,
+        "input_variables": 5,
+        "target_bound": 60,
+        "word_count": 281
+      },
+      "validator": {
+        "returncode": 0,
+        "output": ""
+      },
+      "execution": [
+        {
+          "expected_race_detected": "unordered ('workgroup', (0, 0, 0), 38, ()): Access(invocation=0, group=(0, 0, 0), epoch=1, write=True) versus Access(invocation=1, group=(0, 0, 0), epoch=1, write=True)"
+        },
+        {
+          "expected_race_detected": "unordered ('workgroup', (0, 0, 0), 38, ()): Access(invocation=0, group=(0, 0, 0), epoch=1, write=True) versus Access(invocation=1, group=(0, 0, 0), epoch=1, write=True)"
+        },
+        {
+          "expected_race_detected": "unordered ('workgroup', (0, 0, 0), 38, ()): Access(invocation=1, group=(0, 0, 0), epoch=1, write=True) versus Access(invocation=0, group=(0, 0, 0), epoch=1, write=True)"
+        },
+        {
+          "expected_race_detected": "unordered ('workgroup', (0, 0, 0), 38, ()): Access(invocation=1, group=(0, 0, 0), epoch=1, write=True) versus Access(invocation=0, group=(0, 0, 0), epoch=1, write=True)"
+        },
+        {
+          "expected_race_detected": "unordered ('workgroup', (0, 0, 0), 38, ()): Access(invocation=0, group=(0, 0, 0), epoch=1, write=True) versus Access(invocation=1, group=(0, 0, 0), epoch=1, write=True)"
+        },
+        {
+          "expected_race_detected": "unordered ('workgroup', (0, 0, 0), 38, ()): Access(invocation=0, group=(0, 0, 0), epoch=1, write=True) versus Access(invocation=1, group=(0, 0, 0), epoch=1, write=True)"
+        },
+        {
+          "expected_race_detected": "unordered ('workgroup', (0, 0, 0), 38, ()): Access(invocation=0, group=(0, 0, 0), epoch=1, write=True) versus Access(invocation=1, group=(0, 0, 0), epoch=1, write=True)"
+        },
+        {
+          "expected_race_detected": "unordered ('workgroup', (0, 0, 0), 38, ()): Access(invocation=0, group=(0, 0, 0), epoch=1, write=True) versus Access(invocation=1, group=(0, 0, 0), epoch=1, write=True)"
+        }
+      ],
+      "outcome": "passed",
+      "seconds": 0.005455822974909097
+    },
+    {
+      "id": "control_storage_not_fenced",
+      "expected_status": 0,
+      "word_sha256": "1a28fc8dd89ca6832c59641a2bc4f22ae7fb4b6466dd159c549f11913451590c",
+      "counts": {
+        "words": 332,
+        "types": 2,
+        "members": 0,
+        "resources": 1,
+        "name_bytes": 9
+      },
+      "target": {
+        "workgroup_roots": 0,
+        "static_barriers": 1,
+        "input_variables": 5,
+        "target_bound": 68,
+        "word_count": 332
+      },
+      "validator": {
+        "returncode": 0,
+        "output": ""
+      },
+      "execution": [
+        {
+          "expected_race_detected": "unordered ('storage', (0, 0), 4): Access(invocation=1, group=(0, 0, 0), epoch=0, write=True) versus Access(invocation=0, group=(0, 0, 0), epoch=1, write=False)"
+        },
+        {
+          "expected_race_detected": "unordered ('storage', (0, 0), 4): Access(invocation=1, group=(0, 0, 0), epoch=0, write=True) versus Access(invocation=0, group=(0, 0, 0), epoch=1, write=False)"
+        },
+        {
+          "expected_race_detected": "unordered ('storage', (0, 0), 16): Access(invocation=4, group=(1, 0, 0), epoch=0, write=True) versus Access(invocation=7, group=(1, 0, 0), epoch=1, write=False)"
+        },
+        {
+          "expected_race_detected": "unordered ('storage', (0, 0), 16): Access(invocation=4, group=(1, 0, 0), epoch=0, write=True) versus Access(invocation=7, group=(1, 0, 0), epoch=1, write=False)"
+        },
+        {
+          "expected_race_detected": "unordered ('storage', (0, 0), 20): Access(invocation=5, group=(1, 0, 0), epoch=0, write=True) versus Access(invocation=4, group=(1, 0, 0), epoch=1, write=False)"
+        },
+        {
+          "expected_race_detected": "unordered ('storage', (0, 0), 20): Access(invocation=5, group=(1, 0, 0), epoch=0, write=True) versus Access(invocation=4, group=(1, 0, 0), epoch=1, write=False)"
+        },
+        {
+          "expected_race_detected": "unordered ('storage', (0, 0), 4): Access(invocation=1, group=(0, 0, 0), epoch=0, write=True) versus Access(invocation=0, group=(0, 0, 0), epoch=1, write=False)"
+        },
+        {
+          "expected_race_detected": "unordered ('storage', (0, 0), 4): Access(invocation=1, group=(0, 0, 0), epoch=0, write=True) versus Access(invocation=0, group=(0, 0, 0), epoch=1, write=False)"
+        }
+      ],
+      "outcome": "passed",
+      "seconds": 0.005876437004189938
+    }
+  ],
+  "failed": [],
+  "pending": 0,
+  "physical_device": false
+}

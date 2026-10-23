@@ -1,0 +1,56 @@
+{
+  "acceptance": "Every frozen obligation must close. Report precise unqualified gates, not arbitrary-count success. No GPU, runtime metadata adoption, performance, whole-Doe or production claims.",
+  "baseline_commit": "2220c64cff0bd87b1eed6b246515941ce7d18d24",
+  "candidate_state": {
+    "built": false,
+    "executed": false,
+    "inspected": false,
+    "loaded": false
+  },
+  "capacity_plan": {
+    "abi1_wrapper_ceiling": 147968,
+    "acyclic_path_ceiling": 16384,
+    "cli_query_bytes": 2536128,
+    "fixed_query_bytes": 146256,
+    "fixed_workspace_ceiling": 147456,
+    "old_job_cli_profile_query_bytes": 2172992,
+    "other_frames_ceiling": 8192,
+    "source_caps": "All public M10 capacities unchanged; bind original fixtures and exact current-query mapping",
+    "target_ids": "256+D+64I+3F+P+(S+1+X)+10X+R+G+8",
+    "target_words": "2048+256I+32F+4P+O+9D+6M+L+4K+57X+40R+25G+64",
+    "work_ceiling": 67108864
+  },
+  "contract_manifest_sha256": "9f5013276a311c610cade91062426b9ab6d7f993293c7fcd22ff183902c81f75",
+  "corpus": "Rebind unchanged same98 source inventory from accepted portable runner; classify emitted, validated, executed and rejected separately. Six mandatory source paths frozen above. Other newly admitted sources require their own independent oracle or remain emitted/validated only.",
+  "graph_method": "Explicit dependency edges frozen per source case; independent BFS required-to-varying reachability. These graph slices record the decisive path or its absence, not an alternate WGSL parser or copy of Boolean solver.",
+  "historical": "Bind every portable accepted M10 input and original adapter. Preserve original failures. Exact workgroup-negative admission and current private-query updates only; report each mapping before changing a runner. No broad status set, skip, or blanket author-test acceptance.",
+  "memory_model": "Shared storage initially poison; whole typed null store supplies zeros. Independent access epochs or vector-clock happens-before. Workgroup barrier orders only Workgroup memory, not StorageBuffer. Memory conflict granularity includes enclosing vector memory location, arrays/struct fields track true subobject ranges. All racy controls excluded from positive numerical claims.",
+  "mutability": "This frozen directory and seal remain immutable. Later harness implementations/defect fixes go outside it with attributed supplement and preserved original failures.",
+  "native_gates": [
+    "Fresh GCC14 C11 strict flags source library/archive/CLI; separately bind handed prebuilt",
+    "C/C++ source/archive/shared/prebuilt public consumption",
+    "four headers byte-identical and seven exports",
+    "current query exact spans and one-short rejection; stale M10 bytes reject",
+    "disjoint/overlapping spans; unaligned and boundary sentinels",
+    "reentry/concurrent callers; no shared mutable state or heap",
+    "fenv/errno restored success/failure every output mode",
+    "WORDS/REFLECTION/MEASURE full private emission/uniformity and failure atomicity",
+    "ASan/UBSan source tests and new roots/shortcircuits/loop cases",
+    "actual records/slices/phase union and target counts versus frozen ledger",
+    "complete .su acyclic/recursive combined bounds, fixed212992/job196608",
+    "actual counted analysis work every witness; private exact N and N-1 with source-bound instrumentation"
+  ],
+  "normative_reference": "https://www.w3.org/TR/2026/CRD-WGSL-20261021/",
+  "schedules": {
+    "bounded_burst": "ascending rotation, burst pattern1,3,7 instructions; fair sweeps",
+    "dispatches": 2,
+    "poison_bytes": [
+      165,
+      90
+    ],
+    "reverse": "descending IDs, one instruction each",
+    "round_robin": "ascending global invocation IDs, one instruction each",
+    "shuffle": "Fisher-Yates fair sweep with Python Random seed0x11c0ffee"
+  },
+  "target_execution": "Real emitted SPIR-V only. Per-invocation value maps/Function memory and call frames; per-workgroup Workgroup roots; per-dispatch lifetime. Instruction interleaving fair schedules. Dynamic barrier keys include group, static instruction, active caller sites and active loop iteration stack. All live required invocations must rendezvous; termination while peers await is failure. No invocation-at-a-time replay."
+}

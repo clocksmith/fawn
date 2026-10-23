@@ -1,0 +1,3 @@
+fixed core=552 root=24/4 G=256 H=30 persistent=92456 tokens=24588 common=20856 target=32944 uniformity=5232 total=146256 alignment=8
+cli core=552 root=24/4 G=1024 H=68 persistent=995880 tokens=98316 common=1008744 target=531504 uniformity=428912 total=2536128 alignment=8
+job_cli core=552 root=24/4 G=1024 H=68 persistent=735336 tokens=98316 common=1008744 target=278704 uniformity=428912 total=2172992 alignment=8

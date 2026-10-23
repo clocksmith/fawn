@@ -1,0 +1,31 @@
+{
+  "allocator_imports": [],
+  "artifacts": {
+    "doe-compiler-m11": {
+      "path": "/tmp/doe-m11-independent-native-build2/doe-compiler-m11",
+      "sha256": "c927324f9d7ae2fd9ac14d61cb9334a9870c3ff8396e5934470bfb3653310beb"
+    },
+    "libdoe-m11.a": {
+      "path": "/tmp/doe-m11-independent-native-build2/libdoe-m11.a",
+      "sha256": "8f11e695ee777494e2660f51be02e2bd9b49ecacf3edd068ca77a868128e4273"
+    },
+    "libdoe-m11.so": {
+      "path": "/tmp/doe-m11-independent-native-build2/libdoe-m11.so",
+      "sha256": "5d301e813223c9602f7c7ad57634b0ad53a68ba8b752066fbfdce1e9f29b2553"
+    }
+  },
+  "build_root": "/tmp/doe-m11-independent-native-build2",
+  "exports": [
+    "doe_compiler_compile",
+    "doe_compiler_compile_job",
+    "doe_compiler_compile_typed",
+    "doe_compiler_compile_v2",
+    "doe_compiler_job_requirements",
+    "doe_compiler_typed_requirements",
+    "doe_compiler_workspace_requirements"
+  ],
+  "manifest_sha256": "b124146a5044e288dcd7fbd153a7f75f3ecfc2e4451666b2f4e1b7771073b9af",
+  "owner": "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler",
+  "scope": "Fresh strict native source build only; no semantic/GPU/runtime acceptance",
+  "status": "PASS"
+}

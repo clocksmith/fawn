@@ -1,0 +1,14 @@
+{
+  "utc": "2026-10-23T13:15:17.436315+00:00",
+  "purpose": "Portable reproduction of the exact already-approved private-global status mapping. Not a new expectation or broad status set.",
+  "original_runner_sha256": "4bcb455f57945e19c0b94aad3250d224bd4cf34ed172d367fc79c67912a2230b",
+  "overlay_runner_sha256": "95fc4f9837b38c287283bddc414b6db0b465b73b79b842dc632f94bced71fc9b",
+  "sole_semantic_mapping": {
+    "id": "private",
+    "source_sha256": "20ee474ecf0eca32a4333dfe47989e52a825b72a8a895742e4d26ec9201e6160",
+    "old": 2,
+    "new": 3
+  },
+  "original_runner_and_failure_unchanged": true,
+  "extra_option": "--select exact-case-name only limits reproduction; default remains complete inherited matrix."
+}

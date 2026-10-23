@@ -6,9 +6,11 @@ This is the initial inventory for the explicitly requested, incremental C
 migration on the local experimental branch. It is not a mechanical translation,
 production switchover, new architecture authority, or claim that a rewrite is
 complete. Preserve retained Zig, the original main checkout, and previous
-language-experiment receipts. Changes are committed only on the requested local
-experimental branch; no public push, system installation or external-machine
-operation is part of this campaign.
+language-experiment receipts. Changes are committed only on the requested
+experimental branch. The later explicit publication request permits tested
+source progress on that branch without force or a main change; publication is
+not production promotion. System installation and external-machine operation
+remain outside this campaign.
 
 The immutable baseline is commit
 `665475907494d2095a760596218b4c2d363cb436`. The
@@ -122,6 +124,17 @@ are 140,056/140,208 bytes within reviewed ceilings. Exact historical adapters,
 three corrected candidate defects and first failures remain source-bound.
 This does not qualify workgroup synchronization, physical execution, production
 TranslationInfo/adoption or a production-default replacement.
+
+The [eleventh increment](../../runtime/c/compiler/MILESTONE_11_RESULTS.md) adds
+typed workgroup storage, zero initialization, workgroup barriers and transitive
+source uniformity. Independent multi-invocation execution passes the full unchanged
+100-iteration shared-memory witness and its frozen schedules. The
+[new ledger](corpus-coverage-m11.json) distinguishes 52 freshly emitted/validated
+paths from 43 independently executed paths, nine validation-only emissions and
+46 explicit rejections. All 37 M10 target streams are unchanged. Native storage,
+host-environment, atomicity and sanitizer gates pass within the recorded host
+envelope. Workgroup runtime metadata/adoption, physical execution, broader
+collectives and complete compiler ownership remain unqualified.
 
 The first [CPU runtime owner](../../runtime/c/futures/RESULTS.md) is independently
 accepted as an isolated C library for future IDs and completion queues. It retains

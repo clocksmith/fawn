@@ -1,0 +1,15 @@
+{
+  "utc": "2026-10-23T12:29:44.601078+00:00",
+  "session_id": 67883,
+  "available": "write_stdin reports active session and new stdout/stderr only; original runner persists complete case results only.",
+  "unavailable": "No live dispatch/instruction counter endpoint and no CPU/RSS metadata in exec/write_stdin tool results. Separate ordinary exec commands have isolated PID namespaces.",
+  "read_only_sampling_attempt": {
+    "target": "Exact Python evaluator command using fresh independent library and /tmp/doe-m11-independent-target-LPWtOk/cases",
+    "requested": "pgrep exact command, ps CPU/RSS/state, proc stat/status counters only",
+    "route": "One require_escalated exec attempt",
+    "outcome": "setup failed before requested command executed",
+    "error": "bwrap: Can't create file /home/agent/.codex/sessions: Read-only file system",
+    "retry_or_bypass": false
+  },
+  "qualification": "Active-session liveness and elapsed time do not prove forward instruction progress. No claim is made about current dispatch number or CPU consumption. Original run is unchanged."
+}

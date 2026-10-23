@@ -1,0 +1,166 @@
+{
+  "candidate_used": false,
+  "passed": true,
+  "controls": [
+    {
+      "quantum": 1,
+      "schedule": "round_robin",
+      "validator_valid": true,
+      "detection": "barrier cannot rendezvous with exited invocation",
+      "baseline": {
+        "events": 16,
+        "steps": 20,
+        "barriers_per_group": {
+          "(0, 0, 0)": 3
+        },
+        "memory_accesses": 0,
+        "invocations": 4,
+        "groups": 1,
+        "schedule": "round_robin",
+        "poison": 165,
+        "pure_instruction_quantum": 1,
+        "caller_supplied_reusable_shared_storage": false
+      }
+    },
+    {
+      "quantum": 1,
+      "schedule": "reverse",
+      "validator_valid": true,
+      "detection": "barrier cannot rendezvous with exited invocation",
+      "baseline": {
+        "events": 16,
+        "steps": 20,
+        "barriers_per_group": {
+          "(0, 0, 0)": 3
+        },
+        "memory_accesses": 0,
+        "invocations": 4,
+        "groups": 1,
+        "schedule": "reverse",
+        "poison": 165,
+        "pure_instruction_quantum": 1,
+        "caller_supplied_reusable_shared_storage": false
+      }
+    },
+    {
+      "quantum": 1,
+      "schedule": "shuffle_0x11c0ffee",
+      "validator_valid": true,
+      "detection": "barrier cannot rendezvous with exited invocation",
+      "baseline": {
+        "events": 16,
+        "steps": 20,
+        "barriers_per_group": {
+          "(0, 0, 0)": 3
+        },
+        "memory_accesses": 0,
+        "invocations": 4,
+        "groups": 1,
+        "schedule": "shuffle_0x11c0ffee",
+        "poison": 165,
+        "pure_instruction_quantum": 1,
+        "caller_supplied_reusable_shared_storage": false
+      }
+    },
+    {
+      "quantum": 1,
+      "schedule": "bounded_burst_1_3_7",
+      "validator_valid": true,
+      "detection": "barrier cannot rendezvous with exited invocation",
+      "baseline": {
+        "events": 16,
+        "steps": 20,
+        "barriers_per_group": {
+          "(0, 0, 0)": 3
+        },
+        "memory_accesses": 0,
+        "invocations": 4,
+        "groups": 1,
+        "schedule": "bounded_burst_1_3_7",
+        "poison": 165,
+        "pure_instruction_quantum": 1,
+        "caller_supplied_reusable_shared_storage": false
+      }
+    },
+    {
+      "quantum": 64,
+      "schedule": "round_robin",
+      "validator_valid": true,
+      "detection": "barrier cannot rendezvous with exited invocation",
+      "baseline": {
+        "events": 12,
+        "steps": 20,
+        "barriers_per_group": {
+          "(0, 0, 0)": 3
+        },
+        "memory_accesses": 0,
+        "invocations": 4,
+        "groups": 1,
+        "schedule": "round_robin",
+        "poison": 165,
+        "pure_instruction_quantum": 64,
+        "caller_supplied_reusable_shared_storage": false
+      }
+    },
+    {
+      "quantum": 64,
+      "schedule": "reverse",
+      "validator_valid": true,
+      "detection": "barrier cannot rendezvous with exited invocation",
+      "baseline": {
+        "events": 12,
+        "steps": 20,
+        "barriers_per_group": {
+          "(0, 0, 0)": 3
+        },
+        "memory_accesses": 0,
+        "invocations": 4,
+        "groups": 1,
+        "schedule": "reverse",
+        "poison": 165,
+        "pure_instruction_quantum": 64,
+        "caller_supplied_reusable_shared_storage": false
+      }
+    },
+    {
+      "quantum": 64,
+      "schedule": "shuffle_0x11c0ffee",
+      "validator_valid": true,
+      "detection": "barrier cannot rendezvous with exited invocation",
+      "baseline": {
+        "events": 12,
+        "steps": 20,
+        "barriers_per_group": {
+          "(0, 0, 0)": 3
+        },
+        "memory_accesses": 0,
+        "invocations": 4,
+        "groups": 1,
+        "schedule": "shuffle_0x11c0ffee",
+        "poison": 165,
+        "pure_instruction_quantum": 64,
+        "caller_supplied_reusable_shared_storage": false
+      }
+    },
+    {
+      "quantum": 64,
+      "schedule": "bounded_burst_1_3_7",
+      "validator_valid": true,
+      "detection": "barrier cannot rendezvous with exited invocation",
+      "baseline": {
+        "events": 12,
+        "steps": 20,
+        "barriers_per_group": {
+          "(0, 0, 0)": 3
+        },
+        "memory_accesses": 0,
+        "invocations": 4,
+        "groups": 1,
+        "schedule": "bounded_burst_1_3_7",
+        "poison": 165,
+        "pure_instruction_quantum": 64,
+        "caller_supplied_reusable_shared_storage": false
+      }
+    }
+  ]
+}

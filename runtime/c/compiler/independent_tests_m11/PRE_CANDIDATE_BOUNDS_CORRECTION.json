@@ -1,0 +1,59 @@
+{
+  "candidate_observed": false,
+  "corrected_original_status": 4,
+  "new_case": {
+    "execution": {
+      "class": "exact bytes",
+      "dispatches": 2,
+      "expected_outputs_hex": {
+        "0:0": "03000000040000000500000006000000030000000400000005000000060000000300000004000000"
+      },
+      "groups": [
+        3,
+        1,
+        1
+      ],
+      "initial_shared_poison": [
+        "a5",
+        "5a"
+      ],
+      "inputs_hex": {
+        "0:0": "63000000630000006300000063000000630000006300000063000000630000006300000063000000"
+      },
+      "race_free_required": true,
+      "schedules": [
+        "round_robin",
+        "reverse",
+        "shuffle_0x11c0ffee",
+        "bounded_burst_1_3_7"
+      ]
+    },
+    "expected_status": 0,
+    "graph_reaches_nonuniform": false,
+    "id": "execute_runtime_bounds",
+    "obligation": "Runtime let index99 over fixed4-element root: independent shared/storage bounds; same originally frozen exact outputs",
+    "source": "pre_candidate_supplement/execute_runtime_bounds.wgsl",
+    "source_sha256": "5b4eb249e4eb66d69b9a3b277b089bd5c653bc6d419b5975adb844b9d6f4055d",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "E"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  "old_expected_status": 0,
+  "original_case": "execute_bounds",
+  "original_source_sha256": "4ea6bd6a1963a104c7ae2e9ef2222ecad6ee0922b05f20a0bf84cf95943bdedb",
+  "reason": "WGSL8.5.2 fixed array index const-expression99 is outside [0,4). Accepted M10 array_const_oob already requires semantic rejection. Runtime-stage let prevents const-expression classification without changing99 numerical value.",
+  "reference": "https://www.w3.org/TR/2026/CRD-WGSL-20261021/#array-access-expr",
+  "utc": "2026-10-23T11:32:23.583765+00:00"
+}

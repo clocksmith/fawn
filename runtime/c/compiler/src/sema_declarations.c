@@ -32,6 +32,7 @@ uint32_t sema_find_struct(const Source *s, NameSpan name) {
 bool sema_module_declared(const Source *s, NameSpan name) {
     if (sema_find_constant(s, name) != NO_ID || sema_find_function(s, name) != NO_ID || sema_find_struct(s, name) != NO_ID) return true;
     for (uint32_t i = 0u;i<s->compiler->resource_count;++i) if (source_spans_equal(s, name, s->compiler->resources[i].name)) return true;
+    for (uint32_t i = 0u;i<s->compiler->workgroup_count;++i) if (source_spans_equal(s, name, s->compiler->workgroups[i].name)) return true;
     return false;
 }
 bool sema_alias_visible(const Source *s) {
@@ -53,6 +54,48 @@ uint32_t sema_find_formal(const Source *s, NameSpan name) {
 const LocalBinding *sema_find_local(const Source *s, const LocalScope *scope, NameSpan name) {
     for (size_t i = scope->count;i != 0u;--i) if (source_spans_equal(s, name, scope->values[i-1u].name)) return &scope->values[i-1u];
     return NULL;
+}
+/* Shared read-only value identity. The analysis supplies a budget; normal
+ * lowering uses the same precedence with no analysis accounting. */
+static bool identity_name(Source *s,NameSpan a,NameSpan b,UniformityBudget *budget,bool *same) {
+    if (budget!=NULL && !uniformity_charge(s,budget,1u)) return false;
+    *same=source_spans_equal(s,a,b); return true;
+}
+bool sema_value_identity(Source *s,const LocalScope *scope,NameSpan name,UniformityBudget *budget,ValueIdentity *out) {
+    const CompilerWorkspace *c=s->compiler; bool same=false;
+    *out=(ValueIdentity){IDENTITY_NONE,NO_ID};
+    for (size_t i=scope->count;i!=0u;--i) {
+        if (!identity_name(s,name,scope->values[i-1u].name,budget,&same)) return false;
+        if (same) {*out=(ValueIdentity){IDENTITY_LOCAL,(uint32_t)i-1u};return true;}
+    }
+    if (c->current_function<c->function_count) {
+        const FunctionRecord *f=&c->functions[c->current_function];
+        for (uint32_t i=0u;i<f->formal_count;++i) {
+            if (!identity_name(s,name,c->formals[f->formal_start+i].name,budget,&same)) return false;
+            if (same) {*out=(ValueIdentity){IDENTITY_FORMAL,f->formal_start+i};return true;}
+        }
+    }
+    if (sema_alias_visible(s)) {
+        if (!identity_name(s,name,c->alias,budget,&same)) return false;
+        if (same) {*out=(ValueIdentity){IDENTITY_ALIAS,0u};return true;}
+    }
+    if (c->current_function==c->entry_function) for (uint32_t i=0u;i<c->parameter_count;++i) {
+        if (!identity_name(s,name,c->parameters[i].name,budget,&same)) return false;
+        if (same) {*out=(ValueIdentity){IDENTITY_INPUT,i};return true;}
+    }
+    for (uint32_t i=0u;i<c->constant_decl_count;++i) {
+        if (!identity_name(s,name,c->constant_decls[i].name,budget,&same)) return false;
+        if (same) {*out=(ValueIdentity){IDENTITY_CONSTANT,i};return true;}
+    }
+    for (uint32_t i=0u;i<c->resource_count;++i) {
+        if (!identity_name(s,name,c->resources[i].name,budget,&same)) return false;
+        if (same) {*out=(ValueIdentity){IDENTITY_RESOURCE,i};return true;}
+    }
+    for (uint32_t i=0u;i<c->workgroup_count;++i) {
+        if (!identity_name(s,name,c->workgroups[i].name,budget,&same)) return false;
+        if (same) {*out=(ValueIdentity){IDENTITY_WORKGROUP,i};return true;}
+    }
+    return true;
 }
 bool sema_local_use(Source *s, const LocalScope *scope, const LocalBinding *b, uint32_t offset) {
     const size_t index = (size_t)(b-scope->values);
@@ -103,6 +146,8 @@ bool sema_type_reference(Source *s, TypeRef ref, const LocalScope *scope, TypeId
         if (ref.syntax >= c->generic_count) return source_error(s, DOE_COMPILER_INPUT_ERROR, ref.offset, "invalid type syntax identity");
         const GenericSyntax *g = &c->generic_syntax[ref.syntax];
         if (lexical_value(s, scope, g->name) || sema_module_declared(s, g->name)) return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, g->name.offset, "type generator is shadowed");
+        if (source_span_is(s,g->name,"atomic") || source_span_is(s,g->name,"ptr"))
+            return source_error(s,DOE_COMPILER_UNSUPPORTED,g->name.offset,"atomic and pointer types are not supported");
         if (c->walk_count == c->limits.traversal) return source_pool_error(s, DOE_COMPILER_POOL_TRAVERSAL, (size_t)c->walk_count+1u, ref.offset, "type resolution traversal capacity exceeded");
         c->walk[c->walk_count++] = (WalkItem){.object = ref.syntax};
         ref = g->element;
@@ -359,12 +404,14 @@ static NameSpan module_name(const CompilerWorkspace *c, uint32_t index, uint32_t
     index-=c->function_count;
     if (index<c->resource_count) return c->resources[index].name;
     index-=c->resource_count;
+    if (index<c->workgroup_count) return c->workgroups[index].name;
+    index-=c->workgroup_count;
     return index<nominal_count?c->types[index].name:(NameSpan){0};
 }
 static bool declarations_valid(Source *s) {
     CompilerWorkspace *c = s->compiler;
     const uint32_t nominal_count = c->type_count;
-    const uint64_t count = (uint64_t)c->constant_decl_count+c->function_count+c->resource_count+nominal_count;
+    const uint64_t count = (uint64_t)c->constant_decl_count+c->function_count+c->resource_count+c->workgroup_count+nominal_count;
     for (uint32_t i = 0u;i<count;++i) {
         const NameSpan name = module_name(c, i, nominal_count);
         if (!sema_valid_name(s, name)) return false;
@@ -448,17 +495,29 @@ bool sema_resolve_declarations(Source *s, LocalScope *scope) {
         for (uint32_t j = 0u;j<i;++j) if (r->group == c->resources[j].group && r->binding == c->resources[j].binding)
                 return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, r->name.offset, "duplicate storage group and binding pair");
     }
+    for (uint32_t i=0u;i<c->workgroup_count;++i) {
+        WorkgroupRoot *root=&c->workgroups[i];
+        if (!sema_type_reference(s,root->annotation,scope,&root->type)) return false;
+        const uint32_t flags=type_flags(c,root->type);
+        if ((flags&(TYPE_FIXED|TYPE_CONSTRUCTIBLE))!=(TYPE_FIXED|TYPE_CONSTRUCTIBLE) || (flags&TYPE_ABSTRACT)!=0u)
+            return source_error(s,DOE_COMPILER_SEMANTIC_ERROR,root->name.offset,"workgroup type must be concrete, constructible and fixed-footprint");
+        const uint64_t size=type_size(c,root->type), alignment=type_alignment(c,root->type);
+        const uint64_t remainder=size%alignment, padding=remainder==0u?0u:alignment-remainder;
+        if (size>UINT64_MAX-padding || c->workgroup_storage_bytes>UINT64_MAX-(size+padding))
+            return source_error(s,DOE_COMPILER_SEMANTIC_ERROR,root->name.offset,"logical workgroup storage total overflows uint64");
+        c->workgroup_storage_bytes+=size+padding;
+    }
     c->current_function = c->entry_function;
     for (uint32_t i = 0u;i<c->parameter_count;++i) {
         const EntryParameter *p = &c->parameters[i];
         if (!sema_valid_name(s, p->name)) return false;
         for (uint32_t j = 0u;j<i;++j) if (source_spans_equal(s, p->name, c->parameters[j].name) || p->kind == c->parameters[j].kind)
                 return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, p->name.offset, "duplicate compute input name or builtin");
-        for (uint32_t category = 0u;category<4u;++category) {
-            const uint32_t count = category == 0u?c->constant_decl_count:category == 1u?c->function_count:category == 2u?c->resource_count:c->type_count;
+        for (uint32_t category = 0u;category<5u;++category) {
+            const uint32_t count = category == 0u?c->constant_decl_count:category == 1u?c->function_count:category == 2u?c->resource_count:category == 3u?c->type_count:c->workgroup_count;
             for (uint32_t j = 0u;j<count;++j) {
                 if (category == 3u && c->types[j].kind != TYPE_STRUCT) continue;
-                const NameSpan name = category == 0u?c->constant_decls[j].name:category == 1u?c->functions[j].name:category == 2u?c->resources[j].name:c->types[j].name;
+                const NameSpan name = category == 0u?c->constant_decls[j].name:category == 1u?c->functions[j].name:category == 2u?c->resources[j].name:category == 3u?c->types[j].name:c->workgroups[j].name;
                 const bool scalar = p->kind == INPUT_LOCAL_INDEX || p->flags == 0u;
                 const bool vector = p->kind != INPUT_LOCAL_INDEX;
                 if ((scalar && source_span_is(s, name, "u32")) || (vector && source_span_is(s, name, p->flags != 0u?"vec3u":"vec3")))

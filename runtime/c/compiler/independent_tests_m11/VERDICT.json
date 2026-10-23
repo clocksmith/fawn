@@ -1,0 +1,229 @@
+{
+  "utc": "2026-10-23T13:15:44.745783+00:00",
+  "status": "PASS_WITH_PRESERVED_EVALUATOR_CORRECTIONS",
+  "candidate": "M11 candidate2",
+  "source_manifest_sha256": "b124146a5044e288dcd7fbd153a7f75f3ecfc2e4451666b2f4e1b7771073b9af",
+  "source_archive_sha256": "c3ddb0594195aff3d157f7ee5cc488c4df7289f6c91f6b2dbe49c0302ba6172a",
+  "case_seal_sha256": "9a03dd3f38641834f59a70e6f09a1524a5271daeb1886651ff7575b7a0a2d664",
+  "pre_candidate_supplement_seal_sha256": "4d5ac2a45fbaba470387b50626149fd69ee2568eece1a24b803d90b6b25610a6",
+  "native_seal_sha256": "ecee22fb466e5d026538bb7c667446b17f3a18073d38db0d4a9a63e400de1601",
+  "effective_cases": 120,
+  "execution": {
+    "execution_scenarios": 24,
+    "dispatches": 192,
+    "successful_dispatches": 176,
+    "expected_race_failures": 16,
+    "instructions": 3513581992,
+    "events": 107337136,
+    "memory_accesses": 106430424
+  },
+  "granularity_crosscheck_cases": [
+    "execute_group_isolation",
+    "execute_zero_before_return",
+    "execute_nested_zero",
+    "execute_hidden_index",
+    "execute_helper_phases",
+    "execute_bounds",
+    "execute_snapshot",
+    "execute_runtime_bounds",
+    "execute_constant_skipped_effects",
+    "execute_multiple_roots",
+    "execute_helper_shared_identity",
+    "execute_whole_snapshot",
+    "control_vector_race",
+    "control_storage_not_fenced"
+  ],
+  "explicit_graph_cases": 93,
+  "same98": {
+    "paths": 98,
+    "emitted": 52,
+    "validated": 52,
+    "executed": 43,
+    "rejected": 46
+  },
+  "new_validated_only": [
+    "bench/kernels/compilation-corpus/complex_attention_decode.wgsl",
+    "bench/kernels/compilation-corpus/complex_fused_gemv_dequant.wgsl",
+    "bench/kernels/compilation-corpus/moderate_layernorm.wgsl",
+    "bench/kernels/compilation-corpus/moderate_rmsnorm.wgsl",
+    "bench/kernels/compilation-corpus/moderate_softmax.wgsl",
+    "bench/kernels/concurrent_execution_runsingle_u32.wgsl",
+    "bench/inference-pipeline/kernels/attention-prefill.wgsl",
+    "bench/inference-pipeline/kernels/matmul_f16w_f32a_tiled.wgsl",
+    "bench/inference-pipeline/kernels/matmul_logits_pairwise_f32.wgsl"
+  ],
+  "retained_M10_cases": 576,
+  "retained_M10_exact_mappings": [
+    "workgroup: accepted-M10 PARSE_ERROR2 -> admitted0, pre-candidate seal",
+    "private: accepted-M10 PARSE_ERROR2 -> UNSUPPORTED3, exact frozen-contract mapping after preserving original failure"
+  ],
+  "candidate_defects_observed": [],
+  "unqualified_required_gates": [],
+  "qualifications": [
+    "Standalone compiler, independent CPU target model and default Vulkan1.1 validator only.",
+    "GCC14.2/Linux x86-64 native ABI and C-owned stack bounds; external/system/caller frames excluded.",
+    "Nine additional new same98 emissions are validation-only, not instruction-executed acceptance.",
+    "No GPU, runtime metadata adoption, Vulkan/Metal/D3D12 integration, hardware behavior, performance parity or whole-Doe migration acceptance.",
+    "Full-capacity nonoverlap is a caller precondition. No TSan or alternate-host-ABI claim."
+  ],
+  "long_case": {
+    "id": "witness_nonatomic_100",
+    "expected_status": 0,
+    "word_sha256": "44af617c0e73fdc3dcaaa2569e89406e95c7ca480f2d0813af183de69cb073d5",
+    "counts": {
+      "words": 610,
+      "types": 2,
+      "members": 0,
+      "resources": 1,
+      "name_bytes": 12
+    },
+    "target": {
+      "workgroup_roots": 1,
+      "static_barriers": 3,
+      "input_variables": 3,
+      "target_bound": 122,
+      "word_count": 610
+    },
+    "validator": {
+      "returncode": 0,
+      "output": ""
+    },
+    "execution": [
+      {
+        "events": 13262328,
+        "steps": 435226078,
+        "barriers_per_group": {
+          "(0, 0, 0)": 201,
+          "(1, 0, 0)": 201
+        },
+        "memory_accesses": 13159926,
+        "invocations": 512,
+        "groups": 2,
+        "schedule": "round_robin",
+        "poison": 165,
+        "pure_instruction_quantum": 64,
+        "caller_supplied_reusable_shared_storage": true,
+        "seconds": 623.8467417119537
+      },
+      {
+        "events": 13262328,
+        "steps": 435226078,
+        "barriers_per_group": {
+          "(0, 0, 0)": 201,
+          "(1, 0, 0)": 201
+        },
+        "memory_accesses": 13159926,
+        "invocations": 512,
+        "groups": 2,
+        "schedule": "round_robin",
+        "poison": 90,
+        "pure_instruction_quantum": 64,
+        "caller_supplied_reusable_shared_storage": true,
+        "seconds": 641.241042840993
+      },
+      {
+        "events": 13262328,
+        "steps": 435226078,
+        "barriers_per_group": {
+          "(0, 0, 0)": 201,
+          "(1, 0, 0)": 201
+        },
+        "memory_accesses": 13159926,
+        "invocations": 512,
+        "groups": 2,
+        "schedule": "reverse",
+        "poison": 165,
+        "pure_instruction_quantum": 64,
+        "caller_supplied_reusable_shared_storage": true,
+        "seconds": 639.8872201940394
+      },
+      {
+        "events": 13262328,
+        "steps": 435226078,
+        "barriers_per_group": {
+          "(0, 0, 0)": 201,
+          "(1, 0, 0)": 201
+        },
+        "memory_accesses": 13159926,
+        "invocations": 512,
+        "groups": 2,
+        "schedule": "reverse",
+        "poison": 90,
+        "pure_instruction_quantum": 64,
+        "caller_supplied_reusable_shared_storage": true,
+        "seconds": 649.2808584939921
+      },
+      {
+        "events": 13262328,
+        "steps": 435226078,
+        "barriers_per_group": {
+          "(0, 0, 0)": 201,
+          "(1, 0, 0)": 201
+        },
+        "memory_accesses": 13159926,
+        "invocations": 512,
+        "groups": 2,
+        "schedule": "shuffle_0x11c0ffee",
+        "poison": 165,
+        "pure_instruction_quantum": 64,
+        "caller_supplied_reusable_shared_storage": true,
+        "seconds": 670.3536672539776
+      },
+      {
+        "events": 13262328,
+        "steps": 435226078,
+        "barriers_per_group": {
+          "(0, 0, 0)": 201,
+          "(1, 0, 0)": 201
+        },
+        "memory_accesses": 13159926,
+        "invocations": 512,
+        "groups": 2,
+        "schedule": "shuffle_0x11c0ffee",
+        "poison": 90,
+        "pure_instruction_quantum": 64,
+        "caller_supplied_reusable_shared_storage": true,
+        "seconds": 679.5867674959591
+      },
+      {
+        "events": 13262328,
+        "steps": 435226078,
+        "barriers_per_group": {
+          "(0, 0, 0)": 201,
+          "(1, 0, 0)": 201
+        },
+        "memory_accesses": 13159926,
+        "invocations": 512,
+        "groups": 2,
+        "schedule": "bounded_burst_1_3_7",
+        "poison": 165,
+        "pure_instruction_quantum": 64,
+        "caller_supplied_reusable_shared_storage": true,
+        "seconds": 590.0232639139867
+      },
+      {
+        "events": 13262328,
+        "steps": 435226078,
+        "barriers_per_group": {
+          "(0, 0, 0)": 201,
+          "(1, 0, 0)": 201
+        },
+        "memory_accesses": 13159926,
+        "invocations": 512,
+        "groups": 2,
+        "schedule": "bounded_burst_1_3_7",
+        "poison": 90,
+        "pure_instruction_quantum": 64,
+        "caller_supplied_reusable_shared_storage": true,
+        "seconds": 590.146212150983
+      }
+    ],
+    "outcome": "passed",
+    "seconds": 5084.373908362002
+  },
+  "retained_M10_expectation_accounting": {
+    "unchanged_accepted_M10_expectations": 574,
+    "presealed_workgroup_admission_lift": 1,
+    "exact_contract_private_status_mapping": 1
+  }
+}

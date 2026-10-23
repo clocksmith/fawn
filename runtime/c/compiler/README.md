@@ -1,9 +1,9 @@
 # Experimental standalone C compiler
 
-The [accepted M10 owner](MILESTONE_10_RESULTS.md) extends one shared WGSL compiler
-with typed vectors, fixed arrays, nested nominal structs, by-value calls, access
-paths and checked resource layout. It adds caller-owned typed reflection without
-changing the three earlier public headers. This is an isolated
+The [accepted M11 owner](MILESTONE_11_RESULTS.md) extends one shared WGSL compiler
+with typed workgroup storage, zero initialization, workgroup barriers and
+transitive source uniformity. It retains typed aggregates, calls, checked layout
+and caller-owned reflection without changing the four public headers. This is an isolated
 [C migration](../../../docs/c-migration/MIGRATION.md), not complete WGSL,
 production replacement, native runtime adoption or physical GPU qualification.
 
@@ -21,20 +21,12 @@ The C11 library and CLI use GCC, strict warnings, `-fno-fast-math`,
 subprocess or fallback. Qualified native ABI: Linux x86-64, GCC/G++ 14.2,
 C11/C++17. Other platforms/toolchains need their own qualification.
 
-The current independent [source-only gate](independent_tests_m10/REPRODUCE_FINAL.md)
-uses an existing validator and a repository retaining accepted commit `dee5f42`:
-
-```sh
-GATE="$PWD/runtime/c/compiler/independent_tests_m10"
-python3 "$GATE/postdisclosure/prepare_retained.py" \
-  --repo "$PWD" --out /tmp/doe-m10-retained-fresh
-python3 "$GATE/postdisclosure/run_portable.py" \
-  --owner "$PWD/runtime/c/compiler" \
-  --source-manifest "$GATE/ACCEPTED_COMPILER_SOURCE.sha256" \
-  --retained-root /tmp/doe-m10-retained-fresh \
-  --validator /absolute/path/to/already-installed/spirv-val \
-  --out /tmp/doe-m10-replay-fresh
-```
+The current independent [source-only gate](independent_tests_m11/PORTABLE_USAGE.md)
+provides exact build, semantic, corpus and native commands using an existing
+validator and accepted source history. Its full shared-memory witness is expensive:
+the recorded eight-dispatch case took about 85 minutes. A shorter run must not be
+reported as this acceptance. The retained [M10 instructions](independent_tests_m10/REPRODUCE_FINAL.md)
+remain historical, not a command to apply obsolete expectations to current source.
 
 Use fresh private output paths. The gate verifies exact source before/after and
 builds new artifacts; it does not require a prebuilt compiler. Native C/C++,
@@ -49,7 +41,7 @@ counts and explicitly lifted negative cases. Never broadly relax those assertion
 The shared library exports exactly seven symbols: the five retained compile,
 workspace and job entrypoints, plus `doe_compiler_typed_requirements` and
 `doe_compiler_compile_typed`. See [ABI4](include/doe_compiler_typed.h), the
-[frozen semantics](MILESTONE_10.md) and [storage/lowering ledger](MILESTONE_10_LEDGER.md).
+[frozen semantics](MILESTONE_11.md) and [storage/lowering ledger](MILESTONE_11_LEDGER.md).
 
 - ABI1, v2 and job retain their layouts and real capacity/projection limits.
   New valid syntax shares the same parser and semantic implementation; old
@@ -92,7 +84,13 @@ remain explicit. All dead/unused source is validated. Host numeric evaluation an
 raw instruction execution do not promise universal GPU NaN/subnormal payloads or
 bit-identical floating arithmetic.
 
-Workgroup storage/synchronization/uniformity, matrices, pointers, aliases,
+Fixed typed workgroup roots are zero-initialized before user control flow;
+`workgroupBarrier` synchronizes only workgroup memory within one group. Uniformity
+tracks validated source dependencies, including constant-skipped RHS syntax,
+calls, control flow and loop exits. Workgroup roots are not descriptor bindings;
+standalone reflection does not supply runtime workgroup metadata.
+
+Other barriers, atomics, matrices, pointers, aliases,
 overrides, f16/subgroups, multiple entries, graphics, textures, wider builtins,
 other targets and runtime metadata/adoption remain open owners, not implied coverage.
 
@@ -107,14 +105,16 @@ They are mutually exclusive. No JSON4 option exists.
 Unknown/duplicate/missing/empty options fail. Existing destinations and symlinks
 are refused. A failed second publication rolls back the first owned publication;
 this is ordinary-failure rollback, not crash-atomic multi-file durability.
-The [same-source ledger](../../../docs/c-migration/corpus-coverage-m10.json)
-separates 37 fresh emitted/validated/executed paths from 61 explicit skips and
-unrelated prebuilt observations. None is physical execution or complete adoption.
+The [same-source ledger](../../../docs/c-migration/corpus-coverage-m11.json)
+separates 52 fresh emitted/validated paths, 43 independently executed paths,
+nine validation-only emissions, 46 explicit rejections and unrelated prebuilt
+observations. None is physical execution or complete adoption.
 
 ## Storage and owner map
 
-Measured fixed workspace is 140,056 bytes/alignment8; ABI1 wrapper frame 140,208.
-Independent conservative library bounds are 197,160 fixed and 192,120 maximum-depth
+Measured fixed workspace is 146,256 bytes; public alignment queries remain
+authoritative for allocation. Independent conservative library bounds are
+204,608 fixed and 193,376 maximum-depth
 job bytes. These are derived bounds, not observed stack peaks; they exclude
 external libc/libm, OS and sanitizer frames. Caller-controlled capacities do not
 increase bounded expression/control/type recursion. The frozen ledger owns exact
@@ -125,6 +125,7 @@ pool accounting and ceilings; future growth requires an explicit reviewed change
 - types.c / constants.c: shared typed layout and compact aggregate constants.
 - sema_declarations.c / sema_expression.c / sema_call.c / validate.c: module and
   lexical identity, typed values/references/calls and structured control.
+- uniformity.c: bounded source dependency/control analysis before target emission.
 - storage.c / internal.h: checked caller slices, records and fixed adapters.
 - spirv.c / spirv_decl.h: typed declarations, safe operations and robust lowering.
 - reflection.c: typed graph publication and explicit legacy projections.

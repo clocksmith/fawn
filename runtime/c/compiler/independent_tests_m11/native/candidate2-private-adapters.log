@@ -1,0 +1,4 @@
+PASS adapter1 exact_work=2325 short_work=2324
+PASS adapter2 exact_work=2325 short_work=2324
+PASS adapter3 exact_work=23957 short_work=23956
+PASS adapter4 exact_work=23957 short_work=23956

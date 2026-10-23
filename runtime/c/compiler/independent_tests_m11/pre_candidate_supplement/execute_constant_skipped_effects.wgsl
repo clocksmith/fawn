@@ -1,0 +1,1 @@
+@group(0) @binding(0) var<storage,read_write> out:array<u32>;fn sync()->bool{out[0]=91u;workgroupBarrier();return true;}@compute @workgroup_size(4) fn main(@builtin(local_invocation_index) li:u32,@builtin(global_invocation_id) gid:vec3u,@builtin(workgroup_id) wid:vec3u){let a=false && sync();let b=true || sync();out[gid.x]=li+1u;}

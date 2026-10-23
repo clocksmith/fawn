@@ -1,0 +1,25 @@
+{
+  "candidate_known": true,
+  "changes": [
+    [
+      "r.size_bytes==2172992u&&r.alignment_bytes==8u",
+      "r.size_bytes==2172992u&&r.alignment_bytes==_Alignof(max_align_t)"
+    ],
+    [
+      "c.req.size_bytes==2536128u&&c.req.alignment_bytes==8u",
+      "c.req.size_bytes==2536128u&&c.req.alignment_bytes==_Alignof(max_align_t)"
+    ],
+    [
+      "CHECK(invoke(&c,plain,strlen(plain),2u,&p.o,&base)",
+      "DoeCompilerTypedOutputs p2=selected(&p,2u),b2=selected(&b,2u);CHECK(invoke(&c,plain,strlen(plain),2u,&p2,&base)"
+    ],
+    [
+      "CHECK(invoke(&c,roots,strlen(roots),2u,&b.o,&rich)",
+      "CHECK(invoke(&c,roots,strlen(roots),2u,&b2,&rich)"
+    ]
+  ],
+  "original_failures": "../candidate2-consumers/run-*-boundary_m11.log",
+  "original_sha256": "9a4c82e38f8698eb1ba76dc56285530bbb48bb89563e9a85032aa382045edfe1",
+  "reason": "Public job/typed alignof(max_align_t) is preserved from accepted M10, distinct from private record alignment8. REFLECTION-only descriptors must zero unselected words. No fixture, byte expectation, status, pool, or candidate changed.",
+  "revision_sha256": "c9633dd9ddbcee22d8d429eb4c19d8b3f70a7e27c245766bcd61b4c9fc1018f4"
+}

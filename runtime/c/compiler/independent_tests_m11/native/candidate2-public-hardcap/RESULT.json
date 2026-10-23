@@ -1,0 +1,6 @@
+{
+  "fixture_receipt_sha256": "b8767182e87a7e3b225d847600a8703791d3978301b6cfb16f8a22c912aa9ba4",
+  "scope": "Default public shared ceiling on ABI3/ABI4; ABI1/v2 earlier fixed-pool failures distinguished",
+  "source_manifest_sha256": "b124146a5044e288dcd7fbd153a7f75f3ecfc2e4451666b2f4e1b7771073b9af",
+  "status": "PASS"
+}

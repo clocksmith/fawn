@@ -1,0 +1,390 @@
+{
+  "candidate_used": false,
+  "passed": true,
+  "controls": [
+    {
+      "id": "zero",
+      "quantum": 1,
+      "schedule": "round_robin",
+      "poison": 165,
+      "validator_valid": true,
+      "detection": "exact +zero"
+    },
+    {
+      "id": "zero",
+      "quantum": 1,
+      "schedule": "round_robin",
+      "poison": 90,
+      "validator_valid": true,
+      "detection": "exact +zero"
+    },
+    {
+      "id": "zero",
+      "quantum": 1,
+      "schedule": "reverse",
+      "poison": 165,
+      "validator_valid": true,
+      "detection": "exact +zero"
+    },
+    {
+      "id": "zero",
+      "quantum": 1,
+      "schedule": "reverse",
+      "poison": 90,
+      "validator_valid": true,
+      "detection": "exact +zero"
+    },
+    {
+      "id": "zero",
+      "quantum": 1,
+      "schedule": "shuffle_0x11c0ffee",
+      "poison": 165,
+      "validator_valid": true,
+      "detection": "exact +zero"
+    },
+    {
+      "id": "zero",
+      "quantum": 1,
+      "schedule": "shuffle_0x11c0ffee",
+      "poison": 90,
+      "validator_valid": true,
+      "detection": "exact +zero"
+    },
+    {
+      "id": "zero",
+      "quantum": 1,
+      "schedule": "bounded_burst_1_3_7",
+      "poison": 165,
+      "validator_valid": true,
+      "detection": "exact +zero"
+    },
+    {
+      "id": "zero",
+      "quantum": 1,
+      "schedule": "bounded_burst_1_3_7",
+      "poison": 90,
+      "validator_valid": true,
+      "detection": "exact +zero"
+    },
+    {
+      "id": "zero",
+      "quantum": 64,
+      "schedule": "round_robin",
+      "poison": 165,
+      "validator_valid": true,
+      "detection": "exact +zero"
+    },
+    {
+      "id": "zero",
+      "quantum": 64,
+      "schedule": "round_robin",
+      "poison": 90,
+      "validator_valid": true,
+      "detection": "exact +zero"
+    },
+    {
+      "id": "zero",
+      "quantum": 64,
+      "schedule": "reverse",
+      "poison": 165,
+      "validator_valid": true,
+      "detection": "exact +zero"
+    },
+    {
+      "id": "zero",
+      "quantum": 64,
+      "schedule": "reverse",
+      "poison": 90,
+      "validator_valid": true,
+      "detection": "exact +zero"
+    },
+    {
+      "id": "zero",
+      "quantum": 64,
+      "schedule": "shuffle_0x11c0ffee",
+      "poison": 165,
+      "validator_valid": true,
+      "detection": "exact +zero"
+    },
+    {
+      "id": "zero",
+      "quantum": 64,
+      "schedule": "shuffle_0x11c0ffee",
+      "poison": 90,
+      "validator_valid": true,
+      "detection": "exact +zero"
+    },
+    {
+      "id": "zero",
+      "quantum": 64,
+      "schedule": "bounded_burst_1_3_7",
+      "poison": 165,
+      "validator_valid": true,
+      "detection": "exact +zero"
+    },
+    {
+      "id": "zero",
+      "quantum": 64,
+      "schedule": "bounded_burst_1_3_7",
+      "poison": 90,
+      "validator_valid": true,
+      "detection": "exact +zero"
+    },
+    {
+      "id": "missing_zero",
+      "quantum": 1,
+      "schedule": "round_robin",
+      "poison": 165,
+      "validator_valid": true,
+      "detection": "nonzero poison visible"
+    },
+    {
+      "id": "missing_zero",
+      "quantum": 1,
+      "schedule": "round_robin",
+      "poison": 90,
+      "validator_valid": true,
+      "detection": "nonzero poison visible"
+    },
+    {
+      "id": "missing_zero",
+      "quantum": 1,
+      "schedule": "reverse",
+      "poison": 165,
+      "validator_valid": true,
+      "detection": "nonzero poison visible"
+    },
+    {
+      "id": "missing_zero",
+      "quantum": 1,
+      "schedule": "reverse",
+      "poison": 90,
+      "validator_valid": true,
+      "detection": "nonzero poison visible"
+    },
+    {
+      "id": "missing_zero",
+      "quantum": 1,
+      "schedule": "shuffle_0x11c0ffee",
+      "poison": 165,
+      "validator_valid": true,
+      "detection": "nonzero poison visible"
+    },
+    {
+      "id": "missing_zero",
+      "quantum": 1,
+      "schedule": "shuffle_0x11c0ffee",
+      "poison": 90,
+      "validator_valid": true,
+      "detection": "nonzero poison visible"
+    },
+    {
+      "id": "missing_zero",
+      "quantum": 1,
+      "schedule": "bounded_burst_1_3_7",
+      "poison": 165,
+      "validator_valid": true,
+      "detection": "nonzero poison visible"
+    },
+    {
+      "id": "missing_zero",
+      "quantum": 1,
+      "schedule": "bounded_burst_1_3_7",
+      "poison": 90,
+      "validator_valid": true,
+      "detection": "nonzero poison visible"
+    },
+    {
+      "id": "missing_zero",
+      "quantum": 64,
+      "schedule": "round_robin",
+      "poison": 165,
+      "validator_valid": true,
+      "detection": "nonzero poison visible"
+    },
+    {
+      "id": "missing_zero",
+      "quantum": 64,
+      "schedule": "round_robin",
+      "poison": 90,
+      "validator_valid": true,
+      "detection": "nonzero poison visible"
+    },
+    {
+      "id": "missing_zero",
+      "quantum": 64,
+      "schedule": "reverse",
+      "poison": 165,
+      "validator_valid": true,
+      "detection": "nonzero poison visible"
+    },
+    {
+      "id": "missing_zero",
+      "quantum": 64,
+      "schedule": "reverse",
+      "poison": 90,
+      "validator_valid": true,
+      "detection": "nonzero poison visible"
+    },
+    {
+      "id": "missing_zero",
+      "quantum": 64,
+      "schedule": "shuffle_0x11c0ffee",
+      "poison": 165,
+      "validator_valid": true,
+      "detection": "nonzero poison visible"
+    },
+    {
+      "id": "missing_zero",
+      "quantum": 64,
+      "schedule": "shuffle_0x11c0ffee",
+      "poison": 90,
+      "validator_valid": true,
+      "detection": "nonzero poison visible"
+    },
+    {
+      "id": "missing_zero",
+      "quantum": 64,
+      "schedule": "bounded_burst_1_3_7",
+      "poison": 165,
+      "validator_valid": true,
+      "detection": "nonzero poison visible"
+    },
+    {
+      "id": "missing_zero",
+      "quantum": 64,
+      "schedule": "bounded_burst_1_3_7",
+      "poison": 90,
+      "validator_valid": true,
+      "detection": "nonzero poison visible"
+    },
+    {
+      "id": "storage_semantics",
+      "quantum": 1,
+      "schedule": "round_robin",
+      "poison": 165,
+      "validator_valid": true,
+      "detection": "barrier scopes/semantics must be exactly (2,2,0x108)"
+    },
+    {
+      "id": "storage_semantics",
+      "quantum": 1,
+      "schedule": "round_robin",
+      "poison": 90,
+      "validator_valid": true,
+      "detection": "barrier scopes/semantics must be exactly (2,2,0x108)"
+    },
+    {
+      "id": "storage_semantics",
+      "quantum": 1,
+      "schedule": "reverse",
+      "poison": 165,
+      "validator_valid": true,
+      "detection": "barrier scopes/semantics must be exactly (2,2,0x108)"
+    },
+    {
+      "id": "storage_semantics",
+      "quantum": 1,
+      "schedule": "reverse",
+      "poison": 90,
+      "validator_valid": true,
+      "detection": "barrier scopes/semantics must be exactly (2,2,0x108)"
+    },
+    {
+      "id": "storage_semantics",
+      "quantum": 1,
+      "schedule": "shuffle_0x11c0ffee",
+      "poison": 165,
+      "validator_valid": true,
+      "detection": "barrier scopes/semantics must be exactly (2,2,0x108)"
+    },
+    {
+      "id": "storage_semantics",
+      "quantum": 1,
+      "schedule": "shuffle_0x11c0ffee",
+      "poison": 90,
+      "validator_valid": true,
+      "detection": "barrier scopes/semantics must be exactly (2,2,0x108)"
+    },
+    {
+      "id": "storage_semantics",
+      "quantum": 1,
+      "schedule": "bounded_burst_1_3_7",
+      "poison": 165,
+      "validator_valid": true,
+      "detection": "barrier scopes/semantics must be exactly (2,2,0x108)"
+    },
+    {
+      "id": "storage_semantics",
+      "quantum": 1,
+      "schedule": "bounded_burst_1_3_7",
+      "poison": 90,
+      "validator_valid": true,
+      "detection": "barrier scopes/semantics must be exactly (2,2,0x108)"
+    },
+    {
+      "id": "storage_semantics",
+      "quantum": 64,
+      "schedule": "round_robin",
+      "poison": 165,
+      "validator_valid": true,
+      "detection": "barrier scopes/semantics must be exactly (2,2,0x108)"
+    },
+    {
+      "id": "storage_semantics",
+      "quantum": 64,
+      "schedule": "round_robin",
+      "poison": 90,
+      "validator_valid": true,
+      "detection": "barrier scopes/semantics must be exactly (2,2,0x108)"
+    },
+    {
+      "id": "storage_semantics",
+      "quantum": 64,
+      "schedule": "reverse",
+      "poison": 165,
+      "validator_valid": true,
+      "detection": "barrier scopes/semantics must be exactly (2,2,0x108)"
+    },
+    {
+      "id": "storage_semantics",
+      "quantum": 64,
+      "schedule": "reverse",
+      "poison": 90,
+      "validator_valid": true,
+      "detection": "barrier scopes/semantics must be exactly (2,2,0x108)"
+    },
+    {
+      "id": "storage_semantics",
+      "quantum": 64,
+      "schedule": "shuffle_0x11c0ffee",
+      "poison": 165,
+      "validator_valid": true,
+      "detection": "barrier scopes/semantics must be exactly (2,2,0x108)"
+    },
+    {
+      "id": "storage_semantics",
+      "quantum": 64,
+      "schedule": "shuffle_0x11c0ffee",
+      "poison": 90,
+      "validator_valid": true,
+      "detection": "barrier scopes/semantics must be exactly (2,2,0x108)"
+    },
+    {
+      "id": "storage_semantics",
+      "quantum": 64,
+      "schedule": "bounded_burst_1_3_7",
+      "poison": 165,
+      "validator_valid": true,
+      "detection": "barrier scopes/semantics must be exactly (2,2,0x108)"
+    },
+    {
+      "id": "storage_semantics",
+      "quantum": 64,
+      "schedule": "bounded_burst_1_3_7",
+      "poison": 90,
+      "validator_valid": true,
+      "detection": "barrier scopes/semantics must be exactly (2,2,0x108)"
+    }
+  ]
+}

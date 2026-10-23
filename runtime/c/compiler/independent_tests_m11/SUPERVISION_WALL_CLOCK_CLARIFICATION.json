@@ -1,0 +1,7 @@
+{
+  "utc": "2026-10-23T12:11:45.519562+00:00",
+  "session_id": 67883,
+  "wall_clock_supervisor_timeout_seconds": null,
+  "clarification": "No evaluator-installed wall-clock timeout exists. The recorded 4650-second value is a rough estimate, not a timeout or acceptance threshold. Only the existing per-dispatch event and per-invocation instruction bounds fail the run. Any external executor/session timeout or termination would leave the gate incomplete, never qualified.",
+  "active_run_restarted_or_changed": false
+}

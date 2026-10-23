@@ -1,0 +1,42 @@
+{
+  "entries": {
+    "Makefile": "08ef4f70c8a51bce6ff196ba3c6921ad0a15566b719f3aff657a989eef63ffbd",
+    "include/doe_compiler.h": "5bf4f5e5a4e4624c094320ad9ec97119278bc7f6f06b0e47c01e444d42c6dc5b",
+    "include/doe_compiler_job.h": "6160e631973ffcd9777553520d329b6d6048315f2a90b1283989077e9f51237f",
+    "include/doe_compiler_typed.h": "c7decbdb8da093a3485ded84901bf97f88eea8db6237dfd4089c730aa08e6216",
+    "include/doe_compiler_v2.h": "b0a60c2f05b70dba0786365dadd81b993accbd93f7f68f0e3accf86a815ae891",
+    "src/cli.c": "7b50651f239ae7c93c47991813678669ff7ad118cb9639a82b4e3d5e40636a6f",
+    "src/cli_json.c": "79b35778c0f974c17da970fc8b98af75adac40d174ad3423a79d3847cd217d34",
+    "src/cli_json.h": "7d76808edeb7acd26524f0316659784018577019b98677d10dddb2ff99754305",
+    "src/compile.c": "0c0ccf8df4681794f62792e014a9c7ff7ed47f11f7146c8dc4026b9adbdde1d6",
+    "src/constants.c": "b8431560c29221a2ce5d87166306b321e257095b6c0c7488ca7f858654b54a97",
+    "src/exports.map": "a9025f34c30ba7251802facbaa8bf3660890558dc8ecc8f3fee884de75f9d816",
+    "src/internal.h": "745b6c4243b47048639e3351caa63d1abbccf2730e1924b0e368a8d66b2b6c52",
+    "src/lex.c": "078b86d235ba65a6710e896a0616b87939788a32b9aaa4b24cf7cedc9b6d435c",
+    "src/numeric.c": "390cf61b3f13f56b48c8ed6af4aea676b1ae116388ec7f0ad9439f985d91a614",
+    "src/numeric.h": "3ba4d3c7caff37d08d5a5adc4e2c98c8cdf2d7f9b2bc2db8c5db174c987fd0fd",
+    "src/parse.c": "bd81c729237b9fb71bdc4f35fc871337f4cf69d60d5b9127f72a28a7c97a5f6a",
+    "src/reflection.c": "581645d97a2f1cd8d67e98fa3ca9e7c250a5566faccd4beaf123a63dce4959c1",
+    "src/sema.h": "c9047329360597548a1b0c96623cd6f5724dc9631025139bdcf94e2ed337a7e2",
+    "src/sema_call.c": "9733027515619684821b5fde1039ced029acb1f3a35f38aedbc07f05df2dee62",
+    "src/sema_declarations.c": "e0a2e90bac329e6672f9a918b8eb40f76daa395eee03ebe47294070ac6c6849e",
+    "src/sema_expression.c": "a5057ea1dbe0aea69f68691eec6ce6cd4c047b1a954c560c6d6b48f48317f30c",
+    "src/spirv.c": "2a9d4577f30580e3195cb717a6d069e4e6a3279ebf204aea9482e87ad256b100",
+    "src/spirv_decl.h": "5a2024c97baf98a3f0171a0ae6a898cdf5439882e29dc417642fd82ac71ccd69",
+    "src/storage.c": "daa0f39d16ea5d7e14d1294f7cd6f851f6e766dbc0f44e387919e280ac8aea06",
+    "src/types.c": "8c6d7a8c9ac369bdcbf69f7b9950acee13e35951f7efb3201388378d8e499397",
+    "src/uniformity.c": "dd40e8b927bb1dd346a711c23ae34f5006fed0d0a20dee88f27008f601b47380",
+    "src/validate.c": "c19254a2c0808b3e7ac1888e74c5b86e809ada88b9477988d3eda229417f5b6a",
+    "tests/test_m11_api.c": "4dcbe5095b0e8d2266cae4079327042d312348095542ec0f2a3942095860e2f1",
+    "tests/test_m11_private.c": "fb6f2f92c46d9fc1bf6e35372e0e2be617ce8b2857280e5ccf59562b37e990ce",
+    "tests/test_m11_workgroups.py": "06e3d004c8cfd76d481932f974e7653bc0a378bda074608bbd333e4f70ce7d65"
+  },
+  "headers": {
+    "doe_compiler.h": "5bf4f5e5a4e4624c094320ad9ec97119278bc7f6f06b0e47c01e444d42c6dc5b",
+    "doe_compiler_job.h": "6160e631973ffcd9777553520d329b6d6048315f2a90b1283989077e9f51237f",
+    "doe_compiler_typed.h": "c7decbdb8da093a3485ded84901bf97f88eea8db6237dfd4089c730aa08e6216",
+    "doe_compiler_v2.h": "b0a60c2f05b70dba0786365dadd81b993accbd93f7f68f0e3accf86a815ae891"
+  },
+  "manifest_sha256": "b124146a5044e288dcd7fbd153a7f75f3ecfc2e4451666b2f4e1b7771073b9af",
+  "owner": "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler"
+}

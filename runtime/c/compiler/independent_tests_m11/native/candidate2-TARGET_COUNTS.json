@@ -1,0 +1,138 @@
+{
+  "status": "PASS",
+  "cases": [
+    {
+      "case": "witness_matmul_5",
+      "source_sha256": "04f46b1db0e88d3636cf7ab70bba4e8904efd202f7470155af75f71bafdc6630",
+      "path": "/tmp/doe-m11-independent-target-LPWtOk/early-matmul/witness_matmul_5.spv",
+      "spv_sha256": "faf9a9a602c88217618f161253c16484b892604a296cb30bcd4d9b51add17479",
+      "words": 978,
+      "bound": 174,
+      "highest_defined_id": 173,
+      "workgroup_roots": 1,
+      "whole_null_stores": 1,
+      "static_barriers": 3
+    },
+    {
+      "case": "witness_matmul_67",
+      "source_sha256": "04f46b1db0e88d3636cf7ab70bba4e8904efd202f7470155af75f71bafdc6630",
+      "path": "/tmp/doe-m11-independent-target-LPWtOk/early-matmul/witness_matmul_67.spv",
+      "spv_sha256": "faf9a9a602c88217618f161253c16484b892604a296cb30bcd4d9b51add17479",
+      "words": 978,
+      "bound": 174,
+      "highest_defined_id": 173,
+      "workgroup_roots": 1,
+      "whole_null_stores": 1,
+      "static_barriers": 3
+    },
+    {
+      "case": "witness_nonatomic_1",
+      "source_sha256": "b1e3c7cf65d5cec0fe176ed0fa6b6a13aea3c32f6a14ea35e912475dabecfdc6",
+      "path": "/tmp/doe-m11-independent-target-LPWtOk/cases/witness_nonatomic_1.spv",
+      "spv_sha256": "13c4b7f47857a6822d02f64250078a1c87a1c6bfeadb219f4b81cc44570a88be",
+      "words": 505,
+      "bound": 101,
+      "highest_defined_id": 100,
+      "workgroup_roots": 1,
+      "whole_null_stores": 1,
+      "static_barriers": 3
+    },
+    {
+      "case": "witness_nonatomic_100",
+      "source_sha256": "3af5cad294dad19c73c36f4813a7ef554715481857a1bb74a17a2afebe731f11",
+      "path": "/tmp/doe-m11-independent-target-LPWtOk/cases/witness_nonatomic_100.spv",
+      "spv_sha256": "44af617c0e73fdc3dcaaa2569e89406e95c7ca480f2d0813af183de69cb073d5",
+      "words": 610,
+      "bound": 122,
+      "highest_defined_id": 121,
+      "workgroup_roots": 1,
+      "whole_null_stores": 1,
+      "static_barriers": 3
+    },
+    {
+      "case": "witness_pairwise_0",
+      "source_sha256": "b658ba7a54fd2345758d64b855da20b198d4c4e07a4f5e74d8301d664266811d",
+      "path": "/tmp/doe-m11-independent-target-LPWtOk/early-pairwise/witness_pairwise_0.spv",
+      "spv_sha256": "4daef4a8fc8d0126ad48e5c9a8e98ffb1db38d0ad70e4986af3ead2387087c57",
+      "words": 911,
+      "bound": 162,
+      "highest_defined_id": 161,
+      "workgroup_roots": 1,
+      "whole_null_stores": 1,
+      "static_barriers": 3
+    },
+    {
+      "case": "witness_pairwise_17",
+      "source_sha256": "b658ba7a54fd2345758d64b855da20b198d4c4e07a4f5e74d8301d664266811d",
+      "path": "/tmp/doe-m11-independent-target-LPWtOk/early-pairwise/witness_pairwise_17.spv",
+      "spv_sha256": "4daef4a8fc8d0126ad48e5c9a8e98ffb1db38d0ad70e4986af3ead2387087c57",
+      "words": 911,
+      "bound": 162,
+      "highest_defined_id": 161,
+      "workgroup_roots": 1,
+      "whole_null_stores": 1,
+      "static_barriers": 3
+    },
+    {
+      "case": "witness_pairwise_5",
+      "source_sha256": "b658ba7a54fd2345758d64b855da20b198d4c4e07a4f5e74d8301d664266811d",
+      "path": "/tmp/doe-m11-independent-target-LPWtOk/early-pairwise/witness_pairwise_5.spv",
+      "spv_sha256": "4daef4a8fc8d0126ad48e5c9a8e98ffb1db38d0ad70e4986af3ead2387087c57",
+      "words": 911,
+      "bound": 162,
+      "highest_defined_id": 161,
+      "workgroup_roots": 1,
+      "whole_null_stores": 1,
+      "static_barriers": 3
+    },
+    {
+      "case": "witness_pairwise_8",
+      "source_sha256": "b658ba7a54fd2345758d64b855da20b198d4c4e07a4f5e74d8301d664266811d",
+      "path": "/tmp/doe-m11-independent-target-LPWtOk/early-pairwise/witness_pairwise_8.spv",
+      "spv_sha256": "4daef4a8fc8d0126ad48e5c9a8e98ffb1db38d0ad70e4986af3ead2387087c57",
+      "words": 911,
+      "bound": 162,
+      "highest_defined_id": 161,
+      "workgroup_roots": 1,
+      "whole_null_stores": 1,
+      "static_barriers": 3
+    },
+    {
+      "case": "witness_vec4_128",
+      "source_sha256": "f4cdc0769f6392160583e17815fe41c494cc89cd6b78f2b6b83a841984241d6d",
+      "path": "/tmp/doe-m11-independent-target-LPWtOk/early-vec4/witness_vec4_128.spv",
+      "spv_sha256": "43c69f0248cab8c3c0f0d4ecfcebc19533d4e417dcb0eed8375ad7c90381c4bd",
+      "words": 831,
+      "bound": 149,
+      "highest_defined_id": 148,
+      "workgroup_roots": 1,
+      "whole_null_stores": 1,
+      "static_barriers": 3
+    },
+    {
+      "case": "witness_vec4_73",
+      "source_sha256": "f4cdc0769f6392160583e17815fe41c494cc89cd6b78f2b6b83a841984241d6d",
+      "path": "/tmp/doe-m11-independent-target-LPWtOk/early-vec4/witness_vec4_73.spv",
+      "spv_sha256": "43c69f0248cab8c3c0f0d4ecfcebc19533d4e417dcb0eed8375ad7c90381c4bd",
+      "words": 831,
+      "bound": 149,
+      "highest_defined_id": 148,
+      "workgroup_roots": 1,
+      "whole_null_stores": 1,
+      "static_barriers": 3
+    },
+    {
+      "case": "witness_zero",
+      "source_sha256": "a8c4a18801b189cc5dba3f7141acdda5a79d54eda802ca90a53d5d7ba88da614",
+      "path": "/tmp/doe-m11-independent-target-LPWtOk/cases/witness_zero.spv",
+      "spv_sha256": "fbe85d02c64e2b68d7091de86243101ec5280b9d39e0cd411d148b28fbb951b3",
+      "words": 366,
+      "bound": 78,
+      "highest_defined_id": 77,
+      "workgroup_roots": 1,
+      "whole_null_stores": 1,
+      "static_barriers": 1
+    }
+  ],
+  "scope": "Reuses parent fresh emitted bytes; actual highest-ID+1 and exact Workgroup/null/pointer/barrier row widths, no additional compile/execution claim"
+}

@@ -1,0 +1,195 @@
+
+compile.o:
+                 U __errno_location
+                 U compiler_job_bind
+                 U compiler_job_layout
+                 U compiler_legacy_bind
+                 U compiler_typed_layout
+                 U emit_spirv
+                 U lex_source
+                 U memchr
+                 U memcpy
+                 U memset
+                 U numeric_environment_begin
+                 U numeric_environment_end
+                 U parse_tokens
+                 U reflect_legacy_admit
+                 U reflect_prepare
+                 U reflect_program
+                 U reflect_program_v2
+                 U reflect_typed
+                 U strlen
+                 U validate_syntax
+
+constants.o:
+                 U numeric_materialize
+                 U source_error
+                 U source_pool_error
+                 U type_abstract
+                 U type_child
+                 U type_children
+
+lex.o:
+                 U source_error
+                 U source_pool_error
+                 U strchr
+
+numeric.o:
+                 U exp
+                 U expf
+                 U fegetenv
+                 U fegetround
+                 U feholdexcept
+                 U fesetenv
+                 U fesetround
+                 U fmod
+                 U fmodf
+                 U source_error
+                 U strcmp
+                 U tanh
+                 U tanhf
+
+parse.o:
+                 U memcmp
+                 U memcpy
+                 U memset
+                 U source_error
+                 U source_pool_error
+                 U source_span_is
+                 U strlen
+
+reflection.o:
+                 U memcpy
+                 U source_error
+                 U source_pool_error
+                 U type_alignment
+                 U type_child
+                 U type_flags
+                 U type_size
+
+sema_call.o:
+                 U constant_composite
+                 U constant_project
+                 U constant_reserve
+                 U constant_zero
+                 U memcmp
+                 U numeric_binary
+                 U numeric_bitcast
+                 U numeric_builtin
+                 U numeric_convert
+                 U scalar_builtin_named
+                 U sema_alias_visible
+                 U sema_common_type
+                 U sema_default_type
+                 U sema_emit
+                 U sema_ensure_value
+                 U sema_expression
+                 U sema_find_formal
+                 U sema_find_function
+                 U sema_find_local
+                 U sema_find_parameter
+                 U sema_find_struct
+                 U sema_materialize
+                 U sema_module_declared
+                 U sema_type_reference
+                 U source_error
+                 U source_pool_error
+                 U source_span_is
+                 U source_spans_equal
+                 U type_abstract
+                 U type_child
+                 U type_constructible
+                 U type_intern
+                 U type_leaf
+
+sema_declarations.o:
+                 U memcmp
+                 U sema_expression
+                 U sema_materialize
+                 U source_error
+                 U source_name_at
+                 U source_pool_error
+                 U source_span_is
+                 U source_spans_equal
+                 U type_abstract
+                 U type_alignment
+                 U type_constructible
+                 U type_flags
+                 U type_intern
+                 U type_layout_struct
+                 U type_resource_layout
+                 U type_size
+                 U uniformity_charge
+
+sema_expression.o:
+                 U constant_composite
+                 U constant_materialize
+                 U constant_project
+                 U numeric_binary
+                 U numeric_parse_literal
+                 U numeric_unary
+                 U sema_call_value
+                 U sema_common_type
+                 U sema_default_type
+                 U sema_find_formal
+                 U sema_find_local
+                 U sema_find_parameter
+                 U sema_local_use
+                 U sema_value_identity
+                 U source_error
+                 U source_name_at
+                 U source_pool_error
+                 U source_spans_equal
+                 U strchr
+                 U type_abstract
+                 U type_constructible
+                 U type_intern
+                 U type_leaf
+
+spirv.o:
+                 U memcpy
+                 U memset
+                 U source_error
+                 U source_pool_error
+                 U type_abstract
+                 U type_child
+                 U type_leaf
+
+storage.o:
+
+types.o:
+                 U memcmp
+                 U source_error
+                 U source_pool_error
+                 U strlen
+
+uniformity.o:
+                 U memcpy
+                 U memset
+                 U sema_value_identity
+                 U source_error
+                 U source_spans_equal
+
+validate.o:
+                 U constant_zero
+                 U sema_alias_visible
+                 U sema_append
+                 U sema_assignment_reference
+                 U sema_binary
+                 U sema_call_value
+                 U sema_default_type
+                 U sema_ensure_value
+                 U sema_expression
+                 U sema_find_formal
+                 U sema_find_parameter
+                 U sema_materialize
+                 U sema_reference_load
+                 U sema_resolve_declarations
+                 U sema_type_reference
+                 U sema_valid_name
+                 U source_error
+                 U source_pool_error
+                 U source_spans_equal
+                 U type_abstract
+                 U type_constructible
+                 U uniformity_analyze

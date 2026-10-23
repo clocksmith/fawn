@@ -1,0 +1,43 @@
+{
+  "build_receipt_sha256": "0b20300dec9b881f9adc153ff525d8e85448b5a8f0aa110c80869a98d62d24d2",
+  "commands": 113,
+  "failures": [
+    {
+      "command": [
+        "/tmp/doe-m11-independent-native-build2/consumers-all/archive-boundary_m11"
+      ],
+      "label": "run-archive-boundary_m11",
+      "returncode": 1,
+      "seconds": 0.0014782409998588264
+    },
+    {
+      "command": [
+        "/tmp/doe-m11-independent-native-build2/consumers-all/shared-boundary_m11"
+      ],
+      "label": "run-shared-boundary_m11",
+      "returncode": 1,
+      "seconds": 0.0018209909903816879
+    },
+    {
+      "command": [
+        "/tmp/doe-m11-independent-native-build2/consumers-all/prebuilt-boundary_m11"
+      ],
+      "label": "run-prebuilt-boundary_m11",
+      "returncode": 1,
+      "seconds": 0.002004960027989
+    },
+    {
+      "command": [
+        "/tmp/doe-m11-independent-native-build2/consumers-all/san-boundary_m11"
+      ],
+      "label": "run-san-boundary_m11",
+      "returncode": 1,
+      "seconds": 0.006461835000663996
+    }
+  ],
+  "sanitizer": true,
+  "scope": "Native host/ABI affected gates only; no GPU/runtime/full semantic acceptance",
+  "selection": "all",
+  "source_manifest_sha256": "b124146a5044e288dcd7fbd153a7f75f3ecfc2e4451666b2f4e1b7771073b9af",
+  "status": "FAIL"
+}

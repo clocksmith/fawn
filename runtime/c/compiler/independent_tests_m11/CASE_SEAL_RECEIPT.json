@@ -1,0 +1,14 @@
+{
+  "author_may_start": true,
+  "candidate_executed": false,
+  "candidate_inspected": false,
+  "case_count": 115,
+  "contract_verified": true,
+  "controls": 17,
+  "execution_cases": 20,
+  "fixture_files": 115,
+  "graph_cases": 93,
+  "seal_sha256": "9a03dd3f38641834f59a70e6f09a1524a5271daeb1886651ff7575b7a0a2d664",
+  "unrun": "Candidate compilation, validation and all execution/native/ledger gates remain pending; oracle harness implementation follows seal.",
+  "utc": "2026-10-23T11:12:49.312361+00:00"
+}

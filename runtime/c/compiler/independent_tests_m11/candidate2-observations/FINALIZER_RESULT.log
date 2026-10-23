@@ -1,0 +1,20 @@
+{
+  "status": "PASS_WITH_PRESERVED_EVALUATOR_CORRECTIONS",
+  "execution": {
+    "execution_scenarios": 24,
+    "dispatches": 192,
+    "successful_dispatches": 176,
+    "expected_race_failures": 16,
+    "instructions": 3513581992,
+    "events": 107337136,
+    "memory_accesses": 106430424
+  },
+  "same98": {
+    "paths": 98,
+    "emitted": 52,
+    "validated": 52,
+    "executed": 43,
+    "rejected": 46
+  },
+  "long_case_seconds": 5084.373908362002
+}

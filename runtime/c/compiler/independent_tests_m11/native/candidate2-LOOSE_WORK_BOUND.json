@@ -1,0 +1,48 @@
+{
+  "arithmetic": "Checked saturating u64 add/multiply/power",
+  "formula": "(physicalE+E+2X+P+F+S+32)*(6Ls+32)*(Ls+2)^control_depth*(P+2F)*(S+P+F+R+G+Q+1)",
+  "interpretation": "Capacity-only conservative module bound; each function has <=control_depth active loops and <=Ls locals, sum(P_f+2)<=P+2F. This estimate is not an admission limit.",
+  "non_admission_evidence": "All 17 private-work positives pass using the saturated typed_cli profile, and the public hardcap no-barrier twin succeeds at the same saturated capacity shape. Only actual counted dependency work governs exhaustion.",
+  "profiles": {
+    "fixed": {
+      "Ls": 17,
+      "bound": 54264557968454592,
+      "factors": [
+        2232,
+        134,
+        130321,
+        1194,
+        1166
+      ],
+      "maximum_loop_nesting_bound": 4,
+      "saturated": false
+    },
+    "job_cli": {
+      "Ls": 1025,
+      "bound": 18446744073709551615,
+      "factors": [
+        22904,
+        6182,
+        18446744073709551615,
+        4778,
+        5502
+      ],
+      "maximum_loop_nesting_bound": 16,
+      "saturated": true
+    },
+    "typed_cli": {
+      "Ls": 1025,
+      "bound": 18446744073709551615,
+      "factors": [
+        22904,
+        6182,
+        18446744073709551615,
+        4778,
+        5750
+      ],
+      "maximum_loop_nesting_bound": 16,
+      "saturated": true
+    }
+  },
+  "status": "PASS"
+}

@@ -1,0 +1,3289 @@
+[
+  {
+    "expected_status": 0,
+    "graph_reaches_nonuniform": false,
+    "id": "uniform_literal",
+    "obligation": "Dated WGSL 15.2.8 expression and source-control dependencies",
+    "source": "uniform_literal.wgsl",
+    "source_sha256": "f81323720805ddfa18d2d6bf8bd54b539bc8e7a065230b199814e8094876ae39",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "E"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "expected_status": 0,
+    "graph_reaches_nonuniform": false,
+    "id": "uniform_workgroup_id",
+    "obligation": "Dated WGSL 15.2.8 expression and source-control dependencies",
+    "source": "uniform_workgroup_id.wgsl",
+    "source_sha256": "a18dd490dc8679f1c4d20be0ba402080fe6aa35f1192711fed985dd45aa8bb46",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "E"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "expected_status": 0,
+    "graph_reaches_nonuniform": false,
+    "id": "uniform_num_workgroups",
+    "obligation": "Dated WGSL 15.2.8 expression and source-control dependencies",
+    "source": "uniform_num_workgroups.wgsl",
+    "source_sha256": "411a42d44039b958c66fa35e0ca38d3b2527968d7d3eee19dad8599d50207d0f",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "E"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "diagnostic": "Original source builtin/helper call; uniform control cannot be established; output atomic.",
+    "expected_status": 4,
+    "graph_reaches_nonuniform": true,
+    "id": "uniform_local_index",
+    "obligation": "Dated WGSL 15.2.8 expression and source-control dependencies",
+    "source": "uniform_local_index.wgsl",
+    "source_sha256": "0c9c561546cc54f665ad3dc88f5d5eee65184fde94e7231666ac0df5b32aa904",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "barrier_cf"
+        ],
+        [
+          "barrier_cf",
+          "condition"
+        ],
+        [
+          "condition",
+          "source"
+        ],
+        [
+          "source",
+          "N"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "diagnostic": "Original source builtin/helper call; uniform control cannot be established; output atomic.",
+    "expected_status": 4,
+    "graph_reaches_nonuniform": true,
+    "id": "uniform_local_id",
+    "obligation": "Dated WGSL 15.2.8 expression and source-control dependencies",
+    "source": "uniform_local_id.wgsl",
+    "source_sha256": "066c9ba8a0bab497b7436665ace52e755ca6b9c13bea10f9db7fc77f52c6a1f6",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "barrier_cf"
+        ],
+        [
+          "barrier_cf",
+          "condition"
+        ],
+        [
+          "condition",
+          "source"
+        ],
+        [
+          "source",
+          "N"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "diagnostic": "Original source builtin/helper call; uniform control cannot be established; output atomic.",
+    "expected_status": 4,
+    "graph_reaches_nonuniform": true,
+    "id": "uniform_global_id",
+    "obligation": "Dated WGSL 15.2.8 expression and source-control dependencies",
+    "source": "uniform_global_id.wgsl",
+    "source_sha256": "5bb91f1d49bf6893104d533175e7a971e94b57b42d7d19c5679c4d66aea8088a",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "barrier_cf"
+        ],
+        [
+          "barrier_cf",
+          "condition"
+        ],
+        [
+          "condition",
+          "source"
+        ],
+        [
+          "source",
+          "N"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "expected_status": 0,
+    "graph_reaches_nonuniform": false,
+    "id": "uniform_uniform_fixed",
+    "obligation": "Dated WGSL 15.2.8 expression and source-control dependencies",
+    "source": "uniform_uniform_fixed.wgsl",
+    "source_sha256": "ab23d91d06a2a944ec3698ce82d6ac71155699315e7d5b7ce73435836ac45196",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "E"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "expected_status": 0,
+    "graph_reaches_nonuniform": false,
+    "id": "uniform_readonly_fixed",
+    "obligation": "Dated WGSL 15.2.8 expression and source-control dependencies",
+    "source": "uniform_readonly_fixed.wgsl",
+    "source_sha256": "020015f957977eba869ac9b0924910a1cc9f86298d51bab00316ee507786028d",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "E"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "expected_status": 0,
+    "graph_reaches_nonuniform": false,
+    "id": "uniform_readonly_uniform_index",
+    "obligation": "Dated WGSL 15.2.8 expression and source-control dependencies",
+    "source": "uniform_readonly_uniform_index.wgsl",
+    "source_sha256": "5a49a6a382f17151b06abe5c1e46b51ec14253331261ce455982b6ad37cd1009",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "E"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "diagnostic": "Original source builtin/helper call; uniform control cannot be established; output atomic.",
+    "expected_status": 4,
+    "graph_reaches_nonuniform": true,
+    "id": "uniform_readonly_varying_index",
+    "obligation": "Dated WGSL 15.2.8 expression and source-control dependencies",
+    "source": "uniform_readonly_varying_index.wgsl",
+    "source_sha256": "d79b2de52ce1f26a18036557daf8236db6318d2996df36d79c9b3a79f2d11027",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "barrier_cf"
+        ],
+        [
+          "barrier_cf",
+          "condition"
+        ],
+        [
+          "condition",
+          "source"
+        ],
+        [
+          "source",
+          "N"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "diagnostic": "Original source builtin/helper call; uniform control cannot be established; output atomic.",
+    "expected_status": 4,
+    "graph_reaches_nonuniform": true,
+    "id": "uniform_mutable_fixed",
+    "obligation": "Dated WGSL 15.2.8 expression and source-control dependencies",
+    "source": "uniform_mutable_fixed.wgsl",
+    "source_sha256": "0543b8182c632b2fb6d6aff3619f202cbc1ddd45260a65b42284b08cb06974a4",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "barrier_cf"
+        ],
+        [
+          "barrier_cf",
+          "condition"
+        ],
+        [
+          "condition",
+          "source"
+        ],
+        [
+          "source",
+          "N"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "diagnostic": "Original source builtin/helper call; uniform control cannot be established; output atomic.",
+    "expected_status": 4,
+    "graph_reaches_nonuniform": true,
+    "id": "uniform_workgroup_fixed",
+    "obligation": "Dated WGSL 15.2.8 expression and source-control dependencies",
+    "source": "uniform_workgroup_fixed.wgsl",
+    "source_sha256": "93228202651d75951812eb980feca60d2fd0a9c29c202ca683bad35120fdb86d",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "barrier_cf"
+        ],
+        [
+          "barrier_cf",
+          "condition"
+        ],
+        [
+          "condition",
+          "source"
+        ],
+        [
+          "source",
+          "N"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "diagnostic": "Original source builtin/helper call; uniform control cannot be established; output atomic.",
+    "expected_status": 4,
+    "graph_reaches_nonuniform": true,
+    "id": "uniform_skipped_and_varying",
+    "obligation": "Dated WGSL 15.2.8 expression and source-control dependencies",
+    "source": "uniform_skipped_and_varying.wgsl",
+    "source_sha256": "bbf3eb0d98dc4e7c5d380fb7b5495cdc051be6b20ec258298e8eaf76021388ea",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "barrier_cf"
+        ],
+        [
+          "barrier_cf",
+          "condition"
+        ],
+        [
+          "condition",
+          "source"
+        ],
+        [
+          "source",
+          "N"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "diagnostic": "Original source builtin/helper call; uniform control cannot be established; output atomic.",
+    "expected_status": 4,
+    "graph_reaches_nonuniform": true,
+    "id": "uniform_skipped_or_varying",
+    "obligation": "Dated WGSL 15.2.8 expression and source-control dependencies",
+    "source": "uniform_skipped_or_varying.wgsl",
+    "source_sha256": "987cc3fbeb16bf4315bfcbd76e9546c9bc5a31e16df811fa204103e533c2ec0f",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "barrier_cf"
+        ],
+        [
+          "barrier_cf",
+          "condition"
+        ],
+        [
+          "condition",
+          "source"
+        ],
+        [
+          "source",
+          "N"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "expected_status": 0,
+    "graph_reaches_nonuniform": false,
+    "id": "uniform_short_and_uniform",
+    "obligation": "Dated WGSL 15.2.8 expression and source-control dependencies",
+    "source": "uniform_short_and_uniform.wgsl",
+    "source_sha256": "a4655f633778dbc087f096eb02c4227a411dcd0b53159d2f31e01419d9c73dc4",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "E"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "expected_status": 0,
+    "graph_reaches_nonuniform": false,
+    "id": "uniform_short_or_uniform",
+    "obligation": "Dated WGSL 15.2.8 expression and source-control dependencies",
+    "source": "uniform_short_or_uniform.wgsl",
+    "source_sha256": "425628023760e30f17ced5baba4cd2914938060bfa0b0bf045a1abb549c1c30a",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "E"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "diagnostic": "Original source builtin/helper call; uniform control cannot be established; output atomic.",
+    "expected_status": 4,
+    "graph_reaches_nonuniform": true,
+    "id": "uniform_uniform_index_varying_cf",
+    "obligation": "Dated WGSL 15.2.8 expression and source-control dependencies",
+    "source": "uniform_uniform_index_varying_cf.wgsl",
+    "source_sha256": "1145e2372081ee271f5b93027758123cc2900fe70efa74266229bca6f24d2746",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "barrier_cf"
+        ],
+        [
+          "barrier_cf",
+          "condition"
+        ],
+        [
+          "condition",
+          "source"
+        ],
+        [
+          "source",
+          "N"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "expected_status": 0,
+    "graph_reaches_nonuniform": false,
+    "id": "flow_whole_assignment_kills",
+    "obligation": "Explicit reaching-definition/control graph; whole kill, partial retain, actual behavior channels and loop backedges",
+    "source": "flow_whole_assignment_kills.wgsl",
+    "source_sha256": "c89ab9621cc9f9165b5dc384ce18eea904d105997306039c394476b10b693494",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "E"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "diagnostic": "Original source builtin/helper call; uniform control cannot be established; output atomic.",
+    "expected_status": 4,
+    "graph_reaches_nonuniform": true,
+    "id": "flow_let_snapshot_survives",
+    "obligation": "Explicit reaching-definition/control graph; whole kill, partial retain, actual behavior channels and loop backedges",
+    "source": "flow_let_snapshot_survives.wgsl",
+    "source_sha256": "e7cc28fba2751f0fb805d9063ce08f0339aa3e7e725780a3739088d4db54d56d",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "required_control"
+        ],
+        [
+          "required_control",
+          "reaching_value_or_cf"
+        ],
+        [
+          "reaching_value_or_cf",
+          "varying_origin"
+        ],
+        [
+          "varying_origin",
+          "N"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "diagnostic": "Original source builtin/helper call; uniform control cannot be established; output atomic.",
+    "expected_status": 4,
+    "graph_reaches_nonuniform": true,
+    "id": "flow_branch_equal_assignments",
+    "obligation": "Explicit reaching-definition/control graph; whole kill, partial retain, actual behavior channels and loop backedges",
+    "source": "flow_branch_equal_assignments.wgsl",
+    "source_sha256": "1c521fee1235081271907807539a027a1edee9d11d714bcf421fc17fec8df615",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "required_control"
+        ],
+        [
+          "required_control",
+          "reaching_value_or_cf"
+        ],
+        [
+          "reaching_value_or_cf",
+          "varying_origin"
+        ],
+        [
+          "varying_origin",
+          "N"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "expected_status": 0,
+    "graph_reaches_nonuniform": false,
+    "id": "flow_branch_overwrite_after",
+    "obligation": "Explicit reaching-definition/control graph; whole kill, partial retain, actual behavior channels and loop backedges",
+    "source": "flow_branch_overwrite_after.wgsl",
+    "source_sha256": "d2406408a4167b236d47ccffc50d31dc18bf8058ce9f11dd5c7716603648c6f8",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "E"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "expected_status": 0,
+    "graph_reaches_nonuniform": false,
+    "id": "flow_if_reconverges",
+    "obligation": "Explicit reaching-definition/control graph; whole kill, partial retain, actual behavior channels and loop backedges",
+    "source": "flow_if_reconverges.wgsl",
+    "source_sha256": "f1ccc95376379526db52336eea7899879c229614b419459ed8ffb73fd2041ce0",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "E"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "diagnostic": "Original source builtin/helper call; uniform control cannot be established; output atomic.",
+    "expected_status": 4,
+    "graph_reaches_nonuniform": true,
+    "id": "flow_if_return_no_reconvergence",
+    "obligation": "Explicit reaching-definition/control graph; whole kill, partial retain, actual behavior channels and loop backedges",
+    "source": "flow_if_return_no_reconvergence.wgsl",
+    "source_sha256": "9f61b8ce0908fa58840548184a49cf46246a61f97a726b4ba10a3070af733a4a",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "required_control"
+        ],
+        [
+          "required_control",
+          "reaching_value_or_cf"
+        ],
+        [
+          "reaching_value_or_cf",
+          "varying_origin"
+        ],
+        [
+          "varying_origin",
+          "N"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "expected_status": 0,
+    "graph_reaches_nonuniform": false,
+    "id": "flow_uniform_return",
+    "obligation": "Explicit reaching-definition/control graph; whole kill, partial retain, actual behavior channels and loop backedges",
+    "source": "flow_uniform_return.wgsl",
+    "source_sha256": "af0f6e422be1a0a6c2b6a7e87957c20093a2ccd0074ee78b5e779db225a76bd3",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "E"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "expected_status": 0,
+    "graph_reaches_nonuniform": false,
+    "id": "flow_dead_suffix_excluded",
+    "obligation": "Explicit reaching-definition/control graph; whole kill, partial retain, actual behavior channels and loop backedges",
+    "source": "flow_dead_suffix_excluded.wgsl",
+    "source_sha256": "0261e42e2f226bb22e8798a14a280fba876e77936c5fc0b72cf613632e9c1a03",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "E"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "diagnostic": "Original source builtin/helper call; uniform control cannot be established; output atomic.",
+    "expected_status": 4,
+    "graph_reaches_nonuniform": true,
+    "id": "flow_constant_false_branch_retained",
+    "obligation": "Explicit reaching-definition/control graph; whole kill, partial retain, actual behavior channels and loop backedges",
+    "source": "flow_constant_false_branch_retained.wgsl",
+    "source_sha256": "ffb1fa4c8efdbd6e39efca36a792132da1d2d9d215a4177fdc16cbc15fa027ce",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "required_control"
+        ],
+        [
+          "required_control",
+          "reaching_value_or_cf"
+        ],
+        [
+          "reaching_value_or_cf",
+          "varying_origin"
+        ],
+        [
+          "varying_origin",
+          "N"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "diagnostic": "Original source builtin/helper call; uniform control cannot be established; output atomic.",
+    "expected_status": 4,
+    "graph_reaches_nonuniform": true,
+    "id": "flow_single_array_partial_retains",
+    "obligation": "Explicit reaching-definition/control graph; whole kill, partial retain, actual behavior channels and loop backedges",
+    "source": "flow_single_array_partial_retains.wgsl",
+    "source_sha256": "a8ebd12f4fe866aa08bf0ed1742c107e0c847b5757bb9b063157738686bb8195",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "required_control"
+        ],
+        [
+          "required_control",
+          "reaching_value_or_cf"
+        ],
+        [
+          "reaching_value_or_cf",
+          "varying_origin"
+        ],
+        [
+          "varying_origin",
+          "N"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "expected_status": 0,
+    "graph_reaches_nonuniform": false,
+    "id": "flow_array_whole_kills",
+    "obligation": "Explicit reaching-definition/control graph; whole kill, partial retain, actual behavior channels and loop backedges",
+    "source": "flow_array_whole_kills.wgsl",
+    "source_sha256": "f31cb9497011e2c2530569cb6120211bf7730ecf9a12c0ad873cea0ecd39598e",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "E"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "diagnostic": "Original source builtin/helper call; uniform control cannot be established; output atomic.",
+    "expected_status": 4,
+    "graph_reaches_nonuniform": true,
+    "id": "flow_vector_partial_retains",
+    "obligation": "Explicit reaching-definition/control graph; whole kill, partial retain, actual behavior channels and loop backedges",
+    "source": "flow_vector_partial_retains.wgsl",
+    "source_sha256": "851432d067b9eb71415d651fa8cead6937b46e53c8edf819f23fcced7c9387eb",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "required_control"
+        ],
+        [
+          "required_control",
+          "reaching_value_or_cf"
+        ],
+        [
+          "reaching_value_or_cf",
+          "varying_origin"
+        ],
+        [
+          "varying_origin",
+          "N"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "expected_status": 0,
+    "graph_reaches_nonuniform": false,
+    "id": "flow_vector_whole_kills",
+    "obligation": "Explicit reaching-definition/control graph; whole kill, partial retain, actual behavior channels and loop backedges",
+    "source": "flow_vector_whole_kills.wgsl",
+    "source_sha256": "b0e9ca762d6b6f68cc5459d6d44e6c8fdb09ed22767eb73c241b6c7835011f73",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "E"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "diagnostic": "Original source builtin/helper call; uniform control cannot be established; output atomic.",
+    "expected_status": 4,
+    "graph_reaches_nonuniform": true,
+    "id": "flow_partial_index_dependency",
+    "obligation": "Explicit reaching-definition/control graph; whole kill, partial retain, actual behavior channels and loop backedges",
+    "source": "flow_partial_index_dependency.wgsl",
+    "source_sha256": "322d6260513259e45fcbc2e2230626d611979639b64c175c31a2c22d85a04fdb",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "required_control"
+        ],
+        [
+          "required_control",
+          "reaching_value_or_cf"
+        ],
+        [
+          "reaching_value_or_cf",
+          "varying_origin"
+        ],
+        [
+          "varying_origin",
+          "N"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "diagnostic": "Original source builtin/helper call; uniform control cannot be established; output atomic.",
+    "expected_status": 4,
+    "graph_reaches_nonuniform": true,
+    "id": "flow_read_in_varying_control",
+    "obligation": "Explicit reaching-definition/control graph; whole kill, partial retain, actual behavior channels and loop backedges",
+    "source": "flow_read_in_varying_control.wgsl",
+    "source_sha256": "e424306d81b17f5db0247479761cb7280dcd70c410e58c7a65d02380b7744671",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "required_control"
+        ],
+        [
+          "required_control",
+          "reaching_value_or_cf"
+        ],
+        [
+          "reaching_value_or_cf",
+          "varying_origin"
+        ],
+        [
+          "varying_origin",
+          "N"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "expected_status": 0,
+    "graph_reaches_nonuniform": false,
+    "id": "flow_loop_divergent_reconverges",
+    "obligation": "Explicit reaching-definition/control graph; whole kill, partial retain, actual behavior channels and loop backedges",
+    "source": "flow_loop_divergent_reconverges.wgsl",
+    "source_sha256": "1a8e4f875b1bc703fa1fb6e60ec2f6eb845e19a3b9bbafe75b07c5d93014a7b0",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "E"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "expected_status": 0,
+    "graph_reaches_nonuniform": false,
+    "id": "flow_for_divergent_reconverges",
+    "obligation": "Explicit reaching-definition/control graph; whole kill, partial retain, actual behavior channels and loop backedges",
+    "source": "flow_for_divergent_reconverges.wgsl",
+    "source_sha256": "e51f563d7e3c54c377d931cdd6681219bdb498a33e59022c99e2b36e27bb825a",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "E"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "diagnostic": "Original source builtin/helper call; uniform control cannot be established; output atomic.",
+    "expected_status": 4,
+    "graph_reaches_nonuniform": true,
+    "id": "flow_loop_break_backedge",
+    "obligation": "Explicit reaching-definition/control graph; whole kill, partial retain, actual behavior channels and loop backedges",
+    "source": "flow_loop_break_backedge.wgsl",
+    "source_sha256": "7412c17798955adce74d7294b69871b22c0559bd411d2c49e0520ff760f5ec9a",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "required_control"
+        ],
+        [
+          "required_control",
+          "reaching_value_or_cf"
+        ],
+        [
+          "reaching_value_or_cf",
+          "varying_origin"
+        ],
+        [
+          "varying_origin",
+          "N"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "diagnostic": "Original source builtin/helper call; uniform control cannot be established; output atomic.",
+    "expected_status": 4,
+    "graph_reaches_nonuniform": true,
+    "id": "flow_loop_continue_barrier",
+    "obligation": "Explicit reaching-definition/control graph; whole kill, partial retain, actual behavior channels and loop backedges",
+    "source": "flow_loop_continue_barrier.wgsl",
+    "source_sha256": "546acd7ca54bc5dc868086a0d7bc8a3180526c37284998b1540e42c4dc4fa464",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "required_control"
+        ],
+        [
+          "required_control",
+          "reaching_value_or_cf"
+        ],
+        [
+          "reaching_value_or_cf",
+          "varying_origin"
+        ],
+        [
+          "varying_origin",
+          "N"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "expected_status": 0,
+    "graph_reaches_nonuniform": false,
+    "id": "flow_loop_continue_reconverges",
+    "obligation": "Explicit reaching-definition/control graph; whole kill, partial retain, actual behavior channels and loop backedges",
+    "source": "flow_loop_continue_reconverges.wgsl",
+    "source_sha256": "99d5769c078ae0f4de4c9513fbf5b6dddf752a07d8ef818cf7e497fb3455969d",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "E"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "diagnostic": "Original source builtin/helper call; uniform control cannot be established; output atomic.",
+    "expected_status": 4,
+    "graph_reaches_nonuniform": true,
+    "id": "flow_continuing_break_if",
+    "obligation": "Explicit reaching-definition/control graph; whole kill, partial retain, actual behavior channels and loop backedges",
+    "source": "flow_continuing_break_if.wgsl",
+    "source_sha256": "6a7c8968abd44887758ea955dd82b36cc56b88a75480787e608fb77493887da9",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "required_control"
+        ],
+        [
+          "required_control",
+          "reaching_value_or_cf"
+        ],
+        [
+          "reaching_value_or_cf",
+          "varying_origin"
+        ],
+        [
+          "varying_origin",
+          "N"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "expected_status": 0,
+    "graph_reaches_nonuniform": false,
+    "id": "flow_continuing_uniform_break_if",
+    "obligation": "Explicit reaching-definition/control graph; whole kill, partial retain, actual behavior channels and loop backedges",
+    "source": "flow_continuing_uniform_break_if.wgsl",
+    "source_sha256": "0a8e56f0b2ae39fbacca950184339acac785511b7516477cbf39b3d3ad58cd6e",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "E"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "diagnostic": "Original source builtin/helper call; uniform control cannot be established; output atomic.",
+    "expected_status": 4,
+    "graph_reaches_nonuniform": true,
+    "id": "flow_loop_early_return",
+    "obligation": "Explicit reaching-definition/control graph; whole kill, partial retain, actual behavior channels and loop backedges",
+    "source": "flow_loop_early_return.wgsl",
+    "source_sha256": "bc389af8cb7ddd812334ea4df5c31f102069c51f584a373c73090ff0668c7ce7",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "required_control"
+        ],
+        [
+          "required_control",
+          "reaching_value_or_cf"
+        ],
+        [
+          "reaching_value_or_cf",
+          "varying_origin"
+        ],
+        [
+          "varying_origin",
+          "N"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "diagnostic": "Original source builtin/helper call; uniform control cannot be established; output atomic.",
+    "expected_status": 4,
+    "graph_reaches_nonuniform": true,
+    "id": "flow_loop_local_backedge",
+    "obligation": "Explicit reaching-definition/control graph; whole kill, partial retain, actual behavior channels and loop backedges",
+    "source": "flow_loop_local_backedge.wgsl",
+    "source_sha256": "8a04c32b86ac841d09078fdab8117fb6d6790c5f6e0508d2dd2c038fc9db55f2",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "required_control"
+        ],
+        [
+          "required_control",
+          "reaching_value_or_cf"
+        ],
+        [
+          "reaching_value_or_cf",
+          "varying_origin"
+        ],
+        [
+          "varying_origin",
+          "N"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "expected_status": 0,
+    "graph_reaches_nonuniform": false,
+    "id": "flow_loop_local_kill",
+    "obligation": "Explicit reaching-definition/control graph; whole kill, partial retain, actual behavior channels and loop backedges",
+    "source": "flow_loop_local_kill.wgsl",
+    "source_sha256": "67d11a80c65885f6590333a55fcad920dd3a0fcc02cee12790d1dabdbcd17c75",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "E"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "expected_status": 0,
+    "graph_reaches_nonuniform": false,
+    "id": "flow_nested_loop_reconvergence",
+    "obligation": "Explicit reaching-definition/control graph; whole kill, partial retain, actual behavior channels and loop backedges",
+    "source": "flow_nested_loop_reconvergence.wgsl",
+    "source_sha256": "2f9cfafb98e816a8afaa4f9c4f0f2f444cda4b8a1a0ae3d5f13543c6e9b2aac1",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "E"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "diagnostic": "Original source builtin/helper call; uniform control cannot be established; output atomic.",
+    "expected_status": 4,
+    "graph_reaches_nonuniform": true,
+    "id": "flow_nested_loop_varying_backedge",
+    "obligation": "Explicit reaching-definition/control graph; whole kill, partial retain, actual behavior channels and loop backedges",
+    "source": "flow_nested_loop_varying_backedge.wgsl",
+    "source_sha256": "cbf08503382ae6a82ddc317a012af57c0934f75f308c8b34333d90cf1843b493",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "required_control"
+        ],
+        [
+          "required_control",
+          "reaching_value_or_cf"
+        ],
+        [
+          "reaching_value_or_cf",
+          "varying_origin"
+        ],
+        [
+          "varying_origin",
+          "N"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "expected_status": 0,
+    "graph_reaches_nonuniform": false,
+    "id": "flow_shadow_local_identity",
+    "obligation": "Explicit reaching-definition/control graph; whole kill, partial retain, actual behavior channels and loop backedges",
+    "source": "flow_shadow_local_identity.wgsl",
+    "source_sha256": "2fc38cb6444d34b21a6e31feb380ef70ad9d385e7fa9cc24f782175ba8ebb869",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "E"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "diagnostic": "Original source builtin/helper call; uniform control cannot be established; output atomic.",
+    "expected_status": 4,
+    "graph_reaches_nonuniform": true,
+    "id": "flow_shadow_initializer_old_binding",
+    "obligation": "Explicit reaching-definition/control graph; whole kill, partial retain, actual behavior channels and loop backedges",
+    "source": "flow_shadow_initializer_old_binding.wgsl",
+    "source_sha256": "2ed0761b3b60661fa1510ffda3eb37584f9faef4ece5e04842f84d09872bd084",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "required_control"
+        ],
+        [
+          "required_control",
+          "reaching_value_or_cf"
+        ],
+        [
+          "reaching_value_or_cf",
+          "varying_origin"
+        ],
+        [
+          "varying_origin",
+          "N"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "expected_status": 0,
+    "graph_reaches_nonuniform": false,
+    "id": "helper_direct",
+    "obligation": "Acyclic function summary graph and retained source AST, including runtime-skipped calls",
+    "source": "helper_direct.wgsl",
+    "source_sha256": "73ec6d289329844015faf0ec5d6b84ec1801f9f7ad8cf4e22f997b32d25c1eb2",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "E"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "diagnostic": "Original source builtin/helper call; uniform control cannot be established; output atomic.",
+    "expected_status": 4,
+    "graph_reaches_nonuniform": true,
+    "id": "helper_varying",
+    "obligation": "Acyclic function summary graph and retained source AST, including runtime-skipped calls",
+    "source": "helper_varying.wgsl",
+    "source_sha256": "786acca8135840398afcd8162bd098e5aa51d1ab5c49a4a0b85dd2408bfd52eb",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "callsite_or_formal"
+        ],
+        [
+          "callsite_or_formal",
+          "callee_requirement_or_return"
+        ],
+        [
+          "callee_requirement_or_return",
+          "varying_origin"
+        ],
+        [
+          "varying_origin",
+          "N"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "expected_status": 0,
+    "graph_reaches_nonuniform": false,
+    "id": "helper_skipped_and_uniform",
+    "obligation": "Acyclic function summary graph and retained source AST, including runtime-skipped calls",
+    "source": "helper_skipped_and_uniform.wgsl",
+    "source_sha256": "d8666984dcadf1117b24323fb4582f64b4b7459536a0a577fc052a4ef93b7b96",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "E"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "expected_status": 0,
+    "graph_reaches_nonuniform": false,
+    "id": "helper_skipped_or_uniform",
+    "obligation": "Acyclic function summary graph and retained source AST, including runtime-skipped calls",
+    "source": "helper_skipped_or_uniform.wgsl",
+    "source_sha256": "0df53de7c5cc7744111911836d9586c0ec0c1b72db2284f4e63e990e8d946fee",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "E"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "diagnostic": "Original source builtin/helper call; uniform control cannot be established; output atomic.",
+    "expected_status": 4,
+    "graph_reaches_nonuniform": true,
+    "id": "helper_skipped_and_varying_cf",
+    "obligation": "Acyclic function summary graph and retained source AST, including runtime-skipped calls",
+    "source": "helper_skipped_and_varying_cf.wgsl",
+    "source_sha256": "9a8103b2caf948b24f979435cb40e285f9fd500c5cd2eede550ba8aa5ca62bb0",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "callsite_or_formal"
+        ],
+        [
+          "callsite_or_formal",
+          "callee_requirement_or_return"
+        ],
+        [
+          "callee_requirement_or_return",
+          "varying_origin"
+        ],
+        [
+          "varying_origin",
+          "N"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "diagnostic": "Original source builtin/helper call; uniform control cannot be established; output atomic.",
+    "expected_status": 4,
+    "graph_reaches_nonuniform": true,
+    "id": "helper_skipped_or_varying_cf",
+    "obligation": "Acyclic function summary graph and retained source AST, including runtime-skipped calls",
+    "source": "helper_skipped_or_varying_cf.wgsl",
+    "source_sha256": "c4802d82d71d1629d070fb02516ffdaf4a66aec2489decebef45cea7582ecb54",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "callsite_or_formal"
+        ],
+        [
+          "callsite_or_formal",
+          "callee_requirement_or_return"
+        ],
+        [
+          "callee_requirement_or_return",
+          "varying_origin"
+        ],
+        [
+          "varying_origin",
+          "N"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "diagnostic": "Original source builtin/helper call; uniform control cannot be established; output atomic.",
+    "expected_status": 4,
+    "graph_reaches_nonuniform": true,
+    "id": "helper_runtime_short_varying",
+    "obligation": "Acyclic function summary graph and retained source AST, including runtime-skipped calls",
+    "source": "helper_runtime_short_varying.wgsl",
+    "source_sha256": "2db972337a1f5c86404a4737d77d4d9bd08306b7d8696b85e9b75e30c04b975c",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "callsite_or_formal"
+        ],
+        [
+          "callsite_or_formal",
+          "callee_requirement_or_return"
+        ],
+        [
+          "callee_requirement_or_return",
+          "varying_origin"
+        ],
+        [
+          "varying_origin",
+          "N"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "expected_status": 0,
+    "graph_reaches_nonuniform": false,
+    "id": "helper_chain",
+    "obligation": "Acyclic function summary graph and retained source AST, including runtime-skipped calls",
+    "source": "helper_chain.wgsl",
+    "source_sha256": "71ec4518332321d42ce412c44deefe670e17e9ecd1368dd4c1688481e6a2340a",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "E"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "diagnostic": "Original source builtin/helper call; uniform control cannot be established; output atomic.",
+    "expected_status": 4,
+    "graph_reaches_nonuniform": true,
+    "id": "helper_chain_varying",
+    "obligation": "Acyclic function summary graph and retained source AST, including runtime-skipped calls",
+    "source": "helper_chain_varying.wgsl",
+    "source_sha256": "fd1d211d954adc6064ee62a28b6de746db8184be4f562af547c75022236493de",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "callsite_or_formal"
+        ],
+        [
+          "callsite_or_formal",
+          "callee_requirement_or_return"
+        ],
+        [
+          "callee_requirement_or_return",
+          "varying_origin"
+        ],
+        [
+          "varying_origin",
+          "N"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "expected_status": 0,
+    "graph_reaches_nonuniform": false,
+    "id": "formal_required_uniform",
+    "obligation": "Acyclic function summary graph and retained source AST, including runtime-skipped calls",
+    "source": "formal_required_uniform.wgsl",
+    "source_sha256": "15dcf042c04d58737c1153c931a3be2ac9bcd3afdbb1d0d95765953198e5bdbd",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "E"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "diagnostic": "Original source builtin/helper call; uniform control cannot be established; output atomic.",
+    "expected_status": 4,
+    "graph_reaches_nonuniform": true,
+    "id": "formal_required_varying",
+    "obligation": "Acyclic function summary graph and retained source AST, including runtime-skipped calls",
+    "source": "formal_required_varying.wgsl",
+    "source_sha256": "6bd033b6c4cae59715ba85e42563d2f757359ac31be652aae83ae4ce6ab64a4f",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "callsite_or_formal"
+        ],
+        [
+          "callsite_or_formal",
+          "callee_requirement_or_return"
+        ],
+        [
+          "callee_requirement_or_return",
+          "varying_origin"
+        ],
+        [
+          "varying_origin",
+          "N"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "expected_status": 0,
+    "graph_reaches_nonuniform": false,
+    "id": "formal_return_uniform",
+    "obligation": "Acyclic function summary graph and retained source AST, including runtime-skipped calls",
+    "source": "formal_return_uniform.wgsl",
+    "source_sha256": "c11cd23c8ecd0deba96fa2e734b48d50d1c6e38df9d94373e8b8583918ab4e93",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "E"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "diagnostic": "Original source builtin/helper call; uniform control cannot be established; output atomic.",
+    "expected_status": 4,
+    "graph_reaches_nonuniform": true,
+    "id": "formal_return_varying",
+    "obligation": "Acyclic function summary graph and retained source AST, including runtime-skipped calls",
+    "source": "formal_return_varying.wgsl",
+    "source_sha256": "2967790114aae3b07ce4c3b4b4376011afe9a11a3986f70ca34ee7e74f552400",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "callsite_or_formal"
+        ],
+        [
+          "callsite_or_formal",
+          "callee_requirement_or_return"
+        ],
+        [
+          "callee_requirement_or_return",
+          "varying_origin"
+        ],
+        [
+          "varying_origin",
+          "N"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "expected_status": 0,
+    "graph_reaches_nonuniform": false,
+    "id": "helper_return_reconverges",
+    "obligation": "Acyclic function summary graph and retained source AST, including runtime-skipped calls",
+    "source": "helper_return_reconverges.wgsl",
+    "source_sha256": "8cec8b4894cac07b1ecea87d08464b399f06bec6f37aeb34051ed35116f1b081",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "E"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "diagnostic": "Original source builtin/helper call; uniform control cannot be established; output atomic.",
+    "expected_status": 4,
+    "graph_reaches_nonuniform": true,
+    "id": "unused_helper_invalid",
+    "obligation": "Acyclic function summary graph and retained source AST, including runtime-skipped calls",
+    "source": "unused_helper_invalid.wgsl",
+    "source_sha256": "dec3819d6353f0ca8029699258fa7d341c9f6eb8db54bd214aee9eb4600b1dd8",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "callsite_or_formal"
+        ],
+        [
+          "callsite_or_formal",
+          "callee_requirement_or_return"
+        ],
+        [
+          "callee_requirement_or_return",
+          "varying_origin"
+        ],
+        [
+          "varying_origin",
+          "N"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "diagnostic": "Original source builtin/helper call; uniform control cannot be established; output atomic.",
+    "expected_status": 4,
+    "graph_reaches_nonuniform": true,
+    "id": "mutable_helper_result",
+    "obligation": "Acyclic function summary graph and retained source AST, including runtime-skipped calls",
+    "source": "mutable_helper_result.wgsl",
+    "source_sha256": "2d560f2e2be422b9cff51848f66a101b93b983491af26f3de83c8c5666010241",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "callsite_or_formal"
+        ],
+        [
+          "callsite_or_formal",
+          "callee_requirement_or_return"
+        ],
+        [
+          "callee_requirement_or_return",
+          "varying_origin"
+        ],
+        [
+          "varying_origin",
+          "N"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "diagnostic": "Original source builtin/helper call; uniform control cannot be established; output atomic.",
+    "expected_status": 4,
+    "graph_reaches_nonuniform": true,
+    "id": "workgroup_helper_result",
+    "obligation": "Acyclic function summary graph and retained source AST, including runtime-skipped calls",
+    "source": "workgroup_helper_result.wgsl",
+    "source_sha256": "1f0932d2b9c478353fee17c40cc9384549b0b218246abdd7a16b4fcfbf918e2d",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "callsite_or_formal"
+        ],
+        [
+          "callsite_or_formal",
+          "callee_requirement_or_return"
+        ],
+        [
+          "callee_requirement_or_return",
+          "varying_origin"
+        ],
+        [
+          "varying_origin",
+          "N"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "expected_status": 0,
+    "graph_reaches_nonuniform": false,
+    "id": "source_barrier_no_roots",
+    "obligation": "Acyclic function summary graph and retained source AST, including runtime-skipped calls",
+    "source": "source_barrier_no_roots.wgsl",
+    "source_sha256": "ec58414fbf41a61e47e883664908c523693e54a5be1f0fb90af5d5f1aa84f724",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "E"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "expected_status": 0,
+    "graph_reaches_nonuniform": false,
+    "id": "builtin_shadow_function",
+    "obligation": "Acyclic function summary graph and retained source AST, including runtime-skipped calls",
+    "source": "builtin_shadow_function.wgsl",
+    "source_sha256": "8c6de8778b2f4132466f801f75c4b387324a75d7554d267f22cd2a6016aeb0de",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "E"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "diagnostic": "Original source builtin/helper call; uniform control cannot be established; output atomic.",
+    "expected_status": 4,
+    "graph_reaches_nonuniform": true,
+    "id": "struct_partial_retains",
+    "obligation": "",
+    "source": "struct_partial_retains.wgsl",
+    "source_sha256": "b972c4063e70edfbcecfd30af82360da5cd9fe6c5eb61f55c43bdcb022c5ffdf",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "barrier_cf"
+        ],
+        [
+          "barrier_cf",
+          "read_a"
+        ],
+        [
+          "read_a",
+          "partial_a"
+        ],
+        [
+          "partial_a",
+          "old_a"
+        ],
+        [
+          "old_a",
+          "li"
+        ],
+        [
+          "li",
+          "N"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "expected_status": 0,
+    "graph_reaches_nonuniform": false,
+    "id": "struct_whole_kills",
+    "obligation": "",
+    "source": "struct_whole_kills.wgsl",
+    "source_sha256": "f28e7ea39ecc2a4559e117798d4479eafe612a3e05ec877d989ca1281ca92441",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "E"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "diagnostic": "Original source builtin/helper call; uniform control cannot be established; output atomic.",
+    "expected_status": 4,
+    "graph_reaches_nonuniform": true,
+    "id": "after_barrier_load_still_varying",
+    "obligation": "",
+    "source": "after_barrier_load_still_varying.wgsl",
+    "source_sha256": "da67afa2d024ff04b19a8ce9bec977cfa77db6ef54c397ef676c61cc3aa2255e",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "second_barrier_cf"
+        ],
+        [
+          "second_barrier_cf",
+          "load_x"
+        ],
+        [
+          "load_x",
+          "N"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "expected_status": 0,
+    "id": "root_bool",
+    "obligation": "Exact type/namespace/status boundary; not uniformity fallback",
+    "source": "root_bool.wgsl",
+    "source_sha256": "64726c5226022772b697fd0e424f8f4af71ce515ebe840d301ae1c02c0a27fd0"
+  },
+  {
+    "expected_status": 0,
+    "id": "root_i32",
+    "obligation": "Exact type/namespace/status boundary; not uniformity fallback",
+    "source": "root_i32.wgsl",
+    "source_sha256": "9bddcfef829eacac6747ff3c760342d834fc7ec30850d8e9dfc70b9b364914ca"
+  },
+  {
+    "expected_status": 0,
+    "id": "root_f32",
+    "obligation": "Exact type/namespace/status boundary; not uniformity fallback",
+    "source": "root_f32.wgsl",
+    "source_sha256": "341fd8e30152d9f89b5a18c879f4829b56adb59fd6f989cdd65021c598d65d4f"
+  },
+  {
+    "expected_status": 0,
+    "id": "root_vector",
+    "obligation": "Exact type/namespace/status boundary; not uniformity fallback",
+    "source": "root_vector.wgsl",
+    "source_sha256": "d520efee7d2686bebd8acdec691cf4adf6116a51398aa6acc0dfc7312c4d7d4a"
+  },
+  {
+    "expected_status": 0,
+    "id": "root_forward",
+    "obligation": "Exact type/namespace/status boundary; not uniformity fallback",
+    "source": "root_forward.wgsl",
+    "source_sha256": "d5b2b6f7027149173283a532ea3e9df5f94712dc27ca69df07810f3c8b1d4c0f"
+  },
+  {
+    "expected_status": 0,
+    "id": "root_unused",
+    "obligation": "Exact type/namespace/status boundary; not uniformity fallback",
+    "source": "root_unused.wgsl",
+    "source_sha256": "873daaed3ec55e90a657f4113e34c58515b526e97a5df0eada93602b3bdf80fc"
+  },
+  {
+    "expected_status": 0,
+    "id": "root_shadow",
+    "obligation": "Exact type/namespace/status boundary; not uniformity fallback",
+    "source": "root_shadow.wgsl",
+    "source_sha256": "ff4538bff1d9ef370bda8f45bdf47158d812a461e82465dbc861436511c59e8b"
+  },
+  {
+    "expected_status": 4,
+    "id": "root_initializer",
+    "obligation": "Exact type/namespace/status boundary; not uniformity fallback",
+    "source": "root_initializer.wgsl",
+    "source_sha256": "bcc43227739b88952b14e9158550db62268d80e11fed6f1bec634653b3378f1f"
+  },
+  {
+    "expected_status": 4,
+    "id": "root_access_mode",
+    "obligation": "Exact type/namespace/status boundary; not uniformity fallback",
+    "source": "root_access_mode.wgsl",
+    "source_sha256": "80e5803fedb9ec7ecd9227cd56a8954970004f33eb48272d9793aae49b508726"
+  },
+  {
+    "expected_status": 4,
+    "id": "root_runtime_array",
+    "obligation": "Exact type/namespace/status boundary; not uniformity fallback",
+    "source": "root_runtime_array.wgsl",
+    "source_sha256": "583c1e04d7cae4838b3c758a1d3ee1b2bf79642aa69cea36ae34c50b85b52fff"
+  },
+  {
+    "expected_status": 4,
+    "id": "root_runtime_tail",
+    "obligation": "Exact type/namespace/status boundary; not uniformity fallback",
+    "source": "root_runtime_tail.wgsl",
+    "source_sha256": "84484086050f5e1b820f767a8601c30dca91047c32e2d9b6d27de7a8e751ee98"
+  },
+  {
+    "expected_status": 4,
+    "id": "root_zero_array",
+    "obligation": "Exact type/namespace/status boundary; not uniformity fallback",
+    "source": "root_zero_array.wgsl",
+    "source_sha256": "65769ae5c4320c897e84816c8d313d5fa7b2a4e65c8ad916a4780245c56cacde"
+  },
+  {
+    "expected_status": 4,
+    "id": "root_duplicate",
+    "obligation": "Exact type/namespace/status boundary; not uniformity fallback",
+    "source": "root_duplicate.wgsl",
+    "source_sha256": "10915b108c16ffe1dedf8488ea9f021fb340d21965b03bb339d5a0878020b448"
+  },
+  {
+    "expected_status": 4,
+    "id": "root_type_cycle",
+    "obligation": "Exact type/namespace/status boundary; not uniformity fallback",
+    "source": "root_type_cycle.wgsl",
+    "source_sha256": "4e9fa05f9d5bd6dfefd5fbe78aea184842410b6f15dd3fa70d01ee69bf8489b7"
+  },
+  {
+    "expected_status": 4,
+    "graph_reaches_nonuniform": false,
+    "id": "barrier_arity",
+    "obligation": "Exact type/namespace/status boundary; not uniformity fallback",
+    "source": "barrier_arity.wgsl",
+    "source_sha256": "e5dc2ac13d90e4cdd6b0d138afb3307371e95db9157e8c3b27bc2452de05389f",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "E"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "expected_status": 4,
+    "graph_reaches_nonuniform": false,
+    "id": "barrier_value",
+    "obligation": "Exact type/namespace/status boundary; not uniformity fallback",
+    "source": "barrier_value.wgsl",
+    "source_sha256": "b5907a84a4f70d4145d3c1e300e3d3d1365f29e045458889d3a44396b1f27f9b",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "E"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "expected_status": 4,
+    "graph_reaches_nonuniform": false,
+    "id": "barrier_const",
+    "obligation": "Exact type/namespace/status boundary; not uniformity fallback",
+    "source": "barrier_const.wgsl",
+    "source_sha256": "709db76713d6f3bf5609184f20f834fa9f0c3c4d70e7efa69c22c1b25781d7db",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "E"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "expected_status": 4,
+    "id": "dead_suffix_still_typed",
+    "obligation": "Exact type/namespace/status boundary; not uniformity fallback",
+    "source": "dead_suffix_still_typed.wgsl",
+    "source_sha256": "5e5ce5c50a1dd8420df858514cb338d9900fadbf11d93258f4bcbe913d9cccd6"
+  },
+  {
+    "expected_status": 2,
+    "id": "excluded_atomic",
+    "obligation": "Exact type/namespace/status boundary; not uniformity fallback",
+    "source": "excluded_atomic.wgsl",
+    "source_sha256": "65d7156a5b239b6b565944dcd7dda2c33f04655314f70cee8fd72eb121cec74c"
+  },
+  {
+    "expected_status": 2,
+    "id": "excluded_storage_barrier",
+    "obligation": "Exact type/namespace/status boundary; not uniformity fallback",
+    "source": "excluded_storage_barrier.wgsl",
+    "source_sha256": "87308ac6d17418a6625b716cc5c823ba3845ca3f58c280ffdaa5574db7275ef5"
+  },
+  {
+    "expected_status": 2,
+    "id": "excluded_uniform_load",
+    "obligation": "Exact type/namespace/status boundary; not uniformity fallback",
+    "source": "excluded_uniform_load.wgsl",
+    "source_sha256": "b296934a6635dbf6471ad883f83db0e8fb339a4ddc9add69b4b56457cfee1435"
+  },
+  {
+    "execution": {
+      "class": "exact bytes",
+      "dispatches": 2,
+      "expected_outputs_hex": {
+        "0:0": "0100000002000000030000000000000065000000660000006700000064000000c9000000ca000000cb000000c8000000"
+      },
+      "groups": [
+        3,
+        1,
+        1
+      ],
+      "initial_shared_poison": [
+        "a5",
+        "5a"
+      ],
+      "inputs_hex": {
+        "0:0": "630000006300000063000000630000006300000063000000630000006300000063000000630000006300000063000000"
+      },
+      "race_free_required": true,
+      "schedules": [
+        "round_robin",
+        "reverse",
+        "shuffle_0x11c0ffee",
+        "bounded_burst_1_3_7"
+      ]
+    },
+    "expected_status": 0,
+    "graph_reaches_nonuniform": false,
+    "id": "execute_group_isolation",
+    "obligation": "Cross-lane exchange, distinct groups, generated and two source barriers",
+    "source": "execute_group_isolation.wgsl",
+    "source_sha256": "6ae7e63229ee3fc7a80117db20ee42dea4df2e5a3f48ed8b459bea2f675ffcf8",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "E"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "execution": {
+      "class": "exact bytes",
+      "dispatches": 2,
+      "expected_outputs_hex": {
+        "0:0": "630000000000000000000000000000006300000000000000000000000000000063000000000000000000000000000000"
+      },
+      "groups": [
+        3,
+        1,
+        1
+      ],
+      "initial_shared_poison": [
+        "a5",
+        "5a"
+      ],
+      "inputs_hex": {
+        "0:0": "630000006300000063000000630000006300000063000000630000006300000063000000630000006300000063000000"
+      },
+      "race_free_required": true,
+      "schedules": [
+        "round_robin",
+        "reverse",
+        "shuffle_0x11c0ffee",
+        "bounded_burst_1_3_7"
+      ]
+    },
+    "expected_status": 0,
+    "id": "execute_zero_before_return",
+    "obligation": "Compiler initialization before source early return; all zero prologue lanes",
+    "source": "execute_zero_before_return.wgsl",
+    "source_sha256": "bdef4297ff7fc070b9312995d8f5400941710270631500c481b3452cbb694c2c"
+  },
+  {
+    "execution": {
+      "class": "exact bytes",
+      "dispatches": 2,
+      "expected_outputs_hex": {
+        "0:0": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "groups": [
+        3,
+        1,
+        1
+      ],
+      "initial_shared_poison": [
+        "a5",
+        "5a"
+      ],
+      "inputs_hex": {
+        "0:0": "630000006300000063000000630000006300000063000000630000006300000063000000630000006300000063000000"
+      },
+      "race_free_required": true,
+      "schedules": [
+        "round_robin",
+        "reverse",
+        "shuffle_0x11c0ffee",
+        "bounded_burst_1_3_7"
+      ]
+    },
+    "expected_status": 0,
+    "id": "execute_nested_zero",
+    "obligation": "Whole-root null handles nested bool/vector/f32 aggregate safely",
+    "source": "execute_nested_zero.wgsl",
+    "source_sha256": "25393bc049391081d63ee4692c2155f41f7370c1e383144dd2bebfdb1aa01121"
+  },
+  {
+    "execution": {
+      "class": "exact bytes",
+      "dispatches": 2,
+      "expected_outputs_hex": {
+        "0:0": "00000000"
+      },
+      "groups": [
+        1,
+        1,
+        1
+      ],
+      "initial_shared_poison": [
+        "a5",
+        "5a"
+      ],
+      "inputs_hex": {
+        "0:0": "63000000"
+      },
+      "race_free_required": true,
+      "schedules": [
+        "round_robin",
+        "reverse",
+        "shuffle_0x11c0ffee",
+        "bounded_burst_1_3_7"
+      ]
+    },
+    "expected_status": 0,
+    "id": "execute_hidden_index",
+    "obligation": "Hidden target index for entry with no source builtin, one-lane prologue retained",
+    "source": "execute_hidden_index.wgsl",
+    "source_sha256": "70c45255f26eb37a42c1998fed9ab3fd2aedbd136fd32a1b338247233f5e3d85"
+  },
+  {
+    "execution": {
+      "class": "exact bytes",
+      "dispatches": 2,
+      "expected_outputs_hex": {
+        "0:0": "15000000160000001700000014000000790000007a0000007b00000078000000dd000000de000000df000000dc000000"
+      },
+      "groups": [
+        3,
+        1,
+        1
+      ],
+      "initial_shared_poison": [
+        "a5",
+        "5a"
+      ],
+      "inputs_hex": {
+        "0:0": "630000006300000063000000630000006300000063000000630000006300000063000000630000006300000063000000"
+      },
+      "race_free_required": true,
+      "schedules": [
+        "round_robin",
+        "reverse",
+        "shuffle_0x11c0ffee",
+        "bounded_burst_1_3_7"
+      ]
+    },
+    "expected_status": 0,
+    "graph_reaches_nonuniform": false,
+    "id": "execute_helper_phases",
+    "obligation": "Same helper barrier at different callsites and loop phases",
+    "source": "execute_helper_phases.wgsl",
+    "source_sha256": "ee9b829345a8f0c1a63e79ca2cd250a8bbcb99ad02c7d9a872fd7322349a5184",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "E"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "execution": {
+      "class": "exact bytes",
+      "dispatches": 2,
+      "expected_outputs_hex": {
+        "0:0": "03000000040000000500000006000000030000000400000005000000060000000300000004000000"
+      },
+      "groups": [
+        3,
+        1,
+        1
+      ],
+      "initial_shared_poison": [
+        "a5",
+        "5a"
+      ],
+      "inputs_hex": {
+        "0:0": "63000000630000006300000063000000630000006300000063000000630000006300000063000000"
+      },
+      "race_free_required": true,
+      "schedules": [
+        "round_robin",
+        "reverse",
+        "shuffle_0x11c0ffee",
+        "bounded_burst_1_3_7"
+      ]
+    },
+    "expected_status": 0,
+    "graph_reaches_nonuniform": false,
+    "id": "execute_bounds",
+    "obligation": "Independent shared and storage bounds with partial output length",
+    "source": "execute_bounds.wgsl",
+    "source_sha256": "4ea6bd6a1963a104c7ae2e9ef2222ecad6ee0922b05f20a0bf84cf95943bdedb",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "E"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "execution": {
+      "class": "exact bytes",
+      "dispatches": 2,
+      "expected_outputs_hex": {
+        "0:0": "030000000400000005000000060000000300000004000000050000000600000003000000040000000500000006000000"
+      },
+      "groups": [
+        3,
+        1,
+        1
+      ],
+      "initial_shared_poison": [
+        "a5",
+        "5a"
+      ],
+      "inputs_hex": {
+        "0:0": "630000006300000063000000630000006300000063000000630000006300000063000000630000006300000063000000"
+      },
+      "race_free_required": true,
+      "schedules": [
+        "round_robin",
+        "reverse",
+        "shuffle_0x11c0ffee",
+        "bounded_burst_1_3_7"
+      ]
+    },
+    "expected_status": 0,
+    "graph_reaches_nonuniform": false,
+    "id": "execute_snapshot",
+    "obligation": "Value snapshots survive later shared writes",
+    "source": "execute_snapshot.wgsl",
+    "source_sha256": "371d8a54fa47c9348ed5a0d15b5570d23c541f9e0573570cfffb061762b97ae8",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "E"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "execution": {
+      "groups": [
+        1,
+        1,
+        1
+      ],
+      "oracle_expected_failure": "same-vector conflicting writes",
+      "positive_numerical_witness": false
+    },
+    "expected_status": 0,
+    "graph_reaches_nonuniform": false,
+    "id": "control_vector_race",
+    "obligation": "Distinct vector components can share a memory location; must detect race",
+    "source": "control_vector_race.wgsl",
+    "source_sha256": "2013f00e6374d1e3ab05dd8807443945b42ea18c0ed5d14d3b85b6efe81c68b2",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "E"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "execution": {
+      "groups": [
+        2,
+        1,
+        1
+      ],
+      "inputs_hex": {
+        "0:0": "6300000063000000630000006300000063000000630000006300000063000000"
+      },
+      "oracle_expected_failure": "storage race not ordered by WorkgroupMemory",
+      "positive_numerical_witness": false
+    },
+    "expected_status": 0,
+    "graph_reaches_nonuniform": false,
+    "id": "control_storage_not_fenced",
+    "obligation": "Workgroup barrier is not a storage fence",
+    "source": "control_storage_not_fenced.wgsl",
+    "source_sha256": "f1d8cc12ee6e57319c82ffb3651c7faf839a1283723684d96e0362049118644c",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "E"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "execution": {
+      "class": "exact bytes",
+      "dispatches": 2,
+      "expected_outputs_hex": {
+        "0:0": "0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "groups": [
+        1,
+        1,
+        1
+      ],
+      "initial_shared_poison": [
+        "a5",
+        "5a"
+      ],
+      "inputs_hex": {
+        "0:0": "0000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f841"
+      },
+      "race_free_required": true,
+      "schedules": [
+        "round_robin",
+        "reverse",
+        "shuffle_0x11c0ffee",
+        "bounded_burst_1_3_7"
+      ]
+    },
+    "expected_status": 0,
+    "id": "witness_zero",
+    "obligation": "ONE group: all 2048 +zero outputs, 256 lanes, compact root and repeated poisoned dispatch",
+    "original_source_path": "bench/kernels/zero_initialize_workgroup_memory_2048.wgsl",
+    "source": "witness_zero.wgsl",
+    "source_sha256": "a8c4a18801b189cc5dba3f7141acdda5a79d54eda802ca90a53d5d7ba88da614"
+  },
+  {
+    "execution": {
+      "class": "exact bytes",
+      "dispatches": 2,
+      "expected_outputs_hex": {
+        "0:0": "32000000b6000000b60000001c0100001c01000032000000b60000005c000000b60000001c010000320000001c0100001c010000b600000032000000320000005c00000032000000320000001c010000b60000001c0100001c0100005c0000001c0100001c010000320000003200000032000000320000005c00000032000000320000001c010000b6000000320000001c010000b60000005c000000320000001c010000320000005c000000b60000005c0000005c0000001c0100001c010000b6000000b6000000320000005c000000b60000005c0000005c000000b6000000320000001c0100001c010000b6000000b6000000b60000001c010000b6000000b600000032000000320000001c01000032000000b60000005c000000b60000001c0100001c010000b6000000b6000000b6000000320000001c0100001c010000320000001c010000b6000000320000001c010000b6000000320000005c000000b60000005c000000320000001c01000032000000b6000000b60000001c0100005c0000005c00000032000000b60000005c0000001c0100005c0000001c0100001c0100005c000000b6000000320000001c0100005c000000320000001c01000032000000320000001c010000320000001c010000320000001c01000032000000b600000032000000320000001c01000032000000b6000000b6000000b60000001c0100001c01000032000000b6000000b6000000320000001c0100001c0100001c0100001c0100005c0000001c0100001c010000320000001c010000b60000001c010000b60000001c010000320000001c010000b6000000b60000003200000032000000b60000001c010000320000001c010000b6000000320000001c0100005c0000001c010000b600000032000000320000001c010000320000005c00000032000000b60000001c010000b60000003200000032000000b6000000320000001c0100001c010000b6000000b6000000b6000000320000001c0100003200000032000000b6000000b600000032000000b60000001c010000b60000001c0100001c01000032000000b60000005c000000320000001c0100005c00000032000000b6000000b600000032000000320000001c0100005c0000001c0100005c0000001c0100001c010000320000005c0000001c010000320000003200000032000000b60000001c0100005c0000001c010000b60000001c0100001c01000032000000320000001c010000320000001c01000032000000b60000001c010000320000001c0100001c010000b600000032000000b60000001c01000032000000b60000001c0100001c0100001c0100001c0100005c0000005c000000b60000001c0100001c010000320000003200000032000000b6000000b60000001c0100001c010000be010000be010000fb01000022020000be010000be01000022020000be010000be010000e8010000e8010000be010000e80100003a02000022020000be010000fb010000be010000e8010000be010000be010000e8010000e8010000fb010000e8010000e8010000be01000022020000be0100003a020000be010000e8010000be010000be010000e8010000be010000be01000022020000be010000be010000be010000e8010000be010000be01000022020000e801000022020000be01000022020000e8010000be010000be010000e8010000e8010000e8010000be010000e8010000e8010000be010000e8010000e8010000e8010000be010000be0100003a0200003a020000e8010000be010000be010000e8010000e8010000be010000e8010000e8010000be010000be010000e801000022020000e8010000be010000e8010000be010000e8010000e8010000be010000fb010000be010000e8010000be010000e8010000be010000be0100003a020000be010000be010000fb0100003a02000022020000be0100002202000022020000be01000022020000be0100003a020000be010000e8010000e8010000e8010000e8010000be01000022020000be010000be01000022020000220200003a0200003a020000e8010000be01000022020000be010000be010000e8010000e8010000be010000be010000be010000e8010000be010000e8010000e8010000e8010000be010000e8010000be01000022020000be010000be010000e8010000e801000022020000be01000022020000fb010000e8010000be010000be010000e8010000e801000022020000be010000e801000022020000be010000e8010000be010000be010000be010000e8010000fb010000be010000e801000022020000be010000be010000e8010000e8010000be010000be010000be0100002202000066010000be010000e8010000be010000be010000be01000022020000e8010000be010000be010000e8010000e8010000e801000022020000e8010000e8010000be010000be010000e8010000e801000022020000be010000e8010000fb010000fb010000e8010000be010000e8010000be010000e8010000be01000022020000e8010000be0100002202000022020000be010000be0100003a020000fb010000e80100002202000022020000be010000be010000e8010000e8010000e8010000be010000e8010000e8010000fb010000e8010000e8010000be010000be010000be010000220200003a020000be010000be010000e8010000e8010000e8010000be010000e8010000e8010000be0100002202000022020000be010000fb010000e8010000e8010000e8010000fb01000022020000e8010000be010000"
+      },
+      "groups": [
+        2,
+        1,
+        1
+      ],
+      "initial_shared_poison": [
+        "a5",
+        "5a"
+      ],
+      "inputs_hex": {
+        "0:0": "0700000014000000210000002e0000003b0000004800000055000000620000006f0000007c0000008900000096000000a3000000b0000000bd000000ca000000d7000000e4000000f100000003000000100000001d0000002a0000003700000044000000510000005e0000006b0000007800000085000000920000009f000000ac000000b9000000c6000000d3000000e0000000ed000000fa0000000c000000190000002600000033000000400000004d0000005a0000006700000074000000810000008e0000009b000000a8000000b5000000c2000000cf000000dc000000e9000000f60000000800000015000000220000002f0000003c000000490000005600000063000000700000007d0000008a00000097000000a4000000b1000000be000000cb000000d8000000e5000000f200000004000000110000001e0000002b0000003800000045000000520000005f0000006c000000790000008600000093000000a0000000ad000000ba000000c7000000d4000000e1000000ee000000000000000d0000001a0000002700000034000000410000004e0000005b0000006800000075000000820000008f0000009c000000a9000000b6000000c3000000d0000000dd000000ea000000f7000000090000001600000023000000300000003d0000004a0000005700000064000000710000007e0000008b00000098000000a5000000b2000000bf000000cc000000d9000000e6000000f300000005000000120000001f0000002c000000390000004600000053000000600000006d0000007a0000008700000094000000a1000000ae000000bb000000c8000000d5000000e2000000ef000000010000000e0000001b0000002800000035000000420000004f0000005c000000690000007600000083000000900000009d000000aa000000b7000000c4000000d1000000de000000eb000000f80000000a0000001700000024000000310000003e0000004b0000005800000065000000720000007f0000008c00000099000000a6000000b3000000c0000000cd000000da000000e7000000f40000000600000013000000200000002d0000003a0000004700000054000000610000006e0000007b0000008800000095000000a2000000af000000bc000000c9000000d6000000e3000000f0000000020000000f0000001c000000290000003600000043000000500000005d0000006a0000007700000084000000910000009e000000ab000000b8000000c5000000d2000000df000000ec000000f90000000b0000001800000025000000320000003f0000004c000000590000006600000073000000800000008d0000009a000000a7000000b4000000c1000000ce000000db000000e8000000f50000000700000014000000210000002e0000003b0000004800000055000000620000006f0000007c0000008900000096000000a3000000b0000000bd000000ca000000d7000000e4000000f100000003000000100000001d0000002a0000003700000044000000510000005e0000006b0000007800000085000000920000009f000000ac000000b9000000c6000000d3000000e0000000ed000000fa0000000c000000190000002600000033000000400000004d0000005a0000006700000074000000810000008e0000009b000000a8000000b5000000c2000000cf000000dc000000e9000000f60000000800000015000000220000002f0000003c000000490000005600000063000000700000007d0000008a00000097000000a4000000b1000000be000000cb000000d8000000e5000000f200000004000000110000001e0000002b0000003800000045000000520000005f0000006c000000790000008600000093000000a0000000ad000000ba000000c7000000d4000000e1000000ee000000000000000d0000001a0000002700000034000000410000004e0000005b0000006800000075000000820000008f0000009c000000a9000000b6000000c3000000d0000000dd000000ea000000f7000000090000001600000023000000300000003d0000004a0000005700000064000000710000007e0000008b00000098000000a5000000b2000000bf000000cc000000d9000000e6000000f300000005000000120000001f0000002c000000390000004600000053000000600000006d0000007a0000008700000094000000a1000000ae000000bb000000c8000000d5000000e2000000ef000000010000000e0000001b0000002800000035000000420000004f0000005c000000690000007600000083000000900000009d000000aa000000b7000000c4000000d1000000de000000eb000000f80000000a0000001700000024000000310000003e0000004b0000005800000065000000720000007f0000008c00000099000000a6000000b3000000c0000000cd000000da000000e7000000f40000000600000013000000200000002d0000003a0000004700000054000000610000006e0000007b0000008800000095000000a2000000af000000bc000000c9000000d6000000e3000000f0000000020000000f0000001c000000290000003600000043000000500000005d0000006a0000007700000084000000910000009e000000ab000000b8000000c5000000d2000000df000000ec000000f90000000b0000001800000025000000320000003f0000004c000000590000006600000073000000800000008d0000009a000000a7000000b4000000c1000000ce000000db000000e8000000f50000000700000014000000210000002e0000003b000000"
+      },
+      "race_free_required": true,
+      "schedules": [
+        "round_robin",
+        "reverse",
+        "shuffle_0x11c0ffee",
+        "bounded_burst_1_3_7"
+      ]
+    },
+    "expected_status": 0,
+    "graph_reaches_nonuniform": false,
+    "id": "witness_nonatomic_1",
+    "obligation": "256 lanes; partial output507; exact integer indexed cross-lane source order and 2 source barriers",
+    "original_source_path": "bench/kernels/workgroup_non_atomic.wgsl",
+    "source": "witness_nonatomic_1.wgsl",
+    "source_sha256": "b1e3c7cf65d5cec0fe176ed0fa6b6a13aea3c32f6a14ea35e912475dabecfdc6",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "E"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "execution": {
+      "class": "exact bytes",
+      "dispatches": 2,
+      "expected_outputs_hex": {
+        "0:0": "20320000203200002032000020320000203200002032000020320000203200002032000020320000203200002032000020320000203200002032000020320000203200002032000020320000203200002032000020320000203200002032000020320000203200002032000020320000203200002032000020320000203200002032000020320000203200002032000020320000203200002032000020320000203200002032000020320000203200002032000020320000203200002032000020320000203200002032000020320000203200002032000020320000203200002032000020320000203200002032000020320000203200002032000020320000203200002032000020320000203200002032000020320000203200002032000020320000203200002032000020320000203200002032000020320000203200002032000020320000203200002032000020320000203200002032000020320000203200002032000020320000203200002032000020320000203200002032000020320000203200002032000020320000203200002032000020320000203200002032000020320000203200002032000020320000203200002032000020320000203200002032000020320000203200002032000020320000203200002032000020320000203200002032000020320000203200002032000020320000203200002032000020320000203200002032000020320000203200002032000020320000203200002032000020320000203200002032000020320000203200002032000020320000203200002032000020320000203200002032000020320000203200002032000020320000203200002032000020320000203200002032000020320000203200002032000020320000203200002032000020320000203200002032000020320000203200002032000020320000203200002032000020320000203200002032000020320000203200002032000020320000203200002032000020320000203200002032000020320000203200002032000020320000203200002032000020320000203200002032000020320000203200002032000020320000203200002032000020320000203200002032000020320000203200002032000020320000203200002032000020320000203200002032000020320000203200002032000020320000203200002032000020320000203200002032000020320000203200002032000020320000203200002032000020320000203200002032000020320000203200002032000020320000203200002032000020320000203200002032000020320000203200002032000020320000203200002032000020320000203200002032000020320000203200002032000020320000203200002032000020320000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000b2960000"
+      },
+      "groups": [
+        2,
+        1,
+        1
+      ],
+      "initial_shared_poison": [
+        "a5",
+        "5a"
+      ],
+      "inputs_hex": {
+        "0:0": "0700000014000000210000002e0000003b0000004800000055000000620000006f0000007c0000008900000096000000a3000000b0000000bd000000ca000000d7000000e4000000f100000003000000100000001d0000002a0000003700000044000000510000005e0000006b0000007800000085000000920000009f000000ac000000b9000000c6000000d3000000e0000000ed000000fa0000000c000000190000002600000033000000400000004d0000005a0000006700000074000000810000008e0000009b000000a8000000b5000000c2000000cf000000dc000000e9000000f60000000800000015000000220000002f0000003c000000490000005600000063000000700000007d0000008a00000097000000a4000000b1000000be000000cb000000d8000000e5000000f200000004000000110000001e0000002b0000003800000045000000520000005f0000006c000000790000008600000093000000a0000000ad000000ba000000c7000000d4000000e1000000ee000000000000000d0000001a0000002700000034000000410000004e0000005b0000006800000075000000820000008f0000009c000000a9000000b6000000c3000000d0000000dd000000ea000000f7000000090000001600000023000000300000003d0000004a0000005700000064000000710000007e0000008b00000098000000a5000000b2000000bf000000cc000000d9000000e6000000f300000005000000120000001f0000002c000000390000004600000053000000600000006d0000007a0000008700000094000000a1000000ae000000bb000000c8000000d5000000e2000000ef000000010000000e0000001b0000002800000035000000420000004f0000005c000000690000007600000083000000900000009d000000aa000000b7000000c4000000d1000000de000000eb000000f80000000a0000001700000024000000310000003e0000004b0000005800000065000000720000007f0000008c00000099000000a6000000b3000000c0000000cd000000da000000e7000000f40000000600000013000000200000002d0000003a0000004700000054000000610000006e0000007b0000008800000095000000a2000000af000000bc000000c9000000d6000000e3000000f0000000020000000f0000001c000000290000003600000043000000500000005d0000006a0000007700000084000000910000009e000000ab000000b8000000c5000000d2000000df000000ec000000f90000000b0000001800000025000000320000003f0000004c000000590000006600000073000000800000008d0000009a000000a7000000b4000000c1000000ce000000db000000e8000000f50000000700000014000000210000002e0000003b0000004800000055000000620000006f0000007c0000008900000096000000a3000000b0000000bd000000ca000000d7000000e4000000f100000003000000100000001d0000002a0000003700000044000000510000005e0000006b0000007800000085000000920000009f000000ac000000b9000000c6000000d3000000e0000000ed000000fa0000000c000000190000002600000033000000400000004d0000005a0000006700000074000000810000008e0000009b000000a8000000b5000000c2000000cf000000dc000000e9000000f60000000800000015000000220000002f0000003c000000490000005600000063000000700000007d0000008a00000097000000a4000000b1000000be000000cb000000d8000000e5000000f200000004000000110000001e0000002b0000003800000045000000520000005f0000006c000000790000008600000093000000a0000000ad000000ba000000c7000000d4000000e1000000ee000000000000000d0000001a0000002700000034000000410000004e0000005b0000006800000075000000820000008f0000009c000000a9000000b6000000c3000000d0000000dd000000ea000000f7000000090000001600000023000000300000003d0000004a0000005700000064000000710000007e0000008b00000098000000a5000000b2000000bf000000cc000000d9000000e6000000f300000005000000120000001f0000002c000000390000004600000053000000600000006d0000007a0000008700000094000000a1000000ae000000bb000000c8000000d5000000e2000000ef000000010000000e0000001b0000002800000035000000420000004f0000005c000000690000007600000083000000900000009d000000aa000000b7000000c4000000d1000000de000000eb000000f80000000a0000001700000024000000310000003e0000004b0000005800000065000000720000007f0000008c00000099000000a6000000b3000000c0000000cd000000da000000e7000000f40000000600000013000000200000002d0000003a0000004700000054000000610000006e0000007b0000008800000095000000a2000000af000000bc000000c9000000d6000000e3000000f0000000020000000f0000001c000000290000003600000043000000500000005d0000006a0000007700000084000000910000009e000000ab000000b8000000c5000000d2000000df000000ec000000f90000000b0000001800000025000000320000003f0000004c000000590000006600000073000000800000008d0000009a000000a7000000b4000000c1000000ce000000db000000e8000000f50000000700000014000000210000002e0000003b000000"
+      },
+      "race_free_required": true,
+      "schedules": [
+        "round_robin",
+        "reverse",
+        "shuffle_0x11c0ffee",
+        "bounded_burst_1_3_7"
+      ]
+    },
+    "expected_status": 0,
+    "graph_reaches_nonuniform": false,
+    "id": "witness_nonatomic_100",
+    "obligation": "256 lanes; partial output507; exact integer indexed cross-lane source order and 200 source barriers",
+    "original_source_path": "bench/kernels/workgroup_non_atomic_1024x100.wgsl",
+    "source": "witness_nonatomic_100.wgsl",
+    "source_sha256": "3af5cad294dad19c73c36f4813a7ef554715481857a1bb74a17a2afebe731f11",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "E"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "execution": {
+      "class": "exact bytes",
+      "dispatches": 2,
+      "expected_outputs_hex": {
+        "0:3": "00000000"
+      },
+      "groups": [
+        1,
+        1,
+        1
+      ],
+      "initial_shared_poison": [
+        "a5",
+        "5a"
+      ],
+      "inputs_hex": {
+        "0:0": "00000000000000000000000000000000",
+        "0:1": "",
+        "0:2": "",
+        "0:3": "0000f841"
+      },
+      "race_free_required": true,
+      "schedules": [
+        "round_robin",
+        "reverse",
+        "shuffle_0x11c0ffee",
+        "bounded_burst_1_3_7"
+      ]
+    },
+    "expected_status": 0,
+    "graph_reaches_nonuniform": false,
+    "id": "witness_pairwise_0",
+    "obligation": "ONE group, unequal inputs and partial lengths; pairwise stride1,2,4 exact representable f32",
+    "original_source_path": "bench/inference-pipeline/kernels/dot_product_pairwise_f32.wgsl",
+    "source": "witness_pairwise_0.wgsl",
+    "source_sha256": "b658ba7a54fd2345758d64b855da20b198d4c4e07a4f5e74d8301d664266811d",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "E"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "execution": {
+      "class": "exact bytes",
+      "dispatches": 2,
+      "expected_outputs_hex": {
+        "0:3": "000000c10000f841"
+      },
+      "groups": [
+        1,
+        1,
+        1
+      ],
+      "initial_shared_poison": [
+        "a5",
+        "5a"
+      ],
+      "inputs_hex": {
+        "0:0": "05000000000000000000000000000000",
+        "0:1": "000040c0000000c0000080bf000000000000803f",
+        "0:2": "000000400000803f00000000",
+        "0:3": "0000f8410000f841"
+      },
+      "race_free_required": true,
+      "schedules": [
+        "round_robin",
+        "reverse",
+        "shuffle_0x11c0ffee",
+        "bounded_burst_1_3_7"
+      ]
+    },
+    "expected_status": 0,
+    "graph_reaches_nonuniform": false,
+    "id": "witness_pairwise_5",
+    "obligation": "ONE group, unequal inputs and partial lengths; pairwise stride1,2,4 exact representable f32",
+    "original_source_path": "bench/inference-pipeline/kernels/dot_product_pairwise_f32.wgsl",
+    "source": "witness_pairwise_5.wgsl",
+    "source_sha256": "b658ba7a54fd2345758d64b855da20b198d4c4e07a4f5e74d8301d664266811d",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "E"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "execution": {
+      "class": "exact bytes",
+      "dispatches": 2,
+      "expected_outputs_hex": {
+        "0:3": "000040c2"
+      },
+      "groups": [
+        1,
+        1,
+        1
+      ],
+      "initial_shared_poison": [
+        "a5",
+        "5a"
+      ],
+      "inputs_hex": {
+        "0:0": "08000000000000000000000000000000",
+        "0:1": "000040c0000000c0000080bf000000000000803f000000400000404000008040",
+        "0:2": "000000400000803f00000000000080bf000000c0000040c0000080c00000a0c0",
+        "0:3": "0000f841"
+      },
+      "race_free_required": true,
+      "schedules": [
+        "round_robin",
+        "reverse",
+        "shuffle_0x11c0ffee",
+        "bounded_burst_1_3_7"
+      ]
+    },
+    "expected_status": 0,
+    "graph_reaches_nonuniform": false,
+    "id": "witness_pairwise_8",
+    "obligation": "ONE group, unequal inputs and partial lengths; pairwise stride1,2,4 exact representable f32",
+    "original_source_path": "bench/inference-pipeline/kernels/dot_product_pairwise_f32.wgsl",
+    "source": "witness_pairwise_8.wgsl",
+    "source_sha256": "b658ba7a54fd2345758d64b855da20b198d4c4e07a4f5e74d8301d664266811d",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "E"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "execution": {
+      "class": "exact bytes",
+      "dispatches": 2,
+      "expected_outputs_hex": {
+        "0:3": "000080c1"
+      },
+      "groups": [
+        1,
+        1,
+        1
+      ],
+      "initial_shared_poison": [
+        "a5",
+        "5a"
+      ],
+      "inputs_hex": {
+        "0:0": "11000000000000000000000000000000",
+        "0:1": "000040c0000000c0000080bf000000000000803f00000040",
+        "0:2": "000000400000803f00000000000080bf000000c0000040c0000080c0",
+        "0:3": "0000f841"
+      },
+      "race_free_required": true,
+      "schedules": [
+        "round_robin",
+        "reverse",
+        "shuffle_0x11c0ffee",
+        "bounded_burst_1_3_7"
+      ]
+    },
+    "expected_status": 0,
+    "graph_reaches_nonuniform": false,
+    "id": "witness_pairwise_17",
+    "obligation": "ONE group, unequal inputs and partial lengths; pairwise stride1,2,4 exact representable f32",
+    "original_source_path": "bench/inference-pipeline/kernels/dot_product_pairwise_f32.wgsl",
+    "source": "witness_pairwise_17.wgsl",
+    "source_sha256": "b658ba7a54fd2345758d64b855da20b198d4c4e07a4f5e74d8301d664266811d",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "E"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "execution": {
+      "class": "exact bytes",
+      "dispatches": 2,
+      "expected_outputs_hex": {
+        "0:3": "000020c1000080400000f841"
+      },
+      "groups": [
+        3,
+        1,
+        1
+      ],
+      "initial_shared_poison": [
+        "a5",
+        "5a"
+      ],
+      "inputs_hex": {
+        "0:0": "02000000430000000000000000000000",
+        "0:1": "000000c0000080bf000000000000803f00000040000000c0000080bf000000000000803f00000040000000c0000080bf000000000000803f00000040000000c0000080bf000000000000803f00000040000000c0000080bf000000000000803f00000040000000c0000080bf000000000000803f00000040000000c0000080bf000000000000803f00000040000000c0000080bf000000000000803f00000040000000c0000080bf000000000000803f00000040000000c0000080bf000000000000803f00000040000000c0000080bf000000000000803f00000040000000c0000080bf000000000000803f00000040000000c0000080bf000000000000803f00000040",
+        "0:2": "000040c0000000c0000080bf000000000000803f0000004000004040000040c0000000c0000080bf000000000000803f0000004000004040000040c0000000c0000080bf000000000000803f0000004000004040000040c0000000c0000080bf000000000000803f0000004000004040000040c0000000c0000080bf000000000000803f0000004000004040000040c0000000c0000080bf000000000000803f0000004000004040000040c0000000c0000080bf000000000000803f0000004000004040000040c0000000c0000080bf000000000000803f0000004000004040000040c0000000c0000080bf000000000000803f0000004000004040000040c0000000c0000080bf000000000000803f0000004000004040000040c0000000c0000080bf000000000000803f0000004000004040000040c0000000c0000080bf000000000000803f0000004000004040000040c0000000c0000080bf000000000000803f0000004000004040000040c0000000c0000080bf000000000000803f0000004000004040000040c0000000c0000080bf000000000000803f0000004000004040000040c0000000c0000080bf000000000000803f0000004000004040000040c0000000c0000080bf000000000000803f0000004000004040000040c0000000c0000080bf000000000000803f0000004000004040000040c0000000c0000080bf000000000000803f00000040",
+        "0:3": "0000f8410000f8410000f841"
+      },
+      "race_free_required": true,
+      "schedules": [
+        "round_robin",
+        "reverse",
+        "shuffle_0x11c0ffee",
+        "bounded_burst_1_3_7"
+      ]
+    },
+    "expected_status": 0,
+    "graph_reaches_nonuniform": false,
+    "id": "witness_matmul_67",
+    "obligation": "64 lanes, cols unequal64, out-of-range group early return, unequal inputs/output and divergent barrier-free accumulation",
+    "original_source_path": "bench/inference-pipeline/kernels/matmul_logits_tree64_f32.wgsl",
+    "source": "witness_matmul_67.wgsl",
+    "source_sha256": "04f46b1db0e88d3636cf7ab70bba4e8904efd202f7470155af75f71bafdc6630",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "E"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "execution": {
+      "class": "exact bytes",
+      "dispatches": 2,
+      "expected_outputs_hex": {
+        "0:3": "00002041"
+      },
+      "groups": [
+        3,
+        1,
+        1
+      ],
+      "initial_shared_poison": [
+        "a5",
+        "5a"
+      ],
+      "inputs_hex": {
+        "0:0": "02000000050000000000000000000000",
+        "0:1": "000000c0000080bf000000000000803f00000040",
+        "0:2": "000040c0000000c0000080bf000000000000803f0000004000004040000040c0000000c0000080bf",
+        "0:3": "0000f841"
+      },
+      "race_free_required": true,
+      "schedules": [
+        "round_robin",
+        "reverse",
+        "shuffle_0x11c0ffee",
+        "bounded_burst_1_3_7"
+      ]
+    },
+    "expected_status": 0,
+    "graph_reaches_nonuniform": false,
+    "id": "witness_matmul_5",
+    "obligation": "64 lanes, cols unequal64, out-of-range group early return, unequal inputs/output and divergent barrier-free accumulation",
+    "original_source_path": "bench/inference-pipeline/kernels/matmul_logits_tree64_f32.wgsl",
+    "source": "witness_matmul_5.wgsl",
+    "source_sha256": "04f46b1db0e88d3636cf7ab70bba4e8904efd202f7470155af75f71bafdc6630",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "E"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "execution": {
+      "class": "exact bytes",
+      "dispatches": 2,
+      "expected_outputs_hex": {
+        "0:2": "000080c0000040c0000000c0000080bf000040c000004040000010410000c04000000000000000000000000000000000"
+      },
+      "groups": [
+        3,
+        1,
+        1
+      ],
+      "initial_shared_poison": [
+        "a5",
+        "5a"
+      ],
+      "inputs_hex": {
+        "0:0": "49000000000000000000000000000000",
+        "0:1": "000080c0000040c0000000c0000080bf000040c0000000c0000080bf00000000000000c0000080bf000000000000803f000080bf000000000000803f00000040000000000000803f00000040000040400000803f000000400000404000008040000000400000404000008040000080c00000404000008040000080c0000040c000008040000080c0000040c0000000c0000080c0000040c0000000c0000080bf000040c0000000c0000080bf00000000000000c0000080bf000000000000803f000080bf000000000000803f00000040000000000000803f00000040000040400000803f000000400000404000008040000000400000404000008040000080c00000404000008040000080c0000040c000008040000080c0000040c0000000c0000080c0000040c0000000c0000080bf000040c0000000c0000080bf00000000000000c0000080bf000000000000803f000080bf000000000000803f00000040000000000000803f00000040000040400000803f000000400000404000008040000000400000404000008040000080c00000404000008040000080c0000040c000008040000080c0000040c0000000c0000080c0000040c0000000c0000080bf000040c0000000c0000080bf00000000000000c0000080bf000000000000803f000080bf000000000000803f00000040000000000000803f00000040000040400000803f000000400000404000008040000000400000404000008040000080c00000404000008040000080c0000040c000008040000080c0000040c0000000c0000080c0000040c0000000c0000080bf000040c0000000c0000080bf00000000000000c0000080bf000000000000803f000080bf000000000000803f00000040000000000000803f00000040000040400000803f000000400000404000008040000000400000404000008040000080c00000404000008040000080c0000040c000008040000080c0000040c0000000c0000080c0000040c0000000c0000080bf000040c0000000c0000080bf00000000000000c0000080bf000000000000803f000080bf000000000000803f00000040000000000000803f00000040000040400000803f000000400000404000008040000000400000404000008040000080c00000404000008040000080c0000040c000008040000080c0000040c0000000c0000080c0000040c0000000c0000080bf000040c0000000c0000080bf00000000000000c0000080bf000000000000803f000080bf000000000000803f00000040000000000000803f00000040000040400000803f000000400000404000008040000000400000404000008040000080c00000404000008040000080c0000040c000008040000080c0000040c0000000c0000080c0000040c0000000c0000080bf000040c0000000c0000080bf00000000000000c0000080bf000000000000803f000080bf000000000000803f00000040000000000000803f00000040000040400000803f000000400000404000008040000000400000404000008040000080c0",
+        "0:2": "0000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f841"
+      },
+      "race_free_required": true,
+      "schedules": [
+        "round_robin",
+        "reverse",
+        "shuffle_0x11c0ffee",
+        "bounded_burst_1_3_7"
+      ]
+    },
+    "expected_status": 0,
+    "graph_reaches_nonuniform": false,
+    "id": "witness_vec4_73",
+    "obligation": "64 lanes, whole-vector lane ownership, partial final group and unequal buffer lengths",
+    "original_source_path": "bench/kernels/monte_carlo_reduce_vec4.wgsl",
+    "source": "witness_vec4_73.wgsl",
+    "source_sha256": "f4cdc0769f6392160583e17815fe41c494cc89cd6b78f2b6b83a841984241d6d",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "E"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "execution": {
+      "class": "exact bytes",
+      "dispatches": 2,
+      "expected_outputs_hex": {
+        "0:2": "000080c0000040c0000000c0000080bf000040c0000000c0000080bf00000000"
+      },
+      "groups": [
+        3,
+        1,
+        1
+      ],
+      "initial_shared_poison": [
+        "a5",
+        "5a"
+      ],
+      "inputs_hex": {
+        "0:0": "80000000000000000000000000000000",
+        "0:1": "000080c0000040c0000000c0000080bf000040c0000000c0000080bf00000000000000c0000080bf000000000000803f000080bf000000000000803f00000040000000000000803f00000040000040400000803f000000400000404000008040000000400000404000008040000080c00000404000008040000080c0000040c000008040000080c0000040c0000000c0000080c0000040c0000000c0000080bf000040c0000000c0000080bf00000000000000c0000080bf000000000000803f000080bf000000000000803f00000040000000000000803f00000040000040400000803f000000400000404000008040000000400000404000008040000080c00000404000008040000080c0000040c000008040000080c0000040c0000000c0000080c0000040c0000000c0000080bf000040c0000000c0000080bf00000000000000c0000080bf000000000000803f000080bf000000000000803f00000040000000000000803f00000040000040400000803f000000400000404000008040000000400000404000008040000080c00000404000008040000080c0000040c000008040000080c0000040c0000000c0000080c0000040c0000000c0000080bf000040c0000000c0000080bf00000000000000c0000080bf000000000000803f000080bf000000000000803f00000040000000000000803f00000040000040400000803f000000400000404000008040000000400000404000008040000080c00000404000008040000080c0000040c000008040000080c0000040c0000000c0000080c0000040c0000000c0000080bf000040c0000000c0000080bf00000000000000c0000080bf000000000000803f000080bf000000000000803f00000040000000000000803f00000040000040400000803f000000400000404000008040000000400000404000008040000080c00000404000008040000080c0000040c000008040000080c0000040c0000000c0000080c0000040c0000000c0000080bf000040c0000000c0000080bf00000000000000c0000080bf000000000000803f000080bf000000000000803f00000040000000000000803f00000040000040400000803f000000400000404000008040000000400000404000008040000080c00000404000008040000080c0000040c000008040000080c0000040c0000000c0000080c0000040c0000000c0000080bf000040c0000000c0000080bf00000000000000c0000080bf000000000000803f000080bf000000000000803f00000040000000000000803f00000040000040400000803f000000400000404000008040000000400000404000008040000080c00000404000008040000080c0000040c000008040000080c0000040c0000000c0000080c0000040c0000000c0000080bf000040c0000000c0000080bf00000000000000c0000080bf000000000000803f000080bf000000000000803f00000040000000000000803f00000040000040400000803f000000400000404000008040000000400000404000008040000080c00000404000008040000080c0000040c000008040000080c0000040c0000000c0000080c0000040c0000000c0000080bf000040c0000000c0000080bf00000000000000c0000080bf000000000000803f000080bf000000000000803f00000040000000000000803f00000040000040400000803f000000400000404000008040000000400000404000008040000080c00000404000008040000080c0000040c000008040000080c0000040c0000000c0000080c0000040c0000000c0000080bf000040c0000000c0000080bf00000000000000c0000080bf000000000000803f000080bf000000000000803f00000040000000000000803f00000040000040400000803f000000400000404000008040000000400000404000008040000080c00000404000008040000080c0000040c000008040000080c0000040c0000000c0000080c0000040c0000000c0000080bf000040c0000000c0000080bf00000000000000c0000080bf000000000000803f000080bf000000000000803f00000040000000000000803f00000040000040400000803f000000400000404000008040000000400000404000008040000080c00000404000008040000080c0000040c000008040000080c0000040c0000000c0000080c0000040c0000000c0000080bf000040c0000000c0000080bf00000000000000c0000080bf000000000000803f000080bf000000000000803f00000040000000000000803f00000040000040400000803f000000400000404000008040000000400000404000008040000080c00000404000008040000080c0000040c000008040000080c0000040c0000000c0000080c0000040c0000000c0000080bf000040c0000000c0000080bf00000000000000c0000080bf000000000000803f000080bf000000000000803f00000040000000000000803f00000040000040400000803f000000400000404000008040000000400000404000008040000080c00000404000008040000080c0000040c000008040000080c0000040c0000000c0000080c0000040c0000000c0000080bf000040c0000000c0000080bf00000000000000c0000080bf000000000000803f000080bf000000000000803f00000040000000000000803f00000040000040400000803f000000400000404000008040000000400000404000008040000080c00000404000008040000080c0000040c000008040000080c0000040c0000000c0000080c0000040c0000000c0000080bf000040c0000000c0000080bf00000000",
+        "0:2": "0000f8410000f8410000f8410000f8410000f8410000f8410000f8410000f841"
+      },
+      "race_free_required": true,
+      "schedules": [
+        "round_robin",
+        "reverse",
+        "shuffle_0x11c0ffee",
+        "bounded_burst_1_3_7"
+      ]
+    },
+    "expected_status": 0,
+    "graph_reaches_nonuniform": false,
+    "id": "witness_vec4_128",
+    "obligation": "64 lanes, whole-vector lane ownership, partial final group and unequal buffer lengths",
+    "original_source_path": "bench/kernels/monte_carlo_reduce_vec4.wgsl",
+    "source": "witness_vec4_128.wgsl",
+    "source_sha256": "f4cdc0769f6392160583e17815fe41c494cc89cd6b78f2b6b83a841984241d6d",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "E"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "expected_status": 0,
+    "graph_reaches_nonuniform": false,
+    "id": "work_formals_16",
+    "obligation": "Record actual dependency operations; exact N succeeds; N-1 UNSUPPORTED work-limit with atomic output; all formals participate",
+    "source": "work_formals_16.wgsl",
+    "source_sha256": "96e22e34857ec9c307cee76835c48a9625910ac8f7d96aec3590e929a8880175",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "E"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "expected_status": 0,
+    "graph_reaches_nonuniform": false,
+    "id": "work_formals_64",
+    "obligation": "Record actual dependency operations; exact N succeeds; N-1 UNSUPPORTED work-limit with atomic output; all formals participate",
+    "source": "work_formals_64.wgsl",
+    "source_sha256": "55fdae385409cde8c1daf3d2b53230b6463cdc00ef69336729c7e671437378e9",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "E"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "expected_status": 0,
+    "graph_reaches_nonuniform": false,
+    "id": "work_formals_128",
+    "obligation": "Record actual dependency operations; exact N succeeds; N-1 UNSUPPORTED work-limit with atomic output; all formals participate",
+    "source": "work_formals_128.wgsl",
+    "source_sha256": "866834c340d009f027966fae1b22a298cb483bb1ae7c0498897ea62c9ea7e06e",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "E"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "expected_status": 0,
+    "graph_reaches_nonuniform": false,
+    "id": "work_nested_2",
+    "obligation": "Count work and measure compilation time; fixed depth cases use job limits where needed, no arbitrary iteration cutoff",
+    "source": "work_nested_2.wgsl",
+    "source_sha256": "0649ec4d3f6e3ddce92ae6f0598fea538da1b0209481de3659ea23a206956775",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "E"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "expected_status": 0,
+    "graph_reaches_nonuniform": false,
+    "id": "work_nested_4",
+    "obligation": "Count work and measure compilation time; fixed depth cases use job limits where needed, no arbitrary iteration cutoff",
+    "source": "work_nested_4.wgsl",
+    "source_sha256": "f1f9ca1135ae6717ca44b684f895cbee939a163b2e4b66b65d580ac49e8ca5c4",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "E"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  },
+  {
+    "expected_status": 0,
+    "graph_reaches_nonuniform": false,
+    "id": "work_nested_8",
+    "obligation": "Count work and measure compilation time; fixed depth cases use job limits where needed, no arbitrary iteration cutoff",
+    "source": "work_nested_8.wgsl",
+    "source_sha256": "1dbcc82ba842b0d979836830fe33b315f2d1da69c4efca295d4143d41b1b136a",
+    "uniformity_graph": {
+      "description": "Explicit dependency graph edges point from dependent to dependency. U0 is uniform; N is intrinsic MayBeNonUniform. No numeric evaluation or author solver is used.",
+      "edges": [
+        [
+          "E",
+          "U0"
+        ],
+        [
+          "R",
+          "E"
+        ]
+      ],
+      "nonuniform": "N",
+      "required": "R"
+    }
+  }
+]

@@ -1,0 +1,25 @@
+{
+  "original_full_target_command": [
+    "python3",
+    "/workspace/shared/doe-c-migration-evidence-20261023/milestone11/evaluator/run_cases.py",
+    "--library",
+    "/tmp/doe-m11-independent-native-build2/libdoe-m11.so",
+    "--validator",
+    "/workspace/shared/doe-language-experiment-20261023/phase2/deps/spirv-tools/usr/bin/spirv-val",
+    "--out",
+    "/tmp/doe-m11-independent-target-LPWtOk/cases"
+  ],
+  "environment": {
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "PYTHONPATH": "/workspace/shared/doe-c-migration-evidence-20261023/milestone11/evaluator/oracle"
+  },
+  "log": "/tmp/doe-m11-independent-target-LPWtOk/cases.log",
+  "runner_sha256": "29fbc2d80616101208edfd0a250aa297c9f691f3d649d31f14797b4ee9bc5331",
+  "session_id": 67883,
+  "exit_code": 0,
+  "terminal_observed_utc": "2026-10-23T13:15:24Z",
+  "wall_clock_timeout": null,
+  "event_bound_per_dispatch": 100000000,
+  "instruction_bound_per_invocation": 500000000,
+  "unchanged_run": true
+}

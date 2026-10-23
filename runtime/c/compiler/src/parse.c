@@ -219,6 +219,28 @@ static bool resource_declaration(Parser *p,Syntax *s,ResourceRecord *r) {
     return template_close(p) && name_span(p,&r->name) && punctuation(p,':',":") &&
         type_reference(p,s,&r->annotation) && punctuation(p,';',";");
 }
+static bool workgroup_declaration(Parser *p, Syntax *s) {
+    const uint32_t offset=peek(p)->offset;
+    WorkgroupRoot root={0};
+    if (!word(p,"var")) return false;
+    if (peek(p)->kind!='<')
+        return source_error(p->source,DOE_COMPILER_UNSUPPORTED,offset,"private module variables are not supported");
+    ++p->cursor;
+    if (!spelled(p,peek(p),"workgroup"))
+        return source_error(p->source,DOE_COMPILER_UNSUPPORTED,offset,"unsupported module variable address space");
+    ++p->cursor;
+    if (peek(p)->kind==',')
+        return source_error(p->source,DOE_COMPILER_SEMANTIC_ERROR,peek(p)->offset,"workgroup variables cannot specify an access mode");
+    if (!template_close(p) || !name_span(p,&root.name) || !punctuation(p,':',":") ||
+        !type_reference(p,s,&root.annotation)) return false;
+    if (peek(p)->kind=='=')
+        return source_error(p->source,DOE_COMPILER_SEMANTIC_ERROR,peek(p)->offset,"workgroup variables cannot have an initializer");
+    if (!punctuation(p,';',";")) return false;
+    if (s->workgroup_count==s->limits.tokens/8u)
+        return source_pool_error(p->source,DOE_COMPILER_POOL_TOKENS,8u*((size_t)s->workgroup_count+1u),offset,"workgroup declaration token capacity exceeded");
+    s->workgroups[s->workgroup_count++]=root;
+    return true;
+}
 static bool expression_node(Parser *p, Syntax *s, const Expression *node, bool charged, uint32_t *id) {
     if (node->depth > p->source->limits->expression_depth)
         return source_pool_error(p->source, DOE_COMPILER_POOL_EXPRESSION_DEPTH, node->depth, node->source_offset, "expression depth capacity exceeded");
@@ -738,6 +760,7 @@ bool parse_tokens(Source *source,CompilerWorkspace *s) {
         if (peek(&p)->kind==';') {++p.cursor;continue;}
         if (spelled(&p,peek(&p),"const")) {if (!module_constant(&p,s,first)) return false;}
         else if (spelled(&p,peek(&p),"struct")) {if (!struct_declaration(&p,s)) return false;}
+        else if (spelled(&p,peek(&p),"var")) {if (!workgroup_declaration(&p,s)) return false;}
         else if (starts_storage(&p)) {
             if (s->resource_count==s->limits.resources)
                 return source_pool_error(source,DOE_COMPILER_POOL_RESOURCES,(size_t)s->resource_count+1u,peek(&p)->offset,"resource capacity exceeded");

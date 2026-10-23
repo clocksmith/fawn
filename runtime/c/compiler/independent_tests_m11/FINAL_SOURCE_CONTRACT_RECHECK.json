@@ -1,0 +1,26 @@
+{
+  "utc": "2026-10-23T13:17:43.897445+00:00",
+  "checks": [
+    {
+      "label": "held_checkout",
+      "root": "/workspace/shared/doe-c-migration-20261023",
+      "manifest_sha256": "b124146a5044e288dcd7fbd153a7f75f3ecfc2e4451666b2f4e1b7771073b9af",
+      "entries": 30,
+      "status": "PASS"
+    },
+    {
+      "label": "independent_extracted_source",
+      "root": "/tmp/doe-m11-independent-native-candidate2",
+      "manifest_sha256": "b124146a5044e288dcd7fbd153a7f75f3ecfc2e4451666b2f4e1b7771073b9af",
+      "entries": 30,
+      "status": "PASS"
+    },
+    {
+      "label": "frozen_contract",
+      "root": "/workspace/shared/doe-c-migration-20261023",
+      "manifest_sha256": "9f5013276a311c610cade91062426b9ab6d7f993293c7fcd22ff183902c81f75",
+      "entries": 17,
+      "status": "PASS"
+    }
+  ]
+}

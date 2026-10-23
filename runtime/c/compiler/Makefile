@@ -6,7 +6,7 @@ export TMPDIR := $(CURDIR)/build/tmp
 export PYTHONDONTWRITEBYTECODE := 1
 CFLAGS = -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror
 CXXFLAGS = -std=c++17 -fno-exceptions -fno-rtti -O2 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror
-LIB_SOURCES = src/numeric.c src/lex.c src/parse.c src/validate.c src/types.c src/constants.c src/sema_declarations.c src/sema_expression.c src/sema_call.c src/reflection.c src/spirv.c src/compile.c src/storage.c
+LIB_SOURCES = src/numeric.c src/lex.c src/parse.c src/validate.c src/uniformity.c src/types.c src/constants.c src/sema_declarations.c src/sema_expression.c src/sema_call.c src/reflection.c src/spirv.c src/compile.c src/storage.c
 HEADERS = src/spirv_decl.h include/doe_compiler_typed.h src/sema.h src/numeric.h src/internal.h include/doe_compiler.h include/doe_compiler_v2.h include/doe_compiler_job.h src/cli_json.h
 SPIRV_VAL ?= spirv-val
 CLI_FAULT_FLAGS = -Wl,--wrap=write,--wrap=close,--wrap=link,--wrap=mkstemp,--wrap=malloc,--wrap=free,--wrap=doe_compiler_job_requirements

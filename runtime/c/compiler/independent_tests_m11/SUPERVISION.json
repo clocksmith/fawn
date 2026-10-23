@@ -1,0 +1,36 @@
+{
+  "utc": "2026-10-23T11:55:36.672120+00:00",
+  "session_id": 67883,
+  "source_manifest_sha256": "b124146a5044e288dcd7fbd153a7f75f3ecfc2e4451666b2f4e1b7771073b9af",
+  "library_sha256": "5d301e813223c9602f7c7ad57634b0ad53a68ba8b752066fbfdce1e9f29b2553",
+  "case": "witness_nonatomic_100",
+  "start_utc_approx": "2026-10-23T11:45:23Z",
+  "wall_time_estimate_seconds": 4650,
+  "event_limit_per_dispatch": 100000000,
+  "instruction_limit_per_invocation": 500000000,
+  "pure_instruction_quantum": 64,
+  "limits_fail_closed": "Unfinished, never successful acceptance",
+  "schedules": [
+    "round_robin",
+    "reverse",
+    "shuffle_0x11c0ffee",
+    "bounded_burst_1_3_7"
+  ],
+  "groups": [
+    2,
+    1,
+    1
+  ],
+  "local_size": [
+    256,
+    1,
+    1
+  ],
+  "dispatches_per_schedule": 2,
+  "progress_receipt": "/tmp/doe-m11-independent-target-LPWtOk/cases/results.json",
+  "last_durable_case": "witness_nonatomic_1",
+  "completed_cases": 100,
+  "failures": [],
+  "supervision": "Periodic multi-minute session liveness checks; result/counter receipt emitted at case completion. No live intra-case phase count is claimed.",
+  "memory_scaling_audit": "History stores latest per-invocation read/write per location; shared epochs lazily clear prior history. Opcode counters are fixed per opcode; no per-step trace is retained. No helper calls occur in this witness. Location cache is bounded by concrete accessed roots/indices."
+}

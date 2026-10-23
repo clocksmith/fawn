@@ -1,0 +1,95 @@
+{
+  "candidate_inspected": false,
+  "mapping_sha256": "e1ce42d44d94873fa875919de54041a74954b1d70a59051c1d6c6e196e02e663",
+  "original_files_modified": false,
+  "identities": {
+    "host_support_m9.h": {
+      "original": "/workspace/shared/doe-c-migration-20261023/runtime/c/compiler/independent_tests_m9/native_capacity/source/host_support_m9.h",
+      "original_sha256": "7ae8ebe70c581f6218a2d6c415007444c817cf52ee6a0b1e6096d05d9d52d556",
+      "overlay_sha256": "991ad4592cf4a392ab3922bc16a0f2250dbe4460695ab4524f74311473af4cb6"
+    },
+    "fixtures_m9.h": {
+      "original": "/workspace/shared/doe-c-migration-20261023/runtime/c/compiler/independent_tests_m9/native_capacity/source/fixtures_m9.h",
+      "original_sha256": "77cf1ac1fbfa34341013cd0d136adf7dc903be9b02ac5a4b6a22eb51e9245988",
+      "overlay_sha256": "77cf1ac1fbfa34341013cd0d136adf7dc903be9b02ac5a4b6a22eb51e9245988"
+    },
+    "host_controls_m9.c": {
+      "original": "/workspace/shared/doe-c-migration-20261023/runtime/c/compiler/independent_tests_m9/native_capacity/source/host_controls_m9.c",
+      "original_sha256": "8db9b939f91f5982cf31232f21aeeb41f70ab386bf8ce6f948106b68096ce9b2",
+      "overlay_sha256": "8db9b939f91f5982cf31232f21aeeb41f70ab386bf8ce6f948106b68096ce9b2"
+    },
+    "host_environment_m9.c": {
+      "original": "/workspace/shared/doe-c-migration-20261023/runtime/c/compiler/independent_tests_m9/native_capacity/source/host_environment_m9.c",
+      "original_sha256": "e3b11c35ed3b7e7d6a9e8c5f44a640a549d1eead21fb4dbcfa528e0dce887877",
+      "overlay_sha256": "e3b11c35ed3b7e7d6a9e8c5f44a640a549d1eead21fb4dbcfa528e0dce887877"
+    },
+    "public_exits_m9.c": {
+      "original": "/workspace/shared/doe-c-migration-20261023/runtime/c/compiler/independent_tests_m9/native_capacity/source/public_exits_m9.c",
+      "original_sha256": "7279590e3594e55c13304a371922fccdf48545aec351900974c9a37f5365145f",
+      "overlay_sha256": "3f4b9475ce9522ea000b3d5082d6bee3a85b5a9865cb97765b5e11bf30d1c82c"
+    },
+    "native_m9.cpp": {
+      "original": "/workspace/shared/doe-c-migration-20261023/runtime/c/compiler/independent_tests_m9/native_capacity/source/native_m9.cpp",
+      "original_sha256": "8878702fd8e0d060dd2b01523d625ffa2a31b1c25063a6184e75ac79903d844f",
+      "overlay_sha256": "8878702fd8e0d060dd2b01523d625ffa2a31b1c25063a6184e75ac79903d844f"
+    },
+    "native_job_m9.c": {
+      "original": "/workspace/shared/doe-c-migration-20261023/runtime/c/compiler/independent_tests_m9/native_capacity/source/native_job_m9.c",
+      "original_sha256": "8acf0114dad606544c71586f2a2e2f099461a7759770c4d9f6d7a74aac4395db",
+      "overlay_sha256": "3f36c80c07d2d0a17ec8283333ad1ffd85133045fb757c65c919e8db55e59128"
+    },
+    "fenv_faults_m9.c": {
+      "original": "/workspace/shared/doe-c-migration-20261023/runtime/c/compiler/independent_tests_m9/native_capacity/source/fenv_faults_m9.c",
+      "original_sha256": "3b6355030f3041fa0b5df4541fc5635a4abf13d6319883e633d7ef7f0c446081",
+      "overlay_sha256": "3b6355030f3041fa0b5df4541fc5635a4abf13d6319883e633d7ef7f0c446081"
+    },
+    "native_m6_m9_boundary.c": {
+      "original": "/workspace/shared/doe-c-migration-20261023/runtime/c/compiler/independent_tests_m9/native_capacity/source/native_m6_m9_boundary.c",
+      "original_sha256": "4a73171c958d9a9973b307840cfd9422c1fa36e59546ffec2cf8c2ab17881c5a",
+      "overlay_sha256": "b0bda160efd2730b310b7c7eab23a188f7b0a7b49eaf2c1ed92b4e96cbc1fe41"
+    },
+    "native_m5.c": {
+      "original": "/workspace/shared/doe-c-migration-20261023/runtime/c/compiler/independent_tests_m7/native_m5.c",
+      "original_sha256": "23f160eedc6b9651a09ede985188bbbea575e1b127af894204df697d77d951c4",
+      "overlay_sha256": "ee743f9a7f0297f2391e579a694259009c4a0b05703a313c0b1d56f17aa0e961"
+    }
+  },
+  "changes": [
+    {
+      "file": "host_support_m9.h",
+      "old": "122880u",
+      "new": "147456u"
+    },
+    {
+      "file": "native_job_m9.c",
+      "old": "122880u",
+      "new": "147456u"
+    },
+    {
+      "file": "native_m6_m9_boundary.c",
+      "old": "122880u",
+      "new": "147456u"
+    },
+    {
+      "file": "native_m6_m9_boundary.c",
+      "old": "m6_atomic_call(workspace, m6_invalid[i], strlen(m6_invalid[i]), WORDS, 0);",
+      "new": "m6_atomic_call(workspace, m6_invalid[i], strlen(m6_invalid[i]), WORDS, i == 9u ? 1 : 0);"
+    },
+    {
+      "file": "native_m6_m9_boundary.c",
+      "old": "7 positive/13 negative seeds",
+      "new": "7 original positive/12 original negative/1 exact M10 positive-lift seeds"
+    },
+    {
+      "file": "native_m5.c",
+      "old": "failure(workspace, unsupported, sizeof(unsupported)-1u, WORDS, DOE_COMPILER_UNSUPPORTED);",
+      "new": "failure(workspace, unsupported, sizeof(unsupported)-1u, WORDS, DOE_COMPILER_SEMANTIC_ERROR);"
+    },
+    {
+      "file": "public_exits_m9.c",
+      "old": "case 8u: source=unsupported_source; length=strlen(source); expected=DOE_COMPILER_UNSUPPORTED; break;",
+      "new": "case 8u: source=unsupported_source; length=strlen(source); expected=DOE_COMPILER_SEMANTIC_ERROR; break;"
+    }
+  ],
+  "new_M11_semantic_adapters": []
+}

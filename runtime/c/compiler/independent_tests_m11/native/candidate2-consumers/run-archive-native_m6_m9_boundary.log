@@ -1,0 +1,3 @@
+workspace_size=146256 workspace_alignment=8 result_v1=1008 result_v2=6904
+PASS M5 native: query/preflight/layout/atomicity/reuse/guard/ABI1/threads/12000-fuzz
+PASS M6 native: 7 original positive/12 original negative/1 exact M10 positive-lift seeds, 5120 bounded mutations, 4x64 concurrent calls

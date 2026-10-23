@@ -1,0 +1,18 @@
+{
+  "all_options_command_count": 134,
+  "build_directory_created": false,
+  "compiler_builds_or_tests_run": 0,
+  "corrected_boundary_build_count": 4,
+  "identity_receipt_sha256": "ef293c3d6f8f1dfa338429d4ba05b23b0abec2378ba26311279aceb4f9e1be90",
+  "new_wrapper_execution_qualified": false,
+  "original_bad_boundary_scheduled": false,
+  "original_native219_manifest_sha256": "ecee22fb466e5d026538bb7c667446b17f3a18073d38db0d4a9a63e400de1601",
+  "plan_path": "/tmp/doe-m11-portable-preparation-output-20261023/PLAN.json",
+  "plan_sha256": "86d4723e6eda0c752ea83a1f663bba5a9138542c8555f251d05232b62c179a99",
+  "scope": "Only syntax, immutable-input checks and command preparation; no acceptance or cross-host replay claim.",
+  "source_manifest_sha256": "b124146a5044e288dcd7fbd153a7f75f3ecfc2e4451666b2f4e1b7771073b9af",
+  "status": "PREPARED_NOT_EXECUTED",
+  "syntax_checked": true,
+  "verified_frozen_work_input_count": 17,
+  "verified_repo_input_count": 161
+}

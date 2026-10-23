@@ -62,78 +62,73 @@ static bool finish_lanes(Source *s, TypeId type, ConstantValue lanes[4], uint32_
     }
     return constant_composite(s, type, lanes, count, false, out);
 }
-static bool name_value(Source *s, NameSpan name, const LocalScope *scope, bool emit, ExpressionValue *out) {
-    CompilerWorkspace *c = s->compiler;
-    *out = (ExpressionValue){.value.source_offset = name.offset};
-    const LocalBinding *local = sema_find_local(s, scope, name);
-    if (local != NULL) {
-        if (!sema_local_use(s, scope, local, name.offset)) return false;
-        out->constant = local->constant_value;
-        out->constant.type = local->type;
-        out->value = (IrValue){local->value, local->type, name.offset};
-        out->runtime = (local->flags&LOCAL_CONSTANT) == 0u;
-        out->known = !out->runtime;
-        if ((local->flags&LOCAL_MUTABLE) != 0u)
-            return sema_emit(s, emit, (IrInstruction){.opcode = IR_LOCAL_LOAD, .type = local->type, .source_offset = name.offset, .operands.scalar.binding = local->local_id}, &out->value);
-        return true;
-    }
-    const uint32_t formal = sema_find_formal(s, name);
-    if (formal != NO_ID) {
-        out->runtime = true;
-        out->constant.type = c->formals[formal].type.resolved.type;
-        out->value = (IrValue){c->limits.instructions+1u+formal, out->constant.type, name.offset};
-        return true;
-    }
-    if (sema_alias_visible(s) && source_spans_equal(s, name, c->alias)) {
-        out->runtime = true;
-        out->constant.type = IR_U32;
-        out->value = (IrValue){c->functions[c->entry_function].value_base, IR_U32, name.offset};
-        return true;
-    }
-    const uint32_t parameter = sema_find_parameter(s, name);
-    if (parameter != NO_ID) {
-        TypeId type = IR_U32;
-        if (c->parameters[parameter].kind != INPUT_LOCAL_INDEX && !type_intern(s, TYPE_VECTOR, IR_U32, 3u, &type)) return false;
-        out->runtime = true;
-        out->constant.type = type;
-        return sema_emit(s, emit, (IrInstruction){.opcode = IR_INPUT, .type = type, .source_offset = name.offset, .operands.scalar = {.binding = parameter, .literal = type == IR_U32?0u:NO_ID}}, &out->value);
-    }
-    const uint32_t constant = sema_find_constant(s, name);
-    if (constant != NO_ID && (c->constant_decls[constant].state&3u) == 2u) {
-        const ConstantSyntax *d = &c->constant_decls[constant];
-        out->known = true;
-        out->constant = (ConstantValue){d->type, (d->state&16u) != 0u?CONSTANT_AGGREGATE:0u, d->value.bits};
-        out->value.type = d->type;
-        return true;
-    }
-    for (uint32_t i = 0u;i<c->resource_count;++i) if (source_spans_equal(s, name, c->resources[i].name)) {
-            const ResourceRecord *r = &c->resources[i];
-            if (!type_constructible(c, r->type)) return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, name.offset, "runtime-sized resource is not a value");
-            out->runtime = true;
-            out->constant.type = r->type;
-            return sema_emit(s, emit, (IrInstruction){.opcode = IR_ACCESS_LOAD, .type = r->type, .source_offset = name.offset, .operands.access = {.root = i, .path = NO_ID, .category = ROOT_RESOURCE}}, &out->value);
+static bool identity_value(Source *s,NameSpan name,const LocalScope *scope,ValueIdentity identity,bool emit,ExpressionValue *out) {
+    CompilerWorkspace *c=s->compiler;
+    *out=(ExpressionValue){.value.source_offset=name.offset};
+    switch (identity.kind) {
+        case IDENTITY_LOCAL: {
+            const LocalBinding *local=&scope->values[identity.index];
+            if (!sema_local_use(s,scope,local,name.offset)) return false;
+            out->constant=local->constant_value; out->constant.type=local->type;
+            out->value=(IrValue){local->value,local->type,name.offset};
+            out->runtime=(local->flags&LOCAL_CONSTANT)==0u; out->known=!out->runtime;
+            if ((local->flags&LOCAL_MUTABLE)!=0u)
+                return sema_emit(s,emit,(IrInstruction){.opcode=IR_LOCAL_LOAD,.type=local->type,.source_offset=name.offset,
+                    .operands.scalar.binding=local->local_id},&out->value);
+            return true;
         }
-    return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, name.offset, "name does not resolve to an available value");
+        case IDENTITY_FORMAL:
+            out->runtime=true; out->constant.type=c->formals[identity.index].type.resolved.type;
+            out->value=(IrValue){c->limits.instructions+1u+identity.index,out->constant.type,name.offset}; return true;
+        case IDENTITY_ALIAS:
+            out->runtime=true; out->constant.type=IR_U32;
+            out->value=(IrValue){c->functions[c->entry_function].value_base,IR_U32,name.offset}; return true;
+        case IDENTITY_INPUT: {
+            TypeId type=IR_U32;
+            if (c->parameters[identity.index].kind!=INPUT_LOCAL_INDEX && !type_intern(s,TYPE_VECTOR,IR_U32,3u,&type)) return false;
+            out->runtime=true; out->constant.type=type;
+            return sema_emit(s,emit,(IrInstruction){.opcode=IR_INPUT,.type=type,.source_offset=name.offset,
+                .operands.scalar={.binding=identity.index,.literal=type==IR_U32?0u:NO_ID}},&out->value);
+        }
+        case IDENTITY_CONSTANT: {
+            const ConstantSyntax *d=&c->constant_decls[identity.index];
+            if ((d->state&3u)!=2u) break;
+            out->known=true; out->constant=(ConstantValue){d->type,(d->state&16u)!=0u?CONSTANT_AGGREGATE:0u,d->value.bits};
+            out->value.type=d->type; return true;
+        }
+        case IDENTITY_RESOURCE:
+        case IDENTITY_WORKGROUP: {
+            const TypeId type=identity.kind==IDENTITY_RESOURCE?c->resources[identity.index].type:c->workgroups[identity.index].type;
+            if (!type_constructible(c,type)) return source_error(s,DOE_COMPILER_SEMANTIC_ERROR,name.offset,"runtime-sized resource is not a value");
+            out->runtime=true; out->constant.type=type;
+            return sema_emit(s,emit,(IrInstruction){.opcode=IR_ACCESS_LOAD,.type=type,.source_offset=name.offset,
+                .operands.access={.root=identity.index,.path=NO_ID,.category=identity.kind==IDENTITY_RESOURCE?ROOT_RESOURCE:ROOT_WORKGROUP}},&out->value);
+        }
+        case IDENTITY_NONE: break;
+    }
+    return source_error(s,DOE_COMPILER_SEMANTIC_ERROR,name.offset,"name does not resolve to an available value");
 }
-static bool root_reference(Source *s, NameSpan name, const LocalScope *scope, bool emit, ValueReference *ref, ExpressionValue *value, bool *reference) {
-    CompilerWorkspace *c = s->compiler;
-    *reference = false;
-    const LocalBinding *local = sema_find_local(s, scope, name);
-    if (local != NULL && (local->flags&LOCAL_MUTABLE) != 0u) {
-        if (!sema_local_use(s, scope, local, name.offset)) return false;
-        *ref = (ValueReference){local->local_id, NO_ID, ROOT_LOCAL, local->type, true};
-        *reference = true;
-        return true;
+static bool name_value(Source *s,NameSpan name,const LocalScope *scope,bool emit,ExpressionValue *out) {
+    ValueIdentity identity;
+    return sema_value_identity(s,scope,name,NULL,&identity) && identity_value(s,name,scope,identity,emit,out);
+}
+static bool root_reference(Source *s,NameSpan name,const LocalScope *scope,bool emit,ValueReference *ref,ExpressionValue *value,bool *reference) {
+    CompilerWorkspace *c=s->compiler; ValueIdentity identity;
+    *reference=false;
+    if (!sema_value_identity(s,scope,name,NULL,&identity)) return false;
+    if (identity.kind==IDENTITY_LOCAL) {
+        const LocalBinding *local=&scope->values[identity.index];
+        if ((local->flags&LOCAL_MUTABLE)!=0u) {
+            if (!sema_local_use(s,scope,local,name.offset)) return false;
+            *ref=(ValueReference){local->local_id,NO_ID,ROOT_LOCAL,local->type,true}; *reference=true; return true;
+        }
+    } else if (identity.kind==IDENTITY_RESOURCE) {
+        const ResourceRecord *r=&c->resources[identity.index];
+        *ref=(ValueReference){identity.index,NO_ID,ROOT_RESOURCE,r->type,r->access==DOE_COMPILER_READ_WRITE}; *reference=true; return true;
+    } else if (identity.kind==IDENTITY_WORKGROUP) {
+        *ref=(ValueReference){identity.index,NO_ID,ROOT_WORKGROUP,c->workgroups[identity.index].type,true}; *reference=true; return true;
     }
-    if (local == NULL && sema_find_formal(s, name) == NO_ID && sema_find_parameter(s, name) == NO_ID && !(sema_alias_visible(s) && source_spans_equal(s, name, c->alias))) {
-        for (uint32_t i = 0u;i<c->resource_count;++i) if (source_spans_equal(s, name, c->resources[i].name)) {
-                const ResourceRecord *r = &c->resources[i];
-            *ref = (ValueReference){i, NO_ID, ROOT_RESOURCE, r->type, r->access == DOE_COMPILER_READ_WRITE};
-            *reference = true;
-                return true;
-            }
-    }
-    return name_value(s, name, scope, emit, value);
+    return identity_value(s,name,scope,identity,emit,value);
 }
 bool sema_reference_load(Source *s, ValueReference ref, uint32_t offset, bool emit, ExpressionValue *out) {
     CompilerWorkspace *c = s->compiler;

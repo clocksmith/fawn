@@ -1,0 +1,345 @@
+{
+  "kind": "M11 planning source rebind; not implementation or acceptance",
+  "recorded_utc": "2026-10-23T10:46:11.401728+00:00",
+  "accepted_baseline": "2220c64cff0bd87b1eed6b246515941ce7d18d24",
+  "observed_head": "2220c64cff0bd87b1eed6b246515941ce7d18d24",
+  "trace_manifest_sha256": "db252a00b75dbad17749d5483743c6d5bd625ae55a3ed96579e3042ffdfd6ab0",
+  "changes_from_trace": [],
+  "files": [
+    {
+      "path": "AGENTS.md",
+      "sha256": "123614ec5e93ab5c4c7b174111d11fdc5c67fb4be368f542a414ebcd355ad39d",
+      "bytes": 4708
+    },
+    {
+      "path": "CATSCAN.md",
+      "sha256": "d02b6c32a3d9e8f4fa07d84479ab0b378556adb62e85319c289e700f6ea4846a",
+      "bytes": 1962
+    },
+    {
+      "path": "GOALS.md",
+      "sha256": "e0c7956ff1ef165011d9e7aace8e7cb4933a53937c318e07cc308b485e6ba00c",
+      "bytes": 16795
+    },
+    {
+      "path": "INTENT.md",
+      "sha256": "818112ce166ea8b6d3c788782ae4847ea4e08cdab73f7ac1f30855bcfd92759d",
+      "bytes": 7096
+    },
+    {
+      "path": "bench/inference-pipeline/kernels/dot_product_pairwise_f32.wgsl",
+      "sha256": "b658ba7a54fd2345758d64b855da20b198d4c4e07a4f5e74d8301d664266811d",
+      "bytes": 995
+    },
+    {
+      "path": "bench/inference-pipeline/kernels/matmul_f16w_f32a_tiled.wgsl",
+      "sha256": "6498e9a7ee4e487560d9d32f08f41f0e1a8cbf436c81c7c035d75ecaa35220ca",
+      "bytes": 5563
+    },
+    {
+      "path": "bench/inference-pipeline/kernels/matmul_logits_tree64_f32.wgsl",
+      "sha256": "04f46b1db0e88d3636cf7ab70bba4e8904efd202f7470155af75f71bafdc6630",
+      "bytes": 1141
+    },
+    {
+      "path": "bench/kernels/compilation-corpus/moderate_layernorm.wgsl",
+      "sha256": "dcaf21f3dfb8ebd91165bc41ffe2eb0076337543e78e0d60cc2aebca77a87467",
+      "bytes": 2045
+    },
+    {
+      "path": "bench/kernels/monte_carlo_reduce_vec4.wgsl",
+      "sha256": "f4cdc0769f6392160583e17815fe41c494cc89cd6b78f2b6b83a841984241d6d",
+      "bytes": 1022
+    },
+    {
+      "path": "bench/kernels/workgroup_non_atomic.wgsl",
+      "sha256": "b1e3c7cf65d5cec0fe176ed0fa6b6a13aea3c32f6a14ea35e912475dabecfdc6",
+      "bytes": 632
+    },
+    {
+      "path": "bench/kernels/workgroup_non_atomic_1024x100.wgsl",
+      "sha256": "3af5cad294dad19c73c36f4813a7ef554715481857a1bb74a17a2afebe731f11",
+      "bytes": 839
+    },
+    {
+      "path": "bench/kernels/zero_initialize_workgroup_memory_2048.wgsl",
+      "sha256": "a8c4a18801b189cc5dba3f7141acdda5a79d54eda802ca90a53d5d7ba88da614",
+      "bytes": 520
+    },
+    {
+      "path": "docs/c-migration/corpus-coverage-m10.json",
+      "sha256": "cecc49a7ed4769805a187a02acf2ef89d957137ffed94d2def352a5c8a002b4e",
+      "bytes": 275946
+    },
+    {
+      "path": "runtime/CATSCAN.md",
+      "sha256": "a2979d9d8f3d21ae837afc14ed13dcfae3e30008f216d5ef2a2f1d8c8da0b8a4",
+      "bytes": 1440
+    },
+    {
+      "path": "runtime/c/CATSCAN.md",
+      "sha256": "53144dc8dd85f67bffefb30386dacc5a293344989ed04c3f229bbea153e232d8",
+      "bytes": 1688
+    },
+    {
+      "path": "runtime/c/compiler/CATSCAN.md",
+      "sha256": "18ba4d7020664a6d6edf7f411817111dfca1ccfd1b2d4f014f974fa241a27a38",
+      "bytes": 1812
+    },
+    {
+      "path": "runtime/c/compiler/MILESTONE_10.md",
+      "sha256": "ad185469ca3c05b5eb89dcab48adb909a208a358b8980e9a0da952a2c44052e6",
+      "bytes": 56340
+    },
+    {
+      "path": "runtime/c/compiler/MILESTONE_10_LEDGER.md",
+      "sha256": "9230a960cef5bf9ff08cdb5f8cc4f0c26bf97d48858f280941b9121fcba39d4b",
+      "bytes": 19292
+    },
+    {
+      "path": "runtime/c/compiler/MILESTONE_10_RESULTS.md",
+      "sha256": "a782627682bbbfb65efb6ff630468ac1ff85b718f2970cf9616496c3e1535420",
+      "bytes": 4959
+    },
+    {
+      "path": "runtime/c/compiler/README.md",
+      "sha256": "54db010f6967b2cf00375d42c008ffe0bb9d9470936ca5136f8e33cbbee091d0",
+      "bytes": 7913
+    },
+    {
+      "path": "runtime/c/compiler/STYLE.md",
+      "sha256": "af7ad470688d670be4d3bb57cc600e047ee387686ee7708a95f4751aa1e7078e",
+      "bytes": 9536
+    },
+    {
+      "path": "runtime/c/compiler/include/doe_compiler.h",
+      "sha256": "5bf4f5e5a4e4624c094320ad9ec97119278bc7f6f06b0e47c01e444d42c6dc5b",
+      "bytes": 2464
+    },
+    {
+      "path": "runtime/c/compiler/include/doe_compiler_job.h",
+      "sha256": "6160e631973ffcd9777553520d329b6d6048315f2a90b1283989077e9f51237f",
+      "bytes": 3848
+    },
+    {
+      "path": "runtime/c/compiler/include/doe_compiler_typed.h",
+      "sha256": "c7decbdb8da093a3485ded84901bf97f88eea8db6237dfd4089c730aa08e6216",
+      "bytes": 5417
+    },
+    {
+      "path": "runtime/c/compiler/include/doe_compiler_v2.h",
+      "sha256": "b0a60c2f05b70dba0786365dadd81b993accbd93f7f68f0e3accf86a815ae891",
+      "bytes": 3752
+    },
+    {
+      "path": "runtime/c/compiler/independent_tests_m10/ACCEPTANCE_FINAL.json",
+      "sha256": "ddbb3ef36870045afb79d58cc5ab6da0c7af134d14f81c3c892fc6385819bfda",
+      "bytes": 2621
+    },
+    {
+      "path": "runtime/c/compiler/independent_tests_m10/ACCEPTED_COMPILER_SOURCE.sha256",
+      "sha256": "e818441e6c93feb04a7722fc1602f255cfd2e596d806604821aa7bbd178e1e11",
+      "bytes": 3060
+    },
+    {
+      "path": "runtime/c/compiler/src/cli.c",
+      "sha256": "7b50651f239ae7c93c47991813678669ff7ad118cb9639a82b4e3d5e40636a6f",
+      "bytes": 11400
+    },
+    {
+      "path": "runtime/c/compiler/src/cli_json.c",
+      "sha256": "79b35778c0f974c17da970fc8b98af75adac40d174ad3423a79d3847cd217d34",
+      "bytes": 5038
+    },
+    {
+      "path": "runtime/c/compiler/src/cli_json.h",
+      "sha256": "7d76808edeb7acd26524f0316659784018577019b98677d10dddb2ff99754305",
+      "bytes": 489
+    },
+    {
+      "path": "runtime/c/compiler/src/compile.c",
+      "sha256": "0c0ccf8df4681794f62792e014a9c7ff7ed47f11f7146c8dc4026b9adbdde1d6",
+      "bytes": 15135
+    },
+    {
+      "path": "runtime/c/compiler/src/constants.c",
+      "sha256": "b8431560c29221a2ce5d87166306b321e257095b6c0c7488ca7f858654b54a97",
+      "bytes": 5942
+    },
+    {
+      "path": "runtime/c/compiler/src/exports.map",
+      "sha256": "a9025f34c30ba7251802facbaa8bf3660890558dc8ecc8f3fee884de75f9d816",
+      "bytes": 315
+    },
+    {
+      "path": "runtime/c/compiler/src/internal.h",
+      "sha256": "3859bd9fa402b0f6f40822d8942e89fe19a3c93bcdd530bfa3949a9a9a2e6d3a",
+      "bytes": 13288
+    },
+    {
+      "path": "runtime/c/compiler/src/lex.c",
+      "sha256": "078b86d235ba65a6710e896a0616b87939788a32b9aaa4b24cf7cedc9b6d435c",
+      "bytes": 5996
+    },
+    {
+      "path": "runtime/c/compiler/src/numeric.c",
+      "sha256": "390cf61b3f13f56b48c8ed6af4aea676b1ae116388ec7f0ad9439f985d91a614",
+      "bytes": 38409
+    },
+    {
+      "path": "runtime/c/compiler/src/numeric.h",
+      "sha256": "3ba4d3c7caff37d08d5a5adc4e2c98c8cdf2d7f9b2bc2db8c5db174c987fd0fd",
+      "bytes": 2210
+    },
+    {
+      "path": "runtime/c/compiler/src/parse.c",
+      "sha256": "0c371df30868b6262692806f468c835e7816b2c9511605a5d1d0bb44211d92f4",
+      "bytes": 42397
+    },
+    {
+      "path": "runtime/c/compiler/src/reflection.c",
+      "sha256": "581645d97a2f1cd8d67e98fa3ca9e7c250a5566faccd4beaf123a63dce4959c1",
+      "bytes": 12667
+    },
+    {
+      "path": "runtime/c/compiler/src/sema.h",
+      "sha256": "e9098e0d4472e399b0f3bdcae8c05af0e7a00d047de95de5624fb7a007036bf9",
+      "bytes": 2681
+    },
+    {
+      "path": "runtime/c/compiler/src/sema_call.c",
+      "sha256": "798f1fbb6e02b3d87c14f459a54aa838b9ef0a487d9c043609475a5c52e98a32",
+      "bytes": 18329
+    },
+    {
+      "path": "runtime/c/compiler/src/sema_declarations.c",
+      "sha256": "7c62fe71a1a68f92395c8da92a0c0bbeea083e837645b97e0c2e945af5bb97e1",
+      "bytes": 28578
+    },
+    {
+      "path": "runtime/c/compiler/src/sema_expression.c",
+      "sha256": "8e57318e1f9a066a5ad05503ede16e5f075fed6e5f94bd250d2625788859dd9d",
+      "bytes": 30172
+    },
+    {
+      "path": "runtime/c/compiler/src/spirv.c",
+      "sha256": "6c33ea7580cc2d98cca221aef65b538f5242a953cb66e15a6b65530aebd689fe",
+      "bytes": 69788
+    },
+    {
+      "path": "runtime/c/compiler/src/spirv_decl.h",
+      "sha256": "5a2024c97baf98a3f0171a0ae6a898cdf5439882e29dc417642fd82ac71ccd69",
+      "bytes": 443
+    },
+    {
+      "path": "runtime/c/compiler/src/storage.c",
+      "sha256": "442ceaf8d0a400e2fb1693ed0c22e1ade730ef9f5aeeefc0699bd879fd00f09a",
+      "bytes": 9923
+    },
+    {
+      "path": "runtime/c/compiler/src/types.c",
+      "sha256": "8c6d7a8c9ac369bdcbf69f7b9950acee13e35951f7efb3201388378d8e499397",
+      "bytes": 9555
+    },
+    {
+      "path": "runtime/c/compiler/src/validate.c",
+      "sha256": "1f512d0a7d00dcc6673104c09c25d54db2f3ff7207a44c9b0ef777ebcb2d0809",
+      "bytes": 20619
+    },
+    {
+      "path": "runtime/c/compiler/tests/function_machine.py",
+      "sha256": "fa059fe42baac8bf81befb66cb000bb0d412fbe26a09cbfcb15642aac23d9dea",
+      "bytes": 12018
+    },
+    {
+      "path": "runtime/zig/src/backend/vulkan/vk_shader_source.zig",
+      "sha256": "acc7e67d6ead05bd35c560a18d0098554b492284b93e6092f800265c79e4b842",
+      "bytes": 9177
+    },
+    {
+      "path": "runtime/zig/src/cli/entrypoints/main_emit_spirv.zig",
+      "sha256": "ec6509f57a4781881f0ca93c022123f6eceeeae4d5a3f82e18f7143540e34a4d",
+      "bytes": 5197
+    },
+    {
+      "path": "runtime/zig/src/compiler/wgsl/emit/msl/emit_msl_workgroup_zero.zig",
+      "sha256": "8ca06f113379a44cb24c4ac2029815e68f485dd5e9e0b71942cee46a896c5989",
+      "bytes": 11247
+    },
+    {
+      "path": "runtime/zig/src/compiler/wgsl/emit/spirv/emit_spirv.zig",
+      "sha256": "779517661826121736b7de071fee064b25527845cfae9284cfc652fb90d75c83",
+      "bytes": 37579
+    },
+    {
+      "path": "runtime/zig/src/compiler/wgsl/emit/spirv/emit_spirv_builtins.zig",
+      "sha256": "8bb9db73708c70160c11ff935404620efc4a84901a6d347ec26622f9b35f76ab",
+      "bytes": 44108
+    },
+    {
+      "path": "runtime/zig/src/compiler/wgsl/emit/spirv/emit_spirv_shared.zig",
+      "sha256": "1f825ee3e3e89db14fab7d245e258ca9322e42f459927b304e62507ced3dc969",
+      "bytes": 3056
+    },
+    {
+      "path": "runtime/zig/src/compiler/wgsl/frontend/sema_attrs.zig",
+      "sha256": "64b8ad0a572a474b311728cb0ccdf88d628924ee32345ede95c86a26c9c82f9c",
+      "bytes": 31128
+    },
+    {
+      "path": "runtime/zig/src/compiler/wgsl/pipeline/analysis.zig",
+      "sha256": "836eb8f759138ab4d0f4cfe011da8597c8d376761d48216c82ae34400ca842fe",
+      "bytes": 11831
+    },
+    {
+      "path": "runtime/zig/src/compiler/wgsl/pipeline/translate_spirv.zig",
+      "sha256": "a4d992334d34c8f99d6368fdecb132ba8d6359c1c69671bce552326d15911b83",
+      "bytes": 2404
+    },
+    {
+      "path": "runtime/zig/src/compiler/wgsl/runtime/runtime_compute_translation.zig",
+      "sha256": "6bb7dc2d81d533f475fa981c62ba13ed47eb5af03282c3929874865dba9ba0de",
+      "bytes": 13819
+    },
+    {
+      "path": "runtime/zig/src/native/shader/doe_shader_native.zig",
+      "sha256": "39bb270af3f79d445ea8fc253a05e8c415a3f734946ffd28f2406b5b18f2d4fe",
+      "bytes": 47993
+    },
+    {
+      "path": "runtime/zig/src/native/vulkan/vulkan_compute_native.zig",
+      "sha256": "65fe1ac6898dd9b253cfc0b438b7aaf91595e2fde07e5b30db4688ace75116cf",
+      "bytes": 38602
+    },
+    {
+      "path": "runtime/zig/test_suite_wgsl.zig",
+      "sha256": "e6810d6182f24e60ab04a564baf109326f1b0d8f0b689df2fc935053e8010862",
+      "bytes": 10350
+    },
+    {
+      "path": "runtime/zig/tests/wgsl/coverage_type_decl_test.zig",
+      "sha256": "4dc93530ae16c0a32bd2ba691053bee48ff2d3a78ad75b6a0caa4e1e3e24652f",
+      "bytes": 18037
+    },
+    {
+      "path": "runtime/zig/tests/wgsl/emit_spirv_builtin_test.zig",
+      "sha256": "8a8186739679e15825854928f73c3d13e65e6ee41acb5c6798262a61d6eec10e",
+      "bytes": 56891
+    },
+    {
+      "path": "runtime/zig/tests/wgsl/mod_bounds_local_test.zig",
+      "sha256": "f31f8523b7b4e954ebc75b324f956e0dafea98376bf414081e50c4112923db17",
+      "bytes": 3670
+    },
+    {
+      "path": "runtime/zig/tests/wgsl/mod_feature_translation_test.zig",
+      "sha256": "5adc38da3500474950dd93744fb797411353a1b6ecee0835da0dac08f3500769",
+      "bytes": 20776
+    },
+    {
+      "path": "runtime/zig/tests/wgsl/runtime_compile_test.zig",
+      "sha256": "b9238a74329c1efe4eaa8441abdd97ab5ccecc6418875d8f35d4be21a80849ce",
+      "bytes": 19720
+    }
+  ]
+}

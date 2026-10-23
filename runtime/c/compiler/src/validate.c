@@ -140,6 +140,7 @@ static bool lower_loop(Source *source, const Syntax *s, const Statement *st,
         loop.continuing = true;
         if (!lower_block(source, s, part->body_start, part->end, scope, program, &loop,
                          false, true, true, &tail)) return false;
+        program->statement_behaviors[continuing]=(unsigned char)tail;
     }
     *behavior = body & BEHAVIOR_RETURN;
     if ((body & BEHAVIOR_BREAK) != 0u || has_test) *behavior |= BEHAVIOR_NEXT;
@@ -150,6 +151,7 @@ static bool lower_loop(Source *source, const Syntax *s, const Statement *st,
     if (*behavior == 0u)
         return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, st->source_offset,
                             "loop has an empty WGSL behavior set");
+    program->statement_behaviors[(size_t)(st-s->statements)]=(unsigned char)(*behavior|(body<<4u));
     program->instructions[begin].operands.scalar.literal = *behavior;
     if (!marker(source, program, IR_END_LOOP, st->source_offset, *behavior)) return false;
     scope->count = saved_count; scope->scope_start = saved_start; scope->level = saved_level; scope->loop = outer;
@@ -255,6 +257,8 @@ static bool lower_block(Source *source, const Syntax *s, size_t start, size_t en
                                     "continuing must be the final direct child of loop");
             case STATEMENT_EMPTY: break;
         }
+        if (st->kind!=STATEMENT_FOR && st->kind!=STATEMENT_WHILE && st->kind!=STATEMENT_LOOP)
+            program->statement_behaviors[i]=(unsigned char)current;
         if ((*behavior & BEHAVIOR_NEXT) != 0u) *behavior = (*behavior & ~(unsigned)BEHAVIOR_NEXT) | current;
     }
     if (!retain_scope) scope->count = saved_count;
@@ -276,7 +280,7 @@ static bool reject_call_cycles(Source *source, Syntax *s) {
             while (function->state.graph.scan < function->expression_end) {
                 const uint32_t expression = function->state.graph.scan++;
                 const uint32_t edge = s->callees[expression];
-                if (edge == 0u) continue;
+                if (edge == 0u || edge == UINT32_MAX) continue;
                 FunctionRecord *child = &s->functions[edge - 1u];
                 if (child->state.graph.color == 1u)
                     return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, s->expressions[expression].source_offset,
@@ -314,5 +318,5 @@ bool validate_syntax(Source *source,CompilerWorkspace *c) {
             return source_error(source,DOE_COMPILER_SEMANTIC_ERROR,function->name.offset,"value-returning function must return a value on every path");
         function->instruction_end=c->instruction_count;function->local_count=c->local_count-function->local_start;
     }
-    return reject_call_cycles(source,c);
+    return reject_call_cycles(source,c) && uniformity_analyze(source,UNIFORMITY_WORK_LIMIT,NULL);
 }

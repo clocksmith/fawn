@@ -1,0 +1,178 @@
+{
+  "utc": "2026-10-23T11:47:12.820612+00:00",
+  "timing": "After candidate2 observation; original576-case failure preserved",
+  "original_failure_receipt": "/tmp/doe-m11-independent-target-LPWtOk/m10-regression/results.json",
+  "original_failure_sha256": "ea6a4004956934fed798925fa5108fa958b4d31b121c8e46329977f390cead2b",
+  "case": "private",
+  "source": "@group(0) @binding(0) var<storage,read_write> out:array<u32>;var<private> a:vec2u;@compute @workgroup_size(1) fn main(){}",
+  "source_sha256": "20ee474ecf0eca32a4333dfe47989e52a825b72a8a895742e4d26ec9201e6160",
+  "accepted_M10_status": 2,
+  "M11_status": 3,
+  "raw_M10_original_status": 3,
+  "contract": {
+    "path": "/workspace/shared/doe-c-migration-20261023/runtime/c/compiler/MILESTONE_11.md",
+    "sha256": "b20c239f336f11b9c108e463f2ea8b63b2c999ca2302a3b1c49d97487831e336",
+    "lines": "71-75",
+    "rule": "Private globals are valid unimplemented source and must return UNSUPPORTED."
+  },
+  "validity": "The module declares an unused runtime-array storage binding and a fixed vec2<u32> private variable without initializer; the variable receives standard zero initialization. Entry has valid compute stage/workgroup size and empty body. No private access mode or resource binding is applied to the private variable.",
+  "observations": [
+    {
+      "library": "/tmp/doe-m10-v6-portable-replay/build/libdoe_compiler.so",
+      "sha256": "5b41d5c25f866c87f7c7a3be229a6cfa7c1537fe66360a215a8363b0e0cf4d97",
+      "modes": [
+        {
+          "flags": 1,
+          "status": 2,
+          "diagnostic": "expected fn; unsupported or malformed WGSL subset",
+          "published": {
+            "words": 0,
+            "types": 0,
+            "members": 0,
+            "resources": 0,
+            "name_bytes": 0
+          }
+        },
+        {
+          "flags": 2,
+          "status": 2,
+          "diagnostic": "expected fn; unsupported or malformed WGSL subset",
+          "published": {
+            "words": 0,
+            "types": 0,
+            "members": 0,
+            "resources": 0,
+            "name_bytes": 0
+          }
+        },
+        {
+          "flags": 3,
+          "status": 2,
+          "diagnostic": "expected fn; unsupported or malformed WGSL subset",
+          "published": {
+            "words": 0,
+            "types": 0,
+            "members": 0,
+            "resources": 0,
+            "name_bytes": 0
+          }
+        },
+        {
+          "flags": 5,
+          "status": 2,
+          "diagnostic": "expected fn; unsupported or malformed WGSL subset",
+          "published": {
+            "words": 0,
+            "types": 0,
+            "members": 0,
+            "resources": 0,
+            "name_bytes": 0
+          }
+        },
+        {
+          "flags": 6,
+          "status": 2,
+          "diagnostic": "expected fn; unsupported or malformed WGSL subset",
+          "published": {
+            "words": 0,
+            "types": 0,
+            "members": 0,
+            "resources": 0,
+            "name_bytes": 0
+          }
+        },
+        {
+          "flags": 7,
+          "status": 2,
+          "diagnostic": "expected fn; unsupported or malformed WGSL subset",
+          "published": {
+            "words": 0,
+            "types": 0,
+            "members": 0,
+            "resources": 0,
+            "name_bytes": 0
+          }
+        }
+      ]
+    },
+    {
+      "library": "/tmp/doe-m11-independent-native-build2/libdoe-m11.so",
+      "sha256": "5d301e813223c9602f7c7ad57634b0ad53a68ba8b752066fbfdce1e9f29b2553",
+      "modes": [
+        {
+          "flags": 1,
+          "status": 3,
+          "diagnostic": "unsupported module variable address space",
+          "published": {
+            "words": 0,
+            "types": 0,
+            "members": 0,
+            "resources": 0,
+            "name_bytes": 0
+          }
+        },
+        {
+          "flags": 2,
+          "status": 3,
+          "diagnostic": "unsupported module variable address space",
+          "published": {
+            "words": 0,
+            "types": 0,
+            "members": 0,
+            "resources": 0,
+            "name_bytes": 0
+          }
+        },
+        {
+          "flags": 3,
+          "status": 3,
+          "diagnostic": "unsupported module variable address space",
+          "published": {
+            "words": 0,
+            "types": 0,
+            "members": 0,
+            "resources": 0,
+            "name_bytes": 0
+          }
+        },
+        {
+          "flags": 5,
+          "status": 3,
+          "diagnostic": "unsupported module variable address space",
+          "published": {
+            "words": 0,
+            "types": 0,
+            "members": 0,
+            "resources": 0,
+            "name_bytes": 0
+          }
+        },
+        {
+          "flags": 6,
+          "status": 3,
+          "diagnostic": "unsupported module variable address space",
+          "published": {
+            "words": 0,
+            "types": 0,
+            "members": 0,
+            "resources": 0,
+            "name_bytes": 0
+          }
+        },
+        {
+          "flags": 7,
+          "status": 3,
+          "diagnostic": "unsupported module variable address space",
+          "published": {
+            "words": 0,
+            "types": 0,
+            "members": 0,
+            "resources": 0,
+            "name_bytes": 0
+          }
+        }
+      ]
+    }
+  ],
+  "scope": "Only this exact source hash is remapped. Malformed/unknown address-space sources remain unchanged."
+}
