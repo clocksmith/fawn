@@ -100,12 +100,14 @@ doe_vk_status doe_vk_commands_clear_color(doe_vk_commands *commands,
     return DOE_VK_OK;
 }
 
-static doe_vk_status validate_draw(doe_vk_commands *commands, doe_vk_pipeline *pipeline,
-    const doe_vk_buffer_binding *vertices, size_t vertex_count, const doe_vk_render_draw *draw,
-    uint32_t width, uint32_t height) {
-    if (draw == NULL || vertex_count != pipeline->vertex_count || (vertex_count != 0 && vertices == NULL))
-        return DOE_VK_INVALID_ARGUMENT;
-    const VkPhysicalDeviceLimits *limits = &commands->context->properties.limits;
+doe_vk_status doe_vk_render_viewport(const doe_vk_context *context, const doe_vk_render_draw *draw,
+    uint32_t width, uint32_t height, VkViewport *out) {
+    if (context == NULL || draw == NULL || out == NULL ||
+        (draw->viewport_convention != DOE_VK_VIEWPORT_RAW_VULKAN &&
+         draw->viewport_convention != DOE_VK_VIEWPORT_WEBGPU)) return DOE_VK_INVALID_ARGUMENT;
+    if (draw->viewport_convention == DOE_VK_VIEWPORT_WEBGPU && context->caps.api_version < (1u << 22 | 1u << 12))
+        return DOE_VK_UNSUPPORTED;
+    const VkPhysicalDeviceLimits *limits = &context->properties.limits;
     for (unsigned i = 0; i < 6; ++i) if (!isfinite(draw->viewport[i])) return DOE_VK_INVALID_ARGUMENT;
     const float *v = draw->viewport;
     if (v[0] < 0 || v[1] < 0 || v[2] <= 0 || v[3] <= 0 || v[4] < 0 || v[4] > 1 || v[5] < 0 || v[5] > 1 ||
@@ -117,6 +119,21 @@ static doe_vk_status validate_draw(doe_vk_commands *commands, doe_vk_pipeline *p
         draw->scissor[0] > INT32_MAX || draw->scissor[1] > INT32_MAX ||
         !doe_vk_range(width, draw->scissor[0], draw->scissor[2]) ||
         !doe_vk_range(height, draw->scissor[1], draw->scissor[3])) return DOE_VK_INVALID_ARGUMENT;
+    VkViewport viewport = {v[0], v[1], v[2], v[3], v[4], v[5]};
+    if (draw->viewport_convention == DOE_VK_VIEWPORT_WEBGPU) {
+        viewport.y = v[1] + v[3];
+        viewport.height = -v[3];
+        if (!isfinite(viewport.y) || viewport.y > limits->viewportBoundsRange[1])
+            return DOE_VK_INVALID_ARGUMENT;
+    }
+    *out = viewport;
+    return DOE_VK_OK;
+}
+
+static doe_vk_status validate_draw(doe_vk_commands *commands, doe_vk_pipeline *pipeline,
+    const doe_vk_buffer_binding *vertices, size_t vertex_count, const doe_vk_render_draw *draw) {
+    if (vertex_count != pipeline->vertex_count || (vertex_count != 0 && vertices == NULL))
+        return DOE_VK_INVALID_ARGUMENT;
     if ((uint64_t)draw->first_vertex + draw->vertex_count > UINT32_MAX ||
         (uint64_t)draw->first_instance + draw->instance_count > UINT32_MAX) return DOE_VK_INVALID_ARGUMENT;
     for (size_t i = 0; i < vertex_count; ++i) {
@@ -147,7 +164,10 @@ doe_vk_status doe_vk_commands_draw(doe_vk_commands *commands,
     status = validate_target(commands, target, &width, &height);
     if (status != DOE_VK_OK) return doe_vk_poison(commands, status);
     if (target->texture->desc.format != pipeline->color_format) return doe_vk_poison(commands, DOE_VK_INVALID_ARGUMENT);
-    status = validate_draw(commands, pipeline, vertices, vertex_count, draw, width, height);
+    VkViewport viewport;
+    status = doe_vk_render_viewport(commands->context, draw, width, height, &viewport);
+    if (status != DOE_VK_OK) return doe_vk_poison(commands, status);
+    status = validate_draw(commands, pipeline, vertices, vertex_count, draw);
     if (status != DOE_VK_OK) return doe_vk_poison(commands, status);
     for (size_t i = 0; i < binding_count; ++i) {
         if ((bindings[i].kind == DOE_VK_BINDING_SAMPLED_TEXTURE || bindings[i].kind == DOE_VK_BINDING_STORAGE_TEXTURE) &&
@@ -168,8 +188,6 @@ doe_vk_status doe_vk_commands_draw(doe_vk_commands *commands,
     status = prepare_pass(commands, target, false, width, height, &use);
     if (status != DOE_VK_OK) return doe_vk_poison(commands, status);
     begin_pass(commands, use, width, height, NULL);
-    const float *v = draw->viewport;
-    const VkViewport viewport = {v[0], v[1], v[2], v[3], v[4], v[5]};
     const VkRect2D scissor = { .offset = {(int32_t)draw->scissor[0], (int32_t)draw->scissor[1]},
         .extent = {draw->scissor[2], draw->scissor[3]} };
     doe_vk_context *context = commands->context;
