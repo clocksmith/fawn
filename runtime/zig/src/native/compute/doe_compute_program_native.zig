@@ -11,7 +11,7 @@ const errors = @import("../queue/doe_queue_submit_shared.zig");
 const trace = @import("../diagnostics/doe_program_identity_trace.zig");
 const query = @import("../resource/doe_query_native.zig");
 const abi = @import("../../core/abi/wgpu_core_base_types.zig");
-const queue_submit = @import("../queue/doe_queue_submit_native.zig");
+const queue_submit = @import("../queue/doe_queue_submit_backend.zig");
 const queue_lifecycle = @import("../queue/doe_queue_lifecycle.zig");
 const error_scope = @import("../../runtime/diagnostics/error_scope.zig");
 
