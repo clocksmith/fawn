@@ -79,7 +79,9 @@ transition, invalidation, and acceptance details.
   `runtime/zig/tools/check_core_import_fence.py`.
 - Only benchmark/gate bootstrap thresholds may be placeholders, explicitly
   flagged in config and tracked in gate policy and the relevant live status shard.
-- Latency-critical behavior is deterministic Zig first. A runtime condition may
+- Production latency-critical behavior remains deterministic Zig first. The explicitly
+  selected isolated C migration must preserve the same invariants and cannot
+  replace production before its declared qualification gates pass. A runtime condition may
   be removed only when current proof/config discharges its actual preconditions;
   otherwise retain and measure the guard. Elimination never moves hot-path
   execution into a runtime Lean interpreter. Verification modes and source-bound

@@ -273,8 +273,11 @@ interpreter is not required for architectural symmetry.
 
 ### Implementation language and native boundary
 
-Keep the compiler and runtime core in Zig, with a stable C ABI for native
-integration. Small C++ adapters may bind upstream Chromium, Dawn, Skia, or ONNX
+The selected production compiler and runtime core remain in Zig, with a stable
+C ABI for native integration. The owner-authorized isolated C migration is
+tracked by [explicit owner and qualification gates](c-migration/MIGRATION.md);
+it incrementally develops complete replacement owners without selecting them
+for production or changing historical language-assessment findings. Small C++ adapters may bind upstream Chromium, Dawn, Skia, or ONNX
 interfaces when that integration requires them; small C shims may provide
 loaders and procedure tables. An adapter translates host contracts and resource
 ownership. It does not become a second compiler, backend policy owner, or
