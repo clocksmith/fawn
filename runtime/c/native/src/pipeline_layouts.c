@@ -23,7 +23,7 @@ static bool resource_entry(const doe_shader_view *view, uint32_t index, WGPUShad
             WGPUSamplerBindingType_Comparison : WGPUSamplerBindingType_Filtering;
         return true;
     }
-    if (handle->flags & (DOE_COMPILER_HANDLE_DEPTH | DOE_COMPILER_HANDLE_MULTISAMPLED)) return false;
+    if (handle->flags & DOE_COMPILER_HANDLE_MULTISAMPLED) return false;
     switch (handle->view_dimension) {
     case DOE_COMPILER_VIEW_1D: out->view_dimension = WGPUTextureViewDimension_1D; break;
     case DOE_COMPILER_VIEW_2D: out->view_dimension = WGPUTextureViewDimension_2D; break;
@@ -32,7 +32,11 @@ static bool resource_entry(const doe_shader_view *view, uint32_t index, WGPUShad
     case DOE_COMPILER_VIEW_CUBE: out->view_dimension = WGPUTextureViewDimension_Cube; break;
     default: return false;
     }
-    if (resource->kind == DOE_COMPILER_SAMPLED_TEXTURE) {
+    if (resource->kind == DOE_COMPILER_SAMPLED_TEXTURE && (handle->flags & DOE_COMPILER_HANDLE_DEPTH)) {
+        /* texture_depth_* reflects the WebGPU default 'depth' sample type. */
+        out->kind = DOE_BIND_TEXTURE;
+        out->sample_type = WGPUTextureSampleType_Depth;
+    } else if (resource->kind == DOE_COMPILER_SAMPLED_TEXTURE) {
         out->kind = DOE_BIND_TEXTURE;
         switch (handle->sample_scalar) {
         case DOE_COMPILER_LEAF_F32: out->sample_type = WGPUTextureSampleType_Float; break;

@@ -57,7 +57,7 @@ int main(int argc, char **argv) {
     doe_vk_texture *texture = NULL;
     doe_vk_texture_view *view = NULL;
     require(doe_vk_texture_create(context, &texture_desc, &texture, &error), "storage image");
-    const doe_vk_texture_view_desc view_desc = { DOE_VK_VIEW_2D, 0, 1, 0, 1 };
+    const doe_vk_texture_view_desc view_desc = { DOE_VK_VIEW_2D, 0, 1, 0, 1, DOE_VK_ASPECT_ALL};
     require(doe_vk_texture_view_create(texture, &view_desc, &view, &error), "storage view");
     const doe_vk_binding_layout layout[4] = {
         {0, 3, DOE_VK_BINDING_UNIFORM}, {0, 4, DOE_VK_BINDING_STORAGE},

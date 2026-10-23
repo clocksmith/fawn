@@ -213,13 +213,19 @@ static doe_resource_status validate_binding(const doe_resource_layout *layout,
         if (entry->kind == DOE_BIND_TEXTURE) {
             if (!(view->desc.usage & WGPUTextureUsage_TextureBinding)) return DOE_RESOURCE_USAGE;
             if (entry->multisampled != (view->texture->desc.samples > 1)) return DOE_RESOURCE_LAYOUT;
+            /* Sample types are defined per depth/stencil aspect; a combined
+             * view must select DepthOnly or StencilOnly to be sampled. */
+            if (resource_format_aspects(view->desc.format) == 6) return DOE_RESOURCE_ASPECT;
             WGPUTextureSampleType sample;
             doe_resource_status status = doe_resource_format_sample_type(view->desc.format, view->desc.aspect, &sample);
             if (status != DOE_RESOURCE_OK) return status;
             if (sample == WGPUTextureSampleType_UnfilterableFloat && features->float32_filterable)
                 sample = WGPUTextureSampleType_Float;
+            /* Float views also bind as unfilterable-float; depth aspects bind as
+             * 'depth' or 'unfilterable-float' (WebGPU depth-stencil format table). */
             if (entry->sample_type != sample &&
-                !(sample == WGPUTextureSampleType_Float && entry->sample_type == WGPUTextureSampleType_UnfilterableFloat))
+                !((sample == WGPUTextureSampleType_Float || sample == WGPUTextureSampleType_Depth) &&
+                entry->sample_type == WGPUTextureSampleType_UnfilterableFloat))
                 return DOE_RESOURCE_LAYOUT;
         } else {
             if (!(view->desc.usage & WGPUTextureUsage_StorageBinding)) return DOE_RESOURCE_USAGE;

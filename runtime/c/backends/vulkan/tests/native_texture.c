@@ -32,7 +32,7 @@ int main(int argc, char **argv) {
     doe_vk_texture *destination = NULL;
     require(doe_vk_texture_create(context, &desc, &source, &error), "source image");
     require(doe_vk_texture_create(context, &desc, &destination, &error), "destination image");
-    const doe_vk_texture_view_desc view_desc = { DOE_VK_VIEW_2D_ARRAY, 0, 2, 0, 2 };
+    const doe_vk_texture_view_desc view_desc = { DOE_VK_VIEW_2D_ARRAY, 0, 2, 0, 2, DOE_VK_ASPECT_ALL};
     doe_vk_texture_view *view = NULL;
     require(doe_vk_texture_view_create(source, &view_desc, &view, &error), "view");
     const doe_vk_sampler_desc sampler_desc = {

@@ -108,8 +108,17 @@ Apple SDK compilation, Darwin execution and physical qualification remain unrun.
   use 4-byte offsets (also for writeTexture, stricter than WebGPU's unaligned
   writeTexture offset); texture-to-texture copies use all aspects. Linear bytes
   are 4 (depth32), 2 (depth16) and 1 (stencil). Copy-only depth images are zeroed
-  per aspect by real uploads; attachments by real clears. Depth sampling/storage
-  are rejected.
+  per aspect by real uploads; attachments by real clears. Depth storage is
+  rejected. TextureBinding is admitted: texture_depth_2d/_2d_array/_cube reflect
+  the default 'depth' sample type, depth aspects also bind to explicit
+  'unfilterable-float' layouts, StencilOnly views sample as 'uint', and
+  DepthOnly/StencilOnly views of combined formats select one native aspect.
+  An all-aspect view of a combined format cannot be bound as a texture.
+  Sampled depth images may be cube-compatible. Comparison samplers bind only to
+  'comparison' entries. textureLoad and dimension queries execute; WGSL
+  textureSampleCompare/textureSampleCompareLevel and depth textureSampleLevel
+  are absent from the C compiler, so comparison sampling is not yet possible.
+  Depth24Plus readback values come from its D32 backing.
   Plus formats use D32/D32S8 backing, not an implied optional public feature.
   The backend's sole per-aspect initialization owner clears undefined contents;
   depth/stencil Discard followed by Load reinitializes only missing aspects on GPU.
@@ -319,7 +328,7 @@ PointList target lowering, single-sample color Discard, dual-source blending,
 vertex or fragment storage writes and fragment FragDepth/SampleIndex/SampleMask
 remain explicitly rejected. WGSL discard requires actual enabled demote support;
 unsupported devices reject that pipeline. Blend constants must be finite f32.
-Texture format reinterpretation, depth sampling/storage, multisampled
+Texture format reinterpretation, depth storage, depth comparison sampling (compiler), multisampled
 sampling/copies/storage, cube arrays and anisotropic sampling are rejected.
 The baseline admits 18 named Vulkan
 color formats, subject to actual device usage/format capabilities. Device
@@ -370,7 +379,8 @@ is CPU; see the physical developer runs section for the GPU variant. Its ordinar
 result is:
 
 ```
-PASS public depth/stencil copies: rendered depth32float .25/.75 via DepthOnly/All readback and texture copy, depth16unorm rendered 0/65535, writeTexture and buffer upload plus texture copy, stencil8 upload then IncrementClamp, depth24plus-stencil8 stencil Replace and StencilOnly upload, depth24plus texture copy observed by depth test, 11 copy and 2 creation validation controls, early releases; exact 72 depth/stencil texels and 8 color pixels (CPU Vulkan only)
+PASS public depth/stencil sampling: rendered depth32float and depth24plus-stencil8 DepthOnly maps via texture_depth_2d (automatic depth layout) and texture_2d<f32> (explicit unfilterable-float), StencilOnly as texture_2d<u32>, two-layer texture_depth_2d_array, texture_depth_cube dimensions, comparison-sampler binding admission, 7 view/binding/creation controls, early releases; exact 48 depth values, 8 stencil values and 2 dimensions (no comparison sampling: compiler lacks the builtins) (CPU Vulkan only)
+PASS public depth/stencil copies: rendered depth32float .25/.75 via DepthOnly/All readback and texture copy, depth16unorm rendered 0/65535, writeTexture and buffer upload plus texture copy, stencil8 upload then IncrementClamp, depth24plus-stencil8 stencil Replace and StencilOnly upload, depth24plus texture copy observed by depth test, 11 copy and 1 creation validation controls, early releases; exact 72 depth/stencil texels and 8 color pixels (CPU Vulkan only)
 PASS public indexed draws: uint16/uint32 indices, firstIndex, signed base vertex, instance selection, offset index ranges, pass/bundle replay, uint16/uint32 strip primitive restart, 9 GPU-produced drawIndexedIndirect records with exact-end/out-of-range/wrapping/zero/firstInstance/instance-overrun guards, unchanged arguments, 13 typed validation controls and early releases; exact 192 pixels (CPU Vulkan only)
 PASS public ABI9 atomics: storage accumulation, signed OOB suppression, compare-exchange result identity, fresh workgroup initialization across two groups and two dispatches, early releases (CPU Vulkan only)
 PASS public debug markers: typed procedures, independent nested balance, parent lock, underflow, malformed strings and finished/unbalanced command/pass/bundle rejection (CPU Vulkan only)
@@ -468,7 +478,7 @@ Do not run this on Miles or Suby while their possible disassembly/cooling hold
 remains. Every adapter-using client selects its adapter through
 `tests/adapter_class.h`: software (CPU fallback adapter) by default, or a
 nonfallback GPU adapter with `DOE_C_TEST_ADAPTER=physical`. Each PASS line names
-the class and device it ran on. `make check-physical` runs the same 22 clients on
+the class and device it ran on. `make check-physical` runs the same 23 clients on
 the system ICDs (`VK_ICD_FILENAMES` unset):
 
 ```
@@ -490,7 +500,8 @@ STRIX_HALO, vendor 0x1002 device 0x1586), Mesa 26.0.3-1ubuntu1 RADV, Vulkan 1.4.
 Linux 7.0.0-38. After indexed drawing was added, all 19 clients (including
 `indexed-render`) passed again on that same adapter/driver the same day, and after
 depth/stencil copies were added (with the WGSL language-feature and texture-binding
-view clients) all 22 (including `depth-copies`) passed. That is
+view clients) all 22 (including `depth-copies`) passed; with depth sampling all 23
+(including `depth-sampling`) passed. That is
 developer evidence for these exact clients on that
 adapter/driver: the oracles are the clients' own expected values, not frozen
 independent workloads, and it is not Vulkan backend qualification, a performance

@@ -66,10 +66,10 @@ WGPUTexture wgpuDeviceCreateTexture(WGPUDevice handle, const WGPUTextureDescript
         desc.width == desc.height && desc.depth_or_layers >= 6;
     bool depth_stencil = native_depth_format(desc.format, &native.format);
     if (depth_stencil) {
-        /* Attachment and copy usage are admitted; per-format/aspect copy direction
-         * belongs to the resource copy owner. Depth sampling/storage stay absent. */
-        if (desc.usage & (WGPUTextureUsage_TextureBinding | WGPUTextureUsage_StorageBinding)) {
-            native_error(device, WGPUErrorType_Validation, "depth/stencil sampling and storage are unsupported");
+        /* Attachment, copy and sampled usage are admitted; per-format/aspect copy
+         * direction and sample types belong to the resource owner. No storage. */
+        if (desc.usage & WGPUTextureUsage_StorageBinding) {
+            native_error(device, WGPUErrorType_Validation, "depth/stencil storage is unsupported");
             return NULL;
         }
         /* Attachments zero-initialize through real clears; copy-only images need
@@ -77,7 +77,8 @@ WGPUTexture wgpuDeviceCreateTexture(WGPUDevice handle, const WGPUTextureDescript
         native.usage = (desc.usage & WGPUTextureUsage_RenderAttachment) ?
             DOE_VK_TEXTURE_DEPTH_STENCIL_ATTACHMENT : DOE_VK_TEXTURE_COPY_DST;
         if (desc.usage & WGPUTextureUsage_CopyDst) native.usage |= DOE_VK_TEXTURE_COPY_DST;
-        native.cube_compatible = false; /* Native depth supports array attachments, not cube sampling. */
+        /* Cube compatibility only serves sampled cube views of depth. */
+        if (!(desc.usage & WGPUTextureUsage_TextureBinding)) native.cube_compatible = false;
     }
     if (desc.samples > 1) {
         if (desc.usage != WGPUTextureUsage_RenderAttachment) {

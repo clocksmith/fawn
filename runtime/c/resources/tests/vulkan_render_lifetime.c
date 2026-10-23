@@ -145,7 +145,7 @@ static doe_resource_view *adopt_attachment(const doe_resource_config *config, li
     doe_vk_texture *native_image;
     doe_vk_texture_view *native_view;
     require(doe_vk_texture_create(context, &native_desc, &native_image, &error), "multisample attachment");
-    doe_vk_texture_view_desc native_view_desc = {DOE_VK_VIEW_2D, 0, 1, 0, 1};
+    doe_vk_texture_view_desc native_view_desc = {DOE_VK_VIEW_2D, 0, 1, 0, 1, DOE_VK_ASPECT_ALL};
     require(doe_vk_texture_view_create(native_image, &native_view_desc, &native_view, &error), "multisample view");
     doe_resource_texture_desc desc = {.dimension = WGPUTextureDimension_2D,
         .format = format, .width = 8, .height = 8, .depth_or_layers = 1,
@@ -210,7 +210,7 @@ int main(int argc, char **argv)
     doe_vk_texture *native_image;
     doe_vk_texture_view *native_view;
     require(doe_vk_texture_create(context, &native_desc, &native_image, &error), "image");
-    doe_vk_texture_view_desc native_view_desc = {DOE_VK_VIEW_2D, 0, 1, 0, 1};
+    doe_vk_texture_view_desc native_view_desc = {DOE_VK_VIEW_2D, 0, 1, 0, 1, DOE_VK_ASPECT_ALL};
     require(doe_vk_texture_view_create(native_image, &native_view_desc, &native_view, &error), "view");
     doe_resource_texture_desc image_desc = {.dimension = WGPUTextureDimension_2D,
         .format = WGPUTextureFormat_RGBA8Unorm, .width = 8, .height = 8, .depth_or_layers = 1,

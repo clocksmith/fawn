@@ -36,13 +36,17 @@ static doe_vk_status validate_view(doe_vk_commands *commands,
     if (!(texture->desc.usage & usage)) return DOE_VK_INVALID_ARGUMENT;
     if (kind == DOE_VK_BINDING_STORAGE_TEXTURE && view->desc.mip_count != 1)
         return DOE_VK_INVALID_ARGUMENT;
+    /* A sampled depth/stencil view must select exactly one aspect. */
+    if (view->aspects == (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT))
+        return DOE_VK_INVALID_ARGUMENT;
     doe_vk_texture_use *use = NULL;
     doe_vk_status status = doe_vk_use_texture(commands, texture, &use);
     if (status != DOE_VK_OK) return status;
     uint32_t layers = texture->desc.dimension == DOE_VK_TEXTURE_3D ? 1 : texture->desc.depth_or_layers;
     for (uint32_t mip = view->desc.base_mip; mip < view->desc.base_mip + view->desc.mip_count; ++mip) {
         for (uint32_t layer = view->desc.base_layer; layer < view->desc.base_layer + view->desc.layer_count; ++layer) {
-            if (!use->initialized[(size_t)mip * layers + layer]) return DOE_VK_INVALID_STATE;
+            if ((use->initialized[(size_t)mip * layers + layer] & view->aspects) != view->aspects)
+                return DOE_VK_INVALID_STATE;
         }
     }
     return DOE_VK_OK;
