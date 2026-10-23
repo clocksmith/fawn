@@ -13,19 +13,26 @@ make -C runtime/c package REVISION=HEAD \
   BUILD=/tmp/doe-c-build-unique STAGE=/tmp/doe-c-stage-unique
 ```
 
-Both paths must be fresh and disjoint. Requires Linux, Python3.12+, Git, GNU Make,
-GCC/G++14-compatible C11/C++17 compilation, binutils and ordinary system libc/libm/
-pthreads/dl. No Zig, external shader compiler, installation, package download,
+Both paths must be fresh and disjoint. Requires Python3.12+, Git, Make and
+C11/C++17 compilers. Linux uses GCC/G++14-compatible compilation, binutils and
+ordinary system libc/libm/pthreads/dl. Darwin uses Apple Clang, the macOS SDK
+and cctools (`otool`/`nm`); pass `CC=clang CXX=clang++` to the command above.
+No Zig, external shader compiler, installation, package download,
 GPU or system configuration change is performed. Vulkan is loaded only by actual
 backend consumers; this packaging check creates an instance but no device.
 
 The tool captures the named committed tree, never concurrent worktree edits. It
 calls the native owner's Makefile and its compiler source/flag owner rather than
 maintaining another source list. The two shared libraries have a relative loader
-path. A pinned-header C++ procedure consumer runs after relocation with
-LD_LIBRARY_PATH and LD_PRELOAD removed. The existing export audit checks exact
+path: `$ORIGIN` on Linux, `@loader_path` with `@rpath` library identities on
+Darwin. Darwin staging also verifies the entire non-system dylib dependency
+closure and rejects absolute loader paths. A pinned-header C++ procedure consumer
+runs after relocation with LD_LIBRARY_PATH, LD_PRELOAD and all DYLD_ overrides
+removed. The existing export audit checks exact
 symbols and procedure addresses. Compiler/header/provider identity, tool versions,
-commands and all staged artifact hashes are in MANIFEST.json.
+commands and all staged artifact hashes are in MANIFEST.json. The executing
+packaging tool's hash is recorded separately from the captured tree; testing an
+uncommitted tool never relabels the archived source as containing that tool.
 
 The stage contains lib/, include/, licenses/, an executable host consumer, its
 source, and the explicit implemented-symbol list. Missing symbols are not stubs.
@@ -33,12 +40,22 @@ MANIFEST.json is copied last; its absence means staging did not finish. Failures
 preserve build logs and partial new output for diagnosis and never overwrite an
 existing destination. Copies are hash-checked before completion. This is developer
 staging, not a system installer, npm/Node addon, Fawn/browser integration, Windows
-or macOS distribution, GPU execution or full release qualification. Do not replace
+distribution, GPU execution or full release qualification. Do not replace
 an existing application provider automatically with this artifact.
 
 The later `DEVELOPER_RECEIPT_PACKAGE_METAL.json` repeats the actual canonical
 Linux source build and relocated typed C++ consumption at source2514afd7, after
 composing the explicit Metal source/metadata path and guarded Vulkan indirect
-backend. This tests merged linking/packaging, not GPU execution. Darwin source
-wait support does not by itself qualify a macOS package: numeric host controls,
-Mach-O linking and Apple SDK/device runs remain separate gates.
+backend. This tests merged linking/packaging, not GPU execution. Historical Linux
+receipts do not qualify changed source or Darwin artifacts. Apple SDK compilation,
+Mach-O relocation and device execution remain separate evidence scopes.
+
+[Darwin developer evidence](DEVELOPER_RECEIPT_PACKAGE_DARWIN.json) records the
+Apple Clang/macOS SDK 26.0 build of committed native source `00bbd786d`, verified
+dylib identities/dependencies, moved and staged C++ consumption, and 182 exact
+exports with 20 pinned unprovided names. It identifies the locally modified
+packaging tool separately. No GPU/device execution was performed.
+
+[Current Linux regression](DEVELOPER_RECEIPT_PACKAGE_LINUX_CURRENT.json) builds
+the same committed native source with the current packaging tool, relocates the
+ELF package, and checks the C++ consumer and 182/20 export inventory.

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: MIT
-"""Build and relocate a Linux C-only developer package from one committed tree.
+"""Build and relocate a Linux or Darwin C-only package from one committed tree.
 
 This is an explicit partial native provider, not an installer or release gate.
 The native Makefile owns compilation; this tool owns immutable source capture,
@@ -14,8 +14,10 @@ import json
 import os
 from pathlib import Path
 import platform
+import re
 import shutil
 import subprocess
+import sys
 import tarfile
 
 
@@ -32,10 +34,49 @@ def captured(arguments: list[str], cwd: Path | None = None) -> str:
     return subprocess.check_output(arguments, cwd=cwd, text=True).strip()
 
 
+def audit_libraries(directory: Path, system: str) -> dict[str, str]:
+    """Refuse build-path dependencies before testing the relocated consumer."""
+    if system == "Linux":
+        dynamic = captured(["readelf", "-d", str(directory / "libwebgpu_doe_c.so")])
+        if "Library runpath: [$ORIGIN]" not in dynamic:
+            raise RuntimeError("Native artifact lacks exact $ORIGIN RUNPATH")
+        return {"native_dynamic": dynamic}
+    records: dict[str, str] = {}
+    for name in ("libwebgpu_doe_c.dylib", "libdoe_compiler.dylib"):
+        library = directory / name
+        identity = captured(["otool", "-D", str(library)]).splitlines()[1:]
+        if identity != ["@rpath/" + name]:
+            raise RuntimeError(f"{name}: expected @rpath install identity, got {identity}")
+        dependencies = captured(["otool", "-L", str(library)])
+        links = [line.strip().split(" (", 1)[0]
+                 for line in dependencies.splitlines()[1:]]
+        expected = {"@rpath/" + name}
+        if name == "libwebgpu_doe_c.dylib":
+            expected.add("@rpath/libdoe_compiler.dylib")
+        actual = {link for link in links if not link.startswith(
+            ("/usr/lib/", "/System/Library/"))}
+        if actual != expected:
+            raise RuntimeError(f"{name}: non-system dependencies {actual}, expected {expected}")
+        commands = captured(["otool", "-l", str(library)])
+        runpaths = re.findall(r"cmd LC_RPATH\s+cmdsize \d+\s+path (.*?) \(offset \d+\)",
+                             commands)
+        if runpaths != (["@loader_path"] if name == "libwebgpu_doe_c.dylib" else []):
+            raise RuntimeError(f"{name}: unexpected loader paths {runpaths}")
+        records[name] = dependencies + "\n" + commands
+    return records
+
+
+def loader_environment() -> dict[str, str]:
+    return {key: value for key, value in os.environ.items()
+            if key not in ("LD_LIBRARY_PATH", "LD_PRELOAD")
+            and not key.startswith("DYLD_")}
+
+
 def build_package(repo: Path, revision: str, build: Path, destination: Path,
                   cc: str, cxx: str) -> dict[str, object]:
-    if platform.system() != "Linux":
-        raise ValueError("This package route currently supports Linux ELF only")
+    system = platform.system()
+    if system not in ("Linux", "Darwin"):
+        raise ValueError(f"Unsupported package host {system}; use Linux or Darwin")
     if build.exists() or build.is_symlink() or destination.exists() or destination.is_symlink():
         raise FileExistsError("Use fresh build and destination paths; existing work is never replaced")
     build, destination = build.resolve(), destination.resolve()
@@ -55,20 +96,24 @@ def build_package(repo: Path, revision: str, build: Path, destination: Path,
         bundle.extractall(source, filter="data")
     source_hashes = {str(p.relative_to(source)): digest(p)
                      for p in sorted(source.rglob("*")) if p.is_file()}
-    (build / "SOURCE_INPUTS.json").write_text(json.dumps(source_hashes, indent=2) + "\n")
+    (build / "SOURCE_INPUTS.json").write_text(
+        json.dumps(source_hashes, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     owner = source / "runtime/c/native"
     objects = build / "objects"
     # Two dollars survive GNU Make expansion as one literal loader token.
+    suffix = "dylib" if system == "Darwin" else "so"
+    native_name = "libwebgpu_doe_c." + suffix
+    compiler_name = "libdoe_compiler." + suffix
+    runpath = "@loader_path" if system == "Darwin" else "$$ORIGIN"
     command = ["make", "-C", str(owner), "all", f"BUILD={objects}",
-               f"CC={cc}", f"CXX={cxx}", "COMPILER_RUNPATH=$$ORIGIN"]
+               f"CC={cc}", f"CXX={cxx}", f"SHARED_PLATFORM={system}",
+               f"COMPILER_RUNPATH={runpath}"]
     execute(command, build / "build.log")
-    dynamic = captured(["readelf", "-d", str(objects / "libwebgpu_doe_c.so")])
-    if "Library runpath: [$ORIGIN]" not in dynamic:
-        raise RuntimeError("Native artifact lacks exact $ORIGIN RUNPATH; do not publish an absolute-path package")
+    loader_records = audit_libraries(objects, system)
     candidate = build / "package-before-relocation"
     for name in ("lib", "include", "bin", "licenses"):
         (candidate / name).mkdir(parents=True)
-    for name in ("libwebgpu_doe_c.so", "libdoe_compiler.so"):
+    for name in (native_name, compiler_name):
         shutil.copy2(objects / name, candidate / "lib" / name)
     for header in sorted((source / "runtime/c/compiler/include").glob("*.h")):
         shutil.copy2(header, candidate / "include" / header.name)
@@ -80,21 +125,21 @@ def build_package(repo: Path, revision: str, build: Path, destination: Path,
                  candidate / "licenses/Khronos-SPIRV-Headers.txt")
     shutil.copy2(owner / "EXPORTED_SYMBOLS.txt", candidate / "EXPORTED_SYMBOLS.txt")
     shutil.copy2(owner / "tests/procedures.cpp", candidate / "procedures.cpp")
+    consumer_runpath = "@executable_path/../lib" if system == "Darwin" else "$ORIGIN/../lib"
     consumer_command = [cxx, "-std=c++17", "-Wall", "-Wextra", "-Wpedantic", "-Werror",
                         str(candidate / "procedures.cpp"), "-I" + str(candidate / "include"),
                         "-L" + str(candidate / "lib"), "-lwebgpu_doe_c",
-                        "-Wl,-rpath,$ORIGIN/../lib", "-o", str(candidate / "bin/procedures")]
+                        "-Wl,-rpath," + consumer_runpath, "-o", str(candidate / "bin/procedures")]
     execute(consumer_command, build / "consumer-build.log")
     moved = build / "package-after-relocation"
     candidate.rename(moved)
-    environment = os.environ.copy()
-    environment.pop("LD_LIBRARY_PATH", None)
-    environment.pop("LD_PRELOAD", None)
+    environment = loader_environment()
     with (build / "relocated-consumer.log").open("wb") as log:
         subprocess.run([str(moved / "bin/procedures")], cwd="/", env=environment,
                        stdout=log, stderr=subprocess.STDOUT, check=True)
-    execute(["python3", str(owner / "tests/audit-exports.py"),
-             str(moved / "lib/libwebgpu_doe_c.so"), "--runtime"], build / "exports.log")
+    execute([sys.executable, str(owner / "tests/audit-exports.py"),
+             str(moved / "lib" / native_name), "--runtime", "--platform", system],
+            build / "exports.log")
     after = {str(p.relative_to(source)): digest(p)
              for p in sorted(source.rglob("*")) if p.is_file()}
     if after != source_hashes:
@@ -104,15 +149,18 @@ def build_package(repo: Path, revision: str, build: Path, destination: Path,
     manifest: dict[str, object] = {
         "source_commit": commit, "source_tree": tree,
         "source_archive_sha256": digest(archive), "source_inputs": source_hashes,
+        "packaging_tool_sha256": digest(Path(__file__)),
         "build_command": command, "consumer_command": consumer_command,
         "cc": captured([cc, "--version"]).splitlines()[0],
         "cxx": captured([cxx, "--version"]).splitlines()[0],
         "host": platform.platform(), "artifacts": artifacts,
+        "loader_records": loader_records,
         "checks": ["native C-only source build", "moved C++ consumer with no library-path override",
                    "exact exported procedure inventory and addresses"],
-        "qualification": "partial Linux Vulkan provider; no GPU execution, Windows/macOS package, browser or production cutover qualification",
+        "qualification": f"partial {system} developer package; no GPU execution, Windows package, browser or production cutover qualification",
     }
-    (moved / "MANIFEST.json").write_text(json.dumps(manifest, indent=2) + "\n")
+    (moved / "MANIFEST.json").write_text(
+        json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     # Exclusive creation refuses a concurrent destination. A copy failure leaves
     # a visibly incomplete directory; MANIFEST is copied last as completion marker.
     destination.mkdir(parents=True)

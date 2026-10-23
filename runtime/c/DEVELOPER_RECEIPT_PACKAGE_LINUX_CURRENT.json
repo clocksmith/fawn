@@ -1,0 +1,45 @@
+{
+  "source_commit": "00bbd786d8a9794b1ac716f886a87ca18683a482",
+  "source_tree": "e9087557ceac4422631d8878d395447151248c9b",
+  "source_archive_sha256": "ec0fb363ede0a0469cf47cda4862b9ec6f429112117497d2dece03891b0617b4",
+  "packaging_tool_sha256": "a13854c928ea16467f57efebad565db0405a989719a89a140c465a212697ed98",
+  "host": "Linux-7.0.0-38-generic-x86_64-with-glibc2.43",
+  "cc": "gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0",
+  "cxx": "g++ (Ubuntu 15.2.0-16ubuntu1) 15.2.0",
+  "artifacts": {
+    "EXPORTED_SYMBOLS.txt": "4f0c1628f4c2e0361165982d7153e657e35d0501c43fc6933b14f0d42bbc47f1",
+    "bin/procedures": "b50b431dacd24a3382ddff12dc60c3b79d93f26f652a7ce17c1de7a02ab9d218",
+    "include/doe_compiler.h": "5bf4f5e5a4e4624c094320ad9ec97119278bc7f6f06b0e47c01e444d42c6dc5b",
+    "include/doe_compiler_features.h": "face7d3315ec8bcd884f354cc08efa566c479b5136a509b7db751399bbbd320c",
+    "include/doe_compiler_job.h": "6160e631973ffcd9777553520d329b6d6048315f2a90b1283989077e9f51237f",
+    "include/doe_compiler_module.h": "01cc2966ce7866ccfde6cca75e6ec6e60921f63c271e31cf94648e8d78907cef",
+    "include/doe_compiler_resources.h": "b16c1f9f1a5129daeb32f83baaac1fb1bea41c1a00c084c5fe9c4d7f6cded2b2",
+    "include/doe_compiler_stages.h": "805e94e55267837897ad1b9885d328ac8acf0cc7bfc92b9e5dfe97737439f668",
+    "include/doe_compiler_text.h": "159c2edb21326fe17b7e7dcfe523b4cb765fe34bb44e95b6932f884a1f6a24e1",
+    "include/doe_compiler_typed.h": "c7decbdb8da093a3485ded84901bf97f88eea8db6237dfd4089c730aa08e6216",
+    "include/doe_compiler_v2.h": "b0a60c2f05b70dba0786365dadd81b993accbd93f7f68f0e3accf86a815ae891",
+    "include/webgpu.h": "7691d76ceb67056f89e97b9ff0b62163eacf19a8e0e09a8fa7dbb32069b7978c",
+    "lib/libdoe_compiler.so": "b65f324de060b692fd8ecd04a5580786922099cd3158339155134875b0980f20",
+    "lib/libwebgpu_doe_c.so": "bf02c2e2c31f73dc1e085e7f45abc662a874cc4d2a2cf067b6d7ecf5505ac0aa",
+    "licenses/Doe.txt": "66ccf82f3056418261f3a501d5ad03f156655171980c6d51a25a46495353c4d3",
+    "licenses/Khronos-SPIRV-Headers.txt": "ea43b1de38a6f90c488800d66dec1ed671e68cda530266bc96951fb5b6307613",
+    "licenses/WebGPU-Headers.txt": "17420d366df90c474bd70ad474694956cdb7fc64be70387a49a45458c4152d22",
+    "procedures.cpp": "09452f86d138d0b7d9257b8cbfcd9da6e5fa92e6076f9d859a5d23a259833afa"
+  },
+  "loader_records": {
+    "native_dynamic": "Dynamic section at offset 0x5adc0 contains 26 entries:\n  Tag        Type                         Name/Value\n 0x0000000000000001 (NEEDED)             Shared library: [libdoe_compiler.so]\n 0x0000000000000001 (NEEDED)             Shared library: [libc.so.6]\n 0x000000000000001d (RUNPATH)            Library runpath: [$ORIGIN]\n 0x000000000000000c (INIT)               0x7000\n 0x000000000000000d (FINI)               0x45ab4\n 0x0000000000000019 (INIT_ARRAY)         0x5a208\n 0x000000000000001b (INIT_ARRAYSZ)       8 (bytes)\n 0x000000000000001a (FINI_ARRAY)         0x5a210\n 0x000000000000001c (FINI_ARRAYSZ)       16 (bytes)\n 0x000000006ffffef5 (GNU_HASH)           0x2d0\n 0x0000000000000005 (STRTAB)             0x1eb0\n 0x0000000000000006 (SYMTAB)             0x848\n 0x000000000000000a (STRSZ)              6024 (bytes)\n 0x000000000000000b (SYMENT)             24 (bytes)\n 0x0000000000000003 (PLTGOT)             0x5afe8\n 0x0000000000000002 (PLTRELSZ)           1224 (bytes)\n 0x0000000000000014 (PLTREL)             RELA\n 0x0000000000000017 (JMPREL)             0x5c90\n 0x0000000000000007 (RELA)               0x38a8\n 0x0000000000000008 (RELASZ)             9192 (bytes)\n 0x0000000000000009 (RELAENT)            24 (bytes)\n 0x000000006ffffffe (VERNEED)            0x3818\n 0x000000006fffffff (VERNEEDNUM)         1\n 0x000000006ffffff0 (VERSYM)             0x3638\n 0x000000006ffffff9 (RELACOUNT)          378\n 0x0000000000000000 (NULL)               0x0"
+  },
+  "checks": [
+    "native C-only source build",
+    "moved C++ consumer with no library-path override",
+    "exact exported procedure inventory and addresses"
+  ],
+  "status": "Developer package regression passed on Jupiter Linux; not GPU or whole-migration qualification.",
+  "component": "Experimental C developer package staging",
+  "intent": "Preserved Linux ELF behavior while adding Darwin packaging",
+  "additional_checks": [
+    "Relocated C++ procedures run with LD/DYLD overrides removed; exact export audit: 182 implemented, 20 unprovided.",
+    "The native committed source archive remained unchanged during compilation.",
+    "Complete mandatory C check at same committed native source with the package tool overlay: 693 style sources, zero failures; 20 tool tests; 13 owner builds."
+  ]
+}

@@ -50,7 +50,7 @@ class PackagePreflightTests(unittest.TestCase):
                 self.assertFalse((root / "absent").exists())
 
     def test_unsupported_host_has_no_side_effects(self) -> None:
-        with tempfile.TemporaryDirectory() as directory, patch.object(PACKAGE.platform, "system", return_value="Darwin"):
+        with tempfile.TemporaryDirectory() as directory, patch.object(PACKAGE.platform, "system", return_value="Windows"):
             root = Path(directory)
             with self.assertRaises(ValueError):
                 PACKAGE.build_package(root, "HEAD", root / "build", root / "stage", "gcc", "g++")
@@ -64,6 +64,54 @@ class PackagePreflightTests(unittest.TestCase):
                 with self.assertRaises(subprocess.CalledProcessError):
                     PACKAGE.build_package(root, "missing", root / "build", root / "stage", "gcc", "g++")
             self.assertEqual(list(root.iterdir()), [])
+
+
+class PackageLoaderTests(unittest.TestCase):
+    def test_loader_overrides_cannot_rescue_relocation(self) -> None:
+        environment = {"PATH": "/usr/bin", "LD_LIBRARY_PATH": "/old",
+                       "LD_PRELOAD": "old.so", "DYLD_LIBRARY_PATH": "/old",
+                       "DYLD_FALLBACK_LIBRARY_PATH": "/old",
+                       "DYLD_INSERT_LIBRARIES": "old.dylib"}
+        with patch.dict(PACKAGE.os.environ, environment, clear=True):
+            self.assertEqual(PACKAGE.loader_environment(), {"PATH": "/usr/bin"})
+
+    def macho_output(self, arguments: list[str]) -> str:
+        command, option, filename = arguments
+        self.assertEqual(command, "otool")
+        name = Path(filename).name
+        if option == "-D":
+            return filename + ":\n@rpath/" + name
+        if option == "-L":
+            result = filename + ":\n\t@rpath/" + name + " (compatibility version 0.0.0)"
+            if name == "libwebgpu_doe_c.dylib":
+                result += "\n\t@rpath/libdoe_compiler.dylib (compatibility version 0.0.0)"
+            return result + "\n\t/usr/lib/libSystem.B.dylib (compatibility version 1.0.0)"
+        if name == "libwebgpu_doe_c.dylib":
+            return "Load command 3\n cmd LC_RPATH\n cmdsize 32\n path @loader_path (offset 12)"
+        return "Load command 0\n cmd LC_SEGMENT_64"
+
+    def test_relative_macho_dependency_closure(self) -> None:
+        with patch.object(PACKAGE, "captured", side_effect=self.macho_output):
+            self.assertEqual(len(PACKAGE.audit_libraries(Path("/build"), "Darwin")), 2)
+
+    def test_macho_rejects_absolute_identity_dependency_and_runpath(self) -> None:
+        for bad_option in ("-D", "-L", "-l"):
+            def invalid(arguments: list[str]) -> str:
+                output = self.macho_output(arguments)
+                if arguments[1] != bad_option:
+                    return output
+                return output.replace("@rpath/", "/build/").replace("@loader_path", "/build")
+
+            with self.subTest(option=bad_option), patch.object(PACKAGE, "captured", side_effect=invalid):
+                with self.assertRaises(RuntimeError):
+                    PACKAGE.audit_libraries(Path("/build"), "Darwin")
+
+    def test_linux_requires_origin_runpath(self) -> None:
+        with patch.object(PACKAGE, "captured", return_value="Library runpath: [$ORIGIN]"):
+            PACKAGE.audit_libraries(Path("/build"), "Linux")
+        with patch.object(PACKAGE, "captured", return_value="Library runpath: [/build]"):
+            with self.assertRaises(RuntimeError):
+                PACKAGE.audit_libraries(Path("/build"), "Linux")
 
 
 if __name__ == "__main__":
