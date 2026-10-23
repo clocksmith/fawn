@@ -355,6 +355,15 @@ This is native no-fetch admission only: the public/resource owner still distingu
 an Undefined-step-mode layout hole from an explicit Vertex/Instance slot that
 requires a bound public buffer even when it declares no attributes.
 
+VK_KHR_maintenance5 is enabled by default when the device lists it together with
+its VK_KHR_dynamic_rendering dependency (required with the API 1.2 instance; see
+the vk.xml dependency recorded in ABI_PROVENANCE.json) and reports the feature;
+`caps.maintenance5` reports successful enablement only. Point-list pipelines
+require it, because maintenance5 defines an unwritten PointSize as 1.0; without
+it point lists return UNSUPPORTED and shaders are never rewritten. lavapipe and
+RADV (Mesa 26.0.3) both offer it here. `tests/feature_contract.c` and
+`tests/depth_pipeline_contract.c` check the selection chain and the gate.
+
 Optional demote feature selection is explicit: set
 `enable_shader_demote_if_supported` before device creation. The default remains
 off. `caps.shader_demote_to_helper_invocation` reports successful enablement,

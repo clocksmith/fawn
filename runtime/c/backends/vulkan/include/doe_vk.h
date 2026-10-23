@@ -118,6 +118,10 @@ typedef struct doe_vk_caps {
     /* Enabled imageCubeArray, not merely advertised. Without it cube-array views
      * and SampledCubeArray shaders are rejected. */
     bool image_cube_array;
+    /* VK_KHR_maintenance5 (with VK_KHR_dynamic_rendering) successfully enabled,
+     * not merely advertised. Point-list pipelines require it: the default
+     * PointSize of 1.0 replaces any shader or SPIR-V rewrite. */
+    bool maintenance5;
     doe_vk_adapter_identity identity;
     /* Actual native color-attachment count limit (pipelines and passes are also
      * bounded by DOE_VK_MAX_COLOR_ATTACHMENTS). */

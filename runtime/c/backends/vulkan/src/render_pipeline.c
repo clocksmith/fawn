@@ -120,6 +120,9 @@ static doe_vk_status validate_pipeline(doe_vk_context *context,
         (desc->vertex_buffer_count != 0 && desc->vertex_buffers == NULL) ||
         (desc->attribute_count != 0 && desc->attributes == NULL)) return DOE_VK_INVALID_ARGUMENT;
     if (!(context->caps.queue_flags & VK_QUEUE_GRAPHICS_BIT)) return DOE_VK_UNSUPPORTED;
+    /* Without maintenance5 an unwritten PointSize is undefined; never patch
+     * shaders to supply it. */
+    if (desc->topology == DOE_VK_POINTS && !context->caps.maintenance5) return DOE_VK_UNSUPPORTED;
     if (!targets->used) {
         if (desc->depth_stencil_format == 0 || desc->alpha_to_coverage) return DOE_VK_INVALID_ARGUMENT;
     } else if (fragment_absent(desc)) return DOE_VK_INVALID_ARGUMENT;

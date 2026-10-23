@@ -38,6 +38,27 @@ doe_vk_status doe_vk_prepare_features(doe_vk_context *context, const doe_vk_opti
         selection.demote = demote;
         selection.extension = demote_extension;
     }
+    /* Optional maintenance5 (default PointSize 1.0 among others). The 1.2
+     * instance needs its VK_KHR_dynamic_rendering dependency too; the feature
+     * is enabled only when both extensions exist and the device reports it. */
+    const uint8_t *maintenance_names[] = {(const uint8_t *)"VK_KHR_dynamic_rendering",
+        (const uint8_t *)"VK_KHR_maintenance5"};
+    bool maintenance_present[2] = {false, false};
+    doe_vk_status maintenance_status = doe_vk_extensions_present(context, true, maintenance_names, 2,
+        maintenance_present, error);
+    if (maintenance_status != DOE_VK_OK) return maintenance_status;
+    if (maintenance_present[0] && maintenance_present[1]) {
+        VkPhysicalDeviceMaintenance5FeaturesKHR maintenance5 = {
+            .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_5_FEATURES_KHR
+        };
+        VkPhysicalDeviceFeatures2 query = {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2, .pNext = &maintenance5};
+        context->vk.vkGetPhysicalDeviceFeatures2(context->physical, &query);
+        if (maintenance5.maintenance5) {
+            selection.maintenance5 = (VkPhysicalDeviceMaintenance5FeaturesKHR){
+                .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_5_FEATURES_KHR, .maintenance5 = 1};
+            selection.maintenance5_enabled = true;
+        }
+    }
     if (options->surface_platforms != 0) {
         const uint8_t *names[] = {(const uint8_t *)"VK_KHR_swapchain", (const uint8_t *)"VK_EXT_swapchain_maintenance1"};
         bool present[2];

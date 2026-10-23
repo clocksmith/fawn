@@ -289,12 +289,18 @@ doe_vk_status doe_vk_context_create(const doe_vk_options *options,
         .queueCount = 1,
         .pQueuePriorities = &priority
     };
-    const uint8_t *device_extensions[3];
+    const uint8_t *device_extensions[5];
     uint32_t extension_count = 0;
     void *feature_chain = NULL;
     if (features.extension != NULL) {
         device_extensions[extension_count++] = features.extension;
         feature_chain = &features.demote;
+    }
+    if (features.maintenance5_enabled) {
+        device_extensions[extension_count++] = (const uint8_t *)"VK_KHR_dynamic_rendering";
+        device_extensions[extension_count++] = (const uint8_t *)"VK_KHR_maintenance5";
+        features.maintenance5.pNext = feature_chain;
+        feature_chain = &features.maintenance5;
     }
     if (features.surface_enabled) {
         device_extensions[extension_count++] = (const uint8_t *)"VK_KHR_swapchain";
@@ -323,6 +329,7 @@ doe_vk_status doe_vk_context_create(const doe_vk_options *options,
     context->caps.surface_platforms = options->surface_platforms;
     context->caps.robust_buffer_access = true;
     context->caps.shader_demote_to_helper_invocation = features.extension != NULL;
+    context->caps.maintenance5 = features.maintenance5_enabled;
     context->caps.full_draw_index_uint32 = features.base.fullDrawIndexUint32 != 0;
     context->caps.image_cube_array = features.base.imageCubeArray != 0;
     context->caps.independent_blend = features.base.independentBlend != 0;

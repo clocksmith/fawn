@@ -53,7 +53,10 @@ bool native_render_fixed(const WGPURenderPipelineDescriptor *source, doe_vk_rend
     case WGPUPrimitiveTopology_TriangleStrip: target->topology = DOE_VK_TRIANGLE_STRIP; break;
     case WGPUPrimitiveTopology_LineList: target->topology = DOE_VK_LINES; break;
     case WGPUPrimitiveTopology_LineStrip: target->topology = DOE_VK_LINE_STRIP; break;
-    default: return false; /* Point-size lowering is not yet admitted. */
+    /* The Vulkan owner admits points only with enabled maintenance5 (default
+     * PointSize 1.0); shaders are never rewritten to supply a size. */
+    case WGPUPrimitiveTopology_PointList: target->topology = DOE_VK_POINTS; break;
+    default: return false;
     }
     switch (source->primitive.cullMode) {
     case WGPUCullMode_Undefined:
