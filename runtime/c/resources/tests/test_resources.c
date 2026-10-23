@@ -174,6 +174,35 @@ static void test_texture_layout(void)
     assert(doe_resource_texture_copy_validate(32, &desc, &copy, DOE_RESOURCE_BUFFER_TO_TEXTURE,
         DOE_RESOURCE_COPY_NATIVE, &region) == DOE_RESOURCE_OK);
     assert(region.required_bytes == 32 && region.pitch == 16 && region.image_rows == 2);
+    /* BC srgb/unorm view formats are compatible (any srgb-only difference). */
+    doe_resource_texture_desc bc = texture_desc();
+    bc.format = WGPUTextureFormat_BC7RGBAUnorm;
+    const WGPUTextureFormat bc_views[2] = {WGPUTextureFormat_BC7RGBAUnormSrgb, WGPUTextureFormat_BC1RGBAUnormSrgb};
+    bc.view_formats = bc_views;
+    bc.view_format_count = 1;
+    assert(doe_resource_texture_validate(&bc, &limits) == DOE_RESOURCE_OK);
+    bc.view_formats = bc_views + 1;
+    assert(doe_resource_texture_validate(&bc, &limits) == DOE_RESOURCE_LAYOUT);
+    /* writeTexture (QUEUE) needs whole blocks; internal NATIVE uploads may end at the edge. */
+    bc = texture_desc();
+    bc.format = WGPUTextureFormat_BC1RGBAUnorm;
+    bc.mip_levels = 3;
+    doe_resource_texture_copy partial = {.mip = 2, .width = 2, .height = 2, .depth_or_layers = 1,
+        .bytes_per_row = UINT32_MAX, .rows_per_image = UINT32_MAX};
+    doe_resource_copy_region bc_region;
+    assert(doe_resource_texture_copy_validate(8, &bc, &partial, DOE_RESOURCE_BUFFER_TO_TEXTURE,
+        DOE_RESOURCE_COPY_QUEUE, &bc_region) == DOE_RESOURCE_LAYOUT);
+    partial.bytes_per_row = partial.rows_per_image = 0;
+    assert(doe_resource_texture_copy_validate(8, &bc, &partial, DOE_RESOURCE_BUFFER_TO_TEXTURE,
+        DOE_RESOURCE_COPY_NATIVE, &bc_region) == DOE_RESOURCE_OK);
+    partial.width = partial.height = 4;
+    partial.bytes_per_row = 7; /* QUEUE has no 256-byte alignment, only >= one block row */
+    assert(doe_resource_texture_copy_validate(8, &bc, &partial, DOE_RESOURCE_BUFFER_TO_TEXTURE,
+        DOE_RESOURCE_COPY_QUEUE, &bc_region) == DOE_RESOURCE_LAYOUT);
+    partial.bytes_per_row = 8;
+    partial.rows_per_image = UINT32_MAX;
+    assert(doe_resource_texture_copy_validate(8, &bc, &partial, DOE_RESOURCE_BUFFER_TO_TEXTURE,
+        DOE_RESOURCE_COPY_QUEUE, &bc_region) == DOE_RESOURCE_OK && bc_region.pitch == 8);
     desc.samples = 4; /* Buffer copies need one sample. */
     assert(doe_resource_texture_copy_validate(32, &desc, &copy, DOE_RESOURCE_BUFFER_TO_TEXTURE,
         DOE_RESOURCE_COPY_NATIVE, &region) == DOE_RESOURCE_RANGE);

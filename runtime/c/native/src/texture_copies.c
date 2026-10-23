@@ -76,7 +76,7 @@ void wgpuQueueWriteTexture(WGPUQueue handle, const WGPUTexelCopyTextureInfo *des
     native_lock(device);
     doe_resource_status status = doe_resource_texture_device(texture) == device ?
         doe_resource_texture_copy_validate(data_size, doe_resource_texture_description(texture), &copy,
-            DOE_RESOURCE_BUFFER_TO_TEXTURE, DOE_RESOURCE_COPY_NATIVE, &region) : DOE_RESOURCE_DEVICE_MISMATCH;
+            DOE_RESOURCE_BUFFER_TO_TEXTURE, DOE_RESOURCE_COPY_QUEUE, &region) : DOE_RESOURCE_DEVICE_MISMATCH;
     native_unlock(device);
     /* Stage only the touched bytes: the layout offset selects where they start
      * in `data`, and the staging copy then begins at offset 0. */
@@ -104,7 +104,7 @@ void wgpuQueueWriteTexture(WGPUQueue handle, const WGPUTexelCopyTextureInfo *des
         status = written == DOE_VK_OK ? doe_resource_encoder_create(&device->resources, &encoder) : DOE_RESOURCE_STATE;
         if (status == DOE_RESOURCE_OK)
             status = doe_resource_encoder_copy_texture(encoder, (doe_resource_buffer *)staging,
-                texture, &copy, DOE_RESOURCE_BUFFER_TO_TEXTURE, DOE_RESOURCE_COPY_NATIVE);
+                texture, &copy, DOE_RESOURCE_BUFFER_TO_TEXTURE, DOE_RESOURCE_COPY_QUEUE);
         if (status == DOE_RESOURCE_OK) status = doe_resource_encoder_finish(encoder, &commands);
     } else status = DOE_RESOURCE_OUT_OF_MEMORY;
     doe_resource_encoder_release(encoder);

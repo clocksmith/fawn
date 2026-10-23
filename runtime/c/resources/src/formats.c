@@ -142,13 +142,30 @@ doe_resource_status resource_format_block(WGPUTextureFormat format, uint32_t *by
     return DOE_RESOURCE_OK;
 }
 
+/* WebGPU view-format compatibility: equal, or differing only in srgb-ness.
+ * https://gpuweb.github.io/gpuweb/#texture-view-format-compatible */
+static WGPUTextureFormat srgb_pair(WGPUTextureFormat format)
+{
+    switch (format) {
+    case WGPUTextureFormat_RGBA8Unorm: return WGPUTextureFormat_RGBA8UnormSrgb;
+    case WGPUTextureFormat_RGBA8UnormSrgb: return WGPUTextureFormat_RGBA8Unorm;
+    case WGPUTextureFormat_BGRA8Unorm: return WGPUTextureFormat_BGRA8UnormSrgb;
+    case WGPUTextureFormat_BGRA8UnormSrgb: return WGPUTextureFormat_BGRA8Unorm;
+    case WGPUTextureFormat_BC1RGBAUnorm: return WGPUTextureFormat_BC1RGBAUnormSrgb;
+    case WGPUTextureFormat_BC1RGBAUnormSrgb: return WGPUTextureFormat_BC1RGBAUnorm;
+    case WGPUTextureFormat_BC2RGBAUnorm: return WGPUTextureFormat_BC2RGBAUnormSrgb;
+    case WGPUTextureFormat_BC2RGBAUnormSrgb: return WGPUTextureFormat_BC2RGBAUnorm;
+    case WGPUTextureFormat_BC3RGBAUnorm: return WGPUTextureFormat_BC3RGBAUnormSrgb;
+    case WGPUTextureFormat_BC3RGBAUnormSrgb: return WGPUTextureFormat_BC3RGBAUnorm;
+    case WGPUTextureFormat_BC7RGBAUnorm: return WGPUTextureFormat_BC7RGBAUnormSrgb;
+    case WGPUTextureFormat_BC7RGBAUnormSrgb: return WGPUTextureFormat_BC7RGBAUnorm;
+    default: return WGPUTextureFormat_Undefined;
+    }
+}
+
 bool resource_format_compatible(WGPUTextureFormat base, WGPUTextureFormat view)
 {
-    if (base == view) return true;
-    return (base == WGPUTextureFormat_RGBA8Unorm && view == WGPUTextureFormat_RGBA8UnormSrgb) ||
-        (view == WGPUTextureFormat_RGBA8Unorm && base == WGPUTextureFormat_RGBA8UnormSrgb) ||
-        (base == WGPUTextureFormat_BGRA8Unorm && view == WGPUTextureFormat_BGRA8UnormSrgb) ||
-        (view == WGPUTextureFormat_BGRA8Unorm && base == WGPUTextureFormat_BGRA8UnormSrgb);
+    return base == view || (view != WGPUTextureFormat_Undefined && srgb_pair(base) == view);
 }
 
 bool resource_format_depth(WGPUTextureFormat format)
