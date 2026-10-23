@@ -90,6 +90,7 @@ int main(void) {
     assert(doe_vk_use_queries(&first, &pool, &use) == DOE_VK_OK);
     use->states[0] = DOE_VK_QUERY_RESET;
     use->states[1] = DOE_VK_QUERY_WRITTEN;
+    use->touched[0] = use->touched[1] = 1; /* As the recorded reset/write would mark them. */
     assert(states[0] == DOE_VK_QUERY_UNRESET && states[1] == DOE_VK_QUERY_UNRESET);
     doe_vk_query_use *other = NULL;
     assert(doe_vk_use_queries(&second, &pool, &other) == DOE_VK_BUSY);
