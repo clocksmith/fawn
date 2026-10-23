@@ -40,47 +40,47 @@ $(NATIVE_LIBRARY): $(OBJECTS) $(COMPILER_LIBRARY) $(NATIVE_EXPORTS) | $(BUILD)
 $(BUILD)/native.exports: EXPORTED_SYMBOLS.txt | $(BUILD)
 	sed 's/^/_/' $< > $@.tmp
 	mv $@.tmp $@
-$(BUILD)/backend-selection: tests/backend_selection.c tests/consumer.h $(NATIVE_LIBRARY)
+$(BUILD)/backend-selection: tests/backend_selection.c tests/consumer.h tests/adapter_class.h $(NATIVE_LIBRARY)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
-$(BUILD)/metal-bridge: tests/metal_bridge.c tests/consumer.h $(OBJECTS) $(COMPILER_LIBRARY) | $(BUILD)
+$(BUILD)/metal-bridge: tests/metal_bridge.c tests/consumer.h tests/adapter_class.h $(OBJECTS) $(COMPILER_LIBRARY) | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) tests/metal_bridge.c ../backends/metal/tests/mock_native.c $(OBJECTS) $(COMPILER_LINK) $(PLATFORM_LIBS) \
 	  -Wl,--wrap=doe_mtl_context_create -Wl,--wrap=doe_mtl_context_device -Wl,--wrap=doe_mtl_commands_create \
 	  -Wl,--wrap=doe_mtl_commands_wait -Wl,--wrap=doe_mtl_buffer_create -o $@
-$(BUILD)/draw-budget: tests/draw_budget.c tests/consumer.h $(NATIVE_LIBRARY)
+$(BUILD)/draw-budget: tests/draw_budget.c tests/consumer.h tests/adapter_class.h $(NATIVE_LIBRARY)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
-$(BUILD)/indirect-render: tests/indirect_render.c tests/consumer.h $(NATIVE_LIBRARY)
+$(BUILD)/indirect-render: tests/indirect_render.c tests/consumer.h tests/adapter_class.h $(NATIVE_LIBRARY)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
-$(BUILD)/indirect-compute: tests/indirect_compute.c tests/consumer.h $(OBJECTS) $(COMPILER_LIBRARY) | $(BUILD)
+$(BUILD)/indirect-compute: tests/indirect_compute.c tests/consumer.h tests/adapter_class.h $(OBJECTS) $(COMPILER_LIBRARY) | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) tests/indirect_compute.c $(OBJECTS) $(COMPILER_LINK) $(PLATFORM_LIBS) -Wl,--wrap=doe_vk_dispatch_validator_create -o $@
-$(BUILD)/compute: tests/compute.c $(NATIVE_LIBRARY)
+$(BUILD)/compute: tests/compute.c tests/adapter_class.h $(NATIVE_LIBRARY)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
-$(BUILD)/atomics: tests/atomics.c tests/consumer.h $(NATIVE_LIBRARY)
+$(BUILD)/atomics: tests/atomics.c tests/consumer.h tests/adapter_class.h $(NATIVE_LIBRARY)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
-$(BUILD)/debug: tests/debug.c tests/consumer.h $(NATIVE_LIBRARY)
+$(BUILD)/debug: tests/debug.c tests/consumer.h tests/adapter_class.h $(NATIVE_LIBRARY)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
-$(BUILD)/msaa: tests/msaa.c tests/consumer.h $(NATIVE_LIBRARY)
+$(BUILD)/msaa: tests/msaa.c tests/consumer.h tests/adapter_class.h $(NATIVE_LIBRARY)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
-$(BUILD)/depth: tests/depth.c tests/consumer.h $(NATIVE_LIBRARY)
+$(BUILD)/depth: tests/depth.c tests/consumer.h tests/adapter_class.h $(NATIVE_LIBRARY)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
-$(BUILD)/demote: tests/demote.c tests/consumer.h $(OBJECTS) $(COMPILER_LIBRARY) | $(BUILD)
+$(BUILD)/demote: tests/demote.c tests/consumer.h tests/adapter_class.h $(OBJECTS) $(COMPILER_LIBRARY) | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) tests/demote.c $(OBJECTS) $(COMPILER_LINK) $(PLATFORM_LIBS) -Wl,--wrap=doe_vk_context_create -o $@
-$(BUILD)/graphics-admission: tests/graphics_admission.c tests/consumer.h $(NATIVE_LIBRARY)
+$(BUILD)/graphics-admission: tests/graphics_admission.c tests/consumer.h tests/adapter_class.h $(NATIVE_LIBRARY)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
-$(BUILD)/graphics: tests/graphics.c tests/consumer.h $(NATIVE_LIBRARY)
+$(BUILD)/graphics: tests/graphics.c tests/consumer.h tests/adapter_class.h $(NATIVE_LIBRARY)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
-$(BUILD)/textures: tests/textures.c tests/consumer.h $(NATIVE_LIBRARY)
+$(BUILD)/textures: tests/textures.c tests/consumer.h tests/adapter_class.h $(NATIVE_LIBRARY)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
-$(BUILD)/admission: tests/admission.c tests/consumer.h $(NATIVE_LIBRARY)
+$(BUILD)/admission: tests/admission.c tests/consumer.h tests/adapter_class.h $(NATIVE_LIBRARY)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
-$(BUILD)/failures: tests/failures.c tests/consumer.h $(OBJECTS) $(COMPILER_LIBRARY) | $(BUILD)
+$(BUILD)/failures: tests/failures.c tests/consumer.h tests/adapter_class.h $(OBJECTS) $(COMPILER_LIBRARY) | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) tests/failures.c $(OBJECTS) $(COMPILER_LINK) $(PLATFORM_LIBS) -Wl,--wrap=doe_vk_buffer_create -Wl,--wrap=doe_vk_pipeline_create -Wl,--wrap=doe_vk_render_pipeline_create -Wl,--wrap=doe_vk_timestamp_normalizer_create -o $@
-$(BUILD)/timestamps: tests/timestamps.c tests/consumer.h $(OBJECTS) $(COMPILER_LIBRARY) | $(BUILD)
+$(BUILD)/timestamps: tests/timestamps.c tests/consumer.h tests/adapter_class.h $(OBJECTS) $(COMPILER_LIBRARY) | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) tests/timestamps.c $(OBJECTS) $(COMPILER_LINK) $(PLATFORM_LIBS) -o $@
-$(BUILD)/recovery: tests/recovery.c tests/consumer.h $(OBJECTS) $(COMPILER_LIBRARY) | $(BUILD)
+$(BUILD)/recovery: tests/recovery.c tests/consumer.h tests/adapter_class.h $(OBJECTS) $(COMPILER_LIBRARY) | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) tests/recovery.c $(OBJECTS) $(COMPILER_LINK) $(PLATFORM_LIBS) -Wl,--wrap=doe_vk_commands_submit -Wl,--wrap=doe_vk_commands_recover -Wl,--wrap=doe_vk_commands_release -o $@
-$(BUILD)/empty-shader: tests/empty_shader.c tests/consumer.h $(NATIVE_LIBRARY)
+$(BUILD)/empty-shader: tests/empty_shader.c tests/consumer.h tests/adapter_class.h $(NATIVE_LIBRARY)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
-$(BUILD)/lifecycle: tests/lifecycle.c $(OBJECTS) $(COMPILER_LIBRARY) | $(BUILD)
+$(BUILD)/lifecycle: tests/lifecycle.c tests/adapter_class.h $(OBJECTS) $(COMPILER_LIBRARY) | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) tests/lifecycle.c $(OBJECTS) $(COMPILER_LINK) $(PLATFORM_LIBS) -o $@
 $(BUILD)/procedures-cxx: tests/procedures.cpp $(NATIVE_LIBRARY)
 	$(CXX) $(CPPFLAGS) -std=c++17 -Wall -Wextra -Wpedantic -Werror $(SANITIZE) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
@@ -106,6 +106,17 @@ check: $(BUILD)/draw-budget $(BUILD)/indirect-render $(BUILD)/indirect-compute c
 	$(BUILD)/timestamps
 	$(BUILD)/recovery
 	python3 tests/audit-exports.py $(NATIVE_LIBRARY) $(if $(SANITIZE),,--runtime)
+# The same public clients on a nonfallback GPU adapter (DOE_C_TEST_ADAPTER=physical).
+# Developer evidence on the printed adapter/driver only, not qualification. Uses the
+# system ICDs: unset VK_ICD_FILENAMES. Never run on a host under a physical hold.
+PHYSICAL_CLIENTS = draw-budget indirect-render indirect-compute atomics debug msaa depth \
+	demote graphics-admission empty-shader graphics compute lifecycle textures admission \
+	failures timestamps recovery
+.PHONY: check-physical
+check-physical: $(addprefix $(BUILD)/,$(PHYSICAL_CLIENTS))
+	@set -e; for client in $(PHYSICAL_CLIENTS); do \
+		env -u VK_ICD_FILENAMES DOE_C_TEST_ADAPTER=physical $(BUILD)/$$client; \
+	done
 else
 check:
 	@echo "The SwiftShader/fault-injection suite requires Linux; use check-portable for host ABI checks." >&2

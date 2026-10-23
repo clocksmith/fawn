@@ -182,12 +182,10 @@ int main(void)
     state s = {0};
     s.instance = wgpuCreateInstance(NULL);
     WGPURequestAdapterOptions options = WGPU_REQUEST_ADAPTER_OPTIONS_INIT;
-    options.forceFallbackAdapter = WGPU_TRUE;
+    adapter_class_options(&options);
     WGPURequestAdapterCallbackInfo adapter = {.mode=WGPUCallbackMode_AllowSpontaneous,.callback=adapter_reply,.userdata1=&s};
     assert(wgpuInstanceRequestAdapter(s.instance,&options,adapter).id && s.adapter);
-    WGPUAdapterInfo info = WGPU_ADAPTER_INFO_INIT;
-    assert(wgpuAdapterGetInfo(s.adapter,&info) == WGPUStatus_Success && info.adapterType == WGPUAdapterType_CPU);
-    wgpuAdapterInfoFreeMembers(info);
+    adapter_class_require(s.adapter);
     WGPUDeviceDescriptor descriptor = WGPU_DEVICE_DESCRIPTOR_INIT;
     descriptor.uncapturedErrorCallbackInfo = (WGPUUncapturedErrorCallbackInfo){.callback=error_reply,.userdata1=&s};
     WGPURequestDeviceCallbackInfo requested = {.mode=WGPUCallbackMode_AllowSpontaneous,.callback=device_reply,.userdata1=&s};
@@ -200,5 +198,5 @@ int main(void)
     wgpuDeviceRelease(s.device);
     wgpuAdapterRelease(s.adapter);
     wgpuInstanceRelease(s.instance);
-    puts("PASS public C graphics: genuine WGSL stage IO, sparse shared uniform, empty vertex slot, default fetched components, dynamic blend/scissor/culling, bundle replay, one native pass, integer clears, empty LOAD, real occlusion and early releases (CPU Vulkan only)");
+    printf("PASS public C graphics: genuine WGSL stage IO, sparse shared uniform, empty vertex slot, default fetched components, dynamic blend/scissor/culling, bundle replay, one native pass, integer clears, empty LOAD, real occlusion and early releases %s\n", adapter_class_scope());
 }

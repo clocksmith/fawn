@@ -128,6 +128,6 @@ int main(void)
     commands(&s); compute(&s); render_and_bundles(&s);
     assert(s.validation_errors == 14);
     consumer_finish(&s);
-    puts("PASS public debug markers: typed procedures, independent nested balance, parent lock, underflow, malformed strings and finished/unbalanced command/pass/bundle rejection (CPU Vulkan only)");
+    printf("PASS public debug markers: typed procedures, independent nested balance, parent lock, underflow, malformed strings and finished/unbalanced command/pass/bundle rejection %s\n", adapter_class_scope());
     return 0;
 }

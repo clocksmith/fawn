@@ -173,5 +173,5 @@ int main(void)
     wgpuBufferUnmap(readback);
     wgpuBufferRelease(readback);
     consumer_finish(&s);
-    puts("PASS public indirect draw/bundle: GPU-produced arguments, actual 64 pixels and 12 query results, guarded first/count/instance ranges, disabled firstInstance, distinct draw scratch, stride0 instances, negative/outside/zero viewports, unchanged arguments and early releases (CPU Vulkan only)");
+    printf("PASS public indirect draw/bundle: GPU-produced arguments, actual 64 pixels and 12 query results, guarded first/count/instance ranges, disabled firstInstance, distinct draw scratch, stride0 instances, negative/outside/zero viewports, unchanged arguments and early releases %s\n", adapter_class_scope());
 }

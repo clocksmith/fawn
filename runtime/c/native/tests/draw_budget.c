@@ -126,5 +126,5 @@ int main(void)
     wgpuBufferUnmap(readback);
     wgpuBufferRelease(readback);
     consumer_finish(&s);
-    puts("PASS public maxDrawCount chain: explicit zero, omitted default, direct/indirect no-op counting, aggregate bundles, empty bundle, unknown/duplicate chain invalidation and real zero-budget clear (CPU Vulkan only)");
+    printf("PASS public maxDrawCount chain: explicit zero, omitted default, direct/indirect no-op counting, aggregate bundles, empty bundle, unknown/duplicate chain invalidation and real zero-budget clear %s\n", adapter_class_scope());
 }

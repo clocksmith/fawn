@@ -189,6 +189,6 @@ int main(void)
     assert(s.validation_errors == 3);
     wgpuShaderModuleRelease(module);
     consumer_finish(&s);
-    puts("PASS public MSAA: actual 4x color/depth, exact resolve pixels, mask0/zero-and-full alpha coverage, empty resolve, same-batch discard-zero and depth-only empty/query/bundle passes (CPU Vulkan only)");
+    printf("PASS public MSAA: actual 4x color/depth, exact resolve pixels, mask0/zero-and-full alpha coverage, empty resolve, same-batch discard-zero and depth-only empty/query/bundle passes %s\n", adapter_class_scope());
     return 0;
 }

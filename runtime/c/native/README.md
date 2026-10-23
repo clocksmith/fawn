@@ -185,8 +185,9 @@ make -C runtime/c/native BUILD=/tmp/doe-c-native check \
   VK_ICD_FILENAMES=/usr/lib/chromium/vk_swiftshader_icd.json
 ```
 
-The checked-in test requires a fallback CPU adapter and verifies the returned
-adapter type is CPU. Its ordinary result is:
+`check` requires a fallback CPU adapter and verifies the returned adapter type
+is CPU; see the physical developer runs section for the GPU variant. Its ordinary
+result is:
 
 ```
 PASS public ABI9 atomics: storage accumulation, signed OOB suppression, compare-exchange result identity, fresh workgroup initialization across two groups and two dispatches, early releases (CPU Vulkan only)
@@ -275,14 +276,26 @@ unfinished parallel ABI6 enum edits; checkpoint testing instead materialized the
 committed ABI5 compiler 54f0fb9f6f7202cb13d37e7440ea9d7e13e99b0f with the recorded
 runtime snapshot. That development drift is not a published checkpoint result.
 
-## Physical hold
+## Physical developer runs and holds
 
 Do not run this on Miles or Suby while their possible disassembly/cooling hold
-remains. No physical execution was attempted. After explicit clearance, an
-independent hardware consumer must request a nonfallback adapter, verify actual
-adapter/driver and ICD identity, and capture its own source-bound results. Do not
-relabel the software-only fixture as hardware qualification or infer parity from
-these developer checks.
+remains. Every adapter-using client selects its adapter through
+`tests/adapter_class.h`: software (CPU fallback adapter) by default, or a
+nonfallback GPU adapter with `DOE_C_TEST_ADAPTER=physical`. Each PASS line names
+the class and device it ran on. `make check-physical` runs the same 18 clients on
+the system ICDs (`VK_ICD_FILENAMES` unset):
+
+```
+make -C runtime/c/native BUILD=/tmp/doe-c-native check-physical
+```
+
+On 2026-10-23 all 18 passed on Jupiter: AMD Radeon 8060S Graphics (RADV
+STRIX_HALO, vendor 0x1002 device 0x1586), Mesa 26.0.3-1ubuntu1 RADV, Vulkan 1.4.335,
+Linux 7.0.0-38. That is developer evidence for these exact clients on that
+adapter/driver: the oracles are the clients' own expected values, not frozen
+independent workloads, and it is not Vulkan backend qualification, a performance
+result, or evidence for any other adapter, Metal or D3D12. Qualification still
+needs an independent hardware consumer with source-bound receipts.
 
 The depth receipt binds an isolated ABI8 compiler/shader composition with exact
 resource-view and Vulkan-initialization/cull overlays. Later shared ABI9/atomic,

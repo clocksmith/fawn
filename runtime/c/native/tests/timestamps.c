@@ -145,12 +145,10 @@ int main(void)
     state s = {0};
     s.instance = wgpuCreateInstance(NULL);
     WGPURequestAdapterOptions options = WGPU_REQUEST_ADAPTER_OPTIONS_INIT;
-    options.forceFallbackAdapter = WGPU_TRUE;
+    adapter_class_options(&options);
     WGPURequestAdapterCallbackInfo adapter = {.mode=WGPUCallbackMode_AllowSpontaneous,.callback=adapter_reply,.userdata1=&s};
     assert(wgpuInstanceRequestAdapter(s.instance,&options,adapter).id && s.adapter);
-    WGPUAdapterInfo info = WGPU_ADAPTER_INFO_INIT;
-    assert(wgpuAdapterGetInfo(s.adapter,&info) == WGPUStatus_Success && info.adapterType == WGPUAdapterType_CPU);
-    wgpuAdapterInfoFreeMembers(info);
+    adapter_class_require(s.adapter);
     assert(wgpuAdapterHasFeature(s.adapter,WGPUFeatureName_TimestampQuery));
     WGPUSupportedFeatures features = {0};
     wgpuAdapterGetFeatures(s.adapter,&features);
@@ -184,5 +182,5 @@ int main(void)
     wgpuDeviceRelease(s.device);
     wgpuAdapterRelease(s.adapter);
     wgpuInstanceRelease(s.instance);
-    puts("PASS public timestamps: requested feature, zero/max/range/destroy admission, real pass/command writes, exact GPU nanoseconds, same-batch copy, scratch reuse and early query release (CPU Vulkan only)");
+    printf("PASS public timestamps: requested feature, zero/max/range/destroy admission, real pass/command writes, exact GPU nanoseconds, same-batch copy, scratch reuse and early query release %s\n", adapter_class_scope());
 }
