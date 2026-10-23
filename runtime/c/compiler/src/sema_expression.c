@@ -82,7 +82,7 @@ static bool identity_value(Source *s,NameSpan name,const LocalScope *scope,Value
             out->value=(IrValue){c->functions[c->current_function].value_base,IR_U32,name.offset}; return true;
         case IDENTITY_INPUT: {
             TypeId type=IR_U32;
-            if (c->entry_inputs[identity.index].kind!=INPUT_LOCAL_INDEX && !type_intern(s,TYPE_VECTOR,IR_U32,3u,&type)) return false;
+            if (!input_scalar(c->entry_inputs[identity.index].kind) && !type_intern(s,TYPE_VECTOR,IR_U32,3u,&type)) return false;
             out->runtime=true; out->constant.type=type;
             return sema_emit(s,emit,(IrInstruction){.opcode=IR_INPUT,.type=type,.source_offset=name.offset,
                 .operands.scalar={.binding=identity.index,.literal=type==IR_U32?0u:NO_ID}},&out->value);
@@ -208,7 +208,7 @@ static bool postfix_value(Source *s, const Expression *node, const LocalScope *s
  * general typed input owner, without materializing an unused vector. */
     if (node->kind == EXPRESSION_MEMBER && node->left == NO_ID && node->value.member.member.length == 1u && sema_find_local(s, scope, node->value.member.object) == NULL && sema_find_formal(s, node->value.member.object) == NO_ID) {
         const uint32_t p = sema_find_parameter(s, node->value.member.object);
-        if (p != NO_ID && c->entry_inputs[p].kind != INPUT_LOCAL_INDEX) {
+        if (p != NO_ID && !input_scalar(c->entry_inputs[p].kind)) {
             uint32_t mask;
             if (!source_reference_record(s,slot,SOURCE_INPUT,p,node->source_offset)) return false;
             if (!swizzle(s, node->value.member.member, 3u, &mask)) return false;

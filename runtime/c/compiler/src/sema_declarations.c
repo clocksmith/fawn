@@ -524,13 +524,13 @@ bool sema_resolve_declarations(Source *s, LocalScope *scope) {
             for (uint32_t j = 0u;j<count;++j) {
                 if (category == 3u && c->types[j].kind != TYPE_STRUCT) continue;
                 const NameSpan name = category == 0u?c->constant_decls[j].name:category == 1u?c->functions[j].name:category == 2u?c->resources[j].name:category == 3u?c->types[j].name:c->workgroups[j].name;
-                const bool scalar = p->kind == INPUT_LOCAL_INDEX || p->flags == 0u;
-                const bool vector = p->kind != INPUT_LOCAL_INDEX;
+                const bool scalar = input_scalar(p->kind) || p->flags == 0u;
+                const bool vector = !input_scalar(p->kind);
                 if ((scalar && source_span_is(s, name, "u32")) || (vector && source_span_is(s, name, p->flags != 0u?"vec3u":"vec3")))
                     return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, p->name.offset, "compute input type is shadowed");
             }
         }
-        if (p->kind != INPUT_LOCAL_INDEX) {
+        if (!input_scalar(p->kind)) {
             TypeId ignored;
             if (!type_intern(s, TYPE_VECTOR, IR_U32, 3u, &ignored)) return false;
         }

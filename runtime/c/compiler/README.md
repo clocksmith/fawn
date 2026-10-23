@@ -119,8 +119,14 @@ The admitted overload families now include min/max/clamp/exp/tanh/sqrt and
 dot/length/distance/normalize/cross. Constant and runtime stages remain distinct;
 [AbstractInt dot interpretation](contracts/m12_numeric_interpretation.md) is explicit.
 
+The subsequent [experimental subgroup extension](SUBGROUPS.md) adds eleven typed
+arithmetic/bitwise reduction and scan builtins, four subgroup inputs and separate
+subgroup/workgroup uniformity analysis. Its actual SPIR-V words and ABI5 metadata
+have focused developer checks; collective execution and device feature admission
+remain pending. `make test-subgroups` runs these checks.
+
 Other barriers, atomics, matrices, pointers, aliases,
-overrides, f16/subgroups, graphics, textures, wider builtins,
+overrides, f16, remaining subgroup operations, graphics, textures, wider builtins,
 other targets and runtime metadata/adoption remain open owners, not implied coverage.
 
 ## CLI and actual consumer

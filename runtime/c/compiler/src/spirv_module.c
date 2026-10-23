@@ -322,7 +322,10 @@ bool spirv_plan_module(Emitter *e) {
             if (function->state.target.signature == 0u) function->state.target.signature = spirv_reserve_ids(e, 1u);
         }
     }
-    for (uint32_t i=0u;i<c->entry_input_count;++i) c->entry_inputs[i].target=spirv_reserve_ids(e,1u);
+    for (uint32_t i=0u;i<c->entry_input_count;++i) {
+        c->entry_inputs[i].target=spirv_reserve_ids(e,1u);
+        if (input_subgroup(c->entry_inputs[i].kind)) e->subgroup_capabilities |= 2u;
+    }
     for (uint32_t j=0u;j<c->entry_count;++j) {
         EntryRecord *entry=&c->entries[j];
         if (entry->state.resolved.workgroup_count==0u) continue;
@@ -377,6 +380,10 @@ bool spirv_plan_module(Emitter *e) {
         } else if (ir->opcode == IR_BUILTIN) {
             const NumericBuiltin *builtin = builtin_kind((NumericBuiltinKind)ir->operands.scalar.literal);
             if (builtin == NULL) return spirv_emit_error(e, ir->source_offset, "invalid numeric builtin identity");
+            if (builtin_subgroup(builtin)) {
+                e->subgroup_capabilities |= 1u;
+                (void)use_constant(e, ID_THREE_U32);
+            }
             if (builtin->extended_instruction != 0u && e->math_import == 0u)
                 e->math_import = spirv_reserve_ids(e, 1u);
         } else if (ir->opcode == IR_ACCESS_LOAD || ir->opcode == IR_ACCESS_STORE || ir->opcode == IR_VALUE_ACCESS) {
@@ -397,6 +404,10 @@ static uint32_t builtin_decoration(InputKind kind) {
         case INPUT_LOCAL_INVOCATION: return 27u;
         case INPUT_GLOBAL_INVOCATION: return 28u;
         case INPUT_LOCAL_INDEX: return 29u;
+        case INPUT_SUBGROUP_SIZE: return 36u;
+        case INPUT_SUBGROUP_INVOCATION: return 41u;
+        case INPUT_NUM_SUBGROUPS: return 38u;
+        case INPUT_SUBGROUP_ID: return 40u;
     }
     return 0u;
 }
@@ -525,6 +536,10 @@ static bool dynamic_declarations(Emitter *e) {
 bool spirv_module_declarations(Emitter *e) {
     CompilerWorkspace *c = e->program;
     EMIT(OP_CAPABILITY, 1u);
+    if (e->subgroup_capabilities != 0u) {
+        EMIT(OP_CAPABILITY, 61u); /* GroupNonUniform, SPIR-V 1.3. */
+        if ((e->subgroup_capabilities & 1u) != 0u) { EMIT(OP_CAPABILITY, 63u); }
+    }
     if (e->math_import != 0u) {
         const uint32_t imported[] = { e->math_import, UINT32_C(0x4c534c47), UINT32_C(0x6474732e), UINT32_C(0x3035342e), 0u };
         if (!spirv_instruction(e, OP_EXT_INST_IMPORT, imported, 5u)) return false;
@@ -583,7 +598,7 @@ bool spirv_module_declarations(Emitter *e) {
         EMIT(OP_VARIABLE, spirv_pointer_type(e, root->type, 4u), root->target, 4u);
     }
     for (uint32_t i=0u;i<c->entry_input_count;++i)
-        EMIT(OP_VARIABLE,c->entry_inputs[i].kind==INPUT_LOCAL_INDEX?ID_PTR_INPUT_U32:ID_PTR_INPUT,c->entry_inputs[i].target,1u);
+        EMIT(OP_VARIABLE,input_scalar(c->entry_inputs[i].kind)?ID_PTR_INPUT_U32:ID_PTR_INPUT,c->entry_inputs[i].target,1u);
     for (uint32_t i=0u;i<c->entry_count;++i)
         if (spirv_hidden_initialization_input(c,&c->entries[i])) {
             EMIT(OP_VARIABLE,ID_PTR_INPUT_U32,c->entries[i].state.resolved.local_index_target,1u);

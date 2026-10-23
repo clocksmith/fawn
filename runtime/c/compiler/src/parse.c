@@ -665,12 +665,19 @@ static bool entry_parameter(Parser *p, EntryInput *parameter) {
     else if (spelled(p, builtin, "workgroup_id")) parameter->kind = INPUT_WORKGROUP;
     else if (spelled(p, builtin, "num_workgroups")) parameter->kind = INPUT_NUM_WORKGROUPS;
     else if (spelled(p, builtin, "local_invocation_index")) parameter->kind = INPUT_LOCAL_INDEX;
+    else if (spelled(p, builtin, "subgroup_size")) parameter->kind = INPUT_SUBGROUP_SIZE;
+    else if (spelled(p, builtin, "subgroup_invocation_id")) parameter->kind = INPUT_SUBGROUP_INVOCATION;
+    else if (spelled(p, builtin, "num_subgroups")) parameter->kind = INPUT_NUM_SUBGROUPS;
+    else if (spelled(p, builtin, "subgroup_id")) parameter->kind = INPUT_SUBGROUP_ID;
     else return source_error(p->source, DOE_COMPILER_UNSUPPORTED, builtin->offset,
                              "unsupported compute input builtin");
+    if (input_subgroup(parameter->kind) && (p->tokens->module_flags & MODULE_SUBGROUPS) == 0u)
+        return source_error(p->source, DOE_COMPILER_SEMANTIC_ERROR, builtin->offset,
+                            "subgroup inputs require enable subgroups");
     ++p->cursor;
     if (!punctuation(p, ')', ")") || !name_span(p, &parameter->name) ||
         !punctuation(p, ':', ":")) return false;
-    if (parameter->kind == INPUT_LOCAL_INDEX) return word(p, "u32");
+    if (input_scalar(parameter->kind)) return word(p, "u32");
     if (spelled(p, peek(p), "vec3u")) {
         parameter->flags = 1u;
         ++p->cursor;
@@ -799,11 +806,35 @@ static bool function_declaration(Parser *p, Syntax *s) {
     if (entry) ++s->entry_count;
     return true;
 }
+/* Directives precede declarations and never consume a source declaration pool. */
+static bool module_directive(Parser *p, bool enable) {
+    ++p->cursor;
+    do {
+        const Token *extension = peek(p);
+        if (extension->kind != TOKEN_WORD) return reject(p, "extension name");
+        if (enable && spelled(p, extension, "subgroups"))
+            p->tokens->module_flags |= MODULE_SUBGROUPS;
+        else if (!enable && spelled(p, extension, "subgroup_uniformity")) {
+            /* This implementation analyzes both workgroup and subgroup scopes. */
+        } else return source_error(p->source, DOE_COMPILER_UNSUPPORTED, extension->offset,
+                                    "unsupported enable or language extension");
+        ++p->cursor;
+        if (peek(p)->kind != ',') break;
+        ++p->cursor;
+    } while (peek(p)->kind != ';');
+    return punctuation(p, ';', ";");
+}
 bool parse_tokens(Source *source,CompilerWorkspace *s) {
     Parser p={.source=source,.tokens=s,.exempt_comparison=NO_ID,.exempt_literal=NO_ID};
     bool first=true;
     while (peek(&p)->kind!=TOKEN_END) {
         if (peek(&p)->kind==';') {++p.cursor;continue;}
+        if (spelled(&p, peek(&p), "enable") || spelled(&p, peek(&p), "requires")) {
+            if (!first) return source_error(source, DOE_COMPILER_PARSE_ERROR, peek(&p)->offset,
+                                           "directives must precede declarations");
+            if (!module_directive(&p, spelled(&p, peek(&p), "enable"))) return false;
+            continue;
+        }
         if (spelled(&p,peek(&p),"const")) {if (!module_constant(&p,s,first)) return false;}
         else if (spelled(&p,peek(&p),"struct")) {if (!struct_declaration(&p,s)) return false;}
         else if (spelled(&p,peek(&p),"var")) {if (!workgroup_declaration(&p,s)) return false;}

@@ -13,7 +13,18 @@ static const NumericBuiltin numeric_builtins[] = {
     {"length", BUILTIN_LENGTH, 1u, BUILTIN_FLOAT_REDUCTION, 66u},
     {"distance", BUILTIN_DISTANCE, 2u, BUILTIN_FLOAT_REDUCTION, 67u},
     {"normalize", BUILTIN_NORMALIZE, 1u, BUILTIN_FLOAT_VECTOR, 69u},
-    {"cross", BUILTIN_CROSS, 2u, BUILTIN_FLOAT_CROSS, 68u}
+    {"cross", BUILTIN_CROSS, 2u, BUILTIN_FLOAT_CROSS, 68u},
+    {"subgroupAdd", BUILTIN_SUBGROUP_ADD, 1u, BUILTIN_SUBGROUP_NUMERIC, 0u},
+    {"subgroupMin", BUILTIN_SUBGROUP_MIN, 1u, BUILTIN_SUBGROUP_NUMERIC, 0u},
+    {"subgroupMax", BUILTIN_SUBGROUP_MAX, 1u, BUILTIN_SUBGROUP_NUMERIC, 0u},
+    {"subgroupMul", BUILTIN_SUBGROUP_MUL, 1u, BUILTIN_SUBGROUP_NUMERIC, 0u},
+    {"subgroupAnd", BUILTIN_SUBGROUP_AND, 1u, BUILTIN_SUBGROUP_INTEGER, 0u},
+    {"subgroupOr", BUILTIN_SUBGROUP_OR, 1u, BUILTIN_SUBGROUP_INTEGER, 0u},
+    {"subgroupXor", BUILTIN_SUBGROUP_XOR, 1u, BUILTIN_SUBGROUP_INTEGER, 0u},
+    {"subgroupExclusiveAdd", BUILTIN_SUBGROUP_EXCLUSIVE_ADD, 1u, BUILTIN_SUBGROUP_NUMERIC, 0u},
+    {"subgroupInclusiveAdd", BUILTIN_SUBGROUP_INCLUSIVE_ADD, 1u, BUILTIN_SUBGROUP_NUMERIC, 0u},
+    {"subgroupExclusiveMul", BUILTIN_SUBGROUP_EXCLUSIVE_MUL, 1u, BUILTIN_SUBGROUP_NUMERIC, 0u},
+    {"subgroupInclusiveMul", BUILTIN_SUBGROUP_INCLUSIVE_MUL, 1u, BUILTIN_SUBGROUP_NUMERIC, 0u}
 };
 
 const NumericBuiltin *builtin_named(const Source *source, NameSpan name) {
@@ -29,7 +40,19 @@ const NumericBuiltin *builtin_kind(NumericBuiltinKind kind) {
 }
 
 bool builtin_floating(const NumericBuiltin *builtin) {
-    return builtin->family != BUILTIN_COMPONENT_NUMERIC && builtin->family != BUILTIN_NUMERIC_REDUCTION;
+    return builtin->family == BUILTIN_COMPONENT_FLOAT || builtin->family == BUILTIN_FLOAT_REDUCTION ||
+        builtin->family == BUILTIN_FLOAT_VECTOR || builtin->family == BUILTIN_FLOAT_CROSS;
+}
+
+bool builtin_subgroup(const NumericBuiltin *builtin) {
+    return builtin != NULL && (builtin->family == BUILTIN_SUBGROUP_NUMERIC ||
+        builtin->family == BUILTIN_SUBGROUP_INTEGER);
+}
+
+bool builtin_subgroup_uniform(const NumericBuiltin *builtin) {
+    return builtin_subgroup(builtin) && builtin->kind != BUILTIN_SUBGROUP_EXCLUSIVE_ADD &&
+        builtin->kind != BUILTIN_SUBGROUP_INCLUSIVE_ADD && builtin->kind != BUILTIN_SUBGROUP_EXCLUSIVE_MUL &&
+        builtin->kind != BUILTIN_SUBGROUP_INCLUSIVE_MUL;
 }
 
 bool builtin_scalar_result(const NumericBuiltin *builtin) {

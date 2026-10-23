@@ -3,6 +3,13 @@
 #include "internal.h"
 #include <string.h>
 
+bool input_subgroup(InputKind kind) {
+    return kind == INPUT_SUBGROUP_SIZE || kind == INPUT_SUBGROUP_INVOCATION ||
+        kind == INPUT_NUM_SUBGROUPS || kind == INPUT_SUBGROUP_ID;
+}
+bool input_scalar(InputKind kind) {
+    return kind == INPUT_LOCAL_INDEX || input_subgroup(kind);
+}
 bool source_reference_record(Source *s, SourceReference *slot, SourceReferenceKind kind,
                              uint32_t index, uint32_t offset) {
     if (slot->index!=NO_ID && (slot->kind!=kind || slot->index!=index))
@@ -72,7 +79,7 @@ static bool closure_reference(Source *s, EntryRecord *entry, SourceReference ref
                     "entry interface contains a sibling input identity");
             entry->source_input_mask|=1u<<c->entry_inputs[ref.index].kind;
             break;
-        case SOURCE_NONE: case SOURCE_FUNCTION: case SOURCE_BARRIER: break;
+        case SOURCE_NONE: case SOURCE_FUNCTION: case SOURCE_BARRIER: case SOURCE_SUBGROUP: break;
     }
     return true;
 }
