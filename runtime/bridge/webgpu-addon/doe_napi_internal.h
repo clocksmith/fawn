@@ -969,6 +969,10 @@ const char* doe_binding_access_name(uint32_t access);
 /* Compilation message helpers (doe_napi_shader.c) */
 void ensure_compilation_message_fields(napi_env env, napi_value msg);
 napi_value shader_compilation_messages(napi_env env, void* shader_module);
+/* Standard device-event delivery (doe_napi_device_events.c). */
+void device_events_install(void);
+void* device_events_describe(WGPUDeviceDescriptor* descriptor);
+void device_events_attach(void* slot, void* device);
 
 /* Device label stubs */
 napi_value doe_device_get_label(napi_env env, napi_callback_info info);

@@ -344,9 +344,11 @@ WGPUDevice native_direct_request_device_sync(napi_env env, WGPUInstance inst, WG
         .userdata2 = NULL,
     };
 
+    WGPUDeviceDescriptor descriptor = {0};
+    void* events = device_events_describe(&descriptor);
     WGPUFuture future = pfn_doeNativeAdapterRequestDevice
-        ? pfn_doeNativeAdapterRequestDevice(adapter, NULL, cb_info)
-        : pfn_wgpuAdapterRequestDevice(adapter, NULL, cb_info);
+        ? pfn_doeNativeAdapterRequestDevice(adapter, events ? &descriptor : NULL, cb_info)
+        : pfn_wgpuAdapterRequestDevice(adapter, events ? &descriptor : NULL, cb_info);
     if (future.id == 0) NAPI_THROW(env, "requestDevice future unavailable");
     if (!process_events_until(inst, &result.done, current_timeout_ns(env))) {
         throw_status_error(env, "DOE_REQUEST_DEVICE_TIMEOUT", "requestDevice timed out", result.status, result.message);
@@ -356,6 +358,7 @@ WGPUDevice native_direct_request_device_sync(napi_env env, WGPUInstance inst, WG
         throw_status_error(env, "DOE_REQUEST_DEVICE_ERROR", "requestDevice failed", result.status, result.message);
         return NULL;
     }
+    device_events_attach(events, result.device);
     return result.device;
 }
 
