@@ -866,5 +866,6 @@ bool parse_tokens(Source *source,CompilerWorkspace *s) {
         } else if (!function_declaration(&p,s)) return false;
         first=false;
     }
-    return s->entry_count!=0u || parser_reject(&p,"one shader entry point");
+    return (s->limits.flags & LIMIT_MODULE) != 0u || s->entry_count != 0u ||
+        parser_reject(&p, "one shader entry point");
 }

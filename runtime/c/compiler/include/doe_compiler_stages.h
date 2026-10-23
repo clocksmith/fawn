@@ -73,6 +73,9 @@ typedef struct {
  * records describe graphics entries only; compute inputs retain ABI5 masks.
  * Position components preserve source semantics. WebGPU-to-native Vulkan Y
  * mapping is an explicit viewport/raster consumer obligation, not a hidden flip.
+ * A validated entryless module with NONE selection publishes zero words and
+ * zero entries, while preserving declared type/resource metadata. It is not a
+ * Vulkan shader binary. AUTO/NAME still require a matching shader entry.
  * ABI1..6 do not provide the explicit graphics interface pools.
  * Same exact descriptor-size, span alignment, checked capacity, errno/FP and
  * failure-atomic publication rules as ABI6. Selected zero-capacity spans are valid

@@ -60,7 +60,7 @@ class Matrices(unittest.TestCase):
                        ('determinant(M)', -2.0), ('(M*M)[0][0]', 7.0),
                        ('(M*vec2(2,3))[1]', 16.0), ('(vec2(2,3)*M)[1]', 18.0),
                        ('(2*M+M)[1][1]', 12.0), ('mat2x2(M)[0][1]', 2.0),
-                       ('mat2x2()[1][0]', 0.0),
+                       ('mat2x2f()[1][0]', 0.0),
                        ('(mat2x3(1,2,3,4,5,6)*mat4x2(1,2,3,4,5,6,7,8))[3][2]', 69.0),
                        ('determinant(mat3x3(1,2,3,4,5,6,7,8,10))', -3.0),
                        ('determinant(mat4x4(1,0,0,0,0,2,0,0,0,0,3,0,0,0,0,4))', 24.0)]
@@ -102,7 +102,7 @@ class Matrices(unittest.TestCase):
                 let inferred=mat2x2(vec2(1,2),vec2(3,4));
             }
         ''')
-        errors = [('mat2x3f(1)', 'identical dimensions'),
+        errors = [('mat2x2()', 'explicit concrete'), ('mat2x3f(1)', 'identical dimensions'),
                   ('mat2x2f(vec2f(),1,2)', 'whole floating-point'),
                   ('mat2x2f(vec2i(),vec2i())', 'whole floating-point'),
                   ('mat2x2<u32>()', 'floating-point'), ('determinant(mat3x2f())', 'square'),

@@ -157,7 +157,8 @@ column stride. Older selected reflection rejects only matrix-reachable output
 graphs; binary-only compilation and non-reflected local matrices share the same
 pipeline. No new exports, private records or workspace query growth are required.
 
-All nine f32 matrix shapes support typed/inferred constructors, zero/copy values,
+All nine f32 matrix shapes support typed/inferred constructors, explicitly typed
+zero values, copies,
 column indexing, aggregate storage, helper parameters/results, addition/subtraction,
 scalar/vector/matrix multiplication, transpose and square determinant. AbstractFloat
 constant matrices retain the compact constant DAG and checked numeric owner.
@@ -174,6 +175,14 @@ exact constant results, ABI8 graph publication, old projection failure and reuse
 Software/physical execution and complete retained-source coverage remain separate.
 Rules follow [WGSL CRD2026-10-21](https://www.w3.org/TR/2026/CRD-WGSL-20261021/),
 sections8.8 and17.1.2, and the Khronos GLSL.std.450 determinant definition.
+
+All-module APIs accept valid empty or entryless library modules with NONE
+selection. They still validate every declaration, helper body and dependency,
+then publish zero SPIR-V words plus declared metadata. No synthetic shader entry
+or Vulkan Linkage artifact is manufactured. AUTO/NAME selection still requires
+a matching shader entry, and retained singular APIs still require one entry.
+An empty source span may be NULL with length zero; NULL with positive length
+remains an input error. `make test-library-modules` checks these boundaries.
 
 Other barriers, atomics, general pointers, aliases,
 overrides, f16, remaining subgroup operations, remaining texture operations, wider builtins,
