@@ -24,7 +24,9 @@ static void record_copy(WGPUCommandEncoder handle, const WGPUTexelCopyBufferInfo
             (doe_resource_texture *)texture->texture, &copy, direction, DOE_RESOURCE_COPY_WEBGPU);
     }
     native_unlock(device);
-    if (status != DOE_RESOURCE_OK) native_error(device, native_resource_error(status), "buffer/texture copy recording failed");
+    /* A rejected copy invalidates the encoder; WebGPU reports that validation
+     * error once, at Finish, not at the encoding call. */
+    (void)status;
 }
 void wgpuCommandEncoderCopyBufferToTexture(WGPUCommandEncoder encoder,
     const WGPUTexelCopyBufferInfo *source, const WGPUTexelCopyTextureInfo *destination, const WGPUExtent3D *size)
@@ -55,7 +57,7 @@ void wgpuCommandEncoderCopyTextureToTexture(WGPUCommandEncoder handle,
         status = doe_resource_encoder_blit_texture(encoder, &copy, DOE_RESOURCE_COPY_WEBGPU);
     }
     native_unlock(device);
-    if (status != DOE_RESOURCE_OK) native_error(device, native_resource_error(status), "texture copy recording failed");
+    (void)status; /* Reported once at Finish, as for buffer/texture copies. */
 }
 
 void wgpuQueueWriteTexture(WGPUQueue handle, const WGPUTexelCopyTextureInfo *destination,

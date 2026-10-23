@@ -144,7 +144,8 @@ Apple SDK compilation, Darwin execution and physical qualification remain unrun.
   subresource; buffer copies need one sample.
 - Texel copy layouts take WGPU_COPY_STRIDE_UNDEFINED as WebGPU's undefined:
   rowsPerImage for a one-image copy, bytesPerRow for a one-row copy
-  (`tests/copy_layouts.c`).
+  (`tests/copy_layouts.c`). A rejected buffer/texture or texture/texture copy
+  invalidates the encoder and its validation error is reported once, at Finish.
 - A rejected BeginRenderPass/BeginComputePass still returns a pass (WebGPU invalid
   pass): it records nothing, and its commands, End and the encoder's Finish
   report the rejection.
@@ -534,7 +535,7 @@ PASS public admission: sparse/trailing/null layout holes, null unbind, ignored d
 PASS public error types: resource allocation, automatic-layout allocation, compute/render backend OOM/native/validation failures, failed requested-feature device and successful recovery
 PASS public format features: 3 of 3 offered and enabled (float32-filterable linear r32float/rgba32float midpoints exact, float32-blendable additive r32float 1000007.0, depth32float-stencil8 depth 0.25/stencil 7 per aspect); without them depth32float-stencil8 texture/pipeline/bundle, r32float blending and 'float' r32float binding reject, an unoffered feature fails the request (CPU Vulkan only)
 PASS public draw features: 2 of 2 offered and enabled (indirect-first-instance: GPU firstInstance 2/1 reaches instance attributes and instance_index exactly for indirect, indexed indirect and bundle draws, an instance-buffer overrun stays a no-op; depth-clip-control: unclippedDepth draws z 1.5/-0.5 clamped to depth 1.0/0.0 where the clipped control draws nothing); without them nonzero indirect firstInstance is a no-op while direct firstInstance draws, and unclippedDepth rejects (CPU Vulkan only)
-PASS public copy layouts: undefined rowsPerImage for one image and undefined bytesPerRow for one row through queue writes, buffer-to-texture and texture-to-buffer copies with exact texels, two-image and two-row undefined-stride rejections (CPU Vulkan only)
+PASS public copy layouts: undefined rowsPerImage for one image and undefined bytesPerRow for one row through queue writes, buffer-to-texture and texture-to-buffer copies with exact texels; two-image and two-row undefined-stride and rowsPerImage-0 rejections reported once at Finish (CPU Vulkan only)
 PASS public timestamps: requested feature, zero/max/range/destroy admission, real pass/command writes, exact GPU nanoseconds, same-batch copy, scratch reuse and early query release (CPU Vulkan only)
 PASS typed recovery: native/OOM/pending errors survive submit/write/texture/workdone, unknown leases retained, terminal cleanup and fresh GPU normalizer recovery
 PASS every implemented procedure address matches; every unprovided name returns NULL
