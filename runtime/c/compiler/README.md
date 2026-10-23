@@ -1,9 +1,16 @@
 # Experimental standalone C compiler
 
-The [accepted M12 owner](MILESTONE_12_RESULTS.md) extends one shared WGSL compiler
+The current M13 implementation adds all-entry compute modules, explicit NONE/AUTO/NAME
+selection and source-static resource/workgroup interfaces to the
+[accepted M12 owner](MILESTONE_12_RESULTS.md). Focused developer checks are passing;
+independently sealed integrated qualification remains pending. Production defaults
+remain Zig. The [frozen M13 contract](MILESTONE_13.md) and
+[semantic-Walk liveness amendment](MILESTONE_13_AMENDMENT_01.md) describe this boundary.
+
+M12 extends one shared WGSL compiler
 with typed scalar/vector numeric builtin overloads, preserving workgroup storage,
-uniformity, aggregates, calls, checked layout and caller-owned reflection. Four
-public headers remain unchanged. This is an isolated
+uniformity, aggregates, calls, checked layout and caller-owned reflection. The four retained
+public headers remain unchanged; ABI5 is additive. This is an isolated
 [C migration](../../../docs/c-migration/MIGRATION.md), not complete WGSL,
 production replacement, native runtime adoption or physical GPU qualification.
 
@@ -20,6 +27,11 @@ The C11 library and CLI use GCC, strict warnings, `-fno-fast-math`,
 `-ffp-contract=off`, `-frounding-math`, and libm. They invoke no Zig, compiler
 subprocess or fallback. Qualified native ABI: Linux x86-64, GCC/G++ 14.2,
 C11/C++17. Other platforms/toolchains need their own qualification.
+
+The focused developer command is `make -C runtime/c/compiler test-module`.
+Its C/C++ ABI checks, all-entry SPIR-V validation and selected-body instruction
+execution are not the independently sealed acceptance suite. It includes the
+semantic-Walk overlap regression and does not run the expensive retained witness.
 
 The current independent [source-only gate](independent_tests_m12/PORTABLE_USAGE.md)
 provides exact build, semantic, corpus and native commands using an existing
@@ -38,15 +50,27 @@ counts and explicitly lifted negative cases. Never broadly relax those assertion
 
 ## Native API and caller ownership
 
-The shared library exports exactly seven symbols: the five retained compile,
+The shared library exports exactly nine symbols: the five retained compile,
 workspace and job entrypoints, plus `doe_compiler_typed_requirements` and
-`doe_compiler_compile_typed`. See [ABI4](include/doe_compiler_typed.h), the
+`doe_compiler_compile_typed`, plus the two additive
+[ABI5 module operations](include/doe_compiler_module.h). See [ABI4](include/doe_compiler_typed.h), the
 [frozen numeric semantics](MILESTONE_12.md) and [lowering ledger](MILESTONE_12_LEDGER.md),
 with retained storage ownership.
 
 - ABI1, v2 and job retain their layouts and real capacity/projection limits.
   New valid syntax shares the same parser and semantic implementation; old
   rejection alone is not a permanent language dialect.
+- ABI5 adds sparse entry/input/reference pools, every declared workgroup root,
+  owned per-entry names, LocalSize and builtin masks. Each entry has its own
+  transitive source-static resource/workgroup closure. All successful selectors
+  emit the identical full module; AUTO requires exactly one entry. Dead/skipped
+  source and unused siblings still undergo whole-module validation.
+- Duplicate binding pairs are admitted only in disjoint entry interfaces.
+  Each emitted entry initializes only its own static workgroup roots before
+  its first user operation. Declared roots remain reflected even when unused.
+- ABI4 WORDS admits multiple entries; its singular REFLECTION projection rejects
+  them after whole-module validation. Old ABI1/v2/job reject at a second entry
+  rather than selecting the first. Their public layouts are unchanged.
 - ABI4 sizes explicit logical pools through a versioned query. The caller owns
   suitably aligned workspace and disjoint source/result/output spans, one active
   call per workspace. The library allocates nothing and retains no caller pointers.
@@ -55,8 +79,8 @@ with retained storage ownership.
   Output counts/pool diagnostics are explicit; failures publish no partial words
   or reflection. Caller floating environment and errno are restored before success.
 - Reflection includes all declared nominal structs and resource type closure,
-  checked sizes/alignments/member offsets/strides and runtime-tail metadata. It is
-  not production TranslationInfo, reachable-entry resource analysis or cache identity.
+  checked sizes/alignments/member offsets/strides and runtime-tail metadata. It is not production TranslationInfo or cache identity. ABI5 additionally
+  publishes per-entry closure indices, not a runtime resource/lifetime plan.
 - Legacy projections reject unrepresentable aggregate resources by name rather
   than pretending vectors/structs are scalar arrays. Public enum/layout meanings
   are not repurposed.
@@ -89,14 +113,14 @@ Fixed typed workgroup roots are zero-initialized before user control flow;
 `workgroupBarrier` synchronizes only workgroup memory within one group. Uniformity
 tracks validated source dependencies, including constant-skipped RHS syntax,
 calls, control flow and loop exits. Workgroup roots are not descriptor bindings;
-standalone reflection does not supply runtime workgroup metadata.
+ABI5 reports logical per-entry bytes, not physical allocation or runtime obligations.
 
 The admitted overload families now include min/max/clamp/exp/tanh/sqrt and
 dot/length/distance/normalize/cross. Constant and runtime stages remain distinct;
 [AbstractInt dot interpretation](contracts/m12_numeric_interpretation.md) is explicit.
 
 Other barriers, atomics, matrices, pointers, aliases,
-overrides, f16/subgroups, multiple entries, graphics, textures, wider builtins,
+overrides, f16/subgroups, graphics, textures, wider builtins,
 other targets and runtime metadata/adoption remain open owners, not implied coverage.
 
 ## CLI and actual consumer
@@ -117,10 +141,14 @@ observations. None is physical execution or complete adoption.
 
 ## Storage and owner map
 
-Measured fixed workspace is 146,256 bytes; public alignment queries remain
-authoritative for allocation. Independent conservative library bounds are
-205,776 fixed and 194,544 maximum-depth
-job bytes. These are derived bounds, not observed stack peaks; they exclude
+Current measured fixed workspace is 146,048 bytes; public alignment queries remain
+authoritative for allocation. The retained M12 conservative bounds remain historical, not proof of changed code.
+M13 developer normal/PIC .su/.ci audits enumerate every frame and recursive SCC,
+verify GCC local aliases with nm, and bound complete acyclic call paths separately
+from recursive families and wrappers. The older sum of every unrelated function
+now exceeds its historical coarse subtotal, so it is retained as a failed bound,
+not silently claimed to pass. Full source-bound integrated review remains pending.
+These are derived bounds, not observed stack peaks; they exclude
 external libc/libm, OS and sanitizer frames. Caller-controlled capacities do not
 increase bounded expression/control/type recursion. The frozen ledger owns exact
 pool accounting and ceilings; future growth requires an explicit reviewed change.
@@ -133,7 +161,9 @@ pool accounting and ceilings; future growth requires an explicit reviewed change
   lexical identity, typed values/references/calls and structured control.
 - uniformity.c: bounded source dependency/control analysis before target emission.
 - storage.c / internal.h: checked caller slices, records and fixed adapters.
-- spirv.c / spirv_decl.h: typed declarations, safe operations and robust lowering.
+- module.c: resolved-source sparse closures, iterative graph work and binding collision checks.
+- spirv_module.c / spirv_decl.h: typed target planning and module declarations.
+- spirv.c / spirv_internal.h: function emission, safe operations and robust lowering.
 - reflection.c: typed graph publication and explicit legacy projections.
 - compile.c: preflight, diagnostics, environment ownership and atomic publication.
 - cli.c / cli_json.c: caller allocations, old JSON and owned file publication.
@@ -141,3 +171,6 @@ pool accounting and ceilings; future growth requires an explicit reviewed change
 [Style](STYLE.md), [provenance](PROVENANCE.md), immutable milestone results and
 [remaining-owner roadmap](../../../docs/c-migration/COMPILER_ROADMAP.md) preserve
 historical evidence and the full compiler migration gates.
+
+The final full-feature50% source-reduction goal includes the complete delivery
+burden. No such reduction or complete compiler migration is claimed by M13.

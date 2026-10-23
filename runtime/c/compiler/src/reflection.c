@@ -36,7 +36,10 @@ static bool discover(Source *s, TypeId root, size_t *count) {
 bool reflect_prepare(Source *s, CompilerWorkspace *c, DoeCompilerTypedOutputCounts *counts) {
     *counts = (DoeCompilerTypedOutputCounts){.words = c->word_count, .resources = c->resource_count};
     for (uint32_t i = 0u;i<c->type_count+7u;++i) c->reflection_map[i] = NO_ID;
-    uint64_t names = (uint64_t)c->functions[c->entry_function].name.length+1u;
+    uint64_t names=0u;
+    const bool module=(c->limits.flags&LIMIT_MODULE)!=0u;
+    const uint32_t entries=module?c->entry_count:1u;
+    for (uint32_t i=0u;i<entries;++i) names+=(uint64_t)c->functions[c->entries[i].function].name.length+1u;
     for (uint32_t i = 0u;i<c->type_count;++i) if (c->types[i].kind == TYPE_STRUCT) {
             TypeRecord *t = &c->types[i];
             t->aux = 0u;
@@ -50,6 +53,10 @@ bool reflect_prepare(Source *s, CompilerWorkspace *c, DoeCompilerTypedOutputCoun
         names+=(uint64_t)c->resources[i].name.length+1u;
         if (!discover(s, c->resources[i].type, &counts->types)) return false;
     }
+    if (module) for (uint32_t i=0u;i<c->workgroup_count;++i) {
+        names+=(uint64_t)c->workgroups[i].name.length+1u;
+        if (!discover(s,c->workgroups[i].type,&counts->types)) return false;
+    }
     if (names>UINT32_MAX) return source_error(s, DOE_COMPILER_UNSUPPORTED, s->length, "reflection names exceed uint32 index format");
     counts->name_bytes = (size_t)names;
     return true;
@@ -62,14 +69,8 @@ static DoeCompilerNameV4 publish_name(const Source *s, NameSpan name, char *name
     *cursor+=name.length+1u;
     return result;
 }
-void reflect_typed(const Source *s, const CompilerWorkspace *c, const DoeCompilerTypedOutputs *o, DoeCompilerModuleV4 *module) {
-    uint32_t cursor = 0u, member = 0u;
-    memset(module, 0, sizeof(*module));
-    module->schema_version = DOE_COMPILER_TYPED_SCHEMA_VERSION;
-    module->layout_profile = DOE_COMPILER_TYPED_PROFILE_CONSERVATIVE_UNIFORM;
-    module->entry_point = publish_name(s, c->functions[c->entry_function].name, o->names, &cursor);
-    module->declared_struct_count = declared_structs(c);
-    for (uint32_t i = 0u;i<3u;++i) module->workgroup_size[i] = c->local_size[i].value;
+static void publish_tables(const Source *s, const CompilerWorkspace *c, const DoeCompilerTypedOutputs *o, uint32_t *name_cursor) {
+    uint32_t cursor=*name_cursor, member=0u;
     for (uint32_t id = 1u;id<c->type_count+7u;++id) {
         const uint32_t index = c->reflection_map[id];
         if (index == NO_ID) continue;
@@ -140,7 +141,59 @@ void reflect_typed(const Source *s, const CompilerWorkspace *c, const DoeCompile
         out->runtime_array_offset_bytes = r->tail_offset;
         out->runtime_array_stride_bytes = r->tail_stride;
     }
+    *name_cursor=cursor;
 }
+
+void reflect_typed(const Source *s, const CompilerWorkspace *c, const DoeCompilerTypedOutputs *o, DoeCompilerModuleV4 *module) {
+    uint32_t cursor = 0u;
+    memset(module, 0, sizeof(*module));
+    module->schema_version = DOE_COMPILER_TYPED_SCHEMA_VERSION;
+    module->layout_profile = DOE_COMPILER_TYPED_PROFILE_CONSERVATIVE_UNIFORM;
+    module->entry_point = publish_name(s, c->functions[c->entries[0].function].name, o->names, &cursor);
+    module->declared_struct_count = declared_structs(c);
+    for (uint32_t i = 0u;i<3u;++i) module->workgroup_size[i] = c->entries[0].state.resolved.workgroup_size[i];
+    publish_tables(s,c,o,&cursor);
+}
+void reflect_module(const Source *s, const CompilerWorkspace *c, const DoeCompilerModuleOutputs *o,
+                    uint32_t selected, DoeCompilerModuleV5 *module) {
+    uint32_t cursor=0u;
+    memset(module,0,sizeof(*module));
+    module->schema_version=DOE_COMPILER_MODULE_SCHEMA_VERSION;
+    module->layout_profile=DOE_COMPILER_TYPED_PROFILE_CONSERVATIVE_UNIFORM;
+    module->declared_struct_count=declared_structs(c);
+    module->selected_entry=selected;
+    for (uint32_t i=0u;i<c->entry_count;++i) {
+        const EntryRecord *entry=&c->entries[i];
+        DoeCompilerEntryV5 *out=&o->entries[i];
+        memset(out,0,sizeof(*out));
+        out->stage=DOE_COMPILER_STAGE_COMPUTE;
+        out->name=publish_name(s,c->functions[entry->function].name,o->names,&cursor);
+        for (uint32_t k=0u;k<3u;++k) out->workgroup_size[k]=entry->state.resolved.workgroup_size[k];
+        for (uint32_t k=entry->input_first;k<entry->input_first+entry->input_count;++k)
+            out->declared_builtin_mask|=1u<<c->entry_inputs[k].kind;
+        out->static_builtin_mask=entry->source_input_mask;
+        out->first_resource_reference=entry->state.resolved.resource_first;
+        out->resource_reference_count=entry->state.resolved.resource_count;
+        out->first_workgroup_reference=entry->state.resolved.workgroup_first;
+        out->workgroup_reference_count=entry->state.resolved.workgroup_count;
+        out->workgroup_storage_bytes=entry->state.resolved.workgroup_storage_bytes;
+        if (entry->state.resolved.workgroup_count!=0u) out->flags=DOE_COMPILER_ENTRY_WORKGROUP_INITIALIZATION;
+    }
+    const DoeCompilerTypedOutputs tables={.types=o->types,.members=o->members,.resources=o->resources,.names=o->names};
+    publish_tables(s,c,&tables,&cursor);
+    for (uint32_t i=0u;i<c->workgroup_count;++i) {
+        const WorkgroupRoot *root=&c->workgroups[i];
+        DoeCompilerWorkgroupV5 *out=&o->workgroups[i];
+        memset(out,0,sizeof(*out));
+        out->name=publish_name(s,root->name,o->names,&cursor);
+        out->type_index=c->reflection_map[root->type];
+        out->size_bytes=type_size(c,root->type);
+        out->alignment_bytes=type_alignment(c,root->type);
+    }
+    if (c->entry_reference_count!=0u)
+        memcpy(o->entry_references,c->entry_references,(size_t)c->entry_reference_count*sizeof(*o->entry_references));
+}
+
 static bool flat_struct(const CompilerWorkspace *c, const TypeRecord *t) {
     if (t->count>DOE_COMPILER_MAX_STRUCT_MEMBERS || (t->flags&TYPE_FIXED) == 0u || t->state.layout.size>UINT32_MAX || t->state.layout.alignment>UINT32_MAX) return false;
     for (uint32_t i = 0u;i<t->count;++i) {
@@ -188,8 +241,8 @@ static DoeCompilerScalar old_scalar(TypeId type) {
 }
 void reflect_program(const Source *s, const CompilerWorkspace *c, DoeCompilerReflection *out) {
     memset(out, 0, sizeof(*out));
-    copy_name(s, c->functions[c->entry_function].name, out->entry_point);
-    for (uint32_t i = 0u;i<3u;++i) out->workgroup_size[i] = c->local_size[i].value;
+    copy_name(s, c->functions[c->entries[0].function].name, out->entry_point);
+    for (uint32_t i = 0u;i<3u;++i) out->workgroup_size[i] = c->entries[0].state.resolved.workgroup_size[i];
     out->binding_count = c->resource_count;
     for (uint32_t i = 0u;i<c->resource_count;++i) {
         const ResourceRecord *r = &c->resources[i];
@@ -205,8 +258,8 @@ void reflect_program(const Source *s, const CompilerWorkspace *c, DoeCompilerRef
 }
 void reflect_program_v2(const Source *s, const CompilerWorkspace *c, DoeCompilerReflectionV2 *out) {
     memset(out, 0, sizeof(*out));
-    copy_name(s, c->functions[c->entry_function].name, out->entry_point);
-    for (uint32_t i = 0u;i<3u;++i) out->workgroup_size[i] = c->local_size[i].value;
+    copy_name(s, c->functions[c->entries[0].function].name, out->entry_point);
+    for (uint32_t i = 0u;i<3u;++i) out->workgroup_size[i] = c->entries[0].state.resolved.workgroup_size[i];
     out->binding_count = c->resource_count;
     out->struct_count = declared_structs(c);
     for (uint32_t i = 0u, index = 0u;i<c->type_count;++i) if (c->types[i].kind == TYPE_STRUCT) {

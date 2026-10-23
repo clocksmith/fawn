@@ -36,12 +36,14 @@ bool sema_module_declared(const Source *s, NameSpan name) {
     return false;
 }
 bool sema_alias_visible(const Source *s) {
-    return s->compiler->current_function == s->compiler->entry_function && s->compiler->alias.length != 0u;
+    return s->compiler->entry_count!=0u && s->compiler->current_function == s->compiler->entries[0].function && s->compiler->alias.length != 0u;
 }
 uint32_t sema_find_parameter(const Source *s, NameSpan name) {
     const CompilerWorkspace *c = s->compiler;
-    if (c->current_function != c->entry_function) return NO_ID;
-    for (uint32_t i = 0u;i<c->parameter_count;++i) if (source_spans_equal(s, name, c->parameters[i].name)) return i;
+    if (c->current_function>=c->function_count || (c->functions[c->current_function].flags&FUNCTION_ENTRY)==0u) return NO_ID;
+    const EntryRecord *entry=&c->entries[c->functions[c->current_function].entry_index];
+    for (uint32_t i=entry->input_first;i<entry->input_first+entry->input_count;++i)
+        if (source_spans_equal(s,name,c->entry_inputs[i].name)) return i;
     return NO_ID;
 }
 uint32_t sema_find_formal(const Source *s, NameSpan name) {
@@ -79,9 +81,12 @@ bool sema_value_identity(Source *s,const LocalScope *scope,NameSpan name,Uniform
         if (!identity_name(s,name,c->alias,budget,&same)) return false;
         if (same) {*out=(ValueIdentity){IDENTITY_ALIAS,0u};return true;}
     }
-    if (c->current_function==c->entry_function) for (uint32_t i=0u;i<c->parameter_count;++i) {
-        if (!identity_name(s,name,c->parameters[i].name,budget,&same)) return false;
-        if (same) {*out=(ValueIdentity){IDENTITY_INPUT,i};return true;}
+    if (c->current_function<c->function_count && (c->functions[c->current_function].flags&FUNCTION_ENTRY)!=0u) {
+        const EntryRecord *entry=&c->entries[c->functions[c->current_function].entry_index];
+        for (uint32_t i=entry->input_first;i<entry->input_first+entry->input_count;++i) {
+            if (!identity_name(s,name,c->entry_inputs[i].name,budget,&same)) return false;
+            if (same) {*out=(ValueIdentity){IDENTITY_INPUT,i};return true;}
+        }
     }
     for (uint32_t i=0u;i<c->constant_decl_count;++i) {
         if (!identity_name(s,name,c->constant_decls[i].name,budget,&same)) return false;
@@ -480,20 +485,24 @@ bool sema_resolve_declarations(Source *s, LocalScope *scope) {
     CompilerWorkspace *c = s->compiler;
     c->current_function = NO_ID;
     if (!declarations_valid(s) || !resolve_graph(s, scope) || !resolve_signatures(s, scope)) return false;
-    uint32_t product = 1u;
-    for (uint32_t i = 0u;i<3u;++i) {
-        Integer *v = &c->local_size[i];
-        if (v->expression != NO_ID && !integer_attribute(s, v->expression, scope, false, &v->value)) return false;
-        if (v->value == 0u || v->value>256u || v->value>256u/product)
-            return source_error(s, DOE_COMPILER_UNSUPPORTED, v->offset, "workgroup dimensions and product must be between 1 and 256");
-        product*=v->value;
+    for (uint32_t e=0u;e<c->entry_count;++e) {
+        EntryRecord *entry=&c->entries[e];
+        uint32_t dimensions[3],product=1u;
+        for (uint32_t i=0u;i<3u;++i) {
+            const Integer *v=&entry->state.dimensions[i];
+            dimensions[i]=v->value;
+            if (v->expression!=NO_ID && !integer_attribute(s,v->expression,scope,false,&dimensions[i])) return false;
+            if (dimensions[i]==0u || dimensions[i]>256u || dimensions[i]>256u/product)
+                return source_error(s,DOE_COMPILER_UNSUPPORTED,v->offset,"workgroup dimensions and product must be between 1 and 256");
+            product*=dimensions[i];
+        }
+        memset(&entry->state,0,sizeof(entry->state));
+        for (uint32_t i=0u;i<3u;++i) entry->state.resolved.workgroup_size[i]=dimensions[i];
     }
     for (uint32_t i = 0u;i<c->resource_count;++i) {
         ResourceRecord *r = &c->resources[i];
         if ((r->group_expression != NO_ID && !integer_attribute(s, r->group_expression, scope, false, &r->group)) || (r->binding_expression != NO_ID && !integer_attribute(s, r->binding_expression, scope, false, &r->binding)) || !sema_type_reference(s, r->annotation, scope, &r->type) || !type_resource_layout(s, r)) return false;
         if (r->group>3u || r->binding>31u) return source_error(s, DOE_COMPILER_UNSUPPORTED, r->source_offset, "storage requires group 0..3 and binding 0..31");
-        for (uint32_t j = 0u;j<i;++j) if (r->group == c->resources[j].group && r->binding == c->resources[j].binding)
-                return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, r->name.offset, "duplicate storage group and binding pair");
     }
     for (uint32_t i=0u;i<c->workgroup_count;++i) {
         WorkgroupRoot *root=&c->workgroups[i];
@@ -501,17 +510,14 @@ bool sema_resolve_declarations(Source *s, LocalScope *scope) {
         const uint32_t flags=type_flags(c,root->type);
         if ((flags&(TYPE_FIXED|TYPE_CONSTRUCTIBLE))!=(TYPE_FIXED|TYPE_CONSTRUCTIBLE) || (flags&TYPE_ABSTRACT)!=0u)
             return source_error(s,DOE_COMPILER_SEMANTIC_ERROR,root->name.offset,"workgroup type must be concrete, constructible and fixed-footprint");
-        const uint64_t size=type_size(c,root->type), alignment=type_alignment(c,root->type);
-        const uint64_t remainder=size%alignment, padding=remainder==0u?0u:alignment-remainder;
-        if (size>UINT64_MAX-padding || c->workgroup_storage_bytes>UINT64_MAX-(size+padding))
-            return source_error(s,DOE_COMPILER_SEMANTIC_ERROR,root->name.offset,"logical workgroup storage total overflows uint64");
-        c->workgroup_storage_bytes+=size+padding;
     }
-    c->current_function = c->entry_function;
-    for (uint32_t i = 0u;i<c->parameter_count;++i) {
-        const EntryParameter *p = &c->parameters[i];
+    for (uint32_t e=0u;e<c->entry_count;++e) {
+    const EntryRecord *entry=&c->entries[e];
+    c->current_function=entry->function;
+    for (uint32_t i=entry->input_first;i<entry->input_first+entry->input_count;++i) {
+        const EntryInput *p=&c->entry_inputs[i];
         if (!sema_valid_name(s, p->name)) return false;
-        for (uint32_t j = 0u;j<i;++j) if (source_spans_equal(s, p->name, c->parameters[j].name) || p->kind == c->parameters[j].kind)
+        for (uint32_t j = entry->input_first;j<i;++j) if (source_spans_equal(s, p->name, c->entry_inputs[j].name) || p->kind == c->entry_inputs[j].kind)
                 return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, p->name.offset, "duplicate compute input name or builtin");
         for (uint32_t category = 0u;category<5u;++category) {
             const uint32_t count = category == 0u?c->constant_decl_count:category == 1u?c->function_count:category == 2u?c->resource_count:category == 3u?c->type_count:c->workgroup_count;
@@ -529,6 +535,8 @@ bool sema_resolve_declarations(Source *s, LocalScope *scope) {
             if (!type_intern(s, TYPE_VECTOR, IR_U32, 3u, &ignored)) return false;
         }
     }
+    }
+    c->current_function=c->entries[0].function;
     if (c->alias.length != 0u && (!sema_valid_name(s, c->alias) || sema_find_parameter(s, c->alias) != NO_ID || sema_find_parameter(s, c->alias_source) == NO_ID))
         return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, c->alias.offset, "invalid leading invocation alias");
     c->current_function = NO_ID;

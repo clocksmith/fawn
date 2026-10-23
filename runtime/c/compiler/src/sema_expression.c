@@ -79,10 +79,10 @@ static bool identity_value(Source *s,NameSpan name,const LocalScope *scope,Value
             out->value=(IrValue){c->limits.instructions+1u+identity.index,out->constant.type,name.offset}; return true;
         case IDENTITY_ALIAS:
             out->runtime=true; out->constant.type=IR_U32;
-            out->value=(IrValue){c->functions[c->entry_function].value_base,IR_U32,name.offset}; return true;
+            out->value=(IrValue){c->functions[c->current_function].value_base,IR_U32,name.offset}; return true;
         case IDENTITY_INPUT: {
             TypeId type=IR_U32;
-            if (c->parameters[identity.index].kind!=INPUT_LOCAL_INDEX && !type_intern(s,TYPE_VECTOR,IR_U32,3u,&type)) return false;
+            if (c->entry_inputs[identity.index].kind!=INPUT_LOCAL_INDEX && !type_intern(s,TYPE_VECTOR,IR_U32,3u,&type)) return false;
             out->runtime=true; out->constant.type=type;
             return sema_emit(s,emit,(IrInstruction){.opcode=IR_INPUT,.type=type,.source_offset=name.offset,
                 .operands.scalar={.binding=identity.index,.literal=type==IR_U32?0u:NO_ID}},&out->value);
@@ -105,14 +105,25 @@ static bool identity_value(Source *s,NameSpan name,const LocalScope *scope,Value
     }
     return source_error(s,DOE_COMPILER_SEMANTIC_ERROR,name.offset,"name does not resolve to an available value");
 }
-static bool name_value(Source *s,NameSpan name,const LocalScope *scope,bool emit,ExpressionValue *out) {
-    ValueIdentity identity;
-    return sema_value_identity(s,scope,name,NULL,&identity) && identity_value(s,name,scope,identity,emit,out);
+static bool capture_identity(Source *s, SourceReference *slot, ValueIdentity identity, uint32_t offset) {
+    SourceReferenceKind kind=SOURCE_NONE;
+    if (identity.kind==IDENTITY_RESOURCE) kind=SOURCE_RESOURCE;
+    else if (identity.kind==IDENTITY_WORKGROUP) kind=SOURCE_WORKGROUP;
+    else if (identity.kind==IDENTITY_INPUT) kind=SOURCE_INPUT;
+    else if (identity.kind==IDENTITY_ALIAS) {
+        kind=SOURCE_INPUT;
+        identity.index=sema_find_parameter(s,s->compiler->alias_source);
+    }
+    return source_reference_record(s,slot,kind,kind==SOURCE_NONE?0u:identity.index,offset);
 }
-static bool root_reference(Source *s,NameSpan name,const LocalScope *scope,bool emit,ValueReference *ref,ExpressionValue *value,bool *reference) {
+static bool name_value(Source *s,NameSpan name,const LocalScope *scope,bool emit,ExpressionValue *out,SourceReference *slot) {
+    ValueIdentity identity;
+    return sema_value_identity(s,scope,name,NULL,&identity) && capture_identity(s,slot,identity,name.offset) && identity_value(s,name,scope,identity,emit,out);
+}
+static bool root_reference(Source *s,NameSpan name,const LocalScope *scope,bool emit,ValueReference *ref,ExpressionValue *value,bool *reference,SourceReference *slot) {
     CompilerWorkspace *c=s->compiler; ValueIdentity identity;
     *reference=false;
-    if (!sema_value_identity(s,scope,name,NULL,&identity)) return false;
+    if (!sema_value_identity(s,scope,name,NULL,&identity) || !capture_identity(s,slot,identity,name.offset)) return false;
     if (identity.kind==IDENTITY_LOCAL) {
         const LocalBinding *local=&scope->values[identity.index];
         if ((local->flags&LOCAL_MUTABLE)!=0u) {
@@ -158,13 +169,13 @@ bool sema_reference_load(Source *s, ValueReference ref, uint32_t offset, bool em
     }
     return sema_emit(s, emit, instruction, &out->value);
 }
-static bool postfix_value(Source *, const Expression *, const LocalScope *, bool, bool, ValueReference *, ExpressionValue *, bool *);
-static bool access_base(Source *s, const Expression *node, const LocalScope *scope, bool evaluate, bool emit, ValueReference *ref, ExpressionValue *value, bool *reference) {
+static bool postfix_value(Source *, const Expression *, const LocalScope *, bool, bool, ValueReference *, ExpressionValue *, bool *, SourceReference *);
+static bool access_base(Source *s, const Expression *node, const LocalScope *scope, bool evaluate, bool emit, ValueReference *ref, ExpressionValue *value, bool *reference, SourceReference *slot) {
     CompilerWorkspace *c = s->compiler;
-    if (node->left == NO_ID) return root_reference(s, node->kind == EXPRESSION_MEMBER?node->value.member.object:node->value.reference.storage, scope, emit, ref, value, reference);
+    if (node->left == NO_ID) return root_reference(s, node->kind == EXPRESSION_MEMBER?node->value.member.object:node->value.reference.storage, scope, emit, ref, value, reference, slot);
     const Expression *base = &c->expressions[node->left];
-    if (base->kind == EXPRESSION_MEMBER || base->kind == EXPRESSION_LOAD) return postfix_value(s, base, scope, evaluate, emit, ref, value, reference);
-    if (base->kind == EXPRESSION_NAME) return root_reference(s, base->value.name, scope, emit, ref, value, reference);
+    if (base->kind == EXPRESSION_MEMBER || base->kind == EXPRESSION_LOAD) return postfix_value(s, base, scope, evaluate, emit, ref, value, reference, &c->expression_references[node->left]);
+    if (base->kind == EXPRESSION_NAME) return root_reference(s, base->value.name, scope, emit, ref, value, reference, &c->expression_references[node->left]);
     *reference = false;
     return sema_expression(s, node->left, scope, evaluate, emit, value);
 }
@@ -188,7 +199,7 @@ static bool swizzle(Source *s, NameSpan name, uint32_t n, uint32_t *mask) {
     }
     return true;
 }
-static bool postfix_value(Source *s, const Expression *node, const LocalScope *scope, bool evaluate, bool emit, ValueReference *ref, ExpressionValue *out, bool *reference) {
+static bool postfix_value(Source *s, const Expression *node, const LocalScope *scope, bool evaluate, bool emit, ValueReference *ref, ExpressionValue *out, bool *reference, SourceReference *slot) {
     CompilerWorkspace *c = s->compiler;
     ExpressionValue base = {0};
     ValueReference r = {0};
@@ -197,15 +208,16 @@ static bool postfix_value(Source *s, const Expression *node, const LocalScope *s
  * general typed input owner, without materializing an unused vector. */
     if (node->kind == EXPRESSION_MEMBER && node->left == NO_ID && node->value.member.member.length == 1u && sema_find_local(s, scope, node->value.member.object) == NULL && sema_find_formal(s, node->value.member.object) == NO_ID) {
         const uint32_t p = sema_find_parameter(s, node->value.member.object);
-        if (p != NO_ID && c->parameters[p].kind != INPUT_LOCAL_INDEX) {
+        if (p != NO_ID && c->entry_inputs[p].kind != INPUT_LOCAL_INDEX) {
             uint32_t mask;
+            if (!source_reference_record(s,slot,SOURCE_INPUT,p,node->source_offset)) return false;
             if (!swizzle(s, node->value.member.member, 3u, &mask)) return false;
             *reference = false;
             *out = (ExpressionValue){.runtime = true, .constant.type = IR_U32};
             return sema_emit(s, emit, (IrInstruction){.opcode = IR_INPUT, .type = IR_U32, .source_offset = node->source_offset, .operands.scalar = {.binding = p, .literal = mask}}, &out->value);
         }
     }
-    if (!access_base(s, node, scope, evaluate, emit, &r, &base, &is_ref)) return false;
+    if (!access_base(s, node, scope, evaluate, emit, &r, &base, &is_ref, slot)) return false;
     TypeId input = is_ref?r.type:base.constant.type, output = IR_VOID;
     uint32_t kind = ACCESS_MEMBER, index = 0u;
     if (node->kind == EXPRESSION_MEMBER) {
@@ -297,11 +309,11 @@ static bool postfix_value(Source *s, const Expression *node, const LocalScope *s
     *reference = true;
     return true;
 }
-bool sema_assignment_reference(Source *s, const Assignment *a, const LocalScope *scope, ValueReference *out) {
+bool sema_assignment_reference(Source *s, const Assignment *a, const LocalScope *scope, ValueReference *out, SourceReference *slot) {
     if (a->kind == TARGET_ROOT) {
         ExpressionValue ignored;
         bool reference;
-        if (!root_reference(s, a->root, scope, true, out, &ignored, &reference)) return false;
+        if (!root_reference(s, a->root, scope, true, out, &ignored, &reference, slot)) return false;
         if (!reference || !out->writable) return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, a->root.offset, "assignment target is not writable");
         return true;
     }
@@ -318,9 +330,11 @@ bool sema_assignment_reference(Source *s, const Assignment *a, const LocalScope 
     }
     ExpressionValue ignored;
     bool reference;
-    if (!postfix_value(s, &e, scope, true, true, out, &ignored, &reference)) return false;
+    if (!postfix_value(s, &e, scope, true, true, out, &ignored, &reference, slot)) return false;
     if (!reference || !out->writable) return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, a->root.offset, "assignment target is not writable or is a multi-component swizzle");
-    return true;
+    const SourceReferenceKind kind=out->category==ROOT_RESOURCE?SOURCE_RESOURCE:
+        out->category==ROOT_WORKGROUP?SOURCE_WORKGROUP:SOURCE_NONE;
+    return source_reference_record(s,slot,kind,kind==SOURCE_NONE?0u:out->root,a->root.offset);
 }
 static IrOpcode binary_opcode(ExpressionKind op) {
     switch (op) {
@@ -419,11 +433,11 @@ bool sema_expression(Source *s, uint32_t id, const LocalScope *scope, bool evalu
         out->value.type = (TypeId)n.type;
         return true;
     }
-    if (e->kind == EXPRESSION_NAME) return name_value(s, e->value.name, scope, emit, out);
+    if (e->kind == EXPRESSION_NAME) return name_value(s, e->value.name, scope, emit, out, &c->expression_references[id]);
     if (e->kind == EXPRESSION_MEMBER || e->kind == EXPRESSION_LOAD) {
         ValueReference ref;
         bool reference;
-        if (!postfix_value(s, e, scope, evaluate, emit, &ref, out, &reference)) return false;
+        if (!postfix_value(s, e, scope, evaluate, emit, &ref, out, &reference, &c->expression_references[id])) return false;
         return !reference || sema_reference_load(s, ref, e->source_offset, emit, out);
     }
     ExpressionValue a, b;

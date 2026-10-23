@@ -80,16 +80,16 @@ static bool name_bit(Uniformity *a,NameSpan name,uint32_t cf,uint32_t *out) {
         case IDENTITY_CONSTANT: return true;
         case IDENTITY_ALIAS:
             /* The fixed adapter's compact alias denotes a validated input x. */
-            for (uint32_t i=0u;i<a->compiler->parameter_count;++i) {
+            for (uint32_t i=0u;i<a->compiler->entry_input_count;++i) {
                 if (!charge(a,1u)) return false;
-                if (source_spans_equal(a->source,a->compiler->alias_source,a->compiler->parameters[i].name)) {
-                    const InputKind kind=a->compiler->parameters[i].kind;
+                if (source_spans_equal(a->source,a->compiler->alias_source,a->compiler->entry_inputs[i].name)) {
+                    const InputKind kind=a->compiler->entry_inputs[i].kind;
                     *out=kind==INPUT_WORKGROUP || kind==INPUT_NUM_WORKGROUPS?cf:varying(a); return true;
                 }
             }
             break;
         case IDENTITY_INPUT: {
-            const InputKind kind=a->compiler->parameters[identity.index].kind;
+            const InputKind kind=a->compiler->entry_inputs[identity.index].kind;
             *out=kind==INPUT_WORKGROUP || kind==INPUT_NUM_WORKGROUPS?cf:varying(a); return true;
         }
         case IDENTITY_RESOURCE:
@@ -104,9 +104,10 @@ static bool expression_bit(Uniformity *,uint32_t,uint32_t,uint32_t *);
 static bool call_bit(Uniformity *a,uint32_t id,uint32_t cf,uint32_t *out) {
     const Expression *e=&a->compiler->expressions[id];
     if (!charge(a,1u)) return false;
-    const uint32_t callee=a->compiler->callees[id];
+    const SourceReference reference=a->compiler->expression_references[id];
+    const uint32_t callee=reference.kind==SOURCE_FUNCTION?reference.index+1u:0u;
     *out=cf;
-    if (callee==UINT32_MAX) return require_uniform(a,cf,e->source_offset);
+    if (reference.kind==SOURCE_BARRIER) return require_uniform(a,cf,e->source_offset);
     const FunctionRecord *function=callee==0u?NULL:&a->compiler->functions[callee-1u];
     if (function!=NULL) {
         if (!charge(a,1u)) return false;
@@ -391,13 +392,14 @@ static bool module_bits(Uniformity *a) {
             a->budget.offset=f->name.offset;
             while (f->state.graph.scan<f->expression_end) {
                 if (!charge(a,1u)) return false;
-                const uint32_t expression=f->state.graph.scan++,edge=c->callees[expression];
-                if (edge==0u || edge==UINT32_MAX) continue;
+                const uint32_t expression=f->state.graph.scan++;
+                const SourceReference edge=c->expression_references[expression];
+                if (edge.kind!=SOURCE_FUNCTION) continue;
                 if (!charge(a,1u)) return false;
-                FunctionRecord *child=&c->functions[edge-1u];
+                FunctionRecord *child=&c->functions[edge.index];
                 if (child->state.graph.color==2u) continue;
                 child->state.graph.color=1u; child->state.graph.scan=child->expression_start;
-                child->state.graph.parent=current; current=edge-1u; descend=true; break;
+                child->state.graph.parent=current; current=edge.index; descend=true; break;
             }
             if (!descend) {
                 if (!function_bits(a,current)) return false;
@@ -411,7 +413,7 @@ bool uniformity_analyze(Source *source,uint64_t limit,uint64_t *used) {
     CompilerWorkspace *c=source->compiler;
     if (used!=NULL) *used=0u;
     bool barrier=false;
-    for (uint32_t i=0u;i<c->expression_count;++i) barrier=barrier || c->callees[i]==UINT32_MAX;
+    for (uint32_t i=0u;i<c->expression_count;++i) barrier=barrier || c->expression_references[i].kind==SOURCE_BARRIER;
     if (!barrier) return true;
     Uniformity a={.source=source,.compiler=c,.budget={.limit=limit},
         .scope={.values=c->scope,.capacity=(size_t)c->limits.statements+1u},

@@ -20,9 +20,9 @@ static ExpressionKind update_kind(UpdateKind operation) {
     }
     return EXPRESSION_ADD;
 }
-static bool lower_assignment(Source *source,const Syntax *s,const Assignment *assignment,const LocalScope *scope,IrProgram *program) {
+static bool lower_assignment(Source *source,const Syntax *s,const Assignment *assignment,const LocalScope *scope,IrProgram *program,SourceReference *slot) {
     (void)s;(void)program;ValueReference reference;
-    if (!sema_assignment_reference(source,assignment,scope,&reference)) return false;
+    if (!sema_assignment_reference(source,assignment,scope,&reference,slot)) return false;
     const uint32_t offset=assignment->root.offset;
     const bool increment=assignment->operation==UPDATE_INCREMENT || assignment->operation==UPDATE_DECREMENT;
     ExpressionValue previous={0},result={0};
@@ -171,7 +171,7 @@ static bool lower_block(Source *source, const Syntax *s, size_t start, size_t en
         unsigned current = BEHAVIOR_NEXT;
         switch (st->kind) {
             case STATEMENT_ASSIGN:
-                if (!lower_assignment(source, s, &st->value.assignment, scope, program)) return false;
+                if (!lower_assignment(source, s, &st->value.assignment, scope, program,&program->statement_references[i])) return false;
                 break;
             case STATEMENT_LET:
             case STATEMENT_CONST:
@@ -279,15 +279,15 @@ static bool reject_call_cycles(Source *source, Syntax *s) {
             bool descend = false;
             while (function->state.graph.scan < function->expression_end) {
                 const uint32_t expression = function->state.graph.scan++;
-                const uint32_t edge = s->callees[expression];
-                if (edge == 0u || edge == UINT32_MAX) continue;
-                FunctionRecord *child = &s->functions[edge - 1u];
+                const SourceReference edge=s->expression_references[expression];
+                if (edge.kind!=SOURCE_FUNCTION) continue;
+                FunctionRecord *child = &s->functions[edge.index];
                 if (child->state.graph.color == 1u)
                     return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, s->expressions[expression].source_offset,
                                         "function call dependency cycle");
                 if (child->state.graph.color == 2u) continue;
                 child->state.graph.color = 1u; child->state.graph.scan = child->expression_start;
-                child->state.graph.parent = current; current = edge - 1u; descend = true; break;
+                child->state.graph.parent = current; current = edge.index; descend = true; break;
             }
             if (!descend) {
                 function->state.graph.color = 2u;
@@ -306,7 +306,7 @@ bool validate_syntax(Source *source,CompilerWorkspace *c) {
         function->instruction_start=c->instruction_count;function->local_start=c->local_count;
         if (sema_alias_visible(source)) {
             const uint32_t parameter=sema_find_parameter(source,c->alias_source);IrValue alias;
-            if (parameter==NO_ID || c->parameters[parameter].kind==INPUT_LOCAL_INDEX)
+            if (parameter==NO_ID || c->entry_inputs[parameter].kind==INPUT_LOCAL_INDEX)
                 return source_error(source,DOE_COMPILER_SEMANTIC_ERROR,c->alias_source.offset,"leading alias requires a vector compute input");
             if (!sema_append(source,(IrInstruction){.opcode=IR_INPUT,.type=IR_U32,.source_offset=c->alias_source.offset,
                 .operands.scalar={.binding=parameter,.literal=0u}},&alias)) return false;
@@ -318,5 +318,5 @@ bool validate_syntax(Source *source,CompilerWorkspace *c) {
             return source_error(source,DOE_COMPILER_SEMANTIC_ERROR,function->name.offset,"value-returning function must return a value on every path");
         function->instruction_end=c->instruction_count;function->local_count=c->local_count-function->local_start;
     }
-    return reject_call_cycles(source,c) && uniformity_analyze(source,UNIFORMITY_WORK_LIMIT,NULL);
+    return reject_call_cycles(source,c) && module_closures(source) && uniformity_analyze(source,UNIFORMITY_WORK_LIMIT,NULL);
 }

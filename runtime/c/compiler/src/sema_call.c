@@ -62,7 +62,7 @@ static bool user_call(Source *s, uint32_t id, const LocalScope *scope, uint32_t 
     if ((f->flags&FUNCTION_ENTRY) != 0u || node->value.call.type.offset != NO_ID || node->right != f->formal_count || (!statement && f->result_type == IR_VOID) || (statement && (f->flags&FUNCTION_MUST_USE) != 0u))
         return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, node->source_offset, "invalid function call or result context");
     if (node->right>UINT16_MAX-4u) return source_error(s, DOE_COMPILER_UNSUPPORTED, node->source_offset, "SPIR-V instruction word-count format capacity exceeded");
-    c->callees[id] = callee+1u;
+    if (!source_reference_record(s,&c->expression_references[id],SOURCE_FUNCTION,callee,node->source_offset)) return false;
     uint32_t first = 0u;
     if (emit && !reserve_operands(s, node->right, node->source_offset, &first)) return false;
     uint32_t link = node->left;
@@ -188,7 +188,7 @@ bool sema_call_value(Source *s, uint32_t id, const LocalScope *scope, bool evalu
     if (nominal==NO_ID && source_span_is(s,name,"workgroupBarrier")) {
         if (!statement || node->right!=0u || node->value.call.type.offset!=NO_ID || c->current_function==NO_ID)
             return source_error(s,DOE_COMPILER_SEMANTIC_ERROR,name.offset,"workgroupBarrier requires no arguments and no result");
-        c->callees[id]=UINT32_MAX;
+        if (!source_reference_record(s,&c->expression_references[id],SOURCE_BARRIER,0u,node->source_offset)) return false;
         *out=(ExpressionValue){.runtime=true,.constant.type=IR_VOID,.value={.type=IR_VOID,.source_offset=name.offset}};
         return sema_emit(s,emit,(IrInstruction){.opcode=IR_WORKGROUP_BARRIER,.source_offset=name.offset},NULL);
     }
