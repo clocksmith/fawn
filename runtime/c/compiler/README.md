@@ -397,13 +397,41 @@ Integer absolute-value target operations avoid signed-overflow assumptions.
 Text mappings/host controls do not establish SDK acceptance or physical accuracy.
 `test-component-math`, Metal `component-math-control`, and HLSL `host-control`
 exercise the new owner. Both retained stable-fluids advection shaders compile
-unchanged. The retained 4096-iteration compile-stress shader still hits the
-separate unsupported phony-assignment (`_ = x`) boundary; it is not shortened.
+unchanged. At that numeric checkpoint, the retained 4096-iteration compile-stress
+shader hit the separate phony-assignment (`_ = x`) boundary; it was not shortened.
 
 `shared SHARED_PLATFORM=Darwin SHARED_LIBRARY=/tmp/libdoe_compiler.dylib` prepares
 Mach-O linking using an exported-symbol list generated from the same `exports.map`.
-The Linux shared recipe remains ELF. This is build preparation only: the numeric
-host owner still explicitly requires Linux x86-64 GCC 14.2 and MXCSR control.
-No Darwin compiler build, Apple SDK execution or portability qualification is
-claimed by the recipe or its dry-run tests. Libm remains an explicitly external
-leaf in complete stack accounting, as with the existing exp/sqrt/tanh owner.
+Its install name defaults to `@rpath/<output basename>`; `SHARED_INSTALL_NAME`
+can override it explicitly without embedding a temporary build directory. The
+Linux shared recipe remains ELF. The recipe and dry-run tests alone claim no
+Darwin compiler build, Apple SDK execution or portability qualification. Libm
+remains an explicitly external leaf in complete stack accounting, as with the existing exp/sqrt/tanh owner.
+
+### Host floating-point environment
+
+`numeric_environment.c` owns one per-call environment and exact cleanup; it does
+not require a specific compiler version or operating-system brand. The numeric
+translation units require IEEE binary32/binary64, declared-width evaluation,
+subnormal support, two's-complement integers and strict finite-aware build modes.
+Actual rounded-bit and input/output-subnormal probes run after normalization.
+Unknown machine-control targets fail explicitly before semantic evaluation.
+
+The x86-64 owner saves/restores MXCSR and the x87 control word alongside opaque
+standard `fenv_t`. It normalizes x87 precision as well as masks/rounding because
+libm may use x87 even when C expressions use SSE. The ARM64 owner separately
+saves/restores full FPCR/FPSR and clears rounding, flush/alternate modes and trap
+enables without assuming a platform `fenv_t` representation. The register owner
+follows [Arm FPCR](https://developer.arm.com/documentation/ddi0601/latest/AArch64-Registers/FPCR--Floating-point-Control-Register)
+and is cross-checked against [LLVM's ARM64 floating environment](https://github.com/llvm/llvm-project/blob/main/libc/src/__support/FPUtil/aarch64/FEnvImpl.h).
+Clang uses its supported standard [floating-environment pragmas](https://clang.llvm.org/docs/UsersManual.html#controlling-floating-point-behavior);
+the canonical strict flags remain required for all builds.
+
+Save/hold/round/clear/verification failures restore caller state. A final restore
+failure still blocks publication after one bounded recovery attempt. Caller errno
+remains the public adapter's responsibility. Focused checks include real libc
+failure wrapping, x87 24-bit incoming precision, all rounding modes, exception
+flags/traps, subnormals and independent threads. Current executed qualification
+is Linux x86-64 GCC 14.2 only. ARM64/Darwin and other compiler builds are authored
+paths, not executed or numerically qualified platforms; Apple SDK checks remain
+pending. Existing historical host restrictions/receipts are unchanged.

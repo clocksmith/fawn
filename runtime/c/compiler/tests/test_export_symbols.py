@@ -38,6 +38,7 @@ class ExportSymbols(unittest.TestCase):
                 'TMPDIR=/tmp/doe-export-dry-run/tmp'], cwd=ROOT, text=True)
             if platform == 'Darwin':
                 self.assertIn('-dynamiclib', output)
+                self.assertIn('-install_name,@rpath/libcompiler.so', output)
                 self.assertIn('-exported_symbols_list,', output)
                 self.assertIn('tools/export_symbols.py src/exports.map', output)
                 self.assertNotIn('--version-script', output)
@@ -45,6 +46,14 @@ class ExportSymbols(unittest.TestCase):
                 self.assertIn('-fPIC -shared', output)
                 self.assertIn('--version-script=src/exports.map', output)
                 self.assertNotIn('-dynamiclib', output)
+
+    def test_darwin_install_name_override(self):
+        output = subprocess.check_output(['make', '-n', 'shared', 'SHARED_PLATFORM=Darwin',
+            'SHARED_LIBRARY=/tmp/doe-export-dry-run/libcompiler.dylib',
+            'SHARED_INSTALL_NAME=@rpath/owned/libcompiler.dylib',
+            'TMPDIR=/tmp/doe-export-dry-run/tmp'], cwd=ROOT, text=True)
+        self.assertIn('-install_name,@rpath/owned/libcompiler.dylib', output)
+        self.assertNotIn('-install_name,/tmp/', output)
 
 
 if __name__ == '__main__':

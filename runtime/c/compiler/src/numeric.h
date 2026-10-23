@@ -9,7 +9,12 @@
  * Finish restoration before publishing output, on failure as well as success. */
 typedef struct {
     fenv_t saved;
+#if defined(__x86_64__)
     uint32_t saved_mxcsr;
+    uint16_t saved_x87_control;
+#elif defined(__aarch64__) || defined(__arm64__)
+    uint64_t saved_fpcr, saved_fpsr;
+#endif
     bool active;
 } NumericEnvironment;
 
