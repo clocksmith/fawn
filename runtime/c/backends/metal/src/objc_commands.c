@@ -54,7 +54,7 @@ doe_mtl_status doe_mtl_objc_fill(void *userdata, void *command, void *buffer,
 }
 
 doe_mtl_status doe_mtl_objc_dispatch(void *userdata, void *command, void *pipeline,
-    const doe_mtl_native_binding *bindings, uint32_t sizes_slot,
+    const doe_mtl_native_resources *resources, uint32_t sizes_slot,
     doe_mtl_dimensions groups, doe_mtl_dimensions workgroup, uint32_t repeat,
     doe_mtl_error *error) {
     doe_mtl_objc *runtime = userdata;
@@ -73,13 +73,17 @@ doe_mtl_status doe_mtl_objc_dispatch(void *userdata, void *command, void *pipeli
     runtime->set_object_call(encoder, runtime->set_pipeline, pipeline);
     for (i = 0; i < DOE_MTL_BUFFER_SLOTS; ++i) {
         runtime->bind_buffer_call(encoder, runtime->set_buffer,
-            bindings[i].buffer, bindings[i].offset, i);
-        sizes[i] = bindings[i].size;
+            resources->buffers[i].buffer, resources->buffers[i].offset, i);
+        sizes[i] = resources->buffers[i].size;
     }
     if (sizes_slot != UINT32_MAX) {
         runtime->bind_bytes_call(encoder, runtime->set_bytes,
             sizes, ((size_t)sizes_slot + 1) * sizeof(uint32_t), sizes_slot);
     }
+    for (i = 0; i < resources->texture_count; ++i)
+        runtime->bind_image_call(encoder, runtime->set_texture, resources->textures[i], i);
+    for (i = 0; i < resources->sampler_count; ++i)
+        runtime->bind_image_call(encoder, runtime->set_sampler, resources->samplers[i], i);
     for (i = 0; i < repeat; ++i)
         runtime->dispatch_call(encoder, runtime->dispatch, grid, group);
     doe_mtl_objc_void(runtime, encoder, runtime->end_encoding);

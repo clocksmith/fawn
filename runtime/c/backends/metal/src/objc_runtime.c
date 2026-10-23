@@ -110,6 +110,7 @@ static doe_mtl_status create_device(void *userdata, void **out, doe_mtl_caps *ca
         doe_mtl_objc_drain(runtime, pool);
         return doe_mtl_fail(DOE_MTL_UNSUPPORTED, "Metal device limits", error);
     }
+    doe_mtl_objc_image_caps(runtime, device, &result);
     *out = device;
     *caps = result;
     doe_mtl_objc_drain(runtime, pool);
@@ -266,7 +267,16 @@ static doe_mtl_status open_apple_runtime(doe_mtl_native *out, doe_mtl_error *err
     runtime->fill_call = (doe_objc_fill_call)message;
     runtime->dimensions_call = (doe_objc_dimensions_call)message;
     runtime->dimensions_stret_call = (doe_objc_dimensions_stret_call)message_stret;
-    if (!load_selectors(runtime)) goto unavailable;
+    runtime->set_size_call = (doe_objc_set_size_call)message;
+    runtime->set_float_call = (doe_objc_set_float_call)message;
+    runtime->bool_call = (doe_objc_bool_call)message;
+    runtime->family_call = (doe_objc_family_call)message;
+    runtime->view_call = (doe_objc_view_call)message;
+    runtime->bind_image_call = (doe_objc_bind_image_call)message;
+    runtime->upload_image_call = (doe_objc_upload_image_call)message;
+    runtime->read_image_call = (doe_objc_read_image_call)message;
+    runtime->copy_image_call = (doe_objc_copy_image_call)message;
+    if (!load_selectors(runtime) || !doe_mtl_objc_load_image_selectors(runtime)) goto unavailable;
     native.userdata = runtime;
     native.close = close_runtime;
     native.release = doe_mtl_objc_release;
@@ -279,6 +289,12 @@ static doe_mtl_status open_apple_runtime(doe_mtl_native *out, doe_mtl_error *err
     native.copy = doe_mtl_objc_copy;
     native.fill = doe_mtl_objc_fill;
     native.dispatch = doe_mtl_objc_dispatch;
+    native.texture = doe_mtl_objc_texture;
+    native.view = doe_mtl_objc_view;
+    native.sampler = doe_mtl_objc_sampler;
+    native.upload_texture = doe_mtl_objc_upload_image;
+    native.read_texture = doe_mtl_objc_read_image;
+    native.copy_texture = doe_mtl_objc_copy_image;
     native.commit = doe_mtl_objc_commit;
     native.observe = doe_mtl_objc_observe;
     *out = native;

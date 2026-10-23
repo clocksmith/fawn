@@ -319,7 +319,7 @@ static void pipeline_controls(void) {
 
 static void encoding_controls(void) {
     call_fixture fixture;
-    doe_mtl_native_binding bindings[DOE_MTL_BUFFER_SLOTS] = {{0}};
+    doe_mtl_native_resources resources = {0};
     void *command = NULL;
     fixture_init(&fixture);
     assert(doe_mtl_objc_command(&fixture.runtime, &fixture.queue, &command, NULL) == DOE_MTL_OK);
@@ -330,10 +330,10 @@ static void encoding_controls(void) {
     assert(doe_mtl_objc_fill(&fixture.runtime, command, &fixture.destination_buffer,
         16, 32, 0x87, NULL) == DOE_MTL_OK);
     assert(fixture.destination_offset == 16 && fixture.length == 32 && fixture.value == 0x87);
-    bindings[3] = (doe_mtl_native_binding){&fixture.source_buffer, 12, 28};
-    bindings[7] = (doe_mtl_native_binding){&fixture.destination_buffer, 4, 16};
+    resources.buffers[3] = (doe_mtl_native_binding){&fixture.source_buffer, 12, 28};
+    resources.buffers[7] = (doe_mtl_native_binding){&fixture.destination_buffer, 4, 16};
     assert(doe_mtl_objc_dispatch(&fixture.runtime, command, &fixture.pipeline,
-        bindings, 30, (doe_mtl_dimensions){2, 5, 7}, (doe_mtl_dimensions){8, 4, 2}, 3, NULL) == DOE_MTL_OK);
+        &resources, 30, (doe_mtl_dimensions){2, 5, 7}, (doe_mtl_dimensions){8, 4, 2}, 3, NULL) == DOE_MTL_OK);
     assert(fixture.pipeline_sets == 1 && fixture.buffer_sets == 31 && fixture.dispatches == 3);
     assert(fixture.bound[3].buffer == &fixture.source_buffer && fixture.bound[3].offset == 12);
     assert(fixture.bound[7].buffer == &fixture.destination_buffer && fixture.bound[7].offset == 4);
@@ -345,7 +345,7 @@ static void encoding_controls(void) {
     assert(fixture.ends == 3 && fixture.pools == fixture.drains);
     fixture.fail_encoder = true;
     assert(doe_mtl_objc_dispatch(&fixture.runtime, command, &fixture.pipeline,
-        bindings, UINT32_MAX, (doe_mtl_dimensions){1, 1, 1},
+        &resources, UINT32_MAX, (doe_mtl_dimensions){1, 1, 1},
         (doe_mtl_dimensions){1, 1, 1}, 1, NULL) == DOE_MTL_NATIVE_FAILURE);
     assert(fixture.ends == 3 && fixture.dispatches == 3 && fixture.pools == fixture.drains);
     doe_mtl_objc_release(&fixture.runtime, command);

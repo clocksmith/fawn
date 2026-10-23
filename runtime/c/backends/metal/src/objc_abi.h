@@ -10,6 +10,8 @@
  * x86_64 uses objc_msgSend_stret for a returned three-word MTLSize; arm64
  * uses the ordinary dispatcher. No opaque guessed-size SDK structures. */
 typedef struct doe_mtl_size { size_t width, height, depth; } doe_mtl_size;
+typedef struct doe_mtl_origin { size_t x, y, z; } doe_mtl_origin;
+typedef struct doe_mtl_swizzle_abi { uint8_t red, green, blue, alpha; } doe_mtl_swizzle_abi;
 typedef struct doe_mtl_range_abi { size_t location, length; } doe_mtl_range_abi;
 typedef void (*doe_objc_message)(void);
 #if defined(__aarch64__) || defined(__arm64__)
@@ -36,6 +38,20 @@ typedef void (*doe_objc_copy_call)(void *, void *, void *, size_t, void *, size_
 typedef void (*doe_objc_fill_call)(void *, void *, void *, doe_mtl_range_abi, uint8_t);
 typedef doe_mtl_size (*doe_objc_dimensions_call)(void *, void *);
 typedef void (*doe_objc_dimensions_stret_call)(doe_mtl_size *, void *, void *);
+
+typedef void (*doe_objc_set_size_call)(void *, void *, size_t);
+typedef void (*doe_objc_set_float_call)(void *, void *, float);
+typedef doe_objc_bool (*doe_objc_bool_call)(void *, void *);
+typedef doe_objc_bool (*doe_objc_family_call)(void *, void *, intptr_t);
+typedef void *(*doe_objc_view_call)(void *, void *, size_t, size_t,
+    doe_mtl_range_abi, doe_mtl_range_abi, doe_mtl_swizzle_abi);
+typedef void (*doe_objc_bind_image_call)(void *, void *, void *, size_t);
+typedef void (*doe_objc_upload_image_call)(void *, void *, void *, size_t, size_t,
+    size_t, doe_mtl_size, void *, size_t, size_t, doe_mtl_origin, size_t);
+typedef void (*doe_objc_read_image_call)(void *, void *, void *, size_t, size_t,
+    doe_mtl_origin, doe_mtl_size, void *, size_t, size_t, size_t, size_t);
+typedef void (*doe_objc_copy_image_call)(void *, void *, void *, size_t, size_t,
+    doe_mtl_origin, doe_mtl_size, void *, size_t, size_t, doe_mtl_origin);
 
 typedef struct doe_mtl_objc {
     void *objc_library;
@@ -65,6 +81,24 @@ typedef struct doe_mtl_objc {
     doe_objc_fill_call fill_call;
     doe_objc_dimensions_call dimensions_call;
     doe_objc_dimensions_stret_call dimensions_stret_call;
+    doe_objc_set_size_call set_size_call;
+    doe_objc_set_float_call set_float_call;
+    doe_objc_bool_call bool_call;
+    doe_objc_family_call family_call;
+    doe_objc_view_call view_call;
+    doe_objc_bind_image_call bind_image_call;
+    doe_objc_upload_image_call upload_image_call;
+    doe_objc_read_image_call read_image_call;
+    doe_objc_copy_image_call copy_image_call;
+    void *texture_class, *sampler_class;
+    void *new_texture, *new_view, *new_sampler;
+    void *set_type, *set_format, *set_width, *set_height, *set_depth;
+    void *set_mips, *set_layers, *set_samples, *set_storage, *set_usage;
+    void *set_min_filter, *set_mag_filter, *set_mip_filter;
+    void *set_address_u, *set_address_v, *set_address_w;
+    void *set_min_lod, *set_max_lod, *set_compare, *set_anisotropy;
+    void *upload_image, *read_image, *copy_image, *set_texture, *set_sampler;
+    void *supports_family, *supports_bc;
     void *pool_class;
     void *string_class;
     void *responds;
@@ -123,9 +157,24 @@ doe_mtl_status doe_mtl_objc_copy(void *userdata, void *command, void *source,
 doe_mtl_status doe_mtl_objc_fill(void *userdata, void *command, void *buffer,
     size_t offset, size_t length, uint8_t value, doe_mtl_error *error);
 doe_mtl_status doe_mtl_objc_dispatch(void *userdata, void *command, void *pipeline,
-    const doe_mtl_native_binding *bindings, uint32_t sizes_slot,
+    const doe_mtl_native_resources *resources, uint32_t sizes_slot,
     doe_mtl_dimensions groups, doe_mtl_dimensions workgroup, uint32_t repeat,
     doe_mtl_error *error);
+bool doe_mtl_objc_load_image_selectors(doe_mtl_objc *runtime);
+void doe_mtl_objc_image_caps(doe_mtl_objc *runtime, void *device, doe_mtl_caps *caps);
+doe_mtl_status doe_mtl_objc_texture(void *userdata, void *device,
+    const doe_mtl_texture_desc *desc, void **out, doe_mtl_error *error);
+doe_mtl_status doe_mtl_objc_view(void *userdata, void *texture,
+    const doe_mtl_texture_view_desc *desc, void **out, doe_mtl_error *error);
+doe_mtl_status doe_mtl_objc_sampler(void *userdata, void *device,
+    const doe_mtl_sampler_desc *desc, void **out, doe_mtl_error *error);
+doe_mtl_status doe_mtl_objc_upload_image(void *userdata, void *command, void *buffer,
+    void *texture, const doe_mtl_native_texture_copy *copy, doe_mtl_error *error);
+doe_mtl_status doe_mtl_objc_read_image(void *userdata, void *command, void *texture,
+    void *buffer, const doe_mtl_native_texture_copy *copy, doe_mtl_error *error);
+doe_mtl_status doe_mtl_objc_copy_image(void *userdata, void *command, void *source,
+    const doe_mtl_native_texture_copy *from, void *destination,
+    const doe_mtl_native_texture_copy *to, doe_mtl_error *error);
 void doe_mtl_objc_commit(void *userdata, void *command);
 size_t doe_mtl_objc_observe(void *userdata, void *command, bool wait, int64_t *code);
 #endif

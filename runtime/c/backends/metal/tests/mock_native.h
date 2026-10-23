@@ -5,7 +5,8 @@
 
 typedef enum mock_operation {
     MOCK_NONE, MOCK_DEVICE, MOCK_QUEUE, MOCK_BUFFER, MOCK_CONTENTS,
-    MOCK_PIPELINE, MOCK_COMMAND, MOCK_COPY, MOCK_FILL, MOCK_DISPATCH
+    MOCK_PIPELINE, MOCK_COMMAND, MOCK_COPY, MOCK_FILL, MOCK_DISPATCH,
+    MOCK_TEXTURE, MOCK_VIEW, MOCK_SAMPLER, MOCK_UPLOAD_IMAGE, MOCK_READ_IMAGE, MOCK_COPY_IMAGE
 } mock_operation;
 typedef struct mock_object mock_object;
 typedef struct mock_native {
@@ -20,7 +21,7 @@ typedef struct mock_native {
     unsigned commits;
     unsigned polls;
     unsigned waits;
-    unsigned releases_by_kind[6];
+    unsigned releases_by_kind[8];
     size_t pipeline_max_threads;
     bool unknown_commit;
     mock_object *last_command;
@@ -31,6 +32,12 @@ typedef struct mock_native {
     size_t last_length;
     uint8_t last_fill;
     doe_mtl_native_binding bindings[DOE_MTL_BUFFER_SLOTS];
+    doe_mtl_native_resources resources;
+    doe_mtl_texture_desc texture_desc;
+    doe_mtl_texture_view_desc view_desc;
+    doe_mtl_sampler_desc sampler_desc;
+    doe_mtl_native_texture_copy image_from, image_to;
+    unsigned uploads, reads, image_copies;
     uint32_t sizes_slot;
     doe_mtl_dimensions groups;
     doe_mtl_dimensions workgroup;

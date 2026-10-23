@@ -1,0 +1,142 @@
+{
+  "schema": "doe-c-metal-image-developer-evidence-v1",
+  "consumer": "C migration lead integration review of experimental image transfers and mixed compute resource owner",
+  "created_utc": "2026-10-23T19:07:04.424865+00:00",
+  "base_metal_commit": "33bf0b04",
+  "repository_head_at_observation": "c7ba36a4a06ebe0a34b353780c3d438e1fc1101c",
+  "qualification": "developer controls only; default off; not accepted as full migration, SDK validation or physical support",
+  "source_manifest": {
+    "path": "runtime/c/backends/metal/IMAGE_SOURCE_INPUTS.sha256",
+    "sha256": "da1b70d5f91f8e8a5c4deb8105a1e203422ca224196b16df62d8d27d60396b83",
+    "input_count": 32
+  },
+  "terminal_receipt": {
+    "path": "runtime/c/backends/metal/IMAGE_TERMINAL_RECEIPT.txt",
+    "sha256": "34b0f13788788b0dd4b7cbae594cdbab3d1aed5bef60c2058862867016e14773"
+  },
+  "compiler": "cc (Debian 14.2.0-19) 14.2.0",
+  "checks": [
+    {
+      "command": "make -C runtime/c/backends/metal BUILD=/tmp/doe-c-metal-images-final all check probe abi-compile",
+      "outcome": "pass",
+      "scope": "strict C11 build; original 10 ownership and 3 typed-call groups; 9 image ownership and 4 typed image groups; unsupported Linux probe; x86_64/arm64 source branch compilation, not cross-compilation"
+    },
+    {
+      "command": "ASAN_OPTIONS=detect_leaks=0 make -C runtime/c/backends/metal BUILD=/tmp/doe-c-metal-images-final sanitize",
+      "outcome": "pass",
+      "scope": "all four control executables under ASan/UBSan; LeakSanitizer disabled due to preserved hosted ptrace failure"
+    },
+    {
+      "command": "cc ... -fanalyzer -c context/resources/commands/textures/samplers/texture_formats/texture_ownership/texture_transfer.c",
+      "outcome": "pass",
+      "scope": "GCC analyzer, eight actual owner translation units"
+    },
+    {
+      "command": "c++ -I. -std=c++17 -Wall -Wextra -Werror -x c++ - -fsyntax-only",
+      "outcome": "pass",
+      "scope": "image and compute private backend headers"
+    },
+    {
+      "command": "git diff --check -- runtime/c/backends/metal",
+      "outcome": "pass"
+    },
+    {
+      "command": "python3 runtime/c/tools/check_source_size.py",
+      "outcome": "pass",
+      "scope": "460 files, zero failures at observation; each C/header <=999 physical lines"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "/tmp/doe-c-metal-images-final/libdoe_metal.a",
+      "sha256": "d1d878eff4aeab503a0b9fceb0e712c1342109ff848240f6efa93b861750a780"
+    },
+    {
+      "path": "/tmp/doe-c-metal-images-final/test_lifetime",
+      "sha256": "9b047426b6f4a9a6aeed1d5fea27b8c69fdf5b9f0b7745c7aa71488667d1a53b"
+    },
+    {
+      "path": "/tmp/doe-c-metal-images-final/test_objc_calls",
+      "sha256": "e5760a6b62211c37adfea6006a4933519f8751dc36272a2a80c310abfb7e0b25"
+    },
+    {
+      "path": "/tmp/doe-c-metal-images-final/test_images",
+      "sha256": "2ad1ecc1c0da71c947ec010fd5a483f82fc8634f6154c963b4282dd2f0a817bc"
+    },
+    {
+      "path": "/tmp/doe-c-metal-images-final/test_objc_images",
+      "sha256": "ebaba0e05040f1184abb85d68a8b3abbd3aaef20e1cc8bef8a6cfd0b818f2ca9"
+    },
+    {
+      "path": "/tmp/doe-c-metal-images-final/probe",
+      "sha256": "4b24125f5b38a3369a2d805ed5582f3b3b9fd2326c1b8a114458f68a68bde717"
+    },
+    {
+      "path": "/tmp/doe-c-metal-images-final/sanitize/test_lifetime",
+      "sha256": "1f08fd46e422c12f38d5c5ebc25d345e600a6ac7a76098659a6a76b0153d5a73"
+    },
+    {
+      "path": "/tmp/doe-c-metal-images-final/sanitize/test_objc_calls",
+      "sha256": "96148dc0d04471dd5b3648081ceaf518eca38ab079c867e92449f55ed7c27d0a"
+    },
+    {
+      "path": "/tmp/doe-c-metal-images-final/sanitize/test_images",
+      "sha256": "7abc44a093bea5f0c6f09e0379cf31bac69440f39398a814a535e01a4276f9e0"
+    },
+    {
+      "path": "/tmp/doe-c-metal-images-final/sanitize/test_objc_images",
+      "sha256": "0801c7b287b04cd6ff386726f7f9450cf3af8911c3d1e02d9ae463bcee402a4c"
+    }
+  ],
+  "measurements": {
+    "c_header_files": 26,
+    "c_header_physical_lines": 4535,
+    "production_c_header_files": 19,
+    "production_c_header_physical_lines": 2737,
+    "maximum_file_physical_lines": 429,
+    "complete_retained_delivery_reduction_measured": false,
+    "performance_measured": false
+  },
+  "implemented": [
+    "Native private sample1 textures: 1D, 1D array, 2D, 2D array, cube, cube array and 3D",
+    "43 uncompressed color and 14 BC block layout facts; runtime BC capability gate",
+    "Parent-retained views, explicit mip/face ranges, four-channel swizzle, opt-in linear/sRGB pairs",
+    "Native samplers with exact float LOD, filter, address, compare and anisotropy setters",
+    "Checked buffer-image/image-buffer/image-image transfers; 2D slices distinguished from 3D volume coordinates",
+    "One command owner for mixed compute buffers/textures/samplers, speculative mip/layer initialization and terminal-only retirement"
+  ],
+  "not_run": [
+    "Apple compiler/SDK ABI validation",
+    "Apple Objective-C runtime or GPU execution",
+    "Physical image or shader readback",
+    "LeakSanitizer under a supported runtime",
+    "Full retained-consumer/native integration qualification"
+  ],
+  "remaining_surfaces": [
+    "Depth/stencil, multisample, ETC/ASTC formats",
+    "Graphics and surfaces",
+    "Timestamps, shared events and external images",
+    "Indirect-count validation, caches and streaming reuse",
+    "Full native/frontend wiring"
+  ],
+  "historical_compute_evidence": {
+    "commit": "33bf0b04",
+    "files": [
+      "SOURCE_INPUTS.sha256",
+      "DEVELOPER_RECEIPT.json",
+      "TERMINAL_RECEIPT.txt"
+    ],
+    "unchanged": true,
+    "note": "Historical seals refer to committed compute-slice bytes, not current image-capable inputs."
+  },
+  "boundary_effects": [
+    "Only runtime/c/backends/metal edited",
+    "No provider/default change or new public ownership policy",
+    "No SDK/tool installation, physical test or source deletion",
+    "No shader simulation, fake device or synthesized pixel results"
+  ],
+  "charter_check": {
+    "local_metal_charter": "passes",
+    "global_gate": "blocked only by stale docs/component-index.md at observation; shared index owned by integration lead"
+  }
+}
