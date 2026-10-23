@@ -183,6 +183,14 @@ int main(void)
     configure(&s, surface, format, w.width, w.height);
     for (unsigned i = 0; i < 2; ++i) render_frame(&s, surface, format, pipeline, w.width, w.height, i + 2, i == 0);
 
+    /* Reconfigure at a different size while presentation is in flight: the
+     * previous configuration retires through the pending worker once its
+     * presentation fences signal, not synchronously in configure. */
+    present_burst(surface, 4);
+    resize_window(&w, 64, 48);
+    configure(&s, surface, format, w.width, w.height);
+    for (unsigned i = 0; i < 2; ++i) render_frame(&s, surface, format, pipeline, w.width, w.height, i + 5, i == 0);
+
     /* Unconfigure with a held frame and view: retirement defers until release. */
     WGPUSurfaceTexture held = acquire(surface);
     assert(held.texture);
@@ -212,8 +220,8 @@ int main(void)
     xcb_disconnect(w.connection);
     printf("PASS public surface presentation: XCB window %ux%u after resize (%s), compatibleSurface adapter, "
         "capabilities, %u verified frames with zero-init/asymmetric pixels/same-submission readback before present, "
-        "stale-frame and lease rejection, reconfigure, deferred unconfigure, early releases and configure/acquire/present "
-        "negatives; %u retried Timeout statuses %s\n", w.width, w.height, observed, FRAMES + 4, timeouts,
+        "stale-frame and lease rejection, reconfigure, reconfigure at a new size after a present burst, deferred unconfigure, early releases and configure/acquire/present "
+        "negatives; %u retried Timeout statuses %s\n", w.width, w.height, observed, FRAMES + 6, timeouts,
         adapter_class_scope());
     return 0;
 }

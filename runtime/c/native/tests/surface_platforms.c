@@ -19,7 +19,10 @@ static WGPUSurface create_surface(WGPUInstance instance, WGPUChainedStruct *chai
     return surface;
 }
 
-static void run_frames(WGPUSurface surface, uint32_t width, uint32_t height, unsigned frames, const char *name)
+/* resize: the source has no fixed extent (Wayland), so it also reconfigures
+ * at twice the size right after a present burst, with presentation in flight. */
+static void run_frames(WGPUSurface surface, uint32_t width, uint32_t height, unsigned frames, bool resize,
+    const char *name)
 {
     state s = {0};
     s.instance = wgpuCreateInstance(NULL);
@@ -29,6 +32,14 @@ static void run_frames(WGPUSurface surface, uint32_t width, uint32_t height, uns
     configure(&s, surface, format, width, height);
     WGPURenderPipeline pipeline = quadrant_pipeline(&s, format);
     for (unsigned i = 0; i < frames; ++i) render_frame(&s, surface, format, pipeline, width, height, i, i == 0);
+    if (resize) {
+        present_burst(surface, 4);
+        width *= 2;
+        height *= 2;
+        configure(&s, surface, format, width, height);
+        for (unsigned i = 0; i < 2; ++i) render_frame(&s, surface, format, pipeline, width, height, i + frames, i == 0);
+        frames += 2;
+    }
     wgpuSurfaceUnconfigure(surface);
     wgpuRenderPipelineRelease(pipeline);
     wgpuSurfaceRelease(surface);
@@ -63,7 +74,7 @@ static bool run_xlib(void)
     source.window = window;
     WGPUInstance instance = wgpuCreateInstance(NULL);
     run_frames(create_surface(instance, &source.chain), (uint32_t)attributes.width,
-        (uint32_t)attributes.height, 3, "Xlib window");
+        (uint32_t)attributes.height, 3, false, "Xlib window");
     wgpuInstanceRelease(instance);
     XDestroyWindow(display, window);
     XCloseDisplay(display);
@@ -98,7 +109,8 @@ static bool run_wayland(void)
     source.display = display;
     source.surface = native;
     WGPUInstance instance = wgpuCreateInstance(NULL);
-    run_frames(create_surface(instance, &source.chain), 32, 24, 1, "Wayland role-less wl_surface (not displayed)");
+    run_frames(create_surface(instance, &source.chain), 32, 24, 1, true,
+        "Wayland role-less wl_surface (not displayed), then reconfigured at 64x48 after a present burst");
     wgpuInstanceRelease(instance);
     wl_surface_destroy(native);
     wl_compositor_destroy(compositor);
