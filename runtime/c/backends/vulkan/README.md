@@ -510,6 +510,13 @@ waits pending presentation, discards a quiescent frame and unconfigures. It neve
 starts an acquire or releases caller command/image leases; BUSY preserves them.
 
 Host tests inject actual native-call boundaries and test these states, not display
-output. The installed software ICD admits Wayland/XCB maintenance1 and rejects Xlib.
-This cloud environment has no connected X/Wayland display or Xvfb, so actual window
-creation/acquisition/presentation and physical hardware qualification remain unrun.
+output. The public native frontend (`runtime/c/native`, `check-present`) now drives
+this owner end to end on real windows: on Jupiter (GNOME Wayland with Xwayland),
+lavapipe and Radeon 8060S/RADV both acquired, rendered, read back and presented
+XCB and Xlib windows (FIFO, including one Timeout retry and a resize that returned
+suboptimal) and a role-less Wayland `wl_surface`, with exact pixels read back in the
+presenting submission. That proves native acquisition, prepare-present,
+present-fence retirement, maintenance1 discard and swapchain teardown on those two
+drivers, not what the compositor displayed, OUTDATED/LOST observation on a real
+swapchain (host-tested only) or physical hardware qualification. Mesa Wayland
+reports 64 surface formats, so the explicit format capacity is 128.

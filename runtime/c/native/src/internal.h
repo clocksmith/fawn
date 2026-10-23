@@ -20,6 +20,7 @@
 
 typedef struct native_adapter {
     atomic_uint references;
+    pthread_mutex_t mutex; /* Serializes surface queries on the adapter's own context. */
     doe_instance *instance;
     native_backend backend;
 } native_adapter;
@@ -190,6 +191,9 @@ void native_pending_progress_destroy(native_device *device);
 doe_vk_status native_submit_commands(native_device *device, doe_vk_commands *commands);
 doe_vk_status native_initialize_texture(native_device *device, doe_vk_texture *texture,
     const doe_vk_texture_desc *desc, uint32_t texel_bytes);
+/* Resource finalizer for a native_texture payload: releases its backend texture
+ * under the device mutex, then frees the payload. */
+void native_texture_release(void *userdata, void *handle);
 bool native_compare_operation(WGPUCompareFunction value, uint32_t fallback, uint32_t *out);
 bool native_depth_format(WGPUTextureFormat format, doe_vk_texture_format *out);
 bool native_texture_format(WGPUTextureFormat format, doe_vk_texture_format *out);
