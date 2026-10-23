@@ -1,0 +1,32 @@
+make: Entering directory '/workspace/shared/doe-c-migration-20261023/runtime/c/compiler/targets/metal'
+python3 ../../../tools/check_source_size.py /workspace/shared/doe-c-migration-20261023/runtime/c/compiler/targets/metal/text.c /workspace/shared/doe-c-migration-20261023/runtime/c/compiler/targets/metal/types.c /workspace/shared/doe-c-migration-20261023/runtime/c/compiler/targets/metal/numeric.c /workspace/shared/doe-c-migration-20261023/runtime/c/compiler/targets/metal/access.c /workspace/shared/doe-c-migration-20261023/runtime/c/compiler/targets/metal/control.c /workspace/shared/doe-c-migration-20261023/runtime/c/compiler/targets/metal/stage.c /workspace/shared/doe-c-migration-20261023/runtime/c/compiler/targets/metal/metal.h /workspace/shared/doe-c-migration-20261023/runtime/c/compiler/targets/metal/private.h /workspace/shared/doe-c-migration-20261023/runtime/c/compiler/targets/metal/tests/test_metal.c
+C size check: 9 files, 0 failures; limit 999
+/tmp/doe-metal-target/test_metal
+Metal developer checks passed: real source lowering, layout, entries, workgroups, control, atomic rejection.
+/tmp/doe-metal-target/test_metal /tmp/doe-metal-target/control.metal /tmp/doe-metal-target/aggregate.metal
+Metal developer checks passed: real source lowering, layout, entries, workgroups, control, atomic rejection.
+g++ -std=c++17 -O2 -fno-fast-math -ffp-contract=off -Wno-attributes -Itests/host -I/tmp/doe-metal-target tests/host/check_scalar.cpp -o /tmp/doe-metal-target/check_scalar
+/tmp/doe-metal-target/check_scalar
+Emitted scalar host control passed: continuing/effects/wrapping/robustness.
+g++ -std=c++17 -O2 -fno-fast-math -ffp-contract=off -Wno-attributes -Itests/host -I/tmp/doe-metal-target tests/host/check_layout.cpp -o /tmp/doe-metal-target/check_layout
+/tmp/doe-metal-target/check_layout
+Emitted aggregate host control passed: typed copies, explicit layout, padding preservation.
+mkdir -p /tmp/doe-metal-target
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror -c text.c -o /tmp/doe-metal-target/text.o
+mkdir -p /tmp/doe-metal-target
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror -c types.c -o /tmp/doe-metal-target/types.o
+mkdir -p /tmp/doe-metal-target
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror -c numeric.c -o /tmp/doe-metal-target/numeric.o
+mkdir -p /tmp/doe-metal-target
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror -c access.c -o /tmp/doe-metal-target/access.o
+mkdir -p /tmp/doe-metal-target
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror -c control.c -o /tmp/doe-metal-target/control.o
+mkdir -p /tmp/doe-metal-target
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror -c stage.c -o /tmp/doe-metal-target/stage.o
+ar rcs /tmp/doe-metal-target/libdoe_metal_target.a /tmp/doe-metal-target/text.o /tmp/doe-metal-target/types.o /tmp/doe-metal-target/numeric.o /tmp/doe-metal-target/access.o /tmp/doe-metal-target/control.o /tmp/doe-metal-target/stage.o
+make: Leaving directory '/workspace/shared/doe-c-migration-20261023/runtime/c/compiler/targets/metal'
+make: Entering directory '/workspace/shared/doe-c-migration-20261023/runtime/c/compiler/targets/metal'
+mkdir -p /tmp/doe-metal-target-sanitize
+gcc -std=c11 -O1 -g -fno-omit-frame-pointer -fsanitize=address,undefined -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror text.c types.c numeric.c access.c control.c stage.c ../../src/builtin.c ../../src/compile.c ../../src/constants.c ../../src/lex.c ../../src/module.c ../../src/numeric.c ../../src/parse.c ../../src/reflection.c ../../src/sema_builtin.c ../../src/sema_call.c ../../src/sema_declarations.c ../../src/sema_expression.c ../../src/spirv.c ../../src/spirv_module.c ../../src/storage.c ../../src/types.c ../../src/uniformity.c ../../src/validate.c tests/test_metal.c -lm -o /tmp/doe-metal-target-sanitize/test_metal
+make: Leaving directory '/workspace/shared/doe-c-migration-20261023/runtime/c/compiler/targets/metal'
+Metal developer checks passed: real source lowering, layout, entries, workgroups, control, atomic rejection.

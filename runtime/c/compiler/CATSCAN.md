@@ -18,7 +18,7 @@ Translate the explicitly admitted WGSL surface into independently usable, source
 ## Contracts
 
 - Inputs: caller-owned source and explicitly sized output buffers through the versioned C API.
-- Outputs: SPIR-V, reflection and deterministic original-source diagnostics.
+- Outputs: SPIR-V, experimental MSL through the private typed-IR boundary, reflection and original-source diagnostics.
 
 ## Invariants
 
@@ -32,6 +32,7 @@ Translate the explicitly admitted WGSL surface into independently usable, source
 - Frozen milestone tests, independent instruction execution, SPIR-V target validation, sanitizer boundaries and ordinary GCC consumption pass.
 - Complete compiler migration additionally requires the retained support matrix, target interfaces and real adopter gates; a milestone pass is not completion.
 
+- Experimental MSL has [developer checks](targets/metal/README.md), not Metal SDK or GPU qualification.
 - Evidence: [accepted numeric/vector owner](MILESTONE_12_RESULTS.md), its
   [independent source-only gate](independent_tests_m12/PORTABLE_USAGE.md), and
   retained [compiler tests](tests/).

@@ -1,0 +1,32 @@
+/* SPDX-License-Identifier: MIT
+ * Copyright (c) 2026 Doe contributors
+ * Developer control only: compile the emitted scalar C++ operations under GCC.
+ * This is not a Metal SDK, MSL validator, GPU simulator or qualification oracle.
+ * Address spaces/entry attributes are intentionally not exercised here. */
+#ifndef DOE_METAL_SCALAR_HOST_CONTROL
+#define DOE_METAL_SCALAR_HOST_CONTROL
+#include <algorithm>
+#include <array>
+#include <cmath>
+#include <cstdint>
+#include <cstring>
+#define device
+#define constant const
+#define thread
+#define kernel
+namespace metal {
+using uint = std::uint32_t;
+using uchar = unsigned char;
+using ulong = unsigned long;
+using std::array;
+using std::clamp;
+using std::isnan;
+struct uint3 { uint lanes[3]; uint& operator[](unsigned i) { return lanes[i]; } };
+template<class To, class From> To as_type(From input) {
+    static_assert(sizeof(To) == sizeof(From), "bitcast size");
+    To output;
+    std::memcpy(&output, &input, sizeof(output));
+    return output;
+}
+}
+#endif
