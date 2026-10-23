@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
+import { basename, dirname, resolve } from 'node:path';
+import { libraryBasenamesForPlatform } from './platform-package.js';
 
 const EXPECTED_SCHEMA_VERSION = 1;
 const EXPECTED_ARTIFACT_TYPE = 'libwebgpu_doe';
@@ -81,7 +82,12 @@ function loadMetadataCandidate(metadataPath, parser, source) {
   return parser(parsed, metadataPath, source);
 }
 
-export function loadDoeBuildMetadata({ packageRoot = '', libraryPath = '' } = {}) {
+export function loadDoeBuildMetadata({ libraryPath = '' } = {}) {
+  // These legacy sidecars describe only the drop-in artifact. A C/delegate
+  // override has no matching metadata contract and must not inherit its proof.
+  if (!libraryPath || !libraryBasenamesForPlatform().includes(basename(libraryPath))) {
+    return UNKNOWN_DOE_BUILD_METADATA;
+  }
   const seen = new Set();
   const candidates = [];
 
@@ -98,14 +104,6 @@ export function loadDoeBuildMetadata({ packageRoot = '', libraryPath = '' } = {}
     pushCandidate(resolve(libraryDir, 'metadata.json'), parsePrebuildMetadata, 'prebuild');
     pushCandidate(resolve(libraryDir, 'doe-build-metadata.json'), parseDoeBuildSidecar, 'adjacent');
     pushCandidate(resolve(libraryDir, '..', 'share', 'doe-build-metadata.json'), parseDoeBuildSidecar, 'workspace');
-  }
-
-  if (packageRoot) {
-    pushCandidate(
-      resolve(packageRoot, 'prebuilds', `${process.platform}-${process.arch}`, 'metadata.json'),
-      parsePrebuildMetadata,
-      'package-prebuild',
-    );
   }
 
   for (const candidate of candidates) {
