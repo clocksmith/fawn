@@ -1,9 +1,14 @@
 /* SPDX-License-Identifier: MIT */
 #include "internal.h"
 
-/* WebGPU default layouts report 'float' only for textures used with a sampler.
- * Without exact pair-use reflection, a pipeline that declares no sampler at all
- * is the case known exactly: its f32 textures are 'unfilterable-float'. */
+/* SPEC DEVIATION, not finished: WebGPU default layouts report 'float' only for
+ * an f32 texture statically used in a texture builtin call together with a
+ * sampler (https://gpuweb.github.io/gpuweb/#default-pipeline-layout), otherwise
+ * 'unfilterable-float'. The compiler reflects no texture/sampler pair use, so
+ * once a pipeline references any sampler every f32 texture becomes 'float': an
+ * r32float texture used only by textureLoad is then rejected at createBindGroup.
+ * Only a pipeline without samplers is exact. The reflection needed from the
+ * compiler is requested in the team log. */
 static bool stages_sample(const native_stage *stages, size_t stage_count)
 {
     for (size_t s = 0; s < stage_count; ++s) {
@@ -97,7 +102,7 @@ doe_resource_status native_automatic_layout(native_device *device,
     doe_resource_layout_entry entries[DOE_RESOURCE_MAX_GROUPS][NATIVE_MAX_PIPELINE_BINDINGS];
     size_t counts[DOE_RESOURCE_MAX_GROUPS] = {0};
     size_t group_count = 0;
-    const bool sampled = stages_sample(stages, stage_count);
+    const bool sampled = stages_sample(stages, stage_count); /* Spec deviation: see stages_sample. */
     for (size_t stage_index = 0; stage_index < stage_count; ++stage_index) {
         const native_stage *stage = &stages[stage_index];
         const doe_shader_view *view = &stage->view;
@@ -151,8 +156,12 @@ static bool compatible(const doe_resource_layout_entry *actual, const doe_resour
                 (required->sample_type == WGPUTextureSampleType_UnfilterableFloat &&
                 actual->sample_type == WGPUTextureSampleType_Float));
     case DOE_BIND_STORAGE_TEXTURE:
-        return actual->view_dimension == required->view_dimension &&
-            actual->storage_access == required->storage_access && actual->storage_format == required->storage_format;
+        /* https://gpuweb.github.io/gpuweb/#abstract-opdef-validating-shader-binding:
+         * a "read-write" entry admits shader access read_write or write. */
+        return actual->view_dimension == required->view_dimension && actual->storage_format == required->storage_format &&
+            (actual->storage_access == required->storage_access ||
+                (actual->storage_access == WGPUStorageTextureAccess_ReadWrite &&
+                required->storage_access == WGPUStorageTextureAccess_WriteOnly));
     default: return false;
     }
 }
@@ -189,8 +198,9 @@ bool native_pipeline_bindings(native_pipeline *payload, const native_stage *stag
                 break;
             default: return false;
             }
-            /* Vertex stores are never enabled; fragment stores need the device's
-             * enabled fragmentStoresAndAtomics. */
+            /* Vertex stores are never enabled. Fragment stores need the enabled
+             * fragmentStoresAndAtomics, which native_backend_open requires of
+             * every Vulkan adapter; this stays the defensive per-stage check. */
             if (stage->visibility != WGPUShaderStage_Compute && resource->access != DOE_COMPILER_READ &&
                 (resource->kind == DOE_COMPILER_STORAGE_BUFFER || resource->kind == DOE_COMPILER_STORAGE_TEXTURE) &&
                 (stage->visibility != WGPUShaderStage_Fragment ||

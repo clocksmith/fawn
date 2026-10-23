@@ -46,6 +46,12 @@ native_result native_backend_open(WGPUBackendType kind, bool fallback, uint32_t 
                 &result.value.vulkan.caps));
         if (status == NATIVE_OK && fallback && !result.value.vulkan.caps.software_adapter)
             status = NATIVE_UNAVAILABLE;
+        /* WebGPU core admits writable storage buffers and textures in fragment
+         * shaders under the per-stage limits, and no limit can report their
+         * absence: a device without fragmentStoresAndAtomics is refused, not
+         * advertised with a hidden gap. */
+        if (status == NATIVE_OK && !result.value.vulkan.caps.fragment_stores_and_atomics)
+            status = NATIVE_UNAVAILABLE;
         if (status == NATIVE_OK && native_vulkan_limits(&result.value.vulkan.caps,
                 &result.limits) != WGPUStatus_Success) status = NATIVE_FAILURE;
     } else if (kind == WGPUBackendType_Metal) {
