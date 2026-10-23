@@ -41,6 +41,11 @@ Do not reformat frozen milestones to meet a metric. See
   and never read potentially freed state afterward. Preserve atomic/publication
   rules; one owner finalizes. Timeout/cancellation is not completion, and uncertain
   completion never authorizes resource reuse or destruction.
+- Drop a reference that may be the last one, or join/wait on another owner's
+  thread, only with no owner lock held. A finalizer that must release a lease
+  while its caller holds a (recursive) owner lock may do so only when that caller
+  still holds another lease on the same object, so the drop cannot finalize or join.
+  State which lease guarantees this at the call site.
 
 ## Readability and decisive checks
 
