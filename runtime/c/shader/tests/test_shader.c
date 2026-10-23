@@ -255,6 +255,50 @@ int main(void)
     assert(view.target_entry_count == 0u && view.target_binding_count == 0u);
     doe_shader_release(shader);
     assert(a.live == 0u);
+    options.target = DOE_SHADER_HLSL;
+    options.selection = (DoeCompilerEntrySelectionV5){.mode=DOE_COMPILER_SELECT_NAME,
+        .name="selected",.name_length=8};
+    char hlsl_source[] =
+        "@group(2) @binding(9) var<storage,read_write> output:array<u32>;"
+        "@group(1) @binding(2) var<uniform> scale:vec4u;"
+        "@compute @workgroup_size(1) fn first(){output[0]=0u;}"
+        "@compute @workgroup_size(4) fn selected(@builtin(num_workgroups) groups:vec3u){"
+        "output[0]=scale.x+groups.x;}";
+    shader = sentinel;
+    for (unsigned ordinal = 1; ordinal <= 3; ++ordinal) {
+        a = (allocations){.fail_at=ordinal};
+        assert(doe_shader_create(&options, hlsl_source, strlen(hlsl_source), &shader, &error) == DOE_SHADER_OUT_OF_MEMORY);
+        assert(shader == sentinel && !a.live);
+    }
+    a = (allocations){0};
+    assert(doe_shader_create(&options, hlsl_source, strlen(hlsl_source), &shader, &error) == DOE_SHADER_OK);
+    assert(a.calls == 3 && a.live == 1);
+    assert(doe_shader_borrow(shader, &view) == DOE_SHADER_OK);
+    assert(view.target == DOE_SHADER_HLSL && view.target_language_version == 600);
+    assert(!view.words && !view.counts.words && view.text_size && view.counts.entries == 2);
+    assert(!view.target_bindings && !view.target_entries && !view.target_binding_count && !view.target_entry_count);
+    assert(view.hlsl_binding_count == 2 && view.hlsl_entry_count == 1);
+    assert(view.hlsl_bindings[0].register_kind == DOE_COMPILER_HLSL_REGISTER_UAV);
+    assert(view.hlsl_bindings[0].shader_register == 9 && view.hlsl_bindings[0].register_space == 2);
+    assert(view.hlsl_bindings[0].stride == 4 && view.hlsl_bindings[1].register_kind == DOE_COMPILER_HLSL_REGISTER_CBV);
+    assert(view.hlsl_entries[0].entry_index == 1 && !strcmp(view.hlsl_entries[0].name, "selected"));
+    assert(!view.hlsl_entries[0].flags && view.hlsl_entries[0].dispatch_bytes == 16);
+    assert(view.hlsl_entries[0].dispatch_register == 0 && view.hlsl_entries[0].dispatch_space == 7);
+    assert(doe_shader_matches(shader, DOE_SHADER_HLSL, hlsl_source, strlen(hlsl_source),
+        options.compiler_identity, options.compiler_identity_size, &options.selection));
+    assert(!doe_shader_matches(shader, DOE_SHADER_METAL, hlsl_source, strlen(hlsl_source),
+        options.compiler_identity, options.compiler_identity_size, &options.selection));
+    hlsl_source[0] = '!';
+    assert(view.text[0] != '!' && doe_shader_retain(shader) == DOE_SHADER_OK);
+    doe_shader_release(shader);
+    assert(a.live == 1 && !strcmp(view.hlsl_entries[0].name, "selected"));
+    doe_shader_release(shader);
+    assert(!a.live);
+    options.selection = (DoeCompilerEntrySelectionV5){0};
+    assert(doe_shader_create(&options, "", 0, &shader, &error) == DOE_SHADER_OK);
+    assert(doe_shader_borrow(shader, &view) == DOE_SHADER_OK && !view.text && !view.hlsl_entry_count);
+    doe_shader_release(shader);
+    assert(!a.live);
     puts("owned shader: buffer/handle/stage metadata, matrix/library/owned Metal artifacts, identity, allocation rollback, lifetime PASS");
     return 0;
 }

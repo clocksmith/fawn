@@ -6,7 +6,7 @@ COMPILER_LIBRARY ?= ../compiler/build/libdoe_compiler.so
 CPPFLAGS += -Iinclude -I../compiler/include
 CFLAGS ?= -O2 -g
 CFLAGS += -std=c11 -Wall -Wextra -Wpedantic -Werror
-COMPILER_LINK = -L$(abspath $(dir $(COMPILER_LIBRARY))) -l:$(notdir $(COMPILER_LIBRARY)) -Wl,-rpath,$(abspath $(dir $(COMPILER_LIBRARY)))
+COMPILER_LINK = $(abspath $(COMPILER_LIBRARY)) -Wl,-rpath,$(abspath $(dir $(COMPILER_LIBRARY)))
 HEADERS = include/doe_shader.h $(wildcard ../compiler/include/*.h)
 .PHONY: all test sanitize
 all: $(BUILD)/libdoe_shader.a

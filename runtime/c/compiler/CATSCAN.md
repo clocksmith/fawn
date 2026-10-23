@@ -18,7 +18,10 @@ Translate the explicitly admitted WGSL surface into independently usable, source
 ## Contracts
 
 - Inputs: caller-owned source and explicitly sized output buffers through the versioned C API.
-- Outputs: SPIR-V and explicit ABI10 experimental MSL artifacts from one shared typed pipeline, reflection, target binding/entry metadata and original-source diagnostics.
+- Outputs: SPIR-V, ABI10 experimental MSL and additive ABI11 HLSL artifacts from
+  one shared typed pipeline, reflection, target binding/entry metadata and
+  original-source diagnostics. HLSL records include register namespaces/spaces,
+  exact entry names and dispatch/native feature requirements.
 
 ## Invariants
 
@@ -33,6 +36,8 @@ Translate the explicitly admitted WGSL surface into independently usable, source
 - Complete compiler migration additionally requires the retained support matrix, target interfaces and real adopter gates; a milestone pass is not completion.
 
 - Experimental MSL has [developer checks](targets/metal/README.md), not Metal SDK or GPU qualification.
+- Public HLSL has [typed developer consumption and bounded DXC checks](targets/hlsl/README.md),
+  not independent semantic, Windows SDK, device or production-provider qualification.
 - Evidence: [accepted numeric/vector owner](MILESTONE_12_RESULTS.md), its
   [independent source-only gate](independent_tests_m12/PORTABLE_USAGE.md), and
   retained [compiler tests](tests/).

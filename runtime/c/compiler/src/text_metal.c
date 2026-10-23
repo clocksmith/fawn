@@ -9,8 +9,10 @@ bool compiler_text_metal(Source *source, uint32_t selected, DoeTargetScratch scr
     const CompilerWorkspace *c = source->compiler;
     *result = (TextTargetResult){0};
     if (c->entry_count == 0u) return true;
-    if (doe_metal_emit(source, c, selected, scratch, NULL, 0u, &result->code) != DOE_COMPILER_OK)
+    DoeMetalResult measured;
+    if (doe_metal_emit(source, c, selected, scratch, NULL, 0u, &measured) != DOE_COMPILER_OK)
         return false;
+    result->required_bytes = measured.required_bytes;
     /* Capacity-sized private metadata staging is explicitly charged by ABI10.
      * table zero is an unvisited source resource, not a second closure graph. */
     const uint64_t limit = UINT64_C(67108864);

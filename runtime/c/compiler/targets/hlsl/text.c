@@ -2,6 +2,7 @@
  * Copyright (c) 2026 Doe contributors */
 #include "private.h"
 #include "../ir_view.h"
+#include "../../src/stage.h"
 #include <errno.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -65,6 +66,9 @@ void hlsl_value(HlslEmitter *e, uint32_t id) {
     } else hlsl_format(e, "v%u", id);
 }
 static void emit_entry(HlslEmitter *e, uint32_t entry) {
+    const bool previous_dispatch = e->needs_dispatch, previous_subgroups = e->uses_subgroups;
+    e->needs_dispatch = false;
+    e->uses_subgroups = false;
     e->entry = entry;
     e->traversal_left = 4096u * ((uint64_t)e->module->type_count +
         e->module->member_count + e->module->instruction_count + 1u);
@@ -79,6 +83,21 @@ static void emit_entry(HlslEmitter *e, uint32_t entry) {
     hlsl_resources(e);
     hlsl_numeric_helpers(e);
     hlsl_functions(e);
+    if (!e->failed && e->metadata.entries != NULL) {
+        const FunctionRecord *function = &e->module->functions[e->module->entries[entry].function];
+        DoeCompilerHlslEntryV11 *record = &e->metadata.entries[entry];
+        *record = (DoeCompilerHlslEntryV11){.entry_index=entry,.stage=stage_kind(function),
+            .flags=e->uses_subgroups ? DOE_COMPILER_HLSL_ENTRY_WAVES : 0u,
+            .dispatch_register=e->needs_dispatch ? DOE_HLSL_DISPATCH_SLOT : NO_ID,
+            .dispatch_space=e->needs_dispatch ? DOE_HLSL_DISPATCH_SPACE : NO_ID,
+            .dispatch_bytes=e->needs_dispatch ? 16u : 0u};
+        HlslEmitter name = {.source=e->source,.module=e->module,.output=record->name,
+            .capacity=sizeof(record->name)-1u};
+        hlsl_entry_name(&name, function->name);
+        if (name.failed) e->failed = true;
+    }
+    e->needs_dispatch = previous_dispatch || e->needs_dispatch;
+    e->uses_subgroups = previous_subgroups || e->uses_subgroups;
 }
 static void emit_module(HlslEmitter *e) {
     hlsl_text(e, "// Experimental Doe typed-IR HLSL target, Shader Model 6.0.\n");
@@ -145,6 +164,38 @@ DoeCompilerStatus doe_hlsl_emit(Source *source, const CompilerWorkspace *module,
         .capacity = capacity, .selected_entry = selected_entry, .closure = closure};
     emit_module(&writer);
     if (!writer.failed) result->written_bytes = writer.position;
+    errno = saved_errno;
+    return source->diagnostic->status;
+}
+
+DoeCompilerStatus doe_hlsl_emit_metadata(Source *source, const CompilerWorkspace *module,
+    uint32_t selected_entry, DoeTargetScratch scratch, DoeHlslMetadata metadata, DoeHlslResult *result) {
+    const int saved_errno = errno;
+    if (source == NULL || source->diagnostic == NULL || module == NULL || result == NULL ||
+        (module->resource_count != 0u && metadata.bindings == NULL) ||
+        (module->entry_count != 0u && metadata.entries == NULL)) {
+        errno = saved_errno;
+        return DOE_COMPILER_INPUT_ERROR;
+    }
+    *result = (DoeHlslResult){0};
+    TargetClosure closure;
+    if ((selected_entry != NO_ID && selected_entry >= module->entry_count) ||
+        !target_closure_bind(module, scratch, &closure)) {
+        (void)source_error(source, DOE_COMPILER_INPUT_ERROR, 0u, "invalid HLSL metadata entry or scratch");
+        errno = saved_errno;
+        return DOE_COMPILER_INPUT_ERROR;
+    }
+    if (module->resource_count != 0u)
+        memset(metadata.bindings, 0, (size_t)module->resource_count * sizeof(*metadata.bindings));
+    HlslEmitter measure = {.source=source,.closure=closure,.module=module,
+        .selected_entry=selected_entry,.metadata=metadata};
+    emit_module(&measure);
+    if (!measure.failed) {
+        result->required_bytes = measure.position;
+        result->entry_count = selected_entry == NO_ID ? module->entry_count : 1u;
+        result->needs_dispatch_info = measure.needs_dispatch;
+        result->uses_subgroups = measure.uses_subgroups;
+    }
     errno = saved_errno;
     return source->diagnostic->status;
 }

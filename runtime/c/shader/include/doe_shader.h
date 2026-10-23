@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: MIT */
 #ifndef DOE_SHADER_H
 #define DOE_SHADER_H
-#include "doe_compiler_text.h"
+#include "doe_compiler_hlsl.h"
 #include <stdbool.h>
 #ifdef __cplusplus
 extern "C" {
@@ -21,7 +21,7 @@ typedef struct doe_shader_allocator {
     void (*deallocate)(void *userdata, void *memory, size_t bytes, size_t alignment);
 } doe_shader_allocator;
 typedef enum doe_shader_target {
-    DOE_SHADER_SPIRV = 0, DOE_SHADER_METAL = 1
+    DOE_SHADER_SPIRV = 0, DOE_SHADER_METAL = 1, DOE_SHADER_HLSL = 2
 } doe_shader_target;
 typedef struct doe_shader_options {
     doe_shader_target target; /* Zero preserves the SPIR-V default. No fallback. */
@@ -49,6 +49,12 @@ typedef struct doe_shader_view {
     size_t target_binding_count;
     const DoeCompilerTextEntryV10 *target_entries;
     size_t target_entry_count;
+    /* HLSL has explicit register namespaces and dispatch requirements, never
+     * reinterpreted Metal slot/size records. Other targets leave these empty. */
+    const DoeCompilerHlslBindingV11 *hlsl_bindings;
+    size_t hlsl_binding_count;
+    const DoeCompilerHlslEntryV11 *hlsl_entries;
+    size_t hlsl_entry_count;
     DoeCompilerModuleV5 module;
     DoeCompilerModuleOutputCounts counts;
     const uint32_t *words;

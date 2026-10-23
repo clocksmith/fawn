@@ -4,6 +4,20 @@
 #include "../closure.h"
 #include <inttypes.h>
 
+void hlsl_register(HlslEmitter *e, uint32_t index, uint32_t kind, uint32_t stride) {
+    const ResourceRecord *r = &e->module->resources[index];
+    char letter;
+    switch (kind) {
+        case DOE_COMPILER_HLSL_REGISTER_CBV: letter = 'b'; break;
+        case DOE_COMPILER_HLSL_REGISTER_SRV: letter = 't'; break;
+        case DOE_COMPILER_HLSL_REGISTER_UAV: letter = 'u'; break;
+        case DOE_COMPILER_HLSL_REGISTER_SAMPLER: letter = 's'; break;
+        default: hlsl_error(e, "HLSL register namespace is invalid"); return;
+    }
+    hlsl_format(e, "register(%c%u, space%u)", letter, r->binding, r->group);
+    if (e->metadata.bindings != NULL)
+        e->metadata.bindings[index] = (DoeCompilerHlslBindingV11){index, kind, r->binding, r->group, stride};
+}
 static bool memory_type(const CompilerWorkspace *c, TypeId type) {
     return (type >= IR_I32 && type <= IR_F32) ||
         (type >= 7u && (c->types[type - 7u].flags & (TYPE_HOST | TYPE_FIXED | TYPE_ABSTRACT)) ==
@@ -98,14 +112,16 @@ static void declare_resource(HlslEmitter *e, uint32_t index) {
             hlsl_error(e, "HLSL constant buffer exceeds the 64 KiB CBV limit");
             return;
         }
-        hlsl_format(e, "cbuffer DoeUniform%u : register(b%u, space%u) {\n",
-                    index, r->binding, r->group);
+        hlsl_format(e, "cbuffer DoeUniform%u : ", index);
+        hlsl_register(e, index, DOE_COMPILER_HLSL_REGISTER_CBV, 0u);
+        hlsl_text(e, " {\n");
         hlsl_format(e, "    uint4 r%u_data[%" PRIu64 "];\n};\n", index, (r->minimum + 15u) / 16u);
     } else if (r->kind == DOE_COMPILER_STORAGE_BUFFER &&
                (r->access == DOE_COMPILER_READ || r->access == DOE_COMPILER_READ_WRITE)) {
         const bool writable = r->access == DOE_COMPILER_READ_WRITE;
-        hlsl_format(e, "%sStructuredBuffer<uint> r%u : register(%c%u, space%u);\n",
-                    writable ? "RW" : "", index, writable ? 'u' : 't', r->binding, r->group);
+        hlsl_format(e, "%sStructuredBuffer<uint> r%u : ", writable ? "RW" : "", index);
+        hlsl_register(e, index, writable ? DOE_COMPILER_HLSL_REGISTER_UAV : DOE_COMPILER_HLSL_REGISTER_SRV, 4u);
+        hlsl_text(e, ";\n");
         hlsl_format(e, "uint doe_r%u_bytes() {\n    uint count, stride;\n", index);
         hlsl_format(e, "    r%u.GetDimensions(count, stride);\n", index);
         hlsl_text(e, "    return stride == 4u && count <= 0x3fffffffu ? count * 4u : 0u;\n}\n");

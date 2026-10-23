@@ -3,6 +3,7 @@
 #ifndef DOE_COMPILER_TARGET_HLSL_H
 #define DOE_COMPILER_TARGET_HLSL_H
 #include "../scratch.h"
+#include "../../include/doe_compiler_hlsl.h"
 
 /* Private, allocation-free adapter over borrowed validated module IR. The source,
  * module, scratch, result and output must not overlap or change during the call. Output is
@@ -21,6 +22,14 @@ typedef struct {
     uint32_t entry_count;
     bool needs_dispatch_info, uses_subgroups;
 } DoeHlslResult;
+/* Optional private staging spans, at least resource_count/entry_count records.
+ * These are filled during real target measurement, never directly published. */
+typedef struct {
+    DoeCompilerHlslBindingV11 *bindings;
+    DoeCompilerHlslEntryV11 *entries;
+} DoeHlslMetadata;
 DoeCompilerStatus doe_hlsl_emit(Source *, const CompilerWorkspace *, uint32_t selected_entry, DoeTargetScratch scratch,
                                 char *output, size_t capacity, DoeHlslResult *result);
+DoeCompilerStatus doe_hlsl_emit_metadata(Source *, const CompilerWorkspace *, uint32_t selected_entry,
+    DoeTargetScratch scratch, DoeHlslMetadata, DoeHlslResult *result);
 #endif

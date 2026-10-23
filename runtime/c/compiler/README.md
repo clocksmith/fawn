@@ -370,9 +370,28 @@ The libc formatter is an explicit external leaf, not silently omitted storage.
 
 Consumers build the canonical shared library with `make shared`, optionally
 setting `SHARED_LIBRARY=/tmp/output/libdoe_compiler.so`, `TMPDIR=/tmp/output/tmp`
-and `EXTRA_CFLAGS` for instrumentation. The compiler and private Metal checks
-reuse `targets/metal/sources.mk`; consumers must not parse or copy source lists.
+and `EXTRA_CFLAGS` for instrumentation. The compiler and private target checks
+reuse `targets/metal/sources.mk` and `targets/hlsl/sources.mk`; consumers must not parse or copy source lists.
 `make -s print-library-sources` exposes expanded paths for source/graph audits.
+
+### Additive public HLSL text facade (ABI11)
+
+[`doe_compiler_hlsl.h`](include/doe_compiler_hlsl.h) adds two typed entrypoints
+without changing ABI1-10. It reuses the text API's capacities, flags, result and
+one compile/measure/publication owner, with separate HLSL binding and entry
+records. The actual serializer supplies register namespace/number/space/stride,
+exact entry names, bundle selectors, per-entry wave requirements and any group-
+count CBV. There is no reinterpretation of Metal's size-buffer metadata and no
+caller-side target parser. Whole-module schema9 reflection stays authoritative.
+
+`make test-hlsl-text` compiles and runs ordinary C/C++17 source-to-text consumers;
+`TEXT_TEST_BUILD` and `SHARED_LIBRARY` select their fresh output paths/artifact.
+The HLSL [target guide](targets/hlsl/README.md) specifies the bundle, binding and
+native consumer obligations. `DOE_SHADER_HLSL` in the [shader owner](../shader/README.md)
+retains these exact records with source/target identity and allocation rollback.
+Typed host results alone supply no DXC, DXIL, Windows SDK, GPU or production support.
+The [ABI11 developer receipt](DEVELOPER_RECEIPT_HLSL_ABI11.json) separately binds
+five actual DXC compute compilations and reflected register/wave comparisons.
 
 ### Component numeric family (developer increment)
 
