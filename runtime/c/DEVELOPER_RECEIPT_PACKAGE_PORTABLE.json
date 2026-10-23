@@ -1,0 +1,66 @@
+{
+  "source_commit": "9224ec81f2402030892b6ec16dfcdb9446689040",
+  "source_tree": "aa7c839cace5fda055a78b02d15ea92379057739",
+  "source_archive_sha256": "82537993e7b3c78212fc3c7f0f266580df1bf73820e5c2f01c53ad88f74c1662",
+  "build_command": [
+    "make",
+    "-C",
+    "/tmp/doe-package-portable-check-20261023/source/runtime/c/native",
+    "all",
+    "BUILD=/tmp/doe-package-portable-check-20261023/objects",
+    "CC=gcc",
+    "CXX=g++",
+    "COMPILER_RUNPATH=$$ORIGIN"
+  ],
+  "consumer_command": [
+    "g++",
+    "-std=c++17",
+    "-Wall",
+    "-Wextra",
+    "-Wpedantic",
+    "-Werror",
+    "/tmp/doe-package-portable-check-20261023/package-before-relocation/procedures.cpp",
+    "-I/tmp/doe-package-portable-check-20261023/package-before-relocation/include",
+    "-L/tmp/doe-package-portable-check-20261023/package-before-relocation/lib",
+    "-lwebgpu_doe_c",
+    "-Wl,-rpath,$ORIGIN/../lib",
+    "-o",
+    "/tmp/doe-package-portable-check-20261023/package-before-relocation/bin/procedures"
+  ],
+  "cc": "gcc (Debian 14.2.0-19) 14.2.0",
+  "cxx": "g++ (Debian 14.2.0-19) 14.2.0",
+  "host": "Linux-6.18.55-x86_64-with-glibc2.41",
+  "artifacts": {
+    "EXPORTED_SYMBOLS.txt": "f0c3a8f9bab65cc5b59617f59d1ea22713857eda69483b2fe363f8e88e703d56",
+    "bin/procedures": "ae801879b65a7608eb4cb4e09c68bfb9542db84086b51810f9cd660d1b490701",
+    "include/doe_compiler.h": "5bf4f5e5a4e4624c094320ad9ec97119278bc7f6f06b0e47c01e444d42c6dc5b",
+    "include/doe_compiler_features.h": "face7d3315ec8bcd884f354cc08efa566c479b5136a509b7db751399bbbd320c",
+    "include/doe_compiler_job.h": "6160e631973ffcd9777553520d329b6d6048315f2a90b1283989077e9f51237f",
+    "include/doe_compiler_module.h": "01cc2966ce7866ccfde6cca75e6ec6e60921f63c271e31cf94648e8d78907cef",
+    "include/doe_compiler_resources.h": "b16c1f9f1a5129daeb32f83baaac1fb1bea41c1a00c084c5fe9c4d7f6cded2b2",
+    "include/doe_compiler_stages.h": "805e94e55267837897ad1b9885d328ac8acf0cc7bfc92b9e5dfe97737439f668",
+    "include/doe_compiler_text.h": "159c2edb21326fe17b7e7dcfe523b4cb765fe34bb44e95b6932f884a1f6a24e1",
+    "include/doe_compiler_typed.h": "c7decbdb8da093a3485ded84901bf97f88eea8db6237dfd4089c730aa08e6216",
+    "include/doe_compiler_v2.h": "b0a60c2f05b70dba0786365dadd81b993accbd93f7f68f0e3accf86a815ae891",
+    "include/webgpu.h": "7691d76ceb67056f89e97b9ff0b62163eacf19a8e0e09a8fa7dbb32069b7978c",
+    "lib/libdoe_compiler.so": "28d253f3c81aa31ee069cac415e9a51a1885f8c9b8b3bc3e6ed26ba0fb2f439b",
+    "lib/libwebgpu_doe_c.so": "9ea32e6c34cceabf0f3b036f3d5adb065b93eff6e5407bc6d04455bdeceed829",
+    "licenses/Doe.txt": "66ccf82f3056418261f3a501d5ad03f156655171980c6d51a25a46495353c4d3",
+    "licenses/Khronos-SPIRV-Headers.txt": "ea43b1de38a6f90c488800d66dec1ed671e68cda530266bc96951fb5b6307613",
+    "licenses/WebGPU-Headers.txt": "17420d366df90c474bd70ad474694956cdb7fc64be70387a49a45458c4152d22",
+    "procedures.cpp": "09452f86d138d0b7d9257b8cbfcd9da6e5fa92e6076f9d859a5d23a259833afa"
+  },
+  "checks": [
+    "native C-only source build",
+    "moved C++ consumer with no library-path override",
+    "exact exported procedure inventory and addresses"
+  ],
+  "qualification": "Source-bound partial C Linux package build, relocation and typed procedure consumption only. No GPU execution, Apple SDK, Windows package, browser or production cutover qualification.",
+  "source_input_count": 3717,
+  "full_manifest_sha256": "daa3c25593dabaeecc9d58d3a5428ea080645a403463c801214bac3f6068d085",
+  "private_durable_archive": {
+    "sha256": "7ce0fe13825a62f6a1c7a4e03473e6ed7881be1bc8d67b3654f7be44e7633c8e",
+    "bytes": 1317630,
+    "roundtrip": "Every archived file hash and mode verified against original staged package; original artifacts retained."
+  }
+}
