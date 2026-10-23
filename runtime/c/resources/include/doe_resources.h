@@ -504,6 +504,11 @@ doe_resource_status doe_resource_encoder_begin_compute(doe_resource_encoder *enc
     doe_resource_compute_pass **out);
 void doe_resource_compute_pass_retain(doe_resource_compute_pass *pass);
 void doe_resource_compute_pass_release(doe_resource_compute_pass *pass);
+/* The WebGPU invalid pass returned after a rejected begin: it holds one encoder
+ * lease and records nothing. The encoder must already have failed (NULL
+ * otherwise, or on allocation failure), so every pass command, End and Finish
+ * report that rejection. */
+doe_resource_compute_pass *doe_resource_compute_pass_rejected(doe_resource_encoder *encoder);
 doe_resource_status doe_resource_compute_pass_set_pipeline(doe_resource_compute_pass *pass,
     doe_resource_pipeline *pipeline);
 /* NULL descriptor, or NULL group with no dynamic offsets, unbinds the slot. */

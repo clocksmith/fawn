@@ -36,6 +36,8 @@ an alias of device-free compiled data or a second count for one WebGPU object.
   and overwritten setters, moved into immutable records through retirement.
 - `commands.c`, `compute_pass.c`: sticky encoder admission, pass locking, transfer,
   direct/indirect compute snapshots and single-use submission self-leases.
+  After a rejected begin, `doe_resource_*_pass_rejected` returns the WebGPU
+  invalid pass: one encoder lease, no records, the encoder's rejection reported.
 - `queries.c`, `external_textures.c`, `render.c`, `render_state.c`: real native query-pool ownership,
   retained imported plane views, and attachment/draw/query replay snapshots.
   Render begin/end packets bracket query events, including empty query scopes.
@@ -267,7 +269,9 @@ transient attachments require Clear/Discard for each present aspect. Transient
 creation fixes usage to TransientAttachment|RenderAttachment, one 2D mip/layer
 and no view-format list; its views cannot drop the transient usage bit. One-dimensional
 textures have one mip and cannot be render attachments, and multisample textures
-require attachment usage. These structural rules follow the current
+require attachment usage and reject storage (copy usage is admitted: texture
+copies need equal sample counts and the whole subresource, buffer copies one
+sample). These structural rules follow the current
 [texture descriptor](https://gpuweb.github.io/gpuweb/#validating-gputexturedescriptor)
 and [attachment](https://gpuweb.github.io/gpuweb/#depth-stencil-attachments) contracts,
 correcting retained validation omissions rather than importing unsupported native

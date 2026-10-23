@@ -88,7 +88,10 @@ int main(void)
         descriptor.nextInChain = variant ? &budget.chain : &unknown;
         WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(s.device,NULL);
         wgpuDevicePushErrorScope(s.device,WGPUErrorFilter_Validation);
-        assert(!wgpuCommandEncoderBeginRenderPass(encoder,&descriptor));
+        WGPURenderPassEncoder rejected = wgpuCommandEncoderBeginRenderPass(encoder,&descriptor);
+        assert(rejected); /* WebGPU invalid pass; the error also surfaces at Finish. */
+        wgpuRenderPassEncoderEnd(rejected);
+        wgpuRenderPassEncoderRelease(rejected);
         assert(!wgpuCommandEncoderFinish(encoder,NULL));
         wgpuCommandEncoderRelease(encoder);
         expect_validation(&s);

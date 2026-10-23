@@ -54,7 +54,11 @@ int main(void)
     WGPUTexture sampled = image(&s,WGPUTextureFormat_RGBA8Unorm,usage);
     WGPUTexture depth = image(&s,WGPUTextureFormat_Depth32Float,WGPUTextureUsage_RenderAttachment | WGPUTextureUsage_CopySrc);
     WGPUBuffer readback = buffer(&s,5 * SLOT,WGPUBufferUsage_MapRead | WGPUBufferUsage_CopyDst);
-    WGPUBuffer output = buffer(&s,256,WGPUBufferUsage_Storage | WGPUBufferUsage_CopySrc);
+    WGPUBuffer output = buffer(&s,256,WGPUBufferUsage_Storage | WGPUBufferUsage_CopySrc | WGPUBufferUsage_CopyDst);
+    /* Pre-filled with -1.0: only the dispatch's own zero loads can clear it. */
+    float sentinel[64];
+    for (size_t i = 0; i < 64; ++i) sentinel[i] = -1.0f;
+    wgpuQueueWriteBuffer(s.queue,output,0,sentinel,sizeof(sentinel));
     WGPUComputePipeline reader = pipeline(&s,
         "@group(0) @binding(0) var t:texture_2d<f32>;@group(0) @binding(1) var<storage,read_write> o:array<vec4f>;"
         "@compute @workgroup_size(1) fn main(){for(var i=0u;i<8u;i++){o[i]=textureLoad(t,vec2i(i32(i%4u),i32(i/4u)),0);}}");
