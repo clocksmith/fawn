@@ -6,6 +6,32 @@ a performance result or physical-GPU evidence. Production/default selection is
 unchanged. Only the explicitly implemented symbols in `src/procedures.c` are
 exported; unknown and unimplemented names return NULL from `wgpuGetProcAddress`.
 
+## Backend selection and checked scope
+
+Explicit Vulkan and Metal requests use their own tagged context, typed payloads
+and finalizers within the same device/resource/pending-submission architecture.
+Unsupported backends, including D3D12, report unavailable without fallback.
+Undefined selects Vulkan on Linux and Metal on Apple within this experimental
+provider only; production/default provider selection is unchanged.
+
+Metal adapter/device identity, shared buffers, writes/maps, copy/fill and direct
+compute are composed with the real Metal owner. The ABI10 compiler and shader
+owner supply MSL text, selected entry spelling, sparse binding slots and runtime
+size metadata. Native conversion neither parses WGSL nor substitutes SPIR-V.
+The focused host test replaces only the native platform boundary with its existing
+call ledger. It proves composition, ordering, errors and retained obligations,
+not GPU copies, Apple SDK compilation, driver MSL compilation or Apple execution.
+Linux's actual absent Metal loader also produces an explicit unavailable result.
+
+Metal currently admits a chosen compute envelope: 256 total threads, at most
+256 per axis, 65535 groups per axis and 256-byte buffer offsets. These are frontend
+restrictions, not queried hardware claims. Actual buffer/threadgroup-memory and
+per-axis limits further constrain admission; the backend checks the real
+per-pipeline total-thread limit. Metal images, graphics, timestamps and indirect
+commands remain uncomposed. Native Metal execution failures are not guessed to
+mean device loss. Darwin library/link/test portability and physical qualification
+remain separate from the Linux host composition checked here.
+
 ## Actual ownership and execution path
 
 - Public instances alias the accepted C instance, including its future queue.
@@ -19,10 +45,10 @@ exported; unknown and unimplemented names return NULL from `wgpuGetProcAddress`.
   passes and command buffers alias their typed C resource owners, not wrappers
   with duplicate references. Device-bound shader resources adopt the separately
   shareable immutable `doe_shader` artifact.
-- Shader creation calls the C compiler. Entry selection uses the actual entry
+- Shader creation calls the C compiler for the selected backend target. Entry selection uses the actual entry
   reflection and its static resource closure. Layout checks include reflected
   minimum binding sizes, access kind, stage, resource/device identity and native
-  limits. The capability scanner admits Shader/Matrix, baseline 1D images and
+  limits. The Vulkan capability scanner admits Shader/Matrix, baseline 1D images and
   ImageQuery explicitly. The native context opts into demote when actually available;
   its exact SPIR-V extension/capability is admitted only when successfully enabled,
   never from an API-version guess. Other capabilities/extensions reject before pipeline
@@ -55,7 +81,7 @@ exported; unknown and unimplemented names return NULL from `wgpuGetProcAddress`.
   than reporting success. Releasing all caller handles does not free unresolved
   work; unattended recovery/liveness remains unfinished.
 - TimestampQuery is opt-in at device creation. Generated backend WGSL is compiled
-  by the same ABI9 C compiler before a feature-enabled device is published. Query
+  by the same C compiler before a feature-enabled device is published. Query
   sets alias the resource owner; zero-count sets need no native pool. Query resolve
   records raw timestamps, exact calibrated GPU nanosecond conversion and the copy
   into the caller's destination before later commands. There is no production CPU
@@ -86,7 +112,7 @@ exported; unknown and unimplemented names return NULL from `wgpuGetProcAddress`.
   Label bytes are optional diagnostics, not a second recorder or balance counter.
   ABI9 storage/workgroup atomics use compiler-owned robust access and initialization;
   no atomic type is reinterpreted by a frontend source parser.
-- Device serialization covers mutable resources and Vulkan state. Internal
+- Device serialization covers mutable resources and selected backend state. Internal
   recursive acquisition permits resource-finalizer cleanup using the same lock.
   Foreign callbacks run only after unlocking, with required full-call leases.
 
@@ -129,13 +155,14 @@ callback mode, not a claimed background compiler. No blanket success stubs or
 fallback provider resolution exist. The public advertised limits
 cover the implemented compute/image/graphics path only and do not claim the WebGPU
 Core feature level is complete; adapter/device creation remains experimental.
-Backend selection, Metal/D3D12 public composition, package adoption and surfaces
-remain unfinished. Private backend checks do not qualify those public integrations.
+Metal image/graphics/timestamp composition, D3D12 admission, package adoption
+and surfaces remain unfinished. Private backend checks do not qualify those public
+integrations; the Metal compute bridge remains host-tested only.
 
 ## Reproduce from a coherent checkout
 
-The Makefile builds `libdoe_compiler.so` using the compiler owner's canonical
-source list and flags, then links `libwebgpu_doe_c.so` from C owners only. It writes
+The Makefile invokes the compiler owner's canonical `shared` target for
+`libdoe_compiler.so`, without parsing or duplicating its target source lists, then links `libwebgpu_doe_c.so` from C owners only. It writes
 all outputs to /tmp by default. Existing GCC/G++ and Vulkan loader/ICD are needed;
 no installation or machine-setting change is performed.
 
@@ -257,3 +284,15 @@ pointer/ABI10 compiler changes and indirect work. The first atomic test failure
 used a reserved WGSL identifier; the corrected test and original log are retained.
 `COMPILER_RUNPATH` is overridable for staged builds; relocation is checked by the
 separate package owner, not implied by these development-path executions.
+
+`DEVELOPER_RECEIPT_BACKENDS.json` separately binds the tagged Vulkan/Metal bridge
+to committed c1b4efc1 dependencies and its exact native source. Its normal check
+adds explicit backend selection and the host Metal call ledger to the existing
+Vulkan clients. Metal controls cover actual compiler-owned MSL metadata, selected
+entry, static/dynamic offsets and size slots, asynchronous pipeline delivery,
+per-pipeline thread limits, no atomic-to-SPIR-V fallback, changed adapter identity,
+typed allocation/native failures and unknown-completion retention. The recorded
+first copy assertion incorrectly expected the mock ledger to execute GPU commands;
+the corrected control checks exact native calls and known initial readback bytes,
+without adding production emulation. All real image/graphics execution in this
+receipt is explicitly SwiftShader Vulkan, not Metal.

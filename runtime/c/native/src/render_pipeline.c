@@ -46,7 +46,7 @@ WGPURenderPipeline native_create_render_pipeline(native_device *device,
     const WGPURenderPipelineDescriptor *descriptor, native_pipeline_error *error)
 {
     *error = (native_pipeline_error){WGPUErrorType_Validation, "render descriptor, stage interface or capability unsupported"};
-    if (!device || !descriptor || descriptor->nextInChain || descriptor->vertex.nextInChain ||
+    if (!device || device->backend.kind != WGPUBackendType_Vulkan || !descriptor || descriptor->nextInChain || descriptor->vertex.nextInChain ||
         descriptor->vertex.constantCount) return NULL;
     const WGPUFragmentState *fragment = descriptor->fragment;
     if (fragment && (fragment->nextInChain || fragment->constantCount || fragment->targetCount > 1 ||
@@ -70,8 +70,8 @@ WGPURenderPipeline native_create_render_pipeline(native_device *device,
     doe_vk_vertex_layout layouts[DOE_VK_MAX_VERTEX_BUFFERS];
     doe_vk_vertex_attribute attributes[DOE_VK_MAX_VERTEX_ATTRIBUTES];
     if (!native_render_fixed(descriptor, &native) || !native_render_depth(descriptor->depthStencil, &native, &resource) ||
-        !vertices(&descriptor->vertex, &native, &resource, &device->caps, layouts, attributes) ||
-        !native_render_interfaces(stages, stage_count, &descriptor->vertex, color, descriptor->multisample.alphaToCoverageEnabled, &device->caps)) return NULL;
+        !vertices(&descriptor->vertex, &native, &resource, &device->backend.value.vulkan.caps, layouts, attributes) ||
+        !native_render_interfaces(stages, stage_count, &descriptor->vertex, color, descriptor->multisample.alphaToCoverageEnabled, &device->backend.value.vulkan.caps)) return NULL;
     native_pipeline *payload = calloc(1, sizeof(*payload));
     if (!payload) { *error = (native_pipeline_error){WGPUErrorType_OutOfMemory,"render pipeline payload allocation failed"}; return NULL; }
     payload->device = device;
@@ -85,9 +85,11 @@ WGPURenderPipeline native_create_render_pipeline(native_device *device,
     if (status == DOE_RESOURCE_OK && (!layout || doe_resource_pipeline_layout_device(layout) != device ||
         !native_pipeline_bindings(payload, stages, stage_count, layout))) status = DOE_RESOURCE_LAYOUT;
     if (status == DOE_RESOURCE_OK && backend == DOE_VK_OK) {
-        native.bindings = payload->bindings;
+        doe_vk_binding_layout native_bindings[DOE_RESOURCE_MAX_GROUPS * DOE_RESOURCE_MAX_BINDINGS];
+        if (!native_vulkan_binding_layout(payload,native_bindings)) abort();
+        native.bindings = native_bindings;
         native.binding_count = payload->binding_count;
-        backend = doe_vk_render_pipeline_create(device->context, &native, &payload->pipeline, NULL);
+        backend = doe_vk_render_pipeline_create(device->backend.value.vulkan.context, &native, &payload->handle.vulkan, NULL);
         if (backend == DOE_VK_OK) status = doe_resource_render_pipeline_create(&device->resources, layout, &resource,
             (doe_resource_native){payload,NULL,native_pipeline_release}, &pipeline);
     }
@@ -132,7 +134,7 @@ WGPUBindGroupLayout wgpuRenderPipelineGetBindGroupLayout(WGPURenderPipeline hand
     if (!device) return NULL;
     doe_resource_layout *layout = NULL;
     native_lock(device);
-    doe_resource_status status = index < device->caps.max_bind_groups ?
+    doe_resource_status status = index < device->backend.limits.maxBindGroups ?
         doe_resource_pipeline_layout_get_group(doe_resource_render_pipeline_get_layout(pipeline), index, &layout) : DOE_RESOURCE_RANGE;
     if (status == DOE_RESOURCE_OK) doe_resource_layout_retain(layout);
     native_unlock(device);

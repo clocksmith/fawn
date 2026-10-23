@@ -5,7 +5,7 @@
 struct native_pending {
     native_pending *next;
     native_device *device;
-    doe_vk_commands *native;
+    native_command_handle native;
     doe_resource_commands **resources;
     size_t count;
 };
@@ -18,11 +18,11 @@ static doe_vk_status record_dispatch(doe_vk_commands *commands, const doe_resour
         doe_resource_pipeline_get_layout(record->value.dispatch.pipeline), record->value.dispatch.groups,
         record->value.dispatch.dynamic_offsets, bindings);
     if (status != DOE_VK_OK) return status;
-    return doe_vk_commands_dispatch_resources(commands, pipeline->pipeline, bindings, pipeline->binding_count,
+    return doe_vk_commands_dispatch_resources(commands, pipeline->handle.vulkan, bindings, pipeline->binding_count,
         record->value.dispatch.x, record->value.dispatch.y, record->value.dispatch.z);
 }
 
-static doe_vk_status record_commands(doe_vk_commands *native, doe_resource_commands *commands)
+static doe_vk_status record_vulkan_commands(doe_vk_commands *native, doe_resource_commands *commands)
 {
     size_t count = 0;
     const doe_resource_command *records = doe_resource_commands_borrow(commands, &count);
@@ -34,14 +34,14 @@ static doe_vk_status record_commands(doe_vk_commands *native, doe_resource_comma
             native_buffer *source = doe_resource_buffer_native(record->value.copy.source);
             native_buffer *destination = doe_resource_buffer_native(record->value.copy.destination);
             if (!record->value.copy.size) continue;
-            status = doe_vk_commands_copy(native, source->buffer, record->value.copy.source_offset,
-                destination->buffer, record->value.copy.destination_offset, record->value.copy.size);
+            status = doe_vk_commands_copy(native, source->handle.vulkan, record->value.copy.source_offset,
+                destination->handle.vulkan, record->value.copy.destination_offset, record->value.copy.size);
             break;
         }
         case DOE_COMMAND_CLEAR_BUFFER: {
             native_buffer *buffer = doe_resource_buffer_native(record->value.clear.buffer);
             if (!record->value.clear.size) continue;
-            status = doe_vk_commands_fill(native, buffer->buffer, record->value.clear.offset,
+            status = doe_vk_commands_fill(native, buffer->handle.vulkan, record->value.clear.offset,
                 record->value.clear.size, 0);
             break;
         }
@@ -56,8 +56,8 @@ static doe_vk_status record_commands(doe_vk_commands *native, doe_resource_comma
                 .origin={copy->origin[0], copy->origin[1], copy->origin[2]},
                 .extent={copy->width, copy->height, copy->depth_or_layers}};
             status = record->value.texture.direction == DOE_RESOURCE_BUFFER_TO_TEXTURE ?
-                doe_vk_commands_upload_texture(native, buffer->buffer, layout, texture->texture, region) :
-                doe_vk_commands_read_texture(native, texture->texture, region, buffer->buffer, layout);
+                doe_vk_commands_upload_texture(native, buffer->handle.vulkan, layout, texture->texture, region) :
+                doe_vk_commands_read_texture(native, texture->texture, region, buffer->handle.vulkan, layout);
             break;
         }
         case DOE_COMMAND_COPY_TEXTURE: {
@@ -95,6 +95,38 @@ static doe_vk_status record_commands(doe_vk_commands *native, doe_resource_comma
     return DOE_VK_OK;
 }
 
+static native_result record_commands(native_command_handle *native, doe_resource_commands *commands)
+{
+    if (native->kind == WGPUBackendType_Vulkan)
+        return native_from_vulkan(record_vulkan_commands(native->value.vulkan, commands));
+    if (native->kind != WGPUBackendType_Metal) return NATIVE_UNSUPPORTED;
+    size_t count = 0;
+    const doe_resource_command *records = doe_resource_commands_borrow(commands, &count);
+    for (size_t i = 0; i < count; ++i) {
+        const doe_resource_command *record = &records[i];
+        doe_mtl_status status;
+        if (record->kind == DOE_COMMAND_COPY_BUFFER) {
+            native_buffer *source = doe_resource_buffer_native(record->value.copy.source);
+            native_buffer *destination = doe_resource_buffer_native(record->value.copy.destination);
+            if (!record->value.copy.size) continue;
+            status = doe_mtl_commands_copy(native->value.metal, source->handle.metal,
+                record->value.copy.source_offset, destination->handle.metal,
+                record->value.copy.destination_offset, record->value.copy.size, NULL);
+        } else if (record->kind == DOE_COMMAND_CLEAR_BUFFER) {
+            native_buffer *buffer = doe_resource_buffer_native(record->value.clear.buffer);
+            if (!record->value.clear.size) continue;
+            status = doe_mtl_commands_fill(native->value.metal, buffer->handle.metal,
+                record->value.clear.offset, record->value.clear.size, 0, NULL);
+        } else if (record->kind == DOE_COMMAND_DISPATCH) {
+            native_result dispatched = native_metal_dispatch(native->value.metal,record);
+            if (dispatched != NATIVE_OK) return dispatched;
+            continue;
+        } else return NATIVE_UNSUPPORTED;
+        if (status != DOE_MTL_OK) return native_from_metal(status);
+    }
+    return NATIVE_OK;
+}
+
 static void settle_resources(native_pending *pending, bool success)
 {
     for (size_t i = 0; i < pending->count; ++i) {
@@ -110,44 +142,42 @@ static void settle_resources(native_pending *pending, bool success)
 
 native_queue_settlement native_settle_pending(native_device *device)
 {
-    native_queue_settlement result = {true, DOE_VK_OK};
+    native_queue_settlement result = {true, NATIVE_OK};
     native_pending **cursor = &device->pending;
     while (*cursor) {
         native_pending *pending = *cursor;
-        doe_vk_error error = {0};
-        doe_vk_status status = doe_vk_commands_recover(pending->native, &error);
-        doe_vk_status released = doe_vk_commands_release(pending->native);
-        if (result.status == DOE_VK_OK && status != DOE_VK_OK) result.status = status;
-        if (released == DOE_VK_BUSY) {
+        native_result status = native_command_recover(&pending->native);
+        native_result released = native_command_release(&pending->native);
+        if (result.status == NATIVE_OK && status != NATIVE_OK) result.status = status;
+        if (released == NATIVE_BUSY) {
             device->queue_failed = true;
             result.complete = false;
-            if (result.status == DOE_VK_OK) result.status = DOE_VK_PENDING;
+            if (result.status == NATIVE_OK) result.status = NATIVE_PENDING;
             return result;
         }
-        if (released != DOE_VK_OK) abort();
+        if (released != NATIVE_OK) abort();
         *cursor = pending->next;
-        if (status != DOE_VK_OK) {
+        if (status != NATIVE_OK) {
             device->queue_failed = true;
             /* Proven terminal failure may poison the shared normalization scratch.
              * A later timestamp resolve reconstructs it, never reuses failed data. */
             doe_vk_timestamp_normalizer_release(device->timestamp_normalizer);
             device->timestamp_normalizer = NULL;
         }
-        settle_resources(pending, status == DOE_VK_OK);
+        settle_resources(pending, status == NATIVE_OK);
     }
     return result;
 }
 
-static doe_vk_status submit_pending(native_device *device, native_pending *pending)
+static native_result submit_pending(native_device *device, native_pending *pending)
 {
     pending->next = device->pending;
     device->pending = pending;
-    doe_vk_error error = {0};
-    doe_vk_status status = doe_vk_commands_submit(pending->native, &error);
-    if (status == DOE_VK_OK) status = doe_vk_commands_wait(pending->native, UINT64_MAX, &error);
-    if (status != DOE_VK_OK) device->queue_failed = true;
+    native_result status = native_command_submit(&pending->native);
+    if (status == NATIVE_OK) status = native_command_wait(&pending->native);
+    if (status != NATIVE_OK) device->queue_failed = true;
     native_queue_settlement settled = native_settle_pending(device);
-    return status == DOE_VK_OK ? settled.status : status;
+    return status == NATIVE_OK ? settled.status : status;
 }
 
 doe_vk_status native_submit_commands(native_device *device, doe_vk_commands *commands)
@@ -159,8 +189,8 @@ doe_vk_status native_submit_commands(native_device *device, doe_vk_commands *com
     }
     pending->device = device;
     native_device_retain(device);
-    pending->native = commands;
-    return submit_pending(device, pending);
+    pending->native = (native_command_handle){.kind=WGPUBackendType_Vulkan,.value.vulkan=commands};
+    return native_to_vulkan(submit_pending(device, pending));
 }
 
 void wgpuQueueSubmit(WGPUQueue handle, size_t count, const WGPUCommandBuffer *handles)
@@ -182,35 +212,34 @@ void wgpuQueueSubmit(WGPUQueue handle, size_t count, const WGPUCommandBuffer *ha
     pending->device = device;
     native_device_retain(device);
     native_lock(device);
-    doe_vk_status status = native_device_status(device);
-    if (status == DOE_VK_OK) status = native_settle_pending(device).status;
-    for (size_t i = 0; status == DOE_VK_OK && i < count; ++i) {
+    native_result status = native_device_result(device);
+    if (status == NATIVE_OK) status = native_settle_pending(device).status;
+    for (size_t i = 0; status == NATIVE_OK && i < count; ++i) {
         pending->resources[i] = (doe_resource_commands *)handles[i];
-        if (doe_resource_commands_device(pending->resources[i]) != device) status = DOE_VK_INVALID_ARGUMENT;
+        if (doe_resource_commands_device(pending->resources[i]) != device) status = NATIVE_INVALID_ARGUMENT;
         for (size_t j = 0; j < i; ++j)
-            if (handles[i] == handles[j]) status = DOE_VK_INVALID_ARGUMENT;
+            if (handles[i] == handles[j]) status = NATIVE_INVALID_ARGUMENT;
     }
-    doe_vk_error error = {0};
     doe_resource_status resource_status = DOE_RESOURCE_OK;
-    if (status == DOE_VK_OK) status = doe_vk_commands_create(device->context, &pending->native, &error);
-    for (size_t i = 0; status == DOE_VK_OK && i < count; ++i)
-        status = record_commands(pending->native, pending->resources[i]);
-    for (size_t i = 0; status == DOE_VK_OK && i < count; ++i) {
+    if (status == NATIVE_OK) status = native_command_create(&device->backend, &pending->native);
+    for (size_t i = 0; status == NATIVE_OK && i < count; ++i)
+        status = record_commands(&pending->native, pending->resources[i]);
+    for (size_t i = 0; status == NATIVE_OK && i < count; ++i) {
         resource_status = doe_resource_commands_begin_submit(pending->resources[i]);
-        if (resource_status != DOE_RESOURCE_OK) status = DOE_VK_INVALID_ARGUMENT;
+        if (resource_status != DOE_RESOURCE_OK) status = NATIVE_INVALID_ARGUMENT;
         else ++pending->count;
     }
-    if (status == DOE_VK_OK) {
+    if (status == NATIVE_OK) {
         /* recover preserves original submission failure; successful release is
          * the backend's proof of terminal or never-dispatched ownership. */
         status = submit_pending(device, pending);
     } else {
-        if (doe_vk_commands_release(pending->native) != DOE_VK_OK) abort();
+        if (native_command_release(&pending->native) != NATIVE_OK) abort();
         settle_resources(pending, false);
     }
     native_unlock(device);
-    if (status != DOE_VK_OK) native_error(device, resource_status != DOE_RESOURCE_OK ?
-        native_resource_error(resource_status) : native_backend_error(status),
+    if (status != NATIVE_OK) native_error(device, resource_status != DOE_RESOURCE_OK ?
+        native_resource_error(resource_status) : native_result_error(status),
         "queue submission failed; unresolved work stays retained");
 }
 
@@ -241,7 +270,7 @@ WGPUFuture wgpuQueueOnSubmittedWorkDone(WGPUQueue handle, WGPUQueueWorkDoneCallb
     WGPUFuture future = {0};
     if (settled.complete) future = native_callback(device->instance, callback.mode, &delivery,
         sizeof(delivery), _Alignof(queue_delivery), copy_queue, deliver_queue);
-    else native_error(device, native_backend_error(settled.status), "queue completion remains unknown; no completion future published");
+    else native_error(device, native_result_error(settled.status), "queue completion remains unknown; no completion future published");
     native_device_release(device);
     return future;
 }

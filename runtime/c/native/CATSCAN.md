@@ -19,16 +19,17 @@ Unsupported entrypoints stay absent or fail specifically, never fake success.
 
 ## Contracts
 Pinned `runtime/zig/vendor/webgpu-headers/webgpu.h` and C instance/futures/callbacks,
-error-scope, resource, shader and Vulkan owner contracts apply.
+error-scope, resource, shader and Vulkan/Metal owner contracts apply.
 
 ## Invariants
+One tagged device/pending owner selects Vulkan or Metal without fallback.
 No Zig fallback, synthetic completion or device migration. Unknown completion
 retains ownership. Foreign callbacks run outside locks. Reflection does not replace
 missing dispatch analysis; command and native obligations keep their existing owners.
 
 ## Acceptance
 Developer checks do not establish independent, physical or performance qualification.
-- Evidence: [MSAA/debug/atomics](DEVELOPER_RECEIPT_MSAA.json), [depth](DEVELOPER_RECEIPT_DEPTH.json), [demote/instance](DEVELOPER_RECEIPT_DEMOTE.json), [graphics](DEVELOPER_RECEIPT_GRAPHICS.json),
+- Evidence: [backend bridge](DEVELOPER_RECEIPT_BACKENDS.json), [MSAA/debug/atomics](DEVELOPER_RECEIPT_MSAA.json), [depth](DEVELOPER_RECEIPT_DEPTH.json), [demote/instance](DEVELOPER_RECEIPT_DEMOTE.json), [graphics](DEVELOPER_RECEIPT_GRAPHICS.json),
   [timestamps/recovery](DEVELOPER_RECEIPT_TIMESTAMPS.json) and
   [admission](DEVELOPER_RECEIPT_ADMISSION.json).
 

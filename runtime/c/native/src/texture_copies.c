@@ -91,7 +91,7 @@ void wgpuQueueWriteTexture(WGPUQueue handle, const WGPUTexelCopyTextureInfo *des
     doe_vk_status written = DOE_VK_OK;
     if (staging) {
         native_buffer *payload = doe_resource_buffer_native((doe_resource_buffer *)staging);
-        written = doe_vk_buffer_write(payload->buffer, 0, data, (size_t)bytes);
+        written = doe_vk_buffer_write(payload->handle.vulkan, 0, data, (size_t)bytes);
         status = written == DOE_VK_OK ? doe_resource_encoder_create(&device->resources, &encoder) : DOE_RESOURCE_STATE;
         if (status == DOE_RESOURCE_OK)
             status = doe_resource_encoder_copy_texture(encoder, (doe_resource_buffer *)staging,

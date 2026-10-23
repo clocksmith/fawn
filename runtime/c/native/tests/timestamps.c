@@ -28,8 +28,8 @@ static void read_raw(native_device *device, doe_vk_query_pool *pool, uint64_t va
     doe_vk_buffer *buffer = NULL;
     doe_vk_commands *commands = NULL;
     native_lock(device);
-    assert(doe_vk_buffer_create(device->context,32,DOE_VK_BUFFER_COPY_DST,DOE_VK_MEMORY_HOST,&buffer,NULL) == DOE_VK_OK);
-    assert(doe_vk_commands_create(device->context,&commands,NULL) == DOE_VK_OK);
+    assert(doe_vk_buffer_create(device->backend.value.vulkan.context,32,DOE_VK_BUFFER_COPY_DST,DOE_VK_MEMORY_HOST,&buffer,NULL) == DOE_VK_OK);
+    assert(doe_vk_commands_create(device->backend.value.vulkan.context,&commands,NULL) == DOE_VK_OK);
     assert(doe_vk_commands_resolve_queries(commands,pool,0,4,buffer,0) == DOE_VK_OK);
     assert(doe_vk_commands_submit(commands,NULL) == DOE_VK_OK);
     assert(doe_vk_commands_wait(commands,UINT64_C(5000000000),NULL) == DOE_VK_OK);
@@ -134,7 +134,7 @@ static void actual_queries(state *s)
     doe_vk_query_pool_release(raw_pool);
     const uint64_t *values = map(s,readback,56);
     for (size_t i = 0; i < 4; ++i)
-        assert(values[i] == expected_ns(raw[i],device->caps.timestamp_period_ns,device->caps.timestamp_valid_bits));
+        assert(values[i] == expected_ns(raw[i],device->backend.value.vulkan.caps.timestamp_period_ns,device->backend.value.vulkan.caps.timestamp_valid_bits));
     assert(raw[0] && raw[1] && raw[2] && !raw[3]);
     assert(values[4] == values[2] && values[5] == 0 && values[6] == UINT64_MAX);
     wgpuBufferUnmap(readback);

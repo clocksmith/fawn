@@ -28,9 +28,9 @@ WGPUFuture wgpuDeviceCreateComputePipelineAsync(WGPUDevice handle,
     native_pipeline_error error = {WGPUErrorType_Internal, "compute pipeline creation failed"};
     WGPUComputePipeline pipeline = native_create_compute_pipeline(device, descriptor, &error);
     native_lock(device);
-    bool lost = !doe_vk_context_alive(device->context);
+    bool lost = native_backend_status(&device->backend) == NATIVE_DEVICE_LOST;
     native_unlock(device);
-    if (lost) native_loss_complete(device->loss, WGPUDeviceLostReason_Unknown, "Vulkan device lost");
+    if (lost) native_loss_complete(device->loss, WGPUDeviceLostReason_Unknown, "native device lost");
     pipeline_delivery delivery = {.callback=callback, .pipeline=pipeline,
         .status=pipeline ? WGPUCreatePipelineAsyncStatus_Success :
             error.type == WGPUErrorType_Validation ? WGPUCreatePipelineAsyncStatus_ValidationError : WGPUCreatePipelineAsyncStatus_InternalError,

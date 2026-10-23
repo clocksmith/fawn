@@ -19,12 +19,14 @@ static void release_shader(void *userdata, void *handle)
     free(payload);
 }
 
-doe_shader_status native_compile_shader(const char *source, size_t size, doe_shader **out, doe_shader_error *error)
+static doe_shader_status compile_target(doe_shader_target target, const char *source, size_t size,
+    doe_shader **out, doe_shader_error *error)
 {
     /* Capacity is explicit and compiler-owned. Exhaustion fails visibly; no
-     * reparsing, fallback compiler, or claimed support beyond the selected ABI8 pools. */
-    static const char identity[] = "experimental-c-native-abi8-no-cache";
+     * reparsing, fallback compiler, or claimed support beyond the selected compiler pools. */
+    static const char identity[] = "experimental-c-native-abi10-no-cache";
     doe_shader_options options = {
+        .target=target,
         .allocator = {NULL, shader_allocate, shader_deallocate},
         .capacities = {
             .typed = {.source_bytes=65536, .tokens=8192, .statements=2048, .expressions=8192,
@@ -38,6 +40,11 @@ doe_shader_status native_compile_shader(const char *source, size_t size, doe_sha
         .compiler_identity=identity, .compiler_identity_size=sizeof(identity)-1
     };
     return doe_shader_create(&options, source, size, out, error);
+}
+
+doe_shader_status native_compile_shader(const char *source, size_t size, doe_shader **out, doe_shader_error *error)
+{
+    return compile_target(DOE_SHADER_SPIRV,source,size,out,error);
 }
 
 WGPUShaderModule wgpuDeviceCreateShaderModule(WGPUDevice handle, const WGPUShaderModuleDescriptor *descriptor)
@@ -60,7 +67,8 @@ WGPUShaderModule wgpuDeviceCreateShaderModule(WGPUDevice handle, const WGPUShade
         native_error(device, WGPUErrorType_OutOfMemory, "shader payload allocation failed");
         return NULL;
     }
-    doe_shader_status status = native_compile_shader(source->code.data, size,
+    doe_shader_status status = compile_target(device->backend.kind == WGPUBackendType_Metal ?
+        DOE_SHADER_METAL : DOE_SHADER_SPIRV, source->code.data, size,
         &payload->compiled, &payload->error);
     if (status != DOE_SHADER_OK && !payload->error.diagnostic.message[0])
         memcpy(payload->error.diagnostic.message, "C shader compilation failed", sizeof("C shader compilation failed"));

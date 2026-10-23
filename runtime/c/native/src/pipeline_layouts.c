@@ -103,26 +103,21 @@ finished:
     return status;
 }
 
-static bool compatible(const doe_resource_layout_entry *actual, const doe_resource_layout_entry *required,
-    doe_vk_binding_kind *kind)
+static bool compatible(const doe_resource_layout_entry *actual, const doe_resource_layout_entry *required)
 {
     if (actual->kind != required->kind || (actual->visibility & required->visibility) != required->visibility) return false;
     switch (required->kind) {
     case DOE_BIND_BUFFER:
-        *kind = required->buffer_type == WGPUBufferBindingType_Uniform ? DOE_VK_BINDING_UNIFORM : DOE_VK_BINDING_STORAGE;
         return actual->buffer_type == required->buffer_type &&
             (!actual->minimum_size || actual->minimum_size >= required->minimum_size);
     case DOE_BIND_SAMPLER:
-        *kind = DOE_VK_BINDING_SAMPLER;
         return (actual->sampler_type == WGPUSamplerBindingType_Comparison) ==
             (required->sampler_type == WGPUSamplerBindingType_Comparison);
     case DOE_BIND_TEXTURE:
-        *kind = DOE_VK_BINDING_SAMPLED_TEXTURE;
         return actual->view_dimension == required->view_dimension && actual->multisampled == required->multisampled &&
             (actual->sample_type == required->sample_type || (required->sample_type == WGPUTextureSampleType_Float &&
                 actual->sample_type == WGPUTextureSampleType_UnfilterableFloat));
     case DOE_BIND_STORAGE_TEXTURE:
-        *kind = DOE_VK_BINDING_STORAGE_TEXTURE;
         return actual->view_dimension == required->view_dimension &&
             actual->storage_access == required->storage_access && actual->storage_format == required->storage_format;
     default: return false;
@@ -137,9 +132,29 @@ bool native_pipeline_bindings(native_pipeline *payload, const native_stage *stag
         const native_stage *stage = &stages[stage_index];
         const doe_shader_view *view = &stage->view;
         const DoeCompilerEntryV5 *entry = stage->entry;
+        const WGPULimits *limits = &payload->device->backend.limits;
+        uint32_t uniform_count = 0, storage_count = 0, texture_count = 0, storage_texture_count = 0, sampler_count = 0;
         for (uint32_t i = 0; i < entry->resource_reference_count; ++i) {
             uint32_t index = view->entry_references[entry->first_resource_reference + i];
             const DoeCompilerResourceV4 *resource = &view->resources[index];
+            switch (resource->kind) {
+            case DOE_COMPILER_UNIFORM_BUFFER:
+                if (++uniform_count > limits->maxUniformBuffersPerShaderStage) return false;
+                break;
+            case DOE_COMPILER_STORAGE_BUFFER:
+                if (++storage_count > limits->maxStorageBuffersPerShaderStage) return false;
+                break;
+            case DOE_COMPILER_SAMPLED_TEXTURE:
+                if (++texture_count > limits->maxSampledTexturesPerShaderStage) return false;
+                break;
+            case DOE_COMPILER_STORAGE_TEXTURE:
+                if (++storage_texture_count > limits->maxStorageTexturesPerShaderStage) return false;
+                break;
+            case DOE_COMPILER_SAMPLER:
+                if (++sampler_count > limits->maxSamplersPerShaderStage) return false;
+                break;
+            default: return false;
+            }
             if (stage->visibility != WGPUShaderStage_Compute && resource->access != DOE_COMPILER_READ &&
                 (resource->kind == DOE_COMPILER_STORAGE_BUFFER || resource->kind == DOE_COMPILER_STORAGE_TEXTURE))
                 return false; /* Backend does not enable vertex/fragment stores or atomics. */
@@ -150,8 +165,7 @@ bool native_pipeline_bindings(native_pipeline *payload, const native_stage *stag
             const doe_resource_layout_entry *entries = doe_resource_layout_entries(group, &count);
             const doe_resource_layout_entry *actual = NULL;
             for (size_t j = 0; j < count; ++j) if (entries[j].binding == resource->binding) actual = &entries[j];
-            doe_vk_binding_kind kind;
-            if (!actual || !compatible(actual, &required, &kind)) return false;
+            if (!actual || !compatible(actual, &required)) return false;
             if (actual->kind == DOE_BIND_TEXTURE && actual->sample_type == WGPUTextureSampleType_UnfilterableFloat) unfilterable = true;
             if (actual->kind == DOE_BIND_SAMPLER && actual->sampler_type == WGPUSamplerBindingType_Filtering) filtering = true;
             size_t at = 0;
@@ -159,9 +173,10 @@ bool native_pipeline_bindings(native_pipeline *payload, const native_stage *stag
                 payload->bindings[at].binding != resource->binding)) ++at;
             if (at == payload->binding_count) {
                 if (at == DOE_RESOURCE_MAX_GROUPS * DOE_RESOURCE_MAX_BINDINGS) return false;
-                payload->bindings[at] = (doe_vk_binding_layout){resource->group, resource->binding, kind};
+                payload->bindings[at] = (native_binding){resource->group, resource->binding, required.kind, required.buffer_type};
                 ++payload->binding_count;
-            } else if (payload->bindings[at].kind != kind) return false;
+            } else if (payload->bindings[at].kind != required.kind ||
+                payload->bindings[at].buffer_type != required.buffer_type) return false;
             if (payload->minimum_sizes[at] < resource->minimum_binding_size_bytes)
                 payload->minimum_sizes[at] = resource->minimum_binding_size_bytes;
         }

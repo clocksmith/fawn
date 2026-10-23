@@ -40,3 +40,10 @@ read-only and view-default admission when converting pinned ABI sentinels.
 Optional color and fragment stages remain genuinely absent; never synthesize a
 shader or attachment. Debug balance belongs to each existing recording owner.
 MSAA resolve and discard use the backend's same attachment initialization state.
+
+Backend selection is one tagged payload on the existing device and pending owner.
+Never read another backend's union member or introduce a parallel queue/refcount.
+Unsupported selections report unavailable without fallback. Metal shaders consume
+compiler-owned MSL entry/slot/size metadata; do not parse source or substitute a
+SPIR-V artifact. Distinguish chosen frontend limits from queried device and actual
+per-pipeline limits. Host native-call ledgers are not GPU execution evidence.

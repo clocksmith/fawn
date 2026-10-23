@@ -16,6 +16,10 @@ WGPUTexture wgpuDeviceCreateTexture(WGPUDevice handle, const WGPUTextureDescript
 {
     native_device *device = (native_device *)handle;
     if (!device) return NULL;
+    if (device->backend.kind != WGPUBackendType_Vulkan) {
+        native_error(device, WGPUErrorType_Validation, "operation not yet composed for selected backend");
+        return NULL;
+    }
     const WGPUTextureUsage supported = WGPUTextureUsage_CopySrc | WGPUTextureUsage_CopyDst |
         WGPUTextureUsage_TextureBinding | WGPUTextureUsage_StorageBinding | WGPUTextureUsage_RenderAttachment;
     if (!descriptor || descriptor->nextInChain ||
@@ -35,9 +39,9 @@ WGPUTexture wgpuDeviceCreateTexture(WGPUDevice handle, const WGPUTextureDescript
         .samples=descriptor->sampleCount, .usage=descriptor->usage,
         .view_formats=descriptor->viewFormats, .view_format_count=descriptor->viewFormatCount
     };
-    doe_resource_texture_limits limits = {device->caps.max_texture_dimension_1d,
-        device->caps.max_texture_dimension_2d, device->caps.max_texture_dimension_3d,
-        device->caps.max_texture_array_layers};
+    doe_resource_texture_limits limits = {device->backend.value.vulkan.caps.max_texture_dimension_1d,
+        device->backend.value.vulkan.caps.max_texture_dimension_2d, device->backend.value.vulkan.caps.max_texture_dimension_3d,
+        device->backend.value.vulkan.caps.max_texture_array_layers};
     doe_vk_texture_desc native = {.width=desc.width, .height=desc.height,
         .depth_or_layers=desc.depth_or_layers, .mip_levels=desc.mip_levels,.sample_count=desc.samples,
         .usage=DOE_VK_TEXTURE_COPY_DST}; /* Initialization is internal usage only. */
@@ -86,9 +90,9 @@ WGPUTexture wgpuDeviceCreateTexture(WGPUDevice handle, const WGPUTextureDescript
     doe_vk_format_caps caps;
     native_lock(device);
     doe_vk_status status = native_device_status(device);
-    if (status == DOE_VK_OK) status = native_settle_pending(device).status;
-    if (status == DOE_VK_OK) status = doe_vk_texture_format_caps(device->context, native.format, &caps);
-    if (status == DOE_VK_OK) status = doe_vk_texture_create(device->context, &native, &payload->texture, &error);
+    if (status == DOE_VK_OK) status = native_to_vulkan(native_settle_pending(device).status);
+    if (status == DOE_VK_OK) status = doe_vk_texture_format_caps(device->backend.value.vulkan.context, native.format, &caps);
+    if (status == DOE_VK_OK) status = doe_vk_texture_create(device->backend.value.vulkan.context, &native, &payload->texture, &error);
     if (status == DOE_VK_OK) status = native_initialize_texture(device, payload->texture, &native, caps.texel_bytes);
     doe_resource_status adopted = DOE_RESOURCE_INVALID_ARGUMENT;
     if (status == DOE_VK_OK)

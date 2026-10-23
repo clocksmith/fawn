@@ -96,6 +96,10 @@ WGPUSampler wgpuDeviceCreateSampler(WGPUDevice handle, const WGPUSamplerDescript
 {
     native_device *device = (native_device *)handle;
     if (!device) return NULL;
+    if (device->backend.kind != WGPUBackendType_Vulkan) {
+        native_error(device, WGPUErrorType_Validation, "operation not yet composed for selected backend");
+        return NULL;
+    }
     WGPUSamplerDescriptor defaults = WGPU_SAMPLER_DESCRIPTOR_INIT;
     if (!descriptor) descriptor = &defaults;
     WGPUSamplerDescriptor resolved;
@@ -122,7 +126,7 @@ WGPUSampler wgpuDeviceCreateSampler(WGPUDevice handle, const WGPUSamplerDescript
     doe_vk_error error = {0};
     native_lock(device);
     doe_vk_status status = native_device_status(device);
-    if (status == DOE_VK_OK) status = doe_vk_sampler_create(device->context, &native, &payload->sampler, &error);
+    if (status == DOE_VK_OK) status = doe_vk_sampler_create(device->backend.value.vulkan.context, &native, &payload->sampler, &error);
     doe_resource_status adopted = DOE_RESOURCE_INVALID_ARGUMENT;
     if (status == DOE_VK_OK)
         adopted = doe_resource_sampler_create(&device->resources, &resolved,

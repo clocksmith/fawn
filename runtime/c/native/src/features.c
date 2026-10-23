@@ -12,13 +12,13 @@ bool native_timestamp_supported(const doe_vk_caps *caps)
 {
     return native_timestamp_workgroup(caps) != 0;
 }
-bool native_requested_features(const doe_vk_caps *caps,
+bool native_requested_features(const native_backend *backend,
     const WGPUDeviceDescriptor *descriptor, bool *timestamps)
 {
     *timestamps = false;
     if (!descriptor || !descriptor->requiredFeatureCount) return true;
     if (descriptor->requiredFeatureCount != 1 || !descriptor->requiredFeatures ||
-        descriptor->requiredFeatures[0] != WGPUFeatureName_TimestampQuery || !native_timestamp_supported(caps))
+        descriptor->requiredFeatures[0] != WGPUFeatureName_TimestampQuery || (backend->kind != WGPUBackendType_Vulkan || !native_timestamp_supported(&backend->value.vulkan.caps)))
         return false;
     *timestamps = true;
     return true;
@@ -40,7 +40,7 @@ void wgpuAdapterGetFeatures(WGPUAdapter handle, WGPUSupportedFeatures *features)
     native_adapter *adapter = (native_adapter *)handle;
     /* This void adapter API has no error channel; allocation failure leaves an
      * empty owned output, never an invalid pointer or invented capability. */
-    (void)feature_list(adapter && native_timestamp_supported(&adapter->caps), features);
+    (void)feature_list(adapter && adapter->backend.kind == WGPUBackendType_Vulkan && native_timestamp_supported(&adapter->backend.value.vulkan.caps), features);
 }
 void wgpuDeviceGetFeatures(WGPUDevice handle, WGPUSupportedFeatures *features)
 {
@@ -51,7 +51,7 @@ void wgpuDeviceGetFeatures(WGPUDevice handle, WGPUSupportedFeatures *features)
 WGPUBool wgpuAdapterHasFeature(WGPUAdapter handle, WGPUFeatureName feature)
 {
     native_adapter *adapter = (native_adapter *)handle;
-    return adapter && feature == WGPUFeatureName_TimestampQuery && native_timestamp_supported(&adapter->caps);
+    return adapter && feature == WGPUFeatureName_TimestampQuery && adapter->backend.kind == WGPUBackendType_Vulkan && native_timestamp_supported(&adapter->backend.value.vulkan.caps);
 }
 WGPUBool wgpuDeviceHasFeature(WGPUDevice handle, WGPUFeatureName feature)
 {
