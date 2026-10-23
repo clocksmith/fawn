@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // Render and copy state crosses the addon as webgpu.h values on every provider:
 // sampler filters, stencil operations, copy aspects, per-aspect attachment
-// operations, null color slots and fragment-less pipelines, checked by readback.
+// operations, null color slots and fragment-less pipelines, checked by readback;
+// provider validation errors reach native error scopes.
 
 import assert from 'node:assert/strict';
 import { providerInfo } from '../../src/index.js';
@@ -89,6 +90,16 @@ for (const format of ['stencil8', 'depth24plus-stencil8']) {
   device.queue.submit([encoder.finish()]);
   assert.equal((await readFirstTexel(stencil, 'stencil-only', 1))[0], 7, `${format} stencil after replace`);
   console.log(`ok: ${format} stencil replace writes the reference`);
+}
+
+{
+  // A provider-side validation error lands in the innermost native error scope.
+  const texture = device.createTexture({ size: SIZE, format: 'rgba8unorm', usage: T.COPY_DST });
+  device.pushErrorScope('validation');
+  device.queue.writeTexture({ texture, origin: { x: 3 } }, new Uint8Array(64), { bytesPerRow: 16 }, SIZE);
+  const error = await device.popErrorScope();
+  assert(error instanceof Error && error.message.length > 0, `writeTexture range error reaches the scope, got ${error}`);
+  console.log('ok: error scopes capture provider validation errors');
 }
 
 {
