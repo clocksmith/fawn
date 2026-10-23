@@ -48,6 +48,11 @@ neighbor-sum fixture. Its [accepted results](../../runtime/c/compiler/MILESTONE_
 independent instruction/native checks and the increased static stack footprint. These declared coverage increments do not replace the complete
 compiler and consumer requirements below.
 
+The [third increment](../../runtime/c/compiler/MILESTONE_3_RESULTS.md) admits
+the unchanged existing SPIR-V emitter-consumer protocol. Its actual corpus
+coverage remains narrow: two paths containing one unique source, with 96 paths
+explicitly rejected. This is component consumption, not runtime adoption.
+
 ## Existing authority, not a parallel policy
 
 Owner paths and layer labels come from

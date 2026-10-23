@@ -13,6 +13,11 @@ They are developer checks, not the separate independent acceptance or GPU gates.
 - `test_cli.py`: CLI no-clobber/failure behavior, two unchanged residual shaders,
   retained u32 cases and typed emitted-instruction execution. Its instruction
   interpreter is developer evidence, never a production host fallback.
+- `test_cli_modes.py`: unchanged real emitter-consumer calls, optional reflection,
+  byte equality, malformed options, missing/unsupported sources and destination
+  preservation in both modes. `cli_io_faults.c` supplies test-only linker wrappers
+  for partial/failed/interrupted writes, close/temporary/link failures and
+  competing file/symlink publication. No wrapper enters shipped artifacts.
 - `test_control.py`: unchanged neighbor shader plus renaming/declaration order,
   six unsigned comparisons, empty arms, all-return merges, nested robust Phi
   predecessors, discarded-store-then-return, sequential observations, offset wrap,
@@ -42,3 +47,24 @@ Sanitizer runs disable LeakSanitizer because it is unavailable in the execution
 environment. ASan/UBSan, CPU instruction execution and target validation do not
 prove physical GPU behavior, uniformity, barriers, WebGPU conformance, application
 adoption or performance advantage.
+
+## Explicit milestone-2 CLI admission lift
+
+The preserved M2 executable rejects the unchanged consumer's complete
+`--shader-path INPUT --out OUTPUT` invocation with usage status 2 because
+reflection was required. Milestone 3 admits that invocation; it is the only
+new CLI mode. Explicit `--reflection` without a value, duplicate options,
+unknown options and missing required options remain errors. An explicit empty
+reflection path fails rather than silently selecting binary-only mode. A recognized
+option token cannot supply a missing path. Tests preserve ordinary leading-dash
+filenames and exercise `./--out`, `./--reflection` and `./--shader-path` as
+unambiguous actual path names.
+Historical independent CLI tests are not edited or reclassified as passes.
+
+Run `make test-cli-modes SPIRV_VAL=/path/to/spirv-val` for the focused test and
+`make sanitize-cli SPIRV_VAL=/path/to/spirv-val` to instrument both the actual
+CLI and its fault-injection build with ASan/UBSan. Both invoke the tests as a
+module from the repository root, without changing Python import paths. The
+validator and optional `DOE_COMPILER_CLI` / `DOE_COMPILER_FAULT_CLI` paths must
+refer to existing host artifacts. These checks do not run the full discovery
+gate or establish source-corpus, runtime, application or GPU qualification.

@@ -36,7 +36,10 @@ static int unused_destination(const char *path) {
 int main(int argc, char **argv) {
     const char *input = NULL, *output = NULL, *reflection = NULL;
     for (int i = 1; i < argc; i += 2) {
-        if (i + 1 >= argc) { fprintf(stderr, "each option requires a path\n"); return 2; }
+        if (i + 1 >= argc || strcmp(argv[i + 1], "--shader-path") == 0 ||
+            strcmp(argv[i + 1], "--out") == 0 || strcmp(argv[i + 1], "--reflection") == 0) {
+            fprintf(stderr, "each option requires a path\n"); return 2;
+        }
         const char **slot = NULL;
         if (strcmp(argv[i], "--shader-path") == 0) slot = &input;
         else if (strcmp(argv[i], "--out") == 0) slot = &output;
@@ -44,11 +47,14 @@ int main(int argc, char **argv) {
         if (slot == NULL || *slot != NULL) { fprintf(stderr, "unknown or duplicate option: %s\n", argv[i]); return 2; }
         *slot = argv[i + 1];
     }
-    if (input == NULL || output == NULL || reflection == NULL) {
-        fprintf(stderr, "usage: doe-compiler-c --shader-path INPUT --out OUTPUT --reflection JSON\n");
+    if (input == NULL || output == NULL) {
+        fprintf(stderr, "usage: doe-compiler-c --shader-path INPUT --out OUTPUT [--reflection JSON]\n");
         return 2;
     }
-    if (strcmp(output, reflection) == 0) { fprintf(stderr, "output and reflection paths must differ\n"); return 2; }
+    if (reflection != NULL && reflection[0] == '\0') {
+        fprintf(stderr, "reflection path must not be empty\n"); return 2;
+    }
+    if (reflection != NULL && strcmp(output, reflection) == 0) { fprintf(stderr, "output and reflection paths must differ\n"); return 2; }
     int status = 1, input_fd = -1, binary_fd = -1, json_fd = -1;
     int binary_published = 0, json_published = 0;
     int binary_created = 0, json_created = 0;
@@ -75,63 +81,73 @@ int main(int argc, char **argv) {
                 result.diagnostic.offset, result.diagnostic.message);
         goto cleanup;
     }
-    if (unused_destination(output) < 0 || unused_destination(reflection) < 0) {
+    if (unused_destination(output) < 0 ||
+        (reflection != NULL && unused_destination(reflection) < 0)) {
         perror("destination unavailable (existing files are never overwritten)"); goto cleanup;
     }
-    const DoeCompilerReflection *r = &result.reflection;
     char json[4096];
-    int written = snprintf(json, sizeof(json),
-        "{\n  \"entry_point\": \"%s\",\n"
-        "  \"workgroup_size\": [%u, %u, %u],\n"
-        "  \"binding_count\": %u,\n  \"bindings\": [\n",
-        r->entry_point, r->workgroup_size[0], r->workgroup_size[1],
-        r->workgroup_size[2], r->binding_count);
-    if (written < 0 || (size_t)written >= sizeof(json)) {
-        fprintf(stderr, "reflection exceeds buffer\n"); goto cleanup;
-    }
-    size_t json_length = (size_t)written;
-    for (uint32_t i = 0; i < r->binding_count; ++i) {
-        const DoeCompilerBinding *binding = &r->bindings[i];
-        written = snprintf(json + json_length, sizeof(json) - json_length,
-            "    {\"name\": \"%s\", \"group\": %u, \"binding\": %u, "
-            "\"scalar_type\": \"%s\", \"access\": \"%s\", "
-            "\"element_stride\": %u, \"runtime_sized\": %s}%s\n",
-            binding->name, binding->group, binding->binding,
-            binding->scalar == DOE_COMPILER_F32 ? "f32" : "u32",
-            binding->access == DOE_COMPILER_READ ? "read" : "read_write",
-            binding->element_stride, binding->runtime_sized != 0u ? "true" : "false",
-            i + 1u == r->binding_count ? "" : ",");
+    size_t json_length = 0;
+    if (reflection != NULL) {
+        const DoeCompilerReflection *r = &result.reflection;
+        int written = snprintf(json, sizeof(json),
+            "{\n  \"entry_point\": \"%s\",\n"
+            "  \"workgroup_size\": [%u, %u, %u],\n"
+            "  \"binding_count\": %u,\n  \"bindings\": [\n",
+            r->entry_point, r->workgroup_size[0], r->workgroup_size[1],
+            r->workgroup_size[2], r->binding_count);
+        if (written < 0 || (size_t)written >= sizeof(json)) {
+            fprintf(stderr, "reflection exceeds buffer\n"); goto cleanup;
+        }
+        json_length = (size_t)written;
+        for (uint32_t i = 0; i < r->binding_count; ++i) {
+            const DoeCompilerBinding *binding = &r->bindings[i];
+            written = snprintf(json + json_length, sizeof(json) - json_length,
+                "    {\"name\": \"%s\", \"group\": %u, \"binding\": %u, "
+                "\"scalar_type\": \"%s\", \"access\": \"%s\", "
+                "\"element_stride\": %u, \"runtime_sized\": %s}%s\n",
+                binding->name, binding->group, binding->binding,
+                binding->scalar == DOE_COMPILER_F32 ? "f32" : "u32",
+                binding->access == DOE_COMPILER_READ ? "read" : "read_write",
+                binding->element_stride, binding->runtime_sized != 0u ? "true" : "false",
+                i + 1u == r->binding_count ? "" : ",");
+            if (written < 0 || (size_t)written >= sizeof(json) - json_length) {
+                fprintf(stderr, "reflection exceeds buffer\n"); goto cleanup;
+            }
+            json_length += (size_t)written;
+        }
+        written = snprintf(json + json_length, sizeof(json) - json_length, "  ]\n}\n");
         if (written < 0 || (size_t)written >= sizeof(json) - json_length) {
             fprintf(stderr, "reflection exceeds buffer\n"); goto cleanup;
         }
         json_length += (size_t)written;
     }
-    written = snprintf(json + json_length, sizeof(json) - json_length, "  ]\n}\n");
-    if (written < 0 || (size_t)written >= sizeof(json) - json_length) {
-        fprintf(stderr, "reflection exceeds buffer\n"); goto cleanup;
-    }
-    json_length += (size_t)written;
     unsigned char binary[DOE_COMPILER_MAX_WORDS * 4u];
     for (size_t i = 0; i < result.word_count; ++i)
         for (unsigned b = 0; b < 4u; ++b) binary[i * 4u + b] = (unsigned char)(words[i] >> (b * 8u));
     binary_fd = temporary(output, binary_temp);
     if (binary_fd < 0) { perror("create binary temporary"); goto cleanup; }
     binary_created = 1;
-    json_fd = temporary(reflection, json_temp);
-    if (json_fd < 0) { perror("create reflection temporary"); goto cleanup; }
-    json_created = 1;
+    if (reflection != NULL) {
+        json_fd = temporary(reflection, json_temp);
+        if (json_fd < 0) { perror("create reflection temporary"); goto cleanup; }
+        json_created = 1;
+    }
     if (write_all(binary_fd, binary, result.word_count * 4u) < 0 ||
-        write_all(json_fd, (const unsigned char *)json, json_length) < 0) { perror("write artifacts"); goto cleanup; }
+        (reflection != NULL && write_all(json_fd, (const unsigned char *)json, json_length) < 0)) { perror("write artifacts"); goto cleanup; }
     if (close(binary_fd) < 0) { binary_fd = -1; perror("close binary"); goto cleanup; }
     binary_fd = -1;
-    if (close(json_fd) < 0) { json_fd = -1; perror("close reflection"); goto cleanup; }
-    json_fd = -1;
-    /* Atomic no-clobber publication of each file, rollback the first if second fails.
+    if (json_fd >= 0) {
+        if (close(json_fd) < 0) { json_fd = -1; perror("close reflection"); goto cleanup; }
+        json_fd = -1;
+    }
+    /* Atomic no-clobber publication; rollback binary if requested reflection fails.
      * Not a cross-filesystem crash transaction; no existing destination is replaced. */
     if (link(binary_temp, output) < 0) { perror("publish binary"); goto cleanup; }
     binary_published = 1;
-    if (link(json_temp, reflection) < 0) { perror("publish reflection"); goto cleanup; }
-    json_published = 1;
+    if (reflection != NULL) {
+        if (link(json_temp, reflection) < 0) { perror("publish reflection"); goto cleanup; }
+        json_published = 1;
+    }
     status = 0;
 cleanup:
     if (input_fd >= 0) (void)close(input_fd);

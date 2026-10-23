@@ -1,0 +1,30 @@
+{
+  "compile.c": {
+    "sha256": "82f6c8b0c2a1dd15fccb0a89df4cfd7b611f00f0fe6e99c10083203243c1cfaf",
+    "identical_to_frozen": true
+  },
+  "exports.map": {
+    "sha256": "0cae675dc31261ce4a349c880ce7a841b80e359687dd73f6bfaa46d1e11978de",
+    "identical_to_frozen": true
+  },
+  "internal.h": {
+    "sha256": "31d451f637ed4b0cb9b8ab8cafed3adcc8ec3ab4ecdf9e19ff6dd569f32ffe27",
+    "identical_to_frozen": true
+  },
+  "lex.c": {
+    "sha256": "e140835fca523effc58ef06441327912b70bcd077c519e3c5d90b239c16906d0",
+    "identical_to_frozen": true
+  },
+  "parse.c": {
+    "sha256": "ca817f6dafab27590147d351541e4e9f2fdd9770d8f940436706ad4636f61039",
+    "identical_to_frozen": true
+  },
+  "spirv.c": {
+    "sha256": "bc24c3fea4ed0d163c4ddcdb69598e013c3b75308b7018110584af9c6d5d57d1",
+    "identical_to_frozen": true
+  },
+  "validate.c": {
+    "sha256": "92b14694058bb0e51c8ea494fe9f939bdcf13770f5d0e53087bc7b5e43a213af",
+    "identical_to_frozen": true
+  }
+}

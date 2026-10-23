@@ -50,3 +50,18 @@ instruction tests grow separately from the independent evaluator. No production
 Zig owner, source fixture or prior experimental source is modified. This extension
 adds source admission only: no physical GPU, runtime adopter, performance or
 completed migration claim follows from it.
+
+## Existing emitter-consumer integration
+
+Milestone 3 changes only the CLI's optional-reflection admission and conditional
+reflection-file ownership. It preserves the accepted M2 library sources, header,
+SPIR-V bytes and reflection schema. The unchanged real benchmark gate is a
+consumer, not imported compiler implementation. No seed, historical independent
+test, frozen contract, existing consumer or production source is modified.
+
+The pre-change executable and library, source identities and actual
+required-reflection rejection are retained with the isolated milestone evidence
+before rebuilding. New developer tests exercise both output modes; linker
+wrappers inject local file failures only into dedicated test executables, never
+the shipped CLI or shared library. The source build uses the already installed
+GCC toolchain and validator, with no Zig or new dependency.

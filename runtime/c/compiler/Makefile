@@ -9,13 +9,18 @@ CXXFLAGS = -std=c++17 -fno-exceptions -fno-rtti -O2 -Wall -Wextra -Wpedantic -Wc
 LIB_SOURCES = src/lex.c src/parse.c src/validate.c src/spirv.c src/compile.c
 HEADERS = src/internal.h include/doe_compiler.h
 SPIRV_VAL ?= spirv-val
-.PHONY: all test sanitize clean
+CLI_FAULT_FLAGS = -Wl,--wrap=write,--wrap=close,--wrap=link,--wrap=mkstemp
+.PHONY: all test test-cli-modes sanitize sanitize-cli clean
 all: build/doe-compiler-c build/libdoe_compiler.so
 build/.ready:
 	mkdir -p build/tmp build/logs
 	touch $@
 build/doe-compiler-c: $(LIB_SOURCES) src/cli.c $(HEADERS) | build/.ready
 	$(CC) $(CFLAGS) $(LIB_SOURCES) src/cli.c -o $@
+build/test_cli_faults: $(LIB_SOURCES) src/cli.c tests/cli_io_faults.c $(HEADERS) | build/.ready
+	$(CC) $(CFLAGS) $(LIB_SOURCES) src/cli.c tests/cli_io_faults.c $(CLI_FAULT_FLAGS) -o $@
+test-cli-modes: all build/test_cli_faults
+	cd ../../.. && SPIRV_VAL="$(SPIRV_VAL)" python3 -m unittest runtime.c.compiler.tests.test_cli_modes
 build/libdoe_compiler.so: $(LIB_SOURCES) $(HEADERS) src/exports.map | build/.ready
 	$(CC) $(CFLAGS) -fPIC -shared $(LIB_SOURCES) -Wl,--version-script=src/exports.map -o $@
 build/test_api: $(LIB_SOURCES) tests/test_api.c $(HEADERS) | build/.ready
@@ -34,7 +39,7 @@ build/cpp_consumer: tests/cpp_consumer.cpp include/doe_compiler.h build/libdoe_c
 	$(CXX) $(CXXFLAGS) tests/cpp_consumer.cpp -Lbuild -ldoe_compiler -Wl,-rpath,'$$ORIGIN' -o $@
 build/interposition_consumer: tests/interposition_consumer.c include/doe_compiler.h build/libdoe_compiler.so | build/.ready
 	$(CC) $(CFLAGS) tests/interposition_consumer.c -Lbuild -ldoe_compiler -Wl,-rpath,'$$ORIGIN' -Wl,--export-dynamic -o $@
-test: all build/interposition_consumer build/test_api build/test_boundaries build/test_constants build/test_control_api build/native_consumer build/test_layout build/cpp_consumer
+test: all test-cli-modes build/interposition_consumer build/test_api build/test_boundaries build/test_constants build/test_control_api build/native_consumer build/test_layout build/cpp_consumer
 	build/test_api
 	build/test_boundaries
 	build/test_constants
@@ -55,5 +60,9 @@ sanitize: | build/.ready
 	ASAN_OPTIONS=detect_leaks=0:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1 build/test_constants_sanitize
 	$(CC) $(CFLAGS) -O1 -g -fno-omit-frame-pointer -fsanitize=address,undefined -pthread $(LIB_SOURCES) tests/test_control_api.c -o build/test_control_api_sanitize
 	ASAN_OPTIONS=detect_leaks=0:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1 build/test_control_api_sanitize
+sanitize-cli: | build/.ready
+	$(CC) $(CFLAGS) -O1 -g -fno-omit-frame-pointer -fsanitize=address,undefined $(LIB_SOURCES) src/cli.c -o build/doe-compiler-c-sanitize
+	$(CC) $(CFLAGS) -O1 -g -fno-omit-frame-pointer -fsanitize=address,undefined $(LIB_SOURCES) src/cli.c tests/cli_io_faults.c $(CLI_FAULT_FLAGS) -o build/test_cli_faults_sanitize
+	cd ../../.. && ASAN_OPTIONS=detect_leaks=0:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1 DOE_COMPILER_CLI="$(CURDIR)/build/doe-compiler-c-sanitize" DOE_COMPILER_FAULT_CLI="$(CURDIR)/build/test_cli_faults_sanitize" SPIRV_VAL="$(SPIRV_VAL)" python3 -m unittest runtime.c.compiler.tests.test_cli_modes
 clean:
 	rm -rf build
