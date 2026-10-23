@@ -373,3 +373,37 @@ setting `SHARED_LIBRARY=/tmp/output/libdoe_compiler.so`, `TMPDIR=/tmp/output/tmp
 and `EXTRA_CFLAGS` for instrumentation. The compiler and private Metal checks
 reuse `targets/metal/sources.mk`; consumers must not parse or copy source lists.
 `make -s print-library-sources` exposes expanded paths for source/graph audits.
+
+### Component numeric family (developer increment)
+
+One signature/type/stage owner now includes `abs`, `sign`, `floor`, `round`,
+`trunc`, `fract`, `sin`, `cos`, `tan`, `asin`, `acos`, `atan`, `sinh`, `cosh`,
+`asinh`, `acosh`, `atanh`, `log`, `log2`, `exp2`, `inverseSqrt`, `degrees` and
+`radians`. Scalars and vectors use the same rules; unsigned `sign` rejects.
+`numeric_math.c` owns declared-width const math and domain checks. Runtime
+values keep IR operations, not host evaluation. Evaluated nonfinite constants
+fail, while skipped evaluation still validates names/types. Signed minimum
+`abs` preserves its bit pattern, including AbstractInt. `round` is ties-even;
+`fract` is subtraction from floor and can round to 1, not a clamped fraction.
+Existing ABI records, queries, pools and public exports are unchanged.
+
+Rules are bound to [WGSL 2026-10-21 numeric builtins](https://www.w3.org/TR/2026/CRD-WGSL-20261021/#numeric-builtin-functions)
+and [GLSL.std.450](https://registry.khronos.org/SPIR-V/specs/unified1/GLSL.std.450.html).
+MSL uses `rint`, not `round`, and explicit fractional subtraction; angle conversion
+uses rounded f32 factors. See [Apple MSL math functions](https://developer.apple.com/metal/Metal-Shading-Language-Specification.pdf),
+2026-06-04 section 6.5. HLSL uses its documented [ties-even round](https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-round);
+inverse hyperbolics explicitly reject until a qualified lowering exists.
+Integer absolute-value target operations avoid signed-overflow assumptions.
+Text mappings/host controls do not establish SDK acceptance or physical accuracy.
+`test-component-math`, Metal `component-math-control`, and HLSL `host-control`
+exercise the new owner. Both retained stable-fluids advection shaders compile
+unchanged. The retained 4096-iteration compile-stress shader still hits the
+separate unsupported phony-assignment (`_ = x`) boundary; it is not shortened.
+
+`shared SHARED_PLATFORM=Darwin SHARED_LIBRARY=/tmp/libdoe_compiler.dylib` prepares
+Mach-O linking using an exported-symbol list generated from the same `exports.map`.
+The Linux shared recipe remains ELF. This is build preparation only: the numeric
+host owner still explicitly requires Linux x86-64 GCC 14.2 and MXCSR control.
+No Darwin compiler build, Apple SDK execution or portability qualification is
+claimed by the recipe or its dry-run tests. Libm remains an explicitly external
+leaf in complete stack accounting, as with the existing exp/sqrt/tanh owner.

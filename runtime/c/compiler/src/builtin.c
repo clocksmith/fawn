@@ -12,6 +12,29 @@ static const NumericBuiltin numeric_builtins[] = {
     {"tanh", BUILTIN_TANH, 1u, BUILTIN_COMPONENT_FLOAT, 21u},
     {"sqrt", BUILTIN_SQRT, 1u, BUILTIN_COMPONENT_FLOAT, 31u},
     {"ceil", BUILTIN_CEIL, 1u, BUILTIN_COMPONENT_FLOAT, 9u},
+    {"abs", BUILTIN_ABS, 1u, BUILTIN_COMPONENT_NUMERIC, 0u},
+    {"sign", BUILTIN_SIGN, 1u, BUILTIN_COMPONENT_NUMERIC, 0u},
+    {"floor", BUILTIN_FLOOR, 1u, BUILTIN_COMPONENT_FLOAT, 8u},
+    {"round", BUILTIN_ROUND, 1u, BUILTIN_COMPONENT_FLOAT, 2u},
+    {"trunc", BUILTIN_TRUNC, 1u, BUILTIN_COMPONENT_FLOAT, 3u},
+    {"fract", BUILTIN_FRACT, 1u, BUILTIN_COMPONENT_FLOAT, 10u},
+    {"sin", BUILTIN_SIN, 1u, BUILTIN_COMPONENT_FLOAT, 13u},
+    {"cos", BUILTIN_COS, 1u, BUILTIN_COMPONENT_FLOAT, 14u},
+    {"tan", BUILTIN_TAN, 1u, BUILTIN_COMPONENT_FLOAT, 15u},
+    {"asin", BUILTIN_ASIN, 1u, BUILTIN_COMPONENT_FLOAT, 16u},
+    {"acos", BUILTIN_ACOS, 1u, BUILTIN_COMPONENT_FLOAT, 17u},
+    {"atan", BUILTIN_ATAN, 1u, BUILTIN_COMPONENT_FLOAT, 18u},
+    {"sinh", BUILTIN_SINH, 1u, BUILTIN_COMPONENT_FLOAT, 19u},
+    {"cosh", BUILTIN_COSH, 1u, BUILTIN_COMPONENT_FLOAT, 20u},
+    {"asinh", BUILTIN_ASINH, 1u, BUILTIN_COMPONENT_FLOAT, 22u},
+    {"acosh", BUILTIN_ACOSH, 1u, BUILTIN_COMPONENT_FLOAT, 23u},
+    {"atanh", BUILTIN_ATANH, 1u, BUILTIN_COMPONENT_FLOAT, 24u},
+    {"log", BUILTIN_LOG, 1u, BUILTIN_COMPONENT_FLOAT, 28u},
+    {"log2", BUILTIN_LOG2, 1u, BUILTIN_COMPONENT_FLOAT, 30u},
+    {"exp2", BUILTIN_EXP2, 1u, BUILTIN_COMPONENT_FLOAT, 29u},
+    {"inverseSqrt", BUILTIN_INVERSE_SQRT, 1u, BUILTIN_COMPONENT_FLOAT, 32u},
+    {"degrees", BUILTIN_DEGREES, 1u, BUILTIN_COMPONENT_FLOAT, 12u},
+    {"radians", BUILTIN_RADIANS, 1u, BUILTIN_COMPONENT_FLOAT, 11u},
     {"dot", BUILTIN_DOT, 2u, BUILTIN_NUMERIC_REDUCTION, 0u},
     {"length", BUILTIN_LENGTH, 1u, BUILTIN_FLOAT_REDUCTION, 66u},
     {"distance", BUILTIN_DISTANCE, 2u, BUILTIN_FLOAT_REDUCTION, 67u},
@@ -40,6 +63,12 @@ const NumericBuiltin *builtin_kind(NumericBuiltinKind kind) {
     for (size_t i = 0u; i < sizeof(numeric_builtins) / sizeof(*numeric_builtins); ++i)
         if (kind == numeric_builtins[i].kind) return &numeric_builtins[i];
     return NULL;
+}
+
+uint32_t builtin_extended_instruction(const NumericBuiltin *builtin, TypeId leaf) {
+    if (builtin->kind == BUILTIN_ABS) return leaf == IR_F32 ? 4u : leaf == IR_I32 ? 5u : 0u;
+    if (builtin->kind == BUILTIN_SIGN) return leaf == IR_F32 ? 6u : leaf == IR_I32 ? 7u : 0u;
+    return builtin->extended_instruction;
 }
 
 bool builtin_floating(const NumericBuiltin *builtin) {

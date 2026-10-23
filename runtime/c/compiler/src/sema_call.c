@@ -248,6 +248,7 @@ static inline bool sema_builtin_value(Source *source, const Expression *node, co
     if (builtin->family != BUILTIN_MATRIX) {
         if (builtin_floating(builtin) && leaf == IR_ABSTRACT_INT) leaf = IR_ABSTRACT_FLOAT;
         if (!builtin_shape(builtin, width) ||
+            (builtin->kind == BUILTIN_SIGN && leaf == IR_U32) ||
             (builtin->family == BUILTIN_SUBGROUP_INTEGER && leaf != IR_I32 && leaf != IR_U32 && leaf != IR_ABSTRACT_INT) ||
             (builtin_floating(builtin) && leaf != IR_F32 && leaf != IR_ABSTRACT_FLOAT))
             return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, node->source_offset,

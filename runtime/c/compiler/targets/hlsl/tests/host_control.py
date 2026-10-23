@@ -18,7 +18,7 @@ import sys
 out = pathlib.Path(sys.argv[1])
 subprocess.run([str(out / "test_hlsl"), str(out / "control.hlsl"),
                 str(out / "aggregate.hlsl"), str(out / "effects.hlsl"), str(out / "image_guard.hlsl"),
-                str(out / "graphics.hlsl"), str(out / "array_length.hlsl"), str(out / "matrices.hlsl")], check=True)
+                str(out / "graphics.hlsl"), str(out / "array_length.hlsl"), str(out / "matrices.hlsl"), str(out / "component_math.hlsl")], check=True)
 prelude = r"""
 #include <algorithm>
 #include <array>
@@ -31,6 +31,7 @@ prelude = r"""
 using uint = std::uint32_t;
 using uint3 = std::array<uint, 3>;
 using uint4 = std::array<uint, 4>;
+using std::abs;
 using std::clamp;
 using std::isnan;
 uint asuint(uint v) { return v; }
@@ -184,7 +185,8 @@ int main() {
 """
 for name, main in (("control", scalar), ("aggregate", aggregate), ("effects", effects),
                    ("image_guard", image_guard), ("graphics", graphics), ("array_length", array_length),
-                   ("matrices", pathlib.Path("tests/matrix_main.cpp").read_text())):
+                   ("matrices", pathlib.Path("tests/matrix_main.cpp").read_text()),
+                   ("component_math", pathlib.Path("tests/component_math_main.cpp").read_text())):
     text = (out / (name + ".hlsl")).read_text()
     if name == "image_guard":
         text = re.sub(r"Texture2D<float> (r\d+) : register\([^;]+;", r"ImageTexture \1;", text)
@@ -211,6 +213,13 @@ for name, main in (("control", scalar), ("aggregate", aggregate), ("effects", ef
     extra = image_types if name == "image_guard" else ""
     if name == "matrices":
         extra = '#include "matrix_control.h"\n'
+    if name == "component_math":
+        # C++ round differs from HLSL round. Map only this documented intrinsic;
+        # WGSL/IR interpretation is still the real emitted operation sequence.
+        text = re.sub(r"\bround\(", "std::nearbyint(", text)
+        extra = "float rsqrt(float x) { return 1.0f / std::sqrt(x); }\n"
+        extra += "float degrees(float x) { return x * 57.29577951308232f; }\n"
+        extra += "float radians(float x) { return x * 0.017453292519943295f; }\n"
     path.write_text(prelude + extra + text + main)
     executable = out / (name + "_host")
     subprocess.run(["g++", "-std=c++17", "-O2", "-fno-fast-math", "-ffp-contract=off",

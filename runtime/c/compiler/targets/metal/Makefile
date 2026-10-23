@@ -73,3 +73,12 @@ matrix-host-control: $(OUT)/test_matrices
 	$(OUT)/test_matrices $(OUT)/matrices.metal
 	$(CXX) -std=c++17 -O2 -fsanitize=undefined -Wno-attributes -Itests/host -I$(OUT) tests/host/check_matrices.cpp -o $(OUT)/check_matrices
 	$(OUT)/check_matrices
+
+$(OUT)/test_component_math: $(SOURCES) metal.h private.h tests/fixture.h tests/test_component_math.c ../tests/component_math_source.h $(CORE) $(wildcard ../../src/*.h)
+	mkdir -p $(OUT)
+	$(CC) $(CFLAGS) $(SOURCES) $(CORE) tests/test_component_math.c -lm -o $@
+.PHONY: component-math-control
+component-math-control: $(OUT)/test_component_math
+	$(OUT)/test_component_math $(OUT)/component_math.metal
+	$(CXX) -std=c++17 -O2 -fno-fast-math -ffp-contract=off -fsanitize=undefined -Wno-attributes -Itests/host -I$(OUT) tests/host/check_component_math.cpp -o $(OUT)/check_component_math
+	$(OUT)/check_component_math

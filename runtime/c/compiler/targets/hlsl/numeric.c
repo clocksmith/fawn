@@ -139,6 +139,12 @@ static void subgroup_expression(HlslEmitter *e, const IrInstruction *ir, Numeric
             inclusive = true;
             product = true;
             break;
+        case BUILTIN_ABS: case BUILTIN_SIGN: case BUILTIN_FLOOR: case BUILTIN_ROUND:
+        case BUILTIN_TRUNC: case BUILTIN_FRACT: case BUILTIN_SIN: case BUILTIN_COS:
+        case BUILTIN_TAN: case BUILTIN_ASIN: case BUILTIN_ACOS: case BUILTIN_ATAN:
+        case BUILTIN_SINH: case BUILTIN_COSH: case BUILTIN_ASINH: case BUILTIN_ACOSH:
+        case BUILTIN_ATANH: case BUILTIN_LOG: case BUILTIN_LOG2: case BUILTIN_EXP2:
+        case BUILTIN_INVERSE_SQRT: case BUILTIN_DEGREES: case BUILTIN_RADIANS:
         case BUILTIN_CEIL: case BUILTIN_TRANSPOSE: case BUILTIN_DETERMINANT:
         case BUILTIN_MIN: case BUILTIN_MAX: case BUILTIN_CLAMP: case BUILTIN_EXP:
         case BUILTIN_TANH: case BUILTIN_SQRT: case BUILTIN_DOT: case BUILTIN_LENGTH:
@@ -164,6 +170,45 @@ static void subgroup_expression(HlslEmitter *e, const IrInstruction *ir, Numeric
     }
     if (wrap) hlsl_text(e, ")");
 }
+/* Repeated operands below are immutable IR snapshots, not replayed source
+ * expressions. Component lowering avoids signed overflow and target fract clamps. */
+static void unary_component(HlslEmitter *e, const IrInstruction *ir, NumericBuiltinKind kind) {
+    const TypeId leaf = type_leaf(e->module, ir->type);
+    const uint32_t width = type_vector_width(e->module, ir->type);
+    if (width != 1u) {
+        hlsl_type(e, ir->type);
+        hlsl_text(e, "(");
+    }
+    for (uint32_t lane = 0u; lane < width; ++lane) {
+        if (lane != 0u) hlsl_text(e, ", ");
+        if (kind == BUILTIN_FRACT) {
+            hlsl_text(e, "(");
+            component(e, ir->operands.scalar.left, lane);
+            hlsl_text(e, " - floor(");
+            component(e, ir->operands.scalar.left, lane);
+            hlsl_text(e, "))");
+        } else if (kind == BUILTIN_SIGN) {
+            hlsl_text(e, "(");
+            component(e, ir->operands.scalar.left, lane);
+            hlsl_text(e, leaf == IR_F32 ? " > 0.0f ? 1.0f : (" : " > 0 ? 1 : (");
+            component(e, ir->operands.scalar.left, lane);
+            hlsl_text(e, leaf == IR_F32 ? " < 0.0f ? -1.0f : 0.0f))" : " < 0 ? -1 : 0))");
+        } else if (leaf == IR_I32) {
+            hlsl_text(e, "(");
+            component(e, ir->operands.scalar.left, lane);
+            hlsl_text(e, " < 0 ? asint(0u - asuint(");
+            component(e, ir->operands.scalar.left, lane);
+            hlsl_text(e, ")) : ");
+            component(e, ir->operands.scalar.left, lane);
+            hlsl_text(e, ")");
+        } else {
+            if (leaf == IR_F32) hlsl_text(e, "abs(");
+            component(e, ir->operands.scalar.left, lane);
+            if (leaf == IR_F32) hlsl_text(e, ")");
+        }
+    }
+    if (width != 1u) hlsl_text(e, ")");
+}
 static void builtin_expression(HlslEmitter *e, const IrInstruction *ir) {
     const NumericBuiltin *builtin = builtin_kind((NumericBuiltinKind)ir->operands.scalar.literal);
     if (builtin == NULL) {
@@ -172,6 +217,10 @@ static void builtin_expression(HlslEmitter *e, const IrInstruction *ir) {
     }
     if (builtin_subgroup(builtin)) {
         subgroup_expression(e, ir, builtin->kind);
+        return;
+    }
+    if (builtin->kind == BUILTIN_ABS || builtin->kind == BUILTIN_SIGN || builtin->kind == BUILTIN_FRACT) {
+        unary_component(e, ir, builtin->kind);
         return;
     }
     const TypeId operand_type = hlsl_value_type(e, ir->operands.scalar.left);
@@ -233,6 +282,23 @@ static void builtin_expression(HlslEmitter *e, const IrInstruction *ir) {
     }
     const char *intrinsic = NULL;
     switch (builtin->kind) {
+        case BUILTIN_FLOOR: intrinsic = "floor"; break;
+        case BUILTIN_ROUND: intrinsic = "round"; break;
+        case BUILTIN_TRUNC: intrinsic = "trunc"; break;
+        case BUILTIN_SIN: intrinsic = "sin"; break;
+        case BUILTIN_COS: intrinsic = "cos"; break;
+        case BUILTIN_TAN: intrinsic = "tan"; break;
+        case BUILTIN_ASIN: intrinsic = "asin"; break;
+        case BUILTIN_ACOS: intrinsic = "acos"; break;
+        case BUILTIN_ATAN: intrinsic = "atan"; break;
+        case BUILTIN_SINH: intrinsic = "sinh"; break;
+        case BUILTIN_COSH: intrinsic = "cosh"; break;
+        case BUILTIN_LOG: intrinsic = "log"; break;
+        case BUILTIN_LOG2: intrinsic = "log2"; break;
+        case BUILTIN_EXP2: intrinsic = "exp2"; break;
+        case BUILTIN_INVERSE_SQRT: intrinsic = "rsqrt"; break;
+        case BUILTIN_DEGREES: intrinsic = "degrees"; break;
+        case BUILTIN_RADIANS: intrinsic = "radians"; break;
         case BUILTIN_CEIL: intrinsic = "ceil"; break;
         case BUILTIN_EXP: intrinsic = "exp"; break;
         case BUILTIN_TANH: intrinsic = "tanh"; break;
@@ -244,6 +310,8 @@ static void builtin_expression(HlslEmitter *e, const IrInstruction *ir) {
         case BUILTIN_CROSS: intrinsic = "cross"; break;
         case BUILTIN_TRANSPOSE: intrinsic = "transpose"; break;
         case BUILTIN_DETERMINANT: intrinsic = "determinant"; break;
+        case BUILTIN_ABS: case BUILTIN_SIGN: case BUILTIN_FRACT:
+        case BUILTIN_ASINH: case BUILTIN_ACOSH: case BUILTIN_ATANH:
         case BUILTIN_MIN: case BUILTIN_MAX: case BUILTIN_CLAMP:
         case BUILTIN_SUBGROUP_ADD: case BUILTIN_SUBGROUP_MIN: case BUILTIN_SUBGROUP_MAX:
         case BUILTIN_SUBGROUP_MUL: case BUILTIN_SUBGROUP_AND: case BUILTIN_SUBGROUP_OR:

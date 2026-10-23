@@ -114,6 +114,49 @@ static void numeric_operation(MetalEmitter *e, const IrInstruction *ir) {
     }
     if (width != 1u) metal_text(e, ")");
 }
+/* Repeated operands below are immutable IR snapshots, not replayed source
+ * expressions. Component lowering avoids signed overflow and target fract clamps. */
+static void unary_component(MetalEmitter *e, const IrInstruction *ir, NumericBuiltinKind kind) {
+    const TypeId leaf = type_leaf(e->module, ir->type);
+    const uint32_t width = type_vector_width(e->module, ir->type);
+    if (width != 1u) {
+        metal_type(e, ir->type);
+        metal_text(e, "(");
+    }
+    for (uint32_t lane = 0u; lane < width; ++lane) {
+        if (lane != 0u) metal_text(e, ", ");
+        if (kind == BUILTIN_DEGREES || kind == BUILTIN_RADIANS) {
+            metal_text(e, "(");
+            component(e, ir->operands.scalar.left, lane);
+            metal_text(e, kind == BUILTIN_DEGREES ? " * 57.29577951308232f)" : " * 0.017453292519943295f)");
+        } else if (kind == BUILTIN_FRACT) {
+            metal_text(e, "(");
+            component(e, ir->operands.scalar.left, lane);
+            metal_text(e, " - floor(");
+            component(e, ir->operands.scalar.left, lane);
+            metal_text(e, "))");
+        } else if (kind == BUILTIN_SIGN) {
+            metal_text(e, "(");
+            component(e, ir->operands.scalar.left, lane);
+            metal_text(e, leaf == IR_F32 ? " > 0.0f ? 1.0f : (" : " > 0 ? 1 : (");
+            component(e, ir->operands.scalar.left, lane);
+            metal_text(e, leaf == IR_F32 ? " < 0.0f ? -1.0f : 0.0f))" : " < 0 ? -1 : 0))");
+        } else if (leaf == IR_I32) {
+            metal_text(e, "(");
+            component(e, ir->operands.scalar.left, lane);
+            metal_text(e, " < 0 ? as_type<int>(0u - as_type<uint>(");
+            component(e, ir->operands.scalar.left, lane);
+            metal_text(e, ")) : ");
+            component(e, ir->operands.scalar.left, lane);
+            metal_text(e, ")");
+        } else {
+            if (leaf == IR_F32) metal_text(e, "fabs(");
+            component(e, ir->operands.scalar.left, lane);
+            if (leaf == IR_F32) metal_text(e, ")");
+        }
+    }
+    if (width != 1u) metal_text(e, ")");
+}
 static void builtin_expression(MetalEmitter *e, const IrInstruction *ir) {
     const NumericBuiltin *builtin = builtin_kind((NumericBuiltinKind)ir->operands.scalar.literal);
     if (builtin == NULL) {
@@ -122,13 +165,54 @@ static void builtin_expression(MetalEmitter *e, const IrInstruction *ir) {
     }
     /* A source builtin registry is not a target support table. New shared
      * operations must never become unchecked MSL names by default. */
-    const NumericBuiltinKind kind = builtin->kind;
-    const bool supported = kind == BUILTIN_TRANSPOSE || kind == BUILTIN_DETERMINANT || kind == BUILTIN_CEIL || kind == BUILTIN_MIN || kind == BUILTIN_MAX || kind == BUILTIN_CLAMP ||
-        kind == BUILTIN_EXP || kind == BUILTIN_TANH || kind == BUILTIN_SQRT ||
-        kind == BUILTIN_DOT || kind == BUILTIN_LENGTH || kind == BUILTIN_DISTANCE ||
-        kind == BUILTIN_NORMALIZE || kind == BUILTIN_CROSS;
-    if (!supported) {
+    static const char *const names[] = {
+        [BUILTIN_CEIL] = "ceil",
+        [BUILTIN_EXP] = "exp",
+        [BUILTIN_TANH] = "tanh",
+        [BUILTIN_SQRT] = "sqrt",
+        [BUILTIN_DOT] = "dot",
+        [BUILTIN_LENGTH] = "length",
+        [BUILTIN_DISTANCE] = "distance",
+        [BUILTIN_NORMALIZE] = "normalize",
+        [BUILTIN_CROSS] = "cross",
+        [BUILTIN_TRANSPOSE] = "transpose",
+        [BUILTIN_DETERMINANT] = "determinant",
+        [BUILTIN_MIN] = "min",
+        [BUILTIN_MAX] = "max",
+        [BUILTIN_CLAMP] = "clamp",
+        [BUILTIN_ABS] = "fabs",
+        [BUILTIN_SIGN] = "sign",
+        [BUILTIN_FLOOR] = "floor",
+        [BUILTIN_ROUND] = "rint",
+        [BUILTIN_TRUNC] = "trunc",
+        [BUILTIN_FRACT] = "fract",
+        [BUILTIN_SIN] = "sin",
+        [BUILTIN_COS] = "cos",
+        [BUILTIN_TAN] = "tan",
+        [BUILTIN_ASIN] = "asin",
+        [BUILTIN_ACOS] = "acos",
+        [BUILTIN_ATAN] = "atan",
+        [BUILTIN_SINH] = "sinh",
+        [BUILTIN_COSH] = "cosh",
+        [BUILTIN_ASINH] = "asinh",
+        [BUILTIN_ACOSH] = "acosh",
+        [BUILTIN_ATANH] = "atanh",
+        [BUILTIN_LOG] = "log",
+        [BUILTIN_LOG2] = "log2",
+        [BUILTIN_EXP2] = "exp2",
+        [BUILTIN_INVERSE_SQRT] = "rsqrt",
+        [BUILTIN_DEGREES] = "degrees",
+        [BUILTIN_RADIANS] = "radians",
+    };
+    const unsigned kind = (unsigned)builtin->kind;
+    const char *intrinsic = kind < sizeof(names) / sizeof(*names) ? names[kind] : NULL;
+    if (intrinsic == NULL) {
         metal_error(e, "Metal builtin has no implemented lowering");
+        return;
+    }
+    if (builtin->kind == BUILTIN_ABS || builtin->kind == BUILTIN_SIGN || builtin->kind == BUILTIN_FRACT ||
+        builtin->kind == BUILTIN_DEGREES || builtin->kind == BUILTIN_RADIANS) {
+        unary_component(e, ir, builtin->kind);
         return;
     }
     const TypeId operand_type = metal_value_type(e, ir->operands.scalar.left);
@@ -188,7 +272,7 @@ static void builtin_expression(MetalEmitter *e, const IrInstruction *ir) {
         if (width != 1u) metal_text(e, ")");
         return;
     }
-    metal_format(e, "%s(", builtin->name);
+    metal_format(e, "%s(", intrinsic);
     metal_value(e, ir->operands.scalar.left);
     if (builtin->arity > 1u) {
         metal_text(e, ", ");
