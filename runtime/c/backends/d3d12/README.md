@@ -6,7 +6,7 @@ COM declarations. No retained Zig bridge is linked, invoked or removed.
 
 ## Implemented boundary
 
-- Exact DXGI adapter ordinal, explicit software-adapter opt-in, D3D12 device,
+- Exact DXGI adapter ordinal or explicit CPU WARP selection, software-adapter opt-in, D3D12 device,
   direct command queue, private fence and observable adapter identity.
 - Default/UAV-capable, zero-initialized upload, and readback buffers; checked
   transfer ranges and scoped map/unmap. Default/readback initialization requires
@@ -143,6 +143,34 @@ registration retaining an unsafe event handle. Its performance is unqualified.
 
 ## Checks
 
+The zero/default `DOE_DX_SELECT_ORDINAL` still selects one exact DXGI ordinal.
+`DOE_DX_SELECT_WARP` explicitly chooses `EnumWarpAdapter`; it also requires
+`allow_software_adapter=true` and ordinal zero. Unknown/conflicting options reject
+before allocation or a native call. WARP selection verifies the observed DXGI
+software flag, publishes the actual adapter name/vendor/device/LUID and reports
+`DOE_DX_NO_ADAPTER_ORDINAL` because it did not enumerate an ordinal. Failed
+selection never tries another adapter. See Microsoft's
+[explicit WARP adapter contract](https://learn.microsoft.com/en-us/windows/win32/api/dxgi1_4/nf-dxgi1_4-idxgifactory4-enumwarpadapter).
+
+The native compute client accepts a final `--warp` argument, including alongside
+its existing uniform/indirect modes. That mode checks explicit software identity
+and retains the existing 16-word integer oracle, early caller releases, 30-second
+polling bound and required successful context destruction. It consumes validated
+shader bytecode, not a public WGSL/WebGPU frontend or a host shader interpreter.
+CPU WARP execution is a real Windows driver check, not physical GPU qualification.
+
+`run_warp.cmd` is the bounded hosted-control helper. Call it from this owner
+directory after `VsDevCmd.bat` and `build_windows.cmd`, with `OUT` naming the
+existing build and `WARP_EVIDENCE` a dedicated evidence directory. It requires
+exactly `%WindowsSdkVerBinPath%x64\fxc.exe`, compiles `tests/native_compute.hlsl`
+with `/Ges /WX /T cs_5_1 /E main` to `shader.dxbc`, and runs only
+`native_compute.exe shader.dxbc --warp`. It records the resolved compiler path,
+shader and compute logs, refuses its own existing evidence files and propagates
+every compiler/client failure. It installs nothing and selects no alternate
+compiler/adapter. The root-owned optional
+[hosted workflow](../../../../.github/workflows/c-d3d12-sdk-build.yml) supplies
+the outer process-tree deadline and retains source/tool/artifact identities.
+
 From this directory:
 
     make check
@@ -201,9 +229,10 @@ variant consumes the same arithmetic through a 256-byte b0 uniform view, keeping
 logical parameters and initialized padding explicit. Both are authored real-driver
 consumers with portable C syntax checks, not exercised GPU results.
 
-Windows SDK compilation, DXC compilation, native driver readback, debug-layer
-validation and physical qualification are **unrun** in the dot cloud environment.
-The fixture's portable syntax check is not any of those qualifications.
+The original dot host evidence did not run Windows SDK compilation, native driver
+readback or debug-layer validation. Later source-bound SDK evidence is separate
+below; portable syntax checks never establish those properties or physical
+qualification. New WARP source requires its own hosted SDK/driver execution.
 
 Core SOURCE_INPUTS.sha256 / TERMINAL_RECEIPT.txt, TEXTURE_*, GRAPHICS_* and MESH_*
 seals are historical. [The current developer receipt](DEVELOPER_RECEIPT_INDIRECT_UNIFORM.json)

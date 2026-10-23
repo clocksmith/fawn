@@ -29,19 +29,31 @@ doe_dx_status doe_dx_native_open(const doe_dx_options *options,
     const char *operation = "CreateDXGIFactory1";
     HRESULT result = CreateDXGIFactory1(&IID_IDXGIFactory4, (void **)&factory);
     if (FAILED(result)) goto fail;
-    operation = "IDXGIFactory4.EnumAdapters1";
-    result = IDXGIFactory4_EnumAdapters1(factory, options->adapter_ordinal, &adapter);
+    operation = "adapter.selection";
+    result = E_INVALIDARG;
+    switch (options->adapter_selection) {
+    case DOE_DX_SELECT_ORDINAL:
+        operation = "IDXGIFactory4.EnumAdapters1";
+        result = IDXGIFactory4_EnumAdapters1(factory, options->adapter_ordinal, &adapter);
+        break;
+    case DOE_DX_SELECT_WARP:
+        operation = "IDXGIFactory4.EnumWarpAdapter";
+        result = IDXGIFactory4_EnumWarpAdapter(factory, &IID_IDXGIAdapter1, (void **)&adapter);
+        break;
+    }
     if (FAILED(result)) goto fail;
     DXGI_ADAPTER_DESC1 description;
     operation = "IDXGIAdapter1.GetDesc1";
     result = IDXGIAdapter1_GetDesc1(adapter, &description);
     if (FAILED(result)) goto fail;
     bool software = (description.Flags & DXGI_ADAPTER_FLAG_SOFTWARE) != 0;
-    if (software && !options->allow_software_adapter) {
+    const bool wrong_warp = options->adapter_selection == DOE_DX_SELECT_WARP && !software;
+    if (wrong_warp || (software && !options->allow_software_adapter)) {
         IDXGIAdapter1_Release(adapter);
         IDXGIFactory4_Release(factory);
         doe_dx_native_close(context);
-        return doe_dx_fail(DOE_DX_UNSUPPORTED, 0, "adapter.software", error);
+        return doe_dx_fail(wrong_warp ? DOE_DX_DEVICE_MISMATCH : DOE_DX_UNSUPPORTED,
+            0, wrong_warp ? "adapter.warp_identity" : "adapter.software", error);
     }
     operation = "D3D12CreateDevice";
     result = D3D12CreateDevice((IUnknown *)adapter, D3D_FEATURE_LEVEL_11_0,
@@ -58,7 +70,9 @@ doe_dx_status doe_dx_native_open(const doe_dx_options *options,
         &IID_ID3D12Fence, (void **)&context->fence);
     if (FAILED(result)) goto fail;
     doe_dx_caps found = {0};
-    found.adapter_ordinal = options->adapter_ordinal;
+    found.adapter_ordinal = options->adapter_selection == DOE_DX_SELECT_WARP ?
+        DOE_DX_NO_ADAPTER_ORDINAL : options->adapter_ordinal;
+    found.adapter_selection = options->adapter_selection;
     found.vendor_id = description.VendorId;
     found.device_id = description.DeviceId;
     found.software_adapter = software;

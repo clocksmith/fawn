@@ -41,18 +41,27 @@ typedef struct doe_dx_error {
     const char *operation; /* Static string. */
 } doe_dx_error;
 
+typedef enum doe_dx_adapter_selection {
+    DOE_DX_SELECT_ORDINAL = 0, DOE_DX_SELECT_WARP = 1
+} doe_dx_adapter_selection;
+#define DOE_DX_NO_ADAPTER_ORDINAL UINT32_MAX
 typedef struct doe_dx_options {
     uint32_t adapter_ordinal; /* Exact DXGI ordinal, no adapter fallback. */
     bool allow_software_adapter;
+    /* Zero preserves exact ordinal selection. WARP explicitly selects the CPU
+     * renderer and requires allow_software_adapter=true and adapter_ordinal=0.
+     * No unavailable selection falls back to another adapter. */
+    doe_dx_adapter_selection adapter_selection;
 } doe_dx_options;
 
 /* Adapter identity only, not public WebGPU capability admission. */
 typedef struct doe_dx_caps {
-    uint32_t adapter_ordinal, vendor_id, device_id;
+    uint32_t adapter_ordinal, vendor_id, device_id; /* WARP ordinal is NO_ADAPTER_ORDINAL. */
     uint32_t luid_low;
     int32_t luid_high;
     bool software_adapter;
     char name[256]; /* UTF-8, NUL terminated. */
+    doe_dx_adapter_selection adapter_selection;
 } doe_dx_caps;
 
 doe_dx_status doe_dx_context_create(const doe_dx_options *options,
