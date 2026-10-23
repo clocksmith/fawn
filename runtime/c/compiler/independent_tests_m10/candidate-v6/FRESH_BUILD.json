@@ -1,0 +1,24 @@
+{
+  "artifacts": {
+    "doe-compiler-c": "1a68558935c2fd5146fda04d2484ece819574b5417b5ebed4f9cd56b17af518e",
+    "libdoe_compiler.so": "5b41d5c25f866c87f7c7a3be229a6cfa7c1537fe66360a215a8363b0e0cf4d97"
+  },
+  "cli_link": [
+    "gcc",
+    "<strictCFLAGS>",
+    "<candidate>/src/cli.c",
+    "<candidate>/src/cli_json.c",
+    "<all13.objects>",
+    "-lm"
+  ],
+  "compiler": "gcc (Debian 14.2.0-19) 14.2.0",
+  "library_link": [
+    "gcc",
+    "-shared",
+    "<all13.objects>",
+    "-Wl,--version-script=<candidate>/src/exports.map",
+    "-lm"
+  ],
+  "objects": "All13 strict -O2 -fPIC frame-audited non-CLI source objects; no candidate binaries reused.",
+  "source_manifest_sha256": "e818441e6c93feb04a7722fc1602f255cfd2e596d806604821aa7bbd178e1e11"
+}

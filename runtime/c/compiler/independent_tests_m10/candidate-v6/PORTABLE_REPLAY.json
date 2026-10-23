@@ -1,0 +1,9 @@
+{
+  "passed": true,
+  "source_manifest_sha256": "e818441e6c93feb04a7722fc1602f255cfd2e596d806604821aa7bbd178e1e11",
+  "library_sha256": "5b41d5c25f866c87f7c7a3be229a6cfa7c1537fe66360a215a8363b0e0cf4d97",
+  "cli_sha256": "ca026daae22c1d8862da7e10cbbdaf1600f24ad56c8f445ffffdf88a8608a49c",
+  "stages": 32,
+  "physical_device": false,
+  "native_lanes": "separate runners"
+}

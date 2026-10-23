@@ -1,0 +1,1286 @@
+{
+  "commands": [
+    [
+      "gcc",
+      "-std=c11",
+      "-O2",
+      "-fno-fast-math",
+      "-ffp-contract=off",
+      "-frounding-math",
+      "-Wall",
+      "-Wextra",
+      "-Wpedantic",
+      "-Wconversion",
+      "-Wshadow",
+      "-Wstrict-prototypes",
+      "-Wmissing-prototypes",
+      "-Wswitch-enum",
+      "-Werror",
+      "-Wvla",
+      "-fPIC",
+      "-fstack-usage",
+      "-fcallgraph-info=su",
+      "-c",
+      "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/compile.c",
+      "-o",
+      "/tmp/doe-m10-evaluator-v6-stack-portable/compile.o"
+    ],
+    [
+      "gcc",
+      "-std=c11",
+      "-O2",
+      "-fno-fast-math",
+      "-ffp-contract=off",
+      "-frounding-math",
+      "-Wall",
+      "-Wextra",
+      "-Wpedantic",
+      "-Wconversion",
+      "-Wshadow",
+      "-Wstrict-prototypes",
+      "-Wmissing-prototypes",
+      "-Wswitch-enum",
+      "-Werror",
+      "-Wvla",
+      "-fPIC",
+      "-fstack-usage",
+      "-fcallgraph-info=su",
+      "-c",
+      "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/constants.c",
+      "-o",
+      "/tmp/doe-m10-evaluator-v6-stack-portable/constants.o"
+    ],
+    [
+      "gcc",
+      "-std=c11",
+      "-O2",
+      "-fno-fast-math",
+      "-ffp-contract=off",
+      "-frounding-math",
+      "-Wall",
+      "-Wextra",
+      "-Wpedantic",
+      "-Wconversion",
+      "-Wshadow",
+      "-Wstrict-prototypes",
+      "-Wmissing-prototypes",
+      "-Wswitch-enum",
+      "-Werror",
+      "-Wvla",
+      "-fPIC",
+      "-fstack-usage",
+      "-fcallgraph-info=su",
+      "-c",
+      "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/lex.c",
+      "-o",
+      "/tmp/doe-m10-evaluator-v6-stack-portable/lex.o"
+    ],
+    [
+      "gcc",
+      "-std=c11",
+      "-O2",
+      "-fno-fast-math",
+      "-ffp-contract=off",
+      "-frounding-math",
+      "-Wall",
+      "-Wextra",
+      "-Wpedantic",
+      "-Wconversion",
+      "-Wshadow",
+      "-Wstrict-prototypes",
+      "-Wmissing-prototypes",
+      "-Wswitch-enum",
+      "-Werror",
+      "-Wvla",
+      "-fPIC",
+      "-fstack-usage",
+      "-fcallgraph-info=su",
+      "-c",
+      "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/numeric.c",
+      "-o",
+      "/tmp/doe-m10-evaluator-v6-stack-portable/numeric.o"
+    ],
+    [
+      "gcc",
+      "-std=c11",
+      "-O2",
+      "-fno-fast-math",
+      "-ffp-contract=off",
+      "-frounding-math",
+      "-Wall",
+      "-Wextra",
+      "-Wpedantic",
+      "-Wconversion",
+      "-Wshadow",
+      "-Wstrict-prototypes",
+      "-Wmissing-prototypes",
+      "-Wswitch-enum",
+      "-Werror",
+      "-Wvla",
+      "-fPIC",
+      "-fstack-usage",
+      "-fcallgraph-info=su",
+      "-c",
+      "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/parse.c",
+      "-o",
+      "/tmp/doe-m10-evaluator-v6-stack-portable/parse.o"
+    ],
+    [
+      "gcc",
+      "-std=c11",
+      "-O2",
+      "-fno-fast-math",
+      "-ffp-contract=off",
+      "-frounding-math",
+      "-Wall",
+      "-Wextra",
+      "-Wpedantic",
+      "-Wconversion",
+      "-Wshadow",
+      "-Wstrict-prototypes",
+      "-Wmissing-prototypes",
+      "-Wswitch-enum",
+      "-Werror",
+      "-Wvla",
+      "-fPIC",
+      "-fstack-usage",
+      "-fcallgraph-info=su",
+      "-c",
+      "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/reflection.c",
+      "-o",
+      "/tmp/doe-m10-evaluator-v6-stack-portable/reflection.o"
+    ],
+    [
+      "gcc",
+      "-std=c11",
+      "-O2",
+      "-fno-fast-math",
+      "-ffp-contract=off",
+      "-frounding-math",
+      "-Wall",
+      "-Wextra",
+      "-Wpedantic",
+      "-Wconversion",
+      "-Wshadow",
+      "-Wstrict-prototypes",
+      "-Wmissing-prototypes",
+      "-Wswitch-enum",
+      "-Werror",
+      "-Wvla",
+      "-fPIC",
+      "-fstack-usage",
+      "-fcallgraph-info=su",
+      "-c",
+      "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/sema_call.c",
+      "-o",
+      "/tmp/doe-m10-evaluator-v6-stack-portable/sema_call.o"
+    ],
+    [
+      "gcc",
+      "-std=c11",
+      "-O2",
+      "-fno-fast-math",
+      "-ffp-contract=off",
+      "-frounding-math",
+      "-Wall",
+      "-Wextra",
+      "-Wpedantic",
+      "-Wconversion",
+      "-Wshadow",
+      "-Wstrict-prototypes",
+      "-Wmissing-prototypes",
+      "-Wswitch-enum",
+      "-Werror",
+      "-Wvla",
+      "-fPIC",
+      "-fstack-usage",
+      "-fcallgraph-info=su",
+      "-c",
+      "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/sema_declarations.c",
+      "-o",
+      "/tmp/doe-m10-evaluator-v6-stack-portable/sema_declarations.o"
+    ],
+    [
+      "gcc",
+      "-std=c11",
+      "-O2",
+      "-fno-fast-math",
+      "-ffp-contract=off",
+      "-frounding-math",
+      "-Wall",
+      "-Wextra",
+      "-Wpedantic",
+      "-Wconversion",
+      "-Wshadow",
+      "-Wstrict-prototypes",
+      "-Wmissing-prototypes",
+      "-Wswitch-enum",
+      "-Werror",
+      "-Wvla",
+      "-fPIC",
+      "-fstack-usage",
+      "-fcallgraph-info=su",
+      "-c",
+      "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/sema_expression.c",
+      "-o",
+      "/tmp/doe-m10-evaluator-v6-stack-portable/sema_expression.o"
+    ],
+    [
+      "gcc",
+      "-std=c11",
+      "-O2",
+      "-fno-fast-math",
+      "-ffp-contract=off",
+      "-frounding-math",
+      "-Wall",
+      "-Wextra",
+      "-Wpedantic",
+      "-Wconversion",
+      "-Wshadow",
+      "-Wstrict-prototypes",
+      "-Wmissing-prototypes",
+      "-Wswitch-enum",
+      "-Werror",
+      "-Wvla",
+      "-fPIC",
+      "-fstack-usage",
+      "-fcallgraph-info=su",
+      "-c",
+      "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/spirv.c",
+      "-o",
+      "/tmp/doe-m10-evaluator-v6-stack-portable/spirv.o"
+    ],
+    [
+      "gcc",
+      "-std=c11",
+      "-O2",
+      "-fno-fast-math",
+      "-ffp-contract=off",
+      "-frounding-math",
+      "-Wall",
+      "-Wextra",
+      "-Wpedantic",
+      "-Wconversion",
+      "-Wshadow",
+      "-Wstrict-prototypes",
+      "-Wmissing-prototypes",
+      "-Wswitch-enum",
+      "-Werror",
+      "-Wvla",
+      "-fPIC",
+      "-fstack-usage",
+      "-fcallgraph-info=su",
+      "-c",
+      "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/storage.c",
+      "-o",
+      "/tmp/doe-m10-evaluator-v6-stack-portable/storage.o"
+    ],
+    [
+      "gcc",
+      "-std=c11",
+      "-O2",
+      "-fno-fast-math",
+      "-ffp-contract=off",
+      "-frounding-math",
+      "-Wall",
+      "-Wextra",
+      "-Wpedantic",
+      "-Wconversion",
+      "-Wshadow",
+      "-Wstrict-prototypes",
+      "-Wmissing-prototypes",
+      "-Wswitch-enum",
+      "-Werror",
+      "-Wvla",
+      "-fPIC",
+      "-fstack-usage",
+      "-fcallgraph-info=su",
+      "-c",
+      "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/types.c",
+      "-o",
+      "/tmp/doe-m10-evaluator-v6-stack-portable/types.o"
+    ],
+    [
+      "gcc",
+      "-std=c11",
+      "-O2",
+      "-fno-fast-math",
+      "-ffp-contract=off",
+      "-frounding-math",
+      "-Wall",
+      "-Wextra",
+      "-Wpedantic",
+      "-Wconversion",
+      "-Wshadow",
+      "-Wstrict-prototypes",
+      "-Wmissing-prototypes",
+      "-Wswitch-enum",
+      "-Werror",
+      "-Wvla",
+      "-fPIC",
+      "-fstack-usage",
+      "-fcallgraph-info=su",
+      "-c",
+      "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/validate.c",
+      "-o",
+      "/tmp/doe-m10-evaluator-v6-stack-portable/validate.o"
+    ],
+    [
+      "gcc",
+      "-std=c11",
+      "-O2",
+      "-Wall",
+      "-Wextra",
+      "-Wpedantic",
+      "-Werror",
+      "-I/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src",
+      "/tmp/doe-m10-evaluator-v6-stack-portable/layout.c",
+      "-o",
+      "/tmp/doe-m10-evaluator-v6-stack-portable/layout"
+    ]
+  ],
+  "frames": {
+    "ci_sha256": {
+      "compile.ci": "a63872c7fb61deb2d5f9d66c356bc78e36bc155ffa5b394f7242b8a3e05e82bc",
+      "constants.ci": "9c9899e3c9160e4a2a866c4bba7358826ff9074ff86f219fbf988944eb8f639a",
+      "lex.ci": "f9d2350b28f7800220bfff78d38d4da9f438f927f1e8219102af1a622db8866a",
+      "numeric.ci": "ef021fa073b429928ff1617dc8ad9ebede013e779499add3b3653e217cada1eb",
+      "parse.ci": "fec423f2a3562c1b7eeee6bd59a26725ef74c2323382a93aa1ada26384a818b7",
+      "reflection.ci": "bce30f49a9719b197b16a44aa41d55d6d137373e7abbef92a7b8d1aea3a9abbf",
+      "sema_call.ci": "7e75b691fc59a0d99868291b02de1105c5b74ae774e60bcfa4af99f9481f6b88",
+      "sema_declarations.ci": "3f58dafbaa7b1e3b65a3d602f0ca1d20b92cf326eb9fed2560f94a1956e41835",
+      "sema_expression.ci": "e4a1219ae4104caab813a3bd6afad7bd217da0c40abc09135c7e858e4209b4bb",
+      "spirv.ci": "e0da27e18fa6aa7106be3dd7d68dbb0ef052fe84f4abe9f4e302ef5ffbc62ba1",
+      "storage.ci": "2080e05ff6d508f7e708a7509a6c3de54e57060d6689b35d181f5a0896be5f6f",
+      "types.ci": "d8c70dc3766a4e92292c5aeb2a5d56601e5ab89e4555268006d6374b288fa973",
+      "validate.ci": "07e70077621ecefe8ab128cc85304cb34292b2b968b1a83c7a4d5c995f71cb74"
+    },
+    "compiler": "gcc (Debian 14.2.0-19) 14.2.0",
+    "fixed_combined": 197160,
+    "fixed_phase_bound": 43008,
+    "frame_count": 134,
+    "frame_qualifiers": {
+      "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/sema_call.c:convert_value": {
+        "bytes": 240,
+        "kind": "dynamic,bounded",
+        "unit": "sema_call.ci"
+      },
+      "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/sema_expression.c:name_value": {
+        "bytes": 160,
+        "kind": "dynamic,bounded",
+        "unit": "sema_expression.ci"
+      },
+      "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/sema_expression.c:postfix_value": {
+        "bytes": 320,
+        "kind": "dynamic,bounded",
+        "unit": "sema_expression.ci"
+      },
+      "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/validate.c:lower_block": {
+        "bytes": 464,
+        "kind": "dynamic,bounded",
+        "unit": "validate.ci"
+      },
+      "compiler_job_layout": {
+        "bytes": 240,
+        "kind": "dynamic,bounded",
+        "unit": "storage.ci"
+      },
+      "compiler_typed_layout": {
+        "bytes": 320,
+        "kind": "dynamic,bounded",
+        "unit": "storage.ci"
+      },
+      "constant_materialize": {
+        "bytes": 160,
+        "kind": "dynamic,bounded",
+        "unit": "constants.ci"
+      },
+      "sema_assignment_reference": {
+        "bytes": 176,
+        "kind": "dynamic,bounded",
+        "unit": "sema_expression.ci"
+      },
+      "sema_binary": {
+        "bytes": 272,
+        "kind": "dynamic,bounded",
+        "unit": "sema_expression.ci"
+      },
+      "sema_call_statement": {
+        "bytes": 80,
+        "kind": "dynamic,bounded",
+        "unit": "sema_expression.ci"
+      },
+      "sema_call_value": {
+        "bytes": 496,
+        "kind": "dynamic,bounded",
+        "unit": "sema_call.ci"
+      },
+      "sema_ensure_value": {
+        "bytes": 96,
+        "kind": "dynamic,bounded",
+        "unit": "sema_expression.ci"
+      },
+      "sema_expression": {
+        "bytes": 272,
+        "kind": "dynamic,bounded",
+        "unit": "sema_expression.ci"
+      },
+      "sema_reference_load": {
+        "bytes": 160,
+        "kind": "dynamic,bounded",
+        "unit": "sema_expression.ci"
+      },
+      "validate_syntax": {
+        "bytes": 208,
+        "kind": "dynamic,bounded",
+        "unit": "validate.ci"
+      }
+    },
+    "frames": {
+      "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/compile.c:compile_pipeline": {
+        "bytes": 96,
+        "kind": "static",
+        "unit": "compile.ci"
+      },
+      "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/compile.c:old_output": {
+        "bytes": 96,
+        "kind": "static",
+        "unit": "compile.ci"
+      },
+      "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/constants.c:convert_node": {
+        "bytes": 96,
+        "kind": "static",
+        "unit": "constants.ci"
+      },
+      "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/numeric.c:big_shift": {
+        "bytes": 24,
+        "kind": "static",
+        "unit": "numeric.ci"
+      },
+      "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/numeric.c:numeric_less.isra.0": {
+        "bytes": 8,
+        "kind": "static",
+        "unit": "numeric.ci"
+      },
+      "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/parse.c:attribute_value": {
+        "bytes": 40,
+        "kind": "static",
+        "unit": "parse.ci"
+      },
+      "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/parse.c:block": {
+        "bytes": 32,
+        "kind": "static",
+        "unit": "parse.ci"
+      },
+      "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/parse.c:expression": {
+        "bytes": 144,
+        "kind": "static",
+        "unit": "parse.ci"
+      },
+      "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/parse.c:expression_node.isra.0": {
+        "bytes": 8,
+        "kind": "static",
+        "unit": "parse.ci"
+      },
+      "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/parse.c:generic_reference.constprop.0": {
+        "bytes": 64,
+        "kind": "static",
+        "unit": "parse.ci"
+      },
+      "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/parse.c:local_declaration": {
+        "bytes": 48,
+        "kind": "static",
+        "unit": "parse.ci"
+      },
+      "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/parse.c:name_span": {
+        "bytes": 8,
+        "kind": "static",
+        "unit": "parse.ci"
+      },
+      "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/parse.c:primary": {
+        "bytes": 192,
+        "kind": "static",
+        "unit": "parse.ci"
+      },
+      "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/parse.c:punctuation": {
+        "bytes": 8,
+        "kind": "static",
+        "unit": "parse.ci"
+      },
+      "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/parse.c:reject": {
+        "bytes": 288,
+        "kind": "static",
+        "unit": "parse.ci"
+      },
+      "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/parse.c:simple_statement": {
+        "bytes": 128,
+        "kind": "static",
+        "unit": "parse.ci"
+      },
+      "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/parse.c:statement": {
+        "bytes": 128,
+        "kind": "static",
+        "unit": "parse.ci"
+      },
+      "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/parse.c:statement_slot": {
+        "bytes": 8,
+        "kind": "static",
+        "unit": "parse.ci"
+      },
+      "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/parse.c:template_close": {
+        "bytes": 8,
+        "kind": "static",
+        "unit": "parse.ci"
+      },
+      "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/parse.c:type_reference": {
+        "bytes": 48,
+        "kind": "static",
+        "unit": "parse.ci"
+      },
+      "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/parse.c:unary_form.part.0.isra.0": {
+        "bytes": 8,
+        "kind": "static",
+        "unit": "parse.ci"
+      },
+      "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/parse.c:word": {
+        "bytes": 48,
+        "kind": "static",
+        "unit": "parse.ci"
+      },
+      "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/reflection.c:discover": {
+        "bytes": 32,
+        "kind": "static",
+        "unit": "reflection.ci"
+      },
+      "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/reflection.c:flat_struct": {
+        "bytes": 8,
+        "kind": "static",
+        "unit": "reflection.ci"
+      },
+      "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/sema_call.c:convert_value": {
+        "bytes": 240,
+        "kind": "dynamic,bounded",
+        "unit": "sema_call.ci"
+      },
+      "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/sema_declarations.c:formal_order.isra.0": {
+        "bytes": 32,
+        "kind": "static",
+        "unit": "sema_declarations.ci"
+      },
+      "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/sema_declarations.c:integer_attribute": {
+        "bytes": 96,
+        "kind": "static",
+        "unit": "sema_declarations.ci"
+      },
+      "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/sema_declarations.c:lexical_value": {
+        "bytes": 32,
+        "kind": "static",
+        "unit": "sema_declarations.ci"
+      },
+      "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/sema_declarations.c:sift_formals": {
+        "bytes": 128,
+        "kind": "static",
+        "unit": "sema_declarations.ci"
+      },
+      "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/sema_expression.c:name_value": {
+        "bytes": 160,
+        "kind": "dynamic,bounded",
+        "unit": "sema_expression.ci"
+      },
+      "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/sema_expression.c:postfix_value": {
+        "bytes": 320,
+        "kind": "dynamic,bounded",
+        "unit": "sema_expression.ci"
+      },
+      "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/sema_expression.c:root_reference": {
+        "bytes": 96,
+        "kind": "static",
+        "unit": "sema_expression.ci"
+      },
+      "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/sema_expression.c:swizzle": {
+        "bytes": 96,
+        "kind": "static",
+        "unit": "sema_expression.ci"
+      },
+      "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/spirv.c:access_condition": {
+        "bytes": 192,
+        "kind": "static",
+        "unit": "spirv.ci"
+      },
+      "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/spirv.c:access_walk": {
+        "bytes": 32,
+        "kind": "static",
+        "unit": "spirv.ci"
+      },
+      "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/spirv.c:append_declaration": {
+        "bytes": 48,
+        "kind": "static",
+        "unit": "spirv.ci"
+      },
+      "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/spirv.c:comparison_opcode": {
+        "bytes": 8,
+        "kind": "static",
+        "unit": "spirv.ci"
+      },
+      "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/spirv.c:debug_name": {
+        "bytes": 128,
+        "kind": "static",
+        "unit": "spirv.ci"
+      },
+      "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/spirv.c:emit_block": {
+        "bytes": 272,
+        "kind": "static",
+        "unit": "spirv.ci"
+      },
+      "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/spirv.c:emit_conversion": {
+        "bytes": 176,
+        "kind": "static",
+        "unit": "spirv.ci"
+      },
+      "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/spirv.c:emit_division": {
+        "bytes": 240,
+        "kind": "static",
+        "unit": "spirv.ci"
+      },
+      "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/spirv.c:emit_pointer_access": {
+        "bytes": 160,
+        "kind": "static",
+        "unit": "spirv.ci"
+      },
+      "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/spirv.c:emit_shift": {
+        "bytes": 96,
+        "kind": "static",
+        "unit": "spirv.ci"
+      },
+      "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/spirv.c:extract_lane": {
+        "bytes": 96,
+        "kind": "static",
+        "unit": "spirv.ci"
+      },
+      "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/spirv.c:instruction": {
+        "bytes": 48,
+        "kind": "static",
+        "unit": "spirv.ci"
+      },
+      "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/spirv.c:instruction_space.constprop.0": {
+        "bytes": 8,
+        "kind": "static",
+        "unit": "spirv.ci"
+      },
+      "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/spirv.c:leaf_constant.isra.0": {
+        "bytes": 16,
+        "kind": "static",
+        "unit": "spirv.ci"
+      },
+      "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/spirv.c:pointer_type": {
+        "bytes": 32,
+        "kind": "static",
+        "unit": "spirv.ci"
+      },
+      "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/spirv.c:push_walk": {
+        "bytes": 8,
+        "kind": "static",
+        "unit": "spirv.ci"
+      },
+      "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/spirv.c:reserve_ids": {
+        "bytes": 16,
+        "kind": "static",
+        "unit": "spirv.ci"
+      },
+      "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/spirv.c:span_words": {
+        "bytes": 48,
+        "kind": "static",
+        "unit": "spirv.ci"
+      },
+      "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/spirv.c:unsigned_constant": {
+        "bytes": 16,
+        "kind": "static",
+        "unit": "spirv.ci"
+      },
+      "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/spirv.c:vector_construct": {
+        "bytes": 80,
+        "kind": "static",
+        "unit": "spirv.ci"
+      },
+      "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/spirv.c:zero_constant": {
+        "bytes": 32,
+        "kind": "static",
+        "unit": "spirv.ci"
+      },
+      "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/storage.c:finish_layout": {
+        "bytes": 224,
+        "kind": "static",
+        "unit": "storage.ci"
+      },
+      "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/storage.c:reserve_array": {
+        "bytes": 8,
+        "kind": "static",
+        "unit": "storage.ci"
+      },
+      "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/storage.c:workspace_layout": {
+        "bytes": 112,
+        "kind": "static",
+        "unit": "storage.ci"
+      },
+      "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/validate.c:lower_block": {
+        "bytes": 464,
+        "kind": "dynamic,bounded",
+        "unit": "validate.ci"
+      },
+      "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/validate.c:lower_boolean.isra.0": {
+        "bytes": 80,
+        "kind": "static",
+        "unit": "validate.ci"
+      },
+      "compiler_job_bind": {
+        "bytes": 224,
+        "kind": "static",
+        "unit": "storage.ci"
+      },
+      "compiler_job_layout": {
+        "bytes": 240,
+        "kind": "dynamic,bounded",
+        "unit": "storage.ci"
+      },
+      "compiler_legacy_bind": {
+        "bytes": 112,
+        "kind": "static",
+        "unit": "storage.ci"
+      },
+      "compiler_typed_layout": {
+        "bytes": 320,
+        "kind": "dynamic,bounded",
+        "unit": "storage.ci"
+      },
+      "constant_composite": {
+        "bytes": 64,
+        "kind": "static",
+        "unit": "constants.ci"
+      },
+      "constant_materialize": {
+        "bytes": 160,
+        "kind": "dynamic,bounded",
+        "unit": "constants.ci"
+      },
+      "constant_project": {
+        "bytes": 64,
+        "kind": "static",
+        "unit": "constants.ci"
+      },
+      "constant_reserve": {
+        "bytes": 8,
+        "kind": "static",
+        "unit": "constants.ci"
+      },
+      "constant_zero": {
+        "bytes": 32,
+        "kind": "static",
+        "unit": "constants.ci"
+      },
+      "doe_compiler_compile": {
+        "bytes": 140208,
+        "kind": "static",
+        "unit": "compile.ci"
+      },
+      "doe_compiler_compile_job": {
+        "bytes": 256,
+        "kind": "static",
+        "unit": "compile.ci"
+      },
+      "doe_compiler_compile_typed": {
+        "bytes": 320,
+        "kind": "static",
+        "unit": "compile.ci"
+      },
+      "doe_compiler_compile_v2": {
+        "bytes": 144,
+        "kind": "static",
+        "unit": "compile.ci"
+      },
+      "doe_compiler_job_requirements": {
+        "bytes": 160,
+        "kind": "static",
+        "unit": "compile.ci"
+      },
+      "doe_compiler_typed_requirements": {
+        "bytes": 160,
+        "kind": "static",
+        "unit": "compile.ci"
+      },
+      "doe_compiler_workspace_requirements": {
+        "bytes": 16,
+        "kind": "static",
+        "unit": "compile.ci"
+      },
+      "emit_spirv": {
+        "bytes": 432,
+        "kind": "static",
+        "unit": "spirv.ci"
+      },
+      "lex_source": {
+        "bytes": 96,
+        "kind": "static",
+        "unit": "lex.ci"
+      },
+      "numeric_binary": {
+        "bytes": 128,
+        "kind": "static",
+        "unit": "numeric.ci"
+      },
+      "numeric_bitcast": {
+        "bytes": 8,
+        "kind": "static",
+        "unit": "numeric.ci"
+      },
+      "numeric_builtin": {
+        "bytes": 64,
+        "kind": "static",
+        "unit": "numeric.ci"
+      },
+      "numeric_convert": {
+        "bytes": 8,
+        "kind": "static",
+        "unit": "numeric.ci"
+      },
+      "numeric_environment_begin": {
+        "bytes": 80,
+        "kind": "static",
+        "unit": "numeric.ci"
+      },
+      "numeric_environment_end": {
+        "bytes": 48,
+        "kind": "static",
+        "unit": "numeric.ci"
+      },
+      "numeric_materialize": {
+        "bytes": 8,
+        "kind": "static",
+        "unit": "numeric.ci"
+      },
+      "numeric_parse_literal": {
+        "bytes": 1344,
+        "kind": "static",
+        "unit": "numeric.ci"
+      },
+      "numeric_unary": {
+        "bytes": 8,
+        "kind": "static",
+        "unit": "numeric.ci"
+      },
+      "parse_tokens": {
+        "bytes": 192,
+        "kind": "static",
+        "unit": "parse.ci"
+      },
+      "reflect_legacy_admit": {
+        "bytes": 240,
+        "kind": "static",
+        "unit": "reflection.ci"
+      },
+      "reflect_prepare": {
+        "bytes": 64,
+        "kind": "static",
+        "unit": "reflection.ci"
+      },
+      "reflect_program": {
+        "bytes": 64,
+        "kind": "static",
+        "unit": "reflection.ci"
+      },
+      "reflect_program_v2": {
+        "bytes": 96,
+        "kind": "static",
+        "unit": "reflection.ci"
+      },
+      "reflect_typed": {
+        "bytes": 112,
+        "kind": "static",
+        "unit": "reflection.ci"
+      },
+      "scalar_builtin_named": {
+        "bytes": 48,
+        "kind": "static",
+        "unit": "numeric.ci"
+      },
+      "sema_alias_visible": {
+        "bytes": 8,
+        "kind": "static",
+        "unit": "sema_declarations.ci"
+      },
+      "sema_append": {
+        "bytes": 8,
+        "kind": "static",
+        "unit": "sema_expression.ci"
+      },
+      "sema_assignment_reference": {
+        "bytes": 176,
+        "kind": "dynamic,bounded",
+        "unit": "sema_expression.ci"
+      },
+      "sema_binary": {
+        "bytes": 272,
+        "kind": "dynamic,bounded",
+        "unit": "sema_expression.ci"
+      },
+      "sema_call_statement": {
+        "bytes": 80,
+        "kind": "dynamic,bounded",
+        "unit": "sema_expression.ci"
+      },
+      "sema_call_value": {
+        "bytes": 496,
+        "kind": "dynamic,bounded",
+        "unit": "sema_call.ci"
+      },
+      "sema_common_type": {
+        "bytes": 64,
+        "kind": "static",
+        "unit": "sema_declarations.ci"
+      },
+      "sema_default_type": {
+        "bytes": 64,
+        "kind": "static",
+        "unit": "sema_declarations.ci"
+      },
+      "sema_emit": {
+        "bytes": 8,
+        "kind": "static",
+        "unit": "sema_expression.ci"
+      },
+      "sema_ensure_value": {
+        "bytes": 96,
+        "kind": "dynamic,bounded",
+        "unit": "sema_expression.ci"
+      },
+      "sema_expression": {
+        "bytes": 272,
+        "kind": "dynamic,bounded",
+        "unit": "sema_expression.ci"
+      },
+      "sema_find_constant": {
+        "bytes": 48,
+        "kind": "static",
+        "unit": "sema_declarations.ci"
+      },
+      "sema_find_formal": {
+        "bytes": 48,
+        "kind": "static",
+        "unit": "sema_declarations.ci"
+      },
+      "sema_find_function": {
+        "bytes": 48,
+        "kind": "static",
+        "unit": "sema_declarations.ci"
+      },
+      "sema_find_local": {
+        "bytes": 48,
+        "kind": "static",
+        "unit": "sema_declarations.ci"
+      },
+      "sema_find_parameter": {
+        "bytes": 48,
+        "kind": "static",
+        "unit": "sema_declarations.ci"
+      },
+      "sema_find_struct": {
+        "bytes": 48,
+        "kind": "static",
+        "unit": "sema_declarations.ci"
+      },
+      "sema_local_use": {
+        "bytes": 8,
+        "kind": "static",
+        "unit": "sema_declarations.ci"
+      },
+      "sema_materialize": {
+        "bytes": 48,
+        "kind": "static",
+        "unit": "sema_expression.ci"
+      },
+      "sema_module_declared": {
+        "bytes": 48,
+        "kind": "static",
+        "unit": "sema_declarations.ci"
+      },
+      "sema_reference_load": {
+        "bytes": 160,
+        "kind": "dynamic,bounded",
+        "unit": "sema_expression.ci"
+      },
+      "sema_resolve_declarations": {
+        "bytes": 208,
+        "kind": "static",
+        "unit": "sema_declarations.ci"
+      },
+      "sema_type_reference": {
+        "bytes": 112,
+        "kind": "static",
+        "unit": "sema_declarations.ci"
+      },
+      "sema_valid_name": {
+        "bytes": 64,
+        "kind": "static",
+        "unit": "sema_declarations.ci"
+      },
+      "source_error": {
+        "bytes": 32,
+        "kind": "static",
+        "unit": "compile.ci"
+      },
+      "source_name_at": {
+        "bytes": 8,
+        "kind": "static",
+        "unit": "types.ci"
+      },
+      "source_pool_error": {
+        "bytes": 8,
+        "kind": "static",
+        "unit": "compile.ci"
+      },
+      "source_span_is": {
+        "bytes": 48,
+        "kind": "static",
+        "unit": "types.ci"
+      },
+      "source_spans_equal": {
+        "bytes": 16,
+        "kind": "static",
+        "unit": "types.ci"
+      },
+      "type_abstract": {
+        "bytes": 16,
+        "kind": "static",
+        "unit": "types.ci"
+      },
+      "type_alignment": {
+        "bytes": 8,
+        "kind": "static",
+        "unit": "types.ci"
+      },
+      "type_child": {
+        "bytes": 8,
+        "kind": "static",
+        "unit": "types.ci"
+      },
+      "type_children": {
+        "bytes": 8,
+        "kind": "static",
+        "unit": "types.ci"
+      },
+      "type_constructible": {
+        "bytes": 16,
+        "kind": "static",
+        "unit": "types.ci"
+      },
+      "type_flags": {
+        "bytes": 8,
+        "kind": "static",
+        "unit": "types.ci"
+      },
+      "type_intern": {
+        "bytes": 160,
+        "kind": "static",
+        "unit": "types.ci"
+      },
+      "type_layout_struct": {
+        "bytes": 128,
+        "kind": "static",
+        "unit": "types.ci"
+      },
+      "type_leaf": {
+        "bytes": 8,
+        "kind": "static",
+        "unit": "types.ci"
+      },
+      "type_resource_layout": {
+        "bytes": 48,
+        "kind": "static",
+        "unit": "types.ci"
+      },
+      "type_size": {
+        "bytes": 8,
+        "kind": "static",
+        "unit": "types.ci"
+      },
+      "validate_syntax": {
+        "bytes": 208,
+        "kind": "dynamic,bounded",
+        "unit": "validate.ci"
+      }
+    },
+    "job_combined": 192120,
+    "job_phase_bound": 178176,
+    "maximum_nonwrapper": [
+      1344,
+      "numeric_parse_literal"
+    ],
+    "sccs": [
+      {
+        "bytes": 160,
+        "members": [
+          "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/parse.c:block",
+          "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/parse.c:statement"
+        ]
+      },
+      {
+        "bytes": 448,
+        "members": [
+          "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/parse.c:expression",
+          "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/parse.c:generic_reference.constprop.0",
+          "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/parse.c:primary",
+          "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/parse.c:type_reference"
+        ]
+      },
+      {
+        "bytes": 272,
+        "members": [
+          "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/spirv.c:emit_block"
+        ]
+      },
+      {
+        "bytes": 464,
+        "members": [
+          "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/validate.c:lower_block"
+        ]
+      },
+      {
+        "bytes": 1296,
+        "members": [
+          "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/sema_declarations.c:integer_attribute",
+          "/tmp/doe-m10-evaluator-v6-source/runtime/c/compiler/src/sema_expression.c:postfix_value",
+          "sema_call_value",
+          "sema_expression",
+          "sema_type_reference"
+        ]
+      }
+    ],
+    "su_sha256": {
+      "compile.su": "acf064101b9fb4191f59b19cfe6a401d3c1d3f154b7e26b47d6373f53047d2b5",
+      "constants.su": "e3555129499095cb539a925cc28b7ba5940e666da6ac9f7a80b0d1608f876f41",
+      "lex.su": "fc91fceb3c36b05cc19cabbd629bf5de77ab8650f6613a5af04c1a68efb2e60c",
+      "numeric.su": "6e9d478f53eba3c36241990c69b1b244845609323c547a7f454da2cc88eb21d7",
+      "parse.su": "89887ff67923c64d2cc01fd3fec08c1518d0db87bdfd2846b7e03c42449bbac7",
+      "reflection.su": "b54c4c675791cb4c51920556f5afe31f1a26fed5d2d2b991f9989f381c596926",
+      "sema_call.su": "2bb69ffab0ee1264995fc33548750c42d0af590ff728fc7a7147eec8c98bcfe4",
+      "sema_declarations.su": "76733e8f859311e52ca8aa8040076a7badbe57b3e70b7321ff99a115bad93da5",
+      "sema_expression.su": "c4b5d1047f130330593059dddc4c8c914c7a1e63d50db4d8cc1f59ab8d24f314",
+      "spirv.su": "35c4cdb4ab21f258c39609294caf73366f356748592e6a23603b2574cb5b62de",
+      "storage.su": "5d616c71bc016ba2105abddf03a95c2e1b059c124d90c92844bd77bf30747634",
+      "types.su": "7cb4963d48fe68de9baea5c24ff37c4efdc19b70f3a13fe0e540a41cecd28a7b",
+      "validate.su": "294da6280024f38bd760dc3a5a067f0f2b85ebc224c8b8a9d09ed144dec8adda"
+    },
+    "sum_all_other_frames": 13944,
+    "wrapper": 140208
+  },
+  "passed": true,
+  "records": {
+    "AccessStep": [
+      24,
+      4
+    ],
+    "ArgumentSyntax": [
+      8,
+      4
+    ],
+    "CompilerWorkspace": [
+      512,
+      8
+    ],
+    "ConstantRecord": [
+      32,
+      8
+    ],
+    "ConstantSyntax": [
+      40,
+      8
+    ],
+    "ConstantValue": [
+      16,
+      8
+    ],
+    "Expression": [
+      40,
+      4
+    ],
+    "FormalRecord": [
+      16,
+      4
+    ],
+    "FunctionRecord": [
+      80,
+      4
+    ],
+    "GenericSyntax": [
+      24,
+      4
+    ],
+    "IrInstruction": [
+      32,
+      4
+    ],
+    "IrLocal": [
+      8,
+      4
+    ],
+    "LegacyWorkspace": [
+      140056,
+      8
+    ],
+    "LocalBinding": [
+      48,
+      8
+    ],
+    "MemberRecord": [
+      56,
+      8
+    ],
+    "ResourceRecord": [
+      104,
+      8
+    ],
+    "Statement": [
+      56,
+      4
+    ],
+    "TargetDeclaration": [
+      32,
+      8
+    ],
+    "Token": [
+      12,
+      4
+    ],
+    "TypeRecord": [
+      56,
+      8
+    ],
+    "WalkItem": [
+      16,
+      4
+    ]
+  },
+  "scope": "GCC14 Linux LP64 C-owned frames; external C runtime internals and physical GPU excluded",
+  "source_sha256": {
+    "src/cli.c": "7b50651f239ae7c93c47991813678669ff7ad118cb9639a82b4e3d5e40636a6f",
+    "src/cli_json.c": "79b35778c0f974c17da970fc8b98af75adac40d174ad3423a79d3847cd217d34",
+    "src/cli_json.h": "7d76808edeb7acd26524f0316659784018577019b98677d10dddb2ff99754305",
+    "src/compile.c": "0c0ccf8df4681794f62792e014a9c7ff7ed47f11f7146c8dc4026b9adbdde1d6",
+    "src/constants.c": "b8431560c29221a2ce5d87166306b321e257095b6c0c7488ca7f858654b54a97",
+    "src/exports.map": "a9025f34c30ba7251802facbaa8bf3660890558dc8ecc8f3fee884de75f9d816",
+    "src/internal.h": "3859bd9fa402b0f6f40822d8942e89fe19a3c93bcdd530bfa3949a9a9a2e6d3a",
+    "src/lex.c": "078b86d235ba65a6710e896a0616b87939788a32b9aaa4b24cf7cedc9b6d435c",
+    "src/numeric.c": "390cf61b3f13f56b48c8ed6af4aea676b1ae116388ec7f0ad9439f985d91a614",
+    "src/numeric.h": "3ba4d3c7caff37d08d5a5adc4e2c98c8cdf2d7f9b2bc2db8c5db174c987fd0fd",
+    "src/parse.c": "0c371df30868b6262692806f468c835e7816b2c9511605a5d1d0bb44211d92f4",
+    "src/reflection.c": "581645d97a2f1cd8d67e98fa3ca9e7c250a5566faccd4beaf123a63dce4959c1",
+    "src/sema.h": "e9098e0d4472e399b0f3bdcae8c05af0e7a00d047de95de5624fb7a007036bf9",
+    "src/sema_call.c": "798f1fbb6e02b3d87c14f459a54aa838b9ef0a487d9c043609475a5c52e98a32",
+    "src/sema_declarations.c": "7c62fe71a1a68f92395c8da92a0c0bbeea083e837645b97e0c2e945af5bb97e1",
+    "src/sema_expression.c": "8e57318e1f9a066a5ad05503ede16e5f075fed6e5f94bd250d2625788859dd9d",
+    "src/spirv.c": "6c33ea7580cc2d98cca221aef65b538f5242a953cb66e15a6b65530aebd689fe",
+    "src/spirv_decl.h": "5a2024c97baf98a3f0171a0ae6a898cdf5439882e29dc417642fd82ac71ccd69",
+    "src/storage.c": "442ceaf8d0a400e2fb1693ed0c22e1ade730ef9f5aeeefc0699bd879fd00f09a",
+    "src/types.c": "8c6d7a8c9ac369bdcbf69f7b9950acee13e35951f7efb3201388378d8e499397",
+    "src/validate.c": "1f512d0a7d00dcc6673104c09c25d54db2f3ff7207a44c9b0ef777ebcb2d0809"
+  }
+}

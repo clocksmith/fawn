@@ -113,6 +113,16 @@ pass. The [new ledger](corpus-coverage-m9.json) admits 33 paths / 31 unique sour
 reviewed ceilings, with separate conservative combined-stack accounting. No
 production owner or physical backend becomes qualified from these results.
 
+The [tenth increment](../../runtime/c/compiler/MILESTONE_10_RESULTS.md) adds typed
+aggregates, nested checked layouts/access paths, compact constants and additive
+caller-owned reflection through the same compiler. The unchanged binary-only
+consumer admits 37 of 98 paths, each independently validated/executed; 61 remain
+explicit rejections in the [ledger](corpus-coverage-m10.json). Fixed workspace/frame
+are 140,056/140,208 bytes within reviewed ceilings. Exact historical adapters,
+three corrected candidate defects and first failures remain source-bound.
+This does not qualify workgroup synchronization, physical execution, production
+TranslationInfo/adoption or a production-default replacement.
+
 The first [CPU runtime owner](../../runtime/c/futures/RESULTS.md) is independently
 accepted as an isolated C library for future IDs and completion queues. It retains
 issuance-boundary selection, callback reentry, actual condition waits and explicit

@@ -1,0 +1,151 @@
+{
+  "allocator_imports": [],
+  "claim": "Linux x86-64 GCC14.2 native compiler host only, not GPU qualification",
+  "export_match": false,
+  "failures": [
+    {
+      "command": [
+        "gcc",
+        "-std=c11",
+        "-O2",
+        "-Wall",
+        "-Wextra",
+        "-Wpedantic",
+        "-Wconversion",
+        "-Wshadow",
+        "-Wstrict-prototypes",
+        "-Wmissing-prototypes",
+        "-Werror",
+        "-Wvla",
+        "-fno-fast-math",
+        "-ffp-contract=off",
+        "-frounding-math",
+        "-I/tmp/doe-m10-historical-dee5/runtime/c/compiler/independent_tests_m7",
+        "-I/tmp/doe-m10-native-v6-final-source/runtime/c/compiler/include",
+        "-I/tmp/doe-m10-native-v6-final-source/runtime/c/compiler/src",
+        "/tmp/doe-m10-historical-dee5/runtime/c/compiler/independent_tests_m9/native_capacity/source/private_layout_m9.c",
+        "-o",
+        "/tmp/doe-m10-native-v6-retained-original/build/private-layout"
+      ],
+      "elapsed_seconds": 0.012342681991867721,
+      "name": "private_layout_build",
+      "returncode": 1
+    },
+    {
+      "command": [
+        "/tmp/doe-m10-native-v6-retained-original/build/source_archive-host"
+      ],
+      "elapsed_seconds": 0.02242697001202032,
+      "name": "run_source_archive_host",
+      "returncode": 1
+    },
+    {
+      "command": [
+        "/tmp/doe-m10-native-v6-retained-original/build/source_archive-public_exits"
+      ],
+      "elapsed_seconds": 0.001175670011434704,
+      "name": "run_source_archive_public_exits",
+      "returncode": 1
+    },
+    {
+      "command": [
+        "/tmp/doe-m10-native-v6-retained-original/build/source_archive-derived_job_c"
+      ],
+      "elapsed_seconds": 0.0016866070218384266,
+      "name": "run_source_archive_derived_job_c",
+      "returncode": 1
+    },
+    {
+      "command": [
+        "/tmp/doe-m10-native-v6-retained-original/build/source_shared-host"
+      ],
+      "elapsed_seconds": 0.020284428959712386,
+      "name": "run_source_shared_host",
+      "returncode": 1
+    },
+    {
+      "command": [
+        "/tmp/doe-m10-native-v6-retained-original/build/source_shared-public_exits"
+      ],
+      "elapsed_seconds": 0.0013862529885955155,
+      "name": "run_source_shared_public_exits",
+      "returncode": 1
+    },
+    {
+      "command": [
+        "/tmp/doe-m10-native-v6-retained-original/build/source_shared-derived_job_c"
+      ],
+      "elapsed_seconds": 0.001399632019456476,
+      "name": "run_source_shared_derived_job_c",
+      "returncode": 1
+    },
+    {
+      "command": [
+        "/tmp/doe-m10-native-v6-retained-original/build/fenv-faults"
+      ],
+      "elapsed_seconds": 0.003070686012506485,
+      "name": "run_fenv_faults",
+      "returncode": 1
+    },
+    {
+      "command": [
+        "/tmp/doe-m10-native-v6-retained-original/build/retained-native"
+      ],
+      "elapsed_seconds": 0.0039968269993551075,
+      "name": "run_retained_native",
+      "returncode": 1
+    },
+    {
+      "command": [
+        "/tmp/doe-m10-native-v6-retained-original/build/sanitized-host"
+      ],
+      "elapsed_seconds": 0.12344984599621966,
+      "name": "run_sanitized_host",
+      "returncode": 1
+    },
+    {
+      "command": [
+        "/tmp/doe-m10-native-v6-retained-original/build/sanitized-public_exits"
+      ],
+      "elapsed_seconds": 0.007626667967997491,
+      "name": "run_sanitized_public_exits",
+      "returncode": 1
+    },
+    {
+      "command": [
+        "/tmp/doe-m10-native-v6-retained-original/build/sanitized-derived_job"
+      ],
+      "elapsed_seconds": 0.00642877200152725,
+      "name": "run_sanitized_derived_job",
+      "returncode": 1
+    },
+    {
+      "command": [
+        "/tmp/doe-m10-native-v6-retained-original/build/sanitized-retained_native"
+      ],
+      "elapsed_seconds": 0.010359134990721941,
+      "name": "run_sanitized_retained_native",
+      "returncode": 1
+    }
+  ],
+  "frame_failures": [
+    {
+      "function": "doe_compiler_compile",
+      "limit": 123136,
+      "location": "/tmp/doe-m10-native-v6-final-source/runtime/c/compiler/src/compile.c:77:19:doe_compiler_compile",
+      "qualifier": "static",
+      "size": 140208
+    }
+  ],
+  "frame_max_abi1": 140208,
+  "frame_max_other": 1344,
+  "g++": "g++ (Debian 14.2.0-19) 14.2.0",
+  "gcc": "gcc (Debian 14.2.0-19) 14.2.0",
+  "libc": "glibc 2.41",
+  "source_built": {
+    "/tmp/doe-m10-native-v6-retained-original/build/libm8-source.a": "79b6fd63a6356706bfea3703f2e02f26f02584323388d38cdc9ce950991721df",
+    "/tmp/doe-m10-native-v6-retained-original/build/libm8-source.so": "5b41d5c25f866c87f7c7a3be229a6cfa7c1537fe66360a215a8363b0e0cf4d97"
+  },
+  "source_unchanged_during_run": true,
+  "status": "FAIL"
+}

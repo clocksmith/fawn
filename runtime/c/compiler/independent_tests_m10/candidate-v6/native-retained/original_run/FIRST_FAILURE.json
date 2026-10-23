@@ -1,0 +1,28 @@
+{
+  "command": [
+    "gcc",
+    "-std=c11",
+    "-O2",
+    "-Wall",
+    "-Wextra",
+    "-Wpedantic",
+    "-Wconversion",
+    "-Wshadow",
+    "-Wstrict-prototypes",
+    "-Wmissing-prototypes",
+    "-Werror",
+    "-Wvla",
+    "-fno-fast-math",
+    "-ffp-contract=off",
+    "-frounding-math",
+    "-I/tmp/doe-m10-historical-dee5/runtime/c/compiler/independent_tests_m7",
+    "-I/tmp/doe-m10-native-v6-final-source/runtime/c/compiler/include",
+    "-I/tmp/doe-m10-native-v6-final-source/runtime/c/compiler/src",
+    "/tmp/doe-m10-historical-dee5/runtime/c/compiler/independent_tests_m9/native_capacity/source/private_layout_m9.c",
+    "-o",
+    "/tmp/doe-m10-native-v6-retained-original/build/private-layout"
+  ],
+  "elapsed_seconds": 0.012342681991867721,
+  "name": "private_layout_build",
+  "returncode": 1
+}

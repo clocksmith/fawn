@@ -1,0 +1,342 @@
+{
+  "failed": 0,
+  "passed": 31,
+  "records": [
+    {
+      "case": "zero_empty_bare_attributes",
+      "diagnostic": "",
+      "errors": [],
+      "passed": true,
+      "status": 0
+    },
+    {
+      "case": "legacy_leading_const_exempt",
+      "diagnostic": "",
+      "errors": [],
+      "passed": true,
+      "status": 0
+    },
+    {
+      "case": "legacy_exempt_plus_one",
+      "diagnostic": "",
+      "errors": [],
+      "passed": true,
+      "status": 0
+    },
+    {
+      "case": "legacy_exempt_plus_two_exhausts",
+      "diagnostic": "module constant capacity exceeded",
+      "errors": [],
+      "passed": true,
+      "status": 1
+    },
+    {
+      "case": "new_leading_const_charged",
+      "diagnostic": "",
+      "errors": [],
+      "passed": true,
+      "status": 0
+    },
+    {
+      "case": "new_leading_const_zero_budget",
+      "diagnostic": "expression node capacity exceeded",
+      "errors": [],
+      "passed": true,
+      "status": 1
+    },
+    {
+      "case": "typed_complex_const_three_nodes",
+      "diagnostic": "",
+      "errors": [],
+      "passed": true,
+      "status": 0
+    },
+    {
+      "case": "typed_complex_const_two_nodes",
+      "diagnostic": "expression node capacity exceeded",
+      "errors": [],
+      "passed": true,
+      "status": 1
+    },
+    {
+      "case": "trailing_const_charged",
+      "diagnostic": "",
+      "errors": [],
+      "passed": true,
+      "status": 0
+    },
+    {
+      "case": "trailing_const_not_exempt",
+      "diagnostic": "expression node capacity exceeded",
+      "errors": [],
+      "passed": true,
+      "status": 1
+    },
+    {
+      "case": "attribute_reference_one_node",
+      "diagnostic": "",
+      "errors": [],
+      "passed": true,
+      "status": 0
+    },
+    {
+      "case": "attribute_reference_exhausted",
+      "diagnostic": "expression node capacity exceeded",
+      "errors": [],
+      "passed": true,
+      "status": 1
+    },
+    {
+      "case": "const_attribute_total_two",
+      "diagnostic": "",
+      "errors": [],
+      "passed": true,
+      "status": 0
+    },
+    {
+      "case": "const_attribute_total_one",
+      "diagnostic": "expression node capacity exceeded",
+      "errors": [],
+      "passed": true,
+      "status": 1
+    },
+    {
+      "case": "attribute_expression_three",
+      "diagnostic": "",
+      "errors": [],
+      "passed": true,
+      "status": 0
+    },
+    {
+      "case": "attribute_expression_two",
+      "diagnostic": "expression node capacity exceeded",
+      "errors": [],
+      "passed": true,
+      "status": 1
+    },
+    {
+      "case": "local_const_statement_node",
+      "diagnostic": "",
+      "errors": [],
+      "passed": true,
+      "status": 0
+    },
+    {
+      "case": "local_const_no_statement",
+      "diagnostic": "statement capacity exceeded",
+      "errors": [],
+      "passed": true,
+      "status": 1
+    },
+    {
+      "case": "local_const_no_node",
+      "diagnostic": "expression node capacity exceeded",
+      "errors": [],
+      "passed": true,
+      "status": 1
+    },
+    {
+      "case": "spare_physical_not_capacity_0",
+      "errors": [],
+      "passed": true,
+      "status": 1
+    },
+    {
+      "case": "spare_physical_not_capacity_1",
+      "errors": [],
+      "passed": true,
+      "status": 1
+    },
+    {
+      "case": "spare_physical_not_capacity_2",
+      "errors": [],
+      "passed": true,
+      "status": 1
+    },
+    {
+      "case": "new_fixed_ir_stress_job",
+      "diagnostic": "",
+      "errors": [],
+      "execution": {
+        "cpu_invocations": 2,
+        "dispatch_vectors": 0,
+        "executed_opcodes": [
+          61,
+          62,
+          65,
+          68,
+          169,
+          172,
+          176,
+          247,
+          248,
+          249,
+          250,
+          253
+        ],
+        "instruction_steps": 1594,
+        "unfinished": 0
+      },
+      "offset": 0,
+      "output_sha256": "528658e8eca0b16b1cbf5902118b32289e4ece6fb29e3ffcb895f5eeaf9e1228",
+      "passed": true,
+      "source_sha256": "b6d2f1b702553379616be60730457f727bfd7be0ec2927ef969c4f3a43f23760",
+      "status": 0,
+      "structure": {
+        "instruction_count": 1255,
+        "opcodes": [
+          5,
+          14,
+          15,
+          16,
+          17,
+          19,
+          20,
+          21,
+          22,
+          23,
+          29,
+          30,
+          32,
+          33,
+          43,
+          54,
+          56,
+          59,
+          61,
+          62,
+          65,
+          68,
+          71,
+          72,
+          169,
+          172,
+          176,
+          245,
+          247,
+          248,
+          249,
+          250,
+          253
+        ],
+        "word_count": 4856
+      }
+    },
+    {
+      "case": "fixed_ir_stress_abi1",
+      "diagnostic": "internal SPIR-V word budget exceeded",
+      "errors": [],
+      "passed": true,
+      "status": 5
+    },
+    {
+      "case": "fixed_ir_stress_v2",
+      "diagnostic": "internal SPIR-V word budget exceeded",
+      "errors": [],
+      "passed": true,
+      "status": 5
+    },
+    {
+      "case": "postinspection_true_ir_stress",
+      "diagnostic": "",
+      "errors": [],
+      "execution": {
+        "cpu_invocations": 2,
+        "dispatch_vectors": 0,
+        "executed_opcodes": [
+          59,
+          61,
+          62,
+          65,
+          68,
+          169,
+          172,
+          176,
+          247,
+          248,
+          249,
+          250,
+          253
+        ],
+        "instruction_steps": 1303,
+        "unfinished": 0
+      },
+      "offset": 0,
+      "output_sha256": "c2f6a6c1f15d350165e64e2a7734c3eed3f8b5f0c816ff7919ef2b118fc1476d",
+      "passed": true,
+      "source_sha256": "1582446838a862db54c7bdd4a4461d50cee6bbed3299e804149418c52ce6000b",
+      "status": 0,
+      "structure": {
+        "instruction_count": 1181,
+        "opcodes": [
+          5,
+          14,
+          15,
+          16,
+          17,
+          19,
+          20,
+          21,
+          22,
+          23,
+          29,
+          30,
+          32,
+          33,
+          43,
+          54,
+          56,
+          59,
+          61,
+          62,
+          65,
+          68,
+          71,
+          72,
+          169,
+          172,
+          176,
+          245,
+          247,
+          248,
+          249,
+          250,
+          253
+        ],
+        "word_count": 4140
+      }
+    },
+    {
+      "case": "postinspection_true_ir_abi1",
+      "diagnostic": "typed instruction capacity exceeded",
+      "errors": [],
+      "passed": true,
+      "status": 1
+    },
+    {
+      "case": "postinspection_true_ir_v2",
+      "diagnostic": "typed instruction capacity exceeded",
+      "errors": [],
+      "passed": true,
+      "status": 1
+    },
+    {
+      "case": "target_id_e_overflow",
+      "errors": [],
+      "passed": true,
+      "status": 1
+    },
+    {
+      "case": "target_id_s_overflow",
+      "errors": [],
+      "passed": true,
+      "status": 1
+    },
+    {
+      "case": "constant_record_size_overflow",
+      "errors": [],
+      "passed": true,
+      "status": 1
+    }
+  ]
+}

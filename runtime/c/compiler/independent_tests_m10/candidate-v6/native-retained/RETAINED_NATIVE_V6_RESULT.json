@@ -1,0 +1,33 @@
+{
+  "actually_reached_fenv_paths": 30,
+  "budget_adapters": "Exactly three workspace limits122880\u2192147456; wrapperframe123136\u2192147968; all other frame8192 unchanged; exactexports5\u21927 additive ABI4",
+  "candidate_entries_verified_before_after": 30,
+  "candidate_sources_changed": false,
+  "executed_native_or_api_checks": 21,
+  "fenv_fault_cases": 60,
+  "historical_entries_verified_before_after": 142,
+  "host_calls_per_mode": 2368,
+  "host_profiles": 432,
+  "host_threads": 16,
+  "no_gpu_claim": true,
+  "old_tests_changed": false,
+  "original_failures_preserved": [
+    "original_run",
+    "adapted_run",
+    "portable_run_1/original"
+  ],
+  "portable_full_run": "portable_run_1/RESULT.json",
+  "portable_result_sha256": "29e7a6572604a27aa2114b7603b7c49cd9f2b033e74533df6b61823178291972",
+  "portable_runner": "replay_retained_native.py",
+  "private_layout": "Original obsolete probe compilation failure retained, not passed. Separate independently measured M10 record/stack audit linked and source-bound in portable result.",
+  "public_exit_modes": [
+    "source_archive",
+    "source_shared",
+    "ASan+UBSan"
+  ],
+  "public_exits_per_mode": 8352,
+  "source_semantic_adapters": "Exactly one newly admitted whole-vector local snapshot seed; exactly two separately SHA-bound invalid-uniform status3-to4 negatives; all remaining fixtures and expectations unchanged",
+  "status": "PASS_RETAINED_NATIVE_WITH_ENUMERATED_M10_ADAPTERS",
+  "successful_commands": 62,
+  "utc": "2026-10-23T10:28:13.689575+00:00"
+}

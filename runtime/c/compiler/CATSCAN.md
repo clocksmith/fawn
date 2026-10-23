@@ -32,7 +32,9 @@ Translate the explicitly admitted WGSL surface into independently usable, source
 - Frozen milestone tests, independent instruction execution, SPIR-V target validation, sanitizer boundaries and ordinary GCC consumption pass.
 - Complete compiler migration additionally requires the retained support matrix, target interfaces and real adopter gates; a milestone pass is not completion.
 
-- Evidence: [compiler tests](tests/) and [first milestone](MILESTONE_1.md).
+- Evidence: [accepted typed owner](MILESTONE_10_RESULTS.md), its
+  [independent source-only gate](independent_tests_m10/REPRODUCE_FINAL.md), and
+  retained [compiler tests](tests/).
 
 ## Non-goals
 

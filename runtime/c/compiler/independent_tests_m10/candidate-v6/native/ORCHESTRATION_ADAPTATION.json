@@ -1,0 +1,11 @@
+{
+  "utc": "2026-10-23T10:13:24.995980+00:00",
+  "previous_runner_sha256": "5f8cfecd6d523e552e3bd12f335cf1a06cb0c89a2bcf0c752d8f1d1c01c51be4",
+  "current_runner_sha256": "60ba193c92527890d6421959cf701033ebc6bb90fa831cc23faec35e8cc4cecb",
+  "changes": [
+    "Bind verified final v6 manifest/archive/extracted source identity",
+    "Retain documented harness-only -fno-builtin instrumentation correction"
+  ],
+  "sealed_sources_or_expectations_changed": false,
+  "candidate_sources_changed": false
+}

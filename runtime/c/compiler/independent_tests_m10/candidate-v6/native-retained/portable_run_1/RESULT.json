@@ -1,0 +1,43 @@
+{
+  "adapted_command": [
+    "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+    "/workspace/shared/doe-c-migration-evidence-20261023/milestone10/evaluator/candidate-v6/native-retained/portable_run_1/generated_runner.py",
+    "--source-root",
+    "/tmp/doe-m10-native-v6-final-source/runtime/c/compiler",
+    "--retained-root",
+    "/tmp/doe-m10-historical-dee5",
+    "--out",
+    "/workspace/shared/doe-c-migration-evidence-20261023/milestone10/evaluator/candidate-v6/native-retained/portable_run_1/adapted"
+  ],
+  "adapted_report_sha256": "2583c3b290cce4f2ab5e0666887e7b9fa8b2e4d8d198621423eb93c68425710e",
+  "adapted_returncode": 0,
+  "candidate_manifest_sha256": "e818441e6c93feb04a7722fc1602f255cfd2e596d806604821aa7bbd178e1e11",
+  "candidate_source_edits": false,
+  "candidate_sources_unchanged": 30,
+  "original_command": [
+    "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+    "/tmp/doe-m10-historical-dee5/runtime/c/compiler/independent_tests_m9/native_capacity/source/run_native_m9_final.py",
+    "--source-root",
+    "/tmp/doe-m10-native-v6-final-source/runtime/c/compiler",
+    "--retained-root",
+    "/tmp/doe-m10-historical-dee5",
+    "--out",
+    "/tmp/doe-m10-native-v6-retained-portable/original"
+  ],
+  "original_first_failure_sha256": "280a257c1d7f65cfb7881dbfbec743341595a109dcd3722f532c9642d26decb9",
+  "original_inputs_unchanged": 142,
+  "original_report_sha256": "b8403f795f15a305779d16ae0ccaa2da56c0381a4d3495d462cf425768d4a54c",
+  "original_returncode": 1,
+  "pinned_input_manifest_sha256": "cee043faabdc88ff7ad2ac13f4e7f703f8d3e994f2f21bbcf8ff61b0c8c39d5c",
+  "pinned_test_edits": false,
+  "sanitizers_run": true,
+  "scope": "Native host behavior only. Original obsolete private layout is not passed; full semantic/corpus/combined-stack/GPU acceptance excluded.",
+  "separate_parent_record_audit": {
+    "disposition": "Separate independent M10 measurement replaces, but does not pass, obsolete M9 private layout",
+    "records": 21,
+    "scope": "GCC14 Linux LP64 C-owned frames; external C runtime internals and physical GPU excluded",
+    "sha256": "a93d24648ec4b8e86c18ca46fd86955cfff9727d79951392e5435cfc330770f9"
+  },
+  "status": "PASS_RETAINED_NATIVE_WITH_ENUMERATED_M10_ADAPTERS",
+  "utc": "2026-10-23T10:25:16.101872+00:00"
+}

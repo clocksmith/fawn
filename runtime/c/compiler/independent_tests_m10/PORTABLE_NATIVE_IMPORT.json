@@ -1,0 +1,31 @@
+{
+  "bytes": 115905,
+  "destination": "runtime/c/compiler/independent_tests_m10",
+  "files": {
+    "candidate-v6/native-retained/ENUMERATED_ADAPTERS.json": "96cfef7a67337786501439b654bea1e35377593d18918a123818a747ada23acd",
+    "candidate-v6/native-retained/PORTABLE_SOURCE.sha256": "d3a7062e33bd258a227ee98c7b6327b99054dcdea37f2685c212c408f6c4f824",
+    "candidate-v6/native-retained/README.md": "ae17399dae8a7c65ff88512be5fca8b2c00a1922ad8f2329c6d5a247468b1d1b",
+    "candidate-v6/native-retained/RETAINED_INPUTS.json": "cee043faabdc88ff7ad2ac13f4e7f703f8d3e994f2f21bbcf8ff61b0c8c39d5c",
+    "candidate-v6/native-retained/RETAINED_NATIVE_V6_RESULT.json": "ab6f164255e7e9a419f4aee72dc3f73582a87bd1c752b0564815e8fdac0e945e",
+    "candidate-v6/native-retained/RETAINED_PREPARATION.json": "17210258b68db216770e77cb4cba87906dbb0a45fd660ea97227dab36aa1935c",
+    "candidate-v6/native-retained/adapted_run/FIRST_FAILURE.json": "9690bdb27b8074b7025451d217cc5f10f00c42c5fc8f5654a5a6cfaa3dea2835",
+    "candidate-v6/native-retained/original_run/FIRST_FAILURE.json": "dee033b645505cae41de265e8d5158db26aba631f0798dcf675b1ab81099b24f",
+    "candidate-v6/native-retained/original_run/native-report.json": "cf09a3287a0f89875b6a4160470bcf7d93b976e791537f47693a6e0738df58e6",
+    "candidate-v6/native-retained/portable_run_1/RESULT.json": "29e7a6572604a27aa2114b7603b7c49cd9f2b033e74533df6b61823178291972",
+    "candidate-v6/native-retained/replay_retained_native.py": "67d2e93cb1b3feb04af59c3ca401509925ae619e12edfaf16614b7125b2ec05e",
+    "candidate-v6/native/HANDOFF_IDENTITY.json": "8fd601c73c6417bd36bf3d59fc6b9a7a3ddef492e5a37ba4f2a4aaada7badc64",
+    "candidate-v6/native/NATIVE_V6_RESULT.json": "e2d02e114a24dbdb8cfeefc681364e39be118598d14cdae05e503240a5c3210d",
+    "candidate-v6/native/ORCHESTRATION_ADAPTATION.json": "db7a341ff1f02bc15a8528f245c76a578665c2e6e8b4603c9ad7b22d1b9ea542",
+    "candidate-v6/native/PORTABLE_IMPORT_LIST.json": "e84dc52dd6c0a42daafc6627725d39518b3484e7926f5e5b55cb02ae551fa9c8",
+    "candidate-v6/native/PORTABLE_PLAN_CHECK.json": "b7d79961aaba1b2fc0959eeae68a18a3cc7947c7203a0dbdcffabf0e984a781c",
+    "candidate-v6/native/PORTABLE_SOURCE.sha256": "53eef34e15153301646d9eadcd95655639f234efda351003292f2cb302fb38bf",
+    "candidate-v6/native/README_PORTABLE.md": "195dd451deb01b3ce06e5a660a5c4cd4027c6f6d3371bbfc83d41cee452c1aac",
+    "candidate-v6/native/replay_native_m10.py": "c89bc1b2b1b1fc92ba26474672b4748f9b21b4c1c62c0cc25872fe723a966f91",
+    "candidate-v6/native/run_1/REPORT.json": "8d37325788614882308958a396e3b8c353077f35e5d49f1b377aaa718b40c898",
+    "candidate-v6/native/run_1/commands.json": "400c9d565f0bac20ba57f01351557156299dd3e5d646fe0729d1d2b52370d746"
+  },
+  "main_import_manifest": "PORTABLE_MAIN_IMPORT.json",
+  "main_import_manifest_sha256": "17c00408f1b164eb96b80d329efd9ac1c74396f92dd74d470a49d04c16608ec9",
+  "root": "/workspace/shared/doe-c-migration-evidence-20261023/milestone10/evaluator",
+  "scope": "Additional unchanged portable native wrappers, their seals, and compact source-bound results/failures. Union with main import list. No binaries, build directories, caches or archives. Absolute paths in historical receipts are provenance only; use the distinct replay wrappers rather than altering originals."
+}

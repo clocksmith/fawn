@@ -1,0 +1,29 @@
+{
+  "candidate_manifest_required": "e818441e6c93feb04a7722fc1602f255cfd2e596d806604821aa7bbd178e1e11",
+  "files": {
+    "candidate-v6/native-retained/PORTABLE_SOURCE.sha256": "d3a7062e33bd258a227ee98c7b6327b99054dcdea37f2685c212c408f6c4f824",
+    "candidate-v6/native-retained/README.md": "ae17399dae8a7c65ff88512be5fca8b2c00a1922ad8f2329c6d5a247468b1d1b",
+    "candidate-v6/native-retained/RETAINED_INPUTS.json": "cee043faabdc88ff7ad2ac13f4e7f703f8d3e994f2f21bbcf8ff61b0c8c39d5c",
+    "candidate-v6/native-retained/replay_retained_native.py": "67d2e93cb1b3feb04af59c3ca401509925ae619e12edfaf16614b7125b2ec05e",
+    "candidate-v6/native/PORTABLE_SOURCE.sha256": "53eef34e15153301646d9eadcd95655639f234efda351003292f2cb302fb38bf",
+    "candidate-v6/native/README_PORTABLE.md": "195dd451deb01b3ce06e5a660a5c4cd4027c6f6d3371bbfc83d41cee452c1aac",
+    "candidate-v6/native/replay_native_m10.py": "c89bc1b2b1b1fc92ba26474672b4748f9b21b4c1c62c0cc25872fe723a966f91",
+    "native/PREINSPECTION.json": "5bda015e42dfc34d2bcdeb2ace3bd7c3fd3c50ae464c2994bcec6f8431eb0863",
+    "native/README.md": "0fa2a5b592d20c8731609f1ed9b18cf43fe1bf1b083f9f0bd6dcb2c7805d2f0e",
+    "native/SOURCE_SEAL.sha256": "de784f1927dd9abde7272d60c3e3983fd0b65f6f8738c78f1ddc3923acfcd7dc",
+    "native/abi_m10.c": "015b79d9c7c996496e367748ed4d5ad6e8dae0da250852d3b09f19ab98e84dbd",
+    "native/allocator_m10.c": "dba6aab830ec5ef85f8f4f20a5955c5ee892ffdb782e4a64fb030e4032e5bd90",
+    "native/capacity_m10.c": "a46c7c5c10680932ca00bc40b202168deb3924eb9e0d49656bef41fadd789b3e",
+    "native/consumer_m10.cpp": "89b3124dca8df14c947190e56376f9c7c60f8d246d51c845a2954f736a03db2e",
+    "native/faults_m10.c": "be54980a00ed4f1ee93af10425e6e1a134d0dad28fc474e803c2afae4eb701ad",
+    "native/frozen_headers/doe_compiler.h": "5bf4f5e5a4e4624c094320ad9ec97119278bc7f6f06b0e47c01e444d42c6dc5b",
+    "native/frozen_headers/doe_compiler_job.h": "6160e631973ffcd9777553520d329b6d6048315f2a90b1283989077e9f51237f",
+    "native/frozen_headers/doe_compiler_typed.h": "c7decbdb8da093a3485ded84901bf97f88eea8db6237dfd4089c730aa08e6216",
+    "native/frozen_headers/doe_compiler_v2.h": "b0a60c2f05b70dba0786365dadd81b993accbd93f7f68f0e3accf86a815ae891",
+    "native/host_m10.c": "63ea237b7360d9dc7f2ae7a395862b39dcfb21ecf06d2c59bfb3ad37bfcdec5a",
+    "native/legacy_m10.c": "a11358dd110929620bdcad5f8c472e59d2a7fb7b8eeb722cbdb5303d101dcd58",
+    "native/run_native_m10.py": "97c0dc83ccb0210d37c91f960459a78d87dad158ecb2434102c561f18651b17c",
+    "native/support_m10.h": "d19eac02a419d661018d7f0a6ed1fa8bab459d3ec3c096af94ffd9f20a6a8e88"
+  },
+  "separate_pinned_historical_input_manifest": "candidate-v6/native-retained/RETAINED_INPUTS.json"
+}

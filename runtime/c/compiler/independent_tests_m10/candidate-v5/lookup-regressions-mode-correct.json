@@ -1,0 +1,256 @@
+{
+  "provenance": "Postdisclosure from unchanged M5 max_type_shadow_builtin failure; expected lookup derived from frozen M10 \u00a72 module-before-predeclared rule.",
+  "library_sha256": "f73430a7f8898ef71dc8b28084f82139d34187598c683d5d3faf1d79ce699cf4",
+  "cases": [
+    {
+      "name": "nominal_max_wrong_arity",
+      "source": "struct max{x:u32}@compute @workgroup_size(1) fn main(){let x=max(1u,2u);}",
+      "source_sha256": "667061dabe8bf7e6e7b5dd8b0621cd61297c9a8325ec1781302ae72ca5840a7a",
+      "expected_status": 4,
+      "modes": [
+        {
+          "flags": 1,
+          "status": 6,
+          "offset": 0,
+          "diagnostic": "",
+          "passed": false
+        },
+        {
+          "flags": 2,
+          "status": 0,
+          "offset": 0,
+          "diagnostic": "",
+          "passed": false
+        },
+        {
+          "flags": 3,
+          "status": 0,
+          "offset": 0,
+          "diagnostic": "",
+          "passed": false
+        },
+        {
+          "flags": 5,
+          "status": 0,
+          "offset": 0,
+          "diagnostic": "",
+          "passed": false
+        },
+        {
+          "flags": 6,
+          "status": 0,
+          "offset": 0,
+          "diagnostic": "",
+          "passed": false
+        },
+        {
+          "flags": 7,
+          "status": 0,
+          "offset": 0,
+          "diagnostic": "",
+          "passed": false
+        }
+      ]
+    },
+    {
+      "name": "nominal_max_constructor",
+      "source": "struct max{x:u32}@compute @workgroup_size(1) fn main(){let x:max=max(1u);}",
+      "source_sha256": "1ecee5ee04700e0d52c5d53f016512517bddb0311c2a16a47a61a05a4bdffc76",
+      "expected_status": 0,
+      "modes": [
+        {
+          "flags": 1,
+          "status": 6,
+          "offset": 0,
+          "diagnostic": "",
+          "passed": false
+        },
+        {
+          "flags": 2,
+          "status": 4,
+          "offset": 65,
+          "diagnostic": "scalar builtin requires its exact arguments and a used result",
+          "passed": false
+        },
+        {
+          "flags": 3,
+          "status": 4,
+          "offset": 65,
+          "diagnostic": "scalar builtin requires its exact arguments and a used result",
+          "passed": false
+        },
+        {
+          "flags": 5,
+          "status": 4,
+          "offset": 65,
+          "diagnostic": "scalar builtin requires its exact arguments and a used result",
+          "passed": false
+        },
+        {
+          "flags": 6,
+          "status": 4,
+          "offset": 65,
+          "diagnostic": "scalar builtin requires its exact arguments and a used result",
+          "passed": false
+        },
+        {
+          "flags": 7,
+          "status": 4,
+          "offset": 65,
+          "diagnostic": "scalar builtin requires its exact arguments and a used result",
+          "passed": false
+        }
+      ]
+    },
+    {
+      "name": "nominal_array_constructor",
+      "source": "struct array{x:u32}@compute @workgroup_size(1) fn main(){let x:array=array(1u);}",
+      "source_sha256": "43c6c5c608fafd210d7e4e2f781376b5e30a9cde8a5310730b25656823d22c0b",
+      "expected_status": 0,
+      "modes": [
+        {
+          "flags": 1,
+          "status": 6,
+          "offset": 0,
+          "diagnostic": "",
+          "passed": false
+        },
+        {
+          "flags": 2,
+          "status": 4,
+          "offset": 69,
+          "diagnostic": "value has no implicit conversion to destination type",
+          "passed": false
+        },
+        {
+          "flags": 3,
+          "status": 4,
+          "offset": 69,
+          "diagnostic": "value has no implicit conversion to destination type",
+          "passed": false
+        },
+        {
+          "flags": 5,
+          "status": 4,
+          "offset": 69,
+          "diagnostic": "value has no implicit conversion to destination type",
+          "passed": false
+        },
+        {
+          "flags": 6,
+          "status": 4,
+          "offset": 69,
+          "diagnostic": "value has no implicit conversion to destination type",
+          "passed": false
+        },
+        {
+          "flags": 7,
+          "status": 4,
+          "offset": 69,
+          "diagnostic": "value has no implicit conversion to destination type",
+          "passed": false
+        }
+      ]
+    },
+    {
+      "name": "nominal_vec2_constructor",
+      "source": "struct vec2{x:u32}@compute @workgroup_size(1) fn main(){let x:vec2=vec2(1u);}",
+      "source_sha256": "23bdb57437a88ee5d1e01a6cb3eb35d767b9cf907a7698acd5902a14ace6b141",
+      "expected_status": 0,
+      "modes": [
+        {
+          "flags": 1,
+          "status": 6,
+          "offset": 0,
+          "diagnostic": "",
+          "passed": false
+        },
+        {
+          "flags": 2,
+          "status": 4,
+          "offset": 67,
+          "diagnostic": "value has no implicit conversion to destination type",
+          "passed": false
+        },
+        {
+          "flags": 3,
+          "status": 4,
+          "offset": 67,
+          "diagnostic": "value has no implicit conversion to destination type",
+          "passed": false
+        },
+        {
+          "flags": 5,
+          "status": 4,
+          "offset": 67,
+          "diagnostic": "value has no implicit conversion to destination type",
+          "passed": false
+        },
+        {
+          "flags": 6,
+          "status": 4,
+          "offset": 67,
+          "diagnostic": "value has no implicit conversion to destination type",
+          "passed": false
+        },
+        {
+          "flags": 7,
+          "status": 4,
+          "offset": 67,
+          "diagnostic": "value has no implicit conversion to destination type",
+          "passed": false
+        }
+      ]
+    },
+    {
+      "name": "nominal_bitcast_constructor",
+      "source": "struct bitcast{x:u32}@compute @workgroup_size(1) fn main(){let x:bitcast=bitcast(1u);}",
+      "source_sha256": "674ba46afb82f2eeac81e55e908c6f291695180734d200bb1643da37efb3d366",
+      "expected_status": 0,
+      "modes": [
+        {
+          "flags": 1,
+          "status": 6,
+          "offset": 0,
+          "diagnostic": "",
+          "passed": false
+        },
+        {
+          "flags": 2,
+          "status": 4,
+          "offset": 73,
+          "diagnostic": "bitcast requires a numeric target and one argument",
+          "passed": false
+        },
+        {
+          "flags": 3,
+          "status": 4,
+          "offset": 73,
+          "diagnostic": "bitcast requires a numeric target and one argument",
+          "passed": false
+        },
+        {
+          "flags": 5,
+          "status": 4,
+          "offset": 73,
+          "diagnostic": "bitcast requires a numeric target and one argument",
+          "passed": false
+        },
+        {
+          "flags": 6,
+          "status": 4,
+          "offset": 73,
+          "diagnostic": "bitcast requires a numeric target and one argument",
+          "passed": false
+        },
+        {
+          "flags": 7,
+          "status": 4,
+          "offset": 73,
+          "diagnostic": "bitcast requires a numeric target and one argument",
+          "passed": false
+        }
+      ]
+    }
+  ]
+}

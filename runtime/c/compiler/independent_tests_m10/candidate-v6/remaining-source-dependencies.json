@@ -1,0 +1,1726 @@
+{
+  "basis": "Actual final-v6 rejection location/message and fixed original source. Construct labels explain that location; other source features are observations, not promised next-stage admission.",
+  "counts": {
+    "f16 extension": 6,
+    "graphics stage": 3,
+    "multiple entry points": 1,
+    "pointer expression": 1,
+    "subgroups extension": 6,
+    "texture resource": 1,
+    "type alias": 3,
+    "unadmitted callable dot": 3,
+    "unadmitted callable fract": 1,
+    "vector clamp overload": 2,
+    "workgroup storage": 34
+  },
+  "records": [
+    {
+      "at_offset": "var<workgroup> shared_scores: array<f32, 2048>;\nvar<workgroup> shared_max: array",
+      "diagnostic": {
+        "column": 1,
+        "line": 14,
+        "message": "expected fn; unsupported or malformed WGSL subset",
+        "offset": 389,
+        "status": 2
+      },
+      "first_construct": "workgroup storage",
+      "first_rejection_stage": "parsing",
+      "historical_hint": {
+        "byte_offset": 389,
+        "capability": "still_excluded",
+        "reason": "workgroup variable",
+        "source_fragment": "var<workgroup>"
+      },
+      "source": "bench/kernels/compilation-corpus/complex_attention_decode.wgsl",
+      "source_features_observed": {
+        "atomic": false,
+        "f16": false,
+        "storage_barrier": false,
+        "subgroups": false,
+        "workgroup_barrier": true
+      },
+      "source_line": "var<workgroup> shared_scores: array<f32, 2048>;",
+      "source_sha256": "66abbe70b2a2dfef3de111388510c5c2b0a937257f1b4240d85a32d5523337af"
+    },
+    {
+      "at_offset": "var<workgroup> shared_partial: array<f32, 256>;\n\nfn dequant_q4(packed: u32, idx:",
+      "diagnostic": {
+        "column": 1,
+        "line": 17,
+        "message": "expected fn; unsupported or malformed WGSL subset",
+        "offset": 485,
+        "status": 2
+      },
+      "first_construct": "workgroup storage",
+      "first_rejection_stage": "parsing",
+      "historical_hint": {
+        "byte_offset": 485,
+        "capability": "still_excluded",
+        "reason": "workgroup variable",
+        "source_fragment": "var<workgroup>"
+      },
+      "source": "bench/kernels/compilation-corpus/complex_fused_gemv_dequant.wgsl",
+      "source_features_observed": {
+        "atomic": false,
+        "f16": false,
+        "storage_barrier": false,
+        "subgroups": false,
+        "workgroup_barrier": true
+      },
+      "source_line": "var<workgroup> shared_partial: array<f32, 256>;",
+      "source_sha256": "c2c71685c1663f3995f301551ed983f514e2fb3d5f7d0487daf792b637b71a56"
+    },
+    {
+      "at_offset": "alias ElemT = f32;\n\nconst TILE_SIZE: u32 = 32u;\nconst WG_X: u32 = 8u;\nconst WG_Y",
+      "diagnostic": {
+        "column": 1,
+        "line": 1,
+        "message": "expected fn; unsupported or malformed WGSL subset",
+        "offset": 0,
+        "status": 2
+      },
+      "first_construct": "type alias",
+      "first_rejection_stage": "parsing",
+      "historical_hint": {
+        "byte_offset": 465,
+        "capability": "still_excluded",
+        "reason": "workgroup variable",
+        "source_fragment": "var<workgroup>"
+      },
+      "source": "bench/kernels/compilation-corpus/complex_matmul_tiled.wgsl",
+      "source_features_observed": {
+        "atomic": false,
+        "f16": false,
+        "storage_barrier": false,
+        "subgroups": false,
+        "workgroup_barrier": true
+      },
+      "source_line": "alias ElemT = f32;",
+      "source_sha256": "33d1e963ed359997b7a334ca77da0e94951c38bd620b9fd6264d783bea6c97b9"
+    },
+    {
+      "at_offset": "@compute @workgroup_size(256)\nfn elementwise_add(@builtin(global_invocation_id) ",
+      "diagnostic": {
+        "column": 1,
+        "line": 48,
+        "message": "one compute entry is supported",
+        "offset": 1386,
+        "status": 3
+      },
+      "first_construct": "multiple entry points",
+      "first_rejection_stage": "parsing",
+      "historical_hint": {
+        "byte_offset": 650,
+        "capability": "still_excluded",
+        "reason": "excluded mathematical builtin",
+        "source_fragment": "exp("
+      },
+      "source": "bench/kernels/compilation-corpus/complex_multi_entry.wgsl",
+      "source_features_observed": {
+        "atomic": false,
+        "f16": false,
+        "storage_barrier": false,
+        "subgroups": false,
+        "workgroup_barrier": false
+      },
+      "source_line": "@compute @workgroup_size(256)",
+      "source_sha256": "19f491a1a1e81a13fa640a361a87401b98d22f351fe4eafdff8b2a144032339a"
+    },
+    {
+      "at_offset": "var<workgroup> shared_val: array<f32, 256>;\n\n@compute @workgroup_size(256)\nfn ma",
+      "diagnostic": {
+        "column": 1,
+        "line": 14,
+        "message": "expected fn; unsupported or malformed WGSL subset",
+        "offset": 377,
+        "status": 2
+      },
+      "first_construct": "workgroup storage",
+      "first_rejection_stage": "parsing",
+      "historical_hint": {
+        "byte_offset": 377,
+        "capability": "still_excluded",
+        "reason": "workgroup variable",
+        "source_fragment": "var<workgroup>"
+      },
+      "source": "bench/kernels/compilation-corpus/moderate_layernorm.wgsl",
+      "source_features_observed": {
+        "atomic": false,
+        "f16": false,
+        "storage_barrier": false,
+        "subgroups": false,
+        "workgroup_barrier": true
+      },
+      "source_line": "var<workgroup> shared_val: array<f32, 256>;",
+      "source_sha256": "dcaf21f3dfb8ebd91165bc41ffe2eb0076337543e78e0d60cc2aebca77a87467"
+    },
+    {
+      "at_offset": "var<workgroup> shared_sum: array<f32, 256>;\n\n@compute @workgroup_size(256)\nfn ma",
+      "diagnostic": {
+        "column": 1,
+        "line": 13,
+        "message": "expected fn; unsupported or malformed WGSL subset",
+        "offset": 319,
+        "status": 2
+      },
+      "first_construct": "workgroup storage",
+      "first_rejection_stage": "parsing",
+      "historical_hint": {
+        "byte_offset": 319,
+        "capability": "still_excluded",
+        "reason": "workgroup variable",
+        "source_fragment": "var<workgroup>"
+      },
+      "source": "bench/kernels/compilation-corpus/moderate_rmsnorm.wgsl",
+      "source_features_observed": {
+        "atomic": false,
+        "f16": false,
+        "storage_barrier": false,
+        "subgroups": false,
+        "workgroup_barrier": true
+      },
+      "source_line": "var<workgroup> shared_sum: array<f32, 256>;",
+      "source_sha256": "7a9ba6860ccf30a363f9da36c6fcb46e8b3fcdf8b30b4000f7f0704e72a8f511"
+    },
+    {
+      "at_offset": "var<workgroup> shared_max: array<f32, 256>;\nvar<workgroup> shared_sum: array<f32",
+      "diagnostic": {
+        "column": 1,
+        "line": 12,
+        "message": "expected fn; unsupported or malformed WGSL subset",
+        "offset": 260,
+        "status": 2
+      },
+      "first_construct": "workgroup storage",
+      "first_rejection_stage": "parsing",
+      "historical_hint": {
+        "byte_offset": 260,
+        "capability": "still_excluded",
+        "reason": "workgroup variable",
+        "source_fragment": "var<workgroup>"
+      },
+      "source": "bench/kernels/compilation-corpus/moderate_softmax.wgsl",
+      "source_features_observed": {
+        "atomic": false,
+        "f16": false,
+        "storage_barrier": false,
+        "subgroups": false,
+        "workgroup_barrier": true
+      },
+      "source_line": "var<workgroup> shared_max: array<f32, 256>;",
+      "source_sha256": "eafa9347d477e95b1a639a5c46bac76de2270740c6b249baff1e3c403fbd0481"
+    },
+    {
+      "at_offset": "vertex\nfn main(@location(0) pos: vec4f) -> @builtin(position) vec4f {\n    return",
+      "diagnostic": {
+        "column": 2,
+        "line": 1,
+        "message": "only @compute and @workgroup_size are supported on the entry point",
+        "offset": 1,
+        "status": 3
+      },
+      "first_construct": "graphics stage",
+      "first_rejection_stage": "parsing",
+      "historical_hint": {
+        "byte_offset": 0,
+        "capability": "still_excluded",
+        "reason": "noncompute stage",
+        "source_fragment": "@vertex"
+      },
+      "source": "bench/kernels/compilation-corpus/trivial_passthrough_vertex.wgsl",
+      "source_features_observed": {
+        "atomic": false,
+        "f16": false,
+        "storage_barrier": false,
+        "subgroups": false,
+        "workgroup_barrier": false
+      },
+      "source_line": "@vertex",
+      "source_sha256": "ed605c9b978c4cbd86db61ebbd8c2241e4d5d65ffa5c0b2e82259a9d8aa479c9"
+    },
+    {
+      "at_offset": "var<workgroup> wg_data : array<u32, kBufferSize>;\n\n@compute @workgroup_size(1, 1",
+      "diagnostic": {
+        "column": 1,
+        "line": 5,
+        "message": "expected fn; unsupported or malformed WGSL subset",
+        "offset": 163,
+        "status": 2
+      },
+      "first_construct": "workgroup storage",
+      "first_rejection_stage": "parsing",
+      "historical_hint": {
+        "byte_offset": 163,
+        "capability": "still_excluded",
+        "reason": "workgroup variable",
+        "source_fragment": "var<workgroup>"
+      },
+      "source": "bench/kernels/concurrent_execution_runsingle_u32.wgsl",
+      "source_features_observed": {
+        "atomic": false,
+        "f16": false,
+        "storage_barrier": false,
+        "subgroups": false,
+        "workgroup_barrier": false
+      },
+      "source_line": "var<workgroup> wg_data : array<u32, kBufferSize>;",
+      "source_sha256": "57313155741224f77622b55aa9e739ec7698e5cc3079d92584d253334f1d95a6"
+    },
+    {
+      "at_offset": "fragment\nfn main(@builtin(position) pos: vec4f) -> @location(0) vec4f {\n    retu",
+      "diagnostic": {
+        "column": 2,
+        "line": 7,
+        "message": "only @compute and @workgroup_size are supported on the entry point",
+        "offset": 374,
+        "status": 3
+      },
+      "first_construct": "graphics stage",
+      "first_rejection_stage": "parsing",
+      "historical_hint": {
+        "byte_offset": 373,
+        "capability": "still_excluded",
+        "reason": "noncompute stage",
+        "source_fragment": "@fragment"
+      },
+      "source": "bench/kernels/draw_call_proxy_fragment.wgsl",
+      "source_features_observed": {
+        "atomic": false,
+        "f16": false,
+        "storage_barrier": false,
+        "subgroups": false,
+        "workgroup_barrier": false
+      },
+      "source_line": "@fragment",
+      "source_sha256": "1e5550d45b5c0637c3b38dbdbc307619c1c016dce64d227837221f129d354de8"
+    },
+    {
+      "at_offset": "vertex\nfn main(@builtin(vertex_index) idx: u32) -> @builtin(position) vec4f {\n  ",
+      "diagnostic": {
+        "column": 2,
+        "line": 12,
+        "message": "only @compute and @workgroup_size are supported on the entry point",
+        "offset": 612,
+        "status": 3
+      },
+      "first_construct": "graphics stage",
+      "first_rejection_stage": "parsing",
+      "historical_hint": {
+        "byte_offset": 710,
+        "capability": "still_excluded",
+        "reason": "vector storage element",
+        "source_fragment": "array<vec2f"
+      },
+      "source": "bench/kernels/draw_call_proxy_vertex.wgsl",
+      "source_features_observed": {
+        "atomic": false,
+        "f16": false,
+        "storage_barrier": false,
+        "subgroups": false,
+        "workgroup_barrier": false
+      },
+      "source_line": "@vertex",
+      "source_sha256": "10ab42b3100f3e50660b2fbbd5ce531799a5ecff567102b81af444d976f9ad69"
+    },
+    {
+      "at_offset": "var<workgroup> partial_sums: array<f32, 64>;\n\nfn gemv_partial(row: u32, lane: u3",
+      "diagnostic": {
+        "column": 1,
+        "line": 15,
+        "message": "expected fn; unsupported or malformed WGSL subset",
+        "offset": 408,
+        "status": 2
+      },
+      "first_construct": "workgroup storage",
+      "first_rejection_stage": "parsing",
+      "historical_hint": {
+        "byte_offset": 408,
+        "capability": "still_excluded",
+        "reason": "workgroup variable",
+        "source_fragment": "var<workgroup>"
+      },
+      "source": "bench/kernels/matmul_gemv_subgroup.wgsl",
+      "source_features_observed": {
+        "atomic": false,
+        "f16": false,
+        "storage_barrier": false,
+        "subgroups": false,
+        "workgroup_barrier": true
+      },
+      "source_line": "var<workgroup> partial_sums: array<f32, 64>;",
+      "source_sha256": "fe83a9f4ea9ab05d9177ffbc63e5cc034216d02401001d238566fbfe85842288"
+    },
+    {
+      "at_offset": "enable subgroups;\n\nstruct Uniforms {\n    rows: u32,\n    cols: u32,\n    _pad0: u3",
+      "diagnostic": {
+        "column": 1,
+        "line": 8,
+        "message": "expected fn; unsupported or malformed WGSL subset",
+        "offset": 456,
+        "status": 2
+      },
+      "first_construct": "subgroups extension",
+      "first_rejection_stage": "parsing",
+      "historical_hint": {
+        "byte_offset": 456,
+        "capability": "still_excluded",
+        "reason": "extension directive",
+        "source_fragment": "enable subgroups"
+      },
+      "source": "bench/kernels/matmul_gemv_truesubgroup.wgsl",
+      "source_features_observed": {
+        "atomic": false,
+        "f16": false,
+        "storage_barrier": false,
+        "subgroups": true,
+        "workgroup_barrier": true
+      },
+      "source_line": "enable subgroups;",
+      "source_sha256": "1ad1633b02140d3a70edcef3caecc82876c9a60478f99b4593645a4e012f8243"
+    },
+    {
+      "at_offset": "dot(matrixData[row0Base + col + 0u], v0),\n      dot(matrixData[row1Base + col + ",
+      "diagnostic": {
+        "column": 7,
+        "line": 31,
+        "message": "unsupported type name",
+        "offset": 939,
+        "status": 3
+      },
+      "first_construct": "unadmitted callable dot",
+      "first_rejection_stage": "semantic_validation",
+      "historical_hint": {
+        "byte_offset": 115,
+        "capability": "still_excluded",
+        "reason": "vector storage element",
+        "source_fragment": "array<vec4"
+      },
+      "source": "bench/kernels/matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
+      "source_features_observed": {
+        "atomic": false,
+        "f16": false,
+        "storage_barrier": false,
+        "subgroups": false,
+        "workgroup_barrier": false
+      },
+      "source_line": "dot(matrixData[row0Base + col + 0u], v0),",
+      "source_sha256": "18bb9b1b760f44e1b507093ffd0ecaf35a5817030ac5f18e5e548746ec9230bf"
+    },
+    {
+      "at_offset": "dot(matrixData[base + 0u], v0),\n      dot(matrixData[base + 1u], v0),\n      dot(",
+      "diagnostic": {
+        "column": 7,
+        "line": 40,
+        "message": "unsupported type name",
+        "offset": 1217,
+        "status": 3
+      },
+      "first_construct": "unadmitted callable dot",
+      "first_rejection_stage": "semantic_validation",
+      "historical_hint": {
+        "byte_offset": 115,
+        "capability": "still_excluded",
+        "reason": "vector storage element",
+        "source_fragment": "array<vec4"
+      },
+      "source": "bench/kernels/matrix_vector_mul_32768x2048_f32_swizzle1.wgsl",
+      "source_features_observed": {
+        "atomic": false,
+        "f16": false,
+        "storage_barrier": false,
+        "subgroups": false,
+        "workgroup_barrier": false
+      },
+      "source_line": "dot(matrixData[base + 0u], v0),",
+      "source_sha256": "f4457bfebf14d42f57bb49a08c2e867b4b3ca8da51191f8ecfa699a35c2e84c6"
+    },
+    {
+      "at_offset": "var<workgroup> partialSums : array<vec4<f32>, 64>;\n\n@compute @workgroup_size(64,",
+      "diagnostic": {
+        "column": 1,
+        "line": 10,
+        "message": "expected fn; unsupported or malformed WGSL subset",
+        "offset": 402,
+        "status": 2
+      },
+      "first_construct": "workgroup storage",
+      "first_rejection_stage": "parsing",
+      "historical_hint": {
+        "byte_offset": 402,
+        "capability": "still_excluded",
+        "reason": "workgroup variable",
+        "source_fragment": "var<workgroup>"
+      },
+      "source": "bench/kernels/matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1.wgsl",
+      "source_features_observed": {
+        "atomic": false,
+        "f16": false,
+        "storage_barrier": false,
+        "subgroups": false,
+        "workgroup_barrier": true
+      },
+      "source_line": "var<workgroup> partialSums : array<vec4<f32>, 64>;",
+      "source_sha256": "080408a41d8d45256a8d84b2d1b39f323ee27318270a3f691c71241cbbbeb0ce"
+    },
+    {
+      "at_offset": "*state;\n  x ^= x << 13u;\n  x ^= x >> 17u;\n  x ^= x << 5u;\n  *state = x;\n  return",
+      "diagnostic": {
+        "column": 11,
+        "line": 21,
+        "message": "pointer expressions are outside the typed owner",
+        "offset": 525,
+        "status": 3
+      },
+      "first_construct": "pointer expression",
+      "first_rejection_stage": "parsing",
+      "historical_hint": {
+        "byte_offset": 211,
+        "capability": "still_excluded",
+        "reason": "vector storage element",
+        "source_fragment": "array<vec4"
+      },
+      "source": "bench/kernels/monte_carlo_paths_fixed_samples.wgsl",
+      "source_features_observed": {
+        "atomic": false,
+        "f16": false,
+        "storage_barrier": false,
+        "subgroups": false,
+        "workgroup_barrier": false
+      },
+      "source_line": "var x = *state;",
+      "source_sha256": "fa92ff0ae0a393fd22c539958c1b86e1477966241aa1da774aa6509c57feb0a3"
+    },
+    {
+      "at_offset": "var<workgroup> scratch: array<vec4<f32>, 64>;\n\n@compute @workgroup_size(64, 1, 1",
+      "diagnostic": {
+        "column": 1,
+        "line": 12,
+        "message": "expected fn; unsupported or malformed WGSL subset",
+        "offset": 281,
+        "status": 2
+      },
+      "first_construct": "workgroup storage",
+      "first_rejection_stage": "parsing",
+      "historical_hint": {
+        "byte_offset": 281,
+        "capability": "still_excluded",
+        "reason": "workgroup variable",
+        "source_fragment": "var<workgroup>"
+      },
+      "source": "bench/kernels/monte_carlo_reduce_vec4.wgsl",
+      "source_features_observed": {
+        "atomic": false,
+        "f16": false,
+        "storage_barrier": false,
+        "subgroups": false,
+        "workgroup_barrier": true
+      },
+      "source_line": "var<workgroup> scratch: array<vec4<f32>, 64>;",
+      "source_sha256": "f4cdc0769f6392160583e17815fe41c494cc89cd6b78f2b6b83a841984241d6d"
+    },
+    {
+      "at_offset": "var<workgroup> shared_sum: array<f32, 256>;\n\n@compute @workgroup_size(256)\nfn ma",
+      "diagnostic": {
+        "column": 1,
+        "line": 13,
+        "message": "expected fn; unsupported or malformed WGSL subset",
+        "offset": 319,
+        "status": 2
+      },
+      "first_construct": "workgroup storage",
+      "first_rejection_stage": "parsing",
+      "historical_hint": {
+        "byte_offset": 319,
+        "capability": "still_excluded",
+        "reason": "workgroup variable",
+        "source_fragment": "var<workgroup>"
+      },
+      "source": "bench/kernels/rmsnorm.wgsl",
+      "source_features_observed": {
+        "atomic": false,
+        "f16": false,
+        "storage_barrier": false,
+        "subgroups": false,
+        "workgroup_barrier": true
+      },
+      "source_line": "var<workgroup> shared_sum: array<f32, 256>;",
+      "source_sha256": "0c0161d275a82b454a626aaffb47e014b371ebc4b1fd6def806b182e586cb497"
+    },
+    {
+      "at_offset": "enable subgroups;\n\nstruct Uniforms {\n    size: u32,\n    eps: f32,\n    _pad0: u32",
+      "diagnostic": {
+        "column": 1,
+        "line": 6,
+        "message": "expected fn; unsupported or malformed WGSL subset",
+        "offset": 270,
+        "status": 2
+      },
+      "first_construct": "subgroups extension",
+      "first_rejection_stage": "parsing",
+      "historical_hint": {
+        "byte_offset": 270,
+        "capability": "still_excluded",
+        "reason": "extension directive",
+        "source_fragment": "enable subgroups"
+      },
+      "source": "bench/kernels/rmsnorm_subgroup.wgsl",
+      "source_features_observed": {
+        "atomic": false,
+        "f16": false,
+        "storage_barrier": false,
+        "subgroups": true,
+        "workgroup_barrier": true
+      },
+      "source_line": "enable subgroups;",
+      "source_sha256": "166e7469ee1aa8977ac801db7a02038cc7185c0d6b7df6828731cac517126bba"
+    },
+    {
+      "at_offset": "fract(sin(x * 1.6180339 + f32(i)) * 43758.5453);\n    y = y + x;\n    i = i + 1u;\n",
+      "diagnostic": {
+        "column": 9,
+        "line": 11,
+        "message": "unsupported type name",
+        "offset": 222,
+        "status": 3
+      },
+      "first_construct": "unadmitted callable fract",
+      "first_rejection_stage": "semantic_validation",
+      "historical_hint": {
+        "byte_offset": 222,
+        "capability": "still_excluded",
+        "reason": "excluded mathematical builtin",
+        "source_fragment": "fract("
+      },
+      "source": "bench/kernels/shader_compile_pipeline_stress.wgsl",
+      "source_features_observed": {
+        "atomic": false,
+        "f16": false,
+        "storage_barrier": false,
+        "subgroups": false,
+        "workgroup_barrier": false
+      },
+      "source_line": "x = fract(sin(x * 1.6180339 + f32(i)) * 43758.5453);",
+      "source_sha256": "2ae3a2406171555939779a7290d5fec033ef1809269691362112e245f3434889"
+    },
+    {
+      "at_offset": "alias ElemT = f32;\n\nconst K_TILE_SIZE: u32 = 32u;\nconst K_WORKGROUP_SIZE_X: u32 ",
+      "diagnostic": {
+        "column": 1,
+        "line": 1,
+        "message": "expected fn; unsupported or malformed WGSL subset",
+        "offset": 0,
+        "status": 2
+      },
+      "first_construct": "type alias",
+      "first_rejection_stage": "parsing",
+      "historical_hint": {
+        "byte_offset": 624,
+        "capability": "still_excluded",
+        "reason": "workgroup variable",
+        "source_fragment": "var<workgroup>"
+      },
+      "source": "bench/kernels/shader_robustness_matmul_512_f32.wgsl",
+      "source_features_observed": {
+        "atomic": false,
+        "f16": false,
+        "storage_barrier": false,
+        "subgroups": false,
+        "workgroup_barrier": true
+      },
+      "source_line": "alias ElemT = f32;",
+      "source_sha256": "da30eba0c8fba98daafdcb1fb0959553d084d5af607520b5a2295afa8748c174"
+    },
+    {
+      "at_offset": "clamp(\n    position,\n    vec2<f32>(0.0, 0.0),\n    vec2<f32>(f32(config.width - 1",
+      "diagnostic": {
+        "column": 17,
+        "line": 36,
+        "message": "math builtin vector overloads are outside this increment",
+        "offset": 889,
+        "status": 3
+      },
+      "first_construct": "vector clamp overload",
+      "first_rejection_stage": "semantic_validation",
+      "historical_hint": {
+        "byte_offset": 325,
+        "capability": "still_excluded",
+        "reason": "vector storage element",
+        "source_fragment": "array<vec2"
+      },
+      "source": "bench/kernels/stable_fluids_advect_dye.wgsl",
+      "source_features_observed": {
+        "atomic": false,
+        "f16": false,
+        "storage_barrier": false,
+        "subgroups": false,
+        "workgroup_barrier": false
+      },
+      "source_line": "let clamped = clamp(",
+      "source_sha256": "e2c3739f5a1659691c99814a04285041237b8f8f383006f0e9f5cbf6e2e211d2"
+    },
+    {
+      "at_offset": "clamp(\n    position,\n    vec2<f32>(0.0, 0.0),\n    vec2<f32>(f32(config.width - 1",
+      "diagnostic": {
+        "column": 17,
+        "line": 35,
+        "message": "math builtin vector overloads are outside this increment",
+        "offset": 866,
+        "status": 3
+      },
+      "first_construct": "vector clamp overload",
+      "first_rejection_stage": "semantic_validation",
+      "historical_hint": {
+        "byte_offset": 264,
+        "capability": "still_excluded",
+        "reason": "vector storage element",
+        "source_fragment": "array<vec2"
+      },
+      "source": "bench/kernels/stable_fluids_advect_velocity.wgsl",
+      "source_features_observed": {
+        "atomic": false,
+        "f16": false,
+        "storage_barrier": false,
+        "subgroups": false,
+        "workgroup_barrier": false
+      },
+      "source_line": "let clamped = clamp(",
+      "source_sha256": "e2d32e1cce30302986e549ca01e104a9e450abcbebf85de67c1921f3a5943260"
+    },
+    {
+      "at_offset": "dot(centered, centered);\n  let sample = noise(gid.x, gid.y) - 0.5;\n  let vortex ",
+      "diagnostic": {
+        "column": 19,
+        "line": 47,
+        "message": "unsupported type name",
+        "offset": 1295,
+        "status": 3
+      },
+      "first_construct": "unadmitted callable dot",
+      "first_rejection_stage": "semantic_validation",
+      "historical_hint": {
+        "byte_offset": 267,
+        "capability": "still_excluded",
+        "reason": "vector storage element",
+        "source_fragment": "array<vec2"
+      },
+      "source": "bench/kernels/stable_fluids_seed.wgsl",
+      "source_features_observed": {
+        "atomic": false,
+        "f16": false,
+        "storage_barrier": false,
+        "subgroups": false,
+        "workgroup_barrier": false
+      },
+      "source_line": "let radius_sq = dot(centered, centered);",
+      "source_sha256": "c55be009b63237271ad5338f58bb600340d70ba9eedd3c5666ee26d6b4bdfef7"
+    },
+    {
+      "at_offset": "srcTex : texture_2d<f32>;\n@group(0) @binding(1) var dstTex : texture_storage_2d<",
+      "diagnostic": {
+        "column": 27,
+        "line": 3,
+        "message": "expected <storage, access> or <uniform>; unsupported or malformed WGSL subset",
+        "offset": 59,
+        "status": 2
+      },
+      "first_construct": "texture resource",
+      "first_rejection_stage": "parsing",
+      "historical_hint": {
+        "byte_offset": 68,
+        "capability": "still_excluded",
+        "reason": "texture or sampler resource",
+        "source_fragment": "texture_2d"
+      },
+      "source": "bench/kernels/texture_sample_to_storage_64.wgsl",
+      "source_features_observed": {
+        "atomic": false,
+        "f16": false,
+        "storage_barrier": false,
+        "subgroups": false,
+        "workgroup_barrier": false
+      },
+      "source_line": "@group(0) @binding(0) var srcTex : texture_2d<f32>;",
+      "source_sha256": "fd95deba623ae7b26b4440d892e8fbc60765b76d09bea4dfa5d8dd1dc20d46e4"
+    },
+    {
+      "at_offset": "var<workgroup> wg: array<atomic<u32>, kWorkgroupSize>;\n\n@compute @workgroup_size",
+      "diagnostic": {
+        "column": 1,
+        "line": 5,
+        "message": "expected fn; unsupported or malformed WGSL subset",
+        "offset": 154,
+        "status": 2
+      },
+      "first_construct": "workgroup storage",
+      "first_rejection_stage": "parsing",
+      "historical_hint": {
+        "byte_offset": 154,
+        "capability": "still_excluded",
+        "reason": "workgroup variable",
+        "source_fragment": "var<workgroup>"
+      },
+      "source": "bench/kernels/workgroup_atomic.wgsl",
+      "source_features_observed": {
+        "atomic": true,
+        "f16": false,
+        "storage_barrier": false,
+        "subgroups": false,
+        "workgroup_barrier": true
+      },
+      "source_line": "var<workgroup> wg: array<atomic<u32>, kWorkgroupSize>;",
+      "source_sha256": "b7edc38f80448d1e50f6a31a72b1bb09f3a87484ac3d61b7e299ba0b577c5998"
+    },
+    {
+      "at_offset": "var<workgroup> wg: array<atomic<u32>, kWorkgroupSize>;\n\n@compute @workgroup_size",
+      "diagnostic": {
+        "column": 1,
+        "line": 6,
+        "message": "expected fn; unsupported or malformed WGSL subset",
+        "offset": 186,
+        "status": 2
+      },
+      "first_construct": "workgroup storage",
+      "first_rejection_stage": "parsing",
+      "historical_hint": {
+        "byte_offset": 186,
+        "capability": "still_excluded",
+        "reason": "workgroup variable",
+        "source_fragment": "var<workgroup>"
+      },
+      "source": "bench/kernels/workgroup_atomic_1024x100.wgsl",
+      "source_features_observed": {
+        "atomic": true,
+        "f16": false,
+        "storage_barrier": false,
+        "subgroups": false,
+        "workgroup_barrier": true
+      },
+      "source_line": "var<workgroup> wg: array<atomic<u32>, kWorkgroupSize>;",
+      "source_sha256": "b73fe2e574b280cb361737b14620bada6f5a6482580b31074bbe917731378e91"
+    },
+    {
+      "at_offset": "var<workgroup> wg: array<u32, kWorkgroupSize>;\n\n@compute @workgroup_size(kWorkgr",
+      "diagnostic": {
+        "column": 1,
+        "line": 5,
+        "message": "expected fn; unsupported or malformed WGSL subset",
+        "offset": 154,
+        "status": 2
+      },
+      "first_construct": "workgroup storage",
+      "first_rejection_stage": "parsing",
+      "historical_hint": {
+        "byte_offset": 154,
+        "capability": "still_excluded",
+        "reason": "workgroup variable",
+        "source_fragment": "var<workgroup>"
+      },
+      "source": "bench/kernels/workgroup_non_atomic.wgsl",
+      "source_features_observed": {
+        "atomic": false,
+        "f16": false,
+        "storage_barrier": false,
+        "subgroups": false,
+        "workgroup_barrier": true
+      },
+      "source_line": "var<workgroup> wg: array<u32, kWorkgroupSize>;",
+      "source_sha256": "b1e3c7cf65d5cec0fe176ed0fa6b6a13aea3c32f6a14ea35e912475dabecfdc6"
+    },
+    {
+      "at_offset": "var<workgroup> wg: array<u32, kWorkgroupSize>;\n\n@compute @workgroup_size(kWorkgr",
+      "diagnostic": {
+        "column": 1,
+        "line": 6,
+        "message": "expected fn; unsupported or malformed WGSL subset",
+        "offset": 186,
+        "status": 2
+      },
+      "first_construct": "workgroup storage",
+      "first_rejection_stage": "parsing",
+      "historical_hint": {
+        "byte_offset": 186,
+        "capability": "still_excluded",
+        "reason": "workgroup variable",
+        "source_fragment": "var<workgroup>"
+      },
+      "source": "bench/kernels/workgroup_non_atomic_1024x100.wgsl",
+      "source_features_observed": {
+        "atomic": false,
+        "f16": false,
+        "storage_barrier": false,
+        "subgroups": false,
+        "workgroup_barrier": true
+      },
+      "source_line": "var<workgroup> wg: array<u32, kWorkgroupSize>;",
+      "source_sha256": "3af5cad294dad19c73c36f4813a7ef554715481857a1bb74a17a2afebe731f11"
+    },
+    {
+      "at_offset": "var<workgroup> wg: array<f32, K_WORKGROUP_ARRAY_SIZE>;\n\n@compute @workgroup_size",
+      "diagnostic": {
+        "column": 1,
+        "line": 6,
+        "message": "expected fn; unsupported or malformed WGSL subset",
+        "offset": 214,
+        "status": 2
+      },
+      "first_construct": "workgroup storage",
+      "first_rejection_stage": "parsing",
+      "historical_hint": {
+        "byte_offset": 214,
+        "capability": "still_excluded",
+        "reason": "workgroup variable",
+        "source_fragment": "var<workgroup>"
+      },
+      "source": "bench/kernels/zero_initialize_workgroup_memory_2048.wgsl",
+      "source_features_observed": {
+        "atomic": false,
+        "f16": false,
+        "storage_barrier": false,
+        "subgroups": false,
+        "workgroup_barrier": false
+      },
+      "source_line": "var<workgroup> wg: array<f32, K_WORKGROUP_ARRAY_SIZE>;",
+      "source_sha256": "a8c4a18801b189cc5dba3f7141acdda5a79d54eda802ca90a53d5d7ba88da614"
+    },
+    {
+      "at_offset": "var<workgroup> scores: array<f32, 2048>;\nvar<workgroup> s_max: array<f32, 64>;\nv",
+      "diagnostic": {
+        "column": 1,
+        "line": 14,
+        "message": "expected fn; unsupported or malformed WGSL subset",
+        "offset": 389,
+        "status": 2
+      },
+      "first_construct": "workgroup storage",
+      "first_rejection_stage": "parsing",
+      "historical_hint": {
+        "byte_offset": 389,
+        "capability": "still_excluded",
+        "reason": "workgroup variable",
+        "source_fragment": "var<workgroup>"
+      },
+      "source": "bench/inference-pipeline/kernels/attention-decode.wgsl",
+      "source_features_observed": {
+        "atomic": false,
+        "f16": false,
+        "storage_barrier": false,
+        "subgroups": false,
+        "workgroup_barrier": true
+      },
+      "source_line": "var<workgroup> scores: array<f32, 2048>;",
+      "source_sha256": "d12cda916546e9c518d89bba45e9d0617a60d382c004adb440221840ee76487b"
+    },
+    {
+      "at_offset": "var<workgroup> scores: array<f32, 512>;\n\n@compute @workgroup_size(64)\nfn main(\n ",
+      "diagnostic": {
+        "column": 1,
+        "line": 17,
+        "message": "expected fn; unsupported or malformed WGSL subset",
+        "offset": 502,
+        "status": 2
+      },
+      "first_construct": "workgroup storage",
+      "first_rejection_stage": "parsing",
+      "historical_hint": {
+        "byte_offset": 502,
+        "capability": "still_excluded",
+        "reason": "workgroup variable",
+        "source_fragment": "var<workgroup>"
+      },
+      "source": "bench/inference-pipeline/kernels/attention-prefill.wgsl",
+      "source_features_observed": {
+        "atomic": false,
+        "f16": false,
+        "storage_barrier": false,
+        "subgroups": false,
+        "workgroup_barrier": true
+      },
+      "source_line": "var<workgroup> scores: array<f32, 512>;",
+      "source_sha256": "f1715944f604a096aba7b65060218f366f04930a9dec33f80bcc166dc03cd8bb"
+    },
+    {
+      "at_offset": "var<workgroup> partial: array<f32, WORKGROUP_WIDTH>;\n\n@compute @workgroup_size(8",
+      "diagnostic": {
+        "column": 1,
+        "line": 15,
+        "message": "expected fn; unsupported or malformed WGSL subset",
+        "offset": 346,
+        "status": 2
+      },
+      "first_construct": "workgroup storage",
+      "first_rejection_stage": "parsing",
+      "historical_hint": {
+        "byte_offset": 346,
+        "capability": "still_excluded",
+        "reason": "workgroup variable",
+        "source_fragment": "var<workgroup>"
+      },
+      "source": "bench/inference-pipeline/kernels/dot_product_pairwise_f32.wgsl",
+      "source_features_observed": {
+        "atomic": false,
+        "f16": false,
+        "storage_barrier": false,
+        "subgroups": false,
+        "workgroup_barrier": true
+      },
+      "source_line": "var<workgroup> partial: array<f32, WORKGROUP_WIDTH>;",
+      "source_sha256": "b658ba7a54fd2345758d64b855da20b198d4c4e07a4f5e74d8301d664266811d"
+    },
+    {
+      "at_offset": "var<workgroup> partial_sums: array<f32, 64>;\n\nfn gemv_partial(row: u32, lane: u3",
+      "diagnostic": {
+        "column": 1,
+        "line": 15,
+        "message": "expected fn; unsupported or malformed WGSL subset",
+        "offset": 387,
+        "status": 2
+      },
+      "first_construct": "workgroup storage",
+      "first_rejection_stage": "parsing",
+      "historical_hint": {
+        "byte_offset": 387,
+        "capability": "still_excluded",
+        "reason": "workgroup variable",
+        "source_fragment": "var<workgroup>"
+      },
+      "source": "bench/inference-pipeline/kernels/matmul-gemv.wgsl",
+      "source_features_observed": {
+        "atomic": false,
+        "f16": false,
+        "storage_barrier": false,
+        "subgroups": false,
+        "workgroup_barrier": true
+      },
+      "source_line": "var<workgroup> partial_sums: array<f32, 64>;",
+      "source_sha256": "523638d5e326b2162ea2e467e698d7d25252e771ab56f4b40555d33906ab54bf"
+    },
+    {
+      "at_offset": "alias ElemT = f32;\n\nconst TILE_M: u32 = 16u;\nconst TILE_N: u32 = 16u;\nconst TILE",
+      "diagnostic": {
+        "column": 1,
+        "line": 8,
+        "message": "expected fn; unsupported or malformed WGSL subset",
+        "offset": 327,
+        "status": 2
+      },
+      "first_construct": "type alias",
+      "first_rejection_stage": "parsing",
+      "historical_hint": {
+        "byte_offset": 847,
+        "capability": "still_excluded",
+        "reason": "workgroup variable",
+        "source_fragment": "var<workgroup>"
+      },
+      "source": "bench/inference-pipeline/kernels/matmul-tiled.wgsl",
+      "source_features_observed": {
+        "atomic": false,
+        "f16": false,
+        "storage_barrier": false,
+        "subgroups": false,
+        "workgroup_barrier": true
+      },
+      "source_line": "alias ElemT = f32;",
+      "source_sha256": "964fcc3c3aed8966fa41f7f76910b6857916a543ec4c516ccafcbe43bf609f5c"
+    },
+    {
+      "at_offset": "var<workgroup> tile_a: array<f32, TILE_M * TILE_K>;\nvar<workgroup> tile_b: array",
+      "diagnostic": {
+        "column": 1,
+        "line": 25,
+        "message": "expected fn; unsupported or malformed WGSL subset",
+        "offset": 739,
+        "status": 2
+      },
+      "first_construct": "workgroup storage",
+      "first_rejection_stage": "parsing",
+      "historical_hint": {
+        "byte_offset": 739,
+        "capability": "still_excluded",
+        "reason": "workgroup variable",
+        "source_fragment": "var<workgroup>"
+      },
+      "source": "bench/inference-pipeline/kernels/matmul_f16w_f32a_tiled.wgsl",
+      "source_features_observed": {
+        "atomic": false,
+        "f16": false,
+        "storage_barrier": false,
+        "subgroups": false,
+        "workgroup_barrier": true
+      },
+      "source_line": "var<workgroup> tile_a: array<f32, TILE_M * TILE_K>;",
+      "source_sha256": "6498e9a7ee4e487560d9d32f08f41f0e1a8cbf436c81c7c035d75ecaa35220ca"
+    },
+    {
+      "at_offset": "var<workgroup> partial0: array<f32, 64>;\nvar<workgroup> partial1: array<f32, 64>",
+      "diagnostic": {
+        "column": 1,
+        "line": 16,
+        "message": "expected fn; unsupported or malformed WGSL subset",
+        "offset": 430,
+        "status": 2
+      },
+      "first_construct": "workgroup storage",
+      "first_rejection_stage": "parsing",
+      "historical_hint": {
+        "byte_offset": 430,
+        "capability": "still_excluded",
+        "reason": "workgroup variable",
+        "source_fragment": "var<workgroup>"
+      },
+      "source": "bench/inference-pipeline/kernels/matmul_gemv_row2.wgsl",
+      "source_features_observed": {
+        "atomic": false,
+        "f16": false,
+        "storage_barrier": false,
+        "subgroups": false,
+        "workgroup_barrier": true
+      },
+      "source_line": "var<workgroup> partial0: array<f32, 64>;",
+      "source_sha256": "978c6dc4fd40cb52dfa720da75248d68367f3574d027eb1b7778aac0843841ff"
+    },
+    {
+      "at_offset": "var<workgroup> partial0: array<f32, 64>;\nvar<workgroup> partial1: array<f32, 64>",
+      "diagnostic": {
+        "column": 1,
+        "line": 17,
+        "message": "expected fn; unsupported or malformed WGSL subset",
+        "offset": 491,
+        "status": 2
+      },
+      "first_construct": "workgroup storage",
+      "first_rejection_stage": "parsing",
+      "historical_hint": {
+        "byte_offset": 491,
+        "capability": "still_excluded",
+        "reason": "workgroup variable",
+        "source_fragment": "var<workgroup>"
+      },
+      "source": "bench/inference-pipeline/kernels/matmul_gemv_row2_exact.wgsl",
+      "source_features_observed": {
+        "atomic": false,
+        "f16": false,
+        "storage_barrier": false,
+        "subgroups": false,
+        "workgroup_barrier": true
+      },
+      "source_line": "var<workgroup> partial0: array<f32, 64>;",
+      "source_sha256": "075acd94ec124da444eeb2c3af94b585e4c6810f85c8e7d044f961240aefdcd8"
+    },
+    {
+      "at_offset": "var<workgroup> partial0: array<f32, 64>;\nvar<workgroup> partial1: array<f32, 64>",
+      "diagnostic": {
+        "column": 1,
+        "line": 17,
+        "message": "expected fn; unsupported or malformed WGSL subset",
+        "offset": 533,
+        "status": 2
+      },
+      "first_construct": "workgroup storage",
+      "first_rejection_stage": "parsing",
+      "historical_hint": {
+        "byte_offset": 533,
+        "capability": "still_excluded",
+        "reason": "workgroup variable",
+        "source_fragment": "var<workgroup>"
+      },
+      "source": "bench/inference-pipeline/kernels/matmul_gemv_row2_guarded.wgsl",
+      "source_features_observed": {
+        "atomic": false,
+        "f16": false,
+        "storage_barrier": false,
+        "subgroups": false,
+        "workgroup_barrier": true
+      },
+      "source_line": "var<workgroup> partial0: array<f32, 64>;",
+      "source_sha256": "ebd5fe14705ed631c9667fa043d5c8fda26f412851134a93108752592ee1acf3"
+    },
+    {
+      "at_offset": "var<workgroup> partial0: array<f32, 64>;\nvar<workgroup> partial1: array<f32, 64>",
+      "diagnostic": {
+        "column": 1,
+        "line": 17,
+        "message": "expected fn; unsupported or malformed WGSL subset",
+        "offset": 524,
+        "status": 2
+      },
+      "first_construct": "workgroup storage",
+      "first_rejection_stage": "parsing",
+      "historical_hint": {
+        "byte_offset": 524,
+        "capability": "still_excluded",
+        "reason": "workgroup variable",
+        "source_fragment": "var<workgroup>"
+      },
+      "source": "bench/inference-pipeline/kernels/matmul_gemv_row2_helper_exact.wgsl",
+      "source_features_observed": {
+        "atomic": false,
+        "f16": false,
+        "storage_barrier": false,
+        "subgroups": false,
+        "workgroup_barrier": true
+      },
+      "source_line": "var<workgroup> partial0: array<f32, 64>;",
+      "source_sha256": "1efd4c7cbb631665a6428166a4ded6bf0d40dadbd3972f91c8a83cf63d2564d0"
+    },
+    {
+      "at_offset": "var<workgroup> partial0: array<f32, 32>;\nvar<workgroup> partial1: array<f32, 32>",
+      "diagnostic": {
+        "column": 1,
+        "line": 16,
+        "message": "expected fn; unsupported or malformed WGSL subset",
+        "offset": 475,
+        "status": 2
+      },
+      "first_construct": "workgroup storage",
+      "first_rejection_stage": "parsing",
+      "historical_hint": {
+        "byte_offset": 475,
+        "capability": "still_excluded",
+        "reason": "workgroup variable",
+        "source_fragment": "var<workgroup>"
+      },
+      "source": "bench/inference-pipeline/kernels/matmul_gemv_row2_helper_exact_wg32.wgsl",
+      "source_features_observed": {
+        "atomic": false,
+        "f16": false,
+        "storage_barrier": false,
+        "subgroups": false,
+        "workgroup_barrier": true
+      },
+      "source_line": "var<workgroup> partial0: array<f32, 32>;",
+      "source_sha256": "e0d0c5b9268bb5076a9636cad3022ef53565246f811b7c5474ae3175b710f293"
+    },
+    {
+      "at_offset": "var<workgroup> partial0: array<f32, 64>;\nvar<workgroup> partial1: array<f32, 64>",
+      "diagnostic": {
+        "column": 1,
+        "line": 17,
+        "message": "expected fn; unsupported or malformed WGSL subset",
+        "offset": 557,
+        "status": 2
+      },
+      "first_construct": "workgroup storage",
+      "first_rejection_stage": "parsing",
+      "historical_hint": {
+        "byte_offset": 557,
+        "capability": "still_excluded",
+        "reason": "workgroup variable",
+        "source_fragment": "var<workgroup>"
+      },
+      "source": "bench/inference-pipeline/kernels/matmul_gemv_row2_reuse_helper_exact.wgsl",
+      "source_features_observed": {
+        "atomic": false,
+        "f16": false,
+        "storage_barrier": false,
+        "subgroups": false,
+        "workgroup_barrier": true
+      },
+      "source_line": "var<workgroup> partial0: array<f32, 64>;",
+      "source_sha256": "d00fbd2c429d1b815bcbb8f06fe57f36efa6c9d1aeefc64475a4fd7a4bae638a"
+    },
+    {
+      "at_offset": "var<workgroup> partial0: array<f32, 64>;\nvar<workgroup> partial1: array<f32, 64>",
+      "diagnostic": {
+        "column": 1,
+        "line": 16,
+        "message": "expected fn; unsupported or malformed WGSL subset",
+        "offset": 430,
+        "status": 2
+      },
+      "first_construct": "workgroup storage",
+      "first_rejection_stage": "parsing",
+      "historical_hint": {
+        "byte_offset": 430,
+        "capability": "still_excluded",
+        "reason": "workgroup variable",
+        "source_fragment": "var<workgroup>"
+      },
+      "source": "bench/inference-pipeline/kernels/matmul_gemv_row4.wgsl",
+      "source_features_observed": {
+        "atomic": false,
+        "f16": false,
+        "storage_barrier": false,
+        "subgroups": false,
+        "workgroup_barrier": true
+      },
+      "source_line": "var<workgroup> partial0: array<f32, 64>;",
+      "source_sha256": "dd6916fcbac9a2684ce5f6b32a9aea8e3b3847ad6b162af7ef7c0ee4d9ed8299"
+    },
+    {
+      "at_offset": "var<workgroup> partial0: array<f32, 64>;\nvar<workgroup> partial1: array<f32, 64>",
+      "diagnostic": {
+        "column": 1,
+        "line": 16,
+        "message": "expected fn; unsupported or malformed WGSL subset",
+        "offset": 479,
+        "status": 2
+      },
+      "first_construct": "workgroup storage",
+      "first_rejection_stage": "parsing",
+      "historical_hint": {
+        "byte_offset": 479,
+        "capability": "still_excluded",
+        "reason": "workgroup variable",
+        "source_fragment": "var<workgroup>"
+      },
+      "source": "bench/inference-pipeline/kernels/matmul_gemv_row4_exact.wgsl",
+      "source_features_observed": {
+        "atomic": false,
+        "f16": false,
+        "storage_barrier": false,
+        "subgroups": false,
+        "workgroup_barrier": true
+      },
+      "source_line": "var<workgroup> partial0: array<f32, 64>;",
+      "source_sha256": "655bf6cafae792c2a95d681f8dd98def2cf95ed4d3aa7a6bce1b701a47b7743d"
+    },
+    {
+      "at_offset": "var<workgroup> partial_sums: array<f32, 64>;\n\nfn gemv_partial(row: u32, lane: u3",
+      "diagnostic": {
+        "column": 1,
+        "line": 15,
+        "message": "expected fn; unsupported or malformed WGSL subset",
+        "offset": 408,
+        "status": 2
+      },
+      "first_construct": "workgroup storage",
+      "first_rejection_stage": "parsing",
+      "historical_hint": {
+        "byte_offset": 408,
+        "capability": "still_excluded",
+        "reason": "workgroup variable",
+        "source_fragment": "var<workgroup>"
+      },
+      "source": "bench/inference-pipeline/kernels/matmul_gemv_subgroup.wgsl",
+      "source_features_observed": {
+        "atomic": false,
+        "f16": false,
+        "storage_barrier": false,
+        "subgroups": false,
+        "workgroup_barrier": true
+      },
+      "source_line": "var<workgroup> partial_sums: array<f32, 64>;",
+      "source_sha256": "fe83a9f4ea9ab05d9177ffbc63e5cc034216d02401001d238566fbfe85842288"
+    },
+    {
+      "at_offset": "enable subgroups;\n\nstruct Uniforms {\n    rows: u32,\n    cols: u32,\n    _pad0: u3",
+      "diagnostic": {
+        "column": 1,
+        "line": 6,
+        "message": "expected fn; unsupported or malformed WGSL subset",
+        "offset": 280,
+        "status": 2
+      },
+      "first_construct": "subgroups extension",
+      "first_rejection_stage": "parsing",
+      "historical_hint": {
+        "byte_offset": 280,
+        "capability": "still_excluded",
+        "reason": "extension directive",
+        "source_fragment": "enable subgroups"
+      },
+      "source": "bench/inference-pipeline/kernels/matmul_gemv_subgroup32.wgsl",
+      "source_features_observed": {
+        "atomic": false,
+        "f16": false,
+        "storage_barrier": false,
+        "subgroups": true,
+        "workgroup_barrier": false
+      },
+      "source_line": "enable subgroups;",
+      "source_sha256": "8b43ae6b3bf6cc1a88a450d9536140eef17c4c818236972075bb8c427c4799bd"
+    },
+    {
+      "at_offset": "enable subgroups;\n\nstruct Uniforms {\n    rows: u32,\n    cols: u32,\n    _pad0: u3",
+      "diagnostic": {
+        "column": 1,
+        "line": 4,
+        "message": "expected fn; unsupported or malformed WGSL subset",
+        "offset": 139,
+        "status": 2
+      },
+      "first_construct": "subgroups extension",
+      "first_rejection_stage": "parsing",
+      "historical_hint": {
+        "byte_offset": 139,
+        "capability": "still_excluded",
+        "reason": "extension directive",
+        "source_fragment": "enable subgroups"
+      },
+      "source": "bench/inference-pipeline/kernels/matmul_gemv_subgroup32_vec4only.wgsl",
+      "source_features_observed": {
+        "atomic": false,
+        "f16": false,
+        "storage_barrier": false,
+        "subgroups": true,
+        "workgroup_barrier": false
+      },
+      "source_line": "enable subgroups;",
+      "source_sha256": "829bbca5a05688407ef9ce453ee9a51812ec44fd789f958777de29928d67eac7"
+    },
+    {
+      "at_offset": "enable subgroups;\n\nstruct Uniforms {\n    rows: u32,\n    cols: u32,\n    _pad0: u3",
+      "diagnostic": {
+        "column": 1,
+        "line": 8,
+        "message": "expected fn; unsupported or malformed WGSL subset",
+        "offset": 456,
+        "status": 2
+      },
+      "first_construct": "subgroups extension",
+      "first_rejection_stage": "parsing",
+      "historical_hint": {
+        "byte_offset": 456,
+        "capability": "still_excluded",
+        "reason": "extension directive",
+        "source_fragment": "enable subgroups"
+      },
+      "source": "bench/inference-pipeline/kernels/matmul_gemv_truesubgroup.wgsl",
+      "source_features_observed": {
+        "atomic": false,
+        "f16": false,
+        "storage_barrier": false,
+        "subgroups": true,
+        "workgroup_barrier": true
+      },
+      "source_line": "enable subgroups;",
+      "source_sha256": "1ad1633b02140d3a70edcef3caecc82876c9a60478f99b4593645a4e012f8243"
+    },
+    {
+      "at_offset": "var<workgroup> partial_sums: array<f32, 64>;\n\nfn gemv_partial(row: u32, lane: u3",
+      "diagnostic": {
+        "column": 1,
+        "line": 16,
+        "message": "expected fn; unsupported or malformed WGSL subset",
+        "offset": 444,
+        "status": 2
+      },
+      "first_construct": "workgroup storage",
+      "first_rejection_stage": "parsing",
+      "historical_hint": {
+        "byte_offset": 444,
+        "capability": "still_excluded",
+        "reason": "workgroup variable",
+        "source_fragment": "var<workgroup>"
+      },
+      "source": "bench/inference-pipeline/kernels/matmul_gemv_vec4only.wgsl",
+      "source_features_observed": {
+        "atomic": false,
+        "f16": false,
+        "storage_barrier": false,
+        "subgroups": false,
+        "workgroup_barrier": true
+      },
+      "source_line": "var<workgroup> partial_sums: array<f32, 64>;",
+      "source_sha256": "a0e25a93e7aaa74fde677279c56f0a555f824174b09ffc13c39460c83180440d"
+    },
+    {
+      "at_offset": "enable f16;\n\nstruct Params {\n  rows: u32,\n  cols: u32,\n  _pad0: u32,\n  _pad1: u3",
+      "diagnostic": {
+        "column": 1,
+        "line": 1,
+        "message": "expected fn; unsupported or malformed WGSL subset",
+        "offset": 0,
+        "status": 2
+      },
+      "first_construct": "f16 extension",
+      "first_rejection_stage": "parsing",
+      "historical_hint": {
+        "byte_offset": 0,
+        "capability": "still_excluded",
+        "reason": "extension directive",
+        "source_fragment": "enable f16"
+      },
+      "source": "bench/inference-pipeline/kernels/matmul_logits_f16accum_stub.wgsl",
+      "source_features_observed": {
+        "atomic": false,
+        "f16": true,
+        "storage_barrier": false,
+        "subgroups": false,
+        "workgroup_barrier": false
+      },
+      "source_line": "enable f16;",
+      "source_sha256": "993850678191f16322d162750f9a8e5f6f0e0e4a09b29fa5b1ae6cb789ebe74a"
+    },
+    {
+      "at_offset": "enable f16;\n\nstruct Params {\n  rows: u32,\n  cols: u32,\n  _pad0: u32,\n  _pad1: u3",
+      "diagnostic": {
+        "column": 1,
+        "line": 1,
+        "message": "expected fn; unsupported or malformed WGSL subset",
+        "offset": 0,
+        "status": 2
+      },
+      "first_construct": "f16 extension",
+      "first_rejection_stage": "parsing",
+      "historical_hint": {
+        "byte_offset": 0,
+        "capability": "still_excluded",
+        "reason": "extension directive",
+        "source_fragment": "enable f16"
+      },
+      "source": "bench/inference-pipeline/kernels/matmul_logits_f16accum_wg1.wgsl",
+      "source_features_observed": {
+        "atomic": false,
+        "f16": true,
+        "storage_barrier": false,
+        "subgroups": false,
+        "workgroup_barrier": false
+      },
+      "source_line": "enable f16;",
+      "source_sha256": "0fa75f1b86a7f11f1058c355ca0c906c0a56828cd7f20a243a1360645e2fd78a"
+    },
+    {
+      "at_offset": "enable f16;\n\nstruct Params {\n  rows: u32,\n  cols: u32,\n  _pad0: u32,\n  _pad1: u3",
+      "diagnostic": {
+        "column": 1,
+        "line": 1,
+        "message": "expected fn; unsupported or malformed WGSL subset",
+        "offset": 0,
+        "status": 2
+      },
+      "first_construct": "f16 extension",
+      "first_rejection_stage": "parsing",
+      "historical_hint": {
+        "byte_offset": 0,
+        "capability": "still_excluded",
+        "reason": "extension directive",
+        "source_fragment": "enable f16"
+      },
+      "source": "bench/inference-pipeline/kernels/matmul_logits_f16accum_wg128.wgsl",
+      "source_features_observed": {
+        "atomic": false,
+        "f16": true,
+        "storage_barrier": false,
+        "subgroups": false,
+        "workgroup_barrier": true
+      },
+      "source_line": "enable f16;",
+      "source_sha256": "177817191c5fb034e6129fa22b274bab9e0a86dcb47bac5dab404284d5d12077"
+    },
+    {
+      "at_offset": "enable f16;\n\nstruct Params {\n  rows: u32,\n  cols: u32,\n  _pad0: u32,\n  _pad1: u3",
+      "diagnostic": {
+        "column": 1,
+        "line": 1,
+        "message": "expected fn; unsupported or malformed WGSL subset",
+        "offset": 0,
+        "status": 2
+      },
+      "first_construct": "f16 extension",
+      "first_rejection_stage": "parsing",
+      "historical_hint": {
+        "byte_offset": 0,
+        "capability": "still_excluded",
+        "reason": "extension directive",
+        "source_fragment": "enable f16"
+      },
+      "source": "bench/inference-pipeline/kernels/matmul_logits_f16accum_wg256.wgsl",
+      "source_features_observed": {
+        "atomic": false,
+        "f16": true,
+        "storage_barrier": false,
+        "subgroups": false,
+        "workgroup_barrier": true
+      },
+      "source_line": "enable f16;",
+      "source_sha256": "005686d48ddb4d405b08ef0838cc22902347c816eeaa330984bbd31a596652c8"
+    },
+    {
+      "at_offset": "enable f16;\n\nstruct Params {\n  rows: u32,\n  cols: u32,\n  _pad0: u32,\n  _pad1: u3",
+      "diagnostic": {
+        "column": 1,
+        "line": 1,
+        "message": "expected fn; unsupported or malformed WGSL subset",
+        "offset": 0,
+        "status": 2
+      },
+      "first_construct": "f16 extension",
+      "first_rejection_stage": "parsing",
+      "historical_hint": {
+        "byte_offset": 0,
+        "capability": "still_excluded",
+        "reason": "extension directive",
+        "source_fragment": "enable f16"
+      },
+      "source": "bench/inference-pipeline/kernels/matmul_logits_f16accum_wg64.wgsl",
+      "source_features_observed": {
+        "atomic": false,
+        "f16": true,
+        "storage_barrier": false,
+        "subgroups": false,
+        "workgroup_barrier": true
+      },
+      "source_line": "enable f16;",
+      "source_sha256": "7566c7cabe2bcba8edf149eb308e0882b32305eb15f38731a87b2b552ec27df0"
+    },
+    {
+      "at_offset": "enable f16;\n\nstruct Params {\n  rows: u32,\n  cols: u32,\n  _pad0: u32,\n  _pad1: u3",
+      "diagnostic": {
+        "column": 1,
+        "line": 1,
+        "message": "expected fn; unsupported or malformed WGSL subset",
+        "offset": 0,
+        "status": 2
+      },
+      "first_construct": "f16 extension",
+      "first_rejection_stage": "parsing",
+      "historical_hint": {
+        "byte_offset": 0,
+        "capability": "still_excluded",
+        "reason": "extension directive",
+        "source_fragment": "enable f16"
+      },
+      "source": "bench/inference-pipeline/kernels/matmul_logits_forward_f16accum.wgsl",
+      "source_features_observed": {
+        "atomic": false,
+        "f16": true,
+        "storage_barrier": false,
+        "subgroups": false,
+        "workgroup_barrier": false
+      },
+      "source_line": "enable f16;",
+      "source_sha256": "0fa75f1b86a7f11f1058c355ca0c906c0a56828cd7f20a243a1360645e2fd78a"
+    },
+    {
+      "at_offset": "var<workgroup> partial: array<f32, WORKGROUP_WIDTH>;\n\n@compute @workgroup_size(8",
+      "diagnostic": {
+        "column": 1,
+        "line": 15,
+        "message": "expected fn; unsupported or malformed WGSL subset",
+        "offset": 350,
+        "status": 2
+      },
+      "first_construct": "workgroup storage",
+      "first_rejection_stage": "parsing",
+      "historical_hint": {
+        "byte_offset": 350,
+        "capability": "still_excluded",
+        "reason": "workgroup variable",
+        "source_fragment": "var<workgroup>"
+      },
+      "source": "bench/inference-pipeline/kernels/matmul_logits_pairwise_f32.wgsl",
+      "source_features_observed": {
+        "atomic": false,
+        "f16": false,
+        "storage_barrier": false,
+        "subgroups": false,
+        "workgroup_barrier": true
+      },
+      "source_line": "var<workgroup> partial: array<f32, WORKGROUP_WIDTH>;",
+      "source_sha256": "2d289bebd09a94f023f936f7c55f699ed98018237e92eacded55a415f8f1da7c"
+    },
+    {
+      "at_offset": "var<workgroup> partial: array<f32, WORKGROUP_WIDTH>;\n\n@compute @workgroup_size(6",
+      "diagnostic": {
+        "column": 1,
+        "line": 15,
+        "message": "expected fn; unsupported or malformed WGSL subset",
+        "offset": 351,
+        "status": 2
+      },
+      "first_construct": "workgroup storage",
+      "first_rejection_stage": "parsing",
+      "historical_hint": {
+        "byte_offset": 351,
+        "capability": "still_excluded",
+        "reason": "workgroup variable",
+        "source_fragment": "var<workgroup>"
+      },
+      "source": "bench/inference-pipeline/kernels/matmul_logits_tree64_f32.wgsl",
+      "source_features_observed": {
+        "atomic": false,
+        "f16": false,
+        "storage_barrier": false,
+        "subgroups": false,
+        "workgroup_barrier": true
+      },
+      "source_line": "var<workgroup> partial: array<f32, WORKGROUP_WIDTH>;",
+      "source_sha256": "04f46b1db0e88d3636cf7ab70bba4e8904efd202f7470155af75f71bafdc6630"
+    },
+    {
+      "at_offset": "var<workgroup> shared_sum: array<f32, 256>;\n\n@compute @workgroup_size(256)\nfn ma",
+      "diagnostic": {
+        "column": 1,
+        "line": 13,
+        "message": "expected fn; unsupported or malformed WGSL subset",
+        "offset": 319,
+        "status": 2
+      },
+      "first_construct": "workgroup storage",
+      "first_rejection_stage": "parsing",
+      "historical_hint": {
+        "byte_offset": 319,
+        "capability": "still_excluded",
+        "reason": "workgroup variable",
+        "source_fragment": "var<workgroup>"
+      },
+      "source": "bench/inference-pipeline/kernels/rmsnorm.wgsl",
+      "source_features_observed": {
+        "atomic": false,
+        "f16": false,
+        "storage_barrier": false,
+        "subgroups": false,
+        "workgroup_barrier": true
+      },
+      "source_line": "var<workgroup> shared_sum: array<f32, 256>;",
+      "source_sha256": "0c0161d275a82b454a626aaffb47e014b371ebc4b1fd6def806b182e586cb497"
+    },
+    {
+      "at_offset": "enable subgroups;\n\nstruct Uniforms {\n    size: u32,\n    eps: f32,\n    _pad0: u32",
+      "diagnostic": {
+        "column": 1,
+        "line": 6,
+        "message": "expected fn; unsupported or malformed WGSL subset",
+        "offset": 270,
+        "status": 2
+      },
+      "first_construct": "subgroups extension",
+      "first_rejection_stage": "parsing",
+      "historical_hint": {
+        "byte_offset": 270,
+        "capability": "still_excluded",
+        "reason": "extension directive",
+        "source_fragment": "enable subgroups"
+      },
+      "source": "bench/inference-pipeline/kernels/rmsnorm_subgroup.wgsl",
+      "source_features_observed": {
+        "atomic": false,
+        "f16": false,
+        "storage_barrier": false,
+        "subgroups": true,
+        "workgroup_barrier": true
+      },
+      "source_line": "enable subgroups;",
+      "source_sha256": "166e7469ee1aa8977ac801db7a02038cc7185c0d6b7df6828731cac517126bba"
+    },
+    {
+      "at_offset": "var<workgroup> shared_max_val: array<f32, 256>;\nvar<workgroup> shared_max_idx: a",
+      "diagnostic": {
+        "column": 1,
+        "line": 14,
+        "message": "expected fn; unsupported or malformed WGSL subset",
+        "offset": 313,
+        "status": 2
+      },
+      "first_construct": "workgroup storage",
+      "first_rejection_stage": "parsing",
+      "historical_hint": {
+        "byte_offset": 313,
+        "capability": "still_excluded",
+        "reason": "workgroup variable",
+        "source_fragment": "var<workgroup>"
+      },
+      "source": "bench/inference-pipeline/kernels/sample.wgsl",
+      "source_features_observed": {
+        "atomic": false,
+        "f16": false,
+        "storage_barrier": false,
+        "subgroups": false,
+        "workgroup_barrier": true
+      },
+      "source_line": "var<workgroup> shared_max_val: array<f32, 256>;",
+      "source_sha256": "a8b526119e769b5265686291eac4fc81974fab9b372fb39b348845cb6ba6a7a6"
+    }
+  ]
+}

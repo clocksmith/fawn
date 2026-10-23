@@ -1,0 +1,33 @@
+{
+  "started_utc": "2026-10-23T08:38:15Z",
+  "freeze_commit": "8530b04f6b2171bc24888530dd200e2f4a60983f",
+  "accepted_historical_commit": "dee5f42acbb50e05d5690f1d2d13777c5c26d51d",
+  "frozen_inputs": {
+    "runtime/c/compiler/include/doe_compiler.h": "5bf4f5e5a4e4624c094320ad9ec97119278bc7f6f06b0e47c01e444d42c6dc5b",
+    "runtime/c/compiler/include/doe_compiler_v2.h": "b0a60c2f05b70dba0786365dadd81b993accbd93f7f68f0e3accf86a815ae891",
+    "runtime/c/compiler/include/doe_compiler_job.h": "6160e631973ffcd9777553520d329b6d6048315f2a90b1283989077e9f51237f",
+    "runtime/c/compiler/include/doe_compiler_typed.h": "c7decbdb8da093a3485ded84901bf97f88eea8db6237dfd4089c730aa08e6216",
+    "runtime/c/compiler/MILESTONE_10.md": "ad185469ca3c05b5eb89dcab48adb909a208a358b8980e9a0da952a2c44052e6",
+    "runtime/c/compiler/MILESTONE_10_LEDGER.md": "9230a960cef5bf9ff08cdb5f8cc4f0c26bf97d48858f280941b9121fcba39d4b",
+    "runtime/c/compiler/MILESTONE_10_EVALUATION.md": "a64f95017b07c7fe89f19ac31e039b5d65c53770c22ddcdef7799a4ff62bb02b",
+    "runtime/c/compiler/CONTRACT_10.sha256": "a1051f4b1bcc6a0ce63130c744d969406f797db0f18c60b7fe2b00fa60c8503c",
+    "runtime/c/compiler/contracts/m10_layout_probe.c": "39152526396fe9290e94ac359318482ddeaeaeb4eb7afe08a2d52e9d1a4db6c6",
+    "bench/kernels/stable_fluids_pressure.wgsl": "9813094c4bb5396122eeb4555cbbdb524163c2db0b04a6a3200b4afc6cd13444",
+    "bench/kernels/stable_fluids_divergence.wgsl": "bc5b50ed5e99f0f877cdb8c483f0b40ac2f54ce42e211a01bca302c20b52bdf1",
+    "bench/kernels/stable_fluids_project.wgsl": "2c0903b10003c77e53d5df2cf97e651a1bfaf7e81538f5dad57040700e4a0b6e",
+    "bench/gates/spirv_val_gate.py": "f715496e278e6c2fbdad94f4ce9e2a29b8b67095f933990f2568ec9c6237677b"
+  },
+  "historical_read_only_inputs": {
+    "runtime/c/compiler/independent_tests_m9/native_capacity/source/host_support_m9.h": "7ae8ebe70c581f6218a2d6c415007444c817cf52ee6a0b1e6096d05d9d52d556",
+    "runtime/c/compiler/independent_tests_m9/native_capacity/source/host_environment_m9.c": "e3b11c35ed3b7e7d6a9e8c5f44a640a549d1eead21fb4dbcfa528e0dce887877",
+    "runtime/c/compiler/independent_tests_m9/native_capacity/source/fenv_faults_m9.c": "3b6355030f3041fa0b5df4541fc5635a4abf13d6319883e633d7ef7f0c446081",
+    "runtime/c/compiler/independent_tests_m9/native_capacity/source/public_exits_m9.c": "7279590e3594e55c13304a371922fccdf48545aec351900974c9a37f5365145f",
+    "runtime/c/compiler/independent_tests_m9/native_capacity/source/run_native_m9_final.py": "1de7ee770b532a79da753c4e19017c3647927cf54ba2407e1768274dd4e3fc09",
+    "runtime/c/compiler/independent_tests_m9/native_capacity/source/native_m9.cpp": "8878702fd8e0d060dd2b01523d625ffa2a31b1c25063a6184e75ac79903d844f"
+  },
+  "candidate_inspected": false,
+  "candidate_built_linked_loaded_executed": false,
+  "permitted_validation": "independent source syntax-only checks against frozen public headers",
+  "scope": "Native ABI4 and preserved old API consumers, no semantic execution/layout/numeric oracle duplication, no GPU claim",
+  "old_sources_seals_receipts": "not modified, removed, or resealed"
+}

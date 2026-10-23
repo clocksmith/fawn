@@ -1,0 +1,7 @@
+{
+  "candidate_manifest_sha256": "e818441e6c93feb04a7722fc1602f255cfd2e596d806604821aa7bbd178e1e11",
+  "source_entries_checked": 30,
+  "concrete_seal_sha256": "fac2e3ce9f8869257d21d6c31b4ad79758c18c03426115e85013f03ba96aacb5",
+  "postdisclosure_seal_sha256": "3cc39b54b3962232c6003af191b4874301a9b7f25a3a2a60576095e7f3652689",
+  "passed": true
+}

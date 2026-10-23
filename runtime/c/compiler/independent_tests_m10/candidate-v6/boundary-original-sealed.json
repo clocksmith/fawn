@@ -1,0 +1,343 @@
+{
+  "cases": [
+    {
+      "capacities": {
+        "access_steps": 16385,
+        "constant_edges": 16384,
+        "constants": 4096,
+        "control_depth": 32,
+        "expression_depth": 2,
+        "expressions": 8192,
+        "ir_instructions": 49153,
+        "ir_operands": 16384,
+        "members": 2048,
+        "reserved": 0,
+        "resources": 64,
+        "source_bytes": 131072,
+        "statements": 2048,
+        "target_declarations": 32768,
+        "tokens": 16384,
+        "traversal_items": 4096,
+        "type_syntax_depth": 64,
+        "types": 1024,
+        "words": 262144
+      },
+      "name": "global_expression_counter",
+      "results": [
+        {
+          "flags": 5,
+          "minimum": 3,
+          "pool": 17,
+          "required": {
+            "members": 0,
+            "name_bytes": 0,
+            "resources": 0,
+            "types": 0,
+            "words": 0
+          },
+          "status": 1
+        },
+        {
+          "flags": 6,
+          "minimum": 3,
+          "pool": 17,
+          "required": {
+            "members": 0,
+            "name_bytes": 0,
+            "resources": 0,
+            "types": 0,
+            "words": 0
+          },
+          "status": 1
+        },
+        {
+          "flags": 7,
+          "minimum": 3,
+          "pool": 17,
+          "required": {
+            "members": 0,
+            "name_bytes": 0,
+            "resources": 0,
+            "types": 0,
+            "words": 0
+          },
+          "status": 1
+        }
+      ],
+      "source_bytes": 275,
+      "source_sha256": "c492f1a367dfd3d196daa4edec5ca43c2fea8cd56bc884ed9e8fb22aac4e2f5a"
+    },
+    {
+      "capacities": {
+        "access_steps": 16385,
+        "constant_edges": 16384,
+        "constants": 4096,
+        "control_depth": 32,
+        "expression_depth": 64,
+        "expressions": 8192,
+        "ir_instructions": 49153,
+        "ir_operands": 16384,
+        "members": 2048,
+        "reserved": 0,
+        "resources": 64,
+        "source_bytes": 131072,
+        "statements": 2048,
+        "target_declarations": 32768,
+        "tokens": 16384,
+        "traversal_items": 4096,
+        "type_syntax_depth": 2,
+        "types": 1024,
+        "words": 262144
+      },
+      "name": "global_type_counter",
+      "results": [
+        {
+          "flags": 5,
+          "minimum": 3,
+          "pool": 19,
+          "required": {
+            "members": 0,
+            "name_bytes": 0,
+            "resources": 0,
+            "types": 0,
+            "words": 0
+          },
+          "status": 1
+        },
+        {
+          "flags": 6,
+          "minimum": 3,
+          "pool": 19,
+          "required": {
+            "members": 0,
+            "name_bytes": 0,
+            "resources": 0,
+            "types": 0,
+            "words": 0
+          },
+          "status": 1
+        },
+        {
+          "flags": 7,
+          "minimum": 3,
+          "pool": 19,
+          "required": {
+            "members": 0,
+            "name_bytes": 0,
+            "resources": 0,
+            "types": 0,
+            "words": 0
+          },
+          "status": 1
+        }
+      ],
+      "source_bytes": 275,
+      "source_sha256": "c492f1a367dfd3d196daa4edec5ca43c2fea8cd56bc884ed9e8fb22aac4e2f5a"
+    },
+    {
+      "capacities": {
+        "access_steps": 16385,
+        "constant_edges": 16384,
+        "constants": 4096,
+        "control_depth": 32,
+        "expression_depth": 64,
+        "expressions": 8192,
+        "ir_instructions": 49153,
+        "ir_operands": 16384,
+        "members": 2048,
+        "reserved": 0,
+        "resources": 64,
+        "source_bytes": 131072,
+        "statements": 2048,
+        "target_declarations": 32768,
+        "tokens": 16384,
+        "traversal_items": 4096,
+        "type_syntax_depth": 64,
+        "types": 1024,
+        "words": 262144
+      },
+      "name": "both_counters_admitted",
+      "results": [
+        {
+          "flags": 5,
+          "minimum": 0,
+          "pool": 0,
+          "required": {
+            "members": 0,
+            "name_bytes": 0,
+            "resources": 0,
+            "types": 0,
+            "words": 90
+          },
+          "status": 0
+        },
+        {
+          "flags": 6,
+          "minimum": 0,
+          "pool": 0,
+          "required": {
+            "members": 0,
+            "name_bytes": 5,
+            "resources": 0,
+            "types": 0,
+            "words": 0
+          },
+          "status": 0
+        },
+        {
+          "flags": 7,
+          "minimum": 0,
+          "pool": 0,
+          "required": {
+            "members": 0,
+            "name_bytes": 5,
+            "resources": 0,
+            "types": 0,
+            "words": 90
+          },
+          "status": 0
+        }
+      ],
+      "source_bytes": 275,
+      "source_sha256": "c492f1a367dfd3d196daa4edec5ca43c2fea8cd56bc884ed9e8fb22aac4e2f5a"
+    },
+    {
+      "capacities": {
+        "access_steps": 16385,
+        "constant_edges": 16384,
+        "constants": 4096,
+        "control_depth": 32,
+        "expression_depth": 64,
+        "expressions": 8192,
+        "ir_instructions": 49153,
+        "ir_operands": 16384,
+        "members": 65537,
+        "reserved": 0,
+        "resources": 8,
+        "source_bytes": 709805,
+        "statements": 2048,
+        "target_declarations": 66045,
+        "tokens": 327793,
+        "traversal_items": 131194,
+        "type_syntax_depth": 64,
+        "types": 64,
+        "words": 526312
+      },
+      "name": "OpTypeStruct_members_65533",
+      "results": [
+        {
+          "flags": 5,
+          "minimum": 0,
+          "pool": 0,
+          "required": {
+            "members": 0,
+            "name_bytes": 0,
+            "resources": 0,
+            "types": 0,
+            "words": 393264
+          },
+          "status": 0
+        },
+        {
+          "flags": 6,
+          "minimum": 0,
+          "pool": 0,
+          "required": {
+            "members": 65533,
+            "name_bytes": 447631,
+            "resources": 0,
+            "types": 2,
+            "words": 0
+          },
+          "status": 0
+        },
+        {
+          "flags": 7,
+          "minimum": 0,
+          "pool": 0,
+          "required": {
+            "members": 65533,
+            "name_bytes": 447631,
+            "resources": 0,
+            "types": 2,
+            "words": 393264
+          },
+          "status": 0
+        }
+      ],
+      "source_bytes": 709805,
+      "source_sha256": "b0f6b116d551eb2f84691d41328391252a8e2d4ff5acae87c3e2817304ff71b4"
+    },
+    {
+      "capacities": {
+        "access_steps": 16385,
+        "constant_edges": 16384,
+        "constants": 4096,
+        "control_depth": 32,
+        "expression_depth": 64,
+        "expressions": 8192,
+        "ir_instructions": 49153,
+        "ir_operands": 16384,
+        "members": 65538,
+        "reserved": 0,
+        "resources": 8,
+        "source_bytes": 709816,
+        "statements": 2048,
+        "target_declarations": 66046,
+        "tokens": 327798,
+        "traversal_items": 131196,
+        "type_syntax_depth": 64,
+        "types": 64,
+        "words": 526320
+      },
+      "name": "OpTypeStruct_members_65534",
+      "results": [
+        {
+          "flags": 5,
+          "minimum": 0,
+          "pool": 0,
+          "required": {
+            "members": 0,
+            "name_bytes": 0,
+            "resources": 0,
+            "types": 0,
+            "words": 0
+          },
+          "status": 3
+        },
+        {
+          "flags": 6,
+          "minimum": 0,
+          "pool": 0,
+          "required": {
+            "members": 0,
+            "name_bytes": 0,
+            "resources": 0,
+            "types": 0,
+            "words": 0
+          },
+          "status": 3
+        },
+        {
+          "flags": 7,
+          "minimum": 0,
+          "pool": 0,
+          "required": {
+            "members": 0,
+            "name_bytes": 0,
+            "resources": 0,
+            "types": 0,
+            "words": 0
+          },
+          "status": 3
+        }
+      ],
+      "source_bytes": 709816,
+      "source_sha256": "e1c5eb7031df46e8d2bd15f0970d9b9f22adbe847ac84c6d673fd22aa6526666"
+    }
+  ],
+  "derived_type_syntax_pool": "TS=floor(tokens/2), not independently configurable; token/syntax accounting source audit required",
+  "format": "m10-boundaries-v1",
+  "target_uint32_ID_exhaustion": "not dynamically feasible; actual append/width/ID source audit required",
+  "target_width": "run"
+}

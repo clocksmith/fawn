@@ -1,0 +1,83 @@
+{
+  "candidate_source_manifest_sha256": "e818441e6c93feb04a7722fc1602f255cfd2e596d806604821aa7bbd178e1e11",
+  "completed_utc": "2026-10-23T10:24:49.296481+00:00",
+  "contract_manifest_sha256": "a1051f4b1bcc6a0ce63130c744d969406f797db0f18c60b7fe2b00fa60c8503c",
+  "corpus": {
+    "cpu_invocations": 13434,
+    "default_vulkan11_validated": 37,
+    "fresh_emissions": 37,
+    "instruction_executed": 37,
+    "paths": 98,
+    "prebuilt_acceptance": false,
+    "prebuilt_observed": 65,
+    "prebuilt_validated": 62,
+    "skipped_not_passes": 61,
+    "unique_admitted": 35,
+    "unique_sources": 91
+  },
+  "defects_fixed": [
+    "matrix diagnostic type-generator classification",
+    "saturated target ID format failure classification",
+    "nominal-before-predeclared constructor lookup"
+  ],
+  "historical": {
+    "capacity": 31,
+    "earlier": 839,
+    "enumerated_adapters": "POSTDISCLOSURE_ACCOUNTING.md",
+    "m8": 997,
+    "m8_mutants": 17,
+    "m9": 380,
+    "m9_mutants": 12,
+    "original_sources_unchanged": true,
+    "postdisclosure": 8
+  },
+  "main": {
+    "boundary_cases": 5,
+    "cases": 576,
+    "cli_faults": 19,
+    "lookup_cases": 5,
+    "lookup_modes_per_case": 6,
+    "passed": 576
+  },
+  "native": {
+    "consumer_runs": 15,
+    "m10_fenv_faults": 66,
+    "notes": "Native helper independently source-bound, original failures and exact overlays preserved; final per-lane manifests are separate.",
+    "retained_fenv_faults": 60,
+    "retained_host_profiles": 432,
+    "retained_public_exit_routes": [
+      "source_archive",
+      "source_shared",
+      "ASan+UBSan"
+    ],
+    "retained_public_exits_per_route": 8352,
+    "retained_threads": 16,
+    "sealed_commands": 59
+  },
+  "original_concrete_seal_sha256": "fac2e3ce9f8869257d21d6c31b4ad79758c18c03426115e85013f03ba96aacb5",
+  "postdisclosure_source_seal_sha256": "3cc39b54b3962232c6003af191b4874301a9b7f25a3a2a60576095e7f3652689",
+  "remaining_candidate_blockers": [],
+  "scope": "Frozen M10 isolated compiler, ABI and portable source-only consumer qualification",
+  "source_only_replay": {
+    "all_passed": true,
+    "receipt": "candidate-v6/PORTABLE_REPLAY.json",
+    "stages": 32
+  },
+  "stack": {
+    "combined_fixed": 197160,
+    "combined_job": 192120,
+    "emitter_scc": 272,
+    "fixed_workspace": 140056,
+    "parser_scc": 448,
+    "semantic_scc": 1296,
+    "wrapper": 140208
+  },
+  "unrun": [
+    "physical GPU/device qualification",
+    "native runtime TranslationInfo/cache/adoption",
+    "descriptor overlap/race qualification",
+    "performance/fleet qualification",
+    "whole Doe migration completion"
+  ],
+  "verdict": "PASS"
+}

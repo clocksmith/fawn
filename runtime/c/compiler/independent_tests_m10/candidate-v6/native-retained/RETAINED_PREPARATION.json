@@ -1,0 +1,96 @@
+{
+  "candidate_v6_inspected_or_executed": false,
+  "exact_potential_semantic_adapters": [
+    {
+      "clause": "M10 section2 admits local aggregate values and whole-vector copies; section8 same grammar in legacy modes when reflection representable",
+      "file": "native_m6_m9_boundary.c",
+      "new_expected_success": true,
+      "old_expected_success": false,
+      "sha256": "ba88f71337626997c0a81f48f7e9eb540ca36b04456195cc0594defeb078f26c",
+      "source": "@compute @workgroup_size(1) fn main(@builtin(global_invocation_id) a:vec3u){let x=a;}"
+    },
+    {
+      "clause": "M10 admits fixed-array struct fields but conservatively rejects uniform array stride4 as semantic layout error; this is exact status reclassification, not a positive admission",
+      "expected_new_status": 4,
+      "file": "native_m5.c",
+      "old_expected_status": 3,
+      "sha256": "8cf616ceed349c909209b37a777a8b66bd58c8117e260958b1dddba541d678b6",
+      "source": "struct P{n:array<u32,4>} @group(0) @binding(0) var<uniform> p:P; @compute @workgroup_size(1) fn main(@builtin(global_invocation_id) g:vec3u){}"
+    }
+  ],
+  "known_superseded_limits": [
+    {
+      "new": 147456,
+      "old": 122880,
+      "scope": "Fixed workspace assertion only; MILESTONE_10 section 6 and ledger"
+    },
+    {
+      "new": 147968,
+      "old": 123136,
+      "scope": "ABI1 single-frame ceiling only; other frames8192 unchanged"
+    },
+    {
+      "new_exports": 7,
+      "old_exports": 5,
+      "scope": "Exactly two additive ABI4 exports; all five original names unchanged"
+    }
+  ],
+  "not_needed": [
+    "Zig",
+    "GPU",
+    "downloads",
+    "external validator for native-only runner"
+  ],
+  "originals": "Will run unchanged historical native suite first and retain every first failure; any overlay will be explicit, exact-match and independently hashed without editing pinned tests.",
+  "pinned_commit": "dee5f42acbb50e05d5690f1d2d13777c5c26d51d",
+  "pinned_manifest_sha256": "f13da76d32acb4b7f3e42368673038e0462635b432c273ebf6282adfb459fdc6",
+  "prerequisites": [
+    "gcc/g++",
+    "ar/nm/readelf",
+    "glibc fenv including GNU traps and x86 MXCSR",
+    "pthread/libm",
+    "pinned M7 Python imports",
+    "fresh task-private /tmp build tree"
+  ],
+  "private_layout": "Run original private-layout probe first, preserve compile/runtime failure; obsolete private types cannot be mapped to pretend old representation passed. Parent independently owns frozen M10 record audit.",
+  "retained_seal_verification": {
+    "CURRENT_SOURCE_MANIFEST.json": {
+      "entries": 7,
+      "mismatches": [],
+      "retained_entries": 0
+    },
+    "PREINSPECTION_ADDENDUM.json": {
+      "entries": 5,
+      "mismatches": [],
+      "retained_entries": 0
+    },
+    "PRE_CANDIDATE_FREEZE.json": {
+      "entries": 20,
+      "mismatches": [],
+      "retained_entries": 58
+    }
+  },
+  "status": "SOURCE_PREPARATION_ONLY_AWAITING_V6",
+  "utc": "2026-10-23T10:11:56.031736+00:00",
+  "verified_required_inputs": {
+    "runtime/c/compiler/independent_tests_m7/api_job_m7.py": "5ee5825ab9cbc74cce36e37f04a65db21959522e1798d1d92e3fdd806c3fabdd",
+    "runtime/c/compiler/independent_tests_m7/api_m5.py": "9aa61a745964518bca548a3a4f4674e5784fd29930f3f2c92f9c909f7bb29ae3",
+    "runtime/c/compiler/independent_tests_m7/evaluate.py": "bce10517cb59dcd905959639cb90f12e187cad54b8e5df2ca9c0e6eef0b90cc0",
+    "runtime/c/compiler/independent_tests_m7/fixtures_m6.py": "ed5b958f4f3fe1bc3b1a27485e604712bd5eb6ffcfbed1374d1fb8e02bcd94c0",
+    "runtime/c/compiler/independent_tests_m7/native_job_m7.cpp": "8fbae62cbdc356dfa2181ba02bab009b9653eecd99c6619ce47f2a4819a6608a",
+    "runtime/c/compiler/independent_tests_m7/native_job_m7.py": "02526494b6e780f13da5cf42a7cf7aed7d7e2f4094c7b98b224e023c237f0f3b",
+    "runtime/c/compiler/independent_tests_m7/native_layout_m5.cpp": "203a62b2c38c6d24b0ff2996926d847f33740c2149458ba96ddea05c3aa366ec",
+    "runtime/c/compiler/independent_tests_m7/native_m5.c": "23f160eedc6b9651a09ede985188bbbea575e1b127af894204df697d77d951c4",
+    "runtime/c/compiler/independent_tests_m9/native_capacity/source/fenv_faults_m9.c": "3b6355030f3041fa0b5df4541fc5635a4abf13d6319883e633d7ef7f0c446081",
+    "runtime/c/compiler/independent_tests_m9/native_capacity/source/fixtures_m9.h": "77cf1ac1fbfa34341013cd0d136adf7dc903be9b02ac5a4b6a22eb51e9245988",
+    "runtime/c/compiler/independent_tests_m9/native_capacity/source/host_controls_m9.c": "8db9b939f91f5982cf31232f21aeeb41f70ab386bf8ce6f948106b68096ce9b2",
+    "runtime/c/compiler/independent_tests_m9/native_capacity/source/host_environment_m9.c": "e3b11c35ed3b7e7d6a9e8c5f44a640a549d1eead21fb4dbcfa528e0dce887877",
+    "runtime/c/compiler/independent_tests_m9/native_capacity/source/host_support_m9.h": "7ae8ebe70c581f6218a2d6c415007444c817cf52ee6a0b1e6096d05d9d52d556",
+    "runtime/c/compiler/independent_tests_m9/native_capacity/source/native_job_m9.c": "8acf0114dad606544c71586f2a2e2f099461a7759770c4d9f6d7a74aac4395db",
+    "runtime/c/compiler/independent_tests_m9/native_capacity/source/native_m6_m9_boundary.c": "4a73171c958d9a9973b307840cfd9422c1fa36e59546ffec2cf8c2ab17881c5a",
+    "runtime/c/compiler/independent_tests_m9/native_capacity/source/native_m9.cpp": "8878702fd8e0d060dd2b01523d625ffa2a31b1c25063a6184e75ac79903d844f",
+    "runtime/c/compiler/independent_tests_m9/native_capacity/source/private_layout_m9.c": "a2a0598d0750e36843d4c876da9f32491118e6873ef49477ea2ded2ba1761266",
+    "runtime/c/compiler/independent_tests_m9/native_capacity/source/public_exits_m9.c": "7279590e3594e55c13304a371922fccdf48545aec351900974c9a37f5365145f",
+    "runtime/c/compiler/independent_tests_m9/native_capacity/source/run_native_m9_final.py": "1de7ee770b532a79da753c4e19017c3647927cf54ba2407e1768274dd4e3fc09"
+  }
+}

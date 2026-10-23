@@ -9,9 +9,9 @@ static bool is_letter(unsigned char c) {
 static bool is_digit(unsigned char c) { return c >= '0' && c <= '9'; }
 static bool is_space(unsigned char c) { return c == ' ' || (c >= '\t' && c <= '\r'); }
 
-bool lex_source(Source *source, TokenList *tokens) {
+bool lex_source(Source *source, CompilerWorkspace *tokens) {
     size_t cursor = 0;
-    tokens->count = 0;
+    tokens->token_count = 0;
     while (cursor < source->length) {
         const unsigned char c = (unsigned char)source->source[cursor];
         if (is_space(c)) { ++cursor; continue; }
@@ -38,8 +38,8 @@ bool lex_source(Source *source, TokenList *tokens) {
                 continue;
             }
         }
-        if (tokens->count == tokens->capacity)
-            return source_error(source, DOE_COMPILER_INPUT_ERROR, cursor, "token capacity exceeded");
+        if (tokens->token_count == source->limits->tokens)
+            return source_pool_error(source, DOE_COMPILER_POOL_TOKENS, (size_t)tokens->token_count+1u, cursor, "token capacity exceeded");
         Token token = { .kind = c, .offset = (uint32_t)cursor, .length = 1u };
         if (is_letter(c)) {
             token.kind = TOKEN_WORD;
@@ -104,8 +104,8 @@ bool lex_source(Source *source, TokenList *tokens) {
             }
             cursor += token.length;
         }
-        tokens->tokens[tokens->count++] = token;
+        tokens->tokens[tokens->token_count++] = token;
     }
-    tokens->tokens[tokens->count] = (Token){ .kind = TOKEN_END, .offset = (uint32_t)source->length };
+    tokens->tokens[tokens->token_count] = (Token){ .kind = TOKEN_END, .offset = (uint32_t)source->length };
     return true;
 }

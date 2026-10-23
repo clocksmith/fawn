@@ -1,0 +1,20 @@
+{
+  "allocator_imports": [],
+  "build_directory": "/tmp/doe-m10-native-v6-final",
+  "candidate_inspected_or_run": true,
+  "candidate_manifest_sha256": "e818441e6c93feb04a7722fc1602f255cfd2e596d806604821aa7bbd178e1e11",
+  "cc": "cc (Debian 14.2.0-19) 14.2.0",
+  "cxx": "c++ (Debian 14.2.0-19) 14.2.0",
+  "exports_exact": true,
+  "failures": [],
+  "freeze_commit": "8530b04f6b2171bc24888530dd200e2f4a60983f",
+  "sanitizer": "RUN; individual outcomes in commands",
+  "scope": "native ABI and host only; no semantic/GPU/full migration acceptance",
+  "source_built_artifacts": {
+    "libdoe-native.a": "85745f98632b5b17f9c434605828a763ff0f7d369126ac74741564fc5f4be82b",
+    "libdoe-native.so": "5b41d5c25f866c87f7c7a3be229a6cfa7c1537fe66360a215a8363b0e0cf4d97"
+  },
+  "source_seal_sha256": "de784f1927dd9abde7272d60c3e3983fd0b65f6f8738c78f1ddc3923acfcd7dc",
+  "source_unchanged_during_run": true,
+  "status": "PASS"
+}
