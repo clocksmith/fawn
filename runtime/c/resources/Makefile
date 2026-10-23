@@ -4,7 +4,7 @@ BUILD ?= /tmp/doe-c-resources
 CPPFLAGS += -Iinclude -I../instance/include -I../futures/include -I../labels/include -I../../zig/vendor/webgpu-headers
 CFLAGS ?= -O2 -g
 CFLAGS += -std=c11 -Wall -Wextra -Wpedantic -Werror -pthread
-SOURCES = src/objects.c src/formats.c src/textures.c src/texture_copy.c src/bindings.c src/commands.c src/queries.c src/external_textures.c src/render.c src/render_state.c src/bundles.c src/compute_pass.c src/accessors.c
+SOURCES = src/objects.c src/formats.c src/textures.c src/texture_copy.c src/bindings.c src/usage_scope.c src/commands.c src/queries.c src/external_textures.c src/render.c src/render_state.c src/bundles.c src/compute_pass.c src/accessors.c
 OBJECTS = $(patsubst src/%.c,$(BUILD)/%.o,$(SOURCES))
 LABEL_SOURCES = $(wildcard ../labels/src/*.c)
 .PHONY: all check
@@ -23,11 +23,14 @@ $(BUILD)/test_bundles: tests/test_bundles.c $(BUILD)/libdoe_resources.a $(LABEL_
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(filter-out %.h,$^) -o $@
 $(BUILD)/test_binding_features: tests/test_binding_features.c $(BUILD)/libdoe_resources.a $(LABEL_SOURCES) tests/fixture.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(filter-out %.h,$^) -o $@
-check: $(BUILD)/test_resources $(BUILD)/test_extended $(BUILD)/test_bundles $(BUILD)/test_binding_features
+$(BUILD)/test_usage_scope: tests/test_usage_scope.c $(BUILD)/libdoe_resources.a $(LABEL_SOURCES) tests/fixture.h
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(filter-out %.h,$^) -o $@
+check: $(BUILD)/test_usage_scope $(BUILD)/test_resources $(BUILD)/test_extended $(BUILD)/test_bundles $(BUILD)/test_binding_features
 	$(BUILD)/test_resources
 	$(BUILD)/test_extended
 	$(BUILD)/test_bundles
 	$(BUILD)/test_binding_features
+	$(BUILD)/test_usage_scope
 
 VK_BUILD ?= /tmp/doe-c-resources-vulkan
 .PHONY: vulkan-lifetime vulkan-library
