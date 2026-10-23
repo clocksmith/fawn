@@ -52,19 +52,22 @@ reflection. The unchanged consumer admits 37 of 98 paths. This is not complete
 aggregate/language or production compiler ownership: matrices, pointers and
 other address spaces remain separate.
 
-The next selected owner is typed workgroup storage, zero initialization,
-synchronization and uniformity over the already admitted compute/control/call
-language. Of 61 current rejections, 34 first stop at workgroup storage; hidden
-builtin, multiple-entry and atomic dependencies mean these are not 34 promised
-admissions. Unchanged zero-initialization, cross-lane permutation and repeated
-reduction sources provide witnesses, not source templates. Freeze initialization,
-execution/memory scopes, transitive control/data uniformity and dynamic barrier
-agreement before implementation. Independently scheduled multi-invocation
-execution must model shared visibility, rendezvous, group isolation and race
-boundaries. Single-invocation replay and retained Zig gaps are not proof. Explicit
-unsupported/unproven cases and physical GPU qualification remain separate.
-Vector math, matrices, pointers, aliases, multiple entries, atomics and extensions
-are subsequent reusable dependencies, not silently bundled acceptance claims.
+The [accepted M11 owner](../../runtime/c/compiler/MILESTONE_11_RESULTS.md) adds
+typed workgroup storage, zero initialization, workgroup barriers and transitive
+source uniformity. Independent interleaved execution includes shared visibility,
+dynamic rendezvous, group isolation, race controls and the unchanged 100-iteration
+witness. The same corpus now has 52 emitted/validated paths, 43 independently
+executed paths, nine validation-only emissions and 46 explicit rejections. This
+does not qualify physical execution or runtime workgroup metadata/adoption.
+
+The next selected owner is the legal admitted-type overload family for existing
+min/max/clamp/exp/tanh/sqrt and dot/length/distance/normalize/cross. Fifteen current
+first errors name dot and two name vector clamp; hidden floor and other
+dependencies mean these are not 17 promised admissions. Freeze shape/stage
+resolution, constant semantics, numeric accuracy, target budgets and independent
+oracles before implementation. Keep any ambiguous specification interpretation
+explicit and separate from nonambiguous behavior. Matrices, pointers, aliases,
+multiple entries, atomics and extensions remain subsequent reusable owners.
 
 ## Remaining dependency map
 
@@ -101,4 +104,5 @@ A larger C coverage count does not retire the corresponding Zig source. Complete
 compiler ownership requires all rows plus the migration manifest's consumer and
 target gates. Runtime/GPU qualification is independent, and no missing physical
 device is replaced by CPU interpretation or software validation. Production
-selection and public publication remain outside this isolated implementation.
+selection remains outside this isolated implementation. Source publication on
+the separately authorized experimental branch does not promote production.

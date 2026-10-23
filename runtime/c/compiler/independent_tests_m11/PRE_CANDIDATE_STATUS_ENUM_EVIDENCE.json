@@ -1,0 +1,9 @@
+{
+  "candidate_observed": false,
+  "exact_enum_line": "    DOE_COMPILER_UNSUPPORTED = 3,",
+  "mapping_sha256": "157e66b973693e313f532b779f0baff91b83a537988b1b4776e57967b9287e8e",
+  "public_header_path": "/workspace/shared/doe-c-migration-20261023/runtime/c/compiler/include/doe_compiler.h",
+  "public_header_sha256": "5bf4f5e5a4e4624c094320ad9ec97119278bc7f6f06b0e47c01e444d42c6dc5b",
+  "semantic_expectation_changed": false,
+  "source_bytes_changed": false
+}

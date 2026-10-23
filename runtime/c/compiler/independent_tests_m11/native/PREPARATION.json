@@ -1,0 +1,9 @@
+{
+  "utc": "2026-10-23T11:17:23.803791+00:00",
+  "candidate_inspected": false,
+  "candidate_built": false,
+  "candidate_executed": false,
+  "syntax_only": "PASS GCC14.2.0 C11",
+  "source_seal_sha256": "867d54cb1819aaebeebcc137a85d3e96dc33eaafd6d2b6c3e2a74b2579f7bc63",
+  "plan": "Reuse sealed M10 native suite unchanged; supplemental workgroup host/ABI harness sealed. Later orchestration and private instrumentation will be disclosed separately."
+}

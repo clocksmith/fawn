@@ -1,0 +1,24 @@
+{
+  "candidate_used": false,
+  "passed": true,
+  "controls": [
+    {
+      "name": "actual_helper_callsite",
+      "validator_valid": true,
+      "caught": "different static/caller/loop phase at rendezvous"
+    },
+    {
+      "name": "actual_loop_iteration",
+      "validator_valid": true,
+      "caught": "different static/caller/loop phase at rendezvous"
+    },
+    {
+      "name": "same_vector_components",
+      "caught": "unordered ('workgroup', (0, 0, 0), 202, ()): Access(invocation=0, group=(0, 0, 0), epoch=0, write=True) versus Access(invocation=1, group=(0, 0, 0), epoch=0, write=True)"
+    },
+    {
+      "name": "storage_not_workgroup_fenced",
+      "caught": "unordered ('storage', (0, 0), 0): Access(invocation=0, group=(0, 0, 0), epoch=0, write=True) versus Access(invocation=1, group=(0, 0, 0), epoch=1, write=False)"
+    }
+  ]
+}

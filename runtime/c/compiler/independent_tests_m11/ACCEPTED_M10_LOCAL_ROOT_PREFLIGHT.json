@@ -1,0 +1,169 @@
+{
+  "M11_candidate_used": false,
+  "accepted_M10_library_sha256": "5b41d5c25f866c87f7c7a3be229a6cfa7c1537fe66360a215a8363b0e0cf4d97",
+  "adaptation": "Move module Workgroup roots into entry Function locals and remove exact barrier statements. Syntax/type preflight only; NOT shared-memory/uniformity/output proof. Original literal-OOB source intentionally remains observed failure.",
+  "records": [
+    {
+      "id": "root_bool",
+      "status": 0,
+      "diagnostic": "",
+      "transformed_sha256": "bf5ee6ae3f1cec994cde990baddc25593743f31305b8978ac4cd762a0a7e4409"
+    },
+    {
+      "id": "root_i32",
+      "status": 0,
+      "diagnostic": "",
+      "transformed_sha256": "f730c8b91bcbe31a635fb0a6741ebc6965211ff459396230124db5a4bf4c2f21"
+    },
+    {
+      "id": "root_f32",
+      "status": 0,
+      "diagnostic": "",
+      "transformed_sha256": "debbc29fc28f5969c2347d5e00576789d8846f5c65de544ddaa39946d1c9d5e9"
+    },
+    {
+      "id": "root_vector",
+      "status": 0,
+      "diagnostic": "",
+      "transformed_sha256": "70a740646588a5795052dbfc685a6967b599d363dc242d2fc68a1db9f399aa4b"
+    },
+    {
+      "id": "root_forward",
+      "status": 0,
+      "diagnostic": "",
+      "transformed_sha256": "e5b630a985c06eb55406b70d6cacd2cd590412917cb576f7020244be5bea4b7f"
+    },
+    {
+      "id": "root_unused",
+      "status": 0,
+      "diagnostic": "",
+      "transformed_sha256": "7739926d5f137390718bbf8a25da64e515d97ced53aa8e000745ed5929f49e60"
+    },
+    {
+      "id": "root_shadow",
+      "status": 4,
+      "diagnostic": "local declaration duplicates a binding in its scope",
+      "transformed_sha256": "ba2c380291b3be5598f860a6f4d39399f5490d4a257bb0300dc58739726ea87f"
+    },
+    {
+      "id": "execute_group_isolation",
+      "status": 4,
+      "diagnostic": "reserved WGSL keyword or word cannot name a declaration",
+      "transformed_sha256": "0fb7df3dafcdec99cdc0cc89c51bb9bb57e134b3c1c75fdc3784cd422db51395"
+    },
+    {
+      "id": "execute_zero_before_return",
+      "status": 4,
+      "diagnostic": "reserved WGSL keyword or word cannot name a declaration",
+      "transformed_sha256": "2c8e9dd0d951dcbf5970c1e7d08ee76e1bd34c9de16687084aea6e077c5413c7"
+    },
+    {
+      "id": "execute_nested_zero",
+      "status": 0,
+      "diagnostic": "",
+      "transformed_sha256": "90279ca4eb73db7de51d411997e72d3f124a0850e41634d3ad245d8b773ce4b2"
+    },
+    {
+      "id": "execute_hidden_index",
+      "status": 0,
+      "diagnostic": "",
+      "transformed_sha256": "f9393878edf14fa2039300cc9fbfebb855494c6bb60c2b800e508758c217417b"
+    },
+    {
+      "id": "execute_helper_phases",
+      "status": 4,
+      "diagnostic": "reserved WGSL keyword or word cannot name a declaration",
+      "transformed_sha256": "5610df44df54b90bff503d106a159d59fbcd30cfa871d771ddd535396fa31741"
+    },
+    {
+      "id": "execute_bounds",
+      "status": 4,
+      "diagnostic": "reserved WGSL keyword or word cannot name a declaration",
+      "transformed_sha256": "5ae86bc7d4c974e3fbb6c6bf0e916f4521dadb0ee6ff27dace6bd07608e14e31"
+    },
+    {
+      "id": "execute_snapshot",
+      "status": 4,
+      "diagnostic": "reserved WGSL keyword or word cannot name a declaration",
+      "transformed_sha256": "422467a4465ce113a5bee7654997f91f4b7a084ad979b4e4e196d9c9683d6038"
+    },
+    {
+      "id": "control_vector_race",
+      "status": 4,
+      "diagnostic": "reserved WGSL keyword or word cannot name a declaration",
+      "transformed_sha256": "f4fb2cae76fdb41709c1917366dcc55feb04bd237642d9ab8da77e996c4b9571"
+    },
+    {
+      "id": "witness_zero",
+      "status": 0,
+      "diagnostic": "",
+      "transformed_sha256": "5ac08189186c7e6ab919272e966f4b31004e7982e438088ae2d17067a3bfa213"
+    },
+    {
+      "id": "witness_nonatomic_1",
+      "status": 0,
+      "diagnostic": "",
+      "transformed_sha256": "f8e6dc6f10bbf9085c252af0ce2f8dd339f50b8df6e38a1b5e544052010498a4"
+    },
+    {
+      "id": "witness_nonatomic_100",
+      "status": 0,
+      "diagnostic": "",
+      "transformed_sha256": "844ea41c5dae70454452463815252b2734e162b579fb72f0aa235b80005b4c19"
+    },
+    {
+      "id": "witness_pairwise_0",
+      "status": 0,
+      "diagnostic": "",
+      "transformed_sha256": "cd1bc7835ea692697622bb8f06068e2470b7865395aa7a44c55cbb9ea2f8df16"
+    },
+    {
+      "id": "witness_pairwise_5",
+      "status": 0,
+      "diagnostic": "",
+      "transformed_sha256": "cd1bc7835ea692697622bb8f06068e2470b7865395aa7a44c55cbb9ea2f8df16"
+    },
+    {
+      "id": "witness_pairwise_8",
+      "status": 0,
+      "diagnostic": "",
+      "transformed_sha256": "cd1bc7835ea692697622bb8f06068e2470b7865395aa7a44c55cbb9ea2f8df16"
+    },
+    {
+      "id": "witness_pairwise_17",
+      "status": 0,
+      "diagnostic": "",
+      "transformed_sha256": "cd1bc7835ea692697622bb8f06068e2470b7865395aa7a44c55cbb9ea2f8df16"
+    },
+    {
+      "id": "witness_matmul_67",
+      "status": 0,
+      "diagnostic": "",
+      "transformed_sha256": "b630d612921c0ccb271077aa75e3f3bcec7ec7a0458980b2cacb45b7bf6d3902"
+    },
+    {
+      "id": "witness_matmul_5",
+      "status": 0,
+      "diagnostic": "",
+      "transformed_sha256": "b630d612921c0ccb271077aa75e3f3bcec7ec7a0458980b2cacb45b7bf6d3902"
+    },
+    {
+      "id": "witness_vec4_73",
+      "status": 0,
+      "diagnostic": "",
+      "transformed_sha256": "6c07e0e2feb829528af42bb0e15005047c6910ad1e67dc7125918f839fcb91a9"
+    },
+    {
+      "id": "witness_vec4_128",
+      "status": 0,
+      "diagnostic": "",
+      "transformed_sha256": "6c07e0e2feb829528af42bb0e15005047c6910ad1e67dc7125918f839fcb91a9"
+    },
+    {
+      "id": "execute_runtime_bounds",
+      "status": 4,
+      "diagnostic": "reserved WGSL keyword or word cannot name a declaration",
+      "transformed_sha256": "48907b63cd96a479474e736482ddb70b8355dfbce0115cfa6c2c831632f09573"
+    }
+  ]
+}

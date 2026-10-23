@@ -1,0 +1,101 @@
+[
+  {
+    "id": "remove_zero_store",
+    "must_fail": "poisoned zero output or structural init check",
+    "mutation": "Remove whole-root prologue OpStore, retaining declaration/barrier",
+    "validator": "valid"
+  },
+  {
+    "id": "remove_prologue_barrier",
+    "must_fail": "workgroup initialization read/write happens-before race",
+    "mutation": "Remove compiler barrier",
+    "validator": "valid"
+  },
+  {
+    "id": "remove_source_barrier",
+    "must_fail": "shared write/read race independent of lucky numeric scheduling",
+    "mutation": "Remove first source barrier in cross-lane exchange",
+    "validator": "valid"
+  },
+  {
+    "id": "skip_lane_barrier",
+    "must_fail": "dynamic rendezvous mismatch/deadlock, never silently release",
+    "mutation": "Executor control forces lane1 to skip a barrier event",
+    "validator": "not a binary mutation"
+  },
+  {
+    "id": "privatize_shared",
+    "must_fail": "cross-lane exchange numerical bytes",
+    "mutation": "Executor memory ownership split per invocation while target remains Workgroup",
+    "validator": "original valid"
+  },
+  {
+    "id": "alias_groups",
+    "must_fail": "group-isolation race or differing exact outputs",
+    "mutation": "Executor maps all workgroups to one shared root identity",
+    "validator": "original valid"
+  },
+  {
+    "id": "wrong_memory_scope",
+    "must_fail": "exact barrier contract mismatch",
+    "mutation": "Replace barrier memory scope2 with1",
+    "validator": "classify actual result, do not assume"
+  },
+  {
+    "id": "wrong_execution_scope",
+    "must_fail": "validator or exact barrier contract mismatch",
+    "mutation": "Replace barrier execution scope2 with1",
+    "validator": "invalid under Vulkan1.1 expected"
+  },
+  {
+    "id": "no_memory_semantics",
+    "must_fail": "no Workgroup visibility edge, race",
+    "mutation": "Replace0x108 with0",
+    "validator": "valid expected"
+  },
+  {
+    "id": "storage_semantics",
+    "must_fail": "wrong semantics structural check, cannot bless StorageBuffer fence",
+    "mutation": "Replace0x108 with0x48",
+    "validator": "classify actual result"
+  },
+  {
+    "id": "helper_phase_mismatch",
+    "must_fail": "dynamic rendezvous call-chain mismatch",
+    "mutation": "Executor shifts one invocation caller-chain callsite at a barrier",
+    "validator": "original valid"
+  },
+  {
+    "id": "loop_phase_mismatch",
+    "must_fail": "dynamic rendezvous phase mismatch",
+    "mutation": "Executor shifts one invocation active-loop iteration at same static barrier",
+    "validator": "original valid"
+  },
+  {
+    "fixture": "control_vector_race",
+    "id": "vector_components",
+    "must_fail": "same-vector conflicting memory locations",
+    "validator": "valid expected"
+  },
+  {
+    "fixture": "control_storage_not_fenced",
+    "id": "storage_barrier_scope",
+    "must_fail": "storage write/read conflict remains unordered",
+    "validator": "valid expected"
+  },
+  {
+    "id": "graph_drop_rhs",
+    "must_fail": "expected graph rejection flips for uniform_skipped_and_varying/helper_skipped_and_varying_cf",
+    "mutation": "Drop constant-skipped RHS path from explicit graph"
+  },
+  {
+    "id": "graph_retain_killed",
+    "must_fail": "flow_whole_assignment_kills graph acceptance flips",
+    "mutation": "Add old varying reaching-definition edge after whole assignment"
+  },
+  {
+    "id": "graph_drop_backedge",
+    "must_fail": "flow_loop_break_backedge rejection flips",
+    "mutation": "Remove varying backedge edge"
+  }
+]

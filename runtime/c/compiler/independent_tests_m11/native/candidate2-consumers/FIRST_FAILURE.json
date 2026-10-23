@@ -1,0 +1,8 @@
+{
+  "command": [
+    "/tmp/doe-m11-independent-native-build2/consumers-all/archive-boundary_m11"
+  ],
+  "label": "run-archive-boundary_m11",
+  "returncode": 1,
+  "seconds": 0.0014782409998588264
+}

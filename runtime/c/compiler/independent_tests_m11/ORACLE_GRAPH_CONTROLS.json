@@ -1,0 +1,402 @@
+{
+  "candidate_used": false,
+  "dated_rules": "WGSL CRD2026-10-21 sections15.2.5/6/7/8",
+  "method": "Explicit manually derived decisive graph slices plus independent BFS, not author Boolean analysis",
+  "checks": [
+    {
+      "case": "uniform_literal",
+      "reaches_nonuniform": false
+    },
+    {
+      "case": "uniform_workgroup_id",
+      "reaches_nonuniform": false
+    },
+    {
+      "case": "uniform_num_workgroups",
+      "reaches_nonuniform": false
+    },
+    {
+      "case": "uniform_local_index",
+      "reaches_nonuniform": true
+    },
+    {
+      "case": "uniform_local_id",
+      "reaches_nonuniform": true
+    },
+    {
+      "case": "uniform_global_id",
+      "reaches_nonuniform": true
+    },
+    {
+      "case": "uniform_uniform_fixed",
+      "reaches_nonuniform": false
+    },
+    {
+      "case": "uniform_readonly_fixed",
+      "reaches_nonuniform": false
+    },
+    {
+      "case": "uniform_readonly_uniform_index",
+      "reaches_nonuniform": false
+    },
+    {
+      "case": "uniform_readonly_varying_index",
+      "reaches_nonuniform": true
+    },
+    {
+      "case": "uniform_mutable_fixed",
+      "reaches_nonuniform": true
+    },
+    {
+      "case": "uniform_workgroup_fixed",
+      "reaches_nonuniform": true
+    },
+    {
+      "case": "uniform_skipped_and_varying",
+      "reaches_nonuniform": true
+    },
+    {
+      "case": "uniform_skipped_or_varying",
+      "reaches_nonuniform": true
+    },
+    {
+      "case": "uniform_short_and_uniform",
+      "reaches_nonuniform": false
+    },
+    {
+      "case": "uniform_short_or_uniform",
+      "reaches_nonuniform": false
+    },
+    {
+      "case": "uniform_uniform_index_varying_cf",
+      "reaches_nonuniform": true
+    },
+    {
+      "case": "flow_whole_assignment_kills",
+      "reaches_nonuniform": false
+    },
+    {
+      "case": "flow_let_snapshot_survives",
+      "reaches_nonuniform": true
+    },
+    {
+      "case": "flow_branch_equal_assignments",
+      "reaches_nonuniform": true
+    },
+    {
+      "case": "flow_branch_overwrite_after",
+      "reaches_nonuniform": false
+    },
+    {
+      "case": "flow_if_reconverges",
+      "reaches_nonuniform": false
+    },
+    {
+      "case": "flow_if_return_no_reconvergence",
+      "reaches_nonuniform": true
+    },
+    {
+      "case": "flow_uniform_return",
+      "reaches_nonuniform": false
+    },
+    {
+      "case": "flow_dead_suffix_excluded",
+      "reaches_nonuniform": false
+    },
+    {
+      "case": "flow_constant_false_branch_retained",
+      "reaches_nonuniform": true
+    },
+    {
+      "case": "flow_single_array_partial_retains",
+      "reaches_nonuniform": true
+    },
+    {
+      "case": "flow_array_whole_kills",
+      "reaches_nonuniform": false
+    },
+    {
+      "case": "flow_vector_partial_retains",
+      "reaches_nonuniform": true
+    },
+    {
+      "case": "flow_vector_whole_kills",
+      "reaches_nonuniform": false
+    },
+    {
+      "case": "flow_partial_index_dependency",
+      "reaches_nonuniform": true
+    },
+    {
+      "case": "flow_read_in_varying_control",
+      "reaches_nonuniform": true
+    },
+    {
+      "case": "flow_loop_divergent_reconverges",
+      "reaches_nonuniform": false
+    },
+    {
+      "case": "flow_for_divergent_reconverges",
+      "reaches_nonuniform": false
+    },
+    {
+      "case": "flow_loop_break_backedge",
+      "reaches_nonuniform": true
+    },
+    {
+      "case": "flow_loop_continue_barrier",
+      "reaches_nonuniform": true
+    },
+    {
+      "case": "flow_loop_continue_reconverges",
+      "reaches_nonuniform": false
+    },
+    {
+      "case": "flow_continuing_break_if",
+      "reaches_nonuniform": true
+    },
+    {
+      "case": "flow_continuing_uniform_break_if",
+      "reaches_nonuniform": false
+    },
+    {
+      "case": "flow_loop_early_return",
+      "reaches_nonuniform": true
+    },
+    {
+      "case": "flow_loop_local_backedge",
+      "reaches_nonuniform": true
+    },
+    {
+      "case": "flow_loop_local_kill",
+      "reaches_nonuniform": false
+    },
+    {
+      "case": "flow_nested_loop_reconvergence",
+      "reaches_nonuniform": false
+    },
+    {
+      "case": "flow_nested_loop_varying_backedge",
+      "reaches_nonuniform": true
+    },
+    {
+      "case": "flow_shadow_local_identity",
+      "reaches_nonuniform": false
+    },
+    {
+      "case": "flow_shadow_initializer_old_binding",
+      "reaches_nonuniform": true
+    },
+    {
+      "case": "helper_direct",
+      "reaches_nonuniform": false
+    },
+    {
+      "case": "helper_varying",
+      "reaches_nonuniform": true
+    },
+    {
+      "case": "helper_skipped_and_uniform",
+      "reaches_nonuniform": false
+    },
+    {
+      "case": "helper_skipped_or_uniform",
+      "reaches_nonuniform": false
+    },
+    {
+      "case": "helper_skipped_and_varying_cf",
+      "reaches_nonuniform": true
+    },
+    {
+      "case": "helper_skipped_or_varying_cf",
+      "reaches_nonuniform": true
+    },
+    {
+      "case": "helper_runtime_short_varying",
+      "reaches_nonuniform": true
+    },
+    {
+      "case": "helper_chain",
+      "reaches_nonuniform": false
+    },
+    {
+      "case": "helper_chain_varying",
+      "reaches_nonuniform": true
+    },
+    {
+      "case": "formal_required_uniform",
+      "reaches_nonuniform": false
+    },
+    {
+      "case": "formal_required_varying",
+      "reaches_nonuniform": true
+    },
+    {
+      "case": "formal_return_uniform",
+      "reaches_nonuniform": false
+    },
+    {
+      "case": "formal_return_varying",
+      "reaches_nonuniform": true
+    },
+    {
+      "case": "helper_return_reconverges",
+      "reaches_nonuniform": false
+    },
+    {
+      "case": "unused_helper_invalid",
+      "reaches_nonuniform": true
+    },
+    {
+      "case": "mutable_helper_result",
+      "reaches_nonuniform": true
+    },
+    {
+      "case": "workgroup_helper_result",
+      "reaches_nonuniform": true
+    },
+    {
+      "case": "source_barrier_no_roots",
+      "reaches_nonuniform": false
+    },
+    {
+      "case": "builtin_shadow_function",
+      "reaches_nonuniform": false
+    },
+    {
+      "case": "struct_partial_retains",
+      "reaches_nonuniform": true
+    },
+    {
+      "case": "struct_whole_kills",
+      "reaches_nonuniform": false
+    },
+    {
+      "case": "after_barrier_load_still_varying",
+      "reaches_nonuniform": true
+    },
+    {
+      "case": "barrier_arity",
+      "reaches_nonuniform": false
+    },
+    {
+      "case": "barrier_value",
+      "reaches_nonuniform": false
+    },
+    {
+      "case": "barrier_const",
+      "reaches_nonuniform": false
+    },
+    {
+      "case": "execute_group_isolation",
+      "reaches_nonuniform": false
+    },
+    {
+      "case": "execute_helper_phases",
+      "reaches_nonuniform": false
+    },
+    {
+      "case": "execute_bounds",
+      "reaches_nonuniform": false
+    },
+    {
+      "case": "execute_snapshot",
+      "reaches_nonuniform": false
+    },
+    {
+      "case": "control_vector_race",
+      "reaches_nonuniform": false
+    },
+    {
+      "case": "control_storage_not_fenced",
+      "reaches_nonuniform": false
+    },
+    {
+      "case": "witness_nonatomic_1",
+      "reaches_nonuniform": false
+    },
+    {
+      "case": "witness_nonatomic_100",
+      "reaches_nonuniform": false
+    },
+    {
+      "case": "witness_pairwise_0",
+      "reaches_nonuniform": false
+    },
+    {
+      "case": "witness_pairwise_5",
+      "reaches_nonuniform": false
+    },
+    {
+      "case": "witness_pairwise_8",
+      "reaches_nonuniform": false
+    },
+    {
+      "case": "witness_pairwise_17",
+      "reaches_nonuniform": false
+    },
+    {
+      "case": "witness_matmul_67",
+      "reaches_nonuniform": false
+    },
+    {
+      "case": "witness_matmul_5",
+      "reaches_nonuniform": false
+    },
+    {
+      "case": "witness_vec4_73",
+      "reaches_nonuniform": false
+    },
+    {
+      "case": "witness_vec4_128",
+      "reaches_nonuniform": false
+    },
+    {
+      "case": "work_formals_16",
+      "reaches_nonuniform": false
+    },
+    {
+      "case": "work_formals_64",
+      "reaches_nonuniform": false
+    },
+    {
+      "case": "work_formals_128",
+      "reaches_nonuniform": false
+    },
+    {
+      "case": "work_nested_2",
+      "reaches_nonuniform": false
+    },
+    {
+      "case": "work_nested_4",
+      "reaches_nonuniform": false
+    },
+    {
+      "case": "work_nested_8",
+      "reaches_nonuniform": false
+    }
+  ],
+  "mutations": [
+    {
+      "case": "uniform_skipped_and_varying",
+      "mutation": "remove retained varying RHS/call/backedge terminal dependency",
+      "flips_expected_rejection": true
+    },
+    {
+      "case": "helper_skipped_and_varying_cf",
+      "mutation": "remove retained varying RHS/call/backedge terminal dependency",
+      "flips_expected_rejection": true
+    },
+    {
+      "case": "flow_loop_break_backedge",
+      "mutation": "remove retained varying RHS/call/backedge terminal dependency",
+      "flips_expected_rejection": true
+    },
+    {
+      "case": "flow_whole_assignment_kills",
+      "mutation": "retain killed old definition",
+      "flips_expected_acceptance": true
+    }
+  ],
+  "passed": true
+}

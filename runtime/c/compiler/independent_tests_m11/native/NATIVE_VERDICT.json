@@ -1,0 +1,380 @@
+{
+  "accepted_M10_commit": "2220c64cff0bd87b1eed6b246515941ce7d18d24",
+  "author_prebuilt": {
+    "path": "/tmp/doe-m11-author-build2/build/libdoe_compiler.so",
+    "provenance": "Handed author artifact, not classified as the independent source build",
+    "sha256": "5d301e813223c9602f7c7ad57634b0ad53a68ba8b752066fbfdce1e9f29b2553"
+  },
+  "candidate_defects_observed": [],
+  "corrections": [
+    {
+      "accepted_control": "ACCEPTED_M10_ALIGNMENT_EVIDENCE.json",
+      "description": "Only two public alignment assertions and two REFLECTION-only output descriptor selections corrected. Original supplement source, seal, first report and all failure logs remain preserved. Affected four routes rebuilt/rerun only.",
+      "receipt": "candidate2-boundary-revision1/CORRECTION.json"
+    },
+    {
+      "description": "GCC .su clone-name numeric suffix normalization only; original parser preserved. Full unit/size/count and graph checks retained. Localalias edge separately resolved by matching nm addresses.",
+      "receipt": "STACK_PARSER_CORRECTION.json"
+    }
+  ],
+  "first_native_receipt": {
+    "commands": 113,
+    "failure_scope": "All four failures came from the original evaluator boundary supplement, not candidate defects.",
+    "path": "candidate2-consumers/RESULT.json",
+    "preserved_failure_count": 4,
+    "successful_commands": 109
+  },
+  "historical_mappings": "HISTORICAL_MAPPING_BEFORE_ADAPTERS.json; original142 retained inputs verified unchanged, only enumerated accepted-M10 overlays reused. Parent owns the exact newly admitted workgroup source and exact private-global status mappings.",
+  "host_and_lifetime": {
+    "alias_scope": "Full-capacity source/workspace/output/result nonoverlap remains the public caller precondition. No arbitrary-overlap rejection guarantee was invented or tested.",
+    "checks": [
+      "All selected ABI4 output modes, success/failure atomicity and reuse",
+      "Exact and one-short spans, invalid alignment, redzones and retained public preflight/lifecycle gates",
+      "errno and full supported fenv host profiles including FTZ/DAZ and traps, plus injected numeric-environment failures",
+      "Same-process reuse and concurrent independent caller workspaces",
+      "Allocator interposition self-controls and zero observed allocation in protected compilation windows; no allocator imports",
+      "ASan+UBSan affected consumers, plus all17 private-work sources in all6 modes",
+      "Full secondary scratch poisoning before uniformity and protected persistent IR/type/resource/access/operand hashes afterward"
+    ],
+    "phase_order": "Tokens die after parse; typed resolver Walk finishes with sema; completed sema and cycle checks precede uniformity B2; complete uniformity precedes B1 target/reflection emission. Persistent typed structures are not overlaid.",
+    "status": "PASS"
+  },
+  "independent_build": {
+    "doe-compiler-m11": {
+      "path": "/tmp/doe-m11-independent-native-build2/doe-compiler-m11",
+      "sha256": "c927324f9d7ae2fd9ac14d61cb9334a9870c3ff8396e5934470bfb3653310beb"
+    },
+    "libdoe-m11.a": {
+      "path": "/tmp/doe-m11-independent-native-build2/libdoe-m11.a",
+      "sha256": "8f11e695ee777494e2660f51be02e2bd9b49ecacf3edd068ca77a868128e4273"
+    },
+    "libdoe-m11.so": {
+      "path": "/tmp/doe-m11-independent-native-build2/libdoe-m11.so",
+      "sha256": "5d301e813223c9602f7c7ad57634b0ad53a68ba8b752066fbfdce1e9f29b2553"
+    }
+  },
+  "ledger": {
+    "complete_GCC_frames": 145,
+    "complete_GCC_units": 14,
+    "exact_profiles": 3,
+    "fixed_combined": 204608,
+    "job_combined": 193376,
+    "receipt": "candidate2-LEDGER_STACK.json",
+    "records": 23,
+    "scope": "Conservative GCC14.2/Linux x86-64 C-owned upper bounds, not observed peaks; external libc/libm/OS/caller/sanitizer frames excluded.",
+    "sum_every_nonwrapper_frame": 15200,
+    "wrapper_bytes": 146400
+  },
+  "native_gates_unqualified": [],
+  "native_routes": [
+    "fresh strict GCC14 source-built archive",
+    "fresh source-built shared library",
+    "handed author shared prebuilt",
+    "ASan+UBSan affected consumers"
+  ],
+  "public_compatibility": {
+    "alignment": "Public ABI3/ABI4 alignment16 is sufficient and divisible by private record alignment8; public ABI2 remains8. Equality is neither required nor assumed.",
+    "exports": [
+      "doe_compiler_compile",
+      "doe_compiler_compile_job",
+      "doe_compiler_compile_typed",
+      "doe_compiler_compile_v2",
+      "doe_compiler_job_requirements",
+      "doe_compiler_typed_requirements",
+      "doe_compiler_workspace_requirements"
+    ],
+    "headers_unchanged": 4,
+    "old_span_behavior": "Stale M10 exact byte spans reject before use; all three current exact spans and one-byte-short controls checked.",
+    "query_sizes": {
+      "fixed": 146256,
+      "job_cli": 2172992,
+      "typed_cli": 2536128
+    }
+  },
+  "qualifications": [
+    "No remaining unqualified native gate within this host/compiler scope.",
+    "Not a claim of GPU/hardware execution, another host ABI, TSan race proof, performance parity, runtime integration, or whole-repository acceptance.",
+    "Author receipts remain separate; independent source/prebuilt hashes and routes are explicitly distinguished.",
+    "No invalid full-capacity aliases were used to invent an overlap-rejection obligation."
+  ],
+  "source_entries_unchanged": 30,
+  "source_manifest_sha256": "b124146a5044e288dcd7fbd153a7f75f3ecfc2e4451666b2f4e1b7771073b9af",
+  "status": "PASS_WITH_PRESERVED_EVALUATOR_CORRECTIONS",
+  "target_accounting": {
+    "format_exhaustion_control": "candidate2-ID_BOUNDARY.log",
+    "receipt": "candidate2-TARGET_COUNTS.json",
+    "scope": "Exact header highest-ID+1 and selected opcode/root word counts on11 already-emitted witness instances, plus retained format-saturation boundary control. Parent owns SPIR-V validation/interleaved execution and full corpus."
+  },
+  "work": {
+    "ceiling": 67108864,
+    "charged_analysis": "Budget instantiated at uniformity.c:416. Subsequent retained AST visits, map/reset/copy/compare/join operations, formal/summary/operand/access inspections, identity comparisons and call-graph edges use checked charges before work. The no-barrier witness reports N=0.",
+    "loose_bound": "candidate2-LOOSE_WORK_BOUND.json",
+    "pre_scan_boundary": "uniformity.c:410-415 scans at most expression_count callee-marker positions before creating the budget. This marker-classification pass is uncharged. Parser expression allocation bounds expression_count by physical_expressions; the allocated callee map has that capacity. The pass detects absence of resolved barriers and performs no sensitivity run. It is not counted as an AST dependency visit or call-graph edge traversal. All recorded N values exclude it.",
+    "public_default_cap": {
+      "fixed_adapters": "This large-formal fixture hits the unchanged fixed source/token pool first on ABI1/ABI2, producing INPUT_ERROR, not a work-cap result. Their exact shared analysis mechanism and diagnostic are verified by private N/N-1 through both public adapters.",
+      "fixture": "1000 unused scalar formals plus24 sequential loops, barrier/no-barrier twin",
+      "receipt": "candidate2-public-hardcap/RESULT.json",
+      "routes": [
+        "archive",
+        "shared",
+        "author prebuilt",
+        "ASan+UBSan"
+      ],
+      "success": "ABI3 and all6 ABI4 modes exhaust the unchanged public ceiling with UNSUPPORTED, exact work-limit diagnostic and atomic output; no-barrier twin succeeds in the same pools"
+    },
+    "scope": "Frozen dependency-operation budget, not a cap on every compiler memory read",
+    "source_bound_private": {
+      "all_adapters_N": {
+        "ABI1": 2325,
+        "ABI2": 2325,
+        "ABI3": 23957,
+        "ABI4": 23957
+      },
+      "all_adapters_receipt": "candidate2-private-adapters.log",
+      "cases": {
+        "witness_matmul_5.wgsl": {
+          "bound": "174",
+          "expressions": "56",
+          "ir": "73",
+          "limit_controls": "N_and_N-1",
+          "logical_shared": "256",
+          "modes": "6",
+          "poisoned_secondary": "1",
+          "roots": "1",
+          "statements": "22",
+          "types": "4",
+          "words": "978",
+          "work": "77198"
+        },
+        "witness_matmul_67.wgsl": {
+          "bound": "174",
+          "expressions": "56",
+          "ir": "73",
+          "limit_controls": "N_and_N-1",
+          "logical_shared": "256",
+          "modes": "6",
+          "poisoned_secondary": "1",
+          "roots": "1",
+          "statements": "22",
+          "types": "4",
+          "words": "978",
+          "work": "77198"
+        },
+        "witness_nonatomic_1.wgsl": {
+          "bound": "101",
+          "expressions": "29",
+          "ir": "33",
+          "limit_controls": "N_and_N-1",
+          "logical_shared": "1024",
+          "modes": "6",
+          "poisoned_secondary": "1",
+          "roots": "1",
+          "statements": "9",
+          "types": "3",
+          "words": "505",
+          "work": "35585"
+        },
+        "witness_nonatomic_100.wgsl": {
+          "bound": "122",
+          "expressions": "39",
+          "ir": "56",
+          "limit_controls": "N_and_N-1",
+          "logical_shared": "1024",
+          "modes": "6",
+          "poisoned_secondary": "1",
+          "roots": "1",
+          "statements": "16",
+          "types": "3",
+          "words": "610",
+          "work": "80081"
+        },
+        "witness_pairwise_0.wgsl": {
+          "bound": "162",
+          "expressions": "50",
+          "ir": "63",
+          "limit_controls": "N_and_N-1",
+          "logical_shared": "32",
+          "modes": "6",
+          "poisoned_secondary": "1",
+          "roots": "1",
+          "statements": "17",
+          "types": "4",
+          "words": "911",
+          "work": "59473"
+        },
+        "witness_pairwise_17.wgsl": {
+          "bound": "162",
+          "expressions": "50",
+          "ir": "63",
+          "limit_controls": "N_and_N-1",
+          "logical_shared": "32",
+          "modes": "6",
+          "poisoned_secondary": "1",
+          "roots": "1",
+          "statements": "17",
+          "types": "4",
+          "words": "911",
+          "work": "59473"
+        },
+        "witness_pairwise_5.wgsl": {
+          "bound": "162",
+          "expressions": "50",
+          "ir": "63",
+          "limit_controls": "N_and_N-1",
+          "logical_shared": "32",
+          "modes": "6",
+          "poisoned_secondary": "1",
+          "roots": "1",
+          "statements": "17",
+          "types": "4",
+          "words": "911",
+          "work": "59473"
+        },
+        "witness_pairwise_8.wgsl": {
+          "bound": "162",
+          "expressions": "50",
+          "ir": "63",
+          "limit_controls": "N_and_N-1",
+          "logical_shared": "32",
+          "modes": "6",
+          "poisoned_secondary": "1",
+          "roots": "1",
+          "statements": "17",
+          "types": "4",
+          "words": "911",
+          "work": "59473"
+        },
+        "witness_vec4_128.wgsl": {
+          "bound": "149",
+          "expressions": "42",
+          "ir": "55",
+          "limit_controls": "N_and_N-1",
+          "logical_shared": "1024",
+          "modes": "6",
+          "poisoned_secondary": "1",
+          "roots": "1",
+          "statements": "17",
+          "types": "5",
+          "words": "831",
+          "work": "59434"
+        },
+        "witness_vec4_73.wgsl": {
+          "bound": "149",
+          "expressions": "42",
+          "ir": "55",
+          "limit_controls": "N_and_N-1",
+          "logical_shared": "1024",
+          "modes": "6",
+          "poisoned_secondary": "1",
+          "roots": "1",
+          "statements": "17",
+          "types": "5",
+          "words": "831",
+          "work": "59434"
+        },
+        "witness_zero.wgsl": {
+          "bound": "78",
+          "expressions": "22",
+          "ir": "20",
+          "limit_controls": "no_barrier_zero_work",
+          "logical_shared": "8192",
+          "modes": "6",
+          "poisoned_secondary": "1",
+          "roots": "1",
+          "statements": "5",
+          "types": "3",
+          "words": "366",
+          "work": "0"
+        },
+        "work_formals_128.wgsl": {
+          "bound": "290",
+          "expressions": "130",
+          "ir": "130",
+          "limit_controls": "N_and_N-1",
+          "logical_shared": "0",
+          "modes": "6",
+          "poisoned_secondary": "1",
+          "roots": "0",
+          "statements": "2",
+          "types": "0",
+          "words": "1244",
+          "work": "681866"
+        },
+        "work_formals_16.wgsl": {
+          "bound": "66",
+          "expressions": "18",
+          "ir": "18",
+          "limit_controls": "N_and_N-1",
+          "logical_shared": "0",
+          "modes": "6",
+          "poisoned_secondary": "1",
+          "roots": "0",
+          "statements": "2",
+          "types": "0",
+          "words": "236",
+          "work": "106186"
+        },
+        "work_formals_64.wgsl": {
+          "bound": "162",
+          "expressions": "66",
+          "ir": "66",
+          "limit_controls": "N_and_N-1",
+          "logical_shared": "0",
+          "modes": "6",
+          "poisoned_secondary": "1",
+          "roots": "0",
+          "statements": "2",
+          "types": "0",
+          "words": "668",
+          "work": "352906"
+        },
+        "work_nested_2.wgsl": {
+          "bound": "62",
+          "expressions": "15",
+          "ir": "27",
+          "limit_controls": "N_and_N-1",
+          "logical_shared": "0",
+          "modes": "6",
+          "poisoned_secondary": "1",
+          "roots": "0",
+          "statements": "7",
+          "types": "1",
+          "words": "272",
+          "work": "60028"
+        },
+        "work_nested_4.wgsl": {
+          "bound": "88",
+          "expressions": "29",
+          "ir": "53",
+          "limit_controls": "N_and_N-1",
+          "logical_shared": "0",
+          "modes": "6",
+          "poisoned_secondary": "1",
+          "roots": "0",
+          "statements": "13",
+          "types": "1",
+          "words": "404",
+          "work": "144477"
+        },
+        "work_nested_8.wgsl": {
+          "bound": "140",
+          "expressions": "57",
+          "ir": "105",
+          "limit_controls": "N_and_N-1",
+          "logical_shared": "0",
+          "modes": "6",
+          "poisoned_secondary": "1",
+          "roots": "0",
+          "statements": "25",
+          "types": "1",
+          "words": "668",
+          "work": "412219"
+        }
+      },
+      "controls": "Exact N passes, N-1 UNSUPPORTED with exact diagnostic and no partial publication, recovery after failure; no-barrier zero-work pass",
+      "method": "Link-time wrap of unchanged uniformity_analyze; no public export and no production edit",
+      "modes_per_case": 6,
+      "source": "private_work_m11.c"
+    }
+  }
+}

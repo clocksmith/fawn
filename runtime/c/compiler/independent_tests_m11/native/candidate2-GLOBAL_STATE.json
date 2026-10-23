@@ -1,0 +1,23 @@
+{
+  "allocator_imports": [],
+  "data_symbols": [
+    {
+      "name": "scalar_builtins",
+      "objdump": "0000000000000000 l     O .data.rel.ro.local\t0000000000000090 scalar_builtins",
+      "object": "numeric.o",
+      "section": ".data.rel.ro.local",
+      "size": 144
+    },
+    {
+      "name": "forbidden_names",
+      "objdump": "0000000000000000 l     O .data.rel.ro.local\t0000000000000560 forbidden_names",
+      "object": "sema_declarations.o",
+      "section": ".data.rel.ro.local",
+      "size": 1376
+    }
+  ],
+  "mutable_data_or_bss_symbols": [],
+  "scope": "Compiler-owned object symbols and source declarations; caller and C runtime state excluded. Reentrancy/concurrency supported separately by consumer tests.",
+  "source_const_qualified": true,
+  "status": "PASS"
+}

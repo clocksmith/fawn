@@ -1,0 +1,30 @@
+{
+  "candidate_executed": false,
+  "candidate_inspected": false,
+  "changes": [
+    {
+      "id": "excluded_atomic",
+      "new_status": 3,
+      "old_status": 2,
+      "reason": "Public unchanged DoeCompilerStatus enum: UNSUPPORTED=3, PARSE_ERROR=2; frozen contract requires valid excluded features UNSUPPORTED.",
+      "source_sha256": "65d7156a5b239b6b565944dcd7dda2c33f04655314f70cee8fd72eb121cec74c"
+    },
+    {
+      "id": "excluded_storage_barrier",
+      "new_status": 3,
+      "old_status": 2,
+      "reason": "Public unchanged DoeCompilerStatus enum: UNSUPPORTED=3, PARSE_ERROR=2; frozen contract requires valid excluded features UNSUPPORTED.",
+      "source_sha256": "87308ac6d17418a6625b716cc5c823ba3845ca3f58c280ffdaa5574db7275ef5"
+    },
+    {
+      "id": "excluded_uniform_load",
+      "new_status": 3,
+      "old_status": 2,
+      "reason": "Public unchanged DoeCompilerStatus enum: UNSUPPORTED=3, PARSE_ERROR=2; frozen contract requires valid excluded features UNSUPPORTED.",
+      "source_sha256": "b296934a6635dbf6471ad883f83db0e8fb339a4ddc9add69b4b56457cfee1435"
+    }
+  ],
+  "original_seal_sha256": "9a03dd3f38641834f59a70e6f09a1524a5271daeb1886651ff7575b7a0a2d664",
+  "source_changes": false,
+  "utc": "2026-10-23T11:27:24.399454+00:00"
+}

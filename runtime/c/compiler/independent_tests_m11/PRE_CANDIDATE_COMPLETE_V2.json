@@ -1,0 +1,19 @@
+{
+  "utc": "2026-10-23T11:43:13.928912+00:00",
+  "M11_candidate_inspected": false,
+  "M11_candidate_executed": false,
+  "original_case_seal_sha256": "9a03dd3f38641834f59a70e6f09a1524a5271daeb1886651ff7575b7a0a2d664",
+  "complete_manifest_sha256": "4d5ac2a45fbaba470387b50626149fd69ee2568eece1a24b803d90b6b25610a6",
+  "files": 213,
+  "effective_case_count": 120,
+  "originals_and_v1_receipt_preserved": true,
+  "supplements": [
+    "PRE_CANDIDATE_STATUS_CORRECTION.json",
+    "PRE_CANDIDATE_BOUNDS_CORRECTION.json",
+    "PRE_CANDIDATE_RESERVED_NAME_CORRECTION.json",
+    "PRE_CANDIDATE_HELPER_NAME_CORRECTION.json",
+    "PRE_CANDIDATE_EXECUTION_SUPPLEMENT.json",
+    "SCHEDULING_SUPPLEMENT.md"
+  ],
+  "accepted_M10_preflight_scope": "Only exact transformed syntax/type controls. No claim accepted M10 admits original Workgroup modules. No candidate source used."
+}

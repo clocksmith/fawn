@@ -1,0 +1,172 @@
+{
+  "base_validator": {
+    "output": "",
+    "returncode": 0,
+    "sha256": "feabafbfcadfa335485a7b493ffb51e0193ab8e8baa3cf9e8d898f31bc1e90fc"
+  },
+  "candidate_used": false,
+  "controls": [
+    {
+      "execution": {
+        "barriers_per_group": {
+          "(0, 0, 0)": 3,
+          "(1, 0, 0)": 3,
+          "(2, 0, 0)": 3
+        },
+        "events": 75,
+        "groups": 3,
+        "invocations": 12,
+        "memory_accesses": 48,
+        "poison": 165,
+        "pure_instruction_quantum": 64,
+        "schedule": "round_robin",
+        "steps": 297
+      },
+      "id": "base_round_robin",
+      "passed": true
+    },
+    {
+      "execution": {
+        "barriers_per_group": {
+          "(0, 0, 0)": 3,
+          "(1, 0, 0)": 3,
+          "(2, 0, 0)": 3
+        },
+        "events": 75,
+        "groups": 3,
+        "invocations": 12,
+        "memory_accesses": 48,
+        "poison": 165,
+        "pure_instruction_quantum": 64,
+        "schedule": "reverse",
+        "steps": 297
+      },
+      "id": "base_reverse",
+      "passed": true
+    },
+    {
+      "execution": {
+        "barriers_per_group": {
+          "(0, 0, 0)": 3,
+          "(1, 0, 0)": 3,
+          "(2, 0, 0)": 3
+        },
+        "events": 75,
+        "groups": 3,
+        "invocations": 12,
+        "memory_accesses": 48,
+        "poison": 165,
+        "pure_instruction_quantum": 64,
+        "schedule": "shuffle_0x11c0ffee",
+        "steps": 297
+      },
+      "id": "base_shuffle_0x11c0ffee",
+      "passed": true
+    },
+    {
+      "execution": {
+        "barriers_per_group": {
+          "(0, 0, 0)": 3,
+          "(1, 0, 0)": 3,
+          "(2, 0, 0)": 3
+        },
+        "events": 75,
+        "groups": 3,
+        "invocations": 12,
+        "memory_accesses": 48,
+        "poison": 165,
+        "pure_instruction_quantum": 64,
+        "schedule": "bounded_burst_1_3_7",
+        "steps": 297
+      },
+      "id": "base_bounded_burst_1_3_7",
+      "passed": true
+    },
+    {
+      "detection": "exact output mismatch",
+      "id": "privatize_shared",
+      "passed": true
+    },
+    {
+      "detection": "unordered ('workgroup', (0, 0, 0), 23, (3,)): Access(invocation=0, group=(0, 0, 0), epoch=0, write=True) versus Access(invocation=4, group=(1, 0, 0), epoch=0, write=True)",
+      "id": "alias_groups",
+      "passed": true
+    },
+    {
+      "detection": "unordered ('workgroup', (0, 0, 0), 23, (2,)): Access(invocation=2, group=(0, 0, 0), epoch=1, write=True) versus Access(invocation=1, group=(0, 0, 0), epoch=1, write=False)",
+      "id": "skip_lane_barrier",
+      "passed": true
+    },
+    {
+      "detection": "different static/caller/loop phase at rendezvous",
+      "id": "helper_phase_mismatch",
+      "passed": true
+    },
+    {
+      "detection": "different static/caller/loop phase at rendezvous",
+      "id": "loop_phase_mismatch",
+      "passed": true
+    },
+    {
+      "detection": "whole-root constant-null store absent",
+      "id": "remove_init",
+      "passed": true,
+      "validator": {
+        "output": "",
+        "returncode": 0,
+        "sha256": "f3b7dbb0645e46396a798072cbfec77cbd7f569ba6aa3975f6810e2838b9d242"
+      }
+    },
+    {
+      "detection": "unordered ('workgroup', (0, 0, 0), 23, (1,)): Access(invocation=0, group=(0, 0, 0), epoch=0, write=True) versus Access(invocation=1, group=(0, 0, 0), epoch=0, write=True)",
+      "id": "remove_prologue",
+      "passed": true,
+      "validator": {
+        "output": "",
+        "returncode": 0,
+        "sha256": "4345a6ab229cf938aa3c397a5ef2c69cb8e209808d72b61eef83bdfa144b2efa"
+      }
+    },
+    {
+      "detection": "unordered ('workgroup', (0, 0, 0), 23, (1,)): Access(invocation=1, group=(0, 0, 0), epoch=1, write=True) versus Access(invocation=0, group=(0, 0, 0), epoch=1, write=False)",
+      "id": "remove_source",
+      "passed": true,
+      "validator": {
+        "output": "",
+        "returncode": 0,
+        "sha256": "dc53b9d73186a290d255ade029bad2060d36586f029cba7fcf3c9fe37474323b"
+      }
+    },
+    {
+      "detection": "unordered ('workgroup', (0, 0, 0), 23, (1,)): Access(invocation=0, group=(0, 0, 0), epoch=0, write=True) versus Access(invocation=1, group=(0, 0, 0), epoch=0, write=True)",
+      "id": "no_memory_semantics",
+      "passed": true,
+      "validator": {
+        "output": "",
+        "returncode": 0,
+        "sha256": "b2b63e1bbdd21bb40307cebd8848441e3f912bd09f6a50c5ff094ad8e4be33f4"
+      }
+    },
+    {
+      "detection": "barrier scopes/semantics must be exactly (2,2,0x108)",
+      "id": "wrong_memory_scope",
+      "passed": true,
+      "validator": {
+        "output": "",
+        "returncode": 0,
+        "sha256": "1e308d77f4ef3398ed776b441d0b3188af3a0fed2f057f5eb37bf3fc985d99dc"
+      }
+    },
+    {
+      "detection": "barrier scopes/semantics must be exactly (2,2,0x108)",
+      "id": "wrong_execution_scope",
+      "passed": true,
+      "validator": {
+        "output": "error: line 48: [VUID-StandaloneSpirv-None-04636] ControlBarrier: in Vulkan environment Execution Scope is limited to Workgroup and Subgroup\n  OpControlBarrier %uint_1 %uint_2 %uint_264\n\n",
+        "returncode": 1,
+        "sha256": "7858e38045c0e205bd9eb142b3642a0019b58cdab6e65e2a4cf15a86b1d5ea76"
+      }
+    }
+  ],
+  "passed": true
+}

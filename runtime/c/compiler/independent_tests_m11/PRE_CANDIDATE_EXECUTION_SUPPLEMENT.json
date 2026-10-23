@@ -1,0 +1,139 @@
+{
+  "candidate_observed": false,
+  "cases": [
+    {
+      "execution": {
+        "class": "exact bytes",
+        "dispatches": 2,
+        "expected_outputs_hex": {
+          "0:0": "010000000200000003000000040000000100000002000000030000000400000001000000020000000300000004000000"
+        },
+        "groups": [
+          3,
+          1,
+          1
+        ],
+        "initial_shared_poison": [
+          "a5",
+          "5a"
+        ],
+        "inputs_hex": {
+          "0:0": "630000006300000063000000630000006300000063000000630000006300000063000000630000006300000063000000"
+        },
+        "race_free_required": true,
+        "schedules": [
+          "round_robin",
+          "reverse",
+          "shuffle_0x11c0ffee",
+          "bounded_burst_1_3_7"
+        ]
+      },
+      "expected_status": 0,
+      "id": "execute_constant_skipped_effects",
+      "obligation": "Syntactic barrier-call requirements retained, but skipped runtime calls and storage side effects must never execute; no Workgroup root/prologue",
+      "source": "pre_candidate_supplement/execute_constant_skipped_effects.wgsl",
+      "source_sha256": "b290fcbd613bac1f54fd8d09447edb0bb22b0c08312daba1877942043b809410"
+    },
+    {
+      "execution": {
+        "class": "exact bytes",
+        "dispatches": 2,
+        "expected_outputs_hex": {
+          "0:0": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+        },
+        "groups": [
+          3,
+          1,
+          1
+        ],
+        "initial_shared_poison": [
+          "a5",
+          "5a"
+        ],
+        "inputs_hex": {
+          "0:0": "630000006300000063000000630000006300000063000000630000006300000063000000630000006300000063000000"
+        },
+        "race_free_required": true,
+        "schedules": [
+          "round_robin",
+          "reverse",
+          "shuffle_0x11c0ffee",
+          "bounded_burst_1_3_7"
+        ]
+      },
+      "expected_status": 0,
+      "id": "execute_multiple_roots",
+      "obligation": "Every root is whole-null initialized; three distinct target identities and no fake resources",
+      "source": "pre_candidate_supplement/execute_multiple_roots.wgsl",
+      "source_sha256": "ecf0df99909ebf3730424c2a29b812236e1efdc70c2a52617ede79dbb24bc2a9"
+    },
+    {
+      "execution": {
+        "class": "exact bytes",
+        "dispatches": 2,
+        "expected_outputs_hex": {
+          "0:0": "0100000002000000030000000000000065000000660000006700000064000000c9000000ca000000cb000000c8000000"
+        },
+        "groups": [
+          3,
+          1,
+          1
+        ],
+        "initial_shared_poison": [
+          "a5",
+          "5a"
+        ],
+        "inputs_hex": {
+          "0:0": "630000006300000063000000630000006300000063000000630000006300000063000000630000006300000063000000"
+        },
+        "race_free_required": true,
+        "schedules": [
+          "round_robin",
+          "reverse",
+          "shuffle_0x11c0ffee",
+          "bounded_burst_1_3_7"
+        ]
+      },
+      "expected_status": 0,
+      "id": "execute_helper_shared_identity",
+      "obligation": "Helpers share their caller workgroup root and do not get per-helper prologues/initialization",
+      "source": "pre_candidate_supplement/execute_helper_shared_identity.wgsl",
+      "source_sha256": "71d4e9df1d4a96397afc8bf492f283c9220abefff6199f648698ea5121a008dc"
+    },
+    {
+      "execution": {
+        "class": "exact bytes",
+        "dispatches": 2,
+        "expected_outputs_hex": {
+          "0:0": "040000000500000006000000030000000400000005000000060000000300000004000000050000000600000003000000"
+        },
+        "groups": [
+          3,
+          1,
+          1
+        ],
+        "initial_shared_poison": [
+          "a5",
+          "5a"
+        ],
+        "inputs_hex": {
+          "0:0": "630000006300000063000000630000006300000063000000630000006300000063000000630000006300000063000000"
+        },
+        "race_free_required": true,
+        "schedules": [
+          "round_robin",
+          "reverse",
+          "shuffle_0x11c0ffee",
+          "bounded_burst_1_3_7"
+        ]
+      },
+      "expected_status": 0,
+      "id": "execute_whole_snapshot",
+      "obligation": "Whole aggregate shared load is a by-value snapshot across later stores and helper/local phases",
+      "source": "pre_candidate_supplement/execute_whole_snapshot.wgsl",
+      "source_sha256": "dc0d8b07d349e2b6d75496ab709352e8a9588ec53407b0bcd148c5e4fcbbe5a1"
+    }
+  ],
+  "reason": "Pre-candidate closure of retained runtime short-circuit execution, multiple-root, helper-root identity, and whole-value snapshot obligations. Not derived from author implementation.",
+  "utc": "2026-10-23T11:38:06.541085+00:00"
+}

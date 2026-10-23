@@ -78,6 +78,14 @@ and combined ceilings. Earlier measurements remain historical, not current limit
 The parser's active expression/type counters span mutual transitions; declaration,
 layout/materialization and call graphs use bounded iterative traversal.
 
+The [M11 ledger](MILESTONE_11_LEDGER.md) extends phase accounting for uniformity
+without changing public pools or those ceilings. Analyze validated source before
+target emission: constant-skipped syntax still carries uniformity dependencies.
+Reuse only dead phase storage; never overlay persistent typed IR or resource data.
+Bound fixed-point work explicitly and fail atomically on exhaustion. Initialization
+writes whole typed workgroup roots before user code; a workgroup barrier must not
+become a storage-buffer fence or a cross-group ordering promise.
+
 ## Structured state and resources
 
 Validate all source after return; only emission suppresses dead operations. Keep

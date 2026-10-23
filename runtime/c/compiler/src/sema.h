@@ -8,6 +8,14 @@ struct LoopScope { LoopScope *parent; size_t body_scope_start, body_scope_end; u
 typedef struct { LocalBinding *values; size_t count, capacity, scope_start, level; LoopScope *loop; } LocalScope;
 typedef struct { IrValue value; ConstantValue constant; bool runtime, known; } ExpressionValue;
 typedef struct { uint32_t root, path, category; TypeId type; bool writable; } ValueReference;
+typedef struct { uint64_t used, limit; uint32_t offset; } UniformityBudget;
+#define UNIFORMITY_WORK_LIMIT UINT64_C(67108864)
+typedef enum { IDENTITY_NONE, IDENTITY_LOCAL, IDENTITY_FORMAL, IDENTITY_INPUT,
+    IDENTITY_ALIAS, IDENTITY_CONSTANT, IDENTITY_RESOURCE, IDENTITY_WORKGROUP } ValueIdentityKind;
+typedef struct { ValueIdentityKind kind; uint32_t index; } ValueIdentity;
+bool uniformity_charge(Source *,UniformityBudget *,uint64_t);
+bool uniformity_analyze(Source *,uint64_t,uint64_t *);
+bool sema_value_identity(Source *,const LocalScope *,NameSpan,UniformityBudget *,ValueIdentity *);
 enum { BEHAVIOR_NEXT=1u,BEHAVIOR_BREAK=2u,BEHAVIOR_CONTINUE=4u,BEHAVIOR_RETURN=8u };
 bool constant_zero(Source *,TypeId,ConstantValue *);
 bool constant_composite(Source *,TypeId,const ConstantValue *,uint32_t,bool,ConstantValue *);

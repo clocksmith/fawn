@@ -1,11 +1,11 @@
 # Compiler source provenance
 
-The current [accepted M10 owner](MILESTONE_10_RESULTS.md) extends the same
-Doe-owned C implementation with typed layout, compact aggregate constants,
-semantic access/call owners and target/reflection support. It does not translate
+The current [accepted M11 owner](MILESTONE_11_RESULTS.md) extends the same
+Doe-owned C implementation with typed workgroup initialization and source-level
+uniformity, retaining the shared layout, constants, access and target owners. It does not translate
 or embed a retained vendor/Zig compiler. New source files preserve MIT notices.
 The independently authored source-only tests and exact disclosed adapters are
-retained under `independent_tests_m10`; original prior tests and contracts are
+retained under `independent_tests_m11`; original prior tests and contracts are
 unchanged. The following seed/increment records remain historical provenance.
 
 This increment starts from copies of the independently developed C compiler seed in `doe-language-experiment-20261023/phase2/maintenance/c`. The original seed files, binaries and evidence are immutable. They are not compiled from their old location by this build. No Dawn, Tint, wgpu, or production Zig compiler implementation was copied or translated.

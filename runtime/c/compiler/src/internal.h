@@ -105,6 +105,7 @@ typedef struct { NameSpan name; TypeRef annotation;
     uint32_t group_expression, binding_expression, group, binding, kind, access; TypeId type; uint32_t flags;
     uint64_t minimum, alignment, required_alignment, tail_offset, tail_stride;
     TypeId tail_type; uint32_t target, source_offset, reserved; } ResourceRecord;
+typedef struct { NameSpan name; TypeRef annotation; TypeId type; uint32_t target; } WorkgroupRoot;
 enum { CONSTANT_ZERO, CONSTANT_REPEAT, CONSTANT_COMPOSITE };
 typedef struct { uint32_t kind; TypeId type; uint32_t first, count;
     uint64_t payload; uint32_t target, converted_from; } ConstantRecord;
@@ -118,7 +119,7 @@ typedef enum {
     IR_BREAK, IR_CONTINUE, IR_BREAK_IF, IR_NEGATE, IR_COMPLEMENT,
     IR_DIVIDE, IR_REMAINDER, IR_BIT_AND, IR_BIT_OR, IR_BIT_XOR,
     IR_SHIFT_LEFT, IR_SHIFT_RIGHT, IR_CONVERT, IR_BITCAST, IR_CALL, IR_BUILTIN,
-    IR_COMPOSITE, IR_ACCESS_LOAD, IR_ACCESS_STORE, IR_VALUE_ACCESS, IR_SWIZZLE
+    IR_COMPOSITE, IR_ACCESS_LOAD, IR_ACCESS_STORE, IR_VALUE_ACCESS, IR_SWIZZLE, IR_WORKGROUP_BARRIER
 } IrOpcode;
 typedef struct { uint32_t id; TypeId type; uint32_t source_offset; } IrValue;
 /* Four words have operation-specific, named meanings. Scalar aliases preserve
@@ -134,7 +135,7 @@ typedef struct {
 typedef struct { TypeId type; uint32_t flags; } IrLocal;
 typedef struct { NameSpan name; uint32_t value; TypeId type; ConstantValue constant_value;
     uint32_t local_id, declaration_offset, flags, level; } LocalBinding;
-enum { ROOT_LOCAL, ROOT_RESOURCE, ROOT_VALUE, ROOT_INPUT };
+enum { ROOT_LOCAL, ROOT_RESOURCE, ROOT_VALUE, ROOT_INPUT, ROOT_WORKGROUP };
 typedef struct { uint32_t kind, id; TypeId type; uint32_t storage, first, count; uint64_t payload; } TargetDeclaration;
 typedef struct { uint32_t kind, object, cursor, parent; } WalkItem;
 typedef enum { INPUT_GLOBAL_INVOCATION, INPUT_LOCAL_INVOCATION, INPUT_WORKGROUP,
@@ -165,6 +166,9 @@ struct CompilerWorkspace {
     size_t word_count;
     NameSpan alias, alias_source; EntryParameter parameters[MAX_ENTRY_PARAMETERS];
     uint32_t parameter_count; Integer local_size[3];
+    WorkgroupRoot *workgroups; unsigned char *uniformity;
+    uint32_t workgroup_count, uniformity_flags; uint64_t workgroup_storage_bytes;
+    unsigned char *statement_behaviors;
 };
 typedef CompilerWorkspace Syntax;
 typedef CompilerWorkspace IrProgram;
@@ -173,11 +177,17 @@ typedef struct {
     Expression expressions[337]; Statement statements[16]; ConstantSyntax constant_decls[321];
     FunctionRecord functions[341]; FormalRecord formals[512]; ArgumentSyntax arguments[320]; uint32_t callees[337];
     GenericSyntax generic_syntax[32]; TypeRecord types[32]; MemberRecord members[64]; ResourceRecord resources[8];
+    WorkgroupRoot workgroups[256];
     ConstantRecord constants[64]; ConstantValue constant_edges[128]; AccessStep accesses[337];
     union { Token tokens[2049]; struct {
         IrInstruction instructions[385]; IrLocal locals[354]; LocalBinding scope[17];
-        uint32_t values[898], typed_operands[320], reflection_map[39];
-        TargetDeclaration targets[464]; WalkItem walk[97]; uint32_t words[4096];
+        uint32_t values[898], typed_operands[320]; unsigned char statement_behaviors[16];
+        union { struct { uint32_t reflection_map[39];
+            TargetDeclaration targets[464]; WalkItem walk[97]; uint32_t words[4096];
+        } target; struct {
+            unsigned char expression_bits[337], current_local[17], formal_summary[512], function_summary[341];
+            uint32_t metadata[30][8]; unsigned char frame_maps[30*6*17];
+        } uniformity; uint64_t alignment; } scratch;
     } lowered; } phase;
 } LegacyWorkspace;
 

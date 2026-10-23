@@ -1,0 +1,6953 @@
+{
+  "library_sha256": "5d301e813223c9602f7c7ad57634b0ad53a68ba8b752066fbfdce1e9f29b2553",
+  "cases": [
+    {
+      "id": "uniform_literal",
+      "expected_status": 0,
+      "word_sha256": "02076919f87de5fd14f302d62962b9768a18b5f6cdd9b46125f4083173ff5c37",
+      "counts": {
+        "words": 156,
+        "types": 0,
+        "members": 0,
+        "resources": 0,
+        "name_bytes": 5
+      },
+      "target": {
+        "workgroup_roots": 0,
+        "static_barriers": 1,
+        "input_variables": 5,
+        "target_bound": 39,
+        "word_count": 156
+      },
+      "validator": {
+        "returncode": 0,
+        "output": ""
+      },
+      "outcome": "passed",
+      "seconds": 0.0034057589946314692
+    },
+    {
+      "id": "uniform_workgroup_id",
+      "expected_status": 0,
+      "word_sha256": "e9ece17eadb8f54d50f2eeed67976a63a9bb8897a0e2f5f3617cb707e1480bf1",
+      "counts": {
+        "words": 171,
+        "types": 0,
+        "members": 0,
+        "resources": 0,
+        "name_bytes": 5
+      },
+      "target": {
+        "workgroup_roots": 0,
+        "static_barriers": 1,
+        "input_variables": 5,
+        "target_bound": 42,
+        "word_count": 171
+      },
+      "validator": {
+        "returncode": 0,
+        "output": ""
+      },
+      "outcome": "passed",
+      "seconds": 0.0032728019868955016
+    },
+    {
+      "id": "uniform_num_workgroups",
+      "expected_status": 0,
+      "word_sha256": "f1df1c3f6f5c4539ecc2e4f16df0e6ea4917289606c2214b790761a2512169d6",
+      "counts": {
+        "words": 171,
+        "types": 0,
+        "members": 0,
+        "resources": 0,
+        "name_bytes": 5
+      },
+      "target": {
+        "workgroup_roots": 0,
+        "static_barriers": 1,
+        "input_variables": 5,
+        "target_bound": 42,
+        "word_count": 171
+      },
+      "validator": {
+        "returncode": 0,
+        "output": ""
+      },
+      "outcome": "passed",
+      "seconds": 0.002774085965938866
+    },
+    {
+      "id": "uniform_local_index",
+      "expected_status": 4,
+      "modes": [
+        {
+          "flags": 1,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 242
+        },
+        {
+          "flags": 2,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 242
+        },
+        {
+          "flags": 3,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 242
+        },
+        {
+          "flags": 5,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 242
+        },
+        {
+          "flags": 6,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 242
+        },
+        {
+          "flags": 7,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 242
+        }
+      ],
+      "outcome": "passed",
+      "seconds": 0.0001912220031954348
+    },
+    {
+      "id": "uniform_local_id",
+      "expected_status": 4,
+      "modes": [
+        {
+          "flags": 1,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 245
+        },
+        {
+          "flags": 2,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 245
+        },
+        {
+          "flags": 3,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 245
+        },
+        {
+          "flags": 5,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 245
+        },
+        {
+          "flags": 6,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 245
+        },
+        {
+          "flags": 7,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 245
+        }
+      ],
+      "outcome": "passed",
+      "seconds": 0.00013820402091369033
+    },
+    {
+      "id": "uniform_global_id",
+      "expected_status": 4,
+      "modes": [
+        {
+          "flags": 1,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 245
+        },
+        {
+          "flags": 2,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 245
+        },
+        {
+          "flags": 3,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 245
+        },
+        {
+          "flags": 5,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 245
+        },
+        {
+          "flags": 6,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 245
+        },
+        {
+          "flags": 7,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 245
+        }
+      ],
+      "outcome": "passed",
+      "seconds": 0.0001249539782293141
+    },
+    {
+      "id": "uniform_uniform_fixed",
+      "expected_status": 0,
+      "word_sha256": "1407617b3be5c9a2b2b37ac0e7a0faa25aad54919f89c454fc7fab7752f6a2f7",
+      "counts": {
+        "words": 310,
+        "types": 3,
+        "members": 4,
+        "resources": 3,
+        "name_bytes": 33
+      },
+      "target": {
+        "workgroup_roots": 0,
+        "static_barriers": 1,
+        "input_variables": 5,
+        "target_bound": 54,
+        "word_count": 310
+      },
+      "validator": {
+        "returncode": 0,
+        "output": ""
+      },
+      "outcome": "passed",
+      "seconds": 0.0027788029983639717
+    },
+    {
+      "id": "uniform_readonly_fixed",
+      "expected_status": 0,
+      "word_sha256": "64cdfcba9759d24af31215547d208a0696d64e881872579a9253cd7bff460d70",
+      "counts": {
+        "words": 344,
+        "types": 3,
+        "members": 4,
+        "resources": 3,
+        "name_bytes": 33
+      },
+      "target": {
+        "workgroup_roots": 0,
+        "static_barriers": 1,
+        "input_variables": 5,
+        "target_bound": 60,
+        "word_count": 344
+      },
+      "validator": {
+        "returncode": 0,
+        "output": ""
+      },
+      "outcome": "passed",
+      "seconds": 0.002749037987086922
+    },
+    {
+      "id": "uniform_readonly_uniform_index",
+      "expected_status": 0,
+      "word_sha256": "6984f84ce9b6a91d23ee9c77415ede56254bff77a13634fc704696afe445bdf7",
+      "counts": {
+        "words": 349,
+        "types": 3,
+        "members": 4,
+        "resources": 3,
+        "name_bytes": 33
+      },
+      "target": {
+        "workgroup_roots": 0,
+        "static_barriers": 1,
+        "input_variables": 5,
+        "target_bound": 61,
+        "word_count": 349
+      },
+      "validator": {
+        "returncode": 0,
+        "output": ""
+      },
+      "outcome": "passed",
+      "seconds": 0.0026317849988117814
+    },
+    {
+      "id": "uniform_readonly_varying_index",
+      "expected_status": 4,
+      "modes": [
+        {
+          "flags": 1,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 458
+        },
+        {
+          "flags": 2,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 458
+        },
+        {
+          "flags": 3,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 458
+        },
+        {
+          "flags": 5,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 458
+        },
+        {
+          "flags": 6,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 458
+        },
+        {
+          "flags": 7,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 458
+        }
+      ],
+      "outcome": "passed",
+      "seconds": 0.00022671499755233526
+    },
+    {
+      "id": "uniform_mutable_fixed",
+      "expected_status": 4,
+      "modes": [
+        {
+          "flags": 1,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 457
+        },
+        {
+          "flags": 2,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 457
+        },
+        {
+          "flags": 3,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 457
+        },
+        {
+          "flags": 5,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 457
+        },
+        {
+          "flags": 6,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 457
+        },
+        {
+          "flags": 7,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 457
+        }
+      ],
+      "outcome": "passed",
+      "seconds": 0.00024425098672509193
+    },
+    {
+      "id": "uniform_workgroup_fixed",
+      "expected_status": 4,
+      "modes": [
+        {
+          "flags": 1,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 281
+        },
+        {
+          "flags": 2,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 281
+        },
+        {
+          "flags": 3,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 281
+        },
+        {
+          "flags": 5,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 281
+        },
+        {
+          "flags": 6,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 281
+        },
+        {
+          "flags": 7,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 281
+        }
+      ],
+      "outcome": "passed",
+      "seconds": 0.00017161399591714144
+    },
+    {
+      "id": "uniform_skipped_and_varying",
+      "expected_status": 4,
+      "modes": [
+        {
+          "flags": 1,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 250
+        },
+        {
+          "flags": 2,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 250
+        },
+        {
+          "flags": 3,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 250
+        },
+        {
+          "flags": 5,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 250
+        },
+        {
+          "flags": 6,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 250
+        },
+        {
+          "flags": 7,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 250
+        }
+      ],
+      "outcome": "passed",
+      "seconds": 0.00015960499877110124
+    },
+    {
+      "id": "uniform_skipped_or_varying",
+      "expected_status": 4,
+      "modes": [
+        {
+          "flags": 1,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 249
+        },
+        {
+          "flags": 2,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 249
+        },
+        {
+          "flags": 3,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 249
+        },
+        {
+          "flags": 5,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 249
+        },
+        {
+          "flags": 6,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 249
+        },
+        {
+          "flags": 7,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 249
+        }
+      ],
+      "outcome": "passed",
+      "seconds": 0.00013207498705014586
+    },
+    {
+      "id": "uniform_short_and_uniform",
+      "expected_status": 0,
+      "word_sha256": "e9ece17eadb8f54d50f2eeed67976a63a9bb8897a0e2f5f3617cb707e1480bf1",
+      "counts": {
+        "words": 171,
+        "types": 0,
+        "members": 0,
+        "resources": 0,
+        "name_bytes": 5
+      },
+      "target": {
+        "workgroup_roots": 0,
+        "static_barriers": 1,
+        "input_variables": 5,
+        "target_bound": 42,
+        "word_count": 171
+      },
+      "validator": {
+        "returncode": 0,
+        "output": ""
+      },
+      "outcome": "passed",
+      "seconds": 0.0023618669947609305
+    },
+    {
+      "id": "uniform_short_or_uniform",
+      "expected_status": 0,
+      "word_sha256": "f1df1c3f6f5c4539ecc2e4f16df0e6ea4917289606c2214b790761a2512169d6",
+      "counts": {
+        "words": 171,
+        "types": 0,
+        "members": 0,
+        "resources": 0,
+        "name_bytes": 5
+      },
+      "target": {
+        "workgroup_roots": 0,
+        "static_barriers": 1,
+        "input_variables": 5,
+        "target_bound": 42,
+        "word_count": 171
+      },
+      "validator": {
+        "returncode": 0,
+        "output": ""
+      },
+      "outcome": "passed",
+      "seconds": 0.0034962319768965244
+    },
+    {
+      "id": "uniform_uniform_index_varying_cf",
+      "expected_status": 4,
+      "modes": [
+        {
+          "flags": 1,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 473
+        },
+        {
+          "flags": 2,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 473
+        },
+        {
+          "flags": 3,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 473
+        },
+        {
+          "flags": 5,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 473
+        },
+        {
+          "flags": 6,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 473
+        },
+        {
+          "flags": 7,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 473
+        }
+      ],
+      "outcome": "passed",
+      "seconds": 0.00023980397963896394
+    },
+    {
+      "id": "flow_whole_assignment_kills",
+      "expected_status": 0,
+      "word_sha256": "b73850899ff303217b08d0dee19eeb5ef3799fc88ca7e97a262c74fdbdb81570",
+      "counts": {
+        "words": 188,
+        "types": 0,
+        "members": 0,
+        "resources": 0,
+        "name_bytes": 5
+      },
+      "target": {
+        "workgroup_roots": 0,
+        "static_barriers": 1,
+        "input_variables": 5,
+        "target_bound": 45,
+        "word_count": 188
+      },
+      "validator": {
+        "returncode": 0,
+        "output": ""
+      },
+      "outcome": "passed",
+      "seconds": 0.0024150849785655737
+    },
+    {
+      "id": "flow_let_snapshot_survives",
+      "expected_status": 4,
+      "modes": [
+        {
+          "flags": 1,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 261
+        },
+        {
+          "flags": 2,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 261
+        },
+        {
+          "flags": 3,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 261
+        },
+        {
+          "flags": 5,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 261
+        },
+        {
+          "flags": 6,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 261
+        },
+        {
+          "flags": 7,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 261
+        }
+      ],
+      "outcome": "passed",
+      "seconds": 0.00020161800784990191
+    },
+    {
+      "id": "flow_branch_equal_assignments",
+      "expected_status": 4,
+      "modes": [
+        {
+          "flags": 1,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 275
+        },
+        {
+          "flags": 2,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 275
+        },
+        {
+          "flags": 3,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 275
+        },
+        {
+          "flags": 5,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 275
+        },
+        {
+          "flags": 6,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 275
+        },
+        {
+          "flags": 7,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 275
+        }
+      ],
+      "outcome": "passed",
+      "seconds": 0.00026652298402041197
+    },
+    {
+      "id": "flow_branch_overwrite_after",
+      "expected_status": 0,
+      "word_sha256": "b079ee4558281e2ae8974cdd53f964a67f3621da47ee36c5cd2e3004b112e2e7",
+      "counts": {
+        "words": 225,
+        "types": 0,
+        "members": 0,
+        "resources": 0,
+        "name_bytes": 5
+      },
+      "target": {
+        "workgroup_roots": 0,
+        "static_barriers": 1,
+        "input_variables": 5,
+        "target_bound": 52,
+        "word_count": 225
+      },
+      "validator": {
+        "returncode": 0,
+        "output": ""
+      },
+      "outcome": "passed",
+      "seconds": 0.0029474820476025343
+    },
+    {
+      "id": "flow_if_reconverges",
+      "expected_status": 0,
+      "word_sha256": "5ea3fe25808eb5a1e05746d6b7757f719709e3afeb11be55c4b35d2854a65698",
+      "counts": {
+        "words": 170,
+        "types": 0,
+        "members": 0,
+        "resources": 0,
+        "name_bytes": 5
+      },
+      "target": {
+        "workgroup_roots": 0,
+        "static_barriers": 1,
+        "input_variables": 5,
+        "target_bound": 42,
+        "word_count": 170
+      },
+      "validator": {
+        "returncode": 0,
+        "output": ""
+      },
+      "outcome": "passed",
+      "seconds": 0.00237351399846375
+    },
+    {
+      "id": "flow_if_return_no_reconvergence",
+      "expected_status": 4,
+      "modes": [
+        {
+          "flags": 1,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 246
+        },
+        {
+          "flags": 2,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 246
+        },
+        {
+          "flags": 3,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 246
+        },
+        {
+          "flags": 5,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 246
+        },
+        {
+          "flags": 6,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 246
+        },
+        {
+          "flags": 7,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 246
+        }
+      ],
+      "outcome": "passed",
+      "seconds": 0.00014713796554133296
+    },
+    {
+      "id": "flow_uniform_return",
+      "expected_status": 0,
+      "word_sha256": "33a1309fbd8aa2b2eea63184afe5cb5b83bc2bb373d260cde877a26a228f47ec",
+      "counts": {
+        "words": 170,
+        "types": 0,
+        "members": 0,
+        "resources": 0,
+        "name_bytes": 5
+      },
+      "target": {
+        "workgroup_roots": 0,
+        "static_barriers": 1,
+        "input_variables": 5,
+        "target_bound": 42,
+        "word_count": 170
+      },
+      "validator": {
+        "returncode": 0,
+        "output": ""
+      },
+      "outcome": "passed",
+      "seconds": 0.002236200962215662
+    },
+    {
+      "id": "flow_dead_suffix_excluded",
+      "expected_status": 0,
+      "word_sha256": "5a5fb2a22d6348857e62c2cde4c4e5e67291aba7e7eb3fba6ec564e262c202f8",
+      "counts": {
+        "words": 136,
+        "types": 0,
+        "members": 0,
+        "resources": 0,
+        "name_bytes": 5
+      },
+      "target": {
+        "workgroup_roots": 0,
+        "static_barriers": 0,
+        "input_variables": 5,
+        "target_bound": 36,
+        "word_count": 136
+      },
+      "validator": {
+        "returncode": 0,
+        "output": ""
+      },
+      "outcome": "passed",
+      "seconds": 0.0022658859961666167
+    },
+    {
+      "id": "flow_constant_false_branch_retained",
+      "expected_status": 4,
+      "modes": [
+        {
+          "flags": 1,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 247
+        },
+        {
+          "flags": 2,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 247
+        },
+        {
+          "flags": 3,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 247
+        },
+        {
+          "flags": 5,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 247
+        },
+        {
+          "flags": 6,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 247
+        },
+        {
+          "flags": 7,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 247
+        }
+      ],
+      "outcome": "passed",
+      "seconds": 0.0001670669880695641
+    },
+    {
+      "id": "flow_single_array_partial_retains",
+      "expected_status": 4,
+      "modes": [
+        {
+          "flags": 1,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 272
+        },
+        {
+          "flags": 2,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 272
+        },
+        {
+          "flags": 3,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 272
+        },
+        {
+          "flags": 5,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 272
+        },
+        {
+          "flags": 6,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 272
+        },
+        {
+          "flags": 7,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 272
+        }
+      ],
+      "outcome": "passed",
+      "seconds": 0.00016297097317874432
+    },
+    {
+      "id": "flow_array_whole_kills",
+      "expected_status": 0,
+      "word_sha256": "306f017fb07d1bf12efb9de9303b52794e272e26c1fac57550dfb7b21a46b2fc",
+      "counts": {
+        "words": 246,
+        "types": 0,
+        "members": 0,
+        "resources": 0,
+        "name_bytes": 5
+      },
+      "target": {
+        "workgroup_roots": 0,
+        "static_barriers": 1,
+        "input_variables": 5,
+        "target_bound": 54,
+        "word_count": 246
+      },
+      "validator": {
+        "returncode": 0,
+        "output": ""
+      },
+      "outcome": "passed",
+      "seconds": 0.0023281379835680127
+    },
+    {
+      "id": "flow_vector_partial_retains",
+      "expected_status": 4,
+      "modes": [
+        {
+          "flags": 1,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 266
+        },
+        {
+          "flags": 2,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 266
+        },
+        {
+          "flags": 3,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 266
+        },
+        {
+          "flags": 5,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 266
+        },
+        {
+          "flags": 6,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 266
+        },
+        {
+          "flags": 7,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 266
+        }
+      ],
+      "outcome": "passed",
+      "seconds": 0.00016804801998659968
+    },
+    {
+      "id": "flow_vector_whole_kills",
+      "expected_status": 0,
+      "word_sha256": "aefbc9fe8c8ab222bef1004d11430a654b43b0af28ce5253bfa29aeabaac3f65",
+      "counts": {
+        "words": 219,
+        "types": 0,
+        "members": 0,
+        "resources": 0,
+        "name_bytes": 5
+      },
+      "target": {
+        "workgroup_roots": 0,
+        "static_barriers": 1,
+        "input_variables": 5,
+        "target_bound": 50,
+        "word_count": 219
+      },
+      "validator": {
+        "returncode": 0,
+        "output": ""
+      },
+      "outcome": "passed",
+      "seconds": 0.0024158069863915443
+    },
+    {
+      "id": "flow_partial_index_dependency",
+      "expected_status": 4,
+      "modes": [
+        {
+          "flags": 1,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 271
+        },
+        {
+          "flags": 2,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 271
+        },
+        {
+          "flags": 3,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 271
+        },
+        {
+          "flags": 5,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 271
+        },
+        {
+          "flags": 6,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 271
+        },
+        {
+          "flags": 7,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 271
+        }
+      ],
+      "outcome": "passed",
+      "seconds": 0.00018422200810164213
+    },
+    {
+      "id": "flow_read_in_varying_control",
+      "expected_status": 4,
+      "modes": [
+        {
+          "flags": 1,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 257
+        },
+        {
+          "flags": 2,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 257
+        },
+        {
+          "flags": 3,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 257
+        },
+        {
+          "flags": 5,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 257
+        },
+        {
+          "flags": 6,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 257
+        },
+        {
+          "flags": 7,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 257
+        }
+      ],
+      "outcome": "passed",
+      "seconds": 0.00016957998741418123
+    },
+    {
+      "id": "flow_loop_divergent_reconverges",
+      "expected_status": 0,
+      "word_sha256": "fe7c3077cb2ef91612c7ac10b9e7494be9e172c078f779c6ee9aaf6ba95a9cfe",
+      "counts": {
+        "words": 206,
+        "types": 0,
+        "members": 0,
+        "resources": 0,
+        "name_bytes": 5
+      },
+      "target": {
+        "workgroup_roots": 0,
+        "static_barriers": 1,
+        "input_variables": 5,
+        "target_bound": 49,
+        "word_count": 206
+      },
+      "validator": {
+        "returncode": 0,
+        "output": ""
+      },
+      "outcome": "passed",
+      "seconds": 0.0021622219937853515
+    },
+    {
+      "id": "flow_for_divergent_reconverges",
+      "expected_status": 0,
+      "word_sha256": "40897c79f7c7c5a442a4a3f5c46cd7a2e13de4b319c15c9e67d14e323157b684",
+      "counts": {
+        "words": 206,
+        "types": 0,
+        "members": 0,
+        "resources": 0,
+        "name_bytes": 5
+      },
+      "target": {
+        "workgroup_roots": 0,
+        "static_barriers": 1,
+        "input_variables": 5,
+        "target_bound": 49,
+        "word_count": 206
+      },
+      "validator": {
+        "returncode": 0,
+        "output": ""
+      },
+      "outcome": "passed",
+      "seconds": 0.002307256974745542
+    },
+    {
+      "id": "flow_loop_break_backedge",
+      "expected_status": 4,
+      "modes": [
+        {
+          "flags": 1,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 241
+        },
+        {
+          "flags": 2,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 241
+        },
+        {
+          "flags": 3,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 241
+        },
+        {
+          "flags": 5,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 241
+        },
+        {
+          "flags": 6,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 241
+        },
+        {
+          "flags": 7,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 241
+        }
+      ],
+      "outcome": "passed",
+      "seconds": 0.00032416899921372533
+    },
+    {
+      "id": "flow_loop_continue_barrier",
+      "expected_status": 4,
+      "modes": [
+        {
+          "flags": 1,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 288
+        },
+        {
+          "flags": 2,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 288
+        },
+        {
+          "flags": 3,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 288
+        },
+        {
+          "flags": 5,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 288
+        },
+        {
+          "flags": 6,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 288
+        },
+        {
+          "flags": 7,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 288
+        }
+      ],
+      "outcome": "passed",
+      "seconds": 0.0003356260131113231
+    },
+    {
+      "id": "flow_loop_continue_reconverges",
+      "expected_status": 0,
+      "word_sha256": "54e7918f9f2d7d757b8bd57dd51f62fe6e5d03b31fddb66450817033df8eda15",
+      "counts": {
+        "words": 251,
+        "types": 0,
+        "members": 0,
+        "resources": 0,
+        "name_bytes": 5
+      },
+      "target": {
+        "workgroup_roots": 0,
+        "static_barriers": 1,
+        "input_variables": 5,
+        "target_bound": 58,
+        "word_count": 251
+      },
+      "validator": {
+        "returncode": 0,
+        "output": ""
+      },
+      "outcome": "passed",
+      "seconds": 0.0022627610014751554
+    },
+    {
+      "id": "flow_continuing_break_if",
+      "expected_status": 4,
+      "modes": [
+        {
+          "flags": 1,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 241
+        },
+        {
+          "flags": 2,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 241
+        },
+        {
+          "flags": 3,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 241
+        },
+        {
+          "flags": 5,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 241
+        },
+        {
+          "flags": 6,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 241
+        },
+        {
+          "flags": 7,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 241
+        }
+      ],
+      "outcome": "passed",
+      "seconds": 0.0003271329915151
+    },
+    {
+      "id": "flow_continuing_uniform_break_if",
+      "expected_status": 0,
+      "word_sha256": "75ed15e8ac8d75a65deb2905a9998b7bdfed69390d70cff065c999addee81bd4",
+      "counts": {
+        "words": 206,
+        "types": 0,
+        "members": 0,
+        "resources": 0,
+        "name_bytes": 5
+      },
+      "target": {
+        "workgroup_roots": 0,
+        "static_barriers": 1,
+        "input_variables": 5,
+        "target_bound": 49,
+        "word_count": 206
+      },
+      "validator": {
+        "returncode": 0,
+        "output": ""
+      },
+      "outcome": "passed",
+      "seconds": 0.0023771299747750163
+    },
+    {
+      "id": "flow_loop_early_return",
+      "expected_status": 4,
+      "modes": [
+        {
+          "flags": 1,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 288
+        },
+        {
+          "flags": 2,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 288
+        },
+        {
+          "flags": 3,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 288
+        },
+        {
+          "flags": 5,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 288
+        },
+        {
+          "flags": 6,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 288
+        },
+        {
+          "flags": 7,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 288
+        }
+      ],
+      "outcome": "passed",
+      "seconds": 0.00024498096900060773
+    },
+    {
+      "id": "flow_loop_local_backedge",
+      "expected_status": 4,
+      "modes": [
+        {
+          "flags": 1,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 279
+        },
+        {
+          "flags": 2,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 279
+        },
+        {
+          "flags": 3,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 279
+        },
+        {
+          "flags": 5,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 279
+        },
+        {
+          "flags": 6,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 279
+        },
+        {
+          "flags": 7,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 279
+        }
+      ],
+      "outcome": "passed",
+      "seconds": 0.0003782580024562776
+    },
+    {
+      "id": "flow_loop_local_kill",
+      "expected_status": 0,
+      "word_sha256": "e2b5c7c10304da985c14e67873943c92c29d1515a3036a9a2ee20e56f512e978",
+      "counts": {
+        "words": 269,
+        "types": 0,
+        "members": 0,
+        "resources": 0,
+        "name_bytes": 5
+      },
+      "target": {
+        "workgroup_roots": 0,
+        "static_barriers": 1,
+        "input_variables": 5,
+        "target_bound": 61,
+        "word_count": 269
+      },
+      "validator": {
+        "returncode": 0,
+        "output": ""
+      },
+      "outcome": "passed",
+      "seconds": 0.0030190279940143228
+    },
+    {
+      "id": "flow_nested_loop_reconvergence",
+      "expected_status": 0,
+      "word_sha256": "d253eb6362e0ad8d50bfd9e3d5c8f6d1c6a06aab407caff94f90be6e95259be5",
+      "counts": {
+        "words": 272,
+        "types": 0,
+        "members": 0,
+        "resources": 0,
+        "name_bytes": 5
+      },
+      "target": {
+        "workgroup_roots": 0,
+        "static_barriers": 1,
+        "input_variables": 5,
+        "target_bound": 62,
+        "word_count": 272
+      },
+      "validator": {
+        "returncode": 0,
+        "output": ""
+      },
+      "outcome": "passed",
+      "seconds": 0.0024571079993620515
+    },
+    {
+      "id": "flow_nested_loop_varying_backedge",
+      "expected_status": 4,
+      "modes": [
+        {
+          "flags": 1,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 274
+        },
+        {
+          "flags": 2,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 274
+        },
+        {
+          "flags": 3,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 274
+        },
+        {
+          "flags": 5,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 274
+        },
+        {
+          "flags": 6,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 274
+        },
+        {
+          "flags": 7,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 274
+        }
+      ],
+      "outcome": "passed",
+      "seconds": 0.0005211899988353252
+    },
+    {
+      "id": "flow_shadow_local_identity",
+      "expected_status": 0,
+      "word_sha256": "64ea2e9851fd8ec028ce7c244926311773b5198766ee9b2d507a87cc6998249a",
+      "counts": {
+        "words": 181,
+        "types": 0,
+        "members": 0,
+        "resources": 0,
+        "name_bytes": 5
+      },
+      "target": {
+        "workgroup_roots": 0,
+        "static_barriers": 1,
+        "input_variables": 5,
+        "target_bound": 44,
+        "word_count": 181
+      },
+      "validator": {
+        "returncode": 0,
+        "output": ""
+      },
+      "outcome": "passed",
+      "seconds": 0.0021845559822395444
+    },
+    {
+      "id": "flow_shadow_initializer_old_binding",
+      "expected_status": 4,
+      "modes": [
+        {
+          "flags": 1,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 256
+        },
+        {
+          "flags": 2,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 256
+        },
+        {
+          "flags": 3,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 256
+        },
+        {
+          "flags": 5,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 256
+        },
+        {
+          "flags": 6,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 256
+        },
+        {
+          "flags": 7,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 256
+        }
+      ],
+      "outcome": "passed",
+      "seconds": 0.0002179109724238515
+    },
+    {
+      "id": "helper_direct",
+      "expected_status": 0,
+      "word_sha256": "3aa090a40f8f130cabe033a75bab6de441b47f2ff23abda4ee12885bff46606e",
+      "counts": {
+        "words": 156,
+        "types": 0,
+        "members": 0,
+        "resources": 0,
+        "name_bytes": 5
+      },
+      "target": {
+        "workgroup_roots": 0,
+        "static_barriers": 1,
+        "input_variables": 5,
+        "target_bound": 40,
+        "word_count": 156
+      },
+      "validator": {
+        "returncode": 0,
+        "output": ""
+      },
+      "outcome": "passed",
+      "seconds": 0.002353736024815589
+    },
+    {
+      "id": "helper_varying",
+      "expected_status": 4,
+      "modes": [
+        {
+          "flags": 1,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 287
+        },
+        {
+          "flags": 2,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 287
+        },
+        {
+          "flags": 3,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 287
+        },
+        {
+          "flags": 5,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 287
+        },
+        {
+          "flags": 6,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 287
+        },
+        {
+          "flags": 7,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 287
+        }
+      ],
+      "outcome": "passed",
+      "seconds": 0.000169148959685117
+    },
+    {
+      "id": "helper_skipped_and_uniform",
+      "expected_status": 0,
+      "word_sha256": "a48a6e08a9084a4114b78bc7ba55f2b3c9a2482d944cd51a5dfe08a949fa66de",
+      "counts": {
+        "words": 155,
+        "types": 0,
+        "members": 0,
+        "resources": 0,
+        "name_bytes": 5
+      },
+      "target": {
+        "workgroup_roots": 0,
+        "static_barriers": 1,
+        "input_variables": 5,
+        "target_bound": 40,
+        "word_count": 155
+      },
+      "validator": {
+        "returncode": 0,
+        "output": ""
+      },
+      "outcome": "passed",
+      "seconds": 0.0022256160154938698
+    },
+    {
+      "id": "helper_skipped_or_uniform",
+      "expected_status": 0,
+      "word_sha256": "d922ae107b2a5437d1c5afb6ca251c7f018ade5297fe6462cb4078864b16640d",
+      "counts": {
+        "words": 155,
+        "types": 0,
+        "members": 0,
+        "resources": 0,
+        "name_bytes": 5
+      },
+      "target": {
+        "workgroup_roots": 0,
+        "static_barriers": 1,
+        "input_variables": 5,
+        "target_bound": 40,
+        "word_count": 155
+      },
+      "validator": {
+        "returncode": 0,
+        "output": ""
+      },
+      "outcome": "passed",
+      "seconds": 0.0027907199691981077
+    },
+    {
+      "id": "helper_skipped_and_varying_cf",
+      "expected_status": 4,
+      "modes": [
+        {
+          "flags": 1,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 302
+        },
+        {
+          "flags": 2,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 302
+        },
+        {
+          "flags": 3,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 302
+        },
+        {
+          "flags": 5,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 302
+        },
+        {
+          "flags": 6,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 302
+        },
+        {
+          "flags": 7,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 302
+        }
+      ],
+      "outcome": "passed",
+      "seconds": 0.00018671504221856594
+    },
+    {
+      "id": "helper_skipped_or_varying_cf",
+      "expected_status": 4,
+      "modes": [
+        {
+          "flags": 1,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 301
+        },
+        {
+          "flags": 2,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 301
+        },
+        {
+          "flags": 3,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 301
+        },
+        {
+          "flags": 5,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 301
+        },
+        {
+          "flags": 6,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 301
+        },
+        {
+          "flags": 7,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 301
+        }
+      ],
+      "outcome": "passed",
+      "seconds": 0.00017729197861626744
+    },
+    {
+      "id": "helper_runtime_short_varying",
+      "expected_status": 4,
+      "modes": [
+        {
+          "flags": 1,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 292
+        },
+        {
+          "flags": 2,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 292
+        },
+        {
+          "flags": 3,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 292
+        },
+        {
+          "flags": 5,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 292
+        },
+        {
+          "flags": 6,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 292
+        },
+        {
+          "flags": 7,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 292
+        }
+      ],
+      "outcome": "passed",
+      "seconds": 0.00015121296746656299
+    },
+    {
+      "id": "helper_chain",
+      "expected_status": 0,
+      "word_sha256": "8fa8ee80d4905ac5731904b1674840026bd1a91c441e58ed2373ec87ae01f76e",
+      "counts": {
+        "words": 182,
+        "types": 0,
+        "members": 0,
+        "resources": 0,
+        "name_bytes": 5
+      },
+      "target": {
+        "workgroup_roots": 0,
+        "static_barriers": 1,
+        "input_variables": 5,
+        "target_bound": 46,
+        "word_count": 182
+      },
+      "validator": {
+        "returncode": 0,
+        "output": ""
+      },
+      "outcome": "passed",
+      "seconds": 0.0023190350038930774
+    },
+    {
+      "id": "helper_chain_varying",
+      "expected_status": 4,
+      "modes": [
+        {
+          "flags": 1,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 316
+        },
+        {
+          "flags": 2,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 316
+        },
+        {
+          "flags": 3,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 316
+        },
+        {
+          "flags": 5,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 316
+        },
+        {
+          "flags": 6,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 316
+        },
+        {
+          "flags": 7,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 316
+        }
+      ],
+      "outcome": "passed",
+      "seconds": 0.0001842720084823668
+    },
+    {
+      "id": "formal_required_uniform",
+      "expected_status": 0,
+      "word_sha256": "2162d869637a4ab87863940e8e5e90731d089d8dc055a966667d19fdf00c47b4",
+      "counts": {
+        "words": 192,
+        "types": 0,
+        "members": 0,
+        "resources": 0,
+        "name_bytes": 5
+      },
+      "target": {
+        "workgroup_roots": 0,
+        "static_barriers": 1,
+        "input_variables": 5,
+        "target_bound": 47,
+        "word_count": 192
+      },
+      "validator": {
+        "returncode": 0,
+        "output": ""
+      },
+      "outcome": "passed",
+      "seconds": 0.00221293797949329
+    },
+    {
+      "id": "formal_required_varying",
+      "expected_status": 4,
+      "modes": [
+        {
+          "flags": 1,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 270
+        },
+        {
+          "flags": 2,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 270
+        },
+        {
+          "flags": 3,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 270
+        },
+        {
+          "flags": 5,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 270
+        },
+        {
+          "flags": 6,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 270
+        },
+        {
+          "flags": 7,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 270
+        }
+      ],
+      "outcome": "passed",
+      "seconds": 0.0002338250051252544
+    },
+    {
+      "id": "formal_return_uniform",
+      "expected_status": 0,
+      "word_sha256": "47f778b456de258572e7ed81dce2a7fead1294ac10f8e64dec7f4b37455e93ce",
+      "counts": {
+        "words": 197,
+        "types": 0,
+        "members": 0,
+        "resources": 0,
+        "name_bytes": 5
+      },
+      "target": {
+        "workgroup_roots": 0,
+        "static_barriers": 1,
+        "input_variables": 5,
+        "target_bound": 48,
+        "word_count": 197
+      },
+      "validator": {
+        "returncode": 0,
+        "output": ""
+      },
+      "outcome": "passed",
+      "seconds": 0.0020441680098883808
+    },
+    {
+      "id": "formal_return_varying",
+      "expected_status": 4,
+      "modes": [
+        {
+          "flags": 1,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 277
+        },
+        {
+          "flags": 2,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 277
+        },
+        {
+          "flags": 3,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 277
+        },
+        {
+          "flags": 5,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 277
+        },
+        {
+          "flags": 6,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 277
+        },
+        {
+          "flags": 7,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 277
+        }
+      ],
+      "outcome": "passed",
+      "seconds": 0.00016456301091238856
+    },
+    {
+      "id": "helper_return_reconverges",
+      "expected_status": 0,
+      "word_sha256": "cc220380c9702e6215683b0d8f1e6a474a3cc2e76200172ddcc67ea3dfe393ac",
+      "counts": {
+        "words": 186,
+        "types": 0,
+        "members": 0,
+        "resources": 0,
+        "name_bytes": 5
+      },
+      "target": {
+        "workgroup_roots": 0,
+        "static_barriers": 1,
+        "input_variables": 5,
+        "target_bound": 46,
+        "word_count": 186
+      },
+      "validator": {
+        "returncode": 0,
+        "output": ""
+      },
+      "outcome": "passed",
+      "seconds": 0.0023509510210715234
+    },
+    {
+      "id": "unused_helper_invalid",
+      "expected_status": 4,
+      "modes": [
+        {
+          "flags": 1,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 41
+        },
+        {
+          "flags": 2,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 41
+        },
+        {
+          "flags": 3,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 41
+        },
+        {
+          "flags": 5,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 41
+        },
+        {
+          "flags": 6,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 41
+        },
+        {
+          "flags": 7,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 41
+        }
+      ],
+      "outcome": "passed",
+      "seconds": 0.00017898401711136103
+    },
+    {
+      "id": "mutable_helper_result",
+      "expected_status": 4,
+      "modes": [
+        {
+          "flags": 1,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 477
+        },
+        {
+          "flags": 2,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 477
+        },
+        {
+          "flags": 3,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 477
+        },
+        {
+          "flags": 5,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 477
+        },
+        {
+          "flags": 6,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 477
+        },
+        {
+          "flags": 7,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 477
+        }
+      ],
+      "outcome": "passed",
+      "seconds": 0.00021522800670936704
+    },
+    {
+      "id": "workgroup_helper_result",
+      "expected_status": 4,
+      "modes": [
+        {
+          "flags": 1,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 283
+        },
+        {
+          "flags": 2,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 283
+        },
+        {
+          "flags": 3,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 283
+        },
+        {
+          "flags": 5,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 283
+        },
+        {
+          "flags": 6,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 283
+        },
+        {
+          "flags": 7,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 283
+        }
+      ],
+      "outcome": "passed",
+      "seconds": 0.0001716029946692288
+    },
+    {
+      "id": "source_barrier_no_roots",
+      "expected_status": 0,
+      "word_sha256": "884d21d394e8f153a85a69249a2a95a996b1177a073523b00da0a51d54485d98",
+      "counts": {
+        "words": 136,
+        "types": 0,
+        "members": 0,
+        "resources": 0,
+        "name_bytes": 5
+      },
+      "target": {
+        "workgroup_roots": 0,
+        "static_barriers": 1,
+        "input_variables": 5,
+        "target_bound": 35,
+        "word_count": 136
+      },
+      "validator": {
+        "returncode": 0,
+        "output": ""
+      },
+      "outcome": "passed",
+      "seconds": 0.0033277030452154577
+    },
+    {
+      "id": "builtin_shadow_function",
+      "expected_status": 0,
+      "word_sha256": "dd23832e99272b79543f0360e13981d96361074a9179f7ad54e4f157def99619",
+      "counts": {
+        "words": 167,
+        "types": 0,
+        "members": 0,
+        "resources": 0,
+        "name_bytes": 5
+      },
+      "target": {
+        "workgroup_roots": 0,
+        "static_barriers": 0,
+        "input_variables": 5,
+        "target_bound": 43,
+        "word_count": 167
+      },
+      "validator": {
+        "returncode": 0,
+        "output": ""
+      },
+      "outcome": "passed",
+      "seconds": 0.002411901019513607
+    },
+    {
+      "id": "struct_partial_retains",
+      "expected_status": 4,
+      "modes": [
+        {
+          "flags": 1,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 284
+        },
+        {
+          "flags": 2,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 284
+        },
+        {
+          "flags": 3,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 284
+        },
+        {
+          "flags": 5,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 284
+        },
+        {
+          "flags": 6,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 284
+        },
+        {
+          "flags": 7,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 284
+        }
+      ],
+      "outcome": "passed",
+      "seconds": 0.00019764195894822478
+    },
+    {
+      "id": "struct_whole_kills",
+      "expected_status": 0,
+      "word_sha256": "57c6486413ea83635113cf66b7ea5d868b6369e941e70094bb9a6a085615bf52",
+      "counts": {
+        "words": 229,
+        "types": 2,
+        "members": 2,
+        "resources": 0,
+        "name_bytes": 11
+      },
+      "target": {
+        "workgroup_roots": 0,
+        "static_barriers": 1,
+        "input_variables": 5,
+        "target_bound": 50,
+        "word_count": 229
+      },
+      "validator": {
+        "returncode": 0,
+        "output": ""
+      },
+      "outcome": "passed",
+      "seconds": 0.0024472730001434684
+    },
+    {
+      "id": "after_barrier_load_still_varying",
+      "expected_status": 4,
+      "modes": [
+        {
+          "flags": 1,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 277
+        },
+        {
+          "flags": 2,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 277
+        },
+        {
+          "flags": 3,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 277
+        },
+        {
+          "flags": 5,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 277
+        },
+        {
+          "flags": 6,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 277
+        },
+        {
+          "flags": 7,
+          "status": 4,
+          "diagnostic": "uniform control cannot be established",
+          "offset": 277
+        }
+      ],
+      "outcome": "passed",
+      "seconds": 0.001394889026414603
+    },
+    {
+      "id": "root_bool",
+      "expected_status": 0,
+      "word_sha256": "b61e9d334eccc82bc186d07c28282b7fffbb206803c3ade74a1b32826ce38765",
+      "counts": {
+        "words": 186,
+        "types": 0,
+        "members": 0,
+        "resources": 0,
+        "name_bytes": 5
+      },
+      "target": {
+        "workgroup_roots": 1,
+        "static_barriers": 1,
+        "input_variables": 5,
+        "target_bound": 43,
+        "word_count": 186
+      },
+      "validator": {
+        "returncode": 0,
+        "output": ""
+      },
+      "outcome": "passed",
+      "seconds": 0.002479611022863537
+    },
+    {
+      "id": "root_i32",
+      "expected_status": 0,
+      "word_sha256": "8b7d1f8b36bc828e194ecece7593523af92d18aac029f801485fbe71f57054da",
+      "counts": {
+        "words": 187,
+        "types": 0,
+        "members": 0,
+        "resources": 0,
+        "name_bytes": 5
+      },
+      "target": {
+        "workgroup_roots": 1,
+        "static_barriers": 1,
+        "input_variables": 5,
+        "target_bound": 43,
+        "word_count": 187
+      },
+      "validator": {
+        "returncode": 0,
+        "output": ""
+      },
+      "outcome": "passed",
+      "seconds": 0.002210352977272123
+    },
+    {
+      "id": "root_f32",
+      "expected_status": 0,
+      "word_sha256": "6c9a15a2aca2934ba362731ad59731ee91f09609dfdd377bccdc4c801f62f918",
+      "counts": {
+        "words": 187,
+        "types": 0,
+        "members": 0,
+        "resources": 0,
+        "name_bytes": 5
+      },
+      "target": {
+        "workgroup_roots": 1,
+        "static_barriers": 1,
+        "input_variables": 5,
+        "target_bound": 43,
+        "word_count": 187
+      },
+      "validator": {
+        "returncode": 0,
+        "output": ""
+      },
+      "outcome": "passed",
+      "seconds": 0.002077898010611534
+    },
+    {
+      "id": "root_vector",
+      "expected_status": 0,
+      "word_sha256": "8768346db16277ee3959d700273b64b17c5adf3ee54d027cbbeb29867e40902b",
+      "counts": {
+        "words": 183,
+        "types": 0,
+        "members": 0,
+        "resources": 0,
+        "name_bytes": 5
+      },
+      "target": {
+        "workgroup_roots": 1,
+        "static_barriers": 1,
+        "input_variables": 5,
+        "target_bound": 43,
+        "word_count": 183
+      },
+      "validator": {
+        "returncode": 0,
+        "output": ""
+      },
+      "outcome": "passed",
+      "seconds": 0.0023279180168174207
+    },
+    {
+      "id": "root_forward",
+      "expected_status": 0,
+      "word_sha256": "04ede9bb67c344784a2a782e052c82d3d8848de6d777808ea9b44177cd5ffa22",
+      "counts": {
+        "words": 213,
+        "types": 5,
+        "members": 2,
+        "resources": 0,
+        "name_bytes": 11
+      },
+      "target": {
+        "workgroup_roots": 1,
+        "static_barriers": 1,
+        "input_variables": 5,
+        "target_bound": 46,
+        "word_count": 213
+      },
+      "validator": {
+        "returncode": 0,
+        "output": ""
+      },
+      "outcome": "passed",
+      "seconds": 0.0020859899814240634
+    },
+    {
+      "id": "root_unused",
+      "expected_status": 0,
+      "word_sha256": "ad1cdca5ebc77442ed747b83ca90933cb4fa2203c80925123db69995c8abe56b",
+      "counts": {
+        "words": 191,
+        "types": 0,
+        "members": 0,
+        "resources": 0,
+        "name_bytes": 5
+      },
+      "target": {
+        "workgroup_roots": 1,
+        "static_barriers": 1,
+        "input_variables": 5,
+        "target_bound": 44,
+        "word_count": 191
+      },
+      "validator": {
+        "returncode": 0,
+        "output": ""
+      },
+      "outcome": "passed",
+      "seconds": 0.0021713559981435537
+    },
+    {
+      "id": "root_shadow",
+      "expected_status": 0,
+      "word_sha256": "7ad4a07592b901f07605d4c5f483ef057c17b74aa4a769b540baec52a89f62ec",
+      "counts": {
+        "words": 183,
+        "types": 0,
+        "members": 0,
+        "resources": 0,
+        "name_bytes": 5
+      },
+      "target": {
+        "workgroup_roots": 1,
+        "static_barriers": 1,
+        "input_variables": 5,
+        "target_bound": 43,
+        "word_count": 183
+      },
+      "validator": {
+        "returncode": 0,
+        "output": ""
+      },
+      "outcome": "passed",
+      "seconds": 0.00298945396207273
+    },
+    {
+      "id": "root_initializer",
+      "expected_status": 4,
+      "modes": [
+        {
+          "flags": 1,
+          "status": 4,
+          "diagnostic": "workgroup variables cannot have an initializer",
+          "offset": 20
+        },
+        {
+          "flags": 2,
+          "status": 4,
+          "diagnostic": "workgroup variables cannot have an initializer",
+          "offset": 20
+        },
+        {
+          "flags": 3,
+          "status": 4,
+          "diagnostic": "workgroup variables cannot have an initializer",
+          "offset": 20
+        },
+        {
+          "flags": 5,
+          "status": 4,
+          "diagnostic": "workgroup variables cannot have an initializer",
+          "offset": 20
+        },
+        {
+          "flags": 6,
+          "status": 4,
+          "diagnostic": "workgroup variables cannot have an initializer",
+          "offset": 20
+        },
+        {
+          "flags": 7,
+          "status": 4,
+          "diagnostic": "workgroup variables cannot have an initializer",
+          "offset": 20
+        }
+      ],
+      "outcome": "passed",
+      "seconds": 0.00011832499876618385
+    },
+    {
+      "id": "root_access_mode",
+      "expected_status": 4,
+      "modes": [
+        {
+          "flags": 1,
+          "status": 4,
+          "diagnostic": "workgroup variables cannot specify an access mode",
+          "offset": 13
+        },
+        {
+          "flags": 2,
+          "status": 4,
+          "diagnostic": "workgroup variables cannot specify an access mode",
+          "offset": 13
+        },
+        {
+          "flags": 3,
+          "status": 4,
+          "diagnostic": "workgroup variables cannot specify an access mode",
+          "offset": 13
+        },
+        {
+          "flags": 5,
+          "status": 4,
+          "diagnostic": "workgroup variables cannot specify an access mode",
+          "offset": 13
+        },
+        {
+          "flags": 6,
+          "status": 4,
+          "diagnostic": "workgroup variables cannot specify an access mode",
+          "offset": 13
+        },
+        {
+          "flags": 7,
+          "status": 4,
+          "diagnostic": "workgroup variables cannot specify an access mode",
+          "offset": 13
+        }
+      ],
+      "outcome": "passed",
+      "seconds": 9.966804645955563e-05
+    },
+    {
+      "id": "root_runtime_array",
+      "expected_status": 4,
+      "modes": [
+        {
+          "flags": 1,
+          "status": 4,
+          "diagnostic": "workgroup type must be concrete, constructible and fixed-footprint",
+          "offset": 15
+        },
+        {
+          "flags": 2,
+          "status": 4,
+          "diagnostic": "workgroup type must be concrete, constructible and fixed-footprint",
+          "offset": 15
+        },
+        {
+          "flags": 3,
+          "status": 4,
+          "diagnostic": "workgroup type must be concrete, constructible and fixed-footprint",
+          "offset": 15
+        },
+        {
+          "flags": 5,
+          "status": 4,
+          "diagnostic": "workgroup type must be concrete, constructible and fixed-footprint",
+          "offset": 15
+        },
+        {
+          "flags": 6,
+          "status": 4,
+          "diagnostic": "workgroup type must be concrete, constructible and fixed-footprint",
+          "offset": 15
+        },
+        {
+          "flags": 7,
+          "status": 4,
+          "diagnostic": "workgroup type must be concrete, constructible and fixed-footprint",
+          "offset": 15
+        }
+      ],
+      "outcome": "passed",
+      "seconds": 0.00012013799278065562
+    },
+    {
+      "id": "root_runtime_tail",
+      "expected_status": 4,
+      "modes": [
+        {
+          "flags": 1,
+          "status": 4,
+          "diagnostic": "workgroup type must be concrete, constructible and fixed-footprint",
+          "offset": 39
+        },
+        {
+          "flags": 2,
+          "status": 4,
+          "diagnostic": "workgroup type must be concrete, constructible and fixed-footprint",
+          "offset": 39
+        },
+        {
+          "flags": 3,
+          "status": 4,
+          "diagnostic": "workgroup type must be concrete, constructible and fixed-footprint",
+          "offset": 39
+        },
+        {
+          "flags": 5,
+          "status": 4,
+          "diagnostic": "workgroup type must be concrete, constructible and fixed-footprint",
+          "offset": 39
+        },
+        {
+          "flags": 6,
+          "status": 4,
+          "diagnostic": "workgroup type must be concrete, constructible and fixed-footprint",
+          "offset": 39
+        },
+        {
+          "flags": 7,
+          "status": 4,
+          "diagnostic": "workgroup type must be concrete, constructible and fixed-footprint",
+          "offset": 39
+        }
+      ],
+      "outcome": "passed",
+      "seconds": 0.000135709997266531
+    },
+    {
+      "id": "root_zero_array",
+      "expected_status": 4,
+      "modes": [
+        {
+          "flags": 1,
+          "status": 4,
+          "diagnostic": "array count must be positive",
+          "offset": 17
+        },
+        {
+          "flags": 2,
+          "status": 4,
+          "diagnostic": "array count must be positive",
+          "offset": 17
+        },
+        {
+          "flags": 3,
+          "status": 4,
+          "diagnostic": "array count must be positive",
+          "offset": 17
+        },
+        {
+          "flags": 5,
+          "status": 4,
+          "diagnostic": "array count must be positive",
+          "offset": 17
+        },
+        {
+          "flags": 6,
+          "status": 4,
+          "diagnostic": "array count must be positive",
+          "offset": 17
+        },
+        {
+          "flags": 7,
+          "status": 4,
+          "diagnostic": "array count must be positive",
+          "offset": 17
+        }
+      ],
+      "outcome": "passed",
+      "seconds": 0.00026060501113533974
+    },
+    {
+      "id": "root_duplicate",
+      "expected_status": 4,
+      "modes": [
+        {
+          "flags": 1,
+          "status": 4,
+          "diagnostic": "duplicate module declaration",
+          "offset": 37
+        },
+        {
+          "flags": 2,
+          "status": 4,
+          "diagnostic": "duplicate module declaration",
+          "offset": 37
+        },
+        {
+          "flags": 3,
+          "status": 4,
+          "diagnostic": "duplicate module declaration",
+          "offset": 37
+        },
+        {
+          "flags": 5,
+          "status": 4,
+          "diagnostic": "duplicate module declaration",
+          "offset": 37
+        },
+        {
+          "flags": 6,
+          "status": 4,
+          "diagnostic": "duplicate module declaration",
+          "offset": 37
+        },
+        {
+          "flags": 7,
+          "status": 4,
+          "diagnostic": "duplicate module declaration",
+          "offset": 37
+        }
+      ],
+      "outcome": "passed",
+      "seconds": 0.00010812998516485095
+    },
+    {
+      "id": "root_type_cycle",
+      "expected_status": 4,
+      "modes": [
+        {
+          "flags": 1,
+          "status": 4,
+          "diagnostic": "module type/constant dependency cycle",
+          "offset": 7
+        },
+        {
+          "flags": 2,
+          "status": 4,
+          "diagnostic": "module type/constant dependency cycle",
+          "offset": 7
+        },
+        {
+          "flags": 3,
+          "status": 4,
+          "diagnostic": "module type/constant dependency cycle",
+          "offset": 7
+        },
+        {
+          "flags": 5,
+          "status": 4,
+          "diagnostic": "module type/constant dependency cycle",
+          "offset": 7
+        },
+        {
+          "flags": 6,
+          "status": 4,
+          "diagnostic": "module type/constant dependency cycle",
+          "offset": 7
+        },
+        {
+          "flags": 7,
+          "status": 4,
+          "diagnostic": "module type/constant dependency cycle",
+          "offset": 7
+        }
+      ],
+      "outcome": "passed",
+      "seconds": 0.000139746000058949
+    },
+    {
+      "id": "barrier_arity",
+      "expected_status": 4,
+      "modes": [
+        {
+          "flags": 1,
+          "status": 4,
+          "diagnostic": "workgroupBarrier requires no arguments and no result",
+          "offset": 226
+        },
+        {
+          "flags": 2,
+          "status": 4,
+          "diagnostic": "workgroupBarrier requires no arguments and no result",
+          "offset": 226
+        },
+        {
+          "flags": 3,
+          "status": 4,
+          "diagnostic": "workgroupBarrier requires no arguments and no result",
+          "offset": 226
+        },
+        {
+          "flags": 5,
+          "status": 4,
+          "diagnostic": "workgroupBarrier requires no arguments and no result",
+          "offset": 226
+        },
+        {
+          "flags": 6,
+          "status": 4,
+          "diagnostic": "workgroupBarrier requires no arguments and no result",
+          "offset": 226
+        },
+        {
+          "flags": 7,
+          "status": 4,
+          "diagnostic": "workgroupBarrier requires no arguments and no result",
+          "offset": 226
+        }
+      ],
+      "outcome": "passed",
+      "seconds": 0.000126857019495219
+    },
+    {
+      "id": "barrier_value",
+      "expected_status": 4,
+      "modes": [
+        {
+          "flags": 1,
+          "status": 4,
+          "diagnostic": "workgroupBarrier requires no arguments and no result",
+          "offset": 232
+        },
+        {
+          "flags": 2,
+          "status": 4,
+          "diagnostic": "workgroupBarrier requires no arguments and no result",
+          "offset": 232
+        },
+        {
+          "flags": 3,
+          "status": 4,
+          "diagnostic": "workgroupBarrier requires no arguments and no result",
+          "offset": 232
+        },
+        {
+          "flags": 5,
+          "status": 4,
+          "diagnostic": "workgroupBarrier requires no arguments and no result",
+          "offset": 232
+        },
+        {
+          "flags": 6,
+          "status": 4,
+          "diagnostic": "workgroupBarrier requires no arguments and no result",
+          "offset": 232
+        },
+        {
+          "flags": 7,
+          "status": 4,
+          "diagnostic": "workgroupBarrier requires no arguments and no result",
+          "offset": 232
+        }
+      ],
+      "outcome": "passed",
+      "seconds": 0.00013482902431860566
+    },
+    {
+      "id": "barrier_const",
+      "expected_status": 4,
+      "modes": [
+        {
+          "flags": 1,
+          "status": 4,
+          "diagnostic": "workgroupBarrier requires no arguments and no result",
+          "offset": 234
+        },
+        {
+          "flags": 2,
+          "status": 4,
+          "diagnostic": "workgroupBarrier requires no arguments and no result",
+          "offset": 234
+        },
+        {
+          "flags": 3,
+          "status": 4,
+          "diagnostic": "workgroupBarrier requires no arguments and no result",
+          "offset": 234
+        },
+        {
+          "flags": 5,
+          "status": 4,
+          "diagnostic": "workgroupBarrier requires no arguments and no result",
+          "offset": 234
+        },
+        {
+          "flags": 6,
+          "status": 4,
+          "diagnostic": "workgroupBarrier requires no arguments and no result",
+          "offset": 234
+        },
+        {
+          "flags": 7,
+          "status": 4,
+          "diagnostic": "workgroupBarrier requires no arguments and no result",
+          "offset": 234
+        }
+      ],
+      "outcome": "passed",
+      "seconds": 0.0001300420262850821
+    },
+    {
+      "id": "dead_suffix_still_typed",
+      "expected_status": 4,
+      "modes": [
+        {
+          "flags": 1,
+          "status": 4,
+          "diagnostic": "constructor result cannot be discarded",
+          "offset": 234
+        },
+        {
+          "flags": 2,
+          "status": 4,
+          "diagnostic": "constructor result cannot be discarded",
+          "offset": 234
+        },
+        {
+          "flags": 3,
+          "status": 4,
+          "diagnostic": "constructor result cannot be discarded",
+          "offset": 234
+        },
+        {
+          "flags": 5,
+          "status": 4,
+          "diagnostic": "constructor result cannot be discarded",
+          "offset": 234
+        },
+        {
+          "flags": 6,
+          "status": 4,
+          "diagnostic": "constructor result cannot be discarded",
+          "offset": 234
+        },
+        {
+          "flags": 7,
+          "status": 4,
+          "diagnostic": "constructor result cannot be discarded",
+          "offset": 234
+        }
+      ],
+      "outcome": "passed",
+      "seconds": 0.00017028098227456212
+    },
+    {
+      "id": "excluded_atomic",
+      "expected_status": 3,
+      "modes": [
+        {
+          "flags": 1,
+          "status": 3,
+          "diagnostic": "atomic and pointer types are not supported",
+          "offset": 17
+        },
+        {
+          "flags": 2,
+          "status": 3,
+          "diagnostic": "atomic and pointer types are not supported",
+          "offset": 17
+        },
+        {
+          "flags": 3,
+          "status": 3,
+          "diagnostic": "atomic and pointer types are not supported",
+          "offset": 17
+        },
+        {
+          "flags": 5,
+          "status": 3,
+          "diagnostic": "atomic and pointer types are not supported",
+          "offset": 17
+        },
+        {
+          "flags": 6,
+          "status": 3,
+          "diagnostic": "atomic and pointer types are not supported",
+          "offset": 17
+        },
+        {
+          "flags": 7,
+          "status": 3,
+          "diagnostic": "atomic and pointer types are not supported",
+          "offset": 17
+        }
+      ],
+      "outcome": "passed",
+      "seconds": 0.00012137898011133075
+    },
+    {
+      "id": "excluded_storage_barrier",
+      "expected_status": 3,
+      "modes": [
+        {
+          "flags": 1,
+          "status": 3,
+          "diagnostic": "synchronization builtin is outside the workgroup barrier owner",
+          "offset": 226
+        },
+        {
+          "flags": 2,
+          "status": 3,
+          "diagnostic": "synchronization builtin is outside the workgroup barrier owner",
+          "offset": 226
+        },
+        {
+          "flags": 3,
+          "status": 3,
+          "diagnostic": "synchronization builtin is outside the workgroup barrier owner",
+          "offset": 226
+        },
+        {
+          "flags": 5,
+          "status": 3,
+          "diagnostic": "synchronization builtin is outside the workgroup barrier owner",
+          "offset": 226
+        },
+        {
+          "flags": 6,
+          "status": 3,
+          "diagnostic": "synchronization builtin is outside the workgroup barrier owner",
+          "offset": 226
+        },
+        {
+          "flags": 7,
+          "status": 3,
+          "diagnostic": "synchronization builtin is outside the workgroup barrier owner",
+          "offset": 226
+        }
+      ],
+      "outcome": "passed",
+      "seconds": 0.00013638200471177697
+    },
+    {
+      "id": "excluded_uniform_load",
+      "expected_status": 3,
+      "modes": [
+        {
+          "flags": 1,
+          "status": 3,
+          "diagnostic": "pointer expressions are outside the typed owner",
+          "offset": 268
+        },
+        {
+          "flags": 2,
+          "status": 3,
+          "diagnostic": "pointer expressions are outside the typed owner",
+          "offset": 268
+        },
+        {
+          "flags": 3,
+          "status": 3,
+          "diagnostic": "pointer expressions are outside the typed owner",
+          "offset": 268
+        },
+        {
+          "flags": 5,
+          "status": 3,
+          "diagnostic": "pointer expressions are outside the typed owner",
+          "offset": 268
+        },
+        {
+          "flags": 6,
+          "status": 3,
+          "diagnostic": "pointer expressions are outside the typed owner",
+          "offset": 268
+        },
+        {
+          "flags": 7,
+          "status": 3,
+          "diagnostic": "pointer expressions are outside the typed owner",
+          "offset": 268
+        }
+      ],
+      "outcome": "passed",
+      "seconds": 0.00011233595432713628
+    },
+    {
+      "id": "execute_group_isolation",
+      "expected_status": 0,
+      "word_sha256": "a10eebe0754b61330ab5133117878f984092d8fb924b7de743ea040902386f26",
+      "counts": {
+        "words": 421,
+        "types": 2,
+        "members": 0,
+        "resources": 1,
+        "name_bytes": 9
+      },
+      "target": {
+        "workgroup_roots": 1,
+        "static_barriers": 3,
+        "input_variables": 5,
+        "target_bound": 81,
+        "word_count": 421
+      },
+      "validator": {
+        "returncode": 0,
+        "output": ""
+      },
+      "execution": [
+        {
+          "events": 597,
+          "steps": 609,
+          "barriers_per_group": {
+            "(0, 0, 0)": 3,
+            "(1, 0, 0)": 3,
+            "(2, 0, 0)": 3
+          },
+          "memory_accesses": 48,
+          "invocations": 12,
+          "groups": 3,
+          "schedule": "round_robin",
+          "poison": 165,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.0026333239511586726
+        },
+        {
+          "events": 597,
+          "steps": 609,
+          "barriers_per_group": {
+            "(0, 0, 0)": 3,
+            "(1, 0, 0)": 3,
+            "(2, 0, 0)": 3
+          },
+          "memory_accesses": 48,
+          "invocations": 12,
+          "groups": 3,
+          "schedule": "round_robin",
+          "poison": 90,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.0013341580051928759
+        },
+        {
+          "events": 597,
+          "steps": 609,
+          "barriers_per_group": {
+            "(0, 0, 0)": 3,
+            "(1, 0, 0)": 3,
+            "(2, 0, 0)": 3
+          },
+          "memory_accesses": 48,
+          "invocations": 12,
+          "groups": 3,
+          "schedule": "reverse",
+          "poison": 165,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.0011762550566345453
+        },
+        {
+          "events": 597,
+          "steps": 609,
+          "barriers_per_group": {
+            "(0, 0, 0)": 3,
+            "(1, 0, 0)": 3,
+            "(2, 0, 0)": 3
+          },
+          "memory_accesses": 48,
+          "invocations": 12,
+          "groups": 3,
+          "schedule": "reverse",
+          "poison": 90,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.0013197570224292576
+        },
+        {
+          "events": 597,
+          "steps": 609,
+          "barriers_per_group": {
+            "(0, 0, 0)": 3,
+            "(1, 0, 0)": 3,
+            "(2, 0, 0)": 3
+          },
+          "memory_accesses": 48,
+          "invocations": 12,
+          "groups": 3,
+          "schedule": "shuffle_0x11c0ffee",
+          "poison": 165,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.0013366820057854056
+        },
+        {
+          "events": 597,
+          "steps": 609,
+          "barriers_per_group": {
+            "(0, 0, 0)": 3,
+            "(1, 0, 0)": 3,
+            "(2, 0, 0)": 3
+          },
+          "memory_accesses": 48,
+          "invocations": 12,
+          "groups": 3,
+          "schedule": "shuffle_0x11c0ffee",
+          "poison": 90,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.0012642039800994098
+        },
+        {
+          "events": 597,
+          "steps": 609,
+          "barriers_per_group": {
+            "(0, 0, 0)": 3,
+            "(1, 0, 0)": 3,
+            "(2, 0, 0)": 3
+          },
+          "memory_accesses": 48,
+          "invocations": 12,
+          "groups": 3,
+          "schedule": "bounded_burst_1_3_7",
+          "poison": 165,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.0012286920100450516
+        },
+        {
+          "events": 597,
+          "steps": 609,
+          "barriers_per_group": {
+            "(0, 0, 0)": 3,
+            "(1, 0, 0)": 3,
+            "(2, 0, 0)": 3
+          },
+          "memory_accesses": 48,
+          "invocations": 12,
+          "groups": 3,
+          "schedule": "bounded_burst_1_3_7",
+          "poison": 90,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.0010909789707511663
+        }
+      ],
+      "outcome": "passed",
+      "seconds": 0.016043648996856064
+    },
+    {
+      "id": "execute_zero_before_return",
+      "expected_status": 0,
+      "word_sha256": "69ff6d4d7decb945003a68a5e9e70ec88ac078899131933878963a01ea97ad3d",
+      "counts": {
+        "words": 346,
+        "types": 2,
+        "members": 0,
+        "resources": 1,
+        "name_bytes": 9
+      },
+      "target": {
+        "workgroup_roots": 1,
+        "static_barriers": 1,
+        "input_variables": 5,
+        "target_bound": 69,
+        "word_count": 346
+      },
+      "validator": {
+        "returncode": 0,
+        "output": ""
+      },
+      "execution": [
+        {
+          "events": 360,
+          "steps": 372,
+          "barriers_per_group": {
+            "(0, 0, 0)": 1,
+            "(1, 0, 0)": 1,
+            "(2, 0, 0)": 1
+          },
+          "memory_accesses": 30,
+          "invocations": 12,
+          "groups": 3,
+          "schedule": "round_robin",
+          "poison": 165,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.0008090140181593597
+        },
+        {
+          "events": 360,
+          "steps": 372,
+          "barriers_per_group": {
+            "(0, 0, 0)": 1,
+            "(1, 0, 0)": 1,
+            "(2, 0, 0)": 1
+          },
+          "memory_accesses": 30,
+          "invocations": 12,
+          "groups": 3,
+          "schedule": "round_robin",
+          "poison": 90,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.0007232869975268841
+        },
+        {
+          "events": 360,
+          "steps": 372,
+          "barriers_per_group": {
+            "(0, 0, 0)": 1,
+            "(1, 0, 0)": 1,
+            "(2, 0, 0)": 1
+          },
+          "memory_accesses": 30,
+          "invocations": 12,
+          "groups": 3,
+          "schedule": "reverse",
+          "poison": 165,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.0007724699680693448
+        },
+        {
+          "events": 360,
+          "steps": 372,
+          "barriers_per_group": {
+            "(0, 0, 0)": 1,
+            "(1, 0, 0)": 1,
+            "(2, 0, 0)": 1
+          },
+          "memory_accesses": 30,
+          "invocations": 12,
+          "groups": 3,
+          "schedule": "reverse",
+          "poison": 90,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.0006630579591728747
+        },
+        {
+          "events": 360,
+          "steps": 372,
+          "barriers_per_group": {
+            "(0, 0, 0)": 1,
+            "(1, 0, 0)": 1,
+            "(2, 0, 0)": 1
+          },
+          "memory_accesses": 30,
+          "invocations": 12,
+          "groups": 3,
+          "schedule": "shuffle_0x11c0ffee",
+          "poison": 165,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.0007372669642791152
+        },
+        {
+          "events": 360,
+          "steps": 372,
+          "barriers_per_group": {
+            "(0, 0, 0)": 1,
+            "(1, 0, 0)": 1,
+            "(2, 0, 0)": 1
+          },
+          "memory_accesses": 30,
+          "invocations": 12,
+          "groups": 3,
+          "schedule": "shuffle_0x11c0ffee",
+          "poison": 90,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.0007349239895120263
+        },
+        {
+          "events": 360,
+          "steps": 372,
+          "barriers_per_group": {
+            "(0, 0, 0)": 1,
+            "(1, 0, 0)": 1,
+            "(2, 0, 0)": 1
+          },
+          "memory_accesses": 30,
+          "invocations": 12,
+          "groups": 3,
+          "schedule": "bounded_burst_1_3_7",
+          "poison": 165,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.000601216044742614
+        },
+        {
+          "events": 360,
+          "steps": 372,
+          "barriers_per_group": {
+            "(0, 0, 0)": 1,
+            "(1, 0, 0)": 1,
+            "(2, 0, 0)": 1
+          },
+          "memory_accesses": 30,
+          "invocations": 12,
+          "groups": 3,
+          "schedule": "bounded_burst_1_3_7",
+          "poison": 90,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.0007146240095607936
+        }
+      ],
+      "outcome": "passed",
+      "seconds": 0.009727988974191248
+    },
+    {
+      "id": "execute_nested_zero",
+      "expected_status": 0,
+      "word_sha256": "765cc0f84110f6a0125106ee6f37a3c61009fc6133247b71b6b51e00e0a3fe76",
+      "counts": {
+        "words": 539,
+        "types": 6,
+        "members": 3,
+        "resources": 1,
+        "name_bytes": 17
+      },
+      "target": {
+        "workgroup_roots": 1,
+        "static_barriers": 1,
+        "input_variables": 5,
+        "target_bound": 99,
+        "word_count": 539
+      },
+      "validator": {
+        "returncode": 0,
+        "output": ""
+      },
+      "execution": [
+        {
+          "events": 837,
+          "steps": 849,
+          "barriers_per_group": {
+            "(0, 0, 0)": 1,
+            "(1, 0, 0)": 1,
+            "(2, 0, 0)": 1
+          },
+          "memory_accesses": 96,
+          "invocations": 12,
+          "groups": 3,
+          "schedule": "round_robin",
+          "poison": 165,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.0021870550117455423
+        },
+        {
+          "events": 837,
+          "steps": 849,
+          "barriers_per_group": {
+            "(0, 0, 0)": 1,
+            "(1, 0, 0)": 1,
+            "(2, 0, 0)": 1
+          },
+          "memory_accesses": 96,
+          "invocations": 12,
+          "groups": 3,
+          "schedule": "round_robin",
+          "poison": 90,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.0022978290216997266
+        },
+        {
+          "events": 837,
+          "steps": 849,
+          "barriers_per_group": {
+            "(0, 0, 0)": 1,
+            "(1, 0, 0)": 1,
+            "(2, 0, 0)": 1
+          },
+          "memory_accesses": 96,
+          "invocations": 12,
+          "groups": 3,
+          "schedule": "reverse",
+          "poison": 165,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.0021572120022028685
+        },
+        {
+          "events": 837,
+          "steps": 849,
+          "barriers_per_group": {
+            "(0, 0, 0)": 1,
+            "(1, 0, 0)": 1,
+            "(2, 0, 0)": 1
+          },
+          "memory_accesses": 96,
+          "invocations": 12,
+          "groups": 3,
+          "schedule": "reverse",
+          "poison": 90,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.00191640603588894
+        },
+        {
+          "events": 837,
+          "steps": 849,
+          "barriers_per_group": {
+            "(0, 0, 0)": 1,
+            "(1, 0, 0)": 1,
+            "(2, 0, 0)": 1
+          },
+          "memory_accesses": 96,
+          "invocations": 12,
+          "groups": 3,
+          "schedule": "shuffle_0x11c0ffee",
+          "poison": 165,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.002147977997083217
+        },
+        {
+          "events": 837,
+          "steps": 849,
+          "barriers_per_group": {
+            "(0, 0, 0)": 1,
+            "(1, 0, 0)": 1,
+            "(2, 0, 0)": 1
+          },
+          "memory_accesses": 96,
+          "invocations": 12,
+          "groups": 3,
+          "schedule": "shuffle_0x11c0ffee",
+          "poison": 90,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.001961283036507666
+        },
+        {
+          "events": 837,
+          "steps": 849,
+          "barriers_per_group": {
+            "(0, 0, 0)": 1,
+            "(1, 0, 0)": 1,
+            "(2, 0, 0)": 1
+          },
+          "memory_accesses": 96,
+          "invocations": 12,
+          "groups": 3,
+          "schedule": "bounded_burst_1_3_7",
+          "poison": 165,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.0019654890056699514
+        },
+        {
+          "events": 837,
+          "steps": 849,
+          "barriers_per_group": {
+            "(0, 0, 0)": 1,
+            "(1, 0, 0)": 1,
+            "(2, 0, 0)": 1
+          },
+          "memory_accesses": 96,
+          "invocations": 12,
+          "groups": 3,
+          "schedule": "bounded_burst_1_3_7",
+          "poison": 90,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.0016784449690021574
+        }
+      ],
+      "outcome": "passed",
+      "seconds": 0.02058393496554345
+    },
+    {
+      "id": "execute_hidden_index",
+      "expected_status": 0,
+      "word_sha256": "c8e6c5c92dae97914606c9a5b29f5a22022cc5b741dbd61af70c385547e6b4dd",
+      "counts": {
+        "words": 209,
+        "types": 2,
+        "members": 0,
+        "resources": 1,
+        "name_bytes": 9
+      },
+      "target": {
+        "workgroup_roots": 1,
+        "static_barriers": 1,
+        "input_variables": 1,
+        "target_bound": 50,
+        "word_count": 209
+      },
+      "validator": {
+        "returncode": 0,
+        "output": ""
+      },
+      "execution": [
+        {
+          "events": 20,
+          "steps": 21,
+          "barriers_per_group": {
+            "(0, 0, 0)": 1
+          },
+          "memory_accesses": 3,
+          "invocations": 1,
+          "groups": 1,
+          "schedule": "round_robin",
+          "poison": 165,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.0001224710140377283
+        },
+        {
+          "events": 20,
+          "steps": 21,
+          "barriers_per_group": {
+            "(0, 0, 0)": 1
+          },
+          "memory_accesses": 3,
+          "invocations": 1,
+          "groups": 1,
+          "schedule": "round_robin",
+          "poison": 90,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 8.092902135103941e-05
+        },
+        {
+          "events": 20,
+          "steps": 21,
+          "barriers_per_group": {
+            "(0, 0, 0)": 1
+          },
+          "memory_accesses": 3,
+          "invocations": 1,
+          "groups": 1,
+          "schedule": "reverse",
+          "poison": 165,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 7.081404328346252e-05
+        },
+        {
+          "events": 20,
+          "steps": 21,
+          "barriers_per_group": {
+            "(0, 0, 0)": 1
+          },
+          "memory_accesses": 3,
+          "invocations": 1,
+          "groups": 1,
+          "schedule": "reverse",
+          "poison": 90,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 6.939301965758204e-05
+        },
+        {
+          "events": 20,
+          "steps": 21,
+          "barriers_per_group": {
+            "(0, 0, 0)": 1
+          },
+          "memory_accesses": 3,
+          "invocations": 1,
+          "groups": 1,
+          "schedule": "shuffle_0x11c0ffee",
+          "poison": 165,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 7.12759792804718e-05
+        },
+        {
+          "events": 20,
+          "steps": 21,
+          "barriers_per_group": {
+            "(0, 0, 0)": 1
+          },
+          "memory_accesses": 3,
+          "invocations": 1,
+          "groups": 1,
+          "schedule": "shuffle_0x11c0ffee",
+          "poison": 90,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 6.544601637870073e-05
+        },
+        {
+          "events": 20,
+          "steps": 21,
+          "barriers_per_group": {
+            "(0, 0, 0)": 1
+          },
+          "memory_accesses": 3,
+          "invocations": 1,
+          "groups": 1,
+          "schedule": "bounded_burst_1_3_7",
+          "poison": 165,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 5.2637013141065836e-05
+        },
+        {
+          "events": 20,
+          "steps": 21,
+          "barriers_per_group": {
+            "(0, 0, 0)": 1
+          },
+          "memory_accesses": 3,
+          "invocations": 1,
+          "groups": 1,
+          "schedule": "bounded_burst_1_3_7",
+          "poison": 90,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 7.233698852360249e-05
+        }
+      ],
+      "outcome": "passed",
+      "seconds": 0.003554192022420466
+    },
+    {
+      "id": "execute_helper_phases",
+      "expected_status": 0,
+      "word_sha256": "714bcfc13e0368352566f1120d09eb5eb2a189e8dac0a0bd5038ffb869812b27",
+      "counts": {
+        "words": 522,
+        "types": 2,
+        "members": 0,
+        "resources": 1,
+        "name_bytes": 9
+      },
+      "target": {
+        "workgroup_roots": 1,
+        "static_barriers": 2,
+        "input_variables": 5,
+        "target_bound": 103,
+        "word_count": 522
+      },
+      "validator": {
+        "returncode": 0,
+        "output": ""
+      },
+      "execution": [
+        {
+          "events": 2565,
+          "steps": 2577,
+          "barriers_per_group": {
+            "(0, 0, 0)": 7,
+            "(1, 0, 0)": 7,
+            "(2, 0, 0)": 7
+          },
+          "memory_accesses": 120,
+          "invocations": 12,
+          "groups": 3,
+          "schedule": "round_robin",
+          "poison": 165,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.004311778990086168
+        },
+        {
+          "events": 2565,
+          "steps": 2577,
+          "barriers_per_group": {
+            "(0, 0, 0)": 7,
+            "(1, 0, 0)": 7,
+            "(2, 0, 0)": 7
+          },
+          "memory_accesses": 120,
+          "invocations": 12,
+          "groups": 3,
+          "schedule": "round_robin",
+          "poison": 90,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.004139925993513316
+        },
+        {
+          "events": 2565,
+          "steps": 2577,
+          "barriers_per_group": {
+            "(0, 0, 0)": 7,
+            "(1, 0, 0)": 7,
+            "(2, 0, 0)": 7
+          },
+          "memory_accesses": 120,
+          "invocations": 12,
+          "groups": 3,
+          "schedule": "reverse",
+          "poison": 165,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.003981101035606116
+        },
+        {
+          "events": 2565,
+          "steps": 2577,
+          "barriers_per_group": {
+            "(0, 0, 0)": 7,
+            "(1, 0, 0)": 7,
+            "(2, 0, 0)": 7
+          },
+          "memory_accesses": 120,
+          "invocations": 12,
+          "groups": 3,
+          "schedule": "reverse",
+          "poison": 90,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.004076753044500947
+        },
+        {
+          "events": 2565,
+          "steps": 2577,
+          "barriers_per_group": {
+            "(0, 0, 0)": 7,
+            "(1, 0, 0)": 7,
+            "(2, 0, 0)": 7
+          },
+          "memory_accesses": 120,
+          "invocations": 12,
+          "groups": 3,
+          "schedule": "shuffle_0x11c0ffee",
+          "poison": 165,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.004564873001072556
+        },
+        {
+          "events": 2565,
+          "steps": 2577,
+          "barriers_per_group": {
+            "(0, 0, 0)": 7,
+            "(1, 0, 0)": 7,
+            "(2, 0, 0)": 7
+          },
+          "memory_accesses": 120,
+          "invocations": 12,
+          "groups": 3,
+          "schedule": "shuffle_0x11c0ffee",
+          "poison": 90,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.005489437025971711
+        },
+        {
+          "events": 2565,
+          "steps": 2577,
+          "barriers_per_group": {
+            "(0, 0, 0)": 7,
+            "(1, 0, 0)": 7,
+            "(2, 0, 0)": 7
+          },
+          "memory_accesses": 120,
+          "invocations": 12,
+          "groups": 3,
+          "schedule": "bounded_burst_1_3_7",
+          "poison": 165,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.004319190979003906
+        },
+        {
+          "events": 2565,
+          "steps": 2577,
+          "barriers_per_group": {
+            "(0, 0, 0)": 7,
+            "(1, 0, 0)": 7,
+            "(2, 0, 0)": 7
+          },
+          "memory_accesses": 120,
+          "invocations": 12,
+          "groups": 3,
+          "schedule": "bounded_burst_1_3_7",
+          "poison": 90,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.004066116991452873
+        }
+      ],
+      "outcome": "passed",
+      "seconds": 0.03765944502083585
+    },
+    {
+      "id": "execute_bounds",
+      "expected_status": 4,
+      "modes": [
+        {
+          "flags": 1,
+          "status": 4,
+          "diagnostic": "constant index is out of bounds",
+          "offset": 380
+        },
+        {
+          "flags": 2,
+          "status": 4,
+          "diagnostic": "constant index is out of bounds",
+          "offset": 380
+        },
+        {
+          "flags": 3,
+          "status": 4,
+          "diagnostic": "constant index is out of bounds",
+          "offset": 380
+        },
+        {
+          "flags": 5,
+          "status": 4,
+          "diagnostic": "constant index is out of bounds",
+          "offset": 380
+        },
+        {
+          "flags": 6,
+          "status": 4,
+          "diagnostic": "constant index is out of bounds",
+          "offset": 380
+        },
+        {
+          "flags": 7,
+          "status": 4,
+          "diagnostic": "constant index is out of bounds",
+          "offset": 380
+        }
+      ],
+      "outcome": "passed",
+      "seconds": 0.00023873202735558152
+    },
+    {
+      "id": "execute_snapshot",
+      "expected_status": 0,
+      "word_sha256": "253142cf75b54b1adc15bd9a50198efd47057f309cc1c34de53f626fab30052f",
+      "counts": {
+        "words": 406,
+        "types": 2,
+        "members": 0,
+        "resources": 1,
+        "name_bytes": 9
+      },
+      "target": {
+        "workgroup_roots": 1,
+        "static_barriers": 4,
+        "input_variables": 5,
+        "target_bound": 77,
+        "word_count": 406
+      },
+      "validator": {
+        "returncode": 0,
+        "output": ""
+      },
+      "execution": [
+        {
+          "events": 621,
+          "steps": 633,
+          "barriers_per_group": {
+            "(0, 0, 0)": 4,
+            "(1, 0, 0)": 4,
+            "(2, 0, 0)": 4
+          },
+          "memory_accesses": 60,
+          "invocations": 12,
+          "groups": 3,
+          "schedule": "round_robin",
+          "poison": 165,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.001541623962111771
+        },
+        {
+          "events": 621,
+          "steps": 633,
+          "barriers_per_group": {
+            "(0, 0, 0)": 4,
+            "(1, 0, 0)": 4,
+            "(2, 0, 0)": 4
+          },
+          "memory_accesses": 60,
+          "invocations": 12,
+          "groups": 3,
+          "schedule": "round_robin",
+          "poison": 90,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.0013171129976399243
+        },
+        {
+          "events": 621,
+          "steps": 633,
+          "barriers_per_group": {
+            "(0, 0, 0)": 4,
+            "(1, 0, 0)": 4,
+            "(2, 0, 0)": 4
+          },
+          "memory_accesses": 60,
+          "invocations": 12,
+          "groups": 3,
+          "schedule": "reverse",
+          "poison": 165,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.0012232839944772422
+        },
+        {
+          "events": 621,
+          "steps": 633,
+          "barriers_per_group": {
+            "(0, 0, 0)": 4,
+            "(1, 0, 0)": 4,
+            "(2, 0, 0)": 4
+          },
+          "memory_accesses": 60,
+          "invocations": 12,
+          "groups": 3,
+          "schedule": "reverse",
+          "poison": 90,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.0011923890560865402
+        },
+        {
+          "events": 621,
+          "steps": 633,
+          "barriers_per_group": {
+            "(0, 0, 0)": 4,
+            "(1, 0, 0)": 4,
+            "(2, 0, 0)": 4
+          },
+          "memory_accesses": 60,
+          "invocations": 12,
+          "groups": 3,
+          "schedule": "shuffle_0x11c0ffee",
+          "poison": 165,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.0013657550443895161
+        },
+        {
+          "events": 621,
+          "steps": 633,
+          "barriers_per_group": {
+            "(0, 0, 0)": 4,
+            "(1, 0, 0)": 4,
+            "(2, 0, 0)": 4
+          },
+          "memory_accesses": 60,
+          "invocations": 12,
+          "groups": 3,
+          "schedule": "shuffle_0x11c0ffee",
+          "poison": 90,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.0013687189784832299
+        },
+        {
+          "events": 621,
+          "steps": 633,
+          "barriers_per_group": {
+            "(0, 0, 0)": 4,
+            "(1, 0, 0)": 4,
+            "(2, 0, 0)": 4
+          },
+          "memory_accesses": 60,
+          "invocations": 12,
+          "groups": 3,
+          "schedule": "bounded_burst_1_3_7",
+          "poison": 165,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.0011230859672650695
+        },
+        {
+          "events": 621,
+          "steps": 633,
+          "barriers_per_group": {
+            "(0, 0, 0)": 4,
+            "(1, 0, 0)": 4,
+            "(2, 0, 0)": 4
+          },
+          "memory_accesses": 60,
+          "invocations": 12,
+          "groups": 3,
+          "schedule": "bounded_burst_1_3_7",
+          "poison": 90,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.0010925320093519986
+        }
+      ],
+      "outcome": "passed",
+      "seconds": 0.013679947995115072
+    },
+    {
+      "id": "control_vector_race",
+      "expected_status": 0,
+      "word_sha256": "119c540b988488fcc950813ec23047f1359c856db5481d2e6de7c2127de39679",
+      "counts": {
+        "words": 281,
+        "types": 0,
+        "members": 0,
+        "resources": 0,
+        "name_bytes": 5
+      },
+      "target": {
+        "workgroup_roots": 1,
+        "static_barriers": 2,
+        "input_variables": 5,
+        "target_bound": 60,
+        "word_count": 281
+      },
+      "validator": {
+        "returncode": 0,
+        "output": ""
+      },
+      "execution": [
+        {
+          "expected_race_detected": "unordered ('workgroup', (0, 0, 0), 38, ()): Access(invocation=0, group=(0, 0, 0), epoch=1, write=True) versus Access(invocation=1, group=(0, 0, 0), epoch=1, write=True)"
+        },
+        {
+          "expected_race_detected": "unordered ('workgroup', (0, 0, 0), 38, ()): Access(invocation=0, group=(0, 0, 0), epoch=1, write=True) versus Access(invocation=1, group=(0, 0, 0), epoch=1, write=True)"
+        },
+        {
+          "expected_race_detected": "unordered ('workgroup', (0, 0, 0), 38, ()): Access(invocation=0, group=(0, 0, 0), epoch=1, write=True) versus Access(invocation=1, group=(0, 0, 0), epoch=1, write=True)"
+        },
+        {
+          "expected_race_detected": "unordered ('workgroup', (0, 0, 0), 38, ()): Access(invocation=0, group=(0, 0, 0), epoch=1, write=True) versus Access(invocation=1, group=(0, 0, 0), epoch=1, write=True)"
+        },
+        {
+          "expected_race_detected": "unordered ('workgroup', (0, 0, 0), 38, ()): Access(invocation=0, group=(0, 0, 0), epoch=1, write=True) versus Access(invocation=1, group=(0, 0, 0), epoch=1, write=True)"
+        },
+        {
+          "expected_race_detected": "unordered ('workgroup', (0, 0, 0), 38, ()): Access(invocation=0, group=(0, 0, 0), epoch=1, write=True) versus Access(invocation=1, group=(0, 0, 0), epoch=1, write=True)"
+        },
+        {
+          "expected_race_detected": "unordered ('workgroup', (0, 0, 0), 38, ()): Access(invocation=0, group=(0, 0, 0), epoch=1, write=True) versus Access(invocation=1, group=(0, 0, 0), epoch=1, write=True)"
+        },
+        {
+          "expected_race_detected": "unordered ('workgroup', (0, 0, 0), 38, ()): Access(invocation=0, group=(0, 0, 0), epoch=1, write=True) versus Access(invocation=1, group=(0, 0, 0), epoch=1, write=True)"
+        }
+      ],
+      "outcome": "passed",
+      "seconds": 0.004670528986025602
+    },
+    {
+      "id": "control_storage_not_fenced",
+      "expected_status": 0,
+      "word_sha256": "1a28fc8dd89ca6832c59641a2bc4f22ae7fb4b6466dd159c549f11913451590c",
+      "counts": {
+        "words": 332,
+        "types": 2,
+        "members": 0,
+        "resources": 1,
+        "name_bytes": 9
+      },
+      "target": {
+        "workgroup_roots": 0,
+        "static_barriers": 1,
+        "input_variables": 5,
+        "target_bound": 68,
+        "word_count": 332
+      },
+      "validator": {
+        "returncode": 0,
+        "output": ""
+      },
+      "execution": [
+        {
+          "expected_race_detected": "unordered ('storage', (0, 0), 4): Access(invocation=1, group=(0, 0, 0), epoch=0, write=True) versus Access(invocation=0, group=(0, 0, 0), epoch=1, write=False)"
+        },
+        {
+          "expected_race_detected": "unordered ('storage', (0, 0), 4): Access(invocation=1, group=(0, 0, 0), epoch=0, write=True) versus Access(invocation=0, group=(0, 0, 0), epoch=1, write=False)"
+        },
+        {
+          "expected_race_detected": "unordered ('storage', (0, 0), 16): Access(invocation=4, group=(1, 0, 0), epoch=0, write=True) versus Access(invocation=7, group=(1, 0, 0), epoch=1, write=False)"
+        },
+        {
+          "expected_race_detected": "unordered ('storage', (0, 0), 16): Access(invocation=4, group=(1, 0, 0), epoch=0, write=True) versus Access(invocation=7, group=(1, 0, 0), epoch=1, write=False)"
+        },
+        {
+          "expected_race_detected": "unordered ('storage', (0, 0), 8): Access(invocation=2, group=(0, 0, 0), epoch=0, write=True) versus Access(invocation=1, group=(0, 0, 0), epoch=1, write=False)"
+        },
+        {
+          "expected_race_detected": "unordered ('storage', (0, 0), 8): Access(invocation=2, group=(0, 0, 0), epoch=0, write=True) versus Access(invocation=1, group=(0, 0, 0), epoch=1, write=False)"
+        },
+        {
+          "expected_race_detected": "unordered ('storage', (0, 0), 4): Access(invocation=1, group=(0, 0, 0), epoch=0, write=True) versus Access(invocation=0, group=(0, 0, 0), epoch=1, write=False)"
+        },
+        {
+          "expected_race_detected": "unordered ('storage', (0, 0), 4): Access(invocation=1, group=(0, 0, 0), epoch=0, write=True) versus Access(invocation=0, group=(0, 0, 0), epoch=1, write=False)"
+        }
+      ],
+      "outcome": "passed",
+      "seconds": 0.007209763978607953
+    },
+    {
+      "id": "witness_zero",
+      "expected_status": 0,
+      "word_sha256": "fbe85d02c64e2b68d7091de86243101ec5280b9d39e0cd411d148b28fbb951b3",
+      "counts": {
+        "words": 366,
+        "types": 2,
+        "members": 0,
+        "resources": 1,
+        "name_bytes": 9
+      },
+      "target": {
+        "workgroup_roots": 1,
+        "static_barriers": 1,
+        "input_variables": 2,
+        "target_bound": 78,
+        "word_count": 366
+      },
+      "validator": {
+        "returncode": 0,
+        "output": ""
+      },
+      "execution": [
+        {
+          "events": 4353,
+          "steps": 80643,
+          "barriers_per_group": {
+            "(0, 0, 0)": 1
+          },
+          "memory_accesses": 6144,
+          "invocations": 256,
+          "groups": 1,
+          "schedule": "round_robin",
+          "poison": 165,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.1233918159850873
+        },
+        {
+          "events": 4353,
+          "steps": 80643,
+          "barriers_per_group": {
+            "(0, 0, 0)": 1
+          },
+          "memory_accesses": 6144,
+          "invocations": 256,
+          "groups": 1,
+          "schedule": "round_robin",
+          "poison": 90,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.1055837000021711
+        },
+        {
+          "events": 4353,
+          "steps": 80643,
+          "barriers_per_group": {
+            "(0, 0, 0)": 1
+          },
+          "memory_accesses": 6144,
+          "invocations": 256,
+          "groups": 1,
+          "schedule": "reverse",
+          "poison": 165,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.13061614200705662
+        },
+        {
+          "events": 4353,
+          "steps": 80643,
+          "barriers_per_group": {
+            "(0, 0, 0)": 1
+          },
+          "memory_accesses": 6144,
+          "invocations": 256,
+          "groups": 1,
+          "schedule": "reverse",
+          "poison": 90,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.14331586798653007
+        },
+        {
+          "events": 4353,
+          "steps": 80643,
+          "barriers_per_group": {
+            "(0, 0, 0)": 1
+          },
+          "memory_accesses": 6144,
+          "invocations": 256,
+          "groups": 1,
+          "schedule": "shuffle_0x11c0ffee",
+          "poison": 165,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.13070290797622874
+        },
+        {
+          "events": 4353,
+          "steps": 80643,
+          "barriers_per_group": {
+            "(0, 0, 0)": 1
+          },
+          "memory_accesses": 6144,
+          "invocations": 256,
+          "groups": 1,
+          "schedule": "shuffle_0x11c0ffee",
+          "poison": 90,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.14945816301042214
+        },
+        {
+          "events": 4353,
+          "steps": 80643,
+          "barriers_per_group": {
+            "(0, 0, 0)": 1
+          },
+          "memory_accesses": 6144,
+          "invocations": 256,
+          "groups": 1,
+          "schedule": "bounded_burst_1_3_7",
+          "poison": 165,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.13924639101605862
+        },
+        {
+          "events": 4353,
+          "steps": 80643,
+          "barriers_per_group": {
+            "(0, 0, 0)": 1
+          },
+          "memory_accesses": 6144,
+          "invocations": 256,
+          "groups": 1,
+          "schedule": "bounded_burst_1_3_7",
+          "poison": 90,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.1679498609737493
+        }
+      ],
+      "outcome": "passed",
+      "seconds": 1.0954702460439876
+    },
+    {
+      "id": "witness_nonatomic_1",
+      "expected_status": 0,
+      "word_sha256": "13c4b7f47857a6822d02f64250078a1c87a1c6bfeadb219f4b81cc44570a88be",
+      "counts": {
+        "words": 505,
+        "types": 2,
+        "members": 0,
+        "resources": 1,
+        "name_bytes": 12
+      },
+      "target": {
+        "workgroup_roots": 1,
+        "static_barriers": 3,
+        "input_variables": 3,
+        "target_bound": 101,
+        "word_count": 505
+      },
+      "validator": {
+        "returncode": 0,
+        "output": ""
+      },
+      "execution": [
+        {
+          "events": 134136,
+          "steps": 3701214,
+          "barriers_per_group": {
+            "(0, 0, 0)": 3,
+            "(1, 0, 0)": 3
+          },
+          "memory_accesses": 133110,
+          "invocations": 512,
+          "groups": 2,
+          "schedule": "round_robin",
+          "poison": 165,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 6.134919662028551
+        },
+        {
+          "events": 134136,
+          "steps": 3701214,
+          "barriers_per_group": {
+            "(0, 0, 0)": 3,
+            "(1, 0, 0)": 3
+          },
+          "memory_accesses": 133110,
+          "invocations": 512,
+          "groups": 2,
+          "schedule": "round_robin",
+          "poison": 90,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 6.0299619029974565
+        },
+        {
+          "events": 134136,
+          "steps": 3701214,
+          "barriers_per_group": {
+            "(0, 0, 0)": 3,
+            "(1, 0, 0)": 3
+          },
+          "memory_accesses": 133110,
+          "invocations": 512,
+          "groups": 2,
+          "schedule": "reverse",
+          "poison": 165,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 5.827377780980896
+        },
+        {
+          "events": 134136,
+          "steps": 3701214,
+          "barriers_per_group": {
+            "(0, 0, 0)": 3,
+            "(1, 0, 0)": 3
+          },
+          "memory_accesses": 133110,
+          "invocations": 512,
+          "groups": 2,
+          "schedule": "reverse",
+          "poison": 90,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 5.8939654669957235
+        },
+        {
+          "events": 134136,
+          "steps": 3701214,
+          "barriers_per_group": {
+            "(0, 0, 0)": 3,
+            "(1, 0, 0)": 3
+          },
+          "memory_accesses": 133110,
+          "invocations": 512,
+          "groups": 2,
+          "schedule": "shuffle_0x11c0ffee",
+          "poison": 165,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 5.999387568037491
+        },
+        {
+          "events": 134136,
+          "steps": 3701214,
+          "barriers_per_group": {
+            "(0, 0, 0)": 3,
+            "(1, 0, 0)": 3
+          },
+          "memory_accesses": 133110,
+          "invocations": 512,
+          "groups": 2,
+          "schedule": "shuffle_0x11c0ffee",
+          "poison": 90,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 5.887631326040719
+        },
+        {
+          "events": 134136,
+          "steps": 3701214,
+          "barriers_per_group": {
+            "(0, 0, 0)": 3,
+            "(1, 0, 0)": 3
+          },
+          "memory_accesses": 133110,
+          "invocations": 512,
+          "groups": 2,
+          "schedule": "bounded_burst_1_3_7",
+          "poison": 165,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 5.1977207330055535
+        },
+        {
+          "events": 134136,
+          "steps": 3701214,
+          "barriers_per_group": {
+            "(0, 0, 0)": 3,
+            "(1, 0, 0)": 3
+          },
+          "memory_accesses": 133110,
+          "invocations": 512,
+          "groups": 2,
+          "schedule": "bounded_burst_1_3_7",
+          "poison": 90,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 5.510239745024592
+        }
+      ],
+      "outcome": "passed",
+      "seconds": 46.48551822802983
+    },
+    {
+      "id": "witness_nonatomic_100",
+      "expected_status": 0,
+      "word_sha256": "44af617c0e73fdc3dcaaa2569e89406e95c7ca480f2d0813af183de69cb073d5",
+      "counts": {
+        "words": 610,
+        "types": 2,
+        "members": 0,
+        "resources": 1,
+        "name_bytes": 12
+      },
+      "target": {
+        "workgroup_roots": 1,
+        "static_barriers": 3,
+        "input_variables": 3,
+        "target_bound": 122,
+        "word_count": 610
+      },
+      "validator": {
+        "returncode": 0,
+        "output": ""
+      },
+      "execution": [
+        {
+          "events": 13262328,
+          "steps": 435226078,
+          "barriers_per_group": {
+            "(0, 0, 0)": 201,
+            "(1, 0, 0)": 201
+          },
+          "memory_accesses": 13159926,
+          "invocations": 512,
+          "groups": 2,
+          "schedule": "round_robin",
+          "poison": 165,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 623.8467417119537
+        },
+        {
+          "events": 13262328,
+          "steps": 435226078,
+          "barriers_per_group": {
+            "(0, 0, 0)": 201,
+            "(1, 0, 0)": 201
+          },
+          "memory_accesses": 13159926,
+          "invocations": 512,
+          "groups": 2,
+          "schedule": "round_robin",
+          "poison": 90,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 641.241042840993
+        },
+        {
+          "events": 13262328,
+          "steps": 435226078,
+          "barriers_per_group": {
+            "(0, 0, 0)": 201,
+            "(1, 0, 0)": 201
+          },
+          "memory_accesses": 13159926,
+          "invocations": 512,
+          "groups": 2,
+          "schedule": "reverse",
+          "poison": 165,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 639.8872201940394
+        },
+        {
+          "events": 13262328,
+          "steps": 435226078,
+          "barriers_per_group": {
+            "(0, 0, 0)": 201,
+            "(1, 0, 0)": 201
+          },
+          "memory_accesses": 13159926,
+          "invocations": 512,
+          "groups": 2,
+          "schedule": "reverse",
+          "poison": 90,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 649.2808584939921
+        },
+        {
+          "events": 13262328,
+          "steps": 435226078,
+          "barriers_per_group": {
+            "(0, 0, 0)": 201,
+            "(1, 0, 0)": 201
+          },
+          "memory_accesses": 13159926,
+          "invocations": 512,
+          "groups": 2,
+          "schedule": "shuffle_0x11c0ffee",
+          "poison": 165,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 670.3536672539776
+        },
+        {
+          "events": 13262328,
+          "steps": 435226078,
+          "barriers_per_group": {
+            "(0, 0, 0)": 201,
+            "(1, 0, 0)": 201
+          },
+          "memory_accesses": 13159926,
+          "invocations": 512,
+          "groups": 2,
+          "schedule": "shuffle_0x11c0ffee",
+          "poison": 90,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 679.5867674959591
+        },
+        {
+          "events": 13262328,
+          "steps": 435226078,
+          "barriers_per_group": {
+            "(0, 0, 0)": 201,
+            "(1, 0, 0)": 201
+          },
+          "memory_accesses": 13159926,
+          "invocations": 512,
+          "groups": 2,
+          "schedule": "bounded_burst_1_3_7",
+          "poison": 165,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 590.0232639139867
+        },
+        {
+          "events": 13262328,
+          "steps": 435226078,
+          "barriers_per_group": {
+            "(0, 0, 0)": 201,
+            "(1, 0, 0)": 201
+          },
+          "memory_accesses": 13159926,
+          "invocations": 512,
+          "groups": 2,
+          "schedule": "bounded_burst_1_3_7",
+          "poison": 90,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 590.146212150983
+        }
+      ],
+      "outcome": "passed",
+      "seconds": 5084.373908362002
+    },
+    {
+      "id": "witness_pairwise_0",
+      "expected_status": 0,
+      "word_sha256": "4daef4a8fc8d0126ad48e5c9a8e98ffb1db38d0ad70e4986af3ead2387087c57",
+      "counts": {
+        "words": 911,
+        "types": 4,
+        "members": 4,
+        "resources": 4,
+        "name_bytes": 59
+      },
+      "target": {
+        "workgroup_roots": 1,
+        "static_barriers": 3,
+        "input_variables": 2,
+        "target_bound": 162,
+        "word_count": 911
+      },
+      "validator": {
+        "returncode": 0,
+        "output": ""
+      },
+      "execution": [
+        {
+          "events": 72,
+          "steps": 1539,
+          "barriers_per_group": {
+            "(0, 0, 0)": 5
+          },
+          "memory_accesses": 39,
+          "invocations": 8,
+          "groups": 1,
+          "schedule": "round_robin",
+          "poison": 165,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.002520109002944082
+        },
+        {
+          "events": 72,
+          "steps": 1539,
+          "barriers_per_group": {
+            "(0, 0, 0)": 5
+          },
+          "memory_accesses": 39,
+          "invocations": 8,
+          "groups": 1,
+          "schedule": "round_robin",
+          "poison": 90,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.0018439610139466822
+        },
+        {
+          "events": 72,
+          "steps": 1539,
+          "barriers_per_group": {
+            "(0, 0, 0)": 5
+          },
+          "memory_accesses": 39,
+          "invocations": 8,
+          "groups": 1,
+          "schedule": "reverse",
+          "poison": 165,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.0017846139962784946
+        },
+        {
+          "events": 72,
+          "steps": 1539,
+          "barriers_per_group": {
+            "(0, 0, 0)": 5
+          },
+          "memory_accesses": 39,
+          "invocations": 8,
+          "groups": 1,
+          "schedule": "reverse",
+          "poison": 90,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.0018540869932621717
+        },
+        {
+          "events": 72,
+          "steps": 1539,
+          "barriers_per_group": {
+            "(0, 0, 0)": 5
+          },
+          "memory_accesses": 39,
+          "invocations": 8,
+          "groups": 1,
+          "schedule": "shuffle_0x11c0ffee",
+          "poison": 165,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.0018616070155985653
+        },
+        {
+          "events": 72,
+          "steps": 1539,
+          "barriers_per_group": {
+            "(0, 0, 0)": 5
+          },
+          "memory_accesses": 39,
+          "invocations": 8,
+          "groups": 1,
+          "schedule": "shuffle_0x11c0ffee",
+          "poison": 90,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.0017974729998968542
+        },
+        {
+          "events": 72,
+          "steps": 1539,
+          "barriers_per_group": {
+            "(0, 0, 0)": 5
+          },
+          "memory_accesses": 39,
+          "invocations": 8,
+          "groups": 1,
+          "schedule": "bounded_burst_1_3_7",
+          "poison": 165,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.0018684780225157738
+        },
+        {
+          "events": 72,
+          "steps": 1539,
+          "barriers_per_group": {
+            "(0, 0, 0)": 5
+          },
+          "memory_accesses": 39,
+          "invocations": 8,
+          "groups": 1,
+          "schedule": "bounded_burst_1_3_7",
+          "poison": 90,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.0019470639526844025
+        }
+      ],
+      "outcome": "passed",
+      "seconds": 0.023263256007339805
+    },
+    {
+      "id": "witness_pairwise_5",
+      "expected_status": 0,
+      "word_sha256": "4daef4a8fc8d0126ad48e5c9a8e98ffb1db38d0ad70e4986af3ead2387087c57",
+      "counts": {
+        "words": 911,
+        "types": 4,
+        "members": 4,
+        "resources": 4,
+        "name_bytes": 59
+      },
+      "target": {
+        "workgroup_roots": 1,
+        "static_barriers": 3,
+        "input_variables": 2,
+        "target_bound": 162,
+        "word_count": 911
+      },
+      "validator": {
+        "returncode": 0,
+        "output": ""
+      },
+      "execution": [
+        {
+          "events": 80,
+          "steps": 1641,
+          "barriers_per_group": {
+            "(0, 0, 0)": 5
+          },
+          "memory_accesses": 47,
+          "invocations": 8,
+          "groups": 1,
+          "schedule": "round_robin",
+          "poison": 165,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.0022950469865463674
+        },
+        {
+          "events": 80,
+          "steps": 1641,
+          "barriers_per_group": {
+            "(0, 0, 0)": 5
+          },
+          "memory_accesses": 47,
+          "invocations": 8,
+          "groups": 1,
+          "schedule": "round_robin",
+          "poison": 90,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.002183392003644258
+        },
+        {
+          "events": 80,
+          "steps": 1641,
+          "barriers_per_group": {
+            "(0, 0, 0)": 5
+          },
+          "memory_accesses": 47,
+          "invocations": 8,
+          "groups": 1,
+          "schedule": "reverse",
+          "poison": 165,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.001970748999156058
+        },
+        {
+          "events": 80,
+          "steps": 1641,
+          "barriers_per_group": {
+            "(0, 0, 0)": 5
+          },
+          "memory_accesses": 47,
+          "invocations": 8,
+          "groups": 1,
+          "schedule": "reverse",
+          "poison": 90,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.002401564968749881
+        },
+        {
+          "events": 80,
+          "steps": 1641,
+          "barriers_per_group": {
+            "(0, 0, 0)": 5
+          },
+          "memory_accesses": 47,
+          "invocations": 8,
+          "groups": 1,
+          "schedule": "shuffle_0x11c0ffee",
+          "poison": 165,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.0024112289538607
+        },
+        {
+          "events": 80,
+          "steps": 1641,
+          "barriers_per_group": {
+            "(0, 0, 0)": 5
+          },
+          "memory_accesses": 47,
+          "invocations": 8,
+          "groups": 1,
+          "schedule": "shuffle_0x11c0ffee",
+          "poison": 90,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.00236766500165686
+        },
+        {
+          "events": 80,
+          "steps": 1641,
+          "barriers_per_group": {
+            "(0, 0, 0)": 5
+          },
+          "memory_accesses": 47,
+          "invocations": 8,
+          "groups": 1,
+          "schedule": "bounded_burst_1_3_7",
+          "poison": 165,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.0023735930444672704
+        },
+        {
+          "events": 80,
+          "steps": 1641,
+          "barriers_per_group": {
+            "(0, 0, 0)": 5
+          },
+          "memory_accesses": 47,
+          "invocations": 8,
+          "groups": 1,
+          "schedule": "bounded_burst_1_3_7",
+          "poison": 90,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.0027329829754307866
+        }
+      ],
+      "outcome": "passed",
+      "seconds": 0.023380448983516544
+    },
+    {
+      "id": "witness_pairwise_8",
+      "expected_status": 0,
+      "word_sha256": "4daef4a8fc8d0126ad48e5c9a8e98ffb1db38d0ad70e4986af3ead2387087c57",
+      "counts": {
+        "words": 911,
+        "types": 4,
+        "members": 4,
+        "resources": 4,
+        "name_bytes": 59
+      },
+      "target": {
+        "workgroup_roots": 1,
+        "static_barriers": 3,
+        "input_variables": 2,
+        "target_bound": 162,
+        "word_count": 911
+      },
+      "validator": {
+        "returncode": 0,
+        "output": ""
+      },
+      "execution": [
+        {
+          "events": 88,
+          "steps": 1715,
+          "barriers_per_group": {
+            "(0, 0, 0)": 5
+          },
+          "memory_accesses": 55,
+          "invocations": 8,
+          "groups": 1,
+          "schedule": "round_robin",
+          "poison": 165,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.0025174450129270554
+        },
+        {
+          "events": 88,
+          "steps": 1715,
+          "barriers_per_group": {
+            "(0, 0, 0)": 5
+          },
+          "memory_accesses": 55,
+          "invocations": 8,
+          "groups": 1,
+          "schedule": "round_robin",
+          "poison": 90,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.002276119019370526
+        },
+        {
+          "events": 88,
+          "steps": 1715,
+          "barriers_per_group": {
+            "(0, 0, 0)": 5
+          },
+          "memory_accesses": 55,
+          "invocations": 8,
+          "groups": 1,
+          "schedule": "reverse",
+          "poison": 165,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.0022687489981763065
+        },
+        {
+          "events": 88,
+          "steps": 1715,
+          "barriers_per_group": {
+            "(0, 0, 0)": 5
+          },
+          "memory_accesses": 55,
+          "invocations": 8,
+          "groups": 1,
+          "schedule": "reverse",
+          "poison": 90,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.002211563987657428
+        },
+        {
+          "events": 88,
+          "steps": 1715,
+          "barriers_per_group": {
+            "(0, 0, 0)": 5
+          },
+          "memory_accesses": 55,
+          "invocations": 8,
+          "groups": 1,
+          "schedule": "shuffle_0x11c0ffee",
+          "poison": 165,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.002291643002536148
+        },
+        {
+          "events": 88,
+          "steps": 1715,
+          "barriers_per_group": {
+            "(0, 0, 0)": 5
+          },
+          "memory_accesses": 55,
+          "invocations": 8,
+          "groups": 1,
+          "schedule": "shuffle_0x11c0ffee",
+          "poison": 90,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.002295578015036881
+        },
+        {
+          "events": 88,
+          "steps": 1715,
+          "barriers_per_group": {
+            "(0, 0, 0)": 5
+          },
+          "memory_accesses": 55,
+          "invocations": 8,
+          "groups": 1,
+          "schedule": "bounded_burst_1_3_7",
+          "poison": 165,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.002116583986207843
+        },
+        {
+          "events": 88,
+          "steps": 1715,
+          "barriers_per_group": {
+            "(0, 0, 0)": 5
+          },
+          "memory_accesses": 55,
+          "invocations": 8,
+          "groups": 1,
+          "schedule": "bounded_burst_1_3_7",
+          "poison": 90,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.0023680650047026575
+        }
+      ],
+      "outcome": "passed",
+      "seconds": 0.02308004500810057
+    },
+    {
+      "id": "witness_pairwise_17",
+      "expected_status": 0,
+      "word_sha256": "4daef4a8fc8d0126ad48e5c9a8e98ffb1db38d0ad70e4986af3ead2387087c57",
+      "counts": {
+        "words": 911,
+        "types": 4,
+        "members": 4,
+        "resources": 4,
+        "name_bytes": 59
+      },
+      "target": {
+        "workgroup_roots": 1,
+        "static_barriers": 3,
+        "input_variables": 2,
+        "target_bound": 162,
+        "word_count": 911
+      },
+      "validator": {
+        "returncode": 0,
+        "output": ""
+      },
+      "execution": [
+        {
+          "events": 85,
+          "steps": 1703,
+          "barriers_per_group": {
+            "(0, 0, 0)": 5
+          },
+          "memory_accesses": 52,
+          "invocations": 8,
+          "groups": 1,
+          "schedule": "round_robin",
+          "poison": 165,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.002559828048106283
+        },
+        {
+          "events": 85,
+          "steps": 1703,
+          "barriers_per_group": {
+            "(0, 0, 0)": 5
+          },
+          "memory_accesses": 52,
+          "invocations": 8,
+          "groups": 1,
+          "schedule": "round_robin",
+          "poison": 90,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.0022619080264121294
+        },
+        {
+          "events": 85,
+          "steps": 1703,
+          "barriers_per_group": {
+            "(0, 0, 0)": 5
+          },
+          "memory_accesses": 52,
+          "invocations": 8,
+          "groups": 1,
+          "schedule": "reverse",
+          "poison": 165,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.002718972973525524
+        },
+        {
+          "events": 85,
+          "steps": 1703,
+          "barriers_per_group": {
+            "(0, 0, 0)": 5
+          },
+          "memory_accesses": 52,
+          "invocations": 8,
+          "groups": 1,
+          "schedule": "reverse",
+          "poison": 90,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.0022717140382155776
+        },
+        {
+          "events": 85,
+          "steps": 1703,
+          "barriers_per_group": {
+            "(0, 0, 0)": 5
+          },
+          "memory_accesses": 52,
+          "invocations": 8,
+          "groups": 1,
+          "schedule": "shuffle_0x11c0ffee",
+          "poison": 165,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.0022735450183972716
+        },
+        {
+          "events": 85,
+          "steps": 1703,
+          "barriers_per_group": {
+            "(0, 0, 0)": 5
+          },
+          "memory_accesses": 52,
+          "invocations": 8,
+          "groups": 1,
+          "schedule": "shuffle_0x11c0ffee",
+          "poison": 90,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.002319142979104072
+        },
+        {
+          "events": 85,
+          "steps": 1703,
+          "barriers_per_group": {
+            "(0, 0, 0)": 5
+          },
+          "memory_accesses": 52,
+          "invocations": 8,
+          "groups": 1,
+          "schedule": "bounded_burst_1_3_7",
+          "poison": 165,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.002305312955286354
+        },
+        {
+          "events": 85,
+          "steps": 1703,
+          "barriers_per_group": {
+            "(0, 0, 0)": 5
+          },
+          "memory_accesses": 52,
+          "invocations": 8,
+          "groups": 1,
+          "schedule": "bounded_burst_1_3_7",
+          "poison": 90,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.002389957953710109
+        }
+      ],
+      "outcome": "passed",
+      "seconds": 0.02336718898732215
+    },
+    {
+      "id": "witness_matmul_67",
+      "expected_status": 0,
+      "word_sha256": "faf9a9a602c88217618f161253c16484b892604a296cb30bcd4d9b51add17479",
+      "counts": {
+        "words": 978,
+        "types": 4,
+        "members": 4,
+        "resources": 4,
+        "name_bytes": 63
+      },
+      "target": {
+        "workgroup_roots": 1,
+        "static_barriers": 3,
+        "input_variables": 3,
+        "target_bound": 174,
+        "word_count": 978
+      },
+      "validator": {
+        "returncode": 0,
+        "output": ""
+      },
+      "execution": [
+        {
+          "events": 1865,
+          "steps": 42799,
+          "barriers_per_group": {
+            "(0, 0, 0)": 8,
+            "(1, 0, 0)": 8,
+            "(2, 0, 0)": 1
+          },
+          "memory_accesses": 964,
+          "invocations": 192,
+          "groups": 3,
+          "schedule": "round_robin",
+          "poison": 165,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.05858931603142992
+        },
+        {
+          "events": 1865,
+          "steps": 42799,
+          "barriers_per_group": {
+            "(0, 0, 0)": 8,
+            "(1, 0, 0)": 8,
+            "(2, 0, 0)": 1
+          },
+          "memory_accesses": 964,
+          "invocations": 192,
+          "groups": 3,
+          "schedule": "round_robin",
+          "poison": 90,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.05850534205092117
+        },
+        {
+          "events": 1865,
+          "steps": 42799,
+          "barriers_per_group": {
+            "(0, 0, 0)": 8,
+            "(1, 0, 0)": 8,
+            "(2, 0, 0)": 1
+          },
+          "memory_accesses": 964,
+          "invocations": 192,
+          "groups": 3,
+          "schedule": "reverse",
+          "poison": 165,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.06146614300087094
+        },
+        {
+          "events": 1865,
+          "steps": 42799,
+          "barriers_per_group": {
+            "(0, 0, 0)": 8,
+            "(1, 0, 0)": 8,
+            "(2, 0, 0)": 1
+          },
+          "memory_accesses": 964,
+          "invocations": 192,
+          "groups": 3,
+          "schedule": "reverse",
+          "poison": 90,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.055812498030718416
+        },
+        {
+          "events": 1865,
+          "steps": 42799,
+          "barriers_per_group": {
+            "(0, 0, 0)": 8,
+            "(1, 0, 0)": 8,
+            "(2, 0, 0)": 1
+          },
+          "memory_accesses": 964,
+          "invocations": 192,
+          "groups": 3,
+          "schedule": "shuffle_0x11c0ffee",
+          "poison": 165,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.05894369899760932
+        },
+        {
+          "events": 1865,
+          "steps": 42799,
+          "barriers_per_group": {
+            "(0, 0, 0)": 8,
+            "(1, 0, 0)": 8,
+            "(2, 0, 0)": 1
+          },
+          "memory_accesses": 964,
+          "invocations": 192,
+          "groups": 3,
+          "schedule": "shuffle_0x11c0ffee",
+          "poison": 90,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.05961245601065457
+        },
+        {
+          "events": 1865,
+          "steps": 42799,
+          "barriers_per_group": {
+            "(0, 0, 0)": 8,
+            "(1, 0, 0)": 8,
+            "(2, 0, 0)": 1
+          },
+          "memory_accesses": 964,
+          "invocations": 192,
+          "groups": 3,
+          "schedule": "bounded_burst_1_3_7",
+          "poison": 165,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.05958468600874767
+        },
+        {
+          "events": 1865,
+          "steps": 42799,
+          "barriers_per_group": {
+            "(0, 0, 0)": 8,
+            "(1, 0, 0)": 8,
+            "(2, 0, 0)": 1
+          },
+          "memory_accesses": 964,
+          "invocations": 192,
+          "groups": 3,
+          "schedule": "bounded_burst_1_3_7",
+          "poison": 90,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.05856506002601236
+        }
+      ],
+      "outcome": "passed",
+      "seconds": 0.47525499103358015
+    },
+    {
+      "id": "witness_matmul_5",
+      "expected_status": 0,
+      "word_sha256": "faf9a9a602c88217618f161253c16484b892604a296cb30bcd4d9b51add17479",
+      "counts": {
+        "words": 978,
+        "types": 4,
+        "members": 4,
+        "resources": 4,
+        "name_bytes": 63
+      },
+      "target": {
+        "workgroup_roots": 1,
+        "static_barriers": 3,
+        "input_variables": 3,
+        "target_bound": 174,
+        "word_count": 978
+      },
+      "validator": {
+        "returncode": 0,
+        "output": ""
+      },
+      "execution": [
+        {
+          "events": 1620,
+          "steps": 37115,
+          "barriers_per_group": {
+            "(0, 0, 0)": 8,
+            "(1, 0, 0)": 8,
+            "(2, 0, 0)": 1
+          },
+          "memory_accesses": 721,
+          "invocations": 192,
+          "groups": 3,
+          "schedule": "round_robin",
+          "poison": 165,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.05098381999414414
+        },
+        {
+          "events": 1620,
+          "steps": 37115,
+          "barriers_per_group": {
+            "(0, 0, 0)": 8,
+            "(1, 0, 0)": 8,
+            "(2, 0, 0)": 1
+          },
+          "memory_accesses": 721,
+          "invocations": 192,
+          "groups": 3,
+          "schedule": "round_robin",
+          "poison": 90,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.05585712898755446
+        },
+        {
+          "events": 1620,
+          "steps": 37115,
+          "barriers_per_group": {
+            "(0, 0, 0)": 8,
+            "(1, 0, 0)": 8,
+            "(2, 0, 0)": 1
+          },
+          "memory_accesses": 721,
+          "invocations": 192,
+          "groups": 3,
+          "schedule": "reverse",
+          "poison": 165,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.053642814978957176
+        },
+        {
+          "events": 1620,
+          "steps": 37115,
+          "barriers_per_group": {
+            "(0, 0, 0)": 8,
+            "(1, 0, 0)": 8,
+            "(2, 0, 0)": 1
+          },
+          "memory_accesses": 721,
+          "invocations": 192,
+          "groups": 3,
+          "schedule": "reverse",
+          "poison": 90,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.05241031595505774
+        },
+        {
+          "events": 1620,
+          "steps": 37115,
+          "barriers_per_group": {
+            "(0, 0, 0)": 8,
+            "(1, 0, 0)": 8,
+            "(2, 0, 0)": 1
+          },
+          "memory_accesses": 721,
+          "invocations": 192,
+          "groups": 3,
+          "schedule": "shuffle_0x11c0ffee",
+          "poison": 165,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.05290989298373461
+        },
+        {
+          "events": 1620,
+          "steps": 37115,
+          "barriers_per_group": {
+            "(0, 0, 0)": 8,
+            "(1, 0, 0)": 8,
+            "(2, 0, 0)": 1
+          },
+          "memory_accesses": 721,
+          "invocations": 192,
+          "groups": 3,
+          "schedule": "shuffle_0x11c0ffee",
+          "poison": 90,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.051102085039019585
+        },
+        {
+          "events": 1620,
+          "steps": 37115,
+          "barriers_per_group": {
+            "(0, 0, 0)": 8,
+            "(1, 0, 0)": 8,
+            "(2, 0, 0)": 1
+          },
+          "memory_accesses": 721,
+          "invocations": 192,
+          "groups": 3,
+          "schedule": "bounded_burst_1_3_7",
+          "poison": 165,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.053000757994595915
+        },
+        {
+          "events": 1620,
+          "steps": 37115,
+          "barriers_per_group": {
+            "(0, 0, 0)": 8,
+            "(1, 0, 0)": 8,
+            "(2, 0, 0)": 1
+          },
+          "memory_accesses": 721,
+          "invocations": 192,
+          "groups": 3,
+          "schedule": "bounded_burst_1_3_7",
+          "poison": 90,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.05395769001916051
+        }
+      ],
+      "outcome": "passed",
+      "seconds": 0.4286982410121709
+    },
+    {
+      "id": "witness_vec4_73",
+      "expected_status": 0,
+      "word_sha256": "43c69f0248cab8c3c0f0d4ecfcebc19533d4e417dcb0eed8375ad7c90381c4bd",
+      "counts": {
+        "words": 831,
+        "types": 5,
+        "members": 4,
+        "resources": 3,
+        "name_bytes": 65
+      },
+      "target": {
+        "workgroup_roots": 1,
+        "static_barriers": 3,
+        "input_variables": 3,
+        "target_bound": 149,
+        "word_count": 831
+      },
+      "validator": {
+        "returncode": 0,
+        "output": ""
+      },
+      "execution": [
+        {
+          "events": 2374,
+          "steps": 47429,
+          "barriers_per_group": {
+            "(0, 0, 0)": 8,
+            "(1, 0, 0)": 8,
+            "(2, 0, 0)": 8
+          },
+          "memory_accesses": 1027,
+          "invocations": 192,
+          "groups": 3,
+          "schedule": "round_robin",
+          "poison": 165,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.08646796399261802
+        },
+        {
+          "events": 2374,
+          "steps": 47429,
+          "barriers_per_group": {
+            "(0, 0, 0)": 8,
+            "(1, 0, 0)": 8,
+            "(2, 0, 0)": 8
+          },
+          "memory_accesses": 1027,
+          "invocations": 192,
+          "groups": 3,
+          "schedule": "round_robin",
+          "poison": 90,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.08144244097638875
+        },
+        {
+          "events": 2374,
+          "steps": 47429,
+          "barriers_per_group": {
+            "(0, 0, 0)": 8,
+            "(1, 0, 0)": 8,
+            "(2, 0, 0)": 8
+          },
+          "memory_accesses": 1027,
+          "invocations": 192,
+          "groups": 3,
+          "schedule": "reverse",
+          "poison": 165,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.077356496010907
+        },
+        {
+          "events": 2374,
+          "steps": 47429,
+          "barriers_per_group": {
+            "(0, 0, 0)": 8,
+            "(1, 0, 0)": 8,
+            "(2, 0, 0)": 8
+          },
+          "memory_accesses": 1027,
+          "invocations": 192,
+          "groups": 3,
+          "schedule": "reverse",
+          "poison": 90,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.06527491402812302
+        },
+        {
+          "events": 2374,
+          "steps": 47429,
+          "barriers_per_group": {
+            "(0, 0, 0)": 8,
+            "(1, 0, 0)": 8,
+            "(2, 0, 0)": 8
+          },
+          "memory_accesses": 1027,
+          "invocations": 192,
+          "groups": 3,
+          "schedule": "shuffle_0x11c0ffee",
+          "poison": 165,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.06754839001223445
+        },
+        {
+          "events": 2374,
+          "steps": 47429,
+          "barriers_per_group": {
+            "(0, 0, 0)": 8,
+            "(1, 0, 0)": 8,
+            "(2, 0, 0)": 8
+          },
+          "memory_accesses": 1027,
+          "invocations": 192,
+          "groups": 3,
+          "schedule": "shuffle_0x11c0ffee",
+          "poison": 90,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.068253152014222
+        },
+        {
+          "events": 2374,
+          "steps": 47429,
+          "barriers_per_group": {
+            "(0, 0, 0)": 8,
+            "(1, 0, 0)": 8,
+            "(2, 0, 0)": 8
+          },
+          "memory_accesses": 1027,
+          "invocations": 192,
+          "groups": 3,
+          "schedule": "bounded_burst_1_3_7",
+          "poison": 165,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.06583683600183576
+        },
+        {
+          "events": 2374,
+          "steps": 47429,
+          "barriers_per_group": {
+            "(0, 0, 0)": 8,
+            "(1, 0, 0)": 8,
+            "(2, 0, 0)": 8
+          },
+          "memory_accesses": 1027,
+          "invocations": 192,
+          "groups": 3,
+          "schedule": "bounded_burst_1_3_7",
+          "poison": 90,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.08503789303358644
+        }
+      ],
+      "outcome": "passed",
+      "seconds": 0.6031073769554496
+    },
+    {
+      "id": "witness_vec4_128",
+      "expected_status": 0,
+      "word_sha256": "43c69f0248cab8c3c0f0d4ecfcebc19533d4e417dcb0eed8375ad7c90381c4bd",
+      "counts": {
+        "words": 831,
+        "types": 5,
+        "members": 4,
+        "resources": 3,
+        "name_bytes": 65
+      },
+      "target": {
+        "workgroup_roots": 1,
+        "static_barriers": 3,
+        "input_variables": 3,
+        "target_bound": 149,
+        "word_count": 831
+      },
+      "validator": {
+        "returncode": 0,
+        "output": ""
+      },
+      "execution": [
+        {
+          "events": 2431,
+          "steps": 48042,
+          "barriers_per_group": {
+            "(0, 0, 0)": 8,
+            "(1, 0, 0)": 8,
+            "(2, 0, 0)": 8
+          },
+          "memory_accesses": 1084,
+          "invocations": 192,
+          "groups": 3,
+          "schedule": "round_robin",
+          "poison": 165,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.07742527301888913
+        },
+        {
+          "events": 2431,
+          "steps": 48042,
+          "barriers_per_group": {
+            "(0, 0, 0)": 8,
+            "(1, 0, 0)": 8,
+            "(2, 0, 0)": 8
+          },
+          "memory_accesses": 1084,
+          "invocations": 192,
+          "groups": 3,
+          "schedule": "round_robin",
+          "poison": 90,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.06591012398712337
+        },
+        {
+          "events": 2431,
+          "steps": 48042,
+          "barriers_per_group": {
+            "(0, 0, 0)": 8,
+            "(1, 0, 0)": 8,
+            "(2, 0, 0)": 8
+          },
+          "memory_accesses": 1084,
+          "invocations": 192,
+          "groups": 3,
+          "schedule": "reverse",
+          "poison": 165,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.06409304199041799
+        },
+        {
+          "events": 2431,
+          "steps": 48042,
+          "barriers_per_group": {
+            "(0, 0, 0)": 8,
+            "(1, 0, 0)": 8,
+            "(2, 0, 0)": 8
+          },
+          "memory_accesses": 1084,
+          "invocations": 192,
+          "groups": 3,
+          "schedule": "reverse",
+          "poison": 90,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.07354774902341887
+        },
+        {
+          "events": 2431,
+          "steps": 48042,
+          "barriers_per_group": {
+            "(0, 0, 0)": 8,
+            "(1, 0, 0)": 8,
+            "(2, 0, 0)": 8
+          },
+          "memory_accesses": 1084,
+          "invocations": 192,
+          "groups": 3,
+          "schedule": "shuffle_0x11c0ffee",
+          "poison": 165,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.07754316698992625
+        },
+        {
+          "events": 2431,
+          "steps": 48042,
+          "barriers_per_group": {
+            "(0, 0, 0)": 8,
+            "(1, 0, 0)": 8,
+            "(2, 0, 0)": 8
+          },
+          "memory_accesses": 1084,
+          "invocations": 192,
+          "groups": 3,
+          "schedule": "shuffle_0x11c0ffee",
+          "poison": 90,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.08198915101820603
+        },
+        {
+          "events": 2431,
+          "steps": 48042,
+          "barriers_per_group": {
+            "(0, 0, 0)": 8,
+            "(1, 0, 0)": 8,
+            "(2, 0, 0)": 8
+          },
+          "memory_accesses": 1084,
+          "invocations": 192,
+          "groups": 3,
+          "schedule": "bounded_burst_1_3_7",
+          "poison": 165,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.07715993199963123
+        },
+        {
+          "events": 2431,
+          "steps": 48042,
+          "barriers_per_group": {
+            "(0, 0, 0)": 8,
+            "(1, 0, 0)": 8,
+            "(2, 0, 0)": 8
+          },
+          "memory_accesses": 1084,
+          "invocations": 192,
+          "groups": 3,
+          "schedule": "bounded_burst_1_3_7",
+          "poison": 90,
+          "pure_instruction_quantum": 64,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.07994985999539495
+        }
+      ],
+      "outcome": "passed",
+      "seconds": 0.6044397199875675
+    },
+    {
+      "id": "work_formals_16",
+      "expected_status": 0,
+      "word_sha256": "35defa6da52432d2cc3eb50235ceb6acafe3cb1d330ded25f34f2b4f70cd7819",
+      "counts": {
+        "words": 236,
+        "types": 0,
+        "members": 0,
+        "resources": 0,
+        "name_bytes": 5
+      },
+      "target": {
+        "workgroup_roots": 0,
+        "static_barriers": 1,
+        "input_variables": 0,
+        "target_bound": 66,
+        "word_count": 236
+      },
+      "validator": {
+        "returncode": 0,
+        "output": ""
+      },
+      "outcome": "passed",
+      "seconds": 0.003790075017604977
+    },
+    {
+      "id": "work_formals_64",
+      "expected_status": 0,
+      "word_sha256": "1da1cc35db516335028c585359087169c0aeaa20d13f35fab61c932a53bc514d",
+      "counts": {
+        "words": 668,
+        "types": 0,
+        "members": 0,
+        "resources": 0,
+        "name_bytes": 5
+      },
+      "target": {
+        "workgroup_roots": 0,
+        "static_barriers": 1,
+        "input_variables": 0,
+        "target_bound": 162,
+        "word_count": 668
+      },
+      "validator": {
+        "returncode": 0,
+        "output": ""
+      },
+      "outcome": "passed",
+      "seconds": 0.0043557899771258235
+    },
+    {
+      "id": "work_formals_128",
+      "expected_status": 0,
+      "word_sha256": "f4da99f36ba3936f2bb7698952432017fe6ddfa6e57a535ce7d92374e7d1396f",
+      "counts": {
+        "words": 1244,
+        "types": 0,
+        "members": 0,
+        "resources": 0,
+        "name_bytes": 5
+      },
+      "target": {
+        "workgroup_roots": 0,
+        "static_barriers": 1,
+        "input_variables": 0,
+        "target_bound": 290,
+        "word_count": 1244
+      },
+      "validator": {
+        "returncode": 0,
+        "output": ""
+      },
+      "outcome": "passed",
+      "seconds": 0.004916378005873412
+    },
+    {
+      "id": "work_nested_2",
+      "expected_status": 0,
+      "word_sha256": "2e5d748cb6854c7fdadc93bb050c62b7064c68df89c74fa49a6af99dc17fc23f",
+      "counts": {
+        "words": 272,
+        "types": 0,
+        "members": 0,
+        "resources": 0,
+        "name_bytes": 5
+      },
+      "target": {
+        "workgroup_roots": 0,
+        "static_barriers": 1,
+        "input_variables": 5,
+        "target_bound": 62,
+        "word_count": 272
+      },
+      "validator": {
+        "returncode": 0,
+        "output": ""
+      },
+      "outcome": "passed",
+      "seconds": 0.0046728780143894255
+    },
+    {
+      "id": "work_nested_4",
+      "expected_status": 0,
+      "word_sha256": "28cf43b99ddc50a688beb8fba9b21b9c7100fbf6a6f59052d58133769d0ad9ec",
+      "counts": {
+        "words": 404,
+        "types": 0,
+        "members": 0,
+        "resources": 0,
+        "name_bytes": 5
+      },
+      "target": {
+        "workgroup_roots": 0,
+        "static_barriers": 1,
+        "input_variables": 5,
+        "target_bound": 88,
+        "word_count": 404
+      },
+      "validator": {
+        "returncode": 0,
+        "output": ""
+      },
+      "outcome": "passed",
+      "seconds": 0.004417471005581319
+    },
+    {
+      "id": "work_nested_8",
+      "expected_status": 0,
+      "word_sha256": "6ab185b408b7e5d2d67bccba0e856733294fdd70f376ab095fdebce8776f3b0f",
+      "counts": {
+        "words": 668,
+        "types": 0,
+        "members": 0,
+        "resources": 0,
+        "name_bytes": 5
+      },
+      "target": {
+        "workgroup_roots": 0,
+        "static_barriers": 1,
+        "input_variables": 5,
+        "target_bound": 140,
+        "word_count": 668
+      },
+      "validator": {
+        "returncode": 0,
+        "output": ""
+      },
+      "outcome": "passed",
+      "seconds": 0.005146729003172368
+    },
+    {
+      "id": "execute_runtime_bounds",
+      "expected_status": 0,
+      "word_sha256": "698c61cf81ca7546dd648f71868f6bee35fde0c84e31d1df4dd0fc95d2502744",
+      "counts": {
+        "words": 437,
+        "types": 2,
+        "members": 0,
+        "resources": 1,
+        "name_bytes": 9
+      },
+      "target": {
+        "workgroup_roots": 1,
+        "static_barriers": 2,
+        "input_variables": 5,
+        "target_bound": 84,
+        "word_count": 437
+      },
+      "validator": {
+        "returncode": 0,
+        "output": ""
+      },
+      "execution": [
+        {
+          "events": 601,
+          "steps": 613,
+          "barriers_per_group": {
+            "(0, 0, 0)": 2,
+            "(1, 0, 0)": 2,
+            "(2, 0, 0)": 2
+          },
+          "memory_accesses": 46,
+          "invocations": 12,
+          "groups": 3,
+          "schedule": "round_robin",
+          "poison": 165,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.0014451530296355486
+        },
+        {
+          "events": 601,
+          "steps": 613,
+          "barriers_per_group": {
+            "(0, 0, 0)": 2,
+            "(1, 0, 0)": 2,
+            "(2, 0, 0)": 2
+          },
+          "memory_accesses": 46,
+          "invocations": 12,
+          "groups": 3,
+          "schedule": "round_robin",
+          "poison": 90,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.0013312959927134216
+        },
+        {
+          "events": 601,
+          "steps": 613,
+          "barriers_per_group": {
+            "(0, 0, 0)": 2,
+            "(1, 0, 0)": 2,
+            "(2, 0, 0)": 2
+          },
+          "memory_accesses": 46,
+          "invocations": 12,
+          "groups": 3,
+          "schedule": "reverse",
+          "poison": 165,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.0014051850303076208
+        },
+        {
+          "events": 601,
+          "steps": 613,
+          "barriers_per_group": {
+            "(0, 0, 0)": 2,
+            "(1, 0, 0)": 2,
+            "(2, 0, 0)": 2
+          },
+          "memory_accesses": 46,
+          "invocations": 12,
+          "groups": 3,
+          "schedule": "reverse",
+          "poison": 90,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.0012397000100463629
+        },
+        {
+          "events": 601,
+          "steps": 613,
+          "barriers_per_group": {
+            "(0, 0, 0)": 2,
+            "(1, 0, 0)": 2,
+            "(2, 0, 0)": 2
+          },
+          "memory_accesses": 46,
+          "invocations": 12,
+          "groups": 3,
+          "schedule": "shuffle_0x11c0ffee",
+          "poison": 165,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.001666189986281097
+        },
+        {
+          "events": 601,
+          "steps": 613,
+          "barriers_per_group": {
+            "(0, 0, 0)": 2,
+            "(1, 0, 0)": 2,
+            "(2, 0, 0)": 2
+          },
+          "memory_accesses": 46,
+          "invocations": 12,
+          "groups": 3,
+          "schedule": "shuffle_0x11c0ffee",
+          "poison": 90,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.0013598770019598305
+        },
+        {
+          "events": 601,
+          "steps": 613,
+          "barriers_per_group": {
+            "(0, 0, 0)": 2,
+            "(1, 0, 0)": 2,
+            "(2, 0, 0)": 2
+          },
+          "memory_accesses": 46,
+          "invocations": 12,
+          "groups": 3,
+          "schedule": "bounded_burst_1_3_7",
+          "poison": 165,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.0013406990328803658
+        },
+        {
+          "events": 601,
+          "steps": 613,
+          "barriers_per_group": {
+            "(0, 0, 0)": 2,
+            "(1, 0, 0)": 2,
+            "(2, 0, 0)": 2
+          },
+          "memory_accesses": 46,
+          "invocations": 12,
+          "groups": 3,
+          "schedule": "bounded_burst_1_3_7",
+          "poison": 90,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.001456019002944231
+        }
+      ],
+      "outcome": "passed",
+      "seconds": 0.015252347046043724
+    },
+    {
+      "id": "execute_constant_skipped_effects",
+      "expected_status": 0,
+      "word_sha256": "c3d896c5f391d6793c1e7ea322c0793c1151fdc928a881d88fa476e1e0be4004",
+      "counts": {
+        "words": 273,
+        "types": 2,
+        "members": 0,
+        "resources": 1,
+        "name_bytes": 9
+      },
+      "target": {
+        "workgroup_roots": 0,
+        "static_barriers": 1,
+        "input_variables": 3,
+        "target_bound": 61,
+        "word_count": 273
+      },
+      "validator": {
+        "returncode": 0,
+        "output": ""
+      },
+      "execution": [
+        {
+          "events": 168,
+          "steps": 180,
+          "barriers_per_group": {
+            "(0, 0, 0)": 0,
+            "(1, 0, 0)": 0,
+            "(2, 0, 0)": 0
+          },
+          "memory_accesses": 12,
+          "invocations": 12,
+          "groups": 3,
+          "schedule": "round_robin",
+          "poison": 165,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.0004925969988107681
+        },
+        {
+          "events": 168,
+          "steps": 180,
+          "barriers_per_group": {
+            "(0, 0, 0)": 0,
+            "(1, 0, 0)": 0,
+            "(2, 0, 0)": 0
+          },
+          "memory_accesses": 12,
+          "invocations": 12,
+          "groups": 3,
+          "schedule": "round_robin",
+          "poison": 90,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.0004989570006728172
+        },
+        {
+          "events": 168,
+          "steps": 180,
+          "barriers_per_group": {
+            "(0, 0, 0)": 0,
+            "(1, 0, 0)": 0,
+            "(2, 0, 0)": 0
+          },
+          "memory_accesses": 12,
+          "invocations": 12,
+          "groups": 3,
+          "schedule": "reverse",
+          "poison": 165,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.00036673201248049736
+        },
+        {
+          "events": 168,
+          "steps": 180,
+          "barriers_per_group": {
+            "(0, 0, 0)": 0,
+            "(1, 0, 0)": 0,
+            "(2, 0, 0)": 0
+          },
+          "memory_accesses": 12,
+          "invocations": 12,
+          "groups": 3,
+          "schedule": "reverse",
+          "poison": 90,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.00100763700902462
+        },
+        {
+          "events": 168,
+          "steps": 180,
+          "barriers_per_group": {
+            "(0, 0, 0)": 0,
+            "(1, 0, 0)": 0,
+            "(2, 0, 0)": 0
+          },
+          "memory_accesses": 12,
+          "invocations": 12,
+          "groups": 3,
+          "schedule": "shuffle_0x11c0ffee",
+          "poison": 165,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.0005964510492049158
+        },
+        {
+          "events": 168,
+          "steps": 180,
+          "barriers_per_group": {
+            "(0, 0, 0)": 0,
+            "(1, 0, 0)": 0,
+            "(2, 0, 0)": 0
+          },
+          "memory_accesses": 12,
+          "invocations": 12,
+          "groups": 3,
+          "schedule": "shuffle_0x11c0ffee",
+          "poison": 90,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.0004978860379196703
+        },
+        {
+          "events": 168,
+          "steps": 180,
+          "barriers_per_group": {
+            "(0, 0, 0)": 0,
+            "(1, 0, 0)": 0,
+            "(2, 0, 0)": 0
+          },
+          "memory_accesses": 12,
+          "invocations": 12,
+          "groups": 3,
+          "schedule": "bounded_burst_1_3_7",
+          "poison": 165,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.0003851890214718878
+        },
+        {
+          "events": 168,
+          "steps": 180,
+          "barriers_per_group": {
+            "(0, 0, 0)": 0,
+            "(1, 0, 0)": 0,
+            "(2, 0, 0)": 0
+          },
+          "memory_accesses": 12,
+          "invocations": 12,
+          "groups": 3,
+          "schedule": "bounded_burst_1_3_7",
+          "poison": 90,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.0004703850136138499
+        }
+      ],
+      "outcome": "passed",
+      "seconds": 0.008175680006388575
+    },
+    {
+      "id": "execute_multiple_roots",
+      "expected_status": 0,
+      "word_sha256": "9371af8b14f941f18dcfdd00694d62919d6b9f2797e3591273d7b6d35b23047f",
+      "counts": {
+        "words": 403,
+        "types": 2,
+        "members": 0,
+        "resources": 1,
+        "name_bytes": 9
+      },
+      "target": {
+        "workgroup_roots": 3,
+        "static_barriers": 1,
+        "input_variables": 3,
+        "target_bound": 80,
+        "word_count": 403
+      },
+      "validator": {
+        "returncode": 0,
+        "output": ""
+      },
+      "execution": [
+        {
+          "events": 519,
+          "steps": 531,
+          "barriers_per_group": {
+            "(0, 0, 0)": 1,
+            "(1, 0, 0)": 1,
+            "(2, 0, 0)": 1
+          },
+          "memory_accesses": 75,
+          "invocations": 12,
+          "groups": 3,
+          "schedule": "round_robin",
+          "poison": 165,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.0012975059798918664
+        },
+        {
+          "events": 519,
+          "steps": 531,
+          "barriers_per_group": {
+            "(0, 0, 0)": 1,
+            "(1, 0, 0)": 1,
+            "(2, 0, 0)": 1
+          },
+          "memory_accesses": 75,
+          "invocations": 12,
+          "groups": 3,
+          "schedule": "round_robin",
+          "poison": 90,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.0011609640205278993
+        },
+        {
+          "events": 519,
+          "steps": 531,
+          "barriers_per_group": {
+            "(0, 0, 0)": 1,
+            "(1, 0, 0)": 1,
+            "(2, 0, 0)": 1
+          },
+          "memory_accesses": 75,
+          "invocations": 12,
+          "groups": 3,
+          "schedule": "reverse",
+          "poison": 165,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.0014453140320256352
+        },
+        {
+          "events": 519,
+          "steps": 531,
+          "barriers_per_group": {
+            "(0, 0, 0)": 1,
+            "(1, 0, 0)": 1,
+            "(2, 0, 0)": 1
+          },
+          "memory_accesses": 75,
+          "invocations": 12,
+          "groups": 3,
+          "schedule": "reverse",
+          "poison": 90,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.0012278030044399202
+        },
+        {
+          "events": 519,
+          "steps": 531,
+          "barriers_per_group": {
+            "(0, 0, 0)": 1,
+            "(1, 0, 0)": 1,
+            "(2, 0, 0)": 1
+          },
+          "memory_accesses": 75,
+          "invocations": 12,
+          "groups": 3,
+          "schedule": "shuffle_0x11c0ffee",
+          "poison": 165,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.0017296539735980332
+        },
+        {
+          "events": 519,
+          "steps": 531,
+          "barriers_per_group": {
+            "(0, 0, 0)": 1,
+            "(1, 0, 0)": 1,
+            "(2, 0, 0)": 1
+          },
+          "memory_accesses": 75,
+          "invocations": 12,
+          "groups": 3,
+          "schedule": "shuffle_0x11c0ffee",
+          "poison": 90,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.0014589839847758412
+        },
+        {
+          "events": 519,
+          "steps": 531,
+          "barriers_per_group": {
+            "(0, 0, 0)": 1,
+            "(1, 0, 0)": 1,
+            "(2, 0, 0)": 1
+          },
+          "memory_accesses": 75,
+          "invocations": 12,
+          "groups": 3,
+          "schedule": "bounded_burst_1_3_7",
+          "poison": 165,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.0012545519857667387
+        },
+        {
+          "events": 519,
+          "steps": 531,
+          "barriers_per_group": {
+            "(0, 0, 0)": 1,
+            "(1, 0, 0)": 1,
+            "(2, 0, 0)": 1
+          },
+          "memory_accesses": 75,
+          "invocations": 12,
+          "groups": 3,
+          "schedule": "bounded_burst_1_3_7",
+          "poison": 90,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.0013621310354210436
+        }
+      ],
+      "outcome": "passed",
+      "seconds": 0.014917952998075634
+    },
+    {
+      "id": "execute_helper_shared_identity",
+      "expected_status": 0,
+      "word_sha256": "9e0cca7630bf5617e99e2314ae71bbf2c601e395155d0c14e044a5a524b86588",
+      "counts": {
+        "words": 445,
+        "types": 2,
+        "members": 0,
+        "resources": 1,
+        "name_bytes": 9
+      },
+      "target": {
+        "workgroup_roots": 1,
+        "static_barriers": 3,
+        "input_variables": 3,
+        "target_bound": 90,
+        "word_count": 445
+      },
+      "validator": {
+        "returncode": 0,
+        "output": ""
+      },
+      "execution": [
+        {
+          "events": 705,
+          "steps": 717,
+          "barriers_per_group": {
+            "(0, 0, 0)": 3,
+            "(1, 0, 0)": 3,
+            "(2, 0, 0)": 3
+          },
+          "memory_accesses": 48,
+          "invocations": 12,
+          "groups": 3,
+          "schedule": "round_robin",
+          "poison": 165,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.0014913310296833515
+        },
+        {
+          "events": 705,
+          "steps": 717,
+          "barriers_per_group": {
+            "(0, 0, 0)": 3,
+            "(1, 0, 0)": 3,
+            "(2, 0, 0)": 3
+          },
+          "memory_accesses": 48,
+          "invocations": 12,
+          "groups": 3,
+          "schedule": "round_robin",
+          "poison": 90,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.0014103520079515874
+        },
+        {
+          "events": 705,
+          "steps": 717,
+          "barriers_per_group": {
+            "(0, 0, 0)": 3,
+            "(1, 0, 0)": 3,
+            "(2, 0, 0)": 3
+          },
+          "memory_accesses": 48,
+          "invocations": 12,
+          "groups": 3,
+          "schedule": "reverse",
+          "poison": 165,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.0014153700321912766
+        },
+        {
+          "events": 705,
+          "steps": 717,
+          "barriers_per_group": {
+            "(0, 0, 0)": 3,
+            "(1, 0, 0)": 3,
+            "(2, 0, 0)": 3
+          },
+          "memory_accesses": 48,
+          "invocations": 12,
+          "groups": 3,
+          "schedule": "reverse",
+          "poison": 90,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.0014410979929380119
+        },
+        {
+          "events": 705,
+          "steps": 717,
+          "barriers_per_group": {
+            "(0, 0, 0)": 3,
+            "(1, 0, 0)": 3,
+            "(2, 0, 0)": 3
+          },
+          "memory_accesses": 48,
+          "invocations": 12,
+          "groups": 3,
+          "schedule": "shuffle_0x11c0ffee",
+          "poison": 165,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.0016143330140039325
+        },
+        {
+          "events": 705,
+          "steps": 717,
+          "barriers_per_group": {
+            "(0, 0, 0)": 3,
+            "(1, 0, 0)": 3,
+            "(2, 0, 0)": 3
+          },
+          "memory_accesses": 48,
+          "invocations": 12,
+          "groups": 3,
+          "schedule": "shuffle_0x11c0ffee",
+          "poison": 90,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.001982166024390608
+        },
+        {
+          "events": 705,
+          "steps": 717,
+          "barriers_per_group": {
+            "(0, 0, 0)": 3,
+            "(1, 0, 0)": 3,
+            "(2, 0, 0)": 3
+          },
+          "memory_accesses": 48,
+          "invocations": 12,
+          "groups": 3,
+          "schedule": "bounded_burst_1_3_7",
+          "poison": 165,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.00139466900145635
+        },
+        {
+          "events": 705,
+          "steps": 717,
+          "barriers_per_group": {
+            "(0, 0, 0)": 3,
+            "(1, 0, 0)": 3,
+            "(2, 0, 0)": 3
+          },
+          "memory_accesses": 48,
+          "invocations": 12,
+          "groups": 3,
+          "schedule": "bounded_burst_1_3_7",
+          "poison": 90,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.0016093860031105578
+        }
+      ],
+      "outcome": "passed",
+      "seconds": 0.016196640965063125
+    },
+    {
+      "id": "execute_whole_snapshot",
+      "expected_status": 0,
+      "word_sha256": "3a1505ccaa4053d6021290d14f5d17cb9dfc951bf147bda8a7ab9728bbc6f84f",
+      "counts": {
+        "words": 440,
+        "types": 2,
+        "members": 0,
+        "resources": 1,
+        "name_bytes": 9
+      },
+      "target": {
+        "workgroup_roots": 1,
+        "static_barriers": 4,
+        "input_variables": 3,
+        "target_bound": 86,
+        "word_count": 440
+      },
+      "validator": {
+        "returncode": 0,
+        "output": ""
+      },
+      "execution": [
+        {
+          "events": 717,
+          "steps": 729,
+          "barriers_per_group": {
+            "(0, 0, 0)": 4,
+            "(1, 0, 0)": 4,
+            "(2, 0, 0)": 4
+          },
+          "memory_accesses": 96,
+          "invocations": 12,
+          "groups": 3,
+          "schedule": "round_robin",
+          "poison": 165,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.002073590992949903
+        },
+        {
+          "events": 717,
+          "steps": 729,
+          "barriers_per_group": {
+            "(0, 0, 0)": 4,
+            "(1, 0, 0)": 4,
+            "(2, 0, 0)": 4
+          },
+          "memory_accesses": 96,
+          "invocations": 12,
+          "groups": 3,
+          "schedule": "round_robin",
+          "poison": 90,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.0017815500032156706
+        },
+        {
+          "events": 717,
+          "steps": 729,
+          "barriers_per_group": {
+            "(0, 0, 0)": 4,
+            "(1, 0, 0)": 4,
+            "(2, 0, 0)": 4
+          },
+          "memory_accesses": 96,
+          "invocations": 12,
+          "groups": 3,
+          "schedule": "reverse",
+          "poison": 165,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.0014939759857952595
+        },
+        {
+          "events": 717,
+          "steps": 729,
+          "barriers_per_group": {
+            "(0, 0, 0)": 4,
+            "(1, 0, 0)": 4,
+            "(2, 0, 0)": 4
+          },
+          "memory_accesses": 96,
+          "invocations": 12,
+          "groups": 3,
+          "schedule": "reverse",
+          "poison": 90,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.0014961090055294335
+        },
+        {
+          "events": 717,
+          "steps": 729,
+          "barriers_per_group": {
+            "(0, 0, 0)": 4,
+            "(1, 0, 0)": 4,
+            "(2, 0, 0)": 4
+          },
+          "memory_accesses": 96,
+          "invocations": 12,
+          "groups": 3,
+          "schedule": "shuffle_0x11c0ffee",
+          "poison": 165,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.0016275029629468918
+        },
+        {
+          "events": 717,
+          "steps": 729,
+          "barriers_per_group": {
+            "(0, 0, 0)": 4,
+            "(1, 0, 0)": 4,
+            "(2, 0, 0)": 4
+          },
+          "memory_accesses": 96,
+          "invocations": 12,
+          "groups": 3,
+          "schedule": "shuffle_0x11c0ffee",
+          "poison": 90,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.0014899999951012433
+        },
+        {
+          "events": 717,
+          "steps": 729,
+          "barriers_per_group": {
+            "(0, 0, 0)": 4,
+            "(1, 0, 0)": 4,
+            "(2, 0, 0)": 4
+          },
+          "memory_accesses": 96,
+          "invocations": 12,
+          "groups": 3,
+          "schedule": "bounded_burst_1_3_7",
+          "poison": 165,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.0012880020076408982
+        },
+        {
+          "events": 717,
+          "steps": 729,
+          "barriers_per_group": {
+            "(0, 0, 0)": 4,
+            "(1, 0, 0)": 4,
+            "(2, 0, 0)": 4
+          },
+          "memory_accesses": 96,
+          "invocations": 12,
+          "groups": 3,
+          "schedule": "bounded_burst_1_3_7",
+          "poison": 90,
+          "pure_instruction_quantum": 1,
+          "caller_supplied_reusable_shared_storage": true,
+          "seconds": 0.0016416640137322247
+        }
+      ],
+      "outcome": "passed",
+      "seconds": 0.016852708999067545
+    }
+  ],
+  "failed": [],
+  "pending": 0,
+  "physical_device": false
+}

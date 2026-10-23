@@ -1,0 +1,121 @@
+{
+  "utc": "2026-10-23T11:26:04.573075+00:00",
+  "candidate_inspected": false,
+  "adaptation_state": "Enumerated before creation of any historical overlays; original files untouched",
+  "accepted_M10_commit": "2220c64cff0bd87b1eed6b246515941ce7d18d24",
+  "retained_pin": "dee5f42acbb50e05d5690f1d2d13777c5c26d51d",
+  "retained_input_binding": {
+    "path": "/workspace/shared/doe-c-migration-20261023/runtime/c/compiler/independent_tests_m10/candidate-v6/native-retained/RETAINED_INPUTS.json",
+    "sha256": "cee043faabdc88ff7ad2ac13f4e7f703f8d3e994f2f21bbcf8ff61b0c8c39d5c",
+    "count": 142,
+    "current_historical_input_mismatches": []
+  },
+  "accepted_M10_native_inputs": {
+    "sealed_inputs": "/workspace/shared/doe-c-migration-20261023/runtime/c/compiler/independent_tests_m10/native/SOURCE_SEAL.sha256",
+    "sha256": "de784f1927dd9abde7272d60c3e3983fd0b65f6f8738c78f1ddc3923acfcd7dc",
+    "source_expectation_changes_for_M11": []
+  },
+  "accepted_M10_retained_adapters_reused_without_semantic_change": [
+    {
+      "files": [
+        "host_support_m9.h",
+        "native_job_m9.c",
+        "native_m6_m9_boundary.c"
+      ],
+      "exact_old": "122880u",
+      "exact_new": "147456u",
+      "each_occurrences": 1,
+      "reason": "Already accepted M10 fixed workspace upper bound, unchanged M11 ceiling"
+    },
+    {
+      "file": "native_m6_m9_boundary.c",
+      "old": "m6_atomic_call(workspace, m6_invalid[i], strlen(m6_invalid[i]), WORDS, 0);",
+      "new": "m6_atomic_call(workspace, m6_invalid[i], strlen(m6_invalid[i]), WORDS, i == 9u ? 1 : 0);",
+      "fixture_sha256": "ba88f71337626997c0a81f48f7e9eb540ca36b04456195cc0594defeb078f26c",
+      "reason": "Already accepted M10 exact whole-vector snapshot; no new M11 admission"
+    },
+    {
+      "file": "native_m6_m9_boundary.c",
+      "old": "7 positive/13 negative seeds",
+      "new": "7 original positive/12 original negative/1 exact M10 positive-lift seeds",
+      "reason": "Already accepted M10 display count only"
+    },
+    {
+      "file": "native_m5.c",
+      "old": "failure(workspace, unsupported, sizeof(unsupported)-1u, WORDS, DOE_COMPILER_UNSUPPORTED);",
+      "new": "failure(workspace, unsupported, sizeof(unsupported)-1u, WORDS, DOE_COMPILER_SEMANTIC_ERROR);",
+      "fixture_sha256": "8cf616ceed349c909209b37a777a8b66bd58c8117e260958b1dddba541d678b6",
+      "reason": "Already accepted M10 admitted array but invalid uniform stride; still negative"
+    },
+    {
+      "file": "public_exits_m9.c",
+      "old": "case 8u: source=unsupported_source; length=strlen(source); expected=DOE_COMPILER_UNSUPPORTED; break;",
+      "new": "case 8u: source=unsupported_source; length=strlen(source); expected=DOE_COMPILER_SEMANTIC_ERROR; break;",
+      "fixture_sha256": "890fcacb0d44a98b7e845ca7627d164cb0c89162a2c7d7da4493e6bb5433369e",
+      "reason": "Already accepted M10 distinct invalid uniform stride fixture; same negative, all host/atomicity assertions retained"
+    }
+  ],
+  "M11_new_native_negative_admissions": [],
+  "M11_main_evaluator_only_negative_admission": {
+    "file": "source/fixtures_m10.py",
+    "case": "workgroup",
+    "source": "@group(0) @binding(0) var<storage,read_write> out:array<u32>;var<workgroup> a:array<u32,4>;@compute @workgroup_size(1) fn main(){}",
+    "sha256": "81df1d641637142b20fa4ada1cc380b15f74eb00f86d498420b0c3e2357be3e0",
+    "status_old": 3,
+    "status_new": 0,
+    "reason": "Exact unused fixed workgroup root with one invocation is newly admitted; descriptors/reflection unchanged, output remains untouched. Native worker will not modify main evaluator."
+  },
+  "M11_private_mapping": [
+    {
+      "profile": "fixed",
+      "M10": 140056,
+      "M11": 146256
+    },
+    {
+      "profile": "typed CLI",
+      "M11": 2536128,
+      "M10": 2510488
+    },
+    {
+      "profile": "old job with CLI profile",
+      "M11": 2172992,
+      "M10": 1997144
+    }
+  ],
+  "stack_mapping": {
+    "M10_core": 512,
+    "M11_core": 552,
+    "M11_workgroup_root": [
+      24,
+      4
+    ],
+    "M10_fixed": 140056,
+    "M11_fixed": 146256,
+    "ABI1_wrapper_ceiling_unchanged": 147968,
+    "other_frame_ceiling_unchanged": 8192,
+    "acyclic_sum_ceiling_unchanged": 16384,
+    "caller_owned_wrapper_ceiling_unchanged": 1024,
+    "uniformity_expression_SCC": 256,
+    "uniformity_control_SCC": 256,
+    "fixed_combined_ceiling_unchanged": 212992,
+    "job_combined_ceiling_unchanged": 196608
+  },
+  "runner_only_changes": [
+    "Bind handed M11 immutable source manifest instead of hardcoded M10 30-entry manifest. Verify every handed source and all four headers; never accept extra unmanifested C/header inputs.",
+    "Reuse exact7 exports and existing fno-builtin harness-only correction; candidate strict flags unchanged.",
+    "Use fresh independent source archive/shared and bind handed prebuilt separately. Reuse build outputs across consumers instead of rerunning duplicate full-suite front doors.",
+    "Retain archived original M9 failure receipts; do not rerun deliberately obsolete M9 private-layout and exact5-export front door merely to manufacture duplicate known failures.",
+    "Replace source-bound M10 private-layout audit with independently measured frozen M11 ledger probe; preserve old original and all prior failures.",
+    "Run accepted no-root native M10 tests unchanged, affected M9/M7/M6/M5 public native/query consumers under their exact accepted M10 overlays, plus sealed M11 supplemental tests. No broad status relaxation or class skip."
+  ],
+  "accepted_prior_failures": {
+    "root": "/workspace/shared/doe-c-migration-20261023/runtime/c/compiler/independent_tests_m10/candidate-v6/native-retained",
+    "record": "/workspace/shared/doe-c-migration-20261023/runtime/c/compiler/independent_tests_m10/candidate-v6/native-retained/RETAINED_NATIVE_V6_RESULT.json",
+    "sha256": "ab6f164255e7e9a419f4aee72dc3f73582a87bd1c752b0564815e8fdac0e945e",
+    "original_locations": [
+      "original_run",
+      "adapted_run",
+      "portable_run_1/original"
+    ]
+  }
+}

@@ -1,0 +1,7 @@
+Traceback (most recent call last):
+  File "/workspace/shared/doe-c-migration-evidence-20261023/milestone11/evaluator/finalize_results.py", line 100, in <module>
+    main()
+  File "/workspace/shared/doe-c-migration-evidence-20261023/milestone11/evaluator/finalize_results.py", line 34, in main
+    assert len(actual)==len(result['cases']) and set(actual)==set(effective), ('incomplete case matrix',len(actual),len(effective))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('incomplete case matrix', 100, 120)

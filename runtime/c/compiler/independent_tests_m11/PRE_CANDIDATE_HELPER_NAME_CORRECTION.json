@@ -1,0 +1,18 @@
+{
+  "utc": "2026-10-23T11:42:50.929843+00:00",
+  "M11_candidate_observed": false,
+  "id": "execute_helper_shared_identity",
+  "old_source_path": "pre_candidate_supplement/execute_helper_shared_identity.wgsl",
+  "old_source_sha256": "71d4e9df1d4a96397afc8bf492f283c9220abefff6199f648698ea5121a008dc",
+  "new_source_path": "pre_candidate_supplement/execute_helper_shared_identity_unreserved.wgsl",
+  "new_source_sha256": "25609cfb8fe39953f559cf06cbbbf28871bdc3e1ea0a0a12472e875093a2fe87",
+  "change": "Exact identifier-only get -> read_slot; types, expressions, control, input bytes, expected bytes and statuses unchanged. Original source is preserved.",
+  "normative": "https://www.w3.org/TR/2026/CRD-WGSL-20261021/#reserved-words",
+  "accepted_M10_control": {
+    "library_sha256": "5b41d5c25f866c87f7c7a3be229a6cfa7c1537fe66360a215a8363b0e0cf4d97",
+    "adapted_source_sha256": "b1ae570f37324d7f29e5401d1171b7381f4af91479cce4a717cd7f0052334ec2",
+    "old_status": 4,
+    "offset": 169,
+    "diagnostic": "reserved WGSL keyword or word cannot name a declaration"
+  }
+}

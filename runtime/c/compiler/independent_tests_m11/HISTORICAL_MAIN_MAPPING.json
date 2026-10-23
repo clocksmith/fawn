@@ -1,0 +1,9 @@
+{
+  "M11_expected_status": 0,
+  "accepted_M10_adapter_status": 2,
+  "candidate_observed": false,
+  "case": "workgroup",
+  "raw_M10_status": 3,
+  "reason": "Exact new fixed workgroup-root admission. Original M10 source/tests/adapters remain unchanged. New target-only root/prologue demands M11 target executor, not old scalar target interface.",
+  "source_sha256": "81df1d641637142b20fa4ada1cc380b15f74eb00f86d498420b0c3e2357be3e0"
+}

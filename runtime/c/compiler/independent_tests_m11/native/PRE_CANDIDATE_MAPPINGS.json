@@ -1,0 +1,41 @@
+{
+  "phase": "pre-candidate",
+  "candidate_inspected": false,
+  "baseline_commit": "2220c64cff0bd87b1eed6b246515941ce7d18d24",
+  "original_sources_modified": false,
+  "private_layout_mappings": [
+    {
+      "profile": "fixed",
+      "M10": 140056,
+      "M11": 146256
+    },
+    {
+      "profile": "typed CLI",
+      "M11": 2536128,
+      "M10": 2510488
+    },
+    {
+      "profile": "old job with CLI profile",
+      "M11": 2172992,
+      "M10": 1997144
+    }
+  ],
+  "additional_harness_only": [
+    {
+      "file": "host_m11.c",
+      "change": "Include separate support_m11.h; original host_m10.c unchanged"
+    },
+    {
+      "file": "support_m11.h",
+      "change": "Additional positive replaces numeric_source with typed workgroup vector, lane0 write, helper barrier and varying indexed descriptor output. Additional semantic negative replaces semantic_source with varying local-index barrier. Original support_m10.h unchanged."
+    }
+  ],
+  "historical_adapters": "None yet. No exact negative-admission replacement needed in sealed M10 native sources; retained-negative mappings will be enumerated before any adapter edit.",
+  "alias_boundary": "Pairwise disjoint full-capacity spans are a caller precondition, not a promised overlapping-span reject/no-write guarantee. No invalid overlap execution will be claimed.",
+  "source_inputs": {
+    "runtime/c/compiler/independent_tests_m10/native/host_m10.c": "63ea237b7360d9dc7f2ae7a395862b39dcfb21ecf06d2c59bfb3ad37bfcdec5a",
+    "runtime/c/compiler/independent_tests_m10/native/support_m10.h": "d19eac02a419d661018d7f0a6ed1fa8bab459d3ec3c096af94ffd9f20a6a8e88",
+    "runtime/c/compiler/independent_tests_m10/native/allocator_m10.c": "dba6aab830ec5ef85f8f4f20a5955c5ee892ffdb782e4a64fb030e4032e5bd90"
+  },
+  "M10_size_derivation": "M11 persistent minus40-byte Core delta and24*(T/8) root bytes; M10 common minusS statement-behavior bytes; M10 scratch uses target branch only. Calculated against frozen planning profile before candidate inspection."
+}

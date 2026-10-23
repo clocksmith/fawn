@@ -1,0 +1,14 @@
+{
+  "utc": "2026-10-23T11:57:16.361317+00:00",
+  "provenance": "Post-handoff independent hard-cap coverage supplement requested by evaluator parent; not pre-candidate hidden fixture",
+  "shape": "1000 unused by-value scalar formals and24 sequential once-break loops; paired entry barrier/no-barrier bodies; no numerical or source recognizer oracle",
+  "expectations": {
+    "ABI3": "barrier UNSUPPORTED work-limit diagnostic; no-barrier OK",
+    "ABI4_all_6_modes": "same; failure atomic, poolNONE/minimum0, original source location",
+    "ABI1_ABI2": "earlier fixed source-pool INPUT_ERROR due T2048, not a work-limit outcome"
+  },
+  "files": {
+    "hardcap_barrier.wgsl": "9d8e5b5cef1873cb5f67dc04e59a546813bc0924c821b19febcf0d0978b25035",
+    "hardcap_no_barrier.wgsl": "f9e91d0bda9faee48460ad857c159d3369f42df857c195b4cc9558e4cf2c7d0c"
+  }
+}

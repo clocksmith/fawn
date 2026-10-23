@@ -1,0 +1,25 @@
+{
+  "accepted_base": "2220c64cff0bd87b1eed6b246515941ce7d18d24",
+  "accepted_internal_header_sha256": "3859bd9fa402b0f6f40822d8942e89fe19a3c93bcdd530bfa3949a9a9a2e6d3a",
+  "commit_order": "Remain uncommitted and separately scoped until accepted instance checkpoint is cut.",
+  "implementation_started": false,
+  "independent_case_seal": "Pending; required before implementation",
+  "installation_changes": [
+    "Status/title and repository-relative navigation only in contract/ledger.",
+    "Planning probe includes an exact accepted-M10 internal-header snapshot instead of the changing working-tree header. Public headers remain unchanged."
+  ],
+  "installed": {
+    "MILESTONE_11.md": "b20c239f336f11b9c108e463f2ea8b63b2c999ca2302a3b1c49d97487831e336",
+    "MILESTONE_11_LEDGER.md": "309e23fb67704caf3377af016c9200854abc1b44b87b6a81751d6701c2c3d1b8",
+    "contracts/m11_accepted_internal.h": "3859bd9fa402b0f6f40822d8942e89fe19a3c93bcdd530bfa3949a9a9a2e6d3a",
+    "contracts/m11_layout_probe.c": "87e33a9637b5667365f0cbc71fe614204d0ceb1e80b5b578f9c5a9d65c9dd2c1",
+    "contracts/m11_layout_probe.txt": "05abb87a0111172baf345cd7f71092adc29aeb9c4235eca1248fd3ee41a24fb3",
+    "contracts/m11_source_inputs.json": "0d4efe6166e02a03dc6d81358d4b971cc6fb562bdbeabc20070effbf2ff3e16e"
+  },
+  "kind": "Reviewed M11 contract installation, not implementation acceptance",
+  "review_seal_sha256": "051637edf0a3ac58414b1916e202f134d96e90827b83603bb93598ec5407965a",
+  "reviewed_originals": {
+    "DRAFT.md": "aa0b35e26f8b0a50986df222f74abce8fa309d10f8d72c7a833a5b3215022bd6",
+    "LEDGER.md": "22427a855e9bd486c292c373d686466b4a3459c53c1847a0dfe8741841d908cb"
+  }
+}

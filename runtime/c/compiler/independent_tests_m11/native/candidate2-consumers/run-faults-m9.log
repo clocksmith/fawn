@@ -1,0 +1,151 @@
+observed api=1 source=0 function=fegetenv calls=1
+fault api=1 source=0 function=fegetenv ordinal=1 after_real=0 persistent=0 injected=1 status=1 restored=1 diagnostic=cannot save compiler host floating-point environment
+observed api=1 source=0 function=feholdexcept calls=1
+fault api=1 source=0 function=feholdexcept ordinal=1 after_real=0 persistent=0 injected=1 status=1 restored=1 diagnostic=cannot normalize compiler host floating-point environment
+fault api=1 source=0 function=feholdexcept ordinal=1 after_real=1 persistent=0 injected=1 status=1 restored=1 diagnostic=cannot normalize compiler host floating-point environment
+observed api=1 source=0 function=fesetenv calls=1
+fault api=1 source=0 function=fesetenv ordinal=1 after_real=0 persistent=0 injected=1 status=1 restored=1 diagnostic=compiler host floating-point environment restoration failed
+fault api=1 source=0 function=fesetenv ordinal=1 after_real=1 persistent=0 injected=1 status=1 restored=1 diagnostic=compiler host floating-point environment restoration failed
+fault api=1 source=0 function=fesetenv ordinal=1 after_real=0 persistent=1 injected=2 status=1 restored=0 diagnostic=compiler host floating-point environment restoration failed
+observed api=1 source=0 function=feupdateenv calls=0
+observed api=1 source=0 function=fesetround calls=1
+fault api=1 source=0 function=fesetround ordinal=1 after_real=0 persistent=0 injected=1 status=1 restored=1 diagnostic=cannot normalize compiler host floating-point environment
+fault api=1 source=0 function=fesetround ordinal=1 after_real=1 persistent=0 injected=1 status=1 restored=1 diagnostic=cannot normalize compiler host floating-point environment
+observed api=1 source=0 function=fegetround calls=2
+fault api=1 source=0 function=fegetround ordinal=1 after_real=0 persistent=0 injected=1 status=1 restored=1 diagnostic=cannot normalize compiler host floating-point environment
+fault api=1 source=0 function=fegetround ordinal=2 after_real=0 persistent=0 injected=1 status=1 restored=1 diagnostic=cannot verify compiler host floating-point environment
+observed api=1 source=0 function=feclearexcept calls=0
+observed api=1 source=0 function=fesetexceptflag calls=0
+observed api=1 source=0 function=feenableexcept calls=0
+observed api=1 source=0 function=fedisableexcept calls=0
+observed api=1 source=1 function=fegetenv calls=1
+fault api=1 source=1 function=fegetenv ordinal=1 after_real=0 persistent=0 injected=1 status=1 restored=1 diagnostic=cannot save compiler host floating-point environment
+observed api=1 source=1 function=feholdexcept calls=1
+fault api=1 source=1 function=feholdexcept ordinal=1 after_real=0 persistent=0 injected=1 status=1 restored=1 diagnostic=cannot normalize compiler host floating-point environment
+fault api=1 source=1 function=feholdexcept ordinal=1 after_real=1 persistent=0 injected=1 status=1 restored=1 diagnostic=cannot normalize compiler host floating-point environment
+observed api=1 source=1 function=fesetenv calls=1
+fault api=1 source=1 function=fesetenv ordinal=1 after_real=0 persistent=0 injected=1 status=1 restored=1 diagnostic=compiler host floating-point environment restoration failed
+fault api=1 source=1 function=fesetenv ordinal=1 after_real=1 persistent=0 injected=1 status=1 restored=1 diagnostic=compiler host floating-point environment restoration failed
+fault api=1 source=1 function=fesetenv ordinal=1 after_real=0 persistent=1 injected=2 status=1 restored=0 diagnostic=compiler host floating-point environment restoration failed
+observed api=1 source=1 function=feupdateenv calls=0
+observed api=1 source=1 function=fesetround calls=1
+fault api=1 source=1 function=fesetround ordinal=1 after_real=0 persistent=0 injected=1 status=1 restored=1 diagnostic=cannot normalize compiler host floating-point environment
+fault api=1 source=1 function=fesetround ordinal=1 after_real=1 persistent=0 injected=1 status=1 restored=1 diagnostic=cannot normalize compiler host floating-point environment
+observed api=1 source=1 function=fegetround calls=2
+fault api=1 source=1 function=fegetround ordinal=1 after_real=0 persistent=0 injected=1 status=1 restored=1 diagnostic=cannot normalize compiler host floating-point environment
+fault api=1 source=1 function=fegetround ordinal=2 after_real=0 persistent=0 injected=1 status=1 restored=1 diagnostic=cannot verify compiler host floating-point environment
+observed api=1 source=1 function=feclearexcept calls=0
+observed api=1 source=1 function=fesetexceptflag calls=0
+observed api=1 source=1 function=feenableexcept calls=0
+observed api=1 source=1 function=fedisableexcept calls=0
+observed api=1 source=2 function=fegetenv calls=0
+observed api=1 source=2 function=feholdexcept calls=0
+observed api=1 source=2 function=fesetenv calls=0
+observed api=1 source=2 function=feupdateenv calls=0
+observed api=1 source=2 function=fesetround calls=0
+observed api=1 source=2 function=fegetround calls=0
+observed api=1 source=2 function=feclearexcept calls=0
+observed api=1 source=2 function=fesetexceptflag calls=0
+observed api=1 source=2 function=feenableexcept calls=0
+observed api=1 source=2 function=fedisableexcept calls=0
+observed api=2 source=0 function=fegetenv calls=1
+fault api=2 source=0 function=fegetenv ordinal=1 after_real=0 persistent=0 injected=1 status=1 restored=1 diagnostic=cannot save compiler host floating-point environment
+observed api=2 source=0 function=feholdexcept calls=1
+fault api=2 source=0 function=feholdexcept ordinal=1 after_real=0 persistent=0 injected=1 status=1 restored=1 diagnostic=cannot normalize compiler host floating-point environment
+fault api=2 source=0 function=feholdexcept ordinal=1 after_real=1 persistent=0 injected=1 status=1 restored=1 diagnostic=cannot normalize compiler host floating-point environment
+observed api=2 source=0 function=fesetenv calls=1
+fault api=2 source=0 function=fesetenv ordinal=1 after_real=0 persistent=0 injected=1 status=1 restored=1 diagnostic=compiler host floating-point environment restoration failed
+fault api=2 source=0 function=fesetenv ordinal=1 after_real=1 persistent=0 injected=1 status=1 restored=1 diagnostic=compiler host floating-point environment restoration failed
+fault api=2 source=0 function=fesetenv ordinal=1 after_real=0 persistent=1 injected=2 status=1 restored=0 diagnostic=compiler host floating-point environment restoration failed
+observed api=2 source=0 function=feupdateenv calls=0
+observed api=2 source=0 function=fesetround calls=1
+fault api=2 source=0 function=fesetround ordinal=1 after_real=0 persistent=0 injected=1 status=1 restored=1 diagnostic=cannot normalize compiler host floating-point environment
+fault api=2 source=0 function=fesetround ordinal=1 after_real=1 persistent=0 injected=1 status=1 restored=1 diagnostic=cannot normalize compiler host floating-point environment
+observed api=2 source=0 function=fegetround calls=2
+fault api=2 source=0 function=fegetround ordinal=1 after_real=0 persistent=0 injected=1 status=1 restored=1 diagnostic=cannot normalize compiler host floating-point environment
+fault api=2 source=0 function=fegetround ordinal=2 after_real=0 persistent=0 injected=1 status=1 restored=1 diagnostic=cannot verify compiler host floating-point environment
+observed api=2 source=0 function=feclearexcept calls=0
+observed api=2 source=0 function=fesetexceptflag calls=0
+observed api=2 source=0 function=feenableexcept calls=0
+observed api=2 source=0 function=fedisableexcept calls=0
+observed api=2 source=1 function=fegetenv calls=1
+fault api=2 source=1 function=fegetenv ordinal=1 after_real=0 persistent=0 injected=1 status=1 restored=1 diagnostic=cannot save compiler host floating-point environment
+observed api=2 source=1 function=feholdexcept calls=1
+fault api=2 source=1 function=feholdexcept ordinal=1 after_real=0 persistent=0 injected=1 status=1 restored=1 diagnostic=cannot normalize compiler host floating-point environment
+fault api=2 source=1 function=feholdexcept ordinal=1 after_real=1 persistent=0 injected=1 status=1 restored=1 diagnostic=cannot normalize compiler host floating-point environment
+observed api=2 source=1 function=fesetenv calls=1
+fault api=2 source=1 function=fesetenv ordinal=1 after_real=0 persistent=0 injected=1 status=1 restored=1 diagnostic=compiler host floating-point environment restoration failed
+fault api=2 source=1 function=fesetenv ordinal=1 after_real=1 persistent=0 injected=1 status=1 restored=1 diagnostic=compiler host floating-point environment restoration failed
+fault api=2 source=1 function=fesetenv ordinal=1 after_real=0 persistent=1 injected=2 status=1 restored=0 diagnostic=compiler host floating-point environment restoration failed
+observed api=2 source=1 function=feupdateenv calls=0
+observed api=2 source=1 function=fesetround calls=1
+fault api=2 source=1 function=fesetround ordinal=1 after_real=0 persistent=0 injected=1 status=1 restored=1 diagnostic=cannot normalize compiler host floating-point environment
+fault api=2 source=1 function=fesetround ordinal=1 after_real=1 persistent=0 injected=1 status=1 restored=1 diagnostic=cannot normalize compiler host floating-point environment
+observed api=2 source=1 function=fegetround calls=2
+fault api=2 source=1 function=fegetround ordinal=1 after_real=0 persistent=0 injected=1 status=1 restored=1 diagnostic=cannot normalize compiler host floating-point environment
+fault api=2 source=1 function=fegetround ordinal=2 after_real=0 persistent=0 injected=1 status=1 restored=1 diagnostic=cannot verify compiler host floating-point environment
+observed api=2 source=1 function=feclearexcept calls=0
+observed api=2 source=1 function=fesetexceptflag calls=0
+observed api=2 source=1 function=feenableexcept calls=0
+observed api=2 source=1 function=fedisableexcept calls=0
+observed api=2 source=2 function=fegetenv calls=0
+observed api=2 source=2 function=feholdexcept calls=0
+observed api=2 source=2 function=fesetenv calls=0
+observed api=2 source=2 function=feupdateenv calls=0
+observed api=2 source=2 function=fesetround calls=0
+observed api=2 source=2 function=fegetround calls=0
+observed api=2 source=2 function=feclearexcept calls=0
+observed api=2 source=2 function=fesetexceptflag calls=0
+observed api=2 source=2 function=feenableexcept calls=0
+observed api=2 source=2 function=fedisableexcept calls=0
+observed api=3 source=0 function=fegetenv calls=1
+fault api=3 source=0 function=fegetenv ordinal=1 after_real=0 persistent=0 injected=1 status=1 restored=1 diagnostic=cannot save compiler host floating-point environment
+observed api=3 source=0 function=feholdexcept calls=1
+fault api=3 source=0 function=feholdexcept ordinal=1 after_real=0 persistent=0 injected=1 status=1 restored=1 diagnostic=cannot normalize compiler host floating-point environment
+fault api=3 source=0 function=feholdexcept ordinal=1 after_real=1 persistent=0 injected=1 status=1 restored=1 diagnostic=cannot normalize compiler host floating-point environment
+observed api=3 source=0 function=fesetenv calls=1
+fault api=3 source=0 function=fesetenv ordinal=1 after_real=0 persistent=0 injected=1 status=1 restored=1 diagnostic=compiler host floating-point environment restoration failed
+fault api=3 source=0 function=fesetenv ordinal=1 after_real=1 persistent=0 injected=1 status=1 restored=1 diagnostic=compiler host floating-point environment restoration failed
+fault api=3 source=0 function=fesetenv ordinal=1 after_real=0 persistent=1 injected=2 status=1 restored=0 diagnostic=compiler host floating-point environment restoration failed
+observed api=3 source=0 function=feupdateenv calls=0
+observed api=3 source=0 function=fesetround calls=1
+fault api=3 source=0 function=fesetround ordinal=1 after_real=0 persistent=0 injected=1 status=1 restored=1 diagnostic=cannot normalize compiler host floating-point environment
+fault api=3 source=0 function=fesetround ordinal=1 after_real=1 persistent=0 injected=1 status=1 restored=1 diagnostic=cannot normalize compiler host floating-point environment
+observed api=3 source=0 function=fegetround calls=2
+fault api=3 source=0 function=fegetround ordinal=1 after_real=0 persistent=0 injected=1 status=1 restored=1 diagnostic=cannot normalize compiler host floating-point environment
+fault api=3 source=0 function=fegetround ordinal=2 after_real=0 persistent=0 injected=1 status=1 restored=1 diagnostic=cannot verify compiler host floating-point environment
+observed api=3 source=0 function=feclearexcept calls=0
+observed api=3 source=0 function=fesetexceptflag calls=0
+observed api=3 source=0 function=feenableexcept calls=0
+observed api=3 source=0 function=fedisableexcept calls=0
+observed api=3 source=1 function=fegetenv calls=1
+fault api=3 source=1 function=fegetenv ordinal=1 after_real=0 persistent=0 injected=1 status=1 restored=1 diagnostic=cannot save compiler host floating-point environment
+observed api=3 source=1 function=feholdexcept calls=1
+fault api=3 source=1 function=feholdexcept ordinal=1 after_real=0 persistent=0 injected=1 status=1 restored=1 diagnostic=cannot normalize compiler host floating-point environment
+fault api=3 source=1 function=feholdexcept ordinal=1 after_real=1 persistent=0 injected=1 status=1 restored=1 diagnostic=cannot normalize compiler host floating-point environment
+observed api=3 source=1 function=fesetenv calls=1
+fault api=3 source=1 function=fesetenv ordinal=1 after_real=0 persistent=0 injected=1 status=1 restored=1 diagnostic=compiler host floating-point environment restoration failed
+fault api=3 source=1 function=fesetenv ordinal=1 after_real=1 persistent=0 injected=1 status=1 restored=1 diagnostic=compiler host floating-point environment restoration failed
+fault api=3 source=1 function=fesetenv ordinal=1 after_real=0 persistent=1 injected=2 status=1 restored=0 diagnostic=compiler host floating-point environment restoration failed
+observed api=3 source=1 function=feupdateenv calls=0
+observed api=3 source=1 function=fesetround calls=1
+fault api=3 source=1 function=fesetround ordinal=1 after_real=0 persistent=0 injected=1 status=1 restored=1 diagnostic=cannot normalize compiler host floating-point environment
+fault api=3 source=1 function=fesetround ordinal=1 after_real=1 persistent=0 injected=1 status=1 restored=1 diagnostic=cannot normalize compiler host floating-point environment
+observed api=3 source=1 function=fegetround calls=2
+fault api=3 source=1 function=fegetround ordinal=1 after_real=0 persistent=0 injected=1 status=1 restored=1 diagnostic=cannot normalize compiler host floating-point environment
+fault api=3 source=1 function=fegetround ordinal=2 after_real=0 persistent=0 injected=1 status=1 restored=1 diagnostic=cannot verify compiler host floating-point environment
+observed api=3 source=1 function=feclearexcept calls=0
+observed api=3 source=1 function=fesetexceptflag calls=0
+observed api=3 source=1 function=feenableexcept calls=0
+observed api=3 source=1 function=fedisableexcept calls=0
+observed api=3 source=2 function=fegetenv calls=0
+observed api=3 source=2 function=feholdexcept calls=0
+observed api=3 source=2 function=fesetenv calls=0
+observed api=3 source=2 function=feupdateenv calls=0
+observed api=3 source=2 function=fesetround calls=0
+observed api=3 source=2 function=fegetround calls=0
+observed api=3 source=2 function=feclearexcept calls=0
+observed api=3 source=2 function=fesetexceptflag calls=0
+observed api=3 source=2 function=feenableexcept calls=0
+observed api=3 source=2 function=fedisableexcept calls=0
+{"status":"PASS","fault_cases":60,"applicable_function_paths":30,"unobserved_calls":"not applicable, never silently credited"}

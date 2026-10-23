@@ -1,0 +1,101 @@
+{
+  "candidate_library_sha256": "5d301e813223c9602f7c7ad57634b0ad53a68ba8b752066fbfdce1e9f29b2553",
+  "old_M10_repairs_preserved": [
+    {
+      "name": "runtime_vector_load_3_-1",
+      "kind": "input_binding_extent",
+      "old": 44,
+      "new": 48,
+      "reason": "Three complete vec3<u32> array elements require3*16 bytes;44 bytes expose only floor(44/16)=2 elements. Offset/stride and expected values unchanged."
+    },
+    {
+      "name": "runtime_vector_load_3_0",
+      "kind": "input_binding_extent",
+      "old": 44,
+      "new": 48,
+      "reason": "Three complete vec3<u32> array elements require3*16 bytes;44 bytes expose only floor(44/16)=2 elements. Offset/stride and expected values unchanged."
+    },
+    {
+      "name": "runtime_vector_load_3_2",
+      "kind": "input_binding_extent",
+      "old": 44,
+      "new": 48,
+      "reason": "Three complete vec3<u32> array elements require3*16 bytes;44 bytes expose only floor(44/16)=2 elements. Offset/stride and expected values unchanged."
+    },
+    {
+      "name": "runtime_vector_load_3_3",
+      "kind": "input_binding_extent",
+      "old": 44,
+      "new": 48,
+      "reason": "Three complete vec3<u32> array elements require3*16 bytes;44 bytes expose only floor(44/16)=2 elements. Offset/stride and expected values unchanged."
+    },
+    {
+      "name": "runtime_vector_load_3_2147483647",
+      "kind": "input_binding_extent",
+      "old": 44,
+      "new": 48,
+      "reason": "Three complete vec3<u32> array elements require3*16 bytes;44 bytes expose only floor(44/16)=2 elements. Offset/stride and expected values unchanged."
+    },
+    {
+      "name": "f16",
+      "kind": "expected_status",
+      "old": 3,
+      "new": 2,
+      "reason": "Fresh accepted M9 dee5f42 and v3 both return historical PARSE_ERROR for this exact excluded top-level declaration. No other category is permitted."
+    },
+    {
+      "name": "workgroup",
+      "kind": "expected_status",
+      "old": 3,
+      "new": 2,
+      "reason": "Fresh accepted M9 dee5f42 and v3 both return historical PARSE_ERROR for this exact excluded top-level declaration. No other category is permitted."
+    },
+    {
+      "name": "private",
+      "kind": "expected_status",
+      "old": 3,
+      "new": 2,
+      "reason": "Fresh accepted M9 dee5f42 and v3 both return historical PARSE_ERROR for this exact excluded top-level declaration. No other category is permitted."
+    },
+    {
+      "name": "alias",
+      "kind": "expected_status",
+      "old": 3,
+      "new": 2,
+      "reason": "Fresh accepted M9 dee5f42 and v3 both return historical PARSE_ERROR for this exact excluded top-level declaration. No other category is permitted."
+    },
+    {
+      "name": "override",
+      "kind": "expected_status",
+      "old": 3,
+      "new": 2,
+      "reason": "Fresh accepted M9 dee5f42 and v3 both return historical PARSE_ERROR for this exact excluded top-level declaration. No other category is permitted."
+    }
+  ],
+  "new_mapping": {
+    "M11_expected_status": 0,
+    "accepted_M10_adapter_status": 2,
+    "candidate_observed": false,
+    "case": "workgroup",
+    "raw_M10_status": 3,
+    "reason": "Exact new fixed workgroup-root admission. Original M10 source/tests/adapters remain unchanged. New target-only root/prologue demands M11 target executor, not old scalar target interface.",
+    "source_sha256": "81df1d641637142b20fa4ada1cc380b15f74eb00f86d498420b0c3e2357be3e0"
+  },
+  "cases": [
+    {
+      "name": "private",
+      "expected_status": 3,
+      "flags_status": [
+        3,
+        3,
+        3,
+        3,
+        3,
+        3
+      ],
+      "exact_private_contract_mapping": "20ee474ecf0eca32a4333dfe47989e52a825b72a8a895742e4d26ec9201e6160",
+      "outcome": "passed"
+    }
+  ],
+  "failed": []
+}

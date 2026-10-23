@@ -1,0 +1,60 @@
+{
+  "M11_candidate_used": false,
+  "records": [
+    {
+      "original": "pre_candidate_supplement/execute_constant_skipped_effects.wgsl",
+      "original_sha256": "b290fcbd613bac1f54fd8d09447edb0bb22b0c08312daba1877942043b809410",
+      "adapted": "accepted_m10_preflight_sources/execute_constant_skipped_effects.wgsl",
+      "adapted_sha256": "6683eeb929eab1f417d4fa3b436bd50745bf96a894a638b846144e46ad133e05",
+      "steps": [
+        "Move matched complete module workgroup declarations to first statements of main, changing address space to Function.",
+        "Remove exact workgroupBarrier(); statements. No M11 semantics asserted."
+      ],
+      "expected_stopping_point": "Successful accepted-M10 target measurement of adapted syntax; not original-module Workgroup acceptance."
+    },
+    {
+      "original": "pre_candidate_supplement/execute_multiple_roots.wgsl",
+      "original_sha256": "ecf0df99909ebf3730424c2a29b812236e1efdc70c2a52617ede79dbb24bc2a9",
+      "adapted": "accepted_m10_preflight_sources/execute_multiple_roots.wgsl",
+      "adapted_sha256": "2130ec956d17dfbea687bfe03ed5d2f62d2425051babe50b50597d077ac14969",
+      "steps": [
+        "Move matched complete module workgroup declarations to first statements of main, changing address space to Function.",
+        "Remove exact workgroupBarrier(); statements. No M11 semantics asserted."
+      ],
+      "expected_stopping_point": "Successful accepted-M10 target measurement of adapted syntax; not original-module Workgroup acceptance."
+    },
+    {
+      "original": "pre_candidate_supplement/execute_helper_shared_identity.wgsl",
+      "original_sha256": "71d4e9df1d4a96397afc8bf492f283c9220abefff6199f648698ea5121a008dc",
+      "adapted": "accepted_m10_preflight_sources/execute_helper_shared_identity.wgsl",
+      "adapted_sha256": "b1ae570f37324d7f29e5401d1171b7381f4af91479cce4a717cd7f0052334ec2",
+      "steps": [
+        "Replace exact module workgroup address space with storage read_write plus group1 binding0; preserve helper-visible identity for syntax/type preflight only.",
+        "Remove exact workgroupBarrier(); statements. No M11 semantics asserted."
+      ],
+      "expected_stopping_point": "Original get identifier rejects semantic4; corrected/admitted transformed syntax reaches successful accepted-M10 target measurement."
+    },
+    {
+      "original": "pre_candidate_supplement/execute_helper_shared_identity_unreserved.wgsl",
+      "original_sha256": "25609cfb8fe39953f559cf06cbbbf28871bdc3e1ea0a0a12472e875093a2fe87",
+      "adapted": "accepted_m10_preflight_sources/execute_helper_shared_identity_unreserved.wgsl",
+      "adapted_sha256": "ac930566c85a4ccf1e96b52a458c95e753032d8aa0dc008ef598c9f6ba9bec6e",
+      "steps": [
+        "Replace exact module workgroup address space with storage read_write plus group1 binding0; preserve helper-visible identity for syntax/type preflight only.",
+        "Remove exact workgroupBarrier(); statements. No M11 semantics asserted."
+      ],
+      "expected_stopping_point": "Original get identifier rejects semantic4; corrected/admitted transformed syntax reaches successful accepted-M10 target measurement."
+    },
+    {
+      "original": "pre_candidate_supplement/execute_whole_snapshot.wgsl",
+      "original_sha256": "dc0d8b07d349e2b6d75496ab709352e8a9588ec53407b0bcd148c5e4fcbbe5a1",
+      "adapted": "accepted_m10_preflight_sources/execute_whole_snapshot.wgsl",
+      "adapted_sha256": "1ca85fa5f07d65eef81a43e384d61a932cb5a731f20de38a3ac752357d89748d",
+      "steps": [
+        "Move matched complete module workgroup declarations to first statements of main, changing address space to Function.",
+        "Remove exact workgroupBarrier(); statements. No M11 semantics asserted."
+      ],
+      "expected_stopping_point": "Successful accepted-M10 target measurement of adapted syntax; not original-module Workgroup acceptance."
+    }
+  ]
+}

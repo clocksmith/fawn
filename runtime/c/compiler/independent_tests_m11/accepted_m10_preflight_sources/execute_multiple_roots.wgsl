@@ -1,0 +1,1 @@
+@group(0) @binding(0) var<storage,read_write> out:array<u32>;@compute @workgroup_size(4) fn main(@builtin(local_invocation_index) li:u32,@builtin(global_invocation_id) gid:vec3u,@builtin(workgroup_id) wid:vec3u){var a:array<u32,4>;var b:bool;var c:array<vec2u,4>;out[gid.x]=a[li]+u32(b)+c[li].x;}

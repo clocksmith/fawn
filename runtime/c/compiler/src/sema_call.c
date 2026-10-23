@@ -235,6 +235,16 @@ bool sema_call_value(Source *s, uint32_t id, const LocalScope *scope, bool evalu
     if (function != NO_ID) return user_call(s, id, scope, function, evaluate, emit, statement, out);
     const TypeId nominal = sema_find_struct(s, name);
     if (nominal == NO_ID && sema_module_declared(s, name)) return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, name.offset, "call target resolves to a module value");
+    if (nominal==NO_ID && source_span_is(s,name,"workgroupBarrier")) {
+        if (!statement || node->right!=0u || node->value.call.type.offset!=NO_ID || c->current_function==NO_ID)
+            return source_error(s,DOE_COMPILER_SEMANTIC_ERROR,name.offset,"workgroupBarrier requires no arguments and no result");
+        c->callees[id]=UINT32_MAX;
+        *out=(ExpressionValue){.runtime=true,.constant.type=IR_VOID,.value={.type=IR_VOID,.source_offset=name.offset}};
+        return sema_emit(s,emit,(IrInstruction){.opcode=IR_WORKGROUP_BARRIER,.source_offset=name.offset},NULL);
+    }
+    if (nominal==NO_ID && (source_span_is(s,name,"storageBarrier") || source_span_is(s,name,"workgroupUniformLoad") ||
+        source_span_is(s,name,"textureBarrier")))
+        return source_error(s,DOE_COMPILER_UNSUPPORTED,name.offset,"synchronization builtin is outside the workgroup barrier owner");
     Name text;
     if (name.length >= sizeof(text.text)) return source_error(s, DOE_COMPILER_UNSUPPORTED, name.offset, "identifier length exceeds supported capacity");
     memcpy(text.text, s->source+name.offset, name.length);

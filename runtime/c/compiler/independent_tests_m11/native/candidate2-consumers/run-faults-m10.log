@@ -1,0 +1,187 @@
+observed flags=1 kind=0 function=fegetenv calls=1
+fault flags=1 kind=0 function=fegetenv ordinal=1 after=0 persistent=0 injected=1
+fault flags=1 kind=0 function=fegetenv ordinal=1 after=1 persistent=0 injected=1
+observed flags=1 kind=0 function=feholdexcept calls=1
+fault flags=1 kind=0 function=feholdexcept ordinal=1 after=0 persistent=0 injected=1
+fault flags=1 kind=0 function=feholdexcept ordinal=1 after=1 persistent=0 injected=1
+observed flags=1 kind=0 function=fesetenv calls=1
+fault flags=1 kind=0 function=fesetenv ordinal=1 after=0 persistent=0 injected=1
+fault flags=1 kind=0 function=fesetenv ordinal=1 after=1 persistent=0 injected=1
+fault flags=1 kind=0 function=fesetenv ordinal=1 after=0 persistent=1 injected=2
+observed flags=1 kind=0 function=feupdateenv calls=0
+observed flags=1 kind=0 function=fesetround calls=1
+fault flags=1 kind=0 function=fesetround ordinal=1 after=0 persistent=0 injected=1
+fault flags=1 kind=0 function=fesetround ordinal=1 after=1 persistent=0 injected=1
+observed flags=1 kind=0 function=fegetround calls=2
+fault flags=1 kind=0 function=fegetround ordinal=1 after=0 persistent=0 injected=1
+fault flags=1 kind=0 function=fegetround ordinal=2 after=0 persistent=0 injected=1
+observed flags=1 kind=0 function=feclearexcept calls=0
+observed flags=1 kind=0 function=fesetexceptflag calls=0
+observed flags=1 kind=0 function=feenableexcept calls=0
+observed flags=1 kind=0 function=fedisableexcept calls=0
+observed flags=1 kind=1 function=fegetenv calls=0
+observed flags=1 kind=1 function=feholdexcept calls=0
+observed flags=1 kind=1 function=fesetenv calls=0
+observed flags=1 kind=1 function=feupdateenv calls=0
+observed flags=1 kind=1 function=fesetround calls=0
+observed flags=1 kind=1 function=fegetround calls=0
+observed flags=1 kind=1 function=feclearexcept calls=0
+observed flags=1 kind=1 function=fesetexceptflag calls=0
+observed flags=1 kind=1 function=feenableexcept calls=0
+observed flags=1 kind=1 function=fedisableexcept calls=0
+observed flags=2 kind=0 function=fegetenv calls=1
+fault flags=2 kind=0 function=fegetenv ordinal=1 after=0 persistent=0 injected=1
+fault flags=2 kind=0 function=fegetenv ordinal=1 after=1 persistent=0 injected=1
+observed flags=2 kind=0 function=feholdexcept calls=1
+fault flags=2 kind=0 function=feholdexcept ordinal=1 after=0 persistent=0 injected=1
+fault flags=2 kind=0 function=feholdexcept ordinal=1 after=1 persistent=0 injected=1
+observed flags=2 kind=0 function=fesetenv calls=1
+fault flags=2 kind=0 function=fesetenv ordinal=1 after=0 persistent=0 injected=1
+fault flags=2 kind=0 function=fesetenv ordinal=1 after=1 persistent=0 injected=1
+fault flags=2 kind=0 function=fesetenv ordinal=1 after=0 persistent=1 injected=2
+observed flags=2 kind=0 function=feupdateenv calls=0
+observed flags=2 kind=0 function=fesetround calls=1
+fault flags=2 kind=0 function=fesetround ordinal=1 after=0 persistent=0 injected=1
+fault flags=2 kind=0 function=fesetround ordinal=1 after=1 persistent=0 injected=1
+observed flags=2 kind=0 function=fegetround calls=2
+fault flags=2 kind=0 function=fegetround ordinal=1 after=0 persistent=0 injected=1
+fault flags=2 kind=0 function=fegetround ordinal=2 after=0 persistent=0 injected=1
+observed flags=2 kind=0 function=feclearexcept calls=0
+observed flags=2 kind=0 function=fesetexceptflag calls=0
+observed flags=2 kind=0 function=feenableexcept calls=0
+observed flags=2 kind=0 function=fedisableexcept calls=0
+observed flags=2 kind=1 function=fegetenv calls=0
+observed flags=2 kind=1 function=feholdexcept calls=0
+observed flags=2 kind=1 function=fesetenv calls=0
+observed flags=2 kind=1 function=feupdateenv calls=0
+observed flags=2 kind=1 function=fesetround calls=0
+observed flags=2 kind=1 function=fegetround calls=0
+observed flags=2 kind=1 function=feclearexcept calls=0
+observed flags=2 kind=1 function=fesetexceptflag calls=0
+observed flags=2 kind=1 function=feenableexcept calls=0
+observed flags=2 kind=1 function=fedisableexcept calls=0
+observed flags=3 kind=0 function=fegetenv calls=1
+fault flags=3 kind=0 function=fegetenv ordinal=1 after=0 persistent=0 injected=1
+fault flags=3 kind=0 function=fegetenv ordinal=1 after=1 persistent=0 injected=1
+observed flags=3 kind=0 function=feholdexcept calls=1
+fault flags=3 kind=0 function=feholdexcept ordinal=1 after=0 persistent=0 injected=1
+fault flags=3 kind=0 function=feholdexcept ordinal=1 after=1 persistent=0 injected=1
+observed flags=3 kind=0 function=fesetenv calls=1
+fault flags=3 kind=0 function=fesetenv ordinal=1 after=0 persistent=0 injected=1
+fault flags=3 kind=0 function=fesetenv ordinal=1 after=1 persistent=0 injected=1
+fault flags=3 kind=0 function=fesetenv ordinal=1 after=0 persistent=1 injected=2
+observed flags=3 kind=0 function=feupdateenv calls=0
+observed flags=3 kind=0 function=fesetround calls=1
+fault flags=3 kind=0 function=fesetround ordinal=1 after=0 persistent=0 injected=1
+fault flags=3 kind=0 function=fesetround ordinal=1 after=1 persistent=0 injected=1
+observed flags=3 kind=0 function=fegetround calls=2
+fault flags=3 kind=0 function=fegetround ordinal=1 after=0 persistent=0 injected=1
+fault flags=3 kind=0 function=fegetround ordinal=2 after=0 persistent=0 injected=1
+observed flags=3 kind=0 function=feclearexcept calls=0
+observed flags=3 kind=0 function=fesetexceptflag calls=0
+observed flags=3 kind=0 function=feenableexcept calls=0
+observed flags=3 kind=0 function=fedisableexcept calls=0
+observed flags=3 kind=1 function=fegetenv calls=0
+observed flags=3 kind=1 function=feholdexcept calls=0
+observed flags=3 kind=1 function=fesetenv calls=0
+observed flags=3 kind=1 function=feupdateenv calls=0
+observed flags=3 kind=1 function=fesetround calls=0
+observed flags=3 kind=1 function=fegetround calls=0
+observed flags=3 kind=1 function=feclearexcept calls=0
+observed flags=3 kind=1 function=fesetexceptflag calls=0
+observed flags=3 kind=1 function=feenableexcept calls=0
+observed flags=3 kind=1 function=fedisableexcept calls=0
+observed flags=5 kind=0 function=fegetenv calls=1
+fault flags=5 kind=0 function=fegetenv ordinal=1 after=0 persistent=0 injected=1
+fault flags=5 kind=0 function=fegetenv ordinal=1 after=1 persistent=0 injected=1
+observed flags=5 kind=0 function=feholdexcept calls=1
+fault flags=5 kind=0 function=feholdexcept ordinal=1 after=0 persistent=0 injected=1
+fault flags=5 kind=0 function=feholdexcept ordinal=1 after=1 persistent=0 injected=1
+observed flags=5 kind=0 function=fesetenv calls=1
+fault flags=5 kind=0 function=fesetenv ordinal=1 after=0 persistent=0 injected=1
+fault flags=5 kind=0 function=fesetenv ordinal=1 after=1 persistent=0 injected=1
+fault flags=5 kind=0 function=fesetenv ordinal=1 after=0 persistent=1 injected=2
+observed flags=5 kind=0 function=feupdateenv calls=0
+observed flags=5 kind=0 function=fesetround calls=1
+fault flags=5 kind=0 function=fesetround ordinal=1 after=0 persistent=0 injected=1
+fault flags=5 kind=0 function=fesetround ordinal=1 after=1 persistent=0 injected=1
+observed flags=5 kind=0 function=fegetround calls=2
+fault flags=5 kind=0 function=fegetround ordinal=1 after=0 persistent=0 injected=1
+fault flags=5 kind=0 function=fegetround ordinal=2 after=0 persistent=0 injected=1
+observed flags=5 kind=0 function=feclearexcept calls=0
+observed flags=5 kind=0 function=fesetexceptflag calls=0
+observed flags=5 kind=0 function=feenableexcept calls=0
+observed flags=5 kind=0 function=fedisableexcept calls=0
+observed flags=5 kind=1 function=fegetenv calls=0
+observed flags=5 kind=1 function=feholdexcept calls=0
+observed flags=5 kind=1 function=fesetenv calls=0
+observed flags=5 kind=1 function=feupdateenv calls=0
+observed flags=5 kind=1 function=fesetround calls=0
+observed flags=5 kind=1 function=fegetround calls=0
+observed flags=5 kind=1 function=feclearexcept calls=0
+observed flags=5 kind=1 function=fesetexceptflag calls=0
+observed flags=5 kind=1 function=feenableexcept calls=0
+observed flags=5 kind=1 function=fedisableexcept calls=0
+observed flags=6 kind=0 function=fegetenv calls=1
+fault flags=6 kind=0 function=fegetenv ordinal=1 after=0 persistent=0 injected=1
+fault flags=6 kind=0 function=fegetenv ordinal=1 after=1 persistent=0 injected=1
+observed flags=6 kind=0 function=feholdexcept calls=1
+fault flags=6 kind=0 function=feholdexcept ordinal=1 after=0 persistent=0 injected=1
+fault flags=6 kind=0 function=feholdexcept ordinal=1 after=1 persistent=0 injected=1
+observed flags=6 kind=0 function=fesetenv calls=1
+fault flags=6 kind=0 function=fesetenv ordinal=1 after=0 persistent=0 injected=1
+fault flags=6 kind=0 function=fesetenv ordinal=1 after=1 persistent=0 injected=1
+fault flags=6 kind=0 function=fesetenv ordinal=1 after=0 persistent=1 injected=2
+observed flags=6 kind=0 function=feupdateenv calls=0
+observed flags=6 kind=0 function=fesetround calls=1
+fault flags=6 kind=0 function=fesetround ordinal=1 after=0 persistent=0 injected=1
+fault flags=6 kind=0 function=fesetround ordinal=1 after=1 persistent=0 injected=1
+observed flags=6 kind=0 function=fegetround calls=2
+fault flags=6 kind=0 function=fegetround ordinal=1 after=0 persistent=0 injected=1
+fault flags=6 kind=0 function=fegetround ordinal=2 after=0 persistent=0 injected=1
+observed flags=6 kind=0 function=feclearexcept calls=0
+observed flags=6 kind=0 function=fesetexceptflag calls=0
+observed flags=6 kind=0 function=feenableexcept calls=0
+observed flags=6 kind=0 function=fedisableexcept calls=0
+observed flags=6 kind=1 function=fegetenv calls=0
+observed flags=6 kind=1 function=feholdexcept calls=0
+observed flags=6 kind=1 function=fesetenv calls=0
+observed flags=6 kind=1 function=feupdateenv calls=0
+observed flags=6 kind=1 function=fesetround calls=0
+observed flags=6 kind=1 function=fegetround calls=0
+observed flags=6 kind=1 function=feclearexcept calls=0
+observed flags=6 kind=1 function=fesetexceptflag calls=0
+observed flags=6 kind=1 function=feenableexcept calls=0
+observed flags=6 kind=1 function=fedisableexcept calls=0
+observed flags=7 kind=0 function=fegetenv calls=1
+fault flags=7 kind=0 function=fegetenv ordinal=1 after=0 persistent=0 injected=1
+fault flags=7 kind=0 function=fegetenv ordinal=1 after=1 persistent=0 injected=1
+observed flags=7 kind=0 function=feholdexcept calls=1
+fault flags=7 kind=0 function=feholdexcept ordinal=1 after=0 persistent=0 injected=1
+fault flags=7 kind=0 function=feholdexcept ordinal=1 after=1 persistent=0 injected=1
+observed flags=7 kind=0 function=fesetenv calls=1
+fault flags=7 kind=0 function=fesetenv ordinal=1 after=0 persistent=0 injected=1
+fault flags=7 kind=0 function=fesetenv ordinal=1 after=1 persistent=0 injected=1
+fault flags=7 kind=0 function=fesetenv ordinal=1 after=0 persistent=1 injected=2
+observed flags=7 kind=0 function=feupdateenv calls=0
+observed flags=7 kind=0 function=fesetround calls=1
+fault flags=7 kind=0 function=fesetround ordinal=1 after=0 persistent=0 injected=1
+fault flags=7 kind=0 function=fesetround ordinal=1 after=1 persistent=0 injected=1
+observed flags=7 kind=0 function=fegetround calls=2
+fault flags=7 kind=0 function=fegetround ordinal=1 after=0 persistent=0 injected=1
+fault flags=7 kind=0 function=fegetround ordinal=2 after=0 persistent=0 injected=1
+observed flags=7 kind=0 function=feclearexcept calls=0
+observed flags=7 kind=0 function=fesetexceptflag calls=0
+observed flags=7 kind=0 function=feenableexcept calls=0
+observed flags=7 kind=0 function=fedisableexcept calls=0
+observed flags=7 kind=1 function=fegetenv calls=0
+observed flags=7 kind=1 function=feholdexcept calls=0
+observed flags=7 kind=1 function=fesetenv calls=0
+observed flags=7 kind=1 function=feupdateenv calls=0
+observed flags=7 kind=1 function=fesetround calls=0
+observed flags=7 kind=1 function=fegetround calls=0
+observed flags=7 kind=1 function=feclearexcept calls=0
+observed flags=7 kind=1 function=fesetexceptflag calls=0
+observed flags=7 kind=1 function=feenableexcept calls=0
+observed flags=7 kind=1 function=fedisableexcept calls=0
+PASS 66 injected faults across 30 reached function/mode/source paths; unobserved symbols uncredited

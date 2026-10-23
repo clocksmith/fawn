@@ -1,0 +1,1999 @@
+{
+  "address_proved_local_aliases": {
+    "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/sema_expression.c:sema_expression.localalias": "sema_expression"
+  },
+  "callgraph_edges": {
+    "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/compile.c:compile_pipeline": [
+      "emit_spirv",
+      "lex_source",
+      "memchr",
+      "memset",
+      "numeric_environment_begin",
+      "numeric_environment_end",
+      "parse_tokens",
+      "reflect_legacy_admit",
+      "reflect_prepare",
+      "source_error",
+      "source_pool_error",
+      "validate_syntax"
+    ],
+    "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/compile.c:old_output": [
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/compile.c:compile_pipeline",
+      "memcpy",
+      "source_error"
+    ],
+    "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/constants.c:convert_node": [
+      "constant_reserve",
+      "constant_zero",
+      "numeric_materialize",
+      "source_error",
+      "type_abstract"
+    ],
+    "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:attribute_value": [
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:expression",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:reject",
+      "source_error"
+    ],
+    "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:block": [
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:reject",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:statement",
+      "source_pool_error"
+    ],
+    "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:expression": [
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:expression",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:expression_node.isra.0",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:primary",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:reject",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:unary_form.part.0.isra.0",
+      "source_pool_error"
+    ],
+    "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:expression_node.isra.0": [
+      "source_pool_error"
+    ],
+    "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:generic_reference.constprop.0": [
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:expression",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:template_close",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:type_reference",
+      "source_pool_error"
+    ],
+    "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:local_declaration": [
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:expression",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:name_span",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:reject",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:template_close",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:type_reference",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:word"
+    ],
+    "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:name_span": [
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:reject",
+      "source_error"
+    ],
+    "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:primary": [
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:expression",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:expression_node.isra.0",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:generic_reference.constprop.0",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:name_span",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:primary",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:punctuation",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:reject",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:template_close",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:type_reference",
+      "source_error",
+      "source_pool_error",
+      "source_span_is"
+    ],
+    "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:punctuation": [
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:reject"
+    ],
+    "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:reject": [
+      "memcpy",
+      "source_error",
+      "strlen"
+    ],
+    "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:simple_statement": [
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:expression",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:expression_node.isra.0",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:local_declaration",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:name_span",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:primary",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:reject",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:statement_slot"
+    ],
+    "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:statement": [
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:block",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:expression",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:reject",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:simple_statement",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:statement",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:statement_slot",
+      "source_pool_error"
+    ],
+    "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:statement_slot": [
+      "source_pool_error"
+    ],
+    "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:template_close": [
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:reject"
+    ],
+    "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:type_reference": [
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:generic_reference.constprop.0",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:name_span"
+    ],
+    "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:word": [
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:reject",
+      "memcmp",
+      "strlen"
+    ],
+    "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/reflection.c:discover": [
+      "source_pool_error",
+      "type_child"
+    ],
+    "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/sema_call.c:convert_value": [
+      "constant_composite",
+      "constant_project",
+      "numeric_bitcast",
+      "numeric_convert",
+      "sema_emit",
+      "sema_ensure_value",
+      "sema_materialize",
+      "source_error",
+      "source_pool_error",
+      "type_abstract",
+      "type_intern",
+      "type_leaf"
+    ],
+    "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/sema_declarations.c:formal_order.isra.0": [
+      "memcmp"
+    ],
+    "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/sema_declarations.c:integer_attribute": [
+      "sema_expression",
+      "sema_materialize",
+      "source_error"
+    ],
+    "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/sema_declarations.c:lexical_value": [
+      "sema_alias_visible",
+      "sema_find_formal",
+      "sema_find_local",
+      "sema_find_parameter",
+      "source_spans_equal"
+    ],
+    "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/sema_declarations.c:sift_formals": [
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/sema_declarations.c:formal_order.isra.0"
+    ],
+    "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/sema_expression.c:identity_value.isra.0": [
+      "sema_emit",
+      "sema_local_use",
+      "source_error",
+      "type_constructible",
+      "type_intern"
+    ],
+    "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/sema_expression.c:postfix_value": [
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/sema_expression.c:postfix_value",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/sema_expression.c:root_reference",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/sema_expression.c:swizzle",
+      "constant_composite",
+      "constant_project",
+      "sema_default_type",
+      "sema_emit",
+      "sema_ensure_value",
+      "sema_expression",
+      "sema_find_formal",
+      "sema_find_local",
+      "sema_find_parameter",
+      "sema_materialize",
+      "sema_reference_load",
+      "source_error",
+      "source_pool_error",
+      "source_spans_equal",
+      "type_abstract",
+      "type_intern"
+    ],
+    "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/sema_expression.c:root_reference": [
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/sema_expression.c:identity_value.isra.0",
+      "sema_local_use",
+      "sema_value_identity"
+    ],
+    "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/sema_expression.c:swizzle": [
+      "source_error",
+      "strchr"
+    ],
+    "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:access_condition": [
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:instruction_space.constprop.0",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:reserve_ids",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:unsigned_constant",
+      "source_error"
+    ],
+    "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:access_walk": [
+      "source_error",
+      "source_pool_error"
+    ],
+    "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:append_declaration": [
+      "source_error",
+      "source_pool_error"
+    ],
+    "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:debug_name": [
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:instruction_space.constprop.0",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:span_words",
+      "memcpy",
+      "source_error"
+    ],
+    "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:emit_block": [
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:access_condition",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:access_walk",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:comparison_opcode",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:emit_block",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:emit_conversion",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:emit_division",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:emit_pointer_access",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:emit_shift",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:extract_lane",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:instruction",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:instruction_space.constprop.0",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:reserve_ids",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:vector_construct",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:zero_constant",
+      "source_error",
+      "type_leaf"
+    ],
+    "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:emit_conversion": [
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:instruction_space.constprop.0",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:reserve_ids"
+    ],
+    "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:emit_division": [
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:instruction_space.constprop.0",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:reserve_ids"
+    ],
+    "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:emit_pointer_access": [
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:access_condition",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:access_walk",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:instruction_space.constprop.0",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:pointer_type",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:reserve_ids",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:zero_constant"
+    ],
+    "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:emit_shift": [
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:instruction_space.constprop.0",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:reserve_ids"
+    ],
+    "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:extract_lane": [
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:instruction_space.constprop.0",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:reserve_ids",
+      "type_leaf"
+    ],
+    "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:instruction": [
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:instruction_space.constprop.0",
+      "memcpy"
+    ],
+    "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:instruction_space.constprop.0": [
+      "source_error",
+      "source_pool_error"
+    ],
+    "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:leaf_constant.isra.0": [
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:append_declaration",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:unsigned_constant",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:zero_constant"
+    ],
+    "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:pointer_type": [
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:append_declaration",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:reserve_ids"
+    ],
+    "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:primitive_declarations": [
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:instruction",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:instruction_space.constprop.0",
+      "source_pool_error"
+    ],
+    "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:push_walk": [
+      "source_pool_error"
+    ],
+    "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:reserve_ids": [
+      "source_error"
+    ],
+    "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:span_words": [
+      "memset"
+    ],
+    "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:unsigned_constant": [
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:append_declaration"
+    ],
+    "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:vector_construct": [
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:instruction_space.constprop.0"
+    ],
+    "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:workgroup_zero": [
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:append_declaration",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:zero_constant"
+    ],
+    "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:zero_constant": [
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:append_declaration"
+    ],
+    "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/storage.c:finish_layout": [
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/storage.c:workspace_layout"
+    ],
+    "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/storage.c:workspace_layout": [
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/storage.c:reserve_array"
+    ],
+    "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/uniformity.c:block_bits": [
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/uniformity.c:block_bits",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/uniformity.c:enter_frame",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/uniformity.c:expression_bit",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/uniformity.c:loop_exit",
+      "memcpy",
+      "sema_value_identity",
+      "source_error",
+      "uniformity_charge"
+    ],
+    "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/uniformity.c:enter_frame": [
+      "source_error",
+      "uniformity_charge"
+    ],
+    "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/uniformity.c:expression_bit": [
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/uniformity.c:expression_bit",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/uniformity.c:name_bit",
+      "uniformity_charge"
+    ],
+    "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/uniformity.c:loop_exit": [
+      "memcpy",
+      "source_error",
+      "uniformity_charge"
+    ],
+    "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/uniformity.c:name_bit": [
+      "sema_value_identity",
+      "source_error",
+      "source_spans_equal",
+      "uniformity_charge"
+    ],
+    "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/validate.c:lower_block": [
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/validate.c:lower_block",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/validate.c:lower_boolean.isra.0",
+      "constant_zero",
+      "sema_alias_visible",
+      "sema_append",
+      "sema_assignment_reference",
+      "sema_binary",
+      "sema_call_value",
+      "sema_default_type",
+      "sema_ensure_value",
+      "sema_expression",
+      "sema_find_formal",
+      "sema_find_parameter",
+      "sema_materialize",
+      "sema_reference_load",
+      "sema_type_reference",
+      "sema_valid_name",
+      "source_error",
+      "source_pool_error",
+      "source_spans_equal",
+      "type_abstract",
+      "type_constructible"
+    ],
+    "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/validate.c:lower_boolean.isra.0": [
+      "sema_ensure_value",
+      "sema_expression",
+      "source_error"
+    ],
+    "compiler_job_bind": [
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/storage.c:workspace_layout"
+    ],
+    "compiler_job_layout": [
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/storage.c:finish_layout"
+    ],
+    "compiler_legacy_bind": [
+      "compiler_job_bind"
+    ],
+    "compiler_typed_layout": [
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/storage.c:finish_layout"
+    ],
+    "constant_composite": [
+      "constant_reserve"
+    ],
+    "constant_materialize": [
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/constants.c:convert_node",
+      "source_pool_error",
+      "type_child"
+    ],
+    "constant_project": [
+      "constant_zero",
+      "source_error",
+      "type_child",
+      "type_children"
+    ],
+    "constant_reserve": [
+      "source_pool_error"
+    ],
+    "constant_zero": [
+      "constant_reserve"
+    ],
+    "doe_compiler_compile": [
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/compile.c:old_output",
+      "__errno_location",
+      "compiler_legacy_bind",
+      "reflect_program"
+    ],
+    "doe_compiler_compile_job": [
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/compile.c:old_output",
+      "__errno_location",
+      "compiler_job_bind",
+      "compiler_job_layout",
+      "reflect_program_v2",
+      "source_error"
+    ],
+    "doe_compiler_compile_typed": [
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/compile.c:compile_pipeline",
+      "__errno_location",
+      "compiler_job_bind",
+      "compiler_typed_layout",
+      "memcpy",
+      "reflect_typed",
+      "source_error"
+    ],
+    "doe_compiler_compile_v2": [
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/compile.c:old_output",
+      "__errno_location",
+      "compiler_legacy_bind",
+      "reflect_program_v2",
+      "source_error"
+    ],
+    "doe_compiler_job_requirements": [
+      "__errno_location",
+      "compiler_job_layout"
+    ],
+    "doe_compiler_typed_requirements": [
+      "__errno_location",
+      "compiler_typed_layout"
+    ],
+    "doe_compiler_workspace_requirements": [
+      "__errno_location"
+    ],
+    "emit_spirv": [
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:append_declaration",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:debug_name",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:emit_block",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:instruction",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:instruction_space.constprop.0",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:leaf_constant.isra.0",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:pointer_type",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:primitive_declarations",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:push_walk",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:reserve_ids",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:span_words",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:unsigned_constant",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:workgroup_zero",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:zero_constant",
+      "memcpy",
+      "memset",
+      "source_error",
+      "source_pool_error",
+      "type_abstract",
+      "type_child",
+      "type_leaf"
+    ],
+    "lex_source": [
+      "source_error",
+      "source_pool_error",
+      "strchr"
+    ],
+    "numeric_binary": [
+      "fmod",
+      "fmodf",
+      "numeric_builtin",
+      "source_error"
+    ],
+    "numeric_bitcast": [
+      "source_error"
+    ],
+    "numeric_builtin": [
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/numeric.c:numeric_less.isra.0",
+      "exp",
+      "expf",
+      "source_error",
+      "tanh",
+      "tanhf"
+    ],
+    "numeric_convert": [
+      "source_error"
+    ],
+    "numeric_environment_begin": [
+      "fegetenv",
+      "fegetround",
+      "feholdexcept",
+      "fesetround",
+      "numeric_environment_end",
+      "source_error"
+    ],
+    "numeric_environment_end": [
+      "fesetenv",
+      "source_error"
+    ],
+    "numeric_materialize": [
+      "numeric_convert",
+      "source_error"
+    ],
+    "numeric_parse_literal": [
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/numeric.c:big_shift",
+      "source_error"
+    ],
+    "numeric_unary": [
+      "source_error"
+    ],
+    "parse_tokens": [
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:attribute_value",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:block",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:expression",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:local_declaration",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:name_span",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:punctuation",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:reject",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:template_close",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:type_reference",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:word",
+      "memcmp",
+      "memset",
+      "source_error",
+      "source_pool_error"
+    ],
+    "reflect_legacy_admit": [
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/reflection.c:flat_struct",
+      "source_error"
+    ],
+    "reflect_prepare": [
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/reflection.c:discover",
+      "source_error"
+    ],
+    "reflect_program": [
+      "memcpy"
+    ],
+    "reflect_program_v2": [
+      "memcpy"
+    ],
+    "reflect_typed": [
+      "memcpy",
+      "type_alignment",
+      "type_flags",
+      "type_size"
+    ],
+    "scalar_builtin_named": [
+      "strcmp"
+    ],
+    "sema_append": [
+      "source_pool_error"
+    ],
+    "sema_assignment_reference": [
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/sema_expression.c:postfix_value",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/sema_expression.c:root_reference",
+      "source_error",
+      "source_name_at"
+    ],
+    "sema_binary": [
+      "constant_composite",
+      "constant_project",
+      "numeric_binary",
+      "sema_common_type",
+      "sema_emit",
+      "sema_ensure_value",
+      "sema_materialize",
+      "source_error",
+      "type_intern",
+      "type_leaf"
+    ],
+    "sema_call_statement": [
+      "sema_call_value"
+    ],
+    "sema_call_value": [
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/sema_call.c:convert_value",
+      "constant_project",
+      "constant_reserve",
+      "constant_zero",
+      "memcmp",
+      "numeric_binary",
+      "numeric_builtin",
+      "scalar_builtin_named",
+      "sema_alias_visible",
+      "sema_common_type",
+      "sema_default_type",
+      "sema_emit",
+      "sema_ensure_value",
+      "sema_expression",
+      "sema_find_formal",
+      "sema_find_function",
+      "sema_find_local",
+      "sema_find_parameter",
+      "sema_find_struct",
+      "sema_materialize",
+      "sema_module_declared",
+      "sema_type_reference",
+      "source_error",
+      "source_pool_error",
+      "source_span_is",
+      "source_spans_equal",
+      "type_abstract",
+      "type_child",
+      "type_constructible",
+      "type_intern",
+      "type_leaf"
+    ],
+    "sema_common_type": [
+      "source_error",
+      "source_pool_error",
+      "type_intern"
+    ],
+    "sema_default_type": [
+      "source_pool_error",
+      "type_abstract",
+      "type_intern"
+    ],
+    "sema_emit": [
+      "sema_append"
+    ],
+    "sema_ensure_value": [
+      "sema_append",
+      "source_error",
+      "type_abstract"
+    ],
+    "sema_expression": [
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/sema_expression.c:identity_value.isra.0",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/sema_expression.c:postfix_value",
+      "constant_composite",
+      "constant_project",
+      "numeric_parse_literal",
+      "numeric_unary",
+      "sema_append",
+      "sema_binary",
+      "sema_call_value",
+      "sema_emit",
+      "sema_ensure_value",
+      "sema_expression",
+      "sema_reference_load",
+      "sema_value_identity",
+      "source_error",
+      "type_leaf"
+    ],
+    "sema_find_constant": [
+      "source_spans_equal"
+    ],
+    "sema_find_formal": [
+      "source_spans_equal"
+    ],
+    "sema_find_function": [
+      "source_spans_equal"
+    ],
+    "sema_find_local": [
+      "source_spans_equal"
+    ],
+    "sema_find_parameter": [
+      "source_spans_equal"
+    ],
+    "sema_find_struct": [
+      "source_spans_equal"
+    ],
+    "sema_local_use": [
+      "source_error"
+    ],
+    "sema_materialize": [
+      "constant_materialize",
+      "sema_common_type",
+      "source_error",
+      "type_abstract"
+    ],
+    "sema_module_declared": [
+      "sema_find_constant",
+      "sema_find_function",
+      "sema_find_struct",
+      "source_spans_equal"
+    ],
+    "sema_reference_load": [
+      "sema_emit",
+      "source_error",
+      "source_pool_error",
+      "type_constructible"
+    ],
+    "sema_resolve_declarations": [
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/sema_declarations.c:formal_order.isra.0",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/sema_declarations.c:integer_attribute",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/sema_declarations.c:module_name",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/sema_declarations.c:sift_formals",
+      "sema_expression",
+      "sema_find_constant",
+      "sema_find_parameter",
+      "sema_find_struct",
+      "sema_materialize",
+      "sema_type_reference",
+      "sema_valid_name",
+      "source_error",
+      "source_name_at",
+      "source_span_is",
+      "source_spans_equal",
+      "type_alignment",
+      "type_constructible",
+      "type_flags",
+      "type_intern",
+      "type_layout_struct",
+      "type_resource_layout",
+      "type_size"
+    ],
+    "sema_type_reference": [
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/sema_declarations.c:integer_attribute",
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/sema_declarations.c:lexical_value",
+      "memcmp",
+      "sema_find_struct",
+      "sema_module_declared",
+      "source_error",
+      "source_name_at",
+      "source_pool_error",
+      "source_span_is",
+      "type_flags",
+      "type_intern"
+    ],
+    "sema_valid_name": [
+      "source_error",
+      "source_span_is"
+    ],
+    "sema_value_identity": [
+      "sema_alias_visible",
+      "source_spans_equal",
+      "uniformity_charge"
+    ],
+    "source_error": [
+      "strlen"
+    ],
+    "source_pool_error": [
+      "source_error"
+    ],
+    "source_span_is": [
+      "memcmp",
+      "strlen"
+    ],
+    "source_spans_equal": [
+      "memcmp"
+    ],
+    "type_abstract": [
+      "type_flags"
+    ],
+    "type_constructible": [
+      "type_flags"
+    ],
+    "type_intern": [
+      "source_error",
+      "source_pool_error",
+      "type_alignment",
+      "type_constructible",
+      "type_flags",
+      "type_size"
+    ],
+    "type_layout_struct": [
+      "source_error",
+      "type_alignment",
+      "type_flags",
+      "type_size"
+    ],
+    "type_resource_layout": [
+      "source_error",
+      "type_alignment",
+      "type_flags",
+      "type_size"
+    ],
+    "uniformity_analyze": [
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/uniformity.c:block_bits",
+      "memset",
+      "source_error",
+      "uniformity_charge"
+    ],
+    "uniformity_charge": [
+      "source_error"
+    ],
+    "validate_syntax": [
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/validate.c:lower_block",
+      "sema_alias_visible",
+      "sema_append",
+      "sema_find_parameter",
+      "sema_resolve_declarations",
+      "source_error",
+      "uniformity_analyze"
+    ]
+  },
+  "external_calls_excluded": [
+    "__errno_location",
+    "exp",
+    "expf",
+    "fegetenv",
+    "fegetround",
+    "feholdexcept",
+    "fesetenv",
+    "fesetround",
+    "fmod",
+    "fmodf",
+    "memchr",
+    "memcmp",
+    "memcpy",
+    "memset",
+    "strchr",
+    "strcmp",
+    "strlen",
+    "tanh",
+    "tanhf"
+  ],
+  "profiles": {
+    "fixed": {
+      "G": 256,
+      "H": 30,
+      "actual_slices": {
+        "accesses": 84368,
+        "arguments": 63240,
+        "behaviors": 113296,
+        "callees": 65800,
+        "constants": 80272,
+        "declarations": 14928,
+        "edges": 82320,
+        "expressions": 552,
+        "formals": 55048,
+        "functions": 27768,
+        "generic_syntax": 67148,
+        "locals": 104776,
+        "members": 69712,
+        "operands": 112016,
+        "phase": 92456,
+        "reflection": 113312,
+        "resources": 73296,
+        "scope": 107608,
+        "statements": 14032,
+        "targets": 113472,
+        "total": 146256,
+        "types": 67920,
+        "uniformity": 113312,
+        "values": 108424,
+        "walk": 128320,
+        "words": 129872,
+        "workgroups": 74128
+      },
+      "common": 20856,
+      "persistent": 92456,
+      "private_alignment": 8,
+      "public_alignment": 8,
+      "target": 32944,
+      "tokens": 24588,
+      "total": 146256,
+      "uniformity": 5232
+    },
+    "job_cli": {
+      "G": 1024,
+      "H": 68,
+      "actual_slices": {
+        "accesses": 612432,
+        "arguments": 527624,
+        "behaviors": 1743056,
+        "callees": 560392,
+        "constants": 608336,
+        "declarations": 221776,
+        "edges": 610384,
+        "expressions": 552,
+        "formals": 494856,
+        "functions": 385656,
+        "generic_syntax": 576780,
+        "locals": 1521800,
+        "members": 579344,
+        "operands": 1726672,
+        "phase": 735336,
+        "reflection": 1744080,
+        "resources": 582928,
+        "scope": 1570968,
+        "statements": 164432,
+        "targets": 1744240,
+        "total": 2172992,
+        "types": 577552,
+        "uniformity": 1744080,
+        "values": 1620168,
+        "walk": 1759088,
+        "words": 1760640,
+        "workgroups": 583760
+      },
+      "common": 1008744,
+      "persistent": 735336,
+      "private_alignment": 8,
+      "public_alignment": 16,
+      "target": 278704,
+      "tokens": 98316,
+      "total": 2172992,
+      "uniformity": 428912
+    },
+    "typed_cli": {
+      "G": 1024,
+      "H": 68,
+      "actual_slices": {
+        "accesses": 872976,
+        "arguments": 527624,
+        "behaviors": 2003600,
+        "callees": 560392,
+        "constants": 774672,
+        "declarations": 221776,
+        "edges": 807440,
+        "expressions": 552,
+        "formals": 494856,
+        "functions": 385656,
+        "generic_syntax": 576780,
+        "locals": 1782344,
+        "members": 689424,
+        "operands": 1987216,
+        "phase": 995880,
+        "reflection": 2004624,
+        "resources": 746768,
+        "scope": 1831512,
+        "statements": 164432,
+        "targets": 2005680,
+        "total": 2536128,
+        "types": 675088,
+        "uniformity": 2004624,
+        "values": 1880712,
+        "walk": 2253488,
+        "words": 2273984,
+        "workgroups": 750096
+      },
+      "common": 1008744,
+      "persistent": 995880,
+      "private_alignment": 8,
+      "public_alignment": 16,
+      "target": 531504,
+      "tokens": 98316,
+      "total": 2536128,
+      "uniformity": 428912
+    }
+  },
+  "records": {
+    "AccessStep": [
+      24,
+      4
+    ],
+    "ArgumentSyntax": [
+      8,
+      4
+    ],
+    "CompilerWorkspace": [
+      552,
+      8
+    ],
+    "ConstantRecord": [
+      32,
+      8
+    ],
+    "ConstantSyntax": [
+      40,
+      8
+    ],
+    "ConstantValue": [
+      16,
+      8
+    ],
+    "Expression": [
+      40,
+      4
+    ],
+    "FormalRecord": [
+      16,
+      4
+    ],
+    "FunctionRecord": [
+      80,
+      4
+    ],
+    "GenericSyntax": [
+      24,
+      4
+    ],
+    "IrInstruction": [
+      32,
+      4
+    ],
+    "IrLocal": [
+      8,
+      4
+    ],
+    "LegacyWorkspace": [
+      146256,
+      8
+    ],
+    "LocalBinding": [
+      48,
+      8
+    ],
+    "MemberRecord": [
+      56,
+      8
+    ],
+    "ResourceRecord": [
+      104,
+      8
+    ],
+    "Statement": [
+      56,
+      4
+    ],
+    "TargetDeclaration": [
+      32,
+      8
+    ],
+    "Token": [
+      12,
+      4
+    ],
+    "TypeRecord": [
+      56,
+      8
+    ],
+    "UniformityFrame": [
+      32,
+      4
+    ],
+    "WalkItem": [
+      16,
+      4
+    ],
+    "WorkgroupRoot": [
+      24,
+      4
+    ]
+  },
+  "recursive_families": {
+    "emitter": {
+      "actual": 272,
+      "ceiling": 384,
+      "members": [
+        "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:emit_block"
+      ]
+    },
+    "parser_control": {
+      "actual": 160,
+      "ceiling": 256,
+      "members": [
+        "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:block",
+        "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:statement"
+      ]
+    },
+    "parser_expression_type": {
+      "actual": 448,
+      "ceiling": 512,
+      "members": [
+        "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:expression",
+        "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:generic_reference.constprop.0",
+        "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:primary",
+        "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:type_reference"
+      ]
+    },
+    "sema_control": {
+      "actual": 464,
+      "ceiling": 768,
+      "members": [
+        "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/validate.c:lower_block"
+      ]
+    },
+    "sema_expression_type": {
+      "actual": 1312,
+      "ceiling": 1536,
+      "members": [
+        "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/sema_declarations.c:integer_attribute",
+        "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/sema_expression.c:postfix_value",
+        "sema_call_value",
+        "sema_expression",
+        "sema_type_reference"
+      ]
+    },
+    "uniformity_control": {
+      "actual": 208,
+      "ceiling": 256,
+      "members": [
+        "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/uniformity.c:block_bits"
+      ]
+    },
+    "uniformity_expression": {
+      "actual": 128,
+      "ceiling": 256,
+      "members": [
+        "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/uniformity.c:expression_bit"
+      ]
+    }
+  },
+  "scope": "GCC14.2 C-owned stack bounds; conservative all-non-wrapper frame sum includes even mutually exclusive and recursive functions once, plus retained recurrence bounds. External libc/libm/OS/sanitizer/caller frames excluded, not observed peaks.",
+  "source_manifest_sha256": "b124146a5044e288dcd7fbd153a7f75f3ecfc2e4451666b2f4e1b7771073b9af",
+  "stack": {
+    "ci_sha256": {
+      "compile.ci": "25b04d9930f6151b0677c80e478ca696aaa94f6deb04d0e075b752d2f09f768c",
+      "constants.ci": "4706f2487fae93c17754aafc0db20f4de76d1a1f065f271a95004adf18b8efac",
+      "lex.ci": "861f1be300d7b09e339a4236466a58bf8c46086ab503bd1d04f308f49796c694",
+      "numeric.ci": "0b0c996e8f264c230f4a5d3c0af549004b09e742ffe39c797ce14f5749e5c8b0",
+      "parse.ci": "41a97a304f8e69530e076a7d8f92d68586112c0e76c31cdb9b2016032a01132a",
+      "reflection.ci": "036df65034a3db133bd5119c6de057caaf096d079786d1fdf218271b60a667e0",
+      "sema_call.ci": "bb4f4769267570fd28ebfb52f949f1a6289716fdb619c8d8d424e769d39966d9",
+      "sema_declarations.ci": "5e97c50832919e4eadb6ba42f17245f5cdd4b547765837d5cdbaad86d32299f7",
+      "sema_expression.ci": "1da72525da2a51d1ea824a023011a541c5a7e1dd3a08a2e0393156f92f0ca8f3",
+      "spirv.ci": "b5e039ecf098a57e480321b0b57810349e6760d7b19dc3b4cc474fa34988528b",
+      "storage.ci": "74e276ca5961ddd7155886ea87815bc2647425f4781507a09d69673172dcf60a",
+      "types.ci": "776edb43fad1159cdbab6e9679322fbe4b033e071237b5cbc45fedcc0a76b45e",
+      "uniformity.ci": "f867d5d23916d1424f27b528ed68ab6c98e62fa828444230248edf8454ff32c5",
+      "validate.ci": "070251e06ebd90766883ca757b2eaff66d5549872a4ab5b409666d95639ab3ea"
+    },
+    "compiler": "gcc (Debian 14.2.0-19) 14.2.0",
+    "fixed_combined": 204608,
+    "fixed_phase_bound": 43008,
+    "frame_count": 145,
+    "frame_qualifiers": {
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/sema_call.c:convert_value": {
+        "bytes": 240,
+        "kind": "dynamic,bounded",
+        "unit": "sema_call.ci"
+      },
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/sema_expression.c:identity_value.isra.0": {
+        "bytes": 144,
+        "kind": "dynamic,bounded",
+        "unit": "sema_expression.ci"
+      },
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/sema_expression.c:postfix_value": {
+        "bytes": 320,
+        "kind": "dynamic,bounded",
+        "unit": "sema_expression.ci"
+      },
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/validate.c:lower_block": {
+        "bytes": 464,
+        "kind": "dynamic,bounded",
+        "unit": "validate.ci"
+      },
+      "compiler_job_layout": {
+        "bytes": 240,
+        "kind": "dynamic,bounded",
+        "unit": "storage.ci"
+      },
+      "compiler_typed_layout": {
+        "bytes": 320,
+        "kind": "dynamic,bounded",
+        "unit": "storage.ci"
+      },
+      "constant_materialize": {
+        "bytes": 160,
+        "kind": "dynamic,bounded",
+        "unit": "constants.ci"
+      },
+      "sema_assignment_reference": {
+        "bytes": 176,
+        "kind": "dynamic,bounded",
+        "unit": "sema_expression.ci"
+      },
+      "sema_binary": {
+        "bytes": 272,
+        "kind": "dynamic,bounded",
+        "unit": "sema_expression.ci"
+      },
+      "sema_call_statement": {
+        "bytes": 80,
+        "kind": "dynamic,bounded",
+        "unit": "sema_expression.ci"
+      },
+      "sema_call_value": {
+        "bytes": 512,
+        "kind": "dynamic,bounded",
+        "unit": "sema_call.ci"
+      },
+      "sema_ensure_value": {
+        "bytes": 96,
+        "kind": "dynamic,bounded",
+        "unit": "sema_expression.ci"
+      },
+      "sema_expression": {
+        "bytes": 272,
+        "kind": "dynamic,bounded",
+        "unit": "sema_expression.ci"
+      },
+      "sema_reference_load": {
+        "bytes": 160,
+        "kind": "dynamic,bounded",
+        "unit": "sema_expression.ci"
+      },
+      "validate_syntax": {
+        "bytes": 192,
+        "kind": "dynamic,bounded",
+        "unit": "validate.ci"
+      }
+    },
+    "frames": {
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/compile.c:compile_pipeline": {
+        "bytes": 96,
+        "kind": "static",
+        "unit": "compile.ci"
+      },
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/compile.c:old_output": {
+        "bytes": 96,
+        "kind": "static",
+        "unit": "compile.ci"
+      },
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/constants.c:convert_node": {
+        "bytes": 96,
+        "kind": "static",
+        "unit": "constants.ci"
+      },
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/numeric.c:big_shift": {
+        "bytes": 24,
+        "kind": "static",
+        "unit": "numeric.ci"
+      },
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/numeric.c:numeric_less.isra.0": {
+        "bytes": 8,
+        "kind": "static",
+        "unit": "numeric.ci"
+      },
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:attribute_value": {
+        "bytes": 40,
+        "kind": "static",
+        "unit": "parse.ci"
+      },
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:block": {
+        "bytes": 32,
+        "kind": "static",
+        "unit": "parse.ci"
+      },
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:expression": {
+        "bytes": 144,
+        "kind": "static",
+        "unit": "parse.ci"
+      },
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:expression_node.isra.0": {
+        "bytes": 8,
+        "kind": "static",
+        "unit": "parse.ci"
+      },
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:generic_reference.constprop.0": {
+        "bytes": 64,
+        "kind": "static",
+        "unit": "parse.ci"
+      },
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:local_declaration": {
+        "bytes": 48,
+        "kind": "static",
+        "unit": "parse.ci"
+      },
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:name_span": {
+        "bytes": 8,
+        "kind": "static",
+        "unit": "parse.ci"
+      },
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:primary": {
+        "bytes": 192,
+        "kind": "static",
+        "unit": "parse.ci"
+      },
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:punctuation": {
+        "bytes": 8,
+        "kind": "static",
+        "unit": "parse.ci"
+      },
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:reject": {
+        "bytes": 288,
+        "kind": "static",
+        "unit": "parse.ci"
+      },
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:simple_statement": {
+        "bytes": 128,
+        "kind": "static",
+        "unit": "parse.ci"
+      },
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:statement": {
+        "bytes": 128,
+        "kind": "static",
+        "unit": "parse.ci"
+      },
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:statement_slot": {
+        "bytes": 8,
+        "kind": "static",
+        "unit": "parse.ci"
+      },
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:template_close": {
+        "bytes": 8,
+        "kind": "static",
+        "unit": "parse.ci"
+      },
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:type_reference": {
+        "bytes": 48,
+        "kind": "static",
+        "unit": "parse.ci"
+      },
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:unary_form.part.0.isra.0": {
+        "bytes": 8,
+        "kind": "static",
+        "unit": "parse.ci"
+      },
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:word": {
+        "bytes": 48,
+        "kind": "static",
+        "unit": "parse.ci"
+      },
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/reflection.c:discover": {
+        "bytes": 32,
+        "kind": "static",
+        "unit": "reflection.ci"
+      },
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/reflection.c:flat_struct": {
+        "bytes": 8,
+        "kind": "static",
+        "unit": "reflection.ci"
+      },
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/sema_call.c:convert_value": {
+        "bytes": 240,
+        "kind": "dynamic,bounded",
+        "unit": "sema_call.ci"
+      },
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/sema_declarations.c:formal_order.isra.0": {
+        "bytes": 32,
+        "kind": "static",
+        "unit": "sema_declarations.ci"
+      },
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/sema_declarations.c:integer_attribute": {
+        "bytes": 96,
+        "kind": "static",
+        "unit": "sema_declarations.ci"
+      },
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/sema_declarations.c:lexical_value": {
+        "bytes": 32,
+        "kind": "static",
+        "unit": "sema_declarations.ci"
+      },
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/sema_declarations.c:module_name": {
+        "bytes": 8,
+        "kind": "static",
+        "unit": "sema_declarations.ci"
+      },
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/sema_declarations.c:sift_formals": {
+        "bytes": 128,
+        "kind": "static",
+        "unit": "sema_declarations.ci"
+      },
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/sema_expression.c:identity_value.isra.0": {
+        "bytes": 144,
+        "kind": "dynamic,bounded",
+        "unit": "sema_expression.ci"
+      },
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/sema_expression.c:postfix_value": {
+        "bytes": 320,
+        "kind": "dynamic,bounded",
+        "unit": "sema_expression.ci"
+      },
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/sema_expression.c:root_reference": {
+        "bytes": 96,
+        "kind": "static",
+        "unit": "sema_expression.ci"
+      },
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/sema_expression.c:swizzle": {
+        "bytes": 96,
+        "kind": "static",
+        "unit": "sema_expression.ci"
+      },
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:access_condition": {
+        "bytes": 192,
+        "kind": "static",
+        "unit": "spirv.ci"
+      },
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:access_walk": {
+        "bytes": 32,
+        "kind": "static",
+        "unit": "spirv.ci"
+      },
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:append_declaration": {
+        "bytes": 48,
+        "kind": "static",
+        "unit": "spirv.ci"
+      },
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:comparison_opcode": {
+        "bytes": 8,
+        "kind": "static",
+        "unit": "spirv.ci"
+      },
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:debug_name": {
+        "bytes": 128,
+        "kind": "static",
+        "unit": "spirv.ci"
+      },
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:emit_block": {
+        "bytes": 272,
+        "kind": "static",
+        "unit": "spirv.ci"
+      },
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:emit_conversion": {
+        "bytes": 176,
+        "kind": "static",
+        "unit": "spirv.ci"
+      },
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:emit_division": {
+        "bytes": 240,
+        "kind": "static",
+        "unit": "spirv.ci"
+      },
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:emit_pointer_access": {
+        "bytes": 160,
+        "kind": "static",
+        "unit": "spirv.ci"
+      },
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:emit_shift": {
+        "bytes": 96,
+        "kind": "static",
+        "unit": "spirv.ci"
+      },
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:extract_lane": {
+        "bytes": 96,
+        "kind": "static",
+        "unit": "spirv.ci"
+      },
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:instruction": {
+        "bytes": 48,
+        "kind": "static",
+        "unit": "spirv.ci"
+      },
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:instruction_space.constprop.0": {
+        "bytes": 8,
+        "kind": "static",
+        "unit": "spirv.ci"
+      },
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:leaf_constant.isra.0": {
+        "bytes": 16,
+        "kind": "static",
+        "unit": "spirv.ci"
+      },
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:pointer_type": {
+        "bytes": 32,
+        "kind": "static",
+        "unit": "spirv.ci"
+      },
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:primitive_declarations": {
+        "bytes": 112,
+        "kind": "static",
+        "unit": "spirv.ci"
+      },
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:push_walk": {
+        "bytes": 8,
+        "kind": "static",
+        "unit": "spirv.ci"
+      },
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:reserve_ids": {
+        "bytes": 16,
+        "kind": "static",
+        "unit": "spirv.ci"
+      },
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:span_words": {
+        "bytes": 48,
+        "kind": "static",
+        "unit": "spirv.ci"
+      },
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:unsigned_constant": {
+        "bytes": 16,
+        "kind": "static",
+        "unit": "spirv.ci"
+      },
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:vector_construct": {
+        "bytes": 80,
+        "kind": "static",
+        "unit": "spirv.ci"
+      },
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:workgroup_zero": {
+        "bytes": 16,
+        "kind": "static",
+        "unit": "spirv.ci"
+      },
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:zero_constant": {
+        "bytes": 32,
+        "kind": "static",
+        "unit": "spirv.ci"
+      },
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/storage.c:finish_layout": {
+        "bytes": 256,
+        "kind": "static",
+        "unit": "storage.ci"
+      },
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/storage.c:reserve_array": {
+        "bytes": 8,
+        "kind": "static",
+        "unit": "storage.ci"
+      },
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/storage.c:workspace_layout": {
+        "bytes": 136,
+        "kind": "static",
+        "unit": "storage.ci"
+      },
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/uniformity.c:block_bits": {
+        "bytes": 208,
+        "kind": "static",
+        "unit": "uniformity.ci"
+      },
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/uniformity.c:enter_frame": {
+        "bytes": 32,
+        "kind": "static",
+        "unit": "uniformity.ci"
+      },
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/uniformity.c:expression_bit": {
+        "bytes": 128,
+        "kind": "static",
+        "unit": "uniformity.ci"
+      },
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/uniformity.c:loop_exit": {
+        "bytes": 80,
+        "kind": "static",
+        "unit": "uniformity.ci"
+      },
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/uniformity.c:name_bit": {
+        "bytes": 96,
+        "kind": "static",
+        "unit": "uniformity.ci"
+      },
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/validate.c:lower_block": {
+        "bytes": 464,
+        "kind": "dynamic,bounded",
+        "unit": "validate.ci"
+      },
+      "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/validate.c:lower_boolean.isra.0": {
+        "bytes": 80,
+        "kind": "static",
+        "unit": "validate.ci"
+      },
+      "compiler_job_bind": {
+        "bytes": 256,
+        "kind": "static",
+        "unit": "storage.ci"
+      },
+      "compiler_job_layout": {
+        "bytes": 240,
+        "kind": "dynamic,bounded",
+        "unit": "storage.ci"
+      },
+      "compiler_legacy_bind": {
+        "bytes": 112,
+        "kind": "static",
+        "unit": "storage.ci"
+      },
+      "compiler_typed_layout": {
+        "bytes": 320,
+        "kind": "dynamic,bounded",
+        "unit": "storage.ci"
+      },
+      "constant_composite": {
+        "bytes": 64,
+        "kind": "static",
+        "unit": "constants.ci"
+      },
+      "constant_materialize": {
+        "bytes": 160,
+        "kind": "dynamic,bounded",
+        "unit": "constants.ci"
+      },
+      "constant_project": {
+        "bytes": 64,
+        "kind": "static",
+        "unit": "constants.ci"
+      },
+      "constant_reserve": {
+        "bytes": 8,
+        "kind": "static",
+        "unit": "constants.ci"
+      },
+      "constant_zero": {
+        "bytes": 32,
+        "kind": "static",
+        "unit": "constants.ci"
+      },
+      "doe_compiler_compile": {
+        "bytes": 146400,
+        "kind": "static",
+        "unit": "compile.ci"
+      },
+      "doe_compiler_compile_job": {
+        "bytes": 256,
+        "kind": "static",
+        "unit": "compile.ci"
+      },
+      "doe_compiler_compile_typed": {
+        "bytes": 320,
+        "kind": "static",
+        "unit": "compile.ci"
+      },
+      "doe_compiler_compile_v2": {
+        "bytes": 144,
+        "kind": "static",
+        "unit": "compile.ci"
+      },
+      "doe_compiler_job_requirements": {
+        "bytes": 160,
+        "kind": "static",
+        "unit": "compile.ci"
+      },
+      "doe_compiler_typed_requirements": {
+        "bytes": 160,
+        "kind": "static",
+        "unit": "compile.ci"
+      },
+      "doe_compiler_workspace_requirements": {
+        "bytes": 16,
+        "kind": "static",
+        "unit": "compile.ci"
+      },
+      "emit_spirv": {
+        "bytes": 496,
+        "kind": "static",
+        "unit": "spirv.ci"
+      },
+      "lex_source": {
+        "bytes": 96,
+        "kind": "static",
+        "unit": "lex.ci"
+      },
+      "numeric_binary": {
+        "bytes": 128,
+        "kind": "static",
+        "unit": "numeric.ci"
+      },
+      "numeric_bitcast": {
+        "bytes": 8,
+        "kind": "static",
+        "unit": "numeric.ci"
+      },
+      "numeric_builtin": {
+        "bytes": 64,
+        "kind": "static",
+        "unit": "numeric.ci"
+      },
+      "numeric_convert": {
+        "bytes": 8,
+        "kind": "static",
+        "unit": "numeric.ci"
+      },
+      "numeric_environment_begin": {
+        "bytes": 80,
+        "kind": "static",
+        "unit": "numeric.ci"
+      },
+      "numeric_environment_end": {
+        "bytes": 48,
+        "kind": "static",
+        "unit": "numeric.ci"
+      },
+      "numeric_materialize": {
+        "bytes": 8,
+        "kind": "static",
+        "unit": "numeric.ci"
+      },
+      "numeric_parse_literal": {
+        "bytes": 1344,
+        "kind": "static",
+        "unit": "numeric.ci"
+      },
+      "numeric_unary": {
+        "bytes": 8,
+        "kind": "static",
+        "unit": "numeric.ci"
+      },
+      "parse_tokens": {
+        "bytes": 192,
+        "kind": "static",
+        "unit": "parse.ci"
+      },
+      "reflect_legacy_admit": {
+        "bytes": 240,
+        "kind": "static",
+        "unit": "reflection.ci"
+      },
+      "reflect_prepare": {
+        "bytes": 64,
+        "kind": "static",
+        "unit": "reflection.ci"
+      },
+      "reflect_program": {
+        "bytes": 64,
+        "kind": "static",
+        "unit": "reflection.ci"
+      },
+      "reflect_program_v2": {
+        "bytes": 96,
+        "kind": "static",
+        "unit": "reflection.ci"
+      },
+      "reflect_typed": {
+        "bytes": 112,
+        "kind": "static",
+        "unit": "reflection.ci"
+      },
+      "scalar_builtin_named": {
+        "bytes": 48,
+        "kind": "static",
+        "unit": "numeric.ci"
+      },
+      "sema_alias_visible": {
+        "bytes": 8,
+        "kind": "static",
+        "unit": "sema_declarations.ci"
+      },
+      "sema_append": {
+        "bytes": 8,
+        "kind": "static",
+        "unit": "sema_expression.ci"
+      },
+      "sema_assignment_reference": {
+        "bytes": 176,
+        "kind": "dynamic,bounded",
+        "unit": "sema_expression.ci"
+      },
+      "sema_binary": {
+        "bytes": 272,
+        "kind": "dynamic,bounded",
+        "unit": "sema_expression.ci"
+      },
+      "sema_call_statement": {
+        "bytes": 80,
+        "kind": "dynamic,bounded",
+        "unit": "sema_expression.ci"
+      },
+      "sema_call_value": {
+        "bytes": 512,
+        "kind": "dynamic,bounded",
+        "unit": "sema_call.ci"
+      },
+      "sema_common_type": {
+        "bytes": 64,
+        "kind": "static",
+        "unit": "sema_declarations.ci"
+      },
+      "sema_default_type": {
+        "bytes": 64,
+        "kind": "static",
+        "unit": "sema_declarations.ci"
+      },
+      "sema_emit": {
+        "bytes": 8,
+        "kind": "static",
+        "unit": "sema_expression.ci"
+      },
+      "sema_ensure_value": {
+        "bytes": 96,
+        "kind": "dynamic,bounded",
+        "unit": "sema_expression.ci"
+      },
+      "sema_expression": {
+        "bytes": 272,
+        "kind": "dynamic,bounded",
+        "unit": "sema_expression.ci"
+      },
+      "sema_find_constant": {
+        "bytes": 48,
+        "kind": "static",
+        "unit": "sema_declarations.ci"
+      },
+      "sema_find_formal": {
+        "bytes": 48,
+        "kind": "static",
+        "unit": "sema_declarations.ci"
+      },
+      "sema_find_function": {
+        "bytes": 48,
+        "kind": "static",
+        "unit": "sema_declarations.ci"
+      },
+      "sema_find_local": {
+        "bytes": 48,
+        "kind": "static",
+        "unit": "sema_declarations.ci"
+      },
+      "sema_find_parameter": {
+        "bytes": 48,
+        "kind": "static",
+        "unit": "sema_declarations.ci"
+      },
+      "sema_find_struct": {
+        "bytes": 48,
+        "kind": "static",
+        "unit": "sema_declarations.ci"
+      },
+      "sema_local_use": {
+        "bytes": 8,
+        "kind": "static",
+        "unit": "sema_declarations.ci"
+      },
+      "sema_materialize": {
+        "bytes": 48,
+        "kind": "static",
+        "unit": "sema_expression.ci"
+      },
+      "sema_module_declared": {
+        "bytes": 48,
+        "kind": "static",
+        "unit": "sema_declarations.ci"
+      },
+      "sema_reference_load": {
+        "bytes": 160,
+        "kind": "dynamic,bounded",
+        "unit": "sema_expression.ci"
+      },
+      "sema_resolve_declarations": {
+        "bytes": 208,
+        "kind": "static",
+        "unit": "sema_declarations.ci"
+      },
+      "sema_type_reference": {
+        "bytes": 112,
+        "kind": "static",
+        "unit": "sema_declarations.ci"
+      },
+      "sema_valid_name": {
+        "bytes": 64,
+        "kind": "static",
+        "unit": "sema_declarations.ci"
+      },
+      "sema_value_identity": {
+        "bytes": 96,
+        "kind": "static",
+        "unit": "sema_declarations.ci"
+      },
+      "source_error": {
+        "bytes": 32,
+        "kind": "static",
+        "unit": "compile.ci"
+      },
+      "source_name_at": {
+        "bytes": 8,
+        "kind": "static",
+        "unit": "types.ci"
+      },
+      "source_pool_error": {
+        "bytes": 8,
+        "kind": "static",
+        "unit": "compile.ci"
+      },
+      "source_span_is": {
+        "bytes": 48,
+        "kind": "static",
+        "unit": "types.ci"
+      },
+      "source_spans_equal": {
+        "bytes": 16,
+        "kind": "static",
+        "unit": "types.ci"
+      },
+      "type_abstract": {
+        "bytes": 16,
+        "kind": "static",
+        "unit": "types.ci"
+      },
+      "type_alignment": {
+        "bytes": 8,
+        "kind": "static",
+        "unit": "types.ci"
+      },
+      "type_child": {
+        "bytes": 8,
+        "kind": "static",
+        "unit": "types.ci"
+      },
+      "type_children": {
+        "bytes": 8,
+        "kind": "static",
+        "unit": "types.ci"
+      },
+      "type_constructible": {
+        "bytes": 16,
+        "kind": "static",
+        "unit": "types.ci"
+      },
+      "type_flags": {
+        "bytes": 8,
+        "kind": "static",
+        "unit": "types.ci"
+      },
+      "type_intern": {
+        "bytes": 160,
+        "kind": "static",
+        "unit": "types.ci"
+      },
+      "type_layout_struct": {
+        "bytes": 128,
+        "kind": "static",
+        "unit": "types.ci"
+      },
+      "type_leaf": {
+        "bytes": 8,
+        "kind": "static",
+        "unit": "types.ci"
+      },
+      "type_resource_layout": {
+        "bytes": 48,
+        "kind": "static",
+        "unit": "types.ci"
+      },
+      "type_size": {
+        "bytes": 8,
+        "kind": "static",
+        "unit": "types.ci"
+      },
+      "uniformity_analyze": {
+        "bytes": 336,
+        "kind": "static",
+        "unit": "uniformity.ci"
+      },
+      "uniformity_charge": {
+        "bytes": 8,
+        "kind": "static",
+        "unit": "uniformity.ci"
+      },
+      "validate_syntax": {
+        "bytes": 192,
+        "kind": "dynamic,bounded",
+        "unit": "validate.ci"
+      }
+    },
+    "job_combined": 193376,
+    "job_phase_bound": 178176,
+    "maximum_nonwrapper": [
+      1344,
+      "numeric_parse_literal"
+    ],
+    "sccs": [
+      {
+        "bytes": 160,
+        "members": [
+          "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:block",
+          "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:statement"
+        ]
+      },
+      {
+        "bytes": 448,
+        "members": [
+          "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:expression",
+          "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:generic_reference.constprop.0",
+          "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:primary",
+          "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/parse.c:type_reference"
+        ]
+      },
+      {
+        "bytes": 272,
+        "members": [
+          "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/spirv.c:emit_block"
+        ]
+      },
+      {
+        "bytes": 208,
+        "members": [
+          "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/uniformity.c:block_bits"
+        ]
+      },
+      {
+        "bytes": 128,
+        "members": [
+          "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/uniformity.c:expression_bit"
+        ]
+      },
+      {
+        "bytes": 464,
+        "members": [
+          "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/validate.c:lower_block"
+        ]
+      },
+      {
+        "bytes": 1312,
+        "members": [
+          "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/sema_declarations.c:integer_attribute",
+          "/tmp/doe-m11-independent-native-candidate2/runtime/c/compiler/src/sema_expression.c:postfix_value",
+          "sema_call_value",
+          "sema_expression",
+          "sema_type_reference"
+        ]
+      }
+    ],
+    "su_sha256": {
+      "compile.su": "b57ea2e30ecab9cd873c1b56339018d1070531c074868ba38697705b80e09462",
+      "constants.su": "51a80882a67eb89d60982fe385d87a97deb3cefad7dc0484b1095408b22638d0",
+      "lex.su": "bdba63aafa5dde1a517550e9a6e0fc57dcf54e8282009bb93cdd8b132a2b4e3c",
+      "numeric.su": "102bfd148da0f8da85a3ae428dd0d29af516195b7e82bca424d8f4afb4ae77e1",
+      "parse.su": "93193ac3a040b2210d6ab99a9866f653788beed0f04dec33b08a66e8721491e3",
+      "reflection.su": "977f9e364c60ea30b7097b0cc5812e1ffad0105321cd0c04b6fec8b1e40230a2",
+      "sema_call.su": "797d3a28305b2fb8a3e7c38e1c27bad8fb3860233e8d07216aa1c821758b0df4",
+      "sema_declarations.su": "80652cd407ace0ca4bef1dd1a818ef42e6794c4d4318c448bce044e88dfaddc6",
+      "sema_expression.su": "c29310551bf1a23d4fb0e29eb5c6cbfa70ea453e6f032d3cc82a0a95a9148c96",
+      "spirv.su": "ee0b9963487744fd77d5a1fb909e57d9e252303f9eeb6c8c94d31c059b85afae",
+      "storage.su": "b32297395950a00304337878bf4edaf56711761732bb88e3ca7d1107978c19b6",
+      "types.su": "789becc634ba4be1dbe152a9a588fbdb48d978890fb9fda62c2e640db21fc321",
+      "uniformity.su": "d835edef72ddc9e307ad01f5b878808ddd7ab79ccfe3a26000ae278913cc08ac",
+      "validate.su": "beb840a470dbd689f39c767c1ce8e4de84cd85adbea46309bc009c39dab680f3"
+    },
+    "sum_all_other_frames": 15200,
+    "wrapper": 146400
+  },
+  "status": "PASS",
+  "su_ci_exact_coverage": 145,
+  "uniformity_phase_bounds": {
+    "fixed": 9216,
+    "job": 42496
+  }
+}

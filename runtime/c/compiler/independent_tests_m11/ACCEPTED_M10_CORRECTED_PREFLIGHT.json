@@ -1,0 +1,46 @@
+{
+  "M11_candidate_used": false,
+  "adaptation": "Module roots moved to entry locals and synchronization removed for accepted-M10 grammar/type preflight only",
+  "records": [
+    {
+      "id": "uniform_workgroup_fixed",
+      "status": 0,
+      "diagnostic": ""
+    },
+    {
+      "id": "execute_group_isolation",
+      "status": 0,
+      "diagnostic": ""
+    },
+    {
+      "id": "execute_zero_before_return",
+      "status": 0,
+      "diagnostic": ""
+    },
+    {
+      "id": "execute_helper_phases",
+      "status": 0,
+      "diagnostic": ""
+    },
+    {
+      "id": "execute_bounds",
+      "status": 4,
+      "diagnostic": "constant index is out of bounds"
+    },
+    {
+      "id": "execute_snapshot",
+      "status": 0,
+      "diagnostic": ""
+    },
+    {
+      "id": "control_vector_race",
+      "status": 0,
+      "diagnostic": ""
+    },
+    {
+      "id": "execute_runtime_bounds",
+      "status": 0,
+      "diagnostic": ""
+    }
+  ]
+}

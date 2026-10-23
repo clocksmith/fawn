@@ -26,7 +26,8 @@ enum {
     OP_FORD_LESS_THAN = 184, OP_FORD_GREATER_THAN = 186, OP_FORD_LESS_EQUAL = 188,
     OP_FORD_GREATER_EQUAL = 190,
     OP_SHIFT_RIGHT_LOGICAL = 194, OP_SHIFT_RIGHT_ARITHMETIC = 195, OP_SHIFT_LEFT = 196,
-    OP_BIT_OR = 197, OP_BIT_XOR = 198, OP_BIT_AND = 199, OP_NOT = 200, OP_PHI = 245, OP_LOOP_MERGE = 246, OP_SELECTION_MERGE = 247, OP_LABEL = 248,
+    OP_BIT_OR = 197, OP_BIT_XOR = 198, OP_BIT_AND = 199, OP_NOT = 200, OP_CONTROL_BARRIER = 224,
+    OP_PHI = 245, OP_LOOP_MERGE = 246, OP_SELECTION_MERGE = 247, OP_LABEL = 248,
     OP_BRANCH = 249, OP_BRANCH_CONDITIONAL = 250, OP_RETURN = 253, OP_RETURN_VALUE = 254, OP_UNREACHABLE = 255
 };
 /* Primitive/guard declarations use the frozen bounded allowance, never D or a
@@ -45,10 +46,11 @@ typedef struct {
     CompilerWorkspace *program;
     uint32_t next_id, id_bound, current_label, inputs[MAX_ENTRY_PARAMETERS];
     uint32_t *values;
-    uint32_t local_base, local_start, local_pointers[3][5], math_import;
+    uint32_t local_base, local_start, local_pointers[4][5], math_import;
+    uint32_t workgroup_input, barrier_semantics;
     size_t function_end;
     uint32_t constants_used;
-    bool failed;
+    bool hidden_workgroup_input, failed;
 } Emitter;
 static bool emit_error(Emitter *e, uint32_t offset, const char *message) {
     e->failed = true;
@@ -171,7 +173,7 @@ static uint32_t unsigned_constant(Emitter *e, uint32_t value) {
 }
 static uint32_t pointer_type(Emitter *e, TypeId type, uint32_t storage) {
     CompilerWorkspace *c = e->program;
-    const uint32_t slot = storage == 7u ? 0u : storage == 2u ? 1u : 2u;
+    const uint32_t slot = storage == 7u ? 0u : storage == 2u ? 1u : storage == 12u ? 2u : 3u;
     if (type >= IR_BOOL && type <= IR_F32) {
         if (e->local_pointers[slot][type] == 0u) e->local_pointers[slot][type] = reserve_ids(e, 1u);
         return e->local_pointers[slot][type];
@@ -194,6 +196,21 @@ static uint32_t zero_constant(Emitter *e, TypeId type) {
     if (d == NULL) return 0u;
     t->aux = d->id;
     return d->id;
+}
+/* Workgroup initialization uses OpConstantNull even for a scalar root. Those
+ * scalar nulls are D descriptors, distinct from the fixed ordinary zero IDs. */
+static uint32_t workgroup_zero(Emitter *e, TypeId type) {
+    if (type >= 7u) return zero_constant(e, type);
+    CompilerWorkspace *c = e->program;
+    for (uint32_t i = 0u; i < c->target_count; ++i)
+        if (c->targets[i].kind == DECL_ZERO && c->targets[i].type == type) return c->targets[i].id;
+    TargetDeclaration *d = append_declaration(e, DECL_ZERO, type);
+    return d == NULL ? 0u : d->id;
+}
+static bool plan_workgroup_barrier(Emitter *e) {
+    (void)use_constant(e, ID_TWO_U32);
+    if (e->barrier_semantics == 0u) e->barrier_semantics = reserve_ids(e, 1u);
+    return !e->failed;
 }
 static bool plan_type(Emitter *e, TypeId type) {
     CompilerWorkspace *c = e->program;
@@ -359,6 +376,19 @@ static bool plan_module(Emitter *e) {
         }
     }
     for (uint32_t i = 0u; i < c->parameter_count; ++i) e->inputs[i] = reserve_ids(e, 1u);
+    if (c->workgroup_count != 0u) {
+        for (uint32_t i = 0u; i < c->parameter_count; ++i)
+            if (c->parameters[i].kind == INPUT_LOCAL_INDEX) e->workgroup_input = e->inputs[i];
+        if (e->workgroup_input == 0u) {
+            if (c->parameter_count >= MAX_ENTRY_PARAMETERS)
+                return emit_error(e, c->functions[c->entry_function].name.offset,
+                                  "workgroup initialization input exceeds target interface capacity");
+            e->workgroup_input = reserve_ids(e, 1u);
+            e->hidden_workgroup_input = true;
+        }
+        (void)use_constant(e, ID_ZERO_U32);
+        if (!plan_workgroup_barrier(e)) return false;
+    }
     for (uint32_t i = 0u; i < c->resource_count; ++i) {
         ResourceRecord *r = &c->resources[i];
         if (wrapped_resource(c, r)) {
@@ -372,6 +402,11 @@ static bool plan_module(Emitter *e) {
             r->reserved = pointer->id;
         } else r->reserved = pointer_type(e, r->type, resource_storage(r));
         r->target = reserve_ids(e, 1u);
+    }
+    for (uint32_t i = 0u; i < c->workgroup_count; ++i) {
+        WorkgroupRoot *root = &c->workgroups[i];
+        if (pointer_type(e, root->type, 4u) == 0u || workgroup_zero(e, root->type) == 0u) return false;
+        root->target = reserve_ids(e, 1u);
     }
     for (uint32_t i = 0u; i < c->local_count; ++i)
         if (pointer_type(e, c->locals[i].type, 7u) == 0u) return false;
@@ -392,11 +427,14 @@ static bool plan_module(Emitter *e) {
                 if (!plan_constant(e, ir->operands.scalar.binding)) return false;
                 e->values[ir->result] = c->constants[ir->operands.scalar.binding].target;
             } else e->values[ir->result] = reserve_ids(e, 1u);
+        } else if (ir->opcode == IR_WORKGROUP_BARRIER) {
+            if (!plan_workgroup_barrier(e)) return false;
         } else if (ir->opcode == IR_BUILTIN && ir->operands.scalar.literal >= BUILTIN_EXP && e->math_import == 0u)
             e->math_import = reserve_ids(e, 1u);
         else if (ir->opcode == IR_ACCESS_LOAD || ir->opcode == IR_ACCESS_STORE || ir->opcode == IR_VALUE_ACCESS) {
             const uint32_t category = ir->operands.access.category;
-            const uint32_t storage = category == ROOT_RESOURCE ? resource_storage(&c->resources[ir->operands.access.root]) : 7u;
+            const uint32_t storage = category == ROOT_RESOURCE ? resource_storage(&c->resources[ir->operands.access.root]) :
+                category == ROOT_WORKGROUP ? 4u : 7u;
             if (ir->opcode != IR_VALUE_ACCESS || ir->operands.access.value != NO_ID)
                 if (pointer_type(e, ir->type, storage) == 0u) return false;
             if (ir->opcode != IR_ACCESS_STORE && zero_constant(e, ir->type) == 0u) return false;
@@ -440,6 +478,7 @@ static bool annotations(Emitter *e) {
     }
     for (uint32_t i = 0u; i < c->parameter_count; ++i)
         EMIT(OP_DECORATE, e->inputs[i], 11u, builtin_decoration(c->parameters[i].kind));
+    if (e->hidden_workgroup_input) { EMIT(OP_DECORATE, e->workgroup_input, 11u, builtin_decoration(INPUT_LOCAL_INDEX)); }
     return true;
 }
 static bool primitive_declarations(Emitter *e) {
@@ -452,10 +491,10 @@ static bool primitive_declarations(Emitter *e) {
     EMIT(OP_TYPE_POINTER, ID_PTR_INPUT, 1u, ID_VEC3);
     EMIT(OP_TYPE_POINTER, ID_PTR_INPUT_U32, 1u, ID_U32);
     EMIT(OP_TYPE_FUNCTION, ID_FN_TYPE, ID_VOID);
-    for (uint32_t slot = 0u; slot < 3u; ++slot)
+    for (uint32_t slot = 0u; slot < 4u; ++slot)
         for (TypeId type = IR_BOOL; type <= IR_F32; ++type)
             if (e->local_pointers[slot][type] != 0u)
-                EMIT(OP_TYPE_POINTER, e->local_pointers[slot][type], slot == 0u ? 7u : slot == 1u ? 2u : 12u,
+                EMIT(OP_TYPE_POINTER, e->local_pointers[slot][type], slot == 0u ? 7u : slot == 1u ? 2u : slot == 2u ? 12u : 4u,
                      scalar_type(type));
     if ((e->constants_used & (UINT32_C(1) << ID_FALSE)) != 0u) { EMIT(OP_CONSTANT_FALSE, ID_BOOL, ID_FALSE); }
     if ((e->constants_used & (UINT32_C(1) << ID_TRUE)) != 0u) { EMIT(OP_CONSTANT_TRUE, ID_BOOL, ID_TRUE); }
@@ -474,6 +513,7 @@ static bool primitive_declarations(Emitter *e) {
     if ((e->constants_used & (UINT32_C(1) << ID_TWO_U32)) != 0u) { EMIT(OP_CONSTANT, ID_U32, ID_TWO_U32, 2u); }
     if ((e->constants_used & (UINT32_C(1) << ID_THREE_U32)) != 0u) { EMIT(OP_CONSTANT, ID_U32, ID_THREE_U32, 3u); }
     if ((e->constants_used & (UINT32_C(1) << ID_FOUR_U32)) != 0u) { EMIT(OP_CONSTANT, ID_U32, ID_FOUR_U32, 4u); }
+    if (e->barrier_semantics != 0u) { EMIT(OP_CONSTANT, ID_U32, e->barrier_semantics, UINT32_C(0x108)); }
     return true;
 }
 static bool dynamic_declarations(Emitter *e) {
@@ -537,7 +577,9 @@ static bool module_declarations(Emitter *e) {
     uint32_t entry_arguments[23] = { 5u, entry->state.target.function };
     const size_t entry_words = span_words(e->source, entry->name, entry_arguments + 2u);
     for (uint32_t i = 0u; i < c->parameter_count; ++i) entry_arguments[entry_words + 2u + i] = e->inputs[i];
-    if (!instruction(e, OP_ENTRY_POINT, entry_arguments, entry_words + 2u + c->parameter_count)) return false;
+    if (e->hidden_workgroup_input) entry_arguments[entry_words + 2u + c->parameter_count] = e->workgroup_input;
+    if (!instruction(e, OP_ENTRY_POINT, entry_arguments,
+        entry_words + 2u + c->parameter_count + (e->hidden_workgroup_input ? 1u : 0u))) return false;
     EMIT(OP_EXECUTION_MODE, entry->state.target.function, 17u,
          c->local_size[0].value, c->local_size[1].value, c->local_size[2].value);
     if (!debug_name(e, entry->state.target.function, entry->name)) return false;
@@ -545,6 +587,8 @@ static bool module_declarations(Emitter *e) {
         if (!debug_name(e, e->inputs[i], c->parameters[i].name)) return false;
     for (uint32_t i = 0u; i < c->resource_count; ++i)
         if (!debug_name(e, c->resources[i].target, c->resources[i].name)) return false;
+    for (uint32_t i = 0u; i < c->workgroup_count; ++i)
+        if (!debug_name(e, c->workgroups[i].target, c->workgroups[i].name)) return false;
     if (!annotations(e) || !primitive_declarations(e) || !dynamic_declarations(e)) return false;
     for (uint32_t f = 0u; f < c->function_count; ++f) {
         const FunctionRecord *fn = &c->functions[f];
@@ -569,8 +613,13 @@ static bool module_declarations(Emitter *e) {
         const ResourceRecord *r = &c->resources[i];
         EMIT(OP_VARIABLE, r->reserved, r->target, resource_storage(r));
     }
+    for (uint32_t i = 0u; i < c->workgroup_count; ++i) {
+        const WorkgroupRoot *root = &c->workgroups[i];
+        EMIT(OP_VARIABLE, pointer_type(e, root->type, 4u), root->target, 4u);
+    }
     for (uint32_t i = 0u; i < c->parameter_count; ++i)
         EMIT(OP_VARIABLE, c->parameters[i].kind == INPUT_LOCAL_INDEX ? ID_PTR_INPUT_U32 : ID_PTR_INPUT, e->inputs[i], 1u);
+    if (e->hidden_workgroup_input) { EMIT(OP_VARIABLE, ID_PTR_INPUT_U32, e->workgroup_input, 1u); }
     return true;
 }
 static uint32_t comparison_opcode(Comparison comparison, TypeId type) {
@@ -877,10 +926,11 @@ static bool emit_pointer_access(Emitter *e, const IrInstruction *ir) {
     const uint32_t root = ir->operands.access.root, category = ir->operands.access.category;
     const bool store = ir->opcode == IR_ACCESS_STORE;
     const ResourceRecord *resource = category == ROOT_RESOURCE ? &c->resources[root] : NULL;
-    const uint32_t storage = resource != NULL ? resource_storage(resource) : 7u;
+    const uint32_t storage = resource != NULL ? resource_storage(resource) : category == ROOT_WORKGROUP ? 4u : 7u;
     const bool wrapped = resource != NULL && wrapped_resource(c, resource);
     const uint32_t local = category == ROOT_VALUE ? ir->operands.access.value : root;
-    const uint32_t base = resource != NULL ? resource->target : e->local_base + (local - e->local_start);
+    const uint32_t base = resource != NULL ? resource->target : category == ROOT_WORKGROUP ? c->workgroups[root].target :
+        e->local_base + (local - e->local_start);
     if (category == ROOT_VALUE) { EMIT(OP_STORE, base, e->values[root]); }
     if (!access_walk(e, ir->operands.access.path)) return false;
     uint32_t condition;
@@ -1094,6 +1144,11 @@ static bool emit_loop(Emitter *e, const IrProgram *program, size_t *cursor,
     }
     return true;
 }
+static bool emit_workgroup_barrier(Emitter *e) {
+    /* AcquireRelease | WorkgroupMemory. This does not fence descriptor storage. */
+    EMIT(OP_CONTROL_BARRIER, ID_TWO_U32, ID_TWO_U32, e->barrier_semantics);
+    return true;
+}
 static bool emit_block(Emitter *e, const IrProgram *program, size_t *cursor,
                        unsigned depth, EmitLoop *loop, bool *live) {
     while (*cursor < e->function_end) {
@@ -1178,6 +1233,9 @@ static bool emit_block(Emitter *e, const IrProgram *program, size_t *cursor,
             case IR_BUILTIN:
                 if (!emit_scalar_builtin(e, ir)) return false;
                 break;
+            case IR_WORKGROUP_BARRIER:
+                if (!emit_workgroup_barrier(e)) return false;
+                break;
             case IR_COMPARE:
                 EMIT(comparison_opcode((Comparison)ir->operands.scalar.literal, type_leaf(program, ir->operands.scalar.binding)),
                      target_type(e, ir->type), result, e->values[ir->operands.scalar.left], e->values[ir->operands.scalar.right]);
@@ -1230,6 +1288,23 @@ static bool emit_block(Emitter *e, const IrProgram *program, size_t *cursor,
     }
     return !e->failed;
 }
+static bool emit_workgroup_initialization(Emitter *e) {
+    const uint32_t lane = reserve_ids(e, 1u), first_lane = reserve_ids(e, 1u);
+    const uint32_t initialize = reserve_ids(e, 1u), merge = reserve_ids(e, 1u);
+    EMIT(OP_LOAD, ID_U32, lane, e->workgroup_input);
+    EMIT(OP_IEQUAL, ID_BOOL, first_lane, lane, ID_ZERO_U32);
+    EMIT(OP_SELECTION_MERGE, merge, 0u);
+    EMIT(OP_BRANCH_CONDITIONAL, first_lane, initialize, merge);
+    EMIT(OP_LABEL, initialize);
+    for (uint32_t i = 0u; i < e->program->workgroup_count; ++i) {
+        const WorkgroupRoot *root = &e->program->workgroups[i];
+        EMIT(OP_STORE, root->target, workgroup_zero(e, root->type));
+    }
+    EMIT(OP_BRANCH, merge);
+    EMIT(OP_LABEL, merge);
+    e->current_label = merge;
+    return emit_workgroup_barrier(e);
+}
 static bool function_body(Emitter *e, const IrProgram *program, const FunctionRecord *function) {
     EMIT(OP_FUNCTION, target_type(e, function->result_type), function->state.target.function, 0u, function->state.target.signature);
     for (uint32_t p = 0u; p < function->formal_count; ++p) {
@@ -1245,6 +1320,8 @@ static bool function_body(Emitter *e, const IrProgram *program, const FunctionRe
     e->local_start = function->local_start;
     for (uint32_t i = 0u; i < function->local_count; ++i)
         EMIT(OP_VARIABLE, pointer_type(e, program->locals[function->local_start + i].type, 7u), e->local_base + i, 7u);
+    if (program->workgroup_count != 0u && function == &program->functions[program->entry_function])
+        if (!emit_workgroup_initialization(e)) return false;
     size_t cursor = function->instruction_start;
     bool live = true;
     if (!emit_block(e, program, &cursor, 0u, NULL, &live)) return false;
@@ -1261,9 +1338,10 @@ bool emit_spirv(Source *source, CompilerWorkspace *program) {
     if (program->limits.words < 5u)
         return source_pool_error(source, DOE_COMPILER_POOL_WORDS, 5u, source->length,
                                  "SPIR-V staging capacity is smaller than the header");
-    const uint64_t ceiling = 256u + (uint64_t)program->limits.targets + 64u * program->limits.instructions +
-        3u * (program->limits.tokens / 6u) + program->limits.tokens / 4u +
-        (uint64_t)program->limits.statements + 1u + 11u * (uint64_t)program->limits.accesses + program->limits.resources;
+    const uint64_t ceiling = 256u + (uint64_t)program->limits.targets + 64u * (uint64_t)program->limits.instructions +
+        3u * (uint64_t)(program->limits.tokens / 6u) + program->limits.tokens / 4u +
+        (uint64_t)program->limits.statements + 1u + 11u * (uint64_t)program->limits.accesses + program->limits.resources +
+        program->limits.tokens / 8u + 8u;
     const uint32_t bound = ceiling < UINT32_MAX ? (uint32_t)ceiling : UINT32_MAX - 1u;
     const size_t values = (size_t)program->limits.instructions + program->limits.tokens / 4u + 1u;
     memset(program->values, 0, values * sizeof(*program->values));

@@ -1,0 +1,118 @@
+{
+  "candidate_used": false,
+  "passed": true,
+  "controls": [
+    {
+      "id": "vector_components",
+      "quantum": 1,
+      "schedule": "round_robin",
+      "validator_valid": true,
+      "detection": "unordered ('workgroup', (0, 0, 0), 23, ()): Access(invocation=0, group=(0, 0, 0), epoch=1, write=True) versus Access(invocation=1, group=(0, 0, 0), epoch=1, write=True)"
+    },
+    {
+      "id": "vector_components",
+      "quantum": 1,
+      "schedule": "reverse",
+      "validator_valid": true,
+      "detection": "unordered ('workgroup', (0, 0, 0), 23, ()): Access(invocation=1, group=(0, 0, 0), epoch=1, write=True) versus Access(invocation=0, group=(0, 0, 0), epoch=1, write=True)"
+    },
+    {
+      "id": "vector_components",
+      "quantum": 1,
+      "schedule": "shuffle_0x11c0ffee",
+      "validator_valid": true,
+      "detection": "unordered ('workgroup', (0, 0, 0), 23, ()): Access(invocation=0, group=(0, 0, 0), epoch=1, write=True) versus Access(invocation=1, group=(0, 0, 0), epoch=1, write=True)"
+    },
+    {
+      "id": "vector_components",
+      "quantum": 1,
+      "schedule": "bounded_burst_1_3_7",
+      "validator_valid": true,
+      "detection": "unordered ('workgroup', (0, 0, 0), 23, ()): Access(invocation=0, group=(0, 0, 0), epoch=1, write=True) versus Access(invocation=1, group=(0, 0, 0), epoch=1, write=True)"
+    },
+    {
+      "id": "vector_components",
+      "quantum": 64,
+      "schedule": "round_robin",
+      "validator_valid": true,
+      "detection": "unordered ('workgroup', (0, 0, 0), 23, ()): Access(invocation=0, group=(0, 0, 0), epoch=1, write=True) versus Access(invocation=1, group=(0, 0, 0), epoch=1, write=True)"
+    },
+    {
+      "id": "vector_components",
+      "quantum": 64,
+      "schedule": "reverse",
+      "validator_valid": true,
+      "detection": "unordered ('workgroup', (0, 0, 0), 23, ()): Access(invocation=1, group=(0, 0, 0), epoch=1, write=True) versus Access(invocation=0, group=(0, 0, 0), epoch=1, write=True)"
+    },
+    {
+      "id": "vector_components",
+      "quantum": 64,
+      "schedule": "shuffle_0x11c0ffee",
+      "validator_valid": true,
+      "detection": "unordered ('workgroup', (0, 0, 0), 23, ()): Access(invocation=0, group=(0, 0, 0), epoch=1, write=True) versus Access(invocation=1, group=(0, 0, 0), epoch=1, write=True)"
+    },
+    {
+      "id": "vector_components",
+      "quantum": 64,
+      "schedule": "bounded_burst_1_3_7",
+      "validator_valid": true,
+      "detection": "unordered ('workgroup', (0, 0, 0), 23, ()): Access(invocation=0, group=(0, 0, 0), epoch=1, write=True) versus Access(invocation=1, group=(0, 0, 0), epoch=1, write=True)"
+    },
+    {
+      "id": "storage_not_fenced",
+      "quantum": 1,
+      "schedule": "round_robin",
+      "validator_valid": true,
+      "detection": "unordered ('storage', (0, 0), 4): Access(invocation=1, group=(0, 0, 0), epoch=1, write=True) versus Access(invocation=0, group=(0, 0, 0), epoch=2, write=False)"
+    },
+    {
+      "id": "storage_not_fenced",
+      "quantum": 1,
+      "schedule": "reverse",
+      "validator_valid": true,
+      "detection": "unordered ('storage', (0, 0), 0): Access(invocation=0, group=(0, 0, 0), epoch=1, write=True) versus Access(invocation=3, group=(0, 0, 0), epoch=2, write=False)"
+    },
+    {
+      "id": "storage_not_fenced",
+      "quantum": 1,
+      "schedule": "shuffle_0x11c0ffee",
+      "validator_valid": true,
+      "detection": "unordered ('storage', (0, 0), 0): Access(invocation=0, group=(0, 0, 0), epoch=1, write=True) versus Access(invocation=3, group=(0, 0, 0), epoch=2, write=False)"
+    },
+    {
+      "id": "storage_not_fenced",
+      "quantum": 1,
+      "schedule": "bounded_burst_1_3_7",
+      "validator_valid": true,
+      "detection": "unordered ('storage', (0, 0), 4): Access(invocation=1, group=(0, 0, 0), epoch=1, write=True) versus Access(invocation=0, group=(0, 0, 0), epoch=2, write=False)"
+    },
+    {
+      "id": "storage_not_fenced",
+      "quantum": 64,
+      "schedule": "round_robin",
+      "validator_valid": true,
+      "detection": "unordered ('storage', (0, 0), 4): Access(invocation=1, group=(0, 0, 0), epoch=1, write=True) versus Access(invocation=0, group=(0, 0, 0), epoch=2, write=False)"
+    },
+    {
+      "id": "storage_not_fenced",
+      "quantum": 64,
+      "schedule": "reverse",
+      "validator_valid": true,
+      "detection": "unordered ('storage', (0, 0), 0): Access(invocation=0, group=(0, 0, 0), epoch=1, write=True) versus Access(invocation=3, group=(0, 0, 0), epoch=2, write=False)"
+    },
+    {
+      "id": "storage_not_fenced",
+      "quantum": 64,
+      "schedule": "shuffle_0x11c0ffee",
+      "validator_valid": true,
+      "detection": "unordered ('storage', (0, 0), 4): Access(invocation=1, group=(0, 0, 0), epoch=1, write=True) versus Access(invocation=0, group=(0, 0, 0), epoch=2, write=False)"
+    },
+    {
+      "id": "storage_not_fenced",
+      "quantum": 64,
+      "schedule": "bounded_burst_1_3_7",
+      "validator_valid": true,
+      "detection": "unordered ('storage', (0, 0), 4): Access(invocation=1, group=(0, 0, 0), epoch=1, write=True) versus Access(invocation=0, group=(0, 0, 0), epoch=2, write=False)"
+    }
+  ]
+}

@@ -5,8 +5,8 @@
 
 typedef struct {
     size_t expressions, statements, declarations, functions, formals, arguments, callees;
-    size_t generic_syntax, types, members, resources, constants, edges, accesses;
-    size_t phase, locals, scope, values, operands, reflection, targets, walk, words, total;
+    size_t generic_syntax, types, members, resources, workgroups, constants, edges, accesses;
+    size_t phase, locals, scope, values, operands, behaviors, uniformity, reflection, targets, walk, words, total;
 } WorkspaceLayout;
 static bool reserve_array(size_t *cursor, size_t count, size_t element, size_t alignment, size_t *offset) {
     const size_t remainder = *cursor % alignment;
@@ -32,6 +32,7 @@ static bool workspace_layout(const CompilerLimits *l, WorkspaceLayout *p) {
         !reserve_array(&cursor,l->types,sizeof(TypeRecord),_Alignof(TypeRecord),&p->types) ||
         !reserve_array(&cursor,l->members,sizeof(MemberRecord),_Alignof(MemberRecord),&p->members) ||
         !reserve_array(&cursor,l->resources,sizeof(ResourceRecord),_Alignof(ResourceRecord),&p->resources) ||
+        !reserve_array(&cursor,l->tokens/8u,sizeof(WorkgroupRoot),_Alignof(WorkgroupRoot),&p->workgroups) ||
         !reserve_array(&cursor,l->constants,sizeof(ConstantRecord),_Alignof(ConstantRecord),&p->constants) ||
         !reserve_array(&cursor,l->edges,sizeof(ConstantValue),_Alignof(ConstantValue),&p->edges) ||
         !reserve_array(&cursor,l->accesses,sizeof(AccessStep),_Alignof(AccessStep),&p->accesses) ||
@@ -43,10 +44,23 @@ static bool workspace_layout(const CompilerLimits *l, WorkspaceLayout *p) {
         !reserve_array(&cursor,(size_t)l->statements+1u,sizeof(LocalBinding),_Alignof(LocalBinding),&p->scope) ||
         !reserve_array(&cursor,values,sizeof(uint32_t),_Alignof(uint32_t),&p->values) ||
         !reserve_array(&cursor,l->operands,sizeof(uint32_t),_Alignof(uint32_t),&p->operands) ||
+        !reserve_array(&cursor,l->statements,1u,1u,&p->behaviors) ||
+        !reserve_array(&cursor,0u,1u,_Alignof(ConstantValue),&p->uniformity)) return false;
+    size_t uniform_end=cursor;
+    const size_t frames=2u*(size_t)l->control_depth+l->expression_depth+4u;
+    if (!reserve_array(&uniform_end,l->physical_expressions,1u,1u,&ignored) ||
+        !reserve_array(&uniform_end,(size_t)l->statements+1u,1u,1u,&ignored) ||
+        !reserve_array(&uniform_end,l->tokens/4u,1u,1u,&ignored) ||
+        !reserve_array(&uniform_end,l->tokens/6u,1u,1u,&ignored) ||
+        !reserve_array(&uniform_end,frames,32u,4u,&ignored) ||
+        frames>SIZE_MAX/6u ||
+        !reserve_array(&uniform_end,frames*6u,(size_t)l->statements+1u,1u,&ignored) ||
+        !reserve_array(&uniform_end,0u,1u,_Alignof(ConstantValue),&ignored) ||
         !reserve_array(&cursor,(size_t)l->types+7u,sizeof(uint32_t),_Alignof(uint32_t),&p->reflection) ||
         !reserve_array(&cursor,l->targets,sizeof(TargetDeclaration),_Alignof(TargetDeclaration),&p->targets) ||
         !reserve_array(&cursor,l->traversal,sizeof(WalkItem),_Alignof(WalkItem),&p->walk) ||
         !reserve_array(&cursor,l->words,sizeof(uint32_t),_Alignof(uint32_t),&p->words)) return false;
+    if (cursor < uniform_end) cursor = uniform_end;
     if (cursor < token_end) cursor = token_end;
     if (!reserve_array(&cursor,0u,1u,_Alignof(ConstantValue),&ignored)) return false;
     p->total = cursor;
@@ -106,6 +120,8 @@ void compiler_job_bind(CompilerWorkspace *c, void *memory, const CompilerLimits 
     c->formals=(FormalRecord *)(b+p.formals); c->arguments=(ArgumentSyntax *)(b+p.arguments); c->callees=(uint32_t *)(b+p.callees);
     c->generic_syntax=(GenericSyntax *)(b+p.generic_syntax); c->types=(TypeRecord *)(b+p.types);
     c->members=(MemberRecord *)(b+p.members); c->resources=(ResourceRecord *)(b+p.resources);
+    c->workgroups=(WorkgroupRoot *)(b+p.workgroups);
+    c->statement_behaviors=b+p.behaviors; c->uniformity=b+p.uniformity;
     c->constants=(ConstantRecord *)(b+p.constants); c->constant_edges=(ConstantValue *)(b+p.edges);
     c->accesses=(AccessStep *)(b+p.accesses); c->tokens=(Token *)(b+p.phase);
     c->locals=(IrLocal *)(b+p.locals); c->scope=(LocalBinding *)(b+p.scope); c->values=(uint32_t *)(b+p.values);
@@ -120,9 +136,12 @@ void compiler_legacy_bind(LegacyWorkspace *storage, bool uniforms) {
         .expression_depth=18u,.control_depth=4u,.type_depth=18u,.flags=LIMIT_LEGACY };
     compiler_job_bind(&storage->job,storage,&l);
 }
-_Static_assert(sizeof(CompilerWorkspace)==512u,"M10 core ledger");
+_Static_assert(sizeof(CompilerWorkspace)==552u,"M11 core ledger");
 _Static_assert(sizeof(Expression)==40u && sizeof(Statement)==56u && sizeof(ConstantSyntax)==40u,"M10 syntax ledger");
 _Static_assert(sizeof(TypeRecord)==56u && sizeof(MemberRecord)==56u && sizeof(ResourceRecord)==104u,"M10 type ledger");
 _Static_assert(sizeof(ConstantRecord)==32u && sizeof(ConstantValue)==16u && sizeof(AccessStep)==24u,"M10 value ledger");
 _Static_assert(sizeof(IrInstruction)==32u && sizeof(LocalBinding)==48u && sizeof(TargetDeclaration)==32u,"M10 lowering ledger");
 _Static_assert(sizeof(LegacyWorkspace)<=147456u,"M10 fixed workspace ceiling");
+
+_Static_assert(sizeof(WorkgroupRoot)==24u,"M11 workgroup root ledger");
+_Static_assert(sizeof(LegacyWorkspace)==146256u,"M11 exact fixed workspace ledger");
