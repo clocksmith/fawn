@@ -157,7 +157,7 @@ responsibilities. Unsupported consumer command kinds must reject before submit.
 `make -C runtime/c/resources check` builds GCC C11/Werror into `/tmp`: 13 base and
 8 extended, 6 bundle, 8 binding-feature, 7 dispatch-usage, 10 render-usage,
 1 query-admission, 3 draw-admission, 4 attachment-admission, 4 resolve-admission,
-3 view-default, 5 debug-group and 3 depth-only host suites cover transactional
+3 view-default, 6 debug-group and 3 depth-only host suites cover transactional
 failure/untouched outputs, first error,
 label cleanup, atomic references, stale/read-only maps, copies/aliases, dynamic
 snapshots, pass abandonment/unbinding, shader/query/external/render leases and
@@ -323,3 +323,9 @@ reject before allocation or native adoption. These follow the
 and [bundle layout requirement](https://gpuweb.github.io/gpuweb/#dom-gpurenderbundleencoderdescriptor).
 `DEVELOPER_RECEIPT_DEPTH_ONLY.json` preserves first failures and host evidence;
 actual depth-only drawing remains a separate backend/consumer admission.
+
+ABI debug-label rejection uses the explicit compute-pass invalidator, matching the
+other recording owners. Non-rejection statuses never mutate state; real rejection
+preserves first error and inactive/device-loss admission. This closes the typed
+frontend boundary without fake debug operations or frontend counters.
+`DEVELOPER_RECEIPT_COMPUTE_INVALIDATE.json` binds the focused controls.
