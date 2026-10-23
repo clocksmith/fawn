@@ -254,3 +254,17 @@ Seeded arithmetic is not timestamp evidence; query values come only from native
 Vulkan commands. Use the same process-local software selector and bounded process
 and fence waits as the other native checks. Public WebGPU feature exposure must
 wait for the real compiler/normalization integration, not merely the raw tick API.
+
+### Direct matrix compiler integration check
+
+`make native-matrix COMPILER_LIBRARY=<held ABI8 library>` compiles the small
+`tests/matrix_tail.wgsl` through the explicit ABI8 stage interface, validates
+matrix dimensions/stride and exact24-byte minimum uniform reflection, then executes
+five invocations using an exact24-byte uniform and140-byte storage descriptor.
+It does not route matrix reflection through an older shader ABI or enable Vulkan
+uniform-buffer-standard-layout. The exact35-float readback covers the final8-byte
+tail, signed/dynamic column and row bounds, whole-matrix reconstruction, transpose,
+vector products and determinant. Prefix/suffix sentinels and early caller releases
+remain checked. The optional compiler link belongs only to this test executable,
+not the native backend archive. Use an explicit existing software selector for
+software evidence; this is neither physical nor complete matrix qualification.

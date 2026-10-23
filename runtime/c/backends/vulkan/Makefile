@@ -100,7 +100,7 @@ sanitize: | $(OUT)
 	$(CC) $(STRICT) -O1 -g -fsanitize=address,undefined $(SOURCES) tests/descriptor_contract.c -ldl -o $(OUT)/descriptor_contract-sanitize
 	ASAN_OPTIONS=detect_leaks=0 $(OUT)/descriptor_contract-sanitize
 clean:
-	rm -f $(OBJECTS) $(OUT)/libdoe_vk.a $(OUT)/ownership $(OUT)/native_compute $(OUT)/probe $(OUT)/native_texture $(OUT)/native_descriptors $(OUT)/native_storage $(OUT)/native_render $(OUT)/texture_contract $(OUT)/descriptor_contract $(OUT)/descriptor_contract-sanitize $(OUT)/texture_contract-sanitize $(OUT)/ownership-sanitize $(OUT)/header-cxx.o $(OUT)/loader_contract $(OUT)/loader_contract-sanitize $(OUT)/render_contract $(OUT)/render_contract-sanitize $(OUT)/query_contract $(OUT)/query_contract-sanitize $(OUT)/native_queries $(OUT)/timestamp_contract $(OUT)/timestamp_contract-sanitize $(OUT)/timestamp_lifetime $(OUT)/timestamp_lifetime-sanitize $(OUT)/native_timestamp $(OUT)/pass_contract $(OUT)/pass_contract-sanitize
+	rm -f $(OBJECTS) $(OUT)/libdoe_vk.a $(OUT)/ownership $(OUT)/native_compute $(OUT)/probe $(OUT)/native_texture $(OUT)/native_descriptors $(OUT)/native_storage $(OUT)/native_render $(OUT)/texture_contract $(OUT)/descriptor_contract $(OUT)/descriptor_contract-sanitize $(OUT)/texture_contract-sanitize $(OUT)/ownership-sanitize $(OUT)/header-cxx.o $(OUT)/loader_contract $(OUT)/loader_contract-sanitize $(OUT)/render_contract $(OUT)/render_contract-sanitize $(OUT)/query_contract $(OUT)/query_contract-sanitize $(OUT)/native_queries $(OUT)/timestamp_contract $(OUT)/timestamp_contract-sanitize $(OUT)/timestamp_lifetime $(OUT)/timestamp_lifetime-sanitize $(OUT)/native_timestamp $(OUT)/pass_contract $(OUT)/pass_contract-sanitize $(OUT)/native_matrix
 
 # Compiler/shader dependencies belong only to this optional integration test.
 SHADER_ROOT ?= $(REPO)/runtime/c/shader
@@ -112,3 +112,10 @@ $(OUT)/native_timestamp: tests/native_timestamp.c $(OUT)/libdoe_vk.a $(SHADER_LI
 .PHONY: native-timestamp
 native-timestamp: $(OUT)/native_timestamp
 	$(OUT)/native_timestamp $(NATIVE_ARGS)
+
+# Direct ABI8 matrix reflection is not projected through the older shader ABI.
+$(OUT)/native_matrix: tests/native_matrix.c $(OUT)/libdoe_vk.a $(COMPILER_LIBRARY)
+	$(CC) $(STRICT) $(CFLAGS) -Iinclude -I$(COMPILER_ROOT)/include $< $(OUT)/libdoe_vk.a $(COMPILER_LIBRARY) -Wl,-rpath,$(abspath $(dir $(COMPILER_LIBRARY))) -ldl -o $@
+.PHONY: native-matrix
+native-matrix: $(OUT)/native_matrix
+	$(OUT)/native_matrix tests/matrix_tail.wgsl $(NATIVE_ARGS)
