@@ -122,6 +122,14 @@ void hlsl_block(HlslEmitter *e, uint32_t *cursor, unsigned depth, uint32_t loop,
             hlsl_access(e, ir);
             continue;
         }
+        if (ir->opcode == IR_HANDLE) {
+            hlsl_handle(e, ir);
+            continue;
+        }
+        if (ir->opcode == IR_IMAGE) {
+            hlsl_image(e, ir);
+            continue;
+        }
         if (ir->opcode == IR_COMPOSITE) {
             hlsl_composite(e, ir);
             continue;
@@ -186,6 +194,7 @@ void hlsl_block(HlslEmitter *e, uint32_t *cursor, unsigned depth, uint32_t loop,
             case IR_IF: case IR_ELSE: case IR_END_IF: case IR_SHORT_BEGIN: case IR_SHORT_END:
             case IR_LOOP_BEGIN: case IR_LOOP_TEST: case IR_LOOP_CONTINUING: case IR_END_LOOP:
             case IR_ACCESS_LOAD: case IR_ACCESS_STORE: case IR_VALUE_ACCESS:
+            case IR_HANDLE: case IR_IMAGE:
             default:
                 hlsl_error(e, "Hlsl IR operation has no implemented lowering at this boundary");
                 break;

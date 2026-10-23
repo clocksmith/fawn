@@ -320,7 +320,7 @@ void hlsl_expression(HlslEmitter *e, const IrInstruction *ir) {
         case IR_SHORT_END: case IR_LOCAL_STORE: case IR_LOOP_BEGIN: case IR_LOOP_TEST:
         case IR_LOOP_CONTINUING: case IR_END_LOOP: case IR_BREAK: case IR_CONTINUE:
         case IR_BREAK_IF: case IR_ACCESS_LOAD: case IR_ACCESS_STORE: case IR_VALUE_ACCESS:
-        case IR_WORKGROUP_BARRIER:
+        case IR_WORKGROUP_BARRIER: case IR_HANDLE: case IR_IMAGE:
         default: hlsl_error(e, "Hlsl IR expression has no implemented lowering"); break;
     }
 }

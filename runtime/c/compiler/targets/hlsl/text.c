@@ -61,7 +61,12 @@ TypeId hlsl_value_type(HlslEmitter *e, uint32_t id) {
 }
 void hlsl_value(HlslEmitter *e, uint32_t id) {
     (void)hlsl_value_type(e, id);
-    hlsl_format(e, "v%u", id);
+    if (id != 0u && id <= e->module->instruction_count &&
+        e->module->instructions[id - 1u].opcode == IR_HANDLE) {
+        const IrInstruction *ir = &e->module->instructions[id - 1u];
+        hlsl_handle(e, ir);
+        hlsl_format(e, "r%u", ir->operands.scalar.binding);
+    } else hlsl_format(e, "v%u", id);
 }
 static void emit_entry(HlslEmitter *e, uint32_t entry) {
     e->entry = entry;

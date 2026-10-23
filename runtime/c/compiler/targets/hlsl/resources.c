@@ -113,6 +113,10 @@ void hlsl_resources(HlslEmitter *e) {
     const CompilerWorkspace *c = e->module;
     for (uint32_t resource = 0u; resource < c->resource_count && !e->failed; ++resource) {
         if (!hlsl_entry_resource(e, resource)) continue;
+        if (type_handle(c, c->resources[resource].type)) {
+            hlsl_image_resource(e, resource);
+            continue;
+        }
         declare_resource(e, resource);
         const bool writable = c->resources[resource].kind == DOE_COMPILER_STORAGE_BUFFER &&
             c->resources[resource].access == DOE_COMPILER_READ_WRITE;

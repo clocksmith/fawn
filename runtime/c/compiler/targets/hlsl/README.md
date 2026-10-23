@@ -1,7 +1,7 @@
 # Experimental C HLSL target
 
 Status: authored and strict-GCC compiled; developer source-emission checks and
-executed scalar/aggregate C++ controls pass. **Not DXC validated, DXIL validated,
+executed scalar/aggregate/image-guard C++ controls pass. **Not DXC validated, DXIL validated,
 Windows/D3D12 consumed, hardware qualified, or the complete compiler migration.**
 No DXC download, toolchain installation, production default, public ABI, native
 resource owner or existing independent acceptance package changed.
@@ -29,6 +29,15 @@ Implemented over current C IR:
   arithmetic/scan operations lowered to real Shader Model 6.0 wave operations.
   Inclusive scans combine the exclusive result with the already evaluated input;
   integer signed sum/product operations use unsigned bit-preserving arithmetic.
+- ABI6 sampled/depth/multisampled textures, storage textures and samplers use
+  typed HLSL resource objects. Seven image operations cover guarded texel loads,
+  stores, dimensions/mip/layer/sample counts and explicit-LOD sampling. Integer
+  coordinates, layers, LODs and sample indices are independently guarded before
+  native access. LOD is range-checked before its dimensions query; array sampling
+  clamps the layer. Handle formals retain declared resource identity, not source
+  text. Storage R/RG loads expand missing components to zero/one and stores select
+  only actual format channels. No sampler/texture local alias or handle return is
+  accepted by the current shared core.
 - Resource buffers use StructuredBuffer<uint> / RWStructuredBuffer<uint> views
   with **four-byte descriptor stride**, read-only t registers and writable u
   registers. Group maps directly to register space; binding maps to register.
@@ -45,10 +54,9 @@ Implemented over current C IR:
   workgroup barriers emit GroupMemoryBarrierWithGroupSync, not a device fence.
 
 A selected entry emits only its static resource/workgroup closure and reachable
-function bodies. Original source entry names are retained. Names in the private generated
-namespace (doe_*, Doe*, rN, wN and rN_data) reject explicitly rather than emitting
-colliding declarations. Passing NO_ID emits
-an isolated bundle: the consuming compiler must define DOE_HLSL_ENTRY to exactly
+function bodies. Original source entry names are retained. Names in the private
+generated namespace (doe_*, Doe*, rN, wN and rN_data) reject explicitly rather than
+emitting colliding declarations. Passing NO_ID emits an isolated bundle: the consuming compiler must define DOE_HLSL_ENTRY to exactly
 one valid entry index. This avoids capturing another entry's resource or rejecting
 legal reused bindings across entries. It is not a single simultaneously compiled
 multi-entry module. Reflection remains shared-core-owned.
@@ -82,17 +90,37 @@ Implementation traced these retained owners:
 Consumers must compile the chosen entry, honor its reflected resource layout,
 create the declared word views/CBVs, bind dispatch metadata when reported, and
 validate workgroup shape. Wave support requires actual D3D12 device capability.
+Texture views must match the ABI6 dimension, sample scalar, format, access and
+sample count. Storage textures use UAV registers, including read-only source
+textures. Typed UAV load support is a real runtime format/device obligation, not
+established by emission: R32 formats and additional/per-format support differ.
+This target emits DXIL-bound HLSL, not SPIR-V image-format annotations. Native
+query signatures and capability boundaries follow Microsoft's
+[GetDimensions reference](https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-to-getdimensions)
+and [typed UAV load requirements](https://learn.microsoft.com/en-us/windows/win32/direct3d11/typed-unordered-access-view-loads).
 
 ## Unfinished surface
 
-Vertex/fragment interfaces, textures/samplers, matrices, f16, atomics,
+Vertex/fragment interfaces, derivative/implicit-LOD texture sampling, gather,
+comparison sampling, texture offsets, external textures, matrices, f16, atomics,
 pointer parameters, overrides and remaining retained builtin families are not
 present in this C IR owner and remain explicitly rejected by shared admission.
 Subgroup size and invocation inputs use WaveGetLaneCount/WaveGetLaneIndex;
 num_subgroups and subgroup_id explicitly reject because this owner does not
-assume a portable mapping from local invocation order to HLSL wave membership. Unknown/obsolete IR operations and
-unknown numeric builtin identities fail before output. A coherent compute subset
+assume a portable mapping from local invocation order to HLSL wave membership.
+Unknown/obsolete IR operations and unknown numeric builtin identities fail before
+output. A coherent compute subset
 is not retained HLSL/DXIL parity or completion of the larger C migration.
+
+The next retained compute texture gaps are `textureSampleCompareLevel` and
+`textureSampleGrad`: `emit_hlsl_texture.zig` maps them to `SampleCmpLevelZero` and
+`SampleGrad`. Existing witnesses are `runtime/zig/tests/core/hlsl_subsystem_test.zig`
+(the compare-level case) and `runtime/zig/tests/wgsl/emit_spirv_builtin_test.zig`
+(the compare-level and explicit-gradient cases). They require new shared typed
+image operations and semantic admission before target lowering. Gather likewise
+needs exact component semantics: the retained HLSL helper currently emits
+`GatherRed` without selecting the source component; that behavior must not be
+copied as a generic mapping. No target-only builtin spellings are accepted.
 
 ## Focused checks
 
@@ -104,12 +132,14 @@ explicit layouts, vectors, waves, workgroup initialization, control, output sizi
 and unsupported-identity mutation controls. `library` produces a private archive
 whose shared compiler helper dependencies remain core-owned.
 
-`host-control` mechanically removes stage/resource annotations from three generated
-scalar/aggregate fixtures, binds word arrays, compiles their emitted C++ operations
-with GCC/UBSan and checks continuing, effects, call argument order, nested independent OOB reads, discarded-store RHS
-effects, integer wrapping, bounds, view
-sizes, field offsets and padding preservation. It neither interprets WGSL nor
-models waves, thread scheduling, HLSL address spaces, a GPU driver or descriptor
+`host-control` mechanically removes stage/resource annotations from four generated
+scalar/aggregate/image-guard fixtures, binds word arrays, compiles their emitted
+C++ operations with GCC/UBSan and checks continuing, effects, call argument order,
+nested independent OOB reads, discarded-store RHS effects, integer wrapping,
+bounds, view sizes, field offsets and padding preservation. The image control uses asserting
+query/load stubs with sentinel data solely to execute the emitted negative/upper
+LOD and coordinate guards; it does not emulate image formats, sampling or a GPU.
+It neither interprets WGSL nor models waves, thread scheduling, HLSL address spaces, a GPU driver or descriptor
 lifetime. It is a developer control, not an independent acceptance oracle and not
 proof that a target compiler accepts the source.
 

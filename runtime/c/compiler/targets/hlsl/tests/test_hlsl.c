@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: MIT
  * Copyright (c) 2026 Doe contributors */
-#include "../hlsl.h"
+#include "test_support.h"
 #include "../../../src/numeric.h"
 #include <assert.h>
 #include <errno.h>
@@ -16,13 +16,7 @@ static const DoeCompilerModuleCapacities capacities = {
         .words = 32768u, .expression_depth = 32u, .control_depth = 16u, .type_syntax_depth = 32u},
     .entries = 8u, .entry_inputs = 32u, .entry_references = 256u
 };
-typedef struct {
-    void *storage;
-    CompilerWorkspace *module;
-    Source source;
-    DoeCompilerDiagnostic diagnostic;
-} Fixture;
-static Fixture *prepare(const char *text) {
+Fixture *prepare(const char *text) {
     Fixture *f = calloc(1u, sizeof(*f));
     assert(f != NULL);
     CompilerLimits limits;
@@ -51,11 +45,11 @@ static Fixture *prepare(const char *text) {
     assert(okay);
     return f;
 }
-static void release(Fixture *f) {
+void release(Fixture *f) {
     free(f->storage);
     free(f);
 }
-static char *emit(Fixture *f, uint32_t selected) {
+char *emit(Fixture *f, uint32_t selected) {
     DoeHlslResult measure;
     errno = EDOM;
     const DoeCompilerStatus status = doe_hlsl_emit(&f->source, f->module, selected, NULL, 0u, &measure);
@@ -75,7 +69,7 @@ static char *emit(Fixture *f, uint32_t selected) {
     text[measure.required_bytes] = '\0';
     return text;
 }
-static void has(const char *text, const char *needle) {
+void has(const char *text, const char *needle) {
     if (strstr(text, needle) == NULL) fprintf(stderr, "missing emission: %s\n", needle);
     assert(strstr(text, needle) != NULL);
 }
@@ -327,6 +321,7 @@ static void test_subgroups(void) {
     release(f);
 }
 int main(int argc, char **argv) {
+    test_images(argc > 4 ? argv[4] : NULL);
     test_effects_host_fixture(argc > 3 ? argv[3] : NULL);
     test_target_rejection();
     test_subgroup_inputs();

@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2026 Doe contributors
-"""Execute only emitted scalar/aggregate operations, not HLSL or GPU semantics.
+"""Execute emitted scalar/aggregate/guard operations, not HLSL or GPU semantics.
 
 The mechanical shim removes HLSL resource/stage annotations, exposes word views,
-and maps zero aggregate initialization to C++. It does not simulate WGSL, threads,
+and maps zero aggregate initialization to C++. The image guard uses asserting
+query/load stubs and a sentinel result, not an image or sampling model.
+It does not simulate WGSL, threads,
 wave intrinsics, descriptor lifetime, a driver, or target compiler acceptance.
 """
 import pathlib
@@ -14,7 +16,7 @@ import sys
 
 out = pathlib.Path(sys.argv[1])
 subprocess.run([str(out / "test_hlsl"), str(out / "control.hlsl"),
-                str(out / "aggregate.hlsl"), str(out / "effects.hlsl")], check=True)
+                str(out / "aggregate.hlsl"), str(out / "effects.hlsl"), str(out / "image_guard.hlsl")], check=True)
 prelude = r"""
 #include <algorithm>
 #include <array>
@@ -90,8 +92,62 @@ int main() {
     std::puts("HLSL effects host control: ordered arguments, index snapshots, independent OOB roots, discarded-store effects.");
 }
 """
-for name, main in (("control", scalar), ("aggregate", aggregate), ("effects", effects)):
+image_types = r"""
+using float4 = std::array<float, 4>;
+struct int2 {
+    int values[2];
+    int2() = default;
+    int2(int x, int y) : values{x, y} {}
+    int& operator[](unsigned i) { return values[i]; }
+    int operator[](unsigned i) const { return values[i]; }
+};
+struct uint2 {
+    uint values[2];
+    uint2() = default;
+    uint2(uint x, uint y) : values{x, y} {}
+    uint& operator[](unsigned i) { return values[i]; }
+    uint operator[](unsigned i) const { return values[i]; }
+};
+struct int3 {
+    int x, y, z;
+    int3(int2 xy, int level) : x(xy[0]), y(xy[1]), z(level) {}
+};
+unsigned image_load_calls;
+unsigned image_query_calls;
+struct ImageTexture {
+    void GetDimensions(uint mip, uint& x, uint& y, uint& levels) {
+        assert(mip < 3);
+        ++image_query_calls;
+        x = 4u >> mip; y = 4u >> mip; levels = 3;
+    }
+    float Load(int3 address) {
+        assert(address.z >= 0 && address.z < 3);
+        assert(address.x >= 0 && uint(address.x) < (4u >> address.z));
+        assert(address.y >= 0 && uint(address.y) < (4u >> address.z));
+        ++image_load_calls;
+        return 42.0f;
+    }
+};
+"""
+image_guard = r"""
+int main() {
+    uint words[8] = {};
+    words[7] = 0x12345678;
+    r1 = words; r1_count = 7;
+    image_guard();
+    assert(asfloat(words[0]) == 42.0f);
+    for (unsigned i = 1; i <= 5; ++i) assert(words[i] == 0);
+    assert(asfloat(words[6]) == 2.0f && words[7] == 0x12345678);
+    assert(image_load_calls == 1 && image_query_calls == 11);
+    std::puts("HLSL image guard host control: negative/upper LOD query protection, independent coordinate checks, zero reads.");
+}
+"""
+for name, main in (("control", scalar), ("aggregate", aggregate), ("effects", effects), ("image_guard", image_guard)):
     text = (out / (name + ".hlsl")).read_text()
+    if name == "image_guard":
+        text = re.sub(r"Texture2D<float> (r\d+) : register\([^;]+;", r"ImageTexture \1;", text)
+        text = text.replace("Texture2D<float>", "ImageTexture")
+        text = re.sub(r"\((int2|uint2|float4)\)0", r"\1{}", text)
     text = re.sub(r"(?:RW)?StructuredBuffer<uint> (r\d+) : register\([^;]+;",
                   lambda m: f"uint* {m[1]}; uint {m[1]}_count; uint {m[1]}_stride = 4;", text)
     text = re.sub(r"(r\d+)\.GetDimensions\(count, stride\);",
@@ -100,7 +156,7 @@ for name, main in (("control", scalar), ("aggregate", aggregate), ("effects", ef
     text = re.sub(r"\((DoeT\d+|DoeContext|uint3)\)0", r"\1{}", text)
     text = text.replace("precise ", "")
     path = out / (name + "_host.cpp")
-    path.write_text(prelude + text + main)
+    path.write_text(prelude + (image_types if name == "image_guard" else "") + text + main)
     executable = out / (name + "_host")
     subprocess.run(["g++", "-std=c++17", "-O2", "-fno-fast-math", "-ffp-contract=off",
                     "-fno-exceptions", "-fno-rtti", "-fsanitize=undefined", str(path),
