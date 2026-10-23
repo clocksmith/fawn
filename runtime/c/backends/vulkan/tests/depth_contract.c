@@ -210,6 +210,15 @@ int main(void) {
     depth.desc.format = DOE_VK_FORMAT_D32_FLOAT;
     rejected(&context, &desc, NULL, DOE_VK_INVALID_ARGUMENT); /* No stencil aspect. */
     depth.desc.format = DOE_VK_FORMAT_D32_FLOAT_S8_UINT;
+    doe_vk_render_pass_desc depth_only = {.depth_stencil = &depth_view,
+        .depth_read_only = true, .stencil_read_only = true};
+    rejected(&context, &depth_only, &op, DOE_VK_INVALID_ARGUMENT); /* Color pipeline mismatch. */
+    pipeline.color_format = 0;
+    pipeline.depth_stencil_format = 0;
+    rejected(&context, &depth_only, &op, DOE_VK_INVALID_ARGUMENT);
+    pipeline.depth_stencil_format = depth.desc.format;
+    pipeline.depth_write = true;
+    rejected(&context, &depth_only, &op, DOE_VK_INVALID_ARGUMENT);
     color.desc.sample_count = depth.desc.sample_count = 4;
     uint8_t resolve_state = 0;
     doe_vk_texture resolve = color;

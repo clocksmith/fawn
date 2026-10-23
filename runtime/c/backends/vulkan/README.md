@@ -333,8 +333,8 @@ image mip/layer span, and preserves valid aspects. Array/cube selections use
 retained single-subresource views. Initialized selections are no-op. Use this
 explicit primitive before public attachment publication and before sampling,
 copying or LOAD of discarded attachments. Raw LOAD still rejects undefined data.
-The full descriptor also admits an empty/query-only depth/stencil-only pass,
-without manufacturing a color attachment; depth-only draws remain unsupported.
+The full descriptor also admits depth/stencil-only passes and draws,
+without manufacturing a color attachment.
 The native witness verifies depth-zero after discard without losing stencil,
 and exact zero color bytes after discard.
 
@@ -366,3 +366,19 @@ The existing native render witness now exercises 4x RGBA8/D32S8, a sample1 resol
 empty LOAD resolve, zero sample mask, alpha-zero coverage, resolve-before-discard
 and zero-after-discard, with five exact 64-pixel oracles and early caller release.
 This is explicit SwiftShader execution only, not physical or compiler qualification.
+
+A depth/stencil-only pipeline sets `color_format=0`, an actual depth/stencil format,
+zero color write mask, disabled blend and disabled alpha-to-coverage. Its fragment
+shader may be entirely zero/absent, producing a real vertex-only native pipeline,
+not a dummy fragment shader or rasterizer-discard substitute. A supplied fragment
+shader is still permitted and validated. Color pipelines require a real fragment
+shader. The Vulkan omitted-fragment-stage rule is explicit in
+https://docs.vulkan.org/spec/latest/chapters/pipelines.html.
+
+The same full-pass draw preflight selects the real depth/stencil target for
+viewport, sample compatibility and aliasing checks; existing descriptors, vertex
+leases, read-only admission and retirement are unchanged. The extended retained
+native witness observes a vertex-only depth write using subsequent failing far
+and passing near color draws, with an exact 64-pixel blue/magenta oracle and early
+pipeline release. Host controls inspect native stage/attachment records and
+allocation failure cleanup; they are not shader execution evidence.

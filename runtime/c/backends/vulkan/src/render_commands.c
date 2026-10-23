@@ -66,12 +66,11 @@ typedef struct prepared_draw {
 static doe_vk_status validate_pass_draw(doe_vk_commands *commands, const doe_vk_render_pass_desc *desc,
     const doe_vk_render_pass_draw *draw, uint32_t width, uint32_t height, prepared_draw *prepared) {
     doe_vk_pipeline *pipeline = draw->pipeline;
-    doe_vk_texture_view *target = desc->color;
-    if (target == NULL) return DOE_VK_UNSUPPORTED;
+    doe_vk_texture_view *target = desc->color != NULL ? desc->color : desc->depth_stencil;
     if (pipeline == NULL || !pipeline->graphics || pipeline->context != commands->context ||
         draw->binding_count != pipeline->binding_count ||
         (draw->binding_count != 0 && draw->bindings == NULL) ||
-        target->texture->desc.format != pipeline->color_format ||
+        (desc->color != NULL ? desc->color->texture->desc.format : 0) != pipeline->color_format ||
         doe_vk_samples(target->texture->desc.sample_count) != doe_vk_samples(pipeline->sample_count) ||
         (desc->depth_stencil != NULL ? desc->depth_stencil->texture->desc.format : 0) != pipeline->depth_stencil_format ||
         (desc->depth_read_only && pipeline->depth_write) ||
