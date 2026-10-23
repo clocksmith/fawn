@@ -1,0 +1,42 @@
+make: Entering directory '/tmp/doe-metal-image-snapshot/runtime/c/compiler/targets/metal'
+mkdir -p /tmp/doe-metal-image-qualified
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror text.c types.c numeric.c access.c control.c stage.c handles.c image.c ../../src/builtin.c ../../src/compile.c ../../src/constants.c ../../src/image.c ../../src/lex.c ../../src/module.c ../../src/numeric.c ../../src/parse.c ../../src/parse_interface.c ../../src/reflection.c ../../src/sema_builtin.c ../../src/sema_call.c ../../src/sema_declarations.c ../../src/sema_expression.c ../../src/sema_finalize.c ../../src/sema_image.c ../../src/sema_image_call.c ../../src/sema_stage.c ../../src/spirv.c ../../src/spirv_image.c ../../src/spirv_module.c ../../src/spirv_stage.c ../../src/spirv_subgroup.c ../../src/stage.c ../../src/storage.c ../../src/types.c ../../src/uniformity.c ../../src/validate.c tests/test_metal.c -lm -o /tmp/doe-metal-image-qualified/test_metal
+mkdir -p /tmp/doe-metal-image-qualified
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror text.c types.c numeric.c access.c control.c stage.c handles.c image.c ../../src/builtin.c ../../src/compile.c ../../src/constants.c ../../src/image.c ../../src/lex.c ../../src/module.c ../../src/numeric.c ../../src/parse.c ../../src/parse_interface.c ../../src/reflection.c ../../src/sema_builtin.c ../../src/sema_call.c ../../src/sema_declarations.c ../../src/sema_expression.c ../../src/sema_finalize.c ../../src/sema_image.c ../../src/sema_image_call.c ../../src/sema_stage.c ../../src/spirv.c ../../src/spirv_image.c ../../src/spirv_module.c ../../src/spirv_stage.c ../../src/spirv_subgroup.c ../../src/stage.c ../../src/storage.c ../../src/types.c ../../src/uniformity.c ../../src/validate.c tests/test_images.c -lm -o /tmp/doe-metal-image-qualified/test_images
+python3 ../../../tools/check_source_size.py /tmp/doe-metal-image-snapshot/runtime/c/compiler/targets/metal/text.c /tmp/doe-metal-image-snapshot/runtime/c/compiler/targets/metal/types.c /tmp/doe-metal-image-snapshot/runtime/c/compiler/targets/metal/numeric.c /tmp/doe-metal-image-snapshot/runtime/c/compiler/targets/metal/access.c /tmp/doe-metal-image-snapshot/runtime/c/compiler/targets/metal/control.c /tmp/doe-metal-image-snapshot/runtime/c/compiler/targets/metal/stage.c /tmp/doe-metal-image-snapshot/runtime/c/compiler/targets/metal/handles.c /tmp/doe-metal-image-snapshot/runtime/c/compiler/targets/metal/image.c /tmp/doe-metal-image-snapshot/runtime/c/compiler/targets/metal/metal.h /tmp/doe-metal-image-snapshot/runtime/c/compiler/targets/metal/private.h /tmp/doe-metal-image-snapshot/runtime/c/compiler/targets/metal/tests/fixture.h /tmp/doe-metal-image-snapshot/runtime/c/compiler/targets/metal/tests/test_metal.c /tmp/doe-metal-image-snapshot/runtime/c/compiler/targets/metal/tests/test_images.c /tmp/doe-metal-image-snapshot/runtime/c/compiler/targets/metal/tests/host/image_control.h /tmp/doe-metal-image-snapshot/runtime/c/compiler/targets/metal/tests/host/vector_control.h
+C size check: 15 files, 0 failures; limit 999
+/tmp/doe-metal-image-qualified/test_metal
+Metal developer checks passed: real source lowering, layout, entries, workgroups, control, atomic rejection.
+/tmp/doe-metal-image-qualified/test_images
+Metal image developer controls passed: seven typed operations, 16 formats, dimensions, closures, atomic rejection.
+/tmp/doe-metal-image-qualified/test_metal /tmp/doe-metal-image-qualified/control.metal /tmp/doe-metal-image-qualified/aggregate.metal
+Metal developer checks passed: real source lowering, layout, entries, workgroups, control, atomic rejection.
+g++ -std=c++17 -O2 -fno-fast-math -ffp-contract=off -Wno-attributes -Itests/host -I/tmp/doe-metal-image-qualified tests/host/check_scalar.cpp -o /tmp/doe-metal-image-qualified/check_scalar
+/tmp/doe-metal-image-qualified/check_scalar
+Emitted scalar host control passed: continuing/effects/wrapping/robustness.
+g++ -std=c++17 -O2 -fno-fast-math -ffp-contract=off -Wno-attributes -Itests/host -I/tmp/doe-metal-image-qualified tests/host/check_layout.cpp -o /tmp/doe-metal-image-qualified/check_layout
+/tmp/doe-metal-image-qualified/check_layout
+Emitted aggregate host control passed: typed copies, explicit layout, padding preservation.
+/tmp/doe-metal-image-qualified/test_images /tmp/doe-metal-image-qualified/images.metal
+Metal image developer controls passed: seven typed operations, 16 formats, dimensions, closures, atomic rejection.
+g++ -std=c++17 -O2 -fno-fast-math -ffp-contract=off -Wno-attributes -Itests/host -I/tmp/doe-metal-image-qualified tests/host/check_images.cpp -o /tmp/doe-metal-image-qualified/check_images
+/tmp/doe-metal-image-qualified/check_images
+Emitted Metal image operation controls passed: bounds, methods, layer clamps, raw sampling operands, identity and ordered effects.
+mkdir -p /tmp/doe-metal-image-qualified
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror -c text.c -o /tmp/doe-metal-image-qualified/text.o
+mkdir -p /tmp/doe-metal-image-qualified
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror -c types.c -o /tmp/doe-metal-image-qualified/types.o
+mkdir -p /tmp/doe-metal-image-qualified
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror -c numeric.c -o /tmp/doe-metal-image-qualified/numeric.o
+mkdir -p /tmp/doe-metal-image-qualified
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror -c access.c -o /tmp/doe-metal-image-qualified/access.o
+mkdir -p /tmp/doe-metal-image-qualified
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror -c control.c -o /tmp/doe-metal-image-qualified/control.o
+mkdir -p /tmp/doe-metal-image-qualified
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror -c stage.c -o /tmp/doe-metal-image-qualified/stage.o
+mkdir -p /tmp/doe-metal-image-qualified
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror -c handles.c -o /tmp/doe-metal-image-qualified/handles.o
+mkdir -p /tmp/doe-metal-image-qualified
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror -c image.c -o /tmp/doe-metal-image-qualified/image.o
+ar rcs /tmp/doe-metal-image-qualified/libdoe_metal_target.a /tmp/doe-metal-image-qualified/text.o /tmp/doe-metal-image-qualified/types.o /tmp/doe-metal-image-qualified/numeric.o /tmp/doe-metal-image-qualified/access.o /tmp/doe-metal-image-qualified/control.o /tmp/doe-metal-image-qualified/stage.o /tmp/doe-metal-image-qualified/handles.o /tmp/doe-metal-image-qualified/image.o
+make: Leaving directory '/tmp/doe-metal-image-snapshot/runtime/c/compiler/targets/metal'

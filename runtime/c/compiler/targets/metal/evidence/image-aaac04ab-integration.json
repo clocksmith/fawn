@@ -1,0 +1,10 @@
+{
+  "status": "source-bound focused developer integration, not Metal SDK/native/physical qualification",
+  "core_commit": "aaac04ab92b9948a7cc1459a6dc56e0824900db1",
+  "core_materialization": "git archive core src/include from exact commit, no live core inputs",
+  "target_receipt_sha256": "ba7c3eccb33912e2c58b23035661af9cc7c25d618816c283aeb605b1d8b36ec0",
+  "command": "make -C runtime/c/compiler/targets/metal check host-control image-host-control library OUT=/tmp/doe-metal-aaac04ab",
+  "exit_code": 0,
+  "terminal_sha256": "14961a96b3841de454452300e7c59089012ac0742d090f8463e241828439ae96",
+  "note": "Earlier exact author receipt remains historical. Two later core differences are stage-header documentation and comment-only stage.c changes. This fresh strict build and all focused target controls bind the committed ABI7 core directly."
+}

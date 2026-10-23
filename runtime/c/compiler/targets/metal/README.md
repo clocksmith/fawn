@@ -29,6 +29,21 @@ integer formatting and bit-pattern floating constants, not host float evaluation
 - Multiple compute entry closures; source entry names are exposed with Metal
   host_name attributes. Selection filters kernel wrappers, not module validation.
   All five compute input builtins are mapped; helpers receive a thread context.
+- Texture/sampler handles remain typed by shared ABI6 type/resource identity.
+  All seven admitted image operations lower to MSL methods: load, store,
+  dimensions, mip count, layer count, sample count and explicit-LOD sampling.
+  The shared sampled/depth/multisampled dimensions and sixteen storage formats
+  are covered. MSL supplies storage format conversion and absent-channel defaults;
+  this target does not reimplement those conversions.
+- Independent signed/unsigned texel coordinate, array-layer, mip and sample
+  guards precede native reads/writes and selected-mip dimension queries. Invalid
+  integer loads/queries return all-zero values and stores discard. Results reset
+  on every evaluation, including loop iterations. Sampling preserves floating
+  coordinates and LOD; only the separate integer array layer is clamped.
+- Texture/sampler formals and typed global-handle closures are ordinary MSL
+  parameters. Writable textures never become local values or nullable context
+  fields. Empty entries and resource aliases used by separate entries remain
+  independent; names or source spelling do not select resource identity.
 - Threadgroup roots initialize on local lane zero, then synchronize before user
   code. User barriers fence threadgroup memory only. Aggregate threadgroup copies
   are fieldwise to preserve Metal address-space ownership.
@@ -45,37 +60,49 @@ Semantic/reference owners read during implementation:
   compiler path supply shader source/entry data to Metal consumers.
 - `runtime/zig/src/native/queue/doe_queue_submit_metal.zig` and
   `runtime/zig/src/native/compute/doe_compute_fast.zig` populate byte lengths in
-  slot 30. Resource slots are group * 16 + binding; this target rejects binding
-  values outside a group and any slot >=30 instead of colliding with sizes.
+  slot 30. Buffer slots remain group * 16 + binding, with binding <16 and
+  slots 0..29; slot 30 remains reserved for byte sizes.
 
 The actual runtime must bind slot 30 whenever `needs_sizes_buffer` is true.
+Texture and sampler arguments use their separate native argument tables, with
+slots also group * 16 + binding and binding <16. This target conservatively admits
+texture slots 0..30 and sampler slots 0..15. Texture slot 30 does not collide with
+buffer slot 30. It rejects out-of-range slots rather than silently compacting or
+inventing a runtime remapping. The host must bind each actual reflected view and
+sampler at those exact native indices; this source owner does not change runtime
+binding or negotiate device limits. Per-entry checks permit aliases across
+separate entries but reject duplicate binding identities within one entry.
+
+Native MSL 1D textures have one base level and no explicit-LOD sample overload.
+For WebGPU 1D views, the emitted mip count is 1, integer LODs are independently
+checked against 1 before width/read operations, and sampling uses the sole level.
+The source LOD expression still evaluates once in order. A host-supplied image
+outside WebGPU's 1D single-level invariant is not supported by this contract.
+
 Workgroup dimensions remain in the shared validated entry records and reflection;
 the runtime must dispatch that shape. No native queue/resource behavior changed.
 
 ## Explicit unfinished surface
 
-The current C IR has no vertex/fragment stage interface, texture/sampler, matrix,
-f16, atomic or pointer-parameter instructions. Their retained Zig MSL
-owners are not translated yet. Shared subgroup admission now exists, but this
-Metal owner explicitly rejects all eleven collective arithmetic operations and
-four used subgroup inputs until their target rules are implemented. ABI6 image
-handles and image operations also reject atomically rather than being mistaken
-for buffer values; sampled-load and storage-write rejection controls cover this
-shared-IR extension. Other missing
-features reject at shared admission, never with fake target output. New/obsolete IR opcodes, malformed target
-identities, unrepresentable slots, over-budget workgroups and unsupported value
-types reject explicitly. This is a coherent compute-target implementation over
-the current C IR, not a claim of retained Metal owner completeness.
+General vertex/fragment stage interfaces are being authored in the shared core;
+this Metal owner explicitly rejects their function flags, including constant
+stage functions without stage-input instructions. Matrix, f16, atomic and
+pointer-parameter target owners remain unfinished. Shared subgroup admission
+exists, but this Metal owner still explicitly rejects all eleven collective
+arithmetic operations and four used subgroup inputs. Other missing features
+reject at shared admission or the explicit target boundary, never with fake
+output. This source progress does not establish retained Metal owner completeness.
 
 Emission is bounded at 1 MiB, nesting at 96, and type traversal at
-1024 * (types + members + 1) visits. These are explicit target work/format limits,
+1024 * (types + members + 1) visits. Global handle call-closure traversal has a
+separate budget of 4096 * (instructions + functions + resources + 1) visits. These are explicit target work/format limits,
 not extensions to shared source capacities. No library heap or proportional VLA.
 
 ## Quick developer checks
 
 From this directory:
 
-    make check host-control library
+    make check host-control image-host-control library
 
 `make library` creates a reusable private target archive; its shared compiler
 helper dependencies remain owned by the existing C core.
@@ -84,10 +111,19 @@ All build/generated outputs go to `/tmp/doe-metal-target` by default; override
 OUT when needed. The first target links ordinary GCC C against the same shared
 parser/sema and checks real residual-style sources, explicit layout, vectors/math,
 workgroups, multiple entries, output sizing, deterministic publication, and
-wrong-but-typed rejection. The host controls compile the emitted scalar/aggregate
+wrong-but-typed rejection. The host controls compile the emitted scalar/aggregate/image
 C++ operations with GCC and execute continuing/effects/wrapping/bounds/padding
 checks. They deliberately do not emulate Metal address spaces, builtins, threads
 or driver compilation, and are not a second WGSL interpreter or acceptance oracle.
+Image controls use method spies with explicit sentinels, strict integer argument
+checks and recorded sampling operands. They test emitted sequencing/bounds and
+method mapping, not pixels, filtering, texture memory or native format conversion.
+
+The image mapping was checked against Apple's official [MSL specification](https://developer.apple.com/metal/Metal-Shading-Language-Specification.pdf),
+version 4.1 dated 2026-06-04, sections 2.9, 2.10, 5.2.1 and 6.13.1..6.13.14;
+only the existing MSL 3.0 baseline methods are used. The [WebGPU 1D texture contract](https://www.w3.org/TR/webgpu/#enumdef-gputexturedimension)
+requires the single-level mapping above. [Image author evidence](evidence/image-implementation.md)
+records source hashes, commands, first failures and scope.
 
 Existing independent tests and historical accepted receipts remain untouched.
 The shared compiler build/API is not switched to this owner. Parent integration

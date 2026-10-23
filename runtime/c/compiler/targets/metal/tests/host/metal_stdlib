@@ -21,7 +21,8 @@ using ulong = unsigned long;
 using std::array;
 using std::clamp;
 using std::isnan;
-struct uint3 { uint lanes[3]; uint& operator[](unsigned i) { return lanes[i]; } };
+using std::min;
+
 template<class To, class From> To as_type(From input) {
     static_assert(sizeof(To) == sizeof(From), "bitcast size");
     To output;
@@ -29,4 +30,8 @@ template<class To, class From> To as_type(From input) {
     return output;
 }
 }
+#include "vector_control.h"
+#ifdef DOE_METAL_IMAGE_CONTROL
+#include "image_control.h"
+#endif
 #endif

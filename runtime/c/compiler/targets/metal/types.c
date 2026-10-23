@@ -22,6 +22,10 @@ static void type_name(MetalEmitter *e, TypeId type, unsigned depth) {
     }
     const TypeRecord *t = aggregate(e, type);
     if (t == NULL) return;
+    if (t->kind == TYPE_TEXTURE || t->kind == TYPE_SAMPLER) {
+        metal_handle_type(e, type);
+        return;
+    }
     if ((t->flags & TYPE_CONSTRUCTIBLE) == 0u || (t->flags & TYPE_ABSTRACT) != 0u) {
         metal_error(e, "Metal value type is not concrete and constructible");
         return;

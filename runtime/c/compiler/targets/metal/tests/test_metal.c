@@ -1,84 +1,7 @@
 /* SPDX-License-Identifier: MIT
  * Copyright (c) 2026 Doe contributors */
-#include "../metal.h"
-#include "../../../src/numeric.h"
-#include <assert.h>
-#include <errno.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include "fixture.h"
 
-static const DoeCompilerModuleCapacities capacities = {
-    .typed = {.source_bytes = 16384u, .tokens = 2048u, .statements = 256u, .expressions = 1024u,
-        .types = 64u, .members = 128u, .resources = 32u, .access_steps = 1024u,
-        .constants = 256u, .constant_edges = 512u, .ir_instructions = 4096u,
-        .ir_operands = 1024u, .target_declarations = 2048u, .traversal_items = 193u,
-        .words = 32768u, .expression_depth = 32u, .control_depth = 16u, .type_syntax_depth = 32u},
-    .entries = 8u, .entry_inputs = 32u, .entry_references = 256u
-};
-typedef struct {
-    void *storage;
-    CompilerWorkspace *module;
-    Source source;
-    DoeCompilerDiagnostic diagnostic;
-} Fixture;
-static Fixture *prepare(const char *text) {
-    Fixture *f = calloc(1u, sizeof(*f));
-    assert(f != NULL);
-    CompilerLimits limits;
-    size_t bytes = 0u;
-    assert(compiler_module_layout(&capacities, &limits, &bytes));
-    f->storage = malloc(bytes);
-    assert(f->storage != NULL);
-    f->module = f->storage;
-    compiler_job_bind(f->module, f->storage, &limits);
-    f->source = (Source){.source = text, .length = strlen(text), .diagnostic = &f->diagnostic,
-        .limits = &f->module->limits, .compiler = f->module};
-    bool okay = lex_source(&f->source, f->module) && parse_tokens(&f->source, f->module);
-    if (okay) {
-        for (uint32_t i = 0u; i < f->module->expression_count; ++i)
-            f->module->expression_references[i] = (SourceReference){SOURCE_NONE, NO_ID};
-        for (uint32_t i = 0u; i < f->module->statement_count; ++i)
-            f->module->statement_references[i] = (SourceReference){SOURCE_NONE, NO_ID};
-        NumericEnvironment environment;
-        okay = numeric_environment_begin(&f->source, &environment);
-        if (okay) {
-            okay = validate_syntax(&f->source, f->module);
-            okay = numeric_environment_end(&f->source, &environment) && okay;
-        }
-    }
-    if (!okay) fprintf(stderr, "source failed at %zu: %s\n%s\n", f->diagnostic.offset, f->diagnostic.message, text);
-    assert(okay);
-    return f;
-}
-static void release(Fixture *f) {
-    free(f->storage);
-    free(f);
-}
-static char *emit(Fixture *f, uint32_t selected) {
-    DoeMetalResult measure;
-    errno = EDOM;
-    const DoeCompilerStatus status = doe_metal_emit(&f->source, f->module, selected, NULL, 0u, &measure);
-    if (status != DOE_COMPILER_OK) fprintf(stderr, "Metal rejected at %zu: %s\n", f->diagnostic.offset, f->diagnostic.message);
-    assert(status == DOE_COMPILER_OK);
-    assert(errno == EDOM);
-    assert(measure.required_bytes != 0u && measure.written_bytes == 0u);
-    char *text = malloc(measure.required_bytes + 1u);
-    assert(text != NULL);
-    memset(text, 0xa5, measure.required_bytes + 1u);
-    DoeMetalResult result;
-    assert(doe_metal_emit(&f->source, f->module, selected, text, measure.required_bytes - 1u, &result) == DOE_COMPILER_OUTPUT_TOO_SMALL);
-    assert(result.written_bytes == 0u && (unsigned char)text[0] == 0xa5u);
-    assert(doe_metal_emit(&f->source, f->module, selected, text, measure.required_bytes, &result) == DOE_COMPILER_OK);
-    assert(result.required_bytes == measure.required_bytes && result.written_bytes == measure.required_bytes);
-    assert((unsigned char)text[measure.required_bytes] == 0xa5u);
-    text[measure.required_bytes] = '\0';
-    return text;
-}
-static void has(const char *text, const char *needle) {
-    if (strstr(text, needle) == NULL) fprintf(stderr, "missing emission: %s\n", needle);
-    assert(strstr(text, needle) != NULL);
-}
 static void test_residual(void) {
     const char *source = "struct Params { count:u32, }"
         "@group(0) @binding(0) var<storage,read> left:array<f32>;"
@@ -267,25 +190,6 @@ static void test_unimplemented_subgroups(void) {
         release(f);
     }
 }
-static void test_unimplemented_images(void) {
-    static const char *const sources[] = {
-        "@group(0) @binding(0) var tex:texture_2d<f32>;"
-        "@compute @workgroup_size(1) fn main(){let x=textureLoad(tex,vec2i(0),0);}",
-        "@group(0) @binding(0) var tex:texture_storage_2d<rgba8unorm,write>;"
-        "@compute @workgroup_size(1) fn main(){textureStore(tex,vec2i(0),vec4f(1));}"
-    };
-    for (size_t i = 0u; i < sizeof(sources) / sizeof(sources[0]); ++i) {
-        Fixture *f = prepare(sources[i]);
-        char untouched[64];
-        memset(untouched, 0x5a, sizeof(untouched));
-        DoeMetalResult result;
-        assert(doe_metal_emit(&f->source, f->module, NO_ID, untouched,
-                             sizeof(untouched), &result) == DOE_COMPILER_UNSUPPORTED);
-        assert(result.required_bytes == 0u && result.written_bytes == 0u);
-        for (size_t j = 0u; j < sizeof(untouched); ++j) assert(untouched[j] == 0x5a);
-        release(f);
-    }
-}
 int main(int argc, char **argv) {
     uint32_t slot = NO_ID;
     assert(doe_metal_binding_slot(1u, 13u, &slot) && slot == 29u);
@@ -293,7 +197,6 @@ int main(int argc, char **argv) {
     assert(!doe_metal_binding_slot(0u, 16u, &slot));
     assert(!doe_metal_binding_slot(UINT32_MAX, UINT32_MAX, &slot));
     test_unimplemented_subgroups();
-    test_unimplemented_images();
     test_residual();
     test_layout();
     test_workgroup();
