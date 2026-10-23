@@ -2,10 +2,11 @@
  * Copyright (c) 2026 Doe contributors */
 #ifndef DOE_COMPILER_TARGET_METAL_H
 #define DOE_COMPILER_TARGET_METAL_H
-#include "../../src/internal.h"
+#include "../scratch.h"
 
 /* Private target adapter, not a public ABI. Borrow a fully validated module
  * until return. No IR mutation, allocation, retained pointers or Zig dependency.
+ * The caller supplies exclusive scratch sized by doe_target_scratch_bytes.
  * selected_entry is NO_ID for all entries or an entry index. Output is an exact
  * byte span (not NUL terminated). NULL/zero measures. Failure leaves bytes alone.
  * Source, IR and result must not overlap output or change during the call.
@@ -20,7 +21,7 @@ typedef struct {
     bool needs_sizes_buffer;
 } DoeMetalResult;
 DoeCompilerStatus doe_metal_emit(Source *source, const CompilerWorkspace *module,
-                                 uint32_t selected_entry, char *output,
+                                 uint32_t selected_entry, DoeTargetScratch scratch, char *output,
                                  size_t capacity, DoeMetalResult *result);
 bool doe_metal_binding_slot(uint32_t group, uint32_t binding, uint32_t *slot);
 #endif

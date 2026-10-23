@@ -217,7 +217,7 @@ static bool memory_helper_used(MetalEmitter *e, TypeId type, unsigned mode) {
         if ((mode == 1u && kind != DOE_COMPILER_UNIFORM_BUFFER) ||
             (mode != 1u && kind != DOE_COMPILER_STORAGE_BUFFER)) continue;
         const char *error = NULL;
-        const bool used = target_access_helper_used(c, e->selected_entry, ROOT_RESOURCE,
+        const bool used = target_access_helper_used(c, &e->closure, ROOT_RESOURCE,
             i, type, mode == 2u, &e->traversal_left, &error);
         if (error != NULL) { metal_error(e, error); return false; }
         if (used) return true;
@@ -286,9 +286,9 @@ static bool workgroup_helper_used(MetalEmitter *e, TypeId type, bool store) {
         if (!metal_selected_workgroup(e, i)) continue;
         const char *error = NULL;
         /* Cooperative zeroing stores each whole root before the first barrier. */
-        bool used = store && target_memory_dependency(c, c->workgroups[i].type,
+        bool used = store && target_memory_dependency(c, &e->closure, c->workgroups[i].type,
             type, &e->traversal_left, &error);
-        if (error == NULL && !used) used = target_access_helper_used(c, e->selected_entry,
+        if (error == NULL && !used) used = target_access_helper_used(c, &e->closure,
             ROOT_WORKGROUP, i, type, store, &e->traversal_left, &error);
         if (error != NULL) { metal_error(e, error); return false; }
         if (used) return true;

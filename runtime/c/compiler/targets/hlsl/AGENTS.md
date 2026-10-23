@@ -36,6 +36,8 @@ live in `../ir_view.h`. Keep target syntax/address policy outside that leaf;
 
 Emit memory helpers only for selected reachable access roots, transfer types and
 read/write modes, including recursive aggregate children. `../closure.h` owns the
-read-only bounded call/dependency queries; do not grow a parallel semantic graph.
+read-only bounded call/dependency queries in explicit caller-owned scratch.
+Resolve the function closure once and remember completed DAG nodes; a depth bound
+alone does not bound repeated shared subtrees. Do not grow a second semantic graph.
 Workgroup zero initialization also requires whole-root store helpers. Keep target
 address spaces and byte-view validation local. All walks charge composed work.

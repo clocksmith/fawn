@@ -90,8 +90,9 @@ Developer checks below are not physical qualification or full feature closure.
    `DEVELOPER_RECEIPT_CLOSURE.json` binds positive/absence tests, malformed-graph
    sanitizers and unchanged emitted-operation controls. Independent recheck found
    shared call DAGs revisit completed functions exponentially. A25-level doubling
-   graph reproduces bounded-work exhaustion; explicit visited closure correction
-   remains open. This trims resource helper multiplication, not every unused declaration.
+   graph reproduced bounded-work exhaustion. Explicit caller-owned completed
+   function/type maps now pass both source emitters and malformed-graph sanitizers
+   without higher work limits (`DEVELOPER_RECEIPT_DAG.json`); independent recheck pending. This trims resource helper multiplication, not every unused declaration.
 6. **Duplicate texture-copy footprint arithmetic:** resource/backend owners,
    `45f8264d` and `a6901a80`. Both call the small checked arithmetic leaf in
    `runtime/c/common`; 59,049 bounded independent arithmetic cases plus overflow

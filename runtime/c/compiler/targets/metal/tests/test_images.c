@@ -6,7 +6,7 @@ static void fail_untouched(Fixture *f, const char *diagnostic) {
     char output[128];
     memset(output, 0x5a, sizeof(output));
     DoeMetalResult result;
-    assert(doe_metal_emit(&f->source, f->module, NO_ID, output, sizeof(output), &result) == DOE_COMPILER_UNSUPPORTED);
+    assert(doe_metal_emit(&f->source, f->module, NO_ID, f->scratch, output, sizeof(output), &result) == DOE_COMPILER_UNSUPPORTED);
     assert(result.required_bytes == 0u && result.written_bytes == 0u);
     for (size_t i = 0u; i < sizeof(output); ++i) assert(output[i] == 0x5a);
     has(f->diagnostic.message, diagnostic);

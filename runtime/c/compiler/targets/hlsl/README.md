@@ -176,3 +176,12 @@ omits unrelated function bodies/context resources when one entry is selected.
 These read-only walks have a 96-frame bound and charged work, no allocation or IR
 mutation. Shared malformed-graph tests and multi-entry helper-absence tests run in
 `make check`; source-level unused declarations do not become resource accesses.
+
+The private emitter now requires `DoeTargetScratch`, sized by
+`doe_target_scratch_bytes(module, &bytes)`. The caller owns that exclusive byte
+span, disjoint from inputs/results/output, and may reuse it after any return
+without resetting. One byte per function holds the selected completed closure;
+one per type (including seven primitives) prevents repeated aggregate subtrees.
+No allocation, fixed function-count cap, IR mutation or larger work budget was
+introduced. Each selected entry closure visits each reachable function once;
+MSL's all-entry mode resolves the union once. Shared call DAGs are not unrolled.

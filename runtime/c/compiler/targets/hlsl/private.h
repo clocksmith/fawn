@@ -3,8 +3,10 @@
 #ifndef DOE_HLSL_PRIVATE_H
 #define DOE_HLSL_PRIVATE_H
 #include "hlsl.h"
+#include "../closure.h"
 typedef struct {
     Source *source;
+    TargetClosure closure;
     const CompilerWorkspace *module;
     char *output;
     size_t capacity, position;

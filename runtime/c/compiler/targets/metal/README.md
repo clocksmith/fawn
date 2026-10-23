@@ -150,3 +150,12 @@ leaves. It reuses the same resource/context/function owners as compute. Run
 compiler acceptance. `@invariant` rejects until the native build owns and qualifies
 Apple's `-fpreserve-invariance` requirement (MSL4.1 section1.6.4); an attribute alone
 would be ignored. Graphics pipeline/device/layout qualification remains separate.
+
+The private emitter now requires `DoeTargetScratch`, sized by
+`doe_target_scratch_bytes(module, &bytes)`. The caller owns that exclusive byte
+span, disjoint from inputs/results/output, and may reuse it after any return
+without resetting. One byte per function holds the selected completed closure;
+one per type (including seven primitives) prevents repeated aggregate subtrees.
+No allocation, fixed function-count cap, IR mutation or larger work budget was
+introduced. Each selected entry closure visits each reachable function once;
+MSL's all-entry mode resolves the union once. Shared call DAGs are not unrolled.

@@ -23,11 +23,7 @@ bool hlsl_entry_workgroup(HlslEmitter *e, uint32_t item) {
     return reference(e, entry->state.resolved.workgroup_first, entry->state.resolved.workgroup_count, item);
 }
 bool hlsl_function_used(HlslEmitter *e, uint32_t wanted) {
-    const char *error = NULL;
-    const bool used = target_function_reachable(e->module, e->entry, wanted,
-        &e->traversal_left, &error);
-    if (error != NULL) hlsl_error(e, error);
-    return used;
+    return target_function_used(&e->closure, wanted);
 }
 static void signature(HlslEmitter *e, uint32_t index) {
     const CompilerWorkspace *c = e->module;

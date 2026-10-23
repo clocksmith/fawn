@@ -5,6 +5,7 @@
 #include "../hlsl.h"
 typedef struct {
     void *storage;
+    DoeTargetScratch scratch;
     CompilerWorkspace *module;
     Source source;
     DoeCompilerDiagnostic diagnostic;

@@ -7,10 +7,10 @@ SOURCES = text.c types.c numeric.c access.c control.c stage.c handles.c image.c 
 CORE = $(filter-out ../../src/cli.c ../../src/cli_json.c,$(wildcard ../../src/*.c))
 .PHONY: all check style clean
 all: $(OUT)/test_metal $(OUT)/test_images
-$(OUT)/test_metal: $(SOURCES) metal.h private.h ../ir_view.h ../closure.h ../stage_view.h ../tests/array_length_source.h ../tests/closure_source.h tests/fixture.h tests/test_metal.c $(CORE) $(wildcard ../../src/*.h)
+$(OUT)/test_metal: $(SOURCES) metal.h private.h ../ir_view.h ../closure.h ../scratch.h ../stage_view.h ../tests/array_length_source.h ../tests/closure_source.h tests/fixture.h tests/test_metal.c $(CORE) $(wildcard ../../src/*.h)
 	mkdir -p $(OUT)
 	$(CC) $(CFLAGS) $(SOURCES) $(CORE) tests/test_metal.c -lm -o $@
-$(OUT)/test_images: $(SOURCES) metal.h private.h ../ir_view.h ../closure.h ../stage_view.h ../tests/array_length_source.h ../tests/closure_source.h tests/fixture.h tests/test_images.c $(CORE) $(wildcard ../../src/*.h)
+$(OUT)/test_images: $(SOURCES) metal.h private.h ../ir_view.h ../closure.h ../scratch.h ../stage_view.h ../tests/array_length_source.h ../tests/closure_source.h tests/fixture.h tests/test_images.c $(CORE) $(wildcard ../../src/*.h)
 	mkdir -p $(OUT)
 	$(CC) $(CFLAGS) $(SOURCES) $(CORE) tests/test_images.c -lm -o $@
 check: all style $(OUT)/test_ir_view $(OUT)/test_closure $(OUT)/test_graphics
@@ -20,7 +20,7 @@ check: all style $(OUT)/test_ir_view $(OUT)/test_closure $(OUT)/test_graphics
 	$(OUT)/test_closure
 	$(OUT)/test_graphics
 style:
-	python3 ../../../tools/check_source_size.py $(abspath $(SOURCES) metal.h private.h ../ir_view.h ../closure.h ../stage_view.h ../tests/array_length_source.h ../tests/closure_source.h tests/fixture.h tests/test_metal.c tests/test_images.c tests/host/image_control.h tests/host/vector_control.h)
+	python3 ../../../tools/check_source_size.py $(abspath $(SOURCES) metal.h private.h ../ir_view.h ../closure.h ../scratch.h ../stage_view.h ../tests/array_length_source.h ../tests/closure_source.h tests/fixture.h tests/test_metal.c tests/test_images.c tests/host/image_control.h tests/host/vector_control.h)
 clean:
 	rm -f $(OUT)/test_metal $(OUT)/test_images
 .PHONY: host-control
@@ -40,21 +40,21 @@ image-host-control: all
 	$(OUT)/check_images
 .PHONY: library
 library: $(OUT)/libdoe_metal_target.a
-$(OUT)/%.o: %.c metal.h private.h ../ir_view.h ../closure.h ../stage_view.h ../tests/array_length_source.h ../tests/closure_source.h $(wildcard ../../src/*.h)
+$(OUT)/%.o: %.c metal.h private.h ../ir_view.h ../closure.h ../scratch.h ../stage_view.h ../tests/array_length_source.h ../tests/closure_source.h $(wildcard ../../src/*.h)
 	mkdir -p $(OUT)
 	$(CC) $(CFLAGS) -c $< -o $@
 $(OUT)/libdoe_metal_target.a: $(addprefix $(OUT)/,$(SOURCES:.c=.o))
 	ar rcs $@ $^
 
-$(OUT)/test_ir_view: ../tests/test_ir_view.c ../ir_view.h ../closure.h ../stage_view.h $(wildcard ../../src/*.h)
+$(OUT)/test_ir_view: ../tests/test_ir_view.c ../ir_view.h ../closure.h ../scratch.h ../stage_view.h $(wildcard ../../src/*.h)
 	mkdir -p $(OUT)
 	$(CC) $(CFLAGS) ../tests/test_ir_view.c -o $@
 
-$(OUT)/test_closure: ../tests/test_closure.c ../closure.h ../stage_view.h $(wildcard ../../src/*.h)
+$(OUT)/test_closure: ../tests/test_closure.c ../closure.h ../scratch.h ../stage_view.h $(wildcard ../../src/*.h)
 	mkdir -p $(OUT)
 	$(CC) $(CFLAGS) ../tests/test_closure.c -o $@
 
-$(OUT)/test_graphics: $(SOURCES) metal.h private.h ../ir_view.h ../closure.h ../stage_view.h ../tests/stage_source.h tests/fixture.h tests/test_graphics.c $(CORE) $(wildcard ../../src/*.h)
+$(OUT)/test_graphics: $(SOURCES) metal.h private.h ../ir_view.h ../closure.h ../scratch.h ../stage_view.h ../tests/stage_source.h tests/fixture.h tests/test_graphics.c $(CORE) $(wildcard ../../src/*.h)
 	mkdir -p $(OUT)
 	$(CC) $(CFLAGS) $(SOURCES) $(CORE) tests/test_graphics.c -lm -o $@
 .PHONY: graphics-host-control

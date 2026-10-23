@@ -22,6 +22,7 @@ static const DoeCompilerModuleCapacities capacities = {
 };
 typedef struct {
     void *storage;
+    DoeTargetScratch scratch;
     CompilerWorkspace *module;
     Source source;
     DoeCompilerDiagnostic diagnostic;
@@ -57,18 +58,22 @@ static Fixture *prepare_mode(const char *text, bool graphics) {
     }
     if (!okay) fprintf(stderr, "source failed at %zu: %s\n%s\n", f->diagnostic.offset, f->diagnostic.message, text);
     assert(okay);
+    assert(doe_target_scratch_bytes(f->module, &f->scratch.capacity));
+    f->scratch.data = malloc(f->scratch.capacity);
+    assert(f->scratch.data != NULL);
     return f;
 }
 static inline Fixture *prepare(const char *text) { return prepare_mode(text, false); }
 static inline Fixture *prepare_graphics(const char *text) { return prepare_mode(text, true); }
 static void release(Fixture *f) {
+    free(f->scratch.data);
     free(f->storage);
     free(f);
 }
 static char *emit(Fixture *f, uint32_t selected) {
     DoeMetalResult measure;
     errno = EDOM;
-    const DoeCompilerStatus status = doe_metal_emit(&f->source, f->module, selected, NULL, 0u, &measure);
+    const DoeCompilerStatus status = doe_metal_emit(&f->source, f->module, selected, f->scratch, NULL, 0u, &measure);
     if (status != DOE_COMPILER_OK) fprintf(stderr, "Metal rejected at %zu: %s\n", f->diagnostic.offset, f->diagnostic.message);
     assert(status == DOE_COMPILER_OK);
     assert(errno == EDOM);
@@ -77,9 +82,9 @@ static char *emit(Fixture *f, uint32_t selected) {
     assert(text != NULL);
     memset(text, 0xa5, measure.required_bytes + 1u);
     DoeMetalResult result;
-    assert(doe_metal_emit(&f->source, f->module, selected, text, measure.required_bytes - 1u, &result) == DOE_COMPILER_OUTPUT_TOO_SMALL);
+    assert(doe_metal_emit(&f->source, f->module, selected, f->scratch, text, measure.required_bytes - 1u, &result) == DOE_COMPILER_OUTPUT_TOO_SMALL);
     assert(result.written_bytes == 0u && (unsigned char)text[0] == 0xa5u);
-    assert(doe_metal_emit(&f->source, f->module, selected, text, measure.required_bytes, &result) == DOE_COMPILER_OK);
+    assert(doe_metal_emit(&f->source, f->module, selected, f->scratch, text, measure.required_bytes, &result) == DOE_COMPILER_OK);
     assert(result.required_bytes == measure.required_bytes && result.written_bytes == measure.required_bytes);
     assert((unsigned char)text[measure.required_bytes] == 0xa5u);
     text[measure.required_bytes] = '\0';
