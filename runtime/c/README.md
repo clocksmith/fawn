@@ -42,3 +42,25 @@ composing the explicit Metal source/metadata path and guarded Vulkan indirect
 backend. This tests merged linking/packaging, not GPU execution. Darwin source
 wait support does not by itself qualify a macOS package: numeric host controls,
 Mach-O linking and Apple SDK/device runs remain separate gates.
+
+## Unchanged JavaScript package consumer
+
+`make -C runtime/c check-js STAGE=<finished stage>` rebuilds the doe-gpu N-API addon
+(gitignored `packages/doe-gpu/build`) and runs the unchanged first-kernel
+integration test with `DOE_WEBGPU_LIB` pointing at the staged
+`libwebgpu_doe_c.so`. The package requests a nonfallback adapter, so this needs a
+physical GPU; it is developer evidence on the adapter the receipt names.
+
+The addon prefers Doe-specific `doeNative*` fast paths when a provider exports them
+(the Zig provider) and otherwise calls the exact standard `wgpu*` procedure; a
+missing implementation throws rather than doing nothing. Binding reflection is
+optional: without it the pipeline's own auto layout is used. The package reports
+this provider as `libraryFlavor: "doe-c"`.
+
+On 2026-10-24 on Jupiter (Radeon 8060S, RADV, Node 22.22.1) the staged package at
+91972c24d passed first-kernel 16/16 and 20 of the package's 32 node integration
+tests. The remaining failures need reusable compute programs and GPU recording in
+C, the Doe binding-reflection extension, compiler coverage, depth copies, or are
+packaging-harness artifacts (a packed tarball's own prebuilt addon, and a permission
+sandbox that denies an out-of-package library path). This is not npm packaging, a
+published prebuild, or release evidence.
