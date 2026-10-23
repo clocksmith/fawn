@@ -419,6 +419,69 @@ test "createShaderModule: WGSL with null code pointer returns error module" {
 }
 
 // ============================================================
+// 9b. Device validation error for invalid WGSL
+// ============================================================
+
+const error_scope = @import("../../src/runtime/diagnostics/error_scope.zig");
+
+const PoppedScope = struct {
+    error_type: u32 = 0,
+    message: [512]u8 = undefined,
+    message_len: usize = 0,
+};
+
+fn recordPoppedScope(error_type: u32, message: types.WGPUStringView, userdata1: ?*anyopaque, userdata2: ?*anyopaque) callconv(.c) void {
+    _ = userdata2;
+    const popped: *PoppedScope = @ptrCast(@alignCast(userdata1.?));
+    popped.error_type = error_type;
+    const length = @min(message.length, popped.message.len);
+    if (length > 0) @memcpy(popped.message[0..length], message.data[0..length]);
+    popped.message_len = length;
+}
+
+fn createVulkanWgslModule(dev: *native.DoeDevice, code: []const u8) ?*anyopaque {
+    var wgsl_desc = types.WGPUShaderSourceWGSL{
+        .chain = .{ .next = null, .sType = types.WGPUSType_ShaderSourceWGSL },
+        .code = .{ .data = code.ptr, .length = code.len },
+    };
+    const desc = types.WGPUShaderModuleDescriptor{
+        .nextInChain = @ptrCast(&wgsl_desc.chain),
+        .label = .{ .data = null, .length = 0 },
+    };
+    return shader.doeNativeDeviceCreateShaderModule(@ptrCast(dev), &desc);
+}
+
+test "createShaderModule: invalid WGSL generates a device validation error and keeps compilation info" {
+    var dev = native.DoeDevice{ .backend = .vulkan };
+    dev.error_scopes.push(error_scope.FILTER_VALIDATION);
+    const result = createVulkanWgslModule(&dev, "not WGSL");
+    try std.testing.expect(result != null);
+    var popped = PoppedScope{};
+    try std.testing.expect(dev.error_scopes.pop(.{ .callback = recordPoppedScope, .userdata1 = &popped }));
+    try std.testing.expectEqual(error_scope.ERROR_TYPE_VALIDATION, popped.error_type);
+    const message = popped.message[0..popped.message_len];
+    try std.testing.expect(std.mem.startsWith(u8, message, "createShaderModule: "));
+    const sm = native.cast(native.DoeShaderModule, result).?;
+    try std.testing.expectEqual(native.CompilationMessageKind.@"error", sm.compilation_message_kind);
+    // getCompilationInfo reports the compiler message itself, not the scope text.
+    try std.testing.expectEqualStrings(message["createShaderModule: ".len..], sm.compilation_message.?);
+    shader.doeNativeShaderModuleRelease(result);
+}
+
+test "createShaderModule: valid WGSL generates no device error" {
+    var dev = native.DoeDevice{ .backend = .vulkan };
+    dev.error_scopes.push(error_scope.FILTER_VALIDATION);
+    const result = createVulkanWgslModule(&dev, "@compute @workgroup_size(1) fn main() {}");
+    try std.testing.expect(result != null);
+    var popped = PoppedScope{};
+    try std.testing.expect(dev.error_scopes.pop(.{ .callback = recordPoppedScope, .userdata1 = &popped }));
+    try std.testing.expectEqual(error_scope.ERROR_TYPE_NO_ERROR, popped.error_type);
+    const sm = native.cast(native.DoeShaderModule, result).?;
+    try std.testing.expect(sm.compilation_message_kind != native.CompilationMessageKind.@"error");
+    shader.doeNativeShaderModuleRelease(result);
+}
+
+// ============================================================
 // 10. DoeShaderModule defaults and lifecycle
 // ============================================================
 

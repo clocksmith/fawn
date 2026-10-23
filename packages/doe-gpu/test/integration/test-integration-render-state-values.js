@@ -103,10 +103,18 @@ for (const format of ['stencil8', 'depth24plus-stencil8']) {
 }
 
 {
+  // createShaderModule generates a validation error for invalid WGSL as well
+  // as reporting it through getCompilationInfo; a valid module generates none.
+  device.pushErrorScope('validation');
   const invalid = device.createShaderModule({ code: 'not WGSL' });
+  const error = await device.popErrorScope();
+  assert(error instanceof Error && error.message.length > 0, `invalid WGSL reaches the validation scope, got ${error}`);
   const messages = (await invalid.getCompilationInfo()).messages;
   assert(messages.some((message) => message.type === 'error' && message.message.length > 0), 'invalid WGSL reports an error message');
-  console.log('ok: invalid WGSL reports compilation errors');
+  device.pushErrorScope('validation');
+  device.createShaderModule({ code: '@compute @workgroup_size(1) fn main() {}' });
+  assert((await device.popErrorScope()) === null, 'valid WGSL generates no validation error');
+  console.log('ok: invalid WGSL reports a validation error and compilation errors');
 }
 
 // The Zig drop-in renders one color attachment and no depth-only passes; it

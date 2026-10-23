@@ -3722,9 +3722,9 @@
       },
       "src/native/shader/doe_shader_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "39bb270af3f79d445ea8fc253a05e8c415a3f734946ffd28f2406b5b18f2d4fe",
-        "reason": "Keep: Shader owner validates and retains WGSL for D3D12; routes compute to bounded native integration; releases D3D12 PSO/root through COM, with existing shader/layout references and diagnostics preserved.",
-        "reviewer": "codex-public-d3d12-compute/2026-10-19"
+        "moduleSha256": "21890de2293b569d5bd8493e6ee4f129fb9b10b4baba2ea3aa1eef8d5e7c1d14",
+        "reason": "Keep: Shader owner validates and retains WGSL for D3D12; routes compute to bounded native integration; releases D3D12 PSO/root through COM, with existing shader/layout references and diagnostics preserved; a failed module also generates its device validation error.",
+        "reviewer": "doe-c-claude-surface/2026-10-23"
       },
       "src/native/shader/doe_shader_translation_cache.zig": {
         "decision": "Keep",

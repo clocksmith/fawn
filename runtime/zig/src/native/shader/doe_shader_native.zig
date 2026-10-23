@@ -18,6 +18,7 @@ const native_shared = @import("../support/doe_native_shared_types.zig");
 const native_helpers = @import("../support/doe_native_object_helpers.zig");
 const bind_group = @import("../resource/doe_bind_group_native.zig");
 const resource_ops = @import("../../backend/dropin_resource_ops.zig");
+const error_scope = @import("../../runtime/diagnostics/error_scope.zig");
 const bridge = resource_ops.metal_bridge;
 const metal_bridge_device_new_compute_pipeline = bridge.metal_bridge_device_new_compute_pipeline;
 const metal_bridge_device_new_library_msl = bridge.metal_bridge_device_new_library_msl;
@@ -248,6 +249,12 @@ fn doeNativeDeviceCreateShaderModuleOwned(dev_raw: ?*anyopaque, desc: ?*const ab
             diagnostic.last_error_line,
             diagnostic.last_error_col,
         );
+        // https://gpuweb.github.io/gpuweb/#dom-gpudevice-createshadermodule: an
+        // error-level compilation message also generates a validation error on
+        // the device; getCompilationInfo keeps reporting the same message.
+        var buf: [512]u8 = undefined;
+        const scope_message = std.fmt.bufPrint(&buf, "createShaderModule: {s}", .{message}) catch message;
+        dev.error_scopes.deliver(error_scope.ERROR_TYPE_VALIDATION, scope_message);
         break :blk toOpaque(err_sm);
     };
     label_store.set(handle, d.label.data, d.label.length);
