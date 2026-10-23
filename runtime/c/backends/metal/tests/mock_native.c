@@ -6,7 +6,7 @@
 #include <string.h>
 
 enum { MOCK_KIND_DEVICE, MOCK_KIND_QUEUE, MOCK_KIND_BUFFER, MOCK_KIND_PIPELINE,
-    MOCK_KIND_COMMAND, MOCK_KIND_TEXTURE, MOCK_KIND_VIEW, MOCK_KIND_SAMPLER };
+    MOCK_KIND_COMMAND, MOCK_KIND_TEXTURE, MOCK_KIND_VIEW, MOCK_KIND_SAMPLER, MOCK_KIND_RENDER_PIPELINE, MOCK_KIND_DEPTH_STATE };
 struct mock_object {
     unsigned kind;
     size_t length;
@@ -231,6 +231,36 @@ static doe_mtl_status copy_image(void *userdata, void *command, void *source,
     return doe_mtl_fail(DOE_MTL_OK, "mock image copy", error);
 }
 
+static doe_mtl_status render_pipeline_create(void *userdata, void *device,
+    const doe_mtl_render_pipeline_desc *desc, void **out, void **out_depth, doe_mtl_error *error) {
+    mock_native *mock = userdata;
+    mock_object *pipeline, *depth = NULL;
+    assert(device != NULL && desc->vertex.msl != NULL);
+    if (mock->fail == MOCK_RENDER_PIPELINE) return failure(error);
+    pipeline = object_create(mock, MOCK_KIND_RENDER_PIPELINE);
+    if (desc->depth_stencil.depth_format != 0 || desc->depth_stencil.stencil_format != 0) {
+        if (mock->fail == MOCK_DEPTH_STATE) { release_object(mock, pipeline); return failure(error); }
+        depth = object_create(mock, MOCK_KIND_DEPTH_STATE);
+    }
+    mock->render_pipeline_desc = *desc;
+    *out = pipeline;
+    *out_depth = depth;
+    return doe_mtl_fail(DOE_MTL_OK, "mock render pipeline", error);
+}
+static doe_mtl_status render(void *userdata, void *command,
+    const doe_mtl_native_render_pass *pass, const doe_mtl_native_render_draw *draws,
+    size_t count, doe_mtl_error *error) {
+    mock_native *mock = userdata;
+    size_t i;
+    assert(command != NULL && pass->width != 0);
+    if (mock->fail == MOCK_RENDER) return failure(error);
+    mock->renders++;
+    mock->render_pass = *pass;
+    mock->render_draw_count = count;
+    for (i = 0; i < count && i < 2; ++i) mock->render_draws[i] = draws[i];
+    return doe_mtl_fail(DOE_MTL_OK, "mock render", error);
+}
+
 static void commit(void *userdata, void *handle) {
     mock_native *mock = userdata;
     mock_object *command = handle;
@@ -271,6 +301,8 @@ doe_mtl_native mock_driver(mock_native *mock) {
     native.upload_texture = upload_image;
     native.read_texture = read_image;
     native.copy_texture = copy_image;
+    native.render_pipeline = render_pipeline_create;
+    native.render = render;
     native.commit = commit;
     native.observe = observe;
     return native;

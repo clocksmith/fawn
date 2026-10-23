@@ -276,7 +276,8 @@ static doe_mtl_status open_apple_runtime(doe_mtl_native *out, doe_mtl_error *err
     runtime->upload_image_call = (doe_objc_upload_image_call)message;
     runtime->read_image_call = (doe_objc_read_image_call)message;
     runtime->copy_image_call = (doe_objc_copy_image_call)message;
-    if (!load_selectors(runtime) || !doe_mtl_objc_load_image_selectors(runtime)) goto unavailable;
+    if (!load_selectors(runtime) || !doe_mtl_objc_load_image_selectors(runtime) ||
+        !doe_mtl_objc_load_render(runtime, message)) goto unavailable;
     native.userdata = runtime;
     native.close = close_runtime;
     native.release = doe_mtl_objc_release;
@@ -295,6 +296,8 @@ static doe_mtl_status open_apple_runtime(doe_mtl_native *out, doe_mtl_error *err
     native.upload_texture = doe_mtl_objc_upload_image;
     native.read_texture = doe_mtl_objc_read_image;
     native.copy_texture = doe_mtl_objc_copy_image;
+    native.render_pipeline = doe_mtl_objc_render_pipeline;
+    native.render = doe_mtl_objc_render;
     native.commit = doe_mtl_objc_commit;
     native.observe = doe_mtl_objc_observe;
     *out = native;

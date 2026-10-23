@@ -9,10 +9,17 @@ Textures, parent-backed views and samplers participate in that same owner. Array
 slices and 3D origins are distinct native coordinates, not interchangeable depth.
 
 The compiler supplies validated MSL, resolved workgroup size, flattened slots and
-optional sizes slot. Never guess these from shader text or from pipeline maxima.
+optional sizes slot for each stage. Render inputs include explicit vertex/fragment
+symbols, vertex layouts and native render state. Never guess these from shader
+text or from pipeline maxima.
 Keep the exact C method signature for each Objective-C selector. Review both
 x86_64 struct-return and arm64 dispatch branches after ABI edits. Native error
 codes and original operation names must survive failed encoding and completion.
+
+Render passes are whole-call snapshots: validate every draw, then acquire all
+leases before creating the native encoder. Attachment clear/load/store state is
+speculative until completion, like transfers. Combined depth/stencil formats
+remain unsupported until aspect-qualified initialization has one owner.
 
 Portable call-ledger tests are not a Metal emulator, SDK check or physical run.
 Do not install Apple SDKs or silently substitute Vulkan/software execution.

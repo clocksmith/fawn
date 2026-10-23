@@ -3,6 +3,7 @@
 #define DOE_MTL_NATIVE_H
 #include "../include/doe_metal.h"
 #include "../include/doe_metal_texture.h"
+#include "../include/doe_metal_render.h"
 
 /* Private actual-platform call boundary. Tests substitute these calls only;
  * the production constructor has no injectable/public fake-runtime option.
@@ -25,6 +26,28 @@ typedef struct doe_mtl_native_texture_copy {
     doe_mtl_texture_region region;
     bool volume;
 } doe_mtl_native_texture_copy;
+
+typedef struct doe_mtl_native_render_attachment {
+    void *texture;
+    doe_mtl_load_action load;
+    doe_mtl_store_action store;
+    doe_mtl_clear_color color;
+    double depth;
+    uint32_t stencil;
+} doe_mtl_native_render_attachment;
+typedef struct doe_mtl_native_render_pass {
+    doe_mtl_native_render_attachment colors[DOE_MTL_COLOR_ATTACHMENTS];
+    uint32_t color_count, width, height;
+    doe_mtl_native_render_attachment depth, stencil;
+} doe_mtl_native_render_pass;
+typedef struct doe_mtl_native_render_draw {
+    void *pipeline, *depth_stencil;
+    doe_mtl_native_resources vertex, fragment;
+    uint32_t vertex_sizes_slot, fragment_sizes_slot;
+    void *index_buffer;
+    size_t index_offset;
+    doe_mtl_render_draw values; /* Only scalar/dynamic fields used by adapter. */
+} doe_mtl_native_render_draw;
 
 typedef struct doe_mtl_native {
     void *userdata;
@@ -64,6 +87,11 @@ typedef struct doe_mtl_native {
     doe_mtl_status (*copy_texture)(void *userdata, void *command, void *source,
         const doe_mtl_native_texture_copy *source_copy, void *destination,
         const doe_mtl_native_texture_copy *destination_copy, doe_mtl_error *error);
+    doe_mtl_status (*render_pipeline)(void *userdata, void *device,
+        const doe_mtl_render_pipeline_desc *desc, void **pipeline, void **depth_stencil, doe_mtl_error *error);
+    doe_mtl_status (*render)(void *userdata, void *command,
+        const doe_mtl_native_render_pass *pass, const doe_mtl_native_render_draw *draws,
+        size_t draw_count, doe_mtl_error *error);
     void (*commit)(void *userdata, void *command);
     /* Returns native MTLCommandBufferStatus, retaining exact NSError.code. */
     size_t (*observe)(void *userdata, void *command, bool wait, int64_t *code);

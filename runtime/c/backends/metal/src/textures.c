@@ -14,6 +14,10 @@ static doe_mtl_status texture_validate(const doe_mtl_context *context,
         return DOE_MTL_INVALID_ARGUMENT;
     status = doe_mtl_texture_format_info(desc->format, format);
     if (status != DOE_MTL_OK) return status;
+    if ((format->depth || format->stencil) &&
+        ((desc->usage & (DOE_MTL_TEXTURE_STORAGE | DOE_MTL_TEXTURE_COPY_SRC | DOE_MTL_TEXTURE_COPY_DST)) != 0 ||
+         (desc->type != DOE_MTL_TEXTURE_2D && desc->type != DOE_MTL_TEXTURE_2D_ARRAY)))
+        return DOE_MTL_UNSUPPORTED;
     if (format->compressed && (!context->caps.bc_texture_compression ||
         (desc->usage & (DOE_MTL_TEXTURE_STORAGE | DOE_MTL_TEXTURE_RENDER_TARGET)) != 0))
         return DOE_MTL_UNSUPPORTED;

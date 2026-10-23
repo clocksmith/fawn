@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: MIT */
-#include "texture_internal.h"
+#include "render_internal.h"
 
 doe_mtl_status doe_mtl_recording(doe_mtl_commands *commands, doe_mtl_error *error) {
     if (commands == NULL)
@@ -186,14 +186,15 @@ doe_mtl_status doe_mtl_commands_fill(doe_mtl_commands *commands,
     return doe_mtl_native_record_result(commands, status, &detail, error);
 }
 
-static doe_mtl_status binding_preflight(doe_mtl_commands *commands,
-    doe_mtl_pipeline *pipeline, const doe_mtl_buffer_binding *bindings,
-    size_t count, doe_mtl_native_binding *flat) {
+doe_mtl_status doe_mtl_buffer_bindings_preflight(doe_mtl_commands *commands,
+    const doe_mtl_buffer_binding *bindings, size_t count, uint32_t sizes_slot,
+    doe_mtl_native_binding *flat) {
     size_t i;
+    if (count > DOE_MTL_BUFFER_SLOTS || (count != 0 && bindings == NULL)) return DOE_MTL_INVALID_ARGUMENT;
     for (i = 0; i < count; ++i) {
         const doe_mtl_buffer_binding *binding = &bindings[i];
         doe_mtl_status status;
-        if (binding->slot >= DOE_MTL_BUFFER_SLOTS || binding->slot == pipeline->sizes_slot)
+        if (binding->slot >= DOE_MTL_BUFFER_SLOTS || binding->slot == sizes_slot)
             return DOE_MTL_RANGE;
         if (flat[binding->slot].buffer != NULL) return DOE_MTL_INVALID_ARGUMENT;
         status = doe_mtl_buffer_preflight(commands, binding->buffer, true);
@@ -202,8 +203,8 @@ static doe_mtl_status binding_preflight(doe_mtl_commands *commands,
             !doe_mtl_range(binding->buffer->size, binding->offset, binding->size))
             return DOE_MTL_RANGE;
         if (binding->offset % 4 != 0) return DOE_MTL_ALIGNMENT;
-        if (pipeline->sizes_slot != UINT32_MAX &&
-            (binding->size > UINT32_MAX || binding->slot > pipeline->sizes_slot))
+        if (sizes_slot != UINT32_MAX &&
+            (binding->size > UINT32_MAX || binding->slot > sizes_slot))
             return DOE_MTL_RANGE;
         flat[binding->slot].buffer = binding->buffer->native;
         flat[binding->slot].offset = (size_t)binding->offset;
@@ -227,7 +228,7 @@ doe_mtl_status doe_mtl_commands_dispatch_resources(doe_mtl_commands *commands,
         return doe_mtl_poison(commands, DOE_MTL_INVALID_ARGUMENT, "dispatch arguments", error);
     if (pipeline->context != commands->context)
         return doe_mtl_poison(commands, DOE_MTL_DEVICE_MISMATCH, "dispatch pipeline", error);
-    status = binding_preflight(commands, pipeline, bindings, count, resources.buffers);
+    status = doe_mtl_buffer_bindings_preflight(commands, bindings, count, pipeline->sizes_slot, resources.buffers);
     if (status == DOE_MTL_OK)
         status = doe_mtl_image_bindings_preflight(commands, textures, texture_count,
             samplers, sampler_count, &resources);
@@ -269,6 +270,7 @@ doe_mtl_status doe_mtl_commands_dispatch_indirect(doe_mtl_commands *commands,
 }
 
 static void retire_uses(doe_mtl_commands *commands, bool completed, bool success) {
+    doe_mtl_render_retire(commands);
     doe_mtl_images_retire(commands, completed, success);
     while (commands->buffers != NULL) {
         doe_mtl_buffer_use *use = commands->buffers;

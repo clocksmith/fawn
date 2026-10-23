@@ -2,9 +2,21 @@
 #include "texture_internal.h"
 
 doe_mtl_status doe_mtl_texture_format_info(doe_mtl_format format, doe_mtl_format_info *out) {
-    doe_mtl_format_info info = {1, 1, 0, false, false};
+    doe_mtl_format_info info = {1, 1, 0, false, false, false, false};
     if (out == NULL) return DOE_MTL_INVALID_ARGUMENT;
     switch (format) {
+    case DOE_MTL_DEPTH16_UNORM:
+        info.block_bytes = 2;
+        info.depth = true;
+        break;
+    case DOE_MTL_DEPTH32_FLOAT:
+        info.block_bytes = 4;
+        info.depth = true;
+        break;
+    case DOE_MTL_STENCIL8:
+        info.block_bytes = 1;
+        info.stencil = true;
+        break;
     case DOE_MTL_R8_UNORM: case DOE_MTL_R8_SNORM: case DOE_MTL_R8_UINT: case DOE_MTL_R8_SINT:
         info.block_bytes = 1;
         break;

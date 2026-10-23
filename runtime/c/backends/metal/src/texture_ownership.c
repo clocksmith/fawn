@@ -102,7 +102,7 @@ doe_mtl_status doe_mtl_image_bindings_preflight(doe_mtl_commands *commands,
             doe_mtl_format_info format;
             if (binding->view->desc.mip_count != 1) return DOE_MTL_INVALID_ARGUMENT;
             status = doe_mtl_texture_format_info(binding->view->desc.format, &format);
-            if (status != DOE_MTL_OK || format.srgb || format.compressed) return DOE_MTL_UNSUPPORTED;
+            if (status != DOE_MTL_OK || format.srgb || format.compressed || format.depth || format.stencil) return DOE_MTL_UNSUPPORTED;
         }
         if (!view_initialized(commands, binding->view)) return DOE_MTL_UNINITIALIZED;
         native->textures[binding->slot] = binding->view->native;
@@ -119,7 +119,7 @@ doe_mtl_status doe_mtl_image_bindings_preflight(doe_mtl_commands *commands,
     return DOE_MTL_OK;
 }
 
-static doe_mtl_status use_view(doe_mtl_commands *commands, doe_mtl_texture_view *view) {
+doe_mtl_status doe_mtl_use_view(doe_mtl_commands *commands, doe_mtl_texture_view *view) {
     doe_mtl_view_use *use;
     doe_mtl_texture_use *texture_use;
     doe_mtl_status status = doe_mtl_use_texture(commands, view->texture, &texture_use);
@@ -162,7 +162,7 @@ doe_mtl_status doe_mtl_image_bindings_retain(doe_mtl_commands *commands,
     const doe_mtl_sampler_binding *samplers, size_t sampler_count) {
     size_t i;
     doe_mtl_status status = DOE_MTL_OK;
-    for (i = 0; i < texture_count && status == DOE_MTL_OK; ++i) status = use_view(commands, textures[i].view);
+    for (i = 0; i < texture_count && status == DOE_MTL_OK; ++i) status = doe_mtl_use_view(commands, textures[i].view);
     for (i = 0; i < sampler_count && status == DOE_MTL_OK; ++i) status = use_sampler(commands, samplers[i].sampler);
     return status;
 }

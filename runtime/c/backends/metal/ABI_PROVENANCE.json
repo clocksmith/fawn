@@ -37,6 +37,22 @@
     {
       "path": "runtime/zig/src/backend/metal/metal_texture_resources.zig",
       "sha256": "e45e6cbb81471ba785fa07f3a6961a81c52b748d2e7cdce5758159c171fb64db"
+    },
+    {
+      "path": "runtime/zig/src/backend/metal/metal_render_state_bridge.h",
+      "sha256": "9e49541ec6c9077d78fb9c3910e198ff375c82349f41178ef1a4a08e68b71479"
+    },
+    {
+      "path": "runtime/zig/src/backend/metal/metal_render_state_bridge.m",
+      "sha256": "72ce0e6344b93b65bec225ac27898b0888a1ac81b4a1cdc2f3be4bdd04e2cd0e"
+    },
+    {
+      "path": "runtime/zig/src/native/render/doe_render_pipeline_native.zig",
+      "sha256": "f6bd9727be3a30df8d5530cacf99812cbc9833a8c18b5ca39cd7675bbdcb4b95"
+    },
+    {
+      "path": "runtime/zig/src/native/render/doe_render_pass_controls_native.zig",
+      "sha256": "72090a2a8cfc74f48a16d2b6ba56fc28c063f25eecdf7e06677580c300769243"
     }
   ],
   "primary_references": [
@@ -107,6 +123,26 @@
     {
       "subject": "Compatible texture view types and cube face ranges",
       "url": "https://developer.apple.com/documentation/metal/mtltexture/newtextureviewwithpixelformat%3Atexturetype%3Alevels%3Aslices%3A?changes=_3"
+    },
+    {
+      "subject": "Render target, blend factor and write-mask native values",
+      "url": "https://raw.githubusercontent.com/apple/metal-cpp/main/Metal/MTLRenderPipeline.hpp"
+    },
+    {
+      "subject": "Attachment clear/load/store and descriptor fields",
+      "url": "https://raw.githubusercontent.com/apple/metal-cpp/main/Metal/MTLRenderPass.hpp"
+    },
+    {
+      "subject": "Vertex format layouts and native step-function values",
+      "url": "https://raw.githubusercontent.com/apple/metal-cpp/main/Metal/MTLVertexDescriptor.hpp"
+    },
+    {
+      "subject": "Render argument order, viewport/scissor and signed indexed base vertex",
+      "url": "https://raw.githubusercontent.com/apple/metal-cpp/main/Metal/MTLRenderCommandEncoder.hpp"
+    },
+    {
+      "subject": "Depth/stencil compare, operation and uint32 mask setters",
+      "url": "https://raw.githubusercontent.com/apple/metal-cpp/main/Metal/MTLDepthStencil.hpp"
     }
   ],
   "abi_facts": [
@@ -119,7 +155,12 @@
     "Texture type numbers 0/1/2/3/5/6/7; native shader read/write/render/view usage bits 1/2/4/16.",
     "Sampler min/mag filter0/1, mipfilter1/2, address0/2/3, compare0..7; LOD setters take float.",
     "Per-slice array buffer transfers use native bytesPerImage0 and origin.z0; volume transfers use slice0 and nonzero origin.z/depth as requested.",
-    "GPUFamily uses NSInteger; Mac2=2002, Apple2=1002, Apple3=1003. Exposed dimension limits are conservative published family bounds, not a hardware qualification."
+    "GPUFamily uses NSInteger; Mac2=2002, Apple2=1002, Apple3=1003. Exposed dimension limits are conservative published family bounds, not a hardware qualification.",
+    "Render write-mask bits R=8,G=4,B=2,A=1; blend operations0..4 and admitted factors0..14.",
+    "Load actions discard/load/clear=0/1/2; admitted store discard/store=0/1. Multisample/resolve not admitted.",
+    "ClearColor is four doubles; viewport is six doubles; scissor is four NSUInteger fields passed by value.",
+    "Stencil clear/reference/readMask/writeMask setters take uint32; depth clear takes double; depth-write uses native BOOL.",
+    "Indexed draw baseVertex is signed NSInteger; other primitive/count/offset/base-instance fields are NSUInteger."
   ],
   "not_verified": [
     "Apple SDK declaration compatibility",
@@ -131,6 +172,10 @@
     "Images use private storage and staging transfers rather than the retained bridge shared-storage assumption; no CPU texture mapping is offered.",
     "Explicit view counts/native enums replace retained WebGPU fallback/default conversions; public translation remains upstream.",
     "2D native bytesPerImage is zero per the current Apple method contract, while the buffer image stride still advances each array layer.",
-    "One resource/command owner publishes per-subresource initialization only on native success; no second public lifetime policy."
+    "One resource/command owner publishes per-subresource initialization only on native success; no second public lifetime policy.",
+    "Explicit vertex/fragment source spans and resolved symbols replace retained fallback shader/name behavior; no shader synthesis.",
+    "A zero native color write mask stays zero, rather than retained fallback-to-all behavior.",
+    "Per-stage sparse binding snapshots clear absent slots between draws; no blanket aliasing of vertex and fragment bindings.",
+    "Whole-pass preflight and one completion owner retain every attachment/view and pipeline before native encoding; combined depth/stencil stays rejected until aspect-qualified initialization exists."
   ]
 }
